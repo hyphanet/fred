@@ -45,7 +45,16 @@ public class InsertException extends Exception {
 			}
 		});
 	}
-	
+
+	/**
+	 * zero arg c'tor for db4o on jamvm
+	 */
+	@SuppressWarnings("unused")
+	private InsertException() {
+		mode = 0;
+		extra = null;
+	}
+
 	public InsertException(int m, String msg, FreenetURI expectedURI) {
 		super(getMessage(m)+": "+msg);
 		if(m == 0)

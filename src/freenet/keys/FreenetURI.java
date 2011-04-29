@@ -328,6 +328,13 @@ public class FreenetURI implements Cloneable {
 
 		if(!noTrim)
 			URI = URI.trim();
+		
+		// Strip ?max-size, ?type etc.
+		// Un-encoded ?'s are illegal.
+		int x = URI.indexOf('?');
+		if(x > -1)
+			URI = URI.substring(0, x);
+			
 		if(URI.indexOf('@') < 0 || URI.indexOf('/') < 0)
 			// Encoded URL?
 			try {

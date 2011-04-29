@@ -551,7 +551,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public static final int SYMMETRIC_KEY_LENGTH = 32; // 256 bits - note that this isn't used everywhere to determine it
 
 	/** Datastore directory */
-	private final File storeDir;
+	private final ProgramDirectory storeDir;
 
 	/** Datastore properties */
 	private String storeType;
@@ -682,7 +682,7 @@ public class Node implements TimeSkewDetectorCallback {
 	private final HashMap<Long,OfferReplyTag> runningCHKOfferReplyUIDsRT;
 	private final HashMap<Long,OfferReplyTag> runningSSKOfferReplyUIDsRT;
 
-	
+
 	/** Semi-unique ID for swap requests. Used to identify us so that the
 	 * topology can be reconstructed. */
 	public long swapIdentifier;
@@ -1016,20 +1016,21 @@ public class Node implements TimeSkewDetectorCallback {
 		SimpleFieldSet oldConfig = config.getSimpleFieldSet();
 		// Setup node-specific configuration
 		final SubConfig nodeConfig = new SubConfig("node", config);
+		final SubConfig installConfig = new SubConfig("node.install", config);
 
 		int sortOrder = 0;
 
 		// Directory for node-related files other than store
-		this.nodeDir = setupProgramDir(nodeConfig, "node references", "nodeDir", ".",
-		  sortOrder++, "Node.nodeDir", "Node.nodeDirLong");
-		this.cfgDir = setupProgramDir(nodeConfig, "user config", "cfgDir", nodeDir.dir.toString(),
-		  sortOrder++, "Node.cfgDir", "Node.cfgDirLong");
-		this.userDir = setupProgramDir(nodeConfig, "user state", "userDir", nodeDir.dir.toString(),
-		  sortOrder++, "Node.userDir", "Node.userDirLong");
-		this.runDir = setupProgramDir(nodeConfig, "runtime state", "runDir", nodeDir.dir.toString(),
-		  sortOrder++, "Node.runDir", "Node.runDirLong");
-		this.pluginDir = setupProgramDir(nodeConfig, "plugins", "pluginDir", new File(nodeDir.dir, "plugins").toString(),
-		  sortOrder++, "Node.pluginDir", "Node.pluginDirLong");
+		this.nodeDir = setupProgramDir(installConfig, "nodeDir", ".",
+		  "Node.nodeDir", "Node.nodeDirLong", nodeConfig);
+		this.cfgDir = setupProgramDir(installConfig, "cfgDir", getNodeDir().toString(),
+		  "Node.cfgDir", "Node.cfgDirLong", nodeConfig);
+		this.userDir = setupProgramDir(installConfig, "userDir", getNodeDir().toString(),
+		  "Node.userDir", "Node.userDirLong", nodeConfig);
+		this.runDir = setupProgramDir(installConfig, "runDir", getNodeDir().toString(),
+		  "Node.runDir", "Node.runDirLong", nodeConfig);
+		this.pluginDir = setupProgramDir(installConfig, "pluginDir",  nodeDir.file("plugins").toString(),
+		  "Node.pluginDir", "Node.pluginDirLong", nodeConfig);
 
 		// l10n stuffs
 		nodeConfig.register("l10n", Locale.getDefault().getLanguage().toLowerCase(), sortOrder++, false, true,
@@ -1038,12 +1039,12 @@ public class Node implements TimeSkewDetectorCallback {
 				new L10nCallback());
 
 		try {
-			new NodeL10n(BaseL10n.LANGUAGE.mapToLanguage(nodeConfig.getString("l10n")), cfgDir.dir());
+			new NodeL10n(BaseL10n.LANGUAGE.mapToLanguage(nodeConfig.getString("l10n")), getCfgDir());
 		} catch (MissingResourceException e) {
 			try {
-				new NodeL10n(BaseL10n.LANGUAGE.mapToLanguage(nodeConfig.getOption("l10n").getDefault()), cfgDir.dir());
+				new NodeL10n(BaseL10n.LANGUAGE.mapToLanguage(nodeConfig.getOption("l10n").getDefault()), getCfgDir());
 			} catch (MissingResourceException e1) {
-				new NodeL10n(BaseL10n.LANGUAGE.mapToLanguage(BaseL10n.LANGUAGE.getDefault().shortCode), cfgDir.dir());
+				new NodeL10n(BaseL10n.LANGUAGE.mapToLanguage(BaseL10n.LANGUAGE.getDefault().shortCode), getCfgDir());
 			}
 		}
 
@@ -1689,7 +1690,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), obwLimit, ibwLimit, lastVersion);
 
-		clientCore = new NodeClientCore(this, config, nodeConfig, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets, nodeDBHandle, db);
+		clientCore = new NodeClientCore(this, config, nodeConfig, installConfig, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets, nodeDBHandle, db);
 
 		// Node updater support
 
@@ -1838,7 +1839,7 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 
 		acceptSeedConnections = opennetConfig.getBoolean("acceptSeedConnections");
-		
+
 		if(acceptSeedConnections && opennet != null)
 			opennet.crypto.socket.getAddressTracker().setHugeTracker();
 
@@ -1865,19 +1866,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		passOpennetRefsThroughDarknet = nodeConfig.getBoolean("passOpennetPeersThroughDarknet");
 
-		// HACK to prepare the extra-peer-data config option for removal
-		// FIXME TODO REMOVEME replace this with the code from dir-struct branch when this code is more well-deployed
-		String defaultExtraPeerDataDir = new File(nodeDir.dir, "extra-peer-data-"+getDarknetPortNumber()).toString();
-		String currentExtraPeerDataDir = nodeConfig.getRawOption("extraPeerDataDir");
-		if(currentExtraPeerDataDir != null) {
-			System.out.println("NOTE: The configuration option node.extraPeerDataDir will removed in a future release.");
-			if (!currentExtraPeerDataDir.equals(defaultExtraPeerDataDir)) {
-				new File(currentExtraPeerDataDir).renameTo(new File(defaultExtraPeerDataDir));
-				System.out.println("NOTE: That directory has been moved from " + currentExtraPeerDataDir + " to " + defaultExtraPeerDataDir);
-			}
-		}
-
-		extraPeerDataDir = userDir.file("extra-peer-data-"+getDarknetPortNumber());
+		this.extraPeerDataDir = userDir.file("extra-peer-data-"+getDarknetPortNumber());
 		if (!((extraPeerDataDir.exists() && extraPeerDataDir.isDirectory()) || (extraPeerDataDir.mkdir()))) {
 			String msg = "Could not find or create extra peer data directory";
 			throw new NodeInitException(NodeInitException.EXIT_BAD_DIR, msg);
@@ -2041,31 +2030,9 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 		storeSaltHashResizeOnStart = nodeConfig.getBoolean("storeSaltHashResizeOnStart");
 
-		nodeConfig.register("storeDir", "datastore", sortOrder++, true, true, "Node.storeDirectory", "Node.storeDirectoryLong",
-				new StringCallback() {
-					@Override
-					public String get() {
-						return storeDir.getPath();
-					}
-					@Override
-					public void set(String val) throws InvalidConfigValueException {
-						if(storeDir.equals(new File(val))) return;
-						// FIXME
-						throw new InvalidConfigValueException("Moving datastore on the fly not supported at present");
-					}
-					@Override
-					public boolean isReadOnly() {
-				        return true;
-			        }
-		});
+		this.storeDir = setupProgramDir(installConfig, "storeDir", "datastore", "Node.storeDirectory", "Node.storeDirectoryLong", nodeConfig);
 
 		final String suffix = getStoreSuffix();
-		String datastoreDir = nodeConfig.getString("storeDir");
-		storeDir = new File(datastoreDir);
-		if(!((storeDir.exists() && storeDir.isDirectory()) || (storeDir.mkdir()))) {
-			String msg = "Could not find or create datastore directory";
-			throw new NodeInitException(NodeInitException.EXIT_STORE_OTHER, msg);
-		}
 
 		maxStoreKeys = maxTotalKeys / 2;
 		maxCacheKeys = maxTotalKeys - maxStoreKeys;
@@ -2480,7 +2447,7 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 
 		skipWrapperWarning = nodeConfig.getBoolean("skipWrapperWarning");
-		
+
 		nodeConfig.register("maxPacketSize", 1280, sortOrder++, true, true, "Node.maxPacketSize", "Node.maxPacketSizeLong", new IntCallback() {
 
 			@Override
@@ -2501,9 +2468,9 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 				updateMTU();
 			}
-			
+
 		}, true);
-		
+
 		maxPacketSize = nodeConfig.getInt("maxPacketSize");
 		updateMTU();
 
@@ -2565,17 +2532,44 @@ public class Node implements TimeSkewDetectorCallback {
 	** Sets up a program directory using the config value defined by the given
 	** parameters.
 	*/
-	protected ProgramDirectory setupProgramDir(SubConfig nodeConfig, String shortname,
-	  String cfgKey, String defaultValue, int sortOrder, String shortdesc, String longdesc) throws NodeInitException {
-		ProgramDirectory dir = new ProgramDirectory();
+	protected ProgramDirectory setupProgramDir(SubConfig installConfig,
+	  String cfgKey, String defaultValue, String shortdesc, String longdesc, String moveErrMsg,
+	  SubConfig oldConfig) throws NodeInitException {
+		ProgramDirectory dir = new ProgramDirectory(moveErrMsg);
+		int sortOrder = ProgramDirectory.nextOrder();
 		// forceWrite=true because currently it can't be changed on the fly, also for packages
-		nodeConfig.register(cfgKey, defaultValue, sortOrder, true, true, shortdesc, longdesc, dir.getStringCallback());
+		installConfig.register(cfgKey, defaultValue, sortOrder, true, true, shortdesc, longdesc, dir.getStringCallback());
+		String dirName = installConfig.getString(cfgKey);
+		if (oldConfig != null) {
+			// TODO HACK FIXME remove this after the next few mandatory builds. current build is 1366
+			oldConfig.register(cfgKey, "nonexistent", sortOrder, true, false, shortdesc, longdesc, dir.getStringCallback());
+			String oldValue = oldConfig.getString(cfgKey);
+			if (!oldValue.equals("nonexistent")) {
+				System.err.println("migrating node." + cfgKey + " to node.install." + cfgKey + ": " + oldValue);
+				dirName = oldValue;
+				try {
+					installConfig.set(cfgKey, dirName);
+				} catch (NodeNeedRestartException e) {
+					// Ignore
+				} catch (InvalidConfigValueException e) {
+					// can't happen since we use the same config settings
+				}
+			}
+			oldConfig.removeOption(cfgKey);
+			// end TODO
+		}
 		try {
-			dir.move(nodeConfig.getString(cfgKey));
+			dir.move(dirName);
 		} catch (IOException e) {
-			throw new NodeInitException(NodeInitException.EXIT_BAD_DIR, "could not set up directory: " + shortname);
+			throw new NodeInitException(NodeInitException.EXIT_BAD_DIR, "could not set up directory: " + longdesc);
 		}
 		return dir;
+	}
+
+	protected ProgramDirectory setupProgramDir(SubConfig installConfig,
+	  String cfgKey, String defaultValue, String shortdesc, String longdesc,
+	  SubConfig oldConfig) throws NodeInitException {
+		return setupProgramDir(installConfig, cfgKey, defaultValue, shortdesc, longdesc, null, oldConfig);
 	}
 
 	public void lateSetupDatabase(byte[] databaseKey) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
@@ -2603,8 +2597,8 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	private boolean databaseEncrypted;
-	
-	/** 
+
+	/**
 	 * @param databaseKey The encryption key to the database. Null if the database is not encrypted
 	 * @return A new Db4o Configuration object which is fully configured to Fred's desired database settings.
 	 */
@@ -2676,7 +2670,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		System.err.println("Optimise native queries: "+dbConfig.optimizeNativeQueries());
 		System.err.println("Query activation depth: "+dbConfig.activationDepth());
-		
+
 		// The database is encrypted.
 		if(databaseKey != null) {
 			IoAdapter baseAdapter = dbConfig.io();
@@ -2692,7 +2686,7 @@ public class Node implements TimeSkewDetectorCallback {
 				throw e;
 			}
 		}
-		
+
 		return dbConfig;
 	}
 
@@ -3058,7 +3052,7 @@ public class Node implements TimeSkewDetectorCallback {
 		System.err.println("Finalising defragmentation...");
 		long oldSize = backupFile.length();
 		long newSize = databaseFile.length();
-		
+
 		if(newSize <= 0) {
 			System.err.println("DEFRAG PRODUCED AN EMPTY FILE! Trying to restore old database file...");
 			databaseFile.delete();
@@ -3187,7 +3181,7 @@ public class Node implements TimeSkewDetectorCallback {
 		if(notEnoughSpaceRenameFailed) {
 			title = isCrypt ? l10n("failedToRenameEncryptingTitle") : l10n("failedToRenameDecryptingTitle");
 			text = l10n((isCrypt ? "failedToRenameEncrypting" : "failedToRenameDecrypting"), new String[] { "fromfile", "tofile" }, new String[] { renameFailedFrom.getAbsolutePath(), renameFailedTo.getAbsolutePath() } );
-		} else { 
+		} else {
 			title = isCrypt ? l10n("notEnoughSpaceToAutoEncryptTitle") : l10n("notEnoughSpaceToAutoDecryptTitle");
 			text = l10n((isCrypt ? "notEnoughSpaceToAutoEncrypt" : "notEnoughSpaceToAutoDecrypt"), new String[] { "size", "file" }, new String[] { SizeUtil.formatSize(notEnoughSpaceMinimumSpace), dbFile.getAbsolutePath() });
 		}
@@ -3247,12 +3241,12 @@ public class Node implements TimeSkewDetectorCallback {
 					for (String type : new String[] { "chk", "pubkey", "ssk" })
 						for (String storecache : new String[] { "store", "store.keys", "store.lru", "cache",
 						        "cache.keys", "cache.lru" }) {
-							File f = new File(storeDir, type + suffix + "." + storecache);
+							File f = storeDir.file(type + suffix + "." + storecache);
 							if (f.exists())
 								ul.addChild("li", f.getAbsolutePath());
 						}
 
-					File dbDir = new File(storeDir, "database" + suffix);
+					File dbDir = storeDir.file("database" + suffix);
 					if (dbDir.exists())
 						ul.addChild("li", dbDir.getAbsolutePath());
 
@@ -3267,13 +3261,13 @@ public class Node implements TimeSkewDetectorCallback {
 					for (String type : new String[] { "chk", "pubkey", "ssk" })
 						for (String storecache : new String[] { "store", "store.keys", "store.lru", "cache",
 						        "cache.keys", "cache.lru" }) {
-							File f = new File(storeDir, type + suffix + "." + storecache);
+							File f = storeDir.file(type + suffix + "." + storecache);
 					if (f.exists())
 								sb.append(" - ");
 							sb.append(f.getAbsolutePath());
 							sb.append("\n");
 					}
-					File dbDir = new File(storeDir, "database" + suffix);
+					File dbDir = storeDir.file("database" + suffix);
 					if (dbDir.exists()) {
 						sb.append(" - ");
 						sb.append(dbDir.getAbsolutePath());
@@ -3322,11 +3316,11 @@ public class Node implements TimeSkewDetectorCallback {
 		for(String type : new String[] { "chk", "pubkey", "ssk" }) {
 			for(String ver : new String[] { "store", "cache" }) {
 				for(String ext : new String[] { "", ".keys", ".lru" }) {
-					if(new File(storeDir, type + suffix + "." + ver + ext).exists()) return true;
+					if(storeDir.file(type + suffix + "." + ver + ext).exists()) return true;
 				}
 			}
 		}
-		if(new File(storeDir, "database" + suffix).exists()) return true;
+		if(storeDir.file("database" + suffix).exists()) return true;
 		return false;
     }
 
@@ -3435,7 +3429,7 @@ public class Node implements TimeSkewDetectorCallback {
 				}, "Start store", 0, true, false);
 			}
 
-			File migrationFile = new File(storeDir, "migrated");
+			File migrationFile = storeDir.file("migrated");
 			if (!migrationFile.exists()) {
 				tryMigrate(chkDataFS, "chk", true, suffix);
 				tryMigrate(chkCacheFS, "chk", false, suffix);
@@ -3521,8 +3515,8 @@ public class Node implements TimeSkewDetectorCallback {
 	private <T extends StorableBlock> void tryMigrate(SaltedHashFreenetStore<T> chkDataFS, String type, boolean isStore, String suffix) {
 		String store = isStore ? "store" : "cache";
 		chkDataFS.migrationFrom(//
-		        new File(storeDir, type + suffix + "."+store), //
-		        new File(storeDir, type + suffix + "."+store+".keys"));
+		        storeDir.file(type + suffix + "."+store), //
+		        storeDir.file(type + suffix + "."+store+".keys"));
 	}
 
 	private <T extends StorableBlock> SaltedHashFreenetStore<T> makeClientcache(int bloomFilterSizeInM, String type, boolean isStore, StoreCallback<T> cb, boolean dontResizeOnStart, byte[] clientCacheMasterKey) throws IOException {
@@ -3540,7 +3534,7 @@ public class Node implements TimeSkewDetectorCallback {
 		Logger.normal(this, "Initializing "+type+" Data"+store);
 		System.out.println("Initializing "+type+" Data"+store+" (" + maxStoreKeys + " keys)");
 
-		SaltedHashFreenetStore<T> fs = SaltedHashFreenetStore.<T>construct(storeDir, type+"-"+store, cb,
+		SaltedHashFreenetStore<T> fs = SaltedHashFreenetStore.<T>construct(getStoreDir(), type+"-"+store, cb,
 		        random, maxKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate, storeSaltHashResizeOnStart && !lateStart, lateStart ? ticker : null, clientCacheMasterKey);
 		cb.setStore(fs);
 		return fs;
@@ -3550,7 +3544,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// Setup datastores
 		final EnvironmentConfig envConfig = BerkeleyDBFreenetStore.getBDBConfig();
 
-		final File dbDir = new File(storeDir, "database-"+getDarknetPortNumber());
+		final File dbDir = storeDir.file("database-"+getDarknetPortNumber());
 		dbDir.mkdirs();
 
 		final File reconstructFile = new File(dbDir, "reconstruct");
@@ -3637,33 +3631,33 @@ public class Node implements TimeSkewDetectorCallback {
 			Logger.normal(this, "Initializing CHK Datastore");
 			System.out.println("Initializing CHK Datastore ("+maxStoreKeys+" keys)");
 			chkDatastore = new CHKStore();
-			BerkeleyDBFreenetStore.construct(storeDir, true, suffix, maxStoreKeys, StoreType.CHK,
+			BerkeleyDBFreenetStore.construct(getStoreDir(), true, suffix, maxStoreKeys, StoreType.CHK,
 					storeEnvironment, shutdownHook, reconstructFile, chkDatastore, random);
 			Logger.normal(this, "Initializing CHK Datacache");
 			System.out.println("Initializing CHK Datacache ("+maxCacheKeys+ ':' +maxCacheKeys+" keys)");
 			chkDatacache = new CHKStore();
-			BerkeleyDBFreenetStore.construct(storeDir, false, suffix, maxCacheKeys, StoreType.CHK,
+			BerkeleyDBFreenetStore.construct(getStoreDir(), false, suffix, maxCacheKeys, StoreType.CHK,
 					storeEnvironment, shutdownHook, reconstructFile, chkDatacache, random);
 			Logger.normal(this, "Initializing pubKey Datastore");
 			System.out.println("Initializing pubKey Datastore");
 			pubKeyDatastore = new PubkeyStore();
-			BerkeleyDBFreenetStore.construct(storeDir, true, suffix, maxStoreKeys, StoreType.PUBKEY,
+			BerkeleyDBFreenetStore.construct(getStoreDir(), true, suffix, maxStoreKeys, StoreType.PUBKEY,
 					storeEnvironment, shutdownHook, reconstructFile, pubKeyDatastore, random);
 			Logger.normal(this, "Initializing pubKey Datacache");
 			System.out.println("Initializing pubKey Datacache ("+maxCacheKeys+" keys)");
 			pubKeyDatacache = new PubkeyStore();
-			BerkeleyDBFreenetStore.construct(storeDir, false, suffix, maxCacheKeys, StoreType.PUBKEY,
+			BerkeleyDBFreenetStore.construct(getStoreDir(), false, suffix, maxCacheKeys, StoreType.PUBKEY,
 					storeEnvironment, shutdownHook, reconstructFile, pubKeyDatacache, random);
 			getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
 			Logger.normal(this, "Initializing SSK Datastore");
 			System.out.println("Initializing SSK Datastore");
 			sskDatastore = new SSKStore(getPubKey);
-			BerkeleyDBFreenetStore.construct(storeDir, true, suffix, maxStoreKeys, StoreType.SSK,
+			BerkeleyDBFreenetStore.construct(getStoreDir(), true, suffix, maxStoreKeys, StoreType.SSK,
 					storeEnvironment, shutdownHook, reconstructFile, sskDatastore, random);
 			Logger.normal(this, "Initializing SSK Datacache");
 			System.out.println("Initializing SSK Datacache ("+maxCacheKeys+" keys)");
 			sskDatacache = new SSKStore(getPubKey);
-			BerkeleyDBFreenetStore.construct(storeDir, false, suffix, maxStoreKeys, StoreType.SSK,
+			BerkeleyDBFreenetStore.construct(getStoreDir(), false, suffix, maxStoreKeys, StoreType.SSK,
 					storeEnvironment, shutdownHook, reconstructFile, sskDatacache, random);
 		} catch (final FileNotFoundException e1) {
 			final String msg = "Could not open datastore: "+e1;
@@ -3780,7 +3774,7 @@ public class Node implements TimeSkewDetectorCallback {
 		long transition = Version.transitionTime();
 		if(now < transition)
 			ticker.queueTimedJob(new Runnable() {
-				
+
 				public void run() {
 					freenet.support.Logger.OSThread.logPID(this);
 					PeerNode[] nodes = peers.myPeers;
@@ -3849,10 +3843,10 @@ public class Node implements TimeSkewDetectorCallback {
 		if(javaVersion.startsWith("1.5.0_")) {
 			clientCore.alerts.register(new SimpleUserAlert(false, l10n("java15DeprecatedTitle"), l10n("java15Deprecated"), l10n("java15DeprecatedTitle"), UserAlert.CRITICAL_ERROR));
 		}
-		
+
 		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM name: "+jvmName+", JVM version: "+javaVersion+", OS name: "+osName+", OS version: "+osVersion);
 
-		//Add some checks for "Oracle" to futureproof against them renaming from "Sun".  
+		//Add some checks for "Oracle" to futureproof against them renaming from "Sun".
 		//Should have no effect because if a user has downloaded a new enough file for Oracle to have changed the name these bugs shouldn't apply.
 		//Still, one never knows and this code might be extended to cover future bugs.
 		if((!isOpenJDK) && (jvmVendor.startsWith("Sun ") || jvmVendor.startsWith("Oracle ")) || (jvmVendor.startsWith("The FreeBSD Foundation") && (jvmSpecVendor.startsWith("Sun ") || jvmSpecVendor.startsWith("Oracle "))) || (jvmVendor.startsWith("Apple "))) {
@@ -4574,7 +4568,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if(logMINOR) Logger.minor(this, "Locked "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+map.size());
 		}
 	}
-	
+
 	/** Only used by UIDTag. */
 	void unlockUID(UIDTag tag, boolean canFail, boolean noRecord) {
 		unlockUID(tag.uid, tag.isSSK(), tag.isInsert(), canFail, tag.isOfferReply(), tag.wasLocal(), tag.realTimeFlag, tag, noRecord);
@@ -4635,7 +4629,7 @@ public class Node implements TimeSkewDetectorCallback {
 			expectedTransfersIn = in;
 		}
 	}
-	
+
 	public synchronized CountedRequests countRequests(boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
 		synchronized(map) {
@@ -4652,7 +4646,7 @@ public class Node implements TimeSkewDetectorCallback {
 			return new CountedRequests(count, transfersOut, transfersIn);
 		}
 	}
-	
+
 	public CountedRequests countRequests(PeerNode source, boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
 		synchronized(map) {
@@ -4660,8 +4654,8 @@ public class Node implements TimeSkewDetectorCallback {
 		int transfersOut = 0;
 		int transfersIn = 0;
 		if(!requestsToNode) {
-			// If a request is adopted by us as a result of a timeout, it can be in the 
-			// remote map despite having source == null. However, if a request is in the 
+			// If a request is adopted by us as a result of a timeout, it can be in the
+			// remote map despite having source == null. However, if a request is in the
 			// local map it will always have source == null.
 			if(source != null && local) return new CountedRequests(0, 0, 0);
 			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
@@ -4697,12 +4691,12 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		}
 	}
-	
+
 	void reassignTagToSelf(UIDTag tag) {
 		// The tag remains remote, but we flag it as adopted.
 		tag.reassignToSelf();
 	}
-	
+
 	private synchronized HashMap<Long, ? extends UIDTag> getTracker(boolean local, boolean ssk,
 			boolean insert, boolean offer, boolean realTimeFlag) {
 		if(offer)
@@ -5040,7 +5034,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		return total;
 	}
-	
+
 	public int getNumCHKOfferReplies() {
 		int total = 0;
 		synchronized(runningCHKOfferReplyUIDsRT) {
@@ -5051,7 +5045,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		return total;
 	}
-	
+
 	public int getNumSSKOfferReplies(boolean realTimeFlag) {
 		return realTimeFlag ? runningSSKOfferReplyUIDsRT.size() : runningSSKOfferReplyUIDsBulk.size();
 	}
@@ -5108,9 +5102,9 @@ public class Node implements TimeSkewDetectorCallback {
 			return recentlyCompletedIDs.contains(id);
 		}
 	}
-	
+
 	private ArrayList<Long> completedBuffer = new ArrayList<Long>();
-	
+
 	// Every this many slots, we tell all the PeerMessageQueue's to remove the old Items for the ID's in question.
 	// This prevents memory DoS amongst other things.
 	static final int COMPLETED_THRESHOLD = 128;
@@ -5601,14 +5595,14 @@ public class Node implements TimeSkewDetectorCallback {
 	public File getCfgDir() { return cfgDir.dir(); }
 	public File getUserDir() { return userDir.dir(); }
 	public File getRunDir() { return runDir.dir(); }
-	public File getStoreDir() { return storeDir; } //public File getStoreDir() { return storeDir.dir(); }
+	public File getStoreDir() { return storeDir.dir(); }
 	public File getPluginDir() { return pluginDir.dir(); }
 
 	public ProgramDirectory nodeDir() { return nodeDir; }
 	public ProgramDirectory cfgDir() { return cfgDir; }
 	public ProgramDirectory userDir() { return userDir; }
 	public ProgramDirectory runDir() { return runDir; }
-	//public ProgramDirectory storeDir() { return storeDir; }
+	public ProgramDirectory storeDir() { return storeDir; }
 	public ProgramDirectory pluginDir() { return pluginDir; }
 
 
@@ -5743,7 +5737,7 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 		}
 	}
-	
+
 	public boolean isSeednode() {
 		return acceptSeedConnections;
 	}
@@ -5758,7 +5752,7 @@ public class Node implements TimeSkewDetectorCallback {
 		else
 			return false;
 	}
-	
+
 	// FIXME make this configurable
 	// Probably should wait until we have non-opennet anon auth so we can add it to NodeCrypto.
 	public boolean wantAnonAuthChangeIP(boolean isOpennet) {
@@ -5804,7 +5798,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public int getTotalRunningUIDsAlt() {
 		synchronized(runningUIDs) {
 			return this.runningCHKGetUIDsRT.size() + this.runningCHKPutUIDsRT.size() + this.runningSSKGetUIDsRT.size() +
-			this.runningSSKGetUIDsRT.size() + this.runningSSKOfferReplyUIDsRT.size() + this.runningCHKOfferReplyUIDsRT.size() + 
+			this.runningSSKGetUIDsRT.size() + this.runningSSKOfferReplyUIDsRT.size() + this.runningCHKOfferReplyUIDsRT.size() +
 			this.runningCHKGetUIDsBulk.size() + this.runningCHKPutUIDsBulk.size() + this.runningSSKGetUIDsBulk.size() +
 			this.runningSSKGetUIDsBulk.size() + this.runningSSKOfferReplyUIDsBulk.size() + this.runningCHKOfferReplyUIDsBulk.size();
 		}
@@ -6123,7 +6117,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public boolean getWriteLocalToDatastore() {
 		return writeLocalToDatastore;
 	}
-	
+
 	public boolean getUseSlashdotCache() {
 		return useSlashdotCache;
 	}

@@ -47,7 +47,7 @@ public class NodeStarter implements WrapperListener {
 	 */
 	public static final int extBuildNumber;
 	public static final String extRevisionNumber;
-	
+
 	static {
 		extBuildNumber = ExtVersion.extBuildNumber();
 		extRevisionNumber = ExtVersion.extRevisionNumber();
@@ -351,14 +351,14 @@ public class NodeStarter implements WrapperListener {
 		configFS.put("console.enabled", false);
 		configFS.putSingle("pluginmanager.loadplugin", "");
 		configFS.put("node.updater.enabled", false);
-		configFS.putSingle("node.tempDir", new File(portDir, "temp").toString());
-		configFS.putSingle("node.storeDir", new File(portDir, "store").toString());
+		configFS.putSingle("node.install.tempDir", new File(portDir, "temp").toString());
+		configFS.putSingle("node.install.storeDir", new File(portDir, "store").toString());
 		configFS.put("fcp.persistentDownloadsEnabled", false);
 		configFS.putSingle("node.throttleFile", new File(portDir, "throttle.dat").toString());
-		configFS.putSingle("node.nodeDir", portDir.toString());
-		configFS.putSingle("node.userDir", portDir.toString());
-		configFS.putSingle("node.runDir", portDir.toString());
-		configFS.putSingle("node.cfgDir", portDir.toString());
+		configFS.putSingle("node.install.nodeDir", portDir.toString());
+		configFS.putSingle("node.install.userDir", portDir.toString());
+		configFS.putSingle("node.install.runDir", portDir.toString());
+		configFS.putSingle("node.install.cfgDir", portDir.toString());
 		configFS.put("node.maxHTL", maxHTL);
 		configFS.put("node.testingDropPacketsEvery", dropProb);
 		configFS.put("node.alwaysAllowLocalAddresses", true);

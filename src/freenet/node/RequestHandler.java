@@ -186,7 +186,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		if(o == null) { // ran out of htl?
 			Message dnf = DMT.createFNPDataNotFound(uid);
 			status = RequestSender.DATA_NOT_FOUND; // for byte logging
-			node.failureTable.onFinalFailure(key, null, htl, htl, FailureTable.REJECT_TIME, FailureTable.REJECT_TIME, source);
+			node.failureTable.onFinalFailure(key, null, htl, htl, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
 			sendTerminal(dnf);
 			node.nodeStats.remoteRequest(key instanceof NodeSSK, false, false, htl, key.toNormalizedDouble(), realTimeFlag, false);
 			return;
