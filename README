@@ -61,23 +61,28 @@ load a browser (Chrome or Firefox) in privacy/incognito mode. If the browser is 
 mode it will tell you. Browser bugs might result in it not being in privacy mode so be
 careful of this.
 
-You MUST use a separate browser to access Freenet than the one you use to access
-the WWW at large (or use one with privacy mode enabled). Browser history stealing attacks
-enable malicious websites to probe for specific freesites you have visited. It may also
-be possible for hostile websites to probe for the existence of Freenet by javascript port
-scanning or similar attacks, or possibly even time loads of specific pages from Freenet,
-from the browser you use for the web; this last attack is unconfirmed at the time of 
-writing.
+You MUST use a browser in privacy/incognito mode, or ideally use a completely separate
+browser to access Freenet. The reason for this is browser history stealing attacks via CSS
+which enable malicious websites to probe what other websites - and more importantly
+freesites (on-freenet websites) you have been visiting. Many other browser-level attacks
+may also be possible, especially if you use a lot of plugins and add-ons, or other
+software that is accessed through localhost.
 
 There are many potentially dangerous features in most browsers which you can disable.
 Most of them will be turned off by privacy/incognito mode, hopefully. Candidates include
 location-based services (geo.enabled) and GoBrowsing (keyword.enabled) in firefox, and 
-probably a number of plugins. Note that this is not unique to firefox - until version 9
+probably a number of plugins. Note that this is not unique to Firefox - until version 9
 or so, Internet Explorer had much worse problems. The most fundamental thing is browser
 history probing via CSS. This can be turned off globally and will improve your privacy,
 see e.g. http://whattheinternetknowsaboutyou.com/ - but it is probably still safer to
 use a separate browser, and the fact that you have turned it off will likely be
 detectable.
+
+Freenet will warn you when you try to download a file which may not be safe. Many file
+formats, for instance PDFs, word processor documents, and some types of video, can give
+away your identity. In some cases (such as HTML, PNGs, JPEGs and MP3s), Freenet can
+automatically make the content safe; a few file formats (such as plain text .txt's) are
+safe as-is. Freenet will warn you in all other cases.
 
 MORE SECURITY:
 If your life or liberty depends on Freenet protecting your anonymity, you should
@@ -90,9 +95,9 @@ choose to use Freenet under such circumstances, you  should enable the MAXIMUM
 network security level and add connections to your friends on the Friends page; 
 connecting only to friends considerably improves your security against a variety 
 of attacks, but you should only connect to them if you know them or have some 
-reason to (at least minimally) trust them; connecting to arbitrary strangers 
-from IRC may end up with you adding the bad guys as Friends, and apart from that 
-it damages the network topology.
+reason to (at least minimally) trust them; connecting to random strangers might
+end up with you adding the bad guys as Friends, and apart from that it damages
+the network topology.
 
 CHANGES FROM 0.5:
 This is the 0.7 rewrite of Freenet. This is largely rewritten from scratch, 
@@ -115,9 +120,7 @@ Major changes:
 - Many more changes...
 
 LICENSING:
-Freenet is under the GPLv2 - see LICENSE.Freenet (we are trying to make this
-GPL 2 or later, but some code is arguably GPL 2 only). However, we use some 
-other code:
-- Mantissa is under the modified BSD license. See README.Mantissa. According 
-  to the FSF, modified BSD is compatible with GPL; we must include both 
-  licenses.
+Freenet is under the GPL, version 2 or later - see LICENSE.Freenet. We use some
+code under the Apache license version 2 (mostly apache commons stuff), and some
+modified BSD code (Mantissa). All of which is compatible with the GPL, although
+arguably ASL2 is only compatible with GPL3. Some plugins are GPL3.
