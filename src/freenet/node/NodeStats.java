@@ -1275,7 +1275,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			RunningRequestsSnapshot requestsSnapshot,
 			RunningRequestsSnapshot peerRequestsSnapshot, boolean isLocal, boolean realTime) {
 		if(logMINOR) Logger.minor(this, "Max transfers: congestion control limit "+maxOutputTransfers+
-				" upper "+maxTransfersOutUpperLimit+" lower "+maxTransfersOutLowerLimit+" peer "+maxTransfersOutPeerLimit+" "+(realTime ? "(rt)" : "(bulk"));
+				" upper "+maxTransfersOutUpperLimit+" lower "+maxTransfersOutLowerLimit+" peer "+maxTransfersOutPeerLimit+" "+(realTime ? "(rt)" : "(bulk)"));
 		int peerOutTransfers = peerRequestsSnapshot.totalOutTransfers();
 		int totalOutTransfers = requestsSnapshot.totalOutTransfers();
 		if(peerOutTransfers > maxOutputTransfers) {
