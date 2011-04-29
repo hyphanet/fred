@@ -1068,7 +1068,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		if(ret != null) return new RejectReason(ret, true);
 		
 		ret = checkMaxOutputTransfers(maxOutputTransfers, maxTransfersOutUpperLimit, maxTransfersOutLowerLimit, maxTransfersOutPeerLimit,
-				requestsSnapshot, peerRequestsSnapshot);
+				requestsSnapshot, peerRequestsSnapshot, isLocal, realTimeFlag);
 		if(ret != null) return new RejectReason(ret, true);
 		
 		// Do we have the bandwidth?
@@ -1273,11 +1273,14 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			int maxTransfersOutUpperLimit, int maxTransfersOutLowerLimit,
 			int maxTransfersOutPeerLimit,
 			RunningRequestsSnapshot requestsSnapshot,
-			RunningRequestsSnapshot peerRequestsSnapshot) {
+			RunningRequestsSnapshot peerRequestsSnapshot, boolean isLocal, boolean realTime) {
+		if(logMINOR) Logger.minor(this, "Max transfers: congestion control limit "+maxOutputTransfers+
+				" upper "+maxTransfersOutUpperLimit+" lower "+maxTransfersOutLowerLimit+" peer "+maxTransfersOutPeerLimit+" "+(realTime ? "(rt)" : "(bulk"));
 		int peerOutTransfers = peerRequestsSnapshot.totalOutTransfers();
 		int totalOutTransfers = requestsSnapshot.totalOutTransfers();
 		if(peerOutTransfers > maxOutputTransfers) {
 			// Can't handle that many transfers with current bandwidth.
+			rejected("TooManyTransfers: Congestion control", true);
 			return "TooManyTransfers: Congestion control";
 		}
 		if(totalOutTransfers <= maxTransfersOutLowerLimit) {
@@ -1289,6 +1292,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			// It is within its guaranteed space, so we accept it.
 			return null;
 		}
+		rejected("TooManyTransfers: Fair sharing between peers", isLocal);
 		return "TooManyTransfers: Fair sharing between peers";
 	}
 
