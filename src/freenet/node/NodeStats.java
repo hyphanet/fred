@@ -982,7 +982,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		int threadCount = getActiveThreadCount();
 		if(threadLimit < threadCount) {
 			pInstantRejectIncoming.report(1.0);
-			rejected(">threadLimit", isLocal);
+			rejected(">threadLimit", isLocal, realTimeFlag);
 			return new RejectReason(">threadLimit ("+threadCount+'/'+threadLimit+')', false);
 		}
 
@@ -1004,14 +1004,14 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 					if(logMINOR) Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
 				} else {
 					pInstantRejectIncoming.report(1.0);
-					rejected(">MAX_PING_TIME", isLocal);
+					rejected(">MAX_PING_TIME", isLocal, realTimeFlag);
 					return new RejectReason(">MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+ ')', false);
 				}
 			} else if(pingTime > subMaxPingTime) {
 				double x = ((pingTime - subMaxPingTime)) / (maxPingTime - subMaxPingTime);
 				if(randomLessThan(x, preferInsert)) {
 					pInstantRejectIncoming.report(1.0);
-					rejected(">SUB_MAX_PING_TIME", isLocal);
+					rejected(">SUB_MAX_PING_TIME", isLocal, realTimeFlag);
 					return new RejectReason(">SUB_MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+ ')', false);
 				}
 			}
@@ -1077,7 +1077,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			Logger.minor(this, "Expected sent bytes: "+expected+" -> "+expectedSent);
 		if(!requestOutputThrottle.instantGrab(expectedSent)) {
 			pInstantRejectIncoming.report(1.0);
-			rejected("Insufficient output bandwidth", isLocal);
+			rejected("Insufficient output bandwidth", isLocal, realTimeFlag);
 			return new RejectReason("Insufficient output bandwidth", false);
 		}
 		expected = this.getThrottle(isLocal, isInsert, isSSK, false).currentValue();
@@ -1087,17 +1087,17 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		if(!requestInputThrottle.instantGrab(expectedReceived)) {
 			requestOutputThrottle.recycle(expectedSent);
 			pInstantRejectIncoming.report(1.0);
-			rejected("Insufficient input bandwidth", isLocal);
+			rejected("Insufficient input bandwidth", isLocal, realTimeFlag);
 			return new RejectReason("Insufficient input bandwidth", false);
 		}
 
 		if(source != null) {
 			if(source.getMessageQueueLengthBytes() > MAX_PEER_QUEUE_BYTES) {
-				rejected(">MAX_PEER_QUEUE_BYTES", isLocal);
+				rejected(">MAX_PEER_QUEUE_BYTES", isLocal, realTimeFlag);
 				return new RejectReason("Too many message bytes queued for peer", false);
 			}
 			if(source.getProbableSendQueueTime() > MAX_PEER_QUEUE_TIME) {
-				rejected(">MAX_PEER_QUEUE_TIME", isLocal);
+				rejected(">MAX_PEER_QUEUE_TIME", isLocal, realTimeFlag);
 				return new RejectReason("Peer's queue will take too long to transfer", false);
 			}
 		}
@@ -1260,7 +1260,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			
 			double peerUsedBytes = getPeerBandwidthLiability(peerRequestsSnapshot, source, isSSK, isInsert, isOfferReply, ignoreLocalVsRemoteBandwidthLiability, hasInStore, transfersPerInsert, input, realTimeFlag);
 			if(peerUsedBytes > thisAllocation) {
-				rejected(name+" bandwidth liability: fairness between peers", isLocal);
+				rejected(name+" bandwidth liability: fairness between peers", isLocal, realTimeFlag);
 				return name+" bandwidth liability: fairness between peers (peer "+source+" used "+peerUsedBytes+" allowed "+thisAllocation+")";
 			}
 			
@@ -1279,7 +1279,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		int totalOutTransfers = requestsSnapshot.totalOutTransfers();
 		if(peerOutTransfers > maxOutputTransfers) {
 			// Can't handle that many transfers with current bandwidth.
-			rejected("TooManyTransfers: Congestion control", true);
+			rejected("TooManyTransfers: Congestion control", true, realTime);
 			return "TooManyTransfers: Congestion control";
 		}
 		if(totalOutTransfers <= maxTransfersOutLowerLimit) {
@@ -1291,7 +1291,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			// It is within its guaranteed space, so we accept it.
 			return null;
 		}
-		rejected("TooManyTransfers: Fair sharing between peers", isLocal);
+		rejected("TooManyTransfers: Fair sharing between peers", isLocal, realTime);
 		return "TooManyTransfers: Fair sharing between peers";
 	}
 
@@ -1359,7 +1359,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return hardRandom.nextDouble() < x;
 	}
 
-	private void rejected(String reason, boolean isLocal) {
+	private void rejected(String reason, boolean isLocal, boolean realTime) {
+		reason += " "+(realTime?" (rt)":" (bulk)");
 		if(logMINOR) Logger.minor(this, "Rejecting (local="+isLocal+") : "+reason);
 		if(!isLocal) preemptiveRejectReasons.inc(reason);
 		else this.localPreemptiveRejectReasons.inc(reason);
