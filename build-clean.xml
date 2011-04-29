@@ -37,17 +37,6 @@ build-dependency on ant-optional, libbsf-java and rhino.
 	<property file="build.properties"/>
 	<proppath name="java.class.dirs" path="${java.class.dirs.user}" else="${java.home}/lib"/>
 
-	<property name="main.src" value="src"/>
-	<property name="main.make" value="build/main"/>
-	<property name="main.dst" value="dist"/>
-
-	<property name="test.src" value="test"/>
-	<property name="test.make" value="build/test"/>
-	<property name="test.dst" value="run"/>
-
-	<property name="doc.dst" value="javadoc"/><!-- UNUSED -->
-	<property name="doc.api" value="javadoc"/>
-
 	<property name="version.src" value="freenet/node/Version.java" />
 	<property name="version.make" value="freenet/node/Version.class" />
 
@@ -175,10 +164,13 @@ build-dependency on ant-optional, libbsf-java and rhino.
 
 	<target name="dep" depends="dep-ext, dep-gjs"/>
 
-	<target name="build" depends="init, dep">
-		<!-- Create the time stamp -->
-		<tstamp/>
+	<target name="check-version-file">
+		<uptodate property="version.uptodate"
+		  targetfile="${main.make}/${version.src}"
+		  srcfile="${main.src}/${version.src}"/>
+	</target>
 
+	<target name="build-version-file" depends="check-version-file" unless="version.uptodate">
 		<!-- Create the Version file with patched revision number in ${main.make} -->
 		<copy file="${main.src}/${version.src}" tofile="${main.make}/${version.src}" overwrite="true" />
 		<delete file="${main.make}/${version.make}" quiet="true" />
@@ -186,7 +178,11 @@ build-dependency on ant-optional, libbsf-java and rhino.
 			<replacefilter token="@custom@" value="${git.revision}"/>
 		</replace>
 		<echo message="Updated build version to ${git.revision} in ${main.make}/${version.src}"/>
+	</target>
 
+	<target name="build" depends="init, dep, build-version-file">
+		<!-- Create the time stamp -->
+		<tstamp/>
 		<!-- Create the build directory structure used by compile -->
 		<javac srcdir="${main.src}" destdir="${main.make}" debug="on" optimize="on" source="1.5" target="1.5">
 			<compilerarg line="${javac.args}"/>
@@ -221,8 +217,8 @@ build-dependency on ant-optional, libbsf-java and rhino.
 		</copy>
 	</target>
 
-	<target name="package" depends="build, unit" description="build standard binary packages (Freenet daemon)" >
-		<jar jarfile="${main.dst}/freenet-testnet.jar" basedir="${main.make}">
+	<target name="package-only" depends="build">
+		<jar jarfile="${main.dst}/freenet.jar" basedir="${main.make}">
 			<manifest>
 				<attribute name="Main-Class" value="freenet/node/Node"/>
 				<attribute name="Built-By" value="${user.name}"/>
@@ -241,6 +237,8 @@ build-dependency on ant-optional, libbsf-java and rhino.
 			<exclude name="${version.src}"/>
 		</jar>
 	</target>
+
+	<target name="package" depends="unit, package-only" description="build standard binary packages (Freenet daemon)"/>
 
 	<target name="unit-build" depends="build, libdep-junit" unless="${test.skip}">
 		<javac srcdir="${test.src}" destdir="${test.make}" debug="on" optimize="on" source="1.5" target="1.5">

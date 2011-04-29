@@ -110,19 +110,21 @@ class FailureTableEntry implements TimedOutNodesList {
 			Logger.minor(this, "Failed sending request to "+routedTo.shortToString()+" : timeout "+rfTimeout+" / "+ftTimeout);
 		}
 		int idx = addRequestedFrom(routedTo, htl, now);
-		long curTimeoutTime = requestedTimeoutsRF[idx];
-		long newTimeoutTime = now + rfTimeout;
-		// FIXME htl???
-		if(newTimeoutTime > curTimeoutTime) {
-			requestedTimeoutsRF[idx] = newTimeoutTime;
-			requestedTimeoutHTLs[idx] = htl;
+		if(rfTimeout > 0) {
+			long curTimeoutTime = requestedTimeoutsRF[idx];
+			long newTimeoutTime = now + rfTimeout;
+			if(newTimeoutTime > curTimeoutTime) {
+				requestedTimeoutsRF[idx] = newTimeoutTime;
+				requestedTimeoutHTLs[idx] = htl;
+			}
 		}
-		curTimeoutTime = requestedTimeoutsFT[idx];
-		newTimeoutTime = now +  ftTimeout;
-		// FIXME htl???
-		if(newTimeoutTime > curTimeoutTime) {
-			requestedTimeoutsFT[idx] = newTimeoutTime;
-			requestedTimeoutHTLs[idx] = htl;
+		if(ftTimeout > 0) {
+			long curTimeoutTime = requestedTimeoutsFT[idx];
+			long newTimeoutTime = now +  ftTimeout;
+			if(newTimeoutTime > curTimeoutTime) {
+				requestedTimeoutsFT[idx] = newTimeoutTime;
+				requestedTimeoutHTLs[idx] = htl;
+			}
 		}
 	}
 

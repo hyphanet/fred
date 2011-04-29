@@ -3378,6 +3378,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				Math.max(routingBackedOffUntilRT, routingBackedOffUntilBulk),
 				Math.max(transferBackedOffUntilRT, transferBackedOffUntilBulk));
 	}
+	
+	public synchronized long getRoutingBackedOffUntilRT() {
+		return Math.max(routingBackedOffUntilRT, transferBackedOffUntilRT);
+	}
+	
+	public synchronized long getRoutingBackedOffUntilBulk() {
+		return Math.max(routingBackedOffUntilBulk, transferBackedOffUntilBulk);
+	}
 
 	public synchronized String getLastBackoffReason(boolean realTime) {
 		return realTime ? lastRoutingBackoffReasonRT : lastRoutingBackoffReasonBulk;
@@ -4727,6 +4735,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		private int lastSentAllocationInput;
 		private int lastSentAllocationOutput;
 		private int lastSentMaxOutputTransfers = Integer.MAX_VALUE;
+		private int lastSentMaxOutputTransfersPeerLimit = Integer.MAX_VALUE;
 		private long timeLastSentAllocationNotice;
 		private long countAllocationNotices;
 		private PeerLoadStats lastFullStats;
@@ -4769,6 +4778,17 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 		}
 		
+		public void onSetMaxOutputTransfersPeerLimit(int maxOutputTransfersPeerLimit) {
+			synchronized(this) {
+				if(maxOutputTransfersPeerLimit == lastSentMaxOutputTransfersPeerLimit) return;
+				if(lastSentMaxOutputTransfersPeerLimit == Integer.MAX_VALUE || lastSentMaxOutputTransfersPeerLimit == 0) {
+					sendASAP = true;
+				} else if(maxOutputTransfersPeerLimit > lastSentMaxOutputTransfersPeerLimit * 1.05 || maxOutputTransfersPeerLimit < lastSentMaxOutputTransfersPeerLimit * 0.9) {
+					sendASAP = true;
+				}
+			}
+		}
+		
 		Message makeLoadStats(long now, int transfersPerInsert, boolean noRemember) {
 			PeerLoadStats stats = node.nodeStats.createPeerLoadStats(PeerNode.this, transfersPerInsert, realTimeFlag);
 			synchronized(this) {
@@ -4805,6 +4825,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	public void onSetMaxOutputTransfers(boolean realTime, int maxOutputTransfers) {
 		(realTime ? loadSenderRealTime : loadSenderBulk).onSetMaxOutputTransfers(maxOutputTransfers);
+	}
+	
+	public void onSetMaxOutputTransfersPeerLimit(boolean realTime, int maxOutputTransfers) {
+		(realTime ? loadSenderRealTime : loadSenderBulk).onSetMaxOutputTransfersPeerLimit(maxOutputTransfers);
 	}
 	
 	public void onSetPeerAllocation(boolean input, int thisAllocation, int transfersPerInsert, int maxOutputTransfers, boolean realTime) {
@@ -5341,5 +5365,5 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		double kilobytesPerSecond = bandwidth / 1024.0;
 		return (int)Math.max(1, Math.min(kilobytesPerSecond * timeout, Integer.MAX_VALUE));
 	}
-	
+
 }

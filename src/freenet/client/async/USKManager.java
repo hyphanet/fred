@@ -18,6 +18,7 @@ import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.NullClientCallback;
 import freenet.clients.http.FProxyToadlet;
+import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.node.NodeClientCore;
@@ -225,6 +226,74 @@ public class USKManager {
 		} catch (FetchException e) {
 			if(logMINOR) Logger.minor(this, "Cannot start hint fetch for "+uri+" : "+e, e);
 			// Ignore
+		}
+	}
+	
+	public interface HintCallback {
+
+		/** The SSK block exists. The USK tracker will have been updated. We 
+		 * did not try to fetch the rest of the key.
+		 * @param origURI The original FreenetURI object.
+		 * @param token The token object passed in by the caller.
+		 */
+		void success(FreenetURI origURI, Object token);
+
+		/** The SSK block does not exist. We got a DNF, DNF with RecentlyFailed,
+		 * check store only and it wasn't in the datastore etc.
+		 * @param origURI The original FreenetURI object.
+		 * @param token The token object passed in by the caller.
+		 * @param e The exception.
+		 */
+		void dnf(FreenetURI origURI, Object token, FetchException e);
+
+		/** Some other error. We don't necessarily know that it doesn't exist. 
+		 * @param origURI The original FreenetURI object.
+		 * @param token The token object passed in by the caller.
+		 * @param e The exception.
+		 */
+		void failed(FreenetURI origURI, Object token, FetchException e);
+		
+	}
+	
+	/** Simply check whether the block exists, in such a way that we don't fetch
+	 * the full content. If it does exist then the USK tracker, and therefore 
+	 * any fetchers, will be updated. You can pass either an SSK or a USK. */
+	public void hintCheck(FreenetURI uri, final Object token, ClientContext context, short priority, final HintCallback cb) throws MalformedURLException {
+		final FreenetURI origURI = uri;
+		if(uri.isUSK()) uri = uri.sskForUSK();
+		if(logMINOR) Logger.minor(this, "Doing hint fetch for "+uri);
+		final ClientGetter get = new ClientGetter(new ClientGetCallback() {
+
+			public void onMajorProgress(ObjectContainer container) {
+				// Ignore
+			}
+
+			public void onSuccess(FetchResult result, ClientGetter state,
+					ObjectContainer container) {
+				cb.success(origURI, token);
+			}
+
+			public void onFailure(FetchException e, ClientGetter state,
+					ObjectContainer container) {
+				if(e.isDataFound())
+					cb.success(origURI, token);
+				else if(e.isDNF())
+					cb.dnf(origURI, token, e);
+				else
+					cb.failed(origURI, token, e);
+			}
+			
+		}, uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), priority, rcBulk, new NullBucket(), null);
+		try {
+			get.start(null, context);
+		} catch (FetchException e) {
+			if(logMINOR) Logger.minor(this, "Cannot start hint fetch for "+uri+" : "+e, e);
+			if(e.isDataFound())
+				cb.success(origURI, token);
+			else if(e.isDNF())
+				cb.dnf(origURI, token, e);
+			else
+				cb.failed(origURI, token, e);
 		}
 	}
 
@@ -644,5 +713,32 @@ public class USKManager {
 
 	ClientContext getContext() {
 		return context;
+	}
+
+	public void checkUSK(FreenetURI uri, boolean persistent,
+			ObjectContainer container, boolean isMetadata) {
+		try {
+			if(persistent) container.activate(uri, 5);
+			FreenetURI uu;
+			if(uri.isSSK() && uri.isSSKForUSK()) {
+				uu = uri.setMetaString(null).uskForSSK();
+			} else if(uri.isUSK()) {
+				uu = uri;
+			} else {
+				return;
+			}
+			USK usk = USK.create(uu);
+			if(!isMetadata)
+				context.uskManager.updateKnownGood(usk, uu.getSuggestedEdition(), context);
+			else
+				// We don't know whether the metadata is fetchable.
+				// FIXME add a callback so if the rest of the request completes we updateKnownGood().
+				context.uskManager.updateSlot(usk, uu.getSuggestedEdition(), context);
+		} catch (MalformedURLException e) {
+			Logger.error(this, "Caught "+e, e);
+		} catch (Throwable t) {
+			// Don't let the USK hint cause us to not succeed on the block.
+			Logger.error(this, "Caught "+t, t);
+		}
 	}
 }

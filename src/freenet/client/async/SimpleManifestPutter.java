@@ -58,6 +58,16 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	// Only implements PutCompletionCallback for the final metadata insert
 	private class PutHandler extends BaseClientPutter implements PutCompletionCallback {
 
+		/**
+		 * zero arg c'tor for db4o on jamvm
+		 */
+		@SuppressWarnings("unused")
+		private PutHandler() {
+			persistent = false;
+			data = null;
+			containerHandle = null;
+		}
+
 		protected PutHandler(final SimpleManifestPutter smp, String name, Bucket data, ClientMetadata cm, boolean getCHKOnly, boolean persistent) {
 			super(smp.priorityClass, smp.client);
 			this.persistent = persistent;
@@ -605,6 +615,22 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private final boolean earlyEncode;
 	final byte[] forceCryptoKey;
 	final byte cryptoAlgorithm;
+
+	/**
+	 * zero arg c'tor for db4o on jamvm
+	 */
+	@SuppressWarnings("unused")
+	private SimpleManifestPutter() {
+		metadataPuttersUnfetchable = null;
+		metadataPuttersByMetadata = null;
+		getCHKOnly = false;
+		forceCryptoKey = null;
+		earlyEncode = false;
+		defaultName = null;
+		ctx = null;
+		cryptoAlgorithm = 0;
+		cb = null;
+	}
 
 	public SimpleManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target,

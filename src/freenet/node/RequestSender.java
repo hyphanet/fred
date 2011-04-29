@@ -346,7 +346,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             if(htl == 0) {
             	// This used to be RNF, I dunno why
 				//???: finish(GENERATED_REJECTED_OVERLOAD, null);
-                node.failureTable.onFinalFailure(key, null, htl, origHTL, FailureTable.REJECT_TIME, FailureTable.REJECT_TIME, source);
+                node.failureTable.onFinalFailure(key, null, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
                 finish(DATA_NOT_FOUND, null, false);
                 return;
             }
@@ -552,7 +552,7 @@ loadWaiterLoop:
 				// Fatal timeout
 				waitingFor.localRejectedOverload("FatalTimeout", realTimeFlag);
 				forwardRejectedOverload();
-				node.failureTable.onFinalFailure(key, waitingFor, htl, origHTL, FailureTable.REJECT_TIME, FailureTable.REJECT_TIME, source);
+				node.failureTable.onFinalFailure(key, waitingFor, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
 				finish(TIMED_OUT, waitingFor, false);
 			}
     		
@@ -1332,7 +1332,7 @@ loadWaiterLoop:
     					verifyAndCommit(waiter.headers, data);
     				} catch (KeyVerifyException e1) {
     					Logger.normal(this, "Got data but verify failed: "+e1, e1);
-    					node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, FailureTable.REJECT_TIME, source);
+    					node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
     					if(!wasFork)
     						finish(VERIFY_FAILURE, sentTo, false);
     					else
@@ -1367,7 +1367,7 @@ loadWaiterLoop:
     				// We do an ordinary backoff in all cases.
     				if(!prb.abortedLocally())
     					sentTo.localRejectedOverload("TransferFailedRequest"+e.getReason(), realTimeFlag);
-    				node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, FailureTable.REJECT_TIME, source);
+    				node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
     				if(!wasFork)
     					finish(TRANSFER_FAILED, sentTo, false);
     				int reason = e.getReason();
@@ -1382,7 +1382,7 @@ loadWaiterLoop:
     				} else {
     					// Quick failure (in that we didn't have to timeout). Don't backoff.
     					// Treat as a DNF.
-    					node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, FailureTable.REJECT_TIME, source);
+    					node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
     				}
     				if(!prb.abortedLocally())
     					node.nodeStats.failedBlockReceive(true, timeout, realTimeFlag, source == null);
@@ -1434,7 +1434,7 @@ loadWaiterLoop:
 
 	private void handleDataNotFound(Message msg, boolean wasFork, PeerNode next) {
 		next.successNotOverload(realTimeFlag);
-		node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.REJECT_TIME, FailureTable.REJECT_TIME, source);
+		node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
 		if(!wasFork)
 			finish(DATA_NOT_FOUND, next, false);
 		else

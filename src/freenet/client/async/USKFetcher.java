@@ -463,6 +463,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		public synchronized boolean everInCooldown() {
 			return everInCooldown;
 		}
+		public void reloadPollParameters(ClientContext context) {
+			USKChecker c = checker;
+			if(c == null) return;
+			c.onChangedFetchContext(null, context);
+		}
 	}
 	
 	private final HashSet<DBRAttempt> dbrAttempts = new HashSet<DBRAttempt>();
@@ -1639,6 +1644,22 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 
 	public boolean isRealTime() {
 		return realTimeFlag;
+	}
+	
+	/** FIXME this is a special case hack
+	 * For a generic solution see https://bugs.freenetproject.org/view.php?id=4984
+	 */
+	public void changeUSKPollParameters(long time, int tries, ClientContext context) {
+		this.ctx.setCooldownRetries(tries);
+		this.ctxNoStore.setCooldownRetries(tries);
+		this.ctx.setCooldownTime(time);
+		this.ctxNoStore.setCooldownTime(time);
+		USKAttempt[] pollers;
+		synchronized(this) {
+			pollers = pollingAttempts.values().toArray(new USKAttempt[pollingAttempts.size()]);
+		}
+		for(USKAttempt a : pollers)
+			a.reloadPollParameters(context);
 	}
 	
 	/**

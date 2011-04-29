@@ -148,6 +148,9 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	
 	private final boolean realTimeFlag;
 	
+	private int cachedCooldownTries;
+	private long cachedCooldownTime;
+	
 	@Override
 	public int hashCode() {
 		return hashCode;
@@ -1425,14 +1428,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			checkRetries = tracker.checkRetries;
 			callStore = false;
 		}
-		boolean active = true;
-		if(persistent) {
-			active = container.ext().isActive(blockFetchContext);
-			container.activate(blockFetchContext, 1);
-		}
-		int cooldownRetries = blockFetchContext.getCooldownRetries();
-		long cooldownTime = blockFetchContext.getCooldownTime();
-		if(!active) container.deactivate(blockFetchContext, 1);
+		checkCachedCooldownData(container);
 		synchronized(this) {
 			if(isFinished(container)) return false;
 			if(blockNo < dataBuckets.length) {
@@ -1440,15 +1436,15 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				tries = ++dataRetries[blockNo];
 				if(tries > maxTries && maxTries >= 0) failed = true;
 				else {
-					if(cooldownRetries == 0 ||
-							tries % cooldownRetries == 0) {
+					if(cachedCooldownTries == 0 ||
+							tries % cachedCooldownTries == 0) {
 						long now = System.currentTimeMillis();
 						if(dataCooldownTimes[blockNo] > now)
 							Logger.error(this, "Already on the cooldown queue! for "+this+" data block no "+blockNo, new Exception("error"));
 						else {
 							SplitFileFetcherSegmentGet getter = makeGetter(container, context);
 							if(getter != null) {
-								dataCooldownTimes[blockNo] = now + cooldownTime;
+								dataCooldownTimes[blockNo] = now + cachedCooldownTime;
 								if(logMINOR) Logger.minor(this, "Putting data block "+blockNo+" into cooldown until "+(dataCooldownTimes[blockNo]-now));
 							}
 						}
@@ -1463,15 +1459,15 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				tries = ++checkRetries[checkNo];
 				if(tries > maxTries && maxTries >= 0) failed = true;
 				else {
-					if(cooldownRetries == 0 ||
-							tries % cooldownRetries == 0) {
+					if(cachedCooldownTries == 0 ||
+							tries % cachedCooldownTries == 0) {
 						long now = System.currentTimeMillis();
 						if(checkCooldownTimes[checkNo] > now)
 							Logger.error(this, "Already on the cooldown queue! for "+this+" check block no "+blockNo, new Exception("error"));
 						else {
 							SplitFileFetcherSegmentGet getter = makeGetter(container, context);
 							if(getter != null) {
-								checkCooldownTimes[checkNo] = now + cooldownTime;
+								checkCooldownTimes[checkNo] = now + cachedCooldownTime;
 								if(logMINOR) Logger.minor(this, "Putting check block "+blockNo+" into cooldown until "+(checkCooldownTimes[checkNo]-now));
 							}
 						}
@@ -1504,6 +1500,26 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		return mustSchedule;
 	}
 	
+	private void checkCachedCooldownData(ObjectContainer container) {
+		// 0/0 is illegal, and it's also the default, so use it to indicate we haven't fetched them.
+		if(!(cachedCooldownTime == 0 && cachedCooldownTries == 0)) {
+			// Okay, we have already got them.
+			return;
+		}
+		innerCheckCachedCooldownData(container);
+	}
+	
+	private void innerCheckCachedCooldownData(ObjectContainer container) {
+		boolean active = true;
+		if(persistent) {
+			active = container.ext().isActive(blockFetchContext);
+			container.activate(blockFetchContext, 1);
+		}
+		cachedCooldownTries = blockFetchContext.getCooldownRetries();
+		cachedCooldownTime = blockFetchContext.getCooldownTime();
+		if(!active) container.deactivate(blockFetchContext, 1);
+	}
+
 	private MyCooldownTrackerItem makeCooldownTrackerItem(
 			ObjectContainer container, ClientContext context) {
 		return (MyCooldownTrackerItem) context.cooldownTracker.make(this, persistent, container);
@@ -2375,6 +2391,10 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 
 	public synchronized int getMaxRetries(ObjectContainer container) {
 		if(maxRetries != 0) return maxRetries;
+		return innerGetMaxRetries(container);
+	}
+	
+	private synchronized int innerGetMaxRetries(ObjectContainer container) {
 		boolean contextActive = true;
 		if(persistent) {
 			contextActive = container.ext().isActive(blockFetchContext);
@@ -2386,6 +2406,22 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			if(!contextActive) container.deactivate(blockFetchContext, 1);
 		}
 		return maxRetries;
+	}
+
+	/** Reread the cached cooldown values (and anything else) from the FetchContext
+	 * after it changes. FIXME: Ideally this should be a generic mechanism, but
+	 * that looks too complex without significant changes to data structures.
+	 * For now it's just a hack to make changing the polling interval in USKs work.
+	 * See https://bugs.freenetproject.org/view.php?id=4984
+	 * @param container The database if this is a persistent request.
+	 * @param context The context object.
+	 */
+	public void onChangedFetchContext(ObjectContainer container, ClientContext context) {
+		synchronized(this) {
+			if(finished) return;
+		}
+		innerCheckCachedCooldownData(container);
+		innerGetMaxRetries(container);
 	}
 
 }

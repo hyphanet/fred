@@ -123,12 +123,22 @@ public class BaseL10n {
 	private SimpleFieldSet translationOverride;
 	private ClassLoader cl;
 
+	private static ClassLoader getClassLoaderFallback() {
+		ClassLoader _cl;
+		// getClassLoader() can return null on some implementations if the boot classloader was used.
+		_cl = BaseL10n.class.getClassLoader();
+		if (_cl == null) {
+			_cl = ClassLoader.getSystemClassLoader();
+		}
+		return _cl;
+	}
+
 	public BaseL10n(String l10nFilesBasePath, String l10nFilesMask, String l10nOverrideFilesMask) {
 		this(l10nFilesBasePath, l10nFilesMask, l10nOverrideFilesMask, LANGUAGE.getDefault());
 	}
 
 	public BaseL10n(String l10nFilesBasePath, String l10nFilesMask, String l10nOverrideFilesMask, final LANGUAGE lang) {
-		this(l10nFilesBasePath, l10nFilesMask, l10nOverrideFilesMask, lang, ClassLoader.getSystemClassLoader());
+		this(l10nFilesBasePath, l10nFilesMask, l10nOverrideFilesMask, lang, getClassLoaderFallback());
 	}
 
 	/**

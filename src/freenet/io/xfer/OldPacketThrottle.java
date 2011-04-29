@@ -106,6 +106,13 @@ public class OldPacketThrottle {
 		_packetSeqWindowFullChecked = _packetSeq;
     }
 
+    /**
+     * Notify the throttle that a packet was transmitted successfully. We will increase the window size.
+     * @param maxWindowSize The maximum window size. This should be at least twice the largest window
+     * size actually seen in flight at any time so far. We will ensure that the throttle's window size
+     * does not get bigger than this. This works even for new packet format, and solves some of the 
+     * problems that RFC 2861 does.
+     */
     public synchronized void notifyOfPacketAcknowledged(double maxWindowSize) {
         _totalPackets++;
 		// If we didn't use the whole window, shrink the window a bit.
@@ -113,6 +120,7 @@ public class OldPacketThrottle {
 		// See [freenet-dev] Major weakness in our current link-level congestion control
         int windowSize = (int)getWindowSize();
         if(_packetSeqWindowFullChecked + windowSize < _packetSeq) {
+        	// FIXME this is only relevant for old packet format, which uses sendThrottledMessage(), get rid of it when we get rid of old packet format.
         	if(_packetSeqWindowFull < _packetSeqWindowFullChecked) {
         		// We haven't used the full window once since we last checked.
         		_windowSize *= PACKET_DROP_DECREASE_MULTIPLE;
@@ -135,6 +143,12 @@ public class OldPacketThrottle {
     	} else {
     		_windowSize += (PACKET_TRANSMIT_INCREMENT / _windowSize);
     	}
+    	// Ensure that we the window size does not grow dramatically larger than the largest window
+    	// that has actually been in flight at one time. This works both on new and old packet format,
+    	// although it is more relevant for new packet format because new packet format allows larger
+    	// in flight windows in practice.
+    	if(_windowSize > maxWindowSize)
+    		_windowSize = (float) maxWindowSize;
     	if(_windowSize > (windowSize + 1))
     		notifyAll();
     	if(logMINOR)
