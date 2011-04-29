@@ -1279,7 +1279,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		int totalOutTransfers = requestsSnapshot.totalOutTransfers();
 		if(peerOutTransfers > maxOutputTransfers && !isLocal) {
 			// Can't handle that many transfers with current bandwidth.
-			rejected("TooManyTransfers: Congestion control", true, realTime);
+			rejected("TooManyTransfers: Congestion control", isLocal, realTime);
 			return "TooManyTransfers: Congestion control";
 		}
 		if(totalOutTransfers <= maxTransfersOutLowerLimit) {
