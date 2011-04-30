@@ -5375,4 +5375,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return (int)Math.max(1, Math.min(kilobytesPerSecond * timeout, Integer.MAX_VALUE));
 	}
 
+	public synchronized boolean hasFullNoderef() {
+		return fullFieldSet != null;
+	}
+	
+	public synchronized SimpleFieldSet getFullNoderef() {
+		return fullFieldSet;
+	}
+
 }
