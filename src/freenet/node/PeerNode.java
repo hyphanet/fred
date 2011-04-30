@@ -426,7 +426,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	private PacketFormat packetFormat;
 	MersenneTwister paddingGen;
 	
-	private SimpleFieldSet fullFieldSet;
+	protected SimpleFieldSet fullFieldSet;
 
 	/**
 	 * If this returns true, we will generate the identity from the pubkey.
@@ -2653,7 +2653,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/**
 	* Process a new nodereference, as a SimpleFieldSet.
 	*/
-	private void processNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef, boolean forFullNodeRef) throws FSParseException {
+	protected void processNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef, boolean forFullNodeRef) throws FSParseException {
 		if(logMINOR)
 			Logger.minor(this, "Parsing: \n" + fs);
 		boolean changedAnything = innerProcessNewNoderef(fs, forARK, forDiffNodeRef, forFullNodeRef) || forARK;
@@ -5490,153 +5490,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	
 	public synchronized SimpleFieldSet getFullNoderef() {
 		return fullFieldSet;
-	}
-
-	private boolean sendingFullNoderef;
-	
-	public void sendFullNoderef() {
-		synchronized(this) {
-			if(sendingFullNoderef) return; // DoS????
-			sendingFullNoderef = true;
-		}
-		try {
-			SimpleFieldSet myFullNoderef = node.exportDarknetPublicFieldSet();
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			DeflaterOutputStream dos = new DeflaterOutputStream(baos);
-			try {
-				myFullNoderef.writeTo(dos);
-				dos.close();
-			} catch (IOException e) {
-				Logger.error(this, "Impossible: Caught error while writing compressed noderef: "+e, e);
-				synchronized(this) {
-					sendingFullNoderef = false;
-				}
-				return;
-			}
-			byte[] data = baos.toByteArray();
-			long uid = node.fastWeakRandom.nextLong();
-			RandomAccessThing raf = new ByteArrayRandomAccessThing(data);
-			PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, data.length, Node.PACKET_SIZE, raf, true);
-			try {
-				sendAsync(DMT.createFNPMyFullNoderef(uid, data.length), null, node.nodeStats.foafCounter);
-			} catch (NotConnectedException e1) {
-				// Ignore
-				synchronized(this) {
-					sendingFullNoderef = false;
-				}
-				return;
-			}
-			final BulkTransmitter bt;
-			try {
-				bt = new BulkTransmitter(prb, this, uid, false, node.nodeStats.foafCounter, false);
-			} catch (DisconnectedException e) {
-				synchronized(this) {
-					sendingFullNoderef = false;
-				}
-				return;
-			}
-			node.executor.execute(new Runnable() {
-
-				public void run() {
-					try {
-						bt.send();
-					} finally {
-						synchronized(PeerNode.this) {
-							sendingFullNoderef = false;
-						}
-					}
-				}
-				
-			});
-		} catch (RuntimeException e) {
-			synchronized(this) {
-				sendingFullNoderef = false;
-			}
-			throw e;
-		} catch (Error e) {
-			synchronized(this) {
-				sendingFullNoderef = false;
-			}
-			throw e;
-		}
-	}
-
-	private boolean receivingFullNoderef;
-	
-	public void handleFullNoderef(Message m) {
-		if(this.dontKeepFullFieldSet()) return;
-		long uid = m.getLong(DMT.UID);
-		int length = m.getInt(DMT.NODEREF_LENGTH);
-		if(length > 8 * 1024) {
-			// Way too long!
-			return;
-		}
-		synchronized(this) {
-			if(receivingFullNoderef) return; // DoS????
-			receivingFullNoderef = true;
-		}
-		try {
-			final byte[] data = new byte[length];
-			RandomAccessThing raf = new ByteArrayRandomAccessThing(data);
-			PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, length, Node.PACKET_SIZE, raf, false);
-			final BulkReceiver br = new BulkReceiver(prb, this, uid, node.nodeStats.foafCounter);
-			node.executor.execute(new Runnable() {
-
-				public void run() {
-					try {
-						if(br.receive()) {
-							ByteArrayInputStream bais = new ByteArrayInputStream(data);
-							InflaterInputStream dis = new InflaterInputStream(bais);
-							SimpleFieldSet fs;
-							try {
-								fs = new SimpleFieldSet(new BufferedReader(new InputStreamReader(dis, "UTF-8")), false, false);
-							} catch (UnsupportedEncodingException e) {
-								synchronized(PeerNode.this) {
-									receivingFullNoderef = false;
-								}
-								Logger.error(this, "Impossible: "+e, e);
-								e.printStackTrace();
-								return;
-							} catch (IOException e) {
-								synchronized(PeerNode.this) {
-									receivingFullNoderef = false;
-								}
-								Logger.error(this, "Impossible: "+e, e);
-								return;
-							}
-							try {
-								processNewNoderef(fs, false, false, true);
-							} catch (FSParseException e) {
-								Logger.error(this, "Peer "+PeerNode.this+" sent bogus full noderef: "+e, e);
-								synchronized(PeerNode.this) {
-									receivingFullNoderef = false;
-								}
-								return;
-							}
-							synchronized(PeerNode.this) {
-								fullFieldSet = fs;
-							}
-						} else {
-							Logger.error(this, "Failed to receive noderef from "+PeerNode.this);
-						}
-					} finally {
-						synchronized(PeerNode.this) {
-							receivingFullNoderef = false;
-						}
-					}
-				}
-			});				
-		} catch (RuntimeException e) {
-			synchronized(this) {
-				receivingFullNoderef = false;
-			}
-			throw e;
-		} catch (Error e) {
-			synchronized(this) {
-				receivingFullNoderef = false;
-			}
-			throw e;
-		}
 	}
 
 }

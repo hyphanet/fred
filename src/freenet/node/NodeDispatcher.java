@@ -271,10 +271,10 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		} else if(spec == DMT.FNPPeerLoadStatusByte || spec == DMT.FNPPeerLoadStatusShort || spec == DMT.FNPPeerLoadStatusInt) {
 			return handlePeerLoadStatus(m, source);
 		} else if(spec == DMT.FNPGetYourFullNoderef && source instanceof DarknetPeerNode) {
-			source.sendFullNoderef();
+			((DarknetPeerNode)source).sendFullNoderef();
 			return true;
 		} else if(spec == DMT.FNPMyFullNoderef && source instanceof DarknetPeerNode) {
-			source.handleFullNoderef(m);
+			((DarknetPeerNode)source).handleFullNoderef(m);
 			return true;
 		}
 		return false;
