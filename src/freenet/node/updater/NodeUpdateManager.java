@@ -284,6 +284,7 @@ public class NodeUpdateManager {
 				BucketTools.copyTo(result.asBucket(), fos, -1);
 				fos.close();
 				fos = null;
+				// FIXME add a callback in case it's being used on Windows.
 				if(FileUtil.renameTo(temp, node.runDir().file(filename)))
 					System.out.println("Successfully fetched "+filename+" for version "+Version.buildNumber());
 				else
