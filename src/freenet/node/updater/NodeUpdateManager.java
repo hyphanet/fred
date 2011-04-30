@@ -379,14 +379,21 @@ public class NodeUpdateManager {
 
 	public void maybeSendUOMAnnounce(PeerNode peer) {
 		synchronized(broadcastUOMAnnouncesSync) {
-			if(!broadcastUOMAnnounces) return; // nothing worth announcing yet
+			if(!broadcastUOMAnnounces) {
+				if(logMINOR) Logger.minor(this, "Not sending UOM on connect: Nothing worth announcing yet");
+				return; // nothing worth announcing yet
+			}
 		}
-		boolean hasUpdate;
+		boolean dontHaveUpdate;
 		synchronized(this) {
-			hasUpdate = (mainUpdater == null || mainUpdater.getFetchedVersion() <= 0);
-			if((!hasBeenBlown) && hasUpdate) return;
+			dontHaveUpdate = (mainUpdater == null || mainUpdater.getFetchedVersion() <= 0);
+			if((!hasBeenBlown) && dontHaveUpdate) {
+				if(logMINOR) Logger.minor(this, "Not sending UOM on connect: Don't have the update");
+				return;
+			}
 		}
-		if((!hasUpdate) && hasBeenBlown && !revocationChecker.hasBlown()) {
+		if((!dontHaveUpdate) && hasBeenBlown && !revocationChecker.hasBlown()) {
+			if(logMINOR) Logger.minor(this, "Not sending UOM on connect: Local problem causing blown key");
 			// Local problem, don't broadcast.
 			return;
 		}
@@ -639,7 +646,7 @@ public class NodeUpdateManager {
 			}
 			int extVer = getReadyExt();
 			if(extVer < minExtVersion || extVer > maxExtVersion) {
-				if(logMINOR) Logger.minor(this, "Invalid ext: current "+extVer+" must be between "+minExtVersion+" and "+maxExtVersion);
+				System.err.println("Invalid ext: current "+extVer+" must be between "+minExtVersion+" and "+maxExtVersion);
 				return false;
 			}
 			if(!ignoreRevocation) {
@@ -911,13 +918,11 @@ public class NodeUpdateManager {
 					gotJarTime = System.currentTimeMillis();
 					if(logMINOR)
 						Logger.minor(this, "Got main jar: "+mainUpdater.getFetchedVersion());
+					if(requiredExt > -1)
+						minExtVersion = requiredExt;
+					if(recommendedExt > -1)
+						maxExtVersion = recommendedExt;
 				}
-			}
-			if(!isExt) {
-				if(requiredExt > -1)
-					minExtVersion = requiredExt;
-				if(recommendedExt > -1)
-					maxExtVersion = recommendedExt;
 			}
 		}
 		if(!isExt && (requiredExt > -1 || recommendedExt > -1)) {

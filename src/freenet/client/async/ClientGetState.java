@@ -22,6 +22,8 @@ public interface ClientGetState {
 	/** Get a long value which may be passed around to identify this request (e.g. by the USK fetching code). */
 	public long getToken();
 
+	
+	
 	/**
 	 * Once the callback has finished with this fetch, it will call removeFrom() to instruct the fetch
 	 * to remove itself and all its subsidiary objects from the database.

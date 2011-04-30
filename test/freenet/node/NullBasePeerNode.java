@@ -231,4 +231,8 @@ public class NullBasePeerNode implements BasePeerNode {
 		// Ignore
 	}
 
+	public void receivedAck(long currentTimeMillis) {
+		// Ignore
+	}
+
 }

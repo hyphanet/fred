@@ -28,6 +28,7 @@ public class MessageItem {
 	private boolean hasCachedID;
 	final boolean sendLoadRT;
 	final boolean sendLoadBulk;
+	private long deadline;
 
 	public MessageItem(Message msg2, AsyncMessageCallback[] cb2, ByteCounter ctr, short overridePriority) {
 		this.msg = msg2;
@@ -42,6 +43,13 @@ public class MessageItem {
 		this.sendLoadRT = msg2 == null ? false : msg2.needsLoadRT();
 		this.sendLoadBulk = msg2 == null ? false : msg2.needsLoadBulk();
 		buf = msg.encodeToPacket();
+		if(buf.length > NewPacketFormat.MAX_MESSAGE_SIZE) {
+			// This is bad because fairness between UID's happens at the level of message queueing,
+			// and the window size is frequently very small, so if we have really big messages they
+			// could cause big problems e.g. starvation of other messages, resulting in timeouts 
+			// (especially if there are retransmits).
+			Logger.error(this, "WARNING: Message too big: "+buf.length+" for "+msg2, new Exception("error"));
+		}
 	}
 
 	public MessageItem(Message msg2, AsyncMessageCallback[] cb2, ByteCounter ctr) {
@@ -50,10 +58,17 @@ public class MessageItem {
 		formatted = false;
 		this.ctrCallback = ctr;
 		this.submitted = System.currentTimeMillis();
-		priority = msg2.getSpec().getPriority();
-		this.sendLoadRT = msg2 == null ? false : msg2.needsLoadRT();
-		this.sendLoadBulk = msg2 == null ? false : msg2.needsLoadBulk();
+		priority = msg2.getPriority();
+		this.sendLoadRT = msg2.needsLoadRT();
+		this.sendLoadBulk = msg2.needsLoadBulk();
 		buf = msg.encodeToPacket();
+		if(buf.length > NewPacketFormat.MAX_MESSAGE_SIZE) {
+			// This is bad because fairness between UID's happens at the level of message queueing,
+			// and the window size is frequently very small, so if we have really big messages they
+			// could cause big problems e.g. starvation of other messages, resulting in timeouts 
+			// (especially if there are retransmits).
+			Logger.error(this, "WARNING: Message too big: "+buf.length+" for "+msg2, new Exception("error"));
+		}
 	}
 
 	public MessageItem(byte[] data, AsyncMessageCallback[] cb2, boolean formatted, ByteCounter ctr, short priority, boolean sendLoadRT, boolean sendLoadBulk) {
@@ -157,5 +172,24 @@ public class MessageItem {
 				}
 			}
 		}
+	}
+
+	/** Set the deadline for this message. Called when a message is unqueued, when
+	 * we start to send it. Used if the message does not entirely fit in the 
+	 * packet, and also if it is retransmitted.
+	 * @param time The time (in the future) to set the deadline to.
+	 */
+	public synchronized void setDeadline(long time) {
+		deadline = time;
+	}
+	
+	/** Clear the deadline for this message. */
+	public synchronized void clearDeadline() {
+		deadline = 0;
+	}
+	
+	/** Get the deadline for this message. 0 means no deadline has been set. */
+	public synchronized long getDeadline() {
+		return deadline;
 	}
 }

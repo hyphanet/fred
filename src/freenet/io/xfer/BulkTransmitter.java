@@ -52,6 +52,7 @@ public class BulkTransmitter {
 	private long finishTime=-1;
 	private String cancelReason;
 	private final ByteCounter ctr;
+	private final boolean realTime;
 	
 	private static long transfersCompleted;
 	private static long transfersSucceeded;
@@ -74,12 +75,13 @@ public class BulkTransmitter {
 	 * @param noWait If true, don't wait for an FNPBulkReceivedAll, return as soon as we've sent everything.
 	 * @throws DisconnectedException If the peer we are trying to send to becomes disconnected.
 	 */
-	public BulkTransmitter(PartiallyReceivedBulk prb, PeerContext peer, long uid, boolean noWait, ByteCounter ctr) throws DisconnectedException {
+	public BulkTransmitter(PartiallyReceivedBulk prb, PeerContext peer, long uid, boolean noWait, ByteCounter ctr, boolean realTime) throws DisconnectedException {
 		this.prb = prb;
 		this.peer = peer;
 		this.uid = uid;
 		this.noWait = noWait;
 		this.ctr = ctr;
+		this.realTime = realTime;
 		if(ctr == null) throw new NullPointerException();
 		peerBootID = peer.getBootID();
 		// Need to sync on prb while doing both operations, to avoid race condition.
@@ -216,6 +218,14 @@ public class BulkTransmitter {
 	public boolean send() {
 		long lastSentPacket = System.currentTimeMillis();
 outer:	while(true) {
+			int max = Math.min(Integer.MAX_VALUE, prb.blocks);
+			PacketThrottle throttle = peer.getThrottle();
+			if(throttle != null)
+				max = Math.min(max, (int)Math.min(Integer.MAX_VALUE, throttle.getWindowSize()));
+			// FIXME hardcoded limit for memory usage. We can probably get away with more for now but if we start doing lots of bulk transfers we'll need to limit this globally...
+			max = Math.min(max, 100);
+			if(max < 1) max = 1;
+			
 			if(prb.isAborted()) {
 				if(logMINOR)
 					Logger.minor(this, "Aborted "+this);
@@ -293,16 +303,21 @@ outer:	while(true) {
 			// Congestion control and bandwidth limiting
 			try {
 				if(logMINOR) Logger.minor(this, "Sending packet "+blockNo);
-				Message msg = DMT.createFNPBulkPacketSend(uid, blockNo, buf);
+				Message msg = DMT.createFNPBulkPacketSend(uid, blockNo, buf, realTime);
 				boolean isOldFNP = peer.isOldFNP();
 				UnsentPacketTag tag = new UnsentPacketTag(isOldFNP);
 				if(isOldFNP) {
 					peer.sendThrottledMessage(msg, buf.length, ctr, BulkReceiver.TIMEOUT, false, tag);
 				} else {
 					peer.sendAsync(msg, tag, ctr);
-					// FIXME make this whole function asynchronous somehow.
-					// Will need some means to ensure there aren't too many packets in flight.
-					tag.waitForCompletion();
+					synchronized(this) {
+						while(inFlightPackets >= max && !failedPacket)
+							try {
+								wait(1000);
+							} catch (InterruptedException e) {
+								// Ignore
+							}
+					}
 				}
 				synchronized(this) {
 					blocksNotSentButPresent.setBit(blockNo, false);
@@ -373,8 +388,7 @@ outer:	while(true) {
 					if(logMINOR) Logger.minor(this, "Packet failed for "+BulkTransmitter.this);
 				} else {
 					inFlightPackets--;
-					if(inFlightPackets <= 0)
-						BulkTransmitter.this.notifyAll();
+					BulkTransmitter.this.notifyAll();
 					if(logMINOR) Logger.minor(this, "Packet sent "+BulkTransmitter.this+" remaining in flight: "+inFlightPackets);
 				}
 			}

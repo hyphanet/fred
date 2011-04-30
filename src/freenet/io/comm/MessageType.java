@@ -142,7 +142,10 @@ public class MessageType {
         return internalOnly;
     }
 	
-	public short getPriority() {
+    /** @return The default priority for the message type. Messages's don't necessarily
+     * use this: Message.boostPriority() can increase it for a realtime message, for 
+     * instance. */
+	public short getDefaultPriority() {
 		return priority;
 	}
 

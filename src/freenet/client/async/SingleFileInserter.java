@@ -511,7 +511,7 @@ class SingleFileInserter implements ClientPutState {
 				try {
 					BucketTools.copyTo(data, hasher, data.size());
 				} catch (IOException e) {
-					throw new InsertException(InsertException.BUCKET_ERROR, "I/O error generating hashes", null);
+					throw new InsertException(InsertException.BUCKET_ERROR, "I/O error generating hashes", e, null);
 				}
 				hashes = hasher.getResults();
 			}
@@ -623,6 +623,17 @@ class SingleFileInserter implements ClientPutState {
 		@Override
 		public int hashCode() {
 			return hashCode;
+		}
+
+		/**
+		 * zero arg c'tor for db4o on jamvm
+		 */
+		@SuppressWarnings("unused")
+		private SplitHandler() {
+			persistent = false;
+			origDataLength = 0;
+			origCompressedDataLength = 0;
+			hashCode = 0;
 		}
 
 		public SplitHandler(long origDataLength, long origCompressedDataLength, boolean allowSizes) {

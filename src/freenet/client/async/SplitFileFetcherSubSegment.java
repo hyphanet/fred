@@ -306,7 +306,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	}
 
 	@Override
-	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
 		// This is safe because it won't be removed from the RGA.
 		queueMigrateToSegmentFetcher(container, context);
 		return null;
@@ -402,8 +402,8 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	}
 	
 	@Override
-	public void preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
-		if(!toNetwork) return;
+	public boolean preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
+		if(!toNetwork) return false;
 		boolean deactivate = false;
 		if(persistent) {
 			deactivate = !container.ext().isActive(parent);
@@ -411,6 +411,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		}
 		parent.toNetwork(container, context);
 		if(deactivate) container.deactivate(parent, 1);
+		return false;
 	}
 
 	public long getCooldownTime(ObjectContainer container, ClientContext context, long now) {

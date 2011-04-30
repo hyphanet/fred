@@ -154,5 +154,13 @@ public class SeedClientPeerNode extends PeerNode {
 	public boolean shallWeRouteAccordingToOurPeersLocation() {
 		return false; // Irrelevant
 	}
+	
+	protected void onConnect() {
+		OpennetManager om = node.getOpennet();
+		if(om != null)
+			om.seedTracker.onConnectSeed(this);
+		super.onConnect();
+	}
+
 
 }

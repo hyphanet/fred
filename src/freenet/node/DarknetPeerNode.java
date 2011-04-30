@@ -46,6 +46,9 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.Logger.LogLevel;
+import freenet.support.api.HTTPUploadedFile;
+import freenet.support.io.BucketTools;
+import freenet.support.io.ByteArrayRandomAccessThing;
 import freenet.support.io.FileUtil;
 import freenet.support.io.RandomAccessFileWrapper;
 import freenet.support.io.RandomAccessThing;
@@ -54,50 +57,50 @@ public class DarknetPeerNode extends PeerNode {
 
 	/** Name of this node */
 	String myName;
-	
+
 	/** True if this peer is not to be connected with */
 	private boolean isDisabled;
-	
+
 	/** True if we don't send handshake requests to this peer, but will connect if we receive one */
 	private boolean isListenOnly;
-	
+
 	/** True if we send handshake requests to this peer in infrequent bursts */
 	private boolean isBurstOnly;
-	
+
 	/** True if we want to ignore the source port of the node's sent packets.
 	 * This is normally set when dealing with an Evil Corporate Firewall which rewrites the port on outgoing
 	 * packets but does not redirect incoming packets destined to the rewritten port.
 	 * What it does is this: If we have an address with the same IP but a different port, to the detectedPeer,
 	 * we use that instead. */
 	private boolean ignoreSourcePort;
-	
+
 	/** True if we want to allow LAN/localhost addresses. */
 	private boolean allowLocalAddresses;
-	
+
 	/** Extra peer data file numbers */
 	private LinkedHashSet<Integer> extraPeerDataFileNumbers;
 
 	/** Private comment on the peer for /friends/ page */
 	private String privateDarknetComment;
-	
+
 	/** Private comment on the peer for /friends/ page's extra peer data file number */
 	private int privateDarknetCommentFileNumber;
-	
+
 	/** Queued-to-send N2NM extra peer data file numbers */
 	private LinkedHashSet<Integer> queuedToSendN2NMExtraPeerDataFileNumbers;
-	
+
 	private FRIEND_TRUST trustLevel;
 	
 	private FRIEND_VISIBILITY ourVisibility;
 	private FRIEND_VISIBILITY theirVisibility;
 
 	private static boolean logMINOR;
-	
+
 	public enum FRIEND_TRUST {
 		LOW,
 		NORMAL,
 		HIGH;
-		
+
 		public static FRIEND_TRUST[] valuesBackwards() {
 			FRIEND_TRUST[] valuesBackwards = new FRIEND_TRUST[values().length];
 			for(int i=0;i<values().length;i++)
@@ -141,16 +144,16 @@ public class DarknetPeerNode extends PeerNode {
 	 */
 	public DarknetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility2) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		super(fs, node2, crypto, peers, fromLocal, false, mangler, false);
-		
+
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-		
+
 		String name = fs.get("myName");
 		if(name == null) throw new FSParseException("No name");
 		myName = name;
-	
+
 		if(fromLocal) {
 			SimpleFieldSet metadata = fs.subset("metadata");
-			
+
 			isDisabled = Fields.stringToBool(metadata.get("isDisabled"), false);
 			isListenOnly = Fields.stringToBool(metadata.get("isListenOnly"), false);
 			isBurstOnly = Fields.stringToBool(metadata.get("isBurstOnly"), false);
@@ -183,21 +186,21 @@ public class DarknetPeerNode extends PeerNode {
 			trustLevel = trust;
 			ourVisibility = visibility2;
 		}
-	
+
 		// Setup the private darknet comment note
 		privateDarknetComment = "";
 		privateDarknetCommentFileNumber = -1;
 
 		// Setup the extraPeerDataFileNumbers
 		extraPeerDataFileNumbers = new LinkedHashSet<Integer>();
-		
+
 		// Setup the queuedToSendN2NMExtraPeerDataFileNumbers
 		queuedToSendN2NMExtraPeerDataFileNumbers = new LinkedHashSet<Integer>();
-		
+
 	}
 
 	/**
-	 * 
+	 *
 	 * Normally this is the address that packets have been received from from this node.
 	 * However, if ignoreSourcePort is set, we will search for a similar address with a different port
 	 * number in the node reference.
@@ -232,7 +235,7 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		return true;
 	}
-	
+
 	@Override
 	protected synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef) throws FSParseException {
 		boolean changedAnything = super.innerProcessNewNoderef(fs, forARK, forDiffNodeRef);
@@ -243,14 +246,14 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		return changedAnything;
 	}
-	
+
 	@Override
 	public synchronized SimpleFieldSet exportFieldSet() {
 		SimpleFieldSet fs = super.exportFieldSet();
 		fs.putSingle("myName", getName());
 		return fs;
 	}
-		
+
 	@Override
 	public synchronized SimpleFieldSet exportMetadataFieldSet() {
 		SimpleFieldSet fs = super.exportMetadataFieldSet();
@@ -298,7 +301,7 @@ public class DarknetPeerNode extends PeerNode {
 			return PeerManager.PEER_NODE_STATUS_LISTENING;
 		return status;
 	}
-	
+
 	public void enablePeer() {
 		synchronized(this) {
 			isDisabled = false;
@@ -306,7 +309,7 @@ public class DarknetPeerNode extends PeerNode {
 		setPeerNodeStatus(System.currentTimeMillis());
 		node.peers.writePeers();
 	}
-	
+
 	public void disablePeer() {
 		synchronized(this) {
 			isDisabled = true;
@@ -323,7 +326,7 @@ public class DarknetPeerNode extends PeerNode {
 	public synchronized boolean isDisabled() {
 		return isDisabled;
 	}
-	
+
 	public void setListenOnly(boolean setting) {
 		synchronized(this) {
 			isListenOnly = setting;
@@ -341,7 +344,7 @@ public class DarknetPeerNode extends PeerNode {
 	public synchronized boolean isListenOnly() {
 		return isListenOnly;
 	}
-	
+
 	public void setBurstOnly(boolean setting) {
 		synchronized(this) {
 			isBurstOnly = setting;
@@ -367,7 +370,7 @@ public class DarknetPeerNode extends PeerNode {
 
 	/**
 	 * Change the routing status of a peer
-	 * 
+	 *
 	 * @param shouldRoute
 	 * @param localRequest (true everywhere but in NodeDispatcher)
 	 */
@@ -380,7 +383,7 @@ public class DarknetPeerNode extends PeerNode {
 
 			disableRouting = disableRoutingHasBeenSetLocally || disableRoutingHasBeenSetRemotely;
 		}
-		
+
 		if(localRequest) {
 			Message msg = DMT.createRoutingStatus(shouldRoute);
 			try {
@@ -391,18 +394,18 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		setPeerNodeStatus(System.currentTimeMillis());
 		node.peers.writePeers();
-		
+
 	}
 
 	public boolean isIgnoreSourcePort() {
 		return ignoreSourcePort;
 	}
-	
+
 	@Override
 	public boolean isIgnoreSource() {
 		return ignoreSourcePort;
 	}
-	
+
 	@Override
 	public boolean isBurstOnly() {
 		synchronized(this) {
@@ -425,7 +428,7 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		node.peers.writePeers();
 	}
-	
+
 	public boolean readExtraPeerData() {
 		String extraPeerDataDirPath = node.getExtraPeerDataDir();
 		File extraPeerDataPeerDir = new File(extraPeerDataDirPath+File.separator+getIdentityString());
@@ -589,7 +592,7 @@ public class DarknetPeerNode extends PeerNode {
 					fs.removeValue("sentTime");
 				}
 				fs.putOverwrite("sentTime", Long.toString(System.currentTimeMillis()));
-				
+
 				try {
 					n2nm = DMT.createNodeToNodeMessage(type, fs.toString().getBytes("UTF-8"));
 				} catch (UnsupportedEncodingException e) {
@@ -794,11 +797,11 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		return true;
 	}
-	
+
 	public synchronized String getPrivateDarknetCommentNote() {
 		return privateDarknetComment;
 	}
-	
+
 	public synchronized void setPrivateDarknetCommentNote(String comment) {
 		int localFileNumber;
 		synchronized(privateDarknetComment) {
@@ -853,12 +856,12 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		super.startARKFetcher();
 	}
-	
+
 	@Override
 	public String getTMCIPeerInfo() {
 		return getName()+'\t'+super.getTMCIPeerInfo();
 	}
-	
+
 	/**
 	 * A method to be called once at the beginning of every time isConnected() is true
 	 */
@@ -876,11 +879,11 @@ public class DarknetPeerNode extends PeerNode {
 	private final HashMap<Long, FileOffer> myFileOffersByUID = new HashMap<Long, FileOffer>();
 	/** Files this peer has offered to me */
 	private final HashMap<Long, FileOffer> hisFileOffersByUID = new HashMap<Long, FileOffer>();
-	
+
 	private void storeOffers() {
 		// FIXME do something
 	}
-	
+
 	class FileOffer {
 		final long uid;
 		final String filename;
@@ -895,7 +898,7 @@ public class DarknetPeerNode extends PeerNode {
 		private BulkReceiver receiver;
 		/** True if the offer has either been accepted or rejected */
 		private boolean acceptedOrRejected;
-		
+
 		FileOffer(long uid, RandomAccessThing data, String filename, String mimeType, String comment) throws IOException {
 			this.uid = uid;
 			this.data = data;
@@ -939,7 +942,7 @@ public class DarknetPeerNode extends PeerNode {
 
 		public void accept() {
 			acceptedOrRejected = true;
-			File dest = new File(node.clientCore.downloadDir, "direct-"+FileUtil.sanitize(getName())+"-"+filename);
+			File dest = node.clientCore.downloadsDir().file("direct-"+FileUtil.sanitize(getName())+"-"+filename);
 			try {
 				data = new RandomAccessFileWrapper(dest, "rw");
 			} catch (FileNotFoundException e) {
@@ -986,7 +989,7 @@ public class DarknetPeerNode extends PeerNode {
 
 		public void send() throws DisconnectedException {
 			prb = new PartiallyReceivedBulk(node.usm, size, Node.PACKET_SIZE, data, true);
-			transmitter = new BulkTransmitter(prb, DarknetPeerNode.this, uid, false, node.nodeStats.nodeToNodeCounter);
+			transmitter = new BulkTransmitter(prb, DarknetPeerNode.this, uid, false, node.nodeStats.nodeToNodeCounter, false);
 			if(logMINOR)
 				Logger.minor(this, "Sending "+uid);
 			node.executor.execute(new Runnable() {
@@ -1030,13 +1033,13 @@ public class DarknetPeerNode extends PeerNode {
 				@Override
 				public HTMLNode getHTMLText() {
 					HTMLNode div = new HTMLNode("div");
-					
+
 					div.addChild("p", l10n("failedReceiveHeader", new String[] { "filename", "node" },
 							new String[] { filename, getName() }));
-					
+
 					// Descriptive table
 					describeFile(div);
-					
+
 					return div;
 				}
 
@@ -1104,12 +1107,12 @@ public class DarknetPeerNode extends PeerNode {
 				public boolean userCanDismiss() {
 					return true;
 				}
-				
+
 				@Override
 				public String getShortText() {
 					return l10n("failedReceiveShort", new String[] { "filename", "node" }, new String[] { filename, getName() });
 				}
-				
+
 			};
 			node.clientCore.alerts.register(alert);
 		}
@@ -1123,15 +1126,15 @@ public class DarknetPeerNode extends PeerNode {
 				@Override
 				public HTMLNode getHTMLText() {
 					HTMLNode div = new HTMLNode("div");
-					
+
 					// FIXME localise!!!
-					
+
 					div.addChild("p", l10n("succeededReceiveHeader", new String[] { "filename", "node" },
 							new String[] { filename, getName() }));
-					
+
 					// Descriptive table
 					describeFile(div);
-					
+
 					return div;
 				}
 
@@ -1144,7 +1147,7 @@ public class DarknetPeerNode extends PeerNode {
 				public String getText() {
 					String header = l10n("succeededReceiveHeader", new String[] { "filename", "node" },
 							new String[] { filename, getName() });
-					
+
 					return describeFileText(header);
 				}
 
@@ -1181,7 +1184,7 @@ public class DarknetPeerNode extends PeerNode {
 				public String getShortText() {
 					return l10n("succeededReceiveShort", new String[] { "filename", "node" }, new String[] { filename, getName() });
 				}
-				
+
 			};
 			node.clientCore.alerts.register(alert);
 		}
@@ -1196,30 +1199,30 @@ public class DarknetPeerNode extends PeerNode {
 				@Override
 				public HTMLNode getHTMLText() {
 					HTMLNode div = new HTMLNode("div");
-					
+
 					div.addChild("p", l10n("offeredFileHeader", "name", getName()));
-					
+
 					// Descriptive table
 					describeFile(div);
-					
+
 					// Accept/reject form
-					
+
 					// Hopefully we will have a container when this function is called!
 					HTMLNode form = node.clientCore.getToadletContainer().addFormChild(div, "/friends/", "f2fFileOfferAcceptForm");
-					
+
 					// FIXME node_ is inefficient
 					form.addChild("input", new String[] { "type", "name" },
 							new String[] { "hidden", "node_"+DarknetPeerNode.this.hashCode() });
 
 					form.addChild("input", new String[] { "type", "name", "value" },
 							new String[] { "hidden", "id", Long.toString(uid) });
-					
+
 					form.addChild("input", new String[] { "type", "name", "value" },
 							new String[] { "submit", "acceptTransfer", l10n("acceptTransferButton") });
 
 					form.addChild("input", new String[] { "type", "name", "value" },
 							new String[] { "submit", "rejectTransfer", l10n("rejectTransferButton") });
-					
+
 					return div;
 				}
 				@Override
@@ -1231,7 +1234,7 @@ public class DarknetPeerNode extends PeerNode {
 					String header = l10n("offeredFileHeader", "name", getName());
 					return describeFileText(header);
 				}
-				
+
 				@Override
 				public String getTitle() {
 					return l10n("askUserTitle");
@@ -1267,7 +1270,7 @@ public class DarknetPeerNode extends PeerNode {
 					return l10n("offeredFileShort", new String[] { "filename", "node" }, new String[] { filename, getName() });
 				}
 			};
-			
+
 		}
 		protected void addComment(HTMLNode node) {
 			String[] lines = comment.split("\n");
@@ -1315,7 +1318,7 @@ public class DarknetPeerNode extends PeerNode {
 			}
 			return sb.toString();
 		}
-		
+
 		private void describeFile(HTMLNode div) {
 			HTMLNode table = div.addChild("table", "border", "0");
 			HTMLNode row = table.addChild("tr");
@@ -1422,18 +1425,14 @@ public class DarknetPeerNode extends PeerNode {
 		return getPeerNodeStatus();
 	}
 
-	public int sendFileOffer(File filename, String message) throws IOException {
-		long now = System.currentTimeMillis();
+	private int sendFileOffer(String fnam, String mime, String message, RandomAccessThing data) throws IOException {
 		long uid = node.random.nextLong();
-		String fnam = filename.getName();
-		String mime = DefaultMIMETypes.guessMIMEType(fnam, false);
-		RandomAccessThing data = new RandomAccessFileWrapper(filename, "r");
+		long now = System.currentTimeMillis();
 		FileOffer fo = new FileOffer(uid, data, fnam, mime, message);
 		synchronized(this) {
 			myFileOffersByUID.put(uid, fo);
 		}
 		storeOffers();
-
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fo.toFieldSet(fs);
 		if(logMINOR)
@@ -1443,6 +1442,20 @@ public class DarknetPeerNode extends PeerNode {
 		sendNodeToNodeMessage(fs, Node.N2N_MESSAGE_TYPE_FPROXY, true, now, true);
 		setPeerNodeStatus(System.currentTimeMillis());
 		return getPeerNodeStatus();
+	}
+
+	public int sendFileOffer(File file, String message) throws IOException {
+		String fnam = file.getName();
+		String mime = DefaultMIMETypes.guessMIMEType(fnam, false);
+		RandomAccessThing data = new RandomAccessFileWrapper(file, "r");
+		return sendFileOffer(fnam, mime, message, data);
+	}
+
+	public int sendFileOffer(HTTPUploadedFile file, String message) throws IOException {
+		String fnam = file.getFilename();
+		String mime = file.getContentType();
+		RandomAccessThing data = new ByteArrayRandomAccessThing(BucketTools.toByteArray(file.getData()));
+		return sendFileOffer(fnam, mime, message, data);
 	}
 
 	public void handleFproxyN2NTM(SimpleFieldSet fs, int fileNumber) {
@@ -1474,12 +1487,12 @@ public class DarknetPeerNode extends PeerNode {
 				return; // Ignore re-advertisement
 			hisFileOffersByUID.put(u, offer);
 		}
-		
+
 		// Don't persist for now - FIXME
 		this.deleteExtraPeerDataFile(fileNumber);
-		
+
 		UserAlert alert = offer.askUserUserAlert();
-			
+
 		node.clientCore.alerts.register(alert);
 	}
 
@@ -1496,7 +1509,7 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		fo.accept();
 	}
-	
+
 	public void rejectTransfer(long id) {
 		FileOffer fo;
 		synchronized(this) {
@@ -1508,11 +1521,11 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		fo.reject();
 	}
-	
+
 	public void handleFproxyFileOfferAccepted(SimpleFieldSet fs, int fileNumber) {
 		// Don't persist for now - FIXME
 		this.deleteExtraPeerDataFile(fileNumber);
-		
+
 		long uid;
 		try {
 			uid = fs.getLong("uid");
@@ -1545,7 +1558,7 @@ public class DarknetPeerNode extends PeerNode {
 	public void handleFproxyFileOfferRejected(SimpleFieldSet fs, int fileNumber) {
 		// Don't persist for now - FIXME
 		this.deleteExtraPeerDataFile(fileNumber);
-		
+
 		long uid;
 		try {
 			uid = fs.getLong("uid");
@@ -1553,7 +1566,7 @@ public class DarknetPeerNode extends PeerNode {
 			Logger.error(this, "Could not parse offer rejected: "+e+" on "+this+" :\n"+fs, e);
 			return;
 		}
-		
+
 		FileOffer fo;
 		synchronized(this) {
 			fo = myFileOffersByUID.remove(uid);
@@ -1655,7 +1668,7 @@ public class DarknetPeerNode extends PeerNode {
 	protected boolean generateIdentityFromPubkey() {
 		return false;
 	}
-	
+
 	@Override
 	public boolean equals(Object o) {
 		if(o == this) return true;
@@ -1664,7 +1677,7 @@ public class DarknetPeerNode extends PeerNode {
 			return super.equals(o);
 		} else return false;
 	}
-	
+
 	@Override
 	public final boolean shouldDisconnectAndRemoveNow() {
 		return false;
@@ -1684,7 +1697,7 @@ public class DarknetPeerNode extends PeerNode {
 	protected boolean shouldExportPeerAddedTime() {
 		return true;
 	}
-	
+
 	protected void maybeClearPeerAddedTimeOnRestart(long now) {
 		if((now - peerAddedTime) > (((long) 30) * 24 * 60 * 60 * 1000))  // 30 days
 			peerAddedTime = 0;
@@ -1696,11 +1709,11 @@ public class DarknetPeerNode extends PeerNode {
 	@Override
 	public void fatalTimeout() {
 		if(node.isStopping()) return;
-		Logger.error(this, "Disconnecting from darknet node "+this+" because of fatal timeout");
-		System.err.println("Your friend node \""+getName()+"\" ("+getPeer()+") is having severe problems. We have disconnected to try to limit the effect on us. It will reconnect soon.");
+		Logger.error(this, "Disconnecting from darknet node "+this+" because of fatal timeout", new Exception("error"));
+		System.err.println("Your friend node \""+getName()+"\" ("+getPeer()+" version "+getVersion()+") is having severe problems. We have disconnected to try to limit the effect on us. It will reconnect soon.");
 		// FIXME post a useralert
 		// Disconnect.
-		forceDisconnect(false);
+		forceDisconnect(true);
 	}
 
 	public synchronized FRIEND_TRUST getTrustLevel() {

@@ -207,7 +207,7 @@ public class TextModeClientInterface implements Runnable {
         if(core != null && core.directTMCI != this) {
           sb.append("QUIT - close the socket\r\n");
         }
-        if(n.testnetEnabled) {
+        if(n.isTestnetEnabled()) {
         	sb.append("WARNING: TESTNET MODE ENABLED. YOU HAVE NO ANONYMITY.\r\n");
         }
         s.write(sb.toString().getBytes());
@@ -1048,6 +1048,9 @@ public class TextModeClientInterface implements Runnable {
 				}
 				public void nodeNotAdded() {
 					write("Node not added as we don't want it for some reason.");
+				}
+				public void acceptedSomewhere() {
+					write("Announcement accepted by some node.");
 				}
         		
         	});

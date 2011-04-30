@@ -140,7 +140,10 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
             } catch (NotConnectedException e) {
             	Logger.minor(this, "Not connected");
             	continue;
-            }
+            } catch (SyncSendWaitedTooLongException e) {
+            	Logger.error(this, "Unable to send "+req+" in a reasonable time to "+next);
+            	continue;
+			}
             
             synchronized(this) {
             	hasForwarded = true;

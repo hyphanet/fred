@@ -5,6 +5,7 @@ package freenet.node;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.net.InetAddress;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -51,6 +52,7 @@ import freenet.support.ByteArrayWrapper;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
+import freenet.support.LRUHashtable;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -340,7 +342,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		
 		if(wantAnonAuth && !wantAnonAuthChangeIP) {
 			if(checkAnonAuthChangeIP(opn, buf, offset, length, peer, now)) {
-				Logger.error(this, "Last resort match anon-auth against all anon setup peernodes succeeded - this should not happen! (It can happen if they change address)");
+				// This can happen when a node is upgraded from a SeedClientPeerNode to an OpennetPeerNode.
+				//Logger.error(this, "Last resort match anon-auth against all anon setup peernodes succeeded - this should not happen! (It can happen if they change address)");
 				return DECODED.DECODED;
 			}
 		}
@@ -847,6 +850,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				return;
 			}
 		}
+		
+		if(throttleRekey(pn, replyTo)) return;
 
 		NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
 		if(DiffieHellman.checkDHExponentialValidity(this.getClass(), _hisExponential)) {
@@ -859,6 +864,31 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if((t2-t1)>500) {
 			Logger.error(this,"Message1 timeout error:Processing packet for"+pn);
 		}
+	}
+	
+	private final LRUHashtable<InetAddress, Long> throttleRekeysByIP = new LRUHashtable<InetAddress, Long>();
+	
+	private final int REKEY_BY_IP_TABLE_SIZE = 1024;
+
+	private boolean throttleRekey(PeerNode pn, Peer replyTo) {
+		if(pn != null) {
+			return pn.throttleRekey();
+		}
+		long now = System.currentTimeMillis();
+		InetAddress addr = replyTo.getAddress();
+		synchronized(throttleRekeysByIP) {
+			Long l = throttleRekeysByIP.get(addr);
+			if(l == null || l != null && now > l)
+				throttleRekeysByIP.push(addr, now);
+			while(throttleRekeysByIP.size() > REKEY_BY_IP_TABLE_SIZE || 
+					((!throttleRekeysByIP.isEmpty()) && throttleRekeysByIP.peekValue() < now - PeerNode.THROTTLE_REKEY))
+				throttleRekeysByIP.popKey();
+			if(l != null && now - l < PeerNode.THROTTLE_REKEY) {
+				Logger.error(this, "Two JFK(1)'s initiated by same IP within "+PeerNode.THROTTLE_REKEY+"ms");
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private final int MAX_NONCES_PER_PEER = 10;
@@ -1398,6 +1428,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			PeerNode seed;
 			try {
 				seed = new SeedClientPeerNode(ref, node, crypto, node.peers, false, true, crypto.packetMangler);
+				// Don't tell tracker yet as we don't have the address yet.
 			} catch (FSParseException e) {
 				Logger.error(this, "Invalid seed client noderef: "+e+" from "+from, e);
 				return null;
@@ -1665,7 +1696,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			ptr += 8;
 			if(logMINOR) Logger.minor(this, "Sending tracker ID "+trackerID+" in JFK(3)");
 		}
-		System.arraycopy(Fields.longToBytes(node.bootID), 0, data, ptr, 8);
+		System.arraycopy(Fields.longToBytes(pn.getOutgoingBootID()), 0, data, ptr, 8);
 		ptr += 8;
 		System.arraycopy(pn.jfkMyRef, 0, data, ptr, pn.jfkMyRef.length);
 		final byte[] message3 = new byte[NONCE_SIZE*2 + // nI, nR
@@ -1875,7 +1906,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			data[ptr++] = (byte) (sameAsOldTrackerID ? 1 : 0);
 		}
 
-		System.arraycopy(Fields.longToBytes(node.bootID), 0, data, ptr, 8);
+		System.arraycopy(Fields.longToBytes(pn.getOutgoingBootID()), 0, data, ptr, 8);
 		ptr += 8;
 		System.arraycopy(myRef, 0, data, ptr, myRef.length);
 		ptr += myRef.length;
@@ -2259,7 +2290,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 
 		PacketTracker packets = tracker.packets;
-		packets.acknowledgedPackets(acks);
+		if(packets.acknowledgedPackets(acks))
+			tracker.pn.receivedAck(System.currentTimeMillis());
 
 		int retransmitCount = decrypted[ptr++] & 0xff;
 		if(logMINOR) Logger.minor(this, "Retransmit requests: "+retransmitCount);

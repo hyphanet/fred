@@ -3,6 +3,8 @@ package freenet.node;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.node.OpennetManager.ConnectionType;
+import freenet.node.updater.NodeUpdateManager;
+import freenet.node.updater.UpdateOverMandatoryManager;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
@@ -62,7 +64,8 @@ public class OpennetPeerNode extends PeerNode {
 	}
 		
 	/** Is the peer droppable? 
-	 * SIDE EFFECT: If we are now outside the grace period, we reset peerAddedTime and opennetPeerAddedReason. */ 
+	 * SIDE EFFECT: If we are now outside the grace period, we reset peerAddedTime and opennetPeerAddedReason. 
+	 * Note that the caller must check separately whether the node is TOO OLD and connected. */ 
 	public NOT_DROP_REASON isDroppableWithReason(boolean ignoreDisconnect) {
 		long now = System.currentTimeMillis();
 		int status = getPeerNodeStatus();
@@ -160,9 +163,34 @@ public class OpennetPeerNode extends PeerNode {
 	@Override
 	public final boolean shouldDisconnectAndRemoveNow() {
 		// Allow announced peers 15 minutes to download the auto-update.
-		if(isConnected() && isUnroutableOlderVersion() && System.currentTimeMillis() - timeLastConnectionCompleted() > 60*60*1000)
-			return true;
+		if(isConnected() && isUnroutableOlderVersion()) {
+			return shouldDisconnectTooOld(); 
+		}
 		return false;
+	}
+
+	/** If a node is TOO OLD, we should keep it connected for a brief period for it to
+	 * allow it to issue a UOM request, we should keep it connected while the UOM transfer 
+	 * is in progress, but otherwise we should disconnect. */
+	private boolean shouldDisconnectTooOld() {
+		long uptime = System.currentTimeMillis() - timeLastConnectionCompleted();
+		if(uptime < 30*1000)
+			// Allow 30 seconds to send the UOM request.
+			return false;
+		// FIXME remove, paranoia
+		if(uptime < 60*60*1000)
+			return false;
+		NodeUpdateManager updater = node.nodeUpdater;
+		if(updater == null) return true; // Not going to UOM.
+		UpdateOverMandatoryManager uom = updater.uom;
+		if(uom == null) return true; // Not going to UOM
+		synchronized(this) {
+			if(sendingUOMMainJar || sendingUOMExtJar) {
+				// Let it finish.
+				return false;
+			}
+		}
+		return true;
 	}
 
 	@Override
@@ -224,11 +252,9 @@ public class OpennetPeerNode extends PeerNode {
 	@Override
 	public void fatalTimeout() {
 		if(node.isStopping()) return;
-		Logger.normal(this, "Opennet peer "+this+" is having timeout problems");
-		// FIXME reinstate disconnection.
-//		Logger.normal(this, "Disconnecting "+this+" because of fatal timeout");
-//		// Disconnect.
-//		forceDisconnect(true);
+		Logger.warning(this, "Disconnecting "+this+" because of fatal timeout");
+		// Disconnect.
+		forceDisconnect(true);
 	}
 	
 	public boolean shallWeRouteAccordingToOurPeersLocation() {

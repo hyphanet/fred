@@ -20,7 +20,7 @@ import freenet.support.ShortBuffer;
  */
 public class BulkReceiver {
 
-	static final int TIMEOUT = 30*1000;
+	static final int TIMEOUT = 60*1000;
 	/** Tracks the data we have received */
 	final PartiallyReceivedBulk prb;
 	/** Peer we are receiving from */

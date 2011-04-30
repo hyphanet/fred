@@ -60,6 +60,7 @@ public class OpennetManager {
 	final Node node;
 	final NodeCrypto crypto;
 	final Announcer announcer;
+	final SeedAnnounceTracker seedTracker = new SeedAnnounceTracker();
 
 	/** Our peers. PeerNode's are promoted when they successfully fetch a key. Normally we take
 	 * the bottom peer, but if that isn't eligible to be dropped, we iterate up the list. */
@@ -90,8 +91,10 @@ public class OpennetManager {
 	public static final int DONT_READD_TIME = 60*1000;
 	/** Don't drop a node until it's at least this old, if it's connected. */
 	public static final int DROP_MIN_AGE = 300*1000;
-	/** Don't drop a node until it's at least this old, if it's not connected (if it has connected once then DROP_DISCONNECT_DELAY applies, but only once an hour as below). Must be less than DROP_MIN_AGE. */
-	public static final int DROP_MIN_AGE_DISCONNECTED = 60*1000;
+	/** Don't drop a node until it's at least this old, if it's not connected (if it has connected once then DROP_DISCONNECT_DELAY applies, but only once an hour as below). Must be less than DROP_MIN_AGE.
+	 * Relatively generous because noderef transfers e.g. for announcement can be slow (Note
+	 * that announcements actually wait for previous transfers!). */
+	public static final int DROP_MIN_AGE_DISCONNECTED = 300*1000;
 	/** Don't drop a node until this long after startup */
 	public static final int DROP_STARTUP_DELAY = 120*1000;
 	/** Don't drop a node until this long after losing connection to it.
@@ -323,7 +326,7 @@ public class OpennetManager {
 		return stopping;
 	}
 
-	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs, ConnectionType connectionType) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs, ConnectionType connectionType, boolean allowExisting) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		try {
 		OpennetPeerNode pn = new OpennetPeerNode(fs, node, crypto, this, node.peers, false, crypto.packetMangler);
 		if(Arrays.equals(pn.getIdentity(), crypto.myIdentity)) {
@@ -332,6 +335,16 @@ public class OpennetManager {
 		}
 		if(peersLRU.contains(pn)) {
 			if(logMINOR) Logger.minor(this, "Not adding "+pn.userToString()+" to opennet list as already there");
+			if(allowExisting) {
+				// However, we can reconnect.
+				return (OpennetPeerNode) peersLRU.get(pn);
+			} else {
+				return null;
+			}
+		}
+		if(node.isSeednode() && pn.isUnroutableOlderVersion()) {
+			// We can't send the UOM to it, so we should not accept it.
+			// Plus, some versions around 1320 had big problems with being connected both as a seednode and as an opennet peer.
 			return null;
 		}
 		if(wantPeer(pn, true, false, false, connectionType)) return pn;
@@ -384,6 +397,14 @@ public class OpennetManager {
 		boolean noDisconnect;
 		long now = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "wantPeer("+addAtLRU+","+justChecking+","+oldOpennetPeer+","+connectionType+")");
+		boolean outdated = nodeToAddNow == null ? false : nodeToAddNow.isUnroutableOlderVersion();
+		if(outdated && logMINOR) Logger.minor(this, "Peer is outdated: "+nodeToAddNow.getVersionNumber()+" for "+connectionType);
+		if(outdated) {
+			if(tooManyOutdatedPeers()) {
+				if(logMINOR) Logger.minor(this, "Rejecting TOO OLD peer from "+connectionType+" (too many already): "+nodeToAddNow);
+				return false;
+			}
+		}
 		synchronized(this) {
 			if(nodeToAddNow != null &&
 					peersLRU.contains(nodeToAddNow)) {
@@ -393,7 +414,7 @@ public class OpennetManager {
 			}
 			if(nodeToAddNow != null)
 				connectionAttempts.put(connectionType, connectionAttempts.get(connectionType)+1);
-			if(getSize() < getNumberOfConnectedPeersToAim()) {
+			if(getSize() < getNumberOfConnectedPeersToAim() || outdated) {
 				if(nodeToAddNow != null) {
 					if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" as opennet peers list not full");
 					if(addAtLRU)
@@ -448,7 +469,7 @@ public class OpennetManager {
 						return false;
 					}
 				}
-			} else while(canAdd && (size = getSize()) > maxPeers - (nodeToAddNow == null ? 0 : 1)) {
+			} else while(canAdd && (size = getSize()) > maxPeers - ((nodeToAddNow == null || outdated) ? 0 : 1)) {
 				OpennetPeerNode toDrop;
 				// can drop peers which are over the limit
 				toDrop = peerToDrop(noDisconnect, false, nodeToAddNow != null, connectionType);
@@ -512,6 +533,24 @@ public class OpennetManager {
 		}
 		return canAdd;
 	}
+	
+	private int maxOutdatedPeers() {
+		return Math.max(5, getNumberOfConnectedPeersToAimIncludingDarknet() / 4);
+	}
+	
+	private boolean tooManyOutdatedPeers() {
+		int maxTooOldPeers = maxOutdatedPeers();
+		int count = 0;
+		OpennetPeerNode[] peers = node.peers.getOpennetPeers();
+		for(OpennetPeerNode pn : peers) {
+			if(pn.isUnroutableOlderVersion()) {
+				count++;
+				if(count >= maxTooOldPeers)
+					return true;
+			}
+		}
+		return false;
+	}
 
 	private synchronized boolean enforcePerTypeGracePeriodLimits(int maxPeers, ConnectionType type, boolean addingPeer) {
 		if(type == null) {
@@ -573,6 +612,10 @@ public class OpennetManager {
 		}
 	}
 
+	// A TOO OLD peer does not count towards the limit, even if it is not connected.
+	// It can however be dumped if it doesn't connect in a reasonable time, and if
+	// it upgrades, it may not have the usual grace period.
+	
 	/**
 	 * How many opennet peers do we have?
 	 * Connected but out of date nodes don't count towards the connection limit. Let them connect for
@@ -583,7 +626,7 @@ public class OpennetManager {
 		int x = 0;
 		for (Enumeration<PeerNode> e = peersLRU.elements(); e.hasMoreElements();) {
 			PeerNode pn = e.nextElement();
-			if(!(pn.isConnected() && pn.isUnroutableOlderVersion())) x++;
+			if(!pn.isUnroutableOlderVersion()) x++;
 		}
 		return x;
 	}
@@ -600,11 +643,12 @@ public class OpennetManager {
 			OpennetPeerNode[] peers = peersLRU.toArrayOrdered(new OpennetPeerNode[peersLRU.size()]);
 			for(int i=0;i<peers.length;i++) {
 				OpennetPeerNode pn = peers[i];
-				if(pn.isConnected() && pn.isUnroutableOlderVersion()) {
+				if(pn == null) continue;
+				boolean tooOld = pn.isUnroutableOlderVersion();
+				if(pn.isConnected() && tooOld) {
 					// Doesn't count towards the opennet peers limit, so no point dropping it.
 					continue;
 				}
-				if(pn == null) continue;
 				NOT_DROP_REASON reason = pn.isDroppableWithReason(false);
 				if(map != null) {
 					Integer x = map.get(reason);
@@ -613,13 +657,14 @@ public class OpennetManager {
 					else
 						map.put(reason, x+1);
 				}
-				if((reason != NOT_DROP_REASON.DROPPABLE) && !force) {
+				// Over the limit does not force us to drop TOO OLD peers since they don't count towards the limit.
+				if((reason != NOT_DROP_REASON.DROPPABLE) && ((!force) || tooOld)) {
 					continue;
 				}
 				// LOCKING: Always take the OpennetManager lock first
 				if(!pn.isConnected()) {
 					if(logMINOR)
-						Logger.minor(this, "Possibly dropping opennet peer "+pn+" as is disconnected");
+						Logger.minor(this, "Possibly dropping opennet peer "+pn+" as is disconnected (reason="+reason+" force="+force+" tooOld="+tooOld);
 					pn.setWasDropped();
 					return pn;
 				}
@@ -638,7 +683,8 @@ public class OpennetManager {
 			for(int i=0;i<peers.length;i++) {
 				OpennetPeerNode pn = peers[i];
 				if(pn == null) continue;
-				if(pn.isConnected() && pn.isUnroutableOlderVersion()) {
+				boolean tooOld = pn.isUnroutableOlderVersion();
+				if(pn.isConnected() && tooOld) {
 					// Doesn't count anyway.
 					continue;
 				}
@@ -650,7 +696,8 @@ public class OpennetManager {
 					else
 						map.put(reason, x+1);
 				}
-				if((reason != NOT_DROP_REASON.DROPPABLE) && !force) {
+				// Over the limit does not force us to drop TOO OLD peers since they don't count towards the limit.
+				if((reason != NOT_DROP_REASON.DROPPABLE) && ((!force) || tooOld)) {
 					continue;
 				}
 				if(logMINOR)
@@ -692,9 +739,12 @@ public class OpennetManager {
 			peersLRU.remove(pn);
 			if(pn.isDroppable(true) && !pn.grabWasDropped()) {
 				if(logMINOR) Logger.minor(this, "onRemove() for "+pn);
-				oldPeers.push(pn);
-				while (oldPeers.size() > MAX_OLD_PEERS)
-					oldPeers.pop();
+				if(pn.timeLastConnected() > 0) {
+					// Don't even add it if it never connected.
+					oldPeers.push(pn);
+					while (oldPeers.size() > MAX_OLD_PEERS)
+						oldPeers.pop();
+				}
 			}
 		}
 	}
@@ -790,7 +840,7 @@ public class OpennetManager {
 			new PartiallyReceivedBulk(node.usm, padded.length, Node.PACKET_SIZE, raf, true);
 		try {
 			BulkTransmitter bt =
-				new BulkTransmitter(prb, peer, xferUID, true, ctr);
+				new BulkTransmitter(prb, peer, xferUID, true, ctr, true);
 			bt.send();
 		} catch (DisconnectedException e) {
 			throw new NotConnectedException(e);
@@ -1143,6 +1193,10 @@ public class OpennetManager {
 	
 	public void reannounce() {
 		announcer.reannounce();
+	}
+
+	public void drawSeedStatsBox(HTMLNode content) {
+		seedTracker.drawSeedStats(content);
 	}
 
 }

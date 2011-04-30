@@ -155,22 +155,8 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 			((ClientGetter)parent).addKeyToBinaryBlob(block, container, context);
 		Bucket data = extract(block, container, context);
 		if(data == null) return; // failed
+		context.uskManager.checkUSK(key.getURI(), fromStore, container, block.isMetadata());
 		if(!block.isMetadata()) {
-			if(key instanceof ClientSSK) {
-				try {
-					FreenetURI uri = this.key.getURI();
-					if(uri.isSSK() && uri.isSSKForUSK()) {
-						uri = uri.uskForSSK();
-						USK u = USK.create(uri);
-						context.uskManager.updateKnownGood(u, uri.getSuggestedEdition(), context);
-					}
-				} catch (MalformedURLException e) {
-					Logger.error(this, "Caught "+e, e);
-				} catch (Throwable t) {
-					// Don't let the USK hint cause us to not succeed on the block.
-					Logger.error(this, "Caught "+t, t);
-				}
-			}
 			onSuccess(new FetchResult((ClientMetadata)null, data), container, context);
 		} else {
 			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), false, container, context);
@@ -220,6 +206,12 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		super.cancel(container, context);
 		if(persistent) container.activate(rcb, 1);
 		rcb.onFailure(new FetchException(FetchException.CANCELLED), this, container, context);
+	}
+
+	@Override
+	protected void notFoundInStore(ObjectContainer container,
+			ClientContext context) {
+		this.onFailure(new FetchException(FetchException.DATA_NOT_FOUND), true, container, context);
 	}
 
 }

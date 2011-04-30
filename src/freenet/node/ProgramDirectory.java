@@ -4,6 +4,7 @@
 package freenet.node;
 
 import freenet.config.InvalidConfigValueException;
+import freenet.l10n.NodeL10n;
 import freenet.support.api.StringCallback;
 
 import java.util.HashSet;
@@ -24,9 +25,21 @@ public class ProgramDirectory {
 	protected File dir = null;
 	/** Keeps track of all the files saved in this directory */
 	final protected HashSet<String> files = new HashSet<String>();
+	final private StringCallback callback;
+	final private String moveErrMsg;
+
+	private static int sortOrder = 0;
+	protected static synchronized int nextOrder() {
+		return sortOrder++;
+	}
 
 	public ProgramDirectory() {
-		// pass
+		this(null);
+	}
+
+	public ProgramDirectory(String moveErrMsg) {
+		this.moveErrMsg = moveErrMsg;
+		this.callback = (moveErrMsg != null)? new RWDirectoryCallback(): new DirectoryCallback();
 	}
 
 	/**
@@ -34,36 +47,57 @@ public class ProgramDirectory {
 	** initialisation case.
 	*/
 	public void move(String file) throws IOException {
-		if (this.dir != null) { throw new IOException("move not implemented"); }
-
 		File dir = new File(file);
+		if (this.dir != null && !dir.equals(this.dir)) { throw new IOException("move not implemented"); }
+
 		if (!((dir.exists() && dir.isDirectory()) || (dir.mkdir()))) {
-			throw new IOException("Could not find or make a directory called: " + file);
+			throw new IOException("Could not find or make a directory called: " + l10n(file));
 		}
 
 		this.dir = dir.getCanonicalFile();
 	}
 
 	public StringCallback getStringCallback() {
-		return new StringCallback() {
-			@Override
-			public String get() {
-				return dir.getPath();
-			}
+		return callback;
+	}
 
-			@Override
-			public void set(String val) throws InvalidConfigValueException {
-				if (dir.equals(new File(val))) return;
-				// FIXME support it
-				// Don't need to translate the below as very few users will use it.
-				throw new InvalidConfigValueException("Moving program directory on the fly not supported at present");
-			}
+	public class DirectoryCallback extends StringCallback {
+		@Override
+		public String get() {
+			return dir.getPath();
+		}
 
-			@Override
-			public boolean isReadOnly() {
-				return true;
-			}
-		};
+		@Override
+		public void set(String val) throws InvalidConfigValueException {
+			if (dir == null) { dir = new File(val); return; }
+			if (dir.equals(new File(val))) return;
+			// FIXME support it
+			// Don't need to translate the below as very few users will use it.
+			throw new InvalidConfigValueException("Moving program directory on the fly not supported at present");
+		}
+
+		@Override
+		public boolean isReadOnly() {
+			return true;
+		}
+	}
+
+	public class RWDirectoryCallback extends DirectoryCallback {
+		@Override
+		public void set(String val) throws InvalidConfigValueException {
+			if (dir == null) { dir = new File(val); return; }
+			if (dir.equals(new File(val))) return;
+			File f = new File(val);
+			if(!((f.exists() && f.isDirectory()) || (f.mkdir())))
+				// Relatively commonly used, despite being advanced (i.e. not something we want to show to newbies). So translate it.
+				throw new InvalidConfigValueException(l10n(moveErrMsg));
+			dir = new File(val);
+		}
+
+		@Override
+		public boolean isReadOnly() {
+			return false;
+		}
 	}
 
 	/**
@@ -76,6 +110,10 @@ public class ProgramDirectory {
 
 	public File dir() {
 		return dir;
+	}
+
+	private static String l10n(String key) {
+		return NodeL10n.getBase().getString(key);
 	}
 
 }

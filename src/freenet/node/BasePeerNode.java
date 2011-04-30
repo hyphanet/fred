@@ -80,4 +80,7 @@ interface BasePeerNode extends PeerContext {
 	/** Double the RTT when we resend a packet. */
 	void backoffOnResend();
 
+	/** Report when a packet was acked. */
+	void receivedAck(long currentTimeMillis);
+
 }

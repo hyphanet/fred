@@ -126,7 +126,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	 * at most MAX_CONSECUTIVE_MISSING_PACKET_REPORTS every RECEIPT_TIMEOUT to recover.
 	 */
 	public final int RECEIPT_TIMEOUT;
-	public static final int RECEIPT_TIMEOUT_REALTIME = 5000;
+	public static final int RECEIPT_TIMEOUT_REALTIME = 10000;
 	public static final int RECEIPT_TIMEOUT_BULK = 30000;
 	// TODO: This should be proportional to the calculated round-trip-time, not a constant
 	public final int MAX_ROUND_TRIP_TIME;
@@ -135,6 +135,9 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	public static final int CLEANUP_TIMEOUT = 5000;
 	// After 15 seconds, the receive is overdue and will cause backoff.
 	public static final int TOO_LONG_TIMEOUT = 15000;
+	/** sendAborted is not sent at the realtime/bulk priority. Most of the two
+	 * stage timeout stuff uses 60 seconds, it's a good number. */
+	public static final int ACK_TRANSFER_FAILED_TIMEOUT = 60*1000;
 	PartiallyReceivedBlock _prb;
 	PeerContext _sender;
 	long _uid;
@@ -308,7 +311,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				// and will tell us. So wait for a timeout.
 				// It is important for load management that the two sides agree on the number of transfers happening.
 				// Therefore we need to not complete until the other side has acknowledged that the transfer has been cancelled.
-				MessageFilter mfSendAborted = MessageFilter.create().setTimeout(_realTime ? RECEIPT_TIMEOUT*2 : RECEIPT_TIMEOUT).setType(DMT.sendAborted).setField(DMT.UID, _uid).setSource(_sender);
+				MessageFilter mfSendAborted = MessageFilter.create().setTimeout(ACK_TRANSFER_FAILED_TIMEOUT).setType(DMT.sendAborted).setField(DMT.UID, _uid).setSource(_sender);
 				try {
 					_usm.addAsyncFilter(mfSendAborted, new SlowAsyncMessageFilterCallback() {
 
@@ -377,7 +380,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			completed = true;
 		}
 		if(logMINOR)
-			Logger.minor(this, "Transfer failed: ("+(_realTime?"realtime":"bulk")+") "+reason+" : "+description);
+			Logger.minor(this, "Transfer failed: ("+(_realTime?"realtime":"bulk")+") "+reason+" : "+description+" on "+_uid+" from "+_sender);
 		_prb.removeListener(myListener);
 		_prb.abort(reason, description, false);
 		// Send the abort whether we have received one or not.

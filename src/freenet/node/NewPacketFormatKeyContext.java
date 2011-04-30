@@ -46,7 +46,6 @@ public class NewPacketFormatKeyContext {
 	/** Minimum RTT for purposes of calculating whether to retransmit. 
 	 * Must be greater than MAX_ACK_DELAY */
 	private static final int MIN_RTT_FOR_RETRANSMIT = 250;
-	private static final int NUM_RTTS_TO_LOOSE = 2;
 	
 	private int maxSeenInFlight;
 	
@@ -107,17 +106,19 @@ public class NewPacketFormatKeyContext {
 
 	/** One of our outgoing packets has been acknowledged.
 	 * @return False if we have already acked the packet */
-	public void ack(int ack, BasePeerNode pn) {
+	public void ack(int ack, BasePeerNode pn, SessionKey key) {
 		long rtt;
 		int maxSize;
 		boolean lostBeforeAcked = false;
+		boolean validAck = false;
 		synchronized(sentPackets) {
-			if(logDEBUG) Logger.debug(this, "Acknowledging packet "+ack);
+			if(logDEBUG) Logger.debug(this, "Acknowledging packet "+ack+" from "+pn);
 			SentPacket sent = sentPackets.remove(ack);
 			if(sent != null) {
-				rtt = sent.acked();
+				rtt = sent.acked(key);
 				maxSize = (maxSeenInFlight * 2) + 10;
 				sentTimes.removeTime(ack);
+				validAck = true;
 			} else {
 				if(logDEBUG) Logger.debug(this, "Already acked or lost "+ack);
 				lostBeforeAcked = true;
@@ -137,6 +138,8 @@ public class NewPacketFormatKeyContext {
 		if(pn != null) {
 			pn.reportPing(rt);
 			throttle = pn.getThrottle();
+			if(validAck)
+				pn.receivedAck(System.currentTimeMillis());
 		}
 		if(throttle != null) {
 			throttle.setRoundTripTime(rt);
@@ -245,7 +248,7 @@ public class NewPacketFormatKeyContext {
 			while(it.hasNext()) {
 				Map.Entry<Integer, SentPacket> e = it.next();
 				SentPacket s = e.getValue();
-				long t = (long) (s.getSentTime() + (NUM_RTTS_TO_LOOSE * avgRtt + MAX_ACK_DELAY * 1.1));
+				long t = (long) (s.getSentTime() + (avgRtt + MAX_ACK_DELAY * 1.1));
 				if(t < timeCheck) timeCheck = t;
 			}
 		}
@@ -255,6 +258,7 @@ public class NewPacketFormatKeyContext {
 	public void checkForLostPackets(double averageRTT, long curTime, BasePeerNode pn) {
 		//Mark packets as lost
 		int bigLostCount = 0;
+		int count = 0;
 		synchronized(sentPackets) {
 			// Because MIN_RTT_FOR_RETRANSMIT > MAX_ACK_DELAY, and because averageRTT() includes the actual ack delay, we don't need to add it on here.
 			double avgRtt = Math.max(MIN_RTT_FOR_RETRANSMIT, averageRTT);
@@ -263,17 +267,20 @@ public class NewPacketFormatKeyContext {
 			while(it.hasNext()) {
 				Map.Entry<Integer, SentPacket> e = it.next();
 				SentPacket s = e.getValue();
-				if(s.getSentTime() < (curTime - (NUM_RTTS_TO_LOOSE * avgRtt + MAX_ACK_DELAY * 1.1))) {
+				if(s.getSentTime() < (curTime - (avgRtt + MAX_ACK_DELAY * 1.1))) {
 					if(logMINOR) {
 						Logger.minor(this, "Assuming packet " + e.getKey() + " has been lost. "
 						                + "Delay " + (curTime - s.getSentTime()) + "ms, "
-						                + "threshold " + (NUM_RTTS_TO_LOOSE * avgRtt + MAX_ACK_DELAY * 1.1) + "ms");
+						                + "threshold " + (avgRtt + MAX_ACK_DELAY * 1.1) + "ms");
 					}
 					s.lost();
 					it.remove();
 					bigLostCount++;
-				}
+				} else
+					count++;
 			}
+			if(count > 0 && logMINOR)
+				Logger.minor(this, ""+count+" packets in flight with threshold "+(avgRtt + MAX_ACK_DELAY * 1.1) + "ms");
 		}
 		if(bigLostCount != 0 && pn != null) {
 			PacketThrottle throttle = pn.getThrottle();
@@ -305,6 +312,7 @@ public class NewPacketFormatKeyContext {
 				SentPacket s = e.getValue();
 				s.lost();
 			}
+			sentPackets.clear();
 		}
 	}
 

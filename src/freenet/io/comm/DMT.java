@@ -136,6 +136,8 @@ public class DMT {
 	public static final String ENABLE_INSERT_FORK_WHEN_CACHEABLE = "enableInsertForkWhenCacheable";
 	public static final String PREFER_INSERT = "preferInsert";
 	public static final String IGNORE_LOW_BACKOFF = "ignoreLowBackoff";
+	public static final String LIST_OF_UIDS = "listOfUIDs";
+	public static final String UID_STILL_RUNNING_FLAGS = "UIDStillRunningFlags";
 	
 	/** Very urgent */
 	public static final short PRIORITY_NOW=0;
@@ -193,7 +195,7 @@ public class DMT {
 		addField(UID, Long.class);
 	}};
 	
-	public static final Message createAllSent(long uid) {
+	public static final Message createAllSent(long uid, boolean realTime) {
 		Message msg = new Message(allSent);
 		msg.set(UID, uid);
 		return msg;
@@ -228,7 +230,7 @@ public class DMT {
 		addField(DATA, ShortBuffer.class);
 	}};
 	
-	public static final Message createFNPBulkPacketSend(long uid, int packetNo, ShortBuffer data) {
+	public static final Message createFNPBulkPacketSend(long uid, int packetNo, ShortBuffer data, boolean realTime) {
 		Message msg = new Message(FNPBulkPacketSend);
 		msg.set(UID, uid);
 		msg.set(PACKET_NO, packetNo);
@@ -236,8 +238,8 @@ public class DMT {
 		return msg;
 	}
 	
-	public static final Message createFNPBulkPacketSend(long uid, int packetNo, byte[] data) {
-		return createFNPBulkPacketSend(uid, packetNo, new ShortBuffer(data));
+	public static final Message createFNPBulkPacketSend(long uid, int packetNo, byte[] data, boolean realTime) {
+		return createFNPBulkPacketSend(uid, packetNo, new ShortBuffer(data), realTime);
 	}
 	
 	public static final MessageType FNPBulkSendAborted = new MessageType("FNPBulkSendAborted", PRIORITY_UNSPECIFIED) {{
@@ -585,6 +587,13 @@ public class DMT {
 		return msg;
 	}
 	
+	// This is used by CHK inserts when the DataInsert isn't received.
+	// SSK inserts just use DataInsertRejected with a timeout reason.
+	// FIXME we probably should just use one message for both. One complication is that
+	// CHKs have a single DataInsert (followed by a transfer), whereas SSKs have 2-3 messages,
+	// any of which can timeout independantly. Arguably that's bad design and we should
+	// just send one message now that we have new packet format, see the discussion on
+	// FNPSSKInsertRequestNew vs the old version.
 	public static final MessageType FNPRejectedTimeout = new MessageType("FNPTooSlow", PRIORITY_UNSPECIFIED) {{
 		addField(UID, Long.class);
 	}};
@@ -621,6 +630,9 @@ public class DMT {
 		return "Unknown reason code: "+reason;
 	}
 
+	// FIXME consider using this again now we have new packet format which can handle big messages on any connection.
+	// FIXME be careful if we do - make sure boost priority if realtime, and note timeout issues associated with sending a request at BULK.
+	
 	public static final MessageType FNPSSKInsertRequest = new MessageType("FNPSSKInsertRequest", PRIORITY_BULK_DATA) {{
 		addField(UID, Long.class);
 		addField(HTL, Short.class);
@@ -631,7 +643,7 @@ public class DMT {
 		addField(DATA, ShortBuffer.class);
 	}};
 	
-	public static Message createFNPSSKInsertRequest(long uid, short htl, NodeSSK myKey, byte[] headers, byte[] data, byte[] pubKeyHash) {
+	public static Message createFNPSSKInsertRequest(long uid, short htl, NodeSSK myKey, byte[] headers, byte[] data, byte[] pubKeyHash, boolean realTime) {
 		Message msg = new Message(FNPSSKInsertRequest);
 		msg.set(UID, uid);
 		msg.set(HTL, htl);
@@ -640,6 +652,7 @@ public class DMT {
 		msg.set(BLOCK_HEADERS, new ShortBuffer(headers));
 		msg.set(PUBKEY_HASH, new ShortBuffer(pubKeyHash));
 		msg.set(DATA, new ShortBuffer(data));
+		if(realTime) msg.boostPriority();
 		return msg;
 	}
 	
@@ -656,16 +669,19 @@ public class DMT {
 		msg.set(FREENET_ROUTING_KEY, myKey);
 		return msg;
 	}
+	
+	// SSK inserts data and headers. These are BULK_DATA or REALTIME.
 
-	public static final MessageType FNPSSKInsertRequestHeaders = new MessageType("FNPSSKInsertRequestHeaders", PRIORITY_LOW) {{
+	public static final MessageType FNPSSKInsertRequestHeaders = new MessageType("FNPSSKInsertRequestHeaders", PRIORITY_BULK_DATA) {{
 		addField(UID, Long.class);
 		addField(BLOCK_HEADERS, ShortBuffer.class);
 	}};
 	
-	public static final Message createFNPSSKInsertRequestHeaders(long uid, byte[] headers) {
+	public static final Message createFNPSSKInsertRequestHeaders(long uid, byte[] headers, boolean realTime) {
 		Message msg = new Message(FNPSSKInsertRequestHeaders);
 		msg.set(UID, uid);
 		msg.set(BLOCK_HEADERS, new ShortBuffer(headers));
+		if(realTime) msg.boostPriority();
 		return msg;
 	}
 	
@@ -674,22 +690,28 @@ public class DMT {
 		addField(DATA, ShortBuffer.class);
 	}};
 	
-	public static final Message createFNPSSKInsertRequestData(long uid, byte[] data) {
+	public static final Message createFNPSSKInsertRequestData(long uid, byte[] data, boolean realTime) {
 		Message msg = new Message(FNPSSKInsertRequestData);
 		msg.set(UID, uid);
 		msg.set(DATA, new ShortBuffer(data));
+		if(realTime) msg.boostPriority();
 		return msg;
 	}
 	
-	public static final MessageType FNPSSKDataFoundHeaders = new MessageType("FNPSSKDataFoundHeaders", PRIORITY_UNSPECIFIED) {{
+	// SSK pubkeys, data and headers are all BULK_DATA or REALTIME.
+	// Requests wait for them all equally, so there is no reason for them to be different,
+	// plus everything is throttled now.
+	
+	public static final MessageType FNPSSKDataFoundHeaders = new MessageType("FNPSSKDataFoundHeaders", PRIORITY_BULK_DATA) {{
 		addField(UID, Long.class);
 		addField(BLOCK_HEADERS, ShortBuffer.class);
 	}};
 	
-	public static Message createFNPSSKDataFoundHeaders(long uid, byte[] headers) {
+	public static Message createFNPSSKDataFoundHeaders(long uid, byte[] headers, boolean realTime) {
 		Message msg = new Message(FNPSSKDataFoundHeaders);
 		msg.set(UID, uid);
 		msg.set(BLOCK_HEADERS, new ShortBuffer(headers));
+		if(realTime) msg.boostPriority();
 		return msg;
 	}
 	
@@ -698,10 +720,11 @@ public class DMT {
 		addField(DATA, ShortBuffer.class);
 	}};
 	
-	public static Message createFNPSSKDataFoundData(long uid, byte[] data) {
+	public static Message createFNPSSKDataFoundData(long uid, byte[] data, boolean realTime) {
 		Message msg = new Message(FNPSSKDataFoundData);
 		msg.set(UID, uid);
 		msg.set(DATA, new ShortBuffer(data));
+		if(realTime) msg.boostPriority();
 		return msg;
 	}
 	
@@ -724,10 +747,11 @@ public class DMT {
 		addField(PUBKEY_AS_BYTES, ShortBuffer.class);
 	}};
 	
-	public static Message createFNPSSKPubKey(long uid, DSAPublicKey pubkey) {
+	public static Message createFNPSSKPubKey(long uid, DSAPublicKey pubkey, boolean realTime) {
 		Message msg = new Message(FNPSSKPubKey);
 		msg.set(UID, uid);
 		msg.set(PUBKEY_AS_BYTES, new ShortBuffer(pubkey.asPaddedBytes()));
+		if(realTime) msg.boostPriority();
 		return msg;
 	}
 	
@@ -1624,6 +1648,10 @@ public class DMT {
 		addField(INPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
 		addField(INPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
 		addField(INPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
+		addField(MAX_TRANSFERS_OUT, Byte.class);
+		addField(MAX_TRANSFERS_OUT_PEER_LIMIT, Byte.class);
+		addField(MAX_TRANSFERS_OUT_LOWER_LIMIT, Byte.class);
+		addField(MAX_TRANSFERS_OUT_UPPER_LIMIT, Byte.class);
 		addField(REAL_TIME_FLAG, Boolean.class);
 	}};
 	
@@ -1639,6 +1667,10 @@ public class DMT {
 		addField(INPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
 		addField(INPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
 		addField(INPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
+		addField(MAX_TRANSFERS_OUT, Short.class);
+		addField(MAX_TRANSFERS_OUT_PEER_LIMIT, Short.class);
+		addField(MAX_TRANSFERS_OUT_LOWER_LIMIT, Short.class);
+		addField(MAX_TRANSFERS_OUT_UPPER_LIMIT, Short.class);
 		addField(REAL_TIME_FLAG, Boolean.class);
 	}};
 	
@@ -1654,6 +1686,10 @@ public class DMT {
 		addField(INPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
 		addField(INPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
 		addField(INPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
+		addField(MAX_TRANSFERS_OUT, Integer.class);
+		addField(MAX_TRANSFERS_OUT_PEER_LIMIT, Integer.class);
+		addField(MAX_TRANSFERS_OUT_LOWER_LIMIT, Integer.class);
+		addField(MAX_TRANSFERS_OUT_UPPER_LIMIT, Integer.class);
 		addField(REAL_TIME_FLAG, Boolean.class);
 	}};
 	
@@ -1661,22 +1697,30 @@ public class DMT {
 		Message msg;
 		if(stats.expectedTransfersInCHK < 256 && stats.expectedTransfersInSSK < 256 &&
 				stats.expectedTransfersOutCHK < 256 && stats.expectedTransfersOutSSK < 256 &&
-				stats.averageTransfersOutPerInsert < 256) {
+				stats.averageTransfersOutPerInsert < 256 && stats.maxTransfersOut < 256) {
 			msg = new Message(FNPPeerLoadStatusByte);
 			msg.set(OTHER_TRANSFERS_OUT_CHK, (byte)stats.expectedTransfersOutCHK);
 			msg.set(OTHER_TRANSFERS_IN_CHK, (byte)stats.expectedTransfersInCHK);
 			msg.set(OTHER_TRANSFERS_OUT_SSK, (byte)stats.expectedTransfersOutSSK);
 			msg.set(OTHER_TRANSFERS_IN_SSK, (byte)stats.expectedTransfersInSSK);
 			msg.set(AVERAGE_TRANSFERS_OUT_PER_INSERT, (byte)stats.averageTransfersOutPerInsert);
+			msg.set(MAX_TRANSFERS_OUT, (byte)stats.maxTransfersOut);
+			msg.set(MAX_TRANSFERS_OUT_PEER_LIMIT, (byte)stats.maxTransfersOutPeerLimit);
+			msg.set(MAX_TRANSFERS_OUT_LOWER_LIMIT, (byte)stats.maxTransfersOutLowerLimit);
+			msg.set(MAX_TRANSFERS_OUT_UPPER_LIMIT, (byte)stats.maxTransfersOutUpperLimit);
 		} else if(stats.expectedTransfersInCHK < 65536 && stats.expectedTransfersInSSK < 65536 &&
 				stats.expectedTransfersOutCHK < 65536 && stats.expectedTransfersOutSSK < 65536 &&
-				stats.averageTransfersOutPerInsert < 65536) {
+				stats.averageTransfersOutPerInsert < 65536 && stats.maxTransfersOut < 65536) {
 			msg = new Message(FNPPeerLoadStatusShort);
 			msg.set(OTHER_TRANSFERS_OUT_CHK, (short)stats.expectedTransfersOutCHK);
 			msg.set(OTHER_TRANSFERS_IN_CHK, (short)stats.expectedTransfersInCHK);
 			msg.set(OTHER_TRANSFERS_OUT_SSK, (short)stats.expectedTransfersOutSSK);
 			msg.set(OTHER_TRANSFERS_IN_SSK, (short)stats.expectedTransfersInSSK);
 			msg.set(AVERAGE_TRANSFERS_OUT_PER_INSERT, (short)stats.averageTransfersOutPerInsert);
+			msg.set(MAX_TRANSFERS_OUT, (short)stats.maxTransfersOut);
+			msg.set(MAX_TRANSFERS_OUT_PEER_LIMIT, (short)stats.maxTransfersOutPeerLimit);
+			msg.set(MAX_TRANSFERS_OUT_LOWER_LIMIT, (short)stats.maxTransfersOutLowerLimit);
+			msg.set(MAX_TRANSFERS_OUT_UPPER_LIMIT, (short)stats.maxTransfersOutUpperLimit);
 		} else {
 			msg = new Message(FNPPeerLoadStatusInt);
 			msg.set(OTHER_TRANSFERS_OUT_CHK, stats.expectedTransfersOutCHK);
@@ -1684,6 +1728,10 @@ public class DMT {
 			msg.set(OTHER_TRANSFERS_OUT_SSK, stats.expectedTransfersOutSSK);
 			msg.set(OTHER_TRANSFERS_IN_SSK, stats.expectedTransfersInSSK);
 			msg.set(AVERAGE_TRANSFERS_OUT_PER_INSERT, stats.averageTransfersOutPerInsert);
+			msg.set(MAX_TRANSFERS_OUT, stats.maxTransfersOut);
+			msg.set(MAX_TRANSFERS_OUT_PEER_LIMIT, stats.maxTransfersOutPeerLimit);
+			msg.set(MAX_TRANSFERS_OUT_LOWER_LIMIT, stats.maxTransfersOutLowerLimit);
+			msg.set(MAX_TRANSFERS_OUT_UPPER_LIMIT, stats.maxTransfersOutUpperLimit);
 		}
 		msg.set(OUTPUT_BANDWIDTH_LOWER_LIMIT, (int)stats.outputBandwidthLowerLimit);
 		msg.set(OUTPUT_BANDWIDTH_UPPER_LIMIT, (int)stats.outputBandwidthUpperLimit);
@@ -1701,6 +1749,17 @@ public class DMT {
 	public static final String OTHER_TRANSFERS_IN_CHK = "otherTransfersInCHK";
 	public static final String OTHER_TRANSFERS_OUT_SSK = "otherTransfersOutSSK";
 	public static final String OTHER_TRANSFERS_IN_SSK = "otherTransfersInSSK";
+	/** Maximum transfers out, hard limit based on congestion control; we will be rejected if our usage
+	 * is over this. */
+	public static final String MAX_TRANSFERS_OUT = "maxTransfersOut";
+	/** Maximum transfers out, peer limit. If total is over the lower limit and our usage is over the
+	 * peer limit, we will be rejected. */
+	public static final String MAX_TRANSFERS_OUT_PEER_LIMIT = "maxTransfersOutPeerLimit";
+	/** Maximum transfers out, lower limit. If total is over the lower limit and our usage is over the
+	 * peer limit, we will be rejected. */
+	public static final String MAX_TRANSFERS_OUT_LOWER_LIMIT = "maxTransfersOutLowerLimit";
+	/** Maximum transfers out, upper limit. If total is over the upper limit, everything is rejected. */
+	public static final String MAX_TRANSFERS_OUT_UPPER_LIMIT = "maxTransfersOutUpperLimit";
 	
 	public static final String OUTPUT_BANDWIDTH_LOWER_LIMIT = "outputBandwidthLowerLimit";
 	public static final String OUTPUT_BANDWIDTH_UPPER_LIMIT = "outputBandwidthUpperLimit";
@@ -1738,4 +1797,15 @@ public class DMT {
 		return (spec == FNPCHKDataRequest || spec == FNPSSKDataRequest || spec == FNPSSKInsertRequest || spec == FNPInsertRequest || spec == FNPSSKInsertRequestNew || spec == FNPGetOfferedKey);
 	}
 	
+	// Extended fatal timeout handling.
+	
+	public static final MessageType FNPCheckStillRunning = new MessageType("FNPCheckStillRunning", PRIORITY_HIGH) {{
+		addField(UID, Long.class); // UID for this message, used to identify reply
+		addField(LIST_OF_UIDS, ShortBuffer.class);
+	}};
+	
+	public static final MessageType FNPIsStillRunning = new MessageType("FNPIsStillRunning", PRIORITY_HIGH) {{
+		addField(UID, Long.class);
+		addField(UID_STILL_RUNNING_FLAGS, BitArray.class);
+	}};
 }

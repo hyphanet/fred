@@ -49,8 +49,8 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, SplitFileInserterSegment.class);
+				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, SplitFileInserterSegment.class);
 			}
 		});
 	}
@@ -127,6 +127,38 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	/** When this reaches crossCheckBlocks, we can encode the check blocks. */
 	private int encodedCrossCheckBlocks;
 
+	/**
+	 * zero arg c'tor for db4o on jamvm
+	 */
+	@SuppressWarnings("unused")
+	private SplitFileInserterSegment() {
+		splitfileAlgo = 0;
+		segNo = 0;
+		putter = null;
+		persistent = false;
+		parent = null;
+		maxRetries = 0;
+		getCHKOnly = false;
+		errors = null;
+		dataURIs = null;
+		dataRetries = null;
+		dataFinished = null;
+		dataFailed = null;
+		dataConsecutiveRNFs = null;
+		dataBlocks = null;
+		cryptoKey = null;
+		crossSegmentsByBlock = null;
+		crossCheckBlocks = 0;
+		checkURIs = null;
+		checkRetries = null;
+		checkFinished = null;
+		checkFailed = null;
+		checkConsecutiveRNFs = null;
+		checkBlocks = null;
+		blocks = null;
+		blockInsertContext = null;
+	}
+
 	public SplitFileInserterSegment(SplitFileInserter parent, boolean persistent, boolean realTimeFlag, BaseClientPutter putter,
 			short splitfileAlgo, int crossCheckBlocks, int checkBlockCount, Bucket[] origDataBlocks,
 			InsertContext blockInsertContext, boolean getCHKOnly, int segNo, byte cryptoAlgorithm, byte[] cryptoKey, ObjectContainer container) {
@@ -179,7 +211,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				// See onEncodedCrossCheckBlock().
 				if(encodedCrossCheckBlocks != crossCheckBlocks)
 					return;
-				System.out.println("Starting segment "+segNo);
+				if(logMINOR) Logger.minor(this, "Starting segment "+segNo);
 			}
 			if(started) return;
 			started = true;
@@ -1258,7 +1290,8 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	}
 
 	@Override
-	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
+		// FIXME use keys
 		if(persistent) {
 			container.activate(blocks, 1);
 		}
@@ -1584,8 +1617,8 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			}
 			dataBlocks[blockNum] = data;
 			++encodedCrossCheckBlocks;
-			if(encodedCrossCheckBlocks != crossCheckBlocks)
-				System.out.println("Segment "+segNo+" has "+encodedCrossCheckBlocks+" encoded of "+crossCheckBlocks+", still waiting...");
+			if(logMINOR && encodedCrossCheckBlocks != crossCheckBlocks)
+				Logger.minor(this, "Segment "+segNo+" has "+encodedCrossCheckBlocks+" encoded of "+crossCheckBlocks+", still waiting...");
 		}
 		if(persistent) {
 			data.storeTo(container);
