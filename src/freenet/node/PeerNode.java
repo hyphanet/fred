@@ -5426,6 +5426,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			long uid = node.fastWeakRandom.nextLong();
 			RandomAccessThing raf = new ByteArrayRandomAccessThing(data);
 			PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, data.length, Node.PACKET_SIZE, raf, true);
+			try {
+				sendAsync(DMT.createFNPMyFullNoderef(uid, data.length), null, null);
+			} catch (NotConnectedException e1) {
+				// Ignore
+				synchronized(this) {
+					sendingFullNoderef = false;
+				}
+				return;
+			}
 			final BulkTransmitter bt;
 			try {
 				bt = new BulkTransmitter(prb, this, uid, false, null, false);
