@@ -273,6 +273,9 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		} else if(spec == DMT.FNPGetYourFullNoderef && source instanceof DarknetPeerNode) {
 			source.sendFullNoderef();
 			return true;
+		} else if(spec == DMT.FNPMyFullNoderef && source instanceof DarknetPeerNode) {
+			source.handleFullNoderef(m);
+			return true;
 		}
 		return false;
 	}

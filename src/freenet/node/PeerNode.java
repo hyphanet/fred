@@ -30,6 +30,7 @@ import java.util.Vector;
 import java.util.zip.DataFormatException;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
+import java.util.zip.InflaterInputStream;
 
 import freenet.support.io.ByteArrayRandomAccessThing;
 import freenet.support.io.RandomAccessThing;
@@ -67,6 +68,7 @@ import freenet.io.comm.PeerParseException;
 import freenet.io.comm.PeerRestartedException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.SocketHandler;
+import freenet.io.xfer.BulkReceiver;
 import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.PacketThrottle;
 import freenet.io.xfer.PartiallyReceivedBulk;
@@ -5454,6 +5456,84 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		} catch (Error e) {
 			synchronized(this) {
 				sendingFullNoderef = false;
+			}
+			throw e;
+		}
+	}
+
+	private boolean receivingFullNoderef;
+	
+	public void handleFullNoderef(Message m) {
+		if(this.dontKeepFullFieldSet()) return;
+		long uid = m.getLong(DMT.UID);
+		int length = m.getInt(DMT.NODEREF_LENGTH);
+		if(length > 8 * 1024) {
+			// Way too long!
+			return;
+		}
+		synchronized(this) {
+			if(receivingFullNoderef) return; // DoS????
+			receivingFullNoderef = true;
+		}
+		try {
+			final byte[] data = new byte[length];
+			RandomAccessThing raf = new ByteArrayRandomAccessThing(data);
+			PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, length, Node.PACKET_SIZE, raf, false);
+			final BulkReceiver br = new BulkReceiver(prb, this, uid, null);
+			node.executor.execute(new Runnable() {
+
+				public void run() {
+					try {
+						if(br.receive()) {
+							ByteArrayInputStream bais = new ByteArrayInputStream(data);
+							InflaterInputStream dis = new InflaterInputStream(bais);
+							SimpleFieldSet fs;
+							try {
+								fs = new SimpleFieldSet(new BufferedReader(new InputStreamReader(dis, "UTF-8")), false, false);
+							} catch (UnsupportedEncodingException e) {
+								synchronized(PeerNode.this) {
+									receivingFullNoderef = false;
+								}
+								Logger.error(this, "Impossible: "+e, e);
+								e.printStackTrace();
+								return;
+							} catch (IOException e) {
+								synchronized(PeerNode.this) {
+									receivingFullNoderef = false;
+								}
+								Logger.error(this, "Impossible: "+e, e);
+								return;
+							}
+							try {
+								processNewNoderef(fs, false, false);
+							} catch (FSParseException e) {
+								Logger.error(this, "Peer "+PeerNode.this+" sent bogus full noderef: "+e, e);
+								synchronized(PeerNode.this) {
+									receivingFullNoderef = false;
+								}
+								return;
+							}
+							synchronized(PeerNode.this) {
+								fullFieldSet = fs;
+							}
+						} else {
+							Logger.error(this, "Failed to receive noderef from "+PeerNode.this);
+						}
+					} finally {
+						synchronized(PeerNode.this) {
+							receivingFullNoderef = false;
+						}
+					}
+				}
+			});				
+		} catch (RuntimeException e) {
+			synchronized(this) {
+				receivingFullNoderef = false;
+			}
+			throw e;
+		} catch (Error e) {
+			synchronized(this) {
+				receivingFullNoderef = false;
 			}
 			throw e;
 		}
