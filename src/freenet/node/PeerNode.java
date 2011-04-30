@@ -5427,7 +5427,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			RandomAccessThing raf = new ByteArrayRandomAccessThing(data);
 			PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, data.length, Node.PACKET_SIZE, raf, true);
 			try {
-				sendAsync(DMT.createFNPMyFullNoderef(uid, data.length), null, null);
+				sendAsync(DMT.createFNPMyFullNoderef(uid, data.length), null, node.nodeStats.foafCounter);
 			} catch (NotConnectedException e1) {
 				// Ignore
 				synchronized(this) {
@@ -5437,7 +5437,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 			final BulkTransmitter bt;
 			try {
-				bt = new BulkTransmitter(prb, this, uid, false, null, false);
+				bt = new BulkTransmitter(prb, this, uid, false, node.nodeStats.foafCounter, false);
 			} catch (DisconnectedException e) {
 				synchronized(this) {
 					sendingFullNoderef = false;
@@ -5488,7 +5488,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			final byte[] data = new byte[length];
 			RandomAccessThing raf = new ByteArrayRandomAccessThing(data);
 			PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, length, Node.PACKET_SIZE, raf, false);
-			final BulkReceiver br = new BulkReceiver(prb, this, uid, null);
+			final BulkReceiver br = new BulkReceiver(prb, this, uid, node.nodeStats.foafCounter);
 			node.executor.execute(new Runnable() {
 
 				public void run() {

@@ -2456,6 +2456,34 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return allocationNoticesCounterBytesSent;
 	}
 
+	private long foafCounterBytesReceived;
+	private long foafCounterBytesSent;
+	
+	final ByteCounter foafCounter = new ByteCounter() {
+		
+		public void receivedBytes(int x) {
+			synchronized(NodeStats.this) {
+				foafCounterBytesReceived += x;
+			}
+		}
+
+		public void sentBytes(int x) {
+			synchronized(NodeStats.this) {
+				foafCounterBytesSent += x;
+			}
+		}
+
+		public void sentPayload(int x) {
+			// Ignore
+		}
+		
+	};
+	
+	public long getFOAFBytesSent() {
+		return foafCounterBytesSent;
+	}
+
+	
 	
 
 	private long notificationOnlySentBytes;
