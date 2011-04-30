@@ -2443,9 +2443,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			node.nodeUpdater.maybeSendUOMAnnounce(this);
 		sendConnectedDiffNoderef();
 		if(!dontKeepFullFieldSet()) {
-			synchronized(this) {
-				if(fullFieldSet != null) return;
-			}
 			try {
 				sendAsync(DMT.createFNPGetYourFullNoderef(), null, null);
 			} catch (NotConnectedException e) {
