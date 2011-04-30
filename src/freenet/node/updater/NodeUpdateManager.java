@@ -97,6 +97,8 @@ public class NodeUpdateManager {
 	private volatile boolean peersSayBlown;
 	private boolean updateSeednodes;
 	private boolean updateInstallers;
+	// FIXME make configurable
+	private boolean updateIPToCountry = true;
 
 	/** Is there a new main jar ready to deploy? */
 	private volatile boolean hasNewMainJar;
@@ -303,6 +305,7 @@ public class NodeUpdateManager {
 
 	public static final String WINDOWS_FILENAME = "freenet-latest-installer-windows.exe";
 	public static final String NON_WINDOWS_FILENAME = "freenet-latest-installer-nonwindows.jar";
+	public static final String IPV4_TO_COUNTRY_FILENAME = "IpToCountry.dat";
 
 	public File getInstallerWindows() {
 		File f = node.runDir().file(WINDOWS_FILENAME);
@@ -326,6 +329,10 @@ public class NodeUpdateManager {
 
 	public FreenetURI getInstallerNonWindowsURI() {
 		return updateURI.sskForUSK().setDocName("wininstaller-"+Version.buildNumber());
+	}
+	
+	public FreenetURI getIPv4ToCountryURI() {
+		return updateURI.sskForUSK().setDocName("iptocountryv4-"+Version.buildNumber());
 	}
 
 	public void start() throws InvalidConfigValueException {
@@ -354,7 +361,12 @@ public class NodeUpdateManager {
         	wininstallerGetter.start(RequestStarter.UPDATE_PRIORITY_CLASS, 32*1024*1024);
 
         }
-
+        
+        if(updateIPToCountry) {
+        	SimplePuller ip4Getter =
+        		new SimplePuller(getIPv4ToCountryURI(), IPV4_TO_COUNTRY_FILENAME);
+        	ip4Getter.start(RequestStarter.UPDATE_PRIORITY_CLASS, 8*1024*1024);
+        }
 	}
 
 	void broadcastUOMAnnounces() {
