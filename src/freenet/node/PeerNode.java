@@ -2710,8 +2710,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		else if(s != null) {
 			try {
 				boolean b = Fields.stringToBool(s);
-				if(b != isOpennet())
-					throw new FSParseException("Changed opennet status?!?!?!?");
+				if(b != (isOpennet() || isSeed()))
+					throw new FSParseException("Changed opennet status?!?!?!? expected="+isOpennet()+" but got "+b+" ("+s+") on "+this);
 			} catch (NumberFormatException e) {
 				throw new FSParseException("Cannot parse opennet=\""+s+"\"", e);
 			}
