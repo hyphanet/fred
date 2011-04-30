@@ -2578,7 +2578,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	* The identity must not change, or we throw.
 	*/
 	public void processDiffNoderef(SimpleFieldSet fs) throws FSParseException {
-		processNewNoderef(fs, false, true);
+		processNewNoderef(fs, false, true, false);
 	}
 
 	/**
@@ -2587,7 +2587,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	*/
 	private void processNewNoderef(byte[] data, int offset, int length) throws FSParseException {
 		SimpleFieldSet fs = compressedNoderefToFieldSet(data, offset, length);
-		processNewNoderef(fs, false, false);
+		processNewNoderef(fs, false, false, false);
 	}
 
 	static SimpleFieldSet compressedNoderefToFieldSet(byte[] data, int offset, int length) throws FSParseException {
@@ -2653,10 +2653,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/**
 	* Process a new nodereference, as a SimpleFieldSet.
 	*/
-	private void processNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef) throws FSParseException {
+	private void processNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef, boolean forFullNodeRef) throws FSParseException {
 		if(logMINOR)
 			Logger.minor(this, "Parsing: \n" + fs);
-		boolean changedAnything = innerProcessNewNoderef(fs, forARK, forDiffNodeRef) || forARK;
+		boolean changedAnything = innerProcessNewNoderef(fs, forARK, forDiffNodeRef, forFullNodeRef) || forARK;
 		if(changedAnything && !isSeed())
 			node.peers.writePeers();
 	}
@@ -2665,7 +2665,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	* The synchronized part of processNewNoderef
 	* @throws FSParseException
 	*/
-	protected synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef) throws FSParseException {
+	protected synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef, boolean forFullNodeRef) throws FSParseException {
 		// Anything may be omitted for a differential node reference
 		boolean changedAnything = false;
 		if(!forDiffNodeRef && (false != Fields.stringToBool(fs.get("testnet"), false))) {
@@ -2695,7 +2695,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		if(newLastGoodVersion != null) {
 			// Can be null if anon auth or if forDiffNodeRef.
 			lastGoodVersion = newLastGoodVersion;
-		}
+		} else if(forFullNodeRef)
+			throw new FSParseException("No lastGoodVersion");
 
 		updateVersionRoutablity();
 
@@ -2757,10 +2758,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					jfkNoncesSent.clear();
 				}
 
-			} else if(forARK) {
+			} else if(forARK || forFullNodeRef) {
 				// Connection setup doesn't include a physical.udp.
 				// Differential noderefs only include it on the first one after connect.
 				Logger.error(this, "ARK noderef has no physical.udp for "+this+" : forDiffNodeRef="+forDiffNodeRef+" forARK="+forARK);
+				if(forFullNodeRef)
+					throw new FSParseException("ARK noderef has no physical.udp");
 			}
 		} catch(Exception e1) {
 			Logger.error(this, "Caught "+e1, e1);
@@ -3488,7 +3491,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(myARK.suggestedEdition < fetchedEdition + 1)
 					myARK = myARK.copy(fetchedEdition + 1);
 			}
-			processNewNoderef(fs, true, false);
+			processNewNoderef(fs, true, false, false);
 		} catch(FSParseException e) {
 			Logger.error(this, "Invalid ARK update: " + e, e);
 			// This is ok as ARKs are limited to 4K anyway.
@@ -5514,7 +5517,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 								return;
 							}
 							try {
-								processNewNoderef(fs, false, false);
+								processNewNoderef(fs, false, false, true);
 							} catch (FSParseException e) {
 								Logger.error(this, "Peer "+PeerNode.this+" sent bogus full noderef: "+e, e);
 								synchronized(PeerNode.this) {

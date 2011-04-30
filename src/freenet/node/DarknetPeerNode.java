@@ -192,9 +192,10 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	@Override
-	protected synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef) throws FSParseException {
-		boolean changedAnything = super.innerProcessNewNoderef(fs, forARK, forDiffNodeRef);
+	protected synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef, boolean forFullNodeRef) throws FSParseException {
+		boolean changedAnything = super.innerProcessNewNoderef(fs, forARK, forDiffNodeRef, forFullNodeRef);
 		String name = fs.get("myName");
+		if(name == null && forFullNodeRef) throw new FSParseException("No name in full noderef");
 		if(name != null && !name.equals(myName)) {
 			changedAnything = true;
 			myName = name;
