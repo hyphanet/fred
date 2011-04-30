@@ -6,8 +6,6 @@ import java.net.URI;
 import java.util.Comparator;
 import java.util.HashMap;
 
-import com.onionnetworks.util.FileUtil;
-
 import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
@@ -22,6 +20,7 @@ import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.HTTPRequest;
+import freenet.support.io.FileUtil;
 
 public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	
@@ -473,7 +472,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			}
 			
 			if(fs == null) return false;
-			String filename = FileUtil.sanitizeFileName(peernode_name+".fref");
+			String filename = FileUtil.sanitizeFileNameWithExtras(peernode_name+".fref", "\" ");
 			String content = fs.toString();
 			MultiValueTable<String, String> extraHeaders = new MultiValueTable<String, String>();
 			// Force download to disk

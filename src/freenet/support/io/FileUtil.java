@@ -325,7 +325,7 @@ final public class FileUtil {
      * If OperatingSystem.All is specified this function will generate a filename which fullfils the restrictions of all known OS, currently
      * this is MacOS, Unix and Windows.
      */
-	public static String sanitizeFileName(final String fileName, OperatingSystem targetOS) {
+	public static String sanitizeFileName(final String fileName, OperatingSystem targetOS, String extraChars) {
 		// Filter out any characters which do not exist in the charset.
 		final CharBuffer buffer = fileNameCharset.decode(fileNameCharset.encode(fileName)); // Charset are thread-safe
 
@@ -341,33 +341,49 @@ final public class FileUtil {
 				targetOS = OperatingSystem.All;
 				break;
 		}
+		
+		char def = ' ';
+		if(extraChars.indexOf(' ') != -1) {
+			def = '_';
+			if(extraChars.indexOf(def) != -1) {
+				def = '-';
+				if(extraChars.indexOf(def) != -1)
+					throw new IllegalArgumentException("What do you want me to use instead of spaces???");
+			}
+		}
 
 		for(char c : buffer.array()) {
+			
+			if(extraChars.indexOf(c) != -1) {
+				sb.append(def);
+				continue;
+			}
+			
 			// Control characters and whitespace are converted to space for all OS.
 			// We do not check for the file separator character because it is included in each OS list of reserved characters.
 			if(Character.getType(c) == Character.CONTROL || Character.isWhitespace(c)) {
-				sb.append(' ');
+				sb.append(def);
 				continue;
 			}
 
 
 			if(targetOS == OperatingSystem.All || targetOS == OperatingSystem.Windows) {
 				if(StringValidityChecker.isWindowsReservedPrintableFilenameCharacter(c)) {
-					sb.append(' ');
+					sb.append(def);
 					continue;
 				}
 			}
 
 			if(targetOS == OperatingSystem.All || targetOS == OperatingSystem.MacOS) {
 				if(StringValidityChecker.isMacOSReservedPrintableFilenameCharacter(c)) {
-					sb.append(' ');
+					sb.append(def);
 					continue;
 				}
 			}
 			
 			if(targetOS == OperatingSystem.All || targetOS == OperatingSystem.Unix) {
 				if(StringValidityChecker.isUnixReservedPrintableFilenameCharacter(c)) {
-					sb.append(' ');
+					sb.append(def);
 					continue;
 				}
 			}
@@ -402,7 +418,11 @@ final public class FileUtil {
 	}
 
 	public static String sanitize(String fileName) {
-		return sanitizeFileName(fileName, detectedOS);
+		return sanitizeFileName(fileName, detectedOS, "");
+	}
+
+	public static String sanitizeFileNameWithExtras(String fileName, String extraChars) {
+		return sanitizeFileName(fileName, detectedOS, extraChars);
 	}
 
 
