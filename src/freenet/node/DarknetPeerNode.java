@@ -57,10 +57,7 @@ import freenet.support.io.FileUtil;
 import freenet.support.io.RandomAccessFileWrapper;
 import freenet.support.io.RandomAccessThing;
 
-public class DarknetPeerNode extends PeerNode {
-
-	/** Name of this node */
-	String myName;
+public class DarknetPeerNode extends BaseDarknetPeerNode {
 
 	/** True if this peer is not to be connected with */
 	private boolean isDisabled;
@@ -151,10 +148,6 @@ public class DarknetPeerNode extends PeerNode {
 
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 
-		String name = fs.get("myName");
-		if(name == null) throw new FSParseException("No name");
-		myName = name;
-
 		if(fromLocal) {
 			SimpleFieldSet metadata = fs.subset("metadata");
 
@@ -169,13 +162,13 @@ public class DarknetPeerNode extends PeerNode {
 				trustLevel = FRIEND_TRUST.valueOf(s);
 			} else {
 				trustLevel = node.securityLevels.getDefaultFriendTrust();
-				System.err.println("Assuming friend ("+name+") trust is opposite of friend seclevel: "+trustLevel);
+				System.err.println("Assuming friend ("+myName+") trust is opposite of friend seclevel: "+trustLevel);
 			}
 			s = metadata.get("ourVisibility");
 			if(s != null) {
 				ourVisibility = FRIEND_VISIBILITY.valueOf(s);
 			} else {
-				System.err.println("Assuming friend ("+name+") wants to be invisible");
+				System.err.println("Assuming friend ("+myName+") wants to be invisible");
 				node.createVisibilityAlert();
 				ourVisibility = FRIEND_VISIBILITY.NO;
 			}
@@ -241,18 +234,6 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	@Override
-	protected synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef, boolean forFullNodeRef) throws FSParseException {
-		boolean changedAnything = super.innerProcessNewNoderef(fs, forARK, forDiffNodeRef, forFullNodeRef);
-		String name = fs.get("myName");
-		if(name == null && forFullNodeRef) throw new FSParseException("No name in full noderef");
-		if(name != null && !name.equals(myName)) {
-			changedAnything = true;
-			myName = name;
-		}
-		return changedAnything;
-	}
-
-	@Override
 	public synchronized SimpleFieldSet exportFieldSet() {
 		SimpleFieldSet fs = super.exportFieldSet();
 		fs.putSingle("myName", getName());
@@ -279,10 +260,6 @@ public class DarknetPeerNode extends PeerNode {
 		fs.putSingle("theirVisibility", theirVisibility.name());
 
 		return fs;
-	}
-
-	public synchronized String getName() {
-		return myName;
 	}
 
 	@Override
