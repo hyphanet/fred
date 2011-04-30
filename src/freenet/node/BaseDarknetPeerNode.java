@@ -43,5 +43,20 @@ public abstract class BaseDarknetPeerNode extends PeerNode {
 	public String userToString() {
 		return ""+getPeer()+" : "+getName();
 	}
+	
+	@Override
+	public boolean isDarknet() {
+		return true;
+	}
+
+	@Override
+	public boolean isOpennet() {
+		return false;
+	}
+
+	@Override
+	public boolean isSeed() {
+		return false;
+	}
 
 }

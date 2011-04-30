@@ -1599,21 +1599,6 @@ public class DarknetPeerNode extends BaseDarknetPeerNode {
 	}
 
 	@Override
-	public boolean isDarknet() {
-		return true;
-	}
-
-	@Override
-	public boolean isOpennet() {
-		return false;
-	}
-
-	@Override
-	public boolean isSeed() {
-		return false;
-	}
-
-	@Override
 	public void onSuccess(boolean insert, boolean ssk) {
 		// Ignore it
 	}
