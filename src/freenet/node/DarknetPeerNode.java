@@ -234,13 +234,6 @@ public class DarknetPeerNode extends BaseDarknetPeerNode {
 	}
 
 	@Override
-	public synchronized SimpleFieldSet exportFieldSet() {
-		SimpleFieldSet fs = super.exportFieldSet();
-		fs.putSingle("myName", getName());
-		return fs;
-	}
-
-	@Override
 	public synchronized SimpleFieldSet exportMetadataFieldSet() {
 		SimpleFieldSet fs = super.exportMetadataFieldSet();
 		if(isDisabled)
@@ -1598,11 +1591,6 @@ public class DarknetPeerNode extends BaseDarknetPeerNode {
 		}
 		DownloadFeedUserAlert userAlert = new DownloadFeedUserAlert(this, description, fileNumber, uri, composedTime, sentTime, receivedTime);
 		node.clientCore.alerts.register(userAlert);
-	}
-
-	@Override
-	public String userToString() {
-		return ""+getPeer()+" : "+getName();
 	}
 
 	@Override

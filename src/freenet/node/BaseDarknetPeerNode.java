@@ -32,5 +32,16 @@ public abstract class BaseDarknetPeerNode extends PeerNode {
 		return changedAnything;
 	}
 
+	@Override
+	public synchronized SimpleFieldSet exportFieldSet() {
+		SimpleFieldSet fs = super.exportFieldSet();
+		fs.putSingle("myName", getName());
+		return fs;
+	}
+
+	@Override
+	public String userToString() {
+		return ""+getPeer()+" : "+getName();
+	}
 
 }
