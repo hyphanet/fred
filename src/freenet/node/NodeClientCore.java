@@ -356,7 +356,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 		// Downloads directory
 
-		this.downloadsDir = node.setupProgramDir(nodeConfig, "downloadsDir", node.userDir().file("downloads"),
+		this.downloadsDir = node.setupProgramDir(nodeConfig, "downloadsDir", node.userDir().file("downloads").getPath(),
 		  "NodeClientCore.downloadsDir", "NodeClientCore.downloadsDirLong", l10n("couldNotFindOrCreateDir"), (SubConfig)null);
 
 		// Downloads allowed, uploads allowed

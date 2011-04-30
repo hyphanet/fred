@@ -2030,7 +2030,7 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 		storeSaltHashResizeOnStart = nodeConfig.getBoolean("storeSaltHashResizeOnStart");
 
-		this.storeDir = setupProgramDir(installConfig, "storeDir", userDir().file("datastore"), "Node.storeDirectory", "Node.storeDirectoryLong", nodeConfig);
+		this.storeDir = setupProgramDir(installConfig, "storeDir", userDir().file("datastore").getPath(), "Node.storeDirectory", "Node.storeDirectoryLong", nodeConfig);
 
 		final String suffix = getStoreSuffix();
 
