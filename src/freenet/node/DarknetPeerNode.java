@@ -1763,15 +1763,6 @@ public class DarknetPeerNode extends PeerNode {
 		}
 	}
 	
-	protected void sendInitialMessages() {
-		super.sendInitialMessages();
-		try {
-			sendVisibility();
-		} catch(NotConnectedException e) {
-			Logger.error(this, "Completed handshake with " + getPeer() + " but disconnected: "+e, e);
-		}
-	}
-
 	private void sendVisibility() throws NotConnectedException {
 		sendAsync(DMT.createFNPVisibility(getOurVisibility().code), null, node.nodeStats.initialMessagesCtr);
 	}
@@ -1948,6 +1939,11 @@ public class DarknetPeerNode extends PeerNode {
 
 	protected void sendInitialMessages() {
 		super.sendInitialMessages();
+		try {
+			sendVisibility();
+		} catch(NotConnectedException e) {
+			Logger.error(this, "Completed handshake with " + getPeer() + " but disconnected: "+e, e);
+		}
 		if(!dontKeepFullFieldSet()) {
 			try {
 				sendAsync(DMT.createFNPGetYourFullNoderef(), null, node.nodeStats.foafCounter);
