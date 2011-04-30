@@ -2667,6 +2667,36 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	*/
 	protected synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef, boolean forFullNodeRef) throws FSParseException {
 		
+		if(forFullNodeRef) {
+			// Check the signature.
+			String signature = fs.get("sig");
+			try {
+				boolean failed = false;
+				if(signature == null)
+					failed = false;
+				else {
+					fs.removeValue("sig");
+					String toVerify = fs.toOrderedString();
+					fs.putSingle("sig", signature);
+					failed = !(DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(1, SHA256.digest(toVerify.getBytes("UTF-8"))), false));
+				}
+				if(failed) {
+					String errCause = "";
+					if(signature == null)
+						errCause += " (No signature)";
+					if(failed)
+						errCause += " (VERIFICATION FAILED)";
+					Logger.error(this, "The integrity of the reference has been compromised!" + errCause + " fs was\n" + fs.toOrderedString());
+					throw new FSParseException("Signature verification failed: "+errCause);
+				}
+			} catch(NumberFormatException e) {
+				Logger.error(this, "Invalid reference: " + e, e);
+				throw new FSParseException("Invalid signature", e);
+			} catch(UnsupportedEncodingException e) {
+				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
+			}
+		}
+		
 		// Anything may be omitted for a differential node reference
 		boolean changedAnything = false;
 		if(!forDiffNodeRef && (false != Fields.stringToBool(fs.get("testnet"), false))) {
