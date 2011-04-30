@@ -1821,6 +1821,7 @@ public class DarknetPeerNode extends PeerNode {
 							synchronized(DarknetPeerNode.this) {
 								fullFieldSet = fs;
 							}
+							node.peers.writePeers();
 						} else {
 							Logger.error(this, "Failed to receive noderef from "+DarknetPeerNode.this);
 						}
