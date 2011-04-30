@@ -1808,4 +1808,28 @@ public class DMT {
 		addField(UID, Long.class);
 		addField(UID_STILL_RUNNING_FLAGS, BitArray.class);
 	}};
+	
+	// Friend-of-a-friend (FOAF) related messages
+	
+	public static final MessageType FNPGetYourFullNoderef = new MessageType("FNPGetYourFullNoderef", PRIORITY_LOW) {{
+	}};
+	
+	public static final Message createFNPGetYourFullNoderef() {
+		return new Message(FNPGetYourFullNoderef);
+	}
+	
+	public static final MessageType FNPMyFullNoderef = new MessageType("FNPMyFullNoderef", PRIORITY_LOW) {{
+		addField(UID, Long.class);
+		// Not necessary to pad it since it's not propagated across the network.
+		// It might be relayed one hop, but there's enough padding elsewhere, don't worry about it.
+		// As opposed to opennet refs, which are relayed long distances, down request paths which they might reveal, so do need to be padded.
+		addField(NODEREF_LENGTH, Integer.class);
+	}};
+	
+	public static final Message createFNPMyFullNoderef(long uid, int length) {
+		Message m = new Message(FNPMyFullNoderef);
+		m.set(UID, uid);
+		m.set(NODEREF_LENGTH, length);
+		return m;
+	}
 }

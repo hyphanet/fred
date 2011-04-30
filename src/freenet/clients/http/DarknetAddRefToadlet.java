@@ -91,7 +91,7 @@ public class DarknetAddRefToadlet extends Toadlet {
 		
 		if(installer != null)
 			NodeL10n.getBase().addL10nSubstitution(p, "DarknetAddRefToadlet.explainInstallerWindows", new String[] { "filename", "get-windows" },
-					new HTMLNode[] { HTMLNode.text(installer.getCanonicalPath()), HTMLNode.link(path()+installer.toString()) });
+					new HTMLNode[] { HTMLNode.text(installer.getCanonicalPath()), HTMLNode.link(path()+shortFilename) });
 		else
 			NodeL10n.getBase().addL10nSubstitution(p, "DarknetAddRefToadlet.explainInstallerWindowsNotYet", new String[] { "link" }, new HTMLNode[] { HTMLNode.link("/"+node.nodeUpdater.getInstallerWindowsURI().toString()) });
 		

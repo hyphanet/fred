@@ -823,7 +823,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		}
 		peerRow.addChild("td", "class", "peer-status").addChild("span", "class", peerNodeStatus.getStatusCSSName(), NodeL10n.getBase().getString("ConnectionsToadlet.nodeStatus." + statusString) + (peerNodeStatus.isFetchingARK() ? "*" : ""));
 
-		drawNameColumn(peerRow, peerNodeStatus);
+		drawNameColumn(peerRow, peerNodeStatus, advancedModeEnabled);
 		
 		drawTrustColumn(peerRow, peerNodeStatus);
 		
@@ -972,7 +972,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	/**
 	 * Draw the name column, if there is one. This will be directly after the status column.
 	 */
-	abstract protected void drawNameColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus);
+	abstract protected void drawNameColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus, boolean advanced);
 
 	/**
 	 * Is there a private note column?

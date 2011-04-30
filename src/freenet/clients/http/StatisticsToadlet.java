@@ -1110,6 +1110,7 @@ public class StatisticsToadlet extends Toadlet {
 			long totalBytesSentChangedIP = node.nodeStats.getChangedIPBytesSent();
 			long totalBytesSentNodeToNode = node.nodeStats.getNodeToNodeBytesSent();
 			long totalBytesSentAllocationNotices = node.nodeStats.getAllocationNoticesBytesSent();
+			long totalBytesSentFOAF = node.nodeStats.getFOAFBytesSent();
 			long totalBytesSentRemaining = total[0] - 
 				(totalPayload + totalBytesSentCHKRequests + totalBytesSentSSKRequests +
 				totalBytesSentCHKInserts + totalBytesSentSSKInserts +
@@ -1118,7 +1119,7 @@ public class StatisticsToadlet extends Toadlet {
 				totalBytesSentUOM + totalBytesSentAnnounce + 
 				totalBytesSentRoutingStatus + totalBytesSentNetworkColoring + totalBytesSentPing +
 				totalBytesSentProbeRequest + totalBytesSentRouted + totalBytesSentDisconn + 
-				totalBytesSentInitial + totalBytesSentChangedIP + totalBytesSentNodeToNode + totalBytesSentAllocationNotices);
+				totalBytesSentInitial + totalBytesSentChangedIP + totalBytesSentNodeToNode + totalBytesSentAllocationNotices + totalBytesSentFOAF);
 			activityList.addChild("li", l10n("requestOutput", new String[] { "chk", "ssk" }, new String[] { SizeUtil.formatSize(totalBytesSentCHKRequests, true), SizeUtil.formatSize(totalBytesSentSSKRequests, true) }));
 			activityList.addChild("li", l10n("insertOutput", new String[] { "chk", "ssk" }, new String[] { SizeUtil.formatSize(totalBytesSentCHKInserts, true), SizeUtil.formatSize(totalBytesSentSSKInserts, true) }));
 			activityList.addChild("li", l10n("offeredKeyOutput", new String[] { "total", "offered" }, new String[] { SizeUtil.formatSize(totalBytesSentOfferedKeys, true), SizeUtil.formatSize(totalBytesSendOffers, true) }));
@@ -1132,6 +1133,7 @@ public class StatisticsToadlet extends Toadlet {
 			activityList.addChild("li", l10n("debuggingBytes", new String[] { "netColoring", "ping", "probe", "routed" }, new String[] { SizeUtil.formatSize(totalBytesSentNetworkColoring, true), SizeUtil.formatSize(totalBytesSentPing, true), SizeUtil.formatSize(totalBytesSentProbeRequest, true), SizeUtil.formatSize(totalBytesSentRouted, true) } ));
 			activityList.addChild("li", l10n("nodeToNodeBytes", "total", SizeUtil.formatSize(totalBytesSentNodeToNode, true)));
 			activityList.addChild("li", l10n("loadAllocationNoticesBytes", "total", SizeUtil.formatSize(totalBytesSentAllocationNotices, true)));
+			activityList.addChild("li", l10n("foafBytes", "total", SizeUtil.formatSize(totalBytesSentFOAF, true)));
 			activityList.addChild("li", l10n("unaccountedBytes", new String[] { "total", "percent" },
 					new String[] { SizeUtil.formatSize(totalBytesSentRemaining, true), Integer.toString((int)(totalBytesSentRemaining*100 / total[0])) }));
 			double sentOverheadPerSecond = node.nodeStats.getSentOverheadPerSecond();
