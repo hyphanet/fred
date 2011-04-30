@@ -2666,6 +2666,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	* @throws FSParseException
 	*/
 	protected synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef, boolean forFullNodeRef) throws FSParseException {
+		
 		// Anything may be omitted for a differential node reference
 		boolean changedAnything = false;
 		if(!forDiffNodeRef && (false != Fields.stringToBool(fs.get("testnet"), false))) {
@@ -2673,6 +2674,63 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			Logger.error(this, err);
 			throw new FSParseException(err);
 		}
+		String s = fs.get("opennet");
+		if(s == null && forFullNodeRef)
+			throw new FSParseException("No opennet ref");
+		else if(s != null) {
+			try {
+				boolean b = Fields.stringToBool(s);
+				if(b != isOpennet())
+					throw new FSParseException("Changed opennet status?!?!?!?");
+			} catch (NumberFormatException e) {
+				throw new FSParseException("Cannot parse opennet=\""+s+"\"", e);
+			}
+		}
+		if(!generateIdentityFromPubkey()) {
+			String identityString = fs.get("identity");
+			if(identityString == null && forFullNodeRef)
+				throw new FSParseException("No identity!");
+			else if(identityString != null) {
+				try {
+					byte[] id = Base64.decode(identityString);
+					if(!Arrays.equals(id, identity))
+						throw new FSParseException("Changing the identity");
+				} catch(NumberFormatException e) {
+					throw new FSParseException(e);
+				} catch(IllegalBase64Exception e) {
+					throw new FSParseException(e);
+				}
+			}
+		}
+		
+		SimpleFieldSet sfs = fs.subset("dsaGroup");
+		if(sfs == null && forFullNodeRef)
+			throw new FSParseException("No dsaGroup - very old reference?");
+		else if(sfs != null) {
+			DSAGroup cmp;
+			try {
+				cmp = DSAGroup.create(sfs);
+			} catch (IllegalBase64Exception e) {
+				throw new FSParseException(e);
+			}
+			if(!cmp.equals(this.peerCryptoGroup))
+				throw new FSParseException("Changed DSA group?!");
+		}
+
+		sfs = fs.subset("dsaPubKey");
+		if(sfs == null && forFullNodeRef)
+			throw new FSParseException("No dsaPubKey - very old reference?");
+		else if(sfs != null) {
+			DSAPublicKey key;
+			try {
+				key = DSAPublicKey.create(sfs, peerCryptoGroup);
+			} catch (IllegalBase64Exception e) {
+				throw new FSParseException(e);
+			}
+			if(!key.equals(this.peerPubKey))
+				throw new FSParseException("Changed pubkey?!");
+		}
+
 		String newVersion = fs.get("version");
 		if(newVersion == null) {
 			// Version may be ommitted for an ARK.
