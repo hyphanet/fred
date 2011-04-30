@@ -284,11 +284,21 @@ public class NodeUpdateManager {
 				BucketTools.copyTo(result.asBucket(), fos, -1);
 				fos.close();
 				fos = null;
-				// FIXME add a callback in case it's being used on Windows.
-				if(FileUtil.renameTo(temp, node.runDir().file(filename)))
-					System.out.println("Successfully fetched "+filename+" for version "+Version.buildNumber());
-				else
-					System.out.println("Failed to rename "+temp+" to "+filename+" after fetching it from Freenet.");
+				for(int i=0;i<10;i++) {
+					// FIXME add a callback in case it's being used on Windows.
+					if(FileUtil.renameTo(temp, node.runDir().file(filename))) {
+						System.out.println("Successfully fetched "+filename+" for version "+Version.buildNumber());
+						break;
+					} else {
+						System.out.println("Failed to rename "+temp+" to "+filename+" after fetching it from Freenet.");
+						try {
+							Thread.sleep(1000+node.fastWeakRandom.nextInt(((int)(1000*Math.min(Math.pow(2, i), 15*60*1000)))));
+						} catch (InterruptedException e) {
+							// Ignore
+						}
+					}
+				}
+				temp.delete();
 			} catch (IOException e) {
 				System.err.println("Fetched but failed to write out "+filename+" - please check that the node has permissions to write in "+node.getRunDir()+" and particularly the file "+filename);
 				System.err.println("The error was: "+e);
