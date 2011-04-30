@@ -514,12 +514,18 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				this.peerPubKey = DSAPublicKey.create(sfs, peerCryptoGroup);
 
 			String signature = fs.get("sig");
-			fs.removeValue("sig");
 			if(!noSig) {
 				try {
 					boolean failed = false;
-					if(signature == null || peerCryptoGroup == null || peerPubKey == null ||
-						(failed = !(DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(1, SHA256.digest(fs.toOrderedString().getBytes("UTF-8"))), false)))) {
+					if(signature == null || peerCryptoGroup == null || peerPubKey == null)
+						failed = false;
+					else {
+						fs.removeValue("sig");
+						String toVerify = fs.toOrderedString();
+						fs.putSingle("sig", signature);
+						failed = !(DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(1, SHA256.digest(toVerify.getBytes("UTF-8"))), false));
+					}
+					if(failed) {
 						String errCause = "";
 						if(signature == null)
 							errCause += " (No signature)";
@@ -531,7 +537,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 							errCause += " (VERIFICATION FAILED)";
 						Logger.error(this, "The integrity of the reference has been compromised!" + errCause + " fs was\n" + fs.toOrderedString());
 						this.isSignatureVerificationSuccessfull = false;
-						fs.putSingle("sig", signature);
 						throw new ReferenceSignatureVerificationException("The integrity of the reference has been compromised!" + errCause);
 					} else
 						this.isSignatureVerificationSuccessfull = true;
