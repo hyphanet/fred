@@ -2,6 +2,7 @@ package freenet.node;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
@@ -27,8 +28,11 @@ import java.util.Random;
 import java.util.Set;
 import java.util.Vector;
 import java.util.zip.DataFormatException;
+import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
 
+import freenet.support.io.ByteArrayRandomAccessThing;
+import freenet.support.io.RandomAccessThing;
 import freenet.support.math.MersenneTwister;
 
 import net.i2p.util.NativeBigInteger;
@@ -63,7 +67,9 @@ import freenet.io.comm.PeerParseException;
 import freenet.io.comm.PeerRestartedException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.SocketHandler;
+import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.PacketThrottle;
+import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.io.xfer.ThrottleDeprecatedException;
 import freenet.io.xfer.WaitedTooLongException;
 import freenet.keys.ClientSSK;
@@ -5381,6 +5387,66 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	
 	public synchronized SimpleFieldSet getFullNoderef() {
 		return fullFieldSet;
+	}
+
+	private boolean sendingFullNoderef;
+	
+	public void sendFullNoderef() {
+		synchronized(this) {
+			if(sendingFullNoderef) return; // DoS????
+			sendingFullNoderef = true;
+		}
+		try {
+			SimpleFieldSet myFullNoderef = node.exportDarknetPublicFieldSet();
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			DeflaterOutputStream dos = new DeflaterOutputStream(baos);
+			try {
+				myFullNoderef.writeTo(dos);
+				dos.close();
+			} catch (IOException e) {
+				Logger.error(this, "Impossible: Caught error while writing compressed noderef: "+e, e);
+				synchronized(this) {
+					sendingFullNoderef = false;
+				}
+				return;
+			}
+			byte[] data = baos.toByteArray();
+			long uid = node.fastWeakRandom.nextLong();
+			RandomAccessThing raf = new ByteArrayRandomAccessThing(data);
+			PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, data.length, Node.PACKET_SIZE, raf, true);
+			final BulkTransmitter bt;
+			try {
+				bt = new BulkTransmitter(prb, this, uid, false, null, false);
+			} catch (DisconnectedException e) {
+				synchronized(this) {
+					sendingFullNoderef = false;
+				}
+				return;
+			}
+			node.executor.execute(new Runnable() {
+
+				public void run() {
+					try {
+						bt.send();
+					} finally {
+						synchronized(PeerNode.this) {
+							sendingFullNoderef = false;
+						}
+					}
+				}
+				
+			});
+		} catch (RuntimeException e) {
+			synchronized(this) {
+				sendingFullNoderef = false;
+			}
+			throw e;
+		} catch (Error e) {
+			synchronized(this) {
+				sendingFullNoderef = false;
+			}
+			throw e;
+		}
 	}
 
 }
