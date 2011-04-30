@@ -796,6 +796,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		node.random.nextBytes(buffer);
 		paddingGen = new MersenneTwister(buffer);
 		
+		if(fromLocal) {
+			SimpleFieldSet f = fs.subset("full");
+			if(fullFieldSet == null && f != null)
+				fullFieldSet = f;
+		}
+		
 	// status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
 	}
 
@@ -2879,6 +2885,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		SimpleFieldSet meta = exportMetadataFieldSet();
 		if(!meta.isEmpty())
 			fs.put("metadata", meta);
+		if(fullFieldSet != null)
+			fs.put("full", fullFieldSet);
 		return fs;
 	}
 
