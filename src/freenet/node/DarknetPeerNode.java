@@ -1946,4 +1946,14 @@ public class DarknetPeerNode extends PeerNode {
 		}
 	}
 
+	protected void sendInitialMessages() {
+		super.sendInitialMessages();
+		if(!dontKeepFullFieldSet()) {
+			try {
+				sendAsync(DMT.createFNPGetYourFullNoderef(), null, node.nodeStats.foafCounter);
+			} catch (NotConnectedException e) {
+				// Ignore
+			}
+		}
+	}
 }

@@ -10,7 +10,6 @@ import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.updater.NodeUpdateManager;
-import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.MultiValueTable;
 import freenet.support.SimpleFieldSet;
