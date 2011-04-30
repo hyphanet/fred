@@ -1686,4 +1686,9 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		node.peers.writePeers();
 	}
+
+	@Override
+	boolean dontKeepFullFieldSet() {
+		return false;
+	}
 }

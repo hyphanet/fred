@@ -169,4 +169,9 @@ public class SeedServerPeerNode extends PeerNode {
 		return false; // Irrelevant
 	}
 
+	@Override
+	boolean dontKeepFullFieldSet() {
+		return false;
+	}
+
 }

@@ -417,6 +417,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	private PacketFormat packetFormat;
 	MersenneTwister paddingGen;
+	
+	private SimpleFieldSet fullFieldSet;
 
 	/**
 	 * If this returns true, we will generate the identity from the pubkey.
@@ -538,8 +540,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						Logger.error(this, "The integrity of the reference has been compromised!" + errCause + " fs was\n" + fs.toOrderedString());
 						this.isSignatureVerificationSuccessfull = false;
 						throw new ReferenceSignatureVerificationException("The integrity of the reference has been compromised!" + errCause);
-					} else
+					} else {
 						this.isSignatureVerificationSuccessfull = true;
+						if(!dontKeepFullFieldSet())
+							this.fullFieldSet = fs;
+					}
 				} catch(NumberFormatException e) {
 					Logger.error(this, "Invalid reference: " + e, e);
 					throw new ReferenceSignatureVerificationException("The node reference you added is invalid: It does not have a valid signature.");
@@ -790,9 +795,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		byte buffer[] = new byte[16];
 		node.random.nextBytes(buffer);
 		paddingGen = new MersenneTwister(buffer);
-
+		
 	// status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
 	}
+
+	abstract boolean dontKeepFullFieldSet();
 
 	protected abstract void maybeClearPeerAddedTimeOnRestart(long now);
 
