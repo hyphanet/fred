@@ -1021,15 +1021,15 @@ public class Node implements TimeSkewDetectorCallback {
 		int sortOrder = 0;
 
 		// Directory for node-related files other than store
-		this.nodeDir = setupProgramDir(installConfig, "nodeDir", ".",
-		  "Node.nodeDir", "Node.nodeDirLong", nodeConfig);
-		this.cfgDir = setupProgramDir(installConfig, "cfgDir", getNodeDir().toString(),
-		  "Node.cfgDir", "Node.cfgDirLong", nodeConfig);
-		this.userDir = setupProgramDir(installConfig, "userDir", getNodeDir().toString(),
+		this.userDir = setupProgramDir(installConfig, "userDir", ".",
 		  "Node.userDir", "Node.userDirLong", nodeConfig);
-		this.runDir = setupProgramDir(installConfig, "runDir", getNodeDir().toString(),
+		this.cfgDir = setupProgramDir(installConfig, "cfgDir", getUserDir().toString(),
+		  "Node.cfgDir", "Node.cfgDirLong", nodeConfig);
+		this.nodeDir = setupProgramDir(installConfig, "nodeDir", getUserDir().toString(),
+		  "Node.nodeDir", "Node.nodeDirLong", nodeConfig);
+		this.runDir = setupProgramDir(installConfig, "runDir", getUserDir().toString(),
 		  "Node.runDir", "Node.runDirLong", nodeConfig);
-		this.pluginDir = setupProgramDir(installConfig, "pluginDir",  nodeDir.file("plugins").toString(),
+		this.pluginDir = setupProgramDir(installConfig, "pluginDir",  userDir().file("plugins").toString(),
 		  "Node.pluginDir", "Node.pluginDirLong", nodeConfig);
 
 		// l10n stuffs
@@ -2030,7 +2030,7 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 		storeSaltHashResizeOnStart = nodeConfig.getBoolean("storeSaltHashResizeOnStart");
 
-		this.storeDir = setupProgramDir(installConfig, "storeDir", "datastore", "Node.storeDirectory", "Node.storeDirectoryLong", nodeConfig);
+		this.storeDir = setupProgramDir(installConfig, "storeDir", userDir().file("datastore").getPath(), "Node.storeDirectory", "Node.storeDirectoryLong", nodeConfig);
 
 		final String suffix = getStoreSuffix();
 
