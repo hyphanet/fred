@@ -895,7 +895,8 @@ public class DarknetPeerNode extends PeerNode {
 
 		public void accept() {
 			acceptedOrRejected = true;
-			File dest = node.clientCore.downloadsDir().file("direct-"+FileUtil.sanitize(getName())+"-"+filename);
+			final String baseFilename = "direct-"+FileUtil.sanitize(getName())+"-"+filename;
+			final File dest = node.clientCore.downloadsDir().file(baseFilename+".part");
 			try {
 				data = new RandomAccessFileWrapper(dest, "rw");
 			} catch (FileNotFoundException e) {
@@ -916,6 +917,10 @@ public class DarknetPeerNode extends PeerNode {
 							System.err.println(err);
 							onReceiveFailure();
 						} else {
+							data.close();
+							if(!dest.renameTo(node.clientCore.downloadsDir().file(baseFilename))){
+								Logger.error(this, "Failed to rename "+dest.getName()+" to remove .part suffix.");
+							}
 							onReceiveSuccess();
 						}
 					} catch (Throwable t) {
