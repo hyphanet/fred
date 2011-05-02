@@ -145,7 +145,11 @@ public class Message {
 				Logger.error(Message.class, msg, e);
 		    return null;
 		} catch (IOException e) {
-		    Logger.error(Message.class, "Unexpected IOException: "+e+" reading from buffer stream", e);
+			String msg = "Unexpected IOException: "+e+" reading from buffer stream for "+peer;
+			if(mspec.getName().startsWith("FNPPeerLoadStatus"))
+				Logger.warning(Message.class, msg, e); // FIXME remove this after all the old builds have gone away
+			else
+				Logger.error(Message.class, msg, e);
 		    return null;
 		}
 		if(logMINOR) Logger.minor(Message.class, "Returning message: "+m+" from "+m.getSource());
