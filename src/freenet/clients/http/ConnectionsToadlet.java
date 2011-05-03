@@ -588,6 +588,25 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				ref.setCharAt(idx, '\n');
 			}
 			String[] nodesToAdd=ref.toString().split("\nEnd\n");
+			for(int i=0;i<nodesToAdd.length;i++) {
+				String[] split = nodesToAdd[i].split("\n");
+				StringBuffer sb = new StringBuffer(nodesToAdd[i].length());
+				boolean first = true;
+				for(String s : split) {
+					if(s.equals("End")) break;
+					if(s.indexOf('=') > -1) {
+						if(!first)
+							sb.append('\n');
+					} else {
+						// Try appending it - don't add a newline.
+						// This will make broken refs work sometimes.
+					}
+					sb.append(s);
+					first = false;
+				}
+				nodesToAdd[i] = sb.toString();
+				// Don't need to add a newline at the end, we will do that later.
+			}
 			//The peer's additions results
 			Map<PeerAdditionReturnCodes,Integer> results=new HashMap<PeerAdditionReturnCodes, Integer>();
 			for(int i=0;i<nodesToAdd.length;i++){
