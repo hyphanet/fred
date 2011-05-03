@@ -1177,7 +1177,8 @@ loadWaiterLoop:
     	
     	if(msg.getSpec() == DMT.FNPRecentlyFailed) {
     		handleRecentlyFailed(msg, wasFork, source);
-    		return DO.FINISHED;
+    		// We will resolve finish() in routeRequests(), after recomputing.
+    		return DO.NEXT_PEER;
     	}
     	
     	if(msg.getSpec() == DMT.FNPRouteNotFound) {
