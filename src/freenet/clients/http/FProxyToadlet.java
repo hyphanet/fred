@@ -467,7 +467,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					ctx.writeData(buf, 0, len);
 				}
 			} finally {
-				strm.close();
+				Closer.close(strm);
 			}
 			return;
 		} else if(ks.startsWith("/feed/") || ks.equals("/feed")) {
