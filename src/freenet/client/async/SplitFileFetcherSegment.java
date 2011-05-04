@@ -2235,9 +2235,19 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			// Concurrency is fine here, it won't go away before the given time.
 			setMaxCooldownWakeup(timeout, blockNum, this.getMaxRetries(container), container, context);
 		} else {
-			onNonFatalFailure(new FetchException(FetchException.RECENTLY_FAILED), blockNum, container, context);
+			FetchException e = new FetchException(FetchException.RECENTLY_FAILED);
+			incErrors(e, container);
+			onNonFatalFailure(e, blockNum, container, context);
 		}
 		return true;
+	}
+
+	private void incErrors(FetchException e, ObjectContainer container) {
+		if(persistent)
+			container.activate(errors, 1);
+    	errors.inc(e.getMode());
+		if(persistent)
+			errors.storeTo(container);
 	}
 
 	/** Separate method because we will need to create the Key anyway for checking against
@@ -2289,7 +2299,9 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				// Concurrency is fine here, it won't go away before the given time.
 				setMaxCooldownWakeup(l, ((SplitFileFetcherSegmentSendableRequestItem)block.token).blockNum, maxTries, container, context);
 			} else {
-				onNonFatalFailure(new FetchException(FetchException.RECENTLY_FAILED), ((SplitFileFetcherSegmentSendableRequestItem)(block.token)).blockNum, container, context);
+				FetchException e = new FetchException(FetchException.RECENTLY_FAILED);
+				incErrors(e, container);
+				onNonFatalFailure(e, ((SplitFileFetcherSegmentSendableRequestItem)(block.token)).blockNum, container, context);
 			}
 		}
 		return list;
