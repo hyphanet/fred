@@ -16,6 +16,7 @@ import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.KeyVerifyException;
 import freenet.node.KeysFetchingLocally;
+import freenet.node.LowLevelGetException;
 import freenet.node.NullSendableRequestItem;
 import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
@@ -82,10 +83,15 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		if(fetching.hasKey(k, this, persistent, container)) return null;
 		long l = fetching.checkRecentlyFailed(k, realTimeFlag);
 		if(l > 0 && l > System.currentTimeMillis()) {
-			// FIXME synchronization!!!
-			MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
-			tracker.cooldownWakeupTime = Math.max(tracker.cooldownWakeupTime, l);
-			return null;
+			if(maxRetries == -1) {
+				// FIXME synchronization!!!
+				MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+				tracker.cooldownWakeupTime = Math.max(tracker.cooldownWakeupTime, l);
+				return null;
+			} else {
+				this.onFailure(new LowLevelGetException(LowLevelGetException.RECENTLY_FAILED), null, container, context);
+				return null;
+			}
 		}
 		return keys[0];
 	}
@@ -370,10 +376,15 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			return null;
 		long l = keysFetching.checkRecentlyFailed(k, realTimeFlag);
 		if(l > 0 && l > System.currentTimeMillis()) {
-			// FIXME synchronization!!!
-			MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
-			tracker.cooldownWakeupTime = Math.max(tracker.cooldownWakeupTime, l);
-			return null;
+			if(maxRetries == -1) {
+				// FIXME synchronization!!!
+				MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+				tracker.cooldownWakeupTime = Math.max(tracker.cooldownWakeupTime, l);
+				return null;
+			} else {
+				this.onFailure(new LowLevelGetException(LowLevelGetException.RECENTLY_FAILED), null, container, context);
+				return null;
+			}
 		}
 		PersistentChosenBlock block = new PersistentChosenBlock(false, request, keys[0], k, ckey, sched);
 		return Collections.singletonList(block);
