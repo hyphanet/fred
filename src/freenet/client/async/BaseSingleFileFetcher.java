@@ -83,7 +83,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		if(fetching.hasKey(k, this, persistent, container)) return null;
 		long l = fetching.checkRecentlyFailed(k, realTimeFlag);
 		if(l > 0 && l > System.currentTimeMillis()) {
-			if(maxRetries == -1) {
+			if(maxRetries == -1 || (maxRetries >= RequestScheduler.COOLDOWN_RETRIES)) {
 				// FIXME synchronization!!!
 				MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
 				tracker.cooldownWakeupTime = Math.max(tracker.cooldownWakeupTime, l);
@@ -376,7 +376,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			return null;
 		long l = keysFetching.checkRecentlyFailed(k, realTimeFlag);
 		if(l > 0 && l > System.currentTimeMillis()) {
-			if(maxRetries == -1) {
+			if(maxRetries == -1 || (maxRetries >= RequestScheduler.COOLDOWN_RETRIES)) {
 				// FIXME synchronization!!!
 				MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
 				tracker.cooldownWakeupTime = Math.max(tracker.cooldownWakeupTime, l);
