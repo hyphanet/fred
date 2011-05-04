@@ -2230,6 +2230,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		Key key = this.keys.getNodeKey(blockNum, null, true);
 		long timeout = keys.checkRecentlyFailed(key, realTimeFlag);
 		if(timeout <= now) return false;
+		int maxRetries = getMaxRetries(container);
 		if(maxRetries == -1 || (maxRetries >= RequestScheduler.COOLDOWN_RETRIES)) {
 			// Concurrency is fine here, it won't go away before the given time.
 			setMaxCooldownWakeup(timeout, blockNum, this.getMaxRetries(container), container, context);
@@ -2284,7 +2285,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			long l = fetching.checkRecentlyFailed(block.key, realTimeFlag);
 			if(l < now) continue; // Okay
 			i.remove();
-			if(maxRetries == -1 || (maxRetries >= RequestScheduler.COOLDOWN_RETRIES)) {
+			if(maxTries == -1 || (maxTries >= RequestScheduler.COOLDOWN_RETRIES)) {
 				// Concurrency is fine here, it won't go away before the given time.
 				setMaxCooldownWakeup(l, ((SplitFileFetcherSegmentSendableRequestItem)block.token).blockNum, maxTries, container, context);
 			} else {
