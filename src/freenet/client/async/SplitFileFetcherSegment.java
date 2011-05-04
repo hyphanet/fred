@@ -1336,7 +1336,8 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			fail(new FetchException(FetchException.SPLITFILE_ERROR, errors), container, context, false);
 		}
 	}
-	/** A request has failed non-fatally, so the block may be retried 
+	/** A request has failed non-fatally, so the block may be retried.
+	 * Caller must update errors.
 	 * @param container */
 	public void onNonFatalFailure(FetchException e, int blockNo, ObjectContainer container, ClientContext context) {
 		onNonFatalFailure(e, blockNo, container, context, true);
@@ -2246,13 +2247,24 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		Key key = this.keys.getNodeKey(blockNum, null, true);
 		long timeout = keys.checkRecentlyFailed(key, realTimeFlag);
 		if(timeout <= now) return false;
+		int maxRetries = getMaxRetries(container);
 		if(maxRetries == -1 || (maxRetries >= RequestScheduler.COOLDOWN_RETRIES)) {
 			// Concurrency is fine here, it won't go away before the given time.
 			setMaxCooldownWakeup(timeout, blockNum, this.getMaxRetries(container), container, context);
 		} else {
-			onNonFatalFailure(new FetchException(FetchException.RECENTLY_FAILED), blockNum, container, context);
+			FetchException e = new FetchException(FetchException.RECENTLY_FAILED);
+			incErrors(e, container);
+			onNonFatalFailure(e, blockNum, container, context);
 		}
 		return true;
+	}
+
+	private void incErrors(FetchException e, ObjectContainer container) {
+		if(persistent)
+			container.activate(errors, 1);
+    	errors.inc(e.getMode());
+		if(persistent)
+			errors.storeTo(container);
 	}
 
 	/** Separate method because we will need to create the Key anyway for checking against
@@ -2300,11 +2312,13 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			long l = fetching.checkRecentlyFailed(block.key, realTimeFlag);
 			if(l < now) continue; // Okay
 			i.remove();
-			if(maxRetries == -1 || (maxRetries >= RequestScheduler.COOLDOWN_RETRIES)) {
+			if(maxTries == -1 || (maxTries >= RequestScheduler.COOLDOWN_RETRIES)) {
 				// Concurrency is fine here, it won't go away before the given time.
 				setMaxCooldownWakeup(l, ((SplitFileFetcherSegmentSendableRequestItem)block.token).blockNum, maxTries, container, context);
 			} else {
-				onNonFatalFailure(new FetchException(FetchException.RECENTLY_FAILED), ((SplitFileFetcherSegmentSendableRequestItem)(block.token)).blockNum, container, context);
+				FetchException e = new FetchException(FetchException.RECENTLY_FAILED);
+				incErrors(e, container);
+				onNonFatalFailure(e, ((SplitFileFetcherSegmentSendableRequestItem)(block.token)).blockNum, container, context);
 			}
 		}
 		return list;
