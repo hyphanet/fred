@@ -1333,7 +1333,8 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			fail(new FetchException(FetchException.SPLITFILE_ERROR, errors), container, context, false);
 		}
 	}
-	/** A request has failed non-fatally, so the block may be retried 
+	/** A request has failed non-fatally, so the block may be retried.
+	 * Caller must update errors.
 	 * @param container */
 	public void onNonFatalFailure(FetchException e, int blockNo, ObjectContainer container, ClientContext context) {
 		onNonFatalFailure(e, blockNo, container, context, true);
