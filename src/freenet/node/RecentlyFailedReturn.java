@@ -9,7 +9,7 @@ public class RecentlyFailedReturn {
 	
     private static volatile boolean logMINOR;
     static {
-        Logger.registerClass(PeerManager.class);
+        Logger.registerClass(RecentlyFailedReturn.class);
     }
 	
 	private boolean recentlyFailed;
