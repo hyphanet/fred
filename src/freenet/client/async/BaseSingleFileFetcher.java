@@ -82,9 +82,11 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		Key k = key.getNodeKey(false);
 		if(fetching.hasKey(k, this, persistent, container)) return null;
 		long l = fetching.checkRecentlyFailed(k, realTimeFlag);
-		if(l > 0 && l > System.currentTimeMillis()) {
+		long now = System.currentTimeMillis();
+		if(l > 0 && l > now) {
 			if(maxRetries == -1 || (maxRetries >= RequestScheduler.COOLDOWN_RETRIES)) {
 				// FIXME synchronization!!!
+				if(logMINOR) Logger.minor(this, "RecentlyFailed -> cooldown until "+TimeUtil.formatTime(l-now)+" on "+this);
 				MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
 				tracker.cooldownWakeupTime = Math.max(tracker.cooldownWakeupTime, l);
 				return null;
@@ -375,9 +377,11 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		if(keysFetching.hasKey(k, this, persistent, container))
 			return null;
 		long l = keysFetching.checkRecentlyFailed(k, realTimeFlag);
-		if(l > 0 && l > System.currentTimeMillis()) {
+		long now = System.currentTimeMillis();
+		if(l > 0 && l > now) {
 			if(maxRetries == -1 || (maxRetries >= RequestScheduler.COOLDOWN_RETRIES)) {
 				// FIXME synchronization!!!
+				if(logMINOR) Logger.minor(this, "RecentlyFailed -> cooldown until "+TimeUtil.formatTime(l-now)+" on "+this);
 				MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
 				tracker.cooldownWakeupTime = Math.max(tracker.cooldownWakeupTime, l);
 				return null;

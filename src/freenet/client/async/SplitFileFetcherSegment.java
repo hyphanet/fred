@@ -42,6 +42,7 @@ import freenet.node.RequestScheduler;
 import freenet.node.SendableGet;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
@@ -2249,6 +2250,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		if(timeout <= now) return false;
 		int maxRetries = getMaxRetries(container);
 		if(maxRetries == -1 || (maxRetries >= RequestScheduler.COOLDOWN_RETRIES)) {
+			if(logMINOR) Logger.minor(this, "RecentlyFailed -> cooldown until "+TimeUtil.formatTime(timeout-now)+" on "+this);
 			// Concurrency is fine here, it won't go away before the given time.
 			setMaxCooldownWakeup(timeout, blockNum, this.getMaxRetries(container), container, context);
 		} else {
@@ -2313,6 +2315,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			if(l < now) continue; // Okay
 			i.remove();
 			if(maxTries == -1 || (maxTries >= RequestScheduler.COOLDOWN_RETRIES)) {
+				if(logMINOR) Logger.minor(this, "RecentlyFailed -> cooldown until "+TimeUtil.formatTime(l-now)+" on "+this);
 				// Concurrency is fine here, it won't go away before the given time.
 				setMaxCooldownWakeup(l, ((SplitFileFetcherSegmentSendableRequestItem)block.token).blockNum, maxTries, container, context);
 			} else {
