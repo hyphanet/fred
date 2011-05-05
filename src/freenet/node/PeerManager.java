@@ -38,6 +38,7 @@ import freenet.support.ByteArrayWrapper;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
+import freenet.support.TimeUtil;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
@@ -1192,6 +1193,10 @@ public class PeerManager {
 								if(check < until) {
 									if(logMINOR) Logger.minor(this, "Reducing RecentlyFailed from "+(until-now)+"ms to "+(check-now)+"ms because of check for peers to wakeup");
 									until = check;
+								}
+								if(until > now + FailureTable.RECENTLY_FAILED_TIME) {
+									Logger.error(this, "Wakeup time is too long: "+TimeUtil.formatTime(until-now));
+									until = now + FailureTable.RECENTLY_FAILED_TIME;
 								}
 								recentlyFailed.fail(countWaiting, until);
 								return null;
