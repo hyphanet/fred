@@ -1013,11 +1013,12 @@ public class PeerManager {
 			if(entry != null && !ignoreTimeout) {
 				timeoutFT = entry.getTimeoutTime(p, outgoingHTL, now, true);
 				timeoutRF = entry.getTimeoutTime(p, outgoingHTL, now, false);
-				if(timeoutRF > now)
+				if(timeoutRF > now) {
 					soonestTimeoutWakeup = Math.min(soonestTimeoutWakeup, timeoutRF);
+					countWaiting++;
+				}
 			}
 			boolean timedOut = timeoutFT > now;
-			if(timedOut) countWaiting++;
 			//To help avoid odd race conditions, get the location only once and use it for all calculations.
 			double loc = p.getLocation();
 			boolean direct = true;
