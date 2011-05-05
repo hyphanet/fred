@@ -16,10 +16,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -28,8 +26,6 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
-
-import freenet.support.math.MersenneTwister;
 
 import net.i2p.util.NativeBigInteger;
 import freenet.client.FetchResult;
@@ -55,16 +51,13 @@ import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
-import freenet.io.comm.PacketSocketHandler;
 import freenet.io.comm.Peer;
 import freenet.io.comm.Peer.LocalAddressException;
-import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.PeerRestartedException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.SocketHandler;
 import freenet.io.xfer.PacketThrottle;
-import freenet.io.xfer.ThrottleDeprecatedException;
 import freenet.io.xfer.WaitedTooLongException;
 import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
@@ -75,19 +68,18 @@ import freenet.node.NodeStats.RequestType;
 import freenet.node.NodeStats.RunningRequestsSnapshot;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.PeerManager.PeerStatusChangeListener;
-import freenet.node.PeerNode.IncomingLoadSummaryStats;
-import freenet.node.PeerNode.RequestLikelyAcceptedState;
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.WeakHashSet;
 import freenet.support.WouldBlockException;
-import freenet.support.Logger.LogLevel;
+import freenet.support.math.MersenneTwister;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
@@ -417,6 +409,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	private PacketFormat packetFormat;
 	MersenneTwister paddingGen;
+	
+	protected SimpleFieldSet fullFieldSet;
 
 	/**
 	 * If this returns true, we will generate the identity from the pubkey.
@@ -514,12 +508,18 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				this.peerPubKey = DSAPublicKey.create(sfs, peerCryptoGroup);
 
 			String signature = fs.get("sig");
-			fs.removeValue("sig");
 			if(!noSig) {
 				try {
 					boolean failed = false;
-					if(signature == null || peerCryptoGroup == null || peerPubKey == null ||
-						(failed = !(DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(1, SHA256.digest(fs.toOrderedString().getBytes("UTF-8"))), false)))) {
+					if(signature == null || peerCryptoGroup == null || peerPubKey == null)
+						failed = false;
+					else {
+						fs.removeValue("sig");
+						String toVerify = fs.toOrderedString();
+						fs.putSingle("sig", signature);
+						failed = !(DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(1, SHA256.digest(toVerify.getBytes("UTF-8"))), false));
+					}
+					if(failed) {
 						String errCause = "";
 						if(signature == null)
 							errCause += " (No signature)";
@@ -531,10 +531,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 							errCause += " (VERIFICATION FAILED)";
 						Logger.error(this, "The integrity of the reference has been compromised!" + errCause + " fs was\n" + fs.toOrderedString());
 						this.isSignatureVerificationSuccessfull = false;
-						fs.putSingle("sig", signature);
 						throw new ReferenceSignatureVerificationException("The integrity of the reference has been compromised!" + errCause);
-					} else
+					} else {
 						this.isSignatureVerificationSuccessfull = true;
+						if(!dontKeepFullFieldSet())
+							this.fullFieldSet = fs;
+					}
 				} catch(NumberFormatException e) {
 					Logger.error(this, "Invalid reference: " + e, e);
 					throw new ReferenceSignatureVerificationException("The node reference you added is invalid: It does not have a valid signature.");
@@ -785,9 +787,17 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		byte buffer[] = new byte[16];
 		node.random.nextBytes(buffer);
 		paddingGen = new MersenneTwister(buffer);
-
+		
+		if(fromLocal) {
+			SimpleFieldSet f = fs.subset("full");
+			if(fullFieldSet == null && f != null)
+				fullFieldSet = f;
+		}
+		
 	// status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
 	}
+
+	abstract boolean dontKeepFullFieldSet();
 
 	protected abstract void maybeClearPeerAddedTimeOnRestart(long now);
 
@@ -2542,7 +2552,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	* The identity must not change, or we throw.
 	*/
 	public void processDiffNoderef(SimpleFieldSet fs) throws FSParseException {
-		processNewNoderef(fs, false, true);
+		processNewNoderef(fs, false, true, false);
 	}
 
 	/**
@@ -2551,7 +2561,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	*/
 	private void processNewNoderef(byte[] data, int offset, int length) throws FSParseException {
 		SimpleFieldSet fs = compressedNoderefToFieldSet(data, offset, length);
-		processNewNoderef(fs, false, false);
+		processNewNoderef(fs, false, false, false);
 	}
 
 	static SimpleFieldSet compressedNoderefToFieldSet(byte[] data, int offset, int length) throws FSParseException {
@@ -2617,10 +2627,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/**
 	* Process a new nodereference, as a SimpleFieldSet.
 	*/
-	private void processNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef) throws FSParseException {
+	protected void processNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef, boolean forFullNodeRef) throws FSParseException {
 		if(logMINOR)
 			Logger.minor(this, "Parsing: \n" + fs);
-		boolean changedAnything = innerProcessNewNoderef(fs, forARK, forDiffNodeRef) || forARK;
+		boolean changedAnything = innerProcessNewNoderef(fs, forARK, forDiffNodeRef, forFullNodeRef) || forARK;
 		if(changedAnything && !isSeed())
 			node.peers.writePeers();
 	}
@@ -2629,7 +2639,38 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	* The synchronized part of processNewNoderef
 	* @throws FSParseException
 	*/
-	protected synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef) throws FSParseException {
+	protected synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef, boolean forFullNodeRef) throws FSParseException {
+		
+		if(forFullNodeRef) {
+			// Check the signature.
+			String signature = fs.get("sig");
+			try {
+				boolean failed = false;
+				if(signature == null)
+					failed = false;
+				else {
+					fs.removeValue("sig");
+					String toVerify = fs.toOrderedString();
+					fs.putSingle("sig", signature);
+					failed = !(DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(1, SHA256.digest(toVerify.getBytes("UTF-8"))), false));
+				}
+				if(failed) {
+					String errCause = "";
+					if(signature == null)
+						errCause += " (No signature)";
+					if(failed)
+						errCause += " (VERIFICATION FAILED)";
+					Logger.error(this, "The integrity of the reference has been compromised!" + errCause + " fs was\n" + fs.toOrderedString());
+					throw new FSParseException("Signature verification failed: "+errCause);
+				}
+			} catch(NumberFormatException e) {
+				Logger.error(this, "Invalid reference: " + e, e);
+				throw new FSParseException("Invalid signature", e);
+			} catch(UnsupportedEncodingException e) {
+				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
+			}
+		}
+		
 		// Anything may be omitted for a differential node reference
 		boolean changedAnything = false;
 		if(!forDiffNodeRef && (false != Fields.stringToBool(fs.get("testnet"), false))) {
@@ -2637,6 +2678,63 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			Logger.error(this, err);
 			throw new FSParseException(err);
 		}
+		String s = fs.get("opennet");
+		if(s == null && forFullNodeRef)
+			throw new FSParseException("No opennet ref");
+		else if(s != null) {
+			try {
+				boolean b = Fields.stringToBool(s);
+				if(b != (isOpennet() || isSeed()))
+					throw new FSParseException("Changed opennet status?!?!?!? expected="+isOpennet()+" but got "+b+" ("+s+") on "+this);
+			} catch (NumberFormatException e) {
+				throw new FSParseException("Cannot parse opennet=\""+s+"\"", e);
+			}
+		}
+		if(!generateIdentityFromPubkey()) {
+			String identityString = fs.get("identity");
+			if(identityString == null && forFullNodeRef)
+				throw new FSParseException("No identity!");
+			else if(identityString != null) {
+				try {
+					byte[] id = Base64.decode(identityString);
+					if(!Arrays.equals(id, identity))
+						throw new FSParseException("Changing the identity");
+				} catch(NumberFormatException e) {
+					throw new FSParseException(e);
+				} catch(IllegalBase64Exception e) {
+					throw new FSParseException(e);
+				}
+			}
+		}
+		
+		SimpleFieldSet sfs = fs.subset("dsaGroup");
+		if(sfs == null && forFullNodeRef)
+			throw new FSParseException("No dsaGroup - very old reference?");
+		else if(sfs != null) {
+			DSAGroup cmp;
+			try {
+				cmp = DSAGroup.create(sfs);
+			} catch (IllegalBase64Exception e) {
+				throw new FSParseException(e);
+			}
+			if(!cmp.equals(this.peerCryptoGroup))
+				throw new FSParseException("Changed DSA group?!");
+		}
+
+		sfs = fs.subset("dsaPubKey");
+		if(sfs == null && forFullNodeRef)
+			throw new FSParseException("No dsaPubKey - very old reference?");
+		else if(sfs != null) {
+			DSAPublicKey key;
+			try {
+				key = DSAPublicKey.create(sfs, peerCryptoGroup);
+			} catch (IllegalBase64Exception e) {
+				throw new FSParseException(e);
+			}
+			if(!key.equals(this.peerPubKey))
+				throw new FSParseException("Changed pubkey?!");
+		}
+
 		String newVersion = fs.get("version");
 		if(newVersion == null) {
 			// Version may be ommitted for an ARK.
@@ -2659,7 +2757,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		if(newLastGoodVersion != null) {
 			// Can be null if anon auth or if forDiffNodeRef.
 			lastGoodVersion = newLastGoodVersion;
-		}
+		} else if(forFullNodeRef)
+			throw new FSParseException("No lastGoodVersion");
 
 		updateVersionRoutablity();
 
@@ -2721,10 +2820,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					jfkNoncesSent.clear();
 				}
 
-			} else if(forARK) {
+			} else if(forARK || forFullNodeRef) {
 				// Connection setup doesn't include a physical.udp.
 				// Differential noderefs only include it on the first one after connect.
 				Logger.error(this, "ARK noderef has no physical.udp for "+this+" : forDiffNodeRef="+forDiffNodeRef+" forARK="+forARK);
+				if(forFullNodeRef)
+					throw new FSParseException("ARK noderef has no physical.udp");
 			}
 		} catch(Exception e1) {
 			Logger.error(this, "Caught "+e1, e1);
@@ -2867,6 +2968,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		SimpleFieldSet meta = exportMetadataFieldSet();
 		if(!meta.isEmpty())
 			fs.put("metadata", meta);
+		if(fullFieldSet != null)
+			fs.put("full", fullFieldSet);
 		return fs;
 	}
 
@@ -3450,7 +3553,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(myARK.suggestedEdition < fetchedEdition + 1)
 					myARK = myARK.copy(fetchedEdition + 1);
 			}
-			processNewNoderef(fs, true, false);
+			processNewNoderef(fs, true, false, false);
 		} catch(FSParseException e) {
 			Logger.error(this, "Invalid ARK update: " + e, e);
 			// This is ok as ARKs are limited to 4K anyway.
@@ -5353,6 +5456,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		bandwidth *= nonOverheadFraction;
 		double kilobytesPerSecond = bandwidth / 1024.0;
 		return (int)Math.max(1, Math.min(kilobytesPerSecond * timeout, Integer.MAX_VALUE));
+	}
+
+	public synchronized boolean hasFullNoderef() {
+		return fullFieldSet != null;
+	}
+	
+	public synchronized SimpleFieldSet getFullNoderef() {
+		return fullFieldSet;
 	}
 
 }

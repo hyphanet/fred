@@ -1,6 +1,7 @@
 package freenet.clients.http;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.net.URI;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -19,6 +20,7 @@ import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.HTTPRequest;
+import freenet.support.io.FileUtil;
 
 public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	
@@ -67,9 +69,15 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	}
 	
 	@Override
-	protected void drawNameColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus) {
+	protected void drawNameColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus, boolean advanced) {
 		// name column
-		peerRow.addChild("td", "class", "peer-name").addChild("a", "href", "/send_n2ntm/?peernode_hashcode=" + peerNodeStatus.hashCode(), ((DarknetPeerNodeStatus)peerNodeStatus).getName());
+		HTMLNode cell = peerRow.addChild("td", "class", "peer-name");
+		cell.addChild("a", "href", "/send_n2ntm/?peernode_hashcode=" + peerNodeStatus.hashCode(), ((DarknetPeerNodeStatus)peerNodeStatus).getName());
+		if(advanced && peerNodeStatus.hasFullNoderef) {
+			cell.addChild("#", " (");
+			cell.addChild("a", "href", path()+"friend-"+peerNodeStatus.hashCode()+".fref", l10n("noderefLink"));
+			cell.addChild("#", ")");
+		}
 	}
 	
 	@Override
@@ -431,7 +439,47 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 
 	@Override
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+		if(tryHandlePeerNoderef(uri, request, ctx)) return;
 		super.handleMethodGET(uri, request, ctx);
+	}
+
+	private boolean tryHandlePeerNoderef(URI uri, HTTPRequest request,
+			ToadletContext ctx) throws ToadletContextClosedException, IOException {
+		String path = uri.getPath();
+		if(path.endsWith(".fref") && path.startsWith(path()+"friend-")) {
+			// Get noderef for a peer
+			String input_hashcode_string = path.substring((path()+"friend-").length());
+			input_hashcode_string = input_hashcode_string.substring(0, input_hashcode_string.length() - ".fref".length());
+			int input_hashcode;
+			try {
+				input_hashcode = (Integer.valueOf(input_hashcode_string)).intValue();
+			} catch (NumberFormatException e) {
+				// ignore here, handle below
+				return false;
+			}
+			String peernode_name = null;
+			SimpleFieldSet fs = null;
+			if (input_hashcode != -1) {
+				DarknetPeerNode[] peerNodes = node.getDarknetConnections();
+				for (int i = 0; i < peerNodes.length; i++) {
+					int peer_hashcode = peerNodes[i].hashCode();
+					if (peer_hashcode == input_hashcode) {
+						peernode_name = peerNodes[i].getName();
+						fs = peerNodes[i].getFullNoderef();
+						break;
+					}
+				}
+			}
+			
+			if(fs == null) return false;
+			String filename = FileUtil.sanitizeFileNameWithExtras(peernode_name+".fref", "\" ");
+			String content = fs.toString();
+			MultiValueTable<String, String> extraHeaders = new MultiValueTable<String, String>();
+			// Force download to disk
+			extraHeaders.put("Content-Disposition", "attachment; filename="+filename);
+			this.writeReply(ctx, 200, "application/x-freenet-reference", "OK", extraHeaders, content);
+			return true;
+		} else return false;
 	}
 
 	@Override

@@ -38,6 +38,7 @@ import freenet.support.ByteArrayWrapper;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
+import freenet.support.TimeUtil;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
@@ -1012,11 +1013,12 @@ public class PeerManager {
 			if(entry != null && !ignoreTimeout) {
 				timeoutFT = entry.getTimeoutTime(p, outgoingHTL, now, true);
 				timeoutRF = entry.getTimeoutTime(p, outgoingHTL, now, false);
-				if(timeoutRF > now)
+				if(timeoutRF > now) {
 					soonestTimeoutWakeup = Math.min(soonestTimeoutWakeup, timeoutRF);
+					countWaiting++;
+				}
 			}
 			boolean timedOut = timeoutFT > now;
-			if(timedOut) countWaiting++;
 			//To help avoid odd race conditions, get the location only once and use it for all calculations.
 			double loc = p.getLocation();
 			boolean direct = true;
@@ -1188,12 +1190,16 @@ public class PeerManager {
 							else
 								// A node waking up from backoff or FailureTable might well change the decision, which limits the length of a RecentlyFailed.
 								check = checkBackoffsForRecentlyFailed(peers, best, target, bestDistance, myLoc, prevLoc, now, entry, outgoingHTL);
-							if(check > now + MIN_DELTA) {
-								if(check < until) {
-									if(logMINOR) Logger.minor(this, "Reducing RecentlyFailed from "+(until-now)+"ms to "+(check-now)+"ms because of check for peers to wakeup");
-									until = check;
+							if(check < until) {
+								if(logMINOR) Logger.minor(this, "Reducing RecentlyFailed from "+(until-now)+"ms to "+(check-now)+"ms because of check for peers to wakeup");
+								until = check;
+							}
+							if(until > now + MIN_DELTA) {
+								if(until > now + FailureTable.RECENTLY_FAILED_TIME) {
+									Logger.error(this, "Wakeup time is too long: "+TimeUtil.formatTime(until-now));
+									until = now + FailureTable.RECENTLY_FAILED_TIME;
 								}
-								recentlyFailed.fail(countWaiting, soonestTimeoutWakeup);
+								recentlyFailed.fail(countWaiting, until);
 								return null;
 							} else {
 								// Waking up too soon. Don't RecentlyFailed.

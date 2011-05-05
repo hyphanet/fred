@@ -295,6 +295,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 	private int routeAttempts = 0;
     private boolean starting;
     private int highHTLFailureCount = 0;
+    private boolean killedByRecentlyFailed = false;
     
     private void routeRequests() {
     	
@@ -382,6 +383,25 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             	finish(RECENTLY_FAILED, null, false);
                 node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, -1, source);
             	return;
+            } else {
+            	boolean rfAnyway = false;
+            	synchronized(this) {
+            		rfAnyway = killedByRecentlyFailed;
+            	}
+            	if(rfAnyway) {
+            		// We got a RecentlyFailed so we have to send one.
+            		// But we set a timeout of 0 because we're not generating one based on where we've routed the key to.
+            		// Returning the time we were passed minus some value will give the next node an inaccurate high timeout.
+            		// Rerouting (even assuming we change FNPRecentlyFailed to include a hop count) would also cause problems because nothing would be quenched until we have visited every node on the network.
+            		// That leaves forwarding a RecentlyFailed which won't create further RecentlyFailed's.
+            		// However the peer will still avoid sending us the same key for 10 minutes due to per-node failure tables. This is fine, we probably don't have it anyway!
+            		synchronized(this) {
+            			recentlyFailedTimeLeft = 0;
+            		}
+                	finish(RECENTLY_FAILED, null, false);
+                    node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, -1, source);
+                	return;
+            	}
             }
             
             if(next == null) {
@@ -1157,7 +1177,8 @@ loadWaiterLoop:
     	
     	if(msg.getSpec() == DMT.FNPRecentlyFailed) {
     		handleRecentlyFailed(msg, wasFork, source);
-    		return DO.FINISHED;
+    		// We will resolve finish() in routeRequests(), after recomputing.
+    		return DO.NEXT_PEER;
     	}
     	
     	if(msg.getSpec() == DMT.FNPRouteNotFound) {
@@ -1501,24 +1522,20 @@ loadWaiterLoop:
 		
 		if(timeLeft < 0) timeLeft = 0;
 		
-		//Store the timeleft so that the requestHandler can get at it.
+		// We don't store the recently failed time because we will either generate our own, based on which
+		// peers we have routed the key to (including the timeout we got here, which we DO store in the 
+		// FTE), or we will send a RecentlyFailed with timeout 0, which won't cause RF's on the downstream
+		// peer. The point is, forwarding it as-is is inaccurate: it creates a timeout which is not 
+		// justified. More info in routeRequests().
+		
 		synchronized(this) {
-			recentlyFailedTimeLeft = timeLeft;
+			killedByRecentlyFailed = true;
 		}
 		
-			// Kill the request, regardless of whether there is timeout left.
+		// Kill the request, regardless of whether there is timeout left.
 		// If there is, we will avoid sending requests for the specified period.
-		// FIXME reconsider the exact numbers here.
-		// We need to ensure that a node can't just kill requests by returning RecentlyFailed with timeout = 0.
-		// However, after the period has elapsed, we may reroute, in which case it might be good to go to the same node.
-		// We probably want to keep track of previous failures and explicitly detect malicious behaviour, rather than always using the maximum?
-		// Or maybe we could just do max(timeLeft, *some reasonable threshold*) ????
-		// In which case we can get rid of the threshold above??? Which we should do anyway???
 		node.failureTable.onFinalFailure(key, next, htl, origHTL, timeLeft, FailureTable.REJECT_TIME, source);
-		if(!wasFork)
-			finish(RECENTLY_FAILED, next, false);
-		else
-			this.origTag.removeRoutingTo(next);
+		this.origTag.removeRoutingTo(next);
 		
 	}
 

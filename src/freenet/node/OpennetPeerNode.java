@@ -252,13 +252,18 @@ public class OpennetPeerNode extends PeerNode {
 	@Override
 	public void fatalTimeout() {
 		if(node.isStopping()) return;
-		Logger.warning(this, "Disconnecting "+this+" because of fatal timeout");
+		Logger.error(this, "Disconnecting "+this+" because of fatal timeout");
 		// Disconnect.
 		forceDisconnect(true);
 	}
 	
 	public boolean shallWeRouteAccordingToOurPeersLocation() {
 		return node.shallWeRouteAccordingToOurPeersLocation();
+	}
+
+	@Override
+	boolean dontKeepFullFieldSet() {
+		return true;
 	}
 
 }
