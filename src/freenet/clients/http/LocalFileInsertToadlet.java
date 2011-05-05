@@ -16,16 +16,19 @@ public class LocalFileInsertToadlet extends LocalFileBrowserToadlet {
 		super(core, highLevelSimpleClient);
 	}
 	
+	@Override
 	public String path()
 	{
 		return "/insert-browse/";
 	}
 	
+	@Override
 	protected String postTo()
 	{
 		return "/uploads/";
 	}
 	
+	@Override
 	protected Hashtable<String, String> persistanceFields(Hashtable<String, String> set){
 		Hashtable<String, String> fieldPairs = new Hashtable<String, String>();
 		FreenetURI furi = null;

@@ -12,22 +12,25 @@ import freenet.support.HTMLNode;
 
 public class LocalFileN2NMToadlet extends LocalFileBrowserToadlet {
 	
-	public String path() {
-		return "/n2nm-browse/";
-	}
-	
-	protected String postTo(){
-		return "/send_n2ntm/";
-	}
-	
 	public LocalFileN2NMToadlet(NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient) {
 		super(core, highLevelSimpleClient);
 	}
 	
-	protected void createInsertDirectoryButton(HTMLNode fileRow, String path, ToadletContext ctx, Hashtable<String, String> fieldPairs) {
-		fileRow.addChild("td");
+	@Override
+	public String path() {
+		return "/n2nm-browse/";
 	}
 	
+	@Override
+	protected String postTo(){
+		return "/send_n2ntm/";
+	}
+	
+	@Override
+	protected void createInsertDirectoryButton(HTMLNode fileRow, String path, ToadletContext ctx, Hashtable<String, String> fieldPairs) {
+	}
+	
+	@Override
 	protected Hashtable<String, String> persistanceFields(Hashtable<String, String> set){
 		Hashtable<String, String> fieldPairs = new Hashtable<String, String>();
 		String message = set.get("message");

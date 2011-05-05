@@ -23,7 +23,7 @@ import freenet.support.api.HTTPRequest;
  * @version $Id$
  */
 public abstract class LocalFileBrowserToadlet extends Toadlet {	
-	private final NodeClientCore core;
+	protected final NodeClientCore core;
 	private File currentPath;
 
 	public LocalFileBrowserToadlet(NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient) {
@@ -42,15 +42,22 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 	 */
 	protected abstract Hashtable<String, String> persistanceFields(Hashtable<String, String> set);
 	
-	protected void createInsertDirectoryButton(HTMLNode fileRow, String path, ToadletContext ctx, Hashtable<String, String> fieldPairs) {
-		HTMLNode cellNode = fileRow.addChild("td");
-		HTMLNode formNode = ctx.addFormChild(cellNode, postTo(), "insertLocalFileForm");
+	protected void createInsertDirectoryButton(HTMLNode formNode, String path,
+			ToadletContext ctx, Hashtable<String, String> fieldPairs) {
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local-dir", l10n("insert")});
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "filename", path});
 		createHiddenParamFields(formNode, fieldPairs);
 	}
 	
-	private final void createChangeDirButton(HTMLNode formNode, String buttonText, String path, Hashtable<String, String> fieldPairs){
+	protected void createInsertFileButton(HTMLNode formNode, String absolutePath,
+			ToadletContext ctx, Hashtable<String, String> fieldPairs) {		
+		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local-file", l10n("insert")});
+		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "filename", absolutePath});
+		createHiddenParamFields(formNode, fieldPairs);
+	}
+
+	private final void createChangeDirButton(HTMLNode formNode, String buttonText,
+			String path, Hashtable<String, String> fieldPairs){
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "change-dir", buttonText});
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "path", path});
 		createHiddenParamFields(formNode, fieldPairs);
@@ -103,7 +110,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 	/**
 	 * Renders hidden fields on given formNode. 
 	 */
-	private final void createHiddenParamFields(HTMLNode formNode, Hashtable<String, String> fieldPairs){
+	protected final void createHiddenParamFields(HTMLNode formNode, Hashtable<String, String> fieldPairs){
 		Enumeration<String> keys = fieldPairs.keys();
 		String key;
 		while(keys.hasMoreElements())
@@ -230,7 +237,10 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 				HTMLNode fileRow = listingTable.addChild("tr");
 				if (currentFile.isDirectory()) {
 					if (currentFile.canRead()) {
-						createInsertDirectoryButton(fileRow, currentFile.getAbsolutePath(), ctx, fieldPairs);
+						// Select directory
+						HTMLNode cellNode = fileRow.addChild("td");
+						HTMLNode formNode = ctx.addFormChild(cellNode, postTo(), "insertLocalFileForm");
+						createInsertDirectoryButton(formNode, currentFile.getAbsolutePath(), ctx, fieldPairs);
 						
 						// Change directory
 						HTMLNode directoryCellNode = fileRow.addChild("td");
@@ -243,13 +253,10 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 					fileRow.addChild("td");
 				} else {
 					if (currentFile.canRead()) {
-						
-						// Insert file
+						//Select file
 						HTMLNode cellNode = fileRow.addChild("td");
 						HTMLNode formNode = ctx.addFormChild(cellNode, postTo(), "insertLocalFileForm");
-						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local-file", l10n("insert")});
-						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "filename", currentFile.getAbsolutePath()});
-						createHiddenParamFields(formNode, fieldPairs);
+						createInsertFileButton(formNode, currentFile.getAbsolutePath(), ctx, fieldPairs);
 						
 						fileRow.addChild("td", currentFile.getName());
 						fileRow.addChild("td", "class", "right-align", String.valueOf(currentFile.length()));
