@@ -1193,7 +1193,7 @@ public class PeerManager {
 									if(logMINOR) Logger.minor(this, "Reducing RecentlyFailed from "+(until-now)+"ms to "+(check-now)+"ms because of check for peers to wakeup");
 									until = check;
 								}
-								recentlyFailed.fail(countWaiting, soonestTimeoutWakeup);
+								recentlyFailed.fail(countWaiting, until);
 								return null;
 							} else {
 								// Waking up too soon. Don't RecentlyFailed.
