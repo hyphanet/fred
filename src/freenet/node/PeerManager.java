@@ -1190,11 +1190,11 @@ public class PeerManager {
 							else
 								// A node waking up from backoff or FailureTable might well change the decision, which limits the length of a RecentlyFailed.
 								check = checkBackoffsForRecentlyFailed(peers, best, target, bestDistance, myLoc, prevLoc, now, entry, outgoingHTL);
-							if(check > now + MIN_DELTA) {
-								if(check < until) {
-									if(logMINOR) Logger.minor(this, "Reducing RecentlyFailed from "+(until-now)+"ms to "+(check-now)+"ms because of check for peers to wakeup");
-									until = check;
-								}
+							if(check < until) {
+								if(logMINOR) Logger.minor(this, "Reducing RecentlyFailed from "+(until-now)+"ms to "+(check-now)+"ms because of check for peers to wakeup");
+								until = check;
+							}
+							if(until > now + MIN_DELTA) {
 								if(until > now + FailureTable.RECENTLY_FAILED_TIME) {
 									Logger.error(this, "Wakeup time is too long: "+TimeUtil.formatTime(until-now));
 									until = now + FailureTable.RECENTLY_FAILED_TIME;
