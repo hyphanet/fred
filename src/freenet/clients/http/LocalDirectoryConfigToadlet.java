@@ -24,20 +24,19 @@ public class LocalDirectoryConfigToadlet extends LocalFileBrowserToadlet {
 	}
 	
 	@Override
-	protected void createInsertFileButton(HTMLNode fileRow, String filename, ToadletContext ctx, Hashtable<String, String> fieldPairs){
+	protected void createInsertFileButton(HTMLNode fileRow, String filename){
 	}
 	
 	@Override
-	protected void createInsertDirectoryButton(HTMLNode formNode, String path, ToadletContext ctx, Hashtable<String, String> fieldPairs) {
+	protected void createInsertDirectoryButton(HTMLNode formNode, String path) {
 		formNode.addChild("input", new String[] { "type", "name", "value" }, 
 				new String[] { "submit", "selected-dir", NodeL10n.getBase().getString("ConfigToadlet.selectDirectory")});
 		formNode.addChild("input", new String[] { "type", "name", "value" }, 
 				new String[] { "hidden", "filename", path});
-		createHiddenParamFields(formNode, fieldPairs);
 	}
 
-	@Override
-	protected Hashtable<String, String> persistanceFields(Hashtable<String, String> set) {
+    @Override
+	protected Hashtable<String, String> persistenceFields(Hashtable<String, String> set) {
 		return set;
 	}
 
