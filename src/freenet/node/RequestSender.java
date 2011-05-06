@@ -38,6 +38,7 @@ import freenet.node.OpennetManager.WaitedTooLongForOpennetNoderefException;
 import freenet.node.PeerNode.OutputLoadTracker;
 import freenet.node.PeerNode.RequestLikelyAcceptedState;
 import freenet.node.PeerNode.SlotWaiter;
+import freenet.store.BlockMetadata;
 import freenet.store.KeyCollisionException;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -1564,6 +1565,17 @@ loadWaiterLoop:
 			return;
 		} catch (KeyCollisionException e) {
 			Logger.normal(this, "Collision on "+this);
+			block = node.fetch((NodeSSK)key, false, canWriteClientCache, canWriteClientCache, canWriteDatastore, false, null);
+			if(block != null) {
+				headers = block.getRawHeaders();
+				sskData = block.getRawData();
+			}
+			synchronized(this) {
+				if(finalHeaders == null || finalSskData == null) {
+					finalHeaders = headers;
+					finalSskData = sskData;
+				}
+			}
 			finish(SUCCESS, next, false);
 		}
 	}
