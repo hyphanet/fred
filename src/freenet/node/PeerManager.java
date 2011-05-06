@@ -33,6 +33,7 @@ import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.Key;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
+import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.node.useralerts.PeerManagerUserAlert;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.Logger;
@@ -523,8 +524,8 @@ public class PeerManager {
 	/**
 	 * Connect to a node provided the fieldset representing it.
 	 */
-	public void connect(SimpleFieldSet noderef, OutgoingPacketMangler mangler, FRIEND_TRUST trust) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		PeerNode pn = node.createNewDarknetNode(noderef, trust);
+	public void connect(SimpleFieldSet noderef, OutgoingPacketMangler mangler, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		PeerNode pn = node.createNewDarknetNode(noderef, trust, visibility);
 		PeerNode[] peerList = myPeers;
 		for(int i = 0; i < peerList.length; i++) {
 			if(Arrays.equals(peerList[i].identity, pn.identity))

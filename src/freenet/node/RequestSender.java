@@ -1887,6 +1887,7 @@ loadWaiterLoop:
 			if(logMINOR)
 				Logger.minor(this, "Not connected sending ConnectReply on "+this+" to "+next);
     	} catch (WaitedTooLongForOpennetNoderefException e) {
+    		Logger.error(this, "RequestSender timed out waiting for noderef from "+next+" for "+this);
     		// Not an error since it can be caused downstream.
     		origTag.reassignToSelf(); // Since we will tell downstream that we are finished.
     		Logger.warning(this, "RequestSender timed out waiting for noderef from "+next+" for "+this);

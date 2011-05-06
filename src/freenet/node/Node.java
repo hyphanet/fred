@@ -111,6 +111,7 @@ import freenet.keys.SSKVerifyException;
 import freenet.l10n.BaseL10n;
 import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
+import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.node.NodeDispatcher.NodeDispatcherCallback;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.SecurityLevels.FRIENDS_THREAT_LEVEL;
@@ -715,6 +716,8 @@ public class Node implements TimeSkewDetectorCallback {
 	// Darknet stuff
 
 	NodeCrypto darknetCrypto;
+	// Back compat
+	private boolean showFriendsVisibilityAlert;
 
 	// Opennet stuff
 
@@ -1273,6 +1276,31 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 
 		});
+		
+		nodeConfig.register("showFriendsVisibilityAlert", false, sortOrder++, true, false, "Node.showFriendsVisibilityAlert", "Node.showFriendsVisibilityAlertLong", new BooleanCallback() {
+
+			@Override
+			public Boolean get() {
+				synchronized(Node.this) {
+					return showFriendsVisibilityAlert;
+				}
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException,
+					NodeNeedRestartException {
+				synchronized(this) {
+					if(val == showFriendsVisibilityAlert) return;
+					if(val) return;
+				}
+				unregisterFriendsVisibilityAlert();
+			}
+			
+			
+			
+		});
+		
+		showFriendsVisibilityAlert = nodeConfig.getBoolean("showFriendsVisibilityAlert");
 
 		defragOnce = nodeConfig.getBoolean("defragOnce");
 
@@ -1692,6 +1720,9 @@ public class Node implements TimeSkewDetectorCallback {
 
 		clientCore = new NodeClientCore(this, config, nodeConfig, installConfig, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets, nodeDBHandle, db);
 
+		if(showFriendsVisibilityAlert)
+			registerFriendsVisibilityAlert();
+		
 		// Node updater support
 
 		System.out.println("Initializing Node Updater");
@@ -5562,8 +5593,8 @@ public class Node implements TimeSkewDetectorCallback {
 	public void connectToSeednode(SeedServerTestPeerNode node) throws OpennetDisabledException, FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		peers.addPeer(node,false,false);
 	}
-	public void connect(Node node, FRIEND_TRUST trust) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		peers.connect(node.darknetCrypto.exportPublicFieldSet(), darknetCrypto.packetMangler, trust);
+	public void connect(Node node, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		peers.connect(node.darknetCrypto.exportPublicFieldSet(), darknetCrypto.packetMangler, trust, visibility);
 	}
 
 	public short maxHTL() {
@@ -5606,8 +5637,8 @@ public class Node implements TimeSkewDetectorCallback {
 	public ProgramDirectory pluginDir() { return pluginDir; }
 
 
-	public DarknetPeerNode createNewDarknetNode(SimpleFieldSet fs, FRIEND_TRUST trust) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		return new DarknetPeerNode(fs, this, darknetCrypto, peers, false, darknetCrypto.packetMangler, trust);
+	public DarknetPeerNode createNewDarknetNode(SimpleFieldSet fs, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		return new DarknetPeerNode(fs, this, darknetCrypto, peers, false, darknetCrypto.packetMangler, trust, visibility);
 	}
 
 	public OpennetPeerNode createNewOpennetNode(SimpleFieldSet fs) throws FSParseException, OpennetDisabledException, PeerParseException, ReferenceSignatureVerificationException {
@@ -6122,6 +6153,53 @@ public class Node implements TimeSkewDetectorCallback {
 		return useSlashdotCache;
 	}
 
+	// FIXME remove the visibility alert after a few builds.
+
+	public void createVisibilityAlert() {
+		synchronized(this) {
+			if(showFriendsVisibilityAlert) return;
+			showFriendsVisibilityAlert = true;
+		}
+		// Wait until startup completed.
+		this.getTicker().queueTimedJob(new Runnable() {
+
+			public void run() {
+				config.store();
+			}
+		}, 0);
+		registerFriendsVisibilityAlert();
+	}
+	
+	private UserAlert visibilityAlert = new SimpleUserAlert(true, l10n("pleaseSetPeersVisibilityAlertTitle"), l10n("pleaseSetPeersVisibilityAlert"), l10n("pleaseSetPeersVisibilityAlert"), UserAlert.ERROR) {
+		
+		public void onDismiss() {
+			synchronized(Node.this) {
+				showFriendsVisibilityAlert = false;
+			}
+			config.store();
+			unregisterFriendsVisibilityAlert();
+		}
+		
+	};
+	
+	private void registerFriendsVisibilityAlert() {
+		if(clientCore == null || clientCore.alerts == null) {
+			// Wait until startup completed.
+			this.getTicker().queueTimedJob(new Runnable() {
+
+				public void run() {
+					registerFriendsVisibilityAlert();
+				}
+				
+			}, 0);
+			return;
+		}
+		clientCore.alerts.register(visibilityAlert);
+	}
+	
+	private void unregisterFriendsVisibilityAlert() {
+		clientCore.alerts.unregister(visibilityAlert);
+	}
 
 	public int getMinimumMTU() {
 		int mtu;
