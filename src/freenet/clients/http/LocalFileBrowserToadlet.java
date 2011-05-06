@@ -108,18 +108,15 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 	}
 	
 	/**
-	 * Renders hidden fields on given formNode. 
+	 * Renders hidden fields on given node.
+     * TODO: This doesn't change while the page renders so it should be generated only once.
+     * The problem is that other other parts of the button do.
 	 */
-	protected final void createHiddenParamFields(HTMLNode formNode, Hashtable<String, String> fieldPairs){
-		Enumeration<String> keys = fieldPairs.keys();
-		String key;
-		while(keys.hasMoreElements())
-		{
-			key = keys.nextElement();
-			formNode.addChild("input", new String[] { "type", "name", "value" }, 
-					new String[] { "hidden", key, fieldPairs.get(key)});
+	protected final void createHiddenParamFields(HTMLNode node, Hashtable<String, String> fieldPairs){
+		for(String key : fieldPairs.keySet()) {
+			node.addChild("input", new String[] { "type", "name", "value" },
+		                           new String[] { "hidden", key, fieldPairs.get(key)});
 		}
-		return;
 	}
 
 	// FIXME reentrancy issues with currentPath - fix running two at once.
