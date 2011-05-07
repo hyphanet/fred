@@ -8,19 +8,22 @@ import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
 
 public class LocalDirectoryConfigToadlet extends LocalFileBrowserToadlet {
-	
-	public LocalDirectoryConfigToadlet(NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient) {
+
+	private final String postTo;
+
+	public LocalDirectoryConfigToadlet(NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient, String postTo) {
 		super(core, highLevelSimpleClient);
+		this.postTo = postTo;
 	}
 
 	@Override
 	public String path() {
-		return "/directory-config/";
+		return "/directory-browser"+postTo;
 	}
 
 	@Override
 	protected String postTo() {
-		return "/config/node";
+		return postTo;
 	}
 	
 	@Override
@@ -37,6 +40,8 @@ public class LocalDirectoryConfigToadlet extends LocalFileBrowserToadlet {
 
     @Override
 	protected Hashtable<String, String> persistenceFields(Hashtable<String, String> set) {
+		//Path is set by each button and should not be persisted separately.
+		set.remove("path");
 		return set;
 	}
 

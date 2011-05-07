@@ -42,29 +42,29 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 	
 	protected void createInsertDirectoryButton(HTMLNode node, String path) {
 		node.addChild("input",
-                new String[]{"type", "name", "value"},
-                new String[]{"submit", "insert-local-dir", l10n("insert")});
+		        new String[]{"type", "name", "value"},
+		        new String[]{"submit", "insert-local-dir", l10n("insert")});
 		node.addChild("input",
-                new String[]{"type", "name", "value"},
-                new String[]{"hidden", "filename", path});
+		        new String[]{"type", "name", "value"},
+		        new String[]{"hidden", "filename", path});
 	}
 	
 	protected void createInsertFileButton(HTMLNode node, String absolutePath) {
 		node.addChild("input",
-                new String[]{"type", "name", "value"},
-                new String[]{"submit", "insert-local-file", l10n("insert")});
+		        new String[]{"type", "name", "value"},
+		        new String[]{"submit", "insert-local-file", l10n("insert")});
 		node.addChild("input",
-                new String[]{"type", "name", "value"},
-                new String[]{"hidden", "filename", absolutePath});
+		        new String[]{"type", "name", "value"},
+		        new String[]{"hidden", "filename", absolutePath});
 	}
 
 	private void createChangeDirButton(HTMLNode node, String buttonText, String path) {
 		node.addChild("input",
-                new String[]{"type", "name", "value"},
-                new String[]{"submit", "change-dir", buttonText});
+		        new String[]{"type", "name", "value"},
+		        new String[]{"submit", "change-dir", buttonText});
 		node.addChild("input",
-                new String[]{"type", "name", "value"},
-                new String[]{"hidden", "path", path});
+		        new String[]{"type", "name", "value"},
+		        new String[]{"hidden", "path", path});
 	}
 	
 	/**
@@ -106,7 +106,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
         HTMLNode result = new HTMLNode("div", "id", "persistenceFields");
 		for(String key : fieldPairs.keySet()) {
 			result.addChild("input", new String[] { "type", "name", "value" },
-		                             new String[] { "hidden", key, fieldPairs.get(key)});
+			                         new String[] { "hidden", key, fieldPairs.get(key)});
 		}
         return result;
 	}
@@ -128,9 +128,6 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 		renderPage(persistenceFields(readGET(request)), request.getParam("path"), ctx);
 	}
 
-    /**
-     * 
-     */
 	public void handleMethodPOST(URI uri, HTTPRequest request, final ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		renderPage(persistenceFields(readPOST(request)), request.getPartAsStringFailsafe("path", 4096), ctx);
 	}

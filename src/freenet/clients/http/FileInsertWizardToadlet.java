@@ -50,14 +50,15 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 //			writeError(NodeL10n.getBase().getString("QueueToadlet.fcpIsMissing"), NodeL10n.getBase().getString("QueueToadlet.pleaseEnableFCP"), ctx, false);
 //			return;
 //		}
-//		
+//
 //		if(!core.hasLoadedQueue()) {
 //			writeError(NodeL10n.getBase().getString("QueueToadlet.notLoadedYetTitle"), NodeL10n.getBase().getString("QueueToadlet.notLoadedYet"), ctx, false);
 //			return;
 //		}
-//		
+//
 		if(container.publicGatewayMode() && !ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"), NodeL10n.getBase().getString("Toadlet.unauthorized"));
+			super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"),
+			        NodeL10n.getBase().getString("Toadlet.unauthorized"));
 			return;
 		}
 		
@@ -80,37 +81,51 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 	
 	private HTMLNode createInsertBox(PageMaker pageMaker, ToadletContext ctx, boolean isAdvancedModeEnabled) {
 		/* the insert file box */
-		InfoboxNode infobox = pageMaker.getInfobox(NodeL10n.getBase().getString("QueueToadlet.insertFile"), "insert-queue", true);
+		InfoboxNode infobox = pageMaker.getInfobox(
+		        NodeL10n.getBase().getString("QueueToadlet.insertFile"), "insert-queue", true);
 		HTMLNode insertBox = infobox.outer;
 		HTMLNode insertContent = infobox.content;
 		insertContent.addChild("p", l10n("insertIntro"));
 		NETWORK_THREAT_LEVEL seclevel = core.node.securityLevels.getNetworkThreatLevel();
 		HTMLNode insertForm = ctx.addFormChild(insertContent, QueueToadlet.PATH_UPLOADS, "queueInsertForm");
-		HTMLNode input = insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "keytype", "CHK" });
-		if((!rememberedLastTime && seclevel == NETWORK_THREAT_LEVEL.LOW) || (rememberedLastTime && wasCanonicalLastTime && seclevel != NETWORK_THREAT_LEVEL.MAXIMUM))
+		HTMLNode input = insertForm.addChild("input",
+		        new String[] { "type", "name", "value" },
+		        new String[] { "radio", "keytype", "CHK" });
+		if((!rememberedLastTime && seclevel == NETWORK_THREAT_LEVEL.LOW) ||
+		        (rememberedLastTime && wasCanonicalLastTime && seclevel != NETWORK_THREAT_LEVEL.MAXIMUM))
 			input.addAttribute("checked", "checked");
 		insertForm.addChild("b", l10n("insertCanonicalTitle"));
 		insertForm.addChild("#", ": "+l10n("insertCanonical"));
 		insertForm.addChild("br");
-		input = insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "keytype", "SSK" });
+		input = insertForm.addChild("input",
+		        new String[] { "type", "name", "value" },
+		        new String[] { "radio", "keytype", "SSK" });
 		if(seclevel == NETWORK_THREAT_LEVEL.MAXIMUM || (rememberedLastTime && !wasCanonicalLastTime))
 			input.addAttribute("checked", "checked");
 		insertForm.addChild("b", l10n("insertRandomTitle"));
 		insertForm.addChild("#", ": "+l10n("insertRandom"));
 		if(isAdvancedModeEnabled) {
 			insertForm.addChild("br");
-			insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "keytype", "specify" });
+			insertForm.addChild("input",
+			        new String[] { "type", "name", "value" },
+			        new String[] { "radio", "keytype", "specify" });
 			insertForm.addChild("b", l10n("insertSpecificKeyTitle"));
 			insertForm.addChild("#", ": "+l10n("insertSpecificKey")+" ");
-			insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "key", "KSK@" });
+			insertForm.addChild("input",
+			        new String[] { "type", "name", "value" },
+			        new String[] { "text", "key", "KSK@" });
 		}
 		if(isAdvancedModeEnabled) {
 			insertForm.addChild("br");
 			insertForm.addChild("br");
-			insertForm.addChild("input", new String[] { "type", "name", "checked" }, new String[] { "checkbox", "compress", "checked" });
+			insertForm.addChild("input",
+			        new String[] { "type", "name", "checked" },
+			        new String[] { "checkbox", "compress", "checked" });
 			insertForm.addChild("#", ' ' + NodeL10n.getBase().getString("QueueToadlet.insertFileCompressLabel"));
 		} else {
-			insertForm.addChild("input", new String[] { "type", "value" }, new String[] { "hidden", "true" });
+			insertForm.addChild("input",
+			        new String[] { "type", "value" },
+			        new String[] { "hidden", "true" });
 		}
 		if(isAdvancedModeEnabled) {
 			insertForm.addChild("br");
@@ -119,26 +134,37 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 			for(CompatibilityMode mode : InsertContext.CompatibilityMode.values()) {
 				if(mode == CompatibilityMode.COMPAT_UNKNOWN) continue;
 				// FIXME l10n???
-				HTMLNode option = select.addChild("option", "value", mode.name(), NodeL10n.getBase().getString("InsertContext.CompatibilityMode."+mode.name()));
+				HTMLNode option = select.addChild("option", "value", mode.name(),
+				        NodeL10n.getBase().getString("InsertContext.CompatibilityMode."+mode.name()));
 				if(mode == CompatibilityMode.COMPAT_CURRENT)
 					option.addAttribute("selected", "");
 			}
 			insertForm.addChild("br");
 			insertForm.addChild("#", l10n("splitfileCryptoKeyLabel")+": ");
-			insertForm.addChild("input", new String[] { "type", "name", "maxlength" }, new String[] { "text", "overrideSplitfileKey", "64" });
+			insertForm.addChild("input",
+			        new String[] { "type", "name", "maxlength" },
+			        new String[] { "text", "overrideSplitfileKey", "64" });
 		}
 		insertForm.addChild("br");
 		insertForm.addChild("br");
 		// Local file browser
 		if(ctx.isAllowedFullAccess()) {
 			insertForm.addChild("#", NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseLabel")+": ");
-			insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local", NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseButton") + "..." });
+			insertForm.addChild("input",
+			        new String[] { "type", "name", "value" },
+			        new String[] { "submit", "insert-local",
+			                NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseButton") + "..." });
 			insertForm.addChild("br");
 		}
 		insertForm.addChild("#", NodeL10n.getBase().getString("QueueToadlet.insertFileLabel") + ": ");
-		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "file", "filename", "" });
+		insertForm.addChild("input",
+		        new String[] { "type", "name", "value" },
+		        new String[] { "file", "filename", "" });
 		insertForm.addChild("#", " \u00a0 ");
-		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert", NodeL10n.getBase().getString("QueueToadlet.insertFileInsertFileLabel") });
+		insertForm.addChild("input", 
+		        new String[] { "type", "name", "value" },
+		        new String[] { "submit", "insert",
+		                NodeL10n.getBase().getString("QueueToadlet.insertFileInsertFileLabel") });
 		insertForm.addChild("#", " \u00a0 ");
 		return insertBox;
 	}

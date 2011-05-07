@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.config.BooleanOption;
 import freenet.config.Config;
 import freenet.config.ConfigCallback;
 import freenet.config.EnumerableOptionCallback;
@@ -19,6 +18,7 @@ import freenet.config.WrapperConfig;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.ProgramDirectory;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.FredPluginConfigurable;
@@ -36,6 +36,7 @@ import freenet.support.api.HTTPRequest;
 public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 	// If a setting has to be more than a meg, something is seriously wrong!
 	private static final int MAX_PARAM_VALUE_SIZE = 1024*1024;
+	private final LocalDirectoryConfigToadlet localDirectoryConfigToadlet;
 	private final SubConfig subConfig;
 	private final Config config;
 	private final NodeClientCore core;
@@ -71,18 +72,20 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 
 			if (node.isUsingWrapper()) {
 				alertNode.addChild("br");
-				HTMLNode restartForm = alertNode.addChild("form", new String[] { "action", "method", "enctype", "id",  "accept-charset" },
-						new String[] { "/", "post", "multipart/form-data", "restartForm", "utf-8"} ).addChild("div");
-				restartForm.addChild("input", new String[] { "type", "name", "value" },
-						new String[] { "hidden", "formPassword", node.clientCore.formPassword });
+				HTMLNode restartForm = alertNode.addChild("form",
+				        new String[] { "action", "method", "enctype", "id",  "accept-charset" },
+				        new String[] { "/", "post", "multipart/form-data", "restartForm", "utf-8"}).addChild("div");
+				restartForm.addChild("input",
+				        new String[] { "type", "name", "value" },
+				        new String[] { "hidden", "formPassword", node.clientCore.formPassword });
 				restartForm.addChild("div");
 				restartForm.addChild("input",//
-						new String[] { "type", "name" },//
-						new String[] { "hidden", "restart" });
+				        new String[] { "type", "name" },//
+				        new String[] { "hidden", "restart" });
 				restartForm.addChild("input", //
-						new String[] { "type", "name", "value" },//
-						new String[] { "submit", "restart2",//
-				                l10n("restartNode") });
+				        new String[] { "type", "name", "value" },//
+				        new String[] { "submit", "restart2",
+				                 l10n( "restartNode") });
 			}
 
 			return alertNode;
@@ -115,6 +118,11 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		this.node = node;
 		this.subConfig = subConfig;
 		this.plugin = plugin;
+		this.localDirectoryConfigToadlet = new LocalDirectoryConfigToadlet(core, client, path());
+	}
+
+	public Toadlet getBrowser() {
+		return localDirectoryConfigToadlet;
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
@@ -124,7 +132,43 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			return;
 		}
 
-		String pass = request.getPartAsString("formPassword", 32);
+		 //Returning from directory selector with a selection.
+		if(request.isPartSet("selected-dir")) {
+			handleMethodGET(uri, request, ctx);
+		}
+
+		//Returning from directory selector without a selection.
+		if(request.isPartSet("select-for")) {
+			localDirectoryConfigToadlet.handleMethodPOST(uri, request, ctx);
+		}
+
+		//Entering directory selector from config page.
+		//This would be two loops if it checked for a redirect (key.startsWith("select-directory.")) before constructing
+		//the params string. It constructs it no matter what, then redirects if it turns out to be needed.
+		boolean directorySelector = false;
+		String params = "?";
+		for(String key : request.getParts()) {
+			 //Prepare parts for page selection redirect:
+			//Extract option and put into "select-for"; preserve others.
+			String value;
+			value = request.getPartAsStringFailsafe(key, MAX_PARAM_VALUE_SIZE);
+			if(key.startsWith("select-directory.")) {
+				params +="select-for="+key.substring("select-directory.".length())+'&';
+				directorySelector = true;
+			} else {
+				params +=key+'='+value+'&';
+			}
+		}
+		if(directorySelector) {
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>(1);
+			//params ends in &. Download directory browser starts in default download directory.
+			headers.put("Location", localDirectoryConfigToadlet.path()+params+
+			        "path="+core.getDownloadsDir().getAbsolutePath());
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			return;
+		}
+
+		String pass = request.getPartAsStringFailsafe("formPassword", 32);
 		if((pass == null) || !pass.equals(core.formPassword)) {
 			MultiValueTable<String,String> headers = new MultiValueTable<String,String>();
 			headers.put("Location", path());
@@ -132,33 +176,30 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			return;
 		}
 
-		SubConfig[] sc = config.getConfigs();
 		StringBuilder errbuf = new StringBuilder();
-
 		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 
-		for(int i=0; i<sc.length ; i++){
-			Option<?>[] o = sc[i].getOptions();
-			String prefix = sc[i].getPrefix();
+		for(SubConfig sc : config.getConfigs()) {
+			String prefix = sc.getPrefix();
 			String configName;
 
-			for(int j=0; j<o.length; j++){
-				configName=o[j].getName();
+			for(Option<?> o : sc.getOptions()) {
+				configName=o.getName();
 				if(logMINOR) Logger.minor(this, "Setting "+prefix+ '.' +configName);
 
-				// we ignore unreconized parameters
+				//This ignores unrecognized parameters.
 				if(request.isPartSet(prefix+ '.' +configName)) {
-					String value = request.getPartAsString(prefix+ '.' +configName, MAX_PARAM_VALUE_SIZE);
-					if(!(o[j].getValueString().equals(value))){
+					String value = request.getPartAsStringFailsafe(prefix+ '.' +configName, MAX_PARAM_VALUE_SIZE);
+					if(!(o.getValueString().equals(value))){
 						if(logMINOR) Logger.minor(this, "Setting "+prefix+ '.' +configName+" to "+value);
 						try{
-							o[j].setValue(value);
+							o.setValue(value);
 						} catch (InvalidConfigValueException e) {
-							errbuf.append(o[j].getName()).append(' ').append(e.getMessage()).append('\n');
+							errbuf.append(o.getName()).append(' ').append(e.getMessage()).append('\n');
 						} catch (NodeNeedRestartException e) {
 							needRestart = true;
 						} catch (Exception e){
-                            errbuf.append(o[j].getName()).append(' ').append(e).append('\n');
+							errbuf.append(o.getName()).append(' ').append(e).append('\n');
 							Logger.error(this, "Caught "+e, e);
 						}
 					}
@@ -168,7 +209,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			// Wrapper params
 			String wrapperConfigName = "wrapper.java.maxmemory";
 			if(request.isPartSet(wrapperConfigName)) {
-				String value = request.getPartAsString(wrapperConfigName, MAX_PARAM_VALUE_SIZE);
+				String value = request.getPartAsStringFailsafe(wrapperConfigName, MAX_PARAM_VALUE_SIZE);
 				if(!WrapperConfig.getWrapperProperty(wrapperConfigName).equals(value)) {
 					if(logMINOR) Logger.minor(this, "Setting "+wrapperConfigName+" to "+value);
 					WrapperConfig.setWrapperProperty(wrapperConfigName, value);
@@ -198,7 +239,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 					restartForm.addChild("input", //
 					        new String[] { "type", "name", "value" },//
 					        new String[] { "submit", "restart2",//
-					                l10n("restartNode") });
+					                l10n( "restartNode") });
 				}
 
 				if (needRestartUserAlert == null) {
@@ -223,20 +264,24 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 
 	}
 
-	private static final String l10n(String string) {
+	private static String l10n(String string) {
 		return NodeL10n.getBase().getString("ConfigToadlet." + string);
 	}
 
 	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 
 		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"), NodeL10n.getBase().getString("Toadlet.unauthorized"));
+			super.sendErrorPage(ctx, 403,
+					NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"),
+					NodeL10n.getBase().getString("Toadlet.unauthorized"));
 			return;
 		}
 
 		final int mode = ctx.getPageMaker().parseMode(req, container);
 
-		PageNode page = ctx.getPageMaker().getPageNode(NodeL10n.getBase().getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
+		PageNode page = ctx.getPageMaker().getPageNode(NodeL10n.getBase().
+				getString("ConfigToadlet.fullTitle", new String[]{"name"}, new String[]{node.getMyName()}),
+				ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 
@@ -250,6 +295,10 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		if(subConfig.getPrefix().equals("node") && WrapperConfig.canChangeProperties()) {
 			String configName = "wrapper.java.maxmemory";
 			String curValue = WrapperConfig.getWrapperProperty(configName);
+			//If persisted from directory browser, override. This is a POST HTTPRequest.
+			if(req.isPartSet(configName)) {
+				curValue = req.getPartAsStringFailsafe(configName, MAX_PARAM_VALUE_SIZE);
+			}
 			if(curValue != null) {
 				formNode.addChild("div", "class", "configprefix", l10n("wrapper"));
 				HTMLNode list = formNode.addChild("ul", "class", "config");
@@ -257,63 +306,95 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 				// FIXME how to get the real default???
 				String defaultValue = "128";
 				item.addChild("span", new String[]{ "class", "title", "style" },
-						new String[]{ "configshortdesc", NodeL10n.getBase().getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { defaultValue }),
-						"cursor: help;" }).addChild(NodeL10n.getBase().getHTMLNode("WrapperConfig."+configName+".short"));
-				item.addChild("span", "class", "config").addChild("input", new String[] { "type", "class", "name", "value" }, new String[] { "text", "config", configName, curValue });
-				item.addChild("span", "class", "configlongdesc").addChild(NodeL10n.getBase().getHTMLNode("WrapperConfig."+configName+".long"));
+				        new String[]{ "configshortdesc",
+				                NodeL10n.getBase().getString("ConfigToadlet.defaultIs",
+				        new String[] { "default" }, new String[] { defaultValue }),
+				        "cursor: help;" }).addChild(
+				                NodeL10n.getBase().getHTMLNode("WrapperConfig."+configName+".short"));
+				item.addChild("span", "class", "config").addChild("input",
+				        new String[] { "type", "class", "name", "value" },
+				        new String[] { "text", "config", configName, curValue });
+				item.addChild("span", "class", "configlongdesc").addChild(
+				        NodeL10n.getBase().getHTMLNode("WrapperConfig."+configName+".long"));
 			}
 		}
 
 			short displayedConfigElements = 0;
-
-			Option<?>[] o = subConfig.getOptions();
 			HTMLNode configGroupUlNode = new HTMLNode("ul", "class", "config");
 
-			for(int j=0; j<o.length; j++){
-				if(! (mode == PageMaker.MODE_SIMPLE && o[j].isExpert())){
+			for(Option<?> o : subConfig.getOptions()) {
+				if(! (mode == PageMaker.MODE_SIMPLE && o.isExpert())){
 					displayedConfigElements++;
-					String configName = o[j].getName();
+					String configName = o.getName();
+					String fullName = subConfig.getPrefix() + '.' + configName;
+					String value = o.getValueString();
 
 					// If ConfigToadlet is serving a plugin, ask the plugin to translate the
 					// config descriptions, otherwise use the node's BaseL10n instance like
 					// normal.
-					HTMLNode shortDesc = (plugin == null) ? NodeL10n.getBase().getHTMLNode(o[j].getShortDesc()) : new HTMLNode("#", plugin.getString(o[j].getShortDesc()));
-					HTMLNode longDesc = (plugin == null) ? NodeL10n.getBase().getHTMLNode(o[j].getLongDesc()) : new HTMLNode("#", plugin.getString(o[j].getLongDesc()));
+					HTMLNode shortDesc = (plugin == null) ?
+					        NodeL10n.getBase().getHTMLNode(o.getShortDesc()) :
+					        new HTMLNode("#", plugin.getString(o.getShortDesc()));
+					HTMLNode longDesc = (plugin == null) ?
+					        NodeL10n.getBase().getHTMLNode(o.getLongDesc()) :
+					        new HTMLNode("#", plugin.getString(o.getLongDesc()));
 
 					HTMLNode configItemNode = configGroupUlNode.addChild("li");
-					configItemNode.addChild("a", new String[]{"name", "id"}, new String[]{configName, configName}).addChild("span", new String[]{ "class", "title", "style" },
-							new String[]{ "configshortdesc", NodeL10n.getBase().getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { o[j].getDefault() }) + (mode >= PageMaker.MODE_ADVANCED ? " ["+subConfig.getPrefix() + '.' + o[j].getName() + ']' : ""),
-							"cursor: help;" }).addChild(shortDesc);
+					configItemNode.addChild("a", new String[]{"name", "id"},
+					        new String[]{configName, configName}).addChild("span",
+					        new String[]{ "class", "title", "style" },
+					        new String[]{ "configshortdesc",
+					                NodeL10n.getBase().getString("ConfigToadlet.defaultIs",
+					                new String[] { "default" },
+					                new String[] { o.getDefault() }) +
+					                (mode >= PageMaker.MODE_ADVANCED ? " ["+ fullName + ']' : ""),
+					        "cursor: help;" }).addChild(shortDesc);
 					HTMLNode configItemValueNode = configItemNode.addChild("span", "class", "config");
-					if(o[j].getValueString() == null){
-						Logger.error(this, subConfig.getPrefix() + configName + "has returned null from config!);");
+					if(value == null){
+						Logger.error(this, fullName + "has returned null from config!);");
 						continue;
 					}
 
-					ConfigCallback<?> callback = o[j].getCallback();
+
+					//Values persisted through browser override currently applied ones
+					if(req.isPartSet(fullName)) {
+						//TODO: This may have to be Base64 encoded
+						value = req.getPartAsStringFailsafe(fullName, MAX_PARAM_VALUE_SIZE);
+					}
+					//A value changed by the directory selector takes precedence.
+					if(req.isPartSet("select-for") && req.isPartSet("selected-dir")) {
+						String whichOption = req.getPartAsStringFailsafe("select-for", MAX_PARAM_VALUE_SIZE);
+						if(whichOption.equals(fullName)) {
+							value = req.getPartAsStringFailsafe("filename", MAX_PARAM_VALUE_SIZE);
+						}
+					}
+
+					ConfigCallback<?> callback = o.getCallback();
 					if(callback instanceof EnumerableOptionCallback)
-						configItemValueNode.addChild(addComboBox((EnumerableOptionCallback) callback, subConfig,
-						        configName, callback.isReadOnly()));
+						configItemValueNode.addChild(addComboBox(value, (EnumerableOptionCallback) callback, fullName,
+						        callback.isReadOnly()));
 					else if(callback instanceof BooleanCallback)
-						configItemValueNode.addChild(addBooleanComboBox(((BooleanOption) o[j]).getValue(), subConfig,
-						        configName, callback.isReadOnly()));
+						configItemValueNode.addChild(addBooleanComboBox(Boolean.valueOf(value), fullName,
+						        callback.isReadOnly()));
+					else if(callback instanceof ProgramDirectory.DirectoryCallback && !callback.isReadOnly()){
+						configItemValueNode.addChild(addTextBox(value, fullName, o, false));
+						configItemValueNode.addChild("input",
+						        new String[] { "type", "name", "value" },
+						        new String[] { "submit", "select-directory."+fullName, l10n("selectDirectory") });
+					}
 					else if (callback.isReadOnly())
-						configItemValueNode.addChild("input", //
-						        new String[] { "type", "class", "disabled", "alt", "name", "value" }, //
-						        new String[] { "text", "config", "disabled", o[j].getShortDesc(),
-						                subConfig.getPrefix() + '.' + configName, o[j].getValueString() });
-					else
-						configItemValueNode.addChild("input",//
-						        new String[] { "type", "class", "alt", "name", "value" }, //
-						        new String[] { "text", "config", o[j].getShortDesc(),
-						                subConfig.getPrefix() + '.' + configName, o[j].getValueString() });
+						configItemValueNode.addChild(addTextBox(value, fullName, o, true));
+					else //if (!callback.isReadOnly())
+						configItemValueNode.addChild(addTextBox(value, fullName, o, false));
 
 					configItemNode.addChild("span", "class", "configlongdesc").addChild(longDesc);
 				}
 			}
 
-			if(displayedConfigElements>0) {
-				formNode.addChild("div", "class", "configprefix", (plugin == null) ? l10n(subConfig.getPrefix()) : plugin.getString(subConfig.getPrefix()));
+			if(displayedConfigElements > 0) {
+				formNode.addChild("div", "class", "configprefix", (plugin == null) ?
+				        l10n(subConfig.getPrefix()) :
+				        plugin.getString(subConfig.getPrefix()));
 				formNode.addChild("a", "id", subConfig.getPrefix());
 				formNode.addChild(configGroupUlNode);
 			}
@@ -324,42 +405,66 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
-	private HTMLNode addComboBox(EnumerableOptionCallback o, SubConfig sc, String name, boolean disabled) {
+	private HTMLNode addTextBox(String value, String fullName, Option<?> o, boolean disabled) {
 		HTMLNode result;
-		if (disabled)
-			result = new HTMLNode("select", //
-			        new String[] { "name", "disabled" }, //
-			        new String[] { sc.getPrefix() + '.' + name, "disabled" });
-		else
-			result = new HTMLNode("select", "name", sc.getPrefix() + '.' + name);
 
-		String[] possibleValues = o.getPossibleValues();
-		for(int i=0; i<possibleValues.length; i++) {
-			if(possibleValues[i].equals(o.get()))
-				result.addChild("option", new String[] { "value", "selected" }, new String[] { possibleValues[i], "selected" }, possibleValues[i]);
-			else
-				result.addChild("option", "value", possibleValues[i], possibleValues[i]);
+		if(disabled) {
+			result = new HTMLNode("input",
+			         new String[] { "type", "class", "disabled", "alt", "name", "value" }, //
+			         new String[] { "text", "config", "disabled", o.getShortDesc(), fullName, value });
+		}
+		else {
+			result = new HTMLNode("input",
+			         new String[] { "type", "class", "alt", "name", "value" }, //
+			         new String[] { "text", "config", o.getShortDesc(), fullName, value });
 		}
 
 		return result;
 	}
 
-	private HTMLNode addBooleanComboBox(boolean value, SubConfig sc, String name, boolean disabled) {
+	private HTMLNode addComboBox(String value, EnumerableOptionCallback o, String fullName, boolean disabled) {
 		HTMLNode result;
+
 		if (disabled)
 			result = new HTMLNode("select", //
-			        new String[] { "name", "disabled" }, //
-			        new String[] { sc.getPrefix() + '.' + name, "disabled" });
+			         new String[] { "name", "disabled" }, //
+			         new String[] { fullName, "disabled" });
 		else
-			result = new HTMLNode("select", "name", sc.getPrefix() + '.' + name);
+			result = new HTMLNode("select", "name", fullName);
+
+		for(String possibleValue : o.getPossibleValues()) {
+			if(possibleValue.equals(value))
+				result.addChild("option",
+				        new String[] { "value", "selected" },
+				        new String[] { possibleValue, "selected" }, possibleValue);
+			else
+				result.addChild("option", "value", possibleValue, possibleValue);
+		}
+
+		return result;
+	}
+
+	private HTMLNode addBooleanComboBox(boolean value, String fullName, boolean disabled) {
+		HTMLNode result;
+
+		if (disabled)
+			result = new HTMLNode("select", //
+			         new String[] { "name", "disabled" }, //
+			         new String[] {fullName, "disabled" });
+		else
+			result = new HTMLNode("select", "name", fullName);
 
 		if (value) {
-			result.addChild("option", new String[] { "value", "selected" }, new String[] { "true", "selected" },
+			result.addChild("option",
+			        new String[] { "value", "selected" },
+			        new String[] { "true", "selected" },
 			        l10n("true"));
 			result.addChild("option", "value", "false", l10n("false"));
 		} else {
 			result.addChild("option", "value", "true", l10n("true"));
-			result.addChild("option", new String[] { "value", "selected" }, new String[] { "false", "selected" },
+			result.addChild("option",
+			        new String[] { "value", "selected" },
+			        new String[] { "false", "selected" },
 			        l10n("false"));
 		}
 

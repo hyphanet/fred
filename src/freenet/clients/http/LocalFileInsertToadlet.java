@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
+import java.awt.geom.Path2D;
 import java.net.MalformedURLException;
 import java.util.Hashtable;
 
@@ -11,6 +12,9 @@ import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
 
 public class LocalFileInsertToadlet extends LocalFileBrowserToadlet {
+
+	public static final String PATH = "/insert-browse/";
+	public static final String POST_TO = "/uploads/";
 	
 	public LocalFileInsertToadlet(NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient) {
 		super(core, highLevelSimpleClient);
@@ -19,13 +23,13 @@ public class LocalFileInsertToadlet extends LocalFileBrowserToadlet {
 	@Override
 	public String path()
 	{
-		return "/insert-browse/";
+		return PATH;
 	}
 	
 	@Override
 	protected String postTo()
 	{
-		return "/uploads/";
+		return POST_TO;
 	}
 
     @Override

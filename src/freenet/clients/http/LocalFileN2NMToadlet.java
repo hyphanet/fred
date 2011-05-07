@@ -11,6 +11,9 @@ import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
 
 public class LocalFileN2NMToadlet extends LocalFileBrowserToadlet {
+
+	public static final String PATH = "/n2nm-browse/";
+	public static final String POST_TO = "/send_n2ntm/";
 	
 	public LocalFileN2NMToadlet(NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient) {
 		super(core, highLevelSimpleClient);
@@ -18,12 +21,12 @@ public class LocalFileN2NMToadlet extends LocalFileBrowserToadlet {
 	
 	@Override
 	public String path() {
-		return "/n2nm-browse/";
+		return PATH;
 	}
 	
 	@Override
 	protected String postTo(){
-		return "/send_n2ntm/";
+		return POST_TO;
 	}
 	
 	@Override

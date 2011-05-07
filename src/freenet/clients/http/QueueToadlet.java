@@ -159,7 +159,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			if (request.getPartAsString("insert-local", 128).length() > 0) {
 				
 				FreenetURI insertURI;
-				String keyType = request.getPartAsString("keytype", 10);
+				String keyType = request.getPartAsStringFailsafe("keytype", 10);
 				if ("CHK".equals(keyType)) {
 					insertURI = new FreenetURI("CHK@");
 					if(fiw != null)
@@ -175,24 +175,25 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						if(logMINOR)
 							Logger.minor(this, "Inserting key: "+insertURI+" ("+u+")");
 					} catch (MalformedURLException mue1) {
-						writeError(NodeL10n.getBase().getString("QueueToadlet.errorInvalidURI"), NodeL10n.getBase().getString("QueueToadlet.errorInvalidURIToU"), ctx, false, true);
+						writeError(NodeL10n.getBase().getString("QueueToadlet.errorInvalidURI"),
+						           NodeL10n.getBase().getString("QueueToadlet.errorInvalidURIToU"), ctx, false, true);
 						return;
 					}
 				} else {
-					writeError(NodeL10n.getBase().getString("QueueToadlet.errorMustSpecifyKeyTypeTitle"), NodeL10n.getBase().getString("QueueToadlet.errorMustSpecifyKeyType"), ctx, false, true);
+					writeError(NodeL10n.getBase().getString("QueueToadlet.errorMustSpecifyKeyTypeTitle"),
+					           NodeL10n.getBase().getString("QueueToadlet.errorMustSpecifyKeyType"), ctx, false, true);
 					return;
 				}
-				LocalFileInsertToadlet t = new LocalFileInsertToadlet(core, client);
 				MultiValueTable<String, String> responseHeaders = new MultiValueTable<String, String>();
-				responseHeaders.put("Location", t.path()+"?key="+insertURI.toASCIIString()+
-						"&compress="+String.valueOf(request.getPartAsString("compress", 128).length() > 0)+
-						"&compatibilityMode="+request.getPartAsString("compatibilityMode", 100)+
-						"&overrideSplitfileKey="+request.getPartAsString("overrideSplitfileKey", 65));
+				responseHeaders.put("Location", LocalFileInsertToadlet.PATH+"?key="+insertURI.toASCIIString()+
+				        "&compress="+String.valueOf(request.getPartAsStringFailsafe("compress", 128).length() > 0)+
+				        "&compatibilityMode="+request.getPartAsStringFailsafe("compatibilityMode", 100)+
+				        "&overrideSplitfileKey="+request.getPartAsStringFailsafe("overrideSplitfileKey", 65));
 				ctx.sendReplyHeaders(302, "Found", responseHeaders, null, 0);
 				return;
 			}
 
-			String pass = request.getPartAsString("formPassword", 32);
+			String pass = request.getPartAsStringFailsafe("formPassword", 32);
 			if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
 				MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 				headers.put("Location", path());

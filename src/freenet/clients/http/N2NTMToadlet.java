@@ -32,6 +32,10 @@ public class N2NTMToadlet extends Toadlet {
 		this.core = core;
 	}
 
+	public Toadlet getBrowser() {
+		return browser;
+	}
+
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx)
 			throws ToadletContextClosedException, IOException,
 			RedirectException {

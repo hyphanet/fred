@@ -288,32 +288,50 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 	static final HTMLNode DOWNLOADS_LINK = QueueToadlet.DOWNLOADS_LINK;
 
-	private static void addDownloadOptions(ToadletContext ctx, HTMLNode optionList, FreenetURI key, String mimeType, boolean disableFiltration, boolean dontShowFilter, NodeClientCore core) {
+	private static void addDownloadOptions(ToadletContext ctx, HTMLNode optionList, FreenetURI key, String mimeType,
+	        boolean disableFiltration, boolean dontShowFilter, NodeClientCore core) {
 		PHYSICAL_THREAT_LEVEL threatLevel = core.node.securityLevels.getPhysicalThreatLevel();
 		NETWORK_THREAT_LEVEL netLevel = core.node.securityLevels.getNetworkThreatLevel();
-		boolean filterChecked = !(((threatLevel == PHYSICAL_THREAT_LEVEL.LOW && netLevel == NETWORK_THREAT_LEVEL.LOW)) || disableFiltration);
+		boolean filterChecked = !(((threatLevel == PHYSICAL_THREAT_LEVEL.LOW && netLevel == NETWORK_THREAT_LEVEL.LOW))
+		        || disableFiltration);
 		if((filterChecked) && mimeType != null && !mimeType.equals("application/octet-stream") && !mimeType.equals("")) {
 			MIMEType type = ContentFilter.getMIMEType(mimeType);
-			if((type == null || (!(type.safeToRead || type.readFilter != null))) && !(threatLevel == PHYSICAL_THREAT_LEVEL.HIGH || threatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM || netLevel == NETWORK_THREAT_LEVEL.HIGH || netLevel == NETWORK_THREAT_LEVEL.MAXIMUM))
+			if((type == null || (!(type.safeToRead || type.readFilter != null))) &&
+			        !(threatLevel == PHYSICAL_THREAT_LEVEL.HIGH || threatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM ||
+			          netLevel == NETWORK_THREAT_LEVEL.HIGH || netLevel == NETWORK_THREAT_LEVEL.MAXIMUM))
 				filterChecked = false;
 		}
 		if(threatLevel != PHYSICAL_THREAT_LEVEL.MAXIMUM) {
 			HTMLNode option = optionList.addChild("li");
 			HTMLNode optionForm = ctx.addFormChild(option, "/downloads/", "tooBigQueueForm");
-			optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
-			optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "disk" });
-			optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
+			optionForm.addChild("input",
+			        new String[] { "type", "name", "value" },
+			        new String[] { "hidden", "key", key.toString() });
+			optionForm.addChild("input",
+			        new String[] { "type", "name", "value" },
+			        new String[] { "hidden", "return-type", "disk" });
+			optionForm.addChild("input", 
+			        new String[] { "type", "name", "value" },
+			        new String[] { "hidden", "persistence", "forever" });
 			if (mimeType != null && !mimeType.equals("")) {
-				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "type", mimeType });
+				optionForm.addChild("input",
+				        new String[] { "type", "name", "value" },
+				        new String[] { "hidden", "type", mimeType });
 			}
 			optionForm.addChild("input", new String[] { "type", "name", "value" },
-					new String[] { "submit", "download", l10n("downloadInBackgroundToDiskButton") });
+			        new String[] { "submit", "download", l10n("downloadInBackgroundToDiskButton") });
 			NodeL10n.getBase().addL10nSubstitution(optionForm, "FProxyToadlet.downloadInBackgroundToDisk",
-					new String[] { "dir", "page" },
-					new HTMLNode[] { HTMLNode.text(core.getDownloadsDir().getAbsolutePath()), DOWNLOADS_LINK });
+			        new String[] { "dir", "page" },
+			        new HTMLNode[] { HTMLNode.text(core.getDownloadsDir().getAbsolutePath()), DOWNLOADS_LINK });
+			optionForm.addChild("input",
+			        new String[] { "type", "name", "value" },
+			        new String[] { "submit", "select-download-dir",
+					               NodeL10n.getBase().getString("ConfigToadlet.selectDirectory")} );
 			if(!dontShowFilter) {
 				HTMLNode filterControl = optionForm.addChild("div", l10n("filterData"));
-				HTMLNode f = filterControl.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "filterData", "filterData"});
+				HTMLNode f = filterControl.addChild("input",
+				        new String[] { "type", "name", "value" },
+				        new String[] { "checkbox", "filterData", "filterData"});
 				if(filterChecked) f.addAttribute("checked", "checked");
 				filterControl.addChild("div", l10n("filterDataMessage"));
 			}
@@ -328,18 +346,28 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		if(threatLevel != PHYSICAL_THREAT_LEVEL.LOW) {
 			HTMLNode option = optionList.addChild("li");
 			HTMLNode optionForm = ctx.addFormChild(option, "/downloads/", "tooBigQueueForm");
-			optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
-			optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "direct" });
-			optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
+			optionForm.addChild("input",
+			        new String[] { "type", "name", "value" },
+			        new String[] { "hidden", "key", key.toString() });
+			optionForm.addChild("input",
+			        new String[] { "type", "name", "value" },
+			        new String[] { "hidden", "return-type", "direct" });
+			optionForm.addChild("input",
+			        new String[] { "type", "name", "value" },
+			        new String[] { "hidden", "persistence", "forever" });
 			if (mimeType != null && !mimeType.equals("")) {
-				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "type", mimeType });
+				optionForm.addChild("input",
+				        new String[] { "type", "name", "value" },
+				        new String[] { "hidden", "type", mimeType });
 			}
 			optionForm.addChild("input", new String[] { "type", "name", "value" },
-					new String[] { "submit", "download", l10n("downloadInBackgroundToTempSpaceButton") });
+			        new String[] { "submit", "download", l10n("downloadInBackgroundToTempSpaceButton") });
 			NodeL10n.getBase().addL10nSubstitution(optionForm, "FProxyToadlet.downloadInBackgroundToTempSpace",
-					new String[] { "page", "bold" }, new HTMLNode[] { DOWNLOADS_LINK, HTMLNode.STRONG });
+			        new String[] { "page", "bold" }, new HTMLNode[] { DOWNLOADS_LINK, HTMLNode.STRONG });
 			HTMLNode filterControl = optionForm.addChild("div", l10n("filterData"));
-			HTMLNode f = filterControl.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "checkbox", "filterData", "filterData", "checked"});
+			HTMLNode f = filterControl.addChild("input",
+			        new String[] { "type", "name", "value", "checked" },
+			        new String[] { "checkbox", "filterData", "filterData", "checked"});
 			if(filterChecked) f.addAttribute("checked", "checked");
 			filterControl.addChild("div", l10n("filterDataMessage"));
 
@@ -1050,24 +1078,31 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		server.registerMenu("/alerts/", "FProxyToadlet.categoryStatus", "FProxyToadlet.categoryTitleStatus", null);
 		server.registerMenu("/seclevels/", "FProxyToadlet.categoryConfig", "FProxyToadlet.categoryTitleConfig", null);
 
-
-		server.register(fproxy, "FProxyToadlet.categoryBrowsing", "/", false, "FProxyToadlet.welcomeTitle", "FProxyToadlet.welcome", false, null);
+		server.register(fproxy, "FProxyToadlet.categoryBrowsing", "/", false, "FProxyToadlet.welcomeTitle",
+		        "FProxyToadlet.welcome", false, null);
 
 		InsertFreesiteToadlet siteinsert = new InsertFreesiteToadlet(client, core.alerts);
-		server.register(siteinsert, "FProxyToadlet.categoryBrowsing", "/insertsite/", true, "FProxyToadlet.insertFreesiteTitle", "FProxyToadlet.insertFreesite", false, null);
+		server.register(siteinsert, "FProxyToadlet.categoryBrowsing", "/insertsite/", true,
+		        "FProxyToadlet.insertFreesiteTitle", "FProxyToadlet.insertFreesite", false, null);
 
 		UserAlertsToadlet alerts = new UserAlertsToadlet(client, node, core);
-		server.register(alerts, "FProxyToadlet.categoryStatus", "/alerts/", true, "FProxyToadlet.alertsTitle", "FProxyToadlet.alerts", true, null);
-
+		server.register(alerts, "FProxyToadlet.categoryStatus", "/alerts/", true, "FProxyToadlet.alertsTitle",
+		        "FProxyToadlet.alerts", true, null);
 
 		QueueToadlet downloadToadlet = new QueueToadlet(core, core.getFCPServer(), client, false);
-		server.register(downloadToadlet, "FProxyToadlet.categoryQueue", "/downloads/", true, "FProxyToadlet.downloadsTitle", "FProxyToadlet.downloads", false, downloadToadlet);
+		server.register(downloadToadlet, "FProxyToadlet.categoryQueue", "/downloads/", true,
+		        "FProxyToadlet.downloadsTitle", "FProxyToadlet.downloads", false, downloadToadlet);
 		QueueToadlet uploadToadlet = new QueueToadlet(core, core.getFCPServer(), client, true);
-		server.register(uploadToadlet, "FProxyToadlet.categoryQueue", "/uploads/", true, "FProxyToadlet.uploadsTitle", "FProxyToadlet.uploads", false, uploadToadlet);
+		server.register(uploadToadlet, "FProxyToadlet.categoryQueue", "/uploads/", true, "FProxyToadlet.uploadsTitle",
+		        "FProxyToadlet.uploads", false, uploadToadlet);
 
 		FileInsertWizardToadlet fiw = new FileInsertWizardToadlet(client, core);
-		server.register(fiw, "FProxyToadlet.categoryQueue", FileInsertWizardToadlet.PATH, true, "FProxyToadlet.uploadFileWizardTitle", "FProxyToadlet.uploadFileWizard", false, fiw);
+		server.register(fiw, "FProxyToadlet.categoryQueue", FileInsertWizardToadlet.PATH, true,
+		        "FProxyToadlet.uploadFileWizardTitle", "FProxyToadlet.uploadFileWizard", false, fiw);
 		uploadToadlet.setFIW(fiw);
+
+		LocalFileInsertToadlet localFileInsertToadlet = new LocalFileInsertToadlet(core, client);
+		server.register(localFileInsertToadlet, null, LocalFileInsertToadlet.PATH, true, false);
 
 		SymlinkerToadlet symlinkToadlet = new SymlinkerToadlet(client, node);
 		server.register(symlinkToadlet, null, "/sl/", true, false);
@@ -1086,11 +1121,11 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			if(prefix.equals("security-levels") || prefix.equals("pluginmanager")) continue;
 			ConfigToadlet configtoadlet = new ConfigToadlet(client, config, cfg, node, core);
 			server.register(configtoadlet, "FProxyToadlet.categoryConfig", "/config/"+prefix, true, "ConfigToadlet."+prefix, "ConfigToadlet.title."+prefix, true, configtoadlet);
+			server.register(configtoadlet.getBrowser(), null, configtoadlet.getBrowser().path(), true, false);
 		}
 
 		WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, core, node, bookmarks);
 		server.register(welcometoadlet, null, "/welcome/", true, false);
-
 
 		DarknetConnectionsToadlet friendsToadlet = new DarknetConnectionsToadlet(node, core, client);
 		server.register(friendsToadlet, "FProxyToadlet.categoryFriends", "/friends/", true, "FProxyToadlet.friendsTitle", "FProxyToadlet.friends", true, null);
@@ -1106,21 +1141,13 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 		N2NTMToadlet n2ntmToadlet = new N2NTMToadlet(node, core, client);
 		server.register(n2ntmToadlet, null, "/send_n2ntm/", true, true);
-
-		LocalFileInsertToadlet localFileInsertToadlet = new LocalFileInsertToadlet(core, client);
-		server.register(localFileInsertToadlet, null, localFileInsertToadlet.path(), true, false);
-
-		LocalFileN2NMToadlet localFileN2NMToadlet = new LocalFileN2NMToadlet(core, client);
-		server.register(localFileN2NMToadlet, null, localFileN2NMToadlet.path(), true, false);
-
-        LocalDirectoryConfigToadlet localDirectoryConfigToadlet = new LocalDirectoryConfigToadlet(core, client);
-        server.register(localDirectoryConfigToadlet, null, localDirectoryConfigToadlet.path(), true, false);
+		server.register(n2ntmToadlet.getBrowser(), null, LocalFileN2NMToadlet.PATH, true, false);
 
 		BookmarkEditorToadlet bookmarkEditorToadlet = new BookmarkEditorToadlet(client, core, bookmarks);
 		server.register(bookmarkEditorToadlet, null, "/bookmarkEditor/", true, false);
 
-		BrowserTestToadlet browsertTestToadlet = new BrowserTestToadlet(client, core);
-		server.register(browsertTestToadlet, null, "/test/", true, false);
+		BrowserTestToadlet browserTestToadlet = new BrowserTestToadlet(client, core);
+		server.register(browserTestToadlet, null, "/test/", true, false);
 
 		StatisticsToadlet statisticsToadlet = new StatisticsToadlet(node, core, client);
 		server.register(statisticsToadlet, "FProxyToadlet.categoryStatus", "/stats/", true, "FProxyToadlet.statsTitle", "FProxyToadlet.stats", true, null);
@@ -1167,7 +1194,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 	/**
 	 * Get expected filename for a file.
-	 * @param e The FetchException.
 	 * @param uri The original URI.
 	 * @param expectedMimeType The expected MIME type.
 	 */
