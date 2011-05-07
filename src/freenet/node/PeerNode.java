@@ -5170,11 +5170,18 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		 * other nodes, but still allow this one.
 		 */
 		void onFailed(PeerNode peer, boolean reallyFailed) {
+			if(logMINOR) Logger.minor(this, "onFailed() on "+this+" reallyFailed="+reallyFailed);
 			synchronized(this) {
-				if(acceptedBy != null) return;
+				if(acceptedBy != null) {
+					if(logMINOR) Logger.minor(this, "Already matched on "+this);
+					return;
+				}
 				if(reallyFailed) {
 					waitingFor.remove(peer);
-					if(!waitingFor.isEmpty()) return;
+					if(!waitingFor.isEmpty()) {
+						if(logMINOR) Logger.minor(this, "Still waiting for other nodes "+Arrays.toString(waitingFor.toArray())+" on "+this);
+						return;
+					}
 				}
 				failed = true;
 				notifyAll();
@@ -5190,9 +5197,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		public PeerNode waitForAny(long maxWait) {
 			PeerNode[] all;
 			synchronized(this) {
-				if(shouldGrab()) return grab();
+				if(shouldGrab()) {
+					if(logMINOR) Logger.minor(this, "Already matched on "+this);
+					return grab();
+				}
 				all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
-				if(all.length == 0) return null;
+				if(all.length == 0) {
+					if(logMINOR) Logger.minor(this, "None to wait for on "+this);
+					return null;
+				}
 			}
 			// Double-check before blocking, prevent race condition.
 			for(PeerNode p : all) {
@@ -5202,6 +5215,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					PeerNode[] unreg;
 					PeerNode other = null;
 					synchronized(this) {
+						if(logMINOR) Logger.minor(this, "tryRouteTo() succeeded to "+p+" on "+this+" with "+accept+" - checking whether we have already accepted.");
 						unreg = innerOnWaited(p, accept);
 						if(unreg == null) {
 							// Recover from race condition.
