@@ -1728,7 +1728,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		// If there is, we will avoid sending requests for the specified period.
 		node.failureTable.onFinalFailure(key, next, htl, origHTL, timeLeft, FailureTable.REJECT_TIME, source);
 		next.noLongerRoutingTo(origTag, false);
-		
 	}
 
 	/**
