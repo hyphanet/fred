@@ -286,11 +286,11 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	@Override
-	protected synchronized int getPeerNodeStatus(long now, long backedOffUntilRT, long backedOffUntilBulk, boolean overPingThreshold) {
+	protected synchronized int getPeerNodeStatus(long now, long backedOffUntilRT, long backedOffUntilBulk, boolean overPingThreshold, boolean noLoadStats) {
 		if(isDisabled) {
 			return PeerManager.PEER_NODE_STATUS_DISABLED;
 		}
-		int status = super.getPeerNodeStatus(now, backedOffUntilRT, backedOffUntilBulk, overPingThreshold);
+		int status = super.getPeerNodeStatus(now, backedOffUntilRT, backedOffUntilBulk, overPingThreshold, noLoadStats);
 		if(status == PeerManager.PEER_NODE_STATUS_CONNECTED ||
 				status == PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM ||
 				status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF ||
