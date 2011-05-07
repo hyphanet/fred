@@ -5375,7 +5375,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(acceptState.ordinal() > worstAcceptable.ordinal()) return null;
 				if(tag.addRoutedTo(PeerNode.this, offeredKey))
 					return acceptState;
-				else return null;
+				else
+					return null;
 			}
 		}
 		
@@ -5393,7 +5394,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(!noLoadStats) {
 					TreeMap<Long,SlotWaiter> list = makeSlotWaiters(waiter.requestType);
 					list.put(waiter.counter, waiter);
-					if(logMINOR) Logger.minor(this, "Queued slot "+waiter+" waiter for "+waiter.requestType+" size is now "+list.size());
+					if(logMINOR) Logger.minor(this, "Queued slot "+waiter+" waiter for "+waiter.requestType+" size is now "+list.size()+" on "+this+" for "+PeerNode.this);
 					queued = true;
 				} else {
 					if(logMINOR) Logger.minor(this, "Not waiting for "+this+" as no load stats");
@@ -5546,6 +5547,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(logMINOR) Logger.minor(this, "Our usage is "+ourUsage+" peer limit is "+stats.peerLimit(input)+" lower limit is "+stats.lowerLimit(input)+" realtime "+realTime+" input "+input);
 			if(ourUsage < stats.peerLimit(input))
 				return RequestLikelyAcceptedState.GUARANTEED;
+			otherRunningRequests.log(PeerNode.this);
 			double theirUsage = otherRunningRequests.calculate(ignoreLocalVsRemote, input);
 			if(logMINOR) Logger.minor(this, "Their usage is "+theirUsage);
 			if(ourUsage + theirUsage < stats.lowerLimit(input))
