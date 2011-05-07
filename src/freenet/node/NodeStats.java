@@ -2578,12 +2578,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return (getSentOverhead() * 1000.0) / uptime;
 	}
 
-	public synchronized void successfulBlockReceive(boolean realTimeFlag) {
-		RunningAverage blockTransferPSuccess = realTimeFlag ? blockTransferPSuccessRT : blockTransferPSuccessBulk;
-		blockTransferPSuccess.report(1.0);
-		if(logMINOR) Logger.minor(this, "Successful receives: "+blockTransferPSuccess.currentValue()+" count="+blockTransferPSuccess.countReports()+" realtime="+realTimeFlag);
-	}
-
 	public synchronized void successfulBlockReceive(boolean realTimeFlag, boolean isLocal) {
 		RunningAverage blockTransferPSuccess = realTimeFlag ? blockTransferPSuccessRT : blockTransferPSuccessBulk;
 		blockTransferPSuccess.report(1.0);
