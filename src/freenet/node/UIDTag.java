@@ -67,15 +67,17 @@ public abstract class UIDTag {
 		return System.currentTimeMillis() - createdTime;
 	}
 	
-	public synchronized void addRoutedTo(PeerNode peer, boolean offeredKey) {
+	public synchronized boolean addRoutedTo(PeerNode peer, boolean offeredKey) {
+		if(logMINOR)
+			Logger.minor(this, "Routing to "+peer+" on "+this+(offeredKey ? " (offered)" : ""), new Exception("debug"));
 		if(routedTo == null) routedTo = new HashSet<PeerNode>();
 		routedTo.add(peer);
 		if(offeredKey) {
 			if(fetchingOfferedKeyFrom == null) fetchingOfferedKeyFrom = new HashSet<PeerNode>();
-			fetchingOfferedKeyFrom.add(peer);
+			return fetchingOfferedKeyFrom.add(peer);
 		} else {
 			if(currentlyRoutingTo == null) currentlyRoutingTo = new HashSet<PeerNode>();
-			currentlyRoutingTo.add(peer);
+			return currentlyRoutingTo.add(peer);
 		}
 	}
 
