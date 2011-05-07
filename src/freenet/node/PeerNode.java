@@ -3810,6 +3810,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		if(logMINOR) Logger.minor(this, "Peer node status now "+peerNodeStatus+" was "+oldPeerNodeStatus);
 		if(peerNodeStatus!=oldPeerNodeStatus){
+			if(oldPeerNodeStatus == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
+				outputLoadTrackerRealTime.maybeNotifySlotWaiter();
+				outputLoadTrackerBulk.maybeNotifySlotWaiter();
+			}
 			notifyPeerNodeStatusChangeListeners();
 		}
 		if(peerNodeStatus == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
