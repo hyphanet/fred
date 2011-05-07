@@ -1243,15 +1243,15 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         					}
     					}
     					return DO.WAIT;
-    				} else {
-    					next.localRejectedOverload("ForwardRejectedOverload", realTimeFlag);
-    					int t = timeSinceSent();
-    					node.failureTable.onFailed(key, next, htl, t, t);
-    					if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
-    					// Give up on this one, try another
-    					next.noLongerRoutingTo(origTag, false);
-    					return DO.NEXT_PEER;
     				}
+    				
+    				next.localRejectedOverload("ForwardRejectedOverload", realTimeFlag);
+    				int t = timeSinceSent();
+    				node.failureTable.onFailed(key, next, htl, t, t);
+    				if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
+    				// Give up on this one, try another
+    				next.noLongerRoutingTo(origTag, false);
+    				return DO.NEXT_PEER;
     			}
     			//Could be a previous rejection, the timeout to incur another ACCEPTED_TIMEOUT is minimal...
     			continue;
