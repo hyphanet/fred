@@ -826,10 +826,12 @@ public class PeerManager {
 			if(p.outputLoadTracker(true).getLastIncomingLoadStats() == null) {
 				if(logMINOR)
 					Logger.minor(this, "Skipping (no load stats RT): "+p.getPeer());
+				continue;
 			}
 			if(p.outputLoadTracker(false).getLastIncomingLoadStats() == null) {
 				if(logMINOR)
 					Logger.minor(this, "Skipping (no load stats bulk): "+p.getPeer());
+				continue;
 			}
 			if(p.isRoutingBackedOffEither()) {
 				if(logMINOR) Logger.minor(this, "Skipping (backoff): "+p+" loc "+p.getLocation());
