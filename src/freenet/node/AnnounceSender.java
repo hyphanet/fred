@@ -151,6 +151,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 				rnf(next);
 				return;
 			}
+			node.peers.incrementSelectionSamples(System.currentTimeMillis(), next);
 			if(logMINOR) Logger.minor(this, "Routing request to "+next);
 			nodesRoutedTo.add(next);
 

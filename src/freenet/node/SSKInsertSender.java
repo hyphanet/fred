@@ -244,6 +244,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             
             // Send to next node
             
+			node.peers.incrementSelectionSamples(System.currentTimeMillis(), next);
             try {
             	next.sendSync(request, this, realTimeFlag);
 			} catch (NotConnectedException e1) {
