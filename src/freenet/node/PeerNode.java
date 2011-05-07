@@ -5340,11 +5340,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		public RequestLikelyAcceptedState tryRouteTo(UIDTag tag,
 				RequestLikelyAcceptedState worstAcceptable, boolean offeredKey) {
 			PeerLoadStats loadStats;
-			synchronized(this) {
-				loadStats = lastIncomingLoadStats;
-			}
 			boolean ignoreLocalVsRemote = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
 			synchronized(routedToLock) {
+				loadStats = lastIncomingLoadStats;
 				if(loadStats == null) {
 					Logger.error(this, "Accepting because no load stats from "+this);
 					tag.addRoutedTo(PeerNode.this, offeredKey);
