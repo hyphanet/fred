@@ -449,7 +449,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             	next.sendSync(req, this, realTimeFlag);
             } catch (NotConnectedException e) {
             	Logger.minor(this, "Not connected");
-	        	origTag.removeRoutingTo(next);
+            	next.noLongerRoutingTo(origTag, false);
             	continue;
             } catch (SyncSendWaitedTooLongException e) {
             	Logger.error(this, "Failed to send "+req+" to "+next+" in a reasonable time.");
@@ -589,7 +589,7 @@ loadWaiterLoop:
 				} catch (DisconnectedException e) {
 					Logger.normal(this, "Disconnected from " + waitingFor
 							+ " while waiting for reply on " + this);
-					origTag.removeRoutingTo(waitingFor);
+					waitingFor.noLongerRoutingTo(origTag, false);
 					return;
 				}
 				
@@ -605,7 +605,7 @@ loadWaiterLoop:
 				if(action == DO.FINISHED)
 					return;
 				else if(action == DO.NEXT_PEER) {
-					origTag.removeRoutingTo(waitingFor);
+					waitingFor.noLongerRoutingTo(origTag, false);
 					return; // Don't try others
 				}
 				// else if(action == DO.WAIT) continue;
@@ -1093,7 +1093,7 @@ loadWaiterLoop:
 					if(m.getSpec() == DMT.FNPRejectedLoop ||
 							m.getSpec() == DMT.FNPRejectedOverload) {
 						// Ok.
-						origTag.removeRoutingTo(next);
+						next.noLongerRoutingTo(origTag, false);
 					} else {
 						// Accepted. May as well wait for the data, if any.
 						MainLoopCallback cb = new MainLoopCallback(next, true);
@@ -1111,11 +1111,11 @@ loadWaiterLoop:
 				}
 
 				public void onDisconnect(PeerContext ctx) {
-					origTag.removeRoutingTo(next);
+					next.noLongerRoutingTo(origTag, false);
 				}
 
 				public void onRestarted(PeerContext ctx) {
-					origTag.removeRoutingTo(next);
+					next.noLongerRoutingTo(origTag, false);
 				}
 
 				public int getPriority() {
@@ -1124,7 +1124,7 @@ loadWaiterLoop:
 				
 			}, this);
 		} catch (DisconnectedException e) {
-			origTag.removeRoutingTo(next);
+			next.noLongerRoutingTo(origTag, false);
 		}
 	}
 
@@ -1263,13 +1263,13 @@ loadWaiterLoop:
 			Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e.getMessage()+ ')', e);
 			int t = timeSinceSent();
     		node.failureTable.onFailed(key, next, htl, t, t);
-			origTag.removeRoutingTo(next);
+    		next.noLongerRoutingTo(origTag, false);
 			return false; // try next node
 		} catch (CryptFormatException e) {
 			Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e+ ')');
 			int t = timeSinceSent();
     		node.failureTable.onFailed(key, next, htl, t, t);
-			origTag.removeRoutingTo(next);
+    		next.noLongerRoutingTo(origTag, false);
 			return false; // try next node
 		}
 	}
@@ -1358,7 +1358,7 @@ loadWaiterLoop:
     					if(!wasFork)
     						finish(VERIFY_FAILURE, sentTo, false);
     					else
-    						origTag.removeRoutingTo(sentTo);
+    						sentTo.noLongerRoutingTo(origTag, false);
     					return;
     				}
     				finish(SUCCESS, sentTo, false);
@@ -1437,7 +1437,7 @@ loadWaiterLoop:
 			// Node in trouble suddenly??
 			Logger.normal(this, "Local RejectedOverload after Accepted, moving on to next peer");
 			// Give up on this one, try another
-			origTag.removeRoutingTo(next);
+			next.noLongerRoutingTo(origTag, false);
 			return false;
 		}
 		//so long as the node does not send a (IS_LOCAL) message. Interestingly messages can often timeout having only received this message.
@@ -1451,7 +1451,7 @@ loadWaiterLoop:
 		next.successNotOverload(realTimeFlag);
 		int t = timeSinceSent();
 		node.failureTable.onFailed(key, next, htl, t, t);
-		origTag.removeRoutingTo(next);
+		next.noLongerRoutingTo(origTag, false);
 	}
 
 	private void handleDataNotFound(Message msg, boolean wasFork, PeerNode next) {
@@ -1460,7 +1460,7 @@ loadWaiterLoop:
 		if(!wasFork)
 			finish(DATA_NOT_FOUND, next, false);
 		else
-			this.origTag.removeRoutingTo(next);
+			next.noLongerRoutingTo(origTag, false);
 	}
 
 	private void handleRecentlyFailed(Message msg, boolean wasFork, PeerNode next) {
@@ -1536,8 +1536,7 @@ loadWaiterLoop:
 		// Kill the request, regardless of whether there is timeout left.
 		// If there is, we will avoid sending requests for the specified period.
 		node.failureTable.onFinalFailure(key, next, htl, origHTL, timeLeft, FailureTable.REJECT_TIME, source);
-		this.origTag.removeRoutingTo(next);
-		
+		next.noLongerRoutingTo(origTag, false);
 	}
 
 	/**
@@ -1561,7 +1560,7 @@ loadWaiterLoop:
 			if(!wasFork)
 				finish(VERIFY_FAILURE, next, false);
 			else
-				this.origTag.removeRoutingTo(next);
+				next.noLongerRoutingTo(origTag, false);
 			return;
 		} catch (KeyCollisionException e) {
 			Logger.normal(this, "Collision on "+this);

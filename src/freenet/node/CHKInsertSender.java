@@ -214,13 +214,13 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		public void onDisconnect(PeerContext ctx) {
 			Logger.normal(this, "Disconnected "+ctx+" for "+this);
 			receivedNotice(true, false); // as far as we know
-			thisTag.removeRoutingTo(pn);
+			pn.noLongerRoutingTo(thisTag, false);
 		}
 
 		public void onRestarted(PeerContext ctx) {
 			Logger.normal(this, "Restarted "+ctx+" for "+this);
 			receivedNotice(true, false);
-			thisTag.removeRoutingTo(pn);
+			pn.noLongerRoutingTo(thisTag, false);
 		}
 
 		public int getPriority() {
@@ -477,7 +477,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				next.sendSync(req, this, realTimeFlag);
 			} catch (NotConnectedException e1) {
 				if(logMINOR) Logger.minor(this, "Not connected to "+next);
-				thisTag.removeRoutingTo(next);
+				next.noLongerRoutingTo(thisTag, false);
 				continue;
 			} catch (SyncSendWaitedTooLongException e) {
 				Logger.warning(this, "Failed to send request to "+next);
@@ -502,7 +502,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             Message msg = null;
             
             if(!waitAccepted(next, thisTag)) {
-				thisTag.removeRoutingTo(next);
+				next.noLongerRoutingTo(thisTag, false);
 				if(failIfReceiveFailed(thisTag, next)) {
 					// Need to tell the peer that the DataInsert is not forthcoming.
 					// DataInsertRejected is overridden to work both ways.
@@ -545,7 +545,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				next.sendSync(dataInsert, this, realTimeFlag);
 			} catch (NotConnectedException e1) {
 				if(logMINOR) Logger.minor(this, "Not connected sending DataInsert: "+next+" for "+uid);
-				thisTag.removeRoutingTo(next);
+				next.noLongerRoutingTo(thisTag, false);
 				continue;
 			} catch (SyncSendWaitedTooLongException e) {
 				Logger.error(this, "Unable to send "+dataInsert+" to "+next+" in a reasonable time");
@@ -932,7 +932,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					if(m.getSpec() == DMT.FNPRejectedLoop ||
 							m.getSpec() == DMT.FNPRejectedOverload) {
 						// Ok.
-						tag.removeRoutingTo(next);
+						next.noLongerRoutingTo(tag, false);
 					} else {
 						assert(m.getSpec() == DMT.FNPAccepted);
 						// We are not going to send the DataInsert.
@@ -956,16 +956,16 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 								}
 
 								public void onDisconnect(PeerContext ctx) {
-									tag.removeRoutingTo(next);
+									next.noLongerRoutingTo(tag, false);
 								}
 
 								public void onRestarted(PeerContext ctx) {
-									tag.removeRoutingTo(next);
+									next.noLongerRoutingTo(tag, false);
 								}
 								
 							}, CHKInsertSender.this);
 						} catch (DisconnectedException e) {
-							tag.removeRoutingTo(next);
+							next.noLongerRoutingTo(tag, false);
 						}
 					}
 				}
@@ -980,11 +980,11 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				}
 
 				public void onDisconnect(PeerContext ctx) {
-					tag.removeRoutingTo(next);
+					next.noLongerRoutingTo(tag, false);
 				}
 
 				public void onRestarted(PeerContext ctx) {
-					tag.removeRoutingTo(next);
+					next.noLongerRoutingTo(tag, false);
 				}
 
 				public int getPriority() {
@@ -993,7 +993,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				
 			}, this);
 		} catch (DisconnectedException e) {
-			tag.removeRoutingTo(next);
+			next.noLongerRoutingTo(tag, false);
 		}
 	}
 
