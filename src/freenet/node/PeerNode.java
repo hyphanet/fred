@@ -5280,6 +5280,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			return acceptedState;
 		}
 		
+		public String toString() {
+			return super.toString()+":"+counter+":"+requestType+":"+realTime;
+		}
+		
 		public synchronized int waitingForCount() {
 			return waitingFor.size();
 		}
