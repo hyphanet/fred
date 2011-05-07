@@ -5548,9 +5548,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			RequestLikelyAcceptedState transfersState = getRequestLikelyAcceptedStateTransfers(runningRequests, otherRunningRequests, ignoreLocalVsRemote, stats);
 			RequestLikelyAcceptedState ret = inputState;
 			
-			if(outputState.ordinal() < ret.ordinal())
+			if(outputState.ordinal() > ret.ordinal())
 				ret = outputState;
-			if(transfersState.ordinal() < ret.ordinal())
+			if(transfersState.ordinal() > ret.ordinal())
 				ret = transfersState;
 			return ret;
 		}
