@@ -5350,9 +5350,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				loadStats = lastIncomingLoadStats;
 				if(loadStats == null) {
 					Logger.error(this, "Accepting because no load stats from "+PeerNode.this.shortToString()+" ("+PeerNode.this.getVersionNumber()+")");
-					tag.addRoutedTo(PeerNode.this, offeredKey);
-					// FIXME maybe wait a bit, check the other side's version first???
-					return RequestLikelyAcceptedState.UNKNOWN;
+					if(tag.addRoutedTo(PeerNode.this, offeredKey)) {
+						// FIXME maybe wait a bit, check the other side's version first???
+						return RequestLikelyAcceptedState.UNKNOWN;
+					} else return null;
 				}
 				if(dontSendUnlessGuaranteed)
 					worstAcceptable = RequestLikelyAcceptedState.GUARANTEED;
@@ -5364,8 +5365,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				RequestLikelyAcceptedState acceptState = getRequestLikelyAcceptedState(runningRequests, otherRunningRequests, ignoreLocalVsRemote, loadStats);
 				if(logMINOR) Logger.minor(this, "Predicted acceptance state for request: "+acceptState);
 				if(acceptState.ordinal() > worstAcceptable.ordinal()) return null;
-				tag.addRoutedTo(PeerNode.this, offeredKey);
-				return acceptState;
+				if(tag.addRoutedTo(PeerNode.this, offeredKey))
+					return acceptState;
+				else return null;
 			}
 		}
 		
