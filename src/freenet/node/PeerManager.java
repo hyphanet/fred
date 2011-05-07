@@ -998,14 +998,14 @@ public class PeerManager {
 					Logger.minor(this, "Skipping (not connected): " + p.getPeer());
 				continue;
 			}
-			if(p.outputLoadTracker(realTime).getLastIncomingLoadStats() == null) {
-				if(logMINOR)
-					Logger.minor(this, "Skipping (no load stats): "+p.getPeer());
-				continue;
-			}
 			if(p.isDisconnecting()) {
 				if(logMINOR)
 					Logger.minor(this, "Skipping (disconnecting): "+p.getPeer());
+				continue;
+			}
+			if(p.outputLoadTracker(realTime).getLastIncomingLoadStats() == null) {
+				if(logMINOR)
+					Logger.minor(this, "Skipping (no load stats): "+p.getPeer());
 				continue;
 			}
 			if(minVersion > 0 && Version.getArbitraryBuildNumber(p.getVersion(), -1) < minVersion) {
