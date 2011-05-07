@@ -5582,7 +5582,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			else
 				tag.removeRoutingTo(this);
 		}
-		if(logMINOR) Logger.minor(this, "No longer routing to "+shortToString()+" on "+tag);
+		if(logMINOR) Logger.minor(this, "No longer routing "+tag+" to "+this);
 		outputLoadTracker(tag.realTimeFlag).maybeNotifySlotWaiter();
 	}
 	
