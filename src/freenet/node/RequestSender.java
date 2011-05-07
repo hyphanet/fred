@@ -4,6 +4,7 @@
 package freenet.node;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 
 import freenet.crypt.CryptFormatException;
@@ -105,6 +106,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     private int gotMessages;
     private String lastMessage;
     private HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
+    private HashMap<PeerNode, Integer> softRejectCount;
     
     /** If true, only try to fetch the key from nodes which have offered it */
     private boolean tryOffersOnly;
@@ -1424,26 +1426,36 @@ loadWaiterLoop:
     				
     				if(logMINOR) Logger.minor(this, "Is local");
   
-					if(expectedAcceptState == RequestLikelyAcceptedState.GUARANTEED)
-						Logger.error(this, "Rejected overload yet expected state was "+expectedAcceptState);
 					// FIXME soft rejects, only check then, but don't backoff if sane
 					// FIXME recalculate with broader check, allow a few percent etc.
     				
-    				// FIXME new load management introduces soft rejects and waiting.
-//    				if(msg.getSubMessage(DMT.FNPRejectIsSoft) != null) {
-//    					if(logMINOR) Logger.minor(this, "Soft rejection, waiting to resend");
-//    					nodesRoutedTo.remove(next);
-//    					origTag.removeRoutingTo(next);
-//    					return DO.WAIT;
-//    				} else {
-    					next.localRejectedOverload("ForwardRejectedOverload", realTimeFlag);
-    					int t = timeSinceSent();
-    					node.failureTable.onFailed(key, next, htl, t, t);
-    					if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
-    					// Give up on this one, try another
+    				if(msg.getSubMessage(DMT.FNPRejectIsSoft) != null && expectedAcceptState != null) {
+    					if(logMINOR) Logger.minor(this, "Soft rejection, waiting to resend");
+    					if(expectedAcceptState == RequestLikelyAcceptedState.GUARANTEED)
+    						// Need to recalculate to be sure this is an error.
+    						Logger.normal(this, "Rejected overload yet expected state was "+expectedAcceptState);
+    					nodesRoutedTo.remove(next);
     					next.noLongerRoutingTo(origTag, false);
-    					return DO.NEXT_PEER;
-//    				}
+    					if(softRejectCount == null) softRejectCount = new HashMap<PeerNode, Integer>();
+    					Integer i = softRejectCount.get(next);
+    					if(i == null) softRejectCount.put(next, 1);
+    					else {
+    						softRejectCount.put(next, i+1);
+    						if(i > 3) {
+    							Logger.error(this, "Rejected repeatedly ("+i+") by "+next+" : "+this);
+    							next.outputLoadTracker(realTimeFlag).setDontSendUnlessGuaranteed();
+    						}
+    					}
+    					return DO.WAIT;
+    				}
+    				
+    				next.localRejectedOverload("ForwardRejectedOverload", realTimeFlag);
+    				int t = timeSinceSent();
+    				node.failureTable.onFailed(key, next, htl, t, t);
+    				if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
+    				// Give up on this one, try another
+    				next.noLongerRoutingTo(origTag, false);
+    				return DO.NEXT_PEER;
     			}
     			//Could be a previous rejection, the timeout to incur another ACCEPTED_TIMEOUT is minimal...
     			continue;
