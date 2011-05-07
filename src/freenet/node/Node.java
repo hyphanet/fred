@@ -753,6 +753,7 @@ public class Node implements TimeSkewDetectorCallback {
 	private short maxHTL;
 	private boolean skipWrapperWarning;
 	private int maxPacketSize;
+	private volatile boolean enableNewLoadManagement;
 	/** Should inserts ignore low backoff times by default? */
 	public static boolean IGNORE_LOW_BACKOFF_DEFAULT = false;
 	/** Definition of "low backoff times" for above. */
@@ -2504,6 +2505,21 @@ public class Node implements TimeSkewDetectorCallback {
 
 		maxPacketSize = nodeConfig.getInt("maxPacketSize");
 		updateMTU();
+		
+		nodeConfig.register("enableNewLoadManagement", false, sortOrder++, true, true, "Node.enableNewLoadManagement", "Node.enableNewLoadManagementLong", new BooleanCallback() {
+
+			@Override
+			public Boolean get() {
+				return enableNewLoadManagement;
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException,
+					NodeNeedRestartException {
+				enableNewLoadManagement = val;
+			}
+			
+		});
 
 		nodeConfig.finishedInitialization();
 		if(shouldWriteConfig)
@@ -6227,5 +6243,9 @@ public class Node implements TimeSkewDetectorCallback {
 		byte[] buf = new byte[16];
 		random.nextBytes(buf);
 		return new MersenneTwister(buf);
+	}
+	
+	public boolean enableNewLoadManagement() {
+		return enableNewLoadManagement;
 	}
 }

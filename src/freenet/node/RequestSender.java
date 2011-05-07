@@ -64,8 +64,6 @@ import freenet.support.math.MedianMeanRunningAverage;
  */
 public final class RequestSender implements PrioRunnable, ByteCounter {
 
-	static boolean NEW_LOAD_MANAGEMENT = false;
-	
     // Constants
     static final int ACCEPTED_TIMEOUT = 10000;
     // After a get offered key fails, wait this long for two stage timeout. Probably we will
@@ -303,7 +301,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     private boolean killedByRecentlyFailed = false;
     
     private void routeRequests() {
-    	if(NEW_LOAD_MANAGEMENT)
+    	if(node.enableNewLoadManagement())
     		routeRequestsNewLoadManagement();
     	else
     		routeRequestsOldLoadManagement();
