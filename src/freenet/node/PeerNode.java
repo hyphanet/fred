@@ -5252,6 +5252,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(logMINOR) Logger.minor(this, "Waiting for any node to wake up "+this+" : "+Arrays.toString(waitingFor.toArray())+" (for up to "+maxWait+"ms)");
 				long waitStart = System.currentTimeMillis();
 				long deadline = waitStart + maxWait;
+				boolean failed = false;
 				while(acceptedBy == null && (!waitingFor.isEmpty()) && !failed) {
 					try {
 						if(maxWait == Long.MAX_VALUE)
@@ -5260,27 +5261,42 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 							int wait = (int)Math.min(Integer.MAX_VALUE, deadline - System.currentTimeMillis());
 							if(wait > 0) wait(wait);
 							if(logMINOR) Logger.minor(this, "Maximum wait time exceeded on "+this);
-							// Check for race condition which would result in stalling.
-							if(!shouldGrab()) return null;
+							if(shouldGrab()) {
+								// Race condition resulting in stalling
+								// All we have to do is break.
+								break;
+							} else {
+								// Bigger problem.
+								// No external entity called us, so waitingFor have not been unregistered.
+								failed = true;
+								all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
+								waitingFor.clear();
+								// Now no callers will succeed.
+								// But we still need to unregister the waitingFor's or they will stick around until they are matched, and then, if we are unlucky, will lock a slot on the RequestTag forever and thus cause a catastrophic stall of the whole peer.
+							}
 						}
 					} catch (InterruptedException e) {
 						// Ignore
 					}
 				}
-				long waitEnd = System.currentTimeMillis();
-				if(waitEnd - waitStart > 10000) {
-					Logger.error(this, "Waited "+(waitEnd - waitStart)+"ms for "+this);
-				} else if(waitEnd - waitStart > 1000) {
-					Logger.warning(this, "Waited "+(waitEnd - waitStart)+"ms for "+this);
-				} else {
-					if(logMINOR) Logger.minor(this, "Waited "+(waitEnd - waitStart)+"ms for "+this);
+				if(!failed) {
+					long waitEnd = System.currentTimeMillis();
+					if(waitEnd - waitStart > 10000) {
+						Logger.error(this, "Waited "+(waitEnd - waitStart)+"ms for "+this);
+					} else if(waitEnd - waitStart > 1000) {
+						Logger.warning(this, "Waited "+(waitEnd - waitStart)+"ms for "+this);
+					} else {
+						if(logMINOR) Logger.minor(this, "Waited "+(waitEnd - waitStart)+"ms for "+this);
+					}
+					if(logMINOR) Logger.minor(this, "Returning after waiting: accepted by "+acceptedBy+" waiting for "+waitingFor.size()+" failed "+failed+" on "+this);
+					failed = false;
+					PeerNode got = acceptedBy;
+					acceptedBy = null; // Allow for it to wait again if necessary
+					return got;
 				}
-				if(logMINOR) Logger.minor(this, "Returning after waiting: accepted by "+acceptedBy+" waiting for "+waitingFor.size()+" failed "+failed+" on "+this);
-				failed = false;
-				PeerNode got = acceptedBy;
-				acceptedBy = null; // Allow for it to wait again if necessary
-				return got;
 			}
+			unregister(null, all);
+			return null;
 		}
 		
 		private boolean shouldGrab() {
