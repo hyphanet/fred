@@ -5337,18 +5337,25 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					otherRunningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, true));
 		}
 		
+		/** Can we route the tag to this peer? If so (including if we are accepting because
+		 * we don't have any load stats), and we haven't already, addRoutedTo() and return 
+		 * the accepted state. Otherwise return null. */
 		public RequestLikelyAcceptedState tryRouteTo(UIDTag tag,
 				RequestLikelyAcceptedState worstAcceptable, boolean offeredKey) {
 			PeerLoadStats loadStats;
 			boolean ignoreLocalVsRemote = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
+			if(!isRoutable()) return null;
+			if(isInMandatoryBackoff(System.currentTimeMillis(), realTime)) return null;
 			synchronized(routedToLock) {
 				loadStats = lastIncomingLoadStats;
 				if(loadStats == null) {
-					Logger.error(this, "Accepting because no load stats from "+this);
+					Logger.error(this, "Accepting because no load stats from "+PeerNode.this.shortToString()+" ("+PeerNode.this.getVersionNumber()+")");
 					tag.addRoutedTo(PeerNode.this, offeredKey);
 					// FIXME maybe wait a bit, check the other side's version first???
 					return RequestLikelyAcceptedState.UNKNOWN;
 				}
+				if(dontSendUnlessGuaranteed)
+					worstAcceptable = RequestLikelyAcceptedState.GUARANTEED;
 				// Requests already running to this node
 				RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, loadStats.averageTransfersOutPerInsert, realTime);
 				runningRequests.log(PeerNode.this);
