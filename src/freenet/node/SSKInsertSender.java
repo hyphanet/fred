@@ -252,7 +252,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				continue;
 			} catch (SyncSendWaitedTooLongException e) {
 				Logger.warning(this, "Failed to send request to "+next);
-				thisTag.removeRoutingTo(next);
+				next.noLongerRoutingTo(thisTag, false);
 				continue;
 			}
             sentRequest = true;
@@ -286,7 +286,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				continue;
 			} catch (SyncSendWaitedTooLongException e) {
 				Logger.error(this, "Waited too long to send "+dataMsg+" to "+next+" on "+this);
-				thisTag.removeRoutingTo(next);
+				next.noLongerRoutingTo(thisTag, false);
 				continue;
 			} catch (PeerRestartedException e) {
 				if(logMINOR) Logger.minor(this, "Peer restarted: "+next);
@@ -306,7 +306,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             		continue;
             	} catch (SyncSendWaitedTooLongException e) {
             		Logger.warning(this, "Took too long to send pubkey to "+next+" on "+this);
-					thisTag.removeRoutingTo(next);
+    				next.noLongerRoutingTo(thisTag, false);
             		continue;
 				}
             	
@@ -501,7 +501,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 
 								public void onMatched(Message m) {
 									// Cool.
-									tag.removeRoutingTo(next);
+									next.noLongerRoutingTo(tag, false);
 								}
 
 								public boolean shouldTimeout() {

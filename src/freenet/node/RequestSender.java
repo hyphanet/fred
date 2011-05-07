@@ -453,7 +453,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             	continue;
             } catch (SyncSendWaitedTooLongException e) {
             	Logger.error(this, "Failed to send "+req+" to "+next+" in a reasonable time.");
-	        	origTag.removeRoutingTo(next);
+            	next.noLongerRoutingTo(origTag, false);
             	// Try another node.
             	continue;
 			}
@@ -664,7 +664,7 @@ loadWaiterLoop:
 			switch(status) {
 			case FATAL:
 				offers.deleteLastOffer();
-				origTag.removeFetchingOfferedKeyFrom(pn);
+				pn.noLongerRoutingTo(origTag, true);
 				return;
 			case TWO_STAGE_TIMEOUT:
 				offers.deleteLastOffer();
@@ -673,7 +673,7 @@ loadWaiterLoop:
 				return;
 			case KEEP:
 				offers.keepLastOffer();
-				origTag.removeFetchingOfferedKeyFrom(pn);
+				pn.noLongerRoutingTo(origTag, true);
 				break;
 			case TRY_ANOTHER:
 				offers.deleteLastOffer();
@@ -774,7 +774,7 @@ loadWaiterLoop:
 						isSSK ? handleSSKOfferReply(m, pn, offer) :
 							handleCHKOfferReply(m, pn, offer, null);
 						if(status != OFFER_STATUS.FETCHING)
-							origTag.removeFetchingOfferedKeyFrom(pn);
+							pn.noLongerRoutingTo(origTag, true);
 						// If FETCHING, the block transfer will unlock it.
 						if(logMINOR) Logger.minor(this, "Forked get offered key due to two stage timeout completed with status "+status+" from message "+m+" for "+RequestSender.this+" to "+pn);
 				}
@@ -790,12 +790,12 @@ loadWaiterLoop:
 				
 				public void onDisconnect(PeerContext ctx) {
 					// Ok.
-					origTag.removeFetchingOfferedKeyFrom(pn);
+					pn.noLongerRoutingTo(origTag, true);
 				}
 				
 				public void onRestarted(PeerContext ctx) {
 					// Ok.
-					origTag.removeFetchingOfferedKeyFrom(pn);
+					pn.noLongerRoutingTo(origTag, true);
 				}
 				
 				public int getPriority() {
@@ -1238,7 +1238,7 @@ loadWaiterLoop:
    		Logger.error(this, "Unexpected message: "+msg);
    		int t = timeSinceSent();
    		node.failureTable.onFailed(key, source, htl, t, t);
-		origTag.removeRoutingTo(source);
+   		source.noLongerRoutingTo(origTag, false);
    		return DO.NEXT_PEER;
     	
 	}
