@@ -4766,6 +4766,7 @@ public class Node implements TimeSkewDetectorCallback {
 					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
 				} else if(logDEBUG) Logger.debug(this, "Not counting "+entry.getKey());
 			}
+			if(logMINOR) Logger.minor(this, "Returning count: "+count+" in: "+transfersIn+" out: "+transfersOut);
 			return new CountedRequests(count, transfersOut, transfersIn);
 		} else {
 			// FIXME improve efficiency!
