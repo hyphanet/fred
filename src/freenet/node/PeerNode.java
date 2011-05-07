@@ -5123,24 +5123,44 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			peer.outputLoadTracker(realTime).queueSlotWaiter(this);
 		}
 		
-		boolean onWaited(PeerNode peer, RequestLikelyAcceptedState state) {
+		/** First part of wake-up callback. If this returns null, we have already woken up,
+		 * but if it returns a PeerNode[], the SlotWaiter has been woken up, and the caller
+		 * **must** call unregister() with the returned data.
+		 * @param peer The peer waking up the SlotWaiter.
+		 * @param state The accept state we are waking up with.
+		 * @return Null if already woken up or not waiting for this peer, otherwise an
+		 * array of all the PeerNode's the slot was registered on, which *must* be passed
+		 * to unregister() as soon as the caller has unlocked everything that reasonably
+		 * can be unlocked. */
+		synchronized PeerNode[] innerOnWaited(PeerNode peer, RequestLikelyAcceptedState state) {
 			if(logMINOR) Logger.minor(this, "Waking slot waiter "+this);
-			PeerNode[] all;
-			synchronized(this) {
-				if(acceptedBy != null) return false;
-				if(!waitingFor.contains(peer)) return false;
-				acceptedBy = peer;
-				acceptedState = state;
-				if(tag.addRoutedTo(peer, offeredKey)) {
-					Logger.normal(this, "onWaited for "+this+" added on "+tag+" but already added - race condition?");
-				}
-				notifyAll();
-				all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
+			if(acceptedBy != null) {
+				if(logMINOR) Logger.minor(this, "Already accepted on "+this);
+				return null;
 			}
-			if(all.length == 1) return true;
+			if(!waitingFor.contains(peer)) {
+				if(logMINOR) Logger.minor(this, "Not waiting for peer "+peer+" on "+this);
+				return null;
+			}
+			acceptedBy = peer;
+			acceptedState = state;
+			if(!tag.addRoutedTo(peer, offeredKey)) {
+				Logger.normal(this, "onWaited for "+this+" added on "+tag+" but already added - race condition?");
+			}
+			notifyAll();
+			// Because we are no longer in the slot queue we must remove it.
+			// If we want to wait for it again it must be re-queued.
+			PeerNode[] toUnreg = waitingFor.toArray(new PeerNode[waitingFor.size()]);
+			waitingFor.clear();
+			return toUnreg;
+		}
+		
+		/** Caller should not hold locks while calling this.
+		 * @param exclude Only set this if you have already removed the slot waiter. */
+		void unregister(PeerNode exclude, PeerNode[] all) {
+			if(all == null) return;
 			for(PeerNode p : all)
-				if(p != peer) p.outputLoadTracker(realTime).unqueueSlotWaiter(this);
-			return true;
+				if(p != exclude) p.outputLoadTracker(realTime).unqueueSlotWaiter(this);
 		}
 		
 		/** Some sort of failure.
@@ -5157,6 +5177,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					if(!waitingFor.isEmpty()) return;
 				}
 				failed = true;
+				notifyAll();
 			}
 		}
 		
@@ -5166,34 +5187,62 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 		}
 		
-		public PeerNode waitForAny() {
+		public PeerNode waitForAny(long maxWait) {
 			PeerNode[] all;
 			synchronized(this) {
 				if(shouldGrab()) return grab();
 				all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
+				if(all.length == 0) return null;
 			}
 			// Double-check before blocking, prevent race condition.
 			for(PeerNode p : all) {
 				RequestLikelyAcceptedState accept = p.outputLoadTracker(realTime).tryRouteTo(tag, RequestLikelyAcceptedState.LIKELY, offeredKey);
 				if(accept != null) {
 					if(logMINOR) Logger.minor(this, "tryRouteTo() pre-wait check returned "+accept);
-					if(!onWaited(p, accept)) {
-						synchronized(this) {
-							if(shouldGrab()) return grab();
+					PeerNode[] unreg;
+					PeerNode other = null;
+					synchronized(this) {
+						unreg = innerOnWaited(p, accept);
+						if(unreg == null) {
+							// Recover from race condition.
+							if(shouldGrab()) other = grab();
+						}
+						if(other == null) {
+							if(logMINOR) Logger.minor(this, "Trying the original tryRouteTo() on "+this);
+							// Having set the acceptedBy etc, clear it now.
+							grab();
 						}						
+					}
+					unregister(null, unreg);
+					if(other != null) {
+						Logger.normal(this, "Race condition: tryRouteTo() succeeded on "+p.shortToString()+" but already matched on "+other.shortToString()+" on "+this);
+						tag.removeRoutingTo(p);
+						return other;
 					}
 					return p;
 				}
 			}
+			if(maxWait == 0) return null;
 			synchronized(this) {
+				if(logMINOR) Logger.minor(this, "Waiting for any node to wake up "+this+" : "+Arrays.toString(waitingFor.toArray()));
+				long waitStart = System.currentTimeMillis();
+				long deadline = waitStart + maxWait;
 				while(acceptedBy == null && (!waitingFor.isEmpty()) && !failed) {
 					try {
-						wait();
+						if(maxWait == Long.MAX_VALUE)
+							wait();
+						else {
+							int wait = (int)Math.min(Integer.MAX_VALUE, deadline - System.currentTimeMillis());
+							if(wait > 0) wait(wait);
+							if(logMINOR) Logger.minor(this, "Maximum wait time exceeded on "+this);
+							// Check for race condition which would result in stalling.
+							if(!shouldGrab()) return null;
+						}
 					} catch (InterruptedException e) {
 						// Ignore
 					}
 				}
-				if(logMINOR) Logger.minor(this, "Returning after waiting: accepted by "+acceptedBy+" waiting for "+waitingFor.size()+" failed "+failed);
+				if(logMINOR) Logger.minor(this, "Returning after waiting: accepted by "+acceptedBy+" waiting for "+waitingFor.size()+" failed "+failed+" on "+this);
 				failed = false;
 				PeerNode got = acceptedBy;
 				acceptedBy = null; // Allow for it to wait again if necessary
@@ -5215,6 +5264,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 		public synchronized RequestLikelyAcceptedState getAcceptedState() {
 			return acceptedState;
+		}
+		
+		public synchronized int waitingForCount() {
+			return waitingFor.size();
 		}
 
 	}
@@ -5298,17 +5351,27 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		
 		void queueSlotWaiter(SlotWaiter waiter) {
 			boolean noLoadStats = false;
+			PeerNode[] all = null;
+			boolean queued = false;
 			synchronized(routedToLock) {
 				noLoadStats = (this.lastIncomingLoadStats == null);
 				if(!noLoadStats) {
 					TreeMap<Long,SlotWaiter> list = makeSlotWaiters(waiter.requestType);
 					list.put(waiter.counter, waiter);
 					if(logMINOR) Logger.minor(this, "Queued slot "+waiter+" waiter for "+waiter.requestType+" size is now "+list.size());
-					return;
+					queued = true;
+				} else {
+					if(logMINOR) Logger.minor(this, "Not waiting for "+this+" as no load stats");
+					all = waiter.innerOnWaited(PeerNode.this, RequestLikelyAcceptedState.UNKNOWN);
 				}
 			}
-			if(logMINOR) Logger.minor(this, "Not waiting for "+this+" as no load stats");
-			waiter.onWaited(PeerNode.this, RequestLikelyAcceptedState.UNKNOWN);
+			if(all != null)
+				waiter.unregister(null, all);
+			else if(queued) {
+				if((!isRoutable()) || (isInMandatoryBackoff(System.currentTimeMillis(), realTime))) {
+					waiter.onFailed(PeerNode.this, true);
+				}
+			}
 		}
 		
 		private TreeMap<Long,SlotWaiter> makeSlotWaiters(RequestType requestType) {
@@ -5322,7 +5385,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		
 		void unqueueSlotWaiter(SlotWaiter waiter) {
 			synchronized(routedToLock) {
-				slotWaiters.remove(waiter);
+				TreeMap<Long, SlotWaiter> map = slotWaiters.get(waiter.requestType);
+				if(map == null) return;
+				map.remove(waiter.counter);
 			}
 		}
 		
@@ -5342,76 +5407,82 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		private int slotWaiterTypeCounter = 0;
 
 		private void maybeNotifySlotWaiter() {
-			boolean ignoreLocalVsRemote = false;
-			if(logMINOR) Logger.minor(this, "Maybe waking up slot waiters for "+this+" realtime="+realTime);
+			if(!isRoutable()) return;
+			boolean ignoreLocalVsRemote = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
+			if(logMINOR) Logger.minor(this, "Maybe waking up slot waiters for "+this+" realtime="+realTime+" for "+PeerNode.this.shortToString());
 			boolean foundNever = true;
 			while(true) {
+				boolean foundNone = true;
+				RequestType type;
+				int typeNum;
+				PeerLoadStats loadStats;
 				synchronized(routedToLock) {
+					loadStats = lastIncomingLoadStats;
 					if(slotWaiters.isEmpty()) {
 						if(logMINOR) Logger.minor(this, "No slot waiters for "+this);
 						return;
 					}
-				}
-				boolean foundNone = true;
-				RequestType type;
-				int typeNum;
-				synchronized(this) {
 					typeNum = slotWaiterTypeCounter;
 				}
+				typeNum++;
+				if(typeNum == RequestType.values().length)
+					typeNum = 0;
 				for(int i=0;i<RequestType.values().length;i++) {
 					TreeMap<Long,SlotWaiter> list;
 					type = RequestType.values()[typeNum];
 					if(logMINOR) Logger.minor(this, "Checking slot waiter list for "+type);
+					SlotWaiter slot;
+					RequestLikelyAcceptedState acceptState;
+					PeerNode[] peersForSuccessfulSlot;
 					synchronized(routedToLock) {
 						list = slotWaiters.get(type);
 						if(list == null) {
 							if(logMINOR) Logger.minor(this, "No list");
+							typeNum++;
+							if(typeNum == RequestType.values().length)
+								typeNum = 0;
 							continue;
 						}
 						if(list.isEmpty()) {
 							if(logMINOR) Logger.minor(this, "List empty");
+							typeNum++;
+							if(typeNum == RequestType.values().length)
+								typeNum = 0;
 							continue;
 						}
-					}
-					if(logMINOR) Logger.minor(this, "Checking slot waiters for "+type);
-					foundNone = false;
-					foundNever = false;
-					// Should be safe to collect these here, just a little expensive.
-					ignoreLocalVsRemote = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
-					PeerLoadStats loadStats = lastIncomingLoadStats;
-					// Requests already running to this node
-					RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, loadStats.averageTransfersOutPerInsert, realTime);
-					runningRequests.log(PeerNode.this);
-					// Requests running from its other peers
-					RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
-					RequestLikelyAcceptedState acceptState = getRequestLikelyAcceptedState(runningRequests, otherRunningRequests, ignoreLocalVsRemote, loadStats);
-					if(acceptState == null || acceptState == RequestLikelyAcceptedState.UNLIKELY) {
-						if(logMINOR) Logger.minor(this, "Accept state is "+acceptState+" - not waking up - type is "+type);
-						return;
-					}
-					SlotWaiter slot;
-					synchronized(routedToLock) {
+						if(logMINOR) Logger.minor(this, "Checking slot waiters for "+type);
+						foundNone = false;
+						foundNever = false;
+						// Requests already running to this node
+						RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, loadStats.averageTransfersOutPerInsert, realTime);
+						runningRequests.log(PeerNode.this);
+						// Requests running from its other peers
+						RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
+						acceptState = getRequestLikelyAcceptedState(runningRequests, otherRunningRequests, ignoreLocalVsRemote, loadStats);
+						if(acceptState == null || acceptState == RequestLikelyAcceptedState.UNLIKELY) {
+							if(logMINOR) Logger.minor(this, "Accept state is "+acceptState+" - not waking up - type is "+type);
+							return;
+						}
 						if(dontSendUnlessGuaranteed && acceptState != RequestLikelyAcceptedState.GUARANTEED) {
 							if(logMINOR) Logger.minor(this, "Not accepting until guaranteed for "+PeerNode.this+" realtime="+realTime);
 							return;
 						}
+						if(list.isEmpty()) continue;
 						Iterator<SlotWaiter> it = list.values().iterator();
 						slot = it.next();
 						it.remove();
+						if(logMINOR) Logger.minor(this, "Accept state is "+acceptState+" for "+slot+" - waking up on "+this);
+						peersForSuccessfulSlot = slot.innerOnWaited(PeerNode.this, acceptState);
+						if(peersForSuccessfulSlot == null) continue;
+						slotWaiterTypeCounter = typeNum;
 					}
+					slot.unregister(PeerNode.this, peersForSuccessfulSlot);
 					if(logMINOR) Logger.minor(this, "Accept state is "+acceptState+" for "+slot+" - waking up");
-					if(slot.onWaited(PeerNode.this, acceptState)) {
-						typeNum++;
-						if(typeNum == RequestType.values().length)
-							typeNum = 0;
-					}
+					typeNum++;
+					if(typeNum == RequestType.values().length)
+						typeNum = 0;
 				}
 				if(foundNone) {
-					if(!foundNever) {
-						synchronized(this) {
-							slotWaiterTypeCounter = typeNum;
-						}
-					}
 					return;
 				}
 			}
