@@ -5513,6 +5513,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						slotWaiterTypeCounter = typeNum;
 					}
 					slot.unregister(PeerNode.this, peersForSuccessfulSlot);
+					if(logMINOR) Logger.minor(this, "Accept state is "+acceptState+" for "+slot+" - waking up");
 					typeNum++;
 					if(typeNum == RequestType.values().length)
 						typeNum = 0;
