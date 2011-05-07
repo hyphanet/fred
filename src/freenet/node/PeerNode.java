@@ -5387,7 +5387,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				// Requests running from its other peers
 				RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
 				RequestLikelyAcceptedState acceptState = getRequestLikelyAcceptedState(runningRequests, otherRunningRequests, ignoreLocalVsRemote, loadStats);
-				if(logMINOR) Logger.minor(this, "Predicted acceptance state for request: "+acceptState);
+				if(logMINOR) Logger.minor(this, "Predicted acceptance state for request: "+acceptState+" must beat "+worstAcceptable);
 				if(acceptState.ordinal() > worstAcceptable.ordinal()) return null;
 				if(tag.addRoutedTo(PeerNode.this, offeredKey))
 					return acceptState;
