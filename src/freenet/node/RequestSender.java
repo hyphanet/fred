@@ -677,7 +677,7 @@ loadWaiterLoop:
 				break;
 			case TRY_ANOTHER:
 				offers.deleteLastOffer();
-				origTag.removeFetchingOfferedKeyFrom(pn);
+				pn.noLongerRoutingTo(origTag, true);
 				break;
 			}
 			pn = null;
