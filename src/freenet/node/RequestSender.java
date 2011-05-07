@@ -562,6 +562,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         				}
         				
         			}
+        			assert(expectedAcceptState != null);
         			lastExpectedAcceptState = expectedAcceptState;
         			lastNext = next;
     				if(logMINOR)
