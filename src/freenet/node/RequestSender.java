@@ -447,6 +447,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 				 * Don't use sendAsync().
 				 */
             	next.sendSync(req, this, realTimeFlag);
+            	next.reportRoutedTo(key.toNormalizedDouble(), source == null, realTimeFlag);
     			node.peers.incrementSelectionSamples(System.currentTimeMillis(), next);
             } catch (NotConnectedException e) {
             	Logger.minor(this, "Not connected");
@@ -465,7 +466,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             
 loadWaiterLoop:
             while(true) {
-            	
             	DO action = waitForAccepted(next);
             	// Here FINISHED means accepted, WAIT means try again (soft reject).
             	if(action == DO.WAIT) {

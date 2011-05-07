@@ -470,7 +470,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             // Send to next node
             
             try {
-    			node.peers.incrementSelectionSamples(System.currentTimeMillis(), next);
+    			next.reportRoutedTo(myKey.toNormalizedDouble(), source == null, realTimeFlag);
 				/*
 				 Note also that we won't fork here, unlike in RequestSender, because the data won't be sent after a timeout, and the
 				 insert will not be routed any further without the DataInsert.
