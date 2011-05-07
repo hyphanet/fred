@@ -747,9 +747,9 @@ public class BlockTransmitter {
 				if(lastSentPacket > 0) {
 					delta = now - lastSentPacket;
 					if(delta > 30000)
-						Logger.error(this, "Time between packets on "+BlockTransmitter.this+" : "+TimeUtil.formatTime(delta, 2, true)+" ( "+delta+"ms) realtime="+realTime);
-					else if(delta > 5000)
 						Logger.warning(this, "Time between packets on "+BlockTransmitter.this+" : "+TimeUtil.formatTime(delta, 2, true)+" ( "+delta+"ms) realtime="+realTime);
+					else if(delta > 5000)
+						Logger.normal(this, "Time between packets on "+BlockTransmitter.this+" : "+TimeUtil.formatTime(delta, 2, true)+" ( "+delta+"ms) realtime="+realTime);
 					else if(logMINOR) 
 						Logger.minor(this, "Time between packets on "+BlockTransmitter.this+" : "+TimeUtil.formatTime(delta, 2, true)+" ( "+delta+"ms) realtime="+realTime);
 				}
