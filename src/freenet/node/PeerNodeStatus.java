@@ -116,6 +116,8 @@ public class PeerNodeStatus {
 	public final IncomingLoadSummaryStats incomingLoadStatsRealTime;
 
 	public final IncomingLoadSummaryStats incomingLoadStatsBulk;
+	
+	public final boolean hasFullNoderef;
 
 	PeerNodeStatus(PeerNode peerNode, boolean noHeavy) {
 		Peer p = peerNode.getPeer();
@@ -180,6 +182,7 @@ public class PeerNodeStatus {
 		messageQueueLengthTime = peerNode.getProbableSendQueueTime();
 		incomingLoadStatsRealTime = peerNode.getIncomingLoadStats(true);
 		incomingLoadStatsBulk = peerNode.getIncomingLoadStats(false);
+		hasFullNoderef = peerNode.hasFullNoderef();
 	}
 	
 	public long getMessageQueueLengthBytes() {

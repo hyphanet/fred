@@ -219,6 +219,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public final RunningAverage routingMissDistanceLocal;
 	public final RunningAverage routingMissDistanceRemote;
 	public final RunningAverage routingMissDistanceOverall;
+	public final RunningAverage routingMissDistanceBulk;
+	public final RunningAverage routingMissDistanceRT;
 	public final RunningAverage backedOffPercent;
 	public final DecayingKeyspaceAverage avgCacheCHKLocation;
 	public final DecayingKeyspaceAverage avgSlashdotCacheCHKLocation;
@@ -262,6 +264,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private static final long peerManagerUserAlertStatsUpdateInterval = 1000;  // 1 second
 
 	// Backoff stats
+	final Hashtable<String, TrivialRunningAverage> avgMandatoryBackoffTimesRT;
+	final Hashtable<String, TrivialRunningAverage> avgMandatoryBackoffTimesBulk;
 	final Hashtable<String, TrivialRunningAverage> avgRoutingBackoffTimesRT;
 	final Hashtable<String, TrivialRunningAverage> avgRoutingBackoffTimesBulk;
 	final Hashtable<String, TrivialRunningAverage> avgTransferBackoffTimesRT;
@@ -292,6 +296,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		this.routingMissDistanceLocal = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.routingMissDistanceRemote = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.routingMissDistanceOverall = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
+		this.routingMissDistanceBulk = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
+		this.routingMissDistanceRT = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		preemptiveRejectReasons = new StringCounter();
 		localPreemptiveRejectReasons = new StringCounter();
@@ -552,6 +558,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		hourlyStatsRT = new HourlyStats(node);
 		hourlyStatsBulk = new HourlyStats(node);
 
+		avgMandatoryBackoffTimesRT = new Hashtable<String, TrivialRunningAverage>();
+		avgMandatoryBackoffTimesBulk = new Hashtable<String, TrivialRunningAverage>();
 		avgRoutingBackoffTimesRT = new Hashtable<String, TrivialRunningAverage>();
 		avgRoutingBackoffTimesBulk = new Hashtable<String, TrivialRunningAverage>();
 		avgTransferBackoffTimesRT = new Hashtable<String, TrivialRunningAverage>();
@@ -771,6 +779,20 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			return new RunningRequestsSnapshot(this);
 		}
 		
+		public double peerLimit(boolean input) {
+			if(input)
+				return inputBandwidthPeerLimit;
+			else
+				return outputBandwidthPeerLimit;
+		}
+
+		public double lowerLimit(boolean input) {
+			if(input)
+				return inputBandwidthLowerLimit;
+			else
+				return outputBandwidthLowerLimit;
+		}
+		
 	}
 	
 	class RunningRequestsSnapshot {
@@ -913,7 +935,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			String message = 
 				"Running (adjusted): CHK in: "+expectedTransfersInCHK+" out: "+expectedTransfersOutCHK+
 					" SSK in: "+expectedTransfersInSSK+" out: "+expectedTransfersOutSSK
-					+" total="+totalRequests+(source == null ? "" : (" for "+source));
+					+" total="+totalRequests+(source == null ? "" : (" for "+source)) + (realTimeFlag ? " (realtime)" : " (bulk)");
 			if(expectedTransfersInCHK < 0 || expectedTransfersOutCHK < 0 ||
 					expectedTransfersInSSK < 0 || expectedTransfersOutSSK < 0)
 				Logger.error(this, message);
@@ -1673,6 +1695,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("routingMissDistanceLocal", routingMissDistanceLocal.currentValue());
 		fs.put("routingMissDistanceRemote", routingMissDistanceRemote.currentValue());
 		fs.put("routingMissDistanceOverall", routingMissDistanceOverall.currentValue());
+		fs.put("routingMissDistanceBulk", routingMissDistanceBulk.currentValue());
+		fs.put("routingMissDistanceRT", routingMissDistanceRT.currentValue());
+		
 		fs.put("backedOffPercent", backedOffPercent.currentValue());
 		fs.put("pInstantReject", pRejectIncomingInstantly());
 		fs.put("unclaimedFIFOSize", node.usm.getUnclaimedFIFOSize());
@@ -2485,6 +2510,34 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return allocationNoticesCounterBytesSent;
 	}
 
+	private long foafCounterBytesReceived;
+	private long foafCounterBytesSent;
+	
+	final ByteCounter foafCounter = new ByteCounter() {
+		
+		public void receivedBytes(int x) {
+			synchronized(NodeStats.this) {
+				foafCounterBytesReceived += x;
+			}
+		}
+
+		public void sentBytes(int x) {
+			synchronized(NodeStats.this) {
+				foafCounterBytesSent += x;
+			}
+		}
+
+		public void sentPayload(int x) {
+			// Ignore
+		}
+		
+	};
+	
+	public long getFOAFBytesSent() {
+		return foafCounterBytesSent;
+	}
+
+	
 	
 
 	private long notificationOnlySentBytes;
@@ -2700,6 +2753,30 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		}
 
 		avg.report(executionTimeMiliSeconds);
+	}
+
+	public void reportMandatoryBackoff(String backoffType, long backoffTimeMilliSeconds, boolean realtime) {
+		TrivialRunningAverage avg;
+		if(realtime) {
+			synchronized (avgMandatoryBackoffTimesRT) {
+				avg = avgMandatoryBackoffTimesRT.get(backoffType);
+
+				if (avg == null) {
+					avg = new TrivialRunningAverage();
+					avgMandatoryBackoffTimesRT.put(backoffType, avg);
+				}
+			}
+		} else {
+			synchronized (avgMandatoryBackoffTimesBulk) {
+				avg = avgMandatoryBackoffTimesBulk.get(backoffType);
+
+				if (avg == null) {
+					avg = new TrivialRunningAverage();
+					avgMandatoryBackoffTimesBulk.put(backoffType, avg);
+				}
+			}
+		}
+		avg.report(backoffTimeMilliSeconds);
 	}
 
 	public void reportRoutingBackoff(String backoffType, long backoffTimeMilliSeconds, boolean realtime) {
@@ -3016,6 +3093,37 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 				return 0;
 			else
 				return -1;
+		}
+	}
+
+	public TimedStats[] getMandatoryBackoffStatistics(boolean realtime) {
+
+		if (realtime) {
+			TimedStats[] entries = new TimedStats[avgMandatoryBackoffTimesRT.size()];
+			int i = 0;
+
+			synchronized (avgMandatoryBackoffTimesRT) {
+				for (Map.Entry<String, TrivialRunningAverage> entry : avgMandatoryBackoffTimesRT.entrySet()) {
+					TrivialRunningAverage avg = entry.getValue();
+					entries[i++] = new TimedStats(entry.getKey(), avg.countReports(), (long) avg.currentValue(), (long) avg.totalValue());
+				}
+			}
+
+			Arrays.sort(entries);
+			return entries;
+		} else {
+			TimedStats[] entries = new TimedStats[avgMandatoryBackoffTimesBulk.size()];
+			int i = 0;
+
+			synchronized (avgMandatoryBackoffTimesBulk) {
+				for (Map.Entry<String, TrivialRunningAverage> entry : avgMandatoryBackoffTimesBulk.entrySet()) {
+					TrivialRunningAverage avg = entry.getValue();
+					entries[i++] = new TimedStats(entry.getKey(), avg.countReports(), (long) avg.currentValue(), (long) avg.totalValue());
+				}
+			}
+
+			Arrays.sort(entries);
+			return entries;
 		}
 	}
 

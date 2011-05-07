@@ -2,6 +2,8 @@ package freenet.node;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,6 +17,8 @@ import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.InflaterInputStream;
 
 import freenet.client.DefaultMIMETypes;
 import freenet.io.comm.DMT;
@@ -32,6 +36,7 @@ import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
+import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.BookmarkFeedUserAlert;
 import freenet.node.useralerts.DownloadFeedUserAlert;
@@ -89,6 +94,9 @@ public class DarknetPeerNode extends PeerNode {
 	private LinkedHashSet<Integer> queuedToSendN2NMExtraPeerDataFileNumbers;
 
 	private FRIEND_TRUST trustLevel;
+	
+	private FRIEND_VISIBILITY ourVisibility;
+	private FRIEND_VISIBILITY theirVisibility;
 
 	private static boolean logMINOR;
 
@@ -105,14 +113,40 @@ public class DarknetPeerNode extends PeerNode {
 		}
 
 	}
+	
+	public enum FRIEND_VISIBILITY {
+		YES((short)0), // Visible
+		NAME_ONLY((short)1), // Only the name is visible, but other friends can ask for a connection
+		NO((short)2); // Not visible to our other friends at all
+		
+		/** The codes are persistent and used to communicate between nodes, so they must not change. 
+		 * Which is why we are not using ordinal(). */
+		final short code;
+		
+		FRIEND_VISIBILITY(short code) {
+			this.code = code;
+		}
 
+		public boolean isStricterThan(FRIEND_VISIBILITY theirVisibility) {
+			// Higher number = more strict.
+			return theirVisibility.code < code;
+		}
+
+		public static FRIEND_VISIBILITY getByCode(short code) {
+			for(FRIEND_VISIBILITY f : values()) {
+				if(f.code == code) return f;
+			}
+			return null;
+		}
+	}
+	
 	/**
 	 * Create a darknet PeerNode from a SimpleFieldSet
 	 * @param fs The SimpleFieldSet to parse
 	 * @param node2 The running Node we are part of.
 	 * @param trust If this is a new node, we will use this parameter to set the initial trust level.
 	 */
-	public DarknetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler, FRIEND_TRUST trust) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public DarknetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility2) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		super(fs, node2, crypto, peers, fromLocal, false, mangler, false);
 
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
@@ -137,9 +171,24 @@ public class DarknetPeerNode extends PeerNode {
 				trustLevel = node.securityLevels.getDefaultFriendTrust();
 				System.err.println("Assuming friend ("+name+") trust is opposite of friend seclevel: "+trustLevel);
 			}
+			s = metadata.get("ourVisibility");
+			if(s != null) {
+				ourVisibility = FRIEND_VISIBILITY.valueOf(s);
+			} else {
+				System.err.println("Assuming friend ("+name+") wants to be invisible");
+				node.createVisibilityAlert();
+				ourVisibility = FRIEND_VISIBILITY.NO;
+			}
+			s = metadata.get("theirVisibility");
+			if(s != null) {
+				theirVisibility = FRIEND_VISIBILITY.valueOf(s);
+			} else {
+				theirVisibility = FRIEND_VISIBILITY.NO;
+			} 
 		} else {
 			if(trust == null) throw new IllegalArgumentException();
 			trustLevel = trust;
+			ourVisibility = visibility2;
 		}
 
 		// Setup the private darknet comment note
@@ -192,9 +241,10 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	@Override
-	protected synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef) throws FSParseException {
-		boolean changedAnything = super.innerProcessNewNoderef(fs, forARK, forDiffNodeRef);
+	protected synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef, boolean forFullNodeRef) throws FSParseException {
+		boolean changedAnything = super.innerProcessNewNoderef(fs, forARK, forDiffNodeRef, forFullNodeRef);
 		String name = fs.get("myName");
+		if(name == null && forFullNodeRef) throw new FSParseException("No name in full noderef");
 		if(name != null && !name.equals(myName)) {
 			changedAnything = true;
 			myName = name;
@@ -225,6 +275,8 @@ public class DarknetPeerNode extends PeerNode {
 		if(disableRoutingHasBeenSetLocally)
 			fs.putSingle("disableRoutingHasBeenSetLocally", "true");
 		fs.putSingle("trustLevel", trustLevel.name());
+		fs.putSingle("ourVisibility", ourVisibility.name());
+		fs.putSingle("theirVisibility", theirVisibility.name());
 
 		return fs;
 	}
@@ -234,11 +286,11 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	@Override
-	protected synchronized int getPeerNodeStatus(long now, long backedOffUntilRT, long backedOffUntilBulk, boolean overPingThreshold) {
+	protected synchronized int getPeerNodeStatus(long now, long backedOffUntilRT, long backedOffUntilBulk, boolean overPingThreshold, boolean noLoadStats) {
 		if(isDisabled) {
 			return PeerManager.PEER_NODE_STATUS_DISABLED;
 		}
-		int status = super.getPeerNodeStatus(now, backedOffUntilRT, backedOffUntilBulk, overPingThreshold);
+		int status = super.getPeerNodeStatus(now, backedOffUntilRT, backedOffUntilBulk, overPingThreshold, noLoadStats);
 		if(status == PeerManager.PEER_NODE_STATUS_CONNECTED ||
 				status == PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM ||
 				status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF ||
@@ -246,7 +298,8 @@ public class DarknetPeerNode extends PeerNode {
 				status == PeerManager.PEER_NODE_STATUS_TOO_NEW ||
 				status == PeerManager.PEER_NODE_STATUS_TOO_OLD ||
 				status == PeerManager.PEER_NODE_STATUS_ROUTING_DISABLED ||
-				status == PeerManager.PEER_NODE_STATUS_DISCONNECTING)
+				status == PeerManager.PEER_NODE_STATUS_DISCONNECTING ||
+				status == PeerManager.PEER_NODE_STATUS_NO_LOAD_STATS)
 			return status;
 		if(isListenOnly)
 			return PeerManager.PEER_NODE_STATUS_LISTEN_ONLY;
@@ -895,7 +948,8 @@ public class DarknetPeerNode extends PeerNode {
 
 		public void accept() {
 			acceptedOrRejected = true;
-			File dest = node.clientCore.downloadsDir().file("direct-"+FileUtil.sanitize(getName())+"-"+filename);
+			final String baseFilename = "direct-"+FileUtil.sanitize(getName())+"-"+filename;
+			final File dest = node.clientCore.downloadsDir().file(baseFilename+".part");
 			try {
 				data = new RandomAccessFileWrapper(dest, "rw");
 			} catch (FileNotFoundException e) {
@@ -916,6 +970,10 @@ public class DarknetPeerNode extends PeerNode {
 							System.err.println(err);
 							onReceiveFailure();
 						} else {
+							data.close();
+							if(!dest.renameTo(node.clientCore.downloadsDir().file(baseFilename))){
+								Logger.error(this, "Failed to rename "+dest.getName()+" to remove .part suffix.");
+							}
 							onReceiveSuccess();
 						}
 					} catch (Throwable t) {
@@ -1685,5 +1743,219 @@ public class DarknetPeerNode extends PeerNode {
 			trustLevel = trust;
 		}
 		node.peers.writePeers();
+	}
+
+	/** FIXME This should be the worse of our visibility for the peer and that which the peer has told us. 
+	 * I.e. visibility is reciprocal. */
+	public synchronized FRIEND_VISIBILITY getVisibility() {
+		if(ourVisibility.isStricterThan(theirVisibility)) return ourVisibility;
+		return theirVisibility;
+	}
+
+	public synchronized FRIEND_VISIBILITY getOurVisibility() {
+		return ourVisibility;
+	}
+
+	public void setVisibility(FRIEND_VISIBILITY visibility) {
+		synchronized(this) {
+			if(ourVisibility == visibility) return;
+			ourVisibility = visibility;
+		}
+		node.peers.writePeers();
+		try {
+			sendVisibility();
+		} catch (NotConnectedException e) {
+			Logger.normal(this, "Disconnected while sending visibility update");
+		}
+	}
+	
+	private void sendVisibility() throws NotConnectedException {
+		sendAsync(DMT.createFNPVisibility(getOurVisibility().code), null, node.nodeStats.initialMessagesCtr);
+	}
+
+	public void handleVisibility(Message m) {
+		FRIEND_VISIBILITY v = FRIEND_VISIBILITY.getByCode(m.getShort(DMT.FRIEND_VISIBILITY));
+		if(v == null) {
+			Logger.error(this, "Bogus visibility setting from peer "+this+" : code "+m.getShort(DMT.FRIEND_VISIBILITY));
+			v = FRIEND_VISIBILITY.NO;
+		}
+		synchronized(this) {
+			if(theirVisibility == v) return;
+			theirVisibility = v;
+		}
+		node.peers.writePeers();
+	}
+
+	public synchronized FRIEND_VISIBILITY getTheirVisibility() {
+		return theirVisibility;
+	}
+	
+	@Override
+	boolean dontKeepFullFieldSet() {
+		return false;
+	}
+	
+	private boolean sendingFullNoderef;
+	
+	public void sendFullNoderef() {
+		synchronized(this) {
+			if(sendingFullNoderef) return; // DoS????
+			sendingFullNoderef = true;
+		}
+		try {
+			SimpleFieldSet myFullNoderef = node.exportDarknetPublicFieldSet();
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			DeflaterOutputStream dos = new DeflaterOutputStream(baos);
+			try {
+				myFullNoderef.writeTo(dos);
+				dos.close();
+			} catch (IOException e) {
+				Logger.error(this, "Impossible: Caught error while writing compressed noderef: "+e, e);
+				synchronized(this) {
+					sendingFullNoderef = false;
+				}
+				return;
+			}
+			byte[] data = baos.toByteArray();
+			long uid = node.fastWeakRandom.nextLong();
+			RandomAccessThing raf = new ByteArrayRandomAccessThing(data);
+			PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, data.length, Node.PACKET_SIZE, raf, true);
+			try {
+				sendAsync(DMT.createFNPMyFullNoderef(uid, data.length), null, node.nodeStats.foafCounter);
+			} catch (NotConnectedException e1) {
+				// Ignore
+				synchronized(this) {
+					sendingFullNoderef = false;
+				}
+				return;
+			}
+			final BulkTransmitter bt;
+			try {
+				bt = new BulkTransmitter(prb, this, uid, false, node.nodeStats.foafCounter, false);
+			} catch (DisconnectedException e) {
+				synchronized(this) {
+					sendingFullNoderef = false;
+				}
+				return;
+			}
+			node.executor.execute(new Runnable() {
+
+				public void run() {
+					try {
+						bt.send();
+					} finally {
+						synchronized(DarknetPeerNode.this) {
+							sendingFullNoderef = false;
+						}
+					}
+				}
+				
+			});
+		} catch (RuntimeException e) {
+			synchronized(this) {
+				sendingFullNoderef = false;
+			}
+			throw e;
+		} catch (Error e) {
+			synchronized(this) {
+				sendingFullNoderef = false;
+			}
+			throw e;
+		}
+	}
+
+	private boolean receivingFullNoderef;
+	
+	public void handleFullNoderef(Message m) {
+		if(this.dontKeepFullFieldSet()) return;
+		long uid = m.getLong(DMT.UID);
+		int length = m.getInt(DMT.NODEREF_LENGTH);
+		if(length > 8 * 1024) {
+			// Way too long!
+			return;
+		}
+		synchronized(this) {
+			if(receivingFullNoderef) return; // DoS????
+			receivingFullNoderef = true;
+		}
+		try {
+			final byte[] data = new byte[length];
+			RandomAccessThing raf = new ByteArrayRandomAccessThing(data);
+			PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, length, Node.PACKET_SIZE, raf, false);
+			final BulkReceiver br = new BulkReceiver(prb, this, uid, node.nodeStats.foafCounter);
+			node.executor.execute(new Runnable() {
+
+				public void run() {
+					try {
+						if(br.receive()) {
+							ByteArrayInputStream bais = new ByteArrayInputStream(data);
+							InflaterInputStream dis = new InflaterInputStream(bais);
+							SimpleFieldSet fs;
+							try {
+								fs = new SimpleFieldSet(new BufferedReader(new InputStreamReader(dis, "UTF-8")), false, false);
+							} catch (UnsupportedEncodingException e) {
+								synchronized(DarknetPeerNode.this) {
+									receivingFullNoderef = false;
+								}
+								Logger.error(this, "Impossible: "+e, e);
+								e.printStackTrace();
+								return;
+							} catch (IOException e) {
+								synchronized(DarknetPeerNode.this) {
+									receivingFullNoderef = false;
+								}
+								Logger.error(this, "Impossible: "+e, e);
+								return;
+							}
+							try {
+								processNewNoderef(fs, false, false, true);
+							} catch (FSParseException e) {
+								Logger.error(this, "Peer "+DarknetPeerNode.this+" sent bogus full noderef: "+e, e);
+								synchronized(DarknetPeerNode.this) {
+									receivingFullNoderef = false;
+								}
+								return;
+							}
+							synchronized(DarknetPeerNode.this) {
+								fullFieldSet = fs;
+							}
+							node.peers.writePeers();
+						} else {
+							Logger.error(this, "Failed to receive noderef from "+DarknetPeerNode.this);
+						}
+					} finally {
+						synchronized(DarknetPeerNode.this) {
+							receivingFullNoderef = false;
+						}
+					}
+				}
+			});				
+		} catch (RuntimeException e) {
+			synchronized(this) {
+				receivingFullNoderef = false;
+			}
+			throw e;
+		} catch (Error e) {
+			synchronized(this) {
+				receivingFullNoderef = false;
+			}
+			throw e;
+		}
+	}
+
+	protected void sendInitialMessages() {
+		super.sendInitialMessages();
+		try {
+			sendVisibility();
+		} catch(NotConnectedException e) {
+			Logger.error(this, "Completed handshake with " + getPeer() + " but disconnected: "+e, e);
+		}
+		if(!dontKeepFullFieldSet()) {
+			try {
+				sendAsync(DMT.createFNPGetYourFullNoderef(), null, node.nodeStats.foafCounter);
+			} catch (NotConnectedException e) {
+				// Ignore
+			}
+		}
 	}
 }

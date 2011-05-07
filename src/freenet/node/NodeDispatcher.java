@@ -132,6 +132,9 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		} else if(spec == DMT.FNPSentPackets) {
 			source.handleSentPackets(m);
 			return true;
+		} else if(spec == DMT.FNPVisibility && source instanceof DarknetPeerNode) {
+			((DarknetPeerNode)source).handleVisibility(m);
+			return true;
 		} else if(spec == DMT.FNPVoid) {
 			return true;
 		} else if(spec == DMT.FNPDisconnect) {
@@ -195,6 +198,10 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			source.updateLocation(newLoc, locs);
 			
 			return true;
+		} else if(spec == DMT.FNPPeerLoadStatusByte || spec == DMT.FNPPeerLoadStatusShort || spec == DMT.FNPPeerLoadStatusInt) {
+			// Must be handled before doing the routable check!
+			// We may not have received the Location yet, etc.
+			return handlePeerLoadStatus(m, source);
 		}
 		
 		if(!source.isRoutable()) {
@@ -268,8 +275,12 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			return handleOfferKey(m, source);
 		} else if(spec == DMT.FNPGetOfferedKey) {
 			return handleGetOfferedKey(m, source);
-		} else if(spec == DMT.FNPPeerLoadStatusByte || spec == DMT.FNPPeerLoadStatusShort || spec == DMT.FNPPeerLoadStatusInt) {
-			return handlePeerLoadStatus(m, source);
+		} else if(spec == DMT.FNPGetYourFullNoderef && source instanceof DarknetPeerNode) {
+			((DarknetPeerNode)source).sendFullNoderef();
+			return true;
+		} else if(spec == DMT.FNPMyFullNoderef && source instanceof DarknetPeerNode) {
+			((DarknetPeerNode)source).handleFullNoderef(m);
+			return true;
 		}
 		return false;
 	}

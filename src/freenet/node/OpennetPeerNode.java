@@ -261,4 +261,9 @@ public class OpennetPeerNode extends PeerNode {
 		return node.shallWeRouteAccordingToOurPeersLocation();
 	}
 
+	@Override
+	boolean dontKeepFullFieldSet() {
+		return true;
+	}
+
 }

@@ -77,13 +77,46 @@ load a browser (Chrome or Firefox) in privacy/incognito mode. If the browser is 
 mode it will tell you. Browser bugs might result in it not being in privacy mode so be
 careful of this.
 
-You MUST use a separate browser to access Freenet than the one you use to access
-the WWW at large (or use one with privacy mode enabled). Browser history stealing attacks
-enable malicious websites to probe for specific freesites you have visited. It may also
-be possible for hostile websites to probe for the existence of Freenet by javascript port
-scanning or similar attacks, or possibly even time loads of specific pages from Freenet,
-from the browser you use for the web; this last attack is unconfirmed at the time of 
-writing.
+You MUST use a browser in privacy/incognito mode, or ideally use a completely separate
+browser to access Freenet. The reason for this is browser history stealing attacks via CSS
+which enable malicious websites to probe what other websites - and more importantly
+freesites (on-freenet websites) you have been visiting. Many other browser-level attacks
+may also be possible, especially if you use a lot of plugins and add-ons, or other
+software that is accessed through localhost.
+
+There are many potentially dangerous features in most browsers which you can disable.
+Most of them will be turned off by privacy/incognito mode, hopefully. Candidates include
+location-based services (geo.enabled) and GoBrowsing (keyword.enabled) in firefox, and 
+probably a number of plugins. Note that this is not unique to Firefox - until version 9
+or so, Internet Explorer had much worse problems. The most fundamental thing is browser
+history probing via CSS. This can be turned off globally and will improve your privacy,
+see e.g. http://whattheinternetknowsaboutyou.com/ - but it is probably still safer to
+use a separate browser, and the fact that you have turned it off will likely be
+detectable. If you do use a separate browser, you can do some helpful tricks such as
+turning off javascript, not loading any addons or plugins, turning off the cache and
+history, and setting 127.0.0.1:8888 as a proxy server (it won't serve anything external).
+
+Freenet will warn you when you try to download a file which may not be safe. Many file
+formats, for instance PDFs, word processor documents, and some types of video, can give
+away your identity. In some cases (such as HTML, PNGs, JPEGs and MP3s), Freenet can
+automatically make the content safe; a few file formats (such as plain text .txt's) are
+safe as-is. Freenet will warn you in all other cases.
+
+You are responsible for your computer's physical security. In many hostile environments
+the most likely attack is people busting down your door and stealing your computer -
+perhaps because they know you are using Freenet, or perhaps because they got your name
+from one of your friends who was also a troublemaker! Freenet can encrypt your caches
+and active downloads/uploads, with a password if you set one, and with a panic button to
+get rid of the evidence quickly, but as soon as anything is saved to disk, Freenet can't
+do anything about it. Freenet can download files to encrypted temporary space ("Fetch"
+instead of "Download"), to limit this, but it will use a bit more disk space and is less
+convenient. If you can encrypt your whole hard drive, e.g. with Truecrypt, that is
+strongly recommended. Even if you can't, we strongly recommend you encrypt your swapfile
+(try "fsutil behavior set encryptpagingfile 1" on Windows 7), or turn it off. Note also
+that many types of file will be automatically saved to disk by your browser without you
+asking it to - mostly these are the kind of files that Freenet will warn you about anyway,
+but there might be exceptions depending on what you are using; it's always going to be
+safest to encrypt everything.
 
 MORE SECURITY:
 If your life or liberty depends on Freenet protecting your anonymity, you should
@@ -94,11 +127,18 @@ implemented; there are several known attacks which future versions will greatly
 reduce, and there are likely to be (and have been) serious bugs. If you do 
 choose to use Freenet under such circumstances, you  should enable the MAXIMUM 
 network security level and add connections to your friends on the Friends page; 
-connecting only to friends considerably improves your security against a variety 
-of attacks, but you should only connect to them if you know them or have some 
-reason to (at least minimally) trust them; connecting to arbitrary strangers 
-from IRC may end up with you adding the bad guys as Friends, and apart from that 
-it damages the network topology.
+connecting only to friends greatly improves your security, making it very hard to
+trace content back to you, and reasonably difficult to find out that you are even
+running Freenet, but you should only connect to people you actually know: You are
+vulnerable to those nodes you are connected to (hence in low/normal security, aka
+opennet mode, you have much less security). Plus, connecting to random strangers
+will reduce performance for the network as a whole.
+
+A reasonably detailed explanation of how to use Freenet securely is included in
+the first-time wizard, which you see when you first install Freenet, at the bottom
+of the page asking whether to connect to strangers or just to friends. Mouse over
+it to read it. If you have already installed Freenet you can still see it here:
+http://127.0.0.1:8888/wizard/?step=OPENNET
 
 CHANGES FROM 0.5:
 This is the 0.7 rewrite of Freenet. This is largely rewritten from scratch, 
@@ -121,9 +161,7 @@ Major changes:
 - Many more changes...
 
 LICENSING:
-Freenet is under the GPLv2 - see LICENSE.Freenet (we are trying to make this
-GPL 2 or later, but some code is arguably GPL 2 only). However, we use some 
-other code:
-- Mantissa is under the modified BSD license. See README.Mantissa. According 
-  to the FSF, modified BSD is compatible with GPL; we must include both 
-  licenses.
+Freenet is under the GPL, version 2 or later - see LICENSE.Freenet. We use some
+code under the Apache license version 2 (mostly apache commons stuff), and some
+modified BSD code (Mantissa). All of which is compatible with the GPL, although
+arguably ASL2 is only compatible with GPL3. Some plugins are GPL3.
