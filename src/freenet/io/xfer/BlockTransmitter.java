@@ -280,11 +280,7 @@ public class BlockTransmitter {
 						if(_failed) {
 							// Already failed, we were just waiting for the acknowledgement sendAborted.
 							if(!hadSendCompletion) {
-<<<<<<< HEAD
-								Logger.error(this, "Terminating send after failure on "+this);
-=======
 								Logger.warning(this, "Terminating send after failure on "+this);
->>>>>>> master
 								abortReason = "Already failed and no acknowledgement";
 							} else {
 								// Waiting for transfers maybe???
