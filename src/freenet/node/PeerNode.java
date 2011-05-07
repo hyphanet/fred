@@ -5472,6 +5472,24 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		
 	}
+	
+	public boolean isLowCapacity(boolean isRealtime) {
+		PeerLoadStats stats = outputLoadTracker(isRealtime).getLastIncomingLoadStats();
+		if(stats == null) return false;
+		NodePinger pinger = node.nodeStats.nodePinger;
+		if(pinger == null) return false; // FIXME possible?
+		if(pinger.capacityThreshold(isRealtime, true) > stats.peerLimit(true)) return true;
+		if(pinger.capacityThreshold(isRealtime, false) > stats.peerLimit(false)) return true;
+		return false;
+	}
+
+	public void reportRoutedTo(double target, boolean isLocal, boolean realTime) {
+		double distance = Location.distance(target, getLocation());
+		node.nodeStats.routingMissDistanceOverall.report(distance);
+		(isLocal ? node.nodeStats.routingMissDistanceLocal : node.nodeStats.routingMissDistanceRemote).report(distance);
+		(realTime ? node.nodeStats.routingMissDistanceRT : node.nodeStats.routingMissDistanceBulk).report(distance);
+		node.peers.incrementSelectionSamples(System.currentTimeMillis(), this);
+	}
 
 	private long maxPeerPingTime() {
 		if(node == null)
@@ -5562,22 +5580,4 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return fullFieldSet;
 	}
 	
-	public void reportRoutedTo(double target, boolean isLocal, boolean realTime) {
-		double distance = Location.distance(target, getLocation());
-		node.nodeStats.routingMissDistanceOverall.report(distance);
-		(isLocal ? node.nodeStats.routingMissDistanceLocal : node.nodeStats.routingMissDistanceRemote).report(distance);
-		(realTime ? node.nodeStats.routingMissDistanceRT : node.nodeStats.routingMissDistanceBulk).report(distance);
-		node.peers.incrementSelectionSamples(System.currentTimeMillis(), this);
-	}
-
-	public boolean isLowCapacity(boolean isRealtime) {
-		PeerLoadStats stats = outputLoadTracker(isRealtime).getLastIncomingLoadStats();
-		if(stats == null) return false;
-		NodePinger pinger = node.nodeStats.nodePinger;
-		if(pinger == null) return false; // FIXME possible?
-		if(pinger.capacityThreshold(isRealtime, true) > stats.peerLimit(true)) return true;
-		if(pinger.capacityThreshold(isRealtime, false) > stats.peerLimit(false)) return true;
-		return false;
-	}
-
 }
