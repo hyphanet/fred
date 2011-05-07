@@ -111,7 +111,7 @@ public class Peer implements WritableToDataOutputStream {
 	 * lookup fails.
 	 * @param checkHostnameOrIPSyntax If true, validate the syntax of the given DNS hostname or IPv4
 	 * IP address
-	 * @throws HostSyntaxException If the string is not formatted as a proper DNS hostname
+	 * @throws HostnameSyntaxException If the string is not formatted as a proper DNS hostname
 	 * or IPv4 IP address
 	 * @throws PeerParseException If the string is not valid e.g. if it doesn't contain a 
 	 * port.

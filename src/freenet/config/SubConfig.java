@@ -25,7 +25,7 @@ import freenet.support.api.StringCallback;
  * A specific configuration block.
  */
 public class SubConfig implements Comparable<SubConfig> {
-	
+
 	private final LinkedHashMap<String, Option<?>> map;
 	public final Config config;
 	final String prefix;
@@ -40,7 +40,7 @@ public class SubConfig implements Comparable<SubConfig> {
 			}
 		});
 	}
-	
+
 	public SubConfig(String prefix, Config config) {
 		this.config = config;
 		this.prefix = prefix;
@@ -48,7 +48,7 @@ public class SubConfig implements Comparable<SubConfig> {
 		hasInitialized = false;
 		config.register(this);
 	}
-	
+
 	/**
 	 * Return all the options registered. Each includes its name.
 	 * Used by e.g. webconfig.
@@ -56,11 +56,11 @@ public class SubConfig implements Comparable<SubConfig> {
 	public synchronized Option<?>[] getOptions() {
 		return map.values().toArray(new Option[map.size()]);
 	}
-	
+
 	public synchronized Option<?> getOption(String option) {
 		return map.get(option);
 	}
-	
+
 	public void register(Option<?> o) {
 		synchronized(this) {
 			if(o.name.indexOf(SimpleFieldSet.MULTI_LEVEL_CHAR) != -1)
@@ -71,54 +71,54 @@ public class SubConfig implements Comparable<SubConfig> {
 		}
 		config.onRegister(this, o);
 	}
-	
+
 	public void register(String optionName, int defaultValue, int sortOrder,
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, IntCallback cb, boolean isSize) {
 		if(cb == null) cb = new NullIntCallback();
 		register(new IntOption(this, optionName, defaultValue, sortOrder, expert, forceWrite, shortDesc, longDesc, cb, isSize));
 	}
-	
+
 	public void register(String optionName, long defaultValue, int sortOrder,
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, LongCallback cb, boolean isSize) {
 		if(cb == null) cb = new NullLongCallback();
 		register(new LongOption(this, optionName, defaultValue, sortOrder, expert, forceWrite, shortDesc, longDesc, cb, isSize));
 	}
-	
+
 	public void register(String optionName, String defaultValueString, int sortOrder,
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, IntCallback cb, boolean isSize) {
 		if(cb == null) cb = new NullIntCallback();
 		register(new IntOption(this, optionName, defaultValueString, sortOrder, expert, forceWrite, shortDesc, longDesc, cb, isSize));
 	}
-	
+
 	public void register(String optionName, String defaultValueString, int sortOrder,
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, LongCallback cb, boolean isSize) {
 		if(cb == null) cb = new NullLongCallback();
 		register(new LongOption(this, optionName, defaultValueString, sortOrder, expert, forceWrite, shortDesc, longDesc, cb, isSize));
 	}
-	
+
 	public void register(String optionName, boolean defaultValue, int sortOrder,
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, BooleanCallback cb) {
 		if(cb == null) cb = new NullBooleanCallback();
 		register(new BooleanOption(this, optionName, defaultValue, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
 	}
-	
+
 	public void register(String optionName, String defaultValue, int sortOrder,
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, StringCallback cb) {
 		if(cb == null) cb = new NullStringCallback();
 		register(new StringOption(this, optionName, defaultValue, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
 	}
-	
+
 	public void register(String optionName, short defaultValue, int sortOrder,
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, ShortCallback cb, boolean isSize) {
 		if(cb == null) cb = new NullShortCallback();
 		register(new ShortOption(this, optionName, defaultValue, sortOrder, expert, forceWrite, shortDesc, longDesc, cb, isSize));
 	}
-	
+
 	public void register(String optionName, String[] defaultValue, int sortOrder,
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, StringArrCallback cb) {
 		register(new StringArrOption(this, optionName, defaultValue, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
 	}
-	
+
 	public int getInt(String optionName) {
 		IntOption o;
 		synchronized(this) {
@@ -126,7 +126,7 @@ public class SubConfig implements Comparable<SubConfig> {
 		}
 		return o.getValue();
 	}
-	
+
 	public long getLong(String optionName) {
 		LongOption o;
 		synchronized(this) {
@@ -134,7 +134,7 @@ public class SubConfig implements Comparable<SubConfig> {
 		}
 		return o.getValue();
 	}
-	
+
 	public boolean getBoolean(String optionName) {
 		BooleanOption o;
 		synchronized(this) {
@@ -142,7 +142,7 @@ public class SubConfig implements Comparable<SubConfig> {
 		}
 		return o.getValue();
 	}
-	
+
 	public String getString(String optionName) {
 		StringOption o;
 		synchronized(this) {
@@ -150,7 +150,7 @@ public class SubConfig implements Comparable<SubConfig> {
 		}
 		return o.getValue().trim();
 	}
-	
+
 	public String[] getStringArr(String optionName) {
 		StringArrOption o;
 		synchronized(this) {
@@ -166,7 +166,13 @@ public class SubConfig implements Comparable<SubConfig> {
 		}
 		return o.getValue();
 	}
-	
+
+	public Option<?> removeOption(String optionName) {
+		synchronized(this) {
+			return map.remove(optionName);
+		}
+	}
+
 	/**
 	 * Has the object we are attached to finished initialization?
 	 */
@@ -281,7 +287,7 @@ public class SubConfig implements Comparable<SubConfig> {
 
 	/**
 	 * Force an option to be updated even if it hasn't changed.
-	 * 
+	 *
 	 * @throws InvalidConfigValueException
 	 * @throws NodeNeedRestartException
 	 */
@@ -312,7 +318,7 @@ public class SubConfig implements Comparable<SubConfig> {
 		if(o.getValueString().equals(value))
 			o.setDefault();
 	}
-	
+
 	/**
 	 * If the option's value matches the provided old default regex, then set it to the
 	 * new default. Used to deal with changes to important options where this is not
@@ -325,11 +331,11 @@ public class SubConfig implements Comparable<SubConfig> {
 		if(o.getValueString().matches(value))
 			o.setDefault();
 	}
-	
+
 	public String getPrefix(){
 		return prefix;
 	}
-	
+
 	public int compareTo(SubConfig second) {
 		if (this.getPrefix().compareTo(second.getPrefix()) > 0)
 			return 1;

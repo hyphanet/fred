@@ -361,7 +361,9 @@ class NPFPacket {
 	}
 	
 	public void removeLossyMessage(byte[] buf) {
-		lossyMessages.remove(buf);
+		if(lossyMessages.remove(buf)) {
+			length -= buf.length + 2;
+		}
 	}
 	/** Get the list of lossy messages. Note that for early versions these may be bogus,
 	 * so be careful when parsing them. Note also that these must be processed before the

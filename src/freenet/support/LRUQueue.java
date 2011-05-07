@@ -4,6 +4,8 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
+import freenet.node.OpennetPeerNode;
+
 /**
  * LRU Queue
  * 
@@ -186,6 +188,12 @@ public class LRUQueue<T> {
 	public synchronized void clear() {
 		list.clear();
 		hash.clear();
+	}
+
+	public synchronized T get(T obj) {
+		QItem<T> val = hash.get(obj);
+		if(val == null) return null;
+		return val.obj;
 	}
 }
 

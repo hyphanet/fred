@@ -23,6 +23,7 @@ import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.InsertContext.CompatibilityMode;
+import freenet.client.events.EnterFiniteCooldownEvent;
 import freenet.client.events.ExpectedFileSizeEvent;
 import freenet.client.events.ExpectedHashesEvent;
 import freenet.client.events.ExpectedMIMEEvent;
@@ -36,6 +37,7 @@ import freenet.client.filter.UnknownContentTypeException;
 import freenet.client.filter.UnsafeContentTypeException;
 import freenet.crypt.HashResult;
 import freenet.keys.ClientKeyBlock;
+import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.node.RequestClient;
@@ -54,7 +56,7 @@ import freenet.support.io.NullBucket;
  * of the request is stored in currentState. The ClientGetState's do most of the work. SingleFileFetcher for
  * example fetches a key, parses the metadata, and if necessary creates other states to e.g. fetch splitfiles.
  */
-public class ClientGetter extends BaseClientGetter {
+public class ClientGetter extends BaseClientGetter implements WantsCooldownCallback {
 
 	private static volatile boolean logMINOR;
 
@@ -226,6 +228,8 @@ public class ClientGetter extends BaseClientGetter {
 	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "Succeeded from "+state+" on "+this);
+		// Fetching the container is essentially a full success, we should update the latest known good.
+		context.uskManager.checkUSK(uri, persistent(), container, false);
 		if(persistent()) {
 			container.activate(uri, 5);
 			container.activate(clientMetadata, Integer.MAX_VALUE);
@@ -452,7 +456,7 @@ public class ClientGetter extends BaseClientGetter {
 				currentState = null;
 			}
 			if(e.errorCodes != null && e.errorCodes.isOneCodeOnly())
-				e = new FetchException(e.errorCodes.getFirstCode(), e);
+				e = new FetchException(e.errorCodes.getFirstCode());
 			if(e.mode == FetchException.DATA_NOT_FOUND && super.successfulBlocks > 0)
 				e = new FetchException(e, FetchException.ALL_DATA_NOT_FOUND);
 			if(logMINOR) Logger.minor(this, "onFailure("+e+", "+state+") on "+this+" for "+uri, e);
@@ -640,7 +644,7 @@ public class ClientGetter extends BaseClientGetter {
 	/**
 	 * Add a block to the binary blob.
 	 */
-	void addKeyToBinaryBlob(ClientKeyBlock block, ObjectContainer container, ClientContext context) {
+	protected void addKeyToBinaryBlob(ClientKeyBlock block, ObjectContainer container, ClientContext context) {
 		if(binaryBlobKeysAddedAlready == null) return;
 		if(persistent()) {
 			container.activate(binaryBlobStream, 1);
@@ -703,7 +707,7 @@ public class ClientGetter extends BaseClientGetter {
 	}
 
 	/** Are we collecting a binary blob? */
-	boolean collectingBinaryBlob() {
+	protected boolean collectingBinaryBlob() {
 		return binaryBlobBucket != null;
 	}
 
@@ -850,6 +854,25 @@ public class ClientGetter extends BaseClientGetter {
 		}
 		if(persistent()) container.store(this);
 		ctx.eventProducer.produceEvent(new ExpectedHashesEvent(hashes), container, context);
+	}
+
+	public void enterCooldown(long wakeupTime, ObjectContainer container,
+			ClientContext context) {
+		if(wakeupTime == Long.MAX_VALUE) {
+			// Ignore.
+			// FIXME implement when implement clearCooldown().
+			// It means everything that can be started has been started.
+		} else {
+			if(persistent()) {
+				container.activate(ctx, 1);
+				container.activate(ctx.eventProducer, 1);
+			}
+			ctx.eventProducer.produceEvent(new EnterFiniteCooldownEvent(wakeupTime), container, context);
+		}
+	}
+
+	public void clearCooldown(ObjectContainer container) {
+		// Ignore for now. FIXME.
 	}
 	
 }

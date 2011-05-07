@@ -3,6 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.WeakHashMap;
+
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import com.db4o.ObjectContainer;
@@ -52,6 +59,16 @@ public abstract class ClientRequester {
 		return priorityClass;
 	}
 
+	/**
+	 * zero arg c'tor for db4o on jamvm
+	 */
+	protected ClientRequester() {
+		realTimeFlag = false;
+		creationTime = 0;
+		hashCode = 0;
+		requests = null;
+	}
+
 	protected ClientRequester(short priorityClass, RequestClient client) {
 		this.priorityClass = priorityClass;
 		this.client = client;
@@ -60,6 +77,11 @@ public abstract class ClientRequester {
 			throw new NullPointerException();
 		hashCode = super.hashCode(); // the old object id will do fine, as long as we ensure it doesn't change!
 		requests = persistent() ? new PersistentSendableRequestSet() : new TransientSendableRequestSet();
+		synchronized(allRequesters) {
+			if(!persistent())
+				allRequesters.put(this, dumbValue);
+		}
+		creationTime = System.currentTimeMillis();
 	}
 
 	/** Cancel the request. Inner method, subclasses should actually tell 
@@ -412,13 +434,13 @@ public abstract class ClientRequester {
 		ObjectSet<ClientRequester> requesters = container.query(ClientRequester.class);
 		for(ClientRequester req : requesters) {
 			try {
-				System.out.println("Checking "+req);
+				if(logMINOR) Logger.minor(req, "Checking "+req);
 				if(req.isCancelled() || req.isFinished()) {
-					System.out.println("Cancelled or finished");
+					if(logMINOR) Logger.minor(req, "Cancelled or finished");
 				} else {
-					System.out.println("Checking for broken client: "+req);
+					if(logMINOR) Logger.minor(req, "Checking for broken client: "+req);
 					if(!req.checkForBrokenClient(container, clientContext))
-						System.out.println("Request is clean.");
+						if(logMINOR) Logger.minor(req, "Request is clean.");
 					else {
 						WrapperManager.signalStarting(5*60*1000);
 						container.commit();
@@ -431,4 +453,13 @@ public abstract class ClientRequester {
 		}
 	}
 
+	private static WeakHashMap<ClientRequester,Object> allRequesters = new WeakHashMap<ClientRequester,Object>();
+	private static Object dumbValue = new Object();
+	public final long creationTime;
+
+	public static ClientRequester[] getAll() {
+		synchronized(allRequesters) {
+			return allRequesters.keySet().toArray(new ClientRequester[0]);
+		}
+	}
 }

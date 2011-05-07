@@ -27,6 +27,7 @@ import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
+import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.node.NodeDispatcher.NodeDispatcherCallback;
 import freenet.store.KeyCollisionException;
 import freenet.support.Executor;
@@ -77,6 +78,7 @@ public class RealNodeULPRTest extends RealNodeTest {
     static final boolean REAL_TIME_FLAG = false;
     
 	static final FRIEND_TRUST trust = FRIEND_TRUST.LOW;
+	static final FRIEND_VISIBILITY visibility = FRIEND_VISIBILITY.NO;
 
     public static final int DARKNET_PORT_BASE = RealNodeSecretPingTest.DARKNET_PORT_END;
     public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
@@ -98,7 +100,7 @@ public class RealNodeULPRTest extends RealNodeTest {
         //NodeStarter.globalTestInit(testName, false, LogLevel.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeRoutingTest:normal,freenet.node.NodeDispatcher:NORMAL" /*,freenet.node.FailureTable:MINOR,freenet.node.Node:MINOR,freenet.node.Request:MINOR,freenet.io.comm.MessageCore:MINOR" "freenet.store:minor,freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.MessageCore:debug"*/);
         // Uncomment as appropriate.
         // For testing high-level stuff (requests/ULPRs/FT bugs)
-        NodeStarter.globalTestInit(testName, false, LogLevel.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeRoutingTest:normal,freenet.node.NodeDispatcher:NORMAL,freenet.node.FailureTable:MINOR,freenet.node.Node:MINOR,freenet.node.Request:MINOR,freenet.io.comm.MessageCore:MINOR,freenet.node.PeerNode:MINOR,freenet.node.DarknetPeerNode:MINOR,freenet.io.xfer.PacketThrottle:MINOR,freenet.node.PeerManager:MINOR", true);
+        NodeStarter.globalTestInit(testName, false, LogLevel.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeRoutingTest:normal,freenet.node.NodeDispatcher:NORMAL,freenet.node.FailureTable:MINOR,freenet.node.Node:MINOR,freenet.node.Request:MINOR,freenet.io.comm.MessageCore:MINOR,freenet.node.PeerNode:MINOR,freenet.node.DarknetPeerNode:MINOR,freenet.io.xfer.PacketThrottle:MINOR,freenet.node.PeerManager:MINOR,freenet.client.async:MINOR", true);
         // For testing low-level stuff (connection bugs)
         //NodeStarter.globalTestInit(testName, false, LogLevel.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeRoutingTest:normal,freenet.node.Node:MINOR,freenet.io.comm.MessageCore:MINOR,freenet.node.PeerNode:MINOR,freenet.node.DarknetPeerNode:MINOR,freenet.node.FNP:MINOR,freenet.io.xfer.PacketThrottle:MINOR,freenet.node.PeerManager:MINOR", true);
         Node[] nodes = new Node[NUMBER_OF_NODES];
@@ -118,8 +120,8 @@ public class RealNodeULPRTest extends RealNodeTest {
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             int next = (i+1) % NUMBER_OF_NODES;
             int prev = (i+NUMBER_OF_NODES-1)%NUMBER_OF_NODES;
-            nodes[i].connect(nodes[next], trust);
-            nodes[i].connect(nodes[prev], trust);
+            nodes[i].connect(nodes[next], trust, visibility);
+            nodes[i].connect(nodes[prev], trust, visibility);
         }
         Logger.normal(RealNodeRoutingTest.class, "Connected nodes");
         // Now add some random links
@@ -132,8 +134,8 @@ public class RealNodeULPRTest extends RealNodeTest {
             //System.out.println(""+nodeA+" -> "+nodeB);
             Node a = nodes[nodeA];
             Node b = nodes[nodeB];
-            a.connect(b, trust);
-            b.connect(a, trust);
+            a.connect(b, trust, visibility);
+            b.connect(a, trust, visibility);
         }
         
         Logger.normal(RealNodeRoutingTest.class, "Added random links");
@@ -223,6 +225,9 @@ public class RealNodeULPRTest extends RealNodeTest {
         			// Expected
         			System.err.println("Node "+i%nodes.length+" : key not found (expected behaviour)");
         			continue;
+        		case LowLevelGetException.RECENTLY_FAILED:
+       				System.err.println("Node "+i%nodes.length+" : recently failed (expected behaviour on later tests)");
+       				continue;
         		default:
         			System.err.println("Node "+i%nodes.length+" : UNEXPECTED ERROR: "+e.toString());
         			System.exit(EXIT_UNKNOWN_ERROR_CHECKING_KEY_NOT_EXIST);
@@ -246,8 +251,10 @@ public class RealNodeULPRTest extends RealNodeTest {
         
         // Store the key to ONE node.
         
+        Logger.normal(RealNodeULPRTest.class, "Inserting to node "+(nodes.length-1));
 		long tStart = System.currentTimeMillis();
 		nodes[nodes.length-1].store(block, false, false, true, false); // Write to datastore
+        Logger.normal(RealNodeULPRTest.class, "Inserted to node "+(nodes.length-1));
 		
 		int x = -1;
 		while(true) {
@@ -276,7 +283,7 @@ public class RealNodeULPRTest extends RealNodeTest {
 				break;
 			}
 			if(x % nodes.length == 0) {
-				System.err.print("Nodes that don't have the data: ");
+				System.err.print("Nodes that do have the data: ");
 				for(int i=0;i<nodes.length;i++)
 					if(nodes[i].hasKey(fetchKey.getNodeKey(false), true, true)) {
 						System.err.print(i+" ");

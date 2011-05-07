@@ -42,6 +42,13 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	final FetchContext ctx;
 	final USKRetrieverCallback cb;
 	final USK origUSK;
+	// In wierd 
+	/** The USKCallback that is actually subscribed. This is used when we may
+	 * be going through a USKSparseProxyCallback. */
+	private USKCallback proxy;
+	/** Alternatively, we may be driving a USKFetcher directly. This happens when
+	 * the client subscribes with a custom FetchContext. */
+	private USKFetcher fetcher;
 
         private static volatile boolean logMINOR;
 	static {
@@ -60,6 +67,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		this.ctx = fctx;
 		this.cb = cb;
 		this.origUSK = origUSK;
+		this.proxy = this;
 	}
 
 	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
@@ -71,6 +79,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 			Logger.warning(this, "Found edition prior to that specified by the client: "+l+" < "+origUSK.suggestedEdition, new Exception("error"));
 			return;
 		}
+		if(logMINOR) Logger.minor(this, "Found edition "+l+" for "+this+" - fetching...");
 		// Create a SingleFileFetcher for the key (as an SSK).
 		// Put the edition number into its context object.
 		// Put ourself as callback.
@@ -253,6 +262,57 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	
 	public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
 		// Ignore
+	}
+	
+	/** Called when we subscribe() in USKManager, if we don't directly subscribe
+	 * the USKRetriever. Usually this happens when we put a proxy between them,
+	 * e.g. USKProxyCompletionCallback, which hides updates for efficiency. 
+	 * @param cb The callback that is actually USKManager.subscribe()'ed.
+	 */
+	synchronized void setProxy(USKCallback cb) {
+		proxy = cb;
+	}
+	
+	synchronized USKCallback getProxy() {
+		return proxy;
+	}
+	
+	synchronized void setFetcher(USKFetcher f) {
+		fetcher = f;
+	}
+	
+	synchronized USKFetcher getFetcher() {
+		return fetcher;
+	}
+
+	public void unsubscribe(USKManager manager) {
+		USKFetcher f;
+		USKCallback p;
+		synchronized(this) {
+			f = fetcher;
+			p = proxy;
+		}
+		if(f != null)
+			f.cancel(null, manager.getContext());
+		if(p != null)
+			manager.unsubscribe(origUSK, p);
+	}
+	
+	/** Only works if setFetcher() has been called, i.e. if this was created
+	 * through USKManager.subscribeContentCustom().
+	 * FIXME this is a special case hack, 
+	 * For a generic solution see https://bugs.freenetproject.org/view.php?id=4984
+	 * @param time The new cooldown time. At least 30 minutes or we throw.
+	 * @param tries The new number of tries after each cooldown. Greater than 0
+	 * and less than 3 or we throw.
+	 */
+	public void changeUSKPollParameters(long time, int tries, ClientContext context) {
+		USKFetcher f;
+		synchronized(this) {
+			f = fetcher;
+		}
+		if(f == null) throw new IllegalStateException();
+		f.changeUSKPollParameters(time, tries, context);
 	}
 	
 }

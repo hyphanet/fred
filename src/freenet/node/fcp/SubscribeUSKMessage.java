@@ -35,6 +35,7 @@ public class SubscribeUSKMessage extends FCPMessage {
 	final short prio;
 	final short prioProgress;
 	final boolean realTimeFlag;
+	final boolean sparsePoll;
 	
 	public SubscribeUSKMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		this.identifier = fs.get("Identifier");
@@ -51,6 +52,10 @@ public class SubscribeUSKMessage extends FCPMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Could not parse URI: "+e, identifier, false);
 		}
 		this.dontPoll = Fields.stringToBool(fs.get("DontPoll"), false);
+		if(!dontPoll)
+			this.sparsePoll = fs.getBoolean("SparsePoll", false);
+		else
+			sparsePoll = false;
 		prio = fs.getShort("PriorityClass", RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS);
 		prioProgress = fs.getShort("PriorityClassProgress", (short)Math.max(0, prio-1));
 		realTimeFlag = fs.getBoolean("RealTimeFlag", false);

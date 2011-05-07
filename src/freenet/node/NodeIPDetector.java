@@ -28,6 +28,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.StringCallback;
+import freenet.support.io.NativeThread;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.IPAddressDetector;
 import freenet.support.transport.ip.IPUtil;
@@ -365,6 +366,7 @@ public class NodeIPDetector {
 					node.onTooLowMTU(minimumMTU, UdpSocketHandler.MIN_MTU);
 			}
 		}
+		node.updateMTU();
 		redetectAddress();
 	}
 
@@ -518,7 +520,20 @@ public class NodeIPDetector {
 	}
 
 	public void onConnectedPeer() {
-		ipDetectorManager.maybeRun();
+		// Run off thread, but at high priority.
+		// Initial messages don't need an up to date IP for the node itself, but
+		// announcements do. However announcements are not sent instantly.
+		node.executor.execute(new PrioRunnable() {
+
+			public void run() {
+				ipDetectorManager.maybeRun();
+			}
+
+			public int getPriority() {
+				return NativeThread.HIGH_PRIORITY;
+			}
+			
+		});
 	}
 
 	public void registerIPDetectorPlugin(FredPluginIPDetector detector) {

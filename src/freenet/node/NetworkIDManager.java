@@ -546,6 +546,8 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 			Logger.normal(this, "one party left during connectivity test: "+e);
 		} catch (DisconnectedException e) {
 			Logger.normal(this, "one party left during connectivity test: "+e);
+		} catch (SyncSendWaitedTooLongException e) {
+			Logger.normal(this, "one party left during connectivity test: "+e);
 		} finally {
 			if (success) {
 				secretPingSuccesses++;

@@ -222,4 +222,17 @@ public class NullBasePeerNode implements BasePeerNode {
 		return false;
 	}
 
+	public double averagePingTimeCorrected() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	public void backoffOnResend() {
+		// Ignore
+	}
+
+	public void receivedAck(long currentTimeMillis) {
+		// Ignore
+	}
+
 }

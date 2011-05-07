@@ -3,6 +3,7 @@ package freenet.node;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.HashSet;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -113,7 +114,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	public NodeRestartJobsQueue restartJobsQueue;
 	/** Must be included as a hidden field in order for any dangerous HTTP operation to complete successfully. */
 	public final String formPassword;
-	File downloadDir;
+	final ProgramDirectory downloadsDir;
 	private File[] downloadAllowedDirs;
 	private boolean includeDownloadDir;
 	private boolean downloadAllowedEverywhere;
@@ -126,7 +127,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	public final Node node;
 	final NodeStats nodeStats;
 	public final RandomSource random;
-	final File tempDir;	// Persistent temporary buckets
+	final ProgramDirectory tempDir;	// Persistent temporary buckets
+	final ProgramDirectory persistentTempDir;
 	public FECQueue fecQueue;
 	public final UserAlertManager alerts;
 	final TextModeClientInterfaceServer tmci;
@@ -162,11 +164,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	private static final int FEC_QUEUE_CACHE_SIZE = 20;
 	private UserAlert startingUpAlert;
 	private RestartDBJob[] startupDatabaseJobs;
-	private File persistentTempDir;
 	private boolean alwaysCommit;
 	private boolean useAIMDs;
 
-	NodeClientCore(Node node, Config config, SubConfig nodeConfig, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, long nodeDBHandle, ObjectContainer container) throws NodeInitException {
+	NodeClientCore(Node node, Config config, SubConfig nodeConfig, SubConfig installConfig, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, long nodeDBHandle, ObjectContainer container) throws NodeInitException {
 		this.node = node;
 		this.nodeStats = node.nodeStats;
 		this.random = node.random;
@@ -196,37 +197,12 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 		// Temp files
 
-		nodeConfig.register("tempDir", node.runDir().file("temp-"+portNumber).toString(), sortOrder++, true, true, "NodeClientCore.tempDir", "NodeClientCore.tempDirLong",
-			new StringCallback() {
-
-				@Override
-				public String get() {
-					return tempDir.getPath();
-				}
-
-				@Override
-				public void set(String val) throws InvalidConfigValueException {
-					if(tempDir.equals(new File(val)))
-						return;
-					// FIXME
-					throw new InvalidConfigValueException(l10n("movingTempDirOnTheFlyNotSupported"));
-				}
-
-				@Override
-				public boolean isReadOnly() {
-				        return true;
-			        }
-			});
-
-		tempDir = new File(nodeConfig.getString("tempDir"));
-		if(!((tempDir.exists() && tempDir.isDirectory()) || (tempDir.mkdir()))) {
-			String msg = "Could not find or create temporary directory";
-			throw new NodeInitException(NodeInitException.EXIT_BAD_DIR, msg);
-		}
-		FileUtil.setOwnerRWX(tempDir);
+		this.tempDir = node.setupProgramDir(installConfig, "tempDir", node.runDir().file("temp-"+portNumber).toString(),
+		  "NodeClientCore.tempDir", "NodeClientCore.tempDirLong", nodeConfig);
+		FileUtil.setOwnerRWX(getTempDir());
 
 		try {
-			tempFilenameGenerator = new FilenameGenerator(random, true, tempDir, "temp-");
+			tempFilenameGenerator = new FilenameGenerator(random, true, getTempDir(), "temp-");
 		} catch(IOException e) {
 			String msg = "Could not find or create temporary directory (filename generator)";
 			throw new NodeInitException(NodeInitException.EXIT_BAD_DIR, msg);
@@ -265,28 +241,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			}
 		});
 
-		nodeConfig.register("persistentTempDir", node.userDir().file("persistent-temp-"+portNumber).toString(), sortOrder++, true, false, "NodeClientCore.persistentTempDir", "NodeClientCore.persistentTempDirLong",
-			new StringCallback() {
-
-				@Override
-				public String get() {
-					return persistentTempDir.toString();
-				}
-
-				@Override
-				public void set(String val) throws InvalidConfigValueException {
-					if(get().equals(val))
-						return;
-					// FIXME
-					throw new InvalidConfigValueException("Moving persistent temp directory on the fly not supported at present");
-				}
-
-				@Override
-				public boolean isReadOnly() {
-				        return true;
-			        }
-			});
-		persistentTempDir = new File(nodeConfig.getString("persistentTempDir"));
+		this.persistentTempDir = node.setupProgramDir(installConfig, "persistentTempDir", node.userDir().file("persistent-temp-"+portNumber).toString(),
+		  "NodeClientCore.persistentTempDir", "NodeClientCore.persistentTempDirLong", nodeConfig);
 		initPTBF(container, nodeConfig);
 
 		// Allocate 10% of the RAM to the RAMBucketPool by default
@@ -304,10 +260,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				if(defaultRamBucketPoolSize <= 0) defaultRamBucketPoolSize = 1;
 			}
 		}
-		
+
 		// Max bucket size 5% of the total, minimum 32KB (one block, vast majority of buckets)
 		long maxBucketSize = Math.max(32768, (defaultRamBucketPoolSize * 1024 * 1024) / 20);
-		
+
 		nodeConfig.register("maxRAMBucketSize", SizeUtil.formatSizeWithoutSpace(maxBucketSize), sortOrder++, true, false, "NodeClientCore.maxRAMBucketSize", "NodeClientCore.maxRAMBucketSizeLong", new LongCallback() {
 
 			@Override
@@ -426,29 +382,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 		// Downloads directory
 
-		nodeConfig.register("downloadsDir", "downloads", sortOrder++, true, true, "NodeClientCore.downloadDir", "NodeClientCore.downloadDirLong", new StringCallback() {
-
-			@Override
-			public String get() {
-				return downloadDir.getPath();
-			}
-
-			@Override
-			public void set(String val) throws InvalidConfigValueException {
-				if(downloadDir.equals(new File(val)))
-					return;
-				File f = new File(val);
-				if(!((f.exists() && f.isDirectory()) || (f.mkdir())))
-					// Relatively commonly used, despite being advanced (i.e. not something we want to show to newbies). So translate it.
-					throw new InvalidConfigValueException(l10n("couldNotFindOrCreateDir"));
-				downloadDir = new File(val);
-			}
-		});
-
-		String val = nodeConfig.getString("downloadsDir");
-		downloadDir = new File(val);
-		if(!((downloadDir.exists() && downloadDir.isDirectory()) || (downloadDir.mkdir())))
-			throw new NodeInitException(NodeInitException.EXIT_BAD_DIR, "Could not find or create default downloads directory");
+		this.downloadsDir = node.setupProgramDir(nodeConfig, "downloadsDir", node.userDir().file("downloads").getPath(),
+		  "NodeClientCore.downloadsDir", "NodeClientCore.downloadsDirLong", l10n("couldNotFindOrCreateDir"), (SubConfig)null);
 
 		// Downloads allowed, uploads allowed
 
@@ -553,7 +488,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		this.alerts.register(new SimpleUserAlert(true, NodeL10n.getBase().getString("QueueToadlet.persistenceBrokenTitle"),
 				NodeL10n.getBase().getString("QueueToadlet.persistenceBroken",
 						new String[]{ "TEMPDIR", "DBFILE" },
-						new String[]{ FileUtil.getCanonicalFile(getPersistentTempDir()).toString()+File.separator, FileUtil.getCanonicalFile(node.getUserDir())+File.separator+"node.db4o" }
+						new String[]{ new File(FileUtil.getCanonicalFile(getPersistentTempDir()), File.separator).toString(), new File(FileUtil.getCanonicalFile(node.getUserDir()), "node.db4o").toString() }
 				), NodeL10n.getBase().getString("QueueToadlet.persistenceBrokenShortAlert"), UserAlert.CRITICAL_ERROR)
 				{
 			public boolean isValid() {
@@ -634,8 +569,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		try {
 			String prefix = "freenet-temp-";
 			if(!killedDatabase) {
-				ptbf = PersistentTempBucketFactory.load(persistentTempDir, prefix, random, node.fastWeakRandom, container, node.nodeDBHandle, nodeConfig.getBoolean("encryptPersistentTempBuckets"), this, node.getTicker());
-				ptbf.init(persistentTempDir, prefix, random, node.fastWeakRandom);
+				ptbf = PersistentTempBucketFactory.load(getPersistentTempDir(), prefix, random, node.fastWeakRandom, container, node.nodeDBHandle, nodeConfig.getBoolean("encryptPersistentTempBuckets"), this, node.getTicker());
+				ptbf.init(getPersistentTempDir(), prefix, random, node.fastWeakRandom);
 				pfg = ptbf.fg;
 			}
 		} catch(IOException e2) {
@@ -842,7 +777,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		}
 
 		persister.start();
-		
+
 		requestStarters.start();
 
 		storeChecker.start(node.executor, "Datastore checker");
@@ -917,10 +852,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 		public void completed(boolean success);
 	}
-	
-	/** UID -1 is used internally, so never generate it. 
-	 * It is not however a problem if a node does use it; it will slow its messages down 
-	 * by them being round-robin'ed in PeerMessageQueue with messages with no UID, that's 
+
+	/** UID -1 is used internally, so never generate it.
+	 * It is not however a problem if a node does use it; it will slow its messages down
+	 * by them being round-robin'ed in PeerMessageQueue with messages with no UID, that's
 	 * all. */
 	long makeUID() {
 		while(true) {
@@ -957,7 +892,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 			/** The RequestSender finished.
 			 * @param status The completion status.
-			 * @param uidTransferred If this is set, the RequestSender has taken on 
+			 * @param uidTransferred If this is set, the RequestSender has taken on
 			 * responsibility for unlocking the UID specified. We should not unlock it.
 			 */
 			public void onRequestSenderFinished(int status, boolean fromOfferedKey) {
@@ -1081,7 +1016,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 						rejectedOverload = true;
 						long rtt = System.currentTimeMillis() - startTime;
 						double targetLocation=key.getNodeCHK().toNormalizedDouble();
-						node.nodeStats.reportCHKOutcome(rtt, false, targetLocation);
+						node.nodeStats.reportCHKOutcome(rtt, false, targetLocation, realTimeFlag);
 					}
 				} else
 					if(rs.hasForwarded() &&
@@ -1097,7 +1032,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 							requestStarters.requestCompleted(false, false, key.getNodeKey(true), realTimeFlag);
 						// Count towards RTT even if got a RejectedOverload - but not if timed out.
 						requestStarters.getThrottle(false, false, realTimeFlag).successfulCompletion(rtt);
-						node.nodeStats.reportCHKOutcome(rtt, status == RequestSender.SUCCESS, targetLocation);
+						node.nodeStats.reportCHKOutcome(rtt, status == RequestSender.SUCCESS, targetLocation, realTimeFlag);
 						if(status == RequestSender.SUCCESS) {
 							Logger.minor(this, "Successful CHK fetch took "+rtt);
 						}
@@ -1196,12 +1131,14 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 						nodeStats.successfulSskFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
 				}
 
+				long rtt = System.currentTimeMillis() - startTime;
 				if((status == RequestSender.TIMED_OUT) ||
 					(status == RequestSender.GENERATED_REJECTED_OVERLOAD)) {
 					if(!rejectedOverload) {
 						requestStarters.rejectedOverload(true, false, realTimeFlag);
 						rejectedOverload = true;
 					}
+					node.nodeStats.reportSSKOutcome(rtt, false, realTimeFlag);
 				} else
 					if(rs.hasForwarded() &&
 						((status == RequestSender.DATA_NOT_FOUND) ||
@@ -1210,12 +1147,12 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 						(status == RequestSender.ROUTE_NOT_FOUND) ||
 						(status == RequestSender.VERIFY_FAILURE) ||
 						(status == RequestSender.GET_OFFER_VERIFY_FAILURE))) {
-						long rtt = System.currentTimeMillis() - startTime;
 
 						if(!rejectedOverload)
 							requestStarters.requestCompleted(true, false, key.getNodeKey(true), realTimeFlag);
 						// Count towards RTT even if got a RejectedOverload - but not if timed out.
 						requestStarters.getThrottle(true, false, realTimeFlag).successfulCompletion(rtt);
+						node.nodeStats.reportSSKOutcome(rtt, status == RequestSender.SUCCESS, realTimeFlag);
 					}
 
 				if(rs.getStatus() == RequestSender.SUCCESS)
@@ -1505,7 +1442,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 							throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, "Collided, can't find block, but still collides!", e);
 						}
 					}
-					
+
 					failed.setCollidedBlock(collided);
 					throw failed;
 				}
@@ -1557,10 +1494,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 	/**
 	 * @param prioClass The priority to run requests at.
-	 * @param realTimeFlag If true, requests are latency-optimised. If false, they are 
+	 * @param realTimeFlag If true, requests are latency-optimised. If false, they are
 	 * throughput-optimised. Fewer latency-optimised ("real time") requests are accepted
 	 * but their transfers are faster. Latency-optimised requests are expected to be bursty,
-	 * whereas throughput-optimised (bulk) requests can be constant. 
+	 * whereas throughput-optimised (bulk) requests can be constant.
 	 */
 	public HighLevelSimpleClient makeClient(short prioClass, boolean forceDontIgnoreTooManyPathComponents, boolean realTimeFlag) {
 		return new HighLevelSimpleClientImpl(this, tempBucketFactory, random, prioClass, forceDontIgnoreTooManyPathComponents, realTimeFlag);
@@ -1594,8 +1531,12 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		this.directTMCI = i;
 	}
 
-	public File getDownloadDir() {
-		return downloadDir;
+	public File getDownloadsDir() {
+		return downloadsDir.dir();
+	}
+
+	public ProgramDirectory downloadsDir() {
+		return downloadsDir;
 	}
 
 	public HealingQueue getHealingQueue() {
@@ -1649,7 +1590,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		if(downloadAllowedEverywhere)
 			return true;
 		if(includeDownloadDir)
-			if(FileUtil.isParent(downloadDir, filename))
+			if(FileUtil.isParent(getDownloadsDir(), filename))
 				return true;
 		for(int i = 0; i < downloadAllowedDirs.length; i++) {
 			if(FileUtil.isParent(downloadAllowedDirs[i], filename))
@@ -1685,11 +1626,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	}
 
 	public File getPersistentTempDir() {
-		return persistentTempDir;
+		return persistentTempDir.dir();
 	}
 
 	public File getTempDir() {
-		return tempDir;
+		return tempDir.dir();
 	}
 
 	/** Queue the offered key. */
@@ -1728,7 +1669,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	private long lastCommitted = System.currentTimeMillis();
 
 	static final int MAX_COMMIT_INTERVAL = 30*1000;
-	
+
 	static final int SOON_COMMIT_INTERVAL = 5*1000;
 
 	class DBJobWrapper implements Runnable {
@@ -1932,9 +1873,9 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	public synchronized void setCommitThisTransaction() {
 		commitThisTransaction = true;
 	}
-	
+
 	private boolean commitSoon;
-	
+
 	public synchronized void setCommitSoon() {
 		commitSoon = true;
 	}
@@ -1944,13 +1885,27 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	}
 
 	/* FIXME SECURITY When/if introduce tunneling or similar mechanism for starting requests
-	 * at a distance this will need to be reconsidered. See the comments on the caller in 
+	 * at a distance this will need to be reconsidered. See the comments on the caller in
 	 * RequestHandler (onAbort() handler). */
 	public boolean wantKey(Key key) {
 		boolean isSSK = key instanceof NodeSSK;
 		if(this.clientContext.getFetchScheduler(isSSK, true).wantKey(key)) return true;
 		if(this.clientContext.getFetchScheduler(isSSK, false).wantKey(key)) return true;
 		return false;
+	}
+
+	public long checkRecentlyFailed(Key key, boolean realTime) {
+		RecentlyFailedReturn r = new RecentlyFailedReturn();
+		// We always decrement when we start a request. This feeds into the
+		// routing decision. Depending on our decrementAtMax flag, it may or
+		// may not actually go down one hop. But if we don't use it here then
+		// this won't be comparable to the decisions taken by the RequestSender,
+		// so we will keep on selecting and RF'ing locally, and wasting send
+		// slots and CPU. FIXME SECURITY/NETWORK: Reconsider if we ever decide
+		// not to decrement on the originator.
+		short origHTL = node.decrementHTL(null, node.maxHTL());
+		node.peers.closerPeer(null, new HashSet<PeerNode>(), key.toNormalizedDouble(), true, false, -1, null, 2.0, key, origHTL, 0, true, realTime, r, false, System.currentTimeMillis());
+		return r.recentlyFailed();
 	}
 
 }

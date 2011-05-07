@@ -97,6 +97,8 @@ public class NodeUpdateManager {
 	private volatile boolean peersSayBlown;
 	private boolean updateSeednodes;
 	private boolean updateInstallers;
+	// FIXME make configurable
+	private boolean updateIPToCountry = true;
 
 	/** Is there a new main jar ready to deploy? */
 	private volatile boolean hasNewMainJar;
@@ -282,10 +284,21 @@ public class NodeUpdateManager {
 				BucketTools.copyTo(result.asBucket(), fos, -1);
 				fos.close();
 				fos = null;
-				if(FileUtil.renameTo(temp, node.runDir().file(filename)))
-					System.out.println("Successfully fetched "+filename+" for version "+Version.buildNumber());
-				else
-					System.out.println("Failed to rename "+temp+" to "+filename+" after fetching it from Freenet.");
+				for(int i=0;i<10;i++) {
+					// FIXME add a callback in case it's being used on Windows.
+					if(FileUtil.renameTo(temp, node.runDir().file(filename))) {
+						System.out.println("Successfully fetched "+filename+" for version "+Version.buildNumber());
+						break;
+					} else {
+						System.out.println("Failed to rename "+temp+" to "+filename+" after fetching it from Freenet.");
+						try {
+							Thread.sleep(1000+node.fastWeakRandom.nextInt(((int)(1000*Math.min(Math.pow(2, i), 15*60*1000)))));
+						} catch (InterruptedException e) {
+							// Ignore
+						}
+					}
+				}
+				temp.delete();
 			} catch (IOException e) {
 				System.err.println("Fetched but failed to write out "+filename+" - please check that the node has permissions to write in "+node.getRunDir()+" and particularly the file "+filename);
 				System.err.println("The error was: "+e);
@@ -303,6 +316,7 @@ public class NodeUpdateManager {
 
 	public static final String WINDOWS_FILENAME = "freenet-latest-installer-windows.exe";
 	public static final String NON_WINDOWS_FILENAME = "freenet-latest-installer-nonwindows.jar";
+	public static final String IPV4_TO_COUNTRY_FILENAME = "IpToCountry.dat";
 
 	public File getInstallerWindows() {
 		File f = node.runDir().file(WINDOWS_FILENAME);
@@ -326,6 +340,10 @@ public class NodeUpdateManager {
 
 	public FreenetURI getInstallerNonWindowsURI() {
 		return updateURI.sskForUSK().setDocName("wininstaller-"+Version.buildNumber());
+	}
+	
+	public FreenetURI getIPv4ToCountryURI() {
+		return updateURI.sskForUSK().setDocName("iptocountryv4-"+Version.buildNumber());
 	}
 
 	public void start() throws InvalidConfigValueException {
@@ -354,7 +372,12 @@ public class NodeUpdateManager {
         	wininstallerGetter.start(RequestStarter.UPDATE_PRIORITY_CLASS, 32*1024*1024);
 
         }
-
+        
+        if(updateIPToCountry) {
+        	SimplePuller ip4Getter =
+        		new SimplePuller(getIPv4ToCountryURI(), IPV4_TO_COUNTRY_FILENAME);
+        	ip4Getter.start(RequestStarter.UPDATE_PRIORITY_CLASS, 8*1024*1024);
+        }
 	}
 
 	void broadcastUOMAnnounces() {
@@ -379,14 +402,21 @@ public class NodeUpdateManager {
 
 	public void maybeSendUOMAnnounce(PeerNode peer) {
 		synchronized(broadcastUOMAnnouncesSync) {
-			if(!broadcastUOMAnnounces) return; // nothing worth announcing yet
+			if(!broadcastUOMAnnounces) {
+				if(logMINOR) Logger.minor(this, "Not sending UOM on connect: Nothing worth announcing yet");
+				return; // nothing worth announcing yet
+			}
 		}
-		boolean hasUpdate;
+		boolean dontHaveUpdate;
 		synchronized(this) {
-			hasUpdate = (mainUpdater == null || mainUpdater.getFetchedVersion() <= 0);
-			if((!hasBeenBlown) && hasUpdate) return;
+			dontHaveUpdate = (mainUpdater == null || mainUpdater.getFetchedVersion() <= 0);
+			if((!hasBeenBlown) && dontHaveUpdate) {
+				if(logMINOR) Logger.minor(this, "Not sending UOM on connect: Don't have the update");
+				return;
+			}
 		}
-		if((!hasUpdate) && hasBeenBlown && !revocationChecker.hasBlown()) {
+		if((!dontHaveUpdate) && hasBeenBlown && !revocationChecker.hasBlown()) {
+			if(logMINOR) Logger.minor(this, "Not sending UOM on connect: Local problem causing blown key");
 			// Local problem, don't broadcast.
 			return;
 		}
@@ -639,7 +669,7 @@ public class NodeUpdateManager {
 			}
 			int extVer = getReadyExt();
 			if(extVer < minExtVersion || extVer > maxExtVersion) {
-				if(logMINOR) Logger.minor(this, "Invalid ext: current "+extVer+" must be between "+minExtVersion+" and "+maxExtVersion);
+				System.err.println("Invalid ext: current "+extVer+" must be between "+minExtVersion+" and "+maxExtVersion);
 				return false;
 			}
 			if(!ignoreRevocation) {
@@ -911,13 +941,11 @@ public class NodeUpdateManager {
 					gotJarTime = System.currentTimeMillis();
 					if(logMINOR)
 						Logger.minor(this, "Got main jar: "+mainUpdater.getFetchedVersion());
+					if(requiredExt > -1)
+						minExtVersion = requiredExt;
+					if(recommendedExt > -1)
+						maxExtVersion = recommendedExt;
 				}
-			}
-			if(!isExt) {
-				if(requiredExt > -1)
-					minExtVersion = requiredExt;
-				if(recommendedExt > -1)
-					maxExtVersion = recommendedExt;
 			}
 		}
 		if(!isExt && (requiredExt > -1 || recommendedExt > -1)) {

@@ -11,12 +11,16 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import freenet.client.async.ClientGetter;
+import freenet.client.async.ClientPutter;
+import freenet.client.async.ClientRequester;
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.SubConfig;
 import freenet.io.comm.IncomingPacketFilterImpl;
 import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.BlockTransmitter;
 import freenet.l10n.NodeL10n;
+import freenet.keys.FreenetURI;
 import freenet.node.FNPPacketMangler;
 import freenet.node.Location;
 import freenet.node.Node;
@@ -26,6 +30,7 @@ import freenet.node.NodeStats;
 import freenet.node.OpennetManager;
 import freenet.node.PeerManager;
 import freenet.node.PeerNodeStatus;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarterGroup;
 import freenet.node.Version;
 import freenet.node.stats.DataStoreInstanceType;
@@ -116,6 +121,15 @@ public class StatisticsToadlet extends Toadlet {
 			return;
 		}
 		final SubConfig nodeConfig = node.config.get("node");
+		
+		final String requestPath = request.getPath().substring(path().length());
+
+		if (requestPath.length() > 0) {
+			if(requestPath.equals("requesters.html") || requestPath.equals("/requesters.html")) {
+				showRequesters(request, ctx);
+				return;
+			}
+		}
 
 		node.clientCore.bandwidthStatsPutter.updateData();
 
@@ -280,7 +294,7 @@ public class StatisticsToadlet extends Toadlet {
 
 			String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons(false);
 			if(routingBackoffReasons.length == 0) {
-				curBackoffReasonContent.addChild("#", "Good, your node is not backed off from any peers!");
+				curBackoffReasonContent.addChild("#", l10n("notBackedOff"));
 			} else {
 				HTMLNode reasonList = curBackoffReasonContent.addChild("ul");
 				for(int i=0;i<routingBackoffReasons.length;i++) {
@@ -297,7 +311,7 @@ public class StatisticsToadlet extends Toadlet {
 
 			routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons(true);
 			if(routingBackoffReasons.length == 0) {
-				curBackoffReasonContent.addChild("#", "Good, your node is not backed off from any peers!");
+				curBackoffReasonContent.addChild("#", l10n("notBackedOff"));
 			} else {
 				HTMLNode reasonList = curBackoffReasonContent.addChild("ul");
 				for(int i=0;i<routingBackoffReasons.length;i++) {
@@ -439,6 +453,9 @@ public class StatisticsToadlet extends Toadlet {
 			if(om != null) {
 				// opennet stats box
 				drawOpennetStatsBox(nextTableCell.addChild("div", "class", "infobox"), om);
+				
+				if(node.isSeednode())
+					drawSeedStatsBox(nextTableCell.addChild("div", "class", "infobox"), om);
 			}
 
 			// peer distribution box
@@ -503,6 +520,15 @@ public class StatisticsToadlet extends Toadlet {
 		}
 
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+	}
+
+	private void showRequesters(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+		PageNode page = ctx.getPageMaker().getPageNode(l10n("fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
+
+		drawClientRequestersBox(contentNode);
+		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
 	private void drawLoadBalancingBox(HTMLNode loadStatsInfobox, boolean realTime) {
@@ -657,7 +683,61 @@ public class StatisticsToadlet extends Toadlet {
 		box.addChild("div", "class", "infobox-header", l10n("opennetStats"));
 		HTMLNode opennetStatsContent = box.addChild("div", "class", "infobox-content");
 		om.drawOpennetStatsBox(opennetStatsContent);
-		
+	}
+	
+	private void drawSeedStatsBox(HTMLNode box, OpennetManager om) {
+		box.addChild("div", "class", "infobox-header", l10n("seedStats"));
+		HTMLNode opennetStatsContent = box.addChild("div", "class", "infobox-content");
+		om.drawSeedStatsBox(opennetStatsContent);
+	}
+
+	private void drawClientRequestersBox(HTMLNode box) {
+		box.addChild("div", "class", "infobox-header", l10n("clientRequesterObjects"));
+		HTMLNode masterContent = box.addChild("div", "class", "infobox-content");
+		HTMLNode table = masterContent.addChild("table");
+		HTMLNode row = table.addChild("tr");
+		row.addChild("th", "RequestClient");
+		row.addChild("th", l10n("clientRequesters.class"));
+		row.addChild("th", l10n("clientRequesters.age"));
+		row.addChild("th", l10n("clientRequesters.priorityClass"));
+		row.addChild("th", l10n("clientRequesters.realtimeFlag"));
+		row.addChild("th", l10n("clientRequesters.uri"));
+		NumberFormat nf = NumberFormat.getInstance();
+		nf.setMaximumFractionDigits(0);
+		nf.setMinimumIntegerDigits(2);
+		ClientRequester[] requests = ClientRequester.getAll();
+		Arrays.sort(requests, new Comparator<ClientRequester>() {
+				public int compare(ClientRequester a, ClientRequester b) {
+					return -Long.signum(a.creationTime - b.creationTime);
+				}
+			});
+		long now = System.currentTimeMillis();
+		for(ClientRequester request : requests) {
+			if(request.isFinished() || request.isCancelled())
+				continue;
+			row = table.addChild("tr");
+			RequestClient client = request.getClient();
+			// client can be null if the request is stored in DB4O and then deactivated
+			row.addChild("td", client==null ? "null" : client.toString());
+			try {
+				String s = request.toString();
+				if(s.indexOf(':') > s.indexOf('@')) {
+					s = s.substring(0, s.indexOf(':'));
+				}
+				row.addChild("td", s);
+			} catch (Throwable t) {
+				// FIXME shouldn't happen...
+				row.addChild("td", "ERROR: "+request.getClass().toString());
+			}
+			long diff = now - request.creationTime;
+			StringBuilder sb = new StringBuilder();
+			sb.append(TimeUtil.formatTime(diff, 2));
+			row.addChild("td", sb.toString());
+			row.addChild("td", Short.toString(request.getPriorityClass()));
+			row.addChild("td", client==null ? "?" : Boolean.toString(client.realTimeFlag()));
+			FreenetURI uri = request.getURI(); // getURI() sometimes returns null, eg for ClientPutters
+			row.addChild("td", uri == null ? "null" : uri.toString());
+		}
 	}
 
 	private void drawStoreSizeBox(HTMLNode storeSizeInfobox, double loc, long nodeUptimeSeconds) {
@@ -1068,6 +1148,7 @@ public class StatisticsToadlet extends Toadlet {
 			long totalBytesSentChangedIP = node.nodeStats.getChangedIPBytesSent();
 			long totalBytesSentNodeToNode = node.nodeStats.getNodeToNodeBytesSent();
 			long totalBytesSentAllocationNotices = node.nodeStats.getAllocationNoticesBytesSent();
+			long totalBytesSentFOAF = node.nodeStats.getFOAFBytesSent();
 			long totalBytesSentRemaining = total[0] - 
 				(totalPayload + totalBytesSentCHKRequests + totalBytesSentSSKRequests +
 				totalBytesSentCHKInserts + totalBytesSentSSKInserts +
@@ -1076,20 +1157,21 @@ public class StatisticsToadlet extends Toadlet {
 				totalBytesSentUOM + totalBytesSentAnnounce + 
 				totalBytesSentRoutingStatus + totalBytesSentNetworkColoring + totalBytesSentPing +
 				totalBytesSentProbeRequest + totalBytesSentRouted + totalBytesSentDisconn + 
-				totalBytesSentInitial + totalBytesSentChangedIP + totalBytesSentNodeToNode + totalBytesSentAllocationNotices);
+				totalBytesSentInitial + totalBytesSentChangedIP + totalBytesSentNodeToNode + totalBytesSentAllocationNotices + totalBytesSentFOAF);
 			activityList.addChild("li", l10n("requestOutput", new String[] { "chk", "ssk" }, new String[] { SizeUtil.formatSize(totalBytesSentCHKRequests, true), SizeUtil.formatSize(totalBytesSentSSKRequests, true) }));
 			activityList.addChild("li", l10n("insertOutput", new String[] { "chk", "ssk" }, new String[] { SizeUtil.formatSize(totalBytesSentCHKInserts, true), SizeUtil.formatSize(totalBytesSentSSKInserts, true) }));
 			activityList.addChild("li", l10n("offeredKeyOutput", new String[] { "total", "offered" }, new String[] { SizeUtil.formatSize(totalBytesSentOfferedKeys, true), SizeUtil.formatSize(totalBytesSendOffers, true) }));
 			activityList.addChild("li", l10n("swapOutput", "total", SizeUtil.formatSize(totalBytesSentSwapOutput, true)));
 			activityList.addChild("li", l10n("authBytes", "total", SizeUtil.formatSize(totalBytesSentAuth, true)));
 			activityList.addChild("li", l10n("ackOnlyBytes", "total", SizeUtil.formatSize(totalBytesSentAckOnly, true)));
-			activityList.addChild("li", l10n("resendBytes", "total", SizeUtil.formatSize(totalBytesSentResends, true)));
+			activityList.addChild("li", l10n("resendBytes", new String[] { "total", "percent" }, new String[] { SizeUtil.formatSize(totalBytesSentResends, true), Long.toString((long)(100 * totalBytesSentResends) / Math.max(1, total[0])) } ));
 			activityList.addChild("li", l10n("uomBytes", "total",  SizeUtil.formatSize(totalBytesSentUOM, true)));
 			activityList.addChild("li", l10n("announceBytes", new String[] { "total", "payload" }, new String[] { SizeUtil.formatSize(totalBytesSentAnnounce, true), SizeUtil.formatSize(totalBytesSentAnnouncePayload, true) }));
 			activityList.addChild("li", l10n("adminBytes", new String[] { "routingStatus", "disconn", "initial", "changedIP" }, new String[] { SizeUtil.formatSize(totalBytesSentRoutingStatus, true), SizeUtil.formatSize(totalBytesSentDisconn, true), SizeUtil.formatSize(totalBytesSentInitial, true), SizeUtil.formatSize(totalBytesSentChangedIP, true) }));
 			activityList.addChild("li", l10n("debuggingBytes", new String[] { "netColoring", "ping", "probe", "routed" }, new String[] { SizeUtil.formatSize(totalBytesSentNetworkColoring, true), SizeUtil.formatSize(totalBytesSentPing, true), SizeUtil.formatSize(totalBytesSentProbeRequest, true), SizeUtil.formatSize(totalBytesSentRouted, true) } ));
 			activityList.addChild("li", l10n("nodeToNodeBytes", "total", SizeUtil.formatSize(totalBytesSentNodeToNode, true)));
 			activityList.addChild("li", l10n("loadAllocationNoticesBytes", "total", SizeUtil.formatSize(totalBytesSentAllocationNotices, true)));
+			activityList.addChild("li", l10n("foafBytes", "total", SizeUtil.formatSize(totalBytesSentFOAF, true)));
 			activityList.addChild("li", l10n("unaccountedBytes", new String[] { "total", "percent" },
 					new String[] { SizeUtil.formatSize(totalBytesSentRemaining, true), Integer.toString((int)(totalBytesSentRemaining*100 / total[0])) }));
 			double sentOverheadPerSecond = node.nodeStats.getSentOverheadPerSecond();

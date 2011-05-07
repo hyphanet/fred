@@ -27,7 +27,7 @@ import freenet.support.CPUInformation.UnknownCPUException;
  * <p>BigInteger that takes advantage of the jbigi library for the modPow operation,
  * which accounts for a massive segment of the processing cost of asymmetric
  * crypto. It also takes advantage of the jbigi library for converting a BigInteger
- * value to a double. Sun's implementation of the 'doubleValue()' method is _very_ lousy.
+ * value to a double. Sun/Oracle's implementation of the 'doubleValue()' method is _very_ lousy.
  *
  * The jbigi library itself is basically just a JNI wrapper around the
  * GMP library - a collection of insanely efficient routines for dealing with
@@ -101,6 +101,7 @@ public class NativeBigInteger extends BigInteger {
 	 * it easier for other systems to reuse this class
 	 */
 	private static final boolean _doLog = true;
+	private final static String JBIGI_OPTIMIZATION_ARM = "arm";
 	private final static String JBIGI_OPTIMIZATION_K6 = "k6";
 	private final static String JBIGI_OPTIMIZATION_K6_2 = "k62";
 	private final static String JBIGI_OPTIMIZATION_K6_3 = "k63";
@@ -125,12 +126,25 @@ public class NativeBigInteger extends BigInteger {
 	 * @return A string containing the CPU-type or null if CPU type is unknown
 	 */
 	private static String resolveCPUType() {
+
 		try {
+			
+			String _os_arch = System.getProperty("os.arch").toLowerCase();
+
 			if(System.getProperty("os.arch").toLowerCase().matches("(i?[x0-9]86_64|amd64)"))
+			{
 				return JBIGI_OPTIMIZATION_X86_64;
-			else if(System.getProperty("os.arch").toLowerCase().matches("(ppc)")) {
+				
+			} else if(_os_arch.matches("(arm)"))
+			{
+			    System.out.println("Detected ARM!");
+				return JBIGI_OPTIMIZATION_ARM;
+				
+			} else if(_os_arch.matches("(ppc)"))
+			{
 				System.out.println("Detected PowerPC!");
 				return JBIGI_OPTIMIZATION_PPC;
+				
 			} else {
 				CPUInfo c = CPUID.getInfo();
 				if(c instanceof AMDCPUInfo) {
@@ -250,7 +264,7 @@ public class NativeBigInteger extends BigInteger {
          * @param integer
          */
 	public NativeBigInteger(BigInteger integer) {
-		//Now, why doesn't sun provide a constructor
+		//Now, why doesn't Sun/Oracle provide a constructor
 		//like this one in BigInteger?
 		this(integer.toByteArray());
 	}
@@ -451,7 +465,12 @@ public class NativeBigInteger extends BigInteger {
 	}
 
 	private static final String getResourceName(boolean optimized) {
-		String pname = NativeBigInteger.class.getPackage().getName().replace('.', '/');
+		String name = NativeBigInteger.class.getName();
+		int i = name.lastIndexOf('.');
+		if (i != -1) {
+			name = name.substring(0, i);
+		}
+		String pname = name.replace('.', '/');
 		String pref = getLibraryPrefix();
 		String middle = getMiddleName(optimized);
 		String suff = getLibrarySuffix();

@@ -43,7 +43,7 @@ public class NodeHelloMessage extends FCPMessage {
 		sfs.putSingle("Revision", Version.cvsRevision());
 		sfs.put("ExtBuild", NodeStarter.extBuildNumber);
 		sfs.putSingle("ExtRevision", NodeStarter.extRevisionNumber);
-		sfs.putSingle("Testnet", Boolean.toString(node == null ? false : node.isTestnetEnabled()));
+		sfs.put("Testnet", node.isTestnetEnabled());
 		sfs.putSingle("CompressionCodecs", Compressor.COMPRESSOR_TYPE.getHelloCompressorDescriptor());
 		sfs.putSingle("ConnectionIdentifier", id);
 		sfs.putSingle("NodeLanguage", NodeL10n.getBase().getSelectedLanguage().toString());

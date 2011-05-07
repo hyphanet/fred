@@ -164,7 +164,7 @@ public class BlockTransmitter {
 				Message msg = DMT.createPacketTransmit(_uid, packetNo, copied, _prb.getPacket(packetNo), realTime);
 				MyAsyncMessageCallback cb = new MyAsyncMessageCallback(isOldFNP);
 				MessageItem item;
-				if(!_destination.isOldFNP()) {
+				if(!isOldFNP) {
 					// Everything is throttled.
 					item = _destination.sendAsync(msg, cb, _ctr);
 				} else {
@@ -289,7 +289,7 @@ public class BlockTransmitter {
 							}
 						} else {
 							timeString=TimeUtil.formatTime((System.currentTimeMillis() - timeAllSent), 2, true);
-							Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_destination.getSocketHandler()+" as we haven't heard from receiver in "+timeString+ '.');
+							Logger.warning(this, "Terminating send "+_uid+" to "+_destination+" from "+_destination.getSocketHandler()+" as we haven't heard from receiver in "+timeString+ '.');
 							abortReason = "Haven't heard from you (receiver) in "+timeString;
 						}
 						fail = maybeFail(RetrievalException.RECEIVER_DIED, abortReason);
@@ -456,7 +456,7 @@ public class BlockTransmitter {
 	
 	private void sendAllSentNotification() {
 		try {
-			_usm.send(_destination, DMT.createAllSent(_uid), _ctr);
+			_usm.send(_destination, DMT.createAllSent(_uid, realTime), _ctr);
 		} catch (NotConnectedException e) {
 			Logger.normal(this, "disconnected for allSent()");
 		}
@@ -722,20 +722,20 @@ public class BlockTransmitter {
 		}
 
 		public void acknowledged() {
-			complete();
+			complete(false);
 		}
 
 		public void disconnected() {
 			// FIXME kill transfer
-			complete();
+			complete(true);
 		}
 
 		public void fatalError() {
 			// FIXME kill transfer
-			complete();
+			complete(true);
 		}
 		
-		private void complete() {
+		private void complete(boolean failed) {
 			if(logMINOR) Logger.minor(this, "Completed send on a block for "+BlockTransmitter.this);
 			boolean success = false;
 			long now = System.currentTimeMillis();
@@ -763,7 +763,7 @@ public class BlockTransmitter {
 					}
 				}
 			}
-			if(!isOldFNP)
+			if((!isOldFNP) && (!failed))
 				// Everything is throttled, but payload is not reported.
 				_ctr.sentPayload(PACKET_SIZE);
 			if(callCallback) {

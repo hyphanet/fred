@@ -40,6 +40,7 @@ import freenet.node.OpennetManager.WaitedTooLongForOpennetNoderefException;
 import freenet.node.PeerNode.OutputLoadTracker;
 import freenet.node.PeerNode.RequestLikelyAcceptedState;
 import freenet.node.PeerNode.SlotWaiter;
+import freenet.store.BlockMetadata;
 import freenet.store.KeyCollisionException;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -66,10 +67,13 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 
     // Constants
     static final int ACCEPTED_TIMEOUT = 10000;
-    static final int GET_OFFER_TIMEOUT = 10000;
+    // After a get offered key fails, wait this long for two stage timeout. Probably we will
+    // have disconnected by then.
+    static final int GET_OFFER_LONG_TIMEOUT = 60*1000;
     static final int FETCH_TIMEOUT_BULK = 600*1000;
     static final int FETCH_TIMEOUT_REALTIME = 60*1000;
     final int fetchTimeout;
+    final int getOfferedTimeout;
     /** Wait up to this long to get a path folding reply */
     static final int OPENNET_TIMEOUT = 120000;
     /** One in this many successful requests is randomly reinserted.
@@ -192,10 +196,13 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     	if(key.getRoutingKey() == null) throw new NullPointerException();
     	startTime = System.currentTimeMillis();
     	this.realTimeFlag = realTimeFlag;
-    	if(realTimeFlag)
+    	if(realTimeFlag) {
     		fetchTimeout = FETCH_TIMEOUT_REALTIME;
-    	else
+    		getOfferedTimeout = BlockReceiver.RECEIPT_TIMEOUT_REALTIME;
+    	} else {
     		fetchTimeout = FETCH_TIMEOUT_BULK;
+    		getOfferedTimeout = BlockReceiver.RECEIPT_TIMEOUT_BULK;
+    	}
         this.key = key;
         this.pubKey = pubKey;
         this.htl = htl;
@@ -247,6 +254,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             Logger.error(this, "Caught "+t, t);
             finish(INTERNAL_ERROR, null, false);
         } finally {
+        	// LOCKING: Normally receivingAsync is set by this thread, so there is no need to synchronize.
+        	// If it is set by another thread it will only be after it was set by this thread.
         	if(status == NOT_FINISHED && !receivingAsync) {
         		Logger.error(this, "Not finished: "+this);
         		finish(INTERNAL_ERROR, null, false);
@@ -267,10 +276,13 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         
         final OfferList offers = node.failureTable.getOffers(key);
         
-        if(offers != null) {
-        	if(tryOffers(offers)) return;
-        }
-        
+        if(offers != null)
+        	tryOffers(offers, null, null);
+        else
+        	startRequests();
+    }
+    
+    private void startRequests() {
         if(tryOffersOnly) {
         	if(logMINOR) Logger.minor(this, "Tried all offers, not doing a regular request for key");
         	finish(DATA_NOT_FOUND, null, true); // FIXME need a different error code?
@@ -282,11 +294,12 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         // While in no-cache mode, we don't decrement HTL on a RejectedLoop or similar, but we only allow a limited number of such failures before RNFing.
 		highHTLFailureCount = 0;
         routeRequests();
-    }
-    
-    private int routeAttempts = 0;
+	}
+
+	private int routeAttempts = 0;
     private boolean starting;
     private int highHTLFailureCount = 0;
+    private boolean killedByRecentlyFailed = false;
     
     private void routeRequests() {
     	
@@ -298,6 +311,18 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         peerLoop:
         while(true) {
             boolean canWriteStorePrev = node.canWriteDatastoreInsert(htl);
+            // FIXME SECURITY/NETWORK: Should we never decrement on the originator?
+            // It would buy us another hop of no-cache, making it significantly
+            // harder to trace after the fact; however it would make local 
+            // requests fractionally easier to detect by peers.
+            // IMHO local requests are so easy for peers to detect anyway that
+            // it's probably worth it.
+            // Currently the worst case is we don't cache on the originator
+            // and we don't cache on the first peer we route to. If we get
+            // RejectedOverload's etc we won't cache on them either, up to 5;
+            // but lets assume that one of them accepts, and routes onward;
+            // the *second* hop out (with the originator being 0) WILL cache.
+            // Note also that changing this will have a performance impact.
             if((!starting) && (!canWriteStorePrev)) {
             	// We always decrement on starting a sender.
             	// However, after that, if our HTL is above the no-cache threshold,
@@ -329,8 +354,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             if(htl == 0) {
             	// This used to be RNF, I dunno why
 				//???: finish(GENERATED_REJECTED_OVERLOAD, null);
+                node.failureTable.onFinalFailure(key, null, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
                 finish(DATA_NOT_FOUND, null, false);
-                node.failureTable.onFinalFailure(key, null, htl, origHTL, FailureTable.REJECT_TIME, source);
                 return;
             }
             
@@ -349,16 +374,49 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             	return;
             }
 
+            RecentlyFailedReturn r = new RecentlyFailedReturn();
+            
+            long now = System.currentTimeMillis();
+            
             // Route it
             next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-			        key, htl, 0, source == null, realTimeFlag);
+			        2.0, key, htl, 0, source == null, realTimeFlag, r, false, now);
+            
+            long recentlyFailed = r.recentlyFailed();
+            if(recentlyFailed > now) {
+            	synchronized(this) {
+            		recentlyFailedTimeLeft = (int)Math.min(Integer.MAX_VALUE, recentlyFailed - now);
+            	}
+            	finish(RECENTLY_FAILED, null, false);
+                node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, -1, source);
+            	return;
+            } else {
+            	boolean rfAnyway = false;
+            	synchronized(this) {
+            		rfAnyway = killedByRecentlyFailed;
+            	}
+            	if(rfAnyway) {
+            		// We got a RecentlyFailed so we have to send one.
+            		// But we set a timeout of 0 because we're not generating one based on where we've routed the key to.
+            		// Returning the time we were passed minus some value will give the next node an inaccurate high timeout.
+            		// Rerouting (even assuming we change FNPRecentlyFailed to include a hop count) would also cause problems because nothing would be quenched until we have visited every node on the network.
+            		// That leaves forwarding a RecentlyFailed which won't create further RecentlyFailed's.
+            		// However the peer will still avoid sending us the same key for 10 minutes due to per-node failure tables. This is fine, we probably don't have it anyway!
+            		synchronized(this) {
+            			recentlyFailedTimeLeft = 0;
+            		}
+                	finish(RECENTLY_FAILED, null, false);
+                    node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, -1, source);
+                	return;
+            	}
+            }
             
             if(next == null) {
 				if (logMINOR && rejectOverloads>0)
 					Logger.minor(this, "no more peers, but overloads ("+rejectOverloads+"/"+routeAttempts+" overloaded)");
                 // Backtrack
                 finish(ROUTE_NOT_FOUND, null, false);
-                node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, source);
+                node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, -1, source);
                 return;
             }
             
@@ -483,7 +541,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         							Logger.minor(this, "no more peers, but overloads ("+rejectOverloads+"/"+routeAttempts+" overloaded)");
         						// Backtrack
         						finish(ROUTE_NOT_FOUND, null, false);
-        						node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, source);
+        						node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, -1, source);
         						oldNext.noLongerRoutingTo(origTag, false);
         						return;
         					} else if(next == null) {
@@ -576,7 +634,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             	}
             } // loadWaiterLoop
             
-            long now = System.currentTimeMillis();
+            now = System.currentTimeMillis();
             long delta = now-startedTryingPeer;
             // This includes the time for the Accepted to come back, so it can take a while sometimes.
             // So log it at error only if it's really bad.
@@ -606,7 +664,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     private synchronized int timeSinceSentForTimeout() {
     	int time = timeSinceSent();
     	if(time > FailureTable.REJECT_TIME) {
-    		if(time < fetchTimeout + 10*1000) return time;
+    		if(time < fetchTimeout + 10*1000) return FailureTable.REJECT_TIME;
     		Logger.error(this, "Very long time since sent: "+time+" ("+TimeUtil.formatTime(time, 2, true)+")");
     		return FailureTable.REJECT_TIME;
     	}
@@ -683,8 +741,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 				// Fatal timeout
 				waitingFor.localRejectedOverload("FatalTimeout", realTimeFlag);
 				forwardRejectedOverload();
+				node.failureTable.onFinalFailure(key, waitingFor, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
 				finish(TIMED_OUT, waitingFor, false);
-				node.failureTable.onFinalFailure(key, waitingFor, htl, origHTL, FailureTable.REJECT_TIME, source);
 			}
     		
 			// Wait for second timeout.
@@ -707,8 +765,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 				if(msg == null) {
 					// Second timeout.
 					Logger.error(this, "Fatal timeout waiting for reply after Accepted on "+this+" from "+waitingFor);
-					waitingFor.fatalTimeout();
-					waitingFor.noLongerRoutingTo(origTag, false);
+					waitingFor.fatalTimeout(origTag, false);
 					return;
 				}
 				
@@ -746,205 +803,273 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     	
     };
     
-	/** @return True if we successfully fetched an offered key or failed fatally. False
-     * if we should proceed to a normal fetch. */
-    private boolean tryOffers(final OfferList offers) {
-    	
+    enum OFFER_STATUS {
+    	FETCHING, // Fetching asynchronously or already fetched.
+    	TWO_STAGE_TIMEOUT, // Waiting asynchronously for two stage timeout; remove the offer, but don't unlock the tag.
+    	FATAL, // Fatal error, fail the whole request.
+    	TRY_ANOTHER, // Delete the offer and move on.
+    	KEEP // Keep the offer and move on.
+    }
+    
+	/** Tries offers. If we succeed or fatally fail, end the request. If an offer is being
+	 * transferred asynchronously, set the receivingAsync flag and return. Otherwise we 
+	 * have run out of offers without succeeding, so chain to startRequests(). 
+	 * @param pn If this and status are non-null, we have just tried an offer, and these
+	 * two contain its status. This should be handled before we try to do any more. */
+    private void tryOffers(final OfferList offers, PeerNode pn, OFFER_STATUS status) {
         while(true) {
-        	// Fetches valid offers, then expired ones. Expired offers don't count towards failures,
-        	// but they're still worth trying.
-        	BlockOffer offer = offers.getFirstOffer();
-        	if(offer == null) {
-        		if(logMINOR) Logger.minor(this, "No more offers");
-        		break;
-        	}
-        	PeerNode pn = offer.getPeerNode();
         	if(pn == null) {
-        		offers.deleteLastOffer();
-        		if(logMINOR) Logger.minor(this, "Null offer");
-        		continue;
+        		// Fetches valid offers, then expired ones. Expired offers don't count towards failures,
+        		// but they're still worth trying.
+        		BlockOffer offer = offers.getFirstOffer();
+        		if(offer == null) {
+        			if(logMINOR) Logger.minor(this, "No more offers");
+        			startRequests();
+        			return;
+        		}
+        		pn = offer.getPeerNode();
+        		status = tryOffer(offer, pn, offers);
         	}
-        	if(pn.getBootID() != offer.bootID) {
-        		offers.deleteLastOffer();
-        		if(logMINOR) Logger.minor(this, "Restarted node");
-        		continue;
-        	}
-        	origTag.addRoutedTo(pn, true);
-        	Message msg = DMT.createFNPGetOfferedKey(key, offer.authenticator, pubKey == null, uid);
-        	msg.addSubMessage(DMT.createFNPRealTimeFlag(realTimeFlag));
-        	try {
-				pn.sendAsync(msg, null, this);
-			} catch (NotConnectedException e2) {
-				if(logMINOR)
-					Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
+			switch(status) {
+			case FATAL:
+				offers.deleteLastOffer();
+				origTag.removeFetchingOfferedKeyFrom(pn);
+				return;
+			case TWO_STAGE_TIMEOUT:
+				offers.deleteLastOffer();
+				break;
+			case FETCHING:
+				return;
+			case KEEP:
+				offers.keepLastOffer();
+				origTag.removeFetchingOfferedKeyFrom(pn);
+				break;
+			case TRY_ANOTHER:
 				offers.deleteLastOffer();
 				pn.noLongerRoutingTo(origTag, true);
-				continue;
+				break;
 			}
-        	MessageFilter mfRO = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPRejectedOverload);
-        	MessageFilter mfGetInvalid = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPGetOfferedKeyInvalid);
-        	// Wait for a response.
-        	if(!isSSK) {
-        		// Headers first, then block transfer.
-        		MessageFilter mfDF = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPCHKDataFound);
-        		Message reply;
-				try {
-					reply = node.usm.waitFor(mfDF.or(mfRO.or(mfGetInvalid)), this);
-				} catch (DisconnectedException e2) {
-					if(logMINOR)
-						Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
-					offers.deleteLastOffer();
-					pn.noLongerRoutingTo(origTag, true);
-					continue;
-				}
-        		if(reply == null) {
-        			// We gave it a chance, don't give it another.
-        			offers.deleteLastOffer();
-        			Logger.error(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
-        			// FIXME bug #4613 consider two-stage timeout.
-        			pn.fatalTimeout();
-    				pn.noLongerRoutingTo(origTag, true);
-        			continue;
-        		} else {
-        			if(handleCHKOfferReply(reply, pn, offer, offers)) return true;
-        		}
-        	} else {
-        		// Data, possibly followed by pubkey
-        		MessageFilter mfAltDF = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPSSKDataFoundHeaders);
-        		Message reply;
-				try {
-					reply = node.usm.waitFor(mfRO.or(mfGetInvalid.or(mfAltDF)), this);
-				} catch (DisconnectedException e) {
-					if(logMINOR)
-						Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
-					offers.deleteLastOffer();
-					pn.noLongerRoutingTo(origTag, true);
-					continue;
-				}
-        		if(reply == null) {
-        			// We gave it a chance, don't give it another.
-            		offers.deleteLastOffer();
-        			Logger.error(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
-        			// FIXME bug #4613 consider two-stage timeout.
-        			pn.fatalTimeout();
-    				pn.noLongerRoutingTo(origTag, true);
-        			continue;
-        		} else {
-        			if(handleSSKOfferReply(reply, pn, offer, offers)) return true;
-        		}
-        	}
-        	// RejectedOverload is possible - but we need to include it in the statistics.
-        	// We don't remove the offer in that case. Otherwise we do, even if it fails.
-        	// FNPGetOfferedKeyInvalid is also possible.
+			pn = null;
+			status = null;
         }
-        return false;
     }
 
-    private boolean handleSSKOfferReply(Message reply, PeerNode pn,
-			BlockOffer offer, OfferList offers) {
+    private OFFER_STATUS tryOffer(final BlockOffer offer, final PeerNode pn, final OfferList offers) {
+    	if(pn == null) return OFFER_STATUS.TRY_ANOTHER;
+    	if(pn.getBootID() != offer.bootID) return OFFER_STATUS.TRY_ANOTHER;
+    	origTag.addRoutedTo(pn, true);
+    	Message msg = DMT.createFNPGetOfferedKey(key, offer.authenticator, pubKey == null, uid);
+    	msg.addSubMessage(DMT.createFNPRealTimeFlag(realTimeFlag));
+    	try {
+    		pn.sendSync(msg, this, realTimeFlag);
+		} catch (NotConnectedException e2) {
+			if(logMINOR)
+				Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
+    		return OFFER_STATUS.TRY_ANOTHER;
+		} catch (SyncSendWaitedTooLongException e) {
+			if(logMINOR)
+				Logger.minor(this, "Took too long sending offer get to "+pn+" for "+key);
+    		return OFFER_STATUS.TRY_ANOTHER;
+		}
+    	// Wait asynchronously for a response.
+		synchronized(this) {
+			receivingAsync = true;
+		}
+		try {
+			node.usm.addAsyncFilter(getOfferedKeyReplyFilter(pn, getOfferedTimeout), new SlowAsyncMessageFilterCallback() {
+				
+				public void onMatched(Message m) {
+					OFFER_STATUS status =
+						isSSK ? handleSSKOfferReply(m, pn, offer) :
+							handleCHKOfferReply(m, pn, offer, offers);
+					tryOffers(offers, pn, status);
+				}
+				
+				public boolean shouldTimeout() {
+					return false;
+				}
+				
+				public void onTimeout() {
+					Logger.warning(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
+					// Two stage timeout.
+					OFFER_STATUS status = handleOfferTimeout(offer, pn, offers);
+					tryOffers(offers, pn, status);
+				}
+				
+				public void onDisconnect(PeerContext ctx) {
+					if(logMINOR)
+						Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
+					tryOffers(offers, pn, OFFER_STATUS.TRY_ANOTHER);
+				}
+				
+				public void onRestarted(PeerContext ctx) {
+					if(logMINOR)
+						Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
+					tryOffers(offers, pn, OFFER_STATUS.TRY_ANOTHER);
+				}
+				
+				public int getPriority() {
+					return NativeThread.HIGH_PRIORITY;
+				}
+				
+			}, this);
+			return OFFER_STATUS.FETCHING;
+		} catch (DisconnectedException e) {
+			if(logMINOR)
+				Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
+			return OFFER_STATUS.TRY_ANOTHER;
+		}
+	}
+
+	private MessageFilter getOfferedKeyReplyFilter(final PeerNode pn, int timeout) {
+    	MessageFilter mfRO = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPRejectedOverload);
+    	MessageFilter mfGetInvalid = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPGetOfferedKeyInvalid);
+    	if(isSSK) {
+    		MessageFilter mfAltDF = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPSSKDataFoundHeaders);
+    		return mfAltDF.or(mfRO.or(mfGetInvalid));
+    	} else {
+    		MessageFilter mfDF = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPCHKDataFound);
+    		return mfDF.or(mfRO.or(mfGetInvalid));
+    	}
+	}
+
+	private OFFER_STATUS handleOfferTimeout(final BlockOffer offer, final PeerNode pn,
+			OfferList offers) {
+		try {
+			node.usm.addAsyncFilter(getOfferedKeyReplyFilter(pn, GET_OFFER_LONG_TIMEOUT), new SlowAsyncMessageFilterCallback() {
+				
+				public void onMatched(Message m) {
+					OFFER_STATUS status = 
+						isSSK ? handleSSKOfferReply(m, pn, offer) :
+							handleCHKOfferReply(m, pn, offer, null);
+						if(status != OFFER_STATUS.FETCHING)
+							origTag.removeFetchingOfferedKeyFrom(pn);
+						// If FETCHING, the block transfer will unlock it.
+						if(logMINOR) Logger.minor(this, "Forked get offered key due to two stage timeout completed with status "+status+" from message "+m+" for "+RequestSender.this+" to "+pn);
+				}
+				
+				public boolean shouldTimeout() {
+					return false;
+				}
+				
+				public void onTimeout() {
+					Logger.error(this, "Fatal timeout getting offered key from "+pn+" for "+RequestSender.this);
+					pn.fatalTimeout(origTag, true);
+				}
+				
+				public void onDisconnect(PeerContext ctx) {
+					// Ok.
+					origTag.removeFetchingOfferedKeyFrom(pn);
+				}
+				
+				public void onRestarted(PeerContext ctx) {
+					// Ok.
+					origTag.removeFetchingOfferedKeyFrom(pn);
+				}
+				
+				public int getPriority() {
+					return NativeThread.HIGH_PRIORITY;
+				}
+				
+			}, this);
+			return OFFER_STATUS.TWO_STAGE_TIMEOUT;
+		} catch (DisconnectedException e) {
+			// Okay.
+			if(logMINOR)
+				Logger.minor(this, "Disconnected (2): "+pn+" getting offer for "+key);
+    		return OFFER_STATUS.TRY_ANOTHER;
+		}
+	}
+
+	private OFFER_STATUS handleSSKOfferReply(Message reply, PeerNode pn,
+			BlockOffer offer) {
     	if(reply.getSpec() == DMT.FNPRejectedOverload) {
 			// Non-fatal, keep it.
 			if(logMINOR)
 				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey for "+key+" (expired="+offer.isExpired());
-			offers.keepLastOffer();
-			pn.noLongerRoutingTo(origTag, true);
-			return false;
+			return OFFER_STATUS.KEEP;
 		} else if(reply.getSpec() == DMT.FNPGetOfferedKeyInvalid) {
 			// Fatal, delete it.
 			if(logMINOR)
 				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey as invalid with reason "+reply.getShort(DMT.REASON));
-			offers.deleteLastOffer();
-			pn.noLongerRoutingTo(origTag, true);
-			return false;
+			return OFFER_STATUS.TRY_ANOTHER;
 		} else if(reply.getSpec() == DMT.FNPSSKDataFoundHeaders) {
 			byte[] headers = ((ShortBuffer) reply.getObject(DMT.BLOCK_HEADERS)).getData();
 			// Wait for the data
-			MessageFilter mfData = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPSSKDataFoundData);
+			MessageFilter mfData = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(getOfferedTimeout).setType(DMT.FNPSSKDataFoundData);
 			Message dataMessage;
 			try {
 				dataMessage = node.usm.waitFor(mfData, this);
 			} catch (DisconnectedException e) {
 				if(logMINOR)
 					Logger.minor(this, "Disconnected: "+pn+" getting data for offer for "+key);
-				offers.deleteLastOffer();
-				pn.noLongerRoutingTo(origTag, true);
-	        	return false;
+				return OFFER_STATUS.TRY_ANOTHER;
 			}
 			if(dataMessage == null) {
-				Logger.error(this, "Got headers but not data from "+pn+" for offer for "+key);
-				offers.deleteLastOffer();
-				pn.noLongerRoutingTo(origTag, true);
-				return false;
+				Logger.error(this, "Got headers but not data from "+pn+" for offer for "+key+" on "+this);
+				return OFFER_STATUS.TRY_ANOTHER;
 			}
 			byte[] sskData = ((ShortBuffer) dataMessage.getObject(DMT.DATA)).getData();
 			if(pubKey == null) {
-				MessageFilter mfPK = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPSSKPubKey);
+				MessageFilter mfPK = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(getOfferedTimeout).setType(DMT.FNPSSKPubKey);
 				Message pk;
 				try {
 					pk = node.usm.waitFor(mfPK, this);
 				} catch (DisconnectedException e) {
 					if(logMINOR)
 						Logger.minor(this, "Disconnected: "+pn+" getting pubkey for offer for "+key);
-					offers.deleteLastOffer();
-					pn.noLongerRoutingTo(origTag, true);
-					return false;
+					return OFFER_STATUS.TRY_ANOTHER;
 				}
 				if(pk == null) {
-					Logger.error(this, "Got data but not pubkey from "+pn+" for offer for "+key);
-					offers.deleteLastOffer();
-					pn.noLongerRoutingTo(origTag, true);
-					return false;
+					Logger.error(this, "Got data but not pubkey from "+pn+" for offer for "+key+" on "+this);
+					return OFFER_STATUS.TRY_ANOTHER;
 				}
 				try {
 					pubKey = DSAPublicKey.create(((ShortBuffer)pk.getObject(DMT.PUBKEY_AS_BYTES)).getData());
 				} catch (CryptFormatException e) {
 					Logger.error(this, "Bogus pubkey from "+pn+" for offer for "+key+" : "+e, e);
-					offers.deleteLastOffer();
-					pn.noLongerRoutingTo(origTag, true);
-					return false;
+					return OFFER_STATUS.TRY_ANOTHER;
 				}
 				
 				try {
 					((NodeSSK)key).setPubKey(pubKey);
 				} catch (SSKVerifyException e) {
 					Logger.error(this, "Bogus SSK data from "+pn+" for offer for "+key+" : "+e, e);
-					offers.deleteLastOffer();
-					pn.noLongerRoutingTo(origTag, true);
-					return false;
+					return OFFER_STATUS.TRY_ANOTHER;
 				}
 			}
 			
 			if(finishSSKFromGetOffer(pn, headers, sskData)) {
 				if(logMINOR) Logger.minor(this, "Successfully fetched SSK from offer from "+pn+" for "+key);
-				return true;
+				return OFFER_STATUS.FETCHING;
 			} else {
-        		offers.deleteLastOffer();
-				pn.noLongerRoutingTo(origTag, true);
-        		return false;
+				return OFFER_STATUS.TRY_ANOTHER;
 			}
 		} else {
-			pn.noLongerRoutingTo(origTag, true);
-			return false;
+			// Impossible???
+			Logger.error(this, "Unexpected reply to get offered key: "+reply);
+			return OFFER_STATUS.TRY_ANOTHER;
 		}
 	}
 
-	/** @return True if we successfully received the offer or failed fatally. False if we
-     * should try the next offer and/or normal fetches. */
-	private boolean handleCHKOfferReply(Message reply, PeerNode pn, final BlockOffer offer, final OfferList offers) {
+	/** @return True if we successfully received the offer or failed fatally, or we started
+	 * to receive a block transfer asynchronously (in which case receivingAsync will be set,
+	 * and if it fails the whole request will fail). False if we should try the next offer 
+	 * and/or normal fetches.
+	 * @param offers The list of offered keys. Only used if we complete asynchronously.
+	 * Null indicates this is a fork due to two stage timeout. 
+	 * */
+	private OFFER_STATUS handleCHKOfferReply(Message reply, final PeerNode pn, final BlockOffer offer, final OfferList offers) {
 		if(reply.getSpec() == DMT.FNPRejectedOverload) {
 			// Non-fatal, keep it.
 			if(logMINOR)
 				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey for "+key+" (expired="+offer.isExpired());
-			offers.keepLastOffer();
-			pn.noLongerRoutingTo(origTag, true);
-        	return false;
+			return OFFER_STATUS.KEEP;
 		} else if(reply.getSpec() == DMT.FNPGetOfferedKeyInvalid) {
 			// Fatal, delete it.
 			if(logMINOR)
 				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey as invalid with reason "+reply.getShort(DMT.REASON));
-			offers.deleteLastOffer();
-			pn.noLongerRoutingTo(origTag, true);
-        	return false;
+			return OFFER_STATUS.TRY_ANOTHER;
 		} else if(reply.getSpec() == DMT.FNPCHKDataFound) {
 			finalHeaders = ((ShortBuffer)reply.getObject(DMT.BLOCK_HEADERS)).getData();
 			// Receive the data
@@ -957,6 +1082,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         		
         		prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
         		
+        		// FIXME kill the transfer if off-thread (two stage timeout, offers == null) and it's already completed successfully?
+        		// FIXME we are also plotting to get rid of transfer cancels so maybe not?
         		synchronized(this) {
         			notifyAll();
         		}
@@ -983,11 +1110,18 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 	                		node.nodeStats.successfulBlockReceive(realTimeFlag, source == null);
                 		} catch (KeyVerifyException e1) {
                 			Logger.normal(this, "Got data but verify failed: "+e1, e1);
-                			finish(GET_OFFER_VERIFY_FAILURE, p, true);
-                       		offers.deleteLastOffer();
+                			if(offers != null) {
+                				finish(GET_OFFER_VERIFY_FAILURE, p, true);
+                				offers.deleteLastOffer();
+                			}
                 		} catch (Throwable t) {
                 			Logger.error(this, "Failed on "+this, t);
-                			finish(INTERNAL_ERROR, p, true);
+                			if(offers != null) {
+                				finish(INTERNAL_ERROR, p, true);
+                			}
+                		} finally {
+                			// This is only necessary here because we don't always call finish().
+                			pn.noLongerRoutingTo(origTag, true);
                 		}
 					}
 
@@ -1003,24 +1137,37 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 							else
 								// A certain number of these are normal, it's better to track them through statistics than call attention to them in the logs.
 								Logger.normal(this, "Transfer for offer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+p, e);
-							finish(GET_OFFER_TRANSFER_FAILED, p, true);
+							if(offers != null) {
+								finish(GET_OFFER_TRANSFER_FAILED, p, true);
+							}
 							// Backoff here anyway - the node really ought to have it!
 							p.transferFailed("RequestSenderGetOfferedTransferFailed", realTimeFlag);
-							offers.deleteLastOffer();
+							if(offers != null) {
+								offers.deleteLastOffer();
+							}
 		    				if(!prb.abortedLocally())
 		    					node.nodeStats.failedBlockReceive(false, false, realTimeFlag, source == null);
                 		} catch (Throwable t) {
                 			Logger.error(this, "Failed on "+this, t);
-                			finish(INTERNAL_ERROR, p, true);
+                			if(offers != null) {
+                				finish(INTERNAL_ERROR, p, true);
+                			}
+                		} finally {
+                			// This is only necessary here because we don't always call finish().
+                			pn.noLongerRoutingTo(origTag, true);
                 		}
 					}
         				
         		});
-        		return true;
+        		return OFFER_STATUS.FETCHING;
         	} finally {
         		node.removeTransferringSender((NodeCHK)key, this);
         	}
-		} else return false;
+		} else {
+			// Impossible.
+			Logger.error(this, "Unexpected reply to get offered key: "+reply);
+			return OFFER_STATUS.TRY_ANOTHER;
+		}
 	}
 
 	/** Here FINISHED means accepted, WAIT means try again (soft reject). */
@@ -1045,7 +1192,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     			// Timeout waiting for Accepted
     			next.localRejectedOverload("AcceptedTimeout", realTimeFlag);
     			forwardRejectedOverload();
-    			node.failureTable.onFailed(key, next, htl, timeSinceSent());
+    			int t = timeSinceSent();
+    			node.failureTable.onFailed(key, next, htl, t, t);
     			// Try next node
     			handleAcceptedRejectedTimeout(next, origTag);
     			return DO.NEXT_PEER;
@@ -1054,7 +1202,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     		if(msg.getSpec() == DMT.FNPRejectedLoop) {
     			if(logMINOR) Logger.minor(this, "Rejected loop");
     			next.successNotOverload(realTimeFlag);
-    			node.failureTable.onFailed(key, next, htl, timeSinceSent());
+    			int t = timeSinceSent();
+    			node.failureTable.onFailed(key, next, htl, t, t);
     			// Find another node to route to
     			next.noLongerRoutingTo(origTag, false);
     			return DO.NEXT_PEER;
@@ -1091,7 +1240,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     					return DO.WAIT;
     				} else {
     					next.localRejectedOverload("ForwardRejectedOverload", realTimeFlag);
-    					node.failureTable.onFailed(key, next, htl, timeSinceSent());
+    					int t = timeSinceSent();
+    					node.failureTable.onFailed(key, next, htl, t, t);
     					if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
     					// Give up on this one, try another
     					next.noLongerRoutingTo(origTag, false);
@@ -1143,8 +1293,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 
 				public void onTimeout() {
 					Logger.error(this, "Fatal timeout waiting for Accepted/Rejected from "+next+" on "+RequestSender.this);
-					next.noLongerRoutingTo(origTag, false);
-					next.fatalTimeout();
+					next.fatalTimeout(origTag, false);
 				}
 
 				public void onDisconnect(PeerContext ctx) {
@@ -1215,7 +1364,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     	
     	if(msg.getSpec() == DMT.FNPRecentlyFailed) {
     		handleRecentlyFailed(msg, wasFork, source);
-    		return DO.FINISHED;
+    		// We will resolve finish() in routeRequests(), after recomputing.
+    		return DO.NEXT_PEER;
     	}
     	
     	if(msg.getSpec() == DMT.FNPRouteNotFound) {
@@ -1272,7 +1422,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     	}
     	
    		Logger.error(this, "Unexpected message: "+msg);
-   		node.failureTable.onFailed(key, source, htl, timeSinceSent());
+   		int t = timeSinceSent();
+   		node.failureTable.onFailed(key, source, htl, t, t);
    		source.noLongerRoutingTo(origTag, false);
    		return DO.NEXT_PEER;
     	
@@ -1296,12 +1447,14 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		} catch (SSKVerifyException e) {
 			pubKey = null;
 			Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e.getMessage()+ ')', e);
-    		node.failureTable.onFailed(key, next, htl, timeSinceSent());
-    		next.noLongerRoutingTo(origTag, false);
+			int t = timeSinceSent();
+    		node.failureTable.onFailed(key, next, htl, t, t);
+			origTag.removeRoutingTo(next);
 			return false; // try next node
 		} catch (CryptFormatException e) {
 			Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e+ ')');
-    		node.failureTable.onFailed(key, next, htl, timeSinceSent());
+			int t = timeSinceSent();
+    		node.failureTable.onFailed(key, next, htl, t, t);
     		next.noLongerRoutingTo(origTag, false);
 			return false; // try next node
 		}
@@ -1327,7 +1480,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         	finalHeaders = waiter.headers;
     		if(this.status == SUCCESS || this.prb != null && transferringFrom != null)
     			failNow = true;
-    		if(!wasFork)
+    		if((!wasFork) && (this.prb == null || !this.prb.allReceivedAndNotAborted())) 
     			this.prb = prb;
     		notifyAll();
     	}
@@ -1373,6 +1526,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     				transferTime = tEnd - tStart;
     				synchronized(RequestSender.this) {
     					transferringFrom = null;
+    					if(RequestSender.this.prb == null || !RequestSender.this.prb.allReceivedAndNotAborted())
+    						RequestSender.this.prb = prb;
     				}
     				if(!wasFork)
     					node.removeTransferringSender((NodeCHK)key, RequestSender.this);
@@ -1385,11 +1540,11 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     					verifyAndCommit(waiter.headers, data);
     				} catch (KeyVerifyException e1) {
     					Logger.normal(this, "Got data but verify failed: "+e1, e1);
+    					node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
     					if(!wasFork)
     						finish(VERIFY_FAILURE, sentTo, false);
     					else
-    						sentTo.noLongerRoutingTo(origTag, false);
-    					node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, source);
+    						origTag.removeRoutingTo(sentTo);
     					return;
     				}
     				finish(SUCCESS, sentTo, false);
@@ -1420,9 +1575,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     				// We do an ordinary backoff in all cases.
     				if(!prb.abortedLocally())
     					sentTo.localRejectedOverload("TransferFailedRequest"+e.getReason(), realTimeFlag);
+    				node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
     				if(!wasFork)
     					finish(TRANSFER_FAILED, sentTo, false);
-    				node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, source);
     				int reason = e.getReason();
     				boolean timeout = (!br.senderAborted()) &&
     				(reason == RetrievalException.SENDER_DIED || reason == RetrievalException.RECEIVER_DIED || reason == RetrievalException.TIMED_OUT
@@ -1435,7 +1590,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     				} else {
     					// Quick failure (in that we didn't have to timeout). Don't backoff.
     					// Treat as a DNF.
-    					node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, source);
+    					node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
     				}
     				if(!prb.abortedLocally())
     					node.nodeStats.failedBlockReceive(true, timeout, realTimeFlag, source == null);
@@ -1462,7 +1617,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		if (msg.getBoolean(DMT.IS_LOCAL)) {
 			//NB: IS_LOCAL means it's terminal. not(IS_LOCAL) implies that the rejection message was forwarded from a downstream node.
 			//"Local" from our peers perspective, this has nothing to do with local requests (source==null)
-    		node.failureTable.onFailed(key, next, htl, timeSinceSentForTimeout());
+			int t = timeSinceSentForTimeout();
+    		node.failureTable.onFailed(key, next, htl, t, t);
 			next.localRejectedOverload("ForwardRejectedOverload2", realTimeFlag);
 			// Node in trouble suddenly??
 			Logger.normal(this, "Local RejectedOverload after Accepted, moving on to next peer");
@@ -1479,17 +1635,18 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		short newHtl = msg.getShort(DMT.HTL);
 		if(newHtl < htl) htl = newHtl;
 		next.successNotOverload(realTimeFlag);
-		node.failureTable.onFailed(key, next, htl, timeSinceSent());
-		next.noLongerRoutingTo(origTag, false);
+		int t = timeSinceSent();
+		node.failureTable.onFailed(key, next, htl, t, t);
+		origTag.removeRoutingTo(next);
 	}
 
 	private void handleDataNotFound(Message msg, boolean wasFork, PeerNode next) {
 		next.successNotOverload(realTimeFlag);
+		node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
 		if(!wasFork)
 			finish(DATA_NOT_FOUND, next, false);
 		else
-			next.noLongerRoutingTo(origTag, false);
-		node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.REJECT_TIME, source);
+			this.origTag.removeRoutingTo(next);
 	}
 
 	private void handleRecentlyFailed(Message msg, boolean wasFork, PeerNode next) {
@@ -1532,9 +1689,13 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		int origTimeLeft = timeLeft;
 		
 		if(timeLeft <= 0) {
-			Logger.error(this, "Impossible: timeLeft="+timeLeft);
+			if(timeLeft == 0) {
+				if(logMINOR) Logger.minor(this, "RecentlyFailed: timeout already consumed on "+this);
+			} else {
+				Logger.error(this, "Impossible: timeLeft="+timeLeft);
+			}
 			origTimeLeft = 0;
-			timeLeft=1000; // arbitrary default...
+			timeLeft = 0;
 		}
 		
 		// This is in theory relative to when the request was received by the node. Lets make it relative
@@ -1546,18 +1707,23 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		// Subtract 1% for good measure / to compensate for dodgy clocks
 		timeLeft -= origTimeLeft / 100;
 		
-		//Store the timeleft so that the requestHandler can get at it.
-		recentlyFailedTimeLeft = timeLeft;
+		if(timeLeft < 0) timeLeft = 0;
 		
-			// Kill the request, regardless of whether there is timeout left.
+		// We don't store the recently failed time because we will either generate our own, based on which
+		// peers we have routed the key to (including the timeout we got here, which we DO store in the 
+		// FTE), or we will send a RecentlyFailed with timeout 0, which won't cause RF's on the downstream
+		// peer. The point is, forwarding it as-is is inaccurate: it creates a timeout which is not 
+		// justified. More info in routeRequests().
+		
+		synchronized(this) {
+			killedByRecentlyFailed = true;
+		}
+		
+		// Kill the request, regardless of whether there is timeout left.
 		// If there is, we will avoid sending requests for the specified period.
-		// FIXME we need to create the FT entry.
-		if(!wasFork)
-			finish(RECENTLY_FAILED, next, false);
-		else
-			next.noLongerRoutingTo(origTag, false);
+		node.failureTable.onFinalFailure(key, next, htl, origHTL, timeLeft, FailureTable.REJECT_TIME, source);
+		next.noLongerRoutingTo(origTag, false);
 		
-			node.failureTable.onFinalFailure(key, next, htl, origHTL, timeLeft, source);
 	}
 
 	/**
@@ -1585,6 +1751,17 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 			return;
 		} catch (KeyCollisionException e) {
 			Logger.normal(this, "Collision on "+this);
+			block = node.fetch((NodeSSK)key, false, canWriteClientCache, canWriteClientCache, canWriteDatastore, false, null);
+			if(block != null) {
+				headers = block.getRawHeaders();
+				sskData = block.getRawData();
+			}
+			synchronized(this) {
+				if(finalHeaders == null || finalSskData == null) {
+					finalHeaders = headers;
+					finalSskData = sskData;
+				}
+			}
 			finish(SUCCESS, next, false);
 		}
 	}
@@ -1770,6 +1947,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             notifyAll();
         }
         
+    	boolean shouldUnlock = doOpennet && next != null;
+        
         if(status == SUCCESS) {
         	if((!isSSK) && transferTime > 0 && logMINOR) {
         		long timeTaken = System.currentTimeMillis() - startTime;
@@ -1795,7 +1974,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
        			fireRequestSenderFinished(code, fromOfferedKey);
        			
        			if(doOpennet) {
-       				finishOpennet(next);
+       				if(finishOpennet(next))
+       					shouldUnlock = false;
        			}
        		} finally {
        			if(doOpennet)
@@ -1806,7 +1986,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 			fireRequestSenderFinished(code, fromOfferedKey);
 		}
         
-    	if(doOpennet && next != null) next.noLongerRoutingTo(origTag, fromOfferedKey);
+    	if(shouldUnlock) next.noLongerRoutingTo(origTag, fromOfferedKey);
 		
 		synchronized(this) {
 			opennetFinished = true;
@@ -1833,8 +2013,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
      * If the former, exit.
      * If we want a connection, reply with a ConnectReply, otherwise send a ConnectRejected and exit.
      * Add the peer.
+     * @return True only if there was a fatal timeout and the caller should not unlock.
      */
-    private void finishOpennet(PeerNode next) {
+    private boolean finishOpennet(PeerNode next) {
     	
     	OpennetManager om;
     	
@@ -1843,21 +2024,21 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         	
         	if(noderef == null) {
         		ackOpennet(next);
-        		return;
+        		return false;
         	}
         	
     		om = node.getOpennet();
     		
     		if(om == null) {
         		ackOpennet(next);
-        		return;
+        		return false;
     		}
     		
         	SimpleFieldSet ref = OpennetManager.validateNoderef(noderef, 0, noderef.length, next, false);
         	
         	if(ref == null) {
         		ackOpennet(next);
-        		return;
+        		return false;
         	}
         	
 			if(node.addNewOpennetNode(ref, ConnectionType.PATH_FOLDING) == null) {
@@ -1866,7 +2047,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 					opennetNoderef = noderef;
 					// RequestHandler will send a noderef back up, eventually
 				}
-				return;
+				return false;
 			} else {
 				// opennetNoderef = null i.e. we want the noderef so we won't pass it further down.
 				Logger.normal(this, "Added opennet noderef in "+this+" from "+next);
@@ -1878,20 +2059,21 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		} catch (FSParseException e) {
 			Logger.error(this, "Could not parse opennet noderef for "+this+" from "+next, e);
     		ackOpennet(next);
-			return;
+			return false;
 		} catch (PeerParseException e) {
 			Logger.error(this, "Could not parse opennet noderef for "+this+" from "+next, e);
     		ackOpennet(next);
-			return;
+			return false;
 		} catch (ReferenceSignatureVerificationException e) {
 			Logger.error(this, "Bad signature on opennet noderef for "+this+" from "+next+" : "+e, e);
     		ackOpennet(next);
-			return;
+			return false;
 		} catch (NotConnectedException e) {
 			// Hmmm... let the LRU deal with it
 			if(logMINOR)
 				Logger.minor(this, "Not connected sending ConnectReply on "+this+" to "+next);
     	} catch (WaitedTooLongForOpennetNoderefException e) {
+    		Logger.error(this, "RequestSender timed out waiting for noderef from "+next+" for "+this);
     		// Not an error since it can be caused downstream.
     		origTag.reassignToSelf(); // Since we will tell downstream that we are finished.
     		Logger.warning(this, "RequestSender timed out waiting for noderef from "+next+" for "+this);
@@ -1906,7 +2088,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 			} catch (WaitedTooLongForOpennetNoderefException e1) {
 	    		Logger.error(this, "RequestSender FATAL TIMEOUT out waiting for noderef from "+next+" for "+this);
 				// Fatal timeout. Urgh.
-				next.fatalTimeout();
+				next.fatalTimeout(origTag, false);
+	    		ackOpennet(next);
+	    		return true;
 			}
     		ackOpennet(next);
 		} finally {
@@ -1915,6 +2099,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     			notifyAll();
     		}
     	}
+		return false;
 	}
 
     // Opennet stuff

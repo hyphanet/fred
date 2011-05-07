@@ -53,6 +53,7 @@ public class PeerNodeStatus {
 	private final boolean isOpennet;
 
 	private final double averagePingTime;
+	private final double averagePingTimeCorrected;
 
 	private final boolean publicInvalidVersion;
 
@@ -115,6 +116,8 @@ public class PeerNodeStatus {
 	public final IncomingLoadSummaryStats incomingLoadStatsRealTime;
 
 	public final IncomingLoadSummaryStats incomingLoadStatsBulk;
+	
+	public final boolean hasFullNoderef;
 
 	PeerNodeStatus(PeerNode peerNode, boolean noHeavy) {
 		Peer p = peerNode.getPeer();
@@ -142,6 +145,7 @@ public class PeerNodeStatus {
 		this.isFetchingARK = peerNode.isFetchingARK();
 		this.isOpennet = peerNode.isOpennet();
 		this.averagePingTime = peerNode.averagePingTime();
+		this.averagePingTimeCorrected = peerNode.averagePingTimeCorrected();
 		this.publicInvalidVersion = peerNode.publicInvalidVersion();
 		this.publicReverseInvalidVersion = peerNode.publicReverseInvalidVersion();
 		this.backedOffPercent = peerNode.backedOffPercent.currentValue();
@@ -178,6 +182,7 @@ public class PeerNodeStatus {
 		messageQueueLengthTime = peerNode.getProbableSendQueueTime();
 		incomingLoadStatsRealTime = peerNode.getIncomingLoadStats(true);
 		incomingLoadStatsBulk = peerNode.getIncomingLoadStats(false);
+		hasFullNoderef = peerNode.hasFullNoderef();
 	}
 	
 	public long getMessageQueueLengthBytes() {
@@ -273,6 +278,13 @@ public class PeerNodeStatus {
 	 */
 	public double getAveragePingTime() {
 		return averagePingTime;
+	}
+	
+	/**
+	 * @return The ping time for purposes of retransmissions.
+	 */
+	public double getAveragePingTimeCorrected() {
+		return averagePingTimeCorrected;
 	}
 
 	/**

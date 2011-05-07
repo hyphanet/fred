@@ -420,11 +420,6 @@ public class WelcomeToadlet extends Toadlet {
         HTMLNode pageNode = page.outer;
         HTMLNode contentNode = page.content;
 
-        if (node.isTestnetEnabled()) {
-        	ctx.getPageMaker().getInfobox("infobox-alert", l10n("testnetWarningTitle"), contentNode, "testnet-enabled", true).
-        		addChild("#", l10n("testnetWarning"));
-        }
-
         String useragent = ctx.getHeaders().get("user-agent");
 
         if (useragent != null) {

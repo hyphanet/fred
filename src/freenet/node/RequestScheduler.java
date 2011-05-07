@@ -22,16 +22,6 @@ public interface RequestScheduler {
 	 * */
 	public void succeeded(BaseSendableGet get, boolean persistent);
 
-	/**
-	 * After a key has been requested a few times, it is added to the cooldown queue for
-	 * a fixed period, since it would be pointless to rerequest it (especially given ULPRs).
-	 * Note that while a key is on the cooldown queue its requestors will still be told if
-	 * it is found by ULPRs or back door coalescing.
-	 * @param key The key to be added.
-	 * @return The time at which the key will leave the cooldown queue.
-	 */
-	long queueCooldown(ClientKey key, SendableGet getter, ObjectContainer container);
-
 	/** Once a key has been requested a few times, don't request it again for 30 minutes. 
 	 * To do so would be pointless given ULPRs, and just waste bandwidth. */
 	public static final long COOLDOWN_PERIOD = 30*60*1000;

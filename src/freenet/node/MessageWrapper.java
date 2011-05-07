@@ -52,6 +52,7 @@ public class MessageWrapper {
 	 * @param start the first byte to be marked
 	 * @param end the last byte to be marked
 	 * @param pn just for logging
+	 * @return True if the whole packet has now been acked. False otherwise.
 	 */
 	public boolean ack(int start, int end, BasePeerNode pn) {
 		synchronized(acks) {
@@ -192,9 +193,9 @@ public class MessageWrapper {
 		return item;
 	}
 
-	public boolean canSend() {
+	public boolean allSent() {
 		synchronized(sent) {
-			return !sent.contains(0, item.buf.length-1);
+			return sent.contains(0, item.buf.length-1);
 		}
 	}
 
@@ -207,8 +208,16 @@ public class MessageWrapper {
 				report = 0;
 				resent = end - start + 1 + overhead;
 			} else {
-				report = everSent.notOverlapping(start, end) + overhead;
-				resent = end - start + 1 + overhead - report;
+				report = everSent.notOverlapping(start, end);
+				resent = end - start + 1 - report;
+				if(report > 0 && resent == 0)
+					report += overhead;
+				else if(resent > 0 && report == 0)
+					resent += overhead;
+				else {
+					report += (overhead / 2);
+					resent += (overhead - (overhead / 2));
+				}
 			}
 			everSent.add(start, end);
 			if(everSent.contains(0, item.buf.length-1)) {

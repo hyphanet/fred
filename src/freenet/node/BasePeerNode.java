@@ -74,4 +74,13 @@ interface BasePeerNode extends PeerContext {
 	 * execute the send for some reason. */
 	void setSendLoadStatsASAP(boolean realtime);
 
+	/** Average ping time incorporating variance, calculated like TCP SRTT, as with RFC 2988. */
+	double averagePingTimeCorrected();
+
+	/** Double the RTT when we resend a packet. */
+	void backoffOnResend();
+
+	/** Report when a packet was acked. */
+	void receivedAck(long currentTimeMillis);
+
 }

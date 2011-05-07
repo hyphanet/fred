@@ -99,7 +99,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 				segmentFilters[i] = cachedSegFilters[i];
 				container.activate(cachedSegFilters[i], Integer.MAX_VALUE);
 				cachedSegFilters[i].init(container);
-				System.out.println("Restored segment "+i+" filter for "+parent+" : k="+cachedSegFilters[i].getK()+" size = "+cachedSegFilters[i].getSizeBytes()+" bytes = "+cachedSegFilters[i].getLength()+" elements, filled: "+cachedSegFilters[i].getFilledCount());
+				if(logMINOR) Logger.minor(this, "Restored segment "+i+" filter for "+parent+" : k="+cachedSegFilters[i].getK()+" size = "+cachedSegFilters[i].getSizeBytes()+" bytes = "+cachedSegFilters[i].getLength()+" elements, filled: "+cachedSegFilters[i].getFilledCount());
 			}
 		} else {
 			byte[] segmentsFilterBuffer = new byte[segmentFilterSizeBytes * segments];
@@ -202,7 +202,15 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 
 	public boolean probablyWantKey(Key key, byte[] saltedKey) {
 		if(filter == null) Logger.error(this, "Probably want key: filter = null for "+this+ " fetcher = "+fetcher);
-		return filter.checkFilter(saltedKey);
+		if(filter.checkFilter(saltedKey)) {
+			byte[] salted = localSaltKey(key);
+			for(int i=0;i<segmentFilters.length;i++) {
+				if(segmentFilters[i].checkFilter(salted)) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	public short definitelyWantKey(Key key, byte[] saltedKey, ObjectContainer container,
