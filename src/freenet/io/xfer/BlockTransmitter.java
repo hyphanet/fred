@@ -280,7 +280,11 @@ public class BlockTransmitter {
 						if(_failed) {
 							// Already failed, we were just waiting for the acknowledgement sendAborted.
 							if(!hadSendCompletion) {
+<<<<<<< HEAD
 								Logger.error(this, "Terminating send after failure on "+this);
+=======
+								Logger.warning(this, "Terminating send after failure on "+this);
+>>>>>>> master
 								abortReason = "Already failed and no acknowledgement";
 							} else {
 								// Waiting for transfers maybe???
@@ -746,10 +750,11 @@ public class BlockTransmitter {
 				completed = true;
 				if(lastSentPacket > 0) {
 					delta = now - lastSentPacket;
-					if(delta > 30000)
-						Logger.error(this, "Time between packets on "+BlockTransmitter.this+" : "+TimeUtil.formatTime(delta, 2, true)+" ( "+delta+"ms) realtime="+realTime);
-					else if(delta > 5000)
+					int threshold = (realTime ? BlockReceiver.RECEIPT_TIMEOUT_REALTIME : BlockReceiver.RECEIPT_TIMEOUT_BULK);
+					if(delta > threshold)
 						Logger.warning(this, "Time between packets on "+BlockTransmitter.this+" : "+TimeUtil.formatTime(delta, 2, true)+" ( "+delta+"ms) realtime="+realTime);
+					else if(delta > threshold / 5)
+						Logger.normal(this, "Time between packets on "+BlockTransmitter.this+" : "+TimeUtil.formatTime(delta, 2, true)+" ( "+delta+"ms) realtime="+realTime);
 					else if(logMINOR) 
 						Logger.minor(this, "Time between packets on "+BlockTransmitter.this+" : "+TimeUtil.formatTime(delta, 2, true)+" ( "+delta+"ms) realtime="+realTime);
 				}
