@@ -773,6 +773,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			inputBandwidthPeerLimit = m.getInt(DMT.INPUT_BANDWIDTH_PEER_LIMIT);
 			totalRequests = -1;
 			realTime = m.getBoolean(DMT.REAL_TIME_FLAG);
+			if(maxTransfersOut < 0 || maxTransfersOutUpperLimit < 0 || maxTransfersOutUpperLimit < 0 ||
+					maxTransfersOutPeerLimit < 0) {
+				Logger.error(this, "Bogus max transfers: "+this);
+			}
 		}
 
 		public RunningRequestsSnapshot getOtherRunningRequests() {
