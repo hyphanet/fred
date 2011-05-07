@@ -1077,6 +1077,7 @@ loadWaiterLoop:
     			return DO.NEXT_PEER;
     		}
     		
+    		next.resetMandatoryBackoff(realTimeFlag);
     		return DO.FINISHED;
     		
     	}
