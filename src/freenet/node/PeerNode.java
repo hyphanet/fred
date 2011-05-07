@@ -5062,7 +5062,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 		}
 		
-		public synchronized PeerLoadStats getLastIncomingLoadStats(boolean realTime) {
+		public synchronized PeerLoadStats getLastIncomingLoadStats() {
 			return lastIncomingLoadStats;
 		}
 		
