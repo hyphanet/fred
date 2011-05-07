@@ -271,6 +271,7 @@ public class BlockTransmitter {
 					Future fail;
 					synchronized(_senderThread) {
 						if(_completed) return;
+						boolean hadSendCompletion = _receivedSendCompletion;
 						if(!_receivedSendCompletion) {
 							_receivedSendCompletion = true;
 							_receivedSendSuccess = false;
@@ -278,8 +279,14 @@ public class BlockTransmitter {
 						//SEND_TIMEOUT (one minute) after all packets have been transmitted, terminate the send.
 						if(_failed) {
 							// Already failed, we were just waiting for the acknowledgement sendAborted.
-							Logger.normal(this, "Terminating send after failure on "+this);
-							abortReason = "Already failed and no acknowledgement";
+							if(!hadSendCompletion) {
+								Logger.warning(this, "Terminating send after failure on "+this);
+								abortReason = "Already failed and no acknowledgement";
+							} else {
+								// Waiting for transfers maybe???
+								if(logMINOR) Logger.minor(this, "Trying to terminate send after timeout");
+								abortReason = "Already failed";
+							}
 						} else {
 							timeString=TimeUtil.formatTime((System.currentTimeMillis() - timeAllSent), 2, true);
 							Logger.warning(this, "Terminating send "+_uid+" to "+_destination+" from "+_destination.getSocketHandler()+" as we haven't heard from receiver in "+timeString+ '.');
