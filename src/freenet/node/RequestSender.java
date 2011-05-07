@@ -1468,6 +1468,7 @@ loadWaiterLoop:
     		}
     		
     		next.resetMandatoryBackoff(realTimeFlag);
+    		next.outputLoadTracker(realTimeFlag).clearDontSendUnlessGuaranteed();
     		return DO.FINISHED;
     		
     	}
