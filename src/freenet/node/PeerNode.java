@@ -1080,7 +1080,16 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return isConnected() && isRoutingCompatible() &&
 			!(currentLocation < 0.0 || currentLocation > 1.0);
 	}
-
+	
+	synchronized boolean isInMandatoryBackoff(long now, boolean realTime) {
+		long mandatoryBackoffUntil = realTime ? mandatoryBackoffUntilRT : mandatoryBackoffUntilBulk;
+		if((mandatoryBackoffUntil > -1 && now < mandatoryBackoffUntil)) {
+			if(logMINOR) Logger.minor(this, "In mandatory backoff");
+			return true;
+		}
+		return false;
+	}
+	
 	/**
 	 * Returns true if (apart from actually knowing the peer's location), it is presumed that this peer could route requests.
 	 * True if this peer's build number is not 'too-old' or 'too-new', actively connected, and not marked as explicity disabled.
@@ -1093,6 +1102,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				timeLastRoutable = now;
 				return true;
 			}
+			if(logMINOR) Logger.minor(this, "Not routing compatible");
 			return false;
 		}
 	}
@@ -3145,6 +3155,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(now < transferBackedOffUntil) {
 				if(transferBackedOffUntil - now >= ignoreBackoffUnder) return true;
 			}
+			if(isInMandatoryBackoff(now, realTime)) return true;
 			pingTime = averagePingTime();
 		}
 		if(pingTime > maxPeerPingTime()) return true;
@@ -3213,7 +3224,58 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public final RunningAverage backedOffPercentBulk;
 	/* time of last sample */
 	private long lastSampleTime = Long.MAX_VALUE;
-
+	
+	// Separate, mandatory backoff mechanism for when nodes are consistently sending unexpected soft rejects.
+	// E.g. when load management predicts GUARANTEED and yet we are rejected.
+	// This can happens when the peer's view of how many of our requests are running is different to our view.
+	// But there has not been a timeout, so we haven't called fatalTimeout() and reconnected.
+	
+	// FIXME 3 different kinds of backoff? Can we get rid of some???
+	
+	long mandatoryBackoffUntilRT = -1;
+	int mandatoryBackoffLengthRT = INITIAL_MANDATORY_BACKOFF_LENGTH;
+	long mandatoryBackoffUntilBulk = -1;
+	int mandatoryBackoffLengthBulk = INITIAL_MANDATORY_BACKOFF_LENGTH;
+	static final int INITIAL_MANDATORY_BACKOFF_LENGTH = 1*1000;
+	static final int MANDATORY_BACKOFF_MULTIPLIER = 2;
+	static final int MAX_MANDATORY_BACKOFF_LENGTH = 5*60*1000;
+	
+	/** When load management predicts that a peer will definitely accept the request, both
+	 * before it was sent and after we got the rejected, we go into mandatory backoff. */
+	public void enterMandatoryBackoff(String reason, boolean realTime) {
+		long now = System.currentTimeMillis();
+		synchronized(this) {
+			long mandatoryBackoffUntil = realTime ? mandatoryBackoffUntilRT : mandatoryBackoffUntilBulk;
+			int mandatoryBackoffLength = realTime ? mandatoryBackoffLengthRT : mandatoryBackoffLengthBulk;
+			if(mandatoryBackoffUntil > -1 && mandatoryBackoffUntil > now) return;
+			Logger.error(this, "Entering mandatory backoff for "+this + (realTime ? " (realtime)" : " (bulk)"));
+			mandatoryBackoffUntil = now + (mandatoryBackoffLength/2) + node.fastWeakRandom.nextInt(mandatoryBackoffLength/2);
+			mandatoryBackoffLength *= MANDATORY_BACKOFF_MULTIPLIER;
+			//node.nodeStats.reportMandatoryBackoff(reason, mandatoryBackoffUntil - now, realTime);
+			if(realTime) {
+				mandatoryBackoffLengthRT = mandatoryBackoffLength;
+				mandatoryBackoffUntilRT = mandatoryBackoffUntil;
+			} else {
+				mandatoryBackoffLengthBulk = mandatoryBackoffLength;
+				mandatoryBackoffUntilBulk = mandatoryBackoffUntil;
+			}
+			setLastBackoffReason(reason, realTime);
+		}
+		if(realTime)
+			outputLoadTrackerRealTime.failSlotWaiters(true);
+		else
+			outputLoadTrackerBulk.failSlotWaiters(true);
+	}
+	
+	/** Called when a request is accepted. We don't wait for completion, unlike 
+	 * successNotOverload(). */
+	public synchronized void resetMandatoryBackoff(boolean realTime) {
+		if(realTime)
+			mandatoryBackoffLengthRT = INITIAL_MANDATORY_BACKOFF_LENGTH;
+		else
+			mandatoryBackoffLengthBulk = INITIAL_MANDATORY_BACKOFF_LENGTH;
+	}
+	
 	/**
 	 * Track the percentage of time a peer spends backed off
 	 */
@@ -3462,14 +3524,17 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 
 	public synchronized long getRoutingBackedOffUntil(boolean realTime) {
-		return Math.max(realTime ? routingBackedOffUntilRT : routingBackedOffUntilBulk, 
-				realTime ? transferBackedOffUntilRT : transferBackedOffUntilBulk);
+		return Math.max(realTime ? mandatoryBackoffUntilRT : mandatoryBackoffUntilBulk,
+				Math.max(                               
+						realTime ? routingBackedOffUntilRT : routingBackedOffUntilBulk, 
+								realTime ? transferBackedOffUntilRT : transferBackedOffUntilBulk));
 	}
 	
 	public synchronized long getRoutingBackedOffUntilMax() {
-		return Math.max(
-				Math.max(routingBackedOffUntilRT, routingBackedOffUntilBulk),
-				Math.max(transferBackedOffUntilRT, transferBackedOffUntilBulk));
+		return Math.max(Math.max(mandatoryBackoffUntilRT, mandatoryBackoffUntilBulk),
+				Math.max(
+						Math.max(routingBackedOffUntilRT, routingBackedOffUntilBulk),
+						Math.max(transferBackedOffUntilRT, transferBackedOffUntilBulk)));
 	}
 	
 	public synchronized long getRoutingBackedOffUntilRT() {
@@ -3657,7 +3722,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(overPingTime && (lastRoutingBackoffReasonRT == null || now >= routingBackedOffUntilRT)) {
 					lastRoutingBackoffReasonRT = "TooHighPing";
 				}
-				if(now < routingBackedOffUntilRT || overPingTime) {
+				if(now < routingBackedOffUntilRT || overPingTime || isInMandatoryBackoff(now, true)) {
 					peerNodeStatus = PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
 					if(!lastRoutingBackoffReasonRT.equals(previousRoutingBackoffReasonRT) || (previousRoutingBackoffReasonRT == null)) {
 						if(previousRoutingBackoffReasonRT != null) {
@@ -3675,7 +3740,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(overPingTime && (lastRoutingBackoffReasonBulk == null || now >= routingBackedOffUntilBulk)) {
 					lastRoutingBackoffReasonBulk = "TooHighPing";
 				}
-				if(now < routingBackedOffUntilBulk || overPingTime) {
+				
+				if(now < routingBackedOffUntilBulk || overPingTime|| isInMandatoryBackoff(now, false)) {
 					peerNodeStatus = PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
 					if(!lastRoutingBackoffReasonBulk.equals(previousRoutingBackoffReasonBulk) || (previousRoutingBackoffReasonBulk == null)) {
 						if(previousRoutingBackoffReasonBulk != null) {
