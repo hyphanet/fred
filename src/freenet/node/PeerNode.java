@@ -5155,8 +5155,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(logMINOR) Logger.minor(this, "Got load status : "+stat);
 			synchronized(routedToLock) {
 				lastIncomingLoadStats = stat;
-				maybeNotifySlotWaiter();
 			}
+			maybeNotifySlotWaiter();
 		}
 		
 		public synchronized PeerLoadStats getLastIncomingLoadStats() {
@@ -5249,16 +5249,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				tag.removeFetchingOfferedKeyFrom(this);
 			else
 				tag.removeRoutingTo(this);
-			if(logMINOR) Logger.minor(this, "No longer routing "+tag+" to "+this);
-			outputLoadTracker(tag.realTimeFlag).maybeNotifySlotWaiter();
 		}
+		if(logMINOR) Logger.minor(this, "No longer routing "+tag+" to "+this);
+		outputLoadTracker(tag.realTimeFlag).maybeNotifySlotWaiter();
 	}
 	
 	public void postUnlock(UIDTag tag) {
-		synchronized(routedToLock) {
-			if(logMINOR) Logger.minor(this, "Unlocked "+tag);
-			outputLoadTracker(tag.realTimeFlag).maybeNotifySlotWaiter();
-		}
+		outputLoadTracker(tag.realTimeFlag).maybeNotifySlotWaiter();
 	}
 	
 	SlotWaiter createSlotWaiter(RequestTag tag, RequestType type, boolean offeredKey, boolean realTime) {
