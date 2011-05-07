@@ -3441,8 +3441,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 			setLastBackoffReason(reason, realTime);
 		}
-		outputLoadTrackerRealTime.failSlotWaiters(true);
-		outputLoadTrackerBulk.failSlotWaiters(true);
+		if(realTime)
+			outputLoadTrackerRealTime.failSlotWaiters(true);
+		else
+			outputLoadTrackerBulk.failSlotWaiters(true);
 		setPeerNodeStatus(now);
 	}
 
