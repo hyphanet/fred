@@ -417,5 +417,12 @@ public class RequestStarterGroup {
 			}
 		}
 	}
+
+	public void setUseAIMDs(boolean val) {
+		chkFetchScheduler.setUseAIMDs(val);
+		sskFetchScheduler.setUseAIMDs(val);
+		chkPutScheduler.setUseAIMDs(val);
+		sskPutScheduler.setUseAIMDs(val);
+	}
 	
 }
