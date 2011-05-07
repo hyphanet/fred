@@ -137,4 +137,16 @@ public class NodePinger implements Runnable {
 			return Math.min(median/2, firstQuartile);
 		}
 	}
+
+	public double capacityThreshold(boolean isRealtime, boolean isInput) {
+		return capacityChecker(isRealtime, isInput).getThreshold();
+	}
+
+	private CapacityChecker capacityChecker(boolean isRealtime, boolean isInput) {
+		if(isRealtime) {
+			return isInput ? capacityInputRealtime : capacityOutputRealtime;
+		} else {
+			return isInput ? capacityInputBulk: capacityOutputBulk;
+		}
+	}
 }

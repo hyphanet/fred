@@ -5499,4 +5499,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		node.peers.incrementSelectionSamples(System.currentTimeMillis(), this);
 	}
 
+	public boolean isLowCapacity(boolean isRealtime) {
+		PeerLoadStats stats = outputLoadTracker(isRealtime).getLastIncomingLoadStats();
+		if(stats == null) return false;
+		NodePinger pinger = node.nodeStats.nodePinger;
+		if(pinger == null) return false; // FIXME possible?
+		if(pinger.capacityThreshold(isRealtime, true) > stats.peerLimit(true)) return true;
+		if(pinger.capacityThreshold(isRealtime, false) > stats.peerLimit(false)) return true;
+		return false;
+	}
+
 }
