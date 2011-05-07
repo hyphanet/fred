@@ -62,6 +62,8 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	 * buckets and the thread limit. FIXME make configurable. */
 	static final boolean LOCAL_REQUESTS_COMPETE_FAIRLY = true;
 	
+	boolean DO_AIMD = true;
+	
 	public static boolean isValidPriorityClass(int prio) {
 		return !((prio < MAXIMUM_PRIORITY_CLASS) || (prio > MINIMUM_PRIORITY_CLASS));
 	}
@@ -138,7 +140,11 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				if(logMINOR) Logger.minor(this, "Running "+req+" priority "+req.getPriority());
 				if(!req.localRequestOnly) {
 					// Wait
-					long delay = throttle.getDelay();
+					long delay;
+					if(DO_AIMD)
+						delay = throttle.getDelay();
+					else
+						delay = 100;
 					if(logMINOR) Logger.minor(this, "Delay="+delay+" from "+throttle);
 					long sleepUntil = cycleTime + delay;
 					if(!LOCAL_REQUESTS_COMPETE_FAIRLY) {
@@ -299,6 +305,10 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	public long excludeSummarily(HasCooldownCacheItem item,
 			HasCooldownCacheItem parent, ObjectContainer container, boolean persistent, long now) {
 		return core.clientContext.cooldownTracker.getCachedWakeup(item, persistent, container, now);
+	}
+
+	public void setUseAIMDs(boolean val) {
+		DO_AIMD = val;
 	}
 
 }

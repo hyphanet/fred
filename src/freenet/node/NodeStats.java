@@ -219,6 +219,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public final RunningAverage routingMissDistanceLocal;
 	public final RunningAverage routingMissDistanceRemote;
 	public final RunningAverage routingMissDistanceOverall;
+	public final RunningAverage routingMissDistanceBulk;
+	public final RunningAverage routingMissDistanceRT;
 	public final RunningAverage backedOffPercent;
 	public final DecayingKeyspaceAverage avgCacheCHKLocation;
 	public final DecayingKeyspaceAverage avgSlashdotCacheCHKLocation;
@@ -262,6 +264,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private static final long peerManagerUserAlertStatsUpdateInterval = 1000;  // 1 second
 
 	// Backoff stats
+	final Hashtable<String, TrivialRunningAverage> avgMandatoryBackoffTimesRT;
+	final Hashtable<String, TrivialRunningAverage> avgMandatoryBackoffTimesBulk;
 	final Hashtable<String, TrivialRunningAverage> avgRoutingBackoffTimesRT;
 	final Hashtable<String, TrivialRunningAverage> avgRoutingBackoffTimesBulk;
 	final Hashtable<String, TrivialRunningAverage> avgTransferBackoffTimesRT;
@@ -292,6 +296,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		this.routingMissDistanceLocal = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.routingMissDistanceRemote = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.routingMissDistanceOverall = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
+		this.routingMissDistanceBulk = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
+		this.routingMissDistanceRT = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		preemptiveRejectReasons = new StringCounter();
 		localPreemptiveRejectReasons = new StringCounter();
@@ -552,6 +558,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		hourlyStatsRT = new HourlyStats(node);
 		hourlyStatsBulk = new HourlyStats(node);
 
+		avgMandatoryBackoffTimesRT = new Hashtable<String, TrivialRunningAverage>();
+		avgMandatoryBackoffTimesBulk = new Hashtable<String, TrivialRunningAverage>();
 		avgRoutingBackoffTimesRT = new Hashtable<String, TrivialRunningAverage>();
 		avgRoutingBackoffTimesBulk = new Hashtable<String, TrivialRunningAverage>();
 		avgTransferBackoffTimesRT = new Hashtable<String, TrivialRunningAverage>();
@@ -771,6 +779,20 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			return new RunningRequestsSnapshot(this);
 		}
 		
+		public double peerLimit(boolean input) {
+			if(input)
+				return inputBandwidthPeerLimit;
+			else
+				return outputBandwidthPeerLimit;
+		}
+
+		public double lowerLimit(boolean input) {
+			if(input)
+				return inputBandwidthLowerLimit;
+			else
+				return outputBandwidthLowerLimit;
+		}
+		
 	}
 	
 	class RunningRequestsSnapshot {
@@ -913,7 +935,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			String message = 
 				"Running (adjusted): CHK in: "+expectedTransfersInCHK+" out: "+expectedTransfersOutCHK+
 					" SSK in: "+expectedTransfersInSSK+" out: "+expectedTransfersOutSSK
-					+" total="+totalRequests+(source == null ? "" : (" for "+source));
+					+" total="+totalRequests+(source == null ? "" : (" for "+source)) + (realTimeFlag ? " (realtime)" : " (bulk)");
 			if(expectedTransfersInCHK < 0 || expectedTransfersOutCHK < 0 ||
 					expectedTransfersInSSK < 0 || expectedTransfersOutSSK < 0)
 				Logger.error(this, message);
@@ -982,7 +1004,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		int threadCount = getActiveThreadCount();
 		if(threadLimit < threadCount) {
 			pInstantRejectIncoming.report(1.0);
-			rejected(">threadLimit", isLocal);
+			rejected(">threadLimit", isLocal, realTimeFlag);
 			return new RejectReason(">threadLimit ("+threadCount+'/'+threadLimit+')', false);
 		}
 
@@ -1004,14 +1026,14 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 					if(logMINOR) Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
 				} else {
 					pInstantRejectIncoming.report(1.0);
-					rejected(">MAX_PING_TIME", isLocal);
+					rejected(">MAX_PING_TIME", isLocal, realTimeFlag);
 					return new RejectReason(">MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+ ')', false);
 				}
 			} else if(pingTime > subMaxPingTime) {
 				double x = ((pingTime - subMaxPingTime)) / (maxPingTime - subMaxPingTime);
 				if(randomLessThan(x, preferInsert)) {
 					pInstantRejectIncoming.report(1.0);
-					rejected(">SUB_MAX_PING_TIME", isLocal);
+					rejected(">SUB_MAX_PING_TIME", isLocal, realTimeFlag);
 					return new RejectReason(">SUB_MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+ ')', false);
 				}
 			}
@@ -1066,10 +1088,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 				source, isLocal, isSSK, isInsert, isOfferReply, hasInStore, transfersPerInsert, realTimeFlag, maxOutputTransfers, maxTransfersOutPeerLimit);  
 		if(ret != null) return new RejectReason(ret, true);
 		
-		if(peerRequestsSnapshot.totalOutTransfers() > maxOutputTransfers) {
-			// Can't handle that many transfers with current bandwidth.
-			return new RejectReason("CongestionControl", true);
-		}
+		ret = checkMaxOutputTransfers(maxOutputTransfers, maxTransfersOutUpperLimit, maxTransfersOutLowerLimit, maxTransfersOutPeerLimit,
+				requestsSnapshot, peerRequestsSnapshot, isLocal, realTimeFlag);
+		if(ret != null) return new RejectReason(ret, true);
 		
 		// Do we have the bandwidth?
 		double expected = this.getThrottle(isLocal, isInsert, isSSK, true).currentValue();
@@ -1078,7 +1099,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			Logger.minor(this, "Expected sent bytes: "+expected+" -> "+expectedSent);
 		if(!requestOutputThrottle.instantGrab(expectedSent)) {
 			pInstantRejectIncoming.report(1.0);
-			rejected("Insufficient output bandwidth", isLocal);
+			rejected("Insufficient output bandwidth", isLocal, realTimeFlag);
 			return new RejectReason("Insufficient output bandwidth", false);
 		}
 		expected = this.getThrottle(isLocal, isInsert, isSSK, false).currentValue();
@@ -1088,17 +1109,17 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		if(!requestInputThrottle.instantGrab(expectedReceived)) {
 			requestOutputThrottle.recycle(expectedSent);
 			pInstantRejectIncoming.report(1.0);
-			rejected("Insufficient input bandwidth", isLocal);
+			rejected("Insufficient input bandwidth", isLocal, realTimeFlag);
 			return new RejectReason("Insufficient input bandwidth", false);
 		}
 
 		if(source != null) {
 			if(source.getMessageQueueLengthBytes() > MAX_PEER_QUEUE_BYTES) {
-				rejected(">MAX_PEER_QUEUE_BYTES", isLocal);
+				rejected(">MAX_PEER_QUEUE_BYTES", isLocal, realTimeFlag);
 				return new RejectReason("Too many message bytes queued for peer", false);
 			}
 			if(source.getProbableSendQueueTime() > MAX_PEER_QUEUE_TIME) {
-				rejected(">MAX_PEER_QUEUE_TIME", isLocal);
+				rejected(">MAX_PEER_QUEUE_TIME", isLocal, realTimeFlag);
 				return new RejectReason("Peer's queue will take too long to transfer", false);
 			}
 		}
@@ -1121,7 +1142,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	private int getAcceptableBlockTime(boolean realTime) {
-		return realTime ? 1 : 5;
+		return realTime ? 2 : 15;
 	}
 
 	static final double ONE_PEER_MAX_PEERS_EQUIVALENT = 2.0;
@@ -1261,13 +1282,42 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			
 			double peerUsedBytes = getPeerBandwidthLiability(peerRequestsSnapshot, source, isSSK, isInsert, isOfferReply, ignoreLocalVsRemoteBandwidthLiability, hasInStore, transfersPerInsert, input, realTimeFlag);
 			if(peerUsedBytes > thisAllocation) {
-				rejected(name+" bandwidth liability: fairness between peers", isLocal);
+				rejected(name+" bandwidth liability: fairness between peers", isLocal, realTimeFlag);
 				return name+" bandwidth liability: fairness between peers (peer "+source+" used "+peerUsedBytes+" allowed "+thisAllocation+")";
 			}
 			
 		}
 		return null;
 	}
+	
+	private String checkMaxOutputTransfers(int maxOutputTransfers,
+			int maxTransfersOutUpperLimit, int maxTransfersOutLowerLimit,
+			int maxTransfersOutPeerLimit,
+			RunningRequestsSnapshot requestsSnapshot,
+			RunningRequestsSnapshot peerRequestsSnapshot, boolean isLocal, boolean realTime) {
+		if(logMINOR) Logger.minor(this, "Max transfers: congestion control limit "+maxOutputTransfers+
+				" upper "+maxTransfersOutUpperLimit+" lower "+maxTransfersOutLowerLimit+" peer "+maxTransfersOutPeerLimit+" "+(realTime ? "(rt)" : "(bulk)"));
+		int peerOutTransfers = peerRequestsSnapshot.totalOutTransfers();
+		int totalOutTransfers = requestsSnapshot.totalOutTransfers();
+		if(peerOutTransfers > maxOutputTransfers && !isLocal) {
+			// Can't handle that many transfers with current bandwidth.
+			rejected("TooManyTransfers: Congestion control", isLocal, realTime);
+			return "TooManyTransfers: Congestion control";
+		}
+		if(totalOutTransfers <= maxTransfersOutLowerLimit) {
+			// If the total is below the lower limit, then fine, go for it.
+			return null;
+		}
+		if(peerOutTransfers <= maxTransfersOutPeerLimit) {
+			// The total is above the lower limit, but the per-peer is below the peer limit.
+			// It is within its guaranteed space, so we accept it.
+			return null;
+		}
+		rejected("TooManyTransfers: Fair sharing between peers", isLocal, realTime);
+		return "TooManyTransfers: Fair sharing between peers";
+	}
+
+
 
 	static final boolean SEND_LOAD_STATS_NOTICES = true;
 	
@@ -1331,7 +1381,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return hardRandom.nextDouble() < x;
 	}
 
-	private void rejected(String reason, boolean isLocal) {
+	private void rejected(String reason, boolean isLocal, boolean realTime) {
+		reason += " "+(realTime?" (rt)":" (bulk)");
 		if(logMINOR) Logger.minor(this, "Rejecting (local="+isLocal+") : "+reason);
 		if(!isLocal) preemptiveRejectReasons.inc(reason);
 		else this.localPreemptiveRejectReasons.inc(reason);
@@ -1644,6 +1695,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("routingMissDistanceLocal", routingMissDistanceLocal.currentValue());
 		fs.put("routingMissDistanceRemote", routingMissDistanceRemote.currentValue());
 		fs.put("routingMissDistanceOverall", routingMissDistanceOverall.currentValue());
+		fs.put("routingMissDistanceBulk", routingMissDistanceBulk.currentValue());
+		fs.put("routingMissDistanceRT", routingMissDistanceRT.currentValue());
+		
 		fs.put("backedOffPercent", backedOffPercent.currentValue());
 		fs.put("pInstantReject", pRejectIncomingInstantly());
 		fs.put("unclaimedFIFOSize", node.usm.getUnclaimedFIFOSize());
@@ -2701,6 +2755,30 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		avg.report(executionTimeMiliSeconds);
 	}
 
+	public void reportMandatoryBackoff(String backoffType, long backoffTimeMilliSeconds, boolean realtime) {
+		TrivialRunningAverage avg;
+		if(realtime) {
+			synchronized (avgMandatoryBackoffTimesRT) {
+				avg = avgMandatoryBackoffTimesRT.get(backoffType);
+
+				if (avg == null) {
+					avg = new TrivialRunningAverage();
+					avgMandatoryBackoffTimesRT.put(backoffType, avg);
+				}
+			}
+		} else {
+			synchronized (avgMandatoryBackoffTimesBulk) {
+				avg = avgMandatoryBackoffTimesBulk.get(backoffType);
+
+				if (avg == null) {
+					avg = new TrivialRunningAverage();
+					avgMandatoryBackoffTimesBulk.put(backoffType, avg);
+				}
+			}
+		}
+		avg.report(backoffTimeMilliSeconds);
+	}
+
 	public void reportRoutingBackoff(String backoffType, long backoffTimeMilliSeconds, boolean realtime) {
 		TrivialRunningAverage avg;
 
@@ -3015,6 +3093,37 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 				return 0;
 			else
 				return -1;
+		}
+	}
+
+	public TimedStats[] getMandatoryBackoffStatistics(boolean realtime) {
+
+		if (realtime) {
+			TimedStats[] entries = new TimedStats[avgMandatoryBackoffTimesRT.size()];
+			int i = 0;
+
+			synchronized (avgMandatoryBackoffTimesRT) {
+				for (Map.Entry<String, TrivialRunningAverage> entry : avgMandatoryBackoffTimesRT.entrySet()) {
+					TrivialRunningAverage avg = entry.getValue();
+					entries[i++] = new TimedStats(entry.getKey(), avg.countReports(), (long) avg.currentValue(), (long) avg.totalValue());
+				}
+			}
+
+			Arrays.sort(entries);
+			return entries;
+		} else {
+			TimedStats[] entries = new TimedStats[avgMandatoryBackoffTimesBulk.size()];
+			int i = 0;
+
+			synchronized (avgMandatoryBackoffTimesBulk) {
+				for (Map.Entry<String, TrivialRunningAverage> entry : avgMandatoryBackoffTimesBulk.entrySet()) {
+					TrivialRunningAverage avg = entry.getValue();
+					entries[i++] = new TimedStats(entry.getKey(), avg.countReports(), (long) avg.currentValue(), (long) avg.totalValue());
+				}
+			}
+
+			Arrays.sort(entries);
+			return entries;
 		}
 	}
 

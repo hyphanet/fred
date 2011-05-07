@@ -150,7 +150,7 @@ public class RequestStarterGroup {
 			String name, ClientRequestScheduler csBulk,
 			ClientRequestScheduler csRT, boolean forSSKs, boolean forInserts) throws InvalidConfigValueException {
 		PrioritySchedulerCallback callback = new PrioritySchedulerCallback();
-		schedulerConfig.register(name+"_priority_policy", ClientRequestScheduler.PRIORITY_HARD, name.hashCode(), true, false,
+		schedulerConfig.register(name+"_priority_policy", ClientRequestScheduler.PRIORITY_SOFT, name.hashCode(), true, false,
 				"RequestStarterGroup.scheduler"+(forSSKs?"SSK" : "CHK")+(forInserts?"Inserts":"Requests"),
 				"RequestStarterGroup.schedulerLong",
 				callback);
@@ -259,7 +259,7 @@ public class RequestStarterGroup {
 			if(csBulk != null)
 				return csBulk.getChoosenPriorityScheduler();
 			else
-				return ClientRequestScheduler.PRIORITY_HARD;
+				return ClientRequestScheduler.PRIORITY_SOFT;
 		}
 		
 		@Override
@@ -416,6 +416,17 @@ public class RequestStarterGroup {
 				return ssk ? sskFetchSchedulerBulk : chkFetchSchedulerBulk;
 			}
 		}
+	}
+
+	public void setUseAIMDs(boolean val) {
+		chkFetchSchedulerBulk.setUseAIMDs(val);
+		sskFetchSchedulerBulk.setUseAIMDs(val);
+		chkPutSchedulerBulk.setUseAIMDs(val);
+		sskPutSchedulerBulk.setUseAIMDs(val);
+		chkFetchSchedulerRT.setUseAIMDs(val);
+		sskFetchSchedulerRT.setUseAIMDs(val);
+		chkPutSchedulerRT.setUseAIMDs(val);
+		sskPutSchedulerRT.setUseAIMDs(val);
 	}
 	
 }
