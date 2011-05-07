@@ -5548,15 +5548,19 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		 * @param byteCountersInput 
 		 * @param byteCountersOutput */
 		private RequestLikelyAcceptedState getRequestLikelyAcceptedState(RunningRequestsSnapshot runningRequests, RunningRequestsSnapshot otherRunningRequests, boolean ignoreLocalVsRemote, PeerLoadStats stats) {
-			RequestLikelyAcceptedState outputState = getRequestLikelyAcceptedState(false, runningRequests, otherRunningRequests, ignoreLocalVsRemote, stats);
-			RequestLikelyAcceptedState inputState = getRequestLikelyAcceptedState(true, runningRequests, otherRunningRequests, ignoreLocalVsRemote, stats);
-			if(inputState.ordinal() > outputState.ordinal())
-				return inputState;
-			else
-				return outputState;
+			RequestLikelyAcceptedState outputState = getRequestLikelyAcceptedStateBandwidth(false, runningRequests, otherRunningRequests, ignoreLocalVsRemote, stats);
+			RequestLikelyAcceptedState inputState = getRequestLikelyAcceptedStateBandwidth(true, runningRequests, otherRunningRequests, ignoreLocalVsRemote, stats);
+			RequestLikelyAcceptedState transfersState = getRequestLikelyAcceptedStateTransfers(runningRequests, otherRunningRequests, ignoreLocalVsRemote, stats);
+			RequestLikelyAcceptedState ret = inputState;
+			
+			if(outputState.ordinal() < ret.ordinal())
+				ret = outputState;
+			if(transfersState.ordinal() < ret.ordinal())
+				ret = transfersState;
+			return ret;
 		}
 		
-		private RequestLikelyAcceptedState getRequestLikelyAcceptedState(
+		private RequestLikelyAcceptedState getRequestLikelyAcceptedStateBandwidth(
 				boolean input,
 				RunningRequestsSnapshot runningRequests,
 				RunningRequestsSnapshot otherRunningRequests, boolean ignoreLocalVsRemote, 
@@ -5569,6 +5573,25 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			double theirUsage = otherRunningRequests.calculate(ignoreLocalVsRemote, input);
 			if(logMINOR) Logger.minor(this, "Their usage is "+theirUsage);
 			if(ourUsage + theirUsage < stats.lowerLimit(input))
+				return RequestLikelyAcceptedState.LIKELY;
+			else
+				return RequestLikelyAcceptedState.UNLIKELY;
+		}
+
+		private RequestLikelyAcceptedState getRequestLikelyAcceptedStateTransfers(
+				RunningRequestsSnapshot runningRequests,
+				RunningRequestsSnapshot otherRunningRequests, boolean ignoreLocalVsRemote, 
+				PeerLoadStats stats) {
+			
+			int ourUsage = runningRequests.totalOutTransfers();
+			if(logMINOR) Logger.minor(this, "Our usage is "+ourUsage+" peer limit is "+stats.maxTransfersOutPeerLimit
+					+" lower limit is "+stats.maxTransfersOutLowerLimit+" realtime "+realTime);
+			if(ourUsage < stats.maxTransfersOutPeerLimit)
+				return RequestLikelyAcceptedState.GUARANTEED;
+			otherRunningRequests.log(PeerNode.this);
+			int theirUsage = otherRunningRequests.totalOutTransfers();
+			if(logMINOR) Logger.minor(this, "Their usage is "+theirUsage);
+			if(ourUsage + theirUsage < stats.maxTransfersOutLowerLimit)
 				return RequestLikelyAcceptedState.LIKELY;
 			else
 				return RequestLikelyAcceptedState.UNLIKELY;
