@@ -823,6 +823,16 @@ public class PeerManager {
 			PeerNode p = peers[i];
 			if(!p.isRoutable())
 				continue;
+			if(p.outputLoadTracker(true).getLastIncomingLoadStats() == null) {
+				if(logMINOR)
+					Logger.minor(this, "Skipping (no load stats RT): "+p.getPeer());
+				continue;
+			}
+			if(p.outputLoadTracker(false).getLastIncomingLoadStats() == null) {
+				if(logMINOR)
+					Logger.minor(this, "Skipping (no load stats bulk): "+p.getPeer());
+				continue;
+			}
 			if(p.isRoutingBackedOffEither()) {
 				if(logMINOR) Logger.minor(this, "Skipping (backoff): "+p+" loc "+p.getLocation());
 				continue;
@@ -991,6 +1001,11 @@ public class PeerManager {
 			if(p.isDisconnecting()) {
 				if(logMINOR)
 					Logger.minor(this, "Skipping (disconnecting): "+p.getPeer());
+				continue;
+			}
+			if(p.outputLoadTracker(realTime).getLastIncomingLoadStats() == null) {
+				if(logMINOR)
+					Logger.minor(this, "Skipping (no load stats): "+p.getPeer());
 				continue;
 			}
 			if(minVersion > 0 && Version.getArbitraryBuildNumber(p.getVersion(), -1) < minVersion) {
