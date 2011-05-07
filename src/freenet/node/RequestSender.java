@@ -838,7 +838,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 			switch(status) {
 			case FATAL:
 				offers.deleteLastOffer();
-				origTag.removeFetchingOfferedKeyFrom(pn);
+				pn.noLongerRoutingTo(origTag, true);
 				return;
 			case TWO_STAGE_TIMEOUT:
 				offers.deleteLastOffer();
@@ -847,7 +847,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 				return;
 			case KEEP:
 				offers.keepLastOffer();
-				origTag.removeFetchingOfferedKeyFrom(pn);
+				pn.noLongerRoutingTo(origTag, true);
 				break;
 			case TRY_ANOTHER:
 				offers.deleteLastOffer();
@@ -948,7 +948,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 						isSSK ? handleSSKOfferReply(m, pn, offer) :
 							handleCHKOfferReply(m, pn, offer, null);
 						if(status != OFFER_STATUS.FETCHING)
-							origTag.removeFetchingOfferedKeyFrom(pn);
+							pn.noLongerRoutingTo(origTag, true);
 						// If FETCHING, the block transfer will unlock it.
 						if(logMINOR) Logger.minor(this, "Forked get offered key due to two stage timeout completed with status "+status+" from message "+m+" for "+RequestSender.this+" to "+pn);
 				}
@@ -964,12 +964,12 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 				
 				public void onDisconnect(PeerContext ctx) {
 					// Ok.
-					origTag.removeFetchingOfferedKeyFrom(pn);
+					pn.noLongerRoutingTo(origTag, true);
 				}
 				
 				public void onRestarted(PeerContext ctx) {
 					// Ok.
-					origTag.removeFetchingOfferedKeyFrom(pn);
+					pn.noLongerRoutingTo(origTag, true);
 				}
 				
 				public int getPriority() {
@@ -1454,7 +1454,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 			Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e.getMessage()+ ')', e);
 			int t = timeSinceSent();
     		node.failureTable.onFailed(key, next, htl, t, t);
-			origTag.removeRoutingTo(next);
+    		next.noLongerRoutingTo(origTag, false);
 			return false; // try next node
 		} catch (CryptFormatException e) {
 			Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e+ ')');
@@ -1549,7 +1549,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     					if(!wasFork)
     						finish(VERIFY_FAILURE, sentTo, false);
     					else
-    						origTag.removeRoutingTo(sentTo);
+    						sentTo.noLongerRoutingTo(origTag, false);
     					return;
     				}
     				finish(SUCCESS, sentTo, false);
@@ -1642,7 +1642,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		next.successNotOverload(realTimeFlag);
 		int t = timeSinceSent();
 		node.failureTable.onFailed(key, next, htl, t, t);
-		origTag.removeRoutingTo(next);
+		next.noLongerRoutingTo(origTag, false);
 	}
 
 	private void handleDataNotFound(Message msg, boolean wasFork, PeerNode next) {
@@ -1651,7 +1651,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		if(!wasFork)
 			finish(DATA_NOT_FOUND, next, false);
 		else
-			this.origTag.removeRoutingTo(next);
+			next.noLongerRoutingTo(origTag, false);
 	}
 
 	private void handleRecentlyFailed(Message msg, boolean wasFork, PeerNode next) {

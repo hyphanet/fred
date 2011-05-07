@@ -482,7 +482,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				continue;
 			} catch (SyncSendWaitedTooLongException e) {
 				Logger.warning(this, "Failed to send request to "+next);
-				thisTag.removeRoutingTo(next);
+				next.noLongerRoutingTo(thisTag, false);
 				continue;
 			}
 			synchronized (this) {
@@ -503,7 +503,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             Message msg = null;
             
             if(!waitAccepted(next, thisTag)) {
-				thisTag.removeRoutingTo(next);
+				next.noLongerRoutingTo(thisTag, false);
 				if(failIfReceiveFailed(thisTag, next)) {
 					// Need to tell the peer that the DataInsert is not forthcoming.
 					// DataInsertRejected is overridden to work both ways.
@@ -551,7 +551,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			} catch (SyncSendWaitedTooLongException e) {
 				Logger.error(this, "Unable to send "+dataInsert+" to "+next+" in a reasonable time");
 				// Other side will fail. No need to do anything.
-				thisTag.removeRoutingTo(next);
+				next.noLongerRoutingTo(thisTag, false);
 				continue;
 			}
 
