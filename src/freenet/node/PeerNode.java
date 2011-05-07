@@ -5391,8 +5391,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(acceptState.ordinal() > worstAcceptable.ordinal()) return null;
 				if(tag.addRoutedTo(PeerNode.this, offeredKey))
 					return acceptState;
-				else
+				else {
+					if(logMINOR) Logger.minor(this, "Already routed to peer");
 					return null;
+				}
 			}
 		}
 		
