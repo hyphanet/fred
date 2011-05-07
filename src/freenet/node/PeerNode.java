@@ -5265,7 +5265,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		
 		private boolean shouldGrab() {
-			return !(acceptedBy == null && (!waitingFor.isEmpty()) && !failed);
+			return acceptedBy != null || waitingFor.isEmpty() || failed;
 		}
 
 		private synchronized PeerNode grab() {
