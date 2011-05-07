@@ -3754,8 +3754,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * stats message. If so, we will not be able to route requests to the node under new 
 	 * load management. */
 	private boolean noLoadStats() {
-		if(outputLoadTrackerRealTime.getLastIncomingLoadStats(true) == null) return true;
-		if(outputLoadTrackerRealTime.getLastIncomingLoadStats(false) == null) return true;
+		if(outputLoadTrackerRealTime.getLastIncomingLoadStats() == null) return true;
+		if(outputLoadTrackerRealTime.getLastIncomingLoadStats() == null) return true;
 		return false;
 	}
 	
