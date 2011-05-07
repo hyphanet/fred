@@ -935,7 +935,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			String message = 
 				"Running (adjusted): CHK in: "+expectedTransfersInCHK+" out: "+expectedTransfersOutCHK+
 					" SSK in: "+expectedTransfersInSSK+" out: "+expectedTransfersOutSSK
-					+" total="+totalRequests+(source == null ? "" : (" for "+source));
+					+" total="+totalRequests+(source == null ? "" : (" for "+source)) + (realTimeFlag ? " (realtime)" : " (bulk)");
 			if(expectedTransfersInCHK < 0 || expectedTransfersOutCHK < 0 ||
 					expectedTransfersInSSK < 0 || expectedTransfersOutSSK < 0)
 				Logger.error(this, message);
