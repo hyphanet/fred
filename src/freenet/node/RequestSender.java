@@ -767,6 +767,7 @@ loadWaiterLoop:
         				}
         				
         			}
+        			assert(expectedAcceptState != null);
         			lastExpectedAcceptState = expectedAcceptState;
         			lastNext = next;
     				if(logMINOR)
