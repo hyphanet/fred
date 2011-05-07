@@ -5269,7 +5269,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 
 		private synchronized PeerNode grab() {
-			if(logMINOR) Logger.minor(this, "Returning in first check: accepted by "+acceptedBy+" waiting for "+waitingFor.size()+" failed "+failed);
+			if(logMINOR) Logger.minor(this, "Returning in first check: accepted by "+acceptedBy+" waiting for "+waitingFor.size()+" failed "+failed+" accepted state "+acceptedState);
 			failed = false;
 			PeerNode got = acceptedBy;
 			acceptedBy = null; // Allow for it to wait again if necessary
@@ -5305,8 +5305,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			maybeNotifySlotWaiter();
 		}
 		
-		public synchronized PeerLoadStats getLastIncomingLoadStats() {
-			return lastIncomingLoadStats;
+		public PeerLoadStats getLastIncomingLoadStats() {
+			synchronized(routedToLock) {
+				return lastIncomingLoadStats;
+			}
 		}
 		
 		OutputLoadTracker(boolean realTime) {
