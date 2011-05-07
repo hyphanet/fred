@@ -764,7 +764,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 					Logger.normal(this, "Disconnected from " + waitingFor
 							+ " while waiting for reply on " + this);
 					waitingFor.noLongerRoutingTo(origTag, false);
-					origTag.removeRoutingTo(waitingFor);
 					return;
 				}
 				
