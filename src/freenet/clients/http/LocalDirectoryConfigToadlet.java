@@ -9,20 +9,22 @@ import freenet.support.HTMLNode;
 
 public class LocalDirectoryConfigToadlet extends LocalDirectoryToadlet {
 
-	public LocalDirectoryConfigToadlet(NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient, String postTo) {
+	public LocalDirectoryConfigToadlet (NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient,
+	        String postTo) {
 		super(core, highLevelSimpleClient, postTo);
 	}
 	
 	@Override
-	protected void createSelectDirectoryButton(HTMLNode formNode, String path) {
+	protected void createSelectDirectoryButton (HTMLNode formNode, String path) {
 		formNode.addChild("input", new String[] { "type", "name", "value" }, 
-				new String[] { "submit", "select-dir", NodeL10n.getBase().getString("ConfigToadlet.selectDirectory")});
+		        new String[] { "submit", "select-dir",
+		                NodeL10n.getBase().getString("ConfigToadlet.selectDirectory")});
 		formNode.addChild("input", new String[] { "type", "name", "value" }, 
-				new String[] { "hidden", "filename", path});
+		        new String[] { "hidden", "filename", path});
 	}
 
 	@Override
-	protected  Hashtable<String, String> persistenceFields(Hashtable<String, String> set) {
+	protected  Hashtable<String, String> persistenceFields (Hashtable<String, String> set) {
 		set.remove("path");
 		set.remove("formPassword");
 		return set;

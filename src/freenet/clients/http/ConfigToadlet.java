@@ -5,7 +5,6 @@ package freenet.clients.http;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.Config;
@@ -16,7 +15,6 @@ import freenet.config.NodeNeedRestartException;
 import freenet.config.Option;
 import freenet.config.SubConfig;
 import freenet.config.WrapperConfig;
-import freenet.l10n.BaseL10n;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -76,7 +74,8 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 				alertNode.addChild("br");
 				HTMLNode restartForm = alertNode.addChild("form",
 				        new String[] { "action", "method", "enctype", "id",  "accept-charset" },
-				        new String[] { "/", "post", "multipart/form-data", "restartForm", "utf-8"}).addChild("div");
+				        new String[] { "/", "post", "multipart/form-data", "restartForm", "utf-8"})
+				        .addChild("div");
 				restartForm.addChild("input",
 				        new String[] { "type", "name", "value" },
 				        new String[] { "hidden", "formPassword", node.clientCore.formPassword });
@@ -109,20 +108,24 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		}
 	}
 
-	public ConfigToadlet(String directoryBrowserPath, HighLevelSimpleClient client, Config conf, SubConfig subConfig, Node node, NodeClientCore core) {
+	public ConfigToadlet(String directoryBrowserPath, HighLevelSimpleClient client, Config conf,
+	        SubConfig subConfig, Node node, NodeClientCore core) {
 		this(directoryBrowserPath, client, conf, subConfig, node, core, null);
 	}
 
-	public ConfigToadlet(HighLevelSimpleClient client, Config conf, SubConfig subConfig, Node node, NodeClientCore core) {
+	public ConfigToadlet(HighLevelSimpleClient client, Config conf, SubConfig subConfig, Node node,
+	        NodeClientCore core) {
 		this(client, conf, subConfig, node, core, null);
 	}
 
-	public ConfigToadlet(String directoryBrowserPath, HighLevelSimpleClient client, Config conf, SubConfig subConfig, Node node, NodeClientCore core, FredPluginConfigurable plugin) {
+	public ConfigToadlet(String directoryBrowserPath, HighLevelSimpleClient client, Config conf,
+	        SubConfig subConfig, Node node, NodeClientCore core, FredPluginConfigurable plugin) {
 		this(client, conf, subConfig, node, core, plugin);
 		this.directoryBrowserPath = directoryBrowserPath;
 	}
 
-	public ConfigToadlet(HighLevelSimpleClient client, Config conf, SubConfig subConfig, Node node, NodeClientCore core, FredPluginConfigurable plugin) {
+	public ConfigToadlet(HighLevelSimpleClient client, Config conf, SubConfig subConfig, Node node,
+	        NodeClientCore core, FredPluginConfigurable plugin) {
 		super(client);
 		config=conf;
 		this.core = core;
@@ -132,10 +135,11 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		this.directoryBrowserPath = "/unset-browser-path/";
 	}
 
-	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws
+	        ToadletContextClosedException, IOException, RedirectException {
 		if (!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"), NodeL10n.getBase()
-			        .getString("Toadlet.unauthorized"));
+			super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"),
+			        NodeL10n.getBase().getString("Toadlet.unauthorized"));
 			return;
 		}
 
@@ -146,8 +150,8 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		}
 
 		//Entering directory selector from config page.
-		//This would be two loops if it checked for a redirect (key.startsWith("select-directory.")) before constructing
-		//the params string. It constructs it no matter what, then redirects if it turns out to be needed.
+		//This would be two loops if it checked for a redirect (key.startsWith("select-directory.")) before
+		//constructing params string. It always constructs it, then redirects if it turns out to be needed.
 		boolean directorySelector = false;
 		String params = "?";
 		String value;
@@ -159,7 +163,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 				params +="select-for="+key.substring("select-directory.".length())+'&';
 				directorySelector = true;
 			} else {
-				params +=key+'='+value+'&';
+				params += key+'='+value+'&';
 			}
 		}
 		if(directorySelector) {
@@ -192,13 +196,16 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 
 				//This ignores unrecognized parameters.
 				if(request.isPartSet(prefix+ '.' +configName)) {
-					value = request.getPartAsStringFailsafe(prefix+ '.' +configName, MAX_PARAM_VALUE_SIZE);
+					value = request.getPartAsStringFailsafe(prefix+ '.' +configName,
+					        MAX_PARAM_VALUE_SIZE);
 					if(!(o.getValueString().equals(value))){
-						if(logMINOR) Logger.minor(this, "Setting "+prefix+ '.' +configName+" to "+value);
+						if(logMINOR) Logger.minor(this, "Setting "+prefix+ '.' +configName+
+						        " to "+value);
 						try{
 							o.setValue(value);
 						} catch (InvalidConfigValueException e) {
-							errbuf.append(o.getName()).append(' ').append(e.getMessage()).append('\n');
+							errbuf.append(o.getName()).append(' ')
+							        .append(e.getMessage()).append('\n');
 						} catch (NodeNeedRestartException e) {
 							needRestart = true;
 						} catch (Exception e){
@@ -226,7 +233,8 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		HTMLNode contentNode = page.content;
 
 		if (errbuf.length() == 0) {
-			HTMLNode content = ctx.getPageMaker().getInfobox("infobox-success", l10n("appliedTitle"), contentNode, "configuration-applied", true);
+			HTMLNode content = ctx.getPageMaker().getInfobox("infobox-success", l10n("appliedTitle"),
+			        contentNode, "configuration-applied", true);
 			content.addChild("#", l10n("appliedSuccess"));
 
 			if (needRestart) {
@@ -251,15 +259,17 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 				}
 			}
 		} else {
-			HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", l10n("appliedFailureTitle"), contentNode, "configuration-error", true).
-				addChild("div", "class", "infobox-content");
+			HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", l10n("appliedFailureTitle"),
+			        contentNode, "configuration-error", true).addChild("div", "class", "infobox-content");
 			content.addChild("#", l10n("appliedFailureExceptions"));
 			content.addChild("br");
 			content.addChild("#", errbuf.toString());
 		}
 
-		HTMLNode content = ctx.getPageMaker().getInfobox("infobox-normal", l10n("possibilitiesTitle"), contentNode, "configuration-possibilities", false);
-		content.addChild("a", new String[]{"href", "title"}, new String[]{path(), l10n("shortTitle")}, l10n("returnToNodeConfig"));
+		HTMLNode content = ctx.getPageMaker().getInfobox("infobox-normal", l10n("possibilitiesTitle"),
+		        contentNode, "configuration-possibilities", false);
+		content.addChild("a", new String[]{"href", "title"}, new String[]{path(), l10n("shortTitle")},
+		        l10n("returnToNodeConfig"));
 		content.addChild("br");
 		addHomepageLink(content);
 
@@ -271,20 +281,21 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		return NodeL10n.getBase().getString("ConfigToadlet." + string);
 	}
 
-	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException,
+	        IOException {
 
 		if(!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403,
-					NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"),
-					NodeL10n.getBase().getString("Toadlet.unauthorized"));
+			        NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"),
+			        NodeL10n.getBase().getString("Toadlet.unauthorized"));
 			return;
 		}
 
 		final int mode = ctx.getPageMaker().parseMode(req, container);
 
 		PageNode page = ctx.getPageMaker().getPageNode(NodeL10n.getBase().
-				getString("ConfigToadlet.fullTitle", new String[]{"name"}, new String[]{node.getMyName()}),
-				ctx);
+		        getString("ConfigToadlet.fullTitle", new String[]{"name"},
+		        new String[]{node.getMyName()}), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 
@@ -352,7 +363,8 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 					                new String[] { o.getDefault() }) +
 					                (mode >= PageMaker.MODE_ADVANCED ? " ["+ fullName + ']' : ""),
 					        "cursor: help;" }).addChild(shortDesc);
-					HTMLNode configItemValueNode = configItemNode.addChild("span", "class", "config");
+					HTMLNode configItemValueNode =
+					        configItemNode.addChild("span", "class", "config");
 					if(value == null){
 						Logger.error(this, fullName + "has returned null from config!);");
 						continue;
@@ -365,25 +377,30 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 					}
 					//A value changed by the directory selector takes precedence.
 					if(req.isPartSet("select-for") && req.isPartSet("select-dir")) {
-						String whichOption = req.getPartAsStringFailsafe("select-for", MAX_PARAM_VALUE_SIZE);
+						String whichOption = req.getPartAsStringFailsafe("select-for",
+						        MAX_PARAM_VALUE_SIZE);
 						if(whichOption.equals(fullName)) {
-							value = req.getPartAsStringFailsafe("filename", MAX_PARAM_VALUE_SIZE);
+							value = req.getPartAsStringFailsafe("filename",
+							        MAX_PARAM_VALUE_SIZE);
 						}
 					}
 
 					ConfigCallback<?> callback = o.getCallback();
 					if(callback instanceof EnumerableOptionCallback)
-						configItemValueNode.addChild(addComboBox(value, (EnumerableOptionCallback) callback, fullName,
+						configItemValueNode.addChild(addComboBox(value,
+						        (EnumerableOptionCallback) callback, fullName,
 						        callback.isReadOnly()));
 					else if(callback instanceof BooleanCallback)
-						configItemValueNode.addChild(addBooleanComboBox(Boolean.valueOf(value), fullName,
-						        callback.isReadOnly()));
-					else if(callback instanceof ProgramDirectory.DirectoryCallback && !callback.isReadOnly()){
+						configItemValueNode.addChild(addBooleanComboBox(Boolean.valueOf(value),
+						        fullName, callback.isReadOnly()));
+					else if(callback instanceof ProgramDirectory.DirectoryCallback &&
+					        !callback.isReadOnly()){
 						configItemValueNode.addChild(addTextBox(value, fullName, o, false));
 						configItemValueNode.addChild("input",
 						        new String[] { "type", "name", "value" },
 						        new String[] { "submit", "select-directory."+fullName,
-						                NodeL10n.getBase().getString("QueueToadlet.browseToChange") });
+						                NodeL10n.getBase().
+						                        getString("QueueToadlet.browseToChange") });
 					}
 					else if (callback.isReadOnly())
 						configItemValueNode.addChild(addTextBox(value, fullName, o, true));

@@ -14,7 +14,7 @@ import freenet.support.api.HTTPRequest;
 
 public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallback {
 
-	protected FileInsertWizardToadlet(HighLevelSimpleClient client, NodeClientCore clientCore) {
+	protected FileInsertWizardToadlet (HighLevelSimpleClient client, NodeClientCore clientCore) {
 		super(client);
 		this.core = clientCore;
 	}
@@ -42,21 +42,20 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		wasCanonicalLastTime = false;
 	}
 	
-	public void handleMethodGET(URI uri, final HTTPRequest request, final ToadletContext ctx) 
-	throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleMethodGET (URI uri, final HTTPRequest request, final ToadletContext ctx)
+	        throws ToadletContextClosedException, IOException, RedirectException {
 
 //		// We ensure that we have a FCP server running
 //		if(!fcp.enabled){
 //			writeError(NodeL10n.getBase().getString("QueueToadlet.fcpIsMissing"), NodeL10n.getBase().getString("QueueToadlet.pleaseEnableFCP"), ctx, false);
 //			return;
 //		}
-//
 //		if(!core.hasLoadedQueue()) {
 //			writeError(NodeL10n.getBase().getString("QueueToadlet.notLoadedYetTitle"), NodeL10n.getBase().getString("QueueToadlet.notLoadedYet"), ctx, false);
 //			return;
 //		}
-//
-		if(container.publicGatewayMode() && !ctx.isAllowedFullAccess()) {
+
+		if (container.publicGatewayMode() && !ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"),
 			        NodeL10n.getBase().getString("Toadlet.unauthorized"));
 			return;
@@ -71,15 +70,14 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		HTMLNode contentNode = page.content;
 
 		/* add alert summary box */
-		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary());
+		if (ctx.isAllowedFullAccess()) contentNode.addChild(core.alerts.createSummary());
 
 		contentNode.addChild(createInsertBox(pageMaker, ctx, mode >= PageMaker.MODE_ADVANCED));
 		
 		writeHTMLReply(ctx, 200, "OK", null, pageNode.generate());
 	}
 	
-	private HTMLNode createInsertBox(PageMaker pageMaker, ToadletContext ctx, boolean isAdvancedModeEnabled) {
+	private HTMLNode createInsertBox (PageMaker pageMaker, ToadletContext ctx, boolean isAdvancedModeEnabled) {
 		/* the insert file box */
 		InfoboxNode infobox = pageMaker.getInfobox(
 		        NodeL10n.getBase().getString("QueueToadlet.insertFile"), "insert-queue", true);
@@ -91,20 +89,22 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		HTMLNode input = insertForm.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "radio", "keytype", "CHK" });
-		if((!rememberedLastTime && seclevel == NETWORK_THREAT_LEVEL.LOW) ||
-		        (rememberedLastTime && wasCanonicalLastTime && seclevel != NETWORK_THREAT_LEVEL.MAXIMUM))
+		if ((!rememberedLastTime && seclevel == NETWORK_THREAT_LEVEL.LOW) ||
+		        (rememberedLastTime && wasCanonicalLastTime && seclevel != NETWORK_THREAT_LEVEL.MAXIMUM)) {
 			input.addAttribute("checked", "checked");
+		}
 		insertForm.addChild("b", l10n("insertCanonicalTitle"));
 		insertForm.addChild("#", ": "+l10n("insertCanonical"));
 		insertForm.addChild("br");
 		input = insertForm.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "radio", "keytype", "SSK" });
-		if(seclevel == NETWORK_THREAT_LEVEL.MAXIMUM || (rememberedLastTime && !wasCanonicalLastTime))
+		if (seclevel == NETWORK_THREAT_LEVEL.MAXIMUM || (rememberedLastTime && !wasCanonicalLastTime)) {
 			input.addAttribute("checked", "checked");
+		}
 		insertForm.addChild("b", l10n("insertRandomTitle"));
 		insertForm.addChild("#", ": "+l10n("insertRandom"));
-		if(isAdvancedModeEnabled) {
+		if (isAdvancedModeEnabled) {
 			insertForm.addChild("br");
 			insertForm.addChild("input",
 			        new String[] { "type", "name", "value" },
@@ -115,13 +115,14 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 			        new String[] { "type", "name", "value" },
 			        new String[] { "text", "key", "KSK@" });
 		}
-		if(isAdvancedModeEnabled) {
+		if (isAdvancedModeEnabled) {
 			insertForm.addChild("br");
 			insertForm.addChild("br");
 			insertForm.addChild("input",
 			        new String[] { "type", "name", "checked" },
 			        new String[] { "checkbox", "compress", "checked" });
-			insertForm.addChild("#", ' ' + NodeL10n.getBase().getString("QueueToadlet.insertFileCompressLabel"));
+			insertForm.addChild("#", ' ' +
+			        NodeL10n.getBase().getString("QueueToadlet.insertFileCompressLabel"));
 		} else {
 			insertForm.addChild("input",
 			        new String[] { "type", "value" },
@@ -136,8 +137,7 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 				// FIXME l10n???
 				HTMLNode option = select.addChild("option", "value", mode.name(),
 				        NodeL10n.getBase().getString("InsertContext.CompatibilityMode."+mode.name()));
-				if(mode == CompatibilityMode.COMPAT_CURRENT)
-					option.addAttribute("selected", "");
+				if (mode == CompatibilityMode.COMPAT_CURRENT) option.addAttribute("selected", "");
 			}
 			insertForm.addChild("br");
 			insertForm.addChild("#", l10n("splitfileCryptoKeyLabel")+": ");
@@ -148,8 +148,9 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		insertForm.addChild("br");
 		insertForm.addChild("br");
 		// Local file browser
-		if(ctx.isAllowedFullAccess()) {
-			insertForm.addChild("#", NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseLabel")+": ");
+		if (ctx.isAllowedFullAccess()) {
+			insertForm.addChild("#",
+			        NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseLabel")+": ");
 			insertForm.addChild("input",
 			        new String[] { "type", "name", "value" },
 			        new String[] { "submit", "insert-local",
@@ -169,18 +170,15 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		return insertBox;
 	}
 	
-	String l10n(String key) {
+	String l10n (String key) {
 		return NodeL10n.getBase().getString("FileInsertWizardToadlet."+key);
 	}
 	
-	String l10n(String key, String pattern, String value) {
+	String l10n (String key, String pattern, String value) {
 		return NodeL10n.getBase().getString("FileInsertWizardToadlet."+key, pattern, value);
 	}
 
-	public boolean isEnabled(ToadletContext ctx) {
+	public boolean isEnabled (ToadletContext ctx) {
 		return (!container.publicGatewayMode()) || ((ctx != null) && ctx.isAllowedFullAccess());
 	}
-
-
-
 }

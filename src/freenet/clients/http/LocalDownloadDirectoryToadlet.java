@@ -9,20 +9,22 @@ import java.util.Hashtable;
 
 public class LocalDownloadDirectoryToadlet extends LocalDirectoryToadlet {
 
-	LocalDownloadDirectoryToadlet(NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient, String postTo) {
-		super(core, highLevelSimpleClient, postTo);
+	LocalDownloadDirectoryToadlet (NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient, String post) {
+		super(core, highLevelSimpleClient, post);
 	}
 
 	@Override
-	protected void createSelectDirectoryButton(HTMLNode formNode, String path) {
-		formNode.addChild("input", new String[] { "type", "name", "value" },
-				new String[] { "submit", "select-dir", NodeL10n.getBase().getString("QueueToadlet.download")});
-		formNode.addChild("input", new String[] { "type", "name", "value" },
-				new String[] { "hidden", "path", path});
+	protected void createSelectDirectoryButton (HTMLNode formNode, String path) {
+		formNode.addChild("input",
+		        new String[] { "type", "name", "value" },
+		        new String[] { "submit", "select-dir", NodeL10n.getBase().getString("QueueToadlet.download")});
+		formNode.addChild("input",
+		        new String[] { "type", "name", "value" },
+		        new String[] { "hidden", "path", path});
 	}
 
 	@Override
-	protected Hashtable<String, String> persistenceFields(Hashtable<String, String> set) {
+	protected Hashtable<String, String> persistenceFields (Hashtable<String, String> set) {
 		Hashtable<String, String> fieldPairs = new Hashtable<String, String>();
 		for(String key : set.keySet()) {
 			if(key.equals("bulkDownloads") || key.equals("filterData") || key.equals("key")) {

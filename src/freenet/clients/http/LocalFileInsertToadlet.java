@@ -15,53 +15,50 @@ public class LocalFileInsertToadlet extends LocalFileBrowserToadlet {
 
 	public static final String PATH = "/insert-browse/";
 	public static final String POST_TO = "/uploads/";
-	
-	public LocalFileInsertToadlet(NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient) {
+
+	public LocalFileInsertToadlet (NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient) {
 		super(core, highLevelSimpleClient);
 	}
-	
+
 	@Override
-	public String path()
-	{
+	public String path() {
 		return PATH;
 	}
-	
+
 	@Override
-	protected String postTo()
-	{
+	protected String postTo() {
 		return POST_TO;
 	}
 
     @Override
-	protected Hashtable<String, String> persistenceFields(Hashtable<String, String> set){
+	protected Hashtable<String, String> persistenceFields (Hashtable<String, String> set) {
 		Hashtable<String, String> fieldPairs = new Hashtable<String, String>();
 		FreenetURI furi = null;
 		String key = set.get("key");
-		if(key != null) {
+		if (key != null) {
 			try {
 				furi = new FreenetURI(key);
 			} catch (MalformedURLException e) {
 				furi = null;
 			}
 		}
-		
+
 		String element = set.get("compress");
-		if(element != null && Boolean.valueOf(element)) {
+		if (element != null && Boolean.valueOf(element)) {
 			fieldPairs.put("compress", element);
 		}
-		
+
 		element = set.get("compatibilityMode"); 
-		if(element != null) {
+		if (element != null) {
 			fieldPairs.put("compatibilityMode", element);
 		}
-		
-		if(furi != null)
-		{
+
+		if (furi != null) {
 			fieldPairs.put("key", furi.toASCIIString());
 		}
-		
+
 		element = set.get("overrideSplitfileKey");
-		if(element != null) fieldPairs.put("overrideSplitfileKey", element);
+		if (element != null) fieldPairs.put("overrideSplitfileKey", element);
 		return fieldPairs;
 	}
 }

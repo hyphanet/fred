@@ -14,18 +14,18 @@ public class LocalFileN2NMToadlet extends LocalFileBrowserToadlet {
 
 	public static final String PATH = "/n2nm-browse/";
 	public static final String POST_TO = "/send_n2ntm/";
-	
-	public LocalFileN2NMToadlet(NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient) {
+
+	public LocalFileN2NMToadlet (NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient) {
 		super(core, highLevelSimpleClient);
 	}
-	
+
 	@Override
 	public String path() {
 		return PATH;
 	}
-	
+
 	@Override
-	protected String postTo(){
+	protected String postTo() {
 		return POST_TO;
 	}
 	
@@ -34,15 +34,13 @@ public class LocalFileN2NMToadlet extends LocalFileBrowserToadlet {
 	}
 
     @Override
-	protected Hashtable<String, String> persistenceFields(Hashtable<String, String> set){
+	protected Hashtable<String, String> persistenceFields (Hashtable<String, String> set) {
 		Hashtable<String, String> fieldPairs = new Hashtable<String, String>();
 		String message = set.get("message");
-		if(message != null) fieldPairs.put("message", message);
+		if (message != null) fieldPairs.put("message", message);
 		Set<String> keys = set.keySet();
-		for(String key : keys)
-		{
-			if(key.startsWith("node_"))
-			{
+		for (String key : keys) {
+			if (key.startsWith("node_")) {
 				fieldPairs.put(key, "1");
 			}
 		}
