@@ -170,16 +170,22 @@ class UpdateDeployContext {
 		while((line = br.readLine()) != null) {
 			
 			if(line.startsWith("wrapper.java.classpath.")) {
-				if(writtenNewJar && line.startsWith("wrapper.java.classpath."+mainClasspathNo+'=')) {
-					mainLine = "wrapper.java.classpath."+mainClasspathNo+'='+newMain;
+				if(line.startsWith("wrapper.java.classpath."+mainClasspathNo+'=')) {
+					if(writtenNewJar)
+						mainLine = "wrapper.java.classpath."+mainClasspathNo+'='+newMain;
+					else
+						mainLine = line;
 					if(extLine != null) {
 						bw.write(extLine+'\n');
 						bw.write(mainLine+'\n');
 						writtenMain = true;
 						writtenExt = true;
 					}
-				} else if(writtenNewExt && line.startsWith("wrapper.java.classpath."+extClasspathNo+'=')) {
-					extLine = "wrapper.java.classpath."+extClasspathNo+'='+newExt;
+				} else if(line.startsWith("wrapper.java.classpath."+extClasspathNo+'=')) {
+					if(writtenNewExt)
+						extLine = "wrapper.java.classpath."+extClasspathNo+'='+newExt;
+					else
+						extLine = line;
 					if(mainLine != null) {
 						bw.write(extLine+'\n');
 						bw.write(mainLine+'\n');
