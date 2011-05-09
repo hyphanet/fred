@@ -184,7 +184,7 @@ class UpdateDeployContext {
 					}
 				} else if(line.startsWith("wrapper.java.classpath."+extClasspathNo+'=')) {
 					if(writtenNewExt) {
-						int lower = Math.max(mainClasspathNo, extClasspathNo);
+						int lower = Math.min(mainClasspathNo, extClasspathNo);
 						extLine = "wrapper.java.classpath."+lower+'='+newExt;
 					} else
 						extLine = line;
