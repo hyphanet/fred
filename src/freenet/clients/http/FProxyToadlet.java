@@ -319,11 +319,15 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			        new String[] { "submit", "download", l10n("downloadInBackgroundToDiskButton") });
 			NodeL10n.getBase().addL10nSubstitution(optionForm, "FProxyToadlet.downloadInBackgroundToDisk",
 			        new String[] { "dir", "page" },
-			        new HTMLNode[] { HTMLNode.text(core.getDownloadsDir().getAbsolutePath()), DOWNLOADS_LINK });
+			        new HTMLNode[] { new HTMLNode("input",
+			                new String[] { "type", "name", "value", "size" },
+			                new String[] { "text", "path", core.getDownloadsDir().getAbsolutePath(),
+			                        String.valueOf(core.getDownloadsDir().getAbsolutePath().length()) }),
+			                DOWNLOADS_LINK });
 			optionForm.addChild("input",
 			        new String[] { "type", "name", "value" },
-			        new String[] { "submit", "select-download-dir",
-					               NodeL10n.getBase().getString("ConfigToadlet.selectDirectory")} );
+			        new String[] { "submit", "select-location",
+					               NodeL10n.getBase().getString("QueueToadlet.browseToChange")+"..."} );
 			if(!dontShowFilter) {
 				HTMLNode filterControl = optionForm.addChild("div", l10n("filterData"));
 				HTMLNode f = filterControl.addChild("input",
@@ -1108,10 +1112,12 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		server.register(symlinkToadlet, null, "/sl/", true, false);
 
 		SecurityLevelsToadlet seclevels = new SecurityLevelsToadlet(client, node, core);
-		server.register(seclevels, "FProxyToadlet.categoryConfig", "/seclevels/", true, "FProxyToadlet.seclevelsTitle", "FProxyToadlet.seclevels", true, null);
+		server.register(seclevels, "FProxyToadlet.categoryConfig", "/seclevels/", true, "FProxyToadlet.seclevelsTitle",
+		        "FProxyToadlet.seclevels", true, null);
 
 		PproxyToadlet pproxy = new PproxyToadlet(client, node, core);
-		server.register(pproxy, "FProxyToadlet.categoryConfig", "/plugins/", true, "FProxyToadlet.pluginsTitle", "FProxyToadlet.plugins", true, null);
+		server.register(pproxy, "FProxyToadlet.categoryConfig", "/plugins/", true, "FProxyToadlet.pluginsTitle",
+		        "FProxyToadlet.plugins", true, null);
 
 		SubConfig[] sc = config.getConfigs();
 		Arrays.sort(sc);
@@ -1119,8 +1125,10 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		for(SubConfig cfg : sc) {
 			String prefix = cfg.getPrefix();
 			if(prefix.equals("security-levels") || prefix.equals("pluginmanager")) continue;
-			LocalDirectoryConfigToadlet localDirectoryConfigToadlet = new LocalDirectoryConfigToadlet(core, client, prefix);
-			ConfigToadlet configtoadlet = new ConfigToadlet(localDirectoryConfigToadlet.path(), client, config, cfg, node, core);
+			LocalDirectoryConfigToadlet localDirectoryConfigToadlet = new LocalDirectoryConfigToadlet(core, client,
+			        "/config/"+prefix);
+			ConfigToadlet configtoadlet = new ConfigToadlet(localDirectoryConfigToadlet.path(), client, config, cfg,
+			        node, core);
 			server.register(configtoadlet, "FProxyToadlet.categoryConfig", "/config/"+prefix, true,
 			        "ConfigToadlet."+prefix, "ConfigToadlet.title."+prefix, true, configtoadlet);
 			server.register(localDirectoryConfigToadlet, null, localDirectoryConfigToadlet.path(), true, false);
@@ -1130,16 +1138,20 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		server.register(welcometoadlet, null, "/welcome/", true, false);
 
 		DarknetConnectionsToadlet friendsToadlet = new DarknetConnectionsToadlet(node, core, client);
-		server.register(friendsToadlet, "FProxyToadlet.categoryFriends", "/friends/", true, "FProxyToadlet.friendsTitle", "FProxyToadlet.friends", true, null);
+		server.register(friendsToadlet, "FProxyToadlet.categoryFriends", "/friends/", true,
+		        "FProxyToadlet.friendsTitle", "FProxyToadlet.friends", true, null);
 
 		DarknetAddRefToadlet addRefToadlet = new DarknetAddRefToadlet(node, core, client);
-		server.register(addRefToadlet, "FProxyToadlet.categoryFriends", "/addfriend/", true, "FProxyToadlet.addFriendTitle", "FProxyToadlet.addFriend", true, null);
+		server.register(addRefToadlet, "FProxyToadlet.categoryFriends", "/addfriend/", true,
+		        "FProxyToadlet.addFriendTitle", "FProxyToadlet.addFriend", true, null);
 
 		OpennetConnectionsToadlet opennetToadlet = new OpennetConnectionsToadlet(node, core, client);
-		server.register(opennetToadlet, "FProxyToadlet.categoryStatus", "/strangers/", true, "FProxyToadlet.opennetTitle", "FProxyToadlet.opennet", true, opennetToadlet);
+		server.register(opennetToadlet, "FProxyToadlet.categoryStatus", "/strangers/", true,
+		        "FProxyToadlet.opennetTitle", "FProxyToadlet.opennet", true, opennetToadlet);
 
 		ChatForumsToadlet chatForumsToadlet = new ChatForumsToadlet(client, core.alerts, node.pluginManager, core.node);
-		server.register(chatForumsToadlet, "FProxyToadlet.categoryChat", "/chat/", true, "FProxyToadlet.chatForumsTitle", "FProxyToadlet.chatForums", true, chatForumsToadlet);
+		server.register(chatForumsToadlet, "FProxyToadlet.categoryChat", "/chat/", true,
+		        "FProxyToadlet.chatForumsTitle", "FProxyToadlet.chatForums", true, chatForumsToadlet);
 
 		N2NTMToadlet n2ntmToadlet = new N2NTMToadlet(node, core, client);
 		server.register(n2ntmToadlet, null, "/send_n2ntm/", true, true);
@@ -1153,13 +1165,16 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		server.register(browserTestToadlet, null, "/test/", true, false);
 
 		StatisticsToadlet statisticsToadlet = new StatisticsToadlet(node, core, client);
-		server.register(statisticsToadlet, "FProxyToadlet.categoryStatus", "/stats/", true, "FProxyToadlet.statsTitle", "FProxyToadlet.stats", true, null);
+		server.register(statisticsToadlet, "FProxyToadlet.categoryStatus", "/stats/", true, "FProxyToadlet.statsTitle",
+		        "FProxyToadlet.stats", true, null);
 
 		ConnectivityToadlet connectivityToadlet = new ConnectivityToadlet(client, node, core);
-		server.register(connectivityToadlet, "FProxyToadlet.categoryStatus", "/connectivity/", true, "ConnectivityToadlet.connectivityTitle", "ConnectivityToadlet.connectivity", true, null);
+		server.register(connectivityToadlet, "FProxyToadlet.categoryStatus", "/connectivity/", true,
+		        "ConnectivityToadlet.connectivityTitle", "ConnectivityToadlet.connectivity", true, null);
 
 		TranslationToadlet translationToadlet = new TranslationToadlet(client, core);
-		server.register(translationToadlet, "FProxyToadlet.categoryConfig", TranslationToadlet.TOADLET_URL, true, "TranslationToadlet.title", "TranslationToadlet.titleLong", true, null);
+		server.register(translationToadlet, "FProxyToadlet.categoryConfig", TranslationToadlet.TOADLET_URL, true,
+		        "TranslationToadlet.title", "TranslationToadlet.titleLong", true, null);
 
 		FirstTimeWizardToadlet firstTimeWizardToadlet = new FirstTimeWizardToadlet(client, node, core);
 		server.register(firstTimeWizardToadlet, null, FirstTimeWizardToadlet.TOADLET_URL, true, false);

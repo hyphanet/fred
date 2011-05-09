@@ -16,6 +16,7 @@ import freenet.config.NodeNeedRestartException;
 import freenet.config.Option;
 import freenet.config.SubConfig;
 import freenet.config.WrapperConfig;
+import freenet.l10n.BaseL10n;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -356,14 +357,13 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 						continue;
 					}
 
-
 					//Values persisted through browser override currently applied ones
 					if(req.isPartSet(fullName)) {
 						//TODO: This may have to be Base64 encoded
 						value = req.getPartAsStringFailsafe(fullName, MAX_PARAM_VALUE_SIZE);
 					}
 					//A value changed by the directory selector takes precedence.
-					if(req.isPartSet("select-for") && req.isPartSet("selected-dir")) {
+					if(req.isPartSet("select-for") && req.isPartSet("select-dir")) {
 						String whichOption = req.getPartAsStringFailsafe("select-for", MAX_PARAM_VALUE_SIZE);
 						if(whichOption.equals(fullName)) {
 							value = req.getPartAsStringFailsafe("filename", MAX_PARAM_VALUE_SIZE);
@@ -381,7 +381,8 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 						configItemValueNode.addChild(addTextBox(value, fullName, o, false));
 						configItemValueNode.addChild("input",
 						        new String[] { "type", "name", "value" },
-						        new String[] { "submit", "select-directory."+fullName, l10n("selectDirectory") });
+						        new String[] { "submit", "select-directory."+fullName,
+						                NodeL10n.getBase().getString("QueueToadlet.browseToChange") });
 					}
 					else if (callback.isReadOnly())
 						configItemValueNode.addChild(addTextBox(value, fullName, o, true));

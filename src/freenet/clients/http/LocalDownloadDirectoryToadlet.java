@@ -16,7 +16,7 @@ public class LocalDownloadDirectoryToadlet extends LocalDirectoryToadlet {
 	@Override
 	protected void createSelectDirectoryButton(HTMLNode formNode, String path) {
 		formNode.addChild("input", new String[] { "type", "name", "value" },
-				new String[] { "submit", "insert", NodeL10n.getBase().getString("QueueToadlet.download")});
+				new String[] { "submit", "select-dir", NodeL10n.getBase().getString("QueueToadlet.download")});
 		formNode.addChild("input", new String[] { "type", "name", "value" },
 				new String[] { "hidden", "path", path});
 	}
@@ -25,11 +25,19 @@ public class LocalDownloadDirectoryToadlet extends LocalDirectoryToadlet {
 	protected Hashtable<String, String> persistenceFields(Hashtable<String, String> set) {
 		Hashtable<String, String> fieldPairs = new Hashtable<String, String>();
 		for(String key : set.keySet()) {
-			if (key.equals("bulkDownloads") || key.equals("filterData")) {
+			if(key.equals("bulkDownloads") || key.equals("filterData") || key.equals("key")) {
 				fieldPairs.put(key, set.get(key));
+				//From FProxy page, set download button.
+				if(key.equals("key")) {
+					fieldPairs.put("download", "1");
+					fieldPairs.put("return-type", "disk");
+				//From bulk downloads, set download button.
+				} else if(key.equals("bulkDownloads")) {
+					fieldPairs.put("insert", "1");
+					fieldPairs.put("target", "disk");
+				}
 			}
 		}
-		fieldPairs.put("target", "disk");
 		return fieldPairs;
 	}
 }

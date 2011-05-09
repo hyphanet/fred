@@ -191,9 +191,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				        "&overrideSplitfileKey="+request.getPartAsStringFailsafe("overrideSplitfileKey", 65));
 				ctx.sendReplyHeaders(302, "Found", responseHeaders, null, 0);
 				return;
-			//A download destination directory has been selected, so re-render page.
-			} else if (request.isPartSet("select-location") && request.isPartSet("select-dir")) {
-				handleMethodGET(uri, request, ctx);
 			} else if (request.isPartSet("select-location")) {
 				try {
 					throw new RedirectException(LocalDirectoryConfigToadlet.basePath()+"/downloads/");
@@ -394,8 +391,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				String persistence = request.getPartAsStringFailsafe("persistence", 32);
 				String returnType = request.getPartAsStringFailsafe("return-type", 32);
 				boolean filterData = request.isPartSet("filterData");
+				String downloadPath = core.getDownloadsDir().getAbsolutePath();
+				if(request.isPartSet("path"))
+					downloadPath = request.getPartAsStringFailsafe("path", MAX_FILENAME_LENGTH);
+				File downloadsDir = getDownloadsDir(downloadPath);
 				try {
-					fcp.makePersistentGlobalRequestBlocking(fetchURI, filterData, expectedMIMEType, persistence, returnType, false);
+					fcp.makePersistentGlobalRequestBlocking(fetchURI, filterData, expectedMIMEType, persistence, returnType, false, downloadsDir);
 				} catch (NotAllowedException e) {
 					this.writeError(NodeL10n.getBase().getString("QueueToadlet.errorDToDisk"), NodeL10n.getBase().getString("QueueToadlet.errorDToDiskConfig"), ctx);
 					return;
@@ -418,14 +419,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				if(target == null) target = "direct";
 
 				String downloadPath = core.getDownloadsDir().getAbsolutePath();
-				if(request.isPartSet("path")) {
+				if(request.isPartSet("path"))
 					downloadPath = request.getPartAsStringFailsafe("path", MAX_FILENAME_LENGTH);
-				}
-
-				File downloadsDir = new File(downloadPath);
-				//This could be typed in by the user, so it may have to be created.
-				if(!((downloadsDir.exists() && downloadsDir.isDirectory()) || downloadsDir.mkdirs()))
-					downloadsDir = core.getDownloadsDir();
+				File downloadsDir = getDownloadsDir(downloadPath);
 
 				for(int i=0; i<keys.length; i++) {
 					String currentKey = keys[i];
@@ -880,6 +876,14 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			request.freeParts();
 		}
 		this.handleMethodGET(uri, new HTTPRequestImpl(uri, "GET"), ctx);
+	}
+
+	private File getDownloadsDir(String downloadPath) {
+		File downloadsDir = new File(downloadPath);
+		//This could be typed in by the user, so it may have to be created.
+		if(!((downloadsDir.exists() && downloadsDir.isDirectory()) || downloadsDir.mkdirs()))
+			downloadsDir = core.getDownloadsDir();
+		return downloadsDir;
 	}
 
 	private void sendPanicingPage(ToadletContext ctx) throws ToadletContextClosedException, IOException {
