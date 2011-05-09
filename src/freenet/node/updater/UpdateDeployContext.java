@@ -171,9 +171,10 @@ class UpdateDeployContext {
 			
 			if(line.startsWith("wrapper.java.classpath.")) {
 				if(line.startsWith("wrapper.java.classpath."+mainClasspathNo+'=')) {
-					if(writtenNewJar)
-						mainLine = "wrapper.java.classpath."+mainClasspathNo+'='+newMain;
-					else
+					if(writtenNewJar) {
+						int higher = Math.max(mainClasspathNo, extClasspathNo);
+						mainLine = "wrapper.java.classpath."+higher+'='+newMain;
+					} else
 						mainLine = line;
 					if(extLine != null) {
 						bw.write(extLine+'\n');
@@ -182,9 +183,10 @@ class UpdateDeployContext {
 						writtenExt = true;
 					}
 				} else if(line.startsWith("wrapper.java.classpath."+extClasspathNo+'=')) {
-					if(writtenNewExt)
-						extLine = "wrapper.java.classpath."+extClasspathNo+'='+newExt;
-					else
+					if(writtenNewExt) {
+						int lower = Math.max(mainClasspathNo, extClasspathNo);
+						extLine = "wrapper.java.classpath."+lower+'='+newExt;
+					} else
 						extLine = line;
 					if(mainLine != null) {
 						bw.write(extLine+'\n');
