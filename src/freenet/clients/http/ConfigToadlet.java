@@ -142,6 +142,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		 //Returning from directory selector with a selection, re-render config page with any changes.
 		if(request.isPartSet("select-dir")) {
 			handleMethodGET(uri, request, ctx);
+			return;
 		}
 
 		//Entering directory selector from config page.
