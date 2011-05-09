@@ -151,24 +151,53 @@ class UpdateDeployContext {
 
 		String line;
 			
+		boolean writtenReload = false;
 		boolean writtenMain = false;
 		boolean writtenExt = false;
-		boolean writtenReload = false;
 		
 		String newMain = mainJarAbsolute ? newMainJar.getAbsolutePath() : newMainJar.getPath();
 		String newExt = extJarAbsolute ? newExtJar.getAbsolutePath() : newExtJar.getPath();
 		
+		String extLine = null;
+		String mainLine = null;
+		
+		// We MUST put the ext before the main jar, or auto-update of freenet-ext.jar on Windows won't work.
+		// The main jar refers to freenet-ext.jar so that java -jar freenet.jar works.
+		// Therefore, on Windows, if we update freenet-ext.jar, it will use freenet.jar and freenet-ext.jar
+		// and freenet-ext.jar.new as well. The old freenet-ext.jar will take precedence, and we won't be
+		// able to overwrite either of them, so we'll just restart every 5 minutes forever!
+		
 		while((line = br.readLine()) != null) {
 			
 			if(line.startsWith("wrapper.java.classpath.")) {
-				if(writtenNewJar && line.startsWith("wrapper.java.classpath."+mainClasspathNo+'=')) {
-					bw.write("wrapper.java.classpath."+mainClasspathNo+'='+newMain+'\n');
-					System.err.println("Rewritten wrapper.conf for main jar");
-					writtenMain = true;
-				} else if(writtenNewExt && line.startsWith("wrapper.java.classpath."+extClasspathNo+'=')) {
-					bw.write("wrapper.java.classpath."+extClasspathNo+'='+newExt+'\n');
-					System.err.println("Rewritten wrapper.conf for ext jar");
-					writtenExt = true;
+				if(line.startsWith("wrapper.java.classpath."+mainClasspathNo+'=')) {
+					String main;
+					if(writtenNewJar)
+						main = newMain;
+					else
+						main = line.substring(("wrapper.java.classpath."+mainClasspathNo+'=').length());
+					int higher = Math.max(mainClasspathNo, extClasspathNo);
+					mainLine = "wrapper.java.classpath."+higher+'='+main;
+					if(extLine != null) {
+						bw.write(extLine+'\n');
+						bw.write(mainLine+'\n');
+						writtenMain = true;
+						writtenExt = true;
+					}
+				} else if(line.startsWith("wrapper.java.classpath."+extClasspathNo+'=')) {
+					String ext;
+					if(writtenNewExt)
+						ext = newExt;
+					else
+						ext = line.substring(("wrapper.java.classpath."+extClasspathNo+'=').length());
+					int lower = Math.min(mainClasspathNo, extClasspathNo);
+					extLine = "wrapper.java.classpath."+lower+'='+ext;
+					if(mainLine != null) {
+						bw.write(extLine+'\n');
+						bw.write(mainLine+'\n');
+						writtenMain = true;
+						writtenExt = true;
+					}
 				} else {
 					bw.write(line+'\n');
 				}
