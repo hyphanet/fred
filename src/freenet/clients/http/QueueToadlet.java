@@ -17,6 +17,7 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -137,7 +138,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		this.core = core;
 		this.fcp = fcp;
 		this.uploads = uploads;
-		browser = new LocalFileInsertToadlet(core, client);
 		if(fcp == null) throw new NullPointerException();
 		fcp.setCompletionCallback(this);
 		try {
@@ -155,8 +155,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		}
 
 		try {
-			// Browse... button
-			if (request.getPartAsString("insert-local", 128).length() > 0) {
+			// Browse... button on upload page
+			if (request.isPartSet("insert-local")) {
 				
 				FreenetURI insertURI;
 				String keyType = request.getPartAsStringFailsafe("keytype", 10);
@@ -170,7 +170,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						fiw.reportRandomInsert();
 				} else if("specify".equals(keyType)) {
 					try {
-						String u = request.getPartAsString("key", MAX_KEY_LENGTH);
+						String u = request.getPartAsStringFailsafe("key", MAX_KEY_LENGTH);
 						insertURI = new FreenetURI(u);
 						if(logMINOR)
 							Logger.minor(this, "Inserting key: "+insertURI+" ("+u+")");
@@ -191,6 +191,15 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				        "&overrideSplitfileKey="+request.getPartAsStringFailsafe("overrideSplitfileKey", 65));
 				ctx.sendReplyHeaders(302, "Found", responseHeaders, null, 0);
 				return;
+			//A download destination directory has been selected, so re-render page.
+			} else if (request.isPartSet("select-location") && request.isPartSet("select-dir")) {
+				handleMethodGET(uri, request, ctx);
+			} else if (request.isPartSet("select-location")) {
+				try {
+					throw new RedirectException(LocalDirectoryConfigToadlet.basePath()+"/downloads/");
+				} catch (URISyntaxException e) {
+					//Shouldn't happen, path is defined as such.
+				}
 			}
 
 			String pass = request.getPartAsStringFailsafe("formPassword", 32);
@@ -202,7 +211,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				return;
 			}
 
-			if(request.isPartSet("delete_request") && (request.getPartAsString("delete_request", 128).length() > 0)) {
+			if(request.isPartSet("delete_request") && (request.getPartAsStringFailsafe("delete_request", 128).length() > 0)) {
 				// Confirm box
 				PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmDeleteTitle"), ctx);
 				HTMLNode inner = page.content;
@@ -243,14 +252,18 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					}
 					infoList.addChild("#", l10n("deleteFileFromTemp"));
 					infoList.addChild("input", new String[] { "type", "name", "value", "checked" },
-							new String[] { "checkbox", "identifier-"+part, identifier, "checked" });
+					        new String[] { "checkbox", "identifier-"+part, identifier, "checked" });
 				}
 				
 				content.addChild("p", l10n("confirmDelete"));
 				content.addChild(deleteNode);
 
-				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_request", NodeL10n.getBase().getString("Toadlet.yes") });
-				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.no") });
+				deleteForm.addChild("input",
+				        new String[] { "type", "name", "value" },
+				        new String[] { "submit", "remove_request", NodeL10n.getBase().getString("Toadlet.yes") });
+				deleteForm.addChild("input",
+				        new String[] { "type", "name", "value" },
+				        new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.no") });
 
 				this.writeHTMLReply(ctx, 200, "OK", page.outer.generate());
 				return;
@@ -373,13 +386,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 				FreenetURI fetchURI;
 				try {
-					fetchURI = new FreenetURI(request.getPartAsString("key", MAX_KEY_LENGTH));
+					fetchURI = new FreenetURI(request.getPartAsStringFailsafe("key", MAX_KEY_LENGTH));
 				} catch (MalformedURLException e) {
 					writeError(NodeL10n.getBase().getString("QueueToadlet.errorInvalidURI"), NodeL10n.getBase().getString("QueueToadlet.errorInvalidURIToD"), ctx);
 					return;
 				}
-				String persistence = request.getPartAsString("persistence", 32);
-				String returnType = request.getPartAsString("return-type", 32);
+				String persistence = request.getPartAsStringFailsafe("persistence", 32);
+				String returnType = request.getPartAsStringFailsafe("return-type", 32);
 				boolean filterData = request.isPartSet("filterData");
 				try {
 					fcp.makePersistentGlobalRequestBlocking(fetchURI, filterData, expectedMIMEType, persistence, returnType, false);
@@ -393,7 +406,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				writePermanentRedirect(ctx, "Done", path());
 				return;
 			} else if(request.isPartSet("bulkDownloads")) {
-				String bulkDownloadsAsString = request.getPartAsString("bulkDownloads", 262144);
+				String bulkDownloadsAsString = request.getPartAsStringFailsafe("bulkDownloads", 262144);
 				String[] keys = bulkDownloadsAsString.split("\n");
 				if(("".equals(bulkDownloadsAsString)) || (keys.length < 1)) {
 					writePermanentRedirect(ctx, "Done", path());
@@ -401,8 +414,18 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 				LinkedList<String> success = new LinkedList<String>(), failure = new LinkedList<String>();
 				boolean filterData = request.isPartSet("filterData");
-				String target = request.getPartAsString("target", 128);
+				String target = request.getPartAsStringFailsafe("target", 128);
 				if(target == null) target = "direct";
+
+				String downloadPath = core.getDownloadsDir().getAbsolutePath();
+				if(request.isPartSet("path")) {
+					downloadPath = request.getPartAsStringFailsafe("path", MAX_FILENAME_LENGTH);
+				}
+
+				File downloadsDir = new File(downloadPath);
+				//This could be typed in by the user, so it may have to be created.
+				if(!((downloadsDir.exists() && downloadsDir.isDirectory()) || downloadsDir.mkdirs()))
+					downloadsDir = core.getDownloadsDir();
 
 				for(int i=0; i<keys.length; i++) {
 					String currentKey = keys[i];
@@ -414,7 +437,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 					try {
 						FreenetURI fetchURI = new FreenetURI(currentKey);
-						fcp.makePersistentGlobalRequestBlocking(fetchURI, filterData, null, "forever", target, false);
+						fcp.makePersistentGlobalRequestBlocking(fetchURI, filterData, null, "forever", target, false,
+						        downloadsDir);
 						success.add(fetchURI.toString(true, false));
 					} catch (Exception e) {
 						failure.add(currentKey);
@@ -599,7 +623,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						}
 				}
 				return;
-			} else if (request.isPartSet("insert-local-file")) {
+			} else if (request.isPartSet("select-file")) {
 				final String filename = request.getPartAsString("filename", MAX_FILENAME_LENGTH);
 				if(logMINOR) Logger.minor(this, "Inserting local file: "+filename);
 				final File file = new File(filename);
@@ -708,7 +732,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						}
 				}
 				return;
-			} else if (request.isPartSet("insert-local-dir")) {
+			} else if (request.isPartSet("select-dir")) {
 				final String filename = request.getPartAsString("filename", MAX_FILENAME_LENGTH);
 				if(logMINOR) Logger.minor(this, "Inserting local directory: "+filename);
 				final File file = new File(filename);
@@ -1555,8 +1579,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			}
 		}
 
-		if(!uploads)
+		if(!uploads) {
 			contentNode.addChild(createBulkDownloadForm(ctx, pageMaker));
+		}
 
 		return pageNode;
 	}
@@ -1765,29 +1790,60 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	}
 
 	private HTMLNode createBulkDownloadForm(ToadletContext ctx, PageMaker pageMaker) {
-		InfoboxNode infobox = pageMaker.getInfobox(NodeL10n.getBase().getString("QueueToadlet.downloadFiles"), "grouped-downloads", true);
+		InfoboxNode infobox = pageMaker.getInfobox(
+		        NodeL10n.getBase().getString("QueueToadlet.downloadFiles"), "grouped-downloads", true);
 		HTMLNode downloadBox = infobox.outer;
 		HTMLNode downloadBoxContent = infobox.content;
 		HTMLNode downloadForm = ctx.addFormChild(downloadBoxContent, path(), "queueDownloadForm");
-		downloadForm.addChild("#", NodeL10n.getBase().getString("QueueToadlet.downloadFilesInstructions"));
+		downloadForm.addChild("#", l10n("downloadFilesInstructions"));
 		downloadForm.addChild("br");
-		downloadForm.addChild("textarea", new String[] { "id", "name", "cols", "rows" }, new String[] { "bulkDownloads", "bulkDownloads", "120", "8" });
+		downloadForm.addChild("textarea",
+		        new String[] { "id", "name", "cols", "rows" },
+		        new String[] { "bulkDownloads", "bulkDownloads", "120", "8" });
 		downloadForm.addChild("br");
-		downloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert", NodeL10n.getBase().getString("QueueToadlet.download") });
+		downloadForm.addChild("input",
+		        new String[] { "type", "name", "value" },
+		        new String[] { "submit", "insert", l10n("download") });
 		PHYSICAL_THREAT_LEVEL threatLevel = core.node.securityLevels.getPhysicalThreatLevel();
 		if(threatLevel == PHYSICAL_THREAT_LEVEL.LOW) {
-			downloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "target", "disk" });
+			downloadForm.addChild("input",
+			        new String[] { "type", "name", "value" },
+			        new String[] { "hidden", "target", "disk" });
+			selectLocation(downloadForm);
 		} else if(threatLevel == PHYSICAL_THREAT_LEVEL.HIGH || threatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
-			downloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "target", "direct" });
+			downloadForm.addChild("input",
+			        new String[] { "type", "name", "value" },
+			        new String[] { "hidden", "target", "direct" });
 		} else {
-			HTMLNode select = downloadForm.addChild("select", "name", "target");
-			select.addChild("option", "value", "disk", l10n("bulkDownloadSelectOptionDisk"));
-			select.addChild("option", new String[] { "value", "selected" }, new String[] { "direct", "true" }, l10n("bulkDownloadSelectOptionDirect"));
+			downloadForm.addChild("br");
+			downloadForm.addChild("input",
+			        new String[] { "type", "value", "name" },
+			        new String[] { "radio", "disk", "target" },
+					//Nicer spacing for radio button
+			        ' '+l10n("bulkDownloadSelectOptionDisk")+' ');
+			selectLocation(downloadForm);
+			downloadForm.addChild("br");
+			downloadForm.addChild("input",
+			        new String[] { "type", "value", "name", "checked" },
+			        new String[] { "radio", "direct", "target", "checked" },
+			        ' '+l10n("bulkDownloadSelectOptionDirect")+' ');
 		}
 		HTMLNode filterControl = downloadForm.addChild("div", l10n("filterData"));
-		filterControl.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "checkbox", "filterData", "filterData", "checked"});
+		filterControl.addChild("input",
+		        new String[] { "type", "name", "value", "checked" },
+		        new String[] { "checkbox", "filterData", "filterData", "checked"});
 		filterControl.addChild("#", l10n("filterDataMessage"));
 		return downloadBox;
+	}
+
+	private void selectLocation(HTMLNode node) {
+		node.addChild("input",
+		        new String[] { "type", "name", "value", "size" },
+		        new String[] { "text", "path", core.getDownloadsDir().getAbsolutePath(),
+				               String.valueOf(core.getDownloadsDir().getAbsolutePath().length())});
+		node.addChild("input",
+		        new String[] { "type", "name", "value" },
+		        new String[] { "submit", "select-location", l10n("browseToChange")+"..." });
 	}
 
 	/**

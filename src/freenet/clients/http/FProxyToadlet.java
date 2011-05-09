@@ -43,10 +43,7 @@ import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.l10n.NodeL10n;
-import freenet.node.Node;
-import freenet.node.NodeClientCore;
-import freenet.node.RequestClient;
-import freenet.node.RequestStarter;
+import freenet.node.*;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.pluginmanager.PluginInfoWrapper;
@@ -1092,6 +1089,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		QueueToadlet downloadToadlet = new QueueToadlet(core, core.getFCPServer(), client, false);
 		server.register(downloadToadlet, "FProxyToadlet.categoryQueue", "/downloads/", true,
 		        "FProxyToadlet.downloadsTitle", "FProxyToadlet.downloads", false, downloadToadlet);
+		LocalDownloadDirectoryToadlet localDownloadDirectoryToadlet =
+		        new LocalDownloadDirectoryToadlet(core, client, "/downloads/");
+		server.register(localDownloadDirectoryToadlet, null, localDownloadDirectoryToadlet.path(), true, false);
 		QueueToadlet uploadToadlet = new QueueToadlet(core, core.getFCPServer(), client, true);
 		server.register(uploadToadlet, "FProxyToadlet.categoryQueue", "/uploads/", true, "FProxyToadlet.uploadsTitle",
 		        "FProxyToadlet.uploads", false, uploadToadlet);
@@ -1119,9 +1119,11 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		for(SubConfig cfg : sc) {
 			String prefix = cfg.getPrefix();
 			if(prefix.equals("security-levels") || prefix.equals("pluginmanager")) continue;
-			ConfigToadlet configtoadlet = new ConfigToadlet(client, config, cfg, node, core);
-			server.register(configtoadlet, "FProxyToadlet.categoryConfig", "/config/"+prefix, true, "ConfigToadlet."+prefix, "ConfigToadlet.title."+prefix, true, configtoadlet);
-			server.register(configtoadlet.getBrowser(), null, configtoadlet.getBrowser().path(), true, false);
+			LocalDirectoryConfigToadlet localDirectoryConfigToadlet = new LocalDirectoryConfigToadlet(core, client, prefix);
+			ConfigToadlet configtoadlet = new ConfigToadlet(localDirectoryConfigToadlet.path(), client, config, cfg, node, core);
+			server.register(configtoadlet, "FProxyToadlet.categoryConfig", "/config/"+prefix, true,
+			        "ConfigToadlet."+prefix, "ConfigToadlet.title."+prefix, true, configtoadlet);
+			server.register(localDirectoryConfigToadlet, null, localDirectoryConfigToadlet.path(), true, false);
 		}
 
 		WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, core, node, bookmarks);
@@ -1141,7 +1143,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 		N2NTMToadlet n2ntmToadlet = new N2NTMToadlet(node, core, client);
 		server.register(n2ntmToadlet, null, "/send_n2ntm/", true, true);
-		server.register(n2ntmToadlet.getBrowser(), null, LocalFileN2NMToadlet.PATH, true, false);
+		LocalFileN2NMToadlet localFileN2NMToadlet = new LocalFileN2NMToadlet(core, client);
+		server.register(localFileN2NMToadlet, null, LocalFileN2NMToadlet.PATH, true, false);
 
 		BookmarkEditorToadlet bookmarkEditorToadlet = new BookmarkEditorToadlet(client, core, bookmarks);
 		server.register(bookmarkEditorToadlet, null, "/bookmarkEditor/", true, false);

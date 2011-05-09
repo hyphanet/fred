@@ -5,6 +5,7 @@ package freenet.clients.http;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.Config;
@@ -36,7 +37,7 @@ import freenet.support.api.HTTPRequest;
 public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 	// If a setting has to be more than a meg, something is seriously wrong!
 	private static final int MAX_PARAM_VALUE_SIZE = 1024*1024;
-	private final LocalDirectoryConfigToadlet localDirectoryConfigToadlet;
+	private String directoryBrowserPath;
 	private final SubConfig subConfig;
 	private final Config config;
 	private final NodeClientCore core;
@@ -107,8 +108,17 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		}
 	}
 
+	public ConfigToadlet(String directoryBrowserPath, HighLevelSimpleClient client, Config conf, SubConfig subConfig, Node node, NodeClientCore core) {
+		this(directoryBrowserPath, client, conf, subConfig, node, core, null);
+	}
+
 	public ConfigToadlet(HighLevelSimpleClient client, Config conf, SubConfig subConfig, Node node, NodeClientCore core) {
 		this(client, conf, subConfig, node, core, null);
+	}
+
+	public ConfigToadlet(String directoryBrowserPath, HighLevelSimpleClient client, Config conf, SubConfig subConfig, Node node, NodeClientCore core, FredPluginConfigurable plugin) {
+		this(client, conf, subConfig, node, core, plugin);
+		this.directoryBrowserPath = directoryBrowserPath;
 	}
 
 	public ConfigToadlet(HighLevelSimpleClient client, Config conf, SubConfig subConfig, Node node, NodeClientCore core, FredPluginConfigurable plugin) {
@@ -118,28 +128,19 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		this.node = node;
 		this.subConfig = subConfig;
 		this.plugin = plugin;
-		this.localDirectoryConfigToadlet = new LocalDirectoryConfigToadlet(core, client, path());
+		this.directoryBrowserPath = "/unset-browser-path/";
 	}
 
-	public Toadlet getBrowser() {
-		return localDirectoryConfigToadlet;
-	}
-
-	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		if (!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"), NodeL10n.getBase()
 			        .getString("Toadlet.unauthorized"));
 			return;
 		}
 
-		 //Returning from directory selector with a selection.
-		if(request.isPartSet("selected-dir")) {
+		 //Returning from directory selector with a selection, re-render config page with any changes.
+		if(request.isPartSet("select-dir")) {
 			handleMethodGET(uri, request, ctx);
-		}
-
-		//Returning from directory selector without a selection.
-		if(request.isPartSet("select-for")) {
-			localDirectoryConfigToadlet.handleMethodPOST(uri, request, ctx);
 		}
 
 		//Entering directory selector from config page.
@@ -147,10 +148,10 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		//the params string. It constructs it no matter what, then redirects if it turns out to be needed.
 		boolean directorySelector = false;
 		String params = "?";
+		String value;
 		for(String key : request.getParts()) {
 			 //Prepare parts for page selection redirect:
 			//Extract option and put into "select-for"; preserve others.
-			String value;
 			value = request.getPartAsStringFailsafe(key, MAX_PARAM_VALUE_SIZE);
 			if(key.startsWith("select-directory.")) {
 				params +="select-for="+key.substring("select-directory.".length())+'&';
@@ -162,7 +163,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		if(directorySelector) {
 			MultiValueTable<String, String> headers = new MultiValueTable<String, String>(1);
 			//params ends in &. Download directory browser starts in default download directory.
-			headers.put("Location", localDirectoryConfigToadlet.path()+params+
+			headers.put("Location", directoryBrowserPath+params+
 			        "path="+core.getDownloadsDir().getAbsolutePath());
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
@@ -189,7 +190,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 
 				//This ignores unrecognized parameters.
 				if(request.isPartSet(prefix+ '.' +configName)) {
-					String value = request.getPartAsStringFailsafe(prefix+ '.' +configName, MAX_PARAM_VALUE_SIZE);
+					value = request.getPartAsStringFailsafe(prefix+ '.' +configName, MAX_PARAM_VALUE_SIZE);
 					if(!(o.getValueString().equals(value))){
 						if(logMINOR) Logger.minor(this, "Setting "+prefix+ '.' +configName+" to "+value);
 						try{
@@ -209,7 +210,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			// Wrapper params
 			String wrapperConfigName = "wrapper.java.maxmemory";
 			if(request.isPartSet(wrapperConfigName)) {
-				String value = request.getPartAsStringFailsafe(wrapperConfigName, MAX_PARAM_VALUE_SIZE);
+				value = request.getPartAsStringFailsafe(wrapperConfigName, MAX_PARAM_VALUE_SIZE);
 				if(!WrapperConfig.getWrapperProperty(wrapperConfigName).equals(value)) {
 					if(logMINOR) Logger.minor(this, "Setting "+wrapperConfigName+" to "+value);
 					WrapperConfig.setWrapperProperty(wrapperConfigName, value);

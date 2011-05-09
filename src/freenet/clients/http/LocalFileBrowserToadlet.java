@@ -40,19 +40,19 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 	 */
 	protected abstract Hashtable<String, String> persistenceFields(Hashtable<String, String> set);
 	
-	protected void createInsertDirectoryButton(HTMLNode node, String path) {
+	protected void createSelectDirectoryButton(HTMLNode node, String absolutePath) {
 		node.addChild("input",
 		        new String[]{"type", "name", "value"},
-		        new String[]{"submit", "insert-local-dir", l10n("insert")});
+		        new String[]{"submit", "select-dir", l10n("insert")});
 		node.addChild("input",
 		        new String[]{"type", "name", "value"},
-		        new String[]{"hidden", "filename", path});
+		        new String[]{"hidden", "filename", absolutePath});
 	}
 	
-	protected void createInsertFileButton(HTMLNode node, String absolutePath) {
+	protected void createSelectFileButton(HTMLNode node, String absolutePath) {
 		node.addChild("input",
 		        new String[]{"type", "name", "value"},
-		        new String[]{"submit", "insert-local-file", l10n("insert")});
+		        new String[]{"submit", "select-file", l10n("insert")});
 		node.addChild("input",
 		        new String[]{"type", "name", "value"},
 		        new String[]{"hidden", "filename", absolutePath});
@@ -240,14 +240,14 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 						// Select directory
 						HTMLNode cellNode = fileRow.addChild("td");
 						HTMLNode formNode = ctx.addFormChild(cellNode, postTo(), "insertLocalFileForm");
-						createInsertDirectoryButton(formNode, currentFile.getAbsolutePath());
-                        formNode.addChild(persistenceFields);
+						createSelectDirectoryButton(formNode, currentFile.getAbsolutePath());
+						formNode.addChild(persistenceFields);
 						
 						// Change directory
 						HTMLNode directoryCellNode = fileRow.addChild("td");
 						HTMLNode directoryFormNode = ctx.addFormChild(directoryCellNode, path(), "insertLocalFileForm");
 						createChangeDirButton(directoryFormNode, currentFile.getName(), currentFile.getAbsolutePath());
-                        directoryFormNode.addChild(persistenceFields);
+						directoryFormNode.addChild(persistenceFields);
 					} else {
 						fileRow.addChild("td");
 						fileRow.addChild("td", "class", "unreadable-file", currentFile.getName());
@@ -258,8 +258,8 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 						//Select file
 						HTMLNode cellNode = fileRow.addChild("td");
 						HTMLNode formNode = ctx.addFormChild(cellNode, postTo(), "insertLocalFileForm");
-						createInsertFileButton(formNode, currentFile.getAbsolutePath());
-                        formNode.addChild(persistenceFields);
+						createSelectFileButton(formNode, currentFile.getAbsolutePath());
+						formNode.addChild(persistenceFields);
 						
 						fileRow.addChild("td", currentFile.getName());
 						fileRow.addChild("td", "class", "right-align", String.valueOf(currentFile.length()));
