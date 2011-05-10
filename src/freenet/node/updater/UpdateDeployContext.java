@@ -186,7 +186,9 @@ class UpdateDeployContext {
 						writtenMain = true;
 						writtenExt = true;
 					}
-				} else if(line.startsWith("wrapper.java.classpath."+mainClasspathNo+'=')) {
+				} else if(line.equals("wrapper.java.classpath."+mainClasspathNo+"=freenet.jar.new") ||
+						line.equals("wrapper.java.classpath."+mainClasspathNo+"=freenet.jar") ||
+						(line.startsWith("wrapper.java.classpath."+mainClasspathNo+"=freenet") && line.endsWith(".jar"))) {
 					String main;
 					if(writtenNewJar)
 						main = newMain;
