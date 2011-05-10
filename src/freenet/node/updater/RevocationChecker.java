@@ -135,7 +135,12 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 				manager.blow("Cannot start fetch for the auto-update revocation key", true);
 			}
 			synchronized(this) {
-				if(revocationGetter == cg) revocationGetter = null;
+				if(revocationGetter == cg) {
+					revocationGetter = null;
+					if(tmpBlobFile != null)
+						tmpBlobFile.delete();
+					tmpBlobFile = null;
+				}
 			}
 			return false;
 		} catch (DatabaseDisabledException e) {
