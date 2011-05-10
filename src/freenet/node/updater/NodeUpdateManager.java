@@ -810,6 +810,7 @@ public class NodeUpdateManager {
 			}
 		}
 
+		if(!(writtenNewJar || writtenNewExt)) return true;
 		try {
 			ctx.rewriteWrapperConf(writtenNewJar, writtenNewExt);
 		} catch (IOException e) {
