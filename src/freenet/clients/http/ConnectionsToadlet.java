@@ -546,7 +546,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			
 			String visibilityS = request.getPartAsStringFailsafe("visibility", 10);
 			FRIEND_VISIBILITY visibility = null;
-			if(visibilityS != null)
+			if(visibilityS != null && !visibilityS.equals(""))
 				visibility = FRIEND_VISIBILITY.valueOf(visibilityS);
 			
 			if(trust == null && !isOpennet()) {
