@@ -80,8 +80,8 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		}
 		boolean wasRunning = false;
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+		ClientGetter cg = null;
 		try {
-			ClientGetter cg = null;
 			ClientGetter toCancel = null;
 			synchronized(this) {
 				if(aggressive && !wasAggressive) {
@@ -133,6 +133,9 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 			} else {
 				Logger.error(this, "Not able to start the revocation fetcher.");
 				manager.blow("Cannot start fetch for the auto-update revocation key", true);
+			}
+			synchronized(this) {
+				if(revocationGetter == cg) revocationGetter = null;
 			}
 			return false;
 		} catch (DatabaseDisabledException e) {
