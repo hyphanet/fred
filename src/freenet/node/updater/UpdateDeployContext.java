@@ -45,6 +45,11 @@ class UpdateDeployContext {
 	File newExtJar;
 	boolean mainJarAbsolute;
 	boolean extJarAbsolute;
+	boolean currentExtJarHasNewExtension;
+	
+	boolean currentExtJarHasNewExtension() {
+		return currentExtJarHasNewExtension;
+	}
 	
 	UpdateDeployContext() throws UpdaterParserException {
 		Properties p = WrapperManager.getProperties();
@@ -61,6 +66,7 @@ class UpdateDeployContext {
 					newExtJar = new File(extJar.getParent(), "freenet-ext.jar");
 					extJarAbsolute = isAbsolute;
 					extClasspathNo = propNo;
+					currentExtJarHasNewExtension = true;
 					continue;
 				} else if(name.equals("freenet-ext.jar")) {
 					extJar = f;
