@@ -128,6 +128,7 @@ public class DarknetPeerNode extends PeerNode {
 		}
 
 		public boolean isStricterThan(FRIEND_VISIBILITY theirVisibility) {
+			if(theirVisibility == null) return true;
 			// Higher number = more strict.
 			return theirVisibility.code < code;
 		}
@@ -276,7 +277,8 @@ public class DarknetPeerNode extends PeerNode {
 			fs.putSingle("disableRoutingHasBeenSetLocally", "true");
 		fs.putSingle("trustLevel", trustLevel.name());
 		fs.putSingle("ourVisibility", ourVisibility.name());
-		fs.putSingle("theirVisibility", theirVisibility.name());
+		if(theirVisibility != null)
+			fs.putSingle("theirVisibility", theirVisibility.name());
 
 		return fs;
 	}
@@ -1748,6 +1750,7 @@ public class DarknetPeerNode extends PeerNode {
 	/** FIXME This should be the worse of our visibility for the peer and that which the peer has told us. 
 	 * I.e. visibility is reciprocal. */
 	public synchronized FRIEND_VISIBILITY getVisibility() {
+		// ourVisibility can't be null.
 		if(ourVisibility.isStricterThan(theirVisibility)) return ourVisibility;
 		return theirVisibility;
 	}
@@ -1787,6 +1790,7 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	public synchronized FRIEND_VISIBILITY getTheirVisibility() {
+		if(theirVisibility == null) return FRIEND_VISIBILITY.NO;
 		return theirVisibility;
 	}
 	
