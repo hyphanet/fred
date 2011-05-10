@@ -128,8 +128,12 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 			}
 			return wasRunning;
 		} catch (FetchException e) {
-			Logger.error(this, "Not able to start the revocation fetcher.");
-			manager.blow("Cannot start fetch for the auto-update revocation key", true);
+			if(e.mode == FetchException.RECENTLY_FAILED) {
+				Logger.error(this, "Cannot start revocation fetcher because recently failed");
+			} else {
+				Logger.error(this, "Not able to start the revocation fetcher.");
+				manager.blow("Cannot start fetch for the auto-update revocation key", true);
+			}
 			return false;
 		} catch (DatabaseDisabledException e) {
 			// Impossible
