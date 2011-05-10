@@ -786,88 +786,28 @@ public class NodeUpdateManager {
 
 		boolean tryEasyWay = File.pathSeparatorChar == ':' && !hasNewExtJar;
 
-		File mainJar = ctx.getMainJar();
-		File newMainJar = ctx.getNewMainJar();
-
 		if(hasNewMainJar) {
-			writtenNewJar = true;
-			boolean writtenToTempFile = false;
+			File mainJar = ctx.getMainJar();
+			File newMainJar = ctx.getNewMainJar();
 			try {
-				if(newMainJar.exists()) {
-					if(!newMainJar.delete()) {
-						if(newMainJar.exists()) {
-							System.err.println("Cannot write to preferred new jar location "+newMainJar);
-							if(tryEasyWay) {
-								try {
-									newMainJar = File.createTempFile("freenet", ".jar", mainJar.getParentFile());
-								} catch (IOException e) {
-									failUpdate("Cannot write to any other location either - disk full? "+e);
-									return false;
-								}
-								// Try writing to it
-								try {
-									mainUpdater.writeJarTo(newMainJar);
-									writtenToTempFile = true;
-								} catch (IOException e) {
-									newMainJar.delete();
-									failUpdate("Cannot write new jar - disk full? "+e);
-									return false;
-								}
-							} else {
-								// Try writing it to the new one even though we can't delete it.
-								mainUpdater.writeJarTo(newMainJar);
-							}
-						} else {
-							mainUpdater.writeJarTo(newMainJar);
-						}
-					} else {
-						if(logMINOR) Logger.minor(this, "Deleted old jar "+newMainJar);
-						mainUpdater.writeJarTo(newMainJar);
-					}
-				} else {
-					mainUpdater.writeJarTo(newMainJar);
-				}
-			} catch (IOException e) {
-				failUpdate("Cannot update: Cannot write to " + (tryEasyWay ? " temp file " : "new jar ")+newMainJar);
+				if(writeJar(mainJar, newMainJar, mainUpdater, "main", tryEasyWay))
+					writtenNewJar = true;
+			} catch (UpdateFailedException e) {
+				failUpdate(e.getMessage());
 				return false;
 			}
-
-			if(tryEasyWay) {
-				// Do it the easy way. Just rewrite the main jar.
-				if(!newMainJar.renameTo(mainJar)) {
-					Logger.error(this, "Cannot rename temp file "+newMainJar+" over original jar "+mainJar);
-					if(writtenToTempFile) {
-						// Fail the update - otherwise we will leak disk space
-						newMainJar.delete();
-						failUpdate("Cannot write to preferred new jar location and cannot rename temp file over old jar, update failed");
-						return false;
-					}
-					// Try the hard way
-				} else {
-					System.err.println("Written new Freenet jar: "+mainUpdater.getWrittenVersion());
-					return true;
-				}
-			}
-
 		}
 
-		// Easy way didn't work or we can't do the easy way. Try the hard way.
-
 		if(hasNewExtJar) {
-
-			writtenNewExt = true;
-
-			// Write the new ext jar
-
+			File extJar = ctx.getExtJar();
 			File newExtJar = ctx.getNewExtJar();
-
 			try {
-				extUpdater.writeJarTo(newExtJar);
-			} catch (IOException e) {
-				failUpdate("Cannot write new ext jar to "+newExtJar);
+				if(writeJar(extJar, newExtJar, extUpdater, "ext", tryEasyWay))
+					writtenNewExt = true;
+			} catch (UpdateFailedException e) {
+				failUpdate(e.getMessage());
 				return false;
 			}
-
 		}
 
 		try {
@@ -885,6 +825,85 @@ public class NodeUpdateManager {
 		}
 
 		return true;
+	}
+
+	/** Write a jar. Returns true if the caller needs to rewrite the config, false if he doesn't, or
+	 * throws if it fails.
+	 * @param mainJar The location of the current jar file.
+	 * @param newMainJar The location of the new jar file.
+	 * @param mainUpdater The NodeUpdater for the file in question, so we can ask it to write the file.
+	 * @param name The name of the jar for logging.
+	 * @param tryEasyWay If true, attempt to rename the new file directly over the old one. This avoids
+	 * the need to rewrite the wrapper config file.
+	 * @return True if the caller needs to rewrite the config, false if he doesn't (because easy way 
+	 * worked).
+	 * @throws UpdateFailedException If something breaks.
+	 */
+	private static boolean writeJar(File mainJar, File newMainJar, NodeUpdater mainUpdater,
+			String name, boolean tryEasyWay) throws UpdateFailedException {
+		boolean writtenToTempFile = false;
+		try {
+			if(newMainJar.exists()) {
+				if(!newMainJar.delete()) {
+					if(newMainJar.exists()) {
+						System.err.println("Cannot write to preferred new jar location "+newMainJar);
+						if(tryEasyWay) {
+							try {
+								newMainJar = File.createTempFile("freenet", ".jar", mainJar.getParentFile());
+							} catch (IOException e) {
+								throw new UpdateFailedException("Cannot write to any other location either - disk full? "+e);
+							}
+							// Try writing to it
+							try {
+								mainUpdater.writeJarTo(newMainJar);
+								writtenToTempFile = true;
+							} catch (IOException e) {
+								newMainJar.delete();
+								throw new UpdateFailedException("Cannot write new jar - disk full? "+e);
+							}
+						} else {
+							// Try writing it to the new one even though we can't delete it.
+							mainUpdater.writeJarTo(newMainJar);
+						}
+					} else {
+						mainUpdater.writeJarTo(newMainJar);
+					}
+				} else {
+					if(logMINOR) Logger.minor(NodeUpdateManager.class, "Deleted old jar "+newMainJar);
+					mainUpdater.writeJarTo(newMainJar);
+				}
+			} else {
+				mainUpdater.writeJarTo(newMainJar);
+			}
+		} catch (IOException e) {
+			throw new UpdateFailedException("Cannot update: Cannot write to " + (tryEasyWay ? " temp file " : "new jar ")+newMainJar);
+		}
+
+		if(tryEasyWay) {
+			// Do it the easy way. Just rewrite the main jar.
+			if(!newMainJar.renameTo(mainJar)) {
+				Logger.error(NodeUpdateManager.class, "Cannot rename temp file "+newMainJar+" over original jar "+mainJar);
+				if(writtenToTempFile) {
+					// Fail the update - otherwise we will leak disk space
+					newMainJar.delete();
+					throw new UpdateFailedException("Cannot write to preferred new jar location and cannot rename temp file over old jar, update failed");
+				}
+				// Try the hard way
+			} else {
+				System.err.println("Written new Freenet jar: "+mainUpdater.getWrittenVersion());
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	@SuppressWarnings("serial")
+	private static class UpdateFailedException extends Exception {
+
+		public UpdateFailedException(String message) {
+			super(message);
+		}
+		
 	}
 
 	/** Restart the node. Does not return. */
