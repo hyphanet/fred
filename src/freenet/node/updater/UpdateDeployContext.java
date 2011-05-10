@@ -168,9 +168,11 @@ class UpdateDeployContext {
 		// able to overwrite either of them, so we'll just restart every 5 minutes forever!
 		
 		while((line = br.readLine()) != null) {
-			
+			// The classpath numbers are not reliable.
+			// We have to check the content.
 			if(line.startsWith("wrapper.java.classpath.")) {
-				if(line.startsWith("wrapper.java.classpath."+extClasspathNo+'=')) {
+				if(line.equals("wrapper.java.classpath."+extClasspathNo+"=freenet-ext.jar") || 
+						line.equals("wrapper.java.classpath."+extClasspathNo+"=freenet-ext.jar.new")) {
 					String ext;
 					if(writtenNewExt)
 						ext = newExt;
