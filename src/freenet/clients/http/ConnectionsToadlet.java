@@ -547,12 +547,18 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			
 			String visibilityS = request.getPartAsStringFailsafe("visibility", 10);
 			FRIEND_VISIBILITY visibility = null;
-			if(visibilityS != null)
+			if(visibilityS != null && !visibilityS.equals(""))
 				visibility = FRIEND_VISIBILITY.valueOf(visibilityS);
 			
 			if(trust == null && !isOpennet()) {
 				// FIXME: Layering violation. Ideally DarknetPeerNode would do this check.
 				this.sendErrorPage(ctx, 200, l10n("noTrustLevelAddingFriendTitle"), l10n("noTrustLevelAddingFriend"), !isOpennet());
+				return;
+			}
+			
+			if(visibility == null && !isOpennet()) {
+				// FIXME: Layering violation. Ideally DarknetPeerNode would do this check.
+				this.sendErrorPage(ctx, 200, l10n("noVisibilityLevelAddingFriendTitle"), l10n("noVisibilityLevelAddingFriend"), !isOpennet());
 				return;
 			}
 			

@@ -1374,6 +1374,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		}
 
 		// Okay, we can receive it
+		System.out.println("Receiving main jar "+version+" from "+source.userToString());
 
 		final File temp;
 
@@ -1485,6 +1486,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		}
 
 		// Okay, we can receive it
+		System.out.println("Receiving extra jar "+version+" from "+source.userToString());
 
 		final File temp;
 

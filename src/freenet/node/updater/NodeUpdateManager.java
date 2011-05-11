@@ -784,7 +784,10 @@ public class NodeUpdateManager {
 		boolean writtenNewJar = false;
 		boolean writtenNewExt = false;
 
-		boolean tryEasyWay = File.pathSeparatorChar == ':' && !hasNewExtJar;
+		// If wrapper.conf currently contains freenet-ext.jar.new, we need to update wrapper.conf even
+		// on unix. Reason: freenet-ext.jar.new won't be read if it's not the first item on the classpath,
+		// because freenet.jar includes freenet-ext.jar implicitly via its manifest.
+		boolean tryEasyWay = File.pathSeparatorChar == ':' && !ctx.currentExtJarHasNewExtension();
 
 		if(hasNewMainJar) {
 			File mainJar = ctx.getMainJar();
@@ -810,6 +813,7 @@ public class NodeUpdateManager {
 			}
 		}
 
+		if(!(writtenNewJar || writtenNewExt)) return true;
 		try {
 			ctx.rewriteWrapperConf(writtenNewJar, writtenNewExt);
 		} catch (IOException e) {

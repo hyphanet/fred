@@ -80,8 +80,8 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		}
 		boolean wasRunning = false;
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+		ClientGetter cg = null;
 		try {
-			ClientGetter cg = null;
 			ClientGetter toCancel = null;
 			synchronized(this) {
 				if(aggressive && !wasAggressive) {
@@ -128,8 +128,20 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 			}
 			return wasRunning;
 		} catch (FetchException e) {
-			Logger.error(this, "Not able to start the revocation fetcher.");
-			manager.blow("Cannot start fetch for the auto-update revocation key", true);
+			if(e.mode == FetchException.RECENTLY_FAILED) {
+				Logger.error(this, "Cannot start revocation fetcher because recently failed");
+			} else {
+				Logger.error(this, "Cannot start fetch for the auto-update revocation key: "+e, e);
+				manager.blow("Cannot start fetch for the auto-update revocation key", true);
+			}
+			synchronized(this) {
+				if(revocationGetter == cg) {
+					revocationGetter = null;
+					if(tmpBlobFile != null)
+						tmpBlobFile.delete();
+					tmpBlobFile = null;
+				}
+			}
 			return false;
 		} catch (DatabaseDisabledException e) {
 			// Impossible
