@@ -30,6 +30,8 @@ public class TokenBucket {
 		long now = System.currentTimeMillis();
 		this.timeLastTick = now * (1000 * 1000);
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+		if(nanosPerTick <= 0) throw new IllegalArgumentException();
+		if(max <= 0) throw new IllegalArgumentException();
 	}
 	
 	/**
