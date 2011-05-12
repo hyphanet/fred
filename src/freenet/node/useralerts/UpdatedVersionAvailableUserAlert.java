@@ -126,6 +126,8 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 				boolean fetchingNew = updater.fetchingNewMainJar();
 				boolean fetchingNewExt = updater.fetchingNewExtJar();
 				if(fetchingNew) {
+					if(updater.fetchingFromUOM())
+						sb.append(l10n("fetchingUOM"));
 					if(fetchingNewExt)
 						sb.append(l10n("fetchingNewBoth", new String[] { "nodeVersion", "extVersion" },
 								new String[] { Integer.toString(updater.fetchingNewMainJarVersion()), Integer.toString(updater.fetchingNewExtJarVersion()) }));
@@ -156,7 +158,7 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 	@Override
 	public boolean isValid() {
 		return updater.isEnabled() && (!updater.isBlown()) && 
-			(updater.fetchingNewExtJar() || updater.fetchingNewMainJar() || updater.hasNewExtJar() || updater.hasNewMainJar());
+			(updater.fetchingNewExtJar() || updater.fetchingNewMainJar() || updater.hasNewExtJar() || updater.hasNewMainJar() || updater.fetchingFromUOM());
 	}
 	
 	@Override

@@ -1160,11 +1160,11 @@ public class NodeUpdateManager {
 	}
 
 	public boolean fetchingNewMainJar() {
-		return (mainUpdater != null && mainUpdater.isFetching()) || uom.isFetchingMain();
+		return (mainUpdater != null && mainUpdater.isFetching());
 	}
 
 	public boolean fetchingNewExtJar() {
-		return (extUpdater != null && extUpdater.isFetching()) || uom.isFetchingExt();
+		return (extUpdater != null && extUpdater.isFetching());
 	}
 
 	public int fetchingNewMainJarVersion() {
@@ -1404,4 +1404,8 @@ public class NodeUpdateManager {
         protected boolean isSeednode() {
             return (node.isOpennetEnabled() && node.wantAnonAuth(true));
         }
+
+		public boolean fetchingFromUOM() {
+			return uom.isFetchingExt() || uom.isFetchingMain();
+		}
 }
