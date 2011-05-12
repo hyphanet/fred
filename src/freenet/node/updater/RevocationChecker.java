@@ -132,7 +132,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 				Logger.error(this, "Cannot start revocation fetcher because recently failed");
 			} else {
 				Logger.error(this, "Cannot start fetch for the auto-update revocation key: "+e, e);
-				manager.blow("Cannot start fetch for the auto-update revocation key", true);
+				manager.blow("Cannot start fetch for the auto-update revocation key: "+e, true);
 			}
 			synchronized(this) {
 				if(revocationGetter == cg) {
