@@ -16,6 +16,9 @@ import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.api.Bucket;
+import freenet.support.io.ArrayBucket;
+import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 
@@ -41,7 +44,6 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 	private volatile boolean blown;
 	
 	private File blobFile;
-	private File tmpBlobFile;
 
 	public RevocationChecker(NodeUpdateManager manager, File blobFile) {
 		this.manager = manager;
@@ -106,17 +108,12 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 					}
 					if(logMINOR) Logger.minor(this, "fetcher="+revocationGetter);
 					if(revocationGetter != null && logMINOR) Logger.minor(this, "revocation fetcher: cancelled="+revocationGetter.isCancelled()+", finished="+revocationGetter.isFinished());
-					try {
-						// Client startup may not have completed yet.
-						manager.node.clientCore.getPersistentTempDir().mkdirs();
-						tmpBlobFile = File.createTempFile("revocation-", ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
-					} catch (IOException e) {
-						Logger.error(this, "Cannot record revocation fetch (therefore cannot pass it on to peers)!: "+e+" for "+tmpBlobFile+" dir "+manager.node.clientCore.getPersistentTempDir()+" exists = "+manager.node.clientCore.getPersistentTempDir().exists(), e);
-					}
+					// Client startup may not have completed yet.
+					manager.node.clientCore.getPersistentTempDir().mkdirs();
 					cg = revocationGetter = new ClientGetter(this, 
 							manager.revocationURI, ctxRevocation, 
 							aggressive ? RequestStarter.MAXIMUM_PRIORITY_CLASS : RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
-							this, null, tmpBlobFile == null ? null : new FileBucket(tmpBlobFile, false, false, false, false, false));
+							this, null, new ArrayBucket());
 					if(logMINOR) Logger.minor(this, "Queued another revocation fetcher (count="+revocationDNFCounter+")");
 				}
 			}
@@ -137,9 +134,6 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 			synchronized(this) {
 				if(revocationGetter == cg) {
 					revocationGetter = null;
-					if(tmpBlobFile != null)
-						tmpBlobFile.delete();
-					tmpBlobFile = null;
 				}
 			}
 			return false;
@@ -165,10 +159,10 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 	}
 
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
-		onSuccess(result, state, tmpBlobFile);
+		onSuccess(result, state, state.getBlobBucket());
 	}
 	
-	void onSuccess(FetchResult result, ClientGetter state, File blob) {
+	void onSuccess(FetchResult result, ClientGetter state, Bucket blob) {
 		// The key has been blown !
 		// FIXME: maybe we need a bigger warning message.
 		blown = true;
@@ -194,34 +188,39 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		return blown;
 	}
 
-	private void moveBlob(File tmpBlobFile) {
-		if(tmpBlobFile == null) {
+	private void moveBlob(Bucket tmpBlob) {
+		if(tmpBlob == null) {
 			Logger.error(this, "No temporary binary blob file moving it: may not be able to propagate revocation, bug???");
 			return;
 		}
-                FileUtil.renameTo(tmpBlobFile, blobFile);
+		FileBucket fb = new FileBucket(blobFile, false, false, false, false, false);
+		try {
+			BucketTools.copy(tmpBlob, fb);
+		} catch (IOException e) {
+			System.err.println("Got revocation but cannot write it to disk: "+e);
+			System.err.println("This means the auto-update system is blown but we can't tell other nodes about it!");
+			e.printStackTrace();
+		}
 	}
 
 	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
-		onFailure(e, state, tmpBlobFile);
+		onFailure(e, state, state.getBlobBucket());
 	}
 	
-	void onFailure(FetchException e, ClientGetter state, File tmpBlobFile) {
+	void onFailure(FetchException e, ClientGetter state, Bucket blob) {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Revocation fetch failed: "+e);
 		int errorCode = e.getMode();
 		boolean completed = false;
 		long now = System.currentTimeMillis();
 		if(errorCode == FetchException.CANCELLED) {
-			if(tmpBlobFile != null) tmpBlobFile.delete();
 			return; // cancelled by us above, or killed; either way irrelevant and doesn't need to be restarted
 		}
 		if(e.isFatal()) {
 			manager.blow("Permanent error fetching revocation (error inserting the revocation key?): "+e.toString(), true);
-			moveBlob(tmpBlobFile); // other peers need to know,
+			moveBlob(blob);
 			return;
 		}
-		if(tmpBlobFile != null) tmpBlobFile.delete();
 		if(e.newURI != null) {
 			manager.blow("Revocation URI redirecting to "+e.newURI+" - maybe you set the revocation URI to the update URI?", false);
 		}

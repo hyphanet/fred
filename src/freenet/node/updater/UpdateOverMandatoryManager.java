@@ -1098,7 +1098,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 					System.err.println("Got revocation certificate from " + source.userToString() + " (fatal error i.e. someone with the key inserted bad data) : "+e);
 					// Blow the update, and propagate the revocation certificate.
-					updateManager.revocationChecker.onFailure(e, state, cleanedBlobFile);
+					updateManager.revocationChecker.onFailure(e, state, cleanedBlob);
 					temp.delete();
 
 					insertBlob(updateManager.revocationChecker.getBlobFile(), "revocation");
@@ -1115,7 +1115,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 			public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 				System.err.println("Got revocation certificate from " + source.userToString());
-				updateManager.revocationChecker.onSuccess(result, state, cleanedBlobFile);
+				updateManager.revocationChecker.onSuccess(result, state, cleanedBlob);
 				temp.delete();
 				insertBlob(updateManager.revocationChecker.getBlobFile(), "revocation");
 			}
