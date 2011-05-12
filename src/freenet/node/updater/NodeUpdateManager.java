@@ -460,6 +460,7 @@ public class NodeUpdateManager {
 				extUpdater = null;
 				oldPluginUpdaters = pluginUpdaters;
 				pluginUpdaters = null;
+				disabledNotBlown = false;
 			} else {
 //				if((!WrapperManager.isControlledByNativeWrapper()) || (NodeStarter.extBuildNumber == -1)) {
 //					Logger.error(this, "Cannot update because not running under wrapper");
@@ -1004,6 +1005,8 @@ public class NodeUpdateManager {
 		}
 	}
 
+	private boolean disabledNotBlown;
+	
 	/**
 	 * @param msg
 	 * @param disabledNotBlown If true, the auto-updating system is broken, and should
@@ -1018,6 +1021,7 @@ public class NodeUpdateManager {
 			}else{
 				this.revocationMessage = msg;
 				this.hasBeenBlown = true;
+				this.disabledNotBlown = disabledNotBlown;
 				// We must get to the lower part, and show the user the message
 				try {
 					if(disabledNotBlown) {
@@ -1208,7 +1212,11 @@ public class NodeUpdateManager {
 
 		@Override
 		public Boolean get() {
-			return isEnabled();
+			if(isEnabled()) return true;
+			synchronized(NodeUpdateManager.this) {
+				if(disabledNotBlown) return true;
+			}
+			return false;
 		}
 
 		@Override
