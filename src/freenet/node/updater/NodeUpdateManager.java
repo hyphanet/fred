@@ -1016,6 +1016,8 @@ public class NodeUpdateManager {
 		NodeUpdater main, ext;
 		synchronized(this) {
 			if(hasBeenBlown){
+				if(this.disabledNotBlown && !disabledNotBlown)
+					disabledNotBlown = true;
 				Logger.error(this, "The key has ALREADY been marked as blown! Message was "+revocationMessage+" new message "+msg);
 				return;
 			}else{
