@@ -15,12 +15,15 @@ public class LocalDownloadDirectoryToadlet extends LocalDirectoryToadlet {
 
 	@Override
 	protected void createSelectDirectoryButton (HTMLNode formNode, String path) {
-		formNode.addChild("input",
-		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "select-dir", NodeL10n.getBase().getString("QueueToadlet.download")});
-		formNode.addChild("input",
-		        new String[] { "type", "name", "value" },
-		        new String[] { "hidden", "path", path});
+		if (core.allowDownloadTo(new java.io.File(path))) {
+			formNode.addChild("input",
+			        new String[] { "type", "name", "value" },
+			        new String[] { "submit", "select-dir",
+			                NodeL10n.getBase().getString("QueueToadlet.download")});
+			formNode.addChild("input",
+			        new String[] { "type", "name", "value" },
+			        new String[] { "hidden", "path", path});
+		}
 	}
 
 	@Override

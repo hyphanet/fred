@@ -18,6 +18,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.InvalidParameterException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -282,8 +283,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					this.sendErrorPage(ctx, 200,
 							NodeL10n.getBase().getString("QueueToadlet.failedToRemoveRequest"),
 							NodeL10n.getBase().getString("QueueToadlet.failedToRemove",
-									new String[]{ "id", "message" },
-									new String[]{ identifier, e.getMessage()}
+							        new String[]{ "id", "message" },
+							        new String[]{ identifier, e.getMessage()}
 							));
 					return;
 				} catch (DatabaseDisabledException e) {
@@ -324,8 +325,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					this.sendErrorPage(ctx, 200,
 							NodeL10n.getBase().getString("QueueToadlet.failedToRemoveRequest"),
 							NodeL10n.getBase().getString("QueueToadlet.failedToRemove",
-									new String[]{ "id", "message" },
-									new String[]{ identifier, e.getMessage()}
+							        new String[]{ "id", "message" },
+							        new String[]{ identifier, e.getMessage()}
 							));
 					return;
 				} catch (DatabaseDisabledException e) {
@@ -374,7 +375,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			} else if(request.isPartSet("download")) {
 				// Queue a download
 				if(!request.isPartSet("key")) {
-					writeError(NodeL10n.getBase().getString("QueueToadlet.errorNoKey"), NodeL10n.getBase().getString("QueueToadlet.errorNoKeyToD"), ctx);
+					writeError(l10n("errorNoKey"), l10n("errorNoKeyToD"), ctx);
 					return;
 				}
 				String expectedMIMEType = null;
@@ -385,20 +386,29 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				try {
 					fetchURI = new FreenetURI(request.getPartAsStringFailsafe("key", MAX_KEY_LENGTH));
 				} catch (MalformedURLException e) {
-					writeError(NodeL10n.getBase().getString("QueueToadlet.errorInvalidURI"), NodeL10n.getBase().getString("QueueToadlet.errorInvalidURIToD"), ctx);
+					writeError(l10n("errorInvalidURI"), l10n("errorInvalidURIToD"), ctx);
 					return;
 				}
 				String persistence = request.getPartAsStringFailsafe("persistence", 32);
 				String returnType = request.getPartAsStringFailsafe("return-type", 32);
 				boolean filterData = request.isPartSet("filterData");
-				String downloadPath = core.getDownloadsDir().getAbsolutePath();
-				if(request.isPartSet("path"))
+				String downloadPath;
+				File downloadsDir = null;
+				//Download to disk disabled and initialized.
+				if (request.isPartSet("path") && !core.isDownloadDisabled()) {
 					downloadPath = request.getPartAsStringFailsafe("path", MAX_FILENAME_LENGTH);
-				File downloadsDir = getDownloadsDir(downloadPath);
+					try {
+						downloadsDir = getDownloadsDir(downloadPath);
+					} catch (NotAllowedException e) {
+						downloadDisallowedPage(e, downloadPath, ctx);
+						return;
+					}
+				//Downloading to disk not initialized and/or disabled.
+				} else returnType = "direct";
 				try {
 					fcp.makePersistentGlobalRequestBlocking(fetchURI, filterData, expectedMIMEType, persistence, returnType, false, downloadsDir);
 				} catch (NotAllowedException e) {
-					this.writeError(NodeL10n.getBase().getString("QueueToadlet.errorDToDisk"), NodeL10n.getBase().getString("QueueToadlet.errorDToDiskConfig"), ctx);
+					this.writeError(l10n("QueueToadlet.errorDToDisk"), l10n("QueueToadlet.errorDToDiskConfig"), ctx);
 					return;
 				} catch (DatabaseDisabledException e) {
 					sendPersistenceDisabledError(ctx);
@@ -417,11 +427,17 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				boolean filterData = request.isPartSet("filterData");
 				String target = request.getPartAsStringFailsafe("target", 128);
 				if(target == null) target = "direct";
-
-				String downloadPath = core.getDownloadsDir().getAbsolutePath();
-				if(request.isPartSet("path"))
+				String downloadPath;
+				File downloadsDir = null;
+				if (request.isPartSet("path") && !core.isDownloadDisabled()) {
 					downloadPath = request.getPartAsStringFailsafe("path", MAX_FILENAME_LENGTH);
-				File downloadsDir = getDownloadsDir(downloadPath);
+					try {
+						downloadsDir = getDownloadsDir(downloadPath);
+					} catch (NotAllowedException e) {
+						downloadDisallowedPage(e, downloadPath, ctx);
+						return;
+					}
+				} else target = "direct";
 
 				for(int i=0; i<keys.length; i++) {
 					String currentKey = keys[i];
@@ -433,26 +449,32 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 					try {
 						FreenetURI fetchURI = new FreenetURI(currentKey);
-						fcp.makePersistentGlobalRequestBlocking(fetchURI, filterData, null, "forever", target, false,
-						        downloadsDir);
+						fcp.makePersistentGlobalRequestBlocking(fetchURI, filterData, null,
+						        "forever", target, false, downloadsDir);
 						success.add(fetchURI.toString(true, false));
 					} catch (Exception e) {
 						failure.add(currentKey);
-						Logger.error(this, "An error occured while attempting to download key("+i+") : "+currentKey+ " : "+e.getMessage());
+						Logger.error(this,
+						        "An error occured while attempting to download key("+i+") : "+
+						        currentKey+ " : "+e.getMessage());
 					}
 				}
 
 				boolean displayFailureBox = failure.size() > 0;
 				boolean displaySuccessBox = success.size() > 0;
 
-				PageNode page = ctx.getPageMaker().getPageNode(NodeL10n.getBase().getString("QueueToadlet.downloadFiles"), ctx);
+				PageNode page = ctx.getPageMaker().getPageNode(l10n("downloadFiles"), ctx);
 				HTMLNode pageNode = page.outer;
 				HTMLNode contentNode = page.content;
-				HTMLNode alertContent = ctx.getPageMaker().getInfobox((displayFailureBox ? "infobox-warning" : "infobox-info"), NodeL10n.getBase().getString("QueueToadlet.downloadFiles"), contentNode, "grouped-downloads", true);
+
+				HTMLNode alertContent = ctx.getPageMaker().getInfobox(
+				        (displayFailureBox ? "infobox-warning" : "infobox-info"),
+				        l10n("downloadFiles"), contentNode, "grouped-downloads", true);
 				Iterator<String> it;
 				if(displaySuccessBox) {
 					HTMLNode successDiv = alertContent.addChild("ul");
-					successDiv.addChild("#", NodeL10n.getBase().getString("QueueToadlet.enqueuedSuccessfully", "number", String.valueOf(success.size())));
+					successDiv.addChild("#", l10n("enqueuedSuccessfully", "number",
+					        String.valueOf(success.size())));
 					it = success.iterator();
 					while(it.hasNext()) {
 						HTMLNode line = successDiv.addChild("li");
@@ -463,7 +485,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				if(displayFailureBox) {
 					HTMLNode failureDiv = alertContent.addChild("ul");
 					if(displayFailureBox) {
-						failureDiv.addChild("#", NodeL10n.getBase().getString("QueueToadlet.enqueuedFailure", "number", String.valueOf(failure.size())));
+						failureDiv.addChild("#", l10n("enqueuedFailure", "number",
+						        String.valueOf(failure.size())));
 						it = failure.iterator();
 						while(it.hasNext()) {
 							HTMLNode line = failureDiv.addChild("li");
@@ -472,7 +495,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					}
 					failureDiv.addChild("br");
 				}
-				alertContent.addChild("a", "href", path(), NodeL10n.getBase().getString("Toadlet.returnToQueuepage"));
+				alertContent.addChild("a", "href", path(),
+				        NodeL10n.getBase().getString("Toadlet.returnToQueuepage"));
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			} else if (request.isPartSet("change_priority")) {
@@ -512,11 +536,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						if(logMINOR)
 							Logger.minor(this, "Inserting key: "+insertURI+" ("+u+")");
 					} catch (MalformedURLException mue1) {
-						writeError(NodeL10n.getBase().getString("QueueToadlet.errorInvalidURI"), NodeL10n.getBase().getString("QueueToadlet.errorInvalidURIToU"), ctx, false, true);
+						writeError(l10n("errorInvalidURI"), l10n("errorInvalidURIToU"), ctx, false, true);
 						return;
 					}
 				} else {
-					writeError(NodeL10n.getBase().getString("QueueToadlet.errorMustSpecifyKeyTypeTitle"), NodeL10n.getBase().getString("QueueToadlet.errorMustSpecifyKeyType"), ctx, false, true);
+					writeError(l10n("errorMustSpecifyKeyTypeTitle"),
+					           l10n("errorMustSpecifyKeyType"), ctx, false, true);
 					return;
 				}
 				final HTTPUploadedFile file = request.getUploadedFile("filename");
@@ -878,11 +903,27 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		this.handleMethodGET(uri, new HTTPRequestImpl(uri, "GET"), ctx);
 	}
 
-	private File getDownloadsDir(String downloadPath) {
+	private void downloadDisallowedPage (NotAllowedException e, String downloadPath, ToadletContext ctx)
+	        throws IOException, ToadletContextClosedException {
+		PageNode page = ctx.getPageMaker().getPageNode(l10n("downloadFiles"), ctx);
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
+		Logger.warning(this, e.toString());
+		HTMLNode alert = ctx.getPageMaker().getInfobox("infobox-alert",
+			l10n("downloadFiles"), contentNode, "grouped-downloads", true);
+		alert.addChild("ul", l10n("downloadDisallowed", "directory", downloadPath));
+		alert.addChild("a", "href", path(),
+			NodeL10n.getBase().getString("Toadlet.returnToQueuepage"));
+		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+	}
+
+	private File getDownloadsDir (String downloadPath) throws NotAllowedException {
 		File downloadsDir = new File(downloadPath);
-		//This could be typed in by the user, so it may have to be created.
-		if(!((downloadsDir.exists() && downloadsDir.isDirectory()) || downloadsDir.mkdirs()))
-			downloadsDir = core.getDownloadsDir();
+		//Invalid if it's disallowed, doesn't exist, isn't a directory, or can't be created.
+		if(!core.allowDownloadTo(downloadsDir) || !downloadsDir.exists() || !downloadsDir.isDirectory() ||
+		        !downloadsDir.mkdirs()) {
+			throw new NotAllowedException();
+		}
 		return downloadsDir;
 	}
 
@@ -896,14 +937,18 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		HTMLNode contentNode = page.content;
 
 		HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error",
-				l10n("confirmPanicButtonPageTitle"), contentNode, "confirm-panic", true).
-				addChild("div", "class", "infobox-content");
+		        l10n("confirmPanicButtonPageTitle"), contentNode, "confirm-panic", true).
+		        addChild("div", "class", "infobox-content");
 
 		content.addChild("p", l10n("confirmPanicButton"));
 
 		HTMLNode form = ctx.addFormChild(content, path(), "confirmPanicButton");
-		form.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirmpanic", l10n("confirmPanicButtonYes") });
-		form.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "noconfirmpanic", l10n("confirmPanicButtonNo") });
+		form.addChild("p").addChild("input",
+		        new String[] { "type", "name", "value" },
+		        new String[] { "submit", "confirmpanic", l10n("confirmPanicButtonYes") });
+		form.addChild("p").addChild("input",
+		        new String[] { "type", "name", "value" },
+		        new String[] { "submit", "noconfirmpanic", l10n("confirmPanicButtonNo") });
 
 		if(uploads)
 			content.addChild("p").addChild("a", "href", path(), l10n("backToUploadsPage"));
@@ -1809,15 +1854,19 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "insert", l10n("download") });
 		PHYSICAL_THREAT_LEVEL threatLevel = core.node.securityLevels.getPhysicalThreatLevel();
-		if(threatLevel == PHYSICAL_THREAT_LEVEL.LOW) {
+		//Force downloading to encrypted space if high/maximum threat level or if the user has disabled
+		//downloading to disk.
+		System.out.println("downloadDirs length is "+ (core.isDownloadDisabled() ? "" : "not" ) + " disabled.");
+		if(threatLevel == PHYSICAL_THREAT_LEVEL.HIGH || threatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM ||
+		        core.isDownloadDisabled()) {
+			downloadForm.addChild("input",
+			        new String[] { "type", "name", "value" },
+			        new String[] { "hidden", "target", "direct" });
+		} else if(threatLevel == PHYSICAL_THREAT_LEVEL.LOW) {
 			downloadForm.addChild("input",
 			        new String[] { "type", "name", "value" },
 			        new String[] { "hidden", "target", "disk" });
 			selectLocation(downloadForm);
-		} else if(threatLevel == PHYSICAL_THREAT_LEVEL.HIGH || threatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
-			downloadForm.addChild("input",
-			        new String[] { "type", "name", "value" },
-			        new String[] { "hidden", "target", "direct" });
 		} else {
 			downloadForm.addChild("br");
 			downloadForm.addChild("input",

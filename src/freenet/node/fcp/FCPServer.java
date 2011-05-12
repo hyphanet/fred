@@ -597,14 +597,8 @@ public class FCPServer implements Runnable, DownloadCache {
 
 	public void makePersistentGlobalRequestBlocking(final FreenetURI fetchURI, final boolean filterData,
 	        final String expectedMimeType, final String persistenceTypeString, final String returnTypeString,
-	        final boolean realTimeFlag) throws NotAllowedException, IOException, DatabaseDisabledException {
-		makePersistentGlobalRequestBlocking(fetchURI, filterData, expectedMimeType, persistenceTypeString,
-		        returnTypeString, realTimeFlag, core.getDownloadsDir());
-	}
-
-	public void makePersistentGlobalRequestBlocking(final FreenetURI fetchURI, final boolean filterData,
-	        final String expectedMimeType, final String persistenceTypeString, final String returnTypeString,
-	        final boolean realTimeFlag, final File downloadsDir) throws NotAllowedException, IOException, DatabaseDisabledException {
+	        final boolean realTimeFlag, final File downloadsDir) throws NotAllowedException, IOException,
+	        DatabaseDisabledException {
 		class OutputWrapper {
 			NotAllowedException ne;
 			IOException ioe;
@@ -622,8 +616,9 @@ public class FCPServer implements Runnable, DownloadCache {
 				NotAllowedException ne = null;
 				IOException ioe = null;
 				try {
-					makePersistentGlobalRequest(fetchURI, filterData, expectedMimeType, persistenceTypeString,
-					        returnTypeString, realTimeFlag, container, downloadsDir);
+					makePersistentGlobalRequest(fetchURI, filterData, expectedMimeType,
+					        persistenceTypeString, returnTypeString, realTimeFlag, container,
+					        downloadsDir);
 					return true;
 				} catch (NotAllowedException e) {
 					ne = e;

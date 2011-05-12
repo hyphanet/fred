@@ -300,7 +300,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				        netLevel == NETWORK_THREAT_LEVEL.MAXIMUM))
 				filterChecked = false;
 		}
-		if(threatLevel != PHYSICAL_THREAT_LEVEL.MAXIMUM) {
+		//Display FProxy option to download to disk if the user isn't at maximum physical threat level
+		//and hasn't disabled downloading to disk.
+		if (threatLevel != PHYSICAL_THREAT_LEVEL.MAXIMUM && !core.isDownloadDisabled()) {
 			HTMLNode option = optionList.addChild("li");
 			HTMLNode optionForm = ctx.addFormChild(option, "/downloads/", "tooBigQueueForm");
 			optionForm.addChild("input",
@@ -347,7 +349,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			}
 		}
 
-		if(threatLevel != PHYSICAL_THREAT_LEVEL.LOW) {
+		//Display fetch option if not at low physical security or the user has disabled downloading to disk.
+		if (threatLevel != PHYSICAL_THREAT_LEVEL.LOW || core.isDownloadDisabled()) {
 			HTMLNode option = optionList.addChild("li");
 			HTMLNode optionForm = ctx.addFormChild(option, "/downloads/", "tooBigQueueForm");
 			optionForm.addChild("input",
