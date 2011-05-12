@@ -136,7 +136,7 @@ public class NodeUpdateManager {
 
         SubConfig updaterConfig = new SubConfig("node.updater", config);
 
-        updaterConfig.register("enabled", true, 1, true, false, "NodeUpdateManager.enabled",
+        updaterConfig.register("enabled", true, 1, false, false, "NodeUpdateManager.enabled",
         		"NodeUpdateManager.enabledLong",
         		new UpdaterEnabledCallback());
 
