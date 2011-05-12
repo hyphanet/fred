@@ -1160,11 +1160,11 @@ public class NodeUpdateManager {
 	}
 
 	public boolean fetchingNewMainJar() {
-		return mainUpdater != null && mainUpdater.isFetching();
+		return (mainUpdater != null && mainUpdater.isFetching()) || uom.isFetchingMain();
 	}
 
 	public boolean fetchingNewExtJar() {
-		return extUpdater != null && extUpdater.isFetching();
+		return (extUpdater != null && extUpdater.isFetching()) || uom.isFetchingExt();
 	}
 
 	public int fetchingNewMainJarVersion() {
