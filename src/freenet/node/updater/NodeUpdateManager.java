@@ -446,6 +446,7 @@ public class NodeUpdateManager {
 //		}
 		NodeUpdater main = null, ext = null;
 		Map<String, PluginJarUpdater> oldPluginUpdaters = null;
+		revocationChecker.start(false);
 		synchronized(this) {
 			boolean enabled = (mainUpdater != null);
 			if(enabled == enable) return;
@@ -472,7 +473,6 @@ public class NodeUpdateManager {
 				pluginUpdaters = new HashMap<String, PluginJarUpdater>();
 			}
 		}
-		revocationChecker.start(false);
 		if(!enable) {
 			if(main != null) main.kill();
 			if(ext != null) ext.kill();
