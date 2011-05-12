@@ -472,16 +472,15 @@ public class NodeUpdateManager {
 				pluginUpdaters = new HashMap<String, PluginJarUpdater>();
 			}
 		}
+		revocationChecker.start(false);
 		if(!enable) {
 			if(main != null) main.kill();
 			if(ext != null) ext.kill();
-			revocationChecker.kill();
 			stopPluginUpdaters(oldPluginUpdaters);
 		} else {
 			mainUpdater.start();
 			if(extUpdater != null)
 				extUpdater.start();
-			revocationChecker.start(false);
 			startPluginUpdaters();
 		}
 	}
