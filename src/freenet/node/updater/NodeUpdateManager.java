@@ -136,7 +136,7 @@ public class NodeUpdateManager {
 
         SubConfig updaterConfig = new SubConfig("node.updater", config);
 
-        updaterConfig.register("enabled", true, 1, true, false, "NodeUpdateManager.enabled",
+        updaterConfig.register("enabled", true, 1, false, false, "NodeUpdateManager.enabled",
         		"NodeUpdateManager.enabledLong",
         		new UpdaterEnabledCallback());
 
@@ -1019,6 +1019,8 @@ public class NodeUpdateManager {
 		NodeUpdater main, ext;
 		synchronized(this) {
 			if(hasBeenBlown){
+				if(this.disabledNotBlown && !disabledNotBlown)
+					disabledNotBlown = true;
 				Logger.error(this, "The key has ALREADY been marked as blown! Message was "+revocationMessage+" new message "+msg);
 				return;
 			}else{
@@ -1158,11 +1160,11 @@ public class NodeUpdateManager {
 	}
 
 	public boolean fetchingNewMainJar() {
-		return mainUpdater != null && mainUpdater.isFetching();
+		return (mainUpdater != null && mainUpdater.isFetching());
 	}
 
 	public boolean fetchingNewExtJar() {
-		return extUpdater != null && extUpdater.isFetching();
+		return (extUpdater != null && extUpdater.isFetching());
 	}
 
 	public int fetchingNewMainJarVersion() {
@@ -1402,4 +1404,8 @@ public class NodeUpdateManager {
         protected boolean isSeednode() {
             return (node.isOpennetEnabled() && node.wantAnonAuth(true));
         }
+
+		public boolean fetchingFromUOM() {
+			return uom.isFetchingExt() || uom.isFetchingMain();
+		}
 }

@@ -123,18 +123,23 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 					formText = l10n("updateASAPButton");
 				}
 			} else {
-				boolean fetchingNew = updater.fetchingNewMainJar();
-				boolean fetchingNewExt = updater.fetchingNewExtJar();
-				if(fetchingNew) {
-					if(fetchingNewExt)
-						sb.append(l10n("fetchingNewBoth", new String[] { "nodeVersion", "extVersion" },
-								new String[] { Integer.toString(updater.fetchingNewMainJarVersion()), Integer.toString(updater.fetchingNewExtJarVersion()) }));
-					else
-						sb.append(l10n("fetchingNewNode", "nodeVersion", Integer.toString(updater.fetchingNewMainJarVersion())));
-				} else {
-					if(fetchingNewExt)
-						sb.append(l10n("fetchingNewExt", "extVersion", Integer.toString(updater.fetchingNewExtJarVersion())));
+				if(updater.fetchingFromUOM())
+					sb.append(l10n("fetchingUOM"));
+				else {
+					boolean fetchingNew = updater.fetchingNewMainJar();
+					boolean fetchingNewExt = updater.fetchingNewExtJar();
+					if(fetchingNew) {
+						if(fetchingNewExt)
+							sb.append(l10n("fetchingNewBoth", new String[] { "nodeVersion", "extVersion" },
+									new String[] { Integer.toString(updater.fetchingNewMainJarVersion()), Integer.toString(updater.fetchingNewExtJarVersion()) }));
+						else
+							sb.append(l10n("fetchingNewNode", "nodeVersion", Integer.toString(updater.fetchingNewMainJarVersion())));
+					} else {
+						if(fetchingNewExt)
+							sb.append(l10n("fetchingNewExt", "extVersion", Integer.toString(updater.fetchingNewExtJarVersion())));
+					}
 				}
+				sb.append(" ");
 				sb.append(l10n("updateASAPQuestion"));
 				formText = l10n("updateASAPButton");
 			}
@@ -156,7 +161,7 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 	@Override
 	public boolean isValid() {
 		return updater.isEnabled() && (!updater.isBlown()) && 
-			(updater.fetchingNewExtJar() || updater.fetchingNewMainJar() || updater.hasNewExtJar() || updater.hasNewMainJar());
+			(updater.fetchingNewExtJar() || updater.fetchingNewMainJar() || updater.hasNewExtJar() || updater.hasNewMainJar() || updater.fetchingFromUOM());
 	}
 	
 	@Override

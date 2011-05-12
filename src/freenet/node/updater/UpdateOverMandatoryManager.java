@@ -1870,4 +1870,16 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	public boolean realTimeFlag() {
 		return false;
 	}
+
+	public boolean isFetchingMain() {
+		synchronized(this) {
+			return nodesSendingMainJar.size() > 0;
+		}
+	}
+
+	public boolean isFetchingExt() {
+		synchronized(this) {
+			return nodesSendingExtJar.size() > 0;
+		}
+	}
 }
