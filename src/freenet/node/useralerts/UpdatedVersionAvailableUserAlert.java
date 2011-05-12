@@ -139,6 +139,7 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 							sb.append(l10n("fetchingNewExt", "extVersion", Integer.toString(updater.fetchingNewExtJarVersion())));
 					}
 				}
+				sb.append(" ");
 				sb.append(l10n("updateASAPQuestion"));
 				formText = l10n("updateASAPButton");
 			}
