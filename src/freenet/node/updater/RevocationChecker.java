@@ -249,8 +249,21 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		}
 		if(completed)
 			manager.noRevocationFound();
-		else
-			start(wasAggressive, false);
+		else {
+			if(errorCode == FetchException.RECENTLY_FAILED) {
+				// Try again in 1 second.
+				// This ensures we don't constantly start them, fail them, and start them again.
+				this.manager.node.ticker.queueTimedJob(new Runnable() {
+
+					public void run() {
+						start(wasAggressive, false);
+					}
+					
+				}, 1*1000);
+			} else {
+				start(wasAggressive, false);
+			}
+		}
 	}
 	
 	public void onMajorProgress(ObjectContainer container) {
