@@ -706,7 +706,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			}
 			if(persistent) {
 				if(sourceData == null) {
-					Logger.error(this, "getBlockItem(): sourceData = null but active = "+container.ext().isActive(this));
+					Logger.error(this, "getBlockItem(): sourceData = null but active = "+container.ext().isActive(this), new Exception("error"));
 					return null;
 				}
 			}
