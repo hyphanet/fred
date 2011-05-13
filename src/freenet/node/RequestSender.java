@@ -2076,7 +2076,7 @@ loadWaiterLoop:
 			synchronized(this) {
 				status = this.status;
 			}
-			if (status!=NOT_FINISHED && sentFinished)
+			if (status!=NOT_FINISHED)
 				l.onRequestSenderFinished(status, sentFinishedFromOfferedKey);
 		}
 	}
