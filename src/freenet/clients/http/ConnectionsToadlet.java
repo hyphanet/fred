@@ -397,7 +397,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			if (mode >= PageMaker.MODE_ADVANCED) {
 				if (!path.endsWith("displaymessagetypes.html")) {
 					peerTableInfoboxHeader.addChild("#", " ");
-					peerTableInfoboxHeader.addChild("a", "href", "displaymessagetypes.html", "(more detailed)");
+					peerTableInfoboxHeader.addChild("a", "href", "displaymessagetypes.html", l10n("bracketedMoreDetailed"));
 				}
 			}
 			HTMLNode peerTableInfoboxContent = peerTableInfobox.addChild("div", "class", "infobox-content");
