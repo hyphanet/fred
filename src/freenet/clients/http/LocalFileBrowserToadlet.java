@@ -40,31 +40,34 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 	 */
 	protected abstract Hashtable<String, String> persistenceFields (Hashtable<String, String> set);
 	
-	protected void createSelectDirectoryButton (HTMLNode node, String absolutePath) {
+	protected void createSelectDirectoryButton (HTMLNode node, String absolutePath, HTMLNode persistence) {
 		node.addChild("input",
 		        new String[]{"type", "name", "value"},
 		        new String[]{"submit", "select-dir", l10n("insert")});
 		node.addChild("input",
 		        new String[]{"type", "name", "value"},
 		        new String[]{"hidden", "filename", absolutePath});
+		node.addChild(persistence);
 	}
 	
-	protected void createSelectFileButton (HTMLNode node, String absolutePath) {
+	protected void createSelectFileButton (HTMLNode node, String absolutePath, HTMLNode persistence) {
 		node.addChild("input",
 		        new String[]{"type", "name", "value"},
 		        new String[]{"submit", "select-file", l10n("insert")});
 		node.addChild("input",
 		        new String[]{"type", "name", "value"},
 		        new String[]{"hidden", "filename", absolutePath});
+		node.addChild(persistence);
 	}
 
-	private void createChangeDirButton (HTMLNode node, String buttonText, String path) {
+	private void createChangeDirButton (HTMLNode node, String buttonText, String path, HTMLNode persistence) {
 		node.addChild("input",
 		        new String[]{"type", "name", "value"},
 		        new String[]{"submit", "change-dir", buttonText});
 		node.addChild("input",
 		        new String[]{"type", "name", "value"},
 		        new String[]{"hidden", "path", path});
+		node.addChild(persistence);
 	}
 	
 	/**
@@ -223,8 +226,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 				HTMLNode rootLinkFormNode = ctx.addFormChild(rootLinkCellNode, path(),
 				        "insertLocalFileForm");
 				createChangeDirButton(rootLinkFormNode, currentRoot.getCanonicalPath(),
-				        currentRoot.getAbsolutePath());
-				rootLinkFormNode.addChild(persistenceFields);
+				        currentRoot.getAbsolutePath(), persistenceFields);
 				rootRow.addChild("td");
 			}
 			/* add back link */
@@ -234,8 +236,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 				HTMLNode backLinkCellNode = backlinkRow.addChild("td");
 				HTMLNode backLinkFormNode = ctx.addFormChild(backLinkCellNode, path(),
 				        "insertLocalFileForm");
-				createChangeDirButton(backLinkFormNode, "..", currentPath.getParent());
-				backLinkFormNode.addChild(persistenceFields);
+				createChangeDirButton(backLinkFormNode, "..", currentPath.getParent(), persistenceFields);
 				backlinkRow.addChild("td");
 			}
 			for (int fileIndex = 0, fileCount = files.length; fileIndex < fileCount; fileIndex++) {
@@ -247,16 +248,15 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 						HTMLNode cellNode = fileRow.addChild("td");
 						HTMLNode formNode = ctx.addFormChild(cellNode, postTo(),
 						        "insertLocalFileForm");
-						createSelectDirectoryButton(formNode, currentFile.getAbsolutePath());
-						formNode.addChild(persistenceFields);
+						createSelectDirectoryButton(formNode, currentFile.getAbsolutePath(),
+						        persistenceFields);
 
 						// Change directory
 						HTMLNode directoryCellNode = fileRow.addChild("td");
 						HTMLNode directoryFormNode = ctx.addFormChild(directoryCellNode, path(),
 						        "insertLocalFileForm");
 						createChangeDirButton(directoryFormNode, currentFile.getName(),
-						        currentFile.getAbsolutePath());
-						directoryFormNode.addChild(persistenceFields);
+						        currentFile.getAbsolutePath(), persistenceFields);
 					} else {
 						fileRow.addChild("td");
 						fileRow.addChild("td", "class", "unreadable-file",
@@ -269,8 +269,8 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 						HTMLNode cellNode = fileRow.addChild("td");
 						HTMLNode formNode = ctx.addFormChild(cellNode, postTo(),
 						        "insertLocalFileForm");
-						createSelectFileButton(formNode, currentFile.getAbsolutePath());
-						formNode.addChild(persistenceFields);
+						createSelectFileButton(formNode, currentFile.getAbsolutePath(),
+						        persistenceFields);
 						
 						fileRow.addChild("td", currentFile.getName());
 						fileRow.addChild("td", "class", "right-align",

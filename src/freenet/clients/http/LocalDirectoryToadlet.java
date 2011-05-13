@@ -32,6 +32,6 @@ public abstract class LocalDirectoryToadlet extends LocalFileBrowserToadlet {
 	}
 
 	@Override
-	protected void createSelectFileButton (HTMLNode fileRow, String filename) {
+	protected void createSelectFileButton (HTMLNode fileRow, String filename, HTMLNode persist) {
 	}
 }

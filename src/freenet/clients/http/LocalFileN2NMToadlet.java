@@ -30,7 +30,7 @@ public class LocalFileN2NMToadlet extends LocalFileBrowserToadlet {
 	}
 	
 	@Override
-	protected void createSelectDirectoryButton(HTMLNode fileRow, String path) {
+	protected void createSelectDirectoryButton(HTMLNode fileRow, String path, HTMLNode persistence) {
 	}
 
     @Override

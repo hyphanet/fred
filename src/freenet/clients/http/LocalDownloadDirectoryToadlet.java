@@ -14,7 +14,7 @@ public class LocalDownloadDirectoryToadlet extends LocalDirectoryToadlet {
 	}
 
 	@Override
-	protected void createSelectDirectoryButton (HTMLNode formNode, String path) {
+	protected void createSelectDirectoryButton (HTMLNode formNode, String path, HTMLNode persist) {
 		if (core.allowDownloadTo(new java.io.File(path))) {
 			formNode.addChild("input",
 			        new String[] { "type", "name", "value" },
@@ -23,26 +23,26 @@ public class LocalDownloadDirectoryToadlet extends LocalDirectoryToadlet {
 			formNode.addChild("input",
 			        new String[] { "type", "name", "value" },
 			        new String[] { "hidden", "path", path});
+			formNode.addChild(persist);
 		}
 	}
 
 	@Override
 	protected Hashtable<String, String> persistenceFields (Hashtable<String, String> set) {
 		Hashtable<String, String> fieldPairs = new Hashtable<String, String>();
-		for(String key : set.keySet()) {
-			if(key.equals("bulkDownloads") || key.equals("filterData") || key.equals("key")) {
-				fieldPairs.put(key, set.get(key));
-				//From FProxy page, set download button.
-				if(key.equals("key")) {
-					fieldPairs.put("download", "1");
-					fieldPairs.put("return-type", "disk");
-				//From bulk downloads, set download button.
-				} else if(key.equals("bulkDownloads")) {
-					fieldPairs.put("insert", "1");
-					fieldPairs.put("target", "disk");
-				}
-			}
+		//From bulk downloads, set download button.
+		if (set.containsKey("bulkDownloads")) {
+			fieldPairs.put("bulkDownloads", set.get("bulkDownloads"));
+			fieldPairs.put("insert", "1");
+			fieldPairs.put("target", "disk");
+		//From FProxy page, set download button.
+		} else if (set.containsKey("key")) {
+			fieldPairs.put("key", set.get("key"));
+			fieldPairs.put("download", "1");
+			fieldPairs.put("return-type", "disk");
 		}
+
+		if (set.containsKey("filterData")) fieldPairs.put("filterData", set.get("filterData"));
 		return fieldPairs;
 	}
 }
