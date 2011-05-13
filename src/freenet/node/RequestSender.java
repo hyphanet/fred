@@ -2078,6 +2078,8 @@ loadWaiterLoop:
 			}
 			if (status!=NOT_FINISHED)
 				l.onRequestSenderFinished(status, sentFinishedFromOfferedKey);
+			else
+				Logger.error(this, "sentFinished is true but status is still NOT_FINISHED?!?! on "+this, new Exception("error"));
 		}
 	}
 	
