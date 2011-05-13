@@ -136,7 +136,7 @@ public class NodeUpdateManager {
 
         SubConfig updaterConfig = new SubConfig("node.updater", config);
 
-        updaterConfig.register("enabled", true, 1, true, false, "NodeUpdateManager.enabled",
+        updaterConfig.register("enabled", true, 1, false, false, "NodeUpdateManager.enabled",
         		"NodeUpdateManager.enabledLong",
         		new UpdaterEnabledCallback());
 
@@ -446,6 +446,11 @@ public class NodeUpdateManager {
 //		}
 		NodeUpdater main = null, ext = null;
 		Map<String, PluginJarUpdater> oldPluginUpdaters = null;
+		// We need to run the revocation checker even if auto-update is disabled.
+		// Two reasons:
+		// 1. For the benefit of other nodes, and because even if auto-update is off, it's something the user should probably know about.
+		// 2. When the key is blown, we turn off auto-update!!!!
+		revocationChecker.start(false);
 		synchronized(this) {
 			boolean enabled = (mainUpdater != null);
 			if(enabled == enable) return;
@@ -460,6 +465,7 @@ public class NodeUpdateManager {
 				extUpdater = null;
 				oldPluginUpdaters = pluginUpdaters;
 				pluginUpdaters = null;
+				disabledNotBlown = false;
 			} else {
 //				if((!WrapperManager.isControlledByNativeWrapper()) || (NodeStarter.extBuildNumber == -1)) {
 //					Logger.error(this, "Cannot update because not running under wrapper");
@@ -474,13 +480,11 @@ public class NodeUpdateManager {
 		if(!enable) {
 			if(main != null) main.kill();
 			if(ext != null) ext.kill();
-			revocationChecker.kill();
 			stopPluginUpdaters(oldPluginUpdaters);
 		} else {
 			mainUpdater.start();
 			if(extUpdater != null)
 				extUpdater.start();
-			revocationChecker.start(false);
 			startPluginUpdaters();
 		}
 	}
@@ -784,92 +788,36 @@ public class NodeUpdateManager {
 		boolean writtenNewJar = false;
 		boolean writtenNewExt = false;
 
-		boolean tryEasyWay = File.pathSeparatorChar == ':' && !hasNewExtJar;
-
-		File mainJar = ctx.getMainJar();
-		File newMainJar = ctx.getNewMainJar();
+		// If wrapper.conf currently contains freenet-ext.jar.new, we need to update wrapper.conf even
+		// on unix. Reason: freenet-ext.jar.new won't be read if it's not the first item on the classpath,
+		// because freenet.jar includes freenet-ext.jar implicitly via its manifest.
+		boolean tryEasyWay = File.pathSeparatorChar == ':' && !ctx.currentExtJarHasNewExtension();
 
 		if(hasNewMainJar) {
-			writtenNewJar = true;
-			boolean writtenToTempFile = false;
+			File mainJar = ctx.getMainJar();
+			File newMainJar = ctx.getNewMainJar();
 			try {
-				if(newMainJar.exists()) {
-					if(!newMainJar.delete()) {
-						if(newMainJar.exists()) {
-							System.err.println("Cannot write to preferred new jar location "+newMainJar);
-							if(tryEasyWay) {
-								try {
-									newMainJar = File.createTempFile("freenet", ".jar", mainJar.getParentFile());
-								} catch (IOException e) {
-									failUpdate("Cannot write to any other location either - disk full? "+e);
-									return false;
-								}
-								// Try writing to it
-								try {
-									mainUpdater.writeJarTo(newMainJar);
-									writtenToTempFile = true;
-								} catch (IOException e) {
-									newMainJar.delete();
-									failUpdate("Cannot write new jar - disk full? "+e);
-									return false;
-								}
-							} else {
-								// Try writing it to the new one even though we can't delete it.
-								mainUpdater.writeJarTo(newMainJar);
-							}
-						} else {
-							mainUpdater.writeJarTo(newMainJar);
-						}
-					} else {
-						if(logMINOR) Logger.minor(this, "Deleted old jar "+newMainJar);
-						mainUpdater.writeJarTo(newMainJar);
-					}
-				} else {
-					mainUpdater.writeJarTo(newMainJar);
-				}
-			} catch (IOException e) {
-				failUpdate("Cannot update: Cannot write to " + (tryEasyWay ? " temp file " : "new jar ")+newMainJar);
+				if(writeJar(mainJar, newMainJar, mainUpdater, "main", tryEasyWay))
+					writtenNewJar = true;
+			} catch (UpdateFailedException e) {
+				failUpdate(e.getMessage());
 				return false;
 			}
-
-			if(tryEasyWay) {
-				// Do it the easy way. Just rewrite the main jar.
-				if(!newMainJar.renameTo(mainJar)) {
-					Logger.error(this, "Cannot rename temp file "+newMainJar+" over original jar "+mainJar);
-					if(writtenToTempFile) {
-						// Fail the update - otherwise we will leak disk space
-						newMainJar.delete();
-						failUpdate("Cannot write to preferred new jar location and cannot rename temp file over old jar, update failed");
-						return false;
-					}
-					// Try the hard way
-				} else {
-					System.err.println("Written new Freenet jar: "+mainUpdater.getWrittenVersion());
-					return true;
-				}
-			}
-
 		}
-
-		// Easy way didn't work or we can't do the easy way. Try the hard way.
 
 		if(hasNewExtJar) {
-
-			writtenNewExt = true;
-
-			// Write the new ext jar
-
+			File extJar = ctx.getExtJar();
 			File newExtJar = ctx.getNewExtJar();
-
 			try {
-				extUpdater.writeJarTo(newExtJar);
-			} catch (IOException e) {
-				failUpdate("Cannot write new ext jar to "+newExtJar);
+				if(writeJar(extJar, newExtJar, extUpdater, "ext", tryEasyWay))
+					writtenNewExt = true;
+			} catch (UpdateFailedException e) {
+				failUpdate(e.getMessage());
 				return false;
 			}
-
 		}
 
+		if(!(writtenNewJar || writtenNewExt)) return true;
 		try {
 			ctx.rewriteWrapperConf(writtenNewJar, writtenNewExt);
 		} catch (IOException e) {
@@ -885,6 +833,85 @@ public class NodeUpdateManager {
 		}
 
 		return true;
+	}
+
+	/** Write a jar. Returns true if the caller needs to rewrite the config, false if he doesn't, or
+	 * throws if it fails.
+	 * @param mainJar The location of the current jar file.
+	 * @param newMainJar The location of the new jar file.
+	 * @param mainUpdater The NodeUpdater for the file in question, so we can ask it to write the file.
+	 * @param name The name of the jar for logging.
+	 * @param tryEasyWay If true, attempt to rename the new file directly over the old one. This avoids
+	 * the need to rewrite the wrapper config file.
+	 * @return True if the caller needs to rewrite the config, false if he doesn't (because easy way 
+	 * worked).
+	 * @throws UpdateFailedException If something breaks.
+	 */
+	private static boolean writeJar(File mainJar, File newMainJar, NodeUpdater mainUpdater,
+			String name, boolean tryEasyWay) throws UpdateFailedException {
+		boolean writtenToTempFile = false;
+		try {
+			if(newMainJar.exists()) {
+				if(!newMainJar.delete()) {
+					if(newMainJar.exists()) {
+						System.err.println("Cannot write to preferred new jar location "+newMainJar);
+						if(tryEasyWay) {
+							try {
+								newMainJar = File.createTempFile("freenet", ".jar", mainJar.getParentFile());
+							} catch (IOException e) {
+								throw new UpdateFailedException("Cannot write to any other location either - disk full? "+e);
+							}
+							// Try writing to it
+							try {
+								mainUpdater.writeJarTo(newMainJar);
+								writtenToTempFile = true;
+							} catch (IOException e) {
+								newMainJar.delete();
+								throw new UpdateFailedException("Cannot write new jar - disk full? "+e);
+							}
+						} else {
+							// Try writing it to the new one even though we can't delete it.
+							mainUpdater.writeJarTo(newMainJar);
+						}
+					} else {
+						mainUpdater.writeJarTo(newMainJar);
+					}
+				} else {
+					if(logMINOR) Logger.minor(NodeUpdateManager.class, "Deleted old jar "+newMainJar);
+					mainUpdater.writeJarTo(newMainJar);
+				}
+			} else {
+				mainUpdater.writeJarTo(newMainJar);
+			}
+		} catch (IOException e) {
+			throw new UpdateFailedException("Cannot update: Cannot write to " + (tryEasyWay ? " temp file " : "new jar ")+newMainJar);
+		}
+
+		if(tryEasyWay) {
+			// Do it the easy way. Just rewrite the main jar.
+			if(!newMainJar.renameTo(mainJar)) {
+				Logger.error(NodeUpdateManager.class, "Cannot rename temp file "+newMainJar+" over original jar "+mainJar);
+				if(writtenToTempFile) {
+					// Fail the update - otherwise we will leak disk space
+					newMainJar.delete();
+					throw new UpdateFailedException("Cannot write to preferred new jar location and cannot rename temp file over old jar, update failed");
+				}
+				// Try the hard way
+			} else {
+				System.err.println("Written new Freenet jar: "+mainUpdater.getWrittenVersion());
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	@SuppressWarnings("serial")
+	private static class UpdateFailedException extends Exception {
+
+		public UpdateFailedException(String message) {
+			super(message);
+		}
+		
 	}
 
 	/** Restart the node. Does not return. */
@@ -981,6 +1008,8 @@ public class NodeUpdateManager {
 		}
 	}
 
+	private boolean disabledNotBlown;
+	
 	/**
 	 * @param msg
 	 * @param disabledNotBlown If true, the auto-updating system is broken, and should
@@ -990,11 +1019,14 @@ public class NodeUpdateManager {
 		NodeUpdater main, ext;
 		synchronized(this) {
 			if(hasBeenBlown){
+				if(this.disabledNotBlown && !disabledNotBlown)
+					disabledNotBlown = true;
 				Logger.error(this, "The key has ALREADY been marked as blown! Message was "+revocationMessage+" new message "+msg);
 				return;
 			}else{
 				this.revocationMessage = msg;
 				this.hasBeenBlown = true;
+				this.disabledNotBlown = disabledNotBlown;
 				// We must get to the lower part, and show the user the message
 				try {
 					if(disabledNotBlown) {
@@ -1128,11 +1160,11 @@ public class NodeUpdateManager {
 	}
 
 	public boolean fetchingNewMainJar() {
-		return mainUpdater != null && mainUpdater.isFetching();
+		return (mainUpdater != null && mainUpdater.isFetching());
 	}
 
 	public boolean fetchingNewExtJar() {
-		return extUpdater != null && extUpdater.isFetching();
+		return (extUpdater != null && extUpdater.isFetching());
 	}
 
 	public int fetchingNewMainJarVersion() {
@@ -1185,7 +1217,11 @@ public class NodeUpdateManager {
 
 		@Override
 		public Boolean get() {
-			return isEnabled();
+			if(isEnabled()) return true;
+			synchronized(NodeUpdateManager.this) {
+				if(disabledNotBlown) return true;
+			}
+			return false;
 		}
 
 		@Override
@@ -1368,4 +1404,8 @@ public class NodeUpdateManager {
         protected boolean isSeednode() {
             return (node.isOpennetEnabled() && node.wantAnonAuth(true));
         }
+
+		public boolean fetchingFromUOM() {
+			return uom.isFetchingExt() || uom.isFetchingMain();
+		}
 }

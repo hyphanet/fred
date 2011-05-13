@@ -9,6 +9,9 @@ import freenet.support.Logger.LogLevel;
 public class TokenBucket {
 
 	private static boolean logMINOR;
+	static {
+		LoggerHook.registerClass(TokenBucket.class);
+	}
 	protected long current;
 	protected long max;
 	protected long timeLastTick;
@@ -29,7 +32,8 @@ public class TokenBucket {
 		this.nanosPerTick = nanosPerTick;
 		long now = System.currentTimeMillis();
 		this.timeLastTick = now * (1000 * 1000);
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+		if(nanosPerTick <= 0) throw new IllegalArgumentException();
+		if(max <= 0) throw new IllegalArgumentException();
 	}
 	
 	/**

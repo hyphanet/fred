@@ -1825,6 +1825,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			currentPeersLocation = newLocs;
 			locSetTime = System.currentTimeMillis();
 		}
+		node.peers.updatePMUserAlert();
 		node.peers.writePeers();
 		setPeerNodeStatus(System.currentTimeMillis());
 	}
@@ -2653,6 +2654,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	*/
 	protected synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef, boolean forFullNodeRef) throws FSParseException {
 		
+		boolean shouldUpdatePeerCounts = false;
+		
 		if(forFullNodeRef) {
 			// Check the signature.
 			String signature = fs.get("sig");
@@ -2783,6 +2786,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			} else {
 				if(!Location.equals(newLoc, currentLocation)) {
 					changedAnything = true;
+					if(currentLocation < 0.0 || currentLocation > 1.0)
+						shouldUpdatePeerCounts = true;
 					currentLocation = newLoc;
 					locSetTime = System.currentTimeMillis();
 				}
@@ -2865,6 +2870,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 		if(parseARK(fs, false, forDiffNodeRef))
 			changedAnything = true;
+		if(shouldUpdatePeerCounts)
+			node.peers.updatePMUserAlert();
 		return changedAnything;
 	}
 
@@ -5238,9 +5245,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 			if(maxWait == 0) return null;
 			synchronized(this) {
-				if(logMINOR) Logger.minor(this, "Waiting for any node to wake up "+this+" : "+Arrays.toString(waitingFor.toArray()));
+				if(logMINOR) Logger.minor(this, "Waiting for any node to wake up "+this+" : "+Arrays.toString(waitingFor.toArray())+" (for up to "+maxWait+"ms)");
 				long waitStart = System.currentTimeMillis();
 				long deadline = waitStart + maxWait;
+				boolean failed = false;
 				while(acceptedBy == null && (!waitingFor.isEmpty()) && !failed) {
 					try {
 						if(maxWait == Long.MAX_VALUE)
@@ -5249,27 +5257,42 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 							int wait = (int)Math.min(Integer.MAX_VALUE, deadline - System.currentTimeMillis());
 							if(wait > 0) wait(wait);
 							if(logMINOR) Logger.minor(this, "Maximum wait time exceeded on "+this);
-							// Check for race condition which would result in stalling.
-							if(!shouldGrab()) return null;
+							if(shouldGrab()) {
+								// Race condition resulting in stalling
+								// All we have to do is break.
+								break;
+							} else {
+								// Bigger problem.
+								// No external entity called us, so waitingFor have not been unregistered.
+								failed = true;
+								all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
+								waitingFor.clear();
+								// Now no callers will succeed.
+								// But we still need to unregister the waitingFor's or they will stick around until they are matched, and then, if we are unlucky, will lock a slot on the RequestTag forever and thus cause a catastrophic stall of the whole peer.
+							}
 						}
 					} catch (InterruptedException e) {
 						// Ignore
 					}
 				}
-				long waitEnd = System.currentTimeMillis();
-				if(waitEnd - waitStart > 10000) {
-					Logger.error(this, "Waited "+(waitEnd - waitStart)+"ms for "+this);
-				} else if(waitEnd - waitStart > 1000) {
-					Logger.warning(this, "Waited "+(waitEnd - waitStart)+"ms for "+this);
-				} else {
-					if(logMINOR) Logger.minor(this, "Waited "+(waitEnd - waitStart)+"ms for "+this);
+				if(!failed) {
+					long waitEnd = System.currentTimeMillis();
+					if(waitEnd - waitStart > 10000) {
+						Logger.error(this, "Waited "+(waitEnd - waitStart)+"ms for "+this);
+					} else if(waitEnd - waitStart > 1000) {
+						Logger.warning(this, "Waited "+(waitEnd - waitStart)+"ms for "+this);
+					} else {
+						if(logMINOR) Logger.minor(this, "Waited "+(waitEnd - waitStart)+"ms for "+this);
+					}
+					if(logMINOR) Logger.minor(this, "Returning after waiting: accepted by "+acceptedBy+" waiting for "+waitingFor.size()+" failed "+failed+" on "+this);
+					failed = false;
+					PeerNode got = acceptedBy;
+					acceptedBy = null; // Allow for it to wait again if necessary
+					return got;
 				}
-				if(logMINOR) Logger.minor(this, "Returning after waiting: accepted by "+acceptedBy+" waiting for "+waitingFor.size()+" failed "+failed+" on "+this);
-				failed = false;
-				PeerNode got = acceptedBy;
-				acceptedBy = null; // Allow for it to wait again if necessary
-				return got;
 			}
+			unregister(null, all);
+			return null;
 		}
 		
 		private boolean shouldGrab() {
@@ -5371,12 +5394,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				// Requests running from its other peers
 				RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
 				RequestLikelyAcceptedState acceptState = getRequestLikelyAcceptedState(runningRequests, otherRunningRequests, ignoreLocalVsRemote, loadStats);
-				if(logMINOR) Logger.minor(this, "Predicted acceptance state for request: "+acceptState);
+				if(logMINOR) Logger.minor(this, "Predicted acceptance state for request: "+acceptState+" must beat "+worstAcceptable);
 				if(acceptState.ordinal() > worstAcceptable.ordinal()) return null;
 				if(tag.addRoutedTo(PeerNode.this, offeredKey))
 					return acceptState;
-				else
+				else {
+					if(logMINOR) Logger.minor(this, "Already routed to peer");
 					return null;
+				}
 			}
 		}
 		
@@ -5530,15 +5555,19 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		 * @param byteCountersInput 
 		 * @param byteCountersOutput */
 		private RequestLikelyAcceptedState getRequestLikelyAcceptedState(RunningRequestsSnapshot runningRequests, RunningRequestsSnapshot otherRunningRequests, boolean ignoreLocalVsRemote, PeerLoadStats stats) {
-			RequestLikelyAcceptedState outputState = getRequestLikelyAcceptedState(false, runningRequests, otherRunningRequests, ignoreLocalVsRemote, stats);
-			RequestLikelyAcceptedState inputState = getRequestLikelyAcceptedState(true, runningRequests, otherRunningRequests, ignoreLocalVsRemote, stats);
-			if(inputState.ordinal() > outputState.ordinal())
-				return inputState;
-			else
-				return outputState;
+			RequestLikelyAcceptedState outputState = getRequestLikelyAcceptedStateBandwidth(false, runningRequests, otherRunningRequests, ignoreLocalVsRemote, stats);
+			RequestLikelyAcceptedState inputState = getRequestLikelyAcceptedStateBandwidth(true, runningRequests, otherRunningRequests, ignoreLocalVsRemote, stats);
+			RequestLikelyAcceptedState transfersState = getRequestLikelyAcceptedStateTransfers(runningRequests, otherRunningRequests, ignoreLocalVsRemote, stats);
+			RequestLikelyAcceptedState ret = inputState;
+			
+			if(outputState.ordinal() > ret.ordinal())
+				ret = outputState;
+			if(transfersState.ordinal() > ret.ordinal())
+				ret = transfersState;
+			return ret;
 		}
 		
-		private RequestLikelyAcceptedState getRequestLikelyAcceptedState(
+		private RequestLikelyAcceptedState getRequestLikelyAcceptedStateBandwidth(
 				boolean input,
 				RunningRequestsSnapshot runningRequests,
 				RunningRequestsSnapshot otherRunningRequests, boolean ignoreLocalVsRemote, 
@@ -5551,6 +5580,25 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			double theirUsage = otherRunningRequests.calculate(ignoreLocalVsRemote, input);
 			if(logMINOR) Logger.minor(this, "Their usage is "+theirUsage);
 			if(ourUsage + theirUsage < stats.lowerLimit(input))
+				return RequestLikelyAcceptedState.LIKELY;
+			else
+				return RequestLikelyAcceptedState.UNLIKELY;
+		}
+
+		private RequestLikelyAcceptedState getRequestLikelyAcceptedStateTransfers(
+				RunningRequestsSnapshot runningRequests,
+				RunningRequestsSnapshot otherRunningRequests, boolean ignoreLocalVsRemote, 
+				PeerLoadStats stats) {
+			
+			int ourUsage = runningRequests.totalOutTransfers();
+			if(logMINOR) Logger.minor(this, "Our usage is "+ourUsage+" peer limit is "+stats.maxTransfersOutPeerLimit
+					+" lower limit is "+stats.maxTransfersOutLowerLimit+" realtime "+realTime);
+			if(ourUsage < stats.maxTransfersOutPeerLimit)
+				return RequestLikelyAcceptedState.GUARANTEED;
+			otherRunningRequests.log(PeerNode.this);
+			int theirUsage = otherRunningRequests.totalOutTransfers();
+			if(logMINOR) Logger.minor(this, "Their usage is "+theirUsage);
+			if(ourUsage + theirUsage < stats.maxTransfersOutLowerLimit)
 				return RequestLikelyAcceptedState.LIKELY;
 			else
 				return RequestLikelyAcceptedState.UNLIKELY;
