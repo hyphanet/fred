@@ -2049,30 +2049,34 @@ loadWaiterLoop:
 		boolean sentTransferCancel = false;
 		boolean sentFinishedFromOfferedKey = false;
 		int status;
-		synchronized (this) {
-			synchronized (listeners) {
-				sentTransferCancel = sentAbortDownstreamTransfers;
-				if(!sentTransferCancel) {
-					listeners.add(l);
-					if(logMINOR) Logger.minor(this, "Added listener "+l+" to "+this);
-				}
-				reject = sentReceivedRejectOverload;
-				transfer = sentCHKTransferBegins;
-				sentFinished = sentRequestSenderFinished;
-				sentFinishedFromOfferedKey = completedFromOfferedKey;
+		synchronized (listeners) {
+			sentTransferCancel = sentAbortDownstreamTransfers;
+			if(!sentTransferCancel) {
+				listeners.add(l);
+				if(logMINOR) Logger.minor(this, "Added listener "+l+" to "+this);
 			}
-			reject=reject && hasForwardedRejectedOverload;
-			transfer=transfer && transferStarted();
-			status=this.status;
+			reject = sentReceivedRejectOverload;
+			transfer = sentCHKTransferBegins;
+			sentFinished = sentRequestSenderFinished;
+			sentFinishedFromOfferedKey = completedFromOfferedKey;
 		}
+		reject=reject && hasForwardedRejectedOverload;
+		transfer=transfer && transferStarted();
 		if (reject)
 			l.onReceivedRejectOverload();
 		if (transfer)
 			l.onCHKTransferBegins();
 		if(sentTransferCancel)
 			l.onAbortDownstreamTransfers(abortDownstreamTransfersReason, abortDownstreamTransfersDesc);
-		if (status!=NOT_FINISHED && sentFinished)
-			l.onRequestSenderFinished(status, sentFinishedFromOfferedKey);
+		if(sentFinished) {
+			// At the time when we added the listener, we had sent the status to the others.
+			// Therefore, we need to send it to this one too.
+			synchronized(this) {
+				status = this.status;
+			}
+			if (status!=NOT_FINISHED && sentFinished)
+				l.onRequestSenderFinished(status, sentFinishedFromOfferedKey);
+		}
 	}
 	
 	private boolean sentReceivedRejectOverload;
