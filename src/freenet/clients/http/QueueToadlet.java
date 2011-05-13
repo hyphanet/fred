@@ -1862,7 +1862,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		PHYSICAL_THREAT_LEVEL threatLevel = core.node.securityLevels.getPhysicalThreatLevel();
 		//Force downloading to encrypted space if high/maximum threat level or if the user has disabled
 		//downloading to disk.
-		System.out.println("downloadDirs length is "+ (core.isDownloadDisabled() ? "" : "not" ) + " disabled.");
 		if(threatLevel == PHYSICAL_THREAT_LEVEL.HIGH || threatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM ||
 		        core.isDownloadDisabled()) {
 			downloadForm.addChild("input",
@@ -1896,10 +1895,15 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	}
 
 	private void selectLocation(HTMLNode node) {
+		String downloadLocation = core.getDownloadsDir().getAbsolutePath();
+		//If the download directory isn't allowed, yet downloading is, at least one directory must
+		//have been explicitly defined, so take the first one.
+		if (!core.allowDownloadTo(core.getDownloadsDir())) {
+			downloadLocation = core.getAllowedUploadDirs()[0].getAbsolutePath();
+		}
 		node.addChild("input",
 		        new String[] { "type", "name", "value", "size" },
-		        new String[] { "text", "path", core.getDownloadsDir().getAbsolutePath(),
-				               String.valueOf(core.getDownloadsDir().getAbsolutePath().length())});
+		        new String[] { "text", "path", downloadLocation, String.valueOf(downloadLocation.length())});
 		node.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "select-location", l10n("browseToChange")+"..." });

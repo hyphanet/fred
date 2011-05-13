@@ -321,12 +321,18 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			}
 			optionForm.addChild("input", new String[] { "type", "name", "value" },
 			        new String[] { "submit", "download", l10n("downloadInBackgroundToDiskButton") });
+			String downloadLocation = core.getDownloadsDir().getAbsolutePath();
+			//If the download directory isn't allowed, yet downloading is, at least one directory must
+			//have been explicitly defined, so take the first one.
+			if (!core.allowDownloadTo(core.getDownloadsDir())) {
+				downloadLocation = core.getAllowedUploadDirs()[0].getAbsolutePath();
+			}
 			NodeL10n.getBase().addL10nSubstitution(optionForm, "FProxyToadlet.downloadInBackgroundToDisk",
 			        new String[] { "dir", "page" },
 			        new HTMLNode[] { new HTMLNode("input",
 			                new String[] { "type", "name", "value", "size" },
-			                new String[] { "text", "path", core.getDownloadsDir().getAbsolutePath(),
-			                        String.valueOf(core.getDownloadsDir().getAbsolutePath().length()) }),
+			                new String[] { "text", "path", downloadLocation,
+			                        String.valueOf(downloadLocation.length()) }),
 			                DOWNLOADS_LINK });
 			optionForm.addChild("input",
 			        new String[] { "type", "name", "value" },
