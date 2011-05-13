@@ -325,7 +325,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			//If the download directory isn't allowed, yet downloading is, at least one directory must
 			//have been explicitly defined, so take the first one.
 			if (!core.allowDownloadTo(core.getDownloadsDir())) {
-				downloadLocation = core.getAllowedUploadDirs()[0].getAbsolutePath();
+				downloadLocation = core.getAllowedDownloadDirs()[0].getAbsolutePath();
 			}
 			NodeL10n.getBase().addL10nSubstitution(optionForm, "FProxyToadlet.downloadInBackgroundToDisk",
 			        new String[] { "dir", "page" },

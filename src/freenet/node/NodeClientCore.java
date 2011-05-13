@@ -1578,6 +1578,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		return false;
 	}
 
+	public File[] getAllowedDownloadDirs() {
+		return downloadAllowedDirs;
+	}
+
 	public File[] getAllowedUploadDirs() {
 		return uploadAllowedDirs;
 	}

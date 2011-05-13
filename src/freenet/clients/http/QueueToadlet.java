@@ -1899,7 +1899,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		//If the download directory isn't allowed, yet downloading is, at least one directory must
 		//have been explicitly defined, so take the first one.
 		if (!core.allowDownloadTo(core.getDownloadsDir())) {
-			downloadLocation = core.getAllowedUploadDirs()[0].getAbsolutePath();
+			downloadLocation = core.getAllowedDownloadDirs()[0].getAbsolutePath();
 		}
 		node.addChild("input",
 		        new String[] { "type", "name", "value", "size" },
