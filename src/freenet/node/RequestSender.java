@@ -2060,7 +2060,6 @@ loadWaiterLoop:
 			sentFinished = sentRequestSenderFinished;
 			sentFinishedFromOfferedKey = completedFromOfferedKey;
 		}
-		reject=reject && hasForwardedRejectedOverload;
 		transfer=transfer && transferStarted();
 		if (reject)
 			l.onReceivedRejectOverload();
