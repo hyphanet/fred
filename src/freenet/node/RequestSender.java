@@ -2049,6 +2049,9 @@ loadWaiterLoop:
 		boolean sentTransferCancel = false;
 		boolean sentFinishedFromOfferedKey = false;
 		int status;
+		// LOCKING: We add the new listener. We check each notification.
+		// If it has already been sent when we add the new listener, we need to send it here.
+		// Otherwise we don't, it will be called by the thread processing that event, even if it's already happened.
 		synchronized (listeners) {
 			sentTransferCancel = sentAbortDownstreamTransfers;
 			if(!sentTransferCancel) {
