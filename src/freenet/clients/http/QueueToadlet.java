@@ -546,7 +546,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 				final HTTPUploadedFile file = request.getUploadedFile("filename");
 				if (file == null || file.getFilename().trim().length() == 0) {
-					writeError(NodeL10n.getBase().getString("QueueToadlet.errorNoFileSelected"), NodeL10n.getBase().getString("QueueToadlet.errorNoFileSelectedU"), ctx, false, true);
+					writeError(l10n("errorNoFileSelected"), l10n("errorNoFileSelectedU"), ctx, false, true);
 					return;
 				}
 				final boolean compress = request.getPartAsString("compress", 128).length() > 0;
@@ -599,13 +599,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 								writePermanentRedirect(ctx, "Done", path());
 								return false;
 							} catch (NotAllowedException e) {
-								writeError(NodeL10n.getBase().getString("QueueToadlet.errorAccessDenied"), NodeL10n.getBase().getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.getFilename() }), ctx, false, true);
+								writeError(l10n("errorAccessDenied"), l10n("errorAccessDeniedFile", "file", file.getFilename()), ctx, false, true);
 								return false;
 							} catch (FileNotFoundException e) {
-								writeError(NodeL10n.getBase().getString("QueueToadlet.errorNoFileOrCannotRead"), NodeL10n.getBase().getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.getFilename() }), ctx, false, true);
+								writeError(l10n("errorNoFileOrCannotRead"), l10n("errorAccessDeniedFile", "file", file.getFilename()), ctx, false, true);
 								return false;
 							} catch (MalformedURLException mue1) {
-								writeError(NodeL10n.getBase().getString("QueueToadlet.errorInvalidURI"), NodeL10n.getBase().getString("QueueToadlet.errorInvalidURIToU"), ctx, false, true);
+								writeError(l10n("errorInvalidURI"), l10n("errorInvalidURIToU"), ctx, false, true);
 								return false;
 							} catch (MetadataUnresolvedException e) {
 								Logger.error(this, "Unresolved metadata in starting insert from data uploaded from browser: "+e, e);
@@ -669,7 +669,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					try {
 						furi = new FreenetURI(key);
 					} catch (MalformedURLException e) {
-						writeError(NodeL10n.getBase().getString("QueueToadlet.errorInvalidURI"), NodeL10n.getBase().getString("QueueToadlet.errorInvalidURIToU"), ctx);
+						writeError(l10n("errorInvalidURI"), l10n("errorInvalidURIToU"), ctx);
 						return;
 					}
 				} else {
@@ -711,10 +711,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 								writePermanentRedirect(ctx, "Done", path());
 								return false;
 							} catch (MalformedURLException e) {
-								writeError(NodeL10n.getBase().getString("QueueToadlet.errorInvalidURI"), NodeL10n.getBase().getString("QueueToadlet.errorInvalidURIToU"), ctx);
+								writeError(l10n("errorInvalidURI"), l10n("errorInvalidURIToU"), ctx);
 								return false;
 							} catch (FileNotFoundException e) {
-								writeError(NodeL10n.getBase().getString("QueueToadlet.errorNoFileOrCannotRead"), NodeL10n.getBase().getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ target }), ctx);
+								writeError(l10n("errorNoFileOrCannotRead"), l10n("errorAccessDeniedFile", "file", target), ctx);
 								return false;
 							} catch (NotAllowedException e) {
 								writeError(NodeL10n.getBase().getString("QueueToadlet.errorAccessDenied"), NodeL10n.getBase().getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.getName() }), ctx);
@@ -765,7 +765,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					try {
 						furi = new FreenetURI(key);
 					} catch (MalformedURLException e) {
-						writeError(NodeL10n.getBase().getString("QueueToadlet.errorInvalidURI"), NodeL10n.getBase().getString("QueueToadlet.errorInvalidURIToU"), ctx);
+						writeError(l10n("errorInvalidURI"), l10n("errorInvalidURIToU"), ctx);
 						return;
 					}
 				} else {
@@ -803,10 +803,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 								writePermanentRedirect(ctx, "Done", path());
 								return false;
 							} catch (MalformedURLException e) {
-								writeError(NodeL10n.getBase().getString("QueueToadlet.errorInvalidURI"), NodeL10n.getBase().getString("QueueToadlet.errorInvalidURIToU"), ctx);
+								writeError(l10n("errorInvalidURI"), l10n("errorInvalidURIToU"), ctx);
 								return false;
 							} catch (FileNotFoundException e) {
-								writeError(NodeL10n.getBase().getString("QueueToadlet.errorNoFileOrCannotRead"), NodeL10n.getBase().getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.toString() }), ctx);
+								writeError(l10n("errorNoFileOrCannotRead"), l10n("QueueToadlet.errorAccessDeniedFile", "file", file.toString()), ctx);
 								return false;
 							} finally {
 								synchronized(done) {
@@ -838,10 +838,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 				return;
 			} else if (request.isPartSet("recommend_request")) {
-				PageNode page = ctx.getPageMaker().getPageNode(NodeL10n.getBase().getString("QueueToadlet.recommendAFileToFriends"), ctx);
+				PageNode page = ctx.getPageMaker().getPageNode(l10n("recommendAFileToFriends"), ctx);
 				HTMLNode pageNode = page.outer;
 				HTMLNode contentNode = page.content;
-				HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("#", NodeL10n.getBase().getString("QueueToadlet.recommendAFileToFriends"), contentNode, "recommend-file", true);
+				HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("#", l10n("recommendAFileToFriends"), contentNode, "recommend-file", true);
 				HTMLNode form = ctx.addFormChild(infoboxContent, path(), "recommendForm2");
 				
 				int x = 0;
@@ -849,27 +849,33 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					if(!part.startsWith("identifier-")) continue;
 					String key = request.getPartAsString("key-"+part.substring("identifier-".length()), MAX_KEY_LENGTH);
 					if(key == null || key.equals("")) continue;
-					form.addChild("#", NodeL10n.getBase().getString("QueueToadlet.key") + ":");
+					form.addChild("#", l10n("key") + ":");
 					form.addChild("br");
 					form.addChild("#", key);
 					form.addChild("br");
 					form.addChild("input", new String[] { "type", "name", "value" },
 							new String[] { "hidden", "key-"+x, key });
 				}
-				form.addChild("label", "for", "descB", (NodeL10n.getBase().getString("QueueToadlet.recommendDescription") + ' '));
+				form.addChild("label", "for", "descB", (l10n("recommendDescription") + ' '));
 				form.addChild("br");
-				form.addChild("textarea", new String[]{"id", "name", "row", "cols"}, new String[]{"descB", "description", "3", "70"});
+				form.addChild("textarea",
+				        new String[]{"id", "name", "row", "cols"},
+				        new String[]{"descB", "description", "3", "70"});
 				form.addChild("br");
 
 				HTMLNode peerTable = form.addChild("table", "class", "darknet_connections");
-				peerTable.addChild("th", "colspan", "2", NodeL10n.getBase().getString("QueueToadlet.recommendToFriends"));
+				peerTable.addChild("th", "colspan", "2", l10n("recommendToFriends"));
 				for(DarknetPeerNode peer : core.node.getDarknetConnections()) {
 					HTMLNode peerRow = peerTable.addChild("tr", "class", "darknet_connections_normal");
-					peerRow.addChild("td", "class", "peer-marker").addChild("input", new String[] { "type", "name" }, new String[] { "checkbox", "node_" + peer.hashCode() });
+					peerRow.addChild("td", "class", "peer-marker").addChild("input",
+					        new String[] { "type", "name" }, 
+					        new String[] { "checkbox", "node_" + peer.hashCode() });
 					peerRow.addChild("td", "class", "peer-name").addChild("#", peer.getName());
 				}
 
-				form.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "recommend_uri", NodeL10n.getBase().getString("QueueToadlet.recommend")});
+				form.addChild("input",
+				        new String[]{"type", "name", "value"},
+				        new String[]{"submit", "recommend_uri", l10n("recommend")});
 
 				this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
@@ -883,7 +889,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						FreenetURI furi = new FreenetURI(key);
 						uris.add(furi);
 					} catch (MalformedURLException e) {
-						writeError(NodeL10n.getBase().getString("QueueToadlet.errorInvalidURI"), NodeL10n.getBase().getString("QueueToadlet.errorInvalidURIToU"), ctx);
+						writeError(l10n("errorInvalidURI"), l10n("errorInvalidURIToU"), ctx);
 						return;
 					}
 				}
