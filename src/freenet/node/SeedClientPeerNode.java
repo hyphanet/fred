@@ -162,5 +162,10 @@ public class SeedClientPeerNode extends PeerNode {
 		super.onConnect();
 	}
 
+	@Override
+	boolean dontKeepFullFieldSet() {
+		return true;
+	}
+
 
 }
