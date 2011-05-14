@@ -5,6 +5,7 @@ package freenet.client.async;
 
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
@@ -873,6 +874,10 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 
 	public void clearCooldown(ObjectContainer container) {
 		// Ignore for now. FIXME.
+	}
+
+	public Bucket getBlobBucket() {
+		return binaryBlobBucket;
 	}
 	
 }

@@ -9,7 +9,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
 import java.util.Properties;
+import java.util.TreeSet;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -43,6 +45,11 @@ class UpdateDeployContext {
 	File newExtJar;
 	boolean mainJarAbsolute;
 	boolean extJarAbsolute;
+	boolean currentExtJarHasNewExtension;
+	
+	boolean currentExtJarHasNewExtension() {
+		return currentExtJarHasNewExtension;
+	}
 	
 	UpdateDeployContext() throws UpdaterParserException {
 		Properties p = WrapperManager.getProperties();
@@ -59,6 +66,7 @@ class UpdateDeployContext {
 					newExtJar = new File(extJar.getParent(), "freenet-ext.jar");
 					extJarAbsolute = isAbsolute;
 					extClasspathNo = propNo;
+					currentExtJarHasNewExtension = true;
 					continue;
 				} else if(name.equals("freenet-ext.jar")) {
 					extJar = f;
@@ -152,14 +160,15 @@ class UpdateDeployContext {
 		String line;
 			
 		boolean writtenReload = false;
-		boolean writtenMain = false;
-		boolean writtenExt = false;
 		
 		String newMain = mainJarAbsolute ? newMainJar.getAbsolutePath() : newMainJar.getPath();
 		String newExt = extJarAbsolute ? newExtJar.getAbsolutePath() : newExtJar.getPath();
 		
-		String extLine = null;
-		String mainLine = null;
+		String extRHS = null;
+		String mainRHS = null;
+		
+		ArrayList<String> otherLines = new ArrayList<String>();
+		ArrayList<String> classpath = new ArrayList<String>();
 		
 		// We MUST put the ext before the main jar, or auto-update of freenet-ext.jar on Windows won't work.
 		// The main jar refers to freenet-ext.jar so that java -jar freenet.jar works.
@@ -168,55 +177,72 @@ class UpdateDeployContext {
 		// able to overwrite either of them, so we'll just restart every 5 minutes forever!
 		
 		while((line = br.readLine()) != null) {
+			// The classpath numbers are not reliable.
+			// We have to check the content.
+			
+			boolean dontWrite = false;
 			
 			if(line.startsWith("wrapper.java.classpath.")) {
-				if(line.startsWith("wrapper.java.classpath."+mainClasspathNo+'=')) {
-					String main;
-					if(writtenNewJar)
-						main = newMain;
-					else
-						main = line.substring(("wrapper.java.classpath."+mainClasspathNo+'=').length());
-					int higher = Math.max(mainClasspathNo, extClasspathNo);
-					mainLine = "wrapper.java.classpath."+higher+'='+main;
-					if(extLine != null) {
-						bw.write(extLine+'\n');
-						bw.write(mainLine+'\n');
-						writtenMain = true;
-						writtenExt = true;
+				line = line.substring("wrapper.java.classpath.".length());
+				int idx = line.indexOf('=');
+				if(idx != -1) {
+					try {
+						int number = Integer.parseInt(line.substring(0, idx));
+						// Don't go by the numbers.
+						String rhs = line.substring(idx+1);
+						System.out.println("RHS is: "+rhs);
+						if(rhs.equals("freenet-ext.jar") || rhs.equals("freenet-ext.jar.new")) {
+							if(writtenNewExt)
+								extRHS = newExt;
+							else
+								extRHS = rhs;
+							dontWrite = true;
+						} else if(rhs.equals("freenet.jar") || rhs.equals("freenet.jar.new") || 
+								rhs.equals("freenet-stable-latest.jar") || rhs.equals("freenet-stable-latest.jar.new") ||
+								rhs.equals("freenet-testing-latest.jar") || rhs.equals("freenet-testing-latest.jar.new")) {
+							if(writtenNewJar)
+								mainRHS = newMain;
+							else
+								mainRHS = rhs;
+							dontWrite = true;
+						} else {
+							classpath.add(rhs);
+						}
+					} catch (NumberFormatException e) {
+						// Argh!
+						System.out.println("Don't understand line in wrapper.conf - should be numeric?:\n"+line);
 					}
-				} else if(line.startsWith("wrapper.java.classpath."+extClasspathNo+'=')) {
-					String ext;
-					if(writtenNewExt)
-						ext = newExt;
-					else
-						ext = line.substring(("wrapper.java.classpath."+extClasspathNo+'=').length());
-					int lower = Math.min(mainClasspathNo, extClasspathNo);
-					extLine = "wrapper.java.classpath."+lower+'='+ext;
-					if(mainLine != null) {
-						bw.write(extLine+'\n');
-						bw.write(mainLine+'\n');
-						writtenMain = true;
-						writtenExt = true;
-					}
-				} else {
-					bw.write(line+'\n');
 				}
 			} else if(line.equalsIgnoreCase("wrapper.restart.reload_configuration=TRUE")) {
 				writtenReload = true;
-				bw.write(line+'\n');
-			} else
-				bw.write(line+'\n');
+			}
+			if(!dontWrite)
+				otherLines.add(line);
 		}
 		br.close();
 		
-		if(!((writtenMain || !writtenNewJar) && (writtenExt || !writtenNewExt))) {
+		// Write classpath first
+		
+		if(mainRHS == null || extRHS == null) {
 			throw new UpdaterParserException(l10n("updateFailedNonStandardConfig", 
-					new String[] { "main", "ext" }, new String[] { Boolean.toString(writtenMain), Boolean.toString(writtenExt) } ));
+					new String[] { "main", "ext" }, new String[] { Boolean.toString(mainRHS != null), Boolean.toString(extRHS != null) } ));
 		}
+		
+		// Write ext first
+		bw.write("wrapper.java.classpath.1="+extRHS+'\n');
+		bw.write("wrapper.java.classpath.2="+mainRHS+'\n');
+		int count = 3;
+		for(String s : classpath) {
+			bw.write("wrapper.java.classpath."+count+"="+s+'\n');
+			count++;
+		}
+		
+		for(String s : otherLines)
+			bw.write(s+'\n');
 
 		if(!writtenReload) {
 			// Add it.
-			bw.write("wrapper.restart.reload_configuration=TRUE");
+			bw.write("wrapper.restart.reload_configuration=TRUE\n");
 		}
 		
 		bw.close();

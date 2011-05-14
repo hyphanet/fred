@@ -89,6 +89,8 @@ public class DarknetPeerNodeStatus extends PeerNodeStatus {
 	}
 	
 	public FRIEND_VISIBILITY getTheirVisibility() {
+		if(theirVisibility == null)
+			return FRIEND_VISIBILITY.NO;
 		return theirVisibility;
 	}
 	

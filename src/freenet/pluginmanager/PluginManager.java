@@ -1068,7 +1068,7 @@ public class PluginManager {
 		addOfficialPlugin("Freereader", false, 4, true, new FreenetURI("CHK@4PuSjXk4Z0Hdu04JLhdPHLyOVLljj8qVbjRn3rHVzvg,bDGYnuYj67Q4uzroPBEWAYWRk26bPzf-iQ4~Uo3S7mg,AAIC--8/Freereader.jar"));
 		addOfficialPlugin("Library", false, 22, true, new FreenetURI("CHK@cpjlWeSro72HmsrA9lPOe3DJC-nv-r1f55yUAX7TDrQ,sCT0YiO1ychgX6lBnSsd-TVXZhoWU0sL6JIEyT-0WyA,AAIC--8/Library.jar"));
 		addOfficialPlugin("Spider", false, 48, false, new FreenetURI("CHK@DBgu6re-bD8M2elkdvReOROyZm4f2ppWaLBpJ0Cvo-k,RaD2v5HYVV1Xqit9v6FRaUpz-weoi3ilt4xxr~d9IfE,AAIC--8/Spider.jar"), false, false, true);
-		addOfficialPlugin("Freetalk", false, 5, true, new FreenetURI("CHK@fnUq1nz-cS3sais7CdhWqWQuCK2nAb7MtNn3UYJf2Gc,yRFjWgbjZMb~hb0di5TDtZqjl9Lrxwr-k93eGJtvYZ0,AAIC--8/Freetalk.jar"), false, false, false);
+		addOfficialPlugin("Freetalk", false, 6, true, new FreenetURI("CHK@VDHh51wa~-bP-XXsy0ME9sj14x143vPrWpwrt0ej4K4,BmWr7cIAgLa776LPiUWxuyFgWvoK66JO~8AtjUIMqN8,AAIC--8/Freetalk.jar"), false, false, false);
 		// WoT: Testnet fork, alternative seed identities.
 		addOfficialPlugin("WebOfTrust", false, 5, true, new FreenetURI("CHK@bkB9x~mIAc1jvKD2UK8mmRaxtKR5-usC2mWaJ1pCII0,zC1aRp2Crxct5wtZeQkt2q~XwKiNG7E8H0ZIico0K5s,AAIC--8/WebOfTrust.jar"), false, false, false);
 		addOfficialPlugin("FlogHelper", false, 24, true, new FreenetURI("CHK@WWa59P8NbCnVwT7jEbdyUpjX4Z50fJvpVdc6AxohaJc,imlpwbm9Q5y86rvmycwXCUkmpBNgMEgDZ~HJYY9UTi4,AAIC--8/FlogHelper.jar"), false, false, false);

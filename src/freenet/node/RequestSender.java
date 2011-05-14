@@ -2459,30 +2459,38 @@ loadWaiterLoop:
 		boolean sentTransferCancel = false;
 		boolean sentFinishedFromOfferedKey = false;
 		int status;
-		synchronized (this) {
-			synchronized (listeners) {
-				sentTransferCancel = sentAbortDownstreamTransfers;
-				if(!sentTransferCancel) {
-					listeners.add(l);
-					if(logMINOR) Logger.minor(this, "Added listener "+l+" to "+this);
-				}
-				reject = sentReceivedRejectOverload;
-				transfer = sentCHKTransferBegins;
-				sentFinished = sentRequestSenderFinished;
-				sentFinishedFromOfferedKey = completedFromOfferedKey;
+		// LOCKING: We add the new listener. We check each notification.
+		// If it has already been sent when we add the new listener, we need to send it here.
+		// Otherwise we don't, it will be called by the thread processing that event, even if it's already happened.
+		synchronized (listeners) {
+			sentTransferCancel = sentAbortDownstreamTransfers;
+			if(!sentTransferCancel) {
+				listeners.add(l);
+				if(logMINOR) Logger.minor(this, "Added listener "+l+" to "+this);
 			}
-			reject=reject && hasForwardedRejectedOverload;
-			transfer=transfer && transferStarted();
-			status=this.status;
+			reject = sentReceivedRejectOverload;
+			transfer = sentCHKTransferBegins;
+			sentFinished = sentRequestSenderFinished;
+			sentFinishedFromOfferedKey = completedFromOfferedKey;
 		}
+		transfer=transfer && transferStarted();
 		if (reject)
 			l.onReceivedRejectOverload();
 		if (transfer)
 			l.onCHKTransferBegins();
 		if(sentTransferCancel)
 			l.onAbortDownstreamTransfers(abortDownstreamTransfersReason, abortDownstreamTransfersDesc);
-		if (status!=NOT_FINISHED && sentFinished)
-			l.onRequestSenderFinished(status, sentFinishedFromOfferedKey);
+		if(sentFinished) {
+			// At the time when we added the listener, we had sent the status to the others.
+			// Therefore, we need to send it to this one too.
+			synchronized(this) {
+				status = this.status;
+			}
+			if (status!=NOT_FINISHED)
+				l.onRequestSenderFinished(status, sentFinishedFromOfferedKey);
+			else
+				Logger.error(this, "sentFinished is true but status is still NOT_FINISHED?!?! on "+this, new Exception("error"));
+		}
 	}
 	
 	private boolean sentReceivedRejectOverload;
