@@ -694,8 +694,11 @@ loadWaiterLoop:
         	            	if(waiter.waitingForCount() == 1) {
         	            		canWaitFor++;
         	            		// Wait for another one if the first is low capacity.
+            					// Nodes we were waiting for that then became backed off will have been removed from the list.
+            					HashSet<PeerNode> exclude = waiter.waitingForList();
+            					exclude.addAll(nodesRoutedTo);
         	            		PeerNode alsoWaitFor =
-        	            			node.peers.closerPeer(source, waiter.waitingForList(), target, true, node.isAdvancedModeEnabled(), -1, null,
+        	            			node.peers.closerPeer(source, exclude, target, true, node.isAdvancedModeEnabled(), -1, null,
         	            					key, htl, 0, source == null, realTimeFlag);
         	            		if(alsoWaitFor != null) {
         	            			waiter.addWaitingFor(alsoWaitFor);
@@ -713,8 +716,11 @@ loadWaiterLoop:
         			if(realTimeFlag) canWaitFor++;
         			if(expectedAcceptState == null && waiter.waitingForCount() <= canWaitFor) {
 	            		// Wait for another one if realtime.
+    					// Nodes we were waiting for that then became backed off will have been removed from the list.
+    					HashSet<PeerNode> exclude = waiter.waitingForList();
+    					exclude.addAll(nodesRoutedTo);
 	            		PeerNode alsoWaitFor =
-	            			node.peers.closerPeer(source, waiter.waitingForList(), target, true, node.isAdvancedModeEnabled(), -1, null,
+	            			node.peers.closerPeer(source, exclude, target, true, node.isAdvancedModeEnabled(), -1, null,
 	            					key, htl, 0, source == null, realTimeFlag);
 	            		if(alsoWaitFor != null) {
 	            			waiter.addWaitingFor(alsoWaitFor);
