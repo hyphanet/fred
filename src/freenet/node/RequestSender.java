@@ -808,7 +808,9 @@ loadWaiterLoop:
         			timeSentRequest = System.currentTimeMillis();
         		}
         		
-        		origTag.addRoutedTo(next, false);
+        		if(origTag.addRoutedTo(next, false))
+        			// Should have been already called by tryRoutingTo or innerOnWaited
+        			Logger.error(this, "Didn't add routing to "+next+" on "+this+" ????");
         		
         		tryCount++;
         		
