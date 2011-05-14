@@ -16,6 +16,7 @@ import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.KeyVerifyException;
 import freenet.node.KeysFetchingLocally;
+import freenet.node.LowLevelGetException;
 import freenet.node.NullSendableRequestItem;
 import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
@@ -81,11 +82,18 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		Key k = key.getNodeKey(false);
 		if(fetching.hasKey(k, this, persistent, container)) return null;
 		long l = fetching.checkRecentlyFailed(k, realTimeFlag);
-		if(l > 0 && l > System.currentTimeMillis()) {
-			// FIXME synchronization!!!
-			MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
-			tracker.cooldownWakeupTime = Math.max(tracker.cooldownWakeupTime, l);
-			return null;
+		long now = System.currentTimeMillis();
+		if(l > 0 && l > now) {
+			if(maxRetries == -1 || (maxRetries >= RequestScheduler.COOLDOWN_RETRIES)) {
+				// FIXME synchronization!!!
+				if(logMINOR) Logger.minor(this, "RecentlyFailed -> cooldown until "+TimeUtil.formatTime(l-now)+" on "+this);
+				MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+				tracker.cooldownWakeupTime = Math.max(tracker.cooldownWakeupTime, l);
+				return null;
+			} else {
+				this.onFailure(new LowLevelGetException(LowLevelGetException.RECENTLY_FAILED), null, container, context);
+				return null;
+			}
 		}
 		return keys[0];
 	}
@@ -369,11 +377,18 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		if(keysFetching.hasKey(k, this, persistent, container))
 			return null;
 		long l = keysFetching.checkRecentlyFailed(k, realTimeFlag);
-		if(l > 0 && l > System.currentTimeMillis()) {
-			// FIXME synchronization!!!
-			MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
-			tracker.cooldownWakeupTime = Math.max(tracker.cooldownWakeupTime, l);
-			return null;
+		long now = System.currentTimeMillis();
+		if(l > 0 && l > now) {
+			if(maxRetries == -1 || (maxRetries >= RequestScheduler.COOLDOWN_RETRIES)) {
+				// FIXME synchronization!!!
+				if(logMINOR) Logger.minor(this, "RecentlyFailed -> cooldown until "+TimeUtil.formatTime(l-now)+" on "+this);
+				MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+				tracker.cooldownWakeupTime = Math.max(tracker.cooldownWakeupTime, l);
+				return null;
+			} else {
+				this.onFailure(new LowLevelGetException(LowLevelGetException.RECENTLY_FAILED), null, container, context);
+				return null;
+			}
 		}
 		PersistentChosenBlock block = new PersistentChosenBlock(false, request, keys[0], k, ckey, sched);
 		return Collections.singletonList(block);

@@ -132,6 +132,7 @@ public class DMT {
 	public static final String SECRET = "secret";
 	public static final String NODE_IDENTITY = "nodeIdentity";
 	public static final String UPTIME_PERCENT_48H = "uptimePercent48H";
+	public static final String FRIEND_VISIBILITY = "friendVisibility";
 	public static final String ENABLE_INSERT_FORK_WHEN_CACHEABLE = "enableInsertForkWhenCacheable";
 	public static final String PREFER_INSERT = "preferInsert";
 	public static final String IGNORE_LOW_BACKOFF = "ignoreLowBackoff";
@@ -1367,6 +1368,16 @@ public class DMT {
 		return msg;
 	}
 	
+	public static final MessageType FNPVisibility = new MessageType("FNPVisibility", PRIORITY_HIGH) {{
+		addField(FRIEND_VISIBILITY, Short.class);
+	}};
+	
+	public static final Message createFNPVisibility(short visibility) {
+		Message msg = new Message(FNPVisibility);
+		msg.set(FRIEND_VISIBILITY, visibility);
+		return msg;
+	}
+	
 	public static final MessageType FNPSentPackets = new MessageType("FNPSentPackets", PRIORITY_HIGH) {{
 		addField(TIME_DELTAS, ShortBuffer.class);
 		addField(HASHES, ShortBuffer.class);
@@ -1638,6 +1649,9 @@ public class DMT {
 		addField(INPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
 		addField(INPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
 		addField(MAX_TRANSFERS_OUT, Byte.class);
+		addField(MAX_TRANSFERS_OUT_PEER_LIMIT, Byte.class);
+		addField(MAX_TRANSFERS_OUT_LOWER_LIMIT, Byte.class);
+		addField(MAX_TRANSFERS_OUT_UPPER_LIMIT, Byte.class);
 		addField(REAL_TIME_FLAG, Boolean.class);
 	}};
 	
@@ -1654,6 +1668,9 @@ public class DMT {
 		addField(INPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
 		addField(INPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
 		addField(MAX_TRANSFERS_OUT, Short.class);
+		addField(MAX_TRANSFERS_OUT_PEER_LIMIT, Short.class);
+		addField(MAX_TRANSFERS_OUT_LOWER_LIMIT, Short.class);
+		addField(MAX_TRANSFERS_OUT_UPPER_LIMIT, Short.class);
 		addField(REAL_TIME_FLAG, Boolean.class);
 	}};
 	
@@ -1670,6 +1687,9 @@ public class DMT {
 		addField(INPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
 		addField(INPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
 		addField(MAX_TRANSFERS_OUT, Integer.class);
+		addField(MAX_TRANSFERS_OUT_PEER_LIMIT, Integer.class);
+		addField(MAX_TRANSFERS_OUT_LOWER_LIMIT, Integer.class);
+		addField(MAX_TRANSFERS_OUT_UPPER_LIMIT, Integer.class);
 		addField(REAL_TIME_FLAG, Boolean.class);
 	}};
 	
@@ -1677,7 +1697,9 @@ public class DMT {
 		Message msg;
 		if(stats.expectedTransfersInCHK < 256 && stats.expectedTransfersInSSK < 256 &&
 				stats.expectedTransfersOutCHK < 256 && stats.expectedTransfersOutSSK < 256 &&
-				stats.averageTransfersOutPerInsert < 256 && stats.maxTransfersOut < 256) {
+				stats.averageTransfersOutPerInsert < 256 && stats.maxTransfersOut < 256 && 
+				stats.maxTransfersOutLowerLimit < 256 && stats.maxTransfersOutPeerLimit < 256 &&
+				stats.maxTransfersOutUpperLimit < 256) {
 			msg = new Message(FNPPeerLoadStatusByte);
 			msg.set(OTHER_TRANSFERS_OUT_CHK, (byte)stats.expectedTransfersOutCHK);
 			msg.set(OTHER_TRANSFERS_IN_CHK, (byte)stats.expectedTransfersInCHK);
@@ -1685,9 +1707,14 @@ public class DMT {
 			msg.set(OTHER_TRANSFERS_IN_SSK, (byte)stats.expectedTransfersInSSK);
 			msg.set(AVERAGE_TRANSFERS_OUT_PER_INSERT, (byte)stats.averageTransfersOutPerInsert);
 			msg.set(MAX_TRANSFERS_OUT, (byte)stats.maxTransfersOut);
+			msg.set(MAX_TRANSFERS_OUT_PEER_LIMIT, (byte)stats.maxTransfersOutPeerLimit);
+			msg.set(MAX_TRANSFERS_OUT_LOWER_LIMIT, (byte)stats.maxTransfersOutLowerLimit);
+			msg.set(MAX_TRANSFERS_OUT_UPPER_LIMIT, (byte)stats.maxTransfersOutUpperLimit);
 		} else if(stats.expectedTransfersInCHK < 65536 && stats.expectedTransfersInSSK < 65536 &&
 				stats.expectedTransfersOutCHK < 65536 && stats.expectedTransfersOutSSK < 65536 &&
-				stats.averageTransfersOutPerInsert < 65536 && stats.maxTransfersOut < 65536) {
+				stats.averageTransfersOutPerInsert < 65536 && stats.maxTransfersOut < 65536 && 
+				stats.maxTransfersOutLowerLimit < 65536 && stats.maxTransfersOutPeerLimit < 65536 &&
+				stats.maxTransfersOutUpperLimit < 65536) {
 			msg = new Message(FNPPeerLoadStatusShort);
 			msg.set(OTHER_TRANSFERS_OUT_CHK, (short)stats.expectedTransfersOutCHK);
 			msg.set(OTHER_TRANSFERS_IN_CHK, (short)stats.expectedTransfersInCHK);
@@ -1695,6 +1722,9 @@ public class DMT {
 			msg.set(OTHER_TRANSFERS_IN_SSK, (short)stats.expectedTransfersInSSK);
 			msg.set(AVERAGE_TRANSFERS_OUT_PER_INSERT, (short)stats.averageTransfersOutPerInsert);
 			msg.set(MAX_TRANSFERS_OUT, (short)stats.maxTransfersOut);
+			msg.set(MAX_TRANSFERS_OUT_PEER_LIMIT, (short)stats.maxTransfersOutPeerLimit);
+			msg.set(MAX_TRANSFERS_OUT_LOWER_LIMIT, (short)stats.maxTransfersOutLowerLimit);
+			msg.set(MAX_TRANSFERS_OUT_UPPER_LIMIT, (short)stats.maxTransfersOutUpperLimit);
 		} else {
 			msg = new Message(FNPPeerLoadStatusInt);
 			msg.set(OTHER_TRANSFERS_OUT_CHK, stats.expectedTransfersOutCHK);
@@ -1703,6 +1733,9 @@ public class DMT {
 			msg.set(OTHER_TRANSFERS_IN_SSK, stats.expectedTransfersInSSK);
 			msg.set(AVERAGE_TRANSFERS_OUT_PER_INSERT, stats.averageTransfersOutPerInsert);
 			msg.set(MAX_TRANSFERS_OUT, stats.maxTransfersOut);
+			msg.set(MAX_TRANSFERS_OUT_PEER_LIMIT, stats.maxTransfersOutPeerLimit);
+			msg.set(MAX_TRANSFERS_OUT_LOWER_LIMIT, stats.maxTransfersOutLowerLimit);
+			msg.set(MAX_TRANSFERS_OUT_UPPER_LIMIT, stats.maxTransfersOutUpperLimit);
 		}
 		msg.set(OUTPUT_BANDWIDTH_LOWER_LIMIT, (int)stats.outputBandwidthLowerLimit);
 		msg.set(OUTPUT_BANDWIDTH_UPPER_LIMIT, (int)stats.outputBandwidthUpperLimit);
@@ -1720,7 +1753,17 @@ public class DMT {
 	public static final String OTHER_TRANSFERS_IN_CHK = "otherTransfersInCHK";
 	public static final String OTHER_TRANSFERS_OUT_SSK = "otherTransfersOutSSK";
 	public static final String OTHER_TRANSFERS_IN_SSK = "otherTransfersInSSK";
+	/** Maximum transfers out, hard limit based on congestion control; we will be rejected if our usage
+	 * is over this. */
 	public static final String MAX_TRANSFERS_OUT = "maxTransfersOut";
+	/** Maximum transfers out, peer limit. If total is over the lower limit and our usage is over the
+	 * peer limit, we will be rejected. */
+	public static final String MAX_TRANSFERS_OUT_PEER_LIMIT = "maxTransfersOutPeerLimit";
+	/** Maximum transfers out, lower limit. If total is over the lower limit and our usage is over the
+	 * peer limit, we will be rejected. */
+	public static final String MAX_TRANSFERS_OUT_LOWER_LIMIT = "maxTransfersOutLowerLimit";
+	/** Maximum transfers out, upper limit. If total is over the upper limit, everything is rejected. */
+	public static final String MAX_TRANSFERS_OUT_UPPER_LIMIT = "maxTransfersOutUpperLimit";
 	
 	public static final String OUTPUT_BANDWIDTH_LOWER_LIMIT = "outputBandwidthLowerLimit";
 	public static final String OUTPUT_BANDWIDTH_UPPER_LIMIT = "outputBandwidthUpperLimit";
@@ -1769,4 +1812,28 @@ public class DMT {
 		addField(UID, Long.class);
 		addField(UID_STILL_RUNNING_FLAGS, BitArray.class);
 	}};
+	
+	// Friend-of-a-friend (FOAF) related messages
+	
+	public static final MessageType FNPGetYourFullNoderef = new MessageType("FNPGetYourFullNoderef", PRIORITY_LOW) {{
+	}};
+	
+	public static final Message createFNPGetYourFullNoderef() {
+		return new Message(FNPGetYourFullNoderef);
+	}
+	
+	public static final MessageType FNPMyFullNoderef = new MessageType("FNPMyFullNoderef", PRIORITY_LOW) {{
+		addField(UID, Long.class);
+		// Not necessary to pad it since it's not propagated across the network.
+		// It might be relayed one hop, but there's enough padding elsewhere, don't worry about it.
+		// As opposed to opennet refs, which are relayed long distances, down request paths which they might reveal, so do need to be padded.
+		addField(NODEREF_LENGTH, Integer.class);
+	}};
+	
+	public static final Message createFNPMyFullNoderef(long uid, int length) {
+		Message m = new Message(FNPMyFullNoderef);
+		m.set(UID, uid);
+		m.set(NODEREF_LENGTH, length);
+		return m;
+	}
 }

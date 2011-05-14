@@ -23,7 +23,7 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 
 	@Override
 	protected void drawNameColumn(HTMLNode peerRow,
-			PeerNodeStatus peerNodeStatus) {
+			PeerNodeStatus peerNodeStatus, boolean advanced) {
 		// Do nothing - no names on opennet
 	}
 

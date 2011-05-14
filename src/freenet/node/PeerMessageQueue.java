@@ -109,8 +109,11 @@ public class PeerMessageQueue {
 		LinkedList<MessageItem> itemsNonUrgent;
 		// Construct structures lazily, we're protected by the overall synchronized.
 
-		/** Add a new message, to the end of the lists, i.e. in first-in-first-out order,
-		 * which will wait for the existing messages to be sent first. */
+		/** Add a new message. For a normal priority level, we just add it to the end of the list.
+		 * It will be sent after the messages that are already queued, and its deadline is effectively
+		 * the time it was submitted plus the timeout. For a priority level using round robin between
+		 * peers, it is the same unless we have recently sent a message with the same UID. If we have,
+		 * the timeout is relative to the last send. */
 		public void addLast(MessageItem item) {
 			// Clear the deadline for the item.
 			item.clearDeadline();

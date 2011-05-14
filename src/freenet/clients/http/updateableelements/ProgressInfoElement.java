@@ -59,8 +59,8 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 		}
 		long elapsed = System.currentTimeMillis() - fr.timeStarted;
 		addChild("br");
-		addChild(new SecondCounterNode(System.currentTimeMillis() - fr.timeStarted, true, FProxyToadlet.l10n("timeElapsedLabel") + " "));
-		long eta = fr.eta;
+		addChild(new SecondCounterNode(elapsed, true, FProxyToadlet.l10n("timeElapsedLabel") + " "));
+		long eta = fr.eta - elapsed;
 		if (eta > 0) {
 			addChild("br");
 			addChild(new SecondCounterNode(eta, false, "ETA: "));

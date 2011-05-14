@@ -553,7 +553,7 @@ table.queue span.key_is {
 
 div#content {
     position: inherit;
-    margin: 5px;
+    margin: 0px;
     margin-left: 83px;
     margin-right: 83px;
 }
@@ -688,6 +688,7 @@ div #navbar {
 
 #navlist li a {
     text-decoration: none;
+    color: gray;
 }
 
 #navlist li a:visited {
@@ -800,7 +801,7 @@ div #navbar {
 /* Content styling */
 
 .content {
-    margin-top: 5em;
+    margin-top: 0em;
     margin-left: 83px;
     margin-right: 5em;
 }

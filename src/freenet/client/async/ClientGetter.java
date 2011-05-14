@@ -5,6 +5,7 @@ package freenet.client.async;
 
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
@@ -456,7 +457,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 				currentState = null;
 			}
 			if(e.errorCodes != null && e.errorCodes.isOneCodeOnly())
-				e = new FetchException(e.errorCodes.getFirstCode(), e);
+				e = new FetchException(e.errorCodes.getFirstCode());
 			if(e.mode == FetchException.DATA_NOT_FOUND && super.successfulBlocks > 0)
 				e = new FetchException(e, FetchException.ALL_DATA_NOT_FOUND);
 			if(logMINOR) Logger.minor(this, "onFailure("+e+", "+state+") on "+this+" for "+uri, e);
@@ -873,6 +874,10 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 
 	public void clearCooldown(ObjectContainer container) {
 		// Ignore for now. FIXME.
+	}
+
+	public Bucket getBlobBucket() {
+		return binaryBlobBucket;
 	}
 	
 }
