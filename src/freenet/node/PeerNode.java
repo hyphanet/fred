@@ -5147,10 +5147,22 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(logMINOR) Logger.minor(this, "Waking slot waiter "+this);
 			if(acceptedBy != null) {
 				if(logMINOR) Logger.minor(this, "Already accepted on "+this);
+				if(acceptedBy != peer) {
+					if(offeredKey)
+						tag.removeFetchingOfferedKeyFrom(peer);
+					else
+						tag.removeRoutingTo(peer);
+				}
 				return null;
 			}
 			if(!waitingFor.contains(peer)) {
 				if(logMINOR) Logger.minor(this, "Not waiting for peer "+peer+" on "+this);
+				if(acceptedBy != peer) {
+					if(offeredKey)
+						tag.removeFetchingOfferedKeyFrom(peer);
+					else
+						tag.removeRoutingTo(peer);
+				}
 				return null;
 			}
 			acceptedBy = peer;
