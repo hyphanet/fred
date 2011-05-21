@@ -143,6 +143,14 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			        NodeL10n.getBase().getString("Toadlet.unauthorized"));
 			return;
 		}
+		
+		String pass = request.getPartAsStringFailsafe("formPassword", 32);
+		if((pass == null) || !pass.equals(core.formPassword)) {
+			MultiValueTable<String,String> headers = new MultiValueTable<String,String>();
+			headers.put("Location", path());
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			return;
+		}
 
 		 //Returning from directory selector with a selection, re-render config page with any changes.
 		if(request.isPartSet("select-dir")) {
@@ -172,14 +180,6 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			//params ends in &. Download directory browser starts in default download directory.
 			headers.put("Location", directoryBrowserPath+params+
 			        "path="+core.getDownloadsDir().getAbsolutePath());
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-			return;
-		}
-
-		String pass = request.getPartAsStringFailsafe("formPassword", 32);
-		if((pass == null) || !pass.equals(core.formPassword)) {
-			MultiValueTable<String,String> headers = new MultiValueTable<String,String>();
-			headers.put("Location", path());
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		}
