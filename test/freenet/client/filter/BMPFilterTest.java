@@ -40,39 +40,64 @@ public class BMPFilterTest extends TestCase {
 	
 	public void testReadFilter() throws IOException {
 		new NodeL10n();
-		BMPFilter objBMPFilter=new BMPFilter();
-		Bucket output = new ArrayBucket();
 		for (Object[] test : testImages) {
 			String filename=(String) test[0];
 			int expectedresult = Integer.parseInt(test[1].toString());
 			Bucket ib;
 			ib = resourceToBucket(filename);
-			InputStream inputStream = null;
-			OutputStream outputStream = null;
-			try {
-				inputStream = ib.getInputStream();
-				outputStream = output.getOutputStream();
-				objBMPFilter.readFilter(inputStream, outputStream, "", null, null);
-				inputStream.close();
-				outputStream.close();
+
+			if(expectedresult == TESTOK) {
+				Bucket output = filterImage(ib, null);
 				assertEquals(filename + " should be valid", expectedresult,0);
 				assertEquals("Input and output should be the same length", ib.size(), output.size());
 				assertTrue("Input and output are not identical", Arrays.equals(BucketTools.toByteArray(ib), BucketTools.toByteArray(output)));
-			} 
-			catch (DataFilterException dfe) {
-
-				assertEquals(filename + " should not be valid", expectedresult,1);
+			} else if(expectedresult == DATAFILTEREXCEPTION) {
+				filterImage(ib, DataFilterException.class);
+			} else if(expectedresult == IOEXCEPTION) {
+				filterImage(ib, IOException.class);
 			}
-			catch (IOException exp)
-			{
-				assertEquals(filename + " should not be valid", expectedresult,2);
-			}
-			finally {
-				inputStream.close();
-				outputStream.close();
-			}
-
 		}
+	}
+
+	private Bucket filterImage(Bucket input, Class<? extends Exception> expected) {
+		BMPFilter objBMPFilter = new BMPFilter();
+		Bucket output = new ArrayBucket();
+
+		InputStream inStream;
+		OutputStream outStream;
+		try {
+			inStream = input.getInputStream();
+			outStream = output.getOutputStream();
+		} catch (IOException e) {
+			e.printStackTrace();
+			fail("Caugth unexpected IOException: " + e);
+			return null; //Convince the compiler that we won't continue
+		}
+
+		try {
+			objBMPFilter.readFilter(inStream, outStream, "", null, null);
+
+			if(expected != null) {
+				fail("Filter didn't throw expected exception");
+			}
+		} catch (Exception e) {
+			if((expected == null) || (!expected.isInstance(e))) {
+				//Exception is not expected nor a subclass of an expected exception
+				e.printStackTrace();
+				fail("Caugth unexpected exception: " + e.getClass() + ": " + e.getMessage());
+			}
+		}
+
+		try {
+			inStream.close();
+			outStream.close();
+		} catch(IOException e) {
+			e.printStackTrace();
+			fail("Caugth unexpected IOException: " + e);
+			return null; //Convince the compiler that we won't continue
+		}
+
+		return output;
 	}
 
 
