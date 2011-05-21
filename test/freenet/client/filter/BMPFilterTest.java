@@ -35,7 +35,6 @@ public class BMPFilterTest extends TestCase {
 		{"./bmp/ok.bmp",TESTOK}
 
 	};
-	ArrayBucket ab;
 
 	public void setUp() {
 		new NodeL10n();
@@ -44,7 +43,6 @@ public class BMPFilterTest extends TestCase {
 	public void testReadFilter() throws IOException {
 		new NodeL10n();
 		BMPFilter objBMPFilter=new BMPFilter();
-		ab = new ArrayBucket();
 		Bucket output = new ArrayBucket();
 		for (Object[] test : testImages) {
 			String filename=(String) test[0];
@@ -84,7 +82,7 @@ public class BMPFilterTest extends TestCase {
 	protected Bucket resourceToBucket(String filename) throws IOException {
 		InputStream is = getClass().getResourceAsStream(filename);
 		if (is == null) throw new FileNotFoundException();
-		ab.free();
+		Bucket ab = new ArrayBucket();
 		BucketTools.copyFrom(ab, is, Long.MAX_VALUE);
 		return ab;
 	}
