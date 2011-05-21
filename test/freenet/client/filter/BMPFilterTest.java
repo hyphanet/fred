@@ -7,17 +7,12 @@ import java.io.FileNotFoundException;
 import java.io.OutputStream;
 import java.util.Arrays;
 
-import freenet.l10n.NodeL10n;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
 
 
 public class BMPFilterTest extends TestCase {
-	public void setUp() {
-		new NodeL10n();
-	}
-	
 	/** Tests image that contains an invalid header */
 	public void testSmall() throws IOException {
 		Bucket input = resourceToBucket("./bmp/small.bmp");
