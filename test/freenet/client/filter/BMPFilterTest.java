@@ -18,6 +18,7 @@ public class BMPFilterTest extends TestCase {
 		new NodeL10n();
 	}
 	
+	/** Tests image that contains an invalid header */
 	public void testSmall() throws IOException {
 		Bucket input = resourceToBucket("./bmp/small.bmp");
 		filterImage(input, DataFilterException.class);
