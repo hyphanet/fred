@@ -332,7 +332,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			        new HTMLNode[] { new HTMLNode("input",
 			                new String[] { "type", "name", "value", "size" },
 			                new String[] { "text", "path", downloadLocation,
-			                        String.valueOf(downloadLocation.length()) }),
+			                        Integer.toString(QueueToadlet.MAX_FILENAME_LENGTH) }),
 			                DOWNLOADS_LINK });
 			optionForm.addChild("input",
 			        new String[] { "type", "name", "value" },

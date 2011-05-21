@@ -107,7 +107,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	private static final int LIST_COMPAT_MODE = 15;
 
 	private static final int MAX_IDENTIFIER_LENGTH = 1024*1024;
-	private static final int MAX_FILENAME_LENGTH = 1024*1024;
+	static final int MAX_FILENAME_LENGTH = 1024*1024;
 	private static final int MAX_TYPE_LENGTH = 1024;
 	static final int MAX_KEY_LENGTH = 1024*1024;
 
@@ -1903,7 +1903,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		}
 		node.addChild("input",
 		        new String[] { "type", "name", "value", "size" },
-		        new String[] { "text", "path", downloadLocation, String.valueOf(downloadLocation.length())});
+		        new String[] { "text", "path", downloadLocation, Integer.toString(MAX_FILENAME_LENGTH)});
 		node.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "select-location", l10n("browseToChange")+"..." });
