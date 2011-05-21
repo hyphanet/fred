@@ -26,6 +26,7 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.Logger.LogLevel;
+import freenet.support.URLEncoder;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.HTTPRequest;
 
@@ -160,10 +161,10 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			//Extract option and put into "select-for"; preserve others.
 			value = request.getPartAsStringFailsafe(key, MAX_PARAM_VALUE_SIZE);
 			if(key.startsWith("select-directory.")) {
-				params +="select-for="+key.substring("select-directory.".length())+'&';
+				params +="select-for="+URLEncoder.encode(key.substring("select-directory.".length()),true)+'&';
 				directorySelector = true;
 			} else {
-				params += key+'='+value+'&';
+				params += URLEncoder.encode(key,true)+'='+URLEncoder.encode(value, true)+'&';
 			}
 		}
 		if(directorySelector) {
