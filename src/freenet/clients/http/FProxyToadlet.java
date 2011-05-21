@@ -467,7 +467,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					ctx.writeData(buf, 0, len);
 				}
 			} finally {
-				strm.close();
+				Closer.close(strm);
 			}
 			return;
 		} else if(ks.startsWith("/feed/") || ks.equals("/feed")) {
@@ -874,8 +874,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 				if((!e.isFatal() || filterException != null) && (ctx.isAllowedFullAccess() || !container.publicGatewayMode())) {
 					addDownloadOptions(ctx, optionList, key, mimeType, filterException != null, filterException != null, core);
-					optionList.addChild("li").
-						addChild("a", "href", getLink(key, requestedMimeType, maxSize, httprequest.getParam("force", null),
+					if(filterException == null)
+						optionList.addChild("li").
+							addChild("a", "href", getLink(key, requestedMimeType, maxSize, httprequest.getParam("force", null),
 									httprequest.isParameterSet("forcedownload"))).addChild("#", l10n("retryNow"));
 				}
 

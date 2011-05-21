@@ -70,8 +70,15 @@ public class FailureTable implements OOMHook {
 	static final int MAX_ENTRIES = 20*1000;
 	/** Maximum number of offers to track */
 	static final int MAX_OFFERS = 10*1000;
-	/** Terminate a request if there was a DNF on the same key less than 10 minutes ago */
+	/** Terminate a request if there was a DNF on the same key less than 10 minutes ago.
+	 * Maximum time for any FailureTable i.e. for this period after a DNF, we will avoid the node that 
+	 * DNFed. */
 	static final int REJECT_TIME = 10*60*1000;
+	/** Maximum time for a RecentlyFailed. I.e. until this period expires, we take a request into account
+	 * when deciding whether we have recently failed to this peer. If we get a DNF, we use this figure.
+	 * If we get a RF, we use what it tells us, which can be less than this. Most other failures use
+	 * shorter periods. */
+	static final int RECENTLY_FAILED_TIME = 30*60*1000;
 	/** After 1 hour we forget about an entry completely */
 	static final int MAX_LIFETIME = 60*60*1000;
 	/** Offers expire after 10 minutes */
@@ -110,10 +117,10 @@ public class FailureTable implements OOMHook {
 			Logger.error(this, "Bogus timeout "+ftTimeout, new Exception("error"));
 			ftTimeout = Math.max(Math.min(REJECT_TIME, ftTimeout), 0);
 		}
-		if(rfTimeout < 0 || rfTimeout > REJECT_TIME) {
+		if(rfTimeout < 0 || rfTimeout > RECENTLY_FAILED_TIME) {
 			if(rfTimeout > 0)
 				Logger.error(this, "Bogus timeout "+rfTimeout, new Exception("error"));
-			rfTimeout = Math.max(Math.min(REJECT_TIME, rfTimeout), 0);
+			rfTimeout = Math.max(Math.min(RECENTLY_FAILED_TIME, rfTimeout), 0);
 		}
 		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) return;
 		long now = System.currentTimeMillis();
@@ -145,10 +152,10 @@ public class FailureTable implements OOMHook {
 			Logger.error(this, "Bogus timeout "+ftTimeout, new Exception("error"));
 			ftTimeout = Math.max(Math.min(REJECT_TIME, ftTimeout), 0);
 		}
-		if(rfTimeout < 0 || rfTimeout > REJECT_TIME) {
+		if(rfTimeout < 0 || rfTimeout > RECENTLY_FAILED_TIME) {
 			if(rfTimeout > 0)
 				Logger.error(this, "Bogus timeout "+rfTimeout, new Exception("error"));
-			rfTimeout = Math.max(Math.min(REJECT_TIME, rfTimeout), 0);
+			rfTimeout = Math.max(Math.min(RECENTLY_FAILED_TIME, rfTimeout), 0);
 		}
 		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) return;
 		long now = System.currentTimeMillis();

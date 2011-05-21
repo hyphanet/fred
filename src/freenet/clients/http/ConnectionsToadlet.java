@@ -27,6 +27,7 @@ import freenet.io.xfer.PacketThrottle;
 import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
+import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -225,12 +226,13 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		int numberOfConnError = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_CONN_ERROR);
 		int numberOfDisconnecting = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_DISCONNECTING);
 		int numberOfRoutingDisabled = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_ROUTING_DISABLED);
+		int numberOfNoLoadStats = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_NO_LOAD_STATS);
 		
 		int numberOfSimpleConnected = numberOfConnected + numberOfRoutingBackedOff;
-		int numberOfNotConnected = numberOfTooNew + numberOfTooOld + numberOfDisconnected + numberOfNeverConnected + numberOfDisabled + numberOfBursting + numberOfListening + numberOfListenOnly + numberOfClockProblem + numberOfConnError;
+		int numberOfNotConnected = numberOfTooNew + numberOfTooOld +  numberOfNoLoadStats + numberOfDisconnected + numberOfNeverConnected + numberOfDisabled + numberOfBursting + numberOfListening + numberOfListenOnly + numberOfClockProblem + numberOfConnError;
 		String titleCountString = null;
 		if(node.isAdvancedModeEnabled()) {
-			titleCountString = "(" + numberOfConnected + '/' + numberOfRoutingBackedOff + '/' + numberOfTooNew + '/' + numberOfTooOld + '/' + numberOfRoutingDisabled + '/' + numberOfNotConnected + ')';
+			titleCountString = "(" + numberOfConnected + '/' + numberOfRoutingBackedOff + '/' + numberOfTooNew + '/' + numberOfTooOld + '/' + numberOfNoLoadStats + '/' + numberOfRoutingDisabled + '/' + numberOfNotConnected + ')';
 		} else {
 			titleCountString = (numberOfNotConnected + numberOfSimpleConnected)>0 ? String.valueOf(numberOfSimpleConnected) : "";
 		}
@@ -264,6 +266,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				double routingMissDistanceLocal =  stats.routingMissDistanceLocal.currentValue();
 				double routingMissDistanceRemote =  stats.routingMissDistanceRemote.currentValue();
 				double routingMissDistanceOverall =  stats.routingMissDistanceOverall.currentValue();
+				double routingMissDistanceBulk =  stats.routingMissDistanceBulk.currentValue();
+				double routingMissDistanceRT =  stats.routingMissDistanceRT.currentValue();
 				double backedOffPercent =  stats.backedOffPercent.currentValue();
 				String nodeUptimeString = TimeUtil.formatTime(nodeUptimeSeconds * 1000);  // *1000 to convert to milliseconds
 				
@@ -286,6 +290,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				overviewList.addChild("li", "routingMissDistanceLocal:\u00a0" + fix4.format(routingMissDistanceLocal));
 				overviewList.addChild("li", "routingMissDistanceRemote:\u00a0" + fix4.format(routingMissDistanceRemote));
 				overviewList.addChild("li", "routingMissDistanceOverall:\u00a0" + fix4.format(routingMissDistanceOverall));
+				overviewList.addChild("li", "routingMissDistanceBulk:\u00a0" + fix4.format(routingMissDistanceBulk));
+				overviewList.addChild("li", "routingMissDistanceRT:\u00a0" + fix4.format(routingMissDistanceRT));
 				overviewList.addChild("li", "backedOffPercent:\u00a0" + fix1.format(backedOffPercent));
 				overviewList.addChild("li", "pInstantReject:\u00a0" + fix1.format(stats.pRejectIncomingInstantly()));
 				nextTableCell = overviewTableRow.addChild("td");
@@ -308,7 +314,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				
 				// Peer statistics box
 				HTMLNode peerStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
-				StatisticsToadlet.drawPeerStatsBox(peerStatsInfobox, mode >= PageMaker.MODE_ADVANCED, numberOfConnected, numberOfRoutingBackedOff, numberOfTooNew, numberOfTooOld, numberOfDisconnected, numberOfNeverConnected, numberOfDisabled, numberOfBursting, numberOfListening, numberOfListenOnly, 0, 0, numberOfRoutingDisabled, numberOfClockProblem, numberOfConnError, numberOfDisconnecting, node);
+				StatisticsToadlet.drawPeerStatsBox(peerStatsInfobox, mode >= PageMaker.MODE_ADVANCED, numberOfConnected, numberOfRoutingBackedOff, numberOfTooNew, numberOfTooOld, numberOfDisconnected, numberOfNeverConnected, numberOfDisabled, numberOfBursting, numberOfListening, numberOfListenOnly, 0, 0, numberOfRoutingDisabled, numberOfClockProblem, numberOfConnError, numberOfDisconnecting, numberOfNoLoadStats, node);
 				
 				// Peer routing backoff reason box
 				if(mode >= PageMaker.MODE_ADVANCED) {
@@ -394,7 +400,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			if (mode >= PageMaker.MODE_ADVANCED) {
 				if (!path.endsWith("displaymessagetypes.html")) {
 					peerTableInfoboxHeader.addChild("#", " ");
-					peerTableInfoboxHeader.addChild("a", "href", "displaymessagetypes.html", "(more detailed)");
+					peerTableInfoboxHeader.addChild("a", "href", "displaymessagetypes.html", l10n("bracketedMoreDetailed"));
 				}
 			}
 			HTMLNode peerTableInfoboxContent = peerTableInfobox.addChild("div", "class", "infobox-content");
@@ -419,6 +425,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "name")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("nameClickToMessage"), "border-bottom: 1px dotted; cursor: help;" }, l10n("nameTitle"));
 				if(hasTrustColumn())
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "trust")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("trustMessage"), "border-bottom: 1px dotted; cursor: help;" }, l10n("trustTitle"));
+				if(hasVisibilityColumn())
+					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "trust")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("visibilityMessage"+((mode >= PageMaker.MODE_ADVANCED)?"Advanced":"Simple")), "border-bottom: 1px dotted; cursor: help;" }, l10n("visibilityTitle"));
 				if (mode >= PageMaker.MODE_ADVANCED) {
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "address")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("ipAddress"), "border-bottom: 1px dotted; cursor: help;" }, l10n("ipAddressTitle"));
 				}
@@ -539,9 +547,20 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			if(trustS != null && !trustS.equals(""))
 				trust = FRIEND_TRUST.valueOf(trustS);
 			
+			String visibilityS = request.getPartAsStringFailsafe("visibility", 10);
+			FRIEND_VISIBILITY visibility = null;
+			if(visibilityS != null && !visibilityS.equals(""))
+				visibility = FRIEND_VISIBILITY.valueOf(visibilityS);
+			
 			if(trust == null && !isOpennet()) {
 				// FIXME: Layering violation. Ideally DarknetPeerNode would do this check.
 				this.sendErrorPage(ctx, 200, l10n("noTrustLevelAddingFriendTitle"), l10n("noTrustLevelAddingFriend"), !isOpennet());
+				return;
+			}
+			
+			if(visibility == null && !isOpennet()) {
+				// FIXME: Layering violation. Ideally DarknetPeerNode would do this check.
+				this.sendErrorPage(ctx, 200, l10n("noVisibilityLevelAddingFriendTitle"), l10n("noVisibilityLevelAddingFriend"), !isOpennet());
 				return;
 			}
 			
@@ -590,11 +609,30 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				ref.setCharAt(idx, '\n');
 			}
 			String[] nodesToAdd=ref.toString().split("\nEnd\n");
+			for(int i=0;i<nodesToAdd.length;i++) {
+				String[] split = nodesToAdd[i].split("\n");
+				StringBuffer sb = new StringBuffer(nodesToAdd[i].length());
+				boolean first = true;
+				for(String s : split) {
+					if(s.equals("End")) break;
+					if(s.indexOf('=') > -1) {
+						if(!first)
+							sb.append('\n');
+					} else {
+						// Try appending it - don't add a newline.
+						// This will make broken refs work sometimes.
+					}
+					sb.append(s);
+					first = false;
+				}
+				nodesToAdd[i] = sb.toString();
+				// Don't need to add a newline at the end, we will do that later.
+			}
 			//The peer's additions results
 			Map<PeerAdditionReturnCodes,Integer> results=new HashMap<PeerAdditionReturnCodes, Integer>();
 			for(int i=0;i<nodesToAdd.length;i++){
 				//We need to trim then concat 'End' to the node's reference, this way we have a normal reference(the split() removes the 'End'-s!)
-				PeerAdditionReturnCodes result=addNewNode(nodesToAdd[i].trim().concat("\nEnd"), privateComment, trust);
+				PeerAdditionReturnCodes result=addNewNode(nodesToAdd[i].trim().concat("\nEnd"), privateComment, trust, visibility);
 				//Store the result
 				if(results.containsKey(result)==false){
 					results.put(result, Integer.valueOf(0));
@@ -638,7 +676,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	 * @param trust 
 	 * @param request To pull any extra fields from
 	 * @return The result of the addition*/
-	private PeerAdditionReturnCodes addNewNode(String nodeReference,String privateComment, FRIEND_TRUST trust){
+	private PeerAdditionReturnCodes addNewNode(String nodeReference,String privateComment, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility){
 		SimpleFieldSet fs;
 		
 		try {
@@ -659,7 +697,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			if(isOpennet()) {
 				pn = node.createNewOpennetNode(fs);
 			} else {
-				pn = node.createNewDarknetNode(fs, trust);
+				pn = node.createNewDarknetNode(fs, trust, visibility);
 				((DarknetPeerNode)pn).setPrivateDarknetCommentNote(privateComment);
 			}
 		} catch (FSParseException e1) {
@@ -768,8 +806,20 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				input.addChild("#", l10n("peerTrustExplain."+trust.name()));
 			}
 			peerAdditionForm.addChild("br");
+			
+			peerAdditionForm.addChild("b", l10n("peerVisibilityTitle"));
+			peerAdditionForm.addChild("#", " ");
+			peerAdditionForm.addChild("#", l10n("peerVisibilityIntroduction"));
+			for(FRIEND_VISIBILITY trust : FRIEND_VISIBILITY.values()) { // FIXME reverse order
+				HTMLNode input = peerAdditionForm.addChild("br").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "visibility", trust.name() });
+				input.addChild("b", l10n("peerVisibility."+trust.name())); // FIXME l10n
+				input.addChild("#", ": ");
+				input.addChild("#", l10n("peerVisibilityExplain."+trust.name()));
+			}
+			peerAdditionForm.addChild("br");
+			
 		}
-		 
+		
 		if(!isOpennet) {
 			peerAdditionForm.addChild("#", (l10n("enterDescription") + ' '));
 			peerAdditionForm.addChild("input", new String[] { "id", "type", "name", "size", "maxlength", "value" }, new String[] { "peerPrivateNote", "text", "peerPrivateNote", "16", "250", "" });
@@ -805,9 +855,11 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		}
 		peerRow.addChild("td", "class", "peer-status").addChild("span", "class", peerNodeStatus.getStatusCSSName(), NodeL10n.getBase().getString("ConnectionsToadlet.nodeStatus." + statusString) + (peerNodeStatus.isFetchingARK() ? "*" : ""));
 
-		drawNameColumn(peerRow, peerNodeStatus);
+		drawNameColumn(peerRow, peerNodeStatus, advancedModeEnabled);
 		
 		drawTrustColumn(peerRow, peerNodeStatus);
+		
+		drawVisibilityColumn(peerRow, peerNodeStatus, advancedModeEnabled);
 		
 		// address column
 		if (advancedModeEnabled) {
@@ -946,13 +998,21 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		// Do nothing
 	}
 
+	protected boolean hasVisibilityColumn() {
+		return false;
+	}
+
+	protected void drawVisibilityColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus, boolean advancedModeEnabled) {
+		// Do nothing
+	}
+
 	/** Is there a name column? */
 	abstract protected boolean hasNameColumn();
 	
 	/**
 	 * Draw the name column, if there is one. This will be directly after the status column.
 	 */
-	abstract protected void drawNameColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus);
+	abstract protected void drawNameColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus, boolean advanced);
 
 	/**
 	 * Is there a private note column?

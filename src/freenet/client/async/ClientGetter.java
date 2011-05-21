@@ -5,6 +5,7 @@ package freenet.client.async;
 
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
@@ -37,6 +38,7 @@ import freenet.client.filter.UnknownContentTypeException;
 import freenet.client.filter.UnsafeContentTypeException;
 import freenet.crypt.HashResult;
 import freenet.keys.ClientKeyBlock;
+import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.node.RequestClient;
@@ -227,6 +229,8 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "Succeeded from "+state+" on "+this);
+		// Fetching the container is essentially a full success, we should update the latest known good.
+		context.uskManager.checkUSK(uri, persistent(), container, false);
 		if(persistent()) {
 			container.activate(uri, 5);
 			container.activate(clientMetadata, Integer.MAX_VALUE);
@@ -453,7 +457,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 				currentState = null;
 			}
 			if(e.errorCodes != null && e.errorCodes.isOneCodeOnly())
-				e = new FetchException(e.errorCodes.getFirstCode(), e);
+				e = new FetchException(e.errorCodes.getFirstCode());
 			if(e.mode == FetchException.DATA_NOT_FOUND && super.successfulBlocks > 0)
 				e = new FetchException(e, FetchException.ALL_DATA_NOT_FOUND);
 			if(logMINOR) Logger.minor(this, "onFailure("+e+", "+state+") on "+this+" for "+uri, e);
@@ -870,6 +874,10 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 
 	public void clearCooldown(ObjectContainer container) {
 		// Ignore for now. FIXME.
+	}
+
+	public Bucket getBlobBucket() {
+		return binaryBlobBucket;
 	}
 	
 }

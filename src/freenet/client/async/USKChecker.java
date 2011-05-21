@@ -47,6 +47,7 @@ class USKChecker extends BaseSingleFileFetcher {
 			container.activate(this, 1);
 			container.activate(cb, 1);
 		}
+		// No need to check from here since USKFetcher will be told anyway.
 		cb.onSuccess((ClientSSKBlock)block, context);
 	}
 

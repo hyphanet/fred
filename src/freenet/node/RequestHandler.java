@@ -186,7 +186,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		if(o == null) { // ran out of htl?
 			Message dnf = DMT.createFNPDataNotFound(uid);
 			status = RequestSender.DATA_NOT_FOUND; // for byte logging
-			node.failureTable.onFinalFailure(key, null, htl, htl, FailureTable.REJECT_TIME, FailureTable.REJECT_TIME, source);
+			node.failureTable.onFinalFailure(key, null, htl, htl, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
 			sendTerminal(dnf);
 			node.nodeStats.remoteRequest(key instanceof NodeSSK, false, false, htl, key.toNormalizedDouble(), realTimeFlag, false);
 			return;
@@ -205,6 +205,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	public void onReceivedRejectOverload() {
 		try {
 			if(!sentRejectedOverload) {
+				if(logMINOR) Logger.minor(this, "Propagating RejectedOverload on "+this);
 				// Forward RejectedOverload
 				//Note: This message is only discernible from the terminal messages by the IS_LOCAL flag being false. (!IS_LOCAL)->!Terminal
 				Message msg = DMT.createFNPRejectedOverload(uid, false, true, realTimeFlag);
@@ -219,6 +220,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	private boolean disconnected = false;
 
 	public void onCHKTransferBegins() {
+		if(logMINOR) Logger.minor(this, "CHK transfer start on "+this);
 		try {
 			// Is a CHK.
 			Message df = DMT.createFNPCHKDataFound(uid, rs.getHeaders());
@@ -379,6 +381,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		node.nodeStats.remoteRequest(key instanceof NodeSSK, status == RequestSender.SUCCESS, false, htl, key.toNormalizedDouble(), realTimeFlag, fromOfferedKey);
 
 		if(tooLate) {
+			if(logMINOR) Logger.minor(this, "Too late");
 			// Offer the data if there is any.
 			node.failureTable.onFinalFailure(key, null, htl, htl, -1, -1, source);
 			PeerNode routedLast = rs == null ? null : rs.routedLast();

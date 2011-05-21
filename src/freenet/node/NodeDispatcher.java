@@ -132,6 +132,9 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		} else if(spec == DMT.FNPSentPackets) {
 			source.handleSentPackets(m);
 			return true;
+		} else if(spec == DMT.FNPVisibility && source instanceof DarknetPeerNode) {
+			((DarknetPeerNode)source).handleVisibility(m);
+			return true;
 		} else if(spec == DMT.FNPVoid) {
 			return true;
 		} else if(spec == DMT.FNPDisconnect) {
@@ -140,11 +143,11 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		} else if(spec == DMT.nodeToNodeMessage) {
 			node.receivedNodeToNodeMessage(m, source);
 			return true;
-		} else if(spec == DMT.UOMAnnounce && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
+		} else if(spec == DMT.UOMAnnounce && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleAnnounce(m, source);
-		} else if(spec == DMT.UOMRequestRevocation && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
+		} else if(spec == DMT.UOMRequestRevocation && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleRequestRevocation(m, source);
-		} else if(spec == DMT.UOMSendingRevocation && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
+		} else if(spec == DMT.UOMSendingRevocation && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleSendingRevocation(m, source);
 		} else if(spec == DMT.UOMRequestMain && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
 			node.nodeUpdater.uom.handleRequestJar(m, source, false);
@@ -195,6 +198,10 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			source.updateLocation(newLoc, locs);
 			
 			return true;
+		} else if(spec == DMT.FNPPeerLoadStatusByte || spec == DMT.FNPPeerLoadStatusShort || spec == DMT.FNPPeerLoadStatusInt) {
+			// Must be handled before doing the routable check!
+			// We may not have received the Location yet, etc.
+			return handlePeerLoadStatus(m, source);
 		}
 		
 		if(!source.isRoutable()) {
@@ -268,8 +275,12 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			return handleOfferKey(m, source);
 		} else if(spec == DMT.FNPGetOfferedKey) {
 			return handleGetOfferedKey(m, source);
-		} else if(spec == DMT.FNPPeerLoadStatusByte || spec == DMT.FNPPeerLoadStatusShort || spec == DMT.FNPPeerLoadStatusInt) {
-			return handlePeerLoadStatus(m, source);
+		} else if(spec == DMT.FNPGetYourFullNoderef && source instanceof DarknetPeerNode) {
+			((DarknetPeerNode)source).sendFullNoderef();
+			return true;
+		} else if(spec == DMT.FNPMyFullNoderef && source instanceof DarknetPeerNode) {
+			((DarknetPeerNode)source).handleFullNoderef(m);
+			return true;
 		}
 		return false;
 	}

@@ -1152,5 +1152,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 	Node getNode() {
 		return node;
 	}
+
+	public void setUseAIMDs(boolean val) {
+		starter.setUseAIMDs(val);
+	}
 	
 }
