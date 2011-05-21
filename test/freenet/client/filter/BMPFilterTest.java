@@ -14,49 +14,72 @@ import freenet.support.io.BucketTools;
 
 
 public class BMPFilterTest extends TestCase {
-
-	static final int TESTOK = 0;
-	static final int DATAFILTEREXCEPTION = 1;
-	static final int IOEXCEPTION = 2;
-	static Object[][]  testImages={
-		{"./bmp/small.bmp",DATAFILTEREXCEPTION},
-		{"./bmp/one.bmp",DATAFILTEREXCEPTION},
-		{"./bmp/two.bmp",DATAFILTEREXCEPTION},
-		{"./bmp/three.bmp",DATAFILTEREXCEPTION},
-		{"./bmp/four.bmp",DATAFILTEREXCEPTION},
-		{"./bmp/five.bmp",DATAFILTEREXCEPTION},
-		{"./bmp/six.bmp",DATAFILTEREXCEPTION},
-		{"./bmp/seven.bmp",DATAFILTEREXCEPTION},
-		{"./bmp/eight.bmp",DATAFILTEREXCEPTION},
-		{"./bmp/nine.bmp",DATAFILTEREXCEPTION},
-		{"./bmp/ten.bmp",DATAFILTEREXCEPTION},
-		{"./bmp/ok.bmp",TESTOK}
-
-	};
-
 	public void setUp() {
 		new NodeL10n();
 	}
 	
-	public void testReadFilter() throws IOException {
-		new NodeL10n();
-		for (Object[] test : testImages) {
-			String filename=(String) test[0];
-			int expectedresult = Integer.parseInt(test[1].toString());
-			Bucket ib;
-			ib = resourceToBucket(filename);
+	public void testSmall() throws IOException {
+		Bucket input = resourceToBucket("./bmp/small.bmp");
+		filterImage(input, DataFilterException.class);
+	}
 
-			if(expectedresult == TESTOK) {
-				Bucket output = filterImage(ib, null);
-				assertEquals(filename + " should be valid", expectedresult,0);
-				assertEquals("Input and output should be the same length", ib.size(), output.size());
-				assertTrue("Input and output are not identical", Arrays.equals(BucketTools.toByteArray(ib), BucketTools.toByteArray(output)));
-			} else if(expectedresult == DATAFILTEREXCEPTION) {
-				filterImage(ib, DataFilterException.class);
-			} else if(expectedresult == IOEXCEPTION) {
-				filterImage(ib, IOException.class);
-			}
-		}
+	public void testOne() throws IOException {
+		Bucket input = resourceToBucket("./bmp/one.bmp");
+		filterImage(input, DataFilterException.class);
+	}
+
+	public void testTwo() throws IOException {
+		Bucket input = resourceToBucket("./bmp/two.bmp");
+		filterImage(input, DataFilterException.class);
+	}
+
+	public void testThree() throws IOException {
+		Bucket input = resourceToBucket("./bmp/three.bmp");
+		filterImage(input, DataFilterException.class);
+	}
+
+	public void testFour() throws IOException {
+		Bucket input = resourceToBucket("./bmp/four.bmp");
+		filterImage(input, DataFilterException.class);
+	}
+
+	public void testFive() throws IOException {
+		Bucket input = resourceToBucket("./bmp/five.bmp");
+		filterImage(input, DataFilterException.class);
+	}
+
+	public void testSix() throws IOException {
+		Bucket input = resourceToBucket("./bmp/six.bmp");
+		filterImage(input, DataFilterException.class);
+	}
+
+	public void testSeven() throws IOException {
+		Bucket input = resourceToBucket("./bmp/seven.bmp");
+		filterImage(input, DataFilterException.class);
+	}
+
+	public void testEight() throws IOException {
+		Bucket input = resourceToBucket("./bmp/eight.bmp");
+		filterImage(input, DataFilterException.class);
+	}
+
+	public void testNine() throws IOException {
+		Bucket input = resourceToBucket("./bmp/nine.bmp");
+		filterImage(input, DataFilterException.class);
+	}
+
+	public void testTen() throws IOException {
+		Bucket input = resourceToBucket("./bmp/ten.bmp");
+		filterImage(input, DataFilterException.class);
+	}
+
+	public void testOk() throws IOException {
+		Bucket input = resourceToBucket("./bmp/ok.bmp");
+		Bucket output = filterImage(input, null);
+
+		//Filter should return the original
+		assertEquals("Input and output should be the same length", input.size(), output.size());
+		assertTrue("Input and output are not identical", Arrays.equals(BucketTools.toByteArray(input), BucketTools.toByteArray(output)));
 	}
 
 	private Bucket filterImage(Bucket input, Class<? extends Exception> expected) {
