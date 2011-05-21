@@ -4,36 +4,25 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class IPConverter {
-	// File containing ip ranges and countries
-	private RandomAccessFile file;
-	// Indicates offset at which ipranges start in file
-	private long startPos;
 	// Default name for file name
 	private static final String FILE_NAME = "IpToCountry.dat";
-	// Regex indicating headers start
-	private static final String HEADERS = "##headers##(\\d+{1})##";
 	// Regex indicating ipranges start
 	private static final String START = "##start##";
-	// Sorted Tree for faster header access
-	private TreeMap<Long, Long> headers;
-	// Default mode
-	private final static Mode DEFAULT_MODE = Mode.MEMORY;
-	// Hashmap used for caching (if in File Mode)
+	// Local cache
 	private HashMap<Long, Country> cache;
-	// Hashmap containing all IP ranges (if in MEMORY Mode)
-	private LinkedHashMap<Long, String> ipranges;
+	// Cached DB file content
+	private WeakReference<Cache> fullCache;
 	// Reference to singleton object
 	private static IPConverter instance;
+	// File containing IP ranges
+	private File dbFile;
 
 	private Logger logger = Logger.getLogger(getClass().getName());
 
@@ -50,6 +39,108 @@ public class IPConverter {
 		 * Indicates file mode, in which queries are read directly from file
 		 */
 		FILE;
+	}
+
+	public enum Country {
+		L0("localhost"), I0("IntraNet"), A1("Anonymous Proxy"), A2(
+				"Satellite Provider"),AF("AFGHANISTAN"), AX("ALAND ISLANDS"), AL("ALBANIA"), AN(
+				"NETHERLANDS ANTILLES"), DZ("ALGERIA"), AS("AMERICAN SAMOA"), AD(
+				"ANDORRA"), AO("ANGOLA"), AI("ANGUILLA"), AQ("ANTARCTICA"), AG(
+				"ANTIGUA AND BARBUDA"), AR("ARGENTINA"), AM("ARMENIA"), AW(
+				"ARUBA"), AU("AUSTRALIA"), AT("AUSTRIA"), AZ("AZERBAIJAN"), BS(
+				"BAHAMAS"), BH("BAHRAIN "), BD("BANGLADESH "), BB("BARBADOS "), BY(
+				"BELARUS "), BE("BELGIUM "), BZ("BELIZE "), BJ("BENIN "), BM(
+				"BERMUDA "), BT("BHUTAN "), BO(
+				"BOLIVIA, PLURINATIONAL STATE OF "), BQ(
+				"BONAIRE, SAINT EUSTATIUS AND SABA "), BA(
+				"BOSNIA AND HERZEGOVINA "), BW("BOTSWANA "), BV(
+				"BOUVET ISLAND "), BR("BRAZIL "), IO(
+				"BRITISH INDIAN OCEAN TERRITORY "), BN("BRUNEI DARUSSALAM "), BG(
+				"BULGARIA "), BF("BURKINA FASO "), BI("BURUNDI "), KH(
+				"CAMBODIA "), CM("CAMEROON "), CA("CANADA "), CV("CAPE VERDE "), KY(
+				"CAYMAN ISLANDS "), CF("CENTRAL AFRICAN REPUBLIC "), TD("CHAD "), CL(
+				"CHILE "), CN("CHINA "), CX("CHRISTMAS ISLAND "), CC(
+				"COCOS (KEELING) ISLANDS "), CO("COLOMBIA "), KM("COMOROS "), CG(
+				"CONGO "), CD("CONGO, THE DEMOCRATIC REPUBLIC OF THE "), CK(
+				"COOK ISLANDS "), CR("COSTA RICA "), CI("COTE D'IVOIRE "), HR(
+				"CROATIA "), CU("CUBA "), CW("CURACAO "), CY("CYPRUS "), CZ(
+				"CZECH REPUBLIC "), DK("DENMARK "), DJ("DJIBOUTI "), DM(
+				"DOMINICA "), DO("DOMINICAN REPUBLIC "), EC("ECUADOR "), EG(
+				"EGYPT "), SV("EL SALVADOR "), GQ("EQUATORIAL GUINEA "), ER(
+				"ERITREA "), EE("ESTONIA "), ET("ETHIOPIA "), FK(
+				"FALKLAND ISLANDS (MALVINAS) "), FO("FAROE ISLANDS "), FJ(
+				"FIJI "), FI("FINLAND "), FR("FRANCE "), GF("FRENCH GUIANA "), PF(
+				"FRENCH POLYNESIA "), TF("FRENCH SOUTHERN TERRITORIES "), GA(
+				"GABON "), GM("GAMBIA "), GE("GEORGIA "), DE("GERMANY "), GH(
+				"GHANA "), GI("GIBRALTAR "), GR("GREECE "), GL("GREENLAND "), GD(
+				"GRENADA "), GP("GUADELOUPE "), GU("GUAM "), GT("GUATEMALA "), GG(
+				"GUERNSEY "), GN("GUINEA "), GW("GUINEA-BISSAU "), GY("GUYANA "), HT(
+				"HAITI "), HM("HEARD ISLAND AND MCDONALD ISLANDS "), VA(
+				"HOLY SEE (VATICAN CITY STATE) "), HN("HONDURAS "), HK(
+				"HONG KONG "), HU("HUNGARY "), IS("ICELAND "), IN("INDIA "), ID(
+				"INDONESIA "), IR("IRAN, ISLAMIC REPUBLIC OF "), IQ("IRAQ "), IE(
+				"IRELAND "), IM("ISLE OF MAN "), IL("ISRAEL "), IT("ITALY "), JM(
+				"JAMAICA "), JP("JAPAN "), JE("JERSEY "), JO("JORDAN "), KZ(
+				"KAZAKHSTAN "), KE("KENYA "), KI("KIRIBATI "), KP(
+				"KOREA, DEMOCRATIC PEOPLE'S REPUBLIC OF "), KR(
+				"KOREA, REPUBLIC OF "), KW("KUWAIT "), KG("KYRGYZSTAN "), LA(
+				"LAO PEOPLE'S DEMOCRATIC REPUBLIC "), LV("LATVIA "), LB(
+				"LEBANON "), LS("LESOTHO "), LR("LIBERIA "), LY(
+				"LIBYAN ARAB JAMAHIRIYA "), LI("LIECHTENSTEIN "), LT(
+				"LITHUANIA "), LU("LUXEMBOURG "), MO("MACAO "), MK(
+				"MACEDONIA, THE FORMER YUGOSLAV REPUBLIC OF "), MG(
+				"MADAGASCAR "), MW("MALAWI "), MY("MALAYSIA "), MV("MALDIVES "), ML(
+				"MALI "), MT("MALTA "), MH("MARSHALL ISLANDS "), MQ(
+				"MARTINIQUE "), MR("MAURITANIA "), MU("MAURITIUS "), YT(
+				"MAYOTTE "), MX("MEXICO "), FM(
+				"MICRONESIA, FEDERATED STATES OF "), MD("MOLDOVA, REPUBLIC OF "), MC(
+				"MONACO "), MN("MONGOLIA "), ME("MONTENEGRO "), MS(
+				"MONTSERRAT "), MA("MOROCCO "), MZ("MOZAMBIQUE "), MM(
+				"MYANMAR "), NA("NAMIBIA "), NR("NAURU "), NP("NEPAL "), NL(
+				"NETHERLANDS "), NC("NEW CALEDONIA "), NZ("NEW ZEALAND "), NI(
+				"NICARAGUA "), NE("NIGER "), NG("NIGERIA "), NU("NIUE "), NF(
+				"NORFOLK ISLAND "), MP("NORTHERN MARIANA ISLANDS "), NO(
+				"NORWAY "), OM("OMAN "), PK("PAKISTAN "), PW("PALAU "), PS(
+				"PALESTINIAN TERRITORY, OCCUPIED "), PA("PANAMA "), PG(
+				"PAPUA NEW GUINEA "), PY("PARAGUAY "), PE("PERU "), PH(
+				"PHILIPPINES "), PN("PITCAIRN "), PL("POLAND "), PT("PORTUGAL "), PR(
+				"PUERTO RICO "), QA("QATAR "), RE("REUNION "), RO("ROMANIA "), RU(
+				"RUSSIAN FEDERATION "), RW("RWANDA "), BL("SAINT BARTHELEMY "), SH(
+				"SAINT HELENA, ASCENSION AND TRISTAN DA CUNHA "), KN(
+				"SAINT KITTS AND NEVIS "), LC("SAINT LUCIA "), MF(
+				"SAINT MARTIN (FRENCH PART) "), PM("SAINT PIERRE AND MIQUELON "), VC(
+				"SAINT VINCENT AND THE GRENADINES "), WS("SAMOA "), SM(
+				"SAN MARINO "), ST("SAO TOME AND PRINCIPE "), SA(
+				"SAUDI ARABIA "), SN("SENEGAL "), RS("SERBIA "), SC(
+				"SEYCHELLES "), SL("SIERRA LEONE "), SG("SINGAPORE "), SX(
+				"SINT MAARTEN (DUTCH PART) "), SK("SLOVAKIA "), SI("SLOVENIA "), SB(
+				"SOLOMON ISLANDS "), SO("SOMALIA "), ZA("SOUTH AFRICA "), GS(
+				"SOUTH GEORGIA AND THE SOUTH SANDWICH ISLANDS "), ES("SPAIN "), LK(
+				"SRI LANKA "), SD("SUDAN "), SR("SURINAME "), SJ(
+				"SVALBARD AND JAN MAYEN "), SZ("SWAZILAND "), SE("SWEDEN "), CH(
+				"SWITZERLAND "), SY("SYRIAN ARAB REPUBLIC "), TW(
+				"TAIWAN, PROVINCE OF CHINA "), TJ("TAJIKISTAN "), TZ(
+				"TANZANIA, UNITED REPUBLIC OF "), TH("THAILAND "), TL(
+				"TIMOR-LESTE "), TG("TOGO "), TK("TOKELAU "), TO("TONGA "), TT(
+				"TRINIDAD AND TOBAGO "), TN("TUNISIA "), TR("TURKEY "), TM(
+				"TURKMENISTAN "), TC("TURKS AND CAICOS ISLANDS "), TV("TUVALU "), UG(
+				"UGANDA "), UA("UKRAINE "), AE("UNITED ARAB EMIRATES "), GB(
+				"UNITED KINGDOM "), US("UNITED STATES "), UM(
+				"UNITED STATES MINOR OUTLYING ISLANDS "), UY("URUGUAY "), UZ(
+				"UZBEKISTAN "), VU("VANUATU "), VE(
+				"VENEZUELA, BOLIVARIAN REPUBLIC OF "), VN("VIET NAM "), VG(
+				"VIRGIN ISLANDS, BRITISH "), VI("VIRGIN ISLANDS, U.S. "), WF(
+				"WALLIS AND FUTUNA "), EH("WESTERN SAHARA "), YE("YEMEN "), ZM(
+				"ZAMBIA "), ZW("ZIMBABWE "), ZZ("NA"), EU("European Union");
+		private String name;
+
+		Country(String name) {
+			this.name = name;
+		}
+
+		public String getName() {
+			return name;
+		}
 	}
 
 	// Base85 Decoding table
@@ -70,17 +161,9 @@ public class IPConverter {
 	 * @see Mode
 	 */
 	private IPConverter() {
-		URL filePath = getClass().getResource(FILE_NAME);
+		URL fileURL = getClass().getResource(FILE_NAME);
 		cache = new HashMap<Long, Country>();
-		File dbFile = new File(filePath.getFile());
-		try {
-			file = new RandomAccessFile(dbFile, "r");
-			init();
-		} catch (FileNotFoundException e) {
-			logger.log(Level.INFO, e.getMessage(), e);
-		} catch (IOException e) {
-			logger.log(Level.INFO, e.getMessage(), e);
-		}
+		dbFile = new File(fileURL.getFile());
 	}
 
 	/**
@@ -96,30 +179,6 @@ public class IPConverter {
 	}
 
 	/**
-	 * Depending on current {@link Mode}, initializes the converter. If in file,
-	 * it simply reads the headers and if in memory mode, it copies all ipranges
-	 * from file to memory and closes the file.
-	 * 
-	 * @throws IOException
-	 */
-	private void init() throws IOException {
-		String line;
-		// Read headers
-		do {
-			line = file.readLine();
-		} while (!line.startsWith("##headers##"));
-		readHeaders(line);
-		// Find data start
-		do {
-			line = file.readLine();
-		} while (!line.startsWith(START));
-		startPos = file.getFilePointer() - line.length() + START.length();
-		if (getDefaultMode() == Mode.MEMORY) {
-			readRanges(line);
-		}
-	}
-
-	/**
 	 * Copies all IP ranges from given String to memory. This method is only
 	 * accessed if converter is in memory mode.
 	 * 
@@ -128,42 +187,42 @@ public class IPConverter {
 	 * @see Mode
 	 * @throws IOException
 	 */
-	private void readRanges(String line) throws IOException {
-		ipranges = new LinkedHashMap<Long, String>();
-		// Remove ##start##
-		line = line.substring(START.length());
-		// Read ips and add it to ip table
-		for (int i = 0; i < line.length() / 7 - 1; i++) {
-			int offset = i * 7;
-			String iprange = line.substring(offset, offset + 7);
-			// Code
-			String code = iprange.substring(0, 2);
-			// Ip
-			String ipcode = iprange.substring(2);
-			long ip = decodeBase85(ipcode.getBytes());
-			ipranges.put(ip, code);
+	private Cache readRanges() {
+		RandomAccessFile raf;
+		try {
+			raf = new RandomAccessFile(dbFile, "r");
+			String line;
+			do {
+				line = raf.readLine();
+			} while (!line.startsWith(START));
+			// Remove ##start##
+			line = line.substring(START.length());
+			// Count of entries (each being 7 Bytes)
+			int size = line.length() / 7;
+			// Arrays to form a Cache
+			short[] codes = new short[size];
+			long[] ips = new long[size];
+			// Read ips and add it to ip table
+			for (int i = 0; i < size; i++) {
+				int offset = i * 7;
+				String iprange = line.substring(offset, offset + 7);
+				// Code
+				String code = iprange.substring(0, 2);
+				// Ip
+				String ipcode = iprange.substring(2);
+				long ip = decodeBase85(ipcode.getBytes());
+				Country country = Country.valueOf(code);
+				codes[i] = (short) country.ordinal();
+				ips[i] = ip;
+			}
+			raf.close();
+			return new Cache(codes, ips);
+		} catch (FileNotFoundException e) {
+			logger.log(Level.INFO, e.getMessage(), e);
+		} catch (IOException e) {
+			logger.log(Level.INFO, e.getMessage(), e);
 		}
-		file.close();
-	}
-
-	/**
-	 * Caches the header. Headers are used to access information from file
-	 * faster.
-	 * 
-	 * @param headerLine
-	 *            {@link String} containing header content
-	 */
-	public void readHeaders(String headerLine) {
-		Pattern p = Pattern.compile(HEADERS);
-		Matcher matcher = p.matcher(headerLine);
-		headers = new TreeMap<Long, Long>();
-		p = Pattern.compile("(\\d+{1})=(\\d+{2})");
-		matcher = p.matcher(headerLine);
-		while (matcher.find()) {
-			Long k = Long.valueOf(matcher.group(1));
-			Long v = Long.valueOf(matcher.group(2));
-			headers.put(k, v);
-		}
+		return null;
 	}
 
 	/**
@@ -183,72 +242,40 @@ public class IPConverter {
 	}
 
 	/**
-	 * Finds nearest offset for given IP from headers.
-	 * 
-	 * @param ip
-	 *            IP in long format
-	 * @return nearest offset
-	 */
-	private long findIPOffset(long ip) {
-		long result = 0;
-		for (Long offset : headers.keySet()) {
-			if (ip <= offset) {
-				result = headers.get(offset);
-			}
-		}
-		return result;
-	}
-
-	/**
-	 * Returns a {@link Country} respecting given IP4.
+	 * Returns a {@link CountryManager} respecting given IP4.
 	 * 
 	 * @param ip
 	 *            IP in "XX.XX.XX.XX" format
-	 * @return {@link Country} of given IP
+	 * @return {@link CountryManager} of given IP
 	 * @throws IOException
 	 */
 	public Country locateIP(String ip) {
+		if (fullCache == null) {
+			fullCache = new WeakReference<Cache>(readRanges());
+		}
+		Cache memCache = fullCache.get();
+		long[] ips = memCache.getIps();
+		short[] codes = memCache.getCodes();
 		long longip = ip2num(ip);
-		String cc = "NA";
 		// Check cache first
 		if (cache.containsKey(longip)) {
 			return cache.get(longip);
 		}
-		// Read from memory
-		if (getDefaultMode().equals(Mode.MEMORY)) {
-			for (long ipvalue : ipranges.keySet()) {
-				if (longip >= ipvalue) {
-					cc = ipranges.get(ipvalue);
-					break;
-				}
+		// Binary search
+		int start=0;
+		int last=ips.length-1;
+		int mid;
+		while((mid = Math.round((last-start)/2))>0){
+			int midpos = mid +start;
+			if(longip>=ips[midpos]) {
+				last=midpos;
+			}else{
+				start=midpos;
 			}
-		} else {
-			// Find nearest offset from headers
-			long offset = findIPOffset(longip);
-			// Read data from file
-			byte[] ipData = new byte[7];
-			byte[] ipRange = new byte[5];
-			try {
-				file.seek(startPos + offset);
-				long base85;
-				int read;
-				do {
-					read = file.read(ipData);
-					System.arraycopy(ipData, 2, ipRange, 0, 5);
-					base85 = decodeBase85(ipRange);
-				} while (!(longip >= base85) && (read != -1));
-			} catch (IOException e) {
-				logger.log(Level.INFO, e.getMessage(), e);
-			}
-			// Create country locale
-			byte[] code = new byte[2];
-			System.arraycopy(ipData, 0, code, 0, 2);
-			cc = new String(code);
 		}
-		Country country = new Country(cc);
-		if (!cc.equals("NA")) {
-			cache.put(longip, country);
-		}
+		short countryOrdinal = codes[last];
+		Country country = Country.values()[countryOrdinal];
+		cache.put(longip, country);
 		return country;
 	}
 
@@ -285,9 +312,5 @@ public class IPConverter {
 				return i;
 		}
 		return -1;
-	}
-
-	public static Mode getDefaultMode() {
-		return DEFAULT_MODE;
 	}
 }
