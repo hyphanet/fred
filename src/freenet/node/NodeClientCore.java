@@ -118,6 +118,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	private File[] downloadAllowedDirs;
 	private boolean includeDownloadDir;
 	private boolean downloadAllowedEverywhere;
+	private boolean downloadDisabled;
 	private File[] uploadAllowedDirs;
 	private boolean uploadAllowedEverywhere;
 	public final FilenameGenerator tempFilenameGenerator;
@@ -715,25 +716,30 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		return NodeL10n.getBase().getString("NodeClientCore." + key);
 	}
 
+	public boolean isDownloadDisabled() {
+		return downloadDisabled;
+	}
+
 	protected synchronized void setDownloadAllowedDirs(String[] val) {
 		int x = 0;
 		downloadAllowedEverywhere = false;
 		includeDownloadDir = false;
+		downloadDisabled = false;
 		int i = 0;
 		downloadAllowedDirs = new File[val.length];
 		for(i = 0; i < downloadAllowedDirs.length; i++) {
 			String s = val[i];
-			if(s.equals("downloads"))
-				includeDownloadDir = true;
-			else if(s.equals("all"))
-				downloadAllowedEverywhere = true;
-			else
-				downloadAllowedDirs[x++] = new File(val[i]);
+			if(s.equals("downloads")) includeDownloadDir = true;
+			else if(s.equals("all")) downloadAllowedEverywhere = true;
+			else downloadAllowedDirs[x++] = new File(val[i]);
 		}
 		if(x != i) {
 			File[] newDirs = new File[x];
 			System.arraycopy(downloadAllowedDirs, 0, newDirs, 0, x);
 			downloadAllowedDirs = newDirs;
+		}
+		if(i == 0) {
+			downloadDisabled = true;
 		}
 	}
 
@@ -892,13 +898,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 			/** The RequestSender finished.
 			 * @param status The completion status.
-			 * @param uidTransferred If this is set, the RequestSender has taken on
-			 * responsibility for unlocking the UID specified. We should not unlock it.
+			 * @param fromOfferedKey
 			 */
 			public void onRequestSenderFinished(int status, boolean fromOfferedKey) {
 				tag.unlockHandler();
-				if(listener != null)
-					listener.completed(status == RequestSender.SUCCESS);
+				if(listener != null) listener.completed(status == RequestSender.SUCCESS);
 			}
 
 			public void onAbortDownstreamTransfers(int reason, String desc) {
@@ -950,7 +954,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	 * Fetch a CHK.
 	 * @param key
 	 * @param localOnly
-	 * @param cache
 	 * @param ignoreStore
 	 * @param canWriteClientCache Can we write to the client cache? This is a local request, so
 	 * we can always read from it, but some clients will want to override to avoid polluting it.
@@ -1200,7 +1203,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	 * Start a local request to insert a block. Note that this is a KeyBlock not a ClientKeyBlock
 	 * mainly because of random reinserts.
 	 * @param block
-	 * @param cache
 	 * @param canWriteClientCache
 	 * @throws LowLevelPutException
 	 */
@@ -1585,28 +1587,25 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 	public boolean allowDownloadTo(File filename) {
 		PHYSICAL_THREAT_LEVEL physicalThreatLevel = node.securityLevels.getPhysicalThreatLevel();
-		if(physicalThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM)
-			return false;
-		if(downloadAllowedEverywhere)
-			return true;
-		if(includeDownloadDir)
-			if(FileUtil.isParent(getDownloadsDir(), filename))
-				return true;
-		for(int i = 0; i < downloadAllowedDirs.length; i++) {
-			if(FileUtil.isParent(downloadAllowedDirs[i], filename))
-				return true;
+		if(physicalThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) return false;
+		if(downloadAllowedEverywhere) return true;
+		if(includeDownloadDir && FileUtil.isParent(getDownloadsDir(), filename)) return true;
+		for(File dir : downloadAllowedDirs) {
+			if(FileUtil.isParent(dir, filename)) return true;
 		}
 		return false;
 	}
 
 	public boolean allowUploadFrom(File filename) {
-		if(uploadAllowedEverywhere)
-			return true;
-		for(int i = 0; i < uploadAllowedDirs.length; i++) {
-			if(FileUtil.isParent(uploadAllowedDirs[i], filename))
-				return true;
+		if(uploadAllowedEverywhere) return true;
+		for(File dir : uploadAllowedDirs) {
+			if(FileUtil.isParent(dir, filename)) return true;
 		}
 		return false;
+	}
+
+	public File[] getAllowedDownloadDirs() {
+		return downloadAllowedDirs;
 	}
 
 	public File[] getAllowedUploadDirs() {

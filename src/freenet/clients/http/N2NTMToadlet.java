@@ -6,6 +6,7 @@ package freenet.clients.http;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 
 import freenet.client.HighLevelSimpleClient;
@@ -30,6 +31,10 @@ public class N2NTMToadlet extends Toadlet {
 		browser = new LocalFileN2NMToadlet(core, client);
 		this.node = n;
 		this.core = core;
+	}
+
+	public Toadlet getBrowser() {
+		return browser;
 	}
 
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx)
@@ -107,24 +112,22 @@ public class N2NTMToadlet extends Toadlet {
 
 	private static HTMLNode createPeerInfobox(String infoboxType,
 			String header, String message) {
-		HTMLNode infobox = new HTMLNode("div", "class", "infobox "
-				+ infoboxType);
+		HTMLNode infobox = new HTMLNode("div", "class", "infobox "+infoboxType);
 		infobox.addChild("div", "class", "infobox-header", header);
-		HTMLNode infoboxContent = infobox.addChild("div", "class",
-				"infobox-content");
+		HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 		infoboxContent.addChild("#", message);
 		HTMLNode list = infoboxContent.addChild("ul");
 		Toadlet.addHomepageLink(list);
 		list.addChild("li").addChild("a", new String[] { "href", "title" },
-				new String[] { "/friends/", l10n("returnToFriends") },
-				l10n("friends"));
+		        new String[] { "/friends/", l10n("returnToFriends") },
+		        l10n("friends"));
 		return infobox;
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx)
 			throws ToadletContextClosedException, IOException,
 			RedirectException {
-		String pass = request.getPartAsString("formPassword", 32);
+		String pass = request.getPartAsStringFailsafe("formPassword", 32);
 		if ((pass == null) || !pass.equals(core.formPassword)) {
 			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", "/send_n2ntm/");
@@ -133,24 +136,27 @@ public class N2NTMToadlet extends Toadlet {
 		}
 
 		if (!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, "Unauthorized", NodeL10n.getBase()
-					.getString("Toadlet.unauthorized"));
+			super.sendErrorPage(ctx, 403, "Unauthorized", NodeL10n.getBase().getString("Toadlet.unauthorized"));
 			return;
 		}
-		
+
+		//Browse button clicked. Redirect.
 		if(request.isPartSet("n2nm-browse"))
 		{
-			browser.handleMethodPOST(uri, request, ctx);
+			try {
+				throw new RedirectException(LocalFileN2NMToadlet.PATH);
+			} catch (URISyntaxException e) {
+				//Should be impossible because the browser is registered with .PATH.
+			}
 			return;
 		}
-		
-		if (request.isPartSet("n2nm-upload") || request.isPartSet("insert-local-file")) {
+
+		if (request.isPartSet("n2nm-upload") || request.isPartSet("select-file")) {
 			File filename = null;
-			String message = request.getPartAsString("message", 5 * 1024);
+			String message = request.getPartAsStringFailsafe("message", 5 * 1024);
 			message = message.trim();
 			if (message.length() > 1024) {
-				this.writeTextReply(ctx, 400, "Bad request",
-						l10n("tooLong"));
+				this.writeTextReply(ctx, 400, "Bad request", l10n("tooLong"));
 				return;
 			}
 			PageNode page =  ctx.getPageMaker().getPageNode(l10n("processingSend"), ctx);
@@ -158,8 +164,8 @@ public class N2NTMToadlet extends Toadlet {
 			HTMLNode contentNode = page.content;
 			HTMLNode peerTableInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
-			if(request.isPartSet("insert-local-file")){			
-				String fnam = request.getPartAsString("filename", 1024);
+			if(request.isPartSet("select-file")) {
+				String fnam = request.getPartAsStringFailsafe("filename", 1024);
 				if(fnam != null && fnam.length() > 0) {
 					filename = new File(fnam);
 					if(!(filename.exists() && filename.canRead())) {
