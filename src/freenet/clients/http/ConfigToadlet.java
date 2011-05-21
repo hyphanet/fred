@@ -336,6 +336,17 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 
 			short displayedConfigElements = 0;
 			HTMLNode configGroupUlNode = new HTMLNode("ul", "class", "config");
+			
+			String overriddenOption = null;
+			String overriddenValue = null;
+			
+			//A value changed by the directory selector takes precedence.
+			if(req.isPartSet("select-for") && req.isPartSet("select-dir")) {
+				overriddenOption = req.getPartAsStringFailsafe("select-for",
+				        MAX_PARAM_VALUE_SIZE);
+				overriddenValue = req.getPartAsStringFailsafe("filename",
+						MAX_PARAM_VALUE_SIZE);
+			}
 
 			for(Option<?> o : subConfig.getOptions()) {
 				if(! (mode == PageMaker.MODE_SIMPLE && o.isExpert())){
@@ -376,16 +387,8 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 						//TODO: This may have to be Base64 encoded
 						value = req.getPartAsStringFailsafe(fullName, MAX_PARAM_VALUE_SIZE);
 					}
-					//A value changed by the directory selector takes precedence.
-					if(req.isPartSet("select-for") && req.isPartSet("select-dir")) {
-						String whichOption = req.getPartAsStringFailsafe("select-for",
-						        MAX_PARAM_VALUE_SIZE);
-						if(whichOption.equals(fullName)) {
-							value = req.getPartAsStringFailsafe("filename",
-							        MAX_PARAM_VALUE_SIZE);
-						}
-					}
-
+					if(overriddenOption != null && overriddenOption.equals(fullName))
+						value = overriddenValue;
 					ConfigCallback<?> callback = o.getCallback();
 					if(callback instanceof EnumerableOptionCallback)
 						configItemValueNode.addChild(addComboBox(value,
