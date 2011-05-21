@@ -123,9 +123,7 @@ public class BMPFilterTest extends TestCase {
 		return output;
 	}
 
-
-
-	protected Bucket resourceToBucket(String filename) throws IOException {
+	private Bucket resourceToBucket(String filename) throws IOException {
 		InputStream is = getClass().getResourceAsStream(filename);
 		if (is == null) throw new FileNotFoundException();
 		Bucket ab = new ArrayBucket();
