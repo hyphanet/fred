@@ -694,8 +694,11 @@ loadWaiterLoop:
         	            	if(waiter.waitingForCount() == 1) {
         	            		canWaitFor++;
         	            		// Wait for another one if the first is low capacity.
+            					// Nodes we were waiting for that then became backed off will have been removed from the list.
+            					HashSet<PeerNode> exclude = waiter.waitingForList();
+            					exclude.addAll(nodesRoutedTo);
         	            		PeerNode alsoWaitFor =
-        	            			node.peers.closerPeer(source, waiter.waitingForList(), target, true, node.isAdvancedModeEnabled(), -1, null,
+        	            			node.peers.closerPeer(source, exclude, target, true, node.isAdvancedModeEnabled(), -1, null,
         	            					key, htl, 0, source == null, realTimeFlag);
         	            		if(alsoWaitFor != null) {
         	            			waiter.addWaitingFor(alsoWaitFor);
@@ -713,8 +716,11 @@ loadWaiterLoop:
         			if(realTimeFlag) canWaitFor++;
         			if(expectedAcceptState == null && waiter.waitingForCount() <= canWaitFor) {
 	            		// Wait for another one if realtime.
+    					// Nodes we were waiting for that then became backed off will have been removed from the list.
+    					HashSet<PeerNode> exclude = waiter.waitingForList();
+    					exclude.addAll(nodesRoutedTo);
 	            		PeerNode alsoWaitFor =
-	            			node.peers.closerPeer(source, waiter.waitingForList(), target, true, node.isAdvancedModeEnabled(), -1, null,
+	            			node.peers.closerPeer(source, exclude, target, true, node.isAdvancedModeEnabled(), -1, null,
 	            					key, htl, 0, source == null, realTimeFlag);
 	            		if(alsoWaitFor != null) {
 	            			waiter.addWaitingFor(alsoWaitFor);
@@ -1742,10 +1748,13 @@ loadWaiterLoop:
     			try {
     				long tEnd = System.currentTimeMillis();
     				transferTime = tEnd - tStart;
+    				boolean haveSetPRB = false;
     				synchronized(RequestSender.this) {
     					transferringFrom = null;
-    					if(RequestSender.this.prb == null || !RequestSender.this.prb.allReceivedAndNotAborted())
+    					if(RequestSender.this.prb == null || !RequestSender.this.prb.allReceivedAndNotAborted()) {
     						RequestSender.this.prb = prb;
+    						haveSetPRB = true;
+    					}
     				}
     				if(!wasFork)
     					node.removeTransferringSender((NodeCHK)key, RequestSender.this);
@@ -1765,6 +1774,8 @@ loadWaiterLoop:
     						sentTo.noLongerRoutingTo(origTag, false);
     					return;
     				}
+    				if(haveSetPRB) // It was a fork, so we didn't immediately send the data.
+    					fireCHKTransferBegins();
     				finish(SUCCESS, sentTo, false);
     			} catch (Throwable t) {
         			Logger.error(this, "Failed on "+this, t);

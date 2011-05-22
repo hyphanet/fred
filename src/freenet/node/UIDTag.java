@@ -113,6 +113,7 @@ public abstract class UIDTag {
 			if(!mustUnlock()) return;
 			noRecordUnlock = this.noRecordUnlock;
 		}
+		if(logMINOR) Logger.minor(this, "Unlocking "+this);
 		innerUnlock(noRecordUnlock);
 	}
 	
@@ -129,6 +130,7 @@ public abstract class UIDTag {
 			if(!mustUnlock()) return;
 			noRecordUnlock = this.noRecordUnlock;
 		}
+		if(logMINOR) Logger.minor(this, "Unlocking "+this);
 		innerUnlock(noRecordUnlock);
 	}
 	

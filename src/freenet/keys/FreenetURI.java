@@ -949,6 +949,9 @@ public class FreenetURI implements Cloneable {
 		if(keyType != null && (keyType.equals("KSK") || keyType.equals("SSK") || keyType.equals("USK"))) {
 			if(logMINOR)
 				Logger.minor(this, "Adding docName: " + docName);
+			if(docName == null)
+				// Really this shouldn't be possible...
+				throw new NullPointerException();
 			names.add(docName);
 			if(keyType.equals("USK"))
 				names.add(Long.toString(suggestedEdition));
