@@ -1902,8 +1902,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			downloadLocation = core.getAllowedDownloadDirs()[0].getAbsolutePath();
 		}
 		node.addChild("input",
-		        new String[] { "type", "name", "value", "size" },
-		        new String[] { "text", "path", downloadLocation, Integer.toString(MAX_FILENAME_LENGTH)});
+		        new String[] { "type", "name", "value", "maxlength", "size"},
+		        new String[] { "text", "path", downloadLocation, Integer.toString(MAX_FILENAME_LENGTH),
+		                String.valueOf(downloadLocation.length())});
 		node.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "select-location", l10n("browseToChange")+"..." });
