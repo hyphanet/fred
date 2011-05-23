@@ -13,74 +13,74 @@ import freenet.support.io.BucketTools;
 
 
 public class BMPFilterTest extends TestCase {
-	/** Tests image that contains an invalid header */
-	public void testSmall() throws IOException {
+	/** File of size less than 54 bytes */
+	public void testTooShortImage() throws IOException {
 		Bucket input = resourceToBucket("./bmp/small.bmp");
 		filterImage(input, DataFilterException.class);
 	}
 
-	/** Tests image that contains an invalid header (0x65 0x66) */
-	public void testOne() throws IOException {
+	/** Illegal start word (AB instead of BM) */
+	public void testIllegalStartWord() throws IOException {
 		Bucket input = resourceToBucket("./bmp/one.bmp");
 		filterImage(input, DataFilterException.class);
 	}
 
-	/** Tests image with invalid info header size (70) */
-	public void testTwo() throws IOException {
+	/** Invalid offset i.e. starting address */
+	public void testInvalidOffset() throws IOException {
 		Bucket input = resourceToBucket("./bmp/two.bmp");
 		filterImage(input, DataFilterException.class);
 	}
 
-	/** Tests image with invalid bitmap info header size (119) */
-	public void testThree() throws IOException {
+	/** Invalid size of bitmap info header */
+	public void testInvalidBitmapInfoHeaderSize() throws IOException {
 		Bucket input = resourceToBucket("./bmp/three.bmp");
 		filterImage(input, DataFilterException.class);
 	}
 
-	/** Negative image dimensions */
-	public void testFour() throws IOException {
+	/** Negative image width */
+	public void testNegativeImageWidth() throws IOException {
 		Bucket input = resourceToBucket("./bmp/four.bmp");
 		filterImage(input, DataFilterException.class);
 	}
 
-	/** Invalid number of planes (26213) */
-	public void testFive() throws IOException {
+	/** Invalid number of planes */
+	public void testInvalidNumberOfPlanes() throws IOException {
 		Bucket input = resourceToBucket("./bmp/five.bmp");
 		filterImage(input, DataFilterException.class);
 	}
 
-	/** Invalid bit depth (71) */
-	public void testSix() throws IOException {
+	/** Invalid bit depth */
+	public void testInvalidBitDepth() throws IOException {
 		Bucket input = resourceToBucket("./bmp/six.bmp");
 		filterImage(input, DataFilterException.class);
 	}
 
-	/** Invalid bit depth (17944) */
-	public void testSeven() throws IOException {
+	/** Invalid compression type */
+	public void testInvalidCompressionType() throws IOException {
 		Bucket input = resourceToBucket("./bmp/seven.bmp");
 		filterImage(input, DataFilterException.class);
 	}
 
-	/** Tests image where header size + image data size doesn't match the file size */
-	public void testEight() throws IOException {
+	/** Invalid image data size (i.e. not satisfying fileSize = headerSize + imagedatasize) */
+	public void testInvalidImageDataSize() throws IOException {
 		Bucket input = resourceToBucket("./bmp/eight.bmp");
 		filterImage(input, DataFilterException.class);
 	}
 
-	/** Tests image with negative resolution */
-	public void testNine() throws IOException {
+	/** Invalid image resolution */
+	public void testInvalidImageResolution() throws IOException {
 		Bucket input = resourceToBucket("./bmp/nine.bmp");
 		filterImage(input, DataFilterException.class);
 	}
 
-	/** Tests image that is shorter than expected */
-	public void testTen() throws IOException {
+	/** File is shorter than expected */
+	public void testNotEnoughImageData() throws IOException {
 		Bucket input = resourceToBucket("./bmp/ten.bmp");
 		filterImage(input, DataFilterException.class);
 	}
 
 	/** Tests valid image */
-	public void testOk() throws IOException {
+	public void testValidImage() throws IOException {
 		Bucket input = resourceToBucket("./bmp/ok.bmp");
 		Bucket output = filterImage(input, null);
 
