@@ -111,7 +111,7 @@ public class BMPFilterTest extends TestCase {
 				fail("Filter didn't throw expected exception");
 			}
 		} catch (Exception e) {
-			if((expected == null) || (!expected.isInstance(e))) {
+			if((expected == null) || (!expected.equals(e.getClass()))) {
 				//Exception is not expected nor a subclass of an expected exception
 				e.printStackTrace();
 				fail("Caugth unexpected exception: " + e.getClass() + ": " + e.getMessage());
