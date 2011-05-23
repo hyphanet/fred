@@ -89,6 +89,7 @@ public class BMPFilterTest extends TestCase {
 		assertTrue("Input and output are not identical", Arrays.equals(BucketTools.toByteArray(input), BucketTools.toByteArray(output)));
 	}
 
+	/** Checks that the image size calculation works for images with padding */
 	public void testImageSizeCalculationWithPadding() throws IOException {
 		Bucket input = resourceToBucket("./bmp/sizeCalculationWithPadding.bmp");
 		Bucket output = filterImage(input, null);
@@ -98,6 +99,7 @@ public class BMPFilterTest extends TestCase {
 		assertTrue("Input and output are not identical", Arrays.equals(BucketTools.toByteArray(input), BucketTools.toByteArray(output)));
 	}
 
+	/** Checks that the image size calculation works for images without padding */
 	public void testImageSizeCalculationWithoutPadding() throws IOException {
 		Bucket input = resourceToBucket("./bmp/sizeCalculationWithoutPadding.bmp");
 		Bucket output = filterImage(input, null);
