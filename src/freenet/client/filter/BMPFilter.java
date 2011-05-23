@@ -143,9 +143,12 @@ public class BMPFilter implements ContentDataFilter {
 		if(compression_type==0) {
 			// Verifying the file size w.r.t. image dimensions(width and height), bitDepth with imagedatasize(including padding).
 			int bitsPerLine = imageWidth * bitDepth;
+
+			//Lines are padded to a 4 byte boundary
 			if(bitsPerLine % 32 != 0) {
 				bitsPerLine += 32 - bitsPerLine % 32;
 			}
+
 			int bytesPerLine = bitsPerLine / 8;
 			int calculatedsize = bytesPerLine * imageHeight;
 			if(calculatedsize!=imagedatasize) {
