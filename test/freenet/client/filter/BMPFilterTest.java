@@ -89,6 +89,24 @@ public class BMPFilterTest extends TestCase {
 		assertTrue("Input and output are not identical", Arrays.equals(BucketTools.toByteArray(input), BucketTools.toByteArray(output)));
 	}
 
+	public void testImageSizeCalculationWithPadding() throws IOException {
+		Bucket input = resourceToBucket("./bmp/sizeCalculationWithPadding.bmp");
+		Bucket output = filterImage(input, null);
+
+		//Filter should return the original
+		assertEquals("Input and output should be the same length", input.size(), output.size());
+		assertTrue("Input and output are not identical", Arrays.equals(BucketTools.toByteArray(input), BucketTools.toByteArray(output)));
+	}
+
+	public void testImageSizeCalculationWithoutPadding() throws IOException {
+		Bucket input = resourceToBucket("./bmp/sizeCalculationWithoutPadding.bmp");
+		Bucket output = filterImage(input, null);
+
+		//Filter should return the original
+		assertEquals("Input and output should be the same length", input.size(), output.size());
+		assertTrue("Input and output are not identical", Arrays.equals(BucketTools.toByteArray(input), BucketTools.toByteArray(output)));
+	}
+
 	private Bucket filterImage(Bucket input, Class<? extends Exception> expected) {
 		BMPFilter objBMPFilter = new BMPFilter();
 		Bucket output = new ArrayBucket();
