@@ -132,7 +132,7 @@ public class BMPFilterTest extends TestCase {
 			}
 		} catch (Exception e) {
 			if((expected == null) || (!expected.equals(e.getClass()))) {
-				//Exception is not expected nor a subclass of an expected exception
+				//Exception is not the one we expected
 				e.printStackTrace();
 				fail("Caugth unexpected exception: " + e.getClass() + ": " + e.getMessage());
 			}
