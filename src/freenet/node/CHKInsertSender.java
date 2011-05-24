@@ -204,6 +204,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					// Normal
 					if(logMINOR)
 						Logger.minor(this, "Disconnected while adding filter after first timeout");
+					pn.noLongerRoutingTo(thisTag, false);
 				}
 			} else {
 				Logger.error(this, "Second timeout waiting for final ack from "+pn+" on "+this);
