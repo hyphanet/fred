@@ -330,9 +330,10 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			NodeL10n.getBase().addL10nSubstitution(optionForm, "FProxyToadlet.downloadInBackgroundToDisk",
 			        new String[] { "dir", "page" },
 			        new HTMLNode[] { new HTMLNode("input",
-			                new String[] { "type", "name", "value", "size" },
+			                new String[] { "type", "name", "value", "maxlength", "size" },
 			                new String[] { "text", "path", downloadLocation,
-			                        Integer.toString(QueueToadlet.MAX_FILENAME_LENGTH) }),
+			                        Integer.toString(QueueToadlet.MAX_FILENAME_LENGTH),
+			                        String.valueOf(downloadLocation.length())}),
 			                DOWNLOADS_LINK });
 			optionForm.addChild("input",
 			        new String[] { "type", "name", "value" },
@@ -956,9 +957,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 	private boolean isBrowser(String ua) {
 		if(ua == null) return false;
-		if(ua.indexOf("Mozilla/") > -1) return true;
-		if(ua.indexOf("Opera/") > -1) return true;
-		return false;
+		return (ua.contains("Mozilla/") || ua.contains("Opera/"));
 	}
 
 	private static String writeSizeAndMIME(HTMLNode fileInformationList, FetchException e) {
