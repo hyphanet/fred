@@ -263,7 +263,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				// They can still shoot themselves in the foot, but only when developing themes/using custom themes.
 				// Because of the .. check above, any malicious thing cannot break out of the dir anyway.
 				if(s.equals("/") || (File.pathSeparator.equals("\\") && ((s.length() == 2 || s.length() == 3) && s.charAt(1) == ':' && Character.isLetter(s.charAt(0))))) {
-					throw new InvalidConfigValueException(l10n("cssOverrideCantUseRootDir", "filename", tmp.toString()));
+					throw new InvalidConfigValueException(l10n("cssOverrideCantUseRootDir", "filename", tmp.getParent()));
 				}
 				cssOverride = tmp.getAbsoluteFile();
 			}
