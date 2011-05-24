@@ -92,7 +92,7 @@ public final class PageMaker {
 	public static final int MODE_SIMPLE = 1;
 	public static final int MODE_ADVANCED = 2;
 	private THEME theme;
-	private File override;
+	private String override;
 	private final Node node;
 	
 	private List<SubMenu> menuList = new ArrayList<SubMenu>();
@@ -159,8 +159,8 @@ public final class PageMaker {
 		this.node = n;
 	}
 	
-	void setOverride(File f) {
-		this.override = f;
+	void setOverride(String pointTo) {
+		this.override = pointTo;
 	}
 	
 	public void setTheme(THEME theme2) {
@@ -571,7 +571,7 @@ public final class PageMaker {
 	}
 	
 	private HTMLNode getOverrideContent() {
-		return new HTMLNode("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "stylesheet", override.toURI().toString(), "text/css", "screen", "custom" });
+		return new HTMLNode("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "stylesheet", override, "text/css", "screen", "custom" });
 	}
 	
 	/** Call this before getPageNode(), so the menus reflect the advanced mode setting. */
