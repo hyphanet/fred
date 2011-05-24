@@ -262,9 +262,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				// Prevents user from specifying root dir.
 				// They can still shoot themselves in the foot, but only when developing themes/using custom themes.
 				// Because of the .. check above, any malicious thing cannot break out of the dir anyway.
-				if(s.equals("/") || (File.pathSeparator.equals("\\") && ((s.length() == 2 || s.length() == 3) && s.charAt(1) == ':' && Character.isLetter(s.charAt(0))))) {
-					throw new InvalidConfigValueException(l10n("cssOverrideCantUseRootDir", "filename", tmp.getParent()));
-				}
+				if(parent.getParentFile() == null)
+					throw new InvalidConfigValueException(l10n("cssOverrideCantUseRootDir", "filename", parent.toString()));
 				cssOverride = tmp.getAbsoluteFile();
 			}
 			if(cssOverride == null)

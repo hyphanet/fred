@@ -65,7 +65,7 @@ public class StaticToadlet extends Toadlet {
 			// Prevents user from specifying root dir.
 			// They can still shoot themselves in the foot, but only when developing themes/using custom themes.
 			// Because of the .. check above, any malicious thing cannot break out of the dir anyway.
-			if(s.equals("/") || (File.pathSeparator.equals("\\") && ((s.length() == 2 || s.length() == 3) && s.charAt(1) == ':' && Character.isLetter(s.charAt(0))))) {
+			if(parent.getParentFile() == null) {
 				this.sendErrorPage(ctx, 404, l10n("pathNotFoundTitle"), l10n("pathInvalidChars"));
 				return;
 			}
