@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import freenet.node.Node;
 import freenet.support.Logger;
@@ -13,8 +15,14 @@ import freenet.support.Logger;
 public class IPConverter {
 	// Regex indicating ipranges start
 	private static final String START = "##start##";
+	final int MAX_ENTRIES = 100;
 	// Local cache
-	private HashMap<Long, Country> cache;
+	@SuppressWarnings("serial")
+	private final HashMap<Long, Country> cache = new LinkedHashMap<Long, Country>() {
+		protected boolean removeEldestEntry(Map.Entry<Long, Country> eldest) {
+			return size() > MAX_ENTRIES;
+		}
+	};
 	// Cached DB file content
 	private WeakReference<Cache> fullCache;
 	// Reference to singleton object
@@ -142,7 +150,6 @@ public class IPConverter {
 	 *            reference to freenet {@link Node}
 	 */
 	private IPConverter(File dbFile) {
-		cache = new HashMap<Long, Country>();
 		this.dbFile = dbFile;
 	}
 
