@@ -74,4 +74,9 @@ public class VoidLogger extends Logger
 	
 	@Override
 	public final void instanceUnregisterLogThresholdCallback(LogThresholdCallback ltc) {}
+
+	@Override
+	protected void notifyLogThresholdCallbacks() {
+		// Do nothing
+	}
 }

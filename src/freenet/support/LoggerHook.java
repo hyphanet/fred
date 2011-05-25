@@ -147,6 +147,8 @@ public abstract class LoggerHook extends Logger {
 			detailedThresholds = newThresholds;
 			notifyLogThresholdCallbacks();
 		}
+		if(this == overrideThresholds)
+			logger.notifyLogThresholdCallbacks();
 	}
 
 	public String getDetailedThresholds() {
@@ -222,7 +224,7 @@ public abstract class LoggerHook extends Logger {
 		thresholdsCallbacks.remove(ltc);
 	}
 
-	private final void notifyLogThresholdCallbacks() {
+	protected final void notifyLogThresholdCallbacks() {
 		for(LogThresholdCallback ltc : thresholdsCallbacks)
 			ltc.shouldUpdate();
 	}

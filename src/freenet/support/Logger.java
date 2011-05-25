@@ -560,6 +560,8 @@ public abstract class Logger {
 		logger.instanceUnregisterLogThresholdCallback(ltc);
 	}
 	
+	protected abstract void notifyLogThresholdCallbacks();
+	
 	/** Unregister a log threshold callback with this specific logger. */
 	public abstract void instanceUnregisterLogThresholdCallback(LogThresholdCallback ltc);
 	
