@@ -1229,6 +1229,8 @@ public class StatisticsToadlet extends Toadlet {
 		double routingMissDistanceLocal =  stats.routingMissDistanceLocal.currentValue();
 		double routingMissDistanceRemote =  stats.routingMissDistanceRemote.currentValue();
 		double routingMissDistanceOverall =  stats.routingMissDistanceOverall.currentValue();
+		double routingMissDistanceBulk =  stats.routingMissDistanceBulk.currentValue();
+		double routingMissDistanceRT =  stats.routingMissDistanceRT.currentValue();
 		double backedOffPercent =  stats.backedOffPercent.currentValue();
 		overviewList.addChild("li", "bwlimitDelayTime:\u00a0" + bwlimitDelayTime + "ms");
 		overviewList.addChild("li", "bwlimitDelayTimeBulk:\u00a0" + bwlimitDelayTimeBulk + "ms");
@@ -1256,6 +1258,8 @@ public class StatisticsToadlet extends Toadlet {
 		overviewList.addChild("li", "routingMissDistanceLocal:\u00a0" + fix1p4.format(routingMissDistanceLocal));
 		overviewList.addChild("li", "routingMissDistanceRemote:\u00a0" + fix1p4.format(routingMissDistanceRemote));
 		overviewList.addChild("li", "routingMissDistanceOverall:\u00a0" + fix1p4.format(routingMissDistanceOverall));
+		overviewList.addChild("li", "routingMissDistanceBulk:\u00a0" + fix1p4.format(routingMissDistanceBulk));
+		overviewList.addChild("li", "routingMissDistanceRT:\u00a0" + fix1p4.format(routingMissDistanceRT));
 		overviewList.addChild("li", "backedOffPercent:\u00a0" + fix3p1pct.format(backedOffPercent));
 		overviewList.addChild("li", "pInstantReject:\u00a0" + fix3p1pct.format(stats.pRejectIncomingInstantly()));
 		overviewList.addChild("li", "unclaimedFIFOSize:\u00a0" + node.getUnclaimedFIFOSize());

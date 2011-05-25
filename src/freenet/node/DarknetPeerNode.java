@@ -123,6 +123,7 @@ public class DarknetPeerNode extends BaseDarknetPeerNode {
 		}
 
 		public boolean isStricterThan(FRIEND_VISIBILITY theirVisibility) {
+			if(theirVisibility == null) return true;
 			// Higher number = more strict.
 			return theirVisibility.code < code;
 		}
@@ -248,7 +249,8 @@ public class DarknetPeerNode extends BaseDarknetPeerNode {
 			fs.putSingle("disableRoutingHasBeenSetLocally", "true");
 		fs.putSingle("trustLevel", trustLevel.name());
 		fs.putSingle("ourVisibility", ourVisibility.name());
-		fs.putSingle("theirVisibility", theirVisibility.name());
+		if(theirVisibility != null)
+			fs.putSingle("theirVisibility", theirVisibility.name());
 
 		return fs;
 	}
@@ -915,7 +917,8 @@ public class DarknetPeerNode extends BaseDarknetPeerNode {
 
 		public void accept() {
 			acceptedOrRejected = true;
-			File dest = node.clientCore.downloadsDir().file("direct-"+FileUtil.sanitize(getName())+"-"+filename);
+			final String baseFilename = "direct-"+FileUtil.sanitize(getName())+"-"+filename;
+			final File dest = node.clientCore.downloadsDir().file(baseFilename+".part");
 			try {
 				data = new RandomAccessFileWrapper(dest, "rw");
 			} catch (FileNotFoundException e) {
@@ -936,6 +939,10 @@ public class DarknetPeerNode extends BaseDarknetPeerNode {
 							System.err.println(err);
 							onReceiveFailure();
 						} else {
+							data.close();
+							if(!dest.renameTo(node.clientCore.downloadsDir().file(baseFilename))){
+								Logger.error(this, "Failed to rename "+dest.getName()+" to remove .part suffix.");
+							}
 							onReceiveSuccess();
 						}
 					} catch (Throwable t) {
@@ -1690,6 +1697,7 @@ public class DarknetPeerNode extends BaseDarknetPeerNode {
 	/** FIXME This should be the worse of our visibility for the peer and that which the peer has told us. 
 	 * I.e. visibility is reciprocal. */
 	public synchronized FRIEND_VISIBILITY getVisibility() {
+		// ourVisibility can't be null.
 		if(ourVisibility.isStricterThan(theirVisibility)) return ourVisibility;
 		return theirVisibility;
 	}
@@ -1729,6 +1737,7 @@ public class DarknetPeerNode extends BaseDarknetPeerNode {
 	}
 
 	public synchronized FRIEND_VISIBILITY getTheirVisibility() {
+		if(theirVisibility == null) return FRIEND_VISIBILITY.NO;
 		return theirVisibility;
 	}
 	

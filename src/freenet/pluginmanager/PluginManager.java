@@ -1050,7 +1050,7 @@ public class PluginManager {
 
 	static {
 		try {
-		addOfficialPlugin("Freemail", false, 12, true, new FreenetURI("CHK@OwIWNuh0FvE4SO4HYV9TQ1GtwOrfuZZoJv4-WXp4X2Q,0jcAIHtFJOin6vke-KxUhps5jTxYeu1XvmuCZKxlQY4,AAIC--8/Freemail.jar"));
+		addOfficialPlugin("Freemail", false, 14, true, new FreenetURI("CHK@SdFaDNxXJ1-SuZJcAxq1vxVo3DEV38oJlv~dG2CO4sQ,f0wSpgekodQaiOitR03fvwjfuKjHFcYQ-J7GWj-t1~U,AAIC--8/Freemail.jar"));
 		addOfficialPlugin("HelloWorld", false, new FreenetURI("CHK@ZdTXnWV-ikkt25-y8jmhlHjCY-nikDMQwcYlWHww5eg,Usq3uRHpHuIRmMRRlNQE7BNveO1NwNI7oNKdb7cowFM,AAIC--8/HelloWorld.jar"), false, false, true);
 		addOfficialPlugin("HelloFCP", false, new FreenetURI("CHK@0gtXJpw1QUJCmFOhoPRNqhsNbMtVw1CGVe46FUv7-e0,X8QqhtPkHoaFCUd89bgNaKxX1AV0WNBVf3sRgSF51-g,AAIC--8/HelloFCP.jar"), false, false, true);
 		addOfficialPlugin("JSTUN", true, 2, false, new FreenetURI("CHK@STQEzqyYLPtd4mCMIXO2HV38J6jG492hyPcEjTdc1oI,ojl4TCcJpJbo1OcO8nwPjycNCt1mn6zJq3lxCNExIHI,AAIC--8/JSTUN.jar"));
@@ -1065,8 +1065,8 @@ public class PluginManager {
 		addOfficialPlugin("Freereader", false, 4, true, new FreenetURI("CHK@4PuSjXk4Z0Hdu04JLhdPHLyOVLljj8qVbjRn3rHVzvg,bDGYnuYj67Q4uzroPBEWAYWRk26bPzf-iQ4~Uo3S7mg,AAIC--8/Freereader.jar"));
 		addOfficialPlugin("Library", false, 22, true, new FreenetURI("CHK@cpjlWeSro72HmsrA9lPOe3DJC-nv-r1f55yUAX7TDrQ,sCT0YiO1ychgX6lBnSsd-TVXZhoWU0sL6JIEyT-0WyA,AAIC--8/Library.jar"));
 		addOfficialPlugin("Spider", false, 48, false, new FreenetURI("CHK@DBgu6re-bD8M2elkdvReOROyZm4f2ppWaLBpJ0Cvo-k,RaD2v5HYVV1Xqit9v6FRaUpz-weoi3ilt4xxr~d9IfE,AAIC--8/Spider.jar"), false, false, true);
-		addOfficialPlugin("Freetalk", false, 5, true, new FreenetURI("CHK@fnUq1nz-cS3sais7CdhWqWQuCK2nAb7MtNn3UYJf2Gc,yRFjWgbjZMb~hb0di5TDtZqjl9Lrxwr-k93eGJtvYZ0,AAIC--8/Freetalk.jar"), false, false, false);
-		addOfficialPlugin("WebOfTrust", false, 5, true, new FreenetURI("CHK@YLoIl0~hG6BXrjG9aLhNh2HJv0p3H2jNoo3sgBhxunM,aJ63kjk7oxF1QMh4Qcd4cVTt~cXmQB5BtpOrJlJFJnI,AAIC--8/WebOfTrust.jar"), false, false, false);
+		addOfficialPlugin("Freetalk", false, 8, true, new FreenetURI("CHK@HyPhU0qoNzMO53AiRXwhBhSMFPfminrIWqgdKeIDwBs,NLwM~V-0gOrPTFKsnjKIJ6eKDPQhy5syAQ2H5OOLmDc,AAIC--8/Freetalk.jar"), false, false, false);
+		addOfficialPlugin("WebOfTrust", false, 7, true, new FreenetURI("CHK@QmPBikznbYkzv9ASslt3CwkC4PEc5OSwUtMg21KBUoM,LQ2EOKdg3z9Q0uc49m7XL-CVX4S4VojSpy~k7exsNMU,AAIC--8/WebOfTrust.jar"), false, false, false);
 		addOfficialPlugin("FlogHelper", false, 24, true, new FreenetURI("CHK@WWa59P8NbCnVwT7jEbdyUpjX4Z50fJvpVdc6AxohaJc,imlpwbm9Q5y86rvmycwXCUkmpBNgMEgDZ~HJYY9UTi4,AAIC--8/FlogHelper.jar"), false, false, false);
 		} catch (MalformedURLException e) {
 			throw new Error("Malformed hardcoded URL: "+e, e);

@@ -219,6 +219,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public final RunningAverage routingMissDistanceLocal;
 	public final RunningAverage routingMissDistanceRemote;
 	public final RunningAverage routingMissDistanceOverall;
+	public final RunningAverage routingMissDistanceBulk;
+	public final RunningAverage routingMissDistanceRT;
 	public final RunningAverage backedOffPercent;
 	public final DecayingKeyspaceAverage avgCacheCHKLocation;
 	public final DecayingKeyspaceAverage avgSlashdotCacheCHKLocation;
@@ -292,6 +294,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		this.routingMissDistanceLocal = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.routingMissDistanceRemote = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.routingMissDistanceOverall = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
+		this.routingMissDistanceBulk = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
+		this.routingMissDistanceRT = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		preemptiveRejectReasons = new StringCounter();
 		localPreemptiveRejectReasons = new StringCounter();
@@ -742,20 +746,20 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 				expectedTransfersOutCHK = m.getShort(DMT.OTHER_TRANSFERS_OUT_CHK) & 0xFFFF;
 				expectedTransfersOutSSK = m.getShort(DMT.OTHER_TRANSFERS_OUT_SSK) & 0xFFFF;
 				averageTransfersOutPerInsert = m.getShort(DMT.AVERAGE_TRANSFERS_OUT_PER_INSERT) & 0xFFFF;
-				maxTransfersOut = m.getShort(DMT.MAX_TRANSFERS_OUT);
-				maxTransfersOutUpperLimit = m.getShort(DMT.MAX_TRANSFERS_OUT_UPPER_LIMIT);
-				maxTransfersOutLowerLimit = m.getShort(DMT.MAX_TRANSFERS_OUT_LOWER_LIMIT);
-				maxTransfersOutPeerLimit = m.getShort(DMT.MAX_TRANSFERS_OUT_PEER_LIMIT);
+				maxTransfersOut = m.getShort(DMT.MAX_TRANSFERS_OUT) & 0xFFFF;
+				maxTransfersOutUpperLimit = m.getShort(DMT.MAX_TRANSFERS_OUT_UPPER_LIMIT) & 0xFFFF;
+				maxTransfersOutLowerLimit = m.getShort(DMT.MAX_TRANSFERS_OUT_LOWER_LIMIT) & 0xFFFF;
+				maxTransfersOutPeerLimit = m.getShort(DMT.MAX_TRANSFERS_OUT_PEER_LIMIT) & 0xFFFF;
 			} else if(m.getSpec() == DMT.FNPPeerLoadStatusByte) {
 				expectedTransfersInCHK = m.getByte(DMT.OTHER_TRANSFERS_IN_CHK) & 0xFF;
 				expectedTransfersInSSK = m.getByte(DMT.OTHER_TRANSFERS_IN_SSK) & 0xFF;
 				expectedTransfersOutCHK = m.getByte(DMT.OTHER_TRANSFERS_OUT_CHK) & 0xFF;
 				expectedTransfersOutSSK = m.getByte(DMT.OTHER_TRANSFERS_OUT_SSK) & 0xFF;
 				averageTransfersOutPerInsert = m.getByte(DMT.AVERAGE_TRANSFERS_OUT_PER_INSERT) & 0xFF;
-				maxTransfersOut = m.getByte(DMT.MAX_TRANSFERS_OUT);
-				maxTransfersOutUpperLimit = m.getByte(DMT.MAX_TRANSFERS_OUT_UPPER_LIMIT);
-				maxTransfersOutLowerLimit = m.getByte(DMT.MAX_TRANSFERS_OUT_LOWER_LIMIT);
-				maxTransfersOutPeerLimit = m.getByte(DMT.MAX_TRANSFERS_OUT_PEER_LIMIT);
+				maxTransfersOut = m.getByte(DMT.MAX_TRANSFERS_OUT) & 0xFF;
+				maxTransfersOutUpperLimit = m.getByte(DMT.MAX_TRANSFERS_OUT_UPPER_LIMIT) & 0xFF;
+				maxTransfersOutLowerLimit = m.getByte(DMT.MAX_TRANSFERS_OUT_LOWER_LIMIT) & 0xFF;
+				maxTransfersOutPeerLimit = m.getByte(DMT.MAX_TRANSFERS_OUT_PEER_LIMIT) & 0xFF;
 			} else throw new IllegalArgumentException();
 			outputBandwidthLowerLimit = m.getInt(DMT.OUTPUT_BANDWIDTH_LOWER_LIMIT);
 			outputBandwidthUpperLimit = m.getInt(DMT.OUTPUT_BANDWIDTH_UPPER_LIMIT);
@@ -982,7 +986,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		int threadCount = getActiveThreadCount();
 		if(threadLimit < threadCount) {
 			pInstantRejectIncoming.report(1.0);
-			rejected(">threadLimit", isLocal);
+			rejected(">threadLimit", isLocal, realTimeFlag);
 			return new RejectReason(">threadLimit ("+threadCount+'/'+threadLimit+')', false);
 		}
 
@@ -1004,14 +1008,14 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 					if(logMINOR) Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
 				} else {
 					pInstantRejectIncoming.report(1.0);
-					rejected(">MAX_PING_TIME", isLocal);
+					rejected(">MAX_PING_TIME", isLocal, realTimeFlag);
 					return new RejectReason(">MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+ ')', false);
 				}
 			} else if(pingTime > subMaxPingTime) {
 				double x = ((pingTime - subMaxPingTime)) / (maxPingTime - subMaxPingTime);
 				if(randomLessThan(x, preferInsert)) {
 					pInstantRejectIncoming.report(1.0);
-					rejected(">SUB_MAX_PING_TIME", isLocal);
+					rejected(">SUB_MAX_PING_TIME", isLocal, realTimeFlag);
 					return new RejectReason(">SUB_MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+ ')', false);
 				}
 			}
@@ -1066,10 +1070,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 				source, isLocal, isSSK, isInsert, isOfferReply, hasInStore, transfersPerInsert, realTimeFlag, maxOutputTransfers, maxTransfersOutPeerLimit);  
 		if(ret != null) return new RejectReason(ret, true);
 		
-		if(peerRequestsSnapshot.totalOutTransfers() > maxOutputTransfers) {
-			// Can't handle that many transfers with current bandwidth.
-			return new RejectReason("CongestionControl", true);
-		}
+		ret = checkMaxOutputTransfers(maxOutputTransfers, maxTransfersOutUpperLimit, maxTransfersOutLowerLimit, maxTransfersOutPeerLimit,
+				requestsSnapshot, peerRequestsSnapshot, isLocal, realTimeFlag);
+		if(ret != null) return new RejectReason(ret, true);
 		
 		// Do we have the bandwidth?
 		double expected = this.getThrottle(isLocal, isInsert, isSSK, true).currentValue();
@@ -1078,7 +1081,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			Logger.minor(this, "Expected sent bytes: "+expected+" -> "+expectedSent);
 		if(!requestOutputThrottle.instantGrab(expectedSent)) {
 			pInstantRejectIncoming.report(1.0);
-			rejected("Insufficient output bandwidth", isLocal);
+			rejected("Insufficient output bandwidth", isLocal, realTimeFlag);
 			return new RejectReason("Insufficient output bandwidth", false);
 		}
 		expected = this.getThrottle(isLocal, isInsert, isSSK, false).currentValue();
@@ -1088,17 +1091,17 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		if(!requestInputThrottle.instantGrab(expectedReceived)) {
 			requestOutputThrottle.recycle(expectedSent);
 			pInstantRejectIncoming.report(1.0);
-			rejected("Insufficient input bandwidth", isLocal);
+			rejected("Insufficient input bandwidth", isLocal, realTimeFlag);
 			return new RejectReason("Insufficient input bandwidth", false);
 		}
 
 		if(source != null) {
 			if(source.getMessageQueueLengthBytes() > MAX_PEER_QUEUE_BYTES) {
-				rejected(">MAX_PEER_QUEUE_BYTES", isLocal);
+				rejected(">MAX_PEER_QUEUE_BYTES", isLocal, realTimeFlag);
 				return new RejectReason("Too many message bytes queued for peer", false);
 			}
 			if(source.getProbableSendQueueTime() > MAX_PEER_QUEUE_TIME) {
-				rejected(">MAX_PEER_QUEUE_TIME", isLocal);
+				rejected(">MAX_PEER_QUEUE_TIME", isLocal, realTimeFlag);
 				return new RejectReason("Peer's queue will take too long to transfer", false);
 			}
 		}
@@ -1121,7 +1124,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	private int getAcceptableBlockTime(boolean realTime) {
-		return realTime ? 1 : 5;
+		return realTime ? 2 : 15;
 	}
 
 	static final double ONE_PEER_MAX_PEERS_EQUIVALENT = 2.0;
@@ -1261,13 +1264,42 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			
 			double peerUsedBytes = getPeerBandwidthLiability(peerRequestsSnapshot, source, isSSK, isInsert, isOfferReply, ignoreLocalVsRemoteBandwidthLiability, hasInStore, transfersPerInsert, input, realTimeFlag);
 			if(peerUsedBytes > thisAllocation) {
-				rejected(name+" bandwidth liability: fairness between peers", isLocal);
+				rejected(name+" bandwidth liability: fairness between peers", isLocal, realTimeFlag);
 				return name+" bandwidth liability: fairness between peers (peer "+source+" used "+peerUsedBytes+" allowed "+thisAllocation+")";
 			}
 			
 		}
 		return null;
 	}
+	
+	private String checkMaxOutputTransfers(int maxOutputTransfers,
+			int maxTransfersOutUpperLimit, int maxTransfersOutLowerLimit,
+			int maxTransfersOutPeerLimit,
+			RunningRequestsSnapshot requestsSnapshot,
+			RunningRequestsSnapshot peerRequestsSnapshot, boolean isLocal, boolean realTime) {
+		if(logMINOR) Logger.minor(this, "Max transfers: congestion control limit "+maxOutputTransfers+
+				" upper "+maxTransfersOutUpperLimit+" lower "+maxTransfersOutLowerLimit+" peer "+maxTransfersOutPeerLimit+" "+(realTime ? "(rt)" : "(bulk)"));
+		int peerOutTransfers = peerRequestsSnapshot.totalOutTransfers();
+		int totalOutTransfers = requestsSnapshot.totalOutTransfers();
+		if(peerOutTransfers > maxOutputTransfers && !isLocal) {
+			// Can't handle that many transfers with current bandwidth.
+			rejected("TooManyTransfers: Congestion control", isLocal, realTime);
+			return "TooManyTransfers: Congestion control";
+		}
+		if(totalOutTransfers <= maxTransfersOutLowerLimit) {
+			// If the total is below the lower limit, then fine, go for it.
+			return null;
+		}
+		if(peerOutTransfers <= maxTransfersOutPeerLimit) {
+			// The total is above the lower limit, but the per-peer is below the peer limit.
+			// It is within its guaranteed space, so we accept it.
+			return null;
+		}
+		rejected("TooManyTransfers: Fair sharing between peers", isLocal, realTime);
+		return "TooManyTransfers: Fair sharing between peers";
+	}
+
+
 
 	static final boolean SEND_LOAD_STATS_NOTICES = true;
 	
@@ -1331,7 +1363,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return hardRandom.nextDouble() < x;
 	}
 
-	private void rejected(String reason, boolean isLocal) {
+	private void rejected(String reason, boolean isLocal, boolean realTime) {
+		reason += " "+(realTime?" (rt)":" (bulk)");
 		if(logMINOR) Logger.minor(this, "Rejecting (local="+isLocal+") : "+reason);
 		if(!isLocal) preemptiveRejectReasons.inc(reason);
 		else this.localPreemptiveRejectReasons.inc(reason);
@@ -1644,6 +1677,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("routingMissDistanceLocal", routingMissDistanceLocal.currentValue());
 		fs.put("routingMissDistanceRemote", routingMissDistanceRemote.currentValue());
 		fs.put("routingMissDistanceOverall", routingMissDistanceOverall.currentValue());
+		fs.put("routingMissDistanceBulk", routingMissDistanceBulk.currentValue());
+		fs.put("routingMissDistanceRT", routingMissDistanceRT.currentValue());
+		
 		fs.put("backedOffPercent", backedOffPercent.currentValue());
 		fs.put("pInstantReject", pRejectIncomingInstantly());
 		fs.put("unclaimedFIFOSize", node.usm.getUnclaimedFIFOSize());

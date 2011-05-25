@@ -4822,12 +4822,7 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 			long now = System.currentTimeMillis();
 			for(int i=0;i<uids.length;i++) {
-				if(now - tags[i].createdTime > TIMEOUT) {
-					tags[i].logStillPresent(uids[i]);
-					synchronized(map) {
-						map.remove(uids[i]);
-					}
-				}
+				tags[i].maybeLogStillPresent(now, uids[i]);
 			}
 		}
 	};

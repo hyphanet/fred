@@ -57,6 +57,7 @@ import freenet.support.Logger;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
+import freenet.support.api.Bucket;
 import freenet.support.io.FileBucket;
 import freenet.support.io.RandomAccessFileWrapper;
 
@@ -1013,42 +1014,48 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		return false;
 	}
 
+	void processRevocationBlob(final File temp, PeerNode source) {
+		processRevocationBlob(new FileBucket(temp, true, false, false, false, true), source.userToString(), false);
+	}
+	
 	/**
 	 * Process a binary blob for a revocation certificate (the revocation key).
 	 * @param temp The file it was written to.
 	 */
-	protected void processRevocationBlob(final File temp, final PeerNode source) {
+	void processRevocationBlob(final Bucket temp, final String source, boolean fromDisk) {
 
 		SimpleBlockSet blocks = new SimpleBlockSet();
 
 		DataInputStream dis = null;
 		try {
-			dis = new DataInputStream(new BufferedInputStream(new FileInputStream(temp)));
+			dis = new DataInputStream(new BufferedInputStream(temp.getInputStream()));
 			BinaryBlob.readBinaryBlob(dis, blocks, true);
 		} catch(FileNotFoundException e) {
-			Logger.error(this, "Somebody deleted " + temp + " ? We lost the revocation certificate from " + source.userToString() + "!");
-			System.err.println("Somebody deleted " + temp + " ? We lost the revocation certificate from " + source.userToString() + "!");
-			updateManager.blow("Somebody deleted " + temp + " ? We lost the revocation certificate from " + source.userToString() + "!", true);
+			Logger.error(this, "Somebody deleted " + temp + " ? We lost the revocation certificate from " + source + "!");
+			System.err.println("Somebody deleted " + temp + " ? We lost the revocation certificate from " + source + "!");
+			if(!fromDisk)
+				updateManager.blow("Somebody deleted " + temp + " ? We lost the revocation certificate from " + source + "!", true);
 			return;
 		} catch (EOFException e) {
-			Logger.error(this, "Peer " + source.userToString() + " sent us an invalid revocation certificate! (data too short, might be truncated): " + e + " (data in " + temp + ")", e);
-			System.err.println("Peer " + source.userToString() + " sent us an invalid revocation certificate! (data too short, might be truncated): " + e + " (data in " + temp + ")");
+			Logger.error(this, "Peer " + source + " sent us an invalid revocation certificate! (data too short, might be truncated): " + e + " (data in " + temp + ")", e);
+			System.err.println("Peer " + source + " sent us an invalid revocation certificate! (data too short, might be truncated): " + e + " (data in " + temp + ")");
 			// Probably malicious, might just be buggy, either way, it's not blown
 			e.printStackTrace();
 			// FIXME file will be kept until exit for debugging purposes
 			return;
 		} catch(BinaryBlobFormatException e) {
-			Logger.error(this, "Peer " + source.userToString() + " sent us an invalid revocation certificate!: " + e + " (data in " + temp + ")", e);
-			System.err.println("Peer " + source.userToString() + " sent us an invalid revocation certificate!: " + e + " (data in " + temp + ")");
+			Logger.error(this, "Peer " + source + " sent us an invalid revocation certificate!: " + e + " (data in " + temp + ")", e);
+			System.err.println("Peer " + source + " sent us an invalid revocation certificate!: " + e + " (data in " + temp + ")");
 			// Probably malicious, might just be buggy, either way, it's not blown
 			e.printStackTrace();
 			// FIXME file will be kept until exit for debugging purposes
 			return;
 		} catch(IOException e) {
-			Logger.error(this, "Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " ! : "+e, e);
-			System.err.println("Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " ! : "+e);
+			Logger.error(this, "Could not read revocation cert from temp file " + temp + " from node " + source + " ! : "+e, e);
+			System.err.println("Could not read revocation cert from temp file " + temp + " from node " + source + " ! : "+e);
 			e.printStackTrace();
-			updateManager.blow("Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " ! : "+e, true);
+			if(!fromDisk)
+				updateManager.blow("Could not read revocation cert from temp file " + temp + " from node " + source + " ! : "+e, true);
 			// FIXME will be kept until exit for debugging purposes
 			return;
 		} finally {
@@ -1075,8 +1082,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			f = File.createTempFile("revocation-", ".fblob.tmp", updateManager.node.clientCore.getPersistentTempDir());
 			b = new FileBucket(f, false, false, true, true, true);
 		} catch(IOException e) {
-			Logger.error(this, "Cannot share revocation key from " + source.userToString() + " with our peers because cannot write the cleaned version to disk: " + e, e);
-			System.err.println("Cannot share revocation key from " + source.userToString() + " with our peers because cannot write the cleaned version to disk: " + e);
+			Logger.error(this, "Cannot share revocation key from " + source + " with our peers because cannot write the cleaned version to disk: " + e, e);
+			System.err.println("Cannot share revocation key from " + source + " with our peers because cannot write the cleaned version to disk: " + e);
 			e.printStackTrace();
 			b = null;
 			f = null;
@@ -1089,23 +1096,23 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 				if(e.mode == FetchException.CANCELLED) {
 					// Eh?
-					Logger.error(this, "Cancelled fetch from store/blob of revocation certificate from " + source.userToString());
-					System.err.println("Cancelled fetch from store/blob of revocation certificate from " + source.userToString() + " to " + temp + " - please report to developers");
+					Logger.error(this, "Cancelled fetch from store/blob of revocation certificate from " + source);
+					System.err.println("Cancelled fetch from store/blob of revocation certificate from " + source + " to " + temp + " - please report to developers");
 				// Probably best to keep files around for now.
 				} else if(e.isFatal()) {
 					// Blown: somebody inserted a revocation message, but it was corrupt as inserted
 					// However it had valid signatures etc.
 
-					System.err.println("Got revocation certificate from " + source.userToString() + " (fatal error i.e. someone with the key inserted bad data) : "+e);
+					System.err.println("Got revocation certificate from " + source + " (fatal error i.e. someone with the key inserted bad data) : "+e);
 					// Blow the update, and propagate the revocation certificate.
-					updateManager.revocationChecker.onFailure(e, state, cleanedBlobFile);
-					temp.delete();
+					updateManager.revocationChecker.onFailure(e, state, cleanedBlob);
+					temp.free();
 
 					insertBlob(updateManager.revocationChecker.getBlobFile(), "revocation");
 
 				} else {
-					Logger.error(this, "Failed to fetch revocation certificate from blob from " + source.userToString() + " : "+e+" : this is almost certainly bogus i.e. the auto-update is fine but the node is broken.");
-					System.err.println("Failed to fetch revocation certificate from blob from " + source.userToString() + " : "+e+" : this is almost certainly bogus i.e. the auto-update is fine but the node is broken.");
+					Logger.error(this, "Failed to fetch revocation certificate from blob from " + source + " : "+e+" : this is almost certainly bogus i.e. the auto-update is fine but the node is broken.");
+					System.err.println("Failed to fetch revocation certificate from blob from " + source + " : "+e+" : this is almost certainly bogus i.e. the auto-update is fine but the node is broken.");
 					// This is almost certainly bogus.
 				}
 			}
@@ -1114,9 +1121,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			}
 
 			public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
-				System.err.println("Got revocation certificate from " + source.userToString());
-				updateManager.revocationChecker.onSuccess(result, state, cleanedBlobFile);
-				temp.delete();
+				System.err.println("Got revocation certificate from " + source);
+				updateManager.revocationChecker.onSuccess(result, state, cleanedBlob);
+				temp.free();
 				insertBlob(updateManager.revocationChecker.getBlobFile(), "revocation");
 			}
 		};
@@ -1374,6 +1381,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		}
 
 		// Okay, we can receive it
+		System.out.println("Receiving main jar "+version+" from "+source.userToString());
 
 		final File temp;
 
@@ -1485,6 +1493,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		}
 
 		// Okay, we can receive it
+		System.out.println("Receiving extra jar "+version+" from "+source.userToString());
 
 		final File temp;
 
@@ -1860,5 +1869,17 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 	public boolean realTimeFlag() {
 		return false;
+	}
+
+	public boolean isFetchingMain() {
+		synchronized(this) {
+			return nodesSendingMainJar.size() > 0;
+		}
+	}
+
+	public boolean isFetchingExt() {
+		synchronized(this) {
+			return nodesSendingExtJar.size() > 0;
+		}
 	}
 }

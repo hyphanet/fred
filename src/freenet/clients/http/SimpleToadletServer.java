@@ -256,9 +256,22 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 					throw new InvalidConfigValueException(l10n("cssOverrideNotInUploads", "filename", tmp.toString()));
 				else if(!tmp.canRead() || !tmp.isFile())
 					throw new InvalidConfigValueException(l10n("cssOverrideCantRead", "filename", tmp.toString()));
+				File parent = tmp.getParentFile();
+				String s = parent.toString();
+				// Basic sanity check.
+				// Prevents user from specifying root dir.
+				// They can still shoot themselves in the foot, but only when developing themes/using custom themes.
+				// Because of the .. check above, any malicious thing cannot break out of the dir anyway.
+				if(parent.getParentFile() == null)
+					throw new InvalidConfigValueException(l10n("cssOverrideCantUseRootDir", "filename", parent.toString()));
 				cssOverride = tmp.getAbsoluteFile();
 			}
-			pageMaker.setOverride(cssOverride);
+			if(cssOverride == null)
+				pageMaker.setOverride(null);
+			else {
+				pageMaker.setOverride(StaticToadlet.OVERRIDE_URL + cssOverride.getName());
+			}
+			
 		}
 	}
 	private class FProxyEnabledCallback extends BooleanCallback  {
@@ -640,9 +653,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 		if(!fproxyConfig.getOption("CSSOverride").isDefault()) {
 			cssOverride = new File(fproxyConfig.getString("CSSOverride"));
-			pageMaker.setOverride(cssOverride);
-		} else
+			pageMaker.setOverride(StaticToadlet.OVERRIDE_URL + cssOverride.getName());
+		} else {
 			cssOverride = null;
+			pageMaker.setOverride(null);
+		}
 		
 		this.advancedModeEnabled = fproxyConfig.getBoolean("advancedModeEnabled");
 		toadlets = new LinkedList<ToadletElement>();
@@ -1026,6 +1041,10 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 
 	public REFILTER_POLICY getReFilterPolicy() {
 		return refilterPolicy;
+	}
+
+	public File getOverrideFile() {
+		return cssOverride;
 	}
 
 }
