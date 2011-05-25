@@ -37,6 +37,7 @@ import freenet.node.PeerNode;
 import freenet.node.PeerNode.IncomingLoadSummaryStats;
 import freenet.node.PeerNodeStatus;
 import freenet.node.Version;
+import freenet.node.updater.NodeUpdateManager;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -870,7 +871,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 			HTMLNode locationChild = peerRow.addChild("td", "class", "peer-address");
 			// Ip to country + Flags
-			IPConverter ipc = IPConverter.getInstance();
+			IPConverter ipc = IPConverter.getInstance(node.runDir().file(NodeUpdateManager.IPV4_TO_COUNTRY_FILENAME));
 			// Only IPv4 at the time
 			if(!peerNodeStatus.getPeerAddress().contains(":")) {
 				Country country = ipc.locateIP(peerNodeStatus.getPeerAddress());
