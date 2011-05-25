@@ -87,25 +87,6 @@ public class Util {
 		return new NativeBigInteger(1, data);
 	}
 
-	/**
-	 * Creates a large random number (BigInteger) up to <b>bits</b> bits.
-	 * This differs from the BigInteger constructor, in that it generates all
-	 * numbers from the range 2^lower to 2^n, rather than 2^n-1 to 2^n.
-	 */
-	public static BigInteger generateLargeRandom(
-		int lowerBound,
-		int upperBound,
-		Random r) {
-		if (lowerBound == upperBound)
-			return new NativeBigInteger(lowerBound, r);
-
-		int bl;
-		do {
-			bl = (r.nextInt() & 0x7fffffff) % upperBound;
-		} while (bl < lowerBound);
-		return new NativeBigInteger(bl, r);
-	}
-
 	public static byte[] hashBytes(MessageDigest d, byte[] b) {
 		return hashBytes(d, b, 0, b.length);
 	}
