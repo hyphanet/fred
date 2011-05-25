@@ -454,6 +454,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 						sendAllThemes = val;
 					}
 				});
+		sendAllThemes = fproxyConfig.getBoolean("sendAllThemes");
+		
 		fproxyConfig.register("advancedModeEnabled", false, configItemOrder++, true, false, "SimpleToadletServer.advancedMode", "SimpleToadletServer.advancedModeLong",
 				new FProxyAdvancedModeEnabledCallback(this));
 		fproxyConfig.register("enableExtendedMethodHandling", false, configItemOrder++, true, false, "SimpleToadletServer.enableExtendedMethodHandling", "SimpleToadletServer.enableExtendedMethodHandlingLong",
