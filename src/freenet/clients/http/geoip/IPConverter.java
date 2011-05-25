@@ -242,6 +242,7 @@ public class IPConverter {
 	 */
 	public Country locateIP(String ip) {
 		Cache memCache = getCache();
+		if(memCache == null) return null;
 		long[] ips = memCache.getIps();
 		short[] codes = memCache.getCodes();
 		long longip = ip2num(ip);
