@@ -266,12 +266,14 @@ public class IPConverter {
 	 * @return {@link Cache}
 	 */
 	private Cache getCache() {
+		Cache memCache = null;
 		synchronized (IPConverter.class) {
-			if (fullCache == null) {
-				fullCache = new WeakReference<Cache>(readRanges());
+			if(fullCache != null)
+				memCache = fullCache.get();
+			if(memCache == null) {
+				fullCache = new WeakReference<Cache>(memCache = readRanges());
 			}
 		}
-		Cache memCache = fullCache.get();
 		return memCache;
 	}
 
