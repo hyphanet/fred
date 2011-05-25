@@ -5,14 +5,12 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.ref.WeakReference;
-import java.net.URL;
 import java.util.HashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import freenet.node.Node;
+import freenet.support.Logger;
 
 public class IPConverter {
-	// Default name for file name
-	private static final String FILE_NAME = "IpToCountry.dat";
 	// Regex indicating ipranges start
 	private static final String START = "##start##";
 	// Local cache
@@ -24,26 +22,10 @@ public class IPConverter {
 	// File containing IP ranges
 	private File dbFile;
 
-	private Logger logger = Logger.getLogger(getClass().getName());
-
-	/**
-	 * Simple enumerator determining two modes for {@link IPConverter}
-	 */
-	public enum Mode {
-		/**
-		 * Indicates memory mode, in which all IP ranges are loaded into memory
-		 * at the initialization phase.
-		 */
-		MEMORY,
-		/**
-		 * Indicates file mode, in which queries are read directly from file
-		 */
-		FILE;
-	}
-
 	public enum Country {
 		L0("localhost"), I0("IntraNet"), A1("Anonymous Proxy"), A2(
-				"Satellite Provider"),AF("AFGHANISTAN"), AX("ALAND ISLANDS"), AL("ALBANIA"), AN(
+				"Satellite Provider"), AP("AP Asia/Pacific Region"), AF(
+				"AFGHANISTAN"), AX("ALAND ISLANDS"), AL("ALBANIA"), AN(
 				"NETHERLANDS ANTILLES"), DZ("ALGERIA"), AS("AMERICAN SAMOA"), AD(
 				"ANDORRA"), AO("ANGOLA"), AI("ANGUILLA"), AQ("ANTARCTICA"), AG(
 				"ANTIGUA AND BARBUDA"), AR("ARGENTINA"), AM("ARMENIA"), AW(
@@ -154,16 +136,14 @@ public class IPConverter {
 			'?' };
 
 	/**
-	 * Constructs a new {@link IPConverter} in desired mode
+	 * Constructs a new {@link IPConverter}
 	 * 
-	 * @param mode
-	 *            {@link Mode#FILE} by default
-	 * @see Mode
+	 * @param node
+	 *            reference to freenet {@link Node}
 	 */
-	private IPConverter() {
-		URL fileURL = getClass().getResource(FILE_NAME);
+	private IPConverter(File dbFile) {
 		cache = new HashMap<Long, Country>();
-		dbFile = new File(fileURL.getFile());
+		this.dbFile = dbFile;
 	}
 
 	/**
@@ -171,20 +151,21 @@ public class IPConverter {
 	 * 
 	 * @return singleton object
 	 */
-	public static IPConverter getInstance() {
+	public static IPConverter getInstance(File file) {
 		if (instance == null) {
-			instance = new IPConverter();
+			instance = new IPConverter(file);
+		} else if(!instance.getDBFile().equals(file)) {
+			instance = new IPConverter(file);
 		}
 		return instance;
 	}
 
 	/**
-	 * Copies all IP ranges from given String to memory. This method is only
-	 * accessed if converter is in memory mode.
+	 * Copies all IP ranges from given String to memory as a
+	 * {@link WeakReference}.
 	 * 
 	 * @param line
 	 *            {@link String} containing IP ranges
-	 * @see Mode
 	 * @throws IOException
 	 */
 	private Cache readRanges() {
@@ -218,9 +199,9 @@ public class IPConverter {
 			raf.close();
 			return new Cache(codes, ips);
 		} catch (FileNotFoundException e) {
-			logger.log(Level.INFO, e.getMessage(), e);
+			Logger.error(this, "Databse file not found!", e);
 		} catch (IOException e) {
-			logger.log(Level.INFO, e.getMessage(), e);
+			Logger.error(this, e.getMessage());
 		}
 		return null;
 	}
@@ -235,25 +216,25 @@ public class IPConverter {
 	public long ip2num(String ip) {
 		String[] split = ip.split("\\.");
 		long num = 0;
+		long coef = (256 << 16);
 		for (int i = 0; i < split.length; i++) {
-			num += ((Integer.parseInt(split[i]) % 256 * Math.pow(256, 3 - i)));
+			long modulo = Integer.parseInt(split[i]) % 256;
+			num += (modulo * coef);
+			coef >>= 8;
 		}
 		return num;
 	}
 
 	/**
-	 * Returns a {@link CountryManager} respecting given IP4.
+	 * Returns a {@link Country} respecting given IP4.
 	 * 
 	 * @param ip
 	 *            IP in "XX.XX.XX.XX" format
-	 * @return {@link CountryManager} of given IP
+	 * @return {@link Country} of given IP
 	 * @throws IOException
 	 */
 	public Country locateIP(String ip) {
-		if (fullCache == null) {
-			fullCache = new WeakReference<Cache>(readRanges());
-		}
-		Cache memCache = fullCache.get();
+		Cache memCache = getCache();
 		long[] ips = memCache.getIps();
 		short[] codes = memCache.getCodes();
 		long longip = ip2num(ip);
@@ -262,21 +243,36 @@ public class IPConverter {
 			return cache.get(longip);
 		}
 		// Binary search
-		int start=0;
-		int last=ips.length-1;
+		int start = 0;
+		int last = ips.length - 1;
 		int mid;
-		while((mid = Math.round((last-start)/2))>0){
-			int midpos = mid +start;
-			if(longip>=ips[midpos]) {
-				last=midpos;
-			}else{
-				start=midpos;
+		while ((mid = Math.round((last - start) / 2)) > 0) {
+			int midpos = mid + start;
+			if (longip >= ips[midpos]) {
+				last = midpos;
+			} else {
+				start = midpos;
 			}
 		}
 		short countryOrdinal = codes[last];
 		Country country = Country.values()[countryOrdinal];
 		cache.put(longip, country);
 		return country;
+	}
+
+	/**
+	 * Returns {@link Cache} containing IPranges
+	 * 
+	 * @return {@link Cache}
+	 */
+	private Cache getCache() {
+		synchronized (IPConverter.class) {
+			if (fullCache == null) {
+				fullCache = new WeakReference<Cache>(readRanges());
+			}
+		}
+		Cache memCache = fullCache.get();
+		return memCache;
 	}
 
 	/**
@@ -291,9 +287,11 @@ public class IPConverter {
 		int base = base85.length;
 		if (code.length != 5)
 			return result;
+		long coef = 1;
 		for (int i = 4; i >= 0; i--) {
 			Integer value = getBaseIndex(code[i]);
-			result += value * (Math.pow(base, (4 - i)));
+			result += value * coef;
+			coef *= base;
 		}
 		return result;
 	}
@@ -312,5 +310,13 @@ public class IPConverter {
 				return i;
 		}
 		return -1;
+	}
+	
+	/**
+	 * Returns database file containing IP ranges
+	 * @return database file
+	 */
+	File getDBFile() {
+		return this.dbFile;
 	}
 }
