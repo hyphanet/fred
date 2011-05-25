@@ -444,6 +444,7 @@ public class FCPConnectionHandler implements Closeable {
 				failedMessage = new IdentifierCollisionMessage(id, message.global);
 			}
 		if(failedMessage != null) {
+			if(logMINOR) Logger.minor(this, "Failed: "+failedMessage);
 			outputHandler.queue(failedMessage);
 			if(persistent && message.persistenceType == ClientRequest.PERSIST_FOREVER) {
 				final ClientPut c = cp;
