@@ -242,14 +242,14 @@ public class IPConverter {
 	 */
 	public Country locateIP(String ip) {
 		Cache memCache = getCache();
-		if(memCache == null) return null;
-		long[] ips = memCache.getIps();
-		short[] codes = memCache.getCodes();
 		long longip = ip2num(ip);
 		// Check cache first
 		if (cache.containsKey(longip)) {
 			return cache.get(longip);
 		}
+		if(memCache == null) return null;
+		long[] ips = memCache.getIps();
+		short[] codes = memCache.getCodes();
 		// Binary search
 		int start = 0;
 		int last = ips.length - 1;
