@@ -441,7 +441,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				new FProxyCSSNameCallback());
 		fproxyConfig.register("CSSOverride", "", configItemOrder++, true, false, "SimpleToadletServer.cssOverride", "SimpleToadletServer.cssOverrideLong",
 				new FProxyCSSOverrideCallback());
-		fproxyConfig.register("sendAllThemes", true, configItemOrder++, true, false, "SimpleToadletServer.sendAllThemes", "SimpleToadletServer.sendAllThemesLong",
+		fproxyConfig.register("sendAllThemes", false, configItemOrder++, true, false, "SimpleToadletServer.sendAllThemes", "SimpleToadletServer.sendAllThemesLong",
 				new BooleanCallback() {
 
 					@Override
