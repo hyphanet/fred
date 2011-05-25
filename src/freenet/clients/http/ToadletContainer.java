@@ -103,6 +103,8 @@ public interface ToadletContainer {
 
 	public boolean enableActivelinks();
 	
+	public boolean sendAllThemes();
+	
 	public boolean isFProxyJavascriptEnabled();
 
 	public boolean isFProxyWebPushingEnabled();
