@@ -92,7 +92,7 @@ public final class PageMaker {
 	public static final int MODE_SIMPLE = 1;
 	public static final int MODE_ADVANCED = 2;
 	private THEME theme;
-	private File override;
+	private String override;
 	private final Node node;
 	
 	private List<SubMenu> menuList = new ArrayList<SubMenu>();
@@ -159,8 +159,8 @@ public final class PageMaker {
 		this.node = n;
 	}
 	
-	void setOverride(File f) {
-		this.override = f;
+	void setOverride(String pointTo) {
+		this.override = pointTo;
 	}
 	
 	public void setTheme(THEME theme2) {
@@ -242,13 +242,18 @@ public final class PageMaker {
 		headNode.addChild("title", title + " - Freenet");
 		//To make something only rendered when javascript is on, then add the jsonly class to it
 		headNode.addChild("noscript").addChild("style"," .jsonly {display:none;}");
-		if(override == null)
-			headNode.addChild("link", new String[] { "rel", "href", "type", "title" }, new String[] { "stylesheet", "/static/themes/" + theme.code + "/theme.css", "text/css", theme.code });
-		else
+		if(override != null)
 			headNode.addChild(getOverrideContent());
-		for (THEME t: THEME.values()) {
-			String themeName = t.code;
-			headNode.addChild("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "alternate stylesheet", "/static/themes/" + themeName + "/theme.css", "text/css", "screen", themeName });
+		else 
+			headNode.addChild("link", new String[] { "rel", "href", "type", "title" }, new String[] { "stylesheet", "/static/themes/" + theme.code + "/theme.css", "text/css", theme.code });
+		
+		boolean sendAllThemes =  ctx != null && ctx.getContainer().sendAllThemes();
+		
+		if(sendAllThemes) {
+			for (THEME t: THEME.values()) {
+				String themeName = t.code;
+				headNode.addChild("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "alternate stylesheet", "/static/themes/" + themeName + "/theme.css", "text/css", "screen", themeName });
+			}
 		}
 		
 		boolean webPushingEnabled = 
@@ -571,15 +576,7 @@ public final class PageMaker {
 	}
 	
 	private HTMLNode getOverrideContent() {
-		HTMLNode result = new HTMLNode("style", "type", "text/css");
-		
-		try {
-			result.addChild("#", FileUtil.readUTF(override));
-		} catch (IOException e) {
-			Logger.error(this, "Got an IOE: " + e.getMessage(), e);
-		}
-		
-		return result;
+		return new HTMLNode("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "stylesheet", override, "text/css", "screen", "custom" });
 	}
 	
 	/** Call this before getPageNode(), so the menus reflect the advanced mode setting. */

@@ -1835,6 +1835,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			currentPeersLocation = newLocs;
 			locSetTime = System.currentTimeMillis();
 		}
+		node.peers.updatePMUserAlert();
 		node.peers.writePeers();
 		setPeerNodeStatus(System.currentTimeMillis());
 	}
@@ -2663,6 +2664,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	*/
 	protected synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef, boolean forFullNodeRef) throws FSParseException {
 		
+		boolean shouldUpdatePeerCounts = false;
+		
 		if(forFullNodeRef) {
 			// Check the signature.
 			String signature = fs.get("sig");
@@ -2793,6 +2796,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			} else {
 				if(!Location.equals(newLoc, currentLocation)) {
 					changedAnything = true;
+					if(currentLocation < 0.0 || currentLocation > 1.0)
+						shouldUpdatePeerCounts = true;
 					currentLocation = newLoc;
 					locSetTime = System.currentTimeMillis();
 				}
@@ -2875,6 +2880,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 		if(parseARK(fs, false, forDiffNodeRef))
 			changedAnything = true;
+		if(shouldUpdatePeerCounts)
+			node.peers.updatePMUserAlert();
 		return changedAnything;
 	}
 

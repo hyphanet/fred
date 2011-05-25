@@ -1750,10 +1750,13 @@ loadWaiterLoop:
     			try {
     				long tEnd = System.currentTimeMillis();
     				transferTime = tEnd - tStart;
+    				boolean haveSetPRB = false;
     				synchronized(RequestSender.this) {
     					transferringFrom = null;
-    					if(RequestSender.this.prb == null || !RequestSender.this.prb.allReceivedAndNotAborted())
+    					if(RequestSender.this.prb == null || !RequestSender.this.prb.allReceivedAndNotAborted()) {
     						RequestSender.this.prb = prb;
+    						haveSetPRB = true;
+    					}
     				}
     				if(!wasFork)
     					node.removeTransferringSender((NodeCHK)key, RequestSender.this);
@@ -1773,6 +1776,8 @@ loadWaiterLoop:
     						sentTo.noLongerRoutingTo(origTag, false);
     					return;
     				}
+    				if(haveSetPRB) // It was a fork, so we didn't immediately send the data.
+    					fireCHKTransferBegins();
     				finish(SUCCESS, sentTo, false);
     			} catch (Throwable t) {
         			Logger.error(this, "Failed on "+this, t);
