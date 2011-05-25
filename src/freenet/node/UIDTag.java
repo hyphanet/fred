@@ -270,7 +270,10 @@ public abstract class UIDTag {
 		unlockHandler(false);
 	}
 
-	public String toString() {
+	// LOCKING: Synchronized because of access to currentlyRoutingTo i.e. to avoid ConcurrentModificationException.
+	// UIDTag lock is always taken last anyway so this is safe.
+	// Also it is only used in logging anyway.
+	public synchronized String toString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append(super.toString());
 		sb.append(":");

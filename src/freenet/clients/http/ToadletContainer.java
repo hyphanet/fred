@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
+import java.io.File;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -119,5 +120,7 @@ public interface ToadletContainer {
 	/** What to do when we find cached data on the global queue but it's already been 
 	 * filtered, and we want a filtered copy. */
 	public REFILTER_POLICY getReFilterPolicy();
+
+	public File getOverrideFile();
 
 }
