@@ -88,6 +88,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	// Theme 
 	private THEME cssTheme;
 	private File cssOverride;
+	private boolean sendAllThemes;
 	private boolean advancedModeEnabled;
 	private final PageMaker pageMaker;
 	
@@ -440,6 +441,21 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				new FProxyCSSNameCallback());
 		fproxyConfig.register("CSSOverride", "", configItemOrder++, true, false, "SimpleToadletServer.cssOverride", "SimpleToadletServer.cssOverrideLong",
 				new FProxyCSSOverrideCallback());
+		fproxyConfig.register("sendAllThemes", true, configItemOrder++, true, false, "SimpleToadletServer.sendAllThemes", "SimpleToadletServer.sendAllThemesLong",
+				new BooleanCallback() {
+
+					@Override
+					public Boolean get() {
+						return sendAllThemes;
+					}
+
+					@Override
+					public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+						sendAllThemes = val;
+					}
+				});
+		sendAllThemes = fproxyConfig.getBoolean("sendAllThemes");
+		
 		fproxyConfig.register("advancedModeEnabled", false, configItemOrder++, true, false, "SimpleToadletServer.advancedMode", "SimpleToadletServer.advancedModeLong",
 				new FProxyAdvancedModeEnabledCallback(this));
 		fproxyConfig.register("enableExtendedMethodHandling", false, configItemOrder++, true, false, "SimpleToadletServer.enableExtendedMethodHandling", "SimpleToadletServer.enableExtendedMethodHandlingLong",
@@ -912,6 +928,10 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 
 	public void setCSSName(THEME theme) {
 		this.cssTheme = theme;
+	}
+
+	public synchronized boolean sendAllThemes() {
+		return this.sendAllThemes;
 	}
 
 	public synchronized boolean isAdvancedModeEnabled() {

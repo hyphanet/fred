@@ -246,9 +246,14 @@ public final class PageMaker {
 			headNode.addChild(getOverrideContent());
 		else 
 			headNode.addChild("link", new String[] { "rel", "href", "type", "title" }, new String[] { "stylesheet", "/static/themes/" + theme.code + "/theme.css", "text/css", theme.code });
-		for (THEME t: THEME.values()) {
-			String themeName = t.code;
-			headNode.addChild("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "alternate stylesheet", "/static/themes/" + themeName + "/theme.css", "text/css", "screen", themeName });
+		
+		boolean sendAllThemes =  ctx != null && ctx.getContainer().sendAllThemes();
+		
+		if(sendAllThemes) {
+			for (THEME t: THEME.values()) {
+				String themeName = t.code;
+				headNode.addChild("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "alternate stylesheet", "/static/themes/" + themeName + "/theme.css", "text/css", "screen", themeName });
+			}
 		}
 		
 		boolean webPushingEnabled = 
