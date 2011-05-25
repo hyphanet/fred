@@ -181,5 +181,10 @@ public class ProtocolErrorMessage extends FCPMessage {
 	public void removeFrom(ObjectContainer container) {
 		container.delete(this);
 	}
+	
+	@Override
+	public String toString() {
+		return super.toString()+":"+code+":"+extra+":"+fatal+":"+ident+":"+global;
+	}
 
 }
