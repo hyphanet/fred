@@ -857,6 +857,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			int reqs = 0;
 			this.averageTransfersPerInsert = transfersPerInsert;
 			this.realTimeFlag = realTimeFlag;
+			// countRequests() should be logging. It isn't. Why?
+			if(logMINOR) Logger.minor(this, "Creating snapshot of requests "+(requestsToNode?"to":"from")+" "+source);
 			// We are calculating what part of their resources we use. Therefore, we have
 			// to see it from their point of view - meaning all the requests are remote.
 			if(requestsToNode) ignoreLocalVsRemote = true;
