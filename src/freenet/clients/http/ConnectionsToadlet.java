@@ -324,7 +324,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons(true);
 					int total = 0;
 					if(routingBackoffReasons.length == 0) {
-						backoffReasonContent.addChild("#", "Good, your node is not backed off from any peers!");
+						backoffReasonContent.addChild("#", NodeL10n.getBase().getString("StatisticsToadlet.notBackedOff"));
 					} else {
 						HTMLNode reasonList = backoffReasonContent.addChild("ul");
 						for(int i=0;i<routingBackoffReasons.length;i++) {
@@ -343,7 +343,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons(false);
 					total = 0;
 					if(routingBackoffReasons.length == 0) {
-						backoffReasonContent.addChild("#", "Good, your node is not backed off from any peers!");
+						backoffReasonContent.addChild("#", NodeL10n.getBase().getString("StatisticsToadlet.notBackedOff"));
 					} else {
 						HTMLNode reasonList = backoffReasonContent.addChild("ul");
 						for(int i=0;i<routingBackoffReasons.length;i++) {
