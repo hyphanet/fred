@@ -887,6 +887,24 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			this.averageTransfersPerInsert = stats.averageTransfersOutPerInsert;
 		}
 
+		/** Decrement the counts because a remote request should not be taken into account if it's the one
+		 * we are considering at the moment (we should allow one request to be accepted even if we have a
+		 * very low limit). hasInStore is valid because the count is derived from the tags, and by the time
+		 * shouldRejectRequest() is called, the tag will already have been told if we are going to serve
+		 * from the datastore.
+		 * @param isSSK Is the request/insert for an SSK?
+		 * @param isInsert Is this an insert?
+		 * @param isOfferReply Is this an offer reply (GetOfferedKey)? If so, we won't relay it.
+		 * @param transfersOutPerInsert Average number of transfers outward for each insert.
+		 * @param hasInStore Is the data in the datastore (for a request)? This should be consistent 
+		 * with what the RequestTag thinks. In other words, the ultimate caller (e.g. 
+		 * NodeDispatcher.innerHandleDataRequest()) should check the datastore, and if the data is found,
+		 * tell the tag before calling shouldRejectRequest(), and ensure that the data is passed to the
+		 * RequestHandler regardless of race conditions etc resulting in it going out of cache (i.e. keep 
+		 * it in memory).
+		 * 
+		 * FIXME: This method should really just take a RequestTag!
+		 */
 		public void decrement(boolean isSSK, boolean isInsert,
 				boolean isOfferReply, int transfersOutPerInsert, boolean hasInStore) {
 			if(isInsert) {
