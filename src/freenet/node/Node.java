@@ -2520,6 +2520,7 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 			
 		});
+		enableNewLoadManagement = nodeConfig.getBoolean("enableNewLoadManagement");
 
 		nodeConfig.finishedInitialization();
 		if(shouldWriteConfig)
