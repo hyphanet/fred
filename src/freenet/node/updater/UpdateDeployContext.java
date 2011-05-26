@@ -199,7 +199,9 @@ class UpdateDeployContext {
 							dontWrite = true;
 						} else if(rhs.equals("freenet.jar") || rhs.equals("freenet.jar.new") || 
 								rhs.equals("freenet-stable-latest.jar") || rhs.equals("freenet-stable-latest.jar.new") ||
-								rhs.equals("freenet-testing-latest.jar") || rhs.equals("freenet-testing-latest.jar.new")) {
+								rhs.equals("freenet-testing-latest.jar") || rhs.equals("freenet-testing-latest.jar.new") ||
+								// node.isTestnet() && - FIXME we don't have access to Node here, should isTestnet be static???
+								rhs.equals("freenet-testnet.jar") || rhs.equals("freenet-testnet.jar.new")) {
 							if(writtenNewJar)
 								mainRHS = newMain;
 							else
