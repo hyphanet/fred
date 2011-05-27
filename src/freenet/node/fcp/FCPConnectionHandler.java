@@ -378,7 +378,7 @@ public class FCPConnectionHandler implements Closeable {
 						outputHandler.queue(new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, e.global));
 						return;
 					} catch (MalformedURLException e) {
-						failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, null, id, message.global);
+						failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, e.getMessage(), id, message.global);
 					}
 				} else if(message.persistenceType == ClientRequest.PERSIST_FOREVER) {
 					try {
@@ -444,6 +444,7 @@ public class FCPConnectionHandler implements Closeable {
 				failedMessage = new IdentifierCollisionMessage(id, message.global);
 			}
 		if(failedMessage != null) {
+			if(logMINOR) Logger.minor(this, "Failed: "+failedMessage);
 			outputHandler.queue(failedMessage);
 			if(persistent && message.persistenceType == ClientRequest.PERSIST_FOREVER) {
 				final ClientPut c = cp;

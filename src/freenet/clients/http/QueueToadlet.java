@@ -926,8 +926,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	private File getDownloadsDir (String downloadPath) throws NotAllowedException {
 		File downloadsDir = new File(downloadPath);
 		//Invalid if it's disallowed, doesn't exist, isn't a directory, or can't be created.
-		if(!core.allowDownloadTo(downloadsDir) || !downloadsDir.exists() || !downloadsDir.isDirectory() ||
-		        !downloadsDir.mkdirs()) {
+		if(!core.allowDownloadTo(downloadsDir) || !((downloadsDir.exists() && 
+				downloadsDir.isDirectory()) || !downloadsDir.mkdirs())) {
 			throw new NotAllowedException();
 		}
 		return downloadsDir;

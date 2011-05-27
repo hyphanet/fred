@@ -361,7 +361,7 @@ public final class PageMaker {
 
 			HTMLNode progressBar = statusBarDiv.addChild("div", "class", "progressbar");
 			progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-done progressbar-peers " + additionnalClass, "width: " +
-					Math.floor(100*connectedRatio) + "%;" });
+					Math.min(100,Math.floor(100*connectedRatio)) + "%;" });
 
 			progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_finalized", NodeL10n.getBase().getString("StatusBar.connectedPeers", new String[]{"X", "Y"},
 					new String[]{Integer.toString(node.peers.countConnectedDarknetPeers()), Integer.toString(node.peers.countConnectedOpennetPeers())}) },

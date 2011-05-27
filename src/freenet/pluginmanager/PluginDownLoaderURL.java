@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -20,6 +21,16 @@ public class PluginDownLoaderURL extends PluginDownLoader<URL> {
 		try {
 			return new URL(source);
 		} catch (MalformedURLException e) {
+			// Generate a meaningful error message when file not found falls back to a URL.
+			// Maybe it's a file?
+			// If we've reached this point then it doesn't exist.
+			File[] roots = File.listRoots();
+			for(File f : roots) {
+				if(source.startsWith(f.getName()) && !new File(source).exists()) {
+					throw new PluginNotFoundException("File not found: "+source);
+				}
+			}
+
 			Logger.error(this, "could not build plugin url for " + source, e);
 			throw new PluginNotFoundException("could not build plugin url for " + source, e);
 		}
