@@ -5606,7 +5606,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			int maxTransfersOutPeerLimit = Math.min(stats.maxTransfersOutPeerLimit, stats.maxTransfersOut);
 			if(logMINOR) Logger.minor(this, "Our usage is "+ourUsage+" peer limit is "+maxTransfersOutPeerLimit
 					+" lower limit is "+stats.maxTransfersOutLowerLimit+" realtime "+realTime);
-			if(ourUsage < stats.maxTransfersOutPeerLimit)
+			if(ourUsage < maxTransfersOutPeerLimit)
 				return RequestLikelyAcceptedState.GUARANTEED;
 			otherRunningRequests.log(PeerNode.this);
 			int theirUsage = otherRunningRequests.totalOutTransfers();
