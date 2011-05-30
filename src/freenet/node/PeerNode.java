@@ -5119,15 +5119,21 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 		}
 		
-		public void addWaitingFor(PeerNode peer) {
+		/**
+		 * Add another node to wait for.
+		 * @return True unless queueing the slot was impossible due to a problem with the PeerNode.
+		 * So we return true when there is a successful queueing, and we also return true when there is
+		 * a race condition and the waiter has already completed.
+		 */
+		public boolean addWaitingFor(PeerNode peer) {
 			synchronized(this) {
 				if(acceptedBy != null) {
 					if(logMINOR) Logger.minor(this, "Not adding "+peer.shortToString+" because already matched on "+this);
-					return;
+					return true;
 				}
 				waitingFor.add(peer);
 			}
-			peer.outputLoadTracker(realTime).queueSlotWaiter(this);
+			return peer.outputLoadTracker(realTime).queueSlotWaiter(this);
 		}
 		
 		/** First part of wake-up callback. If this returns null, we have already woken up,
@@ -5422,7 +5428,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		
 		private final EnumMap<RequestType,TreeMap<Long,SlotWaiter>> slotWaiters = new EnumMap<RequestType,TreeMap<Long,SlotWaiter>>(RequestType.class);
 		
-		void queueSlotWaiter(SlotWaiter waiter) {
+		boolean queueSlotWaiter(SlotWaiter waiter) {
+			if(!isRoutable()) return false;
+			if(isInMandatoryBackoff(System.currentTimeMillis(), realTime)) return false;
 			boolean noLoadStats = false;
 			PeerNode[] all = null;
 			boolean queued = false;
@@ -5442,9 +5450,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				waiter.unregister(null, all);
 			else if(queued) {
 				if((!isRoutable()) || (isInMandatoryBackoff(System.currentTimeMillis(), realTime))) {
+					// Has lost connection etc since start of the method.
 					waiter.onFailed(PeerNode.this, true);
+					return false;
 				}
 			}
+			return true;
 		}
 		
 		private TreeMap<Long,SlotWaiter> makeSlotWaiters(RequestType requestType) {

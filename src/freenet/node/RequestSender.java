@@ -687,8 +687,14 @@ loadWaiterLoop:
         				waitedForLoadManagement = true;
         				if(waiter == null)
         					waiter = PeerNode.createSlotWaiter(origTag, type, false, realTimeFlag);
-        				if(next != null)
-        					waiter.addWaitingFor(next);
+        				if(next != null) {
+        					if(!waiter.addWaitingFor(next)) {
+        						next = null;
+        						// Will be rerouted in the failure section below.
+        						// This is essential to avoid adding the same bogus node again and again.
+        						// This is only an issue with next. Hence the other places we route explicitly so there is no risk as they won't return the same node repeatedly after it is no longer routable.
+        					}
+        				}
     				
         	            if(next != null && next.isLowCapacity(realTimeFlag)) {
         	            	if(waiter.waitingForCount() == 1) {
@@ -702,6 +708,8 @@ loadWaiterLoop:
         	            					key, htl, 0, source == null, realTimeFlag);
         	            		if(alsoWaitFor != null) {
         	            			waiter.addWaitingFor(alsoWaitFor);
+        	            			// We do not need to check the return value here.
+        	            			// We will not reuse alsoWaitFor if it is disconnected etc.
         	            			if(logMINOR) Logger.minor(this, "Waiting for "+next+" and "+alsoWaitFor+" on "+waiter+" because first is low capacity");
         	            			PeerNode matched = waiter.waitForAny(0);
         	            			if(matched != null) {
@@ -724,6 +732,8 @@ loadWaiterLoop:
 	            					key, htl, 0, source == null, realTimeFlag);
 	            		if(alsoWaitFor != null) {
 	            			waiter.addWaitingFor(alsoWaitFor);
+	            			// We do not need to check the return value here.
+	            			// We will not reuse alsoWaitFor if it is disconnected etc.
 	            			if(logMINOR) Logger.minor(this, "Waiting for "+next+" and "+alsoWaitFor+" on "+waiter+" because realtime");
 	            			PeerNode matched = waiter.waitForAny(0);
 	            			if(matched != null) {
