@@ -244,6 +244,7 @@ public class IPConverter {
 	 * @throws IOException
 	 */
 	public Country locateIP(String ip) {
+		if(ip == null) return null;
 		Cache memCache = getCache();
 		long longip;
 		try {
