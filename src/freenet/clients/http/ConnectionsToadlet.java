@@ -876,7 +876,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			if(!peerNodeStatus.getPeerAddressNumerical().contains(":")) {
 				Country country = ipc.locateIP(peerNodeStatus.getPeerAddressNumerical());
 				if(country != null)
-					locationChild.addChild("img", "src", "/static/icon/flags/"+country.toString().toLowerCase()+".png");
+					locationChild.addChild("img", new String[] { "src", "title" }, new String[] { "/static/icon/flags/"+country.toString().toLowerCase()+".png", country.getName()});
 			}
 			locationChild.addChild("#", ((peerNodeStatus.getPeerAddress() != null) ? (peerNodeStatus.getPeerAddress() + ':' + peerNodeStatus.getPeerPort()) : (l10n("unknownAddress"))) + pingTime);
 		}
