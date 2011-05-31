@@ -219,9 +219,11 @@ public class IPConverter {
 	 * @param ip
 	 *            IP in "XX.XX.XX.XX" format
 	 * @return IP in long format
+	 * @throws NumberFormatException If the string is not an IP address.
 	 */
 	public long ip2num(String ip) {
 		String[] split = ip.split("\\.");
+		if(split.length != 4) throw new NumberFormatException();
 		long num = 0;
 		long coef = (256 << 16);
 		for (int i = 0; i < split.length; i++) {
@@ -237,12 +239,18 @@ public class IPConverter {
 	 * 
 	 * @param ip
 	 *            IP in "XX.XX.XX.XX" format
-	 * @return {@link Country} of given IP
+	 * @return {@link Country} of given IP, or null if the passed in string is
+	 * not an IP address or we fail to load the ip to country data file.
 	 * @throws IOException
 	 */
 	public Country locateIP(String ip) {
 		Cache memCache = getCache();
-		long longip = ip2num(ip);
+		long longip;
+		try {
+			longip = ip2num(ip);
+		} catch (NumberFormatException e) {
+			return null; // Not an IP address.
+		}
 		// Check cache first
 		if (cache.containsKey(longip)) {
 			return cache.get(longip);
