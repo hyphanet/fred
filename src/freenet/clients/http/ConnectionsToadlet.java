@@ -873,8 +873,9 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			// Ip to country + Flags
 			IPConverter ipc = IPConverter.getInstance(node.runDir().file(NodeUpdateManager.IPV4_TO_COUNTRY_FILENAME));
 			// Only IPv4 at the time
-			if(!peerNodeStatus.getPeerAddressNumerical().contains(":")) {
-				Country country = ipc.locateIP(peerNodeStatus.getPeerAddressNumerical());
+			String addr = peerNodeStatus.getPeerAddressNumerical();
+			if(addr != null && !addr.contains(":")) {
+				Country country = ipc.locateIP(addr);
 				if(country != null)
 					locationChild.addChild("img", new String[] { "src", "title" }, new String[] { "/static/icon/flags/"+country.toString().toLowerCase()+".png", country.getName()});
 			}
