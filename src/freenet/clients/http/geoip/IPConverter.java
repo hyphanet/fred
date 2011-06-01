@@ -206,7 +206,8 @@ public class IPConverter {
 			raf.close();
 			return new Cache(codes, ips);
 		} catch (FileNotFoundException e) {
-			Logger.error(this, "Databse file not found!", e);
+			// Not downloaded yet
+			Logger.warning(this, "Database file not found!", e);
 		} catch (IOException e) {
 			Logger.error(this, e.getMessage());
 		}
