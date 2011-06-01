@@ -5233,7 +5233,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				}
 			}
 			// Double-check before blocking, prevent race condition.
+			long now = System.currentTimeMillis();
+			boolean anyValid = false;
 			for(PeerNode p : all) {
+				if((!p.isRoutable()) || p.isInMandatoryBackoff(now, realTime)) {
+					if(logMINOR) Logger.minor(this, "Peer is not valid in waitForAny(): "+p);
+					continue;
+				}
+				anyValid = true;
 				RequestLikelyAcceptedState accept = p.outputLoadTracker(realTime).tryRouteTo(tag, RequestLikelyAcceptedState.LIKELY, offeredKey);
 				if(accept != null) {
 					if(logMINOR) Logger.minor(this, "tryRouteTo() pre-wait check returned "+accept);
@@ -5262,6 +5269,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				}
 			}
 			if(maxWait == 0) return null;
+			if(!anyValid) {
+				if(logMINOR) Logger.minor(this, "None valid to wait for on "+this);
+				return null;
+			}
 			synchronized(this) {
 				if(logMINOR) Logger.minor(this, "Waiting for any node to wake up "+this+" : "+Arrays.toString(waitingFor.toArray())+" (for up to "+maxWait+"ms)");
 				long waitStart = System.currentTimeMillis();
