@@ -184,7 +184,7 @@ build-dependency on ant-optional, libbsf-java and rhino.
 		<!-- Create the time stamp -->
 		<tstamp/>
 		<!-- Create the build directory structure used by compile -->
-		<javac srcdir="${main.src}" destdir="${main.make}" debug="on" optimize="on" source="1.5" target="1.5">
+		<javac srcdir="${main.src}" destdir="${main.make}" debug="on" optimize="on" source="1.6" target="1.6">
 			<compilerarg line="${javac.args}"/>
 			<classpath refid="lib.path"/>
 			<!-- tell javac to find Version.java in ${main.make}, not ${main.src} -->
@@ -198,7 +198,7 @@ build-dependency on ant-optional, libbsf-java and rhino.
 		</javac>
 
 		<!-- Force compile of Version.java in case compile of ${main.src} didn't trigger it -->
-		<javac srcdir="${main.make}" destdir="${main.make}" debug="on" optimize="on" source="1.5" target="1.5">
+		<javac srcdir="${main.make}" destdir="${main.make}" debug="on" optimize="on" source="1.6" target="1.6">
 			<compilerarg line="${javac.args}"/>
 			<classpath refid="lib.path"/>
 			<include name="${version.src}"/>
@@ -241,7 +241,7 @@ build-dependency on ant-optional, libbsf-java and rhino.
 	<target name="package" depends="unit, package-only" description="build standard binary packages (Freenet daemon)"/>
 
 	<target name="unit-build" depends="build, libdep-junit" unless="${test.skip}">
-		<javac srcdir="${test.src}" destdir="${test.make}" debug="on" optimize="on" source="1.5" target="1.5">
+		<javac srcdir="${test.src}" destdir="${test.make}" debug="on" optimize="on" source="1.6" target="1.6">
 			<compilerarg line="${javac.args}"/>
 			<classpath>
 				<path refid="lib.path"/>
@@ -332,7 +332,7 @@ build-dependency on ant-optional, libbsf-java and rhino.
 		<javadoc classpathref="lib.path" sourcepath="${main.src}" destdir="${doc.api}" use="true">
 			<fileset dir="${main.src}" includes="**/*.java" />
 			<classpath refid="lib.path"/>
-			<link href="http://java.sun.com/j2se/1.5.0/docs/api"/>
+			<link href="http://java.sun.com/j2se/1.6.0/docs/api"/>
 		</javadoc>
 	</target>
 
