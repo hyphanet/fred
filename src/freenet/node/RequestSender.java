@@ -2284,8 +2284,8 @@ loadWaiterLoop:
 				synchronized(this) {
 					opennetNoderef = noderef;
 				}
-				// RequestHandler will send a noderef back up, eventually
-				// Unless this is a local request...
+				// RequestHandler will send a noderef back up, eventually, and will unlockHandler() after that point.
+				// But if this is a local request, we need to send the ack now.
 				if(source == null)
 					ackOpennet(next);
 				return false;
