@@ -4692,10 +4692,10 @@ public class Node implements TimeSkewDetectorCallback {
 			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
 				UIDTag tag = entry.getValue();
 				if(tag.getSource() == source) {
-					if(logMINOR) Logger.minor(this, "Counting "+tag+" from "+entry.getKey()+" from "+source);
 					count++;
 					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert);
 					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
+					if(logMINOR) Logger.minor(this, "Counting "+tag+" from "+entry.getKey()+" from "+source+" count now "+count+" out now "+transfersOut+" in now "+transfersIn);
 				} else if(logDEBUG) Logger.debug(this, "Not counting "+entry.getKey());
 			}
 			return new CountedRequests(count, transfersOut, transfersIn);
