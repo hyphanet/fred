@@ -238,6 +238,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 				manager.blow("Checking for revocation key is failing with an internal error: "+e.toString(), true);
 				return;
 			}
+			// Really fatal, i.e. something was inserted but can't be decoded.
 			manager.blow("Permanent error fetching revocation (error inserting the revocation key?): "+e.toString(), false);
 			moveBlob(blob);
 			return;
