@@ -1863,8 +1863,11 @@ loadWaiterLoop:
 				// If we don't want it let somebody else have it
 				synchronized(this) {
 					opennetNoderef = noderef;
-					// RequestHandler will send a noderef back up, eventually
 				}
+				// RequestHandler will send a noderef back up, eventually
+				// Unless this is a local request...
+				if(source == null)
+					ackOpennet(next);
 				return false;
 			} else {
 				// opennetNoderef = null i.e. we want the noderef so we won't pass it further down.
