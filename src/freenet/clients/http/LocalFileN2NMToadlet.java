@@ -11,32 +11,36 @@ import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
 
 public class LocalFileN2NMToadlet extends LocalFileBrowserToadlet {
-	
-	public String path() {
-		return "/n2nm-browse/";
-	}
-	
-	protected String postTo(){
-		return "/send_n2ntm/";
-	}
-	
-	public LocalFileN2NMToadlet(NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient) {
+
+	public static final String PATH = "/n2nm-browse/";
+	public static final String POST_TO = "/send_n2ntm/";
+
+	public LocalFileN2NMToadlet (NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient) {
 		super(core, highLevelSimpleClient);
 	}
-	
-	protected void createInsertDirectoryButton(HTMLNode fileRow, String path, ToadletContext ctx, Hashtable<String, String> fieldPairs) {
-		fileRow.addChild("td");
+
+	@Override
+	public String path() {
+		return PATH;
+	}
+
+	@Override
+	protected String postTo() {
+		return POST_TO;
 	}
 	
-	protected Hashtable<String, String> persistanceFields(Hashtable<String, String> set){
+	@Override
+	protected void createSelectDirectoryButton(HTMLNode fileRow, String path, HTMLNode persistence) {
+	}
+
+    @Override
+	protected Hashtable<String, String> persistenceFields (Hashtable<String, String> set) {
 		Hashtable<String, String> fieldPairs = new Hashtable<String, String>();
 		String message = set.get("message");
-		if(message != null) fieldPairs.put("message", message);
+		if (message != null) fieldPairs.put("message", message);
 		Set<String> keys = set.keySet();
-		for(String key : keys)
-		{
-			if(key.startsWith("node_"))
-			{
+		for (String key : keys) {
+			if (key.startsWith("node_")) {
 				fieldPairs.put(key, "1");
 			}
 		}
