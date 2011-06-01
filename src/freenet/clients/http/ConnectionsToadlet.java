@@ -19,30 +19,32 @@ import java.util.List;
 import java.util.Map;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.geoip.IPConverter;
+import freenet.clients.http.geoip.IPConverter.Country;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.xfer.PacketThrottle;
 import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
+import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.NodeStats;
 import freenet.node.PeerManager;
 import freenet.node.PeerNode;
-import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.PeerNode.IncomingLoadSummaryStats;
 import freenet.node.PeerNodeStatus;
 import freenet.node.Version;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.MultiValueTable;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.HTTPRequest;
 
 /** Base class for DarknetConnectionsToadlet and OpennetConnectionsToadlet */
@@ -865,7 +867,15 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				pingTime = " (" + (int) peerNodeStatus.getAveragePingTime() + "ms / " +
 				(int) peerNodeStatus.getAveragePingTimeCorrected()+"ms)";
 			}
-			peerRow.addChild("td", "class", "peer-address").addChild("#", ((peerNodeStatus.getPeerAddress() != null) ? (peerNodeStatus.getPeerAddress() + ':' + peerNodeStatus.getPeerPort()) : (l10n("unknownAddress"))) + pingTime);
+			HTMLNode locationChild = peerRow.addChild("td", "class", "peer-address");
+			// Ip to country + Flags
+			IPConverter ipc = IPConverter.getInstance();
+			// Only IPv4 at the time
+			if(!peerNodeStatus.getPeerAddress().contains(":")) {
+				Country country = ipc.locateIP(peerNodeStatus.getPeerAddress());
+				locationChild.addChild("img", "src", "/static/icon/flags/"+country.toString().toLowerCase()+".png");
+			}
+			locationChild.addChild("#", ((peerNodeStatus.getPeerAddress() != null) ? (peerNodeStatus.getPeerAddress() + ':' + peerNodeStatus.getPeerPort()) : (l10n("unknownAddress"))) + pingTime);
 		}
 
 		// version column
