@@ -1092,9 +1092,11 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 					if(!fetcherFinished) {
 						Logger.error(this, "Parent is null on "+this+" but fetcher is not finished");
 					} else {
-						allFromStore = !parent.sentToNetwork;
+						// We don't know.
+						allFromStore = false;
 					}
-				}
+				} else
+					allFromStore = !parent.sentToNetwork;
 			}
 			for(int i=0;i<checkBuckets.length;i++) {
 				boolean heal = false;
