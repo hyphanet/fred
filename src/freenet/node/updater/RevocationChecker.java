@@ -227,17 +227,17 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		if(errorCode == FetchException.CANCELLED) {
 			return; // cancelled by us above, or killed; either way irrelevant and doesn't need to be restarted
 		}
-		if(errorCode == FetchException.INTERNAL_ERROR) {
-			// INTERNAL_ERROR could be related to the key but isn't necessarily.
-			System.err.println("Auto-update is failing with an internal error:");
-			System.err.println(e);
-			e.printStackTrace();
-			System.err.println("Please fix this and restart Freenet!");
-			// Could be out of disk space???
-			manager.blow("Checking for revocation key is failing with an internal error: "+e.toString(), true);
-			return;
-		}
 		if(e.isFatal()) {
+			if(!e.isDefinitelyFatal()) {
+				// INTERNAL_ERROR could be related to the key but isn't necessarily.
+				System.err.println("Auto-update is failing with an internal error:");
+				System.err.println(e);
+				e.printStackTrace();
+				System.err.println("Please fix this and restart Freenet!");
+				// Could be out of disk space???
+				manager.blow("Checking for revocation key is failing with an internal error: "+e.toString(), true);
+				return;
+			}
 			manager.blow("Permanent error fetching revocation (error inserting the revocation key?): "+e.toString(), true);
 			moveBlob(blob);
 			return;
