@@ -60,6 +60,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.FileBucket;
 import freenet.support.io.RandomAccessFileWrapper;
+import freenet.support.io.RandomAccessThing;
 
 /**
  * Co-ordinates update over mandatory. Update over mandatory = updating from your peers, even
@@ -745,7 +746,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	public boolean handleRequestRevocation(Message m, final PeerNode source) {
 		// Do we have the data?
 
-		File data = updateManager.revocationChecker.getBlobFile();
+		final RandomAccessThing data = updateManager.revocationChecker.getBlobThing();
 
 		if(data == null) {
 			Logger.normal(this, "Peer " + source + " asked us for the blob file for the revocation key but we don't have it!");
@@ -755,23 +756,15 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		final long uid = m.getLong(DMT.UID);
 
-		final RandomAccessFileWrapper raf;
-		try {
-			raf = new RandomAccessFileWrapper(data, "r");
-		} catch(FileNotFoundException e) {
-			Logger.error(this, "Peer " + source + " asked us for the blob file for the revocation key, we have downloaded it but don't have the file even though we did have it when we checked!: " + e, e);
-			return true;
-		}
-
 		final PartiallyReceivedBulk prb;
 		long length;
 		try {
-			length = raf.size();
+			length = data.size();
 			prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), length,
-				Node.PACKET_SIZE, raf, true);
+				Node.PACKET_SIZE, data, true);
 		} catch(IOException e) {
 			Logger.error(this, "Peer " + source + " asked us for the blob file for the revocation key, we have downloaded it but we can't determine the file size: " + e, e);
-			raf.close();
+			data.close();
 			return true;
 		}
 
@@ -780,7 +773,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			bt = new BulkTransmitter(prb, source, uid, false, updateManager.ctr, true);
 		} catch(DisconnectedException e) {
 			Logger.error(this, "Peer " + source + " asked us for the blob file for the revocation key, then disconnected: " + e, e);
-			raf.close();
+			data.close();
 			return true;
 		}
 
@@ -791,7 +784,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					Logger.error(this, "Failed to send revocation key blob to " + source.userToString() + " : " + bt.getCancelReason());
 				else
 					Logger.normal(this, "Sent revocation key blob to " + source.userToString());
-				raf.close();
+				data.close();
 			}
 		};
 
@@ -1108,7 +1101,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					updateManager.revocationChecker.onFailure(e, state, cleanedBlob);
 					temp.free();
 
-					insertBlob(updateManager.revocationChecker.getBlobFile(), "revocation");
+					insertBlob(updateManager.revocationChecker.getBlobBucket(), "revocation");
 
 				} else {
 					Logger.error(this, "Failed to fetch revocation certificate from blob from " + source + " : "+e+" : this is almost certainly bogus i.e. the auto-update is fine but the node is broken.");
@@ -1124,7 +1117,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				System.err.println("Got revocation certificate from " + source);
 				updateManager.revocationChecker.onSuccess(result, state, cleanedBlob);
 				temp.free();
-				insertBlob(updateManager.revocationChecker.getBlobFile(), "revocation");
+				insertBlob(updateManager.revocationChecker.getBlobBucket(), "revocation");
 			}
 		};
 
@@ -1143,7 +1136,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 	}
 
-	protected void insertBlob(final File blob, final String type) {
+	protected void insertBlob(final Bucket bucket, final String type) {
 		ClientPutCallback callback = new ClientPutCallback() {
 
 			public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
@@ -1167,7 +1160,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				Logger.normal(this, "Inserted "+type+" binary blob");
 			}
 		};
-		FileBucket bucket = new FileBucket(blob, true, false, false, false, false);
 		// We are inserting a binary blob so we don't need to worry about CompatibilityMode etc.
 		InsertContext ctx = updateManager.node.clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS).getInsertContext(true);
 		ClientPutter putter = new ClientPutter(callback, bucket,
@@ -1642,7 +1634,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				}
 				mainUpdater.onSuccess(result, state, cleanedBlobFile, version);
 				temp.delete();
-				insertBlob(mainUpdater.getBlobFile(version), "main jar");
+				insertBlob(mainUpdater.getBlobBucket(version), "main jar");
 			}
 		};
 
@@ -1749,7 +1741,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				}
 				extUpdater.onSuccess(result, state, cleanedBlobFile, version);
 				temp.delete();
-				insertBlob(extUpdater.getBlobFile(version), "ext jar");
+				insertBlob(extUpdater.getBlobBucket(version), "ext jar");
 			}
 		};
 

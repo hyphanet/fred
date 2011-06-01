@@ -1,6 +1,7 @@
 package freenet.node.updater;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import com.db4o.ObjectContainer;
@@ -21,6 +22,8 @@ import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
+import freenet.support.io.RandomAccessFileWrapper;
+import freenet.support.io.RandomAccessThing;
 
 /**
  * Fetches the revocation key. Each time it starts, it will try to fetch it until it has 3 DNFs. If it ever finds it, it will
@@ -291,6 +294,23 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		return blobFile.length();
 	}
 
+	public FileBucket getBlobBucket() {
+		File f = getBlobFile();
+		if(f == null) return null;
+		return new FileBucket(f, true, false, false, false, false);
+	}
+	
+	public RandomAccessThing getBlobThing() {
+		File f = getBlobFile();
+		if(f == null) return null;
+		try {
+			return new RandomAccessFileWrapper(f, "r");
+		} catch(FileNotFoundException e) {
+			Logger.error(this, "We do not have the blob file for the revocation even though we have successfully downloaded it!", e);
+			return null;
+		}
+	}
+	
 	/** Get the binary blob, if we have fetched it. */
 	public File getBlobFile() {
 		if(!manager.isBlown()) return null;

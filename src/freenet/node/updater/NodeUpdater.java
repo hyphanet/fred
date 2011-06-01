@@ -215,6 +215,11 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	File getBlobFile(int availableVersion) {
 		return new File(node.clientCore.getPersistentTempDir(), blobFilenamePrefix + availableVersion + ".fblob");
 	}
+	Bucket getBlobBucket(int availableVersion) {
+		File f = getBlobFile(availableVersion);
+		if(f == null) return null;
+		return new FileBucket(f, true, false, false, false, false);
+	}
 	private final Object writeJarSync = new Object();
 
 	public void writeJarTo(File fNew) throws IOException {
