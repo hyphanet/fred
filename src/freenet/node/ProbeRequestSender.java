@@ -106,7 +106,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
             // Route it
             PeerNode next;
             next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-			        null, htl, 0, source == null, false);
+			        null, htl, 0, source == null, false, node.enableNewLoadManagement());
             
             if(next == null) {
 				if (logMINOR && rejectOverloads>0)

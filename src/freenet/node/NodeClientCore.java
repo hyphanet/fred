@@ -1903,7 +1903,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		// slots and CPU. FIXME SECURITY/NETWORK: Reconsider if we ever decide
 		// not to decrement on the originator.
 		short origHTL = node.decrementHTL(null, node.maxHTL());
-		node.peers.closerPeer(null, new HashSet<PeerNode>(), key.toNormalizedDouble(), true, false, -1, null, 2.0, key, origHTL, 0, true, realTime, r, false, System.currentTimeMillis());
+		node.peers.closerPeer(null, new HashSet<PeerNode>(), key.toNormalizedDouble(), true, false, -1, null, 2.0, key, origHTL, 0, true, realTime, r, false, System.currentTimeMillis(), node.enableNewLoadManagement());
 		return r.recentlyFailed();
 	}
 

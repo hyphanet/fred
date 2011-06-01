@@ -436,7 +436,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             // Route it
             // Can backtrack, so only route to nodes closer than we are to target.
             next = node.peers.closerPeer(forkedRequestTag == null ? source : null, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-			        null, htl, ignoreLowBackoff ? Node.LOW_BACKOFF : 0, source == null, realTimeFlag);
+			        null, htl, ignoreLowBackoff ? Node.LOW_BACKOFF : 0, source == null, realTimeFlag, false);
 			
             if(next == null) {
                 // Backtrack

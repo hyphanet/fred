@@ -387,7 +387,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             
             // Route it
             next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-			        2.0, key, htl, 0, source == null, realTimeFlag, r, false, now);
+			        2.0, key, htl, 0, source == null, realTimeFlag, r, false, now, false);
             
             long recentlyFailed = r.recentlyFailed();
             if(recentlyFailed > now) {
@@ -593,7 +593,7 @@ loadWaiterLoop:
             
             // Route it
             next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-			        2.0, key, htl, 0, source == null, realTimeFlag, r, false, now);
+			        2.0, key, htl, 0, source == null, realTimeFlag, r, false, now, true);
             
             long recentlyFailed = r.recentlyFailed();
             if(recentlyFailed > now) {
@@ -705,7 +705,7 @@ loadWaiterLoop:
             					exclude.addAll(nodesRoutedTo);
         	            		PeerNode alsoWaitFor =
         	            			node.peers.closerPeer(source, exclude, target, true, node.isAdvancedModeEnabled(), -1, null,
-        	            					key, htl, 0, source == null, realTimeFlag);
+        	            					key, htl, 0, source == null, realTimeFlag, true);
         	            		if(alsoWaitFor != null) {
         	            			waiter.addWaitingFor(alsoWaitFor);
         	            			// We do not need to check the return value here.
@@ -729,7 +729,7 @@ loadWaiterLoop:
     					exclude.addAll(nodesRoutedTo);
 	            		PeerNode alsoWaitFor =
 	            			node.peers.closerPeer(source, exclude, target, true, node.isAdvancedModeEnabled(), -1, null,
-	            					key, htl, 0, source == null, realTimeFlag);
+	            					key, htl, 0, source == null, realTimeFlag, true);
 	            		if(alsoWaitFor != null) {
 	            			waiter.addWaitingFor(alsoWaitFor);
 	            			// We do not need to check the return value here.
@@ -763,7 +763,7 @@ loadWaiterLoop:
         					exclude.addAll(nodesRoutedTo);
         					// will have been removed from the list.
         					next = node.peers.closerPeer(source, exclude, target, true, node.isAdvancedModeEnabled(), -1, null,
-        							key, htl, 0, source == null, realTimeFlag);
+        							key, htl, 0, source == null, realTimeFlag, true);
         					
         					if(next == null && maxWait == Long.MAX_VALUE) {
         						if (logMINOR && rejectOverloads>0)
