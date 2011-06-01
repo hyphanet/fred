@@ -5429,8 +5429,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		private final EnumMap<RequestType,TreeMap<Long,SlotWaiter>> slotWaiters = new EnumMap<RequestType,TreeMap<Long,SlotWaiter>>(RequestType.class);
 		
 		boolean queueSlotWaiter(SlotWaiter waiter) {
-			if(!isRoutable()) return false;
-			if(isInMandatoryBackoff(System.currentTimeMillis(), realTime)) return false;
+			if(!isRoutable()) {
+				if(logMINOR) Logger.minor(this, "Not routable, so not queueing");
+				return false;
+			}
+			if(isInMandatoryBackoff(System.currentTimeMillis(), realTime)) {
+				if(logMINOR) Logger.minor(this, "In mandatory backoff, so not queueing");
+				return false;
+			}
 			boolean noLoadStats = false;
 			PeerNode[] all = null;
 			boolean queued = false;
@@ -5451,6 +5457,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			else if(queued) {
 				if((!isRoutable()) || (isInMandatoryBackoff(System.currentTimeMillis(), realTime))) {
 					// Has lost connection etc since start of the method.
+					if(logMINOR) Logger.minor(this, "Queued but not routable or in mandatory backoff, failing");
 					waiter.onFailed(PeerNode.this, true);
 					return false;
 				}
