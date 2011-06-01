@@ -301,6 +301,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 	}
 
 	public Bucket getBlobBucket() {
+		if(!manager.isBlown()) return null;
 		synchronized(this) {
 			if(blobBucket != null)
 				return blobBucket;
@@ -311,6 +312,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 	}
 	
 	public RandomAccessThing getBlobThing() {
+		if(!manager.isBlown()) return null;
 		synchronized(this) {
 			if(blobBucket != null) {
 				ByteArrayRandomAccessThing t = new ByteArrayRandomAccessThing(blobBucket.toByteArray());
@@ -329,8 +331,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 	}
 	
 	/** Get the binary blob, if we have fetched it. */
-	public File getBlobFile() {
-		if(!manager.isBlown()) return null;
+	private File getBlobFile() {
 		if(blobFile.exists()) return blobFile;
 		return null;
 	}
