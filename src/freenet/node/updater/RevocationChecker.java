@@ -20,6 +20,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
+import freenet.support.io.ByteArrayRandomAccessThing;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.io.RandomAccessFileWrapper;
@@ -47,6 +48,8 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 	private volatile boolean blown;
 	
 	private File blobFile;
+	/** The original binary blob bucket. */
+	private ArrayBucket blobBucket;
 
 	public RevocationChecker(NodeUpdateManager manager, File blobFile) {
 		this.manager = manager;
@@ -207,6 +210,9 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 			Logger.error(this, "No temporary binary blob file moving it: may not be able to propagate revocation, bug???");
 			return;
 		}
+		synchronized(this) {
+			blobBucket = (ArrayBucket) tmpBlob;
+		}
 		FileBucket fb = new FileBucket(blobFile, false, false, false, false, false);
 		try {
 			BucketTools.copy(tmpBlob, fb);
@@ -294,13 +300,24 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		return blobFile.length();
 	}
 
-	public FileBucket getBlobBucket() {
+	public Bucket getBlobBucket() {
+		synchronized(this) {
+			if(blobBucket != null)
+				return blobBucket;
+		}
 		File f = getBlobFile();
 		if(f == null) return null;
 		return new FileBucket(f, true, false, false, false, false);
 	}
 	
 	public RandomAccessThing getBlobThing() {
+		synchronized(this) {
+			if(blobBucket != null) {
+				ByteArrayRandomAccessThing t = new ByteArrayRandomAccessThing(blobBucket.toByteArray());
+				t.setReadOnly();
+				return t;
+			}
+		}
 		File f = getBlobFile();
 		if(f == null) return null;
 		try {
