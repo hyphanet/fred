@@ -517,6 +517,72 @@ public class FetchException extends Exception {
 			return false; // assume it isn't
 		}
 	}
+	
+	public boolean isDefinitelyFatal() {
+		return isDefinitelyFatal(mode);
+	}
+	
+	public static boolean isDefinitelyFatal(int mode) {
+		switch(mode) {
+		// Problems with the data as inserted, or the URI given. No point retrying.
+		case ARCHIVE_FAILURE:
+		case BLOCK_DECODE_ERROR:
+		case TOO_MANY_PATH_COMPONENTS:
+		case NOT_ENOUGH_PATH_COMPONENTS:
+		case INVALID_METADATA:
+		case NOT_IN_ARCHIVE:
+		case TOO_DEEP_ARCHIVE_RECURSION:
+		case TOO_MANY_ARCHIVE_RESTARTS:
+		case TOO_MANY_METADATA_LEVELS:
+		case TOO_MANY_REDIRECTS:
+		case TOO_MUCH_RECURSION:
+		case UNKNOWN_METADATA:
+		case UNKNOWN_SPLITFILE_METADATA:
+		case INVALID_URI:
+		case TOO_BIG:
+		case TOO_BIG_METADATA:
+		case TOO_MANY_BLOCKS_PER_SEGMENT:
+		case CONTENT_HASH_FAILED:
+		case SPLITFILE_DECODE_ERROR:
+			return true;
+
+		// Low level errors, can be retried
+		case DATA_NOT_FOUND:
+		case ROUTE_NOT_FOUND:
+		case REJECTED_OVERLOAD:
+		case TRANSFER_FAILED:
+		case ALL_DATA_NOT_FOUND:
+		case RECENTLY_FAILED: // wait a bit, but fine
+		// Not usually fatal
+		case SPLITFILE_ERROR:
+			return false;
+			
+		case BUCKET_ERROR:
+		case INTERNAL_ERROR:
+			// No point retrying. 
+			// But it's not really fatal. I.e. it's not necessarily a problem with the inserted data.
+			return false;
+		
+		//The ContentFilter failed to validate the data. Retrying won't fix this.
+			case CONTENT_VALIDATION_FAILED:
+			case CONTENT_VALIDATION_UNKNOWN_MIME:
+			case CONTENT_VALIDATION_BAD_MIME:
+				return true;
+
+		// Wierd ones
+		// Not necessarily a problem with the inserted data.
+		case CANCELLED:
+		case ARCHIVE_RESTART:
+		case PERMANENT_REDIRECT:
+		case WRONG_MIME_TYPE:
+			// Fatal
+			return false;
+			
+		default:
+			Logger.error(FetchException.class, "Do not know if error code is fatal: "+getMessage(mode));
+			return false; // assume it isn't
+		}
+	}
 
 	/** Call to indicate the expected size and MIME type are unreliable. */
 	public void setNotFinalizedSize() {
