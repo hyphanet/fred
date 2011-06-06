@@ -207,6 +207,7 @@ class UpdateDeployContext {
 							dontWrite = true;
 						} else {
 							classpath.add(rhs);
+							dontWrite = true;
 						}
 					} catch (NumberFormatException e) {
 						// Argh!
