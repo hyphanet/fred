@@ -78,7 +78,9 @@ see e.g. http://whattheinternetknowsaboutyou.com/ - but it is probably still saf
 use a separate browser, and the fact that you have turned it off will likely be
 detectable. If you do use a separate browser, you can do some helpful tricks such as
 turning off javascript, not loading any addons or plugins, turning off the cache and
-history, and setting 127.0.0.1:8888 as a proxy server (it won't serve anything external).
+history, and setting 127.0.0.1:8888 as a proxy server for all protocols (set it
+explicitly for HTTPS even if you set it for all protocols), so that it won't fetch
+anything from the web.
 
 Freenet will warn you when you try to download a file which may not be safe. Many file
 formats, for instance PDFs, word processor documents, and some types of video, can give
