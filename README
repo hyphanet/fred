@@ -84,7 +84,14 @@ Freenet will warn you when you try to download a file which may not be safe. Man
 formats, for instance PDFs, word processor documents, and some types of video, can give
 away your identity. In some cases (such as HTML, PNGs, JPEGs and MP3s), Freenet can
 automatically make the content safe; a few file formats (such as plain text .txt's) are
-safe as-is. Freenet will warn you in all other cases.
+safe as-is. Freenet will warn you in all other cases. Sometimes using alternative tools,
+or up to date versions of the normal tools, to view such content will help. Another
+option is to create a virtual machine with no internet access, create a clean snapshot
+having installed the software you need, and then use it to browse the content. Once
+finished, reset to the clean snapshot. However, even this is not certain to be
+absolutely secure if there is a buffer overflow or similar severe bug: Breaking out of
+VMs is not completely unheard of; so you will need to secure the VM, or ideally run it
+on a disconnected machine.
 
 You are responsible for your computer's physical security. In many hostile environments
 the most likely attack is people busting down your door and stealing your computer -
