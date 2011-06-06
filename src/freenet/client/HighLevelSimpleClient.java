@@ -144,7 +144,8 @@ public interface HighLevelSimpleClient {
 	/**
 	 * Get the FetchContext so you can customise the search process. Has settings for all sorts of things
 	 * such as how many times to retry each block, whether to follow redirects, whether to open containers,
-	 * etc.
+	 * etc. IMPORTANT: This is created new for each and every request! Changing settings here will not 
+	 * change them on fetch()'es unless you pass the modified FetchContext in to the fetch() call.
 	 */
 	public FetchContext getFetchContext();
 	public FetchContext getFetchContext(long size);
