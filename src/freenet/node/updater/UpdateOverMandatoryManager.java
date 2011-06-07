@@ -1015,7 +1015,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	 * Process a binary blob for a revocation certificate (the revocation key).
 	 * @param temp The file it was written to.
 	 */
-	void processRevocationBlob(final Bucket temp, final String source, boolean fromDisk) {
+	void processRevocationBlob(final Bucket temp, final String source, final boolean fromDisk) {
 
 		SimpleBlockSet blocks = new SimpleBlockSet();
 
@@ -1099,7 +1099,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					System.err.println("Got revocation certificate from " + source + " (fatal error i.e. someone with the key inserted bad data) : "+e);
 					// Blow the update, and propagate the revocation certificate.
 					updateManager.revocationChecker.onFailure(e, state, cleanedBlob);
-					temp.free();
+					// Don't delete it if it's from disk, as it's already in the right place.
+					if(!fromDisk)
+						temp.free();
 
 					insertBlob(updateManager.revocationChecker.getBlobBucket(), "revocation");
 
@@ -1107,6 +1109,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					Logger.error(this, "Failed to fetch revocation certificate from blob from " + source + " : "+e+" : this is almost certainly bogus i.e. the auto-update is fine but the node is broken.");
 					System.err.println("Failed to fetch revocation certificate from blob from " + source + " : "+e+" : this is almost certainly bogus i.e. the auto-update is fine but the node is broken.");
 					// This is almost certainly bogus.
+					// Delete it, even if it's fromDisk.
 					temp.free();
 					cleanedBlob.free();
 				}
@@ -1118,7 +1121,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 				System.err.println("Got revocation certificate from " + source);
 				updateManager.revocationChecker.onSuccess(result, state, cleanedBlob);
-				temp.free();
+				if(!fromDisk)
+					temp.free();
 				insertBlob(updateManager.revocationChecker.getBlobBucket(), "revocation");
 			}
 		};
