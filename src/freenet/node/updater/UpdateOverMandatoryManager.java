@@ -58,6 +58,7 @@ import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.io.ArrayBucket;
 import freenet.support.io.FileBucket;
 import freenet.support.io.RandomAccessFileWrapper;
 import freenet.support.io.RandomAccessThing;
@@ -1071,18 +1072,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		File f;
 		FileBucket b = null;
-		try {
-			f = File.createTempFile("revocation-", ".fblob.tmp", updateManager.node.clientCore.getPersistentTempDir());
-			b = new FileBucket(f, false, false, true, true, true);
-		} catch(IOException e) {
-			Logger.error(this, "Cannot share revocation key from " + source + " with our peers because cannot write the cleaned version to disk: " + e, e);
-			System.err.println("Cannot share revocation key from " + source + " with our peers because cannot write the cleaned version to disk: " + e);
-			e.printStackTrace();
-			b = null;
-			f = null;
-		}
-		final FileBucket cleanedBlob = b;
-		final File cleanedBlobFile = f;
+		final ArrayBucket cleanedBlob = new ArrayBucket();
 
 		ClientGetCallback myCallback = new ClientGetCallback() {
 
