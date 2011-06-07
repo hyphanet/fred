@@ -1107,6 +1107,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					Logger.error(this, "Failed to fetch revocation certificate from blob from " + source + " : "+e+" : this is almost certainly bogus i.e. the auto-update is fine but the node is broken.");
 					System.err.println("Failed to fetch revocation certificate from blob from " + source + " : "+e+" : this is almost certainly bogus i.e. the auto-update is fine but the node is broken.");
 					// This is almost certainly bogus.
+					temp.free();
+					cleanedBlob.free();
 				}
 			}
 			public void onMajorProgress(ObjectContainer container) {
