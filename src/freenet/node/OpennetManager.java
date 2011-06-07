@@ -342,7 +342,7 @@ public class OpennetManager {
 				return null;
 			}
 		}
-		if(node.isSeednode() && pn.isUnroutableOlderVersion()) {
+		if(pn.isUnroutableOlderVersion() && node.nodeUpdater != null && node.nodeUpdater.dontAllowUOM()) {
 			// We can't send the UOM to it, so we should not accept it.
 			// Plus, some versions around 1320 had big problems with being connected both as a seednode and as an opennet peer.
 			return null;
