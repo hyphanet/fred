@@ -1401,7 +1401,7 @@ public class NodeUpdateManager {
 		updater.arm(wasRunning);
 	}
 
-        protected boolean isSeednode() {
+        public boolean dontAllowUOM() {
             return (node.isOpennetEnabled() && node.wantAnonAuth(true));
         }
 

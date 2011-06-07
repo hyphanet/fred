@@ -1190,7 +1190,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		final BulkTransmitter bt;
 		final RandomAccessFileWrapper raf;
 
-		if (source.isOpennet() && updateManager.isSeednode()) {
+		if (source.isOpennet() && updateManager.dontAllowUOM()) {
 			Logger.normal(this, "Peer " + source
 					+ " asked us for the blob file for " + name
 					+ "; We are a seenode, so we ignore it!");
