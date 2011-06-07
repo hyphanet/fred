@@ -319,33 +319,36 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 					failed = false;
 				}
 			}
-			if(data instanceof FileBucket) {
+			if(data instanceof FileBucket && data != returnBucket) {
 				Logger.error(this, "Returned bucket "+data+" in onSuccess, expected "+returnBucket, new Exception("error"));
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Data != returnBucket"), null, container);
 				return;
 			}
 			// Something wierd happened, recreate returnBucket ...
 			if(tempFile != null && tempFile.exists()) tempFile.delete();
-			returnBucket.free();
-			if(persistenceType == PERSIST_FOREVER)
-				returnBucket.removeFrom(container);
-			returnBucket = getBucket(container);
+			if(data != returnBucket)
+				returnBucket.free();
+			if(data != returnBucket) {
+				if(persistenceType == PERSIST_FOREVER)
+					returnBucket.removeFrom(container);
+				returnBucket = getBucket(container);
+			}
 			if(persistenceType == PERSIST_FOREVER && container.ext().isStored(this)) {
 				returnBucket.storeTo(container);
 				container.store(this);
-			}
-
-			Logger.error(this, "Data returned to wrong bucket "+data+" expected "+returnBucket+" in "+this, new Exception("error"));
-			try {
-				BucketTools.copy(data, returnBucket);
-			} catch (IOException e) {
-				data.free();
-				returnBucket.free();
-				if(persistenceType == PERSIST_FOREVER) {
-					data.removeFrom(container);
+				
+				Logger.error(this, "Data returned to wrong bucket "+data+" expected "+returnBucket+" in "+this, new Exception("error"));
+				try {
+					BucketTools.copy(data, returnBucket);
+				} catch (IOException e) {
+					data.free();
+					returnBucket.free();
+					if(persistenceType == PERSIST_FOREVER) {
+						data.removeFrom(container);
+					}
+					onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Data != returnBucket and then failed to copy", e), null, container);
+					return;
 				}
-				onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Data != returnBucket and then failed to copy", e), null, container);
-				return;
 			}
 		}
 		boolean dontFree = false;
