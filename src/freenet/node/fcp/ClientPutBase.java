@@ -145,7 +145,14 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			if(type.equalsIgnoreCase("USK"))
 				uri = uri.setKeyType("SSK");
 			InsertableClientSSK issk = InsertableClientSSK.create(uri);
+			FreenetURI u = uri;
 			uri = issk.getURI();
+			if(type.equalsIgnoreCase("USK")) {
+				uri = uri.setKeyType("USK");
+				uri = uri.setSuggestedEdition(u.getSuggestedEdition());
+			}
+			// docName will be preserved.
+			// Any meta strings *should not* be preserved.
 			return uri;
 		} else if(type.equalsIgnoreCase("KSK")) {
 			return uri;
