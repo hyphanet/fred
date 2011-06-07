@@ -215,20 +215,31 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 			synchronized(this) {
 				blobBucket = (ArrayBucket) tmpBlob;
 			}
-			FileBucket fb = new FileBucket(blobFile, false, false, false, false, false);
-			try {
-				BucketTools.copy(tmpBlob, fb);
-			} catch (IOException e) {
-				System.err.println("Got revocation but cannot write it to disk: "+e);
-				System.err.println("This means the auto-update system is blown but we can't tell other nodes about it!");
-				e.printStackTrace();
-			}
 		} else {
 			synchronized(this) {
 				if(tmpBlob == blobFile) return;
 				if(tmpBlob.equals(blobFile)) return;
 			}
+			try {
+				ArrayBucket buf = new ArrayBucket(BucketTools.toByteArray(tmpBlob));
+				synchronized(this) {
+					blobBucket = buf;
+				}
+			} catch (IOException e) {
+				System.err.println("Unable to copy data from revocation bucket!");
+				System.err.println("This should not happen and indicates there may be a problem with the auto-update checker.");
+				// Don't blow(), as that's already happened.
+				return;
+			}
 			System.out.println("Unexpected blob file in revocation checker: "+tmpBlob);
+		}
+		FileBucket fb = new FileBucket(blobFile, false, false, false, false, false);
+		try {
+			BucketTools.copy(tmpBlob, fb);
+		} catch (IOException e) {
+			System.err.println("Got revocation but cannot write it to disk: "+e);
+			System.err.println("This means the auto-update system is blown but we can't tell other nodes about it!");
+			e.printStackTrace();
 		}
 	}
 
