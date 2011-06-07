@@ -586,6 +586,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		}
 
 		FetchContext fctx = getFetchContext(maxSize);
+		// max-size=-1 => use default
+		maxSize = fctx.maxOutputLength;
 
 		//We should run the ContentFilter by default
 		String forceString = httprequest.getParam("force");
