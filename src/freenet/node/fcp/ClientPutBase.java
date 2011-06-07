@@ -145,8 +145,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			if(type.equalsIgnoreCase("USK"))
 				uri = uri.setKeyType("SSK");
 			InsertableClientSSK issk = InsertableClientSSK.create(uri);
-			uri = uri.setRoutingKey(issk.getURI().getRoutingKey());
-			uri = uri.setKeyType(type);
+			uri = issk.getURI();
 			return uri;
 		} else if(type.equalsIgnoreCase("KSK")) {
 			return uri;
