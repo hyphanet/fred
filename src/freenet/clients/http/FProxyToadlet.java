@@ -476,6 +476,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				if(logMINOR) Logger.minor(this, "Redirecting to FreenetURI: "+newURI);
 				String requestedMimeType = httprequest.getParam("type");
 				long maxSize = httprequest.getLongParam("max-size", MAX_LENGTH);
+				if(maxSize < 0) maxSize = Long.MAX_VALUE;
 				String location = getLink(newURI, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"));
 				writeTemporaryRedirect(ctx, null, location);
 				return;
@@ -547,8 +548,10 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 		if(restricted)
 			maxSize = MAX_LENGTH;
-		else
+		else {
 			maxSize = httprequest.getLongParam("max-size", MAX_LENGTH);
+			if(maxSize < 0) maxSize = Long.MAX_VALUE;
+		}
 
 		//first check of httprange before get
 		// only valid number format is checked here
