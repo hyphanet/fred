@@ -1402,7 +1402,15 @@ public class NodeUpdateManager {
 	}
 
         public boolean dontAllowUOM() {
-            return (node.isOpennetEnabled() && node.wantAnonAuth(true));
+            if(node.isOpennetEnabled() && node.wantAnonAuth(true)) {
+            	// We are a seednode.
+            	// Normally this means we won't send UOM.
+            	// However, if something breaks severely, we need an escape route.
+            	if(node.getUptime() > 5*60*1000 && node.peers.countCompatibleRealPeers() == 0)
+            		return false;
+            	return true;
+            }
+            return false;
         }
 
 		public boolean fetchingFromUOM() {
