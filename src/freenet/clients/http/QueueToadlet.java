@@ -334,6 +334,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					return;
 				}
 				writePermanentRedirect(ctx, "Done", path());
+				return;
 			}
 			else if(request.isPartSet("restart_request") && (request.getPartAsString("restart_request", 128).length() > 0)) {
 				boolean disableFilterData = request.isPartSet("disableFilterData");
