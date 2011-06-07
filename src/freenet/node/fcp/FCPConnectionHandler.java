@@ -437,7 +437,7 @@ public class FCPConnectionHandler implements Closeable {
 				failedMessage = new IdentifierCollisionMessage(id, message.global);
 			}
 		}
-		if(message.persistenceType == ClientRequest.PERSIST_REBOOT)
+		if(message.persistenceType == ClientRequest.PERSIST_REBOOT && cp != null)
 			try {
 				cp.register(null, false);
 			} catch (IdentifierCollisionException e) {
