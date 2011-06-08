@@ -69,6 +69,23 @@ public class HTMLNode implements XMLCharacterClasses {
 	}
 	
 	protected boolean checkNamePattern(String str) {
+		// Workaround buggy java regexes, also probably slightly faster.
+		if(str.length() < 1) return false;
+		char c;
+		c = str.charAt(0);
+		if((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
+			boolean simpleMatch = true;
+			for(int i=1;i<str.length();i++) {
+				c = str.charAt(i);
+				if(!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9'))) {
+					simpleMatch = false;
+					break;
+				}
+			}
+			if(simpleMatch) return true;
+		}
+		// Regex-based match. Probably more expensive, and problems (infinite recursion in Pattern$6.isSatisfiedBy) have been seen in practice.
+		// Oddly these problems were seen where the answer is almost certainly in the first matcher, because the tag name was "html"...
 		return simpleNamePattern.matcher(str).matches() || 
 			namePattern.matcher(str).matches();
 	}
