@@ -716,9 +716,11 @@ public class FailureTable implements OOMHook {
 	public void handleLowMemory() throws Exception {
 		synchronized (this) {
 			int size = entriesByKey.size();
-			do {
+			while(true) {
+				int newSize = entriesByKey.size();
+				if(newSize == 0 || newSize >= size / 2) return;
 				entriesByKey.popKey();
-			} while (entriesByKey.size() >= size / 2);
+			}
 		}
 	}
 
