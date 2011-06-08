@@ -83,6 +83,9 @@ public class NetworkInterface implements Closeable {
 	
 	private final Executor executor;
 
+	// FIXME make configurable
+	static final int maxQueueLength = 100;
+
 	public static NetworkInterface create(int port, String bindTo, String allowedHosts, Executor executor, boolean ignoreUnbindableIP6) throws IOException {
 		NetworkInterface iface = new NetworkInterface(port, allowedHosts, executor);
 		try {
@@ -330,7 +333,7 @@ public class NetworkInterface implements Closeable {
 					AddressType clientAddressType = AddressIdentifier.getAddressType(clientAddress.getHostAddress());
 
 					/* check if the ip address is allowed */
-					if (allowedHosts.allowed(clientAddressType, clientAddress)) {
+					if (allowedHosts.allowed(clientAddressType, clientAddress) && acceptedSockets.size() <= maxQueueLength) {
 						synchronized (syncObject) {
 							acceptedSockets.add(clientSocket);
 							syncObject.notifyAll();

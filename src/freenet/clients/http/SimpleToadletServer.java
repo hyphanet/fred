@@ -113,6 +113,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	private volatile boolean fProxyWebPushingEnabled;	// ugh?
 	private volatile boolean fproxyHasCompletedWizard;	// hmmm..
 	private volatile boolean disableProgressPage;
+	private int maxFproxyConnections;
+	
+	private int fproxyConnections;
 	
 	private boolean finishedStartup;
 	
@@ -293,6 +296,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				} else {
 					myThread.interrupt();
 					myThread = null;
+					SimpleToadletServer.this.notifyAll();
 					return;
 				}
 			}
@@ -649,6 +653,28 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		});
 		doRobots = fproxyConfig.getBoolean("doRobots");
 		
+		// We may not know what the overall thread limit is yet so just set it to 100.
+		fproxyConfig.register("maxFproxyConnections", 100, configItemOrder++, true, false, "SimpleToadletServer.maxFproxyConnections", "SimpleToadletServer.maxFproxyConnectionsLong",
+				new IntCallback() {
+
+					@Override
+					public Integer get() {
+						synchronized(SimpleToadletServer.this) {
+							return maxFproxyConnections;
+						}
+					}
+
+					@Override
+					public void set(Integer val) {
+						synchronized(SimpleToadletServer.this) {
+							maxFproxyConnections = val;
+							SimpleToadletServer.this.notifyAll();
+						}
+					}
+			
+		}, false);
+		maxFproxyConnections = fproxyConfig.getInt("maxFproxyConnections");
+		
 		fproxyConfig.register("refilterPolicy", "RE_FILTER", 
 				configItemOrder++, true, false, "SimpleToadletServer.refilterPolicy", "SimpleToadletServer.refilterPolicyLong", refilterPolicyCallback);
 		
@@ -866,6 +892,13 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		boolean finishedStartup = false;
 		while(true) {
 			synchronized(this) {
+				while(fproxyConnections > maxFproxyConnections) {
+					try {
+						wait();
+					} catch (InterruptedException e) {
+						// Ignore
+					}
+				}
 				if((!finishedStartup) && this.finishedStartup)
 					finishedStartup = true;
 				if(myThread == null) return;
@@ -897,6 +930,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				executor.execute(this, "HTTP socket handler@"+hashCode());
 			else
 				new Thread(this).start();
+            synchronized(SimpleToadletServer.this) {
+            	fproxyConnections++;
+            }
 		}
 		
 		public void run() {
@@ -912,6 +948,10 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				System.err.println("Caught in SimpleToadletServer: "+t);
 				t.printStackTrace();
 				Logger.error(this, "Caught in SimpleToadletServer: "+t, t);
+			} finally {
+	            synchronized(SimpleToadletServer.this) {
+	            	fproxyConnections--;
+	            }
 			}
 			if(logMINOR) Logger.minor(this, "Handled connection");
 		}
