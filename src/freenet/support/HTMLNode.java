@@ -69,7 +69,8 @@ public class HTMLNode implements XMLCharacterClasses {
 	}
 	
 	protected boolean checkNamePattern(String str) {		
-		return simpleNamePattern.matcher(str).matches() || namePattern.matcher(str).matches();
+		return simpleNamePattern.matcher(str).matches() || 
+			namePattern.matcher(str).matches();
 	}
 	
 	public HTMLNode(String name, String[] attributeNames, String[] attributeValues, String content) {
