@@ -355,12 +355,22 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 
+	/**
+	 * Return a better non-persistent request, if one exists. If the best request
+	 * is at the same priority as the priority passed in, 50% chance of accepting
+	 * it.
+	 * @param prio The priority of the persistent request we want to beat.
+	 */
 	public ChosenBlock getBetterNonPersistentRequest(short prio) {
+		// removeFirstTransient() will return anything of the priority given or better.
+		// We want to be fair on persistent vs transient, so we give it a 50% chance of wanting it to be *better* than the current priority, and a 50% chance of wanting it to be *at least as good as* the current priority.
+		prio -= node.fastWeakRandom.nextBoolean() ? 1 : 0;
+		if(prio < 0) return null;
 		short fuzz = -1;
 		if(PRIORITY_SOFT.equals(choosenPriorityScheduler))
 			fuzz = -1;
 		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
-			fuzz = 0;	
+			fuzz = 0;
 		return selector.removeFirstTransient(fuzz, random, offeredKeys, starter, schedTransient, prio, isRTScheduler, clientContext, null);
 	}
 	
