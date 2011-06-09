@@ -213,7 +213,7 @@ public class FreenetURI implements Cloneable {
 		} else
 			extra = null;
 		this.suggestedEdition = uri.suggestedEdition;
-		if(logMINOR) Logger.minor(this, "Copied: "+toString()+" from "+uri.toString(), new Exception("debug"));
+		if(logDEBUG) Logger.debug(this, "Copied: "+toString()+" from "+uri.toString(), new Exception("debug"));
 	}
 	
 	boolean noCacheURI = false;

@@ -361,7 +361,10 @@ public class FCPConnectionHandler implements Closeable {
 		FCPMessage failedMessage = null;
 		synchronized(this) {
 			boolean success;
-			if(isClosed) return;
+			if(isClosed) {
+				if(logMINOR) Logger.minor(this, "Connection is closed");
+				return;
+			}
 			// We need to track non-persistent requests anyway, so we may as well check
 			if(persistent)
 				success = true;
