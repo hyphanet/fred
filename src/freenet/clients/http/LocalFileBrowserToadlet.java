@@ -196,7 +196,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 					return;
 				}
 				currentPath = home;
-				renderPage(fieldPairs, path, ctx);
+				renderPage(fieldPairs, "", ctx);
 				return;
 			}
 			
