@@ -106,7 +106,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
             // Route it
             PeerNode next;
             next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-			        null, htl, 0, source == null);
+			        null, htl, 0, source == null, false);
             
             if(next == null) {
 				if (logMINOR && rejectOverloads>0)
@@ -136,11 +136,14 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
 				 * 
 				 * Don't use sendAsync().
 				 */
-            	next.sendSync(req, this);
+            	next.sendSync(req, this, false);
             } catch (NotConnectedException e) {
             	Logger.minor(this, "Not connected");
             	continue;
-            }
+            } catch (SyncSendWaitedTooLongException e) {
+            	Logger.error(this, "Unable to send "+req+" in a reasonable time to "+next);
+            	continue;
+			}
             
             synchronized(this) {
             	hasForwarded = true;
@@ -179,7 +182,8 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
             		counter++;
             		if(logMINOR) Logger.minor(this, "Timeout waiting for Accepted");
             		// Timeout waiting for Accepted
-            		next.localRejectedOverload("AcceptedTimeout");
+            		// FIXME should we backoff here???
+            		next.localRejectedOverload("AcceptedTimeout", false);
             		forwardRejectedOverload();
             		// Try next node
             		break;

@@ -12,6 +12,7 @@ import freenet.client.DefaultMIMETypes;
 import freenet.l10n.NodeL10n;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
+import freenet.support.io.FileBucket;
 
 /**
  * Static Toadlet.
@@ -24,6 +25,8 @@ public class StaticToadlet extends Toadlet {
 	
 	public static final String ROOT_URL = "/static/";
 	public static final String ROOT_PATH = "staticfiles/";
+	public static final String OVERRIDE = "override/";
+	public static final String OVERRIDE_URL = ROOT_URL + OVERRIDE;
 	
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		String path = uri.getPath();
@@ -43,6 +46,44 @@ public class StaticToadlet extends Toadlet {
 		if (!path.matches("^[A-Za-z0-9\\._\\/\\-]*$") || (path.indexOf("..") != -1)) {
 			this.sendErrorPage(ctx, 404, l10n("pathNotFoundTitle"), l10n("pathInvalidChars"));
 			return;
+		}
+		
+		if(path.startsWith(OVERRIDE)) {
+			File f = this.container.getOverrideFile();
+			if(f == null || (!f.exists()) || (f.isDirectory()) || (!f.isFile())) {
+				this.sendErrorPage(ctx, 404, l10n("pathNotFoundTitle"), l10n("pathInvalidChars"));
+				return;
+			}
+			f = f.getAbsoluteFile();
+			if(f == null || (!f.exists()) || (f.isDirectory()) || (!f.isFile())) {
+				this.sendErrorPage(ctx, 404, l10n("pathNotFoundTitle"), l10n("pathInvalidChars"));
+				return;
+			}
+			File parent = f.getParentFile();
+			String s = parent.toString();
+			// Basic sanity check.
+			// Prevents user from specifying root dir.
+			// They can still shoot themselves in the foot, but only when developing themes/using custom themes.
+			// Because of the .. check above, any malicious thing cannot break out of the dir anyway.
+			if(parent.getParentFile() == null) {
+				this.sendErrorPage(ctx, 404, l10n("pathNotFoundTitle"), l10n("pathInvalidChars"));
+				return;
+			}
+			File from = new File(parent, path.substring(OVERRIDE.length()));
+			if((!from.exists()) && (!from.isFile())) {
+				this.sendErrorPage(ctx, 404, l10n("pathNotFoundTitle"), l10n("pathInvalidChars"));
+				return;
+			}
+			try {
+				FileBucket fb = new FileBucket(from, true, false, false, false, false);
+				ctx.sendReplyHeaders(200, "OK", null, DefaultMIMETypes.guessMIMEType(path, false), fb.size(), new Date(System.currentTimeMillis() - 1000)); // Already expired, we want it to reload it.
+				ctx.writeData(fb);
+				return;
+			} catch (IOException e) {
+				// Not strictly accurate but close enough
+				this.sendErrorPage(ctx, 404, l10n("pathNotFoundTitle"), l10n("pathNotFound"));
+				return;
+			}
 		}
 		
 		InputStream strm = getClass().getResourceAsStream(ROOT_PATH+path);

@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
+import freenet.node.Version;
 import freenet.support.ByteBufferInputStream;
 import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
@@ -85,15 +86,20 @@ public class Message {
 		try {
 			mspec = MessageType.getSpec(Integer.valueOf(bb.readInt()), veryLax);
 		} catch (IOException e1) {
-			if(logDEBUG)
-				Logger.debug(Message.class,"Failed to read message type: "+e1, e1);
+			if(logMINOR)
+				Logger.minor(Message.class,"Failed to read message type: "+e1, e1);
 			return null;
 		}
 		if (mspec == null) {
+			if(logMINOR)
+				Logger.minor(Message.class, "Bogus message type");
 		    return null;
 		}
-		if(mspec.isInternalOnly())
+		if(mspec.isInternalOnly()) {
+			if(logMINOR)
+				Logger.minor(Message.class, "Internal only message");
 		    return null; // silently discard internal-only messages
+		}
 		Message m = new Message(mspec, peer, recvByteCount);
 		try {
 		    for (String name : mspec.getOrderedFields()) {
@@ -131,8 +137,10 @@ public class Message {
 		    }
 		} catch (EOFException e) {
 			String msg = peer.getPeer()+" sent a message packet that ends prematurely while deserialising "+mspec.getName();
-			if(inSubMessage)
-				Logger.minor(Message.class, msg+" in sub-message", e);
+			if(inSubMessage) {
+				if(logMINOR) Logger.minor(Message.class, msg+" in sub-message", e);
+			} else if(mspec.getName().startsWith("FNPPeerLoadStatus"))
+				Logger.warning(Message.class, msg, e); // FIXME remove this after all the old builds have gone away
 			else
 				Logger.error(Message.class, msg, e);
 		    return null;
@@ -140,7 +148,7 @@ public class Message {
 		    Logger.error(Message.class, "Unexpected IOException: "+e+" reading from buffer stream", e);
 		    return null;
 		}
-		if(logMINOR) Logger.minor(Message.class, "Returning message: "+m);
+		if(logMINOR) Logger.minor(Message.class, "Returning message: "+m+" from "+m.getSource());
 		return m;
 	}
 
@@ -159,7 +167,7 @@ public class Message {
 			_sourceRef = source.getWeakRef();
 		}
 		_receivedByteCount = recvByteCount;
-		priority = spec.getPriority();
+		priority = spec.getDefaultPriority();
 	}
 
 	public boolean getBoolean(String key) {

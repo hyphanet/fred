@@ -111,6 +111,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 			// Shortcut the common case
 			Key k = keysList.get(0);
 			if(fetching.hasKey(k, null, false, null)) return null;
+			// Ignore RecentlyFailed because an offered key overrides it.
 			keys.remove(k);
 			keysList.setSize(0);
 			return new MySendableRequestItem(k);
@@ -122,6 +123,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 			// Avoid shuffling penalty by swapping the chosen element with the end.
 			Key k = keysList.get(ptr);
 			if(fetching.hasKey(k, null, false, null)) continue;
+			// Ignore RecentlyFailed because an offered key overrides it.
 			keysList.set(ptr, keysList.get(keysList.size()-1));
 			keysList.setSize(keysList.size()-1);
 			keys.remove(k);
@@ -201,7 +203,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	}
 
 	@Override
-	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
 		throw new UnsupportedOperationException("Transient only");
 	}
 
@@ -223,8 +225,9 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	}
 
 	@Override
-	public void preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
+	public boolean preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
 		// Ignore
+		return false;
 	}
 
 	public void removeFrom(ObjectContainer container, ClientContext context) {

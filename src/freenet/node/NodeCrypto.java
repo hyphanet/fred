@@ -57,7 +57,7 @@ public class NodeCrypto {
 	final boolean isOpennet;
 	final RandomSource random;
 	/** The object which handles our specific UDP port, pulls messages from it, feeds them to the packet mangler for decryption etc */
-	UdpSocketHandler socket;
+	final UdpSocketHandler socket;
 	public FNPPacketMangler packetMangler;
 	// FIXME: abstract out address stuff? Possibly to something like NodeReference?
 	final int portNumber;
@@ -283,6 +283,7 @@ public class NodeCrypto {
 	}
 
 	public void start() {
+		socket.calculateMaxPacketSize();
 		socket.setLowLevelFilter(new IncomingPacketFilterImpl(packetMangler, node, this));
 		packetMangler.start();
 		socket.start();
@@ -326,9 +327,9 @@ public class NodeCrypto {
 		fs.putSingle("version", Version.getVersionString()); // Keep, vital that peer know our version. For example, some types may be sent in different formats to different node versions (e.g. Peer).
 		if(!forAnonInitiator)
 			fs.putSingle("lastGoodVersion", Version.getLastGoodVersionString()); // Also vital
-		if(node.testnetEnabled) {
+		if(node.isTestnetEnabled()) {
 			fs.put("testnet", true);
-			fs.put("testnetPort", node.testnetHandler.getPort()); // Useful, saves a lot of complexity
+			//fs.put("testnetPort", node.testnetHandler.getPort()); // Useful, saves a lot of complexity
 		}
 		if((!isOpennet) && (!forSetup) && (!forARK))
 			fs.putSingle("myName", node.getMyName());

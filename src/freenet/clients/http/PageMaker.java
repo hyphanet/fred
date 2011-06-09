@@ -31,7 +31,8 @@ public final class PageMaker {
 		GRAYANDBLUE("grayandblue", "Gray And Blue", "", false, false),
 		SKY("sky", "Sky", "", false, false),
 		MINIMALBLUE("minimalblue", "Minimal Blue", "A minimalistic theme in blue", false, false),
-		MINIMALISTIC("minimalist", "Minimalistic", "A very minimalistic theme based on Google's designs", true, true);
+		MINIMALISTIC("minimalist", "Minimalistic", "A very minimalistic theme based on Google's designs", true, true),
+		RABBIT_HOLE("rabbit-hole", "Into the Rabbit Hole", "Simple and clean theme", false, false);
 
 		
 		public static final String[] possibleValues = {
@@ -42,7 +43,8 @@ public final class PageMaker {
 			GRAYANDBLUE.code,
 			SKY.code,
 			MINIMALBLUE.code,
-			MINIMALISTIC.code
+			MINIMALISTIC.code,
+			RABBIT_HOLE.code
 		};
 		
 		public final String code;  // the internal name
@@ -90,7 +92,7 @@ public final class PageMaker {
 	public static final int MODE_SIMPLE = 1;
 	public static final int MODE_ADVANCED = 2;
 	private THEME theme;
-	private File override;
+	private String override;
 	private final Node node;
 	
 	private List<SubMenu> menuList = new ArrayList<SubMenu>();
@@ -157,8 +159,8 @@ public final class PageMaker {
 		this.node = n;
 	}
 	
-	void setOverride(File f) {
-		this.override = f;
+	void setOverride(String pointTo) {
+		this.override = pointTo;
 	}
 	
 	public void setTheme(THEME theme2) {
@@ -240,13 +242,18 @@ public final class PageMaker {
 		headNode.addChild("title", title + " - Freenet");
 		//To make something only rendered when javascript is on, then add the jsonly class to it
 		headNode.addChild("noscript").addChild("style"," .jsonly {display:none;}");
-		if(override == null)
-			headNode.addChild("link", new String[] { "rel", "href", "type", "title" }, new String[] { "stylesheet", "/static/themes/" + theme.code + "/theme.css", "text/css", theme.code });
-		else
+		if(override != null)
 			headNode.addChild(getOverrideContent());
-		for (THEME t: THEME.values()) {
-			String themeName = t.code;
-			headNode.addChild("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "alternate stylesheet", "/static/themes/" + themeName + "/theme.css", "text/css", "screen", themeName });
+		else 
+			headNode.addChild("link", new String[] { "rel", "href", "type", "title" }, new String[] { "stylesheet", "/static/themes/" + theme.code + "/theme.css", "text/css", theme.code });
+		
+		boolean sendAllThemes =  ctx != null && ctx.getContainer().sendAllThemes();
+		
+		if(sendAllThemes) {
+			for (THEME t: THEME.values()) {
+				String themeName = t.code;
+				headNode.addChild("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "alternate stylesheet", "/static/themes/" + themeName + "/theme.css", "text/css", "screen", themeName });
+			}
 		}
 		
 		boolean webPushingEnabled = 
@@ -264,7 +271,7 @@ public final class PageMaker {
 			t = null;
 		String activePath = "";
 		if(t != null) activePath = t.path();
-		HTMLNode bodyNode = htmlNode.addChild("body");
+		HTMLNode bodyNode = htmlNode.addChild("body", "id", "fproxy-page");
 		//Add a hidden input that has the request's id
 		if(webPushingEnabled)
 			bodyNode.addChild("input",new String[]{"type","name","value","id"},new String[]{"hidden","requestId",ctx.getUniqueId(),"requestId"});
@@ -354,7 +361,7 @@ public final class PageMaker {
 
 			HTMLNode progressBar = statusBarDiv.addChild("div", "class", "progressbar");
 			progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-done progressbar-peers " + additionnalClass, "width: " +
-					Math.floor(100*connectedRatio) + "%;" });
+					Math.min(100,Math.floor(100*connectedRatio)) + "%;" });
 
 			progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_finalized", NodeL10n.getBase().getString("StatusBar.connectedPeers", new String[]{"X", "Y"},
 					new String[]{Integer.toString(node.peers.countConnectedDarknetPeers()), Integer.toString(node.peers.countConnectedOpennetPeers())}) },
@@ -364,91 +371,93 @@ public final class PageMaker {
 		topBarDiv.addChild("h1", title);
 		if (renderNavigationLinks) {
 			SubMenu selected = null;
+			// Render the full menu.
 			HTMLNode navbarDiv = pageDiv.addChild("div", "id", "navbar");
 			HTMLNode navbarUl = navbarDiv.addChild("ul", "id", "navlist");
 			synchronized (this) {
-			for (SubMenu menu : menuList) {
-				HTMLNode subnavlist = new HTMLNode("ul");
-				boolean isSelected = false;
-				boolean nonEmpty = false;
-				for (String navigationLink :  fullAccess ? menu.navigationLinkTexts : menu.navigationLinkTextsNonFull) {
-					LinkEnabledCallback cb = menu.navigationLinkCallbacks.get(navigationLink);
-					if(cb != null && !cb.isEnabled(ctx)) continue;
-					nonEmpty = true;
-					String navigationTitle = menu.navigationLinkTitles.get(navigationLink);
-					String navigationPath = menu.navigationLinks.get(navigationLink);
-					HTMLNode sublistItem;
-					if(activePath.equals(navigationPath)) {
-						sublistItem = subnavlist.addChild("li", "class", "submenuitem-selected");
-						isSelected = true;
-					} else {
-						sublistItem = subnavlist.addChild("li");
+				for (SubMenu menu : menuList) {
+					HTMLNode subnavlist = new HTMLNode("ul");
+					boolean isSelected = false;
+					boolean nonEmpty = false;
+					for (String navigationLink :  fullAccess ? menu.navigationLinkTexts : menu.navigationLinkTextsNonFull) {
+						LinkEnabledCallback cb = menu.navigationLinkCallbacks.get(navigationLink);
+						if(cb != null && !cb.isEnabled(ctx)) continue;
+						nonEmpty = true;
+						String navigationTitle = menu.navigationLinkTitles.get(navigationLink);
+						String navigationPath = menu.navigationLinks.get(navigationLink);
+						HTMLNode sublistItem;
+						if(activePath.equals(navigationPath)) {
+							sublistItem = subnavlist.addChild("li", "class", "submenuitem-selected");
+							isSelected = true;
+						} else {
+							sublistItem = subnavlist.addChild("li", "class", "submenuitem-not-selected");;
+						}
+						
+						FredPluginL10n l10n = menu.navigationLinkL10n.get(navigationLink);
+						if(l10n == null) l10n = menu.plugin;
+						if(l10n != null) {
+							if(navigationTitle != null) {
+								String newNavigationTitle = l10n.getString(navigationTitle);
+								if(newNavigationTitle == null) {
+									Logger.error(this, "Plugin '"+l10n+"' did return null in getString(key)!");
+								} else {
+									navigationTitle = newNavigationTitle;
+								}
+							}
+							if(navigationLink != null) {
+								String newNavigationLink = l10n.getString(navigationLink);
+								if(newNavigationLink == null) {
+									Logger.error(this, "Plugin '"+l10n+"' did return null in getString(key)!");
+								} else {
+									navigationLink = newNavigationLink;
+								}
+							}
+						} else {
+							if(navigationTitle != null) navigationTitle = NodeL10n.getBase().getString(navigationTitle);
+							if(navigationLink != null) navigationLink = NodeL10n.getBase().getString(navigationLink);
+						}
+						if(navigationTitle != null)
+							sublistItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, navigationTitle }, navigationLink);
+						else
+							sublistItem.addChild("a", "href", navigationPath, navigationLink);
 					}
-					
-					FredPluginL10n l10n = menu.navigationLinkL10n.get(navigationLink);
-					if(l10n == null) l10n = menu.plugin;
-					if(l10n != null) {
-						if(navigationTitle != null) {
-							String newNavigationTitle = l10n.getString(navigationTitle);
-							if(newNavigationTitle == null) {
-								Logger.error(this, "Plugin '"+l10n+"' did return null in getString(key)!");
+					if(nonEmpty) {
+						HTMLNode listItem;
+						if(isSelected) {
+							selected = menu;
+							subnavlist.addAttribute("class", "subnavlist-selected");
+							listItem = new HTMLNode("li", "id", "navlist-selected");
+						} else {
+							subnavlist.addAttribute("class", "subnavlist");
+							listItem = new HTMLNode("li", "class", "navlist-not-selected");
+						}
+						String menuItemTitle = menu.defaultNavigationLinkTitle;
+						String text = menu.navigationLinkText;
+						if(menu.plugin == null) {
+							menuItemTitle = NodeL10n.getBase().getString(menuItemTitle);
+							text = NodeL10n.getBase().getString(text);
+						} else {
+							String newTitle = menu.plugin.getString(menuItemTitle);
+							if(newTitle == null) {
+								Logger.error(this, "Plugin '"+menu.plugin+"' did return null in getString(key)!");
 							} else {
-								navigationTitle = newNavigationTitle;
+								menuItemTitle = newTitle;
+							}
+							String newText = menu.plugin.getString(text);
+							if(newText == null) {
+								Logger.error(this, "Plugin '"+menu.plugin+"' did return null in getString(key)!");
+							} else {
+								text = newText;
 							}
 						}
-						if(navigationLink != null) {
-							String newNavigationLink = l10n.getString(navigationLink);
-							if(newNavigationLink == null) {
-								Logger.error(this, "Plugin '"+l10n+"' did return null in getString(key)!");
-							} else {
-								navigationLink = newNavigationLink;
-							}
-						}
-					} else {
-						if(navigationTitle != null) navigationTitle = NodeL10n.getBase().getString(navigationTitle);
-						if(navigationLink != null) navigationLink = NodeL10n.getBase().getString(navigationLink);
+						
+						listItem.addChild("a", new String[] { "href", "title" }, new String[] { menu.defaultNavigationLink, menuItemTitle }, text);
+						listItem.addChild(subnavlist);
+						navbarUl.addChild(listItem);
 					}
-					if(navigationTitle != null)
-						sublistItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, navigationTitle }, navigationLink);
-					else
-						sublistItem.addChild("a", "href", navigationPath, navigationLink);
-				}
-				if(nonEmpty) {
-					HTMLNode listItem;
-					if(isSelected) {
-						selected = menu;
-						subnavlist.addAttribute("class", "subnavlist-selected");
-						listItem = new HTMLNode("li", "id", "navlist-selected");
-					} else {
-						subnavlist.addAttribute("class", "subnavlist");
-						listItem = new HTMLNode("li");
-					}
-					String menuItemTitle = menu.defaultNavigationLinkTitle;
-					String text = menu.navigationLinkText;
-					if(menu.plugin == null) {
-						menuItemTitle = NodeL10n.getBase().getString(menuItemTitle);
-						text = NodeL10n.getBase().getString(text);
-					} else {
-						String newTitle = menu.plugin.getString(menuItemTitle);
-						if(newTitle == null) {
-							Logger.error(this, "Plugin '"+menu.plugin+"' did return null in getString(key)!");
-						} else {
-							menuItemTitle = newTitle;
-						}
-						String newText = menu.plugin.getString(text);
-						if(newText == null) {
-							Logger.error(this, "Plugin '"+menu.plugin+"' did return null in getString(key)!");
-						} else {
-							text = newText;
-						}
-					}
-
-					listItem.addChild("a", new String[] { "href", "title" }, new String[] { menu.defaultNavigationLink, menuItemTitle }, text);
-					listItem.addChild(subnavlist);
-					navbarUl.addChild(listItem);
 				}
 			}
-			}
+			// Some themes want the selected submenu separately.
 			if(selected != null) {
 				HTMLNode div = new HTMLNode("div", "id", "selected-subnavbar");
 				HTMLNode subnavlist = div.addChild("ul", "id", "selected-subnavbar-list");
@@ -567,15 +576,7 @@ public final class PageMaker {
 	}
 	
 	private HTMLNode getOverrideContent() {
-		HTMLNode result = new HTMLNode("style", "type", "text/css");
-		
-		try {
-			result.addChild("#", FileUtil.readUTF(override));
-		} catch (IOException e) {
-			Logger.error(this, "Got an IOE: " + e.getMessage(), e);
-		}
-		
-		return result;
+		return new HTMLNode("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "stylesheet", override, "text/css", "screen", "custom" });
 	}
 	
 	/** Call this before getPageNode(), so the menus reflect the advanced mode setting. */

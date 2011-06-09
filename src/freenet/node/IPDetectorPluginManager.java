@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.Vector;
 
 import freenet.client.filter.GenericReadFilterCallback;
+import freenet.clients.http.ConnectivityToadlet;
 import freenet.io.AddressTracker;
 import freenet.io.AddressTracker.Status;
 import freenet.io.comm.FreenetInetAddress;
@@ -68,8 +69,8 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 						new HTMLNode[] { HTMLNode.text(Math.abs(portsNotForwarded[0])), HTMLNode.link(url) }); 
 			} else if(portsNotForwarded.length == 2) {
 				NodeL10n.getBase().addL10nSubstitution(div, "IPDetectorPluginManager.forwardTwoPorts"+keySuffix, 
-						new String[] { "port1", "port2", "link" }, 
-						new HTMLNode[] { HTMLNode.text(Math.abs(portsNotForwarded[0])), HTMLNode.text(Math.abs(portsNotForwarded[1])), HTMLNode.link(url) });
+						new String[] { "port1", "port2", "link", "connectivity" }, 
+						new HTMLNode[] { HTMLNode.text(Math.abs(portsNotForwarded[0])), HTMLNode.text(Math.abs(portsNotForwarded[1])), HTMLNode.link(url), HTMLNode.link(ConnectivityToadlet.PATH) });
 			} else {
 				Logger.error(this, "Unknown number of ports to forward: "+portsNotForwarded.length);
 			}
@@ -627,7 +628,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 						// Is it internal?
 						boolean internal = false;
 						for(int j=0;j<nodeAddrs.length;j++) {
-							if(addr.equals(nodeAddrs[j].getAddress())) {
+							if(addr.equals(nodeAddrs[j].getAddress(false))) {
 								// Internal
 								internal = true;
 								break;

@@ -3,9 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
  
+import java.net.InetAddress;
 import java.util.Map;
 
 import freenet.clients.http.DarknetConnectionsToadlet;
+import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
 import freenet.io.xfer.PacketThrottle;
 import freenet.node.NodeStats.PeerLoadStats;
@@ -21,7 +23,10 @@ import freenet.node.PeerNode.IncomingLoadSummaryStats;
  */
 public class PeerNodeStatus {
 
+	/** This is the preferred string form of the address. */
 	private final String peerAddress;
+	/** This one is always an IP address or null. */
+	private final String peerAddressNumerical;
 
 	private final int peerPort;
 
@@ -38,9 +43,11 @@ public class PeerNodeStatus {
 
 	private final int simpleVersion;
 
-	private final int routingBackoffLength;
+	private final int routingBackoffLengthRT;
+	private final int routingBackoffLengthBulk;
 
-	private final long routingBackedOffUntil;
+	private final long routingBackedOffUntilRT;
+	private final long routingBackedOffUntilBulk;
 
 	private final boolean connected;
 
@@ -51,14 +58,18 @@ public class PeerNodeStatus {
 	private final boolean isOpennet;
 
 	private final double averagePingTime;
+	private final double averagePingTimeCorrected;
 
 	private final boolean publicInvalidVersion;
 
 	private final boolean publicReverseInvalidVersion;
 	
 	private final double backedOffPercent;
+	private final double backedOffPercentRT;
+	private final double backedOffPercentBulk;
 
-	private String lastBackoffReason;
+	private String lastBackoffReasonRT;
+	private String lastBackoffReasonBulk;
 
 	private long timeLastRoutable;
 
@@ -110,14 +121,24 @@ public class PeerNodeStatus {
 	public final IncomingLoadSummaryStats incomingLoadStatsRealTime;
 
 	public final IncomingLoadSummaryStats incomingLoadStatsBulk;
+	
+	public final boolean hasFullNoderef;
 
 	PeerNodeStatus(PeerNode peerNode, boolean noHeavy) {
 		Peer p = peerNode.getPeer();
 		if(p == null) {
 			peerAddress = null;
+			peerAddressNumerical = null;
 			peerPort = -1;
 		} else {
-			peerAddress = p.getFreenetAddress().toString();
+			FreenetInetAddress a = p.getFreenetAddress();
+			peerAddress = a.toString();
+			InetAddress i = a.getAddress(false);
+			if(i != null) {
+				peerAddressNumerical = i.getHostAddress();
+			} else {
+				peerAddressNumerical = null;
+			}
 			peerPort = p.getPort();
 		}
 		this.selectionRate = peerNode.selectionRate();
@@ -128,17 +149,23 @@ public class PeerNodeStatus {
 		this.peersLocation = peerNode.getPeersLocation();
 		this.version = peerNode.getVersion();
 		this.simpleVersion = peerNode.getSimpleVersion();
-		this.routingBackoffLength = peerNode.getRoutingBackoffLength();
-		this.routingBackedOffUntil = peerNode.getRoutingBackedOffUntil();
+		this.routingBackoffLengthRT = peerNode.getRoutingBackoffLength(true);
+		this.routingBackoffLengthBulk = peerNode.getRoutingBackoffLength(false);
+		this.routingBackedOffUntilRT = peerNode.getRoutingBackedOffUntil(true);
+		this.routingBackedOffUntilBulk = peerNode.getRoutingBackedOffUntil(false);
 		this.connected = peerNode.isConnected();
 		this.routable = peerNode.isRoutable();
 		this.isFetchingARK = peerNode.isFetchingARK();
 		this.isOpennet = peerNode.isOpennet();
 		this.averagePingTime = peerNode.averagePingTime();
+		this.averagePingTimeCorrected = peerNode.averagePingTimeCorrected();
 		this.publicInvalidVersion = peerNode.publicInvalidVersion();
 		this.publicReverseInvalidVersion = peerNode.publicReverseInvalidVersion();
 		this.backedOffPercent = peerNode.backedOffPercent.currentValue();
-		this.lastBackoffReason = peerNode.getLastBackoffReason();
+		this.backedOffPercentRT = peerNode.backedOffPercentRT.currentValue();
+		this.backedOffPercentBulk = peerNode.backedOffPercentBulk.currentValue();
+		this.lastBackoffReasonRT = peerNode.getLastBackoffReason(true);
+		this.lastBackoffReasonBulk = peerNode.getLastBackoffReason(false);
 		this.timeLastRoutable = peerNode.timeLastRoutable();
 		this.timeLastConnectionCompleted = peerNode.timeLastConnectionCompleted();
 		this.peerAddedTime = peerNode.getPeerAddedTime();
@@ -168,6 +195,7 @@ public class PeerNodeStatus {
 		messageQueueLengthTime = peerNode.getProbableSendQueueTime();
 		incomingLoadStatsRealTime = peerNode.getIncomingLoadStats(true);
 		incomingLoadStatsBulk = peerNode.getIncomingLoadStats(false);
+		hasFullNoderef = peerNode.hasFullNoderef();
 	}
 	
 	public long getMessageQueueLengthBytes() {
@@ -226,15 +254,15 @@ public class PeerNodeStatus {
 	/**
 	 * @return the backedOffPercent
 	 */
-	public double getBackedOffPercent() {
-		return backedOffPercent;
+	public double getBackedOffPercent(boolean realTime) {
+		return realTime ? backedOffPercentRT : backedOffPercentBulk;
 	}
 
 	/**
 	 * @return the lastBackoffReason
 	 */
-	public String getLastBackoffReason() {
-		return lastBackoffReason;
+	public String getLastBackoffReason(boolean realTime) {
+		return realTime ? lastBackoffReasonRT : lastBackoffReasonBulk;
 	}
 
 	/**
@@ -264,12 +292,19 @@ public class PeerNodeStatus {
 	public double getAveragePingTime() {
 		return averagePingTime;
 	}
+	
+	/**
+	 * @return The ping time for purposes of retransmissions.
+	 */
+	public double getAveragePingTimeCorrected() {
+		return averagePingTimeCorrected;
+	}
 
 	/**
 	 * @return the getRoutingBackedOffUntil
 	 */
-	public long getRoutingBackedOffUntil() {
-		return routingBackedOffUntil;
+	public long getRoutingBackedOffUntil(boolean realTime) {
+		return realTime ? routingBackedOffUntilRT : routingBackedOffUntilBulk;
 	}
 
 	/**
@@ -284,10 +319,17 @@ public class PeerNodeStatus {
 	}
 	
 	/**
-	 * @return the peerAddress
+	 * @return the peerAddress, in its preferred string format.
 	 */
 	public String getPeerAddress() {
 		return peerAddress;
+	}
+
+	/**
+	 * @return the peer address, in numerical form, or null if not known.
+	 */
+	public String getPeerAddressNumerical() {
+		return peerAddressNumerical;
 	}
 
 	/**
@@ -300,8 +342,8 @@ public class PeerNodeStatus {
 	/**
 	 * @return the routingBackoffLength
 	 */
-	public int getRoutingBackoffLength() {
-		return routingBackoffLength;
+	public int getRoutingBackoffLength(boolean realTime) {
+		return realTime ? routingBackoffLengthRT : routingBackoffLengthBulk;
 	}
 
 	/**
@@ -369,7 +411,7 @@ public class PeerNodeStatus {
 
 	@Override
 	public String toString() {
-		return statusName + ' ' + peerAddress + ':' + peerPort + ' ' + location + ' ' + version + " backoff: " + routingBackoffLength + " (" + (Math.max(routingBackedOffUntil - System.currentTimeMillis(), 0)) + ')';
+		return statusName + ' ' + peerAddress + ':' + peerPort + ' ' + location + ' ' + version + " RT backoff: " + routingBackoffLengthRT + " (" + (Math.max(routingBackedOffUntilRT - System.currentTimeMillis(), 0)) + " ) bulk backoff: " + routingBackoffLengthBulk + " (" + (Math.max(routingBackedOffUntilBulk - System.currentTimeMillis(), 0)) + ')';
 	}
 
 	@Override

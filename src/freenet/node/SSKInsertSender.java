@@ -211,7 +211,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             
             // Route it
             next = node.peers.closerPeer(forkedRequestTag == null ? source : null, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-			        null, htl, ignoreLowBackoff ? Node.LOW_BACKOFF : 0, source == null);
+			        null, htl, ignoreLowBackoff ? Node.LOW_BACKOFF : 0, source == null, realTimeFlag);
             
             if(next == null) {
                 // Backtrack
@@ -245,10 +245,14 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             // Send to next node
             
             try {
-				next.sendAsync(request, null, this);
+            	next.sendSync(request, this, realTimeFlag);
 			} catch (NotConnectedException e1) {
 				if(logMINOR) Logger.minor(this, "Not connected to "+next);
-				thisTag.removeRoutingTo(next);
+				next.noLongerRoutingTo(thisTag, false);
+				continue;
+			} catch (SyncSendWaitedTooLongException e) {
+				Logger.warning(this, "Failed to send request to "+next);
+				next.noLongerRoutingTo(thisTag, false);
 				continue;
 			}
             sentRequest = true;
@@ -261,61 +265,67 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             
             // Send the headers and data
             
-            Message headersMsg = DMT.createFNPSSKInsertRequestHeaders(uid, headers);
-            Message dataMsg = DMT.createFNPSSKInsertRequestData(uid, data);
+            Message headersMsg = DMT.createFNPSSKInsertRequestHeaders(uid, headers, realTimeFlag);
+            Message dataMsg = DMT.createFNPSSKInsertRequestData(uid, data, realTimeFlag);
             
             try {
 				next.sendAsync(headersMsg, null, this);
-				next.sendThrottledMessage(dataMsg, data.length, this, SSKInsertHandler.DATA_INSERT_TIMEOUT, false, null);
+				if(next.isOldFNP()) {
+					next.sendThrottledMessage(dataMsg, data.length, this, SSKInsertHandler.DATA_INSERT_TIMEOUT, false, null);
+				} else {
+					next.sendSync(dataMsg, this, realTimeFlag);
+					sentPayload(data.length);
+				}
 			} catch (NotConnectedException e1) {
 				if(logMINOR) Logger.minor(this, "Not connected to "+next);
-				thisTag.removeRoutingTo(next);
+				next.noLongerRoutingTo(thisTag, false);
 				continue;
 			} catch (WaitedTooLongException e) {
 				Logger.error(this, "Waited too long to send "+dataMsg+" to "+next+" on "+this);
-				thisTag.removeRoutingTo(next);
+				next.noLongerRoutingTo(thisTag, false);
 				continue;
 			} catch (SyncSendWaitedTooLongException e) {
-				// Impossible
+				Logger.error(this, "Waited too long to send "+dataMsg+" to "+next+" on "+this);
+				next.noLongerRoutingTo(thisTag, false);
+				continue;
 			} catch (PeerRestartedException e) {
 				if(logMINOR) Logger.minor(this, "Peer restarted: "+next);
-				thisTag.removeRoutingTo(next);
+				next.noLongerRoutingTo(thisTag, false);
 				continue;
 			}
             
             // Do we need to send them the pubkey?
             
             if(msg.getBoolean(DMT.NEED_PUB_KEY)) {
-            	Message pkMsg = DMT.createFNPSSKPubKey(uid, pubKey);
+            	Message pkMsg = DMT.createFNPSSKPubKey(uid, pubKey, realTimeFlag);
             	try {
-            		next.sendAsync(pkMsg, null, this);
+            		next.sendSync(pkMsg, this, realTimeFlag);
             	} catch (NotConnectedException e) {
             		if(logMINOR) Logger.minor(this, "Node disconnected while sending pubkey: "+next);
-					thisTag.removeRoutingTo(next);
+    				next.noLongerRoutingTo(thisTag, false);
             		continue;
-            	}
+            	} catch (SyncSendWaitedTooLongException e) {
+            		Logger.warning(this, "Took too long to send pubkey to "+next+" on "+this);
+    				next.noLongerRoutingTo(thisTag, false);
+            		continue;
+				}
             	
             	// Wait for the SSKPubKeyAccepted
             	
-            	MessageFilter mf1 = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPSSKPubKeyAccepted);
+            	// FIXME doubled the timeout because handling it properly would involve forking.
+            	MessageFilter mf1 = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT*2).setType(DMT.FNPSSKPubKeyAccepted);
             	
             	Message newAck;
 				try {
 					newAck = node.usm.waitFor(mf1, this);
 				} catch (DisconnectedException e) {
 					if(logMINOR) Logger.minor(this, "Disconnected from "+next);
-					thisTag.removeRoutingTo(next);
+					next.noLongerRoutingTo(thisTag, false);
 					continue;
 				}
             	
             	if(newAck == null) {
-					// Try to propagate back to source
-            		Logger.error(this, "Timeout waiting for FNPSSKPubKeyAccepted on "+next);
-					next.localRejectedOverload("Timeout2");
-            		// This is a local timeout, they should send it immediately.
-            		next.fatalTimeout();
-					forwardRejectedOverload();
-					thisTag.removeRoutingTo(next);
+            		handleNoPubkeyAccepted(next, thisTag);
 					// Try another peer
 					continue;
             	}
@@ -332,7 +342,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				} catch (DisconnectedException e) {
 					Logger.normal(this, "Disconnected from " + next
 							+ " while waiting for InsertReply on " + this);
-					thisTag.removeRoutingTo(next);
+					next.noLongerRoutingTo(thisTag, false);
 					break;
 				}
 
@@ -340,7 +350,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 					
 					// First timeout.
 					Logger.error(this, "Timeout waiting for reply after Accepted in "+this+" from "+next);
-					next.localRejectedOverload("AfterInsertAcceptedTimeout");
+					next.localRejectedOverload("AfterInsertAcceptedTimeout", realTimeFlag);
 					forwardRejectedOverload();
 					finish(TIMED_OUT, next);
 					
@@ -352,15 +362,14 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 						} catch (DisconnectedException e) {
 							Logger.normal(this, "Disconnected from " + next
 									+ " while waiting for InsertReply on " + this);
-							thisTag.removeRoutingTo(next);
+							next.noLongerRoutingTo(thisTag, false);
 							return;
 						}
 						
 						if(msg == null) {
 							// Second timeout.
 							Logger.error(this, "Fatal timeout waiting for reply after Accepted on "+this+" from "+next);
-							next.fatalTimeout();
-							thisTag.removeRoutingTo(next);
+							next.fatalTimeout(thisTag, false);
 							return;
 						}
 						
@@ -369,7 +378,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 						if(action == DO.FINISHED)
 							return;
 						else if(action == DO.NEXT_PEER) {
-							thisTag.removeRoutingTo(next);
+							next.noLongerRoutingTo(thisTag, false);
 							return; // Don't try others
 						}
 						// else if(action == DO.WAIT) continue;
@@ -388,7 +397,19 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
         }
     }
     
-    private MessageFilter makeSearchFilter(PeerNode next,
+    private void handleNoPubkeyAccepted(PeerNode next, InsertTag thisTag) {
+    	// FIXME implementing two stage timeout would likely involve forking at this point.
+    	// The problem is the peer has now got everything it needs to run the insert!
+    	
+		// Try to propagate back to source
+		Logger.error(this, "Timeout waiting for FNPSSKPubKeyAccepted on "+next);
+		next.localRejectedOverload("Timeout2", realTimeFlag);
+		// This is a local timeout, they should send it immediately.
+		forwardRejectedOverload();
+		next.fatalTimeout(thisTag, false);
+	}
+
+	private MessageFilter makeSearchFilter(PeerNode next,
 			int searchTimeout) {
         /** What are we waiting for now??:
          * - FNPRouteNotFound - couldn't exhaust HTL, but send us the 
@@ -438,7 +459,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 		}
 				
 		// Our task is complete
-		next.successNotOverload();
+		next.successNotOverload(realTimeFlag);
 		finish(SUCCESS, next);
 		return DO.FINISHED;
 
@@ -454,7 +475,9 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 
 	private void handleAcceptedRejectedTimeout(final PeerNode next, final InsertTag tag) {
 		// It could still be running. So the timeout is fatal to the node.
-		Logger.error(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
+		// This is a WARNING not an ERROR because it's possible that the problem is we simply haven't been able to send the message yet, because we don't use sendSync().
+		// FIXME use a callback to rule this out and log an ERROR.
+		Logger.warning(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
 		// The node didn't accept the request. So we don't need to send them the data.
 		// However, we do need to wait a bit longer to try to postpone the fatalTimeout().
 		// Somewhat intricate logic to try to avoid fatalTimeout() if at all possible.
@@ -466,17 +489,19 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 					if(m.getSpec() == DMT.FNPRejectedLoop ||
 							m.getSpec() == DMT.FNPRejectedOverload) {
 						// Ok.
-						tag.removeRoutingTo(next);
+						next.noLongerRoutingTo(tag, false);
 					} else {
-						assert(m.getSpec() == DMT.FNPAccepted);
+						assert(m.getSpec() == DMT.FNPSSKAccepted);
+						if(logMINOR) Logger.minor(this, "Forked timed out insert but not going to send DataInsert on "+SSKInsertSender.this+" to "+next);
 						// We are not going to send the DataInsert.
 						// We have moved on, and we don't want inserts to fork unnecessarily.
-			            MessageFilter mfTimeout = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRejectedTimeout);
+			            MessageFilter mfDataInsertRejected = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPDataInsertRejected);
 			            try {
-							node.usm.addAsyncFilter(mfTimeout, new AsyncMessageFilterCallback() {
+							node.usm.addAsyncFilter(mfDataInsertRejected, new AsyncMessageFilterCallback() {
 
 								public void onMatched(Message m) {
 									// Cool.
+									next.noLongerRoutingTo(tag, false);
 								}
 
 								public boolean shouldTimeout() {
@@ -485,22 +510,21 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 
 								public void onTimeout() {
 									// Grrr!
-									Logger.error(this, "Timed out awaiting FNPRejectedTimeout on insert to "+next);
-									tag.removeRoutingTo(next);
-									next.fatalTimeout();
+									Logger.error(this, "Fatal timeout awaiting FNPRejectedTimeout on insert to "+next+" for "+SSKInsertSender.this);
+									next.fatalTimeout(tag, false);
 								}
 
 								public void onDisconnect(PeerContext ctx) {
-									tag.removeRoutingTo(next);
+									next.noLongerRoutingTo(tag, false);
 								}
 
 								public void onRestarted(PeerContext ctx) {
-									tag.removeRoutingTo(next);
+									next.noLongerRoutingTo(tag, false);
 								}
 								
 							}, SSKInsertSender.this);
 						} catch (DisconnectedException e) {
-							tag.removeRoutingTo(next);
+							next.noLongerRoutingTo(tag, false);
 						}
 					}
 				}
@@ -510,16 +534,16 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				}
 
 				public void onTimeout() {
-					tag.removeRoutingTo(next);
-					next.fatalTimeout();
+					Logger.error(this, "Fatal: No Accepted/Rejected for "+SSKInsertSender.this);
+					next.fatalTimeout(tag, false);
 				}
 
 				public void onDisconnect(PeerContext ctx) {
-					tag.removeRoutingTo(next);
+					next.noLongerRoutingTo(tag, false);
 				}
 
 				public void onRestarted(PeerContext ctx) {
-					tag.removeRoutingTo(next);
+					next.noLongerRoutingTo(tag, false);
 				}
 
 				public int getPriority() {
@@ -528,7 +552,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				
 			}, this);
 		} catch (DisconnectedException e) {
-			tag.removeRoutingTo(next);
+			next.noLongerRoutingTo(tag, false);
 		}
 	}
 
@@ -537,7 +561,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     private boolean handleRejectedOverload(Message msg, PeerNode next, InsertTag thisTag) {
 		// Probably non-fatal, if so, we have time left, can try next one
 		if (msg.getBoolean(DMT.IS_LOCAL)) {
-			next.localRejectedOverload("ForwardRejectedOverload4");
+			next.localRejectedOverload("ForwardRejectedOverload4", realTimeFlag);
 			if(logMINOR) Logger.minor(this,
 					"Local RejectedOverload, moving on to next peer");
 			// Give up on this one, try another
@@ -554,12 +578,12 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 		short newHtl = msg.getShort(DMT.HTL);
 		if (htl > newHtl)
 			htl = newHtl;
-		next.successNotOverload();
+		next.successNotOverload(realTimeFlag);
     	next.noLongerRoutingTo(thisTag, false);
 	}
 
 	private void handleDataInsertRejected(Message msg, PeerNode next, InsertTag thisTag) {
-		next.successNotOverload();
+		next.successNotOverload(realTimeFlag);
 		short reason = msg.getShort(DMT.DATA_INSERT_REJECTED_REASON);
 		if(logMINOR) Logger.minor(this, "DataInsertRejected: " + reason);
 		if (reason == DMT.DATA_INSERT_REJECTED_VERIFY_FAILED) {
@@ -609,12 +633,12 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 		} catch (DisconnectedException e) {
 			if(logMINOR)
 				Logger.minor(this, "Disconnected: "+next+" getting datareply for "+this);
-			thisTag.removeRoutingTo(next);
+			next.noLongerRoutingTo(thisTag, false);
 			return DO.NEXT_PEER;
 		}
 		if(dataMessage == null) {
 			Logger.error(this, "Got headers but not data for datareply for insert from "+this);
-			thisTag.removeRoutingTo(next);
+			next.noLongerRoutingTo(thisTag, false);
 			return DO.NEXT_PEER;
 		}
 		// collided, overwrite data with remote data
@@ -659,7 +683,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				// Terminal overload
 				// Try to propagate back to source
 				if(logMINOR) Logger.minor(this, "Timeout");
-				next.localRejectedOverload("Timeout");
+				next.localRejectedOverload("Timeout", realTimeFlag);
 				forwardRejectedOverload();
 				// It could still be running. So the timeout is fatal to the node.
 				handleAcceptedRejectedTimeout(next, thisTag);
@@ -669,19 +693,21 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 			if (msg.getSpec() == DMT.FNPRejectedOverload) {
 				// Non-fatal - probably still have time left
 				if (msg.getBoolean(DMT.IS_LOCAL)) {
-					next.localRejectedOverload("ForwardRejectedOverload3");
+					next.localRejectedOverload("ForwardRejectedOverload3", realTimeFlag);
 					if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
 					// Give up on this one, try another
 	            	next.noLongerRoutingTo(thisTag, false);
 					return null;
 				} else {
+					if(logMINOR) Logger.minor(this, "Relaying non-local rejected overload on "+this);
 					forwardRejectedOverload();
 				}
 				continue;
 			}
 			
 			if (msg.getSpec() == DMT.FNPRejectedLoop) {
-				next.successNotOverload();
+				if(logMINOR) Logger.minor(this, "Rejected loop on "+this+" from "+next);
+				next.successNotOverload(realTimeFlag);
 				// Loop - we don't want to send the data to this one
             	next.noLongerRoutingTo(thisTag, false);
 				return null;
@@ -711,10 +737,6 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
         MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPSSKAccepted);
         MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPRejectedLoop);
         MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPRejectedOverload);
-        // mfRejectedOverload must be the last thing in the or
-        // So its or pointer remains null
-        // Otherwise we need to recreate it below
-        mfRejectedOverload.clearOr();
         return mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
 	}
 

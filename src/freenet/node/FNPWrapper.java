@@ -187,16 +187,46 @@ public class FNPWrapper implements PacketFormat {
 		return null;
 	}
 
-	public boolean canSend() {
-		SessionKey cur = pn.getCurrentKeyTracker();
+	public boolean canSend(SessionKey cur) {
+		if(cur == null) return false;
 		try {
-			return cur != null && !cur.packets.wouldBlock(false);
+			return !cur.packets.wouldBlock(false);
 		} catch (BlockedTooLongException e) {
 			return false;
 		}
 	}
 
-	public long timeNextUrgent() {
+	public long timeNextUrgent(boolean canSend) {
+		SessionKey cur;
+		SessionKey prev;
+		synchronized(pn) {
+			cur = pn.getCurrentKeyTracker();
+			prev = pn.getPreviousKeyTracker();
+		}
+		long t = Long.MAX_VALUE;
+		if(cur != null) {
+			t = Math.min(t, cur.packets.getNextUrgentTime());
+		}
+		if(prev != null) {
+			t = Math.min(t, prev.packets.getNextUrgentTime());
+		}
+		return Long.MAX_VALUE;
+	}
+	
+	public long timeSendAcks() {
+		SessionKey cur;
+		SessionKey prev;
+		synchronized(pn) {
+			cur = pn.getCurrentKeyTracker();
+			prev = pn.getPreviousKeyTracker();
+		}
+		long t = Long.MAX_VALUE;
+		if(cur != null) {
+			t = Math.min(t, cur.packets.timeSendAcks());
+		}
+		if(prev != null) {
+			t = Math.min(t, prev.packets.timeSendAcks());
+		}
 		return Long.MAX_VALUE;
 	}
 
@@ -206,5 +236,13 @@ public class FNPWrapper implements PacketFormat {
 
 	public long timeCheckForLostPackets() {
 		return Long.MAX_VALUE;
+	}
+
+	public void onReconnect(boolean wasARekey) {
+		// Do nothing.
+	}
+	
+	public boolean fullPacketQueued(int maxPacketSize) {
+		return pn.getMessageQueue().mustSendSize(FNPPacketMangler.HEADERS_LENGTH_ONE_MESSAGE /* FIXME estimate headers */, maxPacketSize);
 	}
 }

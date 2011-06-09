@@ -141,6 +141,10 @@ public class PartiallyReceivedBlock {
 			prl.packetReceived(position);
 		}
 	}
+	
+	public synchronized boolean allReceivedAndNotAborted() {
+		return _receivedCount == _packets && !_aborted;
+	}
 
 	public synchronized boolean allReceived() throws AbortedException {
 		if(_receivedCount == _packets) {

@@ -1,0 +1,29 @@
+# Edit restrictions
+
+[1] src/freenet/support/CPUInformation
+[1] src/net/i2p/util
+[2] src/org/bitpedia
+[1] test/net/i2p/util
+[3] any file that imports anything from org.apache.tools
+
+
+[1]	will be removed after ext27 is made mandatory
+	
+	the code will be moved to a new package, java-native-utils, which contrib
+	will use as an external package.
+	
+	DO NOT EDIT THIS CODE in a way that introduces dependencies on the rest of
+	the fred source code; preferably, not at all.
+
+[2]	will be removed after ext27 is made mandatory
+	
+	we no longer maintain this code in source form; instead, contrib downloads
+	and build this from our mirrors / upstream source.
+	
+	DO NOT EDIT THIS CODE AT ALL.
+
+[3] will be updated after ext27 is made mandatory; the updated code currently
+	lives in the apichange-commons-compress branch.
+	
+    DO NOT EDIT THIS CODE AT ALL.
+

@@ -36,24 +36,27 @@ public class NodeStarter implements WrapperListener {
 	private static LoggingConfigHandler logConfigHandler;
 	/** Freenet will not function at all without at least this build of freenet-ext.jar.
 	 * This will be included in the jar manifest file so we can check it when we download new builds. */
-	public final static int REQUIRED_EXT_BUILD_NUMBER = 24;
+	public final static int REQUIRED_EXT_BUILD_NUMBER = 29;
 	/** Freenet will function best with this build of freenet-ext.jar.
 	 * It may be required in the near future. The node will try to download it.
 	 * The node will not update to a later ext version than this, because that might be incompatible. */
-	public final static int RECOMMENDED_EXT_BUILD_NUMBER = 26;
+	public final static int RECOMMENDED_EXT_BUILD_NUMBER = 29;
 	/*
 	(File.separatorChar == '\\') &&
 	(System.getProperty("os.arch").toLowerCase().matches("(i?[x0-9]86_64|amd64)")) ? 6 : 2;
 	 */
 	public static final int extBuildNumber;
 	public static final String extRevisionNumber;
-	
+
 	static {
 		extBuildNumber = ExtVersion.extBuildNumber();
 		extRevisionNumber = ExtVersion.extRevisionNumber();
 	}
 
 	private FreenetFilePersistentConfig cfg;
+
+	// experimental osgi support
+	private static NodeStarter nodestarter_osgi = null;
 
 	/*---------------------------------------------------------------
 	 * Constructors
@@ -348,14 +351,14 @@ public class NodeStarter implements WrapperListener {
 		configFS.put("console.enabled", false);
 		configFS.putSingle("pluginmanager.loadplugin", "");
 		configFS.put("node.updater.enabled", false);
-		configFS.putSingle("node.tempDir", new File(portDir, "temp").toString());
-		configFS.putSingle("node.storeDir", new File(portDir, "store").toString());
+		configFS.putSingle("node.install.tempDir", new File(portDir, "temp").toString());
+		configFS.putSingle("node.install.storeDir", new File(portDir, "store").toString());
 		configFS.put("fcp.persistentDownloadsEnabled", false);
 		configFS.putSingle("node.throttleFile", new File(portDir, "throttle.dat").toString());
-		configFS.putSingle("node.nodeDir", portDir.toString());
-		configFS.putSingle("node.userDir", portDir.toString());
-		configFS.putSingle("node.runDir", portDir.toString());
-		configFS.putSingle("node.cfgDir", portDir.toString());
+		configFS.putSingle("node.install.nodeDir", portDir.toString());
+		configFS.putSingle("node.install.userDir", portDir.toString());
+		configFS.putSingle("node.install.runDir", portDir.toString());
+		configFS.putSingle("node.install.cfgDir", portDir.toString());
 		configFS.put("node.maxHTL", maxHTL);
 		configFS.put("node.testingDropPacketsEvery", dropProb);
 		configFS.put("node.alwaysAllowLocalAddresses", true);
@@ -397,5 +400,17 @@ public class NodeStarter implements WrapperListener {
 		node.peers.removeAllPeers();
 
 		return node;
+	}
+
+	// experimental osgi support
+	public static void start_osgi(String[] args) {
+		nodestarter_osgi = new NodeStarter();
+		nodestarter_osgi.start(args);
+	}
+
+	// experimental osgi support
+	public static void stop_osgi(int exitCode) {
+		nodestarter_osgi.stop(exitCode);
+		nodestarter_osgi = null;
 	}
 }

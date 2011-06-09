@@ -16,6 +16,7 @@ import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -367,6 +368,12 @@ public class ClientPutMessage extends DataCarryingMessage {
 	}
 
 	public void freeData(ObjectContainer container) {
+		if(bucket == null) {
+			if(dataLength() <= 0)
+				return; // Okay.
+			Logger.error(this, "bucket is null on "+this+" - freed twice?", new Exception("error"));
+			return;
+		}
 		if(persistenceType == ClientRequest.PERSIST_FOREVER)
 			container.activate(bucket, 5);
 		bucket.free();

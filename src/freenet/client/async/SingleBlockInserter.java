@@ -93,10 +93,32 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	final int extraInserts;
 	final byte[] cryptoKey;
 	final byte cryptoAlgorithm;
-	
+
+	/**
+	 * zero arg c'tor for db4o on jamvm
+	 */
+	@SuppressWarnings("unused")
+	private SingleBlockInserter() {
+		uri = null;
+		tokenObject = null;
+		token = 0;
+		sourceLength = 0;
+		parent = null;
+		isMetadata = false;
+		getCHKOnly = false;
+		extraInserts = 0;
+		errors = null;
+		dontSendEncoded = false;
+		ctx = null;
+		cryptoKey = null;
+		cryptoAlgorithm = 0;
+		compressionCodec = 0;
+		cb = null;
+	}
+
 	/**
 	 * Create a SingleBlockInserter.
-	 * @param parent
+	 * @param parent The parent. Must be activated.
 	 * @param data
 	 * @param compressionCodec The compression codec.
 	 * @param uri
@@ -116,7 +138,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	 */
 	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InsertContext ctx, boolean realTimeFlag, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject, ObjectContainer container, ClientContext context, boolean persistent, boolean freeData, int extraInserts, byte cryptoAlgorithm, byte[] cryptoKey) {
 		super(persistent, realTimeFlag);
-		assert(persistent == parent.persistent());
 		this.consecutiveRNFs = 0;
 		this.tokenObject = tokenObject;
 		this.token = token;
@@ -279,7 +300,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(e.code == LowLevelPutException.ROUTE_NOT_FOUND || e.code == LowLevelPutException.ROUTE_REALLY_NOT_FOUND) {
 			consecutiveRNFs++;
 			if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" / "+ctx.consecutiveRNFsCountAsSuccess);
-			if(consecutiveRNFs == ctx.consecutiveRNFsCountAsSuccess) {
+			// Use >= so that extra inserts see this as a success.
+			if(consecutiveRNFs >= ctx.consecutiveRNFsCountAsSuccess) {
 				if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" - counting as success");
 				onSuccess(keyNum, container, context);
 				return;
@@ -661,23 +683,31 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	}
 
 	@Override
-	public synchronized SendableRequestItem chooseKey(KeysFetchingLocally ignored, ObjectContainer container, ClientContext context) {
-		if(finished) return null;
-		if(!persistent) {
-			if(ignored.hasTransientInsert(this, new FakeBlockItem()))
-				return null;
+	public SendableRequestItem chooseKey(KeysFetchingLocally ignored, ObjectContainer container, ClientContext context) {
+		try {
+			synchronized(this) {
+				if(finished) return null;
+				if(!persistent) {
+					if(ignored.hasTransientInsert(this, new FakeBlockItem()))
+						return null;
+				}
+				return getBlockItem(container, context);
+			}
+		} catch (InsertException e) {
+			fail(e, container, context);
+			return null;
 		}
-		return getBlockItem(container, context);
 	}
 
-	private BlockItem getBlockItem(ObjectContainer container, ClientContext context) {
+	private BlockItem getBlockItem(ObjectContainer container, ClientContext context) throws InsertException {
 		try {
 			synchronized(this) {
 				if(finished) return null;
 			}
 			if(persistent) {
 				if(sourceData == null) {
-					Logger.error(this, "getBlockItem(): sourceData = null but active = "+container.ext().isActive(this));
+					Logger.error(this, "getBlockItem(): sourceData = null but active = "+container.ext().isActive(this), new Exception("error"));
+					fail(new InsertException(InsertException.INTERNAL_ERROR), container, context);
 					return null;
 				}
 			}
@@ -711,14 +741,20 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				container.deactivate(ctx, 1);
 			return new BlockItem(this, data, isMetadata, compressionCodec, sourceLength, u, hashCode(), persistent, pre1254, cryptoAlgorithm, cryptoKey);
 		} catch (IOException e) {
-			fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
-			return null;
+			throw new InsertException(InsertException.BUCKET_ERROR, e, null);
 		}
 	}
 	
 	@Override
-	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context) {
-		BlockItem item = getBlockItem(container, context);
+	// FIXME keys is ignored
+	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
+		BlockItem item;
+		try {
+			item = getBlockItem(container, context);
+		} catch (InsertException e) {
+			fail(e, container, context);
+			return null;
+		}
 		if(item == null) return null;
 		PersistentChosenBlock block = new PersistentChosenBlock(true, request, item, null, null, sched);
 		return Collections.singletonList(block);

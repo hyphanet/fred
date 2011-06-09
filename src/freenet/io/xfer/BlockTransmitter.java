@@ -52,6 +52,14 @@ import freenet.support.math.MedianMeanRunningAverage;
  *
  * Given a PartiallyReceivedBlock retransmit to another node (to be received by BlockReceiver).
  * Since a PRB can be concurrently transmitted to many peers NOWHERE in this class is prb.abort() to be called.
+ * 
+ * SECURITY: We must keep sending the data even if the inter-block interval becomes too
+ * large for the receiver to be able to accept the data. Otherwise a malicious node can
+ * use much more bandwidth on our input and upstream nodes than he expends himself, simply
+ * by doing lots of requests and only accepting a few bytes per second worth of packets. 
+ * Obviously if such situations arise naturally they should be handled via load limiting -
+ * either the originator itself with an accurate bandwidth limit, or the packets-in-flight
+ * limit.
  */
 public class BlockTransmitter {
 
@@ -87,6 +95,12 @@ public class BlockTransmitter {
 	private final Ticker _ticker;
 	private final Executor _executor;
 	private final BlockTransmitterCompletion _callback;
+	
+	public interface BlockTimeCallback {
+		public void blockTime(long interval, boolean realtime);
+	}
+	
+	private final BlockTimeCallback blockTimeCallback;
 
 	/** Have we received a completion acknowledgement from the other side - either a 
 	 * sendAborted or allReceived? */
@@ -145,8 +159,17 @@ public class BlockTransmitter {
 
 		/** @return True . */
 		private boolean innerRun(int packetNo, BitArray copied) {
+			boolean isOldFNP = _destination.isOldFNP();
 			try {
-				MessageItem item = _destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, copied, _prb.getPacket(packetNo), realTime), _prb._packetSize, _ctr, SEND_TIMEOUT, false, new MyAsyncMessageCallback());
+				Message msg = DMT.createPacketTransmit(_uid, packetNo, copied, _prb.getPacket(packetNo), realTime);
+				MyAsyncMessageCallback cb = new MyAsyncMessageCallback(isOldFNP);
+				MessageItem item;
+				if(!isOldFNP) {
+					// Everything is throttled.
+					item = _destination.sendAsync(msg, cb, _ctr);
+				} else {
+					item = _destination.sendThrottledMessage(msg, _prb._packetSize, _ctr, SEND_TIMEOUT, false, cb);
+				}
 				synchronized(itemsPending) {
 					itemsPending.add(item);
 				}
@@ -208,7 +231,7 @@ public class BlockTransmitter {
 		
 	}
 	
-	public BlockTransmitter(MessageCore usm, Ticker ticker, PeerContext destination, long uid, PartiallyReceivedBlock source, ByteCounter ctr, ReceiverAbortHandler abortHandler, BlockTransmitterCompletion callback, boolean realTime) {
+	public BlockTransmitter(MessageCore usm, Ticker ticker, PeerContext destination, long uid, PartiallyReceivedBlock source, ByteCounter ctr, ReceiverAbortHandler abortHandler, BlockTransmitterCompletion callback, boolean realTime, BlockTimeCallback blockTimes) {
 		this.realTime = realTime;
 		_ticker = ticker;
 		_executor = _ticker.getExecutor();
@@ -229,6 +252,7 @@ public class BlockTransmitter {
 			// Will throw on running
 		}
 		throttle = _destination.getThrottle();
+		this.blockTimeCallback = blockTimes;
 		if(logMINOR) Logger.minor(this, "Starting block transmit for "+uid+" to "+destination.shortToString()+" realtime="+realTime+" throttle="+throttle);
 	}
 
@@ -247,6 +271,7 @@ public class BlockTransmitter {
 					Future fail;
 					synchronized(_senderThread) {
 						if(_completed) return;
+						boolean hadSendCompletion = _receivedSendCompletion;
 						if(!_receivedSendCompletion) {
 							_receivedSendCompletion = true;
 							_receivedSendSuccess = false;
@@ -254,11 +279,17 @@ public class BlockTransmitter {
 						//SEND_TIMEOUT (one minute) after all packets have been transmitted, terminate the send.
 						if(_failed) {
 							// Already failed, we were just waiting for the acknowledgement sendAborted.
-							Logger.error(this, "Terminating send after failure on "+this);
-							abortReason = "Already failed and no acknowledgement";
+							if(!hadSendCompletion) {
+								Logger.warning(this, "Terminating send after failure on "+this);
+								abortReason = "Already failed and no acknowledgement";
+							} else {
+								// Waiting for transfers maybe???
+								if(logMINOR) Logger.minor(this, "Trying to terminate send after timeout");
+								abortReason = "Already failed";
+							}
 						} else {
 							timeString=TimeUtil.formatTime((System.currentTimeMillis() - timeAllSent), 2, true);
-							Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_destination.getSocketHandler()+" as we haven't heard from receiver in "+timeString+ '.');
+							Logger.warning(this, "Terminating send "+_uid+" to "+_destination+" from "+_destination.getSocketHandler()+" as we haven't heard from receiver in "+timeString+ '.');
 							abortReason = "Haven't heard from you (receiver) in "+timeString;
 						}
 						fail = maybeFail(RetrievalException.RECEIVER_DIED, abortReason);
@@ -425,7 +456,7 @@ public class BlockTransmitter {
 	
 	private void sendAllSentNotification() {
 		try {
-			_usm.send(_destination, DMT.createAllSent(_uid), _ctr);
+			_usm.send(_destination, DMT.createAllSent(_uid, realTime), _ctr);
 		} catch (NotConnectedException e) {
 			Logger.normal(this, "disconnected for allSent()");
 		}
@@ -565,9 +596,14 @@ public class BlockTransmitter {
 		Future fail;
 		synchronized(_senderThread) {
 			_receivedSendCompletion = true; // effectively
+			blockSendsPending = 0; // effectively
+			_sentSendAborted = true; // effectively
 			fail = maybeFail(RetrievalException.SENDER_DISCONNECTED, "Sender disconnected");
 		}
 		fail.execute();
+		// Sometimes disconnect doesn't clear the message queue.
+		// Since we are cancelling the transfer, we need to unqueue the messages.
+		cancelItemsPending();
 	}
 	
 	private void onAborted(int reason, String description) {
@@ -669,7 +705,10 @@ public class BlockTransmitter {
 
 	private class MyAsyncMessageCallback implements AsyncMessageCallback {
 
-		MyAsyncMessageCallback() {
+		final boolean isOldFNP;
+		
+		MyAsyncMessageCallback(boolean isOldFNP) {
+			this.isOldFNP = isOldFNP;
 			synchronized(_senderThread) {
 				blockSendsPending++;
 			}
@@ -683,37 +722,64 @@ public class BlockTransmitter {
 		}
 
 		public void acknowledged() {
-			complete();
+			complete(false);
 		}
 
 		public void disconnected() {
 			// FIXME kill transfer
-			complete();
+			complete(true);
 		}
 
 		public void fatalError() {
 			// FIXME kill transfer
-			complete();
+			complete(true);
 		}
 		
-		private void complete() {
+		private void complete(boolean failed) {
 			if(logMINOR) Logger.minor(this, "Completed send on a block for "+BlockTransmitter.this);
-			boolean success;
+			boolean success = false;
+			long now = System.currentTimeMillis();
+			boolean callCallback = false;
+			long delta = -1;
 			synchronized(_senderThread) {
 				if(completed) return;
 				completed = true;
+				if(lastSentPacket > 0) {
+					delta = now - lastSentPacket;
+					int threshold = (realTime ? BlockReceiver.RECEIPT_TIMEOUT_REALTIME : BlockReceiver.RECEIPT_TIMEOUT_BULK);
+					if(delta > threshold)
+						Logger.warning(this, "Time between packets on "+BlockTransmitter.this+" : "+TimeUtil.formatTime(delta, 2, true)+" ( "+delta+"ms) realtime="+realTime);
+					else if(delta > threshold / 5)
+						Logger.normal(this, "Time between packets on "+BlockTransmitter.this+" : "+TimeUtil.formatTime(delta, 2, true)+" ( "+delta+"ms) realtime="+realTime);
+					else if(logMINOR) 
+						Logger.minor(this, "Time between packets on "+BlockTransmitter.this+" : "+TimeUtil.formatTime(delta, 2, true)+" ( "+delta+"ms) realtime="+realTime);
+				}
+				lastSentPacket = now;
 				blockSendsPending--;
 				if(logMINOR) Logger.minor(this, "Pending: "+blockSendsPending);
-				if(!maybeAllSent()) return;
-				if(!maybeComplete()) return;
-				success = _receivedSendSuccess;
+				if(maybeAllSent()) {
+					if(maybeComplete()) {
+						callCallback = true;
+						success = _receivedSendSuccess;
+					}
+				}
 			}
-			callCallback(success);
+			if((!isOldFNP) && (!failed))
+				// Everything is throttled, but payload is not reported.
+				_ctr.sentPayload(PACKET_SIZE);
+			if(callCallback) {
+				callCallback(success);
+			}
+			if(delta > 0 && blockTimeCallback != null) {
+				blockTimeCallback.blockTime(delta, realTime);
+			}
 		}
 
 	};
 	
 	private int blockSendsPending = 0;
+	
+	private long lastSentPacket = -1;
 	
 	private static MedianMeanRunningAverage avgTimeTaken = new MedianMeanRunningAverage();
 	

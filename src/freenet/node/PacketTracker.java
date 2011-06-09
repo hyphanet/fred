@@ -514,8 +514,11 @@ public class PacketTracker {
 	 * So that we don't end up sending packets too late when overloaded,
 	 * and get horrible problems such as asking to resend packets which
 	 * haven't been sent yet.
+	 * @return True if there were any valid acks (acks for packets that haven't
+	 * already been acked).
 	 */
-	public synchronized void acknowledgedPackets(int[] seqNos) {
+	public synchronized boolean acknowledgedPackets(int[] seqNos) {
+		boolean validAck = false;
 		// FIXME locking: can we just sync on the first part, and not the callbacks? 
 		// acknowledgedPacket() only sync's on removeAckRequest, but as mentioned above we need to do a bit more...
 		AsyncMessageCallback[][] callbacks = new AsyncMessageCallback[seqNos.length][];
@@ -524,7 +527,7 @@ public class PacketTracker {
 			if(logMINOR)
 				Logger.minor(this, "Acknowledged packet: " + realSeqNo);
 			try {
-				removeAckRequest(realSeqNo);
+				validAck |= removeAckRequest(realSeqNo);
 			} catch(UpdatableSortedLinkedListKilledException e) {
 				// Ignore, we are processing an incoming packet
 			}
@@ -533,12 +536,14 @@ public class PacketTracker {
 			callbacks[i] = sentPacketsContents.getCallbacks(realSeqNo);
 			byte[] buf = sentPacketsContents.get(realSeqNo);
 			long timeAdded = sentPacketsContents.getTime(realSeqNo);
-			if(sentPacketsContents.remove(realSeqNo))
+			if(sentPacketsContents.remove(realSeqNo)) {
+				validAck = true;
 				if(buf.length > Node.PACKET_SIZE) {
 					PacketThrottle throttle = pn.getThrottle();
 					throttle.notifyOfPacketAcknowledged(1024);
 					throttle.setRoundTripTime(System.currentTimeMillis() - timeAdded);
 				}
+			}
 			if(logMINOR)
 				Logger.minor(this, "Removed ack request, callbacks "+(callbacks[i] == null ? "(null)" : callbacks[i].length));
 		}
@@ -558,19 +563,21 @@ public class PacketTracker {
 		} catch(BlockedTooLongException e) {
 			// Ignore, will come up again. In any case it's rather unlikely...
 		}
+		return validAck;
 	}
 
 	/**
 	 * Called when we have received a packet acknowledgement.
 	 * @param realSeqNo
 	 */
-	public void acknowledgedPacket(int realSeqNo) {
+	public boolean acknowledgedPacket(int realSeqNo) {
+		boolean validAck = false;
 		AsyncMessageCallback[] callbacks;
 		if(logMINOR)
 			Logger.minor(this, "Acknowledged packet: " + realSeqNo);
 		try {
 			synchronized(this) {
-				removeAckRequest(realSeqNo);
+				validAck |= removeAckRequest(realSeqNo);
 			}
 		} catch(UpdatableSortedLinkedListKilledException e) {
 			// Ignore, we are processing an incoming packet
@@ -580,12 +587,14 @@ public class PacketTracker {
 			Logger.minor(this, "Removed ack request, callbacks "+(callbacks == null ? "(null)" : callbacks.length));
 		byte[] buf = sentPacketsContents.get(realSeqNo);
 		long timeAdded = sentPacketsContents.getTime(realSeqNo);
-		if(sentPacketsContents.remove(realSeqNo))
+		if(sentPacketsContents.remove(realSeqNo)) {
+			validAck = true;
 			if(buf.length > Node.PACKET_SIZE) {
 				PacketThrottle throttle = pn.getThrottle();
 				throttle.notifyOfPacketAcknowledged(1024);
 				throttle.setRoundTripTime(System.currentTimeMillis() - timeAdded);
 			}
+		}
 		try {
 			wouldBlock(true);
 		} catch(BlockedTooLongException e) {
@@ -597,22 +606,27 @@ public class PacketTracker {
 			if(logMINOR)
 				Logger.minor(this, "Executed " + callbacks.length + " callbacks");
 		}
+		return validAck;
 	}
 
 	/**
 	 * Remove an ack request from the queue by packet number.
 	 * @throws UpdatableSortedLinkedListKilledException 
+	 * @return True if a packet was acked that has not previously been acked.
 	 */
-	private void removeAckRequest(int seqNo) throws UpdatableSortedLinkedListKilledException {
+	private boolean removeAckRequest(int seqNo) throws UpdatableSortedLinkedListKilledException {
 		QueuedAckRequest qr = null;
 
 		synchronized(ackRequestQueue) {
 			qr = ackRequestQueue.removeByKey(seqNo);
 		}
-		if(qr != null)
+		if(qr != null) {
 			qr.onAcked();
-		else
+			return true;
+		} else {
 			Logger.normal(this, "Removing ack request twice? Null on " + seqNo + " from " + pn.getPeer() + " (" + TimeUtil.formatTime((int) pn.averagePingTime(), 2, true) + " ping avg)");
+			return false;
+		}
 	}
 
 	/**
@@ -935,6 +949,17 @@ public class PacketTracker {
 		return earliestTime;
 	}
 
+	public long timeSendAcks() {
+		long earliestTime = Long.MAX_VALUE;
+		synchronized(ackQueue) {
+			if(!ackQueue.isEmpty()) {
+				QueuedAck qa = ackQueue.get(0);
+				earliestTime = qa.urgentTime;
+			}
+		}
+		return earliestTime;
+	}
+	
 	/**
 	 * @return The last sent new packet number.
 	 */

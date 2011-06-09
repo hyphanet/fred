@@ -21,6 +21,8 @@ class USKChecker extends BaseSingleFileFetcher {
 
 	final USKCheckerCallback cb;
 	private int dnfs;
+	
+	private long cooldownWakeupTime;
 
         private static volatile boolean logMINOR;
 	static {
@@ -34,9 +36,9 @@ class USKChecker extends BaseSingleFileFetcher {
 
 	USKChecker(USKCheckerCallback cb, ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent, boolean realTimeFlag) {
 		super(key, maxRetries, ctx, parent, false, realTimeFlag);
-                if(logMINOR)
-                    Logger.minor(USKChecker.class, "Created USKChecker for "+key);
 		this.cb = cb;
+        if(logMINOR)
+            Logger.minor(USKChecker.class, "Created USKChecker for "+key+" : "+this);
 	}
 	
 	@Override
@@ -45,6 +47,7 @@ class USKChecker extends BaseSingleFileFetcher {
 			container.activate(this, 1);
 			container.activate(cb, 1);
 		}
+		// No need to check from here since USKFetcher will be told anyway.
 		cb.onSuccess((ClientSSKBlock)block, context);
 	}
 
@@ -113,6 +116,20 @@ class USKChecker extends BaseSingleFileFetcher {
 	@Override
 	public short getPriorityClass(ObjectContainer container) {
 		return cb.getPriority();
+	}
+	
+	@Override
+	protected void onEnterFiniteCooldown(ClientContext context) {
+		cb.onEnterFiniteCooldown(context);
+	}
+
+	@Override
+	protected void notFoundInStore(ObjectContainer container,
+			ClientContext context) {
+		// Ran out of retries.
+		unregisterAll(container, context);
+		// Rest are non-fatal. If have DNFs, DNF, else network error.
+		cb.onDNF(context);
 	}
 
 }

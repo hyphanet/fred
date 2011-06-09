@@ -1372,7 +1372,7 @@ public class LocationManager implements ByteCounter {
 		for(int i=0;i<peers.length;i++) {
 			locs[i] = peers[i].getLocation();
 			if(indicateBackoff) {
-				if(peers[i].isRoutingBackedOff())
+				if(peers[i].isRoutingBackedOffEither())
 					locs[i] += 1;
 				else
 					locs[i] = -1 - locs[i];

@@ -67,15 +67,17 @@ public abstract class UIDTag {
 		return System.currentTimeMillis() - createdTime;
 	}
 	
-	public synchronized void addRoutedTo(PeerNode peer, boolean offeredKey) {
+	public synchronized boolean addRoutedTo(PeerNode peer, boolean offeredKey) {
+		if(logMINOR)
+			Logger.minor(this, "Routing to "+peer+" on "+this+(offeredKey ? " (offered)" : ""), new Exception("debug"));
 		if(routedTo == null) routedTo = new HashSet<PeerNode>();
 		routedTo.add(peer);
 		if(offeredKey) {
 			if(fetchingOfferedKeyFrom == null) fetchingOfferedKeyFrom = new HashSet<PeerNode>();
-			fetchingOfferedKeyFrom.add(peer);
+			return fetchingOfferedKeyFrom.add(peer);
 		} else {
 			if(currentlyRoutingTo == null) currentlyRoutingTo = new HashSet<PeerNode>();
-			currentlyRoutingTo.add(peer);
+			return currentlyRoutingTo.add(peer);
 		}
 	}
 
@@ -111,6 +113,7 @@ public abstract class UIDTag {
 			if(!mustUnlock()) return;
 			noRecordUnlock = this.noRecordUnlock;
 		}
+		if(logMINOR) Logger.minor(this, "Unlocking "+this);
 		innerUnlock(noRecordUnlock);
 	}
 	
@@ -127,6 +130,7 @@ public abstract class UIDTag {
 			if(!mustUnlock()) return;
 			noRecordUnlock = this.noRecordUnlock;
 		}
+		if(logMINOR) Logger.minor(this, "Unlocking "+this);
 		innerUnlock(noRecordUnlock);
 	}
 	
@@ -206,7 +210,7 @@ public abstract class UIDTag {
 					for(PeerNode pn : currentlyRoutingTo) {
 						if(handlingTimeouts.contains(pn)) {
 							if(logMINOR) Logger.debug(this, "Still waiting for "+pn.shortToString()+" but expected because handling timeout in unlockHandler - will reassign to self to resolve timeouts");
-							continue;
+							break;
 						}
 						expected = false;
 					}
@@ -229,7 +233,7 @@ public abstract class UIDTag {
 					for(PeerNode pn : fetchingOfferedKeyFrom) {
 						if(handlingTimeouts.contains(pn)) {
 							if(logMINOR) Logger.debug(this, "Still waiting for "+pn.shortToString()+" but expected because handling timeout in unlockHandler - will reassign to self to resolve timeouts");
-							continue;
+							break;
 						}
 						expected = false;
 					}
@@ -266,7 +270,10 @@ public abstract class UIDTag {
 		unlockHandler(false);
 	}
 
-	public String toString() {
+	// LOCKING: Synchronized because of access to currentlyRoutingTo i.e. to avoid ConcurrentModificationException.
+	// UIDTag lock is always taken last anyway so this is safe.
+	// Also it is only used in logging anyway.
+	public synchronized String toString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append(super.toString());
 		sb.append(":");
@@ -277,8 +284,15 @@ public abstract class UIDTag {
 			sb.append(" (unlocked)");
 		if(noRecordUnlock)
 			sb.append(" (don't record unlock)");
-		if(currentlyRoutingTo != null)
-			sb.append(" (routing to ").append(currentlyRoutingTo.size()).append(")");
+		if(currentlyRoutingTo != null && !currentlyRoutingTo.isEmpty()) {
+			sb.append(" (routing to ");
+			for(PeerNode pn : currentlyRoutingTo) {
+				sb.append(pn.shortToString());
+				sb.append(",");
+			}
+			sb.setLength(sb.length()-1);
+			sb.append(")");
+		}
 		if(fetchingOfferedKeyFrom != null)
 			sb.append(" (fetch offered keys from ").append(fetchingOfferedKeyFrom.size()).append(")");
 		return sb.toString();
@@ -293,6 +307,19 @@ public abstract class UIDTag {
 		if(handlingTimeouts == null)
 			handlingTimeouts = new HashSet<PeerNode>();
 		handlingTimeouts.add(next);
+	}
+
+	private long loggedStillPresent;
+	private int LOGGED_STILL_PRESENT_INTERVAL = 60*1000;
+	
+	public void maybeLogStillPresent(long now, Long uid) {
+		if(now - createdTime > Node.TIMEOUT) {
+			synchronized(this) {
+				if(now - loggedStillPresent < LOGGED_STILL_PRESENT_INTERVAL) return;
+				loggedStillPresent = now;
+			}
+			logStillPresent(uid);
+		}
 	}
 
 }

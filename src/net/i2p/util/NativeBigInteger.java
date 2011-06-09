@@ -17,20 +17,17 @@ import java.math.BigInteger;
 import java.net.URL;
 import java.util.Random;
 
-import freenet.support.HexUtil;
-import freenet.support.Logger;
 import freenet.support.CPUInformation.AMDCPUInfo;
 import freenet.support.CPUInformation.CPUID;
 import freenet.support.CPUInformation.CPUInfo;
 import freenet.support.CPUInformation.IntelCPUInfo;
 import freenet.support.CPUInformation.UnknownCPUException;
-import freenet.support.io.Closer;
 
 /**
  * <p>BigInteger that takes advantage of the jbigi library for the modPow operation,
  * which accounts for a massive segment of the processing cost of asymmetric
  * crypto. It also takes advantage of the jbigi library for converting a BigInteger
- * value to a double. Sun's implementation of the 'doubleValue()' method is _very_ lousy.
+ * value to a double. Sun/Oracle's implementation of the 'doubleValue()' method is _very_ lousy.
  *
  * The jbigi library itself is basically just a JNI wrapper around the
  * GMP library - a collection of insanely efficient routines for dealing with
@@ -104,6 +101,7 @@ public class NativeBigInteger extends BigInteger {
 	 * it easier for other systems to reuse this class
 	 */
 	private static final boolean _doLog = true;
+	private final static String JBIGI_OPTIMIZATION_ARM = "arm";
 	private final static String JBIGI_OPTIMIZATION_K6 = "k6";
 	private final static String JBIGI_OPTIMIZATION_K6_2 = "k62";
 	private final static String JBIGI_OPTIMIZATION_K6_3 = "k63";
@@ -128,12 +126,25 @@ public class NativeBigInteger extends BigInteger {
 	 * @return A string containing the CPU-type or null if CPU type is unknown
 	 */
 	private static String resolveCPUType() {
+
 		try {
+			
+			String _os_arch = System.getProperty("os.arch").toLowerCase();
+
 			if(System.getProperty("os.arch").toLowerCase().matches("(i?[x0-9]86_64|amd64)"))
+			{
 				return JBIGI_OPTIMIZATION_X86_64;
-			else if(System.getProperty("os.arch").toLowerCase().matches("(ppc)")) {
+				
+			} else if(_os_arch.matches("(arm)"))
+			{
+			    System.out.println("Detected ARM!");
+				return JBIGI_OPTIMIZATION_ARM;
+				
+			} else if(_os_arch.matches("(ppc)"))
+			{
 				System.out.println("Detected PowerPC!");
 				return JBIGI_OPTIMIZATION_PPC;
+				
 			} else {
 				CPUInfo c = CPUID.getInfo();
 				if(c instanceof AMDCPUInfo) {
@@ -253,7 +264,7 @@ public class NativeBigInteger extends BigInteger {
          * @param integer
          */
 	public NativeBigInteger(BigInteger integer) {
-		//Now, why doesn't sun provide a constructor
+		//Now, why doesn't Sun/Oracle provide a constructor
 		//like this one in BigInteger?
 		this(integer.toByteArray());
 	}
@@ -274,23 +285,8 @@ public class NativeBigInteger extends BigInteger {
 	}
 
 	@Override
-	public String toString(int radix) {
-		if(radix == 16)
-			return toHexString();
-		return super.toString(radix);
-	}
-
-        /**
-         *
-         * @return
-         */
-        public String toHexString() {
-		byte[] buf = toByteArray();
-		return HexUtil.bytesToHex(buf);
-	}
-
-	@Override
 	public double doubleValue() {
+		// TODO Recent tests show that Java version is quicker. Maybe drop?
 		if(_nativeOk)
 			return nativeDoubleValue(toByteArray());
 		else
@@ -409,7 +405,7 @@ public class NativeBigInteger extends BigInteger {
 			if(ule.toString().toLowerCase().indexOf("not permitted") == -1)
 				throw ule;
 		} finally {
-			Closer.close(fos);
+			if (fos != null) { try { fos.close(); } catch (IOException e) { /* ignore */ } }
 			f.delete();
 		}
 
@@ -453,17 +449,14 @@ public class NativeBigInteger extends BigInteger {
 			} finally {
 				if(temp != null) temp.delete();
 			}
-			Logger.error(NativeBigInteger.class, "Can't load from " + System.getProperty("java.io.tmpdir"));
-			System.err.println("Can't load from " + System.getProperty("java.io.tmpdir"));
+			System.err.println("net.i2p.util.NativeBigInteger: Can't load from " + System.getProperty("java.io.tmpdir"));
 			temp = new File("jbigi-lib.tmp");
 			if(tryLoadResource(temp, resource))
 				return true;
 		} catch(Exception fnf) {
-			Logger.error(NativeBigInteger.class, "Error reading jbigi resource", fnf);
-			System.err.println("Error reading jbigi resource");
+			System.err.println("net.i2p.util.NativeBigInteger: Error reading jbigi resource");
 		} catch(UnsatisfiedLinkError ule) {
-			Logger.error(NativeBigInteger.class, "Library " + resourceName + " is not appropriate for this system.");
-			System.err.println("Library " + resourceName + " is not appropriate for this system.");
+			System.err.println("net.i2p.util.NativeBigInteger: Library " + resourceName + " is not appropriate for this system.");
 		} finally {
 			if(temp != null) temp.delete();
 		}
@@ -472,7 +465,12 @@ public class NativeBigInteger extends BigInteger {
 	}
 
 	private static final String getResourceName(boolean optimized) {
-		String pname = NativeBigInteger.class.getPackage().getName().replace('.', '/');
+		String name = NativeBigInteger.class.getName();
+		int i = name.lastIndexOf('.');
+		if (i != -1) {
+			name = name.substring(0, i);
+		}
+		String pname = name.replace('.', '/');
 		String pref = getLibraryPrefix();
 		String middle = getMiddleName(optimized);
 		String suff = getLibrarySuffix();

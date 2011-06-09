@@ -88,6 +88,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	// Theme 
 	private THEME cssTheme;
 	private File cssOverride;
+	private boolean sendAllThemes;
 	private boolean advancedModeEnabled;
 	private final PageMaker pageMaker;
 	
@@ -112,6 +113,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	private volatile boolean fProxyWebPushingEnabled;	// ugh?
 	private volatile boolean fproxyHasCompletedWizard;	// hmmm..
 	private volatile boolean disableProgressPage;
+	
+	private boolean finishedStartup;
 	
 	/** The PushDataManager handles all the pushing tasks*/
 	public PushDataManager pushDataManager; 
@@ -254,9 +257,22 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 					throw new InvalidConfigValueException(l10n("cssOverrideNotInUploads", "filename", tmp.toString()));
 				else if(!tmp.canRead() || !tmp.isFile())
 					throw new InvalidConfigValueException(l10n("cssOverrideCantRead", "filename", tmp.toString()));
+				File parent = tmp.getParentFile();
+				String s = parent.toString();
+				// Basic sanity check.
+				// Prevents user from specifying root dir.
+				// They can still shoot themselves in the foot, but only when developing themes/using custom themes.
+				// Because of the .. check above, any malicious thing cannot break out of the dir anyway.
+				if(parent.getParentFile() == null)
+					throw new InvalidConfigValueException(l10n("cssOverrideCantUseRootDir", "filename", parent.toString()));
 				cssOverride = tmp.getAbsoluteFile();
 			}
-			pageMaker.setOverride(cssOverride);
+			if(cssOverride == null)
+				pageMaker.setOverride(null);
+			else {
+				pageMaker.setOverride(StaticToadlet.OVERRIDE_URL + cssOverride.getName());
+			}
+			
 		}
 	}
 	private class FProxyEnabledCallback extends BooleanCallback  {
@@ -425,6 +441,21 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				new FProxyCSSNameCallback());
 		fproxyConfig.register("CSSOverride", "", configItemOrder++, true, false, "SimpleToadletServer.cssOverride", "SimpleToadletServer.cssOverrideLong",
 				new FProxyCSSOverrideCallback());
+		fproxyConfig.register("sendAllThemes", false, configItemOrder++, true, false, "SimpleToadletServer.sendAllThemes", "SimpleToadletServer.sendAllThemesLong",
+				new BooleanCallback() {
+
+					@Override
+					public Boolean get() {
+						return sendAllThemes;
+					}
+
+					@Override
+					public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+						sendAllThemes = val;
+					}
+				});
+		sendAllThemes = fproxyConfig.getBoolean("sendAllThemes");
+		
 		fproxyConfig.register("advancedModeEnabled", false, configItemOrder++, true, false, "SimpleToadletServer.advancedMode", "SimpleToadletServer.advancedModeLong",
 				new FProxyAdvancedModeEnabledCallback(this));
 		fproxyConfig.register("enableExtendedMethodHandling", false, configItemOrder++, true, false, "SimpleToadletServer.enableExtendedMethodHandling", "SimpleToadletServer.enableExtendedMethodHandlingLong",
@@ -638,9 +669,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 		if(!fproxyConfig.getOption("CSSOverride").isDefault()) {
 			cssOverride = new File(fproxyConfig.getString("CSSOverride"));
-			pageMaker.setOverride(cssOverride);
-		} else
+			pageMaker.setOverride(StaticToadlet.OVERRIDE_URL + cssOverride.getName());
+		} else {
 			cssOverride = null;
+			pageMaker.setOverride(null);
+		}
 		
 		this.advancedModeEnabled = fproxyConfig.getBoolean("advancedModeEnabled");
 		toadlets = new LinkedList<ToadletElement>();
@@ -735,6 +768,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			}
 			
 		});
+		synchronized(this) {
+			finishedStartup = true;
+		}
 	}
 	
 	public void register(Toadlet t, String menu, String urlPrefix, boolean atFront, boolean fullOnly) {
@@ -827,8 +863,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		} catch (SocketException e1) {
 			Logger.error(this, "Could not set so-timeout to 500ms; on-the-fly disabling of the interface will not work");
 		}
+		boolean finishedStartup = false;
 		while(true) {
 			synchronized(this) {
+				if((!finishedStartup) && this.finishedStartup)
+					finishedStartup = true;
 				if(myThread == null) return;
 			}
 			Socket conn = networkInterface.accept();
@@ -838,7 +877,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
                 continue; // timeout
             if(logMINOR)
                 Logger.minor(this, "Accepted connection");
-            SocketHandler sh = new SocketHandler(conn);
+            SocketHandler sh = new SocketHandler(conn, finishedStartup);
             sh.start();
 		}
 	}
@@ -846,13 +885,18 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	public class SocketHandler implements PrioRunnable {
 
 		Socket sock;
+		final boolean finishedStartup;
 		
-		public SocketHandler(Socket conn) {
+		public SocketHandler(Socket conn, boolean finishedStartup) {
 			this.sock = conn;
+			this.finishedStartup = finishedStartup;
 		}
 
 		void start() {
-			executor.execute(this, "HTTP socket handler@"+hashCode());
+			if(finishedStartup)
+				executor.execute(this, "HTTP socket handler@"+hashCode());
+			else
+				new Thread(this).start();
 		}
 		
 		public void run() {
@@ -884,6 +928,10 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 
 	public void setCSSName(THEME theme) {
 		this.cssTheme = theme;
+	}
+
+	public synchronized boolean sendAllThemes() {
+		return this.sendAllThemes;
 	}
 
 	public synchronized boolean isAdvancedModeEnabled() {
@@ -1013,6 +1061,10 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 
 	public REFILTER_POLICY getReFilterPolicy() {
 		return refilterPolicy;
+	}
+
+	public File getOverrideFile() {
+		return cssOverride;
 	}
 
 }

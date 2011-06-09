@@ -12,6 +12,12 @@ import junit.framework.TestCase;
 
 public class NewPacketFormatTest extends TestCase {
 	
+	public void setUp() {
+		// Because we don't call maybeSendPacket, the packet sent times are not updated,
+		// so lets turn off the keepalives.
+		NewPacketFormat.DO_KEEPALIVES = false;
+	}
+	
 	public void testEmptyCreation() throws BlockedTooLongException {
 		NewPacketFormat npf = new NewPacketFormat(null, 0, 0);
 		PeerMessageQueue pmq = new PeerMessageQueue(new NullBasePeerNode());
@@ -52,7 +58,7 @@ public class NewPacketFormatTest extends TestCase {
 		senderNode.currentKey = senderKey;
 		SessionKey receiverKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 
-		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0, false, false));
+		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0, false, false), 1024);
 
 		NPFPacket fragment1 = sender.createPacket(512, senderQueue, senderKey, false);
 		assertEquals(1, fragment1.getFragments().size());
@@ -76,7 +82,7 @@ public class NewPacketFormatTest extends TestCase {
 		receiver.createPacket(512, senderQueue, receiverKey, false); //Sent, but lost
 
 		try {
-			Thread.sleep(1000); //RTT is 250ms by default since there is no PeerNode to track it
+			Thread.sleep(2000); //RTT is 250ms by default since there is no PeerNode to track it
 		} catch (InterruptedException e) { fail(); }
 
 		NPFPacket resend1 = sender.createPacket(512, senderQueue, senderKey, false);
@@ -100,7 +106,7 @@ public class NewPacketFormatTest extends TestCase {
 		SessionKey senderKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 		SessionKey receiverKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 
-		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0, false, false));
+		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0, false, false), 1024);
 
 		NPFPacket fragment1 = sender.createPacket(512, senderQueue, senderKey, false);
 		assertEquals(1, fragment1.getFragments().size());
@@ -125,7 +131,7 @@ public class NewPacketFormatTest extends TestCase {
 		SessionKey senderKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 		SessionKey receiverKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 
-		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0, false, false));
+		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0, false, false), 1024);
 
 		NPFPacket fragment1 = sender.createPacket(512, senderQueue, senderKey, false);
 		assertEquals(1, fragment1.getFragments().size());
@@ -148,7 +154,7 @@ public class NewPacketFormatTest extends TestCase {
 		SessionKey senderKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 		SessionKey receiverKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 
-		senderQueue.queueAndEstimateSize(new MessageItem(new byte[128], null, false, null, (short) 0, false, false));
+		senderQueue.queueAndEstimateSize(new MessageItem(new byte[128], null, false, null, (short) 0, false, false), 1024);
 
 		Thread.sleep(PacketSender.MAX_COALESCING_DELAY*2);
 		NPFPacket packet1 = sender.createPacket(512, senderQueue, senderKey, false);
@@ -170,7 +176,8 @@ public class NewPacketFormatTest extends TestCase {
 			
 			boolean shouldSend = true;
 			
-			public MessageItem makeLoadStats(boolean realtime, boolean highPriority) {
+			@Override
+			public MessageItem makeLoadStats(boolean realtime, boolean highPriority, boolean noRemember) {
 				return new MessageItem(loadMessage, null, null, (short)0);
 			}
 
@@ -201,6 +208,7 @@ public class NewPacketFormatTest extends TestCase {
 				}
 			}
 			
+			@Override
 			public void processDecryptedMessage(byte[] data, int offset, int length, int overhead) {
 				Message m = Message.decodeMessageFromPacket(data, offset, length, this, overhead);
 				if(m != null) {
@@ -212,7 +220,7 @@ public class NewPacketFormatTest extends TestCase {
 		NewPacketFormat receiver = new NewPacketFormat(receiverNode, 0, 0);
 		SessionKey receiverKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 
-		senderQueue.queueAndEstimateSize(new MessageItem(new byte[128], null, false, null, (short) 0, false, false));
+		senderQueue.queueAndEstimateSize(new MessageItem(new byte[128], null, false, null, (short) 0, false, false), 1024);
 
 		Thread.sleep(PacketSender.MAX_COALESCING_DELAY*2);
 		NPFPacket packet1 = sender.createPacket(512, senderQueue, senderKey, false);
@@ -223,9 +231,11 @@ public class NewPacketFormatTest extends TestCase {
 		}
 		LinkedList<byte[]> finished = receiver.handleDecryptedPacket(packet1, receiverKey);
 		assertEquals(2, finished.size());
+		DecodingMessageGroup decoder = receiverNode.startProcessingDecryptedMessages(finished.size());
 		for(byte[] buffer : finished) {
-			receiverNode.processDecryptedMessage(buffer, 0, buffer.length, 0);
+			decoder.processDecryptedMessage(buffer, 0, buffer.length, 0);
 		}
+		decoder.complete();
 		
 		synchronized(gotMessage) {
 			assert(gotMessage.value);
@@ -239,7 +249,8 @@ public class NewPacketFormatTest extends TestCase {
 		final SessionKey senderKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 		NullBasePeerNode senderNode = new NullBasePeerNode() {
 			
-			public MessageItem makeLoadStats(boolean realtime, boolean highPriority) {
+			@Override
+			public MessageItem makeLoadStats(boolean realtime, boolean highPriority, boolean noRemember) {
 				return new MessageItem(loadMessage, null, false, null, (short) 0, false, false);
 			}
 
@@ -255,7 +266,7 @@ public class NewPacketFormatTest extends TestCase {
 		NewPacketFormat receiver = new NewPacketFormat(receiverNode, 0, 0);
 		SessionKey receiverKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 
-		senderQueue.queueAndEstimateSize(new MessageItem(new byte[128], null, false, null, (short) 0, false, true));
+		senderQueue.queueAndEstimateSize(new MessageItem(new byte[128], null, false, null, (short) 0, false, true), 1024);
 
 		Thread.sleep(PacketSender.MAX_COALESCING_DELAY*2);
 		NPFPacket packet1 = sender.createPacket(512, senderQueue, senderKey, false);
@@ -272,7 +283,8 @@ public class NewPacketFormatTest extends TestCase {
 		final MutableBoolean gotMessage = new MutableBoolean();
 		NullBasePeerNode senderNode = new NullBasePeerNode() {
 			
-			public MessageItem makeLoadStats(boolean realtime, boolean highPriority) {
+			@Override
+			public MessageItem makeLoadStats(boolean realtime, boolean highPriority, boolean noRemember) {
 				return new MessageItem(loadMessage, null, null, (short)0);
 			}
 
@@ -300,7 +312,7 @@ public class NewPacketFormatTest extends TestCase {
 		SessionKey senderKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 		SessionKey receiverKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 
-		senderQueue.queueAndEstimateSize(new MessageItem(new byte[128], null, false, null, (short) 0, false, true));
+		senderQueue.queueAndEstimateSize(new MessageItem(new byte[128], null, false, null, (short) 0, false, true), 1024);
 
 		Thread.sleep(PacketSender.MAX_COALESCING_DELAY*2);
 		NPFPacket packet1 = sender.createPacket(512, senderQueue, senderKey, false);

@@ -164,7 +164,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 						next=node.peers.getRandomPeer(source);
 					} else {
 						next = node.peers.closerPeer(source, routedTo, target, true, node.isAdvancedModeEnabled(), -1,
-						        null, null, htl, 0, source == null);
+						        null, null, htl, 0, source == null, false);
 					}
 					
 					if (next==null) {
@@ -446,14 +446,14 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 			PeerNode target=processing;
 			double randomTarget=node.random.nextDouble();
 			HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
-			PeerNode next = node.peers.closerPeer(target, nodesRoutedTo, randomTarget, true, false, -1, null, null, node.maxHTL(), 0, target == null);
+			PeerNode next = node.peers.closerPeer(target, nodesRoutedTo, randomTarget, true, false, -1, null, null, node.maxHTL(), 0, target == null, false);
 			while (next!=null && target.isRoutable() && !processingRace) {
 				nodesRoutedTo.add(next);
 				//the order is not that important, but for all connected peers try to ping 'target'
 				blockingUpdatePingRecord(target, next);
 				//Since we are causing traffic to 'target'
 				betweenPingSleep(target);
-				next = node.peers.closerPeer(target, nodesRoutedTo, randomTarget, true, false, -1, null, null, node.maxHTL(), 0, target == null);
+				next = node.peers.closerPeer(target, nodesRoutedTo, randomTarget, true, false, -1, null, null, node.maxHTL(), 0, target == null, false);
 			}
 		}
 		boolean didAnything;
@@ -511,7 +511,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		
 		try {
 			//store secret in target
-			target.sendSync(DMT.createFNPStoreSecret(uid, secret), null);
+			target.sendSync(DMT.createFNPStoreSecret(uid, secret), null, false);
 			
 			//Wait for an accepted or give up
 			MessageFilter mfAccepted = MessageFilter.create().setSource(target).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPAccepted);
@@ -524,7 +524,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 			}
 			
 			//next... send a secretping through next to target
-			next.sendSync(DMT.createFNPSecretPing(uid, target.getLocation(), htl, dawn, 0, target.identity), null);
+			next.sendSync(DMT.createFNPSecretPing(uid, target.getLocation(), htl, dawn, 0, target.identity), null, false);
 			
 			//wait for a response; SecretPong, RejectLoop, or timeout
 			MessageFilter mfPong = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SECRETPONG_TIMEOUT).setType(DMT.FNPSecretPong);
@@ -545,6 +545,8 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		} catch (NotConnectedException e) {
 			Logger.normal(this, "one party left during connectivity test: "+e);
 		} catch (DisconnectedException e) {
+			Logger.normal(this, "one party left during connectivity test: "+e);
+		} catch (SyncSendWaitedTooLongException e) {
 			Logger.normal(this, "one party left during connectivity test: "+e);
 		} finally {
 			if (success) {
@@ -582,10 +584,10 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 	private HashSet<PeerNode> getAllConnectedPeers() {
 		double randomTarget=node.random.nextDouble();
 		HashSet<PeerNode> connectedPeers = new HashSet<PeerNode>();
-		PeerNode next = node.peers.closerPeer(null, connectedPeers, randomTarget, true, false, -1, null, null, node.maxHTL(), 0, true);
+		PeerNode next = node.peers.closerPeer(null, connectedPeers, randomTarget, true, false, -1, null, null, node.maxHTL(), 0, true, false);
 		while (next!=null) {
 			connectedPeers.add(next);
-			next = node.peers.closerPeer(null, connectedPeers, randomTarget, true, false, -1, null, null, node.maxHTL(), 0, true);
+			next = node.peers.closerPeer(null, connectedPeers, randomTarget, true, false, -1, null, null, node.maxHTL(), 0, true, false);
 		}
 		return connectedPeers;
 	}

@@ -725,9 +725,9 @@ outer:		while(true) {
 findloop:		while(true) {
 					int last = (int) blocks;
 outer:				while(true) {
-						last = freeBlocksCache.lastOne(last-1);
-						if(last == -1) break;
 						synchronized(this) {
+							last = freeBlocksCache.lastOne(last-1);
+							if(last == -1) break;
 							if(notCommittedBlobs.containsKey((long)last)) continue;
 						}
 						query = container.query();
@@ -751,7 +751,9 @@ outer:				while(true) {
 						Logger.error(this, "Last slot has no tag! index "+last);
 						PersistentBlobTempBucketTag tag = new PersistentBlobTempBucketTag(PersistentBlobTempBucketFactory.this, last);
 						container.store(tag);
-						freeBlocksCache.setBit((int)last, false);
+						synchronized(this) {
+							freeBlocksCache.setBit((int)last, false);
+						}
 						continue;
 					}
 				if(lastCommitted == -1) {
