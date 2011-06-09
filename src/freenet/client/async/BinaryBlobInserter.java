@@ -114,7 +114,8 @@ public class BinaryBlobInserter implements ClientPutState {
 			this.blockNum = i;
 		}
 
-		public void onSuccess(ObjectContainer container, ClientContext context) {
+		@Override
+		public void onSuccess(Object keyNum, ObjectContainer container, ClientContext context) {
 			synchronized(this) {
 				if(inserters[blockNum] == null) return;
 				inserters[blockNum] = null;
@@ -162,7 +163,7 @@ public class BinaryBlobInserter implements ClientPutState {
 				if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" / "+consecutiveRNFsCountAsSuccess);
 				if(consecutiveRNFs == consecutiveRNFsCountAsSuccess) {
 					if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" - counting as success");
-					onSuccess(container, context);
+					onSuccess(keyNum, container, context);
 					return;
 				}
 			} else
