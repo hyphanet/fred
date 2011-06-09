@@ -69,7 +69,8 @@ import freenet.support.io.NativeThread;
  * @author sdiz
  */
 public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetStore<T> {
-	/** Option for saving plainkey */
+	/** Option for saving plainkey. 
+	 * SECURITY: This should NEVER be enabled for a client-cache! */
 	private static final boolean OPTION_SAVE_PLAINKEY = false;
 	private static final int OPTION_MAX_PROBE = 5;
 
