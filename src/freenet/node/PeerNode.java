@@ -274,6 +274,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	/** Peer node public key; changing this means new noderef */
 	final DSAPublicKey peerPubKey;
+	final byte[] pubKeyHash;
+	final byte[] pubKeyHashHash;
 	private boolean isSignatureVerificationSuccessfull;
 	/** Incoming setup key. Used to decrypt incoming auth packets.
 	* Specifically: K_node XOR H(setupKey).
@@ -506,8 +508,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			sfs = fs.subset("dsaPubKey");
 			if(sfs == null || peerCryptoGroup == null)
 				throw new FSParseException("No dsaPubKey - very old reference?");
-			else
+			else {
 				this.peerPubKey = DSAPublicKey.create(sfs, peerCryptoGroup);
+				pubKeyHash = SHA256.digest(peerPubKey.asBytes());
+				pubKeyHashHash = SHA256.digest(pubKeyHash);
+			}
 
 			String signature = fs.get("sig");
 			if(!noSig) {
@@ -568,7 +573,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				throw new FSParseException(e);
 			}
 		} else {
-			identity = peerPubKey.asBytesHash();
+			identity = pubKeyHash;
 		}
 
 		if(identity == null)
