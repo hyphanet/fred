@@ -517,7 +517,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				try {
 					boolean failed = false;
 					if(signature == null || peerCryptoGroup == null || peerPubKey == null)
-						failed = false;
+						failed = true;
 					else {
 						fs.removeValue("sig");
 						String toVerify = fs.toOrderedString();
