@@ -1934,7 +1934,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	private String shortToString;
 	private void updateShortToString() {
-		shortToString = super.toString() + '@' + detectedPeer + '@' + HexUtil.bytesToHex(identity);
+		shortToString = super.toString() + '@' + detectedPeer + '@' + HexUtil.bytesToHex(pubKeyHash);
 	}
 
 	/**
@@ -3147,7 +3147,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			return true;
 		if(o instanceof PeerNode) {
 			PeerNode pn = (PeerNode) o;
-			return Arrays.equals(pn.identity, identity);
+			return Arrays.equals(pn.pubKeyHash, pubKeyHash);
 		} else
 			return false;
 	}
@@ -4154,6 +4154,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	public byte[] getIdentity() {
 		return identity;
+	}
+	
+	public byte[] getPubKeyHash() {
+		return pubKeyHash;
+	}
+
+	public byte[] getPubKeyHashHash() {
+		return pubKeyHashHash;
 	}
 
 	public boolean neverConnected() {

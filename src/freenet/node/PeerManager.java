@@ -529,7 +529,7 @@ public class PeerManager {
 		PeerNode pn = node.createNewDarknetNode(noderef, trust, visibility);
 		PeerNode[] peerList = myPeers;
 		for(int i = 0; i < peerList.length; i++) {
-			if(Arrays.equals(peerList[i].identity, pn.identity))
+			if(Arrays.equals(peerList[i].pubKeyHash, pn.pubKeyHash))
 				return;
 		}
 		addPeer(pn);

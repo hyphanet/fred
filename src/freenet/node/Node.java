@@ -5674,7 +5674,15 @@ public class Node implements TimeSkewDetectorCallback {
 		return opennet.crypto.myIdentity;
 	}
 
+	public byte[] getOpennetPubKeyHash() {
+		return opennet.crypto.myIdentity;
+	}
+
 	public byte[] getDarknetIdentity() {
+		return darknetCrypto.myIdentity;
+	}
+
+	public byte[] getDarknetPubKeyHash() {
 		return darknetCrypto.myIdentity;
 	}
 
