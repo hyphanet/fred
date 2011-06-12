@@ -2511,12 +2511,14 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			saveCompletedIdentifiersOffThread();
 		}
 
+		@Override
 		public void onEventDismiss() {
 			synchronized(completedRequestIdentifiers) {
 				completedRequestIdentifiers.remove(identifier);
 			}
 		}
 
+		@Override
 		public HTMLNode getEventHTMLText() {
 			String name = uri.getPreferredFilename();
 			HTMLNode text = new HTMLNode("div");
@@ -2526,6 +2528,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			return text;
 		}
 
+		@Override
 		public String getTitle() {
 			String title = null;
 			synchronized(events) {

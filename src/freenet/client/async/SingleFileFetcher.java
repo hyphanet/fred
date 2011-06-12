@@ -1496,10 +1496,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			if(logMINOR) Logger.minor(this, "Created "+this+" for "+usk+" and "+cb+" datastore only = "+datastoreOnly);
 		}
 		
+		@Override
 		public int hashCode() {
 			return hashCode;
 		}
 
+		@Override
 		public void onFoundEdition(long l, USK newUSK, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 			if(persistent)
 				container.activate(this, 2);
@@ -1535,6 +1537,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			usk.removeFrom(container);
 		}
 
+		@Override
 		public void onFailure(ObjectContainer container, ClientContext context) {
 			FetchException e = null;
 			if(datastoreOnly) {
@@ -1558,6 +1561,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			if(persistent) removeFrom(container);
 		}
 
+		@Override
 		public void onCancelled(ObjectContainer container, ClientContext context) {
 			if(persistent)
 				container.activate(this, 2);
@@ -1565,10 +1569,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			if(persistent) removeFrom(container);
 		}
 
+		@Override
 		public short getPollingPriorityNormal() {
 			return parent.getPriorityClass();
 		}
 
+		@Override
 		public short getPollingPriorityProgress() {
 			return parent.getPriorityClass();
 		}
