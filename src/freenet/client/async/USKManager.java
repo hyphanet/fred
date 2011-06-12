@@ -18,7 +18,6 @@ import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.NullClientCallback;
 import freenet.clients.http.FProxyToadlet;
-import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.node.NodeClientCore;

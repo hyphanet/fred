@@ -22,7 +22,6 @@ import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
-import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerRestartedException;
 import freenet.node.MessageItem;

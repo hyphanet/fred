@@ -1,7 +1,5 @@
 package freenet.clients.http;
 
-import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,7 +15,6 @@ import freenet.pluginmanager.FredPluginL10n;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
-import freenet.support.io.FileUtil;
 
 /** Simple class to output standard heads and tail for web interface pages. 
 */

@@ -14,7 +14,6 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
-import freenet.client.FetchContext;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
@@ -25,7 +24,6 @@ import freenet.client.Metadata.SimpleManifestComposer;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
-import freenet.keys.InsertableClientSSK;
 import freenet.keys.Key;
 import freenet.node.RequestClient;
 import freenet.support.Logger;

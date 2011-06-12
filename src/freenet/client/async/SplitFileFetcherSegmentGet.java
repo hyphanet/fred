@@ -20,7 +20,6 @@ import freenet.node.SupportsBulkCallFailure;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.RandomGrabArrayItemExclusionList;
 
 /** This was going to be part of SplitFileFetcherSegment, but we can't add a new parent
  * class to the class hierarchy in db4o without quite a bit of work.

@@ -3,10 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import java.util.HashMap;
-
 import freenet.crypt.BlockCipher;
-import freenet.support.Logger;
 
 /**
  * Class representing a single session key.

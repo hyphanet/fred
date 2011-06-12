@@ -3,11 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.WeakHashMap;
 
 import org.tanukisoftware.wrapper.WrapperManager;
@@ -15,7 +10,6 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 
-import freenet.client.FetchContext;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.node.SendableRequest;

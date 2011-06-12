@@ -11,8 +11,6 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import freenet.client.async.ClientGetter;
-import freenet.client.async.ClientPutter;
 import freenet.client.async.ClientRequester;
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.SubConfig;
@@ -21,7 +19,6 @@ import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.BlockTransmitter;
 import freenet.l10n.NodeL10n;
 import freenet.keys.FreenetURI;
-import freenet.node.FNPPacketMangler;
 import freenet.node.Location;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;

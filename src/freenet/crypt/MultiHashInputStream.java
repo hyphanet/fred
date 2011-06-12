@@ -3,12 +3,10 @@ package freenet.crypt;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.DigestException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
-import freenet.crypt.MultiHashOutputStream.Digester;
 import freenet.support.Logger;
 
 public class MultiHashInputStream extends FilterInputStream {

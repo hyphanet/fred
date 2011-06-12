@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
-import java.io.IOException;
 import java.util.LinkedList;
 import java.util.ListIterator;
 

@@ -21,7 +21,6 @@ import freenet.node.SendableRequestItem;
 import freenet.node.SupportsBulkCallFailure;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.RandomGrabArrayItemExclusionList;
 import freenet.support.api.Bucket;
 import freenet.support.io.NativeThread;
 

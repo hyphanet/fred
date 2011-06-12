@@ -2,7 +2,6 @@ package freenet.crypt;
 
 import java.io.FilterOutputStream;
 import java.io.OutputStream;
-import java.security.DigestException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;

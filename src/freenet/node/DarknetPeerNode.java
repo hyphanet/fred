@@ -35,8 +35,6 @@ import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
-import freenet.node.DarknetPeerNode.FRIEND_TRUST;
-import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.BookmarkFeedUserAlert;
 import freenet.node.useralerts.DownloadFeedUserAlert;

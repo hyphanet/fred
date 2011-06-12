@@ -19,12 +19,8 @@ import freenet.client.events.SplitfileProgressEvent;
 import freenet.client.events.StartedCompressionEvent;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
-import freenet.node.Node;
-import freenet.node.fcp.ClientPut.COMPRESS_STATE;
-import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 

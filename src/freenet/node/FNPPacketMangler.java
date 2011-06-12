@@ -11,8 +11,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.concurrent.atomic.AtomicLong;
-
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.BlockCipher;
 import freenet.crypt.DSA;
@@ -32,9 +30,7 @@ import freenet.io.AddressTracker.Status;
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.DMT;
 import freenet.io.comm.FreenetInetAddress;
-import freenet.io.comm.IncomingPacketFilter;
 import freenet.io.comm.IncomingPacketFilter.DECODED;
-import freenet.io.comm.Message;
 import freenet.io.comm.MessageCore;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PacketSocketHandler;

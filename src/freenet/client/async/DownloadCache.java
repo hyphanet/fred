@@ -2,7 +2,6 @@ package freenet.client.async;
 
 import com.db4o.ObjectContainer;
 
-import freenet.client.FetchResult;
 import freenet.keys.FreenetURI;
 import freenet.support.api.Bucket;
 

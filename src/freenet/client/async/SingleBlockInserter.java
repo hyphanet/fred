@@ -30,9 +30,7 @@ import freenet.keys.KeyEncodeException;
 import freenet.keys.KeyVerifyException;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKEncodeException;
-import freenet.keys.SSKVerifyException;
 import freenet.node.KeysFetchingLocally;
-import freenet.node.LowLevelGetException;
 import freenet.node.LowLevelPutException;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -49,7 +47,6 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.io.BucketTools;
-import freenet.support.io.NativeThread;
 
 /**
  * Insert *ONE KEY*.

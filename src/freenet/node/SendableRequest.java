@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.db4o.ObjectContainer;
 
-import freenet.client.FetchContext;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;

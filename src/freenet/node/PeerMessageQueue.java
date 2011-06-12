@@ -9,13 +9,7 @@ import java.util.Map;
 
 import freenet.io.comm.DMT;
 import freenet.support.DoublyLinkedList;
-import freenet.io.comm.UdpSocketHandler;
 import freenet.support.DoublyLinkedListImpl;
-import freenet.support.LogThresholdCallback;
-import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
-import freenet.support.MutableBoolean;
-import freenet.io.comm.Message;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;

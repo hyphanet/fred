@@ -10,7 +10,6 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 

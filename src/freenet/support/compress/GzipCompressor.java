@@ -13,7 +13,6 @@ import java.util.zip.GZIPOutputStream;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
-import freenet.support.io.Closer;
 import freenet.support.io.CountedOutputStream;
 
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS

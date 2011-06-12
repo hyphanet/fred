@@ -1,8 +1,6 @@
 package freenet.node.fcp;
 
 import java.io.File;
-import java.lang.ref.WeakReference;
-
 import freenet.client.InsertContext;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.keys.FreenetURI;

@@ -2,8 +2,6 @@ package freenet.node.fcp;
 
 import java.io.File;
 
-import com.db4o.ObjectContainer;
-
 import freenet.keys.FreenetURI;
 import freenet.node.fcp.ClientPut.COMPRESS_STATE;
 

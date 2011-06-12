@@ -4,7 +4,6 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.FetchContext;
 import freenet.keys.USK;
-import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;

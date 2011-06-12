@@ -28,7 +28,6 @@ import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.Metadata.SimpleManifestComposer;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;

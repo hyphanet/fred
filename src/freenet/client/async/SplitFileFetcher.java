@@ -5,9 +5,6 @@ package freenet.client.async;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -20,27 +17,18 @@ import freenet.client.ArchiveContext;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
-import freenet.client.HighLevelSimpleClientImpl;
-import freenet.client.InsertContext;
-import freenet.client.FetchResult;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.keys.CHKBlock;
-import freenet.keys.ClientCHK;
-import freenet.keys.NodeCHK;
 import freenet.node.SendableGet;
 import freenet.support.BinaryBloomFilter;
 import freenet.support.BloomFilter;
 import freenet.support.CountingBloomFilter;
-import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.OOMHandler;
-import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
-import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
 /**

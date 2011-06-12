@@ -9,7 +9,6 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
 import freenet.io.comm.FreenetInetAddress;
-import freenet.node.SecurityLevels.FRIENDS_THREAT_LEVEL;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;

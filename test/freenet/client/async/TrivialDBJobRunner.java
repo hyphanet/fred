@@ -1,8 +1,5 @@
 package freenet.client.async;
 
-import java.io.File;
-import java.io.IOException;
-
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;

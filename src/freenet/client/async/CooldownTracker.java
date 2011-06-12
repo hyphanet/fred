@@ -8,7 +8,6 @@ import java.util.WeakHashMap;
 
 import com.db4o.ObjectContainer;
 
-import freenet.node.SendableGet;
 import freenet.support.Logger;
 import freenet.support.RemoveRandomWithObject;
 import freenet.support.Ticker;

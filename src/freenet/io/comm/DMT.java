@@ -19,8 +19,6 @@
 
 package freenet.io.comm;
 
-import java.util.LinkedList;
-
 import freenet.crypt.DSAPublicKey;
 import freenet.keys.Key;
 import freenet.keys.NodeCHK;
@@ -29,7 +27,6 @@ import freenet.node.NodeStats.PeerLoadStats;
 import freenet.support.BitArray;
 import freenet.support.Buffer;
 import freenet.support.Fields;
-import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 
 /**

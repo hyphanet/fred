@@ -3,9 +3,7 @@ package freenet.client.async;
 import com.db4o.ObjectContainer;
 
 import freenet.keys.USK;
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 
 /** Proxy class to only pass through latest-slot updates after an onRoundFinished().
  * Note that it completely ignores last-known-good updates.
