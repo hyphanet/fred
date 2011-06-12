@@ -829,7 +829,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		if(noderef == null)
 			return;
 
-		SimpleFieldSet ref = om.validateNoderef(noderef, 0, noderef.length, source, false);
+		SimpleFieldSet ref = OpennetManager.validateNoderef(noderef, 0, noderef.length, source, false);
 
 		if(ref == null)
 			return;

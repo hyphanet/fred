@@ -184,7 +184,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		int totalNumber = 0;
 		for (int i = 0; i < alerts.length; i++) {
 			UserAlert alert = alerts[i];
-			if(showOnlyErrors && alert.getPriorityClass() > alert.ERROR)
+			if(showOnlyErrors && alert.getPriorityClass() > UserAlert.ERROR)
 				continue;
 			if (!alert.isValid())
 				continue;
