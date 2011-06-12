@@ -102,6 +102,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		receivedBytes(m.receivedByteCount());
 	}
 
+	@Override
 	public void run() {
 		freenet.support.Logger.OSThread.logPID(this);
 		try {
@@ -202,6 +203,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		}
 	}
 
+	@Override
 	public void onReceivedRejectOverload() {
 		try {
 			if(!sentRejectedOverload) {
@@ -219,6 +221,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	}
 	private boolean disconnected = false;
 
+	@Override
 	public void onCHKTransferBegins() {
 		if(logMINOR) Logger.minor(this, "CHK transfer start on "+this);
 		try {
@@ -230,6 +233,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			bt =
 				new BlockTransmitter(node.usm, node.getTicker(), source, uid, prb, this, new ReceiverAbortHandler() {
 
+					@Override
 					public boolean onAbort() {
 						RequestSender rs = RequestHandler.this.rs;
 						if(rs != null && rs.uid != RequestHandler.this.uid) {
@@ -283,6 +287,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				},
 				new BlockTransmitterCompletion() {
 
+					@Override
 					public void blockTransferFinished(boolean success) {
 						synchronized(RequestHandler.this) {
 							transferCompleted = true;
@@ -333,6 +338,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		}
 	}
 
+	@Override
 	public void onAbortDownstreamTransfers(int reason, String desc) {
 		if(bt == null) {
 			Logger.error(this, "No downstream transfer to abort! on "+this);
@@ -363,6 +369,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		return true;
 	}
 
+	@Override
 	public void onRequestSenderFinished(int status, boolean fromOfferedKey) {
 		if(logMINOR) Logger.minor(this, "onRequestSenderFinished("+status+") on "+this);
 		long now = System.currentTimeMillis();
@@ -497,6 +504,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		boolean isOldFNP = source.isOldFNP();
 		MultiMessageCallback mcb = null;
 		if(!isOldFNP) mcb = new MultiMessageCallback() {
+			@Override
 			public void finish(boolean success) {
 				sentPayload(data.length); // FIXME report this at the time when that message is acked for more accurate reporting???
 				applyByteCounts();
@@ -513,10 +521,12 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		if(isOldFNP) {
 			node.executor.execute(new PrioRunnable() {
 				
+				@Override
 				public int getPriority() {
 					return RequestHandler.this.getPriority();
 				}
 				
+				@Override
 				public void run() {
 					try {
 						source.sendThrottledMessage(dataMsg, data.length, RequestHandler.this, 60 * 1000, true, null);
@@ -592,6 +602,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				new BlockTransmitter(node.usm, node.getTicker(), source, uid, prb, this, BlockTransmitter.NEVER_CASCADE,
 						new BlockTransmitterCompletion() {
 
+					@Override
 					public void blockTransferFinished(boolean success) {
 						if(success) {
 							// for byte logging
@@ -655,6 +666,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 		private boolean completed = false;
 
+		@Override
 		public void acknowledged() {
 			if(logMINOR)
 				Logger.minor(this, "Acknowledged terminal message: " + RequestHandler.this);
@@ -662,17 +674,20 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			complete();
 		}
 
+		@Override
 		public void disconnected() {
 			if(logMINOR)
 				Logger.minor(this, "Peer disconnected before terminal message sent for " + RequestHandler.this);
 			complete();
 		}
 
+		@Override
 		public void fatalError() {
 			Logger.error(this, "Error sending terminal message?! for " + RequestHandler.this);
 			complete();
 		}
 
+		@Override
 		public void sent() {
 			if(logMINOR)
 				Logger.minor(this, "Sent terminal message: " + RequestHandler.this);
@@ -788,6 +803,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 			// We have already sent ours, so we don't need to worry about timeouts.
 			
+			@Override
 			public void gotNoderef(byte[] noderef) {
 				// We have sent a noderef. It is not appropriate for the caller to call ackOpennet():
 				// in all cases he should unlock.
@@ -796,10 +812,12 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				unregisterRequestHandlerWithNode();
 			}
 
+			@Override
 			public void timedOut() {
 				gotNoderef(null);
 			}
 
+			@Override
 			public void acked(boolean timedOutMessage) {
 				gotNoderef(null);
 			}
@@ -860,6 +878,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		
 		OpennetManager.waitForOpennetNoderef(true, source, uid, this, new NoderefCallback() {
 
+			@Override
 			public void gotNoderef(byte[] newNoderef) {
 				
 				if(newNoderef == null) {
@@ -882,10 +901,12 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				unregisterRequestHandlerWithNode();
 			}
 
+			@Override
 			public void timedOut() {
 				gotNoderef(null);
 			}
 
+			@Override
 			public void acked(boolean timedOutMessage) {
 				gotNoderef(null);
 			}
@@ -898,6 +919,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	private int receivedBytes;
 	private volatile Object bytesSync = new Object();
 
+	@Override
 	public void sentBytes(int x) {
 		synchronized(bytesSync) {
 			sentBytes += x;
@@ -907,6 +929,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			Logger.minor(this, "sentBytes(" + x + ") on " + this);
 	}
 
+	@Override
 	public void receivedBytes(int x) {
 		synchronized(bytesSync) {
 			receivedBytes += x;
@@ -914,6 +937,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		node.nodeStats.requestReceivedBytes(key instanceof NodeSSK, x);
 	}
 
+	@Override
 	public void sentPayload(int x) {
 		/*
 		 * Do not add payload to sentBytes. sentBytes() is called with the actual sent bytes,
@@ -926,6 +950,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			Logger.minor(this, "sentPayload(" + x + ") on " + this);
 	}
 
+	@Override
 	public int getPriority() {
 		return NativeThread.HIGH_PRIORITY;
 	}

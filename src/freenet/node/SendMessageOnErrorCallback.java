@@ -44,14 +44,17 @@ public class SendMessageOnErrorCallback implements AsyncMessageCallback {
         	Logger.minor(this, "Created "+this);
     }
 
+    @Override
     public void sent() {
         // Ignore
     }
 
+    @Override
     public void acknowledged() {
         // All done
     }
 
+    @Override
     public void disconnected() {
     	if(logMINOR)
     		Logger.minor(this, "Disconnect trigger: "+this);
@@ -63,6 +66,7 @@ public class SendMessageOnErrorCallback implements AsyncMessageCallback {
         }
     }
 
+    @Override
     public void fatalError() {
         disconnected();
     }

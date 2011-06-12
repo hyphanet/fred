@@ -77,6 +77,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		this.logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if (!disableSecretPinger) {
 			node.getTicker().queueTimedJob(new Runnable() {
+				@Override
 				public void run() {
 					checkAllPeers();
 					startupChecks = node.peers.quickCountConnectedPeers() * MIN_PINGS_FOR_STARTUP;
@@ -116,6 +117,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		final short dawnHtl=m.getShort(DMT.DAWN_HTL);
 		final int counter=m.getInt(DMT.COUNTER);
 		node.executor.execute(new Runnable() {
+		@Override
 		public void run() {
 		try {
 			_handleSecretPing(m, source, uid, htl, dawnHtl, counter);
@@ -432,6 +434,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		node.getTicker().queueTimedJob(this, period);
 	}
 	
+	@Override
 	public void run() {
 		//pick a target
 		synchronized (workQueue) {
@@ -1001,6 +1004,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 	 * Orders PeerNetworkGroups by size largest first. Determines the priority-order in the master list.
 	 * Throws on comparison of non-network-groups or those without members assigned.
 	 */
+	@Override
 	public int compare(PeerNetworkGroup a, PeerNetworkGroup b) {
 		//since we want largest-first, this is backwards of what it would normally be (a-b).
 		return b.members.size()-a.members.size();
@@ -1008,14 +1012,17 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 	
 	private final ByteCounter ctr = new ByteCounter() {
 
+		@Override
 		public void receivedBytes(int x) {
 			node.nodeStats.networkColoringReceivedBytes(x);
 		}
 
+		@Override
 		public void sentBytes(int x) {
 			node.nodeStats.networkColoringSentBytes(x);
 		}
 
+		@Override
 		public void sentPayload(int x) {
 			// Ignore
 		}

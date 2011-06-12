@@ -35,6 +35,7 @@ public class OldLZMACompressor implements Compressor {
 	}
 
 	// Copied from EncoderThread. See below re licensing.
+	@Override
 	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
 		Bucket output;
 		InputStream is = null;
@@ -55,6 +56,7 @@ public class OldLZMACompressor implements Compressor {
 		return output;
 	}
 	
+	@Override
 	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException {
 		CountedInputStream cis = null;
 		CountedOutputStream cos = null;
@@ -108,6 +110,7 @@ public class OldLZMACompressor implements Compressor {
         props[4] = 0x00;
     }
 
+	@Override
 	public long decompress(InputStream is, OutputStream os, long maxLength, long maxCheckSizeBytes) throws IOException, CompressionOutputSizeException {
 		CountedOutputStream cos = new CountedOutputStream(os);
 		Decoder decoder = new Decoder();
@@ -116,6 +119,7 @@ public class OldLZMACompressor implements Compressor {
 		return cos.written();
 	}
 
+	@Override
 	public int decompress(byte[] dbuf, int i, int j, byte[] output) throws CompressionOutputSizeException {
 		// Didn't work with Inflater.
 		// FIXME fix sometimes to use Inflater - format issue?

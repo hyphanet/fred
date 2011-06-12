@@ -190,6 +190,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		return (MyCooldownTrackerItem) context.cooldownTracker.make(this, persistent, container);
 	}
 
+	@Override
 	public CooldownTrackerItem makeCooldownTrackerItem() {
 		return new MyCooldownTrackerItem();
 	}
@@ -394,6 +395,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		return Collections.singletonList(block);
 	}
 
+	@Override
 	public KeyListener makeKeyListener(ObjectContainer container, ClientContext context, boolean onStartup) {
 		if(persistent) {
 			container.activate(key, 5);
@@ -463,6 +465,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		return false;
 	}
 	
+	@Override
 	public synchronized long getCooldownTime(ObjectContainer container, ClientContext context, long now) {
 		if(cancelled || finished) return -1;
 		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);

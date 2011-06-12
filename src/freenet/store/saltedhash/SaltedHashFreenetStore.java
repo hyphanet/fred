@@ -251,6 +251,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		} else
 			ticker.queueTimedJob(new FastRunnable() {
 
+				@Override
 				public void run() {
 					cleanerThread.start();
 				}
@@ -262,6 +263,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		return false;
 	}
 
+	@Override
 	public T fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache, boolean ignoreOldBlocks, BlockMetadata meta) throws IOException {
 		if (logMINOR)
 			Logger.minor(this, "Fetch " + HexUtil.bytesToHex(routingKey) + " for " + callback);
@@ -368,6 +370,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		return null;
 	}
 
+	@Override
 	public void put(T block, byte[] data, byte[] header, boolean overwrite, boolean isOldBlock) throws IOException, KeyCollisionException {
 		put(block, data, header, overwrite, isOldBlock, false);
 	}
@@ -1292,6 +1295,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				List<Entry> oldEntryList = new LinkedList<Entry>();
 				int optimialK;
 
+				@Override
 				public void init() {
 					if (storeSize > _prevStoreSize)
 						setStoreFileSize(storeSize, false);
@@ -1309,6 +1313,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					WrapperManager.signalStarting(RESIZE_MEMORY_ENTRIES * 30 * 1000 + 1000);
 				}
 
+				@Override
 				public Entry process(Entry entry) {
 					int oldGeneration = entry.generation;
 					if (oldGeneration != generation) {
@@ -1348,6 +1353,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				}
 
 				int i = 0;
+				@Override
 				public boolean batch(long entriesLeft) {
 					WrapperManager.signalStarting(RESIZE_MEMORY_ENTRIES * 30 * 1000 + 1000);
 
@@ -1367,10 +1373,12 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					return _prevStoreSize == prevStoreSize;
 				}
 
+				@Override
 				public void abort() {
 					bloomFilter.discard();
 				}
 
+				@Override
 				public void finish() {
 					configLock.writeLock().lock();
 					try {
@@ -1404,6 +1412,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			BatchProcessor<T> rebuildBloomProcessor = new BatchProcessor<T>() {
 				int optimialK;
 
+				@Override
 				public void init() {
 					optimialK = BloomFilter.optimialK(bloomFilterSize, storeSize);
 
@@ -1419,6 +1428,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					WrapperManager.signalStarting(RESIZE_MEMORY_ENTRIES * 5 * 1000 + 1000);
 				}
 
+				@Override
 				public Entry process(Entry entry) {
 					if (entry.generation != generation) {
 						bloomFilter.addKeyForked(entry.getDigestedRoutingKey());
@@ -1431,6 +1441,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				}
 
 				int i = 0;
+				@Override
 				public boolean batch(long entriesLeft) {
 					WrapperManager.signalStarting(RESIZE_MEMORY_ENTRIES * 5 * 1000 + 1000);
 
@@ -1440,10 +1451,12 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					return prevStoreSize == 0;
 				}
 
+				@Override
 				public void abort() {
 					bloomFilter.discard();
 				}
 
+				@Override
 				public void finish() {
 					bloomFilter.merge();
 					configLock.writeLock().lock();
@@ -1665,22 +1678,27 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			this.cleaner = cleaner;
 		}
 
+		@Override
 		public String anchor() {
 			return "store-cleaner-" + name;
 		}
 
+		@Override
 		public String dismissButtonText() {
 			return NodeL10n.getBase().getString("UserAlert.hide");
 		}
 
+		@Override
 		public HTMLNode getHTMLText() {
 			return new HTMLNode("#", getText());
 		}
 
+		@Override
 		public short getPriorityClass() {
 			return UserAlert.MINOR;
 		}
 
+		@Override
 		public String getShortText() {
 			if (cleaner.isResizing)
 				return NodeL10n.getBase().getString("SaltedHashFreenetStore.shortResizeProgress", //
@@ -1694,6 +1712,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				                cleaner.entriesTotal + "" });
 		}
 
+		@Override
 		public String getText() {
 			if (cleaner.isResizing)
 				return NodeL10n.getBase().getString("SaltedHashFreenetStore.longResizeProgress", //
@@ -1707,36 +1726,44 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				                cleaner.entriesTotal + "" });
 		}
 
+		@Override
 		public String getTitle() {
 			return NodeL10n.getBase().getString("SaltedHashFreenetStore.cleanerAlertTitle", //
 			        new String[] { "name" }, //
 			        new String[] { name });
 		}
 
+		@Override
 		public Object getUserIdentifier() {
 			return null;
 		}
 
+		@Override
 		public boolean isValid() {
 			return cleaner.isRebuilding || cleaner.isResizing;
 		}
 
+		@Override
 		public void isValid(boolean validity) {
 			// Ignore
 		}
 
+		@Override
 		public void onDismiss() {
 			// Ignore
 		}
 
+		@Override
 		public boolean shouldUnregisterOnDismiss() {
 			return true;
 		}
 
+		@Override
 		public boolean userCanDismiss() {
 			return false;
 		}
 
+		@Override
 		public boolean isEventNotification() {
 			return false;
 		}
@@ -1747,6 +1774,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			userAlertManager.register(cleanerStatusUserAlert);
 	}
 
+	@Override
 	public void setMaxKeys(long newStoreSize, boolean shrinkNow) throws IOException {
 		Logger.normal(this, "[" + name + "] Resize newStoreSize=" + newStoreSize + ", shinkNow=" + shrinkNow);
 
@@ -1850,6 +1878,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	}
 
 	public class ShutdownDB implements Runnable {
+		@Override
 		public void run() {
 			close();
 		}
@@ -1936,22 +1965,27 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	private long initialWrites;
 	private long initialBloomFalsePos;
 
+	@Override
 	public long hits() {
 		return hits.get();
 	}
 
+	@Override
 	public long misses() {
 		return misses.get();
 	}
 
+	@Override
 	public long writes() {
 		return writes.get();
 	}
 
+	@Override
 	public long keyCount() {
 		return keyCount.get();
 	}
 
+	@Override
 	public long getMaxKeys() {
 		configLock.readLock().lock();
 		long _storeSize = storeSize;
@@ -1959,6 +1993,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		return _storeSize;
 	}
 
+	@Override
 	public long getBloomFalsePositive() {
 		return bloomFalsePos.get();
 	}
@@ -2010,6 +2045,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		}
 	}
 
+	@Override
 	public boolean probablyInStore(byte[] routingKey) {
 		configLock.readLock().lock();
 		try {
@@ -2028,10 +2064,12 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		bloomFile.delete();
 	}
 
+	@Override
 	public String toString() {
 		return super.toString()+":"+name;
 	}
 	
+	@Override
 	public StoreAccessStats getSessionAccessStats() {
 		return new StoreAccessStats() {
 
@@ -2058,6 +2096,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		};
 	}
 
+	@Override
 	public StoreAccessStats getTotalAccessStats() {
 		return new StoreAccessStats() {
 

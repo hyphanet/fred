@@ -12,6 +12,7 @@ import junit.framework.TestCase;
 
 public class NewPacketFormatTest extends TestCase {
 	
+	@Override
 	public void setUp() {
 		// Because we don't call maybeSendPacket, the packet sent times are not updated,
 		// so lets turn off the keepalives.
@@ -181,12 +182,14 @@ public class NewPacketFormatTest extends TestCase {
 				return new MessageItem(loadMessage, null, null, (short)0);
 			}
 
+			@Override
 			public synchronized boolean grabSendLoadStatsASAP(boolean realtime) {
 				boolean ret = shouldSend;
 				shouldSend = false;
 				return ret;
 			}
 
+			@Override
 			public synchronized void setSendLoadStatsASAP(boolean realtime) {
 				shouldSend = true;
 			}
@@ -201,6 +204,7 @@ public class NewPacketFormatTest extends TestCase {
 		PeerMessageQueue senderQueue = new PeerMessageQueue(senderNode);
 		NullBasePeerNode receiverNode = new NullBasePeerNode() {
 			
+			@Override
 			public void handleMessage(Message msg) {
 				assert(msg.getSpec().equals(DMT.FNPVoid));
 				synchronized(gotMessage) {
@@ -288,6 +292,7 @@ public class NewPacketFormatTest extends TestCase {
 				return new MessageItem(loadMessage, null, null, (short)0);
 			}
 
+			@Override
 			public void handleMessage(Message msg) {
 				assert(msg.getSpec().equals(DMT.FNPVoid));
 				synchronized(gotMessage) {
@@ -300,6 +305,7 @@ public class NewPacketFormatTest extends TestCase {
 		PeerMessageQueue senderQueue = new PeerMessageQueue(senderNode);
 		NullBasePeerNode receiverNode = new NullBasePeerNode() {
 			
+			@Override
 			public void handleMessage(Message msg) {
 				assert(msg.getSpec().equals(DMT.FNPVoid));
 				synchronized(gotMessage) {

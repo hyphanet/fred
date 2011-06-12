@@ -92,6 +92,7 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 	/**
 	 * @param meta IGNORED!
 	 */
+	@Override
 	public T fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache, boolean ignoreOldBlocks, BlockMetadata meta) throws IOException {
 		ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
 		DiskBlock block;
@@ -135,26 +136,32 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 		}
 	}
 
+	@Override
 	public long getBloomFalsePositive() {
 		return -1;
 	}
 
+	@Override
 	public long getMaxKeys() {
 		return maxKeys;
 	}
 
+	@Override
 	public long hits() {
 		return hits;
 	}
 
+	@Override
 	public long keyCount() {
 		return blocksByRoutingKey.size();
 	}
 
+	@Override
 	public long misses() {
 		return misses;
 	}
 
+	@Override
 	public boolean probablyInStore(byte[] routingKey) {
 		ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
 		return blocksByRoutingKey.containsKey(key);
@@ -164,6 +171,7 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 	 * @param isOldBlock Ignored, we don't distinguish between stuff that should be cached and
 	 * stuff that shouldn't be cached; really it's all in the latter category anyway here!
 	 */
+	@Override
 	public void put(T block, byte[] data, byte[] header, boolean overwrite, boolean isOldBlock) throws IOException, KeyCollisionException {
 		byte[] routingkey = block.getRoutingKey();
 		byte[] fullKey = block.getFullKey();
@@ -180,6 +188,7 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 		purgeOldData(new ByteArrayWrapper(routingkey), stored);
 	}
 
+	@Override
 	public void setMaxKeys(long maxStoreKeys, boolean shrinkNow) throws DatabaseException, IOException {
 		if(maxStoreKeys > Integer.MAX_VALUE) throw new IllegalArgumentException();
 		this.maxKeys = (int) maxStoreKeys;
@@ -188,6 +197,7 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 		} else {
 			ticker.queueTimedJob(new Runnable() {
 
+				@Override
 				public void run() {
 					purgeOldData();
 					// Don't re-schedule
@@ -197,12 +207,14 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 		}
 	}
 
+	@Override
 	public long writes() {
 		return writes;
 	}
 
 	private final Runnable purgeOldData = new Runnable() {
 
+		@Override
 		public void run() {
 			try {
 				purgeOldData();
@@ -249,6 +261,7 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 		maxLifetime = val;
 	}
 	
+	@Override
 	public StoreAccessStats getSessionAccessStats() {
 		return new StoreAccessStats() {
 
@@ -275,6 +288,7 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 		};
 	}
 
+	@Override
 	public StoreAccessStats getTotalAccessStats() {
 		return null;
 	}

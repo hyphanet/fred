@@ -17,10 +17,12 @@ public final class LimitedEnumeration<T> implements Enumeration<T> {
         next = loner;
     }
         
+    @Override
     public final boolean hasMoreElements() {
         return next != null;
     }
     
+    @Override
     public final T nextElement() {
         if (next == null) throw new NoSuchElementException();
         try {

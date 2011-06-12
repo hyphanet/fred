@@ -622,6 +622,7 @@ public class SplitFileInserter implements ClientPutState {
 		return false;
 	}
 
+	@Override
 	public BaseClientPutter getParent() {
 		return parent;
 	}
@@ -727,6 +728,7 @@ public class SplitFileInserter implements ClientPutState {
 		}
 	}
 
+	@Override
 	public void cancel(ObjectContainer container, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "Cancelling "+this);
@@ -748,10 +750,12 @@ public class SplitFileInserter implements ClientPutState {
 		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
 	}
 
+	@Override
 	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
 		start(container, context);
 	}
 
+	@Override
 	public Object getToken() {
 		return token;
 	}
@@ -777,6 +781,7 @@ public class SplitFileInserter implements ClientPutState {
 		}
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		// parent can remove itself
 		// ctx will be removed by parent

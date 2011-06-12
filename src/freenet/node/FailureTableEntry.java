@@ -479,6 +479,7 @@ class FailureTableEntry implements TimedOutNodesList {
 	/** Get the timeout time for the given peer, taking HTL into account.
 	 * If there was a timeout at HTL 1, and we are now sending a request at
 	 * HTL 2, we ignore the timeout. */
+	@Override
 	public synchronized long getTimeoutTime(PeerNode peer, short htl, long now, boolean forPerNodeFailureTables) {
 		long timeout = -1;
 		for(int i=0;i<requestedNodes.length;i++) {

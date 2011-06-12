@@ -136,6 +136,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	public static final int AMOUNT_OF_BYTES_ALLOWED_BEFORE_WE_REKEY = 1024 * 1024 * 1024;
 	/** The Runnable in charge of rekeying on a regular basis */
 	private final Runnable transientKeyRekeyer = new Runnable() {
+		@Override
 		public void run() {
 			maybeResetTransientKey();
 		}
@@ -1831,6 +1832,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		/* Re-send the packet after 5sec if we don't get any reply */
 		node.getTicker().queueTimedJob(new Runnable() {
+			@Override
 			public void run() {
 				if(pn.timeLastConnectionCompleted() < timeSent) {
 					if(logMINOR) Logger.minor(this, "Resending JFK(3) to "+pn+" for "+node.getDarknetPortNumber());
@@ -2376,6 +2378,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	/* (non-Javadoc)
 	 * @see freenet.node.OutgoingPacketMangler#processOutgoingOrRequeue(freenet.node.MessageItem[], freenet.node.PeerNode, boolean, boolean)
 	 */
+	@Override
 	public boolean processOutgoingOrRequeue(MessageItem[] messages, PeerNode pn, boolean dontRequeue, boolean onePacket) throws BlockedTooLongException {
 		String requeueLogString = "";
 		if(!dontRequeue) {
@@ -2626,6 +2629,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	/* (non-Javadoc)
 	 * @see freenet.node.OutgoingPacketMangler#processOutgoing(byte[], int, int, freenet.node.SessionKey, int)
 	 */
+	@Override
 	public int processOutgoing(byte[] buf, int offset, int length, SessionKey tracker, short priority) throws KeyChangedException, NotConnectedException, PacketSequenceException, WouldBlockException {
 		byte[] newBuf = preformat(buf, offset, length);
 		return processOutgoingPreformatted(newBuf, 0, newBuf.length, tracker, -1, null, priority);
@@ -2682,6 +2686,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	/* (non-Javadoc)
 	 * @see freenet.node.OutgoingPacketMangler#processOutgoingPreformatted(byte[], int, int, freenet.node.SessionKey, int, freenet.node.AsyncMessageCallback[], int)
 	 */
+	@Override
 	public int processOutgoingPreformatted(byte[] buf, int offset, int length, SessionKey tracker, int packetNumber, AsyncMessageCallback[] callbacks, short priority) throws KeyChangedException, NotConnectedException, PacketSequenceException, WouldBlockException {
 		if(logMINOR) {
 			String log = "processOutgoingPreformatted("+Fields.hashCode(buf)+", "+offset+ ',' +length+ ',' +tracker+ ',' +packetNumber+ ',';
@@ -2963,18 +2968,22 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	@SuppressWarnings("unused")
 	private UserAlert disconnectedStillNotAckedAlert = new AbstractUserAlert() {
 
+		@Override
 		public String anchor() {
 			return "disconnectedStillNotAcked";
 		}
 
+		@Override
 		public String dismissButtonText() {
 			return NodeL10n.getBase().getString("UserAlert.hide");
 		}
 
+		@Override
 		public short getPriorityClass() {
 			return UserAlert.ERROR;
 		}
 
+		@Override
 		public String getShortText() {
 			int sz;
 			synchronized(peersWithProblems) {
@@ -2983,6 +2992,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return l10n("somePeersDisconnectedStillNotAcked", "count", Integer.toString(sz));
 		}
 
+		@Override
 		public HTMLNode getHTMLText() {
 			HTMLNode div = new HTMLNode("div");
 			Peer[] peers;
@@ -2999,6 +3009,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return div;
 		}
 
+		@Override
 		public String getText() {
 			StringBuffer sb = new StringBuffer();
 			Peer[] peers;
@@ -3017,34 +3028,42 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return sb.toString();
 		}
 
+		@Override
 		public String getTitle() {
 			return getShortText();
 		}
 
+		@Override
 		public Object getUserIdentifier() {
 			return FNPPacketMangler.this;
 		}
 
+		@Override
 		public boolean isEventNotification() {
 			return false;
 		}
 
+		@Override
 		public boolean isValid() {
 			return true;
 		}
 
+		@Override
 		public void isValid(boolean validity) {
 			// Ignore
 		}
 
+		@Override
 		public void onDismiss() {
 			// Ignore
 		}
 
+		@Override
 		public boolean shouldUnregisterOnDismiss() {
 			return true;
 		}
 
+		@Override
 		public boolean userCanDismiss() {
 			return true;
 		}
@@ -3133,6 +3152,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	/* (non-Javadoc)
 	 * @see freenet.node.OutgoingPacketMangler#sendHandshake(freenet.node.PeerNode)
 	 */
+	@Override
 	public void sendHandshake(PeerNode pn, boolean notRegistered) {
 		int negType = pn.selectNegType(this);
 		if(negType == -1) {
@@ -3164,16 +3184,19 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	/* (non-Javadoc)
 	 * @see freenet.node.OutgoingPacketMangler#isDisconnected(freenet.io.comm.PeerContext)
 	 */
+	@Override
 	public boolean isDisconnected(PeerContext context) {
 		if(context == null) return false;
 		return !context.isConnected();
 	}
 
+	@Override
 	public void resend(ResendPacketItem item, SessionKey tracker) throws PacketSequenceException, WouldBlockException, KeyChangedException, NotConnectedException {
 		int size = processOutgoingPreformatted(item.buf, 0, item.buf.length, tracker, item.packetNumber, item.callbacks, item.priority);
 		item.pn.resendByteCounter.sentBytes(size);
 	}
 
+	@Override
 	public int[] supportedNegTypes(boolean forPublic) {
 		if(forPublic)
 			return new int[] { 2, 4, 6, 7 };
@@ -3181,22 +3204,27 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return new int[] { 2, 4, 6, 7 };
 	}
 
+	@Override
 	public int fullHeadersLengthOneMessage() {
 		return fullHeadersLengthOneMessage;
 	}
 
+	@Override
 	public SocketHandler getSocketHandler() {
 		return sock;
 	}
 
+	@Override
 	public Peer[] getPrimaryIPAddress() {
 		return crypto.detector.getPrimaryPeers();
 	}
 
+	@Override
 	public byte[] getCompressedNoderef() {
 		return crypto.myCompressedFullRef();
 	}
 
+	@Override
 	public boolean alwaysAllowLocalAddresses() {
 		return crypto.config.alwaysAllowLocalAddresses();
 	}
@@ -3211,9 +3239,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	private final void _fillJFKDHFIFOOffThread() {
 		// do it off-thread
 		node.executor.execute(new PrioRunnable() {
+			@Override
 			public void run() {
 				_fillJFKDHFIFO();
 			}
+			@Override
 			public int getPriority() {
 				return NativeThread.HIGH_PRIORITY;
 			}
@@ -3413,6 +3443,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		return data;
 	}
 
+	@Override
 	public Status getConnectivityStatus() {
 		long now = System.currentTimeMillis();
 		if (now - lastConnectivityStatusUpdate < 3 * 60 * 1000)
@@ -3429,10 +3460,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		return lastConnectivityStatus = value;
 	}
 
+	@Override
 	public boolean allowConnection(PeerNode pn, FreenetInetAddress addr) {
 		return crypto.allowConnection(pn, addr);
 	}
 
+	@Override
 	public void setPortForwardingBroken() {
 		crypto.setPortForwardingBroken();
 	}

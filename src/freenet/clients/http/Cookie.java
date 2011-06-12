@@ -81,6 +81,7 @@ public class Cookie {
 	/**
 	 * Returns true if two Cookies have equal domain, path and name. Does not check the value!
 	 */
+	@Override
 	public boolean equals(Object obj) {
 		if(obj == this)
 			return true;

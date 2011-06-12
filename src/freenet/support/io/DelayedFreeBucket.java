@@ -48,28 +48,34 @@ public class DelayedFreeBucket implements Bucket {
 		if(bucket == null) throw new NullPointerException();
 	}
 
+	@Override
 	public OutputStream getOutputStream() throws IOException {
 		if(freed) throw new IOException("Already freed");
 		return bucket.getOutputStream();
 	}
 
+	@Override
 	public InputStream getInputStream() throws IOException {
 		if(freed) throw new IOException("Already freed");
 		return bucket.getInputStream();
 	}
 
+	@Override
 	public String getName() {
 		return bucket.getName();
 	}
 
+	@Override
 	public long size() {
 		return bucket.size();
 	}
 
+	@Override
 	public boolean isReadOnly() {
 		return bucket.isReadOnly();
 	}
 
+	@Override
 	public void setReadOnly() {
 		bucket.setReadOnly();
 	}
@@ -79,6 +85,7 @@ public class DelayedFreeBucket implements Bucket {
 		return bucket;
 	}
 	
+	@Override
 	public void free() {
 		synchronized(this) { // mutex on just this method; make a separate lock if necessary to lock the above
 			if(freed) return;
@@ -89,11 +96,13 @@ public class DelayedFreeBucket implements Bucket {
 		}
 	}
 
+	@Override
 	public void storeTo(ObjectContainer container) {
 		bucket.storeTo(container);
 		container.store(this);
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		if(logMINOR)
 			Logger.minor(this, "Removing from database: "+this);
@@ -129,6 +138,7 @@ public class DelayedFreeBucket implements Bucket {
 		container.activate(bucket, 1);
 	}
 
+	@Override
 	public Bucket createShadow() {
 		return bucket.createShadow();
 	}

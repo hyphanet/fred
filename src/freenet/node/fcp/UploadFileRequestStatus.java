@@ -30,6 +30,7 @@ public class UploadFileRequestStatus extends UploadRequestStatus {
 	}
 
 
+	@Override
 	public long getDataSize() {
 		return dataSize;
 	}

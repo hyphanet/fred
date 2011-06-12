@@ -36,11 +36,13 @@ public class ArrayBucket implements Bucket {
 		this.name = name;
 	}
 
+	@Override
 	public OutputStream getOutputStream() throws IOException {
 		if(readOnly) throw new IOException("Read only");
 		return new ArrayBucketOutputStream();
 	}
 
+	@Override
 	public InputStream getInputStream() {
 		return new ByteArrayInputStream(data);
 	}
@@ -50,10 +52,12 @@ public class ArrayBucket implements Bucket {
 		return new String(data);
 	}
 
+	@Override
 	public long size() {
 		return data.length;
 	}
 
+	@Override
 	public String getName() {
 		return name;
 	}
@@ -75,14 +79,17 @@ public class ArrayBucket implements Bucket {
 		}
 	}
 
+	@Override
 	public boolean isReadOnly() {
 		return readOnly;
 	}
 
+	@Override
 	public void setReadOnly() {
 		readOnly = true;
 	}
 
+	@Override
 	public void free() {
 		data = new byte[0];
 		// Not much else we can do.
@@ -96,16 +103,19 @@ public class ArrayBucket implements Bucket {
 		return buf;
 	}
 
+	@Override
 	public void storeTo(ObjectContainer container) {
 		container.store(data);
 		container.store(this);
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		container.delete(data);
 		container.delete(this);
 	}
 
+	@Override
 	public Bucket createShadow() {
 		return null;
 	}

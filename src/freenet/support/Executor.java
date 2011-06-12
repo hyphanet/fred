@@ -13,6 +13,7 @@ package freenet.support;
 public interface Executor extends java.util.concurrent.Executor {
 
 	/** Execute a job. */
+	@Override
 	public void execute(Runnable job);
 	public void execute(Runnable job, String jobName);
 	public void execute(Runnable job, String jobName, boolean fromTicker);

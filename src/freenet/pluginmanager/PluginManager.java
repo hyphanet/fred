@@ -212,6 +212,7 @@ public class PluginManager {
 
 		node.securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
 
+			@Override
 			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
 				if(newLevel == oldLevel) return;
 				if(newLevel == NETWORK_THREAT_LEVEL.LOW)
@@ -416,6 +417,7 @@ public class PluginManager {
 					stillTrying = true;
 					node.getTicker().queueTimedJob(new Runnable() {
 
+						@Override
 						public void run() {
 							realStartPlugin(retry, filename, store);
 						}
@@ -431,6 +433,7 @@ public class PluginManager {
 					stillTrying = true;
 					node.getTicker().queueTimedJob(new Runnable() {
 
+						@Override
 						public void run() {
 							realStartPlugin(retry, filename, store);
 						}
@@ -528,16 +531,19 @@ public class PluginManager {
 			this.officialFromFreenet = officialFromFreenet;
 		}
 
+		@Override
 		public String dismissButtonText() {
 			return l10n("deleteFailedPluginButton");
 		}
 
+		@Override
 		public void onDismiss() {
 			synchronized(pluginWrappers) {
 				pluginsFailedLoad.remove(filename);
 			}
 			node.executor.execute(new Runnable() {
 
+				@Override
 				public void run() {
 					cancelRunningLoads(filename, null);
 				}
@@ -545,10 +551,12 @@ public class PluginManager {
 			});
 		}
 
+		@Override
 		public String anchor() {
 			return "pluginfailed:"+filename;
 		}
 
+		@Override
 		public HTMLNode getHTMLText() {
 			HTMLNode div = new HTMLNode("div");
 			HTMLNode p = div.addChild("p");
@@ -582,30 +590,37 @@ public class PluginManager {
 			return div;
 		}
 
+		@Override
 		public short getPriorityClass() {
 			return UserAlert.ERROR;
 		}
 
+		@Override
 		public String getShortText() {
 			return l10n("pluginLoadingFailedShort", "name", filename);
 		}
 
+		@Override
 		public String getText() {
 			return l10n("pluginLoadingFailedWithMessage", new String[] { "name", "message" }, new String[] { filename, message });
 		}
 
+		@Override
 		public String getTitle() {
 			return l10n("pluginLoadingFailedTitle");
 		}
 
+		@Override
 		public Object getUserIdentifier() {
 			return PluginManager.class;
 		}
 
+		@Override
 		public boolean isEventNotification() {
 			return false;
 		}
 
+		@Override
 		public boolean isValid() {
 			boolean success;
 			synchronized(pluginWrappers) {
@@ -617,13 +632,16 @@ public class PluginManager {
 			return success;
 		}
 
+		@Override
 		public void isValid(boolean validity) {
 		}
 
+		@Override
 		public boolean shouldUnregisterOnDismiss() {
 			return true;
 		}
 
+		@Override
 		public boolean userCanDismiss() {
 			return true;
 		}
@@ -1129,14 +1147,17 @@ public class PluginManager {
 	/** All plugin updates are on a single request client. */
 	public final RequestClient singleUpdaterRequestClient = new RequestClient() {
 
+		@Override
 		public boolean persistent() {
 			return false;
 		}
 
+		@Override
 		public void removeFrom(ObjectContainer container) {
 			// Do nothing.
 		}
 
+		@Override
 		public boolean realTimeFlag() {
 			return false;
 		}
@@ -1450,12 +1471,14 @@ public class PluginManager {
 	private File[] getPreviousInstances(File pluginDirectory, final String filename) {
 		File[] cachedFiles = pluginDirectory.listFiles(new FileFilter() {
 
+			@Override
 			public boolean accept(File pathname) {
 				return pathname.isFile() && pathname.getName().startsWith(filename);
 			}
 		});
 		Arrays.sort(cachedFiles, new Comparator<File>() {
 
+			@Override
 			public int compare(File file1, File file2) {
 				return (int) Math.min(Integer.MAX_VALUE, Math.max(Integer.MIN_VALUE, extractTimestamp(file2.getName()) - extractTimestamp(file1.getName())));
 			}
@@ -1661,6 +1684,7 @@ public class PluginManager {
 				if(pi.isThemedPlugin()) {
 					final FredPluginThemed plug = (FredPluginThemed)(pi.plug);
 					executor.execute(new Runnable() {
+						@Override
 						public void run() {
 							try {
 								plug.setTheme(cssName);
@@ -1684,6 +1708,7 @@ public class PluginManager {
 				if(pi.isL10nPlugin()) {
 					final FredPluginL10n plug = (FredPluginL10n)(pi.plug);
 					executor.execute(new Runnable() {
+						@Override
 						public void run() {
 							try {
 								plug.setLanguage(lang);
@@ -1694,6 +1719,7 @@ public class PluginManager {
 				} else if(pi.isBaseL10nPlugin()) {
 					final FredPluginBaseL10n plug = (FredPluginBaseL10n)(pi.plug);
 					executor.execute(new Runnable() {
+						@Override
 						public void run() {
 							try {
 								plug.setLanguage(lang);

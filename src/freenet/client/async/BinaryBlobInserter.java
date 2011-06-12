@@ -81,6 +81,7 @@ public class BinaryBlobInserter implements ClientPutState {
 		else throw new IllegalArgumentException("Unknown block type "+block.getClass()+" : "+block);
 	}
 
+	@Override
 	public void cancel(ObjectContainer container, ClientContext context) {
 		for(int i=0;i<inserters.length;i++) {
 			if(inserters[i] != null)
@@ -89,14 +90,17 @@ public class BinaryBlobInserter implements ClientPutState {
 		parent.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
 	}
 
+	@Override
 	public BaseClientPutter getParent() {
 		return parent;
 	}
 
+	@Override
 	public Object getToken() {
 		return clientContext;
 	}
 
+	@Override
 	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
 		for(int i=0;i<inserters.length;i++) {
 			inserters[i].schedule();
@@ -211,6 +215,7 @@ public class BinaryBlobInserter implements ClientPutState {
 			parent.onFailure(new InsertException(InsertException.TOO_MANY_RETRIES_IN_BLOCKS, errors, null), this, container, context);
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		// FIXME: Persistent blob inserts are not supported.
 		throw new UnsupportedOperationException();

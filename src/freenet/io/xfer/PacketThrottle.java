@@ -347,6 +347,7 @@ public class PacketThrottle {
 			this.realTime = realTime;
 		}
 
+		@Override
 		public void acknowledged() {
 			sent(true); // Make sure it is called at least once.
 			synchronized(PacketThrottle.this) {
@@ -362,6 +363,7 @@ public class PacketThrottle {
 			if(chainCallback != null) chainCallback.acknowledged();
 		}
 
+		@Override
 		public void disconnected() {
 			synchronized(PacketThrottle.this) {
 				if(finished) return;
@@ -373,6 +375,7 @@ public class PacketThrottle {
 			if(chainCallback != null) chainCallback.disconnected();
 		}
 
+		@Override
 		public void fatalError() {
 			synchronized(PacketThrottle.this) {
 				if(finished) return;
@@ -384,6 +387,7 @@ public class PacketThrottle {
 			if(chainCallback != null) chainCallback.fatalError();
 		}
 		
+		@Override
 		public void sent() {
 			sent(false);
 		}

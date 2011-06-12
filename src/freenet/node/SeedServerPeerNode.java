@@ -84,6 +84,7 @@ public class SeedServerPeerNode extends PeerNode {
 			// Wait 5 seconds. Another node may connect first, we don't want all the
 			// announcements to go to the node which we connect to most quickly.
 			node.getTicker().queueTimedJob(new Runnable() {
+				@Override
 				public void run() {
 					try {
 						om.announcer.maybeSendAnnouncement();
@@ -165,6 +166,7 @@ public class SeedServerPeerNode extends PeerNode {
 		forceDisconnect(true);
 	}
 	
+	@Override
 	public boolean shallWeRouteAccordingToOurPeersLocation() {
 		return false; // Irrelevant
 	}

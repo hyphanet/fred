@@ -140,6 +140,7 @@ public class NodeSSK extends Key {
 		return (short) ((BASE_TYPE << 8) + (cryptoAlgorithm & 0xff));
 	}
 
+	@Override
 	public void writeToDataOutputStream(DataOutputStream stream) throws IOException {
 		write(stream);
 	}
@@ -247,6 +248,7 @@ public class NodeSSK extends Key {
 		return makeRoutingKey(pubKeyHash, encryptedHashedDocname);
 	}
 
+	@Override
 	public int compareTo(Key arg0) {
 		if(arg0 instanceof NodeCHK) return -1;
 		NodeSSK key = (NodeSSK) arg0;
@@ -268,10 +270,12 @@ final class ArchiveNodeSSK extends NodeSSK {
 		super(pubKeyHash, encryptedHashedDocname, cryptoAlgorithm);
 	}
 	
+	@Override
 	public void setPubKey(DSAPublicKey pubKey2) throws SSKVerifyException {
 		throw new UnsupportedOperationException();
 	}
 	
+	@Override
 	public boolean grabPubkey(GetPubkey pubkeyCache, boolean canReadClientCache, boolean forULPR, BlockMetadata meta) {
 		throw new UnsupportedOperationException();
 	}

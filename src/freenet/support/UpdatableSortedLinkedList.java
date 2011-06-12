@@ -287,6 +287,7 @@ public class UpdatableSortedLinkedList<T extends UpdatableSortedLinkedListItem<T
 		}
 	}
 
+	@Override
 	public synchronized Iterator<T> iterator() {
 		return list.iterator();
 	}

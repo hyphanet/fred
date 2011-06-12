@@ -63,6 +63,7 @@ public class MP3Filter implements ContentDataFilter {
 		{44100, 48000, 32000}
 	};
 
+	@Override
 	public void readFilter(InputStream input, OutputStream output,
 			String charset, HashMap<String, String> otherParams,
 			FilterCallback cb) throws DataFilterException, IOException {
@@ -202,6 +203,7 @@ public class MP3Filter implements ContentDataFilter {
 		return NodeL10n.getBase().getString("MP3Filter."+key);
 	}
 
+	@Override
 	public void writeFilter(InputStream input, OutputStream output,
 			String charset, HashMap<String, String> otherParams,
 			FilterCallback cb) throws DataFilterException, IOException {

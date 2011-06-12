@@ -78,6 +78,7 @@ public final class Tiger extends MessageDigest implements Cloneable {
     /**
      * Clones this object.
      */
+    @Override
     public Object clone() throws CloneNotSupportedException {
         Tiger that = (Tiger)super.clone();
         that.pad = (byte[])this.pad.clone();
@@ -94,6 +95,7 @@ public final class Tiger extends MessageDigest implements Cloneable {
      * java.security.MessageDigestSpi.
      * @return the digest length in bytes.
      */
+    @Override
     public int engineGetDigestLength() {
         return HASH_LENGTH;
     }
@@ -104,6 +106,7 @@ public final class Tiger extends MessageDigest implements Cloneable {
      * Overrides the protected abstract method of
      * <code>java.security.MessageDigestSpi</code>.
      */
+    @Override
     public void engineReset() {
         int i = 60;
         do {
@@ -134,6 +137,7 @@ public final class Tiger extends MessageDigest implements Cloneable {
      * java.security.MessageDigestSpi.
      * @param input  the byte to use for the update.
      */
+    @Override
     public void engineUpdate(byte input) {
         bytes++;
         if (padding < 63) {
@@ -158,6 +162,7 @@ public final class Tiger extends MessageDigest implements Cloneable {
      * @param offset  the offset to start from in the array of bytes.
      * @param len  the number of bytes to use, starting at offset.
      */
+    @Override
     public void engineUpdate(byte[] input, int offset, int len) {
         if (offset >= 0 && len >= 0 && offset + len <= input.length) {
             bytes += len;
@@ -212,6 +217,7 @@ public final class Tiger extends MessageDigest implements Cloneable {
      * java.security.MessageDigestSpi.
      * @return the length of the digest stored in the output buffer.
      */
+    @Override
     public byte[] engineDigest() {
         try {
             final byte hashvalue[] = new byte[HASH_LENGTH];
@@ -242,6 +248,7 @@ public final class Tiger extends MessageDigest implements Cloneable {
      *             length.
      * @return  the length of the digest stored in the output buffer.
      */
+    @Override
     public int engineDigest(byte[] hashvalue, int offset, int len)
             throws DigestException {
         if (len >= HASH_LENGTH) {

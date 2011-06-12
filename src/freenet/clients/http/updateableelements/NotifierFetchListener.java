@@ -14,6 +14,7 @@ public class NotifierFetchListener implements FProxyFetchListener {
 		this.element = element;
 	}
 
+	@Override
 	public void onEvent() {
 		pushManager.updateElement(element.getUpdaterId(null));
 	}

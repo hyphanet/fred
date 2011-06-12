@@ -268,6 +268,7 @@ public class PersistentBlobTempBucketFactory {
 	private void initSlotFinder() {
 		slotFinder = new DBJob() {
 		
+		@Override
 		public boolean run(ObjectContainer container, ClientContext context) {
 			int added = 0;
 			
@@ -496,6 +497,7 @@ outer:		while(true) {
 		}
 		}
 		
+		@Override
 		public String toString() {
 			return "PersistentBlobTempBucketFactory.SlotFinder";
 		}
@@ -877,6 +879,7 @@ outer:				while(true) {
 			try {
 				jobRunner.queue(new DBJob() {
 
+					@Override
 					public boolean run(ObjectContainer container, ClientContext context) {
 						long size;
 						try {
@@ -913,6 +916,7 @@ outer:				while(true) {
 						return true;
 					}
 					
+					@Override
 					public String toString() {
 						return "PersistentBlobTempBucketFactory.PostShrinkCheck";
 					}
@@ -965,14 +969,17 @@ outer:				while(true) {
 	private void queueMaybeShrink() {
 		ticker.queueTimedJob(new Runnable() {
 
+			@Override
 			public void run() {
 				try {
 					jobRunner.queue(new DBJob() {
 
+						@Override
 						public boolean run(ObjectContainer container, ClientContext context) {
 							return maybeShrink(container);
 						}
 						
+						@Override
 						public String toString() {
 							return "PersistentBlobTempBucketFactory.MaybeShrink";
 						}

@@ -325,6 +325,7 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 		container.store(this);
 	}
 
+	@Override
 	public long getCooldownTime(ObjectContainer container, ClientContext context, long now) {
 		if(persistent) container.activate(segment, 1);
 		HasCooldownCacheItem parentRGA = getParentGrabArray();
@@ -334,6 +335,7 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 		return wakeTime;
 	}
 
+	@Override
 	public void onFailure(BulkCallFailureItem[] items,
 			ObjectContainer container, ClientContext context) {
         FetchException[] fetchExceptions = new FetchException[items.length];

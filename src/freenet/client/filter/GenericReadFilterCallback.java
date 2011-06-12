@@ -90,6 +90,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 			strippedBaseURI = baseURI;
 	}
 
+	@Override
 	public String processURI(String u, String overrideType) throws CommentException {
 		return processURI(u, overrideType, false, false);
 	}
@@ -107,6 +108,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 	//  fragment      = *( pchar / "/" / "?" )
 	protected static final String FRAGMENT   = "(" + PCHAR + "|\\/|\\?)*";
 
+	@Override
 	public String processURI(String u, String overrideType, boolean noRelative, boolean inline) throws CommentException {
 		if(u.matches("^#" + FRAGMENT + "$")) {
 			// Hack for anchors, see #710
@@ -250,6 +252,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		}
 	}
 	
+	@Override
 	public String makeURIAbsolute(String uri) throws URISyntaxException{
 		return baseURI.resolve(URIPreEncoder.encodeURI(uri).normalize()).toASCIIString();
 	}
@@ -354,6 +357,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		return finishProcess(req, overrideType, '/' + furi.toString(false, false), uri, noRelative);
 	}
 
+	@Override
 	public String onBaseHref(String baseHref) {
 		String ret;
 		try {
@@ -376,6 +380,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		}
 	}
 
+	@Override
 	public void onText(String s, String type) {
 		if(cb != null)
 			cb.onText(s, type, baseURI);
@@ -390,6 +395,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 	 * Anything that is hazardous should be protected through formPassword.
 	 * @throws CommentException If the form element could not be parsed and the user should be told.
 	 */
+	@Override
 	public String processForm(String method, String action) throws CommentException {
 		if(action == null) return null;
 		if(method == null) method = "GET";
@@ -425,6 +431,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 	/** Processes a tag. It calls the TagReplacerCallback if present.
 	 * @param pt - The tag, that needs to be processed
 	 * @return The replacement for the tag, or null, if no replacement needed*/
+	@Override
 	public String processTag(ParsedTag pt) {
 		if(trc!=null){
 			return trc.processTag(pt,this);

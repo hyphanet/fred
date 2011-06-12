@@ -575,10 +575,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				try {
 					core.queue(new DBJob() {
 
+						@Override
 						public String toString() {
 							return "QueueToadlet StartInsert";
 						}
 
+						@Override
 						public boolean run(ObjectContainer container, ClientContext context) {
 							try {
 							final ClientPut clientPut;
@@ -684,10 +686,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				try {
 					core.queue(new DBJob() {
 
+						@Override
 						public String toString() {
 							return "QueueToadlet StartLocalFileInsert";
 						}
 
+						@Override
 						public boolean run(ObjectContainer container, ClientContext context) {
 							final ClientPut clientPut;
 							try {
@@ -775,10 +779,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				try {
 					core.queue(new DBJob() {
 
+						@Override
 						public String toString() {
 							return "QueueToadlet StartLocalDirInsert";
 						}
 
+						@Override
 						public boolean run(ObjectContainer container, ClientContext context) {
 							ClientPutDir clientPutDir;
 							try {
@@ -1070,10 +1076,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		try {
 			core.clientContext.jobRunner.queue(new DBJob() {
 
+				@Override
 				public String toString() {
 					return "QueueToadlet ShowQueue";
 				}
 
+				@Override
 				public boolean run(ObjectContainer container, ClientContext context) {
 					HTMLNode pageNode = null;
 					String plainText = null;
@@ -1302,6 +1310,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		Logger.minor(this, "Total queued uploads: "+SizeUtil.formatSize(totalQueuedUploadSize));
 
 		Comparator<RequestStatus> jobComparator = new Comparator<RequestStatus>() {
+			@Override
 			public int compare(RequestStatus firstRequest, RequestStatus secondRequest) {
 				int result = 0;
 				boolean isSet = true;
@@ -2103,10 +2112,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	private final Map<String, PutCompletedEvent> completedPuts = new LinkedHashMap<String, PutCompletedEvent>();
 	private final Map<String, PutDirCompletedEvent> completedPutDirs = new LinkedHashMap<String, PutDirCompletedEvent>();
 
+	@Override
 	public void notifyFailure(ClientRequest req, ObjectContainer container) {
 		// FIXME do something???
 	}
 
+	@Override
 	public void notifySuccess(ClientRequest req, ObjectContainer container) {
 		if(uploads == req instanceof ClientGet) return;
 		synchronized(completedRequestIdentifiers) {
@@ -2118,6 +2129,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 	private void saveCompletedIdentifiersOffThread() {
 		core.getExecutor().execute(new Runnable() {
+			@Override
 			public void run() {
 				saveCompletedIdentifiers();
 			}
@@ -2140,10 +2152,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		final boolean writeAnyway = migrated;
 		core.clientContext.jobRunner.queue(new DBJob() {
 
+			@Override
 			public String toString() {
 				return "QueueToadlet LoadCompletedIdentifiers";
 			}
 
+			@Override
 			public boolean run(ObjectContainer container, ClientContext context) {
 				String[] identifiers;
 				boolean changed = writeAnyway;
@@ -2316,6 +2330,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		return NodeL10n.getBase().getString("QueueToadlet."+key, pattern, value);
 	}
 
+	@Override
 	public void onRemove(ClientRequest req, ObjectContainer container) {
 		String identifier = req.getIdentifier();
 		synchronized(completedRequestIdentifiers) {
@@ -2336,6 +2351,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		saveCompletedIdentifiersOffThread();
 	}
 
+	@Override
 	public boolean isEnabled(ToadletContext ctx) {
 		return (!container.publicGatewayMode()) || ((ctx != null) && ctx.isAllowedFullAccess());
 	}
@@ -2375,12 +2391,14 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			saveCompletedIdentifiersOffThread();
 		}
 
+		@Override
 		public void onEventDismiss() {
 			synchronized(completedRequestIdentifiers) {
 				completedRequestIdentifiers.remove(identifier);
 			}
 		}
 
+		@Override
 		public HTMLNode getEventHTMLText() {
 			HTMLNode text = new HTMLNode("div");
 			NodeL10n.getBase().addL10nSubstitution(text, "QueueToadlet.downloadSucceeded",
@@ -2432,12 +2450,14 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			saveCompletedIdentifiersOffThread();
 		}
 
+		@Override
 		public void onEventDismiss() {
 			synchronized(completedRequestIdentifiers) {
 				completedRequestIdentifiers.remove(identifier);
 			}
 		}
 
+		@Override
 		public HTMLNode getEventHTMLText() {
 			HTMLNode text = new HTMLNode("div");
 			NodeL10n.getBase().addL10nSubstitution(text, "QueueToadlet.uploadSucceeded",
@@ -2446,6 +2466,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			return text;
 		}
 
+		@Override
 		public String getTitle() {
 			String title = null;
 			synchronized(events) {

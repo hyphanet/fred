@@ -92,14 +92,17 @@ public class FCPConnectionHandler implements Closeable {
 	private final HashMap<File, DDACheckJob> inTestDirectories = new HashMap<File, DDACheckJob>();
 	public final RequestClient connectionRequestClientBulk = new RequestClient() {
 		
+		@Override
 		public boolean persistent() {
 			return false;
 		}
 		
+		@Override
 		public void removeFrom(ObjectContainer container) {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public boolean realTimeFlag() {
 			return false;
 		}
@@ -107,14 +110,17 @@ public class FCPConnectionHandler implements Closeable {
 	};
 	public final RequestClient connectionRequestClientRT = new RequestClient() {
 		
+		@Override
 		public boolean persistent() {
 			return false;
 		}
 		
+		@Override
 		public void removeFrom(ObjectContainer container) {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public boolean realTimeFlag() {
 			return true;
 		}
@@ -141,6 +147,7 @@ public class FCPConnectionHandler implements Closeable {
 		outputHandler.start();
 	}
 
+	@Override
 	public void close() {
 		ClientRequest[] requests;
 		if(rebootClient != null)
@@ -169,6 +176,7 @@ public class FCPConnectionHandler implements Closeable {
 		try {
 			server.core.clientContext.jobRunner.queue(new DBJob() {
 
+				@Override
 				public boolean run(ObjectContainer container, ClientContext context) {
 					if((rebootClient != null) && !rebootClient.hasPersistentRequests(null))
 						server.unregisterClient(rebootClient, null);
@@ -291,6 +299,7 @@ public class FCPConnectionHandler implements Closeable {
 						try {
 							server.core.clientContext.jobRunner.queue(new DBJob() {
 
+								@Override
 								public boolean run(ObjectContainer container, ClientContext context) {
 									ClientGet getter;
 									try {
@@ -387,6 +396,7 @@ public class FCPConnectionHandler implements Closeable {
 					try {
 						server.core.clientContext.jobRunner.queue(new DBJob() {
 
+							@Override
 							public boolean run(ObjectContainer container, ClientContext context) {
 								ClientPut putter;
 								try {
@@ -455,6 +465,7 @@ public class FCPConnectionHandler implements Closeable {
 				try {
 					server.core.clientContext.jobRunner.queue(new DBJob() {
 
+						@Override
 						public boolean run(ObjectContainer container, ClientContext context) {
 							if(c != null)
 								c.freeData(container);
@@ -514,6 +525,7 @@ public class FCPConnectionHandler implements Closeable {
 				try {
 					server.core.clientContext.jobRunner.queue(new DBJob() {
 
+						@Override
 						public boolean run(ObjectContainer container, ClientContext context) {
 							ClientPutDir putter;
 							try {

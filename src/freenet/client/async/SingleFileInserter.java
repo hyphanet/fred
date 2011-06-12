@@ -644,6 +644,7 @@ class SingleFileInserter implements ClientPutState {
 			this.origCompressedDataLength = allowSizes ? origCompressedDataLength : 0;
 		}
 
+		@Override
 		public synchronized void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 			if(persistent) { // FIXME debug-point
 				if(logMINOR) Logger.minor(this, "Transition: "+oldState+" -> "+newState);
@@ -656,6 +657,7 @@ class SingleFileInserter implements ClientPutState {
 				container.store(this);
 		}
 		
+		@Override
 		public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
 			if(persistent) {
 				container.activate(block, 2);
@@ -720,6 +722,7 @@ class SingleFileInserter implements ClientPutState {
 			}
 		}
 
+		@Override
 		public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
 			if(persistent) {
 				container.activate(block, 1);
@@ -756,6 +759,7 @@ class SingleFileInserter implements ClientPutState {
 			fail(e, container, context);
 		}
 
+		@Override
 		public void onMetadata(Metadata meta, ClientPutState state, ObjectContainer container, ClientContext context) {
 			if(persistent) {
 				container.activate(cb, 1);
@@ -914,10 +918,12 @@ class SingleFileInserter implements ClientPutState {
 			cb.onFailure(e, this, container, context);
 		}
 
+		@Override
 		public BaseClientPutter getParent() {
 			return parent;
 		}
 
+		@Override
 		public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
 			if(persistent) // FIXME debug-point
 				if(logMINOR) Logger.minor(this, "onEncode() for "+this+" : "+state+" : "+key);
@@ -931,6 +937,7 @@ class SingleFileInserter implements ClientPutState {
 			cb.onEncode(key, this, container, context);
 		}
 
+		@Override
 		public void cancel(ObjectContainer container, ClientContext context) {
 			if(logMINOR) Logger.minor(this, "Cancelling "+this);
 			ClientPutState oldSFI = null;
@@ -966,6 +973,7 @@ class SingleFileInserter implements ClientPutState {
 			}
 		}
 
+		@Override
 		public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 			synchronized(this) {
 				if(state == sfi)
@@ -982,16 +990,19 @@ class SingleFileInserter implements ClientPutState {
 			cb.onBlockSetFinished(this, container, context);
 		}
 
+		@Override
 		public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
 			if(persistent)
 				container.activate(sfi, 1);
 			sfi.schedule(container, context);
 		}
 
+		@Override
 		public Object getToken() {
 			return token;
 		}
 
+		@Override
 		public void onFetchable(ClientPutState state, ObjectContainer container) {
 
 			if(persistent) // FIXME debug-point
@@ -1083,6 +1094,7 @@ class SingleFileInserter implements ClientPutState {
 			container.activate(SingleFileInserter.this, 1);
 		}
 
+		@Override
 		public void removeFrom(ObjectContainer container, ClientContext context) {
 			if(logMINOR) Logger.minor(this, "removeFrom() on "+this);
 			container.delete(this);
@@ -1106,10 +1118,12 @@ class SingleFileInserter implements ClientPutState {
 		
 	}
 
+	@Override
 	public BaseClientPutter getParent() {
 		return parent;
 	}
 
+	@Override
 	public void cancel(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Cancel "+this);
 		synchronized(this) {
@@ -1129,10 +1143,12 @@ class SingleFileInserter implements ClientPutState {
 		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
 	}
 
+	@Override
 	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
 		start(container, context);
 	}
 
+	@Override
 	public Object getToken() {
 		return token;
 	}
@@ -1156,6 +1172,7 @@ class SingleFileInserter implements ClientPutState {
 		return started;
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "removeFrom() on "+this, new Exception("debug"));
 		// parent removes self

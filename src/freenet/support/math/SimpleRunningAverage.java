@@ -66,11 +66,13 @@ public class SimpleRunningAverage implements RunningAverage {
      *
      * @return
      */
+    @Override
     public synchronized double currentValue() {
         if(curLen == 0) return initValue;
         return total/curLen;
     }
 
+    @Override
     public synchronized double valueIfReported(double r) {
         if(curLen < refs.length) {
             return (total+r)/(curLen+1);
@@ -84,6 +86,7 @@ public class SimpleRunningAverage implements RunningAverage {
      *
      * @param d
      */
+    @Override
     public synchronized void report(double d) {
         totalReports++;
 		if (logDEBUG)
@@ -124,6 +127,7 @@ public class SimpleRunningAverage implements RunningAverage {
      *
      * @param d
      */
+    @Override
     public void report(long d) {
         report((double)d);
     }
@@ -136,6 +140,7 @@ public class SimpleRunningAverage implements RunningAverage {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public synchronized long countReports() {
         return totalReports;
     }

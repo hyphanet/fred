@@ -236,6 +236,7 @@ public class NetworkInterface implements Closeable {
 	 *             if an I/O exception occurs
 	 * @see ServerSocket#close()
 	 */
+	@Override
 	public void close() throws IOException {
 		IOException exception = null;
 		shutdown = true;
@@ -321,6 +322,7 @@ public class NetworkInterface implements Closeable {
 		 * 
 		 * @see NetworkInterface#allowedHosts
 		 */
+		@Override
 		public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
 			while (!closed) {

@@ -328,6 +328,7 @@ public class FailureTable implements OOMHook {
 			}
 		}
 		offerExecutor.execute(new Runnable() {
+			@Override
 			public void run() {
 				innerOnOffer(key, peer, authenticator);
 			}
@@ -461,6 +462,7 @@ public class FailureTable implements OOMHook {
 	 */
 	public void sendOfferedKey(final Key key, final boolean isSSK, final boolean needPubKey, final long uid, final PeerNode source, final OfferReplyTag tag, final boolean realTimeFlag) throws NotConnectedException {
 		this.offerExecutor.execute(new Runnable() {
+			@Override
 			public void run() {
 				try {
 					innerSendOfferedKey(key, isSSK, needPubKey, uid, source, tag, realTimeFlag);
@@ -498,10 +500,12 @@ public class FailureTable implements OOMHook {
 			
 			node.executor.execute(new PrioRunnable() {
 
+				@Override
 				public int getPriority() {
 					return NativeThread.HIGH_PRIORITY;
 				}
 
+				@Override
 				public void run() {
 					try {
 						if(source.isOldFNP()) {
@@ -546,6 +550,7 @@ public class FailureTable implements OOMHook {
         		new BlockTransmitter(node.usm, node.getTicker(), source, uid, prb, senderCounter, BlockTransmitter.NEVER_CASCADE,
         				new BlockTransmitterCompletion() {
 
+					@Override
 					public void blockTransferFinished(boolean success) {
 						tag.unlockHandler();
 					}
@@ -553,10 +558,12 @@ public class FailureTable implements OOMHook {
 				}, realTimeFlag, node.nodeStats);
         	node.executor.execute(new PrioRunnable() {
 
+				@Override
 				public int getPriority() {
 					return NativeThread.HIGH_PRIORITY;
 				}
 
+				@Override
 				public void run() {
 					bt.sendAsync();
 				}
@@ -569,14 +576,17 @@ public class FailureTable implements OOMHook {
 	
 	class OfferedKeysByteCounter implements ByteCounter {
 
+		@Override
 		public void receivedBytes(int x) {
 			node.nodeStats.offeredKeysSenderReceivedBytes(x);
 		}
 
+		@Override
 		public void sentBytes(int x) {
 			node.nodeStats.offeredKeysSenderSentBytes(x);
 		}
 
+		@Override
 		public void sentPayload(int x) {
 			node.sentPayload(x);
 			node.nodeStats.offeredKeysSenderSentBytes(-x);
@@ -669,6 +679,7 @@ public class FailureTable implements OOMHook {
 	
 	public class FailureTableCleaner implements Runnable {
 
+		@Override
 		public void run() {
 			try {
 				realRun();
@@ -713,6 +724,7 @@ public class FailureTable implements OOMHook {
 		return entry.othersWant(apartFrom);
 	}
 
+	@Override
 	public void handleLowMemory() throws Exception {
 		synchronized (this) {
 			int size = entriesByKey.size();
@@ -724,6 +736,7 @@ public class FailureTable implements OOMHook {
 		}
 	}
 
+	@Override
 	public void handleOutOfMemory() throws Exception {
 		synchronized (this) {
 			entriesByKey.clear();

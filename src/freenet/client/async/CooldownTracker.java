@@ -314,6 +314,7 @@ public class CooldownTracker {
 	public void startMaintenance(final Ticker ticker) {
 		ticker.queueTimedJob(new Runnable() {
 
+			@Override
 			public void run() {
 				clearExpired(System.currentTimeMillis());
 				ticker.queueTimedJob(this, MAINTENANCE_PERIOD);

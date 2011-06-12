@@ -506,6 +506,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		if(crossCheckBlocks != 0 && !persistent) finishSegments(container, context);
 	}
 
+	@Override
 	public void schedule(ObjectContainer container, ClientContext context) throws KeyListenerConstructionException {
 		if(persistent)
 			container.activate(this, 1);
@@ -524,6 +525,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		context.getChkFetchScheduler(realTimeFlag).register(this, getters, persistent, container, blocks, false);
 	}
 
+	@Override
 	public void cancel(ObjectContainer container, ClientContext context) {
 		boolean persist = persistent;
 		if(persist)
@@ -555,6 +557,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		return realTimeFlag;
 	}
 
+	@Override
 	public long getToken() {
 		return token;
 	}
@@ -565,6 +568,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	 * constructed one at some point, maybe before a restart.
 	 * @throws FetchException
 	 */
+	@Override
 	public KeyListener makeKeyListener(ObjectContainer container, ClientContext context, boolean onStartup) throws KeyListenerConstructionException {
 		synchronized(this) {
 			if(finished) return null;
@@ -649,6 +653,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		}
 	}
 
+	@Override
 	public synchronized boolean isCancelled(ObjectContainer container) {
 		return finished;
 	}
@@ -675,6 +680,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		cancel(container, context);
 	}
 	
+	@Override
 	public void onFailed(KeyListenerConstructionException e, ObjectContainer container, ClientContext context) {
 		onFailed(e.getFetchException(), container, context);
 	}
@@ -686,6 +692,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	
 	/** Remove from the database, but only if all the cross-segments have finished.
 	 * If not, wait for them to report in. */
+	@Override
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			toRemove = true;

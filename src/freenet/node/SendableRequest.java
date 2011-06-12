@@ -101,6 +101,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	public abstract RequestClient getClient(ObjectContainer container);
 	
 	/** Is this request persistent? MUST NOT CHANGE. */
+	@Override
 	public final boolean persistent() {
 		return persistent;
 	}
@@ -108,14 +109,17 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	/** Get the ClientRequest. This DOES need to be cached on the request itself. */
 	public abstract ClientRequester getClientRequest();
 	
+	@Override
 	public synchronized RandomGrabArray getParentGrabArray() {
 		return parentGrabArray;
 	}
 	
+	@Override
 	public boolean knowsParentGrabArray() {
 		return true;
 	}
 	
+	@Override
 	public synchronized void setParentGrabArray(RandomGrabArray parent, ObjectContainer container) {
 		parentGrabArray = parent;
 		if(persistent())
@@ -158,6 +162,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	 * etc. */
 	public abstract List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, KeysFetchingLocally keys, ObjectContainer container, ClientContext context);
 
+	@Override
 	public boolean isStorageBroken(ObjectContainer container) {
 		return false;
 	}

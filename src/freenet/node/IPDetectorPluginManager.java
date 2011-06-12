@@ -47,14 +47,17 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		
 		private boolean valid;
 		
+		@Override
 		public String anchor() {
 			return "port-forward:"+super.hashCode();
 		}
 
+		@Override
 		public String dismissButtonText() {
 			return NodeL10n.getBase().getString("UserAlert.hide");
 		}
 
+		@Override
 		public HTMLNode getHTMLText() {
 			HTMLNode div = new HTMLNode("div");
 			String url = GenericReadFilterCallback.escapeURL(HTMLEncoder.encode(l10n("portForwardHelpURL")));
@@ -80,6 +83,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			return div;
 		}
 
+		@Override
 		public short getPriorityClass() {
 			return innerGetPriorityClass();
 		}
@@ -95,6 +99,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			return UserAlert.MINOR;
 		}
 
+		@Override
 		public String getShortText() {
 			String prefix = innerGetPriorityClass() == UserAlert.ERROR ?
 					l10n("seriousConnectionProblems") : l10n("connectionProblems");
@@ -115,6 +120,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			}
 		}
 
+		@Override
 		public String getText() {
 			String url = l10n("portForwardHelpURL");
 			boolean maybeForwarded = true;
@@ -134,14 +140,17 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			}
 		}
 
+		@Override
 		public String getTitle() {
 			return getShortText();
 		}
 
+		@Override
 		public Object getUserIdentifier() {
 			return IPDetectorPluginManager.this;
 		}
 
+		@Override
 		public boolean isValid() {
 			portsNotForwarded = getUDPPortsNotForwarded();
 			if(portsNotForwarded.length > maxPortsLength) {
@@ -157,22 +166,27 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			return valid;
 		}
 
+		@Override
 		public void isValid(boolean validity) {
 			valid = validity;
 		}
 
+		@Override
 		public void onDismiss() {
 			valid = false;
 		}
 
+		@Override
 		public boolean shouldUnregisterOnDismiss() {
 			return false;
 		}
 
+		@Override
 		public boolean userCanDismiss() {
 			return true;
 		}
 
+		@Override
 		public boolean isEventNotification() {
 			return false;
 		}
@@ -336,6 +350,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			Logger.error(this, "Caught "+t, t);
 		}
 		node.getTicker().queueTimedJob(new Runnable() {
+			@Override
 			public void run() {
 				freenet.support.Logger.OSThread.logPID(this);
 				tryMaybeRun();
@@ -687,6 +702,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			node.pluginManager.killPlugin((FredPlugin)plugin, 0);
 		}
 
+		@Override
 		public void run() {
 			freenet.support.Logger.OSThread.logPID(this);
 			try {
@@ -894,6 +910,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			final FredPluginPortForward plugin = plugins[i];
 			node.executor.execute(new Runnable() {
 
+				@Override
 				public void run() {
 					try {
 						plugin.onChangePublicPorts(newPorts, IPDetectorPluginManager.this);
@@ -906,6 +923,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		}
 	}
 
+	@Override
 	public void portForwardStatus(Map<ForwardPort, ForwardPortStatus> statuses) {
 		Set<ForwardPort> currentPorts = node.getPublicInterfacePorts();
 		for(ForwardPort p : currentPorts) {
@@ -926,6 +944,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			// FIXME use status.externalPort.
 		}
 		node.executor.execute(new Runnable() {
+			@Override
 			public void run() {
 				maybeRun();
 			}

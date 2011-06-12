@@ -148,27 +148,33 @@ public class CPUID {
 	}
 	protected static class AMDInfoImpl extends CPUIDCPUInfo implements AMDCPUInfo
 	{
+		@Override
 		public boolean IsK6Compatible()
 		{
 			return (getCPUFamily() >= 5) && (getCPUModel() >= 6);
 		}
+		@Override
 		public boolean IsK6_2_Compatible()
 		{
 			return (getCPUFamily() >= 5) && (getCPUModel() >= 8);
 		}
+		@Override
 		public boolean IsK6_3_Compatible()
 		{
 			return (getCPUFamily() >= 5) && (getCPUModel() >= 9);
 		}
+		@Override
 		public boolean IsAthlonCompatible()
 		{
 			return getCPUFamily() >= 6;
 		}
+		@Override
 		public boolean IsAthlon64Compatible()
 		{
 			return (getCPUFamily() == 15) && (getCPUExtendedFamily() == 0);
 		}
 
+		@Override
 		public String getCPUModelString() throws UnknownCPUException
 		{
 			if(getCPUFamily() == 4){
@@ -260,26 +266,32 @@ public class CPUID {
 
 	protected static class IntelInfoImpl extends CPUIDCPUInfo implements IntelCPUInfo
 	{
+		@Override
 		public boolean IsPentiumCompatible()
 		{
 			return getCPUFamily() >= 5;
 		}
+		@Override
 		public boolean IsPentiumMMXCompatible()
 		{
 			return IsPentium2Compatible() || ((getCPUFamily() == 5) && ((getCPUModel() ==4) || (getCPUModel() == 8)));
 		}
+		@Override
 		public boolean IsPentium2Compatible()
 		{
 			return (getCPUFamily() > 6) || ((getCPUFamily() == 6) && (getCPUModel() >=3));
 		}
+		@Override
 		public boolean IsPentium3Compatible()
 		{
 			return (getCPUFamily() > 6) || ((getCPUFamily() == 6) && (getCPUModel() >=7));
 		}
+		@Override
 		public boolean IsPentium4Compatible()
 		{
 			return getCPUFamily() >= 15;
 		}
+		@Override
 		public String getCPUModelString() throws UnknownCPUException {
 			if(getCPUFamily() == 4){
 				switch(getCPUModel()){

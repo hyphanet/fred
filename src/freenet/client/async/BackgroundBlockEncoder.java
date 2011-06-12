@@ -84,6 +84,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 		container.store(tag);
 	}
 
+	@Override
 	public void run() {
 	    freenet.support.Logger.OSThread.logPID(this);
 		while(true) {
@@ -107,6 +108,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 		}
 	}
 
+	@Override
 	public int getPriority() {
 		return NativeThread.MIN_PRIORITY;
 	}
@@ -115,6 +117,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 	
 	private DBJob runner = new DBJob() {
 
+		@Override
 		public boolean run(ObjectContainer container, ClientContext context) {
 			Query query = container.query();
 			query.constrain(BackgroundBlockEncoderTag.class);

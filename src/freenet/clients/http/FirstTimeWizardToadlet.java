@@ -707,6 +707,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 
 						private final boolean enable = enableUPnP;
 
+						@Override
 						public void run() {
 							if(enable)
 								core.node.pluginManager.startPluginOfficial("UPnP", true, false, false);
@@ -721,6 +722,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 
 						private final boolean enable = enableJSTUN;
 
+						@Override
 						public void run() {
 							// We can probably get connected without it, so don't force HTTPS.
 							// We'd have to ask the user anyway...

@@ -15,6 +15,7 @@ public class FetchWaiter implements ClientGetCallback {
 	private FetchException error;
 	private boolean finished;
 	
+	@Override
 	public synchronized void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		if(finished) return;
 		this.result = result;
@@ -22,6 +23,7 @@ public class FetchWaiter implements ClientGetCallback {
 		notifyAll();
 	}
 
+	@Override
 	public synchronized void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		if(finished) return;
 		this.error = e;
@@ -43,6 +45,7 @@ public class FetchWaiter implements ClientGetCallback {
 		return result;
 	}
 
+	@Override
 	public void onMajorProgress(ObjectContainer container) {
 		// Ignore
 	}

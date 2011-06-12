@@ -274,6 +274,7 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 		return pr;
 	}
 
+	@Override
 	public int compareTo(PluginInfoWrapper pi) {
 		return className.compareTo(pi.className);
 	}

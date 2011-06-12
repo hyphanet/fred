@@ -97,26 +97,32 @@ public class CHKBlock implements KeyBlock {
         hashCode = chk.hashCode() ^ Fields.hashCode(data) ^ Fields.hashCode(headers) ^ cryptoAlgorithm;
     }
 
+	@Override
 	public NodeCHK getKey() {
         return chk;
     }
 
+	@Override
 	public byte[] getRawHeaders() {
 		return headers;
 	}
 
+	@Override
 	public byte[] getRawData() {
 		return data;
 	}
 
+	@Override
 	public byte[] getPubkeyBytes() {
 		return null;
 	}
 
+	@Override
 	public byte[] getFullKey() {
 		return getKey().getFullKey();
 	}
 
+	@Override
 	public byte[] getRoutingKey() {
 		return getKey().getRoutingKey();
 	}

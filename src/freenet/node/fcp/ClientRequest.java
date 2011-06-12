@@ -147,14 +147,17 @@ public abstract class ClientRequest {
 			client = null;
 			lowLevelClient = new RequestClient() {
 
+				@Override
 				public boolean persistent() {
 					return false;
 				}
 
+				@Override
 				public void removeFrom(ObjectContainer container) {
 					throw new UnsupportedOperationException();
 				}
 
+				@Override
 				public boolean realTimeFlag() {
 					return realTime;
 				}
@@ -397,6 +400,7 @@ public abstract class ClientRequest {
 		if(persistenceType == PERSIST_FOREVER) {
 		server.core.clientContext.jobRunner.queue(new DBJob() {
 
+			@Override
 			public boolean run(ObjectContainer container, ClientContext context) {
 				container.activate(ClientRequest.this, 1);
 				try {
@@ -412,10 +416,12 @@ public abstract class ClientRequest {
 		} else {
 			server.core.getExecutor().execute(new PrioRunnable() {
 
+				@Override
 				public int getPriority() {
 					return NativeThread.NORM_PRIORITY;
 				}
 
+				@Override
 				public void run() {
 					try {
 						restart(null, server.core.clientContext, disableFilterData);

@@ -138,6 +138,7 @@ public class StatisticsToadlet extends Toadlet {
 		/* gather connection statistics */
 		PeerNodeStatus[] peerNodeStatuses = peers.getPeerNodeStatuses(true);
 		Arrays.sort(peerNodeStatuses, new Comparator<PeerNodeStatus>() {
+			@Override
 			public int compare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
 				int statusDifference = firstNode.getStatusValue() - secondNode.getStatusValue();
 				if (statusDifference != 0) {
@@ -704,6 +705,7 @@ public class StatisticsToadlet extends Toadlet {
 		nf.setMinimumIntegerDigits(2);
 		ClientRequester[] requests = ClientRequester.getAll();
 		Arrays.sort(requests, new Comparator<ClientRequester>() {
+				@Override
 				public int compare(ClientRequester a, ClientRequester b) {
 					return -Long.signum(a.creationTime - b.creationTime);
 				}
@@ -870,6 +872,7 @@ public class StatisticsToadlet extends Toadlet {
 			unclaimedFIFOMessageCountsArray[i++] = new STMessageCount( messageName, messageCount );
 		}
 		Arrays.sort(unclaimedFIFOMessageCountsArray, new Comparator<STMessageCount>() {
+			@Override
 			public int compare(STMessageCount firstCount, STMessageCount secondCount) {
 				return secondCount.messageCount - firstCount.messageCount;  // sort in descending order
 			}
@@ -1336,6 +1339,7 @@ public class StatisticsToadlet extends Toadlet {
 		}
 		ThreadBunch[] bunches = map.values().toArray(new ThreadBunch[map.size()]);
 		Arrays.sort(bunches, new Comparator<ThreadBunch>() {
+			@Override
 			public int compare(ThreadBunch b0, ThreadBunch b1) {
 				if(b0.count > b1.count) return -1;
 				if(b0.count < b1.count) return 1;

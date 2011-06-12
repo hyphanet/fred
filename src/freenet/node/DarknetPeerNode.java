@@ -960,6 +960,7 @@ public class DarknetPeerNode extends PeerNode {
 			receiver = new BulkReceiver(prb, DarknetPeerNode.this, uid, null);
 			// FIXME make this persistent
 			node.executor.execute(new Runnable() {
+				@Override
 				public void run() {
 					if(logMINOR)
 						Logger.minor(this, "Received file");
@@ -1004,6 +1005,7 @@ public class DarknetPeerNode extends PeerNode {
 			if(logMINOR)
 				Logger.minor(this, "Sending "+uid);
 			node.executor.execute(new Runnable() {
+				@Override
 				public void run() {
 					if(logMINOR)
 						Logger.minor(this, "Sending file");
@@ -1709,6 +1711,7 @@ public class DarknetPeerNode extends PeerNode {
 		return true;
 	}
 
+	@Override
 	protected void maybeClearPeerAddedTimeOnRestart(long now) {
 		if((now - peerAddedTime) > (((long) 30) * 24 * 60 * 60 * 1000))  // 30 days
 			peerAddedTime = 0;
@@ -1842,6 +1845,7 @@ public class DarknetPeerNode extends PeerNode {
 			}
 			node.executor.execute(new Runnable() {
 
+				@Override
 				public void run() {
 					try {
 						bt.send();
@@ -1887,6 +1891,7 @@ public class DarknetPeerNode extends PeerNode {
 			final BulkReceiver br = new BulkReceiver(prb, this, uid, node.nodeStats.foafCounter);
 			node.executor.execute(new Runnable() {
 
+				@Override
 				public void run() {
 					try {
 						if(br.receive()) {
@@ -1945,6 +1950,7 @@ public class DarknetPeerNode extends PeerNode {
 		}
 	}
 
+	@Override
 	protected void sendInitialMessages() {
 		super.sendInitialMessages();
 		try {

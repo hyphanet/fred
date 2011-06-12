@@ -59,6 +59,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			this.reversed = reversed;
 		}
 		
+		@Override
 		public int compare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
 			int result = 0;
 			boolean isSet = true;
@@ -1058,6 +1059,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 		}
 		Collections.sort(messageNames, new Comparator<String>() {
+			@Override
 			public int compare(String first, String second) {
 				return first.compareToIgnoreCase(second);
 			}

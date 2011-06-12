@@ -56,6 +56,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		itemsFromLastTime = new LinkedList<PersistentCooldownQueueItem>();
 	}
 
+	@Override
 	public long add(Key key, SendableGet client, ObjectContainer container) {
 		assert(cooldownTime != 0);
 		long removeTime = System.currentTimeMillis() + cooldownTime;
@@ -65,6 +66,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		return removeTime;
 	}
 
+	@Override
 	public boolean removeKey(final Key key, final SendableGet client, final long time, ObjectContainer container) {
 		boolean found = false;
 		final String keyAsBytes = HexUtil.bytesToHex(key.getFullKey());
@@ -78,6 +80,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		Evaluation eval = new Evaluation() {
 			final private static long serialVersionUID = 1537102695504880276L;
 
+			@Override
 			public void evaluate(Candidate candidate) {
 				PersistentCooldownQueueItem item = (PersistentCooldownQueueItem) candidate.getObject();
 				if(item.client != client) {
@@ -111,6 +114,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		return found;
 	}
 
+	@Override
 	public Object removeKeyBefore(final long now, long dontCareAfterMillis, ObjectContainer container, int maxCount) {
 		return removeKeyBefore(now, dontCareAfterMillis, container, maxCount, null);
 	}

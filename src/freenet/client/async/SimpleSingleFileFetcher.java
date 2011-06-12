@@ -182,10 +182,12 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	}
 
 	/** getToken() is not supported */
+	@Override
 	public long getToken() {
 		return token;
 	}
 
+	@Override
 	public void onFailed(KeyListenerConstructionException e, ObjectContainer container, ClientContext context) {
 		onFailure(e.getFetchException(), false, container, context);
 	}

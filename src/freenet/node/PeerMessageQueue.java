@@ -77,6 +77,7 @@ public class PeerMessageQueue {
 			public boolean remove(MessageItem item) {
 				return items.remove(item);
 			}
+			@Override
 			public String toString() {
 				return super.toString()+":"+id+":"+items.size()+":"+timeLastSent;
 			}

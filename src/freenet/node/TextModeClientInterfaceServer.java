@@ -258,6 +258,7 @@ public class TextModeClientInterfaceServer implements Runnable {
     /**
      * Read commands, run them
      */
+    @Override
     public void run() {
 	    freenet.support.Logger.OSThread.logPID(this);
     	while(true) {

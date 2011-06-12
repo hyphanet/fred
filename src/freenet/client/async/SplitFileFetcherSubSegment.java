@@ -48,6 +48,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	private static boolean logMINOR;
 	private boolean cancelled;
 	
+	@Override
 	public boolean isStorageBroken(ObjectContainer container) {
 		if(!container.ext().isActive(this))
 			throw new IllegalStateException("Must be activated first!");
@@ -142,6 +143,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 
 	// SendableGet has a hashCode() and inherits equals(), which is consistent with the hashCode().
 	
+	@Override
 	public void onFailure(BulkCallFailureItem[] items, ObjectContainer container, ClientContext context) {
 		throw new UnsupportedOperationException();
 	}
@@ -320,6 +322,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		try {
 			context.jobRunner.queue(new DBJob() {
 				
+				@Override
 				public boolean run(ObjectContainer container, ClientContext context) {
 					if(!container.ext().isStored(SplitFileFetcherSubSegment.this))
 						return false; // Already migrated
@@ -413,6 +416,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		return false;
 	}
 
+	@Override
 	public long getCooldownTime(ObjectContainer container, ClientContext context, long now) {
 		queueMigrateToSegmentFetcher(container, context);
 		return Long.MAX_VALUE;

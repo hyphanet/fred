@@ -45,14 +45,17 @@ public class USKManager {
 	
 	static RequestClient rcRT = new RequestClient() {
 
+		@Override
 		public boolean persistent() {
 			return false;
 		}
 
+		@Override
 		public boolean realTimeFlag() {
 			return true;
 		}
 
+		@Override
 		public void removeFrom(ObjectContainer container) {
 			throw new UnsupportedOperationException();
 		}
@@ -61,14 +64,17 @@ public class USKManager {
 	
 	static RequestClient rcBulk = new RequestClient() {
 
+		@Override
 		public boolean persistent() {
 			return false;
 		}
 
+		@Override
 		public boolean realTimeFlag() {
 			return false;
 		}
 
+		@Override
 		public void removeFrom(ObjectContainer container) {
 			throw new UnsupportedOperationException();
 		}
@@ -263,15 +269,18 @@ public class USKManager {
 		if(logMINOR) Logger.minor(this, "Doing hint fetch for "+uri);
 		final ClientGetter get = new ClientGetter(new ClientGetCallback() {
 
+			@Override
 			public void onMajorProgress(ObjectContainer container) {
 				// Ignore
 			}
 
+			@Override
 			public void onSuccess(FetchResult result, ClientGetter state,
 					ObjectContainer container) {
 				cb.success(origURI, token);
 			}
 
+			@Override
 			public void onFailure(FetchException e, ClientGetter state,
 					ObjectContainer container) {
 				if(e.isDataFound())
@@ -358,6 +367,7 @@ public class USKManager {
 	
 	private final Runnable prefetchChecker = new Runnable() {
 
+		@Override
 		public void run() {
 			if(logDEBUG) Logger.debug(this, "Running prefetch checker...");
 			ArrayList<USK> toFetch = null;
@@ -386,6 +396,7 @@ public class USKManager {
 				FetchContext fctx = new FetchContext(realFetchContext, FetchContext.IDENTICAL_MASK, false, null);
 				final ClientGetter get = new ClientGetter(new ClientGetCallback() {
 					
+					@Override
 					public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 						if(e.newURI != null) {
 							if(logMINOR) Logger.minor(this, "Prefetch succeeded with redirect for "+key);
@@ -397,12 +408,14 @@ public class USKManager {
 						}
 					}
 					
+					@Override
 					public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 						if(logMINOR) Logger.minor(this, "Prefetch succeeded for "+key);
 						result.asBucket().free();
 						updateKnownGood(key, l, context);
 					}
 					
+					@Override
 					public void onMajorProgress(ObjectContainer container) {
 						// Ignore
 					}
@@ -452,6 +465,7 @@ public class USKManager {
 					final boolean newSlotToo = newSlot;
 					for(final USKCallback callback : callbacks)
 						context.mainExecutor.execute(new Runnable() {
+							@Override
 							public void run() {
 								callback.onFoundEdition(number, usk, null, // non-persistent
 										context, false, (short)-1, null, true, newSlotToo);
@@ -485,6 +499,7 @@ public class USKManager {
 					final USK usk = origUSK.copy(number);
 					for(final USKCallback callback : callbacks)
 						context.mainExecutor.execute(new Runnable() {
+							@Override
 							public void run() {
 								callback.onFoundEdition(number, usk, null, // non-persistent
 										context, false, (short)-1, null, false, false);
@@ -564,6 +579,7 @@ public class USKManager {
 		final USKFetcher fetcher = sched;
 		if(fetcher != null) {
 			executor.execute(new Runnable() {
+				@Override
 				public void run() {
 					if(logMINOR) Logger.minor(this, "Starting "+fetcher);
 					fetcher.schedule(null, context);

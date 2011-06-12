@@ -122,6 +122,7 @@ public class HourlyStatsRecord {
 		return d;
 	}
 
+	@Override
 	public synchronized String toString() {
 		StringBuilder s = new StringBuilder();
 		s.append("HourlyStats: Report for hour beginning with UTC ");
@@ -223,6 +224,7 @@ public class HourlyStatsRecord {
 			locDiffSSK = new TrivialRunningAverage();
 		}
 
+		@Override
 		public String toString() {
 			StringBuilder sb = new StringBuilder();
 

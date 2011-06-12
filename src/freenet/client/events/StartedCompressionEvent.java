@@ -18,10 +18,12 @@ public class StartedCompressionEvent implements ClientEvent {
 	
 	final static int code = 0x08;
 	
+	@Override
 	public String getDescription() {
 		return "Started compression attempt with "+codec.name;
 	}
 
+	@Override
 	public int getCode() {
 		return code;
 	}

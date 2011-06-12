@@ -720,6 +720,7 @@ public class CSSParserTest extends TestCase {
 
 	MIMEType cssMIMEType;
 
+	@Override
 	public void setUp() throws InvalidThresholdException {
 		new NodeL10n();
 		//if (TestProperty.VERBOSE) {

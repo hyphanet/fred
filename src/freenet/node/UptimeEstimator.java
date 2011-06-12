@@ -99,6 +99,7 @@ public class UptimeEstimator implements Runnable {
 		}
 	}
 
+	@Override
 	public void run() {
 		synchronized(this) {
 			wasOnline[slot] = true;

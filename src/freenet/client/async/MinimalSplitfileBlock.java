@@ -31,20 +31,24 @@ public class MinimalSplitfileBlock implements SplitfileBlock {
 		this.number = n;
 	}
 
+	@Override
 	public int getNumber() {
 		return number;
 	}
 
+	@Override
 	public boolean hasData() {
 		return data != null;
 	}
 
+	@Override
 	public synchronized Bucket getData() {
 		return data;
 	}
 
 	/** Set the data but only if there is no data already. 
 	 * @return True if we set the data to the new bucket. */
+	@Override
 	public synchronized Bucket trySetData(Bucket data) {
 		if(this.data != null) return this.data;
 		this.data = data;
@@ -52,11 +56,13 @@ public class MinimalSplitfileBlock implements SplitfileBlock {
 	}
 
 	/** Set the data, assert that it is null before being set */
+	@Override
 	public synchronized void assertSetData(Bucket data) {
 		assert(this.data == null || this.data == data);
 		this.data = data;
 	}
 	
+	@Override
 	public synchronized Bucket clearData() {
 		Bucket ret = data;
 		data = null;
@@ -64,6 +70,7 @@ public class MinimalSplitfileBlock implements SplitfileBlock {
 	}
 
 	/** Replace the data - set it and return the old data */
+	@Override
 	public synchronized Bucket replaceData(Bucket data) {
 		Bucket ret = this.data;
 		this.data = data;
@@ -76,6 +83,7 @@ public class MinimalSplitfileBlock implements SplitfileBlock {
 //			Logger.minor(this, "Deactivating "+this, new Exception("debug"));
 //	}
 //
+	@Override
 	public synchronized void storeTo(ObjectContainer container) {
 		if(data != null)
 			data.storeTo(container);

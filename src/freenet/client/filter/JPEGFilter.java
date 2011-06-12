@@ -67,6 +67,7 @@ public class JPEGFilter implements ContentDataFilter {
 		(byte)'J', (byte)'F', (byte)'X', (byte)'X', 0
 	};
 
+	@Override
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 			FilterCallback cb) throws DataFilterException, IOException {
 		readFilter(input, output, charset, otherParams, cb, deleteComments, deleteExif);
@@ -386,6 +387,7 @@ public class JPEGFilter implements ContentDataFilter {
 		throw e;
 	}
 
+	@Override
 	public void writeFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 			FilterCallback cb) throws DataFilterException, IOException {
 		return;

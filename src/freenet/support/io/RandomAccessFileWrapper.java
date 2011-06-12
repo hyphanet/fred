@@ -20,6 +20,7 @@ public class RandomAccessFileWrapper implements RandomAccessThing {
 		raf = new RandomAccessFile(filename, mode);
 	}
 
+	@Override
 	public void pread(long fileOffset, byte[] buf, int bufOffset, int length)
 			throws IOException {
 		synchronized(this) {
@@ -28,6 +29,7 @@ public class RandomAccessFileWrapper implements RandomAccessThing {
 		}
 	}
 
+	@Override
 	public void pwrite(long fileOffset, byte[] buf, int bufOffset, int length)
 			throws IOException {
 		synchronized(this) {
@@ -36,10 +38,12 @@ public class RandomAccessFileWrapper implements RandomAccessThing {
 		}
 	}
 
+	@Override
 	public long size() throws IOException {
 		return raf.length();
 	}
 
+	@Override
 	public void close() {
 		try {
 			raf.close();

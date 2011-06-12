@@ -605,6 +605,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			return BaseManifestPutter.this.finished || cancelled || BaseManifestPutter.this.cancelled;
 		}
 
+		@Override
 		public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
 			if (logDEBUG) {
 				//temp hack, ignored if called via super
@@ -704,6 +705,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			}
 		}
 
+		@Override
 		public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
 			ClientPutState oldState;
 			synchronized(this) {
@@ -724,6 +726,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 				container.deactivate(BaseManifestPutter.this, 1);
 		}
 
+		@Override
 		public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
 			throw new UnsupportedOperationException();
 		}
@@ -733,6 +736,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		 * However, in onSuccess or onFailure, we need to remove the new state, even if
 		 * what is passed in is different (in which case we remove that too).
 		 */
+		@Override
 		public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 			if(newState == null) throw new NullPointerException();
 			Logger.error(this, "onTransition: cur=" + currentState + ", old=" + oldState + ", new=" + newState+" for "+this, new Exception("trace transition"));
@@ -751,6 +755,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			}
 		}
 
+		@Override
 		public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
 			throw new UnsupportedOperationException();
 		}
@@ -838,6 +843,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			super.addRedundantBlocks(blocks, container);
 		}
 		
+		@Override
 		public synchronized int getMinSuccessFetchBlocks() {
 			return minSuccessFetchBlocks;
 		}
@@ -851,6 +857,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 				container.deactivate(BaseManifestPutter.this, 1);
 		}
 
+		@Override
 		public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 			if(persistent) {
 				container.activate(BaseManifestPutter.this, 1);
@@ -884,6 +891,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 				container.deactivate(BaseManifestPutter.this, 1);
 		}
 
+		@Override
 		public void onFetchable(ClientPutState state, ObjectContainer container) {
 			if(logMINOR) Logger.minor(this, "onFetchable " + this, new Exception("debug"));
 			if(persistent)
@@ -941,6 +949,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			super.removeFrom(container, context);
 		}
 
+		@Override
 		public boolean objectCanNew(ObjectContainer container) {
 			if(cancelled) {
 				Logger.error(this, "Storing "+this+" when already cancelled!", new Exception("error"));
@@ -1171,6 +1180,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 
 	private final DBJob runGotAllMetadata = new DBJob() {
 
+		@Override
 		public boolean run(ObjectContainer container, ClientContext context) {
 			try {
 				context.jobRunner.removeRestartJob(this, NativeThread.NORM_PRIORITY, container);
@@ -1556,6 +1566,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 	/** The number of blocks that will be needed to fetch the data. We put this in the top block metadata. */
 	protected int minSuccessFetchBlocks;
 	
+	@Override
 	public void addBlock(ObjectContainer container) {
 		synchronized(this) {
 			minSuccessFetchBlocks++;
@@ -1563,6 +1574,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		super.addBlock(container);
 	}
 	
+	@Override
 	public void addBlocks(int num, ObjectContainer container) {
 		synchronized(this) {
 			minSuccessFetchBlocks+=num;
@@ -1571,6 +1583,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 	}
 	
 	/** Add one or more blocks to the number of requires blocks, and don't notify the clients. */
+	@Override
 	public void addMustSucceedBlocks(int blocks, ObjectContainer container) {
 		synchronized(this) {
 			minSuccessFetchBlocks += blocks;
@@ -1581,6 +1594,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 	/** Add one or more blocks to the number of requires blocks, and don't notify the clients. 
 	 * These blocks are added to the minSuccessFetchBlocks for the insert, but not to the counter for what
 	 * the requestor must fetch. */
+	@Override
 	public void addRedundantBlocks(int blocks, ObjectContainer container) {
 		super.addMustSucceedBlocks(blocks, container);
 	}
@@ -1594,6 +1608,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, minSuccessFetchBlocks, this.blockSetFinalized), container, context);
 	}
 
+	@Override
 	public int getMinSuccessFetchBlocks() {
 		return minSuccessFetchBlocks;
 	}
@@ -1702,6 +1717,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		//Logger.error(this, "Updating "+this+" activated="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("debug"));
 	}
 
+	@Override
 	public boolean objectCanNew(ObjectContainer container) {
 		if(finished) {
 			Logger.error(this, "Storing "+this+" when already finished!", new Exception("error"));

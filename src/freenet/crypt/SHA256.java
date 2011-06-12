@@ -153,6 +153,7 @@ public class SHA256 {
 	
 	static {
 		OOMHandler.addOOMHook(new OOMHook() {
+			@Override
 			public void handleLowMemory() throws Exception {
 				synchronized(digests) {
 					digests.clear();
@@ -160,6 +161,7 @@ public class SHA256 {
 				noCache = true;
 			}
 
+			@Override
 			public void handleOutOfMemory() throws Exception {
 				synchronized(digests) {
 					digests.clear();

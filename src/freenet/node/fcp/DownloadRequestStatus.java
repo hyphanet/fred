@@ -69,6 +69,7 @@ public class DownloadRequestStatus extends RequestStatus {
 		return mimeType;
 	}
 
+	@Override
 	public long getDataSize() {
 		return dataSize;
 	}

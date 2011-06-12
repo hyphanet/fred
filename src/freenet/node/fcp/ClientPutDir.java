@@ -339,6 +339,7 @@ public class ClientPutDir extends ClientPutBase {
 		super.onFailure(e, state, container);
 	}
 
+	@Override
 	public void onRemoveEventProducer(ObjectContainer container) {
 		// Do nothing, we called the removeFrom().
 	}

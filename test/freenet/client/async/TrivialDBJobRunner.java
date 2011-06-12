@@ -28,16 +28,19 @@ public class TrivialDBJobRunner implements DBJobRunner {
 		executor.start(baseExec, "Test executor");
 	}
 
+	@Override
 	public void queue(final DBJob job, final int priority, boolean checkDupes)
 			throws DatabaseDisabledException {
 		if(checkDupes) throw new UnsupportedOperationException();
 		executor.execute(new PrioRunnable() {
 
+			@Override
 			public void run() {
 				job.run(container, context);
 				container.commit();
 			}
 
+			@Override
 			public int getPriority() {
 				return priority;
 			}
@@ -45,6 +48,7 @@ public class TrivialDBJobRunner implements DBJobRunner {
 		});
 	}
 
+	@Override
 	public void runBlocking(final DBJob job, final int priority)
 			throws DatabaseDisabledException {
 		if(onDatabaseThread()) {
@@ -53,6 +57,7 @@ public class TrivialDBJobRunner implements DBJobRunner {
 			final MutableBoolean flag = new MutableBoolean();
 			executor.execute(new PrioRunnable() {
 
+				@Override
 				public void run() {
 					try {
 						job.run(container, context);
@@ -66,6 +71,7 @@ public class TrivialDBJobRunner implements DBJobRunner {
 					
 				}
 
+				@Override
 				public int getPriority() {
 					return priority;
 				}
@@ -83,33 +89,40 @@ public class TrivialDBJobRunner implements DBJobRunner {
 		}
 	}
 
+	@Override
 	public boolean onDatabaseThread() {
 		return executor.onThread();
 	}
 
+	@Override
 	public int getQueueSize(int priority) {
 		return executor.waitingThreads()[priority];
 	}
 
+	@Override
 	public void queueRestartJob(DBJob job, int priority,
 			ObjectContainer container, boolean early)
 			throws DatabaseDisabledException {
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
 	public void removeRestartJob(DBJob job, int priority,
 			ObjectContainer container) throws DatabaseDisabledException {
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
 	public boolean killedDatabase() {
 		return false;
 	}
 
+	@Override
 	public void setCommitThisTransaction() {
 		// Ignore
 	}
 
+	@Override
 	public void setCommitSoon() {
 		// Ignore
 	}

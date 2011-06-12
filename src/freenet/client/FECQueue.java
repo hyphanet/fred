@@ -197,6 +197,7 @@ public class FECQueue implements OOMHook {
 		 * Runs on each thread.
 		 * @author nextgens
 		 */
+		@Override
 		public void run() {
 			freenet.support.Logger.OSThread.logPID(this);
 			try {
@@ -252,6 +253,7 @@ public class FECQueue implements OOMHook {
 							// Run at a fairly high priority so we get the blocks out of memory and onto disk.
 							databaseJobRunner.queue(new DBJob() {
 
+								@Override
 								public boolean run(ObjectContainer container, ClientContext context) {
 									try {
 										job.storeBlockStatuses(container);
@@ -280,6 +282,7 @@ public class FECQueue implements OOMHook {
 									return true;
 								}
 								
+								@Override
 								public String toString() {
 									return "FECQueueJobFailedCallback@"+Integer.toHexString(super.hashCode());
 								}
@@ -310,6 +313,7 @@ public class FECQueue implements OOMHook {
 								prio--;
 							databaseJobRunner.queue(new DBJob() {
 
+								@Override
 								public boolean run(ObjectContainer container, ClientContext context) {
 									try {
 										job.storeBlockStatuses(container);
@@ -359,6 +363,7 @@ public class FECQueue implements OOMHook {
 									return true;
 								}
 								
+								@Override
 								public String toString() {
 									return "FECQueueJobCompletedCallback@"+Integer.toHexString(super.hashCode());
 								}
@@ -382,6 +387,7 @@ public class FECQueue implements OOMHook {
 			}
 		}
 
+		@Override
 		public int getPriority() {
 			return NativeThread.LOW_PRIORITY;
 		}
@@ -392,10 +398,12 @@ public class FECQueue implements OOMHook {
 	private void initCacheFillerJob() {
 		cacheFillerJob = new DBJob() {
 			
+		@Override
 		public String toString() {
 			return "FECQueueCacheFiller";
 		}
 
+		@Override
 		public boolean run(ObjectContainer container, ClientContext context) {
 			// Try to avoid accessing the database while synchronized on the FECQueue.
 			if(logMINOR) Logger.minor(this, "Running FEC cache filler job");
@@ -563,11 +571,13 @@ public class FECQueue implements OOMHook {
 		}
 	}
 
+	@Override
 	public synchronized void handleLowMemory() throws Exception {
 		maxRunningFECThreads = Math.max(1, maxRunningFECThreads - 1);
 		notify(); // not notifyAll()
 	}
 
+	@Override
 	public synchronized void handleOutOfMemory() throws Exception {
 		maxRunningFECThreads = 1;
 		notifyAll();

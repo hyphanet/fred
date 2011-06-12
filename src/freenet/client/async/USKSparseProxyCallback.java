@@ -35,6 +35,7 @@ public class USKSparseProxyCallback implements USKProgressCallback {
 		if(logMINOR) Logger.minor(this, "Creating sparse proxy callback "+this+" for "+cb+" for "+key);
 	}
 
+	@Override
 	public void onFoundEdition(long l, USK key, ObjectContainer container,
 			ClientContext context, boolean metadata, short codec, byte[] data,
 			boolean newKnownGood, boolean newSlotToo) {
@@ -56,18 +57,22 @@ public class USKSparseProxyCallback implements USKProgressCallback {
 		target.onFoundEdition(l, key, null, context, metadata, codec, data, newKnownGood, newSlotToo);
 	}
 
+	@Override
 	public short getPollingPriorityNormal() {
 		return target.getPollingPriorityNormal();
 	}
 
+	@Override
 	public short getPollingPriorityProgress() {
 		return target.getPollingPriorityProgress();
 	}
 
+	@Override
 	public void onSendingToNetwork(ClientContext context) {
 		innerRoundFinished(context, false);
 	}
 
+	@Override
 	public void onRoundFinished(ClientContext context) {
 		innerRoundFinished(context, true);
 	}

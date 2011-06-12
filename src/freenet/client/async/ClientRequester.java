@@ -236,14 +236,17 @@ public abstract class ClientRequester {
 				// REDFLAG this leaks a RequestClient. IMHO this is better than the alternative.
 				this.client = new RequestClient() {
 
+					@Override
 					public boolean persistent() {
 						return true;
 					}
 
+					@Override
 					public void removeFrom(ObjectContainer container) {
 						container.delete(this);
 					}
 
+					@Override
 					public boolean realTimeFlag() {
 						return realTimeFlag;
 					}

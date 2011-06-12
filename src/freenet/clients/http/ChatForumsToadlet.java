@@ -70,6 +70,7 @@ public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 		if(request.isPartSet("loadFreetalk")) {
 			node.executor.execute(new Runnable() {
 
+				@Override
 				public void run() {
 					if(!node.pluginManager.isPluginLoaded("plugins.WebOfTrust.WebOfTrust")) {
 						node.pluginManager.startPluginOfficial("WebOfTrust", true, false, false);
@@ -78,6 +79,7 @@ public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 			});
 			node.executor.execute(new Runnable() {
 
+				@Override
 				public void run() {
 					if(!node.pluginManager.isPluginLoaded("plugins.Freetalk.Freetalk")) {
 						node.pluginManager.startPluginOfficial("Freetalk", true, false, false);
@@ -109,6 +111,7 @@ public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 		return "/chat/";
 	}
 
+	@Override
 	public boolean isEnabled(ToadletContext ctx) {
 		return !plugins.isPluginLoaded("plugins.Freetalk.Freetalk");
 	}

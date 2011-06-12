@@ -41,10 +41,12 @@ public class PrioritizedSerialExecutor implements Executor {
 
 		Thread current;
 
+		@Override
 		public int getPriority() {
 			return priority;
 		}
 
+		@Override
 		public void run() {
 			synchronized(jobs) {
 				if(current != null) {
@@ -192,10 +194,12 @@ public class PrioritizedSerialExecutor implements Executor {
 		}
 	}
 
+	@Override
 	public void execute(Runnable job) {
 		execute(job, "<noname>");
 	}
 
+	@Override
 	public void execute(Runnable job, String jobName) {
 		int prio = defaultPriority;
 		if(job instanceof PrioRunnable)
@@ -234,10 +238,12 @@ public class PrioritizedSerialExecutor implements Executor {
 		}
 	}
 
+	@Override
 	public void execute(Runnable job, String jobName, boolean fromTicker) {
 		execute(job, jobName);
 	}
 
+	@Override
 	public int[] runningThreads() {
 		int[] retval = new int[NativeThread.JAVA_PRIORITY_RANGE+1];
 		if (running)
@@ -245,6 +251,7 @@ public class PrioritizedSerialExecutor implements Executor {
 		return retval;
 	}
 
+	@Override
 	public int[] waitingThreads() {
 		int[] retval = new int[NativeThread.JAVA_PRIORITY_RANGE+1];
 		synchronized(jobs) {
@@ -290,6 +297,7 @@ public class PrioritizedSerialExecutor implements Executor {
 		}
 	}
 
+	@Override
 	public int getWaitingThreadsCount() {
 		synchronized(jobs) {
 			return (waiting ? 1 : 0);

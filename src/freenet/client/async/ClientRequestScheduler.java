@@ -136,6 +136,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 
+	@Override
 	public void start(NodeClientCore core) {
 		if(schedCore != null)
 			schedCore.start(core);
@@ -169,6 +170,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					try {
 						jobRunner.queue(new DBJob() {
 							
+							@Override
 							public boolean run(ObjectContainer container, ClientContext context) {
 								container.delete(regme);
 								if(req.isCancelled(container)) {
@@ -382,6 +384,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 */
 	private final transient ArrayList<SendableRequest> runningPersistentRequests = new ArrayList<SendableRequest> ();
 	
+	@Override
 	public void removeRunningRequest(SendableRequest request, ObjectContainer container) {
 		synchronized(starterQueue) {
 			for(int i=0;i<runningPersistentRequests.size();i++) {
@@ -400,6 +403,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(!active) container.deactivate(request, 1);
 	}
 	
+	@Override
 	public boolean isRunningOrQueuedPersistentRequest(SendableRequest request) {
 		synchronized(starterQueue) {
 			for(int i=0;i<runningPersistentRequests.size();i++) {
@@ -430,6 +434,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	/**
 	 * Called by RequestStarter to find a request to run.
 	 */
+	@Override
 	public ChosenBlock grabRequest() {
 		boolean needsRefill = true;
 		while(true) {
@@ -496,6 +501,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 	
+	@Override
 	public void queueFillRequestStarterQueue() {
 		queueFillRequestStarterQueue(false);
 	}
@@ -593,6 +599,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	private DBJob requestStarterQueueFiller = new DBJob() {
+		@Override
 		public boolean run(ObjectContainer container, ClientContext context) {
 			fillRequestStarterQueue(container, context);
 			return false;
@@ -856,11 +863,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 	static final int TRIP_PENDING_PRIORITY = NativeThread.HIGH_PRIORITY-1;
 	
+	@Override
 	public synchronized void succeeded(final BaseSendableGet succeeded, boolean persistent) {
 		if(persistent) {
 			try {
 				jobRunner.queue(new DBJob() {
 
+					@Override
 					public boolean run(ObjectContainer container, ClientContext context) {
 						if(container.ext().isActive(succeeded))
 							Logger.error(this, "ALREADY ACTIVE in succeeded(): "+succeeded);
@@ -896,6 +905,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			try {
 				jobRunner.queue(new DBJob() {
 
+					@Override
 					public boolean run(ObjectContainer container, ClientContext context) {
 						if(logMINOR) Logger.minor(this, "tripPendingKey for "+key);
 						if(schedCore.tripPendingKey(key, block, container, clientContext))
@@ -917,6 +927,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	/* FIXME SECURITY When/if introduce tunneling or similar mechanism for starting requests
 	 * at a distance this will need to be reconsidered. See the comments on the caller in 
 	 * RequestHandler (onAbort() handler). */
+	@Override
 	public boolean wantKey(Key key) {
 		if(schedTransient.anyProbablyWantKey(key, clientContext)) return true;
 		if(schedCore != null && schedCore.anyProbablyWantKey(key, clientContext)) return true;
@@ -1016,25 +1027,30 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 
+	@Override
 	public long countTransientQueuedRequests() {
 		return schedTransient.countQueuedRequests(null, clientContext);
 	}
 
+	@Override
 	public KeysFetchingLocally fetchingKeys() {
 		return selector;
 	}
 
+	@Override
 	public void removeFetchingKey(Key key) {
 		// Don't need to call clearCooldown(), because selector will do it for each request blocked on the key.
 		selector.removeFetchingKey(key);
 	}
 
+	@Override
 	public void removeTransientInsertFetching(SendableInsert insert, Object token) {
 		selector.removeTransientInsertFetching(insert, token);
 		// Must remove here, because blocks selection and therefore creates cooldown cache entries.
 		insert.clearCooldown(null, clientContext, false);
 	}
 	
+	@Override
 	public void callFailure(final SendableGet get, final LowLevelGetException e, int prio, boolean persistent) {
 		if(!persistent) {
 			get.onFailure(e, null, null, clientContext);
@@ -1042,6 +1058,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			try {
 				jobRunner.queue(new DBJob() {
 
+					@Override
 					public boolean run(ObjectContainer container, ClientContext context) {
 						if(container.ext().isActive(get))
 							Logger.error(this, "ALREADY ACTIVE: "+get+" in callFailure(request)");
@@ -1062,6 +1079,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 	
+	@Override
 	public void callFailure(final SendableInsert insert, final LowLevelPutException e, int prio, boolean persistent) {
 		if(!persistent) {
 			insert.onFailure(e, null, null, clientContext);
@@ -1069,6 +1087,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			try {
 				jobRunner.queue(new DBJob() {
 
+					@Override
 					public boolean run(ObjectContainer container, ClientContext context) {
 						if(container.ext().isActive(insert))
 							Logger.error(this, "ALREADY ACTIVE: "+insert+" in callFailure(insert)");
@@ -1089,10 +1108,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 	
+	@Override
 	public FECQueue getFECQueue() {
 		return clientContext.fecQueue;
 	}
 
+	@Override
 	public ClientContext getContext() {
 		return clientContext;
 	}
@@ -1100,14 +1121,17 @@ public class ClientRequestScheduler implements RequestScheduler {
 	/**
 	 * @return True unless the key was already present.
 	 */
+	@Override
 	public boolean addToFetching(Key key) {
 		return selector.addToFetching(key);
 	}
 	
+	@Override
 	public boolean addTransientInsertFetching(SendableInsert insert, Object token) {
 		return selector.addTransientInsertFetching(insert, token);
 	}
 	
+	@Override
 	public boolean hasFetchingKey(Key key, BaseSendableGet getterWaiting, boolean persistent, ObjectContainer container) {
 		return selector.hasKey(key, null, false, null);
 	}
@@ -1146,6 +1170,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return false;
 	}
 
+	@Override
 	public void wakeStarter() {
 		starter.wakeUp();
 	}

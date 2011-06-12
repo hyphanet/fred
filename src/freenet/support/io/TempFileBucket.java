@@ -89,10 +89,12 @@ public class TempFileBucket extends BaseFileBucket implements Bucket {
 		return generator.getFilename(filenameID);
 	}
 
+	@Override
 	public boolean isReadOnly() {
 		return readOnly;
 	}
 
+	@Override
 	public void setReadOnly() {
 		readOnly = true;
 	}
@@ -105,11 +107,13 @@ public class TempFileBucket extends BaseFileBucket implements Bucket {
 		return false;
 	}
 
+	@Override
 	public void storeTo(ObjectContainer container) {
 		container.store(generator);
 		container.store(this);
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		if(logMINOR)
 			Logger.minor(this, "Removing from database: "+this);
@@ -117,6 +121,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket {
 		container.delete(this);
 	}
 
+	@Override
 	public Bucket createShadow() {
 		TempFileBucket ret = new TempFileBucket(filenameID, generator, false);
 		ret.setReadOnly();

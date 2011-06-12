@@ -137,6 +137,7 @@ public interface Compressor {
 			return result.toArray(new COMPRESSOR_TYPE[result.size()]);
 		}
 
+		@Override
 		public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
 			if(compressor == null) {
 				// DB4O VOODOO! See below.
@@ -145,6 +146,7 @@ public interface Compressor {
 			return compressor.compress(data, bf, maxReadLength, maxWriteLength);
 		}
 
+		@Override
 		public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
 			if(compressor == null) {
 				// DB4O VOODOO! See below.
@@ -153,6 +155,7 @@ public interface Compressor {
 			return compressor.compress(is, os, maxReadLength, maxWriteLength);
 		}
 
+		@Override
 		public long decompress(InputStream input, OutputStream output, long maxLength, long maxEstimateSizeLength) throws IOException, CompressionOutputSizeException {
 			if(compressor == null) {
 				// DB4O VOODOO! See below.
@@ -161,6 +164,7 @@ public interface Compressor {
 			return compressor.decompress(input, output, maxLength, maxEstimateSizeLength);
 		}
 
+		@Override
 		public int decompress(byte[] dbuf, int i, int j, byte[] output) throws CompressionOutputSizeException {
 			if(compressor == null) {
 				// DB4O VOODOO! See below.

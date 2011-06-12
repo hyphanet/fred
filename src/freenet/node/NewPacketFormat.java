@@ -114,6 +114,7 @@ public class NewPacketFormat implements PacketFormat {
 		hmacLength = HMAC_LENGTH;
 	}
 
+	@Override
 	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now, Peer replyTo) {
 		NPFPacket packet = null;
 		SessionKey s = null;
@@ -446,6 +447,7 @@ outer:
 		return seqNumBytes;
 	}
 
+	@Override
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly)
 	throws BlockedTooLongException {
 		SessionKey sessionKey = pn.getPreviousKeyTracker();
@@ -925,6 +927,7 @@ outer:
 		return keyContext.countSentPackets();
 	}
 	
+	@Override
 	public long timeCheckForLostPackets() {
 		long timeCheck = Long.MAX_VALUE;
 		double averageRTT = averageRTT();
@@ -954,6 +957,7 @@ outer:
 		return timeCheck;
 	}
 
+	@Override
 	public void checkForLostPackets() {
 		if(pn == null) return;
 		double averageRTT = averageRTT();
@@ -969,6 +973,7 @@ outer:
 			((NewPacketFormatKeyContext)(key.packetContext)).checkForLostPackets(averageRTT, curTime, pn);
 	}
 
+	@Override
 	public List<MessageItem> onDisconnect() {
 		int messageSize = 0;
 		List<MessageItem> items = null;
@@ -998,6 +1003,7 @@ outer:
 	 * @return 0 if there is anything already in flight. The time that the oldest ack was
 	 * queued at plus the lesser of half the RTT or 100ms if there are acks queued. 
 	 * Otherwise Long.MAX_VALUE to indicate that we need to get messages from the queue. */
+	@Override
 	public long timeNextUrgent(boolean canSend) {
 		long ret = Long.MAX_VALUE;
 		if(canSend) {
@@ -1026,10 +1032,12 @@ outer:
 		return ret;
 	}
 	
+	@Override
 	public long timeSendAcks() {
 		return timeCheckForAcks();
 	}
 	
+	@Override
 	public boolean canSend(SessionKey tracker) {
 		
 		boolean canAllocateID;
@@ -1300,11 +1308,13 @@ outer:
 		return x;
 	}
 	
+	@Override
 	public String toString() {
 		if(pn != null) return super.toString() +" for "+pn.shortToString();
 		else return super.toString();
 	}
 
+	@Override
 	public boolean fullPacketQueued(int maxPacketSize) {
 		return pn.getMessageQueue().mustSendSize(HMAC_LENGTH /* FIXME estimate headers */, maxPacketSize);
 	}

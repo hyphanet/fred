@@ -41,6 +41,7 @@ public class InsertTag extends UIDTag {
 		innerUnlock(noRecordUnlock);
 	}
 
+	@Override
 	protected synchronized boolean mustUnlock() {
 		if(senderStarted && !senderFinished) return false;
 		return super.mustUnlock();
