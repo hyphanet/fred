@@ -3076,22 +3076,27 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 */
 	public StoreLocationStats sskCacheStats() {
 		return new StoreLocationStats() {
+			@Override
 			public double avgLocation() {
 				return avgCacheSSKLocation.currentValue();
 			}
 
+			@Override
 			public double avgSuccess() {
 				return avgCacheSSKSuccess.currentValue();
 			}
 
+			@Override
 			public double furthestSuccess() throws StatsNotAvailableException {
 				return furthestCacheSSKSuccess;
 			}
 
+			@Override
 			public double avgDist() throws StatsNotAvailableException {
 				return Location.distance(nodeLoc, avgLocation());
 			}
 
+			@Override
 			public double distanceStats() throws StatsNotAvailableException {
 				return cappedDistance(avgCacheSSKLocation, node.getChkDatacache());
 			}
@@ -3105,22 +3110,27 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 */
 	public StoreLocationStats sskSlashDotCacheStats() {
 		return new StoreLocationStats() {
+			@Override
 			public double avgLocation() {
 				return avgSlashdotCacheSSKLocation.currentValue();
 			}
 
+			@Override
 			public double avgSuccess() {
 				return avgSlashdotCacheSSKSuccess.currentValue();
 			}
 
+			@Override
 			public double furthestSuccess() throws StatsNotAvailableException {
 				return furthestSlashdotCacheSSKSuccess;
 			}
 
+			@Override
 			public double avgDist() throws StatsNotAvailableException {
 				return Location.distance(nodeLoc, avgLocation());
 			}
 
+			@Override
 			public double distanceStats() throws StatsNotAvailableException {
 				return cappedDistance(avgSlashdotCacheSSKLocation, node.getChkDatacache());
 			}
@@ -3134,22 +3144,27 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 */
 	public StoreLocationStats sskClientCacheStats() {
 		return new StoreLocationStats() {
+			@Override
 			public double avgLocation() {
 				return avgClientCacheSSKLocation.currentValue();
 			}
 
+			@Override
 			public double avgSuccess() {
 				return avgClientCacheSSKSuccess.currentValue();
 			}
 
+			@Override
 			public double furthestSuccess() throws StatsNotAvailableException {
 				return furthestClientCacheSSKSuccess;
 			}
 
+			@Override
 			public double avgDist() throws StatsNotAvailableException {
 				return Location.distance(nodeLoc, avgLocation());
 			}
 
+			@Override
 			public double distanceStats() throws StatsNotAvailableException {
 				return cappedDistance(avgClientCacheSSKLocation, node.getChkDatacache());
 			}
@@ -3180,6 +3195,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			totalTime = myTotalTime;
 		}
 
+		@Override
 		public int compareTo(TimedStats o) {
 			if(totalTime < o.totalTime)
 				return 1;
@@ -3382,6 +3398,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		runningAnnouncements.remove(uid);
 	}
 
+	@Override
 	public void blockTime(long interval, boolean realtime) {
 		throttledPacketSendAverage.report(interval);
 		if(realtime)
