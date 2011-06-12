@@ -151,7 +151,7 @@ public class N2NTMToadlet extends Toadlet {
 			return;
 		}
 
-		if (request.isPartSet("n2nm-upload") || request.isPartSet("select-file")) {
+		if (request.isPartSet("n2nm-upload") || request.isPartSet("select-file") || request.isPartSet("send")) {
 			File filename = null;
 			String message = request.getPartAsStringFailsafe("message", 5 * 1024);
 			message = message.trim();
