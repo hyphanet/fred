@@ -506,7 +506,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(client != null) {
 				RequestStatusCache cache = client.getRequestStatusCache();
 				if(cache != null) {
-					cache.updateStatus(identifier, ((SimpleProgressMessage)progressPending).getEvent());
+					cache.updateStatus(identifier, (progressPending).getEvent());
 				}
 			}
 		} else if(msg instanceof SendingToNetworkMessage) {

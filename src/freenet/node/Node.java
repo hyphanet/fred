@@ -4062,7 +4062,7 @@ public class Node implements TimeSkewDetectorCallback {
 		KeyBlock kb = null;
 
 		if (key instanceof NodeCHK) {
-			kb = fetch((NodeCHK) key, false, canReadClientCache, canWriteClientCache, canWriteDatastore, null);
+			kb = fetch(key, false, canReadClientCache, canWriteClientCache, canWriteDatastore, null);
 		} else if (key instanceof NodeSSK) {
 			NodeSSK sskKey = (NodeSSK) key;
 			DSAPublicKey pubKey = sskKey.getPubKey();

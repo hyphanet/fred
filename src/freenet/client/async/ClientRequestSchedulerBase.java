@@ -149,7 +149,7 @@ abstract class ClientRequestSchedulerBase {
 			throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.MINIMUM_PRIORITY_CLASS+" (least important)");
 		// Client
 		synchronized(this) {
-			SectoredRandomGrabArray clientGrabber = (SectoredRandomGrabArray) newPriorities[priorityClass];
+			SectoredRandomGrabArray clientGrabber = newPriorities[priorityClass];
 			if(persistent()) container.activate(clientGrabber, 1);
 			if(clientGrabber == null) {
 				clientGrabber = new SectoredRandomGrabArray(persistent(), container, null);

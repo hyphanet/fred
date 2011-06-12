@@ -537,7 +537,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 	public void moveElementsTo(SectoredRandomGrabArray newTopLevel,
 			ObjectContainer container, boolean canCommit) {
 		for(int i=0;i<grabArrays.length;i++) {
-			RemoveRandomWithObject grabber = (RemoveRandomWithObject) grabArrays[i];
+			RemoveRandomWithObject grabber = grabArrays[i];
 			Object client = grabClients[i];
 			if(grabber == null && client == null) continue;
 			if(grabber == null && client != null) {

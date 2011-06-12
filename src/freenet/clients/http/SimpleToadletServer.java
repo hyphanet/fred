@@ -181,7 +181,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		@Override
 		public void set(Integer newPort) throws NodeNeedRestartException {
-			if(savedPort != (int)newPort) {
+			if(savedPort != newPort) {
 				savedPort = port;
 				throw new NodeNeedRestartException("Port cannot change on the fly");
 			}

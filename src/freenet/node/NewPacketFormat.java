@@ -158,7 +158,7 @@ public class NewPacketFormat implements PacketFormat {
 	LinkedList<byte[]> handleDecryptedPacket(NPFPacket packet, SessionKey sessionKey) {
 		LinkedList<byte[]> fullyReceived = new LinkedList<byte[]>();
 
-		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) sessionKey.packetContext;
+		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
 		for(int ack : packet.getAcks()) {
 			keyContext.ack(ack, pn, sessionKey);
 		}
@@ -311,7 +311,7 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	private NPFPacket tryDecipherPacket(byte[] buf, int offset, int length, SessionKey sessionKey) {
-		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) sessionKey.packetContext;
+		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
 		// Create the watchlist if the key has changed
 		if(keyContext.seqNumWatchList == null) {
 			if(logMINOR) Logger.minor(this, "Creating watchlist starting at " + keyContext.watchListOffset);
@@ -409,7 +409,7 @@ outer:
 
 		NPFPacket p = NPFPacket.create(payload, pn);
 
-		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) sessionKey.packetContext;
+		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
 		synchronized(this) {
 			if(seqNumGreaterThan(sequenceNumber, keyContext.highestReceivedSeqNum, 31)) {
 				keyContext.highestReceivedSeqNum = sequenceNumber;
@@ -471,7 +471,7 @@ outer:
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly, SessionKey sessionKey)
 	throws BlockedTooLongException {
 		int maxPacketSize = pn.getMaxPacketSize();
-		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) sessionKey.packetContext;
+		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
 
 		NPFPacket packet = createPacket(maxPacketSize - hmacLength, pn.getMessageQueue(), sessionKey, ackOnly);
 		if(packet == null) return false;
@@ -570,7 +570,7 @@ outer:
 		boolean mustSend = false;
 		long now = System.currentTimeMillis();
 		
-		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) sessionKey.packetContext;
+		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
 		
 		AddedAcks moved = keyContext.addAcks(packet, maxPacketSize, now);
 		if(moved != null && moved.anyUrgentAcks) {
@@ -923,7 +923,7 @@ outer:
 
 	/** For unit tests */
 	int countSentPackets(SessionKey key) {
-		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) key.packetContext;
+		NewPacketFormatKeyContext keyContext = key.packetContext;
 		return keyContext.countSentPackets();
 	}
 	
@@ -933,13 +933,13 @@ outer:
 		double averageRTT = averageRTT();
 		SessionKey key = pn.getCurrentKeyTracker();
 		if(key != null)
-			timeCheck = Math.min(timeCheck, ((NewPacketFormatKeyContext)(key.packetContext)).timeCheckForLostPackets(averageRTT));
+			timeCheck = Math.min(timeCheck, ((key.packetContext)).timeCheckForLostPackets(averageRTT));
 		key = pn.getPreviousKeyTracker();
 		if(key != null)
-			timeCheck = Math.min(timeCheck, ((NewPacketFormatKeyContext)(key.packetContext)).timeCheckForLostPackets(averageRTT));
+			timeCheck = Math.min(timeCheck, ((key.packetContext)).timeCheckForLostPackets(averageRTT));
 		key = pn.getUnverifiedKeyTracker();
 		if(key != null)
-			timeCheck = Math.min(timeCheck, ((NewPacketFormatKeyContext)(key.packetContext)).timeCheckForLostPackets(averageRTT));
+			timeCheck = Math.min(timeCheck, ((key.packetContext)).timeCheckForLostPackets(averageRTT));
 		return timeCheck;
 	}
 	
@@ -947,13 +947,13 @@ outer:
 		long timeCheck = Long.MAX_VALUE;
 		SessionKey key = pn.getCurrentKeyTracker();
 		if(key != null)
-			timeCheck = Math.min(timeCheck, ((NewPacketFormatKeyContext)key.packetContext).timeCheckForAcks());
+			timeCheck = Math.min(timeCheck, (key.packetContext).timeCheckForAcks());
 		key = pn.getPreviousKeyTracker();
 		if(key != null)
-			timeCheck = Math.min(timeCheck, ((NewPacketFormatKeyContext)key.packetContext).timeCheckForAcks());
+			timeCheck = Math.min(timeCheck, (key.packetContext).timeCheckForAcks());
 		key = pn.getUnverifiedKeyTracker();
 		if(key != null)
-			timeCheck = Math.min(timeCheck, ((NewPacketFormatKeyContext)key.packetContext).timeCheckForAcks());
+			timeCheck = Math.min(timeCheck, (key.packetContext).timeCheckForAcks());
 		return timeCheck;
 	}
 
@@ -964,13 +964,13 @@ outer:
 		long curTime = System.currentTimeMillis();
 		SessionKey key = pn.getCurrentKeyTracker();
 		if(key != null)
-			((NewPacketFormatKeyContext)(key.packetContext)).checkForLostPackets(averageRTT, curTime, pn);
+			((key.packetContext)).checkForLostPackets(averageRTT, curTime, pn);
 		key = pn.getPreviousKeyTracker();
 		if(key != null)
-			((NewPacketFormatKeyContext)(key.packetContext)).checkForLostPackets(averageRTT, curTime, pn);
+			((key.packetContext)).checkForLostPackets(averageRTT, curTime, pn);
 		key = pn.getUnverifiedKeyTracker();
 		if(key != null)
-			((NewPacketFormatKeyContext)(key.packetContext)).checkForLostPackets(averageRTT, curTime, pn);
+			((key.packetContext)).checkForLostPackets(averageRTT, curTime, pn);
 	}
 
 	@Override
@@ -1051,7 +1051,7 @@ outer:
 		if(canAllocateID) {
 			// Check whether we need to rekey.
 			if(tracker == null) return false;
-			NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) tracker.packetContext;
+			NewPacketFormatKeyContext keyContext = tracker.packetContext;
 			if(!keyContext.canAllocateSeqNum()) {
 				// We can't allocate more sequence numbers because we haven't rekeyed yet
 				pn.startRekeying();

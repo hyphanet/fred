@@ -81,7 +81,7 @@ public final class Tiger extends MessageDigest implements Cloneable {
     @Override
     public Object clone() throws CloneNotSupportedException {
         Tiger that = (Tiger)super.clone();
-        that.pad = (byte[])this.pad.clone();
+        that.pad = this.pad.clone();
         return that;
     }
 
@@ -370,7 +370,7 @@ public final class Tiger extends MessageDigest implements Cloneable {
         long w0, w1, w2, w3, w4, w5, w6, w7;
         /* First pass on little endian input, with multiplier equal to 5. */
         c = hC
-          ^ (w0 = ((long)(  (input[offset     ] & 0xff)
+          ^ (w0 = ((  (input[offset     ] & 0xff)
                          | ((input[offset +  1] & 0xff) <<  8)
                          | ((input[offset +  2] & 0xff) << 16)
                          | ( input[offset +  3]         << 24)) & 0xffffffffL)
@@ -381,7 +381,7 @@ public final class Tiger extends MessageDigest implements Cloneable {
         a = ( hA
             - (S0[(lo=(int) c      ) & 0xff] ^ S1[(lo>>>16) & 0xff] ^
                S2[(hi=(int)(c>>>32)) & 0xff] ^ S3[(hi>>>16) & 0xff]))
-          ^ (w1 = ((long)(  (input[offset +  3] & 0xff)
+          ^ (w1 = ((  (input[offset +  3] & 0xff)
                          | ((input[offset +  4] & 0xff) <<  8)
                          | ((input[offset += 5] & 0xff) << 16)
                          | ( input[offset +  1]         << 24)) & 0xffffffffL)
@@ -393,7 +393,7 @@ public final class Tiger extends MessageDigest implements Cloneable {
                S1[(hi>>> 8)          & 0xff] ^ S0[ hi>>>24        ]) + hB) * 5
             - (S0[(lo=(int) a      ) & 0xff] ^ S1[(lo>>>16) & 0xff] ^
                S2[(hi=(int)(a>>>32)) & 0xff] ^ S3[(hi>>>16) & 0xff]))
-          ^ (w2 = ((long)(  (input[offset +  1] & 0xff)
+          ^ (w2 = ((  (input[offset +  1] & 0xff)
                          | ((input[offset +  2] & 0xff) <<  8)
                          | ((input[offset +  3] & 0xff) << 16)
                          | ( input[offset +  4]         << 24)) & 0xffffffffL)
@@ -405,7 +405,7 @@ public final class Tiger extends MessageDigest implements Cloneable {
                S1[(hi>>> 8)          & 0xff] ^ S0[ hi>>>24        ]) + c) * 5
             - (S0[(lo=(int) b      ) & 0xff] ^ S1[(lo>>>16) & 0xff] ^
                S2[(hi=(int)(b>>>32)) & 0xff] ^ S3[(hi>>>16) & 0xff]))
-          ^ (w3 = ((long)(  (input[offset +  4] & 0xff)
+          ^ (w3 = ((  (input[offset +  4] & 0xff)
                          | ((input[offset += 5] & 0xff) <<  8)
                          | ((input[offset +  1] & 0xff) << 16)
                          | ( input[offset +  2]         << 24)) & 0xffffffffL)
@@ -417,7 +417,7 @@ public final class Tiger extends MessageDigest implements Cloneable {
                S1[(hi>>> 8)          & 0xff] ^ S0[ hi>>>24        ]) + a) * 5
             - (S0[(lo=(int) c      ) & 0xff] ^ S1[(lo>>>16) & 0xff] ^
                S2[(hi=(int)(c>>>32)) & 0xff] ^ S3[(hi>>>16) & 0xff]))
-          ^ (w4 = ((long)(  (input[offset +  2] & 0xff)
+          ^ (w4 = ((  (input[offset +  2] & 0xff)
                          | ((input[offset +  3] & 0xff) <<  8)
                          | ((input[offset +  4] & 0xff) << 16)
                          | ( input[offset += 5]         << 24)) & 0xffffffffL)
@@ -429,7 +429,7 @@ public final class Tiger extends MessageDigest implements Cloneable {
                S1[(hi>>> 8)          & 0xff] ^ S0[ hi>>>24        ]) + b) * 5
             - (S0[(lo=(int) a      ) & 0xff] ^ S1[(lo>>>16) & 0xff] ^
                S2[(hi=(int)(a>>>32)) & 0xff] ^ S3[(hi>>>16) & 0xff]))
-          ^ (w5 = ((long)(  (input[offset += 5] & 0xff)
+          ^ (w5 = ((  (input[offset += 5] & 0xff)
                          | ((input[offset +  1] & 0xff) <<  8)
                          | ((input[offset +  2] & 0xff) << 16)
                          | ( input[offset +  3]         << 24)) & 0xffffffffL)
@@ -441,7 +441,7 @@ public final class Tiger extends MessageDigest implements Cloneable {
                S1[(hi>>> 8         ) & 0xff] ^ S0[ hi>>>24        ]) + c) * 5
             - (S0[(lo=(int) b      ) & 0xff] ^ S1[(lo>>>16) & 0xff] ^
                S2[(hi=(int)(b>>>32)) & 0xff] ^ S3[(hi>>>16) & 0xff]))
-          ^ (w6 = ((long)(  (input[offset +  3] & 0xff)
+          ^ (w6 = ((  (input[offset +  3] & 0xff)
                          | ((input[offset +  4] & 0xff) <<  8)
                          | ((input[offset += 5] & 0xff) << 16)
                          | ( input[offset +  1]         << 24)) & 0xffffffffL)
@@ -453,7 +453,7 @@ public final class Tiger extends MessageDigest implements Cloneable {
                S1[(hi>>> 8)          & 0xff] ^ S0[ hi>>>24        ]) + a) * 5
             - (S0[(lo=(int) c      ) & 0xff] ^ S1[(lo>>>16) & 0xff] ^
                S2[(hi=(int)(c>>>32)) & 0xff] ^ S3[(hi>>>16) & 0xff]))
-          ^ (w7 = ((long)(  (input[offset +  1] & 0xff)
+          ^ (w7 = ((  (input[offset +  1] & 0xff)
                          | ((input[offset +  2] & 0xff) <<  8)
                          | ((input[offset +  3] & 0xff) << 16)
                          | ( input[offset +  4]         << 24)) & 0xffffffffL)

@@ -88,7 +88,7 @@ public class Bzip2Compressor implements Compressor {
 		CBZip2InputStream bz2is = new CBZip2InputStream(new BufferedInputStream(is));
 		long written = 0;
 		int bufSize = 32768;
-		if(maxLength > 0 && maxLength < (long)bufSize)
+		if(maxLength > 0 && maxLength < bufSize)
 			bufSize = (int)maxLength;
 		byte[] buffer = new byte[bufSize];
 		while(true) {

@@ -158,7 +158,7 @@ public class RequestStatusCache {
 	 * and ,true when it has actually started (a race condition means we don't setStarted
 	 * at that point since it's possible the success/failure callback might happen first). */
 	public synchronized void updateStarted(String identifier, boolean started) {
-		RequestStatus status = (RequestStatus) requestsByIdentifier.get(identifier);
+		RequestStatus status = requestsByIdentifier.get(identifier);
 		if(status == null) return; // Can happen during cancel etc.
 		
 		if(!started)

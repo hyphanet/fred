@@ -5048,7 +5048,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			synchronized(this) {
 				lastSentAllocationInput = (int) stats.inputBandwidthPeerLimit;
 				lastSentAllocationOutput = (int) stats.outputBandwidthPeerLimit;
-				lastSentMaxOutputTransfers = (int) stats.maxTransfersOut;
+				lastSentMaxOutputTransfers = stats.maxTransfersOut;
 				if(!noRemember) {
 					if(lastFullStats != null && lastFullStats.equals(stats)) return null;
 					lastFullStats = stats;

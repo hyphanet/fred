@@ -1193,7 +1193,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		// FIXME what happens when the bwlimit changes?
 		
 		double totalCouldSend = Math.max(totalSent,
-				((double)((node.getOutputBandwidthLimit() * uptime))/1000.0));
+				(((node.getOutputBandwidthLimit() * uptime))/1000.0));
 		double nonOverheadFraction = (totalCouldSend - totalOverhead) / totalCouldSend;
 		long timeFirstAnyConnections = peers.timeFirstAnyConnections;
 		if(timeFirstAnyConnections > 0) {

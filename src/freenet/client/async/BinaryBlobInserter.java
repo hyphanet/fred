@@ -61,7 +61,7 @@ public class BinaryBlobInserter implements ClientPutState {
 
 		int x=0;
 		while(i.hasNext()) {
-			Key key = (Key) i.next();
+			Key key = i.next();
 			KeyBlock block = blocks.get(key);
 			MySendableInsert inserter =
 				new MySendableInsert(x++, block, prioClass, getScheduler(block, container, context), clientContext);

@@ -77,7 +77,7 @@ public class GzipCompressor implements Compressor {
 		os = new BufferedOutputStream(os, 32768);
 		long written = 0;
 		int bufSize = 32768;
-		if(maxLength > 0 && maxLength < (long)bufSize)
+		if(maxLength > 0 && maxLength < bufSize)
 			bufSize = (int)maxLength;
 		byte[] buffer = new byte[bufSize];
 		while(true) {
