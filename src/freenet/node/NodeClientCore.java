@@ -1592,6 +1592,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			if(downloadAllowedEverywhere) return true;
 			if(includeDownloadDir && FileUtil.isParent(getDownloadsDir(), filename)) return true;
 			for(File dir : downloadAllowedDirs) {
+				if(dir == null) {
+					// Debug mysterious NPE...
+					Logger.error(this, "Null in upload allowed dirs???");
+					continue;
+				}
 				if(FileUtil.isParent(dir, filename)) return true;
 			}
 			return false;
@@ -1601,6 +1606,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	public synchronized boolean allowUploadFrom(File filename) {
 		if(uploadAllowedEverywhere) return true;
 		for(File dir : uploadAllowedDirs) {
+			if(dir == null) {
+				// Debug mysterious NPE...
+				Logger.error(this, "Null in upload allowed dirs???");
+				continue;
+			}
 			if(FileUtil.isParent(dir, filename)) return true;
 		}
 		return false;
