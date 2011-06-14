@@ -1562,15 +1562,17 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	public boolean allowDownloadTo(File filename) {
 		PHYSICAL_THREAT_LEVEL physicalThreatLevel = node.securityLevels.getPhysicalThreatLevel();
 		if(physicalThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) return false;
-		if(downloadAllowedEverywhere) return true;
-		if(includeDownloadDir && FileUtil.isParent(getDownloadsDir(), filename)) return true;
-		for(File dir : downloadAllowedDirs) {
-			if(FileUtil.isParent(dir, filename)) return true;
+		synchronized(this) {
+			if(downloadAllowedEverywhere) return true;
+			if(includeDownloadDir && FileUtil.isParent(getDownloadsDir(), filename)) return true;
+			for(File dir : downloadAllowedDirs) {
+				if(FileUtil.isParent(dir, filename)) return true;
+			}
+			return false;
 		}
-		return false;
 	}
 
-	public boolean allowUploadFrom(File filename) {
+	public synchronized boolean allowUploadFrom(File filename) {
 		if(uploadAllowedEverywhere) return true;
 		for(File dir : uploadAllowedDirs) {
 			if(FileUtil.isParent(dir, filename)) return true;
@@ -1578,11 +1580,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		return false;
 	}
 
-	public File[] getAllowedDownloadDirs() {
+	public synchronized File[] getAllowedDownloadDirs() {
 		return downloadAllowedDirs;
 	}
 
-	public File[] getAllowedUploadDirs() {
+	public synchronized File[] getAllowedUploadDirs() {
 		return uploadAllowedDirs;
 	}
 
