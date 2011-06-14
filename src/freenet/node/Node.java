@@ -5675,7 +5675,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public byte[] getOpennetPubKeyHash() {
-		return opennet.crypto.myIdentity;
+		return opennet.crypto.pubKeyHash;
 	}
 
 	public byte[] getDarknetIdentity() {
@@ -5683,7 +5683,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public byte[] getDarknetPubKeyHash() {
-		return darknetCrypto.myIdentity;
+		return darknetCrypto.pubKeyHash;
 	}
 
 	public int estimateFullHeadersLengthOneMessage() {
