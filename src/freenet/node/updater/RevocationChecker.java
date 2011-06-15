@@ -216,9 +216,13 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 				blobBucket = (ArrayBucket) tmpBlob;
 			}
 		} else {
-			synchronized(this) {
-				if(tmpBlob == blobFile) return;
-				if(tmpBlob.equals(blobFile)) return;
+			if(tmpBlob instanceof FileBucket) {
+				File f = ((FileBucket)tmpBlob).getFile();
+				synchronized(this) {
+					if(f == blobFile) return;
+					if(f.equals(blobFile)) return;
+					if(FileUtil.getCanonicalFile(f).equals(FileUtil.getCanonicalFile(blobFile))) return;
+				}
 			}
 			try {
 				ArrayBucket buf = new ArrayBucket(BucketTools.toByteArray(tmpBlob));
