@@ -73,6 +73,7 @@ public class PrioritizedSerialExecutor implements Executor {
 						job = checkQueue();
 						if(job == null) {
 							running=false;
+							current = null;
 							return;
 						}
 					}
