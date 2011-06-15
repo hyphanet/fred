@@ -46,7 +46,6 @@ public class PrioritizedSerialExecutor implements Executor {
 		}
 
 		public void run() {
-			long lastDumped = System.currentTimeMillis();
 			synchronized(jobs) {
 				if(current != null) {
 					if(current.isAlive()) {
@@ -57,6 +56,7 @@ public class PrioritizedSerialExecutor implements Executor {
 				current = Thread.currentThread();
 			}
 			try {
+			boolean calledIdleCallback = false;
 			while(true) {
 				Runnable job = null;
 				synchronized(jobs) {
@@ -72,12 +72,24 @@ public class PrioritizedSerialExecutor implements Executor {
 						waiting=false;
 						job = checkQueue();
 						if(job == null) {
-							running=false;
-							current = null;
-							return;
+							if(calledIdleCallback || callback == null) {
+								running=false;
+								current = null;
+								return;
+							}
 						}
 					}
 				}
+				if(job == null) {
+					try {
+						callback.onIdle();
+					} catch (Throwable t) {
+						Logger.error(this, "Idle callback failed: "+t, t);
+					}
+					calledIdleCallback = true;
+					continue;
+				}
+				calledIdleCallback = false;
 				try {
 					if(logMINOR)
 						Logger.minor(this, "Running job "+job);
