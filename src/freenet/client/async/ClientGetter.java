@@ -467,18 +467,18 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			if(persistent()) {
 				container.activate(clientCallback, 1);
 			}
+			if(persistent()) {
+				if(state != null) {
+					container.activate(state, 1);
+					state.removeFrom(container, context);
+				}
+				if(oldState != state && oldState != null) {
+					container.activate(oldState, 1);
+					oldState.removeFrom(container, context);
+				}
+			}
 			clientCallback.onFailure(e1, ClientGetter.this, container);
-			break;
-		}
-		if(persistent()) {
-			if(state != null) {
-				container.activate(state, 1);
-				state.removeFrom(container, context);
-			}
-			if(oldState != state && oldState != null) {
-				container.activate(oldState, 1);
-				oldState.removeFrom(container, context);
-			}
+			return;
 		}
 	}
 
