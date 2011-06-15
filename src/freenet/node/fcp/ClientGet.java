@@ -295,35 +295,73 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(targetFile != null)
 				container.activate(targetFile, 5);
 		}
+		boolean bucketChanged = true;
 		if(returnBucket != data && !binaryBlob) {
-			boolean failed = true;
+			// FIXME A succession of increasingly wierd failure modes. Most of which have been observed in practice. :<
+			// FIXME For any of these to happen there must be a bug in the client layer code or in db4o. So this is defensive.
 			synchronized(this) {
+				// Check for already finished.
 				if(finished) {
 					Logger.error(this, "Already finished but onSuccess() for "+this+" data = "+data, new Exception("debug"));
 					data.free();
 					if(persistenceType == PERSIST_FOREVER) data.removeFrom(container);
 					return; // Already failed - bucket error maybe??
 				}
+				// Check for no bucket on direct return type. Can work around.
 				if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT && returnBucket == null) {
 					// Lost bucket for some reason e.g. bucket error (caused by IOException) on previous try??
 					// Recover...
 					returnBucket = data;
-					failed = false;
+					bucketChanged = false;
 				}
 			}
-			if(failed && persistenceType == PERSIST_FOREVER) {
+			// Check for db4o bug. Can work around.
+			if(bucketChanged && persistenceType == PERSIST_FOREVER) {
 				if(container.ext().getID(returnBucket) == container.ext().getID(data)) {
 					Logger.error(this, "DB4O BUG DETECTED WITHOUT ARRAY HANDLING! EVIL HORRIBLE BUG! UID(returnBucket)="+container.ext().getID(returnBucket)+" for "+returnBucket+" active="+container.ext().isActive(returnBucket)+" stored = "+container.ext().isStored(returnBucket)+" but UID(data)="+container.ext().getID(data)+" for "+data+" active = "+container.ext().isActive(data)+" stored = "+container.ext().isStored(data));
 					// Succeed anyway, hope that the returned bucket is consistent...
 					returnBucket = data;
-					failed = false;
+					bucketChanged = false;
 				}
 			}
-			if(data instanceof FileBucket && data != returnBucket) {
-				Logger.error(this, "Returned bucket "+data+" in onSuccess, expected "+returnBucket, new Exception("error"));
-				onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Data != returnBucket"), null, container);
-				return;
+		}
+		if(bucketChanged) {
+			// Something is still borked.
+			synchronized(this) {
+				if(data instanceof FileBucket && returnBucket instanceof FileBucket) {
+					File actualFile = ((FileBucket)data).getFile();
+					File expectedFile = ((FileBucket)returnBucket).getFile();
+					if(actualFile.toString().equals(expectedFile.toString())) {
+						Logger.warning(this, "Data was written to the correct file "+actualFile+" but the bucket changed: "+returnBucket+" -> "+data);
+						// It was written to the right place, just something wierd happened to copy the bucket (db4o error for instance).
+						returnBucket = data;
+						bucketChanged = false;
+					} else {
+						Logger.error(this, "Data was written to "+actualFile+" but should be written to "+expectedFile);
+						// We can handle this. Just move the data.
+						boolean shortCut = false;
+						if(expectedFile.renameTo(actualFile))
+							shortCut = true;
+						else {
+							actualFile.delete();
+							if(expectedFile.renameTo(actualFile))
+								shortCut = true;
+						}
+						if(shortCut) {
+							returnBucket.free();
+							if(persistenceType == PERSIST_FOREVER)
+								returnBucket.removeFrom(container);
+							returnBucket = data;
+							bucketChanged = false;
+						} // Otherwise the data will have to be copied.
+					}
+				} else {
+					Logger.error(this, "Returned bucket "+data+" in onSuccess, expected "+returnBucket+((data == returnBucket) ? " (equal)" : "(not equal)"), new Exception("error"));
+					// We can work around this, just copy the data.
+				}
 			}
+		}
+		if(bucketChanged) {
 			// Something wierd happened, recreate returnBucket ...
 			if(tempFile != null && tempFile.exists()) tempFile.delete();
 			if(data != returnBucket)
