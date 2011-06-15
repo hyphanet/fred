@@ -213,6 +213,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		}
 		if(tmpBlob instanceof ArrayBucket) {
 			synchronized(this) {
+				if(tmpBlob == blobBucket) return;
 				blobBucket = (ArrayBucket) tmpBlob;
 			}
 		} else {
