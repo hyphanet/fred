@@ -451,13 +451,9 @@ public class WelcomeToadlet extends Toadlet {
 
         HTMLNode bookmarkBoxContent = bookmarkBox.addChild("div", "class", "infobox-content");
         
-                
+        
         HTMLNode bookmarksList = bookmarkBoxContent.addChild("ul", "id", "bookmarks");
         addCategoryToList(BookmarkManager.MAIN_CATEGORY, bookmarksList, (!container.enableActivelinks()) || (useragent != null && useragent.contains("khtml") && !useragent.contains("chrome")), ctx);
-
-        if (!ctx.getPageMaker().getTheme().fetchKeyBoxAboveBookmarks) {
-            this.putFetchKeyBox(ctx, contentNode);
-        }
 
 		// Search Box
         // FIXME search box is BELOW bookmarks for now, until we get search fixed properly.
@@ -486,6 +482,9 @@ public class WelcomeToadlet extends Toadlet {
 			NodeL10n.getBase().addL10nSubstitution(textSpan, "WelcomeToadlet.searchPluginNotLoaded", new String[] { "link" }, new HTMLNode[] { HTMLNode.link("/plugins/") });
 		}
 		
+        if (!ctx.getPageMaker().getTheme().fetchKeyBoxAboveBookmarks) {
+            this.putFetchKeyBox(ctx, contentNode);
+        }
 
         // Version info and Quit Form
         HTMLNode versionContent = ctx.getPageMaker().getInfobox("infobox-information", l10n("versionHeader"), contentNode, "freenet-version", true);
