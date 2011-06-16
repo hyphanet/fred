@@ -133,6 +133,7 @@ public class ClientGetWorkerThread extends Thread {
 			if(hashes != null) {
 				HashResult[] results = hashStream.getResults();
 				if(!HashResult.strictEquals(results, hashes)) {
+					Logger.error(this, "Hashes failed verification (length read is "+hashStream.getReadBytes()+") "+" for "+uri);
 					throw new FetchException(FetchException.CONTENT_HASH_FAILED);
 				}
 			}
