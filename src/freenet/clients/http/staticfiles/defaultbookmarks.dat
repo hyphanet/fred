@@ -1,7 +1,7 @@
 BookmarkCategory=3
 Version=1
 Bookmark=0
-BookmarkCategory0.Name=Indexes of freesites (in-Freenet web sites)
+BookmarkCategory0.Name=Indexes/portals (these link to lots of freesites)
 BookmarkCategory0.Content.BookmarkCategory=0
 BookmarkCategory0.Content.Bookmark=4
 BookmarkCategory0.Content.Bookmark0.Name=AFKindex
@@ -51,7 +51,7 @@ BookmarkCategory1.Content.Bookmark6.URI=USK@e3myoFyp5avg6WYN16ImHri6J7Nj8980Fm~a
 BookmarkCategory1.Content.Bookmark6.Name=jSite
 BookmarkCategory1.Content.Bookmark6.Description=Tool for uploading freesites (Freenet websites)
 BookmarkCategory1.Content.Bookmark6.hasAnActivelink=true
-BookmarkCategory2.Name=Freenet team's flogs
+BookmarkCategory2.Name=Freenet team's flogs (blogs)
 BookmarkCategory2.Content.BookmarkCategory=0
 BookmarkCategory2.Content.Bookmark=3
 BookmarkCategory2.Content.Bookmark0.Name=Toad
