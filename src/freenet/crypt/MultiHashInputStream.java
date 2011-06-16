@@ -15,6 +15,7 @@ public class MultiHashInputStream extends FilterInputStream {
 
 	// Bit flags for generateHashes
 	private Digester[] digesters;
+	private long readBytes;
 	
 	class Digester {
 		HashType hashType;
@@ -54,6 +55,7 @@ public class MultiHashInputStream extends FilterInputStream {
 		if(ret <= 0) return ret;
 		for(Digester d : digesters)
 			d.digest.update(buf, off, ret);
+		readBytes += ret;
 		return ret;
 	}
 	
@@ -70,6 +72,7 @@ public class MultiHashInputStream extends FilterInputStream {
 		byte[] b = new byte[] { (byte)ret };
 		for(Digester d : digesters)
 			d.digest.update(b, 0, 1);
+		readBytes++;
 		return ret;
 	}
 	
@@ -92,5 +95,9 @@ public class MultiHashInputStream extends FilterInputStream {
 			results[i] = digesters[i].getResult();
 		digesters = null;
 		return results;
+	}
+	
+	public long getReadBytes() {
+		return readBytes;
 	}
 }
