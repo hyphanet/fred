@@ -19,10 +19,12 @@ import freenet.client.filter.ContentFilter;
 import freenet.client.filter.FoundURICallback;
 import freenet.client.filter.TagReplacerCallback;
 import freenet.client.filter.ContentFilter.FilterStatus;
+import freenet.client.filter.UnsafeContentTypeException;
 import freenet.crypt.HashResult;
 import freenet.crypt.MultiHashInputStream;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
+import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
@@ -140,7 +142,10 @@ public class ClientGetWorkerThread extends Thread {
 
 			onFinish();
 		} catch(Throwable t) {
-			Logger.error(this, "Exception caught while processing fetch: "+t,t);
+			if(!(t instanceof FetchException || t instanceof UnsafeContentTypeException || t instanceof CompressionOutputSizeException))
+				Logger.error(this, "Exception caught while processing fetch: "+t,t);
+			else if(logMINOR)
+				Logger.minor(this, "Exception caught while processing fetch: "+t,t);
 			setError(t);
 		} finally {
 			Closer.close(input);
