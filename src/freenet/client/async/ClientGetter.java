@@ -331,7 +331,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			if(persistent()) data.removeFrom(container);
 			return;
 		} catch(UnsafeContentTypeException e) {
-			Logger.error(this, "Error filtering content: will not validate", e);
+			Logger.normal(this, "Error filtering content: will not validate", e);
 			onFailure(new FetchException(e.getFetchErrorCode(), expectedSize, e, ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME), state/*Not really the state's fault*/, container, context);
 			if(finalResult != null && finalResult != returnBucket) {
 				finalResult.free();
