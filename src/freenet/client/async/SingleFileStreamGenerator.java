@@ -46,8 +46,8 @@ public class SingleFileStreamGenerator implements StreamGenerator {
 			FileUtil.copy(data, os, -1);
 			data.close();
 			os.close();
-			if(persistent) bucket.removeFrom(container);
 			bucket.free();
+			if(persistent) bucket.removeFrom(container);
 			if(logMINOR) Logger.minor(this, "Stream completely generated", new Exception("debug"));
 		} finally {
 			Closer.close(bucket);

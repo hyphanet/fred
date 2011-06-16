@@ -572,11 +572,13 @@ public class FetchException extends Exception {
 		// Wierd ones
 		// Not necessarily a problem with the inserted data.
 		case CANCELLED:
+			return false;
+			
 		case ARCHIVE_RESTART:
 		case PERMANENT_REDIRECT:
 		case WRONG_MIME_TYPE:
 			// Fatal
-			return false;
+			return true;
 			
 		default:
 			Logger.error(FetchException.class, "Do not know if error code is fatal: "+getMessage(mode));

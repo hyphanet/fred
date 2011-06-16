@@ -213,13 +213,10 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		}
 		if(tmpBlob instanceof ArrayBucket) {
 			synchronized(this) {
+				if(tmpBlob == blobBucket) return;
 				blobBucket = (ArrayBucket) tmpBlob;
 			}
 		} else {
-			synchronized(this) {
-				if(tmpBlob == blobFile) return;
-				if(tmpBlob.equals(blobFile)) return;
-			}
 			try {
 				ArrayBucket buf = new ArrayBucket(BucketTools.toByteArray(tmpBlob));
 				synchronized(this) {
@@ -230,6 +227,14 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 				System.err.println("This should not happen and indicates there may be a problem with the auto-update checker.");
 				// Don't blow(), as that's already happened.
 				return;
+			}
+			if(tmpBlob instanceof FileBucket) {
+				File f = ((FileBucket)tmpBlob).getFile();
+				synchronized(this) {
+					if(f == blobFile) return;
+					if(f.equals(blobFile)) return;
+					if(FileUtil.getCanonicalFile(f).equals(FileUtil.getCanonicalFile(blobFile))) return;
+				}
 			}
 			System.out.println("Unexpected blob file in revocation checker: "+tmpBlob);
 		}

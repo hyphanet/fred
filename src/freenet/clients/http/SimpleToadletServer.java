@@ -951,6 +951,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			} finally {
 	            synchronized(SimpleToadletServer.this) {
 	            	fproxyConnections--;
+	            	SimpleToadletServer.this.notifyAll();
 	            }
 			}
 			if(logMINOR) Logger.minor(this, "Handled connection");

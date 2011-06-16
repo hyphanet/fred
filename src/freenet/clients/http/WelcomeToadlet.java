@@ -435,7 +435,28 @@ public class WelcomeToadlet extends Toadlet {
 			contentNode.addChild(core.alerts.createSummary());
         }
 		
+        if (ctx.getPageMaker().getTheme().fetchKeyBoxAboveBookmarks) {
+            this.putFetchKeyBox(ctx, contentNode);
+        }
+        
+        // Bookmarks
+        HTMLNode bookmarkBox = contentNode.addChild("div", "class", "infobox infobox-normal bookmarks-box");
+        HTMLNode bookmarkBoxHeader = bookmarkBox.addChild("div", "class", "infobox-header");
+        bookmarkBoxHeader.addChild("a", new String[]{"class", "title"}, new String[]{"bookmarks-header-text", NodeL10n.getBase().getString("BookmarkEditorToadlet.myBookmarksExplanation")}, NodeL10n.getBase().getString("BookmarkEditorToadlet.myBookmarksTitle"));
+        if (ctx.isAllowedFullAccess()) {
+            bookmarkBoxHeader.addChild("span", "class", "edit-bracket", "[");
+            bookmarkBoxHeader.addChild("span", "id", "bookmarkedit").addChild("a", new String[]{"href", "class"}, new String[]{"/bookmarkEditor/", "interfacelink"}, NodeL10n.getBase().getString("BookmarkEditorToadlet.edit"));
+            bookmarkBoxHeader.addChild("span", "class", "edit-bracket", "]");
+        }
+
+        HTMLNode bookmarkBoxContent = bookmarkBox.addChild("div", "class", "infobox-content");
+        
+        
+        HTMLNode bookmarksList = bookmarkBoxContent.addChild("ul", "id", "bookmarks");
+        addCategoryToList(BookmarkManager.MAIN_CATEGORY, bookmarksList, (!container.enableActivelinks()) || (useragent != null && useragent.contains("khtml") && !useragent.contains("chrome")), ctx);
+
 		// Search Box
+        // FIXME search box is BELOW bookmarks for now, until we get search fixed properly.
 		HTMLNode searchBox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		searchBox.addAttribute("id", "search-freenet");
         searchBox.addChild("div", "class", "infobox-header").addChild("span", "class", "search-title-label", NodeL10n.getBase().getString("WelcomeToadlet.searchBoxLabel"));
@@ -461,27 +482,6 @@ public class WelcomeToadlet extends Toadlet {
 			NodeL10n.getBase().addL10nSubstitution(textSpan, "WelcomeToadlet.searchPluginNotLoaded", new String[] { "link" }, new HTMLNode[] { HTMLNode.link("/plugins/") });
 		}
 		
-
-        if (ctx.getPageMaker().getTheme().fetchKeyBoxAboveBookmarks) {
-            this.putFetchKeyBox(ctx, contentNode);
-        }
-        
-        // Bookmarks
-        HTMLNode bookmarkBox = contentNode.addChild("div", "class", "infobox infobox-normal bookmarks-box");
-        HTMLNode bookmarkBoxHeader = bookmarkBox.addChild("div", "class", "infobox-header");
-        bookmarkBoxHeader.addChild("a", new String[]{"class", "title"}, new String[]{"bookmarks-header-text", NodeL10n.getBase().getString("BookmarkEditorToadlet.myBookmarksExplanation")}, NodeL10n.getBase().getString("BookmarkEditorToadlet.myBookmarksTitle"));
-        if (ctx.isAllowedFullAccess()) {
-            bookmarkBoxHeader.addChild("span", "class", "edit-bracket", "[");
-            bookmarkBoxHeader.addChild("span", "id", "bookmarkedit").addChild("a", new String[]{"href", "class"}, new String[]{"/bookmarkEditor/", "interfacelink"}, NodeL10n.getBase().getString("BookmarkEditorToadlet.edit"));
-            bookmarkBoxHeader.addChild("span", "class", "edit-bracket", "]");
-        }
-
-        HTMLNode bookmarkBoxContent = bookmarkBox.addChild("div", "class", "infobox-content");
-        
-                
-        HTMLNode bookmarksList = bookmarkBoxContent.addChild("ul", "id", "bookmarks");
-        addCategoryToList(BookmarkManager.MAIN_CATEGORY, bookmarksList, (!container.enableActivelinks()) || (useragent != null && useragent.contains("khtml") && !useragent.contains("chrome")), ctx);
-
         if (!ctx.getPageMaker().getTheme().fetchKeyBoxAboveBookmarks) {
             this.putFetchKeyBox(ctx, contentNode);
         }

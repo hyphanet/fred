@@ -295,8 +295,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(targetFile != null)
 				container.activate(targetFile, 5);
 		}
-		boolean bucketChanged = true;
-		if(returnBucket != data && !binaryBlob) {
+		boolean bucketChanged = (returnBucket != data && !binaryBlob);
+		if(bucketChanged) {
 			// FIXME A succession of increasingly wierd failure modes. Most of which have been observed in practice. :<
 			// FIXME For any of these to happen there must be a bug in the client layer code or in db4o. So this is defensive.
 			synchronized(this) {
