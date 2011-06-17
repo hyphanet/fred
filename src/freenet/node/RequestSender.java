@@ -1338,7 +1338,7 @@ loadWaiterLoop:
                 		try {
 	                		// Received data
 	               			p.transferSuccess(realTimeFlag);
-	                		if(logMINOR) Logger.minor(this, "Received data");
+	                		if(logMINOR) Logger.minor(this, "Received data from offer reply");
                 			verifyAndCommit(finalHeaders, data);
 	                		finish(SUCCESS, p, true);
 	                		node.nodeStats.successfulBlockReceive(realTimeFlag, source == null);
