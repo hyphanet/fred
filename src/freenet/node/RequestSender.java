@@ -1775,6 +1775,7 @@ loadWaiterLoop:
     				// Received data
     				try {
     					verifyAndCommit(waiter.headers, data);
+    					if(logMINOR) Logger.minor(this, "Written to store");
     				} catch (KeyVerifyException e1) {
     					Logger.normal(this, "Got data but verify failed: "+e1, e1);
     					node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
