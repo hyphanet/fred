@@ -1748,8 +1748,10 @@ loadWaiterLoop:
     		synchronized(this) {
     			transferringFrom = next;
     		}
-    	}
-			receivingAsync = true;
+    	} else
+        	if(logMINOR) Logger.minor(this, "Receiving data from fork");
+    	
+    	receivingAsync = true;
     	br.receive(new BlockReceiverCompletion() {
     		
     		public void blockReceived(byte[] data) {
