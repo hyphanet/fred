@@ -1744,7 +1744,6 @@ loadWaiterLoop:
     	}
     	
     	if(logMINOR) Logger.minor(this, "Receiving data");
-    	final PeerNode from = next;
     	if(!wasFork) {
     		synchronized(this) {
     			transferringFrom = next;
