@@ -1749,7 +1749,6 @@ loadWaiterLoop:
     			transferringFrom = next;
     		}
     	}
-    	final PeerNode sentTo = next;
 			receivingAsync = true;
     	br.receive(new BlockReceiverCompletion() {
     		
@@ -1767,8 +1766,8 @@ loadWaiterLoop:
     				}
     				if(!wasFork)
     					node.removeTransferringSender((NodeCHK)key, RequestSender.this);
-   					sentTo.transferSuccess(realTimeFlag);
-    				sentTo.successNotOverload(realTimeFlag);
+   					next.transferSuccess(realTimeFlag);
+    				next.successNotOverload(realTimeFlag);
    					node.nodeStats.successfulBlockReceive(realTimeFlag, source == null);
     				if(logMINOR) Logger.minor(this, "Received data");
     				// Received data
@@ -1776,20 +1775,20 @@ loadWaiterLoop:
     					verifyAndCommit(waiter.headers, data);
     				} catch (KeyVerifyException e1) {
     					Logger.normal(this, "Got data but verify failed: "+e1, e1);
-    					node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
+    					node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
     					if(!wasFork)
-    						finish(VERIFY_FAILURE, sentTo, false);
+    						finish(VERIFY_FAILURE, next, false);
     					else
-    						sentTo.noLongerRoutingTo(origTag, false);
+    						next.noLongerRoutingTo(origTag, false);
     					return;
     				}
     				if(haveSetPRB) // It was a fork, so we didn't immediately send the data.
     					fireCHKTransferBegins();
-    				finish(SUCCESS, sentTo, false);
+    				finish(SUCCESS, next, false);
     			} catch (Throwable t) {
         			Logger.error(this, "Failed on "+this, t);
         			if(!wasFork)
-        				finish(INTERNAL_ERROR, sentTo, true);
+        				finish(INTERNAL_ERROR, next, true);
     			} finally {
     				if(wasFork)
     					next.noLongerRoutingTo(origTag, false);
@@ -1807,15 +1806,15 @@ loadWaiterLoop:
     					Logger.normal(this, "Transfer failed (disconnect): "+e, e);
     				else
     					// A certain number of these are normal, it's better to track them through statistics than call attention to them in the logs.
-    					Logger.normal(this, "Transfer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+sentTo, e);
+    					Logger.normal(this, "Transfer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+next, e);
     				if(RequestSender.this.source == null)
-    					Logger.normal(this, "Local transfer failed: "+e.getReason()+" : "+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+sentTo, e);
+    					Logger.normal(this, "Local transfer failed: "+e.getReason()+" : "+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+next, e);
     				// We do an ordinary backoff in all cases.
     				if(!prb.abortedLocally())
-    					sentTo.localRejectedOverload("TransferFailedRequest"+e.getReason(), realTimeFlag);
-    				node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
+    					next.localRejectedOverload("TransferFailedRequest"+e.getReason(), realTimeFlag);
+    				node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
     				if(!wasFork)
-    					finish(TRANSFER_FAILED, sentTo, false);
+    					finish(TRANSFER_FAILED, next, false);
     				int reason = e.getReason();
     				boolean timeout = (!br.senderAborted()) &&
     				(reason == RetrievalException.SENDER_DIED || reason == RetrievalException.RECEIVER_DIED || reason == RetrievalException.TIMED_OUT
@@ -1824,18 +1823,18 @@ loadWaiterLoop:
     				if(timeout) {
     					// Looks like a timeout. Backoff.
     					if(logMINOR) Logger.minor(this, "Timeout transferring data : "+e, e);
-    					sentTo.transferFailed(e.getErrString(), realTimeFlag);
+    					next.transferFailed(e.getErrString(), realTimeFlag);
     				} else {
     					// Quick failure (in that we didn't have to timeout). Don't backoff.
     					// Treat as a DNF.
-    					node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
+    					node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
     				}
     				if(!prb.abortedLocally())
     					node.nodeStats.failedBlockReceive(true, timeout, realTimeFlag, source == null);
     			} catch (Throwable t) {
         			Logger.error(this, "Failed on "+this, t);
         			if(!wasFork)
-        				finish(INTERNAL_ERROR, sentTo, true);
+        				finish(INTERNAL_ERROR, next, true);
     			} finally {
     				if(wasFork)
     					next.noLongerRoutingTo(origTag, false);
