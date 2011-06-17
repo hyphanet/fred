@@ -1422,7 +1422,7 @@ loadWaiterLoop:
     		}
     		
     		if(msg == null) {
-    			if(logMINOR) Logger.minor(this, "Timeout waiting for Accepted");
+    			if(logMINOR) Logger.minor(this, "Timeout waiting for Accepted for "+this);
     			// Timeout waiting for Accepted
     			next.localRejectedOverload("AcceptedTimeout", realTimeFlag);
     			forwardRejectedOverload();
