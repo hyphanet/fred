@@ -5144,9 +5144,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					if(logMINOR) Logger.minor(this, "Not adding "+peer.shortToString+" because already matched on "+this);
 					return true;
 				}
+				if(waitingFor.contains(peer)) return true;
 				waitingFor.add(peer);
 			}
-			return peer.outputLoadTracker(realTime).queueSlotWaiter(this);
+			if(!peer.outputLoadTracker(realTime).queueSlotWaiter(this)) {
+				synchronized(this) {
+					waitingFor.remove(peer);
+				}
+				return false;
+			} else return true;
 		}
 		
 		/** First part of wake-up callback. If this returns null, we have already woken up,
