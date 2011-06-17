@@ -1325,7 +1325,7 @@ loadWaiterLoop:
 				
         		BlockReceiver br = new BlockReceiver(node.usm, pn, uid, prb, this, node.getTicker(), true, realTimeFlag, myTimeoutHandler);
         		
-       			if(logMINOR) Logger.minor(this, "Receiving data");
+       			if(logMINOR) Logger.minor(this, "Receiving data (for offer reply)");
        			final PeerNode p = pn;
        			receivingAsync = true;
        			br.receive(new BlockReceiverCompletion() {
