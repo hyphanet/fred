@@ -91,7 +91,7 @@ public class WelcomeToadlet extends Toadlet {
                 }
                 cell = row.addChild("td", "style", "border: none");
                 cell.addChild("a", new String[]{"href", "title", "class"}, new String[]{ '/' + item.getKey(), item.getDescription(), "bookmark-title"}, item.getVisibleName());
-                String explain = item.getExplanation();
+                String explain = item.getShortDescription();
                 if(explain != null && explain.length() > 0) {
                 	cell.addChild("#", " (");
                 	cell.addChild("#", explain);

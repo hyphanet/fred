@@ -81,7 +81,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 				
 			String itemPath = URLEncoder.encode(path + item.getName(), false);
 			HTMLNode li = new HTMLNode("li", "class", "item", item.getVisibleName());
-            String explain = item.getExplanation();
+            String explain = item.getShortDescription();
             if(explain != null && explain.length() > 0) {
             	li.addChild("#", " (");
             	li.addChild("#", explain);
@@ -263,7 +263,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 							form.addChild("br");
 							form.addChild("label", "for", "descB", (NodeL10n.getBase().getString("BookmarkEditorToadlet.explainLabel") + ' '));
 							form.addChild("br");
-							form.addChild("textarea", new String[]{"id", "name", "row", "cols"}, new String[]{"explain", "explain", "3", "70"}, (isNew ? "" : item.getExplanation()));
+							form.addChild("textarea", new String[]{"id", "name", "row", "cols"}, new String[]{"explain", "explain", "3", "70"}, (isNew ? "" : item.getShortDescription()));
 							form.addChild("br");
 						}
 						form.addChild("label", "for", "hasAnActivelink", (NodeL10n.getBase().getString("BookmarkEditorToadlet.hasAnActivelinkLabel") + ' '));
