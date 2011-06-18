@@ -9,6 +9,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
+import freenet.client.async.BinaryBlobWriter;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.DatabaseDisabledException;
@@ -130,7 +131,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 					cg = revocationGetter = new ClientGetter(this, 
 							manager.revocationURI, ctxRevocation, 
 							aggressive ? RequestStarter.MAXIMUM_PRIORITY_CLASS : RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
-							this, null, new ArrayBucket());
+							this, null, new BinaryBlobWriter(new ArrayBucket()));
 					if(logMINOR) Logger.minor(this, "Queued another revocation fetcher (count="+revocationDNFCounter+")");
 				}
 			}
