@@ -14,6 +14,7 @@ import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.InsertContext;
 import freenet.client.async.BinaryBlob;
+import freenet.client.async.BinaryBlobWriter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
@@ -211,7 +212,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			getter = new ClientGetter(this,
 					uri, fctx, priorityClass,
 					lowLevelClient,
-					binaryBlob ? new NullBucket() : returnBucket, binaryBlob ? returnBucket : null);
+					binaryBlob ? new NullBucket() : returnBucket, binaryBlob ? new BinaryBlobWriter(returnBucket) : null);
 	}
 
 	/**
