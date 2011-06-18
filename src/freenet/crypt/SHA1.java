@@ -54,6 +54,7 @@ public final class SHA1 implements Digest {
 	return getInstance(false);
     }
     
+    @Override
     public final int digestSize() {
         return 160;
     }
@@ -69,6 +70,7 @@ public final class SHA1 implements Digest {
      * @param digest int[] into which to place 5 elements
      * @param offset index of first of the 5 elements
      */
+    @Override
     public final void extract(int[] digest, int offset) {
         for(int i=0; i<5; ++i) {
             digest[i+offset] = 
@@ -260,6 +262,7 @@ public final class SHA1 implements Digest {
      * this method for types other than bytes.
      * @param b byte to add
      */
+    @Override
     public final void update(byte b) {
         int mask = (blockIndex & 3) << 3;
         count += 8;
@@ -278,11 +281,13 @@ public final class SHA1 implements Digest {
      * @param offset start byte
      * @param length number of bytes to hash
      */
+    @Override
     public final void update(byte[] data, int offset, int length) {
         for (int i=0; i<length; ++i)
             update(data[offset+i]);
     }
 
+    @Override
     public final void update(byte[] data) {
         update(data, 0, data.length);
     }
@@ -291,6 +296,7 @@ public final class SHA1 implements Digest {
      * Write completed digest into the given buffer.
      * @param reset If true, the hash function is reinitialized
      */
+    @Override
     public final void digest(boolean reset, byte[] buffer, int offset) {
         finish();
         System.arraycopy(digestBits, 0, buffer, offset, digestBits.length);
@@ -313,6 +319,7 @@ public final class SHA1 implements Digest {
      * Return completed digest.
      * @return the byte array result
      */
+    @Override
     public final byte[] digest() {
         return digest(true);
     }

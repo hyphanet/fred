@@ -277,12 +277,14 @@ public class ContentFilterTest extends TestCase {
 		HTMLFilter filter;
 		HTMLFilter.HTMLParseContext pc;
 
+		@Override
 		public void setUp() throws Exception {
 			filter = new HTMLFilter();
 			attributes = new LinkedHashMap<String, String>();
 			pc = filter.new HTMLParseContext(null, null, "utf-8", new GenericReadFilterCallback(new URI(ALT_BASE_URI), null, null), false);
 		}
 
+		@Override
 		public void tearDown() {
 			filter = null;
 			attributes = null;

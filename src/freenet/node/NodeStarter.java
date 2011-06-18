@@ -83,6 +83,7 @@ public class NodeStarter implements WrapperListener {
 	 *         of the start method.  If there were no problems then this
 	 *         method should return null.
 	 */
+	@Override
 	public Integer start(String[] args) {
 		if(args.length > 1) {
 			System.out.println("Usage: $ java freenet.node.Node <configFile>");
@@ -142,6 +143,7 @@ public class NodeStarter implements WrapperListener {
 		Runnable useless =
 			new Runnable() {
 
+				@Override
 				public void run() {
 					while(true) {
 						try {
@@ -198,6 +200,7 @@ public class NodeStarter implements WrapperListener {
 	 *         the option of changing the exit code if there are any problems
 	 *         during shutdown.
 	 */
+	@Override
 	public int stop(int exitCode) {
 		System.err.println("Shutting down with exit code " + exitCode);
 		node.park();
@@ -220,6 +223,7 @@ public class NodeStarter implements WrapperListener {
 	 *
 	 * @param event The system control signal.
 	 */
+	@Override
 	public void controlEvent(int event) {
 		if(WrapperManager.isControlledByNativeWrapper()) {
 			// The Wrapper will take care of this event
@@ -280,6 +284,7 @@ public class NodeStarter implements WrapperListener {
 			Runnable useless =
 				new Runnable() {
 
+					@Override
 					public void run() {
 						while(true) {
 							try {

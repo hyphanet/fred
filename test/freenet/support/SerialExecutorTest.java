@@ -12,6 +12,7 @@ public class SerialExecutorTest extends TestCase {
 		final MutableBoolean flag = new MutableBoolean();
 		exec.execute(new PrioRunnable() {
 
+			@Override
 			public void run() {
 				try {
 					// Do nothing
@@ -24,6 +25,7 @@ public class SerialExecutorTest extends TestCase {
 				
 			}
 
+			@Override
 			public int getPriority() {
 				return NativeThread.NORM_PRIORITY;
 			}

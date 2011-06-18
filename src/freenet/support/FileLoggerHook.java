@@ -1057,6 +1057,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		}
 	}
 
+	@Override
 	public void close() {
 		closed = true;
 	}
@@ -1144,6 +1145,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			maxOldLogfilesDiskUsage = val;
 		}
 		Runnable r = new Runnable() {
+			@Override
 			public void run() {
 				trimOldLogFiles();
 			}

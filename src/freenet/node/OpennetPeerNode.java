@@ -215,10 +215,12 @@ public class OpennetPeerNode extends PeerNode {
 		return ret;
 	}
 	
+	@Override
 	public synchronized void setAddedReason(ConnectionType connectionType) {
 		opennetNodeAddedReason = connectionType;
 	}
 	
+	@Override
 	public synchronized ConnectionType getAddedReason() {
 		return opennetNodeAddedReason;
 	}
@@ -231,6 +233,7 @@ public class OpennetPeerNode extends PeerNode {
 		// Guarantee that it gets cleared.
 		node.getTicker().queueTimedJob(new FastRunnable() {
 
+			@Override
 			public void run() {
 				isDroppableWithReason(false);
 			}
@@ -257,6 +260,7 @@ public class OpennetPeerNode extends PeerNode {
 		forceDisconnect(true);
 	}
 	
+	@Override
 	public boolean shallWeRouteAccordingToOurPeersLocation() {
 		return node.shallWeRouteAccordingToOurPeersLocation();
 	}

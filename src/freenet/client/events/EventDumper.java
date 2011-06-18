@@ -19,10 +19,12 @@ public class EventDumper implements ClientEventListener {
 		this.removeWithProducer = removeWithProducer;
 	}
 
+	@Override
 	public void receive(ClientEvent ce, ObjectContainer container, ClientContext context) {
 		pw.println(ce.getDescription());
 	}
 
+	@Override
 	public void onRemoveEventProducer(ObjectContainer container) {
 		if(removeWithProducer)
 			container.delete(this);

@@ -70,6 +70,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		this.proxy = this;
 	}
 
+	@Override
 	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 		if(l < 0) {
 			Logger.error(this, "Found negative edition: "+l+" for "+key+" !!!");
@@ -97,6 +98,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		}
 	}
 
+	@Override
 	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, final ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "Success on "+this+" from "+state+" : length "+streamGenerator.size()+"mime type "+clientMetadata.getMIMEType());
@@ -165,10 +167,12 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		context.uskManager.updateKnownGood(origUSK, state.getToken(), context);
 		context.mainExecutor.execute(new PrioRunnable() {
 
+			@Override
 			public void run() {
 				cb.onFound(origUSK, state.getToken(), result);
 			}
 
+			@Override
 			public int getPriority() {
 				return NativeThread.NORM_PRIORITY;
 			}
@@ -177,6 +181,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		
 	}
 
+	@Override
 	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
 		switch(e.mode) {
 		case FetchException.NOT_ENOUGH_PATH_COMPONENTS:
@@ -187,6 +192,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		Logger.warning(this, "Found edition "+state.getToken()+" but failed to fetch edition: "+e, e);
 	}
 
+	@Override
 	public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
@@ -222,22 +228,27 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		// Ignore
 	}
 
+	@Override
 	public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 
+	@Override
 	public void onExpectedSize(long size, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 
+	@Override
 	public void onFinalizedMetadata(ObjectContainer container) {
 		// Ignore
 	}
 
+	@Override
 	public short getPollingPriorityNormal() {
 		return cb.getPollingPriorityNormal();
 	}
 
+	@Override
 	public short getPollingPriorityProgress() {
 		return cb.getPollingPriorityProgress();
 	}
@@ -252,14 +263,17 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		// Ignore
 	}
 
+	@Override
 	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 
+	@Override
 	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, boolean compressed, boolean bottomLayer, boolean definitiveAnyway, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 	
+	@Override
 	public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}

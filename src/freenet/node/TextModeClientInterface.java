@@ -108,6 +108,7 @@ public class TextModeClientInterface implements Runnable {
         client.addEventHook(new EventDumper(new PrintWriter(out, true), false));
     }
     
+    @Override
     public void run() {
 	    freenet.support.Logger.OSThread.logPID(this);
     	try {
@@ -413,6 +414,7 @@ public class TextModeClientInterface implements Runnable {
     	outsb.append("starting the update process");
     	// FIXME run on separate thread
     	n.ticker.queueTimedJob(new Runnable() {
+    		@Override
     		public void run() {
     		    freenet.support.Logger.OSThread.logPID(this);
     			n.getNodeUpdater().arm();
@@ -930,6 +932,7 @@ public class TextModeClientInterface implements Runnable {
         		return false;
         	}
         	ProbeCallback cb = new ProbeCallback() {
+				@Override
 				public void onCompleted(String reason, double target, double best, double nearest, long id, short counter, short uniqueCounter, short linearCounter) {
 					String msg = "Completed probe request: "+target+" -> "+best+"\r\nNearest actually hit "+nearest+", "+counter+" nodes ("+uniqueCounter+" unique, "+linearCounter+" hops), id "+id+"\r\n";
 					try {
@@ -944,6 +947,7 @@ public class TextModeClientInterface implements Runnable {
 					}
 				}
 
+				@Override
 				public void onTrace(long uid, double target, double nearest, double best, short htl, short counter, double location, long nodeUID, double[] peerLocs, long[] peerUIDs, double[] locsNotVisited, short forkCount, short linearCounter, String reason, long prevUID) {
 					String msg = "Probe trace: UID="+uid+" target="+target+" nearest="+nearest+" best="+best+" htl="+htl+" counter="+counter+" linear="+linearCounter+" location="+location+"node UID="+nodeUID+" prev UID="+prevUID+" peer locs="+Arrays.toString(peerLocs)+" peer UIDs="+Arrays.toString(peerUIDs)+" locs not visited = "+Arrays.toString(locsNotVisited)+" forks: "+forkCount+" reason="+reason+'\n';
 					try {
@@ -954,6 +958,7 @@ public class TextModeClientInterface implements Runnable {
 					}
 				}
 
+				@Override
 				public void onRejectOverload() {
 					String msg = "Probe trace received RejectOverload\n";
 					try {
@@ -1023,32 +1028,40 @@ public class TextModeClientInterface implements Runnable {
         				// Ignore
         			}
         		}
+				@Override
 				public void addedNode(PeerNode pn) {
 					write("Added node "+pn.shortToString());
 				}
 
+				@Override
 				public void bogusNoderef(String reason) {
 					write("Bogus noderef: "+reason);
 				}
 
+				@Override
 				public void completed() {
 					write("Completed announcement.");
 				}
 
+				@Override
 				public void nodeFailed(PeerNode pn, String reason) {
 					write("Node failed: "+pn+" "+reason);
 				}
 
+				@Override
 				public void noMoreNodes() {
 					write("Route Not Found");
 				}
 				
+				@Override
 				public void nodeNotWanted() {
 					write("Hop doesn't want me.");
 				}
+				@Override
 				public void nodeNotAdded() {
 					write("Node not added as we don't want it for some reason.");
 				}
+				@Override
 				public void acceptedSomewhere() {
 					write("Announcement accepted by some node.");
 				}

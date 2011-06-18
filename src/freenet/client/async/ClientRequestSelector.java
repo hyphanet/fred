@@ -596,6 +596,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 		}
 	}
 	
+	@Override
 	public boolean hasKey(Key key, BaseSendableGet getterWaiting, boolean persistent, ObjectContainer container) {
 		if(keysFetching == null) {
 			throw new NullPointerException();
@@ -672,6 +673,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 		}
 	}
 
+	@Override
 	public boolean hasTransientInsert(SendableInsert insert, Object token) {
 		RunningTransientInsert tmp = new RunningTransientInsert(insert, token);
 		synchronized(runningTransientInserts) {
@@ -714,6 +716,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 		}
 	}
 
+	@Override
 	public long checkRecentlyFailed(Key key, boolean realTime) {
 		Node node = sched.getNode();
 		return node.clientCore.checkRecentlyFailed(key, realTime);

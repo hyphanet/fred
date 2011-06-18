@@ -90,21 +90,25 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 		return mb.getReaderBucket();
 	}
 	
+	@Override
 	public boolean objectCanNew(ObjectContainer container) {
 		Logger.error(this, "Trying to store an ArchiveStoreItem!", new Exception("error"));
 		return false;
 	}
 	
+	@Override
 	public boolean objectCanUpdate(ObjectContainer container) {
 		Logger.error(this, "Trying to store an ArchiveStoreItem!", new Exception("error"));
 		return false;
 	}
 	
+	@Override
 	public boolean objectCanActivate(ObjectContainer container) {
 		Logger.error(this, "Trying to store an ArchiveStoreItem!", new Exception("error"));
 		return false;
 	}
 	
+	@Override
 	public boolean objectCanDeactivate(ObjectContainer container) {
 		Logger.error(this, "Trying to store an ArchiveStoreItem!", new Exception("error"));
 		return false;

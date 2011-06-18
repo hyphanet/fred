@@ -64,6 +64,7 @@ public class HTMLNode implements XMLCharacterClasses {
 			readOnly = node.readOnly;
 	}
 	
+	@Override
 	public HTMLNode clone() {
 		return new HTMLNode(this, true);
 	}

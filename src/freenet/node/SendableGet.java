@@ -100,11 +100,13 @@ public abstract class SendableGet extends BaseSendableGet {
 		return false;
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		container.delete(this);
 	}
 
 	/** Caller must activate to depth 1 before calling */
+	@Override
 	public boolean isStorageBroken(ObjectContainer container) {
 		if(!container.ext().isActive(this))
 			throw new IllegalStateException("Must be activated first!");
@@ -115,6 +117,7 @@ public abstract class SendableGet extends BaseSendableGet {
 		return false;
 	}
 	
+	@Override
 	public void unregister(ObjectContainer container, ClientContext context, short oldPrio) {
 		super.unregister(container, context, oldPrio);
 		synchronized(getScheduler(container, context)) {

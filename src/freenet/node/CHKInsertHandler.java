@@ -91,6 +91,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         return super.toString()+" for "+uid;
     }
     
+    @Override
     public void run() {
 	    freenet.support.Logger.OSThread.logPID(this);
         try {
@@ -324,16 +325,19 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
     		MessageFilter mf = makeDataInsertFilter(60*1000);
     		node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
 
+    			@Override
     			public void onMatched(Message m) {
     				// Okay, great.
     				// Either we got a DataInsert, in which case the transfer was aborted above, or we got a DataInsertRejected, which means it never started.
     				// FIXME arguably we should wait until we have the message before sending the transfer cancel in case the message gets lost? Or maybe not?
     			}
 
+    			@Override
     			public boolean shouldTimeout() {
     				return false;
     			}
 
+    			@Override
     			public void onTimeout() {
     				Logger.error(this, "No DataInsert for "+CHKInsertHandler.this+" from "+source+" ("+source.getVersionNumber()+")");
     				// Fatal timeout. Something is seriously busted.
@@ -341,14 +345,17 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
     	    		source.fatalTimeout();
     			}
 
+    			@Override
     			public void onDisconnect(PeerContext ctx) {
     				// Okay. Somewhat expected, it was having problems.
     			}
 
+    			@Override
     			public void onRestarted(PeerContext ctx) {
     				// Okay.
     			}
 
+    			@Override
     			public int getPriority() {
     				return NativeThread.NORM_PRIORITY;
     			}
@@ -510,12 +517,14 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 
     public class DataReceiver implements PrioRunnable {
 
+        @Override
         public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
         	if(logMINOR) Logger.minor(this, "Receiving data for "+CHKInsertHandler.this);
         	// Don't log whether the transfer succeeded or failed as the transfer was initiated by the source therefore could be unreliable evidence.
         	br.receive(new BlockReceiverCompletion() {
         		
+        		@Override
         		public void blockReceived(byte[] buf) {
         			if(logMINOR) Logger.minor(this, "Received data for "+CHKInsertHandler.this);
         			synchronized(CHKInsertHandler.this) {
@@ -525,6 +534,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
    					node.nodeStats.successfulBlockReceive(realTimeFlag, false);
         		}
 
+        		@Override
         		public void blockReceiveFailed(RetrievalException e) {
         			synchronized(CHKInsertHandler.this) {
         				receiveCompleted = true;
@@ -564,6 +574,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         	return super.toString()+" for "+uid;
         }
 
+		@Override
 		public int getPriority() {
 			return NativeThread.HIGH_PRIORITY;
 		}
@@ -578,6 +589,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
     private int totalSentBytes;
     private int totalReceivedBytes;
     
+	@Override
 	public void sentBytes(int x) {
 		synchronized(totalSync) {
 			totalSentBytes += x;
@@ -585,6 +597,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 		node.nodeStats.insertSentBytes(false, x);
 	}
 
+	@Override
 	public void receivedBytes(int x) {
 		synchronized(totalSync) {
 			totalReceivedBytes += x;
@@ -600,11 +613,13 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 		return totalReceivedBytes;
 	}
 
+	@Override
 	public void sentPayload(int x) {
 		node.sentPayload(x);
 		node.nodeStats.insertSentBytes(false, -x);
 	}
 
+	@Override
 	public int getPriority() {
 		return NativeThread.HIGH_PRIORITY;
 	}
@@ -618,6 +633,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 		 * receive a cancel. So we are consistent with the nodes we routed to, and it is
 		 * safe to wait for the node that routed to us to send an explicit cancel. We do
 		 * not need to do anything yet. */
+		@Override
 		public void onFirstTimeout() {
 			// Do nothing.
 		}
@@ -626,6 +642,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 		 * told it we were cancelling. Hence, we know that it was at fault. We need to 
 		 * take action against it.
 		 */
+		@Override
 		public void onFatalTimeout(PeerContext receivingFrom) {
 			Logger.error(this, "Fatal timeout receiving insert "+CHKInsertHandler.this+" from "+receivingFrom);
 			((PeerNode)receivingFrom).fatalTimeout();

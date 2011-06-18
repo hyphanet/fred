@@ -152,6 +152,7 @@ public class DSAGroup extends CryptoKey {
 		else return super.toString();
 	}
 	
+	@Override
 	public String toLongString() {
 		if(this == Global.DSAgroupBigA)
 			return "Global.DSAgroupBigA";

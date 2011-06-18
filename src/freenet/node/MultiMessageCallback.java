@@ -19,18 +19,22 @@ public abstract class MultiMessageCallback {
 
 				private boolean finished;
 				
+				@Override
 				public void sent() {
 					// Ignore
 				}
 
+				@Override
 				public void acknowledged() {
 					complete(true);
 				}
 
+				@Override
 				public void disconnected() {
 					complete(false);
 				}
 
+				@Override
 				public void fatalError() {
 					complete(false);
 				}

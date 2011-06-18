@@ -8,7 +8,6 @@ import java.util.WeakHashMap;
 
 import com.db4o.ObjectContainer;
 
-import freenet.node.SendableGet;
 import freenet.support.Logger;
 import freenet.support.RemoveRandomWithObject;
 import freenet.support.Ticker;
@@ -315,6 +314,7 @@ public class CooldownTracker {
 	public void startMaintenance(final Ticker ticker) {
 		ticker.queueTimedJob(new Runnable() {
 
+			@Override
 			public void run() {
 				clearExpired(System.currentTimeMillis());
 				ticker.queueTimedJob(this, MAINTENANCE_PERIOD);

@@ -78,6 +78,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		noderefBuf = om.crypto.myCompressedFullRef();
 	}
 
+	@Override
 	public void run() {
 		try {
 			realRun();
@@ -375,6 +376,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		}
 		Runnable r = new Runnable() {
 
+			@Override
 			public void run() {
 				try {
 					byte[] noderefBuf = OpennetManager.innerWaitForOpennetNoderef(xferUID, paddedLength, noderefLength, next, false, uid, true, AnnounceSender.this, node);
@@ -559,19 +561,23 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		om.sendAnnouncementReply(uid, next, ref, this);
 	}
 
+	@Override
 	public void sentBytes(int x) {
 		node.nodeStats.announceByteCounter.sentBytes(x);
 	}
 
+	@Override
 	public void receivedBytes(int x) {
 		node.nodeStats.announceByteCounter.receivedBytes(x);
 	}
 
+	@Override
 	public void sentPayload(int x) {
 		node.nodeStats.announceByteCounter.sentPayload(x);
 		// Doesn't count.
 	}
 
+	@Override
 	public int getPriority() {
 		return NativeThread.HIGH_PRIORITY;
 	}

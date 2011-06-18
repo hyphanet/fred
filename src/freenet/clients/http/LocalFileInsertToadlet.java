@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
-import java.awt.geom.Path2D;
 import java.net.MalformedURLException;
 import java.util.Hashtable;
 

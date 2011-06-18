@@ -19,18 +19,22 @@ public class TransientSendableRequestSet implements SendableRequestSet {
 		set = new HashSet<SendableRequest>();
 	}
 	
+	@Override
 	public synchronized boolean addRequest(SendableRequest req, ObjectContainer container) {
 		return set.add(req);
 	}
 
+	@Override
 	public synchronized SendableRequest[] listRequests(ObjectContainer container) {
 		return set.toArray(new SendableRequest[set.size()]);
 	}
 
+	@Override
 	public synchronized boolean removeRequest(SendableRequest req, ObjectContainer container) {
 		return set.remove(req);
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		throw new UnsupportedOperationException();
 	}

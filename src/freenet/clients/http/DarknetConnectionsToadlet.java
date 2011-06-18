@@ -1,7 +1,6 @@
 package freenet.clients.http;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.net.URI;
 import java.util.Comparator;
 import java.util.HashMap;

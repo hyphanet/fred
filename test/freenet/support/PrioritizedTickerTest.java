@@ -20,6 +20,7 @@ public class PrioritizedTickerTest extends TestCase {
 	
 	Runnable simpleRunnable = new Runnable() {
 		
+		@Override
 		public void run() {
 			synchronized(PrioritizedTickerTest.this) {
 				runCount++;

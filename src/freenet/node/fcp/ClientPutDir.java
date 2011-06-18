@@ -218,7 +218,6 @@ public class ClientPutDir extends ClientPutBase {
 	}
 	
 	@Override
-	@SuppressWarnings("unchecked")
 	protected void freeData(ObjectContainer container) {
 		if(logMINOR) Logger.minor(this, "freeData() on "+this+" persistence type = "+persistenceType);
 		synchronized(this) {
@@ -339,6 +338,7 @@ public class ClientPutDir extends ClientPutBase {
 		super.onFailure(e, state, container);
 	}
 
+	@Override
 	public void onRemoveEventProducer(ObjectContainer container) {
 		// Do nothing, we called the removeFrom().
 	}

@@ -33,6 +33,7 @@ public class FNPWrapper implements PacketFormat {
 		this.pn = pn;
 	}
 
+	@Override
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly)
 	                throws BlockedTooLongException {
 		// If there are any urgent notifications, we must send a packet.
@@ -178,15 +179,18 @@ public class FNPWrapper implements PacketFormat {
 		return false;
 	}
 
+	@Override
 	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now, Peer replyTo) {
 		return pn.crypto.packetMangler.process(buf, offset, length, replyTo, pn, now) == DECODED.DECODED;
 	}
 
+	@Override
 	public List<MessageItem> onDisconnect() {
 		//Nothing to do, MessageItems are either sent or requeued.
 		return null;
 	}
 
+	@Override
 	public boolean canSend(SessionKey cur) {
 		if(cur == null) return false;
 		try {
@@ -196,6 +200,7 @@ public class FNPWrapper implements PacketFormat {
 		}
 	}
 
+	@Override
 	public long timeNextUrgent(boolean canSend) {
 		SessionKey cur;
 		SessionKey prev;
@@ -213,6 +218,7 @@ public class FNPWrapper implements PacketFormat {
 		return Long.MAX_VALUE;
 	}
 	
+	@Override
 	public long timeSendAcks() {
 		SessionKey cur;
 		SessionKey prev;
@@ -230,10 +236,12 @@ public class FNPWrapper implements PacketFormat {
 		return Long.MAX_VALUE;
 	}
 
+	@Override
 	public void checkForLostPackets() {
 		// Do nothing.
 	}
 
+	@Override
 	public long timeCheckForLostPackets() {
 		return Long.MAX_VALUE;
 	}
@@ -242,6 +250,7 @@ public class FNPWrapper implements PacketFormat {
 		// Do nothing.
 	}
 	
+	@Override
 	public boolean fullPacketQueued(int maxPacketSize) {
 		return pn.getMessageQueue().mustSendSize(FNPPacketMangler.HEADERS_LENGTH_ONE_MESSAGE /* FIXME estimate headers */, maxPacketSize);
 	}

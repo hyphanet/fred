@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -319,10 +318,12 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		return false;
 	}
 
+	@Override
 	public void onRemoveEventProducer(ObjectContainer container) {
 		// Impossible
 	}
 
+	@Override
 	public void receive(ClientEvent ce, ObjectContainer maybeContainer, ClientContext context) {
 		try{
 			if(ce instanceof SplitfileProgressEvent) {
@@ -378,6 +379,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		}
 	}
 
+	@Override
 	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		synchronized(this) {
 			this.failed = e;
@@ -387,10 +389,12 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		wakeWaiters(true);
 	}
 
+	@Override
 	public void onMajorProgress(ObjectContainer container) {
 		// Ignore
 	}
 
+	@Override
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		synchronized(this) {
 			this.data = result.asBucket();

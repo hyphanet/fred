@@ -105,11 +105,13 @@ public class DatastoreChecker implements PrioRunnable {
 
 	private final DBJob loader =  new DBJob() {
 
+		@Override
 		public boolean run(ObjectContainer container, ClientContext context) {
 			loadPersistentRequests(container, context);
 			return false;
 		}
 		
+		@Override
 		public String toString() {
 			return "DatastoreCheckerPersistentRequestLoader";
 		}
@@ -327,6 +329,7 @@ public class DatastoreChecker implements PrioRunnable {
 		}
 	}
 
+	@Override
 	public void run() {
 		while(true) {
 			try {
@@ -445,6 +448,7 @@ public class DatastoreChecker implements PrioRunnable {
 			try {
 				context.jobRunner.queue(new DBJob() {
 
+					@Override
 					public boolean run(ObjectContainer container, ClientContext context) {
 						if(container.ext().isActive(get)) {
 							Logger.warning(this, "ALREADY ACTIVATED: "+get);
@@ -472,6 +476,7 @@ public class DatastoreChecker implements PrioRunnable {
 						return false;
 					}
 					
+					@Override
 					public String toString() {
 						return "DatastoreCheckerFinishRegister";
 					}
@@ -498,6 +503,7 @@ public class DatastoreChecker implements PrioRunnable {
 		executor.execute(this, name);
 	}
 
+	@Override
 	public int getPriority() {
 		return NativeThread.NORM_PRIORITY;
 	}

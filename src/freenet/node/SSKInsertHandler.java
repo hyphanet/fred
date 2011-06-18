@@ -83,6 +83,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
         return super.toString()+" for "+uid;
     }
     
+    @Override
     public void run() {
 	    freenet.support.Logger.OSThread.logPID(this);
         try {
@@ -409,6 +410,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
     private int totalBytesSent;
     private int totalBytesReceived;
     
+	@Override
 	public void sentBytes(int x) {
 		synchronized(totalBytesSync) {
 			totalBytesSent += x;
@@ -416,6 +418,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 		node.nodeStats.insertSentBytes(true, x);
 	}
 
+	@Override
 	public void receivedBytes(int x) {
 		synchronized(totalBytesSync) {
 			totalBytesReceived += x;
@@ -431,11 +434,13 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 		return totalBytesReceived;
 	}
 
+	@Override
 	public void sentPayload(int x) {
 		node.sentPayload(x);
 		node.nodeStats.insertSentBytes(true, -x);
 	}
 
+	@Override
 	public int getPriority() {
 		return NativeThread.HIGH_PRIORITY;
 	}

@@ -19,12 +19,8 @@ import freenet.client.events.SplitfileProgressEvent;
 import freenet.client.events.StartedCompressionEvent;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
-import freenet.node.Node;
-import freenet.node.fcp.ClientPut.COMPRESS_STATE;
-import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
@@ -168,6 +164,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		// otherwise ignore
 	}
 
+	@Override
 	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
 		synchronized(this) {
 			// Including this helps with certain bugs...
@@ -185,6 +182,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			client.notifySuccess(this, container);
 	}
 
+	@Override
 	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
 		if(finished) return;
 		synchronized(this) {
@@ -201,6 +199,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			client.notifyFailure(this, container);
 	}
 
+	@Override
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
 		synchronized(this) {
 			if(generatedURI != null) {
@@ -291,12 +290,14 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		super.requestWasRemoved(container, context);
 	}
 
+	@Override
 	public void receive(final ClientEvent ce, ObjectContainer container, ClientContext context) {
 		if(finished) return;
 		if(persistenceType == PERSIST_FOREVER && container == null) {
 			try {
 				context.jobRunner.queue(new DBJob() {
 
+					@Override
 					public boolean run(ObjectContainer container, ClientContext context) {
 						container.activate(ClientPutBase.this, 1);
 						receive(ce, container, context);
@@ -344,6 +345,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 
 	protected abstract void onStartCompressing();
 
+	@Override
 	public void onFetchable(BaseClientPutter putter, ObjectContainer container) {
 		if(finished) return;
 		if((verbosity & VERBOSITY_PUT_FETCHABLE) == VERBOSITY_PUT_FETCHABLE) {
@@ -431,6 +433,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 				try {
 					context.jobRunner.queue(new DBJob() {
 
+						@Override
 						public boolean run(ObjectContainer container, ClientContext context) {
 							container.activate(ClientPutBase.this, 1);
 							trySendProgressMessage(msg, verbosity, h, container, context);

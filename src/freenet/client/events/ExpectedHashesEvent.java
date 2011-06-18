@@ -12,10 +12,12 @@ public class ExpectedHashesEvent implements ClientEvent {
 		hashes = h;
 	}
 
+	@Override
 	public int getCode() {
 		return CODE;
 	}
 
+	@Override
 	public String getDescription() {
 		return "Expected hashes";
 	}

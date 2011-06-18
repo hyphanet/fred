@@ -3,11 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.WeakHashMap;
 
 import org.tanukisoftware.wrapper.WrapperManager;
@@ -15,7 +10,6 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 
-import freenet.client.FetchContext;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.node.SendableRequest;
@@ -242,14 +236,17 @@ public abstract class ClientRequester {
 				// REDFLAG this leaks a RequestClient. IMHO this is better than the alternative.
 				this.client = new RequestClient() {
 
+					@Override
 					public boolean persistent() {
 						return true;
 					}
 
+					@Override
 					public void removeFrom(ObjectContainer container) {
 						container.delete(this);
 					}
 
+					@Override
 					public boolean realTimeFlag() {
 						return realTimeFlag;
 					}

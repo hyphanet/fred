@@ -23,6 +23,7 @@ import freenet.support.io.NoCloseProxyOutputStream;
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class Bzip2Compressor implements Compressor {
 
+	@Override
 	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
 		Bucket output = bf.makeBucket(maxWriteLength);
 		InputStream is = null;
@@ -42,6 +43,7 @@ public class Bzip2Compressor implements Compressor {
 		return output;
 	}
 	
+	@Override
 	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
 		if(maxReadLength <= 0)
 			throw new IllegalArgumentException();
@@ -81,11 +83,12 @@ public class Bzip2Compressor implements Compressor {
 		}
 	}
 	
+	@Override
 	public long decompress(InputStream is, OutputStream os, long maxLength, long maxCheckSizeBytes) throws IOException, CompressionOutputSizeException {
 		CBZip2InputStream bz2is = new CBZip2InputStream(new BufferedInputStream(is));
 		long written = 0;
 		int bufSize = 32768;
-		if(maxLength > 0 && maxLength < (long)bufSize)
+		if(maxLength > 0 && maxLength < bufSize)
 			bufSize = (int)maxLength;
 		byte[] buffer = new byte[bufSize];
 		while(true) {
@@ -115,6 +118,7 @@ public class Bzip2Compressor implements Compressor {
 		}
 	}
 
+	@Override
 	public int decompress(byte[] dbuf, int i, int j, byte[] output) throws CompressionOutputSizeException {
 		// Didn't work with Inflater.
 		// FIXME fix sometimes to use Inflater - format issue?

@@ -336,11 +336,13 @@ public final class MessageFilter {
     		if(cb instanceof SlowAsyncMessageFilterCallback) {
     			executor.execute(new PrioRunnable() {
 
+					@Override
 					public void run() {
 						cb.onDisconnect(ctx);
 					}
 
 
+					@Override
 					public int getPriority() {
 						return ((SlowAsyncMessageFilterCallback)cb).getPriority();
 					}
@@ -369,11 +371,13 @@ public final class MessageFilter {
     		if(cb instanceof SlowAsyncMessageFilterCallback) {
     			executor.execute(new PrioRunnable() {
 
+					@Override
 					public void run() {
 						cb.onRestarted(ctx);
 					}
 
 
+					@Override
 					public int getPriority() {
 						return ((SlowAsyncMessageFilterCallback)cb).getPriority();
 					}
@@ -405,10 +409,12 @@ public final class MessageFilter {
 			if(cb instanceof SlowAsyncMessageFilterCallback)
 				executor.execute(new PrioRunnable() {
 
+					@Override
 					public void run() {
 						cb.onMatched(msg);
 					}
 
+					@Override
 					public int getPriority() {
 						return ((SlowAsyncMessageFilterCallback)cb).getPriority();
 					}
@@ -434,10 +440,12 @@ public final class MessageFilter {
 			if(cb instanceof SlowAsyncMessageFilterCallback) {
 				executor.execute(new PrioRunnable() {
 
+					@Override
 					public void run() {
 						cb.onTimeout();
 					}
 
+					@Override
 					public int getPriority() {
 						return ((SlowAsyncMessageFilterCallback)cb).getPriority();
 					}

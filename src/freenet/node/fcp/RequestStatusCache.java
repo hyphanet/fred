@@ -5,16 +5,13 @@ import java.util.HashMap;
 import java.util.List;
 
 import freenet.client.ClientMetadata;
-import freenet.client.FetchResult;
 import freenet.client.InsertContext;
 import freenet.client.async.CacheFetchResult;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
 import freenet.node.fcp.ClientPut.COMPRESS_STATE;
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.NoFreeBucket;
 
@@ -161,7 +158,7 @@ public class RequestStatusCache {
 	 * and ,true when it has actually started (a race condition means we don't setStarted
 	 * at that point since it's possible the success/failure callback might happen first). */
 	public synchronized void updateStarted(String identifier, boolean started) {
-		RequestStatus status = (RequestStatus) requestsByIdentifier.get(identifier);
+		RequestStatus status = requestsByIdentifier.get(identifier);
 		if(status == null) return; // Can happen during cancel etc.
 		
 		if(!started)

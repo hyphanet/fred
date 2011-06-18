@@ -171,6 +171,7 @@ public class SeedAnnounceTracker {
 		itemsByIP.valuesToArray(items);
 		Arrays.sort(items, new Comparator<TrackerItem>() {
 			
+			@Override
 			public int compare(TrackerItem arg0, TrackerItem arg1) {
 				int a = Math.max(arg0.totalAnnounceRequests, arg0.totalSeedConnects);
 				int b = Math.max(arg1.totalAnnounceRequests, arg1.totalSeedConnects);

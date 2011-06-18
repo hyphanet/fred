@@ -96,6 +96,7 @@ public class Announcer {
 			System.out.println("Not attempting immediate announcement: dark peers="+darkPeers+" open peers="+openPeers+" old open peers="+oldOpenPeers+" - will wait 1 minute...");
 			// Wait a minute, then check whether we need to seed.
 			node.getTicker().queueTimedJob(new Runnable() {
+				@Override
 				public void run() {
 					synchronized(Announcer.this) {
 						started = true;
@@ -161,6 +162,7 @@ public class Announcer {
 					if(logMINOR)
 						Logger.minor(this, "Will clear announced-to in 1 minute...");
 					node.getTicker().queueTimedJob(new Runnable() {
+						@Override
 						public void run() {
 							if(logMINOR)
 								Logger.minor(this, "Clearing old announced-to list");
@@ -184,6 +186,7 @@ public class Announcer {
 		node.dnsr.forceRun();
 		// If none connect in a minute, try some more.
 		node.getTicker().queueTimedJob(new Runnable() {
+			@Override
 			public void run() {
 				try {
 					maybeSendAnnouncement();
@@ -320,6 +323,7 @@ public class Announcer {
 		if(killAnnouncement) {
 			node.executor.execute(new Runnable() {
 
+				@Override
 				public void run() {
 					for(OpennetPeerNode pn : node.peers.getOpennetPeers()) {
 						node.peers.disconnect(pn, true, true, true);
@@ -364,6 +368,7 @@ public class Announcer {
 
 	private final Runnable checker = new Runnable() {
 
+		@Override
 		public void run() {
 			int running;
 			synchronized(Announcer.this) {
@@ -375,12 +380,14 @@ public class Announcer {
 				}
 				// Re-check every minute. Something bad might happen (e.g. cpu starvation), causing us to have to reseed.
 				node.getTicker().queueTimedJob(new Runnable() {
+					@Override
 					public void run() {
 						maybeSendAnnouncement();
 					}
 				}, "Check whether we need to announce", RETRY_DELAY, false, true);
 			} else {
 				node.getTicker().queueTimedJob(new Runnable() {
+					@Override
 					public void run() {
 						maybeSendAnnouncement();
 					}
@@ -396,6 +403,7 @@ public class Announcer {
 		if(enoughPeers()) return;
 		node.getTicker().queueTimedJob(new Runnable() {
 
+			@Override
 			public void run() {
 				maybeSendAnnouncement();
 			}
@@ -474,6 +482,7 @@ public class Announcer {
 				// Don't connect seednodes yet
 				Logger.minor(this, "Waiting for MIN_ADDED_SEEDS_INTERVAL");
 				node.getTicker().queueTimedJob(new Runnable() {
+					@Override
 					public void run() {
 						try {
 							maybeSendAnnouncement();
@@ -526,9 +535,11 @@ public class Announcer {
 			private int totalAdded;
 			private int totalNotWanted;
 			private boolean acceptedSomewhere;
+			@Override
 			public synchronized void acceptedSomewhere() {
 				acceptedSomewhere = true;
 			}
+			@Override
 			public void addedNode(PeerNode pn) {
 				synchronized(Announcer.this) {
 					announcementAddedNodes++;
@@ -538,9 +549,11 @@ public class Announcer {
 				System.out.println("Announcement to "+seed.userToString()+" added node "+pn.userToString()+'.');
 				return;
 			}
+			@Override
 			public void bogusNoderef(String reason) {
 				Logger.normal(this, "Announcement to "+seed.userToString()+" got bogus noderef: "+reason, new Exception("debug"));
 			}
+			@Override
 			public void completed() {
 				boolean announceNow = false;
 				synchronized(Announcer.this) {
@@ -553,6 +566,7 @@ public class Announcer {
 						// Wait for COOLING_OFF_PERIOD before trying again
 						node.getTicker().queueTimedJob(new Runnable() {
 
+							@Override
 							public void run() {
 								maybeSendAnnouncement();
 							}
@@ -576,12 +590,15 @@ public class Announcer {
 					maybeSendAnnouncement();
 			}
 
+			@Override
 			public void nodeFailed(PeerNode pn, String reason) {
 				Logger.normal(this, "Announcement to node "+pn.userToString()+" failed: "+reason);
 			}
+			@Override
 			public void noMoreNodes() {
 				Logger.normal(this, "Announcement to "+seed.userToString()+" ran out of nodes (route not found)");
 			}
+			@Override
 			public void nodeNotWanted() {
 				synchronized(Announcer.this) {
 					announcementNotWantedNodes++;
@@ -589,6 +606,7 @@ public class Announcer {
 				}
 				Logger.normal(this, "Announcement to "+seed.userToString()+" returned node not wanted for a total of "+announcementNotWantedNodes+" ("+totalNotWanted+" from this announcement)");
 			}
+			@Override
 			public void nodeNotAdded() {
 				Logger.normal(this, "Announcement to "+seed.userToString()+" : node not wanted (maybe already have it, opennet just turned off, etc)");
 			}
@@ -605,18 +623,22 @@ public class Announcer {
 			this.status = status;
 		}
 
+		@Override
 		public String dismissButtonText() {
 			return NodeL10n.getBase().getString("UserAlert.hide");
 		}
 
+		@Override
 		public HTMLNode getHTMLText() {
 			return new HTMLNode("#", getText());
 		}
 
+		@Override
 		public short getPriorityClass() {
 			return UserAlert.ERROR;
 		}
 
+		@Override
 		public String getText() {
 			StringBuilder sb = new StringBuilder();
 			sb.append(l10n("announceAlertIntro"));
@@ -668,46 +690,57 @@ public class Announcer {
 			return sb.toString();
 		}
 
+		@Override
 		public String getTitle() {
 			return l10n("announceAlertTitle");
 		}
 
+		@Override
 		public Object getUserIdentifier() {
 			return null;
 		}
 
+		@Override
 		public boolean isValid() {
 			return (!enoughPeers()) && node.isOpennetEnabled();
 		}
 
+		@Override
 		public void isValid(boolean validity) {
 			// Ignore
 		}
 
+		@Override
 		public void onDismiss() {
 			// Ignore
 		}
 
+		@Override
 		public boolean shouldUnregisterOnDismiss() {
 			return true;
 		}
 
+		@Override
 		public boolean userCanDismiss() {
 			return true;
 		}
 
+		@Override
 		public String anchor() {
 			return "announcer:"+hashCode();
 		}
 
+		@Override
 		public String getShortText() {
 			return l10n("announceAlertShort");
 		}
 
+		@Override
 		public boolean isEventNotification() {
 			return false;
 		}
 
+		@Override
 		public UserEvent.Type getEventType() {
 			return UserEvent.Type.Announcer;
 		}

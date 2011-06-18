@@ -11,6 +11,7 @@ public class SectoredRandomGrabArrayWithObject extends SectoredRandomGrabArray i
 		this.object = object;
 	}
 
+	@Override
 	public Object getObject() {
 		return object;
 	}
@@ -20,6 +21,7 @@ public class SectoredRandomGrabArrayWithObject extends SectoredRandomGrabArray i
 		return super.toString()+":"+object;
 	}
 
+	@Override
 	public void setObject(Object client, ObjectContainer container) {
 		object = client;
 		if(persistent) container.store(this);

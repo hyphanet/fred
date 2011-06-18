@@ -92,6 +92,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 		}
 	}
 
+	@Override
 	public OutputStream getOutputStream() throws IOException {
 		if(readOnly) throw new IOException("Read only");
 		OutputStream os = bucket.getOutputStream();
@@ -187,6 +188,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 		}
 	}
 
+	@Override
 	public InputStream getInputStream() throws IOException {
 		return new PaddedEphemerallyEncryptedInputStream(bucket.getInputStream());
 	}
@@ -301,6 +303,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 			return PCFBMode.create(aes);
 	}
 
+	@Override
 	public String getName() {
 		return "Encrypted:"+bucket.getName();
 	}
@@ -310,14 +313,17 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 		return super.toString()+ ':' +bucket;
 	}
 	
+	@Override
 	public synchronized long size() {
 		return dataLength;
 	}
 
+	@Override
 	public boolean isReadOnly() {
 		return readOnly;
 	}
 	
+	@Override
 	public void setReadOnly() {
 		readOnly = true;
 	}
@@ -329,6 +335,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 		return bucket;
 	}
 
+	@Override
 	public void free() {
 		bucket.free();
 	}
@@ -340,11 +347,13 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 		return key;
 	}
 
+	@Override
 	public void storeTo(ObjectContainer container) {
 		bucket.storeTo(container);
 		container.store(this);
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		if(logMINOR)
 			Logger.minor(this, "Removing from database: "+this);
@@ -358,6 +367,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 		container.activate(bucket, 1);
 	}
 	
+	@Override
 	public Bucket createShadow() {
 		Bucket newUnderlying = bucket.createShadow();
 		if(newUnderlying == null) return null;

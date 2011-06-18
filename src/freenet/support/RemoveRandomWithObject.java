@@ -8,6 +8,7 @@ public interface RemoveRandomWithObject extends RemoveRandom {
 
 	public boolean isEmpty(ObjectContainer container);
 
+	@Override
 	public void removeFrom(ObjectContainer container);
 
 	public void setObject(Object client, ObjectContainer container);

@@ -22,7 +22,6 @@ import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.ByteArrayRandomAccessThing;
 import freenet.support.io.FileBucket;
-import freenet.support.io.FileUtil;
 import freenet.support.io.RandomAccessFileWrapper;
 import freenet.support.io.RandomAccessThing;
 
@@ -176,6 +175,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		start(wasAggressive);
 	}
 
+	@Override
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		onSuccess(result, state, state.getBlobBucket());
 	}
@@ -248,6 +248,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		}
 	}
 
+	@Override
 	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		onFailure(e, state, state.getBlobBucket());
 	}
@@ -300,6 +301,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 				// This ensures we don't constantly start them, fail them, and start them again.
 				this.manager.node.ticker.queueTimedJob(new Runnable() {
 
+					@Override
 					public void run() {
 						start(wasAggressive, false);
 					}
@@ -311,6 +313,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		}
 	}
 	
+	@Override
 	public void onMajorProgress(ObjectContainer container) {
 		// TODO Auto-generated method stub
 		
@@ -361,14 +364,17 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		return null;
 	}
 
+	@Override
 	public boolean persistent() {
 		return false;
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
 	public boolean realTimeFlag() {
 		return false;
 	}

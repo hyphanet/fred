@@ -16,6 +16,7 @@ public class TestPlugin implements FredPlugin {
 				(thing == FredPlugin.handleFProxy));
 	}
 	*/
+	@Override
 	public void terminate() {
 		goon = false;
 	}
@@ -38,6 +39,7 @@ public class TestPlugin implements FredPlugin {
 		}
 	}
 
+	@Override
 	public void runPlugin(PluginRespirator pr) {
 		this.pr = pr;
 		//pr.registerToadlet(this);

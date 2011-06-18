@@ -55,6 +55,7 @@ public class WatchGlobal extends FCPMessage {
 		try {
 			handler.server.core.clientContext.jobRunner.queue(new DBJob() {
 
+				@Override
 				public boolean run(ObjectContainer container, ClientContext context) {
 					FCPClient client = handler.getForeverClient(container);
 					container.activate(client, 1);

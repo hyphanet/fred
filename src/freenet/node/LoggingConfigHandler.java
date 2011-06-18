@@ -42,6 +42,7 @@ public class LoggingConfigHandler {
 			}
 		}
 
+		@Override
 		public String[] getPossibleValues() {
 			LogLevel[] priorities = LogLevel.values();
 			ArrayList<String> values = new ArrayList<String>(priorities.length+1);
@@ -354,6 +355,7 @@ public class LoggingConfigHandler {
 			executor.execute(this, "Old log directory "+logDir+" deleter");
 		}
 		
+		@Override
 		public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
 			fileLoggerHook.waitForSwitch();

@@ -56,6 +56,7 @@ public class RequestTag extends UIDTag {
 		sender = new WeakReference<RequestSender>(rs);
 	}
 	
+	@Override
 	protected synchronized boolean mustUnlock() {
 		if(sent && requestSenderFinishedCode == RequestSender.NOT_FINISHED) return false;
 		if(waitingForOpennet != null && waitingForOpennet.get() != null) return false;
@@ -185,6 +186,7 @@ public class RequestTag extends UIDTag {
 		innerUnlock(noRecordUnlock);
 	}
 	
+	@Override
 	public synchronized boolean currentlyRoutingTo(PeerNode peer) {
 		if(waitingForOpennet != null && waitingForOpennet == peer.myRef)
 			return true;

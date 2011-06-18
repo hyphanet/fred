@@ -19,10 +19,12 @@ public class FCPClientRequestClient implements RequestClient {
 		this.realTimeFlag = realTime;
 	}
 	
+	@Override
 	public boolean persistent() {
 		return forever;
 	}
 	
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		if(forever)
 			container.delete(this);
@@ -39,6 +41,7 @@ public class FCPClientRequestClient implements RequestClient {
 		return true;
 	}
 
+	@Override
 	public boolean realTimeFlag() {
 		return realTimeFlag;
 	}

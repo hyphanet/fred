@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import freenet.keys.ClientKeyBlock;
 import freenet.keys.KeyBlock;
 
 public class LowLevelPutException extends Exception {

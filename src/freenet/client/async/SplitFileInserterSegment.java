@@ -310,6 +310,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		}
 	}
 
+	@Override
 	public void tryEncode(ObjectContainer container, ClientContext context) {
 		boolean deactivateParent = false;
 		boolean deactivateParentCtx = false;
@@ -388,8 +389,10 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		return cryptoAlgorithm;
 	}
 
+	@Override
 	public void onDecodedSegment(ObjectContainer container, ClientContext context, FECJob job, Bucket[] dataBuckets, Bucket[] checkBuckets, SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus) {} // irrevelant
 
+	@Override
 	public void onEncodedSegment(ObjectContainer container, ClientContext context, FECJob job, Bucket[] dataBuckets, Bucket[] checkBuckets, SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus) {
 		if(persistent) {
 			container.activate(parent, 1);
@@ -579,6 +582,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		if(!persistent) {
 			context.mainExecutor.execute(new Runnable() {
 
+				@Override
 				public void run() {
 					parent.segmentHasURIs(SplitFileInserterSegment.this, null, context);
 				}
@@ -700,6 +704,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		cancelInner(container, context);
 	}
 
+	@Override
 	public void onFailed(Throwable t, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(finished) {
@@ -772,6 +777,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			this.cryptoKey = cryptoKey;
 		}
 
+		@Override
 		public void dump() {
 			copyBucket.free();
 		}
@@ -805,6 +811,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 
 		}
 
+		@Override
 		public void dump() {
 			// Do nothing
 		}
@@ -1105,6 +1112,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			if(!persistent) {
 				context.mainExecutor.execute(new Runnable() {
 
+					@Override
 					public void run() {
 						finish(null, context, parent);
 					}
@@ -1119,6 +1127,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			if(!persistent) {
 				context.mainExecutor.execute(new Runnable() {
 
+					@Override
 					public void run() {
 						parent.segmentFetchable(SplitFileInserterSegment.this, null);
 					}
@@ -1199,6 +1208,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			compressorDescriptor = compressorDescriptor2;
 			this.seg = seg;
 		}
+		@Override
 		public boolean send(NodeClientCore core, RequestScheduler sched, final ClientContext context, final ChosenBlock req) {
 				// Ignore keyNum, key, since we're only sending one block.
 			final int num;
@@ -1341,6 +1351,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		return sz;
 	}
 
+	@Override
 	public synchronized boolean isEmpty(ObjectContainer container) {
 		if(persistent) container.activate(blocks, 2);
 		boolean ret = (finished || blocks.isEmpty());
@@ -1350,6 +1361,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 
 	private boolean removeOnEncode;
 
+	@Override
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		container.activate(encodeJob, 1);
 		if(encodeJob != null) {
@@ -1483,6 +1495,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		}
 	}
 
+	@Override
 	public boolean isStorageBroken(ObjectContainer container) {
 		if(putter == null) return true;
 		if(parent == null) return true;

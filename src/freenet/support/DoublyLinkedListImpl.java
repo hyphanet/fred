@@ -72,6 +72,7 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void clear() {
     	// Help to detect removal after clear().
     	// The check in remove() is enough, strictly,
@@ -98,6 +99,7 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
     /**
      * {@inheritDoc}
      */
+    @Override
     public final int size() {
 		assert size != 0 || (_firstItem == null && _lastItem == null);
         return size;
@@ -106,6 +108,7 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
     /**
      * {@inheritDoc}
      */
+    @Override
     public final boolean isEmpty() {
 		assert size != 0 || (_firstItem == null && _lastItem == null);
         return size == 0;
@@ -115,10 +118,12 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
      * {@inheritDoc}
      * @see #forwardElements()
      */
+    @Override
     public final Enumeration<T> elements() {
         return forwardElements();
     }
     
+	@Override
 	public boolean contains(T item) {
     	for(T i : this) {
     		if(i.equals(item))
@@ -130,6 +135,7 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
     /**
      * {@inheritDoc}
      */
+	@Override
 	public final T head() {
 		return size == 0 ? null : _firstItem;
     }
@@ -137,6 +143,7 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
     /**
      * {@inheritDoc}
      */
+	@Override
 	public final T tail() {
 		return size == 0 ? null : _lastItem;
     }
@@ -146,6 +153,7 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
     /**
      * {@inheritDoc}
      */
+	@Override
 	public final void unshift(T i) {
 		insertNext(null, i);
     }
@@ -153,12 +161,14 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
     /**
      * {@inheritDoc}
      */
+	@Override
 	public final T shift() {
 		return size == 0 ? null : remove(_firstItem);
     }
     /**
      * {@inheritDoc}
      */
+    @Override
     public DoublyLinkedList<T> shift(int n) {
         if (n > size) n = size;
         if (n < 1) return new DoublyLinkedListImpl<T>();
@@ -189,6 +199,7 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
     /**
      * {@inheritDoc}
      */
+	@Override
 	public final void push(T i) {
 		insertPrev(null, i);
     }
@@ -196,6 +207,7 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
     /**
      * {@inheritDoc}
      */
+	@Override
 	public final T pop() {
 		return size == 0 ? null : remove(_lastItem);
     }
@@ -203,6 +215,7 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
     /**
      * {@inheritDoc}
      */
+    @Override
     public DoublyLinkedList<T> pop(int n) {
         if (n > size) n = size;
         if (n < 1) return new DoublyLinkedListImpl<T>();
@@ -232,6 +245,7 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
     /**
      * {@inheritDoc}
      */
+	@Override
 	public final boolean hasNext(T i) {
 		T next = i.getNext();
 		return next != null;
@@ -239,6 +253,7 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
     /**
      * {@inheritDoc}
      */
+	@Override
 	public final boolean hasPrev(T i) {
 		T prev = i.getPrev();
 		return prev != null;
@@ -246,6 +261,7 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
     /**
      * {@inheritDoc}
      */
+	@Override
 	public final T next(T i) {
 		T next = i.getNext();
 		return next;
@@ -253,6 +269,7 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
     /**
      * {@inheritDoc}
      */
+	@Override
 	public final T prev(T i) {
 		T prev = i.getPrev();
 		return prev;
@@ -264,6 +281,7 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
     /**
      * {@inheritDoc}
      */
+	@Override
 	public T remove(T i) {
     	if (i.getParent() == null || isEmpty())
 			return null; // not in list
@@ -302,6 +320,7 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
     /**
      * {@inheritDoc}
      */
+	@Override
 	public void insertPrev(T i, T j) {
     	if (j.getParent() != null)
     		throw new PromiscuousItemException(j, j.getParent());
@@ -346,6 +365,7 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
     /**
      * {@inheritDoc}
      */
+	@Override
 	public void insertNext(T i, T j) {
     	if (j.getParent() != null)
     		throw new PromiscuousItemException(j, i.getParent());
@@ -406,10 +426,12 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
         protected ForwardWalker() {
 			next = _firstItem;
         }
+        @Override
         public final boolean hasMoreElements() {
 			return next != null;
         }
 
+		@Override
 		public T nextElement() {
 			if (next == null)
                 throw new NoSuchElementException();
@@ -424,10 +446,12 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
         protected ReverseWalker() {
 			next = _lastItem;
         }
+        @Override
         public final boolean hasMoreElements() {
 			return next != null;
         }
 
+		@Override
 		public T nextElement() {
 			if (next == null)
                 throw new NoSuchElementException();
@@ -453,10 +477,12 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
 		//			return (T) new Item<T>();
 		//        }
 
+		@Override
 		public final T getNext() {
             return next;
         }
 
+		@Override
 		@SuppressWarnings("unchecked")
 		public final T setNext(DoublyLinkedList.Item<?> i) {
 			T old = next;
@@ -464,10 +490,12 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
             return old;
         }
 
+		@Override
 		public final T getPrev() {
             return prev;
         }
 
+		@Override
 		@SuppressWarnings("unchecked")
 		public final T setPrev(DoublyLinkedList.Item<?> i) {
 			T old = prev;
@@ -475,10 +503,12 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
             return old;
         }
 
+		@Override
 		public DoublyLinkedList<? super T> getParent() {
 			return list;
 		}
 
+		@Override
 		public DoublyLinkedList<? super T> setParent(DoublyLinkedList<? super T> l) {
 			DoublyLinkedList<? super T> old = list;
 			list = l;
@@ -486,14 +516,17 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
 		}
     }
 
+	@Override
 	public Iterator<T> iterator() {
 		return new Iterator<T>() {
 			private Enumeration<T> e = forwardElements();
 
+			@Override
 			public boolean hasNext() {
 				return e.hasMoreElements();
 			}
 
+			@Override
 			public T next() {
 				if(!hasNext())
 					throw new NoSuchElementException();
@@ -501,6 +534,7 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
 				return e.nextElement();
 			}
 
+			@Override
 			public void remove() {
 				throw new UnsupportedOperationException();
 			}

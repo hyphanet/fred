@@ -10,7 +10,6 @@ import freenet.clients.http.DarknetConnectionsToadlet;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
 import freenet.io.xfer.PacketThrottle;
-import freenet.node.NodeStats.PeerLoadStats;
 import freenet.node.PeerNode.IncomingLoadSummaryStats;
 
 /**

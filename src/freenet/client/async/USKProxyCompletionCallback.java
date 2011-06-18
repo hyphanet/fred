@@ -27,6 +27,7 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 		this.persistent = persistent;
 	}
 
+	@Override
 	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(container != null && persistent) {
 			container.activate(cb, 1);
@@ -43,6 +44,7 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 		container.delete(this);
 	}
 
+	@Override
 	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
 		switch(e.mode) {
 		case FetchException.NOT_ENOUGH_PATH_COMPONENTS:
@@ -62,42 +64,50 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 		if(persistent) removeFrom(container);
 	}
 
+	@Override
 	public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(container != null && persistent)
 			container.activate(cb, 1);
 		cb.onBlockSetFinished(state, container, context);
 	}
 
+	@Override
 	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
 		// Ignore
 	}
 
+	@Override
 	public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) throws FetchException {
 		if(container != null && persistent)
 			container.activate(cb, 1);
 		cb.onExpectedMIME(mime, container, context);
 	}
 
+	@Override
 	public void onExpectedSize(long size, ObjectContainer container, ClientContext context) {
 		if(container != null && persistent)
 			container.activate(cb, 1);
 		cb.onExpectedSize(size, container, context);
 	}
 
+	@Override
 	public void onFinalizedMetadata(ObjectContainer container) {
 		if(container != null && persistent)
 			container.activate(cb, 1);
 		cb.onFinalizedMetadata(container);
 	}
 
+	@Override
 	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
 		cb.onExpectedTopSize(size, compressed, blocksReq, blocksTotal, container, context);
 	}
 
+	@Override
 	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, boolean dontCompress, boolean bottomLayer, boolean definitiveAnyway, ObjectContainer container, ClientContext context) {
 		cb.onSplitfileCompatibilityMode(min, max, splitfileKey, dontCompress, bottomLayer, definitiveAnyway, container, context);
 	}
 
+	@Override
 	public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
 		cb.onHashes(hashes, container, context);
 	}

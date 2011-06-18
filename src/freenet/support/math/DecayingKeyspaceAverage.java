@@ -47,6 +47,7 @@ public class DecayingKeyspaceAverage implements RunningAverage {
          *
          * @return
          */
+        @Override
         public synchronized double currentValue() {
 		return avg.currentValue();
 	}
@@ -55,6 +56,7 @@ public class DecayingKeyspaceAverage implements RunningAverage {
          *
          * @param d
          */
+        @Override
         public synchronized void report(double d) {
 		if((d < 0.0) || (d > 1.0))
 			//Just because we use non-normalized locations doesn't mean we can accept them.
@@ -78,6 +80,7 @@ public class DecayingKeyspaceAverage implements RunningAverage {
 			avg.setCurrentValue(Location.normalize(newValue));
 	}
 
+	@Override
 	public synchronized double valueIfReported(double d) {
 		if((d < 0.0) || (d > 1.0))
 			throw new IllegalArgumentException("Not a valid normalized key: " + d);
@@ -87,6 +90,7 @@ public class DecayingKeyspaceAverage implements RunningAverage {
 		return Location.normalize(avg.valueIfReported(superValue + diff));
 	}
 
+	@Override
 	public synchronized long countReports() {
 		return avg.countReports();
 	}
@@ -95,6 +99,7 @@ public class DecayingKeyspaceAverage implements RunningAverage {
          *
          * @param d
          */
+        @Override
         public void report(long d) {
 		throw new IllegalArgumentException("KeyspaceAverage does not like longs");
 	}

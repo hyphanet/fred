@@ -165,14 +165,17 @@ public class SSKBlock implements KeyBlock {
 		hashCode = Fields.hashCode(data) ^ Fields.hashCode(headers) ^ nodeKey.hashCode() ^ pubKey.hashCode() ^ hashIdentifier;
 	}
 
+	@Override
 	public NodeSSK getKey() {
 		return nodeKey;
 	}
 
+	@Override
 	public byte[] getRawHeaders() {
 		return headers;
 	}
 
+	@Override
 	public byte[] getRawData() {
 		return data;
 	}
@@ -181,14 +184,17 @@ public class SSKBlock implements KeyBlock {
 		return pubKey;
 	}
 
+	@Override
 	public byte[] getPubkeyBytes() {
 		return pubKey.asBytes();
 	}
 
+	@Override
 	public byte[] getFullKey() {
 		return getKey().getFullKey();
 	}
 
+	@Override
 	public byte[] getRoutingKey() {
 		return getKey().getRoutingKey();
 	}

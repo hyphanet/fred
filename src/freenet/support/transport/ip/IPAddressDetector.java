@@ -215,6 +215,7 @@ public class IPAddressDetector implements Runnable {
 		lastAddressList = output.toArray(new InetAddress[output.size()]);
 	}
 
+	@Override
 	public void run() {
 		freenet.support.Logger.OSThread.logPID(this);
 		while(true) {

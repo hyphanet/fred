@@ -11,10 +11,12 @@ public abstract class UpdatableSortedLinkedListItemImpl<T extends UpdatableSorte
 	private T next;
 	private T prev;
 
+	@Override
 	public T getNext() {
 		return next;
 	}
 
+	@Override
 	@SuppressWarnings("unchecked")
 	public T setNext(Item<?> i) {
 		T old = next;
@@ -22,10 +24,12 @@ public abstract class UpdatableSortedLinkedListItemImpl<T extends UpdatableSorte
 		return old;
 	}
 
+	@Override
 	public T getPrev() {
 		return prev;
 	}
 
+	@Override
 	@SuppressWarnings("unchecked")
 	public T setPrev(Item<?> i) {
 		T old = prev;
@@ -40,10 +44,12 @@ public abstract class UpdatableSortedLinkedListItemImpl<T extends UpdatableSorte
 
 	private DoublyLinkedList<? super T> parentList;
 
+	@Override
 	public DoublyLinkedList<? super T> getParent() {
 		return parentList;
 	}
 
+	@Override
 	public DoublyLinkedList<? super T> setParent(DoublyLinkedList<? super T> l) {
 		DoublyLinkedList<? super T> oldParent = parentList;
 		parentList = l;

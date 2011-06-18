@@ -23,6 +23,7 @@ public class TimeSortedHashtable<T extends Comparable<T>>  {
 		long time;
 		final T value;
 		
+		@Override
 		public int compareTo(Element<T> o) {
 			if(time > o.time) return 1;
 			if(time < o.time) return -1;

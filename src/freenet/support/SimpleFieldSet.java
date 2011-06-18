@@ -555,6 +555,7 @@ public class SimpleFieldSet {
     		}
     	}
 
+		@Override
 		public boolean hasNext() {
 			synchronized(SimpleFieldSet.this) {
 				while(true) {
@@ -572,6 +573,7 @@ public class SimpleFieldSet {
 			}
 		}
 
+		@Override
 		public final String next() {
 			return nextKey();
 		}
@@ -609,6 +611,7 @@ public class SimpleFieldSet {
 			}
 		}
 
+		@Override
 		public synchronized void remove() {
 			throw new UnsupportedOperationException();
 		}

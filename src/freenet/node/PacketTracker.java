@@ -252,10 +252,12 @@ public class PacketTracker {
 		private T next;
 		private T prev;
 
+		@Override
 		public final T getNext() {
 			return next;
 		}
 
+		@Override
 		@SuppressWarnings("unchecked")
 		public final T setNext(Item<?> i) {
 			T old = next;
@@ -263,10 +265,12 @@ public class PacketTracker {
 			return old;
 		}
 
+		@Override
 		public T getPrev() {
 			return prev;
 		}
 
+		@Override
 		@SuppressWarnings("unchecked")
 		public T setPrev(Item<?> i) {
 			T old = prev;
@@ -274,6 +278,7 @@ public class PacketTracker {
 			return old;
 		}
 
+		@Override
 		public int compareTo(T r) {
 			if(urgentTime > r.urgentTime)
 				return 1;
@@ -286,15 +291,18 @@ public class PacketTracker {
 			return 0;
 		}
 
+		@Override
 		public Object indexValue() {
 			return packetNumber;
 		}
 		private DoublyLinkedList<? super T> parent;
 
+		@Override
 		public DoublyLinkedList<? super T> getParent() {
 			return parent;
 		}
 
+		@Override
 		public DoublyLinkedList<? super T> setParent(DoublyLinkedList<? super T> l) {
 			DoublyLinkedList<? super T> old = parent;
 			parent = l;

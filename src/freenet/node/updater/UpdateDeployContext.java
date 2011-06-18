@@ -11,8 +11,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Properties;
-import java.util.TreeSet;
-
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.l10n.NodeL10n;

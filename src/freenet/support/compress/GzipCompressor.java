@@ -13,12 +13,12 @@ import java.util.zip.GZIPOutputStream;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
-import freenet.support.io.Closer;
 import freenet.support.io.CountedOutputStream;
 
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class GzipCompressor implements Compressor {
 
+	@Override
 	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
 		Bucket output = bf.makeBucket(maxWriteLength);
 		InputStream is = null;
@@ -34,6 +34,7 @@ public class GzipCompressor implements Compressor {
 		return output;
 	}
 	
+	@Override
 	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
 		if(maxReadLength < 0)
 			throw new IllegalArgumentException();
@@ -70,12 +71,13 @@ public class GzipCompressor implements Compressor {
 		}
 	}
 
+	@Override
 	public long decompress(InputStream is, OutputStream os, long maxLength, long maxCheckSizeBytes) throws IOException, CompressionOutputSizeException {
 		GZIPInputStream gis = new GZIPInputStream(new BufferedInputStream(is, 32768));
 		os = new BufferedOutputStream(os, 32768);
 		long written = 0;
 		int bufSize = 32768;
-		if(maxLength > 0 && maxLength < (long)bufSize)
+		if(maxLength > 0 && maxLength < bufSize)
 			bufSize = (int)maxLength;
 		byte[] buffer = new byte[bufSize];
 		while(true) {
@@ -108,6 +110,7 @@ public class GzipCompressor implements Compressor {
 		}
 	}
 
+	@Override
 	public int decompress(byte[] dbuf, int i, int j, byte[] output) throws CompressionOutputSizeException {
 		// Didn't work with Inflater.
 		// FIXME fix sometimes to use Inflater - format issue?

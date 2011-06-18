@@ -33,6 +33,7 @@ public class SlashdotStoreTest extends TestCase {
 	private TempBucketFactory tbf;
 	private File tempDir;
 
+	@Override
 	protected void setUp() throws java.lang.Exception {
 		tempDir = new File("tmp-slashdotstoretest");
 		tempDir.mkdir();
@@ -41,6 +42,7 @@ public class SlashdotStoreTest extends TestCase {
 		exec.start();
 	}
 	
+	@Override
 	protected void tearDown() {
 		FileUtil.removeAll(tempDir);
 	}

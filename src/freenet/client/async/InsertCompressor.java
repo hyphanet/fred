@@ -11,9 +11,7 @@ import com.db4o.query.Query;
 import freenet.client.InsertException;
 import freenet.crypt.HashResult;
 import freenet.crypt.MultiHashInputStream;
-import freenet.crypt.MultiHashOutputStream;
 import freenet.keys.CHKBlock;
-import freenet.keys.NodeCHK;
 import freenet.node.PrioRunnable;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -114,6 +112,7 @@ public class InsertCompressor implements CompressJob {
 		ctx.rc.enqueueNewJob(this);
 	}
 
+	@Override
 	public void tryCompress(final ClientContext context) throws InsertException {
 		long origSize = origData.size();
 		COMPRESSOR_TYPE bestCodec = null;
@@ -141,6 +140,7 @@ public class InsertCompressor implements CompressJob {
 					if(persistent) {
 						context.jobRunner.queue(new DBJob() {
 
+							@Override
 							public boolean run(ObjectContainer container, ClientContext context) {
 								if(!container.ext().isStored(inserter)) {
 									if(InsertCompressor.logMINOR) Logger.minor(this, "Already deleted (start compression): "+inserter+" for "+InsertCompressor.this);
@@ -234,6 +234,7 @@ public class InsertCompressor implements CompressJob {
 			
 				context.jobRunner.queue(new DBJob() {
 					
+					@Override
 					public boolean run(ObjectContainer container, ClientContext context) {
 						if(!container.ext().isStored(inserter)) {
 							if(InsertCompressor.logMINOR) Logger.minor(this, "Already deleted: "+inserter+" for "+InsertCompressor.this);
@@ -254,10 +255,12 @@ public class InsertCompressor implements CompressJob {
 				// We do it off thread so that RealCompressor can release the semaphore
 				context.mainExecutor.execute(new PrioRunnable() {
 
+					@Override
 					public int getPriority() {
 						return NativeThread.NORM_PRIORITY;
 					}
 
+					@Override
 					public void run() {
 						try {
 							inserter.onCompressed(output, null, context);
@@ -284,6 +287,7 @@ public class InsertCompressor implements CompressJob {
 			try {
 				context.jobRunner.queue(new DBJob() {
 					
+					@Override
 					public boolean run(ObjectContainer container, ClientContext context) {
 						if(!container.ext().isStored(inserter)) {
 							if(InsertCompressor.logMINOR) Logger.minor(this, "Already deleted (on failed): "+inserter+" for "+InsertCompressor.this);
@@ -349,11 +353,13 @@ public class InsertCompressor implements CompressJob {
 		}
 	}
 
+	@Override
 	public void onFailure(final InsertException e, ClientPutState c, ClientContext context) {
 		if(persistent) {
 			try {
 				context.jobRunner.queue(new DBJob() {
 					
+					@Override
 					public boolean run(ObjectContainer container, ClientContext context) {
 						if(container.ext().isActive(inserter))
 							Logger.error(this, "ALREADY ACTIVE in compress failure callback: "+inserter);

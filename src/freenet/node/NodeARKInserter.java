@@ -189,6 +189,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 		}
 	}
 	
+	@Override
 	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
 		FreenetURI uri = state.getURI();
 		if(logMINOR) Logger.minor(this, darknetOpennetString + " ARK insert succeeded: " + uri);
@@ -200,6 +201,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 		startInserter();
 	}
 
+	@Override
 	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
 		if(logMINOR) Logger.minor(this, darknetOpennetString + " ARK insert failed: "+e);
 		synchronized(this) {
@@ -216,6 +218,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 		startInserter();
 	}
 
+	@Override
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
 		if(logMINOR) Logger.minor(this, "Generated URI for " + darknetOpennetString + " ARK: "+uri);
 		long l = uri.getSuggestedEdition();
@@ -250,22 +253,27 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 		startInserter();
 	}
 
+	@Override
 	public void onMajorProgress(ObjectContainer container) {
 		// Ignore
 	}
 
+	@Override
 	public void onFetchable(BaseClientPutter state, ObjectContainer container) {
 		// Ignore, we don't care
 	}
 
+	@Override
 	public boolean persistent() {
 		return false;
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
 	public boolean realTimeFlag() {
 		return false;
 	}

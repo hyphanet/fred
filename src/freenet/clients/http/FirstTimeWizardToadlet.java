@@ -21,7 +21,6 @@ import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.SecurityLevels;
 import freenet.node.Node.AlreadySetPasswordException;
-import freenet.node.SecurityLevels.FRIENDS_THREAT_LEVEL;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.pluginmanager.FredPluginBandwidthIndicator;
@@ -708,6 +707,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 
 						private final boolean enable = enableUPnP;
 
+						@Override
 						public void run() {
 							if(enable)
 								core.node.pluginManager.startPluginOfficial("UPnP", true, false, false);
@@ -722,6 +722,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 
 						private final boolean enable = enableJSTUN;
 
+						@Override
 						public void run() {
 							// We can probably get connected without it, so don't force HTTPS.
 							// We'd have to ask the user anyway...
