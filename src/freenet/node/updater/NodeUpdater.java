@@ -17,6 +17,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
+import freenet.client.async.BinaryBlobWriter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
@@ -186,7 +187,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 					uri = uri.sskForUSK();
 					cg = new ClientGetter(this,  
 						uri, ctx, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
-						this, null, new FileBucket(tempBlobFile, false, false, false, false, false));
+						this, null, new BinaryBlobWriter(new FileBucket(tempBlobFile, false, false, false, false, false)));
 					toStart = cg;
 				} else {
 					System.err.println("Already fetching "+jarName() + " fetch for " + fetchingVersion + " want "+availableVersion);

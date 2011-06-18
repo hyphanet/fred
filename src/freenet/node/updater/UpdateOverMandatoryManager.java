@@ -27,6 +27,7 @@ import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.BinaryBlob;
 import freenet.client.async.BinaryBlobFormatException;
+import freenet.client.async.BinaryBlobWriter;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutCallback;
@@ -1118,7 +1119,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		};
 
 		ClientGetter cg = new ClientGetter(myCallback,
-			updateManager.revocationURI, tempContext, (short) 0, this, null, cleanedBlob);
+			updateManager.revocationURI, tempContext, (short) 0, this, null, new BinaryBlobWriter(cleanedBlob));
 
 		try {
 			updateManager.node.clientCore.clientContext.start(cg);
@@ -1635,7 +1636,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		};
 
 		ClientGetter cg = new ClientGetter(myCallback,
-			uri, tempContext, (short) 0, this, null, cleanedBlob);
+			uri, tempContext, (short) 0, this, null, new BinaryBlobWriter(cleanedBlob));
 
 		try {
 			updateManager.node.clientCore.clientContext.start(cg);
@@ -1742,7 +1743,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		};
 
 		ClientGetter cg = new ClientGetter(myCallback,
-				uri, tempContext, (short) 0, this, null, cleanedBlob);
+				uri, tempContext, (short) 0, this, null, new BinaryBlobWriter(cleanedBlob));
 
 			try {
 				updateManager.node.clientCore.clientContext.start(cg);
