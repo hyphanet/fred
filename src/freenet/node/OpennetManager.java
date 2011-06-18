@@ -205,6 +205,7 @@ public class OpennetManager {
 		node.peers.tryReadPeers(node.nodeDir().file("openpeers-"+crypto.portNumber).toString(), crypto, this, true, false);
 		OpennetPeerNode[] nodes = node.peers.getOpennetPeers();
 		Arrays.sort(nodes, new Comparator<OpennetPeerNode>() {
+			@Override
 			public int compare(OpennetPeerNode pn1, OpennetPeerNode pn2) {
 				long lastSuccess1 = pn1.timeLastSuccess();
 				long lastSuccess2 = pn2.timeLastSuccess();
@@ -903,16 +904,19 @@ public class OpennetManager {
 		boolean finished;
 		boolean timedOut;
 		
+		@Override
 		public synchronized void timedOut() {
 			timedOut = true;
 			finished = true;
 			notifyAll();
 		}
 		
+		@Override
 		public void acked(boolean timedOutMessage) {
 			gotNoderef(null);
 		}
 		
+		@Override
 		public synchronized void gotNoderef(byte[] noderef) {
 			returned = noderef;
 			finished = true;
@@ -971,6 +975,7 @@ public class OpennetManager {
 				
 				boolean completed;
 
+				@Override
 				public void onMatched(Message msg) {
 					if (msg.getSpec() == DMT.FNPOpennetCompletedAck || 
 							msg.getSpec() == DMT.FNPOpennetCompletedTimeout) {
@@ -988,10 +993,12 @@ public class OpennetManager {
 					}
 				}
 
+				@Override
 				public boolean shouldTimeout() {
 					return false;
 				}
 
+				@Override
 				public void onTimeout() {
 					synchronized(this) {
 						if(completed) return;
@@ -1000,14 +1007,17 @@ public class OpennetManager {
 					callback.timedOut();
 				}
 
+				@Override
 				public void onDisconnect(PeerContext ctx) {
 					complete(null);
 				}
 
+				@Override
 				public void onRestarted(PeerContext ctx) {
 					complete(null);
 				}
 
+				@Override
 				public int getPriority() {
 					return NativeThread.NORM_PRIORITY;
 				}

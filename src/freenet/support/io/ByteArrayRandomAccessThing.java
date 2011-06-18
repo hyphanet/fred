@@ -12,10 +12,12 @@ public class ByteArrayRandomAccessThing implements RandomAccessThing {
 		this.data = padded;
 	}
 
+	@Override
 	public void close() {
 		// Do nothing
 	}
 
+	@Override
 	public void pread(long fileOffset, byte[] buf, int bufOffset, int length)
 			throws IOException {
 		if(fileOffset < 0) throw new IOException("Cannot read before zero");
@@ -23,6 +25,7 @@ public class ByteArrayRandomAccessThing implements RandomAccessThing {
 		System.arraycopy(data, (int)fileOffset, buf, bufOffset, length);
 	}
 
+	@Override
 	public void pwrite(long fileOffset, byte[] buf, int bufOffset, int length)
 			throws IOException {
 		if(fileOffset < 0) throw new IOException("Cannot write before zero");
@@ -31,6 +34,7 @@ public class ByteArrayRandomAccessThing implements RandomAccessThing {
 		System.arraycopy(buf, bufOffset, data, (int)fileOffset, length);
 	}
 
+	@Override
 	public long size() throws IOException {
 		return data.length;
 	}

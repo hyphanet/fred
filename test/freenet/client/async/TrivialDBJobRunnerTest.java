@@ -13,6 +13,7 @@ public class TrivialDBJobRunnerTest extends TestCase {
 		jobRunner.start(new PooledExecutor(), null);
 		jobRunner.runBlocking(new DBJob() {
 
+			@Override
 			public boolean run(ObjectContainer container, ClientContext context) {
 				// Do nothing.
 				return false;

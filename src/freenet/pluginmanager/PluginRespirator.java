@@ -116,6 +116,7 @@ public class PluginRespirator {
 
 		this.node.clientCore.runBlocking(new DBJob() {
 
+			@Override
 			public boolean run(ObjectContainer container, ClientContext context) {
 				ObjectSet<PluginStoreContainer> stores = container.queryByExample(example);
 				if(stores.size() == 0) store = new PluginStore();
@@ -145,6 +146,7 @@ public class PluginRespirator {
 
 		this.node.clientCore.queue(new DBJob() {
 
+			@Override
 			public boolean run(ObjectContainer container, ClientContext context) {
 				// cascadeOnDelete(true) will make the calls to store() delete
 				// any precedent stored instance of PluginStore.

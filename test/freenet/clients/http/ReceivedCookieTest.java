@@ -16,6 +16,7 @@ public class ReceivedCookieTest extends CookieTest {
 											+ " $Expires = \"Sun, 25 Oct 2030 15:09:37 GMT\"; "
 											+ " $blah;";
 
+	@Override
 	@SuppressWarnings("deprecation")
 	protected void setUp() throws Exception { 		
 		super.setUp();
@@ -25,6 +26,7 @@ public class ReceivedCookieTest extends CookieTest {
 		cookie = ReceivedCookie.parseHeader(validEncodedCookie).get(0);
 	}
 
+	@Override
 	public void testGetDomain() {
 		// TODO: Implement.
 	}
@@ -59,6 +61,7 @@ public class ReceivedCookieTest extends CookieTest {
 		assertEquals(VALID_NAME.toLowerCase(), cookie.getName()); assertEquals(VALID_VALUE, cookie.getValue());
 	}
 
+	@Override
 	public void testEncodeToHeaderValue() {
 		try {
 			cookie.encodeToHeaderValue();

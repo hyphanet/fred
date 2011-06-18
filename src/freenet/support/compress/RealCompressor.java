@@ -43,6 +43,7 @@ public class RealCompressor implements PrioRunnable {
 		this.context = context;
 	}
 
+	@Override
 	public int getPriority() {
 		return NativeThread.HIGH_PRIORITY;
 	}
@@ -54,6 +55,7 @@ public class RealCompressor implements PrioRunnable {
 		notifyAll();
 	}
 
+	@Override
 	public void run() {
 		Logger.normal(this, "Starting RealCompressor");
 		while(true) {
@@ -74,6 +76,7 @@ public class RealCompressor implements PrioRunnable {
 			
 			final CompressJob finalJob = currentJob;
 			exec.execute(new PrioRunnable() {
+				@Override
 				public void run() {
 					freenet.support.Logger.OSThread.logPID(this);
 					try {
@@ -101,6 +104,7 @@ public class RealCompressor implements PrioRunnable {
 					}
 				}
 
+				@Override
 				public int getPriority() {
 					return NativeThread.MIN_PRIORITY;
 				}

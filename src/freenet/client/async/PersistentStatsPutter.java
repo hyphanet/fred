@@ -94,6 +94,7 @@ public class PersistentStatsPutter implements DBJob {
 		this.latestUptimeVal = uptime;
 	}
 
+	@Override
 	public boolean run(ObjectContainer container, ClientContext context) {
 		this.updateData();
 

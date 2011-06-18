@@ -96,6 +96,7 @@ public class Inet4AddressMatcher implements AddressMatcher {
 	 * @return <code>true</code> if <code>inetAddress</code> matches the
 	 *         specification of this matcher, <code>false</code> otherwise
 	 */
+	@Override
 	public boolean matches(InetAddress inetAddress) {
 		if (!(inetAddress instanceof Inet4Address)) return false;
 		int matchAddress = convertToBytes(inetAddress.getHostAddress());
@@ -120,6 +121,7 @@ public class Inet4AddressMatcher implements AddressMatcher {
 		return new Inet4AddressMatcher(cidrHostname).matches(address);
 	}
 
+	@Override
 	public String getHumanRepresentation() {
 		if(networkMask == -1)
 			return convertToString(address);

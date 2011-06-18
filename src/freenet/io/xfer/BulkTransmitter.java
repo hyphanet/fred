@@ -96,9 +96,11 @@ public class BulkTransmitter {
 		try {
 			prb.usm.addAsyncFilter(MessageFilter.create().setNoTimeout().setSource(peer).setType(DMT.FNPBulkReceiveAborted).setField(DMT.UID, uid),
 					new AsyncMessageFilterCallback() {
+						@Override
 						public void onMatched(Message m) {
 							cancel("Other side sent FNPBulkReceiveAborted");
 						}
+						@Override
 						public boolean shouldTimeout() {
 							synchronized(BulkTransmitter.this) {
 								if(cancelled || finished) return true;
@@ -106,21 +108,26 @@ public class BulkTransmitter {
 							if(BulkTransmitter.this.prb.isAborted()) return true;
 							return false;
 						}
+						@Override
 						public void onTimeout() {
 							// Ignore
 						}
+						@Override
 						public void onDisconnect(PeerContext ctx) {
 							// Ignore
 						}
+						@Override
 						public void onRestarted(PeerContext ctx) {
 							// Ignore
 						}
 			}, ctr);
 			prb.usm.addAsyncFilter(MessageFilter.create().setNoTimeout().setSource(peer).setType(DMT.FNPBulkReceivedAll).setField(DMT.UID, uid),
 					new AsyncMessageFilterCallback() {
+						@Override
 						public void onMatched(Message m) {
 							completed();
 						}
+						@Override
 						public boolean shouldTimeout() {
 							synchronized(BulkTransmitter.this) {
 								   if (cancelled) return true;
@@ -129,12 +136,15 @@ public class BulkTransmitter {
 							if(BulkTransmitter.this.prb.isAborted()) return true;
 							return false;
 						}
+						@Override
 						public void onTimeout() {
 							// Ignore
 						}
+						@Override
 						public void onDisconnect(PeerContext ctx) {
 							// Ignore
 						}
+						@Override
 						public void onRestarted(PeerContext ctx) {
 							// Ignore
 						}
@@ -370,6 +380,7 @@ outer:	while(true) {
 			}
 		}
 
+		@Override
 		public void acknowledged() {
 			complete(false);
 		}
@@ -394,14 +405,17 @@ outer:	while(true) {
 			}
 		}
 
+		@Override
 		public void disconnected() {
 			complete(true);
 		}
 
+		@Override
 		public void fatalError() {
 			complete(true);
 		}
 
+		@Override
 		public void sent() {
 			// Wait for acknowledgment
 		}

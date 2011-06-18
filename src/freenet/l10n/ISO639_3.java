@@ -141,6 +141,7 @@ public final class ISO639_3 {
 			return id.equals(other.id);
 		}
 		
+		@Override
 		public boolean equals(Object o) {
 			if(!(o instanceof LanguageCode))
 				return false;
@@ -153,10 +154,12 @@ public final class ISO639_3 {
 			return id.hashCode();
 		}
 
+		@Override
 		public int compareTo(LanguageCode o) {
 			return id.compareTo(o.id);
 		}
 		
+		@Override
 		public String toString() {
 			return new String(id) + " = " + referenceName + " (scope: " + scope + "; type: " + type + ")";
 		}

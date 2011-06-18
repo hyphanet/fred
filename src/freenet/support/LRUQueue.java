@@ -4,8 +4,6 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
-import freenet.node.OpennetPeerNode;
-
 /**
  * LRU Queue
  * 
@@ -110,10 +108,12 @@ public class LRUQueue<T> {
 
 		private Enumeration<QItem<T>> source = list.reverseElements();
        
+        @Override
         public boolean hasMoreElements() {
             return source.hasMoreElements();
         }
 
+		@Override
 		public T nextElement() {
 			return source.nextElement().obj;
         }

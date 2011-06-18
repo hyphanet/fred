@@ -26,31 +26,37 @@ public class SingleKeyListener implements KeyListener {
 		this.realTime = realTime;
 	}
 
+	@Override
 	public long countKeys() {
 		if(done) return 0;
 		else return 1;
 	}
 
+	@Override
 	public short definitelyWantKey(Key key, byte[] saltedKey, ObjectContainer container,
 			ClientContext context) {
 		if(!key.equals(this.key)) return -1;
 		else return prio;
 	}
 
+	@Override
 	public HasKeyListener getHasKeyListener() {
 		return fetcher;
 	}
 
+	@Override
 	public short getPriorityClass(ObjectContainer container) {
 		return prio;
 	}
 
+	@Override
 	public SendableGet[] getRequestsForKey(Key key, byte[] saltedKey, ObjectContainer container,
 			ClientContext context) {
 		if(!key.equals(this.key)) return null;
 		return new SendableGet[] { fetcher };
 	}
 
+	@Override
 	public boolean handleBlock(Key key, byte[] saltedKey, KeyBlock found,
 			ObjectContainer container, ClientContext context) {
 		if(!key.equals(this.key)) return false;
@@ -74,27 +80,33 @@ public class SingleKeyListener implements KeyListener {
 		return new Key[] { key };
 	}
 
+	@Override
 	public boolean persistent() {
 		return persistent;
 	}
 
+	@Override
 	public boolean probablyWantKey(Key key, byte[] saltedKey) {
 		if(done) return false;
 		return key.equals(this.key);
 	}
 
+	@Override
 	public synchronized void onRemove() {
 		done = true;
 	}
 
+	@Override
 	public boolean isEmpty() {
 		return done;
 	}
 
+	@Override
 	public boolean isSSK() {
 		return key instanceof NodeSSK;
 	}
 
+	@Override
 	public boolean isRealTime() {
 		return realTime;
 	}

@@ -74,6 +74,7 @@ public class SecurityLevels {
 				}
 			}
 
+			@Override
 			public String[] getPossibleValues() {
 				NETWORK_THREAT_LEVEL[] values = NETWORK_THREAT_LEVEL.values();
 				String[] names = new String[values.length];
@@ -122,6 +123,7 @@ public class SecurityLevels {
 				}
 			}
 
+			@Override
 			public String[] getPossibleValues() {
 				PHYSICAL_THREAT_LEVEL[] values = PHYSICAL_THREAT_LEVEL.values();
 				String[] names = new String[values.length];

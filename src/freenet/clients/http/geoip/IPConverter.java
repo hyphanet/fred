@@ -19,6 +19,7 @@ public class IPConverter {
 	// Local cache
 	@SuppressWarnings("serial")
 	private final HashMap<Long, Country> cache = new LinkedHashMap<Long, Country>() {
+		@Override
 		protected boolean removeEldestEntry(Map.Entry<Long, Country> eldest) {
 			return size() > MAX_ENTRIES;
 		}

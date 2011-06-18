@@ -457,7 +457,6 @@ public class FetchException extends Exception {
 	}
 
 	/** Is an error mode fatal i.e. is there no point retrying? */
-	@SuppressWarnings("deprecation")
 	public static boolean isFatal(int mode) {
 		switch(mode) {
 		// Problems with the data as inserted, or the URI given. No point retrying.

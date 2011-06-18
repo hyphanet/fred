@@ -169,6 +169,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			return SimpleManifestPutter.this.finished || cancelled || SimpleManifestPutter.this.cancelled;
 		}
 
+		@Override
 		public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
 			if(logMINOR) Logger.minor(this, "Completed "+this);
 			if(persistent) {
@@ -249,6 +250,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 		}
 
+		@Override
 		public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
 			ClientPutState oldState;
 			synchronized(this) {
@@ -269,6 +271,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				container.deactivate(SimpleManifestPutter.this, 1);
 		}
 
+		@Override
 		public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
 			if(logMINOR) Logger.minor(this, "onEncode("+key+") for "+this);
 			if(metadata == null) {
@@ -292,6 +295,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		 * However, in onSuccess or onFailure, we need to remove the new state, even if
 		 * what is passed in is different (in which case we remove that too).
 		 */
+		@Override
 		public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 			if(newState == null) throw new NullPointerException();
 
@@ -309,6 +313,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 		}
 
+		@Override
 		public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
 			if(logMINOR) Logger.minor(this, "Assigning metadata: "+m+" for "+this+" from "+state+" persistent="+persistent,
 					new Exception("debug"));
@@ -456,10 +461,12 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				container.deactivate(SimpleManifestPutter.this, 1);
 		}
 		
+		@Override
 		public synchronized int getMinSuccessFetchBlocks() {
 			return minSuccessFetchBlocks;
 		}
 		
+		@Override
 		public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 			if(persistent) {
 				container.activate(SimpleManifestPutter.this, 1);
@@ -489,6 +496,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				container.deactivate(SimpleManifestPutter.this, 1);
 		}
 
+		@Override
 		public void onFetchable(ClientPutState state, ObjectContainer container) {
 			if(persistent)
 				container.activate(SimpleManifestPutter.this, 1);
@@ -545,6 +553,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			super.removeFrom(container, context);
 		}
 
+		@Override
 		public boolean objectCanNew(ObjectContainer container) {
 			if(cancelled) {
 				Logger.error(this, "Storing "+this+" when already cancelled!", new Exception("error"));
@@ -841,6 +850,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 	private final DBJob runGotAllMetadata = new DBJob() {
 
+		@Override
 		public boolean run(ObjectContainer container, ClientContext context) {
 			try {
 				context.jobRunner.removeRestartJob(this, NativeThread.NORM_PRIORITY, container);
@@ -1454,6 +1464,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		fail(new InsertException(InsertException.CANCELLED), container, context);
 	}
 
+	@Override
 	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
 		Metadata token = (Metadata) state.getToken();
 		if(persistent()) {
@@ -1540,6 +1551,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			complete(container, context);
 	}
 
+	@Override
 	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
 		if(persistent()) {
 			container.activate(metadataPuttersByMetadata, 2);
@@ -1575,6 +1587,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		fail(e, container, context);
 	}
 
+	@Override
 	public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
 		if(state.getToken() == baseMetadata) {
 			this.finalURI = key.getURI();
@@ -1599,6 +1612,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 	}
 
+	@Override
 	public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 		Metadata m = (Metadata) oldState.getToken();
 		if(persistent()) {
@@ -1639,6 +1653,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 	}
 
+	@Override
 	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
@@ -1646,6 +1661,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	/** The number of blocks that will be needed to fetch the data. We put this in the top block metadata. */
 	protected int minSuccessFetchBlocks;
 	
+	@Override
 	public void addBlock(ObjectContainer container) {
 		synchronized(this) {
 			minSuccessFetchBlocks++;
@@ -1653,6 +1669,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		super.addBlock(container);
 	}
 	
+	@Override
 	public void addBlocks(int num, ObjectContainer container) {
 		synchronized(this) {
 			minSuccessFetchBlocks+=num;
@@ -1661,6 +1678,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 	
 	/** Add one or more blocks to the number of requires blocks, and don't notify the clients. */
+	@Override
 	public void addMustSucceedBlocks(int blocks, ObjectContainer container) {
 		synchronized(this) {
 			minSuccessFetchBlocks += blocks;
@@ -1671,6 +1689,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	/** Add one or more blocks to the number of requires blocks, and don't notify the clients. 
 	 * These blocks are added to the minSuccessFetchBlocks for the insert, but not to the counter for what
 	 * the requestor must fetch. */
+	@Override
 	public void addRedundantBlocks(int blocks, ObjectContainer container) {
 		super.addMustSucceedBlocks(blocks, container);
 	}
@@ -1684,10 +1703,12 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.minSuccessFetchBlocks, this.blockSetFinalized), container, context);
 	}
 
+	@Override
 	public int getMinSuccessFetchBlocks() {
 		return minSuccessFetchBlocks;
 	}
 	
+	@Override
 	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			this.metadataBlockSetFinalized = true;
@@ -1859,6 +1880,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		return true;
 	}
 
+	@Override
 	public void onFetchable(ClientPutState state, ObjectContainer container) {
 		Metadata m = (Metadata) state.getToken();
 		if(persistent()) {
@@ -1966,6 +1988,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		if(logDEBUG) Logger.debug(this, "Updating "+this+" activated="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("debug"));
 	}
 
+	@Override
 	public boolean objectCanNew(ObjectContainer container) {
 		if(finished) {
 			Logger.error(this, "Storing "+this+" when already finished!", new Exception("error"));

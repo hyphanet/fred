@@ -4,7 +4,6 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.FetchContext;
 import freenet.keys.USK;
-import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -63,6 +62,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		if(logMINOR) Logger.minor(this, "Created tag for "+origUSK+" and "+callback+" : "+this);
 	}
 	
+	@Override
 	public int hashCode() {
 		return hashCode;
 	}
@@ -108,6 +108,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		if(logMINOR) Logger.minor(this, "Starting "+fetcher+" for "+this);
 	}
 
+	@Override
 	public void cancel(ObjectContainer container, ClientContext context) {
 		USKFetcher f = fetcher;
 		if(f != null) fetcher.cancel(null, context);
@@ -122,14 +123,17 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			Logger.error(this, "cancel() for "+fetcher+" did not set finished on "+this+" ???");
 	}
 
+	@Override
 	public long getToken() {
 		return token;
 	}
 
+	@Override
 	public void schedule(ObjectContainer container, ClientContext context) {
 		start(context.uskManager, context, container);
 	}
 
+	@Override
 	public void onCancelled(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Cancelled on "+this);
 		synchronized(this) {
@@ -142,6 +146,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			try {
 				context.jobRunner.runBlocking(new DBJob() {
 
+					@Override
 					public boolean run(ObjectContainer container, ClientContext context) {
 						container.activate(callback, 1);
 						if(callback instanceof USKFetcherTagCallback)
@@ -163,6 +168,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		}
 	}
 
+	@Override
 	public void onFailure(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Failed on "+this);
 		synchronized(this) {
@@ -184,6 +190,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			try {
 				context.jobRunner.queue(new DBJob() {
 
+					@Override
 					public boolean run(ObjectContainer container, ClientContext context) {
 						container.activate(USKFetcherTag.this, 1);
 						container.activate(callback, 1);
@@ -207,14 +214,17 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		}
 	}
 
+	@Override
 	public short getPollingPriorityNormal() {
 		return pollingPriorityNormal;
 	}
 
+	@Override
 	public short getPollingPriorityProgress() {
 		return pollingPriorityProgress;
 	}
 
+	@Override
 	public void onFoundEdition(final long l, final USK key, ObjectContainer container, ClientContext context, final boolean metadata, final short codec, final byte[] data, final boolean newKnownGood, final boolean newSlotToo) {
 		if(logMINOR) Logger.minor(this, "Found edition "+l+" on "+this);
 		synchronized(this) {
@@ -240,6 +250,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			try {
 				context.jobRunner.queue(new DBJob() {
 
+					@Override
 					public boolean run(ObjectContainer container, ClientContext context) {
 						container.activate(callback, 1);
 						if(callback instanceof USKFetcherTagCallback)
@@ -280,6 +291,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		});
 	}
 	
+	@Override
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Removing "+this);
 		container.activate(origUSK, 5);

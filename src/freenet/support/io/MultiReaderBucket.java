@@ -62,6 +62,7 @@ public class MultiReaderBucket {
 		
 		private boolean freed;
 
+		@Override
 		public void free() {
 			if(logMINOR)
 				Logger.minor(this, "ReaderBucket "+this+" for "+MultiReaderBucket.this+" free()ing for "+bucket);
@@ -77,6 +78,7 @@ public class MultiReaderBucket {
 			bucket.free();
 		}
 
+		@Override
 		public InputStream getInputStream() throws IOException {
 			synchronized(MultiReaderBucket.this) {
 				if(freed || closed) {
@@ -129,22 +131,27 @@ public class MultiReaderBucket {
 			}
 		}
 		
+		@Override
 		public String getName() {
 			return bucket.getName();
 		}
 
+		@Override
 		public OutputStream getOutputStream() throws IOException {
 			throw new IOException("Read only");
 		}
 
+		@Override
 		public boolean isReadOnly() {
 			return true;
 		}
 
+		@Override
 		public void setReadOnly() {
 			// Already read only
 		}
 
+		@Override
 		public long size() {
 			return bucket.size();
 		}
@@ -155,10 +162,12 @@ public class MultiReaderBucket {
                         super.finalize();
 		}
 
+		@Override
 		public void storeTo(ObjectContainer container) {
 			container.store(this);
 		}
 
+		@Override
 		public void removeFrom(ObjectContainer container) {
 			container.delete(this);
 			synchronized(MultiReaderBucket.this) {
@@ -169,6 +178,7 @@ public class MultiReaderBucket {
 			container.delete(MultiReaderBucket.this);
 		}
 
+		@Override
 		public Bucket createShadow() {
 			return null;
 		}

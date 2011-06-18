@@ -37,6 +37,7 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 		});
 	}
 
+	@Override
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 			FilterCallback cb) throws DataFilterException, IOException {
 		if (logDEBUG)
@@ -66,11 +67,13 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 		
 	}
 
+	@Override
 	public void writeFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
 	public String getCharset(byte [] input, int length, String charset) throws DataFilterException, IOException {
 		if(logDEBUG)
 			Logger.debug(this, "Fetching charset for CSS with initial charset "+charset);
@@ -127,6 +130,7 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 		return HexUtil.hexToBytes(s);
 	}
 	
+	@Override
 	public BOMDetection getCharsetByBOM(byte[] input, int length) throws DataFilterException, IOException {
 		if(ContentFilter.startsWith(input, ascii, length))
 			return new BOMDetection("UTF-8", true);
@@ -177,6 +181,7 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 		else return null;
 	}
 
+	@Override
 	public int getCharsetBufferSize() {
 		return 64; //This should be a reasonable number of bytes to read in
 	}

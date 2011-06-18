@@ -77,6 +77,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
      * Decode into RAM, if short.
      * @throws CHKDecodeException 
      */
+	@Override
 	public byte[] memoryDecode() throws CHKDecodeException {
 		try {
 			ArrayBucket a = (ArrayBucket) decode(new ArrayBucketFactory(), 32*1024, false);
@@ -91,6 +92,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
      * @return the original data
      * @throws IOException If there is a bucket error.
      */
+    @Override
     public Bucket decode(BucketFactory bf, int maxLength, boolean dontCompress) throws CHKDecodeException, IOException {
         // Overall hash already verified, so first job is to decrypt.
 		if(key.cryptoAlgorithm != Key.ALGO_AES_PCFB_256_SHA256)
@@ -289,10 +291,12 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
 		}
     }
 
+    @Override
     public ClientCHK getClientKey() {
         return key;
     }
 
+	@Override
 	public boolean isMetadata() {
 		return key.isMetadata();
 	}

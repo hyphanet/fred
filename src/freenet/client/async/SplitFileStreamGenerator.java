@@ -38,6 +38,7 @@ public class SplitFileStreamGenerator implements StreamGenerator {
 		this.crossCheckBlocks = crossCheckBlocks;
 	}
 
+	@Override
 	public void writeTo(OutputStream os, ObjectContainer container,
 			ClientContext context) throws IOException {
 		try {
@@ -55,6 +56,7 @@ public class SplitFileStreamGenerator implements StreamGenerator {
 		}
 	}
 
+	@Override
 	public long size() {
 		return length;
 	}

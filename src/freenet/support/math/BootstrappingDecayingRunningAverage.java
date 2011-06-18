@@ -82,6 +82,7 @@ public final class BootstrappingDecayingRunningAverage implements RunningAverage
          *
          * @return
          */
+	@Override
 	public synchronized double currentValue() {
 		return currentValue;
 	}
@@ -107,6 +108,7 @@ public final class BootstrappingDecayingRunningAverage implements RunningAverage
          *
          * @param d
          */
+	@Override
 	public synchronized void report(double d) {
 		if(d < min) {
 			if(logDEBUG)
@@ -128,6 +130,7 @@ public final class BootstrappingDecayingRunningAverage implements RunningAverage
          *
          * @param d
          */
+	@Override
 	public void report(long d) {
 		report((double)d);
 	}
@@ -137,6 +140,7 @@ public final class BootstrappingDecayingRunningAverage implements RunningAverage
          *
          * @param d
          */
+	@Override
 	public synchronized double valueIfReported(double d) {
 		if(d < min) {
 			Logger.error(this, "Too low: "+d, new Exception("debug"));
@@ -175,6 +179,7 @@ public final class BootstrappingDecayingRunningAverage implements RunningAverage
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public synchronized  long countReports() {
 		return reports;
 	}

@@ -80,6 +80,7 @@ public class Inet6AddressMatcher implements AddressMatcher {
 		return addressBytes;
 	}
 
+	@Override
 	public boolean matches(InetAddress address) {
 		if (!(address instanceof Inet6Address)) return false;
 		byte[] addressBytes = address.getAddress();
@@ -95,6 +96,7 @@ public class Inet6AddressMatcher implements AddressMatcher {
 		return new Inet6AddressMatcher(pattern).matches(address);
 	}
 
+	@Override
 	public String getHumanRepresentation() {
 		if(netmask == FULL_MASK)
 			return convertToString(address);

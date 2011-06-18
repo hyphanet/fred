@@ -21,6 +21,7 @@ public class CookieTest extends TestCase {
 	
 	Cookie cookie;
 	
+	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 	

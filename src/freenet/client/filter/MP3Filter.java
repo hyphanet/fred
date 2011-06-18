@@ -5,7 +5,6 @@ import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -64,6 +63,7 @@ public class MP3Filter implements ContentDataFilter {
 		{44100, 48000, 32000}
 	};
 
+	@Override
 	public void readFilter(InputStream input, OutputStream output,
 			String charset, HashMap<String, String> otherParams,
 			FilterCallback cb) throws DataFilterException, IOException {
@@ -203,6 +203,7 @@ public class MP3Filter implements ContentDataFilter {
 		return NodeL10n.getBase().getString("MP3Filter."+key);
 	}
 
+	@Override
 	public void writeFilter(InputStream input, OutputStream output,
 			String charset, HashMap<String, String> otherParams,
 			FilterCallback cb) throws DataFilterException, IOException {

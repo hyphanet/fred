@@ -29,7 +29,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
-import freenet.node.Version;
 import freenet.support.ByteBufferInputStream;
 import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;

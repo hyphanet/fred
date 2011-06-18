@@ -446,6 +446,7 @@ public class ClientPut extends ClientPutBase {
 		}
 	}
 	
+	@Override
 	public void setVarsRestart(ObjectContainer container) {
 		super.setVarsRestart(container);
 		if(client != null) {
@@ -456,6 +457,7 @@ public class ClientPut extends ClientPutBase {
 		}
 	}
 	
+	@Override
 	public void onRemoveEventProducer(ObjectContainer container) {
 		// Do nothing, we called the removeFrom().
 	}

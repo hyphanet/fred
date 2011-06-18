@@ -27,18 +27,21 @@ public class PutWaiter implements ClientPutCallback {
 		});
 	}
 
+	@Override
 	public synchronized void onSuccess(BaseClientPutter state, ObjectContainer container) {
 		succeeded = true;
 		finished = true;
 		notifyAll();
 	}
 
+	@Override
 	public synchronized void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
 		error = e;
 		finished = true;
 		notifyAll();
 	}
 
+	@Override
 	public synchronized void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
 		if(logMINOR)
 			Logger.minor(this, "URI: "+uri);
@@ -66,10 +69,12 @@ public class PutWaiter implements ClientPutCallback {
 		throw new InsertException(InsertException.INTERNAL_ERROR, "Did not succeed but no error", uri);
 	}
 
+	@Override
 	public void onMajorProgress(ObjectContainer container) {
 		// Ignore
 	}
 
+	@Override
 	public void onFetchable(BaseClientPutter state, ObjectContainer container) {
 		// Ignore
 	}

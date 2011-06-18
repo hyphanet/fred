@@ -62,6 +62,7 @@ public class DSASignature implements CryptoElement, java.io.Serializable {
 		return s;
     }
 
+    @Override
     public String toLongString() {
 		if(toStringCached == null)
 			toStringCached = HexUtil.biToHex(r) + ',' + HexUtil.biToHex(s);

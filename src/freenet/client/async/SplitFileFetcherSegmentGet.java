@@ -20,7 +20,6 @@ import freenet.node.SupportsBulkCallFailure;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.RandomGrabArrayItemExclusionList;
 
 /** This was going to be part of SplitFileFetcherSegment, but we can't add a new parent
  * class to the class hierarchy in db4o without quite a bit of work.
@@ -326,6 +325,7 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 		container.store(this);
 	}
 
+	@Override
 	public long getCooldownTime(ObjectContainer container, ClientContext context, long now) {
 		if(persistent) container.activate(segment, 1);
 		HasCooldownCacheItem parentRGA = getParentGrabArray();
@@ -335,6 +335,7 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 		return wakeTime;
 	}
 
+	@Override
 	public void onFailure(BulkCallFailureItem[] items,
 			ObjectContainer container, ClientContext context) {
         FetchException[] fetchExceptions = new FetchException[items.length];

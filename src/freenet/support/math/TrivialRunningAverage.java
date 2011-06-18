@@ -23,6 +23,7 @@ public class TrivialRunningAverage implements RunningAverage {
 		total = 0.0;
 	}
 
+	@Override
 	public synchronized long countReports() {
 		return reports;
 	}
@@ -35,6 +36,7 @@ public class TrivialRunningAverage implements RunningAverage {
          *
          * @return
          */
+        @Override
         public synchronized double currentValue() {
 		return total / reports;
 	}
@@ -43,6 +45,7 @@ public class TrivialRunningAverage implements RunningAverage {
          *
          * @param d
          */
+        @Override
         public synchronized void report(double d) {
 		total += d;
 		reports++;
@@ -53,10 +56,12 @@ public class TrivialRunningAverage implements RunningAverage {
          *
          * @param d
          */
+        @Override
         public void report(long d) {
 		report((double)d);
 	}
 
+	@Override
 	public synchronized double valueIfReported(double r) {
 		return (total + r) / (reports + 1);
 	}

@@ -74,6 +74,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	final byte cryptoAlgorithm;
 	final byte[] forceCryptoKey;
 	
+	@Override
 	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
 		// Caller calls schedule()
 		// schedule() calls scheduleFetcher()
@@ -110,6 +111,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		fetcher.schedule(container, context);
 	}
 
+	@Override
 	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean lastContentWasMetadata, short codec, byte[] hisData, boolean newKnownGood, boolean newSlotToo) {
 		boolean alreadyInserted = false;
 		synchronized(this) {
@@ -251,6 +253,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		}
 	}
 
+	@Override
 	public synchronized void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
 		if(persistent) container.activate(pubUSK, 5);
 		USK newEdition = pubUSK.copy(edition);
@@ -282,6 +285,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		// FINISHED!!!! Yay!!!
 	}
 
+	@Override
 	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
 		ClientPutState oldSBI;
 		synchronized(this) {
@@ -359,10 +363,12 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		this.realTimeFlag = realTimeFlag;
 	}
 
+	@Override
 	public BaseClientPutter getParent() {
 		return parent;
 	}
 
+	@Override
 	public void cancel(ObjectContainer container, ClientContext context) {
 		USKFetcherTag tag;
 		boolean persist = persistent;
@@ -404,11 +410,13 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
 	}
 
+	@Override
 	public void onFailure(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Fetcher failed to find the given edition or any later edition on "+this);
 		scheduleInsert(container, context);
 	}
 
+	@Override
 	public void onCancelled(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(fetcher != null) {
@@ -426,40 +434,49 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		cancel(container, context);
 	}
 
+	@Override
 	public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 
+	@Override
 	public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 		// Shouldn't happen
 		Logger.error(this, "Got onTransition("+oldState+ ',' +newState+ ')');
 	}
 
+	@Override
 	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
 		// Shouldn't happen
 		Logger.error(this, "Got onMetadata("+m+ ',' +state+ ')');
 	}
 
+	@Override
 	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 
+	@Override
 	public Object getToken() {
 		return tokenObject;
 	}
 
+	@Override
 	public void onFetchable(ClientPutState state, ObjectContainer container) {
 		// Ignore
 	}
 
+	@Override
 	public short getPollingPriorityNormal() {
 		return parent.getPriorityClass();
 	}
 
+	@Override
 	public short getPollingPriorityProgress() {
 		return parent.getPriorityClass();
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "Removing from database: "+this, new Exception("debug"));

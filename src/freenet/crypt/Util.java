@@ -10,8 +10,6 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.util.Arrays;
-import java.util.Random;
-
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.support.HexUtil;

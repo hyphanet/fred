@@ -45,14 +45,17 @@ public class Rijndael implements BlockCipher {
 		this.blocksize = 128;
 	}
 
+	@Override
 	public final int getBlockSize() {
 		return blocksize;
 	}
 
+	@Override
 	public final int getKeySize() {
 		return keysize;
 	}
 
+	@Override
 	public final void initialize(byte[] key) {
 		try {
 			byte[] nkey=new byte[keysize>>3];
@@ -64,6 +67,7 @@ public class Rijndael implements BlockCipher {
 		}
 	}
 
+	@Override
 	public synchronized final void encipher(byte[] block, byte[] result) {
 		if(block.length != blocksize/8)
 			throw new IllegalArgumentException();
@@ -88,6 +92,7 @@ public class Rijndael implements BlockCipher {
 		Rijndael_Algorithm.blockEncrypt(block, result, 0, sessionKey, blocksize/8, a, t);
 	}
 
+	@Override
 	public synchronized final void decipher(byte[] block, byte[] result) {
 		if(block.length != blocksize/8)
 			throw new IllegalArgumentException();

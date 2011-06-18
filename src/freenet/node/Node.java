@@ -66,7 +66,6 @@ import com.sleepycat.je.EnvironmentMutableConfig;
 
 import freenet.client.FECQueue;
 import freenet.client.FetchContext;
-import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.SplitFileInserterSegment;
 import freenet.clients.http.SecurityLevelsToadlet;
 import freenet.clients.http.SimpleToadletServer;
@@ -114,7 +113,6 @@ import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.node.NodeDispatcher.NodeDispatcherCallback;
 import freenet.node.OpennetManager.ConnectionType;
-import freenet.node.SecurityLevels.FRIENDS_THREAT_LEVEL;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.fcp.FCPMessage;
@@ -150,7 +148,6 @@ import freenet.store.FreenetStore.StoreType;
 import freenet.store.saltedhash.SaltedHashFreenetStore;
 import freenet.support.Executor;
 import freenet.support.Fields;
-import freenet.support.FileLoggerHook;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.LRUQueue;
@@ -201,6 +198,7 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 		}
 
+		@Override
 		public void run() {
 			System.err.println("Migrating old "+(clientCache ? "client cache" : "datastore"));
 			if(clientCache) {
@@ -372,6 +370,7 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 		}
 
+		@Override
 		public String[] getPossibleValues() {
 			return new String[] { "bdb-index", "salt-hash", "ram" };
 		}
@@ -458,6 +457,7 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 		}
 
+		@Override
 		public String[] getPossibleValues() {
 			return new String[] { "salt-hash", "ram", "none" };
 		}
@@ -480,6 +480,7 @@ public class Node implements TimeSkewDetectorCallback {
 			PluginManager.setLanguage(NodeL10n.getBase().getSelectedLanguage());
 		}
 
+		@Override
 		public String[] getPossibleValues() {
 			return BaseL10n.LANGUAGE.valuesWithFullNames();
 		}
@@ -1078,6 +1079,7 @@ public class Node implements TimeSkewDetectorCallback {
 						return;
 					File[] subDirs = f.listFiles(new FileFilter() {
 
+						@Override
 						public boolean accept(File pathname) {
 							return pathname.exists() && pathname.canRead() && pathname.isDirectory();
 						}
@@ -1090,6 +1092,7 @@ public class Node implements TimeSkewDetectorCallback {
 							recurse(currentDir);
 				}
 
+				@Override
 				public void run() {
 					for(File root : File.listRoots()) {
 						if(isPRNGReady)
@@ -1210,6 +1213,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		shutdownHook.addEarlyJob(new NativeThread("Shutdown database", NativeThread.HIGH_PRIORITY, true) {
 
+			@Override
 			public void realRun() {
 				System.err.println("Stopping database jobs...");
 				if(clientCore == null) return;
@@ -1819,6 +1823,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
 
+			@Override
 			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
 				if(newLevel == NETWORK_THREAT_LEVEL.HIGH
 						|| newLevel == NETWORK_THREAT_LEVEL.MAXIMUM) {
@@ -2104,6 +2109,7 @@ public class Node implements TimeSkewDetectorCallback {
 		if(File.separatorChar == '/' && System.getProperty("os.name").toLowerCase().indexOf("mac os") < 0) {
 			securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<SecurityLevels.PHYSICAL_THREAT_LEVEL>() {
 
+				@Override
 				public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
 					try {
 						if(newLevel == PHYSICAL_THREAT_LEVEL.LOW)
@@ -2121,6 +2127,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<SecurityLevels.PHYSICAL_THREAT_LEVEL>() {
 
+			@Override
 			public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
 					if(newLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
 						synchronized(this) {
@@ -2361,6 +2368,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
 
+			@Override
 			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
 				if(newLevel == NETWORK_THREAT_LEVEL.LOW && securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW)
 					writeLocalToDatastore = true;
@@ -2372,6 +2380,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL>() {
 
+			@Override
 			public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
 				if(newLevel == PHYSICAL_THREAT_LEVEL.LOW && securityLevels.getNetworkThreatLevel() == NETWORK_THREAT_LEVEL.LOW)
 					writeLocalToDatastore = true;
@@ -2456,6 +2465,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
 
+			@Override
 			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
 				if(newLevel == NETWORK_THREAT_LEVEL.MAXIMUM)
 					useSlashdotCache = false;
@@ -2533,6 +2543,7 @@ public class Node implements TimeSkewDetectorCallback {
 		pluginManager = new PluginManager(this, lastVersion);
 
 		shutdownHook.addEarlyJob(new NativeThread("Shutdown plugins", NativeThread.HIGH_PRIORITY, true) {
+			@Override
 			public void realRun() {
 				pluginManager.stop(30*1000); // FIXME make it configurable??
 			}
@@ -2701,6 +2712,7 @@ public class Node implements TimeSkewDetectorCallback {
 		dbConfig.blockSize(8);
 		dbConfig.diagnostic().addListener(new DiagnosticListener() {
 
+			@Override
 			public void onDiagnostic(Diagnostic arg0) {
 				if(arg0 instanceof ClassHasNoFields)
 					return; // Ignore
@@ -3122,6 +3134,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// Store after startup
 		this.executor.execute(new Runnable() {
 
+			@Override
 			public void run() {
 				Node.this.config.store();
 			}
@@ -3147,70 +3160,86 @@ public class Node implements TimeSkewDetectorCallback {
 
 		final long creationTime = System.currentTimeMillis();
 
+		@Override
 		public String anchor() {
 			return "password";
 		}
 
+		@Override
 		public String dismissButtonText() {
 			return null;
 		}
 
+		@Override
 		public long getUpdatedTime() {
 			return creationTime;
 		}
 
+		@Override
 		public FCPMessage getFCPMessage() {
 			return new FeedMessage(getTitle(), getShortText(), getText(), getPriorityClass(), getUpdatedTime());
 		}
 
+		@Override
 		public HTMLNode getHTMLText() {
 			HTMLNode content = new HTMLNode("div");
 			SecurityLevelsToadlet.generatePasswordFormPage(false, clientCore.getToadletContainer(), content, false, false, false, null, null);
 			return content;
 		}
 
+		@Override
 		public short getPriorityClass() {
 			return UserAlert.ERROR;
 		}
 
+		@Override
 		public String getShortText() {
 			return NodeL10n.getBase().getString("SecurityLevels.enterPassword");
 		}
 
+		@Override
 		public String getText() {
 			return NodeL10n.getBase().getString("SecurityLevels.enterPassword");
 		}
 
+		@Override
 		public String getTitle() {
 			return NodeL10n.getBase().getString("SecurityLevels.enterPassword");
 		}
 
+		@Override
 		public Object getUserIdentifier() {
 			return Node.this;
 		}
 
+		@Override
 		public boolean isEventNotification() {
 			return false;
 		}
 
+		@Override
 		public boolean isValid() {
 			synchronized(Node.this) {
 				return clientCacheAwaitingPassword || databaseAwaitingPassword;
 			}
 		}
 
+		@Override
 		public void isValid(boolean validity) {
 			// Ignore
 		}
 
+		@Override
 		public void onDismiss() {
 			// Ignore
 		}
 
+		@Override
 		public boolean shouldUnregisterOnDismiss() {
 			return false;
 		}
 
+		@Override
 		public boolean userCanDismiss() {
 			return false;
 		}
@@ -3418,6 +3447,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 				this.getTicker().queueTimedJob(new Runnable() {
 
+					@Override
 					public void run() {
 						System.err.println("Starting delayed init of datastore");
 						try {
@@ -3462,6 +3492,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 				this.getTicker().queueTimedJob(new Runnable() {
 
+					@Override
 					public void run() {
 						Node.this.chkDatastore = chkDatastore;
 						Node.this.chkDatacache = chkDatacache;
@@ -3525,6 +3556,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 				getTicker().queueTimedJob(new Runnable() {
 
+					@Override
 					public void run() {
 						System.err.println("Starting delayed init of client-cache");
 						try {
@@ -3823,6 +3855,7 @@ public class Node implements TimeSkewDetectorCallback {
 		if(now < transition)
 			ticker.queueTimedJob(new Runnable() {
 
+				@Override
 				public void run() {
 					freenet.support.Logger.OSThread.logPID(this);
 					PeerNode[] nodes = peers.myPeers;
@@ -4029,7 +4062,7 @@ public class Node implements TimeSkewDetectorCallback {
 		KeyBlock kb = null;
 
 		if (key instanceof NodeCHK) {
-			kb = fetch((NodeCHK) key, false, canReadClientCache, canWriteClientCache, canWriteDatastore, null);
+			kb = fetch(key, false, canReadClientCache, canWriteClientCache, canWriteDatastore, null);
 		} else if (key instanceof NodeSSK) {
 			NodeSSK sskKey = (NodeSSK) key;
 			DSAPublicKey pubKey = sskKey.getPubKey();
@@ -4804,6 +4837,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	private Runnable deadUIDChecker = new Runnable() {
+		@Override
 		public void run() {
 			try {
 				checkUIDs(runningLocalSSKGetUIDsRT);
@@ -5339,6 +5373,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private NodeToNodeMessageListener diffNoderefListener = new NodeToNodeMessageListener() {
 
+		@Override
 		public void handleMessage(byte[] data, boolean fromDarknet, PeerNode src, int type) {
 			Logger.normal(this, "Received differential node reference node to node message from "+src.getPeer());
 			SimpleFieldSet fs = null;
@@ -5363,6 +5398,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private NodeToNodeMessageListener fproxyN2NMListener = new NodeToNodeMessageListener() {
 
+		@Override
 		public void handleMessage(byte[] data, boolean fromDarknet, PeerNode src, int type) {
 			if(!fromDarknet) {
 				Logger.error(this, "Got N2NTM from non-darknet node ?!?!?!: from "+src);
@@ -5628,6 +5664,7 @@ public class Node implements TimeSkewDetectorCallback {
 		return inputBandwidthLimit;
 	}
 
+	@Override
 	public synchronized void setTimeSkewDetectedUserAlert() {
 		if(timeSkewDetectedUserAlert == null) {
 			timeSkewDetectedUserAlert = new TimeSkewDetectedUserAlert();
@@ -5870,23 +5907,29 @@ public class Node implements TimeSkewDetectorCallback {
 	private SimpleUserAlert alertMTUTooSmall;
 
 	public final RequestClient nonPersistentClientBulk = new RequestClient() {
+		@Override
 		public boolean persistent() {
 			return false;
 		}
+		@Override
 		public void removeFrom(ObjectContainer container) {
 			throw new UnsupportedOperationException();
 		}
+		@Override
 		public boolean realTimeFlag() {
 			return false;
 		}
 	};
 	public final RequestClient nonPersistentClientRT = new RequestClient() {
+		@Override
 		public boolean persistent() {
 			return false;
 		}
+		@Override
 		public void removeFrom(ObjectContainer container) {
 			throw new UnsupportedOperationException();
 		}
+		@Override
 		public boolean realTimeFlag() {
 			return true;
 		}
@@ -5962,6 +6005,7 @@ public class Node implements TimeSkewDetectorCallback {
 					cachedClientCacheKey = copied;
 					// Wipe it if haven't specified datastore size in 10 minutes.
 					ticker.queueTimedJob(new Runnable() {
+						@Override
 						public void run() {
 							synchronized(Node.this) {
 								MasterKeys.clear(cachedClientCacheKey);
@@ -6184,6 +6228,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// Wait until startup completed.
 		this.getTicker().queueTimedJob(new Runnable() {
 
+			@Override
 			public void run() {
 				config.store();
 			}
@@ -6193,6 +6238,7 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	private UserAlert visibilityAlert = new SimpleUserAlert(true, l10n("pleaseSetPeersVisibilityAlertTitle"), l10n("pleaseSetPeersVisibilityAlert"), l10n("pleaseSetPeersVisibilityAlert"), UserAlert.ERROR) {
 		
+		@Override
 		public void onDismiss() {
 			synchronized(Node.this) {
 				showFriendsVisibilityAlert = false;
@@ -6208,6 +6254,7 @@ public class Node implements TimeSkewDetectorCallback {
 			// Wait until startup completed.
 			this.getTicker().queueTimedJob(new Runnable() {
 
+				@Override
 				public void run() {
 					registerFriendsVisibilityAlert();
 				}

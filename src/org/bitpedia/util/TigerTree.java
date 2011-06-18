@@ -12,7 +12,6 @@ import java.security.MessageDigest;
 import java.util.LinkedList;
 import java.io.*;
 import java.security.*;
-import java.util.*;
 import java.math.*;
 
 /**
@@ -57,10 +56,12 @@ public class TigerTree extends MessageDigest {
         tiger = new Tiger();
     }
 
+    @Override
     protected int engineGetDigestLength() {
         return HASHSIZE;
     }
 
+    @Override
     protected void engineUpdate(byte in) {
         byteCount += 1;
         buffer[bufferOffset++] = in;
@@ -70,6 +71,7 @@ public class TigerTree extends MessageDigest {
         }
     }
 
+    @Override
     protected void engineUpdate(byte[] in, int offset, int length) {
         byteCount += length;
 
@@ -87,6 +89,7 @@ public class TigerTree extends MessageDigest {
         bufferOffset += length;
     }
 
+    @Override
     protected byte[] engineDigest() {
         byte[] hash = new byte[HASHSIZE];
         try {
@@ -97,6 +100,7 @@ public class TigerTree extends MessageDigest {
         return hash;
     }
 
+    @Override
     protected int engineDigest(byte[] buf, int offset, int len)
         throws DigestException {
         if (len < HASHSIZE)
@@ -113,6 +117,7 @@ public class TigerTree extends MessageDigest {
         return HASHSIZE;
     }
 
+    @Override
     protected void engineReset() {
         bufferOffset = 0;
         byteCount = 0;
@@ -125,6 +130,7 @@ public class TigerTree extends MessageDigest {
      * 
      * @see java.security.MessageDigest#clone()
      */
+    @Override
     public Object clone() throws CloneNotSupportedException {
         throw new CloneNotSupportedException();
     }

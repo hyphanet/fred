@@ -133,6 +133,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		}
 	}
 
+	@Override
 	public synchronized RemoveRandomReturn removeRandom(RandomGrabArrayItemExclusionList excluding, ObjectContainer container, ClientContext context, long now) {
 		while(true) {
 			if(grabArrays.length == 0) return null;
@@ -469,6 +470,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		return grabArrays.length == 0;
 	}
 	
+	@Override
 	public boolean persistent() {
 		return persistent;
 	}
@@ -477,6 +479,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		return grabArrays.length;
 	}
 	
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		if(grabArrays != null && grabArrays.length != 0) {
 			for(RemoveRandomWithObject rr : grabArrays) {
@@ -489,6 +492,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		container.delete(this);
 	}
 
+	@Override
 	public void maybeRemove(RemoveRandom r, ObjectContainer container, ClientContext context) {
 		int count = 0;
 		int finalSize;
@@ -533,7 +537,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 	public void moveElementsTo(SectoredRandomGrabArray newTopLevel,
 			ObjectContainer container, boolean canCommit) {
 		for(int i=0;i<grabArrays.length;i++) {
-			RemoveRandomWithObject grabber = (RemoveRandomWithObject) grabArrays[i];
+			RemoveRandomWithObject grabber = grabArrays[i];
 			Object client = grabClients[i];
 			if(grabber == null && client == null) continue;
 			if(grabber == null && client != null) {
@@ -584,6 +588,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		}
 	}
 
+	@Override
 	public void moveElementsTo(RemoveRandom existingGrabber,
 			ObjectContainer container, boolean canCommit) {
 		if(existingGrabber instanceof SectoredRandomGrabArray)
@@ -592,6 +597,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			throw new IllegalArgumentException();
 	}
 
+	@Override
 	public void setParent(RemoveRandomParent newParent, ObjectContainer container) {
 		this.parent = newParent;
 		if(persistent()) container.store(this);

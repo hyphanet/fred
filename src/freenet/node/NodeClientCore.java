@@ -38,7 +38,6 @@ import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
-import freenet.config.WrapperConfig;
 import freenet.crypt.RandomSource;
 import freenet.io.xfer.AbortedException;
 import freenet.io.xfer.PartiallyReceivedBlock;
@@ -67,7 +66,6 @@ import freenet.store.KeyCollisionException;
 import freenet.support.Base64;
 import freenet.support.Executor;
 import freenet.support.ExecutorIdleCallback;
-import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.MutableBoolean;
@@ -82,7 +80,6 @@ import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
 import freenet.support.api.StringArrCallback;
-import freenet.support.api.StringCallback;
 import freenet.support.compress.Compressor;
 import freenet.support.compress.RealCompressor;
 import freenet.support.io.FileUtil;
@@ -213,6 +210,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		if (container != null) {
 			bandwidthStatsPutter.restorePreviousData(container);
 			this.getTicker().queueTimedJob(new Runnable() {
+				@Override
 				public void run() {
 					try {
 						queue(bandwidthStatsPutter, NativeThread.LOW_PRIORITY, true);
@@ -357,6 +355,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 		node.securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL>() {
 
+			@Override
 			public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
 				if(newLevel == PHYSICAL_THREAT_LEVEL.LOW) {
 					if(tempBucketFactory.isEncrypting()) {
@@ -492,6 +491,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 						new String[]{ new File(FileUtil.getCanonicalFile(getPersistentTempDir()), File.separator).toString(), new File(FileUtil.getCanonicalFile(node.getUserDir()), "node.db4o").toString() }
 				), NodeL10n.getBase().getString("QueueToadlet.persistenceBrokenShortAlert"), UserAlert.CRITICAL_ERROR)
 				{
+			@Override
 			public boolean isValid() {
 				synchronized(NodeClientCore.this) {
 					if(!killedDatabase) return false;
@@ -501,6 +501,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				return true;
 			}
 
+			@Override
 			public boolean userCanDismiss() {
 				return false;
 			}
@@ -679,6 +680,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 		bandwidthStatsPutter.restorePreviousData(container);
 		this.getTicker().queueTimedJob(new Runnable() {
+			@Override
 			public void run() {
 				try {
 					queue(bandwidthStatsPutter, NativeThread.LOW_PRIORITY, false);
@@ -698,6 +700,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		// is that new persistent jobs will be accepted.
 		node.getTicker().queueTimedJob(new Runnable() {
 
+			@Override
 			public void run() {
 				clientDatabaseExecutor.start(node.executor, "Client database access thread");
 			}
@@ -768,10 +771,12 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		try {
 			clientContext.jobRunner.queue(new DBJob() {
 
+				@Override
 				public String toString() {
 					return "Init ArchiveManager";
 				}
 
+				@Override
 				public boolean run(ObjectContainer container, ClientContext context) {
 					ArchiveManager.init(container, context, context.nodeDBHandle);
 					return false;
@@ -796,6 +801,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 		node.executor.execute(new PrioRunnable() {
 
+			@Override
 			public void run() {
 				Logger.normal(this, "Resuming persistent requests");
 				if(persistentTempBucketFactory != null)
@@ -809,6 +815,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				alerts.unregister(startingUpAlert);
 			}
 
+			@Override
 			public int getPriority() {
 				return NativeThread.LOW_PRIORITY;
 			}
@@ -822,10 +829,12 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 	private DBJob startupJobRunner = new DBJob() {
 
+		@Override
 		public String toString() {
 			return "Run startup jobs";
 		}
 
+		@Override
 		public boolean run(ObjectContainer container, ClientContext context) {
 			RestartDBJob job = startupDatabaseJobs[startupDatabaseJobsDone];
 			try {
@@ -888,10 +897,12 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		}
 		asyncGet(key, isSSK, offersOnly, uid, new RequestSender.Listener() {
 
+			@Override
 			public void onCHKTransferBegins() {
 				// Ignore
 			}
 
+			@Override
 			public void onReceivedRejectOverload() {
 				// Ignore
 			}
@@ -900,11 +911,13 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			 * @param status The completion status.
 			 * @param fromOfferedKey
 			 */
+			@Override
 			public void onRequestSenderFinished(int status, boolean fromOfferedKey) {
 				tag.unlockHandler();
 				if(listener != null) listener.completed(status == RequestSender.SUCCESS);
 			}
 
+			@Override
 			public void onAbortDownstreamTransfers(int reason, String desc) {
 				// Ignore, onRequestSenderFinished will also be called.
 			}
@@ -1624,6 +1637,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		return uploadAllowedDirs;
 	}
 
+	@Override
 	public SimpleFieldSet persistThrottlesToFieldSet() {
 		return requestStarters.persistToFieldSet();
 	}
@@ -1665,6 +1679,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		return requestStarters.countTransientQueuedRequests();
 	}
 
+	@Override
 	public void queue(final DBJob job, int priority, boolean checkDupes) throws DatabaseDisabledException{
 		synchronized(this) {
 			if(killedDatabase) throw new DatabaseDisabledException();
@@ -1692,6 +1707,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 		final DBJob job;
 
+		@Override
 		public void run() {
 
 			try {
@@ -1779,18 +1795,22 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 	}
 
+	@Override
 	public boolean onDatabaseThread() {
 		return clientDatabaseExecutor.onThread();
 	}
 
+	@Override
 	public int getQueueSize(int priority) {
 		return clientDatabaseExecutor.getQueueSize(priority);
 	}
 
+	@Override
 	public void handleLowMemory() throws Exception {
 		// Ignore
 	}
 
+	@Override
 	public void handleOutOfMemory() throws Exception {
 		synchronized(this) {
 			killedDatabase = true;
@@ -1804,6 +1824,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	/**
 	 * Queue a job to be run soon after startup. The job must delete itself.
 	 */
+	@Override
 	public void queueRestartJob(DBJob job, int priority, ObjectContainer container, boolean early) throws DatabaseDisabledException {
 		synchronized(this) {
 			if(killedDatabase) throw new DatabaseDisabledException();
@@ -1811,6 +1832,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		restartJobsQueue.queueRestartJob(job, priority, container, early);
 	}
 
+	@Override
 	public void removeRestartJob(DBJob job, int priority, ObjectContainer container) throws DatabaseDisabledException {
 		synchronized(this) {
 			if(killedDatabase) throw new DatabaseDisabledException();
@@ -1818,6 +1840,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		restartJobsQueue.removeRestartJob(job, priority, container);
 	}
 
+	@Override
 	public void runBlocking(final DBJob job, int priority) throws DatabaseDisabledException {
 		if(clientDatabaseExecutor.onThread()) {
 			job.run(node.db, clientContext);
@@ -1825,6 +1848,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			final MutableBoolean finished = new MutableBoolean();
 			queue(new DBJob() {
 
+				@Override
 				public boolean run(ObjectContainer container, ClientContext context) {
 					try {
 						return job.run(container, context);
@@ -1836,6 +1860,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					}
 				}
 
+				@Override
 				public String toString() {
 					return job.toString();
 				}
@@ -1862,10 +1887,12 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		killedDatabase = true;
 	}
 
+	@Override
 	public synchronized boolean killedDatabase() {
 		return killedDatabase;
 	}
 
+	@Override
 	public void onIdle() {
 		synchronized(NodeClientCore.this) {
 			if(killedDatabase) return;
@@ -1881,12 +1908,14 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 	private boolean commitThisTransaction;
 
+	@Override
 	public synchronized void setCommitThisTransaction() {
 		commitThisTransaction = true;
 	}
 
 	private boolean commitSoon;
 
+	@Override
 	public synchronized void setCommitSoon() {
 		commitSoon = true;
 	}

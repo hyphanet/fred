@@ -1,6 +1,5 @@
 package freenet.client.filter;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -27,15 +26,11 @@ import freenet.client.filter.UnsupportedCharsetInFilterException;
 import freenet.client.filter.CharsetExtractor.BOMDetection;
 import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.l10n.NodeL10n;
-import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
-
-import freenet.support.TestProperty;
 
 public class CSSParserTest extends TestCase {
 
@@ -725,6 +720,7 @@ public class CSSParserTest extends TestCase {
 
 	MIMEType cssMIMEType;
 
+	@Override
 	public void setUp() throws InvalidThresholdException {
 		new NodeL10n();
 		//if (TestProperty.VERBOSE) {

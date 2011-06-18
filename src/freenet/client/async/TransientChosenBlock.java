@@ -10,7 +10,6 @@ import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
 import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
-import freenet.support.RandomGrabArray;
 
 /**
  * A ChosenBlock which isn't persistent.

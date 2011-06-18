@@ -5,7 +5,6 @@ package freenet.client.async;
 
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
@@ -38,7 +37,6 @@ import freenet.client.filter.UnknownContentTypeException;
 import freenet.client.filter.UnsafeContentTypeException;
 import freenet.crypt.HashResult;
 import freenet.keys.ClientKeyBlock;
-import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.node.RequestClient;
@@ -49,7 +47,6 @@ import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
 import freenet.support.compress.DecompressorThreadManager;
 import freenet.support.io.Closer;
-import freenet.support.io.NullBucket;
 
 /**
  * A high level data request. Follows redirects, downloads splitfiles, etc. Similar to what you get from FCP,
@@ -213,6 +210,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		return true;
 	}
 
+	@Override
 	protected void clearCountersOnRestart() {
 		this.archiveRestarts = 0;
 		this.expectedMIME = null;
@@ -226,6 +224,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	 * Called when the request succeeds.
 	 * @param state The ClientGetState which retrieved the data.
 	 */
+	@Override
 	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "Succeeded from "+state+" on "+this);
@@ -421,6 +420,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	 * @param e The reason for failure, in the form of a FetchException.
 	 * @param state The failing state.
 	 */
+	@Override
 	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "Failed from "+state+" : "+e+" on "+this, e);
@@ -568,6 +568,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	 * Called when no more blocks will be added to the total, and therefore we can confidently display a
 	 * percentage for the overall progress. Will notify clients with a SplitfileProgressEvent.
 	 */
+	@Override
 	public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "Set finished", new Exception("debug"));
@@ -714,6 +715,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 
 	/** Called when we know the MIME type of the final data 
 	 * @throws FetchException */
+	@Override
 	public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) throws FetchException {
 		if(finalizedMetadata) return;
 		if(persistent()) {
@@ -744,6 +746,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	}
 
 	/** Called when we have some idea of the length of the final data */
+	@Override
 	public void onExpectedSize(long size, ObjectContainer container, ClientContext context) {
 		if(finalizedMetadata) return;
 		if(finalBlocksRequired != 0) return;
@@ -757,6 +760,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	}
 
 	/** Called when we are fairly sure that the expected MIME and size won't change */
+	@Override
 	public void onFinalizedMetadata(ObjectContainer container) {
 		finalizedMetadata = true;
 		if(persistent())
@@ -829,6 +833,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	private int finalBlocksRequired;
 	private int finalBlocksTotal;
 	
+	@Override
 	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
 		if(finalBlocksRequired != 0 || finalBlocksTotal != 0) return;
 		if(logMINOR) Logger.minor(this, "New format metadata has top data: original size "+size+" (compressed "+compressed+") blocks "+blocksReq+" / "+blocksTotal);
@@ -839,10 +844,12 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		notifyClients(container, context);
 	}
 
+	@Override
 	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] customSplitfileKey, boolean dontCompress, boolean bottomLayer, boolean definitiveAnyway, ObjectContainer container, ClientContext context) {
 		ctx.eventProducer.produceEvent(new SplitfileCompatibilityModeEvent(min, max, customSplitfileKey, dontCompress, bottomLayer || definitiveAnyway), container, context);
 	}
 
+	@Override
 	public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(this.hashes != null) {
@@ -857,6 +864,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		ctx.eventProducer.produceEvent(new ExpectedHashesEvent(hashes), container, context);
 	}
 
+	@Override
 	public void enterCooldown(long wakeupTime, ObjectContainer container,
 			ClientContext context) {
 		if(wakeupTime == Long.MAX_VALUE) {
@@ -872,6 +880,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		}
 	}
 
+	@Override
 	public void clearCooldown(ObjectContainer container) {
 		// Ignore for now. FIXME.
 	}

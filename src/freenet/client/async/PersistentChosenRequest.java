@@ -132,6 +132,7 @@ public class PersistentChosenRequest {
 		try {
 			context.jobRunner.queue(new DBJob() {
 
+				@Override
 				public boolean run(ObjectContainer container, ClientContext context) {
 					finish(container, context, false, false);
 					return true;

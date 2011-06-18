@@ -196,6 +196,7 @@ public class RealNodeULPRTest extends RealNodeTest {
         
         NodeDispatcherCallback cb = new NodeDispatcherCallback() {
 
+			@Override
 			public void snoop(Message m, Node n) {
 				if(((!isSSK) && m.getSpec() == DMT.FNPCHKDataRequest) ||
 						(isSSK && m.getSpec() == DMT.FNPSSKDataRequest)) {

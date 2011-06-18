@@ -55,6 +55,7 @@ public class DSAPrivateKey extends CryptoKey {
         return new DSAPrivateKey(Util.readMPI(i), g);
     }
     
+    @Override
     public String toLongString() {
         return "x="+HexUtil.biToHex(x);
     }

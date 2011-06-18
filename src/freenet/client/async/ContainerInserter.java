@@ -28,7 +28,6 @@ import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.Metadata.SimpleManifestComposer;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
@@ -131,6 +130,7 @@ public class ContainerInserter implements ClientPutState {
 		this.realTimeFlag = realTimeFlag;
 	}
 
+	@Override
 	public void cancel(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(cancelled) return;
@@ -144,19 +144,23 @@ public class ContainerInserter implements ClientPutState {
 		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
 	}
 
+	@Override
 	public BaseClientPutter getParent() {
 		return parent;
 	}
 
+	@Override
 	public Object getToken() {
 		return token;
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		// TODO
 		new Exception("ContainerInserter.removeFrom: TODO").printStackTrace();
 	}
 
+	@Override
 	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
 		start(container, context);
 	}

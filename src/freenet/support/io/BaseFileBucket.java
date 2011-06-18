@@ -12,10 +12,8 @@ import java.util.Vector;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
-import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
@@ -79,6 +77,7 @@ public abstract class BaseFileBucket implements Bucket {
 		}
 	}
 
+	@Override
 	public OutputStream getOutputStream() throws IOException {
 		synchronized (this) {
 			File file = getFile();
@@ -282,6 +281,7 @@ public abstract class BaseFileBucket implements Bucket {
 		}
 	}
 
+	@Override
 	public synchronized InputStream getInputStream() throws IOException {
 		if(freed)
 			throw new IOException("File already freed: "+this);
@@ -302,10 +302,12 @@ public abstract class BaseFileBucket implements Bucket {
 	/**
 	 * @return the name of the file.
 	 */
+	@Override
 	public synchronized String getName() {
 		return getFile().getName();
 	}
 
+	@Override
 	public synchronized long size() {
 		return length;
 	}
@@ -423,6 +425,7 @@ public abstract class BaseFileBucket implements Bucket {
 		return buckets;
 	}
 
+	@Override
 	public void free() {
 		free(false);
 	}

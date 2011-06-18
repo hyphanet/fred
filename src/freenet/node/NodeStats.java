@@ -451,6 +451,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 		node.securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
 
+			@Override
 			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
 				if(newLevel == NETWORK_THREAT_LEVEL.MAXIMUM)
 					ignoreLocalVsRemoteBandwidthLiability = true;
@@ -574,6 +575,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	public void start() throws NodeInitException {
 		node.executor.execute(new Runnable() {
+			@Override
 			public void run() {
 				nodePinger.start();
 			}
@@ -660,6 +662,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		/** Maximum transfers out - upper overall limit. Nothing is accepted above this limit. */
 		public final int maxTransfersOutUpperLimit;
 		
+		@Override
 		public boolean equals(Object o) {
 			if(!(o instanceof PeerLoadStats)) return false;
 			PeerLoadStats s = (PeerLoadStats)o;
@@ -683,6 +686,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			return true;
 		}
 		
+		@Override
 		public String toString() {
 			return peer.toString()+":output:{lower="+outputBandwidthLowerLimit+",upper="+outputBandwidthUpperLimit+",this="+outputBandwidthPeerLimit+"},input:lower="+inputBandwidthLowerLimit+",upper="+inputBandwidthUpperLimit+",peer="+inputBandwidthPeerLimit+"},requests:"+
 				"in:"+expectedTransfersInCHK+"chk/"+expectedTransfersInSSK+"ssk:out:"+
@@ -1005,6 +1009,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			name = n;
 			soft = s;
 		}
+		@Override
 		public String toString() {
 			return (soft ? "SOFT" : "HARD") + ":" + name;
 		}
@@ -1188,7 +1193,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		// FIXME what happens when the bwlimit changes?
 		
 		double totalCouldSend = Math.max(totalSent,
-				((double)((node.getOutputBandwidthLimit() * uptime))/1000.0));
+				(((node.getOutputBandwidthLimit() * uptime))/1000.0));
 		double nonOverheadFraction = (totalCouldSend - totalOverhead) / totalCouldSend;
 		long timeFirstAnyConnections = peers.timeFirstAnyConnections;
 		if(timeFirstAnyConnections > 0) {
@@ -1527,6 +1532,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		}
 	}
 
+	@Override
 	public SimpleFieldSet persistThrottlesToFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.put("RemoteChkFetchBytesSentAverage", remoteChkFetchBytesSentAverage.exportFieldSet(true));
@@ -2097,18 +2103,21 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	ByteCounter sendOffersCtr = new ByteCounter() {
 
+		@Override
 		public void receivedBytes(int x) {
 			synchronized(NodeStats.this) {
 				offerKeysRcvdBytes += x;
 			}
 		}
 
+		@Override
 		public void sentBytes(int x) {
 			synchronized(NodeStats.this) {
 				offerKeysSentBytes += x;
 			}
 		}
 
+		@Override
 		public void sentPayload(int x) {
 			// Ignore
 		}
@@ -2152,16 +2161,19 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	public final ByteCounter resendByteCounter = new ByteCounter() {
 
+		@Override
 		public void receivedBytes(int x) {
 			// Ignore
 		}
 
+		@Override
 		public void sentBytes(int x) {
 			synchronized(NodeStats.this) {
 				resendBytesSent += x;
 			}
 		}
 
+		@Override
 		public void sentPayload(int x) {
 			Logger.error(this, "Payload sent in resendByteCounter????", new Exception("error"));
 		}
@@ -2190,16 +2202,19 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	public final ByteCounter announceByteCounter = new ByteCounter() {
 
+		@Override
 		public void receivedBytes(int x) {
 			// Ignore
 		}
 
+		@Override
 		public void sentBytes(int x) {
 			synchronized(NodeStats.this) {
 				announceBytesSent += x;
 			}
 		}
 
+		@Override
 		public void sentPayload(int x) {
 			synchronized(NodeStats.this) {
 				announceBytesPayload += x;
@@ -2220,17 +2235,20 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	ByteCounter setRoutingStatusCtr = new ByteCounter() {
 
+		@Override
 		public void receivedBytes(int x) {
 			// Impossible?
 			Logger.error(this, "Routing status sender received bytes: "+x+" - isn't that impossible?");
 		}
 
+		@Override
 		public void sentBytes(int x) {
 			synchronized(NodeStats.this) {
 				routingStatusBytesSent += x;
 			}
 		}
 
+		@Override
 		public void sentPayload(int x) {
 			// Ignore
 		}
@@ -2273,18 +2291,21 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	public ByteCounter sskRequestCtr = new ByteCounter() {
 
+		@Override
 		public void receivedBytes(int x) {
 			synchronized(NodeStats.this) {
 				sskRequestRcvdBytes += x;
 			}
 		}
 
+		@Override
 		public void sentBytes(int x) {
 			synchronized(NodeStats.this) {
 				sskRequestSentBytes += x;
 			}
 		}
 
+		@Override
 		public void sentPayload(int x) {
 			// Ignore
 		}
@@ -2293,18 +2314,21 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	public ByteCounter chkRequestCtr = new ByteCounter() {
 
+		@Override
 		public void receivedBytes(int x) {
 			synchronized(NodeStats.this) {
 				chkRequestRcvdBytes += x;
 			}
 		}
 
+		@Override
 		public void sentBytes(int x) {
 			synchronized(NodeStats.this) {
 				chkRequestSentBytes += x;
 			}
 		}
 
+		@Override
 		public void sentPayload(int x) {
 			// Ignore
 		}
@@ -2313,18 +2337,21 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	public ByteCounter sskInsertCtr = new ByteCounter() {
 
+		@Override
 		public void receivedBytes(int x) {
 			synchronized(NodeStats.this) {
 				sskInsertRcvdBytes += x;
 			}
 		}
 
+		@Override
 		public void sentBytes(int x) {
 			synchronized(NodeStats.this) {
 				sskInsertSentBytes += x;
 			}
 		}
 
+		@Override
 		public void sentPayload(int x) {
 			// Ignore
 		}
@@ -2333,18 +2360,21 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	public ByteCounter chkInsertCtr = new ByteCounter() {
 
+		@Override
 		public void receivedBytes(int x) {
 			synchronized(NodeStats.this) {
 				chkInsertRcvdBytes += x;
 			}
 		}
 
+		@Override
 		public void sentBytes(int x) {
 			synchronized(NodeStats.this) {
 				chkInsertSentBytes += x;
 			}
 		}
 
+		@Override
 		public void sentPayload(int x) {
 			// Ignore
 		}
@@ -2356,18 +2386,21 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	public ByteCounter probeRequestCtr = new ByteCounter() {
 
+		@Override
 		public void receivedBytes(int x) {
 			synchronized(NodeStats.this) {
 				probeRequestRcvdBytes += x;
 			}
 		}
 
+		@Override
 		public void sentBytes(int x) {
 			synchronized(NodeStats.this) {
 				probeRequestSentBytes += x;
 			}
 		}
 
+		@Override
 		public void sentPayload(int x) {
 			// Ignore
 		}
@@ -2383,18 +2416,21 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	public ByteCounter routedMessageCtr = new ByteCounter() {
 
+		@Override
 		public void receivedBytes(int x) {
 			synchronized(NodeStats.this) {
 				routedMessageBytesRcvd += x;
 			}
 		}
 
+		@Override
 		public void sentBytes(int x) {
 			synchronized(NodeStats.this) {
 				routedMessageBytesSent += x;
 			}
 		}
 
+		@Override
 		public void sentPayload(int x) {
 			// Ignore
 		}
@@ -2425,18 +2461,21 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	ByteCounter initialMessagesCtr = new ByteCounter() {
 
+		@Override
 		public void receivedBytes(int x) {
 			synchronized(NodeStats.this) {
 				initialMessagesBytesReceived += x;
 			}
 		}
 
+		@Override
 		public void sentBytes(int x) {
 			synchronized(NodeStats.this) {
 				initialMessagesBytesSent += x;
 			}
 		}
 
+		@Override
 		public void sentPayload(int x) {
 			// Ignore
 		}
@@ -2452,18 +2491,21 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	ByteCounter changedIPCtr = new ByteCounter() {
 
+		@Override
 		public void receivedBytes(int x) {
 			synchronized(NodeStats.this) {
 				changedIPBytesReceived += x;
 			}
 		}
 
+		@Override
 		public void sentBytes(int x) {
 			synchronized(NodeStats.this) {
 				changedIPBytesSent += x;
 			}
 		}
 
+		@Override
 		public void sentPayload(int x) {
 			// Ignore
 		}
@@ -2479,18 +2521,21 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	final ByteCounter nodeToNodeCounter = new ByteCounter() {
 
+		@Override
 		public void receivedBytes(int x) {
 			synchronized(NodeStats.this) {
 				nodeToNodeRcvdBytes += x;
 			}
 		}
 
+		@Override
 		public void sentBytes(int x) {
 			synchronized(NodeStats.this) {
 				nodeToNodeSentBytes += x;
 			}
 		}
 
+		@Override
 		public void sentPayload(int x) {
 			// Ignore
 		}
@@ -2506,18 +2551,21 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	
 	final ByteCounter allocationNoticesCounter = new ByteCounter() {
 		
+		@Override
 		public void receivedBytes(int x) {
 			synchronized(NodeStats.this) {
 				allocationNoticesCounterBytesReceived += x;
 			}
 		}
 
+		@Override
 		public void sentBytes(int x) {
 			synchronized(NodeStats.this) {
 				allocationNoticesCounterBytesSent += x;
 			}
 		}
 
+		@Override
 		public void sentPayload(int x) {
 			// Ignore
 		}
@@ -2533,18 +2581,21 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	
 	final ByteCounter foafCounter = new ByteCounter() {
 		
+		@Override
 		public void receivedBytes(int x) {
 			synchronized(NodeStats.this) {
 				foafCounterBytesReceived += x;
 			}
 		}
 
+		@Override
 		public void sentBytes(int x) {
 			synchronized(NodeStats.this) {
 				foafCounterBytesSent += x;
 			}
 		}
 
+		@Override
 		public void sentPayload(int x) {
 			// Ignore
 		}
@@ -2855,22 +2906,27 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 */
 	public StoreLocationStats chkStoreStats() {
 		return new StoreLocationStats() {
+			@Override
 			public double avgLocation() {
 				return avgStoreCHKLocation.currentValue();
 			}
 
+			@Override
 			public double avgSuccess() {
 				return avgStoreCHKSuccess.currentValue();
 			}
 
+			@Override
 			public double furthestSuccess() throws StatsNotAvailableException {
 				return furthestStoreCHKSuccess;
 			}
 
+			@Override
 			public double avgDist() throws StatsNotAvailableException {
 				return Location.distance(nodeLoc, avgLocation());
 			}
 
+			@Override
 			public double distanceStats() throws StatsNotAvailableException {
 				return cappedDistance(avgStoreCHKLocation, node.getChkDatastore());
 			}
@@ -2884,22 +2940,27 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 */
 	public StoreLocationStats chkCacheStats() {
 		return new StoreLocationStats() {
+			@Override
 			public double avgLocation() {
 				return avgCacheCHKLocation.currentValue();
 			}
 
+			@Override
 			public double avgSuccess() {
 				return avgCacheCHKSuccess.currentValue();
 			}
 
+			@Override
 			public double furthestSuccess() throws StatsNotAvailableException {
 				return furthestCacheCHKSuccess;
 			}
 
+			@Override
 			public double avgDist() throws StatsNotAvailableException {
 				return Location.distance(nodeLoc, avgLocation());
 			}
 
+			@Override
 			public double distanceStats() throws StatsNotAvailableException {
 				return cappedDistance(avgCacheCHKLocation, node.getChkDatacache());
 			}
@@ -2913,22 +2974,27 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 */
 	public StoreLocationStats chkSlashDotCacheStats() {
 		return new StoreLocationStats() {
+			@Override
 			public double avgLocation() {
 				return avgSlashdotCacheCHKLocation.currentValue();
 			}
 
+			@Override
 			public double avgSuccess() {
 				return avgSlashdotCacheCHKSucess.currentValue();
 			}
 
+			@Override
 			public double furthestSuccess() throws StatsNotAvailableException {
 				return furthestSlashdotCacheCHKSuccess;
 			}
 
+			@Override
 			public double avgDist() throws StatsNotAvailableException {
 				return Location.distance(nodeLoc, avgLocation());
 			}
 
+			@Override
 			public double distanceStats() throws StatsNotAvailableException {
 				return cappedDistance(avgSlashdotCacheCHKLocation, node.getChkDatacache());
 			}
@@ -2942,22 +3008,27 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 */
 	public StoreLocationStats chkClientCacheStats() {
 		return new StoreLocationStats() {
+			@Override
 			public double avgLocation() {
 				return avgClientCacheCHKLocation.currentValue();
 			}
 
+			@Override
 			public double avgSuccess() {
 				return avgClientCacheCHKSuccess.currentValue();
 			}
 
+			@Override
 			public double furthestSuccess() throws StatsNotAvailableException {
 				return furthestClientCacheCHKSuccess;
 			}
 
+			@Override
 			public double avgDist() throws StatsNotAvailableException {
 				return Location.distance(nodeLoc, avgLocation());
 			}
 
+			@Override
 			public double distanceStats() throws StatsNotAvailableException {
 				return cappedDistance(avgClientCacheCHKLocation, node.getChkDatacache());
 			}
@@ -2971,22 +3042,27 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 */
 	public StoreLocationStats sskStoreStats() {
 		return new StoreLocationStats() {
+			@Override
 			public double avgLocation() {
 				return avgStoreSSKLocation.currentValue();
 			}
 
+			@Override
 			public double avgSuccess() {
 				return avgStoreSSKSuccess.currentValue();
 			}
 
+			@Override
 			public double furthestSuccess() throws StatsNotAvailableException {
 				return furthestStoreSSKSuccess;
 			}
 
+			@Override
 			public double avgDist() throws StatsNotAvailableException {
 				return Location.distance(nodeLoc, avgLocation());
 			}
 
+			@Override
 			public double distanceStats() throws StatsNotAvailableException {
 				return cappedDistance(avgStoreSSKLocation, node.getChkDatastore());
 			}
@@ -3000,22 +3076,27 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 */
 	public StoreLocationStats sskCacheStats() {
 		return new StoreLocationStats() {
+			@Override
 			public double avgLocation() {
 				return avgCacheSSKLocation.currentValue();
 			}
 
+			@Override
 			public double avgSuccess() {
 				return avgCacheSSKSuccess.currentValue();
 			}
 
+			@Override
 			public double furthestSuccess() throws StatsNotAvailableException {
 				return furthestCacheSSKSuccess;
 			}
 
+			@Override
 			public double avgDist() throws StatsNotAvailableException {
 				return Location.distance(nodeLoc, avgLocation());
 			}
 
+			@Override
 			public double distanceStats() throws StatsNotAvailableException {
 				return cappedDistance(avgCacheSSKLocation, node.getChkDatacache());
 			}
@@ -3029,22 +3110,27 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 */
 	public StoreLocationStats sskSlashDotCacheStats() {
 		return new StoreLocationStats() {
+			@Override
 			public double avgLocation() {
 				return avgSlashdotCacheSSKLocation.currentValue();
 			}
 
+			@Override
 			public double avgSuccess() {
 				return avgSlashdotCacheSSKSuccess.currentValue();
 			}
 
+			@Override
 			public double furthestSuccess() throws StatsNotAvailableException {
 				return furthestSlashdotCacheSSKSuccess;
 			}
 
+			@Override
 			public double avgDist() throws StatsNotAvailableException {
 				return Location.distance(nodeLoc, avgLocation());
 			}
 
+			@Override
 			public double distanceStats() throws StatsNotAvailableException {
 				return cappedDistance(avgSlashdotCacheSSKLocation, node.getChkDatacache());
 			}
@@ -3058,22 +3144,27 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 */
 	public StoreLocationStats sskClientCacheStats() {
 		return new StoreLocationStats() {
+			@Override
 			public double avgLocation() {
 				return avgClientCacheSSKLocation.currentValue();
 			}
 
+			@Override
 			public double avgSuccess() {
 				return avgClientCacheSSKSuccess.currentValue();
 			}
 
+			@Override
 			public double furthestSuccess() throws StatsNotAvailableException {
 				return furthestClientCacheSSKSuccess;
 			}
 
+			@Override
 			public double avgDist() throws StatsNotAvailableException {
 				return Location.distance(nodeLoc, avgLocation());
 			}
 
+			@Override
 			public double distanceStats() throws StatsNotAvailableException {
 				return cappedDistance(avgClientCacheSSKLocation, node.getChkDatacache());
 			}
@@ -3104,6 +3195,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			totalTime = myTotalTime;
 		}
 
+		@Override
 		public int compareTo(TimedStats o) {
 			if(totalTime < o.totalTime)
 				return 1;
@@ -3306,6 +3398,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		runningAnnouncements.remove(uid);
 	}
 
+	@Override
 	public void blockTime(long interval, boolean realtime) {
 		throttledPacketSendAverage.report(interval);
 		if(realtime)

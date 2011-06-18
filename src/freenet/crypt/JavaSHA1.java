@@ -22,26 +22,32 @@ class JavaSHA1 implements Digest, Cloneable {
 	digest = MessageDigest.getInstance("SHA1");
     }
     
+    @Override
     public void extract(int[] digest, int offset) {
 	throw new UnsupportedOperationException();
     }
     
+    @Override
     public void update(byte b) {
 	digest.update(b);
     }
     
+    @Override
     public void update(byte[] data, int offset, int length) {
 	digest.update(data, offset, length);
     }
     
+    @Override
     public void update(byte[] data) {
 	digest.update(data);
     }
     
+    @Override
     public byte[] digest() {
 	return digest.digest();
     }
     
+    @Override
     public void digest(boolean reset, byte[] buffer, int offset) {
 	if(reset != true) throw new UnsupportedOperationException();
 	try {
@@ -69,6 +75,7 @@ class JavaSHA1 implements Digest, Cloneable {
 //         for(i=0; i<8; ++i) update(bits[i]);
 //     }
     
+    @Override
     public int digestSize() {
 	return 160;
     }

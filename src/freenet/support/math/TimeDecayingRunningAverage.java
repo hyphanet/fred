@@ -178,6 +178,7 @@ public class TimeDecayingRunningAverage implements RunningAverage {
      *
      * @return
      */
+    @Override
     public synchronized double currentValue() {
     	return curValue;
     }
@@ -186,6 +187,7 @@ public class TimeDecayingRunningAverage implements RunningAverage {
      *
      * @param d
      */
+    @Override
     public void report(double d) {
 		synchronized(this) {
 			// Must synchronize first to achieve serialization.
@@ -261,10 +263,12 @@ public class TimeDecayingRunningAverage implements RunningAverage {
          *
          * @param d
          */
+        @Override
         public void report(long d) {
         report((double)d);
     }
 
+    @Override
     public double valueIfReported(double r) {
         throw new UnsupportedOperationException();
     }
@@ -294,6 +298,7 @@ public class TimeDecayingRunningAverage implements RunningAverage {
         return 4 + 4 + 8 + 8 + 1 + 8 + 8;
     }
 
+    @Override
     public synchronized long countReports() {
         return totalReports;
     }

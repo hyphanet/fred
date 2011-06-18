@@ -30,42 +30,52 @@ public class SimpleReadOnlyArrayBucket implements Bucket {
 		this(buf, 0, buf.length);
 	}
 	
+	@Override
 	public OutputStream getOutputStream() throws IOException {
 		throw new IOException("Read only");
 	}
 
+	@Override
 	public InputStream getInputStream() throws IOException {
 		return new ByteArrayInputStream(buf, offset, length);
 	}
 
+	@Override
 	public String getName() {
 		return "SimpleReadOnlyArrayBucket: len="+length+ ' ' +super.toString();
 	}
 
+	@Override
 	public long size() {
 		return length;
 	}
 
+	@Override
 	public boolean isReadOnly() {
 		return true;
 	}
 
+	@Override
 	public void setReadOnly() {
 		// Already read-only
 	}
 
+	@Override
 	public void free() {
 		// Do nothing
 	}
 
+	@Override
 	public void storeTo(ObjectContainer container) {
 		container.store(this);
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		container.delete(this);
 	}
 
+	@Override
 	public Bucket createShadow() {
 		if(buf.length < 256*1024) {
 			byte[] newBuf = new byte[length];

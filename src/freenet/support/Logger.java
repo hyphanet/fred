@@ -570,6 +570,7 @@ public abstract class Logger {
 		LogThresholdCallback ltc = new LogThresholdCallback() {
 			WeakReference<Class<?>> ref = new WeakReference<Class<?>> (clazz);
 
+			@Override
 			public void shouldUpdate() {
 				Class<?> clazz = ref.get();
 				if (clazz == null) {	// class unloaded

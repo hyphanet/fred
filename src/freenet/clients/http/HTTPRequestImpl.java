@@ -158,6 +158,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	/* (non-Javadoc)
 	 * @see freenet.clients.http.HTTPRequest#getPath()
 	 */
+	@Override
 	public String getPath() {
 		return this.uri.getPath();
 	}
@@ -166,6 +167,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	/* (non-Javadoc)
 	 * @see freenet.clients.http.HTTPRequest#hasParameters()
 	 */
+	@Override
 	public boolean hasParameters() {
 		return ! this.parameterNameValuesMap.isEmpty();
 	}
@@ -175,6 +177,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	 *
 	 * @return The names of all parameters
 	 */
+	@Override
 	public Collection<String> getParameterNames() {
 		return parameterNameValuesMap.keySet();
 	}
@@ -301,6 +304,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	/* (non-Javadoc)
 	 * @see freenet.clients.http.HTTPRequest#isParameterSet(java.lang.String)
 	 */
+	@Override
 	public boolean isParameterSet(String name) {
 		return this.parameterNameValuesMap.containsKey(name);
 	}
@@ -308,6 +312,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	/* (non-Javadoc)
 	 * @see freenet.clients.http.HTTPRequest#getParam(java.lang.String)
 	 */
+	@Override
 	public String getParam(String name) {
 		return this.getParam(name, "");
 	}
@@ -315,6 +320,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	/* (non-Javadoc)
 	 * @see freenet.clients.http.HTTPRequest#getParam(java.lang.String, java.lang.String)
 	 */
+	@Override
 	public String getParam(String name, String defaultValue) {
 		String value = this.getParameterValue(name);
 		if (value == null) {
@@ -326,6 +332,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	/* (non-Javadoc)
 	 * @see freenet.clients.http.HTTPRequest#getIntParam(java.lang.String)
 	 */
+	@Override
 	public int getIntParam(String name) {
 		return this.getIntParam(name, 0);
 	}
@@ -333,6 +340,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	/* (non-Javadoc)
 	 * @see freenet.clients.http.HTTPRequest#getIntParam(java.lang.String, int)
 	 */
+	@Override
 	public int getIntParam(String name, int defaultValue) {
 		if (!this.isParameterSet(name)) {
 			return defaultValue;
@@ -348,6 +356,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	/* (non-Javadoc)
 	 * @see freenet.clients.http.HTTPRequest#getIntPart(java.lang.String, int)
 	 */
+	@Override
 	public int getIntPart(String name, int defaultValue) {
 		if (!this.isPartSet(name)) {
 			return defaultValue;
@@ -365,6 +374,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	/* (non-Javadoc)
 	 * @see freenet.clients.http.HTTPRequest#getMultipleParam(java.lang.String)
 	 */
+	@Override
 	public String[] getMultipleParam(String name) {
 		List<String> valueList = this.getParameterValueList(name);
 		String[] values = new String[valueList.size()];
@@ -375,6 +385,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	/* (non-Javadoc)
 	 * @see freenet.clients.http.HTTPRequest#getMultipleIntParam(java.lang.String)
 	 */
+	@Override
 	public int[] getMultipleIntParam(String name) {
 		List<String> valueList = this.getParameterValueList(name);
 
@@ -566,6 +577,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	/* (non-Javadoc)
 	 * @see freenet.clients.http.HTTPRequest#getUploadedFile(java.lang.String)
 	 */
+	@Override
 	public HTTPUploadedFile getUploadedFile(String name) {
 		return uploadedFiles.get(name);
 	}
@@ -573,6 +585,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	/* (non-Javadoc)
 	 * @see freenet.clients.http.HTTPRequest#getPart(java.lang.String)
 	 */
+	@Override
 	public Bucket getPart(String name) {
 		return this.parts.get(name);
 	}
@@ -580,6 +593,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	/* (non-Javadoc)
 	 * @see freenet.clients.http.HTTPRequest#isPartSet(java.lang.String)
 	 */
+	@Override
 	public boolean isPartSet(String name) {
 		if(parts == null)
 			return false;
@@ -587,6 +601,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		return this.parts.containsKey(name);
 	}
 
+	@Override
 	@Deprecated
 	public String getPartAsString(String name, int maxlength) {
 		try {
@@ -596,6 +611,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		}
 	}
 	
+	@Override
 	public String getPartAsStringThrowing(String name, int maxLength) throws NoSuchElementException, SizeLimitExceededException {
 		Bucket part = this.parts.get(name);
 		
@@ -608,6 +624,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		return getPartAsLimitedString(part, maxLength);
 	}
 	
+	@Override
 	public String getPartAsStringFailsafe(String name, int maxLength) {
 		Bucket part = this.parts.get(name);
 		return part == null ? "" : getPartAsLimitedString(part, maxLength);
@@ -624,6 +641,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	/* (non-Javadoc)
 	 * @see freenet.clients.http.HTTPRequest#getPartAsString(java.lang.String, int)
 	 */
+	@Override
 	@Deprecated
 	public byte[] getPartAsBytes(String name, int maxlength) {
 		Bucket part = this.parts.get(name);
@@ -649,6 +667,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		return new byte[0];
 	}
 	
+	@Override
 	public byte[] getPartAsBytesThrowing(String name, int maxLength) throws NoSuchElementException, SizeLimitExceededException {
 		Bucket part = this.parts.get(name);
 		
@@ -661,6 +680,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		return getPartAsLimitedBytes(part, maxLength);
 	}
 	
+	@Override
 	public byte[] getPartAsBytesFailsafe(String name, int maxLength) {
 		Bucket part = this.parts.get(name);
 		return part == null ? new byte[0] : getPartAsLimitedBytes(part, maxLength);
@@ -687,6 +707,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	/* (non-Javadoc)
 	 * @see freenet.clients.http.HTTPRequest#freeParts()
 	 */
+	@Override
 	public void freeParts() {
 		if (this.parts == null) return;
 		
@@ -701,6 +722,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	/* (non-Javadoc)
 	 * @see freenet.clients.http.HTTPRequest#getLongParam(java.lang.String, long)
 	 */
+	@Override
 	public long getLongParam(String name, long defaultValue) {
 		if (!this.isParameterSet(name)) {
 			return defaultValue;
@@ -750,6 +772,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		/* (non-Javadoc)
 		 * @see freenet.clients.http.HTTPUploadedFile#getContentType()
 		 */
+		@Override
 		public String getContentType() {
 			return contentType;
 		}
@@ -757,6 +780,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		/* (non-Javadoc)
 		 * @see freenet.clients.http.HTTPUploadedFile#getData()
 		 */
+		@Override
 		public Bucket getData() {
 			return data;
 		}
@@ -764,24 +788,29 @@ public class HTTPRequestImpl implements HTTPRequest {
 		/* (non-Javadoc)
 		 * @see freenet.clients.http.HTTPUploadedFile#getFilename()
 		 */
+		@Override
 		public String getFilename() {
 			return filename;
 		}
 
 	}
 
+	@Override
 	public String getMethod() {
 		return method;
 	}
 
+	@Override
 	public Bucket getRawData() {
 		return data;
 	}
 
+	@Override
 	public String getHeader(String name) {
 		return this.headers.get(name);
 	}
 
+	@Override
 	public int getContentLength() {
 		String slen = headers.get("content-length");
 		if (slen == null)
@@ -790,6 +819,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		return Integer.parseInt(slen);
 	}
 
+	@Override
 	public String[] getParts() {
 		return parts.keySet().toArray(new String[parts.size()]);
 	}

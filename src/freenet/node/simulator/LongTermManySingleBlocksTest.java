@@ -87,6 +87,7 @@ public class LongTermManySingleBlocksTest {
 				t.start();
 			}
 
+			@Override
 			public void run() {
 				synchronized(InsertBatch.this) {
 					runningInserts++;
@@ -284,14 +285,17 @@ public class LongTermManySingleBlocksTest {
 			fctx.maxSplitfileBlockRetries = 0;
 			RequestClient requestContext = new RequestClient() {
 
+				@Override
 				public boolean persistent() {
 					return false;
 				}
 
+				@Override
 				public void removeFrom(ObjectContainer container) {
 					// Ignore.
 				}
 
+				@Override
 				public boolean realTimeFlag() {
 					return false;
 				}

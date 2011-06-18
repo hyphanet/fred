@@ -289,6 +289,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 
 	/** Called when the insert succeeds. */
+	@Override
 	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
 		if(persistent())
 			container.activate(client, 1);
@@ -318,6 +319,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 
 	/** Called when the insert fails. */
+	@Override
 	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "onFailure() for "+this+" : "+state+" : "+e, e);
 		if(persistent())
@@ -348,6 +350,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 
 	/** Called when we know the final URI of the insert. */
+	@Override
 	public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
 		if(persistent())
 			container.activate(client, 1);
@@ -420,6 +423,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 
 	/** Called when a ClientPutState transitions to a new state. If this is the current state, then we update
 	 * it, but it might also be a subsidiary state, in which case we ignore it. */
+	@Override
 	public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 		if(newState == null) throw new NullPointerException();
 
@@ -437,6 +441,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 
 	/** Called when we have generated metadata for the insert. This should not happen, because we should
 	 * insert the metadata! */
+	@Override
 	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
 		Logger.error(this, "Got metadata on "+this+" from "+state+" (this means the metadata won't be inserted)");
 	}
@@ -444,10 +449,12 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	/** The number of blocks that will be needed to fetch the data. We put this in the top block metadata. */
 	protected int minSuccessFetchBlocks;
 	
+	@Override
 	public int getMinSuccessFetchBlocks() {
 		return minSuccessFetchBlocks;
 	}
 	
+	@Override
 	public void addBlock(ObjectContainer container) {
 		synchronized(this) {
 			minSuccessFetchBlocks++;
@@ -455,6 +462,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		super.addBlock(container);
 	}
 	
+	@Override
 	public void addBlocks(int num, ObjectContainer container) {
 		synchronized(this) {
 			minSuccessFetchBlocks+=num;
@@ -463,6 +471,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 	
 	/** Add one or more blocks to the number of requires blocks, and don't notify the clients. */
+	@Override
 	public void addMustSucceedBlocks(int blocks, ObjectContainer container) {
 		synchronized(this) {
 			minSuccessFetchBlocks += blocks;
@@ -473,10 +482,12 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	/** Add one or more blocks to the number of requires blocks, and don't notify the clients. 
 	 * These blocks are added to the minSuccessFetchBlocks for the insert, but not to the counter for what
 	 * the requestor must fetch. */
+	@Override
 	public void addRedundantBlocks(int blocks, ObjectContainer container) {
 		super.addMustSucceedBlocks(blocks, container);
 	}
 	
+	@Override
 	protected void clearCountersOnRestart() {
 		minSuccessFetchBlocks = 0;
 		super.clearCountersOnRestart();
@@ -500,6 +511,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 
 	/** Called when we know exactly how many blocks will be needed. */
+	@Override
 	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "Set finished", new Exception("debug"));
@@ -508,6 +520,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 
 	/** Called (sometimes) when enough of the data has been inserted that the file can now be fetched. Not
 	 * very useful unless earlyEncode was enabled. */
+	@Override
 	public void onFetchable(ClientPutState state, ObjectContainer container) {
 		if(persistent())
 			container.activate(client, 1);
@@ -558,6 +571,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		super.removeFrom(container, context);
 	}
 
+	@Override
 	public void dump(ObjectContainer container) {
 		container.activate(uri, 5);
 		System.out.println("URI: "+uri);

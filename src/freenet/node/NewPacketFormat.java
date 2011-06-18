@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -20,7 +19,6 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.io.xfer.PacketThrottle;
 import freenet.node.NewPacketFormatKeyContext.AddedAcks;
-import freenet.support.ByteBufferInputStream;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -116,6 +114,7 @@ public class NewPacketFormat implements PacketFormat {
 		hmacLength = HMAC_LENGTH;
 	}
 
+	@Override
 	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now, Peer replyTo) {
 		NPFPacket packet = null;
 		SessionKey s = null;
@@ -159,7 +158,7 @@ public class NewPacketFormat implements PacketFormat {
 	LinkedList<byte[]> handleDecryptedPacket(NPFPacket packet, SessionKey sessionKey) {
 		LinkedList<byte[]> fullyReceived = new LinkedList<byte[]>();
 
-		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) sessionKey.packetContext;
+		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
 		for(int ack : packet.getAcks()) {
 			keyContext.ack(ack, pn, sessionKey);
 		}
@@ -312,7 +311,7 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	private NPFPacket tryDecipherPacket(byte[] buf, int offset, int length, SessionKey sessionKey) {
-		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) sessionKey.packetContext;
+		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
 		// Create the watchlist if the key has changed
 		if(keyContext.seqNumWatchList == null) {
 			if(logMINOR) Logger.minor(this, "Creating watchlist starting at " + keyContext.watchListOffset);
@@ -410,7 +409,7 @@ outer:
 
 		NPFPacket p = NPFPacket.create(payload, pn);
 
-		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) sessionKey.packetContext;
+		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
 		synchronized(this) {
 			if(seqNumGreaterThan(sequenceNumber, keyContext.highestReceivedSeqNum, 31)) {
 				keyContext.highestReceivedSeqNum = sequenceNumber;
@@ -448,6 +447,7 @@ outer:
 		return seqNumBytes;
 	}
 
+	@Override
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly)
 	throws BlockedTooLongException {
 		SessionKey sessionKey = pn.getPreviousKeyTracker();
@@ -471,7 +471,7 @@ outer:
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly, SessionKey sessionKey)
 	throws BlockedTooLongException {
 		int maxPacketSize = pn.getMaxPacketSize();
-		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) sessionKey.packetContext;
+		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
 
 		NPFPacket packet = createPacket(maxPacketSize - hmacLength, pn.getMessageQueue(), sessionKey, ackOnly);
 		if(packet == null) return false;
@@ -570,7 +570,7 @@ outer:
 		boolean mustSend = false;
 		long now = System.currentTimeMillis();
 		
-		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) sessionKey.packetContext;
+		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
 		
 		AddedAcks moved = keyContext.addAcks(packet, maxPacketSize, now);
 		if(moved != null && moved.anyUrgentAcks) {
@@ -923,22 +923,23 @@ outer:
 
 	/** For unit tests */
 	int countSentPackets(SessionKey key) {
-		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) key.packetContext;
+		NewPacketFormatKeyContext keyContext = key.packetContext;
 		return keyContext.countSentPackets();
 	}
 	
+	@Override
 	public long timeCheckForLostPackets() {
 		long timeCheck = Long.MAX_VALUE;
 		double averageRTT = averageRTT();
 		SessionKey key = pn.getCurrentKeyTracker();
 		if(key != null)
-			timeCheck = Math.min(timeCheck, ((NewPacketFormatKeyContext)(key.packetContext)).timeCheckForLostPackets(averageRTT));
+			timeCheck = Math.min(timeCheck, ((key.packetContext)).timeCheckForLostPackets(averageRTT));
 		key = pn.getPreviousKeyTracker();
 		if(key != null)
-			timeCheck = Math.min(timeCheck, ((NewPacketFormatKeyContext)(key.packetContext)).timeCheckForLostPackets(averageRTT));
+			timeCheck = Math.min(timeCheck, ((key.packetContext)).timeCheckForLostPackets(averageRTT));
 		key = pn.getUnverifiedKeyTracker();
 		if(key != null)
-			timeCheck = Math.min(timeCheck, ((NewPacketFormatKeyContext)(key.packetContext)).timeCheckForLostPackets(averageRTT));
+			timeCheck = Math.min(timeCheck, ((key.packetContext)).timeCheckForLostPackets(averageRTT));
 		return timeCheck;
 	}
 	
@@ -946,31 +947,33 @@ outer:
 		long timeCheck = Long.MAX_VALUE;
 		SessionKey key = pn.getCurrentKeyTracker();
 		if(key != null)
-			timeCheck = Math.min(timeCheck, ((NewPacketFormatKeyContext)key.packetContext).timeCheckForAcks());
+			timeCheck = Math.min(timeCheck, (key.packetContext).timeCheckForAcks());
 		key = pn.getPreviousKeyTracker();
 		if(key != null)
-			timeCheck = Math.min(timeCheck, ((NewPacketFormatKeyContext)key.packetContext).timeCheckForAcks());
+			timeCheck = Math.min(timeCheck, (key.packetContext).timeCheckForAcks());
 		key = pn.getUnverifiedKeyTracker();
 		if(key != null)
-			timeCheck = Math.min(timeCheck, ((NewPacketFormatKeyContext)key.packetContext).timeCheckForAcks());
+			timeCheck = Math.min(timeCheck, (key.packetContext).timeCheckForAcks());
 		return timeCheck;
 	}
 
+	@Override
 	public void checkForLostPackets() {
 		if(pn == null) return;
 		double averageRTT = averageRTT();
 		long curTime = System.currentTimeMillis();
 		SessionKey key = pn.getCurrentKeyTracker();
 		if(key != null)
-			((NewPacketFormatKeyContext)(key.packetContext)).checkForLostPackets(averageRTT, curTime, pn);
+			((key.packetContext)).checkForLostPackets(averageRTT, curTime, pn);
 		key = pn.getPreviousKeyTracker();
 		if(key != null)
-			((NewPacketFormatKeyContext)(key.packetContext)).checkForLostPackets(averageRTT, curTime, pn);
+			((key.packetContext)).checkForLostPackets(averageRTT, curTime, pn);
 		key = pn.getUnverifiedKeyTracker();
 		if(key != null)
-			((NewPacketFormatKeyContext)(key.packetContext)).checkForLostPackets(averageRTT, curTime, pn);
+			((key.packetContext)).checkForLostPackets(averageRTT, curTime, pn);
 	}
 
+	@Override
 	public List<MessageItem> onDisconnect() {
 		int messageSize = 0;
 		List<MessageItem> items = null;
@@ -1000,6 +1003,7 @@ outer:
 	 * @return 0 if there is anything already in flight. The time that the oldest ack was
 	 * queued at plus the lesser of half the RTT or 100ms if there are acks queued. 
 	 * Otherwise Long.MAX_VALUE to indicate that we need to get messages from the queue. */
+	@Override
 	public long timeNextUrgent(boolean canSend) {
 		long ret = Long.MAX_VALUE;
 		if(canSend) {
@@ -1028,10 +1032,12 @@ outer:
 		return ret;
 	}
 	
+	@Override
 	public long timeSendAcks() {
 		return timeCheckForAcks();
 	}
 	
+	@Override
 	public boolean canSend(SessionKey tracker) {
 		
 		boolean canAllocateID;
@@ -1045,7 +1051,7 @@ outer:
 		if(canAllocateID) {
 			// Check whether we need to rekey.
 			if(tracker == null) return false;
-			NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) tracker.packetContext;
+			NewPacketFormatKeyContext keyContext = tracker.packetContext;
 			if(!keyContext.canAllocateSeqNum()) {
 				// We can't allocate more sequence numbers because we haven't rekeyed yet
 				pn.startRekeying();
@@ -1302,11 +1308,13 @@ outer:
 		return x;
 	}
 	
+	@Override
 	public String toString() {
 		if(pn != null) return super.toString() +" for "+pn.shortToString();
 		else return super.toString();
 	}
 
+	@Override
 	public boolean fullPacketQueued(int maxPacketSize) {
 		return pn.getMessageQueue().mustSendSize(HMAC_LENGTH /* FIXME estimate headers */, maxPacketSize);
 	}

@@ -130,6 +130,7 @@ public class PproxyToadlet extends Toadlet {
 				final String pluginName = request.getPartAsString("plugin-name", 40);
 				node.executor.execute(new Runnable() {
 
+					@Override
 					public void run() {
 						pm.startPluginOfficial(pluginName, true, true, "https".equals(request.getPartAsString("pluginSource", 10)));
 					}
@@ -252,6 +253,7 @@ public class PproxyToadlet extends Toadlet {
 					}
 					node.executor.execute(new Runnable() {
 
+						@Override
 						public void run() {
 							// FIXME
 							pm.startPluginAuto(fn, true);

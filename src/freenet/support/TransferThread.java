@@ -62,8 +62,10 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	}
 	
 	/** Specify the priority of this thread. Priorities to return can be found in class NativeThread. */
+	@Override
 	public abstract int getPriority();
 
+	@Override
 	public void run() {
 		long sleepTime = 1 * 1000;
 		try {
@@ -193,11 +195,13 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	/**
 	 * You have to do "finally { removeFetch() }" when using this function.
 	 */
+	@Override
 	public abstract void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container);
 
 	/**
 	 * You have to do "finally { removeFetch() }" when using this function.
 	 */
+	@Override
 	public abstract void onFailure(FetchException e, ClientGetter state, ObjectContainer container);
 
 	/* Inserts */
@@ -205,19 +209,24 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	/**
 	 * You have to do "finally { removeInsert() }" when using this function.
 	 */
+	@Override
 	public abstract void onSuccess(BaseClientPutter state, ObjectContainer container);
 
 	/**
 	 * You have to do "finally { removeInsert() }" when using this function.
 	 */
+	@Override
 	public abstract void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container);
 
+	@Override
 	public abstract void onFetchable(BaseClientPutter state, ObjectContainer container);
 
+	@Override
 	public abstract void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container);
 
 	/** Called when freenet.async thinks that the request should be serialized to
 	 * disk, if it is a persistent request. */
+	@Override
 	public abstract void onMajorProgress(ObjectContainer container);
 
 	public boolean objectCanNew(ObjectContainer container) {

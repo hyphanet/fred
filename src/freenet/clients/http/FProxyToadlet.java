@@ -114,16 +114,19 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		this.context = core.clientContext;
 		prefetchHook = new FoundURICallback() {
 
+				@Override
 				public void foundURI(FreenetURI uri) {
 					// Ignore
 				}
 
+				@Override
 				public void foundURI(FreenetURI uri, boolean inline) {
 					if(!inline) return;
 					if(logMINOR) Logger.minor(this, "Prefetching "+uri);
 					client.prefetch(uri, 60*1000, 512*1024, prefetchAllowedTypes);
 				}
 
+				@Override
 				public void onText(String text, String type, URI baseURI) {
 					// Ignore
 				}
@@ -763,12 +766,15 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				if(needsFetch){
 					//If we don't have the data, then we need to fetch it and block until it is available
 					FetchResult result = fetch(key, maxSize, new RequestClient() {
+						@Override
 						public boolean persistent() {
 							return false;
 						}
+						@Override
 						public void removeFrom(ObjectContainer container) {
 							throw new UnsupportedOperationException();
 						}
+						@Override
 						public boolean realTimeFlag() {
 							return true;
 						} }, fctx);
@@ -1073,14 +1079,17 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		FProxyFetchTracker fetchTracker = new FProxyFetchTracker(core.clientContext, client.getFetchContext(),
 		        new RequestClient() {
 
+			@Override
 			public boolean persistent() {
 				return false;
 			}
 
+			@Override
 			public void removeFrom(ObjectContainer container) {
 				// Do nothing.
 			}
 
+			@Override
 			public boolean realTimeFlag() {
 				return true;
 			}
@@ -1290,10 +1299,12 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		return result;
 	}
 
+	@Override
 	public boolean persistent() {
 		return false;
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		throw new UnsupportedOperationException();
 	}
@@ -1303,6 +1314,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		return "/";
 	}
 
+	@Override
 	public boolean realTimeFlag() {
 		return true;
 	}

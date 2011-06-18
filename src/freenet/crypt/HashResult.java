@@ -71,6 +71,7 @@ public class HashResult implements Comparable {
 		dos.write(result);
 	}
 
+	@Override
 	public int compareTo(Object arg0) {
 		HashResult h = (HashResult)arg0;
 		if(type.bitmask == h.type.bitmask) return 0;
@@ -135,6 +136,7 @@ public class HashResult implements Comparable {
 		return out;
 	}
 	
+	@Override
 	public HashResult clone() {
 		return new HashResult(this);
 	}

@@ -54,6 +54,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	 * charset detection can be ambiguous, potentially resulting in attacks. */
 	private static boolean allowNoHTMLTag = true;
 	
+	@Override
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		if(cb == null) cb = new NullFilterCallback();
@@ -79,11 +80,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		w.flush();
 	}
 	
+	@Override
 	public void writeFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 			FilterCallback cb) throws DataFilterException, IOException {
 		throw new UnsupportedOperationException();
 	}
 	
+	@Override
 	public String getCharset(byte[] input, int length, String parseCharset) throws DataFilterException, IOException {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);		
 		if(logMINOR) Logger.minor(this, "getCharset(): default="+parseCharset);
@@ -2658,12 +2661,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		return NodeL10n.getBase().getString("HTMLFilter."+key, pattern, value);
 	}
 
+	@Override
 	public BOMDetection getCharsetByBOM(byte[] input, int length) throws DataFilterException {
 		// No enhanced BOMs.
 		// FIXME XML BOMs???
 		return null;
 	}
 
+	@Override
 	public int getCharsetBufferSize() {
 		//Read in 64 kilobytes. The charset could be defined anywhere in the head section
 		return 1024*64;

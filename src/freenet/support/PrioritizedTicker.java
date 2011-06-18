@@ -2,7 +2,6 @@ package freenet.support;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.TreeMap;
 
@@ -31,12 +30,14 @@ public class PrioritizedTicker implements Ticker, Runnable {
 			this.job = job;
 		}
 
+		@Override
 		public boolean equals(Object o) {
 			if(!(o instanceof Job)) return false;
 			// Ignore the name, we are only interested in the job, needed for noDupes.
 			return ((Job)o).job == job;
 		}
 		
+		@Override
 		public int hashCode() {
 			return job.hashCode();
 		}
@@ -63,6 +64,7 @@ public class PrioritizedTicker implements Ticker, Runnable {
 		myThread.start();
 	}
 
+	@Override
 	public void run() {
 		if(logMINOR) Logger.minor(this, "In Ticker.run()");
 		freenet.support.Logger.OSThread.logPID(this);
@@ -154,6 +156,7 @@ public class PrioritizedTicker implements Ticker, Runnable {
 	}
 
 
+	@Override
 	public void queueTimedJob(Runnable job, long offset) {
 		queueTimedJob(job, "Scheduled job: "+job, offset, false, false);
 	}
@@ -174,6 +177,7 @@ public class PrioritizedTicker implements Ticker, Runnable {
 	 * increasing numbers of announcement check jobs queued, while ensuring that we do always
 	 * have one queued within the given period.
 	 */
+	@Override
 	public void queueTimedJob(Runnable runner, String name, long offset, boolean runOnTickerAnyway, boolean noDupes) {
 		// Run directly *if* that won't cause any priority problems.
 		if(offset <= 0 && !runOnTickerAnyway) {
@@ -259,6 +263,7 @@ public class PrioritizedTicker implements Ticker, Runnable {
 		}
 	}
 
+	@Override
 	public Executor getExecutor() {
 		return executor;
 	}
@@ -269,6 +274,7 @@ public class PrioritizedTicker implements Ticker, Runnable {
 		}
 	}
 
+	@Override
 	public void removeQueuedJob(Runnable runnable) {
 		Job job = new Job(null, runnable);
 		synchronized(timedJobsByTime) {

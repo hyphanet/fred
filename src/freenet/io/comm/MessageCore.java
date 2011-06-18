@@ -99,6 +99,7 @@ public class MessageCore {
     	}
     	ticker.queueTimedJob(new Runnable() {
 
+			@Override
 			public void run() {
 				long now = System.currentTimeMillis();
 				long nextRun = now + MAX_FILTER_REMOVE_TIME;

@@ -50,14 +50,17 @@ public class PooledExecutor implements Executor {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 	}
 
+	@Override
 	public void execute(Runnable job) {
 		execute(job, "<noname>");
 	}
 
+	@Override
 	public void execute(Runnable job, String jobName) {
 		execute(job, jobName, false);
 	}
 
+	@Override
 	public void execute(Runnable runnable, String jobName, boolean fromTicker) {
 		int prio = NativeThread.NORM_PRIORITY;
 		if(runnable instanceof PrioRunnable)
@@ -133,6 +136,7 @@ public class PooledExecutor implements Executor {
 		}
 	}
 
+	@Override
 	public synchronized int[] runningThreads() {
 		int[] result = new int[runningThreads.length];
 		for(int i = 0; i < result.length; i++)
@@ -140,6 +144,7 @@ public class PooledExecutor implements Executor {
 		return result;
 	}
 
+	@Override
 	public synchronized int[] waitingThreads() {
 		int[] result = new int[waitingThreads.length];
 		for(int i = 0; i < result.length; i++)
@@ -147,6 +152,7 @@ public class PooledExecutor implements Executor {
 		return result;
 	}
 
+	@Override
 	public int getWaitingThreadsCount() {
 		return waitingThreadsCount;
 	}

@@ -276,6 +276,7 @@ public class WelcomeToadlet extends Toadlet {
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
             node.ticker.queueTimedJob(new Runnable() {
 
+				@Override
                         public void run() {
                             node.exit("Shutdown from fproxy");
                         }
@@ -303,6 +304,7 @@ public class WelcomeToadlet extends Toadlet {
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
             node.ticker.queueTimedJob(new Runnable() {
 
+				@Override
                         public void run() {
                             node.getNodeStarter().restart();
                         }

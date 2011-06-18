@@ -2,7 +2,6 @@ package freenet.crypt;
 
 import java.io.FilterOutputStream;
 import java.io.OutputStream;
-import java.security.DigestException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -46,18 +45,21 @@ public class MultiHashOutputStream extends FilterOutputStream {
 		this.digesters = digesters.toArray(new Digester[digesters.size()]);
 	}
 	
+	@Override
 	public void write(int arg0) throws java.io.IOException {
 		out.write(arg0);
 		for(Digester d : digesters)
 			d.digest.update(new byte[] { (byte)arg0 });
 	}
 
+	@Override
 	public void write(byte[] arg0) throws java.io.IOException {
 		out.write(arg0);
 		for(Digester d : digesters)
 			d.digest.update(arg0);
 	}
 	
+	@Override
 	public void write(byte[] arg0, int arg1, int arg2) throws java.io.IOException {
 		out.write(arg0, arg1, arg2);
 		for(Digester d : digesters)

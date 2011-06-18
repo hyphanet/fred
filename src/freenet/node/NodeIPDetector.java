@@ -508,6 +508,7 @@ public class NodeIPDetector {
 		// 60 second delay for inserting ARK to avoid reinserting more than necessary if we don't detect IP on startup.
 		// Not a FastRunnable as it can take a while to start the insert
 		node.getTicker().queueTimedJob(new Runnable() {
+			@Override
 			public void run() {
 				NodeIPPortDetector[] detectors;
 				synchronized(this) {
@@ -525,10 +526,12 @@ public class NodeIPDetector {
 		// announcements do. However announcements are not sent instantly.
 		node.executor.execute(new PrioRunnable() {
 
+			@Override
 			public void run() {
 				ipDetectorManager.maybeRun();
 			}
 
+			@Override
 			public int getPriority() {
 				return NativeThread.HIGH_PRIORITY;
 			}

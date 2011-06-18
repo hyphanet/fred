@@ -34,6 +34,7 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 		return _path;
 	}
 
+	@Override
 	public boolean isEnabled(ToadletContext ctx) {
 		return true;
 	}

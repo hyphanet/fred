@@ -95,6 +95,7 @@ public class PluginJarUpdater extends NodeUpdater {
 		}
 	}
 	
+	@Override
 	protected void parseManifestLine(String line) {
 		if(line.startsWith(REQUIRED_NODE_VERSION_PREFIX)) {
 			requiredNodeVersion = Integer.parseInt(line.substring(REQUIRED_NODE_VERSION_PREFIX.length()));
@@ -141,6 +142,7 @@ public class PluginJarUpdater extends NodeUpdater {
 			
 			toRegister = alert = new AbstractUserAlert(true, l10n("pluginUpdatedTitle", "name", pluginName), l10n("pluginUpdatedText", "name", pluginName), l10n("pluginUpdatedShortText", "name", pluginName), null, UserAlert.ERROR, true, NodeL10n.getBase().getString("UserAlert.hide"), true, this) {
 				
+				@Override
 				public void onDismiss() {
 					synchronized(PluginJarUpdater.this) {
 						alert = null;
@@ -198,6 +200,7 @@ public class PluginJarUpdater extends NodeUpdater {
 			node.clientCore.alerts.unregister(a);
 	}
 
+	@Override
 	void kill() {
 		super.kill();
 		UserAlert a;
@@ -219,6 +222,7 @@ public class PluginJarUpdater extends NodeUpdater {
 		}
 	}
 
+	@Override
 	protected RequestClient getRequestClient() {
 		return pluginManager.singleUpdaterRequestClient;
 	}

@@ -32,43 +32,53 @@ public class ProxyUserAlert extends AbstractUserAlert {
 		}
 	}
 	
+	@Override
 	public boolean userCanDismiss() {
 		return alert.userCanDismiss();
 	}
 
+	@Override
 	public String getTitle() {
 		return alert.getTitle();
 	}
 
+	@Override
 	public String getText() {
 		return alert.getText();
 	}
 
+	@Override
 	public HTMLNode getHTMLText() {
 		return alert.getHTMLText();
 	}
 
+	@Override
 	public short getPriorityClass() {
 		return alert.getPriorityClass();
 	}
 
+	@Override
 	public boolean isValid() {
 		return alert != null && alert.isValid();
 	}
 
+	@Override
 	public void isValid(boolean validity) {
 		if(alert != null)
 			alert.isValid(validity);
 	}
 
+	@Override
 	public String dismissButtonText() {
 		return alert.dismissButtonText();
 	}
 
+	@Override
 	public boolean shouldUnregisterOnDismiss() {
 		return alert.shouldUnregisterOnDismiss();
 	}
 
+	@Override
 	public void onDismiss() {
 		if(alert != null) alert.onDismiss();
 	}
@@ -76,18 +86,22 @@ public class ProxyUserAlert extends AbstractUserAlert {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public Object getUserIdentifier() {
 		return alert.getUserIdentifier();
 	}
 
+	@Override
 	public String anchor() {
 		return "anchor:"+Integer.toString(hashCode());
 	}
 
+	@Override
 	public String getShortText() {
 		return alert.getShortText();
 	}
 
+	@Override
 	public boolean isEventNotification() {
 		if(alert == null) return false;
 		return alert.isEventNotification();

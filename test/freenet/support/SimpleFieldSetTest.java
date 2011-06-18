@@ -417,7 +417,7 @@ public class SimpleFieldSetTest extends TestCase {
 						Double.compare((methodSFS.getDouble(Double.toString(methodPairsArray[i][0]))),
 											methodPairsArray[i][1]),0);
 				assertEquals(
-						Double.compare(methodSFS.getDouble(Double.toString(methodPairsArray[i][0]),(double)5),
+						Double.compare(methodSFS.getDouble(Double.toString(methodPairsArray[i][0]),5),
 											methodPairsArray[i][1]),0);
 			} catch (FSParseException aException) {
 				fail("Not expected exception thrown : " + aException.getMessage()); }
@@ -629,7 +629,7 @@ public class SimpleFieldSetTest extends TestCase {
 			methodSFS.putAppend(keyPrefix,String.valueOf((double)i));
 		double[] result = methodSFS.getDoubleArray(keyPrefix);
 		for (int i = 0; i<15; i++)
-			assertTrue(result[i]== ((double)i));
+			assertTrue(result[i]== (i));
 		
 	}
 	

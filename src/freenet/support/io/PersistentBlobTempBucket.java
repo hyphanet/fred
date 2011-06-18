@@ -51,10 +51,12 @@ public class PersistentBlobTempBucket implements Bucket {
 		this.readOnly = shadow;
 	}
 
+	@Override
 	public Bucket createShadow() {
 		return factory.createShadow(this);
 	}
 
+	@Override
 	public void free() {
 		if(shadow)
 			factory.freeShadow(index, this);
@@ -80,6 +82,7 @@ public class PersistentBlobTempBucket implements Bucket {
 	// the index might change during defrag, especially if we are reading a shadow
 	// bucket on a non-database thread.
 	
+	@Override
 	public InputStream getInputStream() throws IOException {
 		if(freed) throw new IOException("Already freed");
 		final FileChannel channel = factory.channel;
@@ -154,10 +157,12 @@ public class PersistentBlobTempBucket implements Bucket {
 		};
 	}
 
+	@Override
 	public String getName() {
 		return factory.getName()+":"+index;
 	}
 
+	@Override
 	public OutputStream getOutputStream() throws IOException {
 		if(freed) throw new IOException("Already freed");
 		if(shadow) throw new IOException("Shadow");
@@ -204,14 +209,17 @@ public class PersistentBlobTempBucket implements Bucket {
 		};
 	}
 
+	@Override
 	public synchronized boolean isReadOnly() {
 		return readOnly;
 	}
 
+	@Override
 	public synchronized void setReadOnly() {
 		readOnly = true;
 	}
 
+	@Override
 	public synchronized long size() {
 		return size;
 	}
@@ -221,6 +229,7 @@ public class PersistentBlobTempBucket implements Bucket {
 	// structure. When removeFrom() is called afterwards, we are moved back to the
 	// temporary map, unless we have been freed.
 	
+	@Override
 	public void storeTo(ObjectContainer container) {
 		if(shadow) {
 			throw new UnsupportedOperationException("Can't store a shadow");
@@ -296,6 +305,7 @@ public class PersistentBlobTempBucket implements Bucket {
 		return true;
 	}
 	
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		if(shadow) throw new UnsupportedOperationException("Can't store a shadow");
 		boolean p;

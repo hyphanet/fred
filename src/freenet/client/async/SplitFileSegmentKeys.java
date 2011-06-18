@@ -10,7 +10,6 @@ import java.util.Arrays;
 import com.db4o.ObjectContainer;
 
 import freenet.keys.ClientCHK;
-import freenet.keys.Key;
 import freenet.keys.NodeCHK;
 import freenet.support.Logger;
 

@@ -476,6 +476,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				} else {
 					final boolean persistent = this.persistent;
 					fetchArchive(false, archiveMetadata, ArchiveManager.METADATA_NAME, new ArchiveExtractCallback() {
+						@Override
 						public void gotBucket(Bucket data, ObjectContainer container, ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
@@ -497,6 +498,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							if(persistent)
 								container.deactivate(SingleFileFetcher.this, 1);
 						}
+						@Override
 						public void notInArchive(ObjectContainer container, ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
@@ -504,6 +506,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							if(persistent)
 								container.deactivate(SingleFileFetcher.this, 1);
 						}
+						@Override
 						public void onFailed(ArchiveRestartException e, ObjectContainer container, ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
@@ -511,6 +514,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							if(persistent)
 								container.deactivate(SingleFileFetcher.this, 1);
 						}
+						@Override
 						public void onFailed(ArchiveFailureException e, ObjectContainer container, ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
@@ -518,6 +522,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							if(persistent)
 								container.deactivate(SingleFileFetcher.this, 1);
 						}
+						@Override
 						public void removeFrom(ObjectContainer container) {
 							container.delete(this);
 						}
@@ -561,6 +566,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					// Therefore, the archive needs to be fetched.
 					final boolean persistent = this.persistent;
 					fetchArchive(true, archiveMetadata, filename, new ArchiveExtractCallback() {
+						@Override
 						public void gotBucket(Bucket data, ObjectContainer container, ClientContext context) {
 							if(persistent) {
 								container.activate(SingleFileFetcher.this, 1);
@@ -589,6 +595,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 								container.deactivate(SingleFileFetcher.this, 1);
 							}
 						}
+						@Override
 						public void notInArchive(ObjectContainer container, ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
@@ -596,6 +603,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							if(persistent)
 								container.deactivate(SingleFileFetcher.this, 1);
 						}
+						@Override
 						public void onFailed(ArchiveRestartException e, ObjectContainer container, ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
@@ -603,6 +611,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							if(persistent)
 								container.deactivate(SingleFileFetcher.this, 1);
 						}
+						@Override
 						public void onFailed(ArchiveFailureException e, ObjectContainer container, ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
@@ -610,6 +619,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							if(persistent)
 								container.deactivate(SingleFileFetcher.this, 1);
 						}
+						@Override
 						public void removeFrom(ObjectContainer container) {
 							container.delete(this);
 						}
@@ -660,6 +670,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					// Therefore, the archive needs to be fetched.
 					final boolean persistent = this.persistent;
 					fetchArchive(true, archiveMetadata, filename, new ArchiveExtractCallback() {
+						@Override
 						public void gotBucket(Bucket data, ObjectContainer container, ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
@@ -672,6 +683,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							if(persistent)
 								container.deactivate(SingleFileFetcher.this, 1);
 						}
+						@Override
 						public void notInArchive(ObjectContainer container, ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
@@ -679,6 +691,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							if(persistent)
 								container.deactivate(SingleFileFetcher.this, 1);
 						}
+						@Override
 						public void onFailed(ArchiveRestartException e, ObjectContainer container, ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
@@ -686,6 +699,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							if(persistent)
 								container.deactivate(SingleFileFetcher.this, 1);
 						}
+						@Override
 						public void onFailed(ArchiveFailureException e, ObjectContainer container, ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
@@ -693,6 +707,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							if(persistent)
 								container.deactivate(SingleFileFetcher.this, 1);
 						}
+						@Override
 						public void removeFrom(ObjectContainer container) {
 							container.delete(this);
 						}
@@ -970,6 +985,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			this.ctx = SingleFileFetcher.this.ctx;
 		}
 		
+		@Override
 		public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 			OutputStream output = null;
 			PipedInputStream pipeIn = new PipedInputStream();
@@ -1088,6 +1104,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			innerWrapHandleMetadata(true, container, context);
 		}
 
+		@Override
 		public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
 			boolean wasActive = true;
 			if(persistent) {
@@ -1113,6 +1130,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			}
 		}
 
+		@Override
 		public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
 			boolean wasActive = true;
 			if(persistent) {
@@ -1129,14 +1147,17 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				container.deactivate(SingleFileFetcher.this, 1);
 		}
 
+		@Override
 		public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
 			// Ignore
 		}
 
+		@Override
 		public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
 
+		@Override
 		public void onExpectedSize(long size, ObjectContainer container, ClientContext context) {
 			boolean wasActive = true;
 			if(persistent) {
@@ -1151,14 +1172,17 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				container.deactivate(SingleFileFetcher.this, 1);
 		}
 
+		@Override
 		public void onFinalizedMetadata(ObjectContainer container) {
 			// Ignore
 		}
 
+		@Override
 		public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
 
+		@Override
 		public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, boolean dontCompress, boolean bottomLayer, boolean definitiveAnyway, ObjectContainer container, ClientContext context) {
 			boolean wasActive = true;
 			boolean cbWasActive = true;
@@ -1175,6 +1199,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				container.deactivate(rcb, 1);
 		}
 
+		@Override
 		public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
 			this.hashes = hashes;
 			if(persistent) container.store(this);
@@ -1192,6 +1217,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			this.ctx = SingleFileFetcher.this.ctx;
 		}
 		
+		@Override
 		public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 			OutputStream output = null;
 			PipedInputStream pipeIn = new PipedInputStream();
@@ -1274,6 +1300,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			}
 		}
 		
+		@Override
 		public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
 			boolean wasActive = true;
 			if(persistent) {
@@ -1294,18 +1321,22 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			}
 		}
 
+		@Override
 		public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
 			// Ignore as we are fetching metadata here
 		}
 
+		@Override
 		public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
 			// Ignore
 		}
 
+		@Override
 		public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
 
+		@Override
 		public void onExpectedSize(long size, ObjectContainer container, ClientContext context) {
 			boolean wasActive = true;
 			boolean cbWasActive = true;
@@ -1322,14 +1353,17 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				container.deactivate(rcb, 1);
 		}
 
+		@Override
 		public void onFinalizedMetadata(ObjectContainer container) {
 			// Ignore
 		}
 
+		@Override
 		public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
 
+		@Override
 		public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, boolean dontCompress, boolean bottomLayer, boolean definitiveAnyway, ObjectContainer container, ClientContext context) {
 			boolean wasActive = true;
 			boolean cbWasActive = true;
@@ -1346,6 +1380,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				container.deactivate(rcb, 1);
 		}
 
+		@Override
 		public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
@@ -1437,6 +1472,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		final int hashCode;
 		private USKFetcherTag tag;
 		
+		@Override
 		public void setTag(USKFetcherTag tag, ObjectContainer container, ClientContext context) {
 			this.tag = tag;
 			if(persistent) container.store(this);
@@ -1460,10 +1496,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			if(logMINOR) Logger.minor(this, "Created "+this+" for "+usk+" and "+cb+" datastore only = "+datastoreOnly);
 		}
 		
+		@Override
 		public int hashCode() {
 			return hashCode;
 		}
 
+		@Override
 		public void onFoundEdition(long l, USK newUSK, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 			if(persistent)
 				container.activate(this, 2);
@@ -1499,6 +1537,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			usk.removeFrom(container);
 		}
 
+		@Override
 		public void onFailure(ObjectContainer container, ClientContext context) {
 			FetchException e = null;
 			if(datastoreOnly) {
@@ -1522,6 +1561,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			if(persistent) removeFrom(container);
 		}
 
+		@Override
 		public void onCancelled(ObjectContainer container, ClientContext context) {
 			if(persistent)
 				container.activate(this, 2);
@@ -1529,10 +1569,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			if(persistent) removeFrom(container);
 		}
 
+		@Override
 		public short getPollingPriorityNormal() {
 			return parent.getPriorityClass();
 		}
 
+		@Override
 		public short getPollingPriorityProgress() {
 			return parent.getPriorityClass();
 		}
