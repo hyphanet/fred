@@ -252,6 +252,8 @@ public class BookmarkItem extends Bookmark {
     }
     
     public String getDescription() {
+		if(desc.startsWith("L10N:"))
+			return NodeL10n.getBase().getString("Bookmarks.Defaults.Description."+desc.substring("L10N:".length()));
         return (desc == null ? "" : desc);
     }
     
