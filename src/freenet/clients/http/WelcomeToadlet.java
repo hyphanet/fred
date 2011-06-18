@@ -96,7 +96,7 @@ public class WelcomeToadlet extends Toadlet {
 
         List<BookmarkCategory> cats = cat.getSubCategories();
         for (int i = 0; i < cats.size(); i++) {
-            list.addChild("li", "class", "cat", cats.get(i).getName());
+            list.addChild("li", "class", "cat", cats.get(i).getVisibleName());
             addCategoryToList(cats.get(i), list.addChild("li").addChild("ul"), noActiveLinks, ctx);
         }
     }

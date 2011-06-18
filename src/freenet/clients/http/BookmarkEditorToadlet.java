@@ -107,7 +107,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 			String catPath = path + cats.get(i).getName() + '/';
 			String catPathEncoded = URLEncoder.encode(catPath, false);
 
-			HTMLNode subCat = list.addChild("li", "class", "cat", cats.get(i).getName());
+			HTMLNode subCat = list.addChild("li", "class", "cat", cats.get(i).getVisibleName());
 
 			HTMLNode actions = new HTMLNode("span", "class", "actions");
 
@@ -240,7 +240,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 					HTMLNode form = ctx.addFormChild(actionBoxContent, "", "editBookmarkForm");
 
 					form.addChild("label", "for", "name", (NodeL10n.getBase().getString("BookmarkEditorToadlet.nameLabel") + ' '));
-					form.addChild("input", new String[]{"type", "id", "name", "size", "value"}, new String[]{"text", "name", "name", "20", !isNew ? bookmark.getName() : ""});
+					form.addChild("input", new String[]{"type", "id", "name", "size", "value"}, new String[]{"text", "name", "name", "20", !isNew ? bookmark.getVisibleName() : ""});
 
 					form.addChild("br");
 					if(("edit".equals(action) && bookmark instanceof BookmarkItem) || "addItem".equals(action) || "share".equals(action)) {
