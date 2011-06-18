@@ -27,13 +27,15 @@ public class BookmarkItem extends Bookmark {
     private final BookmarkUpdatedUserAlert alert;
     private final UserAlertManager alerts;
     protected String desc;
+    protected String explanation;
 
-    public BookmarkItem(FreenetURI k, String n, String d, boolean hasAnActivelink, UserAlertManager uam)
+    public BookmarkItem(FreenetURI k, String n, String d, String e, boolean hasAnActivelink, UserAlertManager uam)
             throws MalformedURLException {
 
         this.key = k;
         this.name = n;
         this.desc = d;
+        this.explanation = e;
         this.hasAnActivelink = hasAnActivelink;
         this.alerts = uam;
         alert = new BookmarkUpdatedUserAlert();
@@ -58,6 +60,8 @@ public class BookmarkItem extends Bookmark {
         if(name == null) name = "";
         this.desc = sfs.get("Description");
         if(desc == null) desc = "";
+        this.explanation = sfs.get("Explanation");
+        if(explanation == null) explanation = "";
         this.hasAnActivelink = sfs.getBoolean("hasAnActivelink");
         this.key = new FreenetURI(sfs.get("URI"));
         this.alerts = uam;
@@ -165,9 +169,10 @@ public class BookmarkItem extends Bookmark {
         return key;
     }
 
-    public synchronized void update(FreenetURI uri, boolean hasAnActivelink, String description) {
+    public synchronized void update(FreenetURI uri, boolean hasAnActivelink, String description, String explanation) {
         this.key = uri;
         this.desc = description;
+        this.explanation = explanation;
         this.hasAnActivelink = hasAnActivelink;
         if(!key.isUSK())
         	disableBookmark();
@@ -257,11 +262,18 @@ public class BookmarkItem extends Bookmark {
         return (desc == null ? "" : desc);
     }
     
+    public String getExplanation() {
+		if(explanation.startsWith("L10N:"))
+			return NodeL10n.getBase().getString("Bookmarks.Defaults.Explanation."+explanation.substring("L10N:".length()));
+        return (explanation == null ? "" : explanation);
+    }
+    
     @Override
 	public SimpleFieldSet getSimpleFieldSet() {
 	SimpleFieldSet sfs = new SimpleFieldSet(true);
 	sfs.putSingle("Name", name);
 	sfs.putSingle("Description", desc);
+	sfs.putSingle("Explanation", explanation);
 	sfs.put("hasAnActivelink", hasAnActivelink);
 	sfs.putSingle("URI", key.toString());
 	return sfs;

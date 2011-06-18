@@ -36,6 +36,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 	private static final int MAX_NAME_LENGTH = 500;
 	/** Max. bookmark path length (e.g. <code>Freenet related software and documentation/Freenet Message System</code> ) */
 	private static final int MAX_BOOKMARK_PATH_LENGTH = 10 * MAX_NAME_LENGTH;
+	private static final int MAX_EXPLANATION_LENGTH = 1024;
 	
 	private final NodeClientCore core;
 	private final BookmarkManager bookmarkManager;
@@ -254,6 +255,10 @@ public class BookmarkEditorToadlet extends Toadlet {
 							form.addChild("br");
 							form.addChild("textarea", new String[]{"id", "name", "row", "cols"}, new String[]{"descB", "descB", "3", "70"}, (isNew ? "" : item.getDescription()));
 							form.addChild("br");
+							form.addChild("label", "for", "descB", (NodeL10n.getBase().getString("BookmarkEditorToadlet.explainLabel") + ' '));
+							form.addChild("br");
+							form.addChild("textarea", new String[]{"id", "name", "row", "cols"}, new String[]{"explain", "explain", "3", "70"}, (isNew ? "" : item.getExplanation()));
+							form.addChild("br");
 						}
 						form.addChild("label", "for", "hasAnActivelink", (NodeL10n.getBase().getString("BookmarkEditorToadlet.hasAnActivelinkLabel") + ' '));
 						if(!isNew && item.hasAnActivelink())
@@ -366,7 +371,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 					boolean hasAnActivelink = req.isPartSet("hasAnActivelink");
 					if(bookmark instanceof BookmarkItem) {
 						BookmarkItem item = (BookmarkItem) bookmark;
-						item.update(new FreenetURI(req.getPartAsString("key", MAX_KEY_LENGTH)), hasAnActivelink, req.getPartAsString("descB", MAX_KEY_LENGTH));
+						item.update(new FreenetURI(req.getPartAsString("key", MAX_KEY_LENGTH)), hasAnActivelink, req.getPartAsString("descB", MAX_KEY_LENGTH), req.getPartAsStringFailsafe("explain", MAX_EXPLANATION_LENGTH));
 						sendBookmarkFeeds(req, item, req.getPartAsString("publicDescB", MAX_KEY_LENGTH));
 					}
 					bookmarkManager.storeBookmarks();
@@ -390,7 +395,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 							pageMaker.getInfobox("infobox-error", NodeL10n.getBase().getString("BookmarkEditorToadlet.invalidNameTitle"), content, "bookmark-error", false).
 								addChild("#", NodeL10n.getBase().getString("BookmarkEditorToadlet.invalidName"));
 						} else
-							newBookmark = new BookmarkItem(key, name, req.getPartAsString("descB", MAX_KEY_LENGTH), hasAnActivelink, core.alerts);
+							newBookmark = new BookmarkItem(key, name, req.getPartAsString("descB", MAX_KEY_LENGTH), req.getPartAsString("explain", MAX_EXPLANATION_LENGTH), hasAnActivelink, core.alerts);
 					} else
 						if (name.contains("/")) {
 							pageMaker.getInfobox("infobox-error", NodeL10n.getBase().getString("BookmarkEditorToadlet.invalidNameTitle"), content, "bookmark-error", false).
