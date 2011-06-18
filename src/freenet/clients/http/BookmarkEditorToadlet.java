@@ -80,7 +80,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 			BookmarkItem item =  items.get(i);
 				
 			String itemPath = URLEncoder.encode(path + item.getName(), false);
-			HTMLNode li = new HTMLNode("li", "class", "item", item.getName());
+			HTMLNode li = new HTMLNode("li", "class", "item", item.getVisibleName());
 
 			HTMLNode actions = new HTMLNode("span", "class", "actions");
 			actions.addChild("a", "href", "?action=edit&bookmark=" + itemPath).addChild("img", new String[]{"src", "alt", "title"}, new String[]{"/static/icon/edit.png", edit, edit});
