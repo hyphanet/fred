@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import freenet.node.FSParseException;
 import junit.framework.TestCase;
@@ -735,5 +736,22 @@ public class SimpleFieldSetTest extends TestCase {
                     assertTrue(isAKey(SAMPLE_STRING_PAIRS, "", (String)itr.next()));
                 }
                 assertFalse(itr.hasNext());
+	}
+
+	public void testKeyIterationPastEnd() {
+		System.out.println("Starting iterator test");
+
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
+		sfs.putOverwrite("test", "test");
+
+		Iterator<String> keyIterator = sfs.keyIterator();
+		assertEquals("test", keyIterator.next());
+
+		try {
+			String s = keyIterator.next();
+			fail("Expected NoSuchElementException, but got " + s);
+		} catch(NoSuchElementException e) {
+			//Expected
+		}
 	}
 }
