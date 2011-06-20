@@ -748,7 +748,7 @@ loadWaiterLoop:
         			if(expectedAcceptState == null) {
         				PeerNode oldNext = next;
         				long maxWait = Long.MAX_VALUE;
-        				if(waiter.waitingForCount() <= canWaitFor) {
+        				if(waiter.waitingForCount() <= canWaitFor && next != null) {
         					// Can add another one if it's taking ages.
         					// However after adding it once, we will wait for as long as it takes.
         					maxWait = fetchTimeout / 10;
