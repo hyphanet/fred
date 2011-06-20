@@ -651,8 +651,11 @@ loadWaiterLoop:
         	while(true) {
         		if(logMINOR) Logger.minor(this, "Going around loop");
             
-        		expectedAcceptState = 
-        			next.outputLoadTracker(realTimeFlag).tryRouteTo(origTag, RequestLikelyAcceptedState.LIKELY, false);
+        		if(next != null)
+        			expectedAcceptState = 
+        				next.outputLoadTracker(realTimeFlag).tryRouteTo(origTag, RequestLikelyAcceptedState.LIKELY, false);
+        		else
+        			expectedAcceptState = null;
         		
         		if(expectedAcceptState == RequestLikelyAcceptedState.UNKNOWN) {
         			// No stats, old style, just go for it.
