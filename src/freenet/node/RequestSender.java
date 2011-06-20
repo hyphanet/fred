@@ -750,7 +750,7 @@ loadWaiterLoop:
         				long maxWait = Long.MAX_VALUE;
         				// After waitForAny() it will be null, it is all cleared.
         				int waitingForCount = waiter.waitingForCount();
-        				if(waitingForCount <= canWaitFor && next != null) {
+        				if(waitingForCount < canWaitFor && next != null) {
         					// Can add another one if it's taking ages.
         					// However after adding it once, we will wait for as long as it takes.
         					maxWait = fetchTimeout / 10;
