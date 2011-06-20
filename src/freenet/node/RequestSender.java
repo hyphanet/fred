@@ -748,7 +748,9 @@ loadWaiterLoop:
         			if(expectedAcceptState == null) {
         				PeerNode oldNext = next;
         				long maxWait = Long.MAX_VALUE;
-        				if(waiter.waitingForCount() <= canWaitFor && next != null) {
+        				// After waitForAny() it will be null, it is all cleared.
+        				int waitingForCount = waiter.waitingForCount();
+        				if(waitingForCount <= canWaitFor && next != null) {
         					// Can add another one if it's taking ages.
         					// However after adding it once, we will wait for as long as it takes.
         					maxWait = fetchTimeout / 10;
@@ -767,7 +769,7 @@ loadWaiterLoop:
         					next = node.peers.closerPeer(source, exclude, target, true, node.isAdvancedModeEnabled(), -1, null,
         							key, htl, 0, source == null, realTimeFlag, true);
         					
-        					if(next == null && (maxWait == Long.MAX_VALUE || waiter.waitingForCount() == 0)) {
+        					if(next == null && (maxWait == Long.MAX_VALUE || waitingForCount == 0)) {
         						if (logMINOR && rejectOverloads>0)
         							Logger.minor(this, "no more peers, but overloads ("+rejectOverloads+"/"+routeAttempts+" overloaded)");
         						// Backtrack
