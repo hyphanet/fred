@@ -767,7 +767,7 @@ loadWaiterLoop:
         					next = node.peers.closerPeer(source, exclude, target, true, node.isAdvancedModeEnabled(), -1, null,
         							key, htl, 0, source == null, realTimeFlag, true);
         					
-        					if(next == null && maxWait == Long.MAX_VALUE) {
+        					if(next == null && (maxWait == Long.MAX_VALUE || waiter.waitingForCount() == 0)) {
         						if (logMINOR && rejectOverloads>0)
         							Logger.minor(this, "no more peers, but overloads ("+rejectOverloads+"/"+routeAttempts+" overloaded)");
         						// Backtrack
