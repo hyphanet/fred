@@ -465,6 +465,12 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 		String ks = uri.getPath();
 
+		// max-retries
+		// Less than -1 = use default.
+		// 0 = one try only, don't retry
+		// 1 = two tries
+		// 2 = three tries
+		// 3 or more = GO INTO COOLDOWN EVERY 3 TRIES! TAKES *MUCH* LONGER!!! STRONGLY NOT RECOMMENDED!!!
 		int maxRetries = httprequest.getIntParam("max-retries", -2);
 
 		if (ks.equals("/")) {
