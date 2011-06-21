@@ -3030,6 +3030,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			fs.putSingle("detected.udp", detectedPeer.toStringPrefNumeric());
 		if(lastReceivedPacketTime() > 0)
 			fs.put("timeLastReceivedPacket", timeLastReceivedPacket);
+		if(lastReceivedAckTime() > 0)
+			fs.put("timeLastReceivedAck", timeLastReceivedAck);
 		if(timeLastConnected() > 0)
 			fs.put("timeLastConnected", timeLastConnected);
 		if(timeLastRoutable() > 0)
