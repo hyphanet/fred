@@ -109,7 +109,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 	protected static final String FRAGMENT   = "(" + PCHAR + "|\\/|\\?)*";
 
 	@Override
-	public String processURI(String u, String overrideType, boolean noRelative, boolean inline) throws CommentException {
+	public String processURI(String u, String overrideType, boolean forBaseHref, boolean inline) throws CommentException {
 		if(u.matches("^#" + FRAGMENT + "$")) {
 			// Hack for anchors, see #710
 			return u;
@@ -127,8 +127,8 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 			if(u.startsWith("/") || u.startsWith("%2f"))
 				// Don't bother with relative URIs if it's obviously absolute.
 				// Don't allow encoded /'s, they're just too confusing (here they would get decoded and then coalesced with other slashes).
-				noRelative = true;
-			if(!noRelative)
+				forBaseHref = true;
+			if(!forBaseHref)
 				resolved = baseURI.resolve(uri);
 			else
 				resolved = uri;
@@ -226,7 +226,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 					while(p.startsWith("/")) p = p.substring(1);
 					FreenetURI furi = new FreenetURI(p, true);
 					if(logMINOR) Logger.minor(this, "Parsed: "+furi);
-					return processURI(furi, uri, overrideType, noRelative, inline);
+					return processURI(furi, uri, overrideType, forBaseHref, inline);
 				} catch (MalformedURLException e) {
 					if(logMINOR) Logger.minor(this, "Malformed URL (b): "+e, e);
 					if(e.getMessage() != null) {
