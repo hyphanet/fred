@@ -2481,10 +2481,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				// Decode and encode for the same reason we do in sanitizeHash().
 				baseHref = HTMLDecoder.decode(baseHref);
 				String ref = pc.cb.onBaseHref(baseHref);
-				if(ref != null)
+				if(ref != null) {
 					hn.put("href", HTMLEncoder.encode(ref));
+					return hn;
+				}
 			}
-			return hn;
+			return null;
 		}
 
 	}
