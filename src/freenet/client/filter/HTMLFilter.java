@@ -638,6 +638,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if(t == null || t.startSlash || t.endSlash) {
 				if(!pc.openElements.isEmpty())
 					return pc.openElements.peek();
+				if (pc.writeAfterTag.length() > 0) {
+					w.write(pc.writeAfterTag.toString());
+					pc.writeAfterTag = new StringBuilder(1024);
+				}
 				return null;
 			} else return t.element;
 		} else {
@@ -2486,6 +2490,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					return hn;
 				}
 			}
+			pc.writeAfterTag.append("<!-- deleted invalid base href -->");
 			return null;
 		}
 
