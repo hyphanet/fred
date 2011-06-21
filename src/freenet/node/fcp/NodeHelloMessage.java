@@ -24,11 +24,9 @@ import freenet.support.compress.Compressor;
 public class NodeHelloMessage extends FCPMessage {
 	public static final String NAME = "NodeHello";
 	
-	private final Node node;
 	private final String id;
 		
-	public NodeHelloMessage(final Node node, String id) {
-		this.node = node;
+	public NodeHelloMessage(String id) {
 		this.id = id;
 	}
 	
