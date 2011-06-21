@@ -1883,10 +1883,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 		long cachedStoreHits = node.getChkDatacache().hits();
 		long cachedStoreMisses = node.getChkDatacache().misses();
+		long cachedStoreWrites = node.getChkDatacache().writes();
 		long cacheAccesses = cachedStoreHits + cachedStoreMisses;
 		double percentCachedStoreHitsOfAccesses = (double)(cachedStoreHits*100) / (double)cacheAccesses;
 		long storeHits = node.getChkDatastore().hits();
 		long storeMisses = node.getChkDatastore().misses();
+		long storeWrites = node.getChkDatastore().writes();
 		long storeAccesses = storeHits + storeMisses;
 		double percentStoreHitsOfAccesses = (double)(storeHits*100) / (double)storeAccesses;
 		long overallAccesses = storeAccesses + cacheAccesses;
@@ -1903,11 +1905,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("percentOverallKeysOfMax", percentOverallKeysOfMax);
 		fs.put("cachedStoreHits", cachedStoreHits);
 		fs.put("cachedStoreMisses", cachedStoreMisses);
+		fs.put("cachedStoreWrites", cachedStoreWrites);
 		fs.put("cacheAccesses", cacheAccesses);
 		fs.put("percentCachedStoreHitsOfAccesses", percentCachedStoreHitsOfAccesses);
 		fs.put("storeHits", storeHits);
 		fs.put("storeMisses", storeMisses);
 		fs.put("storeAccesses", storeAccesses);
+		fs.put("storeWrites", storeWrites);
 		fs.put("percentStoreHitsOfAccesses", percentStoreHitsOfAccesses);
 		fs.put("overallAccesses", overallAccesses);
 		fs.put("avgStoreAccessRate", avgStoreAccessRate);
