@@ -206,9 +206,6 @@ public class ClientPut extends ClientPutBase {
 		if ((mimeType == null) && (targetFilename != null)) {
 			mimeType = DefaultMIMETypes.guessMIMEType(targetFilename, true);
 		}
-		if(mimeType == null) {
-			mimeType = DefaultMIMETypes.guessMIMEType(identifier, true);
-		}
 		clientToken = message.clientToken;
 		Bucket tempData = message.bucket;
 		ClientMetadata cm = new ClientMetadata(mimeType);
