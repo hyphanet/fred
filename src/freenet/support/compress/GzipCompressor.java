@@ -62,6 +62,8 @@ public class GzipCompressor implements Compressor {
 			gos.finish();
 			cos.flush();
 			gos = null;
+			if(cos.written() > maxWriteLength)
+				throw new CompressionOutputSizeException();
 			return cos.written();
 		} finally {
 			if(gos != null) {

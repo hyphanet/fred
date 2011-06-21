@@ -73,6 +73,8 @@ public class Bzip2Compressor implements Compressor {
 			bz2os.close();
 			cos.flush();
 			bz2os = null;
+			if(cos.written() > maxWriteLength)
+				throw new CompressionOutputSizeException();
 			return cos.written();
 		} finally {
 			if(bz2os != null) {

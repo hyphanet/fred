@@ -63,7 +63,7 @@ public class NewLZMACompressor implements Compressor {
 	}
 	
 	@Override
-	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException {
+	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
 		CountedInputStream cis = null;
 		CountedOutputStream cos = null;
 		cis = new CountedInputStream(new BufferedInputStream(is, 32768));
@@ -81,6 +81,8 @@ public class NewLZMACompressor implements Compressor {
         encoder.SetDictionarySize( dictionarySize );
         encoder.WriteCoderProperties(os);
         encoder.Code( cis, cos, maxReadLength, maxWriteLength, null );
+		if(cos.written() > maxWriteLength)
+			throw new CompressionOutputSizeException();
         cos.flush();
 		if(logMINOR)
 			Logger.minor(this, "Read "+cis.count()+" written "+cos.written());
