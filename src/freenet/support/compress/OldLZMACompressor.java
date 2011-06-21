@@ -60,8 +60,8 @@ public class OldLZMACompressor implements Compressor {
 	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException {
 		CountedInputStream cis = null;
 		CountedOutputStream cos = null;
-		cis = new CountedInputStream(new BufferedInputStream(is));
-		cos = new CountedOutputStream(new BufferedOutputStream(os));
+		cis = new CountedInputStream(new BufferedInputStream(is, 32768));
+		cos = new CountedOutputStream(new BufferedOutputStream(os, 32768));
 		Encoder encoder = new Encoder();
         encoder.SetEndMarkerMode( true );
         // Dictionary size 1MB, this is equivalent to lzma -4, it uses 16MB to compress and 2MB to decompress.
@@ -83,8 +83,8 @@ public class OldLZMACompressor implements Compressor {
 			output = bf.makeBucket(maxLength);
 		if(logMINOR)
 			Logger.minor(this, "Decompressing "+data+" size "+data.size()+" to new bucket "+output);
-		CountedInputStream is = new CountedInputStream(new BufferedInputStream(data.getInputStream()));
-		BufferedOutputStream os = new BufferedOutputStream(output.getOutputStream());
+		CountedInputStream is = new CountedInputStream(new BufferedInputStream(data.getInputStream(), 32768));
+		BufferedOutputStream os = new BufferedOutputStream(output.getOutputStream(), 32768);
 		decompress(is, os, maxLength, maxCheckSizeLength);
 		os.close();
 		if(logMINOR)
