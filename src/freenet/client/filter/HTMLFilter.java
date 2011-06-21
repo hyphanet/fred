@@ -2476,8 +2476,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				ParsedTag p,
 				HTMLParseContext pc) throws DataFilterException {
 			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
-			// Get the already-sanitized version.
-			String baseHref = getHashString(hn, "href");
+			String baseHref = getHashString(h, "href");
 			if(baseHref != null) {
 				String ref = pc.cb.onBaseHref(baseHref);
 				if(ref != null)
