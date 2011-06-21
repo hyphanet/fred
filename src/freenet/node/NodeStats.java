@@ -1807,6 +1807,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("recentOutputRate", recent_output_rate);
 		fs.put("recentInputRate", recent_input_rate);
 
+		fs.put("ackOnlyBytes", getNotificationOnlyPacketsSentBytes());
+		fs.put("resentBytes", getResendBytesSent());
+		fs.put("updaterOutputBytes", getUOMBytesSent());
+		fs.put("announcePayloadBytes", getAnnounceBytesPayloadSent());
+		fs.put("announceSentBytes", getAnnounceBytesSent());
+
 		String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons(true);
 		if(routingBackoffReasons.length != 0) {
 			for(int i=0;i<routingBackoffReasons.length;i++) {
