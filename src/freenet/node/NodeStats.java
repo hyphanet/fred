@@ -1725,6 +1725,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("backedOffPercent", backedOffPercent.currentValue());
 		fs.put("pInstantReject", pRejectIncomingInstantly());
 		fs.put("unclaimedFIFOSize", node.usm.getUnclaimedFIFOSize());
+		fs.put("RAMBucketPoolSize", node.clientCore.tempBucketFactory.getRamUsed());
 
 		/* gather connection statistics */
 		PeerNodeStatus[] peerNodeStatuses = peers.getPeerNodeStatuses(true);
@@ -1770,6 +1771,18 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 		fs.put("numberOfTransferringRequestSenders", node.getNumTransferringRequestSenders());
 		fs.put("numberOfARKFetchers", node.getNumARKFetchers());
+
+		fs.put("numberOfLocalCHKInserts", node.getNumLocalCHKInserts());
+		fs.put("numberOfRemoteCHKInserts", node.getNumRemoteCHKInserts());
+		fs.put("numberOfLocalSSKInserts", node.getNumLocalSSKInserts());
+		fs.put("numberOfRemoteSSKInserts", node.getNumRemoteSSKInserts());
+		fs.put("numberOfLocalCHKRequests", node.getNumLocalCHKRequests());
+		fs.put("numberOfRemoteCHKRequests", node.getNumRemoteCHKRequests());
+		fs.put("numberOfLocalSSKRequests", node.getNumLocalSSKRequests());
+		fs.put("numberOfRemoteSSKRequests", node.getNumRemoteSSKRequests());
+		fs.put("numberOfTransferringRequestHandlers", node.getNumTransferringRequestHandlers());
+		fs.put("numberOfCHKOfferReplys", node.getNumCHKOfferReplies());
+		fs.put("numberOfSSKOfferReplys", node.getNumSSKOfferReplies());
 
 		long[] total = node.collector.getTotalIO();
 		long total_output_rate = (total[0]) / nodeUptimeSeconds;
@@ -1917,12 +1930,19 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("runningThreadCount", getActiveThreadCount());
 
 		fs.put("globalFetchPSuccess", globalFetchPSuccess.currentValue());
+		fs.put("globalFetchCount", globalFetchPSuccess.countReports());
 		fs.put("chkLocalFetchPSuccess", chkLocalFetchPSuccess.currentValue());
+		fs.put("chkLocalFetchCount", chkLocalFetchPSuccess.countReports());
 		fs.put("chkRemoteFetchPSuccess", chkRemoteFetchPSuccess.currentValue());
+		fs.put("chkRemoteFetchCount", chkRemoteFetchPSuccess.countReports());
 		fs.put("sskLocalFetchPSuccess", sskLocalFetchPSuccess.currentValue());
+		fs.put("sskLocalFetchCount", sskLocalFetchPSuccess.countReports());
 		fs.put("sskRemoteFetchPSuccess", sskRemoteFetchPSuccess.currentValue());
-		fs.put("blockTransferPSuccessBulk", blockTransferPSuccessBulk.currentValue());
+		fs.put("sskRemoteFetchCount", sskRemoteFetchPSuccess.countReports());
 		fs.put("blockTransferPSuccessRT", blockTransferPSuccessRT.currentValue());
+		fs.put("blockTransferCountRT", blockTransferPSuccessRT.countReports());
+		fs.put("blockTransferPSuccessBulk", blockTransferPSuccessBulk.currentValue());
+		fs.put("blockTransferCountBulk", blockTransferPSuccessBulk.countReports());
 		fs.put("blockTransferFailTimeout", blockTransferFailTimeout.currentValue());
 
 		return fs;
