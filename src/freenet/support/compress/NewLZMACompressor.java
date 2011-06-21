@@ -82,7 +82,7 @@ public class NewLZMACompressor implements Compressor {
         encoder.WriteCoderProperties(os);
         encoder.Code( cis, cos, maxReadLength, maxWriteLength, null );
 		if(cos.written() > maxWriteLength)
-			throw new CompressionOutputSizeException();
+			throw new CompressionOutputSizeException(cos.written());
         cos.flush();
 		if(logMINOR)
 			Logger.minor(this, "Read "+cis.count()+" written "+cos.written());
