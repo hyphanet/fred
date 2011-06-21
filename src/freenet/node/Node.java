@@ -6291,7 +6291,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 
-	public boolean isTestnetEnabled() {
+	public static boolean isTestnetEnabled() {
 		return false;
 	}
 
