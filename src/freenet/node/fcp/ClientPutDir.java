@@ -269,7 +269,7 @@ public class ClientPutDir extends ClientPutBase {
 			container.activate(manifestElements, 5);
 		}
 		return new PersistentPutDir(identifier, publicURI, verbosity, priorityClass,
-				persistenceType, global, defaultName, manifestElements, clientToken, started, ctx.maxInsertRetries, wasDiskPut, container);
+				persistenceType, global, defaultName, manifestElements, clientToken, started, ctx.maxInsertRetries, ctx.dontCompress, ctx.compressorDescriptor, wasDiskPut, container);
 	}
 
 	@Override
