@@ -15,19 +15,24 @@ public class DataFoundMessage extends FCPMessage {
 	final boolean global;
 	final String mimeType;
 	final long dataLength;
+	final long startupTime, completionTime;
 	
-	public DataFoundMessage(FetchResult fr, String identifier, boolean global) {
+	public DataFoundMessage(FetchResult fr, String identifier, boolean global, long startupTime, long completionTime) {
 		this.identifier = identifier;
 		this.global = global;
 		this.mimeType = fr.getMimeType();
 		this.dataLength = fr.size();
+		this.startupTime = startupTime;
+		this.completionTime = completionTime;
 	}
 
-	public DataFoundMessage(long foundDataLength, String foundDataMimeType, String identifier, boolean global) {
+	public DataFoundMessage(long foundDataLength, String foundDataMimeType, String identifier, boolean global, long startupTime, long completionTime) {
 		this.mimeType = foundDataMimeType;
 		this.identifier = identifier;
 		this.global = global;
 		this.dataLength = foundDataLength;
+		this.startupTime = startupTime;
+		this.completionTime = completionTime;
 	}
 
 	@Override
@@ -37,6 +42,8 @@ public class DataFoundMessage extends FCPMessage {
 		if(global) fs.putSingle("Global", "true");
 		fs.putSingle("Metadata.ContentType", mimeType);
 		fs.putSingle("DataLength", Long.toString(dataLength));
+		fs.put("StartupTime", startupTime);
+		fs.put("CompletionTime", completionTime);
 		return fs;
 	}
 

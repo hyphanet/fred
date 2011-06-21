@@ -457,7 +457,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		// Don't need to lock. succeeded is only ever set, never unset.
 		// and succeeded and getFailedMessage are both atomic.
 		if(succeeded) {
-			msg = new DataFoundMessage(foundDataLength, foundDataMimeType, identifier, global);
+			// FIXME: Duplicate of AllDataMessage
+			// FIXME: CompletionTime is set on finish() : we need to give it current time here
+			msg = new DataFoundMessage(foundDataLength, foundDataMimeType, identifier, global, startupTime, completionTime != 0 ? completionTime : System.currentTimeMillis());
 		} else {
 			msg = getFailedMessage;
 			if(persistenceType == PERSIST_FOREVER)
