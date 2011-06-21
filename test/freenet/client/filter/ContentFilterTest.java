@@ -111,7 +111,15 @@ public class ContentFilterTest extends TestCase {
 	private static final String FRAME_SRC_CHARSET_BAD1C = "<frame src=\"test.html?type=text/html\">";
 
 	private static final String SPAN_WITH_STYLE = "<span style=\"font-family: verdana, sans-serif; color: red;\">";
-
+	
+	private static final String BASE_HREF = "<base href=\"/"+BASE_KEY+"\">";
+	private static final String BAD_BASE_HREF = "<base href=\"/\">";
+	private static final String BAD_BASE_HREF2 = "<base href=\"//www.google.com\">";
+	private static final String BAD_BASE_HREF3 = "<base>";
+	private static final String BAD_BASE_HREF4 = "<base id=\"blah\">";
+	private static final String BAD_BASE_HREF5 = "<base href=\"http://www.google.com/\">";
+	private static final String DELETED_BASE_HREF = "<!-- deleted invalid base href -->";
+	
 	// From CSS spec
 
 	private static final String CSS_SPEC_EXAMPLE1 = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\">\n<HTML>\n  <HEAD>\n  <TITLE>Bach's home page</TITLE>\n  <STYLE type=\"text/css\">\n    body {\n      font-family: \"Gill Sans\", sans-serif;\n      font-size: 12pt;\n      margin: 3em;\n\n    }\n  </STYLE>\n  </HEAD>\n  <BODY>\n    <H1>Bach's home page</H1>\n    <P>Johann Sebastian Bach was a prolific composer.\n  </BODY>\n</HTML>";
@@ -175,6 +183,13 @@ public class ContentFilterTest extends TestCase {
 		assertEquals(CSS_SPEC_EXAMPLE1, HTMLFilter(CSS_SPEC_EXAMPLE1));
 
 		assertEquals(SPAN_WITH_STYLE, HTMLFilter(SPAN_WITH_STYLE));
+		
+		assertEquals(BASE_HREF, HTMLFilter(BASE_HREF));
+		assertEquals(DELETED_BASE_HREF, HTMLFilter(BAD_BASE_HREF));
+		assertEquals(DELETED_BASE_HREF, HTMLFilter(BAD_BASE_HREF2));
+		assertEquals(DELETED_BASE_HREF, HTMLFilter(BAD_BASE_HREF3));
+		assertEquals(DELETED_BASE_HREF, HTMLFilter(BAD_BASE_HREF4));
+		assertEquals(DELETED_BASE_HREF, HTMLFilter(BAD_BASE_HREF5));
 	}
 
 	public void testEvilCharset() throws IOException {
@@ -246,7 +261,7 @@ public class ContentFilterTest extends TestCase {
 		String s = HTMLFilter("<html>"+data+"</html>", false);
 		assertTrue(s.startsWith("<html>"));
 		s = s.substring("<html>".length());
-		assertTrue(s.endsWith("</html>"));
+		assertTrue("s = \""+s+"\"", s.endsWith("</html>"));
 		s = s.substring(0, s.length() - "</html>".length());
 		return s;
 	}
