@@ -866,11 +866,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				} else
 					if(logMINOR) Logger.minor(this, "Not finished: rcb="+rcb+" for "+this); 
 				
-				long len = metadata.dataLength();
-				if(metadata.uncompressedDataLength() > len)
-					len = metadata.uncompressedDataLength();
+				final long len = metadata.dataLength();
+				final long uncompressedLen = metadata.isCompressed() ? metadata.uncompressedDataLength() : len;
 				
-				if((len > ctx.maxOutputLength) ||
+				if((uncompressedLen > ctx.maxOutputLength) ||
 						(len > ctx.maxTempLength)) {
 					// Just in case...
 					boolean compressed = metadata.isCompressed();
@@ -936,6 +935,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		Metadata newMeta = (Metadata) meta.clone();
 		newMeta.setSimpleRedirect();
 		final SingleFileFetcher f;
+		// FIXME arguable archive data is "temporary", but
+		// this will use ctx.maxOutputLength
 		f = new SingleFileFetcher(this, persistent, true, newMeta, new ArchiveFetcherCallback(forData, element, callback), new FetchContext(ctx, FetchContext.SET_RETURN_ARCHIVES, true, null), container, context);
 		if(persistent) container.store(f);
 		if(logMINOR) Logger.minor(this, "fetchArchive(): "+f);
@@ -995,7 +996,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				container.activate(decompressors, 5);
 				container.activate(ctx, 2);
 			}
-			long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
+			// FIXME not strictly correct and unnecessary - archive size already checked against ctx.max*Length inside SingleFileFetcher
+			long maxLen = Math.min(ctx.maxTempLength, ctx.maxOutputLength);
 			try {
 				data = context.getBucketFactory(persistent).makeBucket(maxLen);
 				output = data.getOutputStream();
@@ -1227,7 +1229,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				container.activate(decompressors, 5);
 				container.activate(ctx, 2);
 			}
-			long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
+			// does matter only on pre-1255 keys (1255 keys have top block sizes)
+			// FIXME would save at most few tics on decompression
+			// and block allocation;
+			// To be effective should try guess minimal possible size earlier by the number of segments
+			long maxLen = Math.min(ctx.maxTempLength, ctx.maxOutputLength);
 			try {
 				finalData = context.getBucketFactory(persistent).makeBucket(maxLen);
 				output = finalData.getOutputStream();
