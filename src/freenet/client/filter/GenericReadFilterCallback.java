@@ -141,7 +141,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		
 		HTTPRequest req = new HTTPRequestImpl(uri, "GET");
 		if (path != null){
-			if(path.equals("/") && req.isParameterSet("newbookmark")){
+			if(path.equals("/") && req.isParameterSet("newbookmark") && !forBaseHref){
 				// allow links to the root to add bookmarks
 				String bookmark_key = req.getParam("newbookmark");
 				String bookmark_desc = req.getParam("desc");
@@ -212,7 +212,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 				}
 			}
 			
-			if(!isAbsolute) {
+			if((!isAbsolute) && (!forBaseHref)) {
 				
 				// Relative URI
 				
@@ -242,6 +242,8 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		
 		uri = origURI;
 		
+		if(forBaseHref)
+			throw new CommentException(l10n("bogusBaseHref"));
 		if(GenericReadFilterCallback.allowedProtocols.contains(uri.getScheme()))
 			return "/?"+GenericReadFilterCallback.magicHTTPEscapeString+ '=' +uri;
 		else {
