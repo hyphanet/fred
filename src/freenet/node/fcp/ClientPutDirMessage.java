@@ -174,16 +174,16 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putSingle("URI", uri.toString());
 		sfs.putSingle("Identifier", identifier);
-		sfs.putSingle("Verbosity", Integer.toString(verbosity));
-		sfs.putSingle("MaxRetries", Integer.toString(maxRetries));
+		sfs.put("Verbosity", verbosity);
+		sfs.put("MaxRetries", maxRetries);
 		sfs.putSingle("ClientToken", clientToken);
-		sfs.putSingle("GetCHKOnly", Boolean.toString(getCHKOnly));
-		sfs.putSingle("PriorityClass", Short.toString(priorityClass));
+		sfs.put("GetCHKOnly", getCHKOnly);
+		sfs.put("PriorityClass", priorityClass);
 		sfs.putSingle("PersistenceType", ClientRequest.persistenceTypeString(persistenceType));
-		sfs.putSingle("DontCompress", Boolean.toString(dontCompress));
+		sfs.put("DontCompress", dontCompress);
 		if (compressorDescriptor != null)
 			sfs.putSingle("Codecs", compressorDescriptor);
-		sfs.putSingle("Global", Boolean.toString(global));
+		sfs.put("Global", global);
 		sfs.putSingle("DefaultName", defaultName);
 		return sfs;
 	}

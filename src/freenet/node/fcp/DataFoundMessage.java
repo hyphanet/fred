@@ -39,9 +39,9 @@ public class DataFoundMessage extends FCPMessage {
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.putSingle("Identifier", identifier);
-		if(global) fs.putSingle("Global", "true");
+		fs.put("Global", global);
 		fs.putSingle("Metadata.ContentType", mimeType);
-		fs.putSingle("DataLength", Long.toString(dataLength));
+		fs.put("DataLength", dataLength);
 		fs.put("StartupTime", startupTime);
 		fs.put("CompletionTime", completionTime);
 		return fs;

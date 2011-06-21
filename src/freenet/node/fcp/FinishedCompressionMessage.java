@@ -42,14 +42,14 @@ public class FinishedCompressionMessage extends FCPMessage {
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.putSingle("Identifier", identifier);
-		fs.putSingle("Codec", Integer.toString(codec));
+		fs.put("Codec", codec);
 		if(codec != -1)
 			fs.putSingle("Codec.Name", Compressor.COMPRESSOR_TYPE.getCompressorByMetadataID((short)codec).name());
 		else
 			fs.putSingle("Codec.Name", "NONE");
-		fs.putSingle("OriginalSize", Long.toString(origSize));
-		fs.putSingle("CompressedSize", Long.toString(compressedSize));
-		if(global) fs.putSingle("Global", "true");
+		fs.put("OriginalSize", origSize);
+		fs.put("CompressedSize", compressedSize);
+		fs.put("Global", global);
 		return fs;
 	}
 

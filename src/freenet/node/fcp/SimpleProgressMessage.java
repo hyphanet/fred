@@ -33,7 +33,7 @@ public class SimpleProgressMessage extends FCPMessage {
 		if(event.minSuccessFetchBlocks != 0)
 			fs.put("MinSuccessFetchBlocks", event.minSuccessFetchBlocks);
 		fs.putSingle("Identifier", ident);
-		if(global) fs.putSingle("Global", "true");
+		fs.put("Global", global);
 		return fs;
 	}
 

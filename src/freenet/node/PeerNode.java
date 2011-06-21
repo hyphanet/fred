@@ -3029,21 +3029,19 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		if(detectedPeer != null)
 			fs.putSingle("detected.udp", detectedPeer.toStringPrefNumeric());
 		if(lastReceivedPacketTime() > 0)
-			fs.putSingle("timeLastReceivedPacket", Long.toString(timeLastReceivedPacket));
-		if(lastReceivedAckTime() > 0)
-			fs.putSingle("timeLastReceivedAck", Long.toString(timeLastReceivedAck));
+			fs.put("timeLastReceivedPacket", timeLastReceivedPacket);
 		if(timeLastConnected() > 0)
-			fs.putSingle("timeLastConnected", Long.toString(timeLastConnected));
+			fs.put("timeLastConnected", timeLastConnected);
 		if(timeLastRoutable() > 0)
-			fs.putSingle("timeLastRoutable", Long.toString(timeLastRoutable));
+			fs.put("timeLastRoutable", timeLastRoutable);
 		if(getPeerAddedTime() > 0 && shouldExportPeerAddedTime())
-			fs.putSingle("peerAddedTime", Long.toString(peerAddedTime));
+			fs.put("peerAddedTime", peerAddedTime);
 		if(neverConnected)
 			fs.putSingle("neverConnected", "true");
 		if(hadRoutableConnectionCount > 0)
-			fs.putSingle("hadRoutableConnectionCount", Long.toString(hadRoutableConnectionCount));
+			fs.put("hadRoutableConnectionCount", hadRoutableConnectionCount);
 		if(routableConnectionCheckCount > 0)
-			fs.putSingle("routableConnectionCheckCount", Long.toString(routableConnectionCheckCount));
+			fs.put("routableConnectionCheckCount", routableConnectionCheckCount);
 		if(currentPeersLocation != null)
 			fs.put("peersLocation", currentPeersLocation);
 		return fs;
@@ -3059,22 +3057,22 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		long now = System.currentTimeMillis();
 		synchronized(this) {
-			fs.putSingle("averagePingTime", Double.toString(averagePingTime()));
+			fs.put("averagePingTime", averagePingTime());
 			long idle = now - lastReceivedPacketTime();
 			if(idle > (60 * 1000) && -1 != lastReceivedPacketTime())  // 1 minute
 
-				fs.putSingle("idle", Long.toString(idle));
+				fs.put("idle", idle);
 			if(peerAddedTime > 1)
-				fs.putSingle("peerAddedTime", Long.toString(peerAddedTime));
+				fs.put("peerAddedTime", peerAddedTime);
 			fs.putSingle("lastRoutingBackoffReasonRT", lastRoutingBackoffReasonRT);
 			fs.putSingle("lastRoutingBackoffReasonBulk", lastRoutingBackoffReasonBulk);
-			fs.putSingle("routingBackoffPercent", Double.toString(backedOffPercent.currentValue() * 100));
-			fs.putSingle("routingBackoffRT", Long.toString((Math.max(Math.max(routingBackedOffUntilRT, transferBackedOffUntilRT) - now, 0))));
-			fs.putSingle("routingBackoffBulk", Long.toString((Math.max(Math.max(routingBackedOffUntilBulk, transferBackedOffUntilBulk) - now, 0))));
-			fs.putSingle("routingBackoffLengthRT", Integer.toString(routingBackoffLengthRT));
-			fs.putSingle("routingBackoffLengthBulk", Integer.toString(routingBackoffLengthBulk));
-			fs.putSingle("overloadProbability", Double.toString(getPRejected() * 100));
-			fs.putSingle("percentTimeRoutableConnection", Double.toString(getPercentTimeRoutableConnection() * 100));
+			fs.put("routingBackoffPercent", backedOffPercent.currentValue() * 100);
+			fs.put("routingBackoffRT", Math.max(Math.max(routingBackedOffUntilRT, transferBackedOffUntilRT) - now, 0));
+			fs.put("routingBackoffBulk", Math.max(Math.max(routingBackedOffUntilBulk, transferBackedOffUntilBulk) - now, 0));
+			fs.put("routingBackoffLengthRT", routingBackoffLengthRT);
+			fs.put("routingBackoffLengthBulk", routingBackoffLengthBulk);
+			fs.put("overloadProbability", getPRejected() * 100);
+			fs.put("percentTimeRoutableConnection", getPercentTimeRoutableConnection() * 100);
 		}
 		fs.putSingle("status", getPeerNodeStatusString());
 		return fs;
@@ -3091,8 +3089,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			fs.putAppend("physical.udp", nominalPeer.get(i).toString());
 		fs.put("auth.negTypes", negTypes);
 		fs.putSingle("identity", getIdentityString());
-		fs.putSingle("location", Double.toString(currentLocation));
-		fs.putSingle("testnet", Boolean.toString(testnetEnabled));
+		fs.put("location", currentLocation);
+		fs.put("testnet", testnetEnabled);
 		fs.putSingle("version", version);
 		if(peerCryptoGroup != null)
 			fs.put("dsaGroup", peerCryptoGroup.asFieldSet());
@@ -3100,7 +3098,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			fs.put("dsaPubKey", peerPubKey.asFieldSet());
 		if(myARK != null) {
 			// Decrement it because we keep the number we would like to fetch, not the last one fetched.
-			fs.putSingle("ark.number", Long.toString(myARK.suggestedEdition - 1));
+			fs.put("ark.number", myARK.suggestedEdition - 1);
 			fs.putSingle("ark.pubURI", myARK.getBaseSSK().toString(false, false));
 		}
 		fs.put("opennet", isOpennet());

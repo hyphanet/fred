@@ -25,7 +25,7 @@ public class PutFetchableMessage extends FCPMessage {
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.putSingle("Identifier", identifier);
-		if(global) fs.putSingle("Global", "true");
+		fs.put("Global", global);
 		if(uri != null)
 			fs.putSingle("URI", uri.toString(false, false));
 		return fs;

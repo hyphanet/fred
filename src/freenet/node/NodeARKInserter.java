@@ -233,7 +233,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 				node.writeNodeFile();
 			// We'll broadcast the new ARK edition to our connected peers via a differential node reference
 			SimpleFieldSet fs = new SimpleFieldSet(true);
-			fs.putSingle("ark.number", Long.toString(crypto.myARKNumber));
+			fs.put("ark.number", crypto.myARKNumber);
 			node.peers.locallyBroadcastDiffNodeRef(fs, !crypto.isOpennet, crypto.isOpennet);
 		}
 	}

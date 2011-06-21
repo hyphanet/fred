@@ -162,8 +162,7 @@ public class ProtocolErrorMessage extends FCPMessage {
 		if(extra != null)
 			sfs.putSingle("ExtraDescription", extra);
 		sfs.put("Fatal", fatal);
-		if(global)
-			sfs.putSingle("Global", "true");
+		sfs.put("Global", global);
 		return sfs;
 	}
 

@@ -280,28 +280,28 @@ public class ClientPutMessage extends DataCarryingMessage {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putSingle("URI", uri.toString());
 		sfs.putSingle("Identifier", identifier);
-		sfs.putSingle("Verbosity", Integer.toString(verbosity));
-		sfs.putSingle("MaxRetries", Integer.toString(maxRetries));
+		sfs.put("Verbosity", verbosity);
+		sfs.put("MaxRetries", maxRetries);
 		sfs.putSingle("Metadata.ContentType", contentType);
 		sfs.putSingle("ClientToken", clientToken);
 		if(uploadFromType == UPLOAD_FROM_DIRECT) {
 			sfs.putSingle("UploadFrom", "direct");
-			sfs.putSingle("DataLength", Long.toString(dataLength));
+			sfs.put("DataLength", dataLength);
 		} else if(uploadFromType == UPLOAD_FROM_DISK) {
 			sfs.putSingle("UploadFrom", "disk");
 			sfs.putSingle("Filename", origFilename.getAbsolutePath());
-			sfs.putSingle("DataLength", Long.toString(dataLength));
+			sfs.put("DataLength", dataLength);
 		} else if(uploadFromType == UPLOAD_FROM_REDIRECT) {
 			sfs.putSingle("UploadFrom", "redirect");
 			sfs.putSingle("TargetURI", redirectTarget.toString());
 		}
-		sfs.putSingle("GetCHKOnly", Boolean.toString(getCHKOnly));
-		sfs.putSingle("PriorityClass", Short.toString(priorityClass));
+		sfs.put("GetCHKOnly", getCHKOnly);
+		sfs.put("PriorityClass", priorityClass);
 		sfs.putSingle("PersistenceType", ClientRequest.persistenceTypeString(persistenceType));
-		sfs.putSingle("DontCompress", Boolean.toString(dontCompress));
+		sfs.put("DontCompress", dontCompress);
 		if (compressorDescriptor != null)
 			sfs.putSingle("Codecs", compressorDescriptor);
-		sfs.putSingle("Global", Boolean.toString(global));
+		sfs.put("Global", global);
 		sfs.put("BinaryBlob", binaryBlob);
 		return sfs;
 	}

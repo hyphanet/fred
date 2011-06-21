@@ -36,7 +36,7 @@ public abstract class SendPeerMessage extends DataCarryingMessage {
 		fs.putSingle("Identifier", identifier);
 		fs.putSingle("NodeIdentifier", nodeIdentifier);
 		if(dataLength >= 0)
-			fs.putSingle("DataLength", Long.toString(dataLength));
+			fs.put("DataLength", dataLength);
 		return fs;
 	}
 

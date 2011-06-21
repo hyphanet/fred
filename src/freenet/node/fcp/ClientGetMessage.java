@@ -220,16 +220,16 @@ public class ClientGetMessage extends FCPMessage {
 	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
-		fs.putSingle("IgnoreDS", Boolean.toString(ignoreDS));
+		fs.put("IgnoreDS", ignoreDS);
 		fs.putSingle("URI", uri.toString(false, false));
-		fs.putSingle("FilterData", Boolean.toString(filterData));
+		fs.put("FilterData", filterData);
 		fs.putSingle("Charset", charset);
 		fs.putSingle("Identifier", identifier);
-		fs.putSingle("Verbosity", Integer.toString(verbosity));
+		fs.put("Verbosity", verbosity);
 		fs.putSingle("ReturnType", getReturnTypeString());
-		fs.putSingle("MaxSize", Long.toString(maxSize));
-		fs.putSingle("MaxTempSize", Long.toString(maxTempSize));
-		fs.putSingle("MaxRetries", Integer.toString(maxRetries));
+		fs.put("MaxSize", maxSize);
+		fs.put("MaxTempSize", maxTempSize);
+		fs.put("MaxRetries", maxRetries);
 		fs.put("BinaryBlob", binaryBlob);
 		return fs;
 	}

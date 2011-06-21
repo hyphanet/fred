@@ -1809,12 +1809,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		double swaps = node.getSwaps();
 		double noSwaps = node.getNoSwaps();
 		double numberOfRemotePeerLocationsSeenInSwaps = node.getNumberOfRemotePeerLocationsSeenInSwaps();
-		fs.putSingle("numberOfRemotePeerLocationsSeenInSwaps", Double.toString(numberOfRemotePeerLocationsSeenInSwaps));
+		fs.put("numberOfRemotePeerLocationsSeenInSwaps", numberOfRemotePeerLocationsSeenInSwaps);
 		double avgConnectedPeersPerNode = 0.0;
 		if ((numberOfRemotePeerLocationsSeenInSwaps > 0.0) && ((swaps > 0.0) || (noSwaps > 0.0))) {
 			avgConnectedPeersPerNode = numberOfRemotePeerLocationsSeenInSwaps/(swaps+noSwaps);
 		}
-		fs.putSingle("avgConnectedPeersPerNode", Double.toString(avgConnectedPeersPerNode));
+		fs.put("avgConnectedPeersPerNode", avgConnectedPeersPerNode);
 
 		int startedSwaps = node.getStartedSwaps();
 		int swapsRejectedAlreadyLocked = node.getSwapsRejectedAlreadyLocked();

@@ -63,7 +63,7 @@ public class PersistentPutDir extends FCPMessage {
 		fs.put("Verbosity", verbosity);
 		fs.putSingle("Persistence", ClientRequest.persistenceTypeString(persistenceType));
 		fs.put("PriorityClass", priorityClass);
-		fs.putSingle("Global", Boolean.toString(global));
+		fs.put("Global", global);
 		fs.putSingle("PutDirType", wasDiskPut ? "disk" : "complex");
 		SimpleFieldSet files = new SimpleFieldSet(false);
 		// Flatten the hierarchy, it can be reconstructed on restarting.
