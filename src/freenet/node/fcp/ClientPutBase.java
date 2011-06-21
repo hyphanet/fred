@@ -14,6 +14,7 @@ import freenet.client.async.DatabaseDisabledException;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.FinishedCompressionEvent;
+import freenet.client.events.ExpectedHashesEvent;
 import freenet.client.events.SimpleEventProducer;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.client.events.StartedCompressionEvent;
@@ -36,6 +37,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 
 	// Verbosity bitmasks
 	private static final int VERBOSITY_SPLITFILE_PROGRESS = 1;
+	private static final int VERBOSITY_EXPECTED_HASHES = 8; // same as ClientGet
 	private static final int VERBOSITY_PUT_FETCHABLE = 256;
 	private static final int VERBOSITY_COMPRESSION_START_END = 512;
 
@@ -339,6 +341,13 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 					new FinishedCompressionMessage(identifier, global, (FinishedCompressionEvent)ce);
 				trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null, container, context);
 				onStopCompressing();
+			}
+		} else if(ce instanceof ExpectedHashesEvent) {
+			if((verbosity & VERBOSITY_EXPECTED_HASHES) == VERBOSITY_EXPECTED_HASHES) {
+				ExpectedHashes msg =
+					new ExpectedHashes((ExpectedHashesEvent)ce, identifier, global);
+				trySendProgressMessage(msg, VERBOSITY_EXPECTED_HASHES, null, container, context);
+				//FIXME: onHashesComputed();
 			}
 		}
 	}

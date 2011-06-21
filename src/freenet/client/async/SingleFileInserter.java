@@ -15,6 +15,7 @@ import freenet.client.MetadataUnresolvedException;
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.events.FinishedCompressionEvent;
+import freenet.client.events.ExpectedHashesEvent;
 import freenet.client.events.StartedCompressionEvent;
 import freenet.crypt.HashResult;
 import freenet.crypt.HashType;
@@ -203,6 +204,7 @@ class SingleFileInserter implements ClientPutState {
 					Logger.debug(this, res.type.name()+" : "+HexUtil.bytesToHex(res.result));
 				}
 			}
+			ctx.eventProducer.produceEvent(new ExpectedHashesEvent(hashes), container, context);
 			
 			// So it is passed on.
 			origHashes = hashes;
