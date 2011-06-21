@@ -817,7 +817,7 @@ public class StatisticsToadlet extends Toadlet {
 			if(totalAccess != null)
 				access += " (" + fix1p2.format(totalAccess.accessRate(totalUptimeSeconds)) + " /s)";
 			row.addChild("td", access);
-			access = fix1p2.format(sessionAccess.writeRate(nodeUptimeSeconds)) + " /s)";
+			access = fix1p2.format(sessionAccess.writeRate(nodeUptimeSeconds)) + " /s";
 			if(totalAccess != null)
 				access += " (" + fix1p2.format(totalAccess.writeRate(totalUptimeSeconds)) + " /s)";
 			row.addChild("td", access);
