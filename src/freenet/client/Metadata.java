@@ -1573,7 +1573,6 @@ public class Metadata implements Cloneable {
 	public void setArchiveManifest() {
 		ARCHIVE_TYPE type = ARCHIVE_TYPE.getArchiveType(clientMetadata.getMIMEType());
 		archiveType = type;
-		compressionCodec = null;
 		clientMetadata.clear();
 		documentType = ARCHIVE_MANIFEST;
 	}
