@@ -1705,6 +1705,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		}
 		fs.put("averagePingTime", getNodeAveragePingTime());
 		fs.put("bwlimitDelayTime", getBwlimitDelayTime());
+		fs.put("bwlimitDelayTimeRT", getBwlimitDelayTimeRT());
+		fs.put("bwlimitDelayTimeBulk", getBwlimitDelayTimeBulk());
 
 		// Network Size
 		fs.put("opennetSizeEstimateSession", getOpennetSizeEstimate(-1));
