@@ -171,6 +171,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			//progressMessage = null;
 			succeeded = true;
 			finished = true;
+			completionTime = System.currentTimeMillis();
 			if(generatedURI == null)
 				Logger.error(this, "No generated URI in onSuccess() for "+this+" from "+state);
 		}
@@ -187,6 +188,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		if(finished) return;
 		synchronized(this) {
 			finished = true;
+			completionTime = System.currentTimeMillis();
 			putFailedMessage = new PutFailedMessage(e, identifier, global);
 		}
 		if(persistenceType == PERSIST_FOREVER)

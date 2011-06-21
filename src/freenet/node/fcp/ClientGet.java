@@ -405,12 +405,15 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			else
 				this.foundDataMimeType = BinaryBlob.MIME_TYPE;
 
+			// completionTime is set here rather than in finish() for two reasons:
+			// 1. It must be set inside the lock.
+			// 2. It must be set before AllData is sent so it is consistent.
 			if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
+				// Set it before we create the AllDataMessage.
+				completionTime = System.currentTimeMillis();
 				// Send all the data at once
 				// FIXME there should be other options
-				// FIXME: CompletionTime is set on finish() : we need to give it current time here
-				// but it means we won't always return the same value to clients... Does it matter ?
-				adm = new AllDataMessage(returnBucket, identifier, global, startupTime, System.currentTimeMillis(), this.foundDataMimeType);
+				adm = new AllDataMessage(returnBucket, identifier, global, startupTime, completionTime, this.foundDataMimeType);
 				if(persistenceType == PERSIST_CONNECTION)
 					adm.setFreeOnSent();
 				dontFree = true;
@@ -424,7 +427,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 					postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_RENAME_FILE, false, null, identifier, global);
 					// Don't delete temp file, user might want it.
 				}
+				// Wait until after the potentially expensive rename.
+				completionTime = System.currentTimeMillis();
 				returnBucket = new FileBucket(targetFile, false, true, false, false, false);
+			} else {
+				// Needs to be set for all other cases too.
+				completionTime = System.currentTimeMillis();
 			}
 			if(persistenceType == PERSIST_FOREVER && progressPending != null) {
 				container.activate(progressPending, 1);
@@ -656,6 +664,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			getFailedMessage = new GetFailedMessage(e, identifier, global);
 			finished = true;
 			started = true;
+			completionTime = System.currentTimeMillis();
 		}
 		if(logMINOR)
 			Logger.minor(this, "Caught "+e, e);

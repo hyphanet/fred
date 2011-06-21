@@ -270,7 +270,6 @@ public abstract class ClientRequest {
 
 	/** Request completed. But we may have to stick around until we are acked. */
 	protected void finish(ObjectContainer container) {
-		completionTime = System.currentTimeMillis();
 		if(persistenceType == ClientRequest.PERSIST_CONNECTION)
 			origHandler.finishedClientRequest(this);
 		else
