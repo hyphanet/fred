@@ -174,9 +174,7 @@ public class InsertCompressor implements CompressJob {
 						if(first && generateHashes != 0) {
 							if(logMINOR) Logger.minor(this, "Generating hashes: "+generateHashes);
 							is = hasher = new MultiHashInputStream(is, generateHashes);
-							maxOutputSize = Long.MAX_VALUE; // Want to run it to the end anyway to get hashes. Fortunately the first hasher is always the fastest.
 						}
-						first = false;
 						try {
 							comp.compress(is, os, origSize, maxOutputSize);
 						} catch (RuntimeException e) {
@@ -185,12 +183,16 @@ public class InsertCompressor implements CompressJob {
 							// Try the next one
 							continue;
 						}
+						if(hasher != null) {
+							is.skip(Long.MAX_VALUE);
+							hashes = hasher.getResults();
+							first = false;
+						}
 					} finally {
 						Closer.close(is);
 						Closer.close(os);
 					}
 					long resultSize = result.size();
-					if(hasher != null) hashes = hasher.getResults();
 					// minSize is {SSKBlock,CHKBlock}.MAX_COMPRESSED_DATA_LENGTH
 					if(resultSize <= minSize) {
 						if(logMINOR)
