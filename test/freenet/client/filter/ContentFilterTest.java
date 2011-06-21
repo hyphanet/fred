@@ -255,7 +255,7 @@ public class ContentFilterTest extends TestCase {
 		}
 	}
 
-	private String HTMLFilter(String data) throws Exception {
+	public static String HTMLFilter(String data) throws Exception {
 		if(data.startsWith("<html")) return HTMLFilter(data, false);
 		if(data.startsWith("<?")) return HTMLFilter(data, false);
 		String s = HTMLFilter("<html>"+data+"</html>", false);
@@ -266,7 +266,7 @@ public class ContentFilterTest extends TestCase {
 		return s;
 	}
 
-	private String HTMLFilter(String data, boolean alt) throws Exception {
+	public static String HTMLFilter(String data, boolean alt) throws Exception {
 		String returnValue;
 		String typeName = "text/html";
 		URI baseURI = new URI(alt ? ALT_BASE_URI : BASE_URI);
