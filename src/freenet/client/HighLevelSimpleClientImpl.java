@@ -153,6 +153,23 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		return fw.waitForCompletion();
 	}
 
+	/**
+	 * Fetch a key. Either returns the data, or throws an exception.
+	 */
+	@Override
+	public FetchResult fetchFromMetadata(Bucket initialMetadata) throws FetchException {
+		if(initialMetadata == null) throw new NullPointerException();
+		FetchContext context = getFetchContext();
+		FetchWaiter fw = new FetchWaiter();
+		ClientGetter get = new ClientGetter(fw, FreenetURI.EMPTY_CHK_URI, context, priorityClass, this, null, null, initialMetadata);
+		try {
+			core.clientContext.start(get);
+		} catch (DatabaseDisabledException e) {
+			// Impossible
+		}
+		return fw.waitForCompletion();
+	}
+
 	@Override
 	public FetchResult fetch(FreenetURI uri, long overrideMaxSize) throws FetchException {
 		return fetch(uri, overrideMaxSize, this);
@@ -186,6 +203,18 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	public ClientGetter fetch(FreenetURI uri, RequestClient clientContext, ClientGetCallback callback, FetchContext fctx, short prio) throws FetchException {
 		if(uri == null) throw new NullPointerException();
 		ClientGetter get = new ClientGetter(callback, uri, fctx, prio, clientContext, null, null, null);
+		try {
+			core.clientContext.start(get);
+		} catch (DatabaseDisabledException e) {
+			// Impossible
+		}
+		return get;
+	}
+
+	@Override
+	public ClientGetter fetchFromMetadata(Bucket initialMetadata, RequestClient clientContext, ClientGetCallback callback, FetchContext fctx, short prio) throws FetchException {
+		if(initialMetadata == null) throw new NullPointerException();
+		ClientGetter get = new ClientGetter(callback, FreenetURI.EMPTY_CHK_URI, fctx, prio, clientContext, null, null, initialMetadata);
 		try {
 			core.clientContext.start(get);
 		} catch (DatabaseDisabledException e) {

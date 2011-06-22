@@ -13,6 +13,7 @@ import freenet.client.async.ClientPutter;
 import freenet.client.events.ClientEventListener;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
+import freenet.support.api.Bucket;
 
 public interface HighLevelSimpleClient {
 
@@ -31,6 +32,12 @@ public interface HighLevelSimpleClient {
 	 * @throws FetchException If there is an error fetching the data
 	 */
 	public FetchResult fetch(FreenetURI uri) throws FetchException;
+
+	/**
+	 * Blocking fetch from metadata
+	 * @throws FetchException If there is an error fetching the data
+	 */
+	public FetchResult fetchFromMetadata(Bucket initialMetadata) throws FetchException;
 
 	/**
 	 * Blocking fetch of a URI with a configurable max-size.
@@ -55,6 +62,16 @@ public interface HighLevelSimpleClient {
 	 * @return The ClientGetter object, which will have been started already.
 	 */
 	public ClientGetter fetch(FreenetURI uri, RequestClient context, ClientGetCallback callback, FetchContext fctx, short prio) throws FetchException;
+
+	/**
+	 * Non-blocking fetch of a URI with a configurable max-size (in bytes), context object, callback and context.
+	 * Will return immediately, the callback will be called later.
+	 * @param callback Will be called when the request completes, fails, etc. If the request is persistent
+	 * this will be called on the database thread with a container parameter.
+	 * @param fctx Fetch context so you can customise the search process.
+	 * @return The ClientGetter object, which will have been started already.
+	 */
+	public ClientGetter fetchFromMetadata(Bucket initialMetadata, RequestClient context, ClientGetCallback callback, FetchContext fctx, short prio) throws FetchException;
 
 	/**
 	 * Non-blocking fetch of a URI with a configurable max-size (in bytes), context object, callback and context.
