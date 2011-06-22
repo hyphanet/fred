@@ -316,6 +316,7 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 	@Override
 	public void readFrom(InputStream is, BucketFactory bf, FCPServer server)
 			throws IOException, MessageInvalidException {
+		if(initialMetadataLength == 0) return;
 		Bucket data;
 		data = bf.makeBucket(initialMetadataLength);
 		BucketTools.copyFrom(data, is, initialMetadataLength);
