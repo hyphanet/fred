@@ -225,7 +225,7 @@ abstract class ClientRequestSchedulerBase {
 				if(persistent()) container.deactivate(req, 1);
 				continue;
 			}
-			if(req.isStorageBroken(container)) {
+			if(persistent() && req.isStorageBroken(container)) {
 				Logger.error(this, "Broken request while changing priority: "+req);
 				continue;
 			}
