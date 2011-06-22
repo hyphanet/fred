@@ -198,7 +198,7 @@ public class USKManager {
 	public void hintUpdate(USK usk, long edition, ClientContext context) {
 		if(edition < lookupLatestSlot(usk)) return;
 		FreenetURI uri = usk.copy(edition).getURI().sskForUSK();
-		final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, rcBulk, new NullBucket(), null);
+		final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, rcBulk, new NullBucket(), null, null);
 		try {
 			get.start(null, context);
 		} catch (FetchException e) {
@@ -225,7 +225,7 @@ public class USKManager {
 		}
 		uri = uri.sskForUSK();
 		if(logMINOR) Logger.minor(this, "Doing hint fetch for "+uri);
-		final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), priority, rcBulk, new NullBucket(), null);
+		final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), priority, rcBulk, new NullBucket(), null, null);
 		try {
 			get.start(null, context);
 		} catch (FetchException e) {
@@ -291,7 +291,7 @@ public class USKManager {
 					cb.failed(origURI, token, e);
 			}
 			
-		}, uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), priority, rcBulk, new NullBucket(), null);
+		}, uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), priority, rcBulk, new NullBucket(), null, null);
 		try {
 			get.start(null, context);
 		} catch (FetchException e) {
@@ -419,7 +419,7 @@ public class USKManager {
 					public void onMajorProgress(ObjectContainer container) {
 						// Ignore
 					}
-				}, key.getURI().sskForUSK() /* FIXME add getSSKURI() */, fctx, RequestStarter.UPDATE_PRIORITY_CLASS, rcBulk, new NullBucket(), null);
+				}, key.getURI().sskForUSK() /* FIXME add getSSKURI() */, fctx, RequestStarter.UPDATE_PRIORITY_CLASS, rcBulk, new NullBucket(), null, null);
 				try {
 					get.start(null, context);
 				} catch (FetchException e) {

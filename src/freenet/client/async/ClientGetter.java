@@ -92,6 +92,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	/** Callback to spy on the data at each stage of the request */
 	private SnoopBucket snoopBucket;
 	private HashResult[] hashes;
+	private final Bucket initialMetadata;
 
 	/**
 	 * Fetch a key.
@@ -108,7 +109,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	 * accessed in the case of redundant structures such as splitfiles) in the binary blob format to this bucket.
 	 */
 	public ClientGetter(ClientGetCallback client,
-			    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, BinaryBlobWriter binaryBlobWriter) {
+			    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, BinaryBlobWriter binaryBlobWriter, Bucket initialMetadata) {
 		super(priorityClass, clientContext);
 		this.clientCallback = client;
 		this.returnBucket = returnBucket;
@@ -117,6 +118,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		this.finished = false;
 		this.actx = new ArchiveContext(ctx.maxTempLength, ctx.maxArchiveLevels);
 		this.binaryBlobWriter = binaryBlobWriter;
+		this.initialMetadata = initialMetadata;
 		archiveRestarts = 0;
 	}
 
@@ -165,7 +167,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 				resetBlocks();
 				currentState = SingleFileFetcher.create(this, this,
 						uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, -1, true,
-						true, container, context, realTimeFlag);
+						true, container, context, realTimeFlag, initialMetadata != null);
 			}
 			if(persistent() && oldHashes != null) {
 				for(HashResult res : oldHashes) {
@@ -179,7 +181,14 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 				container.store(this);
 			}
 			if(currentState != null && !finished) {
-				currentState.schedule(container, context);
+				if(initialMetadata != null && currentState instanceof SingleFileFetcher) {
+					if(persistent())
+						container.activate(initialMetadata, 1);
+					((SingleFileFetcher)currentState).handleMetadata(initialMetadata, container, context);
+					if(persistent())
+						container.deactivate(initialMetadata, 1);
+				} else
+					currentState.schedule(container, context);
 			}
 			if(cancelled) cancel();
 		} catch (MalformedURLException e) {

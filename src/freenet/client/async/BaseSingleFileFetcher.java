@@ -62,7 +62,6 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		this.key = key;
 		this.ctx = ctx;
 		if(ctx == null) throw new NullPointerException();
-		if(key == null) throw new NullPointerException();
 	}
 
 	@Override
@@ -327,6 +326,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 
 	public void schedule(ObjectContainer container, ClientContext context) {
+		if(key == null) throw new NullPointerException();
 		if(persistent) {
 			container.activate(ctx, 1);
 			if(ctx.blocks != null)

@@ -1140,7 +1140,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		};
 
 		ClientGetter cg = new ClientGetter(myCallback,
-			updateManager.revocationURI, tempContext, (short) 0, this, null, new BinaryBlobWriter(cleanedBlob));
+			updateManager.revocationURI, tempContext, (short) 0, this, null, new BinaryBlobWriter(cleanedBlob), null);
 
 		try {
 			updateManager.node.clientCore.clientContext.start(cg);
@@ -1679,7 +1679,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		};
 
 		ClientGetter cg = new ClientGetter(myCallback,
-			uri, tempContext, (short) 0, this, null, new BinaryBlobWriter(cleanedBlob));
+			uri, tempContext, (short) 0, this, null, new BinaryBlobWriter(cleanedBlob), null);
 
 		try {
 			updateManager.node.clientCore.clientContext.start(cg);
@@ -1789,7 +1789,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		};
 
 		ClientGetter cg = new ClientGetter(myCallback,
-				uri, tempContext, (short) 0, this, null, new BinaryBlobWriter(cleanedBlob));
+				uri, tempContext, (short) 0, this, null, new BinaryBlobWriter(cleanedBlob), null);
 
 			try {
 				updateManager.node.clientCore.clientContext.start(cg);

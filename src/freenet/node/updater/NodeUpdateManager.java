@@ -260,7 +260,7 @@ public class NodeUpdateManager {
 			context.maxSplitfileBlockRetries = -1;
 			context.maxTempLength = maxSize;
 			context.maxOutputLength = maxSize;
-			ClientGetter get = new ClientGetter(this, freenetURI, context, priority, node.nonPersistentClientBulk, null, null);
+			ClientGetter get = new ClientGetter(this, freenetURI, context, priority, node.nonPersistentClientBulk, null, null, null);
 			try {
 				node.clientCore.clientContext.start(get);
 			} catch (DatabaseDisabledException e) {

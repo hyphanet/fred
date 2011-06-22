@@ -306,7 +306,7 @@ public class TextModeClientInterface implements Runnable {
 	            try {
 	            	FetchContext context = client.getFetchContext();
 	        		FetchWaiter fw = new FetchWaiter();
-	        		ClientGetter get = new ClientGetter(fw, uri, context, RequestStarter.INTERACTIVE_PRIORITY_CLASS, (RequestClient)client, null, null);
+	        		ClientGetter get = new ClientGetter(fw, uri, context, RequestStarter.INTERACTIVE_PRIORITY_CLASS, (RequestClient)client, null, null, null);
 	        		get.setMetaSnoop(new DumperSnoopMetadata());
 	            	get.start(null, n.clientCore.clientContext);
 					FetchResult result = fw.waitForCompletion();
