@@ -54,6 +54,11 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	/** The final URI for the data. */
 	private FreenetURI uri;
 	private final byte[] overrideSplitfileCrypto;
+	/** When positive, means we will return metadata rather than a URI, once the
+	 * metadata is under this length. If it is too short it is still possible to
+	 * return a URI, but we won't return both. */
+	private final long metadataThreshold;
+	private boolean gotFinalMetadata;
 
         private static volatile boolean logMINOR;
 	static {
@@ -80,6 +85,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		cm = null;
 		client = null;
 		binaryBlob = false;
+		metadataThreshold = 0;
 	}
 
 	/**
@@ -98,7 +104,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 */
 	public ClientPutter(ClientPutCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InsertContext ctx,
 			short priorityClass, boolean getCHKOnly,
-			boolean isMetadata, RequestClient clientContext, String targetFilename, boolean binaryBlob, ClientContext context, byte[] overrideSplitfileCrypto) {
+			boolean isMetadata, RequestClient clientContext, String targetFilename, boolean binaryBlob, ClientContext context, byte[] overrideSplitfileCrypto,
+			long metadataThreshold) {
 		super(priorityClass, clientContext);
 		this.cm = cm;
 		this.isMetadata = isMetadata;
@@ -112,6 +119,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		this.targetFilename = targetFilename;
 		this.binaryBlob = binaryBlob;
 		this.overrideSplitfileCrypto = overrideSplitfileCrypto;
+		this.metadataThreshold = metadataThreshold;
 	}
 
 	/** Start the insert.
@@ -188,7 +196,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 						if(meta != null) meta = persistent() ? meta.clone() : meta;
 						currentState =
 							new SingleFileInserter(this, this, new InsertBlock(data, meta, persistent() ? targetURI.clone() : targetURI), isMetadata, ctx, realTimeFlag, 
-									false, getCHKOnly, false, null, null, false, targetFilename, earlyEncode, false, persistent(), 0, 0, null, Key.ALGO_AES_PCFB_256_SHA256, cryptoKey);
+									false, getCHKOnly, false, null, null, false, targetFilename, earlyEncode, false, persistent(), 0, 0, null, Key.ALGO_AES_PCFB_256_SHA256, cryptoKey, metadataThreshold);
 					} else
 						currentState =
 							new BinaryBlobInserter(data, this, getClient(), false, priorityClass, ctx, context, container);
@@ -361,6 +369,9 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				if(persistent())
 					this.uri.removeFrom(container);
 			}
+			if(gotFinalMetadata) {
+				Logger.error(this, "Generated URI *and* sent final metadata??? on "+this+" from "+state);
+			}
 			this.uri = key.getURI();
 			if(targetFilename != null)
 				uri = uri.pushMetaString(targetFilename);
@@ -371,6 +382,34 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			u = u.clone();
 		}
 		client.onGeneratedURI(uri, this, container);
+	}
+	
+	/** Called when metadataThreshold was specified and metadata is being returned
+	 * instead of a URI. */
+	public void onMetadata(Bucket finalMetadata, ClientPutState state, ObjectContainer container, ClientContext context) {
+		if(persistent())
+			container.activate(client, 1);
+		boolean freeIt = false;
+		synchronized(this) {
+			if(uri != null) {
+				Logger.error(this, "Generated URI *and* sent final metadata??? on "+this+" from "+state);
+			}
+			if(gotFinalMetadata) {
+				Logger.error(this, "onMetadata called twice - already sent metadata to client for "+this);
+				freeIt = true;
+			} else {
+				gotFinalMetadata = true;
+			}
+		}
+		if(freeIt) {
+			finalMetadata.free();
+			finalMetadata.removeFrom(container);
+			return;
+		}
+		if(persistent()) {
+			container.store(this);
+		}
+		client.onGeneratedMetadata(finalMetadata, this, container);
 	}
 
 	/** Cancel the insert. Will call onFailure() if it is not already cancelled, so the callback will

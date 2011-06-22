@@ -511,6 +511,13 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		container.delete(this);
 	}
 
+	@Override
+	public void onMetadata(Bucket meta, ClientPutState state,
+			ObjectContainer container, ClientContext context) {
+		Logger.error(this, "onMetadata on "+this+" from "+state, new Exception("error"));
+		meta.free();
+	}
+
 //	public boolean objectCanNew(ObjectContainer container) {
 //		Logger.minor(this, "objectCanNew() on "+this, new Exception("debug"));
 //		return true;

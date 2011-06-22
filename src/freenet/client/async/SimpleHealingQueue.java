@@ -180,4 +180,11 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		return 0;
 	}
 
+	@Override
+	public void onMetadata(Bucket meta, ClientPutState state,
+			ObjectContainer container, ClientContext context) {
+		Logger.error(this, "onMetadata() in SimpleHealingQueue - impossible", new Exception("error"));
+		meta.free();
+	}
+
 }

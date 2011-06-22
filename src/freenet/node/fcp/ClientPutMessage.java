@@ -82,6 +82,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 	final byte[] overrideSplitfileCryptoKey;
 	final boolean localRequestOnly;
 	final boolean realTimeFlag;
+	final long metadataThreshold;
 	
 	public static final short UPLOAD_FROM_DIRECT = 0;
 	public static final short UPLOAD_FROM_DISK = 1;
@@ -273,6 +274,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 		extraInsertsSingleBlock = fs.getInt("ExtraInsertsSingleBlock", HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK);
 		extraInsertsSplitfileHeaderBlock = fs.getInt("ExtraInsertsSplitfileHeaderBlock", HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER);
 		realTimeFlag = fs.getBoolean("RealTimeFlag", false);
+		metadataThreshold = fs.getLong("MetadataThreshold", -1);
 	}
 
 	@Override

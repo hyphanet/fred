@@ -8,6 +8,7 @@ import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutCallback;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
+import freenet.support.api.Bucket;
 
 /**
  *
@@ -54,6 +55,13 @@ public class NullClientCallback implements ClientGetCallback, ClientPutCallback 
 	@Override
 	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
 		if (logDEBUG) Logger.debug(this, "NullClientCallback#onSuccess state=" + state + ", container=" + container);
+	}
+
+	@Override
+	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state,
+			ObjectContainer container) {
+		if(logDEBUG) Logger.debug(this, "NullClientCallback#onGeneratedMetadata state=" + state);
+		metadata.free();
 	}
 
 }

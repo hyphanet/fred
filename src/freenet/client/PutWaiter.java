@@ -8,6 +8,7 @@ import freenet.keys.FreenetURI;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.api.Bucket;
 
 /** Provides a blocking wrapper for an insert. Used for simple blocking APIs such as HighLevelSimpleClient. */
 public class PutWaiter implements ClientPutCallback {
@@ -77,6 +78,13 @@ public class PutWaiter implements ClientPutCallback {
 	@Override
 	public void onFetchable(BaseClientPutter state, ObjectContainer container) {
 		// Ignore
+	}
+
+	@Override
+	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state,
+			ObjectContainer container) {
+		Logger.error(this, "onGeneratedMetadata() on PutWaiter from "+state, new Exception("error"));
+		metadata.free();
 	}
 
 }

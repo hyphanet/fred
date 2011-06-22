@@ -76,7 +76,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			InsertBlock block =
 				new InsertBlock(data, cm, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
 			this.origSFI =
-				new SingleFileInserter(this, this, block, false, ctx, realTimeFlag, false, getCHKOnly, true, null, null, false, null, earlyEncode, false, persistent, 0, 0, null, cryptoAlgorithm, forceCryptoKey);
+				new SingleFileInserter(this, this, block, false, ctx, realTimeFlag, false, getCHKOnly, true, null, null, false, null, earlyEncode, false, persistent, 0, 0, null, cryptoAlgorithm, forceCryptoKey, -1);
 			metadata = null;
 			containerHandle = null;
 		}
@@ -367,6 +367,11 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				container.deactivate(putHandlersWaitingForMetadata, 1);
 				container.deactivate(SimpleManifestPutter.this, 1);
 			}
+		}
+		
+		@Override
+		public void onMetadata(Bucket m, ClientPutState state, ObjectContainer container, ClientContext context) {
+			throw new UnsupportedOperationException();
 		}
 		
 		/** The number of blocks that will be needed to fetch the data. We put this in the top block metadata. */
@@ -1041,7 +1046,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		try {
 			// Treat it as a splitfile for purposes of determining reinserts.
 			metadataInserter =
-				new SingleFileInserter(this, this, block, isMetadata, ctx, realTimeFlag, (archiveType == ARCHIVE_TYPE.ZIP) , getCHKOnly, false, baseMetadata, archiveType, true, null, earlyEncode, true, persistent(), 0, 0, null, cryptoAlgorithm, ckey);
+				new SingleFileInserter(this, this, block, isMetadata, ctx, realTimeFlag, (archiveType == ARCHIVE_TYPE.ZIP) , getCHKOnly, false, baseMetadata, archiveType, true, null, earlyEncode, true, persistent(), 0, 0, null, cryptoAlgorithm, ckey, -1);
 			if(logMINOR) Logger.minor(this, "Inserting main metadata: "+metadataInserter+" for "+baseMetadata+" for "+this);
 			if(persistent()) {
 				container.activate(metadataPuttersByMetadata, 2);
@@ -1180,7 +1185,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				InsertBlock ib = new InsertBlock(b, null, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
 				// Don't random-encrypt the metadata.
 				SingleFileInserter metadataInserter =
-					new SingleFileInserter(this, this, ib, true, ctx, realTimeFlag, false, getCHKOnly, false, m, null, true, null, earlyEncode, false, persistent(), 0, 0, null, cryptoAlgorithm, null);
+					new SingleFileInserter(this, this, ib, true, ctx, realTimeFlag, false, getCHKOnly, false, m, null, true, null, earlyEncode, false, persistent(), 0, 0, null, cryptoAlgorithm, null, -1);
 				if(logMINOR) Logger.minor(this, "Inserting subsidiary metadata: "+metadataInserter+" for "+m);
 				synchronized(this) {
 					this.metadataPuttersByMetadata.put(m, metadataInserter);
@@ -2042,6 +2047,12 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	@Override
 	protected void innerToNetwork(ObjectContainer container, ClientContext context) {
 		// Ignore
+	}
+
+	@Override
+	public void onMetadata(Bucket meta, ClientPutState state,
+			ObjectContainer container, ClientContext context) {
+		throw new UnsupportedOperationException();
 	}
 
 }

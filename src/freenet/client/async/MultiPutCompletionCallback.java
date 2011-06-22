@@ -10,6 +10,7 @@ import freenet.keys.BaseClientKey;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.api.Bucket;
 
 public class MultiPutCompletionCallback implements PutCompletionCallback, ClientPutState {
 
@@ -288,6 +289,17 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			container.activate(cb, 1);
 		if(generator == state) {
 			cb.onMetadata(m, this, container, context);
+		} else {
+			Logger.error(this, "Got metadata for "+state);
+		}
+	}
+	
+	@Override
+	public synchronized void onMetadata(Bucket metadata, ClientPutState state, ObjectContainer container, ClientContext context) {
+		if(persistent)
+			container.activate(cb, 1);
+		if(generator == state) {
+			cb.onMetadata(metadata, this, container, context);
 		} else {
 			Logger.error(this, "Got metadata for "+state);
 		}

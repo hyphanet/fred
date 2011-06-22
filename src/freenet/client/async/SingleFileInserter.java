@@ -85,6 +85,10 @@ class SingleFileInserter implements ClientPutState {
 	private final byte[] forceCryptoKey;
 	private final byte cryptoAlgorithm;
 	private final boolean realTimeFlag;
+	/** When positive, means we will return metadata rather than a URI, once the
+	 * metadata is under this length. If it is too short it is still possible to
+	 * return a URI, but we won't return both. */
+	private final long metadataThreshold;
 	
 	// A persistent hashCode is helpful in debugging, and also means we can put
 	// these objects into sets etc when we need to.
@@ -109,12 +113,13 @@ class SingleFileInserter implements ClientPutState {
 	 * @param freeData If true, free the data when possible.
 	 * @param targetFilename 
 	 * @param earlyEncode If true, try to get a URI as quickly as possible.
+	 * @param metadataThreshold 
 	 * @throws InsertException
 	 */
 	SingleFileInserter(BaseClientPutter parent, PutCompletionCallback cb, InsertBlock block, 
 			boolean metadata, InsertContext ctx, boolean realTimeFlag, boolean dontCompress, 
 			boolean getCHKOnly, boolean reportMetadataOnly, Object token, ARCHIVE_TYPE archiveType,
-			boolean freeData, String targetFilename, boolean earlyEncode, boolean forSplitfile, boolean persistent, long origDataLength, long origCompressedDataLength, HashResult[] origHashes, byte cryptoAlgorithm, byte[] forceCryptoKey) {
+			boolean freeData, String targetFilename, boolean earlyEncode, boolean forSplitfile, boolean persistent, long origDataLength, long origCompressedDataLength, HashResult[] origHashes, byte cryptoAlgorithm, byte[] forceCryptoKey, long metadataThreshold) {
 		hashCode = super.hashCode();
 		this.earlyEncode = earlyEncode;
 		this.reportMetadataOnly = reportMetadataOnly;
@@ -136,6 +141,7 @@ class SingleFileInserter implements ClientPutState {
 		this.origHashes = origHashes;
 		this.forceCryptoKey = forceCryptoKey;
 		this.cryptoAlgorithm = cryptoAlgorithm;
+		this.metadataThreshold = metadataThreshold;
 		if(logMINOR) Logger.minor(this, "Created "+this+" persistent="+persistent+" freeData="+freeData);
 	}
 	
@@ -787,6 +793,7 @@ class SingleFileInserter implements ClientPutState {
 				} else {
 					// Already started metadata putter ? (in which case we've got the metadata twice)
 					if(metadataPutter != null) return;
+					if(metaInsertSuccess) return;
 				}
 			}
 			if(reportMetadataOnly) {
@@ -843,12 +850,22 @@ class SingleFileInserter implements ClientPutState {
 			CompatibilityMode cmode = ctx.getCompatibilityMode();
 			if(!(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal()))
 				m = null;
+			if(metadataThreshold > 0 && metaBytes.length < metadataThreshold) {
+				// FIXME what to do about m ???
+				// I.e. do the other layers of metadata already include the content type?
+				// It's probably already included in the splitfile, but need to check that, and test it.
+				synchronized(this) {
+					metaInsertSuccess = true;
+				}
+				cb.onMetadata(metadataBucket, state, container, context);
+				return;
+			}
 			InsertBlock newBlock = new InsertBlock(metadataBucket, m, block.desiredURI);
 			if(persistent)
 				container.activate(SingleFileInserter.this, 1);
 				synchronized(this) {
 					// Only the bottom layer in a multi-level splitfile pyramid has randomised keys. The rest are unpredictable anyway, and this ensures we only need to supply one key when reinserting.
-					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, realTimeFlag, false, getCHKOnly, false, token, archiveType, true, metaPutterTargetFilename, earlyEncode, true, persistent, origDataLength, origCompressedDataLength, origHashes, cryptoAlgorithm, forceCryptoKey);
+					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, realTimeFlag, false, getCHKOnly, false, token, archiveType, true, metaPutterTargetFilename, earlyEncode, true, persistent, origDataLength, origCompressedDataLength, origHashes, cryptoAlgorithm, forceCryptoKey, metadataThreshold);
 					if(origHashes != null) {
 						// It gets passed on, and the last one deletes it.
 						SingleFileInserter.this.origHashes = null;
@@ -1116,6 +1133,44 @@ class SingleFileInserter implements ClientPutState {
 			else if(logDEBUG)
 				Logger.debug(this, "objectCanNew() on "+this, new Exception("debug"));
 			return true;
+		}
+
+		@Override
+		public void onMetadata(Bucket meta, ClientPutState state,
+				ObjectContainer container, ClientContext context) {
+			if(logMINOR) Logger.minor(this, "Got metadata bucket for "+this+" from "+state);
+			boolean freeIt = false;
+			synchronized(this) {
+				if(finished) return;
+				if(state == metadataPutter) {
+					// Okay, return it.
+				} else if(state == sfi) {
+					if(metadataPutter != null) {
+						Logger.error(this, "Got metadata from "+sfi+" even though already started inserting metadata on the next layer on "+this+" !!");
+						freeIt = true;
+					} else {
+						// Okay, return it.
+						metaInsertSuccess = true; // Not going to start it now, so effectively it has succeeded.
+					}
+				} else if(reportMetadataOnly) {
+					if(state != sfi) {
+						Logger.error(this, "Got metadata from unknown object "+state+" when expecting to report metadata");
+						return;
+					}
+					metaInsertSuccess = true;
+				} else {
+					Logger.error(this, "Got metadata from unknown object "+state);
+					freeIt = true;
+				}
+			}
+			if(freeIt) {
+				meta.free();
+				meta.removeFrom(container);
+				return;
+			}
+			if(persistent)
+				container.activate(cb, 1);
+			cb.onMetadata(meta, this, container, context);
 		}
 		
 	}
