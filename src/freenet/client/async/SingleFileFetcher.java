@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -253,6 +254,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			data.free();
 			if(persistent) data.removeFrom(container);
 		} catch (MetadataParseException e) {
+			onFailure(new FetchException(FetchException.INVALID_METADATA, e), false, container, context);
+			data.free();
+			if(persistent) data.removeFrom(container);
+			return;
+		} catch (EOFException e) {
+			// This is a metadata error too.
 			onFailure(new FetchException(FetchException.INVALID_METADATA, e), false, container, context);
 			data.free();
 			if(persistent) data.removeFrom(container);
