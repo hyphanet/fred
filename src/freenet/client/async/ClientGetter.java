@@ -184,7 +184,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 				if(initialMetadata != null && currentState instanceof SingleFileFetcher) {
 					if(persistent())
 						container.activate(initialMetadata, 1);
-					((SingleFileFetcher)currentState).handleMetadata(initialMetadata, container, context);
+					((SingleFileFetcher)currentState).startWithMetadata(initialMetadata, container, context);
 					if(persistent())
 						container.deactivate(initialMetadata, 1);
 				} else

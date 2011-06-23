@@ -225,7 +225,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	}
 
 	// Package-local so that ClientGetter can call it instead of schedule().
-	void handleMetadata(Bucket data, ObjectContainer container, ClientContext context) {
+	void startWithMetadata(Bucket data, ObjectContainer container, ClientContext context) {
+		parent.completedBlock(true, container, context);
+		handleMetadata(data, container, context);
+	}
+	
+	private void handleMetadata(Bucket data, ObjectContainer container, ClientContext context) {
 		if(!ctx.followRedirects) {
 			onFailure(new FetchException(FetchException.INVALID_METADATA, "Told me not to follow redirects (splitfile block??)"), false, container, context);
 			data.free();
