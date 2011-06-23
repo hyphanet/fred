@@ -94,6 +94,23 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	private HashResult[] hashes;
 	private final Bucket initialMetadata;
 
+	// Shorter constructors for convenience and backwards compatibility.
+	
+	public ClientGetter(ClientGetCallback client,
+		    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext) {
+		this(client, uri, ctx, priorityClass, clientContext, null, null, null);
+	}
+	
+	public ClientGetter(ClientGetCallback client,
+		    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket) {
+		this(client, uri, ctx, priorityClass, clientContext, returnBucket, null, null);
+	}
+	
+	public ClientGetter(ClientGetCallback client,
+		    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, BinaryBlobWriter binaryBlobWriter) {
+		this(client, uri, ctx, priorityClass, clientContext, returnBucket, binaryBlobWriter, null);
+	}
+	
 	/**
 	 * Fetch a key.
 	 * @param client The callback we will call when it is completed.
