@@ -340,7 +340,19 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		boolean isSSK = key instanceof NodeSSK;
         boolean realTimeFlag = DMT.getRealTimeFlag(m);
 		OfferReplyTag tag = new OfferReplyTag(isSSK, source, realTimeFlag, uid, node);
-		node.lockUID(uid, isSSK, false, true, false, realTimeFlag, tag);
+		
+		if(!node.lockUID(uid, isSSK, false, true, false, realTimeFlag, tag)) {
+			if(logMINOR) Logger.minor(this, "Could not lock ID "+uid+" -> rejecting (already running)");
+			Message rejected = DMT.createFNPRejectedLoop(uid);
+			try {
+				source.sendAsync(rejected, null, node.failureTable.senderCounter);
+			} catch (NotConnectedException e) {
+				Logger.normal(this, "Rejecting request from "+source.getPeer()+": "+e);
+			}
+			return true;
+		} else {
+			if(logMINOR) Logger.minor(this, "Locked "+uid);
+		}
 		boolean needPubKey;
 		try {
 		needPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
