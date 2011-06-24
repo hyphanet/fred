@@ -1132,9 +1132,16 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			if(logMINOR) Logger.minor(this, "Maybe accepting extra request due to it being in datastore (limit now "+limit+"s)...");
 		}
 		
-		// Multiply by limit: X seconds at full power should be able to clear the transfers even if all the requests succeed.
-		
 		int peers = node.peers.countConnectedPeers();
+		
+		// These limits are by transfers.
+		// We limit the total number of transfers running in parallel to ensure
+		// that they don't get starved: The number of seconds a transfer has to
+		// wait (for all the others) before it can send needs to be reasonable.
+		
+		// Whereas the bandwidth-based limit is by bytes, on the principle that
+		// it must be possible to complete all transfers within a reasonable time.
+		
 		int maxTransfersOutUpperLimit = getMaxTransfersUpperLimit(realTimeFlag, nonOverheadFraction);
 		int maxTransfersOutLowerLimit = (int)Math.max(1,getLowerLimit(maxTransfersOutUpperLimit, peers));
 		int maxTransfersOutPeerLimit = (int)Math.max(1,getPeerLimit(source, maxTransfersOutUpperLimit - maxTransfersOutLowerLimit, false, transfersPerInsert, realTimeFlag, peers));
@@ -1144,9 +1151,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		/** Requests running for this specific peer (local counts as a peer) */
 		RunningRequestsSnapshot peerRequestsSnapshot = new RunningRequestsSnapshot(node, source, false, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, realTimeFlag);
 		
-		if(source != null && !isLocal) {
+		if(source != null) {
 			peerRequestsSnapshot.decrement(isSSK, isInsert, isOfferReply, transfersPerInsert, hasInStore);
 		}
+		
+		
+		// Check bandwidth-based limits, with fair sharing.
 		
 		String ret = checkBandwidthLiability(getOutputBandwidthUpperLimit(totalSent, totalOverhead, uptime, limit, nonOverheadFraction), requestsSnapshot, peerRequestsSnapshot, false, limit,
 				source, isLocal, isSSK, isInsert, isOfferReply, hasInStore, transfersPerInsert, realTimeFlag, maxOutputTransfers, maxTransfersOutPeerLimit);  
@@ -1155,6 +1165,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		ret = checkBandwidthLiability(getInputBandwidthUpperLimit(limit), requestsSnapshot, peerRequestsSnapshot, true, limit,
 				source, isLocal, isSSK, isInsert, isOfferReply, hasInStore, transfersPerInsert, realTimeFlag, maxOutputTransfers, maxTransfersOutPeerLimit);  
 		if(ret != null) return new RejectReason(ret, true);
+		
+		// Check transfer-based limits, with fair sharing.
 		
 		ret = checkMaxOutputTransfers(maxOutputTransfers, maxTransfersOutUpperLimit, maxTransfersOutLowerLimit, maxTransfersOutPeerLimit,
 				requestsSnapshot, peerRequestsSnapshot, isLocal, realTimeFlag);
@@ -1184,6 +1196,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			return new RejectReason("Insufficient input bandwidth", false);
 		}
 
+		// Message queues - when the link level has far more queued than it
+		// can transmit in a reasonable time, don't accept requests.
 		if(source != null) {
 			if(source.getMessageQueueLengthBytes() > MAX_PEER_QUEUE_BYTES) {
 				rejected(">MAX_PEER_QUEUE_BYTES", isLocal, realTimeFlag);
