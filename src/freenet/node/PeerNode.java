@@ -5288,22 +5288,26 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			// calling unregister().
 			PeerNode[] all;
 			PeerNode ret = null;
+			boolean grabbed = false;
 			synchronized(this) {
 				if(shouldGrab()) {
 					if(logMINOR) Logger.minor(this, "Already matched on "+this);
-					 ret = grab();
+					ret = grab();
+					grabbed = true;
 				}
 				all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
-				if(all.length == 0) {
-					if(logMINOR) Logger.minor(this, "None to wait for on "+this);
-					return null;
-				}
 				if(ret != null)
 					waitingFor.clear();
 			}
-			if(ret != null) {
+			if(grabbed) {
 				unregister(ret, all);
 				return ret;
+			}
+			// grab() above will have set failed = false if necessary.
+			// acceptedBy = null because ret = null, and it won't change after that because waitingFor is empty.
+			if(all.length == 0) {
+				if(logMINOR) Logger.minor(this, "None to wait for on "+this);
+				return null;
 			}
 			// Double-check before blocking, prevent race condition.
 			long now = System.currentTimeMillis();
