@@ -181,10 +181,17 @@ public class InsertCompressor implements CompressJob {
 							// ArithmeticException has been seen in bzip2 codec.
 							Logger.error(this, "Compression failed with codec "+comp+" : "+e, e);
 							// Try the next one
+							// RuntimeException is iffy, so lets not try the hasher.
 							continue;
+						} catch (CompressionOutputSizeException e) {
+							if(hasher != null) {
+								is.skip(Long.MAX_VALUE);
+								hashes = hasher.getResults();
+								first = false;
+							}
+							continue; // try next compressor type
 						}
 						if(hasher != null) {
-							is.skip(Long.MAX_VALUE);
 							hashes = hasher.getResults();
 							first = false;
 						}
@@ -217,8 +224,6 @@ public class InsertCompressor implements CompressJob {
 						bestCodec = comp;
 						shouldFreeOnFinally = false;
 					}
-				} catch(CompressionOutputSizeException e) {
-					continue;       // try next compressor type
 				} catch (DatabaseDisabledException e) {
 					Logger.error(this, "Database disabled compressing data", new Exception("error"));
 					shouldFreeOnFinally = true;
