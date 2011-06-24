@@ -1144,7 +1144,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		/** Requests running for this specific peer (local counts as a peer) */
 		RunningRequestsSnapshot peerRequestsSnapshot = new RunningRequestsSnapshot(node, source, false, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, realTimeFlag);
 		
-		if(source != null) {
+		if(source != null && !isLocal) {
 			peerRequestsSnapshot.decrement(isSSK, isInsert, isOfferReply, transfersPerInsert, hasInStore);
 		}
 		
