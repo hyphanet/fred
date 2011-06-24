@@ -5282,7 +5282,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		
 		public PeerNode waitForAny(long maxWait) {
-			// Always unregister() after grab().
+			// If waitingFor is non-empty after this function returns, we can
+			// be accepted when we shouldn't be accepted. So always ensure that
+			// the state is clean when returning, by clearing waitingFor and
+			// calling unregister().
 			PeerNode[] all;
 			PeerNode ret = null;
 			synchronized(this) {
@@ -5340,8 +5343,16 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 			if(maxWait == 0) return null;
 			if(!anyValid) {
+				synchronized(this) {
+					if(shouldGrab()) ret = grab();
+					all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
+					waitingFor.clear();
+					failed = false;
+					acceptedBy = null;
+				}
 				if(logMINOR) Logger.minor(this, "None valid to wait for on "+this);
-				return null;
+				unregister(ret, all);
+				return ret;
 			}
 			synchronized(this) {
 				if(logMINOR) Logger.minor(this, "Waiting for any node to wake up "+this+" : "+Arrays.toString(waitingFor.toArray())+" (for up to "+maxWait+"ms)");
@@ -5384,14 +5395,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						if(logMINOR) Logger.minor(this, "Waited "+(waitEnd - waitStart)+"ms for "+this);
 					}
 					if(logMINOR) Logger.minor(this, "Returning after waiting: accepted by "+acceptedBy+" waiting for "+waitingFor.size()+" failed "+failed+" on "+this);
-					failed = false;
-					PeerNode got = acceptedBy;
+					ret = acceptedBy;
 					acceptedBy = null; // Allow for it to wait again if necessary
-					return got;
+					all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
+					waitingFor.clear();
 				}
+				failed = false;
 			}
-			unregister(null, all);
-			return null;
+			unregister(ret, all);
+			return ret;
 		}
 		
 		private boolean shouldGrab() {
