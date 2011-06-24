@@ -6073,12 +6073,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		if(shouldThrottle())
 			bandwidth = Math.min(bandwidth, node.getOutputBandwidthLimit() / 2);
 		bandwidth *= nonOverheadFraction;
-		// Transfers are divided into blocks. Blocks are 1KB. We only care about
-		// blocks because we are concerned with the inter-block period, assuming
-		// fairness between transfers.
-		double blocksPerSecond = bandwidth / 1024.0;
-		// The inter-block period must be no more than timeout.
-		return (int)Math.max(1, Math.min(blocksPerSecond * timeout, Integer.MAX_VALUE));
+		// Transfers are divided into packets. Packets are 1KB. There are 1-2
+		// of these for SSKs and 32 of them for CHKs, but that's irrelevant here.
+		// We only care about the inter-block period, which is determined by the
+		// bandwidth and the number of transfers running (since we schedule 
+		// packets fairly between transfers).
+		double packetsPerSecond = bandwidth / 1024.0;
+		return (int)Math.max(1, Math.min(packetsPerSecond * timeout, Integer.MAX_VALUE));
 	}
 
 	public synchronized boolean hasFullNoderef() {
