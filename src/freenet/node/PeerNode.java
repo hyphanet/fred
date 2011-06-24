@@ -6075,9 +6075,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		bandwidth *= nonOverheadFraction;
 		// Transfers are divided into packets. Packets are 1KB. There are 1-2
 		// of these for SSKs and 32 of them for CHKs, but that's irrelevant here.
-		// We only care about the inter-block period, which is determined by the
-		// bandwidth and the number of transfers running (since we schedule 
-		// packets fairly between transfers).
+		// We are only concerned here with the time that a transfer will have to
+		// wait after sending a packet for it to have an opportunity to send 
+		// another one. Or equivalently the delay between starting and sending 
+		// the first packet.
 		double packetsPerSecond = bandwidth / 1024.0;
 		return (int)Math.max(1, Math.min(packetsPerSecond * timeout, Integer.MAX_VALUE));
 	}
