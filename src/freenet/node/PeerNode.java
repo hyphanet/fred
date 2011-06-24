@@ -6068,11 +6068,16 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/** Calculate the maximum number of outgoing transfers to this peer that we
 	 * will accept in requests and inserts. */
 	public int calculateMaxTransfersOut(int timeout, double nonOverheadFraction) {
+		// First get usable bandwidth.
 		double bandwidth = (getThrottle().getBandwidth()+1.0);
 		if(shouldThrottle())
 			bandwidth = Math.min(bandwidth, node.getOutputBandwidthLimit() / 2);
 		bandwidth *= nonOverheadFraction;
+		// Transfers are divided into blocks. Blocks are 1KB. We only care about
+		// blocks because we are concerned with the inter-block period, assuming
+		// fairness between transfers.
 		double kilobytesPerSecond = bandwidth / 1024.0;
+		// The inter-block period must be no more than timeout.
 		return (int)Math.max(1, Math.min(kilobytesPerSecond * timeout, Integer.MAX_VALUE));
 	}
 
