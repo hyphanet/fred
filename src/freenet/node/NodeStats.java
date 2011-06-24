@@ -1111,11 +1111,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 		int transfersPerInsert = outwardTransfersPerInsert();
 		
+		/** Requests running, globally */
 		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, realTimeFlag);
 		
 		if(!isLocal) {
 			// If not local, is already locked.
-			// So we need to decrement the relevant value, to counteract this and restore the SSK:CHK balance.
+			// But if it is local, it's not already locked.
 			requestsSnapshot.decrement(isSSK, isInsert, isOfferReply, transfersPerInsert, hasInStore);
 		}
 
@@ -1137,8 +1138,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		int maxTransfersOutUpperLimit = getMaxTransfersUpperLimit(realTimeFlag, nonOverheadFraction);
 		int maxTransfersOutLowerLimit = (int)Math.max(1,getLowerLimit(maxTransfersOutUpperLimit, peers));
 		int maxTransfersOutPeerLimit = (int)Math.max(1,getPeerLimit(source, maxTransfersOutUpperLimit - maxTransfersOutLowerLimit, false, transfersPerInsert, realTimeFlag, peers));
+		/** Per-peer limit based on current state of the connection. */
 		int maxOutputTransfers = this.calculateMaxTransfersOut(source, realTimeFlag, nonOverheadFraction, maxTransfersOutUpperLimit);
 		
+		/** Requests running for this specific peer (local counts as a peer) */
 		RunningRequestsSnapshot peerRequestsSnapshot = new RunningRequestsSnapshot(node, source, false, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, realTimeFlag);
 		
 		if(source != null) {
