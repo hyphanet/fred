@@ -1015,7 +1015,43 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		}
 	}
 	
-	/* return reject reason as string if should reject, otherwise return null */
+	/** Should a request be accepted by this node, based on its local capacity?
+	 * This includes thread limits and ping times, but more importantly, 
+	 * mechanisms based on predicting worst case bandwidth usage for all running
+	 * requests, and fairly sharing that capacity between peers. Currently there
+	 * is no mechanism for fairness between request types, this should be
+	 * implemented on the sender side, and is with new load management. New load
+	 * management has caused various changes here but that's probably sorted out
+	 * now, i.e. changes involved in new load management will probably be mainly
+	 * in PeerNode and RequestSender now.
+	 * @param canAcceptAnyway Periodically we ignore the ping time and accept a
+	 * request anyway. This is because the ping time partly depends on whether
+	 * we have accepted any requests... FIXME this should be reconsidered.
+	 * @param isInsert Whether this is an insert.
+	 * @param isSSK Whether this is a request/insert for an SSK.
+	 * @param isLocal Is this request originated locally? This can affect our
+	 * estimate of likely bandwidth usage. Whether it should be used is unclear,
+	 * since an attacker can observe bandwidth usage. It is configurable.
+	 * @param isOfferReply Is this request actually a GetOfferedKey? This is a
+	 * non-relayed fetch of a block which we recently offered via ULPRs.
+	 * @param source The node that sent us this request. This should be null
+	 * on local requests and non-null on remote requests, but in some parts of
+	 * the code that doesn't always hold. It *should* hold here, but that needs
+	 * more checking before we can remove isLocal.
+	 * @param hasInStore If this is a request, do we have the block in the 
+	 * datastore already? This affects whether we accept it, which gives a 
+	 * significant performance gain. Arguably there is a security issue, 
+	 * although timing attacks are pretty easy anyway, and making requests go
+	 * further may give attackers more samples...
+	 * @param preferInsert If true, prefer inserts to requests (slightly). There
+	 * is a flag for this on inserts. The idea is that when inserts are 
+	 * misrouted this causes long-term problems because the data is stored in 
+	 * the wrong place. New load management should avoid the need for this.
+	 * @param realTimeFlag Is this a realtime request (low latency, low capacity)
+	 * or a bulk request (high latency, high capacity)? They are accounted for 
+	 * separately.
+	 * @return The reason for rejecting it, or null to accept it.
+	 */
 	public RejectReason shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, boolean isLocal, boolean isOfferReply, PeerNode source, boolean hasInStore, boolean preferInsert, boolean realTimeFlag) {
 		if(logMINOR) dumpByteCostAverages();
 
