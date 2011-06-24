@@ -1307,11 +1307,14 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return (int)Math.max(1, (getAcceptableBlockTime(realTime) * outputAvailablePerSecond) / 1024.0);
 	}
 
-	/** Should the request be rejected due to bandwidth liability?
+	/** Should the request be rejected due to bandwidth liability? Enforces fair
+	 * sharing between peers, while allowing peers to opportunistically use a bit
+	 * more than their fair share as long as the total is below the lower limit.
+	 * Used for both bandwidth-based limiting and transfer-count-based limiting.
 	 * 
 	 * @param bandwidthAvailableOutputUpperLimit The overall upper limit, already calculated.
 	 * @param requestsSnapshot The requests running.
-	 * @param peerRequestsSnapshot 
+	 * @param peerRequestsSnapshot The requests running to this one peer.
 	 * @param input True if this is input bandwidth, false if it is output bandwidth.
 	 * @param limit The limit period in seconds.
 	 * @param source The source of the request.
