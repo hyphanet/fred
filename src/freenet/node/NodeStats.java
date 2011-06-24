@@ -1099,9 +1099,15 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 		}
 
-		// Successful cluster timeout protection.
-		// Reject request if the result of all our current requests completing simultaneously would be that
-		// some of them timeout.
+		// Pre-emptive rejection based on avoiding timeouts, with fair sharing
+		// between peers. We calculate the node's capacity for requests and then
+		// decide whether we will exceed it, or whether a particular peer will
+		// exceed its slice of it. Peers are guaranteed a proportion of the
+		// total ("peer limit"), but can opportunistically use a bit more, 
+		// provided the total is less than the "lower limit". The overall usage
+		// should not go over the "upper limit".
+		
+		// This should normally account for the bulk of request rejections.
 		
 		int transfersPerInsert = outwardTransfersPerInsert();
 		
@@ -1152,6 +1158,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		if(ret != null) return new RejectReason(ret, true);
 		
 		// Do we have the bandwidth?
+		// The throttles should not be used much now, the timeout-based 
+		// preemptive rejection and fair sharing code above should catch it in
+		// all cases. FIXME can we get rid of the throttles here?
 		double expected = this.getThrottle(isLocal, isInsert, isSSK, true).currentValue();
 		int expectedSent = (int)Math.max(expected / nonOverheadFraction, 0);
 		if(logMINOR)
