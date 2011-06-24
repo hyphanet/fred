@@ -363,25 +363,25 @@ public class PluginManager {
 
 	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store, OfficialPluginDescription desc, boolean force, boolean forceHTTPS) {
 		if((alwaysLoadOfficialPluginsFromCentralServer && !force)|| force && forceHTTPS) {
-			return realStartPlugin(new PluginDownLoaderOfficialHTTPS(), pluginname, store);
+			return realStartPlugin(new PluginDownLoaderOfficialHTTPS(), pluginname, store, false);
 		} else {
-			return realStartPlugin(new PluginDownLoaderOfficialFreenet(client, node, false), pluginname, store);
+			return realStartPlugin(new PluginDownLoaderOfficialFreenet(client, node, false), pluginname, store, false);
 		}
 	}
 
 	public PluginInfoWrapper startPluginFile(final String filename, boolean store) {
-		return realStartPlugin(new PluginDownLoaderFile(), filename, store);
+		return realStartPlugin(new PluginDownLoaderFile(), filename, store, false);
 	}
 
 	public PluginInfoWrapper startPluginURL(final String filename, boolean store) {
-		return realStartPlugin(new PluginDownLoaderURL(), filename, store);
+		return realStartPlugin(new PluginDownLoaderURL(), filename, store, false);
 	}
 
 	public PluginInfoWrapper startPluginFreenet(final String filename, boolean store) {
-		return realStartPlugin(new PluginDownLoaderFreenet(client, node, false), filename, store);
+		return realStartPlugin(new PluginDownLoaderFreenet(client, node, false), filename, store, false);
 	}
 
-	private PluginInfoWrapper realStartPlugin(final PluginDownLoader<?> pdl, final String filename, final boolean store) {
+	private PluginInfoWrapper realStartPlugin(final PluginDownLoader<?> pdl, final String filename, final boolean store, boolean ignoreOld) {
 		if(filename.trim().length() == 0)
 			return null;
 		final PluginProgress pluginProgress = new PluginProgress(filename, pdl);
@@ -392,7 +392,7 @@ public class PluginManager {
 		FredPlugin plug;
 		PluginInfoWrapper pi = null;
 		try {
-			plug = loadPlugin(pdl, filename, pluginProgress);
+			plug = loadPlugin(pdl, filename, pluginProgress, ignoreOld);
 			if (plug == null)
 				return null; // Already loaded
 			pluginProgress.setProgress(PluginProgress.PROGRESS_STATE.STARTING);
@@ -417,7 +417,7 @@ public class PluginManager {
 					node.getTicker().queueTimedJob(new Runnable() {
 
 						public void run() {
-							realStartPlugin(retry, filename, store);
+							realStartPlugin(retry, filename, store, true);
 						}
 
 					}, 0);
@@ -432,7 +432,7 @@ public class PluginManager {
 					node.getTicker().queueTimedJob(new Runnable() {
 
 						public void run() {
-							realStartPlugin(retry, filename, store);
+							realStartPlugin(retry, filename, store, true);
 						}
 
 					}, 0);
@@ -1161,11 +1161,12 @@ public class PluginManager {
 	 *
 	 * @param name
 	 *            The specification of the plugin
+	 * @param ignoreOld 
 	 * @return An instanciated object of the plugin
 	 * @throws PluginNotFoundException
 	 *             If anything goes wrong.
 	 */
-	private FredPlugin loadPlugin(PluginDownLoader<?> pdl, String name, PluginProgress progress) throws PluginNotFoundException {
+	private FredPlugin loadPlugin(PluginDownLoader<?> pdl, String name, PluginProgress progress, boolean ignoreOld) throws PluginNotFoundException {
 
 		pdl.setSource(name);
 
@@ -1185,7 +1186,7 @@ public class PluginManager {
 		File[] filesInPluginDirectory = getPreviousInstances(pluginDirectory, filename);
 		boolean first = true;
 		for (File cachedFile : filesInPluginDirectory) {
-			if (first && !pluginIsLocal) {
+			if (first && !pluginIsLocal && !ignoreOld) {
 				first = false;
 				pluginFile = new File(pluginDirectory, cachedFile.getName());
 				continue;
