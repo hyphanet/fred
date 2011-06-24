@@ -6076,9 +6076,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		// Transfers are divided into blocks. Blocks are 1KB. We only care about
 		// blocks because we are concerned with the inter-block period, assuming
 		// fairness between transfers.
-		double kilobytesPerSecond = bandwidth / 1024.0;
+		double blocksPerSecond = bandwidth / 1024.0;
 		// The inter-block period must be no more than timeout.
-		return (int)Math.max(1, Math.min(kilobytesPerSecond * timeout, Integer.MAX_VALUE));
+		return (int)Math.max(1, Math.min(blocksPerSecond * timeout, Integer.MAX_VALUE));
 	}
 
 	public synchronized boolean hasFullNoderef() {
