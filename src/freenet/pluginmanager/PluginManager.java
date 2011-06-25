@@ -1182,7 +1182,10 @@ public class PluginManager {
 	 *
 	 * @param name
 	 *            The specification of the plugin
-	 * @param ignoreOld 
+	 * @param ignoreOld If true, ignore any old cached copies of the plugin,
+	 * and download a new version anyway. This is especially important on Windows,
+	 * where we will not usually be able to delete the file after determining
+	 * that it is too old. 
 	 * @return An instanciated object of the plugin
 	 * @throws PluginNotFoundException
 	 *             If anything goes wrong.
@@ -1356,13 +1359,8 @@ public class PluginManager {
 						pdl instanceof PluginDownLoaderOfficialFreenet) {
 					System.err.println("Loading official plugin "+name);
 					// Check the version after loading it!
-					// Building it into the manifest would be better, in that it would
-					// avoid having to unload ... but building it into the manifest is
-					// problematic, specifically it involves either platform specific
-					// scripts that aren't distributed and devs won't use when they
-					// build locally, or executing java code, which would mean we have
-					// to protect the versioning info. Either way is bad. The latter is
-					// less bad if we don't auto-build.
+					// FIXME IMPORTANT Build the version into the manifest. This is actually pretty easy and just involves changing build.xml.
+					// We already do similar things elsewhere.
 
 					// Ugh, this is just as messy ... ideas???? Maybe we need to have OS
 					// detection and use grep/sed on unix and find on windows???
@@ -1382,19 +1380,12 @@ public class PluginManager {
 					if(ver < minVer) {
 						System.err.println("Failed to load plugin "+name+" : TOO OLD: need at least version "+minVer+" but is "+ver);
 						Logger.error(this, "Failed to load plugin "+name+" : TOO OLD: need at least version "+minVer+" but is "+ver);
-						try {
-							if(object instanceof FredPluginThreadless) {
-								PluginInfoWrapper pi = new PluginInfoWrapper(node, (FredPlugin)object, filename);
-								pi.getPlugin().runPlugin(pi.getPluginRespirator());
-							}
-						} catch (Throwable t) {
-							Logger.error(this, "Failed to start plugin (to prevent NPEs) while terminating it because it is too old: "+t, t);
-						}
-						try {
-							((FredPlugin)object).terminate();
-						} catch (Throwable t) {
-							Logger.error(this, "Plugin failed to terminate: "+t, t);
-						}
+
+						// At this point, the constructor has run, so it's theoretically possible that the plugin has e.g. created some threads.
+						// However, it has not been able to use any of the node's services, because we haven't passed it the PluginRespirator.
+						// So there is no need to call runPlugin and terminate().
+						// And it doesn't matter all that much if the shutdown fails - we won't be able to delete the file on Windows anyway, we're relying on the ignoreOld logic.
+						// Plus, this will not cause a leak of more than one fd per plugin, even when it has started threads.
 						try {
 							jarClassLoader.close();
 						} catch (Throwable t) {
