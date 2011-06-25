@@ -31,8 +31,9 @@ public interface PutCompletionCallback {
 	/** Called as an alternative to onEncode, if a metadata length threshold 
 	 * was specified. Lower-level insert states, such as SplitFileInserter, will 
 	 * call onMetadata() instead. Higher level insert states will call this 
-	 * version or onEncode. FIXME arguably we should split the interface, it 
-	 * might simplify e.g. SingleFileInserter.SplitHandler.
+	 * version or onEncode. Callee must free the Bucket. 
+	 * FIXME arguably we should split the interface, it might simplify e.g. 
+	 * SingleFileInserter.SplitHandler.
 	 */
 	public void onMetadata(Bucket meta, ClientPutState state, ObjectContainer container, ClientContext context);
 	
