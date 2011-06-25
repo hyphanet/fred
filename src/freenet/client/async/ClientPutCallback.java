@@ -27,7 +27,8 @@ public interface ClientPutCallback extends ClientBaseCallback {
 	 * if the originator specified a metadata threshold, and we can get the 
 	 * metadata below that threshold without inserting a single top block.
 	 * @param metadata Bucket containing the metadata. Persistent if the insert
-	 * is persistent.
+	 * is persistent. Recipient may keep it, but must eventually free it. The 
+	 * caller will not free it.
 	 * @param state The original BaseClientPutter object which was returned by the .insert() method which
 	 * 				started this insert. Can be casted to the return type of that .insert().
 	 * @param container The database handle; if this is a persistent insert, the
