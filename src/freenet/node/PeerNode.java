@@ -5363,7 +5363,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				long waitStart = System.currentTimeMillis();
 				long deadline = waitStart + maxWait;
 				boolean timedOut = false;
-				while(acceptedBy == null && (!waitingFor.isEmpty()) && !timedOut) {
+				while(acceptedBy == null && (!waitingFor.isEmpty()) && !failed) {
 					try {
 						if(maxWait == Long.MAX_VALUE)
 							wait();
@@ -5381,6 +5381,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 								timedOut = true;
 								all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
 								waitingFor.clear();
+								break;
 								// Now no callers will succeed.
 								// But we still need to unregister the waitingFor's or they will stick around until they are matched, and then, if we are unlucky, will lock a slot on the RequestTag forever and thus cause a catastrophic stall of the whole peer.
 							}
@@ -5404,7 +5405,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
 					waitingFor.clear();
 				}
-				timedOut = false;
+				failed = false;
 			}
 			unregister(ret, all);
 			return ret;
