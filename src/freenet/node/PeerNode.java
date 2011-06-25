@@ -5362,8 +5362,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(logMINOR) Logger.minor(this, "Waiting for any node to wake up "+this+" : "+Arrays.toString(waitingFor.toArray())+" (for up to "+maxWait+"ms)");
 				long waitStart = System.currentTimeMillis();
 				long deadline = waitStart + maxWait;
-				boolean failed = false;
-				while(acceptedBy == null && (!waitingFor.isEmpty()) && !failed) {
+				boolean timedOut = false;
+				while(acceptedBy == null && (!waitingFor.isEmpty()) && !timedOut) {
 					try {
 						if(maxWait == Long.MAX_VALUE)
 							wait();
@@ -5378,7 +5378,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 							} else {
 								// Bigger problem.
 								// No external entity called us, so waitingFor have not been unregistered.
-								failed = true;
+								timedOut = true;
 								all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
 								waitingFor.clear();
 								// Now no callers will succeed.
@@ -5389,7 +5389,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						// Ignore
 					}
 				}
-				if(!failed) {
+				if(!timedOut) {
 					long waitEnd = System.currentTimeMillis();
 					if(waitEnd - waitStart > 10000) {
 						Logger.error(this, "Waited "+(waitEnd - waitStart)+"ms for "+this);
@@ -5398,13 +5398,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					} else {
 						if(logMINOR) Logger.minor(this, "Waited "+(waitEnd - waitStart)+"ms for "+this);
 					}
-					if(logMINOR) Logger.minor(this, "Returning after waiting: accepted by "+acceptedBy+" waiting for "+waitingFor.size()+" failed "+failed+" on "+this);
+					if(logMINOR) Logger.minor(this, "Returning after waiting: accepted by "+acceptedBy+" waiting for "+waitingFor.size()+" failed "+timedOut+" on "+this);
 					ret = acceptedBy;
 					acceptedBy = null; // Allow for it to wait again if necessary
 					all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
 					waitingFor.clear();
 				}
-				failed = false;
+				timedOut = false;
 			}
 			unregister(ret, all);
 			return ret;
