@@ -531,10 +531,6 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 
 	@Override
 	public void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData, ObjectContainer container) {
-		if(persistenceType == PERSIST_CONNECTION) {
-			Logger.error(this, "WTF? persistenceType="+persistenceType, new Exception("error"));
-			return;
-		}
 		if(includePersistentRequest) {
 			FCPMessage msg = persistentTagMessage(container);
 			handler.queue(msg);
