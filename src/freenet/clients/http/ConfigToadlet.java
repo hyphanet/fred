@@ -167,7 +167,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			formNode.addChild("input",
 			        new String[] { "type", "name", "value" },
 			        new String[] { "hidden", "subconfig", subconfig });
-			//Persist visible fields so that they are reset to default.
+			//Persist visible fields so that they are reset to default or unsaved changes are persisted.
 			for (String part : request.getParts()) {
 				if (part.startsWith(subconfig)) {
 					formNode.addChild("input",
@@ -177,9 +177,9 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 				}
 			}
 			formNode.addChild("input",
-				new String[]{"type", "name", "value"},
-				new String[]{"submit", "reset-to-defaults",
-					NodeL10n.getBase().getString("Toadlet.yes")});
+			        new String[]{"type", "name", "value"},
+			        new String[]{"submit", "reset-to-defaults",
+			                NodeL10n.getBase().getString("Toadlet.yes")});
 
 			formNode.addChild("input",
 			        new String[] { "type", "name", "value" },
@@ -190,7 +190,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		}
 
 		//Returning from directory selector with a selection or declining resetting settings to defaults.
-		//Re-render config page with any changes made in the selector while also persisting values changed but
+		//Re-render config page with any changes made in the selector and/or persisting values changed but
 		//not applied.
 		if(request.isPartSet("select-dir") || request.isPartSet("decline-default-reset")) {
 			handleMethodGET(uri, request, ctx);
@@ -232,7 +232,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		}
 		boolean resetToDefault = request.isPartSet("reset-to-defaults");
 		if (resetToDefault && logMINOR) {
-			Logger.minor(this, "Resetting to defaults.");
+			Logger.minor(this, "Resetting to defaults");
 		}
 
 		for(SubConfig sc : config.getConfigs()) {
@@ -500,7 +500,9 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		formNode.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "hidden", "subconfig", subConfig.getPrefix() } );
-		//'Node' prefix options should not be reset to defaults as it would cause extensive problems.
+		//'Node' prefix options should not be reset to defaults as it is a, quoting Toad, "very bad idea".
+		//Options whose defaults are not wise to apply include the location of the master keys file,
+		//the Darknet port number, and the datastore size.
 		if(!subConfig.getPrefix().equals("node")) {
 			formNode.addChild("input",
 			        new String[]{"type", "name", "value"},
