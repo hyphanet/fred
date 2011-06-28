@@ -219,7 +219,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		if (request.isPartSet("subconfig")) {
 			desiredPrefix = request.getPartAsStringFailsafe("subconfig", MAX_PARAM_VALUE_SIZE);
 			if (logMINOR) {
-				Logger.minor(this, "Restoring defaults on subconfig prefix "+desiredPrefix);
+				Logger.minor(this, "Restoring defaults on subconfig prefix \'"+desiredPrefix+"\'.");
 			}
 		}
 
@@ -231,12 +231,14 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 
 			for(Option<?> o : sc.getOptions()) {
 				configName=o.getName();
-				if(logMINOR) Logger.minor(this, "Setting "+prefix+ '.' +configName);
+				if(logMINOR) {
+					Logger.minor(this, "Checking if change is needed for "+prefix+ '.' +configName);
+				}
 
 				//This ignores unrecognized parameters.
 				if(request.isPartSet(prefix+ '.' +configName) || prefix.equals(desiredPrefix)) {
-					//Current subconfig is to be reset to defaults.
-					if (prefix.equals(desiredPrefix)) {
+					//Current subconfig is to be reset to default and the current option is visible.
+					if (prefix.equals(desiredPrefix) && request.isPartSet(prefix+ '.' +configName)) {
 						value = o.getDefault();
 					} else { //request.isPartSet(prefix+ '.' +configName)) {
 						//Setting a specific value
