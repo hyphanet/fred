@@ -226,61 +226,58 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 
 		String desiredPrefix = request.getPartAsStringFailsafe("subconfig", MAX_PARAM_VALUE_SIZE);
+		if (logMINOR) {
+			Logger.minor(this, "Current config prefix is "+desiredPrefix);
+		}
 		boolean resetToDefault = request.isPartSet("reset-to-defaults");
 		if (resetToDefault && logMINOR) {
-			Logger.minor(this, "Restoring defaults on subconfig prefix \'"+desiredPrefix+"\'.");
+			Logger.minor(this, "Resetting to defaults.");
 		}
 
 		for(SubConfig sc : config.getConfigs()) {
 			String prefix = sc.getPrefix();
 			String configName;
 
-			for(Option<?> o : sc.getOptions()) {
-				configName=o.getName();
-				if(logMINOR) {
-					Logger.minor(this, "Checking option "+prefix+ '.' +configName);
-				}
+			if (prefix.equals(desiredPrefix)) {
 
-				//This ignores unrecognized parameters.
-				if(request.isPartSet(prefix+ '.' +configName) || prefix.equals(desiredPrefix)) {
-					//Current subconfig is to be reset to default and the current option is visible.
-					if (prefix.equals(desiredPrefix) && request.isPartSet(prefix+'.'+configName)
-					        && resetToDefault) {
-						value = o.getDefault();
-					} else if (request.isPartSet(prefix+ '.' +configName)) {
-						//Current option is visible.
-						value = request.getPartAsStringFailsafe(prefix+ '.' +configName,
-					        MAX_PARAM_VALUE_SIZE);
-					} else { //if (prefix.equals(desiredPrefix) &&
-						// !request.isPartSet(prefix+ '.' +configName)) {
-						//Current subconfig resetting, but the current option is not visible.
-						if (logMINOR) {
-							Logger.minor(this, "Ignoring invisible option "
-							        +prefix+ '.' +configName);
-						}
-						value = o.getValueString();
+				for(Option<?> o : sc.getOptions()) {
+					configName=o.getName();
+					if(logMINOR) {
+						Logger.minor(this, "Checking option "+prefix+ '.' +configName);
 					}
 
-					if(!(o.getValueString().equals(value))){
-
-						if(logMINOR) {
-							Logger.minor(this, "Changing "+prefix+ '.' +configName+
-							        " to "+value);
+					//This ignores unrecognized parameters.
+					if (request.isPartSet(prefix+ '.' +configName)) {
+						//Current subconfig is to be reset to default.
+						if (resetToDefault) {
+							value = o.getDefault();
+						} else {
+							value = request.getPartAsStringFailsafe(prefix+ '.' +configName,
+							        MAX_PARAM_VALUE_SIZE);
 						}
 
-						try{
-							o.setValue(value);
-						} catch (InvalidConfigValueException e) {
-							errbuf.append(o.getName()).append(' ')
-							        .append(e.getMessage()).append('\n');
-						} catch (NodeNeedRestartException e) {
-							needRestart = true;
-						} catch (Exception e){
-							errbuf.append(o.getName()).append(' ').append(e).append('\n');
-							Logger.error(this, "Caught "+e, e);
+						if(!(o.getValueString().equals(value))){
+
+							if(logMINOR) {
+								Logger.minor(this, "Changing "+prefix+ '.' +configName+
+								        " to "+value);
+							}
+
+							try{
+								o.setValue(value);
+							} catch (InvalidConfigValueException e) {
+								errbuf.append(o.getName()).append(' ')
+								        .append(e.getMessage()).append('\n');
+							} catch (NodeNeedRestartException e) {
+								needRestart = true;
+							} catch (Exception e){
+								errbuf.append(o.getName()).append(' ').append(e).
+								        append('\n');
+								Logger.error(this, "Caught "+e, e);
+							}
+						} else if(logMINOR) {
+							Logger.minor(this, prefix+ '.' +configName+" not changed");
 						}
-					} else if(logMINOR) {
-						Logger.minor(this, prefix+ '.' +configName+" has not been changed.");
 					}
 				}
 			}
