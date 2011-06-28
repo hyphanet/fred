@@ -5187,6 +5187,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					if(logMINOR) Logger.minor(this, "Not adding "+peer.shortToString+" because already matched on "+this);
 					return true;
 				}
+				if(failed) {
+					if(logMINOR) Logger.minor(this, "Not adding "+peer.shortToString+" because already failed on "+this);
+					return true;
+				}
 				if(waitingFor.contains(peer)) return true;
 				waitingFor.add(peer);
 			}
