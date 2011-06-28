@@ -1954,7 +1954,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 					@Override
 					public void set(Long storeSize) throws InvalidConfigValueException {
-						if((storeSize < 0) || (storeSize < (32 * 1024 * 1024)))
+						if((storeSize < 0) || (storeSize < (10 * 1024 * 1024)))
 							throw new InvalidConfigValueException(l10n("invalidStoreSize"));
 						long newMaxStoreKeys = storeSize / sizePerKey;
 						if(newMaxStoreKeys == maxTotalKeys) return;
