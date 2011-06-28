@@ -172,7 +172,8 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 				if (part.startsWith(subconfig)) {
 					formNode.addChild("input",
 				        new String[] { "type", "name", "value" },
-				        new String[] { "hidden", part, "visible" });
+				        new String[] { "hidden", part,
+				                request.getPartAsStringFailsafe(part, MAX_PARAM_VALUE_SIZE) });
 				}
 			}
 			formNode.addChild("input",
