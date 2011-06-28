@@ -94,7 +94,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private volatile long maxPingTime;
     private final double nodeLoc=0.0;
 
-	private final Node node;
+	final Node node;
 	private MemoryChecker myMemoryChecker;
 	public final PeerManager peers;
 

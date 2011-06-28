@@ -421,6 +421,8 @@ public class RequestStarterGroup {
 	}
 
 	public void setUseAIMDs(boolean val) {
+		if(!stats.node.enableNewLoadManagement())
+			val = true;
 		chkFetchSchedulerBulk.setUseAIMDs(val);
 		sskFetchSchedulerBulk.setUseAIMDs(val);
 		chkPutSchedulerBulk.setUseAIMDs(val);

@@ -62,7 +62,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	 * buckets and the thread limit. FIXME make configurable. */
 	static final boolean LOCAL_REQUESTS_COMPETE_FAIRLY = true;
 	
-	boolean DO_AIMD = true;
+	boolean doAIMD = true;
 	
 	public static boolean isValidPriorityClass(int prio) {
 		return !((prio < MAXIMUM_PRIORITY_CLASS) || (prio > MINIMUM_PRIORITY_CLASS));
@@ -141,7 +141,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				if(!req.localRequestOnly) {
 					// Wait
 					long delay;
-					if(DO_AIMD)
+					if(doAIMD)
 						delay = throttle.getDelay();
 					else
 						delay = 100;
@@ -312,7 +312,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	}
 
 	public void setUseAIMDs(boolean val) {
-		DO_AIMD = val;
+		doAIMD = val;
 	}
 
 }
