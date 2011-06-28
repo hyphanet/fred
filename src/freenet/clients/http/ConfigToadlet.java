@@ -187,8 +187,18 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		StringBuilder errbuf = new StringBuilder();
 		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 
+		String desiredPrefix = null;
+		if (request.isPartSet("subconfig")) {
+			desiredPrefix = request.getPartAsStringFailsafe("subconfig", MAX_PARAM_VALUE_SIZE);
+			if (logMINOR) {
+				Logger.minor(this, "Restoring defaults on subconfig prefix "+desiredPrefix);
+			}
+		}
+
 		for(SubConfig sc : config.getConfigs()) {
 			String prefix = sc.getPrefix();
+			//If prefix were null, it could match an unset desiredPrefix.
+			assert(prefix != null);
 			String configName;
 
 			for(Option<?> o : sc.getOptions()) {
@@ -196,12 +206,23 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 				if(logMINOR) Logger.minor(this, "Setting "+prefix+ '.' +configName);
 
 				//This ignores unrecognized parameters.
-				if(request.isPartSet(prefix+ '.' +configName)) {
-					value = request.getPartAsStringFailsafe(prefix+ '.' +configName,
+				if(request.isPartSet(prefix+ '.' +configName) || prefix.equals(desiredPrefix)) {
+					//Current subconfig is to be reset to defaults.
+					if (prefix.equals(desiredPrefix)) {
+						value = o.getDefault();
+					} else {
+						//Setting a specific value
+						value = request.getPartAsStringFailsafe(prefix+ '.' +configName,
 					        MAX_PARAM_VALUE_SIZE);
+					}
+
 					if(!(o.getValueString().equals(value))){
-						if(logMINOR) Logger.minor(this, "Setting "+prefix+ '.' +configName+
-						        " to "+value);
+
+						if(logMINOR) {
+							Logger.minor(this, "Setting "+prefix+ '.' +configName+
+							        " to "+value);
+						}
+
 						try{
 							o.setValue(value);
 						} catch (InvalidConfigValueException e) {
@@ -222,7 +243,9 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			if(request.isPartSet(wrapperConfigName)) {
 				value = request.getPartAsStringFailsafe(wrapperConfigName, MAX_PARAM_VALUE_SIZE);
 				if(!WrapperConfig.getWrapperProperty(wrapperConfigName).equals(value)) {
-					if(logMINOR) Logger.minor(this, "Setting "+wrapperConfigName+" to "+value);
+					if(logMINOR) {
+						Logger.minor(this, "Setting "+wrapperConfigName+" to "+value);
+					}
 					WrapperConfig.setWrapperProperty(wrapperConfigName, value);
 				}
 			}
@@ -430,7 +453,14 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			}
 
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("apply")});
-		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset",  l10n("reset")});
+		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset",  l10n("undo")});
+		HTMLNode resetToDefaultsForm = ctx.addFormChild(configNode, path(), "resetToDefaults");
+		resetToDefaultsForm.addChild("input",
+		        new String[] { "type", "name", "value" },
+		        new String[] { "hidden", "subconfig", subConfig.getPrefix() } );
+		resetToDefaultsForm.addChild("input",
+		        new String[] { "type", "value" },
+		        new String[] { "submit",  l10n("resetToDefaults")});
 
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
