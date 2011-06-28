@@ -163,19 +163,29 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			content.addChild("#", l10n("confirmReset"));
 
 			HTMLNode yesForm = ctx.addFormChild(content, path(), "yes-button");
+			String subconfig = request.getPartAsStringFailsafe("subconfig", MAX_PARAM_VALUE_SIZE);
 			yesForm.addChild("input",
 			        new String[] { "type", "name", "value" },
-			        new String[] { "hidden", "subconfig",
-			                request.getPartAsStringFailsafe("subconfig", MAX_PARAM_VALUE_SIZE) });
+			        new String[] { "hidden", "subconfig", subconfig });
+			//Persist visible fields so that they are reset to default.
+			for (String part : request.getParts()) {
+				if (part.startsWith(subconfig)) {
+					yesForm.addChild("input",
+				        new String[] { "type", "name", "value" },
+				        new String[] { "hidden", part, "visible" });
+				}
+			}
 			yesForm.addChild("input",
-			        new String[] { "type", "value" },
-			        new String[] { "submit", NodeL10n.getBase().getString("Toadlet.yes") });
+			        new String[] { "type", "name", "value" },
+			        new String[] { "submit", "reset-to-defaults",
+			                NodeL10n.getBase().getString("Toadlet.yes") });
 
 			HTMLNode noForm = ctx.addFormChild(content, path(), "no-button");
 			noForm.addChild("input",
 			        new String[] { "type", "name", "value" },
 			        new String[] { "submit", "decline-default-reset",
 			                NodeL10n.getBase().getString("Toadlet.no")});
+			writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 		}
 
 		//Returning from directory selector with a selection or declining resetting settings to defaults.
@@ -215,41 +225,46 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		StringBuilder errbuf = new StringBuilder();
 		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 
-		String desiredPrefix = null;
-		if (request.isPartSet("subconfig")) {
-			desiredPrefix = request.getPartAsStringFailsafe("subconfig", MAX_PARAM_VALUE_SIZE);
-			if (logMINOR) {
-				Logger.minor(this, "Restoring defaults on subconfig prefix \'"+desiredPrefix+"\'.");
-			}
+		String desiredPrefix = request.getPartAsStringFailsafe("subconfig", MAX_PARAM_VALUE_SIZE);
+		boolean resetToDefault = request.isPartSet("reset-to-defaults");
+		if (resetToDefault && logMINOR) {
+			Logger.minor(this, "Restoring defaults on subconfig prefix \'"+desiredPrefix+"\'.");
 		}
 
 		for(SubConfig sc : config.getConfigs()) {
 			String prefix = sc.getPrefix();
-			//If prefix were null, it could match an unset desiredPrefix.
-			assert(prefix != null);
 			String configName;
 
 			for(Option<?> o : sc.getOptions()) {
 				configName=o.getName();
 				if(logMINOR) {
-					Logger.minor(this, "Checking if change is needed for "+prefix+ '.' +configName);
+					Logger.minor(this, "Checking option "+prefix+ '.' +configName);
 				}
 
 				//This ignores unrecognized parameters.
 				if(request.isPartSet(prefix+ '.' +configName) || prefix.equals(desiredPrefix)) {
 					//Current subconfig is to be reset to default and the current option is visible.
-					if (prefix.equals(desiredPrefix) && request.isPartSet(prefix+ '.' +configName)) {
+					if (prefix.equals(desiredPrefix) && request.isPartSet(prefix+'.'+configName)
+					        && resetToDefault) {
 						value = o.getDefault();
-					} else { //request.isPartSet(prefix+ '.' +configName)) {
-						//Setting a specific value
+					} else if (request.isPartSet(prefix+ '.' +configName)) {
+						//Current option is visible.
 						value = request.getPartAsStringFailsafe(prefix+ '.' +configName,
 					        MAX_PARAM_VALUE_SIZE);
+					} else { //if (prefix.equals(desiredPrefix) &&
+						// !request.isPartSet(prefix+ '.' +configName)) {
+						//Current subconfig resetting, but the current option is not visible.
+						if (logMINOR) {
+							Logger.minor(this, "Ignoring invisible option "
+							        +prefix+ '.' +configName);
+						}
+						value = o.getValueString();
 					}
 
 					if(!(o.getValueString().equals(value))){
 
 						if(logMINOR) {
-							Logger.minor(this, "Setting "+prefix+ '.' +configName+
+							Logger.minor(this, "Changing "+prefix+ '.' +configName+
 							        " to "+value);
 						}
 
@@ -264,6 +279,8 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 							errbuf.append(o.getName()).append(' ').append(e).append('\n');
 							Logger.error(this, "Caught "+e, e);
 						}
+					} else if(logMINOR) {
+						Logger.minor(this, prefix+ '.' +configName+" has not been changed.");
 					}
 				}
 			}
