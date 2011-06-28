@@ -152,8 +152,36 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			return;
 		}
 
-		 //Returning from directory selector with a selection, re-render config page with any changes.
-		if(request.isPartSet("select-dir")) {
+		//User requested reset to defaults, so present confirmation page.
+		if (request.isPartSet("confirm-reset-to-defaults")) {
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmResetTitle"), ctx);
+			HTMLNode pageNode = page.outer;
+			HTMLNode contentNode = page.content;
+
+			HTMLNode content = ctx.getPageMaker().getInfobox("infobox-warning", l10n("confirmResetTitle"),
+			        contentNode, "reset-confirm", true);
+			content.addChild("#", l10n("confirmReset"));
+
+			HTMLNode yesForm = ctx.addFormChild(content, path(), "yes-button");
+			yesForm.addChild("input",
+			        new String[] { "type", "name", "value" },
+			        new String[] { "hidden", "subconfig",
+			                request.getPartAsStringFailsafe("subconfig", MAX_PARAM_VALUE_SIZE) });
+			yesForm.addChild("input",
+			        new String[] { "type", "value" },
+			        new String[] { "submit", NodeL10n.getBase().getString("Toadlet.yes") });
+
+			HTMLNode noForm = ctx.addFormChild(content, path(), "no-button");
+			noForm.addChild("input",
+			        new String[] { "type", "name", "value" },
+			        new String[] { "submit", "decline-default-reset",
+			                NodeL10n.getBase().getString("Toadlet.no")});
+		}
+
+		//Returning from directory selector with a selection or declining resetting settings to defaults.
+		//Re-render config page with any changes made in the selector while also persisting values changed but
+		//not applied.
+		if(request.isPartSet("select-dir") || request.isPartSet("decline-default-reset")) {
 			handleMethodGET(uri, request, ctx);
 			return;
 		}
@@ -210,7 +238,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 					//Current subconfig is to be reset to defaults.
 					if (prefix.equals(desiredPrefix)) {
 						value = o.getDefault();
-					} else {
+					} else { //request.isPartSet(prefix+ '.' +configName)) {
 						//Setting a specific value
 						value = request.getPartAsStringFailsafe(prefix+ '.' +configName,
 					        MAX_PARAM_VALUE_SIZE);
@@ -371,10 +399,8 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			
 			//A value changed by the directory selector takes precedence.
 			if(req.isPartSet("select-for") && req.isPartSet("select-dir")) {
-				overriddenOption = req.getPartAsStringFailsafe("select-for",
-				        MAX_PARAM_VALUE_SIZE);
-				overriddenValue = req.getPartAsStringFailsafe("filename",
-						MAX_PARAM_VALUE_SIZE);
+				overriddenOption = req.getPartAsStringFailsafe("select-for", MAX_PARAM_VALUE_SIZE);
+				overriddenValue = req.getPartAsStringFailsafe("filename", MAX_PARAM_VALUE_SIZE);
 			}
 
 			for(Option<?> o : subConfig.getOptions()) {
@@ -411,9 +437,9 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 						continue;
 					}
 
-					//Values persisted through browser override currently applied ones
+					// Values persisted through browser or backing down from resetting to defaults
+					// override the currently applied ones.
 					if(req.isPartSet(fullName)) {
-						//TODO: This may have to be Base64 encoded
 						value = req.getPartAsStringFailsafe(fullName, MAX_PARAM_VALUE_SIZE);
 					}
 					if(overriddenOption != null && overriddenOption.equals(fullName))
@@ -454,13 +480,12 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("apply")});
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset",  l10n("undo")});
-		HTMLNode resetToDefaultsForm = ctx.addFormChild(configNode, path(), "resetToDefaults");
-		resetToDefaultsForm.addChild("input",
+		formNode.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "hidden", "subconfig", subConfig.getPrefix() } );
-		resetToDefaultsForm.addChild("input",
-		        new String[] { "type", "value" },
-		        new String[] { "submit",  l10n("resetToDefaults")});
+		formNode.addChild("input",
+		        new String[] { "type", "name", "value" },
+		        new String[] { "submit",  "confirm-reset-to-defaults", l10n("resetToDefaults")});
 
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
