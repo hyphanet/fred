@@ -11,6 +11,7 @@ import freenet.client.async.ManifestElement;
 import freenet.client.async.SimpleManifestPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -40,10 +41,11 @@ public class PersistentPutDir extends FCPMessage {
 	final boolean dontCompress;
 	final String compressorDescriptor;
 	final boolean realTime;
+	final byte[] splitfileCryptoKey;
 	
 	public PersistentPutDir(String identifier, FreenetURI uri, int verbosity, short priorityClass,
 	        short persistenceType, boolean global, String defaultName, HashMap<String, Object> manifestElements,
-	        String token, boolean started, int maxRetries, boolean dontCompress, String compressorDescriptor, boolean wasDiskPut, boolean realTime, ObjectContainer container) {
+	        String token, boolean started, int maxRetries, boolean dontCompress, String compressorDescriptor, boolean wasDiskPut, boolean realTime, byte[] splitfileCryptoKey, ObjectContainer container) {
 		this.identifier = identifier;
 		this.uri = uri;
 		this.verbosity = verbosity;
@@ -59,6 +61,7 @@ public class PersistentPutDir extends FCPMessage {
 		this.dontCompress = dontCompress;
 		this.compressorDescriptor = compressorDescriptor;
 		this.realTime = realTime;
+		this.splitfileCryptoKey = splitfileCryptoKey;
 		cached = generateFieldSet(container);
 	}
 
@@ -133,6 +136,8 @@ public class PersistentPutDir extends FCPMessage {
 		if(compressorDescriptor != null)
 			fs.putSingle("Codecs", compressorDescriptor);
 		fs.put("RealTime", realTime);
+		if(splitfileCryptoKey != null)
+			fs.putSingle("SplitfileCryptoKey", HexUtil.bytesToHex(splitfileCryptoKey));
 		return fs;
 	}
 

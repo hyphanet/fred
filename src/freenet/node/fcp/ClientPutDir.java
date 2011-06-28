@@ -190,6 +190,7 @@ public class ClientPutDir extends ClientPutBase {
 				container.activate(putter, 1);
 			if(putter != null)
 				putter.start(container, context);
+
 			started = true;
 			if(client != null) {
 				RequestStatusCache cache = client.getRequestStatusCache();
@@ -268,8 +269,14 @@ public class ClientPutDir extends ClientPutBase {
 			container.activate(ctx, 1);
 			container.activate(manifestElements, 5);
 		}
+		// FIXME: remove debug code
+		if (lowLevelClient == null)
+			Logger.error(this, "lowLevelClient == null", new Exception("error"));
+		if (putter == null)
+			Logger.error(this, "putter == null", new Exception("error"));
+		// FIXME end
 		return new PersistentPutDir(identifier, publicURI, verbosity, priorityClass,
-				persistenceType, global, defaultName, manifestElements, clientToken, started, ctx.maxInsertRetries, ctx.dontCompress, ctx.compressorDescriptor, wasDiskPut, lowLevelClient.realTimeFlag(), container);
+				persistenceType, global, defaultName, manifestElements, clientToken, started, ctx.maxInsertRetries, ctx.dontCompress, ctx.compressorDescriptor, wasDiskPut, lowLevelClient.realTimeFlag(), putter != null ? putter.getSplitfileCryptoKey() : null, container);
 	}
 
 	@Override

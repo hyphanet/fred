@@ -352,9 +352,15 @@ public class ClientPut extends ClientPutBase {
 			container.activate(ctx, 1);
 			container.activate(lowLevelClient, 1);
 		}
+		// FIXME: remove debug code
+		if (lowLevelClient == null)
+			Logger.error(this, "lowLevelClient == null", new Exception("error"));
+		if (putter == null)
+			Logger.error(this, "putter == null", new Exception("error"));
+		// FIXME end
 		return new PersistentPut(identifier, publicURI, verbosity, priorityClass, uploadFrom, targetURI, 
 				persistenceType, origFilename, clientMetadata.getMIMEType(), client.isGlobalQueue,
-				getDataSize(container), clientToken, started, ctx.maxInsertRetries, targetFilename, binaryBlob, this.ctx.getCompatibilityMode(), this.ctx.dontCompress, this.ctx.compressorDescriptor, lowLevelClient.realTimeFlag());
+				getDataSize(container), clientToken, started, ctx.maxInsertRetries, targetFilename, binaryBlob, this.ctx.getCompatibilityMode(), this.ctx.dontCompress, this.ctx.compressorDescriptor, lowLevelClient.realTimeFlag(), putter != null ? putter.getSplitfileCryptoKey() : null);
 	}
 
 	@Override
