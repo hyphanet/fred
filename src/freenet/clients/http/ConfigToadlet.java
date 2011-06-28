@@ -499,6 +499,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		formNode.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "hidden", "subconfig", subConfig.getPrefix() } );
+		//'Node' prefix options should not be reset to defaults as it would cause extensive problems.
 		if(!subConfig.getPrefix().equals("node")) {
 			formNode.addChild("input",
 			        new String[]{"type", "name", "value"},
