@@ -242,7 +242,7 @@ public class ClientPutDir extends ClientPutBase {
 	@SuppressWarnings("unchecked")
 	private void freeData(HashMap<String, Object> manifestElements, ObjectContainer container) {
 		if(logMINOR) Logger.minor(this, "freeData() inner on "+this+" persistence type = "+persistenceType+" size = "+manifestElements.size());
-		Iterator i = manifestElements.values().iterator();
+		Iterator<Object> i = manifestElements.values().iterator();
 		while(i.hasNext()) {
 			Object o = i.next();
 			if(o instanceof HashMap) {
