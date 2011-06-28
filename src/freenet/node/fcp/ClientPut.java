@@ -351,6 +351,7 @@ public class ClientPut extends ClientPutBase {
 			container.activate(origFilename, 5);
 			container.activate(ctx, 1);
 			container.activate(lowLevelClient, 1);
+			container.activate(putter, 1);
 		}
 		// FIXME: remove debug code
 		if (lowLevelClient == null)
