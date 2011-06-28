@@ -429,8 +429,11 @@ public class FreenetURI implements Cloneable {
 
 		// strip 'file extensions' from CHKs
 		// added by aum (david@rebirthing.co.nz)
-		if("CHK".equals(keyType))
-			URI = URI.split("[.]")[0];
+		if("CHK".equals(keyType)) {
+			int idx = URI.lastIndexOf('.');
+			if(idx != -1)
+				URI = URI.substring(0, x);
+		}
 
 		// URI now contains: routingKey[,cryptoKey][,metaInfo]
 		StringTokenizer st = new StringTokenizer(URI, ",");
