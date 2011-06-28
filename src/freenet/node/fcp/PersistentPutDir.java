@@ -39,10 +39,11 @@ public class PersistentPutDir extends FCPMessage {
 	private final SimpleFieldSet cached;
 	final boolean dontCompress;
 	final String compressorDescriptor;
+	final boolean realTime;
 	
 	public PersistentPutDir(String identifier, FreenetURI uri, int verbosity, short priorityClass,
 	        short persistenceType, boolean global, String defaultName, HashMap<String, Object> manifestElements,
-	        String token, boolean started, int maxRetries, boolean dontCompress, String compressorDescriptor, boolean wasDiskPut, ObjectContainer container) {
+	        String token, boolean started, int maxRetries, boolean dontCompress, String compressorDescriptor, boolean wasDiskPut, boolean realTime, ObjectContainer container) {
 		this.identifier = identifier;
 		this.uri = uri;
 		this.verbosity = verbosity;
@@ -57,6 +58,7 @@ public class PersistentPutDir extends FCPMessage {
 		this.wasDiskPut = wasDiskPut;
 		this.dontCompress = dontCompress;
 		this.compressorDescriptor = compressorDescriptor;
+		this.realTime = realTime;
 		cached = generateFieldSet(container);
 	}
 
@@ -130,6 +132,7 @@ public class PersistentPutDir extends FCPMessage {
 		fs.put("DontCompress", dontCompress);
 		if(compressorDescriptor != null)
 			fs.putSingle("Codecs", compressorDescriptor);
+		fs.put("RealTime", realTime);
 		return fs;
 	}
 
