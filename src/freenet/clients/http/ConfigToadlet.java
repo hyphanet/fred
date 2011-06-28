@@ -162,30 +162,30 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			        contentNode, "reset-confirm", true);
 			content.addChild("#", l10n("confirmReset"));
 
-			HTMLNode yesForm = ctx.addFormChild(content, path(), "yes-button");
+			HTMLNode formNode = ctx.addFormChild(content, path(), "yes-button");
 			String subconfig = request.getPartAsStringFailsafe("subconfig", MAX_PARAM_VALUE_SIZE);
-			yesForm.addChild("input",
+			formNode.addChild("input",
 			        new String[] { "type", "name", "value" },
 			        new String[] { "hidden", "subconfig", subconfig });
 			//Persist visible fields so that they are reset to default.
 			for (String part : request.getParts()) {
 				if (part.startsWith(subconfig)) {
-					yesForm.addChild("input",
+					formNode.addChild("input",
 				        new String[] { "type", "name", "value" },
 				        new String[] { "hidden", part, "visible" });
 				}
 			}
-			yesForm.addChild("input",
-			        new String[] { "type", "name", "value" },
-			        new String[] { "submit", "reset-to-defaults",
-			                NodeL10n.getBase().getString("Toadlet.yes") });
+			formNode.addChild("input",
+				new String[]{"type", "name", "value"},
+				new String[]{"submit", "reset-to-defaults",
+					NodeL10n.getBase().getString("Toadlet.yes")});
 
-			HTMLNode noForm = ctx.addFormChild(content, path(), "no-button");
-			noForm.addChild("input",
+			formNode.addChild("input",
 			        new String[] { "type", "name", "value" },
 			        new String[] { "submit", "decline-default-reset",
 			                NodeL10n.getBase().getString("Toadlet.no")});
 			writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+			return;
 		}
 
 		//Returning from directory selector with a selection or declining resetting settings to defaults.
@@ -503,8 +503,8 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		        new String[] { "type", "name", "value" },
 		        new String[] { "hidden", "subconfig", subConfig.getPrefix() } );
 		formNode.addChild("input",
-		        new String[] { "type", "name", "value" },
-		        new String[] { "submit",  "confirm-reset-to-defaults", l10n("resetToDefaults")});
+			new String[]{"type", "name", "value"},
+			new String[]{"submit", "confirm-reset-to-defaults", l10n("resetToDefaults")});
 
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
