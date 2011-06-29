@@ -38,7 +38,6 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 	private final boolean isThemedPlugin;
 	private final boolean isL10nPlugin;
 	private final boolean isBaseL10nPlugin;
-	private final boolean isUpdatedablePlugin;
 	private final boolean isConfigurablePlugin;
 	private final String filename;
 	private HashSet<String> toadletLinks = new HashSet<String>();
@@ -64,7 +63,6 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 		isThemedPlugin = (plug instanceof FredPluginThemed);
 		isL10nPlugin = (plug instanceof FredPluginL10n);
 		isBaseL10nPlugin = (plug instanceof FredPluginBaseL10n);
-		isUpdatedablePlugin = (plug instanceof FredPluginUoF);
 		isConfigurablePlugin = (plug instanceof FredPluginConfigurable);
 		if(isConfigurablePlugin) {
 			config = FilePersistentConfig.constructFilePersistentConfig(new File(node.getCfgDir(), "plugin-"+getPluginClassName()+".ini"), "config options for plugin: "+getPluginClassName());
@@ -246,10 +244,6 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 		return isBaseL10nPlugin;
 	}
 	
-	public boolean isUpdatedablePlugin() {
-		return isUpdatedablePlugin;
-	}
-
 	public boolean isConfigurablePlugin() {
 		return isConfigurablePlugin;
 	}
