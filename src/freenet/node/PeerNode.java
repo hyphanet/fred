@@ -2082,6 +2082,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			node.peers.disconnected(this);
 			return -1;
 		}
+		if(!crypto.allowConnection(this, replyTo.getFreenetAddress())) {
+			Logger.normal(this, "Rejecting connection because already have something with the same IP");
+			return -1;
+		}
 		boolean routable = true;
 		boolean newer = false;
 		boolean older = false;
