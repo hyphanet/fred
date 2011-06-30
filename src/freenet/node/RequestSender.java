@@ -877,12 +877,7 @@ loadWaiterLoop:
             long delta = now-startedTryingPeer;
             // This includes the time for the Accepted to come back, so it can take a while sometimes.
             // So log it at error only if it's really bad.
-            if((delta > 10000 && realTimeFlag) || (delta > 20000 && !realTimeFlag) || tryCount > 2)
-            	Logger.error(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(delta, 2, true)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement+(realTimeFlag ? " (realtime)" : " (bulk)")+((source == null)?" (local)":" (remote)"));
-            else if((delta > 1000 && realTimeFlag) || (delta > 10000 && !realTimeFlag) || tryCount > 1)
-            	Logger.warning(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(delta, 2, true)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement+(realTimeFlag ? " (realtime)" : " (bulk)")+((source == null)?" (local)":" (remote)"));            	
-            else if(logMINOR && (waitedForLoadManagement || retriedForLoadManagement))
-            	Logger.minor(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(delta, 2, true)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement+(realTimeFlag ? " (realtime)" : " (bulk)")+((source == null)?" (local)":" (remote)"));
+            logDelta(delta, tryCount, waitedForLoadManagement, retriedForLoadManagement);
             
             if(logMINOR) Logger.minor(this, "Got Accepted");
             
@@ -900,7 +895,17 @@ loadWaiterLoop:
         }
 	}
     
-    private synchronized int timeSinceSentForTimeout() {
+    private void logDelta(long delta, int tryCount, boolean waitedForLoadManagement, boolean retriedForLoadManagement) {
+        if((delta > 10000 && realTimeFlag) || (delta > 20000 && !realTimeFlag) || tryCount > 2)
+        	Logger.error(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(delta, 2, true)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement+(realTimeFlag ? " (realtime)" : " (bulk)")+((source == null)?" (local)":" (remote)"));
+        else if((delta > 1000 && realTimeFlag) || (delta > 10000 && !realTimeFlag) || tryCount > 1)
+        	Logger.warning(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(delta, 2, true)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement+(realTimeFlag ? " (realtime)" : " (bulk)")+((source == null)?" (local)":" (remote)"));            	
+        else if(logMINOR && (waitedForLoadManagement || retriedForLoadManagement))
+        	Logger.minor(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(delta, 2, true)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement+(realTimeFlag ? " (realtime)" : " (bulk)")+((source == null)?" (local)":" (remote)"));
+        node.nodeStats.reportNLMDelay(delta, realTimeFlag, source == null);
+	}
+
+	private synchronized int timeSinceSentForTimeout() {
     	int time = timeSinceSent();
     	if(time > FailureTable.REJECT_TIME) {
     		if(time < fetchTimeout + 10*1000) return FailureTable.REJECT_TIME;

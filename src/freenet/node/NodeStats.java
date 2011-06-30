@@ -3513,4 +3513,25 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return 2 * maxPingTime;
 	}
 	
+	private RunningAverage nlmDelayRTLocal = new TrivialRunningAverage();
+	private RunningAverage nlmDelayRTRemote = new TrivialRunningAverage();
+	private RunningAverage nlmDelayBulkLocal = new TrivialRunningAverage();
+	private RunningAverage nlmDelayBulkRemote = new TrivialRunningAverage();
+
+	public void reportNLMDelay(long waitTime, boolean realTime, boolean local) {
+		if(realTime) {
+			if(local)
+				nlmDelayRTLocal.report(waitTime);
+			else
+				nlmDelayRTRemote.report(waitTime);
+		} else {
+			if(local)
+				nlmDelayBulkLocal.report(waitTime);
+			else
+				nlmDelayBulkRemote.report(waitTime);
+		}
+		if(logMINOR) Logger.minor(this, "Delay times: realtime: local="+nlmDelayRTLocal.currentValue()+" remote = "+nlmDelayRTRemote.currentValue()+
+				" bulk: local="+nlmDelayBulkLocal.currentValue()+" remote="+nlmDelayBulkRemote.currentValue());
+	}
+	
 }
