@@ -653,6 +653,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 	}
 		
+	public SimpleManifestPutter(ClientPutCallback cb,
+			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target,
+			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode, boolean persistent, byte[] forceCryptoKey, ObjectContainer container, ClientContext context) {
+		this(cb, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, persistent, Key.ALGO_AES_PCFB_256_SHA256, forceCryptoKey, container, context);
+
+	}
+		
 	private static byte[] getRandomSplitfileKeys(FreenetURI target,
 			InsertContext ctx, boolean persistent, ObjectContainer container, ClientContext context) {
 		boolean randomiseSplitfileKeys = ClientPutter.randomiseSplitfileKeys(target, ctx, persistent, container);
