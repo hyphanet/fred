@@ -1380,6 +1380,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			}
 			// wantPeer will call node.peers.addPeer(), we don't have to.
 		}
+		if((!dontWant) && !crypto.allowConnection(pn, replyTo.getFreenetAddress())) {
+			Logger.normal(this, "Rejecting connection because already have something with the same IP");
+			dontWant = true;
+		}
 
 		long newTrackerID = pn.completedHandshake(
 				bootID, hisRef, 0, hisRef.length, outgoingCipher, outgoingKey, incommingCipher,
@@ -1601,6 +1605,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				opennet.purgeOldOpennetPeer(pn);
 			}
 			// wantPeer will call node.peers.addPeer(), we don't have to.
+		}
+		if((!dontWant) && !crypto.allowConnection(pn, replyTo.getFreenetAddress())) {
+			Logger.normal(this, "Rejecting connection because already have something with the same IP");
+			dontWant = true;
 		}
 
 		// We change the key
