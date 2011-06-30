@@ -2339,6 +2339,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			node.peers.addConnectedPeer(this);
 			maybeOnConnect();
 		}
+		
+		crypto.maybeBootConnection(this, replyTo.getFreenetAddress());
 
 		return packets.trackerID;
 	}
