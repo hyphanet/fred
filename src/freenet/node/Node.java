@@ -754,7 +754,8 @@ public class Node implements TimeSkewDetectorCallback {
 	private short maxHTL;
 	private boolean skipWrapperWarning;
 	private int maxPacketSize;
-	private volatile boolean enableNewLoadManagement;
+	private volatile boolean enableNewLoadManagementRT;
+	private volatile boolean enableNewLoadManagementBulk;
 	/** Should inserts ignore low backoff times by default? */
 	public static boolean IGNORE_LOW_BACKOFF_DEFAULT = false;
 	/** Definition of "low backoff times" for above. */
@@ -2516,21 +2517,37 @@ public class Node implements TimeSkewDetectorCallback {
 		maxPacketSize = nodeConfig.getInt("maxPacketSize");
 		updateMTU();
 		
-		nodeConfig.register("enableNewLoadManagement", false, sortOrder++, true, true, "Node.enableNewLoadManagement", "Node.enableNewLoadManagementLong", new BooleanCallback() {
+		nodeConfig.register("enableNewLoadManagementRT", false, sortOrder++, true, true, "Node.enableNewLoadManagementRT", "Node.enableNewLoadManagementRTLong", new BooleanCallback() {
 
 			@Override
 			public Boolean get() {
-				return enableNewLoadManagement;
+				return enableNewLoadManagementRT;
 			}
 
 			@Override
 			public void set(Boolean val) throws InvalidConfigValueException,
 					NodeNeedRestartException {
-				enableNewLoadManagement = val;
+				enableNewLoadManagementRT = val;
 			}
 			
 		});
-		enableNewLoadManagement = nodeConfig.getBoolean("enableNewLoadManagement");
+		enableNewLoadManagementRT = nodeConfig.getBoolean("enableNewLoadManagementRT");
+
+		nodeConfig.register("enableNewLoadManagementBulk", false, sortOrder++, true, true, "Node.enableNewLoadManagementBulk", "Node.enableNewLoadManagementBulkLong", new BooleanCallback() {
+
+			@Override
+			public Boolean get() {
+				return enableNewLoadManagementBulk;
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException,
+					NodeNeedRestartException {
+				enableNewLoadManagementBulk = val;
+			}
+			
+		});
+		enableNewLoadManagementBulk = nodeConfig.getBoolean("enableNewLoadManagementBulk");
 
 		nodeConfig.finishedInitialization();
 		if(shouldWriteConfig)
@@ -6302,7 +6319,7 @@ public class Node implements TimeSkewDetectorCallback {
 		return new MersenneTwister(buf);
 	}
 	
-	public boolean enableNewLoadManagement() {
-		return enableNewLoadManagement;
+	public boolean enableNewLoadManagement(boolean realTimeFlag) {
+		return realTimeFlag ? enableNewLoadManagementRT : enableNewLoadManagementBulk;
 	}
 }

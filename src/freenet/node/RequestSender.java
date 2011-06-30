@@ -300,7 +300,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     private boolean killedByRecentlyFailed = false;
     
     private void routeRequests() {
-    	if(node.enableNewLoadManagement())
+    	if(node.enableNewLoadManagement(realTimeFlag))
     		routeRequestsNewLoadManagement();
     	else
     		routeRequestsOldLoadManagement();

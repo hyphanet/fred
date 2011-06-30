@@ -163,7 +163,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	private UserAlert startingUpAlert;
 	private RestartDBJob[] startupDatabaseJobs;
 	private boolean alwaysCommit;
-	private boolean useAIMDs;
+	private boolean useAIMDsRT;
+	private boolean useAIMDsBulk;
 
 	NodeClientCore(Node node, Config config, SubConfig nodeConfig, SubConfig installConfig, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, long nodeDBHandle, ObjectContainer container) throws NodeInitException {
 		this.node = node;
@@ -320,12 +321,12 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		compressor.setClientContext(clientContext);
 		storeChecker.setContext(clientContext);
 
-		nodeConfig.register("useAIMDs", true, sortOrder++, true, false, "NodeClientCore.useAIMDs", "NodeClientCore.useAIMDsLong", new BooleanCallback() {
+		nodeConfig.register("useAIMDsRT", true, sortOrder++, true, false, "NodeClientCore.useAIMDsRT", "NodeClientCore.useAIMDsRTLong", new BooleanCallback() {
 
 			@Override
 			public Boolean get() {
 				synchronized(NodeClientCore.this) {
-					return useAIMDs;
+					return useAIMDsRT;
 				}
 			}
 
@@ -333,13 +334,38 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			public void set(Boolean val) throws InvalidConfigValueException,
 					NodeNeedRestartException {
 				synchronized(NodeClientCore.this) {
-					if(useAIMDs == val.booleanValue()) return;
-					useAIMDs = val;
+					if(useAIMDsRT == val.booleanValue()) return;
+					useAIMDsRT = val;
 				}
-				NodeClientCore.this.requestStarters.setUseAIMDs(val);
+				NodeClientCore.this.requestStarters.setUseAIMDsRT(val);
 			}
 			
 		});
+		
+		useAIMDsRT = nodeConfig.getBoolean("useAIMDsRT");
+		
+		nodeConfig.register("useAIMDsBulk", true, sortOrder++, true, false, "NodeClientCore.useAIMDsBulk", "NodeClientCore.useAIMDsBulkLong", new BooleanCallback() {
+
+			@Override
+			public Boolean get() {
+				synchronized(NodeClientCore.this) {
+					return useAIMDsBulk;
+				}
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException,
+					NodeNeedRestartException {
+				synchronized(NodeClientCore.this) {
+					if(useAIMDsBulk == val.booleanValue()) return;
+					useAIMDsBulk = val;
+				}
+				NodeClientCore.this.requestStarters.setUseAIMDsBulk(val);
+			}
+			
+		});
+		
+		useAIMDsBulk = nodeConfig.getBoolean("useAIMDsBulk");
 		
 		try {
 			requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext, nodeDBHandle, container);
@@ -347,8 +373,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			throw new NodeInitException(NodeInitException.EXIT_BAD_CONFIG, e1.toString());
 		}
 		
-		useAIMDs = nodeConfig.getBoolean("useAIMDs");
-		requestStarters.setUseAIMDs(useAIMDs);
+		requestStarters.setUseAIMDsBulk(useAIMDsBulk);
+		requestStarters.setUseAIMDsRT(useAIMDsRT);
 		
 		clientContext.init(requestStarters, alerts);
 		initKeys(container);
@@ -1944,7 +1970,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		// slots and CPU. FIXME SECURITY/NETWORK: Reconsider if we ever decide
 		// not to decrement on the originator.
 		short origHTL = node.decrementHTL(null, node.maxHTL());
-		node.peers.closerPeer(null, new HashSet<PeerNode>(), key.toNormalizedDouble(), true, false, -1, null, 2.0, key, origHTL, 0, true, realTime, r, false, System.currentTimeMillis(), node.enableNewLoadManagement());
+		node.peers.closerPeer(null, new HashSet<PeerNode>(), key.toNormalizedDouble(), true, false, -1, null, 2.0, key, origHTL, 0, true, realTime, r, false, System.currentTimeMillis(), node.enableNewLoadManagement(realTime));
 		return r.recentlyFailed();
 	}
 

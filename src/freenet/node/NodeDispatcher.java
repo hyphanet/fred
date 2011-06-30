@@ -890,7 +890,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			}
 			if(next == null)
 			next = node.peers.closerPeer(pn, ctx.routedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-				        null, htl, 0, pn == null, false, node.enableNewLoadManagement());
+				        null, htl, 0, pn == null, false, node.enableNewLoadManagement(false));
 			if(logMINOR) Logger.minor(this, "Next: "+next+" message: "+m);
 			if(next != null) {
 				// next is connected, or at least has been => next.getPeer() CANNOT be null.
