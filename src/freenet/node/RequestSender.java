@@ -878,11 +878,11 @@ loadWaiterLoop:
             // This includes the time for the Accepted to come back, so it can take a while sometimes.
             // So log it at error only if it's really bad.
             if((delta > 10000 && realTimeFlag) || (delta > 20000 && !realTimeFlag) || tryCount > 2)
-            	Logger.error(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(delta, 2, true)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement+(realTimeFlag ? " (realtime)" : " (bulk)"));
+            	Logger.error(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(delta, 2, true)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement+(realTimeFlag ? " (realtime)" : " (bulk)")+((source == null)?" (local)":" (remote)"));
             else if((delta > 1000 && realTimeFlag) || (delta > 10000 && !realTimeFlag) || tryCount > 1)
-            	Logger.warning(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(delta, 2, true)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement+(realTimeFlag ? " (realtime)" : " (bulk)"));            	
+            	Logger.warning(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(delta, 2, true)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement+(realTimeFlag ? " (realtime)" : " (bulk)")+((source == null)?" (local)":" (remote)"));            	
             else if(logMINOR && (waitedForLoadManagement || retriedForLoadManagement))
-            	Logger.minor(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(delta, 2, true)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement+(realTimeFlag ? " (realtime)" : " (bulk)"));
+            	Logger.minor(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(delta, 2, true)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement+(realTimeFlag ? " (realtime)" : " (bulk)")+((source == null)?" (local)":" (remote)"));
             
             if(logMINOR) Logger.minor(this, "Got Accepted");
             
