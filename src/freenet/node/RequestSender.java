@@ -2088,6 +2088,7 @@ loadWaiterLoop:
     		synchronized(this) {
     			finalHeaders = headers;
     		}
+    		if(logMINOR) Logger.minor(this, "Verified");
     		// Cache only in the cache, not the store. The reason for this is that
     		// requests don't go to the full distance, and therefore pollute the 
     		// store; simulations it is best to only include data from requests
@@ -2101,7 +2102,9 @@ loadWaiterLoop:
     			finalSskData = data;
     		}
     		try {
-				node.storeShallow(new SSKBlock(data, headers, (NodeSSK)key, false), canWriteClientCache, canWriteDatastore, tryOffersOnly);
+    			SSKBlock block = new SSKBlock(data, headers, (NodeSSK)key, false);
+        		if(logMINOR) Logger.minor(this, "Verified SSK");
+				node.storeShallow(block, canWriteClientCache, canWriteDatastore, tryOffersOnly);
 			} catch (KeyCollisionException e) {
 				Logger.normal(this, "Collision on "+this);
 			}
