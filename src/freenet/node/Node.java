@@ -2517,7 +2517,7 @@ public class Node implements TimeSkewDetectorCallback {
 		maxPacketSize = nodeConfig.getInt("maxPacketSize");
 		updateMTU();
 		
-		nodeConfig.register("enableNewLoadManagementRT", false, sortOrder++, true, true, "Node.enableNewLoadManagementRT", "Node.enableNewLoadManagementRTLong", new BooleanCallback() {
+		nodeConfig.register("enableNewLoadManagementRT", false, sortOrder++, true, false, "Node.enableNewLoadManagementRT", "Node.enableNewLoadManagementRTLong", new BooleanCallback() {
 
 			@Override
 			public Boolean get() {
@@ -2533,7 +2533,7 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 		enableNewLoadManagementRT = nodeConfig.getBoolean("enableNewLoadManagementRT");
 
-		nodeConfig.register("enableNewLoadManagementBulk", false, sortOrder++, true, true, "Node.enableNewLoadManagementBulk", "Node.enableNewLoadManagementBulkLong", new BooleanCallback() {
+		nodeConfig.register("enableNewLoadManagementBulk", false, sortOrder++, true, false, "Node.enableNewLoadManagementBulk", "Node.enableNewLoadManagementBulkLong", new BooleanCallback() {
 
 			@Override
 			public Boolean get() {
