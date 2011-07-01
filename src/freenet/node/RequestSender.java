@@ -303,14 +303,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
      * or chaining to MainLoopCallback, i.e. the caller isn't going to do more 
      * stuff relevant to the request afterwards. */
     private void routeRequests() {
-    	if(node.enableNewLoadManagement(realTimeFlag))
-    		routeRequestsNewLoadManagement();
-    	else
-    		routeRequestsOldLoadManagement();
-    }
-    
-    
-    private void routeRequestsOldLoadManagement() {
+    	
+    	boolean newLoadManagement = node.enableNewLoadManagement(realTimeFlag);
     	
     	PeerNode next = null;
     	
@@ -386,7 +380,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             
             // Route it
             next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-			        2.0, key, htl, 0, source == null, realTimeFlag, r, false, now, false);
+			        2.0, key, htl, 0, source == null, realTimeFlag, r, false, now, newLoadManagement);
             
             long recentlyFailed = r.recentlyFailed();
             if(recentlyFailed > now) {
@@ -426,209 +420,96 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 return;
             }
             
-            synchronized(this) {
-            	lastNode = next;
-            }
-			
-            if(logMINOR) Logger.minor(this, "Routing request to "+next);
-            nodesRoutedTo.add(next);
-            
-            Message req = createDataRequest();
-            
-            // Not possible to get an accurate time for sending, guaranteed to be not later than the time of receipt.
-            // Why? Because by the time the sent() callback gets called, it may already have been acked, under heavy load.
-            // So take it from when we first started to try to send the request.
-            // See comments below when handling FNPRecentlyFailed for why we need this.
-            synchronized(this) {
-            	timeSentRequest = System.currentTimeMillis();
-            }
-			
-            origTag.addRoutedTo(next, false);
-            
-            try {
-            	//This is the first contact to this node, it is more likely to timeout
-				/*
-				 * using sendSync could:
-				 *   make ACCEPTED_TIMEOUT more accurate (as it is measured from the send-time),
-				 *   use a lot of our time that we have to fulfill this request (simply waiting on the send queue, or longer if the node just went down),
-				 * using sendAsync could:
-				 *   make ACCEPTED_TIMEOUT much more likely,
-				 *   leave many hanging-requests/unclaimedFIFO items,
-				 *   potentially make overloaded peers MORE overloaded (we make a request and promptly forget about them).
-				 * 
-				 * Don't use sendAsync().
-				 */
-            	next.sendSync(req, this, realTimeFlag);
-            	next.reportRoutedTo(key.toNormalizedDouble(), source == null, realTimeFlag);
-    			node.peers.incrementSelectionSamples(System.currentTimeMillis(), next);
-            } catch (NotConnectedException e) {
-            	Logger.minor(this, "Not connected");
-            	next.noLongerRoutingTo(origTag, false);
-            	continue;
-            } catch (SyncSendWaitedTooLongException e) {
-            	Logger.error(this, "Failed to send "+req+" to "+next+" in a reasonable time.");
-            	next.noLongerRoutingTo(origTag, false);
-            	// Try another node.
-            	continue;
-			}
-            
-            synchronized(this) {
-            	hasForwarded = true;
-            }
-            
-loadWaiterLoop:
-            while(true) {
-            	DO action = waitForAccepted(null, next);
-            	// Here FINISHED means accepted, WAIT means try again (soft reject).
-            	if(action == DO.WAIT) {
-					//retriedForLoadManagement = true;
-            		continue loadWaiterLoop;
-            	} else if(action == DO.NEXT_PEER) {
-            		continue peerLoop;
-            	} else { // FINISHED => accepted
-            		break;
-            	}
-            } // loadWaiterLoop
-            
-            if(logMINOR) Logger.minor(this, "Got Accepted");
-            
-            // Otherwise, must be Accepted
-            
-            gotMessages = 0;
-            lastMessage = null;
-            
-            synchronized(this) {
-            	receivingAsync = true;
-            }
-            MainLoopCallback cb = new MainLoopCallback(lastNode, false);
-            cb.schedule();
-            return;
-        }
-	}
-    
-    
-    private void routeRequestsNewLoadManagement() {
-    	
-    	PeerNode next = null;
-        
-        peerLoop:
-        while(true) {
-            boolean canWriteStorePrev = node.canWriteDatastoreInsert(htl);
-            // FIXME SECURITY/NETWORK: Should we never decrement on the originator?
-            // It would buy us another hop of no-cache, making it significantly
-            // harder to trace after the fact; however it would make local 
-            // requests fractionally easier to detect by peers.
-            // IMHO local requests are so easy for peers to detect anyway that
-            // it's probably worth it.
-            // Currently the worst case is we don't cache on the originator
-            // and we don't cache on the first peer we route to. If we get
-            // RejectedOverload's etc we won't cache on them either, up to 5;
-            // but lets assume that one of them accepts, and routes onward;
-            // the *second* hop out (with the originator being 0) WILL cache.
-            // Note also that changing this will have a performance impact.
-            if((!starting) && (!canWriteStorePrev)) {
-            	// We always decrement on starting a sender.
-            	// However, after that, if our HTL is above the no-cache threshold,
-            	// we do not want to decrement the HTL for trivial rejections (e.g. RejectedLoop),
-            	// because we would end up caching data too close to the originator.
-            	// So allow 5 failures and then RNF.
-            	if(highHTLFailureCount++ >= MAX_HIGH_HTL_FAILURES) {
-            		if(logMINOR) Logger.minor(this, "Too many failures at non-cacheable HTL");
-            		finish(ROUTE_NOT_FOUND, null, false);
-            		return;
-            	}
-            	if(logMINOR) Logger.minor(this, "Allowing failure "+highHTLFailureCount+" htl is still "+htl);
-            } else {
-            	/*
-            	 * If we haven't routed to any node yet, decrement according to the source.
-            	 * If we have, decrement according to the node which just failed.
-            	 * Because:
-            	 * 1) If we always decrement according to source then we can be at max or min HTL
-            	 * for a long time while we visit *every* peer node. This is BAD!
-            	 * 2) The node which just failed can be seen as the requestor for our purposes.
-            	 */
-            	// Decrement at this point so we can DNF immediately on reaching HTL 0.
-            	htl = node.decrementHTL((hasForwarded ? next : source), htl);
-            	if(logMINOR) Logger.minor(this, "Decremented HTL to "+htl);
-            }
-            starting = false;
-
-            if(logMINOR) Logger.minor(this, "htl="+htl);
-            if(htl == 0) {
-            	// This used to be RNF, I dunno why
-				//???: finish(GENERATED_REJECTED_OVERLOAD, null);
-                node.failureTable.onFinalFailure(key, null, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
-                finish(DATA_NOT_FOUND, null, false);
-                return;
-            }
-            
-            // If we are unable to reply in a reasonable time, and we haven't started a 
-            // transfer, we should not route further. There are other cases e.g. we 
-            // reassign to self (due to external timeout) while waiting for the data, then
-            // get a transfer without timing out on the node. In that case we will get the
-            // data, but just for ourselves.
-            boolean failed;
-            synchronized(this) {
-            	failed = reassignedToSelfDueToMultipleTimeouts;
-            	if(!failed) routeAttempts++;
-            }
-            if(failed) {
-            	finish(TIMED_OUT, null, false);
-            	return;
-            }
-
-            RecentlyFailedReturn r = new RecentlyFailedReturn();
-            
-            long now = System.currentTimeMillis();
-            
-            // Route it
-            next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-			        2.0, key, htl, 0, source == null, realTimeFlag, r, false, now, true);
-            
-            long recentlyFailed = r.recentlyFailed();
-            if(recentlyFailed > now) {
-            	synchronized(this) {
-            		recentlyFailedTimeLeft = (int)Math.min(Integer.MAX_VALUE, recentlyFailed - now);
-            	}
-            	finish(RECENTLY_FAILED, null, false);
-                node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, -1, source);
-            	return;
-            } else {
-            	boolean rfAnyway = false;
-            	synchronized(this) {
-            		rfAnyway = killedByRecentlyFailed;
-            	}
-            	if(rfAnyway) {
-            		// We got a RecentlyFailed so we have to send one.
-            		// But we set a timeout of 0 because we're not generating one based on where we've routed the key to.
-            		// Returning the time we were passed minus some value will give the next node an inaccurate high timeout.
-            		// Rerouting (even assuming we change FNPRecentlyFailed to include a hop count) would also cause problems because nothing would be quenched until we have visited every node on the network.
-            		// That leaves forwarding a RecentlyFailed which won't create further RecentlyFailed's.
-            		// However the peer will still avoid sending us the same key for 10 minutes due to per-node failure tables. This is fine, we probably don't have it anyway!
-            		synchronized(this) {
-            			recentlyFailedTimeLeft = 0;
-            		}
-                	finish(RECENTLY_FAILED, null, false);
-                    node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, -1, source);
-                	return;
-            	}
-            }
-            
-            if(next == null) {
-				if (logMINOR && rejectOverloads>0)
-					Logger.minor(this, "no more peers, but overloads ("+rejectOverloads+"/"+routeAttempts+" overloaded)");
-                // Backtrack
-                finish(ROUTE_NOT_FOUND, null, false);
-                node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, -1, source);
-                return;
-            }
-            
-            if(innerRouteRequestsNew(next))
+            if(newLoadManagement ? 
+            		innerRouteRequestsNew(next) : innerRouteRequestsOld(next))
             	continue peerLoop;
-            return;
+            else
+            	return;
         }
 	}
     
+    
+    private boolean innerRouteRequestsOld(PeerNode next) {
+        
+        synchronized(this) {
+        	lastNode = next;
+        }
+		
+        if(logMINOR) Logger.minor(this, "Routing request to "+next);
+        nodesRoutedTo.add(next);
+        
+        Message req = createDataRequest();
+        
+        // Not possible to get an accurate time for sending, guaranteed to be not later than the time of receipt.
+        // Why? Because by the time the sent() callback gets called, it may already have been acked, under heavy load.
+        // So take it from when we first started to try to send the request.
+        // See comments below when handling FNPRecentlyFailed for why we need this.
+        synchronized(this) {
+        	timeSentRequest = System.currentTimeMillis();
+        }
+		
+        origTag.addRoutedTo(next, false);
+        
+        try {
+        	//This is the first contact to this node, it is more likely to timeout
+			/*
+			 * using sendSync could:
+			 *   make ACCEPTED_TIMEOUT more accurate (as it is measured from the send-time),
+			 *   use a lot of our time that we have to fulfill this request (simply waiting on the send queue, or longer if the node just went down),
+			 * using sendAsync could:
+			 *   make ACCEPTED_TIMEOUT much more likely,
+			 *   leave many hanging-requests/unclaimedFIFO items,
+			 *   potentially make overloaded peers MORE overloaded (we make a request and promptly forget about them).
+			 * 
+			 * Don't use sendAsync().
+			 */
+        	next.sendSync(req, this, realTimeFlag);
+        	next.reportRoutedTo(key.toNormalizedDouble(), source == null, realTimeFlag);
+			node.peers.incrementSelectionSamples(System.currentTimeMillis(), next);
+        } catch (NotConnectedException e) {
+        	Logger.minor(this, "Not connected");
+        	next.noLongerRoutingTo(origTag, false);
+        	return true;
+        } catch (SyncSendWaitedTooLongException e) {
+        	Logger.error(this, "Failed to send "+req+" to "+next+" in a reasonable time.");
+        	next.noLongerRoutingTo(origTag, false);
+        	// Try another node.
+        	return true;
+		}
+        
+        synchronized(this) {
+        	hasForwarded = true;
+        }
+        
+loadWaiterLoop:
+        while(true) {
+        	DO action = waitForAccepted(null, next);
+        	// Here FINISHED means accepted, WAIT means try again (soft reject).
+        	if(action == DO.WAIT) {
+				//retriedForLoadManagement = true;
+        		continue loadWaiterLoop;
+        	} else if(action == DO.NEXT_PEER) {
+        		return true;
+        	} else { // FINISHED => accepted
+        		break;
+        	}
+        } // loadWaiterLoop
+        
+        if(logMINOR) Logger.minor(this, "Got Accepted");
+        
+        // Otherwise, must be Accepted
+        
+        gotMessages = 0;
+        lastMessage = null;
+        
+        synchronized(this) {
+        	receivingAsync = true;
+        }
+        MainLoopCallback cb = new MainLoopCallback(lastNode, false);
+        cb.schedule();
+        return false;
+	}
+
     /**
      * @param next
      * @return True to try another peer.
