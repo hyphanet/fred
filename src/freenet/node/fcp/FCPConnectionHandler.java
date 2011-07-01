@@ -92,14 +92,17 @@ public class FCPConnectionHandler implements Closeable {
 	private final HashMap<File, DDACheckJob> inTestDirectories = new HashMap<File, DDACheckJob>();
 	public final RequestClient connectionRequestClientBulk = new RequestClient() {
 		
+		@Override
 		public boolean persistent() {
 			return false;
 		}
 		
+		@Override
 		public void removeFrom(ObjectContainer container) {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public boolean realTimeFlag() {
 			return false;
 		}
@@ -107,14 +110,17 @@ public class FCPConnectionHandler implements Closeable {
 	};
 	public final RequestClient connectionRequestClientRT = new RequestClient() {
 		
+		@Override
 		public boolean persistent() {
 			return false;
 		}
 		
+		@Override
 		public void removeFrom(ObjectContainer container) {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public boolean realTimeFlag() {
 			return true;
 		}
@@ -141,6 +147,7 @@ public class FCPConnectionHandler implements Closeable {
 		outputHandler.start();
 	}
 
+	@Override
 	public void close() {
 		ClientRequest[] requests;
 		if(rebootClient != null)
@@ -169,6 +176,7 @@ public class FCPConnectionHandler implements Closeable {
 		try {
 			server.core.clientContext.jobRunner.queue(new DBJob() {
 
+				@Override
 				public boolean run(ObjectContainer container, ClientContext context) {
 					if((rebootClient != null) && !rebootClient.hasPersistentRequests(null))
 						server.unregisterClient(rebootClient, null);
@@ -291,6 +299,7 @@ public class FCPConnectionHandler implements Closeable {
 						try {
 							server.core.clientContext.jobRunner.queue(new DBJob() {
 
+								@Override
 								public boolean run(ObjectContainer container, ClientContext context) {
 									ClientGet getter;
 									try {
@@ -361,7 +370,10 @@ public class FCPConnectionHandler implements Closeable {
 		FCPMessage failedMessage = null;
 		synchronized(this) {
 			boolean success;
-			if(isClosed) return;
+			if(isClosed) {
+				if(logMINOR) Logger.minor(this, "Connection is closed");
+				return;
+			}
 			// We need to track non-persistent requests anyway, so we may as well check
 			if(persistent)
 				success = true;
@@ -384,6 +396,7 @@ public class FCPConnectionHandler implements Closeable {
 					try {
 						server.core.clientContext.jobRunner.queue(new DBJob() {
 
+							@Override
 							public boolean run(ObjectContainer container, ClientContext context) {
 								ClientPut putter;
 								try {
@@ -437,7 +450,7 @@ public class FCPConnectionHandler implements Closeable {
 				failedMessage = new IdentifierCollisionMessage(id, message.global);
 			}
 		}
-		if(message.persistenceType == ClientRequest.PERSIST_REBOOT)
+		if(message.persistenceType == ClientRequest.PERSIST_REBOOT && cp != null)
 			try {
 				cp.register(null, false);
 			} catch (IdentifierCollisionException e) {
@@ -452,6 +465,7 @@ public class FCPConnectionHandler implements Closeable {
 				try {
 					server.core.clientContext.jobRunner.queue(new DBJob() {
 
+						@Override
 						public boolean run(ObjectContainer container, ClientContext context) {
 							if(c != null)
 								c.freeData(container);
@@ -511,6 +525,7 @@ public class FCPConnectionHandler implements Closeable {
 				try {
 					server.core.clientContext.jobRunner.queue(new DBJob() {
 
+						@Override
 						public boolean run(ObjectContainer container, ClientContext context) {
 							ClientPutDir putter;
 							try {

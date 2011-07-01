@@ -55,6 +55,7 @@ public abstract class StoringUserEvent<T extends StoringUserEvent<T>> extends Ab
 		}
 	}
 
+	@Override
 	public boolean isValid() {
 		boolean valid;
 		synchronized(events) {

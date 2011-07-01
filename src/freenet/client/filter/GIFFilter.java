@@ -26,6 +26,7 @@ public class GIFFilter implements ContentDataFilter {
 		{ (byte)'G', (byte)'I', (byte)'F', (byte)'8', (byte)'9', (byte)'a' };
 		
 	
+	@Override
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		DataInputStream dis = new DataInputStream(input);
@@ -53,6 +54,7 @@ public class GIFFilter implements ContentDataFilter {
 		throw new DataFilterException(shortReason, shortReason, message);
 	}
 
+	@Override
 	public void writeFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		output.write(input.read());

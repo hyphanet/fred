@@ -41,12 +41,13 @@ public class PrioritizedSerialExecutor implements Executor {
 
 		Thread current;
 
+		@Override
 		public int getPriority() {
 			return priority;
 		}
 
+		@Override
 		public void run() {
-			long lastDumped = System.currentTimeMillis();
 			synchronized(jobs) {
 				if(current != null) {
 					if(current.isAlive()) {
@@ -57,6 +58,7 @@ public class PrioritizedSerialExecutor implements Executor {
 				current = Thread.currentThread();
 			}
 			try {
+			boolean calledIdleCallback = false;
 			while(true) {
 				Runnable job = null;
 				synchronized(jobs) {
@@ -72,11 +74,24 @@ public class PrioritizedSerialExecutor implements Executor {
 						waiting=false;
 						job = checkQueue();
 						if(job == null) {
-							running=false;
-							return;
+							if(calledIdleCallback || callback == null) {
+								running=false;
+								current = null;
+								return;
+							}
 						}
 					}
 				}
+				if(job == null) {
+					try {
+						callback.onIdle();
+					} catch (Throwable t) {
+						Logger.error(this, "Idle callback failed: "+t, t);
+					}
+					calledIdleCallback = true;
+					continue;
+				}
+				calledIdleCallback = false;
 				try {
 					if(logMINOR)
 						Logger.minor(this, "Running job "+job);
@@ -134,7 +149,7 @@ public class PrioritizedSerialExecutor implements Executor {
 	 * @param invertOrder Set if the priorities are thread priorities. Unset if they are request priorities. D'oh!
 	 */
 	public PrioritizedSerialExecutor(int priority, int internalPriorityCount, int defaultPriority, boolean invertOrder, int jobTimeout, ExecutorIdleCallback callback, NodeStats statistics) {
-		@SuppressWarnings("unchecked") LinkedList<Runnable>[] jobs = (LinkedList<Runnable>[])new LinkedList[internalPriorityCount];
+		@SuppressWarnings("unchecked") LinkedList<Runnable>[] jobs = new LinkedList[internalPriorityCount];
 		for (int i=0;i<jobs.length;i++) {
 			jobs[i] = new LinkedList<Runnable>();
 		}
@@ -179,10 +194,12 @@ public class PrioritizedSerialExecutor implements Executor {
 		}
 	}
 
+	@Override
 	public void execute(Runnable job) {
 		execute(job, "<noname>");
 	}
 
+	@Override
 	public void execute(Runnable job, String jobName) {
 		int prio = defaultPriority;
 		if(job instanceof PrioRunnable)
@@ -221,10 +238,12 @@ public class PrioritizedSerialExecutor implements Executor {
 		}
 	}
 
+	@Override
 	public void execute(Runnable job, String jobName, boolean fromTicker) {
 		execute(job, jobName);
 	}
 
+	@Override
 	public int[] runningThreads() {
 		int[] retval = new int[NativeThread.JAVA_PRIORITY_RANGE+1];
 		if (running)
@@ -232,6 +251,7 @@ public class PrioritizedSerialExecutor implements Executor {
 		return retval;
 	}
 
+	@Override
 	public int[] waitingThreads() {
 		int[] retval = new int[NativeThread.JAVA_PRIORITY_RANGE+1];
 		synchronized(jobs) {
@@ -260,7 +280,7 @@ public class PrioritizedSerialExecutor implements Executor {
 	
 	@SuppressWarnings("unchecked")
 	public LinkedList<Runnable>[] getQueuedJobsByPriority() {
-		final LinkedList<Runnable>[] jobsClone = (LinkedList<Runnable>[])new LinkedList[jobs.length];
+		final LinkedList<Runnable>[] jobsClone = new LinkedList[jobs.length];
 		
 		synchronized(jobs) {
 			for(int i=0; i < jobs.length; ++i) {
@@ -277,6 +297,7 @@ public class PrioritizedSerialExecutor implements Executor {
 		}
 	}
 
+	@Override
 	public int getWaitingThreadsCount() {
 		synchronized(jobs) {
 			return (waiting ? 1 : 0);

@@ -27,6 +27,7 @@ import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.BinaryBlob;
 import freenet.client.async.BinaryBlobFormatException;
+import freenet.client.async.BinaryBlobWriter;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutCallback;
@@ -58,8 +59,10 @@ import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.io.ArrayBucket;
 import freenet.support.io.FileBucket;
 import freenet.support.io.RandomAccessFileWrapper;
+import freenet.support.io.RandomAccessThing;
 
 /**
  * Co-ordinates update over mandatory. Update over mandatory = updating from your peers, even
@@ -241,10 +244,12 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		Message msg = DMT.createUOMRequestRevocation(updateManager.node.random.nextLong());
 		source.sendAsync(msg, new AsyncMessageCallback() {
 
+			@Override
 			public void acknowledged() {
 				// Ok
 			}
 
+			@Override
 			public void disconnected() {
 				// :(
 				System.err.println("Failed to send request for revocation key to " + source.userToString() + 
@@ -255,11 +260,13 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				}
 			}
 
+			@Override
 			public void fatalError() {
 				// Not good!
 				System.err.println("Failed to send request for revocation key to " + source.userToString() + " because of a fatal error.");
 			}
 
+			@Override
 			public void sent() {
 				// Cool
 			}
@@ -267,6 +274,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		
 		updateManager.node.getTicker().queueTimedJob(new Runnable() {
 
+			@Override
 			public void run() {
 				if(updateManager.isBlown()) return;
 				synchronized(UpdateOverMandatoryManager.this) {
@@ -332,6 +340,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				}
 				updateManager.node.getTicker().queueTimedJob(new Runnable() {
 
+					@Override
 					public void run() {
 						if(updateManager.isBlown())
 							return;
@@ -398,6 +407,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				}
 				updateManager.node.getTicker().queueTimedJob(new Runnable() {
 
+					@Override
 					public void run() {
 						if(updateManager.isBlown())
 							return;
@@ -472,10 +482,12 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			System.err.println("Fetching "+lname+" jar from " + source.userToString());
 			source.sendAsync(msg, new AsyncMessageCallback() {
 
+				@Override
 				public void acknowledged() {
 					// Cool! Wait for the actual transfer.
 				}
 
+				@Override
 				public void disconnected() {
 					Logger.normal(this, "Disconnected from " + source.userToString() + " after sending UOMRequest"+name);
 					synchronized(UpdateOverMandatoryManager.this) {
@@ -487,6 +499,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 						maybeRequestMainJar();
 				}
 
+				@Override
 				public void fatalError() {
 					Logger.normal(this, "Fatal error from " + source.userToString() + " after sending UOMRequest"+name);
 					synchronized(UpdateOverMandatoryManager.this) {
@@ -498,10 +511,12 @@ public class UpdateOverMandatoryManager implements RequestClient {
 						maybeRequestMainJar();
 				}
 
+				@Override
 				public void sent() {
 					// Timeout...
 					updateManager.node.ticker.queueTimedJob(new Runnable() {
 
+						@Override
 						public void run() {
 							synchronized(UpdateOverMandatoryManager.this) {
 								if(!askedSendJar.contains(source))
@@ -745,7 +760,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	public boolean handleRequestRevocation(Message m, final PeerNode source) {
 		// Do we have the data?
 
-		File data = updateManager.revocationChecker.getBlobFile();
+		final RandomAccessThing data = updateManager.revocationChecker.getBlobThing();
 
 		if(data == null) {
 			Logger.normal(this, "Peer " + source + " asked us for the blob file for the revocation key but we don't have it!");
@@ -755,23 +770,15 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		final long uid = m.getLong(DMT.UID);
 
-		final RandomAccessFileWrapper raf;
-		try {
-			raf = new RandomAccessFileWrapper(data, "r");
-		} catch(FileNotFoundException e) {
-			Logger.error(this, "Peer " + source + " asked us for the blob file for the revocation key, we have downloaded it but don't have the file even though we did have it when we checked!: " + e, e);
-			return true;
-		}
-
 		final PartiallyReceivedBulk prb;
 		long length;
 		try {
-			length = raf.size();
+			length = data.size();
 			prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), length,
-				Node.PACKET_SIZE, raf, true);
+				Node.PACKET_SIZE, data, true);
 		} catch(IOException e) {
 			Logger.error(this, "Peer " + source + " asked us for the blob file for the revocation key, we have downloaded it but we can't determine the file size: " + e, e);
-			raf.close();
+			data.close();
 			return true;
 		}
 
@@ -780,18 +787,19 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			bt = new BulkTransmitter(prb, source, uid, false, updateManager.ctr, true);
 		} catch(DisconnectedException e) {
 			Logger.error(this, "Peer " + source + " asked us for the blob file for the revocation key, then disconnected: " + e, e);
-			raf.close();
+			data.close();
 			return true;
 		}
 
 		final Runnable r = new Runnable() {
 
+			@Override
 			public void run() {
 				if(!bt.send())
 					Logger.error(this, "Failed to send revocation key blob to " + source.userToString() + " : " + bt.getCancelReason());
 				else
 					Logger.normal(this, "Sent revocation key blob to " + source.userToString());
-				raf.close();
+				data.close();
 			}
 		};
 
@@ -800,6 +808,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		try {
 			source.sendAsync(msg, new AsyncMessageCallback() {
 
+				@Override
 				public void acknowledged() {
 					if(logMINOR)
 						Logger.minor(this, "Sending data...");
@@ -807,16 +816,19 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					updateManager.node.executor.execute(r, "Revocation key send for " + uid + " to " + source.userToString());
 				}
 
+				@Override
 				public void disconnected() {
 					// Argh
 					Logger.error(this, "Peer " + source + " asked us for the blob file for the revocation key, then disconnected when we tried to send the UOMSendingRevocation");
 				}
 
+				@Override
 				public void fatalError() {
 					// Argh
 					Logger.error(this, "Peer " + source + " asked us for the blob file for the revocation key, then got a fatal error when we tried to send the UOMSendingRevocation");
 				}
 
+				@Override
 				public void sent() {
 					if(logMINOR)
 						Logger.minor(this, "Message sent, data soon");
@@ -944,6 +956,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		updateManager.node.executor.execute(new Runnable() {
 
+			@Override
 			public void run() {
 				try {
 				if(br.receive())
@@ -1022,7 +1035,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	 * Process a binary blob for a revocation certificate (the revocation key).
 	 * @param temp The file it was written to.
 	 */
-	void processRevocationBlob(final Bucket temp, final String source, boolean fromDisk) {
+	void processRevocationBlob(final Bucket temp, final String source, final boolean fromDisk) {
 
 		SimpleBlockSet blocks = new SimpleBlockSet();
 
@@ -1078,21 +1091,11 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		File f;
 		FileBucket b = null;
-		try {
-			f = File.createTempFile("revocation-", ".fblob.tmp", updateManager.node.clientCore.getPersistentTempDir());
-			b = new FileBucket(f, false, false, true, true, true);
-		} catch(IOException e) {
-			Logger.error(this, "Cannot share revocation key from " + source + " with our peers because cannot write the cleaned version to disk: " + e, e);
-			System.err.println("Cannot share revocation key from " + source + " with our peers because cannot write the cleaned version to disk: " + e);
-			e.printStackTrace();
-			b = null;
-			f = null;
-		}
-		final FileBucket cleanedBlob = b;
-		final File cleanedBlobFile = f;
+		final ArrayBucket cleanedBlob = new ArrayBucket();
 
 		ClientGetCallback myCallback = new ClientGetCallback() {
 
+			@Override
 			public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 				if(e.mode == FetchException.CANCELLED) {
 					// Eh?
@@ -1106,30 +1109,38 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					System.err.println("Got revocation certificate from " + source + " (fatal error i.e. someone with the key inserted bad data) : "+e);
 					// Blow the update, and propagate the revocation certificate.
 					updateManager.revocationChecker.onFailure(e, state, cleanedBlob);
-					temp.free();
+					// Don't delete it if it's from disk, as it's already in the right place.
+					if(!fromDisk)
+						temp.free();
 
-					insertBlob(updateManager.revocationChecker.getBlobFile(), "revocation");
+					insertBlob(updateManager.revocationChecker.getBlobBucket(), "revocation");
 
 				} else {
 					Logger.error(this, "Failed to fetch revocation certificate from blob from " + source + " : "+e+" : this is almost certainly bogus i.e. the auto-update is fine but the node is broken.");
 					System.err.println("Failed to fetch revocation certificate from blob from " + source + " : "+e+" : this is almost certainly bogus i.e. the auto-update is fine but the node is broken.");
 					// This is almost certainly bogus.
+					// Delete it, even if it's fromDisk.
+					temp.free();
+					cleanedBlob.free();
 				}
 			}
+			@Override
 			public void onMajorProgress(ObjectContainer container) {
 				// Ignore
 			}
 
+			@Override
 			public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 				System.err.println("Got revocation certificate from " + source);
 				updateManager.revocationChecker.onSuccess(result, state, cleanedBlob);
-				temp.free();
-				insertBlob(updateManager.revocationChecker.getBlobFile(), "revocation");
+				if(!fromDisk)
+					temp.free();
+				insertBlob(updateManager.revocationChecker.getBlobBucket(), "revocation");
 			}
 		};
 
 		ClientGetter cg = new ClientGetter(myCallback,
-			updateManager.revocationURI, tempContext, (short) 0, this, null, cleanedBlob);
+			updateManager.revocationURI, tempContext, (short) 0, this, null, new BinaryBlobWriter(cleanedBlob), null);
 
 		try {
 			updateManager.node.clientCore.clientContext.start(cg);
@@ -1143,36 +1154,47 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 	}
 
-	protected void insertBlob(final File blob, final String type) {
+	protected void insertBlob(final Bucket bucket, final String type) {
 		ClientPutCallback callback = new ClientPutCallback() {
 
+			@Override
 			public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
 				Logger.error(this, "Failed to insert "+type+" binary blob: " + e, e);
 			}
 			
+			@Override
 			public void onFetchable(BaseClientPutter state, ObjectContainer container) {
 				// Ignore
 			}
 			
+			@Override
 			public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
 				// Ignore
 			}
 			
+			@Override
 			public void onMajorProgress(ObjectContainer container) {
 				// Ignore
 			}
 			
+			@Override
 			public void onSuccess(BaseClientPutter state, ObjectContainer container) {
 				// All done. Cool.
 				Logger.normal(this, "Inserted "+type+" binary blob");
 			}
+
+			@Override
+			public void onGeneratedMetadata(Bucket metadata,
+					BaseClientPutter state, ObjectContainer container) {
+				Logger.error(this, "Got onGeneratedMetadata inserting blob from "+state, new Exception("error"));
+				metadata.free();
+			}
 		};
-		FileBucket bucket = new FileBucket(blob, true, false, false, false, false);
 		// We are inserting a binary blob so we don't need to worry about CompatibilityMode etc.
 		InsertContext ctx = updateManager.node.clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS).getInsertContext(true);
 		ClientPutter putter = new ClientPutter(callback, bucket,
 			FreenetURI.EMPTY_CHK_URI, null, ctx,
-			RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, this, null, true, updateManager.node.clientCore.clientContext, null);
+			RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, this, null, true, updateManager.node.clientCore.clientContext, null, -1);
 		try {
 			updateManager.node.clientCore.clientContext.start(putter, false);
 		} catch(InsertException e1) {
@@ -1202,7 +1224,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		final BulkTransmitter bt;
 		final RandomAccessFileWrapper raf;
 
-		if (source.isOpennet() && updateManager.isSeednode()) {
+		if (source.isOpennet() && updateManager.dontAllowUOM()) {
 			Logger.normal(this, "Peer " + source
 					+ " asked us for the blob file for " + name
 					+ "; We are a seenode, so we ignore it!");
@@ -1269,6 +1291,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		
 		final Runnable r = new Runnable() {
 
+			@Override
 			public void run() {
 				try {
 					if(!bt.send())
@@ -1285,6 +1308,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		try {
 			source.sendAsync(msg, new AsyncMessageCallback() {
 
+				@Override
 				public void acknowledged() {
 					if(logMINOR)
 						Logger.minor(this, "Sending data...");
@@ -1293,18 +1317,21 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					updateManager.node.executor.execute(r, name+" jar send for " + uid + " to " + source.userToString());
 				}
 
+				@Override
 				public void disconnected() {
 					// Argh
 					Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, then disconnected when we tried to send the UOMSendingMain");
 					source.finishedSendingUOMJar(isExt);
 				}
 
+				@Override
 				public void fatalError() {
 					// Argh
 					Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, then got a fatal error when we tried to send the UOMSendingMain");
 					source.finishedSendingUOMJar(isExt);
 				}
 
+				@Override
 				public void sent() {
 					if(logMINOR)
 						Logger.minor(this, "Message sent, data soon");
@@ -1416,6 +1443,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		updateManager.node.executor.execute(new Runnable() {
 
+			@Override
 			public void run() {
 				try {
 					synchronized(UpdateOverMandatoryManager.class) {
@@ -1528,6 +1556,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		updateManager.node.executor.execute(new Runnable() {
 
+			@Override
 			public void run() {
 				try {
 					synchronized(UpdateOverMandatoryManager.class) {
@@ -1607,6 +1636,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		ClientGetCallback myCallback = new ClientGetCallback() {
 
+			@Override
 			public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 				if(e.mode == FetchException.CANCELLED) {
 					// Eh?
@@ -1624,10 +1654,12 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				}
 			}
 
+			@Override
 			public void onMajorProgress(ObjectContainer container) {
 				// Ignore
 			}
 
+			@Override
 			public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 				System.err.println("Got main jar version " + version + " from " + source.userToString());
 				if(result.size() == 0) {
@@ -1642,12 +1674,12 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				}
 				mainUpdater.onSuccess(result, state, cleanedBlobFile, version);
 				temp.delete();
-				insertBlob(mainUpdater.getBlobFile(version), "main jar");
+				insertBlob(mainUpdater.getBlobBucket(version), "main jar");
 			}
 		};
 
 		ClientGetter cg = new ClientGetter(myCallback,
-			uri, tempContext, (short) 0, this, null, cleanedBlob);
+			uri, tempContext, (short) 0, this, null, new BinaryBlobWriter(cleanedBlob), null);
 
 		try {
 			updateManager.node.clientCore.clientContext.start(cg);
@@ -1714,6 +1746,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		ClientGetCallback myCallback = new ClientGetCallback() {
 
+			@Override
 			public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 				if(e.mode == FetchException.CANCELLED) {
 					// Eh?
@@ -1731,10 +1764,12 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				}
 			}
 
+			@Override
 			public void onMajorProgress(ObjectContainer container) {
 				// Ignore
 			}
 
+			@Override
 			public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 				System.err.println("Got ext jar version " + version + " from " + source.userToString());
 				if(result.size() == 0) {
@@ -1749,12 +1784,12 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				}
 				extUpdater.onSuccess(result, state, cleanedBlobFile, version);
 				temp.delete();
-				insertBlob(extUpdater.getBlobFile(version), "ext jar");
+				insertBlob(extUpdater.getBlobBucket(version), "ext jar");
 			}
 		};
 
 		ClientGetter cg = new ClientGetter(myCallback,
-				uri, tempContext, (short) 0, this, null, cleanedBlob);
+				uri, tempContext, (short) 0, this, null, new BinaryBlobWriter(cleanedBlob), null);
 
 			try {
 				updateManager.node.clientCore.clientContext.start(cg);
@@ -1781,6 +1816,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			private final int lastGoodMainBuildNumber = Version.lastGoodBuild();
 			private final int recommendedExtBuildNumber = NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER;
 
+			@Override
 			public boolean accept(File file) {
 				String fileName = file.getName();
 
@@ -1838,10 +1874,12 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		return !gotError;
 	}
 
+	@Override
 	public boolean persistent() {
 		return false;
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		throw new UnsupportedOperationException();
 	}
@@ -1867,6 +1905,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		}
 	}
 
+	@Override
 	public boolean realTimeFlag() {
 		return false;
 	}

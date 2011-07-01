@@ -144,6 +144,7 @@ public class LocationManager implements ByteCounter {
     		node.getTicker().queueTimedJob(sender, STARTUP_DELAY);
 		node.ticker.queueTimedJob(new Runnable() {
 
+			@Override
 			public void run() {
 				try {
 					clearOldSwapChains();
@@ -162,6 +163,7 @@ public class LocationManager implements ByteCounter {
      */
     public class SwapRequestSender implements Runnable {
 
+        @Override
         public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
 		    Thread.currentThread().setName("SwapRequestSender");
@@ -290,6 +292,7 @@ public class LocationManager implements ByteCounter {
             uid = origMessage.getLong(DMT.UID);
         }
 
+        @Override
         public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
             MessageDigest md = SHA256.getMessageDigest();
@@ -452,6 +455,7 @@ public class LocationManager implements ByteCounter {
 
         RecentlyForwardedItem item;
 
+        @Override
         public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
             long uid = r.nextLong();
@@ -653,6 +657,7 @@ public class LocationManager implements ByteCounter {
     private void recordLocChange(final boolean randomReset, final boolean fromDupLocation) {
         node.executor.execute(new Runnable() {
 
+			@Override
 			public void run() {
 				File locationLog = node.nodeDir().file("location.log.txt");
 				if(locationLog.exists() && locationLog.length() > 1024*1024*10)
@@ -1396,14 +1401,17 @@ public class LocationManager implements ByteCounter {
 		return (int) averageSwapTime.currentValue();
 	}
 
+	@Override
 	public void receivedBytes(int x) {
 		node.nodeStats.swappingReceivedBytes(x);
 	}
 
+	@Override
 	public void sentBytes(int x) {
 		node.nodeStats.swappingSentBytes(x);
 	}
 
+	@Override
 	public void sentPayload(int x) {
 		Logger.error(this, "LocationManager sentPayload()?", new Exception("debug"));
 	}

@@ -36,6 +36,7 @@ public class SimpleEventProducer implements ClientEventProducer {
 	    addEventListener(cela[i]);
     }
     
+	@Override
     public void addEventListener(ClientEventListener cel) {
 	if(cel != null)
 	    listeners.addElement(cel);
@@ -43,6 +44,7 @@ public class SimpleEventProducer implements ClientEventProducer {
 	    throw new IllegalArgumentException("Adding a null listener!");
     }
     
+	@Override
     public boolean removeEventListener(ClientEventListener cel) {
 	boolean b = listeners.removeElement(cel);
 	listeners.trimToSize();
@@ -52,6 +54,7 @@ public class SimpleEventProducer implements ClientEventProducer {
     /**
      * Sends the ClientEvent to all registered listeners of this object.
      **/
+	@Override
     public void produceEvent(ClientEvent ce, ObjectContainer container, ClientContext context) {
     	if(container != null)
     		container.activate(listeners, 1);
@@ -87,6 +90,7 @@ public class SimpleEventProducer implements ClientEventProducer {
 	    addEventListener(cela[i]);
     }
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
     	if(container != null)
     		container.activate(listeners, 1);

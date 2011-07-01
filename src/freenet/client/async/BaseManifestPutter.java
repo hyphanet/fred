@@ -14,7 +14,6 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
-import freenet.client.FetchContext;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
@@ -25,7 +24,6 @@ import freenet.client.Metadata.SimpleManifestComposer;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
-import freenet.keys.InsertableClientSSK;
 import freenet.keys.Key;
 import freenet.node.RequestClient;
 import freenet.support.Logger;
@@ -251,7 +249,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		private ExternPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, Bucket data, ClientMetadata cm2, boolean getCHKOnly2) {
 			super(bmp, parent, name, cm2, runningPutHandlers, null);
 			InsertBlock block = new InsertBlock(data, cm, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
-			this.origSFI = new SingleFileInserter(this, this, block, false, ctx, realTimeFlag, false, getCHKOnly2, true, null, null, false, null, earlyEncode, false, persistent(), 0, 0, null, cryptoAlgorithm, forceCryptoKey);
+			this.origSFI = new SingleFileInserter(this, this, block, false, ctx, realTimeFlag, false, getCHKOnly2, true, null, null, false, null, earlyEncode, false, persistent(), 0, 0, null, cryptoAlgorithm, forceCryptoKey, -1);
 		}
 
 		@Override
@@ -370,7 +368,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		private MetaPutHandler(BaseManifestPutter smp, PutHandler parent, InsertBlock insertBlock, boolean getCHKOnly, ObjectContainer container) {
 			super(smp, parent, null, null, null, container);
 			// Treat as splitfile for purposes of determining number of reinserts.
-			this.origSFI = new SingleFileInserter(this, this, insertBlock, true, ctx, realTimeFlag, false, getCHKOnly, false, null, null, true, null, earlyEncode, true, persistent(), 0, 0, null, cryptoAlgorithm, null);
+			this.origSFI = new SingleFileInserter(this, this, insertBlock, true, ctx, realTimeFlag, false, getCHKOnly, false, null, null, true, null, earlyEncode, true, persistent(), 0, 0, null, cryptoAlgorithm, null, -1);
 			if(logMINOR) Logger.minor(this, "Inserting root metadata: "+origSFI);
 		}
 
@@ -381,7 +379,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			metadata = toResolve;
 			// Treat as splitfile for purposes of determining number of reinserts.
 			InsertBlock ib = new InsertBlock(b, null, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
-			this.origSFI = new SingleFileInserter(this, this, ib, true, ctx, realTimeFlag, false, getCHKOnly, false, toResolve, null, true, null, earlyEncode, true, persistent(), 0, 0, null, cryptoAlgorithm, null);
+			this.origSFI = new SingleFileInserter(this, this, ib, true, ctx, realTimeFlag, false, getCHKOnly, false, toResolve, null, true, null, earlyEncode, true, persistent(), 0, 0, null, cryptoAlgorithm, null, -1);
 			if(logMINOR) Logger.minor(this, "Inserting subsidiary metadata: "+origSFI+" for "+toResolve);
 		}
 
@@ -444,6 +442,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			Metadata m = new Metadata(Metadata.SYMBOLIC_SHORTLINK, null, null, target, null);
 			metadata = m;
 		}
+
 	}
 
 	// Only implements PutCompletionCallback for the final metadata insert
@@ -607,6 +606,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			return BaseManifestPutter.this.finished || cancelled || BaseManifestPutter.this.cancelled;
 		}
 
+		@Override
 		public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
 			if (logDEBUG) {
 				//temp hack, ignored if called via super
@@ -706,6 +706,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			}
 		}
 
+		@Override
 		public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
 			ClientPutState oldState;
 			synchronized(this) {
@@ -726,6 +727,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 				container.deactivate(BaseManifestPutter.this, 1);
 		}
 
+		@Override
 		public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
 			throw new UnsupportedOperationException();
 		}
@@ -735,6 +737,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		 * However, in onSuccess or onFailure, we need to remove the new state, even if
 		 * what is passed in is different (in which case we remove that too).
 		 */
+		@Override
 		public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 			if(newState == null) throw new NullPointerException();
 			Logger.error(this, "onTransition: cur=" + currentState + ", old=" + oldState + ", new=" + newState+" for "+this, new Exception("trace transition"));
@@ -753,7 +756,14 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			}
 		}
 
+		@Override
 		public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
+			throw new UnsupportedOperationException();
+		}
+		
+		@Override
+		public void onMetadata(Bucket meta, ClientPutState state,
+				ObjectContainer container, ClientContext context) {
 			throw new UnsupportedOperationException();
 		}
 
@@ -840,6 +850,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			super.addRedundantBlocks(blocks, container);
 		}
 		
+		@Override
 		public synchronized int getMinSuccessFetchBlocks() {
 			return minSuccessFetchBlocks;
 		}
@@ -853,6 +864,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 				container.deactivate(BaseManifestPutter.this, 1);
 		}
 
+		@Override
 		public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 			if(persistent) {
 				container.activate(BaseManifestPutter.this, 1);
@@ -886,6 +898,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 				container.deactivate(BaseManifestPutter.this, 1);
 		}
 
+		@Override
 		public void onFetchable(ClientPutState state, ObjectContainer container) {
 			if(logMINOR) Logger.minor(this, "onFetchable " + this, new Exception("debug"));
 			if(persistent)
@@ -943,6 +956,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			super.removeFrom(container, context);
 		}
 
+		@Override
 		public boolean objectCanNew(ObjectContainer container) {
 			if(cancelled) {
 				Logger.error(this, "Storing "+this+" when already cancelled!", new Exception("error"));
@@ -1173,6 +1187,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 
 	private final DBJob runGotAllMetadata = new DBJob() {
 
+		@Override
 		public boolean run(ObjectContainer container, ClientContext context) {
 			try {
 				context.jobRunner.removeRestartJob(this, NativeThread.NORM_PRIORITY, container);
@@ -1558,6 +1573,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 	/** The number of blocks that will be needed to fetch the data. We put this in the top block metadata. */
 	protected int minSuccessFetchBlocks;
 	
+	@Override
 	public void addBlock(ObjectContainer container) {
 		synchronized(this) {
 			minSuccessFetchBlocks++;
@@ -1565,6 +1581,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		super.addBlock(container);
 	}
 	
+	@Override
 	public void addBlocks(int num, ObjectContainer container) {
 		synchronized(this) {
 			minSuccessFetchBlocks+=num;
@@ -1573,6 +1590,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 	}
 	
 	/** Add one or more blocks to the number of requires blocks, and don't notify the clients. */
+	@Override
 	public void addMustSucceedBlocks(int blocks, ObjectContainer container) {
 		synchronized(this) {
 			minSuccessFetchBlocks += blocks;
@@ -1583,6 +1601,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 	/** Add one or more blocks to the number of requires blocks, and don't notify the clients. 
 	 * These blocks are added to the minSuccessFetchBlocks for the insert, but not to the counter for what
 	 * the requestor must fetch. */
+	@Override
 	public void addRedundantBlocks(int blocks, ObjectContainer container) {
 		super.addMustSucceedBlocks(blocks, container);
 	}
@@ -1596,6 +1615,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, minSuccessFetchBlocks, this.blockSetFinalized), container, context);
 	}
 
+	@Override
 	public int getMinSuccessFetchBlocks() {
 		return minSuccessFetchBlocks;
 	}
@@ -1704,6 +1724,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		//Logger.error(this, "Updating "+this+" activated="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("debug"));
 	}
 
+	@Override
 	public boolean objectCanNew(ObjectContainer container) {
 		if(finished) {
 			Logger.error(this, "Storing "+this+" when already finished!", new Exception("error"));

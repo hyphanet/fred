@@ -199,6 +199,7 @@ public class RequestStarterGroup {
 			this.realTime = realTime;
 		}
 
+		@Override
 		public synchronized long getDelay() {
 			double rtt = roundTripTime.currentValue();
 			double winSizeForMinPacketDelay = rtt / MIN_DELAY;
@@ -277,6 +278,7 @@ public class RequestStarterGroup {
 			csRT.setPriorityScheduler(value);
 		}
 		
+		@Override
 		public String[] getPossibleValues() {
 			return possibleValues;
 		}
@@ -416,6 +418,19 @@ public class RequestStarterGroup {
 				return ssk ? sskFetchSchedulerBulk : chkFetchSchedulerBulk;
 			}
 		}
+	}
+
+	public void setUseAIMDs(boolean val) {
+		if(!stats.node.enableNewLoadManagement())
+			val = true;
+		chkFetchSchedulerBulk.setUseAIMDs(val);
+		sskFetchSchedulerBulk.setUseAIMDs(val);
+		chkPutSchedulerBulk.setUseAIMDs(val);
+		sskPutSchedulerBulk.setUseAIMDs(val);
+		chkFetchSchedulerRT.setUseAIMDs(val);
+		sskFetchSchedulerRT.setUseAIMDs(val);
+		chkPutSchedulerRT.setUseAIMDs(val);
+		sskPutSchedulerRT.setUseAIMDs(val);
 	}
 	
 }

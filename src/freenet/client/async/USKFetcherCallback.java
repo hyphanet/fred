@@ -22,6 +22,7 @@ public interface USKFetcherCallback extends USKCallback {
 	/** Found the latest edition. **This is terminal for a USKFetcherCallback**. It isn't for a USKCallback subscription.
 	 * @param l The edition number.
 	 * @param key The key. */
+	@Override
 	void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo);
 	
 }

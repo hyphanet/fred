@@ -89,6 +89,7 @@ public class SimpleSendableInsert extends SendableInsert {
 	public SendableRequestSender getSender(ObjectContainer container, ClientContext context) {
 		return new SendableRequestSender() {
 
+			@Override
 			public boolean send(NodeClientCore core, RequestScheduler sched, ClientContext context, ChosenBlock req) {
 				// Ignore keyNum, key, since this is a single block
 				try {
@@ -124,6 +125,7 @@ public class SimpleSendableInsert extends SendableInsert {
 		return finished;
 	}
 	
+	@Override
 	public boolean isEmpty(ObjectContainer container) {
 		return finished;
 	}
@@ -178,6 +180,7 @@ public class SimpleSendableInsert extends SendableInsert {
 		return false;
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		// Transient-only
 		throw new UnsupportedOperationException();

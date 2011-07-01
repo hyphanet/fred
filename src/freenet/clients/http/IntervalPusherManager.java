@@ -23,6 +23,7 @@ public class IntervalPusherManager {
 	private Runnable					refresherJob	= 
 		new Runnable() {
 		
+		@Override
 		public void run() {
 			// Updating
 			for (BaseUpdateableElement element : elements) {

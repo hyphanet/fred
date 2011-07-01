@@ -151,10 +151,12 @@ public class SeedClientPeerNode extends PeerNode {
 		forceDisconnect(true);
 	}
 	
+	@Override
 	public boolean shallWeRouteAccordingToOurPeersLocation() {
 		return false; // Irrelevant
 	}
 	
+	@Override
 	protected void onConnect() {
 		OpennetManager om = node.getOpennet();
 		if(om != null)

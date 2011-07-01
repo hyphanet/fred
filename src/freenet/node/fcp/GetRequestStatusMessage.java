@@ -46,6 +46,7 @@ public class GetRequestStatusMessage extends FCPMessage {
 			try {
 				node.clientCore.clientContext.jobRunner.queue(new DBJob() {
 
+					@Override
 					public boolean run(ObjectContainer container, ClientContext context) {
 						ClientRequest req = handler.getForeverRequest(global, handler, identifier, container);
 						container.activate(req, 1);

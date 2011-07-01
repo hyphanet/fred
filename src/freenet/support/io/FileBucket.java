@@ -70,10 +70,12 @@ public class FileBucket extends BaseFileBucket implements Bucket {
 		return file;
 	}
 
+	@Override
 	public synchronized boolean isReadOnly() {
 		return readOnly;
 	}
 
+	@Override
 	public synchronized void setReadOnly() {
 		readOnly = true;
 	}
@@ -107,10 +109,12 @@ public class FileBucket extends BaseFileBucket implements Bucket {
 		return deleteOnFree;
 	}
 
+	@Override
 	public void storeTo(ObjectContainer container) {
 		container.store(this);
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		Logger.minor(this, "Removing "+this);
 		container.activate(file, 5);
@@ -135,6 +139,7 @@ public class FileBucket extends BaseFileBucket implements Bucket {
 //		Logger.minor(this, "Deleting "+this, new Exception("debug"));
 //	}
 //	
+	@Override
 	public Bucket createShadow() {
 		String fnam = file.getPath();
 		File newFile = new File(fnam);

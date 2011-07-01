@@ -42,6 +42,7 @@ public class DNSRequester implements Runnable {
     	node.executor.execute(this, "DNSRequester thread for "+node.getDarknetPortNumber());
     }
 
+    @Override
     public void run() {
 	    freenet.support.Logger.OSThread.logPID(this);
         while(true) {

@@ -47,6 +47,7 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 	/**
 	 * Decode the data.
 	 */
+	@Override
 	public Bucket decode(BucketFactory factory, int maxLength, boolean dontDecompress) throws KeyDecodeException, IOException {
 		/* We know the signature is valid because it is checked in the constructor. */
 		/* We also know e(h(docname)) is valid */
@@ -100,12 +101,14 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
         return b;
 	}
 
+	@Override
 	public boolean isMetadata() {
 		if(!decoded)
 			throw new IllegalStateException("Cannot read isMetadata before decoded");
 		return isMetadata;
 	}
 
+	@Override
 	public ClientSSK getClientKey() {
 		return key;
 	}
@@ -114,6 +117,7 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 		return compressionAlgorithm;
 	}
 	
+	@Override
 	public byte[] memoryDecode() throws KeyDecodeException {
 		return memoryDecode(false);
 	}

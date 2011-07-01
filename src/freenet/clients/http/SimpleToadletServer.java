@@ -10,7 +10,6 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 
@@ -113,6 +112,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	private volatile boolean fProxyWebPushingEnabled;	// ugh?
 	private volatile boolean fproxyHasCompletedWizard;	// hmmm..
 	private volatile boolean disableProgressPage;
+	private int maxFproxyConnections;
+	
+	private int fproxyConnections;
 	
 	private boolean finishedStartup;
 	
@@ -179,7 +181,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		@Override
 		public void set(Integer newPort) throws NodeNeedRestartException {
-			if(savedPort != (int)newPort) {
+			if(savedPort != newPort) {
 				savedPort = port;
 				throw new NodeNeedRestartException("Port cannot change on the fly");
 			}
@@ -236,6 +238,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				core.node.pluginManager.setFProxyTheme(cssTheme);
 		}
 
+		@Override
 		public String[] getPossibleValues() {
 			return THEME.possibleValues;
 		}
@@ -293,6 +296,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				} else {
 					myThread.interrupt();
 					myThread = null;
+					SimpleToadletServer.this.notifyAll();
 					return;
 				}
 			}
@@ -368,6 +372,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	private class ReFilterCallback extends StringCallback implements EnumerableOptionCallback {
 
+		@Override
 		public String[] getPossibleValues() {
 			REFILTER_POLICY[] possible = REFILTER_POLICY.values();
 			String[] ret = new String[possible.length];
@@ -649,6 +654,28 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		});
 		doRobots = fproxyConfig.getBoolean("doRobots");
 		
+		// We may not know what the overall thread limit is yet so just set it to 100.
+		fproxyConfig.register("maxFproxyConnections", 100, configItemOrder++, true, false, "SimpleToadletServer.maxFproxyConnections", "SimpleToadletServer.maxFproxyConnectionsLong",
+				new IntCallback() {
+
+					@Override
+					public Integer get() {
+						synchronized(SimpleToadletServer.this) {
+							return maxFproxyConnections;
+						}
+					}
+
+					@Override
+					public void set(Integer val) {
+						synchronized(SimpleToadletServer.this) {
+							maxFproxyConnections = val;
+							SimpleToadletServer.this.notifyAll();
+						}
+					}
+			
+		}, false);
+		maxFproxyConnections = fproxyConfig.getInt("maxFproxyConnections");
+		
 		fproxyConfig.register("refilterPolicy", "RE_FILTER", 
 				configItemOrder++, true, false, "SimpleToadletServer.refilterPolicy", "SimpleToadletServer.refilterPolicyLong", refilterPolicyCallback);
 		
@@ -722,10 +749,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}		
 
+	@Override
 	public boolean doRobots() {
 		return doRobots;
 	}
 	
+	@Override
 	public boolean publicGatewayMode() {
 		return publicGatewayMode;
 	}
@@ -744,6 +773,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	public void finishStart() {
 		core.node.securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
 
+			@Override
 			public void onChange(NETWORK_THREAT_LEVEL oldLevel,
 					NETWORK_THREAT_LEVEL newLevel) {
 				// At LOW, we do ACCEPT_OLD.
@@ -759,6 +789,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		});
 		core.node.securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL> () {
 
+			@Override
 			public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
 				if(newLevel != oldLevel && newLevel == PHYSICAL_THREAT_LEVEL.LOW) {
 					isPanicButtonToBeShown = false;
@@ -773,14 +804,17 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
+	@Override
 	public void register(Toadlet t, String menu, String urlPrefix, boolean atFront, boolean fullOnly) {
 		register(t, menu, urlPrefix, atFront, null, null, fullOnly, null, null);
 	}
 	
+	@Override
 	public void register(Toadlet t, String menu, String urlPrefix, boolean atFront, String name, String title, boolean fullOnly, LinkEnabledCallback cb) {
 		register(t, menu, urlPrefix, atFront, name, title, fullOnly, cb, null);
 	}
 	
+	@Override
 	public void register(Toadlet t, String menu, String urlPrefix, boolean atFront, String name, String title, boolean fullOnly, LinkEnabledCallback cb, FredPluginL10n l10n) {
 		ToadletElement te = new ToadletElement(t, urlPrefix, menu, name);
 		if(atFront) toadlets.addFirst(te);
@@ -795,6 +829,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		pageMaker.addNavigationCategory(link, name, title, plugin);
 	}
 
+	@Override
 	public synchronized void unregister(Toadlet t) {
 		for(Iterator<ToadletElement> i=toadlets.iterator();i.hasNext();) {
 			ToadletElement e = i.next();
@@ -812,10 +847,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		return startupToadlet;
 	}
 	
+	@Override
 	public boolean fproxyHasCompletedWizard() {
 		return fproxyHasCompletedWizard;
 	}
 	
+	@Override
 	public Toadlet findToadlet(URI uri) throws PermanentRedirectException {
 		String path = uri.getPath();
 
@@ -857,6 +894,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		return null;
 	}
 
+	@Override
 	public void run() {
 		try {
 			networkInterface.setSoTimeout(500);
@@ -866,6 +904,13 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		boolean finishedStartup = false;
 		while(true) {
 			synchronized(this) {
+				while(fproxyConnections > maxFproxyConnections) {
+					try {
+						wait();
+					} catch (InterruptedException e) {
+						// Ignore
+					}
+				}
 				if((!finishedStartup) && this.finishedStartup)
 					finishedStartup = true;
 				if(myThread == null) return;
@@ -897,8 +942,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				executor.execute(this, "HTTP socket handler@"+hashCode());
 			else
 				new Thread(this).start();
+            synchronized(SimpleToadletServer.this) {
+            	fproxyConnections++;
+            }
 		}
 		
+		@Override
 		public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
 			if(logMINOR) Logger.minor(this, "Handling connection");
@@ -912,16 +961,23 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				System.err.println("Caught in SimpleToadletServer: "+t);
 				t.printStackTrace();
 				Logger.error(this, "Caught in SimpleToadletServer: "+t, t);
+			} finally {
+	            synchronized(SimpleToadletServer.this) {
+	            	fproxyConnections--;
+	            	SimpleToadletServer.this.notifyAll();
+	            }
 			}
 			if(logMINOR) Logger.minor(this, "Handled connection");
 		}
 
+		@Override
 		public int getPriority() {
 			return NativeThread.HIGH_PRIORITY-1;
 		}
 
 	}
 
+	@Override
 	public THEME getTheme() {
 		return this.cssTheme;
 	}
@@ -930,14 +986,17 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		this.cssTheme = theme;
 	}
 
+	@Override
 	public synchronized boolean sendAllThemes() {
 		return this.sendAllThemes;
 	}
 
+	@Override
 	public synchronized boolean isAdvancedModeEnabled() {
 		return this.advancedModeEnabled;
 	}
 	
+	@Override
 	public void setAdvancedMode(boolean enabled) {
 		synchronized(this) {
 			if(advancedModeEnabled == enabled) return;
@@ -950,6 +1009,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		advancedModeEnabled = b;
 	}
 
+	@Override
 	public synchronized boolean isFProxyJavascriptEnabled() {
 		return this.fProxyJavascriptEnabled;
 	}
@@ -958,6 +1018,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		fProxyJavascriptEnabled = b;
 	}
 	
+	@Override
 	public synchronized boolean isFProxyWebPushingEnabled() {
 		return this.fProxyWebPushingEnabled;
 	}
@@ -966,11 +1027,13 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		fProxyWebPushingEnabled = b;
 	}
 
+	@Override
 	public String getFormPassword() {
 		if(core == null) return "";
 		return core.formPassword;
 	}
 
+	@Override
 	public boolean isAllowedFullAccess(InetAddress remoteAddr) {
 		return this.allowedFullAccess.allowed(remoteAddr);
 	}
@@ -983,6 +1046,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		return NodeL10n.getBase().getString("SimpleToadletServer."+key);
 	}
 
+	@Override
 	public HTMLNode addFormChild(HTMLNode parentNode, String target, String id) {
 		HTMLNode formNode =
 			parentNode.addChild("div")
@@ -1011,40 +1075,48 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		return bookmarkManager.getBookmarkURIs();
 	}
 
+	@Override
 	public boolean enablePersistentConnections() {
 		return enablePersistentConnections;
 	}
 
+	@Override
 	public boolean enableInlinePrefetch() {
 		return enableInlinePrefetch;
 	}
 
+	@Override
 	public boolean enableExtendedMethodHandling() {
 		return enableExtendedMethodHandling;
 	}
 
+	@Override
 	public synchronized boolean allowPosts() {
 		return !(bf instanceof ArrayBucketFactory);
 	}
 
+	@Override
 	public synchronized BucketFactory getBucketFactory() {
 		return bf;
 	}
 	
 
 
+	@Override
 	public boolean enableActivelinks() {
 		return enableActivelinks;
 	}
 
 
 
+	@Override
 	public boolean disableProgressPage() {
 		return disableProgressPage;
 	}
 
 
 
+	@Override
 	public PageMaker getPageMaker() {
 		return pageMaker;
 	}
@@ -1059,10 +1131,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	private REFILTER_POLICY refilterPolicy;
 
+	@Override
 	public REFILTER_POLICY getReFilterPolicy() {
 		return refilterPolicy;
 	}
 
+	@Override
 	public File getOverrideFile() {
 		return cssOverride;
 	}

@@ -5,6 +5,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.keys.BaseClientKey;
+import freenet.support.api.Bucket;
 
 /**
  * Callback called when part of a put request completes.
@@ -26,6 +27,15 @@ public interface PutCompletionCallback {
 	 * any!
 	 */
 	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context);
+	
+	/** Called as an alternative to onEncode, if a metadata length threshold 
+	 * was specified. Lower-level insert states, such as SplitFileInserter, will 
+	 * call onMetadata() instead. Higher level insert states will call this 
+	 * version or onEncode. Callee must free the Bucket. 
+	 * FIXME arguably we should split the interface, it might simplify e.g. 
+	 * SingleFileInserter.SplitHandler.
+	 */
+	public void onMetadata(Bucket meta, ClientPutState state, ObjectContainer container, ClientContext context);
 	
 	/** Called when enough data has been inserted that the file can be
 	 * retrieved, even if not all data has been inserted yet. Note that this

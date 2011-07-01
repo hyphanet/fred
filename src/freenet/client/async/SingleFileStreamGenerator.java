@@ -38,6 +38,7 @@ public class SingleFileStreamGenerator implements StreamGenerator {
 		this.persistent = persistent;
 	}
 
+	@Override
 	public void writeTo(OutputStream os, ObjectContainer container,
 			ClientContext context) throws IOException {
 		try{
@@ -46,8 +47,8 @@ public class SingleFileStreamGenerator implements StreamGenerator {
 			FileUtil.copy(data, os, -1);
 			data.close();
 			os.close();
-			if(persistent) bucket.removeFrom(container);
 			bucket.free();
+			if(persistent) bucket.removeFrom(container);
 			if(logMINOR) Logger.minor(this, "Stream completely generated", new Exception("debug"));
 		} finally {
 			Closer.close(bucket);
@@ -55,6 +56,7 @@ public class SingleFileStreamGenerator implements StreamGenerator {
 		}
 	}
 
+	@Override
 	public long size() {
 		return bucket.size();
 	}

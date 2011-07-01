@@ -26,10 +26,12 @@ public class PrioritizedSerialExecutorTest extends TestCase {
 			this.prio = prio;
 		}
 
+		@Override
 		public int getPriority() {
 			return prio;
 		}
 
+		@Override
 		public void run() {
 			synchronized (this) {
 				notifyAll();

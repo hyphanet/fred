@@ -15,6 +15,7 @@ public class AbstractUserEvent extends AbstractUserAlert implements UserEvent {
 
 	}
 
+	@Override
 	public Type getEventType() {
 		return eventType;
 	}

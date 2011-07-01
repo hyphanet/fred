@@ -21,6 +21,7 @@ public class MainJarUpdater extends NodeUpdater {
 		return "freenet.jar";
 	}
 
+	@Override
 	protected void parseManifestLine(String line) {
 		if(line.startsWith(REQUIRED_EXT_PREFIX)) {
 			requiredExt = Integer.parseInt(line.substring(REQUIRED_EXT_PREFIX.length()));
@@ -30,6 +31,7 @@ public class MainJarUpdater extends NodeUpdater {
 	}
 	
 	/** Called with locks held */
+	@Override
 	protected void maybeParseManifest(FetchResult result) {
 		requiredExt = -1;
 		recommendedExt = -1;
@@ -44,6 +46,7 @@ public class MainJarUpdater extends NodeUpdater {
 		}
 	}
 
+	@Override
 	protected void processSuccess() {
 		manager.onDownloadedNewJar(false, requiredExt, recommendedExt);
 	}

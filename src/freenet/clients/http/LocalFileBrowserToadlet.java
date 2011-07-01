@@ -29,6 +29,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 		this.core = core;
 	}
 	
+	@Override
 	public abstract String path();
 	
 	protected abstract String postTo();
@@ -196,11 +197,12 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 					return;
 				}
 				currentPath = home;
-				renderPage(fieldPairs, path, ctx);
+				renderPage(fieldPairs, "", ctx);
 				return;
 			}
 			
 			Arrays.sort(files, new Comparator<File>() {
+				@Override
 				public int compare(File firstFile, File secondFile) {
 					if (firstFile.isDirectory() && !secondFile.isDirectory()) {
 						return -1;

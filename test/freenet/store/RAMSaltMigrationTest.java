@@ -39,6 +39,7 @@ public class RAMSaltMigrationTest extends TestCase {
 	private TempBucketFactory tbf;
 	private File tempDir;
 
+	@Override
 	protected void setUp() throws java.lang.Exception {
 		tempDir = new File("tmp-slashdotstoretest");
 		tempDir.mkdir();
@@ -47,6 +48,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		exec.start();
 	}
 
+	@Override
 	protected void tearDown() {
 		FileUtil.removeAll(tempDir);
 	}

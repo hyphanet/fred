@@ -12,10 +12,12 @@ public class SplitfileCompatibilityModeEvent implements ClientEvent {
 	
 	public final static int CODE = 0x0D;
 	
+	@Override
 	public int getCode() {
 		return CODE;
 	}
 
+	@Override
 	public String getDescription() {
 		if(minCompatibilityMode == -1)
 			return "Unknown CompatibilityMode";

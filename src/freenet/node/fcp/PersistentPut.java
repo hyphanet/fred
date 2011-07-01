@@ -33,12 +33,14 @@ public class PersistentPut extends FCPMessage {
 	final String targetFilename;
 	final boolean binaryBlob;
 	final InsertContext.CompatibilityMode compatMode;
+	final boolean dontCompress;
+	final String compressorDescriptor;
 	
 	public PersistentPut(String identifier, FreenetURI uri, int verbosity, 
 			short priorityClass, short uploadFrom, FreenetURI targetURI, 
 			short persistenceType, File origFilename, String mimeType, 
 			boolean global, long size, String clientToken, boolean started, 
-			int maxRetries, String targetFilename, boolean binaryBlob, InsertContext.CompatibilityMode compatMode) {
+			int maxRetries, String targetFilename, boolean binaryBlob, InsertContext.CompatibilityMode compatMode, boolean dontCompress, String compressorDescriptor) {
 		this.identifier = identifier;
 		this.uri = uri;
 		this.verbosity = verbosity;
@@ -56,6 +58,8 @@ public class PersistentPut extends FCPMessage {
 		this.targetFilename = targetFilename;
 		this.binaryBlob = binaryBlob;
 		this.compatMode = compatMode;
+		this.dontCompress = dontCompress;
+		this.compressorDescriptor = compressorDescriptor;
 	}
 
 	@Override
@@ -85,6 +89,9 @@ public class PersistentPut extends FCPMessage {
 		if(binaryBlob)
 			fs.put("BinaryBlob", binaryBlob);
 		fs.putOverwrite("CompatibilityMode", compatMode.name());
+		fs.put("DontCompress", dontCompress);
+		if(compressorDescriptor != null)
+			fs.putSingle("Codecs", compressorDescriptor);
 		return fs;
 	}
 

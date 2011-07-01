@@ -1,8 +1,6 @@
 package freenet.node.fcp;
 
 import java.io.File;
-import java.lang.ref.WeakReference;
-
 import freenet.client.InsertContext;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.keys.FreenetURI;
@@ -71,6 +69,7 @@ public class DownloadRequestStatus extends RequestStatus {
 		return mimeType;
 	}
 
+	@Override
 	public long getDataSize() {
 		return dataSize;
 	}

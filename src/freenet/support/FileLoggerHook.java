@@ -444,7 +444,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	        		System.err.println(
 	        				"Closing alt on change caught " + e);
 	        	}
-	        	if(previousFile != null && previousFile.exists())
+	        	if(previousFile != null && latestFile.exists())
 	        		FileUtil.renameTo(latestFile, previousFile);
 	        	latestFile.delete();
 	        	altLogStream = openNewLogFile(latestFile, false);
@@ -1057,6 +1057,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		}
 	}
 
+	@Override
 	public void close() {
 		closed = true;
 	}
@@ -1144,6 +1145,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			maxOldLogfilesDiskUsage = val;
 		}
 		Runnable r = new Runnable() {
+			@Override
 			public void run() {
 				trimOldLogFiles();
 			}

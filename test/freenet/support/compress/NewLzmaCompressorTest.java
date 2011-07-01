@@ -213,7 +213,7 @@ public class NewLzmaCompressorTest extends TestCase {
 		BucketFactory factory = new ArrayBucketFactory();
 		Bucket outBucket = null;
 
-		outBucket = Compressor.COMPRESSOR_TYPE.LZMA_NEW.compress(inBucket, factory, 32768, 32768);
+		outBucket = Compressor.COMPRESSOR_TYPE.LZMA_NEW.compress(inBucket, factory, uncompressedData.length, uncompressedData.length * 2 + 64);
 
 		InputStream in = null;
 		in = outBucket.getInputStream();

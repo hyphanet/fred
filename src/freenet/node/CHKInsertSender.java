@@ -59,6 +59,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			bt = new BlockTransmitter(node.usm, node.getTicker(), pn, uid, prb, CHKInsertSender.this, BlockTransmitter.NEVER_CASCADE, 
 					new BlockTransmitterCompletion() {
 
+				@Override
 				public void blockTransferFinished(boolean success) {
 					BackgroundTransfer.this.completedTransfer(success);
 					// Double-check that the node is still connected. Pointless to wait otherwise.
@@ -87,6 +88,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			node.executor.execute(this, "CHKInsert-BackgroundTransfer for "+uid+" to "+pn.getPeer());
 		}
 		
+		@Override
 		public void run() {
 			freenet.support.Logger.OSThread.logPID(this);
 			try {
@@ -164,6 +166,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			return true;
 		}
 		
+		@Override
 		public void onMatched(Message m) {
 			pn.successNotOverload(realTimeFlag);
 			PeerNode pn = (PeerNode) m.getSource();
@@ -180,6 +183,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			}			
 		}
 		
+		@Override
 		public boolean shouldTimeout() {
 			//AFIACS, this will still let the filter timeout, but not call onMatched() twice.
 			return finishedWaiting;
@@ -189,6 +193,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			return MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPInsertTransfersCompleted).setSource(pn).setTimeout(transferCompletionTimeout);
 		}
 
+		@Override
 		public void onTimeout() {
 			/* FIXME: Cascading timeout...
 			   if this times out, we don't have any time to report to the node of origin the timeout notification (anyTimedOut?).
@@ -212,22 +217,26 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			}
 		}
 
+		@Override
 		public void onDisconnect(PeerContext ctx) {
 			Logger.normal(this, "Disconnected "+ctx+" for "+this);
 			receivedNotice(true, false); // as far as we know
 			pn.noLongerRoutingTo(thisTag, false);
 		}
 
+		@Override
 		public void onRestarted(PeerContext ctx) {
 			Logger.normal(this, "Restarted "+ctx+" for "+this);
 			receivedNotice(true, false);
 			pn.noLongerRoutingTo(thisTag, false);
 		}
 
+		@Override
 		public int getPriority() {
 			return NativeThread.HIGH_PRIORITY;
 		}
 		
+		@Override
 		public String toString() {
 			return super.toString()+":"+uid+":"+pn;
 		}
@@ -335,6 +344,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
         return super.toString()+" for "+uid;
     }
     
+    @Override
     public void run() {
 	    freenet.support.Logger.OSThread.logPID(this);
         short origHTL;
@@ -436,7 +446,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             // Route it
             // Can backtrack, so only route to nodes closer than we are to target.
             next = node.peers.closerPeer(forkedRequestTag == null ? source : null, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-			        null, htl, ignoreLowBackoff ? Node.LOW_BACKOFF : 0, source == null, realTimeFlag);
+			        null, htl, ignoreLowBackoff ? Node.LOW_BACKOFF : 0, source == null, realTimeFlag, false);
 			
             if(next == null) {
                 // Backtrack
@@ -471,6 +481,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             // Send to next node
             
             try {
+    			next.reportRoutedTo(myKey.toNormalizedDouble(), source == null, realTimeFlag);
 				/*
 				 Note also that we won't fork here, unlike in RequestSender, because the data won't be sent after a timeout, and the
 				 insert will not be routed any further without the DataInsert.
@@ -601,6 +612,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					
 					Runnable r = new Runnable() {
 
+						@Override
 						public void run() {
 							// We do not need to unlock the tag here.
 							// That will happen in the BackgroundTransfer, which has already started.
@@ -929,6 +941,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		try {
 			node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
 
+				@Override
 				public void onMatched(Message m) {
 					if(m.getSpec() == DMT.FNPRejectedLoop ||
 							m.getSpec() == DMT.FNPRejectedOverload) {
@@ -942,24 +955,29 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			            try {
 							node.usm.addAsyncFilter(mfTimeout, new AsyncMessageFilterCallback() {
 
+								@Override
 								public void onMatched(Message m) {
 									// Cool.
 								}
 
+								@Override
 								public boolean shouldTimeout() {
 									return false;
 								}
 
+								@Override
 								public void onTimeout() {
 									// Grrr!
 									Logger.error(this, "Timed out awaiting FNPRejectedTimeout on insert to "+next);
 									next.fatalTimeout(tag, false);
 								}
 
+								@Override
 								public void onDisconnect(PeerContext ctx) {
 									next.noLongerRoutingTo(tag, false);
 								}
 
+								@Override
 								public void onRestarted(PeerContext ctx) {
 									next.noLongerRoutingTo(tag, false);
 								}
@@ -971,23 +989,28 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					}
 				}
 
+				@Override
 				public boolean shouldTimeout() {
 					return false;
 				}
 
+				@Override
 				public void onTimeout() {
 					Logger.error(this, "Fatal: No Accepted/Rejected for "+CHKInsertSender.this);
 					next.fatalTimeout(tag, false);
 				}
 
+				@Override
 				public void onDisconnect(PeerContext ctx) {
 					next.noLongerRoutingTo(tag, false);
 				}
 
+				@Override
 				public void onRestarted(PeerContext ctx) {
 					next.noLongerRoutingTo(tag, false);
 				}
 
+				@Override
 				public int getPriority() {
 					return NativeThread.NORM_PRIORITY;
 				}
@@ -1097,10 +1120,12 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
         if(logMINOR) Logger.minor(this, "Returning from finish()");
     }
 
+    @Override
     public synchronized int getStatus() {
         return status;
     }
     
+    @Override
     public synchronized short getHTL() {
         return htl;
     }
@@ -1144,6 +1169,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     /**
      * @return The current status as a string
      */
+    @Override
     public synchronized String getStatusString() {
         if(status == SUCCESS)
             return "SUCCESS";
@@ -1162,6 +1188,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
         return "UNKNOWN STATUS CODE: "+status;
     }
 
+	@Override
 	public synchronized boolean sentRequest() {
 		return sentRequest;
 	}
@@ -1281,6 +1308,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		return headers;
 	}
 
+	@Override
 	public long getUID() {
 		return uid;
 	}
@@ -1288,6 +1316,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 	private final Object totalBytesSync = new Object();
 	private int totalBytesSent;
 	
+	@Override
 	public void sentBytes(int x) {
 		synchronized(totalBytesSync) {
 			totalBytesSent += x;
@@ -1303,6 +1332,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 	
 	private int totalBytesReceived;
 	
+	@Override
 	public void receivedBytes(int x) {
 		synchronized(totalBytesSync) {
 			totalBytesReceived += x;
@@ -1316,6 +1346,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		}
 	}
 
+	@Override
 	public void sentPayload(int x) {
 		node.sentPayload(x);
 		node.nodeStats.insertSentBytes(false, -x);
@@ -1329,6 +1360,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		return !backgroundTransfers.isEmpty();
 	}
 
+	@Override
 	public int getPriority() {
 		return NativeThread.HIGH_PRIORITY;
 	}

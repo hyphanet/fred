@@ -76,6 +76,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	}
 
 	/** Must be called, or we will NPE in run() */
+	@Override
 	public void setLowLevelFilter(IncomingPacketFilter f) {
 		lowLevelFilter = f;
 	}
@@ -88,6 +89,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		return title;
 	}
 
+	@Override
 	public void run() { // Listen for packets
 		tracker.startReceive(System.currentTimeMillis());
 		try {
@@ -216,6 +218,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	 * @param blockToSend The data block to send.
 	 * @param destination The peer to send it to.
 	 */
+	@Override
 	public void sendPacket(byte[] blockToSend, Peer destination, boolean allowLocalAddresses) throws LocalAddressException {
 		assert(blockToSend != null);
 		if(!_active) {
@@ -278,6 +281,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	/**
 	 * @return The maximum packet size supported by this SocketManager, not including transport (UDP/IP) headers.
 	 */
+	@Override
 	public int getMaxPacketSize() {
 		return maxPacketSize;
 	}
@@ -308,6 +312,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		// UDP/IP header is 28 bytes.
 	}
 
+	@Override
 	public int getPacketSendThreshold() {
 		return getMaxPacketSize() - 100;
 	}
@@ -356,6 +361,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		return _sock.getLocalAddress() + ":" + _sock.getLocalPort();
 	}
 
+	@Override
 	public int getHeadersLength() {
 		return UDP_HEADERS_LENGTH;
 	}
@@ -364,14 +370,17 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		return tracker;
 	}
 
+	@Override
 	public void rescanPortForward() {
 		tracker.rescan();
 	}
 
+	@Override
 	public AddressTracker.Status getDetectedConnectivityStatus() {
 		return tracker.getPortForwardStatus();
 	}
 
+	@Override
 	public int getPriority() {
 		return NativeThread.MAX_PRIORITY;
 	}

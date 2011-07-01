@@ -39,26 +39,32 @@ public class ReadOnlyFileSliceBucket implements Bucket {
 		this.length = length;
 	}
 
+	@Override
 	public OutputStream getOutputStream() throws IOException {
 		throw new IOException("Bucket is read-only");
 	}
 
+	@Override
 	public InputStream getInputStream() throws IOException {
 		return new MyInputStream();
 	}
 
+	@Override
 	public String getName() {
 		return "ROFS:" + file.getAbsolutePath() + ':' + startAt + ':' + length;
 	}
 
+	@Override
 	public long size() {
 		return length;
 	}
 
+	@Override
 	public boolean isReadOnly() {
 		return true;
 	}
 
+	@Override
 	public void setReadOnly() {
 	// Do nothing
 	}
@@ -125,13 +131,16 @@ public class ReadOnlyFileSliceBucket implements Bucket {
 		}
 	}
 
+	@Override
 	public void free() {
 	}
 
+	@Override
 	public void storeTo(ObjectContainer container) {
 		container.store(this);
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		container.delete(file);
 		container.delete(this);
@@ -142,6 +151,7 @@ public class ReadOnlyFileSliceBucket implements Bucket {
 		container.activate(file, 5);
 	}
 
+	@Override
 	public Bucket createShadow() {
 		String fnam = new String(file.getPath());
 		File newFile = new File(fnam);

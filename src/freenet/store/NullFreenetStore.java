@@ -12,6 +12,7 @@ public class NullFreenetStore<T extends StorableBlock> implements FreenetStore<T
 		callback.setStore(this);
 	}
 
+	@Override
 	public T fetch(byte[] routingKey, byte[] fullKey,
 			boolean dontPromote, boolean canReadClientCache,
 			boolean canReadSlashdotCache, boolean ignoreOldBlocks, BlockMetadata meta) throws IOException {
@@ -19,45 +20,55 @@ public class NullFreenetStore<T extends StorableBlock> implements FreenetStore<T
 		return null;
 	}
 
+	@Override
 	public long getBloomFalsePositive() {
 		return 0;
 	}
 
+	@Override
 	public long getMaxKeys() {
 		return 0;
 	}
 
+	@Override
 	public long hits() {
 		return 0;
 	}
 
+	@Override
 	public long keyCount() {
 		return 0;
 	}
 
+	@Override
 	public long misses() {
 		return 0;
 	}
 
+	@Override
 	public boolean probablyInStore(byte[] routingKey) {
 		return false;
 	}
 
+	@Override
 	public void put(T block, byte[] data, byte[] header,
 			boolean overwrite, boolean oldBlock) throws IOException,
 			KeyCollisionException {
 		// Do nothing
 	}
 
+	@Override
 	public void setMaxKeys(long maxStoreKeys, boolean shrinkNow)
 			throws DatabaseException, IOException {
 		// Do nothing
 	}
 
+	@Override
 	public long writes() {
 		return 0;
 	}
 
+	@Override
 	public StoreAccessStats getSessionAccessStats() {
 		return new StoreAccessStats() {
 
@@ -84,6 +95,7 @@ public class NullFreenetStore<T extends StorableBlock> implements FreenetStore<T
 		};
 	}
 
+	@Override
 	public StoreAccessStats getTotalAccessStats() {
 		return null;
 	}

@@ -39,6 +39,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 		this.forceRefetchArchive = forceRefetchArchive;
 	}
 
+	@Override
 	public Bucket get(String internalName, ArchiveContext archiveContext,
 			ArchiveManager manager, ObjectContainer container)
 			throws ArchiveFailureException, ArchiveRestartException,
@@ -61,12 +62,14 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 		return null;
 	}
 
+	@Override
 	public Bucket getMetadata(ArchiveContext archiveContext,
 			ArchiveManager manager, ObjectContainer container) throws ArchiveFailureException,
 			ArchiveRestartException, MetadataParseException, FetchException {
 		return get(".metadata", archiveContext, manager, container);
 	}
 
+	@Override
 	public void extractToCache(Bucket bucket, ArchiveContext actx,
 			String element, ArchiveExtractCallback callback,
 			ArchiveManager manager, ObjectContainer container, ClientContext context) throws ArchiveFailureException,
@@ -76,6 +79,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 		manager.extractToCache(key, archiveType, compressorType, bucket, actx, ctx, element, callback, container, context);
 	}
 
+	@Override
 	public ARCHIVE_TYPE getArchiveType() {
 		return archiveType;
 	}
@@ -84,6 +88,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 		return compressorType;
 	}
 
+	@Override
 	public FreenetURI getKey() {
 		return key;
 	}
@@ -103,6 +108,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 	 * @param container
 	 * @param context
 	 */
+	@Override
 	public void extractPersistentOffThread(Bucket bucket, boolean freeBucket, ArchiveContext actx, String element, ArchiveExtractCallback callback, ObjectContainer container, final ClientContext context) {
 		assert(element != null); // no callback would be called...
 		final ArchiveManager manager = context.archiveManager;
@@ -119,6 +125,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 
 		context.mainExecutor.execute(new Runnable() {
 
+			@Override
 			public void run() {
 				try {
 					if(logMINOR)
@@ -144,6 +151,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 					}
 					context.jobRunner.queue(new DBJob() {
 
+						@Override
 						public boolean run(ObjectContainer container, ClientContext context) {
 							if(logMINOR)
 								Logger.minor(this, "Calling callback for "+tag.data+" for "+tag.handler.key+" element "+tag.element+" for "+tag.callback);
@@ -169,6 +177,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 					try {
 						context.jobRunner.queue(new DBJob() {
 
+							@Override
 							public boolean run(ObjectContainer container, ClientContext context) {
 								container.activate(tag.callback, 1);
 								tag.callback.onFailed(e, container, context);
@@ -191,6 +200,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 					try {
 						context.jobRunner.queue(new DBJob() {
 
+							@Override
 							public boolean run(ObjectContainer container, ClientContext context) {
 								container.activate(tag.callback, 1);
 								tag.callback.onFailed(e, container, context);
@@ -237,39 +247,47 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 
 		Bucket data;
 
+		@Override
 		public void gotBucket(Bucket data, ObjectContainer container, ClientContext context) {
 			this.data = data;
 		}
 
+		@Override
 		public void notInArchive(ObjectContainer container, ClientContext context) {
 			this.data = null;
 		}
 
+		@Override
 		public void onFailed(ArchiveRestartException e, ObjectContainer container, ClientContext context) {
 			// Must not be called.
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public void onFailed(ArchiveFailureException e, ObjectContainer container, ClientContext context) {
 			// Must not be called.
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public void removeFrom(ObjectContainer container) {
 			container.delete(this);
 		}
 
 	}
 
+	@Override
 	public void activateForExecution(ObjectContainer container) {
 		container.activate(this, 1);
 		container.activate(key, 5);
 	}
 
+	@Override
 	public ArchiveHandler cloneHandler() {
 		return new ArchiveHandlerImpl(key.clone(), archiveType, compressorType, forceRefetchArchive);
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		if(key == null) {
 			Logger.error(this, "removeFrom() : key = null for "+this+" I exist = "+container.ext().isStored(this)+" I am active: "+container.ext().isActive(this), new Exception("error"));

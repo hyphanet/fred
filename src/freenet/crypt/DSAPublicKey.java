@@ -125,6 +125,7 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 		return y.intValue();
 	}
 
+	@Override
 	public String toLongString() {
 		return "y=" + HexUtil.biToHex(y);
 	}
@@ -208,10 +209,12 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 		return new DSAPublicKey(group, x);
 	}
 
+	@Override
 	public byte[] getFullKey() {
 		return asBytesHash();
 	}
 
+	@Override
 	public byte[] getRoutingKey() {
 		return asBytesHash();
 	}

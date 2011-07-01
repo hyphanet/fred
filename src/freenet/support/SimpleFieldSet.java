@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import com.db4o.ObjectContainer;
 
@@ -555,6 +556,7 @@ public class SimpleFieldSet {
     		}
     	}
 
+		@Override
 		public boolean hasNext() {
 			synchronized(SimpleFieldSet.this) {
 				while(true) {
@@ -572,6 +574,7 @@ public class SimpleFieldSet {
 			}
 		}
 
+		@Override
 		public final String next() {
 			return nextKey();
 		}
@@ -601,14 +604,18 @@ public class SimpleFieldSet {
 						subIterator = fs.keyIterator(newPrefix);
 					} else {
 						// No more subIterator's
-						if(ret == null)
-							Logger.error(this, "Returning null from KeyIterator.nextKey() - should never happen!");
+						if(ret == null) {
+							//There is nothing to return and no more iterators, so we must be out
+							//of elements
+							throw new NoSuchElementException();
+						}
 						return ret;
 					}
 				}
 			}
 		}
 
+		@Override
 		public synchronized void remove() {
 			throw new UnsupportedOperationException();
 		}

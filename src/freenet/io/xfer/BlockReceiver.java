@@ -110,10 +110,12 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	
 	private BlockReceiverTimeoutHandler nullTimeoutHandler = new BlockReceiverTimeoutHandler() {
 
+		@Override
 		public void onFirstTimeout() {
 			// Do nothing
 		}
 
+		@Override
 		public void onFatalTimeout(PeerContext source) {
 			// Do nothing
 		}
@@ -195,6 +197,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	
 	private AsyncMessageFilterCallback notificationWaiter = new SlowAsyncMessageFilterCallback() {
 
+		@Override
 		public void onMatched(Message m1) {
             if(logMINOR)
             	Logger.minor(this, "Received "+m1);
@@ -292,10 +295,12 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			}
 		}
 		
+		@Override
 		public boolean shouldTimeout() {
 			return completed;
 		}
 		
+		@Override
 		public void onTimeout() {
 			synchronized(this) {
 				if(completed) return;
@@ -315,28 +320,34 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				try {
 					_usm.addAsyncFilter(mfSendAborted, new SlowAsyncMessageFilterCallback() {
 
+						@Override
 						public void onMatched(Message m) {
 							// Ok.
 							if(logMINOR) Logger.minor(this, "Transfer cancel acknowledged");
 						}
 
+						@Override
 						public boolean shouldTimeout() {
 							return false;
 						}
 
+						@Override
 						public void onTimeout() {
 							Logger.error(this, "Other side did not acknowlege transfer failure on "+BlockReceiver.this);
 							_timeoutHandler.onFatalTimeout(_sender);
 						}
 
+						@Override
 						public void onDisconnect(PeerContext ctx) {
 							// Ok.
 						}
 
+						@Override
 						public void onRestarted(PeerContext ctx) {
 							// Ok.
 						}
 
+						@Override
 						public int getPriority() {
 							return NativeThread.NORM_PRIORITY;
 						}
@@ -355,14 +366,17 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			}
 		}
 		
+		@Override
 		public void onDisconnect(PeerContext ctx) {
 			complete(RetrievalException.SENDER_DISCONNECTED, RetrievalException.getErrString(RetrievalException.SENDER_DISCONNECTED));
 		}
 		
+		@Override
 		public void onRestarted(PeerContext ctx) {
 			complete(RetrievalException.SENDER_DISCONNECTED, RetrievalException.getErrString(RetrievalException.SENDER_DISCONNECTED));
 		}
 
+		@Override
 		public int getPriority() {
 			return NativeThread.NORM_PRIORITY;
 		}
@@ -442,10 +456,12 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			try {
 				_prb.addListener(myListener = new PartiallyReceivedBlock.PacketReceivedListener() {;
 
+					@Override
 					public void packetReceived(int packetNo) {
 						// Ignore
 					}
 
+					@Override
 					public void receiveAborted(int reason, String description) {
 						complete(reason, description);
 					}
@@ -497,24 +513,29 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	 * allSent, is quite common, as the receive() routine usually quits immeadiately on receiving all packets.
 	 * packetTransmit is less common, when receive() requested what it thought was a missing packet, only reordered.
 	 */
+	@Override
 	public void onMatched(Message m) {
 		if (logMINOR)
 			Logger.minor(this, "discarding message post-receive: "+m);
 		maybeResetDiscardFilter();												   
 	}
 	
+	@Override
 	public boolean shouldTimeout() {
 		return false;
 	}
 	
+	@Override
 	public void onTimeout() {
 		//ignore
 	}
 
+	@Override
 	public void onDisconnect(PeerContext ctx) {
 		// Ignore
 	}
 
+	@Override
 	public void onRestarted(PeerContext ctx) {
 		// Ignore
 	}
@@ -545,6 +566,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		return runningBlockReceives;
 	}
 	
+	@Override
 	public String toString() {
 		return super.toString()+":"+_uid+":"+_sender.shortToString();
 	}

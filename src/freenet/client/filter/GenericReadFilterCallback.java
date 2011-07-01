@@ -90,6 +90,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 			strippedBaseURI = baseURI;
 	}
 
+	@Override
 	public String processURI(String u, String overrideType) throws CommentException {
 		return processURI(u, overrideType, false, false);
 	}
@@ -107,7 +108,8 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 	//  fragment      = *( pchar / "/" / "?" )
 	protected static final String FRAGMENT   = "(" + PCHAR + "|\\/|\\?)*";
 
-	public String processURI(String u, String overrideType, boolean noRelative, boolean inline) throws CommentException {
+	@Override
+	public String processURI(String u, String overrideType, boolean forBaseHref, boolean inline) throws CommentException {
 		if(u.matches("^#" + FRAGMENT + "$")) {
 			// Hack for anchors, see #710
 			return u;
@@ -125,8 +127,8 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 			if(u.startsWith("/") || u.startsWith("%2f"))
 				// Don't bother with relative URIs if it's obviously absolute.
 				// Don't allow encoded /'s, they're just too confusing (here they would get decoded and then coalesced with other slashes).
-				noRelative = true;
-			if(!noRelative)
+				forBaseHref = true;
+			if(!forBaseHref)
 				resolved = baseURI.resolve(uri);
 			else
 				resolved = uri;
@@ -139,7 +141,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		
 		HTTPRequest req = new HTTPRequestImpl(uri, "GET");
 		if (path != null){
-			if(path.equals("/") && req.isParameterSet("newbookmark")){
+			if(path.equals("/") && req.isParameterSet("newbookmark") && !forBaseHref){
 				// allow links to the root to add bookmarks
 				String bookmark_key = req.getParam("newbookmark");
 				String bookmark_desc = req.getParam("desc");
@@ -210,7 +212,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 				}
 			}
 			
-			if(!isAbsolute) {
+			if((!isAbsolute) && (!forBaseHref)) {
 				
 				// Relative URI
 				
@@ -224,7 +226,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 					while(p.startsWith("/")) p = p.substring(1);
 					FreenetURI furi = new FreenetURI(p, true);
 					if(logMINOR) Logger.minor(this, "Parsed: "+furi);
-					return processURI(furi, uri, overrideType, noRelative, inline);
+					return processURI(furi, uri, overrideType, forBaseHref, inline);
 				} catch (MalformedURLException e) {
 					if(logMINOR) Logger.minor(this, "Malformed URL (b): "+e, e);
 					if(e.getMessage() != null) {
@@ -240,6 +242,8 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		
 		uri = origURI;
 		
+		if(forBaseHref)
+			throw new CommentException(l10n("bogusBaseHref"));
 		if(GenericReadFilterCallback.allowedProtocols.contains(uri.getScheme()))
 			return "/?"+GenericReadFilterCallback.magicHTTPEscapeString+ '=' +uri;
 		else {
@@ -250,6 +254,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		}
 	}
 	
+	@Override
 	public String makeURIAbsolute(String uri) throws URISyntaxException{
 		return baseURI.resolve(URIPreEncoder.encodeURI(uri).normalize()).toASCIIString();
 	}
@@ -354,6 +359,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		return finishProcess(req, overrideType, '/' + furi.toString(false, false), uri, noRelative);
 	}
 
+	@Override
 	public String onBaseHref(String baseHref) {
 		String ret;
 		try {
@@ -376,6 +382,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		}
 	}
 
+	@Override
 	public void onText(String s, String type) {
 		if(cb != null)
 			cb.onText(s, type, baseURI);
@@ -390,6 +397,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 	 * Anything that is hazardous should be protected through formPassword.
 	 * @throws CommentException If the form element could not be parsed and the user should be told.
 	 */
+	@Override
 	public String processForm(String method, String action) throws CommentException {
 		if(action == null) return null;
 		if(method == null) method = "GET";
@@ -425,6 +433,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 	/** Processes a tag. It calls the TagReplacerCallback if present.
 	 * @param pt - The tag, that needs to be processed
 	 * @return The replacement for the tag, or null, if no replacement needed*/
+	@Override
 	public String processTag(ParsedTag pt) {
 		if(trc!=null){
 			return trc.processTag(pt,this);

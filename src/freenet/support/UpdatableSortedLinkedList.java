@@ -205,7 +205,6 @@ public class UpdatableSortedLinkedList<T extends UpdatableSortedLinkedListItem<T
      * @return an array, in order, of the elements in the list
      * @throws UpdatableSortedLinkedListKilledException 
      */
-    @SuppressWarnings("unchecked")
     public synchronized UpdatableSortedLinkedListItem[] toArray() throws UpdatableSortedLinkedListKilledException {
     	if(killed) throw new UpdatableSortedLinkedListKilledException();
         int size = list.size();
@@ -287,6 +286,7 @@ public class UpdatableSortedLinkedList<T extends UpdatableSortedLinkedListItem<T
 		}
 	}
 
+	@Override
 	public synchronized Iterator<T> iterator() {
 		return list.iterator();
 	}

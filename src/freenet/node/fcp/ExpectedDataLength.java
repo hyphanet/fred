@@ -22,7 +22,7 @@ public class ExpectedDataLength extends FCPMessage {
 		SimpleFieldSet fs = new SimpleFieldSet(false);
 		fs.putOverwrite("Identifier", identifier);
 		fs.put("Global", global);
-		fs.putSingle("DataLength", Long.toString(dataLength));
+		fs.put("DataLength", dataLength);
 		return fs;
 	}
 

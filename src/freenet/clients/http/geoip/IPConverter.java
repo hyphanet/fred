@@ -19,6 +19,7 @@ public class IPConverter {
 	// Local cache
 	@SuppressWarnings("serial")
 	private final HashMap<Long, Country> cache = new LinkedHashMap<Long, Country>() {
+		@Override
 		protected boolean removeEldestEntry(Map.Entry<Long, Country> eldest) {
 			return size() > MAX_ENTRIES;
 		}
@@ -206,7 +207,8 @@ public class IPConverter {
 			raf.close();
 			return new Cache(codes, ips);
 		} catch (FileNotFoundException e) {
-			Logger.error(this, "Databse file not found!", e);
+			// Not downloaded yet
+			Logger.warning(this, "Database file not found!", e);
 		} catch (IOException e) {
 			Logger.error(this, e.getMessage());
 		}

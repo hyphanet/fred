@@ -18,6 +18,7 @@ public interface RandomAccessThing extends Closeable {
 	
 	public void pwrite(long fileOffset, byte[] buf, int bufOffset, int length) throws IOException;
 
+	@Override
 	public void close();
 	
 }

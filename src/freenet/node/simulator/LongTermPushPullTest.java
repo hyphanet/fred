@@ -155,10 +155,12 @@ public class LongTermPushPullTest {
 				System.out.println("PUSHING " + uri);
 				client.addEventHook(new ClientEventListener() {
 
+					@Override
 					public void onRemoveEventProducer(ObjectContainer container) {
 						// Ignore
 					}
 
+					@Override
 					public void receive(ClientEvent ce, ObjectContainer maybeContainer, ClientContext context) {
 						System.out.println(ce.getDescription());
 					}

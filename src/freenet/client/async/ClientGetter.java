@@ -5,7 +5,6 @@ package freenet.client.async;
 
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
@@ -38,7 +37,6 @@ import freenet.client.filter.UnknownContentTypeException;
 import freenet.client.filter.UnsafeContentTypeException;
 import freenet.crypt.HashResult;
 import freenet.keys.ClientKeyBlock;
-import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.node.RequestClient;
@@ -49,7 +47,6 @@ import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
 import freenet.support.compress.DecompressorThreadManager;
 import freenet.support.io.Closer;
-import freenet.support.io.NullBucket;
 
 /**
  * A high level data request. Follows redirects, downloads splitfiles, etc. Similar to what you get from FCP,
@@ -82,12 +79,8 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	private int archiveRestarts;
 	/** If not null, Bucket to return the data in, otherwise we create one. */
 	final Bucket returnBucket;
-	/** If not null, Bucket to return a binary blob in */
-	final Bucket binaryBlobBucket;
-	/** If not null, HashSet to track keys already added for a binary blob */
-	final HashSet<Key> binaryBlobKeysAddedAlready;
-	/** We are writing the binary blob to this stream. FIXME binary blobs are not persistent because of this! */
-	private DataOutputStream binaryBlobStream;
+	/** If not null, BucketWrapper to return a binary blob in */
+	private final BinaryBlobWriter binaryBlobWriter;
 	/** The expected MIME type, if we know it. Should not change. */
 	private String expectedMIME;
 	/** The expected size of the file, if we know it. */
@@ -99,7 +92,25 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	/** Callback to spy on the data at each stage of the request */
 	private SnoopBucket snoopBucket;
 	private HashResult[] hashes;
+	private final Bucket initialMetadata;
 
+	// Shorter constructors for convenience and backwards compatibility.
+	
+	public ClientGetter(ClientGetCallback client,
+		    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext) {
+		this(client, uri, ctx, priorityClass, clientContext, null, null, null);
+	}
+	
+	public ClientGetter(ClientGetCallback client,
+		    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket) {
+		this(client, uri, ctx, priorityClass, clientContext, returnBucket, null, null);
+	}
+	
+	public ClientGetter(ClientGetCallback client,
+		    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, BinaryBlobWriter binaryBlobWriter) {
+		this(client, uri, ctx, priorityClass, clientContext, returnBucket, binaryBlobWriter, null);
+	}
+	
 	/**
 	 * Fetch a key.
 	 * @param client The callback we will call when it is completed.
@@ -115,7 +126,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	 * accessed in the case of redundant structures such as splitfiles) in the binary blob format to this bucket.
 	 */
 	public ClientGetter(ClientGetCallback client,
-			    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, Bucket binaryBlobBucket) {
+			    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, BinaryBlobWriter binaryBlobWriter, Bucket initialMetadata) {
 		super(priorityClass, clientContext);
 		this.clientCallback = client;
 		this.returnBucket = returnBucket;
@@ -123,11 +134,8 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		this.ctx = ctx;
 		this.finished = false;
 		this.actx = new ArchiveContext(ctx.maxTempLength, ctx.maxArchiveLevels);
-		this.binaryBlobBucket = binaryBlobBucket;
-		if(binaryBlobBucket != null) {
-			binaryBlobKeysAddedAlready = new HashSet<Key>();
-		} else
-			binaryBlobKeysAddedAlready = null;
+		this.binaryBlobWriter = binaryBlobWriter;
+		this.initialMetadata = initialMetadata;
 		archiveRestarts = 0;
 	}
 
@@ -176,7 +184,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 				resetBlocks();
 				currentState = SingleFileFetcher.create(this, this,
 						uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, -1, true,
-						true, container, context, realTimeFlag);
+						true, container, context, realTimeFlag, initialMetadata != null);
 			}
 			if(persistent() && oldHashes != null) {
 				for(HashResult res : oldHashes) {
@@ -190,15 +198,14 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 				container.store(this);
 			}
 			if(currentState != null && !finished) {
-				if(binaryBlobBucket != null) {
-					try {
-						binaryBlobStream = new DataOutputStream(new BufferedOutputStream(binaryBlobBucket.getOutputStream()));
-						BinaryBlob.writeBinaryBlobHeader(binaryBlobStream);
-					} catch (IOException e) {
-						throw new FetchException(FetchException.BUCKET_ERROR, "Failed to open binary blob bucket", e);
-					}
-				}
-				currentState.schedule(container, context);
+				if(initialMetadata != null && currentState instanceof SingleFileFetcher) {
+					if(persistent())
+						container.activate(initialMetadata, 1);
+					((SingleFileFetcher)currentState).startWithMetadata(initialMetadata, container, context);
+					if(persistent())
+						container.deactivate(initialMetadata, 1);
+				} else
+					currentState.schedule(container, context);
 			}
 			if(cancelled) cancel();
 		} catch (MalformedURLException e) {
@@ -213,6 +220,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		return true;
 	}
 
+	@Override
 	protected void clearCountersOnRestart() {
 		this.archiveRestarts = 0;
 		this.expectedMIME = null;
@@ -226,6 +234,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	 * Called when the request succeeds.
 	 * @param state The ClientGetState which retrieved the data.
 	 */
+	@Override
 	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "Succeeded from "+state+" on "+this);
@@ -235,7 +244,12 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			container.activate(uri, 5);
 			container.activate(clientMetadata, Integer.MAX_VALUE);
 		}
-		if(!closeBinaryBlobStream(container, context)) return;
+		try {
+			if (binaryBlobWriter != null) binaryBlobWriter.finalizeBucket();
+		} catch (IOException ioe) {
+			onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream: "+ioe), null, container, context);
+			return;
+		}
 		String mimeType;
 		synchronized(this) {
 			finished = true;
@@ -331,7 +345,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			if(persistent()) data.removeFrom(container);
 			return;
 		} catch(UnsafeContentTypeException e) {
-			Logger.error(this, "Error filtering content: will not validate", e);
+			Logger.normal(this, "Error filtering content: will not validate", e);
 			onFailure(new FetchException(e.getFetchErrorCode(), expectedSize, e, ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME), state/*Not really the state's fault*/, container, context);
 			if(finalResult != null && finalResult != returnBucket) {
 				finalResult.free();
@@ -421,10 +435,17 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	 * @param e The reason for failure, in the form of a FetchException.
 	 * @param state The failing state.
 	 */
+	@Override
 	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "Failed from "+state+" : "+e+" on "+this, e);
-		closeBinaryBlobStream(container, context);
+		try {
+			if (binaryBlobWriter != null) binaryBlobWriter.finalizeBucket();
+		} catch (IOException ioe) {
+			// the request is already failed but fblob creation failed too
+			// the invalid fblob must be told, more important then an valid but incomplete fblob (ADNF for example)
+			e = new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream: "+ioe);
+		}
 		if(persistent())
 			container.activate(uri, 5);
 		ClientGetState oldState = null;
@@ -467,18 +488,18 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			if(persistent()) {
 				container.activate(clientCallback, 1);
 			}
+			if(persistent()) {
+				if(state != null) {
+					container.activate(state, 1);
+					state.removeFrom(container, context);
+				}
+				if(oldState != state && oldState != null) {
+					container.activate(oldState, 1);
+					oldState.removeFrom(container, context);
+				}
+			}
 			clientCallback.onFailure(e1, ClientGetter.this, container);
-			break;
-		}
-		if(persistent()) {
-			if(state != null) {
-				container.activate(state, 1);
-				state.removeFrom(container, context);
-			}
-			if(oldState != state && oldState != null) {
-				container.activate(oldState, 1);
-				oldState.removeFrom(container, context);
-			}
+			return;
 		}
 	}
 
@@ -568,6 +589,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	 * Called when no more blocks will be added to the total, and therefore we can confidently display a
 	 * percentage for the overall progress. Will notify clients with a SplitfileProgressEvent.
 	 */
+	@Override
 	public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "Set finished", new Exception("debug"));
@@ -646,74 +668,28 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	 * Add a block to the binary blob.
 	 */
 	protected void addKeyToBinaryBlob(ClientKeyBlock block, ObjectContainer container, ClientContext context) {
-		if(binaryBlobKeysAddedAlready == null) return;
+		if(binaryBlobWriter == null) return;
 		if(persistent()) {
-			container.activate(binaryBlobStream, 1);
-			container.activate(binaryBlobKeysAddedAlready, 1);
+			container.activate(binaryBlobWriter, 1);
 		}
 		if(logMINOR)
 			Logger.minor(this, "Adding key "+block.getClientKey().getURI()+" to "+this, new Exception("debug"));
-		Key key = block.getKey();
-		synchronized(binaryBlobKeysAddedAlready) {
-			if(binaryBlobStream == null) return;
-			if(binaryBlobKeysAddedAlready.contains(key)) return;
-			binaryBlobKeysAddedAlready.add(key);
-			try {
-				BinaryBlob.writeKey(binaryBlobStream, block, key);
-			} catch (IOException e) {
-				Logger.error(this, "Failed to write key to binary blob stream: "+e, e);
-				onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to write key to binary blob stream: "+e), null, container, context);
-				binaryBlobStream = null;
-				binaryBlobKeysAddedAlready.clear();
-			}
-		}
-	}
-
-	/**
-	 * Close the binary blob stream.
-	 * @return True unless a failure occurred, in which case we will have already
-	 * called onFailure() with an appropriate error.
-	 */
-	private boolean closeBinaryBlobStream(ObjectContainer container, ClientContext context) {
-		if(persistent()) {
-			container.activate(binaryBlobStream, 1);
-			container.activate(binaryBlobKeysAddedAlready, 1);
-		}
-		if(binaryBlobKeysAddedAlready == null) return true;
-		synchronized(binaryBlobKeysAddedAlready) {
-			if(binaryBlobStream == null) return true;
-			boolean triedClose = false;
-			try {
-				BinaryBlob.writeEndBlob(binaryBlobStream);
-				binaryBlobStream.flush();
-				triedClose = true;
-				binaryBlobStream.close();
-				return true;
-			} catch (IOException e) {
-				Logger.error(this, "Failed to close binary blob stream: "+e, e);
-				onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream: "+e), null, container, context);
-				if(!triedClose) {
-					try {
-						binaryBlobStream.close();
-					} catch (IOException e1) {
-						// Ignore
-					}
-				}
-				return false;
-			} finally {
-				binaryBlobStream = null;
-				binaryBlobKeysAddedAlready.clear();
-			}
+		try {
+			binaryBlobWriter.addKey(block, context, container);
+		} catch (IOException e) {
+			Logger.error(this, "Failed to write key to binary blob stream: "+e, e);
+			onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to write key to binary blob stream: "+e), null, container, context);
 		}
 	}
 
 	/** Are we collecting a binary blob? */
 	protected boolean collectingBinaryBlob() {
-		return binaryBlobBucket != null;
+		return binaryBlobWriter != null;
 	}
 
 	/** Called when we know the MIME type of the final data 
 	 * @throws FetchException */
+	@Override
 	public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) throws FetchException {
 		if(finalizedMetadata) return;
 		if(persistent()) {
@@ -744,6 +720,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	}
 
 	/** Called when we have some idea of the length of the final data */
+	@Override
 	public void onExpectedSize(long size, ObjectContainer container, ClientContext context) {
 		if(finalizedMetadata) return;
 		if(finalBlocksRequired != 0) return;
@@ -757,6 +734,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	}
 
 	/** Called when we are fairly sure that the expected MIME and size won't change */
+	@Override
 	public void onFinalizedMetadata(ObjectContainer container) {
 		finalizedMetadata = true;
 		if(persistent())
@@ -829,6 +807,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	private int finalBlocksRequired;
 	private int finalBlocksTotal;
 	
+	@Override
 	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
 		if(finalBlocksRequired != 0 || finalBlocksTotal != 0) return;
 		if(logMINOR) Logger.minor(this, "New format metadata has top data: original size "+size+" (compressed "+compressed+") blocks "+blocksReq+" / "+blocksTotal);
@@ -839,10 +818,12 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		notifyClients(container, context);
 	}
 
+	@Override
 	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] customSplitfileKey, boolean dontCompress, boolean bottomLayer, boolean definitiveAnyway, ObjectContainer container, ClientContext context) {
 		ctx.eventProducer.produceEvent(new SplitfileCompatibilityModeEvent(min, max, customSplitfileKey, dontCompress, bottomLayer || definitiveAnyway), container, context);
 	}
 
+	@Override
 	public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(this.hashes != null) {
@@ -857,6 +838,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		ctx.eventProducer.produceEvent(new ExpectedHashesEvent(hashes), container, context);
 	}
 
+	@Override
 	public void enterCooldown(long wakeupTime, ObjectContainer container,
 			ClientContext context) {
 		if(wakeupTime == Long.MAX_VALUE) {
@@ -872,12 +854,13 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		}
 	}
 
+	@Override
 	public void clearCooldown(ObjectContainer container) {
 		// Ignore for now. FIXME.
 	}
 
 	public Bucket getBlobBucket() {
-		return binaryBlobBucket;
+		return binaryBlobWriter.getFinalBucket();
 	}
 	
 }

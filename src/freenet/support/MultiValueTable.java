@@ -179,10 +179,12 @@ public class MultiValueTable<K,V> {
                 current = global.nextElement().elements();
         }
 
+        @Override
         public final boolean hasMoreElements() {
             return global.hasMoreElements(); // || current.hasMoreElements();
         }
         
+        @Override
         public final V nextElement() {
             V o = current.nextElement();
             step();

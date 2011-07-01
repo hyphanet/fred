@@ -250,6 +250,7 @@ public class Peer implements WritableToDataOutputStream {
 		return addr.toString() + ':' + _port;
 	}
 
+	@Override
 	public void writeToDataOutputStream(DataOutputStream dos) throws IOException {
 		addr.writeToDataOutputStream(dos);
 		dos.writeInt(_port);

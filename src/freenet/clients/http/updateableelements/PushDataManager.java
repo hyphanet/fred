@@ -329,6 +329,7 @@ public class PushDataManager {
 
 	/** A task for the Cleaner, that periodically checks for failed requests. */
 	private class CleanerTimerTask implements Runnable {
+		@Override
 		public void run() {
 			synchronized (PushDataManager.this) {
 				if (logMINOR) {

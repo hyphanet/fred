@@ -20,6 +20,7 @@ import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
+import freenet.client.async.BaseClientPutter;
 import freenet.client.async.BinaryBlob;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientPutter;
@@ -160,7 +161,7 @@ public class ClientPut extends ClientPutBase {
 				ctx, priorityClass, 
 				getCHKOnly, isMetadata, 
 				lowLevelClient,
-				this.uri.getDocName() == null ? targetFilename : null, binaryBlob, server.core.clientContext, overrideSplitfileKey);
+				this.uri.getDocName() == null ? targetFilename : null, binaryBlob, server.core.clientContext, overrideSplitfileKey, -1);
 	}
 	
 	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MessageInvalidException, MalformedURLException {
@@ -205,9 +206,6 @@ public class ClientPut extends ClientPutBase {
 		}
 		if ((mimeType == null) && (targetFilename != null)) {
 			mimeType = DefaultMIMETypes.guessMIMEType(targetFilename, true);
-		}
-		if(mimeType == null) {
-			mimeType = DefaultMIMETypes.guessMIMEType(identifier, true);
 		}
 		clientToken = message.clientToken;
 		Bucket tempData = message.bucket;
@@ -272,7 +270,7 @@ public class ClientPut extends ClientPutBase {
 				ctx, priorityClass, 
 				getCHKOnly, isMetadata,
 				lowLevelClient,
-				this.uri.getDocName() == null ? targetFilename : null, binaryBlob, server.core.clientContext, message.overrideSplitfileCryptoKey);
+				this.uri.getDocName() == null ? targetFilename : null, binaryBlob, server.core.clientContext, message.overrideSplitfileCryptoKey, message.metadataThreshold);
 	}
 	
 	@Override
@@ -355,7 +353,7 @@ public class ClientPut extends ClientPutBase {
 		}
 		return new PersistentPut(identifier, publicURI, verbosity, priorityClass, uploadFrom, targetURI, 
 				persistenceType, origFilename, clientMetadata.getMIMEType(), client.isGlobalQueue,
-				getDataSize(container), clientToken, started, ctx.maxInsertRetries, targetFilename, binaryBlob, this.ctx.getCompatibilityMode());
+				getDataSize(container), clientToken, started, ctx.maxInsertRetries, targetFilename, binaryBlob, this.ctx.getCompatibilityMode(), this.ctx.dontCompress, this.ctx.compressorDescriptor);
 	}
 
 	@Override
@@ -446,6 +444,7 @@ public class ClientPut extends ClientPutBase {
 		}
 	}
 	
+	@Override
 	public void setVarsRestart(ObjectContainer container) {
 		super.setVarsRestart(container);
 		if(client != null) {
@@ -456,6 +455,7 @@ public class ClientPut extends ClientPutBase {
 		}
 	}
 	
+	@Override
 	public void onRemoveEventProducer(ObjectContainer container) {
 		// Do nothing, we called the removeFrom().
 	}
@@ -577,6 +577,6 @@ public class ClientPut extends ClientPutBase {
 				failureReasonShort, failureReasonLong, getDataSize(container), mimeType,
 				fnam, isCompressing(container));
 	}
-	
+
 
 }

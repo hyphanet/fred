@@ -2825,6 +2825,7 @@ class CSSTokenizerFilter {
 			this.decoded = decoded;
 		}
 
+		@Override
 		protected void innerEncode(boolean unicode, StringBuilder out) {
 			char prevc = 0;
 			char c = 0;
@@ -2873,6 +2874,7 @@ class CSSTokenizerFilter {
 			super(original, decoded, changed);
 		}
 
+		@Override
 		protected boolean mustEncode(char c, int i, char prevc, boolean unicode) {
 			// It is an identifier.
 			if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
@@ -2901,6 +2903,7 @@ class CSSTokenizerFilter {
 		 * included in the decoded string. */
 		final char stringChar;
 
+		@Override
 		protected boolean mustEncode(char c, int i, char prevc, boolean unicode) {
 			// It is a string.
 			// Anything is allowed in a string...
@@ -4419,10 +4422,12 @@ outer:		for(int i=0;i<value.length;i++) {
 			super(valueOnly, ElementInfo.VISUALMEDIA);
 		}
 
+		@Override
 		boolean isSpecificFamily(String s) {
 			return ElementInfo.isSpecificFontFamily(s);
 		}
 
+		@Override
 		boolean isGenericFamily(String s) {
 			return ElementInfo.isGenericFontFamily(s);
 		}
@@ -4435,10 +4440,12 @@ outer:		for(int i=0;i<value.length;i++) {
 			super(valueOnly, ElementInfo.AURALMEDIA);
 		}
 
+		@Override
 		boolean isSpecificFamily(String s) {
 			return ElementInfo.isSpecificVoiceFamily(s);
 		}
 
+		@Override
 		boolean isGenericFamily(String s) {
 			return ElementInfo.isGenericVoiceFamily(s);
 		}

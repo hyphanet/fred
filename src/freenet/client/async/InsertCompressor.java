@@ -11,9 +11,7 @@ import com.db4o.query.Query;
 import freenet.client.InsertException;
 import freenet.crypt.HashResult;
 import freenet.crypt.MultiHashInputStream;
-import freenet.crypt.MultiHashOutputStream;
 import freenet.keys.CHKBlock;
-import freenet.keys.NodeCHK;
 import freenet.node.PrioRunnable;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -114,6 +112,7 @@ public class InsertCompressor implements CompressJob {
 		ctx.rc.enqueueNewJob(this);
 	}
 
+	@Override
 	public void tryCompress(final ClientContext context) throws InsertException {
 		long origSize = origData.size();
 		COMPRESSOR_TYPE bestCodec = null;
@@ -141,6 +140,7 @@ public class InsertCompressor implements CompressJob {
 					if(persistent) {
 						context.jobRunner.queue(new DBJob() {
 
+							@Override
 							public boolean run(ObjectContainer container, ClientContext context) {
 								if(!container.ext().isStored(inserter)) {
 									if(InsertCompressor.logMINOR) Logger.minor(this, "Already deleted (start compression): "+inserter+" for "+InsertCompressor.this);
@@ -174,23 +174,32 @@ public class InsertCompressor implements CompressJob {
 						if(first && generateHashes != 0) {
 							if(logMINOR) Logger.minor(this, "Generating hashes: "+generateHashes);
 							is = hasher = new MultiHashInputStream(is, generateHashes);
-							maxOutputSize = Long.MAX_VALUE; // Want to run it to the end anyway to get hashes. Fortunately the first hasher is always the fastest.
 						}
-						first = false;
 						try {
 							comp.compress(is, os, origSize, maxOutputSize);
 						} catch (RuntimeException e) {
 							// ArithmeticException has been seen in bzip2 codec.
 							Logger.error(this, "Compression failed with codec "+comp+" : "+e, e);
 							// Try the next one
+							// RuntimeException is iffy, so lets not try the hasher.
 							continue;
+						} catch (CompressionOutputSizeException e) {
+							if(hasher != null) {
+								is.skip(Long.MAX_VALUE);
+								hashes = hasher.getResults();
+								first = false;
+							}
+							continue; // try next compressor type
+						}
+						if(hasher != null) {
+							hashes = hasher.getResults();
+							first = false;
 						}
 					} finally {
 						Closer.close(is);
 						Closer.close(os);
 					}
 					long resultSize = result.size();
-					if(hasher != null) hashes = hasher.getResults();
 					// minSize is {SSKBlock,CHKBlock}.MAX_COMPRESSED_DATA_LENGTH
 					if(resultSize <= minSize) {
 						if(logMINOR)
@@ -215,8 +224,6 @@ public class InsertCompressor implements CompressJob {
 						bestCodec = comp;
 						shouldFreeOnFinally = false;
 					}
-				} catch(CompressionOutputSizeException e) {
-					continue;       // try next compressor type
 				} catch (DatabaseDisabledException e) {
 					Logger.error(this, "Database disabled compressing data", new Exception("error"));
 					shouldFreeOnFinally = true;
@@ -234,6 +241,7 @@ public class InsertCompressor implements CompressJob {
 			
 				context.jobRunner.queue(new DBJob() {
 					
+					@Override
 					public boolean run(ObjectContainer container, ClientContext context) {
 						if(!container.ext().isStored(inserter)) {
 							if(InsertCompressor.logMINOR) Logger.minor(this, "Already deleted: "+inserter+" for "+InsertCompressor.this);
@@ -254,10 +262,12 @@ public class InsertCompressor implements CompressJob {
 				// We do it off thread so that RealCompressor can release the semaphore
 				context.mainExecutor.execute(new PrioRunnable() {
 
+					@Override
 					public int getPriority() {
 						return NativeThread.NORM_PRIORITY;
 					}
 
+					@Override
 					public void run() {
 						try {
 							inserter.onCompressed(output, null, context);
@@ -284,6 +294,7 @@ public class InsertCompressor implements CompressJob {
 			try {
 				context.jobRunner.queue(new DBJob() {
 					
+					@Override
 					public boolean run(ObjectContainer container, ClientContext context) {
 						if(!container.ext().isStored(inserter)) {
 							if(InsertCompressor.logMINOR) Logger.minor(this, "Already deleted (on failed): "+inserter+" for "+InsertCompressor.this);
@@ -349,11 +360,13 @@ public class InsertCompressor implements CompressJob {
 		}
 	}
 
+	@Override
 	public void onFailure(final InsertException e, ClientPutState c, ClientContext context) {
 		if(persistent) {
 			try {
 				context.jobRunner.queue(new DBJob() {
 					
+					@Override
 					public boolean run(ObjectContainer container, ClientContext context) {
 						if(container.ext().isActive(inserter))
 							Logger.error(this, "ALREADY ACTIVE in compress failure callback: "+inserter);

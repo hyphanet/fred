@@ -39,12 +39,15 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 
 	public SimpleHealingQueue(InsertContext context, short prio, int maxRunning) {
 		super(prio, new RequestClient() {
+			@Override
 			public boolean persistent() {
 				return false;
 			}
+			@Override
 			public void removeFrom(ObjectContainer container) {
 				throw new UnsupportedOperationException();
 			}
+			@Override
 			public boolean realTimeFlag() {
 				return false;
 			} });
@@ -80,6 +83,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		}
 	}
 
+	@Override
 	public void queue(Bucket data, byte[] cryptoKey, byte cryptoAlgorithm, ClientContext context) {
 		if(!innerQueue(data, cryptoKey, cryptoAlgorithm, context))
 			data.free();
@@ -105,6 +109,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		// Do nothing
 	}
 
+	@Override
 	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
 		SingleBlockInserter sbi = (SingleBlockInserter)state;
 		Bucket data = (Bucket) sbi.getToken();
@@ -116,6 +121,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		data.free();
 	}
 
+	@Override
 	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
 		SingleBlockInserter sbi = (SingleBlockInserter)state;
 		Bucket data = (Bucket) sbi.getToken();
@@ -127,24 +133,29 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		data.free();
 	}
 
+	@Override
 	public void onEncode(BaseClientKey usk, ClientPutState state, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 
+	@Override
 	public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 		// Should never happen
 		Logger.error(this, "impossible: onTransition on SimpleHealingQueue from "+oldState+" to "+newState, new Exception("debug"));
 	}
 
+	@Override
 	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
 		// Should never happen
 		Logger.error(this, "Got metadata on SimpleHealingQueue from "+state+": "+m, new Exception("debug"));
 	}
 
+	@Override
 	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 
+	@Override
 	public void onFetchable(ClientPutState state, ObjectContainer container) {
 		// Ignore
 	}
@@ -167,6 +178,13 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 	@Override
 	public int getMinSuccessFetchBlocks() {
 		return 0;
+	}
+
+	@Override
+	public void onMetadata(Bucket meta, ClientPutState state,
+			ObjectContainer container, ClientContext context) {
+		Logger.error(this, "onMetadata() in SimpleHealingQueue - impossible", new Exception("error"));
+		meta.free();
 	}
 
 }

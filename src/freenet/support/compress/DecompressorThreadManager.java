@@ -158,6 +158,7 @@ public class DecompressorThreadManager {
 		}
 
 		/**Begins the decompression */
+		@Override
 		public void run() {
 			try {
 				if(manager.getError() == null) {

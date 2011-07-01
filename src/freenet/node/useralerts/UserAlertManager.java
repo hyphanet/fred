@@ -78,6 +78,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		// Run off-thread, because of locking, and because client
 		// callbacks may take some time
 		core.clientContext.mainExecutor.execute(new Runnable() {
+			@Override
 			public void run() {
 				for (FCPConnectionHandler subscriber : subscribers)
 					subscriber.outputHandler.queue(alert.getFCPMessage());
@@ -143,6 +144,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		return a;
 	}
 
+	@Override
 	public int compare(UserAlert a0, UserAlert a1) {
 		if(a0 == a1) return 0; // common case, also we should be consistent with == even with proxyuseralert's
 		short prio0 = a0.getPriorityClass();
@@ -182,7 +184,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		int totalNumber = 0;
 		for (int i = 0; i < alerts.length; i++) {
 			UserAlert alert = alerts[i];
-			if(showOnlyErrors && alert.getPriorityClass() > alert.ERROR)
+			if(showOnlyErrors && alert.getPriorityClass() > UserAlert.ERROR)
 				continue;
 			if (!alert.isValid())
 				continue;
@@ -366,6 +368,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		// Run off-thread, because of locking, and because client
 		// callbacks may take some time
 		core.clientContext.mainExecutor.execute(new Runnable() {
+			@Override
 			public void run() {
 				for (UserAlert alert : getAlerts())
                                         if(alert.isValid())

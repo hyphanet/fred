@@ -8,7 +8,6 @@ import com.db4o.ObjectContainer;
 import freenet.client.FECQueue;
 import freenet.client.async.ChosenBlock;
 import freenet.client.async.ClientContext;
-import freenet.keys.ClientKey;
 import freenet.keys.Key;
 
 public interface RequestScheduler {

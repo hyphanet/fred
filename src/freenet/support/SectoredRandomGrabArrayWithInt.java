@@ -11,6 +11,7 @@ public class SectoredRandomGrabArrayWithInt extends SectoredRandomGrabArray impl
 		this.number = number;
 	}
 
+	@Override
 	public int getNumber() {
 		return number;
 	}

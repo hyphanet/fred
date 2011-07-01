@@ -506,6 +506,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		return "/config/"+subConfig.getPrefix();
 	}
 
+	@Override
 	public boolean isEnabled(ToadletContext ctx) {
 		Option<?>[] o = subConfig.getOptions();
 		if(core.isAdvancedModeEnabled()) return true;

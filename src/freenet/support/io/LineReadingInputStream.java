@@ -26,6 +26,7 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 	 * @param bufferSize The initial size of the read buffer.
 	 * @param utf If true, read as UTF-8, if false, read as ISO-8859-1.
 	 */
+	@Override
 	public String readLine(int maxLength, int bufferSize, boolean utf) throws IOException {
 		if(maxLength < 1)
 			return null;

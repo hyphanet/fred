@@ -11,10 +11,12 @@ public class RandomGrabArrayWithClient extends RandomGrabArray implements Remove
 		this.client = client;
 	}
 
+	@Override
 	public final Object getObject() {
 		return client;
 	}
 
+	@Override
 	public void setObject(Object client, ObjectContainer container) {
 		this.client = client;
 		if(persistent) container.store(this);

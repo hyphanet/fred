@@ -40,6 +40,7 @@ public class SubscribeUSK implements USKProgressCallback {
 		}
 	}
 
+	@Override
 	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 		if(handler.isClosed()) {
 			core.uskManager.unsubscribe(key, this);
@@ -50,10 +51,12 @@ public class SubscribeUSK implements USKProgressCallback {
 		handler.outputHandler.queue(msg);
 	}
 
+	@Override
 	public short getPollingPriorityNormal() {
 		return prio;
 	}
 
+	@Override
 	public short getPollingPriorityProgress() {
 		return prioProgress;
 	}
@@ -62,10 +65,12 @@ public class SubscribeUSK implements USKProgressCallback {
 		core.uskManager.unsubscribe(usk, this);
 	}
 
+	@Override
 	public void onSendingToNetwork(ClientContext context) {
 		handler.outputHandler.queue(new SubscribedUSKSendingToNetworkMessage(identifier));
 	}
 
+	@Override
 	public void onRoundFinished(ClientContext context) {
 		handler.outputHandler.queue(new SubscribedUSKRoundFinishedMessage(identifier));
 	}

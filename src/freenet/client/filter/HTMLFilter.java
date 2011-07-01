@@ -54,6 +54,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	 * charset detection can be ambiguous, potentially resulting in attacks. */
 	private static boolean allowNoHTMLTag = true;
 	
+	@Override
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		if(cb == null) cb = new NullFilterCallback();
@@ -79,11 +80,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		w.flush();
 	}
 	
+	@Override
 	public void writeFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 			FilterCallback cb) throws DataFilterException, IOException {
 		throw new UnsupportedOperationException();
 	}
 	
+	@Override
 	public String getCharset(byte[] input, int length, String parseCharset) throws DataFilterException, IOException {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);		
 		if(logMINOR) Logger.minor(this, "getCharset(): default="+parseCharset);
@@ -635,6 +638,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if(t == null || t.startSlash || t.endSlash) {
 				if(!pc.openElements.isEmpty())
 					return pc.openElements.peek();
+				if (pc.writeAfterTag.length() > 0) {
+					w.write(pc.writeAfterTag.toString());
+					pc.writeAfterTag = new StringBuilder(1024);
+				}
 				return null;
 			} else return t.element;
 		} else {
@@ -2473,14 +2480,18 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				ParsedTag p,
 				HTMLParseContext pc) throws DataFilterException {
 			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
-			// Get the already-sanitized version.
-			String baseHref = getHashString(hn, "href");
+			String baseHref = getHashString(h, "href");
 			if(baseHref != null) {
+				// Decode and encode for the same reason we do in sanitizeHash().
+				baseHref = HTMLDecoder.decode(baseHref);
 				String ref = pc.cb.onBaseHref(baseHref);
-				if(ref != null)
-					hn.put("href", ref);
+				if(ref != null) {
+					hn.put("href", HTMLEncoder.encode(ref));
+					return hn;
+				}
 			}
-			return hn;
+			pc.writeAfterTag.append("<!-- deleted invalid base href -->");
+			return null;
 		}
 
 	}
@@ -2658,12 +2669,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		return NodeL10n.getBase().getString("HTMLFilter."+key, pattern, value);
 	}
 
+	@Override
 	public BOMDetection getCharsetByBOM(byte[] input, int length) throws DataFilterException {
 		// No enhanced BOMs.
 		// FIXME XML BOMs???
 		return null;
 	}
 
+	@Override
 	public int getCharsetBufferSize() {
 		//Read in 64 kilobytes. The charset could be defined anywhere in the head section
 		return 1024*64;

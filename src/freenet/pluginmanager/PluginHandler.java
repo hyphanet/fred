@@ -34,6 +34,7 @@ public class PluginHandler {
 			t.setDaemon(true);
 			pi.setThread(t);
 			job = new Runnable() {
+				@Override
 				public void run() {
 					t.start();
 				}
@@ -58,6 +59,7 @@ public class PluginHandler {
 			this.pi = pi;
 		}
 		
+		@Override
 		public void run() {
 				try {
 					pm.register(pi);

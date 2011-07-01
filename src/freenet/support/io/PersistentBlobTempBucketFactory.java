@@ -290,6 +290,7 @@ public class PersistentBlobTempBucketFactory {
 	private void initSlotFinder() {
 		slotFinder = new DBJob() {
 		
+		@Override
 		public boolean run(ObjectContainer container, ClientContext context) {
 			int added = 0;
 			
@@ -461,7 +462,7 @@ outer:		while(true) {
 			// FIXME limits size to Integer.MAX_VALUE entries so that we don't need to worry about freeBlocksCache.
 			// FIXME long term, make freeBlocksCache take a long.
 			if(blocks + addBlocks > Integer.MAX_VALUE) {
-				addBlocks = (blocks + addBlocks) - (long)Integer.MAX_VALUE;
+				addBlocks = (blocks + addBlocks) - Integer.MAX_VALUE;
 				if(addBlocks <= 0) return changedTags;
 			}
 			
@@ -518,6 +519,7 @@ outer:		while(true) {
 		}
 		}
 		
+		@Override
 		public String toString() {
 			return "PersistentBlobTempBucketFactory.SlotFinder";
 		}
@@ -752,7 +754,7 @@ outer:				while(true) {
 						PersistentBlobTempBucketTag tag = new PersistentBlobTempBucketTag(PersistentBlobTempBucketFactory.this, last);
 						container.store(tag);
 						synchronized(this) {
-							freeBlocksCache.setBit((int)last, false);
+							freeBlocksCache.setBit(last, false);
 						}
 						continue;
 					}
@@ -899,6 +901,7 @@ outer:				while(true) {
 			try {
 				jobRunner.queue(new DBJob() {
 
+					@Override
 					public boolean run(ObjectContainer container, ClientContext context) {
 						long size;
 						try {
@@ -935,6 +938,7 @@ outer:				while(true) {
 						return true;
 					}
 					
+					@Override
 					public String toString() {
 						return "PersistentBlobTempBucketFactory.PostShrinkCheck";
 					}
@@ -987,14 +991,17 @@ outer:				while(true) {
 	private void queueMaybeShrink() {
 		ticker.queueTimedJob(new Runnable() {
 
+			@Override
 			public void run() {
 				try {
 					jobRunner.queue(new DBJob() {
 
+						@Override
 						public boolean run(ObjectContainer container, ClientContext context) {
 							return maybeShrink(container);
 						}
 						
+						@Override
 						public String toString() {
 							return "PersistentBlobTempBucketFactory.MaybeShrink";
 						}

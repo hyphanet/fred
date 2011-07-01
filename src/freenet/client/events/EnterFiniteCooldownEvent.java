@@ -12,10 +12,12 @@ public class EnterFiniteCooldownEvent implements ClientEvent {
 		this.wakeupTime = wakeupTime;
 	}
 
+	@Override
 	public String getDescription() {
 		return "Wake up in "+TimeUtil.formatTime(wakeupTime - System.currentTimeMillis(), 2, true);
 	}
 
+	@Override
 	public int getCode() {
 		return CODE;
 	}

@@ -74,6 +74,8 @@ public class NodeCrypto {
 	private DSAPrivateKey privKey;
 	/** My public key */
 	private DSAPublicKey pubKey;
+	byte[] pubKeyHash;
+	byte[] pubKeyHashHash;
 	/** My ARK SSK private key */
 	InsertableClientSSK myARK;
 	/** My ARK sequence number */
@@ -208,6 +210,8 @@ public class NodeCrypto {
 			cryptoGroup = DSAGroup.create(fs.subset("dsaGroup"));
 			privKey = DSAPrivateKey.create(fs.subset("dsaPrivKey"), cryptoGroup);
 			pubKey = DSAPublicKey.create(fs.subset("dsaPubKey"), cryptoGroup);
+			pubKeyHash = SHA256.digest(pubKey.asBytes());
+			pubKeyHashHash = SHA256.digest(pubKeyHash);
 		} catch (IllegalBase64Exception e) {
 			Logger.error(this, "Caught "+e, e);
 			throw new IOException(e.toString());
@@ -280,6 +284,8 @@ public class NodeCrypto {
 		anonSetupCipher.initialize(identityHash);
 		clientNonce = new byte[32];
 		node.random.nextBytes(clientNonce);
+		pubKeyHash = SHA256.digest(pubKey.asBytes());
+		pubKeyHashHash = SHA256.digest(pubKeyHash);
 	}
 
 	public void start() {

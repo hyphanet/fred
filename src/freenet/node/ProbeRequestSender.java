@@ -79,6 +79,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
     	node.executor.execute(this, "ResettingHTLProbeRequestSender for UID "+uid);
     }
     
+    @Override
     public void run() {
         try {
         	realRun();
@@ -106,7 +107,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
             // Route it
             PeerNode next;
             next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-			        null, htl, 0, source == null, false);
+			        null, htl, 0, source == null, false, node.enableNewLoadManagement());
             
             if(next == null) {
 				if (logMINOR && rejectOverloads>0)
@@ -403,6 +404,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
 	private volatile Object totalBytesSync = new Object();
 	private int totalBytesSent;
 	
+	@Override
 	public void sentBytes(int x) {
 		synchronized(totalBytesSync) {
 			totalBytesSent += x;
@@ -418,6 +420,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
 	
 	private int totalBytesReceived;
 	
+	@Override
 	public void receivedBytes(int x) {
 		synchronized(totalBytesSync) {
 			totalBytesReceived += x;
@@ -435,6 +438,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
 		return hasForwarded;
 	}
 
+	@Override
 	public void sentPayload(int x) {
 		Logger.error(this, "sentPayload("+x+") in ResettingHTLProbeRequestSender ?!?!? for "+this, new Exception("error"));
 	}
@@ -530,6 +534,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
 		}
 	}
 
+	@Override
 	public int getPriority() {
 		return NativeThread.HIGH_PRIORITY;
 	}

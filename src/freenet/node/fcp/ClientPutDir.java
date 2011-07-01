@@ -218,7 +218,6 @@ public class ClientPutDir extends ClientPutBase {
 	}
 	
 	@Override
-	@SuppressWarnings("unchecked")
 	protected void freeData(ObjectContainer container) {
 		if(logMINOR) Logger.minor(this, "freeData() on "+this+" persistence type = "+persistenceType);
 		synchronized(this) {
@@ -243,7 +242,7 @@ public class ClientPutDir extends ClientPutBase {
 	@SuppressWarnings("unchecked")
 	private void freeData(HashMap<String, Object> manifestElements, ObjectContainer container) {
 		if(logMINOR) Logger.minor(this, "freeData() inner on "+this+" persistence type = "+persistenceType+" size = "+manifestElements.size());
-		Iterator i = manifestElements.values().iterator();
+		Iterator<Object> i = manifestElements.values().iterator();
 		while(i.hasNext()) {
 			Object o = i.next();
 			if(o instanceof HashMap) {
@@ -270,7 +269,7 @@ public class ClientPutDir extends ClientPutBase {
 			container.activate(manifestElements, 5);
 		}
 		return new PersistentPutDir(identifier, publicURI, verbosity, priorityClass,
-				persistenceType, global, defaultName, manifestElements, clientToken, started, ctx.maxInsertRetries, wasDiskPut, container);
+				persistenceType, global, defaultName, manifestElements, clientToken, started, ctx.maxInsertRetries, ctx.dontCompress, ctx.compressorDescriptor, wasDiskPut, container);
 	}
 
 	@Override
@@ -339,6 +338,7 @@ public class ClientPutDir extends ClientPutBase {
 		super.onFailure(e, state, container);
 	}
 
+	@Override
 	public void onRemoveEventProducer(ObjectContainer container) {
 		// Do nothing, we called the removeFrom().
 	}

@@ -49,6 +49,7 @@ public class NodeCHK extends Key {
 
 	public static final byte BASE_TYPE = 1;
 
+    @Override
     public final void writeToDataOutputStream(DataOutputStream stream) throws IOException {
         write(stream);
     }
@@ -128,6 +129,7 @@ public class NodeCHK extends Key {
 		return out;
 	}
 
+	@Override
 	public int compareTo(Key arg0) {
 		if(arg0 instanceof NodeSSK) return 1;
 		NodeCHK key = (NodeCHK) arg0;

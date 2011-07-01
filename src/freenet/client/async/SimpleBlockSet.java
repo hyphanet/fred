@@ -21,18 +21,22 @@ public class SimpleBlockSet implements BlockSet {
 
 	private final HashMap<Key, KeyBlock> blocksByKey = new HashMap<Key, KeyBlock>();
 	
+	@Override
 	public synchronized void add(KeyBlock block) {
 		blocksByKey.put(block.getKey(), block);
 	}
 
+	@Override
 	public synchronized KeyBlock get(Key key) {
 		return blocksByKey.get(key);
 	}
 
+	@Override
 	public synchronized Set<Key> keys() {
 		return blocksByKey.keySet();
 	}
 
+	@Override
 	public ClientKeyBlock get(ClientKey key) {
 		KeyBlock block = get(key.getNodeKey(false));
 		if(block == null) return null;

@@ -151,6 +151,7 @@ public class FCPServer implements Runnable, DownloadCache {
 		}
 	}
 
+	@Override
 	public void run() {
 	    freenet.support.Logger.OSThread.logPID(this);
 		while(true) {
@@ -515,10 +516,12 @@ public class FCPServer implements Runnable, DownloadCache {
 			done.value = false;
 			core.clientContext.jobRunner.queue(new DBJob() {
 
+				@Override
 				public String toString() {
 					return "FCP removeGlobalRequestBlocking";
 				}
 
+				@Override
 				public boolean run(ObjectContainer container, ClientContext context) {
 					boolean succeeded = false;
 					try {
@@ -558,10 +561,12 @@ public class FCPServer implements Runnable, DownloadCache {
 		done.value = false;
 		core.clientContext.jobRunner.queue(new DBJob() {
 
+			@Override
 			public String toString() {
 				return "FCP removeAllGlobalRequestsBlocking";
 			}
 
+			@Override
 			public boolean run(ObjectContainer container, ClientContext context) {
 				boolean succeeded = false;
 				try {
@@ -608,10 +613,12 @@ public class FCPServer implements Runnable, DownloadCache {
 		final OutputWrapper ow = new OutputWrapper();
 		core.clientContext.jobRunner.queue(new DBJob() {
 
+			@Override
 			public String toString() {
 				return "FCP makePersistentGlobalRequestBlocking";
 			}
 
+			@Override
 			public boolean run(ObjectContainer container, ClientContext context) {
 				NotAllowedException ne = null;
 				IOException ioe = null;
@@ -672,10 +679,12 @@ public class FCPServer implements Runnable, DownloadCache {
 			final OutputWrapper ow = new OutputWrapper();
 			core.clientContext.jobRunner.queue(new DBJob() {
 
+				@Override
 				public String toString() {
 					return "FCP modifyGlobalRequestBlocking";
 				}
 
+				@Override
 				public boolean run(ObjectContainer container, ClientContext context) {
 					boolean success = false;
 					try {
@@ -713,6 +722,10 @@ public class FCPServer implements Runnable, DownloadCache {
 		}
 	}
 
+	public void makePersistentGlobalRequest(FreenetURI fetchURI, boolean filterData, String expectedMimeType, String persistenceTypeString, String returnTypeString, boolean realTimeFlag, ObjectContainer container) throws NotAllowedException, IOException {
+		makePersistentGlobalRequest(fetchURI, filterData, expectedMimeType, persistenceTypeString, returnTypeString, realTimeFlag, container, core.getDownloadsDir());
+	}
+	
 	/**
 	 * Create a persistent globally-queued request for a file.
 	 * @param fetchURI The file to fetch.
@@ -856,10 +869,12 @@ public class FCPServer implements Runnable, DownloadCache {
 				final OutputWrapper ow = new OutputWrapper();
 			core.clientContext.jobRunner.queue(new DBJob() {
 
+				@Override
 				public String toString() {
 					return "FCP startBlocking";
 				}
 
+				@Override
 				public boolean run(ObjectContainer container, ClientContext context) {
 					// Don't activate, it may not be stored yet.
 					try {
@@ -911,10 +926,12 @@ public class FCPServer implements Runnable, DownloadCache {
 			final OutputWrapper ow = new OutputWrapper();
 			core.clientContext.jobRunner.queue(new DBJob() {
 
+				@Override
 				public String toString() {
 					return "FCP restartBlocking";
 				}
 
+				@Override
 				public boolean run(ObjectContainer container, ClientContext context) {
 					boolean success = false;
 					try {
@@ -973,10 +990,12 @@ public class FCPServer implements Runnable, DownloadCache {
 
 		core.clientContext.jobRunner.queue(new DBJob() {
 
+			@Override
 			public String toString() {
 				return "FCP getCompletedRequestBlocking";
 			}
 
+			@Override
 			public boolean run(ObjectContainer container, ClientContext context) {
 				FetchResult result = null;
 				try {
@@ -1017,6 +1036,7 @@ public class FCPServer implements Runnable, DownloadCache {
 		return whiteboard;
 	}
 
+	@Override
 	public CacheFetchResult lookupInstant(FreenetURI key, boolean noFilter, boolean mustCopy, Bucket preferred) {
 		ClientGet get = globalRebootClient.getCompletedRequest(key, null);
 
@@ -1063,6 +1083,7 @@ public class FCPServer implements Runnable, DownloadCache {
 
 	}
 
+	@Override
 	public CacheFetchResult lookup(FreenetURI key, boolean noFilter, ClientContext context,
 			ObjectContainer container, boolean mustCopy, Bucket preferred) {
 		if(globalForeverClient == null) return null;

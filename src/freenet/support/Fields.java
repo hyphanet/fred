@@ -411,6 +411,7 @@ public abstract class Fields {
 	 * Compares byte arrays lexicographically.
 	 */
 	public static final class ByteArrayComparator implements Comparator<byte[]> {
+		@Override
 		public final int compare(byte[] o1, byte[] o2) {
 			return compareBytes(o1, o2);
 		}

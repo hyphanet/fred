@@ -68,6 +68,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 	/* (non-Javadoc)
 	 * @see freenet.client.async.CooldownQueue#add(freenet.keys.Key, freenet.node.SendableGet)
 	 */
+	@Override
 	public synchronized long add(Key key, SendableGet client, ObjectContainer container) {
 		long removeTime = System.currentTimeMillis() + cooldownTime;
 		if(removeTime < getLastTime()) {
@@ -130,6 +131,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 	/* (non-Javadoc)
 	 * @see freenet.client.async.CooldownQueue#removeKeyBefore(long)
 	 */
+	@Override
 	public synchronized Object removeKeyBefore(long now, long dontCareAfterMillis, ObjectContainer container, int maxKeys) {
 		ArrayList<Key> v = new ArrayList<Key>();
 		boolean foundIT = false;
@@ -247,6 +249,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 	/* (non-Javadoc)
 	 * @see freenet.client.async.CooldownQueue#removeKey(freenet.keys.Key, freenet.node.SendableGet, long)
 	 */
+	@Override
 	public synchronized boolean removeKey(Key key, SendableGet client, long time, ObjectContainer container) {
 		if(time <= 0) return false; // We won't find it.
 		if(holes < 0) Logger.error(this, "holes = "+holes+" !!");

@@ -11,6 +11,12 @@ public abstract class Bookmark {
 		return name;
 	}
 
+	public String getVisibleName() {
+		if(name.startsWith("L10N:"))
+			return NodeL10n.getBase().getString("Bookmarks.Defaults.Name."+name.substring("L10N:".length()));
+		return name;
+	}
+
 	protected void setName(String s) {
 		name = (s.length() > 0 ? s : NodeL10n.getBase().getString("Bookmark.noName"));
 	}

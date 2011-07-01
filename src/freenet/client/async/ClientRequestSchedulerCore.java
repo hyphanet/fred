@@ -109,6 +109,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		if(isInsertScheduler) {
 		preRegisterMeRunner = new DBJob() {
 
+			@Override
 			public boolean run(ObjectContainer container, ClientContext context) {
 				synchronized(ClientRequestSchedulerCore.this) {
 					if(registerMeSet != null) return false;
@@ -222,6 +223,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 
 	class RegisterMeRunner implements DBJob {
 
+		@Override
 		public boolean run(ObjectContainer container, ClientContext context) {
 			if(sched.databaseExecutor.getQueueSize(NativeThread.NORM_PRIORITY) > 100) {
 				// If the queue isn't empty, reschedule at NORM-1, wait for the backlog to clear
