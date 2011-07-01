@@ -3542,12 +3542,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		header.addChild("th", l10n("remoteHeader"));
 		HTMLNode row = table.addChild("tr");
 		row.addChild("th", l10n("realTimeHeader"));
-		row.addChild("td", Integer.toString((int)nlmDelayRTLocal.currentValue()));
-		row.addChild("td", Integer.toString((int)nlmDelayRTRemote.currentValue()));
+		row.addChild("td", TimeUtil.formatTime((int)nlmDelayRTLocal.currentValue(), 2, true));
+		row.addChild("td", TimeUtil.formatTime((int)nlmDelayRTRemote.currentValue(), 2, true));
 		row = table.addChild("tr");
 		row.addChild("th", l10n("bulkHeader"));
-		row.addChild("td", Integer.toString((int)nlmDelayBulkLocal.currentValue()));
-		row.addChild("td", Integer.toString((int)nlmDelayBulkRemote.currentValue()));
+		row.addChild("td", TimeUtil.formatTime((int)nlmDelayBulkLocal.currentValue(), 2, true));
+		row.addChild("td", TimeUtil.formatTime((int)nlmDelayBulkRemote.currentValue(), 2, true));
 	}
 	
 }
