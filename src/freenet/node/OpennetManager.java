@@ -416,6 +416,7 @@ public class OpennetManager {
 				FreenetInetAddress addr = p.getFreenetAddress();
 				if(addr == null) continue;
 				InetAddress a = addr.getAddress(false);
+				if(a == null) continue;
 				if(a.isAnyLocalAddress() || a.isSiteLocalAddress()) continue;
 				any = true;
 				if(crypto.allowConnection(nodeToAddNow, addr))
