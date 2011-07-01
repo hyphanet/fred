@@ -311,9 +311,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     	
     	PeerNode next = null;
     	
-    	NodeStats.RequestType type =
-    		isSSK ? NodeStats.RequestType.SSK_REQUEST : NodeStats.RequestType.CHK_REQUEST;
-        
         peerLoop:
         while(true) {
             boolean canWriteStorePrev = node.canWriteDatastoreInsert(htl);
