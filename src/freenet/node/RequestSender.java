@@ -312,7 +312,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     	PeerNode next = null;
     	
     	NodeStats.RequestType type =
-    		(key instanceof NodeSSK) ? NodeStats.RequestType.SSK_REQUEST : NodeStats.RequestType.CHK_REQUEST;
+    		isSSK ? NodeStats.RequestType.SSK_REQUEST : NodeStats.RequestType.CHK_REQUEST;
         
         peerLoop:
         while(true) {
@@ -512,7 +512,7 @@ loadWaiterLoop:
     	PeerNode next = null;
         
     	NodeStats.RequestType type =
-    		(key instanceof NodeSSK) ? NodeStats.RequestType.SSK_REQUEST : NodeStats.RequestType.CHK_REQUEST;
+    		isSSK ? NodeStats.RequestType.SSK_REQUEST : NodeStats.RequestType.CHK_REQUEST;
     	
         peerLoop:
         while(true) {
