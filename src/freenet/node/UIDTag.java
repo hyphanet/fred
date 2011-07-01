@@ -118,6 +118,8 @@ public abstract class UIDTag {
 	}
 	
 	public void removeRoutingTo(PeerNode next) {
+		if(logMINOR)
+			Logger.minor(this, "No longer routing to "+next+" on "+this, new Exception("debug"));
 		boolean noRecordUnlock;
 		synchronized(this) {
 			if(currentlyRoutingTo == null) return;
