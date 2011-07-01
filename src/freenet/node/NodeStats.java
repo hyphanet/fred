@@ -3533,5 +3533,21 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		if(logMINOR) Logger.minor(this, "Delay times: realtime: local="+nlmDelayRTLocal.currentValue()+" remote = "+nlmDelayRTRemote.currentValue()+
 				" bulk: local="+nlmDelayBulkLocal.currentValue()+" remote="+nlmDelayBulkRemote.currentValue());
 	}
+
+	public void drawNewLoadManagementDelayTimes(HTMLNode content) {
+		HTMLNode table = content.addChild("table", "border", "0");
+		HTMLNode header = table.addChild("tr");
+		header.addChild("th", l10n("delayTimes"));
+		header.addChild("th", l10n("localHeader"));
+		header.addChild("th", l10n("remoteHeader"));
+		HTMLNode row = table.addChild("tr");
+		row.addChild("th", l10n("realTimeHeader"));
+		row.addChild("td", Integer.toString((int)nlmDelayRTLocal.currentValue()));
+		row.addChild("td", Integer.toString((int)nlmDelayRTRemote.currentValue()));
+		row = table.addChild("tr");
+		row.addChild("th", l10n("bulkHeader"));
+		row.addChild("td", Integer.toString((int)nlmDelayBulkLocal.currentValue()));
+		row.addChild("td", Integer.toString((int)nlmDelayBulkRemote.currentValue()));
+	}
 	
 }
