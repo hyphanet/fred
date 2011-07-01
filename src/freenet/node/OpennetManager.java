@@ -11,6 +11,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -21,6 +22,7 @@ import java.util.Map;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
+import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
@@ -403,6 +405,24 @@ public class OpennetManager {
 		if(outdated) {
 			if(tooManyOutdatedPeers()) {
 				if(logMINOR) Logger.minor(this, "Rejecting TOO OLD peer from "+connectionType+" (too many already): "+nodeToAddNow);
+				return false;
+			}
+		}
+		if(nodeToAddNow != null && crypto.config.oneConnectionPerAddress()) {
+			boolean okay = false;
+			boolean any = false;
+			for(Peer p : nodeToAddNow.getHandshakeIPs()) {
+				if(p == null) continue;
+				FreenetInetAddress addr = p.getFreenetAddress();
+				if(addr == null) continue;
+				InetAddress a = addr.getAddress(false);
+				if(a.isAnyLocalAddress() || a.isSiteLocalAddress()) continue;
+				any = true;
+				if(crypto.allowConnection(nodeToAddNow, addr))
+					okay = true;
+			}
+			if(any && !okay) {
+				Logger.normal(this, "Rejecting peer as we are already connected to a peer with the same IP address");
 				return false;
 			}
 		}
