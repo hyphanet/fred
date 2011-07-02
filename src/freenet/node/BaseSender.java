@@ -256,7 +256,7 @@ loadWaiterLoop:
     					}
     				}
 				
-    	            if(next != null && next.isLowCapacity(realTimeFlag)) {
+    	            if(next.isLowCapacity(realTimeFlag)) {
     	            	if(waiter.waitingForCount() == 1) {
     	            		canWaitFor++;
     	            		// Wait for another one if the first is low capacity.
@@ -289,7 +289,7 @@ loadWaiterLoop:
     			
     			if(realTimeFlag) canWaitFor++;
     			// Skip it and go straight to rerouting if no next, as above.
-    			if(next != null && expectedAcceptState == null && waiter.waitingForCount() <= canWaitFor) {
+    			if(expectedAcceptState == null && waiter.waitingForCount() <= canWaitFor) {
             		// Wait for another one if realtime.
 					// Nodes we were waiting for that then became backed off will have been removed from the list.
 					HashSet<PeerNode> exclude = waiter.waitingForList();
