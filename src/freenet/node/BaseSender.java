@@ -294,7 +294,7 @@ loadWaiterLoop:
     			
     			if(expectedAcceptState == null) {
     				PeerNode oldNext = next;
-    				long maxWait = Long.MAX_VALUE;
+    				long maxWait = getLongSlotWaiterTimeout();
     				// After waitForAny() it will be null, it is all cleared.
     				int waitingForCount = waiter.waitingForCount();
     				if(waitingForCount < canWaitFor && next != null) {
@@ -436,6 +436,8 @@ loadWaiterLoop:
         
         return false;
 	}
+    
+    protected abstract long getLongSlotWaiterTimeout();
     
     protected abstract long getShortSlotWaiterTimeout();
 
