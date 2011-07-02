@@ -198,12 +198,21 @@ loadWaiterLoop:
     loadWaiterLoop:
     	while(true) {
     		if(logMINOR) Logger.minor(this, "Going around loop");
+    		
+    		if(next == null) {
+				next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
+						key, htl, 0, source == null, realTimeFlag, true);
+				if(next == null) {
+					if (logMINOR && rejectOverloads>0)
+						Logger.minor(this, "no more peers, but overloads ("+rejectOverloads+"/"+routeAttempts+" overloaded)");
+					// Backtrack
+					rnf();
+					return false;
+				}
+    		}
         
-    		if(next != null)
-    			expectedAcceptState = 
-    				next.outputLoadTracker(realTimeFlag).tryRouteTo(origTag, RequestLikelyAcceptedState.LIKELY, false);
-    		else
-    			expectedAcceptState = null;
+   			expectedAcceptState = 
+   				next.outputLoadTracker(realTimeFlag).tryRouteTo(origTag, RequestLikelyAcceptedState.LIKELY, false);
     		
     		if(expectedAcceptState == RequestLikelyAcceptedState.UNKNOWN) {
     			// No stats, old style, just go for it.
@@ -240,7 +249,8 @@ loadWaiterLoop:
     				if(next != null) {
     					if(!waiter.addWaitingFor(next)) {
     						next = null;
-    						// Will be rerouted in the failure section below.
+    						continue;
+    						// Will be rerouted.
     						// This is essential to avoid adding the same bogus node again and again.
     						// This is only an issue with next. Hence the other places we route explicitly so there is no risk as they won't return the same node repeatedly after it is no longer routable.
     					}
