@@ -600,7 +600,7 @@ loadWaiterLoop:
 
 	protected boolean isAccepted(Message msg) {
 		// SSKInsertSender needs an alternative accepted message.
-		return msg.getSpec() != DMT.FNPAccepted;
+		return msg.getSpec() == DMT.FNPAccepted;
 	}
 
 	protected abstract int getAcceptedTimeout();
