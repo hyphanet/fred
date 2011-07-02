@@ -324,8 +324,8 @@ loadWaiterLoop:
 						// Failed. Reroute.
 						continue;
 					}
-					// Timed out, or not waiting for anything, not failed.
     				if(waited == null) {
+    					// Timed out, or not waiting for anything, not failed.
     					if(logMINOR) Logger.minor(this, "Failed in wait - backoff, disconnection etc? Rerouting...");
     					// Disconnected, low capacity, or backed off.
     					// In any case, add another peer.
