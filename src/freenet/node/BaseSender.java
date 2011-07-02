@@ -316,6 +316,7 @@ loadWaiterLoop:
     					// However after adding it once, we will wait for as long as it takes.
     					maxWait = getShortSlotWaiterTimeout();
     				}
+					HashSet<PeerNode> exclude = waiter.waitingForList();
     				PeerNode waited;
 					try {
 						waited = waiter.waitForAny(maxWait);
@@ -331,7 +332,6 @@ loadWaiterLoop:
     					
     					// Route it
     					// Nodes we were waiting for that then became backed off will have been removed from the list.
-    					HashSet<PeerNode> exclude = waiter.waitingForList();
     					exclude.addAll(nodesRoutedTo);
     					// will have been removed from the list.
     					next = node.peers.closerPeer(source, exclude, target, true, node.isAdvancedModeEnabled(), -1, null,
