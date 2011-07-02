@@ -5269,13 +5269,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					if(logMINOR) Logger.minor(this, "Already matched on "+this);
 					return;
 				}
-				if(reallyFailed) {
-					waitingFor.remove(peer);
-					if(!waitingFor.isEmpty()) {
-						if(logMINOR) Logger.minor(this, "Still waiting for other nodes "+Arrays.toString(waitingFor.toArray())+" on "+this);
-						return;
-					}
-				}
+				// Always wake up.
+				// Whether it's a backoff or a disconnect, we probably want to add another peer.
+				// FIXME get rid of parameter.
 				failed = true;
 				notifyAll();
 			}
