@@ -195,6 +195,8 @@ loadWaiterLoop:
         RequestLikelyAcceptedState lastExpectedAcceptState = null;
         RequestLikelyAcceptedState expectedAcceptState = null;
         
+        boolean addedExtraNode = false;
+        
     loadWaiterLoop:
     	while(true) {
     		if(logMINOR) Logger.minor(this, "Going around loop");
@@ -317,17 +319,43 @@ loadWaiterLoop:
             		}
     			}
     			
+    			if(addedExtraNode) canWaitFor++;
+    			// Skip it and go straight to rerouting if no next, as above.
+    			if(expectedAcceptState == null && waiter.waitingForCount() <= canWaitFor) {
+            		// Wait for another one if realtime.
+					// Nodes we were waiting for that then became backed off will have been removed from the list.
+					HashSet<PeerNode> exclude = waiter.waitingForList();
+					exclude.addAll(nodesRoutedTo);
+            		PeerNode alsoWaitFor =
+            			node.peers.closerPeer(source, exclude, target, true, node.isAdvancedModeEnabled(), -1, null,
+            					key, htl, 0, source == null, realTimeFlag, true);
+            		if(alsoWaitFor != null) {
+            			waiter.addWaitingFor(alsoWaitFor);
+            			// We do not need to check the return value here.
+            			// We will not reuse alsoWaitFor if it is disconnected etc.
+            			if(logMINOR) Logger.minor(this, "Waiting for "+next+" and "+alsoWaitFor+" on "+waiter+" because realtime");
+            			PeerNode matched;
+						try {
+							matched = waiter.waitForAny(0);
+						} catch (SlotWaiterFailedException e) {
+							// Reroute.
+							continue;
+						}
+            			if(matched != null) {
+            				expectedAcceptState = waiter.getAcceptedState();
+            				next = matched;
+            			}
+            		}
+    			}
+    			
     			if(expectedAcceptState == null) {
-    				PeerNode oldNext = next;
     				long maxWait = getLongSlotWaiterTimeout();
     				// After waitForAny() it will be null, it is all cleared.
-    				int waitingForCount = waiter.waitingForCount();
-    				if(waitingForCount < canWaitFor) {
+    				if(!addedExtraNode) {
     					// Can add another one if it's taking ages.
     					// However after adding it once, we will wait for as long as it takes.
     					maxWait = getShortSlotWaiterTimeout();
     				}
-					HashSet<PeerNode> exclude = waiter.waitingForList();
     				PeerNode waited;
 					try {
 						waited = waiter.waitForAny(maxWait);
@@ -339,32 +367,13 @@ loadWaiterLoop:
     					// Timed out, or not waiting for anything, not failed.
     					if(logMINOR) Logger.minor(this, "Timed out waiting for a peer to accept "+this+" on "+waiter);
     					
-    					
-    					// Disconnected, low capacity, or backed off.
-    					// In any case, add another peer.
-    					
-    					// Route it
-    					// Nodes we were waiting for that then became backed off will have been removed from the list.
-    					exclude.addAll(nodesRoutedTo);
-    					// will have been removed from the list.
-    					next = node.peers.closerPeer(source, exclude, target, true, node.isAdvancedModeEnabled(), -1, null,
-    							key, htl, 0, source == null, realTimeFlag, true);
-    					
-    					if(next == null && (maxWait == Long.MAX_VALUE || waitingForCount == 0)) {
-    						if (logMINOR && rejectOverloads>0)
-    							Logger.minor(this, "no more peers, but overloads ("+rejectOverloads+"/"+routeAttempts+" overloaded)");
+    					if(addedExtraNode) {
     						// Backtrack
     						rnf();
-    						oldNext.noLongerRoutingTo(origTag, false);
     						return false;
-    					} else if(next == null) {
-    						next = oldNext;
-    						if(logMINOR) Logger.minor(this, "Waiting the full timeout after failing to reroute");
-    						continue loadWaiterLoop;
     					} else {
-    						if(logMINOR) Logger.minor(this, "Rerouted after failure in wait to "+next);
-    						// Wait for the old and the new too.
-    						continue loadWaiterLoop;
+    						addedExtraNode = true;
+    						continue;
     					}
     				} else {
     					next = waited;
