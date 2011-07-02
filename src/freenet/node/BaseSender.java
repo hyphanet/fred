@@ -321,7 +321,7 @@ loadWaiterLoop:
     				long maxWait = getLongSlotWaiterTimeout();
     				// After waitForAny() it will be null, it is all cleared.
     				int waitingForCount = waiter.waitingForCount();
-    				if(waitingForCount < canWaitFor && next != null) {
+    				if(waitingForCount < canWaitFor) {
     					// Can add another one if it's taking ages.
     					// However after adding it once, we will wait for as long as it takes.
     					maxWait = getShortSlotWaiterTimeout();
@@ -337,6 +337,8 @@ loadWaiterLoop:
     				if(waited == null) {
     					// Timed out, or not waiting for anything, not failed.
     					if(logMINOR) Logger.minor(this, "Timed out waiting for a peer to accept "+this+" on "+waiter);
+    					
+    					
     					// Disconnected, low capacity, or backed off.
     					// In any case, add another peer.
     					
