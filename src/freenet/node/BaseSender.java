@@ -234,7 +234,8 @@ loadWaiterLoop:
     					next.noLongerRoutingTo(origTag, false);
     					expectedAcceptState = null;
     					next = null;
-    					// Will reroute after waitForAny().
+    					// Will reroute.
+    					continue;
     				}
     			}
     			
