@@ -5427,7 +5427,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						if(logMINOR) Logger.minor(this, "Waited "+(waitEnd - waitStart)+"ms for "+this);
 					}
 				}
-				if(logMINOR) Logger.minor(this, "Returning after waiting: accepted by "+acceptedBy+" waiting for "+waitingFor.size()+" failed "+timedOut+" on "+this);
+				if(logMINOR) Logger.minor(this, "Returning after waiting: accepted by "+acceptedBy+" waiting for "+waitingFor.size()+" failed "+failed+" on "+this);
 				ret = acceptedBy;
 				acceptedBy = null; // Allow for it to wait again if necessary
 				all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
