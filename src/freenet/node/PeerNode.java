@@ -5301,10 +5301,16 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			PeerNode[] all;
 			PeerNode ret = null;
 			boolean grabbed = false;
+			SlotWaiterFailedException f = null;
 			synchronized(this) {
 				if(shouldGrab()) {
 					if(logMINOR) Logger.minor(this, "Already matched on "+this);
 					ret = grab();
+					grabbed = true;
+				}
+				if(fe != null) {
+					f = fe;
+					fe = null;
 					grabbed = true;
 				}
 				all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
@@ -5313,6 +5319,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 			if(grabbed) {
 				unregister(ret, all);
+				if(f != null && ret != null) throw f;
 				return ret;
 			}
 			// grab() above will have set failed = false if necessary.
@@ -5356,12 +5363,17 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						tag.removeRoutingTo(p);
 						return other;
 					}
+					// p != null so in this one instance we're going to ignore fe.
 					return p;
 				}
 			}
 			if(maxWait == 0) return null;
 			if(!anyValid) {
 				synchronized(this) {
+					if(fe != null) {
+						f = fe;
+						fe = null;
+					}
 					if(shouldGrab()) ret = grab();
 					all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
 					waitingFor.clear();
@@ -5370,6 +5382,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				}
 				if(logMINOR) Logger.minor(this, "None valid to wait for on "+this);
 				unregister(ret, all);
+				if(f != null && ret == null) throw f;
 				return ret;
 			}
 			synchronized(this) {
@@ -5429,14 +5442,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			return acceptedBy != null || waitingFor.isEmpty() || failed;
 		}
 
-		private synchronized PeerNode grab() throws SlotWaiterFailedException {
+		private synchronized PeerNode grab() {
 			if(logMINOR) Logger.minor(this, "Returning in first check: accepted by "+acceptedBy+" waiting for "+waitingFor.size()+" failed "+failed+" accepted state "+acceptedState);
 			failed = false;
 			PeerNode got = acceptedBy;
 			acceptedBy = null; // Allow for it to wait again if necessary
-			SlotWaiterFailedException f = fe;
-			fe = null;
-			if(f != null) throw f;
 			return got;
 		}
 
