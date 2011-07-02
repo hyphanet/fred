@@ -5345,7 +5345,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						if(other == null) {
 							if(logMINOR) Logger.minor(this, "Trying the original tryRouteTo() on "+this);
 							// Having set the acceptedBy etc, clear it now.
-							grab();
+							acceptedBy = null;
+							failed = false;
+							fe = null;
 						}						
 					}
 					unregister(null, unreg);
