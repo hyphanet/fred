@@ -180,8 +180,6 @@ loadWaiterLoop:
     	NodeStats.RequestType type =
     		isSSK ? NodeStats.RequestType.SSK_REQUEST : NodeStats.RequestType.CHK_REQUEST;
     	
-        boolean triedAll = false;
-        
         int tryCount = 0;
         
         long startedTryingPeer = System.currentTimeMillis();
@@ -219,7 +217,6 @@ loadWaiterLoop:
     		if(expectedAcceptState == RequestLikelyAcceptedState.UNKNOWN) {
     			// No stats, old style, just go for it.
     			// This can happen both when talking to an old node and when we've just connected, but should not be the case for long enough to be a problem.
-    			triedAll = true;
     			if(logMINOR) Logger.minor(this, "No load stats for "+next);
     		} else {
     			if(expectedAcceptState != null) {
