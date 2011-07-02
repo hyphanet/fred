@@ -165,7 +165,7 @@ loadWaiterLoop:
         gotMessages = 0;
         lastMessage = null;
         
-        onAccepted(lastNode);
+        onAccepted(next);
         
         return false;
 	}
@@ -432,7 +432,7 @@ loadWaiterLoop:
         gotMessages = 0;
         lastMessage = null;
         
-        onAccepted(lastNode);
+        onAccepted(next);
         
         return false;
 	}
