@@ -2026,7 +2026,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         synchronized(this) {
         	receivingAsync = true;
         }
-        MainLoopCallback cb = new MainLoopCallback(lastNode, false);
+        MainLoopCallback cb = new MainLoopCallback(next, false);
         cb.schedule();
 	}
 	
