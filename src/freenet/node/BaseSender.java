@@ -16,6 +16,7 @@ import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.node.PeerNode.RequestLikelyAcceptedState;
 import freenet.node.PeerNode.SlotWaiter;
+import freenet.node.PeerNode.SlotWaiterFailedException;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
@@ -260,7 +261,13 @@ loadWaiterLoop:
     	            			// We do not need to check the return value here.
     	            			// We will not reuse alsoWaitFor if it is disconnected etc.
     	            			if(logMINOR) Logger.minor(this, "Waiting for "+next+" and "+alsoWaitFor+" on "+waiter+" because first is low capacity");
-    	            			PeerNode matched = waiter.waitForAny(0);
+    	            			PeerNode matched;
+								try {
+									matched = waiter.waitForAny(0);
+								} catch (SlotWaiterFailedException e) {
+									// Reroute.
+									continue;
+								}
     	            			if(matched != null) {
     	            				expectedAcceptState = waiter.getAcceptedState();
     	            				next = matched;
@@ -285,7 +292,13 @@ loadWaiterLoop:
             			// We do not need to check the return value here.
             			// We will not reuse alsoWaitFor if it is disconnected etc.
             			if(logMINOR) Logger.minor(this, "Waiting for "+next+" and "+alsoWaitFor+" on "+waiter+" because realtime");
-            			PeerNode matched = waiter.waitForAny(0);
+            			PeerNode matched;
+						try {
+							matched = waiter.waitForAny(0);
+						} catch (SlotWaiterFailedException e) {
+							// Reroute.
+							continue;
+						}
             			if(matched != null) {
             				expectedAcceptState = waiter.getAcceptedState();
             				next = matched;
@@ -303,7 +316,14 @@ loadWaiterLoop:
     					// However after adding it once, we will wait for as long as it takes.
     					maxWait = getShortSlotWaiterTimeout();
     				}
-    				PeerNode waited = waiter.waitForAny(maxWait);
+    				PeerNode waited;
+					try {
+						waited = waiter.waitForAny(maxWait);
+					} catch (SlotWaiterFailedException e) {
+						// Failed. Reroute.
+						continue;
+					}
+					// Timed out, or not waiting for anything, not failed.
     				if(waited == null) {
     					if(logMINOR) Logger.minor(this, "Failed in wait - backoff, disconnection etc? Rerouting...");
     					// Disconnected, low capacity, or backed off.
