@@ -5285,6 +5285,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 		}
 		
+		/** Wait for any of the PeerNode's we have queued on to accept (locally
+		 * i.e. to allocate a local slot to) this request.
+		 * @param maxWait The time to wait for. Can be 0, but if it is 0, this
+		 * is a "peek", i.e. if we return null, the queued slots remain live.
+		 * Whereas if maxWait is not 0, we will unregister when we timeout.
+		 * @return A matched node, or null.
+		 * @throws SlotWaiterFailedException If a peer actually failed.
+		 */
 		public PeerNode waitForAny(long maxWait) throws SlotWaiterFailedException {
 			// If waitingFor is non-empty after this function returns, we can
 			// be accepted when we shouldn't be accepted. So always ensure that
