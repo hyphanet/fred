@@ -126,6 +126,13 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 			container.store(this);
 	}
 	
+	/** Unregister the request.
+	 * @param container
+	 * @param context
+	 * @param oldPrio If we are changing priorities it can matter what the old priority is.
+	 * However the parent method, SendableRequest, ignores this. In any case, 
+	 * (short)-1 means not specified (look it up).
+	 */
 	public void unregister(ObjectContainer container, ClientContext context, short oldPrio) {
 		RandomGrabArray arr = getParentGrabArray();
 		if(arr != null) {
