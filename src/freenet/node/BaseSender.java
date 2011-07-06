@@ -275,7 +275,7 @@ loadWaiterLoop:
 								try {
 									matched = waiter.waitForAny(0);
 								} catch (SlotWaiterFailedException e) {
-									// Reroute.
+									if(logMINOR) Logger.minor(this, "Rerouting as slot waiter failed...");
 									continue;
 								}
     	            			if(matched != null) {
@@ -307,7 +307,7 @@ loadWaiterLoop:
 						try {
 							matched = waiter.waitForAny(0);
 						} catch (SlotWaiterFailedException e) {
-							// Reroute.
+							if(logMINOR) Logger.minor(this, "Rerouting as slot waiter failed...");
 							continue;
 						}
             			if(matched != null) {
