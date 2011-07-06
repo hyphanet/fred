@@ -262,7 +262,12 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			}
 			try {
 				if(_prb.allReceived()) {
-					_usm.send(_sender, DMT.createAllReceived(_uid), _ctr);
+					try {
+						_usm.send(_sender, DMT.createAllReceived(_uid), _ctr);
+					} catch (NotConnectedException e1) {
+						complete(RetrievalException.SENDER_DISCONNECTED, RetrievalException.getErrString(RetrievalException.SENDER_DISCONNECTED));
+						return;
+					}
 					discardEndTime=System.currentTimeMillis()+CLEANUP_TIMEOUT;
 					discardFilter=relevantMessages(CLEANUP_TIMEOUT);
 					maybeResetDiscardFilter();
@@ -281,9 +286,6 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				// We didn't cause it?!
 				Logger.error(this, "Caught in receive - probably a bug as receive sets it: "+e1, e1);
 				complete(RetrievalException.UNKNOWN, "Aborted?");
-				return;
-			} catch (NotConnectedException e1) {
-				complete(RetrievalException.SENDER_DISCONNECTED, RetrievalException.getErrString(RetrievalException.SENDER_DISCONNECTED));
 				return;
 			}
 			try {
