@@ -270,7 +270,7 @@ loadWaiterLoop:
     	            			waiter.addWaitingFor(alsoWaitFor);
     	            			// We do not need to check the return value here.
     	            			// We will not reuse alsoWaitFor if it is disconnected etc.
-    	            			if(logMINOR) Logger.minor(this, "Waiting for "+next+" and "+alsoWaitFor+" on "+waiter+" because first is low capacity");
+    	            			if(logMINOR) Logger.minor(this, "Waiting for "+next+" and "+alsoWaitFor+" on "+waiter+" because realtime");
     	            			PeerNode matched;
 								try {
 									matched = waiter.waitForAny(0);
@@ -281,6 +281,7 @@ loadWaiterLoop:
     	            			if(matched != null) {
     	            				expectedAcceptState = waiter.getAcceptedState();
     	            				next = matched;
+    	            				if(logMINOR) Logger.minor(this, "Matched "+matched+" with "+expectedAcceptState);
     	            			}
     	            		}
     	            	}
