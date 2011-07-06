@@ -398,18 +398,24 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		if(logMINOR)
 			Logger.minor(this, "Transfer failed: ("+(_realTime?"realtime":"bulk")+") "+reason+" : "+description+" on "+_uid+" from "+_sender);
 		_prb.removeListener(myListener);
-		_prb.abort(reason, description, false);
-		// Send the abort whether we have received one or not.
-		// If we are cancelling due to failing to turtle, we need to tell the sender
-		// this otherwise he will keep sending, wasting a lot of bandwidth on packets
-		// that we will ignore. If we are cancelling because the sender has told us 
-		// to, we need to acknowledge that.
-		try {
-			sendAborted(_prb._abortReason, _prb._abortDescription);
-		} catch (NotConnectedException e) {
-			// Ignore at this point.
+		byte[] block = _prb.abort(reason, description, false);
+		if(block == null) {
+			// Expected behaviour.
+			// Send the abort whether we have received one or not.
+			// If we are cancelling due to failing to turtle, we need to tell the sender
+			// this otherwise he will keep sending, wasting a lot of bandwidth on packets
+			// that we will ignore. If we are cancelling because the sender has told us 
+			// to, we need to acknowledge that.
+			try {
+				sendAborted(_prb._abortReason, _prb._abortDescription);
+			} catch (NotConnectedException e) {
+				// Ignore at this point.
+			}
+			callback.blockReceiveFailed(new RetrievalException(reason, description));
+		} else {
+			Logger.error(this, "Succeeded in complete("+reason+","+description+") on "+this, new Exception("error"));
+			callback.blockReceived(block);
 		}
-		callback.blockReceiveFailed(new RetrievalException(reason, description));
 		decRunningBlockReceives();
 	}
 
