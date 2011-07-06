@@ -5319,7 +5319,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 			if(grabbed) {
 				unregister(ret, all);
-				if(f != null && ret != null) throw f;
+				if(f != null && ret == null) throw f;
 				return ret;
 			}
 			// grab() above will have set failed = false if necessary.
