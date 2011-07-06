@@ -264,13 +264,13 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				if(_prb.allReceived()) {
 					try {
 						_usm.send(_sender, DMT.createAllReceived(_uid), _ctr);
+						discardEndTime=System.currentTimeMillis()+CLEANUP_TIMEOUT;
+						discardFilter=relevantMessages(CLEANUP_TIMEOUT);
+						maybeResetDiscardFilter();
 					} catch (NotConnectedException e1) {
-						complete(RetrievalException.SENDER_DISCONNECTED, RetrievalException.getErrString(RetrievalException.SENDER_DISCONNECTED));
-						return;
+						// Ignore, we've got it.
+						if(logMINOR) Logger.minor(this, "Got data but can't send allReceived to "+_sender+" as is disconnected");
 					}
-					discardEndTime=System.currentTimeMillis()+CLEANUP_TIMEOUT;
-					discardFilter=relevantMessages(CLEANUP_TIMEOUT);
-					maybeResetDiscardFilter();
 					long endTime = System.currentTimeMillis();
 					long transferTime = (endTime - startTime);
 					if(logMINOR) {
