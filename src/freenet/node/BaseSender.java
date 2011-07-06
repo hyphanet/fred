@@ -312,6 +312,7 @@ loadWaiterLoop:
             			if(matched != null) {
             				expectedAcceptState = waiter.getAcceptedState();
             				next = matched;
+            				if(logMINOR) Logger.minor(this, "Matched "+matched+" with "+expectedAcceptState);
             			}
             		}
     			}
