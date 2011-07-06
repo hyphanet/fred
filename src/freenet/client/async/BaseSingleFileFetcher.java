@@ -224,7 +224,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	 */
 	public void unregisterAll(ObjectContainer container, ClientContext context) {
 		getScheduler(container, context).removePendingKeys(this, false);
-		unregister(container, context, getPriorityClass(container));
+		unregister(container, context, (short)-1);
 	}
 
 	@Override
