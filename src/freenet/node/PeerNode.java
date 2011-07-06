@@ -5433,6 +5433,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
 				waitingFor.clear();
 				failed = false;
+				fe = null;
 			}
 			unregister(ret, all);
 			return ret;
