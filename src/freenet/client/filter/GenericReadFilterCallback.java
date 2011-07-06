@@ -115,6 +115,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 			return u;
 		}
 		
+		boolean noRelative = forBaseHref;
 		// evil hack, see #2451 and r24565,r24566
 		u = u.replaceAll(" #", " %23");
 		
@@ -127,8 +128,8 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 			if(u.startsWith("/") || u.startsWith("%2f"))
 				// Don't bother with relative URIs if it's obviously absolute.
 				// Don't allow encoded /'s, they're just too confusing (here they would get decoded and then coalesced with other slashes).
-				forBaseHref = true;
-			if(!forBaseHref)
+				noRelative = true;
+			if(!noRelative)
 				resolved = baseURI.resolve(uri);
 			else
 				resolved = uri;
