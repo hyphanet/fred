@@ -2253,6 +2253,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							hn.put("content", content);
 						} catch (ParseException e) {
 							// Delete it.
+							return null;
 						}
 					} else if (
 						http_equiv.equalsIgnoreCase("Content-Script-Type")) {
@@ -2306,6 +2307,51 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						if(content.matches("([a-zA-Z0-9]*(-[A-Za-z0-9]*)*(,\\s*)?)*")) {
 							hn.put("http-equiv", "Content-Language");
 							hn.put("content", content);
+						}
+					} else if (http_equiv.equalsIgnoreCase("refresh")) {
+						int idx = content.indexOf(';');
+						if(idx == -1) {
+							try {
+								int seconds = Integer.parseInt(content);
+								// Disallow 0 second refreshes.
+								if(seconds == 0) seconds = 1;
+								if(seconds >= 0) {
+									hn.put("http-equiv", "refresh");
+									hn.put("content", Integer.toString(seconds));
+								}
+							} catch (NumberFormatException e) {
+								// Delete.
+								pc.writeAfterTag.append("<!-- doesn't parse as number in meta refresh -->");
+								return null;
+							}
+						} else {
+							int seconds;
+							String before = content.substring(0, idx);
+							String after = content.substring(idx+1).trim();
+							try {
+								seconds = Integer.parseInt(content);
+								// Disallow 0 second refreshes.
+								if(seconds == 0) seconds = 1;
+								if(seconds < 0) return hn;
+								if(!after.toLowerCase().startsWith("url=")) {
+									pc.writeAfterTag.append("<!-- no url but doesn't parse as number in meta refresh -->");
+									return null;
+								}
+								after = after.substring("url=".length()).trim();
+								try {
+									String url = sanitizeURI(after, null, null, null, pc.cb, false);
+									hn.put("http-equiv", "refresh");
+									hn.put("content", ""+seconds+"; url="+HTMLEncoder.encode(url));
+								} catch (CommentException e) {
+									pc.writeAfterTag.append("<!-- "+e.getMessage()+"-->");
+									// Delete
+									return null;
+								}
+							} catch (NumberFormatException e) {
+								pc.writeAfterTag.append("<!-- doesn't parse as number in meta refresh possibly with url -->");
+								// Delete.
+								return null;
+							}
 						}
 					}
 				}
