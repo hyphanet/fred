@@ -54,11 +54,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	 * charset detection can be ambiguous, potentially resulting in attacks. */
 	private static boolean allowNoHTMLTag = true;
 	
-	// FIXME make these configurable.
+	// FIXME make these configurable on a per-document level.
+	// Maybe by merging with TagReplacerCallback???
+	// For now they're just global.
 	/** -1 means don't allow it */
-	static int metaRefreshSamePageMinInterval = 1;
+	public static int metaRefreshSamePageMinInterval = 1;
 	/** -1 means don't allow it */
-	static int metaRefreshRedirectMinInterval = 30;
+	public static int metaRefreshRedirectMinInterval = 30;
 	
 	@Override
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
