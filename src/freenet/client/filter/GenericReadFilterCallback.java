@@ -163,7 +163,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 			}
 		}
 		
-		String reason = "";
+		String reason = l10n("deletedURI");
 		
 		// Try as an absolute URI
 		
