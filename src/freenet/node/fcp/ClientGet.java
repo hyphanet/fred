@@ -538,7 +538,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(client != null) {
 				RequestStatusCache cache = client.getRequestStatusCache();
 				if(cache != null) {
-					cache.updateDetectedCompatModes(identifier, compat.getModes(), compat.cryptoKey);
+					cache.updateDetectedCompatModes(identifier, compat.getModes(), compat.cryptoKey, compat.dontCompress);
 				}
 			}
 		} else if(msg instanceof ExpectedHashes) {
@@ -955,6 +955,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			return new InsertContext.CompatibilityMode[] { InsertContext.CompatibilityMode.COMPAT_UNKNOWN, InsertContext.CompatibilityMode.COMPAT_UNKNOWN };
 	}
 	
+	public boolean getDontCompress(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER && compatMessage != null)
+			container.activate(compatMessage, 2);
+		return compatMessage.dontCompress;
+	}
+	
 	public byte[] getOverriddenSplitfileCryptoKey(ObjectContainer container) {
 		if(persistenceType == PERSIST_FOREVER && compatMessage != null)
 			container.activate(compatMessage, 2);
@@ -1212,6 +1218,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				succeeded, total, min, fetched, fatal, failed, totalFinalized, 
 				lastActivity, priorityClass, failureCode, mimeType, dataSize, target, 
 				getCompatibilityMode(container), getOverriddenSplitfileCryptoKey(container), 
-				getURI(container).clone(), failureReasonShort, failureReasonLong, overriddenDataType, shadow, filterData);
+				getURI(container).clone(), failureReasonShort, failureReasonLong, overriddenDataType, shadow, filterData, getDontCompress(container));
 	}
 }

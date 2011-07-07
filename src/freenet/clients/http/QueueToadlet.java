@@ -2105,6 +2105,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			byte[] overrideCryptoKey = get.getOverriddenSplitfileCryptoKey();
 			if(overrideCryptoKey != null)
 				compatCell.addChild("#", " - "+l10n("overriddenCryptoKeyInCompatCell")+": "+HexUtil.bytesToHex(overrideCryptoKey));
+			if(get.detectedDontCompress())
+				compatCell.addChild("#", " ("+l10n("dontCompressInCompatCell")+")");
 		}
 		return compatCell;
 	}
