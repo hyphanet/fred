@@ -2324,12 +2324,35 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								pc.writeAfterTag.append("<!-- doesn't parse as number in meta refresh -->");
 								return null;
 							}
+						} else {
+							int seconds;
+							String before = content.substring(0, idx);
+							String after = content.substring(idx+1).trim();
+							try {
+								seconds = Integer.parseInt(content);
+								// Disallow 0 second refreshes.
+								if(seconds == 0) seconds = 1;
+								if(seconds < 0) return hn;
+								if(!after.toLowerCase().startsWith("url=")) {
+									pc.writeAfterTag.append("<!-- no url but doesn't parse as number in meta refresh -->");
+									return null;
+								}
+								after = after.substring("url=".length()).trim();
+								try {
+									String url = sanitizeURI(after, null, null, null, pc.cb, false);
+									hn.put("http-equiv", "refresh");
+									hn.put("content", ""+seconds+"; url="+HTMLEncoder.encode(url));
+								} catch (CommentException e) {
+									pc.writeAfterTag.append("<!-- "+e.getMessage()+"-->");
+									// Delete
+									return null;
+								}
+							} catch (NumberFormatException e) {
+								pc.writeAfterTag.append("<!-- doesn't parse as number in meta refresh possibly with url -->");
+								// Delete.
+								return null;
+							}
 						}
-						// FIXME allow redirections *when we have web pushing*, or a reliable way to detect the browser dropping a connection.
-						// Too dangerous before that, because each page can have its own inlines,
-						// and fproxy will use a thread and connection for each, and
-						// it has no way of telling that the browser no longer wants them!
-						// See git c09c6f8489f5ccc59dab6fcd9eac448634f54734 for redirection support.
 					}
 				}
 			}
