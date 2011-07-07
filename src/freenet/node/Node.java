@@ -1731,6 +1731,7 @@ public class Node implements TimeSkewDetectorCallback {
 			public void set(Boolean val) throws InvalidConfigValueException,
 					NodeNeedRestartException {
 				enableNewLoadManagementRT = val;
+				Node.this.clientCore.onSetNewLoadManagementRT(val);
 			}
 			
 		});
@@ -1747,6 +1748,7 @@ public class Node implements TimeSkewDetectorCallback {
 			public void set(Boolean val) throws InvalidConfigValueException,
 					NodeNeedRestartException {
 				enableNewLoadManagementBulk = val;
+				Node.this.clientCore.onSetNewLoadManagementBulk(val);
 			}
 			
 		});

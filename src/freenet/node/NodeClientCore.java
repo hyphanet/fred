@@ -1974,4 +1974,20 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		return r.recentlyFailed();
 	}
 
+	public void onSetNewLoadManagementBulk(boolean val) {
+		boolean useAIMDs;
+		synchronized(NodeClientCore.this) {
+			useAIMDs = useAIMDsBulk;
+		}
+		NodeClientCore.this.requestStarters.setUseAIMDsBulk(useAIMDs);
+	}
+
+	public void onSetNewLoadManagementRT(boolean val) {
+		boolean useAIMDs;
+		synchronized(NodeClientCore.this) {
+			useAIMDs = useAIMDsRT;
+		}
+		NodeClientCore.this.requestStarters.setUseAIMDsRT(useAIMDs);
+	}
+
 }
