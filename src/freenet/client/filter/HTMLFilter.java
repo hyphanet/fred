@@ -54,6 +54,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	 * charset detection can be ambiguous, potentially resulting in attacks. */
 	private static boolean allowNoHTMLTag = true;
 	
+	// FIXME make these configurable.
+	/** -1 means don't allow it */
+	static int metaRefreshSamePageMinInterval = 1;
+	/** -1 means don't allow it */
+	static int metaRefreshRedirectMinInterval = 30;
+	
 	@Override
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
@@ -2310,29 +2316,27 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						}
 					} else if (http_equiv.equalsIgnoreCase("refresh")) {
 						int idx = content.indexOf(';');
-						if(idx == -1) {
+						if(idx == -1 && metaRefreshSamePageMinInterval >= 0) {
 							try {
 								int seconds = Integer.parseInt(content);
-								// Disallow 0 second refreshes.
-								if(seconds == 0) seconds = 1;
-								if(seconds >= 0) {
-									hn.put("http-equiv", "refresh");
-									hn.put("content", Integer.toString(seconds));
-								}
+								if(seconds < 0) return null;
+								if(seconds < metaRefreshSamePageMinInterval)
+									seconds = metaRefreshSamePageMinInterval;
+								hn.put("http-equiv", "refresh");
+								hn.put("content", Integer.toString(seconds));
 							} catch (NumberFormatException e) {
 								// Delete.
 								pc.writeAfterTag.append("<!-- doesn't parse as number in meta refresh -->");
 								return null;
 							}
-						} else {
+						} else if(metaRefreshRedirectMinInterval >= 0) {
 							int seconds;
 							String before = content.substring(0, idx);
 							String after = content.substring(idx+1).trim();
 							try {
 								seconds = Integer.parseInt(before);
-								// Disallow 0 second refreshes.
-								if(seconds == 0) seconds = 1;
-								if(seconds < 0) return hn;
+								if(seconds < 0) return null;
+								if(seconds < metaRefreshRedirectMinInterval) seconds = metaRefreshRedirectMinInterval;
 								if(!after.toLowerCase().startsWith("url=")) {
 									pc.writeAfterTag.append("<!-- no url but doesn't parse as number in meta refresh -->");
 									return null;
