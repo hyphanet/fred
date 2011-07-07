@@ -2329,7 +2329,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							String before = content.substring(0, idx);
 							String after = content.substring(idx+1).trim();
 							try {
-								seconds = Integer.parseInt(content);
+								seconds = Integer.parseInt(before);
 								// Disallow 0 second refreshes.
 								if(seconds == 0) seconds = 1;
 								if(seconds < 0) return hn;
