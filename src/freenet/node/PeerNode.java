@@ -5365,6 +5365,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						tag.removeRoutingTo(p);
 						return other;
 					}
+					p.outputLoadTracker(realTime).reportAllocatedAfterWait();
 					// p != null so in this one instance we're going to ignore fe.
 					return p;
 				}
@@ -5612,9 +5613,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					all = waiter.innerOnWaited(PeerNode.this, RequestLikelyAcceptedState.UNKNOWN);
 				}
 			}
-			if(all != null)
+			if(all != null) {
+				reportAllocatedAfterWait();
 				waiter.unregister(null, all);
-			else if(queued) {
+			} else if(queued) {
 				if((!isRoutable()) || (isInMandatoryBackoff(System.currentTimeMillis(), realTime))) {
 					// Has lost connection etc since start of the method.
 					if(logMINOR) Logger.minor(this, "Queued but not routable or in mandatory backoff, failing");
