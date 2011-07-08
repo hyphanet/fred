@@ -2035,7 +2035,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	}
     
     protected long getLongSlotWaiterTimeout() {
-    	return fetchTimeout / 2;
+    	return fetchTimeout / 5;
 	}
     
 	protected int getAcceptedTimeout() {
@@ -2047,7 +2047,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		// Calculate the reject period based on the proportion of requests being timed out.
 		// If the vast majority are being accepted, then try again after the timeout.
 		// If more are being rejected, it makes sense to wait longer, up to the limit of the maximum recently failed time.
-		int period = (int) Math.min(((fetchTimeout / 2) / (1.0 - load)), FailureTable.RECENTLY_FAILED_TIME);
+		int period = (int) Math.min(((fetchTimeout / 5) / (1.0 - load)), FailureTable.RECENTLY_FAILED_TIME);
 		Logger.error(this, "Timed out while waiting for a slot, period = "+period+" because average reject proportion for peers is "+load+" on "+this);
     	synchronized(this) {
     		recentlyFailedTimeLeft = period;
