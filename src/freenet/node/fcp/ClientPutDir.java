@@ -281,7 +281,17 @@ public class ClientPutDir extends ClientPutBase {
 			Logger.error(this, "putter == null", new Exception("error"));
 		// FIXME end
 		return new PersistentPutDir(identifier, publicURI, verbosity, priorityClass,
-				persistenceType, global, defaultName, manifestElements, clientToken, started, ctx.maxInsertRetries, ctx.dontCompress, ctx.compressorDescriptor, wasDiskPut, lowLevelClient.realTimeFlag(), putter != null ? putter.getSplitfileCryptoKey() : null, container);
+				persistenceType, global, defaultName, manifestElements, clientToken, started, ctx.maxInsertRetries, ctx.dontCompress, ctx.compressorDescriptor, wasDiskPut, isRealTime(), putter != null ? putter.getSplitfileCryptoKey() : null, container);
+	}
+	
+	private boolean isRealTime() {
+		// FIXME: remove debug code
+		if (lowLevelClient == null) {
+			// This can happen but only due to data corruption - old databases on which various bugs have resulted in it getting deleted, and also possibly failed deletions.
+			Logger.error(this, "lowLevelClient == null", new Exception("error"));
+			return false;
+		}
+		return lowLevelClient.realTimeFlag();
 	}
 
 	@Override
