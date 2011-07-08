@@ -956,7 +956,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	}
 	
 	public boolean getDontCompress(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER && compatMessage != null)
+		if(compatMessage == null) return false;
+		if(persistenceType == PERSIST_FOREVER)
 			container.activate(compatMessage, 2);
 		return compatMessage.dontCompress;
 	}
