@@ -290,7 +290,7 @@ loadWaiterLoop:
     	            			if(logMINOR) Logger.minor(this, "Waiting for "+next+" and "+alsoWaitFor+" on "+waiter+" because realtime");
     	            			PeerNode matched;
 								try {
-									matched = waiter.waitForAny(0);
+									matched = waiter.waitForAny(0, false);
 								} catch (SlotWaiterFailedException e) {
 									if(logMINOR) Logger.minor(this, "Rerouting as slot waiter failed...");
 									continue;
@@ -323,7 +323,7 @@ loadWaiterLoop:
             			if(logMINOR) Logger.minor(this, "Waiting for "+next+" and "+alsoWaitFor+" on "+waiter+" because realtime");
             			PeerNode matched;
 						try {
-							matched = waiter.waitForAny(0);
+							matched = waiter.waitForAny(0, false);
 						} catch (SlotWaiterFailedException e) {
 							if(logMINOR) Logger.minor(this, "Rerouting as slot waiter failed...");
 							continue;
@@ -354,7 +354,7 @@ loadWaiterLoop:
             			if(logMINOR) Logger.minor(this, "Waiting for "+next+" and "+alsoWaitFor+" on "+waiter+" because realtime");
             			PeerNode matched;
 						try {
-							matched = waiter.waitForAny(0);
+							matched = waiter.waitForAny(0, false);
 						} catch (SlotWaiterFailedException e) {
 							// Reroute.
 							continue;
@@ -374,9 +374,10 @@ loadWaiterLoop:
     					// However after adding it once, we will wait for as long as it takes.
     					maxWait = getShortSlotWaiterTimeout();
     				}
+    				HashSet<PeerNode> waitedFor = waiter.waitingForList();
     				PeerNode waited;
 					try {
-						waited = waiter.waitForAny(maxWait);
+						waited = waiter.waitForAny(maxWait, addedExtraNode);
 					} catch (SlotWaiterFailedException e) {
 						// Failed. Reroute.
 						continue;
@@ -387,7 +388,7 @@ loadWaiterLoop:
     					
     					if(addedExtraNode) {
     						// Backtrack
-    						timedOutWhileWaiting();
+    						timedOutWhileWaiting(getLoad(waitedFor));
     						return false;
     					} else {
     						addedExtraNode = true;
@@ -498,7 +499,15 @@ loadWaiterLoop:
         return false;
 	}
     
-    protected abstract long getLongSlotWaiterTimeout();
+    private double getLoad(HashSet<PeerNode> waitedFor) {
+    	double total = 0;
+    	for(PeerNode pn : waitedFor) {
+    		total += pn.outputLoadTracker(realTimeFlag).proportionTimingOutFatallyInWait();
+    	}
+    	return total / waitedFor.size();
+	}
+
+	protected abstract long getLongSlotWaiterTimeout();
     
     protected abstract long getShortSlotWaiterTimeout();
 
@@ -675,7 +684,11 @@ loadWaiterLoop:
 	
 	protected abstract void rnf();
 	
-	protected abstract void timedOutWhileWaiting();
+	/** We timed out while waiting for a slot from any node. Fail the request.
+	 * @param load The proportion of requests getting timed out, on average,
+	 * across the nodes we are waiting for. This is used to decide how long the
+	 * RecentlyFailed should be for. */
+	protected abstract void timedOutWhileWaiting(double load);
 	
 	protected abstract void onAccepted(PeerNode next);
 	
