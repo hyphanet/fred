@@ -251,6 +251,8 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 					if (request.isPartSet(prefix+ '.' +configName)) {
 						//Current subconfig is to be reset to default.
 						if (resetToDefault) {
+							// Disallow resetting fproxy port number to default as it might break the link to start fproxy on the system tray, shortcuts etc.
+							if(prefix.equals("fproxy") && configName.equals("port")) continue;
 							value = o.getDefault();
 						} else {
 							value = request.getPartAsStringFailsafe(prefix+ '.' +configName,
