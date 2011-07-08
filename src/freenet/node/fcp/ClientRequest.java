@@ -165,18 +165,18 @@ public abstract class ClientRequest {
 			};
 		} else {
 			origHandler = null;
-		if(global) {
-			client = persistenceType == PERSIST_FOREVER ? handler.server.globalForeverClient : handler.server.globalRebootClient;
-		} else {
-			client = persistenceType == PERSIST_FOREVER ? handler.getForeverClient(container) : handler.getRebootClient();
-		}
-		if(persistenceType == PERSIST_FOREVER) {
-			container.activate(client, 1);
-			client.init(container);
-		}
-		lowLevelClient = client.lowLevelClient(realTime);
-		if(lowLevelClient == null)
-			throw new NullPointerException("No lowLevelClient from client: "+client+" global = "+global+" persistence = "+persistenceType);
+			if(global) {
+				client = persistenceType == PERSIST_FOREVER ? handler.server.globalForeverClient : handler.server.globalRebootClient;
+			} else {
+				client = persistenceType == PERSIST_FOREVER ? handler.getForeverClient(container) : handler.getRebootClient();
+			}
+			if(persistenceType == PERSIST_FOREVER) {
+				container.activate(client, 1);
+				client.init(container);
+			}
+			lowLevelClient = client.lowLevelClient(realTime);
+			if(lowLevelClient == null)
+				throw new NullPointerException("No lowLevelClient from client: "+client+" global = "+global+" persistence = "+persistenceType);
 		}
 		if(lowLevelClient.persistent() != (persistenceType == PERSIST_FOREVER))
 			throw new IllegalStateException("Low level client.persistent="+lowLevelClient.persistent()+" but persistence type = "+persistenceType);
