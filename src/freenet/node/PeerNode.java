@@ -5514,6 +5514,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		
 		public synchronized double proportionTimingOutFatallyInWait() {
+			if(totalFatalTimeouts == 1 && totalAllocated == 0) return 0.5; // Limit impact if the first one is rejected.
 			return (double)totalFatalTimeouts / ((double)(totalFatalTimeouts + totalAllocated));
 		}
 
