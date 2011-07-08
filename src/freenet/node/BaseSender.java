@@ -387,7 +387,7 @@ loadWaiterLoop:
     					
     					if(addedExtraNode) {
     						// Backtrack
-    						rnf();
+    						timedOutWhileWaiting();
     						return false;
     					} else {
     						addedExtraNode = true;
@@ -674,6 +674,8 @@ loadWaiterLoop:
 	protected abstract int getAcceptedTimeout();
 	
 	protected abstract void rnf();
+	
+	protected abstract void timedOutWhileWaiting();
 	
 	protected abstract void onAccepted(PeerNode next);
 	

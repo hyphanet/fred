@@ -2042,4 +2042,15 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		return ACCEPTED_TIMEOUT;
 	}
 
+	@Override
+	protected void timedOutWhileWaiting() {
+		// FIXME calculate this based on how overloaded the peers are.
+		int period = fetchTimeout;
+    	synchronized(this) {
+    		recentlyFailedTimeLeft = period;
+    	}
+    	finish(RECENTLY_FAILED, null, false);
+        node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, -1, source);
+	}
+
 }
