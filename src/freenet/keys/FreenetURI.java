@@ -432,7 +432,7 @@ public class FreenetURI implements Cloneable {
 		if("CHK".equals(keyType)) {
 			int idx = URI.lastIndexOf('.');
 			if(idx != -1)
-				URI = URI.substring(0, x);
+				URI = URI.substring(0, idx);
 		}
 
 		// URI now contains: routingKey[,cryptoKey][,metaInfo]
