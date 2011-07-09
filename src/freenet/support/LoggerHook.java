@@ -22,7 +22,7 @@ public abstract class LoggerHook extends Logger {
 	}
 
 	LoggerHook(String thresh) throws InvalidThresholdException{
-		this.threshold = LogLevel.valueOf(thresh.toUpperCase());
+		this.threshold = parseThreshold(thresh.toUpperCase());
 	}
 
 	public DetailedThreshold[] detailedThresholds = new DetailedThreshold[0];
@@ -116,10 +116,19 @@ public abstract class LoggerHook extends Logger {
 	public LogLevel getThresholdNew() {
 		return threshold;
 	}
+	
+	private LogLevel parseThreshold(String threshold) throws InvalidThresholdException {
+		if(threshold == null) throw new InvalidThresholdException(threshold);
+		try {
+			return LogLevel.valueOf(threshold.toUpperCase());
+		} catch (IllegalArgumentException e) {
+			throw new InvalidThresholdException(threshold);
+		}
+	}
 
 	@Override
 	public void setThreshold(String symbolicThreshold) throws InvalidThresholdException {
-		setThreshold(LogLevel.valueOf(symbolicThreshold.toUpperCase()));
+		setThreshold(parseThreshold(symbolicThreshold));
 	}
 
 	@Override
@@ -139,7 +148,7 @@ public abstract class LoggerHook extends Logger {
 				continue;
 			String section = token.substring(0, x);
 			String value = token.substring(x + 1, token.length());
-			stuff.add(new DetailedThreshold(section, LogLevel.valueOf(value.toUpperCase())));
+			stuff.add(new DetailedThreshold(section, parseThreshold(value.toUpperCase())));
 		}
 		DetailedThreshold[] newThresholds = new DetailedThreshold[stuff.size()];
 		stuff.toArray(newThresholds);
