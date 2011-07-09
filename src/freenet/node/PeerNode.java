@@ -18,7 +18,7 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -5147,6 +5147,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	
 	public static class SlotWaiter {
 		
+		final PeerNode source;
 		private final HashSet<PeerNode> waitingFor;
 		private PeerNode acceptedBy;
 		private RequestLikelyAcceptedState acceptedState;
@@ -5167,12 +5168,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		final long counter;
 		static private long waiterCounter;
 		
-		SlotWaiter(UIDTag tag, RequestType type, boolean offeredKey, boolean realTime) {
+		SlotWaiter(UIDTag tag, RequestType type, boolean offeredKey, boolean realTime, PeerNode source) {
 			this.tag = tag;
 			this.requestType = type;
 			this.offeredKey = offeredKey;
 			this.waitingFor = new HashSet<PeerNode>();
 			this.realTime = realTime;
+			this.source = source;
 			synchronized(SlotWaiter.class) {
 				counter = waiterCounter++;
 			}
@@ -5486,33 +5488,58 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	
 	static class SlotWaiterList {
 		
-		private TreeMap<Long, SlotWaiter> map;
+		private LinkedHashMap<PeerNode, TreeMap<Long, SlotWaiter>> lru;
 
 		public synchronized void put(SlotWaiter waiter) {
+			PeerNode source = waiter.source;
+			TreeMap<Long, SlotWaiter> map = lru.get(source);
+			if(source == null) {
+				lru.put(source, map = new TreeMap<Long, SlotWaiter>());
+			}
 			map.put(waiter.counter, waiter);
 		}
 
-		public synchronized int size() {
-			return map.size();
-		}
-
 		public synchronized void remove(SlotWaiter waiter) {
-			map.remove(waiter);
+			PeerNode source = waiter.source;
+			TreeMap<Long, SlotWaiter> map = lru.get(source);
+			if(map == null) {
+				Logger.error(this, "SlotWaiter "+waiter+" was not queued");
+				return;
+			}
+			map.remove(waiter.counter);
+			if(map.isEmpty())
+				lru.remove(source);
 		}
 
 		public synchronized boolean isEmpty() {
-			return map.isEmpty();
+			return lru.isEmpty();
 		}
 
 		public synchronized SlotWaiter removeFirst() {
+			if(lru.isEmpty()) return null;
+			// FIXME better to use LRUHashtable?
+			// Would need to update it to use Iterator and other modern APIs in values(), and creating two objects here isn't THAT expensive on modern VMs...
+			PeerNode source = lru.keySet().iterator().next();
+			TreeMap<Long, SlotWaiter> map = lru.get(source);
 			Long key = map.firstKey();
 			SlotWaiter ret = map.get(key);
 			map.remove(key);
+			lru.remove(source);
+			if(!map.isEmpty())
+				lru.put(source, map);
 			return ret;
 		}
 
-		public synchronized SlotWaiter[] values() {
-			return map.values().toArray(new SlotWaiter[map.size()]);
+		public synchronized ArrayList<SlotWaiter> values() {
+			ArrayList<SlotWaiter> list = new ArrayList<SlotWaiter>();
+			for(TreeMap<Long, SlotWaiter> map : lru.values()) {
+				list.addAll(map.values());
+			}
+			return list;
+		}
+		
+		public String toString() {
+			return super.toString()+":peers="+lru.size();
 		}
 		
 	}
@@ -5639,7 +5666,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(!noLoadStats) {
 					SlotWaiterList list = makeSlotWaiters(waiter.requestType);
 					list.put(waiter);
-					if(logMINOR) Logger.minor(this, "Queued slot "+waiter+" waiter for "+waiter.requestType+" size is now "+list.size()+" on "+this+" for "+PeerNode.this);
+					if(logMINOR) Logger.minor(this, "Queued slot "+waiter+" waiter for "+waiter.requestType+" on "+list+" on "+this+" for "+PeerNode.this);
 					queued = true;
 				} else {
 					if(logMINOR) Logger.minor(this, "Not waiting for "+this+" as no load stats");
@@ -5866,8 +5893,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		outputLoadTracker(tag.realTimeFlag).maybeNotifySlotWaiter();
 	}
 	
-	static SlotWaiter createSlotWaiter(UIDTag tag, RequestType type, boolean offeredKey, boolean realTime) {
-		return new SlotWaiter(tag, type, offeredKey, realTime);
+	static SlotWaiter createSlotWaiter(UIDTag tag, RequestType type, boolean offeredKey, boolean realTime, PeerNode source) {
+		return new SlotWaiter(tag, type, offeredKey, realTime, source);
 	}
 
 	public IncomingLoadSummaryStats getIncomingLoadStats(boolean realTime) {
