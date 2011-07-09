@@ -5484,6 +5484,39 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 	}
 	
+	static class SlotWaiterList {
+		
+		private TreeMap<Long, SlotWaiter> map;
+
+		public synchronized void put(SlotWaiter waiter) {
+			map.put(waiter.counter, waiter);
+		}
+
+		public synchronized int size() {
+			return map.size();
+		}
+
+		public synchronized void remove(SlotWaiter waiter) {
+			map.remove(waiter);
+		}
+
+		public synchronized boolean isEmpty() {
+			return map.isEmpty();
+		}
+
+		public synchronized SlotWaiter removeFirst() {
+			Long key = map.firstKey();
+			SlotWaiter ret = map.get(key);
+			map.remove(key);
+			return ret;
+		}
+
+		public synchronized SlotWaiter[] values() {
+			return map.values().toArray(new SlotWaiter[map.size()]);
+		}
+		
+	}
+	
 	/** Uses the information we receive on the load on the target node to determine whether
 	 * we can route to it and when we can route to it.
 	 */
@@ -5587,7 +5620,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		// FIXME on capacity changing so that we should add another node???
 		// FIXME on backoff so that we should add another node???
 		
-		private final EnumMap<RequestType,TreeMap<Long,SlotWaiter>> slotWaiters = new EnumMap<RequestType,TreeMap<Long,SlotWaiter>>(RequestType.class);
+		private final EnumMap<RequestType,SlotWaiterList> slotWaiters = new EnumMap<RequestType,SlotWaiterList>(RequestType.class);
 		
 		boolean queueSlotWaiter(SlotWaiter waiter) {
 			if(!isRoutable()) {
@@ -5604,8 +5637,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			synchronized(routedToLock) {
 				noLoadStats = (this.lastIncomingLoadStats == null);
 				if(!noLoadStats) {
-					TreeMap<Long,SlotWaiter> list = makeSlotWaiters(waiter.requestType);
-					list.put(waiter.counter, waiter);
+					SlotWaiterList list = makeSlotWaiters(waiter.requestType);
+					list.put(waiter);
 					if(logMINOR) Logger.minor(this, "Queued slot "+waiter+" waiter for "+waiter.requestType+" size is now "+list.size()+" on "+this+" for "+PeerNode.this);
 					queued = true;
 				} else {
@@ -5627,10 +5660,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			return true;
 		}
 		
-		private TreeMap<Long,SlotWaiter> makeSlotWaiters(RequestType requestType) {
-			TreeMap<Long,SlotWaiter> slots = slotWaiters.get(requestType);
+		private SlotWaiterList makeSlotWaiters(RequestType requestType) {
+			SlotWaiterList slots = slotWaiters.get(requestType);
 			if(slots == null) {
-				slots = new TreeMap<Long,SlotWaiter>();
+				slots = new SlotWaiterList();
 				slotWaiters.put(requestType, slots);
 			}
 			return slots;
@@ -5638,15 +5671,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		
 		void unqueueSlotWaiter(SlotWaiter waiter) {
 			synchronized(routedToLock) {
-				TreeMap<Long, SlotWaiter> map = slotWaiters.get(waiter.requestType);
+				SlotWaiterList map = slotWaiters.get(waiter.requestType);
 				if(map == null) return;
-				map.remove(waiter.counter);
+				map.remove(waiter);
 			}
 		}
 		
 		private void failSlotWaiters(boolean reallyFailed) {
 			for(RequestType type : RequestType.values()) {
-				TreeMap<Long,SlotWaiter> slots; 
+				SlotWaiterList slots; 
 				synchronized(routedToLock) {
 					slots = slotWaiters.get(type);
 					if(slots == null) continue;
@@ -5681,7 +5714,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(typeNum == RequestType.values().length)
 					typeNum = 0;
 				for(int i=0;i<RequestType.values().length;i++) {
-					TreeMap<Long,SlotWaiter> list;
+					SlotWaiterList list;
 					type = RequestType.values()[typeNum];
 					if(logMINOR) Logger.minor(this, "Checking slot waiter list for "+type);
 					SlotWaiter slot;
@@ -5721,9 +5754,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 							return;
 						}
 						if(list.isEmpty()) continue;
-						Iterator<SlotWaiter> it = list.values().iterator();
-						slot = it.next();
-						it.remove();
+						slot = list.removeFirst();
 						if(logMINOR) Logger.minor(this, "Accept state is "+acceptState+" for "+slot+" - waking up on "+this);
 						peersForSuccessfulSlot = slot.innerOnWaited(PeerNode.this, acceptState);
 						if(peersForSuccessfulSlot == null) continue;
