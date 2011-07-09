@@ -5424,9 +5424,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				}
 				if(!timedOut) {
 					long waitEnd = System.currentTimeMillis();
-					if(waitEnd - waitStart > 10000) {
+					if(waitEnd - waitStart > (realTime ? 60000 : 6000)) {
 						Logger.error(this, "Waited "+(waitEnd - waitStart)+"ms for "+this);
-					} else if(waitEnd - waitStart > 1000) {
+					} else if(waitEnd - waitStart > (realTime ? 10000 : 1000)) {
 						Logger.warning(this, "Waited "+(waitEnd - waitStart)+"ms for "+this);
 					} else {
 						if(logMINOR) Logger.minor(this, "Waited "+(waitEnd - waitStart)+"ms for "+this);
