@@ -261,7 +261,7 @@ loadWaiterLoop:
     					Logger.minor(this, "Cannot send to "+next+" realtime="+realTimeFlag);
     				waitedForLoadManagement = true;
     				if(waiter == null)
-    					waiter = PeerNode.createSlotWaiter(origTag, type, false, realTimeFlag);
+    					waiter = PeerNode.createSlotWaiter(origTag, type, false, realTimeFlag, source);
     				if(next != null) {
     					if(!waiter.addWaitingFor(next)) {
     						next = null;
