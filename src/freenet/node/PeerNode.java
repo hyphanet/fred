@@ -5492,7 +5492,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	
 	static class SlotWaiterList {
 		
-		private LinkedHashMap<PeerNode, TreeMap<Long, SlotWaiter>> lru;
+		private final LinkedHashMap<PeerNode, TreeMap<Long, SlotWaiter>> lru =
+			new LinkedHashMap<PeerNode, TreeMap<Long, SlotWaiter>>();
 
 		public synchronized void put(SlotWaiter waiter) {
 			PeerNode source = waiter.source;
