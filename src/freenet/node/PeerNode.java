@@ -5367,7 +5367,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						tag.removeRoutingTo(p);
 						return other;
 					}
-					if(isRemote()) p.outputLoadTracker(realTime).reportAllocated();
+					p.outputLoadTracker(realTime).reportAllocated(isLocal());
 					// p != null so in this one instance we're going to ignore fe.
 					return p;
 				}
@@ -5440,17 +5440,17 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				failed = false;
 				fe = null;
 			}
-			if(timeOutIsFatal && all != null && isRemote()) {
+			if(timeOutIsFatal && all != null) {
 				for(PeerNode pn : all) {
-					pn.outputLoadTracker(realTime).reportFatalTimeoutInWait();
+					pn.outputLoadTracker(realTime).reportFatalTimeoutInWait(isLocal());
 				}
 			}
 			unregister(ret, all);
 			return ret;
 		}
 		
-		final boolean isRemote() {
-			return source != null;
+		final boolean isLocal() {
+			return source == null;
 		}
 		
 		private boolean shouldGrab() {
@@ -5578,14 +5578,16 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			maybeNotifySlotWaiter();
 		}
 		
-		/** Only report this for local timeouts, see comments above */
-		synchronized /* lock only used for counter */ void reportFatalTimeoutInWait() {
-			totalFatalTimeouts++;
+		synchronized /* lock only used for counter */ void reportFatalTimeoutInWait(boolean local) {
+			if(!local)
+				totalFatalTimeouts++;
+			node.nodeStats.reportFatalTimeoutInWait(local);
 		}
 
-		/** Only report this for local slot allocations, see comments above */
-		synchronized /* lock only used for counter */ void reportAllocated() {
-			totalAllocated++;
+		synchronized /* lock only used for counter */ void reportAllocated(boolean local) {
+			if(!local)
+				totalAllocated++;
+			node.nodeStats.reportAllocatedSlot(local);
 		}
 		
 		public synchronized double proportionTimingOutFatallyInWait() {
@@ -5688,7 +5690,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				}
 			}
 			if(all != null) {
-				if(waiter.isRemote()) reportAllocated();
+				reportAllocated(waiter.isLocal());
 				waiter.unregister(null, all);
 			} else if(queued) {
 				if((!isRoutable()) || (isInMandatoryBackoff(System.currentTimeMillis(), realTime))) {
@@ -5799,7 +5801,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						if(logMINOR) Logger.minor(this, "Accept state is "+acceptState+" for "+slot+" - waking up on "+this);
 						peersForSuccessfulSlot = slot.innerOnWaited(PeerNode.this, acceptState);
 						if(peersForSuccessfulSlot == null) continue;
-						if(slot.isRemote()) reportAllocated();
+						reportAllocated(slot.isLocal());
 						slotWaiterTypeCounter = typeNum;
 					}
 					slot.unregister(PeerNode.this, peersForSuccessfulSlot);

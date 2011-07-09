@@ -3548,6 +3548,45 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		row.addChild("th", l10n("bulkHeader"));
 		row.addChild("td", TimeUtil.formatTime((int)nlmDelayBulkLocal.currentValue(), 2, true));
 		row.addChild("td", TimeUtil.formatTime((int)nlmDelayBulkRemote.currentValue(), 2, true));
+		
+		synchronized(slotTimeoutsSync) {
+			if(fatalTimeoutsInWaitLocal + fatalTimeoutsInWaitRemote + 
+					allocatedSlotLocal + allocatedSlotRemote > 0) {
+				table = content.addChild("table", "border", "0");
+				header = table.addChild("tr");
+				header.addChild("th", l10n("timeoutFractions"));
+				header.addChild("th", l10n("localHeader"));
+				header.addChild("th", l10n("remoteHeader"));
+				row = table.addChild("tr");
+				row.addChild("td", "");
+				row.addChild("td", this.fix3p3pct.format(((double)fatalTimeoutsInWaitLocal)/((double)(fatalTimeoutsInWaitLocal + allocatedSlotLocal))));
+				row.addChild("td", this.fix3p3pct.format(((double)fatalTimeoutsInWaitRemote)/((double)(fatalTimeoutsInWaitRemote + allocatedSlotRemote))));
+			}
+		}
+	}
+
+	private Object slotTimeoutsSync = new Object();
+	private long fatalTimeoutsInWaitLocal;
+	private long fatalTimeoutsInWaitRemote;
+	private long allocatedSlotLocal;
+	private long allocatedSlotRemote;
+	
+	public void reportFatalTimeoutInWait(boolean local) {
+		synchronized(slotTimeoutsSync) {
+			if(local)
+				fatalTimeoutsInWaitLocal++;
+			else
+				fatalTimeoutsInWaitRemote++;
+		}
+	}
+
+	public void reportAllocatedSlot(boolean local) {
+		synchronized(slotTimeoutsSync) {
+			if(local)
+				allocatedSlotLocal++;
+			else
+				allocatedSlotRemote++;
+		}
 	}
 	
 }
