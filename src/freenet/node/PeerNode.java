@@ -5498,7 +5498,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		public synchronized void put(SlotWaiter waiter) {
 			PeerNode source = waiter.source;
 			TreeMap<Long, SlotWaiter> map = lru.get(source);
-			if(source == null) {
+			if(map == null) {
 				lru.put(source, map = new TreeMap<Long, SlotWaiter>());
 			}
 			map.put(waiter.counter, waiter);
