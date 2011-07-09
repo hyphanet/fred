@@ -2048,7 +2048,10 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		// If the vast majority are being accepted, then try again after the timeout.
 		// If more are being rejected, it makes sense to wait longer, up to the limit of the maximum recently failed time.
 		int period = (int) Math.min(((fetchTimeout / 5) / (1.0 - load)), FailureTable.RECENTLY_FAILED_TIME);
-		Logger.error(this, "Timed out while waiting for a slot, period = "+period+" because average reject proportion for peers is "+load+" on "+this);
+		if(source != null)
+			Logger.error(this, "Timed out while waiting for a slot, period = "+period+" because average reject proportion for peers is "+load+" on "+this);
+		else
+			Logger.warning(this, "Local request timed out while waiting for a slot, period = "+period+" because average reject proportion for peers is "+load+" on "+this);
     	synchronized(this) {
     		recentlyFailedTimeLeft = period;
     	}
