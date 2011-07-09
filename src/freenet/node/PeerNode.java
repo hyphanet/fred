@@ -5508,7 +5508,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			PeerNode source = waiter.source;
 			TreeMap<Long, SlotWaiter> map = lru.get(source);
 			if(map == null) {
-				Logger.error(this, "SlotWaiter "+waiter+" was not queued");
+				if(logMINOR) Logger.minor(this, "SlotWaiter "+waiter+" was not queued");
 				return;
 			}
 			map.remove(waiter.counter);
