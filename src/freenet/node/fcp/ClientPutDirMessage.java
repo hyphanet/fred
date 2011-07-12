@@ -10,6 +10,7 @@ import freenet.client.InsertContext;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
+import freenet.support.HexUtil;
 import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
 import freenet.support.compress.InvalidCompressionCodecException;
@@ -54,6 +55,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 	final int extraInsertsSingleBlock;
 	final int extraInsertsSplitfileHeaderBlock;
 	final InsertContext.CompatibilityMode compatibilityMode;
+	final byte[] overrideSplitfileCryptoKey;
 	final boolean localRequestOnly;
 	final boolean realTimeFlag;
 	
@@ -79,6 +81,17 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 			}
 		}
 		compatibilityMode = cmode;
+		s = fs.get("OverrideSplitfileCryptoKey");
+		if(s == null)
+			overrideSplitfileCryptoKey = null;
+		else
+			try {
+				overrideSplitfileCryptoKey = HexUtil.hexToBytes(s);
+			} catch (NumberFormatException e1) {
+				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid splitfile crypto key (not hex)", identifier, global);
+			} catch (IndexOutOfBoundsException e1) {
+				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid splitfile crypto key (too short)", identifier, global);
+			}
 		localRequestOnly = fs.getBoolean("LocalRequestOnly", false);
 		if(identifier == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier", null, global);
@@ -174,16 +187,16 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putSingle("URI", uri.toString());
 		sfs.putSingle("Identifier", identifier);
-		sfs.putSingle("Verbosity", Integer.toString(verbosity));
-		sfs.putSingle("MaxRetries", Integer.toString(maxRetries));
+		sfs.put("Verbosity", verbosity);
+		sfs.put("MaxRetries", maxRetries);
 		sfs.putSingle("ClientToken", clientToken);
-		sfs.putSingle("GetCHKOnly", Boolean.toString(getCHKOnly));
-		sfs.putSingle("PriorityClass", Short.toString(priorityClass));
+		sfs.put("GetCHKOnly", getCHKOnly);
+		sfs.put("PriorityClass", priorityClass);
 		sfs.putSingle("PersistenceType", ClientRequest.persistenceTypeString(persistenceType));
-		sfs.putSingle("DontCompress", Boolean.toString(dontCompress));
+		sfs.put("DontCompress", dontCompress);
 		if (compressorDescriptor != null)
 			sfs.putSingle("Codecs", compressorDescriptor);
-		sfs.putSingle("Global", Boolean.toString(global));
+		sfs.put("Global", global);
 		sfs.putSingle("DefaultName", defaultName);
 		return sfs;
 	}

@@ -74,6 +74,8 @@ public class NodeCrypto {
 	private DSAPrivateKey privKey;
 	/** My public key */
 	private DSAPublicKey pubKey;
+	byte[] pubKeyHash;
+	byte[] pubKeyHashHash;
 	/** My ARK SSK private key */
 	InsertableClientSSK myARK;
 	/** My ARK sequence number */
@@ -208,6 +210,8 @@ public class NodeCrypto {
 			cryptoGroup = DSAGroup.create(fs.subset("dsaGroup"));
 			privKey = DSAPrivateKey.create(fs.subset("dsaPrivKey"), cryptoGroup);
 			pubKey = DSAPublicKey.create(fs.subset("dsaPubKey"), cryptoGroup);
+			pubKeyHash = SHA256.digest(pubKey.asBytes());
+			pubKeyHashHash = SHA256.digest(pubKeyHash);
 		} catch (IllegalBase64Exception e) {
 			Logger.error(this, "Caught "+e, e);
 			throw new IOException(e.toString());
@@ -280,6 +284,8 @@ public class NodeCrypto {
 		anonSetupCipher.initialize(identityHash);
 		clientNonce = new byte[32];
 		node.random.nextBytes(clientNonce);
+		pubKeyHash = SHA256.digest(pubKey.asBytes());
+		pubKeyHashHash = SHA256.digest(pubKeyHash);
 	}
 
 	public void start() {
@@ -510,6 +516,26 @@ public class NodeCrypto {
     	return true;
 	}
 
+	/** If oneConnectionPerAddress is not set, but there are peers with the same
+	 * IP for which it is set, disconnect them.
+	 * @param peerNode
+	 * @param freenetAddress
+	 */
+	public void maybeBootConnection(PeerNode peerNode,
+			FreenetInetAddress address) {
+		if(config.oneConnectionPerAddress())
+			return; // If it's set here then we've already checked, we're not going to boot anyone else.
+		
+		ArrayList<PeerNode> possibleMatches = node.peers.getAllConnectedByAddress(address);
+		if(possibleMatches == null) return;
+		for(PeerNode pn : possibleMatches) {
+			if(pn.crypto == this) continue;
+			if(pn.crypto.config.oneConnectionPerAddress()) {
+				node.peers.disconnect(pn, true, true, pn.isOpennet());
+			}
+		}
+	}
+
 	DSAGroup getCryptoGroup() {
 		return cryptoGroup;
 	}
@@ -603,5 +629,6 @@ public class NodeCrypto {
 	public boolean wantAnonAuthChangeIP() {
 		return node.wantAnonAuthChangeIP(isOpennet);
 	}
+
 }
 

@@ -81,6 +81,7 @@ public abstract class RandomSource extends Random {
      */
     public abstract void close();
     
+    @Override
     protected synchronized int next(int bits) {
     	return super.next(bits);
     }

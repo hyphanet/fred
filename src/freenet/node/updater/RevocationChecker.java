@@ -1,6 +1,7 @@
 package freenet.node.updater;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import com.db4o.ObjectContainer;
@@ -8,6 +9,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
+import freenet.client.async.BinaryBlobWriter;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.DatabaseDisabledException;
@@ -19,8 +21,11 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
+import freenet.support.io.ByteArrayRandomAccessThing;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
+import freenet.support.io.RandomAccessFileWrapper;
+import freenet.support.io.RandomAccessThing;
 
 /**
  * Fetches the revocation key. Each time it starts, it will try to fetch it until it has 3 DNFs. If it ever finds it, it will
@@ -44,6 +49,8 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 	private volatile boolean blown;
 	
 	private File blobFile;
+	/** The original binary blob bucket. */
+	private ArrayBucket blobBucket;
 
 	public RevocationChecker(NodeUpdateManager manager, File blobFile) {
 		this.manager = manager;
@@ -70,7 +77,8 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		if(blobFile.exists()) {
 			ArrayBucket bucket = new ArrayBucket();
 			try {
-				BucketTools.copy(new FileBucket(blobFile, true, false, false, false, false), bucket);
+				BucketTools.copy(new FileBucket(blobFile, true, false, false, false, true), bucket);
+				// Allow to free if bogus.
 				manager.uom.processRevocationBlob(bucket, "disk", true);
 			} catch (IOException e) {
 				Logger.error(this, "Failed to read old revocation blob: "+e, e);
@@ -124,7 +132,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 					cg = revocationGetter = new ClientGetter(this, 
 							manager.revocationURI, ctxRevocation, 
 							aggressive ? RequestStarter.MAXIMUM_PRIORITY_CLASS : RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
-							this, null, new ArrayBucket());
+							this, null, new BinaryBlobWriter(new ArrayBucket()), null);
 					if(logMINOR) Logger.minor(this, "Queued another revocation fetcher (count="+revocationDNFCounter+")");
 				}
 			}
@@ -169,6 +177,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		start(wasAggressive);
 	}
 
+	@Override
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		onSuccess(result, state, state.getBlobBucket());
 	}
@@ -204,6 +213,33 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 			Logger.error(this, "No temporary binary blob file moving it: may not be able to propagate revocation, bug???");
 			return;
 		}
+		if(tmpBlob instanceof ArrayBucket) {
+			synchronized(this) {
+				if(tmpBlob == blobBucket) return;
+				blobBucket = (ArrayBucket) tmpBlob;
+			}
+		} else {
+			try {
+				ArrayBucket buf = new ArrayBucket(BucketTools.toByteArray(tmpBlob));
+				synchronized(this) {
+					blobBucket = buf;
+				}
+			} catch (IOException e) {
+				System.err.println("Unable to copy data from revocation bucket!");
+				System.err.println("This should not happen and indicates there may be a problem with the auto-update checker.");
+				// Don't blow(), as that's already happened.
+				return;
+			}
+			if(tmpBlob instanceof FileBucket) {
+				File f = ((FileBucket)tmpBlob).getFile();
+				synchronized(this) {
+					if(f == blobFile) return;
+					if(f.equals(blobFile)) return;
+					if(FileUtil.getCanonicalFile(f).equals(FileUtil.getCanonicalFile(blobFile))) return;
+				}
+			}
+			System.out.println("Unexpected blob file in revocation checker: "+tmpBlob);
+		}
 		FileBucket fb = new FileBucket(blobFile, false, false, false, false, false);
 		try {
 			BucketTools.copy(tmpBlob, fb);
@@ -214,6 +250,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		}
 	}
 
+	@Override
 	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		onFailure(e, state, state.getBlobBucket());
 	}
@@ -228,7 +265,18 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 			return; // cancelled by us above, or killed; either way irrelevant and doesn't need to be restarted
 		}
 		if(e.isFatal()) {
-			manager.blow("Permanent error fetching revocation (error inserting the revocation key?): "+e.toString(), true);
+			if(!e.isDefinitelyFatal()) {
+				// INTERNAL_ERROR could be related to the key but isn't necessarily.
+				System.err.println("Auto-update is failing with an internal error:");
+				System.err.println(e);
+				e.printStackTrace();
+				System.err.println("Please fix this and restart Freenet!");
+				// Could be out of disk space???
+				manager.blow("Checking for revocation key is failing with an internal error: "+e.toString(), true);
+				return;
+			}
+			// Really fatal, i.e. something was inserted but can't be decoded.
+			manager.blow("Permanent error fetching revocation (error inserting the revocation key?): "+e.toString(), false);
 			moveBlob(blob);
 			return;
 		}
@@ -255,6 +303,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 				// This ensures we don't constantly start them, fail them, and start them again.
 				this.manager.node.ticker.queueTimedJob(new Runnable() {
 
+					@Override
 					public void run() {
 						start(wasAggressive, false);
 					}
@@ -266,6 +315,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		}
 	}
 	
+	@Override
 	public void onMajorProgress(ObjectContainer container) {
 		// TODO Auto-generated method stub
 		
@@ -280,21 +330,53 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		return blobFile.length();
 	}
 
-	/** Get the binary blob, if we have fetched it. */
-	public File getBlobFile() {
+	public Bucket getBlobBucket() {
 		if(!manager.isBlown()) return null;
+		synchronized(this) {
+			if(blobBucket != null)
+				return blobBucket;
+		}
+		File f = getBlobFile();
+		if(f == null) return null;
+		return new FileBucket(f, true, false, false, false, false);
+	}
+	
+	public RandomAccessThing getBlobThing() {
+		if(!manager.isBlown()) return null;
+		synchronized(this) {
+			if(blobBucket != null) {
+				ByteArrayRandomAccessThing t = new ByteArrayRandomAccessThing(blobBucket.toByteArray());
+				t.setReadOnly();
+				return t;
+			}
+		}
+		File f = getBlobFile();
+		if(f == null) return null;
+		try {
+			return new RandomAccessFileWrapper(f, "r");
+		} catch(FileNotFoundException e) {
+			Logger.error(this, "We do not have the blob file for the revocation even though we have successfully downloaded it!", e);
+			return null;
+		}
+	}
+	
+	/** Get the binary blob, if we have fetched it. */
+	private File getBlobFile() {
 		if(blobFile.exists()) return blobFile;
 		return null;
 	}
 
+	@Override
 	public boolean persistent() {
 		return false;
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
 	public boolean realTimeFlag() {
 		return false;
 	}

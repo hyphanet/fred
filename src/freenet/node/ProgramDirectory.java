@@ -16,8 +16,8 @@ import java.io.IOException;
 ** stores there.
 **
 ** @author infinity0
-** @see http://new-wiki.freenetproject.org/Program_files
-** @see http://wiki.freenetproject.org/Program_files
+** @see <a href=http://new-wiki.freenetproject.org/Program_files>New wiki program files documentation</a>
+** @see <a href=http://wiki.freenetproject.org/Program_files>Old wiki program files documentation</a>
 */
 public class ProgramDirectory {
 

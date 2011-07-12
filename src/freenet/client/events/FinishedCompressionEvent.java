@@ -20,10 +20,12 @@ public class FinishedCompressionEvent implements ClientEvent {
 		this.compressedSize = compressedSize;
 	}
 
+	@Override
 	public String getDescription() {
 		return "Compressed data: codec="+codec+", origSize="+originalSize+", compressedSize="+compressedSize;
 	}
 
+	@Override
 	public int getCode() {
 		return code;
 	}

@@ -151,6 +151,7 @@ public class FCPServer implements Runnable, DownloadCache {
 		}
 	}
 
+	@Override
 	public void run() {
 	    freenet.support.Logger.OSThread.logPID(this);
 		while(true) {
@@ -515,10 +516,12 @@ public class FCPServer implements Runnable, DownloadCache {
 			done.value = false;
 			core.clientContext.jobRunner.queue(new DBJob() {
 
+				@Override
 				public String toString() {
 					return "FCP removeGlobalRequestBlocking";
 				}
 
+				@Override
 				public boolean run(ObjectContainer container, ClientContext context) {
 					boolean succeeded = false;
 					try {
@@ -558,10 +561,12 @@ public class FCPServer implements Runnable, DownloadCache {
 		done.value = false;
 		core.clientContext.jobRunner.queue(new DBJob() {
 
+			@Override
 			public String toString() {
 				return "FCP removeAllGlobalRequestsBlocking";
 			}
 
+			@Override
 			public boolean run(ObjectContainer container, ClientContext context) {
 				boolean succeeded = false;
 				try {
@@ -595,7 +600,10 @@ public class FCPServer implements Runnable, DownloadCache {
 		}
 	}
 
-	public void makePersistentGlobalRequestBlocking(final FreenetURI fetchURI, final boolean filterData, final String expectedMimeType, final String persistenceTypeString, final String returnTypeString, final boolean realTimeFlag) throws NotAllowedException, IOException, DatabaseDisabledException {
+	public void makePersistentGlobalRequestBlocking(final FreenetURI fetchURI, final boolean filterData,
+	        final String expectedMimeType, final String persistenceTypeString, final String returnTypeString,
+	        final boolean realTimeFlag, final File downloadsDir) throws NotAllowedException, IOException,
+	        DatabaseDisabledException {
 		class OutputWrapper {
 			NotAllowedException ne;
 			IOException ioe;
@@ -605,15 +613,19 @@ public class FCPServer implements Runnable, DownloadCache {
 		final OutputWrapper ow = new OutputWrapper();
 		core.clientContext.jobRunner.queue(new DBJob() {
 
+			@Override
 			public String toString() {
 				return "FCP makePersistentGlobalRequestBlocking";
 			}
 
+			@Override
 			public boolean run(ObjectContainer container, ClientContext context) {
 				NotAllowedException ne = null;
 				IOException ioe = null;
 				try {
-					makePersistentGlobalRequest(fetchURI, filterData, expectedMimeType, persistenceTypeString, returnTypeString, realTimeFlag, container);
+					makePersistentGlobalRequest(fetchURI, filterData, expectedMimeType,
+					        persistenceTypeString, returnTypeString, realTimeFlag, container,
+					        downloadsDir);
 					return true;
 				} catch (NotAllowedException e) {
 					ne = e;
@@ -667,10 +679,12 @@ public class FCPServer implements Runnable, DownloadCache {
 			final OutputWrapper ow = new OutputWrapper();
 			core.clientContext.jobRunner.queue(new DBJob() {
 
+				@Override
 				public String toString() {
 					return "FCP modifyGlobalRequestBlocking";
 				}
 
+				@Override
 				public boolean run(ObjectContainer container, ClientContext context) {
 					boolean success = false;
 					try {
@@ -708,20 +722,25 @@ public class FCPServer implements Runnable, DownloadCache {
 		}
 	}
 
+	public void makePersistentGlobalRequest(FreenetURI fetchURI, boolean filterData, String expectedMimeType, String persistenceTypeString, String returnTypeString, boolean realTimeFlag, ObjectContainer container) throws NotAllowedException, IOException {
+		makePersistentGlobalRequest(fetchURI, filterData, expectedMimeType, persistenceTypeString, returnTypeString, realTimeFlag, container, core.getDownloadsDir());
+	}
+	
 	/**
 	 * Create a persistent globally-queued request for a file.
 	 * @param fetchURI The file to fetch.
-	 * @param persistence The persistence type.
-	 * @param returnType The return type.
+	 * @param persistenceTypeString The persistence type.
+	 * @param returnTypeString The return type.
+	 * @param downloadsDir Target directory if downloading to disk. Must be valid!
 	 * @throws NotAllowedException
 	 * @throws IOException
 	 */
-	public void makePersistentGlobalRequest(FreenetURI fetchURI, boolean filterData, String expectedMimeType, String persistenceTypeString, String returnTypeString, boolean realTimeFlag, ObjectContainer container) throws NotAllowedException, IOException {
+	public void makePersistentGlobalRequest(FreenetURI fetchURI, boolean filterData, String expectedMimeType, String persistenceTypeString, String returnTypeString, boolean realTimeFlag, ObjectContainer container, File downloadsDir) throws NotAllowedException, IOException {
 		boolean persistence = persistenceTypeString.equalsIgnoreCase("reboot");
 		short returnType = ClientGetMessage.parseReturnType(returnTypeString);
 		File returnFilename = null, returnTempFilename = null;
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
-			returnFilename = makeReturnFilename(fetchURI, expectedMimeType);
+			returnFilename = makeReturnFilename(fetchURI, expectedMimeType, downloadsDir);
 			returnTempFilename = makeTempReturnFilename(returnFilename);
 		}
 //		public ClientGet(FCPClient globalClient, FreenetURI uri, boolean dsOnly, boolean ignoreDS,
@@ -758,7 +777,6 @@ public class FCPServer implements Runnable, DownloadCache {
 					}
 				}
 			}
-
 		}
 	}
 
@@ -766,7 +784,7 @@ public class FCPServer implements Runnable, DownloadCache {
 		return new File(returnFilename.toString() + ".freenet-tmp");
 	}
 
-	private File makeReturnFilename(FreenetURI uri, String expectedMimeType) {
+	private File makeReturnFilename(FreenetURI uri, String expectedMimeType, File downloadsDir) {
 		String ext;
 		if((expectedMimeType != null) && (expectedMimeType.length() > 0) &&
 				!expectedMimeType.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE)) {
@@ -777,8 +795,8 @@ public class FCPServer implements Runnable, DownloadCache {
 		String preferredWithExt = preferred;
 		if(!(ext != null && preferredWithExt.endsWith(ext)))
 			preferredWithExt += extAdd;
-		File f = new File(core.getDownloadsDir(), preferredWithExt);
-		File f1 = new File(core.getDownloadsDir(), preferredWithExt + ".freenet-tmp");
+		File f = new File(downloadsDir, preferredWithExt);
+		File f1 = new File(downloadsDir, preferredWithExt + ".freenet-tmp");
 		int x = 0;
 		StringBuilder sb = new StringBuilder();
 		for(;f.exists() || f1.exists();sb.setLength(0)) {
@@ -786,8 +804,8 @@ public class FCPServer implements Runnable, DownloadCache {
 			sb.append('-');
 			sb.append(x);
 			sb.append(extAdd);
-			f = new File(core.getDownloadsDir(), sb.toString());
-			f1 = new File(core.getDownloadsDir(), sb.append(".freenet-tmp").toString());
+			f = new File(downloadsDir, sb.toString());
+			f1 = new File(downloadsDir, sb.append(".freenet-tmp").toString());
 			x++;
 		}
 		return f;
@@ -851,10 +869,12 @@ public class FCPServer implements Runnable, DownloadCache {
 				final OutputWrapper ow = new OutputWrapper();
 			core.clientContext.jobRunner.queue(new DBJob() {
 
+				@Override
 				public String toString() {
 					return "FCP startBlocking";
 				}
 
+				@Override
 				public boolean run(ObjectContainer container, ClientContext context) {
 					// Don't activate, it may not be stored yet.
 					try {
@@ -906,10 +926,12 @@ public class FCPServer implements Runnable, DownloadCache {
 			final OutputWrapper ow = new OutputWrapper();
 			core.clientContext.jobRunner.queue(new DBJob() {
 
+				@Override
 				public String toString() {
 					return "FCP restartBlocking";
 				}
 
+				@Override
 				public boolean run(ObjectContainer container, ClientContext context) {
 					boolean success = false;
 					try {
@@ -968,10 +990,12 @@ public class FCPServer implements Runnable, DownloadCache {
 
 		core.clientContext.jobRunner.queue(new DBJob() {
 
+			@Override
 			public String toString() {
 				return "FCP getCompletedRequestBlocking";
 			}
 
+			@Override
 			public boolean run(ObjectContainer container, ClientContext context) {
 				FetchResult result = null;
 				try {
@@ -1012,6 +1036,7 @@ public class FCPServer implements Runnable, DownloadCache {
 		return whiteboard;
 	}
 
+	@Override
 	public CacheFetchResult lookupInstant(FreenetURI key, boolean noFilter, boolean mustCopy, Bucket preferred) {
 		ClientGet get = globalRebootClient.getCompletedRequest(key, null);
 
@@ -1058,6 +1083,7 @@ public class FCPServer implements Runnable, DownloadCache {
 
 	}
 
+	@Override
 	public CacheFetchResult lookup(FreenetURI key, boolean noFilter, ClientContext context,
 			ObjectContainer container, boolean mustCopy, Bucket preferred) {
 		if(globalForeverClient == null) return null;

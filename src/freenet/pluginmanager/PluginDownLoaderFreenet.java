@@ -57,10 +57,12 @@ public class PluginDownLoaderFreenet extends PluginDownLoader<FreenetURI> {
 				progress.setDownloading();
 				hlsc.addEventHook(new ClientEventListener() {
 
+					@Override
 					public void onRemoveEventProducer(ObjectContainer container) {
 						// Ignore
 					}
 
+					@Override
 					public void receive(ClientEvent ce, ObjectContainer maybeContainer, ClientContext context) {
 						if(ce instanceof SplitfileProgressEvent) {
 							SplitfileProgressEvent split = (SplitfileProgressEvent) ce;
@@ -78,7 +80,7 @@ public class PluginDownLoaderFreenet extends PluginDownLoader<FreenetURI> {
 				}
 				FetchWaiter fw = new FetchWaiter();
 
-				get = new ClientGetter(fw, uri, context, PluginManager.PRIO, node.nonPersistentClientBulk, null, null);
+				get = new ClientGetter(fw, uri, context, PluginManager.PRIO, node.nonPersistentClientBulk, null, null, null);
 				try {
 					node.clientCore.clientContext.start(get);
 				} catch (DatabaseDisabledException e) {

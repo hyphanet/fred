@@ -162,8 +162,7 @@ public class ProtocolErrorMessage extends FCPMessage {
 		if(extra != null)
 			sfs.putSingle("ExtraDescription", extra);
 		sfs.put("Fatal", fatal);
-		if(global)
-			sfs.putSingle("Global", "true");
+		sfs.put("Global", global);
 		return sfs;
 	}
 
@@ -180,6 +179,11 @@ public class ProtocolErrorMessage extends FCPMessage {
 	@Override
 	public void removeFrom(ObjectContainer container) {
 		container.delete(this);
+	}
+	
+	@Override
+	public String toString() {
+		return super.toString()+":"+code+":"+extra+":"+fatal+":"+ident+":"+global;
 	}
 
 }

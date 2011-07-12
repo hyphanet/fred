@@ -30,9 +30,7 @@ import freenet.keys.KeyEncodeException;
 import freenet.keys.KeyVerifyException;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKEncodeException;
-import freenet.keys.SSKVerifyException;
 import freenet.node.KeysFetchingLocally;
-import freenet.node.LowLevelGetException;
 import freenet.node.LowLevelPutException;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -49,7 +47,6 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.io.BucketTools;
-import freenet.support.io.NativeThread;
 
 /**
  * Insert *ONE KEY*.
@@ -215,6 +212,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(!persistent) {
 			context.mainExecutor.execute(new Runnable() {
 				
+				@Override
 				public void run() {
 					cb.onEncode(key, SingleBlockInserter.this, null, context);
 				}
@@ -378,6 +376,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 	}
 
+	@Override
 	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
 		synchronized(this) {
 			if(finished) {
@@ -478,10 +477,12 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			container.deactivate(cb, 1);
 	}
 
+	@Override
 	public BaseClientPutter getParent() {
 		return parent;
 	}
 
+	@Override
 	public void cancel(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(finished) return;
@@ -508,6 +509,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			container.deactivate(cb, 1);
 	}
 
+	@Override
 	public synchronized boolean isEmpty(ObjectContainer container) {
 		return finished;
 	}
@@ -528,6 +530,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			this.orig = orig;
 		}
 
+		@Override
 		public boolean send(NodeClientCore core, RequestScheduler sched, final ClientContext context, final ChosenBlock req) {
 			// Ignore keyNum, key, since we're only sending one block.
 			ClientKeyBlock b;
@@ -648,11 +651,13 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return parent;
 	}
 
+	@Override
 	public Object getToken() {
 		return tokenObject;
 	}
 
 	/** Attempt to encode the block, if necessary */
+	@Override
 	public void tryEncode(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(resultingURI != null) return;
@@ -789,6 +794,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			this.cryptoKey = cryptoKey;
 		}
 		
+		@Override
 		public void dump() {
 			copyBucket.free();
 		}
@@ -813,6 +819,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	// Used for testing whether a block is already queued.
 	private class FakeBlockItem implements SendableRequestItem {
 		
+		@Override
 		public void dump() {
 			// Do nothing
 		}
@@ -837,6 +844,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "removeFrom() on "+this);
 		container.activate(uri, 5);
@@ -915,6 +923,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 //	}
 //	
 	
+	@Override
 	public boolean isStorageBroken(ObjectContainer container) {
 		if(parent == null) return true;
 		if(ctx == null) return true;

@@ -42,7 +42,7 @@ public class AllDataMessage extends DataCarryingMessage {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.put("DataLength", dataLength);
 		fs.putSingle("Identifier", identifier);
-		if(global) fs.putSingle("Global", "true");
+		fs.put("Global", global);
 		fs.put("StartupTime", startupTime);
 		fs.put("CompletionTime", completionTime);
 		if(mimeType!=null) fs.putSingle("Metadata.ContentType", mimeType);

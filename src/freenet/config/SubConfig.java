@@ -336,6 +336,7 @@ public class SubConfig implements Comparable<SubConfig> {
 		return prefix;
 	}
 
+	@Override
 	public int compareTo(SubConfig second) {
 		if (this.getPrefix().compareTo(second.getPrefix()) > 0)
 			return 1;

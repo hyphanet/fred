@@ -3,18 +3,17 @@ package freenet.crypt;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.DigestException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
-import freenet.crypt.MultiHashOutputStream.Digester;
 import freenet.support.Logger;
 
 public class MultiHashInputStream extends FilterInputStream {
 
 	// Bit flags for generateHashes
 	private Digester[] digesters;
+	private long readBytes;
 	
 	class Digester {
 		HashType hashType;
@@ -54,6 +53,7 @@ public class MultiHashInputStream extends FilterInputStream {
 		if(ret <= 0) return ret;
 		for(Digester d : digesters)
 			d.digest.update(buf, off, ret);
+		readBytes += ret;
 		return ret;
 	}
 	
@@ -70,6 +70,7 @@ public class MultiHashInputStream extends FilterInputStream {
 		byte[] b = new byte[] { (byte)ret };
 		for(Digester d : digesters)
 			d.digest.update(b, 0, 1);
+		readBytes++;
 		return ret;
 	}
 	
@@ -92,5 +93,9 @@ public class MultiHashInputStream extends FilterInputStream {
 			results[i] = digesters[i].getResult();
 		digesters = null;
 		return results;
+	}
+	
+	public long getReadBytes() {
+		return readBytes;
 	}
 }

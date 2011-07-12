@@ -55,6 +55,7 @@ public class FeedMessage extends MultipleDataCarryingMessage {
 				+ " goes from server to client not the other way around", null, false);
 	}
 
+	@Override
 	public String getName() {
 		return NAME;
 	}

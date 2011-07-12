@@ -83,6 +83,9 @@ public class NetworkInterface implements Closeable {
 	
 	private final Executor executor;
 
+	// FIXME make configurable
+	static final int maxQueueLength = 100;
+
 	public static NetworkInterface create(int port, String bindTo, String allowedHosts, Executor executor, boolean ignoreUnbindableIP6) throws IOException {
 		NetworkInterface iface = new NetworkInterface(port, allowedHosts, executor);
 		try {
@@ -233,6 +236,7 @@ public class NetworkInterface implements Closeable {
 	 *             if an I/O exception occurs
 	 * @see ServerSocket#close()
 	 */
+	@Override
 	public void close() throws IOException {
 		IOException exception = null;
 		shutdown = true;
@@ -318,6 +322,7 @@ public class NetworkInterface implements Closeable {
 		 * 
 		 * @see NetworkInterface#allowedHosts
 		 */
+		@Override
 		public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
 			while (!closed) {
@@ -330,7 +335,7 @@ public class NetworkInterface implements Closeable {
 					AddressType clientAddressType = AddressIdentifier.getAddressType(clientAddress.getHostAddress());
 
 					/* check if the ip address is allowed */
-					if (allowedHosts.allowed(clientAddressType, clientAddress)) {
+					if (allowedHosts.allowed(clientAddressType, clientAddress) && acceptedSockets.size() <= maxQueueLength) {
 						synchronized (syncObject) {
 							acceptedSockets.add(clientSocket);
 							syncObject.notifyAll();

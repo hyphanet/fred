@@ -14,6 +14,7 @@ import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.InsertContext;
 import freenet.client.async.BinaryBlob;
+import freenet.client.async.BinaryBlobWriter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
@@ -146,7 +147,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		returnBucket = ret;
 			getter = new ClientGetter(this, uri, fctx, priorityClass,
 					lowLevelClient,
-					returnBucket, null);
+					returnBucket, null, null);
 	}
 
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MessageInvalidException {
@@ -211,7 +212,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			getter = new ClientGetter(this,
 					uri, fctx, priorityClass,
 					lowLevelClient,
-					binaryBlob ? new NullBucket() : returnBucket, binaryBlob ? returnBucket : null);
+					binaryBlob ? new NullBucket() : returnBucket, binaryBlob ? new BinaryBlobWriter(returnBucket) : null, message.getInitialMetadata());
 	}
 
 	/**
@@ -281,6 +282,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		// Otherwise ignore
 	}
 
+	@Override
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		Logger.minor(this, "Succeeded: "+identifier);
 		Bucket data = result.asBucket();
@@ -295,57 +297,98 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(targetFile != null)
 				container.activate(targetFile, 5);
 		}
-		if(returnBucket != data && !binaryBlob) {
-			boolean failed = true;
+		boolean bucketChanged = (returnBucket != data && !binaryBlob);
+		if(bucketChanged) {
+			// FIXME A succession of increasingly wierd failure modes. Most of which have been observed in practice. :<
+			// FIXME For any of these to happen there must be a bug in the client layer code or in db4o. So this is defensive.
 			synchronized(this) {
+				// Check for already finished.
 				if(finished) {
 					Logger.error(this, "Already finished but onSuccess() for "+this+" data = "+data, new Exception("debug"));
 					data.free();
 					if(persistenceType == PERSIST_FOREVER) data.removeFrom(container);
 					return; // Already failed - bucket error maybe??
 				}
+				// Check for no bucket on direct return type. Can work around.
 				if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT && returnBucket == null) {
 					// Lost bucket for some reason e.g. bucket error (caused by IOException) on previous try??
 					// Recover...
 					returnBucket = data;
-					failed = false;
+					bucketChanged = false;
 				}
 			}
-			if(failed && persistenceType == PERSIST_FOREVER) {
+			// Check for db4o bug. Can work around.
+			if(bucketChanged && persistenceType == PERSIST_FOREVER) {
 				if(container.ext().getID(returnBucket) == container.ext().getID(data)) {
 					Logger.error(this, "DB4O BUG DETECTED WITHOUT ARRAY HANDLING! EVIL HORRIBLE BUG! UID(returnBucket)="+container.ext().getID(returnBucket)+" for "+returnBucket+" active="+container.ext().isActive(returnBucket)+" stored = "+container.ext().isStored(returnBucket)+" but UID(data)="+container.ext().getID(data)+" for "+data+" active = "+container.ext().isActive(data)+" stored = "+container.ext().isStored(data));
 					// Succeed anyway, hope that the returned bucket is consistent...
 					returnBucket = data;
-					failed = false;
+					bucketChanged = false;
 				}
 			}
-			if(data instanceof FileBucket) {
-				Logger.error(this, "Returned bucket "+data+" in onSuccess, expected "+returnBucket, new Exception("error"));
-				onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Data != returnBucket"), null, container);
-				return;
+		}
+		if(bucketChanged) {
+			// Something is still borked.
+			synchronized(this) {
+				if(data instanceof FileBucket && returnBucket instanceof FileBucket) {
+					File actualFile = ((FileBucket)data).getFile();
+					File expectedFile = ((FileBucket)returnBucket).getFile();
+					if(actualFile.toString().equals(expectedFile.toString())) {
+						Logger.warning(this, "Data was written to the correct file "+actualFile+" but the bucket changed: "+returnBucket+" -> "+data);
+						// It was written to the right place, just something wierd happened to copy the bucket (db4o error for instance).
+						returnBucket = data;
+						bucketChanged = false;
+					} else {
+						Logger.error(this, "Data was written to "+actualFile+" but should be written to "+expectedFile);
+						// We can handle this. Just move the data.
+						boolean shortCut = false;
+						if(expectedFile.renameTo(actualFile))
+							shortCut = true;
+						else {
+							actualFile.delete();
+							if(expectedFile.renameTo(actualFile))
+								shortCut = true;
+						}
+						if(shortCut) {
+							returnBucket.free();
+							if(persistenceType == PERSIST_FOREVER)
+								returnBucket.removeFrom(container);
+							returnBucket = data;
+							bucketChanged = false;
+						} // Otherwise the data will have to be copied.
+					}
+				} else {
+					Logger.error(this, "Returned bucket "+data+" in onSuccess, expected "+returnBucket+((data == returnBucket) ? " (equal)" : "(not equal)"), new Exception("error"));
+					// We can work around this, just copy the data.
+				}
 			}
+		}
+		if(bucketChanged) {
 			// Something wierd happened, recreate returnBucket ...
 			if(tempFile != null && tempFile.exists()) tempFile.delete();
-			returnBucket.free();
-			if(persistenceType == PERSIST_FOREVER)
-				returnBucket.removeFrom(container);
-			returnBucket = getBucket(container);
+			if(data != returnBucket)
+				returnBucket.free();
+			if(data != returnBucket) {
+				if(persistenceType == PERSIST_FOREVER)
+					returnBucket.removeFrom(container);
+				returnBucket = getBucket(container);
+			}
 			if(persistenceType == PERSIST_FOREVER && container.ext().isStored(this)) {
 				returnBucket.storeTo(container);
 				container.store(this);
-			}
-
-			Logger.error(this, "Data returned to wrong bucket "+data+" expected "+returnBucket+" in "+this, new Exception("error"));
-			try {
-				BucketTools.copy(data, returnBucket);
-			} catch (IOException e) {
-				data.free();
-				returnBucket.free();
-				if(persistenceType == PERSIST_FOREVER) {
-					data.removeFrom(container);
+				
+				Logger.error(this, "Data returned to wrong bucket "+data+" expected "+returnBucket+" in "+this, new Exception("error"));
+				try {
+					BucketTools.copy(data, returnBucket);
+				} catch (IOException e) {
+					data.free();
+					returnBucket.free();
+					if(persistenceType == PERSIST_FOREVER) {
+						data.removeFrom(container);
+					}
+					onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Data != returnBucket and then failed to copy", e), null, container);
+					return;
 				}
-				onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Data != returnBucket and then failed to copy", e), null, container);
-				return;
 			}
 		}
 		boolean dontFree = false;
@@ -362,12 +405,15 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			else
 				this.foundDataMimeType = BinaryBlob.MIME_TYPE;
 
+			// completionTime is set here rather than in finish() for two reasons:
+			// 1. It must be set inside the lock.
+			// 2. It must be set before AllData is sent so it is consistent.
 			if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
+				// Set it before we create the AllDataMessage.
+				completionTime = System.currentTimeMillis();
 				// Send all the data at once
 				// FIXME there should be other options
-				// FIXME: CompletionTime is set on finish() : we need to give it current time here
-				// but it means we won't always return the same value to clients... Does it matter ?
-				adm = new AllDataMessage(returnBucket, identifier, global, startupTime, System.currentTimeMillis(), this.foundDataMimeType);
+				adm = new AllDataMessage(returnBucket, identifier, global, startupTime, completionTime, this.foundDataMimeType);
 				if(persistenceType == PERSIST_CONNECTION)
 					adm.setFreeOnSent();
 				dontFree = true;
@@ -381,7 +427,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 					postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_RENAME_FILE, false, null, identifier, global);
 					// Don't delete temp file, user might want it.
 				}
+				// Wait until after the potentially expensive rename.
+				completionTime = System.currentTimeMillis();
 				returnBucket = new FileBucket(targetFile, false, true, false, false, false);
+			} else {
+				// Needs to be set for all other cases too.
+				completionTime = System.currentTimeMillis();
 			}
 			if(persistenceType == PERSIST_FOREVER && progressPending != null) {
 				container.activate(progressPending, 1);
@@ -414,7 +465,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		// Don't need to lock. succeeded is only ever set, never unset.
 		// and succeeded and getFailedMessage are both atomic.
 		if(succeeded) {
-			msg = new DataFoundMessage(foundDataLength, foundDataMimeType, identifier, global);
+			// FIXME: Duplicate of AllDataMessage
+			// FIXME: CompletionTime is set on finish() : we need to give it current time here
+			msg = new DataFoundMessage(foundDataLength, foundDataMimeType, identifier, global, startupTime, completionTime != 0 ? completionTime : System.currentTimeMillis());
 		} else {
 			msg = getFailedMessage;
 			if(persistenceType == PERSIST_FOREVER)
@@ -464,7 +517,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(client != null) {
 				RequestStatusCache cache = client.getRequestStatusCache();
 				if(cache != null) {
-					cache.updateStatus(identifier, ((SimpleProgressMessage)progressPending).getEvent());
+					cache.updateStatus(identifier, (progressPending).getEvent());
 				}
 			}
 		} else if(msg instanceof SendingToNetworkMessage) {
@@ -485,7 +538,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(client != null) {
 				RequestStatusCache cache = client.getRequestStatusCache();
 				if(cache != null) {
-					cache.updateDetectedCompatModes(identifier, compat.getModes(), compat.cryptoKey);
+					cache.updateDetectedCompatModes(identifier, compat.getModes(), compat.cryptoKey, compat.dontCompress);
 				}
 			}
 		} else if(msg instanceof ExpectedHashes) {
@@ -603,6 +656,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		return new PersistentGet(identifier, uri, verbosity, priorityClass, returnType, persistenceType, targetFile, tempFile, clientToken, client.isGlobalQueue, started, fctx.maxNonSplitfileRetries, binaryBlob, fctx.maxOutputLength);
 	}
 
+	@Override
 	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		if(finished) return;
 		synchronized(this) {
@@ -610,6 +664,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			getFailedMessage = new GetFailedMessage(e, identifier, global);
 			finished = true;
 			started = true;
+			completionTime = System.currentTimeMillis();
 		}
 		if(logMINOR)
 			Logger.minor(this, "Caught "+e, e);
@@ -691,6 +746,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		super.requestWasRemoved(container, context);
 	}
 
+	@Override
 	public void receive(ClientEvent ce, ObjectContainer container, ClientContext context) {
 		// Don't need to lock, verbosity is final and finished is never unset.
 		if(finished) return;
@@ -745,6 +801,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			try {
 				context.jobRunner.queue(new DBJob() {
 
+					@Override
 					public boolean run(ObjectContainer container, ClientContext context) {
 						trySendProgress(progress, verbosityMask, null, container);
 						return false;
@@ -896,6 +953,13 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			return compatMessage.getModes();
 		} else
 			return new InsertContext.CompatibilityMode[] { InsertContext.CompatibilityMode.COMPAT_UNKNOWN, InsertContext.CompatibilityMode.COMPAT_UNKNOWN };
+	}
+	
+	public boolean getDontCompress(ObjectContainer container) {
+		if(compatMessage == null) return false;
+		if(persistenceType == PERSIST_FOREVER)
+			container.activate(compatMessage, 2);
+		return compatMessage.dontCompress;
 	}
 	
 	public byte[] getOverriddenSplitfileCryptoKey(ObjectContainer container) {
@@ -1079,6 +1143,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		return getFailedMessage != null && getFailedMessage.redirectURI != null;
 	}
 
+	@Override
 	public void onRemoveEventProducer(ObjectContainer container) {
 		// Do nothing, we called the removeFrom().
 	}
@@ -1154,6 +1219,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				succeeded, total, min, fetched, fatal, failed, totalFinalized, 
 				lastActivity, priorityClass, failureCode, mimeType, dataSize, target, 
 				getCompatibilityMode(container), getOverriddenSplitfileCryptoKey(container), 
-				getURI(container).clone(), failureReasonShort, failureReasonLong, overriddenDataType, shadow, filterData);
+				getURI(container).clone(), failureReasonShort, failureReasonLong, overriddenDataType, shadow, filterData, getDontCompress(container));
 	}
 }

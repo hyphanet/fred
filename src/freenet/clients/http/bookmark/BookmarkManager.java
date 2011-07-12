@@ -112,6 +112,7 @@ public class BookmarkManager implements RequestClient {
 
 	private class USKUpdatedCallback implements USKCallback {
 
+		@Override
 		public void onFoundEdition(long edition, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 			if(!newKnownGood) {
 				FreenetURI uri = key.copy(edition).getURI();
@@ -144,10 +145,12 @@ public class BookmarkManager implements RequestClient {
 			}
 		}
 
+		@Override
 		public short getPollingPriorityNormal() {
 			return PRIORITY;
 		}
 
+		@Override
 		public short getPollingPriorityProgress() {
 			return PRIORITY_PROGRESS;
 		}
@@ -433,14 +436,17 @@ public class BookmarkManager implements RequestClient {
 		return sfs;
 	}
 
+	@Override
 	public boolean persistent() {
 		return false;
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
 	public boolean realTimeFlag() {
 		return false;
 	}

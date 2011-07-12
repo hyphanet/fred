@@ -4,8 +4,6 @@
 package freenet.client.async;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-
 import com.db4o.ObjectContainer;
 
 import freenet.client.ClientMetadata;
@@ -14,11 +12,8 @@ import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
-import freenet.keys.ClientSSK;
-import freenet.keys.FreenetURI;
 import freenet.keys.KeyDecodeException;
 import freenet.keys.TooBigException;
-import freenet.keys.USK;
 import freenet.node.LowLevelGetException;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -187,10 +182,12 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	}
 
 	/** getToken() is not supported */
+	@Override
 	public long getToken() {
 		return token;
 	}
 
+	@Override
 	public void onFailed(KeyListenerConstructionException e, ObjectContainer container, ClientContext context) {
 		onFailure(e.getFetchException(), false, container, context);
 	}

@@ -39,6 +39,7 @@ public class MedianMeanRunningAverage implements RunningAverage {
 		}
 	}
 
+	@Override
 	public synchronized long countReports() {
 		return reports.size();
 	}
@@ -47,6 +48,7 @@ public class MedianMeanRunningAverage implements RunningAverage {
          *
          * @return
          */
+        @Override
         public synchronized double currentValue() {
 		int size = reports.size();
 		int middle = size / 2;
@@ -58,6 +60,7 @@ public class MedianMeanRunningAverage implements RunningAverage {
          *
          * @param d
          */
+        @Override
         public synchronized void report(double d) {
 		mean.report(d);
 		reports.add(d);
@@ -67,10 +70,12 @@ public class MedianMeanRunningAverage implements RunningAverage {
          *
          * @param d
          */
+        @Override
         public void report(long d) {
 		report((double)d);
 	}
 
+	@Override
 	public double valueIfReported(double r) {
 		throw new UnsupportedOperationException();
 	}

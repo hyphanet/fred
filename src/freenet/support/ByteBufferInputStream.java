@@ -42,6 +42,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		return buf.remaining();
 	}
 
+	@Override
 	public boolean readBoolean() throws IOException {
 		try {
 			return buf.get() != 0;
@@ -50,6 +51,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		}
 	}
 
+	@Override
 	public byte readByte() throws IOException {
 		try {
 			return buf.get();
@@ -58,6 +60,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		}
 	}
 
+	@Override
 	public char readChar() throws IOException {
 		try {
 			return buf.getChar();
@@ -66,6 +69,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		}
 	}
 
+	@Override
 	public double readDouble() throws IOException {
 		try {
 			return buf.getDouble();
@@ -74,6 +78,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		}
 	}
 
+	@Override
 	public float readFloat() throws IOException {
 		try {
 			return buf.getFloat();
@@ -82,6 +87,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		}
 	}
 
+	@Override
 	public void readFully(byte[] b) throws IOException {
 		try {
 			buf.get(b);
@@ -90,6 +96,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		}
 	}
 
+	@Override
 	public void readFully(byte[] b, int off, int len) throws IOException {
 		try {
 			buf.get(b, off, len);
@@ -98,6 +105,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		}
 	}
 
+	@Override
 	public int readInt() throws IOException {
 		try {
 			return buf.getInt();
@@ -106,6 +114,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		}
 	}
 
+	@Override
 	public long readLong() throws IOException {
 		try {
 			return buf.getLong();
@@ -114,6 +123,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		}
 	}
 
+	@Override
 	public short readShort() throws IOException {
 		try {
 			return buf.getShort();
@@ -123,6 +133,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 	}
 
 
+	@Override
 	public int readUnsignedByte() throws IOException {
 		try {
 			return buf.get() & 0xFF;
@@ -131,6 +142,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		}
 	}
 
+	@Override
 	public int readUnsignedShort() throws IOException {
 		try {
 			return buf.getShort() & 0xFFFF;
@@ -139,18 +151,21 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		}
 	}
 
+	@Override
 	public int skipBytes(int n) throws IOException {
 		int skip = Math.min(n, buf.remaining());
 		buf.position(buf.position() + skip);
 		return skip;
 	}
 
+	@Override
 	public String readUTF() throws IOException {
 		return DataInputStream.readUTF(this);
 	}
 	/**
 	 * @deprecated {@link DataInputStream#readLine()} is deprecated, so why not?
 	 */
+	@Override
 	@Deprecated
 	public String readLine() throws IOException {
 		// hmmmm bad

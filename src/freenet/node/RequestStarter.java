@@ -62,6 +62,8 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	 * buckets and the thread limit. FIXME make configurable. */
 	static final boolean LOCAL_REQUESTS_COMPETE_FAIRLY = true;
 	
+	boolean doAIMD = true;
+	
 	public static boolean isValidPriorityClass(int prio) {
 		return !((prio < MAXIMUM_PRIORITY_CLASS) || (prio > MINIMUM_PRIORITY_CLASS));
 	}
@@ -138,7 +140,11 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				if(logMINOR) Logger.minor(this, "Running "+req+" priority "+req.getPriority());
 				if(!req.localRequestOnly) {
 					// Wait
-					long delay = throttle.getDelay();
+					long delay;
+					if(doAIMD)
+						delay = throttle.getDelay();
+					else
+						delay = 100;
 					if(logMINOR) Logger.minor(this, "Delay="+delay+" from "+throttle);
 					long sleepUntil = cycleTime + delay;
 					if(!LOCAL_REQUESTS_COMPETE_FAIRLY) {
@@ -219,6 +225,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		return true;
 	}
 
+	@Override
 	public void run() {
 	    freenet.support.Logger.OSThread.logPID(this);
 		while(true) {
@@ -242,6 +249,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 			this.key = key;
 		}
 
+		@Override
 		public void run() {
 			try {
 		    freenet.support.Logger.OSThread.logPID(this);
@@ -279,6 +287,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	/** Can this item be excluded, based on e.g. already running requests? It must have 
 	 * been activated already if it is persistent.
 	 */
+	@Override
 	public long exclude(RandomGrabArrayItem item, ObjectContainer container, ClientContext context, long now) {
 		if(sched.isRunningOrQueuedPersistentRequest((SendableRequest)item)) {
 			Logger.normal(this, "Excluding already-running request: "+item, new Exception("debug"));
@@ -296,9 +305,14 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	/** Can this item be excluded based solely on the cooldown queue?
 	 * @return -1 if the item can be run now, or the time at which it is on the cooldown queue until.
 	 */
+	@Override
 	public long excludeSummarily(HasCooldownCacheItem item,
 			HasCooldownCacheItem parent, ObjectContainer container, boolean persistent, long now) {
 		return core.clientContext.cooldownTracker.getCachedWakeup(item, persistent, container, now);
+	}
+
+	public void setUseAIMDs(boolean val) {
+		doAIMD = val;
 	}
 
 }

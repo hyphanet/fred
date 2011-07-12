@@ -111,7 +111,15 @@ public class ContentFilterTest extends TestCase {
 	private static final String FRAME_SRC_CHARSET_BAD1C = "<frame src=\"test.html?type=text/html\">";
 
 	private static final String SPAN_WITH_STYLE = "<span style=\"font-family: verdana, sans-serif; color: red;\">";
-
+	
+	private static final String BASE_HREF = "<base href=\"/"+BASE_KEY+"\">";
+	private static final String BAD_BASE_HREF = "<base href=\"/\">";
+	private static final String BAD_BASE_HREF2 = "<base href=\"//www.google.com\">";
+	private static final String BAD_BASE_HREF3 = "<base>";
+	private static final String BAD_BASE_HREF4 = "<base id=\"blah\">";
+	private static final String BAD_BASE_HREF5 = "<base href=\"http://www.google.com/\">";
+	private static final String DELETED_BASE_HREF = "<!-- deleted invalid base href -->";
+	
 	// From CSS spec
 
 	private static final String CSS_SPEC_EXAMPLE1 = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\">\n<HTML>\n  <HEAD>\n  <TITLE>Bach's home page</TITLE>\n  <STYLE type=\"text/css\">\n    body {\n      font-family: \"Gill Sans\", sans-serif;\n      font-size: 12pt;\n      margin: 3em;\n\n    }\n  </STYLE>\n  </HEAD>\n  <BODY>\n    <H1>Bach's home page</H1>\n    <P>Johann Sebastian Bach was a prolific composer.\n  </BODY>\n</HTML>";
@@ -175,6 +183,85 @@ public class ContentFilterTest extends TestCase {
 		assertEquals(CSS_SPEC_EXAMPLE1, HTMLFilter(CSS_SPEC_EXAMPLE1));
 
 		assertEquals(SPAN_WITH_STYLE, HTMLFilter(SPAN_WITH_STYLE));
+		
+		assertEquals(BASE_HREF, HTMLFilter(BASE_HREF));
+		assertEquals(DELETED_BASE_HREF, HTMLFilter(BAD_BASE_HREF));
+		assertEquals(DELETED_BASE_HREF, HTMLFilter(BAD_BASE_HREF2));
+		assertEquals(DELETED_BASE_HREF, HTMLFilter(BAD_BASE_HREF3));
+		assertEquals(DELETED_BASE_HREF, HTMLFilter(BAD_BASE_HREF4));
+		assertEquals(DELETED_BASE_HREF, HTMLFilter(BAD_BASE_HREF5));
+	}
+	
+	private static final String META_TIME_ONLY = "<meta http-equiv=\"refresh\" content=\"5\">";
+	private static final String META_TIME_ONLY_WRONG_CASE = "<meta http-equiv=\"RefResH\" content=\"5\">";
+	private static final String META_TIME_ONLY_TOO_SHORT = "<meta http-equiv=\"refresh\" content=\"0\">";
+	private static final String META_TIME_ONLY_NEGATIVE = "<meta http-equiv=\"refresh\" content=\"-5\">";
+	
+	private static final String META_TIME_ONLY_BADNUM1 = "<meta http-equiv=\"refresh\" content=\"5.5\">";
+	private static final String META_TIME_ONLY_BADNUM2 = "<meta http-equiv=\"refresh\" content=\"\">";
+	private static final String META_TIME_ONLY_BADNUM_OUT = "<!-- doesn't parse as number in meta refresh -->";
+	
+	private static final String META_VALID_REDIRECT = "<meta http-equiv=\"refresh\" content=\"30; url=/KSK@gpl.txt\">";
+	private static final String META_VALID_REDIRECT_NOSPACE = "<meta http-equiv=\"refresh\" content=\"30;url=/KSK@gpl.txt\">";
+	
+	private static final String META_BOGUS_REDIRECT1 = "<meta http-equiv=\"refresh\" content=\"30; url=/\">";
+	private static final String META_BOGUS_REDIRECT2 = "<meta http-equiv=\"refresh\" content=\"30; url=/plugins\">";
+	private static final String META_BOGUS_REDIRECT3 = "<meta http-equiv=\"refresh\" content=\"30; url=http://www.google.com\">";
+	private static final String META_BOGUS_REDIRECT4 = "<meta http-equiv=\"refresh\" content=\"30; url=//www.google.com\">";
+	private static final String META_BOGUS_REDIRECT5 = "<meta http-equiv=\"refresh\" content=\"30; url=\"/KSK@gpl.txt\"\">";
+	private static final String META_BOGUS_REDIRECT6 = "<meta http-equiv=\"refresh\" content=\"30; /KSK@gpl.txt\">";
+	private static final String META_BOGUS_REDIRECT1_OUT = "<!-- Malformed URL (relative): There is no @ in that URI! ()-->";
+	private static final String META_BOGUS_REDIRECT2_OUT = "<!-- Malformed URL (relative): There is no @ in that URI! (plugins)-->";
+	private static final String META_BOGUS_REDIRECT3_OUT = "<meta http-equiv=\"refresh\" content=\"30; url=/?_CHECKED_HTTP_=http://www.google.com\">";
+	private static final String META_BOGUS_REDIRECT4_OUT = "<!-- Deleted invalid or dangerous URI-->";
+	private static final String META_BOGUS_REDIRECT5_OUT = "<!-- Malformed URL (relative): Invalid key type: \"/KSK-->";
+	private static final String META_BOGUS_REDIRECT_NO_URL = "<!-- no url but doesn't parse as number in meta refresh -->";
+	
+	public void testMetaRefresh() throws Exception {
+		HTMLFilter.metaRefreshSamePageMinInterval = 5;
+		HTMLFilter.metaRefreshRedirectMinInterval = 30;
+		assertEquals(META_TIME_ONLY, headFilter(META_TIME_ONLY));
+		assertEquals(META_TIME_ONLY, headFilter(META_TIME_ONLY_WRONG_CASE));
+		assertEquals(META_TIME_ONLY, headFilter(META_TIME_ONLY_TOO_SHORT));
+		assertEquals("", headFilter(META_TIME_ONLY_NEGATIVE));
+		assertEquals(META_TIME_ONLY_BADNUM_OUT, headFilter(META_TIME_ONLY_BADNUM1));
+		assertEquals(META_TIME_ONLY_BADNUM_OUT, headFilter(META_TIME_ONLY_BADNUM2));
+		assertEquals(META_VALID_REDIRECT, headFilter(META_VALID_REDIRECT));
+		assertEquals(META_VALID_REDIRECT, headFilter(META_VALID_REDIRECT_NOSPACE));
+		assertEquals(META_BOGUS_REDIRECT1_OUT, headFilter(META_BOGUS_REDIRECT1));
+		assertEquals(META_BOGUS_REDIRECT2_OUT, headFilter(META_BOGUS_REDIRECT2));
+		assertEquals(META_BOGUS_REDIRECT3_OUT, headFilter(META_BOGUS_REDIRECT3));
+		assertEquals(META_BOGUS_REDIRECT4_OUT, headFilter(META_BOGUS_REDIRECT4));
+		assertEquals(META_BOGUS_REDIRECT5_OUT, headFilter(META_BOGUS_REDIRECT5));
+		assertEquals(META_BOGUS_REDIRECT_NO_URL, headFilter(META_BOGUS_REDIRECT6));
+		HTMLFilter.metaRefreshSamePageMinInterval = -1;
+		HTMLFilter.metaRefreshRedirectMinInterval = -1;
+		assertEquals("", headFilter(META_TIME_ONLY));
+		assertEquals("", headFilter(META_TIME_ONLY_WRONG_CASE));
+		assertEquals("", headFilter(META_TIME_ONLY_TOO_SHORT));
+		assertEquals("", headFilter(META_TIME_ONLY_NEGATIVE));
+		assertEquals("", headFilter(META_TIME_ONLY_BADNUM1));
+		assertEquals("", headFilter(META_TIME_ONLY_BADNUM2));
+		assertEquals("", headFilter(META_VALID_REDIRECT));
+		assertEquals("", headFilter(META_VALID_REDIRECT_NOSPACE));
+		assertEquals("", headFilter(META_BOGUS_REDIRECT1));
+		assertEquals("", headFilter(META_BOGUS_REDIRECT2));
+		assertEquals("", headFilter(META_BOGUS_REDIRECT3));
+		assertEquals("", headFilter(META_BOGUS_REDIRECT4));
+		assertEquals("", headFilter(META_BOGUS_REDIRECT5));
+		assertEquals("", headFilter(META_BOGUS_REDIRECT6));
+	}
+
+	private String headFilter(String data) throws Exception {
+		String s = HTMLFilter("<head>"+data+"</head>");
+		if(s == null) return s;
+		if(!s.startsWith("<head>"))
+			assertTrue("Head deleted???: "+s, false);
+		s = s.substring("<head>".length());
+		if(!s.endsWith("</head>"))
+			assertTrue("Head close deleted???: "+s, false);
+		s = s.substring(0, s.length() - "</head>".length());
+		return s;
 	}
 
 	public void testEvilCharset() throws IOException {
@@ -240,18 +327,18 @@ public class ContentFilterTest extends TestCase {
 		}
 	}
 
-	private String HTMLFilter(String data) throws Exception {
+	public static String HTMLFilter(String data) throws Exception {
 		if(data.startsWith("<html")) return HTMLFilter(data, false);
 		if(data.startsWith("<?")) return HTMLFilter(data, false);
 		String s = HTMLFilter("<html>"+data+"</html>", false);
 		assertTrue(s.startsWith("<html>"));
 		s = s.substring("<html>".length());
-		assertTrue(s.endsWith("</html>"));
+		assertTrue("s = \""+s+"\"", s.endsWith("</html>"));
 		s = s.substring(0, s.length() - "</html>".length());
 		return s;
 	}
 
-	private String HTMLFilter(String data, boolean alt) throws Exception {
+	public static String HTMLFilter(String data, boolean alt) throws Exception {
 		String returnValue;
 		String typeName = "text/html";
 		URI baseURI = new URI(alt ? ALT_BASE_URI : BASE_URI);
@@ -277,12 +364,14 @@ public class ContentFilterTest extends TestCase {
 		HTMLFilter filter;
 		HTMLFilter.HTMLParseContext pc;
 
+		@Override
 		public void setUp() throws Exception {
 			filter = new HTMLFilter();
 			attributes = new LinkedHashMap<String, String>();
 			pc = filter.new HTMLParseContext(null, null, "utf-8", new GenericReadFilterCallback(new URI(ALT_BASE_URI), null, null), false);
 		}
 
+		@Override
 		public void tearDown() {
 			filter = null;
 			attributes = null;

@@ -1,7 +1,6 @@
 package freenet.node.fcp;
 
 import freenet.keys.FreenetURI;
-import freenet.node.fcp.ClientPut.COMPRESS_STATE;
 
 /** Base class for cached status of uploads */
 public abstract class UploadRequestStatus extends RequestStatus {

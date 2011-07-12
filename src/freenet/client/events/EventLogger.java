@@ -30,10 +30,12 @@ public class EventLogger implements ClientEventListener {
      * @param ce
      *            The event that occured
      */
+	@Override
     public void receive(ClientEvent ce, ObjectContainer container, ClientContext context) {
     	Logger.logStatic(ce, ce.getDescription(), logPrio);
     }
 
+	@Override
 	public void onRemoveEventProducer(ObjectContainer container) {
 		if(removeWithProducer)
 			container.delete(this);

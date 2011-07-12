@@ -6,7 +6,6 @@ package freenet.crypt;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import org.bitpedia.collider.core.Ed2Handler;
 import org.bitpedia.util.TigerTree;
 
 public enum HashType {

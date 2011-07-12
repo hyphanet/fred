@@ -141,6 +141,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 	/** Must be less than BLOCK_SIZE */
 	static final int MAX_EXCLUDED = 10;
 	
+	@Override
 	public RemoveRandomReturn removeRandom(RandomGrabArrayItemExclusionList excluding, ObjectContainer container, ClientContext context, long now) {
 		if(logMINOR) Logger.minor(this, "removeRandom() on "+this+" index="+index);
 		synchronized(this) {
@@ -615,6 +616,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 		return index == 0;
 	}
 	
+	@Override
 	public boolean persistent() {
 		return persistent;
 	}
@@ -672,6 +674,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 	}
 	
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		if(blocks != null) {
 			int count = 0;
@@ -719,6 +722,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 		}
 	}
 
+	@Override
 	public void moveElementsTo(RemoveRandom existingGrabber,
 			ObjectContainer container, boolean canCommit) {
 		if(existingGrabber instanceof RandomGrabArray)
@@ -727,6 +731,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 			throw new IllegalArgumentException("Expected RGA but got "+existingGrabber);
 	}
 	
+	@Override
 	public void setParent(RemoveRandomParent newParent, ObjectContainer container) {
 		this.parent = newParent;
 		if(persistent()) container.store(this);

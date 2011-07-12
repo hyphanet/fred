@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.db4o.ObjectContainer;
 
-import freenet.client.FetchContext;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
@@ -102,6 +101,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	public abstract RequestClient getClient(ObjectContainer container);
 	
 	/** Is this request persistent? MUST NOT CHANGE. */
+	@Override
 	public final boolean persistent() {
 		return persistent;
 	}
@@ -109,20 +109,30 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	/** Get the ClientRequest. This DOES need to be cached on the request itself. */
 	public abstract ClientRequester getClientRequest();
 	
+	@Override
 	public synchronized RandomGrabArray getParentGrabArray() {
 		return parentGrabArray;
 	}
 	
+	@Override
 	public boolean knowsParentGrabArray() {
 		return true;
 	}
 	
+	@Override
 	public synchronized void setParentGrabArray(RandomGrabArray parent, ObjectContainer container) {
 		parentGrabArray = parent;
 		if(persistent())
 			container.store(this);
 	}
 	
+	/** Unregister the request.
+	 * @param container
+	 * @param context
+	 * @param oldPrio If we are changing priorities it can matter what the old priority is.
+	 * However the parent method, SendableRequest, ignores this. In any case, 
+	 * (short)-1 means not specified (look it up).
+	 */
 	public void unregister(ObjectContainer container, ClientContext context, short oldPrio) {
 		RandomGrabArray arr = getParentGrabArray();
 		if(arr != null) {
@@ -159,6 +169,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	 * etc. */
 	public abstract List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, KeysFetchingLocally keys, ObjectContainer container, ClientContext context);
 
+	@Override
 	public boolean isStorageBroken(ObjectContainer container) {
 		return false;
 	}

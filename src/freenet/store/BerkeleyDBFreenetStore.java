@@ -424,6 +424,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 			Logger.error(this, "Doing quick and dirty shrink of the store by "+(100 * (blocksInStore - maxBlocksInStore) / blocksInStore)+"%");
 			Logger.error(this, "Offline shrinks will preserve the most recently used data, this online shrink does not.");
 			Runnable r = new Runnable() {
+				@Override
 				public void run() {
 					try {
 						synchronized(shrinkLock) { if(shrinking) return; shrinking = true; }
@@ -1165,6 +1166,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public T fetch(byte[] routingkey, byte[] fullKey, boolean dontPromote,
 			boolean canReadClientCache, boolean canReadSlashdotCache, boolean ignoreOldBlocks, BlockMetadata meta) throws IOException {
 		T retval = fetch(routingkey, fullKey, dontPromote, canReadClientCache, canReadSlashdotCache, (DSAPublicKey)null);
@@ -1411,6 +1413,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void put(StorableBlock block, byte[] data, byte[] header, boolean overwrite, boolean isOldBlock) throws KeyCollisionException, IOException {
 		// We do not support flagging a block as old because we do not support block flags.
 		byte[] routingkey = block.getRoutingKey();
@@ -1810,6 +1813,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 			theBinding = theBinding1;
 		}
 		
+		@Override
 		public boolean createSecondaryKey(SecondaryDatabase secDb,
 				DatabaseEntry keyEntry,
 				DatabaseEntry dataEntry,
@@ -1828,6 +1832,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 			theBinding = theBinding1;
 		}
 		
+		@Override
 		public boolean createSecondaryKey(SecondaryDatabase secDb,
 				DatabaseEntry keyEntry,
 				DatabaseEntry dataEntry,
@@ -1847,6 +1852,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 			// TODO Auto-generated constructor stub
 		}
 
+		@Override
 		public void realRun() {
 			System.err.println("Closing database due to shutdown.");
 			close(true);
@@ -2044,6 +2050,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void setMaxKeys(long maxStoreKeys, boolean forceBigShrink) throws DatabaseException, IOException {
 		synchronized(this) {
 			maxBlocksInStore = maxStoreKeys;
@@ -2054,6 +2061,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public long getMaxKeys() {
 		return maxBlocksInStore;
 	}
@@ -2061,6 +2069,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public long hits() {
 		return hits;
 	}
@@ -2068,6 +2077,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public long misses() {
 		return misses;
 	}
@@ -2075,6 +2085,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public long writes() {
 		return writes;
 	}
@@ -2082,6 +2093,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public long keyCount() {
 		return blocksInStore;
 	}
@@ -2262,6 +2274,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 		bf.get(data);
 	}
 	
+    @Override
     public void handleLowMemory() throws Exception {
     	// Flush all
 		if (storeFC != null)
@@ -2274,6 +2287,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 		environment.evictMemory();
 	}
 
+	@Override
 	public void handleOutOfMemory() throws Exception {
 		// database likely to be corrupted,
 		// reconstruct it just in case
@@ -2320,10 +2334,12 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
         return envConfig;
     }
 
+	@Override
 	public long getBloomFalsePositive() {
 		return -1;
 	}
 	
+    @Override
     public boolean probablyInStore(byte[] routingKey) {
     	// This needs to be fast, so that it can be run from any thread.
     	// Accessing the bdbje database is often slow, involves many disk seeks,
@@ -2345,6 +2361,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 		 */
 	}
     
+	@Override
 	public StoreAccessStats getSessionAccessStats() {
 		return new StoreAccessStats() {
 
@@ -2371,6 +2388,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 		};
 	}
 
+	@Override
 	public StoreAccessStats getTotalAccessStats() {
 		return null;
 	}

@@ -54,6 +54,15 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	 * charset detection can be ambiguous, potentially resulting in attacks. */
 	private static boolean allowNoHTMLTag = true;
 	
+	// FIXME make these configurable on a per-document level.
+	// Maybe by merging with TagReplacerCallback???
+	// For now they're just global.
+	/** -1 means don't allow it */
+	public static int metaRefreshSamePageMinInterval = 1;
+	/** -1 means don't allow it */
+	public static int metaRefreshRedirectMinInterval = 30;
+	
+	@Override
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		if(cb == null) cb = new NullFilterCallback();
@@ -79,11 +88,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		w.flush();
 	}
 	
+	@Override
 	public void writeFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 			FilterCallback cb) throws DataFilterException, IOException {
 		throw new UnsupportedOperationException();
 	}
 	
+	@Override
 	public String getCharset(byte[] input, int length, String parseCharset) throws DataFilterException, IOException {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);		
 		if(logMINOR) Logger.minor(this, "getCharset(): default="+parseCharset);
@@ -635,6 +646,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if(t == null || t.startSlash || t.endSlash) {
 				if(!pc.openElements.isEmpty())
 					return pc.openElements.peek();
+				if (pc.writeAfterTag.length() > 0) {
+					w.write(pc.writeAfterTag.toString());
+					pc.writeAfterTag = new StringBuilder(1024);
+				}
 				return null;
 			} else return t.element;
 		} else {
@@ -2246,6 +2261,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							hn.put("content", content);
 						} catch (ParseException e) {
 							// Delete it.
+							return null;
 						}
 					} else if (
 						http_equiv.equalsIgnoreCase("Content-Script-Type")) {
@@ -2299,6 +2315,49 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						if(content.matches("([a-zA-Z0-9]*(-[A-Za-z0-9]*)*(,\\s*)?)*")) {
 							hn.put("http-equiv", "Content-Language");
 							hn.put("content", content);
+						}
+					} else if (http_equiv.equalsIgnoreCase("refresh")) {
+						int idx = content.indexOf(';');
+						if(idx == -1 && metaRefreshSamePageMinInterval >= 0) {
+							try {
+								int seconds = Integer.parseInt(content);
+								if(seconds < 0) return null;
+								if(seconds < metaRefreshSamePageMinInterval)
+									seconds = metaRefreshSamePageMinInterval;
+								hn.put("http-equiv", "refresh");
+								hn.put("content", Integer.toString(seconds));
+							} catch (NumberFormatException e) {
+								// Delete.
+								pc.writeAfterTag.append("<!-- doesn't parse as number in meta refresh -->");
+								return null;
+							}
+						} else if(metaRefreshRedirectMinInterval >= 0) {
+							int seconds;
+							String before = content.substring(0, idx);
+							String after = content.substring(idx+1).trim();
+							try {
+								seconds = Integer.parseInt(before);
+								if(seconds < 0) return null;
+								if(seconds < metaRefreshRedirectMinInterval) seconds = metaRefreshRedirectMinInterval;
+								if(!after.toLowerCase().startsWith("url=")) {
+									pc.writeAfterTag.append("<!-- no url but doesn't parse as number in meta refresh -->");
+									return null;
+								}
+								after = after.substring("url=".length()).trim();
+								try {
+									String url = sanitizeURI(after, null, null, null, pc.cb, false);
+									hn.put("http-equiv", "refresh");
+									hn.put("content", ""+seconds+"; url="+HTMLEncoder.encode(url));
+								} catch (CommentException e) {
+									pc.writeAfterTag.append("<!-- "+e.getMessage()+"-->");
+									// Delete
+									return null;
+								}
+							} catch (NumberFormatException e) {
+								pc.writeAfterTag.append("<!-- doesn't parse as number in meta refresh possibly with url -->");
+								// Delete.
+								return null;
+							}
 						}
 					}
 				}
@@ -2473,14 +2532,18 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				ParsedTag p,
 				HTMLParseContext pc) throws DataFilterException {
 			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
-			// Get the already-sanitized version.
-			String baseHref = getHashString(hn, "href");
+			String baseHref = getHashString(h, "href");
 			if(baseHref != null) {
+				// Decode and encode for the same reason we do in sanitizeHash().
+				baseHref = HTMLDecoder.decode(baseHref);
 				String ref = pc.cb.onBaseHref(baseHref);
-				if(ref != null)
-					hn.put("href", ref);
+				if(ref != null) {
+					hn.put("href", HTMLEncoder.encode(ref));
+					return hn;
+				}
 			}
-			return hn;
+			pc.writeAfterTag.append("<!-- deleted invalid base href -->");
+			return null;
 		}
 
 	}
@@ -2658,12 +2721,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		return NodeL10n.getBase().getString("HTMLFilter."+key, pattern, value);
 	}
 
+	@Override
 	public BOMDetection getCharsetByBOM(byte[] input, int length) throws DataFilterException {
 		// No enhanced BOMs.
 		// FIXME XML BOMs???
 		return null;
 	}
 
+	@Override
 	public int getCharsetBufferSize() {
 		//Read in 64 kilobytes. The charset could be defined anywhere in the head section
 		return 1024*64;

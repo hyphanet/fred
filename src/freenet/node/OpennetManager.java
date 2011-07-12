@@ -11,6 +11,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -21,6 +22,7 @@ import java.util.Map;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
+import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
@@ -205,6 +207,7 @@ public class OpennetManager {
 		node.peers.tryReadPeers(node.nodeDir().file("openpeers-"+crypto.portNumber).toString(), crypto, this, true, false);
 		OpennetPeerNode[] nodes = node.peers.getOpennetPeers();
 		Arrays.sort(nodes, new Comparator<OpennetPeerNode>() {
+			@Override
 			public int compare(OpennetPeerNode pn1, OpennetPeerNode pn2) {
 				long lastSuccess1 = pn1.timeLastSuccess();
 				long lastSuccess2 = pn2.timeLastSuccess();
@@ -342,7 +345,7 @@ public class OpennetManager {
 				return null;
 			}
 		}
-		if(node.isSeednode() && pn.isUnroutableOlderVersion()) {
+		if(pn.isUnroutableOlderVersion() && node.nodeUpdater != null && node.nodeUpdater.dontAllowUOM()) {
 			// We can't send the UOM to it, so we should not accept it.
 			// Plus, some versions around 1320 had big problems with being connected both as a seednode and as an opennet peer.
 			return null;
@@ -402,6 +405,25 @@ public class OpennetManager {
 		if(outdated) {
 			if(tooManyOutdatedPeers()) {
 				if(logMINOR) Logger.minor(this, "Rejecting TOO OLD peer from "+connectionType+" (too many already): "+nodeToAddNow);
+				return false;
+			}
+		}
+		if(nodeToAddNow != null && crypto.config.oneConnectionPerAddress()) {
+			boolean okay = false;
+			boolean any = false;
+			for(Peer p : nodeToAddNow.getHandshakeIPs()) {
+				if(p == null) continue;
+				FreenetInetAddress addr = p.getFreenetAddress();
+				if(addr == null) continue;
+				InetAddress a = addr.getAddress(false);
+				if(a == null) continue;
+				if(a.isAnyLocalAddress() || a.isSiteLocalAddress()) continue;
+				any = true;
+				if(crypto.allowConnection(nodeToAddNow, addr))
+					okay = true;
+			}
+			if(any && !okay) {
+				Logger.normal(this, "Rejecting peer as we are already connected to a peer with the same IP address");
 				return false;
 			}
 		}
@@ -903,16 +925,19 @@ public class OpennetManager {
 		boolean finished;
 		boolean timedOut;
 		
+		@Override
 		public synchronized void timedOut() {
 			timedOut = true;
 			finished = true;
 			notifyAll();
 		}
 		
+		@Override
 		public void acked(boolean timedOutMessage) {
 			gotNoderef(null);
 		}
 		
+		@Override
 		public synchronized void gotNoderef(byte[] noderef) {
 			returned = noderef;
 			finished = true;
@@ -971,6 +996,7 @@ public class OpennetManager {
 				
 				boolean completed;
 
+				@Override
 				public void onMatched(Message msg) {
 					if (msg.getSpec() == DMT.FNPOpennetCompletedAck || 
 							msg.getSpec() == DMT.FNPOpennetCompletedTimeout) {
@@ -988,10 +1014,12 @@ public class OpennetManager {
 					}
 				}
 
+				@Override
 				public boolean shouldTimeout() {
 					return false;
 				}
 
+				@Override
 				public void onTimeout() {
 					synchronized(this) {
 						if(completed) return;
@@ -1000,14 +1028,17 @@ public class OpennetManager {
 					callback.timedOut();
 				}
 
+				@Override
 				public void onDisconnect(PeerContext ctx) {
 					complete(null);
 				}
 
+				@Override
 				public void onRestarted(PeerContext ctx) {
 					complete(null);
 				}
 
+				@Override
 				public int getPriority() {
 					return NativeThread.NORM_PRIORITY;
 				}

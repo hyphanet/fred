@@ -289,7 +289,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 					copy = Long.MAX_VALUE;
 				else
 					copy = truncateLength - totalCopied;
-				if(copy < ((long)CHKBlock.DATA_LENGTH))
+				if(copy < (CHKBlock.DATA_LENGTH))
 					buf = new byte[(int)copy];
 				InputStream is = data.getInputStream();
 				DataInputStream dis = new DataInputStream(is);
@@ -822,6 +822,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		}
 	}
 	
+	@Override
 	public void onDecodedSegment(ObjectContainer container, ClientContext context, FECJob job, Bucket[] dataBuckets2, Bucket[] checkBuckets2, SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus) {
 		if(persistent) {
 			container.activate(parent, 1);
@@ -1037,6 +1038,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	// Set at decode time, before calling segmentFinished or encoderFinished.
 	private boolean createdBeforeRestart;
 
+	@Override
 	public void onEncodedSegment(ObjectContainer container, ClientContext context, FECJob job, Bucket[] dataBuckets2, Bucket[] checkBuckets2, SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus) {
 		try {
 		if(persistent) {
@@ -1092,9 +1094,11 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 					if(!fetcherFinished) {
 						Logger.error(this, "Parent is null on "+this+" but fetcher is not finished");
 					} else {
-						allFromStore = !parent.sentToNetwork;
+						// We don't know.
+						allFromStore = false;
 					}
-				}
+				} else
+					allFromStore = !parent.sentToNetwork;
 			}
 			for(int i=0;i<checkBuckets.length;i++) {
 				boolean heal = false;
@@ -1785,6 +1789,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		return v.toArray(new Integer[v.size()]);
 	}
 
+	@Override
 	public void onFailed(Throwable t, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(finished) {
@@ -2410,6 +2415,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		}
 	}
 
+	@Override
 	public CooldownTrackerItem makeCooldownTrackerItem() {
 		return new MyCooldownTrackerItem(dataBuckets.length, checkBuckets.length);
 	}

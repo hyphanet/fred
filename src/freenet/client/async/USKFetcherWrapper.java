@@ -43,14 +43,17 @@ public class USKFetcherWrapper extends BaseClientGetter {
 		// Do nothing
 	}
 
+	@Override
 	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 		// Ignore; we don't do anything with it because we are running in the background.
 	}
 
+	@Override
 	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 
+	@Override
 	public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
@@ -65,14 +68,17 @@ public class USKFetcherWrapper extends BaseClientGetter {
 		return super.toString()+ ':' +usk;
 	}
 
+	@Override
 	public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 
+	@Override
 	public void onExpectedSize(long size, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 
+	@Override
 	public void onFinalizedMetadata(ObjectContainer container) {
 		// Ignore
 	}
@@ -87,14 +93,17 @@ public class USKFetcherWrapper extends BaseClientGetter {
 		// Ignore
 	}
 
+	@Override
 	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 
+	@Override
 	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, boolean compressed, boolean bottomLayer, boolean definitiveAnyway, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 
+	@Override
 	public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}

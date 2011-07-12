@@ -110,6 +110,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		originalFiles = new HashSet<File>();
 		File[] files = dir.listFiles(new FileFilter() {
 
+			@Override
 			public boolean accept(File pathname) {
 				if(!pathname.exists() || pathname.isDirectory())
 					return false;
@@ -138,6 +139,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	
 	/** Notify the bucket factory that a file is a temporary file, and not to be deleted. FIXME this is not
 	 * currently used. @see #completedInit() */
+	@Override
 	public void register(File file) {
 		synchronized(this) {
 			if(originalFiles == null)
@@ -170,6 +172,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	/** Create a persistent temporary bucket. Use a blob if it is exactly 32KB, otherwise use a temporary
 	 * file. Encrypted if appropriate. Wrapped in a DelayedFreeBucket so that they will not be deleted until
 	 * after the transaction deleting them in the database commits. */
+	@Override
 	public Bucket makeBucket(long size) throws IOException {
 		Bucket rawBucket = null;
 		boolean mustWrap = true;
@@ -194,6 +197,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	/**
 	 * Free an allocated bucket, but only after the change has been written to disk.
 	 */
+	@Override
 	public void delayedFreeBucket(DelayedFreeBucket b) {
 		synchronized(this) {
 			bucketsToFree.add(b);
@@ -213,22 +217,26 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	}
 	
 	/** Get the directory we are creating temporary files in */
+	@Override
 	public File getDir() {
 		return fg.getDir();
 	}
 
 	/** Get the FilenameGenerator */
+	@Override
 	public FilenameGenerator getGenerator() {
 		return fg;
 	}
 
 	/** Is the file potentially one of ours? That is, is it in the right directory and does it have the
 	 * right prefix? */
+	@Override
 	public boolean matches(File file) {
 		return fg.matches(file);
 	}
 
 	/** Get the filename ID from the filename for a file that matches() */
+	@Override
 	public long getID(File file) {
 		return fg.getID(file);
 	}

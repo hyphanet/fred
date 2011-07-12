@@ -10,10 +10,12 @@ public class ExpectedMIMEEvent implements ClientEvent {
 		this.expectedMIMEType = type;
 	}
 
+	@Override
 	public int getCode() {
 		return CODE;
 	}
 
+	@Override
 	public String getDescription() {
 		return "Expected MIME type: "+expectedMIMEType;
 	}

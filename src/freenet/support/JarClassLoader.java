@@ -236,6 +236,7 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 		return definePackage(name, specTitle, specVersion, specVendor, implTitle, implVersion, implVendor, sealBase);
 	}
 	
+	@Override
 	public void close() throws IOException {
 		tempJarFile.close();
 	}

@@ -147,14 +147,17 @@ public abstract class ClientRequest {
 			client = null;
 			lowLevelClient = new RequestClient() {
 
+				@Override
 				public boolean persistent() {
 					return false;
 				}
 
+				@Override
 				public void removeFrom(ObjectContainer container) {
 					throw new UnsupportedOperationException();
 				}
 
+				@Override
 				public boolean realTimeFlag() {
 					return realTime;
 				}
@@ -162,18 +165,18 @@ public abstract class ClientRequest {
 			};
 		} else {
 			origHandler = null;
-		if(global) {
-			client = persistenceType == PERSIST_FOREVER ? handler.server.globalForeverClient : handler.server.globalRebootClient;
-		} else {
-			client = persistenceType == PERSIST_FOREVER ? handler.getForeverClient(container) : handler.getRebootClient();
-		}
-		if(persistenceType == PERSIST_FOREVER) {
-			container.activate(client, 1);
-			client.init(container);
-		}
-		lowLevelClient = client.lowLevelClient(realTime);
-		if(lowLevelClient == null)
-			throw new NullPointerException("No lowLevelClient from client: "+client+" global = "+global+" persistence = "+persistenceType);
+			if(global) {
+				client = persistenceType == PERSIST_FOREVER ? handler.server.globalForeverClient : handler.server.globalRebootClient;
+			} else {
+				client = persistenceType == PERSIST_FOREVER ? handler.getForeverClient(container) : handler.getRebootClient();
+			}
+			if(persistenceType == PERSIST_FOREVER) {
+				container.activate(client, 1);
+				client.init(container);
+			}
+			lowLevelClient = client.lowLevelClient(realTime);
+			if(lowLevelClient == null)
+				throw new NullPointerException("No lowLevelClient from client: "+client+" global = "+global+" persistence = "+persistenceType);
 		}
 		if(lowLevelClient.persistent() != (persistenceType == PERSIST_FOREVER))
 			throw new IllegalStateException("Low level client.persistent="+lowLevelClient.persistent()+" but persistence type = "+persistenceType);
@@ -267,7 +270,6 @@ public abstract class ClientRequest {
 
 	/** Request completed. But we may have to stick around until we are acked. */
 	protected void finish(ObjectContainer container) {
-		completionTime = System.currentTimeMillis();
 		if(persistenceType == ClientRequest.PERSIST_CONNECTION)
 			origHandler.finishedClientRequest(this);
 		else
@@ -397,6 +399,7 @@ public abstract class ClientRequest {
 		if(persistenceType == PERSIST_FOREVER) {
 		server.core.clientContext.jobRunner.queue(new DBJob() {
 
+			@Override
 			public boolean run(ObjectContainer container, ClientContext context) {
 				container.activate(ClientRequest.this, 1);
 				try {
@@ -412,10 +415,12 @@ public abstract class ClientRequest {
 		} else {
 			server.core.getExecutor().execute(new PrioRunnable() {
 
+				@Override
 				public int getPriority() {
 					return NativeThread.NORM_PRIORITY;
 				}
 
+				@Override
 				public void run() {
 					try {
 						restart(null, server.core.clientContext, disableFilterData);

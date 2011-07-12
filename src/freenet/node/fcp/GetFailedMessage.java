@@ -116,13 +116,13 @@ public class GetFailedMessage extends FCPMessage {
 	 */
 	public SimpleFieldSet getFieldSet(boolean verbose) {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
-		sfs.putSingle("Code", Integer.toString(code));
+		sfs.put("Code", code);
 		if(verbose)
 			sfs.putSingle("CodeDescription", codeDescription);
 		if(extraDescription != null)
 			sfs.putSingle("ExtraDescription", extraDescription);
 		if(verbose)
-			sfs.putSingle("Fatal", Boolean.toString(isFatal));
+			sfs.put("Fatal", isFatal);
 		if(tracker != null) {
 			sfs.tput("Errors", tracker.toFieldSet(verbose));
 		}
@@ -130,7 +130,7 @@ public class GetFailedMessage extends FCPMessage {
 			sfs.putSingle("ShortCodeDescription", shortCodeDescription);
 		sfs.putSingle("Identifier", identifier);
 		if(expectedDataLength > -1) {
-			sfs.putSingle("ExpectedDataLength", Long.toString(expectedDataLength));
+			sfs.put("ExpectedDataLength", expectedDataLength);
 		}
 		if(expectedMimeType != null)
 			sfs.putSingle("ExpectedMetadata.ContentType", expectedMimeType);

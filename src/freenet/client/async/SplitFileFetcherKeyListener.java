@@ -174,6 +174,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 			Logger.minor(this, "Created "+this+" for "+fetcher);
 	}
 
+	@Override
 	public long countKeys() {
 		return keyCount;
 	}
@@ -200,6 +201,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		return ret;
 	}
 
+	@Override
 	public boolean probablyWantKey(Key key, byte[] saltedKey) {
 		if(filter == null) Logger.error(this, "Probably want key: filter = null for "+this+ " fetcher = "+fetcher);
 		if(filter.checkFilter(saltedKey)) {
@@ -213,6 +215,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		return false;
 	}
 
+	@Override
 	public short definitelyWantKey(Key key, byte[] saltedKey, ObjectContainer container,
 			ClientContext context) {
 		// Caller has already called probablyWantKey(), so don't do it again.
@@ -243,6 +246,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		return -1;
 	}
 	
+	@Override
 	public boolean handleBlock(Key key, byte[] saltedKey, KeyBlock block,
 			ObjectContainer container, ClientContext context) {
 		// Caller has already called probablyWantKey(), so don't do it again.
@@ -286,14 +290,17 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		return found;
 	}
 
+	@Override
 	public HasKeyListener getHasKeyListener() {
 		return fetcher;
 	}
 
+	@Override
 	public short getPriorityClass(ObjectContainer container) {
 		return prio;
 	}
 
+	@Override
 	public SendableGet[] getRequestsForKey(Key key, byte[] saltedKey, 
 			ObjectContainer container, ClientContext context) {
 		ArrayList<SendableGet> ret = new ArrayList<SendableGet>();
@@ -326,6 +333,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		return ret.toArray(new SendableGet[ret.size()]);
 	}
 
+	@Override
 	public void onRemove() {
 		synchronized(this) {
 			killed = true;
@@ -333,6 +341,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		
 	}
 
+	@Override
 	public boolean persistent() {
 		return persistent;
 	}
@@ -411,6 +420,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 				context.jobRunner.setCommitThisTransaction();
 				context.jobRunner.queue(new DBJob() {
 
+					@Override
 					public boolean run(ObjectContainer container,
 							ClientContext context) {
 						synchronized(SplitFileFetcherKeyListener.this) {
@@ -433,6 +443,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		}
 	}
 
+	@Override
 	public boolean isEmpty() {
 		// FIXME: We rely on SplitFileFetcher unregistering itself.
 		// Maybe we should keep track of how many segments have been cleared?
@@ -440,6 +451,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		return killed;
 	}
 
+	@Override
 	public boolean isSSK() {
 		return false;
 	}
@@ -448,6 +460,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		Logger.error(this, "Deactivating a SplitFileFetcherKeyListener: "+this, new Exception("error"));
 	}
 
+	@Override
 	public boolean isRealTime() {
 		return realTime;
 	}

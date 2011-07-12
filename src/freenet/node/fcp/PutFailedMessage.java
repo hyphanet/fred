@@ -102,7 +102,7 @@ public class PutFailedMessage extends FCPMessage {
 		if(identifier == null)
 			throw new NullPointerException();
 		fs.putSingle("Identifier", identifier);
-		if(global) fs.putSingle("Global", "true");
+		fs.put("Global", global);
 		fs.put("Code", code);
 		if(verbose)
 			fs.putSingle("CodeDescription", codeDescription);

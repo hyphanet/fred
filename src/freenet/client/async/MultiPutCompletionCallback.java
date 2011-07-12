@@ -10,6 +10,7 @@ import freenet.keys.BaseClientKey;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.api.Bucket;
 
 public class MultiPutCompletionCallback implements PutCompletionCallback, ClientPutState {
 
@@ -64,6 +65,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		this.persistent = persistent;
 	}
 
+	@Override
 	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
 		onBlockSetFinished(state, container, context);
 		onFetchable(state, container);
@@ -101,6 +103,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		}
 	}
 
+	@Override
 	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
 		if(collisionIsOK && e.getMode() == InsertException.COLLISION) {
 			onSuccess(state, container, context);
@@ -224,10 +227,12 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		}
 	}
 
+	@Override
 	public BaseClientPutter getParent() {
 		return parent;
 	}
 
+	@Override
 	public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(state != generator) return;
@@ -237,6 +242,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		cb.onEncode(key, this, container, context);
 	}
 
+	@Override
 	public void cancel(ObjectContainer container, ClientContext context) {
 		ClientPutState[] states = new ClientPutState[waitingFor.size()];
 		synchronized(this) {
@@ -251,6 +257,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		}
 	}
 
+	@Override
 	public synchronized void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 		if(generator == oldState)
 			generator = newState;
@@ -276,6 +283,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		if(persistent) container.store(this);
 	}
 
+	@Override
 	public synchronized void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
 		if(persistent)
 			container.activate(cb, 1);
@@ -285,7 +293,19 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			Logger.error(this, "Got metadata for "+state);
 		}
 	}
+	
+	@Override
+	public synchronized void onMetadata(Bucket metadata, ClientPutState state, ObjectContainer container, ClientContext context) {
+		if(persistent)
+			container.activate(cb, 1);
+		if(generator == state) {
+			cb.onMetadata(metadata, this, container, context);
+		} else {
+			Logger.error(this, "Got metadata for "+state);
+		}
+	}
 
+	@Override
 	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 		if(persistent)
 			container.activate(waitingForBlockSet, 2);
@@ -301,14 +321,17 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		cb.onBlockSetFinished(this, container, context);
 	}
 
+	@Override
 	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
 		// Do nothing
 	}
 
+	@Override
 	public Object getToken() {
 		return token;
 	}
 
+	@Override
 	public void onFetchable(ClientPutState state, ObjectContainer container) {
 		if(persistent)
 			container.activate(waitingForFetchable, 2);
@@ -324,6 +347,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		cb.onFetchable(this, container);
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		container.activate(waitingFor, 2);
 		container.activate(waitingForBlockSet, 2);

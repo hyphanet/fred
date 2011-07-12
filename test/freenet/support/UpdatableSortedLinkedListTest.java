@@ -11,16 +11,19 @@ public class UpdatableSortedLinkedListTest extends TestCase {
 			this.value = v;
 		}
 
+		@Override
 		public DoublyLinkedList<? super T> getParent() {
 			return parent;
 		}
 
+		@Override
 		public DoublyLinkedList<? super T> setParent(DoublyLinkedList<? super T> l) {
 			DoublyLinkedList<? super T> old = parent;
 			parent = l;
 			return old;
 		}
 
+		@Override
 		public int compareTo(T t) {
 			return t.value == value ? 0 : t.value > value ? -1 : 1;
 		}
@@ -44,6 +47,7 @@ public class UpdatableSortedLinkedListTest extends TestCase {
 			return value;
 		}
 
+		@Override
 		public String toString() {
 			return "(" + value + ")";
 		}

@@ -5,9 +5,6 @@ package freenet.client.async;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -20,27 +17,18 @@ import freenet.client.ArchiveContext;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
-import freenet.client.HighLevelSimpleClientImpl;
-import freenet.client.InsertContext;
-import freenet.client.FetchResult;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.keys.CHKBlock;
-import freenet.keys.ClientCHK;
-import freenet.keys.NodeCHK;
 import freenet.node.SendableGet;
 import freenet.support.BinaryBloomFilter;
 import freenet.support.BloomFilter;
 import freenet.support.CountingBloomFilter;
-import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.OOMHandler;
-import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
-import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
 /**
@@ -518,6 +506,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		if(crossCheckBlocks != 0 && !persistent) finishSegments(container, context);
 	}
 
+	@Override
 	public void schedule(ObjectContainer container, ClientContext context) throws KeyListenerConstructionException {
 		if(persistent)
 			container.activate(this, 1);
@@ -536,6 +525,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		context.getChkFetchScheduler(realTimeFlag).register(this, getters, persistent, container, blocks, false);
 	}
 
+	@Override
 	public void cancel(ObjectContainer container, ClientContext context) {
 		boolean persist = persistent;
 		if(persist)
@@ -567,6 +557,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		return realTimeFlag;
 	}
 
+	@Override
 	public long getToken() {
 		return token;
 	}
@@ -577,6 +568,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	 * constructed one at some point, maybe before a restart.
 	 * @throws FetchException
 	 */
+	@Override
 	public KeyListener makeKeyListener(ObjectContainer container, ClientContext context, boolean onStartup) throws KeyListenerConstructionException {
 		synchronized(this) {
 			if(finished) return null;
@@ -661,6 +653,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		}
 	}
 
+	@Override
 	public synchronized boolean isCancelled(ObjectContainer container) {
 		return finished;
 	}
@@ -687,6 +680,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		cancel(container, context);
 	}
 	
+	@Override
 	public void onFailed(KeyListenerConstructionException e, ObjectContainer container, ClientContext context) {
 		onFailed(e.getFetchException(), container, context);
 	}
@@ -698,6 +692,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	
 	/** Remove from the database, but only if all the cross-segments have finished.
 	 * If not, wait for them to report in. */
+	@Override
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			toRemove = true;

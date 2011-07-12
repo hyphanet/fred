@@ -30,7 +30,7 @@ public class PeerNote extends FCPMessage {
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.putSingle("NodeIdentifier", nodeIdentifier);
-		fs.putSingle("PeerNoteType", Integer.toString(peerNoteType));
+		fs.put("PeerNoteType", peerNoteType);
 		try {
 			fs.putSingle("NoteText", Base64.encode(noteText.getBytes("UTF-8"), true));
 		} catch (UnsupportedEncodingException e) {

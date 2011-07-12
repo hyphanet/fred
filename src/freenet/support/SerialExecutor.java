@@ -36,10 +36,12 @@ public class SerialExecutor implements Executor {
 
 	private final Runnable runner = new PrioRunnable() {
 
+		@Override
 		public int getPriority() {
 			return priority;
 		}
 
+		@Override
 		public void run() {
 			synchronized(syncLock) {
 				runningThread = Thread.currentThread();
@@ -106,10 +108,12 @@ public class SerialExecutor implements Executor {
 		realExecutor.execute(runner, name);
 	}
 
+	@Override
 	public void execute(Runnable job) {
 		execute(job, "<noname>");
 	}
 
+	@Override
 	public void execute(Runnable job, String jobName) {
 		if (logMINOR)
 			Logger.minor(this, "Running " + jobName + " : " + job + " started=" + threadStarted + " waiting="
@@ -122,10 +126,12 @@ public class SerialExecutor implements Executor {
 		}
 	}
 
+	@Override
 	public void execute(Runnable job, String jobName, boolean fromTicker) {
 		execute(job, jobName);
 	}
 
+	@Override
 	public int[] runningThreads() {
 		int[] retval = new int[NativeThread.JAVA_PRIORITY_RANGE+1];
 		if (threadStarted && !threadWaiting)
@@ -133,6 +139,7 @@ public class SerialExecutor implements Executor {
 		return retval;
 	}
 
+	@Override
 	public int[] waitingThreads() {
 		int[] retval = new int[NativeThread.JAVA_PRIORITY_RANGE+1];
 		synchronized (syncLock) {
@@ -142,6 +149,7 @@ public class SerialExecutor implements Executor {
 		return retval;
 	}
 
+	@Override
 	public int getWaitingThreadsCount() {
 		synchronized (syncLock) {
 			return (threadStarted && threadWaiting) ? 1 : 0;

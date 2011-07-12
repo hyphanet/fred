@@ -50,6 +50,7 @@ public class BucketChainBucket implements Bucket {
 		this.cacheWholeBucket = cacheWholeBucket;
 	}
 
+	@Override
 	public void free() {
 		Bucket[] list;
 		synchronized(this) {
@@ -74,6 +75,7 @@ public class BucketChainBucket implements Bucket {
 		return buckets.toArray(new Bucket[buckets.size()]);
 	}
 
+	@Override
 	public InputStream getInputStream() throws IOException {
 		synchronized(this) {
 			if(freed) throw new IOException("Freed");
@@ -195,10 +197,12 @@ public class BucketChainBucket implements Bucket {
 		return bucket.getInputStream();
 	}
 
+	@Override
 	public String getName() {
 		return "BucketChainBucket";
 	}
 
+	@Override
 	public OutputStream getOutputStream() throws IOException {
 		Bucket[] list;
 		synchronized(this) {
@@ -349,26 +353,32 @@ public class BucketChainBucket implements Bucket {
 		return bucket.getOutputStream();
 	}
 	
+	@Override
 	public boolean isReadOnly() {
 		return readOnly;
 	}
 
+	@Override
 	public void setReadOnly() {
 		readOnly = true;
 	}
 
+	@Override
 	public long size() {
 		return size;
 	}
 
+	@Override
 	public void storeTo(ObjectContainer container) {
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
 	public Bucket createShadow() {
 		Vector<Bucket> newBuckets = new Vector<Bucket>();
 		for(int i=0;i<buckets.size();i++) {

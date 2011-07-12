@@ -73,6 +73,7 @@ public abstract class AbstractUserAlert implements UserAlert {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public boolean userCanDismiss() {
 		return userCanDismiss;
 	}
@@ -80,6 +81,7 @@ public abstract class AbstractUserAlert implements UserAlert {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public String getTitle() {
 		return title;
 	}
@@ -87,10 +89,12 @@ public abstract class AbstractUserAlert implements UserAlert {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public String getText() {
 		return text;
 	}
 	
+	@Override
 	public String getShortText() {
 		return shortText;
 	}
@@ -98,6 +102,7 @@ public abstract class AbstractUserAlert implements UserAlert {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public HTMLNode getHTMLText() {
 		return htmlText;
 	}
@@ -105,6 +110,7 @@ public abstract class AbstractUserAlert implements UserAlert {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public short getPriorityClass() {
 		return priorityClass;
 	}
@@ -112,6 +118,7 @@ public abstract class AbstractUserAlert implements UserAlert {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public boolean isValid() {
 		return valid;
 	}
@@ -119,6 +126,7 @@ public abstract class AbstractUserAlert implements UserAlert {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void isValid(boolean valid) {
 		if (userCanDismiss()) {
 			this.valid = valid;
@@ -128,6 +136,7 @@ public abstract class AbstractUserAlert implements UserAlert {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public String dismissButtonText() {
 		return dismissButtonText;
 	}
@@ -135,6 +144,7 @@ public abstract class AbstractUserAlert implements UserAlert {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public boolean shouldUnregisterOnDismiss() {
 		return shouldUnregisterOnDismiss;
 	}
@@ -142,20 +152,24 @@ public abstract class AbstractUserAlert implements UserAlert {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void onDismiss() {
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public Object getUserIdentifier() {
 		return userIdentifier;
 	}
 
+	@Override
 	public String anchor() {
 		return Integer.toString(hashCode());
 	}
 
+	@Override
 	public boolean isEventNotification() {
 		return false;
 	}
@@ -164,10 +178,12 @@ public abstract class AbstractUserAlert implements UserAlert {
 		return false;
 	}
 
+	@Override
 	public long getUpdatedTime() {
 		return creationTime;
 	}
 
+	@Override
 	public FCPMessage getFCPMessage() {
 		return new FeedMessage(getTitle(), getShortText(), getText(), getPriorityClass(), getUpdatedTime());
 	}

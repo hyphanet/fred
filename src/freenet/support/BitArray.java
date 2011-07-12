@@ -104,6 +104,7 @@ public class BitArray implements WritableToDataOutputStream {
 		return sb.toString();
 	}
 
+	@Override
 	public void writeToDataOutputStream(DataOutputStream dos) throws IOException {
 		dos.writeInt(_size);
 		dos.write(_bits);

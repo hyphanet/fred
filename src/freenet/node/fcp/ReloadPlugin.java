@@ -52,6 +52,7 @@ public class ReloadPlugin extends FCPMessage {
 		}
 
 		node.executor.execute(new Runnable() {
+			@Override
 			public void run() {
 				PluginInfoWrapper pi = node.pluginManager.getPluginInfo(plugname);
 				if (pi == null) {

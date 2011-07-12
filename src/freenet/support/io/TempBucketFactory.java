@@ -181,6 +181,7 @@ public class TempBucketFactory implements BucketFactory {
 			return (currentBucket instanceof ArrayBucket);
 		}
 
+		@Override
 		public synchronized OutputStream getOutputStream() throws IOException {
 			if(osIndex > 0)
 				throw new IOException("Only one OutputStream per bucket on "+this+" !");
@@ -270,6 +271,7 @@ public class TempBucketFactory implements BucketFactory {
 			}
 		}
 
+		@Override
 		public synchronized InputStream getInputStream() throws IOException {
 			if(!hasWritten)
 				throw new IOException("No OutputStream has been openned! Why would you want an InputStream then?");
@@ -363,22 +365,27 @@ public class TempBucketFactory implements BucketFactory {
 			}
 		}
 
+		@Override
 		public synchronized String getName() {
 			return currentBucket.getName();
 		}
 
+		@Override
 		public synchronized long size() {
 			return currentSize;
 		}
 
+		@Override
 		public synchronized boolean isReadOnly() {
 			return currentBucket.isReadOnly();
 		}
 
+		@Override
 		public synchronized void setReadOnly() {
 			currentBucket.setReadOnly();
 		}
 
+		@Override
 		public synchronized void free() {
 			if(hasBeenFreed) return;
 			hasBeenFreed = true;
@@ -394,14 +401,17 @@ public class TempBucketFactory implements BucketFactory {
 			}
 		}
 
+		@Override
 		public Bucket createShadow() {
 			return currentBucket.createShadow();
 		}
 
+		@Override
 		public void removeFrom(ObjectContainer container) {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public void storeTo(ObjectContainer container) {
 			throw new UnsupportedOperationException();
 		}
@@ -454,6 +464,7 @@ public class TempBucketFactory implements BucketFactory {
 		this.executor = executor;
 	}
 
+	@Override
 	public Bucket makeBucket(long size) throws IOException {
 		return makeBucket(size, DEFAULT_FACTOR, defaultIncrement);
 	}
@@ -542,6 +553,7 @@ public class TempBucketFactory implements BucketFactory {
 	
 	private final Runnable cleaner = new Runnable() {
 
+		@Override
 		public void run() {
 			try {
 				boolean force;

@@ -17,7 +17,6 @@ import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.SecurityLevels;
 import freenet.node.Node.AlreadySetPasswordException;
-import freenet.node.SecurityLevels.FRIENDS_THREAT_LEVEL;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.support.HTMLNode;
@@ -293,7 +292,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 			if(pageNode != null) {
 				formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "seclevels", "on" });
 				formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("apply")});
-				formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset",  l10n("reset")});
+				formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset",  l10n("undo")});
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			} else {
@@ -573,7 +572,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "seclevels", "on" });
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("apply")});
-		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset",  l10n("reset")});
+		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset",  l10n("undo")});
 	}
 
 	private void addPasswordChangeForm(HTMLNode inner) {

@@ -78,6 +78,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		noderefBuf = om.crypto.myCompressedFullRef();
 	}
 
+	@Override
 	public void run() {
 		try {
 			realRun();
@@ -137,7 +138,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 			if(onlyNode == null) {
 				// Route it
 				next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1,
-				        null, null, htl, 0, source == null, false);
+				        null, null, htl, 0, source == null, false, false);
 			} else {
 				next = onlyNode;
 				if(nodesRoutedTo.contains(onlyNode)) {
@@ -152,6 +153,8 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 				return;
 			}
 			if(logMINOR) Logger.minor(this, "Routing request to "+next);
+			if(onlyNode == null)
+				next.reportRoutedTo(target, source == null, false);
 			nodesRoutedTo.add(next);
 
 			long xferUID = sendTo(next);
@@ -373,6 +376,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		}
 		Runnable r = new Runnable() {
 
+			@Override
 			public void run() {
 				try {
 					byte[] noderefBuf = OpennetManager.innerWaitForOpennetNoderef(xferUID, paddedLength, noderefLength, next, false, uid, true, AnnounceSender.this, node);
@@ -557,19 +561,23 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		om.sendAnnouncementReply(uid, next, ref, this);
 	}
 
+	@Override
 	public void sentBytes(int x) {
 		node.nodeStats.announceByteCounter.sentBytes(x);
 	}
 
+	@Override
 	public void receivedBytes(int x) {
 		node.nodeStats.announceByteCounter.receivedBytes(x);
 	}
 
+	@Override
 	public void sentPayload(int x) {
 		node.nodeStats.announceByteCounter.sentPayload(x);
 		// Doesn't count.
 	}
 
+	@Override
 	public int getPriority() {
 		return NativeThread.HIGH_PRIORITY;
 	}

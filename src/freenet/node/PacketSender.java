@@ -90,6 +90,7 @@ public class PacketSender implements Runnable {
 		
 		node.ticker.queueTimedJob(new Runnable() {
 
+			@Override
 			public void run() {
 				try {
 					long now = System.currentTimeMillis();
@@ -114,6 +115,7 @@ public class PacketSender implements Runnable {
 		}, 1000);
 	}
 
+	@Override
 	public void run() {
 		if(logMINOR) Logger.minor(this, "In PacketSender.run()");
 		freenet.support.Logger.OSThread.logPID(this);

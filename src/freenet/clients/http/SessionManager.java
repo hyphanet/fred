@@ -125,6 +125,7 @@ public final class SessionManager {
 			mExpiresAtTime = currentTime + SessionManager.MAX_SESSION_IDLE_TIME;
 		}
 		
+		@Override
 		public boolean equals(Object obj) {
 			Session other = ((Session)obj);
 			

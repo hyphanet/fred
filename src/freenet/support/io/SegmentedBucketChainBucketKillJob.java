@@ -17,6 +17,7 @@ public class SegmentedBucketChainBucketKillJob implements DBJob {
 		bcb = bucket;
 	}
 
+	@Override
 	public boolean run(ObjectContainer container, ClientContext context) {
 		container.activate(bcb, 2);
 		Logger.normal(this, "Freeing unfinished unstored bucket "+this);

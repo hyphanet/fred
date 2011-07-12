@@ -86,6 +86,14 @@ public class LRUHashtable<K, V> {
         }
 	}
 
+	public final synchronized K peekKey() {
+        if ( list.size() > 0 ) {
+			return hash.get(list.tail().obj).obj;
+        } else {
+            return null;
+        }
+	}
+
     public final int size() {
         return list.size();
     }
@@ -130,10 +138,12 @@ public class LRUHashtable<K, V> {
 	private class ItemEnumeration implements Enumeration<K> {
 		private Enumeration<QItem<K, V>> source = list.reverseElements();
        
+        @Override
         public boolean hasMoreElements() {
             return source.hasMoreElements();
         }
 
+		@Override
 		public K nextElement() {
 			return source.nextElement().obj;
         }
@@ -142,10 +152,12 @@ public class LRUHashtable<K, V> {
 	private class ValuesEnumeration implements Enumeration<V> {
 		private Enumeration<QItem<K, V>> source = list.reverseElements();
        
+        @Override
         public boolean hasMoreElements() {
             return source.hasMoreElements();
         }
 
+		@Override
 		public V nextElement() {
 			return source.nextElement().value;
         }

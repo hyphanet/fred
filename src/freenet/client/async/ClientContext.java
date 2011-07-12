@@ -134,6 +134,7 @@ public class ClientContext {
 		if(inserter.persistent()) {
 			jobRunner.queue(new DBJob() {
 				
+				@Override
 				public boolean run(ObjectContainer container, ClientContext context) {
 					container.activate(inserter, 1);
 					try {
@@ -162,6 +163,7 @@ public class ClientContext {
 		if(getter.persistent()) {
 			jobRunner.queue(new DBJob() {
 				
+				@Override
 				public boolean run(ObjectContainer container, ClientContext context) {
 					container.activate(getter, 1);
 					try {
@@ -190,6 +192,7 @@ public class ClientContext {
 		if(inserter.persistent()) {
 			jobRunner.queue(new DBJob() {
 				
+				@Override
 				public boolean run(ObjectContainer container, ClientContext context) {
 					container.activate(inserter, 1);
 					try {
@@ -218,6 +221,7 @@ public class ClientContext {
 		if(inserter.persistent()) {
 			jobRunner.queue(new DBJob() {
 				
+				@Override
 				public boolean run(ObjectContainer container, ClientContext context) {
 					container.activate(inserter, 1);
 					try {
@@ -285,6 +289,7 @@ public class ClientContext {
 			// Wait until after startup
 			ticker.queueTimedJob(new Runnable() {
 
+				@Override
 				public void run() {
 					alerts.register(alert);
 				}

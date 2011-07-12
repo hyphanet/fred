@@ -17,27 +17,33 @@ public class NullPersistentFileTracker implements PersistentFileTracker {
 	private NullPersistentFileTracker() {		
 	}
 
+	@Override
 	public void register(File file) {
 		// Do nothing
 	}
 
+	@Override
 	public void delayedFreeBucket(DelayedFreeBucket bucket) {
 		// Free immediately
 		bucket.free();
 	}
 
+	@Override
 	public File getDir() {
 		return new File(".");
 	}
 
+	@Override
 	public boolean matches(File file) {
 		return false;
 	}
 
+	@Override
 	public FilenameGenerator getGenerator() {
 		return null;
 	}
 
+	@Override
 	public long getID(File file) {
 		return 0;
 	}

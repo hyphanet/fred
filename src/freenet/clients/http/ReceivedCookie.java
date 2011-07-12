@@ -213,6 +213,7 @@ public final class ReceivedCookie extends Cookie {
 	/**
 	 * @throws IllegalArgumentException If the validation of the name fails.
 	 */
+	@Override
 	public String getName() {
 		if(name == null) {
 			name = validateName(notValidatedName);
@@ -225,6 +226,7 @@ public final class ReceivedCookie extends Cookie {
 	/**
 	 * @throws IllegalArgumentException If the validation of the domain fails.
 	 */
+	@Override
 	public URI getDomain() {
 		if(domain == null) {
 			try {
@@ -244,6 +246,7 @@ public final class ReceivedCookie extends Cookie {
 	/**
 	 * @throws IllegalArgumentException If the validation of the path fails.
 	 */
+	@Override
 	public URI getPath() {
 		if(path == null) {
 			try {
@@ -259,6 +262,7 @@ public final class ReceivedCookie extends Cookie {
 	/**
 	 * @throws IllegalArgumentException If the validation of the name fails.
 	 */
+	@Override
 	public String getValue() {
 		if(value == null) 
 			value = validateValue(content.get(getName()));
@@ -279,6 +283,7 @@ public final class ReceivedCookie extends Cookie {
 //		return expirationDate;
 //	}
 
+	@Override
 	protected String encodeToHeaderValue() {
 		throw new UnsupportedOperationException("ReceivedCookie objects cannot be encoded to a HTTP header value, use Cookie objects!");
 	}

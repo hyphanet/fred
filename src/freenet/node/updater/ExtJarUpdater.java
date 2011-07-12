@@ -14,6 +14,7 @@ public class ExtJarUpdater extends NodeUpdater {
 		return "freenet-ext.jar";
 	}
 	
+	@Override
 	protected void processSuccess() {
 		manager.onDownloadedNewJar(true, -1, -1);
 	}

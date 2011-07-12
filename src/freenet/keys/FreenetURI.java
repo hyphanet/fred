@@ -213,7 +213,7 @@ public class FreenetURI implements Cloneable {
 		} else
 			extra = null;
 		this.suggestedEdition = uri.suggestedEdition;
-		if(logMINOR) Logger.minor(this, "Copied: "+toString()+" from "+uri.toString(), new Exception("debug"));
+		if(logDEBUG) Logger.debug(this, "Copied: "+toString()+" from "+uri.toString(), new Exception("debug"));
 	}
 	
 	boolean noCacheURI = false;
@@ -429,8 +429,11 @@ public class FreenetURI implements Cloneable {
 
 		// strip 'file extensions' from CHKs
 		// added by aum (david@rebirthing.co.nz)
-		if("CHK".equals(keyType))
-			URI = URI.split("[.]")[0];
+		if("CHK".equals(keyType)) {
+			int idx = URI.lastIndexOf('.');
+			if(idx != -1)
+				URI = URI.substring(0, idx);
+		}
 
 		// URI now contains: routingKey[,cryptoKey][,metaInfo]
 		StringTokenizer st = new StringTokenizer(URI, ",");

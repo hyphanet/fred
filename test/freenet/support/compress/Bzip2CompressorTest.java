@@ -9,8 +9,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import java.util.Arrays;
-
 import junit.framework.TestCase;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;

@@ -194,7 +194,7 @@ public class PluginManager {
 			System.err.println("KeyExplorer plugin renamed to KeyUtils");
 		}
 
-		pmconfig.register("alwaysLoadOfficialPluginsFromCentralServer", false, 0, false, false, "PluginManager.alwaysLoadPluginsFromHTTPS", "PluginManager.alwaysLoadPluginsFromCentralServerLong", new BooleanCallback() {
+		pmconfig.register("alwaysLoadOfficialPluginsFromCentralServer", false, 0, false, false, "PluginManager.alwaysLoadPluginsFromCentralServer", "PluginManager.alwaysLoadPluginsFromCentralServerLong", new BooleanCallback() {
 
 			@Override
 			public Boolean get() {
@@ -212,6 +212,7 @@ public class PluginManager {
 
 		node.securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
 
+			@Override
 			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
 				if(newLevel == oldLevel) return;
 				if(newLevel == NETWORK_THREAT_LEVEL.LOW)
@@ -363,25 +364,25 @@ public class PluginManager {
 
 	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store, OfficialPluginDescription desc, boolean force, boolean forceHTTPS) {
 		if((alwaysLoadOfficialPluginsFromCentralServer && !force)|| force && forceHTTPS) {
-			return realStartPlugin(new PluginDownLoaderOfficialHTTPS(), pluginname, store);
+			return realStartPlugin(new PluginDownLoaderOfficialHTTPS(), pluginname, store, false);
 		} else {
-			return realStartPlugin(new PluginDownLoaderOfficialFreenet(client, node, false), pluginname, store);
+			return realStartPlugin(new PluginDownLoaderOfficialFreenet(client, node, false), pluginname, store, false);
 		}
 	}
 
 	public PluginInfoWrapper startPluginFile(final String filename, boolean store) {
-		return realStartPlugin(new PluginDownLoaderFile(), filename, store);
+		return realStartPlugin(new PluginDownLoaderFile(), filename, store, false);
 	}
 
 	public PluginInfoWrapper startPluginURL(final String filename, boolean store) {
-		return realStartPlugin(new PluginDownLoaderURL(), filename, store);
+		return realStartPlugin(new PluginDownLoaderURL(), filename, store, false);
 	}
 
 	public PluginInfoWrapper startPluginFreenet(final String filename, boolean store) {
-		return realStartPlugin(new PluginDownLoaderFreenet(client, node, false), filename, store);
+		return realStartPlugin(new PluginDownLoaderFreenet(client, node, false), filename, store, false);
 	}
 
-	private PluginInfoWrapper realStartPlugin(final PluginDownLoader<?> pdl, final String filename, final boolean store) {
+	private PluginInfoWrapper realStartPlugin(final PluginDownLoader<?> pdl, final String filename, final boolean store, boolean ignoreOld) {
 		if(filename.trim().length() == 0)
 			return null;
 		final PluginProgress pluginProgress = new PluginProgress(filename, pdl);
@@ -392,7 +393,7 @@ public class PluginManager {
 		FredPlugin plug;
 		PluginInfoWrapper pi = null;
 		try {
-			plug = loadPlugin(pdl, filename, pluginProgress);
+			plug = loadPlugin(pdl, filename, pluginProgress, ignoreOld);
 			if (plug == null)
 				return null; // Already loaded
 			pluginProgress.setProgress(PluginProgress.PROGRESS_STATE.STARTING);
@@ -416,8 +417,9 @@ public class PluginManager {
 					stillTrying = true;
 					node.getTicker().queueTimedJob(new Runnable() {
 
+						@Override
 						public void run() {
-							realStartPlugin(retry, filename, store);
+							realStartPlugin(retry, filename, store, true);
 						}
 
 					}, 0);
@@ -431,8 +433,9 @@ public class PluginManager {
 					stillTrying = true;
 					node.getTicker().queueTimedJob(new Runnable() {
 
+						@Override
 						public void run() {
-							realStartPlugin(retry, filename, store);
+							realStartPlugin(retry, filename, store, true);
 						}
 
 					}, 0);
@@ -528,16 +531,19 @@ public class PluginManager {
 			this.officialFromFreenet = officialFromFreenet;
 		}
 
+		@Override
 		public String dismissButtonText() {
 			return l10n("deleteFailedPluginButton");
 		}
 
+		@Override
 		public void onDismiss() {
 			synchronized(pluginWrappers) {
 				pluginsFailedLoad.remove(filename);
 			}
 			node.executor.execute(new Runnable() {
 
+				@Override
 				public void run() {
 					cancelRunningLoads(filename, null);
 				}
@@ -545,10 +551,12 @@ public class PluginManager {
 			});
 		}
 
+		@Override
 		public String anchor() {
 			return "pluginfailed:"+filename;
 		}
 
+		@Override
 		public HTMLNode getHTMLText() {
 			HTMLNode div = new HTMLNode("div");
 			HTMLNode p = div.addChild("p");
@@ -582,30 +590,37 @@ public class PluginManager {
 			return div;
 		}
 
+		@Override
 		public short getPriorityClass() {
 			return UserAlert.ERROR;
 		}
 
+		@Override
 		public String getShortText() {
 			return l10n("pluginLoadingFailedShort", "name", filename);
 		}
 
+		@Override
 		public String getText() {
 			return l10n("pluginLoadingFailedWithMessage", new String[] { "name", "message" }, new String[] { filename, message });
 		}
 
+		@Override
 		public String getTitle() {
 			return l10n("pluginLoadingFailedTitle");
 		}
 
+		@Override
 		public Object getUserIdentifier() {
 			return PluginManager.class;
 		}
 
+		@Override
 		public boolean isEventNotification() {
 			return false;
 		}
 
+		@Override
 		public boolean isValid() {
 			boolean success;
 			synchronized(pluginWrappers) {
@@ -617,13 +632,16 @@ public class PluginManager {
 			return success;
 		}
 
+		@Override
 		public void isValid(boolean validity) {
 		}
 
+		@Override
 		public boolean shouldUnregisterOnDismiss() {
 			return true;
 		}
 
+		@Override
 		public boolean userCanDismiss() {
 			return true;
 		}
@@ -1054,20 +1072,20 @@ public class PluginManager {
 		addOfficialPlugin("HelloWorld", false, new FreenetURI("CHK@ZdTXnWV-ikkt25-y8jmhlHjCY-nikDMQwcYlWHww5eg,Usq3uRHpHuIRmMRRlNQE7BNveO1NwNI7oNKdb7cowFM,AAIC--8/HelloWorld.jar"), false, false, true);
 		addOfficialPlugin("HelloFCP", false, new FreenetURI("CHK@0gtXJpw1QUJCmFOhoPRNqhsNbMtVw1CGVe46FUv7-e0,X8QqhtPkHoaFCUd89bgNaKxX1AV0WNBVf3sRgSF51-g,AAIC--8/HelloFCP.jar"), false, false, true);
 		addOfficialPlugin("JSTUN", true, 2, false, new FreenetURI("CHK@STQEzqyYLPtd4mCMIXO2HV38J6jG492hyPcEjTdc1oI,ojl4TCcJpJbo1OcO8nwPjycNCt1mn6zJq3lxCNExIHI,AAIC--8/JSTUN.jar"));
-		addOfficialPlugin("KeyUtils", false, 5007, false, new FreenetURI("CHK@c16sREW1FPGYGn2gdhy0ZSpLKmenMnQehdbZFe5QE5Y,3OHVJ~4skzUw5TsRTo3jKupKr4-JHq27N3nHdIJ6oiw,AAIC--8/KeyUtils.jar"), false, false, true);
+		addOfficialPlugin("KeyUtils", false, 5009, false, new FreenetURI("CHK@WI1aBemzqrlOP62cvbVO0A7Ckb0hKSQ0OB1dmEbF9BM,bcnZg1CdaFciYOfmf6CK0-sLJD-I~13CFx4qI831mqY,AAIC--8/KeyUtils.jar"), false, false, true);
 		addOfficialPlugin("MDNSDiscovery", false, 2, false, new FreenetURI("CHK@wPyhY61bsDM3OW6arFlxYX8~mBKjo~XtOTIAbT0dk88,Vr3MTAzkW5J28SJs2dTxkj6D4GVNm3u8GFsxJgzTL1M,AAIC--8/MDNSDiscovery.jar"));
 		addOfficialPlugin("SNMP", false, new FreenetURI("CHK@EykJIv83UE291zONVzfXqyJYX5t66uCQJHkzQrB61MI,-npuolPZj1fcAWane2~qzRNEjKDERx52aQ5bC6NBQgw,AAIC--8/SNMP.jar"), false, false, true);
 		addOfficialPlugin("TestGallery", false, 1, false, new FreenetURI("CHK@LfJVh1EkCr4ry0yDW74vwxkX-3nkr~ztW2z0SUZHfC0,-mz7l39dC6n0RTUiSokjC~pUDO7PWZ89miYesKH0-WA,AAIC--8/TestGallery.jar"), false, true, false);
-		addOfficialPlugin("ThawIndexBrowser", false, 4, true, new FreenetURI("CHK@424rWuNPGY8FjiF4MMDPCwle4MboQg6GOmFReUhbJqU,79Zd2brL9PwZd7z2OL2DXW4xTNvm81EEYVYGmbLG5Jg,AAIC--8/ThawIndexBrowser.jar"));
+		addOfficialPlugin("ThawIndexBrowser", false, 5, true, new FreenetURI("CHK@G8Je6u7aY3PN7KsxNYlQJzkYJure-5YNiZ~kFhwjHgs,ci3UDwFeWDzZzBvNsga1aM2vjouOUMMyKO8HAeOgFgs,AAIC--8/ThawIndexBrowser.jar"));
 		addOfficialPlugin("UPnP", true, 10003, false, new FreenetURI("CHK@chunCVhavqu60gWdf1jlAzKyVhEx7Hy99BaDpoU~xlc,iI-VcHxkg66W8-61P-bHzJYTx9PYrI2GuGIjC4Lg8mI,AAIC--8/UPnP.jar"));
 		addOfficialPlugin("XMLLibrarian", false, 26, true, new FreenetURI("CHK@TvjyCaG1dx0xIBSJkXSKA1ZT4I~NkRKeQqwC0a0bhFM,JiQe4CRjF1RwhQRFFQzP-ih9t2i0peV0tBCfJAeFCdk,AAIC--8/XMLLibrarian.jar"), true, false, false);
 		addOfficialPlugin("XMLSpider", false, 47, true, new FreenetURI("CHK@IQU400XKMx~nMEfdXV2YokCzJxx6BeCBmIObzZuq1zo,cY6UJ~KWGESJvaFajXHfr9UZUKJzt7gkmqUKUIZF5SE,AAIC--8/XMLSpider.jar"), true, false, false);
 		addOfficialPlugin("Freereader", false, 4, true, new FreenetURI("CHK@4PuSjXk4Z0Hdu04JLhdPHLyOVLljj8qVbjRn3rHVzvg,bDGYnuYj67Q4uzroPBEWAYWRk26bPzf-iQ4~Uo3S7mg,AAIC--8/Freereader.jar"));
-		addOfficialPlugin("Library", false, 22, true, new FreenetURI("CHK@cpjlWeSro72HmsrA9lPOe3DJC-nv-r1f55yUAX7TDrQ,sCT0YiO1ychgX6lBnSsd-TVXZhoWU0sL6JIEyT-0WyA,AAIC--8/Library.jar"));
-		addOfficialPlugin("Spider", false, 48, false, new FreenetURI("CHK@DBgu6re-bD8M2elkdvReOROyZm4f2ppWaLBpJ0Cvo-k,RaD2v5HYVV1Xqit9v6FRaUpz-weoi3ilt4xxr~d9IfE,AAIC--8/Spider.jar"), false, false, true);
-		addOfficialPlugin("Freetalk", false, 8, true, new FreenetURI("CHK@HyPhU0qoNzMO53AiRXwhBhSMFPfminrIWqgdKeIDwBs,NLwM~V-0gOrPTFKsnjKIJ6eKDPQhy5syAQ2H5OOLmDc,AAIC--8/Freetalk.jar"), false, false, false);
-		addOfficialPlugin("WebOfTrust", false, 7, true, new FreenetURI("CHK@QmPBikznbYkzv9ASslt3CwkC4PEc5OSwUtMg21KBUoM,LQ2EOKdg3z9Q0uc49m7XL-CVX4S4VojSpy~k7exsNMU,AAIC--8/WebOfTrust.jar"), false, false, false);
-		addOfficialPlugin("FlogHelper", false, 24, true, new FreenetURI("CHK@WWa59P8NbCnVwT7jEbdyUpjX4Z50fJvpVdc6AxohaJc,imlpwbm9Q5y86rvmycwXCUkmpBNgMEgDZ~HJYY9UTi4,AAIC--8/FlogHelper.jar"), false, false, false);
+		addOfficialPlugin("Library", false, 24, true, new FreenetURI("CHK@WtWIvOZXLVZkmDrY5929RxOZ-woRpRoMgE8rdZaQ0VU,rxH~D9VvOOuA7bCnVuzq~eux77i9RR3lsdwVHUgXoOY,AAIC--8/Library.jar"));
+		addOfficialPlugin("Spider", false, 49, false, new FreenetURI("CHK@7a33HqOQZqqyxBwGhtx-JEPzEMTOaPql4sB-EIuMhjk,2ecFy5ttpAC2sDx5yvS19MDEdowMQpzagpdOg2I~Mh8,AAIC--8/Spider.jar"), false, false, true);
+		addOfficialPlugin("Freetalk", false, 10, true, new FreenetURI("CHK@8XFuj2nhUSYe6xvLInZTeTpizlwJXOeITLB3AMGOFEU,XFKdUrHvsxzhh9wNe4~bY78JfSaxDF9nBaeAQsVXnXE,AAIC--8/Freetalk.jar"), false, false, false);
+		addOfficialPlugin("WebOfTrust", false, 9, true, new FreenetURI("CHK@7Bb5dmp5brUqE-Wj7ckpqH-eUz6wadqhVszFVrs5FwE,-afJw63EyGvA32ZDEY9LsMqic~v5WT~wlj7qbG4Af7o,AAIC--8/WebOfTrust.jar"), false, false, false);
+		addOfficialPlugin("FlogHelper", false, 25, true, new FreenetURI("CHK@ouKtlWlUIBK24evXS2aKb8VaM6ZhsQ8FEdpP~OA2m-E,wa0jbvAwS9q463BmXQm094vmUEQmnDruZ3rS80jeNuw,AAIC--8/FlogHelper.jar"), false, false, false);
 		} catch (MalformedURLException e) {
 			throw new Error("Malformed hardcoded URL: "+e, e);
 		}
@@ -1129,14 +1147,17 @@ public class PluginManager {
 	/** All plugin updates are on a single request client. */
 	public final RequestClient singleUpdaterRequestClient = new RequestClient() {
 
+		@Override
 		public boolean persistent() {
 			return false;
 		}
 
+		@Override
 		public void removeFrom(ObjectContainer container) {
 			// Do nothing.
 		}
 
+		@Override
 		public boolean realTimeFlag() {
 			return false;
 		}
@@ -1161,11 +1182,15 @@ public class PluginManager {
 	 *
 	 * @param name
 	 *            The specification of the plugin
+	 * @param ignoreOld If true, ignore any old cached copies of the plugin,
+	 * and download a new version anyway. This is especially important on Windows,
+	 * where we will not usually be able to delete the file after determining
+	 * that it is too old. 
 	 * @return An instanciated object of the plugin
 	 * @throws PluginNotFoundException
 	 *             If anything goes wrong.
 	 */
-	private FredPlugin loadPlugin(PluginDownLoader<?> pdl, String name, PluginProgress progress) throws PluginNotFoundException {
+	private FredPlugin loadPlugin(PluginDownLoader<?> pdl, String name, PluginProgress progress, boolean ignoreOld) throws PluginNotFoundException {
 
 		pdl.setSource(name);
 
@@ -1185,7 +1210,7 @@ public class PluginManager {
 		File[] filesInPluginDirectory = getPreviousInstances(pluginDirectory, filename);
 		boolean first = true;
 		for (File cachedFile : filesInPluginDirectory) {
-			if (first && !pluginIsLocal) {
+			if (first && !pluginIsLocal && !ignoreOld) {
 				first = false;
 				pluginFile = new File(pluginDirectory, cachedFile.getName());
 				continue;
@@ -1334,13 +1359,8 @@ public class PluginManager {
 						pdl instanceof PluginDownLoaderOfficialFreenet) {
 					System.err.println("Loading official plugin "+name);
 					// Check the version after loading it!
-					// Building it into the manifest would be better, in that it would
-					// avoid having to unload ... but building it into the manifest is
-					// problematic, specifically it involves either platform specific
-					// scripts that aren't distributed and devs won't use when they
-					// build locally, or executing java code, which would mean we have
-					// to protect the versioning info. Either way is bad. The latter is
-					// less bad if we don't auto-build.
+					// FIXME IMPORTANT Build the version into the manifest. This is actually pretty easy and just involves changing build.xml.
+					// We already do similar things elsewhere.
 
 					// Ugh, this is just as messy ... ideas???? Maybe we need to have OS
 					// detection and use grep/sed on unix and find on windows???
@@ -1360,19 +1380,12 @@ public class PluginManager {
 					if(ver < minVer) {
 						System.err.println("Failed to load plugin "+name+" : TOO OLD: need at least version "+minVer+" but is "+ver);
 						Logger.error(this, "Failed to load plugin "+name+" : TOO OLD: need at least version "+minVer+" but is "+ver);
-						try {
-							if(object instanceof FredPluginThreadless) {
-								PluginInfoWrapper pi = new PluginInfoWrapper(node, (FredPlugin)object, filename);
-								pi.getPlugin().runPlugin(pi.getPluginRespirator());
-							}
-						} catch (Throwable t) {
-							Logger.error(this, "Failed to start plugin (to prevent NPEs) while terminating it because it is too old: "+t, t);
-						}
-						try {
-							((FredPlugin)object).terminate();
-						} catch (Throwable t) {
-							Logger.error(this, "Plugin failed to terminate: "+t, t);
-						}
+
+						// At this point, the constructor has run, so it's theoretically possible that the plugin has e.g. created some threads.
+						// However, it has not been able to use any of the node's services, because we haven't passed it the PluginRespirator.
+						// So there is no need to call runPlugin and terminate().
+						// And it doesn't matter all that much if the shutdown fails - we won't be able to delete the file on Windows anyway, we're relying on the ignoreOld logic.
+						// Plus, this will not cause a leak of more than one fd per plugin, even when it has started threads.
 						try {
 							jarClassLoader.close();
 						} catch (Throwable t) {
@@ -1450,12 +1463,14 @@ public class PluginManager {
 	private File[] getPreviousInstances(File pluginDirectory, final String filename) {
 		File[] cachedFiles = pluginDirectory.listFiles(new FileFilter() {
 
+			@Override
 			public boolean accept(File pathname) {
 				return pathname.isFile() && pathname.getName().startsWith(filename);
 			}
 		});
 		Arrays.sort(cachedFiles, new Comparator<File>() {
 
+			@Override
 			public int compare(File file1, File file2) {
 				return (int) Math.min(Integer.MAX_VALUE, Math.max(Integer.MIN_VALUE, extractTimestamp(file2.getName()) - extractTimestamp(file1.getName())));
 			}
@@ -1661,6 +1676,7 @@ public class PluginManager {
 				if(pi.isThemedPlugin()) {
 					final FredPluginThemed plug = (FredPluginThemed)(pi.plug);
 					executor.execute(new Runnable() {
+						@Override
 						public void run() {
 							try {
 								plug.setTheme(cssName);
@@ -1684,6 +1700,7 @@ public class PluginManager {
 				if(pi.isL10nPlugin()) {
 					final FredPluginL10n plug = (FredPluginL10n)(pi.plug);
 					executor.execute(new Runnable() {
+						@Override
 						public void run() {
 							try {
 								plug.setLanguage(lang);
@@ -1694,6 +1711,7 @@ public class PluginManager {
 				} else if(pi.isBaseL10nPlugin()) {
 					final FredPluginBaseL10n plug = (FredPluginBaseL10n)(pi.plug);
 					executor.execute(new Runnable() {
+						@Override
 						public void run() {
 							try {
 								plug.setLanguage(lang);

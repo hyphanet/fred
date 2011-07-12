@@ -3,12 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
  
+import java.net.InetAddress;
 import java.util.Map;
 
 import freenet.clients.http.DarknetConnectionsToadlet;
+import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
 import freenet.io.xfer.PacketThrottle;
-import freenet.node.NodeStats.PeerLoadStats;
 import freenet.node.PeerNode.IncomingLoadSummaryStats;
 
 /**
@@ -21,7 +22,10 @@ import freenet.node.PeerNode.IncomingLoadSummaryStats;
  */
 public class PeerNodeStatus {
 
+	/** This is the preferred string form of the address. */
 	private final String peerAddress;
+	/** This one is always an IP address or null. */
+	private final String peerAddressNumerical;
 
 	private final int peerPort;
 
@@ -123,9 +127,17 @@ public class PeerNodeStatus {
 		Peer p = peerNode.getPeer();
 		if(p == null) {
 			peerAddress = null;
+			peerAddressNumerical = null;
 			peerPort = -1;
 		} else {
-			peerAddress = p.getFreenetAddress().toString();
+			FreenetInetAddress a = p.getFreenetAddress();
+			peerAddress = a.toString();
+			InetAddress i = a.getAddress(false);
+			if(i != null) {
+				peerAddressNumerical = i.getHostAddress();
+			} else {
+				peerAddressNumerical = null;
+			}
 			peerPort = p.getPort();
 		}
 		this.selectionRate = peerNode.selectionRate();
@@ -306,10 +318,17 @@ public class PeerNodeStatus {
 	}
 	
 	/**
-	 * @return the peerAddress
+	 * @return the peerAddress, in its preferred string format.
 	 */
 	public String getPeerAddress() {
 		return peerAddress;
+	}
+
+	/**
+	 * @return the peer address, in numerical form, or null if not known.
+	 */
+	public String getPeerAddressNumerical() {
+		return peerAddressNumerical;
 	}
 
 	/**

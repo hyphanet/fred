@@ -1,7 +1,5 @@
 package freenet.clients.http;
 
-import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,7 +15,6 @@ import freenet.pluginmanager.FredPluginL10n;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
-import freenet.support.io.FileUtil;
 
 /** Simple class to output standard heads and tail for web interface pages. 
 */
@@ -246,9 +243,14 @@ public final class PageMaker {
 			headNode.addChild(getOverrideContent());
 		else 
 			headNode.addChild("link", new String[] { "rel", "href", "type", "title" }, new String[] { "stylesheet", "/static/themes/" + theme.code + "/theme.css", "text/css", theme.code });
-		for (THEME t: THEME.values()) {
-			String themeName = t.code;
-			headNode.addChild("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "alternate stylesheet", "/static/themes/" + themeName + "/theme.css", "text/css", "screen", themeName });
+		
+		boolean sendAllThemes =  ctx != null && ctx.getContainer().sendAllThemes();
+		
+		if(sendAllThemes) {
+			for (THEME t: THEME.values()) {
+				String themeName = t.code;
+				headNode.addChild("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "alternate stylesheet", "/static/themes/" + themeName + "/theme.css", "text/css", "screen", themeName });
+			}
 		}
 		
 		boolean webPushingEnabled = 
@@ -356,7 +358,7 @@ public final class PageMaker {
 
 			HTMLNode progressBar = statusBarDiv.addChild("div", "class", "progressbar");
 			progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-done progressbar-peers " + additionnalClass, "width: " +
-					Math.floor(100*connectedRatio) + "%;" });
+					Math.min(100,Math.floor(100*connectedRatio)) + "%;" });
 
 			progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_finalized", NodeL10n.getBase().getString("StatusBar.connectedPeers", new String[]{"X", "Y"},
 					new String[]{Integer.toString(node.peers.countConnectedDarknetPeers()), Integer.toString(node.peers.countConnectedOpennetPeers())}) },

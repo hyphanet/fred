@@ -85,6 +85,7 @@ public class ImageElement extends BaseUpdateableElement {
 		fetchListener = new NotifierFetchListener(((SimpleToadletServer) ctx.getContainer()).pushDataManager, this);
 		((SimpleToadletServer) ctx.getContainer()).getTicker().queueTimedJob(new Runnable() {
 
+			@Override
 			public void run() {
 				try {
 					FProxyFetchWaiter waiter = ImageElement.this.tracker.makeFetcher(ImageElement.this.key, ImageElement.this.maxSize, null, REFILTER_POLICY.RE_FILTER);

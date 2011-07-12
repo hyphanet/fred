@@ -256,11 +256,11 @@ public class DarknetPeerNode extends BaseDarknetPeerNode {
 	}
 
 	@Override
-	protected synchronized int getPeerNodeStatus(long now, long backedOffUntilRT, long backedOffUntilBulk, boolean overPingThreshold) {
+	protected synchronized int getPeerNodeStatus(long now, long backedOffUntilRT, long backedOffUntilBulk, boolean overPingThreshold, boolean noLoadStats) {
 		if(isDisabled) {
 			return PeerManager.PEER_NODE_STATUS_DISABLED;
 		}
-		int status = super.getPeerNodeStatus(now, backedOffUntilRT, backedOffUntilBulk, overPingThreshold);
+		int status = super.getPeerNodeStatus(now, backedOffUntilRT, backedOffUntilBulk, overPingThreshold, noLoadStats);
 		if(status == PeerManager.PEER_NODE_STATUS_CONNECTED ||
 				status == PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM ||
 				status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF ||
@@ -268,7 +268,8 @@ public class DarknetPeerNode extends BaseDarknetPeerNode {
 				status == PeerManager.PEER_NODE_STATUS_TOO_NEW ||
 				status == PeerManager.PEER_NODE_STATUS_TOO_OLD ||
 				status == PeerManager.PEER_NODE_STATUS_ROUTING_DISABLED ||
-				status == PeerManager.PEER_NODE_STATUS_DISCONNECTING)
+				status == PeerManager.PEER_NODE_STATUS_DISCONNECTING ||
+				status == PeerManager.PEER_NODE_STATUS_NO_LOAD_STATS)
 			return status;
 		if(isListenOnly)
 			return PeerManager.PEER_NODE_STATUS_LISTEN_ONLY;
@@ -929,6 +930,7 @@ public class DarknetPeerNode extends BaseDarknetPeerNode {
 			receiver = new BulkReceiver(prb, DarknetPeerNode.this, uid, null);
 			// FIXME make this persistent
 			node.executor.execute(new Runnable() {
+				@Override
 				public void run() {
 					if(logMINOR)
 						Logger.minor(this, "Received file");
@@ -973,6 +975,7 @@ public class DarknetPeerNode extends BaseDarknetPeerNode {
 			if(logMINOR)
 				Logger.minor(this, "Sending "+uid);
 			node.executor.execute(new Runnable() {
+				@Override
 				public void run() {
 					if(logMINOR)
 						Logger.minor(this, "Sending file");
@@ -1658,6 +1661,7 @@ public class DarknetPeerNode extends BaseDarknetPeerNode {
 		return true;
 	}
 
+	@Override
 	protected void maybeClearPeerAddedTimeOnRestart(long now) {
 		if((now - peerAddedTime) > (((long) 30) * 24 * 60 * 60 * 1000))  // 30 days
 			peerAddedTime = 0;
@@ -1791,6 +1795,7 @@ public class DarknetPeerNode extends BaseDarknetPeerNode {
 			}
 			node.executor.execute(new Runnable() {
 
+				@Override
 				public void run() {
 					try {
 						bt.send();
@@ -1836,6 +1841,7 @@ public class DarknetPeerNode extends BaseDarknetPeerNode {
 			final BulkReceiver br = new BulkReceiver(prb, this, uid, node.nodeStats.foafCounter);
 			node.executor.execute(new Runnable() {
 
+				@Override
 				public void run() {
 					try {
 						if(br.receive()) {
@@ -1894,6 +1900,7 @@ public class DarknetPeerNode extends BaseDarknetPeerNode {
 		}
 	}
 
+	@Override
 	protected void sendInitialMessages() {
 		super.sendInitialMessages();
 		try {

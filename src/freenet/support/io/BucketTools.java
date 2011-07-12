@@ -293,7 +293,7 @@ public class BucketTools {
 		InputStream is = decodedData.getInputStream();
 		try {
 			int bufferSize = BUFFER_SIZE;
-			if(truncateLength > 0 && truncateLength < (long)bufferSize) bufferSize = (int) truncateLength;
+			if(truncateLength > 0 && truncateLength < bufferSize) bufferSize = (int) truncateLength;
 			byte[] buf = new byte[bufferSize];
 			long moved = 0;
 			while(moved < truncateLength) {

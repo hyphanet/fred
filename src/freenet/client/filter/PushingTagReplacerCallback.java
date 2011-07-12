@@ -54,6 +54,7 @@ public class PushingTagReplacerCallback implements TagReplacerCallback {
 		return l10n;
 	}
 
+	@Override
 	public String processTag(ParsedTag pt, URIProcessor uriProcessor) {
 		// If javascript or pushing is disabled, then it won't need pushing
 		if (ctx.getContainer().isFProxyJavascriptEnabled() && ctx.getContainer().isFProxyWebPushingEnabled()) {

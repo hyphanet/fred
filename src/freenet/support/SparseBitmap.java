@@ -95,6 +95,7 @@ public class SparseBitmap implements Iterable<int[]> {
 		ranges.addAll(toAdd);
 	}
 
+	@Override
 	public Iterator<int[]> iterator() {
 		return new SparseBitmapIterator(this);
 	}
@@ -103,6 +104,7 @@ public class SparseBitmap implements Iterable<int[]> {
 		return ranges.isEmpty();
 	}
 
+	@Override
 	public String toString() {
 		StringBuffer s = new StringBuffer();
 		for(int[] range : this) {
@@ -119,15 +121,18 @@ public class SparseBitmap implements Iterable<int[]> {
 			it = map.ranges.iterator();
 		}
 
+		@Override
 		public boolean hasNext() {
 			return it.hasNext();
 		}
 
+		@Override
 		public int[] next() {
 			Range r = it.next();
 			return new int[] {r.start, r.end};
 		}
 
+		@Override
 		public void remove() {
 			it.remove();
 		}
@@ -149,6 +154,7 @@ public class SparseBitmap implements Iterable<int[]> {
 	}
 
 	private static class RangeComparator implements Comparator<Range> {
+		@Override
 		public int compare(Range r1, Range r2) {
 			return r1.start - r2.start;
 		}

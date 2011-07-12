@@ -55,6 +55,7 @@ public class RemovePersistentRequest extends FCPMessage {
 			try {
 				handler.server.core.clientContext.jobRunner.queue(new DBJob() {
 
+					@Override
 					public boolean run(ObjectContainer container, ClientContext context) {
 						try {
 							ClientRequest req = handler.removePersistentForeverRequest(global, identifier, container);

@@ -37,6 +37,7 @@ public class MemoryChecker implements Runnable {
 		run();
 	}
 
+	@Override
 	public void run() {
 		freenet.support.Logger.OSThread.logPID(this);
 		if(!goon){

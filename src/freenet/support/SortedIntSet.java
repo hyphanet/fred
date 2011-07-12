@@ -35,6 +35,7 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 		verify();
 	}
 	
+	@Override
 	public int size() {
 		return length;
 	}
@@ -65,6 +66,7 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 	 * @param num
 	 * @return <code>true</code>, if the set is empty.
 	 */
+	@Override
 	public synchronized boolean isEmpty() {
 		return length == 0;
 	}
@@ -194,6 +196,7 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 	/**
 	 * Clear this set
 	 */
+	@Override
 	public synchronized void clear() {
 		data = new int[MIN_SIZE];
 		for(int i=0;i<data.length;i++)
@@ -226,34 +229,42 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 		return Fields.binarySearch(data, key, 0, length-1);
 	}
 
+	@Override
 	public Comparator<? super Integer> comparator() {
 		return null;
 	}
 
+	@Override
 	public Integer first() {
 		return getFirst();
 	}
 
+	@Override
 	public SortedSet<Integer> headSet(Integer arg0) {
 		throw new UnsupportedOperationException(); // FIXME
 	}
 
+	@Override
 	public Integer last() {
 		return getLast();
 	}
 
+	@Override
 	public SortedSet<Integer> subSet(Integer arg0, Integer arg1) {
 		throw new UnsupportedOperationException(); // FIXME
 	}
 
+	@Override
 	public SortedSet<Integer> tailSet(Integer arg0) {
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
 	public boolean add(Integer arg0) {
 		return push(arg0.intValue());
 	}
 
+	@Override
 	public boolean contains(Object arg0) {
 		if(arg0 instanceof Integer) {
 			int x = (Integer)arg0;
@@ -262,6 +273,7 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 		return false;
 	}
 
+	@Override
 	public Iterator<Integer> iterator() {
 		return new Iterator<Integer>() {
 			
@@ -269,10 +281,12 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 			int last = -1;
 			boolean hasLast = false;
 
+			@Override
 			public boolean hasNext() {
 				return x < length;
 			}
 
+			@Override
 			public Integer next() {
 				if(x >= length) throw new NoSuchElementException();
 				hasLast = true;
@@ -280,6 +294,7 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 				return last;
 			}
 
+			@Override
 			public void remove() {
 				if(!hasLast)
 					throw new IllegalStateException();
@@ -290,6 +305,7 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 		};
 	}
 
+	@Override
 	public boolean remove(Object arg0) {
 		if(arg0 instanceof Integer) {
 			return remove(((Integer)arg0).intValue());
@@ -297,10 +313,12 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 		return false;
 	}
 
+	@Override
 	public boolean removeAll(Collection<?> arg0) {
 		throw new UnsupportedOperationException(); // FIXME
 	}
 
+	@Override
 	public boolean retainAll(Collection<?> arg0) {
 		throw new UnsupportedOperationException(); // FIXME
 	}

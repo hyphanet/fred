@@ -21,7 +21,6 @@ import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.SecurityLevels;
 import freenet.node.Node.AlreadySetPasswordException;
-import freenet.node.SecurityLevels.FRIENDS_THREAT_LEVEL;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.pluginmanager.FredPluginBandwidthIndicator;
@@ -90,7 +89,18 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			boolean incognito = request.isParameterSet("incognito");
 			// Bug 3376: Opening Chrome in incognito mode from command line will open a new non-incognito window if the browser is already open.
 			// See http://code.google.com/p/chromium/issues/detail?id=9636
-			// When this is fixed, we should check the browser version and allow it for known good versions of Chrome.
+			// This is fixed upstream but we need to test for fixed versions of Chrome.
+			// Bug 5210: Same for Firefox!
+			// Note also that Firefox 4 and later are much less vulnerable to css link:visited attacks,
+			// but are not completely immune, especially if the bad guy can guess the site url. Ideally
+			// the user should turn off link:visited styling altogether.
+			// FIXME detect recent firefox and tell the user how they could improve their privacy further.
+			// See:
+			// http://blog.mozilla.com/security/2010/03/31/plugging-the-css-history-leak/
+			// http://dbaron.org/mozilla/visited-privacy#limits
+			// http://jeremiahgrossman.blogspot.com/2006/08/i-know-where-youve-been.html
+			// https://developer.mozilla.org/en/Firefox_4_for_developers
+			// https://developer.mozilla.org/en/CSS/Privacy_and_the_%3avisited_selector
 			incognito = false;
 
 			PageNode page = ctx.getPageMaker().getPageNode(incognito ? l10n("browserWarningIncognitoPageTitle") : l10n("browserWarningPageTitle"), false, ctx);
@@ -708,6 +718,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 
 						private final boolean enable = enableUPnP;
 
+						@Override
 						public void run() {
 							if(enable)
 								core.node.pluginManager.startPluginOfficial("UPnP", true, false, false);
@@ -722,6 +733,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 
 						private final boolean enable = enableJSTUN;
 
+						@Override
 						public void run() {
 							// We can probably get connected without it, so don't force HTTPS.
 							// We'd have to ask the user anyway...

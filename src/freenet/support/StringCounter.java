@@ -50,6 +50,7 @@ public class StringCounter {
 	private synchronized Item[] sortedItems(final boolean ascending) {
 		Item[] items = items();
 		Arrays.sort(items, new Comparator<Item>() {
+			@Override
 			public int compare(Item it0, Item it1) {
 				int ret;
 				if(it0.counter > it1.counter) ret = 1;

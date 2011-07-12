@@ -22,7 +22,7 @@ public class IdentifierCollisionMessage extends FCPMessage {
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putSingle("Identifier", identifier);
-		if(global) sfs.putSingle("Global", "true");
+		sfs.put("Global", global);
 		return sfs;
 	}
 

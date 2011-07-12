@@ -76,7 +76,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			InsertBlock block =
 				new InsertBlock(data, cm, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
 			this.origSFI =
-				new SingleFileInserter(this, this, block, false, ctx, realTimeFlag, false, getCHKOnly, true, null, null, false, null, earlyEncode, false, persistent, 0, 0, null, cryptoAlgorithm, forceCryptoKey);
+				new SingleFileInserter(this, this, block, false, ctx, realTimeFlag, false, getCHKOnly, true, null, null, false, null, earlyEncode, false, persistent, 0, 0, null, cryptoAlgorithm, forceCryptoKey, -1);
 			metadata = null;
 			containerHandle = null;
 		}
@@ -169,6 +169,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			return SimpleManifestPutter.this.finished || cancelled || SimpleManifestPutter.this.cancelled;
 		}
 
+		@Override
 		public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
 			if(logMINOR) Logger.minor(this, "Completed "+this);
 			if(persistent) {
@@ -249,6 +250,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 		}
 
+		@Override
 		public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
 			ClientPutState oldState;
 			synchronized(this) {
@@ -269,6 +271,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				container.deactivate(SimpleManifestPutter.this, 1);
 		}
 
+		@Override
 		public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
 			if(logMINOR) Logger.minor(this, "onEncode("+key+") for "+this);
 			if(metadata == null) {
@@ -292,6 +295,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		 * However, in onSuccess or onFailure, we need to remove the new state, even if
 		 * what is passed in is different (in which case we remove that too).
 		 */
+		@Override
 		public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 			if(newState == null) throw new NullPointerException();
 
@@ -309,6 +313,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 		}
 
+		@Override
 		public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
 			if(logMINOR) Logger.minor(this, "Assigning metadata: "+m+" for "+this+" from "+state+" persistent="+persistent,
 					new Exception("debug"));
@@ -362,6 +367,11 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				container.deactivate(putHandlersWaitingForMetadata, 1);
 				container.deactivate(SimpleManifestPutter.this, 1);
 			}
+		}
+		
+		@Override
+		public void onMetadata(Bucket m, ClientPutState state, ObjectContainer container, ClientContext context) {
+			throw new UnsupportedOperationException();
 		}
 		
 		/** The number of blocks that will be needed to fetch the data. We put this in the top block metadata. */
@@ -456,10 +466,12 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				container.deactivate(SimpleManifestPutter.this, 1);
 		}
 		
+		@Override
 		public synchronized int getMinSuccessFetchBlocks() {
 			return minSuccessFetchBlocks;
 		}
 		
+		@Override
 		public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 			if(persistent) {
 				container.activate(SimpleManifestPutter.this, 1);
@@ -489,6 +501,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				container.deactivate(SimpleManifestPutter.this, 1);
 		}
 
+		@Override
 		public void onFetchable(ClientPutState state, ObjectContainer container) {
 			if(persistent)
 				container.activate(SimpleManifestPutter.this, 1);
@@ -545,6 +558,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			super.removeFrom(container, context);
 		}
 
+		@Override
 		public boolean objectCanNew(ObjectContainer container) {
 			if(cancelled) {
 				Logger.error(this, "Storing "+this+" when already cancelled!", new Exception("error"));
@@ -635,7 +649,14 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	public SimpleManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target,
 			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode, boolean persistent, ObjectContainer container, ClientContext context) {
-		this(cb, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, persistent, Key.ALGO_AES_PCFB_256_SHA256, getRandomSplitfileKeys(target, ctx, persistent, container, context), container, context);
+		this(cb, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, persistent, Key.ALGO_AES_PCFB_256_SHA256, null, container, context);
+
+	}
+		
+	public SimpleManifestPutter(ClientPutCallback cb,
+			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target,
+			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode, boolean persistent, byte[] forceCryptoKey, ObjectContainer container, ClientContext context) {
+		this(cb, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, persistent, Key.ALGO_AES_PCFB_256_SHA256, forceCryptoKey, container, context);
 
 	}
 		
@@ -669,7 +690,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			this.targetURI = target.clone();
 		else
 			this.targetURI = target;
-		this.forceCryptoKey = forceCryptoKey;
+		this.forceCryptoKey = forceCryptoKey != null ? forceCryptoKey : getRandomSplitfileKeys(target, ctx, persistent, container, context);
 		this.cb = cb;
 		this.ctx = ctx;
 		this.getCHKOnly = getCHKOnly;
@@ -839,8 +860,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		return finished || cancelled;
 	}
 
+	public byte[] getSplitfileCryptoKey() {
+		return forceCryptoKey;
+	}
+
 	private final DBJob runGotAllMetadata = new DBJob() {
 
+		@Override
 		public boolean run(ObjectContainer container, ClientContext context) {
 			try {
 				context.jobRunner.removeRestartJob(this, NativeThread.NORM_PRIORITY, container);
@@ -1031,7 +1057,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		try {
 			// Treat it as a splitfile for purposes of determining reinserts.
 			metadataInserter =
-				new SingleFileInserter(this, this, block, isMetadata, ctx, realTimeFlag, (archiveType == ARCHIVE_TYPE.ZIP) , getCHKOnly, false, baseMetadata, archiveType, true, null, earlyEncode, true, persistent(), 0, 0, null, cryptoAlgorithm, ckey);
+				new SingleFileInserter(this, this, block, isMetadata, ctx, realTimeFlag, (archiveType == ARCHIVE_TYPE.ZIP) , getCHKOnly, false, baseMetadata, archiveType, true, null, earlyEncode, true, persistent(), 0, 0, null, cryptoAlgorithm, ckey, -1);
 			if(logMINOR) Logger.minor(this, "Inserting main metadata: "+metadataInserter+" for "+baseMetadata+" for "+this);
 			if(persistent()) {
 				container.activate(metadataPuttersByMetadata, 2);
@@ -1170,7 +1196,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				InsertBlock ib = new InsertBlock(b, null, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
 				// Don't random-encrypt the metadata.
 				SingleFileInserter metadataInserter =
-					new SingleFileInserter(this, this, ib, true, ctx, realTimeFlag, false, getCHKOnly, false, m, null, true, null, earlyEncode, false, persistent(), 0, 0, null, cryptoAlgorithm, null);
+					new SingleFileInserter(this, this, ib, true, ctx, realTimeFlag, false, getCHKOnly, false, m, null, true, null, earlyEncode, false, persistent(), 0, 0, null, cryptoAlgorithm, null, -1);
 				if(logMINOR) Logger.minor(this, "Inserting subsidiary metadata: "+metadataInserter+" for "+m);
 				synchronized(this) {
 					this.metadataPuttersByMetadata.put(m, metadataInserter);
@@ -1454,6 +1480,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		fail(new InsertException(InsertException.CANCELLED), container, context);
 	}
 
+	@Override
 	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
 		Metadata token = (Metadata) state.getToken();
 		if(persistent()) {
@@ -1540,6 +1567,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			complete(container, context);
 	}
 
+	@Override
 	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
 		if(persistent()) {
 			container.activate(metadataPuttersByMetadata, 2);
@@ -1575,6 +1603,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		fail(e, container, context);
 	}
 
+	@Override
 	public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
 		if(state.getToken() == baseMetadata) {
 			this.finalURI = key.getURI();
@@ -1599,6 +1628,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 	}
 
+	@Override
 	public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 		Metadata m = (Metadata) oldState.getToken();
 		if(persistent()) {
@@ -1639,6 +1669,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 	}
 
+	@Override
 	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
@@ -1646,6 +1677,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	/** The number of blocks that will be needed to fetch the data. We put this in the top block metadata. */
 	protected int minSuccessFetchBlocks;
 	
+	@Override
 	public void addBlock(ObjectContainer container) {
 		synchronized(this) {
 			minSuccessFetchBlocks++;
@@ -1653,6 +1685,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		super.addBlock(container);
 	}
 	
+	@Override
 	public void addBlocks(int num, ObjectContainer container) {
 		synchronized(this) {
 			minSuccessFetchBlocks+=num;
@@ -1661,6 +1694,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 	
 	/** Add one or more blocks to the number of requires blocks, and don't notify the clients. */
+	@Override
 	public void addMustSucceedBlocks(int blocks, ObjectContainer container) {
 		synchronized(this) {
 			minSuccessFetchBlocks += blocks;
@@ -1671,6 +1705,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	/** Add one or more blocks to the number of requires blocks, and don't notify the clients. 
 	 * These blocks are added to the minSuccessFetchBlocks for the insert, but not to the counter for what
 	 * the requestor must fetch. */
+	@Override
 	public void addRedundantBlocks(int blocks, ObjectContainer container) {
 		super.addMustSucceedBlocks(blocks, container);
 	}
@@ -1684,10 +1719,12 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.minSuccessFetchBlocks, this.blockSetFinalized), container, context);
 	}
 
+	@Override
 	public int getMinSuccessFetchBlocks() {
 		return minSuccessFetchBlocks;
 	}
 	
+	@Override
 	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			this.metadataBlockSetFinalized = true;
@@ -1859,6 +1896,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		return true;
 	}
 
+	@Override
 	public void onFetchable(ClientPutState state, ObjectContainer container) {
 		Metadata m = (Metadata) state.getToken();
 		if(persistent()) {
@@ -1966,6 +2004,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		if(logDEBUG) Logger.debug(this, "Updating "+this+" activated="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("debug"));
 	}
 
+	@Override
 	public boolean objectCanNew(ObjectContainer container) {
 		if(finished) {
 			Logger.error(this, "Storing "+this+" when already finished!", new Exception("error"));
@@ -2019,6 +2058,12 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	@Override
 	protected void innerToNetwork(ObjectContainer container, ClientContext context) {
 		// Ignore
+	}
+
+	@Override
+	public void onMetadata(Bucket meta, ClientPutState state,
+			ObjectContainer container, ClientContext context) {
+		throw new UnsupportedOperationException();
 	}
 
 }

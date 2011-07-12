@@ -73,6 +73,7 @@ public class PNGFilter implements ContentDataFilter {
 		this.checkCRCs = checkCRCs;
 	}
 
+	@Override
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 			FilterCallback cb) throws DataFilterException, IOException {
 		readFilter(input, output, charset, otherParams, cb, deleteText, deleteTimestamp, checkCRCs);
@@ -316,6 +317,7 @@ public class PNGFilter implements ContentDataFilter {
 		return NodeL10n.getBase().getString("PNGFilter." + key);
 	}
 
+	@Override
 	public void writeFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		// TODO Auto-generated method stub

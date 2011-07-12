@@ -5,6 +5,8 @@ package freenet.node.fcp;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 
 import com.db4o.ObjectContainer;
@@ -17,6 +19,9 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
+import freenet.support.api.Bucket;
+import freenet.support.api.BucketFactory;
+import freenet.support.io.BucketTools;
 
 /**
  * ClientGet message.
@@ -40,7 +45,7 @@ import freenet.support.Logger.LogLevel;
  *    doesn't need to maintain its own state
  * EndMessage
  */
-public class ClientGetMessage extends FCPMessage {
+public class ClientGetMessage extends BaseDataCarryingMessage {
 
 	public final static String NAME = "ClientGet";
 	final boolean ignoreDS;
@@ -64,6 +69,8 @@ public class ClientGetMessage extends FCPMessage {
 	final String charset;
 	final boolean filterData;
 	final boolean realTimeFlag;
+	private Bucket initialMetadata;
+	private final long initialMetadataLength;
 	
 	// FIXME move these to the actual getter process
 	static final short RETURN_TYPE_DIRECT = 0; // over FCP
@@ -215,21 +222,22 @@ public class ClientGetMessage extends FCPMessage {
 		writeToClientCache = fs.getBoolean("WriteToClientCache", persistenceType == ClientRequest.PERSIST_CONNECTION);
 		binaryBlob = Fields.stringToBool(fs.get("BinaryBlob"), false);
 		realTimeFlag = fs.getBoolean("RealTimeFlag", false);
+		initialMetadataLength = fs.getLong("InitialMetadata.DataLength", 0);
 	}
 
 	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
-		fs.putSingle("IgnoreDS", Boolean.toString(ignoreDS));
+		fs.put("IgnoreDS", ignoreDS);
 		fs.putSingle("URI", uri.toString(false, false));
-		fs.putSingle("FilterData", Boolean.toString(filterData));
+		fs.put("FilterData", filterData);
 		fs.putSingle("Charset", charset);
 		fs.putSingle("Identifier", identifier);
-		fs.putSingle("Verbosity", Integer.toString(verbosity));
+		fs.put("Verbosity", verbosity);
 		fs.putSingle("ReturnType", getReturnTypeString());
-		fs.putSingle("MaxSize", Long.toString(maxSize));
-		fs.putSingle("MaxTempSize", Long.toString(maxTempSize));
-		fs.putSingle("MaxRetries", Integer.toString(maxRetries));
+		fs.put("MaxSize", maxSize);
+		fs.put("MaxTempSize", maxTempSize);
+		fs.put("MaxRetries", maxRetries);
 		fs.put("BinaryBlob", binaryBlob);
 		return fs;
 	}
@@ -298,6 +306,31 @@ public class ClientGetMessage extends FCPMessage {
 		container.delete(diskFile);
 		container.delete(tempFile);
 		container.delete(this);
+	}
+
+	@Override
+	long dataLength() {
+		return initialMetadataLength;
+	}
+
+	@Override
+	public void readFrom(InputStream is, BucketFactory bf, FCPServer server)
+			throws IOException, MessageInvalidException {
+		if(initialMetadataLength == 0) return;
+		Bucket data;
+		data = bf.makeBucket(initialMetadataLength);
+		BucketTools.copyFrom(data, is, initialMetadataLength);
+		// No need for synchronization here.
+		initialMetadata = data;
+	}
+
+	@Override
+	protected void writeData(OutputStream os) throws IOException {
+		throw new UnsupportedOperationException();
+	}
+
+	public Bucket getInitialMetadata() {
+		return initialMetadata;
 	}
 
 }

@@ -44,6 +44,7 @@ public class SplitfileProgressEvent implements ClientEvent {
 			Logger.minor(this, "Created SplitfileProgressEvent: total="+totalBlocks+" succeed="+succeedBlocks+" failed="+failedBlocks+" fatally="+fatallyFailedBlocks+" min success="+minSuccessfulBlocks+" finalized="+finalizedTotal);
 	}
 
+	@Override
 	public String getDescription() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Completed ");
@@ -77,6 +78,7 @@ public class SplitfileProgressEvent implements ClientEvent {
 		return sb.toString();
 	}
 
+	@Override
 	public int getCode() {
 		return CODE;
 	}

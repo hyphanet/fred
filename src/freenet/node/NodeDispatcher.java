@@ -74,14 +74,17 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 
 	ByteCounter pingCounter = new ByteCounter() {
 
+		@Override
 		public void receivedBytes(int x) {
 			node.nodeStats.pingCounterReceived(x);
 		}
 
+		@Override
 		public void sentBytes(int x) {
 			node.nodeStats.pingCounterSent(x);
 		}
 
+		@Override
 		public void sentPayload(int x) {
 			// Ignore
 		}
@@ -92,6 +95,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		public void snoop(Message m, Node n);
 	}
 	
+	@Override
 	public boolean handleMessage(Message m) {
 		PeerNode source = (PeerNode)m.getSource();
 		if(source == null) {
@@ -336,7 +340,19 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		boolean isSSK = key instanceof NodeSSK;
         boolean realTimeFlag = DMT.getRealTimeFlag(m);
 		OfferReplyTag tag = new OfferReplyTag(isSSK, source, realTimeFlag, uid, node);
-		node.lockUID(uid, isSSK, false, true, false, realTimeFlag, tag);
+		
+		if(!node.lockUID(uid, isSSK, false, true, false, realTimeFlag, tag)) {
+			if(logMINOR) Logger.minor(this, "Could not lock ID "+uid+" -> rejecting (already running)");
+			Message rejected = DMT.createFNPRejectedLoop(uid);
+			try {
+				source.sendAsync(rejected, null, node.failureTable.senderCounter);
+			} catch (NotConnectedException e) {
+				Logger.normal(this, "Rejecting request from "+source.getPeer()+": "+e);
+			}
+			return true;
+		} else {
+			if(logMINOR) Logger.minor(this, "Locked "+uid);
+		}
 		boolean needPubKey;
 		try {
 		needPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
@@ -377,6 +393,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	private void handleDisconnect(final Message m, final PeerNode source) {
 		// Must run ON the packet sender thread as it sends a packet directly
 		node.getTicker().queueTimedJob(new FastRunnable() {
+			@Override
 			public void run() {
 				// Send the ack
 					source.sendAnyUrgentNotifications(true);
@@ -420,6 +437,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	
 	private final PrioRunnable queueRunner = new PrioRunnable() {
 
+		@Override
 		public void run() {
 			while(true) {
 				try {
@@ -432,6 +450,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			}
 		}
 
+		@Override
 		public int getPriority() {
 			// Slightly less than the actual requests themselves because accepting requests increases load.
 			return NativeThread.HIGH_PRIORITY-1;
@@ -741,6 +760,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	/**
 	 * Cleanup any old/stale routing contexts and reschedule execution.
 	 */
+	@Override
 	public void run() {
 		long now=System.currentTimeMillis();
 		synchronized (routedContexts) {
@@ -870,7 +890,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			}
 			if(next == null)
 			next = node.peers.closerPeer(pn, ctx.routedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-				        null, htl, 0, pn == null, false);
+				        null, htl, 0, pn == null, false, node.enableNewLoadManagement(false));
 			if(logMINOR) Logger.minor(this, "Next: "+next+" message: "+m);
 			if(next != null) {
 				// next is connected, or at least has been => next.getPeer() CANNOT be null.
@@ -973,22 +993,27 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			ProbeRequestSender rs = new ProbeRequestSender(target, node.maxHTL(), uid, node, node.getLocation(), null, 2.0);
 			rs.addListener(new ProbeRequestSender.Listener() {
 
+				@Override
 				public void onCompletion(double nearest, double best, short counter, short uniqueCounter, short linearCounter) throws NotConnectedException {
 					cb.onCompleted("completed", target, best, nearest, uid, counter, uniqueCounter, linearCounter);
 				}
 
+				@Override
 				public void onRNF(short htl, double nearest, double best, short counter, short uniqueCounter, short linearCounter) throws NotConnectedException {
 					cb.onCompleted("rnf", target, best, nearest, uid, counter, uniqueCounter, linearCounter);					
 				}
 
+				@Override
 				public void onReceivedRejectOverload(double nearest, double best, short counter, short uniqueCounter, short linearCounter, String reason) throws NotConnectedException {
 					cb.onRejectOverload();
 				}
 
+				@Override
 				public void onTimeout(double nearest, double best, short counter, short uniqueCounter, short linearCounter, String reason) throws NotConnectedException {
 					cb.onCompleted("timeout", target, best, nearest, uid, counter, uniqueCounter, linearCounter);					
 				}
 
+				@Override
 				public void onTrace(long uid, double nearest, double best, short htl, short counter, short uniqueCounter, double location, long myUID, ShortBuffer peerLocs, ShortBuffer peerUIDs, short forkCount, short linearCounter, String reason, long prevUID) throws NotConnectedException {
 					cb.onTrace(uid, target, nearest, best, htl, counter, location, myUID, Fields.bytesToDoubles(peerLocs.getData()), Fields.bytesToLongs(peerUIDs.getData()), new double[0], forkCount, linearCounter, reason, prevUID);
 				}

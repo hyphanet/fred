@@ -183,17 +183,18 @@ public class PartiallyReceivedBlock {
 	 * @param description
 	 * @param cancelledLocally If true, the transfer was deliberately aborted by *this node*,
 	 * not as the result of a timeout.
+	 * @return Null if the PRB is aborted now. The data if it is not.
 	 */
-	public void abort(int reason, String description, boolean cancelledLocally) {
+	public byte[] abort(int reason, String description, boolean cancelledLocally) {
 		PacketReceivedListener[] listeners;
 		synchronized(this) {
 			if(_aborted) {
 				if(logMINOR) Logger.minor(this, "Already aborted "+this+" : reason="+_abortReason+" description="+_abortDescription);
-				return;
+				return null;
 			}
 			if(_receivedCount == _packets) {
 				if(logMINOR) Logger.minor(this, "Already received");
-				return;
+				return _data;
 			}
 			Logger.normal(this, "Aborting PRB: "+reason+" : "+description+" on "+this, new Exception("debug"));
 			_aborted = true;
@@ -206,6 +207,7 @@ public class PartiallyReceivedBlock {
 		for (PacketReceivedListener prl : listeners) {
 			prl.receiveAborted(reason, description);
 		}
+		return null;
 	}
 	
 	public synchronized boolean isAborted() {

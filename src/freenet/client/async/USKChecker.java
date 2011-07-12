@@ -109,6 +109,7 @@ class USKChecker extends BaseSingleFileFetcher {
 		return "USKChecker for "+key.getURI()+" for "+cb;
 	}
 
+	@Override
 	public void onFailed(KeyListenerConstructionException e, ObjectContainer container, ClientContext context) {
 		onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, "IMPOSSIBLE: Failed to create Bloom filters (we don't have any!)", e), null, container, context);
 	}

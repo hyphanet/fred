@@ -29,6 +29,7 @@ public class TrivialTicker implements Ticker {
 		this.executor = executor;
 	}
 	
+	@Override
 	public void queueTimedJob(final Runnable job, long offset) {
 		TimerTask t = new TimerTask() {
 			@Override
@@ -54,6 +55,7 @@ public class TrivialTicker implements Ticker {
 		}
 	}
 
+	@Override
 	public void queueTimedJob(final Runnable job, final String name, long offset,
 			boolean runOnTickerAnyway, boolean noDupes) {
 		TimerTask t = new TimerTask() {
@@ -89,6 +91,7 @@ public class TrivialTicker implements Ticker {
 		removeQueuedJob(job);
 	}
 	
+	@Override
 	public void removeQueuedJob(final Runnable job) {
 		synchronized(this) {
 			if(!running)
@@ -121,6 +124,7 @@ public class TrivialTicker implements Ticker {
 			
 			timer.schedule(new TimerTask() {
 
+				@Override
 				public void run() {
 					// According to the JavaDoc of cancel(), calling it inside a TimerTask guarantees that the task is the last one which is run.
 					timer.cancel();
@@ -148,6 +152,7 @@ public class TrivialTicker implements Ticker {
 		}
 	}
 
+	@Override
 	public Executor getExecutor() {
 		return executor;
 	}

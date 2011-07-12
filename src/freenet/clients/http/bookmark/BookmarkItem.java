@@ -27,13 +27,15 @@ public class BookmarkItem extends Bookmark {
     private final BookmarkUpdatedUserAlert alert;
     private final UserAlertManager alerts;
     protected String desc;
+    protected String shortDescription;
 
-    public BookmarkItem(FreenetURI k, String n, String d, boolean hasAnActivelink, UserAlertManager uam)
+    public BookmarkItem(FreenetURI k, String n, String d, String s, boolean hasAnActivelink, UserAlertManager uam)
             throws MalformedURLException {
 
         this.key = k;
         this.name = n;
         this.desc = d;
+        this.shortDescription = s;
         this.hasAnActivelink = hasAnActivelink;
         this.alerts = uam;
         alert = new BookmarkUpdatedUserAlert();
@@ -58,6 +60,8 @@ public class BookmarkItem extends Bookmark {
         if(name == null) name = "";
         this.desc = sfs.get("Description");
         if(desc == null) desc = "";
+        this.shortDescription = sfs.get("ShortDescription");
+        if(shortDescription == null) shortDescription = "";
         this.hasAnActivelink = sfs.getBoolean("hasAnActivelink");
         this.key = new FreenetURI(sfs.get("URI"));
         this.alerts = uam;
@@ -165,9 +169,10 @@ public class BookmarkItem extends Bookmark {
         return key;
     }
 
-    public synchronized void update(FreenetURI uri, boolean hasAnActivelink, String description) {
+    public synchronized void update(FreenetURI uri, boolean hasAnActivelink, String description, String shortDescription) {
         this.key = uri;
         this.desc = description;
+        this.shortDescription = shortDescription;
         this.hasAnActivelink = hasAnActivelink;
         if(!key.isUSK())
         	disableBookmark();
@@ -252,7 +257,15 @@ public class BookmarkItem extends Bookmark {
     }
     
     public String getDescription() {
+		if(desc.startsWith("L10N:"))
+			return NodeL10n.getBase().getString("Bookmarks.Defaults.Description."+desc.substring("L10N:".length()));
         return (desc == null ? "" : desc);
+    }
+    
+    public String getShortDescription() {
+		if(shortDescription.startsWith("L10N:"))
+			return NodeL10n.getBase().getString("Bookmarks.Defaults.ShortDescription."+shortDescription.substring("L10N:".length()));
+        return (shortDescription == null ? "" : shortDescription);
     }
     
     @Override
@@ -260,6 +273,7 @@ public class BookmarkItem extends Bookmark {
 	SimpleFieldSet sfs = new SimpleFieldSet(true);
 	sfs.putSingle("Name", name);
 	sfs.putSingle("Description", desc);
+	sfs.putSingle("ShortDescription", shortDescription);
 	sfs.put("hasAnActivelink", hasAnActivelink);
 	sfs.putSingle("URI", key.toString());
 	return sfs;

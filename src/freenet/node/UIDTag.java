@@ -113,10 +113,13 @@ public abstract class UIDTag {
 			if(!mustUnlock()) return;
 			noRecordUnlock = this.noRecordUnlock;
 		}
+		if(logMINOR) Logger.minor(this, "Unlocking "+this);
 		innerUnlock(noRecordUnlock);
 	}
 	
 	public void removeRoutingTo(PeerNode next) {
+		if(logMINOR)
+			Logger.minor(this, "No longer routing to "+next+" on "+this, new Exception("debug"));
 		boolean noRecordUnlock;
 		synchronized(this) {
 			if(currentlyRoutingTo == null) return;
@@ -129,6 +132,7 @@ public abstract class UIDTag {
 			if(!mustUnlock()) return;
 			noRecordUnlock = this.noRecordUnlock;
 		}
+		if(logMINOR) Logger.minor(this, "Unlocking "+this);
 		innerUnlock(noRecordUnlock);
 	}
 	
@@ -271,6 +275,7 @@ public abstract class UIDTag {
 	// LOCKING: Synchronized because of access to currentlyRoutingTo i.e. to avoid ConcurrentModificationException.
 	// UIDTag lock is always taken last anyway so this is safe.
 	// Also it is only used in logging anyway.
+	@Override
 	public synchronized String toString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append(super.toString());

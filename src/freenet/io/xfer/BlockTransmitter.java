@@ -118,6 +118,7 @@ public class BlockTransmitter {
 		
 		private boolean running = false;
 		
+		@Override
 		public void run() {
 			synchronized(this) {
 				if(running) return;
@@ -225,6 +226,7 @@ public class BlockTransmitter {
 			return true; // More blocks to send.
 		}
 
+		@Override
 		public int getPriority() {
 			return NativeThread.HIGH_PRIORITY;
 		}
@@ -265,6 +267,7 @@ public class BlockTransmitter {
 			if(logMINOR) Logger.minor(this, "Scheduling timeout on "+this);
 			timeoutJob = new PrioRunnable() {
 				
+				@Override
 				public void run() {
 					String timeString;
 					String abortReason;
@@ -297,6 +300,7 @@ public class BlockTransmitter {
 					fail.execute();
 				}
 				
+				@Override
 				public int getPriority() {
 					return NativeThread.NORM_PRIORITY;
 				}
@@ -354,6 +358,7 @@ public class BlockTransmitter {
 	
 	private final Future nullFuture = new Future() {
 
+		@Override
 		public void execute() {
 			// Do nothing.
 		}
@@ -384,6 +389,7 @@ public class BlockTransmitter {
 				// Send the aborted, then wait.
 				return new Future() {
 
+					@Override
 					public void execute() {
 						try {
 							innerSendAborted(reason, description);
@@ -405,6 +411,7 @@ public class BlockTransmitter {
 				// They have sent us a cancel, but we still need to send them an ack or they will do a fatal timeout.
 				return new Future() {
 
+					@Override
 					public void execute() {
 						try {
 							innerSendAborted(reason, description);
@@ -423,6 +430,7 @@ public class BlockTransmitter {
 		_sentSendAborted = true;
 		return new Future() {
 
+			@Override
 			public void execute() {
 				if(!sendAborted) {
 					try {
@@ -472,6 +480,7 @@ public class BlockTransmitter {
 	
 	public static final ReceiverAbortHandler ALWAYS_CASCADE = new ReceiverAbortHandler() {
 
+		@Override
 		public boolean onAbort() {
 			return true;
 		}
@@ -480,6 +489,7 @@ public class BlockTransmitter {
 	
 	public static final ReceiverAbortHandler NEVER_CASCADE = new ReceiverAbortHandler() {
 
+		@Override
 		public boolean onAbort() {
 			return false;
 		}
@@ -499,6 +509,7 @@ public class BlockTransmitter {
 	
 	private AsyncMessageFilterCallback cbAllReceived = new SlowAsyncMessageFilterCallback() {
 
+		@Override
 		public void onMatched(Message m) {
 			if(logMINOR) {
 				long endTime = System.currentTimeMillis();
@@ -517,6 +528,7 @@ public class BlockTransmitter {
 			callCallback(true);
 		}
 
+		@Override
 		public boolean shouldTimeout() {
 			synchronized(_senderThread) {
 				// We are waiting for the send completion, which is set on timeout as well as on receiving a message.
@@ -527,18 +539,22 @@ public class BlockTransmitter {
 			return false;
 		}
 
+		@Override
 		public void onTimeout() {
 			// Do nothing
 		}
 
+		@Override
 		public void onDisconnect(PeerContext ctx) {
 			BlockTransmitter.this.onDisconnect();
 		}
 
+		@Override
 		public void onRestarted(PeerContext ctx) {
 			BlockTransmitter.this.onDisconnect();
 		}
 
+		@Override
 		public int getPriority() {
 			return NativeThread.NORM_PRIORITY;
 		}
@@ -547,6 +563,7 @@ public class BlockTransmitter {
 	
 	private AsyncMessageFilterCallback cbSendAborted = new SlowAsyncMessageFilterCallback() {
 
+		@Override
 		public void onMatched(Message msg) {
 			if((!_prb.isAborted()) && abortHandler.onAbort())
 				_prb.abort(RetrievalException.CANCELLED_BY_RECEIVER, "Cascading cancel from receiver", true);
@@ -561,6 +578,7 @@ public class BlockTransmitter {
 			cancelItemsPending();
 		}
 
+		@Override
 		public boolean shouldTimeout() {
 			synchronized(_senderThread) {
 				// We are waiting for the send completion, which is set on timeout as well as on receiving a message.
@@ -571,18 +589,22 @@ public class BlockTransmitter {
 			return false;
 		}
 
+		@Override
 		public void onTimeout() {
 			// Do nothing
 		}
 
+		@Override
 		public void onDisconnect(PeerContext ctx) {
 			BlockTransmitter.this.onDisconnect();
 		}
 
+		@Override
 		public void onRestarted(PeerContext ctx) {
 			BlockTransmitter.this.onDisconnect();
 		}
 
+		@Override
 		public int getPriority() {
 			return NativeThread.NORM_PRIORITY;
 		}
@@ -632,6 +654,7 @@ public class BlockTransmitter {
 			synchronized(_prb) {
 				_unsent = _prb.addListener(myListener = new PartiallyReceivedBlock.PacketReceivedListener() {;
 
+					@Override
 					public void packetReceived(int packetNo) {
 						synchronized(_senderThread) {
 							if(_unsent.contains(packetNo)) {
@@ -648,6 +671,7 @@ public class BlockTransmitter {
 						}
 					}
 
+					@Override
 					public void receiveAborted(int reason, String description) {
 						onAborted(reason, description);
 					}
@@ -716,20 +740,24 @@ public class BlockTransmitter {
 		
 		private boolean completed = false;
 		
+		@Override
 		public void sent() {
 			if(logMINOR) Logger.minor(this, "Sent block on "+BlockTransmitter.this);
 			// Wait for acknowledged
 		}
 
+		@Override
 		public void acknowledged() {
 			complete(false);
 		}
 
+		@Override
 		public void disconnected() {
 			// FIXME kill transfer
 			complete(true);
 		}
 
+		@Override
 		public void fatalError() {
 			// FIXME kill transfer
 			complete(true);
@@ -798,6 +826,7 @@ public class BlockTransmitter {
 		if(_callback != null) {
 			_executor.execute(new Runnable() {
 
+				@Override
 				public void run() {
 					try {
 						_callback.blockTransferFinished(success);

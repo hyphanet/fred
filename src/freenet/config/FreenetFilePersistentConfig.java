@@ -16,6 +16,7 @@ public class FreenetFilePersistentConfig extends FilePersistentConfig {
 
 	private Ticker ticker;
 	public final Runnable thread = new Runnable() {
+		@Override
 		public void run() {
 			synchronized (this) {
 				while(!hasNodeStarted){

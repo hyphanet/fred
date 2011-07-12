@@ -11,6 +11,7 @@ import freenet.client.async.ManifestElement;
 import freenet.client.async.SimpleManifestPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -19,6 +20,7 @@ import freenet.support.io.FileBucket;
 import freenet.support.io.NullBucket;
 import freenet.support.io.PaddedEphemerallyEncryptedBucket;
 import freenet.support.io.PersistentTempFileBucket;
+import freenet.support.io.TempBucketFactory;
 
 public class PersistentPutDir extends FCPMessage {
 
@@ -37,10 +39,14 @@ public class PersistentPutDir extends FCPMessage {
 	final int maxRetries;
 	final boolean wasDiskPut;
 	private final SimpleFieldSet cached;
+	final boolean dontCompress;
+	final String compressorDescriptor;
+	final boolean realTime;
+	final byte[] splitfileCryptoKey;
 	
 	public PersistentPutDir(String identifier, FreenetURI uri, int verbosity, short priorityClass,
 	        short persistenceType, boolean global, String defaultName, HashMap<String, Object> manifestElements,
-	        String token, boolean started, int maxRetries, boolean wasDiskPut, ObjectContainer container) {
+	        String token, boolean started, int maxRetries, boolean dontCompress, String compressorDescriptor, boolean wasDiskPut, boolean realTime, byte[] splitfileCryptoKey, ObjectContainer container) {
 		this.identifier = identifier;
 		this.uri = uri;
 		this.verbosity = verbosity;
@@ -53,6 +59,10 @@ public class PersistentPutDir extends FCPMessage {
 		this.started = started;
 		this.maxRetries = maxRetries;
 		this.wasDiskPut = wasDiskPut;
+		this.dontCompress = dontCompress;
+		this.compressorDescriptor = compressorDescriptor;
+		this.realTime = realTime;
+		this.splitfileCryptoKey = splitfileCryptoKey;
 		cached = generateFieldSet(container);
 	}
 
@@ -63,7 +73,7 @@ public class PersistentPutDir extends FCPMessage {
 		fs.put("Verbosity", verbosity);
 		fs.putSingle("Persistence", ClientRequest.persistenceTypeString(persistenceType));
 		fs.put("PriorityClass", priorityClass);
-		fs.putSingle("Global", Boolean.toString(global));
+		fs.put("Global", global);
 		fs.putSingle("PutDirType", wasDiskPut ? "disk" : "complex");
 		SimpleFieldSet files = new SimpleFieldSet(false);
 		// Flatten the hierarchy, it can be reconstructed on restarting.
@@ -107,7 +117,7 @@ public class PersistentPutDir extends FCPMessage {
 				} else if(data instanceof FileBucket) {
 					subset.putSingle("UploadFrom", "disk");
 					subset.putSingle("Filename", ((FileBucket)data).getFile().getPath());
-				} else if (data instanceof PaddedEphemerallyEncryptedBucket || data instanceof NullBucket || data instanceof PersistentTempFileBucket) {
+				} else if (data instanceof PaddedEphemerallyEncryptedBucket || data instanceof NullBucket || data instanceof PersistentTempFileBucket || data instanceof TempBucketFactory.TempBucket) {
 					subset.putSingle("UploadFrom", "direct");
 				} else {
 					throw new IllegalStateException("Don't know what to do with bucket: "+data);
@@ -123,6 +133,12 @@ public class PersistentPutDir extends FCPMessage {
 			fs.putSingle("ClientToken", token);
 		fs.put("Started", started);
 		fs.put("MaxRetries", maxRetries);
+		fs.put("DontCompress", dontCompress);
+		if(compressorDescriptor != null)
+			fs.putSingle("Codecs", compressorDescriptor);
+		fs.put("RealTime", realTime);
+		if(splitfileCryptoKey != null)
+			fs.putSingle("SplitfileCryptoKey", HexUtil.bytesToHex(splitfileCryptoKey));
 		return fs;
 	}
 

@@ -1,8 +1,6 @@
 package freenet.node.fcp;
 
 import java.io.File;
-import java.lang.ref.WeakReference;
-
 import freenet.client.InsertContext;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.keys.FreenetURI;
@@ -25,6 +23,7 @@ public class DownloadRequestStatus extends RequestStatus {
 	boolean filterData;
 	Bucket dataShadow;
 	public final boolean overriddenDataType;
+	private boolean detectedDontCompress;
 	
 	synchronized void setFinished(boolean success, long dataSize, String mimeType, 
 			int failureCode, String failureReasonLong, String failureReasonShort, Bucket dataShadow, boolean filtered) {
@@ -42,7 +41,7 @@ public class DownloadRequestStatus extends RequestStatus {
 			boolean success, int total, int min, int fetched, int fatal, int failed,
 			boolean totalFinalized, long last, short prio, // all these passed to parent
 			int failureCode, String mime, long size, File dest, CompatibilityMode[] compat,
-			byte[] splitfileKey, FreenetURI uri, String failureReasonShort, String failureReasonLong, boolean overriddenDataType, Bucket dataShadow, boolean filterData) {
+			byte[] splitfileKey, FreenetURI uri, String failureReasonShort, String failureReasonLong, boolean overriddenDataType, Bucket dataShadow, boolean filterData, boolean dontCompress) {
 		super(identifier, persistence, started, finished, success, total, min, fetched, 
 				fatal, failed, totalFinalized, last, prio);
 		this.overriddenDataType = overriddenDataType;
@@ -57,6 +56,7 @@ public class DownloadRequestStatus extends RequestStatus {
 		this.failureReasonLong = failureReasonLong;
 		this.dataShadow = dataShadow;
 		this.filterData = filterData;
+		this.detectedDontCompress = dontCompress;
 	}
 	
 	public final boolean toTempSpace() {
@@ -71,6 +71,7 @@ public class DownloadRequestStatus extends RequestStatus {
 		return mimeType;
 	}
 
+	@Override
 	public long getDataSize() {
 		return dataSize;
 	}
@@ -101,8 +102,9 @@ public class DownloadRequestStatus extends RequestStatus {
 	}
 
 	public synchronized void updateDetectedCompatModes(
-			InsertContext.CompatibilityMode[] compatModes) {
+			InsertContext.CompatibilityMode[] compatModes, boolean dontCompress) {
 		this.detectedCompatModes = compatModes;
+		this.detectedDontCompress = dontCompress;
 	}
 
 	public synchronized void updateDetectedSplitfileKey(byte[] splitfileKey) {
@@ -123,6 +125,10 @@ public class DownloadRequestStatus extends RequestStatus {
 
 	public synchronized void redirect(FreenetURI redirect) {
 		this.uri = redirect;
+	}
+	
+	public synchronized boolean detectedDontCompress() {
+		return detectedDontCompress;
 	}
 
 }

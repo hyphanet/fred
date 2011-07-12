@@ -87,10 +87,12 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		this.cacheWholeBucket = cacheWholeBucket;
 	}
 
+	@Override
 	public Bucket createShadow() {
 		return null;
 	}
 
+	@Override
 	public void free() {
 		synchronized(this) {
 			freed = true;
@@ -100,6 +102,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		// Due to memory issues, we cannot complete the cleanup before returning, especially if we are already on the database thread...
 		DBJob freeJob = new DBJob() {
 			
+			@Override
 			public boolean run(ObjectContainer container, ClientContext context) {
 				SegmentedChainBucketSegment segment = null;
 				if(!container.ext().isStored(SegmentedBucketChainBucket.this)) {
@@ -159,6 +162,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		}
 	}
 
+	@Override
 	public InputStream getInputStream() throws IOException {
 		synchronized(this) {
 			if(freed || clearing) throw new IOException("Freed");
@@ -251,6 +255,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		final BucketArrayWrapper baw = new BucketArrayWrapper();
 		dbJobRunner.runBlocking(new DBJob() {
 
+			@Override
 			public boolean run(ObjectContainer container, ClientContext context) {
 				container.activate(seg, 1);
 				synchronized(baw) {
@@ -266,10 +271,12 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		}
 	}
 
+	@Override
 	public String getName() {
 		return "SegmentedBucketChainBucket";
 	}
 
+	@Override
 	public OutputStream getOutputStream() throws IOException {
 		final SegmentedChainBucketSegment[] segs;
 		synchronized(this) {
@@ -285,6 +292,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 			try {
 				dbJobRunner.runBlocking(new DBJob() {
 
+					@Override
 					public boolean run(ObjectContainer container, ClientContext context) {
 						for(int i=0;i<segs.length;i++) {
 							segs[i].removeFrom(container);
@@ -394,6 +402,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 				try {
 					dbJobRunner.runBlocking(new DBJob() {
 						
+						@Override
 						public boolean run(ObjectContainer container, ClientContext context) {
 							if(container.ext().isStored(oldSeg)) {
 								if(!container.ext().isActive(oldSeg)) {
@@ -449,6 +458,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 			try {
 			dbJobRunner.runBlocking(new DBJob() {
 				
+				@Override
 				public boolean run(ObjectContainer container, ClientContext context) {
 					try {
 						oldSeg.storeTo(container);
@@ -485,18 +495,22 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		}
 	}
 
+	@Override
 	public boolean isReadOnly() {
 		return readOnly;
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		// Valid no-op if we haven't been stored.
 	}
 
+	@Override
 	public void setReadOnly() {
 		readOnly = true;
 	}
 
+	@Override
 	public synchronized long size() {
 		return size;
 	}
@@ -510,6 +524,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 	 * FIXME: Enforce the rule that you must close any OutputStream's before 
 	 * calling storeTo().
 	 */
+	@Override
 	public void storeTo(ObjectContainer container) {
 		throw new UnsupportedOperationException();
 	}
@@ -519,6 +534,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		try {
 			dbJobRunner.runBlocking(new DBJob() {
 
+				@Override
 				public boolean run(ObjectContainer container, ClientContext context) {
 					baw.buckets = getBuckets(container);
 					return false;
@@ -564,6 +580,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		}
 		DBJob clearJob = new DBJob() {
 			
+			@Override
 			public boolean run(ObjectContainer container, ClientContext context) {
 				if(!container.ext().isStored(SegmentedBucketChainBucket.this)) {
 					Logger.error(this, "Bucket not stored in clearJob, already deleted???");

@@ -11,50 +11,53 @@ import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
 
 public class LocalFileInsertToadlet extends LocalFileBrowserToadlet {
-	
-	public LocalFileInsertToadlet(NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient) {
+
+	public static final String PATH = "/insert-browse/";
+	public static final String POST_TO = "/uploads/";
+
+	public LocalFileInsertToadlet (NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient) {
 		super(core, highLevelSimpleClient);
 	}
-	
-	public String path()
-	{
-		return "/insert-browse/";
+
+	@Override
+	public String path() {
+		return PATH;
 	}
-	
-	protected String postTo()
-	{
-		return "/uploads/";
+
+	@Override
+	protected String postTo() {
+		return POST_TO;
 	}
-	
-	protected Hashtable<String, String> persistanceFields(Hashtable<String, String> set){
+
+    @Override
+	protected Hashtable<String, String> persistenceFields (Hashtable<String, String> set) {
 		Hashtable<String, String> fieldPairs = new Hashtable<String, String>();
 		FreenetURI furi = null;
 		String key = set.get("key");
-		if(key != null) {
+		if (key != null) {
 			try {
 				furi = new FreenetURI(key);
 			} catch (MalformedURLException e) {
 				furi = null;
 			}
 		}
-		
+
 		String element = set.get("compress");
-		if(element != null && Boolean.valueOf(element)) {
+		if (element != null && Boolean.valueOf(element)) {
 			fieldPairs.put("compress", element);
 		}
-		
+
 		element = set.get("compatibilityMode"); 
-		if(element != null) {
+		if (element != null) {
 			fieldPairs.put("compatibilityMode", element);
 		}
-		
-		if(furi != null)
-		{
+
+		if (furi != null) {
 			fieldPairs.put("key", furi.toASCIIString());
 		}
-		
+
 		element = set.get("overrideSplitfileKey");
-		if(element != null) fieldPairs.put("overrideSplitfileKey", element);
+		if (element != null) fieldPairs.put("overrideSplitfileKey", element);
 		return fieldPairs;
 	}
 }

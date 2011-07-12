@@ -260,7 +260,7 @@ public class NodeUpdateManager {
 			context.maxSplitfileBlockRetries = -1;
 			context.maxTempLength = maxSize;
 			context.maxOutputLength = maxSize;
-			ClientGetter get = new ClientGetter(this, freenetURI, context, priority, node.nonPersistentClientBulk, null, null);
+			ClientGetter get = new ClientGetter(this, freenetURI, context, priority, node.nonPersistentClientBulk, null, null, null);
 			try {
 				node.clientCore.clientContext.start(get);
 			} catch (DatabaseDisabledException e) {
@@ -270,10 +270,12 @@ public class NodeUpdateManager {
 			}
 		}
 
+		@Override
 		public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 			System.err.println("Failed to fetch "+filename+" : "+e);
 		}
 
+		@Override
 		public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 			File temp;
 			FileOutputStream fos = null;
@@ -308,6 +310,7 @@ public class NodeUpdateManager {
 			}
 		}
 
+		@Override
 		public void onMajorProgress(ObjectContainer container) {
 			// Ignore
 		}
@@ -1075,6 +1078,7 @@ public class NodeUpdateManager {
 		// If we're still here, we didn't update.
 		broadcastUOMAnnounces();
 		node.ticker.queueTimedJob(new Runnable() {
+			@Override
 			public void run() {
 				revocationChecker.start(false);
 			}
@@ -1116,6 +1120,7 @@ public class NodeUpdateManager {
 
 	void deployOffThread(long delay) {
 		node.ticker.queueTimedJob(new Runnable() {
+			@Override
 			public void run() {
 				if(logMINOR) Logger.minor(this, "Running deployOffThread");
 				try {
@@ -1303,6 +1308,7 @@ public class NodeUpdateManager {
 		peersSayBlown = false;
 		node.executor.execute(new Runnable() {
 
+			@Override
 			public void run() {
 				isReadyToDeployUpdate(false);
 			}
@@ -1341,14 +1347,17 @@ public class NodeUpdateManager {
 
 	final ByteCounter ctr = new ByteCounter() {
 
+		@Override
 		public void receivedBytes(int x) {
 			// FIXME
 		}
 
+		@Override
 		public void sentBytes(int x) {
 			node.nodeStats.reportUOMBytesSent(x);
 		}
 
+		@Override
 		public void sentPayload(int x) {
 			// Ignore. It will be reported to sentBytes() as well.
 		}
@@ -1401,8 +1410,16 @@ public class NodeUpdateManager {
 		updater.arm(wasRunning);
 	}
 
-        protected boolean isSeednode() {
-            return (node.isOpennetEnabled() && node.wantAnonAuth(true));
+        public boolean dontAllowUOM() {
+            if(node.isOpennetEnabled() && node.wantAnonAuth(true)) {
+            	// We are a seednode.
+            	// Normally this means we won't send UOM.
+            	// However, if something breaks severely, we need an escape route.
+            	if(node.getUptime() > 5*60*1000 && node.peers.countCompatibleRealPeers() == 0)
+            		return false;
+            	return true;
+            }
+            return false;
         }
 
 		public boolean fetchingFromUOM() {

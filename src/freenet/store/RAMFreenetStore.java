@@ -43,6 +43,7 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 		callback.setStore(this);
 	}
 	
+	@Override
 	public synchronized T fetch(byte[] routingKey, byte[] fullKey,
 			boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache, boolean ignoreOldBlocks, BlockMetadata meta) throws IOException {
 		ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
@@ -71,22 +72,27 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 		}
 	}
 
+	@Override
 	public synchronized long getMaxKeys() {
 		return maxKeys;
 	}
 
+	@Override
 	public synchronized long hits() {
 		return hits;
 	}
 
+	@Override
 	public synchronized long keyCount() {
 		return blocksByRoutingKey.size();
 	}
 
+	@Override
 	public synchronized long misses() {
 		return misses;
 	}
 
+	@Override
 	public synchronized void put(T block, byte[] data, byte[] header, boolean overwrite, boolean isOldBlock) throws KeyCollisionException {
 		byte[] routingkey = block.getRoutingKey();
 		byte[] fullKey = block.getFullKey();
@@ -133,6 +139,7 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 		}
 	}
 
+	@Override
 	public synchronized void setMaxKeys(long maxStoreKeys, boolean shrinkNow)
 			throws DatabaseException, IOException {
 		this.maxKeys = (int)Math.min(Integer.MAX_VALUE, maxStoreKeys);
@@ -142,14 +149,17 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 		}
 	}
 
+	@Override
 	public long writes() {
 		return writes;
 	}
 
+	@Override
 	public long getBloomFalsePositive() {
 		return -1;
 	}
 	
+	@Override
 	public boolean probablyInStore(byte[] routingKey) {
 		ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
 		return blocksByRoutingKey.get(key) != null;
@@ -181,6 +191,7 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 		}
 	}
 	
+	@Override
 	public StoreAccessStats getSessionAccessStats() {
 		return new StoreAccessStats() {
 
@@ -207,6 +218,7 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 		};
 	}
 
+	@Override
 	public StoreAccessStats getTotalAccessStats() {
 		return null;
 	}
