@@ -375,8 +375,16 @@ abstract class ClientRequestSchedulerBase {
 		boolean ret = false;
 		if(matches != null) {
 			for(KeyListener listener : matches) {
-				if(listener.handleBlock(key, saltedKey, block, container, context))
-					ret = true;
+				try {
+					if(listener.handleBlock(key, saltedKey, block, container, context))
+						ret = true;
+				} catch (Throwable t) {
+					try {
+						Logger.error(this, "Caught "+t+" in handleBlock callback for "+listener, new Exception("error"));
+					} catch (Throwable t1) {
+						Logger.error(this, "Caught "+t+" in handleBlock callback", new Exception("error"));
+					}
+				}
 				if(listener.isEmpty()) {
 					synchronized(this) {
 						keyListeners.remove(listener);
