@@ -2215,7 +2215,7 @@ public class Node implements TimeSkewDetectorCallback {
 		if (storeType.equals("salt-hash")) {
 			initRAMFS();
 			// FIXME remove migration code
-			if(lastVersion > 0 && lastVersion <= 1311) {
+			if(lastVersion > 0 && lastVersion <= 1381) {
 				// Check for a comment in wrapper.conf saying we've already upgraded, otherwise update it and restart.
 				long extraMemory = maxTotalKeys * 3 * 4;
 				int extraMemoryMB = (int)Math.min(Integer.MAX_VALUE, ((extraMemory + 1024 * 1024 - 1) / (1024 * 1024)));
