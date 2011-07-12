@@ -522,6 +522,24 @@ public class PeerManager {
 		return null;
 	}
 
+	/**
+	 * Find nodes with a given IP address.
+	 */
+	public ArrayList<PeerNode> getAllConnectedByAddress(FreenetInetAddress a) {
+		ArrayList<PeerNode> found = null;
+		
+		PeerNode[] peerList = myPeers;
+		// Try a match by IP address if we can't match exactly by IP:port.
+		for(PeerNode pn : peerList) {
+			if(!pn.isConnected()) continue;
+			if(!pn.isRoutable()) continue;
+			if(pn.matchesIP(a)) {
+				if(found == null) found = new ArrayList<PeerNode>();
+				found.add(pn);
+			}
+		}
+		return found;
+	}
 
 	/**
 	 * Connect to a node provided the fieldset representing it.

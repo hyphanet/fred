@@ -54,6 +54,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	/** The final URI for the data. */
 	private FreenetURI uri;
 	private final byte[] overrideSplitfileCrypto;
+	/** Random or overriden splitfile cryptokey. Valid after start(). */
+	private byte[] cryptoKey;
 	/** When positive, means we will return metadata rather than a URI, once the
 	 * metadata is under this length. If it is too short it is still possible to
 	 * return a URI, but we won't return both. */
@@ -183,7 +185,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 					return false;
 				}
 				cancel = this.cancelled;
-				byte[] cryptoKey = null;
+				cryptoKey = null;
 				if(overrideSplitfileCrypto != null) {
 					cryptoKey = overrideSplitfileCrypto;
 				} else if(randomiseSplitfileKeys) {
@@ -458,6 +460,13 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	@Override
 	public FreenetURI getURI() {
 		return uri;
+	}
+
+	/**
+	 * Get used splitfile cryptokey. Valid only after start().
+	 */
+	public byte[] getSplitfileCryptoKey() {
+		return cryptoKey;
 	}
 
 	/** Called when a ClientPutState transitions to a new state. If this is the current state, then we update

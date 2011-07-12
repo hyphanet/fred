@@ -649,7 +649,14 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	public SimpleManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target,
 			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode, boolean persistent, ObjectContainer container, ClientContext context) {
-		this(cb, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, persistent, Key.ALGO_AES_PCFB_256_SHA256, getRandomSplitfileKeys(target, ctx, persistent, container, context), container, context);
+		this(cb, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, persistent, Key.ALGO_AES_PCFB_256_SHA256, null, container, context);
+
+	}
+		
+	public SimpleManifestPutter(ClientPutCallback cb,
+			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target,
+			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode, boolean persistent, byte[] forceCryptoKey, ObjectContainer container, ClientContext context) {
+		this(cb, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, persistent, Key.ALGO_AES_PCFB_256_SHA256, forceCryptoKey, container, context);
 
 	}
 		
@@ -683,7 +690,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			this.targetURI = target.clone();
 		else
 			this.targetURI = target;
-		this.forceCryptoKey = forceCryptoKey;
+		this.forceCryptoKey = forceCryptoKey != null ? forceCryptoKey : getRandomSplitfileKeys(target, ctx, persistent, container, context);
 		this.cb = cb;
 		this.ctx = ctx;
 		this.getCHKOnly = getCHKOnly;
@@ -851,6 +858,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	@Override
 	public synchronized boolean isFinished() {
 		return finished || cancelled;
+	}
+
+	public byte[] getSplitfileCryptoKey() {
+		return forceCryptoKey;
 	}
 
 	private final DBJob runGotAllMetadata = new DBJob() {

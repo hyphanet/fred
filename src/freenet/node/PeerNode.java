@@ -18,7 +18,7 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -2335,6 +2335,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			node.peers.addConnectedPeer(this);
 			maybeOnConnect();
 		}
+		
+		crypto.maybeBootConnection(this, replyTo.getFreenetAddress());
 
 		return packets.trackerID;
 	}
@@ -5145,6 +5147,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	
 	public static class SlotWaiter {
 		
+		final PeerNode source;
 		private final HashSet<PeerNode> waitingFor;
 		private PeerNode acceptedBy;
 		private RequestLikelyAcceptedState acceptedState;
@@ -5152,6 +5155,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		final boolean offeredKey;
 		final RequestType requestType;
 		private boolean failed;
+		private SlotWaiterFailedException fe;
 		final boolean realTime;
 		
 		// FIXME the counter is a quick hack to ensure that the original ordering is preserved
@@ -5164,12 +5168,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		final long counter;
 		static private long waiterCounter;
 		
-		SlotWaiter(UIDTag tag, RequestType type, boolean offeredKey, boolean realTime) {
+		SlotWaiter(UIDTag tag, RequestType type, boolean offeredKey, boolean realTime, PeerNode source) {
 			this.tag = tag;
 			this.requestType = type;
 			this.offeredKey = offeredKey;
 			this.waitingFor = new HashSet<PeerNode>();
 			this.realTime = realTime;
+			this.source = source;
 			synchronized(SlotWaiter.class) {
 				counter = waiterCounter++;
 			}
@@ -5267,14 +5272,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					if(logMINOR) Logger.minor(this, "Already matched on "+this);
 					return;
 				}
-				if(reallyFailed) {
-					waitingFor.remove(peer);
-					if(!waitingFor.isEmpty()) {
-						if(logMINOR) Logger.minor(this, "Still waiting for other nodes "+Arrays.toString(waitingFor.toArray())+" on "+this);
-						return;
-					}
-				}
+				// Always wake up.
+				// Whether it's a backoff or a disconnect, we probably want to add another peer.
+				// FIXME get rid of parameter.
 				failed = true;
+				fe = new SlotWaiterFailedException(peer, reallyFailed);
 				notifyAll();
 			}
 		}
@@ -5285,7 +5287,17 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 		}
 		
-		public PeerNode waitForAny(long maxWait) {
+		/** Wait for any of the PeerNode's we have queued on to accept (locally
+		 * i.e. to allocate a local slot to) this request.
+		 * @param maxWait The time to wait for. Can be 0, but if it is 0, this
+		 * is a "peek", i.e. if we return null, the queued slots remain live.
+		 * Whereas if maxWait is not 0, we will unregister when we timeout.
+		 * @param timeOutIsFatal If true, if we timeout, count it for each node
+		 * involved as a fatal timeout.
+		 * @return A matched node, or null.
+		 * @throws SlotWaiterFailedException If a peer actually failed.
+		 */
+		public PeerNode waitForAny(long maxWait, boolean timeOutIsFatal) throws SlotWaiterFailedException {
 			// If waitingFor is non-empty after this function returns, we can
 			// be accepted when we shouldn't be accepted. So always ensure that
 			// the state is clean when returning, by clearing waitingFor and
@@ -5293,10 +5305,16 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			PeerNode[] all;
 			PeerNode ret = null;
 			boolean grabbed = false;
+			SlotWaiterFailedException f = null;
 			synchronized(this) {
 				if(shouldGrab()) {
 					if(logMINOR) Logger.minor(this, "Already matched on "+this);
 					ret = grab();
+					grabbed = true;
+				}
+				if(fe != null) {
+					f = fe;
+					fe = null;
 					grabbed = true;
 				}
 				all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
@@ -5305,6 +5323,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 			if(grabbed) {
 				unregister(ret, all);
+				if(f != null && ret == null) throw f;
 				return ret;
 			}
 			// grab() above will have set failed = false if necessary.
@@ -5337,7 +5356,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						if(other == null) {
 							if(logMINOR) Logger.minor(this, "Trying the original tryRouteTo() on "+this);
 							// Having set the acceptedBy etc, clear it now.
-							grab();
+							acceptedBy = null;
+							failed = false;
+							fe = null;
 						}						
 					}
 					unregister(null, unreg);
@@ -5346,12 +5367,18 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						tag.removeRoutingTo(p);
 						return other;
 					}
+					p.outputLoadTracker(realTime).reportAllocated(isLocal());
+					// p != null so in this one instance we're going to ignore fe.
 					return p;
 				}
 			}
 			if(maxWait == 0) return null;
 			if(!anyValid) {
 				synchronized(this) {
+					if(fe != null) {
+						f = fe;
+						fe = null;
+					}
 					if(shouldGrab()) ret = grab();
 					all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
 					waitingFor.clear();
@@ -5360,6 +5387,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				}
 				if(logMINOR) Logger.minor(this, "None valid to wait for on "+this);
 				unregister(ret, all);
+				if(f != null && ret == null) throw f;
 				return ret;
 			}
 			synchronized(this) {
@@ -5396,23 +5424,33 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				}
 				if(!timedOut) {
 					long waitEnd = System.currentTimeMillis();
-					if(waitEnd - waitStart > 10000) {
+					if(waitEnd - waitStart > (realTime ? 6000 : 60000)) {
 						Logger.error(this, "Waited "+(waitEnd - waitStart)+"ms for "+this);
-					} else if(waitEnd - waitStart > 1000) {
+					} else if(waitEnd - waitStart > (realTime ? 1000 : 10000)) {
 						Logger.warning(this, "Waited "+(waitEnd - waitStart)+"ms for "+this);
 					} else {
 						if(logMINOR) Logger.minor(this, "Waited "+(waitEnd - waitStart)+"ms for "+this);
 					}
 				}
-				if(logMINOR) Logger.minor(this, "Returning after waiting: accepted by "+acceptedBy+" waiting for "+waitingFor.size()+" failed "+timedOut+" on "+this);
+				if(logMINOR) Logger.minor(this, "Returning after waiting: accepted by "+acceptedBy+" waiting for "+waitingFor.size()+" failed "+failed+" on "+this);
 				ret = acceptedBy;
 				acceptedBy = null; // Allow for it to wait again if necessary
 				all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
 				waitingFor.clear();
 				failed = false;
+				fe = null;
+			}
+			if(timeOutIsFatal && all != null) {
+				for(PeerNode pn : all) {
+					pn.outputLoadTracker(realTime).reportFatalTimeoutInWait(isLocal());
+				}
 			}
 			unregister(ret, all);
 			return ret;
+		}
+		
+		final boolean isLocal() {
+			return source == null;
 		}
 		
 		private boolean shouldGrab() {
@@ -5442,6 +5480,75 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	}
 	
+	static class SlotWaiterFailedException extends Exception {
+		final PeerNode pn;
+		final boolean fatal;
+		SlotWaiterFailedException(PeerNode p, boolean f) {
+			this.pn = p;
+			this.fatal = f;
+			// FIXME OPTIMISATION: arrange for empty stack trace
+		}
+	}
+	
+	static class SlotWaiterList {
+		
+		private final LinkedHashMap<PeerNode, TreeMap<Long, SlotWaiter>> lru =
+			new LinkedHashMap<PeerNode, TreeMap<Long, SlotWaiter>>();
+
+		public synchronized void put(SlotWaiter waiter) {
+			PeerNode source = waiter.source;
+			TreeMap<Long, SlotWaiter> map = lru.get(source);
+			if(map == null) {
+				lru.put(source, map = new TreeMap<Long, SlotWaiter>());
+			}
+			map.put(waiter.counter, waiter);
+		}
+
+		public synchronized void remove(SlotWaiter waiter) {
+			PeerNode source = waiter.source;
+			TreeMap<Long, SlotWaiter> map = lru.get(source);
+			if(map == null) {
+				if(logMINOR) Logger.minor(this, "SlotWaiter "+waiter+" was not queued");
+				return;
+			}
+			map.remove(waiter.counter);
+			if(map.isEmpty())
+				lru.remove(source);
+		}
+
+		public synchronized boolean isEmpty() {
+			return lru.isEmpty();
+		}
+
+		public synchronized SlotWaiter removeFirst() {
+			if(lru.isEmpty()) return null;
+			// FIXME better to use LRUHashtable?
+			// Would need to update it to use Iterator and other modern APIs in values(), and creating two objects here isn't THAT expensive on modern VMs...
+			PeerNode source = lru.keySet().iterator().next();
+			TreeMap<Long, SlotWaiter> map = lru.get(source);
+			Long key = map.firstKey();
+			SlotWaiter ret = map.get(key);
+			map.remove(key);
+			lru.remove(source);
+			if(!map.isEmpty())
+				lru.put(source, map);
+			return ret;
+		}
+
+		public synchronized ArrayList<SlotWaiter> values() {
+			ArrayList<SlotWaiter> list = new ArrayList<SlotWaiter>();
+			for(TreeMap<Long, SlotWaiter> map : lru.values()) {
+				list.addAll(map.values());
+			}
+			return list;
+		}
+		
+		public String toString() {
+			return super.toString()+":peers="+lru.size();
+		}
+		
+	}
+	
 	/** Uses the information we receive on the load on the target node to determine whether
 	 * we can route to it and when we can route to it.
 	 */
@@ -5453,6 +5560,16 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		
 		private boolean dontSendUnlessGuaranteed;
 		
+		// These only count remote timeouts.
+		// Strictly local and remote should be the same in new load management, but
+		// local often produces more load than can be handled by our peers.
+		// Fair sharing in SlotWaiterList ensures that this doesn't cause excessive
+		// timeouts for others, but we want the stats that determine their RecentlyFailed
+		// times to be based on remote requests only. Also, local requests by definition
+		// do not cause downstream problems.
+		private long totalFatalTimeouts;
+		private long totalAllocated;
+		
 		public void reportLoadStatus(PeerLoadStats stat) {
 			if(logMINOR) Logger.minor(this, "Got load status : "+stat);
 			synchronized(routedToLock) {
@@ -5461,6 +5578,23 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			maybeNotifySlotWaiter();
 		}
 		
+		synchronized /* lock only used for counter */ void reportFatalTimeoutInWait(boolean local) {
+			if(!local)
+				totalFatalTimeouts++;
+			node.nodeStats.reportFatalTimeoutInWait(local);
+		}
+
+		synchronized /* lock only used for counter */ void reportAllocated(boolean local) {
+			if(!local)
+				totalAllocated++;
+			node.nodeStats.reportAllocatedSlot(local);
+		}
+		
+		public synchronized double proportionTimingOutFatallyInWait() {
+			if(totalFatalTimeouts == 1 && totalAllocated == 0) return 0.5; // Limit impact if the first one is rejected.
+			return (double)totalFatalTimeouts / ((double)(totalFatalTimeouts + totalAllocated));
+		}
+
 		public PeerLoadStats getLastIncomingLoadStats() {
 			synchronized(routedToLock) {
 				return lastIncomingLoadStats;
@@ -5529,7 +5663,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		// FIXME on capacity changing so that we should add another node???
 		// FIXME on backoff so that we should add another node???
 		
-		private final EnumMap<RequestType,TreeMap<Long,SlotWaiter>> slotWaiters = new EnumMap<RequestType,TreeMap<Long,SlotWaiter>>(RequestType.class);
+		private final EnumMap<RequestType,SlotWaiterList> slotWaiters = new EnumMap<RequestType,SlotWaiterList>(RequestType.class);
 		
 		boolean queueSlotWaiter(SlotWaiter waiter) {
 			if(!isRoutable()) {
@@ -5546,18 +5680,19 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			synchronized(routedToLock) {
 				noLoadStats = (this.lastIncomingLoadStats == null);
 				if(!noLoadStats) {
-					TreeMap<Long,SlotWaiter> list = makeSlotWaiters(waiter.requestType);
-					list.put(waiter.counter, waiter);
-					if(logMINOR) Logger.minor(this, "Queued slot "+waiter+" waiter for "+waiter.requestType+" size is now "+list.size()+" on "+this+" for "+PeerNode.this);
+					SlotWaiterList list = makeSlotWaiters(waiter.requestType);
+					list.put(waiter);
+					if(logMINOR) Logger.minor(this, "Queued slot "+waiter+" waiter for "+waiter.requestType+" on "+list+" on "+this+" for "+PeerNode.this);
 					queued = true;
 				} else {
 					if(logMINOR) Logger.minor(this, "Not waiting for "+this+" as no load stats");
 					all = waiter.innerOnWaited(PeerNode.this, RequestLikelyAcceptedState.UNKNOWN);
 				}
 			}
-			if(all != null)
+			if(all != null) {
+				reportAllocated(waiter.isLocal());
 				waiter.unregister(null, all);
-			else if(queued) {
+			} else if(queued) {
 				if((!isRoutable()) || (isInMandatoryBackoff(System.currentTimeMillis(), realTime))) {
 					// Has lost connection etc since start of the method.
 					if(logMINOR) Logger.minor(this, "Queued but not routable or in mandatory backoff, failing");
@@ -5568,10 +5703,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			return true;
 		}
 		
-		private TreeMap<Long,SlotWaiter> makeSlotWaiters(RequestType requestType) {
-			TreeMap<Long,SlotWaiter> slots = slotWaiters.get(requestType);
+		private SlotWaiterList makeSlotWaiters(RequestType requestType) {
+			SlotWaiterList slots = slotWaiters.get(requestType);
 			if(slots == null) {
-				slots = new TreeMap<Long,SlotWaiter>();
+				slots = new SlotWaiterList();
 				slotWaiters.put(requestType, slots);
 			}
 			return slots;
@@ -5579,15 +5714,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		
 		void unqueueSlotWaiter(SlotWaiter waiter) {
 			synchronized(routedToLock) {
-				TreeMap<Long, SlotWaiter> map = slotWaiters.get(waiter.requestType);
+				SlotWaiterList map = slotWaiters.get(waiter.requestType);
 				if(map == null) return;
-				map.remove(waiter.counter);
+				map.remove(waiter);
 			}
 		}
 		
 		private void failSlotWaiters(boolean reallyFailed) {
 			for(RequestType type : RequestType.values()) {
-				TreeMap<Long,SlotWaiter> slots; 
+				SlotWaiterList slots; 
 				synchronized(routedToLock) {
 					slots = slotWaiters.get(type);
 					if(slots == null) continue;
@@ -5622,7 +5757,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(typeNum == RequestType.values().length)
 					typeNum = 0;
 				for(int i=0;i<RequestType.values().length;i++) {
-					TreeMap<Long,SlotWaiter> list;
+					SlotWaiterList list;
 					type = RequestType.values()[typeNum];
 					if(logMINOR) Logger.minor(this, "Checking slot waiter list for "+type);
 					SlotWaiter slot;
@@ -5662,12 +5797,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 							return;
 						}
 						if(list.isEmpty()) continue;
-						Iterator<SlotWaiter> it = list.values().iterator();
-						slot = it.next();
-						it.remove();
+						slot = list.removeFirst();
 						if(logMINOR) Logger.minor(this, "Accept state is "+acceptState+" for "+slot+" - waking up on "+this);
 						peersForSuccessfulSlot = slot.innerOnWaited(PeerNode.this, acceptState);
 						if(peersForSuccessfulSlot == null) continue;
+						reportAllocated(slot.isLocal());
 						slotWaiterTypeCounter = typeNum;
 					}
 					slot.unregister(PeerNode.this, peersForSuccessfulSlot);
@@ -5775,8 +5909,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		outputLoadTracker(tag.realTimeFlag).maybeNotifySlotWaiter();
 	}
 	
-	static SlotWaiter createSlotWaiter(RequestTag tag, RequestType type, boolean offeredKey, boolean realTime) {
-		return new SlotWaiter(tag, type, offeredKey, realTime);
+	static SlotWaiter createSlotWaiter(UIDTag tag, RequestType type, boolean offeredKey, boolean realTime, PeerNode source) {
+		return new SlotWaiter(tag, type, offeredKey, realTime, source);
 	}
 
 	public IncomingLoadSummaryStats getIncomingLoadStats(boolean realTime) {

@@ -262,10 +262,15 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			}
 			try {
 				if(_prb.allReceived()) {
-					_usm.send(_sender, DMT.createAllReceived(_uid), _ctr);
-					discardEndTime=System.currentTimeMillis()+CLEANUP_TIMEOUT;
-					discardFilter=relevantMessages(CLEANUP_TIMEOUT);
-					maybeResetDiscardFilter();
+					try {
+						_usm.send(_sender, DMT.createAllReceived(_uid), _ctr);
+						discardEndTime=System.currentTimeMillis()+CLEANUP_TIMEOUT;
+						discardFilter=relevantMessages(CLEANUP_TIMEOUT);
+						maybeResetDiscardFilter();
+					} catch (NotConnectedException e1) {
+						// Ignore, we've got it.
+						if(logMINOR) Logger.minor(this, "Got data but can't send allReceived to "+_sender+" as is disconnected");
+					}
 					long endTime = System.currentTimeMillis();
 					long transferTime = (endTime - startTime);
 					if(logMINOR) {
@@ -281,9 +286,6 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				// We didn't cause it?!
 				Logger.error(this, "Caught in receive - probably a bug as receive sets it: "+e1, e1);
 				complete(RetrievalException.UNKNOWN, "Aborted?");
-				return;
-			} catch (NotConnectedException e1) {
-				complete(RetrievalException.SENDER_DISCONNECTED, RetrievalException.getErrString(RetrievalException.SENDER_DISCONNECTED));
 				return;
 			}
 			try {
@@ -396,18 +398,24 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		if(logMINOR)
 			Logger.minor(this, "Transfer failed: ("+(_realTime?"realtime":"bulk")+") "+reason+" : "+description+" on "+_uid+" from "+_sender);
 		_prb.removeListener(myListener);
-		_prb.abort(reason, description, false);
-		// Send the abort whether we have received one or not.
-		// If we are cancelling due to failing to turtle, we need to tell the sender
-		// this otherwise he will keep sending, wasting a lot of bandwidth on packets
-		// that we will ignore. If we are cancelling because the sender has told us 
-		// to, we need to acknowledge that.
-		try {
-			sendAborted(_prb._abortReason, _prb._abortDescription);
-		} catch (NotConnectedException e) {
-			// Ignore at this point.
+		byte[] block = _prb.abort(reason, description, false);
+		if(block == null) {
+			// Expected behaviour.
+			// Send the abort whether we have received one or not.
+			// If we are cancelling due to failing to turtle, we need to tell the sender
+			// this otherwise he will keep sending, wasting a lot of bandwidth on packets
+			// that we will ignore. If we are cancelling because the sender has told us 
+			// to, we need to acknowledge that.
+			try {
+				sendAborted(_prb._abortReason, _prb._abortDescription);
+			} catch (NotConnectedException e) {
+				// Ignore at this point.
+			}
+			callback.blockReceiveFailed(new RetrievalException(reason, description));
+		} else {
+			Logger.error(this, "Succeeded in complete("+reason+","+description+") on "+this, new Exception("error"));
+			callback.blockReceived(block);
 		}
-		callback.blockReceiveFailed(new RetrievalException(reason, description));
 		decRunningBlockReceives();
 	}
 

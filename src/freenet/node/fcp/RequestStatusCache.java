@@ -94,10 +94,10 @@ public class RequestStatusCache {
 		status.updateStatus(event);
 	}
 	
-	synchronized void updateDetectedCompatModes(String identifier, InsertContext.CompatibilityMode[] compatModes, byte[] splitfileKey) {
+	synchronized void updateDetectedCompatModes(String identifier, InsertContext.CompatibilityMode[] compatModes, byte[] splitfileKey, boolean dontCompress) {
 		DownloadRequestStatus status = (DownloadRequestStatus) requestsByIdentifier.get(identifier);
 		if(status == null) return; // Can happen during cancel etc.
-		status.updateDetectedCompatModes(compatModes);
+		status.updateDetectedCompatModes(compatModes, dontCompress);
 		status.updateDetectedSplitfileKey(splitfileKey);
 	}
 	

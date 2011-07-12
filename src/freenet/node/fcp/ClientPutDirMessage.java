@@ -10,6 +10,7 @@ import freenet.client.InsertContext;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
+import freenet.support.HexUtil;
 import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
 import freenet.support.compress.InvalidCompressionCodecException;
@@ -54,6 +55,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 	final int extraInsertsSingleBlock;
 	final int extraInsertsSplitfileHeaderBlock;
 	final InsertContext.CompatibilityMode compatibilityMode;
+	final byte[] overrideSplitfileCryptoKey;
 	final boolean localRequestOnly;
 	final boolean realTimeFlag;
 	
@@ -79,6 +81,17 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 			}
 		}
 		compatibilityMode = cmode;
+		s = fs.get("OverrideSplitfileCryptoKey");
+		if(s == null)
+			overrideSplitfileCryptoKey = null;
+		else
+			try {
+				overrideSplitfileCryptoKey = HexUtil.hexToBytes(s);
+			} catch (NumberFormatException e1) {
+				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid splitfile crypto key (not hex)", identifier, global);
+			} catch (IndexOutOfBoundsException e1) {
+				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid splitfile crypto key (too short)", identifier, global);
+			}
 		localRequestOnly = fs.getBoolean("LocalRequestOnly", false);
 		if(identifier == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier", null, global);

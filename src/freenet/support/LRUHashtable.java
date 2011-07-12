@@ -86,6 +86,14 @@ public class LRUHashtable<K, V> {
         }
 	}
 
+	public final synchronized K peekKey() {
+        if ( list.size() > 0 ) {
+			return hash.get(list.tail().obj).obj;
+        } else {
+            return null;
+        }
+	}
+
     public final int size() {
         return list.size();
     }

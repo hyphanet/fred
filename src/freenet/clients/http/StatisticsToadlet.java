@@ -227,6 +227,9 @@ public class StatisticsToadlet extends Toadlet {
 				loadStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
 				
 				drawLoadBalancingBox(loadStatsInfobox, true);
+				
+				HTMLNode newLoadManagementBox = nextTableCell.addChild("div", "class", "infobox");
+				drawNewLoadManagementBox(newLoadManagementBox);
 								
 				// Psuccess box
 				HTMLNode successRateBox = nextTableCell.addChild("div", "class", "infobox");
@@ -547,6 +550,12 @@ public class StatisticsToadlet extends Toadlet {
 		loadStatsList.addChild("li", starters.statsPageLine(true, true, realTime));
 		loadStatsList.addChild("li", starters.diagnosticThrottlesLine(false));
 		loadStatsList.addChild("li", starters.diagnosticThrottlesLine(true));
+	}
+	
+	private void drawNewLoadManagementBox(HTMLNode infobox) {
+		infobox.addChild("div", "class", "infobox-header", l10n("newLoadManagementTitle"));
+		HTMLNode content = infobox.addChild("div", "class", "infobox-content");
+		node.nodeStats.drawNewLoadManagementDelayTimes(content);
 	}
 
 	private void drawRejectReasonsBox(HTMLNode nextTableCell, boolean local) {

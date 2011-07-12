@@ -15,6 +15,7 @@ import java.util.LinkedList;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
+import freenet.client.filter.HTMLFilter;
 import freenet.clients.http.FProxyFetchInProgress.REFILTER_POLICY;
 import freenet.clients.http.PageMaker.THEME;
 import freenet.clients.http.bookmark.BookmarkManager;
@@ -675,6 +676,42 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			
 		}, false);
 		maxFproxyConnections = fproxyConfig.getInt("maxFproxyConnections");
+		
+		fproxyConfig.register("metaRefreshSamePageInterval", 1, configItemOrder++, true, false, "SimpleToadletServer.metaRefreshSamePageInterval", "SimpleToadletServer.metaRefreshSamePageIntervalLong",
+				new IntCallback() {
+
+					@Override
+					public Integer get() {
+						return HTMLFilter.metaRefreshSamePageMinInterval;
+					}
+
+					@Override
+					public void set(Integer val)
+							throws InvalidConfigValueException,
+							NodeNeedRestartException {
+						if(val < -1) throw new InvalidConfigValueException("-1 = disabled, 0+ = set a minimum interval"); // FIXME l10n
+						HTMLFilter.metaRefreshSamePageMinInterval = val;
+					}
+		}, false);
+		HTMLFilter.metaRefreshSamePageMinInterval = Math.max(-1, fproxyConfig.getInt("metaRefreshSamePageInterval"));
+		
+		fproxyConfig.register("metaRefreshRedirectInterval", 1, configItemOrder++, true, false, "SimpleToadletServer.metaRefreshRedirectInterval", "SimpleToadletServer.metaRefreshRedirectIntervalLong",
+				new IntCallback() {
+
+					@Override
+					public Integer get() {
+						return HTMLFilter.metaRefreshRedirectMinInterval;
+					}
+
+					@Override
+					public void set(Integer val)
+							throws InvalidConfigValueException,
+							NodeNeedRestartException {
+						if(val < -1) throw new InvalidConfigValueException("-1 = disabled, 0+ = set a minimum interval"); // FIXME l10n
+						HTMLFilter.metaRefreshRedirectMinInterval = val;
+					}
+		}, false);
+		HTMLFilter.metaRefreshRedirectMinInterval = Math.max(-1, fproxyConfig.getInt("metaRefreshRedirectInterval"));
 		
 		fproxyConfig.register("refilterPolicy", "RE_FILTER", 
 				configItemOrder++, true, false, "SimpleToadletServer.refilterPolicy", "SimpleToadletServer.refilterPolicyLong", refilterPolicyCallback);

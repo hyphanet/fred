@@ -10,6 +10,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.InsertContext;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.support.HexUtil;
 import freenet.support.SimpleFieldSet;
 
 public class PersistentPut extends FCPMessage {
@@ -34,13 +35,15 @@ public class PersistentPut extends FCPMessage {
 	final boolean binaryBlob;
 	final InsertContext.CompatibilityMode compatMode;
 	final boolean dontCompress;
+	final boolean realTime;
+	final byte[] splitfileCryptoKey;
 	final String compressorDescriptor;
 	
 	public PersistentPut(String identifier, FreenetURI uri, int verbosity, 
 			short priorityClass, short uploadFrom, FreenetURI targetURI, 
 			short persistenceType, File origFilename, String mimeType, 
 			boolean global, long size, String clientToken, boolean started, 
-			int maxRetries, String targetFilename, boolean binaryBlob, InsertContext.CompatibilityMode compatMode, boolean dontCompress, String compressorDescriptor) {
+			int maxRetries, String targetFilename, boolean binaryBlob, InsertContext.CompatibilityMode compatMode, boolean dontCompress, String compressorDescriptor, boolean realTime, byte[] splitfileCryptoKey) {
 		this.identifier = identifier;
 		this.uri = uri;
 		this.verbosity = verbosity;
@@ -60,6 +63,8 @@ public class PersistentPut extends FCPMessage {
 		this.compatMode = compatMode;
 		this.dontCompress = dontCompress;
 		this.compressorDescriptor = compressorDescriptor;
+		this.realTime = realTime;
+		this.splitfileCryptoKey = splitfileCryptoKey;
 	}
 
 	@Override
@@ -92,6 +97,9 @@ public class PersistentPut extends FCPMessage {
 		fs.put("DontCompress", dontCompress);
 		if(compressorDescriptor != null)
 			fs.putSingle("Codecs", compressorDescriptor);
+		fs.put("RealTime", realTime);
+		if(splitfileCryptoKey != null)
+			fs.putSingle("SplitfileCryptoKey", HexUtil.bytesToHex(splitfileCryptoKey));
 		return fs;
 	}
 

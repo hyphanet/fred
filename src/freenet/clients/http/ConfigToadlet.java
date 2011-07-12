@@ -152,8 +152,47 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			return;
 		}
 
-		 //Returning from directory selector with a selection, re-render config page with any changes.
-		if(request.isPartSet("select-dir")) {
+		//User requested reset to defaults, so present confirmation page.
+		if (request.isPartSet("confirm-reset-to-defaults")) {
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmResetTitle"), ctx);
+			HTMLNode pageNode = page.outer;
+			HTMLNode contentNode = page.content;
+
+			HTMLNode content = ctx.getPageMaker().getInfobox("infobox-warning", l10n("confirmResetTitle"),
+			        contentNode, "reset-confirm", true);
+			content.addChild("#", l10n("confirmReset"));
+
+			HTMLNode formNode = ctx.addFormChild(content, path(), "yes-button");
+			String subconfig = request.getPartAsStringFailsafe("subconfig", MAX_PARAM_VALUE_SIZE);
+			formNode.addChild("input",
+			        new String[] { "type", "name", "value" },
+			        new String[] { "hidden", "subconfig", subconfig });
+			//Persist visible fields so that they are reset to default or unsaved changes are persisted.
+			for (String part : request.getParts()) {
+				if (part.startsWith(subconfig)) {
+					formNode.addChild("input",
+				        new String[] { "type", "name", "value" },
+				        new String[] { "hidden", part,
+				                request.getPartAsStringFailsafe(part, MAX_PARAM_VALUE_SIZE) });
+				}
+			}
+			formNode.addChild("input",
+			        new String[]{"type", "name", "value"},
+			        new String[]{"submit", "reset-to-defaults",
+			                NodeL10n.getBase().getString("Toadlet.yes")});
+
+			formNode.addChild("input",
+			        new String[] { "type", "name", "value" },
+			        new String[] { "submit", "decline-default-reset",
+			                NodeL10n.getBase().getString("Toadlet.no")});
+			writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+			return;
+		}
+
+		//Returning from directory selector with a selection or declining resetting settings to defaults.
+		//Re-render config page with any changes made in the selector and/or persisting values changed but
+		//not applied.
+		if(request.isPartSet("select-dir") || request.isPartSet("decline-default-reset")) {
 			handleMethodGET(uri, request, ctx);
 			return;
 		}
@@ -187,31 +226,60 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		StringBuilder errbuf = new StringBuilder();
 		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 
+		String desiredPrefix = request.getPartAsStringFailsafe("subconfig", MAX_PARAM_VALUE_SIZE);
+		if (logMINOR) {
+			Logger.minor(this, "Current config prefix is "+desiredPrefix);
+		}
+		boolean resetToDefault = request.isPartSet("reset-to-defaults");
+		if (resetToDefault && logMINOR) {
+			Logger.minor(this, "Resetting to defaults");
+		}
+
 		for(SubConfig sc : config.getConfigs()) {
 			String prefix = sc.getPrefix();
 			String configName;
 
-			for(Option<?> o : sc.getOptions()) {
-				configName=o.getName();
-				if(logMINOR) Logger.minor(this, "Setting "+prefix+ '.' +configName);
+			if (prefix.equals(desiredPrefix)) {
 
-				//This ignores unrecognized parameters.
-				if(request.isPartSet(prefix+ '.' +configName)) {
-					value = request.getPartAsStringFailsafe(prefix+ '.' +configName,
-					        MAX_PARAM_VALUE_SIZE);
-					if(!(o.getValueString().equals(value))){
-						if(logMINOR) Logger.minor(this, "Setting "+prefix+ '.' +configName+
-						        " to "+value);
-						try{
-							o.setValue(value);
-						} catch (InvalidConfigValueException e) {
-							errbuf.append(o.getName()).append(' ')
-							        .append(e.getMessage()).append('\n');
-						} catch (NodeNeedRestartException e) {
-							needRestart = true;
-						} catch (Exception e){
-							errbuf.append(o.getName()).append(' ').append(e).append('\n');
-							Logger.error(this, "Caught "+e, e);
+				for(Option<?> o : sc.getOptions()) {
+					configName=o.getName();
+					if(logMINOR) {
+						Logger.minor(this, "Checking option "+prefix+ '.' +configName);
+					}
+
+					//This ignores unrecognized parameters.
+					if (request.isPartSet(prefix+ '.' +configName)) {
+						//Current subconfig is to be reset to default.
+						if (resetToDefault) {
+							// Disallow resetting fproxy port number to default as it might break the link to start fproxy on the system tray, shortcuts etc.
+							if(prefix.equals("fproxy") && configName.equals("port")) continue;
+							value = o.getDefault();
+						} else {
+							value = request.getPartAsStringFailsafe(prefix+ '.' +configName,
+							        MAX_PARAM_VALUE_SIZE);
+						}
+
+						if(!(o.getValueString().equals(value))){
+
+							if(logMINOR) {
+								Logger.minor(this, "Changing "+prefix+ '.' +configName+
+								        " to "+value);
+							}
+
+							try{
+								o.setValue(value);
+							} catch (InvalidConfigValueException e) {
+								errbuf.append(o.getName()).append(' ')
+								        .append(e.getMessage()).append('\n');
+							} catch (NodeNeedRestartException e) {
+								needRestart = true;
+							} catch (Exception e){
+								errbuf.append(o.getName()).append(' ').append(e).
+								        append('\n');
+								Logger.error(this, "Caught "+e, e);
+							}
+						} else if(logMINOR) {
+							Logger.minor(this, prefix+ '.' +configName+" not changed");
 						}
 					}
 				}
@@ -222,7 +290,9 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			if(request.isPartSet(wrapperConfigName)) {
 				value = request.getPartAsStringFailsafe(wrapperConfigName, MAX_PARAM_VALUE_SIZE);
 				if(!WrapperConfig.getWrapperProperty(wrapperConfigName).equals(value)) {
-					if(logMINOR) Logger.minor(this, "Setting "+wrapperConfigName+" to "+value);
+					if(logMINOR) {
+						Logger.minor(this, "Setting "+wrapperConfigName+" to "+value);
+					}
 					WrapperConfig.setWrapperProperty(wrapperConfigName, value);
 				}
 			}
@@ -348,10 +418,8 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			
 			//A value changed by the directory selector takes precedence.
 			if(req.isPartSet("select-for") && req.isPartSet("select-dir")) {
-				overriddenOption = req.getPartAsStringFailsafe("select-for",
-				        MAX_PARAM_VALUE_SIZE);
-				overriddenValue = req.getPartAsStringFailsafe("filename",
-						MAX_PARAM_VALUE_SIZE);
+				overriddenOption = req.getPartAsStringFailsafe("select-for", MAX_PARAM_VALUE_SIZE);
+				overriddenValue = req.getPartAsStringFailsafe("filename", MAX_PARAM_VALUE_SIZE);
 			}
 
 			for(Option<?> o : subConfig.getOptions()) {
@@ -388,9 +456,9 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 						continue;
 					}
 
-					//Values persisted through browser override currently applied ones
+					// Values persisted through browser or backing down from resetting to defaults
+					// override the currently applied ones.
 					if(req.isPartSet(fullName)) {
-						//TODO: This may have to be Base64 encoded
 						value = req.getPartAsStringFailsafe(fullName, MAX_PARAM_VALUE_SIZE);
 					}
 					if(overriddenOption != null && overriddenOption.equals(fullName))
@@ -430,7 +498,18 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			}
 
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("apply")});
-		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset",  l10n("reset")});
+		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset",  l10n("undo")});
+		formNode.addChild("input",
+		        new String[] { "type", "name", "value" },
+		        new String[] { "hidden", "subconfig", subConfig.getPrefix() } );
+		//'Node' prefix options should not be reset to defaults as it is a, quoting Toad, "very bad idea".
+		//Options whose defaults are not wise to apply include the location of the master keys file,
+		//the Darknet port number, and the datastore size.
+		if(!subConfig.getPrefix().equals("node")) {
+			formNode.addChild("input",
+			        new String[]{"type", "name", "value"},
+			        new String[]{"submit", "confirm-reset-to-defaults", l10n("resetToDefaults")});
+		}
 
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}

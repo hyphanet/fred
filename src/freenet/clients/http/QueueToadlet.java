@@ -765,6 +765,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				final FreenetURI furi;
 				final String key = request.getPartAsString("key", MAX_KEY_LENGTH);
 				final boolean compress = request.isPartSet("compress");
+				String s = request.getPartAsString("overrideSplitfileKey", 65);
+				final byte[] overrideSplitfileKey;
+				if(s != null && !s.equals(""))
+					overrideSplitfileKey = HexUtil.hexToBytes(s);
+				else
+					overrideSplitfileKey = null;
 				if(key != null) {
 					try {
 						furi = new FreenetURI(key);
@@ -789,7 +795,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							ClientPutDir clientPutDir;
 							try {
 							try {
-								clientPutDir = new ClientPutDir(fcp.getGlobalForeverClient(), furi, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, file, null, false, true, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, false, fcp, container);
+								clientPutDir = new ClientPutDir(fcp.getGlobalForeverClient(), furi, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, file, null, false, true, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, false, overrideSplitfileKey, fcp, container);
 								if(logMINOR) Logger.minor(this, "Started global request to insert dir "+file+" to "+furi+" as "+identifier);
 								if(clientPutDir != null)
 									try {
@@ -2099,6 +2105,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			byte[] overrideCryptoKey = get.getOverriddenSplitfileCryptoKey();
 			if(overrideCryptoKey != null)
 				compatCell.addChild("#", " - "+l10n("overriddenCryptoKeyInCompatCell")+": "+HexUtil.bytesToHex(overrideCryptoKey));
+			if(get.detectedDontCompress())
+				compatCell.addChild("#", " ("+l10n("dontCompressInCompatCell")+")");
 		}
 		return compatCell;
 	}

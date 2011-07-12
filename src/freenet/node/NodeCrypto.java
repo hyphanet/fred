@@ -516,6 +516,26 @@ public class NodeCrypto {
     	return true;
 	}
 
+	/** If oneConnectionPerAddress is not set, but there are peers with the same
+	 * IP for which it is set, disconnect them.
+	 * @param peerNode
+	 * @param freenetAddress
+	 */
+	public void maybeBootConnection(PeerNode peerNode,
+			FreenetInetAddress address) {
+		if(config.oneConnectionPerAddress())
+			return; // If it's set here then we've already checked, we're not going to boot anyone else.
+		
+		ArrayList<PeerNode> possibleMatches = node.peers.getAllConnectedByAddress(address);
+		if(possibleMatches == null) return;
+		for(PeerNode pn : possibleMatches) {
+			if(pn.crypto == this) continue;
+			if(pn.crypto.config.oneConnectionPerAddress()) {
+				node.peers.disconnect(pn, true, true, pn.isOpennet());
+			}
+		}
+	}
+
 	DSAGroup getCryptoGroup() {
 		return cryptoGroup;
 	}
@@ -609,5 +629,6 @@ public class NodeCrypto {
 	public boolean wantAnonAuthChangeIP() {
 		return node.wantAnonAuthChangeIP(isOpennet);
 	}
+
 }
 

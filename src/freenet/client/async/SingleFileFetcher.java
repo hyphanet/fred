@@ -161,10 +161,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		if(recursionLevel > ctx.maxRecursionLevel)
 			throw new FetchException(FetchException.TOO_MUCH_RECURSION);
 		this.thisKey = persistent ? fetcher.thisKey.clone() : fetcher.thisKey;
-		// Copy the decompressors. Just because a multi-level metadata splitfile 
-		// is compressed, that **doesn't** mean that the data we are eventually 
-		// going to fetch is!
-		this.decompressors = new LinkedList<COMPRESSOR_TYPE>(fetcher.decompressors);
+		// Do not copy the decompressors. Whether the metadata/container is compressed
+		// is independant of whether the final data is; when we find the data we will
+		// call back into the original fetcher.
+		this.decompressors = new LinkedList<COMPRESSOR_TYPE>();
 		if(fetcher.uri == null) throw new NullPointerException();
 		this.uri = persistent ? fetcher.uri.clone() : fetcher.uri;
 		this.metaSnoop = fetcher.metaSnoop;
