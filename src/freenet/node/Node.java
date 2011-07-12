@@ -2222,7 +2222,7 @@ public class Node implements TimeSkewDetectorCallback {
 				if(extraMemoryMB >= 10) {
 					System.out.println("Need "+extraMemoryMB+"MB extra space in heap for slot filters.");
 					UpdateDeployContext.CHANGED changed = 
-						UpdateDeployContext.tryIncreaseMemoryLimit(extraMemoryMB, " Increased because of slot filters in 1312");
+						UpdateDeployContext.tryIncreaseMemoryLimit(extraMemoryMB, " Increased because of slot filters in 1382");
 					if(changed == CHANGED.SUCCESS) {
 						WrapperManager.restart();
 						System.err.println("Unable to restart after increasing memory limit for the slot filters (the total memory usage is decreased relative to bloom filters but the heap size needs to grow). Probably due to not running in the wrapper.");
