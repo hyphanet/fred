@@ -173,11 +173,14 @@ public class PluginRespirator {
 	 * The usage of the global "/" path is not allowed. You must use {@link getSessionManager(String cookieNamespace)}
 	 * if you want your cookie to be valid in the "/" path.
 	 * 
+	 * This function is synchronized  on the SessionManager-list and therefore concurrency-proof.
+	 * 
 	 * @Deprecated We want cookies to be valid in the "/" path for menus to work even if the user is not in the menu of the given
 	 * 				plugin. Therefore, we should use cookie namespaces instead.
 	 */
 	@Deprecated
 	public SessionManager getSessionManager(URI cookiePath) {
+		synchronized(sessionManagers) {
 		for(SessionManager m : sessionManagers) {
 			if(m.getCookiePath().equals(cookiePath))
 				return m;
@@ -186,15 +189,19 @@ public class PluginRespirator {
 		final SessionManager m = new SessionManager(cookiePath);
 		sessionManagers.add(m);
 		return m;
+		}
 	}
 	
 	/**
 	 * Get a new session manager for use with the global "/" cookie path and the given cookie namespace.
 	 * See {@link SessionManager} for a detailed explanation of what cookie namespaces are.
 	 * 
+	 * This function is synchronized  on the SessionManager-list and therefore concurrency-proof.
+	 * 
 	 * @param myCookieNamespace The name of the client application which uses this cookie. 
 	 */
 	public SessionManager getSessionManager(String cookieNamespace) {
+		synchronized(sessionManagers) {
 		for(SessionManager m : sessionManagers) {
 			if(m.getCookieNamespace().equals(cookieNamespace))
 				return m;
@@ -203,6 +210,7 @@ public class PluginRespirator {
 		final SessionManager m = new SessionManager(cookieNamespace);
 		sessionManagers.add(m);
 		return m;
+		}
 	}
 
 	/**
