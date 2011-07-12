@@ -23,6 +23,7 @@ import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.InsertContext.CompatibilityMode;
+import freenet.client.async.BinaryBlobWriter.BinaryBlobAlreadyClosedException;
 import freenet.client.events.EnterFiniteCooldownEvent;
 import freenet.client.events.ExpectedFileSizeEvent;
 import freenet.client.events.ExpectedHashesEvent;
@@ -249,6 +250,9 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		} catch (IOException ioe) {
 			onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream: "+ioe), null, container, context);
 			return;
+		} catch (BinaryBlobAlreadyClosedException e) {
+			onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream, already closed: "+e, e), null, container, context);
+			return;
 		}
 		String mimeType;
 		synchronized(this) {
@@ -445,6 +449,8 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			// the request is already failed but fblob creation failed too
 			// the invalid fblob must be told, more important then an valid but incomplete fblob (ADNF for example)
 			e = new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream: "+ioe);
+		} catch (BinaryBlobAlreadyClosedException ee) {
+			e = new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream, already closed: "+ee, ee);
 		}
 		if(persistent())
 			container.activate(uri, 5);
@@ -679,6 +685,9 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		} catch (IOException e) {
 			Logger.error(this, "Failed to write key to binary blob stream: "+e, e);
 			onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to write key to binary blob stream: "+e), null, container, context);
+		} catch (BinaryBlobAlreadyClosedException e) {
+			Logger.error(this, "Failed to write key to binary blob stream (already closed??): "+e, e);
+			onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to write key to binary blob stream (already closed??): "+e), null, container, context);
 		}
 	}
 

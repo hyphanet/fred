@@ -60,9 +60,9 @@ public final class BinaryBlobWriter {
 		_isSingleBucket = true;
 	}
 
-	private DataOutputStream getOutputStream() throws IOException {
+	private DataOutputStream getOutputStream() throws IOException, BinaryBlobAlreadyClosedException {
 		if (_finalized) {
-			throw new IllegalStateException("Already finalized.");
+			throw new BinaryBlobAlreadyClosedException("Already finalized.");
 		}
 		if (_stream_cache==null) {
 			if (_isSingleBucket) {
@@ -83,8 +83,9 @@ public final class BinaryBlobWriter {
 	/**
 	 * Add a block to the binary blob.
 	 * @throws IOException
+	 * @throws BinaryBlobAlreadyClosedException 
 	 */
-	public synchronized void addKey(ClientKeyBlock block, ClientContext context, ObjectContainer container) throws IOException {
+	public synchronized void addKey(ClientKeyBlock block, ClientContext context, ObjectContainer container) throws IOException, BinaryBlobAlreadyClosedException {
 		Key key = block.getKey();
 		if(_binaryBlobKeysAddedAlready.contains(key)) return;
 		BinaryBlob.writeKey(getOutputStream(), block, key);
@@ -95,16 +96,17 @@ public final class BinaryBlobWriter {
 	 * finalize the return bucket
 	 * @return
 	 * @throws IOException
+	 * @throws BinaryBlobAlreadyClosedException 
 	 */
-	public void finalizeBucket() throws IOException {
+	public void finalizeBucket() throws IOException, BinaryBlobAlreadyClosedException {
 		if (_finalized) {
-			throw new IllegalStateException("Already finalized.");
+			throw new BinaryBlobAlreadyClosedException("Already finalized.");
 		}
 		finalizeBucket(true);
 	}
 
-	private void finalizeBucket(Boolean mark) throws IOException {
-		if (_finalized) throw new IllegalStateException("Already finalized.");
+	private void finalizeBucket(Boolean mark) throws IOException, BinaryBlobAlreadyClosedException {
+		if (_finalized) throw new BinaryBlobAlreadyClosedException("Already finalized.");
 		if (!_isSingleBucket) {
 			if (_buckets.isEmpty()) throw new IllegalStateException("Finalizing without adding something?");
 			if (!mark && (_buckets.size()==1)) {
@@ -130,7 +132,7 @@ public final class BinaryBlobWriter {
 		}
 	}
 
-	public synchronized void getSnapshot(Bucket bucket) throws IOException {
+	public synchronized void getSnapshot(Bucket bucket) throws IOException, BinaryBlobAlreadyClosedException {
 		if (_buckets.isEmpty()) return;
 		if (_finalized) {
 			BucketTools.copy(_buckets.get(0), bucket);
@@ -139,10 +141,10 @@ public final class BinaryBlobWriter {
 		getSnapshot(bucket, true);
 	}
 
-	private void getSnapshot(Bucket bucket, boolean addEndmarker) throws IOException {
+	private void getSnapshot(Bucket bucket, boolean addEndmarker) throws IOException, BinaryBlobAlreadyClosedException {
 		if (_buckets.isEmpty()) return;
 		if (_finalized) {
-			throw new IllegalStateException();
+			throw new BinaryBlobAlreadyClosedException("Already closed getting final data");
 		}
 		OutputStream out = bucket.getOutputStream();
 		for (int i=0,n=_buckets.size(); i<n;i++) {
@@ -166,5 +168,13 @@ public final class BinaryBlobWriter {
 		} else {
 			return _buckets.get(0);
 		}
+	}
+	
+	static class BinaryBlobAlreadyClosedException extends Exception {
+
+		public BinaryBlobAlreadyClosedException(String message) {
+			super(message);
+		}
+		
 	}
 }
