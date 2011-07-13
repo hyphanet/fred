@@ -122,6 +122,8 @@ import freenet.node.stats.DataStoreStats;
 import freenet.node.stats.NotAvailNodeStoreStats;
 import freenet.node.stats.StoreCallbackStats;
 import freenet.node.updater.NodeUpdateManager;
+import freenet.node.updater.UpdateDeployContext;
+import freenet.node.updater.UpdateDeployContext.CHANGED;
 import freenet.node.useralerts.BuildOldAgeUserAlert;
 import freenet.node.useralerts.ExtOldAgeUserAlert;
 import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
@@ -557,13 +559,12 @@ public class Node implements TimeSkewDetectorCallback {
 
 	/** Datastore properties */
 	private String storeType;
-	private int storeBloomFilterSize;
-	private final boolean storeBloomFilterCounting;
+	private boolean storeUseSlotFilters;
 	private boolean storeSaltHashResizeOnStart;
 
 	/** The number of bytes per key total in all the different datastores. All the datastores
 	 * are always the same size in number of keys. */
-	static final int sizePerKey = CHKBlock.DATA_LENGTH + CHKBlock.TOTAL_HEADERS_LENGTH +
+	public static final int sizePerKey = CHKBlock.DATA_LENGTH + CHKBlock.TOTAL_HEADERS_LENGTH +
 		DSAPublicKey.PADDED_SIZE + SSKBlock.DATA_LENGTH + SSKBlock.TOTAL_HEADERS_LENGTH;
 
 	/** The maximum number of keys stored in each of the datastores, cache and store combined. */
@@ -2039,56 +2040,33 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 
 		maxTotalKeys = maxTotalDatastoreSize / sizePerKey;
+		
+		boolean hadBloomFilter = true;
+		s = nodeConfig.getRawOption("storeBloomFilterSize");
+		if(s != null && s.equals("0"))
+			hadBloomFilter = false;
+		
+		nodeConfig.register("storeUseSlotFilters", hadBloomFilter, sortOrder++, true, false, "Node.storeUseSlotFilters", "Node.storeUseSlotFiltersLong", new BooleanCallback() {
 
-		nodeConfig.register("storeBloomFilterSize", -1, sortOrder++, true, false, "Node.storeBloomFilterSize",
-		        "Node.storeBloomFilterSizeLong", new IntCallback() {
-			        private Integer cachedBloomFilterSize;
+			public Boolean get() {
+				synchronized(Node.this) {
+					return storeUseSlotFilters;
+				}
+			}
 
-			        @Override
-					public Integer get() {
-			        	if (cachedBloomFilterSize == null)
-					        cachedBloomFilterSize = storeBloomFilterSize;
-				        return cachedBloomFilterSize;
-			        }
-
-			        @Override
-					public void set(Integer val) throws InvalidConfigValueException, NodeNeedRestartException {
-				        cachedBloomFilterSize = val;
-				        throw new NodeNeedRestartException("Store bloom filter size cannot be changed on the fly");
-			        }
-
-			        @Override
-					public boolean isReadOnly() {
-				        return !("salt-hash".equals(storeType));
-			        }
-		        }, true);
-
-		storeBloomFilterSize = nodeConfig.getInt("storeBloomFilterSize");
-
-		nodeConfig.register("storeBloomFilterCounting", true, sortOrder++, true, false,
-		        "Node.storeBloomFilterCounting", "Node.storeBloomFilterCountingLong", new BooleanCallback() {
-			        private Boolean cachedBloomFilterCounting;
-
-			        @Override
-					public Boolean get() {
-				        if (cachedBloomFilterCounting == null)
-					        cachedBloomFilterCounting = storeBloomFilterCounting;
-				        return cachedBloomFilterCounting;
-			        }
-
-			        @Override
-					public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
-				        cachedBloomFilterCounting = val;
-				        throw new NodeNeedRestartException("Store bloom filter type cannot be changed on the fly");
-			        }
-
-			        @Override
-					public boolean isReadOnly() {
-				        return !("salt-hash".equals(storeType));
-			        }
-		        });
-
-		storeBloomFilterCounting = nodeConfig.getBoolean("storeBloomFilterCounting");
+			public void set(Boolean val) throws InvalidConfigValueException,
+					NodeNeedRestartException {
+				synchronized(Node.this) {
+					storeUseSlotFilters = val;
+				}
+				
+				// FIXME l10n
+				throw new NodeNeedRestartException("Need to restart to change storeUseSlotFilters");
+			}
+			
+		});
+		
+		storeUseSlotFilters = nodeConfig.getBoolean("storeUseSlotFilters");
 
 		nodeConfig.register("storeSaltHashResizeOnStart", false, sortOrder++, true, false,
 				"Node.storeSaltHashResizeOnStart", "Node.storeSaltHashResizeOnStartLong", new BooleanCallback() {
@@ -2236,6 +2214,29 @@ public class Node implements TimeSkewDetectorCallback {
 
 		if (storeType.equals("salt-hash")) {
 			initRAMFS();
+			// FIXME remove migration code
+			if(lastVersion > 0 && lastVersion <= 1381) {
+				// Check for a comment in wrapper.conf saying we've already upgraded, otherwise update it and restart.
+				long extraMemory = maxTotalKeys * 3 * 4;
+				int extraMemoryMB = (int)Math.min(Integer.MAX_VALUE, ((extraMemory + 1024 * 1024 - 1) / (1024 * 1024)));
+				if(extraMemoryMB >= 10) {
+					System.out.println("Need "+extraMemoryMB+"MB extra space in heap for slot filters.");
+					UpdateDeployContext.CHANGED changed = 
+						UpdateDeployContext.tryIncreaseMemoryLimit(extraMemoryMB, " Increased because of slot filters in 1382");
+					if(changed == CHANGED.SUCCESS) {
+						WrapperManager.restart();
+						System.err.println("Unable to restart after increasing memory limit for the slot filters (the total memory usage is decreased relative to bloom filters but the heap size needs to grow). Probably due to not running in the wrapper.");
+						System.err.println("If the node crashes due to out of memory, be it on your own head!");
+						System.err.println("You need to increase wrapper.java.maxmemory by "+extraMemoryMB);
+					} else if(changed == CHANGED.FAIL) {
+						System.err.println("Unable to increase the memory limit for the slot filters (the total memory usage is decreased relative to bloom filters but the heap size needs to grow). Most likely due to being unable to write wrapper.conf or similar problem.");
+						System.err.println("If the node crashes due to out of memory, be it on your own head!");
+						System.err.println("You need to increase wrapper.java.maxmemory by "+extraMemoryMB);
+					} else /*if(changed == CHANGED.ALREADY)*/ {
+						System.err.println("Memory limit has already been increased for slot filters, continuing startup.");
+					}
+				}
+			}
 			initSaltHashFS(suffix, false, null);
 		} else if (storeType.equals("bdb-index")) {
 			initBDBFS(suffix);
@@ -3426,28 +3427,20 @@ public class Node implements TimeSkewDetectorCallback {
 	    storeEnvironment = null;
 		envMutableConfig = null;
 		try {
-			int bloomSize = storeBloomFilterSize;
-			if (bloomSize == -1)
-				bloomSize = (int) Math.min(maxTotalDatastoreSize / 2048, Integer.MAX_VALUE);
-			int bloomFilterSizeInM = storeBloomFilterCounting ? bloomSize / 6 * 4
-			        : bloomSize / 6 * 8;
-			// Increase size by 10% to allow some space for removing keys. Even a 2-bit counting filter gets saturated.
-			bloomFilterSizeInM *= 1.1;
-
 			final CHKStore chkDatastore = new CHKStore();
-			final SaltedHashFreenetStore<CHKBlock> chkDataFS = makeStore(bloomFilterSizeInM, "CHK", true, chkDatastore, dontResizeOnStart, masterKey);
+			final SaltedHashFreenetStore<CHKBlock> chkDataFS = makeStore("CHK", true, chkDatastore, dontResizeOnStart, masterKey);
 			final CHKStore chkDatacache = new CHKStore();
-			final SaltedHashFreenetStore<CHKBlock> chkCacheFS = makeStore(bloomFilterSizeInM, "CHK", false, chkDatacache, dontResizeOnStart, masterKey);
+			final SaltedHashFreenetStore<CHKBlock> chkCacheFS = makeStore("CHK", false, chkDatacache, dontResizeOnStart, masterKey);
 			chkCacheFS.setAltStore(chkDataFS);
 			final PubkeyStore pubKeyDatastore = new PubkeyStore();
-			final SaltedHashFreenetStore<DSAPublicKey> pubkeyDataFS = makeStore(bloomFilterSizeInM, "PUBKEY", true, pubKeyDatastore, dontResizeOnStart, masterKey);
+			final SaltedHashFreenetStore<DSAPublicKey> pubkeyDataFS = makeStore("PUBKEY", true, pubKeyDatastore, dontResizeOnStart, masterKey);
 			final PubkeyStore pubKeyDatacache = new PubkeyStore();
-			final SaltedHashFreenetStore<DSAPublicKey> pubkeyCacheFS = makeStore(bloomFilterSizeInM, "PUBKEY", false, pubKeyDatacache, dontResizeOnStart, masterKey);
+			final SaltedHashFreenetStore<DSAPublicKey> pubkeyCacheFS = makeStore("PUBKEY", false, pubKeyDatacache, dontResizeOnStart, masterKey);
 			pubkeyCacheFS.setAltStore(pubkeyDataFS);
 			final SSKStore sskDatastore = new SSKStore(getPubKey);
-			final SaltedHashFreenetStore<SSKBlock> sskDataFS = makeStore(bloomFilterSizeInM, "SSK", true, sskDatastore, dontResizeOnStart, masterKey);
+			final SaltedHashFreenetStore<SSKBlock> sskDataFS = makeStore("SSK", true, sskDatastore, dontResizeOnStart, masterKey);
 			final SSKStore sskDatacache = new SSKStore(getPubKey);
-			final SaltedHashFreenetStore<SSKBlock> sskCacheFS = makeStore(bloomFilterSizeInM, "SSK", false, sskDatacache, dontResizeOnStart, masterKey);
+			final SaltedHashFreenetStore<SSKBlock> sskCacheFS = makeStore("SSK", false, sskDatacache, dontResizeOnStart, masterKey);
 			sskCacheFS.setAltStore(sskDataFS);
 
 			boolean delay =
@@ -3551,16 +3544,12 @@ public class Node implements TimeSkewDetectorCallback {
 		envMutableConfig = null;
 
 		try {
-			int bloomSize = (int) Math.min(maxTotalClientCacheSize / 2048, Integer.MAX_VALUE);
-			int bloomFilterSizeInM = storeBloomFilterCounting ? bloomSize / 6 * 4
-			        : (bloomSize) / 6 * 8;
-
 			final CHKStore chkClientcache = new CHKStore();
-			final SaltedHashFreenetStore<CHKBlock> chkDataFS = makeClientcache(bloomFilterSizeInM, "CHK", true, chkClientcache, dontResizeOnStart, clientCacheMasterKey);
+			final SaltedHashFreenetStore<CHKBlock> chkDataFS = makeClientcache("CHK", true, chkClientcache, dontResizeOnStart, clientCacheMasterKey);
 			final PubkeyStore pubKeyClientcache = new PubkeyStore();
-			final SaltedHashFreenetStore<DSAPublicKey> pubkeyDataFS = makeClientcache(bloomFilterSizeInM, "PUBKEY", true, pubKeyClientcache, dontResizeOnStart, clientCacheMasterKey);
+			final SaltedHashFreenetStore<DSAPublicKey> pubkeyDataFS = makeClientcache("PUBKEY", true, pubKeyClientcache, dontResizeOnStart, clientCacheMasterKey);
 			final SSKStore sskClientcache = new SSKStore(getPubKey);
-			final SaltedHashFreenetStore<SSKBlock> sskDataFS = makeClientcache(bloomFilterSizeInM, "SSK", true, sskClientcache, dontResizeOnStart, clientCacheMasterKey);
+			final SaltedHashFreenetStore<SSKBlock> sskDataFS = makeClientcache("SSK", true, sskClientcache, dontResizeOnStart, clientCacheMasterKey);
 
 			boolean delay =
 				chkDataFS.start(ticker, false) |
@@ -3620,23 +3609,23 @@ public class Node implements TimeSkewDetectorCallback {
 		        storeDir.file(type + suffix + "."+store+".keys"));
 	}
 
-	private <T extends StorableBlock> SaltedHashFreenetStore<T> makeClientcache(int bloomFilterSizeInM, String type, boolean isStore, StoreCallback<T> cb, boolean dontResizeOnStart, byte[] clientCacheMasterKey) throws IOException {
-		SaltedHashFreenetStore<T> store = makeStore(bloomFilterSizeInM, type, "clientcache", maxClientCacheKeys, cb, dontResizeOnStart, clientCacheMasterKey);
+	private <T extends StorableBlock> SaltedHashFreenetStore<T> makeClientcache(String type, boolean isStore, StoreCallback<T> cb, boolean dontResizeOnStart, byte[] clientCacheMasterKey) throws IOException {
+		SaltedHashFreenetStore<T> store = makeStore(type, "clientcache", maxClientCacheKeys, cb, dontResizeOnStart, clientCacheMasterKey);
 		return store;
 	}
 
-	private <T extends StorableBlock> SaltedHashFreenetStore<T> makeStore(int bloomFilterSizeInM, String type, boolean isStore, StoreCallback<T> cb, boolean dontResizeOnStart, byte[] clientCacheMasterKey) throws IOException {
+	private <T extends StorableBlock> SaltedHashFreenetStore<T> makeStore(String type, boolean isStore, StoreCallback<T> cb, boolean dontResizeOnStart, byte[] clientCacheMasterKey) throws IOException {
 		String store = isStore ? "store" : "cache";
 		long maxKeys = isStore ? maxStoreKeys : maxCacheKeys;
-		return makeStore(bloomFilterSizeInM, type, store, maxKeys, cb, dontResizeOnStart, clientCacheMasterKey);
+		return makeStore(type, store, maxKeys, cb, dontResizeOnStart, clientCacheMasterKey);
 	}
 
-	private <T extends StorableBlock> SaltedHashFreenetStore<T> makeStore(int bloomFilterSizeInM, String type, String store, long maxKeys, StoreCallback<T> cb, boolean lateStart, byte[] clientCacheMasterKey) throws IOException {
+	private <T extends StorableBlock> SaltedHashFreenetStore<T> makeStore(String type, String store, long maxKeys, StoreCallback<T> cb, boolean lateStart, byte[] clientCacheMasterKey) throws IOException {
 		Logger.normal(this, "Initializing "+type+" Data"+store);
 		System.out.println("Initializing "+type+" Data"+store+" (" + maxStoreKeys + " keys)");
 
 		SaltedHashFreenetStore<T> fs = SaltedHashFreenetStore.<T>construct(getStoreDir(), type+"-"+store, cb,
-		        random, maxKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate, storeSaltHashResizeOnStart && !lateStart, lateStart ? ticker : null, clientCacheMasterKey);
+		        random, maxKeys, storeUseSlotFilters, shutdownHook, storePreallocate, storeSaltHashResizeOnStart && !lateStart, lateStart ? ticker : null, clientCacheMasterKey);
 		cb.setStore(fs);
 		return fs;
 	}

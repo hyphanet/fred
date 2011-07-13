@@ -5,6 +5,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -14,11 +15,14 @@ import java.util.Properties;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.l10n.NodeL10n;
+import freenet.node.NodeInitException;
+import freenet.node.updater.UpdateDeployContext.CHANGED;
+import freenet.support.io.Closer;
 
 /**
  * Handles the wrapper.conf, essentially.
  */
-class UpdateDeployContext {
+public class UpdateDeployContext {
 
 	public static class UpdateCatastropheException extends Exception {
 
@@ -259,6 +263,112 @@ class UpdateDeployContext {
 		
 		System.err.println("Rewritten wrapper.conf for"+(writtenNewJar ? (" new main jar: "+newMainJar) : "")+(writtenNewExt ? (" new ext jar: "+newExtJar): ""));
 		
+	}
+
+	public enum CHANGED {
+		ALREADY, // Found the comment, so it has already been changed
+		SUCCESS, // Succeeded
+		FAIL // Failed e.g. due to unable to write wrapper.conf.
+	}
+
+	public static CHANGED tryIncreaseMemoryLimit(int extraMemoryMB,
+			String markerComment) {
+		// Rewrite wrapper.conf
+		// Don't just write it out from properties; we want to keep it as close to what it was as possible.
+
+		File oldConfig = new File("wrapper.conf");
+		File newConfig = new File("wrapper.conf.new");
+		
+		if(!oldConfig.exists()) {
+			File wrapperDir = new File("wrapper");
+			if(wrapperDir.exists() && wrapperDir.isDirectory()) {
+				File o = new File(wrapperDir, "wrapper.conf");
+				if(o.exists()) {
+					oldConfig = o;
+					newConfig = new File(wrapperDir, "wrapper.conf.new");
+				}
+			}
+		}
+		
+		FileInputStream fis = null;
+		BufferedInputStream bis = null;
+		InputStreamReader isr = null;
+		BufferedReader br = null;
+		FileOutputStream fos = null;
+		OutputStreamWriter osw = null;
+		BufferedWriter bw = null;
+		
+		boolean success = false;
+		
+		try {
+		
+		fis = new FileInputStream(oldConfig);
+		bis = new BufferedInputStream(fis);
+		isr = new InputStreamReader(bis);
+		br = new BufferedReader(isr);
+		
+		fos = new FileOutputStream(newConfig);
+		osw = new OutputStreamWriter(fos);
+		bw = new BufferedWriter(osw);
+
+		String line;
+		
+		while((line = br.readLine()) != null) {
+			
+			if(line.equals("#" + markerComment))
+				return CHANGED.ALREADY;
+			
+			if(line.startsWith("wrapper.java.maxmemory=")) {
+				try {
+					int memoryLimit = Integer.parseInt(line.substring("wrapper.java.maxmemory=".length()));
+					int newMemoryLimit = memoryLimit + extraMemoryMB;
+					// There have been some cases where really high limits have caused the JVM to do bad things.
+					if(newMemoryLimit > 2048) newMemoryLimit = 2048;
+					bw.write('#' + markerComment + '\n');
+					bw.write("wrapper.java.maxmemory="+newMemoryLimit+'\n');
+					success = true;
+					continue;
+				} catch (NumberFormatException e) {
+					// Grrrrr!
+				}
+			}
+			
+			bw.write(line+'\n');
+		}
+		br.close();
+		
+		} catch (IOException e) {
+			newConfig.delete();
+			System.err.println("Unable to rewrite wrapper.conf with new memory limit.");
+			return CHANGED.FAIL;
+		} finally {
+			Closer.close(br);
+			Closer.close(isr);
+			Closer.close(bis);
+			Closer.close(fis);
+			Closer.close(bw);
+			Closer.close(osw);
+			Closer.close(fos);
+		}
+		
+		if(success) {
+			if(!newConfig.renameTo(oldConfig)) {
+				if(!oldConfig.delete()) {
+					System.err.println("Unable to move rewritten wrapper.conf with new memory limit "+newConfig+" over old config "+oldConfig+" : unable to delete old config");
+					return CHANGED.FAIL;
+				}
+				if(!newConfig.renameTo(oldConfig)) {
+					System.err.println("Old wrapper.conf deleted but new wrapper.conf cannot be renamed!");
+					System.err.println("FREENET WILL NOT START UNTIL YOU RENAME "+newConfig+" to "+oldConfig);
+					System.exit(NodeInitException.EXIT_BROKE_WRAPPER_CONF);
+				}
+			}
+			System.err.println("Rewritten wrapper.conf for new memory limit");
+			return CHANGED.SUCCESS;
+		} else {
+			newConfig.delete();
+			return CHANGED.FAIL;
+		}
 	}
 
 }

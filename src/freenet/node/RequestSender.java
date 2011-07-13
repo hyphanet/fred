@@ -839,7 +839,6 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         		BlockReceiver br = new BlockReceiver(node.usm, pn, uid, prb, this, node.getTicker(), true, realTimeFlag, myTimeoutHandler);
         		
        			if(logMINOR) Logger.minor(this, "Receiving data (for offer reply)");
-       			final PeerNode p = pn;
        			receivingAsync = true;
        			br.receive(new BlockReceiverCompletion() {
        				
@@ -851,21 +850,21 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
                 		try {
 	                		// Received data
-	               			p.transferSuccess(realTimeFlag);
+	               			pn.transferSuccess(realTimeFlag);
 	                		if(logMINOR) Logger.minor(this, "Received data from offer reply");
                 			verifyAndCommit(finalHeaders, data);
-	                		finish(SUCCESS, p, true);
+	                		finish(SUCCESS, pn, true);
 	                		node.nodeStats.successfulBlockReceive(realTimeFlag, source == null);
                 		} catch (KeyVerifyException e1) {
                 			Logger.normal(this, "Got data but verify failed: "+e1, e1);
                 			if(offers != null) {
-                				finish(GET_OFFER_VERIFY_FAILURE, p, true);
+                				finish(GET_OFFER_VERIFY_FAILURE, pn, true);
                 				offers.deleteLastOffer();
                 			}
                 		} catch (Throwable t) {
                 			Logger.error(this, "Failed on "+this, t);
                 			if(offers != null) {
-                				finish(INTERNAL_ERROR, p, true);
+                				finish(INTERNAL_ERROR, pn, true);
                 			}
                 		} finally {
                 			// This is only necessary here because we don't always call finish().
@@ -885,12 +884,12 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 								Logger.normal(this, "Transfer failed (disconnect): "+e, e);
 							else
 								// A certain number of these are normal, it's better to track them through statistics than call attention to them in the logs.
-								Logger.normal(this, "Transfer for offer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+p, e);
+								Logger.normal(this, "Transfer for offer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+pn, e);
 							if(offers != null) {
-								finish(GET_OFFER_TRANSFER_FAILED, p, true);
+								finish(GET_OFFER_TRANSFER_FAILED, pn, true);
 							}
 							// Backoff here anyway - the node really ought to have it!
-							p.transferFailed("RequestSenderGetOfferedTransferFailed", realTimeFlag);
+							pn.transferFailed("RequestSenderGetOfferedTransferFailed", realTimeFlag);
 							if(offers != null) {
 								offers.deleteLastOffer();
 							}
@@ -899,7 +898,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
                 		} catch (Throwable t) {
                 			Logger.error(this, "Failed on "+this, t);
                 			if(offers != null) {
-                				finish(INTERNAL_ERROR, p, true);
+                				finish(INTERNAL_ERROR, pn, true);
                 			}
                 		} finally {
                 			// This is only necessary here because we don't always call finish().

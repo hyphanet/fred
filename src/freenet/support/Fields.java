@@ -593,11 +593,15 @@ public abstract class Fields {
 		}
 		return buf;
 	}
-
+	
 	public static byte[] intsToBytes(int[] ints) {
-		byte[] buf = new byte[ints.length * 4];
-		for(int i = 0; i < ints.length; i++) {
-			long x = ints[i];
+		return intsToBytes(ints, 0, ints.length);
+	}
+
+	public static byte[] intsToBytes(int[] ints, int offset, int length) {
+		byte[] buf = new byte[length * 4];
+		for(int i = 0; i < length; i++) {
+			long x = ints[i + offset];
 			for(int j = 0; j < 4; j++) {
 				buf[i * 4 + j] = (byte) x;
 				x >>>= 8;

@@ -351,7 +351,10 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode bandwidthForm = ctx.addFormChild(bandwidthInfoboxContent, ".", "dsForm");
 			HTMLNode result = bandwidthForm.addChild("select", "name", "ds");
 
+			long maxSize = maxDatastoreSize();
+			
 			long autodetectedSize = canAutoconfigureDatastoreSize();
+			if(maxSize < autodetectedSize) autodetectedSize = maxSize;
 
 			@SuppressWarnings("unchecked")
 			Option<Long> sizeOption = (Option<Long>) config.get("node").getOption("storeSize");
@@ -362,17 +365,27 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				result.addChild("option", new String[] { "value", "selected" }, new String[] { SizeUtil.formatSize(autodetectedSize), "on" }, SizeUtil.formatSize(autodetectedSize));
 			if(autodetectedSize != 512*1024*1024)
 				result.addChild("option", "value", "512M", "512 MiB");
+			// We always allow at least 1GB
 			result.addChild("option", "value", "1G", "1 GiB");
-			if(autodetectedSize != -1 || !sizeOption.isDefault())
-				result.addChild("option", "value", "2G", "2 GiB");
-			else
-				result.addChild("option", new String[] { "value", "selected" }, new String[] { "2G", "on" }, "2GiB");
+			if(maxSize >= 2*1024*1024*1024) {
+				if(autodetectedSize != -1 || !sizeOption.isDefault())
+					result.addChild("option", "value", "2G", "2 GiB");
+				else
+					result.addChild("option", new String[] { "value", "selected" }, new String[] { "2G", "on" }, "2GiB");
+			}
+			if(maxSize >= 3*1024*1024*1024)
 			result.addChild("option", "value", "3G", "3 GiB");
+			if(maxSize >= 5*1024*1024*1024)
 			result.addChild("option", "value", "5G", "5 GiB");
-			result.addChild("option", "value", "10G", "10 GiB");
+			if(maxSize >= 10*1024*1024*1024)
+				result.addChild("option", "value", "10G", "10 GiB");
+			if(maxSize >= 20*1024*1024*1024)
 			result.addChild("option", "value", "20G", "20 GiB");
+			if(maxSize >= 30*1024*1024*1024)
 			result.addChild("option", "value", "30G", "30 GiB");
+			if(maxSize >= 50*1024*1024*1024)
 			result.addChild("option", "value", "50G", "50 GiB");
+			if(maxSize >= 100*1024*1024*1024)
 			result.addChild("option", "value", "100G", "100 GiB");
 
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "dsF", NodeL10n.getBase().getString("FirstTimeWizardToadlet.continue")});
@@ -858,6 +871,13 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			return bytes / 2;
 		}else
 			return -1;
+	}
+	
+	private long maxDatastoreSize() {
+		long maxMemory = Runtime.getRuntime().maxMemory();
+		if(maxMemory == Long.MAX_VALUE) return Long.MAX_VALUE;
+		if(maxMemory < 128*1024*1024) return 1024*1024*1024;
+		return (((((maxMemory - 100*1024*1024)*4)/5) / (4 * 3) /* it's actually size per one key of each type */)) * Node.sizePerKey;
 	}
 
 	private long canAutoconfigureDatastoreSize() {
