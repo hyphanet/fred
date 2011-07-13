@@ -1769,7 +1769,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			// If we have moved past the origUSK, then clear the KeyList for it.
 			for(Iterator<Entry<Long,KeyList>> it = fromSubscribers.entrySet().iterator();it.hasNext();) {
 				Entry<Long,KeyList> entry = it.next();
-				long l = entry.getKey();
+				long l = entry.getKey() - 1;
 				if(l <= lookedUp)
 					it.remove();
 				entry.getValue().getNextEditions(toFetch, toPoll, l-1, alreadyRunning, random);
