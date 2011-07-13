@@ -62,7 +62,7 @@ public final class BinaryBlobWriter {
 
 	private DataOutputStream getOutputStream() throws IOException, BinaryBlobAlreadyClosedException {
 		if (_finalized) {
-			throw new BinaryBlobAlreadyClosedException("Already finalized.");
+			throw new BinaryBlobAlreadyClosedException("Already finalized (getting final data).");
 		}
 		if (_stream_cache==null) {
 			if (_isSingleBucket) {
@@ -100,13 +100,13 @@ public final class BinaryBlobWriter {
 	 */
 	public void finalizeBucket() throws IOException, BinaryBlobAlreadyClosedException {
 		if (_finalized) {
-			throw new BinaryBlobAlreadyClosedException("Already finalized.");
+			throw new BinaryBlobAlreadyClosedException("Already finalized (closing blob).");
 		}
 		finalizeBucket(true);
 	}
 
 	private void finalizeBucket(Boolean mark) throws IOException, BinaryBlobAlreadyClosedException {
-		if (_finalized) throw new BinaryBlobAlreadyClosedException("Already finalized.");
+		if (_finalized) throw new BinaryBlobAlreadyClosedException("Already finalized (closing blob - 2).");
 		if (!_isSingleBucket) {
 			if (_buckets.isEmpty()) throw new IllegalStateException("Finalizing without adding something?");
 			if (!mark && (_buckets.size()==1)) {
@@ -144,7 +144,7 @@ public final class BinaryBlobWriter {
 	private void getSnapshot(Bucket bucket, boolean addEndmarker) throws IOException, BinaryBlobAlreadyClosedException {
 		if (_buckets.isEmpty()) return;
 		if (_finalized) {
-			throw new BinaryBlobAlreadyClosedException("Already closed getting final data");
+			throw new BinaryBlobAlreadyClosedException("Already closed (getting final data snapshot)");
 		}
 		OutputStream out = bucket.getOutputStream();
 		for (int i=0,n=_buckets.size(); i<n;i++) {
