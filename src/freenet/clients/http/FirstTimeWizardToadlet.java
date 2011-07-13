@@ -116,8 +116,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				}
 			}
 			incognito = false;
+			boolean isRelativelySafe = isFirefox && !isOldFirefox;
 			
-			PageNode page = ctx.getPageMaker().getPageNode(incognito ? l10n("browserWarningIncognitoPageTitle") : l10n("browserWarningPageTitle"), false, ctx);
+			PageNode page = ctx.getPageMaker().getPageNode(incognito ? l10n("browserWarningIncognitoPageTitle") : (isRelativelySafe ? l10n("browserWarningPageTitleRelativelySafe") : l10n("browserWarningPageTitle")), false, ctx);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 
@@ -127,8 +128,10 @@ public class FirstTimeWizardToadlet extends Toadlet {
 
 			if(incognito)
 				infoboxHeader.addChild("#", l10n("browserWarningIncognitoShort"));
-			else
+			else if(isRelativelySafe)
 				infoboxHeader.addChild("#", l10n("browserWarningShort"));
+			else
+				infoboxHeader.addChild("#", l10n("browserWarningShortRelativelySafe"));
 			
 			if(isOldFirefox) {
 				HTMLNode p = infoboxContent.addChild("p");
@@ -137,13 +140,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 					p.addChild("#", " " + l10n("browserWarningOldFirefoxNewerHasPrivacyMode"));
 			}
 			
-			NodeL10n.getBase().addL10nSubstitution(infoboxContent, incognito ? "FirstTimeWizardToadlet.browserWarningIncognito" : "FirstTimeWizardToadlet.browserWarning", new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
+			if(isRelativelySafe)
+				infoboxContent.addChild("p", incognito ? l10n("browserWarningIncognitoMaybeSafe") : l10n("browserWarningMaybeSafe"));
+			else
+				NodeL10n.getBase().addL10nSubstitution(infoboxContent, incognito ? "FirstTimeWizardToadlet.browserWarningIncognito" : "FirstTimeWizardToadlet.browserWarning", new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
 
 			if(incognito) {
-				if(mightHaveClobberedTabs) {
-					String url = container.getURL(uri.getHost());
-					NodeL10n.getBase().addL10nSubstitution(infoboxContent.addChild("p"), "FirstTimeWizardToadlet.browserWarningFirefoxMightHaveClobberedTabs", new String[] { "link" }, new HTMLNode[] { new HTMLNode("a", "href", url, url) });
-				}
 				infoboxContent.addChild("p", l10n("browserWarningIncognitoSuggestion"));
 			} else
 				infoboxContent.addChild("p", l10n("browserWarningSuggestion"));
