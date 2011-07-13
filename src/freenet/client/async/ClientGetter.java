@@ -478,7 +478,12 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 					return;
 				}
 			}
+			boolean alreadyFinished = false;
 			synchronized(this) {
+				if(finished) {
+					Logger.error(this, "Already finished - not calling callbacks on "+this, new Exception("error"));
+					alreadyFinished = true;
+				}
 				finished = true;
 				oldState = currentState;
 				currentState = null;
@@ -504,7 +509,8 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 					oldState.removeFrom(container, context);
 				}
 			}
-			clientCallback.onFailure(e1, ClientGetter.this, container);
+			if(!alreadyFinished)
+				clientCallback.onFailure(e1, ClientGetter.this, container);
 			return;
 		}
 	}
