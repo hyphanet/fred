@@ -86,6 +86,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		WIZARD_STEP currentStep = WIZARD_STEP.valueOf(request.getParam("step", WIZARD_STEP.WELCOME.toString()));
 
 		if(currentStep == WIZARD_STEP.BROWSER_WARNING) {
+			
 			boolean incognito = request.isParameterSet("incognito");
 			// Bug 3376: Opening Chrome in incognito mode from command line will open a new non-incognito window if the browser is already open.
 			// See http://code.google.com/p/chromium/issues/detail?id=9636
@@ -101,8 +102,21 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			// http://jeremiahgrossman.blogspot.com/2006/08/i-know-where-youve-been.html
 			// https://developer.mozilla.org/en/Firefox_4_for_developers
 			// https://developer.mozilla.org/en/CSS/Privacy_and_the_%3avisited_selector
+			String ua = request.getHeader("user-agent");
+			boolean isFirefox = false;
+			boolean isOldFirefox = false;
+			boolean mightHaveClobberedTabs = false;
+			if(ua != null) {
+				isFirefox = ua.contains("Firefox/");
+				if(isFirefox) {
+					if(incognito)
+						mightHaveClobberedTabs = true;
+					if(ua.contains("Firefox/0.") || ua.contains("Firefox/1.") || ua.contains("Firefox/2.") || ua.contains("Firefox/3."))
+						isOldFirefox = true;
+				}
+			}
 			incognito = false;
-
+			
 			PageNode page = ctx.getPageMaker().getPageNode(incognito ? l10n("browserWarningIncognitoPageTitle") : l10n("browserWarningPageTitle"), false, ctx);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
@@ -115,11 +129,23 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				infoboxHeader.addChild("#", l10n("browserWarningIncognitoShort"));
 			else
 				infoboxHeader.addChild("#", l10n("browserWarningShort"));
+			
+			if(isOldFirefox) {
+				HTMLNode p = infoboxContent.addChild("p");
+				p.addChild("#", l10n("browserWarningOldFirefox"));
+				if(!incognito)
+					p.addChild("#", " " + l10n("browserWarningOldFirefoxNewerHasPrivacyMode"));
+			}
+			
 			NodeL10n.getBase().addL10nSubstitution(infoboxContent, incognito ? "FirstTimeWizardToadlet.browserWarningIncognito" : "FirstTimeWizardToadlet.browserWarning", new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
 
-			if(incognito)
+			if(incognito) {
+				if(mightHaveClobberedTabs) {
+					String url = container.getURL(uri.getHost());
+					NodeL10n.getBase().addL10nSubstitution(infoboxContent.addChild("p"), "FirstTimeWizardToadlet.browserWarningFirefoxMightHaveClobberedTabs", new String[] { "link" }, new HTMLNode[] { new HTMLNode("a", "href", url, url) });
+				}
 				infoboxContent.addChild("p", l10n("browserWarningIncognitoSuggestion"));
-			else
+			} else
 				infoboxContent.addChild("p", l10n("browserWarningSuggestion"));
 
 			infoboxContent.addChild("p").addChild("a", "href", "?step="+WIZARD_STEP.MISC, NodeL10n.getBase().getString("FirstTimeWizardToadlet.clickContinue"));
