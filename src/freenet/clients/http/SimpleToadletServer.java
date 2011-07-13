@@ -1178,4 +1178,26 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		return cssOverride;
 	}
 
+	@Override
+	public String getURL() {
+		return getURL(null);
+	}
+
+	@Override
+	public String getURL(String host) {
+		StringBuffer sb = new StringBuffer();
+		if(ssl)
+			sb.append("https");
+		else
+			sb.append("http");
+		sb.append("://");
+		if(host == null)
+			host = "127.0.0.1";
+		sb.append(host);
+		sb.append(":");
+		sb.append(this.port);
+		sb.append("/");
+		return sb.toString();
+	}
+
 }

@@ -807,7 +807,8 @@ public class HTTPRequestImpl implements HTTPRequest {
 
 	@Override
 	public String getHeader(String name) {
-		return this.headers.get(name);
+		assert(name.equals(name.toLowerCase()));
+		return this.headers.get(name.toLowerCase());
 	}
 
 	@Override

@@ -125,4 +125,8 @@ public interface ToadletContainer {
 
 	public File getOverrideFile();
 
+	public String getURL();
+
+	public String getURL(String host);
+
 }
