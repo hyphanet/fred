@@ -1772,7 +1772,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				long l = entry.getKey();
 				if(l <= lookedUp)
 					it.remove();
-				entry.getValue().getNextEditions(toFetch, toPoll, l, alreadyRunning, random);
+				entry.getValue().getNextEditions(toFetch, toPoll, l-1, alreadyRunning, random);
 			}
 			
 			if(doRandom) {
