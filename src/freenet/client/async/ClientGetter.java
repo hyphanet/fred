@@ -456,9 +456,10 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		} catch (IOException ioe) {
 			// the request is already failed but fblob creation failed too
 			// the invalid fblob must be told, more important then an valid but incomplete fblob (ADNF for example)
-			e = new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream: "+ioe);
+			if(e.mode != FetchException.CANCELLED && !force)
+				e = new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream: "+ioe);
 		} catch (BinaryBlobAlreadyClosedException ee) {
-			if(e.mode != FetchException.BUCKET_ERROR)
+			if(e.mode != FetchException.BUCKET_ERROR && e.mode != FetchException.CANCELLED && !force)
 				e = new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream, already closed: "+ee, ee);
 		}
 		if(persistent())
