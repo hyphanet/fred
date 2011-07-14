@@ -2215,14 +2215,15 @@ public class Node implements TimeSkewDetectorCallback {
 		if (storeType.equals("salt-hash")) {
 			initRAMFS();
 			// FIXME remove migration code
-			if(lastVersion > 0 && lastVersion <= 1381) {
+			final int lastVersionWithBloom = 1384;
+			if(lastVersion > 0 && lastVersion <= lastVersionWithBloom) {
 				// Check for a comment in wrapper.conf saying we've already upgraded, otherwise update it and restart.
 				long extraMemory = maxTotalKeys * 3 * 4;
 				int extraMemoryMB = (int)Math.min(Integer.MAX_VALUE, ((extraMemory + 1024 * 1024 - 1) / (1024 * 1024)));
 				if(extraMemoryMB >= 10) {
 					System.out.println("Need "+extraMemoryMB+"MB extra space in heap for slot filters.");
 					UpdateDeployContext.CHANGED changed = 
-						UpdateDeployContext.tryIncreaseMemoryLimit(extraMemoryMB, " Increased because of slot filters in 1382");
+						UpdateDeployContext.tryIncreaseMemoryLimit(extraMemoryMB, " Increased because of slot filters in "+(lastVersionWithBloom+1));
 					if(changed == CHANGED.SUCCESS) {
 						WrapperManager.restart();
 						System.err.println("Unable to restart after increasing memory limit for the slot filters (the total memory usage is decreased relative to bloom filters but the heap size needs to grow). Probably due to not running in the wrapper.");
