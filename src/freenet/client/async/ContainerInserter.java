@@ -12,8 +12,8 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import org.apache.tools.tar.TarEntry;
-import org.apache.tools.tar.TarOutputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 
 import com.db4o.ObjectContainer;
 
@@ -31,7 +31,6 @@ import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
-import freenet.support.io.NoCloseProxyOutputStream;
 
 /**
  * Insert a bunch of files as single Archive with .metadata
@@ -183,8 +182,6 @@ public class ContainerInserter implements ClientPutState {
 			String mimeType = (archiveType == ARCHIVE_TYPE.TAR ?
 				createTarBucket(os, container) :
 				createZipBucket(os, container));
-			os.flush();
-			os.close();
 			os = null;
 			if(logMINOR)
 				Logger.minor(this, "Archive size is "+outputBucket.size());
@@ -299,33 +296,29 @@ public class ContainerInserter implements ClientPutState {
 	}
 	
 
-	
+	/**
+	** OutputStream os will be close()d if this method returns successfully.
+	*/
 	private String createTarBucket(OutputStream os, @SuppressWarnings("unused") ObjectContainer container) throws IOException {
 		if(logMINOR) Logger.minor(this, "Create a TAR Bucket");
 		
-		// FIXME: TarOutputStream.finish() does NOT call TarBuffer.flushBlock() from TarBuffer.close().
-		// So we wrap it here and call close().
-		// Fix it in Contrib, release a new jar, require the new jar, then clean up this code.
-		os = new NoCloseProxyOutputStream(os);
-		TarOutputStream tarOS = new TarOutputStream(os);
-		tarOS.setLongFileMode(TarOutputStream.LONGFILE_GNU);
-		TarEntry ze;
+		TarArchiveOutputStream tarOS = new TarArchiveOutputStream(os);
+		tarOS.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
+		TarArchiveEntry ze;
 
 		for(ContainerElement ph : containerItems) {
 			if(logMINOR)
 				Logger.minor(this, "Putting into tar: "+ph+" data length "+ph.data.size()+" name "+ph.targetInArchive);
-			ze = new TarEntry(ph.targetInArchive);
+			ze = new TarArchiveEntry(ph.targetInArchive);
 			ze.setModTime(0);
 			long size = ph.data.size();
 			ze.setSize(size);
-			tarOS.putNextEntry(ze);
+			tarOS.putArchiveEntry(ze);
 			BucketTools.copyTo(ph.data, tarOS, size);
-			tarOS.closeEntry();
+			tarOS.closeArchiveEntry();
 		}
 		
-		tarOS.closeEntry();
-		// Both finish() and close() are necessary.
-		tarOS.finish();
+		tarOS.closeArchiveEntry();
 		tarOS.close();
 		
 		return ARCHIVE_TYPE.TAR.mimeTypes[0];
