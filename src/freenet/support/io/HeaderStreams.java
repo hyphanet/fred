@@ -9,8 +9,6 @@ import java.io.OutputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 
-import java.util.Arrays;
-
 /**
 ** Utilities for manipulating headers on streams.
 **
@@ -26,6 +24,7 @@ final public class HeaderStreams {
 	*/
 	public static InputStream augInput(final byte[] hd, InputStream s) throws IOException {
 		return new FilterInputStream(s) {
+			/** index of next byte to read from hd */
 			private int i = 0;
 
 			@Override public int available() throws IOException {
@@ -37,17 +36,18 @@ final public class HeaderStreams {
 			}
 
 			@Override public int read(byte[] buf, int off, int len) throws IOException {
-				int w = i;
-				for (; i<hd.length && len>0; i++, off++, len--) {
+				int prev = i;
+				for (; i<hd.length && len>0; i++, len--, off++) {
 					buf[off] = hd[i];
 				}
-				return (w-i) + in.read(buf, off, len);
+				return (i-prev) + in.read(buf, off, len);
 				//System.out.println("" + System.identityHashCode(this) + " || augInput read: " + Arrays.toString(buf) + " off " + off + " len " + len);
 			}
 
-			@Override public long skip(long n) throws IOException {
-				int left = hd.length-i;
-				return left + in.skip(n-left);
+			@Override public long skip(long len) throws IOException {
+				int prev = i;
+				for (; i<hd.length && len>0; i++, len--) { }
+				return (i-prev) + in.skip(len);
 			}
 
 			@Override public boolean markSupported() {
@@ -89,7 +89,7 @@ final public class HeaderStreams {
 			}
 
 			@Override public void write(byte[] buf, int off, int len) throws IOException {
-				for (; i<hd.length && len>0; i++, off++, len--) {
+				for (; i<hd.length && len>0; i++, len--, off++) {
 					if (buf[off] != hd[i]) { throw new IOException("byte " + i + ": expected '" + hd[i] + "'; got '" + buf[off] + "'."); }
 				}
 				out.write(buf, off, len);

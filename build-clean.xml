@@ -187,9 +187,7 @@ build-dependency on ant-optional, libbsf-java and rhino.
 			<!-- tell javac to find Version.java in ${main.make}, not ${main.src} -->
 			<sourcepath><pathelement path="${main.make}"/></sourcepath>
 			<!-- following a very temporary list of files to be build -->
-			<include name="freenet/**/*.java"/>
-			<include name="net/i2p/util/*.java"/>
-			<include name="org/**/*.java"/>
+			<include name="**/*.java"/>
 			<exclude name="**/package-info.java"/>
 			<exclude name="${version.src}"/>
 		</javac>
@@ -263,10 +261,9 @@ build-dependency on ant-optional, libbsf-java and rhino.
 		<junit printsummary="yes" fork="yes" haltonfailure="yes" dir="${test.dst}">
 			<classpath refid="libtest.path"/>
 			<formatter type="plain" usefile="false"/>
-			<batchtest fork="yes">
-				<fileset dir="${test.make}">
-					<include name="**/*Test.class"/>
-				</fileset>
+			<test if="test.class" name="${test.class}"/>
+			<batchtest unless="test.class" fork="yes">
+				<fileset dir="${test.make}" includes="**/*Test.class"/>
 			</batchtest>
 			<sysproperty key="test.verbose" value="${test.verbose}"/>
 			<sysproperty key="test.benchmark" value="${test.benchmark}"/>
