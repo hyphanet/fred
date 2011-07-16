@@ -13,8 +13,8 @@ import java.util.Vector;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import org.apache.tools.tar.TarEntry;
-import org.apache.tools.tar.TarOutputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 
 import com.db4o.ObjectContainer;
 
@@ -37,7 +37,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NativeThread;
-import freenet.support.io.NoCloseProxyOutputStream;
+import freenet.support.io.Closer;
 
 public class SimpleManifestPutter extends BaseClientPutter implements PutCompletionCallback {
 
@@ -1017,16 +1017,15 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			// We want to include the metadata.
 			// We have the metadata, fortunately enough, because everything has been resolve()d.
 			// So all we need to do is create the actual archive.
+			OutputStream os = null;
 			try {
 				Bucket outputBucket = context.getBucketFactory(persistent()).makeBucket(baseMetadata.dataLength());
 				// TODO: try both ? - maybe not worth it
 				archiveType = ARCHIVE_TYPE.getDefault();
-				OutputStream os = new BufferedOutputStream(outputBucket.getOutputStream());
+				os = new BufferedOutputStream(outputBucket.getOutputStream());
 				String mimeType = (archiveType == ARCHIVE_TYPE.TAR ?
 					createTarBucket(bucket, os, container) :
 					createZipBucket(bucket, os, container));
-				os.flush();
-				os.close();
 				if(logMINOR)
 					Logger.minor(this, "Archive size is "+outputBucket.size());
 				bucket.free();
@@ -1048,6 +1047,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				if(persistent())
 					container.deactivate(baseMetadata, 1);
 				return;
+			} finally {
+				Closer.close(os);
 			}
 		} else {
 			if(persistent()) container.activate(targetURI, 5);
@@ -1084,16 +1085,15 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 	}
 
+	/**
+	** OutputStream os will be close()d if this method returns successfully.
+	*/
 	private String createTarBucket(Bucket inputBucket, OutputStream os, ObjectContainer container) throws IOException {
 		if(logMINOR) Logger.minor(this, "Create a TAR Bucket");
 
-		// FIXME: TarOutputStream.finish() does NOT call TarBuffer.flushBlock() from TarBuffer.close().
-		// So we wrap it here and call close().
-		// Fix it in Contrib, release a new jar, require the new jar, then clean up this code.
-		os = new NoCloseProxyOutputStream(os);
-		TarOutputStream tarOS = new TarOutputStream(os);
-		tarOS.setLongFileMode(TarOutputStream.LONGFILE_GNU);
-		TarEntry ze;
+		TarArchiveOutputStream tarOS = new TarArchiveOutputStream(os);
+		tarOS.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
+		TarArchiveEntry ze;
 
 		for(PutHandler ph : elementsToPutInArchive) {
 			if(persistent()) {
@@ -1102,28 +1102,26 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 			if(logMINOR)
 				Logger.minor(this, "Putting into tar: "+ph+" data length "+ph.data.size()+" name "+ph.targetInArchive);
-			ze = new TarEntry(ph.targetInArchive);
+			ze = new TarArchiveEntry(ph.targetInArchive);
 			ze.setModTime(0);
 			long size = ph.data.size();
 			ze.setSize(size);
-			tarOS.putNextEntry(ze);
+			tarOS.putArchiveEntry(ze);
 			BucketTools.copyTo(ph.data, tarOS, size);
-			tarOS.closeEntry();
+			tarOS.closeArchiveEntry();
 		}
 
 		// Add .metadata - after the rest.
 		if(logMINOR)
 			Logger.minor(this, "Putting metadata into tar: length is "+inputBucket.size());
-		ze = new TarEntry(".metadata");
+		ze = new TarArchiveEntry(".metadata");
 		ze.setModTime(0); // -1 = now, 0 = 1970.
 		long size = inputBucket.size();
 		ze.setSize(size);
-		tarOS.putNextEntry(ze);
+		tarOS.putArchiveEntry(ze);
 		BucketTools.copyTo(inputBucket, tarOS, size);
 
-		tarOS.closeEntry();
-		// Both finish() and close() are necessary.
-		tarOS.finish();
+		tarOS.closeArchiveEntry();
 		tarOS.close();
 
 		return ARCHIVE_TYPE.TAR.mimeTypes[0];
