@@ -349,6 +349,8 @@ loopOverLines:
 				if(split.length < 4) continue;
 				
 				int token = 3;
+				
+				if(split.length < token + INSERTED_BLOCKS * 2) continue;
 			
 				for(int i=0;i<INSERTED_BLOCKS;i++) {
 					try {
