@@ -480,7 +480,8 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			boolean alreadyFinished = false;
 			synchronized(this) {
 				if(finished && !force) {
-					Logger.error(this, "Already finished - not calling callbacks on "+this, new Exception("error"));
+					if(!cancelled)
+						Logger.error(this, "Already finished - not calling callbacks on "+this, new Exception("error"));
 					alreadyFinished = true;
 				}
 				finished = true;
