@@ -451,17 +451,6 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context, boolean force) {
 		if(logMINOR)
 			Logger.minor(this, "Failed from "+state+" : "+e+" on "+this, e);
-		try {
-			if (binaryBlobWriter != null) binaryBlobWriter.finalizeBucket();
-		} catch (IOException ioe) {
-			// the request is already failed but fblob creation failed too
-			// the invalid fblob must be told, more important then an valid but incomplete fblob (ADNF for example)
-			if(e.mode != FetchException.CANCELLED && !force)
-				e = new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream: "+ioe);
-		} catch (BinaryBlobAlreadyClosedException ee) {
-			if(e.mode != FetchException.BUCKET_ERROR && e.mode != FetchException.CANCELLED && !force)
-				e = new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream, already closed: "+ee, ee);
-		}
 		if(persistent())
 			container.activate(uri, 5);
 		ClientGetState oldState = null;
@@ -498,6 +487,19 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 				finished = true;
 				oldState = currentState;
 				currentState = null;
+			}
+			if(!alreadyFinished) {
+				try {
+					if (binaryBlobWriter != null) binaryBlobWriter.finalizeBucket();
+				} catch (IOException ioe) {
+					// the request is already failed but fblob creation failed too
+					// the invalid fblob must be told, more important then an valid but incomplete fblob (ADNF for example)
+					if(e.mode != FetchException.CANCELLED && !force)
+						e = new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream: "+ioe);
+				} catch (BinaryBlobAlreadyClosedException ee) {
+					if(e.mode != FetchException.BUCKET_ERROR && e.mode != FetchException.CANCELLED && !force)
+						e = new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream, already closed: "+ee, ee);
+				}
 			}
 			if(e.errorCodes != null && e.errorCodes.isOneCodeOnly())
 				e = new FetchException(e.errorCodes.getFirstCode());
