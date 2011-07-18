@@ -404,6 +404,7 @@ public class PproxyToadlet extends Toadlet {
 			sendErrorPage(ctx, PluginHTTPException.code, e.message, e.location);
 		} catch (Throwable t) {
 			ctx.forceDisconnect();
+			Logger.error(this, "Caught: "+t, t);
 			writeInternalError(t, ctx);
 		}
 	}
