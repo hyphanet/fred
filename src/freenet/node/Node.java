@@ -2041,12 +2041,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		maxTotalKeys = maxTotalDatastoreSize / sizePerKey;
 		
-		boolean hadBloomFilter = true;
-		s = nodeConfig.getRawOption("storeBloomFilterSize");
-		if(s != null && s.equals("0"))
-			hadBloomFilter = false;
-		
-		nodeConfig.register("storeUseSlotFilters", hadBloomFilter, sortOrder++, true, false, "Node.storeUseSlotFilters", "Node.storeUseSlotFiltersLong", new BooleanCallback() {
+		nodeConfig.register("storeUseSlotFilters", true, sortOrder++, true, false, "Node.storeUseSlotFilters", "Node.storeUseSlotFiltersLong", new BooleanCallback() {
 
 			public Boolean get() {
 				synchronized(Node.this) {
