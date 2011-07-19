@@ -249,12 +249,11 @@ public class Yarrow extends RandomSource {
 			dis = new DataInputStream(bis);
 
 			EntropySource seedFile = new EntropySource();
-			try {
 				for(int i = 0; i < 32; i++)
 					acceptEntropy(seedFile, dis.readLong(), 64);
-			} catch(EOFException f) {
-			}
 			dis.close();
+		} catch(EOFException f) {
+			// Okay.
 		} catch(IOException e) {
 			Logger.error(this, "IOE trying to read the seedfile from disk : " + e.getMessage());
 		} finally {
