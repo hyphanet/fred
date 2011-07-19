@@ -679,14 +679,14 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		this.defaultName = defaultName;
 		
 		if(defaultName != null) {
-			if(client.persistent())
+			if(persistent)
 				container.activate(manifestElements, Integer.MAX_VALUE);
 			checkDefaultName(manifestElements, defaultName);
 		}
 		
 		this.cryptoAlgorithm = cryptoAlgorithm;
 
-		if(client.persistent())
+		if(persistent)
 			this.targetURI = target.clone();
 		else
 			this.targetURI = target;
@@ -703,7 +703,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		metadataPuttersByMetadata = new HashMap<Metadata,ClientPutState>();
 		metadataPuttersUnfetchable = new HashMap<Metadata,ClientPutState>();
 		elementsToPutInArchive = new ArrayList<PutHandler>();
-		makePutHandlers(manifestElements, putHandlersByName, client.persistent());
+		makePutHandlers(manifestElements, putHandlersByName, persistent);
 		checkZips();
 	}
 
