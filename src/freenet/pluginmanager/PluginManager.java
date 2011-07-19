@@ -1041,6 +1041,11 @@ public class PluginManager {
 		/** Minimum getRealVersion(). If the plugin is older than this, we will fail
 		 * the load. */
 		public final long minimumVersion;
+		/** Recommended getRealVersion(). If the plugin is older than this, we will
+		 * download the new version in the background, and either use it on restart,
+		 * or offer the user the option to reload it. This is in fact identical to
+		 * what happens on a USK-based update... */
+		public final long recommendedVersion;
 		/** Does it use XML? If so, if the JVM is vulnerable, then don't load it */
 		public final boolean usesXML;
 		/** FreenetURI to get the latest version from */
@@ -1052,10 +1057,11 @@ public class PluginManager {
 		/** If true, the plugin is geeky - it should not be shown except in advanced mode even though it's not deprecated nor is it experimental. */
 		public final boolean advanced;
 
-		OfficialPluginDescription(String name, boolean essential, long minVer, boolean usesXML, FreenetURI uri, boolean deprecated, boolean experimental, boolean advanced) {
+		OfficialPluginDescription(String name, boolean essential, long minVer, long recVer, boolean usesXML, FreenetURI uri, boolean deprecated, boolean experimental, boolean advanced) {
 			this.name = name;
 			this.essential = essential;
 			this.minimumVersion = minVer;
+			this.recommendedVersion = recVer;
 			this.usesXML = usesXML;
 			this.uri = uri;
 			this.deprecated = deprecated;
@@ -1092,27 +1098,31 @@ public class PluginManager {
 	}
 
 	static void addOfficialPlugin(String name, boolean usesXML) {
-		officialPlugins.put(name, new OfficialPluginDescription(name, false, -1, usesXML, null, false, false, false));
+		officialPlugins.put(name, new OfficialPluginDescription(name, false, -1, -1, usesXML, null, false, false, false));
 	}
 
 	static void addOfficialPlugin(String name, boolean usesXML, FreenetURI uri) {
-		officialPlugins.put(name, new OfficialPluginDescription(name, false, -1, usesXML, uri, false, false, false));
+		officialPlugins.put(name, new OfficialPluginDescription(name, false, -1, -1, usesXML, uri, false, false, false));
 	}
 
 	static void addOfficialPlugin(String name, boolean usesXML, FreenetURI uri, boolean deprecated, boolean experimental, boolean advanced) {
-		officialPlugins.put(name, new OfficialPluginDescription(name, false, -1, usesXML, uri, deprecated, experimental, advanced));
+		officialPlugins.put(name, new OfficialPluginDescription(name, false, -1, -1, usesXML, uri, deprecated, experimental, advanced));
 	}
 
 	static void addOfficialPlugin(String name, boolean essential, long minVer, boolean usesXML) {
-		officialPlugins.put(name, new OfficialPluginDescription(name, essential, minVer, usesXML, null, false, false, false));
+		officialPlugins.put(name, new OfficialPluginDescription(name, essential, minVer, -1, usesXML, null, false, false, false));
+	}
+
+	static void addOfficialPlugin(String name, boolean essential, long minVer, long recVer, boolean usesXML) {
+		officialPlugins.put(name, new OfficialPluginDescription(name, essential, minVer, recVer, usesXML, null, false, false, false));
 	}
 
 	static void addOfficialPlugin(String name, boolean essential, long minVer, boolean usesXML, FreenetURI uri) {
-		officialPlugins.put(name, new OfficialPluginDescription(name, essential, minVer, usesXML, uri, false, false, false));
+		officialPlugins.put(name, new OfficialPluginDescription(name, essential, minVer, -1, usesXML, uri, false, false, false));
 	}
 
 	static void addOfficialPlugin(String name, boolean essential, long minVer, boolean usesXML, FreenetURI uri, boolean deprecated, boolean experimental, boolean advanced) {
-		officialPlugins.put(name, new OfficialPluginDescription(name, essential, minVer, usesXML, uri, deprecated, experimental, advanced));
+		officialPlugins.put(name, new OfficialPluginDescription(name, essential, minVer, -1, usesXML, uri, deprecated, experimental, advanced));
 	}
 
 	/**
