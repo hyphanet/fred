@@ -193,20 +193,55 @@ public class FECJob {
 		return true;
 	}
 
-	public void storeBlockStatuses(ObjectContainer container) {
+	public void storeBlockStatuses(ObjectContainer container, boolean failure) {
 		if(logMINOR) Logger.minor(this, "Storing block statuses");
+		int countNullsData = -1;
+		int countNullsCheck = -1;
 		if(dataBlockStatus != null) {
+			countNullsData = 0;
 			for(int i=0;i<dataBlockStatus.length;i++) {
 				SplitfileBlock block = dataBlockStatus[i];
 				if(logMINOR) Logger.minor(this, "Storing data block "+i+": "+block);
-				block.storeTo(container);
+				if(block != null)
+					block.storeTo(container);
+				else
+					countNullsData++;
 			}
+			
 		}
 		if(checkBlockStatus != null) {
+			countNullsCheck = 0;
 			for(int i=0;i<checkBlockStatus.length;i++) {
 				SplitfileBlock block = checkBlockStatus[i];
 				if(logMINOR) Logger.minor(this, "Storing check block "+i+": "+block);
-				block.storeTo(container);
+				if(block != null)
+					block.storeTo(container);
+				else
+					countNullsCheck++;
+			}
+		}
+		// FIXME simplify debugging logging code here???
+		// We cannot however just assume they are non-null, this isn't always true.
+		if(failure && (countNullsData > 0 || countNullsCheck > 0))
+			Logger.normal(this, "After failed, storing block statuses, "+countNullsData+"/"+dataBlockStatus.length+" nulls in data blocks "+countNullsCheck+"/"+checkBlockStatus.length+" nulls in check blocks");
+		else if(failure) {
+			if(logMINOR) Logger.minor(this, "After failed, storing block statuses, "+countNullsData+"/"+dataBlockStatus.length+" nulls in data blocks "+countNullsCheck+"/"+checkBlockStatus.length+" nulls in check blocks");
+		} else {
+			// After a normal, successful job.
+			if(isADecodingJob) {
+				if(countNullsData != 0)
+					Logger.normal(this, "After successful decode, storing block statuses, "+countNullsData+"/"+dataBlockStatus.length+" nulls in data blocks "+countNullsCheck+"/"+checkBlockStatus.length+" nulls in check blocks");
+				else {
+					if(logMINOR)
+						Logger.normal(this, "After successful decode, storing block statuses, "+countNullsData+"/"+dataBlockStatus.length+" nulls in data blocks "+countNullsCheck+"/"+checkBlockStatus.length+" nulls in check blocks");
+				}
+			} else {
+				if(countNullsCheck != 0 || countNullsData != 0)
+					Logger.normal(this, "After successful decode, storing block statuses, "+countNullsData+"/"+dataBlockStatus.length+" nulls in data blocks "+countNullsCheck+"/"+checkBlockStatus.length+" nulls in check blocks");
+				else {
+					if(logMINOR)
+						Logger.normal(this, "After successful decode, storing block statuses, "+countNullsData+"/"+dataBlockStatus.length+" nulls in data blocks "+countNullsCheck+"/"+checkBlockStatus.length+" nulls in check blocks");
+				}
 			}
 		}
 	}

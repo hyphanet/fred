@@ -256,7 +256,7 @@ public class FECQueue implements OOMHook {
 								@Override
 								public boolean run(ObjectContainer container, ClientContext context) {
 									try {
-										job.storeBlockStatuses(container);
+										job.storeBlockStatuses(container, true);
 									} catch (Throwable t) {
 										Logger.error(this, "Caught storing block statuses for "+job+" : "+t, t);
 										// Fail with the original error.
@@ -316,7 +316,7 @@ public class FECQueue implements OOMHook {
 								@Override
 								public boolean run(ObjectContainer container, ClientContext context) {
 									try {
-										job.storeBlockStatuses(container);
+										job.storeBlockStatuses(container, false);
 									} catch (Throwable t) {
 										Logger.error(this, "Caught storing block statuses on "+this+" : "+t, t);
 										// Don't activate the job itself.
