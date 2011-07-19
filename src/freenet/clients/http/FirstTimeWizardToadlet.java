@@ -514,7 +514,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			return;
 		}
 
-		String passwd = request.getPartAsString("formPassword", 32);
+		String passwd = request.getPartAsStringFailsafe("formPassword", 32);
 		boolean noPassword = (passwd == null) || !passwd.equals(core.formPassword);
 		if(noPassword) {
 			if(logMINOR) Logger.minor(this, "No password ("+passwd+" should be "+core.formPassword+ ')');
@@ -526,7 +526,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			// We don't require a confirmation here, since it's one page at a time, so there's less information to
 			// confuse the user, and we don't know whether the node has friends yet etc.
 			// FIXME should we have confirmation here???
-			String networkThreatLevel = request.getPartAsString("security-levels.networkThreatLevel", 128);
+			String networkThreatLevel = request.getPartAsStringFailsafe("security-levels.networkThreatLevel", 128);
 			NETWORK_THREAT_LEVEL newThreatLevel = SecurityLevels.parseNetworkThreatLevel(networkThreatLevel);
 			if(newThreatLevel == null) {
 				super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_NETWORK);
@@ -574,7 +574,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			// We don't require a confirmation here, since it's one page at a time, so there's less information to
 			// confuse the user, and we don't know whether the node has friends yet etc.
 			// FIXME should we have confirmation here???
-			String physicalThreatLevel = request.getPartAsString("security-levels.physicalThreatLevel", 128);
+			String physicalThreatLevel = request.getPartAsStringFailsafe("security-levels.physicalThreatLevel", 128);
 			PHYSICAL_THREAT_LEVEL oldThreatLevel = core.node.securityLevels.getPhysicalThreatLevel();
 			PHYSICAL_THREAT_LEVEL newThreatLevel = SecurityLevels.parsePhysicalThreatLevel(physicalThreatLevel);
 			if(logMINOR) Logger.minor(this, "Old threat level: "+oldThreatLevel+" new threat level: "+newThreatLevel);
@@ -584,7 +584,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			}
 			if(newThreatLevel == PHYSICAL_THREAT_LEVEL.HIGH && oldThreatLevel != newThreatLevel) {
 				// Check for password
-				String pass = request.getPartAsString("masterPassword", SecurityLevelsToadlet.MAX_PASSWORD_LENGTH);
+				String pass = request.getPartAsStringFailsafe("masterPassword", SecurityLevelsToadlet.MAX_PASSWORD_LENGTH);
 				if(pass != null && pass.length() > 0) {
 					try {
 						if(oldThreatLevel == PHYSICAL_THREAT_LEVEL.NORMAL || oldThreatLevel == PHYSICAL_THREAT_LEVEL.LOW)
@@ -638,7 +638,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			if((newThreatLevel == PHYSICAL_THREAT_LEVEL.LOW || newThreatLevel == PHYSICAL_THREAT_LEVEL.NORMAL) &&
 					oldThreatLevel == PHYSICAL_THREAT_LEVEL.HIGH) {
 				// Check for password
-				String pass = request.getPartAsString("masterPassword", SecurityLevelsToadlet.MAX_PASSWORD_LENGTH);
+				String pass = request.getPartAsStringFailsafe("masterPassword", SecurityLevelsToadlet.MAX_PASSWORD_LENGTH);
 				if(pass != null && pass.length() > 0) {
 					// This is actually the OLD password ...
 					try {
@@ -727,7 +727,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.NAME_SELECTION+"&opennet="+core.node.isOpennetEnabled());
 			return;
 		} else if(request.isPartSet("nnameF")) {
-			String selectedNName = request.getPartAsString("nname", 128);
+			String selectedNName = request.getPartAsStringFailsafe("nname", 128);
 			try {
 				config.get("node").set("name", selectedNName);
 				Logger.normal(this, "The node name has been set to "+ selectedNName);
@@ -737,16 +737,16 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step="+WIZARD_STEP.BANDWIDTH);
 			return;
 		} else if(request.isPartSet("bwF")) {
-			_setUpstreamBandwidthLimit(request.getPartAsString("bw", 20)); // drop down options may be 6 chars or less, but formatted ones e.g. old value if re-running can be more
+			_setUpstreamBandwidthLimit(request.getPartAsStringFailsafe("bw", 20)); // drop down options may be 6 chars or less, but formatted ones e.g. old value if re-running can be more
 			super.writeTemporaryRedirect(ctx, "step4", TOADLET_URL+"?step="+WIZARD_STEP.DATASTORE_SIZE);
 			return;
 		} else if(request.isPartSet("dsF")) {
-			_setDatastoreSize(request.getPartAsString("ds", 20)); // drop down options may be 6 chars or less, but formatted ones e.g. old value if re-running can be more
+			_setDatastoreSize(request.getPartAsStringFailsafe("ds", 20)); // drop down options may be 6 chars or less, but formatted ones e.g. old value if re-running can be more
 			super.writeTemporaryRedirect(ctx, "step5", TOADLET_URL+"?step="+WIZARD_STEP.CONGRATZ);
 			return;
 		} else if(request.isPartSet("miscF")) {
 			try {
-				config.get("node.updater").set("autoupdate", Boolean.parseBoolean(request.getPartAsString("autodeploy", 10)));
+				config.get("node.updater").set("autoupdate", Boolean.parseBoolean(request.getPartAsStringFailsafe("autodeploy", 10)));
 			} catch (ConfigException e) {
 				Logger.error(this, "Should not happen, please report!" + e, e);
 			}
