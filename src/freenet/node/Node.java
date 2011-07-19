@@ -755,8 +755,6 @@ public class Node implements TimeSkewDetectorCallback {
 	private short maxHTL;
 	private boolean skipWrapperWarning;
 	private int maxPacketSize;
-	private volatile boolean enableNewLoadManagementRT;
-	private volatile boolean enableNewLoadManagementBulk;
 	/** Should inserts ignore low backoff times by default? */
 	public static boolean IGNORE_LOW_BACKOFF_DEFAULT = false;
 	/** Definition of "low backoff times" for above. */
@@ -1718,42 +1716,6 @@ public class Node implements TimeSkewDetectorCallback {
 		peers.updatePMUserAlert();
 
 		uptime = new UptimeEstimator(runDir, ticker, darknetCrypto.identityHash);
-
-		// Must be set up before creating NodeClientCore.
-		
-		nodeConfig.register("enableNewLoadManagementRT", false, sortOrder++, true, false, "Node.enableNewLoadManagementRT", "Node.enableNewLoadManagementRTLong", new BooleanCallback() {
-
-			@Override
-			public Boolean get() {
-				return enableNewLoadManagementRT;
-			}
-
-			@Override
-			public void set(Boolean val) throws InvalidConfigValueException,
-					NodeNeedRestartException {
-				enableNewLoadManagementRT = val;
-				Node.this.clientCore.onSetNewLoadManagementRT(val);
-			}
-			
-		});
-		enableNewLoadManagementRT = nodeConfig.getBoolean("enableNewLoadManagementRT");
-
-		nodeConfig.register("enableNewLoadManagementBulk", false, sortOrder++, true, false, "Node.enableNewLoadManagementBulk", "Node.enableNewLoadManagementBulkLong", new BooleanCallback() {
-
-			@Override
-			public Boolean get() {
-				return enableNewLoadManagementBulk;
-			}
-
-			@Override
-			public void set(Boolean val) throws InvalidConfigValueException,
-					NodeNeedRestartException {
-				enableNewLoadManagementBulk = val;
-				Node.this.clientCore.onSetNewLoadManagementBulk(val);
-			}
-			
-		});
-		enableNewLoadManagementBulk = nodeConfig.getBoolean("enableNewLoadManagementBulk");
 
 		// ULPRs
 
@@ -6309,6 +6271,6 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 	
 	public boolean enableNewLoadManagement(boolean realTimeFlag) {
-		return realTimeFlag ? enableNewLoadManagementRT : enableNewLoadManagementBulk;
+		return nodeStats.enableNewLoadManagement(realTimeFlag);
 	}
 }

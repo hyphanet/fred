@@ -287,7 +287,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public final DecayingKeyspaceAverage avgSlashdotCacheSSKSuccess;
 	public final DecayingKeyspaceAverage avgClientCacheSSKSuccess;
 	public final DecayingKeyspaceAverage avgStoreSSKSuccess;
-
+	
+	private volatile boolean enableNewLoadManagementRT;
+	private volatile boolean enableNewLoadManagementBulk;
 
 	NodeStats(Node node, int sortOrder, SubConfig statsConfig, int obwLimit, int ibwLimit, int lastVersion) throws NodeInitException {
 		this.node = node;
@@ -461,6 +463,40 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			}
 
 		});
+		
+		statsConfig.register("enableNewLoadManagementRT", false, sortOrder++, true, false, "Node.enableNewLoadManagementRT", "Node.enableNewLoadManagementRTLong", new BooleanCallback() {
+
+			@Override
+			public Boolean get() {
+				return enableNewLoadManagementRT;
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException,
+					NodeNeedRestartException {
+				enableNewLoadManagementRT = val;
+				NodeStats.this.node.clientCore.onSetNewLoadManagementRT(val);
+			}
+			
+		});
+		enableNewLoadManagementRT = statsConfig.getBoolean("enableNewLoadManagementRT");
+
+		statsConfig.register("enableNewLoadManagementBulk", false, sortOrder++, true, false, "Node.enableNewLoadManagementBulk", "Node.enableNewLoadManagementBulkLong", new BooleanCallback() {
+
+			@Override
+			public Boolean get() {
+				return enableNewLoadManagementBulk;
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException,
+					NodeNeedRestartException {
+				enableNewLoadManagementBulk = val;
+				NodeStats.this.node.clientCore.onSetNewLoadManagementBulk(val);
+			}
+			
+		});
+		enableNewLoadManagementBulk = statsConfig.getBoolean("enableNewLoadManagementBulk");
 
 		persister = new ConfigurablePersister(this, statsConfig, "nodeThrottleFile", "node-throttle.dat", sortOrder++, true, false,
 				"NodeStat.statsPersister", "NodeStat.statsPersisterLong", node.ticker, node.getRunDir());
@@ -3586,6 +3622,11 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			else
 				allocatedSlotRemote++;
 		}
+	}
+	
+	
+	public boolean enableNewLoadManagement(boolean realTimeFlag) {
+		return realTimeFlag ? enableNewLoadManagementRT : enableNewLoadManagementBulk;
 	}
 	
 }
