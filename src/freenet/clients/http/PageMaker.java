@@ -330,34 +330,34 @@ public final class PageMaker {
 			final int connectedDarknetPeers = node.peers.countConnectedDarknetPeers();
 			final int totalPeers = (node.getOpennet() == null) ? (darknetTotal > 0 ? darknetTotal : Integer.MAX_VALUE) : node.getOpennet().getNumberOfConnectedPeersToAimIncludingDarknet();
 			final double connectedRatio = ((double)connectedPeers) / (double)totalPeers;
-			final String additionnalClass;
+			final String additionalClass;
 
 			// If we use Opennet, we color the bar by the ratio of connected nodes
 			if(connectedPeers > connectedDarknetPeers) {
 				if (connectedRatio < 0.3D || connectedPeers < 3) {
-					additionnalClass = "very-few-peers";
+					additionalClass = "very-few-peers";
 				} else if (connectedRatio < 0.5D) {
-					additionnalClass = "few-peers";
+					additionalClass = "few-peers";
 				} else if (connectedRatio < 0.75D) {
-					additionnalClass = "avg-peers";
+					additionalClass = "avg-peers";
 				} else {
-					additionnalClass = "full-peers";
+					additionalClass = "full-peers";
 				}
 			} else {
 				// If we are darknet only, we color by absolute connected peers
 				if (connectedDarknetPeers < 3) {
-					additionnalClass = "very-few-peers";
+					additionalClass = "very-few-peers";
 				} else if (connectedDarknetPeers < 5) {
-					additionnalClass = "few-peers";
+					additionalClass = "few-peers";
 				} else if (connectedDarknetPeers < 10) {
-					additionnalClass = "avg-peers";
+					additionalClass = "avg-peers";
 				} else {
-					additionnalClass = "full-peers";
+					additionalClass = "full-peers";
 				}
 			}
 
 			HTMLNode progressBar = statusBarDiv.addChild("div", "class", "progressbar");
-			progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-done progressbar-peers " + additionnalClass, "width: " +
+			progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-done progressbar-peers " + additionalClass, "width: " +
 					Math.min(100,Math.floor(100*connectedRatio)) + "%;" });
 
 			progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_finalized", NodeL10n.getBase().getString("StatusBar.connectedPeers", new String[]{"X", "Y"},
