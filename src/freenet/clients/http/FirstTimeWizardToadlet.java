@@ -454,7 +454,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		}else if(currentStep == WIZARD_STEP.CONGRATZ) {
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("step7Title"), true, ctx);
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("step7Title"), false, ctx);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 
