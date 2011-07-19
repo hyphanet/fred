@@ -163,8 +163,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	private UserAlert startingUpAlert;
 	private RestartDBJob[] startupDatabaseJobs;
 	private boolean alwaysCommit;
-	private boolean useAIMDsRT;
-	private boolean useAIMDsBulk;
 
 	NodeClientCore(Node node, Config config, SubConfig nodeConfig, SubConfig installConfig, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, long nodeDBHandle, ObjectContainer container) throws NodeInitException {
 		this.node = node;
@@ -321,60 +319,14 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		compressor.setClientContext(clientContext);
 		storeChecker.setContext(clientContext);
 
-		nodeConfig.register("useAIMDsRT", true, sortOrder++, true, false, "NodeClientCore.useAIMDsRT", "NodeClientCore.useAIMDsRTLong", new BooleanCallback() {
-
-			@Override
-			public Boolean get() {
-				synchronized(NodeClientCore.this) {
-					return useAIMDsRT;
-				}
-			}
-
-			@Override
-			public void set(Boolean val) throws InvalidConfigValueException,
-					NodeNeedRestartException {
-				synchronized(NodeClientCore.this) {
-					if(useAIMDsRT == val.booleanValue()) return;
-					useAIMDsRT = val;
-				}
-				NodeClientCore.this.requestStarters.setUseAIMDsRT(val);
-			}
-			
-		});
-		
-		useAIMDsRT = nodeConfig.getBoolean("useAIMDsRT");
-		
-		nodeConfig.register("useAIMDsBulk", true, sortOrder++, true, false, "NodeClientCore.useAIMDsBulk", "NodeClientCore.useAIMDsBulkLong", new BooleanCallback() {
-
-			@Override
-			public Boolean get() {
-				synchronized(NodeClientCore.this) {
-					return useAIMDsBulk;
-				}
-			}
-
-			@Override
-			public void set(Boolean val) throws InvalidConfigValueException,
-					NodeNeedRestartException {
-				synchronized(NodeClientCore.this) {
-					if(useAIMDsBulk == val.booleanValue()) return;
-					useAIMDsBulk = val;
-				}
-				NodeClientCore.this.requestStarters.setUseAIMDsBulk(val);
-			}
-			
-		});
-		
-		useAIMDsBulk = nodeConfig.getBoolean("useAIMDsBulk");
-		
 		try {
 			requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext, nodeDBHandle, container);
 		} catch (InvalidConfigValueException e1) {
 			throw new NodeInitException(NodeInitException.EXIT_BAD_CONFIG, e1.toString());
 		}
 		
-		requestStarters.setUseAIMDsBulk(useAIMDsBulk);
-		requestStarters.setUseAIMDsRT(useAIMDsRT);
+		requestStarters.setUseAIMDsBulk(node.nodeStats.useAIMDsBulk());
+		requestStarters.setUseAIMDsRT(node.nodeStats.useAIMDsRT());
 		
 		clientContext.init(requestStarters, alerts);
 		initKeys(container);
@@ -1974,20 +1926,12 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		return r.recentlyFailed();
 	}
 
-	public void onSetNewLoadManagementBulk(boolean val) {
-		boolean useAIMDs;
-		synchronized(NodeClientCore.this) {
-			useAIMDs = useAIMDsBulk;
-		}
-		NodeClientCore.this.requestStarters.setUseAIMDsBulk(useAIMDs);
+	public void onSetUseAIMDsRT(boolean val) {
+		requestStarters.setUseAIMDsBulk(val);
 	}
 
-	public void onSetNewLoadManagementRT(boolean val) {
-		boolean useAIMDs;
-		synchronized(NodeClientCore.this) {
-			useAIMDs = useAIMDsRT;
-		}
-		NodeClientCore.this.requestStarters.setUseAIMDsRT(useAIMDs);
+	public void onSetUseAIMDsBulk(boolean val) {
+		requestStarters.setUseAIMDsRT(val);
 	}
 
 }
