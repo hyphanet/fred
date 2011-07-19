@@ -486,6 +486,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 								Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
 							writeEntry(entry, digestedKey, offset[i]);
 							keyCount.incrementAndGet();
+							onWrite();
 							return true;
 						} else if(((flag & Entry.ENTRY_WRONG_STORE) == Entry.ENTRY_WRONG_STORE)) {
 							if (wrongStoreCount == 0)
@@ -530,6 +531,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				writeEntry(entry, digestedKey, offset[indexToOverwrite]);
 				if (oldEntry.generation != generation)
 					keyCount.incrementAndGet();
+				onWrite();
 				return true;
 			} finally {
 				unlockDigestedKey(digestedKey, false, lockMap);
