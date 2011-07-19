@@ -513,17 +513,17 @@ public class PproxyToadlet extends Toadlet {
 		
 		p.addChild("#", " " + l10n("pluginSourceChoice"));
 		
-		boolean isLowSecLevel = pm.loadOfficialPluginsFromWeb();
+		boolean loadFromWeb = pm.loadOfficialPluginsFromWeb();
 		
 		HTMLNode input = addOfficialForm.addChild("input", new String[] { "type", "name", "value" },
 				new String[] { "radio", "pluginSource", "freenet" });
-		if(!isLowSecLevel)
+		if(!loadFromWeb)
 			input.addAttribute("checked", "true");
 		addOfficialForm.addChild("#", l10n("pluginSourceFreenet"));
 		addOfficialForm.addChild("br");
 		input = addOfficialForm.addChild("input", new String[] { "type", "name", "value" },
 				new String[] { "radio", "pluginSource", "https" });
-		if(isLowSecLevel)
+		if(loadFromWeb)
 			input.addAttribute("checked", "true");
 		addOfficialForm.addChild("#", l10n("pluginSourceHTTPS"));
 		addOfficialForm.addChild("#", " ");
