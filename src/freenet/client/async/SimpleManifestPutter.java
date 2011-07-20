@@ -780,7 +780,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 
 	protected void makePutHandlers(HashMap<String, Object> manifestElements, HashMap<String,Object> putHandlersByName, boolean persistent) {
-		makePutHandlers(manifestElements, putHandlersByName, "/", persistent);
+		makePutHandlers(manifestElements, putHandlersByName, "", persistent);
 	}
 
 	private void makePutHandlers(HashMap<String, Object> manifestElements, HashMap<String,Object> putHandlersByName, String ZipPrefix, boolean persistent) {
