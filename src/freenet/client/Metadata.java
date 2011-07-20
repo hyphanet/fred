@@ -643,7 +643,6 @@ public class Metadata implements Cloneable {
 				if(targetName.isEmpty()) throw new MetadataParseException("Invalid target name is empty: \""+new String(buf, "UTF-8")+"\"");
 				if(targetName.charAt(0) == '/') {
 					targetName = targetName.substring(1);
-					Logger.warning(this, "Stripped initial slash from parsed archive internal redirect: "+new String(buf, "UTF-8")+"\"");
 					continue;
 				} else break;
 			}
