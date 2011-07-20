@@ -514,7 +514,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
-	private HTMLNode addTextBox(String value, String fullName, Option<?> o, boolean disabled) {
+	public static HTMLNode addTextBox(String value, String fullName, Option<?> o, boolean disabled) {
 		HTMLNode result;
 
 		if(disabled) {
@@ -531,37 +531,40 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		return result;
 	}
 
-	private HTMLNode addComboBox(String value, EnumerableOptionCallback o, String fullName, boolean disabled) {
+	public static HTMLNode addComboBox(String value, EnumerableOptionCallback o, String fullName, boolean disabled) {
 		HTMLNode result;
 
-		if (disabled)
+		if (disabled) {
 			result = new HTMLNode("select", //
 			         new String[] { "name", "disabled" }, //
 			         new String[] { fullName, "disabled" });
-		else
+		} else {
 			result = new HTMLNode("select", "name", fullName);
+		}
 
 		for(String possibleValue : o.getPossibleValues()) {
-			if(possibleValue.equals(value))
+			if(possibleValue.equals(value)) {
 				result.addChild("option",
 				        new String[] { "value", "selected" },
 				        new String[] { possibleValue, "selected" }, possibleValue);
-			else
+			} else {
 				result.addChild("option", "value", possibleValue, possibleValue);
+			}
 		}
 
 		return result;
 	}
 
-	private HTMLNode addBooleanComboBox(boolean value, String fullName, boolean disabled) {
+	public static HTMLNode addBooleanComboBox(boolean value, String fullName, boolean disabled) {
 		HTMLNode result;
 
-		if (disabled)
+		if (disabled) {
 			result = new HTMLNode("select", //
 			         new String[] { "name", "disabled" }, //
 			         new String[] {fullName, "disabled" });
-		else
+		} else {
 			result = new HTMLNode("select", "name", fullName);
+		}
 
 		if (value) {
 			result.addChild("option",
