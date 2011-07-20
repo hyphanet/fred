@@ -9,6 +9,7 @@ import java.net.URI;
 import java.util.HashSet;
 import java.util.List;
 
+import freenet.config.Config;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.ClientMetadata;
@@ -407,7 +408,10 @@ public class WelcomeToadlet extends Toadlet {
                 this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
                 return;
             } else if (request.getParam(GenericReadFilterCallback.magicHTTPEscapeString).length() > 0) {
-            	PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmExternalLinkTitle"), ctx);
+		//Confirm whether the user really means to access an HTTP link.
+		//Only render status and navigation bars if the user has completed the wizard.
+		boolean renderBars = node.clientCore.getToadletContainer().fproxyHasCompletedWizard();
+            	PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmExternalLinkTitle"), renderBars, renderBars, ctx);
                 HTMLNode pageNode = page.outer;
                 HTMLNode contentNode = page.content;
                 HTMLNode warnboxContent = ctx.getPageMaker().getInfobox("infobox-warning", l10n("confirmExternalLinkSubTitle"), contentNode, "confirm-external-link", true);
