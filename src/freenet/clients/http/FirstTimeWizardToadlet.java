@@ -502,9 +502,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		HTMLNode languageForm = ctx.addFormChild(secondParagraph, ".", "languageForm");
 		Option language = config.get("node").getOption("l10n");
 		EnumerableOptionCallback l10nCallback = (EnumerableOptionCallback)language.getCallback();
-		languageForm.addChild(ConfigToadlet.addComboBox(language.getValueString(), l10nCallback, language.getName(), false));
-		languageForm.addChild("input", "type", "submit");
-		//TODO: Auto-submit with Javascript upon selection, with noscript fall back to explicit submission button.
+		HTMLNode dropDown = ConfigToadlet.addComboBox(language.getValueString(), l10nCallback, language.getName(), false);
+		//Submit automatically upon selection if Javascript.
+		dropDown.addAttribute("onchange", "this.form.submit()");
+		languageForm.addChild(dropDown);
+		//Otherwise fall back to submit button if no Javascript
+		languageForm.addChild("noscript").addChild("input", "type", "submit");
 
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
