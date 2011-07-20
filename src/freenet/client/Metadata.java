@@ -639,6 +639,14 @@ public class Metadata implements Cloneable {
 			byte[] buf = new byte[len];
 			dis.readFully(buf);
 			targetName = new String(buf, "UTF-8");
+			while(true) {
+				if(targetName.isEmpty()) throw new MetadataParseException("Invalid target name is empty: \""+new String(buf, "UTF-8")+"\"");
+				if(targetName.charAt(0) == '/') {
+					targetName = targetName.substring(1);
+					Logger.warning(this, "Stripped initial slash from parsed archive internal redirect: "+new String(buf, "UTF-8")+"\"");
+					continue;
+				} else break;
+			}
 			if(logMINOR) Logger.minor(this, "Archive and/or internal redirect: "+targetName+" ("+len+ ')');
 		}
 	}
