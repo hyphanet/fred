@@ -223,12 +223,14 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.OPENNET);
 				return;
 			}
-			
-			boolean opennet = Fields.stringToBool(request.getParam("opennet", "false"));
+
+			String opennetParam = request.getParam("opennet", "false");
+			boolean opennet = Fields.stringToBool(opennetParam);
 
 			infoboxHeader.addChild("#", l10n(opennet ? "networkThreatLevelHeaderOpennet" : "networkThreatLevelHeaderDarknet"));
 			infoboxContent.addChild("p", l10n(opennet ? "networkThreatLevelIntroOpennet" : "networkThreatLevelIntroDarknet"));
 			HTMLNode form = ctx.addFormChild(infoboxContent, ".", "networkSecurityForm");
+			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "opennet", opennetParam });
 			String controlName = "security-levels.networkThreatLevel";
 			if(opennet) {
 				HTMLNode div = form.addChild("div", "class", "opennetDiv");
@@ -522,14 +524,22 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			return;
 		}
 
-		if(request.isPartSet("security-levels.networkThreatLevel")) {
+		if(request.isPartSet("networkSecurityF")) {
 			// We don't require a confirmation here, since it's one page at a time, so there's less information to
 			// confuse the user, and we don't know whether the node has friends yet etc.
 			// FIXME should we have confirmation here???
+
 			String networkThreatLevel = request.getPartAsStringFailsafe("security-levels.networkThreatLevel", 128);
 			NETWORK_THREAT_LEVEL newThreatLevel = SecurityLevels.parseNetworkThreatLevel(networkThreatLevel);
-			if(newThreatLevel == null) {
-				super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_NETWORK);
+
+			/*If the user didn't select a network security level before clicking continue or the selected
+			* security level could not be determined, redirect to the same page.*/
+			if(newThreatLevel == null || !request.isPartSet("security-levels.networkThreatLevel")) {
+				//TODO: StringBuilder is not thread-safe but it's faster. Is it okay in this case?
+				StringBuilder redirectTo = new StringBuilder(TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_NETWORK);
+				//Max length of 5 because 5 letters in false, 4 in true.
+				redirectTo.append("&opennet=").append(request.getPartAsStringFailsafe("opennet", 5));
+				super.writeTemporaryRedirect(ctx, "step1", redirectTo.toString());
 				return;
 			}
 			if((newThreatLevel == NETWORK_THREAT_LEVEL.MAXIMUM || newThreatLevel == NETWORK_THREAT_LEVEL.HIGH)) {
@@ -557,7 +567,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 					}
 					formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "security-levels.networkThreatLevel.tryConfirm", "on" });
 					formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "seclevels", "on" });
-					formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("continue")});
+					formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "networkSecurityF", l10n("continue")});
 					writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 					return;
 				} else if((!request.isPartSet("security-levels.networkThreatLevel.confirm")) &&
@@ -570,15 +580,19 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			core.storeConfig();
 			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_PHYSICAL);
 			return;
-		} else if(request.isPartSet("security-levels.physicalThreatLevel")) {
+		} else if(request.isPartSet("physicalSecurityF")) {
 			// We don't require a confirmation here, since it's one page at a time, so there's less information to
 			// confuse the user, and we don't know whether the node has friends yet etc.
 			// FIXME should we have confirmation here???
+
 			String physicalThreatLevel = request.getPartAsStringFailsafe("security-levels.physicalThreatLevel", 128);
 			PHYSICAL_THREAT_LEVEL oldThreatLevel = core.node.securityLevels.getPhysicalThreatLevel();
 			PHYSICAL_THREAT_LEVEL newThreatLevel = SecurityLevels.parsePhysicalThreatLevel(physicalThreatLevel);
 			if(logMINOR) Logger.minor(this, "Old threat level: "+oldThreatLevel+" new threat level: "+newThreatLevel);
-			if(newThreatLevel == null) {
+
+			/*If the user didn't select a network security level before clicking continue or the selected
+			* security level could not be determined, redirect to the same page.*/
+			if(newThreatLevel == null || !request.isPartSet("security-levels.physicalThreatLevel")) {
 				super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_PHYSICAL);
 				return;
 			}
