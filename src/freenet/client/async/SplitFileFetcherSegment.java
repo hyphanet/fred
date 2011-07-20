@@ -696,6 +696,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				container.activate(checkBuckets[i], 1);
 		}
 		int data = 0;
+		SplitFileFetcherSegmentGet oldGetter;
 		synchronized(this) {
 			if(finished || encoderFinished) return;
 			for(int i=0;i<dataBuckets.length;i++) {
@@ -707,12 +708,14 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 					if(persistent) dataBuckets[i].storeTo(container);
 				}
 			}
-		}
-		if(getter != null) {
-			if(persistent) container.activate(getter, 1);
-			getter.unregister(container, context, getPriorityClass(container));
-			if(persistent) getter.removeFrom(container);
+			oldGetter = getter;
 			getter = null;
+		}
+		if(oldGetter != null) {
+			if(persistent) container.activate(oldGetter, 1);
+			oldGetter.unregister(container, context, getPriorityClass(container));
+			if(persistent) oldGetter.removeFrom(container);
+			oldGetter = null;
 			if(persistent) container.store(this);
 		}
 		if(data == dataBuckets.length) {
