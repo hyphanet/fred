@@ -575,9 +575,11 @@ public class WelcomeToadlet extends Toadlet {
         }
     }
 
+	public static final String PATH = "/";
+
 	@Override
 	public String path() {
 		// So it matches "Browse Freenet" on the menu
-		return "/";
+		return PATH;
 	}
 }
