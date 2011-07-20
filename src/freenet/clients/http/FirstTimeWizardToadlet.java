@@ -446,8 +446,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			miscInfoboxContent.addChild("p", l10n("pluginsLong"));
 			miscInfoboxContent.addChild("p").addChild("input", new String[] { "type", "checked", "name", "value" },
 					new String[] { "checkbox", "on", "upnp", "true" }, l10n("enableUPnP"));
-			miscInfoboxContent.addChild("p").addChild("input", new String[] { "type", "checked", "name", "value" },
-					new String[] { "checkbox", "on", "jstun" }, l10n("enableJSTUN"));
+			miscInfoboxContent.addChild("p").addChild("input", new String[] { "type", "name", "value" },
+					new String[] { "checkbox", "jstun", "true" }, l10n("enableJSTUN"));
 
 			miscInfoboxContent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "miscF", NodeL10n.getBase().getString("FirstTimeWizardToadlet.continue")});
 			miscInfoboxContent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
