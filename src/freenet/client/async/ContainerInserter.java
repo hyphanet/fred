@@ -225,7 +225,7 @@ public class ContainerInserter implements ClientPutState {
 		Bucket bucket = null;
 		int x = 0;
 
-		Metadata md = makeManifest(origMetadata, "/");
+		Metadata md = makeManifest(origMetadata, "");
 
 		while(true) {
 			try {
