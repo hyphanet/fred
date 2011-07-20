@@ -895,7 +895,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					// Just in case...
 					boolean compressed = metadata.isCompressed();
 					if(persistent) removeFrom(container, context);
-					throw new FetchException(FetchException.TOO_BIG, len, isFinal && decompressors.size() <= (compressed ? 1 : 0), clientMetadata.getMIMEType());
+					throw new FetchException(FetchException.TOO_BIG, uncompressedLen, isFinal && decompressors.size() <= (compressed ? 1 : 0), clientMetadata.getMIMEType());
 				}
 				
 				SplitFileFetcher sf = new SplitFileFetcher(metadata, rcb, parent, ctx, deleteFetchContext, 
