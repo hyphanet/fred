@@ -14,6 +14,7 @@ import freenet.client.filter.GenericReadFilterCallback;
 import freenet.config.Config;
 import freenet.config.ConfigException;
 import freenet.config.Option;
+import freenet.config.EnumerableOptionCallback;
 import freenet.l10n.NodeL10n;
 import freenet.node.MasterKeysFileSizeException;
 import freenet.node.MasterKeysWrongPasswordException;
@@ -498,6 +499,13 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		String append = incognito ? "&incognito=true" : "";
 		secondParagraph.addChild("a", "href", "?step="+WIZARD_STEP.BROWSER_WARNING+append).addChild("#", l10n("clickContinue"));
 
+		HTMLNode languageForm = ctx.addFormChild(secondParagraph, ".", "languageForm");
+		Option language = config.get("node").getOption("l10n");
+		EnumerableOptionCallback l10nCallback = (EnumerableOptionCallback)language.getCallback();
+		languageForm.addChild(ConfigToadlet.addComboBox(language.getValueString(), l10nCallback, language.getName(), false));
+		languageForm.addChild("input", "type", "submit");
+		//TODO: Auto-submit with Javascript upon selection, with noscript fall back to explicit submission button.
+
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
@@ -802,6 +810,20 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			super.writeTemporaryRedirect(ctx, "step7", TOADLET_URL+"?step="+WIZARD_STEP.OPENNET);
 			return;
 
+		}
+
+		//The user changed their language on the welcome page. Change the language and rerender the page.
+		if (request.isPartSet("l10n")) {
+			String desiredLanguage = request.getPartAsStringFailsafe("l10n", 4096);
+			try {
+				config.get("node").set("l10n", desiredLanguage);
+			} catch (freenet.config.InvalidConfigValueException e) {
+				Logger.error(this, "Failed to set language to "+desiredLanguage+". "+e);
+			} catch (freenet.config.NodeNeedRestartException e) {
+				//Changing language doesn't require a restart, at least as of version 1385.
+				//Doing so would be really annoying as the node would have to start up again
+				//which could be very slow.
+			}
 		}
 
 		super.writeTemporaryRedirect(ctx, "invalid/unhandled data", TOADLET_URL);
