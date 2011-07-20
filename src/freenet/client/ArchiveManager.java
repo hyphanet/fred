@@ -384,7 +384,7 @@ outerTAR:		while(true) {
 				entry = tarIS.getNextEntry();
 				if(entry == null) break;
 				if(entry.isDirectory()) continue;
-				String name = entry.getName();
+				String name = stripLeadingSlashes(entry.getName());
 				if(names.contains(name)) {
 					Logger.error(this, "Duplicate key "+name+" in archive "+key);
 					continue;
@@ -464,7 +464,7 @@ outerZIP:		while(true) {
 				entry = zis.getNextEntry();
 				if(entry == null) break;
 				if(entry.isDirectory()) continue;
-				String name = entry.getName();
+				String name = stripLeadingSlashes(entry.getName());
 				if(names.contains(name)) {
 					Logger.error(this, "Duplicate key "+name+" in archive "+key);
 					continue;
@@ -531,6 +531,12 @@ outerZIP:		while(true) {
 				}
 			}
 		}
+	}
+
+	private String stripLeadingSlashes(String name) {
+		while(name.length() > 1 && name.charAt(0) == '/')
+			name = name.substring(1);
+		return name;
 	}
 
 	/**
