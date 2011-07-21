@@ -80,7 +80,9 @@ public class DecompressorThreadManager {
 				if(getError() != null) throw getError();
 				DecompressorThread threadRunnable = threads.remove();
 				if(threads.isEmpty()) threadRunnable.setLast();
-				new Thread(threadRunnable, "DecompressorThread"+count).start();
+				Thread t = new Thread(threadRunnable, "DecompressorThread"+count);
+				t.start();
+				if(logMINOR) Logger.minor(this, "Started decompressor thread "+t);
 				count++;
 			}
 			output.close();
@@ -160,6 +162,7 @@ public class DecompressorThreadManager {
 		/**Begins the decompression */
 		@Override
 		public void run() {
+			if(logMINOR) Logger.minor(this, "Decompressing...");
 			try {
 				if(manager.getError() == null) {
 					compressor.decompress(input, output, maxLen, maxLen * 4);
@@ -170,6 +173,7 @@ public class DecompressorThreadManager {
 					output = null;
 					if(isLast) manager.onFinish();
 				}
+				if(logMINOR) Logger.minor(this, "Finished decompressing...");
 			} catch (Exception e) {
 				manager.onFailure(e);
 			} finally {
