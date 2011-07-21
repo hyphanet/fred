@@ -22,6 +22,7 @@ import freenet.node.LowLevelGetException;
 import freenet.node.LowLevelPutException;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.PrioRunnable;
 import freenet.node.RequestScheduler;
 import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
@@ -899,7 +900,21 @@ public class ClientRequestScheduler implements RequestScheduler {
 			offeredKeys.remove(block.getKey());
 		}
 		final Key key = block.getKey();
-		schedTransient.tripPendingKey(key, block, null, clientContext);
+		if(schedTransient.anyProbablyWantKey(key, clientContext)) {
+			this.clientContext.mainExecutor.execute(new PrioRunnable() {
+
+				@Override
+				public void run() {
+					schedTransient.tripPendingKey(key, block, null, clientContext);
+				}
+
+				@Override
+				public int getPriority() {
+					return TRIP_PENDING_PRIORITY;
+				}
+				
+			});
+		}
 		if(schedCore == null) return;
 		if(schedCore.anyProbablyWantKey(key, clientContext)) {
 			try {
