@@ -19,4 +19,9 @@ public class WaitingMultiMessageCallback extends MultiMessageCallback {
 		}
 	}
 
+	@Override
+	void sent() {
+		// Ignore
+	}
+
 }

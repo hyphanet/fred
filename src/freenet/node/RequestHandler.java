@@ -508,7 +508,16 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			public void finish(boolean success) {
 				sentPayload(data.length); // FIXME report this at the time when that message is acked for more accurate reporting???
 				applyByteCounts();
-				unregisterRequestHandlerWithNode();
+				node.removeTransferringRequestHandler(uid);
+			}
+			@Override
+			void sent() {
+				// As soon as the originator receives the messages, he can reuse the slot.
+				// Unlocking on sent is a reasonable compromise between:
+				// 1. Unlocking immediately avoids problems with the recipient reusing the slot when he's received the data, therefore us rejecting the request and getting a mandatory backoff, and
+				// 2. However, we do want SSK requests from the datastore to be counted towards the total when accepting requests.
+				// FIXME consider other options. Reassigning to self probably wouldn't work well as it'd let them steal our capacity, although only for a short period on a normal connection...
+				tag.unlockHandler();
 			}
 		};
 		Message headersMsg = DMT.createFNPSSKDataFoundHeaders(uid, headers, realTimeFlag);
@@ -651,6 +660,10 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		else
 			sendTerminalCalled = true;
 
+		// Unlock handler immediately.
+		// Otherwise the request sender will think the slot is free as soon as it
+		// receives it, but we won't, so we may reject his requests and get a mandatory backoff.
+		tag.unlockHandler();
 		try {
 			source.sendAsync(msg, new TerminalMessageByteCountCollector(), this);
 		} catch (NotConnectedException e) {
@@ -704,7 +717,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				Logger.minor(this, "Completing: " + RequestHandler.this);
 			//For byte counting, this relies on the fact that the callback will only be excuted once.
 			applyByteCounts();
-			unregisterRequestHandlerWithNode();
+			node.removeTransferringRequestHandler(uid);
 		}
 	}
 
@@ -887,12 +900,15 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 					
 					// Send it forward to the data source, if it is valid.
 					
-					if(OpennetManager.validateNoderef(newNoderef, 0, newNoderef.length, source, false) != null)
+					if(OpennetManager.validateNoderef(newNoderef, 0, newNoderef.length, source, false) != null) {
+						// As soon as the originator receives the three blocks, he can reuse the slot.
+						tag.unlockHandler();
 						try {
 							om.sendOpennetRef(true, uid, dataSource, newNoderef, RequestHandler.this);
 						} catch(NotConnectedException e) {
 							// How sad
 						}
+					}
 				}
 				
 				// We have sent a noderef. It is not appropriate for the caller to call ackOpennet():
