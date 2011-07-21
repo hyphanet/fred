@@ -898,15 +898,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		if(core != null && core.node != null && !fproxyHasCompletedWizard) {
 			if(!(core.node.isOpennetEnabled() || core.node.getPeerNodes().length > 0)) {
 
-				String query = uri.getQuery();
-				//If the user has not completed the wizard, only allow access to the wizard,
-				//static resources, and checked HTTP links. Anything else redirects to the first
-				//page of the wizard.
-				if(path == null || !(path.startsWith(FirstTimeWizardToadlet.TOADLET_URL) ||
+				//If the user has not completed the wizard, only allow access to the wizard and static
+				//resources. Anything else redirects to the first page of the wizard.
+				if (!(path.startsWith(FirstTimeWizardToadlet.TOADLET_URL) ||
 				        path.startsWith(StaticToadlet.ROOT_URL) ||
-				        (path.startsWith(WelcomeToadlet.PATH) && 
-				                query != null &&
-				                query.contains(GenericReadFilterCallback.magicHTTPEscapeString)))) {
+				        path.equals("/favicon.ico"))) {
 					try {
 						throw new PermanentRedirectException(new URI(null, null, null, -1, FirstTimeWizardToadlet.TOADLET_URL, uri.getQuery(), null));
 					} catch(URISyntaxException e) { throw new Error(e); }
