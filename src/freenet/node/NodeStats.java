@@ -3636,7 +3636,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		synchronized(slotTimeoutsSync) {
 			if(fatalTimeoutsInWaitLocal + fatalTimeoutsInWaitRemote + 
 					allocatedSlotLocal + allocatedSlotRemote > 0) {
-				content.addChild("#", l10n("timeoutFractions"));
+				content.addChild("b", l10n("timeoutFractions"));
 				table = content.addChild("table", "border", "0");
 				header = table.addChild("tr");
 				header.addChild("th", l10n("localHeader"));
