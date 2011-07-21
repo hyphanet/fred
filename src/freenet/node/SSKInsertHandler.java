@@ -304,6 +304,8 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
             if((status == SSKInsertSender.TIMED_OUT) ||
             		(status == SSKInsertSender.GENERATED_REJECTED_OVERLOAD) ||
             		(status == SSKInsertSender.INTERNAL_ERROR)) {
+            	// Unlock early for downstream, late for upstream; see UIDTag comments.
+            	tag.unlockHandler();
                 Message msg = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
                 try {
 					source.sendSync(msg, this, realTimeFlag);
@@ -323,6 +325,8 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
             }
             
             if((status == SSKInsertSender.ROUTE_NOT_FOUND) || (status == SSKInsertSender.ROUTE_REALLY_NOT_FOUND)) {
+            	// Unlock early for downstream, late for upstream; see UIDTag comments.
+            	tag.unlockHandler();
                 Message msg = DMT.createFNPRouteNotFound(uid, sender.getHTL());
                 try {
 					source.sendSync(msg, this, realTimeFlag);
@@ -338,6 +342,8 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
             }
             
             if(status == SSKInsertSender.SUCCESS) {
+            	// Unlock early for downstream, late for upstream; see UIDTag comments.
+            	tag.unlockHandler();
             	Message msg = DMT.createFNPInsertReply(uid);
             	try {
 					source.sendSync(msg, this, realTimeFlag);
@@ -354,6 +360,8 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
             
             // Otherwise...?
             Logger.error(this, "Unknown status code: "+sender.getStatusString());
+        	// Unlock early for downstream, late for upstream; see UIDTag comments.
+        	tag.unlockHandler();
             Message msg = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
             try {
 				source.sendSync(msg, this, realTimeFlag);
