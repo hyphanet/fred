@@ -190,10 +190,10 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		int size = (int)Math.max(storeSize, prevStoreSize);
 		if(useSlotFilter) {
 			slotFilterDisabled = false;
-			useSlotFilter = true;
+			this.useSlotFilter = true;
 		} else {
 			slotFilterDisabled = true;
-			useSlotFilter = false;
+			this.useSlotFilter = false;
 		}
 		if(!slotFilterDisabled) {
 			slotFilter = new ResizablePersistentIntBuffer(slotFilterFile, size, SLOT_FILTER_INTERVAL);
