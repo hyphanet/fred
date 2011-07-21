@@ -53,6 +53,10 @@ public class ClientGetWorkerThread extends Thread {
 		Logger.registerClass(ClientGetWorkerThread.class);
 	}
 
+	private static int counter;
+	private static synchronized int counter() {
+		return counter++;
+	}
 
 	 /**
 	 * @param input The stream to read the data from
@@ -71,7 +75,7 @@ public class ClientGetWorkerThread extends Thread {
 	public ClientGetWorkerThread(PipedInputStream input, OutputStream output, FreenetURI uri,
 			String mimeType, HashResult[] hashes, boolean filterData, String charset,
 			FoundURICallback prefetchHook, TagReplacerCallback tagReplacer) throws URISyntaxException {
-		super("ClientGetWorkerThread");
+		super("ClientGetWorkerThread-"+counter());
 		this.input = input;
 		if(uri != null) this.uri = uri.toURI("/");
 		else this.uri = null;
