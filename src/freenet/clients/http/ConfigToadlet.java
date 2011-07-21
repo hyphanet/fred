@@ -514,7 +514,15 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
-	private HTMLNode addTextBox(String value, String fullName, Option<?> o, boolean disabled) {
+	/**
+	 * Generates a text box for the given setting suitable for adding to an existing form.
+	 * @param value The current value of the option. It is displayed in the text box.
+	 * @param fullName The full name of the option, used to name the text field.
+	 * @param o The option, used to add the short description as an "alt" attribute.
+	 * @param disabled Whether the text box should be disabled.
+	 * @return An input of type "text" and class "config" containing the current value of the option.
+	 */
+	public static HTMLNode addTextBox(String value, String fullName, Option<?> o, boolean disabled) {
 		HTMLNode result;
 
 		if(disabled) {
@@ -531,37 +539,59 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		return result;
 	}
 
-	private HTMLNode addComboBox(String value, EnumerableOptionCallback o, String fullName, boolean disabled) {
+	/**
+	 * Generates a drop-down combobox for the given enumerable option suitable for adding to an existing form.
+	 * Its first element is the "select" element, so any Javascript attributes can be added to the output.
+	 * @param value The currently applied value of the option.
+	 * @param o The option, used to list all values.
+	 * @param fullName The full name of the option, used to name the drop-down.
+	 * @param disabled Whether the drop-down should be disabled.
+	 * @return An HTMLNode of a "select" with "option" children for each of the possible values. If the value
+	 * specified in value is one of the options, it will be selected.
+	 */
+	public static HTMLNode addComboBox(String value, EnumerableOptionCallback o, String fullName, boolean disabled) {
 		HTMLNode result;
 
-		if (disabled)
+		if (disabled) {
 			result = new HTMLNode("select", //
 			         new String[] { "name", "disabled" }, //
 			         new String[] { fullName, "disabled" });
-		else
+		} else {
 			result = new HTMLNode("select", "name", fullName);
+		}
 
 		for(String possibleValue : o.getPossibleValues()) {
-			if(possibleValue.equals(value))
+			if(possibleValue.equals(value)) {
 				result.addChild("option",
 				        new String[] { "value", "selected" },
 				        new String[] { possibleValue, "selected" }, possibleValue);
-			else
+			} else {
 				result.addChild("option", "value", possibleValue, possibleValue);
+			}
 		}
 
 		return result;
 	}
 
-	private HTMLNode addBooleanComboBox(boolean value, String fullName, boolean disabled) {
+	/**
+	 * Generates a drop-down combobox for a true/false option suitable for adding to an existing form.
+	 * Its first element is the "select" element, so any Javascript attributes can be added to the output.
+	 * @param value The current value of the option. This will be selected.
+	 * @param fullName The full name of the option, used to name the drop-down.
+	 * @param disabled Whether the drop-down should be disabled.
+	 * @return An HTMLNode of a "select" with an "option" child for localized "true" and "false", with the
+	 * current value selected.
+	 */
+	public static HTMLNode addBooleanComboBox(boolean value, String fullName, boolean disabled) {
 		HTMLNode result;
 
-		if (disabled)
+		if (disabled) {
 			result = new HTMLNode("select", //
 			         new String[] { "name", "disabled" }, //
 			         new String[] {fullName, "disabled" });
-		else
+		} else {
 			result = new HTMLNode("select", "name", fullName);
+		}
 
 		if (value) {
 			result.addChild("option",

@@ -231,6 +231,19 @@ public final class PageMaker {
 	}
 
 	public PageNode getPageNode(String title, boolean renderNavigationLinks, ToadletContext ctx) {
+		return getPageNode(title, renderNavigationLinks, true, ctx);
+	}
+
+	/**
+	 * Generates an FProxy template page with optional navigation bar and status information suitable for adding
+	 * content to.
+	 * @param title Title of the page.
+	 * @param renderNavigationLinks Whether to render navigation links.
+	 * @param renderStatus Whether to render the status display.
+	 * @param ctx ToadletContext to use to render the page.
+	 * @return A template PageNode.
+	 */
+	public PageNode getPageNode(String title, boolean renderNavigationLinks, boolean renderStatus, ToadletContext ctx) {
 		boolean fullAccess = ctx == null ? false : ctx.isAllowedFullAccess();
 		HTMLNode pageNode = new HTMLNode.HTMLDoctype("html", "-//W3C//DTD XHTML 1.1//EN");
 		HTMLNode htmlNode = pageNode.addChild("html", "xml:lang", NodeL10n.getBase().getSelectedLanguage().isoCode);
@@ -281,88 +294,90 @@ public final class PageMaker {
 		HTMLNode pageDiv = bodyNode.addChild("div", "id", "page");
 		HTMLNode topBarDiv = pageDiv.addChild("div", "id", "topbar");
 
-		final HTMLNode statusBarDiv = pageDiv.addChild("div", "id", "statusbar-container").addChild("div", "id", "statusbar");
+		if (renderStatus) {
+			final HTMLNode statusBarDiv = pageDiv.addChild("div", "id", "statusbar-container").addChild("div", "id", "statusbar");
 
-		 if (node != null && node.clientCore != null) {
-			 final HTMLNode alerts = node.clientCore.alerts.createSummary(true);
-			 if (alerts != null) {
-				 statusBarDiv.addChild(alerts).addAttribute("id", "statusbar-alerts");
-				 statusBarDiv.addChild("div", "class", "separator", "\u00a0");
+			 if (node != null && node.clientCore != null) {
+				 final HTMLNode alerts = node.clientCore.alerts.createSummary(true);
+				 if (alerts != null) {
+					 statusBarDiv.addChild(alerts).addAttribute("id", "statusbar-alerts");
+					 statusBarDiv.addChild("div", "class", "separator", "\u00a0");
+				 }
 			 }
-		 }
-	
 
-		statusBarDiv.addChild("div", "id", "statusbar-language").addChild("a", "href", "/config/node#l10n", NodeL10n.getBase().getSelectedLanguage().fullName);
 
-		if (node.clientCore != null && ctx != null) {
-			statusBarDiv.addChild("div", "class", "separator", "\u00a0");
-			final HTMLNode switchMode = statusBarDiv.addChild("div", "id", "statusbar-switchmode");
-			if (ctx.activeToadlet().container.isAdvancedModeEnabled()) {
-				switchMode.addAttribute("class", "simple");
-				switchMode.addChild("a", "href", "?mode=1", NodeL10n.getBase().getString("StatusBar.switchToSimpleMode"));
-			} else {
-				switchMode.addAttribute("class", "advanced");
-				switchMode.addChild("a", "href", "?mode=2", NodeL10n.getBase().getString("StatusBar.switchToAdvancedMode"));
-			}
-		}
+			statusBarDiv.addChild("div", "id", "statusbar-language").addChild("a", "href", "/config/node#l10n", NodeL10n.getBase().getSelectedLanguage().fullName);
 
-		if (node != null && node.clientCore != null) {
-			statusBarDiv.addChild("div", "class", "separator", "\u00a0");
-			final HTMLNode secLevels = statusBarDiv.addChild("div", "id", "statusbar-seclevels", NodeL10n.getBase().getString("SecurityLevels.statusBarPrefix"));
-
-			final HTMLNode network = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getNetworkThreatLevel()) + "\u00a0");
-			network.addAttribute("title", NodeL10n.getBase().getString("SecurityLevels.networkThreatLevelShort"));
-			network.addAttribute("class", node.securityLevels.getNetworkThreatLevel().toString().toLowerCase());
-
-			final HTMLNode physical = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getPhysicalThreatLevel()));
-			physical.addAttribute("title", NodeL10n.getBase().getString("SecurityLevels.physicalThreatLevelShort"));
-			physical.addAttribute("class", node.securityLevels.getPhysicalThreatLevel().toString().toLowerCase());
-
-			statusBarDiv.addChild("div", "class", "separator", "\u00a0");
-
-			final int connectedPeers = node.peers.countConnectedPeers();
-			int darknetTotal = 0;
-			for(DarknetPeerNode n : node.peers.getDarknetPeers()) {
-				if(n == null) continue;
-				if(n.isDisabled()) continue;
-				darknetTotal++;
-			}
-			final int connectedDarknetPeers = node.peers.countConnectedDarknetPeers();
-			final int totalPeers = (node.getOpennet() == null) ? (darknetTotal > 0 ? darknetTotal : Integer.MAX_VALUE) : node.getOpennet().getNumberOfConnectedPeersToAimIncludingDarknet();
-			final double connectedRatio = ((double)connectedPeers) / (double)totalPeers;
-			final String additionnalClass;
-
-			// If we use Opennet, we color the bar by the ratio of connected nodes
-			if(connectedPeers > connectedDarknetPeers) {
-				if (connectedRatio < 0.3D || connectedPeers < 3) {
-					additionnalClass = "very-few-peers";
-				} else if (connectedRatio < 0.5D) {
-					additionnalClass = "few-peers";
-				} else if (connectedRatio < 0.75D) {
-					additionnalClass = "avg-peers";
+			if (node.clientCore != null && ctx != null) {
+				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
+				final HTMLNode switchMode = statusBarDiv.addChild("div", "id", "statusbar-switchmode");
+				if (ctx.activeToadlet().container.isAdvancedModeEnabled()) {
+					switchMode.addAttribute("class", "simple");
+					switchMode.addChild("a", "href", "?mode=1", NodeL10n.getBase().getString("StatusBar.switchToSimpleMode"));
 				} else {
-					additionnalClass = "full-peers";
-				}
-			} else {
-				// If we are darknet only, we color by absolute connected peers
-				if (connectedDarknetPeers < 3) {
-					additionnalClass = "very-few-peers";
-				} else if (connectedDarknetPeers < 5) {
-					additionnalClass = "few-peers";
-				} else if (connectedDarknetPeers < 10) {
-					additionnalClass = "avg-peers";
-				} else {
-					additionnalClass = "full-peers";
+					switchMode.addAttribute("class", "advanced");
+					switchMode.addChild("a", "href", "?mode=2", NodeL10n.getBase().getString("StatusBar.switchToAdvancedMode"));
 				}
 			}
 
-			HTMLNode progressBar = statusBarDiv.addChild("div", "class", "progressbar");
-			progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-done progressbar-peers " + additionnalClass, "width: " +
-					Math.min(100,Math.floor(100*connectedRatio)) + "%;" });
+			if (node != null && node.clientCore != null) {
+				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
+				final HTMLNode secLevels = statusBarDiv.addChild("div", "id", "statusbar-seclevels", NodeL10n.getBase().getString("SecurityLevels.statusBarPrefix"));
 
-			progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_finalized", NodeL10n.getBase().getString("StatusBar.connectedPeers", new String[]{"X", "Y"},
-					new String[]{Integer.toString(node.peers.countConnectedDarknetPeers()), Integer.toString(node.peers.countConnectedOpennetPeers())}) },
-					Integer.toString(connectedPeers) + ((totalPeers != Integer.MAX_VALUE) ? " / " + Integer.toString(totalPeers) : ""));
+				final HTMLNode network = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getNetworkThreatLevel()) + "\u00a0");
+				network.addAttribute("title", NodeL10n.getBase().getString("SecurityLevels.networkThreatLevelShort"));
+				network.addAttribute("class", node.securityLevels.getNetworkThreatLevel().toString().toLowerCase());
+
+				final HTMLNode physical = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getPhysicalThreatLevel()));
+				physical.addAttribute("title", NodeL10n.getBase().getString("SecurityLevels.physicalThreatLevelShort"));
+				physical.addAttribute("class", node.securityLevels.getPhysicalThreatLevel().toString().toLowerCase());
+
+				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
+
+				final int connectedPeers = node.peers.countConnectedPeers();
+				int darknetTotal = 0;
+				for(DarknetPeerNode n : node.peers.getDarknetPeers()) {
+					if(n == null) continue;
+					if(n.isDisabled()) continue;
+					darknetTotal++;
+				}
+				final int connectedDarknetPeers = node.peers.countConnectedDarknetPeers();
+				final int totalPeers = (node.getOpennet() == null) ? (darknetTotal > 0 ? darknetTotal : Integer.MAX_VALUE) : node.getOpennet().getNumberOfConnectedPeersToAimIncludingDarknet();
+				final double connectedRatio = ((double)connectedPeers) / (double)totalPeers;
+				final String additionalClass;
+
+				// If we use Opennet, we color the bar by the ratio of connected nodes
+				if(connectedPeers > connectedDarknetPeers) {
+					if (connectedRatio < 0.3D || connectedPeers < 3) {
+						additionalClass = "very-few-peers";
+					} else if (connectedRatio < 0.5D) {
+						additionalClass = "few-peers";
+					} else if (connectedRatio < 0.75D) {
+						additionalClass = "avg-peers";
+					} else {
+						additionalClass = "full-peers";
+					}
+				} else {
+					// If we are darknet only, we color by absolute connected peers
+					if (connectedDarknetPeers < 3) {
+						additionalClass = "very-few-peers";
+					} else if (connectedDarknetPeers < 5) {
+						additionalClass = "few-peers";
+					} else if (connectedDarknetPeers < 10) {
+						additionalClass = "avg-peers";
+					} else {
+						additionalClass = "full-peers";
+					}
+				}
+
+				HTMLNode progressBar = statusBarDiv.addChild("div", "class", "progressbar");
+				progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-done progressbar-peers " + additionalClass, "width: " +
+						Math.min(100,Math.floor(100*connectedRatio)) + "%;" });
+
+				progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_finalized", NodeL10n.getBase().getString("StatusBar.connectedPeers", new String[]{"X", "Y"},
+						new String[]{Integer.toString(node.peers.countConnectedDarknetPeers()), Integer.toString(node.peers.countConnectedOpennetPeers())}) },
+						Integer.toString(connectedPeers) + ((totalPeers != Integer.MAX_VALUE) ? " / " + Integer.toString(totalPeers) : ""));
+			}
 		}
 
 		topBarDiv.addChild("h1", title);
