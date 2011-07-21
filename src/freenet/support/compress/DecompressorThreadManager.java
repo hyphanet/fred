@@ -122,8 +122,10 @@ public class DecompressorThreadManager {
 				// FIXME remove the timeout here.
 				// Something wierd is happening...
 				//wait(0)
-				wait(10*60*1000);
-				Logger.error(this, "Still waiting for decompressor chain after "+TimeUtil.formatTime(System.currentTimeMillis()-start));
+				wait(20*60*1000);
+				long time = System.currentTimeMillis()-start;
+				if(time > 20*60*1000)
+					Logger.error(this, "Still waiting for decompressor chain after "+TimeUtil.formatTime(time));
 			} catch(InterruptedException e) {
 				//Do nothing
 			}
