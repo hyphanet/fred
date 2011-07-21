@@ -438,7 +438,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 		// Be generous with unlocking incoming requests, and cautious with
 		// unlocking outgoing requests, hence avoid problems. If we wait until
 		// the completion has been acknowledged, then there will be a period
-		// during which downstream thinks we have unlocked but we haven't, 
+		// during which the originator thinks we have unlocked but we haven't, 
 		// which will cause unnecessary rejects and thus mandatory backoff.
     	tag.unlockHandler();
         
