@@ -434,8 +434,16 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 			commit(block);
 			block = null;
 		}
+		
+		// Be generous with unlocking incoming requests, and cautious with
+		// unlocking outgoing requests, hence avoid problems. If we wait until
+		// the completion has been acknowledged, then there will be a period
+		// during which downstream thinks we have unlocked but we haven't, 
+		// which will cause unnecessary rejects and thus mandatory backoff.
+    	tag.unlockHandler();
         
         	try {
+        		// We do need to sendSync here so we have accurate byte counter totals.
         		source.sendSync(m, this, realTimeFlag);
         		if(logMINOR) Logger.minor(this, "Sent completion: "+m+" for "+this);
         	} catch (NotConnectedException e1) {
