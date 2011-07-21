@@ -140,7 +140,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	}
 
 	private SaltedHashFreenetStore(File baseDir, String name, StoreCallback<T> callback, Random random, long maxKeys,
-	        boolean useSlotFilter, SemiOrderedShutdownHook shutdownHook, boolean preallocate, boolean resizeOnStart, byte[] masterKey) throws IOException {
+	        boolean enableSlotFilters, SemiOrderedShutdownHook shutdownHook, boolean preallocate, boolean resizeOnStart, byte[] masterKey) throws IOException {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 
@@ -188,12 +188,12 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		
 		slotFilterFile = new File(this.baseDir, name + ".slotfilter");
 		int size = (int)Math.max(storeSize, prevStoreSize);
-		if(useSlotFilter) {
+		if(enableSlotFilters) {
 			slotFilterDisabled = false;
-			this.useSlotFilter = true;
+			useSlotFilter = true;
 		} else {
 			slotFilterDisabled = true;
-			this.useSlotFilter = false;
+			useSlotFilter = false;
 		}
 		if(!slotFilterDisabled) {
 			slotFilter = new ResizablePersistentIntBuffer(slotFilterFile, size, SLOT_FILTER_INTERVAL);
