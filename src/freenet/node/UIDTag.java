@@ -67,6 +67,17 @@ public abstract class UIDTag {
 		return System.currentTimeMillis() - createdTime;
 	}
 	
+	/** Notify that we are routing to, or fetching an offered key from, a 
+	 * specific node. This should be called before we send the actual request
+	 * message, to avoid us thinking we have more outgoing capacity than we
+	 * actually have on a specific peer.
+	 * @param peer The peer we are routing to.
+	 * @param offeredKey If true, we are fetching an offered key, if false we
+	 * are routing a normal request. Fetching an offered key is quite distinct,
+	 * notably it has much shorter timeouts.
+	 * @return True if we were already routing to (or fetching an offered key 
+	 * from, depending on offeredKey) the peer.
+	 */
 	public synchronized boolean addRoutedTo(PeerNode peer, boolean offeredKey) {
 		if(logMINOR)
 			Logger.minor(this, "Routing to "+peer+" on "+this+(offeredKey ? " (offered)" : ""), new Exception("debug"));
@@ -101,7 +112,14 @@ public abstract class UIDTag {
 		if(fetchingOfferedKeyFrom == null) return false;
 		return fetchingOfferedKeyFrom.contains(peer);
 	}
-	
+
+	/** Notify that we are no longer fetching an offered key from a specific 
+	 * node. Must be called only when we are sure the next node doesn't think
+	 * we are routing to it any more. See removeRoutingTo() explanation for more
+	 * detail. When we are not routing to any nodes, and not fetching from, and
+	 * the handler has also been unlocked, the UID is unlocked.
+	 * @param next The node we are no longer fetching an offered key from.
+	 */
 	public void removeFetchingOfferedKeyFrom(PeerNode next) {
 		boolean noRecordUnlock;
 		synchronized(this) {
@@ -117,6 +135,20 @@ public abstract class UIDTag {
 		innerUnlock(noRecordUnlock);
 	}
 	
+	/** Notify that we are no longer routing to a specific node. When we are
+	 * not routing to (or fetching offered keys from) any nodes, and the handler
+	 * side has also been unlocked, the whole tag is unlocked (note that this 
+	 * is only relevant to incoming requests; outgoing requests only care about
+	 * what we are routing to). We should not call this method until we are 
+	 * reasonably sure that the node in question no longer thinks we are 
+	 * routing to it. Whereas we unlock the handler as soon as possible, 
+	 * without waiting for acknowledgement of our completion notice. Be 
+	 * cautious (late) in what you send, and generous (early) in what 
+	 * you accept! This avoids problems with the previous node thinking we've
+	 * finished when we haven't, or us thinking the next node has finished when
+	 * it hasn't.
+	 * @param next The node we are no longer routing to.
+	 */
 	public void removeRoutingTo(PeerNode next) {
 		if(logMINOR)
 			Logger.minor(this, "No longer routing to "+next+" on "+this, new Exception("debug"));
@@ -253,6 +285,15 @@ public abstract class UIDTag {
 		return true;
 	}
 	
+	/** Unlock the handler. That is, the incoming request has finished. This 
+	 * method should be called before the acknowledgement that the request has
+	 * finished is sent downstream. Therefore, we will never be waiting for an
+	 * acknowledgement from downstream in order to release the slot it is using,
+	 * during which time it might think we are rejecting wrongly.
+	 * 
+	 * Once both the incoming and outgoing requests are unlocked, the whole tag
+	 * is unlocked.
+	 */
 	public void unlockHandler(boolean noRecord) {
 		boolean canUnlock;
 		synchronized(this) {
