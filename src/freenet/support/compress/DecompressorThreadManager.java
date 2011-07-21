@@ -4,6 +4,8 @@
 package freenet.support.compress;
 
 import freenet.support.LogThresholdCallback;
+import freenet.support.TimeUtil;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PipedInputStream;
@@ -114,9 +116,14 @@ public class DecompressorThreadManager {
 
 	/** Blocks until all threads have finished executing and cleaning up.*/
 	public synchronized void waitFinished() throws Throwable {
+		long start = System.currentTimeMillis();
 		while(!finished) {
 			try {
-				wait();
+				// FIXME remove the timeout here.
+				// Something wierd is happening...
+				//wait(0)
+				wait(10*60*1000);
+				Logger.error(this, "Still waiting for decompressor chain after "+TimeUtil.formatTime(System.currentTimeMillis()-start));
 			} catch(InterruptedException e) {
 				//Do nothing
 			}
