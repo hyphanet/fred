@@ -547,9 +547,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			* security level could not be determined, redirect to the same page.*/
 			if(newThreatLevel == null || !request.isPartSet("security-levels.networkThreatLevel")) {
 				//TODO: StringBuilder is not thread-safe but it's faster. Is it okay in this case?
-				StringBuilder redirectTo = new StringBuilder(TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_NETWORK);
+				StringBuilder redirectTo = new StringBuilder(TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_NETWORK+"&opennet=");
 				//Max length of 5 because 5 letters in false, 4 in true.
-				redirectTo.append("&opennet=").append(request.getPartAsStringFailsafe("opennet", 5));
+				redirectTo.append(request.getPartAsStringFailsafe("opennet", 5));
 				super.writeTemporaryRedirect(ctx, "step1", redirectTo.toString());
 				return;
 			}
