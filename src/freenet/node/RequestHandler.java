@@ -503,12 +503,14 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		// The pubKey will have been set on the SSK key, and the SSKBlock will have been constructed.
 		boolean isOldFNP = source.isOldFNP();
 		MultiMessageCallback mcb = null;
+		// As soon as the originator receives the messages, he can reuse the slot.
+		tag.unlockHandler();
 		if(!isOldFNP) mcb = new MultiMessageCallback() {
 			@Override
 			public void finish(boolean success) {
 				sentPayload(data.length); // FIXME report this at the time when that message is acked for more accurate reporting???
 				applyByteCounts();
-				unregisterRequestHandlerWithNode();
+				node.removeTransferringRequestHandler(uid);
 			}
 		};
 		Message headersMsg = DMT.createFNPSSKDataFoundHeaders(uid, headers, realTimeFlag);
@@ -651,6 +653,10 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		else
 			sendTerminalCalled = true;
 
+		// Unlock handler immediately.
+		// Otherwise the request sender will think the slot is free as soon as it
+		// receives it, but we won't, so we may reject his requests and get a mandatory backoff.
+		tag.unlockHandler();
 		try {
 			source.sendAsync(msg, new TerminalMessageByteCountCollector(), this);
 		} catch (NotConnectedException e) {
@@ -704,7 +710,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				Logger.minor(this, "Completing: " + RequestHandler.this);
 			//For byte counting, this relies on the fact that the callback will only be excuted once.
 			applyByteCounts();
-			unregisterRequestHandlerWithNode();
+			node.removeTransferringRequestHandler(uid);
 		}
 	}
 
@@ -887,12 +893,15 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 					
 					// Send it forward to the data source, if it is valid.
 					
-					if(OpennetManager.validateNoderef(newNoderef, 0, newNoderef.length, source, false) != null)
+					if(OpennetManager.validateNoderef(newNoderef, 0, newNoderef.length, source, false) != null) {
+						// As soon as the originator receives the three blocks, he can reuse the slot.
+						tag.unlockHandler();
 						try {
 							om.sendOpennetRef(true, uid, dataSource, newNoderef, RequestHandler.this);
 						} catch(NotConnectedException e) {
 							// How sad
 						}
+					}
 				}
 				
 				// We have sent a noderef. It is not appropriate for the caller to call ackOpennet():
