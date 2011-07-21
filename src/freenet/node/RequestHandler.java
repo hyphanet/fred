@@ -503,14 +503,21 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		// The pubKey will have been set on the SSK key, and the SSKBlock will have been constructed.
 		boolean isOldFNP = source.isOldFNP();
 		MultiMessageCallback mcb = null;
-		// As soon as the originator receives the messages, he can reuse the slot.
-		tag.unlockHandler();
 		if(!isOldFNP) mcb = new MultiMessageCallback() {
 			@Override
 			public void finish(boolean success) {
 				sentPayload(data.length); // FIXME report this at the time when that message is acked for more accurate reporting???
 				applyByteCounts();
 				node.removeTransferringRequestHandler(uid);
+			}
+			@Override
+			void sent() {
+				// As soon as the originator receives the messages, he can reuse the slot.
+				// Unlocking on sent is a reasonable compromise between:
+				// 1. Unlocking immediately avoids problems with the recipient reusing the slot when he's received the data, therefore us rejecting the request and getting a mandatory backoff, and
+				// 2. However, we do want SSK requests from the datastore to be counted towards the total when accepting requests.
+				// FIXME consider other options. Reassigning to self probably wouldn't work well as it'd let them steal our capacity, although only for a short period on a normal connection...
+				tag.unlockHandler();
 			}
 		};
 		Message headersMsg = DMT.createFNPSSKDataFoundHeaders(uid, headers, realTimeFlag);

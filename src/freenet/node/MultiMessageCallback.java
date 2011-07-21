@@ -6,22 +6,31 @@ import freenet.io.comm.AsyncMessageCallback;
 public abstract class MultiMessageCallback {
 	
 	private int waiting;
+	private int waitingForSend;
 	
 	private boolean armed;
 	
 	private boolean someFailed;
 	
 	abstract void finish(boolean success);
+	
+	abstract void sent();
 
 	public AsyncMessageCallback make() {
 		synchronized(this) {
 			AsyncMessageCallback cb = new AsyncMessageCallback() {
 
 				private boolean finished;
+				private boolean sent;
 				
 				@Override
 				public void sent() {
-					// Ignore
+					synchronized(MultiMessageCallback.this) {
+						if(finished || sent) return;
+						waitingForSend--;
+						if(waitingForSend > 0) return;
+					}
+					MultiMessageCallback.this.sent();
 				}
 
 				@Override
@@ -42,6 +51,10 @@ public abstract class MultiMessageCallback {
 				private void complete(boolean success) {
 					synchronized(MultiMessageCallback.this) {
 						if(finished) return;
+						if(!sent) {
+							sent = true;
+							waitingForSend--;
+						}
 						if(!success) someFailed = true;
 						finished = true;
 						waiting--;
@@ -53,6 +66,7 @@ public abstract class MultiMessageCallback {
 				
 			};
 			waiting++;
+			waitingForSend++;
 			return cb;
 		}
 	}
