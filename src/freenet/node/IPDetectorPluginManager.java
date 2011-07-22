@@ -965,5 +965,9 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		if(proxyAlert.isValid())
 			contentNode.addChild(node.clientCore.alerts.renderAlert(proxyAlert));
 	}
+
+	public boolean hasJSTUN() {
+		return node.pluginManager.isPluginLoadedOrLoadingOrWantLoad("JSTUN");
+	}
 	
 }

@@ -620,4 +620,8 @@ public class NodeIPDetector {
 	public boolean noDetectPlugins() {
 		return !ipDetectorManager.hasDetectors();
 	}
+
+	public boolean hasJSTUN() {
+		return ipDetectorManager.hasJSTUN();
+	}
 }
