@@ -232,6 +232,7 @@ public class BulkTransmitter {
 			transfersCompleted++;
 			transfersSucceeded++;
 		}
+		if(logMINOR) Logger.minor(this, "Completed transfer successfully "+this);
 	}
 	
 	/**
@@ -281,6 +282,7 @@ outer:	while(true) {
 					synchronized(this) {
 						allQueued = true;
 						if(unsentPackets == 0 && !calledAllSent) {
+							if(logMINOR) Logger.minor(this, "Calling all sent callback on "+this);
 							callAllSent = true;
 							calledAllSent = true;
 							anyFailed = failedPacket;
@@ -466,6 +468,7 @@ outer:	while(true) {
 				calledAllSent = true;
 				anyFailed = failedPacket;
 			}
+			if(logMINOR) Logger.minor(this, "Calling all sent callback on "+this);
 			allSentCallback.allSent(BulkTransmitter.this, anyFailed);
 		}
 		
