@@ -449,8 +449,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			miscInfoboxContent.addChild("p", l10n("pluginsLong"));
 			miscInfoboxContent.addChild("p").addChild("input", new String[] { "type", "checked", "name", "value" },
 					new String[] { "checkbox", "on", "upnp", "true" }, l10n("enableUPnP"));
-			miscInfoboxContent.addChild("p").addChild("input", new String[] { "type", "name", "value" },
-					new String[] { "checkbox", "jstun", "true" }, l10n("enableJSTUN"));
 
 			miscInfoboxContent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "miscF", l10n("continue")});
 			miscInfoboxContent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
@@ -776,7 +774,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				Logger.error(this, "Should not happen, please report!" + e, e);
 			}
 			final boolean enableUPnP = request.isPartSet("upnp");
-			final boolean enableJSTUN = request.isPartSet("jstun");
 			if(enableUPnP != core.node.pluginManager.isPluginLoaded("plugins.UPnP.UPnP")) {
 					// We can probably get connected without it, so don't force HTTPS.
 					// We'd have to ask the user anyway...
@@ -792,22 +789,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 								core.node.pluginManager.killPluginByClass("plugins.UPnP.UPnP", 5000);
 						}
 
-					});
-			}
-			if(enableJSTUN != core.node.pluginManager.isPluginLoaded("plugins.JSTUN.JSTUN")) {
-					core.node.executor.execute(new Runnable() {
-
-						private final boolean enable = enableJSTUN;
-
-						@Override
-						public void run() {
-							// We can probably get connected without it, so don't force HTTPS.
-							// We'd have to ask the user anyway...
-							if(enable)
-							core.node.pluginManager.startPluginOfficial("JSTUN", true, false, false);
-							else
-								core.node.pluginManager.killPluginByClass("plugins.JSTUN.JSTUN", 5000);
-						}
 					});
 			}
 			super.writeTemporaryRedirect(ctx, "step7", TOADLET_URL+"?step="+WIZARD_STEP.OPENNET);
