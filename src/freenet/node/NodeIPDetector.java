@@ -81,6 +81,7 @@ public class NodeIPDetector {
 	boolean maybeSymmetric;
 	/** Have the detector plugins been queried (or found to be non-existent)? */
 	private boolean hasDetectedPM;
+	/** Have we checked peers and local interfaces for our IP address? */
 	private boolean hasDetectedIAD;
 	/** Subsidiary detectors: NodeIPPortDetector's which rely on this object */
 	private NodeIPPortDetector[] portDetectors;
