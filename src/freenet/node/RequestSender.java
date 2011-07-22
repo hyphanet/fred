@@ -73,7 +73,6 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     
     // Basics
     final RequestTag origTag;
-    final Node node;
     private PartiallyReceivedBlock prb;
     private byte[] finalHeaders;
     private byte[] finalSskData;
@@ -175,7 +174,6 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     	}
         this.pubKey = pubKey;
         this.origTag = tag;
-        this.node = n;
         this.tryOffersOnly = offersOnly;
         this.canWriteClientCache = canWriteClientCache;
         this.canWriteDatastore = canWriteDatastore;
