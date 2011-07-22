@@ -905,6 +905,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				
 				if(newNoderef == null) {
 					// Already sent a ref, no way to tell upstream that we didn't receive one. :(
+					tag.unlockHandler();
 				} else {
 					
 					// Send it forward to the data source, if it is valid.
@@ -912,20 +913,32 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 					if(OpennetManager.validateNoderef(newNoderef, 0, newNoderef.length, source, false) != null) {
 						try {
 							if(logMINOR) Logger.minor(this, "Relaying noderef from source to data source");
-							om.sendOpennetRef(true, uid, dataSource, newNoderef, RequestHandler.this);
-							// Noderef sending does not wait for acknowledgement, nor does it even wait for the messages to be sent.
-							// So this should return fairly quickly, as soon as the messages have been queued to the link layer.
-							// Therefore if we unlock now, we are (usually) unlocking before the sender gets the messages, so won't get problems.
+							om.sendOpennetRef(true, uid, dataSource, newNoderef, RequestHandler.this, new AllSentCallback() {
+
+								@Override
+								public void allSent(
+										BulkTransmitter bulkTransmitter,
+										boolean anyFailed) {
+									// As soon as the originator receives the three blocks, he can reuse the slot.
+									tag.unlockHandler();
+									// Note that sendOpennetRef() does not wait for an acknowledgement or even for the blocks to have been sent!
+									// So this will be called well after gotNoderef() exits.
+								}
+								
+							});
 						} catch(NotConnectedException e) {
 							// How sad
+							tag.unlockHandler();
 						}
+					} else {
+						tag.unlockHandler();
 					}
 				}
 				
 				// We have sent a noderef. It is not appropriate for the caller to call ackOpennet():
 				// in all cases he should unlock.
 				applyByteCounts();
-				unregisterRequestHandlerWithNode();
+				node.removeTransferringRequestHandler(uid);
 			}
 
 			@Override
