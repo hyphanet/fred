@@ -138,6 +138,22 @@ public class BulkTransmitter {
 					new AsyncMessageFilterCallback() {
 						@Override
 						public void onMatched(Message m) {
+							// send() will terminate.
+							if(allSentCallback != null) {
+								boolean callAllSent = false;
+								boolean anyFailed = false;
+								synchronized(this) {
+									allQueued = true;
+									if(unsentPackets == 0 && !calledAllSent) {
+										if(logMINOR) Logger.minor(this, "Calling all sent callback on "+this);
+										callAllSent = true;
+										calledAllSent = true;
+										anyFailed = failedPacket;
+									}
+								}
+								if(callAllSent)
+									allSentCallback.allSent(BulkTransmitter.this, anyFailed);
+							}
 							completed();
 						}
 						@Override
@@ -272,10 +288,6 @@ outer:	while(true) {
 				blockNo = blocksNotSentButPresent.firstOne();
 			}
 			if(blockNo < 0) {
-				if(noWait && prb.hasWholeFile()) {
-					completed();
-					return true;
-				}
 				if(allSentCallback != null) {
 					boolean callAllSent = false;
 					boolean anyFailed = false;
@@ -290,6 +302,10 @@ outer:	while(true) {
 					}
 					if(callAllSent)
 						allSentCallback.allSent(this, anyFailed);
+				}
+				if(noWait && prb.hasWholeFile()) {
+					completed();
+					return true;
 				}
 				synchronized(this) {
 					// Wait for all packets to complete
