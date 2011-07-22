@@ -74,9 +74,8 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 					new HTMLNode[] { HTMLNode.link("/plugins/"), HTMLNode.link("/config/node") });
 		} else if(!node.ipDetector.hasJSTUN() && !node.ipDetector.isDetecting()) {
 			HTMLNode p = textNode.addChild("p");
-			NodeL10n.getBase().addL10nSubstitution(p, "IPUndetectedUserAlert.loadJSTUN", new String[] { "plugins", "config", },
-					new HTMLNode[] { HTMLNode.link("/plugins/"), HTMLNode.link("/config/node") });
-			textNode.addChild(p);
+			NodeL10n.getBase().addL10nSubstitution(p, "IPUndetectedUserAlert.loadJSTUN", new String[] { "plugins" },
+					new HTMLNode[] { HTMLNode.link("/plugins/") });
 		}
 		
 		addPortForwardSuggestion(textNode);
