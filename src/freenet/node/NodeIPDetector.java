@@ -79,6 +79,7 @@ public class NodeIPDetector {
 	FreenetInetAddress[] lastIP;
 	/** Set when we have grounds to believe that we may be behind a symmetric NAT. */
 	boolean maybeSymmetric;
+	/** Have the detector plugins been queried (or found to be non-existent)? */
 	private boolean hasDetectedPM;
 	private boolean hasDetectedIAD;
 	/** Subsidiary detectors: NodeIPPortDetector's which rely on this object */
