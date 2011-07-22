@@ -898,6 +898,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		
 		// We do not need to worry about timeouts here, because we have already sent our noderef.
 		
+		// We have sent a noderef. Therefore we must unlock, not ack.
+		
 		OpennetManager.waitForOpennetNoderef(true, source, uid, this, new NoderefCallback() {
 
 			@Override
@@ -921,6 +923,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 										boolean anyFailed) {
 									// As soon as the originator receives the three blocks, he can reuse the slot.
 									tag.unlockHandler();
+									applyByteCounts();
 									// Note that sendOpennetRef() does not wait for an acknowledgement or even for the blocks to have been sent!
 									// So this will be called well after gotNoderef() exits.
 								}
@@ -929,15 +932,14 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 						} catch(NotConnectedException e) {
 							// How sad
 							tag.unlockHandler();
+							applyByteCounts();
 						}
 					} else {
 						tag.unlockHandler();
+						applyByteCounts();
 					}
 				}
 				
-				// We have sent a noderef. It is not appropriate for the caller to call ackOpennet():
-				// in all cases he should unlock.
-				applyByteCounts();
 				node.removeTransferringRequestHandler(uid);
 			}
 
@@ -952,7 +954,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			}
 			
 		}, node);
-
 
 	}
 	private int sentBytes;
