@@ -18,13 +18,13 @@ import freenet.support.HTMLNode;
 public class ProgressBarElement extends BaseUpdateableElement {
 
 	/** The tracker that the Fetcher can be acquired */
-	private FProxyFetchTracker		tracker;
+	private final FProxyFetchTracker		tracker;
 	/** The URI of the download this progress bar shows */
-	private FreenetURI				key;
+	private final FreenetURI				key;
 	/** The maxSize */
-	private long					maxSize;
+	private final long					maxSize;
 	/** The FetchListener that gets notified when the download progresses */
-	private NotifierFetchListener	fetchListener;
+	private final NotifierFetchListener	fetchListener;
 	private final FetchContext		fctx;
 
 	public ProgressBarElement(FProxyFetchTracker tracker, FreenetURI key, FetchContext fctx, long maxSize, ToadletContext ctx, boolean pushed) {
@@ -35,7 +35,10 @@ public class ProgressBarElement extends BaseUpdateableElement {
 		this.fctx = fctx;
 		this.maxSize = maxSize;
 		init(pushed);
-		if(!pushed) return;
+		if(!pushed) {
+			fetchListener = null;
+			return;
+		}
 		// Creates and registers the FetchListener
 		fetchListener = new NotifierFetchListener(((SimpleToadletServer) ctx.getContainer()).pushDataManager, this);
 		tracker.getFetchInProgress(key, maxSize, fctx).addListener(fetchListener);
