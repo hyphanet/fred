@@ -57,12 +57,6 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 	@Override
 	public HTMLNode getHTMLText() {
 		HTMLNode textNode = new HTMLNode("div");
-		if(node.ipDetector.noDetectPlugins()) {
-			HTMLNode p = new HTMLNode("p");
-			NodeL10n.getBase().addL10nSubstitution(p, "IPUndetectedUserAlert.loadDetectPlugins", new String[] { "plugins", "config", },
-					new HTMLNode[] { HTMLNode.link("/plugins/"), HTMLNode.link("/config/node") });
-			return p;
-		}
 		SubConfig sc = node.config.get("node");
 		Option<?> o = sc.getOption("tempIPAddressHint");
 		
@@ -74,8 +68,12 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 		if(peers > 0)
 			textNode.addChild("p", l10n("noIPMaybeFromPeers", "number", Integer.toString(peers)));
 		
-		if(!node.ipDetector.hasJSTUN() && !node.ipDetector.isDetecting()) {
-			HTMLNode p = new HTMLNode("p");
+		if(node.ipDetector.noDetectPlugins()) {
+			HTMLNode p = textNode.addChild("p");
+			NodeL10n.getBase().addL10nSubstitution(p, "IPUndetectedUserAlert.loadDetectPlugins", new String[] { "plugins", "config", },
+					new HTMLNode[] { HTMLNode.link("/plugins/"), HTMLNode.link("/config/node") });
+		} else if(!node.ipDetector.hasJSTUN() && !node.ipDetector.isDetecting()) {
+			HTMLNode p = textNode.addChild("p");
 			NodeL10n.getBase().addL10nSubstitution(p, "IPUndetectedUserAlert.loadJSTUN", new String[] { "plugins", "config", },
 					new HTMLNode[] { HTMLNode.link("/plugins/"), HTMLNode.link("/config/node") });
 			textNode.addChild(p);
