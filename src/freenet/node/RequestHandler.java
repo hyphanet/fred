@@ -912,16 +912,10 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 					if(OpennetManager.validateNoderef(newNoderef, 0, newNoderef.length, source, false) != null) {
 						try {
 							if(logMINOR) Logger.minor(this, "Relaying noderef from source to data source");
-							om.sendOpennetRef(true, uid, dataSource, newNoderef, RequestHandler.this, new AllSentCallback() {
-
-								@Override
-								public void allSent(BulkTransmitter bulkTransmitter,
-										boolean anyFailed) {
-									// As soon as the originator receives the three blocks, he can reuse the slot.
-									tag.unlockHandler();
-								}
-								
-							});
+							om.sendOpennetRef(true, uid, dataSource, newNoderef, RequestHandler.this);
+							// Noderef sending does not wait for acknowledgement, nor does it even wait for the messages to be sent.
+							// So this should return fairly quickly, as soon as the messages have been queued to the link layer.
+							// Therefore if we unlock now, we are (usually) unlocking before the sender gets the messages, so won't get problems.
 						} catch(NotConnectedException e) {
 							// How sad
 						}
