@@ -911,6 +911,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 					
 					if(OpennetManager.validateNoderef(newNoderef, 0, newNoderef.length, source, false) != null) {
 						try {
+							if(logMINOR) Logger.minor(this, "Relaying noderef from source to data source");
 							om.sendOpennetRef(true, uid, dataSource, newNoderef, RequestHandler.this, new AllSentCallback() {
 
 								@Override
