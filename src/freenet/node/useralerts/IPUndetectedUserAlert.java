@@ -47,17 +47,19 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 
 	@Override
 	public HTMLNode getHTMLText() {
+		HTMLNode p = null;
 		if(node.ipDetector.noDetectPlugins()) {
-			HTMLNode p = new HTMLNode("p");
+			p = new HTMLNode("p");
 			NodeL10n.getBase().addL10nSubstitution(p, "IPUndetectedUserAlert.loadDetectPlugins", new String[] { "plugins", "config", },
 					new HTMLNode[] { HTMLNode.link("/plugins/"), HTMLNode.link("/config/node") });
 			return p;
 		} else if(!node.ipDetector.hasJSTUN() && !node.ipDetector.isDetecting()) {
-			HTMLNode p = new HTMLNode("p");
+			p = new HTMLNode("p");
 			NodeL10n.getBase().addL10nSubstitution(p, "IPUndetectedUserAlert.loadJSTUN", new String[] { "plugins", "config", },
 					new HTMLNode[] { HTMLNode.link("/plugins/"), HTMLNode.link("/config/node") });
 		}
 		HTMLNode textNode = new HTMLNode("div");
+		if(p != null) textNode.addChild(p);
 		SubConfig sc = node.config.get("node");
 		Option<?> o = sc.getOption("tempIPAddressHint");
 		
