@@ -94,8 +94,12 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	private boolean slotFilterDisabled;
 	/** If true, then treat the slot filter as authoritative. If the slot filter
 	 * gives a certain content for a particular slot, assume it is right. This
-	 * saves a lot of seeks, both when reading and when writing. */
-	private boolean useSlotFilter;
+	 * saves a lot of seeks, both when reading and when writing. Note that the 
+	 * slot filter will indicate when it doesn't have any information about a 
+	 * slot, which is the default, which is why it has to be rebuilt on 
+	 * conversion from an old store. We normally also check slotFilterDisabled 
+	 * to see whether there *is* a slot filter. */
+	private static final boolean USE_SLOT_FILTER = true;
 	
 	private static final int SLOT_CHECKED = 1 << 31;
 	private static final int SLOT_OCCUPIED = 1 << 30;
@@ -193,13 +197,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		
 		slotFilterFile = new File(this.baseDir, name + ".slotfilter");
 		int size = (int)Math.max(storeSize, prevStoreSize);
-		if(enableSlotFilters) {
-			slotFilterDisabled = false;
-			useSlotFilter = true;
-		} else {
-			slotFilterDisabled = true;
-			useSlotFilter = false;
-		}
+		slotFilterDisabled = !enableSlotFilters;
 		if(!slotFilterDisabled) {
 			slotFilter = new ResizablePersistentIntBuffer(slotFilterFile, size, SLOT_FILTER_INTERVAL);
 			System.err.println("Slot filter (" + slotFilterFile + ") for " + name + " is loaded (new="+slotFilter.isNew()+".");
@@ -850,7 +848,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			cache = slotFilter.get((int)offset);
 			validCache = (cache & SLOT_CHECKED) != 0;
 			likelyMatch = slotCacheLikelyMatch(cache, digestedRoutingKey);
-			if(useSlotFilter && validCache && !likelyMatch) return null;
+			if(USE_SLOT_FILTER && validCache && !likelyMatch) return null;
 		}
 		if(validCache && logMINOR) {
 			if(likelyMatch)
@@ -950,7 +948,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	 * @throws IOException
 	 */
 	private long getFlag(long offset, boolean forceReadEntry) throws IOException {
-		if((!forceReadEntry) && (!slotFilterDisabled) && useSlotFilter) {
+		if((!forceReadEntry) && (!slotFilterDisabled) && USE_SLOT_FILTER) {
 			int cache = slotFilter.get((int)offset);
 			if((cache & SLOT_CHECKED) != 0) {
 				return translateSlotFlagsToEntryFlags(cache);
@@ -961,7 +959,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	}
 
 	private boolean isFree(long offset) throws IOException {
-		if((!slotFilterDisabled) && useSlotFilter) {
+		if((!slotFilterDisabled) && USE_SLOT_FILTER) {
 			int cache = slotFilter.get((int)offset);
 			if((cache & SLOT_CHECKED) != 0) {
 				return slotCacheIsFree(cache);
