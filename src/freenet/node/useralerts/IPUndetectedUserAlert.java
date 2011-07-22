@@ -44,29 +44,45 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 	private String l10n(String key, String[] patterns, String[] values) {
 		return NodeL10n.getBase().getString("IPUndetectedUserAlert."+key, patterns, values);
 	}
+	
+	@Override
+	public boolean isValid() {
+		if(node.isOpennetEnabled())
+			return false;
+		if(node.peers.countConnectiblePeers() >= 5 && (node.getUptime() < 60*1000 || node.ipDetector.isDetecting()))
+			return false;
+		return true;
+	}
 
 	@Override
 	public HTMLNode getHTMLText() {
-		HTMLNode p = null;
+		HTMLNode textNode = new HTMLNode("div");
 		if(node.ipDetector.noDetectPlugins()) {
-			p = new HTMLNode("p");
+			HTMLNode p = new HTMLNode("p");
 			NodeL10n.getBase().addL10nSubstitution(p, "IPUndetectedUserAlert.loadDetectPlugins", new String[] { "plugins", "config", },
 					new HTMLNode[] { HTMLNode.link("/plugins/"), HTMLNode.link("/config/node") });
 			return p;
-		} else if(!node.ipDetector.hasJSTUN() && !node.ipDetector.isDetecting()) {
-			p = new HTMLNode("p");
-			NodeL10n.getBase().addL10nSubstitution(p, "IPUndetectedUserAlert.loadJSTUN", new String[] { "plugins", "config", },
-					new HTMLNode[] { HTMLNode.link("/plugins/"), HTMLNode.link("/config/node") });
 		}
-		HTMLNode textNode = new HTMLNode("div");
-		if(p != null) textNode.addChild(p);
 		SubConfig sc = node.config.get("node");
 		Option<?> o = sc.getOption("tempIPAddressHint");
 		
 		NodeL10n.getBase().addL10nSubstitution(textNode, "IPUndetectedUserAlert."+(node.ipDetector.isDetecting() ? "detectingWithConfigLink" : "unknownAddressWithConfigLink"), 
 				new String[] { "link" },
 				new HTMLNode[] { HTMLNode.link("/config/"+sc.getPrefix()) });
+		
+		int peers = node.peers.getDarknetPeers().length;
+		if(peers > 0)
+			textNode.addChild("p", l10n("noIPMaybeFromPeers", "number", Integer.toString(peers)));
+		
+		if(!node.ipDetector.hasJSTUN() && !node.ipDetector.isDetecting()) {
+			HTMLNode p = new HTMLNode("p");
+			NodeL10n.getBase().addL10nSubstitution(p, "IPUndetectedUserAlert.loadJSTUN", new String[] { "plugins", "config", },
+					new HTMLNode[] { HTMLNode.link("/plugins/"), HTMLNode.link("/config/node") });
+			textNode.addChild(p);
+		}
+		
 		addPortForwardSuggestion(textNode);
+		
 		HTMLNode formNode = textNode.addChild("form", new String[] { "action", "method" }, new String[] { "/config/"+sc.getPrefix(), "post" });
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
 		HTMLNode listNode = formNode.addChild("ul", "class", "config");
@@ -75,6 +91,7 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 		itemNode.addChild("span", "class", "configlongdesc", NodeL10n.getBase().getString(o.getLongDesc()));
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", NodeL10n.getBase().getString("UserAlert.apply") });
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset", NodeL10n.getBase().getString("UserAlert.reset") });
+		
 		return textNode;
 	}
 

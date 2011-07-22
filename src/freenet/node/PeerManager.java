@@ -2244,6 +2244,24 @@ public class PeerManager {
 		return count;
 	}
 	
+	/**
+	 * How many peers do we have that actually may connect? Don't include seednodes, disabled nodes, etc.
+	 */
+	public int countConnectiblePeers() {
+		PeerNode[] peers = myPeers;
+		int count = 0;
+		for(int i = 0; i < peers.length; i++) {
+			if(peers[i].isDisabled())
+				continue;
+			if(peers[i] instanceof DarknetPeerNode) {
+				if(((DarknetPeerNode)peers[i]).isListenOnly())
+					continue;
+			}
+			count++;
+		}
+		return count;
+	}
+	
 	public int countSeednodes() {
 		int count = 0;
 		for(PeerNode peer : myPeers) {
