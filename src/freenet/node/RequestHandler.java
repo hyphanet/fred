@@ -518,7 +518,12 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				// Unlocking on sent is a reasonable compromise between:
 				// 1. Unlocking immediately avoids problems with the recipient reusing the slot when he's received the data, therefore us rejecting the request and getting a mandatory backoff, and
 				// 2. However, we do want SSK requests from the datastore to be counted towards the total when accepting requests.
-				// FIXME consider other options. Reassigning to self probably wouldn't work well as it'd let them steal our capacity, although only for a short period on a normal connection...
+				// This is safe however.
+				// We have already done the request so there is no outgoing request.
+				// A node might be able to get a few more slots in flight by not acking the SSK messages, but it would quickly stall.
+				// Furthermore, we would start sending hard rejections when the send queue gets past a certain point.
+				// So it is neither beneficial for the node nor a viable DoS.
+				// Alternative solution would be to wait until the pubkey and data have been acked before unlocking and sending the headers, but this appears not to be necessary.
 				tag.unlockHandler();
 			}
 		};
