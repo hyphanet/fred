@@ -835,7 +835,7 @@ public class BlockTransmitter {
 					}
 				}
 				
-			}, "BlockTransmitter completion callback");
+			}, "BlockTransmitter completion callback for "+this);
 		} else {
 			cleanup();
 		}
