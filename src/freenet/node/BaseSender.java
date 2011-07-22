@@ -215,8 +215,10 @@ loadWaiterLoop:
     		
     		if(logMINOR) Logger.minor(this, "Going around loop");
     		
+    		long now = System.currentTimeMillis();
+    		
     		if(next == null) {
-    			next = closerPeer(nodesRoutedTo);
+    			next = closerPeer(nodesRoutedTo, now);
 				if(next == null) {
 					if (logMINOR && rejectOverloads>0)
 						Logger.minor(this, "no more peers, but overloads ("+rejectOverloads+"/"+routeAttempts+" overloaded)");
@@ -279,7 +281,7 @@ loadWaiterLoop:
         					// Nodes we were waiting for that then became backed off will have been removed from the list.
         					HashSet<PeerNode> exclude = waiter.waitingForList();
         					exclude.addAll(nodesRoutedTo);
-    	            		PeerNode alsoWaitFor = closerPeer(exclude);
+    	            		PeerNode alsoWaitFor = closerPeer(exclude, now);
     	            		if(alsoWaitFor != null) {
     	            			waiter.addWaitingFor(alsoWaitFor);
     	            			// We do not need to check the return value here.
@@ -310,7 +312,7 @@ loadWaiterLoop:
 					// Nodes we were waiting for that then became backed off will have been removed from the list.
 					HashSet<PeerNode> exclude = waiter.waitingForList();
 					exclude.addAll(nodesRoutedTo);
-            		PeerNode alsoWaitFor = closerPeer(exclude);
+            		PeerNode alsoWaitFor = closerPeer(exclude, now);
             		if(alsoWaitFor != null) {
             			waiter.addWaitingFor(alsoWaitFor);
             			// We do not need to check the return value here.
@@ -339,7 +341,7 @@ loadWaiterLoop:
 					// Nodes we were waiting for that then became backed off will have been removed from the list.
 					HashSet<PeerNode> exclude = waiter.waitingForList();
 					exclude.addAll(nodesRoutedTo);
-            		PeerNode alsoWaitFor = closerPeer(exclude);
+            		PeerNode alsoWaitFor = closerPeer(exclude, now);
             		if(alsoWaitFor != null) {
             			waiter.addWaitingFor(alsoWaitFor);
             			// We do not need to check the return value here.
@@ -492,9 +494,13 @@ loadWaiterLoop:
         return false;
 	}
     
-    private PeerNode closerPeer(HashSet<PeerNode> exclude) {
-		return node.peers.closerPeer(source, exclude, target, true, node.isAdvancedModeEnabled(), -1, null,
-				isInsert() ? null : key, htl, 0, source == null, realTimeFlag, true);
+    private PeerNode closerPeer(HashSet<PeerNode> exclude, long now) {
+		return node.peers.closerPeer(sourceForRouting(), exclude, target, true, node.isAdvancedModeEnabled(), -1, null,
+				2.0, isInsert() ? null : key, htl, 0, source == null, realTimeFlag, null, true, now, false);
+	}
+
+	private PeerNode sourceForRouting() {
+		return source;
 	}
 
 	private double getLoad(HashSet<PeerNode> waitedFor) {
