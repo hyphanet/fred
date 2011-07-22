@@ -50,11 +50,14 @@ public abstract class MultiMessageCallback {
 				}
 				
 				private void complete(boolean success) {
+					boolean callSent = false;
 					synchronized(MultiMessageCallback.this) {
 						if(finished) return;
 						if(!sent) {
 							sent = true;
 							waitingForSend--;
+							if(waitingForSend == 0)
+								callSent = true;
 						}
 						if(!success) someFailed = true;
 						finished = true;
@@ -62,6 +65,8 @@ public abstract class MultiMessageCallback {
 						if(!finished()) return;
 						if(someFailed) success = false;
 					}
+					if(callSent)
+						MultiMessageCallback.this.sent();
 					finish(success);
 				}
 				
@@ -74,12 +79,16 @@ public abstract class MultiMessageCallback {
 
 	public void arm() {
 		boolean success;
+		boolean callSent = false;
+		boolean complete = false;
 		synchronized(this) {
 			armed = true;
-			if(!finished()) return;
+			complete = waiting == 0;
+			if(waitingForSend == 0) callSent = true;
 			success = !someFailed;
 		}
-		finish(success);
+		if(callSent) sent();
+		if(complete) finish(success);
 	}
 	
 	protected final synchronized boolean finished() {
