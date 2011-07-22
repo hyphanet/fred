@@ -508,7 +508,9 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			public void finish(boolean success) {
 				sentPayload(data.length); // FIXME report this at the time when that message is acked for more accurate reporting???
 				applyByteCounts();
-				node.removeTransferringRequestHandler(uid);
+				// Will call unlockHandler.
+				// This is okay, it can be called twice safely, and it ensures that even if sent() is not called it will still be unlocked.
+				unregisterRequestHandlerWithNode();
 			}
 			@Override
 			void sent() {
@@ -717,7 +719,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				Logger.minor(this, "Completing: " + RequestHandler.this);
 			//For byte counting, this relies on the fact that the callback will only be excuted once.
 			applyByteCounts();
-			node.removeTransferringRequestHandler(uid);
+			unregisterRequestHandlerWithNode();
 		}
 	}
 
