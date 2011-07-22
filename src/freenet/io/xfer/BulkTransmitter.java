@@ -138,22 +138,8 @@ public class BulkTransmitter {
 					new AsyncMessageFilterCallback() {
 						@Override
 						public void onMatched(Message m) {
-							// send() will terminate.
-							if(allSentCallback != null) {
-								boolean callAllSent = false;
-								boolean anyFailed = false;
-								synchronized(this) {
-									allQueued = true;
-									if(unsentPackets == 0 && !calledAllSent) {
-										if(logMINOR) Logger.minor(this, "Calling all sent callback on "+this);
-										callAllSent = true;
-										calledAllSent = true;
-										anyFailed = failedPacket;
-									}
-								}
-								if(callAllSent)
-									allSentCallback.allSent(BulkTransmitter.this, anyFailed);
-							}
+							// send() will terminate, so must call setAllQueued().
+							setAllQueued();
 							completed();
 						}
 						@Override
@@ -288,21 +274,7 @@ outer:	while(true) {
 				blockNo = blocksNotSentButPresent.firstOne();
 			}
 			if(blockNo < 0) {
-				if(allSentCallback != null) {
-					boolean callAllSent = false;
-					boolean anyFailed = false;
-					synchronized(this) {
-						allQueued = true;
-						if(unsentPackets == 0 && !calledAllSent) {
-							if(logMINOR) Logger.minor(this, "Calling all sent callback on "+this);
-							callAllSent = true;
-							calledAllSent = true;
-							anyFailed = failedPacket;
-						}
-					}
-					if(callAllSent)
-						allSentCallback.allSent(this, anyFailed);
-				}
+				setAllQueued();
 				if(noWait && prb.hasWholeFile()) {
 					completed();
 					return true;
@@ -400,6 +372,23 @@ outer:	while(true) {
 		}
 	}
 	
+	private void setAllQueued() {
+		if(allSentCallback != null) {
+			boolean callAllSent = false;
+			boolean anyFailed = false;
+			synchronized(this) {
+				allQueued = true;
+				if(unsentPackets == 0 && !calledAllSent) {
+					if(logMINOR) Logger.minor(this, "Calling all sent callback on "+this);
+					callAllSent = true;
+					calledAllSent = true;
+					anyFailed = failedPacket;
+				}
+			}
+			if(callAllSent)
+				allSentCallback.allSent(this, anyFailed);
+		}
+	}
 	private int inFlightPackets = 0;
 	private int unsentPackets = 0;
 	private boolean failedPacket = false;
