@@ -494,7 +494,7 @@ loadWaiterLoop:
     
     private PeerNode closerPeer(HashSet<PeerNode> exclude) {
 		return node.peers.closerPeer(source, exclude, target, true, node.isAdvancedModeEnabled(), -1, null,
-				key, htl, 0, source == null, realTimeFlag, true);
+				isInsert() ? null : key, htl, 0, source == null, realTimeFlag, true);
 	}
 
 	private double getLoad(HashSet<PeerNode> waitedFor) {
@@ -701,5 +701,7 @@ loadWaiterLoop:
 			int acceptedTimeout);
 	
 	protected abstract void forwardRejectedOverload();
+	
+	protected abstract boolean isInsert();
 	
 }

@@ -2063,4 +2063,9 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, -1, source);
 	}
 
+	@Override
+	protected boolean isInsert() {
+		return false;
+	}
+
 }
