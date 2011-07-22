@@ -26,7 +26,7 @@ public abstract class MultiMessageCallback {
 				@Override
 				public void sent() {
 					synchronized(MultiMessageCallback.this) {
-						if(finished || sent) return;
+						if(finished || sent || !armed) return;
 						sent = true;
 						waitingForSend--;
 						if(waitingForSend > 0) return;
