@@ -15,6 +15,8 @@ import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.xfer.BlockTransmitter;
 import freenet.io.xfer.BlockTransmitter.BlockTransmitterCompletion;
 import freenet.io.xfer.BlockTransmitter.ReceiverAbortHandler;
+import freenet.io.xfer.BulkTransmitter;
+import freenet.io.xfer.BulkTransmitter.AllSentCallback;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.io.xfer.WaitedTooLongException;
 import freenet.keys.CHKBlock;
@@ -908,10 +910,17 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 					// Send it forward to the data source, if it is valid.
 					
 					if(OpennetManager.validateNoderef(newNoderef, 0, newNoderef.length, source, false) != null) {
-						// As soon as the originator receives the three blocks, he can reuse the slot.
-						tag.unlockHandler();
 						try {
-							om.sendOpennetRef(true, uid, dataSource, newNoderef, RequestHandler.this);
+							om.sendOpennetRef(true, uid, dataSource, newNoderef, RequestHandler.this, new AllSentCallback() {
+
+								@Override
+								public void allSent(BulkTransmitter bulkTransmitter,
+										boolean anyFailed) {
+									// As soon as the originator receives the three blocks, he can reuse the slot.
+									tag.unlockHandler();
+								}
+								
+							});
 						} catch(NotConnectedException e) {
 							// How sad
 						}

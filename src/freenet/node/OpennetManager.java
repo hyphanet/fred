@@ -34,6 +34,7 @@ import freenet.io.comm.RetrievalException;
 import freenet.io.comm.SlowAsyncMessageFilterCallback;
 import freenet.io.xfer.BulkReceiver;
 import freenet.io.xfer.BulkTransmitter;
+import freenet.io.xfer.BulkTransmitter.AllSentCallback;
 import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.node.OpennetPeerNode.NOT_DROP_REASON;
 import freenet.support.HTMLNode;
@@ -824,6 +825,10 @@ public class OpennetManager {
 		return max - node.peers.countConnectedDarknetPeers();
 	}
 
+	public void sendOpennetRef(boolean isReply, long uid, PeerNode peer, byte[] noderef, ByteCounter ctr) throws NotConnectedException {
+		sendOpennetRef(isReply, uid, peer, noderef, ctr, null);
+	}
+	
 	/**
 	 * Send our opennet noderef to a node.
 	 * @param isReply If true, send an FNPOpennetConnectReply, else send an FNPOpennetConnectDestination.
@@ -832,7 +837,7 @@ public class OpennetManager {
 	 * @param cs The full compressed noderef to send.
 	 * @throws NotConnectedException If the peer becomes disconnected while we are trying to send the noderef.
 	 */
-	public void sendOpennetRef(boolean isReply, long uid, PeerNode peer, byte[] noderef, ByteCounter ctr) throws NotConnectedException {
+	public void sendOpennetRef(boolean isReply, long uid, PeerNode peer, byte[] noderef, ByteCounter ctr, AllSentCallback cb) throws NotConnectedException {
 		byte[] padded = new byte[paddedSize(noderef.length)];
 		if(noderef.length > padded.length) {
 			Logger.error(this, "Noderef too big: "+noderef.length+" bytes");
@@ -844,7 +849,7 @@ public class OpennetManager {
 		Message msg2 = isReply ? DMT.createFNPOpennetConnectReplyNew(uid, xferUID, noderef.length, padded.length) :
 			DMT.createFNPOpennetConnectDestinationNew(uid, xferUID, noderef.length, padded.length);
 		peer.sendAsync(msg2, null, ctr);
-		innerSendOpennetRef(xferUID, padded, peer, ctr);
+		innerSendOpennetRef(xferUID, padded, peer, ctr, cb);
 	}
 
 	/**
@@ -852,17 +857,18 @@ public class OpennetManager {
 	 * @param xferUID The transfer UID
 	 * @param padded The length of the data to transfer.
 	 * @param peer The peer to send it to.
+	 * @param cb 
 	 * @throws NotConnectedException If the peer is not connected, or we lose the connection to the peer,
 	 * or it restarts.
 	 */
-	private void innerSendOpennetRef(long xferUID, byte[] padded, PeerNode peer, ByteCounter ctr) throws NotConnectedException {
+	private void innerSendOpennetRef(long xferUID, byte[] padded, PeerNode peer, ByteCounter ctr, AllSentCallback cb) throws NotConnectedException {
 		ByteArrayRandomAccessThing raf = new ByteArrayRandomAccessThing(padded);
 		raf.setReadOnly();
 		PartiallyReceivedBulk prb =
 			new PartiallyReceivedBulk(node.usm, padded.length, Node.PACKET_SIZE, raf, true);
 		try {
 			BulkTransmitter bt =
-				new BulkTransmitter(prb, peer, xferUID, true, ctr, true);
+				new BulkTransmitter(prb, peer, xferUID, true, ctr, true, cb);
 			bt.send();
 		} catch (DisconnectedException e) {
 			throw new NotConnectedException(e);
@@ -883,7 +889,7 @@ public class OpennetManager {
 		byte[] padded = new byte[paddedSize(noderef.length)];
 		node.fastWeakRandom.nextBytes(padded); // FIXME implement nextBytes(buf,offset, length)
 		System.arraycopy(noderef, 0, padded, 0, noderef.length);
-		innerSendOpennetRef(xferUID, padded, peer, ctr);
+		innerSendOpennetRef(xferUID, padded, peer, ctr, null);
 	}
 
 	private int paddedSize(int length) {
@@ -906,7 +912,7 @@ public class OpennetManager {
 		Message msg = DMT.createFNPOpennetAnnounceReply(uid, xferUID, noderef.length,
 				padded.length);
 		peer.sendAsync(msg, null, ctr);
-		innerSendOpennetRef(xferUID, padded, peer, ctr);
+		innerSendOpennetRef(xferUID, padded, peer, ctr, null);
 	}
 
 	interface NoderefCallback {
