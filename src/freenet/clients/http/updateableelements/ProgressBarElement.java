@@ -48,7 +48,14 @@ public class ProgressBarElement extends BaseUpdateableElement {
 	public void updateState(boolean initial) {
 		children.clear();
 
-		FProxyFetchWaiter waiter = tracker.makeWaiterForFetchInProgress(key, maxSize, fctx);
+		FProxyFetchInProgress progress = tracker.getFetchInProgress(key, maxSize, fctx);
+		if (progress == null) {
+			addChild("div", "No fetcher found");
+		}
+		FProxyFetchWaiter waiter = progress.getWaiter();
+		if (waiter == null) {
+			addChild("div", "No fetcher found");
+		}
 		FProxyFetchResult fr = waiter.getResult();
 		if (fr == null) {
 			addChild("div", "No fetcher found");
@@ -81,10 +88,10 @@ public class ProgressBarElement extends BaseUpdateableElement {
 			}
 		}
 		if (waiter != null) {
-			tracker.getFetchInProgress(key, maxSize, fctx).close(waiter);
+			progress.close(waiter);
 		}
 		if (fr != null) {
-			tracker.getFetchInProgress(key, maxSize, fctx).close(fr);
+			progress.close(fr);
 		}
 	}
 
