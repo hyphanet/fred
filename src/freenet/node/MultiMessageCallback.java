@@ -12,9 +12,11 @@ public abstract class MultiMessageCallback {
 	
 	private boolean someFailed;
 	
+	/** This is called when all messages have been acked, or failed */
 	abstract void finish(boolean success);
 	
-	abstract void sent();
+	/** This is called when all messages have been sent (but not acked) or failed to send */
+	abstract void sent(boolean success);
 
 	public AsyncMessageCallback make() {
 		synchronized(this) {
@@ -25,13 +27,15 @@ public abstract class MultiMessageCallback {
 				
 				@Override
 				public void sent() {
+					boolean success;
 					synchronized(MultiMessageCallback.this) {
 						if(finished || sent || !armed) return;
 						sent = true;
 						waitingForSend--;
 						if(waitingForSend > 0) return;
+						success = !someFailed;
 					}
-					MultiMessageCallback.this.sent();
+					MultiMessageCallback.this.sent(success);
 				}
 
 				@Override
@@ -66,7 +70,7 @@ public abstract class MultiMessageCallback {
 						if(someFailed) success = false;
 					}
 					if(callSent)
-						MultiMessageCallback.this.sent();
+						MultiMessageCallback.this.sent(success);
 					finish(success);
 				}
 				
@@ -87,7 +91,7 @@ public abstract class MultiMessageCallback {
 			if(waitingForSend == 0) callSent = true;
 			success = !someFailed;
 		}
-		if(callSent) sent();
+		if(callSent) sent(success);
 		if(complete) finish(success);
 	}
 	

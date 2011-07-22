@@ -513,7 +513,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				unregisterRequestHandlerWithNode();
 			}
 			@Override
-			void sent() {
+			void sent(boolean success) {
 				// As soon as the originator receives the messages, he can reuse the slot.
 				// Unlocking on sent is a reasonable compromise between:
 				// 1. Unlocking immediately avoids problems with the recipient reusing the slot when he's received the data, therefore us rejecting the request and getting a mandatory backoff, and
