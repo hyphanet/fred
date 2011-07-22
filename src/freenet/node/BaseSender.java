@@ -513,7 +513,7 @@ loadWaiterLoop:
 
 	private void logDelta(long delta, int tryCount, boolean waitedForLoadManagement, boolean retriedForLoadManagement) {
 		long longTimeout = getLongSlotWaiterTimeout();
-        if((delta > longTimeout) || tryCount > 2)
+        if((delta > longTimeout) || tryCount > 3)
         	Logger.error(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(delta, 2, true)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement+(realTimeFlag ? " (realtime)" : " (bulk)")+((source == null)?" (local)":" (remote)"));
         else if((delta > longTimeout / 5) || tryCount > 1)
         	Logger.warning(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(delta, 2, true)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement+(realTimeFlag ? " (realtime)" : " (bulk)")+((source == null)?" (local)":" (remote)"));            	
