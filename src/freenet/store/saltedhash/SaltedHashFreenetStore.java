@@ -89,7 +89,12 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	 */
 	private final ResizablePersistentIntBuffer slotFilter;
 	private final File slotFilterFile;
+	/** If true, don't create a slot filter, don't keep it up to date, don't
+	 * do anything with it. */
 	private boolean slotFilterDisabled;
+	/** If true, then treat the slot filter as authoritative. If the slot filter
+	 * gives a certain content for a particular slot, assume it is right. This
+	 * saves a lot of seeks, both when reading and when writing. */
 	private boolean useSlotFilter;
 	
 	private static final int SLOT_CHECKED = 1 << 31;
