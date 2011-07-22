@@ -2055,7 +2055,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		if(logMINOR) {
 			if(source != null)
 				Logger.minor(this, "Timed out while waiting for a slot, period = "+period+" because average reject proportion for peers is "+load+" on "+this);
-			else if(logMINOR)
+			else
 				Logger.minor(this, "Local request timed out while waiting for a slot, period = "+period+" because average reject proportion for peers is "+load+" on "+this);
 		}
     	synchronized(this) {
