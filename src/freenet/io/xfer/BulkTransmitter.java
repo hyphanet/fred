@@ -218,6 +218,9 @@ public class BulkTransmitter {
 		synchronized(BulkTransmitter.class) {
 			transfersCompleted++;
 		}
+		// Call AllSentCallback if necessary.
+		// If there are packets still waiting, it will be called after they are sent or failed.
+		setAllQueued();
 	}
 
 	/** Like cancel(), but without the negative overtones: The client says it's got everything,
