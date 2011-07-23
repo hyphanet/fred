@@ -10,6 +10,12 @@
 /* First: Progress bars */
 /* @import url(/static/themes/clean/theme.css); */
 
+/* basic colors */
+body {
+    color: black;
+    background-color: white;
+}
+
 /* alerts */
 
 .alert-error {
@@ -556,8 +562,6 @@ div#content {
     margin: 0px;
     margin-left: 83px;
     margin-right: 83px;
-}
-
 }
 
 /* rabbit hole */
