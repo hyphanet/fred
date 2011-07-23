@@ -99,6 +99,13 @@ public abstract class BaseSender implements ByteCounter {
     
     final boolean newLoadManagement;
     
+    /** The main route requests loop. This must be filled in by the implementation. 
+     * It will deal with decrementing the HTL, completing on running out of HTL,
+     * RecentlyFailed for requests, fork on cacheable for inserts, and so on. It 
+     * will choose a peer and then chain to innerRouteRequests(), which in turn 
+     * can call back to routeRequests() if it needs a new peer. */
+    protected abstract void routeRequests();
+    
 	protected boolean innerRouteRequests(PeerNode next, RequestTag origTag) {
         return (newLoadManagement ? 
         		innerRouteRequestsNew(next, origTag) : innerRouteRequestsOld(next, origTag));

@@ -265,7 +265,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     /** Route requests. Method is responsible for its own completion, e.g. finish
      * or chaining to MainLoopCallback, i.e. the caller isn't going to do more 
      * stuff relevant to the request afterwards. */
-    private void routeRequests() {
+    protected void routeRequests() {
     	
     	PeerNode next = null;
     	
