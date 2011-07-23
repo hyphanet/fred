@@ -106,7 +106,7 @@ public abstract class BaseSender implements ByteCounter {
      * can call back to routeRequests() if it needs a new peer. */
     protected abstract void routeRequests();
     
-	protected void innerRouteRequests(PeerNode next, RequestTag origTag) {
+	protected void innerRouteRequests(PeerNode next, UIDTag origTag) {
         if(newLoadManagement) 
         	innerRouteRequestsNew(next, origTag);
         else
@@ -608,7 +608,6 @@ loadWaiterLoop:
     		if(msg.getSpec() == DMT.FNPRejectedOverload) {
     			if(logMINOR) Logger.minor(this, "Rejected: overload");
     			// Non-fatal - probably still have time left
-    			forwardRejectedOverload();
     			if (msg.getBoolean(DMT.IS_LOCAL)) {
     				
     				if(logMINOR) Logger.minor(this, "Is local");
@@ -643,6 +642,8 @@ loadWaiterLoop:
     				// Give up on this one, try another
     				next.noLongerRoutingTo(origTag, false);
     				return DO.NEXT_PEER;
+    			} else {
+        			forwardRejectedOverload();
     			}
     			//Could be a previous rejection, the timeout to incur another ACCEPTED_TIMEOUT is minimal...
     			continue;
