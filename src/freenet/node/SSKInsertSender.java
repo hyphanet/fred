@@ -62,7 +62,6 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
     private boolean hasRecentlyCollided;
     private SSKBlock block;
     private static boolean logMINOR;
-    private HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
     private final boolean forkOnCacheable;
     private final boolean preferInsert;
     private final boolean ignoreLowBackoff;
