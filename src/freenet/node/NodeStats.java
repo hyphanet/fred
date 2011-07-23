@@ -1099,6 +1099,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		}
 	}
 	
+	private final Object serializeShouldRejectRequest = new Object();
+	
 	/** Should a request be accepted by this node, based on its local capacity?
 	 * This includes thread limits and ping times, but more importantly, 
 	 * mechanisms based on predicting worst case bandwidth usage for all running
@@ -1137,6 +1139,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 * @return The reason for rejecting it, or null to accept it.
 	 */
 	public RejectReason shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, boolean isLocal, boolean isOfferReply, PeerNode source, boolean hasInStore, boolean preferInsert, boolean realTimeFlag, UIDTag tag) {
+		// Serialise shouldRejectRequest.
+		// It's not always called on the same thread, and things could be problematic if they interfere with each other.
+		synchronized(serializeShouldRejectRequest) {
 		if(logMINOR) dumpByteCostAverages();
 
 		if(source != null) {
@@ -1304,6 +1309,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 		// Accept
 		return null;
+		}
 	}
 	
 	public int calculateMaxTransfersOut(PeerNode peer, boolean realTime,
