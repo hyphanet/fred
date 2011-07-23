@@ -2063,4 +2063,60 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		return false;
 	}
 
+	@Override
+	protected void handleAcceptedRejectedTimeout(final PeerNode next,
+			final UIDTag origTag) {
+		
+		origTag.handlingTimeout(next);
+		
+		int timeout = 60*1000;
+		
+		MessageFilter mf = makeAcceptedRejectedFilter(next, timeout);
+		try {
+			node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
+
+				@Override
+				public void onMatched(Message m) {
+					if(m.getSpec() == DMT.FNPRejectedLoop ||
+							m.getSpec() == DMT.FNPRejectedOverload) {
+						// Ok.
+						next.noLongerRoutingTo(origTag, false);
+					} else {
+						// Accepted. May as well wait for the data, if any.
+						onAccepted(next);
+					}
+				}
+				
+				@Override
+				public boolean shouldTimeout() {
+					return false;
+				}
+
+				@Override
+				public void onTimeout() {
+					Logger.error(this, "Fatal timeout waiting for Accepted/Rejected from "+next+" on "+RequestSender.this);
+					next.fatalTimeout(origTag, false);
+				}
+
+				@Override
+				public void onDisconnect(PeerContext ctx) {
+					next.noLongerRoutingTo(origTag, false);
+				}
+
+				@Override
+				public void onRestarted(PeerContext ctx) {
+					next.noLongerRoutingTo(origTag, false);
+				}
+
+				@Override
+				public int getPriority() {
+					return NativeThread.NORM_PRIORITY;
+				}
+				
+			}, this);
+		} catch (DisconnectedException e) {
+			next.noLongerRoutingTo(origTag, false);
+		}
+	}
+
 }
