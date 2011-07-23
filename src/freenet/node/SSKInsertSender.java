@@ -879,6 +879,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 				break;
 			// else if(action == DO.WAIT) continue;
         }
+		routeRequests();
 	}
 
 	@Override
