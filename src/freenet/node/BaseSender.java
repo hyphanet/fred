@@ -47,7 +47,7 @@ public abstract class BaseSender implements ByteCounter {
     protected final short origHTL;
     final Node node;
     protected final long startTime;
-    final long uid;
+    long uid;
     
     BaseSender(Key key, boolean realTimeFlag, PeerNode source, Node node, short htl, long uid) {
     	if(key.getRoutingKey() == null) throw new NullPointerException();
