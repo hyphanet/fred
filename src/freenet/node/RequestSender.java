@@ -386,10 +386,9 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
                 return;
             }
             
-            if(innerRouteRequests(next, origTag))
-            	continue peerLoop;
-            else
-            	return;
+            innerRouteRequests(next, origTag);
+            // Will either chain back to routeRequests(), or call onAccepted().
+           	return;
         }
 	}
     

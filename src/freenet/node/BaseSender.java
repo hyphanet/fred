@@ -106,12 +106,14 @@ public abstract class BaseSender implements ByteCounter {
      * can call back to routeRequests() if it needs a new peer. */
     protected abstract void routeRequests();
     
-	protected boolean innerRouteRequests(PeerNode next, RequestTag origTag) {
-        return (newLoadManagement ? 
-        		innerRouteRequestsNew(next, origTag) : innerRouteRequestsOld(next, origTag));
+	protected void innerRouteRequests(PeerNode next, RequestTag origTag) {
+        if(newLoadManagement) 
+        	innerRouteRequestsNew(next, origTag);
+        else
+        	innerRouteRequestsOld(next, origTag);
 	}
 
-    protected boolean innerRouteRequestsOld(PeerNode next, UIDTag origTag) {
+    protected void innerRouteRequestsOld(PeerNode next, UIDTag origTag) {
         
         synchronized(this) {
         	lastNode = next;
@@ -151,12 +153,14 @@ public abstract class BaseSender implements ByteCounter {
         } catch (NotConnectedException e) {
         	Logger.minor(this, "Not connected");
         	next.noLongerRoutingTo(origTag, false);
-        	return true;
+        	routeRequests();
+        	return;
         } catch (SyncSendWaitedTooLongException e) {
         	Logger.error(this, "Failed to send "+req+" to "+next+" in a reasonable time.");
         	next.noLongerRoutingTo(origTag, false);
         	// Try another node.
-        	return true;
+        	routeRequests();
+        	return;
 		}
         
         synchronized(this) {
@@ -171,7 +175,8 @@ loadWaiterLoop:
 				//retriedForLoadManagement = true;
         		continue loadWaiterLoop;
         	} else if(action == DO.NEXT_PEER) {
-        		return true;
+            	routeRequests();
+            	return;
         	} else { // FINISHED => accepted
         		break;
         	}
@@ -185,8 +190,6 @@ loadWaiterLoop:
         lastMessage = null;
         
         onAccepted(next);
-        
-        return false;
 	}
     
     /** Limit the number of nodes that we route to that reject the request due to
@@ -200,8 +203,8 @@ loadWaiterLoop:
 
     /**
      * New load management. Give it the peer you want to route to, it might 
-     * route to a different one, but it will return true to try another peer, or
-     * false otherwise.
+     * route to a different one, but it will either get accepted and call
+     * onAccepted(), or decide it needs to reroute and call routeRequests().
      * 
      * IMPORTANT: Caller must not decrement htl when rerouting if 
      * dontDecrementHTLThisTime is set (but must still reroute); this happens
@@ -214,7 +217,7 @@ loadWaiterLoop:
      * to this one in all cases.
      * @return True to try another peer. False if the request has been accepted.
      */
-    protected boolean innerRouteRequestsNew(PeerNode next, UIDTag origTag) {
+    protected void innerRouteRequestsNew(PeerNode next, UIDTag origTag) {
         
     	NodeStats.RequestType type =
     		isSSK ? NodeStats.RequestType.SSK_REQUEST : NodeStats.RequestType.CHK_REQUEST;
@@ -253,8 +256,8 @@ loadWaiterLoop:
 					if (logMINOR && rejectOverloads>0)
 						Logger.minor(this, "no more peers, but overloads ("+rejectOverloads+"/"+routeAttempts+" overloaded)");
 					// Backtrack
-					rnf();
-					return false;
+					rnf(); // rnf() is responsible for termination/rerouting.
+					return;
 				}
     		}
         
@@ -280,7 +283,8 @@ loadWaiterLoop:
     					next.noLongerRoutingTo(origTag, false);
     					expectedAcceptState = null;
     					dontDecrementHTLThisTime = true;
-    					return true;
+    		        	routeRequests();
+    		        	return;
     				}
     			}
     			
@@ -295,7 +299,8 @@ loadWaiterLoop:
     				if(next != null) {
     					if(!waiter.addWaitingFor(next)) {
         					dontDecrementHTLThisTime = true;
-        					return true;
+        		        	routeRequests();
+        		        	return;
     						// Will be rerouted.
     						// This is essential to avoid adding the same bogus node again and again.
     						// This is only an issue with next. Hence the other places we route explicitly so there is no risk as they won't return the same node repeatedly after it is no longer routable.
@@ -413,7 +418,8 @@ loadWaiterLoop:
     					if(addedExtraNode) {
     						// Backtrack
     						timedOutWhileWaiting(getLoad(waitedFor));
-    						return false;
+    						// Above is responsible for termination or rerouting.
+    						return;
     					} else {
     						addedExtraNode = true;
     						continue;
@@ -477,7 +483,8 @@ loadWaiterLoop:
     		} catch (NotConnectedException e) {
     			Logger.minor(this, "Not connected");
     			next.noLongerRoutingTo(origTag, false);
-    			return true;
+            	routeRequests();
+            	return;
             } catch (SyncSendWaitedTooLongException e) {
             	Logger.error(this, "Failed to send "+req+" to "+next+" in a reasonable time.");
             	next.noLongerRoutingTo(origTag, false);
@@ -498,7 +505,8 @@ loadWaiterLoop:
         		continue loadWaiterLoop;
         	} else if(action == DO.NEXT_PEER) {
 				if(logMINOR) Logger.minor(this, "Trying next peer");
-				return true;
+	        	routeRequests();
+	        	return;
         	} else { // FINISHED => accepted
 				if(logMINOR) Logger.minor(this, "Accepted!");
         		break;
@@ -519,8 +527,6 @@ loadWaiterLoop:
         lastMessage = null;
         
         onAccepted(next);
-        
-        return false;
 	}
     
     private PeerNode closerPeer(HashSet<PeerNode> exclude, long now, boolean newLoadManagement) {
