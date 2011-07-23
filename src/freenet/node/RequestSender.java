@@ -274,42 +274,47 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         peerLoop:
         while(true) {
             boolean canWriteStorePrev = node.canWriteDatastoreInsert(htl);
-            // FIXME SECURITY/NETWORK: Should we never decrement on the originator?
-            // It would buy us another hop of no-cache, making it significantly
-            // harder to trace after the fact; however it would make local 
-            // requests fractionally easier to detect by peers.
-            // IMHO local requests are so easy for peers to detect anyway that
-            // it's probably worth it.
-            // Currently the worst case is we don't cache on the originator
-            // and we don't cache on the first peer we route to. If we get
-            // RejectedOverload's etc we won't cache on them either, up to 5;
-            // but lets assume that one of them accepts, and routes onward;
-            // the *second* hop out (with the originator being 0) WILL cache.
-            // Note also that changing this will have a performance impact.
-            if((!starting) && (!canWriteStorePrev)) {
-            	// We always decrement on starting a sender.
-            	// However, after that, if our HTL is above the no-cache threshold,
-            	// we do not want to decrement the HTL for trivial rejections (e.g. RejectedLoop),
-            	// because we would end up caching data too close to the originator.
-            	// So allow 5 failures and then RNF.
-            	if(highHTLFailureCount++ >= MAX_HIGH_HTL_FAILURES) {
-            		if(logMINOR) Logger.minor(this, "Too many failures at non-cacheable HTL");
-            		finish(ROUTE_NOT_FOUND, null, false);
-            		return;
-            	}
-            	if(logMINOR) Logger.minor(this, "Allowing failure "+highHTLFailureCount+" htl is still "+htl);
+            if(dontDecrementHTLThisTime) {
+            	// NLM needs us to reroute.
+            	dontDecrementHTLThisTime = false;
             } else {
-            	/*
-            	 * If we haven't routed to any node yet, decrement according to the source.
-            	 * If we have, decrement according to the node which just failed.
-            	 * Because:
-            	 * 1) If we always decrement according to source then we can be at max or min HTL
-            	 * for a long time while we visit *every* peer node. This is BAD!
-            	 * 2) The node which just failed can be seen as the requestor for our purposes.
-            	 */
-            	// Decrement at this point so we can DNF immediately on reaching HTL 0.
-            	htl = node.decrementHTL((hasForwarded ? next : source), htl);
-            	if(logMINOR) Logger.minor(this, "Decremented HTL to "+htl);
+            	// FIXME SECURITY/NETWORK: Should we never decrement on the originator?
+            	// It would buy us another hop of no-cache, making it significantly
+            	// harder to trace after the fact; however it would make local 
+            	// requests fractionally easier to detect by peers.
+            	// IMHO local requests are so easy for peers to detect anyway that
+            	// it's probably worth it.
+            	// Currently the worst case is we don't cache on the originator
+            	// and we don't cache on the first peer we route to. If we get
+            	// RejectedOverload's etc we won't cache on them either, up to 5;
+            	// but lets assume that one of them accepts, and routes onward;
+            	// the *second* hop out (with the originator being 0) WILL cache.
+            	// Note also that changing this will have a performance impact.
+            	if((!starting) && (!canWriteStorePrev)) {
+            		// We always decrement on starting a sender.
+            		// However, after that, if our HTL is above the no-cache threshold,
+            		// we do not want to decrement the HTL for trivial rejections (e.g. RejectedLoop),
+            		// because we would end up caching data too close to the originator.
+            		// So allow 5 failures and then RNF.
+            		if(highHTLFailureCount++ >= MAX_HIGH_HTL_FAILURES) {
+            			if(logMINOR) Logger.minor(this, "Too many failures at non-cacheable HTL");
+            			finish(ROUTE_NOT_FOUND, null, false);
+            			return;
+            		}
+            		if(logMINOR) Logger.minor(this, "Allowing failure "+highHTLFailureCount+" htl is still "+htl);
+            	} else {
+            		/*
+            		 * If we haven't routed to any node yet, decrement according to the source.
+            		 * If we have, decrement according to the node which just failed.
+            		 * Because:
+            		 * 1) If we always decrement according to source then we can be at max or min HTL
+            		 * for a long time while we visit *every* peer node. This is BAD!
+            		 * 2) The node which just failed can be seen as the requestor for our purposes.
+            		 */
+            		// Decrement at this point so we can DNF immediately on reaching HTL 0.
+            		htl = node.decrementHTL((hasForwarded ? next : source), htl);
+            		if(logMINOR) Logger.minor(this, "Decremented HTL to "+htl);
+            	}
             }
             starting = false;
 

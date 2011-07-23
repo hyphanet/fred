@@ -93,6 +93,9 @@ public abstract class BaseSender implements ByteCounter {
 	
     private HashMap<PeerNode, Integer> softRejectCount;
     
+    /** If this is set, don't decrement HTL, and then unset it. */
+    protected boolean dontDecrementHTLThisTime;
+    
     protected boolean innerRouteRequestsOld(PeerNode next, UIDTag origTag) {
         
         synchronized(this) {
@@ -181,8 +184,20 @@ loadWaiterLoop:
     private static int MAX_REJECTED_LOOPS = 3;
 
     /**
-     * @param next
-     * @return True to try another peer.
+     * New load management. Give it the peer you want to route to, it might 
+     * route to a different one, but it will return true to try another peer, or
+     * false otherwise.
+     * 
+     * IMPORTANT: Caller must not decrement htl when rerouting if 
+     * dontDecrementHTLThisTime is set (but must still reroute); this happens
+     * when we discover too that the proposed peer is no longer suitable. One 
+     * of the reasons for this is that BaseSender does not handle 
+     * RecentlyFailedReturn, which can only happen in the main peer selection
+     * loop. If we set it, we haven't routed to a peer (we might have been
+     * soft-rejected, but that is not serious in NLM).
+     * @param next The peer that we have routed to. We won't necessarily route
+     * to this one in all cases.
+     * @return True to try another peer. False if the request has been accepted.
      */
     protected boolean innerRouteRequestsNew(PeerNode next, UIDTag origTag) {
         
@@ -249,9 +264,8 @@ loadWaiterLoop:
     					next.enterMandatoryBackoff("Mandatory:RejectedGUARANTEED", realTimeFlag);
     					next.noLongerRoutingTo(origTag, false);
     					expectedAcceptState = null;
-    					next = null;
-    					// Will reroute.
-    					continue;
+    					dontDecrementHTLThisTime = true;
+    					return true;
     				}
     			}
     			
@@ -265,8 +279,8 @@ loadWaiterLoop:
     					waiter = PeerNode.createSlotWaiter(origTag, type, false, realTimeFlag, source);
     				if(next != null) {
     					if(!waiter.addWaitingFor(next)) {
-    						next = null;
-    						continue;
+        					dontDecrementHTLThisTime = true;
+        					return true;
     						// Will be rerouted.
     						// This is essential to avoid adding the same bogus node again and again.
     						// This is only an issue with next. Hence the other places we route explicitly so there is no risk as they won't return the same node repeatedly after it is no longer routable.
