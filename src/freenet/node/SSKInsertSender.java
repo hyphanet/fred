@@ -299,7 +299,8 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
     
 	private final int TIMEOUT_AFTER_ACCEPTEDREJECTED_TIMEOUT = 60*1000;
 
-	private void handleAcceptedRejectedTimeout(final PeerNode next, final InsertTag tag) {
+	@Override
+	protected void handleAcceptedRejectedTimeout(final PeerNode next, final UIDTag tag) {
 		// It could still be running. So the timeout is fatal to the node.
 		// This is a WARNING not an ERROR because it's possible that the problem is we simply haven't been able to send the message yet, because we don't use sendSync().
 		// FIXME use a callback to rule this out and log an ERROR.
