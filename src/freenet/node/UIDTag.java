@@ -60,6 +60,7 @@ public abstract class UIDTag {
 		this.uid = uid;
 		if(logMINOR)
 			Logger.minor(this, "Created "+this);
+		if(wasLocal) accepted = true; // FIXME remove, but it's always true at the moment.
 	}
 
 	public abstract void logStillPresent(Long uid);
