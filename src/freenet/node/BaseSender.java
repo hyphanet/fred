@@ -62,6 +62,7 @@ public abstract class BaseSender implements ByteCounter {
         assert(isSSK || key instanceof NodeCHK);
         this.htl = htl;
         this.origHTL = htl;
+        newLoadManagement = node.enableNewLoadManagement(realTimeFlag);
     }
     
 	protected abstract Message createDataRequest();
@@ -96,6 +97,13 @@ public abstract class BaseSender implements ByteCounter {
     /** If this is set, don't decrement HTL, and then unset it. */
     protected boolean dontDecrementHTLThisTime;
     
+    final boolean newLoadManagement;
+    
+	protected boolean innerRouteRequests(PeerNode next, RequestTag origTag) {
+        return (newLoadManagement ? 
+        		innerRouteRequestsNew(next, origTag) : innerRouteRequestsOld(next, origTag));
+	}
+
     protected boolean innerRouteRequestsOld(PeerNode next, UIDTag origTag) {
         
         synchronized(this) {

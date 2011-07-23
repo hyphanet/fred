@@ -267,8 +267,6 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
      * stuff relevant to the request afterwards. */
     private void routeRequests() {
     	
-    	boolean newLoadManagement = node.enableNewLoadManagement(realTimeFlag);
-    	
     	PeerNode next = null;
     	
         peerLoop:
@@ -388,14 +386,12 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
                 return;
             }
             
-            if(newLoadManagement ? 
-            		innerRouteRequestsNew(next, origTag) : innerRouteRequestsOld(next, origTag))
+            if(innerRouteRequests(next, origTag))
             	continue peerLoop;
             else
             	return;
         }
 	}
-    
     
 	private synchronized int timeSinceSentForTimeout() {
     	int time = timeSinceSent();
