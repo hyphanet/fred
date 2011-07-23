@@ -197,7 +197,10 @@ public class FECJob {
 		if(logMINOR) Logger.minor(this, "Storing block statuses");
 		int countNullsData = -1;
 		int countNullsCheck = -1;
+		int dataLength = -1;
+		int checkLength = -1;
 		if(dataBlockStatus != null) {
+			dataLength = dataBlockStatus.length;
 			countNullsData = 0;
 			for(int i=0;i<dataBlockStatus.length;i++) {
 				SplitfileBlock block = dataBlockStatus[i];
@@ -210,6 +213,7 @@ public class FECJob {
 			
 		}
 		if(checkBlockStatus != null) {
+			checkLength = checkBlockStatus.length;
 			countNullsCheck = 0;
 			for(int i=0;i<checkBlockStatus.length;i++) {
 				SplitfileBlock block = checkBlockStatus[i];
@@ -230,17 +234,17 @@ public class FECJob {
 			// After a normal, successful job.
 			if(isADecodingJob) {
 				if(countNullsData != 0)
-					Logger.normal(this, "After successful decode, storing block statuses, "+countNullsData+"/"+dataBlockStatus.length+" nulls in data blocks "+countNullsCheck+"/"+checkBlockStatus.length+" nulls in check blocks");
+					Logger.normal(this, "After successful decode, storing block statuses, "+countNullsData+"/"+dataLength+" nulls in data blocks "+countNullsCheck+"/"+checkLength+" nulls in check blocks");
 				else {
 					if(logMINOR)
-						Logger.normal(this, "After successful decode, storing block statuses, "+countNullsData+"/"+dataBlockStatus.length+" nulls in data blocks "+countNullsCheck+"/"+checkBlockStatus.length+" nulls in check blocks");
+						Logger.normal(this, "After successful decode, storing block statuses, "+countNullsData+"/"+dataLength+" nulls in data blocks "+countNullsCheck+"/"+checkLength+" nulls in check blocks");
 				}
 			} else {
 				if(countNullsCheck != 0 || countNullsData != 0)
-					Logger.normal(this, "After successful decode, storing block statuses, "+countNullsData+"/"+dataBlockStatus.length+" nulls in data blocks "+countNullsCheck+"/"+checkBlockStatus.length+" nulls in check blocks");
+					Logger.normal(this, "After successful decode, storing block statuses, "+countNullsData+"/"+dataLength+" nulls in data blocks "+countNullsCheck+"/"+checkLength+" nulls in check blocks");
 				else {
 					if(logMINOR)
-						Logger.normal(this, "After successful decode, storing block statuses, "+countNullsData+"/"+dataBlockStatus.length+" nulls in data blocks "+countNullsCheck+"/"+checkBlockStatus.length+" nulls in check blocks");
+						Logger.normal(this, "After successful decode, storing block statuses, "+countNullsData+"/"+dataLength+" nulls in data blocks "+countNullsCheck+"/"+checkLength+" nulls in check blocks");
 				}
 			}
 		}
