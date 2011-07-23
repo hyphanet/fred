@@ -2014,11 +2014,6 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		return transferCoalesced;
 	}
 	
-	protected void rnf() {
-		finish(ROUTE_NOT_FOUND, null, false);
-		node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, -1, source);
-	}
-	
 	protected void onAccepted(PeerNode next) {
         synchronized(this) {
         	receivingAsync = true;

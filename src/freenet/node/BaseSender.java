@@ -251,14 +251,9 @@ loadWaiterLoop:
     		long now = System.currentTimeMillis();
     		
     		if(next == null) {
-    			next = closerPeer(nodesRoutedTo, now, true);
-				if(next == null) {
-					if (logMINOR && rejectOverloads>0)
-						Logger.minor(this, "no more peers, but overloads ("+rejectOverloads+"/"+routeAttempts+" overloaded)");
-					// Backtrack
-					rnf(); // rnf() is responsible for termination/rerouting.
-					return;
-				}
+				dontDecrementHTLThisTime = true;
+	        	routeRequests();
+	        	return;
     		}
         
    			expectedAcceptState = 
@@ -722,8 +717,6 @@ loadWaiterLoop:
 	}
 
 	protected abstract int getAcceptedTimeout();
-	
-	protected abstract void rnf();
 	
 	/** We timed out while waiting for a slot from any node. Fail the request.
 	 * @param load The proportion of requests getting timed out, on average,

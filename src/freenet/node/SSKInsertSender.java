@@ -700,14 +700,12 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 
 	@Override
 	protected long getLongSlotWaiterTimeout() {
-		// TODO Auto-generated method stub
-		return 0;
+		return searchTimeout / 5;
 	}
 
 	@Override
 	protected long getShortSlotWaiterTimeout() {
-		// TODO Auto-generated method stub
-		return 0;
+		return searchTimeout / 10;
 	}
 
 	@Override
@@ -716,15 +714,12 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 	}
 
 	@Override
-	protected void rnf() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
 	protected void timedOutWhileWaiting(double load) {
-		// TODO Auto-generated method stub
-		
+		// FIXME maybe we need a way to tell the predecessor, like RecentlyFailed???
+        // Backtrack, i.e. RNF.
+		if(!hasForwarded)
+			origTag.setNotRoutedOnwards();
+        finish(ROUTE_NOT_FOUND, null);
 	}
 	
 	private boolean needPubKey;
