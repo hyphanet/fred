@@ -496,7 +496,7 @@ loadWaiterLoop:
     
     private PeerNode closerPeer(HashSet<PeerNode> exclude, long now, boolean newLoadManagement) {
 		return node.peers.closerPeer(sourceForRouting(), exclude, target, true, node.isAdvancedModeEnabled(), -1, null,
-				2.0, isInsert() ? null : key, htl, 0, source == null, realTimeFlag, null, true, now, newLoadManagement);
+				2.0, isInsert() ? null : key, htl, ignoreLowBackoff(), source == null, realTimeFlag, null, true, now, newLoadManagement);
 	}
 
 	private PeerNode sourceForRouting() {
@@ -709,5 +709,9 @@ loadWaiterLoop:
 	protected abstract void forwardRejectedOverload();
 	
 	protected abstract boolean isInsert();
+	
+	protected int ignoreLowBackoff() {
+		return 0;
+	}
 	
 }
