@@ -885,4 +885,16 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 	protected boolean isInsert() {
 		return true;
 	}
+	
+	@Override
+	protected PeerNode sourceForRouting() {
+		if(forkedRequestTag != null) return null;
+		return source;
+	}
+
+	@Override
+	protected int ignoreLowBackoff() {
+		return ignoreLowBackoff ? Node.LOW_BACKOFF : 0;
+	}
+
 }

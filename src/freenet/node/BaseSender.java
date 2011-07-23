@@ -529,7 +529,7 @@ loadWaiterLoop:
 				2.0, isInsert() ? null : key, htl, ignoreLowBackoff(), source == null, realTimeFlag, null, false, now, newLoadManagement);
 	}
 
-	private PeerNode sourceForRouting() {
+	protected PeerNode sourceForRouting() {
 		return source;
 	}
 
