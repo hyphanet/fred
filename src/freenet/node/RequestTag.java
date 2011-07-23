@@ -131,12 +131,14 @@ public class RequestTag extends UIDTag {
 	@Override
 	public synchronized int expectedTransfersIn(boolean ignoreLocalVsRemote,
 			int outwardTransfersPerInsert) {
+		if(!accepted) return 0;
 		return notRoutedOnwards ? 0 : 1;
 	}
 
 	@Override
 	public synchronized int expectedTransfersOut(boolean ignoreLocalVsRemote,
 			int outwardTransfersPerInsert) {
+		if(!accepted) return 0;
 		if(completedDownstreamTransfers) return 0;
 		return ((!isLocal()) || ignoreLocalVsRemote) ? 1 : 0;
 	}

@@ -31,7 +31,7 @@ public abstract class UIDTag {
 	private final WeakReference<PeerNode> sourceRef;
 	final boolean realTimeFlag;
 	private final Node node;
-	private boolean accepted;
+	protected boolean accepted;
 	
 	/** Nodes we have routed to at some point */
 	private HashSet<PeerNode> routedTo = null;
