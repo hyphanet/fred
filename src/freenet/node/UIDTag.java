@@ -31,6 +31,7 @@ public abstract class UIDTag {
 	private final WeakReference<PeerNode> sourceRef;
 	final boolean realTimeFlag;
 	private final Node node;
+	private boolean accepted;
 	
 	/** Nodes we have routed to at some point */
 	private HashSet<PeerNode> routedTo = null;
@@ -364,6 +365,10 @@ public abstract class UIDTag {
 			}
 			logStillPresent(uid);
 		}
+	}
+
+	public synchronized void setAccepted() {
+		accepted = true;
 	}
 
 }

@@ -1136,7 +1136,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 * separately.
 	 * @return The reason for rejecting it, or null to accept it.
 	 */
-	public RejectReason shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, boolean isLocal, boolean isOfferReply, PeerNode source, boolean hasInStore, boolean preferInsert, boolean realTimeFlag) {
+	public RejectReason shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, boolean isLocal, boolean isOfferReply, PeerNode source, boolean hasInStore, boolean preferInsert, boolean realTimeFlag, UIDTag tag) {
 		if(logMINOR) dumpByteCostAverages();
 
 		if(source != null) {
@@ -1300,6 +1300,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 		pInstantRejectIncoming.report(0.0);
 
+		if(tag != null) tag.setAccepted();
+		
 		// Accept
 		return null;
 	}

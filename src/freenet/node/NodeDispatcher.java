@@ -357,7 +357,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		try {
 		needPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
 		RejectReason reject = 
-			nodeStats.shouldRejectRequest(true, false, isSSK, false, true, source, false, false, realTimeFlag);
+			nodeStats.shouldRejectRequest(true, false, isSSK, false, true, source, false, false, realTimeFlag, tag);
 		if(reject != null) {
 			Logger.normal(this, "Rejecting FNPGetOfferedKey from "+source+" for "+key+" : "+reject);
 			Message rejected = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
@@ -520,7 +520,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		if(block != null)
 			tag.setNotRoutedOnwards();
 		
-		RejectReason rejectReason = nodeStats.shouldRejectRequest(!isSSK, false, isSSK, false, false, source, block != null, false, realTimeFlag);
+		RejectReason rejectReason = nodeStats.shouldRejectRequest(!isSSK, false, isSSK, false, false, source, block != null, false, realTimeFlag, tag);
 		if(rejectReason != null) {
 			// can accept 1 CHK request every so often, but not with SSKs because they aren't throttled so won't sort out bwlimitDelayTime, which was the whole reason for accepting them when overloaded...
 			Logger.normal(this, "Rejecting "+(isSSK ? "SSK" : "CHK")+" request from "+source.getPeer()+" preemptively because "+rejectReason);
@@ -582,7 +582,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		if(preference != null)
 			preferInsert = preference.getBoolean(DMT.PREFER_INSERT);
 		// SSKs don't fix bwlimitDelayTime so shouldn't be accepted when overloaded.
-		RejectReason rejectReason = nodeStats.shouldRejectRequest(!isSSK, true, isSSK, false, false, source, false, preferInsert, realTimeFlag);
+		RejectReason rejectReason = nodeStats.shouldRejectRequest(!isSSK, true, isSSK, false, false, source, false, preferInsert, realTimeFlag, tag);
 		if(rejectReason != null) {
 			Logger.normal(this, "Rejecting insert from "+source.getPeer()+" preemptively because "+rejectReason);
 			Message rejected = DMT.createFNPRejectedOverload(id, true, true, realTimeFlag);

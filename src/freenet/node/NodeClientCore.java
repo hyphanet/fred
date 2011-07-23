@@ -865,6 +865,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			return;
 		}
+		tag.setAccepted();
 		short htl = node.maxHTL();
 		// If another node requested it within the ULPR period at a lower HTL, that may allow
 		// us to cache it in the datastore. Find the lowest HTL fetching the key in that period,
@@ -959,6 +960,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
+		tag.setAccepted();
 		RequestSender rs = null;
 		try {
 			Object o = node.makeRequestSender(key.getNodeCHK(), node.maxHTL(), uid, tag, null, localOnly, ignoreStore, false, true, canWriteClientCache, realTimeFlag);
@@ -1083,6 +1085,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
+		tag.setAccepted();
 		RequestSender rs = null;
 		try {
 			Object o = node.makeRequestSender(key.getNodeKey(true), node.maxHTL(), uid, tag, null, localOnly, ignoreStore, false, true, canWriteClientCache, realTimeFlag);
@@ -1217,6 +1220,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
 		}
+		tag.setAccepted();
 		try {
 			long startTime = System.currentTimeMillis();
 			is = node.makeInsertSender(block.getKey(),
@@ -1336,6 +1340,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
 		}
+		tag.setAccepted();
 		try {
 			long startTime = System.currentTimeMillis();
 			// Be consistent: use the client cache to check for collisions as this is a local insert.
