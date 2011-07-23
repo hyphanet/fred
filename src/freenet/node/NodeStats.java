@@ -1203,11 +1203,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		/** Requests running, globally */
 		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, realTimeFlag);
 		
-		if(!isLocal) {
-			// If not local, is already locked.
-			// But if it is local, it's not already locked.
-			requestsSnapshot.decrement(isSSK, isInsert, isOfferReply, transfersPerInsert, hasInStore);
-		}
+		// Don't need to decrement because it won't be counted until setAccepted() below.
 
 		if(logMINOR)
 			requestsSnapshot.log();
@@ -1239,11 +1235,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 		/** Requests running for this specific peer (local counts as a peer) */
 		RunningRequestsSnapshot peerRequestsSnapshot = new RunningRequestsSnapshot(node, source, false, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, realTimeFlag);
-		
-		if(source != null) {
-			peerRequestsSnapshot.decrement(isSSK, isInsert, isOfferReply, transfersPerInsert, hasInStore);
-		}
-		
 		
 		// Check bandwidth-based limits, with fair sharing.
 		
