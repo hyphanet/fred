@@ -958,6 +958,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		//For debugging purposes, remember the number of responses AFTER the insert, and the last message type we received.
 		gotMessages++;
 		lastMessage=msg.getSpec().getName();
+		if(logMINOR) Logger.minor(this, "Handling message "+msg+" on "+this);
     	
     	if(msg.getSpec() == DMT.FNPDataNotFound) {
     		handleDataNotFound(msg, wasFork, source);
