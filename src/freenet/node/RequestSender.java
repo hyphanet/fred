@@ -267,6 +267,8 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
      * stuff relevant to the request afterwards. */
     protected void routeRequests() {
     	
+    	if(logMINOR) Logger.minor(this, "Routing requests on "+this, new Exception("debug"));
+    	
     	PeerNode next = null;
     	
         peerLoop:
