@@ -432,7 +432,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				forkedRequestTag.unlockHandler();
             	Logger.normal(this, "FORKING CHK INSERT "+origUID+" to "+uid);
             	nodesRoutedTo.clear();
-            	node.lockUID(uid, false, true, false, false, realTimeFlag, forkedRequestTag);
+            	node.lockUID(forkedRequestTag);
             }
             
             // Route it
