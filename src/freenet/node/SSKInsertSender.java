@@ -197,6 +197,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
             	forkedRequestTag.reassignToSelf();
             	forkedRequestTag.startedSender();
             	forkedRequestTag.unlockHandler();
+				forkedRequestTag.setAccepted();
             	Logger.normal(this, "FORKING SSK INSERT "+origUID+" to "+uid);
             	nodesRoutedTo.clear();
             	node.lockUID(forkedRequestTag);
