@@ -4588,6 +4588,10 @@ public class Node implements TimeSkewDetectorCallback {
 		is.start();
 		return is;
 	}
+	
+	public boolean lockUID(UIDTag tag) {
+		return lockUID(tag.uid, tag.isSSK(), tag.isInsert(), tag.isOfferReply(), tag.wasLocal(), tag.realTimeFlag, tag);
+	}
 
 	public boolean lockUID(long uid, boolean ssk, boolean insert, boolean offerReply, boolean local, boolean realTimeFlag, UIDTag tag) {
 		synchronized(runningUIDs) {
