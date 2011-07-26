@@ -288,9 +288,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
     final double target;
     final long origUID;
     final InsertTag origTag;
-    long uid;
     private InsertTag forkedRequestTag;
-    short htl;
     final byte[] headers; // received BEFORE creation => we handle Accepted elsewhere
     final PartiallyReceivedBlock prb;
     final boolean fromStore;
