@@ -506,7 +506,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		}
 		if(disconn)
 			unregisterRequestHandlerWithNode();
-		else if(disconn)
+		else if(reject != null)
 			sendTerminal(reject);
 		else if(xferFinished)
 			transferFinished(xferSuccess);
