@@ -435,7 +435,8 @@ outer:	while(true) {
 				finished = true;
 				notifyAll();
 			}
-			ctr.sentPayload(prb.blockSize);
+			if(!failed)
+				ctr.sentPayload(prb.blockSize);
 			synchronized(BulkTransmitter.this) {
 				if(failed) {
 					failedPacket = true;
