@@ -373,7 +373,10 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			return false;
 		}
 		waitingForTransferSuccess = true;
-		if(!transferCompleted) return false; // Wait
+		if(!transferCompleted) {
+			if(logMINOR) Logger.minor(this, "Waiting for transfer to finish on "+this);
+			return false; // Wait
+		}
 		return true;
 	}
 
@@ -926,7 +929,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 					
 					if(OpennetManager.validateNoderef(newNoderef, 0, newNoderef.length, source, false) != null) {
 						try {
-							if(logMINOR) Logger.minor(this, "Relaying noderef from source to data source");
+							if(logMINOR) Logger.minor(this, "Relaying noderef from source to data source for "+RequestHandler.this);
 							om.sendOpennetRef(true, uid, dataSource, newNoderef, RequestHandler.this, new AllSentCallback() {
 
 								@Override
