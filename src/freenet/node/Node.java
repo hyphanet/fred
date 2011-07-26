@@ -4687,22 +4687,37 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-	public synchronized void countRequests(boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, CountedRequests counter) {
+	public synchronized void countRequests(boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, CountedRequests counter, CountedRequests counterSourceRestarted) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
 		synchronized(map) {
 			int count = 0;
 			int transfersOut = 0;
 			int transfersIn = 0;
+			int countSR = 0;
+			int transfersOutSR = 0;
+			int transfersInSR = 0;
 			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
 				UIDTag tag = entry.getValue();
+				int out = tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert);
+				int in = tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
 				count++;
-				transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert);
-				transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
+				transfersOut += out;
+				transfersIn += in;
+				if(counterSourceRestarted != null && tag.hasSourceRestarted()) {
+					countSR++;
+					transfersOutSR += out;
+					transfersInSR += in;
+				}
 				if(logDEBUG) Logger.debug(this, "UID "+entry.getKey()+" : out "+transfersOut+" in "+transfersIn);
 			}
 			counter.total += count;
 			counter.expectedTransfersIn += transfersIn;
 			counter.expectedTransfersOut += transfersOut;
+			if(counterSourceRestarted != null) {
+				counterSourceRestarted.total += countSR;
+				counterSourceRestarted.expectedTransfersIn += transfersInSR;
+				counterSourceRestarted.expectedTransfersOut += transfersOutSR;
+			}
 		}
 	}
 

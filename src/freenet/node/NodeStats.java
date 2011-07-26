@@ -890,6 +890,11 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		int expectedTransfersOutSSK;
 		int expectedTransfersInSSK;
 		int totalRequests;
+		int expectedTransfersOutCHKSR;
+		int expectedTransfersInCHKSR;
+		int expectedTransfersOutSSKSR;
+		int expectedTransfersInSSKSR;
+		int totalRequestsSR;
 		int averageTransfersPerInsert;
 		final boolean realTimeFlag;
 		
@@ -898,21 +903,28 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			this.realTimeFlag = realTimeFlag;
 			CountedRequests countCHK = new CountedRequests();
 			CountedRequests countSSK = new CountedRequests();
-			node.countRequests(true, false, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK);
-			node.countRequests(true, true, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK);
-			node.countRequests(true, false, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK);
-			node.countRequests(true, true, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK);
-			node.countRequests(false, false, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK);
-			node.countRequests(false, true, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK);
-			node.countRequests(false, false, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK);
-			node.countRequests(false, true, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK);
-			node.countRequests(false, false, false, true, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK);
-			node.countRequests(false, true, false, true, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK);
+			CountedRequests countCHKSR = new CountedRequests();
+			CountedRequests countSSKSR = new CountedRequests();
+			node.countRequests(true, false, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK, countCHKSR);
+			node.countRequests(true, true, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK, countSSKSR);
+			node.countRequests(true, false, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK, countCHKSR);
+			node.countRequests(true, true, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK, countSSKSR);
+			node.countRequests(false, false, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK, countCHKSR);
+			node.countRequests(false, true, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK, countSSKSR);
+			node.countRequests(false, false, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK, countCHKSR);
+			node.countRequests(false, true, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK, countSSKSR);
+			node.countRequests(false, false, false, true, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK, countCHKSR);
+			node.countRequests(false, true, false, true, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK, countSSKSR);
 			this.expectedTransfersInCHK = countCHK.expectedTransfersIn;
 			this.expectedTransfersInSSK = countSSK.expectedTransfersIn;
 			this.expectedTransfersOutCHK = countCHK.expectedTransfersOut;
 			this.expectedTransfersOutSSK = countSSK.expectedTransfersOut;
 			this.totalRequests = countCHK.total + countSSK.total;
+			this.expectedTransfersInCHKSR = countCHKSR.expectedTransfersIn;
+			this.expectedTransfersInSSKSR = countSSKSR.expectedTransfersIn;
+			this.expectedTransfersOutCHKSR = countCHKSR.expectedTransfersOut;
+			this.expectedTransfersOutSSKSR = countSSKSR.expectedTransfersOut;
+			this.totalRequestsSR = countCHKSR.total + countSSKSR.total;
 		}
 		
 		/**
