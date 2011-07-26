@@ -4673,18 +4673,21 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-	public class CountedRequests {
-		final int total;
-		final int expectedTransfersOut;
-		final int expectedTransfersIn;
+	public static class CountedRequests {
+		int total;
+		int expectedTransfersOut;
+		int expectedTransfersIn;
 		private CountedRequests(int count, int out, int in) {
 			total = count;
 			expectedTransfersOut = out;
 			expectedTransfersIn = in;
 		}
+		public CountedRequests() {
+			// Initially empty.
+		}
 	}
 
-	public synchronized CountedRequests countRequests(boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote) {
+	public synchronized void countRequests(boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, CountedRequests counter) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
 		synchronized(map) {
 			int count = 0;
@@ -4697,7 +4700,9 @@ public class Node implements TimeSkewDetectorCallback {
 				transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
 				if(logDEBUG) Logger.debug(this, "UID "+entry.getKey()+" : out "+transfersOut+" in "+transfersIn);
 			}
-			return new CountedRequests(count, transfersOut, transfersIn);
+			counter.total += count;
+			counter.expectedTransfersIn += transfersIn;
+			counter.expectedTransfersOut += transfersOut;
 		}
 	}
 

@@ -894,37 +894,25 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		final boolean realTimeFlag;
 		
 		RunningRequestsSnapshot(Node node, boolean ignoreLocalVsRemote, int transfersPerInsert, boolean realTimeFlag) {
-			int transfersInSSK = 0;
-			int transfersOutSSK = 0;
-			int transfersInCHK = 0;
-			int transfersOutCHK = 0;
 			this.averageTransfersPerInsert = transfersPerInsert;
 			this.realTimeFlag = realTimeFlag;
-			CountedRequests count;
-			count = node.countRequests(true, false, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote);
-			transfersInCHK += count.expectedTransfersIn; transfersOutCHK += count.expectedTransfersOut;
-			count = node.countRequests(true, true, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote);
-			transfersInSSK += count.expectedTransfersIn; transfersOutSSK += count.expectedTransfersOut;
-			count = node.countRequests(true, false, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote);
-			transfersInCHK += count.expectedTransfersIn; transfersOutCHK += count.expectedTransfersOut;
-			count = node.countRequests(true, true, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote);
-			transfersInSSK += count.expectedTransfersIn; transfersOutSSK += count.expectedTransfersOut;
-			count = node.countRequests(false, false, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote);
-			transfersInCHK += count.expectedTransfersIn; transfersOutCHK += count.expectedTransfersOut;
-			count = node.countRequests(false, true, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote);
-			transfersInSSK += count.expectedTransfersIn; transfersOutSSK += count.expectedTransfersOut;
-			count = node.countRequests(false, false, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote);
-			transfersInCHK += count.expectedTransfersIn; transfersOutCHK += count.expectedTransfersOut;
-			count = node.countRequests(false, true, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote);
-			transfersInSSK += count.expectedTransfersIn; transfersOutSSK += count.expectedTransfersOut;
-			count = node.countRequests(false, false, false, true, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote);
-			transfersInCHK += count.expectedTransfersIn; transfersOutCHK += count.expectedTransfersOut;
-			count = node.countRequests(false, true, false, true, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote);
-			transfersInSSK += count.expectedTransfersIn; transfersOutSSK += count.expectedTransfersOut;
-			this.expectedTransfersInCHK = transfersInCHK;
-			this.expectedTransfersInSSK = transfersInSSK;
-			this.expectedTransfersOutCHK = transfersOutCHK;
-			this.expectedTransfersOutSSK = transfersOutSSK;
+			CountedRequests countCHK = new CountedRequests();
+			CountedRequests countSSK = new CountedRequests();
+			node.countRequests(true, false, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK);
+			node.countRequests(true, true, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK);
+			node.countRequests(true, false, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK);
+			node.countRequests(true, true, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK);
+			node.countRequests(false, false, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK);
+			node.countRequests(false, true, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK);
+			node.countRequests(false, false, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK);
+			node.countRequests(false, true, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK);
+			node.countRequests(false, false, false, true, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK);
+			node.countRequests(false, true, false, true, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK);
+			this.expectedTransfersInCHK = countCHK.expectedTransfersIn;
+			this.expectedTransfersInSSK = countSSK.expectedTransfersIn;
+			this.expectedTransfersOutCHK = countCHK.expectedTransfersOut;
+			this.expectedTransfersOutSSK = countSSK.expectedTransfersOut;
+			this.totalRequests = countCHK.total + countSSK.total;
 		}
 		
 		/**
