@@ -1532,6 +1532,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			}
 		}
 		
+		if(logMINOR && sourceRestarted != 0)
+			Logger.minor(this, "Allocation is "+thisAllocation+" source restarted is "+sourceRestarted);
 		return thisAllocation - sourceRestarted;
 		
 	}
