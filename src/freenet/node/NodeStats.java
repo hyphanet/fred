@@ -1063,6 +1063,20 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 					expectedTransfersInSSK * TRANSFER_IN_OUT_OVERHEAD;
 		}
 
+		public double calculateSR(boolean ignoreLocalVsRemoteBandwidthLiability, boolean input) {
+			
+			if(input)
+				return this.expectedTransfersInCHKSR * (32768+256) +
+					this.expectedTransfersInSSKSR * (2048+256) +
+					this.expectedTransfersOutCHKSR * TRANSFER_OUT_IN_OVERHEAD +
+					this.expectedTransfersOutSSKSR * TRANSFER_OUT_IN_OVERHEAD;
+			else
+				return this.expectedTransfersOutCHKSR * (32768+256) +
+					this.expectedTransfersOutSSKSR * (2048+256) +
+					expectedTransfersInCHKSR * TRANSFER_IN_OUT_OVERHEAD +
+					expectedTransfersInSSKSR * TRANSFER_IN_OUT_OVERHEAD;
+		}
+
 		/**
 		 * @return The number of requests running or -1 if not known (remote doesn't tell us).
 		 */
