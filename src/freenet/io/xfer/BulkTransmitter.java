@@ -356,12 +356,12 @@ outer:	while(true) {
 			} catch (NotConnectedException e) {
 				cancel("Disconnected");
 				if(logMINOR)
-					Logger.minor(this, "Canclled: not connected "+this);
+					Logger.minor(this, "Cancelled: not connected "+this);
 				return false;
 			} catch (PeerRestartedException e) {
 				cancel("PeerRestarted");
 				if(logMINOR)
-					Logger.minor(this, "Canclled: not connected "+this);
+					Logger.minor(this, "Cancelled: not connected "+this);
 				return false;
 			} catch (WaitedTooLongException e) {
 				long rtt = peer.getThrottle().getRoundTripTime();
