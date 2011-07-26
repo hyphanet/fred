@@ -448,7 +448,7 @@ outer:	while(true) {
 					if(logMINOR) Logger.minor(this, "Packet sent "+BulkTransmitter.this+" remaining in flight: "+inFlightPackets);
 				}
 			}
-			sent();
+			sent(true);
 		}
 
 		@Override
@@ -463,9 +463,13 @@ outer:	while(true) {
 
 		@Override
 		public void sent() {
+			sent(false);
+		}
+		
+		public void sent(boolean ignoreFinished) {
 			if(allSentCallback == null) return;
 			synchronized(this) {
-				if(finished) return;
+				if(finished && !ignoreFinished) return;
 				if(sent) return;
 				sent = true;
 				notifyAll();
