@@ -942,21 +942,34 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			if(requestsToNode) ignoreLocalVsRemote = true;
 			CountedRequests countCHK = new CountedRequests();
 			CountedRequests countSSK = new CountedRequests();
-			node.countRequests(source, requestsToNode, true, false, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK);
-			node.countRequests(source, requestsToNode, true, true, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK);
-			node.countRequests(source, requestsToNode, true, false, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK);
-			node.countRequests(source, requestsToNode, true, true, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK);
-			node.countRequests(source, requestsToNode, false, false, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK);
-			node.countRequests(source, requestsToNode, false, true, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK);
-			node.countRequests(source, requestsToNode, false, false, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK);
-			node.countRequests(source, requestsToNode, false, true, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK);
-			node.countRequests(source, requestsToNode, false, false, false, true, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK);
-			node.countRequests(source, requestsToNode, false, true, false, true, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK);
+			CountedRequests countCHKSR = null;
+			CountedRequests countSSKSR = null;
+			if(!requestsToNode) {
+				// No point counting if it's requests to the node.
+				// Restarted only matters for requests from a node.
+				countCHKSR = new CountedRequests();
+				countSSKSR = new CountedRequests();
+			}
+			node.countRequests(source, requestsToNode, true, false, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK, countCHKSR);
+			node.countRequests(source, requestsToNode, true, true, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK, countSSKSR);
+			node.countRequests(source, requestsToNode, true, false, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK, countCHKSR);
+			node.countRequests(source, requestsToNode, true, true, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK, countSSKSR);
+			node.countRequests(source, requestsToNode, false, false, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK, countCHKSR);
+			node.countRequests(source, requestsToNode, false, true, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK, countSSKSR);
+			node.countRequests(source, requestsToNode, false, false, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK, countCHKSR);
+			node.countRequests(source, requestsToNode, false, true, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK, countSSKSR);
+			node.countRequests(source, requestsToNode, false, false, false, true, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK, countCHKSR);
+			node.countRequests(source, requestsToNode, false, true, false, true, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK, countSSKSR);
 			this.expectedTransfersInCHK = countCHK.expectedTransfersIn;
 			this.expectedTransfersInSSK = countSSK.expectedTransfersIn;
 			this.expectedTransfersOutCHK = countCHK.expectedTransfersOut;
 			this.expectedTransfersOutSSK = countSSK.expectedTransfersOut;
 			this.totalRequests = countCHK.total + countSSK.total;
+			this.expectedTransfersInCHKSR = countCHKSR.expectedTransfersIn;
+			this.expectedTransfersInSSKSR = countSSKSR.expectedTransfersIn;
+			this.expectedTransfersOutCHKSR = countCHKSR.expectedTransfersOut;
+			this.expectedTransfersOutSSKSR = countSSKSR.expectedTransfersOut;
+			this.totalRequestsSR = countCHKSR.total + countSSKSR.total;
 		}
 
 		public RunningRequestsSnapshot(PeerLoadStats stats) {

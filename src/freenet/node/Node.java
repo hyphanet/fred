@@ -4721,12 +4721,15 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-	public void countRequests(PeerNode source, boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, CountedRequests counter) {
+	public void countRequests(PeerNode source, boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, CountedRequests counter, CountedRequests counterSR) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
 		synchronized(map) {
 		int count = 0;
 		int transfersOut = 0;
 		int transfersIn = 0;
+		int countSR = 0;
+		int transfersOutSR = 0;
+		int transfersInSR = 0;
 		if(!requestsToNode) {
 			// If a request is adopted by us as a result of a timeout, it can be in the
 			// remote map despite having source == null. However, if a request is in the
@@ -4735,9 +4738,16 @@ public class Node implements TimeSkewDetectorCallback {
 			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
 				UIDTag tag = entry.getValue();
 				if(tag.getSource() == source) {
+					int out = tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, true);
+					int in = tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, true);
 					count++;
-					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, true);
-					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, true);
+					transfersOut += out;
+					transfersIn += in;
+					if(counterSR != null && tag.hasSourceRestarted()) {
+						countSR++;
+						transfersOutSR += out;
+						transfersInSR += in;
+					}
 					if(logMINOR) Logger.minor(this, "Counting "+tag+" from "+entry.getKey()+" from "+source+" count now "+count+" out now "+transfersOut+" in now "+transfersIn);
 				} else if(logDEBUG) Logger.debug(this, "Not counting "+entry.getKey());
 			}
@@ -4745,7 +4755,13 @@ public class Node implements TimeSkewDetectorCallback {
 			counter.total += count;
 			counter.expectedTransfersIn += transfersIn;
 			counter.expectedTransfersOut += transfersOut;
+			if(counterSR != null) {
+				counterSR.total += countSR;
+				counterSR.expectedTransfersIn += transfersInSR;
+				counterSR.expectedTransfersOut += transfersOutSR;
+			}
 		} else {
+			// hasSourceRestarted is irrelevant for requests *to* a node.
 			// FIXME improve efficiency!
 			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
 				UIDTag tag = entry.getValue();
