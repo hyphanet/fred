@@ -4721,7 +4721,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-	public CountedRequests countRequests(PeerNode source, boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote) {
+	public void countRequests(PeerNode source, boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, CountedRequests counter) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
 		synchronized(map) {
 		int count = 0;
@@ -4731,7 +4731,7 @@ public class Node implements TimeSkewDetectorCallback {
 			// If a request is adopted by us as a result of a timeout, it can be in the
 			// remote map despite having source == null. However, if a request is in the
 			// local map it will always have source == null.
-			if(source != null && local) return new CountedRequests(0, 0, 0);
+			if(source != null && local) return;
 			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
 				UIDTag tag = entry.getValue();
 				if(tag.getSource() == source) {
@@ -4742,7 +4742,9 @@ public class Node implements TimeSkewDetectorCallback {
 				} else if(logDEBUG) Logger.debug(this, "Not counting "+entry.getKey());
 			}
 			if(logMINOR) Logger.minor(this, "Returning count: "+count+" in: "+transfersIn+" out: "+transfersOut);
-			return new CountedRequests(count, transfersOut, transfersIn);
+			counter.total += count;
+			counter.expectedTransfersIn += transfersIn;
+			counter.expectedTransfersOut += transfersOut;
 		} else {
 			// FIXME improve efficiency!
 			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
@@ -4762,7 +4764,9 @@ public class Node implements TimeSkewDetectorCallback {
 				} else if(logDEBUG) Logger.debug(this, "Not counting "+entry.getKey());
 			}
 			if(logMINOR) Logger.minor(this, "Counted for "+(local?"local":"remote")+" "+(ssk?"ssk":"chk")+" "+(insert?"insert":"request")+" "+(offer?"offer":"")+" : "+count+" of "+map.size()+" for "+source);
-			return new CountedRequests(count, transfersOut, transfersIn);
+			counter.total += count;
+			counter.expectedTransfersIn += transfersIn;
+			counter.expectedTransfersOut += transfersOut;
 		}
 		}
 	}
