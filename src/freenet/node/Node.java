@@ -4851,6 +4851,32 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 		}
 	};
+	
+
+	public void onRestartOrDisconnect(PeerNode pn) {
+		onRestartOrDisconnect(pn, runningSSKGetUIDsRT);
+		onRestartOrDisconnect(pn, runningCHKGetUIDsRT);
+		onRestartOrDisconnect(pn, runningSSKPutUIDsRT);
+		onRestartOrDisconnect(pn, runningCHKPutUIDsRT);
+		onRestartOrDisconnect(pn, runningSSKOfferReplyUIDsRT);
+		onRestartOrDisconnect(pn, runningCHKOfferReplyUIDsRT);
+		onRestartOrDisconnect(pn, runningSSKGetUIDsBulk);
+		onRestartOrDisconnect(pn, runningCHKGetUIDsBulk);
+		onRestartOrDisconnect(pn, runningSSKPutUIDsBulk);
+		onRestartOrDisconnect(pn, runningCHKPutUIDsBulk);
+		onRestartOrDisconnect(pn, runningSSKOfferReplyUIDsBulk);
+		onRestartOrDisconnect(pn, runningCHKOfferReplyUIDsBulk);
+	}
+
+	private void onRestartOrDisconnect(PeerNode pn,
+			HashMap<Long, ? extends UIDTag> uids) {
+		synchronized(uids) {
+			for(UIDTag tag : uids.values()) {
+				if(tag.isSource(pn))
+					tag.onRestartOrDisconnectSource();
+			}
+		}
+	}
 
 
 	/**
@@ -6278,4 +6304,5 @@ public class Node implements TimeSkewDetectorCallback {
 	public boolean enableNewLoadManagement(boolean realTimeFlag) {
 		return nodeStats.enableNewLoadManagement(realTimeFlag);
 	}
+
 }

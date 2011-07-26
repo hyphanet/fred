@@ -32,6 +32,7 @@ public abstract class UIDTag {
 	final boolean realTimeFlag;
 	private final Node node;
 	protected boolean accepted;
+	protected boolean sourceRestarted;
 	
 	/** Nodes we have routed to at some point */
 	private HashSet<PeerNode> routedTo = null;
@@ -370,6 +371,17 @@ public abstract class UIDTag {
 
 	public synchronized void setAccepted() {
 		accepted = true;
+	}
+
+	public synchronized void onRestartOrDisconnectSource() {
+		sourceRestarted = true;
+	}
+
+	public synchronized boolean isSource(PeerNode pn) {
+		if(reassigned) return false;
+		if(wasLocal) return false;
+		if(sourceRef == null) return false;
+		return sourceRef == pn.myRef;
 	}
 
 }
