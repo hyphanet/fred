@@ -964,12 +964,14 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			this.expectedTransfersInSSK = countSSK.expectedTransfersIn;
 			this.expectedTransfersOutCHK = countCHK.expectedTransfersOut;
 			this.expectedTransfersOutSSK = countSSK.expectedTransfersOut;
-			this.totalRequests = countCHK.total + countSSK.total;
-			this.expectedTransfersInCHKSR = countCHKSR.expectedTransfersIn;
-			this.expectedTransfersInSSKSR = countSSKSR.expectedTransfersIn;
-			this.expectedTransfersOutCHKSR = countCHKSR.expectedTransfersOut;
-			this.expectedTransfersOutSSKSR = countSSKSR.expectedTransfersOut;
-			this.totalRequestsSR = countCHKSR.total + countSSKSR.total;
+			if(!requestsToNode) {
+				this.totalRequests = countCHK.total + countSSK.total;
+				this.expectedTransfersInCHKSR = countCHKSR.expectedTransfersIn;
+				this.expectedTransfersInSSKSR = countSSKSR.expectedTransfersIn;
+				this.expectedTransfersOutCHKSR = countCHKSR.expectedTransfersOut;
+				this.expectedTransfersOutSSKSR = countSSKSR.expectedTransfersOut;
+				this.totalRequestsSR = countCHKSR.total + countSSKSR.total;
+			}
 		}
 
 		public RunningRequestsSnapshot(PeerLoadStats stats) {
