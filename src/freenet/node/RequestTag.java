@@ -140,6 +140,8 @@ public class RequestTag extends UIDTag {
 			int outwardTransfersPerInsert) {
 		if(!accepted) return 0;
 		if(completedDownstreamTransfers) return 0;
+		// FIXME if we are asking for purposes of rejecting or accepting a request
+		// locally, we should return 0 if sourceRestarted or unlockedHandler.
 		return ((!isLocal()) || ignoreLocalVsRemote) ? 1 : 0;
 	}
 	
