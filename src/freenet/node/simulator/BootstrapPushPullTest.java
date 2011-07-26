@@ -48,7 +48,7 @@ public class BootstrapPushPullTest {
 			ipOverride = args[0];
         File dir = new File("bootstrap-push-pull-test");
         FileUtil.removeAll(dir);
-        RandomSource random = NodeStarter.globalTestInit(dir.getPath(), false, LogLevel.ERROR, "", false);
+        RandomSource random = NodeStarter.globalTestInit(dir.getPath(), false, LogLevel.NORMAL, ""/*"freenet.node:MINOR,freenet.client:MINOR"*/, false);
         File seednodes = new File("seednodes.fref");
         if(!seednodes.exists() || seednodes.length() == 0 || !seednodes.canRead()) {
         	System.err.println("Unable to read seednodes.fref, it doesn't exist, or is empty");
