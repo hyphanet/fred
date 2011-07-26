@@ -386,6 +386,8 @@ outer:	while(true) {
 					callAllSent = true;
 					calledAllSent = true;
 					anyFailed = failedPacket;
+				} else if(!calledAllSent) {
+					if(logMINOR) Logger.minor(this, "Still waiting for "+unsentPackets);
 				}
 			}
 			if(callAllSent)
