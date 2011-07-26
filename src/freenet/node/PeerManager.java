@@ -238,6 +238,10 @@ public class PeerManager {
 				} catch(ReferenceSignatureVerificationException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
 					continue;
+				} catch (RuntimeException e2) {
+					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
+					continue;
+					// FIXME tell the user???
 				}
 				if(oldOpennetPeers)
 					opennet.addOldOpennetNode(pn);
