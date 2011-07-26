@@ -400,6 +400,7 @@ loadWaiterLoop:
     				}
     				HashSet<PeerNode> waitedFor = waiter.waitingForList();
     				PeerNode waited;
+    				// FIXME figure out a way to wake-up mid-wait if origTag.hasSourceRestarted().
 					try {
 						waited = waiter.waitForAny(maxWait, addedExtraNode);
 					} catch (SlotWaiterFailedException e) {
@@ -438,6 +439,13 @@ loadWaiterLoop:
     		}
     		if(logMINOR) Logger.minor(this, "Routing to "+next);
     		
+        	if(origTag.hasSourceRestarted()) {
+        		origTag.removeRoutingTo(next);
+        		// FIXME finish more directly.
+	        	routeRequests();
+	        	return;
+        	}
+        	
     		synchronized(this) {
     			lastNode = next;
     		}

@@ -376,6 +376,10 @@ public abstract class UIDTag {
 	public synchronized void onRestartOrDisconnectSource() {
 		sourceRestarted = true;
 	}
+	
+	public synchronized boolean hasSourceRestarted() {
+		return sourceRestarted;
+	}
 
 	public synchronized boolean isSource(PeerNode pn) {
 		if(reassigned) return false;

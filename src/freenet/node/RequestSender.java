@@ -341,7 +341,12 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
             	finish(TIMED_OUT, null, false);
             	return;
             }
-
+            
+        	if(origTag.hasSourceRestarted()) {
+        		finish(ROUTE_NOT_FOUND, null, false);
+        		return;
+        	}
+        	
             RecentlyFailedReturn r = new RecentlyFailedReturn();
             
             long now = System.currentTimeMillis();

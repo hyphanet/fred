@@ -375,6 +375,11 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
         while(true) {
         	if(failIfReceiveFailed(null, null)) return; // don't need to set status as killed by CHKInsertHandler
             
+        	if(origTag.hasSourceRestarted()) {
+        		finish(SUCCESS, null);
+        		return;
+        	}
+        	
             /*
              * If we haven't routed to any node yet, decrement according to the source.
              * If we have, decrement according to the node which just failed.

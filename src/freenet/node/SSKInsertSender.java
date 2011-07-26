@@ -185,6 +185,11 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
                 return;
             }
             
+        	if(origTag.hasSourceRestarted()) {
+        		finish(SUCCESS, null);
+        		return;
+        	}
+        	
             if( node.canWriteDatastoreInsert(htl) && (!canWriteStorePrev) && forkOnCacheable && forkedRequestTag == null) {
             	// FORK! We are now cacheable, and it is quite possible that we have already gone over the ideal sink nodes,
             	// in which case if we don't fork we will miss them, and greatly reduce the insert's reachability.
