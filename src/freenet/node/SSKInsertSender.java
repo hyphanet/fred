@@ -45,7 +45,6 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 
     // Basics
     final NodeSSK myKey;
-    final double target;
     final long origUID;
     final InsertTag origTag;
     /** SSK's pubkey */
@@ -88,13 +87,11 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
     	super(block.getKey(), realTimeFlag, source, node, htl, uid);
     	logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
     	this.fromStore = fromStore;
-    	this.htl = htl;
     	this.origUID = uid;
     	this.origTag = tag;
     	myKey = block.getKey();
     	data = block.getRawData();
     	headers = block.getRawHeaders();
-    	target = myKey.toNormalizedDouble();
     	pubKey = myKey.getPubKey();
     	if(pubKey == null)
     		throw new IllegalArgumentException("Must have pubkey to insert data!!");
