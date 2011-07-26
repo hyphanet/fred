@@ -2774,11 +2774,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			throw new FSParseException("No dsaPubKey - very old reference?");
 		else if(sfs != null) {
 			DSAPublicKey key;
-			try {
-				key = DSAPublicKey.create(sfs, peerCryptoGroup);
-			} catch (IllegalBase64Exception e) {
-				throw new FSParseException(e);
-			}
+			key = DSAPublicKey.create(sfs, peerCryptoGroup);
 			if(!key.equals(this.peerPubKey))
 				throw new FSParseException("Changed pubkey?!");
 		}
