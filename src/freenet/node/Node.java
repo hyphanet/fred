@@ -4698,8 +4698,8 @@ public class Node implements TimeSkewDetectorCallback {
 			int transfersInSR = 0;
 			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
 				UIDTag tag = entry.getValue();
-				int out = tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert);
-				int in = tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
+				int out = tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, true);
+				int in = tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, true);
 				count++;
 				transfersOut += out;
 				transfersIn += in;
@@ -4736,8 +4736,8 @@ public class Node implements TimeSkewDetectorCallback {
 				UIDTag tag = entry.getValue();
 				if(tag.getSource() == source) {
 					count++;
-					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert);
-					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
+					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, true);
+					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, true);
 					if(logMINOR) Logger.minor(this, "Counting "+tag+" from "+entry.getKey()+" from "+source+" count now "+count+" out now "+transfersOut+" in now "+transfersIn);
 				} else if(logDEBUG) Logger.debug(this, "Not counting "+entry.getKey());
 			}
@@ -4751,13 +4751,13 @@ public class Node implements TimeSkewDetectorCallback {
 				// So we *DO NOT* care whether it's an ordinary routed relayed request or a GetOfferedKey, if we are counting outgoing requests.
 				if(tag.currentlyFetchingOfferedKeyFrom(source)) {
 					if(logMINOR) Logger.minor(this, "Counting "+tag+" to "+entry.getKey());
-					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert);
-					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
+					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, false);
+					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, false);
 					count++;
 				} else if(tag.currentlyRoutingTo(source)) {
 					if(logMINOR) Logger.minor(this, "Counting "+tag+" to "+entry.getKey());
-					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert);
-					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
+					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, false);
+					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, false);
 					count++;
 				} else if(logDEBUG) Logger.debug(this, "Not counting "+entry.getKey());
 			}

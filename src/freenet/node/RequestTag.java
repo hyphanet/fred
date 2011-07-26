@@ -130,18 +130,17 @@ public class RequestTag extends UIDTag {
 
 	@Override
 	public synchronized int expectedTransfersIn(boolean ignoreLocalVsRemote,
-			int outwardTransfersPerInsert) {
+			int outwardTransfersPerInsert, boolean forAccept) {
 		if(!accepted) return 0;
 		return notRoutedOnwards ? 0 : 1;
 	}
 
 	@Override
 	public synchronized int expectedTransfersOut(boolean ignoreLocalVsRemote,
-			int outwardTransfersPerInsert) {
+			int outwardTransfersPerInsert, boolean forAccept) {
 		if(!accepted) return 0;
 		if(completedDownstreamTransfers) return 0;
-		// FIXME if we are asking for purposes of rejecting or accepting a request
-		// locally, we should return 0 if sourceRestarted or unlockedHandler.
+		if(forAccept && (sourceRestarted || unlockedHandler)) return 0;
 		return ((!isLocal()) || ignoreLocalVsRemote) ? 1 : 0;
 	}
 	

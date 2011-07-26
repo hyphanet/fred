@@ -68,14 +68,14 @@ public class InsertTag extends UIDTag {
 
 	@Override
 	public int expectedTransfersIn(boolean ignoreLocalVsRemote,
-			int outwardTransfersPerInsert) {
+			int outwardTransfersPerInsert, boolean forAccept) {
 		if(!accepted) return 0;
 		return ((!isLocal()) || ignoreLocalVsRemote) ? 1 : 0;
 	}
 
 	@Override
 	public int expectedTransfersOut(boolean ignoreLocalVsRemote,
-			int outwardTransfersPerInsert) {
+			int outwardTransfersPerInsert, boolean forAccept) {
 		if(!accepted) return 0;
 		if(notRoutedOnwards) return 0;
 		else return outwardTransfersPerInsert;
