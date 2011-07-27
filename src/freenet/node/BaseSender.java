@@ -201,6 +201,8 @@ loadWaiterLoop:
      * to a slow network. */
     private static int MAX_REJECTED_LOOPS = 3;
 
+    private boolean addedExtraNode = false;
+    
     /**
      * New load management. Give it the peer you want to route to, it might 
      * route to a different one, but it will either get accepted and call
@@ -234,8 +236,6 @@ loadWaiterLoop:
         PeerNode lastNext = null;
         RequestLikelyAcceptedState lastExpectedAcceptState = null;
         RequestLikelyAcceptedState expectedAcceptState = null;
-        
-        boolean addedExtraNode = false;
         
     loadWaiterLoop:
     	while(true) {
@@ -511,6 +511,7 @@ loadWaiterLoop:
 	        	routeRequests();
 	        	return;
         	} else { // FINISHED => accepted
+        		addedExtraNode = false;
 				if(logMINOR) Logger.minor(this, "Accepted!");
         		break;
         	}
