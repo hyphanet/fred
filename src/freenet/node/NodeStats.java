@@ -1428,7 +1428,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			if(logMINOR)
 				Logger.minor(this, "Allocation ("+name+") for "+source+" is "+thisAllocation+" total usage is "+bandwidthLiabilityOutput+" of lower limit"+bandwidthAvailableOutputLowerLimit+" upper limit is "+bandwidthAvailableOutputUpperLimit);
 			
-			double peerUsedBytes = getPeerBandwidthLiability(peerRequestsSnapshot, source, isSSK, isInsert, isOfferReply, ignoreLocalVsRemoteBandwidthLiability, hasInStore, transfersPerInsert, input, realTimeFlag);
+			double peerUsedBytes = getPeerBandwidthLiability(peerRequestsSnapshot, source, isSSK, transfersPerInsert, input);
 			if(peerUsedBytes > thisAllocation) {
 				rejected(name+" bandwidth liability: fairness between peers", isLocal, realTimeFlag);
 				return name+" bandwidth liability: fairness between peers (peer "+source+" used "+peerUsedBytes+" allowed "+thisAllocation+")";
@@ -1514,18 +1514,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 * rejected.
 	 * @param requestsSnapshot Snapshot of requests running from the peer.
 	 * @param source The peer.
-	 * @param isSSK REMOVE 
-	 * @param isInsert REMOVE
-	 * @param isOfferReply REMOVE
 	 * @param ignoreLocalVsRemote If true, pretend local requests are remote 
 	 * requests.
-	 * @param hasInStore REMOVE
 	 * @param transfersOutPerInsert Average number of output transfers from an insert.
 	 * @param input If true, calculate input bytes, if false, calculate output bytes.
-	 * @param realTimeFlag REMOVE
 	 * @return
 	 */
-	private double getPeerBandwidthLiability(RunningRequestsSnapshot requestsSnapshot, PeerNode source, boolean isSSK, boolean isInsert, boolean isOfferReply, boolean ignoreLocalVsRemote, boolean hasInStore, int transfersOutPerInsert, boolean input, boolean realTimeFlag) {
+	private double getPeerBandwidthLiability(RunningRequestsSnapshot requestsSnapshot, PeerNode source, boolean ignoreLocalVsRemote, int transfersOutPerInsert, boolean input) {
 		
 		requestsSnapshot.log(source);
 		
