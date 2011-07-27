@@ -28,7 +28,7 @@ public class NativeBigIntegerTest extends TestCase {
 
 	TestIntegers nativeTest;
 	TestIntegers javaTest;
-	//TestIntegers java7Test;
+	TestIntegers gnuTest;
 
 	protected void setUp() throws Exception {
 		if (!NativeBigInteger.isNative())
@@ -55,12 +55,12 @@ public class NativeBigIntegerTest extends TestCase {
 			new NativeBigInteger(1, randbytes)
 		);
 
-		/*java7Test = new TestIntegers7(
-			"java7",
-			new java7.math.BigInteger(_sampleGenerator),
-			new java7.math.BigInteger(_samplePrime),
-			new java7.math.BigInteger(randbytes)
-		);*/
+		gnuTest = new TestIntegersGMP(
+			"gnu",
+			new freenet.support.math.BigInteger(_sampleGenerator),
+			new freenet.support.math.BigInteger(_samplePrime),
+			new freenet.support.math.BigInteger(randbytes)
+		);
 
 	}
 
@@ -72,20 +72,20 @@ public class NativeBigIntegerTest extends TestCase {
 
 		printInfo(nativeTest.getReport());
 		printInfo(javaTest.getReport());
-		//printInfo(java7Test.getReport());
+		printInfo(gnuTest.getReport());
 		printInfo("native = " + (nativeTest.getTime() * 100.0 / javaTest.getTime()) + "% of pure java time");
-		//printInfo("java 7 = " + (java7Test.getTime() * 100.0 / javaTest.getTime()) + "% of pure java time");
+		printInfo("gnu = " + (gnuTest.getTime() * 100.0 / javaTest.getTime()) + "% of pure java time");
 	}
 
 	public void testModPow() {
 		for (runsProcessed = 0; runsProcessed < numRuns; runsProcessed++) {
 			BigInteger nativeVal = nativeTest.modPow();
 			BigInteger javaVal = javaTest.modPow();
-			//BigInteger java7Val = java7Test.modPow();
+			BigInteger gnuVal = gnuTest.modPow();
 
 			assertEquals(nativeVal, javaVal);
-			//assertEquals(javaVal, java7Val);
-			//assertEquals(java7Val, nativeVal);
+			assertEquals(javaVal, gnuVal);
+			assertEquals(gnuVal, nativeVal);
 		}
 	}
 
@@ -93,11 +93,11 @@ public class NativeBigIntegerTest extends TestCase {
 		for (runsProcessed = 0; runsProcessed < numRuns; runsProcessed++) {
 			double nativeVal = nativeTest.doubleValue();
 			double javaVal = javaTest.doubleValue();
-			//double java7Val = java7Test.doubleValue();
+			double gnuVal = gnuTest.doubleValue();
 
 			assertEquals(nativeVal, javaVal);
-			//assertEquals(javaVal, java7Val);
-			//assertEquals(java7Val, nativeVal);
+			assertEquals(javaVal, gnuVal);
+			assertEquals(gnuVal, nativeVal);
 		}
 	}
 
@@ -159,13 +159,13 @@ public class NativeBigIntegerTest extends TestCase {
 
 	}
 
-	/*static class TestIntegers7 extends TestIntegers {
+	static class TestIntegersGMP extends TestIntegers {
 
-		final java7.math.BigInteger g;
-		final java7.math.BigInteger p;
-		final java7.math.BigInteger k;
+		final freenet.support.math.BigInteger g;
+		final freenet.support.math.BigInteger p;
+		final freenet.support.math.BigInteger k;
 
-		public TestIntegers7(String name, java7.math.BigInteger g, java7.math.BigInteger p, java7.math.BigInteger k) {
+		public TestIntegersGMP(String name, freenet.support.math.BigInteger g, freenet.support.math.BigInteger p, freenet.support.math.BigInteger k) {
 			super(name, null, null, null);
 			this.g = g;
 			this.p = p;
@@ -174,7 +174,7 @@ public class NativeBigIntegerTest extends TestCase {
 
 		public BigInteger modPow() {
 			long start = System.currentTimeMillis();
-			java7.math.BigInteger r = g.modPow(p, k);
+			freenet.support.math.BigInteger r = g.modPow(p, k);
 			time += System.currentTimeMillis() - start;
 			++runs;
 			return new BigInteger(r.toByteArray());
@@ -191,6 +191,6 @@ public class NativeBigIntegerTest extends TestCase {
 			return r;
 		}
 
-	}*/
+	}
 
 }

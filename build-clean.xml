@@ -265,6 +265,7 @@ build-dependency on ant-optional, libbsf-java and rhino.
 			<batchtest unless="test.class" fork="yes">
 				<fileset dir="${test.make}" includes="**/*Test.class"/>
 			</batchtest>
+			<sysproperty key="java.library.path" value="/usr/lib/jni:/usr/lib/jvm/java-1.5.0-gcj-4.6/lib"/>
 			<sysproperty key="test.verbose" value="${test.verbose}"/>
 			<sysproperty key="test.benchmark" value="${test.benchmark}"/>
 			<sysproperty key="test.extensive" value="${test.extensive}"/>
