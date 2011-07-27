@@ -358,6 +358,8 @@ public abstract class UIDTag {
 		}
 		if(fetchingOfferedKeyFrom != null)
 			sb.append(" (fetch offered keys from ").append(fetchingOfferedKeyFrom.size()).append(")");
+		if(sourceRestarted)
+			sb.append(" (source restarted)");
 		return sb.toString();
 	}
 
