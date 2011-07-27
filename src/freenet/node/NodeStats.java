@@ -804,6 +804,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			// I.e. requests which were sent before the peer restarted, which it doesn't know about or failed for when the bootID changed.
 			// We try to complete these quickly, but they can stick around for a while sometimes.
 			
+			// This implies that the sourceRestarted() requests are not counted when checking whether the peer is over the limit.
+			
 			outputBandwidthUpperLimit = getOutputBandwidthUpperLimit(totalSent, totalOverhead, uptime, limit, nonOverheadFraction);
 			outputBandwidthLowerLimit = getLowerLimit(outputBandwidthUpperLimit, peers);
 			
@@ -940,7 +942,11 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		 * routed to a node. If we are counting requests from a node, we also fill
 		 * in the *SR counters with the counts for requests which have sourceRestarted()
 		 * i.e. the requests where the peer has reconnected after a timeout but the 
-		 * requests are still running.
+		 * requests are still running. These are only counted in the *SR totals,
+		 * they are not in the basic totals. The caller will reduce the limits
+		 * according to the *SR totals, and only compare the non-SR requests when
+		 * deciding whether the peer is over the limit. The updated limits are 
+		 * sent to the downstream node so that it can send the right number of requests.
 		 * @param node We need this to count the requests.
 		 * @param source The peer we are interested in.
 		 * @param requestsToNode If true, count requests sent to the node and currently
@@ -972,18 +978,23 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			node.countRequests(source, requestsToNode, false, true, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK, countSSKSR);
 			node.countRequests(source, requestsToNode, false, false, false, true, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK, countCHKSR);
 			node.countRequests(source, requestsToNode, false, true, false, true, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK, countSSKSR);
-			this.expectedTransfersInCHK = countCHK.expectedTransfersIn;
-			this.expectedTransfersInSSK = countSSK.expectedTransfersIn;
-			this.expectedTransfersOutCHK = countCHK.expectedTransfersOut;
-			this.expectedTransfersOutSSK = countSSK.expectedTransfersOut;
-			this.totalRequests = countCHK.total + countSSK.total;
 			if(!requestsToNode) {
 				this.expectedTransfersInCHKSR = countCHKSR.expectedTransfersIn;
 				this.expectedTransfersInSSKSR = countSSKSR.expectedTransfersIn;
 				this.expectedTransfersOutCHKSR = countCHKSR.expectedTransfersOut;
 				this.expectedTransfersOutSSKSR = countSSKSR.expectedTransfersOut;
 				this.totalRequestsSR = countCHKSR.total + countSSKSR.total;
+				this.expectedTransfersInCHK = countCHK.expectedTransfersIn - expectedTransfersInCHKSR;
+				this.expectedTransfersInSSK = countSSK.expectedTransfersIn - expectedTransfersInSSKSR;
+				this.expectedTransfersOutCHK = countCHK.expectedTransfersOut - expectedTransfersOutCHKSR;
+				this.expectedTransfersOutSSK = countSSK.expectedTransfersOut - expectedTransfersOutSSKSR;
+				this.totalRequests = (countCHK.total + countSSK.total) - totalRequestsSR;
 			} else {
+				this.expectedTransfersInCHK = countCHK.expectedTransfersIn;
+				this.expectedTransfersInSSK = countSSK.expectedTransfersIn;
+				this.expectedTransfersOutCHK = countCHK.expectedTransfersOut;
+				this.expectedTransfersOutSSK = countSSK.expectedTransfersOut;
+				this.totalRequests = countCHK.total + countSSK.total;
 				this.expectedTransfersInCHKSR = 0;
 				this.expectedTransfersInSSKSR = 0;
 				this.expectedTransfersOutCHKSR = 0;
@@ -1216,7 +1227,11 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		// Whereas the bandwidth-based limit is by bytes, on the principle that
 		// it must be possible to complete all transfers within a reasonable time.
 		
-		/** Requests running for this specific peer (local counts as a peer) */
+		/** Requests running for this specific peer (local counts as a peer).
+		 * Note that this separately counts requests which have sourceRestarted,
+		 * which are not included in the count, and are decremented from the peer limit
+		 * before it is used and sent to the peer. This ensures that the peer
+		 * doesn't use more than it should after a restart. */
 		RunningRequestsSnapshot peerRequestsSnapshot = new RunningRequestsSnapshot(node, source, false, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, realTimeFlag);
 		
 		int maxTransfersOutUpperLimit = getMaxTransfersUpperLimit(realTimeFlag, nonOverheadFraction);
