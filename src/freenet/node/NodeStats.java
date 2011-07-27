@@ -1509,6 +1509,22 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 	}
 
+	/** Calculate the worst-case bytes used by a specific peer. This will be
+	 * compared to its peer limit, and if it is higher, the request may be 
+	 * rejected.
+	 * @param requestsSnapshot Snapshot of requests running from the peer.
+	 * @param source The peer.
+	 * @param isSSK REMOVE 
+	 * @param isInsert REMOVE
+	 * @param isOfferReply REMOVE
+	 * @param ignoreLocalVsRemote If true, pretend local requests are remote 
+	 * requests.
+	 * @param hasInStore REMOVE
+	 * @param transfersOutPerInsert Average number of output transfers from an insert.
+	 * @param input If true, calculate input bytes, if false, calculate output bytes.
+	 * @param realTimeFlag REMOVE
+	 * @return
+	 */
 	private double getPeerBandwidthLiability(RunningRequestsSnapshot requestsSnapshot, PeerNode source, boolean isSSK, boolean isInsert, boolean isOfferReply, boolean ignoreLocalVsRemote, boolean hasInStore, int transfersOutPerInsert, boolean input, boolean realTimeFlag) {
 		
 		requestsSnapshot.log(source);
