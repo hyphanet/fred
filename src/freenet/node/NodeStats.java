@@ -936,8 +936,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		}
 		
 		/**
-		 * @param node
-		 * @param source
+		 * Create a snapshot of either the requests from a node, or the requests 
+		 * routed to a node. If we are counting requests from a node, we also fill
+		 * in the *SR counters with the counts for requests which have sourceRestarted()
+		 * i.e. the requests where the peer has reconnected after a timeout but the 
+		 * requests are still running.
+		 * @param node We need this to count the requests.
+		 * @param source The peer we are interested in.
 		 * @param requestsToNode If true, count requests sent to the node and currently
 		 * running. If false, count requests originated by the node.
 		 */
