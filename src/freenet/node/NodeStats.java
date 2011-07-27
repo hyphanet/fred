@@ -717,7 +717,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	static final int BANDWIDTH_LIABILITY_LIMIT_SECONDS_REALTIME = 60;
 	
 	/** Stats to send to a single peer so it can determine whether we are likely to reject 
-	 * a request. */
+	 * a request. Includes the various limits, but also, the expected transfers
+	 * from requests already accepted from other peers (but NOT from this peer).
+	 * Note that requests which are sourceRestarted() or reassignToSelf() are
+	 * included in "from other peers", as are local requests. */
 	public class PeerLoadStats {
 		
 		public final PeerNode peer;
@@ -796,6 +799,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			RunningRequestsSnapshot runningLocal = new RunningRequestsSnapshot(node, peer, false, ignoreLocalVsRemote, transfersPerInsert, realTimeFlag);
 			
 			int peers = node.peers.countConnectedPeers();
+			
+			// Peer limits are adjusted to deduct any requests already allocated by sourceRestarted() requests.
+			// I.e. requests which were sent before the peer restarted, which it doesn't know about or failed for when the bootID changed.
+			// We try to complete these quickly, but they can stick around for a while sometimes.
 			
 			outputBandwidthUpperLimit = getOutputBandwidthUpperLimit(totalSent, totalOverhead, uptime, limit, nonOverheadFraction);
 			outputBandwidthLowerLimit = getLowerLimit(outputBandwidthUpperLimit, peers);
