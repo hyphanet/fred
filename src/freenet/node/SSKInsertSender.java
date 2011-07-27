@@ -38,8 +38,8 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 
     // Constants
     static final int ACCEPTED_TIMEOUT = 10000;
-    static final int SEARCH_TIMEOUT_REALTIME = 30*1000;
-    static final int SEARCH_TIMEOUT_BULK = 120*1000;
+    static final int SEARCH_TIMEOUT_REALTIME = 60*1000;
+    static final int SEARCH_TIMEOUT_BULK = 600*1000;
     
     final int searchTimeout;
 
