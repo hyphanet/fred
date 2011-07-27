@@ -886,17 +886,17 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	
 	class RunningRequestsSnapshot {
 		
-		int expectedTransfersOutCHK;
-		int expectedTransfersInCHK;
-		int expectedTransfersOutSSK;
-		int expectedTransfersInSSK;
-		int totalRequests;
-		int expectedTransfersOutCHKSR;
-		int expectedTransfersInCHKSR;
-		int expectedTransfersOutSSKSR;
-		int expectedTransfersInSSKSR;
-		int totalRequestsSR;
-		int averageTransfersPerInsert;
+		final int expectedTransfersOutCHK;
+		final int expectedTransfersInCHK;
+		final int expectedTransfersOutSSK;
+		final int expectedTransfersInSSK;
+		final int totalRequests;
+		final int expectedTransfersOutCHKSR;
+		final int expectedTransfersInCHKSR;
+		final int expectedTransfersOutSSKSR;
+		final int expectedTransfersInSSKSR;
+		final int totalRequestsSR;
+		final int averageTransfersPerInsert;
 		final boolean realTimeFlag;
 		
 		RunningRequestsSnapshot(Node node, boolean ignoreLocalVsRemote, int transfersPerInsert, boolean realTimeFlag) {
@@ -971,6 +971,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 				this.expectedTransfersOutCHKSR = countCHKSR.expectedTransfersOut;
 				this.expectedTransfersOutSSKSR = countSSKSR.expectedTransfersOut;
 				this.totalRequestsSR = countCHKSR.total + countSSKSR.total;
+			} else {
+				this.expectedTransfersInCHKSR = 0;
+				this.expectedTransfersInSSKSR = 0;
+				this.expectedTransfersOutCHKSR = 0;
+				this.expectedTransfersOutSSKSR = 0;
+				this.totalRequestsSR = 0;
 			}
 		}
 
@@ -983,6 +989,11 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			this.expectedTransfersOutSSK = stats.expectedTransfersOutSSK;
 			this.totalRequests = stats.totalRequests;
 			this.averageTransfersPerInsert = stats.averageTransfersOutPerInsert;
+			this.expectedTransfersInCHKSR = 0;
+			this.expectedTransfersInSSKSR = 0;
+			this.expectedTransfersOutCHKSR = 0;
+			this.expectedTransfersOutSSKSR = 0;
+			this.totalRequestsSR = 0;
 		}
 
 		public void log() {
