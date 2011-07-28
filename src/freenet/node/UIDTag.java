@@ -391,6 +391,9 @@ public abstract class UIDTag {
 		accepted = true;
 	}
 
+	/** The handler disconnected or restarted, or the request is taking a 
+	 * ridiculously long time and we have to avoid a timeout on the sender. 
+	 * Some places we use reassignToSelf() in the latter case. */
 	public synchronized void onRestartOrDisconnectSource() {
 		sourceRestarted = true;
 	}

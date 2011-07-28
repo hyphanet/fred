@@ -1955,8 +1955,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				Logger.error(this, "Transfer started, not dumping listeners when reassigning to self on timeout (race condition?) on "+this);
 				return;
 			}
-			// Safe to call it here, tag is self-synched always last.
-			origTag.reassignToSelf();
+			origTag.onRestartOrDisconnectSource();
 			for(Listener l : listeners) {
 				l.onRequestSenderFinished(TIMED_OUT, fromOfferedKey);
 			}
