@@ -67,7 +67,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 
 				@Override
 				public void blockTransferFinished(boolean success) {
-					if(logMINOR) Logger.minor(this, "Transfer completed: "+success);
+					if(logMINOR) Logger.minor(this, "Transfer completed: "+success+" for "+this);
 					BackgroundTransfer.this.completedTransfer(success);
 					// Double-check that the node is still connected. Pointless to wait otherwise.
 					if (pn.isConnected() && success) {
