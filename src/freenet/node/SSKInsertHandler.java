@@ -131,7 +131,18 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 				if(logMINOR) Logger.minor(this, "Lost connection to source on "+uid);
 				return;
 			}
-			if(msg.getSpec() == DMT.FNPSSKInsertRequestHeaders) {
+			if(msg == null) {
+				Logger.normal(this, "Failed to receive all parts (data="+data+" headers="+headers+" pk="+pubKey+") for "+uid);
+				Message failed = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED);
+				try {
+					source.sendSync(failed, this, realTimeFlag);
+				} catch (NotConnectedException e) {
+					// Ignore
+				} catch (SyncSendWaitedTooLongException e) {
+					// Ignore
+				}
+				return;
+			} else if(msg.getSpec() == DMT.FNPSSKInsertRequestHeaders) {
 				headers = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
 			} else if(msg.getSpec() == DMT.FNPSSKInsertRequestData) {
 				data = ((ShortBuffer)msg.getObject(DMT.DATA)).getData();
@@ -166,17 +177,8 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 					// Ignore.
 				}
 				return;
-			} else { // msg == null
-				Logger.normal(this, "Failed to receive all parts (data="+data+" headers="+headers+" pk="+pubKey+") for "+uid);
-				Message failed = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED);
-				try {
-					source.sendSync(failed, this, realTimeFlag);
-				} catch (NotConnectedException e) {
-					// Ignore
-				} catch (SyncSendWaitedTooLongException e) {
-					// Ignore
-				}
-				return;
+			} else {
+				Logger.error(this, "Unexpected message? "+msg+" on "+this);
 			}
 		}
 		
