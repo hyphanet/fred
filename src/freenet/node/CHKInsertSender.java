@@ -55,6 +55,9 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		/** Have we started the first wait? We start waiting when we have 
 		 * completed the transfer AND received an InsertReply, RNF or similar. */
 		private boolean startedWait;
+		/** Has the background transfer been terminated due to not receiving
+		 * an InsertReply, or due to disconnection etc? */
+		private boolean killed;
 		
 		private final InsertTag thisTag;
 		
@@ -78,7 +81,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 						}
 						startWait();
 					} else {
-						BackgroundTransfer.this.receivedNotice(false, false);
+						BackgroundTransfer.this.receivedNotice(false, false, false);
 						pn.localRejectedOverload("TransferFailedInsert", realTimeFlag);
 					}
 				}
@@ -101,7 +104,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				if(logMINOR)
 					Logger.minor(this, "Disconnected while adding filter");
 				BackgroundTransfer.this.completedTransfer(false);
-				BackgroundTransfer.this.receivedNotice(false, false);
+				BackgroundTransfer.this.receivedNotice(false, false, true);
 			}
 		}
 		
@@ -116,7 +119,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				this.realRun();
 			} catch (Throwable t) {
 				this.completedTransfer(false);
-				this.receivedNotice(false, false);
+				this.receivedNotice(false, false, true);
 				Logger.error(this, "Caught "+t, t);
 			}
 		}
@@ -141,7 +144,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		
 		/** @param timeout Whether this completion is the result of a timeout.
 		 * @return True if we should wait again, false if we have already received a notice or timed out. */
-		private boolean receivedNotice(boolean success, boolean timeout) {
+		private boolean receivedNotice(boolean success, boolean timeout, boolean kill) {
 			if(logMINOR) Logger.minor(this, "Received notice: "+success+(timeout ? " (timeout)" : "")+" on "+this);
 			boolean noUnlockPeer = false;
 			boolean noNotifyOriginator = false;
@@ -150,25 +153,33 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 					Logger.error(this, "Finished waiting already yet receivedNotice("+success+","+timeout+")", new Exception("error"));
 					return false;
 				}
-				if (receivedCompletionNotice) {
-					if(logMINOR) Logger.minor(this, "receivedNotice("+success+"), already had receivedNotice("+completionSucceeded+")");
-					if(timeout) {
-						// Fatal timeout.
-						finishedWaiting = true;
-						noNotifyOriginator = true;
-					}
+				if(killed) {
+					// Do nothing. But do unlock.
+				} else if(kill) {
+					killed = true;
 				} else {
-					completionSucceeded = success;
-					receivedCompletionNotice = true;
-					if(!timeout) // Any completion mode other than a timeout immediately sets finishedWaiting, because we won't wait any longer.
-						finishedWaiting = true;
-					else {
-						// First timeout but not had second timeout yet.
-						// Unlock downstream (below), but will wait here for the peer to fatally timeout.
-						// UIDTag will automatically reassign to self when the time comes if we call handlingTimeout() here, and will avoid unnecessarily logging errors.
-						// LOCKING: Note that it is safe to call the tag within the lock since we always take the UIDTag lock last.
-						thisTag.handlingTimeout(pn);
-						noUnlockPeer = true;
+					if (receivedCompletionNotice) {
+						// Two stage timeout.
+						if(logMINOR) Logger.minor(this, "receivedNotice("+success+"), already had receivedNotice("+completionSucceeded+")");
+						if(timeout) {
+							// Fatal timeout.
+							finishedWaiting = true;
+							noNotifyOriginator = true;
+						}
+					} else {
+						// Normal completion.
+						completionSucceeded = success;
+						receivedCompletionNotice = true;
+						if(!timeout) // Any completion mode other than a timeout immediately sets finishedWaiting, because we won't wait any longer.
+							finishedWaiting = true;
+						else {
+							// First timeout but not had second timeout yet.
+							// Unlock downstream (below), but will wait here for the peer to fatally timeout.
+							// UIDTag will automatically reassign to self when the time comes if we call handlingTimeout() here, and will avoid unnecessarily logging errors.
+							// LOCKING: Note that it is safe to call the tag within the lock since we always take the UIDTag lock last.
+							thisTag.handlingTimeout(pn);
+							noUnlockPeer = true;
+						}
 					}
 				}
 				if(!noNotifyOriginator) {
@@ -200,7 +211,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				if(anyTimedOut) {
 					CHKInsertSender.this.setTransferTimedOut();
 				}
-				receivedNotice(!anyTimedOut, false);
+				receivedNotice(!anyTimedOut, false, false);
 			} else {
 				Logger.error(this, "received completion notice for wrong node: "+pn+" != "+this.pn);
 			}			
@@ -223,7 +234,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			 */
 			// NORMAL priority because it is normally caused by a transfer taking too long downstream, and that doesn't usually indicate a bug.
 			Logger.normal(this, "Timed out waiting for a final ack from: "+pn+" on "+this, new Exception("debug"));
-			if(receivedNotice(false, true)) {
+			if(receivedNotice(false, true, false)) {
 				pn.localRejectedOverload("InsertTimeoutNoFinalAck", realTimeFlag);
 				// First timeout. Wait for second timeout.
 				try {
@@ -243,14 +254,14 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		@Override
 		public void onDisconnect(PeerContext ctx) {
 			Logger.normal(this, "Disconnected "+ctx+" for "+this);
-			receivedNotice(true, false); // as far as we know
+			receivedNotice(true, false, true); // as far as we know
 			pn.noLongerRoutingTo(thisTag, false);
 		}
 
 		@Override
 		public void onRestarted(PeerContext ctx) {
 			Logger.normal(this, "Restarted "+ctx+" for "+this);
-			receivedNotice(true, false);
+			receivedNotice(true, false, true);
 			pn.noLongerRoutingTo(thisTag, false);
 		}
 
@@ -281,7 +292,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		/** Called when we get a failure, e.g. DataInsertRejected. */
 		public void kill() {
 			Logger.normal(this, "Killed "+this);
-			receivedNotice(false, false); // as far as we know
+			receivedNotice(false, false, true); // as far as we know
 			pn.noLongerRoutingTo(thisTag, false);
 		}
 	}
