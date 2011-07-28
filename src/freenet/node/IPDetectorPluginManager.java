@@ -210,11 +210,20 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			div.addChild("#", super.getText());
 			if(suggestPortForward) {
 				if(portsNotForwarded.length == 1) {
-					NodeL10n.getBase().addL10nSubstitution(div, "IPDetectorPluginManager.suggestForwardPortWithLink", new String[] { "link", "port" },
-							new HTMLNode[] { HTMLNode.link("/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues"), HTMLNode.text(portsNotForwarded[0])});
+					NodeL10n.getBase().addL10nSubstitution(div,
+					        "IPDetectorPluginManager.suggestForwardPortWithLink",
+					        new String[] { "link", "port" },
+					        new HTMLNode[] { HTMLNode.link(GenericReadFilterCallback.escapeURL(
+					                "http://wiki.freenetproject.org/FirewallAndRouterIssues")),
+					                HTMLNode.text(portsNotForwarded[0])});
 				} else {
-					NodeL10n.getBase().addL10nSubstitution(div, "IPDetectorPluginManager.suggestForwardTwoPortsWithLink", new String[] { "link", "port1", "port2" },
-							new HTMLNode[] { HTMLNode.link("/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues"), HTMLNode.text(portsNotForwarded[0]), HTMLNode.text(portsNotForwarded[1]) });
+					NodeL10n.getBase().addL10nSubstitution(div,
+					        "IPDetectorPluginManager.suggestForwardTwoPortsWithLink",
+					        new String[] { "link", "port1", "port2" },
+					        new HTMLNode[] { HTMLNode.link(GenericReadFilterCallback.escapeURL(
+					                "http://wiki.freenetproject.org/FirewallAndRouterIssues")),
+					                HTMLNode.text(portsNotForwarded[0]),
+					                HTMLNode.text(portsNotForwarded[1]) });
 				}
 			}
 			return div;

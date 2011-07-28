@@ -11,6 +11,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+
+import freenet.client.filter.GenericReadFilterCallback;
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.BlockCipher;
 import freenet.crypt.DSA;
@@ -3007,9 +3009,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			synchronized(peersWithProblems) {
 				peers = peersWithProblems.toArray(new Peer[peersWithProblems.size()]);
 			}
-			NodeL10n.getBase().addL10nSubstitution(div, "FNPPacketMangler.somePeersDisconnectedStillNotAckedDetail",
-					new String[] { "count", "link" },
-					new HTMLNode[] { HTMLNode.text(peers.length), HTMLNode.link("/?_CHECKED_HTTP_=https://bugs.freenetproject.org/view.php?id=2692") });
+			NodeL10n.getBase().addL10nSubstitution(div,
+			        "FNPPacketMangler.somePeersDisconnectedStillNotAckedDetail",
+			        new String[] { "count", "link" },
+			        new HTMLNode[] { HTMLNode.text(peers.length),
+			                HTMLNode.link(GenericReadFilterCallback.escapeURL("https://bugs.freenetproject.org/view.php?id=2692")) });
 			HTMLNode list = div.addChild("ul");
 			for(Peer peer : peers) {
 				list.addChild("li", peer.toString());
