@@ -337,7 +337,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 
 								@Override
 								public void onMatched(Message m) {
-									// Cool.
+									// They timed out when they didn't get our DataInsert. This is okay.
 									next.noLongerRoutingTo(tag, false);
 								}
 

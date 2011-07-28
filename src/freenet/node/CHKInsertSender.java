@@ -621,7 +621,8 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 
 								@Override
 								public void onMatched(Message m) {
-									// Cool.
+									// They timed out when they didn't get our DataInsert. This is okay.
+									next.noLongerRoutingTo(tag, false);
 								}
 
 								@Override
