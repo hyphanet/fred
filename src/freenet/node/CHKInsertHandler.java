@@ -386,15 +386,45 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
      */
     private void finish(int code) {
     	if(logMINOR) Logger.minor(this, "Waiting for receive");
+    	boolean routingTookTooLong = false;
+    	int transferTimeout = realTimeFlag ?
+    			CHKInsertSender.TRANSFER_COMPLETION_ACK_TIMEOUT_REALTIME :
+    				CHKInsertSender.TRANSFER_COMPLETION_ACK_TIMEOUT_BULK;
 		synchronized(this) {
+			long startedTime = System.currentTimeMillis();
 			while(receiveStarted && !receiveCompleted) {
 				try {
-					wait(100*1000);
+					int t = (int)Math.min(Integer.MAX_VALUE, startedTime + transferTimeout - System.currentTimeMillis());
+					if(t > 0) wait(t);
+					else {
+						routingTookTooLong = true;
+						break;
+					}
 				} catch (InterruptedException e) {
 					// Ignore
 				}
 			}
     	}
+		
+		if(routingTookTooLong) {
+			tag.reassignToSelf(); // FIXME treat as source restarted? See also RequestSender similar code.
+        	try {
+				source.sendAsync(DMT.createFNPInsertTransfersCompleted(uid, true), null, this);
+			} catch (NotConnectedException e) {
+				// Ignore.
+			}
+			
+			Logger.error(this, "Insert took too long, telling downstream that it's finished and reassigning to self.");
+			synchronized(this) {
+				while(receiveStarted && !receiveCompleted) {
+					try {
+						wait();
+					} catch (InterruptedException e) {
+						// Ignore
+					}
+				}
+			}
+		}
 		
 		CHKBlock block = verify();
 		// If we wanted to reduce latency at the cost of security (bug 3338), we'd commit here, or even on the receiver thread.
@@ -447,6 +477,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 		// which will cause unnecessary rejects and thus mandatory backoff.
     	tag.unlockHandler();
         
+    	if(!routingTookTooLong) {
         	try {
         		// We do need to sendSync here so we have accurate byte counter totals.
         		source.sendSync(m, this, realTimeFlag);
@@ -458,6 +489,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         		Logger.error(this, "Took too long to send "+m+" to "+source);
         		// May need to commit anyway...
 			}
+    	}
 		        
         if(code != CHKInsertSender.TIMED_OUT && code != CHKInsertSender.GENERATED_REJECTED_OVERLOAD && 
         		code != CHKInsertSender.INTERNAL_ERROR && code != CHKInsertSender.ROUTE_REALLY_NOT_FOUND &&
