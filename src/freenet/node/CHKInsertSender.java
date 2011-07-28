@@ -98,7 +98,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			//synch-version: this.receivedNotice(waitForReceivedNotification(this));
 			//Add ourselves as a listener for the longterm completion message of this transfer, then gracefully exit.
 			try {
-				node.usm.addAsyncFilter(getNotificationMessageFilter(), BackgroundTransfer.this, null);
+				node.usm.addAsyncFilter(getNotificationMessageFilter(false), BackgroundTransfer.this, null);
 			} catch (DisconnectedException e) {
 				// Normal
 				if(logMINOR)
@@ -223,8 +223,8 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			return finishedWaiting;
 		}
 		
-		private MessageFilter getNotificationMessageFilter() {
-			return MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPInsertTransfersCompleted).setSource(pn).setTimeout(transferCompletionTimeout);
+		private MessageFilter getNotificationMessageFilter(boolean longTimeoutAnyway) {
+			return MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPInsertTransfersCompleted).setSource(pn).setTimeout(longTimeoutAnyway ? TRANSFER_COMPLETION_ACK_TIMEOUT_BULK : transferCompletionTimeout);
 		}
 
 		@Override
@@ -238,7 +238,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				pn.localRejectedOverload("InsertTimeoutNoFinalAck", realTimeFlag);
 				// First timeout. Wait for second timeout.
 				try {
-					node.usm.addAsyncFilter(getNotificationMessageFilter(), this, CHKInsertSender.this);
+					node.usm.addAsyncFilter(getNotificationMessageFilter(true), this, CHKInsertSender.this);
 				} catch (DisconnectedException e) {
 					// Normal
 					if(logMINOR)
