@@ -49,6 +49,13 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		/** Did it succeed? */
 		boolean transferSucceeded;
 		
+		/** Do we have the InsertReply, RNF or similar completion? If not,
+		 * there is no point starting to wait for a timeout. */
+		boolean gotInsertReply;
+		/** Have we started the first wait? We start waiting when we have 
+		 * completed the transfer AND received an InsertReply, RNF or similar. */
+		private boolean startedWait;
+		
 		private final InsertTag thisTag;
 		
 		BackgroundTransfer(final PeerNode pn, PartiallyReceivedBlock prb, InsertTag thisTag) {
@@ -62,18 +69,13 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				public void blockTransferFinished(boolean success) {
 					BackgroundTransfer.this.completedTransfer(success);
 					// Double-check that the node is still connected. Pointless to wait otherwise.
-					if (pn.isConnected() && transferSucceeded) {
-						//synch-version: this.receivedNotice(waitForReceivedNotification(this));
-						//Add ourselves as a listener for the longterm completion message of this transfer, then gracefully exit.
-						try {
-							node.usm.addAsyncFilter(getNotificationMessageFilter(), BackgroundTransfer.this, null);
-						} catch (DisconnectedException e) {
-							// Normal
-							if(logMINOR)
-								Logger.minor(this, "Disconnected while adding filter");
-							BackgroundTransfer.this.completedTransfer(false);
-							BackgroundTransfer.this.receivedNotice(false, false);
+					if (pn.isConnected() && success) {
+						synchronized(backgroundTransfers) {
+							if(!gotInsertReply) return;
+							if(startedWait) return;
+							startedWait = true;
 						}
+						startWait();
 					} else {
 						BackgroundTransfer.this.receivedNotice(false, false);
 						pn.localRejectedOverload("TransferFailedInsert", realTimeFlag);
@@ -81,6 +83,24 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				}
 				
 			}, realTimeFlag, node.nodeStats);
+		}
+		
+		/** Start waiting for an acknowledgement or timeout. Caller must ensure
+		 * that the transfer has succeeded and we have received an RNF, InsertReply
+		 * or other valid completion. The timeout is relative to that, since up
+		 * to that point we could still be routing. */
+		private void startWait() {
+			//synch-version: this.receivedNotice(waitForReceivedNotification(this));
+			//Add ourselves as a listener for the longterm completion message of this transfer, then gracefully exit.
+			try {
+				node.usm.addAsyncFilter(getNotificationMessageFilter(), BackgroundTransfer.this, null);
+			} catch (DisconnectedException e) {
+				// Normal
+				if(logMINOR)
+					Logger.minor(this, "Disconnected while adding filter");
+				BackgroundTransfer.this.completedTransfer(false);
+				BackgroundTransfer.this.receivedNotice(false, false);
+			}
 		}
 		
 		void start() {
@@ -152,6 +172,8 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				if(!noNotifyOriginator) {
 					backgroundTransfers.notifyAll();
 				}
+				if(!noUnlockPeer)
+					startedWait = true; // Prevent further wait's.
 			}
 			if((!noNotifyOriginator) && (!success)) {
 				setTransferTimedOut();
@@ -238,6 +260,27 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		@Override
 		public String toString() {
 			return super.toString()+":"+uid+":"+pn;
+		}
+
+		/** Called when we have received an InsertReply, RouteNotFound or other
+		 * successful or quasi-successful completion to routing. */
+		public void onCompleted() {
+			synchronized(backgroundTransfers) {
+				if(finishedWaiting) return;
+				if(!completedTransfer) return;
+				if(gotInsertReply) return;
+				gotInsertReply = true;
+				if(startedWait) return;
+				startedWait = true;
+			}
+			startWait();
+		}
+
+		/** Called when we get a failure, e.g. DataInsertRejected. */
+		public void kill() {
+			Logger.normal(this, "Killed "+this);
+			receivedNotice(false, false); // as far as we know
+			pn.noLongerRoutingTo(thisTag, false);
 		}
 	}
 	
@@ -681,13 +724,14 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		}
 	}
 
-	private void startBackgroundTransfer(PeerNode node, PartiallyReceivedBlock prb, InsertTag tag) {
+	private BackgroundTransfer startBackgroundTransfer(PeerNode node, PartiallyReceivedBlock prb, InsertTag tag) {
 		BackgroundTransfer ac = new BackgroundTransfer(node, prb, tag);
 		synchronized(backgroundTransfers) {
 			backgroundTransfers.add(ac);
 			backgroundTransfers.notifyAll();
 		}
 		ac.start();
+		return ac;
 	}
 	
 	private boolean hasForwardedRejectedOverload;
@@ -1117,7 +1161,8 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		}
 
 		if(logMINOR) Logger.minor(this, "Sending data");
-		startBackgroundTransfer(next, prb, thisTag);
+		final BackgroundTransfer transfer = 
+			startBackgroundTransfer(next, prb, thisTag);
 		
 		// Once the transfer has started, we only unlock the tag after the transfer completes (successfully or not).
 		
@@ -1127,6 +1172,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
         	
 			if(failIfReceiveFailed(thisTag, next)) {
 				// The transfer has started, it will be cancelled.
+				transfer.onCompleted();
 				return;
 			}
 			
@@ -1135,10 +1181,12 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			} catch (DisconnectedException e) {
 				Logger.normal(this, "Disconnected from " + next
 						+ " while waiting for InsertReply on " + this);
+				transfer.onDisconnect(next);
 				break;
 			}
 			if(failIfReceiveFailed(thisTag, next)) {
 				// The transfer has started, it will be cancelled.
+				transfer.onCompleted();
 				return;
 			}
 			
@@ -1182,22 +1230,30 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			            	
 			            	Message msg;
 
-			    			if(failIfReceiveFailed(tag, waitingFor)) return;
+			    			if(failIfReceiveFailed(tag, waitingFor)) {
+			    				transfer.onCompleted();
+			    				return;
+			    			}
 							
 							try {
 								msg = node.usm.waitFor(mf, CHKInsertSender.this);
 							} catch (DisconnectedException e) {
 								Logger.normal(this, "Disconnected from " + waitingFor
 										+ " while waiting for InsertReply on " + CHKInsertSender.this);
+								transfer.onDisconnect(waitingFor);
 								return;
 							}
 							
-			    			if(failIfReceiveFailed(tag, waitingFor)) return;
+			    			if(failIfReceiveFailed(tag, waitingFor)) {
+			    				transfer.onCompleted();
+			    				return;
+			    			}
 							
 							if(msg == null) {
 								// Second timeout.
 								// Definitely caused by the next node, fatal.
 								Logger.error(this, "Got second (local) timeout on "+CHKInsertSender.this+" from "+waitingFor);
+			    				transfer.onCompleted();
 								waitingFor.fatalTimeout();
 								return;
 							}
@@ -1206,33 +1262,39 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 								// Next node timed out awaiting our DataInsert.
 								// But we already sent it, so something is wrong. :(
 								handleRejectedTimeout(msg, waitingFor);
+								transfer.kill();
 								return;
 							}
 
 							if (msg.getSpec() == DMT.FNPRejectedOverload) {
 								if(handleRejectedOverload(msg, waitingFor, tag)) {
 									// Already set the status, and handle... will have unlocked the next node, so no need to call finished().
+									transfer.onCompleted();
 									return; // Don't try another node.
 								}
 								else continue;
 							}
 
 							if (msg.getSpec() == DMT.FNPRouteNotFound) {
+								transfer.onCompleted();
 								return; // Don't try another node.
 							}
 							
 							if (msg.getSpec() == DMT.FNPDataInsertRejected) {
 								handleDataInsertRejected(msg, waitingFor, tag);
+								transfer.kill();
 								return; // Don't try another node.
 							}
 							
 							if (msg.getSpec() != DMT.FNPInsertReply) {
 								Logger.error(this, "Unknown reply: " + msg);
+								transfer.onCompleted();
 								return;
 							} else {
 								// Our task is complete, one node (quite deep), has accepted the insert.
 								// The request will not be routed to any other nodes, this is where the data *should* be.
 								// We will removeRoutingTo() after the node has sent the transfer completion notice, which never happens before the InsertReply.
+								transfer.onCompleted();
 								return;
 							}
 			            }
@@ -1252,32 +1314,40 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			if (msg.getSpec() == DMT.FNPRejectedTimeout) {
 				// Next node timed out awaiting our DataInsert.
 				// But we already sent it, so something is wrong. :(
+				transfer.kill();
 				handleRejectedTimeout(msg, next);
 				return;
 			}
 
 			if (msg.getSpec() == DMT.FNPRejectedOverload) {
-				if(handleRejectedOverload(msg, next, thisTag)) break;
+				if(handleRejectedOverload(msg, next, thisTag)) {
+					transfer.kill();
+					break;
+				}
 				else continue;
 			}
 
 			if (msg.getSpec() == DMT.FNPRouteNotFound) {
 				//RNF means that the HTL was not exhausted, but that the data will still be stored.
 				handleRNF(msg, next, thisTag);
+				transfer.onCompleted();
 				break;
 			}
 
 			//Can occur after reception of the entire chk block
 			if (msg.getSpec() == DMT.FNPDataInsertRejected) {
 				handleDataInsertRejected(msg, next, thisTag);
+				transfer.kill();
 				break;
 			}
 			
 			if (msg.getSpec() != DMT.FNPInsertReply) {
 				Logger.error(this, "Unknown reply: " + msg);
+				transfer.onCompleted();
 				finish(INTERNAL_ERROR, next);
 				return;
 			} else {
+				transfer.onCompleted();
 				// Our task is complete, one node (quite deep), has accepted the insert.
 				// The request will not be routed to any other nodes, this is where the data *should* be.
 				// We will removeRoutingTo() after the node has sent the transfer completion notice, which never happens before the InsertReply.
