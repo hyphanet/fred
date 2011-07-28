@@ -326,6 +326,8 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 						next.noLongerRoutingTo(tag, false);
 					} else {
 						assert(m.getSpec() == DMT.FNPSSKAccepted);
+						if(logMINOR)
+							Logger.minor(this, "Accepted after timeout on "+SSKInsertSender.this+" - will not send DataInsert, waiting for RejectedTimeout");
 						if(logMINOR) Logger.minor(this, "Forked timed out insert but not going to send DataInsert on "+SSKInsertSender.this+" to "+next);
 						// We are not going to send the DataInsert.
 						// We have moved on, and we don't want inserts to fork unnecessarily.

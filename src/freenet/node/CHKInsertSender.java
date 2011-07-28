@@ -611,6 +611,8 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 						next.noLongerRoutingTo(tag, false);
 					} else {
 						assert(m.getSpec() == DMT.FNPAccepted);
+						if(logMINOR)
+							Logger.minor(this, "Accepted after timeout on "+CHKInsertSender.this+" - will not send DataInsert, waiting for RejectedTimeout");
 						// We are not going to send the DataInsert.
 						// We have moved on, and we don't want inserts to fork unnecessarily.
 			            MessageFilter mfTimeout = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRejectedTimeout);
