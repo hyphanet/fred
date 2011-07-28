@@ -271,7 +271,6 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     	
     	PeerNode next = null;
     	
-        peerLoop:
         while(true) {
             boolean canWriteStorePrev = node.canWriteDatastoreInsert(htl);
             if(dontDecrementHTLThisTime) {

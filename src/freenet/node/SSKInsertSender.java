@@ -3,12 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import java.util.HashSet;
-
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
 import freenet.io.comm.AsyncMessageCallback;
-import freenet.io.comm.AsyncMessageFilterCallback;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
@@ -25,7 +22,6 @@ import freenet.keys.SSKVerifyException;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.ShortBuffer;
-import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 /**

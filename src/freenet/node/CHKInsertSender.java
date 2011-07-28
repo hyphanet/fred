@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import java.util.HashSet;
 import java.util.Vector;
 
 import freenet.io.comm.AsyncMessageCallback;
@@ -25,7 +24,6 @@ import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
-import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 public final class CHKInsertSender extends BaseSender implements PrioRunnable, AnyInsertSender, ByteCounter {
@@ -337,10 +335,6 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
     @Override
     public void run() {
 	    freenet.support.Logger.OSThread.logPID(this);
-        short origHTL;
-    	synchronized (this) {
-            origHTL = htl;
-		}
     	origTag.startedSender();
         try {
         	routeRequests();
