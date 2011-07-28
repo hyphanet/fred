@@ -27,7 +27,6 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.HTTPRequest;
 
 public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
-	public static final String magicHTTPEscapeString = "_CHECKED_HTTP_";
 	public static final HashSet<String> allowedProtocols;
 	
 	static {
@@ -247,7 +246,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		if(forBaseHref)
 			throw new CommentException(l10n("bogusBaseHref"));
 		if(GenericReadFilterCallback.allowedProtocols.contains(uri.getScheme()))
-			return "/?"+GenericReadFilterCallback.magicHTTPEscapeString+ '=' +uri;
+			return "/?"+ExternalLinkToadlet.magicHTTPEscapeString+ '=' +uri;
 		else {
 			if(uri.getScheme() == null) {
 				throw new CommentException(reason);
@@ -443,9 +442,4 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 			return null;
 		}
 	}
-
-	public static String escapeURL(String uri) {
-		return ExternalLinkToadlet.PATH+"?" + magicHTTPEscapeString + '=' + uri;
-	}
-	
 }

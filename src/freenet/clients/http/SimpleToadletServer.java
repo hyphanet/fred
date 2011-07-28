@@ -13,7 +13,6 @@ import java.net.URISyntaxException;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import freenet.client.filter.GenericReadFilterCallback;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.filter.HTMLFilter;

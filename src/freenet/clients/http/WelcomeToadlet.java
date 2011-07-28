@@ -9,14 +9,12 @@ import java.net.URI;
 import java.util.HashSet;
 import java.util.List;
 
-import freenet.config.Config;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.ClientMetadata;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertException;
-import freenet.client.filter.GenericReadFilterCallback;
 import freenet.clients.http.bookmark.BookmarkCategory;
 import freenet.clients.http.bookmark.BookmarkItem;
 import freenet.clients.http.bookmark.BookmarkManager;

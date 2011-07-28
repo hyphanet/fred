@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Vector;
 
-import freenet.client.filter.GenericReadFilterCallback;
+import freenet.clients.http.ExternalLinkToadlet;
 import freenet.io.comm.Peer;
 import freenet.l10n.NodeL10n;
 import freenet.node.useralerts.AbstractUserAlert;
@@ -555,7 +555,7 @@ public class PacketSender implements Runnable {
 			        "PacketSender.somePeersDisconnectedBlockedTooLongDetail",
 			        new String[] { "count", "link" },
 			        new HTMLNode[] { HTMLNode.text(peers.length),
-			                HTMLNode.link(GenericReadFilterCallback.escapeURL("https://bugs.freenetproject.org/"))});
+			                HTMLNode.link(ExternalLinkToadlet.escape("https://bugs.freenetproject.org/"))});
 			HTMLNode list = div.addChild("ul");
 			for(Peer peer : peers) {
 				list.addChild("li", peer.toString());

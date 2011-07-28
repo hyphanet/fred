@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.client.filter.GenericReadFilterCallback;
 import freenet.l10n.NodeL10n;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.support.HTMLNode;
@@ -35,7 +34,7 @@ public class InsertFreesiteToadlet extends Toadlet {
 		
 		NodeL10n.getBase().addL10nSubstitution(contentBox.addChild("p"), "InsertFreesiteToadlet.content2",
 		        new String[] { "jsite-http", "jsite-freenet", "jsite-freenet-version", "jsite-info" },
-		        new HTMLNode[] { HTMLNode.link(GenericReadFilterCallback.escapeURL("http://downloads.freenetproject.org/alpha/jSite/")),
+		        new HTMLNode[] { HTMLNode.link(ExternalLinkToadlet.escape("http://downloads.freenetproject.org/alpha/jSite/")),
 		                HTMLNode.link("/CHK@2gVK8i-oJ9bqmXOZfkRN1hqgveSUrOdzSxtkndMbLu8,OPKeK9ySG7RcKXadzNN4npe8KSDb9EbGXSiH1Me~6rQ,AAIC--8/jSite.jar"),
 		                HTMLNode.text("0.6.2"), HTMLNode.link("/SSK@ugb~uuscsidMI-Ze8laZe~o3BUIb3S50i25RIwDH99M,9T20t3xoG-dQfMO94LGOl9AxRTkaz~TykFY-voqaTQI,AQACAAE/FAFS-49/files/jsite.htm"),
 		        });
@@ -50,7 +49,7 @@ public class InsertFreesiteToadlet extends Toadlet {
 		
 		NodeL10n.getBase().addL10nSubstitution(contentBox.addChild("p"), "InsertFreesiteToadlet.contentThingamablog",
 		        new String[] { "thingamablog", "thingamablog-freenet" },
-		        new HTMLNode[] { HTMLNode.link(GenericReadFilterCallback.escapeURL("http://downloads.freenetproject.org/alpha/thingamablog/thingamablog.zip")),
+		        new HTMLNode[] { HTMLNode.link(ExternalLinkToadlet.escape("http://downloads.freenetproject.org/alpha/thingamablog/thingamablog.zip")),
 		                HTMLNode.link("/CHK@o8j9T2Ghc9cfKMLvv9aLrHbvW5XiAMEGwGDqH2UANTk,sVxLdxoNL-UAsvrlXRZtI5KyKlp0zv3Ysk4EcO627V0,AAIC--8/thingamablog.zip") });
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());

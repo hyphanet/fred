@@ -1,10 +1,6 @@
 package freenet.clients.http;
 
-import java.io.IOException;
-import java.net.URI;
-
 import freenet.client.HighLevelSimpleClient;
-import freenet.client.filter.GenericReadFilterCallback;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.useralerts.UserAlertManager;
@@ -12,6 +8,9 @@ import freenet.pluginmanager.PluginManager;
 import freenet.support.HTMLNode;
 import freenet.support.MultiValueTable;
 import freenet.support.api.HTTPRequest;
+
+import java.io.IOException;
+import java.net.URI;
 
 public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 
@@ -51,7 +50,7 @@ public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 		        new String[] { "frost-freenet", "frost-web", "frost-help" },
 		                new HTMLNode[] {
 			                HTMLNode.link("/freenet:USK@QRZAI1nSm~dAY2hTdzVWXmEhkaI~dso0OadnppBR7kE,wq5rHGBI7kpChBe4yRmgBChIGDug7Xa5SG9vYGXdxR0,AQACAAE/frost/9/"),
-			                HTMLNode.link(GenericReadFilterCallback.escapeURL("http://jtcfrost.sourceforge.net/")),
+			                HTMLNode.link(ExternalLinkToadlet.escape("http://jtcfrost.sourceforge.net/")),
 			                HTMLNode.link("/SSK@ugb~uuscsidMI-Ze8laZe~o3BUIb3S50i25RIwDH99M,9T20t3xoG-dQfMO94LGOl9AxRTkaz~TykFY-voqaTQI,AQACAAE/FAFS-49/files/frost.htm")});
 		contentBox.addChild("p", l10n("content2"));
 		

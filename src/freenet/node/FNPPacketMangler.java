@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 
-import freenet.client.filter.GenericReadFilterCallback;
+import freenet.clients.http.ExternalLinkToadlet;
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.BlockCipher;
 import freenet.crypt.DSA;
@@ -469,7 +469,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 * @param offset The offset at which to start reading
 	 * @param length The number of bytes to read
 	 * @param peer The Peer to send a reply to
-	 * @param now The time at which the packet was received
 	 * @return True if we handled a negotiation packet, false otherwise.
 	 */
 	private boolean tryProcessAuthAnon(byte[] buf, int offset, int length, Peer peer) {
@@ -3013,7 +3012,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			        "FNPPacketMangler.somePeersDisconnectedStillNotAckedDetail",
 			        new String[] { "count", "link" },
 			        new HTMLNode[] { HTMLNode.text(peers.length),
-			                HTMLNode.link(GenericReadFilterCallback.escapeURL("https://bugs.freenetproject.org/view.php?id=2692")) });
+			                HTMLNode.link(ExternalLinkToadlet.escape("https://bugs.freenetproject.org/view.php?id=2692")) });
 			HTMLNode list = div.addChild("ul");
 			for(Peer peer : peers) {
 				list.addChild("li", peer.toString());
