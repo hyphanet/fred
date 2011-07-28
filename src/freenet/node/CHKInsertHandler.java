@@ -146,7 +146,11 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         }
         
         if(msg.getSpec() == DMT.FNPDataInsertRejected) {
-        	// Not caused by the immediately upstream node.
+        	try {
+				source.sendAsync(DMT.createFNPDataInsertRejected(uid, msg.getShort(DMT.DATA_INSERT_REJECTED_REASON)), null, this);
+			} catch (NotConnectedException e) {
+				// Ignore.
+			}
         	return;
         }
         
