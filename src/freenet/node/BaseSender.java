@@ -573,7 +573,7 @@ loadWaiterLoop:
     		
     		Message msg;
     		
-    		MessageFilter mf = makeAcceptedRejectedFilter(next, getAcceptedTimeout());
+    		MessageFilter mf = makeAcceptedRejectedFilter(next, getAcceptedTimeout(), origTag);
     		
     		try {
     			msg = node.usm.waitFor(mf, this);
@@ -689,8 +689,16 @@ loadWaiterLoop:
     	NEXT_PEER
     }
 
+	/** Construct a filter to wait the specified time for accepted or rejected.
+	 * The actual messages may vary.
+	 * @param next The peer we are waiting for a response from.
+	 * @param acceptedTimeout The time to wait.
+	 * @param tag Use the UID from this tag. Some requests may change the tag
+	 * after some hops, and if e.g. waiting for confirmation after a timeout,
+	 * we need to use the old tag.
+	 */
 	protected abstract MessageFilter makeAcceptedRejectedFilter(PeerNode next,
-			int acceptedTimeout);
+			int acceptedTimeout, UIDTag tag);
 	
 	protected abstract void forwardRejectedOverload();
 	

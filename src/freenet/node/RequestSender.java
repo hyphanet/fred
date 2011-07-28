@@ -923,8 +923,10 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		}
 	}
 
+	@Override
 	protected MessageFilter makeAcceptedRejectedFilter(PeerNode next,
-			int acceptedTimeout) {
+			int acceptedTimeout, UIDTag tag) {
+		assert(tag == origTag);
 		/**
 		 * What are we waiting for?
 		 * FNPAccepted - continue
@@ -2079,7 +2081,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		
 		int timeout = 60*1000;
 		
-		MessageFilter mf = makeAcceptedRejectedFilter(next, timeout);
+		MessageFilter mf = makeAcceptedRejectedFilter(next, timeout, origTag);
 		try {
 			node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
 

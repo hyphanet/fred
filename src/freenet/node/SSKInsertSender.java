@@ -308,10 +308,12 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 		// This is a WARNING not an ERROR because it's possible that the problem is we simply haven't been able to send the message yet, because we don't use sendSync().
 		// FIXME use a callback to rule this out and log an ERROR.
 		Logger.warning(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
+		// Use the right UID here, in case we fork.
+		final long uid = tag.uid;
 		// The node didn't accept the request. So we don't need to send them the data.
 		// However, we do need to wait a bit longer to try to postpone the fatalTimeout().
 		// Somewhat intricate logic to try to avoid fatalTimeout() if at all possible.
-		MessageFilter mf = makeAcceptedRejectedFilter(next, TIMEOUT_AFTER_ACCEPTEDREJECTED_TIMEOUT);
+		MessageFilter mf = makeAcceptedRejectedFilter(next, TIMEOUT_AFTER_ACCEPTEDREJECTED_TIMEOUT, tag);
 		try {
 			node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
 
@@ -504,7 +506,9 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 
 	@Override
 	protected MessageFilter makeAcceptedRejectedFilter(PeerNode next,
-			int acceptedTimeout) {
+			int acceptedTimeout, UIDTag tag) {
+		// Use the right UID here, in case we fork.
+		final long uid = tag.uid;
         /*
          * Because messages may be re-ordered, it is
          * entirely possible that we get a non-local RejectedOverload,
