@@ -264,7 +264,6 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
         	searchTimeout = SEARCH_TIMEOUT_BULK;
         	transferCompletionTimeout = TRANSFER_COMPLETION_ACK_TIMEOUT_BULK;
         }
-        logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
     }
 
 	void start() {
@@ -272,6 +271,11 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 	}
 
 	static boolean logMINOR;
+	static boolean logDEBUG;
+	
+	static {
+		Logger.registerClass(CHKInsertSender.class);
+	}
 	
     // Constants
     static final int ACCEPTED_TIMEOUT = 10000;
@@ -623,20 +627,24 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 								@Override
 								public void sent() {
 									// Ignore.
+									if(logDEBUG) Logger.debug(this, "DataInsertRejected sent after accepted timeout on "+CHKInsertSender.this);
 								}
 
 								@Override
 								public void acknowledged() {
+									if(logDEBUG) Logger.debug(this, "DataInsertRejected acknowledged after accepted timeout on "+CHKInsertSender.this);
 									next.noLongerRoutingTo(tag, false);
 								}
 
 								@Override
 								public void disconnected() {
+									if(logDEBUG) Logger.debug(this, "DataInsertRejected peer disconnected after accepted timeout on "+CHKInsertSender.this);
 									next.noLongerRoutingTo(tag, false);
 								}
 
 								@Override
 								public void fatalError() {
+									if(logDEBUG) Logger.debug(this, "DataInsertRejected fatal error after accepted timeout on "+CHKInsertSender.this);
 									next.noLongerRoutingTo(tag, false);
 								}
 								
