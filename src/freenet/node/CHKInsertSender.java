@@ -6,6 +6,7 @@ package freenet.node;
 import java.util.HashSet;
 import java.util.Vector;
 
+import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.AsyncMessageFilterCallback;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
@@ -615,40 +616,32 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 							Logger.minor(this, "Accepted after timeout on "+CHKInsertSender.this+" - will not send DataInsert, waiting for RejectedTimeout");
 						// We are not going to send the DataInsert.
 						// We have moved on, and we don't want inserts to fork unnecessarily.
-			            MessageFilter mfTimeout = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRejectedTimeout);
-			            try {
-							node.usm.addAsyncFilter(mfTimeout, new AsyncMessageFilterCallback() {
+						// However, we need to send a DataInsertRejected, or two-stage timeout will happen.
+						try {
+							next.sendAsync(DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_TIMEOUT_WAITING_FOR_ACCEPTED), new AsyncMessageCallback() {
 
 								@Override
-								public void onMatched(Message m) {
-									// They timed out when they didn't get our DataInsert. This is okay.
+								public void sent() {
+									// Ignore.
+								}
+
+								@Override
+								public void acknowledged() {
 									next.noLongerRoutingTo(tag, false);
 								}
 
 								@Override
-								public boolean shouldTimeout() {
-									return false;
-								}
-
-								@Override
-								public void onTimeout() {
-									// Grrr!
-									Logger.error(this, "Timed out awaiting FNPRejectedTimeout on insert to "+next);
-									next.fatalTimeout(tag, false);
-								}
-
-								@Override
-								public void onDisconnect(PeerContext ctx) {
+								public void disconnected() {
 									next.noLongerRoutingTo(tag, false);
 								}
 
 								@Override
-								public void onRestarted(PeerContext ctx) {
+								public void fatalError() {
 									next.noLongerRoutingTo(tag, false);
 								}
 								
 							}, CHKInsertSender.this);
-						} catch (DisconnectedException e) {
+						} catch (NotConnectedException e) {
 							next.noLongerRoutingTo(tag, false);
 						}
 					}

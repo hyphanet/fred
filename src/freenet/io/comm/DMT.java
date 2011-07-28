@@ -616,6 +616,7 @@ public class DMT {
 	public static final short DATA_INSERT_REJECTED_VERIFY_FAILED = 1;
 	public static final short DATA_INSERT_REJECTED_RECEIVE_FAILED = 2;
 	public static final short DATA_INSERT_REJECTED_SSK_ERROR = 3;
+	public static final short DATA_INSERT_REJECTED_TIMEOUT_WAITING_FOR_ACCEPTED = 4;
 	
 	public static final String getDataInsertRejectedReason(short reason) {
 		if(reason == DATA_INSERT_REJECTED_VERIFY_FAILED)
@@ -624,6 +625,8 @@ public class DMT {
 			return "Receive failed";
 		else if(reason == DATA_INSERT_REJECTED_SSK_ERROR)
 			return "SSK error";
+		else if(reason == DATA_INSERT_REJECTED_TIMEOUT_WAITING_FOR_ACCEPTED)
+			return "Timeout waiting for Accepted (moved on)";
 		return "Unknown reason code: "+reason;
 	}
 
