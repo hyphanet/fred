@@ -109,7 +109,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 			return;
 		}
 		
-		while(true) {
+		while(headers == null || data == null || pubKey == null) {
 			MessageFilter mfDataInsertRejected = MessageFilter.create().setType(DMT.FNPDataInsertRejected).setField(DMT.UID, uid).setSource(source).setTimeout(DATA_INSERT_TIMEOUT);
 			MessageFilter mf = mfDataInsertRejected;
 			if(headers == null) {
@@ -124,7 +124,6 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 				MessageFilter m = MessageFilter.create().setType(DMT.FNPSSKPubKey).setField(DMT.UID, uid).setSource(source).setTimeout(PUBKEY_TIMEOUT);
 				m = m.or(mf);
 			}
-			if(headers != null && data != null && pubKey != null) break;
 			Message msg;
 			try {
 				msg = node.usm.waitFor(mf, this);
