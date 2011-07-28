@@ -67,6 +67,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 
 				@Override
 				public void blockTransferFinished(boolean success) {
+					if(logMINOR) Logger.minor(this, "Transfer completed: "+success);
 					BackgroundTransfer.this.completedTransfer(success);
 					// Double-check that the node is still connected. Pointless to wait otherwise.
 					if (pn.isConnected() && success) {
@@ -90,6 +91,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		 * or other valid completion. The timeout is relative to that, since up
 		 * to that point we could still be routing. */
 		private void startWait() {
+			if(logMINOR) Logger.minor(this, "Waiting for completion notification from "+this);
 			//synch-version: this.receivedNotice(waitForReceivedNotification(this));
 			//Add ourselves as a listener for the longterm completion message of this transfer, then gracefully exit.
 			try {
