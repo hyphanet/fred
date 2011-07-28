@@ -256,7 +256,7 @@ public abstract class UIDTag {
 		if(hasUnlocked) return false;
 		if(!unlockedHandler) return false;
 		if(currentlyRoutingTo != null && !currentlyRoutingTo.isEmpty()) {
-			if(!(reassigned || wasLocal)) {
+			if(!(reassigned || wasLocal || sourceRestarted)) {
 				boolean expected = false;
 				if(handlingTimeouts != null) {
 					expected = true;
