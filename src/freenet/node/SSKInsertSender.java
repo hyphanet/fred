@@ -62,6 +62,10 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
     private boolean hasRecentlyCollided;
     private SSKBlock block;
     private static boolean logMINOR;
+    private static boolean logDEBUG;
+    static {
+    	Logger.registerClass(SSKInsertSender.class);
+    }
     private final boolean forkOnCacheable;
     private final boolean preferInsert;
     private final boolean ignoreLowBackoff;
@@ -86,7 +90,6 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
     
     SSKInsertSender(SSKBlock block, long uid, InsertTag tag, short htl, PeerNode source, Node node, boolean fromStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
     	super(block.getKey(), realTimeFlag, source, node, htl, uid);
-    	logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
     	this.fromStore = fromStore;
     	this.origUID = uid;
     	this.origTag = tag;
@@ -339,20 +342,24 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 								@Override
 								public void sent() {
 									// Ignore.
+									if(logDEBUG) Logger.debug(this, "DataInsertRejected sent after accepted timeout on "+SSKInsertSender.this);
 								}
 
 								@Override
 								public void acknowledged() {
+									if(logDEBUG) Logger.debug(this, "DataInsertRejected acknowledged after accepted timeout on "+SSKInsertSender.this);
 									next.noLongerRoutingTo(tag, false);
 								}
 
 								@Override
 								public void disconnected() {
+									if(logDEBUG) Logger.debug(this, "DataInsertRejected peer disconnected after accepted timeout on "+SSKInsertSender.this);
 									next.noLongerRoutingTo(tag, false);
 								}
 
 								@Override
 								public void fatalError() {
+									if(logDEBUG) Logger.debug(this, "DataInsertRejected fatal error after accepted timeout on "+SSKInsertSender.this);
 									next.noLongerRoutingTo(tag, false);
 								}
 								
