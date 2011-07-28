@@ -269,9 +269,9 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		public void onCompleted() {
 			synchronized(backgroundTransfers) {
 				if(finishedWaiting) return;
-				if(!completedTransfer) return;
 				if(gotInsertReply) return;
 				gotInsertReply = true;
+				if(!completedTransfer) return;
 				if(startedWait) return;
 				startedWait = true;
 			}
