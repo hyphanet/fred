@@ -310,6 +310,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 		Logger.warning(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
 		// Use the right UID here, in case we fork.
 		final long uid = tag.uid;
+		tag.handlingTimeout(next);
 		// The node didn't accept the request. So we don't need to send them the data.
 		// However, we do need to wait a bit longer to try to postpone the fatalTimeout().
 		// Somewhat intricate logic to try to avoid fatalTimeout() if at all possible.
