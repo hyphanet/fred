@@ -7,6 +7,7 @@ import java.util.HashSet;
 
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
+import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.AsyncMessageFilterCallback;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
@@ -331,40 +332,32 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 						if(logMINOR) Logger.minor(this, "Forked timed out insert but not going to send DataInsert on "+SSKInsertSender.this+" to "+next);
 						// We are not going to send the DataInsert.
 						// We have moved on, and we don't want inserts to fork unnecessarily.
-			            MessageFilter mfDataInsertRejected = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPDataInsertRejected);
-			            try {
-							node.usm.addAsyncFilter(mfDataInsertRejected, new AsyncMessageFilterCallback() {
+						// However, we need to send a DataInsertRejected, or two-stage timeout will happen.
+						try {
+							next.sendAsync(DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_TIMEOUT_WAITING_FOR_ACCEPTED), new AsyncMessageCallback() {
 
 								@Override
-								public void onMatched(Message m) {
-									// They timed out when they didn't get our DataInsert. This is okay.
+								public void sent() {
+									// Ignore.
+								}
+
+								@Override
+								public void acknowledged() {
 									next.noLongerRoutingTo(tag, false);
 								}
 
 								@Override
-								public boolean shouldTimeout() {
-									return false;
-								}
-
-								@Override
-								public void onTimeout() {
-									// Grrr!
-									Logger.error(this, "Fatal timeout awaiting FNPRejectedTimeout on insert to "+next+" for "+SSKInsertSender.this);
-									next.fatalTimeout(tag, false);
-								}
-
-								@Override
-								public void onDisconnect(PeerContext ctx) {
+								public void disconnected() {
 									next.noLongerRoutingTo(tag, false);
 								}
 
 								@Override
-								public void onRestarted(PeerContext ctx) {
+								public void fatalError() {
 									next.noLongerRoutingTo(tag, false);
 								}
 								
 							}, SSKInsertSender.this);
-						} catch (DisconnectedException e) {
+						} catch (NotConnectedException e) {
 							next.noLongerRoutingTo(tag, false);
 						}
 					}
