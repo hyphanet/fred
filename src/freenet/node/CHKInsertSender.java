@@ -1062,7 +1062,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 
 	@Override
 	protected long getShortSlotWaiterTimeout() {
-		return searchTimeout / 10;
+		return searchTimeout / 20;
 	}
 
 	@Override

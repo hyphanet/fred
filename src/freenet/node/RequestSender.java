@@ -2033,7 +2033,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	}
 	
     protected long getShortSlotWaiterTimeout() {
-    	return fetchTimeout / 10;
+    	return fetchTimeout / 20;
 	}
     
     protected long getLongSlotWaiterTimeout() {

@@ -716,7 +716,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 
 	@Override
 	protected long getShortSlotWaiterTimeout() {
-		return searchTimeout / 10;
+		return searchTimeout / 20;
 	}
 
 	@Override
