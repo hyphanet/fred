@@ -17,7 +17,6 @@ import java.net.URI;
 public class ExternalLinkToadlet extends Toadlet {
 
 	private static final int MAX_URL_LENGTH = 1024 * 1024;
-	//TODO: Constructor, POST from welcome toadlet as well
 	public static final String PATH = "/external-link/";
 	public static final String magicHTTPEscapeString = "_CHECKED_HTTP_";
 
