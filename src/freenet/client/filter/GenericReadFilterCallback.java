@@ -12,6 +12,7 @@ import java.nio.charset.Charset;
 import java.util.HashSet;
 
 import freenet.client.filter.HTMLFilter.ParsedTag;
+import freenet.clients.http.ExternalLinkToadlet;
 import freenet.clients.http.HTTPRequestImpl;
 import freenet.clients.http.StaticToadlet;
 import freenet.keys.FreenetURI;
@@ -444,7 +445,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 	}
 
 	public static String escapeURL(String uri) {
-		return "/?" + magicHTTPEscapeString + '=' + uri;
+		return ExternalLinkToadlet.PATH+"?" + magicHTTPEscapeString + '=' + uri;
 	}
 	
 }

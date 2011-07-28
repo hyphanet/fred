@@ -279,9 +279,10 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode div = form.addChild("div", "class", "opennetDiv");
 			String controlName = "security-levels.physicalThreatLevel";
 			HTMLNode swapWarning = div.addChild("p").addChild("i");
-			NodeL10n.getBase().addL10nSubstitution(swapWarning, "SecurityLevels.physicalThreatLevelSwapfile", new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
-			if(File.separatorChar == '\\')
+			NodeL10n.getBase().addL10nSubstitution(swapWarning, "SecurityLevels.physicalThreatLevelSwapfile", new String[] { "bold", "truecrypt" }, new HTMLNode[] { HTMLNode.STRONG, HTMLNode.linkInNewWindow(GenericReadFilterCallback.escapeURL("http://www.truecrypt.org/")) });
+ 			if(File.separatorChar == '\\') {
 				swapWarning.addChild("#", " " + l10nSec("physicalThreatLevelSwapfileWindows"));
+			}
 			for(PHYSICAL_THREAT_LEVEL level : PHYSICAL_THREAT_LEVEL.values()) {
 				HTMLNode input;
 				input = div.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", controlName, level.name() });

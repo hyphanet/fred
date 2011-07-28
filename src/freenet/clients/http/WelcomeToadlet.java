@@ -39,7 +39,6 @@ import freenet.support.io.FileUtil;
 
 public class WelcomeToadlet extends Toadlet {
 
-    private static final int MAX_URL_LENGTH = 1024 * 1024;
     final NodeClientCore core;
     final Node node;
     final BookmarkManager bookmarkManager;
@@ -137,18 +136,6 @@ public class WelcomeToadlet extends Toadlet {
             writeHTMLReply(ctx, 200, "OK", pageNode.generate());
             Logger.normal(this, "Node is updating/restarting");
             node.getNodeUpdater().arm();
-        } else if (request.getPartAsString(GenericReadFilterCallback.magicHTTPEscapeString, MAX_URL_LENGTH).length() > 0) {
-            if (noPassword) {
-                redirectToRoot(ctx);
-                return;
-            }
-            MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-            String url = null;
-            if ((request.getPartAsString("Go", 32).length() > 0)) {
-                url = request.getPartAsString(GenericReadFilterCallback.magicHTTPEscapeString, MAX_URL_LENGTH);
-            }
-            headers.put("Location", url == null ? "/" : url);
-            ctx.sendReplyHeaders(302, "Found", headers, null, 0);
         } else if (request.getPartAsString("update", 32).length() > 0) {
         	PageNode page = ctx.getPageMaker().getPageNode(l10n("nodeUpdateConfirmTitle"), ctx);
             HTMLNode pageNode = page.outer;
@@ -405,24 +392,6 @@ public class WelcomeToadlet extends Toadlet {
 
                 addForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "addbookmark", NodeL10n.getBase().getString("BookmarkEditorToadlet.addBookmark")});
 
-                this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-                return;
-            } else if (request.getParam(GenericReadFilterCallback.magicHTTPEscapeString).length() > 0) {
-		//Confirm whether the user really means to access an HTTP link.
-		//Only render status and navigation bars if the user has completed the wizard.
-		boolean renderBars = node.clientCore.getToadletContainer().fproxyHasCompletedWizard();
-            	PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmExternalLinkTitle"), renderBars, renderBars, ctx);
-                HTMLNode pageNode = page.outer;
-                HTMLNode contentNode = page.content;
-                HTMLNode warnboxContent = ctx.getPageMaker().getInfobox("infobox-warning", l10n("confirmExternalLinkSubTitle"), contentNode, "confirm-external-link", true);
-                HTMLNode externalLinkForm = ctx.addFormChild(warnboxContent, "/", "confirmExternalLinkForm");
-
-                final String target = request.getParam(GenericReadFilterCallback.magicHTTPEscapeString);
-                externalLinkForm.addChild("#", l10n("confirmExternalLinkWithURL", "url", target));
-                externalLinkForm.addChild("br");
-                externalLinkForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"hidden", GenericReadFilterCallback.magicHTTPEscapeString, target});
-                externalLinkForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
-                externalLinkForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "Go", l10n("goToExternalLink")});
                 this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
                 return;
             }

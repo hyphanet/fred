@@ -1191,6 +1191,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, core, node, bookmarks);
 		server.register(welcometoadlet, null, "/welcome/", true, false);
 
+		ExternalLinkToadlet externalLinkToadlet = new ExternalLinkToadlet(client, core, node);
+		server.register(externalLinkToadlet, null, ExternalLinkToadlet.PATH, true, false);
+
 		DarknetConnectionsToadlet friendsToadlet = new DarknetConnectionsToadlet(node, core, client);
 		server.register(friendsToadlet, "FProxyToadlet.categoryFriends", "/friends/", true,
 		        "FProxyToadlet.friendsTitle", "FProxyToadlet.friends", true, null);
