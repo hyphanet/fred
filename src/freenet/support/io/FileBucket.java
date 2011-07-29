@@ -124,8 +124,8 @@ public class FileBucket extends BaseFileBucket implements Bucket {
 
 	@Override
 	public void removeFrom(ObjectContainer container) {
-		if(logMINOR) Logger.minor(this, "Removing "+this);
 		container.activate(file, 5);
+		if(logMINOR) Logger.minor(this, "Removing "+this);
 		container.delete(file);
 		container.delete(this);
 	}
