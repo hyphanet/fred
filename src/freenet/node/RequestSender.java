@@ -1950,16 +1950,18 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	private boolean receivingAsync;
 	
 	private void reassignToSelfOnTimeout(boolean fromOfferedKey) {
+		Listener[] list;
 		synchronized(listeners) {
 			if(sentCHKTransferBegins) {
 				Logger.error(this, "Transfer started, not dumping listeners when reassigning to self on timeout (race condition?) on "+this);
 				return;
 			}
 			origTag.onRestartOrDisconnectSource();
-			for(Listener l : listeners) {
-				l.onRequestSenderFinished(TIMED_OUT, fromOfferedKey);
-			}
+			list = listeners.toArray(new Listener[listeners.size()]);
 			listeners.clear();
+		}
+		for(Listener l : list) {
+			l.onRequestSenderFinished(TIMED_OUT, fromOfferedKey);
 		}
 	}
 	
