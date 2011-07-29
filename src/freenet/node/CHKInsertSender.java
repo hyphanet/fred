@@ -150,7 +150,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			boolean noNotifyOriginator = false;
 			synchronized(backgroundTransfers) {
 				if(finishedWaiting) {
-					if(!killed)
+					if(!(killed || kill))
 						Logger.error(this, "Finished waiting already yet receivedNotice("+success+","+timeout+")", new Exception("error"));
 					return false;
 				}
