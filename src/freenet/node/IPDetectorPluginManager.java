@@ -217,7 +217,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 					        "IPDetectorPluginManager.suggestForwardPortWithLink",
 					        new String[] { "link", "port" },
 					        new HTMLNode[] { HTMLNode.link(ExternalLinkToadlet.escape(
-							"http://wiki.freenetproject.org/FirewallAndRouterIssues")),
+					                "http://wiki.freenetproject.org/FirewallAndRouterIssues")),
 					                HTMLNode.text(portsNotForwarded[0])});
 				} else {
 					NodeL10n.getBase().addL10nSubstitution(div,
