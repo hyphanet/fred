@@ -31,8 +31,6 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 
 	private static boolean logMINOR;
 	
-    static final int PUBKEY_TIMEOUT = 10000;
-    
     static final int DATA_INSERT_TIMEOUT = 30000;
     
     final Node node;
@@ -121,7 +119,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 				mf = m.or(mf);
 			}
 			if(pubKey == null) {
-				MessageFilter m = MessageFilter.create().setType(DMT.FNPSSKPubKey).setField(DMT.UID, uid).setSource(source).setTimeout(PUBKEY_TIMEOUT);
+				MessageFilter m = MessageFilter.create().setType(DMT.FNPSSKPubKey).setField(DMT.UID, uid).setSource(source).setTimeout(DATA_INSERT_TIMEOUT);
 				mf = m.or(mf);
 			}
 			Message msg;
