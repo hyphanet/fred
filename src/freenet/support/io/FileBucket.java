@@ -7,7 +7,9 @@ import java.io.File;
 
 import com.db4o.ObjectContainer;
 
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
 /**
@@ -25,6 +27,12 @@ public class FileBucket extends BaseFileBucket implements Bucket {
 	protected final boolean createFileOnly;
 	// JVM caches File.size() and there is no way to flush the cache, so we
 	// need to track it ourselves
+	
+    private static volatile boolean logMINOR;
+
+    static {
+    	Logger.registerClass(FileBucket.class);
+    }
 
 	/**
 	 * Creates a new FileBucket.
@@ -116,7 +124,7 @@ public class FileBucket extends BaseFileBucket implements Bucket {
 
 	@Override
 	public void removeFrom(ObjectContainer container) {
-		Logger.minor(this, "Removing "+this);
+		if(logMINOR) Logger.minor(this, "Removing "+this);
 		container.activate(file, 5);
 		container.delete(file);
 		container.delete(this);
