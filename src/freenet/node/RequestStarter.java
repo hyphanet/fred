@@ -62,7 +62,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	 * buckets and the thread limit. FIXME make configurable. */
 	static final boolean LOCAL_REQUESTS_COMPETE_FAIRLY = true;
 	
-	boolean doAIMD = true;
+	private volatile boolean doAIMD = true;
 	
 	public static boolean isValidPriorityClass(int prio) {
 		return !((prio < MAXIMUM_PRIORITY_CLASS) || (prio > MINIMUM_PRIORITY_CLASS));
