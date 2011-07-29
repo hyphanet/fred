@@ -1956,13 +1956,13 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				Logger.error(this, "Transfer started, not dumping listeners when reassigning to self on timeout (race condition?) on "+this);
 				return;
 			}
-			origTag.onRestartOrDisconnectSource();
 			list = listeners.toArray(new Listener[listeners.size()]);
 			listeners.clear();
 		}
 		for(Listener l : list) {
 			l.onRequestSenderFinished(TIMED_OUT, fromOfferedKey);
 		}
+		origTag.onRestartOrDisconnectSource();
 	}
 	
 	@Override
