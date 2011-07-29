@@ -117,7 +117,6 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 	@Override
 	public void run() {
 	    freenet.support.Logger.OSThread.logPID(this);
-        short origHTL = htl;
         origTag.startedSender();
         try {
         	routeRequests();
