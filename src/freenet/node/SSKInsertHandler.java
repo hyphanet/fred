@@ -122,7 +122,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 			}
 			if(pubKey == null) {
 				MessageFilter m = MessageFilter.create().setType(DMT.FNPSSKPubKey).setField(DMT.UID, uid).setSource(source).setTimeout(PUBKEY_TIMEOUT);
-				m = m.or(mf);
+				mf = m.or(mf);
 			}
 			Message msg;
 			try {
