@@ -182,7 +182,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
                 return;
             }
             
-        	if(origTag.hasSourceRestarted()) {
+        	if(origTag.shouldStop()) {
         		finish(SUCCESS, null);
         		return;
         	}

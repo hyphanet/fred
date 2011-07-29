@@ -439,7 +439,7 @@ loadWaiterLoop:
     		}
     		if(logMINOR) Logger.minor(this, "Routing to "+next);
     		
-        	if(origTag.hasSourceRestarted()) {
+        	if(origTag.hasSourceReallyRestarted()) {
         		origTag.removeRoutingTo(next);
         		// FIXME finish more directly.
 	        	routeRequests();

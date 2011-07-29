@@ -398,7 +398,22 @@ public abstract class UIDTag {
 		sourceRestarted = true;
 	}
 	
-	public synchronized boolean hasSourceRestarted() {
+	/** Should we deduct this request from the source's limit, instead of 
+	 * counting it towards it? A normal request is counted towards it. A hidden
+	 * request is deducted from it. This is used when the source has restarted
+	 * but also in some other cases. */
+	public synchronized boolean countAsSourceRestarted() {
+		return sourceRestarted;
+	}
+	
+	/** Should we send messages to the source? */
+	public synchronized boolean hasSourceReallyRestarted() {
+		return sourceRestarted;
+	}
+	
+	/** Should we stop the request as soon as is convenient? Normally this 
+	 * happens when the source is restarted or disconnected. */
+	public synchronized boolean shouldStop() {
 		return sourceRestarted;
 	}
 

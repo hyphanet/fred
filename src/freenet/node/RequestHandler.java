@@ -225,7 +225,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 	@Override
 	public void onCHKTransferBegins() {
-		if(tag.hasSourceRestarted()) {
+		if(tag.hasSourceReallyRestarted()) {
 			Logger.normal(this, "requestor is gone, can't send terminal message");
 			applyByteCounts();
 			unregisterRequestHandlerWithNode();
@@ -382,7 +382,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 	@Override
 	public void onRequestSenderFinished(int status, boolean fromOfferedKey) {
-		if(tag.hasSourceRestarted()) {
+		if(tag.hasSourceReallyRestarted()) {
 			Logger.normal(this, "requestor is gone, can't send terminal message");
 			applyByteCounts();
 			unregisterRequestHandlerWithNode();

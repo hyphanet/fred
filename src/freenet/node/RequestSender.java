@@ -341,7 +341,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
             	return;
             }
             
-        	if(origTag.hasSourceRestarted()) {
+        	if(origTag.shouldStop()) {
         		finish(ROUTE_NOT_FOUND, null, false);
         		return;
         	}

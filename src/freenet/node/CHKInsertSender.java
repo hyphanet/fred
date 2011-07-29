@@ -428,7 +428,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
         while(true) {
         	if(failIfReceiveFailed(null, null)) return; // don't need to set status as killed by CHKInsertHandler
             
-        	if(origTag.hasSourceRestarted()) {
+        	if(origTag.shouldStop()) {
         		finish(SUCCESS, null);
         		return;
         	}
