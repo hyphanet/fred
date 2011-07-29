@@ -1962,7 +1962,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		for(Listener l : list) {
 			l.onRequestSenderFinished(TIMED_OUT, fromOfferedKey);
 		}
-		origTag.onRestartOrDisconnectSource();
+		origTag.timedOutToHandlerButContinued();
 	}
 	
 	@Override

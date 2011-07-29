@@ -256,7 +256,7 @@ public abstract class UIDTag {
 		if(hasUnlocked) return false;
 		if(!unlockedHandler) return false;
 		if(currentlyRoutingTo != null && !currentlyRoutingTo.isEmpty()) {
-			if(!(reassigned || wasLocal || sourceRestarted)) {
+			if(!(reassigned || wasLocal || sourceRestarted || timedOutButContinued)) {
 				boolean expected = false;
 				if(handlingTimeouts != null) {
 					expected = true;
@@ -360,6 +360,8 @@ public abstract class UIDTag {
 			sb.append(" (fetch offered keys from ").append(fetchingOfferedKeyFrom.size()).append(")");
 		if(sourceRestarted)
 			sb.append(" (source restarted)");
+		if(timedOutButContinued)
+			sb.append(" (timed out but continued)");
 		return sb.toString();
 	}
 
@@ -390,20 +392,32 @@ public abstract class UIDTag {
 	public synchronized void setAccepted() {
 		accepted = true;
 	}
+	
+	private boolean timedOutButContinued;
 
-	/** The handler disconnected or restarted, or the request is taking a 
-	 * ridiculously long time and we have to avoid a timeout on the sender. 
-	 * Some places we use reassignToSelf() in the latter case. */
+	/** Set when we are going to tell downstream that the request has timed out,
+	 * but can't terminate it yet. We will terminate the request if we have to
+	 * reroute it, and we count it towards the peer's limit, but we don't stop
+	 * messages to the request source. */
+	public synchronized void timedOutToHandlerButContinued() {
+		timedOutButContinued = true;
+	}
+	
+	/** The handler disconnected or restarted. */
 	public synchronized void onRestartOrDisconnectSource() {
 		sourceRestarted = true;
 	}
+	
+	// The third option is reassignToSelf(). We only use that when we actually
+	// want the data, and mean to continue. In that case, none of the next three
+	// are appropriate.
 	
 	/** Should we deduct this request from the source's limit, instead of 
 	 * counting it towards it? A normal request is counted towards it. A hidden
 	 * request is deducted from it. This is used when the source has restarted
 	 * but also in some other cases. */
 	public synchronized boolean countAsSourceRestarted() {
-		return sourceRestarted;
+		return sourceRestarted || timedOutButContinued;
 	}
 	
 	/** Should we send messages to the source? */
@@ -414,7 +428,7 @@ public abstract class UIDTag {
 	/** Should we stop the request as soon as is convenient? Normally this 
 	 * happens when the source is restarted or disconnected. */
 	public synchronized boolean shouldStop() {
-		return sourceRestarted;
+		return sourceRestarted || timedOutButContinued;
 	}
 
 	public synchronized boolean isSource(PeerNode pn) {
