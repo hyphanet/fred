@@ -157,6 +157,9 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 					// Do nothing. But do unlock.
 				} else if(kill) {
 					killed = true;
+					finishedWaiting = true;
+					receivedCompletionNotice = true;
+					completionSucceeded = false;
 				} else {
 					if (receivedCompletionNotice) {
 						// Two stage timeout.
