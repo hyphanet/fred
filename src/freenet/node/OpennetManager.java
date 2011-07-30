@@ -426,7 +426,7 @@ public class OpennetManager {
 						okay = true;
 				}
 			} else {
-				Logger.warning(this, "Peer does not have any IP addresses???");
+				Logger.error(this, "Peer does not have any IP addresses???");
 			}
 			if(any && !okay) {
 				Logger.normal(this, "Rejecting peer as we are already connected to a peer with the same IP address");
