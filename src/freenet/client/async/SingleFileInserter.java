@@ -210,6 +210,10 @@ class SingleFileInserter implements ClientPutState {
 					Logger.debug(this, res.type.name()+" : "+HexUtil.bytesToHex(res.result));
 				}
 			}
+			if(persistent) {
+				container.activate(ctx, 1);
+				container.activate(ctx.eventProducer, 1);
+			}
 			ctx.eventProducer.produceEvent(new ExpectedHashesEvent(hashes), container, context);
 			
 			// So it is passed on.
