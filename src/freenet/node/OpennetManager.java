@@ -412,16 +412,21 @@ public class OpennetManager {
 		if(nodeToAddNow != null && crypto.config.oneConnectionPerAddress()) {
 			boolean okay = false;
 			boolean any = false;
-			for(Peer p : nodeToAddNow.getHandshakeIPs()) {
-				if(p == null) continue;
-				FreenetInetAddress addr = p.getFreenetAddress();
-				if(addr == null) continue;
-				InetAddress a = addr.getAddress(false);
-				if(a == null) continue;
-				if(a.isAnyLocalAddress() || a.isSiteLocalAddress()) continue;
-				any = true;
-				if(crypto.allowConnection(nodeToAddNow, addr))
-					okay = true;
+			Peer[] handshakeIPs = nodeToAddNow.getHandshakeIPs();
+			if(handshakeIPs != null) {
+				for(Peer p : handshakeIPs) {
+					if(p == null) continue;
+					FreenetInetAddress addr = p.getFreenetAddress();
+					if(addr == null) continue;
+					InetAddress a = addr.getAddress(false);
+					if(a == null) continue;
+					if(a.isAnyLocalAddress() || a.isSiteLocalAddress()) continue;
+					any = true;
+					if(crypto.allowConnection(nodeToAddNow, addr))
+						okay = true;
+				}
+			} else {
+				Logger.warning(this, "Peer does not have any IP addresses???");
 			}
 			if(any && !okay) {
 				Logger.normal(this, "Rejecting peer as we are already connected to a peer with the same IP address");
