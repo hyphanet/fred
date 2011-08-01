@@ -48,6 +48,9 @@ public abstract class BaseSender implements ByteCounter {
     final Node node;
     protected final long startTime;
     long uid;
+    static final int SEARCH_TIMEOUT_BULK = 600*1000;
+    static final int SEARCH_TIMEOUT_REALTIME = 60*1000;
+    protected final int searchTimeout;
     
     BaseSender(Key key, boolean realTimeFlag, PeerNode source, Node node, short htl, long uid) {
     	if(key.getRoutingKey() == null) throw new NullPointerException();
@@ -63,6 +66,10 @@ public abstract class BaseSender implements ByteCounter {
         this.htl = htl;
         this.origHTL = htl;
         newLoadManagement = node.enableNewLoadManagement(realTimeFlag);
+        if(realTimeFlag)
+        	searchTimeout = SEARCH_TIMEOUT_REALTIME;
+        else
+        	searchTimeout = SEARCH_TIMEOUT_BULK;
     }
     
 	protected abstract Message createDataRequest();

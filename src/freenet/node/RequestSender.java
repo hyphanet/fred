@@ -61,9 +61,6 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     // After a get offered key fails, wait this long for two stage timeout. Probably we will
     // have disconnected by then.
     static final int GET_OFFER_LONG_TIMEOUT = 60*1000;
-    static final int FETCH_TIMEOUT_BULK = 600*1000;
-    static final int FETCH_TIMEOUT_REALTIME = 60*1000;
-    final int fetchTimeout;
     final int getOfferedTimeout;
     /** Wait up to this long to get a path folding reply */
     static final int OPENNET_TIMEOUT = 120000;
@@ -166,10 +163,8 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
             PeerNode source, boolean offersOnly, boolean canWriteClientCache, boolean canWriteDatastore, boolean realTimeFlag) {
     	super(key, realTimeFlag, source, n, htl, uid);
     	if(realTimeFlag) {
-    		fetchTimeout = FETCH_TIMEOUT_REALTIME;
     		getOfferedTimeout = BlockReceiver.RECEIPT_TIMEOUT_REALTIME;
     	} else {
-    		fetchTimeout = FETCH_TIMEOUT_BULK;
     		getOfferedTimeout = BlockReceiver.RECEIPT_TIMEOUT_BULK;
     	}
         this.pubKey = pubKey;
@@ -209,7 +204,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				reassignToSelfOnTimeout(fromOfferedKey);
 			}
     		
-    	}, fetchTimeout);
+    	}, searchTimeout);
         try {
         	realRun();
         } catch (Throwable t) {
@@ -401,7 +396,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	private synchronized int timeSinceSentForTimeout() {
     	int time = timeSinceSent();
     	if(time > FailureTable.REJECT_TIME) {
-    		if(time < fetchTimeout + 10*1000) return FailureTable.REJECT_TIME;
+    		if(time < searchTimeout + 10*1000) return FailureTable.REJECT_TIME;
     		Logger.error(this, "Very long time since sent: "+time+" ("+TimeUtil.formatTime(time, 2, true)+")");
     		return FailureTable.REJECT_TIME;
     	}
@@ -422,7 +417,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		public MainLoopCallback(PeerNode source, boolean noReroute) {
 			waitingFor = source;
 			this.noReroute = noReroute;
-			deadline = System.currentTimeMillis() + fetchTimeout;
+			deadline = System.currentTimeMillis() + searchTimeout;
 		}
 
 		@Override
@@ -470,7 +465,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		public void onTimeout() {
 			// This is probably a downstream timeout.
 			// It's not a serious problem until we have a second (fatal) timeout.
-			Logger.warning(this, "Timed out after waiting "+fetchTimeout+" on "+uid+" from "+waitingFor+" ("+gotMessages+" messages; last="+lastMessage+") for "+uid+" noReroute="+noReroute);
+			Logger.warning(this, "Timed out after waiting "+searchTimeout+" on "+uid+" from "+waitingFor+" ("+gotMessages+" messages; last="+lastMessage+") for "+uid+" noReroute="+noReroute);
 			if(noReroute) {
 				waitingFor.localRejectedOverload("FatalTimeoutForked", realTimeFlag);
 			} else {
@@ -483,7 +478,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     		
 			// Wait for second timeout.
     		// FIXME make this async.
-    		long deadline = System.currentTimeMillis() + fetchTimeout;
+    		long deadline = System.currentTimeMillis() + searchTimeout;
 			while(true) {
 				
 				Message msg;
@@ -1979,7 +1974,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	}
 
 	public long fetchTimeout() {
-		return fetchTimeout;
+		return searchTimeout;
 	}
 
 	BlockReceiverTimeoutHandler myTimeoutHandler = new BlockReceiverTimeoutHandler() {
@@ -2033,11 +2028,11 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	}
 	
     protected long getShortSlotWaiterTimeout() {
-    	return fetchTimeout / 20;
+    	return searchTimeout / 20;
 	}
     
     protected long getLongSlotWaiterTimeout() {
-    	return fetchTimeout / 5;
+    	return searchTimeout / 5;
 	}
     
 	protected int getAcceptedTimeout() {
@@ -2049,7 +2044,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		// Calculate the reject period based on the proportion of requests being timed out.
 		// If the vast majority are being accepted, then try again after the timeout.
 		// If more are being rejected, it makes sense to wait longer, up to the limit of the maximum recently failed time.
-		int period = (int) Math.min(((fetchTimeout / 5) / (1.0 - load)), FailureTable.RECENTLY_FAILED_TIME);
+		int period = (int) Math.min(((searchTimeout / 5) / (1.0 - load)), FailureTable.RECENTLY_FAILED_TIME);
 		// Timeouts while waiting for a slot are relatively normal.
 		// That is, in an ideal world they wouldn't happen.
 		// They happen when the network is very small, or when there is a capacity bottleneck.

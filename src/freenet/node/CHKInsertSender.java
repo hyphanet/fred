@@ -316,10 +316,8 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
         this.preferInsert = preferInsert;
         this.ignoreLowBackoff = ignoreLowBackoff;
         if(realTimeFlag) {
-        	searchTimeout = SEARCH_TIMEOUT_REALTIME;
         	transferCompletionTimeout = TRANSFER_COMPLETION_ACK_TIMEOUT_REALTIME;
         } else {
-        	searchTimeout = SEARCH_TIMEOUT_BULK;
         	transferCompletionTimeout = TRANSFER_COMPLETION_ACK_TIMEOUT_BULK;
         }
     }
@@ -337,12 +335,9 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 	
     // Constants
     static final int ACCEPTED_TIMEOUT = 10000;
-    static final int SEARCH_TIMEOUT_REALTIME = 60*1000;
-    static final int SEARCH_TIMEOUT_BULK = 600*1000;
     static final int TRANSFER_COMPLETION_ACK_TIMEOUT_REALTIME = 60*1000;
     static final int TRANSFER_COMPLETION_ACK_TIMEOUT_BULK = 300*1000;
 
-    final int searchTimeout;
     final int transferCompletionTimeout;
     
     // Basics
