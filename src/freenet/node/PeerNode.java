@@ -5196,6 +5196,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					return true;
 				}
 				if(waitingFor.contains(peer)) return true;
+				// Race condition if contains() && cantQueue (i.e. it was accepted then it became backed off), but probably not serious.
 				if(cantQueue) return false;
 				waitingFor.add(peer);
 			}
