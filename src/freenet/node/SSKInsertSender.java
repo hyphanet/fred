@@ -459,7 +459,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 		
 		headers = ((ShortBuffer) msg.getObject(DMT.BLOCK_HEADERS)).getData();
 		// Wait for the data
-		MessageFilter mfData = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPSSKDataFoundData);
+		MessageFilter mfData = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SSKInsertHandler.DATA_INSERT_TIMEOUT).setType(DMT.FNPSSKDataFoundData);
 		Message dataMessage;
 		try {
 			dataMessage = node.usm.waitFor(mfData, this);
