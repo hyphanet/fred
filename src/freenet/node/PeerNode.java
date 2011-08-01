@@ -5203,6 +5203,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(!peer.outputLoadTracker(realTime).queueSlotWaiter(this)) {
 				synchronized(this) {
 					waitingFor.remove(peer);
+					if(acceptedBy != null || failed) return true;
 				}
 				return false;
 			} else return true;
