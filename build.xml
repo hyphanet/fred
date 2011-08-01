@@ -41,7 +41,7 @@ me again. (This is the easier option, for newbies.)
 If you want to build freenet-ext from source, please clone the "contrib" repo,
 add "lib.contrib.dir = [path/to/repo]/dist" to override.properties, and then
 run me again. (You do not need to build freenet-ext explicitly, I will do that
-automatically.)
+automatically; however you need ant-contrib installed for that to work.)
 
 For more options on how to tune the build process, see build.properties.
 		</echo>
