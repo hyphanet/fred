@@ -66,12 +66,17 @@ public abstract class BaseSender implements ByteCounter {
         this.htl = htl;
         this.origHTL = htl;
         newLoadManagement = node.enableNewLoadManagement(realTimeFlag);
-        if(realTimeFlag)
-        	searchTimeout = SEARCH_TIMEOUT_REALTIME;
-        else
-        	searchTimeout = SEARCH_TIMEOUT_BULK;
+        searchTimeout = calculateTimeout(realTimeFlag, htl, node);
     }
     
+    static final double EXTRA_HOPS_AT_BOTTOM = 1.0 / Node.DECREMENT_AT_MIN_PROB;
+    
+	static public int calculateTimeout(boolean realTimeFlag, short htl, Node node) {
+		double timeout = realTimeFlag ? SEARCH_TIMEOUT_REALTIME : SEARCH_TIMEOUT_BULK;
+		timeout = (timeout * (double)EXTRA_HOPS_AT_BOTTOM) / (double) node.maxHTL(); 
+		return (int)timeout;
+	}
+
 	protected abstract Message createDataRequest();
 
     protected PeerNode lastNode;
