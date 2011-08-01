@@ -73,7 +73,7 @@ public abstract class BaseSender implements ByteCounter {
     
 	static public int calculateTimeout(boolean realTimeFlag, short htl, Node node) {
 		double timeout = realTimeFlag ? SEARCH_TIMEOUT_REALTIME : SEARCH_TIMEOUT_BULK;
-		timeout = (timeout * (double)EXTRA_HOPS_AT_BOTTOM) / (double) node.maxHTL(); 
+		timeout = (timeout * ((double)htl) / (EXTRA_HOPS_AT_BOTTOM + (double) node.maxHTL())); 
 		return (int)timeout;
 	}
 	
