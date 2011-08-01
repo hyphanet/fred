@@ -5185,6 +5185,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		 * a race condition and the waiter has already completed.
 		 */
 		public boolean addWaitingFor(PeerNode peer) {
+			if(!peer.isRoutable()) {
+				if(logMINOR) Logger.minor(this, "Not routable, so not queueing");
+				return false;
+			}
+			if(peer.isInMandatoryBackoff(System.currentTimeMillis(), realTime)) {
+				if(logMINOR) Logger.minor(this, "In mandatory backoff, so not queueing");
+				return false;
+			}
 			synchronized(this) {
 				if(acceptedBy != null) {
 					if(logMINOR) Logger.minor(this, "Not adding "+peer.shortToString+" because already matched on "+this);
