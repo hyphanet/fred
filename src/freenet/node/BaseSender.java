@@ -76,6 +76,10 @@ public abstract class BaseSender implements ByteCounter {
 		timeout = (timeout * (double)EXTRA_HOPS_AT_BOTTOM) / (double) node.maxHTL(); 
 		return (int)timeout;
 	}
+	
+	protected int calculateTimeout(short htl) {
+		return calculateTimeout(realTimeFlag, htl, node);
+	}
 
 	protected abstract Message createDataRequest();
 
