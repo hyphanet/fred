@@ -2039,10 +2039,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 
 	@Override
 	protected void timedOutWhileWaiting(double load) {
-		// Calculate the reject period based on the proportion of requests being timed out.
-		// If the vast majority are being accepted, then try again after the timeout.
-		// If more are being rejected, it makes sense to wait longer, up to the limit of the maximum recently failed time.
-		int period = (int) Math.min(((searchTimeout / 5) / (1.0 - load)), FailureTable.RECENTLY_FAILED_TIME);
+		htl = (short)Math.min(0, hopsForFatalTimeoutWaitingForPeer());
 		// Timeouts while waiting for a slot are relatively normal.
 		// That is, in an ideal world they wouldn't happen.
 		// They happen when the network is very small, or when there is a capacity bottleneck.
@@ -2050,14 +2047,11 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		// Individual timeouts are therefore not very interesting...
 		if(logMINOR) {
 			if(source != null)
-				Logger.minor(this, "Timed out while waiting for a slot, period = "+period+" because average reject proportion for peers is "+load+" on "+this);
+				Logger.minor(this, "Timed out while waiting for a slot on "+this);
 			else
-				Logger.minor(this, "Local request timed out while waiting for a slot, period = "+period+" because average reject proportion for peers is "+load+" on "+this);
+				Logger.minor(this, "Local request timed out while waiting for a slot on "+this);
 		}
-    	synchronized(this) {
-    		recentlyFailedTimeLeft = period;
-    	}
-    	finish(RECENTLY_FAILED, null, false);
+    	finish(ROUTE_NOT_FOUND, null, false);
         node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, -1, source);
 	}
 

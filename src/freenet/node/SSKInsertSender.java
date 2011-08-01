@@ -703,7 +703,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 
 	@Override
 	protected void timedOutWhileWaiting(double load) {
-		// FIXME maybe we need a way to tell the predecessor, like RecentlyFailed???
+		htl = (short)Math.min(0, hopsForFatalTimeoutWaitingForPeer());
         // Backtrack, i.e. RNF.
 		if(!hasForwarded)
 			origTag.setNotRoutedOnwards();

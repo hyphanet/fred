@@ -81,6 +81,12 @@ public abstract class BaseSender implements ByteCounter {
 		return calculateTimeout(realTimeFlag, htl, node);
 	}
 	
+	private short hopsForTime(long time) {
+		double timeout = realTimeFlag ? SEARCH_TIMEOUT_REALTIME : SEARCH_TIMEOUT_BULK;
+		double timePerHop = timeout / ((double)EXTRA_HOPS_AT_BOTTOM + (double) node.maxHTL());
+		return (short) Math.max(node.maxHTL(), time / timePerHop);
+	}
+
 	protected abstract Message createDataRequest();
 
     protected PeerNode lastNode;
@@ -572,6 +578,10 @@ loadWaiterLoop:
 
 	protected long getShortSlotWaiterTimeout() {
 		return incomingSearchTimeout / 20;
+	}
+	
+	protected short hopsForFatalTimeoutWaitingForPeer() {
+		return hopsForTime(getLongSlotWaiterTimeout());
 	}
 
 	private void logDelta(long delta, int tryCount, boolean waitedForLoadManagement, boolean retriedForLoadManagement) {

@@ -1112,7 +1112,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 
 	@Override
 	protected void timedOutWhileWaiting(double load) {
-		// FIXME maybe we need a way to tell the predecessor, like RecentlyFailed???
+		htl = (short)Math.min(0, hopsForFatalTimeoutWaitingForPeer());
         // Backtrack, i.e. RNF.
 		if(!hasForwarded)
 			origTag.setNotRoutedOnwards();
