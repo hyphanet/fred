@@ -5185,14 +5185,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		 * a race condition and the waiter has already completed.
 		 */
 		public boolean addWaitingFor(PeerNode peer) {
-			if(!peer.isRoutable()) {
-				if(logMINOR) Logger.minor(this, "Not routable, so not queueing");
-				return false;
-			}
-			if(peer.isInMandatoryBackoff(System.currentTimeMillis(), realTime)) {
-				if(logMINOR) Logger.minor(this, "In mandatory backoff, so not queueing");
-				return false;
-			}
+			boolean cantQueue = (!peer.isRoutable()) || peer.isInMandatoryBackoff(System.currentTimeMillis(), realTime);
 			synchronized(this) {
 				if(acceptedBy != null) {
 					if(logMINOR) Logger.minor(this, "Not adding "+peer.shortToString+" because already matched on "+this);
@@ -5203,6 +5196,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					return true;
 				}
 				if(waitingFor.contains(peer)) return true;
+				if(cantQueue) return false;
 				waitingFor.add(peer);
 			}
 			if(!peer.outputLoadTracker(realTime).queueSlotWaiter(this)) {
