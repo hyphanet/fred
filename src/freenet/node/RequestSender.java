@@ -204,7 +204,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				reassignToSelfOnTimeout(fromOfferedKey);
 			}
     		
-    	}, searchTimeout);
+    	}, incomingSearchTimeout);
         try {
         	realRun();
         } catch (Throwable t) {
@@ -413,10 +413,12 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     	private final long deadline;
 		public byte[] sskData;
 		public byte[] headers;
+		final long searchTimeout;
 
-		public MainLoopCallback(PeerNode source, boolean noReroute) {
+		public MainLoopCallback(PeerNode source, boolean noReroute, long searchTimeout) {
 			waitingFor = source;
 			this.noReroute = noReroute;
+			this.searchTimeout = searchTimeout;
 			deadline = System.currentTimeMillis() + searchTimeout;
 		}
 
@@ -1974,7 +1976,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	}
 
 	public long fetchTimeout() {
-		return searchTimeout;
+		return incomingSearchTimeout;
 	}
 
 	BlockReceiverTimeoutHandler myTimeoutHandler = new BlockReceiverTimeoutHandler() {
@@ -2019,11 +2021,15 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		return transferCoalesced;
 	}
 	
+	private int searchTimeout;
+	
 	protected void onAccepted(PeerNode next) {
+		MainLoopCallback cb;
         synchronized(this) {
         	receivingAsync = true;
+        	searchTimeout = calculateTimeout(htl);
+            cb = new MainLoopCallback(next, false, searchTimeout);
         }
-        MainLoopCallback cb = new MainLoopCallback(next, false);
         cb.schedule();
 	}
 	

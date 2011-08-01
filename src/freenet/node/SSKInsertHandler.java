@@ -279,7 +279,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
             int status = sender.getStatus();
             
             if(status == SSKInsertSender.NOT_FINISHED) {
-            	if(System.currentTimeMillis() - startTime > sender.searchTimeout) {
+            	if(System.currentTimeMillis() - startTime > sender.incomingSearchTimeout) {
             		Logger.error(this, "Sender took more than timeout. Timing out for original source.");
             		tag.timedOutToHandlerButContinued();
             		status = SSKInsertSender.TIMED_OUT;

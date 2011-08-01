@@ -50,7 +50,7 @@ public abstract class BaseSender implements ByteCounter {
     long uid;
     static final int SEARCH_TIMEOUT_BULK = 600*1000;
     static final int SEARCH_TIMEOUT_REALTIME = 60*1000;
-    protected final int searchTimeout;
+    final int incomingSearchTimeout;
     
     BaseSender(Key key, boolean realTimeFlag, PeerNode source, Node node, short htl, long uid) {
     	if(key.getRoutingKey() == null) throw new NullPointerException();
@@ -66,7 +66,7 @@ public abstract class BaseSender implements ByteCounter {
         this.htl = htl;
         this.origHTL = htl;
         newLoadManagement = node.enableNewLoadManagement(realTimeFlag);
-        searchTimeout = calculateTimeout(realTimeFlag, htl, node);
+        incomingSearchTimeout = calculateTimeout(realTimeFlag, htl, node);
     }
     
     static final double EXTRA_HOPS_AT_BOTTOM = 1.0 / Node.DECREMENT_AT_MIN_PROB;
@@ -567,11 +567,11 @@ loadWaiterLoop:
 	}
 
 	protected long getLongSlotWaiterTimeout() {
-		return searchTimeout / 5;
+		return incomingSearchTimeout / 5;
 	}
 
 	protected long getShortSlotWaiterTimeout() {
-		return searchTimeout / 20;
+		return incomingSearchTimeout / 20;
 	}
 
 	private void logDelta(long delta, int tryCount, boolean waitedForLoadManagement, boolean retriedForLoadManagement) {

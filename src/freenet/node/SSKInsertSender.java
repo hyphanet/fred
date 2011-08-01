@@ -805,7 +805,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
         // We have sent them the pubkey, and the data.
         // Wait for the response.
         
-		MessageFilter mf = makeSearchFilter(next, searchTimeout);
+		MessageFilter mf = makeSearchFilter(next, calculateTimeout(htl));
         
         while (true) {
         	Message msg;
