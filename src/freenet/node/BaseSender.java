@@ -80,7 +80,7 @@ public abstract class BaseSender implements ByteCounter {
 	protected int calculateTimeout(short htl) {
 		return calculateTimeout(realTimeFlag, htl, node);
 	}
-
+	
 	protected abstract Message createDataRequest();
 
     protected PeerNode lastNode;
@@ -566,9 +566,13 @@ loadWaiterLoop:
     	return total / waitedFor.size();
 	}
 
-	protected abstract long getLongSlotWaiterTimeout();
-    
-    protected abstract long getShortSlotWaiterTimeout();
+	protected long getLongSlotWaiterTimeout() {
+		return searchTimeout / 5;
+	}
+
+	protected long getShortSlotWaiterTimeout() {
+		return searchTimeout / 20;
+	}
 
 	private void logDelta(long delta, int tryCount, boolean waitedForLoadManagement, boolean retriedForLoadManagement) {
 		long longTimeout = getLongSlotWaiterTimeout();

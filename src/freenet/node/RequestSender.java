@@ -2027,14 +2027,6 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         cb.schedule();
 	}
 	
-    protected long getShortSlotWaiterTimeout() {
-    	return searchTimeout / 20;
-	}
-    
-    protected long getLongSlotWaiterTimeout() {
-    	return searchTimeout / 5;
-	}
-    
 	protected int getAcceptedTimeout() {
 		return ACCEPTED_TIMEOUT;
 	}
