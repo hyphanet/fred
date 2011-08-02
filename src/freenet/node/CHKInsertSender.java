@@ -558,6 +558,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 	private void handleRNF(Message msg, PeerNode next, InsertTag thisTag) {
 		if(logMINOR) Logger.minor(this, "Rejected: RNF");
 		short newHtl = msg.getShort(DMT.HTL);
+		if(newHtl < 0) newHtl = 0;
 		synchronized (this) {
 			if (htl > newHtl)
 				htl = newHtl;						

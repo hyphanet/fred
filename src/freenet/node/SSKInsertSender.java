@@ -409,6 +409,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 	private void handleRouteNotFound(Message msg, PeerNode next, InsertTag thisTag) {
 		if(logMINOR) Logger.minor(this, "Rejected: RNF");
 		short newHtl = msg.getShort(DMT.HTL);
+		if(newHtl < 0) newHtl = 0;
 		if (htl > newHtl)
 			htl = newHtl;
 		next.successNotOverload(realTimeFlag);

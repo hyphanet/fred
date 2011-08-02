@@ -321,6 +321,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 				if(msg.getSpec() == DMT.FNPRouteNotFound) {
 					// Backtrack within available hops
 					short newHtl = msg.getShort(DMT.HTL);
+					if(newHtl < 0) newHtl = 0;
 					if(newHtl < htl) htl = newHtl;
 					break;
 				}
