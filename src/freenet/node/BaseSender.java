@@ -573,11 +573,11 @@ loadWaiterLoop:
 	}
 
 	protected long getLongSlotWaiterTimeout() {
-		return incomingSearchTimeout / 5;
+		return (realTimeFlag ? SEARCH_TIMEOUT_REALTIME : SEARCH_TIMEOUT_BULK) / 5;
 	}
 
 	protected long getShortSlotWaiterTimeout() {
-		return incomingSearchTimeout / 20;
+		return (realTimeFlag ? SEARCH_TIMEOUT_REALTIME : SEARCH_TIMEOUT_BULK) / 20;
 	}
 	
 	protected short hopsForFatalTimeoutWaitingForPeer() {
