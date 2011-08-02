@@ -1657,6 +1657,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         	}
         	
 			if(node.addNewOpennetNode(ref, ConnectionType.PATH_FOLDING) == null) {
+				if(logMINOR) Logger.minor(this, "Don't want noderef on "+this);
 				// If we don't want it let somebody else have it
 				synchronized(this) {
 					opennetNoderef = noderef;
