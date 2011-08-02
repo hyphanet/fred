@@ -458,7 +458,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
             boolean successNow = false;
             boolean noRequest = false;
             synchronized (this) {
-            	if(htl == 0) {
+            	if(htl <= 0) {
             		successNow = true;
             		// Send an InsertReply back
             		noRequest = !hasForwarded;

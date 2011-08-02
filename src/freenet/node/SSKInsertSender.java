@@ -165,7 +165,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
                 if(logMINOR) Logger.minor(this, "Decremented HTL to "+htl);
             }
             starting = false;
-            if(htl == 0) {
+            if(htl <= 0) {
                 // Send an InsertReply back
         		if(!hasForwarded)
         			origTag.setNotRoutedOnwards();
