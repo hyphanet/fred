@@ -865,6 +865,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 			@Override
 			public void timedOut() {
+				if(logMINOR) Logger.minor(this, "Timed out waiting for noderef from "+source+" on "+RequestHandler.this);
 				gotNoderef(null);
 			}
 
