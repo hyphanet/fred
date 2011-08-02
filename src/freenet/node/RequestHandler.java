@@ -799,10 +799,24 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			sendTerminal(DMT.createFNPOpennetCompletedTimeout(uid));
 			return;
 		}
-		if(noderef == null || 
-				node.random.nextInt(OpennetManager.RESET_PATH_FOLDING_PROB) == 0) {
+		if(noderef == null) {
 			finishOpennetNoRelayInner(om);
 			return;
+		}
+		if(noderef != null && node.random.nextInt(OpennetManager.RESET_PATH_FOLDING_PROB) == 0) {
+			
+			// Check whether it is actually the noderef of the peer.
+			// If so, we need to relay it anyway.
+			
+			SimpleFieldSet ref = OpennetManager.validateNoderef(noderef, 0, noderef.length, source, false);
+			
+			if(ref == null || om.alreadyHaveOpennetNode(ref)) {
+				// Okay, let it through.
+			} else {
+				// Reset path folding.
+				finishOpennetNoRelayInner(om);
+				return;
+			}
 		}
 
 		finishOpennetRelay(noderef, om);
