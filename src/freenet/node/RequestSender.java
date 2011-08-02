@@ -1612,7 +1612,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 
 	/** Acknowledge the opennet path folding attempt without sending a reference. Once
 	 * the send completes (asynchronously), unlock everything. */
-	private void ackOpennet(PeerNode next) {
+	void ackOpennet(PeerNode next) {
 		Message msg = DMT.createFNPOpennetCompletedAck(uid);
 		// We probably should set opennetFinished after the send completes.
 		try {

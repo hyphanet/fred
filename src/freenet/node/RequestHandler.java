@@ -814,6 +814,9 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				// Okay, let it through.
 			} else {
 				// Reset path folding.
+				// We need to tell the source of the noderef that we are not going to use it.
+				// RequestSender didn't because it expected us to use the ref.
+				rs.ackOpennet(rs.successFrom());
 				finishOpennetNoRelayInner(om);
 				return;
 			}
