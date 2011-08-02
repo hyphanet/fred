@@ -207,7 +207,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
             
             // Route it
             next = node.peers.closerPeer(forkedRequestTag == null ? source : null, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-			        null, htl, ignoreLowBackoff ? Node.LOW_BACKOFF : 0, source == null, realTimeFlag, newLoadManagement);
+			        null, htl, ignoreLowBackoff ? Node.LOW_BACKOFF : 0, source == null, realTimeFlag);
             
             if(next == null) {
                 // Backtrack
