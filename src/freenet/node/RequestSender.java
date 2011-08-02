@@ -318,7 +318,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
             starting = false;
 
             if(logMINOR) Logger.minor(this, "htl="+htl);
-            if(htl == 0) {
+            if(htl <= 0) {
             	// This used to be RNF, I dunno why
 				//???: finish(GENERATED_REJECTED_OVERLOAD, null);
                 node.failureTable.onFinalFailure(key, null, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
