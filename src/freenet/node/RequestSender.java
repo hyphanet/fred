@@ -1738,6 +1738,8 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     			if(opennetFinished) {
     				if(opennetTimedOut)
     					throw new WaitedTooLongForOpennetNoderefException();
+    				if(logMINOR)
+    					Logger.minor(this, "Grabbing opennet noderef on "+this, new Exception("debug"));
     				// Only one RequestHandler may take the noderef
     				byte[] ref = opennetNoderef;
     				opennetNoderef = null;
@@ -1749,6 +1751,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 					// Ignore
 					continue;
 				}
+				if(logMINOR) Logger.minor(this, "Took too long waiting for opennet ref on "+this);
 				return null;
     		}
     	}

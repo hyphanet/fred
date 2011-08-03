@@ -800,6 +800,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			return;
 		}
 		if(noderef == null) {
+			if(logMINOR) Logger.minor(this, "Not relaying as no noderef on "+this);
 			finishOpennetNoRelayInner(om);
 			return;
 		}
@@ -836,7 +837,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	 */
 	private void finishOpennetNoRelayInner(final OpennetManager om) {
 		if(logMINOR)
-			Logger.minor(this, "Finishing opennet: sending own reference");
+			Logger.minor(this, "Finishing opennet: sending own reference", new Exception("debug"));
 		if(!om.wantPeer(null, false, false, false, ConnectionType.PATH_FOLDING)) {
 			ackOpennet();
 			return; // Don't want a reference
