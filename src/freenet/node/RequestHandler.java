@@ -813,6 +813,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			if(ref == null || om.alreadyHaveOpennetNode(ref)) {
 				// Okay, let it through.
 			} else {
+				if(logMINOR) Logger.minor(this, "Resetting path folding on "+this);
 				// Reset path folding.
 				// We need to tell the source of the noderef that we are not going to use it.
 				// RequestSender didn't because it expected us to use the ref.
