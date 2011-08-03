@@ -85,6 +85,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     private boolean tryOffersOnly;
     
 	private ArrayList<Listener> listeners=new ArrayList<Listener>();
+	private RequestHandler noderefListener;
 	
     // Terminal status
     // Always set finished AFTER setting the reason flag
@@ -1667,8 +1668,9 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     	
     	OpennetManager om;
     	
+    	byte[] noderef = null;
     	try {
-   			byte[] noderef = OpennetManager.waitForOpennetNoderef(false, next, uid, this, node);
+   			noderef = OpennetManager.waitForOpennetNoderef(false, next, uid, this, node);
         	
         	if(noderef == null) {
         		ackOpennet(next);
@@ -1692,23 +1694,21 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			if(node.addNewOpennetNode(ref, ConnectionType.PATH_FOLDING) == null) {
 				if(logMINOR) Logger.minor(this, "Don't want noderef on "+this);
 				// If we don't want it let somebody else have it
-				synchronized(this) {
-					opennetNoderef = noderef;
-				}
 				// RequestHandler will send a noderef back up, eventually, and will unlockHandler() after that point.
 				// But if this is a local request, we need to send the ack now.
 				if(source == null)
 					ackOpennet(next);
 				return false;
 			} else {
-				// opennetNoderef = null i.e. we want the noderef so we won't pass it further down.
+				// Pass on noderef = null i.e. we want the noderef so we won't pass it further down.
 				Logger.normal(this, "Added opennet noderef in "+this+" from "+next);
+				noderef = null;
 			}
 			
 	    	// We want the node: send our reference
     		om.sendOpennetRef(true, uid, next, om.crypto.myCompressedFullRef(), this);
 			origTag.finishedWaitingForOpennet(next);
-
+			
 		} catch (FSParseException e) {
 			Logger.error(this, "Could not parse opennet noderef for "+this+" from "+next, e);
     		ackOpennet(next);
@@ -1747,10 +1747,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			}
     		ackOpennet(next);
 		} finally {
-    		synchronized(this) {
-    			opennetFinished = true;
-    			notifyAll();
-    		}
+			this.fireOpennetFinished(noderef);
     	}
 		return false;
 	}
@@ -1763,39 +1760,6 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     /** Did we timeout waiting for opennet noderef? */
     private boolean opennetTimedOut;
     
-    /** Opennet noderef from next node */
-    private byte[] opennetNoderef;
-    
-    public byte[] waitForOpennetNoderef() throws WaitedTooLongForOpennetNoderefException {
-    	synchronized(this) {
-    		long startTime = System.currentTimeMillis();
-    		while(true) {
-    			if(opennetFinished) {
-    				if(opennetTimedOut)
-    					throw new WaitedTooLongForOpennetNoderefException();
-    				if(logMINOR)
-    					Logger.minor(this, "Grabbing opennet noderef on "+this, new Exception("debug"));
-    				// Only one RequestHandler may take the noderef
-    				byte[] ref = opennetNoderef;
-    				opennetNoderef = null;
-    				return ref;
-    			}
-    			try {
-    				int waitTime = (int) Math.min(Integer.MAX_VALUE, OPENNET_TIMEOUT + startTime - System.currentTimeMillis());
-    				if(waitTime > 0) {
-    					wait(waitTime);
-    					continue;
-    				}
-				} catch (InterruptedException e) {
-					// Ignore
-					continue;
-				}
-				if(logMINOR) Logger.minor(this, "Took too long waiting for opennet ref on "+this);
-				return null;
-    		}
-    	}
-    }
-
     public synchronized PeerNode successFrom() {
     	return successFrom;
     }
@@ -1984,6 +1948,16 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			}
 		}
 	}
+	
+	private void fireOpennetFinished(byte[] noderef) {
+		RequestHandler handler;
+		synchronized (listeners) {
+			if(noderefListener == null) return;
+			handler = noderefListener;
+			noderefListener = null;
+		}
+		handler.onOpennetFinished(noderef);
+	}
 
 	private boolean sentAbortDownstreamTransfers;
 	private int abortDownstreamTransfersReason;
@@ -2158,6 +2132,17 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			}, this);
 		} catch (DisconnectedException e) {
 			next.noLongerRoutingTo(origTag, false);
+		}
+	}
+
+	public boolean setOpennetListener(RequestHandler requestHandler) {
+		synchronized(listeners) {
+			if(noderefListener == null) {
+				noderefListener = requestHandler;
+				return true;
+			} else {
+				return false;
+			}
 		}
 	}
 

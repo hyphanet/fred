@@ -202,6 +202,11 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				responseDeadline = searchStartTime + rs.fetchTimeout() + queueTime;
 			}
 			rs.addListener(this);
+			if(!rs.setOpennetListener(this)) {
+				synchronized(this) {
+					this.opennetCompleted = true;
+				}
+			}
 		}
 	}
 
@@ -328,6 +333,10 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	/** Are we waiting for the transfer to complete? */
 	boolean waitingForTransferSuccess;
 	
+	private byte[] gotNoderef;
+	private boolean wantOpennet;
+	private boolean opennetCompleted;
+	
 	/** Once the transfer has finished and we have the final status code, either path fold
 	 * or just unregister.
 	 * @param success Whether the block transfer succeeded.
@@ -336,26 +345,12 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		if(logMINOR) Logger.minor(this, "Transfer finished (success="+success+")");
 		if(success) {
 			status = rs.getStatus();
-			// Run off-thread because, on the onRequestSenderFinished path, RequestSender won't start to wait for the noderef until we return!
-			// FIXME make waitForOpennetNoderef asynchronous.
-			node.executor.execute(new PrioRunnable() {
-
-				@Override
-				public void run() {
-					// Successful CHK transfer, maybe path fold
-					try {
-						finishOpennetChecked();
-					} catch (NotConnectedException e) {
-						// Not a big deal as the transfer succeeded.
-					}
-				}
-
-				@Override
-				public int getPriority() {
-					return NativeThread.HIGH_PRIORITY;
-				}
-				
-			});
+			// Successful CHK transfer, maybe path fold
+			try {
+				finishOpennetChecked();
+			} catch (NotConnectedException e) {
+				// Not a big deal as the transfer succeeded.
+			}
 		} else {
 			finalTransferFailed = true;
 			status = rs.getStatus();
@@ -777,7 +772,16 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		OpennetManager om = node.getOpennet();
 		if(om != null &&
 			(node.passOpennetRefsThroughDarknet() || source.isOpennet())) {
-			finishOpennetInner(om);
+			byte[] noderef = null;
+			synchronized(this) {
+				wantOpennet = true;
+				if(opennetCompleted == false) {
+					if(logMINOR) Logger.minor(this, "Waiting for opennet completion on "+this);
+					return;
+				}
+				noderef = gotNoderef;
+			}
+			finishOpennetInner(om, gotNoderef);
 		} else {
 			ackOpennet();
 		}
@@ -810,16 +814,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	 * unlocking after this has been sent (asynchronously), or will unlock itself if we
 	 * sent a noderef (after we have handled the incoming noderef / ack / timeout). 
 	 */
-	private void finishOpennetInner(OpennetManager om) {
+	private void finishOpennetInner(OpennetManager om, byte[] noderef) {
 		if(logMINOR) Logger.minor(this, "Finish opennet on "+this);
-		byte[] noderef;
-		try {
-			noderef = rs.waitForOpennetNoderef();
-		} catch (WaitedTooLongForOpennetNoderefException e) {
-			sendTerminal(DMT.createFNPOpennetCompletedTimeout(uid));
-			rs.ackOpennet(rs.successFrom());
-			return;
-		}
 		if(noderef == null) {
 			if(logMINOR) Logger.minor(this, "Not relaying as no noderef on "+this);
 			finishOpennetNoRelayInner(om);
@@ -1072,4 +1068,21 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	public int getPriority() {
 		return NativeThread.HIGH_PRIORITY;
 	}
+
+	public void onOpennetFinished(byte[] noderef) {
+		synchronized(this) {
+			this.opennetCompleted = true;
+			this.gotNoderef = noderef;
+			if(!wantOpennet) return;
+		}
+		OpennetManager om = node.getOpennet();
+		if(om == null) {
+			ackOpennet();
+			PeerNode fromPeer = rs.successFrom();
+			if(fromPeer != null)
+				rs.ackOpennet(fromPeer);
+		} else
+			finishOpennetInner(om, noderef);
+	}
+
 }
