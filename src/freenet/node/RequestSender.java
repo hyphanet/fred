@@ -1248,6 +1248,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	private void handleRouteNotFound(Message msg, PeerNode next) {
 		// Backtrack within available hops
 		short newHtl = msg.getShort(DMT.HTL);
+		if(newHtl < 0) newHtl = 0;
 		if(newHtl < htl) htl = newHtl;
 		next.successNotOverload(realTimeFlag);
 		int t = timeSinceSent();
