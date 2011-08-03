@@ -886,6 +886,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 			@Override
 			public void acked(boolean timedOutMessage) {
+				if(logMINOR) Logger.minor(this, "Noderef acknowledged from "+source+" on "+RequestHandler.this);
 				gotNoderef(null);
 			}
 			
