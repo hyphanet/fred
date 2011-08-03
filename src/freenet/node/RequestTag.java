@@ -12,6 +12,12 @@ import freenet.support.TimeUtil;
  */
 public class RequestTag extends UIDTag {
 	
+    private static volatile boolean logMINOR;
+    
+    static {
+    	Logger.registerClass(RequestTag.class);
+    }
+	
 	enum START {
 		ASYNC_GET,
 		LOCAL,
