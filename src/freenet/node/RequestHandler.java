@@ -333,6 +333,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	 * @param success Whether the block transfer succeeded.
 	 */
 	protected void transferFinished(boolean success) {
+		if(logMINOR) Logger.minor(this, "Transfer finished (success="+success+")");
 		if(success) {
 			status = rs.getStatus();
 			// Successful CHK transfer, maybe path fold
@@ -796,6 +797,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	 * sent a noderef (after we have handled the incoming noderef / ack / timeout). 
 	 */
 	private void finishOpennetInner(OpennetManager om) {
+		if(logMINOR) Logger.minor(this, "Finish opennet on "+this);
 		byte[] noderef;
 		try {
 			noderef = rs.waitForOpennetNoderef();
