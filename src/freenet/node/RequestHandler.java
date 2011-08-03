@@ -840,6 +840,10 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	 * Completion: Will ack downstream if necessary (if we didn't send a noderef), and will
 	 * in any case call applyByteCounts(); unregisterRequestHandlerWithNode() asynchronously,
 	 * either after receiving the noderef, or after sending the ack.
+	 * 
+	 * In all cases we do not interact with dataSource. The caller must have already
+	 * sent an ack to dataSource if necessary (but in most cases dataSource has timed out or 
+	 * something similar has happened).
 	 */
 	private void finishOpennetNoRelayInner(final OpennetManager om) {
 		if(logMINOR)
