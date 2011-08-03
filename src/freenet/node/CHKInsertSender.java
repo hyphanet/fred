@@ -200,7 +200,11 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				// Upstream (towards originator), of course, we can unlockHandler() as soon as all the transfers are finished.
 				// LOCKING: Do this outside the lock as pn can do heavy stuff in response (new load management).
 				pn.noLongerRoutingTo(thisTag, false);
-			if(noNotifyOriginator) return false;
+			if(timeout && noNotifyOriginator) {
+				Logger.error(this, "Second timeout waiting for final ack from "+pn+" on "+this);
+				pn.fatalTimeout(thisTag, false);
+				return false;
+			}
 			return true;
 		}
 		
@@ -249,9 +253,6 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 						Logger.minor(this, "Disconnected while adding filter after first timeout");
 					pn.noLongerRoutingTo(thisTag, false);
 				}
-			} else {
-				Logger.error(this, "Second timeout waiting for final ack from "+pn+" on "+this);
-				pn.fatalTimeout(thisTag, false);
 			}
 		}
 
