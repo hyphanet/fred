@@ -803,6 +803,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			noderef = rs.waitForOpennetNoderef();
 		} catch (WaitedTooLongForOpennetNoderefException e) {
 			sendTerminal(DMT.createFNPOpennetCompletedTimeout(uid));
+			rs.ackOpennet(rs.successFrom());
 			return;
 		}
 		if(noderef == null) {
@@ -935,6 +936,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		try {
 			om.sendOpennetRef(false, uid, source, noderef, this);
 		} catch(NotConnectedException e) {
+			rs.ackOpennet(dataSource);
 			// Lost contact with request source, nothing we can do
 			applyByteCounts();
 			unregisterRequestHandlerWithNode();
@@ -994,10 +996,11 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			public void timedOut() {
 				tag.unlockHandler();
 				try {
-					dataSource.sendAsync(DMT.createFNPOpennetCompletedTimeout(uid), null, RequestHandler.this);
+					dataSource.sendAsync(DMT.createFNPOpennetCompletedTimeout(uid), rs.finishOpennetOnAck(dataSource), RequestHandler.this);
 				} catch (NotConnectedException e) {
 					// Ignore
 				}
+				rs.ackOpennet(rs.successFrom());
 				applyByteCounts();
 				node.removeTransferringRequestHandler(uid);
 			}

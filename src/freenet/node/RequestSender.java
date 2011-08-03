@@ -7,6 +7,7 @@ import java.util.ArrayList;
 
 import freenet.crypt.CryptFormatException;
 import freenet.crypt.DSAPublicKey;
+import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
@@ -1581,20 +1582,14 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         	// FIXME should this be called when fromOfferedKey??
        		node.nodeStats.requestCompleted(true, source != null, isSSK);
         	
-       		try {
-       			
-       			//NOTE: because of the requesthandler implementation, this will block and wait
-       			//      for downstream transfers on a CHK. The opennet stuff introduces
-       			//      a delay of it's own if we don't get the expected message.
-       			fireRequestSenderFinished(code, fromOfferedKey);
-       			
-       			if(doOpennet) {
-       				if(finishOpennet(next))
-       					shouldUnlock = false;
-       			}
-       		} finally {
-       			if(doOpennet)
-       				origTag.finishedWaitingForOpennet(next);
+       		//NOTE: because of the requesthandler implementation, this will block and wait
+       		//      for downstream transfers on a CHK. The opennet stuff introduces
+       		//      a delay of it's own if we don't get the expected message.
+       		fireRequestSenderFinished(code, fromOfferedKey);
+       		
+       		if(doOpennet) {
+       			if(finishOpennet(next))
+       				shouldUnlock = false;
        		}
         } else {
         	node.nodeStats.requestCompleted(false, source != null, isSSK);
@@ -1609,14 +1604,55 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		}
 		
     }
+    
+    AsyncMessageCallback finishOpennetOnAck(final PeerNode next) {
+    	
+    	return new AsyncMessageCallback() {
+
+			private boolean completed;
+			
+			@Override
+			public void sent() {
+				// Ignore
+			}
+
+			@Override
+			public void acknowledged() {
+				synchronized(this) {
+					if(completed) return;
+					completed = true;
+				}
+				origTag.finishedWaitingForOpennet(next);
+			}
+
+			@Override
+			public void disconnected() {
+				synchronized(this) {
+					if(completed) return;
+					completed = true;
+				}
+				origTag.finishedWaitingForOpennet(next);
+			}
+
+			@Override
+			public void fatalError() {
+				synchronized(this) {
+					if(completed) return;
+					completed = true;
+				}
+				origTag.finishedWaitingForOpennet(next);
+			}
+			
+		};
+    }
 
 	/** Acknowledge the opennet path folding attempt without sending a reference. Once
 	 * the send completes (asynchronously), unlock everything. */
-	void ackOpennet(PeerNode next) {
+	void ackOpennet(final PeerNode next) {
 		Message msg = DMT.createFNPOpennetCompletedAck(uid);
 		// We probably should set opennetFinished after the send completes.
 		try {
-			next.sendAsync(msg, null, this);
+			next.sendAsync(msg, finishOpennetOnAck(next), this);
 		} catch (NotConnectedException e) {
 			// Ignore.
 		}
@@ -1674,6 +1710,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			
 	    	// We want the node: send our reference
     		om.sendOpennetRef(true, uid, next, om.crypto.myCompressedFullRef(), this);
+			origTag.finishedWaitingForOpennet(next);
 
 		} catch (FSParseException e) {
 			Logger.error(this, "Could not parse opennet noderef for "+this+" from "+next, e);
