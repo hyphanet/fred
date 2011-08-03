@@ -1799,7 +1799,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     	}
     }
 
-    public PeerNode successFrom() {
+    public synchronized PeerNode successFrom() {
     	return successFrom;
     }
     
