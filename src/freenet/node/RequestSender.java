@@ -1736,6 +1736,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     
     public byte[] waitForOpennetNoderef() throws WaitedTooLongForOpennetNoderefException {
     	synchronized(this) {
+    		long startTime = System.currentTimeMillis();
     		while(true) {
     			if(opennetFinished) {
     				if(opennetTimedOut)
@@ -1746,7 +1747,11 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     				return ref;
     			}
     			try {
-					wait(OPENNET_TIMEOUT);
+    				int waitTime = (int) Math.min(Integer.MAX_VALUE, System.currentTimeMillis() + OPENNET_TIMEOUT - startTime);
+    				if(waitTime > 0) {
+    					wait(waitTime);
+    					continue;
+    				}
 				} catch (InterruptedException e) {
 					// Ignore
 					continue;
