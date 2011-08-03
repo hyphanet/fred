@@ -331,12 +331,26 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	protected void transferFinished(boolean success) {
 		if(success) {
 			status = rs.getStatus();
-			// Successful CHK transfer, maybe path fold
-			try {
-				finishOpennetChecked();
-			} catch (NotConnectedException e) {
-				// Not a big deal as the transfer succeeded.
-			}
+			// Run off-thread because, on the onRequestSenderFinished path, RequestSender won't start to wait for the noderef until we return!
+			// FIXME make waitForOpennetNoderef asynchronous.
+			node.executor.execute(new PrioRunnable() {
+
+				@Override
+				public void run() {
+					// Successful CHK transfer, maybe path fold
+					try {
+						finishOpennetChecked();
+					} catch (NotConnectedException e) {
+						// Not a big deal as the transfer succeeded.
+					}
+				}
+
+				@Override
+				public int getPriority() {
+					return NativeThread.HIGH_PRIORITY;
+				}
+				
+			});
 		} else {
 			finalTransferFailed = true;
 			status = rs.getStatus();
