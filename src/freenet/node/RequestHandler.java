@@ -947,8 +947,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			public void gotNoderef(byte[] newNoderef) {
 				
 				if(newNoderef == null) {
-					// Already sent a ref, no way to tell upstream that we didn't receive one. :(
 					tag.unlockHandler();
+					rs.ackOpennet(dataSource);
 				} else {
 					
 					// Send it forward to the data source, if it is valid.
@@ -986,12 +986,20 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 			@Override
 			public void timedOut() {
-				gotNoderef(null);
+				tag.unlockHandler();
+				try {
+					dataSource.sendAsync(DMT.createFNPOpennetCompletedTimeout(uid), null, RequestHandler.this);
+				} catch (NotConnectedException e) {
+					// Ignore
+				}
+				node.removeTransferringRequestHandler(uid);
 			}
 
 			@Override
 			public void acked(boolean timedOutMessage) {
-				gotNoderef(null);
+				tag.unlockHandler();
+				rs.ackOpennet(dataSource);
+				node.removeTransferringRequestHandler(uid);
 			}
 			
 		}, node);
