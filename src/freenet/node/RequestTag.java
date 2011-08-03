@@ -181,7 +181,7 @@ public class RequestTag extends UIDTag {
 		boolean noRecordUnlock;
 		synchronized(this) {
 			if(waitingForOpennet == null) {
-				Logger.error(this, "Not waiting for opennet!");
+				if(logMINOR) Logger.minor(this, "Not waiting for opennet!");
 				return;
 			}
 			PeerNode got = waitingForOpennet.get();
