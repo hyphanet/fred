@@ -298,6 +298,10 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 					@Override
 					public void blockTransferFinished(boolean success) {
 						synchronized(RequestHandler.this) {
+							if(transferCompleted) {
+								Logger.error(this, "Transfer already completed on "+this, new Exception("debug"));
+								return;
+							}
 							transferCompleted = true;
 							transferSuccess = success;
 							if(!waitingForTransferSuccess) return;
