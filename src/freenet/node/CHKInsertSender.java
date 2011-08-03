@@ -147,7 +147,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		private boolean receivedNotice(boolean success, boolean timeout, boolean kill) {
 			if(logMINOR) Logger.minor(this, "Received notice: "+success+(timeout ? " (timeout)" : "")+" on "+this);
 			boolean noUnlockPeer = false;
-			boolean noNotifyOriginator = false;
+			boolean gotFatalTimeout = false;
 			synchronized(backgroundTransfers) {
 				if(finishedWaiting) {
 					if(!(killed || kill))
@@ -168,7 +168,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 						if(timeout) {
 							// Fatal timeout.
 							finishedWaiting = true;
-							noNotifyOriginator = true;
+							gotFatalTimeout = true;
 						}
 					} else {
 						// Normal completion.
@@ -186,13 +186,13 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 						}
 					}
 				}
-				if(!noNotifyOriginator) {
+				if(!gotFatalTimeout) {
 					backgroundTransfers.notifyAll();
 				}
 				if(!noUnlockPeer)
 					startedWait = true; // Prevent further wait's.
 			}
-			if((!noNotifyOriginator) && (!success)) {
+			if((!gotFatalTimeout) && (!success)) {
 				setTransferTimedOut();
 			}
 			if(!noUnlockPeer)
@@ -200,7 +200,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				// Upstream (towards originator), of course, we can unlockHandler() as soon as all the transfers are finished.
 				// LOCKING: Do this outside the lock as pn can do heavy stuff in response (new load management).
 				pn.noLongerRoutingTo(thisTag, false);
-			if(timeout && noNotifyOriginator) {
+			if(timeout && gotFatalTimeout) {
 				Logger.error(this, "Second timeout waiting for final ack from "+pn+" on "+this);
 				pn.fatalTimeout(thisTag, false);
 				return false;
