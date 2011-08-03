@@ -1582,9 +1582,6 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         	// FIXME should this be called when fromOfferedKey??
        		node.nodeStats.requestCompleted(true, source != null, isSSK);
         	
-       		//NOTE: because of the requesthandler implementation, this will block and wait
-       		//      for downstream transfers on a CHK. The opennet stuff introduces
-       		//      a delay of it's own if we don't get the expected message.
        		fireRequestSenderFinished(code, fromOfferedKey);
        		
        		if(doOpennet) {
