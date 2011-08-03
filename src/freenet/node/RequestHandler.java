@@ -971,6 +971,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 										BulkTransmitter bulkTransmitter,
 										boolean anyFailed) {
 									// As soon as the originator receives the three blocks, he can reuse the slot.
+									tag.finishedWaitingForOpennet(dataSource);
 									tag.unlockHandler();
 									applyByteCounts();
 									// Note that sendOpennetRef() does not wait for an acknowledgement or even for the blocks to have been sent!
@@ -980,10 +981,12 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 							});
 						} catch(NotConnectedException e) {
 							// How sad
+							tag.finishedWaitingForOpennet(dataSource);
 							tag.unlockHandler();
 							applyByteCounts();
 						}
 					} else {
+						tag.finishedWaitingForOpennet(dataSource);
 						tag.unlockHandler();
 						applyByteCounts();
 					}
