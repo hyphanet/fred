@@ -29,6 +29,9 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.RetrievalException;
 import freenet.io.comm.SlowAsyncMessageFilterCallback;
+import freenet.node.BasePeerNode;
+import freenet.node.PeerNode;
+import freenet.node.SyncSendWaitedTooLongException;
 import freenet.support.BitArray;
 import freenet.support.Buffer;
 import freenet.support.LogThresholdCallback;
@@ -153,8 +156,25 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	private final boolean _realTime;
 //	private final boolean _doTooLong;
 	private final BlockReceiverTimeoutHandler _timeoutHandler;
+	private final boolean completeAfterAckedAllReceived;
 
-	public BlockReceiver(MessageCore usm, PeerContext sender, long uid, PartiallyReceivedBlock prb, ByteCounter ctr, Ticker ticker, boolean doTooLong, boolean realTime, BlockReceiverTimeoutHandler timeoutHandler) {
+	/**
+	 * @param usm
+	 * @param sender
+	 * @param uid
+	 * @param prb
+	 * @param ctr
+	 * @param ticker
+	 * @param doTooLong
+	 * @param realTime
+	 * @param timeoutHandler
+	 * @param completeAfterAckedAllReceived If true, we need to call completion
+	 * only after we have received an ack to the allReceived message. Generally,
+	 * handlers want to complete early (=false), so the slot is freed up and can 
+	 * be reused by the other side; senders want to complete late, so they don't 
+	 * end up reusing the slot before the handler has completed (=true).
+	 */
+	public BlockReceiver(MessageCore usm, PeerContext sender, long uid, PartiallyReceivedBlock prb, ByteCounter ctr, Ticker ticker, boolean doTooLong, boolean realTime, BlockReceiverTimeoutHandler timeoutHandler, boolean completeAfterAckedAllReceived) {
 		_timeoutHandler = timeoutHandler == null ? nullTimeoutHandler : timeoutHandler;
 		_sender = sender;
 		_prb = prb;
@@ -163,6 +183,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		_ctr = ctr;
 		_ticker = ticker;
 		_realTime = realTime;
+		this.completeAfterAckedAllReceived = completeAfterAckedAllReceived;
 		RECEIPT_TIMEOUT = _realTime ? RECEIPT_TIMEOUT_REALTIME : RECEIPT_TIMEOUT_BULK;
 		MAX_ROUND_TRIP_TIME = RECEIPT_TIMEOUT;
 //		_doTooLong = doTooLong;
@@ -263,7 +284,18 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			try {
 				if(_prb.allReceived()) {
 					try {
-						_usm.send(_sender, DMT.createAllReceived(_uid), _ctr);
+						Message m = DMT.createAllReceived(_uid);
+						if(completeAfterAckedAllReceived) {
+							try {
+								// FIXME layer violation
+								// FIXME make asynchronous
+								((PeerNode)_sender).sendSync(m, _ctr, _realTime);
+							} catch (SyncSendWaitedTooLongException e) {
+								// Complete anyway.
+							}
+						} else {
+							_usm.send(_sender, m, _ctr);
+						}
 						discardEndTime=System.currentTimeMillis()+CLEANUP_TIMEOUT;
 						discardFilter=relevantMessages(CLEANUP_TIMEOUT);
 						maybeResetDiscardFilter();
