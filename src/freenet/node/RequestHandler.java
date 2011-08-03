@@ -996,6 +996,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				} catch (NotConnectedException e) {
 					// Ignore
 				}
+				applyByteCounts();
 				node.removeTransferringRequestHandler(uid);
 			}
 
@@ -1003,6 +1004,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			public void acked(boolean timedOutMessage) {
 				tag.unlockHandler();
 				rs.ackOpennet(dataSource);
+				applyByteCounts();
 				node.removeTransferringRequestHandler(uid);
 			}
 			
