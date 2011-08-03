@@ -1747,7 +1747,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     				return ref;
     			}
     			try {
-    				int waitTime = (int) Math.min(Integer.MAX_VALUE, System.currentTimeMillis() + OPENNET_TIMEOUT - startTime);
+    				int waitTime = (int) Math.min(Integer.MAX_VALUE, OPENNET_TIMEOUT + startTime - System.currentTimeMillis());
     				if(waitTime > 0) {
     					wait(waitTime);
     					continue;
