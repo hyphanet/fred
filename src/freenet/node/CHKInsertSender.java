@@ -1329,7 +1329,11 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 
 			if (msg.getSpec() == DMT.FNPRejectedOverload) {
 				if(handleRejectedOverload(msg, next, thisTag)) {
-					transfer.kill();
+					// We have had an Accepted. This happens on a timeout downstream.
+					// They will complete it (finish()), so we need to wait for a transfer completion.
+					// FIXME it might be less confusing and therefore less likely to cause problems
+					// if we had a different message sent post-accept???
+					transfer.onCompleted();
 					break;
 				}
 				else continue;
