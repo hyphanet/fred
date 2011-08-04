@@ -823,7 +823,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 			if (msg == null) {
 				
 				// First timeout.
-				Logger.error(this, "Timeout waiting for reply after Accepted in "+this+" from "+next);
+				Logger.warning(this, "Timeout waiting for reply after Accepted in "+this+" from "+next);
 				next.localRejectedOverload("AfterInsertAcceptedTimeout", realTimeFlag);
 				forwardRejectedOverload();
 				finish(TIMED_OUT, next);
