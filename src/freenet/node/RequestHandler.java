@@ -688,9 +688,15 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 	private void unregisterRequestHandlerWithNode() {
 		node.removeTransferringRequestHandler(uid);
-		PeerNode p = rs.successFrom();
-		if(p != null)
-			tag.finishedWaitingForOpennet(p);
+		RequestSender r;
+		synchronized(this) {
+			r = rs;
+		}
+		if(r != null) {
+			PeerNode p = r.successFrom();
+			if(p != null)
+				tag.finishedWaitingForOpennet(p);
+		}
 		tag.unlockHandler();
 	}
 
