@@ -296,7 +296,7 @@ loadWaiterLoop:
     					// We routed it, thinking it was GUARANTEED.
     					// It was rejected, and as far as we know it's still GUARANTEED. :(
     					Logger.error(this, "Rejected overload (last time) yet expected state was "+lastExpectedAcceptState+" is now "+expectedAcceptState+" from "+next.shortToString()+" ("+next.getVersionNumber()+")");
-    					next.enterMandatoryBackoff("Mandatory:RejectedGUARANTEED", realTimeFlag);
+    					next.rejectedGuaranteed(realTimeFlag);
     					next.noLongerRoutingTo(origTag, false);
     					expectedAcceptState = null;
     					dontDecrementHTLThisTime = true;
@@ -551,6 +551,8 @@ loadWaiterLoop:
         
         gotMessages = 0;
         lastMessage = null;
+        
+        next.acceptedAny(realTimeFlag);
         
         onAccepted(next);
 	}
