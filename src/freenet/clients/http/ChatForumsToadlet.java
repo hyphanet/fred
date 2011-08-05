@@ -1,8 +1,5 @@
 package freenet.clients.http;
 
-import java.io.IOException;
-import java.net.URI;
-
 import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
@@ -11,6 +8,9 @@ import freenet.pluginmanager.PluginManager;
 import freenet.support.HTMLNode;
 import freenet.support.MultiValueTable;
 import freenet.support.api.HTTPRequest;
+
+import java.io.IOException;
+import java.net.URI;
 
 public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 
@@ -41,11 +41,17 @@ public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 		
 		HTMLNode ul = contentBox.addChild("ul");
 		HTMLNode li = ul.addChild("li");
-		NodeL10n.getBase().addL10nSubstitution(li, "ChatForumsToadlet.fms", new String[] { "fms", "fms-help" }, 
-				new HTMLNode[] { HTMLNode.link("/USK@0npnMrqZNKRCRoGojZV93UNHCMN-6UU3rRSAmP6jNLE,~BG-edFtdCC1cSH4O3BWdeIYa8Sw5DfyrSV-TKdO5ec,AQACAAE/fms/101/"), HTMLNode.link("/SSK@ugb~uuscsidMI-Ze8laZe~o3BUIb3S50i25RIwDH99M,9T20t3xoG-dQfMO94LGOl9AxRTkaz~TykFY-voqaTQI,AQACAAE/FAFS-49/files/fms.htm")});
+		NodeL10n.getBase().addL10nSubstitution(li, "ChatForumsToadlet.fms",
+		        new String[] { "fms", "fms-help" },
+		        new HTMLNode[] { HTMLNode.link("/USK@0npnMrqZNKRCRoGojZV93UNHCMN-6UU3rRSAmP6jNLE,~BG-edFtdCC1cSH4O3BWdeIYa8Sw5DfyrSV-TKdO5ec,AQACAAE/fms/101/"),
+		                HTMLNode.link("/SSK@ugb~uuscsidMI-Ze8laZe~o3BUIb3S50i25RIwDH99M,9T20t3xoG-dQfMO94LGOl9AxRTkaz~TykFY-voqaTQI,AQACAAE/FAFS-49/files/fms.htm")});
 		li = ul.addChild("li");
-		NodeL10n.getBase().addL10nSubstitution(li, "ChatForumsToadlet.frost", new String[] { "frost-freenet", "frost-web", "frost-help" },
-				new HTMLNode[] { HTMLNode.link("/freenet:USK@QRZAI1nSm~dAY2hTdzVWXmEhkaI~dso0OadnppBR7kE,wq5rHGBI7kpChBe4yRmgBChIGDug7Xa5SG9vYGXdxR0,AQACAAE/frost/9/"), HTMLNode.link("/?_CHECKED_HTTP_=http://jtcfrost.sourceforge.net/"), HTMLNode.link("/SSK@ugb~uuscsidMI-Ze8laZe~o3BUIb3S50i25RIwDH99M,9T20t3xoG-dQfMO94LGOl9AxRTkaz~TykFY-voqaTQI,AQACAAE/FAFS-49/files/frost.htm")});
+		NodeL10n.getBase().addL10nSubstitution(li, "ChatForumsToadlet.frost",
+		        new String[] { "frost-freenet", "frost-web", "frost-help" },
+		                new HTMLNode[] {
+			                HTMLNode.link("/freenet:USK@QRZAI1nSm~dAY2hTdzVWXmEhkaI~dso0OadnppBR7kE,wq5rHGBI7kpChBe4yRmgBChIGDug7Xa5SG9vYGXdxR0,AQACAAE/frost/9/"),
+			                HTMLNode.link(ExternalLinkToadlet.escape("http://jtcfrost.sourceforge.net/")),
+			                HTMLNode.link("/SSK@ugb~uuscsidMI-Ze8laZe~o3BUIb3S50i25RIwDH99M,9T20t3xoG-dQfMO94LGOl9AxRTkaz~TykFY-voqaTQI,AQACAAE/FAFS-49/files/frost.htm")});
 		contentBox.addChild("p", l10n("content2"));
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
