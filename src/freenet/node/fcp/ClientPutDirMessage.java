@@ -5,6 +5,7 @@ package freenet.node.fcp;
 
 import java.net.MalformedURLException;
 
+import freenet.client.async.ManifestPutter;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
 import freenet.keys.FreenetURI;
@@ -58,6 +59,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 	final byte[] overrideSplitfileCryptoKey;
 	final boolean localRequestOnly;
 	final boolean realTimeFlag;
+	final short manifestPutterType;
 	
 	public ClientPutDirMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		identifier = fs.get("Identifier");
@@ -180,6 +182,17 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 		extraInsertsSingleBlock = fs.getInt("ExtraInsertsSingleBlock", HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK);
 		extraInsertsSplitfileHeaderBlock = fs.getInt("ExtraInsertsSplitfileHeaderBlock", HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER);
 		realTimeFlag = fs.getBoolean("RealTimeFlag", false);
+		String manifestPutter = fs.get("ManifestPutter");
+		if(manifestPutter == null || manifestPutter.equalsIgnoreCase("simple")) {
+			manifestPutterType = ManifestPutter.MANIFEST_SIMPLEPUTTER;
+		} else if(manifestPutter.equalsIgnoreCase("default")) {
+			manifestPutterType = ManifestPutter.MANIFEST_DEFAULTPUTTER;
+		} else {
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid ManifestPutter value: "+manifestPutter, identifier, global);
+		}
+		if(manifestPutterType != ManifestPutter.MANIFEST_SIMPLEPUTTER && persistenceType != ClientRequest.PERSIST_CONNECTION) {
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Persistenace can only be used with the simple ManifestPutter", identifier, global);
+		}
 	}
 
 	@Override
@@ -198,6 +211,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 			sfs.putSingle("Codecs", compressorDescriptor);
 		sfs.put("Global", global);
 		sfs.putSingle("DefaultName", defaultName);
+		sfs.putSingle("ManifestPutter", ManifestPutter.manifestPutterTypeString(manifestPutterType));
 		return sfs;
 	}
 
