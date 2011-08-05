@@ -13,12 +13,14 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerRestartedException;
+import freenet.node.PrioRunnable;
 import freenet.node.SyncSendWaitedTooLongException;
 import freenet.support.BitArray;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
+import freenet.support.io.NativeThread;
 
 /**
  * Bulk data transfer (not block). Bulk transfer is designed for files which may be much bigger than a 
@@ -390,9 +392,26 @@ outer:	while(true) {
 					if(logMINOR) Logger.minor(this, "Still waiting for "+unsentPackets);
 				}
 			}
-			if(callAllSent)
-				allSentCallback.allSent(this, anyFailed);
+			if(callAllSent) {
+				callAllSentCallbackInner(anyFailed);
+			}
 		}
+	}
+	
+	private void callAllSentCallbackInner(final boolean anyFailed) {
+		prb.usm.getExecutor().execute(new PrioRunnable() {
+
+			@Override
+			public void run() {
+				allSentCallback.allSent(BulkTransmitter.this, anyFailed);
+			}
+
+			@Override
+			public int getPriority() {
+				return NativeThread.HIGH_PRIORITY;
+			}
+			
+		});
 	}
 	private int inFlightPackets = 0;
 	private int unsentPackets = 0;
@@ -474,7 +493,7 @@ outer:	while(true) {
 				sent = true;
 				notifyAll();
 			}
-			boolean anyFailed;
+			final boolean anyFailed;
 			synchronized(BulkTransmitter.this) {
 				unsentPackets--;
 				if(unsentPackets > 0) return;
@@ -484,7 +503,7 @@ outer:	while(true) {
 				anyFailed = failedPacket;
 			}
 			if(logMINOR) Logger.minor(this, "Calling all sent callback on "+this);
-			allSentCallback.allSent(BulkTransmitter.this, anyFailed);
+			callAllSentCallbackInner(anyFailed);
 		}
 		
 	}

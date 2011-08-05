@@ -623,4 +623,8 @@ public class MessageCore {
 		}
 		return messageCounts;
 	}
+
+	public Executor getExecutor() {
+		return _executor;
+	}
 }
