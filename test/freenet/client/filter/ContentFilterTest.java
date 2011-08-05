@@ -18,6 +18,7 @@ import freenet.client.filter.GenericReadFilterCallback;
 import freenet.client.filter.HTMLFilter;
 import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.client.filter.HTMLFilter.*;
+import freenet.clients.http.ExternalLinkToadlet;
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -139,7 +140,7 @@ public class ContentFilterTest extends TestCase {
 		assertEquals(INTERNAL_RELATIVE_LINK, HTMLFilter(INTERNAL_ABSOLUTE_LINK));
 		// are external links stripped out ?
 		assertTrue(HTMLFilter(EXTERNAL_LINK_CHECK1).startsWith(EXTERNAL_LINK_OK));
-		assertTrue(HTMLFilter(EXTERNAL_LINK_CHECK2).contains(GenericReadFilterCallback.magicHTTPEscapeString));
+		assertTrue(HTMLFilter(EXTERNAL_LINK_CHECK2).contains(ExternalLinkToadlet.magicHTTPEscapeString));
 		assertTrue(HTMLFilter(EXTERNAL_LINK_CHECK3).startsWith(EXTERNAL_LINK_OK));
 
 		// regression testing
@@ -158,7 +159,7 @@ public class ContentFilterTest extends TestCase {
 		// bug #2451
 		assertEquals(POUNT_CHARACTER_ENCODING_TEST_RESULT, HTMLFilter(POUNT_CHARACTER_ENCODING_TEST));
 		// bug #2297
-		assertTrue(HTMLFilter(PREVENT_FPROXY_ACCESS).contains(GenericReadFilterCallback.magicHTTPEscapeString));
+		assertTrue(HTMLFilter(PREVENT_FPROXY_ACCESS).contains(ExternalLinkToadlet.magicHTTPEscapeString));
 		// bug #2921
 		assertTrue(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_SIMPLE).contains("div { }"));
 		assertTrue(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_ESCAPE).contains("div { }"));
