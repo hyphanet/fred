@@ -28,7 +28,7 @@ import freenet.support.io.NativeThread;
 
 public final class CHKInsertSender extends BaseSender implements PrioRunnable, AnyInsertSender, ByteCounter {
 	
-	private class BackgroundTransfer implements PrioRunnable, AsyncMessageFilterCallback {
+	private class BackgroundTransfer implements PrioRunnable, SlowAsyncMessageFilterCallback {
 		private final long uid;
 		/** Node we are waiting for response from */
 		final PeerNode pn;
