@@ -13,7 +13,6 @@ import java.net.URISyntaxException;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import freenet.client.filter.GenericReadFilterCallback;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.filter.HTMLFilter;
@@ -902,6 +901,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				//resources. Anything else redirects to the first page of the wizard.
 				if (!(path.startsWith(FirstTimeWizardToadlet.TOADLET_URL) ||
 				        path.startsWith(StaticToadlet.ROOT_URL) ||
+				        path.startsWith(ExternalLinkToadlet.PATH) ||
 				        path.equals("/favicon.ico"))) {
 					try {
 						throw new PermanentRedirectException(new URI(null, null, null, -1, FirstTimeWizardToadlet.TOADLET_URL, uri.getQuery(), null));
