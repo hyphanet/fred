@@ -6152,8 +6152,40 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return false;
 	}
 
-	public void reportRoutedTo(double target, boolean isLocal, boolean realTime) {
+	public void reportRoutedTo(double target, boolean isLocal, boolean realTime, PeerNode prev, Set<PeerNode> routedTo) {
 		double distance = Location.distance(target, getLocation());
+		
+		double myLoc = node.getLocation();
+		double prevLoc;
+		if(prev != null)
+			prevLoc = prev.getLocation();
+		else
+			prevLoc = -1.0;
+		
+		double[] peersLocation = getPeersLocation();
+		if((peersLocation != null) && (shallWeRouteAccordingToOurPeersLocation())) {
+			for(double l : peersLocation) {
+				boolean ignoreLoc = false; // Because we've already been there
+				if(Math.abs(l - myLoc) < Double.MIN_VALUE * 2 ||
+						Math.abs(l - prevLoc) < Double.MIN_VALUE * 2)
+					ignoreLoc = true;
+				else {
+					for(PeerNode cmpPN : routedTo)
+						if(Math.abs(l - cmpPN.getLocation()) < Double.MIN_VALUE * 2) {
+							ignoreLoc = true;
+							break;
+						}
+				}
+				if(ignoreLoc) continue;
+				double newDiff = Location.distance(l, target);
+				if(newDiff < distance) {
+					distance = newDiff;
+				}
+			}
+			if(logMINOR)
+				Logger.minor(this, "The peer "+this+" has published his peer's locations and the closest we have found to the target is "+distance+" away.");
+		}
+		
 		node.nodeStats.routingMissDistanceOverall.report(distance);
 		(isLocal ? node.nodeStats.routingMissDistanceLocal : node.nodeStats.routingMissDistanceRemote).report(distance);
 		(realTime ? node.nodeStats.routingMissDistanceRT : node.nodeStats.routingMissDistanceBulk).report(distance);

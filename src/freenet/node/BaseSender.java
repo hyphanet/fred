@@ -175,7 +175,7 @@ public abstract class BaseSender implements ByteCounter {
 			 * Don't use sendAsync().
 			 */
         	next.sendSync(req, this, realTimeFlag);
-        	next.reportRoutedTo(key.toNormalizedDouble(), source == null, realTimeFlag);
+        	next.reportRoutedTo(key.toNormalizedDouble(), source == null, realTimeFlag, source, nodesRoutedTo);
 			node.peers.incrementSelectionSamples(System.currentTimeMillis(), next);
         } catch (NotConnectedException e) {
         	Logger.minor(this, "Not connected");
@@ -508,7 +508,7 @@ loadWaiterLoop:
     			 * Don't use sendAsync().
     			 */
     			if(logMINOR) Logger.minor(this, "Sending "+req+" to "+next);
-    			next.reportRoutedTo(key.toNormalizedDouble(), source == null, realTimeFlag);
+    			next.reportRoutedTo(key.toNormalizedDouble(), source == null, realTimeFlag, source, nodesRoutedTo);
     			next.sendSync(req, this, realTimeFlag);
     		} catch (NotConnectedException e) {
     			Logger.minor(this, "Not connected");
