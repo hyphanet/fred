@@ -434,6 +434,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         	}
         	if(routingTookTooLong) {
         		tag.timedOutToHandlerButContinued();
+        		sentCompletionWasSet = true;
         		try {
         			source.sendAsync(DMT.createFNPInsertTransfersCompleted(uid, true), null, this);
         		} catch (NotConnectedException e) {
