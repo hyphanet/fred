@@ -2067,12 +2067,17 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	
 	private int searchTimeout;
 	
+	@Override
 	protected void onAccepted(PeerNode next) {
+		onAccepted(next, false);
+	}
+	
+	protected void onAccepted(PeerNode next, boolean forked) {
 		MainLoopCallback cb;
         synchronized(this) {
         	receivingAsync = true;
         	searchTimeout = calculateTimeout(htl);
-            cb = new MainLoopCallback(next, false, searchTimeout);
+            cb = new MainLoopCallback(next, forked, searchTimeout);
         }
         cb.schedule();
 	}
@@ -2125,7 +2130,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 						next.noLongerRoutingTo(origTag, false);
 					} else {
 						// Accepted. May as well wait for the data, if any.
-						onAccepted(next);
+						onAccepted(next, true);
 					}
 				}
 				
