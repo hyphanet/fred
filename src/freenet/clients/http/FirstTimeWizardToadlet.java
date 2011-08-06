@@ -8,12 +8,13 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
+import java.util.EnumMap;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.wizardsteps.*;
 import freenet.config.Config;
 import freenet.config.ConfigException;
 import freenet.config.Option;
-import freenet.config.EnumerableOptionCallback;
 import freenet.l10n.NodeL10n;
 import freenet.node.MasterKeysFileSizeException;
 import freenet.node.MasterKeysWrongPasswordException;
@@ -41,6 +42,7 @@ import freenet.support.io.FileUtil;
 public class FirstTimeWizardToadlet extends Toadlet {
 	private final NodeClientCore core;
 	private final Config config;
+	private final EnumMap<WIZARD_STEP, AbstractGetStep> getHandlers;
 
         private static volatile boolean logMINOR;
 	static {
@@ -52,7 +54,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		});
 	}
 
-	private enum WIZARD_STEP {
+	public enum WIZARD_STEP {
 		WELCOME,
 		// Before security levels, because once the network security level has been set, we won't redirect
 		// the user to the wizard page.
@@ -65,14 +67,26 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		NAME_SELECTION,
 		BANDWIDTH,
 		DATASTORE_SIZE,
-		CONGRATZ,
-		FINAL;
+		CONGRATZ
 	}
 
 	FirstTimeWizardToadlet(HighLevelSimpleClient client, Node node, NodeClientCore core) {
+		//Generic Toadlet-related initialization.
 		super(client);
 		this.core = core;
 		this.config = node.config;
+
+		//Add GET handlers for steps.
+		getHandlers = new EnumMap<WIZARD_STEP, AbstractGetStep>(WIZARD_STEP.class);
+		getHandlers.put(WIZARD_STEP.WELCOME, new GetWELCOME(config));
+		getHandlers.put(WIZARD_STEP.BROWSER_WARNING, new GetBROWSER_WARNING());
+		getHandlers.put(WIZARD_STEP.OPENNET, new GetOPENNET());
+		getHandlers.put(WIZARD_STEP.SECURITY_NETWORK, new GetSECURITY_NETWORK());
+		getHandlers.put(WIZARD_STEP.SECURITY_PHYSICAL, new GetSECURITY_PHYSICAL(core));
+		getHandlers.put(WIZARD_STEP.NAME_SELECTION, new GetNAME_SELECTION());
+		getHandlers.put(WIZARD_STEP.BANDWIDTH, new GetBANDWIDTH(core, config));
+		getHandlers.put(WIZARD_STEP.DATASTORE_SIZE, new GetDATASTORE_SIZE(core, config));
+		getHandlers.put(WIZARD_STEP.CONGRATZ, new GetCONGRATZ(config));
 	}
 
 	public static final String TOADLET_URL = "/wizard/";
@@ -83,434 +97,14 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			return;
 		}
 
+		//Read the current step from the URL parameter, defaulting to the welcome page if unset.
 		WIZARD_STEP currentStep = WIZARD_STEP.valueOf(request.getParam("step", WIZARD_STEP.WELCOME.toString()));
-
-		if(currentStep == WIZARD_STEP.BROWSER_WARNING) {
-			
-			boolean incognito = request.isParameterSet("incognito");
-			// Bug 3376: Opening Chrome in incognito mode from command line will open a new non-incognito window if the browser is already open.
-			// See http://code.google.com/p/chromium/issues/detail?id=9636
-			// This is fixed upstream but we need to test for fixed versions of Chrome.
-			// Bug 5210: Same for Firefox!
-			// Note also that Firefox 4 and later are much less vulnerable to css link:visited attacks,
-			// but are not completely immune, especially if the bad guy can guess the site url. Ideally
-			// the user should turn off link:visited styling altogether.
-			// FIXME detect recent firefox and tell the user how they could improve their privacy further.
-			// See:
-			// http://blog.mozilla.com/security/2010/03/31/plugging-the-css-history-leak/
-			// http://dbaron.org/mozilla/visited-privacy#limits
-			// http://jeremiahgrossman.blogspot.com/2006/08/i-know-where-youve-been.html
-			// https://developer.mozilla.org/en/Firefox_4_for_developers
-			// https://developer.mozilla.org/en/CSS/Privacy_and_the_%3avisited_selector
-			String ua = request.getHeader("user-agent");
-			boolean isFirefox = false;
-			boolean isOldFirefox = false;
-			boolean mightHaveClobberedTabs = false;
-			if(ua != null) {
-				isFirefox = ua.contains("Firefox/");
-				if(isFirefox) {
-					if(incognito)
-						mightHaveClobberedTabs = true;
-					if(ua.contains("Firefox/0.") || ua.contains("Firefox/1.") || ua.contains("Firefox/2.") || ua.contains("Firefox/3."))
-						isOldFirefox = true;
-				}
-			}
-			incognito = false;
-			boolean isRelativelySafe = isFirefox && !isOldFirefox;
-			
-			PageNode page = ctx.getPageMaker().getPageNode(incognito ? l10n("browserWarningIncognitoPageTitle") : (isRelativelySafe ? l10n("browserWarningPageTitleRelativelySafe") : l10n("browserWarningPageTitle")), false, false, ctx);
-			HTMLNode pageNode = page.outer;
-			HTMLNode contentNode = page.content;
-
-			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-			HTMLNode infoboxHeader = infobox.addChild("div", "class", "infobox-header");
-			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-
-			if(incognito)
-				infoboxHeader.addChild("#", l10n("browserWarningIncognitoShort"));
-			else if(isRelativelySafe)
-				infoboxHeader.addChild("#", l10n("browserWarningShort"));
-			else
-				infoboxHeader.addChild("#", l10n("browserWarningShortRelativelySafe"));
-			
-			if(isOldFirefox) {
-				HTMLNode p = infoboxContent.addChild("p");
-				p.addChild("#", l10n("browserWarningOldFirefox"));
-				if(!incognito)
-					p.addChild("#", " " + l10n("browserWarningOldFirefoxNewerHasPrivacyMode"));
-			}
-			
-			if(isRelativelySafe)
-				infoboxContent.addChild("p", incognito ? l10n("browserWarningIncognitoMaybeSafe") : l10n("browserWarningMaybeSafe"));
-			else
-				NodeL10n.getBase().addL10nSubstitution(infoboxContent, incognito ? "FirstTimeWizardToadlet.browserWarningIncognito" : "FirstTimeWizardToadlet.browserWarning", new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
-
-			if(incognito) {
-				infoboxContent.addChild("p", l10n("browserWarningIncognitoSuggestion"));
-			} else
-				infoboxContent.addChild("p", l10n("browserWarningSuggestion"));
-
-			infoboxContent.addChild("p").addChild("a", "href", "?step="+WIZARD_STEP.MISC, l10n("clickContinue"));
-
-			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-			return;
-		} else if(currentStep == WIZARD_STEP.OPENNET){
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("opennetChoicePageTitle"), false, false, ctx);
-			HTMLNode pageNode = page.outer;
-			HTMLNode contentNode = page.content;
-
-			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-			HTMLNode infoboxHeader = infobox.addChild("div", "class", "infobox-header");
-			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-
-			infoboxHeader.addChild("#", l10n("opennetChoiceTitle"));
-			
-			infoboxContent.addChild("p", l10n("opennetChoiceIntroduction"));
-			
-			HTMLNode form = infoboxContent.addChild("form", new String[] { "action", "method", "id" }, new String[] { "GET", ".", "opennetChoiceForm" });
-			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "step", WIZARD_STEP.SECURITY_NETWORK.name() });
-			
-			HTMLNode p = form.addChild("p");
-			HTMLNode input = p.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "opennet", "false" });
-			input.addChild("b", l10n("opennetChoiceConnectFriends")+":");
-			p.addChild("br");
-			p.addChild("i", l10n("opennetChoicePro"));
-			p.addChild("#", ": "+l10n("opennetChoiceConnectFriendsPRO") + "¹");
-			p.addChild("br");
-			p.addChild("i", l10n("opennetChoiceCon"));
-			p.addChild("#", ": "+l10n("opennetChoiceConnectFriendsCON", "minfriends", "5"));
-			
-			p = form.addChild("p");
-			input = p.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "opennet", "true" });
-			input.addChild("b", l10n("opennetChoiceConnectStrangers")+":");
-			p.addChild("br");
-			p.addChild("i", l10n("opennetChoicePro"));
-			p.addChild("#", ": "+l10n("opennetChoiceConnectStrangersPRO"));
-			p.addChild("br");
-			p.addChild("i", l10n("opennetChoiceCon"));
-			p.addChild("#", ": "+l10n("opennetChoiceConnectStrangersCON"));
-			
-			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "opennetF", l10n("continue")});
-			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
-			HTMLNode foot = infoboxContent.addChild("div", "class", "toggleable");
-			foot.addChild("i", "¹: " + l10n("opennetChoiceHowSafeIsFreenetToggle"));
-			HTMLNode footHidden = foot.addChild("div", "class", "hidden");
-			HTMLNode footList = footHidden.addChild("ol");
-			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetStupid"));
-			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetFriends") + "²");
-			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetTrustworthy"));
-			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetNoSuspect"));
-			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetChangeID"));
-			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetSSK"));
-			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetOS"));
-			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetBigPriv"));
-			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetDistant"));
-			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetBugs"));
-			HTMLNode foot2 = footHidden.addChild("p");
-			foot2.addChild("#", "²: " + l10n("opennetChoiceHowSafeIsFreenetFoot2"));
-			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-			return;
-		} else if(currentStep == WIZARD_STEP.SECURITY_NETWORK) {
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("networkSecurityPageTitle"), false, false, ctx);
-			HTMLNode pageNode = page.outer;
-			HTMLNode contentNode = page.content;
-
-			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-			HTMLNode infoboxHeader = infobox.addChild("div", "class", "infobox-header");
-			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-			
-			if(!request.isParameterSet("opennet")) {
-				super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.OPENNET);
-				return;
-			}
-
-			String opennetParam = request.getParam("opennet", "false");
-			boolean opennet = Fields.stringToBool(opennetParam);
-
-			infoboxHeader.addChild("#", l10n(opennet ? "networkThreatLevelHeaderOpennet" : "networkThreatLevelHeaderDarknet"));
-			infoboxContent.addChild("p", l10n(opennet ? "networkThreatLevelIntroOpennet" : "networkThreatLevelIntroDarknet"));
-			HTMLNode form = ctx.addFormChild(infoboxContent, ".", "networkSecurityForm");
-			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "opennet", opennetParam });
-			String controlName = "security-levels.networkThreatLevel";
-			if(opennet) {
-				HTMLNode div = form.addChild("div", "class", "opennetDiv");
-				for(NETWORK_THREAT_LEVEL level : NETWORK_THREAT_LEVEL.OPENNET_VALUES) {
-					HTMLNode input;
-					input = div.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", controlName, level.name() });
-					input.addChild("b", l10nSec("networkThreatLevel.name."+level));
-					input.addChild("#", ": ");
-					NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.networkThreatLevel.choice."+level, new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
-					HTMLNode inner = input.addChild("p").addChild("i");
-					NodeL10n.getBase().addL10nSubstitution(inner, "SecurityLevels.networkThreatLevel.desc."+level, new String[] { "bold" },
-							new HTMLNode[] { HTMLNode.STRONG });
-				}
-			}
-			if(!opennet) {
-				HTMLNode div = form.addChild("div", "class", "darknetDiv");
-				for(NETWORK_THREAT_LEVEL level : NETWORK_THREAT_LEVEL.DARKNET_VALUES) {
-					HTMLNode input;
-					input = div.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", controlName, level.name() });
-					input.addChild("b", l10nSec("networkThreatLevel.name."+level));
-					input.addChild("#", ": ");
-					NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.networkThreatLevel.choice."+level, new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
-					HTMLNode inner = input.addChild("p").addChild("i");
-					NodeL10n.getBase().addL10nSubstitution(inner, "SecurityLevels.networkThreatLevel.desc."+level, new String[] { "bold" },
-							new HTMLNode[] { HTMLNode.STRONG });
-				}
-				form.addChild("p").addChild("b", l10nSec("networkThreatLevel.opennetFriendsWarning"));
-			}
-			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "networkSecurityF", l10n("continue")});
-			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
-			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-			return;
-		} else if(currentStep == WIZARD_STEP.SECURITY_PHYSICAL) {
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("physicalSecurityPageTitle"), false, false, ctx);
-			HTMLNode pageNode = page.outer;
-			HTMLNode contentNode = page.content;
-
-			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-			HTMLNode infoboxHeader = infobox.addChild("div", "class", "infobox-header");
-			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-
-			infoboxHeader.addChild("#", l10nSec("physicalThreatLevelShort"));
-			infoboxContent.addChild("p", l10nSec("physicalThreatLevel"));
-			HTMLNode form = ctx.addFormChild(infoboxContent, ".", "physicalSecurityForm");
-			HTMLNode div = form.addChild("div", "class", "opennetDiv");
-			String controlName = "security-levels.physicalThreatLevel";
-			HTMLNode swapWarning = div.addChild("p").addChild("i");
-			NodeL10n.getBase().addL10nSubstitution(swapWarning, "SecurityLevels.physicalThreatLevelSwapfile",
-			        new String[] { "bold", "truecrypt" },
-			        new HTMLNode[] { HTMLNode.STRONG,
-			                HTMLNode.linkInNewWindow(ExternalLinkToadlet.escape("http://www.truecrypt.org/")) });
- 			if(File.separatorChar == '\\') {
-				swapWarning.addChild("#", " " + l10nSec("physicalThreatLevelSwapfileWindows"));
-			}
-			for(PHYSICAL_THREAT_LEVEL level : PHYSICAL_THREAT_LEVEL.values()) {
-				HTMLNode input;
-				input = div.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", controlName, level.name() });
-				input.addChild("b", l10nSec("physicalThreatLevel.name."+level));
-				input.addChild("#", ": ");
-				NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.physicalThreatLevel.choice."+level, new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
-				if(level == PHYSICAL_THREAT_LEVEL.HIGH) {
-					if(core.node.securityLevels.getPhysicalThreatLevel() != level) {
-						// Add password form
-						HTMLNode p = div.addChild("p");
-						p.addChild("label", "for", "passwordBox", l10nSec("setPasswordLabel")+":");
-						p.addChild("input", new String[] { "id", "type", "name" }, new String[] { "passwordBox", "password", "masterPassword" });
-					}
-				}
-			}
-			div.addChild("#", l10nSec("physicalThreatLevelEnd"));
-			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "physicalSecurityF", l10n("continue")});
-			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
-			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-			return;
-		} else if(currentStep == WIZARD_STEP.NAME_SELECTION) {
-			// Attempt to skip one step if possible: opennet nodes don't need a name
-			if(Boolean.valueOf(request.getParam("opennet"))) {
-				super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step="+WIZARD_STEP.BANDWIDTH);
-				return;
-			}
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("step2Title"), false, false, ctx);
-			HTMLNode pageNode = page.outer;
-			HTMLNode contentNode = page.content;
-
-			HTMLNode nnameInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-			HTMLNode nnameInfoboxHeader = nnameInfobox.addChild("div", "class", "infobox-header");
-			HTMLNode nnameInfoboxContent = nnameInfobox.addChild("div", "class", "infobox-content");
-
-			nnameInfoboxHeader.addChild("#", l10n("chooseNodeName"));
-			nnameInfoboxContent.addChild("#", l10n("chooseNodeNameLong"));
-			HTMLNode nnameForm = ctx.addFormChild(nnameInfoboxContent, ".", "nnameForm");
-			nnameForm.addChild("input", "name", "nname");
-
-			nnameForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "nnameF", l10n("continue")});
-			nnameForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
-			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-			return;
-		} else if(currentStep == WIZARD_STEP.BANDWIDTH) {
-			// Attempt to skip one step if possible
-			int autodetectedLimit = canAutoconfigureBandwidth();
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("step3Title"), false, false, ctx);
-			HTMLNode pageNode = page.outer;
-			HTMLNode contentNode = page.content;
-
-			HTMLNode bandwidthInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-			HTMLNode bandwidthnfoboxHeader = bandwidthInfobox.addChild("div", "class", "infobox-header");
-			HTMLNode bandwidthInfoboxContent = bandwidthInfobox.addChild("div", "class", "infobox-content");
-
-			bandwidthnfoboxHeader.addChild("#", l10n("bandwidthLimit"));
-			bandwidthInfoboxContent.addChild("#", l10n("bandwidthLimitLong"));
-			HTMLNode bandwidthForm = ctx.addFormChild(bandwidthInfoboxContent, ".", "bwForm");
-			HTMLNode result = bandwidthForm.addChild("select", "name", "bw");
-
-			@SuppressWarnings("unchecked")
-			Option<Integer> sizeOption = (Option<Integer>) config.get("node").getOption("outputBandwidthLimit");
-			if(!sizeOption.isDefault()) {
-				int current = sizeOption.getValue();
-				result.addChild("option", new String[] { "value", "selected" }, new String[] { SizeUtil.formatSize(current), "on" }, l10n("currentSpeed")+" "+SizeUtil.formatSize(current)+"/s");
-			} else if(autodetectedLimit != -1)
-				result.addChild("option", new String[] { "value", "selected" }, new String[] { SizeUtil.formatSize(autodetectedLimit), "on" }, l10n("autodetectedSuggestedLimit")+" "+SizeUtil.formatSize(autodetectedLimit)+"/s");
-
-			// don't forget to update handlePost too if you change that!
-			if(autodetectedLimit != 8192)
-				result.addChild("option", "value", "8K", l10n("bwlimitLowerSpeed"));
-			// Special case for 128kbps to increase performance at the cost of some link degradation. Above that we use 50% of the limit.
-			result.addChild("option", "value", "12K", "512+/128 kbps (12KB/s)");
-			if(autodetectedLimit != -1 || !sizeOption.isDefault())
-				result.addChild("option", "value", "16K", "1024+/256 kbps (16KB/s)");
-			else
-				result.addChild("option", new String[] { "value", "selected" }, new String[] { "16K", "selected" }, "1024+/256 kbps (16KB/s)");
-			result.addChild("option", "value", "32K", "1024+/512 kbps (32K/s)");
-			result.addChild("option", "value", "64K", "1024+/1024 kbps (64K/s)");
-			result.addChild("option", "value", "1000K", l10n("bwlimitHigherSpeed"));
-
-			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "bwF", l10n("continue")});
-			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
-			bandwidthInfoboxContent.addChild("#", l10n("bandwidthLimitAfter"));
-			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-			return;
-		} else if(currentStep == WIZARD_STEP.DATASTORE_SIZE) {
-			// Attempt to skip one step if possible
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("step4Title"), false, false, ctx);
-			HTMLNode pageNode = page.outer;
-			HTMLNode contentNode = page.content;
-
-			HTMLNode bandwidthInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-			HTMLNode bandwidthnfoboxHeader = bandwidthInfobox.addChild("div", "class", "infobox-header");
-			HTMLNode bandwidthInfoboxContent = bandwidthInfobox.addChild("div", "class", "infobox-content");
-
-			bandwidthnfoboxHeader.addChild("#", l10n("datastoreSize"));
-			bandwidthInfoboxContent.addChild("#", l10n("datastoreSizeLong"));
-			HTMLNode bandwidthForm = ctx.addFormChild(bandwidthInfoboxContent, ".", "dsForm");
-			HTMLNode result = bandwidthForm.addChild("select", "name", "ds");
-
-			long maxSize = maxDatastoreSize();
-			
-			long autodetectedSize = canAutoconfigureDatastoreSize();
-			if(maxSize < autodetectedSize) autodetectedSize = maxSize;
-
-			@SuppressWarnings("unchecked")
-			Option<Long> sizeOption = (Option<Long>) config.get("node").getOption("storeSize");
-			if(!sizeOption.isDefault()) {
-				long current = sizeOption.getValue();
-				result.addChild("option", new String[] { "value", "selected" }, new String[] { SizeUtil.formatSize(current), "on" }, l10n("currentPrefix")+" "+SizeUtil.formatSize(current));
-			} else if(autodetectedSize != -1)
-				result.addChild("option", new String[] { "value", "selected" }, new String[] { SizeUtil.formatSize(autodetectedSize), "on" }, SizeUtil.formatSize(autodetectedSize));
-			if(autodetectedSize != 512*1024*1024)
-				result.addChild("option", "value", "512M", "512 MiB");
-			// We always allow at least 1GB
-			result.addChild("option", "value", "1G", "1 GiB");
-			if(maxSize >= 2*1024*1024*1024) {
-				if(autodetectedSize != -1 || !sizeOption.isDefault())
-					result.addChild("option", "value", "2G", "2 GiB");
-				else
-					result.addChild("option", new String[] { "value", "selected" }, new String[] { "2G", "on" }, "2GiB");
-			}
-			if(maxSize >= 3*1024*1024*1024)
-			result.addChild("option", "value", "3G", "3 GiB");
-			if(maxSize >= 5*1024*1024*1024)
-			result.addChild("option", "value", "5G", "5 GiB");
-			if(maxSize >= 10*1024*1024*1024)
-				result.addChild("option", "value", "10G", "10 GiB");
-			if(maxSize >= 20*1024*1024*1024)
-			result.addChild("option", "value", "20G", "20 GiB");
-			if(maxSize >= 30*1024*1024*1024)
-			result.addChild("option", "value", "30G", "30 GiB");
-			if(maxSize >= 50*1024*1024*1024)
-			result.addChild("option", "value", "50G", "50 GiB");
-			if(maxSize >= 100*1024*1024*1024)
-			result.addChild("option", "value", "100G", "100 GiB");
-
-			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "dsF", l10n("continue")});
-			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
-			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-			return;
-		} else if(currentStep == WIZARD_STEP.MISC) {
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("stepMiscTitle"), false, false, ctx);
-			HTMLNode pageNode = page.outer;
-			HTMLNode contentNode = page.content;
-
-			HTMLNode form = ctx.addFormChild(contentNode, ".", "miscForm");
-
-			HTMLNode miscInfobox = form.addChild("div", "class", "infobox infobox-normal");
-			HTMLNode miscInfoboxHeader = miscInfobox.addChild("div", "class", "infobox-header");
-			HTMLNode miscInfoboxContent = miscInfobox.addChild("div", "class", "infobox-content");
-
-			miscInfoboxHeader.addChild("#", l10n("autoUpdate"));
-			miscInfoboxContent.addChild("p", l10n("autoUpdateLong"));
-			miscInfoboxContent.addChild("p").addChild("input", new String[] { "type", "checked", "name", "value" },
-					new String[] { "radio", "on", "autodeploy", "true" }, l10n("autoUpdateAutodeploy"));
-			miscInfoboxContent.addChild("p").addChild("input", new String[] { "type", "name", "value" },
-					new String[] { "radio", "autodeploy", "false" }, l10n("autoUpdateNoAutodeploy"));
-
-			miscInfobox = form.addChild("div", "class", "infobox infobox-normal");
-			miscInfoboxHeader = miscInfobox.addChild("div", "class", "infobox-header");
-			miscInfoboxContent = miscInfobox.addChild("div", "class", "infobox-content");
-
-			miscInfoboxHeader.addChild("#", l10n("plugins"));
-			miscInfoboxContent.addChild("p", l10n("pluginsLong"));
-			miscInfoboxContent.addChild("p").addChild("input", new String[] { "type", "checked", "name", "value" },
-					new String[] { "checkbox", "on", "upnp", "true" }, l10n("enableUPnP"));
-
-			miscInfoboxContent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "miscF", l10n("continue")});
-			miscInfoboxContent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
-			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-			return;
-		}else if(currentStep == WIZARD_STEP.CONGRATZ) {
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("step7Title"), false, false, ctx);
-			HTMLNode pageNode = page.outer;
-			HTMLNode contentNode = page.content;
-
-			HTMLNode congratzInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-			HTMLNode congratzInfoboxHeader = congratzInfobox.addChild("div", "class", "infobox-header");
-			HTMLNode congratzInfoboxContent = congratzInfobox.addChild("div", "class", "infobox-content");
-
-			congratzInfoboxHeader.addChild("#", l10n("congratz"));
-			congratzInfoboxContent.addChild("p", l10n("congratzLong"));
-
-			congratzInfoboxContent.addChild("a", "href", "?step="+WIZARD_STEP.FINAL, l10n("continueEnd"));
-
-			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-			return;
-		} else if(currentStep == WIZARD_STEP.FINAL) {
-			try {
-				config.get("fproxy").set("hasCompletedWizard", true);
-                                config.store();
-				this.writeTemporaryRedirect(ctx, "Return to home", "/");
-			} catch (ConfigException e) {
-				Logger.error(this, e.getMessage(), e);
-			}
-			return;
-		}
-
-		PageNode page = ctx.getPageMaker().getPageNode(l10n("homepageTitle"), false, false, ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
-
-		HTMLNode welcomeInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-		HTMLNode welcomeInfoboxHeader = welcomeInfobox.addChild("div", "class", "infobox-header");
-		HTMLNode welcomeInfoboxContent = welcomeInfobox.addChild("div", "class", "infobox-content");
-		welcomeInfoboxHeader.addChild("#", l10n("welcomeInfoboxTitle"));
-
-		HTMLNode firstParagraph = welcomeInfoboxContent.addChild("p");
-		firstParagraph.addChild("#", l10n("welcomeInfoboxContent1"));
-		HTMLNode secondParagraph = welcomeInfoboxContent.addChild("p");
-		boolean incognito = request.isParameterSet("incognito");
-		String append = incognito ? "&incognito=true" : "";
-		secondParagraph.addChild("a", "href", "?step="+WIZARD_STEP.BROWSER_WARNING+append).addChild("#", l10n("clickContinue"));
-
-		HTMLNode languageForm = ctx.addFormChild(secondParagraph, ".", "languageForm");
-		Option language = config.get("node").getOption("l10n");
-		EnumerableOptionCallback l10nCallback = (EnumerableOptionCallback)language.getCallback();
-		HTMLNode dropDown = ConfigToadlet.addComboBox(language.getValueString(), l10nCallback, language.getName(), false);
-		//Submit automatically upon selection if Javascript.
-		dropDown.addAttribute("onchange", "this.form.submit()");
-		languageForm.addChild(dropDown);
-		//Otherwise fall back to submit button if no Javascript
-		languageForm.addChild("noscript").addChild("input", "type", "submit");
-
-		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		//Get handler for page.
+		AbstractGetStep getStep = getHandlers.get(currentStep);
+		//Generate page to surround the content, using the step's title.
+		PageNode pageNode = ctx.getPageMaker().getPageNode(getStep.TITLE_KEY, false, false, ctx);
+		//Return the page to the browser.
+		writeHTMLReply(ctx, 200, "OK", getStep.getPage(pageNode.content, request, ctx));
 	}
 
 	private String l10nSec(String key) {
@@ -750,7 +344,11 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			} catch (MasterKeysFileSizeException e) {
 				System.err.println("Failed starting up database while switching physical security level to "+newThreatLevel+" from "+oldThreatLevel+" : "+core.node.getMasterPasswordFile()+" is too " + e.sizeToString());
 			}
-			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.NAME_SELECTION+"&opennet="+core.node.isOpennetEnabled());
+			if (core.node.isOpennetEnabled()) {
+				super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.NAME_SELECTION+"&opennet=true");
+			} else {
+				super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step="+WIZARD_STEP.BANDWIDTH);
+			}
 			return;
 		} else if(request.isPartSet("nnameF")) {
 			String selectedNName = request.getPartAsStringFailsafe("nname", 128);
@@ -816,6 +414,15 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		super.writeTemporaryRedirect(ctx, "invalid/unhandled data", TOADLET_URL);
 	}
 
+	private void _setUpstreamBandwidthLimit(String selectedUploadSpeed) {
+		try {
+			config.get("node").set("outputBandwidthLimit", selectedUploadSpeed);
+			Logger.normal(this, "The outputBandwidthLimit has been set to " + selectedUploadSpeed);
+		} catch (ConfigException e) {
+			Logger.error(this, "Should not happen, please report!" + e, e);
+		}
+	}
+
 	private void sendPasswordFileCorruptedPage(boolean tooBig, ToadletContext ctx, boolean forSecLevels, boolean forFirstTimeWizard) throws ToadletContextClosedException, IOException {
 		writeHTMLReply(ctx, 500, "OK", SecurityLevelsToadlet.sendPasswordFileCorruptedPageInner(tooBig, ctx, forSecLevels, forFirstTimeWizard, core.node.getMasterPasswordFile().getPath(), core.node).generate());
 	}
@@ -831,7 +438,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	private String l10n(String key, String pattern, String value) {
 		return NodeL10n.getBase().getString("FirstTimeWizardToadlet."+key, pattern, value);
 	}
-	
+
 	private void _setDatastoreSize(String selectedStoreSize) {
 		try {
 			long size = Fields.parseLong(selectedStoreSize);
@@ -869,92 +476,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			Logger.normal(this, "The storeSize has been set to " + selectedStoreSize);
 		} catch(ConfigException e) {
 			Logger.error(this, "Should not happen, please report!" + e, e);
-		}
-	}
-
-	private void _setUpstreamBandwidthLimit(String selectedUploadSpeed) {
-		try {
-			config.get("node").set("outputBandwidthLimit", selectedUploadSpeed);
-			Logger.normal(this, "The outputBandwidthLimit has been set to " + selectedUploadSpeed);
-		} catch (ConfigException e) {
-			Logger.error(this, "Should not happen, please report!" + e, e);
-		}
-	}
-
-	private void _setDownstreamBandwidthLimit(String selectedDownloadSpeed) {
-		try {
-			config.get("node").set("inputBandwidthLimit", selectedDownloadSpeed);
-			Logger.normal(this, "The inputBandwidthLimit has been set to " + selectedDownloadSpeed);
-		} catch(ConfigException e) {
-			Logger.error(this, "Should not happen, please report!" + e, e);
-		}
-	}
-
-	private int canAutoconfigureBandwidth() {
-		if(!config.get("node").getOption("outputBandwidthLimit").isDefault())
-			return -1;
-		FredPluginBandwidthIndicator bwIndicator = core.node.ipDetector.getBandwidthIndicator();
-		if(bwIndicator == null)
-			return -1;
-
-		int downstreamBWLimit = bwIndicator.getDownstreamMaxBitRate();
-		int upstreamBWLimit = bwIndicator.getUpstramMaxBitRate();
-		if((downstreamBWLimit > 0 && downstreamBWLimit < 65536) || (upstreamBWLimit > 0 && upstreamBWLimit < 8192)) {
-			// These are kilobits, not bits, per second, right?
-			// Assume the router is buggy and don't autoconfigure.
-			// Nothing that implements UPnP would be that slow.
-			System.err.println("Buggy router? downstream: "+downstreamBWLimit+" upstream: "+upstreamBWLimit+" - these are supposed to be in bits per second!");
-			return -1;
-		}
-		if(downstreamBWLimit > 0) {
-			int bytes = (downstreamBWLimit / 8) - 1;
-			String downstreamBWLimitString = SizeUtil.formatSize(bytes * 2 / 3);
-			// Set the downstream limit anyway, it is usually so high as to be irrelevant.
-			// The user can choose the upstream limit.
-			_setDownstreamBandwidthLimit(downstreamBWLimitString);
-			Logger.normal(this, "The node has a bandwidthIndicator: it has reported downstream=" + downstreamBWLimit + "bits/sec... we will use " + downstreamBWLimitString + " and skip the bandwidth selection step of the wizard.");
-		}
-
-		// We don't mind if the downstreamBWLimit couldn't be set, but upstreamBWLimit is important
-		if(upstreamBWLimit > 0) {
-			int bytes = (upstreamBWLimit / 8) - 1;
-			if(bytes < 16384) return 8192;
-			return bytes / 2;
-		}else
-			return -1;
-	}
-	
-	private long maxDatastoreSize() {
-		long maxMemory = Runtime.getRuntime().maxMemory();
-		if(maxMemory == Long.MAX_VALUE) return Long.MAX_VALUE;
-		if(maxMemory < 128*1024*1024) return 1024*1024*1024;
-		return (((((maxMemory - 100*1024*1024)*4)/5) / (4 * 3) /* it's actually size per one key of each type */)) * Node.sizePerKey;
-	}
-
-	private long canAutoconfigureDatastoreSize() {
-		if(!config.get("node").getOption("storeSize").isDefault())
-			return -1;
-
-		long freeSpace = FileUtil.getFreeSpace(core.node.getStoreDir());
-
-		if(freeSpace <= 0)
-			return -1;
-		else {
-			long shortSize = -1;
-			if(freeSpace / 20 > 1024 * 1024 * 1024) { // 20GB+ => 5%, limit 256GB
-				// If 20GB+ free, 5% of available disk space.
-				// Maximum of 256GB. That's a 128MB bloom filter.
-				shortSize = Math.min(freeSpace / 20, 256*1024*1024*1024L);
-			}else if(freeSpace / 10 > 1024 * 1024 * 1024) { // 10GB+ => 10%
-				// If 10GB+ free, 10% of available disk space.
-				shortSize = freeSpace / 10;
-			}else if(freeSpace / 5 > 1024 * 1024 * 1024) { // 5GB+ => 512MB
-				// If 5GB+ free, default to 512MB
-				shortSize = 512*1024*1024;
-			}else // <5GB => 256MB
-				shortSize = 256*1024*1024;
-
-			return shortSize;
 		}
 	}
 
