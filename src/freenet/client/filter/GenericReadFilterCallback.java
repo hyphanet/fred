@@ -246,7 +246,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		if(forBaseHref)
 			throw new CommentException(l10n("bogusBaseHref"));
 		if(GenericReadFilterCallback.allowedProtocols.contains(uri.getScheme()))
-			return "/?"+ExternalLinkToadlet.magicHTTPEscapeString+ '=' +uri;
+			return ExternalLinkToadlet.escape(uri.toString());
 		else {
 			if(uri.getScheme() == null) {
 				throw new CommentException(reason);
