@@ -192,8 +192,8 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 		} else {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid ManifestPutter value: "+manifestPutter, identifier, global);
 		}
-		if(manifestPutterType != ManifestPutter.MANIFEST_SIMPLEPUTTER && persistenceType != ClientRequest.PERSIST_CONNECTION) {
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Persistenace can only be used with the simple ManifestPutter", identifier, global);
+		if(manifestPutterType != ManifestPutter.MANIFEST_SIMPLEPUTTER && (persistenceType != ClientRequest.PERSIST_CONNECTION && persistenceType != ClientRequest.PERSIST_REBOOT)) {
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Only Connection or Reboot persistenace can only be used with the default ManifestPutter", identifier, global);
 		}
 	}
 
