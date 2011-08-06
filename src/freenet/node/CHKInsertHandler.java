@@ -386,45 +386,18 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
      */
     private void finish(int code) {
     	if(logMINOR) Logger.minor(this, "Waiting for receive");
-    	boolean routingTookTooLong = false;
     	int transferTimeout = realTimeFlag ?
     			CHKInsertSender.TRANSFER_COMPLETION_ACK_TIMEOUT_REALTIME :
     				CHKInsertSender.TRANSFER_COMPLETION_ACK_TIMEOUT_BULK;
 		synchronized(this) {
-			long startedTime = System.currentTimeMillis();
 			while(receiveStarted && !receiveCompleted) {
 				try {
-					int t = (int)Math.min(Integer.MAX_VALUE, startedTime + transferTimeout - System.currentTimeMillis());
-					if(t > 0) wait(t);
-					else {
-						routingTookTooLong = true;
-						break;
-					}
+					wait(100*1000);
 				} catch (InterruptedException e) {
 					// Ignore
 				}
 			}
     	}
-		
-		if(routingTookTooLong) {
-			tag.timedOutToHandlerButContinued();
-        	try {
-				source.sendAsync(DMT.createFNPInsertTransfersCompleted(uid, true), null, this);
-			} catch (NotConnectedException e) {
-				// Ignore.
-			}
-			
-			Logger.error(this, "Insert took too long, telling downstream that it's finished and reassigning to self.");
-			synchronized(this) {
-				while(receiveStarted && !receiveCompleted) {
-					try {
-						wait();
-					} catch (InterruptedException e) {
-						// Ignore
-					}
-				}
-			}
-		}
 		
 		CHKBlock block = verify();
 		// If we wanted to reduce latency at the cost of security (bug 3338), we'd commit here, or even on the receiver thread.
@@ -438,8 +411,10 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         
 		Message m=null;
 		
+		boolean routingTookTooLong = false;
         if((sender != null) && (!sentCompletionWasSet)) {
             if(logMINOR) Logger.minor(this, "Waiting for completion");
+            long startedTime = System.currentTimeMillis();
 			//If there are downstream senders, our final success report depends on there being no timeouts in the chain.
         	while(true) {
         		synchronized(sender) {
@@ -447,14 +422,44 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         				break;
         			}
         			try {
-        				sender.wait(10*1000);
+        				int t = (int)Math.min(Integer.MAX_VALUE, startedTime + transferTimeout - System.currentTimeMillis());
+        				if(t > 0) wait(t);
+        				else {
+        					routingTookTooLong = true;
+        				}
         			} catch (InterruptedException e) {
         				// Loop
         			}
         		}
         	}
+        	if(routingTookTooLong) {
+        		tag.timedOutToHandlerButContinued();
+        		try {
+        			source.sendAsync(DMT.createFNPInsertTransfersCompleted(uid, true), null, this);
+        		} catch (NotConnectedException e) {
+        			// Ignore.
+        		}
+        		
+        		Logger.error(this, "Insert took too long, telling downstream that it's finished and reassigning to self on "+this);
+        		
+        		// Still waiting.
+        		while(true) {
+        			synchronized(sender) {
+        				if(sender.completed()) {
+        					break;
+        				}
+        				try {
+        					wait(10*1000);
+        				} catch (InterruptedException e) {
+        					// Loop
+        				}
+        			}
+        		}
+        		if(logMINOR) Logger.minor(this, "Completed after telling downstream on "+this);
+        	}
         	boolean failed = sender.anyTransfersFailed();
-        	m = DMT.createFNPInsertTransfersCompleted(uid, failed);
+        	if(!sentCompletionWasSet)
+        		m = DMT.createFNPInsertTransfersCompleted(uid, failed);
 		}
 		
 		if((sender == null) && (!sentCompletionWasSet) && (canCommit)) {
@@ -477,7 +482,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 		// which will cause unnecessary rejects and thus mandatory backoff.
     	tag.unlockHandler();
         
-    	if(!routingTookTooLong) {
+    	if(m != null) {
         	try {
         		// We do need to sendSync here so we have accurate byte counter totals.
         		source.sendSync(m, this, realTimeFlag);
