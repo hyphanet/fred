@@ -4588,6 +4588,10 @@ public class Node implements TimeSkewDetectorCallback {
 		is.start();
 		return is;
 	}
+	
+	public boolean lockUID(UIDTag tag) {
+		return lockUID(tag.uid, tag.isSSK(), tag.isInsert(), tag.isOfferReply(), tag.wasLocal(), tag.realTimeFlag, tag);
+	}
 
 	public boolean lockUID(long uid, boolean ssk, boolean insert, boolean offerReply, boolean local, boolean realTimeFlag, UIDTag tag) {
 		synchronized(runningUIDs) {
@@ -4669,57 +4673,95 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-	public class CountedRequests {
-		final int total;
-		final int expectedTransfersOut;
-		final int expectedTransfersIn;
+	public static class CountedRequests {
+		int total;
+		int expectedTransfersOut;
+		int expectedTransfersIn;
 		private CountedRequests(int count, int out, int in) {
 			total = count;
 			expectedTransfersOut = out;
 			expectedTransfersIn = in;
 		}
+		public CountedRequests() {
+			// Initially empty.
+		}
 	}
 
-	public synchronized CountedRequests countRequests(boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote) {
+	public synchronized void countRequests(boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, CountedRequests counter, CountedRequests counterSourceRestarted) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
 		synchronized(map) {
 			int count = 0;
 			int transfersOut = 0;
 			int transfersIn = 0;
+			int countSR = 0;
+			int transfersOutSR = 0;
+			int transfersInSR = 0;
 			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
 				UIDTag tag = entry.getValue();
+				int out = tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, true);
+				int in = tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, true);
 				count++;
-				transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert);
-				transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
+				transfersOut += out;
+				transfersIn += in;
+				if(counterSourceRestarted != null && tag.countAsSourceRestarted()) {
+					countSR++;
+					transfersOutSR += out;
+					transfersInSR += in;
+				}
 				if(logDEBUG) Logger.debug(this, "UID "+entry.getKey()+" : out "+transfersOut+" in "+transfersIn);
 			}
-			return new CountedRequests(count, transfersOut, transfersIn);
+			counter.total += count;
+			counter.expectedTransfersIn += transfersIn;
+			counter.expectedTransfersOut += transfersOut;
+			if(counterSourceRestarted != null) {
+				counterSourceRestarted.total += countSR;
+				counterSourceRestarted.expectedTransfersIn += transfersInSR;
+				counterSourceRestarted.expectedTransfersOut += transfersOutSR;
+			}
 		}
 	}
 
-	public CountedRequests countRequests(PeerNode source, boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote) {
+	public void countRequests(PeerNode source, boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, CountedRequests counter, CountedRequests counterSR) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
 		synchronized(map) {
 		int count = 0;
 		int transfersOut = 0;
 		int transfersIn = 0;
+		int countSR = 0;
+		int transfersOutSR = 0;
+		int transfersInSR = 0;
 		if(!requestsToNode) {
 			// If a request is adopted by us as a result of a timeout, it can be in the
 			// remote map despite having source == null. However, if a request is in the
 			// local map it will always have source == null.
-			if(source != null && local) return new CountedRequests(0, 0, 0);
+			if(source != null && local) return;
 			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
 				UIDTag tag = entry.getValue();
 				if(tag.getSource() == source) {
+					int out = tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, true);
+					int in = tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, true);
 					count++;
-					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert);
-					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
+					transfersOut += out;
+					transfersIn += in;
+					if(counterSR != null && tag.countAsSourceRestarted()) {
+						countSR++;
+						transfersOutSR += out;
+						transfersInSR += in;
+					}
 					if(logMINOR) Logger.minor(this, "Counting "+tag+" from "+entry.getKey()+" from "+source+" count now "+count+" out now "+transfersOut+" in now "+transfersIn);
 				} else if(logDEBUG) Logger.debug(this, "Not counting "+entry.getKey());
 			}
 			if(logMINOR) Logger.minor(this, "Returning count: "+count+" in: "+transfersIn+" out: "+transfersOut);
-			return new CountedRequests(count, transfersOut, transfersIn);
+			counter.total += count;
+			counter.expectedTransfersIn += transfersIn;
+			counter.expectedTransfersOut += transfersOut;
+			if(counterSR != null) {
+				counterSR.total += countSR;
+				counterSR.expectedTransfersIn += transfersInSR;
+				counterSR.expectedTransfersOut += transfersOutSR;
+			}
 		} else {
+			// hasSourceRestarted is irrelevant for requests *to* a node.
 			// FIXME improve efficiency!
 			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
 				UIDTag tag = entry.getValue();
@@ -4727,18 +4769,20 @@ public class Node implements TimeSkewDetectorCallback {
 				// So we *DO NOT* care whether it's an ordinary routed relayed request or a GetOfferedKey, if we are counting outgoing requests.
 				if(tag.currentlyFetchingOfferedKeyFrom(source)) {
 					if(logMINOR) Logger.minor(this, "Counting "+tag+" to "+entry.getKey());
-					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert);
-					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
+					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, false);
+					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, false);
 					count++;
 				} else if(tag.currentlyRoutingTo(source)) {
 					if(logMINOR) Logger.minor(this, "Counting "+tag+" to "+entry.getKey());
-					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert);
-					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
+					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, false);
+					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, false);
 					count++;
 				} else if(logDEBUG) Logger.debug(this, "Not counting "+entry.getKey());
 			}
 			if(logMINOR) Logger.minor(this, "Counted for "+(local?"local":"remote")+" "+(ssk?"ssk":"chk")+" "+(insert?"insert":"request")+" "+(offer?"offer":"")+" : "+count+" of "+map.size()+" for "+source);
-			return new CountedRequests(count, transfersOut, transfersIn);
+			counter.total += count;
+			counter.expectedTransfersIn += transfersIn;
+			counter.expectedTransfersOut += transfersOut;
 		}
 		}
 	}
@@ -4847,6 +4891,32 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 		}
 	};
+	
+
+	public void onRestartOrDisconnect(PeerNode pn) {
+		onRestartOrDisconnect(pn, runningSSKGetUIDsRT);
+		onRestartOrDisconnect(pn, runningCHKGetUIDsRT);
+		onRestartOrDisconnect(pn, runningSSKPutUIDsRT);
+		onRestartOrDisconnect(pn, runningCHKPutUIDsRT);
+		onRestartOrDisconnect(pn, runningSSKOfferReplyUIDsRT);
+		onRestartOrDisconnect(pn, runningCHKOfferReplyUIDsRT);
+		onRestartOrDisconnect(pn, runningSSKGetUIDsBulk);
+		onRestartOrDisconnect(pn, runningCHKGetUIDsBulk);
+		onRestartOrDisconnect(pn, runningSSKPutUIDsBulk);
+		onRestartOrDisconnect(pn, runningCHKPutUIDsBulk);
+		onRestartOrDisconnect(pn, runningSSKOfferReplyUIDsBulk);
+		onRestartOrDisconnect(pn, runningCHKOfferReplyUIDsBulk);
+	}
+
+	private void onRestartOrDisconnect(PeerNode pn,
+			HashMap<Long, ? extends UIDTag> uids) {
+		synchronized(uids) {
+			for(UIDTag tag : uids.values()) {
+				if(tag.isSource(pn))
+					tag.onRestartOrDisconnectSource();
+			}
+		}
+	}
 
 
 	/**
@@ -6274,4 +6344,5 @@ public class Node implements TimeSkewDetectorCallback {
 	public boolean enableNewLoadManagement(boolean realTimeFlag) {
 		return nodeStats.enableNewLoadManagement(realTimeFlag);
 	}
+
 }

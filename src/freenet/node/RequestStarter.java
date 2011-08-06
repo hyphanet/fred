@@ -62,7 +62,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	 * buckets and the thread limit. FIXME make configurable. */
 	static final boolean LOCAL_REQUESTS_COMPETE_FAIRLY = true;
 	
-	boolean doAIMD = true;
+	private volatile boolean doAIMD = true;
 	
 	public static boolean isValidPriorityClass(int prio) {
 		return !((prio < MAXIMUM_PRIORITY_CLASS) || (prio > MINIMUM_PRIORITY_CLASS));
@@ -166,7 +166,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				RejectReason reason;
 				assert(req.realTimeFlag == realTime);
 				if(LOCAL_REQUESTS_COMPETE_FAIRLY && !req.localRequestOnly) {
-					if((reason = stats.shouldRejectRequest(true, isInsert, isSSK, true, false, null, false, isInsert && Node.PREFER_INSERT_DEFAULT, req.realTimeFlag)) != null) {
+					if((reason = stats.shouldRejectRequest(true, isInsert, isSSK, true, false, null, false, isInsert && Node.PREFER_INSERT_DEFAULT, req.realTimeFlag, null)) != null) {
 						if(logMINOR)
 							Logger.minor(this, "Not sending local request: "+reason);
 						// Wait one throttle-delay before trying again

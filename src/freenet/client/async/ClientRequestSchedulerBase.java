@@ -238,6 +238,8 @@ abstract class ClientRequestSchedulerBase {
 			//Remove from the starterQueue
 			if(persistent()) sched.removeFromStarterQueue(req, container, true);
 			// Then can do innerRegister() (not register()).
+			if(persistent())
+				container.activate(req, 1);
 			innerRegister(req, random, container, context, null);
 			if(persistent())
 				container.deactivate(req, 1);

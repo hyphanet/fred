@@ -39,7 +39,7 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.NativeThread;
 import freenet.support.io.Closer;
 
-public class SimpleManifestPutter extends BaseClientPutter implements PutCompletionCallback {
+public class SimpleManifestPutter extends ManifestPutter implements PutCompletionCallback {
 
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
@@ -860,6 +860,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		return finished || cancelled;
 	}
 
+	@Override
 	public byte[] getSplitfileCryptoKey() {
 		return forceCryptoKey;
 	}

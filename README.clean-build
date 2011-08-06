@@ -50,14 +50,6 @@ NOTE: the default checkout of this package contains some pre-built javascript;
 running `dist` will remove it and re-build it from source. You can also remove
 it separately by running the `clean-gjs` target.
 
-(It is possible to use build.xml to do the above in fewer steps, but it needs
-extra libraries - ant-optional, and (if Java 5) bsf[3] and rhino[4]. Also, it
-won't abort immediately if building a component fails; it'll first try to
-retrieve pre-built blobs of that component. This may not be what you want.)
-
 [1] However, you still need to trust your compiler and operating system; see
 Ken Thompson's "Reflections on Trusting Trust".
 [2] http://packages.debian.org/source/sid/gwt
-[3] http://www.mozilla.org/rhino/
-[4] http://jakarta.apache.org/bsf/ On Debian, bug #601685 prevents libbsf-java
-from working with rhino, but fix (provided in the report) is fairly simple.

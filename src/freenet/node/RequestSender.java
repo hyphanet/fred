@@ -7,6 +7,7 @@ import java.util.ArrayList;
 
 import freenet.crypt.CryptFormatException;
 import freenet.crypt.DSAPublicKey;
+import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
@@ -61,9 +62,6 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     // After a get offered key fails, wait this long for two stage timeout. Probably we will
     // have disconnected by then.
     static final int GET_OFFER_LONG_TIMEOUT = 60*1000;
-    static final int FETCH_TIMEOUT_BULK = 600*1000;
-    static final int FETCH_TIMEOUT_REALTIME = 60*1000;
-    final int fetchTimeout;
     final int getOfferedTimeout;
     /** Wait up to this long to get a path folding reply */
     static final int OPENNET_TIMEOUT = 120000;
@@ -73,7 +71,6 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     
     // Basics
     final RequestTag origTag;
-    final Node node;
     private PartiallyReceivedBlock prb;
     private byte[] finalHeaders;
     private byte[] finalSskData;
@@ -167,15 +164,12 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
             PeerNode source, boolean offersOnly, boolean canWriteClientCache, boolean canWriteDatastore, boolean realTimeFlag) {
     	super(key, realTimeFlag, source, n, htl, uid);
     	if(realTimeFlag) {
-    		fetchTimeout = FETCH_TIMEOUT_REALTIME;
     		getOfferedTimeout = BlockReceiver.RECEIPT_TIMEOUT_REALTIME;
     	} else {
-    		fetchTimeout = FETCH_TIMEOUT_BULK;
     		getOfferedTimeout = BlockReceiver.RECEIPT_TIMEOUT_BULK;
     	}
         this.pubKey = pubKey;
         this.origTag = tag;
-        this.node = n;
         this.tryOffersOnly = offersOnly;
         this.canWriteClientCache = canWriteClientCache;
         this.canWriteDatastore = canWriteDatastore;
@@ -211,7 +205,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				reassignToSelfOnTimeout(fromOfferedKey);
 			}
     		
-    	}, fetchTimeout);
+    	}, incomingSearchTimeout);
         try {
         	realRun();
         } catch (Throwable t) {
@@ -267,56 +261,60 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     /** Route requests. Method is responsible for its own completion, e.g. finish
      * or chaining to MainLoopCallback, i.e. the caller isn't going to do more 
      * stuff relevant to the request afterwards. */
-    private void routeRequests() {
+    protected void routeRequests() {
     	
-    	boolean newLoadManagement = node.enableNewLoadManagement(realTimeFlag);
+    	if(logMINOR) Logger.minor(this, "Routing requests on "+this, new Exception("debug"));
     	
     	PeerNode next = null;
     	
-        peerLoop:
         while(true) {
             boolean canWriteStorePrev = node.canWriteDatastoreInsert(htl);
-            // FIXME SECURITY/NETWORK: Should we never decrement on the originator?
-            // It would buy us another hop of no-cache, making it significantly
-            // harder to trace after the fact; however it would make local 
-            // requests fractionally easier to detect by peers.
-            // IMHO local requests are so easy for peers to detect anyway that
-            // it's probably worth it.
-            // Currently the worst case is we don't cache on the originator
-            // and we don't cache on the first peer we route to. If we get
-            // RejectedOverload's etc we won't cache on them either, up to 5;
-            // but lets assume that one of them accepts, and routes onward;
-            // the *second* hop out (with the originator being 0) WILL cache.
-            // Note also that changing this will have a performance impact.
-            if((!starting) && (!canWriteStorePrev)) {
-            	// We always decrement on starting a sender.
-            	// However, after that, if our HTL is above the no-cache threshold,
-            	// we do not want to decrement the HTL for trivial rejections (e.g. RejectedLoop),
-            	// because we would end up caching data too close to the originator.
-            	// So allow 5 failures and then RNF.
-            	if(highHTLFailureCount++ >= MAX_HIGH_HTL_FAILURES) {
-            		if(logMINOR) Logger.minor(this, "Too many failures at non-cacheable HTL");
-            		finish(ROUTE_NOT_FOUND, null, false);
-            		return;
-            	}
-            	if(logMINOR) Logger.minor(this, "Allowing failure "+highHTLFailureCount+" htl is still "+htl);
+            if(dontDecrementHTLThisTime) {
+            	// NLM needs us to reroute.
+            	dontDecrementHTLThisTime = false;
             } else {
-            	/*
-            	 * If we haven't routed to any node yet, decrement according to the source.
-            	 * If we have, decrement according to the node which just failed.
-            	 * Because:
-            	 * 1) If we always decrement according to source then we can be at max or min HTL
-            	 * for a long time while we visit *every* peer node. This is BAD!
-            	 * 2) The node which just failed can be seen as the requestor for our purposes.
-            	 */
-            	// Decrement at this point so we can DNF immediately on reaching HTL 0.
-            	htl = node.decrementHTL((hasForwarded ? next : source), htl);
-            	if(logMINOR) Logger.minor(this, "Decremented HTL to "+htl);
+            	// FIXME SECURITY/NETWORK: Should we never decrement on the originator?
+            	// It would buy us another hop of no-cache, making it significantly
+            	// harder to trace after the fact; however it would make local 
+            	// requests fractionally easier to detect by peers.
+            	// IMHO local requests are so easy for peers to detect anyway that
+            	// it's probably worth it.
+            	// Currently the worst case is we don't cache on the originator
+            	// and we don't cache on the first peer we route to. If we get
+            	// RejectedOverload's etc we won't cache on them either, up to 5;
+            	// but lets assume that one of them accepts, and routes onward;
+            	// the *second* hop out (with the originator being 0) WILL cache.
+            	// Note also that changing this will have a performance impact.
+            	if((!starting) && (!canWriteStorePrev)) {
+            		// We always decrement on starting a sender.
+            		// However, after that, if our HTL is above the no-cache threshold,
+            		// we do not want to decrement the HTL for trivial rejections (e.g. RejectedLoop),
+            		// because we would end up caching data too close to the originator.
+            		// So allow 5 failures and then RNF.
+            		if(highHTLFailureCount++ >= MAX_HIGH_HTL_FAILURES) {
+            			if(logMINOR) Logger.minor(this, "Too many failures at non-cacheable HTL");
+            			finish(ROUTE_NOT_FOUND, null, false);
+            			return;
+            		}
+            		if(logMINOR) Logger.minor(this, "Allowing failure "+highHTLFailureCount+" htl is still "+htl);
+            	} else {
+            		/*
+            		 * If we haven't routed to any node yet, decrement according to the source.
+            		 * If we have, decrement according to the node which just failed.
+            		 * Because:
+            		 * 1) If we always decrement according to source then we can be at max or min HTL
+            		 * for a long time while we visit *every* peer node. This is BAD!
+            		 * 2) The node which just failed can be seen as the requestor for our purposes.
+            		 */
+            		// Decrement at this point so we can DNF immediately on reaching HTL 0.
+            		htl = node.decrementHTL((hasForwarded ? next : source), htl);
+            		if(logMINOR) Logger.minor(this, "Decremented HTL to "+htl);
+            	}
             }
             starting = false;
 
             if(logMINOR) Logger.minor(this, "htl="+htl);
-            if(htl == 0) {
+            if(htl <= 0) {
             	// This used to be RNF, I dunno why
 				//???: finish(GENERATED_REJECTED_OVERLOAD, null);
                 node.failureTable.onFinalFailure(key, null, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
@@ -338,7 +336,12 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
             	finish(TIMED_OUT, null, false);
             	return;
             }
-
+            
+        	if(origTag.shouldStop()) {
+        		finish(ROUTE_NOT_FOUND, null, false);
+        		return;
+        	}
+        	
             RecentlyFailedReturn r = new RecentlyFailedReturn();
             
             long now = System.currentTimeMillis();
@@ -385,19 +388,16 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
                 return;
             }
             
-            if(newLoadManagement ? 
-            		innerRouteRequestsNew(next, origTag) : innerRouteRequestsOld(next, origTag))
-            	continue peerLoop;
-            else
-            	return;
+            innerRouteRequests(next, origTag);
+            // Will either chain back to routeRequests(), or call onAccepted().
+           	return;
         }
 	}
-    
     
 	private synchronized int timeSinceSentForTimeout() {
     	int time = timeSinceSent();
     	if(time > FailureTable.REJECT_TIME) {
-    		if(time < fetchTimeout + 10*1000) return FailureTable.REJECT_TIME;
+    		if(time < searchTimeout + 10*1000) return FailureTable.REJECT_TIME;
     		Logger.error(this, "Very long time since sent: "+time+" ("+TimeUtil.formatTime(time, 2, true)+")");
     		return FailureTable.REJECT_TIME;
     	}
@@ -414,11 +414,13 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     	private final long deadline;
 		public byte[] sskData;
 		public byte[] headers;
+		final long searchTimeout;
 
-		public MainLoopCallback(PeerNode source, boolean noReroute) {
+		public MainLoopCallback(PeerNode source, boolean noReroute, long searchTimeout) {
 			waitingFor = source;
 			this.noReroute = noReroute;
-			deadline = System.currentTimeMillis() + fetchTimeout;
+			this.searchTimeout = searchTimeout;
+			deadline = System.currentTimeMillis() + searchTimeout;
 		}
 
 		@Override
@@ -466,7 +468,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		public void onTimeout() {
 			// This is probably a downstream timeout.
 			// It's not a serious problem until we have a second (fatal) timeout.
-			Logger.warning(this, "Timed out after waiting "+fetchTimeout+" on "+uid+" from "+waitingFor+" ("+gotMessages+" messages; last="+lastMessage+") for "+uid+" noReroute="+noReroute);
+			Logger.warning(this, "Timed out after waiting "+searchTimeout+" on "+uid+" from "+waitingFor+" ("+gotMessages+" messages; last="+lastMessage+") for "+uid+" noReroute="+noReroute);
 			if(noReroute) {
 				waitingFor.localRejectedOverload("FatalTimeoutForked", realTimeFlag);
 			} else {
@@ -479,7 +481,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     		
 			// Wait for second timeout.
     		// FIXME make this async.
-    		long deadline = System.currentTimeMillis() + fetchTimeout;
+    		long deadline = System.currentTimeMillis() + searchTimeout;
 			while(true) {
 				
 				Message msg;
@@ -836,7 +838,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         		}
         		fireCHKTransferBegins();
 				
-        		BlockReceiver br = new BlockReceiver(node.usm, pn, uid, prb, this, node.getTicker(), true, realTimeFlag, myTimeoutHandler);
+        		BlockReceiver br = new BlockReceiver(node.usm, pn, uid, prb, this, node.getTicker(), true, realTimeFlag, myTimeoutHandler, true);
         		
        			if(logMINOR) Logger.minor(this, "Receiving data (for offer reply)");
        			receivingAsync = true;
@@ -918,8 +920,10 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		}
 	}
 
+	@Override
 	protected MessageFilter makeAcceptedRejectedFilter(PeerNode next,
-			int acceptedTimeout) {
+			int acceptedTimeout, UIDTag tag) {
+		assert(tag == origTag);
 		/**
 		 * What are we waiting for?
 		 * FNPAccepted - continue
@@ -960,6 +964,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		//For debugging purposes, remember the number of responses AFTER the insert, and the last message type we received.
 		gotMessages++;
 		lastMessage=msg.getSpec().getName();
+		if(logMINOR) Logger.minor(this, "Handling message "+msg+" on "+this);
     	
     	if(msg.getSpec() == DMT.FNPDataNotFound) {
     		handleDataNotFound(msg, wasFork, source);
@@ -1088,7 +1093,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     		fireCHKTransferBegins();
     	
     	final long tStart = System.currentTimeMillis();
-    	final BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb, this, node.getTicker(), true, realTimeFlag, myTimeoutHandler);
+    	final BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb, this, node.getTicker(), true, realTimeFlag, myTimeoutHandler, true);
     	
     	if(failNow) {
     		if(logMINOR) Logger.minor(this, "Terminating forked transfer on "+this+" from "+next);
@@ -1241,6 +1246,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	private void handleRouteNotFound(Message msg, PeerNode next) {
 		// Backtrack within available hops
 		short newHtl = msg.getShort(DMT.HTL);
+		if(newHtl < 0) newHtl = 0;
 		if(newHtl < htl) htl = newHtl;
 		next.successNotOverload(realTimeFlag);
 		int t = timeSinceSent();
@@ -1576,20 +1582,11 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         	// FIXME should this be called when fromOfferedKey??
        		node.nodeStats.requestCompleted(true, source != null, isSSK);
         	
-       		try {
-       			
-       			//NOTE: because of the requesthandler implementation, this will block and wait
-       			//      for downstream transfers on a CHK. The opennet stuff introduces
-       			//      a delay of it's own if we don't get the expected message.
-       			fireRequestSenderFinished(code, fromOfferedKey);
-       			
-       			if(doOpennet) {
-       				if(finishOpennet(next))
-       					shouldUnlock = false;
-       			}
-       		} finally {
-       			if(doOpennet)
-       				origTag.finishedWaitingForOpennet(next);
+       		fireRequestSenderFinished(code, fromOfferedKey);
+       		
+       		if(doOpennet) {
+       			if(finishOpennet(next))
+       				shouldUnlock = false;
        		}
         } else {
         	node.nodeStats.requestCompleted(false, source != null, isSSK);
@@ -1604,14 +1601,55 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		}
 		
     }
+    
+    AsyncMessageCallback finishOpennetOnAck(final PeerNode next) {
+    	
+    	return new AsyncMessageCallback() {
+
+			private boolean completed;
+			
+			@Override
+			public void sent() {
+				// Ignore
+			}
+
+			@Override
+			public void acknowledged() {
+				synchronized(this) {
+					if(completed) return;
+					completed = true;
+				}
+				origTag.finishedWaitingForOpennet(next);
+			}
+
+			@Override
+			public void disconnected() {
+				synchronized(this) {
+					if(completed) return;
+					completed = true;
+				}
+				origTag.finishedWaitingForOpennet(next);
+			}
+
+			@Override
+			public void fatalError() {
+				synchronized(this) {
+					if(completed) return;
+					completed = true;
+				}
+				origTag.finishedWaitingForOpennet(next);
+			}
+			
+		};
+    }
 
 	/** Acknowledge the opennet path folding attempt without sending a reference. Once
 	 * the send completes (asynchronously), unlock everything. */
-	private void ackOpennet(PeerNode next) {
+	void ackOpennet(final PeerNode next) {
 		Message msg = DMT.createFNPOpennetCompletedAck(uid);
 		// We probably should set opennetFinished after the send completes.
 		try {
-			next.sendAsync(msg, null, this);
+			next.sendAsync(msg, finishOpennetOnAck(next), this);
 		} catch (NotConnectedException e) {
 			// Ignore.
 		}
@@ -1652,6 +1690,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         	}
         	
 			if(node.addNewOpennetNode(ref, ConnectionType.PATH_FOLDING) == null) {
+				if(logMINOR) Logger.minor(this, "Don't want noderef on "+this);
 				// If we don't want it let somebody else have it
 				synchronized(this) {
 					opennetNoderef = noderef;
@@ -1668,6 +1707,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			
 	    	// We want the node: send our reference
     		om.sendOpennetRef(true, uid, next, om.crypto.myCompressedFullRef(), this);
+			origTag.finishedWaitingForOpennet(next);
 
 		} catch (FSParseException e) {
 			Logger.error(this, "Could not parse opennet noderef for "+this+" from "+next, e);
@@ -1688,7 +1728,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     	} catch (WaitedTooLongForOpennetNoderefException e) {
     		Logger.error(this, "RequestSender timed out waiting for noderef from "+next+" for "+this);
     		// Not an error since it can be caused downstream.
-    		origTag.reassignToSelf(); // Since we will tell downstream that we are finished.
+    		origTag.timedOutToHandlerButContinued(); // Since we will tell downstream that we are finished.
     		Logger.warning(this, "RequestSender timed out waiting for noderef from "+next+" for "+this);
 			synchronized(this) {
 				opennetTimedOut = true;
@@ -1728,27 +1768,35 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     
     public byte[] waitForOpennetNoderef() throws WaitedTooLongForOpennetNoderefException {
     	synchronized(this) {
+    		long startTime = System.currentTimeMillis();
     		while(true) {
     			if(opennetFinished) {
     				if(opennetTimedOut)
     					throw new WaitedTooLongForOpennetNoderefException();
+    				if(logMINOR)
+    					Logger.minor(this, "Grabbing opennet noderef on "+this, new Exception("debug"));
     				// Only one RequestHandler may take the noderef
     				byte[] ref = opennetNoderef;
     				opennetNoderef = null;
     				return ref;
     			}
     			try {
-					wait(OPENNET_TIMEOUT);
+    				int waitTime = (int) Math.min(Integer.MAX_VALUE, OPENNET_TIMEOUT + startTime - System.currentTimeMillis());
+    				if(waitTime > 0) {
+    					wait(waitTime);
+    					continue;
+    				}
 				} catch (InterruptedException e) {
 					// Ignore
 					continue;
 				}
+				if(logMINOR) Logger.minor(this, "Took too long waiting for opennet ref on "+this);
 				return null;
     		}
     	}
     }
 
-    public PeerNode successFrom() {
+    public synchronized PeerNode successFrom() {
     	return successFrom;
     }
     
@@ -1943,18 +1991,19 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	private boolean receivingAsync;
 	
 	private void reassignToSelfOnTimeout(boolean fromOfferedKey) {
+		Listener[] list;
 		synchronized(listeners) {
 			if(sentCHKTransferBegins) {
 				Logger.error(this, "Transfer started, not dumping listeners when reassigning to self on timeout (race condition?) on "+this);
 				return;
 			}
-			// Safe to call it here, tag is self-synched always last.
-			origTag.reassignToSelf();
-			for(Listener l : listeners) {
-				l.onRequestSenderFinished(TIMED_OUT, fromOfferedKey);
-			}
+			list = listeners.toArray(new Listener[listeners.size()]);
 			listeners.clear();
 		}
+		for(Listener l : list) {
+			l.onRequestSenderFinished(TIMED_OUT, fromOfferedKey);
+		}
+		origTag.timedOutToHandlerButContinued();
 	}
 	
 	@Override
@@ -1971,7 +2020,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	}
 
 	public long fetchTimeout() {
-		return fetchTimeout;
+		return incomingSearchTimeout;
 	}
 
 	BlockReceiverTimeoutHandler myTimeoutHandler = new BlockReceiverTimeoutHandler() {
@@ -1982,7 +2031,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		 * So we reassign the request to ourself, and then wait for the second timeout. */
 		@Override
 		public void onFirstTimeout() {
-			node.reassignTagToSelf(origTag);
+			origTag.timedOutToHandlerButContinued();
 		}
 
 		/** The timeout appears to have been caused by the node we are directly connected
@@ -2016,37 +2065,31 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		return transferCoalesced;
 	}
 	
-	protected void rnf() {
-		finish(ROUTE_NOT_FOUND, null, false);
-		node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, -1, source);
+	private int searchTimeout;
+	
+	@Override
+	protected void onAccepted(PeerNode next) {
+		onAccepted(next, false);
 	}
 	
-	protected void onAccepted(PeerNode next) {
+	protected void onAccepted(PeerNode next, boolean forked) {
+		MainLoopCallback cb;
         synchronized(this) {
         	receivingAsync = true;
+        	searchTimeout = calculateTimeout(htl);
+            cb = new MainLoopCallback(next, forked, searchTimeout);
         }
-        MainLoopCallback cb = new MainLoopCallback(next, false);
         cb.schedule();
 	}
 	
-    protected long getShortSlotWaiterTimeout() {
-    	return fetchTimeout / 10;
-	}
-    
-    protected long getLongSlotWaiterTimeout() {
-    	return fetchTimeout / 5;
-	}
-    
 	protected int getAcceptedTimeout() {
 		return ACCEPTED_TIMEOUT;
 	}
 
 	@Override
 	protected void timedOutWhileWaiting(double load) {
-		// Calculate the reject period based on the proportion of requests being timed out.
-		// If the vast majority are being accepted, then try again after the timeout.
-		// If more are being rejected, it makes sense to wait longer, up to the limit of the maximum recently failed time.
-		int period = (int) Math.min(((fetchTimeout / 5) / (1.0 - load)), FailureTable.RECENTLY_FAILED_TIME);
+		htl -= (short)Math.min(0, hopsForFatalTimeoutWaitingForPeer());
+		if(htl < 0) htl = 0;
 		// Timeouts while waiting for a slot are relatively normal.
 		// That is, in an ideal world they wouldn't happen.
 		// They happen when the network is very small, or when there is a capacity bottleneck.
@@ -2054,15 +2097,73 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		// Individual timeouts are therefore not very interesting...
 		if(logMINOR) {
 			if(source != null)
-				Logger.minor(this, "Timed out while waiting for a slot, period = "+period+" because average reject proportion for peers is "+load+" on "+this);
+				Logger.minor(this, "Timed out while waiting for a slot on "+this);
 			else
-				Logger.minor(this, "Local request timed out while waiting for a slot, period = "+period+" because average reject proportion for peers is "+load+" on "+this);
+				Logger.minor(this, "Local request timed out while waiting for a slot on "+this);
 		}
-    	synchronized(this) {
-    		recentlyFailedTimeLeft = period;
-    	}
-    	finish(RECENTLY_FAILED, null, false);
+    	finish(ROUTE_NOT_FOUND, null, false);
         node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, -1, source);
+	}
+
+	@Override
+	protected boolean isInsert() {
+		return false;
+	}
+
+	@Override
+	protected void handleAcceptedRejectedTimeout(final PeerNode next,
+			final UIDTag origTag) {
+		
+		origTag.handlingTimeout(next);
+		
+		int timeout = 60*1000;
+		
+		MessageFilter mf = makeAcceptedRejectedFilter(next, timeout, origTag);
+		try {
+			node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
+
+				@Override
+				public void onMatched(Message m) {
+					if(m.getSpec() == DMT.FNPRejectedLoop ||
+							m.getSpec() == DMT.FNPRejectedOverload) {
+						// Ok.
+						next.noLongerRoutingTo(origTag, false);
+					} else {
+						// Accepted. May as well wait for the data, if any.
+						onAccepted(next, true);
+					}
+				}
+				
+				@Override
+				public boolean shouldTimeout() {
+					return false;
+				}
+
+				@Override
+				public void onTimeout() {
+					Logger.error(this, "Fatal timeout waiting for Accepted/Rejected from "+next+" on "+RequestSender.this);
+					next.fatalTimeout(origTag, false);
+				}
+
+				@Override
+				public void onDisconnect(PeerContext ctx) {
+					next.noLongerRoutingTo(origTag, false);
+				}
+
+				@Override
+				public void onRestarted(PeerContext ctx) {
+					next.noLongerRoutingTo(origTag, false);
+				}
+
+				@Override
+				public int getPriority() {
+					return NativeThread.NORM_PRIORITY;
+				}
+				
+			}, this);
+		} catch (DisconnectedException e) {
+			next.noLongerRoutingTo(origTag, false);
+		}
 	}
 
 }

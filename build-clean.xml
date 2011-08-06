@@ -8,25 +8,8 @@ of speech, and without decentralization the network would be vulnerable to attac
 
 This file is to build Freenet entirely from source. The builder is responsible
 for satisfying all library dependencies, e.g. via override.properties. Package
-maintainers may prefer to use this instead of build.xml, since it relieves the
-build-dependency on ant-optional, libbsf-java and rhino.
+maintainers may prefer to use this instead of build.xml.
 	</description>
-
-	<!-- =================================================================== -->
-	<!-- Helper tasks                                                        -->
-	<!-- =================================================================== -->
-
-	<macrodef name="proppath" description="set a property to a path if it exists">
-		<attribute name="name"/>
-		<attribute name="path"/>
-		<attribute name="else" default="."/>
-		<attribute name="type" default="dir"/>
-		<sequential>
-			<condition property="@{name}" value="@{path}" else="@{else}">
-				<available file="@{path}" type="@{type}"/>
-			</condition>
-		</sequential>
-	</macrodef>
 
 	<!-- =================================================================== -->
 	<!-- Global properties                                                   -->
@@ -35,21 +18,17 @@ build-dependency on ant-optional, libbsf-java and rhino.
 	<!-- user overrides (properties are immutable, so set overrides first) -->
 	<property file="override.properties"/>
 	<property file="build.properties"/>
-	<proppath name="java.class.dirs" path="${java.class.dirs.user}" else="${java.home}/lib"/>
 
 	<property name="version.src" value="freenet/node/Version.java" />
 	<property name="version.make" value="freenet/node/Version.class" />
 
-	<property name="lib" value="lib"/>
-	<proppath name="lib.contrib.dir" path="${contrib.dir}/dist" else="${lib}"/>
 	<path id="lib.path">
-		<fileset dir="${lib}" includes="**/*.jar"/>
-		<fileset dir="${lib.contrib.dir}" includes="**/*.jar"/>
-		<fileset dir="${java.class.dirs}" includes="${lib.jars}"/>
+		<fileset dir="${lib.contrib.dir}" includes="${lib.contrib.jars}"/>
+		<fileset dir="${lib.dir}" includes="${lib.jars}"/>
 	</path>
 	<path id="libtest.path">
 		<path refid="lib.path"/>
-		<fileset dir="${java.class.dirs}" includes="${libtest.jars}"/>
+		<fileset dir="${lib.dir}" includes="${libtest.jars}"/>
 		<pathelement path="${main.make}"/>
 		<pathelement path="${test.make}"/>
 	</path>
@@ -62,7 +41,7 @@ build-dependency on ant-optional, libbsf-java and rhino.
 	<path id="gjs.lib.path">
 		<fileset dir="${gjs.dir}" includes="lib/*.jar"/>
 		<pathelement location="${gjs.dir}/war/WEB-INF/classes"/>
-		<fileset dir="${java.class.dirs}" includes="${gjs.lib.jars}"/>
+		<fileset dir="${lib.dir}" includes="${gjs.lib.jars}"/>
 	</path>
 
 	<assertions><enable/></assertions>
@@ -101,10 +80,6 @@ build-dependency on ant-optional, libbsf-java and rhino.
 		<echo message="  benchmark   Run benchmark tests"/>
 		<echo message="  extensive   Run extensive tests"/>
 		<echo message=""/>
-		<echo message="Rebuild parameters (-Dsuppress.PARAM=false)"/>
-		<echo message="  ext         Rebuild ext if possible, otherwise download"/>
-		<echo message="  gjs         Rebuild gjs if possible, otherwise checkout"/>
-		<echo message=""/>
 		<echo message="Misc parameters (-DPARAM=VALUE)"/>
 		<echo message="  javac.args  Command line arguments to pass to javac"/>
 		<echo message=""/>
@@ -130,21 +105,27 @@ build-dependency on ant-optional, libbsf-java and rhino.
 		<available property="lib.junit.present" classname="junit.framework.Test" classpathref="lib.path"/>
 		<available property="gjs.lib.gwt-user.present" classname="com.google.gwt.user.client.Window" classpathref="gjs.lib.path"/>
 		<available property="gjs.lib.gwt-dev.present" classname="com.google.gwt.dev.About" classpathref="gjs.lib.path"/>
+		<condition property="gjs.lib.gwt.present">
+			<and>
+				<isset property="gjs.lib.gwt-user.present"/>
+				<isset property="gjs.lib.gwt-dev.present"/>
+			</and>
+		</condition>
 	</target>
 
-	<target name="libdep-ext" depends="env" unless="${lib.contrib.present}">
+	<target name="libdep-ext" depends="env" unless="lib.contrib.present">
 		<fail message="freenet-ext not available"/>
 	</target>
 
-	<target name="libdep-junit" depends="env" unless="${lib.junit.present}">
+	<target name="libdep-junit" depends="env" unless="lib.junit.present">
 		<fail message="JUnit not available"/>
 	</target>
 
-	<target name="libdep-gwt-user" depends="env" unless="${gjs.lib.gwt-user.present}">
+	<target name="libdep-gwt-user" depends="env" unless="gjs.lib.gwt-user.present">
 		<fail message="GWT-user not present"/>
 	</target>
 
-	<target name="libdep-gwt-dev" depends="env" unless="${gjs.lib.gwt-dev.present}">
+	<target name="libdep-gwt-dev" depends="env" unless="gjs.lib.gwt-dev.present">
 		<fail message="GWT-dev not present"/>
 	</target>
 
@@ -159,7 +140,7 @@ build-dependency on ant-optional, libbsf-java and rhino.
 		<mkdir dir="${test.dst}"/>
 	</target>
 
-	<target name="dep" depends="dep-ext, dep-gjs"/>
+	<target name="dep" depends="ensure-ext, ensure-gjs"/>
 
 	<target name="check-version-file">
 		<uptodate property="version.uptodate"
@@ -213,12 +194,11 @@ build-dependency on ant-optional, libbsf-java and rhino.
 	</target>
 
 	<target name="package-only" depends="build">
-		<property name="loc.lib.contrib.dir" location="${lib.contrib.dir}" />
-		<property name="loc.loc" location="${lib}" />
+		<property name="lib.contrib.loc" location="${lib.contrib.dir}" />
+		<property name="lib.loc" location="${lib.dir}" />
 		<pathconvert property="lib.jars.package" refid="lib.path" pathsep=" ">
-			<map from="${loc.lib.contrib.dir}" to="freenet"/>
-			<map from="${loc.lib}/" to=""/>
-			<map from="${java.class.dirs}/" to=""/>
+			<map from="${lib.contrib.loc}/" to="${lib.contrib.dir.rel}/"/>
+			<map from="${lib.loc}/" to=""/>
 		</pathconvert>
 		<jar jarfile="${main.dst}/freenet.jar" basedir="${main.make}">
 			<manifest>
@@ -284,7 +264,9 @@ build-dependency on ant-optional, libbsf-java and rhino.
 	<!-- Dependencies (contrib, ie. freenet-ext.jar)                         -->
 	<!-- =================================================================== -->
 
-	<target name="dep-ext" depends="libdep-ext" />
+	<target name="ensure-ext" depends="libdep-ext">
+		<!-- clean build does nothing, since this is external library. -->
+	</target>
 
 	<!-- =================================================================== -->
 	<!-- Generate GWT code                                                   -->
@@ -294,22 +276,18 @@ build-dependency on ant-optional, libbsf-java and rhino.
 		<available property="gjs.present" file="${gjs.dst}" type="dir"/>
 	</target>
 
-	<target name="dep-gjs" depends="env-gjs" unless="${gjs.present}">
+	<target name="ensure-gjs" depends="env-gjs" unless="gjs.present">
 		<antcall target="build-gjs"/>
 	</target>
 
-	<target name="build-gjs" depends="suppress-gjs, libdep-gwt-user, libdep-gwt-dev" unless="${suppress.gjs}">
+	<target name="build-gjs" depends="libdep-gwt-user, libdep-gwt-dev">
 		<ant antfile="build.xml" dir="${gjs.dir}">
 			<reference refid="gjs.lib.path" torefid="project.class.path"/>
 		</ant>
 	</target>
 
-	<target name="clean-gjs" depends="suppress-gjs" unless="${suppress.gjs}">
+	<target name="clean-gjs">
 		<ant antfile="build.xml" dir="${gjs.dir}" target="deleteGenerated"/>
-	</target>
-
-	<target name="suppress-gjs" if="${suppress.gjs}">
-		<echo message="suppress.gjs is set to true, so clean-gjs and build-gjs will skip" />
 	</target>
 
 	<!-- =================================================================== -->

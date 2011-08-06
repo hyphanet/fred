@@ -18,6 +18,7 @@ import freenet.client.filter.GenericReadFilterCallback;
 import freenet.client.filter.HTMLFilter;
 import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.client.filter.HTMLFilter.*;
+import freenet.clients.http.ExternalLinkToadlet;
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -139,7 +140,7 @@ public class ContentFilterTest extends TestCase {
 		assertEquals(INTERNAL_RELATIVE_LINK, HTMLFilter(INTERNAL_ABSOLUTE_LINK));
 		// are external links stripped out ?
 		assertTrue(HTMLFilter(EXTERNAL_LINK_CHECK1).startsWith(EXTERNAL_LINK_OK));
-		assertTrue(HTMLFilter(EXTERNAL_LINK_CHECK2).contains(GenericReadFilterCallback.magicHTTPEscapeString));
+		assertTrue(HTMLFilter(EXTERNAL_LINK_CHECK2).contains(ExternalLinkToadlet.PATH));
 		assertTrue(HTMLFilter(EXTERNAL_LINK_CHECK3).startsWith(EXTERNAL_LINK_OK));
 
 		// regression testing
@@ -158,7 +159,7 @@ public class ContentFilterTest extends TestCase {
 		// bug #2451
 		assertEquals(POUNT_CHARACTER_ENCODING_TEST_RESULT, HTMLFilter(POUNT_CHARACTER_ENCODING_TEST));
 		// bug #2297
-		assertTrue(HTMLFilter(PREVENT_FPROXY_ACCESS).contains(GenericReadFilterCallback.magicHTTPEscapeString));
+		assertTrue(HTMLFilter(PREVENT_FPROXY_ACCESS).contains(ExternalLinkToadlet.PATH));
 		// bug #2921
 		assertTrue(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_SIMPLE).contains("div { }"));
 		assertTrue(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_ESCAPE).contains("div { }"));
@@ -212,7 +213,7 @@ public class ContentFilterTest extends TestCase {
 	private static final String META_BOGUS_REDIRECT6 = "<meta http-equiv=\"refresh\" content=\"30; /KSK@gpl.txt\">";
 	private static final String META_BOGUS_REDIRECT1_OUT = "<!-- Malformed URL (relative): There is no @ in that URI! ()-->";
 	private static final String META_BOGUS_REDIRECT2_OUT = "<!-- Malformed URL (relative): There is no @ in that URI! (plugins)-->";
-	private static final String META_BOGUS_REDIRECT3_OUT = "<meta http-equiv=\"refresh\" content=\"30; url=/?_CHECKED_HTTP_=http://www.google.com\">";
+	private static final String META_BOGUS_REDIRECT3_OUT = "<meta http-equiv=\"refresh\" content=\"30; url=/external-link/?_CHECKED_HTTP_=http://www.google.com\">";
 	private static final String META_BOGUS_REDIRECT4_OUT = "<!-- Deleted invalid or dangerous URI-->";
 	private static final String META_BOGUS_REDIRECT5_OUT = "<!-- Malformed URL (relative): Invalid key type: \"/KSK-->";
 	private static final String META_BOGUS_REDIRECT_NO_URL = "<!-- no url but doesn't parse as number in meta refresh -->";

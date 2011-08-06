@@ -48,7 +48,7 @@ import freenet.support.io.NativeThread;
  * </DL>
  * @see {@link PlainManifestPutter} and {@link DefaultManifestPutter}</P>
  */
-public abstract class BaseManifestPutter extends BaseClientPutter {
+public abstract class BaseManifestPutter extends ManifestPutter {
 
 	// FIXME: DB4O ISSUE: HASHMAP ACTIVATION:
 	// REDFLAG MUST BE FIXED BEFORE DEPLOYING THE NEW PUTTERS !!!

@@ -329,6 +329,24 @@ public class OpennetManager {
 	synchronized boolean stopping() {
 		return stopping;
 	}
+	
+	public boolean alreadyHaveOpennetNode(SimpleFieldSet fs) {
+		try {
+			// FIXME OPT can we do this cheaper?
+			// Maybe just parse the pubkey, and then compare it with the existing peers?
+			OpennetPeerNode pn = new OpennetPeerNode(fs, node, crypto, this, node.peers, false, crypto.packetMangler);
+			if(peersLRU.contains(pn)) {
+				if(logMINOR) Logger.minor(this, "Not adding "+pn.userToString()+" to opennet list as already there");
+				return true;
+			}
+			// Don't check for self. That should be passed through too.
+			return false;
+		} catch (Throwable t) {
+			// Don't break the code flow in the caller which is normally a request.
+			Logger.error(this, "Caught "+t+" parsing opennet node from fieldset", t);
+			return false;
+		}
+	}
 
 	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs, ConnectionType connectionType, boolean allowExisting) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		try {
@@ -412,16 +430,21 @@ public class OpennetManager {
 		if(nodeToAddNow != null && crypto.config.oneConnectionPerAddress()) {
 			boolean okay = false;
 			boolean any = false;
-			for(Peer p : nodeToAddNow.getHandshakeIPs()) {
-				if(p == null) continue;
-				FreenetInetAddress addr = p.getFreenetAddress();
-				if(addr == null) continue;
-				InetAddress a = addr.getAddress(false);
-				if(a == null) continue;
-				if(a.isAnyLocalAddress() || a.isSiteLocalAddress()) continue;
-				any = true;
-				if(crypto.allowConnection(nodeToAddNow, addr))
-					okay = true;
+			Peer[] handshakeIPs = nodeToAddNow.getHandshakeIPs();
+			if(handshakeIPs != null) {
+				for(Peer p : handshakeIPs) {
+					if(p == null) continue;
+					FreenetInetAddress addr = p.getFreenetAddress();
+					if(addr == null) continue;
+					InetAddress a = addr.getAddress(false);
+					if(a == null) continue;
+					if(a.isAnyLocalAddress() || a.isSiteLocalAddress()) continue;
+					any = true;
+					if(crypto.allowConnection(nodeToAddNow, addr))
+						okay = true;
+				}
+			} else {
+				Logger.error(this, "Peer does not have any IP addresses???");
 			}
 			if(any && !okay) {
 				Logger.normal(this, "Rejecting peer as we are already connected to a peer with the same IP address");
@@ -463,8 +486,9 @@ public class OpennetManager {
 		if(nodeToAddNow != null)
 			nodeToAddNow.setAddedReason(connectionType);
 		if(notMany) {
-			if(nodeToAddNow != null)
+			if(nodeToAddNow != null) {
 				node.peers.addPeer(nodeToAddNow, true, true); // Add to peers outside the OM lock
+			}
 			return true;
 		}
 		boolean canAdd = true;
