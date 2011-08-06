@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -14,7 +13,6 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.wizardsteps.*;
 import freenet.config.Config;
 import freenet.config.ConfigException;
-import freenet.config.Option;
 import freenet.l10n.NodeL10n;
 import freenet.node.MasterKeysFileSizeException;
 import freenet.node.MasterKeysWrongPasswordException;
@@ -24,15 +22,12 @@ import freenet.node.SecurityLevels;
 import freenet.node.Node.AlreadySetPasswordException;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
-import freenet.pluginmanager.FredPluginBandwidthIndicator;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.SizeUtil;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.HTTPRequest;
-import freenet.support.io.FileUtil;
 
 /**
  * A first time wizard aimed to ease the configuration of the node.
@@ -42,7 +37,7 @@ import freenet.support.io.FileUtil;
 public class FirstTimeWizardToadlet extends Toadlet {
 	private final NodeClientCore core;
 	private final Config config;
-	private final EnumMap<WIZARD_STEP, AbstractGetStep> getHandlers;
+	private final EnumMap<WIZARD_STEP, GetStep> getHandlers;
 
         private static volatile boolean logMINOR;
 	static {
@@ -77,7 +72,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		this.config = node.config;
 
 		//Add GET handlers for steps.
-		getHandlers = new EnumMap<WIZARD_STEP, AbstractGetStep>(WIZARD_STEP.class);
+		getHandlers = new EnumMap<WIZARD_STEP, GetStep>(WIZARD_STEP.class);
 		getHandlers.put(WIZARD_STEP.WELCOME, new GetWELCOME(config));
 		getHandlers.put(WIZARD_STEP.BROWSER_WARNING, new GetBROWSER_WARNING());
 		getHandlers.put(WIZARD_STEP.OPENNET, new GetOPENNET());
@@ -100,9 +95,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		//Read the current step from the URL parameter, defaulting to the welcome page if unset.
 		WIZARD_STEP currentStep = WIZARD_STEP.valueOf(request.getParam("step", WIZARD_STEP.WELCOME.toString()));
 		//Get handler for page.
-		AbstractGetStep getStep = getHandlers.get(currentStep);
+		GetStep getStep = getHandlers.get(currentStep);
 		//Generate page to surround the content, using the step's title.
-		PageNode pageNode = ctx.getPageMaker().getPageNode(getStep.TITLE_KEY, false, false, ctx);
+		PageNode pageNode = ctx.getPageMaker().getPageNode(getStep.getTitleKey(), false, false, ctx);
 		//Return the page to the browser.
 		writeHTMLReply(ctx, 200, "OK", getStep.getPage(pageNode.content, request, ctx));
 	}

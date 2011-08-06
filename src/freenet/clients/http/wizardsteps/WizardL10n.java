@@ -10,7 +10,7 @@ import freenet.support.api.HTTPRequest;
 import javax.naming.OperationNotSupportedException;
 
 /**
- * An WizardL10n returns a rendered HTMLNode to return to the browser.
+ * A static utility class for performing l10n from wizard steps.
  */
 public final class WizardL10n {
 
@@ -22,15 +22,15 @@ public final class WizardL10n {
 		throw new OperationNotSupportedException("Cannot instantiate WizardL10n; it is a utility class.");
 	}
 
-	protected String l10n(String key) {
+	public static String l10n(String key) {
 		return NodeL10n.getBase().getString("FirstTimeWizardToadlet."+key);
 	}
 
-	protected String l10n(String key, String pattern, String value) {
+	public static String l10n(String key, String pattern, String value) {
 		return NodeL10n.getBase().getString("FirstTimeWizardToadlet."+key, pattern, value);
 	}
 
-	protected String l10nSec(String key) {
+	public static String l10nSec(String key) {
 		return NodeL10n.getBase().getString("SecurityLevels."+key);
 	}
 }

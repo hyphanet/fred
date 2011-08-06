@@ -1,6 +1,5 @@
 package freenet.clients.http.wizardsteps;
 
-import com.db4o.foundation.ArgumentNullException;
 import freenet.clients.http.ConfigToadlet;
 import freenet.clients.http.FirstTimeWizardToadlet;
 import freenet.clients.http.ToadletContext;
@@ -13,9 +12,7 @@ import freenet.support.api.HTTPRequest;
 /**
  * This step is the first, and provides a small welcome screen and an option to change the language.
  */
-public class GetWELCOME extends AbstractGetStep {
-
-	public static final String TITLE_KEY = "homepageTitle";
+public class GetWELCOME implements GetStep {
 
 	private final Config config;
 
@@ -25,6 +22,11 @@ public class GetWELCOME extends AbstractGetStep {
 	 */
 	public GetWELCOME(Config config) {
 		this.config = config;
+	}
+
+	@Override
+	public String getTitleKey() {
+		return "homepageTitle";
 	}
 
 	/**
@@ -38,10 +40,10 @@ public class GetWELCOME extends AbstractGetStep {
 		HTMLNode welcomeInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode welcomeInfoboxHeader = welcomeInfobox.addChild("div", "class", "infobox-header");
 		HTMLNode welcomeInfoboxContent = welcomeInfobox.addChild("div", "class", "infobox-content");
-		welcomeInfoboxHeader.addChild("#", l10n("welcomeInfoboxTitle"));
+		welcomeInfoboxHeader.addChild("#", WizardL10n.l10n("welcomeInfoboxTitle"));
 
 		HTMLNode firstParagraph = welcomeInfoboxContent.addChild("p");
-		firstParagraph.addChild("#", l10n("welcomeInfoboxContent1"));
+		firstParagraph.addChild("#", WizardL10n.l10n("welcomeInfoboxContent1"));
 
 		HTMLNode secondParagraph = welcomeInfoboxContent.addChild("p");
 		StringBuilder continueTo = new StringBuilder("?step=").
@@ -49,7 +51,7 @@ public class GetWELCOME extends AbstractGetStep {
 		if (request.isParameterSet("incognito")) {
 			continueTo.append("&incognito=true");
 		}
-		secondParagraph.addChild("a", "href", continueTo.toString()).addChild("#", l10n("clickContinue"));
+		secondParagraph.addChild("a", "href", continueTo.toString()).addChild("#", WizardL10n.l10n("clickContinue"));
 
 		HTMLNode languageForm = ctx.addFormChild(secondParagraph, ".", "languageForm");
 		Option language = config.get("node").getOption("l10n");

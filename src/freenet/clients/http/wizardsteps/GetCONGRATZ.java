@@ -1,6 +1,5 @@
 package freenet.clients.http.wizardsteps;
 
-import freenet.clients.http.FirstTimeWizardToadlet;
 import freenet.clients.http.ToadletContext;
 import freenet.config.Config;
 import freenet.config.ConfigException;
@@ -11,14 +10,17 @@ import freenet.support.api.HTTPRequest;
 /**
  * Wizard completion page. Sets completion in config and links to the node's main page.
  */
-public class GetCONGRATZ extends AbstractGetStep {
-
-	public static final String TITLE_KEY = "step7Title";
+public class GetCONGRATZ implements GetStep {
 
 	private final Config config;
 
 	public GetCONGRATZ(Config config) {
 		this.config = config;
+	}
+
+	@Override
+	public String getTitleKey() {
+		return "step7Title";
 	}
 
 	@Override
@@ -36,10 +38,10 @@ public class GetCONGRATZ extends AbstractGetStep {
 		HTMLNode congratzInfoboxHeader = congratzInfobox.addChild("div", "class", "infobox-header");
 		HTMLNode congratzInfoboxContent = congratzInfobox.addChild("div", "class", "infobox-content");
 
-		congratzInfoboxHeader.addChild("#", l10n("congratz"));
-		congratzInfoboxContent.addChild("p", l10n("congratzLong"));
+		congratzInfoboxHeader.addChild("#", WizardL10n.l10n("congratz"));
+		congratzInfoboxContent.addChild("p", WizardL10n.l10n("congratzLong"));
 
-		congratzInfoboxContent.addChild("a", "href", "/", l10n("continueEnd"));
+		congratzInfoboxContent.addChild("a", "href", "/", WizardL10n.l10n("continueEnd"));
 
 		return contentNode.generate();
 	}

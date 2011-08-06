@@ -1,18 +1,25 @@
 package freenet.clients.http.wizardsteps;
 
+import freenet.clients.http.ToadletContext;
+import freenet.support.HTMLNode;
+import freenet.support.api.HTTPRequest;
+
 /**
- * Created by IntelliJ IDEA.
- * User: steve
- * Date: 8/6/11
- * Time: 2:59 PM
- * To change this template use File | Settings | File Templates.
+ * Classes which implement GetStep return HTML for the step to be sent to the browser.
  */
 public interface GetStep {
 
 	/**
-	 * Localization key for the page title.
+	 * @return Localization key for the page title.
 	 */
-	public final String TITLE_KEY;
+	public String getTitleKey();
 
-
+	/**
+	 * Renders a page for a step in the wizard.
+	 * @param contentNode page content node to render content into.
+	 * @param ctx For adding forms and getting a PageNode.
+	 * @param request The HTTPRequest for the page, used in its creation.
+	 * @return HTML to be sent to the browser.
+	 */
+	public String getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx);
 }

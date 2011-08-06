@@ -15,9 +15,7 @@ import freenet.support.api.HTTPRequest;
 /**
  * Allows the user to select from pairs of upload and download bandwidth limits.
  */
-public class GetBANDWIDTH extends AbstractGetStep {
-
-	public static final String TITLE_KEY = "step3Title";
+public class GetBANDWIDTH implements GetStep {
 
 	private final NodeClientCore core;
 	private final Config config;
@@ -28,6 +26,11 @@ public class GetBANDWIDTH extends AbstractGetStep {
 	}
 
 	@Override
+	public String getTitleKey() {
+		return "step3Title";
+	}
+
+	@Override
 	public String getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
 		int autodetectedLimit = canAutoconfigureBandwidth();
 
@@ -35,8 +38,8 @@ public class GetBANDWIDTH extends AbstractGetStep {
 		HTMLNode bandwidthnfoboxHeader = bandwidthInfobox.addChild("div", "class", "infobox-header");
 		HTMLNode bandwidthInfoboxContent = bandwidthInfobox.addChild("div", "class", "infobox-content");
 
-		bandwidthnfoboxHeader.addChild("#", l10n("bandwidthLimit"));
-		bandwidthInfoboxContent.addChild("#", l10n("bandwidthLimitLong"));
+		bandwidthnfoboxHeader.addChild("#", WizardL10n.l10n("bandwidthLimit"));
+		bandwidthInfoboxContent.addChild("#", WizardL10n.l10n("bandwidthLimitLong"));
 		HTMLNode bandwidthForm = ctx.addFormChild(bandwidthInfoboxContent, ".", "bwForm");
 		HTMLNode result = bandwidthForm.addChild("select", "name", "bw");
 
@@ -47,30 +50,37 @@ public class GetBANDWIDTH extends AbstractGetStep {
 			result.addChild("option",
 			        new String[] { "value", "selected" },
 			        new String[] { SizeUtil.formatSize(current), "on" },
-			                l10n("currentSpeed")+" "+SizeUtil.formatSize(current)+"/s");
+			                WizardL10n.l10n("currentSpeed")+" "+SizeUtil.formatSize(current)+"/s");
 		} else if (autodetectedLimit != -1) {
 			result.addChild("option",
 			        new String[] { "value", "selected" },
 			        new String[] { SizeUtil.formatSize(autodetectedLimit), "on" },
-			                l10n("autodetectedSuggestedLimit")+" "+SizeUtil.formatSize(autodetectedLimit)+"/s");
+			                WizardL10n.l10n("autodetectedSuggestedLimit")+" "+SizeUtil.formatSize(autodetectedLimit)+"/s");
 		}
 
 		// don't forget to update handlePost too if you change that! TODO: ... "that"?
 		if(autodetectedLimit != 8192)
-			result.addChild("option", "value", "8K", l10n("bwlimitLowerSpeed"));
+			result.addChild("option", "value", "8K", WizardL10n.l10n("bwlimitLowerSpeed"));
 		// Special case for 128kbps to increase performance at the cost of some link degradation. Above that we use 50% of the limit.
 		result.addChild("option", "value", "12K", "512+/128 kbps (12KB/s)");
-		if(autodetectedLimit != -1 || !sizeOption.isDefault())
+		if(autodetectedLimit != -1 || !sizeOption.isDefault()) {
 			result.addChild("option", "value", "16K", "1024+/256 kbps (16KB/s)");
-		else
-			result.addChild("option", new String[] { "value", "selected" }, new String[] { "16K", "selected" }, "1024+/256 kbps (16KB/s)");
+		} else {
+			result.addChild("option",
+			        new String[] { "value", "selected" },
+			        new String[] { "16K", "selected" }, "1024+/256 kbps (16KB/s)");
+		}
 		result.addChild("option", "value", "32K", "1024+/512 kbps (32K/s)");
 		result.addChild("option", "value", "64K", "1024+/1024 kbps (64K/s)");
-		result.addChild("option", "value", "1000K", l10n("bwlimitHigherSpeed"));
+		result.addChild("option", "value", "1000K", WizardL10n.l10n("bwlimitHigherSpeed"));
 
-		bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "bwF", l10n("continue")});
-		bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
-		bandwidthInfoboxContent.addChild("#", l10n("bandwidthLimitAfter"));
+		bandwidthForm.addChild("input",
+		        new String[] { "type", "name", "value" },
+		        new String[] { "submit", "bwF", WizardL10n.l10n("continue")});
+		bandwidthForm.addChild("input",
+		        new String[] { "type", "name", "value" },
+		        new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
+		bandwidthInfoboxContent.addChild("#", WizardL10n.l10n("bandwidthLimitAfter"));
 
 		return contentNode.generate();
 	}

@@ -9,9 +9,12 @@ import freenet.support.api.HTTPRequest;
 /**
  * This step gives the user information about browser usage.
  */
-public class GetBROWSER_WARNING extends AbstractGetStep {
+public class GetBROWSER_WARNING implements GetStep {
 
-	public static final String TITLE_KEY = "browserWarningPageTitle";
+	@Override
+	public String getTitleKey() {
+		return "browserWarningPageTitle";
+	}
 
 	@Override
 	public String getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
@@ -50,30 +53,30 @@ public class GetBROWSER_WARNING extends AbstractGetStep {
 		HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 
 		if(incognito)
-			infoboxHeader.addChild("#", l10n("browserWarningIncognitoShort"));
+			infoboxHeader.addChild("#", WizardL10n.l10n("browserWarningIncognitoShort"));
 		else if(isRelativelySafe)
-			infoboxHeader.addChild("#", l10n("browserWarningShort"));
+			infoboxHeader.addChild("#", WizardL10n.l10n("browserWarningShort"));
 		else
-			infoboxHeader.addChild("#", l10n("browserWarningShortRelativelySafe"));
+			infoboxHeader.addChild("#", WizardL10n.l10n("browserWarningShortRelativelySafe"));
 
 		if(isOldFirefox) {
 			HTMLNode p = infoboxContent.addChild("p");
-			p.addChild("#", l10n("browserWarningOldFirefox"));
+			p.addChild("#", WizardL10n.l10n("browserWarningOldFirefox"));
 			if(!incognito)
-				p.addChild("#", " " + l10n("browserWarningOldFirefoxNewerHasPrivacyMode"));
+				p.addChild("#", " " + WizardL10n.l10n("browserWarningOldFirefoxNewerHasPrivacyMode"));
 		}
 
 		if(isRelativelySafe)
-			infoboxContent.addChild("p", incognito ? l10n("browserWarningIncognitoMaybeSafe") : l10n("browserWarningMaybeSafe"));
+			infoboxContent.addChild("p", incognito ? WizardL10n.l10n("browserWarningIncognitoMaybeSafe") : WizardL10n.l10n("browserWarningMaybeSafe"));
 		else
 			NodeL10n.getBase().addL10nSubstitution(infoboxContent, incognito ? "FirstTimeWizardToadlet.browserWarningIncognito" : "FirstTimeWizardToadlet.browserWarning", new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
 
 		if(incognito) {
-			infoboxContent.addChild("p", l10n("browserWarningIncognitoSuggestion"));
+			infoboxContent.addChild("p", WizardL10n.l10n("browserWarningIncognitoSuggestion"));
 		} else
-			infoboxContent.addChild("p", l10n("browserWarningSuggestion"));
+			infoboxContent.addChild("p", WizardL10n.l10n("browserWarningSuggestion"));
 
-		infoboxContent.addChild("p").addChild("a", "href", "?step="+ FirstTimeWizardToadlet.WIZARD_STEP.MISC, l10n("clickContinue"));
+		infoboxContent.addChild("p").addChild("a", "href", "?step="+ FirstTimeWizardToadlet.WIZARD_STEP.MISC, WizardL10n.l10n("clickContinue"));
 		
 		return contentNode.generate();
 	}

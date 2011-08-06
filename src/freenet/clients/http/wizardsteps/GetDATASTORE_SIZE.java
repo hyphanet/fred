@@ -14,9 +14,7 @@ import freenet.support.io.FileUtil;
 /**
  * Allows the user to select datastore size, considering available storage space when offering options.
  */
-public class GetDATASTORE_SIZE extends AbstractGetStep {
-
-	public static final String TITLE_KEY = "step4Title";
+public class GetDATASTORE_SIZE implements GetStep {
 
 	private final NodeClientCore core;
 	private final Config config;
@@ -27,13 +25,18 @@ public class GetDATASTORE_SIZE extends AbstractGetStep {
 	}
 
 	@Override
+	public String getTitleKey() {
+		return "step4Title";
+	}
+
+	@Override
 	public String getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
 		HTMLNode bandwidthInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode bandwidthnfoboxHeader = bandwidthInfobox.addChild("div", "class", "infobox-header");
 		HTMLNode bandwidthInfoboxContent = bandwidthInfobox.addChild("div", "class", "infobox-content");
 
-		bandwidthnfoboxHeader.addChild("#", l10n("datastoreSize"));
-		bandwidthInfoboxContent.addChild("#", l10n("datastoreSizeLong"));
+		bandwidthnfoboxHeader.addChild("#", WizardL10n.l10n("datastoreSize"));
+		bandwidthInfoboxContent.addChild("#", WizardL10n.l10n("datastoreSizeLong"));
 		HTMLNode bandwidthForm = ctx.addFormChild(bandwidthInfoboxContent, ".", "dsForm");
 		HTMLNode result = bandwidthForm.addChild("select", "name", "ds");
 
@@ -48,7 +51,7 @@ public class GetDATASTORE_SIZE extends AbstractGetStep {
 			long current = sizeOption.getValue();
 			result.addChild("option",
 			        new String[] { "value", "selected" },
-			        new String[] { SizeUtil.formatSize(current), "on" }, l10n("currentPrefix")+" "+SizeUtil.formatSize(current));
+			        new String[] { SizeUtil.formatSize(current), "on" }, WizardL10n.l10n("currentPrefix")+" "+SizeUtil.formatSize(current));
 		} else if(autodetectedSize != -1) {
 			result.addChild("option", new String[] { "value", "selected" }, new String[] { SizeUtil.formatSize(autodetectedSize), "on" }, SizeUtil.formatSize(autodetectedSize));
 		}
@@ -74,7 +77,7 @@ public class GetDATASTORE_SIZE extends AbstractGetStep {
 
 		bandwidthForm.addChild("input",
 		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "dsF", l10n("continue")});
+		        new String[] { "submit", "dsF", WizardL10n.l10n("continue")});
 		bandwidthForm.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
