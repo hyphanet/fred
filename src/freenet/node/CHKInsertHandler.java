@@ -423,7 +423,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         			}
         			try {
         				int t = (int)Math.min(Integer.MAX_VALUE, startedTime + transferTimeout - System.currentTimeMillis());
-        				if(t > 0) wait(t);
+        				if(t > 0) sender.wait(t);
         				else {
         					routingTookTooLong = true;
         				}
