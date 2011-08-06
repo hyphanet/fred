@@ -16,7 +16,7 @@ public class GetNAME_SELECTION implements GetStep {
 	}
 
 	@Override
-	public String getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
+	public void getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
 		HTMLNode nnameInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode nnameInfoboxHeader = nnameInfobox.addChild("div", "class", "infobox-header");
 		HTMLNode nnameInfoboxContent = nnameInfobox.addChild("div", "class", "infobox-content");
@@ -32,7 +32,5 @@ public class GetNAME_SELECTION implements GetStep {
 		nnameForm.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
-
-		return contentNode.generate();
 	}
 }

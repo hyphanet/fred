@@ -75,6 +75,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		getHandlers = new EnumMap<WIZARD_STEP, GetStep>(WIZARD_STEP.class);
 		getHandlers.put(WIZARD_STEP.WELCOME, new GetWELCOME(config));
 		getHandlers.put(WIZARD_STEP.BROWSER_WARNING, new GetBROWSER_WARNING());
+		getHandlers.put(WIZARD_STEP.MISC, new GetMISC());
 		getHandlers.put(WIZARD_STEP.OPENNET, new GetOPENNET());
 		getHandlers.put(WIZARD_STEP.SECURITY_NETWORK, new GetSECURITY_NETWORK());
 		getHandlers.put(WIZARD_STEP.SECURITY_PHYSICAL, new GetSECURITY_PHYSICAL(core));
@@ -97,9 +98,10 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		//Get handler for page.
 		GetStep getStep = getHandlers.get(currentStep);
 		//Generate page to surround the content, using the step's title.
-		PageNode pageNode = ctx.getPageMaker().getPageNode(getStep.getTitleKey(), false, false, ctx);
+		PageNode pageNode = ctx.getPageMaker().getPageNode(l10n(getStep.getTitleKey()), false, false, ctx);
 		//Return the page to the browser.
-		writeHTMLReply(ctx, 200, "OK", getStep.getPage(pageNode.content, request, ctx));
+		getStep.getPage(pageNode.content, request, ctx);
+		writeHTMLReply(ctx, 200, "OK", pageNode.outer.generate());
 	}
 
 	private String l10nSec(String key) {

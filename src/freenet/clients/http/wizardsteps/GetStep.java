@@ -15,11 +15,10 @@ public interface GetStep {
 	public String getTitleKey();
 
 	/**
-	 * Renders a page for a step in the wizard.
+	 * Renders a page for a step in the wizard by modifying contentNode.
 	 * @param contentNode page content node to render content into.
 	 * @param ctx For adding forms and getting a PageNode.
 	 * @param request The HTTPRequest for the page, used in its creation.
-	 * @return HTML to be sent to the browser.
 	 */
-	public String getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx);
+	public void getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx);
 }

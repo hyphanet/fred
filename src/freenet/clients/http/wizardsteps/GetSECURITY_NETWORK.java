@@ -17,7 +17,7 @@ public class GetSECURITY_NETWORK implements GetStep {
 		return "networkSecurityPageTitle";
 	}
 
-	public String getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
+	public void getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode infoboxHeader = infobox.addChild("div", "class", "infobox-header");
 		HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
@@ -25,7 +25,8 @@ public class GetSECURITY_NETWORK implements GetStep {
 		//If opennet isn't defined, re-ask.
 		if(!request.isParameterSet("opennet")) {
 			GetOPENNET reRender = new GetOPENNET();
-			return reRender.getPage(contentNode, request, ctx);
+			reRender.getPage(contentNode, request, ctx);
+			return;
 		}
 
 		String opennetParam = request.getParam("opennet", "false");
@@ -65,7 +66,5 @@ public class GetSECURITY_NETWORK implements GetStep {
 		}
 		form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "networkSecurityF", WizardL10n.l10n("continue")});
 		form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
-
-		return contentNode.generate();
 	}
 }

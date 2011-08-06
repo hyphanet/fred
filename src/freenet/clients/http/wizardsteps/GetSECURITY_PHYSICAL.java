@@ -31,7 +31,7 @@ public class GetSECURITY_PHYSICAL implements GetStep {
 	}
 
 	@Override
-	public String getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
+	public void getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode infoboxHeader = infobox.addChild("div", "class", "infobox-header");
 		HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
@@ -71,7 +71,5 @@ public class GetSECURITY_PHYSICAL implements GetStep {
 		form.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
-
-		return contentNode.generate();
 	}
 }

@@ -30,13 +30,12 @@ public class GetWELCOME implements GetStep {
 	}
 
 	/**
-	 * Renders the first page of the wizard.
+	 * Renders the first page of the wizard into the given content node.
 	 * @param request used to check whether the user is using a browser with incognito mode.
 	 * @param ctx used to add the language selection drop-down form and get the PageNode.
-	 * @return HTML of the first page.
 	 */
 	@Override
-	public String getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
+	public void getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
 		HTMLNode welcomeInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode welcomeInfoboxHeader = welcomeInfobox.addChild("div", "class", "infobox-header");
 		HTMLNode welcomeInfoboxContent = welcomeInfobox.addChild("div", "class", "infobox-content");
@@ -62,7 +61,5 @@ public class GetWELCOME implements GetStep {
 		languageForm.addChild(dropDown);
 		//Otherwise fall back to submit button if no Javascript
 		languageForm.addChild("noscript").addChild("input", "type", "submit");
-
-		return contentNode.generate();
 	}
 }

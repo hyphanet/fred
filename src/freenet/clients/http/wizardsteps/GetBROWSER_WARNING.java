@@ -17,7 +17,7 @@ public class GetBROWSER_WARNING implements GetStep {
 	}
 
 	@Override
-	public String getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
+	public void getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
 		boolean incognito = request.isParameterSet("incognito");
 		// Bug 3376: Opening Chrome in incognito mode from command line will open a new non-incognito window if the browser is already open.
 		// See http://code.google.com/p/chromium/issues/detail?id=9636
@@ -77,7 +77,5 @@ public class GetBROWSER_WARNING implements GetStep {
 			infoboxContent.addChild("p", WizardL10n.l10n("browserWarningSuggestion"));
 
 		infoboxContent.addChild("p").addChild("a", "href", "?step="+ FirstTimeWizardToadlet.WIZARD_STEP.MISC, WizardL10n.l10n("clickContinue"));
-		
-		return contentNode.generate();
 	}
 }

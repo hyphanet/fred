@@ -31,7 +31,7 @@ public class GetBANDWIDTH implements GetStep {
 	}
 
 	@Override
-	public String getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
+	public void getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
 		int autodetectedLimit = canAutoconfigureBandwidth();
 
 		HTMLNode bandwidthInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -81,8 +81,6 @@ public class GetBANDWIDTH implements GetStep {
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
 		bandwidthInfoboxContent.addChild("#", WizardL10n.l10n("bandwidthLimitAfter"));
-
-		return contentNode.generate();
 	}
 
 	private int canAutoconfigureBandwidth() {

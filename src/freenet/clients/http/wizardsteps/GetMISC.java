@@ -16,7 +16,7 @@ public class GetMISC implements GetStep {
 	}
 
 	@Override
-	public String getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
+	public void getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
 		HTMLNode form = ctx.addFormChild(contentNode, ".", "miscForm");
 
 		HTMLNode miscInfobox = form.addChild("div", "class", "infobox infobox-normal");
@@ -48,7 +48,5 @@ public class GetMISC implements GetStep {
 		miscInfoboxContent.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
-
-		return contentNode.generate();
 	}
 }

@@ -17,7 +17,7 @@ public class GetOPENNET implements GetStep {
 	}
 
 	@Override
-	public String getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
+	public void getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode infoboxHeader = infobox.addChild("div", "class", "infobox-header");
 		HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
@@ -67,7 +67,5 @@ public class GetOPENNET implements GetStep {
 		footList.addChild("li", WizardL10n.l10n("opennetChoiceHowSafeIsFreenetBugs"));
 		HTMLNode foot2 = footHidden.addChild("p");
 		foot2.addChild("#", "²: " + WizardL10n.l10n("opennetChoiceHowSafeIsFreenetFoot2"));
-
-		return contentNode.generate();
 	}
 }

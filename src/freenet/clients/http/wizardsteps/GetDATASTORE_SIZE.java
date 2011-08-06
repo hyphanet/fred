@@ -30,7 +30,7 @@ public class GetDATASTORE_SIZE implements GetStep {
 	}
 
 	@Override
-	public String getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
+	public void getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
 		HTMLNode bandwidthInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode bandwidthnfoboxHeader = bandwidthInfobox.addChild("div", "class", "infobox-header");
 		HTMLNode bandwidthInfoboxContent = bandwidthInfobox.addChild("div", "class", "infobox-content");
@@ -81,8 +81,6 @@ public class GetDATASTORE_SIZE implements GetStep {
 		bandwidthForm.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
-
-		return contentNode.generate();
 	}
 
 	private long maxDatastoreSize() {

@@ -24,7 +24,7 @@ public class GetCONGRATZ implements GetStep {
 	}
 
 	@Override
-	public String getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
+	public void getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
 		//Set wizard completion flag
 		try {
 			config.get("fproxy").set("hasCompletedWizard", true);
@@ -42,7 +42,5 @@ public class GetCONGRATZ implements GetStep {
 		congratzInfoboxContent.addChild("p", WizardL10n.l10n("congratzLong"));
 
 		congratzInfoboxContent.addChild("a", "href", "/", WizardL10n.l10n("continueEnd"));
-
-		return contentNode.generate();
 	}
 }
