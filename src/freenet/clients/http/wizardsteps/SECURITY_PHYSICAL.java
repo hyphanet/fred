@@ -250,6 +250,7 @@ public class SECURITY_PHYSICAL extends Toadlet implements Step {
 		} catch (MasterKeysFileSizeException e) {
 			System.err.println("Failed starting up database while switching physical security level to "+newThreatLevel+" from "+oldThreatLevel+" : "+core.node.getMasterPasswordFile()+" is too " + e.sizeToString());
 		}
+		//If opennet is enabled, skip asking for node name as it's not needed. This is to keep things simpler for the user.
 		if (core.node.isOpennetEnabled()) {
 			return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH;
 		} else {
