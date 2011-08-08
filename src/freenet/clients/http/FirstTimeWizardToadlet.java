@@ -92,6 +92,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		if (currentStep == WIZARD_STEP.BROWSER_WARNING &&
 			request.getHeader("user-agent").contains("Chrome")) {
 			currentStep = WIZARD_STEP.MISC;
+		} else if (currentStep == WIZARD_STEP.SECURITY_NETWORK && !request.isParameterSet("opennet")) {
+			//If opennet isn't defined, re-ask.
+			currentStep = WIZARD_STEP.OPENNET;
 		}
 		Step getStep = steps.get(currentStep);
 		//Generate page to surround the content, using the step's title and without status or nav bars.

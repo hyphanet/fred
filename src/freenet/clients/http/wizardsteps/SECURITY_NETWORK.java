@@ -35,13 +35,6 @@ public class SECURITY_NETWORK extends Toadlet implements Step {
 	}
 
 	public void getStep(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
-		//If opennet isn't defined, re-ask.
-		if(!request.isParameterSet("opennet")) {
-			OPENNET reRender = new OPENNET();
-			reRender.getStep(contentNode, request, ctx);
-			return;
-		}
-
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode infoboxHeader = infobox.addChild("div", "class", "infobox-header");
 		HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
