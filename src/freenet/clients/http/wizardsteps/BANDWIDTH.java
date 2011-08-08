@@ -23,6 +23,10 @@ public class BANDWIDTH implements Step {
 
 	private final NodeClientCore core;
 	private final Config config;
+	/**
+	 * A speed this low suggests that the auto-detected bandwidth limit is bogus.
+	 */
+	private final int suspiciouslyLowSpeed = 8192;
 
 	public BANDWIDTH(NodeClientCore core, Config config) {
 		this.config = config;
@@ -62,9 +66,9 @@ public class BANDWIDTH implements Step {
 			                WizardL10n.l10n("autodetectedSuggestedLimit")+" "+SizeUtil.formatSize(autodetectedLimit)+"/s");
 		}
 
-		// don't forget to update handlePost too if you change that! TODO: ... "that"?
-		if(autodetectedLimit != 8192)
+		if(autodetectedLimit != suspiciouslyLowSpeed) {
 			result.addChild("option", "value", "8K", WizardL10n.l10n("bwlimitLowerSpeed"));
+		}
 		// Special case for 128kbps to increase performance at the cost of some link degradation. Above that we use 50% of the limit.
 		result.addChild("option", "value", "12K", "512+/128 kbps (12KB/s)");
 		if(autodetectedLimit != -1 || !sizeOption.isDefault()) {
@@ -104,15 +108,17 @@ public class BANDWIDTH implements Step {
 	}
 
 	private int canAutoconfigureBandwidth() {
-		if(!config.get("node").getOption("outputBandwidthLimit").isDefault())
+		if(!config.get("node").getOption("outputBandwidthLimit").isDefault()) {
 			return -1;
+		}
 		FredPluginBandwidthIndicator bwIndicator = core.node.ipDetector.getBandwidthIndicator();
-		if(bwIndicator == null)
+		if(bwIndicator == null) {
 			return -1;
+		}
 
 		int downstreamBWLimit = bwIndicator.getDownstreamMaxBitRate();
 		int upstreamBWLimit = bwIndicator.getUpstramMaxBitRate();
-		if((downstreamBWLimit > 0 && downstreamBWLimit < 65536) || (upstreamBWLimit > 0 && upstreamBWLimit < 8192)) {
+		if((downstreamBWLimit > 0 && downstreamBWLimit < 65536) || (upstreamBWLimit > 0 && upstreamBWLimit < suspiciouslyLowSpeed)) {
 			// These are kilobits, not bits, per second, right?
 			// Assume the router is buggy and don't autoconfigure.
 			// Nothing that implements UPnP would be that slow.
@@ -131,7 +137,7 @@ public class BANDWIDTH implements Step {
 		// We don't mind if the downstreamBWLimit couldn't be set, but upstreamBWLimit is important
 		if(upstreamBWLimit > 0) {
 			int bytes = (upstreamBWLimit / 8) - 1;
-			if(bytes < 16384) return 8192;
+			if(bytes < 16384) return suspiciouslyLowSpeed;
 			return bytes / 2;
 		}else
 			return -1;

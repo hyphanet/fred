@@ -240,6 +240,17 @@ public class SECURITY_PHYSICAL extends Toadlet implements Step {
 				return null;
 			}
 		}
+		setThreatLevel(newThreatLevel, oldThreatLevel);
+		//TODO: Mode this to before name selection GET. Steps shouldn't have to have this kind of logic.
+		//If opennet is enabled, skip asking for node name as it's not needed. This is to keep things simpler for the user.
+		if (core.node.isOpennetEnabled()) {
+			return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH;
+		} else {
+			return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.NAME_SELECTION;
+		}
+	}
+
+	public void setThreatLevel(SecurityLevels.PHYSICAL_THREAT_LEVEL newThreatLevel, SecurityLevels.PHYSICAL_THREAT_LEVEL oldThreatLevel) throws IOException {
 		core.node.securityLevels.setThreatLevel(newThreatLevel);
 		core.storeConfig();
 		try {
@@ -249,12 +260,6 @@ public class SECURITY_PHYSICAL extends Toadlet implements Step {
 			System.err.println("Failed starting up database while switching physical security level to "+newThreatLevel+" from "+oldThreatLevel+" : wrong password - this is impossible, it should have been handled by the other cases, suggest you remove master.keys");
 		} catch (MasterKeysFileSizeException e) {
 			System.err.println("Failed starting up database while switching physical security level to "+newThreatLevel+" from "+oldThreatLevel+" : "+core.node.getMasterPasswordFile()+" is too " + e.sizeToString());
-		}
-		//If opennet is enabled, skip asking for node name as it's not needed. This is to keep things simpler for the user.
-		if (core.node.isOpennetEnabled()) {
-			return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH;
-		} else {
-			return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.NAME_SELECTION;
 		}
 	}
 

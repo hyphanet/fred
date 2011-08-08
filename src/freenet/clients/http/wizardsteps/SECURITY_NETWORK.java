@@ -153,8 +153,12 @@ public class SECURITY_NETWORK extends Toadlet implements Step {
 		}
 		//The user selected low or normal security, or confirmed high or maximum. Set the configuration
 		//and continue to the physical security step.
-		core.node.securityLevels.setThreatLevel(newThreatLevel);
-		core.storeConfig();
+		setThreatLevel(newThreatLevel);
 		return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_PHYSICAL;
+	}
+
+	public void setThreatLevel(SecurityLevels.NETWORK_THREAT_LEVEL level) {
+		core.node.securityLevels.setThreatLevel(level);
+		core.storeConfig();
 	}
 }

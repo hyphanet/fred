@@ -72,29 +72,47 @@ public class MISC implements Step {
 
 	@Override
 	public String postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+		setAutoUpdate(Boolean.parseBoolean(request.getPartAsStringFailsafe("autodeploy", 10)));
+		setUPnP(request.isPartSet("upnp"));
+		return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.OPENNET;
+	}
+
+	/**
+	 * Sets whether auto-update should be enabled.
+	 * @param enabled whether auto-update should be enabled.
+	 */
+	public void setAutoUpdate(boolean enabled) {
 		try {
-			config.get("node.updater").set("autoupdate", Boolean.parseBoolean(request.getPartAsStringFailsafe("autodeploy", 10)));
+			config.get("node.updater").set("autoupdate", enabled);
 		} catch (ConfigException e) {
 			Logger.error(this, "Should not happen, please report!" + e, e);
 		}
-		final boolean enableUPnP = request.isPartSet("upnp");
-		if(enableUPnP != core.node.pluginManager.isPluginLoaded("plugins.UPnP.UPnP")) {
-				// We can probably get connected without it, so don't force HTTPS.
-				// We'd have to ask the user anyway...
-				core.node.executor.execute(new Runnable() {
+	}
 
-					private final boolean enable = enableUPnP;
-
-					@Override
-					public void run() {
-						if(enable)
-							core.node.pluginManager.startPluginOfficial("UPnP", true, false, false);
-						else
-							core.node.pluginManager.killPluginByClass("plugins.UPnP.UPnP", 5000);
-					}
-
-				});
+	/**
+	 * Enables or disables the UPnP plugin asynchronously. If the plugin's state would not change for the given
+	 * argument, it does nothing.
+	 * @param enableUPnP whether UPnP should be enabled.
+	 */
+	public void setUPnP(final boolean enableUPnP) {
+		//If its state would not change, don't do anything.
+		if(enableUPnP == core.node.pluginManager.isPluginLoaded("plugins.UPnP.UPnP")) {
+				return;
 		}
-		return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.OPENNET;
+
+		core.node.executor.execute(new Runnable() {
+
+			private final boolean enable = enableUPnP;
+
+			@Override
+			public void run() {
+				if(enable) {
+					core.node.pluginManager.startPluginOfficial("UPnP", true, false, false);
+				} else {
+					core.node.pluginManager.killPluginByClass("plugins.UPnP.UPnP", 5000);
+				}
+			}
+
+		});
 	}
 }

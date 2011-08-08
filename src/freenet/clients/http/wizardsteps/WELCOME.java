@@ -1,8 +1,6 @@
 package freenet.clients.http.wizardsteps;
 
-import freenet.clients.http.ConfigToadlet;
-import freenet.clients.http.FirstTimeWizardToadlet;
-import freenet.clients.http.ToadletContext;
+import freenet.clients.http.*;
 import freenet.config.Config;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.Option;
@@ -37,27 +35,26 @@ public class WELCOME implements Step {
 	 */
 	@Override
 	public void getStep(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
-		HTMLNode welcomeInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-		HTMLNode welcomeInfoboxHeader = welcomeInfobox.addChild("div", "class", "infobox-header");
-		HTMLNode welcomeInfoboxContent = welcomeInfobox.addChild("div", "class", "infobox-content");
-		welcomeInfoboxHeader.addChild("#", WizardL10n.l10n("welcomeInfoboxTitle"));
+		PageMaker pm = ctx.getPageMaker();
+		HTMLNode welcomeInfoboxContent = addInfoBox(WizardL10n.l10n("welcomeInfoboxTitle"), pm, contentNode);
+		welcomeInfoboxContent.addChild("p", WizardL10n.l10n("welcomeInfoboxContent1"));
 
-		HTMLNode firstParagraph = welcomeInfoboxContent.addChild("p");
-		firstParagraph.addChild("#", WizardL10n.l10n("welcomeInfoboxContent1"));
+		boolean incognito = request.isParameterSet("incognito");
 
-		HTMLNode secondParagraph = welcomeInfoboxContent.addChild("p");
-		StringBuilder continueTo = new StringBuilder("?step=").
-		        append(FirstTimeWizardToadlet.WIZARD_STEP.BROWSER_WARNING);
-		if (request.isParameterSet("incognito")) {
-			continueTo.append("&incognito=true");
-		}
-		secondParagraph.addChild("a", "href", continueTo.toString()).addChild("#", WizardL10n.l10n("clickContinue"));
+		//Low security option
+		addSecurityBox(contentNode, pm, "Low", ctx, incognito);
 
-		HTMLNode languageForm = ctx.addFormChild(secondParagraph, ".", "languageForm");
+		//High security option
+		addSecurityBox(contentNode, pm, "High", ctx, incognito);
+
+		//Detailed wizard option
+		addSecurityBox(contentNode, pm, "None", ctx, incognito);
+
+		HTMLNode languageForm = ctx.addFormChild(contentNode, ".", "languageForm");
 		//Marker for step on POST side
 		languageForm.addChild("input",
-		        new String [] { "type", "name", "value" },
-		        new String [] { "hidden", "step", "WELCOME"});
+		        new String[] { "type", "name", "value" },
+		        new String[] { "hidden", "step", "WELCOME"});
 		//Add option dropdown for languages
 		Option language = config.get("node").getOption("l10n");
 		EnumerableOptionCallback l10nCallback = (EnumerableOptionCallback)language.getCallback();
@@ -71,7 +68,8 @@ public class WELCOME implements Step {
 
 	@Override
 	public String postStep(HTTPRequest request, ToadletContext ctx) {
-		//The user changed their language on the welcome page. Change the language and rerender the page.
+		//The user changed their language on the welcome page. Change the language and re-render the page.
+		//Presets are handled within FirstTimeWizardToadlet because it can access all steps.
 		String desiredLanguage = request.getPartAsStringFailsafe("l10n", 4096);
 		try {
 			config.get("node").set("l10n", desiredLanguage);
@@ -83,5 +81,38 @@ public class WELCOME implements Step {
 			//which could be very slow.
 		}
 		return FirstTimeWizardToadlet.TOADLET_URL;
+	}
+
+	/**
+	 * Adds an InfoBox with the given title to the parent HTMLNode. Idea credit to p0s/x0r in Freetalk.
+	 * @param infoBoxTitle The title of the InfoBox.
+	 * @param pm The pageMaker to get the InfoBox from.
+	 * @param parent Parent HTMLNode to add the InfoBox to.
+	 * @return HTMLNode of the InfoBox's content.
+	 */
+	private HTMLNode addInfoBox(String infoBoxTitle, PageMaker pm, HTMLNode parent) {
+		InfoboxNode invitationsBox = pm.getInfobox(infoBoxTitle);
+		parent.addChild(invitationsBox.outer);
+		return invitationsBox.content;
+	}
+
+	/**
+	 * Adds an infobox with information about a given security level and button.
+	 * @param parent node to add infobox to.
+	 * @param pm to get the InfoBox from.
+	 * @param preset suffix for security level keys.
+	 * @param ctx used to add a form
+	 * @param incognito whether incognito mode is enabled
+	 */
+	private void addSecurityBox(HTMLNode parent, PageMaker pm, String preset, ToadletContext ctx, boolean incognito) {
+		HTMLNode securityContent = addInfoBox(WizardL10n.l10n("presetTitle"+preset), pm, parent);
+		securityContent.addChild("p", WizardL10n.l10n("preset" + preset));
+		HTMLNode secForm = ctx.addFormChild(securityContent, ".", "SecForm"+preset);
+		secForm.addChild("input",
+		        new String[]{"type", "name", "value"},
+		        new String[]{"hidden", "incognito", String.valueOf(incognito)});
+		secForm.addChild("input",
+		        new String[]{"type", "name", "value"},
+		        new String[]{"submit", "preset" + preset, WizardL10n.l10n("presetChoose" + preset)});
 	}
 }
