@@ -115,7 +115,8 @@ public class RequestTag extends UIDTag {
 			sb.append(" handlerDisconnected=true");
 		if(waitingForOpennet != null) {
 			PeerNode pn = waitingForOpennet.get();
-			sb.append(" waitingForOpennet="+pn == null ? "(null)" : pn.shortToString());
+			sb.append(" waitingForOpennet=");
+			sb.append(pn == null ? "(null)" : pn.shortToString());
 		}
 		sb.append(" : ");
 		sb.append(super.toString());
