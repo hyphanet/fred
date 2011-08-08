@@ -69,20 +69,20 @@ public class DATASTORE_SIZE implements Step {
 		}
 		// We always allow at least 1GB
 		result.addChild("option", "value", "1G", "1 GiB");
-		if(maxSize >= 2*1024*1024*1024) {
+		if(maxSize >= 2l*1024*1024*1024) {
 			if(autodetectedSize != -1 || !sizeOption.isDefault()) {
 				result.addChild("option", "value", "2G", "2 GiB");
 			} else {
 				result.addChild("option", new String[] { "value", "selected" }, new String[] { "2G", "on" }, "2GiB");
 			}
 		}
-		if(maxSize >= 3*1024*1024*1024) result.addChild("option", "value", "3G", "3 GiB");
-		if(maxSize >= 5*1024*1024*1024) result.addChild("option", "value", "5G", "5 GiB");
-		if(maxSize >= 10*1024*1024*1024) result.addChild("option", "value", "10G", "10 GiB");
-		if(maxSize >= 20*1024*1024*1024) result.addChild("option", "value", "20G", "20 GiB");
-		if(maxSize >= 30*1024*1024*1024) result.addChild("option", "value", "30G", "30 GiB");
-		if(maxSize >= 50*1024*1024*1024) result.addChild("option", "value", "50G", "50 GiB");
-		if(maxSize >= 100*1024*1024*1024) result.addChild("option", "value", "100G", "100 GiB");
+		if(maxSize >= 3l*1024*1024*1024) result.addChild("option", "value", "3G", "3 GiB");
+		if(maxSize >= 5l*1024*1024*1024) result.addChild("option", "value", "5G", "5 GiB");
+		if(maxSize >= 10l*1024*1024*1024) result.addChild("option", "value", "10G", "10 GiB");
+		if(maxSize >= 20l*1024*1024*1024) result.addChild("option", "value", "20G", "20 GiB");
+		if(maxSize >= 30l*1024*1024*1024) result.addChild("option", "value", "30G", "30 GiB");
+		if(maxSize >= 50l*1024*1024*1024) result.addChild("option", "value", "50G", "50 GiB");
+		if(maxSize >= 100l*1024*1024*1024) result.addChild("option", "value", "100G", "100 GiB");
 
 		//Marker for step on POST side
 		bandwidthForm.addChild("input",

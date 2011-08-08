@@ -18,11 +18,9 @@ import java.io.IOException;
 public class SECURITY_NETWORK extends Toadlet implements Step {
 
 	private final NodeClientCore core;
-	private final HighLevelSimpleClient client;
 
 	public SECURITY_NETWORK(NodeClientCore core, HighLevelSimpleClient client) {
 		super(client);
-		this.client = client;
 		this.core = core;
 	}
 
