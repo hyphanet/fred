@@ -91,10 +91,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		//Skip the browser warning page if using Chrome because its incognito mode works from command line.
 		if (currentStep == WIZARD_STEP.BROWSER_WARNING &&
 			request.getHeader("user-agent").contains("Chrome")) {
-			currentStep = WIZARD_STEP.MISC;
+			super.writeTemporaryRedirect(ctx, "Skipping unneeded warning", TOADLET_URL+"?step=MISC");
+			return;
 		} else if (currentStep == WIZARD_STEP.SECURITY_NETWORK && !request.isParameterSet("opennet")) {
 			//If opennet isn't defined, re-ask.
-			currentStep = WIZARD_STEP.OPENNET;
+			super.writeTemporaryRedirect(ctx, "Need opennet choice", TOADLET_URL+"?step=OPENNET");
+			return;
 		}
 		Step getStep = steps.get(currentStep);
 		//Generate page to surround the content, using the step's title and without status or nav bars.
