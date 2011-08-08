@@ -103,7 +103,8 @@ public class RequestTag extends UIDTag {
 			sb.append(" sent");
 		sb.append(" finishedCode=").append(requestSenderFinishedCode);
 		sb.append(" rejected=").append(rejected);
-		sb.append(" thrown=").append(handlerThrew);
+		if(handlerThrew != null)
+			sb.append(" thrown=").append(handlerThrew);
 		if(abortedDownstreamTransfer) {
 			sb.append(" abortedDownstreamTransfer reason=");
 			sb.append(abortedDownstreamReason);
