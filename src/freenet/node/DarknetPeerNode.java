@@ -1849,6 +1849,8 @@ public class DarknetPeerNode extends PeerNode {
 				public void run() {
 					try {
 						bt.send();
+					} catch (DisconnectedException e) {
+						// :|
 					} finally {
 						synchronized(DarknetPeerNode.this) {
 							sendingFullNoderef = false;

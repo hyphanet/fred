@@ -245,8 +245,9 @@ public class BulkTransmitter {
 	/**
 	 * Send the file.
 	 * @return True if the file was successfully sent. False otherwise.
+	 * @throws DisconnectedException 
 	 */
-	public boolean send() {
+	public boolean send() throws DisconnectedException {
 		long lastSentPacket = System.currentTimeMillis();
 outer:	while(true) {
 			int max = Math.min(Integer.MAX_VALUE, prb.blocks);
@@ -271,7 +272,7 @@ outer:	while(true) {
 				prb.remove(BulkTransmitter.this);
 				if(logMINOR)
 					Logger.minor(this, "Failed to send "+uid+": peer restarted: "+peer);
-				return false;
+				throw new DisconnectedException();
 			}
 			synchronized(this) {
 				if(finished) return true;
@@ -359,12 +360,12 @@ outer:	while(true) {
 				cancel("Disconnected");
 				if(logMINOR)
 					Logger.minor(this, "Cancelled: not connected "+this);
-				return false;
+				throw new DisconnectedException();
 			} catch (PeerRestartedException e) {
 				cancel("PeerRestarted");
 				if(logMINOR)
 					Logger.minor(this, "Cancelled: not connected "+this);
-				return false;
+				throw new DisconnectedException();
 			} catch (WaitedTooLongException e) {
 				long rtt = peer.getThrottle().getRoundTripTime();
 				Logger.error(this, "Failed to send bulk packet "+blockNo+" for "+this+" RTT is "+TimeUtil.formatTime(rtt));
