@@ -1,11 +1,20 @@
 package freenet.clients.http.wizardsteps;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.clients.http.*;
+import freenet.clients.http.ExternalLinkToadlet;
+import freenet.clients.http.FirstTimeWizardToadlet;
+import freenet.clients.http.PageNode;
+import freenet.clients.http.SecurityLevelsToadlet;
+import freenet.clients.http.Toadlet;
+import freenet.clients.http.ToadletContext;
+import freenet.clients.http.ToadletContextClosedException;
 import freenet.l10n.NodeL10n;
-import freenet.node.*;
+import freenet.node.MasterKeysFileSizeException;
+import freenet.node.MasterKeysWrongPasswordException;
+import freenet.node.Node;
+import freenet.node.NodeClientCore;
+import freenet.node.SecurityLevels;
 import freenet.support.HTMLNode;
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 
@@ -246,9 +255,9 @@ public class SECURITY_PHYSICAL extends Toadlet implements Step {
 			System.err.println("Failed starting up database while switching physical security level to "+newThreatLevel+" from "+oldThreatLevel+" : "+core.node.getMasterPasswordFile()+" is too " + e.sizeToString());
 		}
 		if (core.node.isOpennetEnabled()) {
-			return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.NAME_SELECTION+"&opennet=true";
-		} else {
 			return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH;
+		} else {
+			return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.NAME_SELECTION+"&opennet=true";
 		}
 	}
 

@@ -1,8 +1,6 @@
 package freenet.clients.http.wizardsteps;
 
-import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.FirstTimeWizardToadlet;
-import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
 import freenet.config.Config;
@@ -21,7 +19,7 @@ public class NAME_SELECTION implements Step {
 
 	private final Config config;
 
-	public NAME_SELECTION(Config config, HighLevelSimpleClient client) {
+	public NAME_SELECTION(Config config) {
 		this.config = config;
 	}
 

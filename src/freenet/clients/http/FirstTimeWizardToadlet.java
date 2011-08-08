@@ -67,7 +67,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		steps.put(WIZARD_STEP.OPENNET, new OPENNET());
 		steps.put(WIZARD_STEP.SECURITY_NETWORK, new SECURITY_NETWORK(core, client));
 		steps.put(WIZARD_STEP.SECURITY_PHYSICAL, new SECURITY_PHYSICAL(core, client));
-		steps.put(WIZARD_STEP.NAME_SELECTION, new NAME_SELECTION(config, client));
+		steps.put(WIZARD_STEP.NAME_SELECTION, new NAME_SELECTION(config));
 		steps.put(WIZARD_STEP.BANDWIDTH, new BANDWIDTH(core, config));
 		steps.put(WIZARD_STEP.DATASTORE_SIZE, new DATASTORE_SIZE(core, config));
 		steps.put(WIZARD_STEP.CONGRATZ, new CONGRATZ(config));
@@ -81,9 +81,18 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			return;
 		}
 
-		//Read the current step from the URL parameter, defaulting to the welcome page if unset.
-		WIZARD_STEP currentStep = WIZARD_STEP.valueOf(request.getParam("step", WIZARD_STEP.WELCOME.toString()));
-		//Get handler for page.
+		//Read the current step from the URL parameter, defaulting to the welcome page if unset or invalid..
+		WIZARD_STEP currentStep;
+		try {
+			currentStep = WIZARD_STEP.valueOf(request.getParam("step", WIZARD_STEP.WELCOME.toString()));
+		} catch (IllegalArgumentException e) {
+			currentStep = WIZARD_STEP.WELCOME;
+		}
+		//Skip the browser warning page if using Chrome because its incognito mode works from command line.
+		if (currentStep == WIZARD_STEP.BROWSER_WARNING &&
+			request.getHeader("user-agent").contains("Chrome")) {
+			currentStep = WIZARD_STEP.MISC;
+		}
 		Step getStep = steps.get(currentStep);
 		//Generate page to surround the content, using the step's title and without status or nav bars.
 		PageNode pageNode = ctx.getPageMaker().getPageNode(NodeL10n.getBase().getString(
@@ -117,15 +126,16 @@ public class FirstTimeWizardToadlet extends Toadlet {
 
 		try {
 			//Attempt to parse the current step, defaulting to WELCOME if unspecified.
-			String currentStep = request.getPartAsStringFailsafe("step", 20);
-			WIZARD_STEP currentValue = currentStep.isEmpty() ? WIZARD_STEP.WELCOME : WIZARD_STEP.valueOf(currentStep);
+			String currentValue = request.getPartAsStringFailsafe("step", 20);
+			WIZARD_STEP currentStep = currentValue.isEmpty() ? WIZARD_STEP.WELCOME : WIZARD_STEP.valueOf(currentValue);
 
-			String redirectTo = steps.get(currentValue).postStep(request, ctx);
+			String redirectTo = steps.get(currentStep).postStep(request, ctx);
 			if (redirectTo != null) {
 				super.writeTemporaryRedirect(ctx, "Wizard redirecting.", redirectTo);
 			}
 		} catch (IllegalArgumentException e) {
 			//Failed to parse enum value, redirect to start.
+			//TODO: Should this be an error page instead? Suddenly redirecting to the beginning is confusing.
 			super.writeTemporaryRedirect(ctx, "invalid/unhandled data", TOADLET_URL);
 		}
 	}

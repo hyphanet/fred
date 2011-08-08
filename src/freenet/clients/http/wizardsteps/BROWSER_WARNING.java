@@ -1,11 +1,8 @@
 package freenet.clients.http.wizardsteps;
 
-import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.FirstTimeWizardToadlet;
-import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
-import freenet.config.FreenetFilePersistentConfig;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -42,14 +39,23 @@ public class BROWSER_WARNING implements Step {
 		String ua = request.getHeader("user-agent");
 		boolean isFirefox = false;
 		boolean isOldFirefox = false;
-		boolean mightHaveClobberedTabs = false;
+		boolean showTabWarning = false;
 		if(ua != null) {
 			isFirefox = ua.contains("Firefox/");
-			if(isFirefox) {
-				if(incognito)
-					mightHaveClobberedTabs = true;
-				if(ua.contains("Firefox/0.") || ua.contains("Firefox/1.") || ua.contains("Firefox/2.") || ua.contains("Firefox/3."))
-					isOldFirefox = true;
+			//Firefox 3.6 can destroy tabs, see https://bugs.freenetproject.org/view.php?id=5209
+			if(ua.contains("Firefox/3.6") && incognito) {
+				showTabWarning = true;
+			} else if (isFirefox) {
+				//Versions of Firefox other than 3.6 do not behave properly when going into
+				//privacy mode from the command line, so show the warnings about the lack of
+				//being in privacy mode.
+				incognito = false;
+			}
+			if(ua.contains("Firefox/0.") ||
+			   ua.contains("Firefox/1.") ||
+			   ua.contains("Firefox/2.") ||
+			   ua.contains("Firefox/3.")) {
+				isOldFirefox = true;
 			}
 		}
 		boolean isRelativelySafe = isFirefox && !isOldFirefox;
@@ -58,31 +64,43 @@ public class BROWSER_WARNING implements Step {
 		HTMLNode infoboxHeader = infobox.addChild("div", "class", "infobox-header");
 		HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 
-		if(incognito)
+		if(incognito) {
 			infoboxHeader.addChild("#", WizardL10n.l10n("browserWarningIncognitoShort"));
-		else if(isRelativelySafe)
-			infoboxHeader.addChild("#", WizardL10n.l10n("browserWarningShort"));
-		else
+		} else if (isRelativelySafe) {
 			infoboxHeader.addChild("#", WizardL10n.l10n("browserWarningShortRelativelySafe"));
+		} else {
+			infoboxHeader.addChild("#", WizardL10n.l10n("browserWarningShort"));
+		}
 
 		if(isOldFirefox) {
 			HTMLNode p = infoboxContent.addChild("p");
 			p.addChild("#", WizardL10n.l10n("browserWarningOldFirefox"));
-			if(!incognito)
+			if (showTabWarning) {
+				p.addChild("#", " " + WizardL10n.l10n("browserWarningFirefoxMightHaveClobberedTabs"));
+			} else if(!incognito) {
 				p.addChild("#", " " + WizardL10n.l10n("browserWarningOldFirefoxNewerHasPrivacyMode"));
+			}
 		}
 
-		if(isRelativelySafe)
-			infoboxContent.addChild("p", incognito ? WizardL10n.l10n("browserWarningIncognitoMaybeSafe") : WizardL10n.l10n("browserWarningMaybeSafe"));
-		else
-			NodeL10n.getBase().addL10nSubstitution(infoboxContent, incognito ? "FirstTimeWizardToadlet.browserWarningIncognito" : "FirstTimeWizardToadlet.browserWarning", new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
+		if(isRelativelySafe) {
+			infoboxContent.addChild("p", incognito ?
+			        WizardL10n.l10n("browserWarningIncognitoMaybeSafe") :
+			        WizardL10n.l10n("browserWarningMaybeSafe"));
+		} else {
+			NodeL10n.getBase().addL10nSubstitution(infoboxContent, incognito ?
+			        "FirstTimeWizardToadlet.browserWarningIncognito" :
+			        "FirstTimeWizardToadlet.browserWarning",
+			        new String[] { "bold" },
+			        new HTMLNode[] { HTMLNode.STRONG });
+		}
 
 		if(incognito) {
 			infoboxContent.addChild("p", WizardL10n.l10n("browserWarningIncognitoSuggestion"));
-		} else
+		} else {
 			infoboxContent.addChild("p", WizardL10n.l10n("browserWarningSuggestion"));
+		}
 
-		infoboxContent.addChild("p").addChild("a", "href", "?step="+ FirstTimeWizardToadlet.WIZARD_STEP.MISC, WizardL10n.l10n("clickContinue"));
+		infoboxContent.addChild("p").addChild("a", "href", "?step=MISC", WizardL10n.l10n("clickContinue"));
 	}
 
 	/**

@@ -1,8 +1,6 @@
 package freenet.clients.http.wizardsteps;
 
-import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.FirstTimeWizardToadlet;
-import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
 import freenet.config.Config;
@@ -159,7 +157,7 @@ public class DATASTORE_SIZE implements Step {
 		if(freeSpace <= 0) {
 			return -1;
 		} else {
-			long shortSize = -1;
+			long shortSize;
 			if(freeSpace / 20 > 1024 * 1024 * 1024) { // 20GB+ => 5%, limit 256GB
 				// If 20GB+ free, 5% of available disk space.
 				// Maximum of 256GB. That's a 128MB bloom filter.
@@ -170,8 +168,9 @@ public class DATASTORE_SIZE implements Step {
 			}else if(freeSpace / 5 > 1024 * 1024 * 1024) { // 5GB+ => 512MB
 				// If 5GB+ free, default to 512MB
 				shortSize = 512*1024*1024;
-			}else // <5GB => 256MB
+			}else { // <5GB => 256MB
 				shortSize = 256*1024*1024;
+			}
 
 			return shortSize;
 		}

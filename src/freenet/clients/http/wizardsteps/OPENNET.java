@@ -1,8 +1,6 @@
 package freenet.clients.http.wizardsteps;
 
-import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.FirstTimeWizardToadlet;
-import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
 import freenet.l10n.NodeL10n;
