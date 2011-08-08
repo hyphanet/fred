@@ -951,10 +951,10 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	 * @param om
 	 */
 	private void finishOpennetRelay(byte[] noderef, final OpennetManager om) {
-		if(logMINOR)
-			Logger.minor(this, "Finishing opennet: relaying reference from " + rs.successFrom()+" on "+this);
-		// Send it back to the handler, then wait for the ConnectReply
 		final PeerNode dataSource = rs.successFrom();
+		if(logMINOR)
+			Logger.minor(this, "Finishing opennet: relaying reference from " + dataSource+" on "+this);
+		// Send it back to the handler, then wait for the ConnectReply
 
 		try {
 			om.sendOpennetRef(false, uid, source, noderef, this);
