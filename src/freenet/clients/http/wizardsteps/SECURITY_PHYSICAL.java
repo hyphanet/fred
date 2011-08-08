@@ -254,7 +254,7 @@ public class SECURITY_PHYSICAL extends Toadlet implements Step {
 		if (core.node.isOpennetEnabled()) {
 			return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH;
 		} else {
-			return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.NAME_SELECTION+"&opennet=true";
+			return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.NAME_SELECTION;
 		}
 	}
 
