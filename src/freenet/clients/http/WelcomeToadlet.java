@@ -144,7 +144,7 @@ public class WelcomeToadlet extends Toadlet {
             updateForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
             updateForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "updateconfirm", l10n("update")});
             writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-        } else if (request.isPartSet("getThreadDump")) {
+	} else if (request.isPartSet("getThreadDump")) {
             if (noPassword) {
                 redirectToRoot(ctx);
                 return;
@@ -392,7 +392,11 @@ public class WelcomeToadlet extends Toadlet {
 
                 this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
                 return;
-            }
+        } else if (uri.getQuery() != null && uri.getQuery().contains("_CHECKED_HTTP_=")) {
+		//Redirect requests for escaped URLs using the old destination to ExternalLinkToadlet.
+		super.writeTemporaryRedirect(ctx, "Depreciated", ExternalLinkToadlet.PATH+'?'+uri.getQuery());
+		return;
+        }
         }
 
         PageNode page = ctx.getPageMaker().getPageNode(l10n("homepageFullTitleWithName", "name", node.getMyName()), ctx);
