@@ -1,6 +1,10 @@
 package freenet.clients.http.wizardsteps;
 
+import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.FirstTimeWizardToadlet;
+import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContext;
+import freenet.clients.http.ToadletContextClosedException;
 import freenet.config.Config;
 import freenet.config.ConfigException;
 import freenet.config.Option;
@@ -12,17 +16,25 @@ import freenet.support.Logger;
 import freenet.support.SizeUtil;
 import freenet.support.api.HTTPRequest;
 
+import java.io.IOException;
+
 /**
  * Allows the user to select from pairs of upload and download bandwidth limits.
  */
-public class GetBANDWIDTH implements GetStep {
+public class BANDWIDTH extends Toadlet implements Step {
 
 	private final NodeClientCore core;
 	private final Config config;
 
-	public GetBANDWIDTH(NodeClientCore core, Config config) {
+	public BANDWIDTH(NodeClientCore core, Config config, HighLevelSimpleClient client) {
+		super(client);
 		this.config = config;
 		this.core = core;
+	}
+
+	@Override
+	public String path() {
+		return FirstTimeWizardToadlet.TOADLET_URL+"?step=BANDWIDTH";
 	}
 
 	@Override
@@ -31,7 +43,7 @@ public class GetBANDWIDTH implements GetStep {
 	}
 
 	@Override
-	public void getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
+	public void getStep(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
 		int autodetectedLimit = canAutoconfigureBandwidth();
 
 		HTMLNode bandwidthInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -75,12 +87,28 @@ public class GetBANDWIDTH implements GetStep {
 		result.addChild("option", "value", "1000K", WizardL10n.l10n("bwlimitHigherSpeed"));
 
 		bandwidthForm.addChild("input",
+		        new String [] { "type", "name", "value" },
+		        new String [] { "hidden", "step", "BANDWIDTH" });
+		bandwidthForm.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "bwF", WizardL10n.l10n("continue")});
 		bandwidthForm.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
 		bandwidthInfoboxContent.addChild("#", WizardL10n.l10n("bandwidthLimitAfter"));
+	}
+
+	@Override
+	public void postStep(HTTPRequest request, ToadletContext ctx)  throws ToadletContextClosedException, IOException {
+		// drop down options may be 6 chars or less, but formatted ones e.g. old value if re-running can be more
+		String selectedUploadSpeed = request.getPartAsStringFailsafe("bw", 20);
+		try {
+			config.get("node").set("outputBandwidthLimit", selectedUploadSpeed);
+			Logger.normal(this, "The outputBandwidthLimit has been set to " + selectedUploadSpeed);
+		} catch (ConfigException e) {
+			Logger.error(this, "Should not happen, please report!" + e, e);
+		}
+		super.writeTemporaryRedirect(ctx, "step4", FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.DATASTORE_SIZE);
 	}
 
 	private int canAutoconfigureBandwidth() {

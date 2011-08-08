@@ -1,15 +1,29 @@
 package freenet.clients.http.wizardsteps;
 
+import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.FirstTimeWizardToadlet;
+import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContext;
+import freenet.clients.http.ToadletContextClosedException;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
+import java.io.IOException;
+
 /**
  * This step gives the user information about browser usage.
  */
-public class GetBROWSER_WARNING implements GetStep {
+public class BROWSER_WARNING extends Toadlet implements Step {
+
+	public BROWSER_WARNING(HighLevelSimpleClient client) {
+		super(client);
+	}
+
+	@Override
+	public String path() {
+		return FirstTimeWizardToadlet.TOADLET_URL+"?step=BROWSER_WARNING";
+	}
 
 	@Override
 	public String getTitleKey() {
@@ -17,7 +31,7 @@ public class GetBROWSER_WARNING implements GetStep {
 	}
 
 	@Override
-	public void getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
+	public void getStep(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
 		boolean incognito = request.isParameterSet("incognito");
 		// Bug 3376: Opening Chrome in incognito mode from command line will open a new non-incognito window if the browser is already open.
 		// See http://code.google.com/p/chromium/issues/detail?id=9636
@@ -77,5 +91,17 @@ public class GetBROWSER_WARNING implements GetStep {
 			infoboxContent.addChild("p", WizardL10n.l10n("browserWarningSuggestion"));
 
 		infoboxContent.addChild("p").addChild("a", "href", "?step="+ FirstTimeWizardToadlet.WIZARD_STEP.MISC, WizardL10n.l10n("clickContinue"));
+	}
+
+	/**
+	 * There is no POST side to this step, so a POST redirects to the GET side.
+	 * @param request Parameters to inform the step.
+	 * @param ctx Used to write redirects.
+	 * @throws ToadletContextClosedException
+	 * @throws IOException
+	 */
+	@Override
+	public void postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+		super.writeTemporaryRedirect(ctx, "browser warning", path());
 	}
 }

@@ -357,7 +357,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
-	static HTMLNode sendCantDeleteMasterKeysFileInner(ToadletContext ctx, String filename, boolean forFirstTimeWizard, String physicalSecurityLevel, Node node) {
+	public static HTMLNode sendCantDeleteMasterKeysFileInner(ToadletContext ctx, String filename, boolean forFirstTimeWizard, String physicalSecurityLevel, Node node) {
 		PageNode page = ctx.getPageMaker().getPageNode(l10nSec("cantDeletePasswordFileTitle"), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
@@ -620,7 +620,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 	 * @param forFirstTimeWizard The user has tried to set a password in the first-time wizard on the physical security levels page.
 	 * If neither of the above are set, the user is just trying to unlock an existing master keys file, which sadly has been corrupted. :(
 	 * @param ctx */
-	static HTMLNode sendPasswordFileCorruptedPageInner(boolean tooBig, ToadletContext ctx, boolean forSecLevels, boolean forFirstTimeWizard, String masterPasswordFile, Node node) {
+	public static HTMLNode sendPasswordFileCorruptedPageInner(boolean tooBig, ToadletContext ctx, boolean forSecLevels, boolean forFirstTimeWizard, String masterPasswordFile, Node node) {
 		PageNode page = ctx.getPageMaker().getPageNode(l10nSec("passwordFileCorruptedTitle"), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;

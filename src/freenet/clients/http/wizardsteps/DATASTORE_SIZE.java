@@ -1,27 +1,41 @@
 package freenet.clients.http.wizardsteps;
 
+import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.FirstTimeWizardToadlet;
+import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContext;
+import freenet.clients.http.ToadletContextClosedException;
 import freenet.config.Config;
+import freenet.config.ConfigException;
 import freenet.config.Option;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.support.Fields;
 import freenet.support.HTMLNode;
+import freenet.support.Logger;
 import freenet.support.SizeUtil;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.FileUtil;
 
+import java.io.IOException;
+
 /**
  * Allows the user to select datastore size, considering available storage space when offering options.
  */
-public class GetDATASTORE_SIZE implements GetStep {
+public class DATASTORE_SIZE extends Toadlet implements Step {
 
 	private final NodeClientCore core;
 	private final Config config;
 
-	public GetDATASTORE_SIZE(NodeClientCore core, Config config) {
+	public DATASTORE_SIZE(NodeClientCore core, Config config, HighLevelSimpleClient client) {
+		super(client);
 		this.config = config;
 		this.core = core;
+	}
+
+	public String path() {
+		return FirstTimeWizardToadlet.TOADLET_URL+"?step=DATASTORE_SIZE";
 	}
 
 	@Override
@@ -30,7 +44,7 @@ public class GetDATASTORE_SIZE implements GetStep {
 	}
 
 	@Override
-	public void getPage(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
+	public void getStep(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
 		HTMLNode bandwidthInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode bandwidthnfoboxHeader = bandwidthInfobox.addChild("div", "class", "infobox-header");
 		HTMLNode bandwidthInfoboxContent = bandwidthInfobox.addChild("div", "class", "infobox-content");
@@ -75,12 +89,63 @@ public class GetDATASTORE_SIZE implements GetStep {
 		if(maxSize >= 50*1024*1024*1024) result.addChild("option", "value", "50G", "50 GiB");
 		if(maxSize >= 100*1024*1024*1024) result.addChild("option", "value", "100G", "100 GiB");
 
+		//Marker for step on POST side
+		bandwidthForm.addChild("input",
+		        new String [] { "type", "name", "value" },
+		        new String [] { "hidden", "step", "DATASTORE_SIZE" });
 		bandwidthForm.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "dsF", WizardL10n.l10n("continue")});
 		bandwidthForm.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
+	}
+
+	@Override
+	public void postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+		// drop down options may be 6 chars or less, but formatted ones e.g. old value if re-running can be more
+		_setDatastoreSize(request.getPartAsStringFailsafe("ds", 20));
+		super.writeTemporaryRedirect(ctx, "step4", FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.CONGRATZ);
+	}
+
+	private void _setDatastoreSize(String selectedStoreSize) {
+		try {
+			long size = Fields.parseLong(selectedStoreSize);
+			// client cache: 10% up to 200MB
+			long clientCacheSize = Math.min(size / 10, 200*1024*1024);
+			// recent requests cache / slashdot cache / ULPR cache
+			int upstreamLimit = config.get("node").getInt("outputBandwidthLimit");
+			int downstreamLimit = config.get("node").getInt("inputBandwidthLimit");
+			// is used for remote stuff, so go by the minimum of the two
+			int limit;
+			if(downstreamLimit <= 0) limit = upstreamLimit;
+			else limit = Math.min(downstreamLimit, upstreamLimit);
+			// 35KB/sec limit has been seen to have 0.5 store writes per second.
+			// So saying we want to have space to cache everything is only doubling that ...
+			// OTOH most stuff is at low enough HTL to go to the datastore and thus not to
+			// the slashdot cache, so we could probably cut this significantly...
+			long lifetime = config.get("node").getLong("slashdotCacheLifetime");
+			long maxSlashdotCacheSize = (lifetime / 1000) * limit;
+			long slashdotCacheSize = Math.min(size / 10, maxSlashdotCacheSize);
+
+			long storeSize = size - (clientCacheSize + slashdotCacheSize);
+
+			System.out.println("Setting datastore size to "+Fields.longToString(storeSize, true));
+			config.get("node").set("storeSize", Fields.longToString(storeSize, true));
+			if(config.get("node").getString("storeType").equals("ram"))
+				config.get("node").set("storeType", "salt-hash");
+			System.out.println("Setting client cache size to "+Fields.longToString(clientCacheSize, true));
+			config.get("node").set("clientCacheSize", Fields.longToString(clientCacheSize, true));
+			if(config.get("node").getString("clientCacheType").equals("ram"))
+				config.get("node").set("clientCacheType", "salt-hash");
+			System.out.println("Setting slashdot/ULPR/recent requests cache size to "+Fields.longToString(slashdotCacheSize, true));
+			config.get("node").set("slashdotCacheSize", Fields.longToString(slashdotCacheSize, true));
+
+
+			Logger.normal(this, "The storeSize has been set to " + selectedStoreSize);
+		} catch(ConfigException e) {
+			Logger.error(this, "Should not happen, please report!" + e, e);
+		}
 	}
 
 	private long maxDatastoreSize() {
