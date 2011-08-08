@@ -861,11 +861,11 @@ public class OpennetManager {
 	 * @param cs The full compressed noderef to send.
 	 * @throws NotConnectedException If the peer becomes disconnected while we are trying to send the noderef.
 	 */
-	public void sendOpennetRef(boolean isReply, long uid, PeerNode peer, byte[] noderef, ByteCounter ctr, AllSentCallback cb) throws NotConnectedException {
+	public boolean sendOpennetRef(boolean isReply, long uid, PeerNode peer, byte[] noderef, ByteCounter ctr, AllSentCallback cb) throws NotConnectedException {
 		byte[] padded = new byte[paddedSize(noderef.length)];
 		if(noderef.length > padded.length) {
 			Logger.error(this, "Noderef too big: "+noderef.length+" bytes");
-			return;
+			return false;
 		}
 		node.fastWeakRandom.nextBytes(padded); // FIXME implement nextBytes(buf,offset, length)
 		System.arraycopy(noderef, 0, padded, 0, noderef.length);
@@ -873,7 +873,7 @@ public class OpennetManager {
 		Message msg2 = isReply ? DMT.createFNPOpennetConnectReplyNew(uid, xferUID, noderef.length, padded.length) :
 			DMT.createFNPOpennetConnectDestinationNew(uid, xferUID, noderef.length, padded.length);
 		peer.sendAsync(msg2, null, ctr);
-		innerSendOpennetRef(xferUID, padded, peer, ctr, cb);
+		return innerSendOpennetRef(xferUID, padded, peer, ctr, cb);
 	}
 
 	/**
@@ -885,7 +885,7 @@ public class OpennetManager {
 	 * @throws NotConnectedException If the peer is not connected, or we lose the connection to the peer,
 	 * or it restarts.
 	 */
-	private void innerSendOpennetRef(long xferUID, byte[] padded, PeerNode peer, ByteCounter ctr, AllSentCallback cb) throws NotConnectedException {
+	private boolean innerSendOpennetRef(long xferUID, byte[] padded, PeerNode peer, ByteCounter ctr, AllSentCallback cb) throws NotConnectedException {
 		ByteArrayRandomAccessThing raf = new ByteArrayRandomAccessThing(padded);
 		raf.setReadOnly();
 		PartiallyReceivedBulk prb =
@@ -893,7 +893,7 @@ public class OpennetManager {
 		try {
 			BulkTransmitter bt =
 				new BulkTransmitter(prb, peer, xferUID, true, ctr, true, cb);
-			bt.send();
+			return bt.send();
 		} catch (DisconnectedException e) {
 			throw new NotConnectedException(e);
 		}
