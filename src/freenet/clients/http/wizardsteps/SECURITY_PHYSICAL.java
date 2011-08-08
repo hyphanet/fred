@@ -98,10 +98,6 @@ public class SECURITY_PHYSICAL extends Toadlet implements Step {
 
 	@Override
 	public String postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		// We don't require a confirmation here, since it's one page at a time, so there's less information to
-		// confuse the user, and we don't know whether the node has friends yet etc.
-		// FIXME should we have confirmation here???
-
 		String physicalThreatLevel = request.getPartAsStringFailsafe("security-levels.physicalThreatLevel", 128);
 		SecurityLevels.PHYSICAL_THREAT_LEVEL oldThreatLevel = core.node.securityLevels.getPhysicalThreatLevel();
 		SecurityLevels.PHYSICAL_THREAT_LEVEL newThreatLevel = SecurityLevels.parsePhysicalThreatLevel(physicalThreatLevel);

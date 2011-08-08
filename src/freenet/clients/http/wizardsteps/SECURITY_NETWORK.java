@@ -101,11 +101,6 @@ public class SECURITY_NETWORK extends Toadlet implements Step {
 	}
 
 	public String postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		// We don't require a confirmation here, since it's one page at a time, so there's less information to
-		// confuse the user, and we don't know whether the node has friends yet etc.
-		// FIXME should we have confirmation here???
-		//TODO: Confirmation of what?
-
 		String networkThreatLevel = request.getPartAsStringFailsafe("security-levels.networkThreatLevel", 128);
 		SecurityLevels.NETWORK_THREAT_LEVEL newThreatLevel = SecurityLevels.parseNetworkThreatLevel(networkThreatLevel);
 
