@@ -186,9 +186,6 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 						}
 					}
 				}
-				if(!gotFatalTimeout) {
-					backgroundTransfers.notifyAll();
-				}
 				if(!noUnlockPeer)
 					startedWait = true; // Prevent further wait's.
 			}
@@ -200,6 +197,12 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				// Upstream (towards originator), of course, we can unlockHandler() as soon as all the transfers are finished.
 				// LOCKING: Do this outside the lock as pn can do heavy stuff in response (new load management).
 				pn.noLongerRoutingTo(thisTag, false);
+			synchronized(backgroundTransfers) {
+				// Avoid "Unlocked handler but still routing to yet not reassigned".
+				if(!gotFatalTimeout) {
+					backgroundTransfers.notifyAll();
+				}
+			}
 			if(timeout && gotFatalTimeout) {
 				Logger.error(this, "Second timeout waiting for final ack from "+pn+" on "+this);
 				pn.fatalTimeout(thisTag, false);
