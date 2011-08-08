@@ -451,7 +451,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         					break;
         				}
         				try {
-        					wait(10*1000);
+        					sender.wait(10*1000);
         				} catch (InterruptedException e) {
         					// Loop
         				}
