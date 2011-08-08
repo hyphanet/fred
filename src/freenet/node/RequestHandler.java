@@ -1004,15 +1004,11 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 							});
 						} catch(NotConnectedException e) {
 							// How sad
-							tag.finishedWaitingForOpennet(dataSource);
-							tag.unlockHandler();
-							applyByteCounts();
 						}
-					} else {
-						tag.finishedWaitingForOpennet(dataSource);
-						tag.unlockHandler();
-						applyByteCounts();
 					}
+					tag.finishedWaitingForOpennet(dataSource);
+					tag.unlockHandler();
+					applyByteCounts();
 				}
 				
 				node.removeTransferringRequestHandler(uid);
