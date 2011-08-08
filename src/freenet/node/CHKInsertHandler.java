@@ -426,6 +426,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         				if(t > 0) sender.wait(t);
         				else {
         					routingTookTooLong = true;
+        					break;
         				}
         			} catch (InterruptedException e) {
         				// Loop
