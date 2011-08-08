@@ -17,23 +17,17 @@ import java.io.IOException;
 /**
  * Allows the user to choose a node name for Darknet.
  */
-public class NAME_SELECTION extends Toadlet implements Step {
+public class NAME_SELECTION implements Step {
 
 	private final Config config;
 
 	public NAME_SELECTION(Config config, HighLevelSimpleClient client) {
-		super(client);
 		this.config = config;
 	}
 
 	@Override
 	public String getTitleKey() {
 		return "step2Title";
-	}
-
-	@Override
-	public String path() {
-		return FirstTimeWizardToadlet.TOADLET_URL+"?step=NAME_SELECTION";
 	}
 
 	@Override
@@ -60,7 +54,7 @@ public class NAME_SELECTION extends Toadlet implements Step {
 	}
 
 	@Override
-	public void postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public String postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		String selectedNName = request.getPartAsStringFailsafe("nname", 128);
 		try {
 			config.get("node").set("name", selectedNName);
@@ -68,6 +62,6 @@ public class NAME_SELECTION extends Toadlet implements Step {
 		} catch (ConfigException e) {
 			Logger.error(this, "Should not happen, please report!" + e, e);
 		}
-		super.writeTemporaryRedirect(ctx, "step3", FirstTimeWizardToadlet.TOADLET_URL+"?step="+ FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH);
+		return FirstTimeWizardToadlet.TOADLET_URL+"?step="+ FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH;
 	}
 }

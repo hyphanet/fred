@@ -39,7 +39,7 @@ public class SECURITY_NETWORK extends Toadlet implements Step {
 	public void getStep(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
 		//If opennet isn't defined, re-ask.
 		if(!request.isParameterSet("opennet")) {
-			OPENNET reRender = new OPENNET(client);
+			OPENNET reRender = new OPENNET();
 			reRender.getStep(contentNode, request, ctx);
 			return;
 		}
@@ -82,6 +82,11 @@ public class SECURITY_NETWORK extends Toadlet implements Step {
 		        new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
 	}
 
+	/**
+	 * Adds to the given parent node description and a radio button for the selected security level.
+	 * @param parent to add content to.
+	 * @param level to add content about.
+	 */
 	private void securityLevelChoice(HTMLNode parent, SecurityLevels.NETWORK_THREAT_LEVEL level) {
 		HTMLNode input = parent.addChild("p").addChild("input",
 		        new String[] { "type", "name", "value" },
@@ -97,7 +102,7 @@ public class SECURITY_NETWORK extends Toadlet implements Step {
 		        new HTMLNode[] { HTMLNode.STRONG });
 	}
 
-	public void postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public String postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		// We don't require a confirmation here, since it's one page at a time, so there's less information to
 		// confuse the user, and we don't know whether the node has friends yet etc.
 		// FIXME should we have confirmation here???
@@ -109,13 +114,14 @@ public class SECURITY_NETWORK extends Toadlet implements Step {
 		/*If the user didn't select a network security level before clicking continue or the selected
 		* security level could not be determined, redirect to the same page.*/
 		if(newThreatLevel == null || !request.isPartSet("security-levels.networkThreatLevel")) {
-			StringBuilder redirectTo = new StringBuilder(FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_NETWORK+"&opennet=");
+			StringBuilder redirectTo = new StringBuilder(path()+"&opennet=");
 			//Max length of 5 because 5 letters in false, 4 in true.
 			redirectTo.append(request.getPartAsStringFailsafe("opennet", 5));
-			super.writeTemporaryRedirect(ctx, "step1", redirectTo.toString());
-			return;
+			return redirectTo.toString();
 		}
 		if((newThreatLevel == SecurityLevels.NETWORK_THREAT_LEVEL.MAXIMUM || newThreatLevel == SecurityLevels.NETWORK_THREAT_LEVEL.HIGH)) {
+			//Make the user aware of the effects of high or maximum network threat if selected.
+			//They must check
 			if((!request.isPartSet("security-levels.networkThreatLevel.confirm")) &&
 				(!request.isPartSet("security-levels.networkThreatLevel.tryConfirm"))) {
 				PageNode page = ctx.getPageMaker().getPageNode(WizardL10n.l10n("networkSecurityPageTitle"), false, false, ctx);
@@ -152,15 +158,17 @@ public class SECURITY_NETWORK extends Toadlet implements Step {
 				        new String[] { "type", "name", "value" },
 				        new String[] { "submit", "networkSecurityF", WizardL10n.l10n("continue")});
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-				return;
+				return null;
 			} else if((!request.isPartSet("security-levels.networkThreatLevel.confirm")) &&
-					request.isPartSet("security-levels.networkThreatLevel.tryConfirm")) {
-				super.writeTemporaryRedirect(ctx, "step1", FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_NETWORK);
-				return;
+				        request.isPartSet("security-levels.networkThreatLevel.tryConfirm")) {
+				//If the user did not check the box, redisplay the page.
+				return path();
 			}
 		}
+		//The user selected low or normal security, or confirmed high or maximum. Set the configuration
+		//and continue to the physical security step.
 		core.node.securityLevels.setThreatLevel(newThreatLevel);
 		core.storeConfig();
-		super.writeTemporaryRedirect(ctx, "step1", FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_PHYSICAL);
+		return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_PHYSICAL;
 	}
 }

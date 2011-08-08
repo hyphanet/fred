@@ -88,7 +88,7 @@ public class SECURITY_PHYSICAL extends Toadlet implements Step {
 	}
 
 	@Override
-	public void postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public String postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		// We don't require a confirmation here, since it's one page at a time, so there's less information to
 		// confuse the user, and we don't know whether the node has friends yet etc.
 		// FIXME should we have confirmation here???
@@ -101,8 +101,7 @@ public class SECURITY_PHYSICAL extends Toadlet implements Step {
 		/*If the user didn't select a network security level before clicking continue or the selected
 		* security level could not be determined, redirect to the same page.*/
 		if(newThreatLevel == null || !request.isPartSet("security-levels.physicalThreatLevel")) {
-			super.writeTemporaryRedirect(ctx, "step1", FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_PHYSICAL);
-			return;
+			return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_PHYSICAL;
 		}
 		if(newThreatLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.HIGH && oldThreatLevel != newThreatLevel) {
 			// Check for password
@@ -130,10 +129,10 @@ public class SECURITY_PHYSICAL extends Toadlet implements Step {
 					addBackToPhysicalSeclevelsLink(content);
 
 					writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-					return;
+					return null;
 				} catch (MasterKeysFileSizeException e) {
 					sendPasswordFileCorruptedPage(e.isTooBig(), ctx, false, true);
-					return;
+					return null;
 				}
 			} else {
 				// Must set a password!
@@ -154,7 +153,7 @@ public class SECURITY_PHYSICAL extends Toadlet implements Step {
 				addBackToPhysicalSeclevelsLink(content);
 
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-				return;
+				return null;
 			}
 		}
 		if((newThreatLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.LOW || newThreatLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.NORMAL) &&
@@ -180,7 +179,7 @@ public class SECURITY_PHYSICAL extends Toadlet implements Step {
 						pw.flush();
 						msg = msg + sw.toString() + "</pre></body></html>";
 						writeHTMLReply(ctx, 500, "Internal Error", msg);
-						return;
+						return null;
 					}
 				} catch (MasterKeysWrongPasswordException e) {
 					System.err.println("Wrong password!");
@@ -197,10 +196,10 @@ public class SECURITY_PHYSICAL extends Toadlet implements Step {
 					addBackToPhysicalSeclevelsLink(content);
 
 					writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-					return;
+					return null;
 				} catch (MasterKeysFileSizeException e) {
 					sendPasswordFileCorruptedPage(e.isTooBig(), ctx, false, true);
-					return;
+					return null;
 				} catch (Node.AlreadySetPasswordException e) {
 					System.err.println("Already set a password when changing it - maybe master.keys copied in at the wrong moment???");
 				}
@@ -223,7 +222,7 @@ public class SECURITY_PHYSICAL extends Toadlet implements Step {
 				addBackToPhysicalSeclevelsLink(content);
 
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-				return;
+				return null;
 
 			}
 
@@ -233,7 +232,7 @@ public class SECURITY_PHYSICAL extends Toadlet implements Step {
 				core.node.killMasterKeysFile();
 			} catch (IOException e) {
 				sendCantDeleteMasterKeysFile(ctx, newThreatLevel.name());
-				return;
+				return null;
 			}
 		}
 		core.node.securityLevels.setThreatLevel(newThreatLevel);
@@ -247,9 +246,9 @@ public class SECURITY_PHYSICAL extends Toadlet implements Step {
 			System.err.println("Failed starting up database while switching physical security level to "+newThreatLevel+" from "+oldThreatLevel+" : "+core.node.getMasterPasswordFile()+" is too " + e.sizeToString());
 		}
 		if (core.node.isOpennetEnabled()) {
-			super.writeTemporaryRedirect(ctx, "step1", FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.NAME_SELECTION+"&opennet=true");
+			return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.NAME_SELECTION+"&opennet=true";
 		} else {
-			super.writeTemporaryRedirect(ctx, "step3", FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH);
+			return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH;
 		}
 	}
 

@@ -25,7 +25,6 @@ import freenet.support.api.HTTPRequest;
  */
 public class FirstTimeWizardToadlet extends Toadlet {
 	private final NodeClientCore core;
-	private final Config config;
 	private final EnumMap<WIZARD_STEP, Step> steps;
 
         private static volatile boolean logMINOR;
@@ -58,20 +57,20 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		//Generic Toadlet-related initialization.
 		super(client);
 		this.core = core;
-		this.config = node.config;
+		Config config = node.config;
 
 		//Add GET handlers for steps.
 		steps = new EnumMap<WIZARD_STEP, Step>(WIZARD_STEP.class);
 		steps.put(WIZARD_STEP.WELCOME, new WELCOME(config));
-		steps.put(WIZARD_STEP.BROWSER_WARNING, new BROWSER_WARNING(client));
-		steps.put(WIZARD_STEP.MISC, new MISC(core, config, client));
-		steps.put(WIZARD_STEP.OPENNET, new OPENNET(client));
+		steps.put(WIZARD_STEP.BROWSER_WARNING, new BROWSER_WARNING());
+		steps.put(WIZARD_STEP.MISC, new MISC(core, config));
+		steps.put(WIZARD_STEP.OPENNET, new OPENNET());
 		steps.put(WIZARD_STEP.SECURITY_NETWORK, new SECURITY_NETWORK(core, client));
 		steps.put(WIZARD_STEP.SECURITY_PHYSICAL, new SECURITY_PHYSICAL(core, client));
 		steps.put(WIZARD_STEP.NAME_SELECTION, new NAME_SELECTION(config, client));
-		steps.put(WIZARD_STEP.BANDWIDTH, new BANDWIDTH(core, config, client));
-		steps.put(WIZARD_STEP.DATASTORE_SIZE, new DATASTORE_SIZE(core, config, client));
-		steps.put(WIZARD_STEP.CONGRATZ, new CONGRATZ(config, client));
+		steps.put(WIZARD_STEP.BANDWIDTH, new BANDWIDTH(core, config));
+		steps.put(WIZARD_STEP.DATASTORE_SIZE, new DATASTORE_SIZE(core, config));
+		steps.put(WIZARD_STEP.CONGRATZ, new CONGRATZ(config));
 	}
 
 	public static final String TOADLET_URL = "/wizard/";
@@ -94,6 +93,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		writeHTMLReply(ctx, 200, "OK", pageNode.outer.generate());
 	}
 
+	/**
+	 * @return whether wizard steps should log minor events.
+	 */
 	public static boolean shouldLogMinor() {
 		return logMINOR;
 	}
@@ -113,22 +115,20 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			return;
 		}
 
-		//Attempt to parse the current step, defaulting to WELCOME if unspecified.
-		String currentStep = request.getPartAsStringFailsafe("step", 20);
-		WIZARD_STEP currentValue = currentStep.isEmpty() ? WIZARD_STEP.WELCOME : WIZARD_STEP.valueOf(currentStep);
+		try {
+			//Attempt to parse the current step, defaulting to WELCOME if unspecified.
+			String currentStep = request.getPartAsStringFailsafe("step", 20);
+			WIZARD_STEP currentValue = currentStep.isEmpty() ? WIZARD_STEP.WELCOME : WIZARD_STEP.valueOf(currentStep);
 
-		steps.get(currentValue).postStep(request, ctx);
-
-		super.writeTemporaryRedirect(ctx, "invalid/unhandled data", TOADLET_URL);
+			String redirectTo = steps.get(currentValue).postStep(request, ctx);
+			if (redirectTo != null) {
+				super.writeTemporaryRedirect(ctx, "Wizard redirecting.", redirectTo);
+			}
+		} catch (IllegalArgumentException e) {
+			//Failed to parse enum value, redirect to start.
+			super.writeTemporaryRedirect(ctx, "invalid/unhandled data", TOADLET_URL);
+		}
 	}
-
-		private void sendPasswordFileCorruptedPage(boolean tooBig, ToadletContext ctx, boolean forSecLevels, boolean forFirstTimeWizard) throws ToadletContextClosedException, IOException {
-		writeHTMLReply(ctx, 500, "OK", SecurityLevelsToadlet.sendPasswordFileCorruptedPageInner(tooBig, ctx, forSecLevels, forFirstTimeWizard, core.node.getMasterPasswordFile().getPath(), core.node).generate());
-	}
-
-	/*private String l10n(String key) {
-		return NodeL10n.getBase().getString("FirstTimeWizardToadlet."+key);
-	}*/
 
 	@Override
 	public String path() {

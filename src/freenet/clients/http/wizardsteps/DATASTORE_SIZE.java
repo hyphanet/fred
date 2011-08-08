@@ -23,19 +23,14 @@ import java.io.IOException;
 /**
  * Allows the user to select datastore size, considering available storage space when offering options.
  */
-public class DATASTORE_SIZE extends Toadlet implements Step {
+public class DATASTORE_SIZE implements Step {
 
 	private final NodeClientCore core;
 	private final Config config;
 
-	public DATASTORE_SIZE(NodeClientCore core, Config config, HighLevelSimpleClient client) {
-		super(client);
+	public DATASTORE_SIZE(NodeClientCore core, Config config) {
 		this.config = config;
 		this.core = core;
-	}
-
-	public String path() {
-		return FirstTimeWizardToadlet.TOADLET_URL+"?step=DATASTORE_SIZE";
 	}
 
 	@Override
@@ -102,10 +97,10 @@ public class DATASTORE_SIZE extends Toadlet implements Step {
 	}
 
 	@Override
-	public void postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public String postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		// drop down options may be 6 chars or less, but formatted ones e.g. old value if re-running can be more
 		_setDatastoreSize(request.getPartAsStringFailsafe("ds", 20));
-		super.writeTemporaryRedirect(ctx, "step4", FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.CONGRATZ);
+		return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.CONGRATZ;
 	}
 
 	private void _setDatastoreSize(String selectedStoreSize) {

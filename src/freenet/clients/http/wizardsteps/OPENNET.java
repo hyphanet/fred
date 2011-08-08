@@ -14,16 +14,7 @@ import java.io.IOException;
 /**
  * This step allows the user to choose between darknet and opennet, explaining each briefly.
  */
-public class OPENNET extends Toadlet implements Step {
-
-	public OPENNET(HighLevelSimpleClient client) {
-		super(client);
-	}
-
-	@Override
-	public String path() {
-		return FirstTimeWizardToadlet.TOADLET_URL+"?step=OPENNET";
-	}
+public class OPENNET implements Step {
 
 	@Override
 	public String getTitleKey() {
@@ -98,7 +89,7 @@ public class OPENNET extends Toadlet implements Step {
 	 * @throws IOException
 	 */
 	@Override
-	public void postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		super.writeTemporaryRedirect(ctx, "no-post", path());
+	public String postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+		return FirstTimeWizardToadlet.TOADLET_URL+"?step=OPENNET";
 	}
 }

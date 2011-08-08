@@ -5,6 +5,7 @@ import freenet.clients.http.FirstTimeWizardToadlet;
 import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
+import freenet.config.FreenetFilePersistentConfig;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -14,16 +15,7 @@ import java.io.IOException;
 /**
  * This step gives the user information about browser usage.
  */
-public class BROWSER_WARNING extends Toadlet implements Step {
-
-	public BROWSER_WARNING(HighLevelSimpleClient client) {
-		super(client);
-	}
-
-	@Override
-	public String path() {
-		return FirstTimeWizardToadlet.TOADLET_URL+"?step=BROWSER_WARNING";
-	}
+public class BROWSER_WARNING implements Step {
 
 	@Override
 	public String getTitleKey() {
@@ -101,7 +93,7 @@ public class BROWSER_WARNING extends Toadlet implements Step {
 	 * @throws IOException
 	 */
 	@Override
-	public void postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		super.writeTemporaryRedirect(ctx, "browser warning", path());
+	public String postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+		return FirstTimeWizardToadlet.TOADLET_URL+"?step=BROWSER_WARNING";
 	}
 }

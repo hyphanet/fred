@@ -16,18 +16,12 @@ import java.io.IOException;
 /**
  * Wizard completion page. Sets completion in config and links to the node's main page.
  */
-public class CONGRATZ extends Toadlet implements Step {
+public class CONGRATZ implements Step {
 
 	private final Config config;
 
-	public CONGRATZ(Config config, HighLevelSimpleClient client) {
-		super(client);
+	public CONGRATZ(Config config) {
 		this.config = config;
-	}
-
-	@Override
-	public String path() {
-		return FirstTimeWizardToadlet.TOADLET_URL+"?step=CONGRATZ";
 	}
 
 	@Override
@@ -54,7 +48,7 @@ public class CONGRATZ extends Toadlet implements Step {
 	}
 
 	@Override
-	public void postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public String postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		//Set wizard completion flag
 		try {
 			config.get("fproxy").set("hasCompletedWizard", true);
@@ -64,6 +58,6 @@ public class CONGRATZ extends Toadlet implements Step {
 			//TODO: Is log an continue a reasonable behavior?
 			Logger.error(this, e.getMessage(), e);
 		}
-		super.writeTemporaryRedirect(ctx, "Wizard complete.", "/");
+		return "/";
 	}
 }

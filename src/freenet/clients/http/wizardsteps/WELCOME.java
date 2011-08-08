@@ -70,9 +70,8 @@ public class WELCOME implements Step {
 	}
 
 	@Override
-	public void postStep(HTTPRequest request, ToadletContext ctx) {
-		//The user changed their language on the welcome page. Change the language and rerender the page
-		//by falling through to the invalid redirect.
+	public String postStep(HTTPRequest request, ToadletContext ctx) {
+		//The user changed their language on the welcome page. Change the language and rerender the page.
 		String desiredLanguage = request.getPartAsStringFailsafe("l10n", 4096);
 		try {
 			config.get("node").set("l10n", desiredLanguage);
@@ -83,5 +82,6 @@ public class WELCOME implements Step {
 			//Doing so would be really annoying as the node would have to start up again
 			//which could be very slow.
 		}
+		return FirstTimeWizardToadlet.TOADLET_URL;
 	}
 }

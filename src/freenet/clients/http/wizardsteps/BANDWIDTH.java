@@ -21,20 +21,14 @@ import java.io.IOException;
 /**
  * Allows the user to select from pairs of upload and download bandwidth limits.
  */
-public class BANDWIDTH extends Toadlet implements Step {
+public class BANDWIDTH implements Step {
 
 	private final NodeClientCore core;
 	private final Config config;
 
-	public BANDWIDTH(NodeClientCore core, Config config, HighLevelSimpleClient client) {
-		super(client);
+	public BANDWIDTH(NodeClientCore core, Config config) {
 		this.config = config;
 		this.core = core;
-	}
-
-	@Override
-	public String path() {
-		return FirstTimeWizardToadlet.TOADLET_URL+"?step=BANDWIDTH";
 	}
 
 	@Override
@@ -99,7 +93,7 @@ public class BANDWIDTH extends Toadlet implements Step {
 	}
 
 	@Override
-	public void postStep(HTTPRequest request, ToadletContext ctx)  throws ToadletContextClosedException, IOException {
+	public String postStep(HTTPRequest request, ToadletContext ctx)  throws ToadletContextClosedException, IOException {
 		// drop down options may be 6 chars or less, but formatted ones e.g. old value if re-running can be more
 		String selectedUploadSpeed = request.getPartAsStringFailsafe("bw", 20);
 		try {
@@ -108,7 +102,7 @@ public class BANDWIDTH extends Toadlet implements Step {
 		} catch (ConfigException e) {
 			Logger.error(this, "Should not happen, please report!" + e, e);
 		}
-		super.writeTemporaryRedirect(ctx, "step4", FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.DATASTORE_SIZE);
+		return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.DATASTORE_SIZE;
 	}
 
 	private int canAutoconfigureBandwidth() {

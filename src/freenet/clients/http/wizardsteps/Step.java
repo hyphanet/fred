@@ -26,11 +26,12 @@ public interface Step {
 	public void getStep(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx);
 
 	/**
-	 * Performs operations for the step. May return HTML or redirect to another page.
+	 * Performs operations for the step.
 	 * @param request Parameters to inform the step.
 	 * @param ctx Used to write redirects.
 	 * @throws IOException if Toadlet's WriteTemporaryRedirect does.
 	 * @throws ToadletContextClosedException if Toadlet's WriteTemporaryRedirect does.
+	 * @return a destination to redirect to, or null if no redirect is wanted. (Ex. the POST wrote HTML)
 	 */
-	public void postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException;
+	public String postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException;
 }

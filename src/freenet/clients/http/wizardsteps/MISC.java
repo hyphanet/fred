@@ -18,20 +18,14 @@ import java.io.IOException;
 /**
  * Allows the user to choose whether to enable auto-updating, and what official utility plugins to install.
  */
-public class MISC extends Toadlet implements Step {
+public class MISC implements Step {
 
 	private final Config config;
 	private final NodeClientCore core;
 
-	public MISC(NodeClientCore core, Config config, HighLevelSimpleClient client) {
-		super(client);
+	public MISC(NodeClientCore core, Config config) {
 		this.core = core;
 		this.config = config;
-	}
-
-	@Override
-	public String path() {
-		return FirstTimeWizardToadlet.TOADLET_URL+"?step=MISC";
 	}
 
 	@Override
@@ -79,7 +73,7 @@ public class MISC extends Toadlet implements Step {
 	}
 
 	@Override
-	public void postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public String postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		try {
 			config.get("node.updater").set("autoupdate", Boolean.parseBoolean(request.getPartAsStringFailsafe("autodeploy", 10)));
 		} catch (ConfigException e) {
@@ -103,6 +97,6 @@ public class MISC extends Toadlet implements Step {
 
 				});
 		}
-		super.writeTemporaryRedirect(ctx, "step7", FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.OPENNET);
+		return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.OPENNET;
 	}
 }
