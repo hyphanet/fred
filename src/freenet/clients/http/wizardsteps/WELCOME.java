@@ -35,20 +35,21 @@ public class WELCOME implements Step {
 	 */
 	@Override
 	public void getStep(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
-		PageMaker pm = ctx.getPageMaker();
-		HTMLNode welcomeInfoboxContent = addInfoBox(WizardL10n.l10n("welcomeInfoboxTitle"), pm, contentNode);
-		welcomeInfoboxContent.addChild("p", WizardL10n.l10n("welcomeInfoboxContent1"));
 
 		boolean incognito = request.isParameterSet("incognito");
 
+		HTMLNode optionsTable = contentNode.addChild("table");
+		HTMLNode tableHeader = optionsTable.addChild("tr");
+		HTMLNode tableRow = optionsTable.addChild("tr");
+
 		//Low security option
-		addSecurityBox(contentNode, pm, "Low", ctx, incognito);
+		addSecurityTableCell(tableHeader, tableRow, "Low", ctx, incognito);
 
 		//High security option
-		addSecurityBox(contentNode, pm, "High", ctx, incognito);
+		addSecurityTableCell(tableHeader, tableRow, "High", ctx, incognito);
 
 		//Detailed wizard option
-		addSecurityBox(contentNode, pm, "None", ctx, incognito);
+		addSecurityTableCell(tableHeader, tableRow, "None", ctx, incognito);
 
 		HTMLNode languageForm = ctx.addFormChild(contentNode, ".", "languageForm");
 		//Marker for step on POST side
@@ -84,33 +85,22 @@ public class WELCOME implements Step {
 	}
 
 	/**
-	 * Adds an InfoBox with the given title to the parent HTMLNode. Idea credit to p0s/x0r in Freetalk.
-	 * @param infoBoxTitle The title of the InfoBox.
-	 * @param pm The pageMaker to get the InfoBox from.
-	 * @param parent Parent HTMLNode to add the InfoBox to.
-	 * @return HTMLNode of the InfoBox's content.
-	 */
-	private HTMLNode addInfoBox(String infoBoxTitle, PageMaker pm, HTMLNode parent) {
-		InfoboxNode invitationsBox = pm.getInfobox(infoBoxTitle);
-		parent.addChild(invitationsBox.outer);
-		return invitationsBox.content;
-	}
-
-	/**
-	 * Adds an infobox with information about a given security level and button.
-	 * @param parent node to add infobox to.
-	 * @param pm to get the InfoBox from.
+	 * Adds a table cell with information about a given security level and button.
+	 * @param row "tr" node to add cell content to
+	 * @param header "tr" node to add header to
 	 * @param preset suffix for security level keys.
 	 * @param ctx used to add a form
 	 * @param incognito whether incognito mode is enabled
 	 */
-	private void addSecurityBox(HTMLNode parent, PageMaker pm, String preset, ToadletContext ctx, boolean incognito) {
-		HTMLNode securityContent = addInfoBox(WizardL10n.l10n("presetTitle"+preset), pm, parent);
-		securityContent.addChild("p", WizardL10n.l10n("preset" + preset));
-		HTMLNode secForm = ctx.addFormChild(securityContent, ".", "SecForm"+preset);
+	private void addSecurityTableCell(HTMLNode header, HTMLNode row, String preset, ToadletContext ctx, boolean incognito) {
+		header.addChild("th", "width", "33%", WizardL10n.l10n("presetTitle"+preset));
+		HTMLNode tableCell = row.addChild("td");
+		tableCell.addChild("p", WizardL10n.l10n("preset" + preset));
+		HTMLNode centerForm = tableCell.addChild("div", "style", "text-align:center;");
+		HTMLNode secForm = ctx.addFormChild(centerForm, ".", "SecForm"+preset);
 		secForm.addChild("input",
-		        new String[]{"type", "name", "value"},
-		        new String[]{"hidden", "incognito", String.valueOf(incognito)});
+		        new String[]{"type", "name", "value", },
+		        new String[]{"hidden", "incognito", String.valueOf(incognito), });
 		secForm.addChild("input",
 		        new String[]{"type", "name", "value"},
 		        new String[]{"submit", "preset" + preset, WizardL10n.l10n("presetChoose" + preset)});
