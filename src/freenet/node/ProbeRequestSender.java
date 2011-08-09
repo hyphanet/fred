@@ -361,12 +361,15 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
 
 				@Override
 				public void onMatched(Message msg) {
+					String reason = msg.getString(DMT.REASON);
+					if(reason != null && !reason.startsWith("LATE:"))
+						reason = "LATE:" + reason;
 					fireTrace(msg.getDouble(DMT.NEAREST_LOCATION), msg.getDouble(DMT.BEST_LOCATION),
 							msg.getShort(DMT.HTL), msg.getShort(DMT.COUNTER), 
 							msg.getShort(DMT.UNIQUE_COUNTER), msg.getDouble(DMT.LOCATION), 
 							msg.getLong(DMT.MY_UID), (ShortBuffer) msg.getObject(DMT.PEER_LOCATIONS), 
 							(ShortBuffer) msg.getObject(DMT.PEER_UIDS), 
-							msg.getShort(DMT.LINEAR_COUNTER), msg.getString(DMT.REASON), msg.getLong(DMT.PREV_UID));
+							msg.getShort(DMT.LINEAR_COUNTER), reason, msg.getLong(DMT.PREV_UID));
 					int timeLeft = (int) Math.min(Integer.MAX_VALUE, Math.max(0, relayUntil - System.currentTimeMillis()));
 			        MessageFilter mfTrace = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(timeLeft).setType(DMT.FNPRHProbeTrace);
 					try {
