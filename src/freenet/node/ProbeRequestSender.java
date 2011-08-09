@@ -188,7 +188,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
             		// FIXME should we backoff here???
             		next.localRejectedOverload("AcceptedTimeout", false);
             		forwardRejectedOverload();
-            		relayTraces(next);
+            		relayTraces(next, "TIMEOUT");
             		// Try next node
             		break;
             	}
@@ -262,7 +262,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
             		// Fatal timeout
             		forwardRejectedOverload();
             		fireTimeout("Timeout");
-            		relayTraces(next);
+            		relayTraces(next, "TIMEOUT AFTER ACCEPTED");
             		return;
             	}
 				
@@ -290,7 +290,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
             			uniqueCounter++;
             			htl--;
             		}
-            		relayTraces(next);
+            		relayTraces(next, "RNF");
             		break;
             	}
             	
@@ -313,7 +313,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
 						//"Local" from our peers perspective, this has nothing to do with local requests (source==null)
 						if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
 						// Give up on this one, try another
-	            		relayTraces(next);
+	            		relayTraces(next, "OVERLOAD");
 						break;
 					}
 					//so long as the node does not send a (IS_LOCAL) message. Interestingly messages can often timeout having only received this message.
@@ -332,7 +332,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
             		linearCounter += (short) Math.max(0, msg.getShort(DMT.LINEAR_COUNTER));
             		fireCompletion();
             		// All finished.
-            		relayTraces(next);
+            		relayTraces(next, "AFTER FINISH");
             		return;
             	}
             	
@@ -352,7 +352,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
         }
 	}
 
-	private void relayTraces(final PeerNode next) {
+	private void relayTraces(final PeerNode next, final String why) {
 		final long relayUntil = System.currentTimeMillis() + 120*1000;
 		
         MessageFilter mfTrace = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(120*1000).setType(DMT.FNPRHProbeTrace);
@@ -363,7 +363,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
 				public void onMatched(Message msg) {
 					String reason = msg.getString(DMT.REASON);
 					if(reason != null && !reason.startsWith("LATE:"))
-						reason = "LATE:" + reason;
+						reason = "LATE:" + why + ":" + reason;
 					fireTrace(msg.getDouble(DMT.NEAREST_LOCATION), msg.getDouble(DMT.BEST_LOCATION),
 							msg.getShort(DMT.HTL), msg.getShort(DMT.COUNTER), 
 							msg.getShort(DMT.UNIQUE_COUNTER), msg.getDouble(DMT.LOCATION), 
