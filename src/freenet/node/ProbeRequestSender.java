@@ -6,12 +6,14 @@ package freenet.node;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import freenet.io.comm.AsyncMessageFilterCallback;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
+import freenet.io.comm.PeerContext;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.Logger.LogLevel;
@@ -186,6 +188,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
             		// FIXME should we backoff here???
             		next.localRejectedOverload("AcceptedTimeout", false);
             		forwardRejectedOverload();
+            		relayTraces(next);
             		// Try next node
             		break;
             	}
@@ -259,6 +262,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
             		// Fatal timeout
             		forwardRejectedOverload();
             		fireTimeout("Timeout");
+            		relayTraces(next);
             		return;
             	}
 				
@@ -286,6 +290,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
             			uniqueCounter++;
             			htl--;
             		}
+            		relayTraces(next);
             		break;
             	}
             	
@@ -308,6 +313,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
 						//"Local" from our peers perspective, this has nothing to do with local requests (source==null)
 						if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
 						// Give up on this one, try another
+	            		relayTraces(next);
 						break;
 					}
 					//so long as the node does not send a (IS_LOCAL) message. Interestingly messages can often timeout having only received this message.
@@ -326,6 +332,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
             		linearCounter += (short) Math.max(0, msg.getShort(DMT.LINEAR_COUNTER));
             		fireCompletion();
             		// All finished.
+            		relayTraces(next);
             		return;
             	}
             	
@@ -343,6 +350,56 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
             	
             }
         }
+	}
+
+	private void relayTraces(final PeerNode next) {
+		final long relayUntil = System.currentTimeMillis() + 120*1000;
+		
+        MessageFilter mfTrace = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(120*1000).setType(DMT.FNPRHProbeTrace);
+        try {
+			node.usm.addAsyncFilter(mfTrace, new AsyncMessageFilterCallback() {
+
+				@Override
+				public void onMatched(Message msg) {
+					fireTrace(msg.getDouble(DMT.NEAREST_LOCATION), msg.getDouble(DMT.BEST_LOCATION),
+							msg.getShort(DMT.HTL), msg.getShort(DMT.COUNTER), 
+							msg.getShort(DMT.UNIQUE_COUNTER), msg.getDouble(DMT.LOCATION), 
+							msg.getLong(DMT.MY_UID), (ShortBuffer) msg.getObject(DMT.PEER_LOCATIONS), 
+							(ShortBuffer) msg.getObject(DMT.PEER_UIDS), 
+							msg.getShort(DMT.LINEAR_COUNTER), msg.getString(DMT.REASON), msg.getLong(DMT.PREV_UID));
+					int timeLeft = (int) Math.min(Integer.MAX_VALUE, Math.max(0, relayUntil - System.currentTimeMillis()));
+			        MessageFilter mfTrace = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(timeLeft).setType(DMT.FNPRHProbeTrace);
+					try {
+						node.usm.addAsyncFilter(mfTrace, this, ProbeRequestSender.this);
+					} catch (DisconnectedException e) {
+						// Ok.
+					}
+				}
+
+				@Override
+				public boolean shouldTimeout() {
+					return false;
+				}
+
+				@Override
+				public void onTimeout() {
+					// Ok.
+				}
+
+				@Override
+				public void onDisconnect(PeerContext ctx) {
+					// Ok.
+				}
+
+				@Override
+				public void onRestarted(PeerContext ctx) {
+					// Ok.
+				}
+				
+			}, this);
+		} catch (DisconnectedException e) {
+			// Ok.
+		}
 	}
 
 	private void fireTrace(double nearest, double best, short htl, short counter, 
