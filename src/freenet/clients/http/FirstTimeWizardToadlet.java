@@ -117,7 +117,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			StringBuilder redirectTo = new StringBuilder(TOADLET_URL+"?step=");
 			WIZARD_PRESET preset = WIZARD_PRESET.valueOf(request.getParam("preset"));
 			if (preset == WIZARD_PRESET.HIGH) {
-				redirectTo.append("SECURITY_NETWORK&preset=high&opennet=false");
+				redirectTo.append("SECURITY_NETWORK&preset=HIGH&confirm=true&opennet=false&security-levels.networkThreatLevel=HIGH");
 			} else /*if (preset == WIZARD_PRESET.LOW)*/ {
 				redirectTo.append("BANDWIDTH");
 			}
