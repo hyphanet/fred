@@ -16,18 +16,12 @@ import java.io.IOException;
  * This step allows the user to choose between security levels. If opennet is disabled, only high and maximum are shown.
  * If opennet is enabled, only low and normal are shown.
  */
-public class SECURITY_NETWORK extends Toadlet implements Step {
+public class SECURITY_NETWORK implements Step {
 
 	private final NodeClientCore core;
 
-	public SECURITY_NETWORK(NodeClientCore core, HighLevelSimpleClient client) {
-		super(client);
+	public SECURITY_NETWORK(NodeClientCore core) {
 		this.core = core;
-	}
-
-	@Override
-	public String path() {
-		return FirstTimeWizardToadlet.TOADLET_URL+"?step=SECURITY_NETWORK";
 	}
 
 	@Override
@@ -161,7 +155,7 @@ public class SECURITY_NETWORK extends Toadlet implements Step {
 		SecurityLevels.NETWORK_THREAT_LEVEL newThreatLevel = SecurityLevels.parseNetworkThreatLevel(networkThreatLevel);
 
 		//In order to redirect, either for retry or confirmation.
-		StringBuilder redirectTo = new StringBuilder(path()+"&opennet=");
+		StringBuilder redirectTo = new StringBuilder(FirstTimeWizardToadlet.TOADLET_URL+"?step=SECURITY_NETWORK&opennet=");
 		//Max length of 5 because 5 letters in false, 4 in true.
 		redirectTo.append(request.getPartAsStringFailsafe("opennet", 5));
 
