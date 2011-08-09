@@ -82,7 +82,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		stepMISC = new MISC(core, config);
 		steps.put(WIZARD_STEP.MISC, stepMISC);
 
-		stepSECURITY_NETWORK = new SECURITY_NETWORK(core, client);
+		stepSECURITY_NETWORK = new SECURITY_NETWORK(core);
 		steps.put(WIZARD_STEP.SECURITY_NETWORK, stepSECURITY_NETWORK);
 
 		stepSECURITY_PHYSICAL = new SECURITY_PHYSICAL(core, client);
@@ -187,7 +187,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				stepMISC.setUPnP(true);
 				stepMISC.setAutoUpdate(true);
 				redirectTo.append("&preset="+WIZARD_PRESET.LOW);
-			} else /*if (!request.isPartSet("presetLow"))*/ {
+			} else if (request.isPartSet("presetHigh")) {
 				//High security preset
 				redirectTo.append("&preset="+WIZARD_PRESET.HIGH);
 			}
