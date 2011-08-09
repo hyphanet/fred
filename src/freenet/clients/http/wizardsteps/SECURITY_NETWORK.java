@@ -114,7 +114,7 @@ public class SECURITY_NETWORK extends Toadlet implements Step {
 	}
 
 	/**
-	 * If the paramter "preset" is present and has a valid WIZARD_PRESET value, it will add it to the formNode
+	 * If the parameter "preset" is present and has a valid WIZARD_PRESET value, it will add it to the formNode
 	 * as a hidden field named "preset".
 	 * @param request to check for "preset" on
 	 * @param formNode to add hidden field to.
