@@ -676,6 +676,7 @@ loadWaiterLoop:
     					return DO.WAIT;
     				}
     				
+        			forwardRejectedOverload();
     				next.localRejectedOverload("ForwardRejectedOverload", realTimeFlag);
     				int t = timeSinceSent();
     				node.failureTable.onFailed(key, next, htl, t, t);
