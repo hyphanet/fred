@@ -2088,7 +2088,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 
 	@Override
 	protected void timedOutWhileWaiting(double load) {
-		htl -= (short)Math.min(0, hopsForFatalTimeoutWaitingForPeer());
+		htl -= (short)Math.max(0, hopsForFatalTimeoutWaitingForPeer());
 		if(htl < 0) htl = 0;
 		// Timeouts while waiting for a slot are relatively normal.
 		// That is, in an ideal world they wouldn't happen.
