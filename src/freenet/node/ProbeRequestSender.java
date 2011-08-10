@@ -364,6 +364,8 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
 					String reason = msg.getString(DMT.REASON);
 					if(reason != null && !reason.startsWith("LATE:"))
 						reason = "LATE:" + why + ":" + reason;
+					else if(reason == null)
+						reason = "LATE:" + why;
 					fireTrace(msg.getDouble(DMT.NEAREST_LOCATION), msg.getDouble(DMT.BEST_LOCATION),
 							msg.getShort(DMT.HTL), msg.getShort(DMT.COUNTER), 
 							msg.getShort(DMT.UNIQUE_COUNTER), msg.getDouble(DMT.LOCATION), 
