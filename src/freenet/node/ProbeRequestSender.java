@@ -142,10 +142,12 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
             	next.sendSync(req, this, false);
             } catch (NotConnectedException e) {
             	Logger.minor(this, "Not connected");
+            	fireShortTrace("Not connected: "+next.getLocation());
             	counter++;
             	continue;
             } catch (SyncSendWaitedTooLongException e) {
             	Logger.error(this, "Unable to send "+req+" in a reasonable time to "+next);
+            	fireShortTrace("Took too long to send: "+next.getLocation());
             	counter++;
             	continue;
 			}
@@ -179,6 +181,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
                     if(logMINOR) Logger.minor(this, "first part got "+msg);
                 } catch (DisconnectedException e) {
                 	counter++;
+                	fireShortTrace("Disconnected while waiting for Accepted: "+next.getLocation());
                     Logger.normal(this, "Disconnected from "+next+" while waiting for Accepted on "+uid);
                     break;
                 }
@@ -193,6 +196,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
             		forwardRejectedOverload();
             		relayTraces(next, "TIMEOUT");
             		// Try next node
+                	fireShortTrace("Timeout while waiting for Accepted: "+next.getLocation());
             		break;
             	}
             	
@@ -201,6 +205,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
             		counter++;
             		if(logMINOR) Logger.minor(this, "Rejected loop");
             		// Find another node to route to
+                	fireShortTrace("Rejected loop: "+next.getLocation());
             		break;
             	}
             	
@@ -214,6 +219,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
 					if (msg.getBoolean(DMT.IS_LOCAL)) {
 						if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
 						// Give up on this one, try another
+	                	fireShortTrace("Rejected overload: "+next.getLocation());
 						break;
 					}
 					//Could be a previous rejection, the timeout to incur another ACCEPTED_TIMEOUT is minimal...
@@ -222,6 +228,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
             	
             	if(msg.getSpec() != DMT.FNPAccepted) {
             		Logger.error(this, "Unrecognized message: "+msg);
+                	fireShortTrace("Not accepted: "+next.getLocation()+" "+msg.getSpec());
             		continue;
             	}
             	
@@ -255,6 +262,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
             		msg = node.usm.waitFor(mf, this);
             	} catch (DisconnectedException e) {
             		Logger.normal(this, "Disconnected from "+next+" while waiting for data on "+uid);
+                	fireShortTrace("Disconnected after accepted: "+next.getLocation()+" "+msg.getSpec());
             		break;
             	}
             	
@@ -266,6 +274,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
             		forwardRejectedOverload();
             		fireTimeout("Timeout");
             		relayTraces(next, "TIMEOUT AFTER ACCEPTED");
+                	fireShortTrace("Disconnected after accepted: "+next.getLocation()+" "+msg.getSpec());
             		return;
             	}
 				
@@ -293,6 +302,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
             			uniqueCounter++;
             			htl--;
             		}
+                	fireShortTrace("RNF: "+next.getLocation()+" "+msg.getSpec());
             		relayTraces(next, "RNF");
             		break;
             	}
@@ -317,6 +327,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
 						if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
 						// Give up on this one, try another
 	            		relayTraces(next, "OVERLOAD");
+	                	fireShortTrace("Rejected overload after accepted: "+next.getLocation()+" "+msg.getSpec());
 						break;
 					}
 					//so long as the node does not send a (IS_LOCAL) message. Interestingly messages can often timeout having only received this message.
@@ -353,6 +364,11 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
             	
             }
         }
+	}
+
+	private void fireShortTrace(String message) {
+    	fireTrace(nearestLoc, best, htl, counter, uniqueCounter, node.getLocation(), 
+    			uid, new ShortBuffer(), new ShortBuffer(), linearCounter, message, source.swapIdentifier);
 	}
 
 	private void relayTraces(final PeerNode next, final String why) {

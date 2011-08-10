@@ -54,6 +54,14 @@ public class ShortBuffer implements WritableToDataOutputStream {
 	}
 
 	/**
+	 * Create an empty Buffer */
+	public ShortBuffer() {
+		_data = new byte[0];
+		_start = 0;
+		_length = 0;
+	}
+	
+	/**
 	 * Create a Buffer from a byte array
 	 *
 	 * @param data
