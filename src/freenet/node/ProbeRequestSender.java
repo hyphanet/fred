@@ -178,6 +178,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
                     msg = node.usm.waitFor(mf, this);
                     if(logMINOR) Logger.minor(this, "first part got "+msg);
                 } catch (DisconnectedException e) {
+                	counter++;
                     Logger.normal(this, "Disconnected from "+next+" while waiting for Accepted on "+uid);
                     break;
                 }
