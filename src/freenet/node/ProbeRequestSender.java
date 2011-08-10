@@ -145,6 +145,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
             	continue;
             } catch (SyncSendWaitedTooLongException e) {
             	Logger.error(this, "Unable to send "+req+" in a reasonable time to "+next);
+            	counter++;
             	continue;
 			}
             
