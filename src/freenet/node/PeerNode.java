@@ -1280,7 +1280,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		else if(logMINOR)
 			Logger.minor(this, "Disconnected "+this, new Exception("debug"));
 		node.usm.onDisconnect(this);
-		node.onRestartOrDisconnect(this);
+		if(dumpMessageQueue)
+			node.onRestartOrDisconnect(this);
 		node.failureTable.onDisconnect(this);
 		node.peers.disconnected(this);
 		node.nodeUpdater.disconnected(this);
