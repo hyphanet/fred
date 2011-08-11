@@ -194,7 +194,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 		// Temp files
 
-		this.tempDir = node.setupProgramDir(installConfig, "tempDir", node.runDir().file("temp-"+portNumber).toString(),
+		this.tempDir = node.setupProgramDir(installConfig, "tempDir", node.runDir().file("temp").toString(),
 		  "NodeClientCore.tempDir", "NodeClientCore.tempDirLong", nodeConfig);
 		FileUtil.setOwnerRWX(getTempDir());
 
