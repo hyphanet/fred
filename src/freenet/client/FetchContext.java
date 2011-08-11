@@ -102,6 +102,9 @@ public class FetchContext implements Cloneable {
 	 * with that interval or less. */
 	private long cooldownTime;
 
+	/** Ignore USK DATEHINTs */
+	public boolean ignoreUSKDatehints;
+
 	public FetchContext(long curMaxLength,
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
 			boolean dontEnterImplicitArchives,
@@ -135,6 +138,7 @@ public class FetchContext implements Cloneable {
 		this.overrideMIME = overrideMIME;
 		this.cooldownRetries = RequestScheduler.COOLDOWN_RETRIES;
 		this.cooldownTime = RequestScheduler.COOLDOWN_PERIOD;
+		this.ignoreUSKDatehints = false; // FIXME
 		hasOwnEventProducer = true;
 	}
 
@@ -180,6 +184,7 @@ public class FetchContext implements Cloneable {
 		this.overrideMIME = ctx.overrideMIME;
 		this.cooldownRetries = ctx.cooldownRetries;
 		this.cooldownTime = ctx.cooldownTime;
+		this.ignoreUSKDatehints = ctx.ignoreUSKDatehints;
 
 		if(maskID == IDENTICAL_MASK || maskID == SPLITFILE_DEFAULT_MASK) {
 			// DEFAULT
