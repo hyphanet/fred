@@ -72,14 +72,9 @@ public abstract class BaseSender implements ByteCounter {
     static final double EXTRA_HOPS_AT_BOTTOM = 1.0 / Node.DECREMENT_AT_MIN_PROB;
     
 	static public int calculateTimeout(boolean realTimeFlag, short htl, Node node) {
-		//double timeout = realTimeFlag ? SEARCH_TIMEOUT_REALTIME : SEARCH_TIMEOUT_BULK;
-		//timeout = (timeout * ((double)htl + EXTRA_HOPS_AT_BOTTOM) / (EXTRA_HOPS_AT_BOTTOM + (double) node.maxHTL())); 
-		//return (int)timeout;
-		
-		// FIXME reinstate timeout-per-htl.
-		// This is important, but needs to be deployed on its own as it is potentially very disruptive in the short term.
-		
-		return realTimeFlag ? SEARCH_TIMEOUT_REALTIME : SEARCH_TIMEOUT_BULK;
+		double timeout = realTimeFlag ? SEARCH_TIMEOUT_REALTIME : SEARCH_TIMEOUT_BULK;
+		timeout = (timeout * ((double)htl + EXTRA_HOPS_AT_BOTTOM) / (EXTRA_HOPS_AT_BOTTOM + (double) node.maxHTL())); 
+		return (int)timeout;
 	}
 	
 	protected int calculateTimeout(short htl) {
