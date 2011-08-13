@@ -331,7 +331,7 @@ public class PproxyToadlet extends Toadlet {
 
 				Iterator<PluginProgress> loadingPlugins = pm.getStartingPlugins().iterator();
 
-				PageNode page = ctx.getPageMaker().getPageNode(l10n("pluginsWithNodeName", "name", core.getMyName()), ctx);
+				PageNode page = ctx.getPageMaker().getPageNode(l10n("plugins"), ctx);
 				HTMLNode pageNode = page.outer;
 				if (loadingPlugins.hasNext()) {
 					/* okay, add a refresh. */

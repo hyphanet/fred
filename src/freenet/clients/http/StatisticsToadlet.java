@@ -167,7 +167,7 @@ public class StatisticsToadlet extends Toadlet {
 		int numberOfNoLoadStats = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_NO_LOAD_STATS);
 
 		final int mode = ctx.getPageMaker().parseMode(request, container);
-		PageNode page = ctx.getPageMaker().getPageNode(l10n("fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
+		PageNode page = ctx.getPageMaker().getPageNode(l10n("fullTitle"), ctx);
 		pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 
@@ -524,7 +524,7 @@ public class StatisticsToadlet extends Toadlet {
 	}
 
 	private void showRequesters(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		PageNode page = ctx.getPageMaker().getPageNode(l10n("fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
+		PageNode page = ctx.getPageMaker().getPageNode(l10n("fullTitle"), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 
