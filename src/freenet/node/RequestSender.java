@@ -192,7 +192,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				
     			boolean fromOfferedKey;
     			
-				synchronized(this) {
+				synchronized(RequestSender.this) {
 					if(status != NOT_FINISHED) return;
 					if(transferringFrom != null) return;
 					reassignedToSelfDueToMultipleTimeouts = true;
