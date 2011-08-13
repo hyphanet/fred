@@ -4843,7 +4843,8 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	// Must include bulk inserts so fairly long.
-	static final int TIMEOUT = 16 * 60 * 1000;
+	// 21 minutes is enough for a fatal timeout.
+	static final int TIMEOUT = 21 * 60 * 1000;
 
 	private void startDeadUIDChecker() {
 		getTicker().queueTimedJob(deadUIDChecker, TIMEOUT);
