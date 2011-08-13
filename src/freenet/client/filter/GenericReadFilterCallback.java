@@ -17,7 +17,6 @@ import freenet.clients.http.HTTPRequestImpl;
 import freenet.clients.http.StaticToadlet;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
-import freenet.support.HTMLEncoder;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.URIPreEncoder;
@@ -141,20 +140,26 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		String path = uri.getPath();
 		
 		HTTPRequest req = new HTTPRequestImpl(uri, "GET");
-		if (path != null){
-			if(path.equals("/") && req.isParameterSet("newbookmark") && !forBaseHref){
+		if (path != null) {
+			if (path.equals("/") && req.isParameterSet("newbookmark") && !forBaseHref) {
 				// allow links to the root to add bookmarks
 				String bookmark_key = req.getParam("newbookmark");
 				String bookmark_desc = req.getParam("desc");
 				String bookmark_activelink = req.getParam("hasAnActivelink", "");
 
-				bookmark_key = HTMLEncoder.encode(bookmark_key);
-				bookmark_desc = HTMLEncoder.encode(bookmark_desc);
+				try {
+					FreenetURI furi = new FreenetURI(bookmark_key);
+					bookmark_key = furi.toString();
+					bookmark_desc = URLEncoder.encode(bookmark_desc, "UTF-8");
+				} catch (UnsupportedEncodingException e) {
+					// impossible, UTF-8 is always supported
+				} catch (MalformedURLException e) {
+					throw new CommentException("Invalid Freenet URI: " + e);
+				}
 
 				String url = "/?newbookmark="+bookmark_key+"&desc="+bookmark_desc;
-				if (!bookmark_activelink.equals("")) {
-					bookmark_activelink = HTMLEncoder.encode(bookmark_activelink);
-					url = url+"&hasAnActivelink=true";
+				if (bookmark_activelink.equals("true")) {
+					url = url + "&hasAnActivelink=true";
 				}
 				return url;
 			} else if(path.startsWith(StaticToadlet.ROOT_URL)) {
