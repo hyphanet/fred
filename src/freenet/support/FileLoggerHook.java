@@ -644,13 +644,6 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 						continue;
 					}
 				}
-				// First field: version
-				if(nums[0] != Version.buildNumber()) {
-					if(logMINOR) Logger.minor(this, "Deleting old log from build "+nums[0]+", current="+Version.buildNumber());
-					// Logs that old are useless
-					f.delete();
-					continue;
-				}
 				if(nums.length > 1)
 					gc.set(Calendar.YEAR, nums[1]);
 				if(nums.length > 2)
