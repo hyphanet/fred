@@ -1697,8 +1697,13 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				}
 				// RequestHandler will send a noderef back up, eventually, and will unlockHandler() after that point.
 				// But if this is a local request, we need to send the ack now.
+				// Serious race condition not possible here as we set it.
 				if(source == null)
 					ackOpennet(next);
+				else if(origTag.shouldStop()) {
+					// Can't pass it on.
+					origTag.finishedWaitingForOpennet(next);
+				}
 				return false;
 			} else {
 				// opennetNoderef = null i.e. we want the noderef so we won't pass it further down.
@@ -1725,6 +1730,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			// Hmmm... let the LRU deal with it
 			if(logMINOR)
 				Logger.minor(this, "Not connected sending ConnectReply on "+this+" to "+next);
+			origTag.finishedWaitingForOpennet(next);
     	} catch (WaitedTooLongForOpennetNoderefException e) {
     		Logger.error(this, "RequestSender timed out waiting for noderef from "+next+" for "+this);
     		// Not an error since it can be caused downstream.
