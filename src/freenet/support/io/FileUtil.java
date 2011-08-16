@@ -499,6 +499,26 @@ final public class FileUtil {
 				remaining -= read;
 		}
 	}
+	
+	public static boolean secureDeleteAll(File wd, Random random) throws IOException {
+		if(!wd.isDirectory()) {
+			System.err.println("DELETING FILE "+wd);
+			if(!wd.delete() && wd.exists()) {
+				Logger.error(FileUtil.class, "Could not delete file: "+wd);
+				return false;
+			}
+		} else {
+			File[] subfiles = wd.listFiles();
+			for(int i=0;i<subfiles.length;i++) {
+				if(!removeAll(subfiles[i])) return false;
+			}
+			if(!wd.delete()) {
+				Logger.error(FileUtil.class, "Could not delete directory: "+wd);
+			}
+		}
+		return true;
+	}
+
 
 	/** Delete everything in a directory. Only use this when we are *very sure* there is no
 	 * important data below it! */
@@ -660,6 +680,12 @@ final public class FileUtil {
 			success = false;
 		}
 		return success;
+	}
+
+	public static boolean equals(File a, File b) {
+		a = getCanonicalFile(a);
+		b = getCanonicalFile(b);
+		return a.equals(b);
 	}
 
 }

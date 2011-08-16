@@ -87,6 +87,7 @@ import freenet.support.io.FilenameGenerator;
 import freenet.support.io.NativeThread;
 import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.TempBucketFactory;
+import freenet.support.math.MersenneTwister;
 
 /**
  * The connection between the node and the client layer.
@@ -196,6 +197,18 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 		this.tempDir = node.setupProgramDir(installConfig, "tempDir", node.runDir().file("temp").toString(),
 		  "NodeClientCore.tempDir", "NodeClientCore.tempDirLong", nodeConfig);
+		
+		// FIXME remove back compatibility hack.
+		File oldTemp = node.runDir().file("temp-"+node.getDarknetPortNumber());
+		if(oldTemp.exists() && oldTemp.isDirectory() && !FileUtil.equals(tempDir.dir, oldTemp)) {
+			System.err.println("Deleting old temporary dir: "+oldTemp);
+			try {
+				FileUtil.secureDeleteAll(oldTemp, new MersenneTwister(random.nextLong()));
+			} catch (IOException e) {
+				// Ignore.
+			}
+		}
+		
 		FileUtil.setOwnerRWX(getTempDir());
 
 		try {
