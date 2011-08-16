@@ -161,7 +161,11 @@ final public class FileUtil {
 		// (where /var/lib/freenet-experimental is the current working dir)
 		// Regenerating from path worked. So do that here.
 		// And yes, it's voodoo.
-		file = new File(file.getPath());
+		String name = file.getPath();
+		if(File.pathSeparatorChar == '\\') {
+			name = name.toLowerCase();
+		}
+		file = new File(name);
 		File result;
 		try {
 			result = file.getAbsoluteFile().getCanonicalFile();
