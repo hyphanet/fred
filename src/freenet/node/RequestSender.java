@@ -984,8 +984,8 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     	}
     	
     	if(msg.getSpec() == DMT.FNPRejectedOverload) {
-    		if(handleRejectedOverload(msg, wasFork, source)) return DO.WAIT;
-    		else return DO.FINISHED;
+    		if(handleRejectedOverload(msg, source)) return DO.WAIT;
+    		else return DO.NEXT_PEER;
     	}
 
     	if((!isSSK) && msg.getSpec() == DMT.FNPCHKDataFound) {
@@ -1223,7 +1223,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 
 	/** @param next 
 	 * @return True to continue waiting for this node, false to move on to another. */
-	private boolean handleRejectedOverload(Message msg, boolean wasFork, PeerNode next) {
+	private boolean handleRejectedOverload(Message msg, PeerNode next) {
 		
 		// Non-fatal - probably still have time left
 		forwardRejectedOverload();
@@ -1236,18 +1236,8 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			next.localRejectedOverload("ForwardRejectedOverload2", realTimeFlag);
 			// Node in trouble suddenly??
 			Logger.normal(this, "Local RejectedOverload after Accepted, moving on to next peer");
-			// Local RejectedOverload, after already having Accepted.
-			// This indicates either:
-			// a) The node no longer has the resources to handle the request, even though it did initially.
-			// b) The node has a severe internal error.
-			// c) The node knows we will timeout fatally if it doesn't send something.
-			// In all 3 cases, it is possible that the request is continuing downstream.
-			// So this is fatal. Treat similarly to a DNF.
-			// FIXME use a different message for termination after accepted.
+			// Give up on this one, try another
 			next.noLongerRoutingTo(origTag, false);
-			node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
-			if(!wasFork)
-				finish(TIMED_OUT, next, false);
 			return false;
 		}
 		//so long as the node does not send a (IS_LOCAL) message. Interestingly messages can often timeout having only received this message.
