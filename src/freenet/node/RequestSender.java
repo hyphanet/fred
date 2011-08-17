@@ -834,6 +834,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         		// FIXME kill the transfer if off-thread (two stage timeout, offers == null) and it's already completed successfully?
         		// FIXME we are also plotting to get rid of transfer cancels so maybe not?
         		synchronized(this) {
+        			transferringFrom = pn;
         			notifyAll();
         		}
         		fireCHKTransferBegins();

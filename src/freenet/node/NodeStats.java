@@ -483,7 +483,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		});
 		enableNewLoadManagementRT = statsConfig.getBoolean("enableNewLoadManagementRT");
 
-		statsConfig.register("enableNewLoadManagementBulk", false, sortOrder++, true, false, "Node.enableNewLoadManagementBulk", "Node.enableNewLoadManagementBulkLong", new BooleanCallback() {
+		statsConfig.register("enableNewLoadManagementBulk", true, sortOrder++, true, false, "Node.enableNewLoadManagementBulk", "Node.enableNewLoadManagementBulkLong", new BooleanCallback() {
 
 			@Override
 			public Boolean get() {
