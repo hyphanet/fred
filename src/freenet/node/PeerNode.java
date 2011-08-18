@@ -1840,14 +1840,29 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 
 		Arrays.sort(newLocs);
+		
+		boolean anythingChanged = false;
 
 		synchronized(this) {
+			if(!Location.equals(currentLocation, newLoc))
+				anythingChanged = true;
 			currentLocation = newLoc;
+			if(currentPeersLocation.length != newLocs.length)
+				anythingChanged = true;
+			else if(!anythingChanged) {
+				for(int i=0;i<currentPeersLocation.length;i++) {
+					if(!Location.equals(currentPeersLocation[i], newLocs[i])) {
+						anythingChanged = true;
+						break;
+					}
+				}
+			}
 			currentPeersLocation = newLocs;
 			locSetTime = System.currentTimeMillis();
 		}
 		node.peers.updatePMUserAlert();
-		node.peers.writePeers(isOpennet());
+		if(anythingChanged)
+			node.peers.writePeers(isOpennet());
 		setPeerNodeStatus(System.currentTimeMillis());
 	}
 
