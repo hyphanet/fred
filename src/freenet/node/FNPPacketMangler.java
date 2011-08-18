@@ -1398,7 +1398,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 					c, Ke, Ka, authenticator, hisRef, pn, replyTo, unknownInitiator, setupType, newTrackerID, newTrackerID == trackerID);
 
 			if(dontWant) {
-				node.peers.disconnect(pn, true, true, true); // Let it connect then tell it to remove it.
+				node.peers.disconnectAndRemove(pn, true, true, true); // Let it connect then tell it to remove it.
 			} else {
 				pn.maybeSendInitialMessages();
 			}
@@ -1635,7 +1635,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				pn.theirInitialMsgID);
 		if(newTrackerID >= 0) {
 			if(dontWant) {
-				node.peers.disconnect(pn, true, true, true);
+				node.peers.disconnectAndRemove(pn, true, true, true);
 			} else {
 				pn.maybeSendInitialMessages();
 			}

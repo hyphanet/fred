@@ -408,7 +408,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		// Otherwise just dump all current connection state and keep trying to connect.
 		boolean remove = m.getBoolean(DMT.REMOVE);
 		if(remove) {
-			node.peers.disconnect(source, false, false, false);
+			node.peers.disconnectAndRemove(source, false, false, false);
 			if(source instanceof DarknetPeerNode)
 				// FIXME remove, dirty logs.
 				// FIXME add a useralert?
