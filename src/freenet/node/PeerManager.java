@@ -1530,6 +1530,9 @@ public class PeerManager {
 		return sb.toString();
 	}
 	
+	private static final int BACKUPS_OPENNET = 1;
+	private static final int BACKUPS_DARKNET = 10;
+	
 	private void writePeersInnerDarknet() {
         String newDarknetPeersString = null;
 		synchronized(writePeersSync) {
@@ -1538,7 +1541,7 @@ public class PeerManager {
 		}
 		synchronized(writePeerFileSync) {
 			if(newDarknetPeersString != null && !newDarknetPeersString.equals(darknetPeersStringCache))
-				writePeersInner(darkFilename, darknetPeersStringCache = newDarknetPeersString, 10);
+				writePeersInner(darkFilename, darknetPeersStringCache = newDarknetPeersString, BACKUPS_DARKNET);
 		}
 	}
 
@@ -1556,10 +1559,10 @@ public class PeerManager {
 		}
 		synchronized(writePeerFileSync) {
 			if(newOpennetPeersString != null && !newOpennetPeersString.equals(opennetPeersStringCache)) {
-				writePeersInner(openFilename, opennetPeersStringCache = newOpennetPeersString, 1);
+				writePeersInner(openFilename, opennetPeersStringCache = newOpennetPeersString, BACKUPS_OPENNET);
 			}
 			if(newOldOpennetPeersString != null && !newOldOpennetPeersString.equals(oldOpennetPeersStringCache)) {
-				writePeersInner(oldOpennetPeersFilename, oldOpennetPeersStringCache = newOldOpennetPeersString, 1);
+				writePeersInner(oldOpennetPeersFilename, oldOpennetPeersStringCache = newOldOpennetPeersString, BACKUPS_OPENNET);
 			}
 		}
 	}
