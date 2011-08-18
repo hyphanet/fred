@@ -526,7 +526,7 @@ public class NodeCrypto {
 		if(config.oneConnectionPerAddress())
 			return; // If it's set here then we've already checked, we're not going to boot anyone else.
 		
-		ArrayList<PeerNode> possibleMatches = node.peers.getAllConnectedByAddress(address);
+		ArrayList<PeerNode> possibleMatches = node.peers.getAllConnectedByAddress(address, true);
 		if(possibleMatches == null) return;
 		for(PeerNode pn : possibleMatches) {
 			if(pn.crypto == this) continue;

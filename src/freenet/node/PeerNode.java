@@ -6062,9 +6062,16 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return false;
 	}
 
-	public synchronized boolean matchesIP(FreenetInetAddress addr) {
-		if(detectedPeer != null && detectedPeer.getFreenetAddress().laxEquals(addr)) return true;
-		if(nominalPeer != null) { // FIXME condition necessary???
+	/** Does this PeerNode match the given IP address? 
+	 * @param strict If true, only match if the IP is actually in use. If false,
+	 * also match from nominal IP addresses and domain names etc. */
+	public synchronized boolean matchesIP(FreenetInetAddress addr, boolean strict) {
+		if(detectedPeer != null && 
+				strict ?
+				detectedPeer.getFreenetAddress().equals(addr) :
+				detectedPeer.getFreenetAddress().laxEquals(addr)
+				) return true;
+		if((!strict) && nominalPeer != null) {
 			for(Peer p : nominalPeer) {
 				if(p != null && p.getFreenetAddress().laxEquals(addr)) return true;
 			}
