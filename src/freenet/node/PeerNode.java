@@ -461,15 +461,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			throw new FSParseException("Invalid version "+version+" : "+e2);
 		}
 		String locationString = fs.get("location");
-		String[] peerLocationsString = fs.getAll("peersLocation");
 
 		currentLocation = Location.getLocation(locationString);
-		if(peerLocationsString != null) {
-			double[] peerLocations = new double[peerLocationsString.length];
-			for(int i = 0; i < peerLocationsString.length; i++)
-				peerLocations[i] = Location.getLocation(peerLocationsString[i]);
-			currentPeersLocation = peerLocations;
-		}
 		locSetTime = System.currentTimeMillis();
 
 		disableRouting = disableRoutingHasBeenSetLocally = false;
@@ -705,6 +698,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			SimpleFieldSet metadata = fs.subset("metadata");
 
 			if(metadata != null) {
+				
+				String[] peerLocationsString = fs.getAll("peersLocation");
+				if(peerLocationsString != null) {
+					double[] peerLocations = new double[peerLocationsString.length];
+					for(int i = 0; i < peerLocationsString.length; i++)
+						peerLocations[i] = Location.getLocation(peerLocationsString[i]);
+					currentPeersLocation = peerLocations;
+				}
 
 				// Don't be tolerant of nonexistant domains; this should be an IP address.
 				Peer p;
