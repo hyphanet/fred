@@ -498,7 +498,7 @@ public class PeerManager {
 		// Try a match by IP address if we can't match exactly by IP:port.
 		FreenetInetAddress addr = peer.getFreenetAddress();
 		for(int i = 0; i < peerList.length; i++) {
-			if(peerList[i].matchesIP(addr))
+			if(peerList[i].matchesIP(addr, false))
 				return peerList[i];
 		}
 		return null;
@@ -520,7 +520,7 @@ public class PeerManager {
 		// Try a match by IP address if we can't match exactly by IP:port.
 		FreenetInetAddress addr = peer.getFreenetAddress();
 		for(int i = 0; i < peerList.length; i++) {
-			if(peerList[i].matchesIP(addr) && peerList[i].getOutgoingMangler() == mangler)
+			if(peerList[i].matchesIP(addr, false) && peerList[i].getOutgoingMangler() == mangler)
 				return peerList[i];
 		}
 		return null;
@@ -529,7 +529,7 @@ public class PeerManager {
 	/**
 	 * Find nodes with a given IP address.
 	 */
-	public ArrayList<PeerNode> getAllConnectedByAddress(FreenetInetAddress a) {
+	public ArrayList<PeerNode> getAllConnectedByAddress(FreenetInetAddress a, boolean strict) {
 		ArrayList<PeerNode> found = null;
 		
 		PeerNode[] peerList = myPeers;
@@ -537,7 +537,7 @@ public class PeerManager {
 		for(PeerNode pn : peerList) {
 			if(!pn.isConnected()) continue;
 			if(!pn.isRoutable()) continue;
-			if(pn.matchesIP(a)) {
+			if(pn.matchesIP(a, strict)) {
 				if(found == null) found = new ArrayList<PeerNode>();
 				found.add(pn);
 			}
