@@ -531,6 +531,10 @@ public class NodeCrypto {
 		for(PeerNode pn : possibleMatches) {
 			if(pn.crypto == this) continue;
 			if(pn.crypto.config.oneConnectionPerAddress()) {
+				if(pn instanceof DarknetPeerNode) {
+					Logger.error(this, "Dropping peer "+pn+" because don't want connection due to others on the same IP address!");
+					System.out.println("Disconnecting permanently from your friend \""+((DarknetPeerNode)pn).getName()+"\" because other peers are using the same IP address!");
+				}
 				node.peers.disconnectAndRemove(pn, true, true, pn.isOpennet());
 			}
 		}
