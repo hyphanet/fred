@@ -2097,6 +2097,13 @@ public class PeerManager {
 			if(!p.isRealConnection())
 				continue; // Ignore non-searchable peers i.e. bootstrapping peers
 			// If getPeer() is null then presumably !isConnected().
+			if(p.isDarknet() && !pn.isDarknet()) {
+				// Darknet is only affected by other darknet peers.
+				// Opennet peers with the same IP will NOT cause darknet peers to be dropped, even if one connection per IP is set for darknet, and even if it isn't set for opennet.
+				// (Which would be a perverse configuration anyway!)
+				// FIXME likewise, FOAFs should not boot darknet connections.
+				continue;
+			}
 			if(p.getPeer().getFreenetAddress().equals(addr))
 				return true;
 		}
