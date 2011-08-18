@@ -2089,15 +2089,15 @@ public class PeerManager {
 		synchronized(this) {
 			peers = myPeers;
 		}
-		for(int i = 0; i < peers.length; i++) {
-			if(peers[i] == pn)
+		for(PeerNode p : peers) {
+			if(p == pn)
 				continue;
-			if(!peers[i].isConnected())
+			if(!p.isConnected())
 				continue;
-			if(!peers[i].isRealConnection())
+			if(!p.isRealConnection())
 				continue; // Ignore non-searchable peers i.e. bootstrapping peers
 			// If getPeer() is null then presumably !isConnected().
-			if(peers[i].getPeer().getFreenetAddress().equals(addr))
+			if(p.getPeer().getFreenetAddress().equals(addr))
 				return true;
 		}
 		return false;
