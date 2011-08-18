@@ -176,38 +176,27 @@ public class PeerManager {
 					darkFilename = filename;
 		}
 		OutgoingPacketMangler mangler = crypto.packetMangler;
-		File peersFile = new File(filename);
-		File backupFile = new File(filename + ".bak");
-		// Try to read the node list from disk
-		if(peersFile.exists())
-			if(readPeers(peersFile, mangler, crypto, opennet, oldOpennetPeers)) {
-				String msg;
-				if(oldOpennetPeers)
-					msg = "Read " + opennet.countOldOpennetPeers() + " old-opennet-peers from " + peersFile;
-				else if(isOpennet)
-					msg = "Read " + getOpennetPeers().length + " opennet peers from " + peersFile;
-				else
-					msg = "Read " + getDarknetPeers().length + " darknet peers from " + peersFile;
-				Logger.normal(this, msg);
-				System.out.println(msg);
-				return;
-			}
-		// Try the backup
-		if(backupFile.exists())
-			if(readPeers(backupFile, mangler, crypto, opennet, oldOpennetPeers)) {
-				String msg;
-				if(oldOpennetPeers)
-					msg = "Read " + opennet.countOldOpennetPeers() + " old-opennet-peers from " + peersFile;
-				else if(isOpennet)
-					msg = "Read " + getOpennetPeers().length + " opennet peers from " + peersFile;
-				else
-					msg = "Read " + getDarknetPeers().length + " darknet peers from " + peersFile;
-				Logger.normal(this, msg);
-				System.out.println(msg);
-			} else {
-				Logger.error(this, "No (readable) peers file with peers in it found");
-				System.err.println("No (readable) peers file with peers in it found");
-			}
+		int maxBackups = isOpennet ? BACKUPS_OPENNET : BACKUPS_DARKNET;
+		for(int i=0;i<=maxBackups;i++) {
+			File peersFile = this.getBackupFilename(filename, i);
+			// Try to read the node list from disk
+			if(peersFile.exists())
+				if(readPeers(peersFile, mangler, crypto, opennet, oldOpennetPeers)) {
+					String msg;
+					if(oldOpennetPeers)
+						msg = "Read " + opennet.countOldOpennetPeers() + " old-opennet-peers from " + peersFile;
+					else if(isOpennet)
+						msg = "Read " + getOpennetPeers().length + " opennet peers from " + peersFile;
+					else
+						msg = "Read " + getDarknetPeers().length + " darknet peers from " + peersFile;
+					Logger.normal(this, msg);
+					System.out.println(msg);
+					return;
+				}
+		}
+		if(!isOpennet)
+			System.out.println("No darknet peers file found.");
+		// The other cases are less important.
 	}
 
 	private boolean readPeers(File peersFile, OutgoingPacketMangler mangler, NodeCrypto crypto, OpennetManager opennet, boolean oldOpennetPeers) {
