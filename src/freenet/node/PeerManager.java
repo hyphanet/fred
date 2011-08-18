@@ -206,6 +206,7 @@ public class PeerManager {
 	}
 
 	private boolean readPeers(File peersFile, OutgoingPacketMangler mangler, NodeCrypto crypto, OpennetManager opennet, boolean oldOpennetPeers) {
+		boolean someBroken = false;
 		boolean gotSome = false;
 		FileInputStream fis;
 		try {
@@ -231,23 +232,31 @@ public class PeerManager {
 					pn = PeerNode.create(fs, node, crypto, opennet, this, mangler);
 				} catch(FSParseException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
-					if(mangler == null)
+					if(mangler == null) {
 						System.err.println("Cannot parse a friend from the peers file: "+e2);
+						someBroken = true;
+					}
 					continue;
 				} catch(PeerParseException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
-					if(mangler == null)
+					if(mangler == null) {
 						System.err.println("Cannot parse a friend from the peers file: "+e2);
+						someBroken = true;
+					}
 					continue;
 				} catch(ReferenceSignatureVerificationException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
-					if(mangler == null)
+					if(mangler == null) {
 						System.err.println("Cannot parse a friend from the peers file: "+e2);
+						someBroken = true;
+					}
 					continue;
 				} catch (RuntimeException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
-					if(mangler == null)
+					if(mangler == null) {
 						System.err.println("Cannot parse a friend from the peers file: "+e2);
+						someBroken = true;
+					}
 					continue;
 					// FIXME tell the user???
 				}
@@ -266,6 +275,20 @@ public class PeerManager {
 			br.close();
 		} catch(IOException e3) {
 			Logger.error(this, "Ignoring " + e3 + " caught reading " + peersFile, e3);
+		}
+		if(someBroken) {
+			File broken = new File(peersFile.getPath()+".broken");
+			try {
+				broken.delete();
+				FileOutputStream fos = new FileOutputStream(broken);
+				fis = new FileInputStream(peersFile);
+				FileUtil.copy(fis, fos, -1);
+				fos.close();
+				fis.close();
+				System.err.println("Broken peers file copied to "+broken);
+			} catch (IOException e) {
+				System.err.println("Unable to copy broken peers file.");
+			}
 		}
 		return gotSome;
 	}
