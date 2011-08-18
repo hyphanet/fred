@@ -1847,13 +1847,18 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(!Location.equals(currentLocation, newLoc))
 				anythingChanged = true;
 			currentLocation = newLoc;
-			if(currentPeersLocation.length != newLocs.length)
+			if(newLocs != null && currentPeersLocation == null || 
+					newLocs == null && currentPeersLocation != null)
 				anythingChanged = true;
-			else if(!anythingChanged) {
-				for(int i=0;i<currentPeersLocation.length;i++) {
-					if(!Location.equals(currentPeersLocation[i], newLocs[i])) {
-						anythingChanged = true;
-						break;
+			else if(currentPeersLocation != null && newLocs != null && !anythingChanged) {
+				if(currentPeersLocation.length != newLocs.length)
+					anythingChanged = true;
+				else {
+					for(int i=0;i<currentPeersLocation.length;i++) {
+						if(!Location.equals(currentPeersLocation[i], newLocs[i])) {
+							anythingChanged = true;
+							break;
+						}
 					}
 				}
 			}
