@@ -313,7 +313,7 @@ public class DarknetPeerNode extends PeerNode {
 			isDisabled = false;
 		}
 		setPeerNodeStatus(System.currentTimeMillis());
-		node.peers.writePeers();
+		node.peers.writePeersDarknet();
 	}
 
 	public void disablePeer() {
@@ -325,7 +325,7 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		stopARKFetcher();
 		setPeerNodeStatus(System.currentTimeMillis());
-		node.peers.writePeers();
+		node.peers.writePeersDarknet();
 	}
 
 	@Override
@@ -344,7 +344,7 @@ public class DarknetPeerNode extends PeerNode {
 			stopARKFetcher();
 		}
 		setPeerNodeStatus(System.currentTimeMillis());
-		node.peers.writePeers();
+		node.peers.writePeersDarknet();
 	}
 
 	public synchronized boolean isListenOnly() {
@@ -365,7 +365,7 @@ public class DarknetPeerNode extends PeerNode {
 			}
 		}
 		setPeerNodeStatus(now);
-		node.peers.writePeers();
+		node.peers.writePeersDarknet();
 	}
 
 	public void setIgnoreSourcePort(boolean setting) {
@@ -399,7 +399,7 @@ public class DarknetPeerNode extends PeerNode {
 			}
 		}
 		setPeerNodeStatus(System.currentTimeMillis());
-		node.peers.writePeers();
+		node.peers.writePeersDarknet();
 
 	}
 
@@ -432,7 +432,7 @@ public class DarknetPeerNode extends PeerNode {
 		synchronized(this) {
 			allowLocalAddresses = setting;
 		}
-		node.peers.writePeers();
+		node.peers.writePeersDarknet();
 	}
 
 	public boolean readExtraPeerData() {
@@ -1745,7 +1745,7 @@ public class DarknetPeerNode extends PeerNode {
 		synchronized(this) {
 			trustLevel = trust;
 		}
-		node.peers.writePeers();
+		node.peers.writePeersDarknet();
 	}
 
 	/** FIXME This should be the worse of our visibility for the peer and that which the peer has told us. 
@@ -1765,7 +1765,7 @@ public class DarknetPeerNode extends PeerNode {
 			if(ourVisibility == visibility) return;
 			ourVisibility = visibility;
 		}
-		node.peers.writePeers();
+		node.peers.writePeersDarknet();
 		try {
 			sendVisibility();
 		} catch (NotConnectedException e) {
@@ -1787,7 +1787,7 @@ public class DarknetPeerNode extends PeerNode {
 			if(theirVisibility == v) return;
 			theirVisibility = v;
 		}
-		node.peers.writePeers();
+		node.peers.writePeersDarknet();
 	}
 
 	public synchronized FRIEND_VISIBILITY getTheirVisibility() {
@@ -1928,7 +1928,7 @@ public class DarknetPeerNode extends PeerNode {
 							synchronized(DarknetPeerNode.this) {
 								fullFieldSet = fs;
 							}
-							node.peers.writePeers();
+							node.peers.writePeersDarknet();
 						} else {
 							Logger.error(this, "Failed to receive noderef from "+DarknetPeerNode.this);
 						}

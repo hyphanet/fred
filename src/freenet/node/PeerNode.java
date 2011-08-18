@@ -1846,7 +1846,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			locSetTime = System.currentTimeMillis();
 		}
 		node.peers.updatePMUserAlert();
-		node.peers.writePeers();
+		node.peers.writePeers(isOpennet());
 		setPeerNodeStatus(System.currentTimeMillis());
 	}
 
@@ -2679,7 +2679,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			Logger.minor(this, "Parsing: \n" + fs);
 		boolean changedAnything = innerProcessNewNoderef(fs, forARK, forDiffNodeRef, forFullNodeRef) || forARK;
 		if(changedAnything && !isSeed())
-			node.peers.writePeers();
+			node.peers.writePeers(isOpennet());
 	}
 
 	/**
