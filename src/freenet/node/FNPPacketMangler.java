@@ -1382,6 +1382,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			// wantPeer will call node.peers.addPeer(), we don't have to.
 		}
 		if((!dontWant) && !crypto.allowConnection(pn, replyTo.getFreenetAddress())) {
+			if(pn instanceof DarknetPeerNode) {
+				Logger.error(this, "Dropping peer "+pn+" because don't want connection due to others on the same IP address!");
+				System.out.println("Disconnecting permanently from your friend \""+((DarknetPeerNode)pn).getName()+"\" because other peers are using the same IP address!");
+			}
 			Logger.normal(this, "Rejecting connection because already have something with the same IP");
 			dontWant = true;
 		}
