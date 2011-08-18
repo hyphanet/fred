@@ -531,7 +531,7 @@ public class NodeCrypto {
 		for(PeerNode pn : possibleMatches) {
 			if(pn.crypto == this) continue;
 			if(pn.crypto.config.oneConnectionPerAddress()) {
-				node.peers.disconnect(pn, true, true, pn.isOpennet());
+				node.peers.disconnectAndRemove(pn, true, true, pn.isOpennet());
 			}
 		}
 	}

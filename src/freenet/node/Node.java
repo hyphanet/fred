@@ -5353,7 +5353,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public void removePeerConnection(PeerNode pn) {
-		peers.disconnect(pn, true, false, false);
+		peers.disconnectAndRemove(pn, true, false, false);
 	}
 
 	public void onConnectedPeer() {

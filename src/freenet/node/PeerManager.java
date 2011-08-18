@@ -558,7 +558,7 @@ public class PeerManager {
 		addPeer(pn);
 	}
 	
-	public void disconnect(final PeerNode pn, boolean sendDisconnectMessage, final boolean waitForAck, boolean purge) {
+	public void disconnectAndRemove(final PeerNode pn, boolean sendDisconnectMessage, final boolean waitForAck, boolean purge) {
 		disconnect(pn, sendDisconnectMessage, waitForAck, purge, false, true, Node.MAX_PEER_INACTIVITY);
 	}
 

@@ -204,7 +204,7 @@ public class PacketSender implements Runnable {
 			pn.maybeOnConnect();
 			if(pn.shouldDisconnectAndRemoveNow() && !pn.isDisconnecting()) {
 				// Might as well do it properly.
-				node.peers.disconnect(pn, true, true, false);
+				node.peers.disconnectAndRemove(pn, true, true, false);
 			}
 
 			if(pn.isConnected()) {
