@@ -1538,7 +1538,7 @@ public class PeerManager {
 		}
 		synchronized(writePeerFileSync) {
 			if(newDarknetPeersString != null && !newDarknetPeersString.equals(darknetPeersStringCache))
-				writePeersInner(darkFilename, darknetPeersStringCache = newDarknetPeersString);
+				writePeersInner(darkFilename, darknetPeersStringCache = newDarknetPeersString, 10);
 		}
 	}
 
@@ -1556,26 +1556,35 @@ public class PeerManager {
 		}
 		synchronized(writePeerFileSync) {
 			if(newOpennetPeersString != null && !newOpennetPeersString.equals(opennetPeersStringCache)) {
-				writePeersInner(openFilename, opennetPeersStringCache = newOpennetPeersString);
+				writePeersInner(openFilename, opennetPeersStringCache = newOpennetPeersString, 1);
 			}
 			if(newOldOpennetPeersString != null && !newOldOpennetPeersString.equals(oldOpennetPeersStringCache)) {
-				writePeersInner(oldOpennetPeersFilename, oldOpennetPeersStringCache = newOldOpennetPeersString);
+				writePeersInner(oldOpennetPeersFilename, oldOpennetPeersStringCache = newOldOpennetPeersString, 1);
 			}
 		}
 	}
-
+	
 	/**
 	 * Write the peers file to disk
 	 */
-	private void writePeersInner(String filename, String sb) {
+	private void writePeersInner(String filename, String sb, int maxBackups) {
+		assert(maxBackups >= 1);
 		synchronized(writePeerFileSync) {
 			FileOutputStream fos = null;
-			String f = filename + ".bak";
+			File f;
+			try {
+				f = File.createTempFile(filename, ".tmp");
+			} catch (IOException e2) {
+				Logger.error(this, "Cannot write peers to disk: Cannot create temp file - " + e2, e2);
+				Closer.close(fos);
+				return;
+			}
 			try {
 				fos = new FileOutputStream(f);
 			} catch(FileNotFoundException e2) {
 				Logger.error(this, "Cannot write peers to disk: Cannot create " + f + " - " + e2, e2);
 				Closer.close(fos);
+				f.delete();
 				return;
 			}
 			OutputStreamWriter w = null;
@@ -1583,6 +1592,7 @@ public class PeerManager {
 				w = new OutputStreamWriter(fos, "UTF-8");
 			} catch(UnsupportedEncodingException e2) {
 				Closer.close(w);
+				f.delete();
 				throw new Error("Impossible: JVM doesn't support UTF-8: " + e2, e2);
 			}
 			try {
@@ -1591,9 +1601,20 @@ public class PeerManager {
 				fos.getFD().sync();
 				w.close();
 				w = null;
-
-				File fnam = new File(filename);
-				FileUtil.renameTo(new File(f), fnam);
+				
+				File prevFile = null;
+				for(int i=maxBackups;i>=0;i--) {
+					File thisFile = getBackupFilename(filename, i);
+					if(prevFile == null) {
+						thisFile.delete();
+					} else {
+						if(thisFile.exists()) {
+							FileUtil.renameTo(thisFile, prevFile);
+						}
+					}
+					prevFile = thisFile;
+				}
+				FileUtil.renameTo(f, prevFile);
 			} catch(IOException e) {
 				try {
 					fos.close();
@@ -1601,12 +1622,20 @@ public class PeerManager {
 					Logger.error(this, "Cannot close peers file: " + e, e);
 				}
 				Logger.error(this, "Cannot write file: " + e, e);
+				f.delete();
 				return; // don't overwrite old file!
 			} finally {
 				Closer.close(w);
 				Closer.close(fos);
+				f.delete();
 			}
 		}
+	}
+
+	private File getBackupFilename(String filename, int i) {
+		if(i == 0) return new File(filename);
+		if(i == 1) return new File(filename+".bak");
+		return new File(filename+".bak."+i);
 	}
 
 	/**
