@@ -1712,8 +1712,6 @@ public class Node implements TimeSkewDetectorCallback {
 		// Then read the peers
 		peers = new PeerManager(this);
 		peers.tryReadPeers(nodeDir.file("peers-"+getDarknetPortNumber()).getPath(), darknetCrypto, null, false, false);
-		peers.writePeersDarknet();
-		peers.writePeersOpennet();
 		peers.updatePMUserAlert();
 
 		uptime = new UptimeEstimator(runDir, ticker, darknetCrypto.identityHash);
