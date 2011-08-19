@@ -313,7 +313,7 @@ public class DarknetPeerNode extends PeerNode {
 			isDisabled = false;
 		}
 		setPeerNodeStatus(System.currentTimeMillis());
-		node.peers.writePeersDarknet();
+		node.peers.writePeersDarknetUrgent();
 	}
 
 	public void disablePeer() {
@@ -325,7 +325,7 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		stopARKFetcher();
 		setPeerNodeStatus(System.currentTimeMillis());
-		node.peers.writePeersDarknet();
+		node.peers.writePeersDarknetUrgent();
 	}
 
 	@Override
@@ -344,7 +344,7 @@ public class DarknetPeerNode extends PeerNode {
 			stopARKFetcher();
 		}
 		setPeerNodeStatus(System.currentTimeMillis());
-		node.peers.writePeersDarknet();
+		node.peers.writePeersDarknetUrgent();
 	}
 
 	public synchronized boolean isListenOnly() {
@@ -365,7 +365,7 @@ public class DarknetPeerNode extends PeerNode {
 			}
 		}
 		setPeerNodeStatus(now);
-		node.peers.writePeersDarknet();
+		node.peers.writePeersDarknetUrgent();
 	}
 
 	public void setIgnoreSourcePort(boolean setting) {
@@ -399,7 +399,7 @@ public class DarknetPeerNode extends PeerNode {
 			}
 		}
 		setPeerNodeStatus(System.currentTimeMillis());
-		node.peers.writePeersDarknet();
+		node.peers.writePeersDarknetUrgent();
 
 	}
 
@@ -432,7 +432,7 @@ public class DarknetPeerNode extends PeerNode {
 		synchronized(this) {
 			allowLocalAddresses = setting;
 		}
-		node.peers.writePeersDarknet();
+		node.peers.writePeersDarknetUrgent();
 	}
 
 	public boolean readExtraPeerData() {
@@ -1745,7 +1745,7 @@ public class DarknetPeerNode extends PeerNode {
 		synchronized(this) {
 			trustLevel = trust;
 		}
-		node.peers.writePeersDarknet();
+		node.peers.writePeersDarknetUrgent();
 	}
 
 	/** FIXME This should be the worse of our visibility for the peer and that which the peer has told us. 
@@ -1765,7 +1765,7 @@ public class DarknetPeerNode extends PeerNode {
 			if(ourVisibility == visibility) return;
 			ourVisibility = visibility;
 		}
-		node.peers.writePeersDarknet();
+		node.peers.writePeersDarknetUrgent();
 		try {
 			sendVisibility();
 		} catch (NotConnectedException e) {

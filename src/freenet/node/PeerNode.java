@@ -1867,6 +1867,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		node.peers.updatePMUserAlert();
 		if(anythingChanged)
+			// Not urgent. This makes up the majority of the total writes.
+			// Writing it on shutdown is sufficient.
 			node.peers.writePeers(isOpennet());
 		setPeerNodeStatus(System.currentTimeMillis());
 	}
@@ -2701,6 +2703,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		boolean changedAnything = innerProcessNewNoderef(fs, forARK, forDiffNodeRef, forFullNodeRef) || forARK;
 		if(changedAnything && !isSeed())
 			node.peers.writePeers(isOpennet());
+		// FIXME should this be urgent if IPs change? Dunno.
 	}
 
 	/**

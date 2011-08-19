@@ -42,6 +42,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
+import freenet.support.io.NativeThread;
 
 /**
  * @author amphibian
@@ -114,10 +115,18 @@ public class PeerManager {
 	};
 	
 	protected void writePeersNow() {
+		writePeersDarknetNow();
+		writePeersOpennetNow();
+	}
+
+	private void writePeersDarknetNow() {
 		if(shouldWritePeersDarknet) {
 			shouldWritePeersDarknet = false;
 			writePeersInnerDarknet();
 		}
+	}
+
+	private void writePeersOpennetNow() {
 		if(shouldWritePeersOpennet) {
 			shouldWritePeersOpennet = false;
 			writePeersInnerOpennet();
@@ -649,14 +658,14 @@ public class PeerManager {
 						}
 						if(remove) {
 							if(removePeer(pn) && !pn.isSeed())
-								writePeers(pn.isOpennet());
+								writePeersUrgent(pn.isOpennet());
 						}
 					}
 				}, ctrDisconn);
 			} catch(NotConnectedException e) {
 				if(remove) {
 					if(pn.isDisconnecting() && removePeer(pn) && !pn.isSeed())
-						writePeers(pn.isOpennet());
+						writePeersUrgent(pn.isOpennet());
 				}
 				return;
 			}
@@ -669,7 +678,7 @@ public class PeerManager {
                                     	if(remove) {
                                     		if(removePeer(pn)) {
                                     			if(!pn.isSeed()) {
-                                    				writePeers(pn.isOpennet());
+                                    				writePeersUrgent(pn.isOpennet());
                                     			}
                                     		}
                                     	}
@@ -681,7 +690,7 @@ public class PeerManager {
 		} else {
 			if(remove) {
 				if(removePeer(pn) && !pn.isSeed())
-					writePeers(pn.isOpennet());
+					writePeersUrgent(pn.isOpennet());
 			}
 		}
 	}
@@ -1476,6 +1485,44 @@ public class PeerManager {
 			writePeersDarknet();
 	}
 
+	void writePeersUrgent(boolean opennet) {
+		if(opennet)
+			writePeersOpennetUrgent();
+		else
+			writePeersDarknetUrgent();
+	}
+	
+	void writePeersOpennetUrgent() {
+		node.executor.execute(new PrioRunnable() {
+
+			@Override
+			public void run() {
+				writePeersOpennetNow();
+			}
+
+			@Override
+			public int getPriority() {
+				return NativeThread.HIGH_PRIORITY;
+			}
+			
+		});
+	}
+
+	void writePeersDarknetUrgent() {
+		node.executor.execute(new PrioRunnable() {
+
+			@Override
+			public void run() {
+				writePeersDarknetNow();
+			}
+
+			@Override
+			public int getPriority() {
+				return NativeThread.HIGH_PRIORITY;
+			}
+			
+		});
+	}
 
 	void writePeersDarknet() {
 		shouldWritePeersDarknet = true;

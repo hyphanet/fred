@@ -5347,7 +5347,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public boolean addPeerConnection(PeerNode pn) {
 		boolean retval = peers.addPeer(pn);
-		peers.writePeers(pn.isOpennet());
+		peers.writePeersUrgent(pn.isOpennet());
 		return retval;
 	}
 
