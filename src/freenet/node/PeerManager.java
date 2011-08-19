@@ -158,7 +158,7 @@ public class PeerManager {
 	 * @param node
 	 * @param filename
 	 */
-	public PeerManager(Node node) {
+	public PeerManager(Node node, SemiOrderedShutdownHook shutdownHook) {
 		Logger.normal(this, "Creating PeerManager");
 		peerNodeStatuses = new HashMap<Integer, HashSet<PeerNode>>();
 		peerNodeStatusesDarknet = new HashMap<Integer, HashSet<PeerNode>>();
@@ -168,6 +168,11 @@ public class PeerManager {
 		myPeers = new PeerNode[0];
 		connectedPeers = new PeerNode[0];
 		this.node = node;
+		shutdownHook.addEarlyJob(new Thread() {
+			public void run() {
+				writePeersNow();
+			}
+		});
 	}
 
 	/**

@@ -1710,7 +1710,7 @@ public class Node implements TimeSkewDetectorCallback {
 		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
 
 		// Then read the peers
-		peers = new PeerManager(this);
+		peers = new PeerManager(this, shutdownHook);
 		peers.tryReadPeers(nodeDir.file("peers-"+getDarknetPortNumber()).getPath(), darknetCrypto, null, false, false);
 		peers.updatePMUserAlert();
 
