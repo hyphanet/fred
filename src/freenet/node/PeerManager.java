@@ -101,7 +101,7 @@ public class PeerManager {
 	/** Should update the peer-file ? */
 	private volatile boolean shouldWritePeersDarknet = false;
 	private volatile boolean shouldWritePeersOpennet = false;
-	private static final int MIN_WRITEPEERS_DELAY = 5*1000; // 5sec
+	private static final int MIN_WRITEPEERS_DELAY = 5*60*1000; // 5 minutes. Urgent stuff calls write*PeersUrgent.
 	private final Runnable writePeersRunnable = new Runnable() {
 
 		@Override
