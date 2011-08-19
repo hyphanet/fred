@@ -106,20 +106,24 @@ public class PeerManager {
 		@Override
 		public void run() {
 			try {
-				if(shouldWritePeersDarknet) {
-					shouldWritePeersDarknet = false;
-					writePeersInnerDarknet();
-				}
-				if(shouldWritePeersOpennet) {
-					shouldWritePeersOpennet = false;
-					writePeersInnerOpennet();
-				}
+				writePeersNow();
 			} finally {
 				node.getTicker().queueTimedJob(writePeersRunnable, MIN_WRITEPEERS_DELAY);
 			}
 		}
 	};
 	
+	protected void writePeersNow() {
+		if(shouldWritePeersDarknet) {
+			shouldWritePeersDarknet = false;
+			writePeersInnerDarknet();
+		}
+		if(shouldWritePeersOpennet) {
+			shouldWritePeersOpennet = false;
+			writePeersInnerOpennet();
+		}
+	}
+
 	public static final int PEER_NODE_STATUS_CONNECTED = 1;
 	public static final int PEER_NODE_STATUS_ROUTING_BACKED_OFF = 2;
 	public static final int PEER_NODE_STATUS_TOO_NEW = 3;
