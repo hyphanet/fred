@@ -67,10 +67,8 @@ public class PeerManager {
 	private String darkFilename;
         private String openFilename;
         private String oldOpennetPeersFilename;
-        // FIXME either track dirty status separately for each of the three files,
-        // or implement a cheaper cache e.g. a secure hash, maybe with file size as a 
-        // short-cut. String.hashCode() unfortunately will give way too many false 
-        // positives and thus result in not writing important changes.
+        // FIXME MEMORY use a hash. Not hashCode() though.
+        // FIXME Strip metadata, except for peer locations.
         private String darknetPeersStringCache = null;
         private String opennetPeersStringCache = null;
         private String oldOpennetPeersStringCache = null;
