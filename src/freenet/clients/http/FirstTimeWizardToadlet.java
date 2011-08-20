@@ -189,13 +189,10 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		try {
 			//Attempt to parse the current step, defaulting to WELCOME if unspecified or invalid.
 			String currentValue = request.getPartAsStringFailsafe("step", 20);
-			System.out.println("Raw current value is "+currentValue);
 			currentStep = currentValue.isEmpty() ? WIZARD_STEP.WELCOME : WIZARD_STEP.valueOf(currentValue);
-			System.out.println("Using "+currentStep.name());
 		} catch (IllegalArgumentException e) {
 			//Failed to parse enum value, default to welcome.
 			//TODO: Should this be an error page instead?
-			System.out.println("Invalid, defaulting to welcome.");
 			currentStep = WIZARD_STEP.WELCOME;
 		}
 
