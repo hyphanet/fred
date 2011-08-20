@@ -204,19 +204,20 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		if (currentStep.equals(WIZARD_STEP.WELCOME) &&
 		        (request.isPartSet("presetLow") || request.isPartSet("presetHigh") || request.isPartSet("presetNone"))) {
 			/*Apply presets and persist incognito to the browser warning. The browser warning only checks
-			  whether the parameter is set; not its value.*/
+			  whether the parameter is set; not its value. UPnP is enabled first to allow it time to
+			  load (and thus enable autodetection) before hitting the bandwidth page.*/
 			StringBuilder redirectTo = new StringBuilder(TOADLET_URL+"?step=BROWSER_WARNING&incognito=");
 			redirectTo.append(request.getPartAsStringFailsafe("incognito", 5));
 
 			//Translate button name to preset value on the query string.
 			if (request.isPartSet("presetLow")) {
 				//Low security preset
-				stepSECURITY_NETWORK.setThreatLevel(SecurityLevels.NETWORK_THREAT_LEVEL.LOW);
-				stepSECURITY_PHYSICAL.setThreatLevel(SecurityLevels.PHYSICAL_THREAT_LEVEL.NORMAL,
-					SecurityLevels.PHYSICAL_THREAT_LEVEL.LOW);
 				stepMISC.setUPnP(true);
 				stepMISC.setAutoUpdate(true);
 				redirectTo.append("&preset=LOW");
+				stepSECURITY_NETWORK.setThreatLevel(SecurityLevels.NETWORK_THREAT_LEVEL.LOW);
+				stepSECURITY_PHYSICAL.setThreatLevel(SecurityLevels.PHYSICAL_THREAT_LEVEL.NORMAL,
+				        SecurityLevels.PHYSICAL_THREAT_LEVEL.LOW);
 			} else if (request.isPartSet("presetHigh")) {
 				//High security preset
 				stepMISC.setUPnP(true);

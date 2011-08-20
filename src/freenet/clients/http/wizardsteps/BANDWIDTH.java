@@ -108,20 +108,39 @@ public class BANDWIDTH implements Step {
 	 */
 	public boolean canSkip() {
 		int upstreamLimit = autoDetectBandwidthLimits();
+		String error = "Cannot skip bandwidth step: ";
 		if (upstreamLimit > 0) {
 			//Upstream limit is in bytes, as is the config value.
-			_setUpstreamBandwidthLimit(""+upstreamLimit);
+			_setUpstreamBandwidthLimit(String.valueOf(upstreamLimit));
 			return true;
+		} else if (upstreamLimit == -1) {
+			error += "Upstream has already been configured. Not auto-detecting so that it is not changed.";
+		} else if (upstreamLimit == -2) {
+			error += "Upstream is set but below 16 KiB. This is too low to reasonably take half of it without asking.";
+		} else if (upstreamLimit == -3) {
+			error += "Downstream is set but below 8 KiB, or upstream is set but below 1 KiB. This is unexpectedly low.";
+		} else if (upstreamLimit == -4) {
+			error += "The UPnP plugin is not loaded or done starting up.";
+		} else if (upstreamLimit == -5) {
+			error += "The upstream limit is not set.";
+		} else {
+			error += "Unrecognized error!";
 		}
+		System.out.println(error);
+		Logger.normal(this, error);
 		return false;
 	}
 
 	/**
-	 * Attempts to detect upstream and downstream bandwidth limits, setting the downstream limit if it is a positive value.
-	 * @return -1 if the upload bandwidth setting is default, the detected downstream limit below 8KiB, or the detected
-	 * upstream bandwidth is below 1 KiB. -2 if the detected upstream limit is below 16KiB.
-	 * Otherwise, half the upload limit, as measured in is in bytes.
-	 * 
+	 * Attempts to detect upstream and downstream bandwidth limits. Sets the downstream limit if it is greater than
+	 * or equal to 8 KiB.
+	 * @return
+	 * -1 if the upstream bandwidth setting has already been configured.
+	 * -2 if the detected upstream limit is below 16KiB.
+	 * -3 if the detected downstream limit below 8KiB, or the detected upstream bandwidth is below 1 KiB.
+	 * -4 if the UPnP plugin is not loaded or done starting up.
+	 * -5 if the upstream bandwidth limit is not a positive value.
+	 * Half the upload limit if it is successfully detected. Measured in bytes/second.
 	 */
 	private int autoDetectBandwidthLimits() {
 		if (!config.get("node").getOption("outputBandwidthLimit").isDefault()) {
@@ -130,7 +149,7 @@ public class BANDWIDTH implements Step {
 		FredPluginBandwidthIndicator bwIndicator = core.node.ipDetector.getBandwidthIndicator();
 		if (bwIndicator == null) {
 			Logger.normal(this, "The node does not have a bandwidthIndicator.");
-			return -1;
+			return -4;
 		}
 
 		int downstreamBWLimit = bwIndicator.getDownstreamMaxBitRate();
@@ -141,7 +160,7 @@ public class BANDWIDTH implements Step {
 			// Assume the router is buggy and don't autoconfigure.
 			// Nothing that implements UPnP would be that slow.
 			System.err.println("Buggy router? downstream: "+downstreamBWLimit+" upstream: "+upstreamBWLimit+" - these are supposed to be in bits per second!");
-			return -1;
+			return -3;
 		}
 		if (downstreamBWLimit > 0) {
 			int bytes = (downstreamBWLimit / 8) - 1;
@@ -154,11 +173,11 @@ public class BANDWIDTH implements Step {
 
 		// We don't mind if the downstreamBWLimit couldn't be set, but upstreamBWLimit is important
 		if (upstreamBWLimit > 0) {
-			int bytes = upstreamBWLimit / 8;
 			if (upstreamBWLimit < 16*KiB) return -2;
+			int bytes = upstreamBWLimit / 8;
 			return bytes / 2;
 		} else {
-			return -1;
+			return -5;
 		}
 	}
 
