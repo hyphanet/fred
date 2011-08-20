@@ -1,16 +1,12 @@
 package freenet.clients.http.wizardsteps;
 
 import freenet.clients.http.FirstTimeWizardToadlet;
-import freenet.clients.http.ToadletContext;
-import freenet.clients.http.ToadletContextClosedException;
 import freenet.config.Config;
 import freenet.config.ConfigException;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
-
-import java.io.IOException;
 
 /**
  * Allows the user to choose a node name for Darknet.
@@ -24,7 +20,7 @@ public class NAME_SELECTION implements Step {
 	}
 
 	@Override
-	public void getStep(HTTPRequest request, StepPageHelper helper) {
+	public void getStep(HTTPRequest request, PageHelper helper) {
 		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("step2Title"));
 		HTMLNode nnameInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode nnameInfoboxHeader = nnameInfobox.addChild("div", "class", "infobox-header");
@@ -35,10 +31,6 @@ public class NAME_SELECTION implements Step {
 		HTMLNode nnameForm = helper.addFormChild(nnameInfoboxContent, ".", "nnameForm");
 		nnameForm.addChild("input", "name", "nname");
 
-		//Marker for step on POST side
-		nnameForm.addChild("input",
-		        new String [] { "type", "name", "value"},
-		        new String [] { "hidden", "step", "NAME_SELECTION" });
 		nnameForm.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "nnameF", WizardL10n.l10n("continue")});

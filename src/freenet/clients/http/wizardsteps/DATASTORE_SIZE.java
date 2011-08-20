@@ -1,8 +1,6 @@
 package freenet.clients.http.wizardsteps;
 
 import freenet.clients.http.FirstTimeWizardToadlet;
-import freenet.clients.http.ToadletContext;
-import freenet.clients.http.ToadletContextClosedException;
 import freenet.config.Config;
 import freenet.config.ConfigException;
 import freenet.config.Option;
@@ -15,8 +13,6 @@ import freenet.support.Logger;
 import freenet.support.SizeUtil;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.FileUtil;
-
-import java.io.IOException;
 
 /**
  * Allows the user to select datastore size, considering available storage space when offering options.
@@ -32,7 +28,7 @@ public class DATASTORE_SIZE implements Step {
 	}
 
 	@Override
-	public void getStep(HTTPRequest request, StepPageHelper helper) {
+	public void getStep(HTTPRequest request, PageHelper helper) {
 		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("step4Title"));
 		HTMLNode bandwidthInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode bandwidthnfoboxHeader = bandwidthInfobox.addChild("div", "class", "infobox-header");
@@ -78,10 +74,6 @@ public class DATASTORE_SIZE implements Step {
 		if(maxSize >= 50l*1024*1024*1024) result.addChild("option", "value", "50G", "50 GiB");
 		if(maxSize >= 100l*1024*1024*1024) result.addChild("option", "value", "100G", "100 GiB");
 
-		//Marker for step on POST side
-		bandwidthForm.addChild("input",
-		        new String [] { "type", "name", "value" },
-		        new String [] { "hidden", "step", "DATASTORE_SIZE" });
 		bandwidthForm.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "dsF", WizardL10n.l10n("continue")});

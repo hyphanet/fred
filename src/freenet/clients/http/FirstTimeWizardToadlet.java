@@ -16,6 +16,7 @@ import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.SecurityLevels;
+import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -109,38 +110,41 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		} catch (IllegalArgumentException e) {
 			currentStep = WIZARD_STEP.WELCOME;
 		}
+
+		PersistFields persistFields = new PersistFields(request);
+
 		//Skip the browser warning page if using Chrome because its incognito mode works from command line.
-		if (currentStep == WIZARD_STEP.BROWSER_WARNING &&
-			request.getHeader("user-agent").contains("Chrome")) {
-			StringBuilder redirectTo = new StringBuilder(TOADLET_URL+"?step=MISC");
-			if (request.isParameterSet("preset")) {
-				redirectTo.append("&preset=").append(WIZARD_PRESET.valueOf(request.getParam("preset")));
-			}
-			super.writeTemporaryRedirect(ctx, "Skipping unneeded warning", redirectTo.toString());
+		if (currentStep == WIZARD_STEP.BROWSER_WARNING && request.getHeader("user-agent").contains("Chrome")) {
+			super.writeTemporaryRedirect(ctx, "Skipping unneeded warning",
+			        addPersistFields(TOADLET_URL+"?step=MISC", persistFields));
 			return;
-		} else if (currentStep == WIZARD_STEP.MISC && request.isParameterSet("preset")) {
-			//If using a preset, skip the miscellaneous page as both high and low security set those settings.
-			StringBuilder redirectTo = new StringBuilder(TOADLET_URL+"?step=");
-			WIZARD_PRESET preset = WIZARD_PRESET.valueOf(request.getParam("preset"));
-			if (preset == WIZARD_PRESET.HIGH) {
-				redirectTo.append("SECURITY_NETWORK&preset=HIGH&confirm=true&opennet=false&security-levels.networkThreatLevel=HIGH");
-			} else /*if (preset == WIZARD_PRESET.LOW)*/ {
-				redirectTo.append("BANDWIDTH");
+		} else if (currentStep == WIZARD_STEP.MISC && persistFields.isUsingPreset()) {
+			/*If using a preset, skip the miscellaneous page as both high and low security set those settings.
+			 * This overrides the persistence fields.*/
+			StringBuilder redirectBase = new StringBuilder(TOADLET_URL+"?step=");
+			if (persistFields.preset == WIZARD_PRESET.HIGH) {
+				redirectBase.append("SECURITY_NETWORK&preset=HIGH&confirm=true&opennet=false&security-levels.networkThreatLevel=HIGH");
+			} else /*if (persistFields.preset == WIZARD_PRESET.LOW)*/ {
+				redirectBase.append("BANDWIDTH&preset=LOW&opennet=true");
 			}
-			super.writeTemporaryRedirect(ctx, "Skipping to next necessary step", redirectTo.toString());
+			//addPersistFields() is not used here because the fields are overridden.
+			super.writeTemporaryRedirect(ctx, "Skipping to next necessary step", redirectBase.toString());
 			return;
 		} else if (currentStep == WIZARD_STEP.SECURITY_NETWORK && !request.isParameterSet("opennet")) {
 			//If opennet isn't defined when attempting to set network security level, ask again.
-			super.writeTemporaryRedirect(ctx, "Need opennet choice", TOADLET_URL+"?step=OPENNET");
+			super.writeTemporaryRedirect(ctx, "Need opennet choice",
+			        addPersistFields(TOADLET_URL+"?step=OPENNET", persistFields));
 			return;
 		} else if (currentStep == WIZARD_STEP.BANDWIDTH && request.isParameterSet("preset") &&  stepBANDWIDTH.canSkip()) {
 			//If using a preset and the bandwidth limits can be set automatically, skip the step.
+			System.out.println("Skipping bandwidth step due to successful limit autodetection.");
 			super.writeTemporaryRedirect(ctx, "Autodetected, not needed",
-			        FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.DATASTORE_SIZE);
+			        addPersistFields(TOADLET_URL+"?step=DATASTORE_SIZE", persistFields));
 			return;
 		}
+
 		Step getStep = steps.get(currentStep);
-		StepPageHelper helper = new StepPageHelper(ctx);
+		PageHelper helper = new PageHelper(ctx, persistFields, currentStep);
 		getStep.getStep(request, helper);
 		writeHTMLReply(ctx, 200, "OK", helper.getPageOuter().generate());
 	}
@@ -150,6 +154,20 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	 */
 	public static boolean shouldLogMinor() {
 		return logMINOR;
+	}
+
+	/**
+	 * Appends any defined persistence fields to the given URL.
+	 * @param baseURL The URL to append fields to.
+	 * @param persistFields To get persistence fields from.
+	 * @return URL with persistence fields included.
+	 */
+	private static String addPersistFields(String baseURL, PersistFields persistFields) {
+		StringBuilder url = new StringBuilder(baseURL).append("&opennet=").append(persistFields.opennet);
+		if (persistFields.isUsingPreset()) {
+			url.append("&preset=").append(persistFields.preset);
+		}
+		return url.toString();
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
@@ -171,78 +189,88 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		try {
 			//Attempt to parse the current step, defaulting to WELCOME if unspecified or invalid.
 			String currentValue = request.getPartAsStringFailsafe("step", 20);
+			System.out.println("Raw current value is "+currentValue);
 			currentStep = currentValue.isEmpty() ? WIZARD_STEP.WELCOME : WIZARD_STEP.valueOf(currentValue);
+			System.out.println("Using "+currentStep.name());
 		} catch (IllegalArgumentException e) {
 			//Failed to parse enum value, default to welcome.
 			//TODO: Should this be an error page instead?
+			System.out.println("Invalid, defaulting to welcome.");
 			currentStep = WIZARD_STEP.WELCOME;
 		}
 
-		//Check the requested preset. Deal with it here so that WELCOME's POST doesn't have to have access to
-		//settings modifiers in other steps.
-		if (request.isPartSet("presetLow") || request.isPartSet("presetHigh") || request.isPartSet("presetNone")) {
-			//Set up destination URL based on incognito and current preset.
+		PersistFields persistFields = new PersistFields(request);
+
+		String redirectTarget;
+
+		//If a preset was selected from the welcome page, apply preset settings and proceed to the browser warning.
+		if (currentStep.equals(WIZARD_STEP.WELCOME) &&
+		        (request.isPartSet("presetLow") || request.isPartSet("presetHigh") || request.isPartSet("presetNone"))) {
+			/*Apply presets and persist incognito to the browser warning. The browser warning only checks
+			  whether the parameter is set; not its value.*/
 			StringBuilder redirectTo = new StringBuilder(TOADLET_URL+"?step=BROWSER_WARNING&incognito=");
 			redirectTo.append(request.getPartAsStringFailsafe("incognito", 5));
 
-			/*If detailed setup was selected, just fall through to the full wizard and do not set
-			 *the "preset" URL parameter.*/
-
+			//Translate button name to preset value on the query string.
 			if (request.isPartSet("presetLow")) {
 				//Low security preset
 				stepSECURITY_NETWORK.setThreatLevel(SecurityLevels.NETWORK_THREAT_LEVEL.LOW);
 				stepSECURITY_PHYSICAL.setThreatLevel(SecurityLevels.PHYSICAL_THREAT_LEVEL.NORMAL,
-				        SecurityLevels.PHYSICAL_THREAT_LEVEL.LOW);
+					SecurityLevels.PHYSICAL_THREAT_LEVEL.LOW);
 				stepMISC.setUPnP(true);
 				stepMISC.setAutoUpdate(true);
-				redirectTo.append("&preset="+WIZARD_PRESET.LOW);
+				redirectTo.append("&preset=LOW");
 			} else if (request.isPartSet("presetHigh")) {
 				//High security preset
-				redirectTo.append("&preset="+WIZARD_PRESET.HIGH);
-			}
-			super.writeTemporaryRedirect(ctx, "Wizard redirecting.", redirectTo.toString());
-			return;
-		}
-
-		try {
-			super.writeTemporaryRedirect(ctx, "Wizard redirecting.", steps.get(currentStep).postStep(request));
-		} catch (IOException e) {
-			String title;
-			if (e.getMessage().equals("cantWriteNewMasterKeysFile")) {
-				//Recognized as being unable to write to the master keys file.
-				title = NodeL10n.getBase().getString("SecurityLevels.cantWriteNewMasterKeysFileTitle");
-			} else {
-				//Some other error.
-				title = NodeL10n.getBase().getString("Toadlet.internalErrorPleaseReport");
+				stepMISC.setUPnP(true);
+				stepMISC.setAutoUpdate(true);
+				redirectTo.append("&preset=HIGH");
 			}
 
-			//Very loud error message, with descriptive title and header if possible.
-			StringBuilder msg = new StringBuilder("<html><head><title>").append(title).
-			        append("</title></head><body><h1>").append(title).append("</h1><pre>");
+			redirectTarget = redirectTo.toString();
+		} else {
+			try {
+				redirectTarget = steps.get(currentStep).postStep(request);
+			} catch (IOException e) {
+				String title;
+				if (e.getMessage().equals("cantWriteNewMasterKeysFile")) {
+					//Recognized as being unable to write to the master keys file.
+					title = NodeL10n.getBase().getString("SecurityLevels.cantWriteNewMasterKeysFileTitle");
+				} else {
+					//Some other error.
+					title = NodeL10n.getBase().getString("Toadlet.internalErrorPleaseReport");
+				}
 
-			//Print stack trace.
-			StringWriter sw = new StringWriter();
-			PrintWriter pw = new PrintWriter(sw);
-			e.printStackTrace(pw);
-			pw.flush();
-			msg.append(sw.toString()).append("</pre>");
+				//Very loud error message, with descriptive title and header if possible.
+				StringBuilder msg = new StringBuilder("<html><head><title>").append(title).
+				        append("</title></head><body><h1>").append(title).append("</h1><pre>");
 
-			//Include internal exception if one exists.
-			Throwable internal = e.getCause();
-			if (internal != null) {
-				msg.append("<h1>").
-				        append(NodeL10n.getBase().getString("Toadlet.internalErrorPleaseReport")).
-				        append("</h1>").append("<pre>");
-
-				sw = new StringWriter();
-				pw = new PrintWriter(sw);
-				internal.printStackTrace(pw);
+				//Print stack trace.
+				StringWriter sw = new StringWriter();
+				PrintWriter pw = new PrintWriter(sw);
+				e.printStackTrace(pw);
 				pw.flush();
 				msg.append(sw.toString()).append("</pre>");
+
+				//Include internal exception if one exists.
+				Throwable internal = e.getCause();
+				if (internal != null) {
+					msg.append("<h1>").
+					        append(NodeL10n.getBase().getString("Toadlet.internalErrorPleaseReport")).
+					        append("</h1>").append("<pre>");
+
+					sw = new StringWriter();
+					pw = new PrintWriter(sw);
+					internal.printStackTrace(pw);
+					pw.flush();
+					msg.append(sw.toString()).append("</pre>");
+				}
+				msg.append("</body></html>");
+				writeHTMLReply(ctx, 500, "Internal Error", msg.toString());
+				return;
 			}
-			msg.append("</body></html>");
-			writeHTMLReply(ctx, 500, "Internal Error", msg.toString());
 		}
+		super.writeTemporaryRedirect(ctx, "Wizard redirecting.", addPersistFields(redirectTarget, persistFields));
 	}
 
 	@Override

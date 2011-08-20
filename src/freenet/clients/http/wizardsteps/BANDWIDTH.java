@@ -1,8 +1,6 @@
 package freenet.clients.http.wizardsteps;
 
 import freenet.clients.http.FirstTimeWizardToadlet;
-import freenet.clients.http.ToadletContext;
-import freenet.clients.http.ToadletContextClosedException;
 import freenet.config.Config;
 import freenet.config.ConfigException;
 import freenet.config.Option;
@@ -13,8 +11,6 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SizeUtil;
 import freenet.support.api.HTTPRequest;
-
-import java.io.IOException;
 
 /**
  * Allows the user to select from pairs of upload and download bandwidth limits.
@@ -34,7 +30,7 @@ public class BANDWIDTH implements Step {
 	}
 
 	@Override
-	public void getStep(HTTPRequest request, StepPageHelper helper) {
+	public void getStep(HTTPRequest request, PageHelper helper) {
 		int autodetectedLimit = autoDetectBandwidthLimits();
 
 		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("step3Title"));
@@ -79,9 +75,6 @@ public class BANDWIDTH implements Step {
 		result.addChild("option", "value", "64K", "1024+/1024 kbps (64K/s)");
 		result.addChild("option", "value", "1000K", WizardL10n.l10n("bwlimitHigherSpeed"));
 
-		bandwidthForm.addChild("input",
-		        new String [] { "type", "name", "value" },
-		        new String [] { "hidden", "step", "BANDWIDTH" });
 		bandwidthForm.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "bwF", WizardL10n.l10n("continue")});

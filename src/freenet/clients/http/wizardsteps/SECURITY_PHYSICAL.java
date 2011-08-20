@@ -1,13 +1,8 @@
 package freenet.clients.http.wizardsteps;
 
-import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.ExternalLinkToadlet;
 import freenet.clients.http.FirstTimeWizardToadlet;
-import freenet.clients.http.PageNode;
 import freenet.clients.http.SecurityLevelsToadlet;
-import freenet.clients.http.Toadlet;
-import freenet.clients.http.ToadletContext;
-import freenet.clients.http.ToadletContextClosedException;
 import freenet.l10n.NodeL10n;
 import freenet.node.MasterKeysFileSizeException;
 import freenet.node.MasterKeysWrongPasswordException;
@@ -20,8 +15,6 @@ import freenet.support.api.HTTPRequest;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 
 /**
  * Allows the user to set the physical security level.
@@ -45,7 +38,7 @@ public class SECURITY_PHYSICAL implements Step {
 	}
 
 	@Override
-	public void getStep(HTTPRequest request, StepPageHelper helper) {
+	public void getStep(HTTPRequest request, PageHelper helper) {
 
 		if (request.isParameterSet("error")) {
 			if (errorHandler(request, helper)) {
@@ -91,10 +84,6 @@ public class SECURITY_PHYSICAL implements Step {
 			}
 		}
 		div.addChild("#", WizardL10n.l10nSec("physicalThreatLevelEnd"));
-		//Marker for step on POST side
-		form.addChild("input",
-		        new String [] { "type", "name", "value" },
-		        new String [] { "hidden", "step", "SECURITY_PHYSICAL" });
 		form.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "physicalSecurityF", WizardL10n.l10n("continue")});
@@ -109,7 +98,7 @@ public class SECURITY_PHYSICAL implements Step {
 	 * @param helper creates page, infoboxes, forms.
 	 * @return whether an error page was successfully generated.
 	 */
-	private boolean errorHandler(HTTPRequest request, StepPageHelper helper) {
+	private boolean errorHandler(HTTPRequest request, PageHelper helper) {
 		String physicalThreatLevel = request.getPartAsStringFailsafe("newThreatLevel", 128);
 		SecurityLevels.PHYSICAL_THREAT_LEVEL newThreatLevel = SecurityLevels.parsePhysicalThreatLevel(physicalThreatLevel);
 		String error = request.getParam("error");

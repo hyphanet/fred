@@ -1,6 +1,5 @@
 package freenet.clients.http.wizardsteps;
 
-import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.*;
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
@@ -9,8 +8,6 @@ import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
-
-import java.io.IOException;
 
 /**
  * This step allows the user to choose between security levels. If opennet is disabled, only high and maximum are shown.
@@ -25,7 +22,7 @@ public class SECURITY_NETWORK implements Step {
 	}
 
 	@Override
-	public void getStep(HTTPRequest request, StepPageHelper helper) {
+	public void getStep(HTTPRequest request, PageHelper helper) {
 		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("networkSecurityPageTitle"));
 		String opennetParam = request.getParam("opennet", "false");
 		boolean opennet = Fields.stringToBool(opennetParam);
@@ -50,15 +47,6 @@ public class SECURITY_NETWORK implements Step {
 				NodeL10n.getBase().addL10nSubstitution(p, "FirstTimeWizardToadlet.highNetworkThreatLevelWarning", new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
 				formNode.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "security-levels.networkThreatLevel.confirm", "off" }, WizardL10n.l10n("highNetworkThreatLevelCheckbox"));
 			}
-			//Marker for step on POST side
-			formNode.addChild("input",
-			        new String [] { "type", "name", "value" },
-			        new String [] { "hidden", "step", "SECURITY_NETWORK" });
-			//On high or maximum, so by definition opennet is disabled.
-			formNode.addChild("input",
-			        new String [] { "type", "name", "value" },
-			        new String [] { "hidden", "opennet", "false" });
-			addPresetPreset(request, formNode);
 			formNode.addChild("input",
 			        new String[] { "type", "name", "value" },
 			        new String[] { "hidden", "security-levels.networkThreatLevel.tryConfirm", "on" });
@@ -91,40 +79,12 @@ public class SECURITY_NETWORK implements Step {
 			}
 			form.addChild("p").addChild("b", WizardL10n.l10nSec("networkThreatLevel.opennetFriendsWarning"));
 		}
-		//Marker for step on POST side
-		form.addChild("input",
-		        new String [] { "type", "name", "value" },
-		        new String [] { "hidden", "step", "SECURITY_NETWORK" });
-		addPresetPreset(request, form);
 		form.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "networkSecurityF", WizardL10n.l10n("continue")});
 		form.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
-	}
-
-	/**
-	 * If the parameter "preset" is present and has a valid WIZARD_PRESET value, it will add it to the formNode
-	 * as a hidden field named "preset".
-	 * @param request to check for "preset" on
-	 * @param formNode to add hidden field to.
-	 */
-	private void addPresetPreset(HTTPRequest request, HTMLNode formNode) {
-		if (request.isParameterSet("preset")) {
-			try {
-				FirstTimeWizardToadlet.WIZARD_PRESET preset =
-				        FirstTimeWizardToadlet.WIZARD_PRESET.valueOf(request.getParam("preset"));
-				formNode.addChild("input",
-				        new String [] { "type", "name", "value" },
-				        new String [] { "hidden", "preset", preset.name() });
-			} catch (IllegalArgumentException e) {
-				//Preset is not valid, ignore it.
-				if (FirstTimeWizardToadlet.shouldLogMinor()) {
-					Logger.minor(this, "SECURITY_NETWORK ignoring invalid 'preset' value.");
-				}
-			}
-		}
 	}
 
 	/**

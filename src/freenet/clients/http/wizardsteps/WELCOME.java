@@ -27,7 +27,7 @@ public class WELCOME implements Step {
 	 * @param request used to check whether the user is using a browser with incognito mode.
 	 */
 	@Override
-	public void getStep(HTTPRequest request, StepPageHelper helper) {
+	public void getStep(HTTPRequest request, PageHelper helper) {
 		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("homepageTitle"));
 		boolean incognito = request.isParameterSet("incognito");
 
@@ -45,10 +45,6 @@ public class WELCOME implements Step {
 		addSecurityTableCell(tableHeader, tableRow, "None", helper, incognito);
 
 		HTMLNode languageForm = helper.addFormChild(contentNode, ".", "languageForm");
-		//Marker for step on POST side
-		languageForm.addChild("input",
-		        new String[] { "type", "name", "value" },
-		        new String[] { "hidden", "step", "WELCOME"});
 		//Add option dropdown for languages
 		Option language = config.get("node").getOption("l10n");
 		EnumerableOptionCallback l10nCallback = (EnumerableOptionCallback)language.getCallback();
@@ -85,7 +81,7 @@ public class WELCOME implements Step {
 	 * @param helper used to add a form
 	 * @param incognito whether incognito mode is enabled
 	 */
-	private void addSecurityTableCell(HTMLNode header, HTMLNode row, String preset, StepPageHelper helper, boolean incognito) {
+	private void addSecurityTableCell(HTMLNode header, HTMLNode row, String preset, PageHelper helper, boolean incognito) {
 		header.addChild("th", "width", "33%", WizardL10n.l10n("presetTitle"+preset));
 		HTMLNode tableCell = row.addChild("td");
 		tableCell.addChild("p", WizardL10n.l10n("preset" + preset));

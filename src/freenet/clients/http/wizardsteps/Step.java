@@ -1,8 +1,5 @@
 package freenet.clients.http.wizardsteps;
 
-import freenet.clients.http.ToadletContext;
-import freenet.clients.http.ToadletContextClosedException;
-import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 import java.io.IOException;
@@ -17,7 +14,7 @@ public interface Step {
 	 * @param helper used to get a style-conforming page content node, forms, and InfoBoxes without access to
 	 * ToadletContext.
 	 */
-	public void getStep(HTTPRequest request, StepPageHelper helper);
+	public void getStep(HTTPRequest request, PageHelper helper);
 
 	/**
 	 * Performs operations for the step.

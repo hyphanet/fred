@@ -1,27 +1,25 @@
 package freenet.clients.http.wizardsteps;
 
-import com.sun.org.apache.xerces.internal.dom.ParentNode;
-import com.sun.org.apache.xml.internal.dtm.ref.DTMDefaultBaseIterators;
-import com.sun.xml.internal.ws.wsdl.writer.document.soap.Header;
+import freenet.clients.http.FirstTimeWizardToadlet;
 import freenet.clients.http.PageNode;
 import freenet.clients.http.ToadletContext;
 import freenet.support.HTMLNode;
-import org.omg.CORBA.CTX_RESTRICT_SCOPE;
-
-import javax.swing.border.TitledBorder;
-import java.lang.annotation.Target;
-import java.util.StringTokenizer;
 
 /**
  * Provides a page content node, forms, and InfoBoxes. Used to wrap ToadletContext access away from Wizard Steps.
+ * A new one should be constructed each time a step is run.
  */
-public class StepPageHelper {
+public class PageHelper {
 
 	private final ToadletContext toadletContext;
+	private final PersistFields persistFields;
+	private final FirstTimeWizardToadlet.WIZARD_STEP step;
 	private PageNode pageNode;
 
-	public StepPageHelper(ToadletContext ctx) {
+	public PageHelper(ToadletContext ctx, PersistFields persistFields, FirstTimeWizardToadlet.WIZARD_STEP step) {
 		this.toadletContext = ctx;
+		this.persistFields = persistFields;
+		this.step = step;
 	}
 
 	/**
@@ -54,7 +52,28 @@ public class StepPageHelper {
 		return toadletContext.getPageMaker().getInfobox(category, header, parent, title, isUnique);
 	}
 
+	/**
+	 * Generates a form that includes persistence for inter-step fields. This is currently opennet, preset, and step.
+	 * Opennet is whether the user enabled opennet, preset is what preset they're using, and step is what POST step
+	 * will be used to process the form.
+	 * @param parentNode node to add form to
+	 * @param target where form should POST to
+	 * @param id ID attribute (in HTML) of form
+	 * @return form node to add buttons, inputs, and whatnot to.
+	 */
 	public HTMLNode addFormChild(HTMLNode parentNode, String target, String id) {
-		return toadletContext.addFormChild(parentNode, target, id);
+		HTMLNode form = toadletContext.addFormChild(parentNode, target, id);
+		if (persistFields.isUsingPreset()) {
+			form.addChild("input",
+			        new String[] { "type", "name", "value" },
+			        new String[] { "hidden", "preset", persistFields.preset.name() });
+		}
+		form.addChild("input",
+		        new String[] { "type", "name", "value" },
+		        new String[] { "hidden", "opennet", String.valueOf(persistFields.opennet) });
+		form.addChild("input",
+		        new String[] { "type", "name", "value" },
+		        new String[] { "hidden", "step", step.name() });
+		return form;
 	}
 }

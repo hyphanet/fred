@@ -10,7 +10,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.clients.http.wizardsteps.StepPageHelper;
+import freenet.clients.http.wizardsteps.PageHelper;
 import freenet.l10n.NodeL10n;
 import freenet.node.MasterKeysFileSizeException;
 import freenet.node.MasterKeysWrongPasswordException;
@@ -358,7 +358,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
-	public static void sendCantDeleteMasterKeysFileInner(StepPageHelper helper, String filename, String physicalSecurityLevel) {
+	public static void sendCantDeleteMasterKeysFileInner(PageHelper helper, String filename, String physicalSecurityLevel) {
 		HTMLNode contentNode = helper.getPageContent(l10nSec("cantDeletePasswordFileTitle"));
 		HTMLNode content = helper.getInfobox("infobox-error",
 		        l10nSec("cantDeletePasswordFileTitle"), contentNode, "password-error", true).
@@ -635,10 +635,10 @@ public class SecurityLevelsToadlet extends Toadlet {
 		writeHTMLReply(ctx, 500, "Internal Server Error", page.generate());
 	}
 
-	public static void sendPasswordFileCorruptedPageInner(StepPageHelper helper, String masterPasswordFile) {
+	public static void sendPasswordFileCorruptedPageInner(PageHelper helper, String masterPasswordFile) {
 		HTMLNode contentNode = helper.getPageContent(l10nSec("passwordFileCorruptedTitle"));
 		HTMLNode infoBox = helper.getInfobox("infobox-error",
-		        l10nSec("passwordFileCorruptedTitle"), contentNode, "password-error", false).
+			l10nSec("passwordFileCorruptedTitle"), contentNode, "password-error", false).
 		        addChild("div", "class", "infobox-content");
 		sendPasswordFileCorruptedPageInner(infoBox, masterPasswordFile);
 	}

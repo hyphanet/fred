@@ -1,13 +1,9 @@
 package freenet.clients.http.wizardsteps;
 
 import freenet.clients.http.FirstTimeWizardToadlet;
-import freenet.clients.http.ToadletContext;
-import freenet.clients.http.ToadletContextClosedException;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
-
-import java.io.IOException;
 
 /**
  * This step gives the user information about browser usage.
@@ -15,7 +11,7 @@ import java.io.IOException;
 public class BROWSER_WARNING implements Step {
 
 	@Override
-	public void getStep(HTTPRequest request, StepPageHelper helper) {
+	public void getStep(HTTPRequest request, PageHelper helper) {
 		boolean incognito = request.isParameterSet("incognito");
 		// Bug 3376: Opening Chrome in incognito mode from command line will open a new non-incognito window if the browser is already open.
 		// See http://code.google.com/p/chromium/issues/detail?id=9636
@@ -102,7 +98,7 @@ public class BROWSER_WARNING implements Step {
 
 	/**
 	 * There is no POST side to this step, so a POST redirects to the GET side.
-	 * @param request Parameters to inform the step.
+	 * @param request Unused.
 	 */
 	@Override
 	public String postStep(HTTPRequest request) {

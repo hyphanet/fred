@@ -1,13 +1,9 @@
 package freenet.clients.http.wizardsteps;
 
 import freenet.clients.http.FirstTimeWizardToadlet;
-import freenet.clients.http.ToadletContext;
-import freenet.clients.http.ToadletContextClosedException;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
-
-import java.io.IOException;
 
 /**
  * This step allows the user to choose between darknet and opennet, explaining each briefly.
@@ -15,7 +11,7 @@ import java.io.IOException;
 public class OPENNET implements Step {
 
 	@Override
-	public void getStep(HTTPRequest request, StepPageHelper helper) {
+	public void getStep(HTTPRequest request, PageHelper helper) {
 		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("opennetChoicePageTitle"));
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode infoboxHeader = infobox.addChild("div", "class", "infobox-header");
@@ -33,7 +29,9 @@ public class OPENNET implements Step {
 		        new String[] { "hidden", "step", FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_NETWORK.name() });
 
 		HTMLNode p = form.addChild("p");
-		HTMLNode input = p.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "opennet", "false" });
+		HTMLNode input = p.addChild("input",
+		        new String[] { "type", "name", "value" },
+		        new String[] { "radio", "opennet", "false" });
 		input.addChild("b", WizardL10n.l10n("opennetChoiceConnectFriends")+":");
 		p.addChild("br");
 		p.addChild("i", WizardL10n.l10n("opennetChoicePro"));

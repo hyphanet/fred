@@ -1,8 +1,6 @@
 package freenet.clients.http.wizardsteps;
 
 import freenet.clients.http.FirstTimeWizardToadlet;
-import freenet.clients.http.ToadletContext;
-import freenet.clients.http.ToadletContextClosedException;
 import freenet.config.Config;
 import freenet.config.ConfigException;
 import freenet.l10n.NodeL10n;
@@ -10,8 +8,6 @@ import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
-
-import java.io.IOException;
 
 /**
  * Allows the user to choose whether to enable auto-updating, and what official utility plugins to install.
@@ -27,7 +23,7 @@ public class MISC implements Step {
 	}
 
 	@Override
-	public void getStep(HTTPRequest request, StepPageHelper helper) {
+	public void getStep(HTTPRequest request, PageHelper helper) {
 		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("stepMiscTitle"));
 		HTMLNode form = helper.addFormChild(contentNode, ".", "miscForm");
 
@@ -53,11 +49,6 @@ public class MISC implements Step {
 		miscInfoboxContent.addChild("p").addChild("input",
 		        new String[] { "type", "checked", "name", "value" },
 		        new String[] { "checkbox", "on", "upnp", "true" }, WizardL10n.l10n("enableUPnP"));
-
-		//Marker for step on POST side
-		miscInfoboxContent.addChild("input",
-		        new String [] { "type", "name", "value" },
-		        new String [] { "hidden", "step", "MISC" });
 		miscInfoboxContent.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "miscF", WizardL10n.l10n("continue")});
