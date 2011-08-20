@@ -99,7 +99,7 @@ public class SECURITY_PHYSICAL implements Step {
 	 * @return whether an error page was successfully generated.
 	 */
 	private boolean errorHandler(HTTPRequest request, PageHelper helper) {
-		String physicalThreatLevel = request.getPartAsStringFailsafe("newThreatLevel", 128);
+		String physicalThreatLevel = request.getParam("newThreatLevel");
 		SecurityLevels.PHYSICAL_THREAT_LEVEL newThreatLevel = SecurityLevels.parsePhysicalThreatLevel(physicalThreatLevel);
 		String error = request.getParam("error");
 
@@ -134,10 +134,10 @@ public class SECURITY_PHYSICAL implements Step {
 					return false;
 			}
 
-			HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n(pageTitleKey));
+			HTMLNode contentNode = helper.getPageContent(WizardL10n.l10nSec(pageTitleKey));
 
 			HTMLNode content = helper.getInfobox("infobox-error",
-				WizardL10n.l10n(infoBoxTitleKey), contentNode, null, true).
+				WizardL10n.l10nSec(infoBoxTitleKey), contentNode, null, true).
 				addChild("div", "class", "infobox-content");
 
 			HTMLNode form = helper.addFormChild(content, FirstTimeWizardToadlet.TOADLET_URL+"?step=SECURITY_PHYSICAL", "masterPasswordForm");
