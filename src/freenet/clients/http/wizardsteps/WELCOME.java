@@ -22,20 +22,13 @@ public class WELCOME implements Step {
 	public WELCOME(Config config) {
 		this.config = config;
 	}
-
-	@Override
-	public String getTitleKey() {
-		return "homepageTitle";
-	}
-
 	/**
 	 * Renders the first page of the wizard into the given content node.
 	 * @param request used to check whether the user is using a browser with incognito mode.
-	 * @param ctx used to add the language selection drop-down form and get the PageNode.
 	 */
 	@Override
-	public void getStep(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
-
+	public void getStep(HTTPRequest request, StepPageHelper helper) {
+		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("homepageTitle"));
 		boolean incognito = request.isParameterSet("incognito");
 
 		HTMLNode optionsTable = contentNode.addChild("table");
@@ -43,15 +36,15 @@ public class WELCOME implements Step {
 		HTMLNode tableRow = optionsTable.addChild("tr");
 
 		//Low security option
-		addSecurityTableCell(tableHeader, tableRow, "Low", ctx, incognito);
+		addSecurityTableCell(tableHeader, tableRow, "Low", helper, incognito);
 
 		//High security option
-		addSecurityTableCell(tableHeader, tableRow, "High", ctx, incognito);
+		addSecurityTableCell(tableHeader, tableRow, "High", helper, incognito);
 
 		//Detailed wizard option
-		addSecurityTableCell(tableHeader, tableRow, "None", ctx, incognito);
+		addSecurityTableCell(tableHeader, tableRow, "None", helper, incognito);
 
-		HTMLNode languageForm = ctx.addFormChild(contentNode, ".", "languageForm");
+		HTMLNode languageForm = helper.addFormChild(contentNode, ".", "languageForm");
 		//Marker for step on POST side
 		languageForm.addChild("input",
 		        new String[] { "type", "name", "value" },
@@ -68,7 +61,7 @@ public class WELCOME implements Step {
 	}
 
 	@Override
-	public String postStep(HTTPRequest request, ToadletContext ctx) {
+	public String postStep(HTTPRequest request) {
 		//The user changed their language on the welcome page. Change the language and re-render the page.
 		//Presets are handled within FirstTimeWizardToadlet because it can access all steps.
 		String desiredLanguage = request.getPartAsStringFailsafe("l10n", 4096);
@@ -89,15 +82,15 @@ public class WELCOME implements Step {
 	 * @param row "tr" node to add cell content to
 	 * @param header "tr" node to add header to
 	 * @param preset suffix for security level keys.
-	 * @param ctx used to add a form
+	 * @param helper used to add a form
 	 * @param incognito whether incognito mode is enabled
 	 */
-	private void addSecurityTableCell(HTMLNode header, HTMLNode row, String preset, ToadletContext ctx, boolean incognito) {
+	private void addSecurityTableCell(HTMLNode header, HTMLNode row, String preset, StepPageHelper helper, boolean incognito) {
 		header.addChild("th", "width", "33%", WizardL10n.l10n("presetTitle"+preset));
 		HTMLNode tableCell = row.addChild("td");
 		tableCell.addChild("p", WizardL10n.l10n("preset" + preset));
 		HTMLNode centerForm = tableCell.addChild("div", "style", "text-align:center;");
-		HTMLNode secForm = ctx.addFormChild(centerForm, ".", "SecForm"+preset);
+		HTMLNode secForm = helper.addFormChild(centerForm, ".", "SecForm"+preset);
 		secForm.addChild("input",
 		        new String[]{"type", "name", "value", },
 		        new String[]{"hidden", "incognito", String.valueOf(incognito), });

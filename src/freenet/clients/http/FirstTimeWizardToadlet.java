@@ -4,6 +4,8 @@
 package freenet.clients.http;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.URI;
 import java.util.EnumMap;
 
@@ -30,6 +32,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	private final MISC stepMISC;
 	private final SECURITY_NETWORK stepSECURITY_NETWORK;
 	private final SECURITY_PHYSICAL stepSECURITY_PHYSICAL;
+	private final BANDWIDTH stepBANDWIDTH;
 
         private static volatile boolean logMINOR;
 	static {
@@ -73,7 +76,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		steps.put(WIZARD_STEP.WELCOME, new WELCOME(config));
 		steps.put(WIZARD_STEP.BROWSER_WARNING, new BROWSER_WARNING());
 		steps.put(WIZARD_STEP.NAME_SELECTION, new NAME_SELECTION(config));
-		steps.put(WIZARD_STEP.BANDWIDTH, new BANDWIDTH(core, config));
 		steps.put(WIZARD_STEP.DATASTORE_SIZE, new DATASTORE_SIZE(core, config));
 		steps.put(WIZARD_STEP.CONGRATZ, new CONGRATZ(config));
 		steps.put(WIZARD_STEP.OPENNET, new OPENNET());
@@ -85,8 +87,11 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		stepSECURITY_NETWORK = new SECURITY_NETWORK(core);
 		steps.put(WIZARD_STEP.SECURITY_NETWORK, stepSECURITY_NETWORK);
 
-		stepSECURITY_PHYSICAL = new SECURITY_PHYSICAL(core, client);
+		stepSECURITY_PHYSICAL = new SECURITY_PHYSICAL(core);
 		steps.put(WIZARD_STEP.SECURITY_PHYSICAL, stepSECURITY_PHYSICAL);
+
+		stepBANDWIDTH = new BANDWIDTH(core, config);
+		steps.put(WIZARD_STEP.BANDWIDTH, stepBANDWIDTH);
 	}
 
 	public static final String TOADLET_URL = "/wizard/";
@@ -114,6 +119,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			super.writeTemporaryRedirect(ctx, "Skipping unneeded warning", redirectTo.toString());
 			return;
 		} else if (currentStep == WIZARD_STEP.MISC && request.isParameterSet("preset")) {
+			//If using a preset, skip the miscellaneous page as both high and low security set those settings.
 			StringBuilder redirectTo = new StringBuilder(TOADLET_URL+"?step=");
 			WIZARD_PRESET preset = WIZARD_PRESET.valueOf(request.getParam("preset"));
 			if (preset == WIZARD_PRESET.HIGH) {
@@ -124,17 +130,19 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			super.writeTemporaryRedirect(ctx, "Skipping to next necessary step", redirectTo.toString());
 			return;
 		} else if (currentStep == WIZARD_STEP.SECURITY_NETWORK && !request.isParameterSet("opennet")) {
-			//If opennet isn't defined, re-ask.
+			//If opennet isn't defined when attempting to set network security level, ask again.
 			super.writeTemporaryRedirect(ctx, "Need opennet choice", TOADLET_URL+"?step=OPENNET");
+			return;
+		} else if (currentStep == WIZARD_STEP.BANDWIDTH && request.isParameterSet("preset") &&  stepBANDWIDTH.canSkip()) {
+			//If using a preset and the bandwidth limits can be set automatically, skip the step.
+			super.writeTemporaryRedirect(ctx, "Autodetected, not needed",
+			        FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.DATASTORE_SIZE);
 			return;
 		}
 		Step getStep = steps.get(currentStep);
-		//Generate page to surround the content, using the step's title and without status or nav bars.
-		PageNode pageNode = ctx.getPageMaker().getPageNode(NodeL10n.getBase().getString(
-		        "FirstTimeWizardToadlet."+getStep.getTitleKey()), false, false, ctx);
-		//Return the page to the browser.
-		getStep.getStep(pageNode.content, request, ctx);
-		writeHTMLReply(ctx, 200, "OK", pageNode.outer.generate());
+		StepPageHelper helper = new StepPageHelper(ctx);
+		getStep.getStep(request, helper);
+		writeHTMLReply(ctx, 200, "OK", helper.getPageOuter().generate());
 	}
 
 	/**
@@ -177,7 +185,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			StringBuilder redirectTo = new StringBuilder(TOADLET_URL+"?step=BROWSER_WARNING&incognito=");
 			redirectTo.append(request.getPartAsStringFailsafe("incognito", 5));
 
-			//If detailed setup was selected, just fall through to the full wizard
+			/*If detailed setup was selected, just fall through to the full wizard and do not set
+			 *the "preset" URL parameter.*/
 
 			if (request.isPartSet("presetLow")) {
 				//Low security preset
@@ -195,9 +204,44 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			return;
 		}
 
-		String redirectTo = steps.get(currentStep).postStep(request, ctx);
-		if (redirectTo != null) {
-			super.writeTemporaryRedirect(ctx, "Wizard redirecting.", redirectTo);
+		try {
+			super.writeTemporaryRedirect(ctx, "Wizard redirecting.", steps.get(currentStep).postStep(request));
+		} catch (IOException e) {
+			String title;
+			if (e.getMessage().equals("cantWriteNewMasterKeysFile")) {
+				//Recognized as being unable to write to the master keys file.
+				title = NodeL10n.getBase().getString("SecurityLevels.cantWriteNewMasterKeysFileTitle");
+			} else {
+				//Some other error.
+				title = NodeL10n.getBase().getString("Toadlet.internalErrorPleaseReport");
+			}
+
+			//Very loud error message, with descriptive title and header if possible.
+			StringBuilder msg = new StringBuilder("<html><head><title>").append(title).
+			        append("</title></head><body><h1>").append(title).append("</h1><pre>");
+
+			//Print stack trace.
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			e.printStackTrace(pw);
+			pw.flush();
+			msg.append(sw.toString()).append("</pre>");
+
+			//Include internal exception if one exists.
+			Throwable internal = e.getCause();
+			if (internal != null) {
+				msg.append("<h1>").
+				        append(NodeL10n.getBase().getString("Toadlet.internalErrorPleaseReport")).
+				        append("</h1>").append("<pre>");
+
+				sw = new StringWriter();
+				pw = new PrintWriter(sw);
+				internal.printStackTrace(pw);
+				pw.flush();
+				msg.append(sw.toString()).append("</pre>");
+			}
+			msg.append("</body></html>");
+			writeHTMLReply(ctx, 500, "Internal Error", msg.toString());
 		}
 	}
 

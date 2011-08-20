@@ -24,9 +24,9 @@ public class BANDWIDTH implements Step {
 	private final NodeClientCore core;
 	private final Config config;
 	/**
-	 * A speed this low suggests that the auto-detected bandwidth limit is bogus.
+	 * 1 kibibyte (KiB). Value is in bits.
 	 */
-	private final int suspiciouslyLowSpeed = 8192;
+	private final int KiB = 8192;
 
 	public BANDWIDTH(NodeClientCore core, Config config) {
 		this.config = config;
@@ -34,13 +34,10 @@ public class BANDWIDTH implements Step {
 	}
 
 	@Override
-	public String getTitleKey() {
-		return "step3Title";
-	}
+	public void getStep(HTTPRequest request, StepPageHelper helper) {
+		int autodetectedLimit = autoDetectBandwidthLimits();
 
-	@Override
-	public void getStep(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
-		int autodetectedLimit = canAutoconfigureBandwidth();
+		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("step3Title"));
 
 		HTMLNode bandwidthInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode bandwidthnfoboxHeader = bandwidthInfobox.addChild("div", "class", "infobox-header");
@@ -48,7 +45,7 @@ public class BANDWIDTH implements Step {
 
 		bandwidthnfoboxHeader.addChild("#", WizardL10n.l10n("bandwidthLimit"));
 		bandwidthInfoboxContent.addChild("#", WizardL10n.l10n("bandwidthLimitLong"));
-		HTMLNode bandwidthForm = ctx.addFormChild(bandwidthInfoboxContent, ".", "bwForm");
+		HTMLNode bandwidthForm = helper.addFormChild(bandwidthInfoboxContent, ".", "bwForm");
 		HTMLNode result = bandwidthForm.addChild("select", "name", "bw");
 
 		@SuppressWarnings("unchecked")
@@ -59,14 +56,14 @@ public class BANDWIDTH implements Step {
 			        new String[] { "value", "selected" },
 			        new String[] { SizeUtil.formatSize(current), "on" },
 			                WizardL10n.l10n("currentSpeed")+" "+SizeUtil.formatSize(current)+"/s");
-		} else if (autodetectedLimit != -1) {
+		} else if (autodetectedLimit > 0) {
 			result.addChild("option",
 			        new String[] { "value", "selected" },
 			        new String[] { SizeUtil.formatSize(autodetectedLimit), "on" },
 			                WizardL10n.l10n("autodetectedSuggestedLimit")+" "+SizeUtil.formatSize(autodetectedLimit)+"/s");
 		}
 
-		if(autodetectedLimit != suspiciouslyLowSpeed) {
+		if(autodetectedLimit != -2) {
 			result.addChild("option", "value", "8K", WizardL10n.l10n("bwlimitLowerSpeed"));
 		}
 		// Special case for 128kbps to increase performance at the cost of some link degradation. Above that we use 50% of the limit.
@@ -95,37 +92,65 @@ public class BANDWIDTH implements Step {
 	}
 
 	@Override
-	public String postStep(HTTPRequest request, ToadletContext ctx)  throws ToadletContextClosedException, IOException {
+	public String postStep(HTTPRequest request)  {
 		// drop down options may be 6 chars or less, but formatted ones e.g. old value if re-running can be more
 		String selectedUploadSpeed = request.getPartAsStringFailsafe("bw", 20);
+		_setUpstreamBandwidthLimit(selectedUploadSpeed);
+		return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.DATASTORE_SIZE;
+	}
+
+	private void _setUpstreamBandwidthLimit(String selectedUploadSpeed) {
 		try {
 			config.get("node").set("outputBandwidthLimit", selectedUploadSpeed);
 			Logger.normal(this, "The outputBandwidthLimit has been set to " + selectedUploadSpeed);
 		} catch (ConfigException e) {
 			Logger.error(this, "Should not happen, please report!" + e, e);
 		}
-		return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.DATASTORE_SIZE;
 	}
 
-	private int canAutoconfigureBandwidth() {
-		if(!config.get("node").getOption("outputBandwidthLimit").isDefault()) {
+	/**
+	 * Checks if the bandwidth step can be skipped. Attempts to autodetect and autoconfigure upload and download
+	 * bandwidth limits.
+	 * @return true on success, and the step can be skipped. False on failure.
+	 */
+	public boolean canSkip() {
+		int upstreamLimit = autoDetectBandwidthLimits();
+		if (upstreamLimit > 0) {
+			//Upstream limit is in bytes, as is the config value.
+			_setUpstreamBandwidthLimit(""+upstreamLimit);
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Attempts to detect upstream and downstream bandwidth limits, setting the downstream limit if it is a positive value.
+	 * @return -1 if the upload bandwidth setting is default, the detected downstream limit below 8KiB, or the detected
+	 * upstream bandwidth is below 1 KiB. -2 if the detected upstream limit is below 16KiB.
+	 * Otherwise, half the upload limit, as measured in is in bytes.
+	 * 
+	 */
+	private int autoDetectBandwidthLimits() {
+		if (!config.get("node").getOption("outputBandwidthLimit").isDefault()) {
 			return -1;
 		}
 		FredPluginBandwidthIndicator bwIndicator = core.node.ipDetector.getBandwidthIndicator();
-		if(bwIndicator == null) {
+		if (bwIndicator == null) {
+			Logger.normal(this, "The node does not have a bandwidthIndicator.");
 			return -1;
 		}
 
 		int downstreamBWLimit = bwIndicator.getDownstreamMaxBitRate();
 		int upstreamBWLimit = bwIndicator.getUpstramMaxBitRate();
-		if((downstreamBWLimit > 0 && downstreamBWLimit < 65536) || (upstreamBWLimit > 0 && upstreamBWLimit < suspiciouslyLowSpeed)) {
+		//Check for suspiciously low upstream bandwidth.
+		if ((downstreamBWLimit > 0 && downstreamBWLimit < 8*KiB) || (upstreamBWLimit > 0 && upstreamBWLimit < KiB)) {
 			// These are kilobits, not bits, per second, right?
 			// Assume the router is buggy and don't autoconfigure.
 			// Nothing that implements UPnP would be that slow.
 			System.err.println("Buggy router? downstream: "+downstreamBWLimit+" upstream: "+upstreamBWLimit+" - these are supposed to be in bits per second!");
 			return -1;
 		}
-		if(downstreamBWLimit > 0) {
+		if (downstreamBWLimit > 0) {
 			int bytes = (downstreamBWLimit / 8) - 1;
 			String downstreamBWLimitString = SizeUtil.formatSize(bytes * 2 / 3);
 			// Set the downstream limit anyway, it is usually so high as to be irrelevant.
@@ -135,12 +160,13 @@ public class BANDWIDTH implements Step {
 		}
 
 		// We don't mind if the downstreamBWLimit couldn't be set, but upstreamBWLimit is important
-		if(upstreamBWLimit > 0) {
-			int bytes = (upstreamBWLimit / 8) - 1;
-			if(bytes < 16384) return suspiciouslyLowSpeed;
+		if (upstreamBWLimit > 0) {
+			int bytes = upstreamBWLimit / 8;
+			if (upstreamBWLimit < 16*KiB) return -2;
 			return bytes / 2;
-		}else
+		} else {
 			return -1;
+		}
 	}
 
 	private void _setDownstreamBandwidthLimit(String selectedDownloadSpeed) {

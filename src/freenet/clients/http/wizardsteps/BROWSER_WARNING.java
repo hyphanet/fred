@@ -15,12 +15,7 @@ import java.io.IOException;
 public class BROWSER_WARNING implements Step {
 
 	@Override
-	public String getTitleKey() {
-		return "browserWarningPageTitle";
-	}
-
-	@Override
-	public void getStep(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
+	public void getStep(HTTPRequest request, StepPageHelper helper) {
 		boolean incognito = request.isParameterSet("incognito");
 		// Bug 3376: Opening Chrome in incognito mode from command line will open a new non-incognito window if the browser is already open.
 		// See http://code.google.com/p/chromium/issues/detail?id=9636
@@ -59,6 +54,8 @@ public class BROWSER_WARNING implements Step {
 			}
 		}
 		boolean isRelativelySafe = isFirefox && !isOldFirefox;
+
+		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("browserWarningPageTitle"));
 
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode infoboxHeader = infobox.addChild("div", "class", "infobox-header");
@@ -106,12 +103,9 @@ public class BROWSER_WARNING implements Step {
 	/**
 	 * There is no POST side to this step, so a POST redirects to the GET side.
 	 * @param request Parameters to inform the step.
-	 * @param ctx Used to write redirects.
-	 * @throws ToadletContextClosedException
-	 * @throws IOException
 	 */
 	@Override
-	public String postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public String postStep(HTTPRequest request) {
 		return FirstTimeWizardToadlet.TOADLET_URL+"?step=BROWSER_WARNING";
 	}
 }

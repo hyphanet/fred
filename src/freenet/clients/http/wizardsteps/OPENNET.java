@@ -15,12 +15,8 @@ import java.io.IOException;
 public class OPENNET implements Step {
 
 	@Override
-	public String getTitleKey() {
-		return "opennetChoicePageTitle";
-	}
-
-	@Override
-	public void getStep(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
+	public void getStep(HTTPRequest request, StepPageHelper helper) {
+		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("opennetChoicePageTitle"));
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode infoboxHeader = infobox.addChild("div", "class", "infobox-header");
 		HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
@@ -30,9 +26,11 @@ public class OPENNET implements Step {
 		infoboxContent.addChild("p", WizardL10n.l10n("opennetChoiceIntroduction"));
 
 		HTMLNode form = infoboxContent.addChild("form",
-		        new String[] { "action", "method", "id" }, new String[] { "GET", ".", "opennetChoiceForm" });
+		        new String[] { "action", "method", "id" },
+		        new String[] { "GET", ".", "opennetChoiceForm" });
 		form.addChild("input",
-		        new String[] { "type", "name", "value" }, new String[] { "hidden", "step", FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_NETWORK.name() });
+		        new String[] { "type", "name", "value" },
+		        new String[] { "hidden", "step", FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_NETWORK.name() });
 
 		HTMLNode p = form.addChild("p");
 		HTMLNode input = p.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "opennet", "false" });
@@ -45,7 +43,9 @@ public class OPENNET implements Step {
 		p.addChild("#", ": "+WizardL10n.l10n("opennetChoiceConnectFriendsCON", "minfriends", "5"));
 
 		p = form.addChild("p");
-		input = p.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "opennet", "true" });
+		input = p.addChild("input",
+		        new String[] { "type", "name", "value" },
+		        new String[] { "radio", "opennet", "true" });
 		input.addChild("b", WizardL10n.l10n("opennetChoiceConnectStrangers")+":");
 		p.addChild("br");
 		p.addChild("i", WizardL10n.l10n("opennetChoicePro"));
@@ -82,12 +82,9 @@ public class OPENNET implements Step {
 	 * The GET side of this step has a form that uses the GET method on the SECURITY_NETWORK step. There is no
 	 * POST side, so this POST redirects to the GET side.
 	 * @param request Unused, required by Step interface.
-	 * @param ctx Used to write redirects.
-	 * @throws ToadletContextClosedException
-	 * @throws IOException
 	 */
 	@Override
-	public String postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public String postStep(HTTPRequest request) {
 		return FirstTimeWizardToadlet.TOADLET_URL+"?step=OPENNET";
 	}
 }

@@ -24,19 +24,15 @@ public class NAME_SELECTION implements Step {
 	}
 
 	@Override
-	public String getTitleKey() {
-		return "step2Title";
-	}
-
-	@Override
-	public void getStep(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
+	public void getStep(HTTPRequest request, StepPageHelper helper) {
+		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("step2Title"));
 		HTMLNode nnameInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode nnameInfoboxHeader = nnameInfobox.addChild("div", "class", "infobox-header");
 		HTMLNode nnameInfoboxContent = nnameInfobox.addChild("div", "class", "infobox-content");
 
 		nnameInfoboxHeader.addChild("#", WizardL10n.l10n("chooseNodeName"));
 		nnameInfoboxContent.addChild("#", WizardL10n.l10n("chooseNodeNameLong"));
-		HTMLNode nnameForm = ctx.addFormChild(nnameInfoboxContent, ".", "nnameForm");
+		HTMLNode nnameForm = helper.addFormChild(nnameInfoboxContent, ".", "nnameForm");
 		nnameForm.addChild("input", "name", "nname");
 
 		//Marker for step on POST side
@@ -52,9 +48,14 @@ public class NAME_SELECTION implements Step {
 	}
 
 	@Override
-	public String postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public String postStep(HTTPRequest request) {
 		String selectedNName = request.getPartAsStringFailsafe("nname", 128);
 		try {
+			//User chose cancel
+			if (request.isParameterSet("cancel")) {
+				//Refresh page if no name given
+				return FirstTimeWizardToadlet.TOADLET_URL+"?step="+ FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH;
+			}
 			config.get("node").set("name", selectedNName);
 			Logger.normal(this, "The node name has been set to " + selectedNName);
 		} catch (ConfigException e) {

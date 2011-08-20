@@ -22,12 +22,8 @@ public class CONGRATZ implements Step {
 	}
 
 	@Override
-	public String getTitleKey() {
-		return "step7Title";
-	}
-
-	@Override
-	public void getStep(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
+	public void getStep(HTTPRequest request, StepPageHelper helper) {
+		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("step7Title"));
 		HTMLNode congratzInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode congratzInfoboxHeader = congratzInfobox.addChild("div", "class", "infobox-header");
 		HTMLNode congratzInfoboxContent = congratzInfobox.addChild("div", "class", "infobox-content");
@@ -35,7 +31,7 @@ public class CONGRATZ implements Step {
 		congratzInfoboxHeader.addChild("#", WizardL10n.l10n("congratz"));
 		congratzInfoboxContent.addChild("p", WizardL10n.l10n("congratzLong"));
 
-		HTMLNode continueForm = ctx.addFormChild(congratzInfoboxContent, ".", "continueForm");
+		HTMLNode continueForm = helper.addFormChild(congratzInfoboxContent, ".", "continueForm");
 		continueForm.addChild("input",
 		        new String [] { "type", "name", "value" },
 		        new String [] { "hidden", "step", "CONGRATZ" });
@@ -45,7 +41,7 @@ public class CONGRATZ implements Step {
 	}
 
 	@Override
-	public String postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public String postStep(HTTPRequest request) {
 		//Set wizard completion flag
 		try {
 			config.get("fproxy").set("hasCompletedWizard", true);

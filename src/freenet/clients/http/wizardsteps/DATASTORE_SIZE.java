@@ -32,19 +32,15 @@ public class DATASTORE_SIZE implements Step {
 	}
 
 	@Override
-	public String getTitleKey() {
-		return "step4Title";
-	}
-
-	@Override
-	public void getStep(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
+	public void getStep(HTTPRequest request, StepPageHelper helper) {
+		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("step4Title"));
 		HTMLNode bandwidthInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode bandwidthnfoboxHeader = bandwidthInfobox.addChild("div", "class", "infobox-header");
 		HTMLNode bandwidthInfoboxContent = bandwidthInfobox.addChild("div", "class", "infobox-content");
 
 		bandwidthnfoboxHeader.addChild("#", WizardL10n.l10n("datastoreSize"));
 		bandwidthInfoboxContent.addChild("#", WizardL10n.l10n("datastoreSizeLong"));
-		HTMLNode bandwidthForm = ctx.addFormChild(bandwidthInfoboxContent, ".", "dsForm");
+		HTMLNode bandwidthForm = helper.addFormChild(bandwidthInfoboxContent, ".", "dsForm");
 		HTMLNode result = bandwidthForm.addChild("select", "name", "ds");
 
 		long maxSize = maxDatastoreSize();
@@ -95,7 +91,7 @@ public class DATASTORE_SIZE implements Step {
 	}
 
 	@Override
-	public String postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public String postStep(HTTPRequest request) {
 		// drop down options may be 6 chars or less, but formatted ones e.g. old value if re-running can be more
 		_setDatastoreSize(request.getPartAsStringFailsafe("ds", 20));
 		return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.CONGRATZ;

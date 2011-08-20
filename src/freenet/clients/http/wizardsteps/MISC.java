@@ -27,13 +27,9 @@ public class MISC implements Step {
 	}
 
 	@Override
-	public String getTitleKey() {
-		return "stepMiscTitle";
-	}
-
-	@Override
-	public void getStep(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
-		HTMLNode form = ctx.addFormChild(contentNode, ".", "miscForm");
+	public void getStep(HTTPRequest request, StepPageHelper helper) {
+		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("stepMiscTitle"));
+		HTMLNode form = helper.addFormChild(contentNode, ".", "miscForm");
 
 		HTMLNode miscInfobox = form.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode miscInfoboxHeader = miscInfobox.addChild("div", "class", "infobox-header");
@@ -71,7 +67,7 @@ public class MISC implements Step {
 	}
 
 	@Override
-	public String postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public String postStep(HTTPRequest request) {
 		setAutoUpdate(Boolean.parseBoolean(request.getPartAsStringFailsafe("autodeploy", 10)));
 		setUPnP(request.isPartSet("upnp"));
 		return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.OPENNET;

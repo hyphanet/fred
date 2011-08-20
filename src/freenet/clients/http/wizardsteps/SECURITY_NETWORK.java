@@ -25,11 +25,8 @@ public class SECURITY_NETWORK implements Step {
 	}
 
 	@Override
-	public String getTitleKey() {
-		return "networkSecurityPageTitle";
-	}
-
-	public void getStep(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx) {
+	public void getStep(HTTPRequest request, StepPageHelper helper) {
+		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("networkSecurityPageTitle"));
 		String opennetParam = request.getParam("opennet", "false");
 		boolean opennet = Fields.stringToBool(opennetParam);
 
@@ -40,7 +37,7 @@ public class SECURITY_NETWORK implements Step {
 			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-information");
 			infobox.addChild("div", "class", "infobox-header", WizardL10n.l10n("networkThreatLevelConfirmTitle." + newThreatLevel));
 			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-			HTMLNode formNode = ctx.addFormChild(infoboxContent, ".", "configFormSecLevels");
+			HTMLNode formNode = helper.addFormChild(infoboxContent, ".", "configFormSecLevels");
 			formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "security-levels.networkThreatLevel", networkThreatLevel });
 			if(newThreatLevel == SecurityLevels.NETWORK_THREAT_LEVEL.MAXIMUM) {
 				HTMLNode p = formNode.addChild("p");
@@ -76,7 +73,7 @@ public class SECURITY_NETWORK implements Step {
 		HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 
 		//Add choices and description depending on whether opennet was selected.
-		HTMLNode form = ctx.addFormChild(infoboxContent, ".", "networkSecurityForm");
+		HTMLNode form = helper.addFormChild(infoboxContent, ".", "networkSecurityForm");
 		form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "opennet", opennetParam });
 		if(opennet) {
 			infoboxHeader.addChild("#", WizardL10n.l10n("networkThreatLevelHeaderOpennet"));
@@ -150,7 +147,8 @@ public class SECURITY_NETWORK implements Step {
 		        new HTMLNode[] { HTMLNode.STRONG });
 	}
 
-	public String postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	@Override
+	public String postStep(HTTPRequest request) {
 		String networkThreatLevel = request.getPartAsStringFailsafe("security-levels.networkThreatLevel", 128);
 		SecurityLevels.NETWORK_THREAT_LEVEL newThreatLevel = SecurityLevels.parseNetworkThreatLevel(networkThreatLevel);
 

@@ -11,27 +11,19 @@ import java.io.IOException;
  * Classes which implement Step are sub-Toadlets accessible only through the wizard, and are not registered in FProxy.
  */
 public interface Step {
-
-	/**
-	 * @return Localization key for the page title.
-	 */
-	public String getTitleKey();
-
 	/**
 	 * Renders a page for a step in the wizard by modifying contentNode.
-	 * @param contentNode page content node to render content into.
-	 * @param ctx For adding forms and getting a PageNode.
 	 * @param request The HTTPRequest for the page, used in its creation.
+	 * @param helper used to get a style-conforming page content node, forms, and InfoBoxes without access to
+	 * ToadletContext.
 	 */
-	public void getStep(HTMLNode contentNode, HTTPRequest request, ToadletContext ctx);
+	public void getStep(HTTPRequest request, StepPageHelper helper);
 
 	/**
 	 * Performs operations for the step.
 	 * @param request Parameters to inform the step.
-	 * @param ctx Used to write redirects.
-	 * @throws IOException if Toadlet's WriteTemporaryRedirect does.
-	 * @throws ToadletContextClosedException if Toadlet's WriteTemporaryRedirect does.
-	 * @return a destination to redirect to, or null if no redirect is wanted. (Ex. the POST wrote HTML)
+	 * @return a destination to redirect to.
+	 * @throws IOException likely a setting failed to apply
 	 */
-	public String postStep(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException;
+	public String postStep(HTTPRequest request) throws IOException;
 }
