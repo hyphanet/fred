@@ -42,12 +42,13 @@ public class NAME_SELECTION implements Step {
 	@Override
 	public String postStep(HTTPRequest request) {
 		String selectedNName = request.getPartAsStringFailsafe("nname", 128);
+
+		//Prompt again when provided with a blank node name.
+		if (selectedNName.isEmpty()) {
+			return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.NAME_SELECTION;
+		}
+
 		try {
-			//User chose cancel
-			if (request.isParameterSet("cancel")) {
-				//Refresh page if no name given
-				return FirstTimeWizardToadlet.TOADLET_URL+"?step="+ FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH;
-			}
 			config.get("node").set("name", selectedNName);
 			Logger.normal(this, "The node name has been set to " + selectedNName);
 		} catch (ConfigException e) {

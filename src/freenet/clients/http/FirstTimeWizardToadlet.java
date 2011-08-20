@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.EnumMap;
 
 import freenet.client.HighLevelSimpleClient;
@@ -196,6 +197,11 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			currentStep = WIZARD_STEP.WELCOME;
 		}
 
+		//User chose cancel, return to first page.
+		if (request.isPartSet("cancel")) {
+			currentStep = WIZARD_STEP.WELCOME;
+		}
+
 		PersistFields persistFields = new PersistFields(request);
 
 		String redirectTarget;
@@ -217,7 +223,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				redirectTo.append("&preset=LOW");
 				stepSECURITY_NETWORK.setThreatLevel(SecurityLevels.NETWORK_THREAT_LEVEL.LOW);
 				stepSECURITY_PHYSICAL.setThreatLevel(SecurityLevels.PHYSICAL_THREAT_LEVEL.NORMAL,
-				        SecurityLevels.PHYSICAL_THREAT_LEVEL.LOW);
+					SecurityLevels.PHYSICAL_THREAT_LEVEL.LOW);
 			} else if (request.isPartSet("presetHigh")) {
 				//High security preset
 				stepMISC.setUPnP(true);
@@ -229,6 +235,19 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		} else {
 			try {
 				redirectTarget = steps.get(currentStep).postStep(request);
+
+				//Opennet step can change the persisted value for opennet.
+				if (currentStep == WIZARD_STEP.OPENNET) {
+					try {
+						HTTPRequest newRequest = new HTTPRequestImpl(new URI(redirectTarget), "GET");
+						redirectTarget = TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_NETWORK;
+						persistFields = new PersistFields(newRequest);
+					} catch (URISyntaxException e) {
+						Logger.error(this, "Unexpected invalid query string from OPENNET step! "+e, e);
+						redirectTarget = TOADLET_URL+"?step="+WIZARD_STEP.WELCOME;
+					}
+
+				}
 			} catch (IOException e) {
 				String title;
 				if (e.getMessage().equals("cantWriteNewMasterKeysFile")) {

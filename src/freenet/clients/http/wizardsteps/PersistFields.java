@@ -5,36 +5,60 @@ import freenet.support.Fields;
 import freenet.support.api.HTTPRequest;
 
 /**
- * Parses an HTTPRequest and makes fields that should be persisted available through public properties.
+ * Handles fields that should be persisted, making them available through public properties.
+ * Able to parse these fields from an HTTPRequest.
  */
 public class PersistFields {
 
 	public final FirstTimeWizardToadlet.WIZARD_PRESET preset;
 	public final boolean opennet;
 
+	/**
+	 * @param request Parsed for persistence fields, checking parameters first.
+	 */
 	public PersistFields(HTTPRequest request) {
+		this.preset = parsePreset(request);
+		this.opennet = parseOpennet(request);
+	}
 
+	/**
+	 * @param opennet Set manually
+	 * @param request Parsed for remaining fields.
+	 */
+	public PersistFields(HTTPRequest request, boolean opennet) {
+		this.preset = parsePreset(request);
+		this.opennet = opennet;
+	}
+
+	private FirstTimeWizardToadlet.WIZARD_PRESET parsePreset(HTTPRequest request) {
 		String presetRaw;
-		String opennetRaw;
+		FirstTimeWizardToadlet.WIZARD_PRESET preset;
 
 		if (request.hasParameters()) {
 			presetRaw = request.getParam("preset");
-			opennetRaw = request.getParam("opennet", "false");
 		} else {
 			presetRaw = request.getPartAsStringFailsafe("preset", 4);
+		}
+
+		try {
+			preset = FirstTimeWizardToadlet.WIZARD_PRESET.valueOf(presetRaw);
+		} catch (IllegalArgumentException e) {
+			preset = null;
+		}
+
+		return preset;
+	}
+
+	private boolean parseOpennet(HTTPRequest request) {
+		String opennetRaw;
+
+		if (request.hasParameters()) {
+			opennetRaw = request.getParam("opennet", "false");
+		} else {
 			opennetRaw = request.getPartAsStringFailsafe("opennet", 5);
 		}
 
-		//Assigning to preset directly counts as multiple modification.
-		FirstTimeWizardToadlet.WIZARD_PRESET temp;
-		try {
-			temp = FirstTimeWizardToadlet.WIZARD_PRESET.valueOf(presetRaw);
-		} catch (IllegalArgumentException e) {
-			temp = null;
-		}
-		this.preset = temp;
-
-		this.opennet = Fields.stringToBool(opennetRaw, false);
+		return Fields.stringToBool(opennetRaw, false);
 	}
 
 	public boolean isUsingPreset() {

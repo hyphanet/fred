@@ -21,12 +21,7 @@ public class OPENNET implements Step {
 
 		infoboxContent.addChild("p", WizardL10n.l10n("opennetChoiceIntroduction"));
 
-		HTMLNode form = infoboxContent.addChild("form",
-		        new String[] { "action", "method", "id" },
-		        new String[] { "GET", ".", "opennetChoiceForm" });
-		form.addChild("input",
-		        new String[] { "type", "name", "value" },
-		        new String[] { "hidden", "step", FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_NETWORK.name() });
+		HTMLNode form = helper.addFormChild(infoboxContent, ".", "opennetForm");
 
 		HTMLNode p = form.addChild("p");
 		HTMLNode input = p.addChild("input",
@@ -77,12 +72,16 @@ public class OPENNET implements Step {
 	}
 
 	/**
-	 * The GET side of this step has a form that uses the GET method on the SECURITY_NETWORK step. There is no
-	 * POST side, so this POST redirects to the GET side.
-	 * @param request Unused, required by Step interface.
+	 * Doesn't make any changes, just passes result on to SECURITY_NETWORK.
+	 * @param request Checked for "opennet" value.
 	 */
 	@Override
 	public String postStep(HTTPRequest request) {
-		return FirstTimeWizardToadlet.TOADLET_URL+"?step=OPENNET";
+		if (request.isPartSet("opennet")) {
+			return FirstTimeWizardToadlet.TOADLET_URL+"?step=SECURITY_NETWORK&opennet="+request.getPartAsStringFailsafe("opennet", 5);
+		} else {
+			//Nothing selected when continue clicked. Display choice again.
+			return FirstTimeWizardToadlet.TOADLET_URL+"?step=OPENNET";
+		}
 	}
 }

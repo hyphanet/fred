@@ -25,7 +25,7 @@ public class SECURITY_NETWORK implements Step {
 	public void getStep(HTTPRequest request, PageHelper helper) {
 		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("networkSecurityPageTitle"));
 		String opennetParam = request.getParam("opennet", "false");
-		boolean opennet = Fields.stringToBool(opennetParam);
+		boolean opennet = Fields.stringToBool(opennetParam, false);
 
 		if (request.isParameterSet("confirm")) {
 			String networkThreatLevel = request.getParam("security-levels.networkThreatLevel");
@@ -53,6 +53,9 @@ public class SECURITY_NETWORK implements Step {
 			formNode.addChild("input",
 			        new String[] { "type", "name", "value" },
 			        new String[] { "submit", "networkSecurityF", WizardL10n.l10n("continue")});
+			formNode.addChild("input",
+			        new String[] { "type", "name", "value" },
+			        new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
 			return;
 		}
 
