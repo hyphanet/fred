@@ -9,6 +9,8 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 
+import java.net.URI;
+
 /**
  * This step allows the user to choose between security levels. If opennet is disabled, only high and maximum are shown.
  * If opennet is enabled, only low and normal are shown.
@@ -116,9 +118,7 @@ public class SECURITY_NETWORK implements Step {
 		SecurityLevels.NETWORK_THREAT_LEVEL newThreatLevel = SecurityLevels.parseNetworkThreatLevel(networkThreatLevel);
 
 		//In order to redirect, either for retry or confirmation.
-		StringBuilder redirectTo = new StringBuilder(FirstTimeWizardToadlet.TOADLET_URL+"?step=SECURITY_NETWORK&opennet=");
-		//Max length of 5 because 5 letters in false, 4 in true.
-		redirectTo.append(request.getPartAsStringFailsafe("opennet", 5));
+		StringBuilder redirectTo = new StringBuilder(FirstTimeWizardToadlet.TOADLET_URL+"?step=SECURITY_NETWORK");
 
 		/*If the user didn't select a network security level before clicking continue or the selected
 		* security level could not be determined, redirect to the same page.*/
@@ -129,18 +129,19 @@ public class SECURITY_NETWORK implements Step {
 			//Make the user aware of the effects of high or maximum network threat if selected.
 			//They must check a box acknowledging its affects to proceed.
 			if((!request.isPartSet("security-levels.networkThreatLevel.confirm")) &&
-				(!request.isPartSet("security-levels.networkThreatLevel.tryConfirm"))) {
-				redirectTo.append("&confirm=true").append("&security-levels.networkThreatLevel=");
-				redirectTo.append(networkThreatLevel);
+			        (!request.isPartSet("security-levels.networkThreatLevel.tryConfirm"))) {
+				displayConfirmationBox(redirectTo, networkThreatLevel);
 				return redirectTo.toString();
 			} else if((!request.isPartSet("security-levels.networkThreatLevel.confirm")) &&
 				        request.isPartSet("security-levels.networkThreatLevel.tryConfirm")) {
-				//If the user did not check the box. If in a preset, go back to the beginning,
+				//If the user did not check the box. If in a preset, redisplay the page, The user can
+				//press cancel to go back.
 				if (request.isPartSet("preset")) {
-					return FirstTimeWizardToadlet.TOADLET_URL;
+					displayConfirmationBox(redirectTo, networkThreatLevel);
+					return redirectTo.toString();
 				}
 
-				//If in detailed mode, return to level selection.
+				//If in detailed mode, the user can choose between levels, so return to level selection.
 				return redirectTo.toString();
 			}
 		}
@@ -148,6 +149,10 @@ public class SECURITY_NETWORK implements Step {
 		//and continue to the physical security step.
 		setThreatLevel(newThreatLevel);
 		return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_PHYSICAL;
+	}
+
+	private void displayConfirmationBox(StringBuilder redirectTo, String networkThreatLevel) {
+		redirectTo.append("&confirm=true&security-levels.networkThreatLevel=").append(networkThreatLevel);
 	}
 
 	public void setThreatLevel(SecurityLevels.NETWORK_THREAT_LEVEL level) {
