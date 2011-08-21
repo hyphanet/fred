@@ -25,8 +25,6 @@ import freenet.support.api.HTTPRequest;
 
 /**
  * A first time wizard aimed to ease the configuration of the node.
- *
- * TODO: a choose your CSS step?
  */
 public class FirstTimeWizardToadlet extends Toadlet {
 	private final NodeClientCore core;
@@ -34,7 +32,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	private final MISC stepMISC;
 	private final SECURITY_NETWORK stepSECURITY_NETWORK;
 	private final SECURITY_PHYSICAL stepSECURITY_PHYSICAL;
-	private final BANDWIDTH stepBANDWIDTH;
 
         private static volatile boolean logMINOR;
 	static {
@@ -59,7 +56,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		NAME_SELECTION,
 		DATASTORE_SIZE,
 		BANDWIDTH,
-		CONGRATZ
 	}
 
 	public enum WIZARD_PRESET {
@@ -79,8 +75,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		steps.put(WIZARD_STEP.BROWSER_WARNING, new BROWSER_WARNING());
 		steps.put(WIZARD_STEP.NAME_SELECTION, new NAME_SELECTION(config));
 		steps.put(WIZARD_STEP.DATASTORE_SIZE, new DATASTORE_SIZE(core, config));
-		steps.put(WIZARD_STEP.CONGRATZ, new CONGRATZ(config));
 		steps.put(WIZARD_STEP.OPENNET, new OPENNET());
+		steps.put(WIZARD_STEP.BANDWIDTH, new BANDWIDTH(core, config));
 
 		//Add step handlers that are set by presets
 		stepMISC = new MISC(core, config);
@@ -91,9 +87,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 
 		stepSECURITY_PHYSICAL = new SECURITY_PHYSICAL(core);
 		steps.put(WIZARD_STEP.SECURITY_PHYSICAL, stepSECURITY_PHYSICAL);
-
-		stepBANDWIDTH = new BANDWIDTH(core, config);
-		steps.put(WIZARD_STEP.BANDWIDTH, stepBANDWIDTH);
 	}
 
 	public static final String TOADLET_URL = "/wizard/";

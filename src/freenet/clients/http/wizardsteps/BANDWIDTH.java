@@ -89,7 +89,19 @@ public class BANDWIDTH implements Step {
 		// drop down options may be 6 chars or less, but formatted ones e.g. old value if re-running can be more
 		String selectedUploadSpeed = request.getPartAsStringFailsafe("bw", 20);
 		_setUpstreamBandwidthLimit(selectedUploadSpeed);
-		return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.CONGRATZ;
+
+		//Set wizard completion flag
+		try {
+			config.get("fproxy").set("hasCompletedWizard", true);
+			config.store();
+		} catch (ConfigException e) {
+			//TODO: Is there anything that can reasonably be done about this? What kind of failures could occur?
+			//TODO: Is logging and continuing a reasonable behavior?
+			Logger.error(this, e.getMessage(), e);
+		}
+
+		//Not actually a step, just so that FProxy ignores the persisted fields as well.
+		return "/?step=COMPLETE";
 	}
 
 	private void _setUpstreamBandwidthLimit(String selectedUploadSpeed) {
