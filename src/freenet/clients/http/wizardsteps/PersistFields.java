@@ -14,7 +14,7 @@ public class PersistFields {
 	public final boolean opennet;
 
 	/**
-	 * @param request Parsed for persistence fields, checking parameters first.
+	 * @param request Parsed for persistence fields, checking parameters (GET) first, then parts (POST).
 	 */
 	public PersistFields(HTTPRequest request) {
 		this.preset = parsePreset(request);
@@ -23,11 +23,20 @@ public class PersistFields {
 
 	/**
 	 * @param opennet Set manually
-	 * @param request Parsed for remaining fields.
+	 * @param request Parsed for remaining fields. (preset)
 	 */
-	public PersistFields(HTTPRequest request, boolean opennet) {
+	public PersistFields(boolean opennet, HTTPRequest request) {
 		this.preset = parsePreset(request);
 		this.opennet = opennet;
+	}
+
+	/**
+	 * @param preset Set manually
+	 * @param request Parsed for remaining fields. (opennet)
+	 */
+	public PersistFields(FirstTimeWizardToadlet.WIZARD_PRESET preset, HTTPRequest request) {
+		this.preset = preset;
+		this.opennet = parseOpennet(request);
 	}
 
 	private FirstTimeWizardToadlet.WIZARD_PRESET parsePreset(HTTPRequest request) {

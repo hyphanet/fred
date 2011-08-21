@@ -89,7 +89,7 @@ public class BANDWIDTH implements Step {
 		// drop down options may be 6 chars or less, but formatted ones e.g. old value if re-running can be more
 		String selectedUploadSpeed = request.getPartAsStringFailsafe("bw", 20);
 		_setUpstreamBandwidthLimit(selectedUploadSpeed);
-		return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.DATASTORE_SIZE;
+		return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.CONGRATZ;
 	}
 
 	private void _setUpstreamBandwidthLimit(String selectedUploadSpeed) {
@@ -103,7 +103,8 @@ public class BANDWIDTH implements Step {
 
 	/**
 	 * Checks if the bandwidth step can be skipped. Attempts to autodetect and autoconfigure upload and download
-	 * bandwidth limits.
+	 * bandwidth limits. This is not used because the user should be informed of theoretical maximum monthly
+	 * net transfer so they can avoid exceeding caps.
 	 * @return true on success, and the step can be skipped. False on failure.
 	 */
 	public boolean canSkip() {

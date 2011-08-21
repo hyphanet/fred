@@ -57,8 +57,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		SECURITY_NETWORK,
 		SECURITY_PHYSICAL,
 		NAME_SELECTION,
-		BANDWIDTH,
 		DATASTORE_SIZE,
+		BANDWIDTH,
 		CONGRATZ
 	}
 
@@ -135,12 +135,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			//If opennet isn't defined when attempting to set network security level, ask again.
 			super.writeTemporaryRedirect(ctx, "Need opennet choice",
 			        addPersistFields(TOADLET_URL+"?step=OPENNET", persistFields));
-			return;
-		} else if (currentStep == WIZARD_STEP.BANDWIDTH && request.isParameterSet("preset") &&  stepBANDWIDTH.canSkip()) {
-			//If using a preset and the bandwidth limits can be set automatically, skip the step.
-			System.out.println("Skipping bandwidth step due to successful limit autodetection.");
-			super.writeTemporaryRedirect(ctx, "Autodetected, not needed",
-			        addPersistFields(TOADLET_URL+"?step=DATASTORE_SIZE", persistFields));
 			return;
 		}
 
@@ -241,7 +235,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 					try {
 						HTTPRequest newRequest = new HTTPRequestImpl(new URI(redirectTarget), "GET");
 						redirectTarget = TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_NETWORK;
-						persistFields = new PersistFields(newRequest);
+						persistFields = new PersistFields(persistFields.preset, newRequest);
 					} catch (URISyntaxException e) {
 						Logger.error(this, "Unexpected invalid query string from OPENNET step! "+e, e);
 						redirectTarget = TOADLET_URL+"?step="+WIZARD_STEP.WELCOME;

@@ -86,7 +86,7 @@ public class DATASTORE_SIZE implements Step {
 	public String postStep(HTTPRequest request) {
 		// drop down options may be 6 chars or less, but formatted ones e.g. old value if re-running can be more
 		_setDatastoreSize(request.getPartAsStringFailsafe("ds", 20));
-		return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.CONGRATZ;
+		return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH;
 	}
 
 	private void _setDatastoreSize(String selectedStoreSize) {

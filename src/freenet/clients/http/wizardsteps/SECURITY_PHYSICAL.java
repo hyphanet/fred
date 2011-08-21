@@ -240,7 +240,7 @@ public class SECURITY_PHYSICAL implements Step {
 		//TODO: Mode this to before name selection GET. Steps shouldn't have to have this kind of logic.
 		//If opennet is enabled, skip asking for node name as it's not needed. This is to keep things simpler for the user.
 		if (core.node.isOpennetEnabled()) {
-			return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH;
+			return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.DATASTORE_SIZE;
 		} else {
 			return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.NAME_SELECTION;
 		}

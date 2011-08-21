@@ -54,6 +54,6 @@ public class NAME_SELECTION implements Step {
 		} catch (ConfigException e) {
 			Logger.error(this, "Should not happen, please report!" + e, e);
 		}
-		return FirstTimeWizardToadlet.TOADLET_URL+"?step="+ FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH;
+		return FirstTimeWizardToadlet.TOADLET_URL+"?step="+ FirstTimeWizardToadlet.WIZARD_STEP.DATASTORE_SIZE;
 	}
 }
