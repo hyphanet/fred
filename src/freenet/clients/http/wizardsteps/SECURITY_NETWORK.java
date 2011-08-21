@@ -37,17 +37,37 @@ public class SECURITY_NETWORK implements Step {
 			infobox.addChild("div", "class", "infobox-header", WizardL10n.l10n("networkThreatLevelConfirmTitle." + newThreatLevel));
 			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 			HTMLNode formNode = helper.addFormChild(infoboxContent, ".", "configFormSecLevels");
-			formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "security-levels.networkThreatLevel", networkThreatLevel });
+			formNode.addChild("input",
+			        new String[] { "type", "name", "value" },
+			        new String[] { "hidden", "security-levels.networkThreatLevel", networkThreatLevel });
 			if(newThreatLevel == SecurityLevels.NETWORK_THREAT_LEVEL.MAXIMUM) {
 				HTMLNode p = formNode.addChild("p");
-				NodeL10n.getBase().addL10nSubstitution(p, "SecurityLevels.maximumNetworkThreatLevelWarning", new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
+				NodeL10n.getBase().addL10nSubstitution(p, "SecurityLevels.maximumNetworkThreatLevelWarning",
+				        new String[] { "bold" },
+				        new HTMLNode[] { HTMLNode.STRONG });
 				p.addChild("#", " ");
-				NodeL10n.getBase().addL10nSubstitution(p, "SecurityLevels.maxSecurityYouNeedFriends", new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
-				formNode.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "security-levels.networkThreatLevel.confirm", "off" }, WizardL10n.l10nSec("maximumNetworkThreatLevelCheckbox"));
+				NodeL10n.getBase().addL10nSubstitution(p, "SecurityLevels.maxSecurityYouNeedFriends",
+				        new String[] { "bold" },
+				        new HTMLNode[] { HTMLNode.STRONG });
+				formNode.addChild("p").addChild("input",
+				        new String[] { "type", "name", "value" },
+				        new String[] { "checkbox", "security-levels.networkThreatLevel.confirm", "off" },
+				        WizardL10n.l10nSec("maximumNetworkThreatLevelCheckbox"));
 			} else /*if(newThreatLevel == NETWORK_THREAT_LEVEL.HIGH)*/ {
 				HTMLNode p = formNode.addChild("p");
-				NodeL10n.getBase().addL10nSubstitution(p, "FirstTimeWizardToadlet.highNetworkThreatLevelWarning", new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
-				formNode.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "security-levels.networkThreatLevel.confirm", "off" }, WizardL10n.l10n("highNetworkThreatLevelCheckbox"));
+				NodeL10n.getBase().addL10nSubstitution(p, "FirstTimeWizardToadlet.highNetworkThreatLevelWarning",
+				        new String[] { "bold", "addAFriend", "friends" },
+				        new HTMLNode[] { HTMLNode.STRONG,
+				                new HTMLNode("#", NodeL10n.getBase().getString("FProxyToadlet.addFriendTitle")),
+				                new HTMLNode("#", NodeL10n.getBase().getString("FProxyToadlet.categoryFriends"))});
+				HTMLNode checkbox = formNode.addChild("p").addChild("input",
+				        new String[] { "type", "name", "value" },
+				        new String[] { "checkbox", "security-levels.networkThreatLevel.confirm", "off" });
+				NodeL10n.getBase().addL10nSubstitution(checkbox,
+				        "FirstTimeWizardToadlet.highNetworkThreatLevelCheckbox",
+				        new String[] { "bold", "addAFriend" },
+				        new HTMLNode[] { HTMLNode.STRONG,
+				                new HTMLNode("#", NodeL10n.getBase().getString("FProxyToadlet.addFriendTitle")),});
 			}
 			formNode.addChild("input",
 			        new String[] { "type", "name", "value" },
