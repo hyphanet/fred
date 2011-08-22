@@ -119,7 +119,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			if (persistFields.preset == WIZARD_PRESET.HIGH) {
 				redirectBase.append("SECURITY_NETWORK&preset=HIGH&confirm=true&opennet=false&security-levels.networkThreatLevel=HIGH");
 			} else /*if (persistFields.preset == WIZARD_PRESET.LOW)*/ {
-				redirectBase.append("BANDWIDTH&preset=LOW&opennet=true");
+				redirectBase.append("DATASTORE_SIZE&preset=LOW&opennet=true");
 			}
 			//addPersistFields() is not used here because the fields are overridden.
 			super.writeTemporaryRedirect(ctx, "Skipping to next necessary step", redirectBase.toString());
