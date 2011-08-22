@@ -73,4 +73,17 @@ public class PersistFields {
 	public boolean isUsingPreset() {
 		return preset != null;
 	}
+
+	/**
+	 * Appends any defined persistence fields to the given URL.
+	 * @param baseURL The URL to append fields to.
+	 * @return URL with persistence fields included.
+	 */
+	public String appendTo(String baseURL) {
+		StringBuilder url = new StringBuilder(baseURL).append("&opennet=").append(opennet);
+		if (isUsingPreset()) {
+			url.append("&preset=").append(preset);
+		}
+		return url.toString();
+	}
 }

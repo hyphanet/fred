@@ -110,7 +110,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		//Skip the browser warning page if using Chrome because its incognito mode works from command line.
 		if (currentStep == WIZARD_STEP.BROWSER_WARNING && request.getHeader("user-agent").contains("Chrome")) {
 			super.writeTemporaryRedirect(ctx, "Skipping unneeded warning",
-			        addPersistFields(TOADLET_URL+"?step=MISC", persistFields));
+			        persistFields.appendTo(TOADLET_URL+"?step=MISC"));
 			return;
 		} else if (currentStep == WIZARD_STEP.MISC && persistFields.isUsingPreset()) {
 			/*If using a preset, skip the miscellaneous page as both high and low security set those settings.
@@ -127,7 +127,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		} else if (currentStep == WIZARD_STEP.SECURITY_NETWORK && !request.isParameterSet("opennet")) {
 			//If opennet isn't defined when attempting to set network security level, ask again.
 			super.writeTemporaryRedirect(ctx, "Need opennet choice",
-			        addPersistFields(TOADLET_URL+"?step=OPENNET", persistFields));
+			        persistFields.appendTo(TOADLET_URL+"?step=OPENNET"));
 			return;
 		}
 
@@ -142,20 +142,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	 */
 	public static boolean shouldLogMinor() {
 		return logMINOR;
-	}
-
-	/**
-	 * Appends any defined persistence fields to the given URL.
-	 * @param baseURL The URL to append fields to.
-	 * @param persistFields To get persistence fields from.
-	 * @return URL with persistence fields included.
-	 */
-	private static String addPersistFields(String baseURL, PersistFields persistFields) {
-		StringBuilder url = new StringBuilder(baseURL).append("&opennet=").append(persistFields.opennet);
-		if (persistFields.isUsingPreset()) {
-			url.append("&preset=").append(persistFields.preset);
-		}
-		return url.toString();
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
@@ -274,7 +260,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				return;
 			}
 		}
-		super.writeTemporaryRedirect(ctx, "Wizard redirecting.", addPersistFields(redirectTarget, persistFields));
+		super.writeTemporaryRedirect(ctx, "Wizard redirecting.", persistFields.appendTo(redirectTarget));
 	}
 
 	@Override
