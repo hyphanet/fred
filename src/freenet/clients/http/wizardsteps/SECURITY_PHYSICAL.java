@@ -159,6 +159,10 @@ public class SECURITY_PHYSICAL implements Step {
 		return false;
 	}
 
+	public SecurityLevels.PHYSICAL_THREAT_LEVEL getCurrentLevel() {
+		return core.node.securityLevels.getPhysicalThreatLevel();
+	}
+
 	@Override
 	public String postStep(HTTPRequest request) throws IOException {
 		final String errorCorrupt = FirstTimeWizardToadlet.TOADLET_URL+"?step=SECURITY_PHYSICAL&error=corrupt";

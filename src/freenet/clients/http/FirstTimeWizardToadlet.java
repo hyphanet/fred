@@ -193,15 +193,15 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				//Low security preset
 				stepMISC.setUPnP(true);
 				stepMISC.setAutoUpdate(true);
-				redirectTo.append("&preset=LOW");
+				redirectTo.append("&preset=LOW&opennet=true");
 				stepSECURITY_NETWORK.setThreatLevel(SecurityLevels.NETWORK_THREAT_LEVEL.LOW);
 				stepSECURITY_PHYSICAL.setThreatLevel(SecurityLevels.PHYSICAL_THREAT_LEVEL.NORMAL,
-					SecurityLevels.PHYSICAL_THREAT_LEVEL.LOW);
+				        stepSECURITY_PHYSICAL.getCurrentLevel());
 			} else if (request.isPartSet("presetHigh")) {
 				//High security preset
 				stepMISC.setUPnP(true);
 				stepMISC.setAutoUpdate(true);
-				redirectTo.append("&preset=HIGH");
+				redirectTo.append("&preset=HIGH&opennet=false");
 			}
 
 			redirectTarget = redirectTo.toString();

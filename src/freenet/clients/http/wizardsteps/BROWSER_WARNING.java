@@ -93,15 +93,18 @@ public class BROWSER_WARNING implements Step {
 			infoboxContent.addChild("p", WizardL10n.l10n("browserWarningSuggestion"));
 		}
 
-		infoboxContent.addChild("p").addChild("a", "href", "?step=MISC", WizardL10n.l10n("clickContinue"));
+		HTMLNode form = helper.addFormChild(infoboxContent.addChild("p"), ".", "continueForm");
+		form.addChild("input",
+		        new String[] { "type", "name", "value" },
+		        new String[] { "submit", "continue", WizardL10n.l10n("clickContinue")});
 	}
 
 	/**
-	 * There is no POST side to this step, so a POST redirects to the GET side.
+	 * This POST side just continues to the next step.
 	 * @param request Unused.
 	 */
 	@Override
 	public String postStep(HTTPRequest request) {
-		return FirstTimeWizardToadlet.TOADLET_URL+"?step=BROWSER_WARNING";
+		return FirstTimeWizardToadlet.TOADLET_URL+"?step=MISC";
 	}
 }
