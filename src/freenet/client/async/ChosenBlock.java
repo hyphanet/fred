@@ -60,10 +60,14 @@ public abstract class ChosenBlock {
 	public abstract void onFetchSuccess(ClientContext context);
 
 	public abstract short getPriority();
+	
+	private boolean sendIsBlocking;
 
 	public boolean send(NodeClientCore core, RequestScheduler sched) {
 		ClientContext context = sched.getContext();
-		return getSender(context).send(core, sched, context, this);
+		SendableRequestSender sender = getSender(context);
+		sendIsBlocking = sender.sendIsBlocking();
+		return sender.send(core, sched, context, this);
 	}
 	
 	public abstract SendableRequestSender getSender(ClientContext context);
@@ -78,5 +82,10 @@ public abstract class ChosenBlock {
 	
 	public void setGeneratedKey(ClientKey key) {
 		generatedKey = key;
+	}
+
+	/** Call this after send() */
+	public boolean sendIsBlocking() {
+		return sendIsBlocking;
 	}
 }
