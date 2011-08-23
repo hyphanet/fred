@@ -2067,14 +2067,22 @@ public class Node implements TimeSkewDetectorCallback {
                     public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
 						storePreallocate = val;
 						if (storeType.equals("salt-hash")) {
-							((SaltedHashFreenetStore<CHKBlock>) chkDatastore.getStore()).setPreallocate(val);
-							((SaltedHashFreenetStore<CHKBlock>) chkDatacache.getStore()).setPreallocate(val);
-							((SaltedHashFreenetStore<DSAPublicKey>) pubKeyDatastore.getStore()).setPreallocate(val);
-							((SaltedHashFreenetStore<DSAPublicKey>) pubKeyDatacache.getStore()).setPreallocate(val);
-							((SaltedHashFreenetStore<SSKBlock>) sskDatastore.getStore()).setPreallocate(val);
-							((SaltedHashFreenetStore<SSKBlock>) sskDatacache.getStore()).setPreallocate(val);
+							setPreallocate(chkDatastore, val);
+							setPreallocate(chkDatacache, val);
+							setPreallocate(pubKeyDatastore, val);
+							setPreallocate(pubKeyDatacache, val);
+							setPreallocate(sskDatastore, val);
+							setPreallocate(sskDatacache, val);
 						}
-                    }}
+                    }
+
+					private void setPreallocate(StoreCallback<?> datastore,
+							boolean val) {
+						// Avoid race conditions by checking first.
+						FreenetStore<?> store = datastore.getStore();
+						if(store instanceof SaltedHashFreenetStore)
+							((SaltedHashFreenetStore<?>)store).setPreallocate(val);
+					}}
 		);
 		storePreallocate = nodeConfig.getBoolean("storePreallocate");
 
