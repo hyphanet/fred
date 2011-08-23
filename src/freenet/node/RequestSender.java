@@ -1928,7 +1928,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				status = this.status;
 			}
 			if (status!=NOT_FINISHED)
-				l.onRequestSenderFinished(status, sentFinishedFromOfferedKey);
+				l.onRequestSenderFinished(status, sentFinishedFromOfferedKey, this);
 			else
 				Logger.error(this, "sentFinished is true but status is still NOT_FINISHED?!?! on "+this, new Exception("error"));
 		}
@@ -1981,7 +1981,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			if(logMINOR) Logger.minor(this, "Notifying "+listeners.size()+" listeners of status "+status);
 			for (RequestSenderListener l : listeners) {
 				try {
-					l.onRequestSenderFinished(status, fromOfferedKey);
+					l.onRequestSenderFinished(status, fromOfferedKey, this);
 				} catch (Throwable t) {
 					Logger.error(this, "Caught: "+t, t);
 				}
@@ -2005,7 +2005,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			listeners.clear();
 		}
 		for(RequestSenderListener l : list) {
-			l.onRequestSenderFinished(TIMED_OUT, fromOfferedKey);
+			l.onRequestSenderFinished(TIMED_OUT, fromOfferedKey, this);
 		}
 		origTag.timedOutToHandlerButContinued();
 	}

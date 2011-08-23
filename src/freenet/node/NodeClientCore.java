@@ -870,16 +870,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		}
 	}
 
-	/** Asynchronous fetch. Wraps the listener so it will be unlocked before it
-	 * is called.
-	 * @param key
-	 * @param offersOnly
-	 * @param listener
-	 * @param canReadClientCache
-	 * @param canWriteClientCache
-	 * @param realTimeFlag
-	 */
-	public void asyncGet(Key key, boolean offersOnly, final RequestSenderListener listener, boolean canReadClientCache, boolean canWriteClientCache, final boolean realTimeFlag) {
+	public void asyncGet(final Key key, boolean offersOnly, final RequestCompletionListener listener, boolean canReadClientCache, boolean canWriteClientCache, final boolean realTimeFlag) {
 		final long uid = makeUID();
 		final boolean isSSK = key instanceof NodeSSK;
 		final RequestTag tag = new RequestTag(isSSK, RequestTag.START.ASYNC_GET, null, realTimeFlag, uid, node);
@@ -896,16 +887,21 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			htl = node.failureTable.minOfferedHTL(key, htl);
 			if(logMINOR) Logger.minor(this, "Using old HTL for GetOfferedKey: "+htl);
 		}
+		final long startTime = System.currentTimeMillis();
 		asyncGet(key, isSSK, offersOnly, uid, new RequestSenderListener() {
 
+			private boolean rejectedOverload;
+			
 			@Override
 			public void onCHKTransferBegins() {
-				listener.onCHKTransferBegins();
+				// Ignore
 			}
 
 			@Override
 			public void onReceivedRejectOverload() {
-				listener.onReceivedRejectOverload();
+				synchronized(this) {
+					rejectedOverload = true;
+				}
 			}
 
 			/** The RequestSender finished.
@@ -913,14 +909,99 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			 * @param fromOfferedKey
 			 */
 			@Override
-			public void onRequestSenderFinished(int status, boolean fromOfferedKey) {
+			public void onRequestSenderFinished(int status, boolean fromOfferedKey, RequestSender rs) {
 				tag.unlockHandler();
-				listener.onRequestSenderFinished(status, fromOfferedKey);
+				
+				if(rs.abortedDownstreamTransfers())
+					status = RequestSender.TRANSFER_FAILED;
+
+				if(status == RequestSender.NOT_FINISHED) {
+					Logger.error(this, "Bogus status in onRequestSenderFinished for "+rs, new Exception("error"));
+					listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
+					return;
+				}
+				
+				boolean rejectedOverload;
+				synchronized(this) {
+					rejectedOverload = this.rejectedOverload;
+				}
+
+				if(status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD && status != RequestSender.INTERNAL_ERROR) {
+					if(logMINOR)
+						Logger.minor(this, "CHK fetch cost " + rs.getTotalSentBytes() + '/' + rs.getTotalReceivedBytes() + " bytes (" + status + ')');
+					nodeStats.localChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
+					nodeStats.localChkFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
+					if(status == RequestSender.SUCCESS)
+						// See comments above declaration of successful* : We don't report sent bytes here.
+						//nodeStats.successfulChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
+						nodeStats.successfulChkFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
+				}
+
+				if((status == RequestSender.TIMED_OUT) ||
+					(status == RequestSender.GENERATED_REJECTED_OVERLOAD)) {
+					if(!rejectedOverload) {
+						// See below
+						requestStarters.rejectedOverload(false, false, realTimeFlag);
+						rejectedOverload = true;
+						long rtt = System.currentTimeMillis() - startTime;
+						double targetLocation=key.toNormalizedDouble();
+						node.nodeStats.reportCHKOutcome(rtt, false, targetLocation, realTimeFlag);
+					}
+				} else
+					if(rs.hasForwarded() &&
+						((status == RequestSender.DATA_NOT_FOUND) ||
+						(status == RequestSender.RECENTLY_FAILED) ||
+						(status == RequestSender.SUCCESS) ||
+						(status == RequestSender.ROUTE_NOT_FOUND) ||
+						(status == RequestSender.VERIFY_FAILURE) ||
+						(status == RequestSender.GET_OFFER_VERIFY_FAILURE))) {
+						long rtt = System.currentTimeMillis() - startTime;
+						double targetLocation=key.toNormalizedDouble();
+						if(!rejectedOverload)
+							requestStarters.requestCompleted(false, false, key, realTimeFlag);
+						// Count towards RTT even if got a RejectedOverload - but not if timed out.
+						requestStarters.getThrottle(false, false, realTimeFlag).successfulCompletion(rtt);
+						node.nodeStats.reportCHKOutcome(rtt, status == RequestSender.SUCCESS, targetLocation, realTimeFlag);
+						if(status == RequestSender.SUCCESS) {
+							Logger.minor(this, "Successful CHK fetch took "+rtt);
+						}
+					}
+
+				if(status == RequestSender.SUCCESS)
+					// FIXME how to identify failed to decode and report it back to the client layer??? do we even need to???
+					listener.onSucceeded();
+				else {
+					switch(status) {
+						case RequestSender.NOT_FINISHED:
+							Logger.error(this, "RS still running in getCHK!: " + rs);
+							listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
+						case RequestSender.DATA_NOT_FOUND:
+							listener.onFailed(new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND));
+						case RequestSender.RECENTLY_FAILED:
+							listener.onFailed(new LowLevelGetException(LowLevelGetException.RECENTLY_FAILED));
+						case RequestSender.ROUTE_NOT_FOUND:
+							listener.onFailed(new LowLevelGetException(LowLevelGetException.ROUTE_NOT_FOUND));
+						case RequestSender.TRANSFER_FAILED:
+						case RequestSender.GET_OFFER_TRANSFER_FAILED:
+							listener.onFailed(new LowLevelGetException(LowLevelGetException.TRANSFER_FAILED));
+						case RequestSender.VERIFY_FAILURE:
+						case RequestSender.GET_OFFER_VERIFY_FAILURE:
+							listener.onFailed(new LowLevelGetException(LowLevelGetException.VERIFY_FAILED));
+						case RequestSender.GENERATED_REJECTED_OVERLOAD:
+						case RequestSender.TIMED_OUT:
+							listener.onFailed(new LowLevelGetException(LowLevelGetException.REJECTED_OVERLOAD));
+						case RequestSender.INTERNAL_ERROR:
+							listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
+						default:
+							Logger.error(this, "Unknown RequestSender code in getCHK: " + status + " on " + rs);
+							listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
+					}
+				}
 			}
 
 			@Override
 			public void onAbortDownstreamTransfers(int reason, String desc) {
-				listener.onAbortDownstreamTransfers(reason, desc);
+				// Ignore, onRequestSenderFinished will also be called.
 			}
 		}, tag, canReadClientCache, canWriteClientCache, htl, realTimeFlag);
 	}
