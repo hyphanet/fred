@@ -146,23 +146,7 @@ public class PersistentChosenBlock extends ChosenBlock {
 
 	@Override
 	public boolean send(NodeClientCore core, RequestScheduler sched) {
-		try {
-			return super.send(core, sched);
-		} finally {
-			boolean wasFinished;
-			synchronized(this) {
-				wasFinished = finished;
-				if(!finished) {
-					finished = true;
-					if(parent.request instanceof SendableGet) {
-						Logger.error(this, "SendableGet "+parent.request+" didn't call a callback on "+this);
-					}
-				}
-			}
-			if(!wasFinished) {
-				parent.onFinished(this, sched.getContext());
-			}
-		}
+		return super.send(core, sched);
 	}
 
 	@Override
