@@ -80,16 +80,11 @@ public class SendableGetRequestSender implements SendableRequestSender {
 					}
 					
 				}, true, req.canWriteClientCache, req.realTimeFlag, req.localRequestOnly, req.ignoreStore);
-				core.realGetKey(key, req.localRequestOnly, req.ignoreStore, req.canWriteClientCache, req.realTimeFlag);
-			} catch (final LowLevelGetException e) {
-				req.onFailure(e, context);
-				return true;
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
 				req.onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), context);
 				return true;
 			}
-			req.onFetchSuccess(context);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
 			req.onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), context);
