@@ -1959,6 +1959,22 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("numberOfCHKOfferReplys", node.getNumCHKOfferReplies());
 		fs.put("numberOfSSKOfferReplys", node.getNumSSKOfferReplies());
 
+		fs.put("delayTimeLocalRT", nlmDelayRTLocal.currentValue());
+		fs.put("delayTimeRemoteRT", nlmDelayRTRemote.currentValue());
+		fs.put("delayTimeLocalBulk", nlmDelayBulkLocal.currentValue());
+		fs.put("delayTimeRemoteBulk", nlmDelayBulkRemote.currentValue());
+		synchronized(slotTimeoutsSync) {
+		    // timeoutFractions = fatalTimeouts/(fatalTimeouts+allocatedSlot)
+		    fs.put("fatalTimeoutsLocal",fatalTimeoutsInWaitLocal);
+		    fs.put("fatalTimeoutsRemote",fatalTimeoutsInWaitRemote);
+		    fs.put("allocatedSlotLocal",allocatedSlotLocal);
+		    fs.put("allocatedSlotRemote",allocatedSlotRemote);
+		}
+
+		int[] waitingSlots = node.countRequestsWaitingForSlots();
+		fs.put("RequestsWaitingSlotsLocal", waitingSlots[0]);
+		fs.put("RequestsWaitingSlotsRemote", waitingSlots[1]);
+
 		long[] total = node.collector.getTotalIO();
 		long total_output_rate = (total[0]) / nodeUptimeSeconds;
 		long total_input_rate = (total[1]) / nodeUptimeSeconds;
