@@ -657,6 +657,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return NodeL10n.getBase().getString("NodeStats."+key);
 	}
 
+	protected String l10n(String key, String[] patterns, String[] values) {
+		return NodeL10n.getBase().getString("NodeStats."+key, patterns, values);
+	}
+
 	public void start() throws NodeInitException {
 		node.executor.execute(new Runnable() {
 			@Override
@@ -3636,6 +3640,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public void drawNewLoadManagementDelayTimes(HTMLNode content) {
+		int[] waitingSlots = node.countRequestsWaitingForSlots();
+		content.addChild("p").addChild("#", l10n("slotsWaiting", new String[] { "local", "remote" }, new String[] { Integer.toString(waitingSlots[0]), Integer.toString(waitingSlots[1]) }));
 		HTMLNode table = content.addChild("table", "border", "0");
 		HTMLNode header = table.addChild("tr");
 		header.addChild("th", l10n("delayTimes"));

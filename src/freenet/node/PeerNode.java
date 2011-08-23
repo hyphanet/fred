@@ -5224,6 +5224,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				// Race condition if contains() && cantQueue (i.e. it was accepted then it became backed off), but probably not serious.
 				if(cantQueue) return false;
 				waitingFor.add(peer);
+				tag.setWaitingForSlot();
 			}
 			if(!peer.outputLoadTracker(realTime).queueSlotWaiter(this)) {
 				synchronized(this) {
@@ -5275,6 +5276,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			// If we want to wait for it again it must be re-queued.
 			PeerNode[] toUnreg = waitingFor.toArray(new PeerNode[waitingFor.size()]);
 			waitingFor.clear();
+			tag.clearWaitingForSlot();
 			return toUnreg;
 		}
 		
@@ -5304,6 +5306,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				// FIXME get rid of parameter.
 				failed = true;
 				fe = new SlotWaiterFailedException(peer, reallyFailed);
+				tag.clearWaitingForSlot();
 				notifyAll();
 			}
 		}
@@ -5347,6 +5350,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
 				if(ret != null)
 					waitingFor.clear();
+				if(grabbed || all.length == 0)
+					tag.clearWaitingForSlot();
 			}
 			if(grabbed) {
 				unregister(ret, all);
@@ -5387,6 +5392,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 							failed = false;
 							fe = null;
 						}						
+						tag.clearWaitingForSlot();
 					}
 					unregister(null, unreg);
 					if(other != null) {
@@ -5400,6 +5406,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				}
 			}
 			if(maxWait == 0) return null;
+			// Don't need to clear waiting here because we are still waiting.
 			if(!anyValid) {
 				synchronized(this) {
 					if(fe != null) {
@@ -5415,6 +5422,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(logMINOR) Logger.minor(this, "None valid to wait for on "+this);
 				unregister(ret, all);
 				if(f != null && ret == null) throw f;
+				tag.clearWaitingForSlot();
 				return ret;
 			}
 			synchronized(this) {
@@ -5466,6 +5474,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				waitingFor.clear();
 				failed = false;
 				fe = null;
+				tag.clearWaitingForSlot();
 			}
 			if(timeOutIsFatal && all != null) {
 				for(PeerNode pn : all) {

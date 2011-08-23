@@ -4793,6 +4793,27 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		}
 	}
+	
+	/**
+	 * @return [0] is the number of local requests waiting for slots, [1] is the
+	 * number of remote requests waiting for slots.
+	 */
+	public int[] countRequestsWaitingForSlots() {
+		// FIXME use a counter, but that means make sure it always removes it when something bad happens.
+		
+		int local = 0;
+		int remote = 0;
+		synchronized(runningUIDs) {
+			for(UIDTag tag : runningUIDs.values()) {
+				if(!tag.isWaitingForSlot()) continue;
+				if(tag.isLocal())
+					local++;
+				else
+					remote++;
+			}
+		}
+		return new int[] { local, remote };
+	}
 
 	void reassignTagToSelf(UIDTag tag) {
 		// The tag remains remote, but we flag it as adopted.
