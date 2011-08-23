@@ -1023,6 +1023,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			}
 			if(o == null) {
 				listener.onNotStarted();
+				return;
 			}
 			RequestSender rs = (RequestSender) o;
 			rs.addListener(listener);
