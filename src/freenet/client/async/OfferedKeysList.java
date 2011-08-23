@@ -16,6 +16,8 @@ import freenet.node.KeysFetchingLocally;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
+import freenet.node.RequestSender;
+import freenet.node.RequestSenderListener;
 import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
 import freenet.node.NodeClientCore.SimpleRequestSenderCompletionListener;
@@ -166,13 +168,27 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 				// Don't let a node force us to start a real request for a specific key.
 				// We check the datastore, take up offers if any (on a short timeout), and then quit if we still haven't fetched the data.
 				// Obviously this may have a marginal impact on load but it should only be marginal.
-				core.asyncGet(key, true, new SimpleRequestSenderCompletionListener() {
+				core.asyncGet(key, true, new RequestSenderListener() {
 
 					@Override
-					public void completed(boolean success) {
+					public void onCHKTransferBegins() {
 						// Ignore
 					}
-					
+
+					@Override
+					public void onReceivedRejectOverload() {
+						// Ignore
+					}
+
+					@Override
+					public void onRequestSenderFinished(int status, boolean fromOfferedKey) {
+						// Do nothing.
+					}
+
+					@Override
+					public void onAbortDownstreamTransfers(int reason, String desc) {
+						// Ignore, onRequestSenderFinished will also be called.
+					}
 				}, true, false, realTimeFlag);
 				// FIXME reconsider canWriteClientCache=false parameter.
 				return true;

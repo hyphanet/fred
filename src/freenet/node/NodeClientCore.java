@@ -857,7 +857,16 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		}
 	}
 
-	public void asyncGet(Key key, boolean offersOnly, final SimpleRequestSenderCompletionListener listener, boolean canReadClientCache, boolean canWriteClientCache, final boolean realTimeFlag) {
+	/** Asynchronous fetch. Wraps the listener so it will be unlocked before it
+	 * is called.
+	 * @param key
+	 * @param offersOnly
+	 * @param listener
+	 * @param canReadClientCache
+	 * @param canWriteClientCache
+	 * @param realTimeFlag
+	 */
+	public void asyncGet(Key key, boolean offersOnly, final RequestSenderListener listener, boolean canReadClientCache, boolean canWriteClientCache, final boolean realTimeFlag) {
 		final long uid = makeUID();
 		final boolean isSSK = key instanceof NodeSSK;
 		final RequestTag tag = new RequestTag(isSSK, RequestTag.START.ASYNC_GET, null, realTimeFlag, uid, node);
@@ -878,12 +887,12 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 			@Override
 			public void onCHKTransferBegins() {
-				// Ignore
+				listener.onCHKTransferBegins();
 			}
 
 			@Override
 			public void onReceivedRejectOverload() {
-				// Ignore
+				listener.onReceivedRejectOverload();
 			}
 
 			/** The RequestSender finished.
@@ -893,12 +902,12 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			@Override
 			public void onRequestSenderFinished(int status, boolean fromOfferedKey) {
 				tag.unlockHandler();
-				if(listener != null) listener.completed(status == RequestSender.SUCCESS);
+				listener.onRequestSenderFinished(status, fromOfferedKey);
 			}
 
 			@Override
 			public void onAbortDownstreamTransfers(int reason, String desc) {
-				// Ignore, onRequestSenderFinished will also be called.
+				listener.onAbortDownstreamTransfers(reason, desc);
 			}
 		}, tag, canReadClientCache, canWriteClientCache, htl, realTimeFlag);
 	}
