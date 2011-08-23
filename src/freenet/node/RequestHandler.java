@@ -396,7 +396,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 	}
 
 	@Override
-	public void onRequestSenderFinished(int status, boolean fromOfferedKey) {
+	public void onRequestSenderFinished(int status, boolean fromOfferedKey, RequestSender rs) {
 		if(tag.hasSourceReallyRestarted()) {
 			Logger.normal(this, "requestor is gone, can't send terminal message");
 			applyByteCounts();
