@@ -52,6 +52,8 @@ public abstract class UIDTag {
 	protected boolean noRecordUnlock;
 	private boolean hasUnlocked;
 	
+	private boolean waitingForSlot;
+	
 	UIDTag(PeerNode source, boolean realTimeFlag, long uid, Node node) {
 		createdTime = System.currentTimeMillis();
 		this.sourceRef = source == null ? null : source.myRef;
@@ -436,6 +438,26 @@ public abstract class UIDTag {
 		if(wasLocal) return false;
 		if(sourceRef == null) return false;
 		return sourceRef == pn.myRef;
+	}
+	
+	public synchronized void setWaitingForSlot() {
+		// FIXME use a counter on Node.
+		// We'd need to ensure it ALWAYS gets unset when some wierd
+		// error happens.
+		if(waitingForSlot) return;
+		waitingForSlot = true;
+	}
+	
+	public synchronized void clearWaitingForSlot() {
+		// FIXME use a counter on Node.
+		// We'd need to ensure it ALWAYS gets unset when some wierd
+		// error happens.
+		if(!waitingForSlot) return;
+		waitingForSlot = false;
+	}
+	
+	public synchronized boolean isWaitingForSlot() {
+		return waitingForSlot;
 	}
 
 }
