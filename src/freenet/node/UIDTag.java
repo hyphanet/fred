@@ -452,6 +452,7 @@ public abstract class UIDTag {
 		// FIXME use a counter on Node.
 		// We'd need to ensure it ALWAYS gets unset when some wierd
 		// error happens.
+		// Probably we can do this just by calling clearWaitingForSlot() when unlocking???
 		if(!waitingForSlot) return;
 		waitingForSlot = false;
 	}
