@@ -9,6 +9,7 @@ import java.util.List;
 import com.db4o.ObjectContainer;
 
 import freenet.client.FetchContext;
+import freenet.client.FetchException;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.ClientSSK;
@@ -274,18 +275,29 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			}
 		}
 		unregister(container, context, getPriorityClass(container)); // Key has already been removed from pendingKeys
-		try {
-			onSuccess(Key.createKeyBlock(this.key, block), false, null, container, context);
-		} catch (KeyVerifyException e) {
-			Logger.error(this, "onGotKey("+key+","+block+") got "+e+" for "+this, e);
-			// FIXME if we get rid of the direct route this must call onFailure()
-		}
+		onSuccess(block, false, null, container, context);
 		if(persistent) {
 			container.deactivate(this, 1);
 			container.deactivate(this.key, 1);
 		}
 	}
 	
+	public void onSuccess(KeyBlock lowLevelBlock, boolean fromStore, Object token, ObjectContainer container, ClientContext context) {
+		if(persistent) {
+			container.activate(key, Integer.MAX_VALUE);
+		}
+		ClientKeyBlock block;
+		try {
+			block = Key.createKeyBlock(this.key, lowLevelBlock);
+			onSuccess(block, fromStore, token, container, context);
+		} catch (KeyVerifyException e) {
+			onBlockDecodeError(token, container, context);
+		}
+	}
+	
+	protected abstract void onBlockDecodeError(Object token, ObjectContainer container,
+			ClientContext context);
+
 	/** Called when/if the low-level request succeeds. */
 	public abstract void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, ObjectContainer container, ClientContext context);
 	
