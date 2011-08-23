@@ -81,6 +81,8 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	private final boolean isSSK;
 	final boolean realTime;
 	
+	static final int MAX_WAITING_FOR_SLOTS = 50;
+	
 	public RequestStarter(NodeClientCore node, BaseRequestThrottle throttle, String name, TokenBucket outputBucket, TokenBucket inputBucket,
 			RunningAverage averageOutputBytesPerRequest, RunningAverage averageInputBytesPerRequest, boolean isInsert, boolean isSSK, boolean realTime) {
 		this.core = node;
@@ -162,6 +164,24 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 								// Ignore
 							}
 					} while(now < sleepUntil);
+				}
+				if(!doAIMD) {
+					// Arbitrary limit on number of local requests waiting for slots.
+					// Firstly, they use threads. This could be a serious problem for faster nodes.
+					// Secondly, it may help to prevent wider problems:
+					// If all queues are full, the network will die.
+					int[] waiting = core.node.countRequestsWaitingForSlots();
+					int localRequestsWaitingForSlots = waiting[0];
+					int maxWaitingForSlots = MAX_WAITING_FOR_SLOTS;
+					// FIXME calibrate this by the number of local timeouts.
+					// FIXME consider an AIMD, or some similar mechanism.
+					// Local timeout-waiting-for-slots is largely dependant on
+					// the number of requests running, due to strict round-robin,
+					// so we can probably do something even simpler than an AIMD.
+					// For now we'll just have a fixed number.
+					// This should partially address the problem.
+					// Note that while waitFor() is blocking, we need such a limit anyway.
+					if(localRequestsWaitingForSlots > maxWaitingForSlots) continue;
 				}
 				RejectReason reason;
 				assert(req.realTimeFlag == realTime);
