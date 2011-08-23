@@ -1073,4 +1073,10 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 	public int getPriority() {
 		return NativeThread.HIGH_PRIORITY;
 	}
+
+	@Override
+	public void onNotStarted() {
+		// Impossible
+		assert(false);
+	}
 }

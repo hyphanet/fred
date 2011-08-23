@@ -1012,6 +1012,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			public void onAbortDownstreamTransfers(int reason, String desc) {
 				// Ignore, onRequestSenderFinished will also be called.
 			}
+
+			@Override
+			public void onNotStarted() {
+				listener.onFailed(new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND_IN_STORE));
+			}
 		}, tag, canReadClientCache, canWriteClientCache, htl, realTimeFlag, localOnly, ignoreStore);
 	}
 
@@ -1028,6 +1033,9 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				tag.servedFromDatastore = true;
 				tag.unlockHandler();
 				return; // Already have it.
+			}
+			if(o == null) {
+				listener.onNotStarted();
 			}
 			RequestSender rs = (RequestSender) o;
 			rs.addListener(listener);
