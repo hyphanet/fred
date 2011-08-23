@@ -962,26 +962,35 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 						case RequestSender.NOT_FINISHED:
 							Logger.error(this, "RS still running in getCHK!: " + rs);
 							listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
+							return;
 						case RequestSender.DATA_NOT_FOUND:
 							listener.onFailed(new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND));
+							return;
 						case RequestSender.RECENTLY_FAILED:
 							listener.onFailed(new LowLevelGetException(LowLevelGetException.RECENTLY_FAILED));
+							return;
 						case RequestSender.ROUTE_NOT_FOUND:
 							listener.onFailed(new LowLevelGetException(LowLevelGetException.ROUTE_NOT_FOUND));
+							return;
 						case RequestSender.TRANSFER_FAILED:
 						case RequestSender.GET_OFFER_TRANSFER_FAILED:
 							listener.onFailed(new LowLevelGetException(LowLevelGetException.TRANSFER_FAILED));
+							return;
 						case RequestSender.VERIFY_FAILURE:
 						case RequestSender.GET_OFFER_VERIFY_FAILURE:
 							listener.onFailed(new LowLevelGetException(LowLevelGetException.VERIFY_FAILED));
+							return;
 						case RequestSender.GENERATED_REJECTED_OVERLOAD:
 						case RequestSender.TIMED_OUT:
 							listener.onFailed(new LowLevelGetException(LowLevelGetException.REJECTED_OVERLOAD));
+							return;
 						case RequestSender.INTERNAL_ERROR:
 							listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
+							return;
 						default:
 							Logger.error(this, "Unknown RequestSender code in getCHK: " + status + " on " + rs);
 							listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
+							return;
 					}
 				}
 			}
