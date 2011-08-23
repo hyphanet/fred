@@ -27,11 +27,9 @@ public class MISC implements Step {
 		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("stepMiscTitle"));
 		HTMLNode form = helper.addFormChild(contentNode, ".", "miscForm");
 
-		HTMLNode miscInfobox = form.addChild("div", "class", "infobox infobox-normal");
-		HTMLNode miscInfoboxHeader = miscInfobox.addChild("div", "class", "infobox-header");
-		HTMLNode miscInfoboxContent = miscInfobox.addChild("div", "class", "infobox-content");
+		HTMLNode miscInfoboxContent = helper.getInfobox("infobox-normal", WizardL10n.l10n("autoUpdate"),
+		        form, null, false);
 
-		miscInfoboxHeader.addChild("#", WizardL10n.l10n("autoUpdate"));
 		miscInfoboxContent.addChild("p", WizardL10n.l10n("autoUpdateLong"));
 		miscInfoboxContent.addChild("p").addChild("input",
 		        new String[] { "type", "checked", "name", "value" },
@@ -40,11 +38,9 @@ public class MISC implements Step {
 		        new String[] { "type", "name", "value" },
 		        new String[] { "radio", "autodeploy", "false" }, WizardL10n.l10n("autoUpdateNoAutodeploy"));
 
-		miscInfobox = form.addChild("div", "class", "infobox infobox-normal");
-		miscInfoboxHeader = miscInfobox.addChild("div", "class", "infobox-header");
-		miscInfoboxContent = miscInfobox.addChild("div", "class", "infobox-content");
+		miscInfoboxContent = helper.getInfobox("infobox-normal", WizardL10n.l10n("plugins"),
+		        form, null, false);
 
-		miscInfoboxHeader.addChild("#", WizardL10n.l10n("plugins"));
 		miscInfoboxContent.addChild("p", WizardL10n.l10n("pluginsLong"));
 		miscInfoboxContent.addChild("p").addChild("input",
 		        new String[] { "type", "checked", "name", "value" },

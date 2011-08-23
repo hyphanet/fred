@@ -53,17 +53,16 @@ public class BROWSER_WARNING implements Step {
 
 		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("browserWarningPageTitle"));
 
-		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-		HTMLNode infoboxHeader = infobox.addChild("div", "class", "infobox-header");
-		HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-
+		String infoBoxHeader;
 		if(incognito) {
-			infoboxHeader.addChild("#", WizardL10n.l10n("browserWarningIncognitoShort"));
+			infoBoxHeader = WizardL10n.l10n("browserWarningIncognitoShort");
 		} else if (isRelativelySafe) {
-			infoboxHeader.addChild("#", WizardL10n.l10n("browserWarningShortRelativelySafe"));
+			infoBoxHeader = WizardL10n.l10n("browserWarningShortRelativelySafe");
 		} else {
-			infoboxHeader.addChild("#", WizardL10n.l10n("browserWarningShort"));
+			infoBoxHeader = WizardL10n.l10n("browserWarningShort");
 		}
+		
+		HTMLNode infoboxContent = helper.getInfobox("infobox-normal", infoBoxHeader, contentNode, null, false);
 
 		if(isOldFirefox) {
 			HTMLNode p = infoboxContent.addChild("p");
@@ -96,7 +95,7 @@ public class BROWSER_WARNING implements Step {
 		HTMLNode form = helper.addFormChild(infoboxContent.addChild("p"), ".", "continueForm");
 		form.addChild("input",
 		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "continue", WizardL10n.l10n("clickContinue")});
+		        new String[] { "submit", "continue", WizardL10n.l10n("continue")});
 	}
 
 	/**

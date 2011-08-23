@@ -46,9 +46,6 @@ public class PageHelper {
 	}
 
 	public HTMLNode getInfobox(String category, String header, HTMLNode parent, String title, boolean isUnique) {
-		toadletContext.getPageMaker().getInfobox("infobox-error",
-		        WizardL10n.l10n("passwordWrongTitle"), parent, null, true).
-		        addChild("div", "class", "infobox-content");
 		return toadletContext.getPageMaker().getInfobox(category, header, parent, title, isUnique);
 	}
 

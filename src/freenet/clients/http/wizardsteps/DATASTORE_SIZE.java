@@ -30,11 +30,9 @@ public class DATASTORE_SIZE implements Step {
 	@Override
 	public void getStep(HTTPRequest request, PageHelper helper) {
 		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("step4Title"));
-		HTMLNode bandwidthInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-		HTMLNode bandwidthnfoboxHeader = bandwidthInfobox.addChild("div", "class", "infobox-header");
-		HTMLNode bandwidthInfoboxContent = bandwidthInfobox.addChild("div", "class", "infobox-content");
+		HTMLNode bandwidthInfoboxContent = helper.getInfobox("infobox-header", WizardL10n.l10n("datastoreSize"),
+		        contentNode, null, false);
 
-		bandwidthnfoboxHeader.addChild("#", WizardL10n.l10n("datastoreSize"));
 		bandwidthInfoboxContent.addChild("#", WizardL10n.l10n("datastoreSizeLong"));
 		HTMLNode bandwidthForm = helper.addFormChild(bandwidthInfoboxContent, ".", "dsForm");
 		HTMLNode result = bandwidthForm.addChild("select", "name", "ds");
@@ -52,7 +50,9 @@ public class DATASTORE_SIZE implements Step {
 			        new String[] { "value", "selected" },
 			        new String[] { SizeUtil.formatSize(current), "on" }, WizardL10n.l10n("currentPrefix")+" "+SizeUtil.formatSize(current));
 		} else if(autodetectedSize != -1) {
-			result.addChild("option", new String[] { "value", "selected" }, new String[] { SizeUtil.formatSize(autodetectedSize), "on" }, SizeUtil.formatSize(autodetectedSize));
+			result.addChild("option",
+			        new String[] { "value", "selected" },
+			        new String[] { SizeUtil.formatSize(autodetectedSize), "on" }, SizeUtil.formatSize(autodetectedSize));
 		}
 		if(autodetectedSize != 512*1024*1024) {
 			result.addChild("option", "value", "512M", "512 MiB");
@@ -63,7 +63,9 @@ public class DATASTORE_SIZE implements Step {
 			if(autodetectedSize != -1 || !sizeOption.isDefault()) {
 				result.addChild("option", "value", "2G", "2 GiB");
 			} else {
-				result.addChild("option", new String[] { "value", "selected" }, new String[] { "2G", "on" }, "2GiB");
+				result.addChild("option",
+				        new String[] { "value", "selected" },
+				        new String[] { "2G", "on" }, "2GiB");
 			}
 		}
 		if(maxSize >= 3l*1024*1024*1024) result.addChild("option", "value", "3G", "3 GiB");

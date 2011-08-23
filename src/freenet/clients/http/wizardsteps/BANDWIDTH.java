@@ -35,11 +35,9 @@ public class BANDWIDTH implements Step {
 
 		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("step3Title"));
 
-		HTMLNode bandwidthInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-		HTMLNode bandwidthnfoboxHeader = bandwidthInfobox.addChild("div", "class", "infobox-header");
-		HTMLNode bandwidthInfoboxContent = bandwidthInfobox.addChild("div", "class", "infobox-content");
+		HTMLNode bandwidthInfoboxContent = helper.getInfobox("infobox-normal", WizardL10n.l10n("bandwidthLimit"),
+		        contentNode, null, false);
 
-		bandwidthnfoboxHeader.addChild("#", WizardL10n.l10n("bandwidthLimit"));
 		bandwidthInfoboxContent.addChild("#", WizardL10n.l10n("bandwidthLimitLong"));
 		HTMLNode bandwidthForm = helper.addFormChild(bandwidthInfoboxContent, ".", "bwForm");
 		HTMLNode result = bandwidthForm.addChild("select", "name", "bw");

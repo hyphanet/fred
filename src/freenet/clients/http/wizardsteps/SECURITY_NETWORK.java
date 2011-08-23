@@ -33,9 +33,9 @@ public class SECURITY_NETWORK implements Step {
 			String networkThreatLevel = request.getParam("security-levels.networkThreatLevel");
 			SecurityLevels.NETWORK_THREAT_LEVEL newThreatLevel = SecurityLevels.parseNetworkThreatLevel(networkThreatLevel);
 
-			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-information");
-			infobox.addChild("div", "class", "infobox-header", WizardL10n.l10n("networkThreatLevelConfirmTitle." + newThreatLevel));
-			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
+			HTMLNode infoboxContent = helper.getInfobox("infobox-information",
+			        WizardL10n.l10n("networkThreatLevelConfirmTitle."+newThreatLevel), contentNode, null, false);
+
 			HTMLNode formNode = helper.addFormChild(infoboxContent, ".", "configFormSecLevels");
 			formNode.addChild("input",
 			        new String[] { "type", "name", "value" },
@@ -81,23 +81,24 @@ public class SECURITY_NETWORK implements Step {
 			return;
 		}
 
-		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-		HTMLNode infoboxHeader = infobox.addChild("div", "class", "infobox-header");
-		HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-
 		//Add choices and description depending on whether opennet was selected.
-		HTMLNode form = helper.addFormChild(infoboxContent, ".", "networkSecurityForm");
-		form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "opennet", opennetParam });
+		HTMLNode form;
 		if(opennet) {
-			infoboxHeader.addChild("#", WizardL10n.l10n("networkThreatLevelHeaderOpennet"));
+			HTMLNode infoboxContent = helper.getInfobox("infobox-normal",
+			        WizardL10n.l10n("networkThreatLevelHeaderOpennet"), contentNode, null, false);
 			infoboxContent.addChild("p", WizardL10n.l10n("networkThreatLevelIntroOpennet"));
+
+			form = helper.addFormChild(infoboxContent, ".", "networkSecurityForm");
 			HTMLNode div = form.addChild("div", "class", "opennetDiv");
 			for(SecurityLevels.NETWORK_THREAT_LEVEL level : SecurityLevels.NETWORK_THREAT_LEVEL.OPENNET_VALUES) {
 				securityLevelChoice(div, level);
 			}
 		} else {
+			HTMLNode infoboxContent = helper.getInfobox("infobox-normal",
+			        WizardL10n.l10n("networkThreatLevelHeaderDarknet"), contentNode, null, false);
 			infoboxContent.addChild("p", WizardL10n.l10n("networkThreatLevelIntroDarknet"));
-			infoboxHeader.addChild("#", WizardL10n.l10n("networkThreatLevelHeaderDarknet"));
+
+			form = helper.addFormChild(infoboxContent, ".", "networkSecurityForm");
 			HTMLNode div = form.addChild("div", "class", "darknetDiv");
 			for(SecurityLevels.NETWORK_THREAT_LEVEL level : SecurityLevels.NETWORK_THREAT_LEVEL.DARKNET_VALUES) {
 				securityLevelChoice(div, level);

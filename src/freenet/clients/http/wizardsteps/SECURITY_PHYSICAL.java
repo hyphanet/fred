@@ -49,12 +49,10 @@ public class SECURITY_PHYSICAL implements Step {
 		}
 
 		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("physicalSecurityPageTitle"));
-		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-		HTMLNode infoboxHeader = infobox.addChild("div", "class", "infobox-header");
-		HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-
-		infoboxHeader.addChild("#", WizardL10n.l10nSec("physicalThreatLevelShort"));
+		HTMLNode infoboxContent = helper.getInfobox("infobox-normal",
+		        WizardL10n.l10nSec("physicalThreatLevelShort"), contentNode, null, false);
 		infoboxContent.addChild("p", WizardL10n.l10nSec("physicalThreatLevel"));
+
 		HTMLNode form = helper.addFormChild(infoboxContent, ".", "physicalSecurityForm");
 		HTMLNode div = form.addChild("div", "class", "opennetDiv");
 		String controlName = "security-levels.physicalThreatLevel";
@@ -137,8 +135,7 @@ public class SECURITY_PHYSICAL implements Step {
 			HTMLNode contentNode = helper.getPageContent(WizardL10n.l10nSec(pageTitleKey));
 
 			HTMLNode content = helper.getInfobox("infobox-error",
-				WizardL10n.l10nSec(infoBoxTitleKey), contentNode, null, true).
-				addChild("div", "class", "infobox-content");
+			        WizardL10n.l10nSec(infoBoxTitleKey), contentNode, null, true);
 
 			HTMLNode form = helper.addFormChild(content, FirstTimeWizardToadlet.TOADLET_URL+"?step=SECURITY_PHYSICAL", "masterPasswordForm");
 
