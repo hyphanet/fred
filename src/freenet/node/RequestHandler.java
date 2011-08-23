@@ -40,7 +40,7 @@ import freenet.support.io.NativeThread;
  * is separated off into RequestSender so we get transfer coalescing
  * and both ends for free. 
  */
-public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.Listener {
+public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderListener {
 
 	private static volatile boolean logMINOR;
 

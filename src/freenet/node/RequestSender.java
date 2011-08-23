@@ -84,7 +84,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     /** If true, only try to fetch the key from nodes which have offered it */
     private boolean tryOffersOnly;
     
-	private ArrayList<Listener> listeners=new ArrayList<Listener>();
+	private ArrayList<RequestSenderListener> listeners=new ArrayList<RequestSenderListener>();
 	
     // Terminal status
     // Always set finished AFTER setting the reason flag
@@ -1891,20 +1891,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		return (source==null);
 	}
 	
-	/** All these methods should return quickly! */
-	interface Listener {
-		/** Should return quickly, allocate a thread if it needs to block etc */
-		void onReceivedRejectOverload();
-		/** Should return quickly, allocate a thread if it needs to block etc */
-		void onCHKTransferBegins();
-		/** Should return quickly, allocate a thread if it needs to block etc */
-		void onRequestSenderFinished(int status, boolean fromOfferedKey);
-		/** Abort downstream transfers (not necessarily upstream ones, so not via the PRB).
-		 * Should return quickly, allocate a thread if it needs to block etc. */
-		void onAbortDownstreamTransfers(int reason, String desc);
-	}
-	
-	public void addListener(Listener l) {
+	public void addListener(RequestSenderListener l) {
 		// Only call here if we've already called for the other listeners.
 		// Therefore the callbacks will only be called once.
 		boolean reject=false;
@@ -1953,7 +1940,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		synchronized (listeners) {
 			if(sentReceivedRejectOverload) return;
 			sentReceivedRejectOverload = true;
-			for (Listener l : listeners) {
+			for (RequestSenderListener l : listeners) {
 				try {
 					l.onReceivedRejectOverload();
 				} catch (Throwable t) {
@@ -1969,7 +1956,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		synchronized (listeners) {
 			if(sentCHKTransferBegins) return;
 			sentCHKTransferBegins = true;
-			for (Listener l : listeners) {
+			for (RequestSenderListener l : listeners) {
 				try {
 					l.onCHKTransferBegins();
 				} catch (Throwable t) {
@@ -1992,7 +1979,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			sentRequestSenderFinished = true;
 			completedFromOfferedKey = fromOfferedKey;
 			if(logMINOR) Logger.minor(this, "Notifying "+listeners.size()+" listeners of status "+status);
-			for (Listener l : listeners) {
+			for (RequestSenderListener l : listeners) {
 				try {
 					l.onRequestSenderFinished(status, fromOfferedKey);
 				} catch (Throwable t) {
@@ -2008,16 +1995,16 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	private boolean receivingAsync;
 	
 	private void reassignToSelfOnTimeout(boolean fromOfferedKey) {
-		Listener[] list;
+		RequestSenderListener[] list;
 		synchronized(listeners) {
 			if(sentCHKTransferBegins) {
 				Logger.error(this, "Transfer started, not dumping listeners when reassigning to self on timeout (race condition?) on "+this);
 				return;
 			}
-			list = listeners.toArray(new Listener[listeners.size()]);
+			list = listeners.toArray(new RequestSenderListener[listeners.size()]);
 			listeners.clear();
 		}
-		for(Listener l : list) {
+		for(RequestSenderListener l : list) {
 			l.onRequestSenderFinished(TIMED_OUT, fromOfferedKey);
 		}
 		origTag.timedOutToHandlerButContinued();
@@ -2064,9 +2051,9 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	
 	// FIXME this should not be necessary, we should be able to ask our listeners.
 	// However at the moment NodeClientCore's realGetCHK and realGetSSK (the blocking fetches)
-	// do not register a Listener. Eventually they will be replaced with something that does.
+	// do not register a RequestSenderListener. Eventually they will be replaced with something that does.
 	
-	// Also we should consider whether a local Listener added *after* the request starts should
+	// Also we should consider whether a local RequestSenderListener added *after* the request starts should
 	// impact on the decision or whether that leaks too much information. It's probably safe
 	// given the amount leaked anyway! (Note that if we start the request locally we will want
 	// to finish it even if incoming RequestHandler's are coalesced with it and they fail their 
