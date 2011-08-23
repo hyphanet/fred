@@ -11,4 +11,7 @@ public interface RequestSenderListener {
 	/** Abort downstream transfers (not necessarily upstream ones, so not via the PRB).
 	 * Should return quickly, allocate a thread if it needs to block etc. */
 	void onAbortDownstreamTransfers(int reason, String desc);
+	/** Not called by RequestSender, but called if localOnly is true and the data
+	 * is not in the store. */
+	void onNotStarted();
 }
