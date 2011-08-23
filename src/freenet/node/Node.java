@@ -5934,9 +5934,9 @@ public class Node implements TimeSkewDetectorCallback {
 	public int getTotalRunningUIDsAlt() {
 		synchronized(runningUIDs) {
 			return this.runningCHKGetUIDsRT.size() + this.runningCHKPutUIDsRT.size() + this.runningSSKGetUIDsRT.size() +
-			this.runningSSKGetUIDsRT.size() + this.runningSSKOfferReplyUIDsRT.size() + this.runningCHKOfferReplyUIDsRT.size() +
+			this.runningSSKPutUIDsRT.size() + this.runningSSKOfferReplyUIDsRT.size() + this.runningCHKOfferReplyUIDsRT.size() +
 			this.runningCHKGetUIDsBulk.size() + this.runningCHKPutUIDsBulk.size() + this.runningSSKGetUIDsBulk.size() +
-			this.runningSSKGetUIDsBulk.size() + this.runningSSKOfferReplyUIDsBulk.size() + this.runningCHKOfferReplyUIDsBulk.size();
+			this.runningSSKPutUIDsBulk.size() + this.runningSSKOfferReplyUIDsBulk.size() + this.runningCHKOfferReplyUIDsBulk.size();
 		}
 	}
 
