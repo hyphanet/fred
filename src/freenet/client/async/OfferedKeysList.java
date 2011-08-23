@@ -20,6 +20,7 @@ import freenet.node.RequestCompletionListener;
 import freenet.node.RequestScheduler;
 import freenet.node.RequestSender;
 import freenet.node.RequestSenderListener;
+import freenet.node.SendableInsert;
 import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
 import freenet.node.NodeClientCore.SimpleRequestSenderCompletionListener;
@@ -164,8 +165,8 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		return new SendableRequestSender() {
 
 			@Override
-			public boolean send(NodeClientCore core, RequestScheduler sched, ClientContext context, ChosenBlock req) {
-				Key key = ((MySendableRequestItem) req.token).key;
+			public boolean send(NodeClientCore core, final RequestScheduler sched, ClientContext context, ChosenBlock req) {
+				final Key key = ((MySendableRequestItem) req.token).key;
 				// Have to cache it in order to propagate it; FIXME
 				// Don't let a node force us to start a real request for a specific key.
 				// We check the datastore, take up offers if any (on a short timeout), and then quit if we still haven't fetched the data.
@@ -174,17 +175,28 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 
 					@Override
 					public void onSucceeded() {
-						// Ignore.
+						sched.removeFetchingKey(key);
+						// Something might be waiting for a request to complete (e.g. if we have two requests for the same key), 
+						// so wake the starter thread.
+						sched.wakeStarter();
 					}
 
 					@Override
 					public void onFailed(LowLevelGetException e) {
-						// Ignore.
+						sched.removeFetchingKey(key);
+						// Something might be waiting for a request to complete (e.g. if we have two requests for the same key), 
+						// so wake the starter thread.
+						sched.wakeStarter();
 					}
 
-				}, true, false, realTimeFlag);
+				}, true, false, realTimeFlag, false, false);
 				// FIXME reconsider canWriteClientCache=false parameter.
 				return true;
+			}
+
+			@Override
+			public boolean sendIsBlocking() {
+				return false;
 			}
 			
 		};

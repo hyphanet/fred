@@ -857,7 +857,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		}
 	}
 
-	public void asyncGet(final Key key, boolean offersOnly, final RequestCompletionListener listener, boolean canReadClientCache, boolean canWriteClientCache, final boolean realTimeFlag) {
+	public void asyncGet(final Key key, boolean offersOnly, final RequestCompletionListener listener, boolean canReadClientCache, boolean canWriteClientCache, final boolean realTimeFlag, boolean localOnly, boolean ignoreStore) {
 		final long uid = makeUID();
 		final boolean isSSK = key instanceof NodeSSK;
 		final RequestTag tag = new RequestTag(isSSK, RequestTag.START.ASYNC_GET, null, realTimeFlag, uid, node);
@@ -990,7 +990,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			public void onAbortDownstreamTransfers(int reason, String desc) {
 				// Ignore, onRequestSenderFinished will also be called.
 			}
-		}, tag, canReadClientCache, canWriteClientCache, htl, realTimeFlag);
+		}, tag, canReadClientCache, canWriteClientCache, htl, realTimeFlag, localOnly, ignoreStore);
 	}
 
 	/**
@@ -999,9 +999,9 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	 * anything and will run asynchronously. Caller is responsible for unlocking the UID.
 	 * @param key
 	 */
-	void asyncGet(Key key, boolean isSSK, boolean offersOnly, long uid, RequestSenderListener listener, RequestTag tag, boolean canReadClientCache, boolean canWriteClientCache, short htl, boolean realTimeFlag) {
+	void asyncGet(Key key, boolean isSSK, boolean offersOnly, long uid, RequestSenderListener listener, RequestTag tag, boolean canReadClientCache, boolean canWriteClientCache, short htl, boolean realTimeFlag, boolean ignoreStore, boolean localOnly) {
 		try {
-			Object o = node.makeRequestSender(key, htl, uid, tag, null, false, false, offersOnly, canReadClientCache, canWriteClientCache, realTimeFlag);
+			Object o = node.makeRequestSender(key, htl, uid, tag, null, localOnly, ignoreStore, offersOnly, canReadClientCache, canWriteClientCache, realTimeFlag);
 			if(o instanceof KeyBlock) {
 				tag.servedFromDatastore = true;
 				tag.unlockHandler();
