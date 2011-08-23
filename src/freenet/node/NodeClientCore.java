@@ -874,7 +874,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			htl = node.failureTable.minOfferedHTL(key, htl);
 			if(logMINOR) Logger.minor(this, "Using old HTL for GetOfferedKey: "+htl);
 		}
-		asyncGet(key, isSSK, offersOnly, uid, new RequestSender.Listener() {
+		asyncGet(key, isSSK, offersOnly, uid, new RequestSenderListener() {
 
 			@Override
 			public void onCHKTransferBegins() {
@@ -909,7 +909,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	 * anything and will run asynchronously. Caller is responsible for unlocking the UID.
 	 * @param key
 	 */
-	void asyncGet(Key key, boolean isSSK, boolean offersOnly, long uid, RequestSender.Listener listener, RequestTag tag, boolean canReadClientCache, boolean canWriteClientCache, short htl, boolean realTimeFlag) {
+	void asyncGet(Key key, boolean isSSK, boolean offersOnly, long uid, RequestSenderListener listener, RequestTag tag, boolean canReadClientCache, boolean canWriteClientCache, short htl, boolean realTimeFlag) {
 		try {
 			Object o = node.makeRequestSender(key, htl, uid, tag, null, false, false, offersOnly, canReadClientCache, canWriteClientCache, realTimeFlag);
 			if(o instanceof KeyBlock) {
