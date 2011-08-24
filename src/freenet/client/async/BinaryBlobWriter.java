@@ -178,4 +178,8 @@ public final class BinaryBlobWriter {
 		}
 		
 	}
+
+	public boolean isFinalized() {
+		return _finalized;
+	}
 }
