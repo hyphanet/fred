@@ -171,6 +171,8 @@ public final class BinaryBlobWriter {
 
 	public static class BinaryBlobAlreadyClosedException extends Exception {
 
+		private static final long serialVersionUID = -1L;
+
 		public BinaryBlobAlreadyClosedException(String message) {
 			super(message);
 		}
