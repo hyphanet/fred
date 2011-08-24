@@ -168,8 +168,8 @@ public final class BinaryBlobWriter {
 			return _buckets.get(0);
 		}
 	}
-	
-	static class BinaryBlobAlreadyClosedException extends Exception {
+
+	public static class BinaryBlobAlreadyClosedException extends Exception {
 
 		public BinaryBlobAlreadyClosedException(String message) {
 			super(message);
