@@ -1975,6 +1975,16 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("RequestsWaitingSlotsLocal", waitingSlots[0]);
 		fs.put("RequestsWaitingSlotsRemote", waitingSlots[1]);
 
+		fs.put("successfulLocalCHKFetchTimeBulk", successfulLocalCHKFetchTimeAverageBulk.currentValue());
+		fs.put("successfulLocalCHKFetchTimeRT", successfulLocalCHKFetchTimeAverageRT.currentValue());
+		fs.put("unsuccessfulLocalCHKFetchTimeBulk", unsuccessfulLocalCHKFetchTimeAverageBulk.currentValue());
+		fs.put("unsuccessfulLocalCHKFetchTimeRT", unsuccessfulLocalCHKFetchTimeAverageRT.currentValue());
+
+		fs.put("successfulLocalSSKFetchTimeBulk", successfulLocalSSKFetchTimeAverageBulk.currentValue());
+		fs.put("successfulLocalSSKFetchTimeRT", successfulLocalSSKFetchTimeAverageRT.currentValue());
+		fs.put("unsuccessfulLocalSSKFetchTimeBulk", unsuccessfulLocalSSKFetchTimeAverageBulk.currentValue());
+		fs.put("unsuccessfulLocalSSKFetchTimeRT", unsuccessfulLocalSSKFetchTimeAverageRT.currentValue());
+
 		long[] total = node.collector.getTotalIO();
 		long total_output_rate = (total[0]) / nodeUptimeSeconds;
 		long total_input_rate = (total[1]) / nodeUptimeSeconds;
