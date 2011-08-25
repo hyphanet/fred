@@ -94,22 +94,22 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	private final Bucket initialMetadata;
 
 	// Shorter constructors for convenience and backwards compatibility.
-	
+
 	public ClientGetter(ClientGetCallback client,
 		    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext) {
 		this(client, uri, ctx, priorityClass, clientContext, null, null, null);
 	}
-	
+
 	public ClientGetter(ClientGetCallback client,
 		    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket) {
 		this(client, uri, ctx, priorityClass, clientContext, returnBucket, null, null);
 	}
-	
+
 	public ClientGetter(ClientGetCallback client,
 		    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, BinaryBlobWriter binaryBlobWriter) {
 		this(client, uri, ctx, priorityClass, clientContext, returnBucket, binaryBlobWriter, null);
 	}
-	
+
 	public ClientGetter(ClientGetCallback client,
 		    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, BinaryBlobWriter binaryBlobWriter, Bucket initialMetadata) {
 		this(client, uri, ctx, priorityClass, clientContext, returnBucket, binaryBlobWriter, false, initialMetadata);
