@@ -17,7 +17,7 @@ public class WELCOME implements Step {
 
 	/**
 	 * Constructs a new WELCOME GET handler.
-	 * @param config Node config; cannot be null. Used to build language drop-down.
+	 * @param config Node config; cannot be null. Used to build language drop-down and change language.
 	 */
 	public WELCOME(Config config) {
 		this.config = config;

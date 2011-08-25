@@ -11,13 +11,25 @@ import java.net.URISyntaxException;
 import java.util.EnumMap;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.clients.http.wizardsteps.*;
+import freenet.clients.http.wizardsteps.BANDWIDTH;
+import freenet.clients.http.wizardsteps.BANDWIDTH_MONTHLY;
+import freenet.clients.http.wizardsteps.BANDWIDTH_RATE;
+import freenet.clients.http.wizardsteps.BROWSER_WARNING;
+import freenet.clients.http.wizardsteps.DATASTORE_SIZE;
+import freenet.clients.http.wizardsteps.MISC;
+import freenet.clients.http.wizardsteps.NAME_SELECTION;
+import freenet.clients.http.wizardsteps.OPENNET;
+import freenet.clients.http.wizardsteps.PageHelper;
+import freenet.clients.http.wizardsteps.PersistFields;
+import freenet.clients.http.wizardsteps.SECURITY_NETWORK;
+import freenet.clients.http.wizardsteps.SECURITY_PHYSICAL;
+import freenet.clients.http.wizardsteps.Step;
+import freenet.clients.http.wizardsteps.WELCOME;
 import freenet.config.Config;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.SecurityLevels;
-import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -56,6 +68,10 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		NAME_SELECTION,
 		DATASTORE_SIZE,
 		BANDWIDTH,
+		//TODO: These, move wizard completion writing into something they can both access.
+		//TODO: Monthy and rate extend BANDWIDTH to get protected bandwidth setting functions?
+		BANDWIDTH_MONTHLY,
+		BANDWIDTH_RATE
 	}
 
 	public enum WIZARD_PRESET {
@@ -76,7 +92,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		steps.put(WIZARD_STEP.NAME_SELECTION, new NAME_SELECTION(config));
 		steps.put(WIZARD_STEP.DATASTORE_SIZE, new DATASTORE_SIZE(core, config));
 		steps.put(WIZARD_STEP.OPENNET, new OPENNET());
-		steps.put(WIZARD_STEP.BANDWIDTH, new BANDWIDTH(core, config));
+		steps.put(WIZARD_STEP.BANDWIDTH, new BANDWIDTH());
+		steps.put(WIZARD_STEP.BANDWIDTH_MONTHLY, new BANDWIDTH_MONTHLY(core, config));
+		steps.put(WIZARD_STEP.BANDWIDTH_RATE, new BANDWIDTH_RATE(core, config));
 
 		//Add step handlers that are set by presets
 		stepMISC = new MISC(core, config);
