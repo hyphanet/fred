@@ -1558,8 +1558,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 */
 	private double getPeerBandwidthLiability(RunningRequestsSnapshot requestsSnapshot, PeerNode source, boolean ignoreLocalVsRemote, int transfersOutPerInsert, boolean input) {
 		
-		requestsSnapshot.log(source);
-		
 		return requestsSnapshot.calculate(ignoreLocalVsRemoteBandwidthLiability, input);
 	}
 
