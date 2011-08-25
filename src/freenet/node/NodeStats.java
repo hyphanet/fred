@@ -523,7 +523,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 		useAIMDsRT = statsConfig.getBoolean("useAIMDsRT");
 		
-		statsConfig.register("useAIMDsBulk", false, sortOrder++, true, false, "NodeClientCore.useAIMDsBulk", "NodeClientCore.useAIMDsBulkLong", new BooleanCallback() {
+		statsConfig.register("useAIMDsBulk", true, sortOrder++, true, false, "NodeClientCore.useAIMDsBulk", "NodeClientCore.useAIMDsBulkLong", new BooleanCallback() {
 
 			@Override
 			public Boolean get() {
