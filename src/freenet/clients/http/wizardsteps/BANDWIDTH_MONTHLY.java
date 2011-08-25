@@ -14,11 +14,11 @@ import freenet.support.api.HTTPRequest;
 public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 
 	private long[] caps;
+	private final long GB = 1000000000;
 
 	public BANDWIDTH_MONTHLY(NodeClientCore core, Config config) {
 		super(core, config);
-		final long GiB = 1073741824;
-		caps = new long[] { 25*GiB, 50*GiB, 100*GiB, 150*GiB };
+		caps = new long[] { 25*GB, 50*GB, 100*GB, 150*GB };
 	}
 
 	@Override
@@ -49,12 +49,12 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 		//Row for each cap
 		for (long cap : caps) {
 			HTMLNode row = table.addChild("tr");
-			String capString = SizeUtil.formatSize(cap, false);
-			row.addChild("td", capString);
-			HTMLNode selectForm = helper.addFormChild(row.addChild("td"), ".", capString+"-form");
+			//ISPs are likely to list limits in GB instead of GiB, so display GB here.
+			row.addChild("td", String.valueOf(cap/GB)+" GB");
+			HTMLNode selectForm = helper.addFormChild(row.addChild("td"), ".", "limit");
 			selectForm.addChild("input",
 			        new String[] { "type", "name", "value" },
-			        new String[] { "hidden", "capTo", capString});
+			        new String[] { "hidden", "capTo", String.valueOf(cap)});
 			selectForm.addChild("input",
 			        new String[] { "type", "value" },
 			        new String[] { "submit", WizardL10n.l10n("bandwidthSelect")});
@@ -83,8 +83,8 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 			target.append(URLEncoder.encode(capTo, true));
 			return target.toString();
 		}
-		//Linear from 0.5 at 25 GiB to 0.8 at 100 GiB. bytesMonth is divided by the number of bytes in a GiB.
-		double downloadFraction = 0.004*(bytesMonth/1073741824) + 0.4;
+		//Linear from 0.5 at 25 GB to 0.8 at 100 GB. bytesMonth is divided by the number of bytes in a GiB.
+		double downloadFraction = 0.004*(bytesMonth/GB) + 0.4;
 		if (downloadFraction < 0.4) downloadFraction = 0.4;
 		if (downloadFraction > 0.8) downloadFraction = 0.8;
 		//Seconds in 30 days
