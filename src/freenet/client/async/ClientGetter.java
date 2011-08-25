@@ -448,6 +448,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	 * @param e The reason for failure, in the form of a FetchException.
 	 * @param state The failing state.
 	 */
+	@Override
 	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
 		onFailure(e, state, container, context, false);
 	}
