@@ -915,24 +915,28 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 				if(status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD && status != RequestSender.INTERNAL_ERROR) {
 					if(logMINOR)
-						Logger.minor(this, "CHK fetch cost " + rs.getTotalSentBytes() + '/' + rs.getTotalReceivedBytes() + " bytes (" + status + ')');
-					nodeStats.localChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
-					nodeStats.localChkFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
+						Logger.minor(this, (isSSK ? "SSK" : "CHK") + " fetch cost " + rs.getTotalSentBytes() + '/' + rs.getTotalReceivedBytes() + " bytes (" + status + ')');
+					(isSSK ? nodeStats.localSskFetchBytesSentAverage : nodeStats.localChkFetchBytesSentAverage).report(rs.getTotalSentBytes());
+					(isSSK ? nodeStats.localSskFetchBytesReceivedAverage : nodeStats.localChkFetchBytesReceivedAverage).report(rs.getTotalReceivedBytes());
 					if(status == RequestSender.SUCCESS)
 						// See comments above declaration of successful* : We don't report sent bytes here.
 						//nodeStats.successfulChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
-						nodeStats.successfulChkFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
+						(isSSK ? nodeStats.successfulSskFetchBytesReceivedAverage : nodeStats.successfulChkFetchBytesReceivedAverage).report(rs.getTotalReceivedBytes());
 				}
 
 				if((status == RequestSender.TIMED_OUT) ||
 					(status == RequestSender.GENERATED_REJECTED_OVERLOAD)) {
 					if(!rejectedOverload) {
 						// See below
-						requestStarters.rejectedOverload(false, false, realTimeFlag);
+						requestStarters.rejectedOverload(isSSK, false, realTimeFlag);
 						rejectedOverload = true;
 						long rtt = System.currentTimeMillis() - startTime;
 						double targetLocation=key.toNormalizedDouble();
-						node.nodeStats.reportCHKOutcome(rtt, false, targetLocation, realTimeFlag);
+						if(isSSK) {
+							node.nodeStats.reportSSKOutcome(rtt, false, realTimeFlag);
+						} else {
+							node.nodeStats.reportCHKOutcome(rtt, false, targetLocation, realTimeFlag);
+						}
 					}
 				} else
 					if(rs.hasForwarded() &&
@@ -945,12 +949,16 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 						long rtt = System.currentTimeMillis() - startTime;
 						double targetLocation=key.toNormalizedDouble();
 						if(!rejectedOverload)
-							requestStarters.requestCompleted(false, false, key, realTimeFlag);
+							requestStarters.requestCompleted(isSSK, false, key, realTimeFlag);
 						// Count towards RTT even if got a RejectedOverload - but not if timed out.
-						requestStarters.getThrottle(false, false, realTimeFlag).successfulCompletion(rtt);
-						node.nodeStats.reportCHKOutcome(rtt, status == RequestSender.SUCCESS, targetLocation, realTimeFlag);
+						requestStarters.getThrottle(isSSK, false, realTimeFlag).successfulCompletion(rtt);
+						if(isSSK) {
+							node.nodeStats.reportSSKOutcome(rtt, status == RequestSender.SUCCESS, realTimeFlag);
+						} else {
+							node.nodeStats.reportCHKOutcome(rtt, status == RequestSender.SUCCESS, targetLocation, realTimeFlag);
+						}
 						if(status == RequestSender.SUCCESS) {
-							Logger.minor(this, "Successful CHK fetch took "+rtt);
+							Logger.minor(this, "Successful " + (isSSK ? "SSK" : "CHK") + " fetch took "+rtt);
 						}
 					}
 
@@ -960,7 +968,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				else {
 					switch(status) {
 						case RequestSender.NOT_FINISHED:
-							Logger.error(this, "RS still running in getCHK!: " + rs);
+							Logger.error(this, "RS still running in get" + (isSSK ? "SSK" : "CHK") + "!: " + rs);
 							listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
 							return;
 						case RequestSender.DATA_NOT_FOUND:
@@ -988,7 +996,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 							listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
 							return;
 						default:
-							Logger.error(this, "Unknown RequestSender code in getCHK: " + status + " on " + rs);
+							Logger.error(this, "Unknown RequestSender code in get"+ (isSSK ? "SSK" : "CHK") +": " + status + " on " + rs);
 							listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
 							return;
 					}
