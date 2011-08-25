@@ -390,7 +390,7 @@ public class WelcomeToadlet extends Toadlet {
 
                 this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
                 return;
-        } else if (uri.getQuery() != null && uri.getQuery().contains("_CHECKED_HTTP_=")) {
+        } else if (uri.getQuery() != null && uri.getQuery().startsWith("_CHECKED_HTTP_=")) {
 		//Redirect requests for escaped URLs using the old destination to ExternalLinkToadlet.
 		super.writeTemporaryRedirect(ctx, "Depreciated", ExternalLinkToadlet.PATH+'?'+uri.getQuery());
 		return;
