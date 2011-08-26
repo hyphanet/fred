@@ -523,14 +523,10 @@ public class NodeCrypto {
 	 */
 	public void maybeBootConnection(PeerNode peerNode,
 			FreenetInetAddress address) {
-		if(config.oneConnectionPerAddress())
-			return; // If it's set here then we've already checked, we're not going to boot anyone else.
-		
 		ArrayList<PeerNode> possibleMatches = node.peers.getAllConnectedByAddress(address, true);
 		if(possibleMatches == null) return;
 		for(PeerNode pn : possibleMatches) {
 			if(pn == peerNode) continue;
-			if(pn.crypto == this) continue;
 			if(pn.crypto.config.oneConnectionPerAddress()) {
 				if(pn instanceof DarknetPeerNode) {
 					if(!peerNode.isDarknet()) {
