@@ -84,10 +84,10 @@ public class SECURITY_PHYSICAL implements Step {
 		div.addChild("#", WizardL10n.l10nSec("physicalThreatLevelEnd"));
 		form.addChild("input",
 		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "physicalSecurityF", WizardL10n.l10n("continue")});
+		        new String[] { "submit", "back", NodeL10n.getBase().getString("Toadlet.back")});
 		form.addChild("input",
 		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
+		        new String[] { "submit", "next", NodeL10n.getBase().getString("Toadlet.next")});
 	}
 
 	/**

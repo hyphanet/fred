@@ -74,10 +74,10 @@ public class SECURITY_NETWORK implements Step {
 			        new String[] { "hidden", "security-levels.networkThreatLevel.tryConfirm", "on" });
 			formNode.addChild("input",
 			        new String[] { "type", "name", "value" },
-			        new String[] { "submit", "networkSecurityF", WizardL10n.l10n("continue")});
+			        new String[] { "submit", "back", NodeL10n.getBase().getString("Toadlet.back")});
 			formNode.addChild("input",
 			        new String[] { "type", "name", "value" },
-			        new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
+			        new String[] { "submit", "next", NodeL10n.getBase().getString("Toadlet.next")});
 			return;
 		}
 

@@ -188,21 +188,18 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			currentStep = WIZARD_STEP.WELCOME;
 		}
 
-		//User chose cancel, return to first page.
-		if (request.isPartSet("cancel")) {
-			currentStep = WIZARD_STEP.WELCOME;
-		}
-
 		PersistFields persistFields = new PersistFields(request);
-
 		String redirectTarget;
 
-		//If a preset was selected from the welcome page, apply preset settings and proceed to the browser warning.
-		if (currentStep.equals(WIZARD_STEP.WELCOME) &&
+		//User chose back, return to previous page.
+		if (request.isPartSet("back")) {
+			redirectTarget = TOADLET_URL+"?step="+getPreviousStep(currentStep, persistFields.preset).name();
+		} else if (currentStep.equals(WIZARD_STEP.WELCOME) &&
 		        (request.isPartSet("presetLow") || request.isPartSet("presetHigh") || request.isPartSet("presetNone"))) {
-			/*Apply presets and persist incognito to the browser warning. The browser warning only checks
-			  whether the parameter is set; not its value. UPnP is enabled first to allow it time to
-			  load (and thus enable autodetection) before hitting the bandwidth page.*/
+			//If a preset was selected from the welcome page, apply preset settings and proceed to the browser warning.
+
+			/*Apply presets and UPnP is enabled first to allow it time to load (and thus enable
+			  autodetection) before hitting the bandwidth page.*/
 			StringBuilder redirectTo = new StringBuilder(TOADLET_URL+"?step=BROWSER_WARNING&incognito=");
 			redirectTo.append(request.getPartAsStringFailsafe("incognito", 5));
 
@@ -222,7 +219,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				redirectTo.append("&preset=HIGH&opennet=false");
 			}
 
-			redirectTarget = redirectTo.toString();
+			super.writeTemporaryRedirect(ctx, "Wizard redirecting.", redirectTo.toString());
+			return;
 		} else {
 			try {
 				redirectTarget = steps.get(currentStep).postStep(request);
@@ -237,8 +235,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 						Logger.error(this, "Unexpected invalid query string from OPENNET step! "+e, e);
 						redirectTarget = TOADLET_URL+"?step="+WIZARD_STEP.WELCOME;
 					}
-
 				}
+
+				redirectTarget = persistFields.appendTo(redirectTarget);
 			} catch (IOException e) {
 				String title;
 				if (e.getMessage().equals("cantWriteNewMasterKeysFile")) {
@@ -279,6 +278,54 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			}
 		}
 		super.writeTemporaryRedirect(ctx, "Wizard redirecting.", persistFields.appendTo(redirectTarget));
+	}
+
+	//FIXME: There really has to be a better way to find the previous step, but with an enum there's no decrement.
+	//FIXME: Would a set work better than an enum?
+	private WIZARD_STEP getPreviousStep(WIZARD_STEP currentStep, WIZARD_PRESET preset) {
+
+		//Might be obvious, but still: No breaks needed in cases because their only contents are returns.
+
+		//First pages for the presets
+		if (preset == WIZARD_PRESET.HIGH) {
+			switch (currentStep) {
+				case SECURITY_NETWORK:
+				case SECURITY_PHYSICAL:
+					//Go back to the beginning from the warning or the physical security page.
+					return WIZARD_STEP.WELCOME;
+			}
+		} else  if (preset == WIZARD_PRESET.LOW) {
+			switch (currentStep) {
+				case DATASTORE_SIZE:
+					//Go back to the beginning from the datastore page.
+					return WIZARD_STEP.WELCOME;
+			}
+		}
+
+		//Otherwise normal order.
+		switch (currentStep) {
+			case MISC:
+			case BROWSER_WARNING:
+				return WIZARD_STEP.WELCOME;
+			case OPENNET:
+				return WIZARD_STEP.MISC;
+			case SECURITY_NETWORK:
+				return WIZARD_STEP.OPENNET;
+			case SECURITY_PHYSICAL:
+				return WIZARD_STEP.SECURITY_NETWORK;
+			case NAME_SELECTION:
+				return WIZARD_STEP.SECURITY_PHYSICAL;
+			case DATASTORE_SIZE:
+				return WIZARD_STEP.NAME_SELECTION;
+			case BANDWIDTH:
+				return WIZARD_STEP.DATASTORE_SIZE;
+			case BANDWIDTH_MONTHLY:
+			case BANDWIDTH_RATE:
+				return WIZARD_STEP.BANDWIDTH;
+		}
+
+		//Should be matched by this point, unknown step.
+		return WIZARD_STEP.WELCOME;
 	}
 
 	@Override

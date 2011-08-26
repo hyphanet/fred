@@ -68,6 +68,11 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 		customForm.addChild("td").addChild("input",
 			new String[]{"type", "value"},
 			new String[]{"submit", WizardL10n.l10n("bandwidthSelect")});
+
+		HTMLNode backForm = helper.addFormChild(contentNode, ".", "backForm");
+		backForm.addChild("input",
+		        new String[] { "type", "name", "value" },
+		        new String[] { "submit", "back", NodeL10n.getBase().getString("Toadlet.back")});
 	}
 
 	@Override
@@ -77,7 +82,6 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 		try {
 			bytesMonth = Fields.parseLong(capTo);
 		} catch (NumberFormatException e) {
-			System.out.println("Herp derp "+e);
 			StringBuilder target = new StringBuilder(FirstTimeWizardToadlet.TOADLET_URL);
 			target.append("?step=BANDWIDTH_MONTHLY&parseError=true&parseTarget=");
 			target.append(URLEncoder.encode(capTo, true));

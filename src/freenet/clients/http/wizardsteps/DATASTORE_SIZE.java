@@ -76,12 +76,15 @@ public class DATASTORE_SIZE implements Step {
 		if(maxSize >= 50l*1024*1024*1024) result.addChild("option", "value", "50G", "50 GiB");
 		if(maxSize >= 100l*1024*1024*1024) result.addChild("option", "value", "100G", "100 GiB");
 
-		bandwidthForm.addChild("input",
+
+		//Put buttons below dropdown.
+		HTMLNode below = bandwidthForm.addChild("div");
+		below.addChild("input",
 		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "dsF", WizardL10n.l10n("continue")});
-		bandwidthForm.addChild("input",
+		        new String[] { "submit", "next", NodeL10n.getBase().getString("Toadlet.next")});
+		below.addChild("input",
 		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
+		        new String[] { "submit", "back", NodeL10n.getBase().getString("Toadlet.back")});
 	}
 
 	@Override

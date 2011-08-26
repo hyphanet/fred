@@ -31,10 +31,10 @@ public class NAME_SELECTION implements Step {
 
 		nnameForm.addChild("input",
 		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "nnameF", WizardL10n.l10n("continue")});
+		        new String[] { "submit", "back", NodeL10n.getBase().getString("Toadlet.back")});
 		nnameForm.addChild("input",
 		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
+		        new String[] { "submit", "next", NodeL10n.getBase().getString("Toadlet.next")});
 	}
 
 	@Override

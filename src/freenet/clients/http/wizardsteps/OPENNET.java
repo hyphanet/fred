@@ -46,10 +46,11 @@ public class OPENNET implements Step {
 
 		form.addChild("input",
 		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "opennetF", WizardL10n.l10n("continue")});
+		        new String[] { "submit", "back", NodeL10n.getBase().getString("Toadlet.back")});
 		form.addChild("input",
 		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
+		        new String[] { "submit", "next", NodeL10n.getBase().getString("Toadlet.next")});
+
 		HTMLNode foot = infoboxContent.addChild("div", "class", "toggleable");
 		foot.addChild("i", "¹: " + WizardL10n.l10n("opennetChoiceHowSafeIsFreenetToggle"));
 		HTMLNode footHidden = foot.addChild("div", "class", "hidden");

@@ -95,7 +95,10 @@ public class BROWSER_WARNING implements Step {
 		HTMLNode form = helper.addFormChild(infoboxContent.addChild("p"), ".", "continueForm");
 		form.addChild("input",
 		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "continue", WizardL10n.l10n("continue")});
+		        new String[] { "submit", "back", NodeL10n.getBase().getString("Toadlet.back")});
+		form.addChild("input",
+		        new String[] { "type", "name", "value" },
+		        new String[] { "submit", "next", NodeL10n.getBase().getString("Toadlet.next")});
 	}
 
 	/**

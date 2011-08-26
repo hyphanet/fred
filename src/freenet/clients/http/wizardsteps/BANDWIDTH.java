@@ -29,7 +29,7 @@ public class BANDWIDTH implements Step {
 		HTMLNode bandwidthForm = helper.addFormChild(bandwidthInfoboxContent, ".", "bwForm");
 		bandwidthForm.addChild("input",
 		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
+		        new String[] { "submit", "back", NodeL10n.getBase().getString("Toadlet.back")});
 		bandwidthForm.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "yes", NodeL10n.getBase().getString("Toadlet.yes")});
@@ -47,6 +47,6 @@ public class BANDWIDTH implements Step {
 		//No: Set for data rate limit. 
 		/*else if (request.isPartSet("no"))*/ return FirstTimeWizardToadlet.TOADLET_URL+"?step=BANDWIDTH_RATE";
 
-		//Cancel: FirstTimeWizardToadlet handles that.
+		//Back: FirstTimeWizardToadlet handles that.
 	}
 }
