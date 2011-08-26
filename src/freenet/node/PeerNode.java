@@ -448,6 +448,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		this.outgoingMangler = mangler;
 		this.node = node2;
 		this.crypto = crypto;
+		assert(crypto.isOpennet == (isOpennet() || isSeed()));
 		this.peers = peers;
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercentRT = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
