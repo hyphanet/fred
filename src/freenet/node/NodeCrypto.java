@@ -529,6 +529,7 @@ public class NodeCrypto {
 		ArrayList<PeerNode> possibleMatches = node.peers.getAllConnectedByAddress(address, true);
 		if(possibleMatches == null) return;
 		for(PeerNode pn : possibleMatches) {
+			if(pn == peerNode) continue;
 			if(pn.crypto == this) continue;
 			if(pn.crypto.config.oneConnectionPerAddress()) {
 				if(pn instanceof DarknetPeerNode) {
