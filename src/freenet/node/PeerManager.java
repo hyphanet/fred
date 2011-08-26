@@ -105,29 +105,29 @@ public class PeerManager {
 		@Override
 		public void run() {
 			try {
-				writePeersNow();
+				writePeersNow(false);
 			} finally {
 				node.getTicker().queueTimedJob(writePeersRunnable, MIN_WRITEPEERS_DELAY);
 			}
 		}
 	};
 	
-	protected void writePeersNow() {
-		writePeersDarknetNow();
-		writePeersOpennetNow();
+	protected void writePeersNow(boolean rotateBackups) {
+		writePeersDarknetNow(rotateBackups);
+		writePeersOpennetNow(rotateBackups);
 	}
 
-	private void writePeersDarknetNow() {
+	private void writePeersDarknetNow(boolean rotateBackups) {
 		if(shouldWritePeersDarknet) {
 			shouldWritePeersDarknet = false;
-			writePeersInnerDarknet();
+			writePeersInnerDarknet(rotateBackups);
 		}
 	}
 
-	private void writePeersOpennetNow() {
+	private void writePeersOpennetNow(boolean rotateBackups) {
 		if(shouldWritePeersOpennet) {
 			shouldWritePeersOpennet = false;
-			writePeersInnerOpennet();
+			writePeersInnerOpennet(rotateBackups);
 		}
 	}
 
@@ -168,7 +168,7 @@ public class PeerManager {
 		this.node = node;
 		shutdownHook.addEarlyJob(new Thread() {
 			public void run() {
-				writePeersNow();
+				writePeersNow(false);
 			}
 		});
 	}
@@ -1500,7 +1500,7 @@ public class PeerManager {
 
 			@Override
 			public void run() {
-				writePeersOpennetNow();
+				writePeersOpennetNow(true);
 			}
 
 			@Override
@@ -1516,7 +1516,7 @@ public class PeerManager {
 
 			@Override
 			public void run() {
-				writePeersDarknetNow();
+				writePeersDarknetNow(true);
 			}
 
 			@Override
@@ -1576,7 +1576,7 @@ public class PeerManager {
 	private static final int BACKUPS_OPENNET = 1;
 	private static final int BACKUPS_DARKNET = 10;
 	
-	private void writePeersInnerDarknet() {
+	private void writePeersInnerDarknet(boolean rotateBackups) {
         String newDarknetPeersString = null;
 		synchronized(writePeersSync) {
 			if(darkFilename != null)
@@ -1584,11 +1584,11 @@ public class PeerManager {
 		}
 		synchronized(writePeerFileSync) {
 			if(newDarknetPeersString != null && !newDarknetPeersString.equals(darknetPeersStringCache))
-				writePeersInner(darkFilename, darknetPeersStringCache = newDarknetPeersString, BACKUPS_DARKNET);
+				writePeersInner(darkFilename, darknetPeersStringCache = newDarknetPeersString, BACKUPS_DARKNET, rotateBackups);
 		}
 	}
 
-	private void writePeersInnerOpennet() {
+	private void writePeersInnerOpennet(boolean rotateBackups) {
         String newOpennetPeersString = null;
         String newOldOpennetPeersString = null;
 		synchronized(writePeersSync) {
@@ -1602,18 +1602,19 @@ public class PeerManager {
 		}
 		synchronized(writePeerFileSync) {
 			if(newOpennetPeersString != null && !newOpennetPeersString.equals(opennetPeersStringCache)) {
-				writePeersInner(openFilename, opennetPeersStringCache = newOpennetPeersString, BACKUPS_OPENNET);
+				writePeersInner(openFilename, opennetPeersStringCache = newOpennetPeersString, BACKUPS_OPENNET, rotateBackups);
 			}
 			if(newOldOpennetPeersString != null && !newOldOpennetPeersString.equals(oldOpennetPeersStringCache)) {
-				writePeersInner(oldOpennetPeersFilename, oldOpennetPeersStringCache = newOldOpennetPeersString, BACKUPS_OPENNET);
+				writePeersInner(oldOpennetPeersFilename, oldOpennetPeersStringCache = newOldOpennetPeersString, BACKUPS_OPENNET, rotateBackups);
 			}
 		}
 	}
 	
 	/**
 	 * Write the peers file to disk
+	 * @param rotateBackups If true, rotate backups. If false, just clobber the latest file.
 	 */
-	private void writePeersInner(String filename, String sb, int maxBackups) {
+	private void writePeersInner(String filename, String sb, int maxBackups, boolean rotateBackups) {
 		assert(maxBackups >= 1);
 		synchronized(writePeerFileSync) {
 			FileOutputStream fos = null;
@@ -1649,19 +1650,23 @@ public class PeerManager {
 				w.close();
 				w = null;
 				
-				File prevFile = null;
-				for(int i=maxBackups;i>=0;i--) {
-					File thisFile = getBackupFilename(filename, i);
-					if(prevFile == null) {
-						thisFile.delete();
-					} else {
-						if(thisFile.exists()) {
-							FileUtil.renameTo(thisFile, prevFile);
+				if(rotateBackups) {
+					File prevFile = null;
+					for(int i=maxBackups;i>=0;i--) {
+						File thisFile = getBackupFilename(filename, i);
+						if(prevFile == null) {
+							thisFile.delete();
+						} else {
+							if(thisFile.exists()) {
+								FileUtil.renameTo(thisFile, prevFile);
+							}
 						}
+						prevFile = thisFile;
 					}
-					prevFile = thisFile;
+					FileUtil.renameTo(f, prevFile);
+				} else {
+					FileUtil.renameTo(f, getBackupFilename(filename, 0));
 				}
-				FileUtil.renameTo(f, prevFile);
 			} catch(IOException e) {
 				try {
 					fos.close();
