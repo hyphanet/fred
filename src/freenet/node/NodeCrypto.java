@@ -527,6 +527,7 @@ public class NodeCrypto {
 		if(possibleMatches == null) return;
 		for(PeerNode pn : possibleMatches) {
 			if(pn == peerNode) continue;
+			if(pn.equals(peerNode)) continue;
 			if(pn.crypto.config.oneConnectionPerAddress()) {
 				if(pn instanceof DarknetPeerNode) {
 					if(!peerNode.isDarknet()) {
