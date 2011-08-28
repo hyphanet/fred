@@ -74,7 +74,7 @@ public class SECURITY_NETWORK implements Step {
 			        new String[] { "hidden", "security-levels.networkThreatLevel.tryConfirm", "on" });
 			formNode.addChild("input",
 			        new String[] { "type", "name", "value" },
-			        new String[] { "submit", "back", NodeL10n.getBase().getString("Toadlet.back")});
+			        new String[] { "submit", "return-from-confirm", NodeL10n.getBase().getString("Toadlet.back")});
 			formNode.addChild("input",
 			        new String[] { "type", "name", "value" },
 			        new String[] { "submit", "next", NodeL10n.getBase().getString("Toadlet.next")});
@@ -107,10 +107,10 @@ public class SECURITY_NETWORK implements Step {
 		}
 		form.addChild("input",
 		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "networkSecurityF", WizardL10n.l10n("continue")});
+		        new String[] { "submit", "back", NodeL10n.getBase().getString("Toadlet.back")});
 		form.addChild("input",
 		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
+		        new String[] { "submit", "next", NodeL10n.getBase().getString("Toadlet.next")});
 	}
 
 	/**
@@ -146,6 +146,20 @@ public class SECURITY_NETWORK implements Step {
 		if(newThreatLevel == null || !request.isPartSet("security-levels.networkThreatLevel")) {
 			return redirectTo.toString();
 		}
+
+		PersistFields persistFields = new PersistFields(request);
+		boolean isInPreset = persistFields.isUsingPreset();
+		if (request.isPartSet("return-from-confirm")) {
+			//User clicked back from a confirmation page
+			if (isInPreset) {
+				//In a preset, go back a step
+				return FirstTimeWizardToadlet.getPreviousStep(
+				        FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_NETWORK, persistFields.preset).name();
+			}
+
+			//Not in a preset, redisplay level choice.
+			return FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_NETWORK.name();
+		}
 		if((newThreatLevel == SecurityLevels.NETWORK_THREAT_LEVEL.MAXIMUM || newThreatLevel == SecurityLevels.NETWORK_THREAT_LEVEL.HIGH)) {
 			//Make the user aware of the effects of high or maximum network threat if selected.
 			//They must check a box acknowledging its affects to proceed.
@@ -155,14 +169,8 @@ public class SECURITY_NETWORK implements Step {
 				return redirectTo.toString();
 			} else if((!request.isPartSet("security-levels.networkThreatLevel.confirm")) &&
 				        request.isPartSet("security-levels.networkThreatLevel.tryConfirm")) {
-				//If the user did not check the box. If in a preset, redisplay the page, The user can
-				//press cancel to go back.
-				if (request.isPartSet("preset")) {
-					displayConfirmationBox(redirectTo, networkThreatLevel);
-					return redirectTo.toString();
-				}
-
-				//If in detailed mode, the user can choose between levels, so return to level selection.
+				//If the user did not check the box and clicked next, redisplay the prompt.
+				displayConfirmationBox(redirectTo, networkThreatLevel);
 				return redirectTo.toString();
 			}
 		}

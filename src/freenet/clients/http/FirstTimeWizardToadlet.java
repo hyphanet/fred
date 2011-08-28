@@ -213,7 +213,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				redirectTo.append("&preset=HIGH&opennet=false");
 			}
 
-			super.writeTemporaryRedirect(ctx, "Wizard redirecting.", redirectTo.toString());
+			super.writeTemporaryRedirect(ctx, "Wizard set preset", redirectTo.toString());
 			return;
 		} else if (request.isPartSet("back")) {
 			//User chose back, return to previous page.
@@ -285,7 +285,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 
 	//FIXME: There really has to be a better way to find the previous step, but with an enum there's no decrement.
 	//FIXME: Would a set work better than an enum?
-	private WIZARD_STEP getPreviousStep(WIZARD_STEP currentStep, WIZARD_PRESET preset) {
+	public static WIZARD_STEP getPreviousStep(WIZARD_STEP currentStep, WIZARD_PRESET preset) {
 
 		//Might be obvious, but still: No breaks needed in cases because their only contents are returns.
 
