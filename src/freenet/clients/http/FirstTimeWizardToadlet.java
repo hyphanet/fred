@@ -225,9 +225,13 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				//Opennet step can change the persisted value for opennet.
 				if (currentStep == WIZARD_STEP.OPENNET) {
 					try {
-						HTTPRequest newRequest = new HTTPRequestImpl(new URI(redirectTarget), "GET");
-						redirectTarget = WIZARD_STEP.SECURITY_NETWORK.name();
-						persistFields = new PersistFields(persistFields.preset, newRequest);
+						HTTPRequest newRequest = new HTTPRequestImpl(new URI(
+						        stepURL(redirectTarget)), "GET");
+						//Only continue if a value for opennet has been selected.
+						if (newRequest.isPartSet("opennet")) {
+							redirectTarget = WIZARD_STEP.SECURITY_NETWORK.name();
+							persistFields = new PersistFields(persistFields.preset, newRequest);
+						}
 					} catch (URISyntaxException e) {
 						Logger.error(this, "Unexpected invalid query string from OPENNET step! "+e, e);
 						redirectTarget = WIZARD_STEP.WELCOME.name();
@@ -272,7 +276,11 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				return;
 			}
 		}
-		super.writeTemporaryRedirect(ctx, "Wizard redirecting.", TOADLET_URL+"?step="+persistFields.appendTo(redirectTarget));
+		super.writeTemporaryRedirect(ctx, "Wizard redirect", stepURL(persistFields.appendTo(redirectTarget)));
+	}
+
+	private String stepURL(String step) {
+		return TOADLET_URL+"?step="+step;
 	}
 
 	//FIXME: There really has to be a better way to find the previous step, but with an enum there's no decrement.

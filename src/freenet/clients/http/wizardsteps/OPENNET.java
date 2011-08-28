@@ -18,7 +18,7 @@ public class OPENNET implements Step {
 
 		infoboxContent.addChild("p", WizardL10n.l10n("opennetChoiceIntroduction"));
 
-		HTMLNode form = helper.addFormChild(infoboxContent, ".", "opennetForm");
+		HTMLNode form = helper.addFormChild(infoboxContent, ".", "opennetForm", false);
 
 		HTMLNode p = form.addChild("p");
 		HTMLNode input = p.addChild("input",

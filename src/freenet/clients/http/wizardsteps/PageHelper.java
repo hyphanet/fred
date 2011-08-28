@@ -49,6 +49,10 @@ public class PageHelper {
 		return toadletContext.getPageMaker().getInfobox(category, header, parent, title, isUnique);
 	}
 
+	public HTMLNode addFormChild(HTMLNode parentNode, String target, String id) {
+		return addFormChild(parentNode, target, id, true);
+	}
+
 	/**
 	 * Generates a form that includes persistence for inter-step fields. This is currently opennet, preset, and step.
 	 * Opennet is whether the user enabled opennet, preset is what preset they're using, and step is what POST step
@@ -56,18 +60,21 @@ public class PageHelper {
 	 * @param parentNode node to add form to
 	 * @param target where form should POST to
 	 * @param id ID attribute (in HTML) of form
+	 * @param includeOpennet whether the opennet field should be persisted. False on the OPENNET step.
 	 * @return form node to add buttons, inputs, and whatnot to.
 	 */
-	public HTMLNode addFormChild(HTMLNode parentNode, String target, String id) {
+	public HTMLNode addFormChild(HTMLNode parentNode, String target, String id, boolean includeOpennet) {
 		HTMLNode form = toadletContext.addFormChild(parentNode, target, id);
 		if (persistFields.isUsingPreset()) {
 			form.addChild("input",
 			        new String[] { "type", "name", "value" },
 			        new String[] { "hidden", "preset", persistFields.preset.name() });
 		}
-		form.addChild("input",
-		        new String[] { "type", "name", "value" },
-		        new String[] { "hidden", "opennet", String.valueOf(persistFields.opennet) });
+		if (includeOpennet) {
+			form.addChild("input",
+			        new String[] { "type", "name", "value" },
+			        new String[] { "hidden", "opennet", String.valueOf(persistFields.opennet) });
+		}
 		form.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "hidden", "step", step.name() });
