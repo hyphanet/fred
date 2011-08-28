@@ -53,7 +53,9 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 		BandwidthLimit detected = detectBandwidthLimits();
 		if (detected.downBytes > 0 && detected.upBytes > 0) {
 			//Detected limits are reasonable; add as recommended option.
-			addLimitRow(table, helper, detected, true);
+			long upload = detected.upBytes/2;
+			BandwidthLimit usable = new BandwidthLimit(upload*4, upload);
+			addLimitRow(table, helper, usable, true);
 		}
 
 		for (BandwidthLimit limit : limits) {
