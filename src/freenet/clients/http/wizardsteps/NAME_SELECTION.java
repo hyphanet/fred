@@ -43,7 +43,7 @@ public class NAME_SELECTION implements Step {
 
 		//Prompt again when provided with a blank node name.
 		if (selectedNName.isEmpty()) {
-			return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.NAME_SELECTION;
+			return FirstTimeWizardToadlet.WIZARD_STEP.NAME_SELECTION.name();
 		}
 
 		try {
@@ -52,6 +52,6 @@ public class NAME_SELECTION implements Step {
 		} catch (ConfigException e) {
 			Logger.error(this, "Should not happen, please report!" + e, e);
 		}
-		return FirstTimeWizardToadlet.TOADLET_URL+"?step="+ FirstTimeWizardToadlet.WIZARD_STEP.DATASTORE_SIZE;
+		return FirstTimeWizardToadlet.WIZARD_STEP.DATASTORE_SIZE.name();
 	}
 }

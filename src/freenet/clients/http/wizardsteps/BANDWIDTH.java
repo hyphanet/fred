@@ -42,10 +42,10 @@ public class BANDWIDTH implements Step {
 	public String postStep(HTTPRequest request)  {
 
 		//Yes: Set for monthly data limit.
-		if (request.isPartSet("yes")) return FirstTimeWizardToadlet.TOADLET_URL+"?step=BANDWIDTH_MONTHLY";
+		if (request.isPartSet("yes")) return FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH_MONTHLY.name();
 
 		//No: Set for data rate limit. 
-		/*else if (request.isPartSet("no"))*/ return FirstTimeWizardToadlet.TOADLET_URL+"?step=BANDWIDTH_RATE";
+		/*else if (request.isPartSet("no"))*/ return FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH_RATE.name();
 
 		//Back: FirstTimeWizardToadlet handles that.
 	}

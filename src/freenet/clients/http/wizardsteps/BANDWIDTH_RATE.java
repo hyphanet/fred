@@ -107,14 +107,15 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 		        request.getPartAsStringFailsafe("downBytes", 20));
 
 		if(!preset.isEmpty()) {
-			//This should not happen, there are no units!
+			//Error parsing predefined limit.
+			//This should not happen, as there are no units to confound the parser.
 			Logger.error(this, "Failed to parse pre-defined limit! Please report.");
-			return FirstTimeWizardToadlet.TOADLET_URL+"?step=BANDWIDTH_RATE&parseError=true&parseTarget="+
+			return FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH_RATE+"&parseError=true&parseTarget="+
 				        URLEncoder.encode(preset, true);
 		}
 
 		setWizardComplete();
-		return "/?step=COMPLETE";
+		return FirstTimeWizardToadlet.WIZARD_STEP.COMPLETE.name();
 	}
 
 	/**

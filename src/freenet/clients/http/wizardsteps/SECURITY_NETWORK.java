@@ -138,8 +138,8 @@ public class SECURITY_NETWORK implements Step {
 		String networkThreatLevel = request.getPartAsStringFailsafe("security-levels.networkThreatLevel", 128);
 		SecurityLevels.NETWORK_THREAT_LEVEL newThreatLevel = SecurityLevels.parseNetworkThreatLevel(networkThreatLevel);
 
-		//In order to redirect, either for retry or confirmation.
-		StringBuilder redirectTo = new StringBuilder(FirstTimeWizardToadlet.TOADLET_URL+"?step=SECURITY_NETWORK");
+		//Used in case of redirect either for retry or confirmation.
+		StringBuilder redirectTo = new StringBuilder(FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_NETWORK.name());
 
 		/*If the user didn't select a network security level before clicking continue or the selected
 		* security level could not be determined, redirect to the same page.*/
@@ -169,7 +169,7 @@ public class SECURITY_NETWORK implements Step {
 		//The user selected low or normal security, or confirmed high or maximum. Set the configuration
 		//and continue to the physical security step.
 		setThreatLevel(newThreatLevel);
-		return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_PHYSICAL;
+		return FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_PHYSICAL.name();
 	}
 
 	private void displayConfirmationBox(StringBuilder redirectTo, String networkThreatLevel) {

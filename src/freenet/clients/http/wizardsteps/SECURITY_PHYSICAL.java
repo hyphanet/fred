@@ -162,7 +162,7 @@ public class SECURITY_PHYSICAL implements Step {
 
 	@Override
 	public String postStep(HTTPRequest request) throws IOException {
-		final String errorCorrupt = FirstTimeWizardToadlet.TOADLET_URL+"?step=SECURITY_PHYSICAL&error=corrupt";
+		final String errorCorrupt = FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_PHYSICAL+"&error=corrupt";
 		String pass = request.getPartAsStringFailsafe("masterPassword", SecurityLevelsToadlet.MAX_PASSWORD_LENGTH);
 		final boolean passwordIsBlank = pass != null && pass.length() == 0;
 
@@ -176,7 +176,7 @@ public class SECURITY_PHYSICAL implements Step {
 		/*If the user didn't select a network security level before clicking continue or the selected
 		* security level could not be determined, redirect to the same page.*/
 		if (newThreatLevel == null || !request.isPartSet("security-levels.physicalThreatLevel")) {
-			return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_PHYSICAL;
+			return FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_PHYSICAL.name();
 		}
 		//Changing to high physical threat level: set password.
 		if (newThreatLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.HIGH && oldThreatLevel != newThreatLevel) {
@@ -234,16 +234,17 @@ public class SECURITY_PHYSICAL implements Step {
 			try {
 				core.node.killMasterKeysFile();
 			} catch (IOException e) {
-				return FirstTimeWizardToadlet.TOADLET_URL+"?step=SECURITY_PHYSICAL&error=delete&newThreatLevel="+newThreatLevel.name();
+				return FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_PHYSICAL+
+				        "&error=delete&newThreatLevel="+newThreatLevel.name();
 			}
 		}
 		setThreatLevel(newThreatLevel, oldThreatLevel);
 		//TODO: Mode this to before name selection GET. Steps shouldn't have to have this kind of logic.
 		//If opennet is enabled, skip asking for node name as it's not needed. This is to keep things simpler for the user.
 		if (core.node.isOpennetEnabled()) {
-			return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.DATASTORE_SIZE;
+			return FirstTimeWizardToadlet.WIZARD_STEP.DATASTORE_SIZE.name();
 		} else {
-			return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.NAME_SELECTION;
+			return FirstTimeWizardToadlet.WIZARD_STEP.NAME_SELECTION.name();
 		}
 	}
 
@@ -258,7 +259,7 @@ public class SECURITY_PHYSICAL implements Step {
 		if (type == PASSWORD_PROMPT.WRONG) {
 			System.err.println("Wrong password!");
 		}
-		StringBuilder destination = new StringBuilder(FirstTimeWizardToadlet.TOADLET_URL+"?step=SECURITY_PHYSICAL&error=pass&newThreatLevel=");
+		StringBuilder destination = new StringBuilder(FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_PHYSICAL+"&error=pass&newThreatLevel=");
 		destination.append(newThreatLevel.name()).append("&type=").append(type.name());
 		if (displayZeroLength) {
 			destination.append("&zeroLength=true");

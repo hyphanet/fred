@@ -76,10 +76,11 @@ public class OPENNET implements Step {
 	@Override
 	public String postStep(HTTPRequest request) {
 		if (request.isPartSet("opennet")) {
-			return FirstTimeWizardToadlet.TOADLET_URL+"?step=SECURITY_NETWORK&opennet="+request.getPartAsStringFailsafe("opennet", 5);
+			return FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_NETWORK+"&opennet="+
+			        request.getPartAsStringFailsafe("opennet", 5);
 		} else {
-			//Nothing selected when continue clicked. Display choice again.
-			return FirstTimeWizardToadlet.TOADLET_URL+"?step=OPENNET";
+			//Nothing selected when "next" clicked. Display choice again.
+			return FirstTimeWizardToadlet.WIZARD_STEP.OPENNET.name();
 		}
 	}
 }

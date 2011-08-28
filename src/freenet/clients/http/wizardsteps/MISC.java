@@ -57,7 +57,7 @@ public class MISC implements Step {
 	public String postStep(HTTPRequest request) {
 		setAutoUpdate(Boolean.parseBoolean(request.getPartAsStringFailsafe("autodeploy", 10)));
 		setUPnP(request.isPartSet("upnp"));
-		return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.OPENNET;
+		return FirstTimeWizardToadlet.WIZARD_STEP.OPENNET.name();
 	}
 
 	/**

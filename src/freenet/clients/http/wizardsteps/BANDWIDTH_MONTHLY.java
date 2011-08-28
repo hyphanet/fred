@@ -110,6 +110,6 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 
 		setWizardComplete();
 
-		return "/?step=COMPLETE";
+		return FirstTimeWizardToadlet.WIZARD_STEP.COMPLETE.name();
 	}
 }

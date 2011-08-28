@@ -70,7 +70,7 @@ public class WELCOME implements Step {
 			//Doing so would be really annoying as the node would have to start up again
 			//which could be very slow.
 		}
-		return FirstTimeWizardToadlet.TOADLET_URL;
+		return FirstTimeWizardToadlet.WIZARD_STEP.WELCOME.name();
 	}
 
 	/**

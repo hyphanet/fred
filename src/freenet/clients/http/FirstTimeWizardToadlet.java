@@ -57,10 +57,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 
 	public enum WIZARD_STEP {
 		WELCOME,
-		// Before security levels, because once the network security level has been set, we won't redirect
-		// the user to the wizard page.
 		BROWSER_WARNING,
-		// We have to set up UPnP before reaching the bandwidth stage, so we can autodetect bandwidth settings.
 		MISC,
 		OPENNET,
 		SECURITY_NETWORK,
@@ -68,10 +65,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		NAME_SELECTION,
 		DATASTORE_SIZE,
 		BANDWIDTH,
-		//TODO: These, move wizard completion writing into something they can both access.
-		//TODO: Monthy and rate extend BANDWIDTH to get protected bandwidth setting functions?
 		BANDWIDTH_MONTHLY,
-		BANDWIDTH_RATE
+		BANDWIDTH_RATE,
+		COMPLETE //Redirects to front page
 	}
 
 	public enum WIZARD_PRESET {
@@ -147,6 +143,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			super.writeTemporaryRedirect(ctx, "Need opennet choice",
 			        persistFields.appendTo(TOADLET_URL+"?step=OPENNET"));
 			return;
+		} else if (currentStep == WIZARD_STEP.COMPLETE) {
+			super.writeTemporaryRedirect(ctx, "Wizard complete", WelcomeToadlet.PATH);
 		}
 
 		Step getStep = steps.get(currentStep);
@@ -191,15 +189,11 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		PersistFields persistFields = new PersistFields(request);
 		String redirectTarget;
 
-		//User chose back, return to previous page.
-		if (request.isPartSet("back")) {
-			redirectTarget = TOADLET_URL+"?step="+getPreviousStep(currentStep, persistFields.preset).name();
-		} else if (currentStep.equals(WIZARD_STEP.WELCOME) &&
+		if (currentStep.equals(WIZARD_STEP.WELCOME) &&
 		        (request.isPartSet("presetLow") || request.isPartSet("presetHigh") || request.isPartSet("presetNone"))) {
-			//If a preset was selected from the welcome page, apply preset settings and proceed to the browser warning.
 
 			/*Apply presets and UPnP is enabled first to allow it time to load (and thus enable
-			  autodetection) before hitting the bandwidth page.*/
+			  autodetection) before hitting the bandwidth page. This also effectively sets the preset field.*/
 			StringBuilder redirectTo = new StringBuilder(TOADLET_URL+"?step=BROWSER_WARNING&incognito=");
 			redirectTo.append(request.getPartAsStringFailsafe("incognito", 5));
 
@@ -221,6 +215,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 
 			super.writeTemporaryRedirect(ctx, "Wizard redirecting.", redirectTo.toString());
 			return;
+		} else if (request.isPartSet("back")) {
+			//User chose back, return to previous page.
+			redirectTarget = getPreviousStep(currentStep, persistFields.preset).name();
 		} else {
 			try {
 				redirectTarget = steps.get(currentStep).postStep(request);
@@ -229,15 +226,13 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				if (currentStep == WIZARD_STEP.OPENNET) {
 					try {
 						HTTPRequest newRequest = new HTTPRequestImpl(new URI(redirectTarget), "GET");
-						redirectTarget = TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_NETWORK;
+						redirectTarget = WIZARD_STEP.SECURITY_NETWORK.name();
 						persistFields = new PersistFields(persistFields.preset, newRequest);
 					} catch (URISyntaxException e) {
 						Logger.error(this, "Unexpected invalid query string from OPENNET step! "+e, e);
-						redirectTarget = TOADLET_URL+"?step="+WIZARD_STEP.WELCOME;
+						redirectTarget = WIZARD_STEP.WELCOME.name();
 					}
 				}
-
-				redirectTarget = persistFields.appendTo(redirectTarget);
 			} catch (IOException e) {
 				String title;
 				if (e.getMessage().equals("cantWriteNewMasterKeysFile")) {
@@ -277,7 +272,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				return;
 			}
 		}
-		super.writeTemporaryRedirect(ctx, "Wizard redirecting.", persistFields.appendTo(redirectTarget));
+		super.writeTemporaryRedirect(ctx, "Wizard redirecting.", TOADLET_URL+"?step="+persistFields.appendTo(redirectTarget));
 	}
 
 	//FIXME: There really has to be a better way to find the previous step, but with an enum there's no decrement.

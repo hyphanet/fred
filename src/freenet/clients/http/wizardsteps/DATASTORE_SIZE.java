@@ -81,17 +81,17 @@ public class DATASTORE_SIZE implements Step {
 		HTMLNode below = bandwidthForm.addChild("div");
 		below.addChild("input",
 		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "next", NodeL10n.getBase().getString("Toadlet.next")});
+		        new String[] { "submit", "back", NodeL10n.getBase().getString("Toadlet.back")});
 		below.addChild("input",
 		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "back", NodeL10n.getBase().getString("Toadlet.back")});
+		        new String[] { "submit", "next", NodeL10n.getBase().getString("Toadlet.next")});
 	}
 
 	@Override
 	public String postStep(HTTPRequest request) {
 		// drop down options may be 6 chars or less, but formatted ones e.g. old value if re-running can be more
 		_setDatastoreSize(request.getPartAsStringFailsafe("ds", 20));
-		return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH;
+		return FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH.name();
 	}
 
 	private void _setDatastoreSize(String selectedStoreSize) {

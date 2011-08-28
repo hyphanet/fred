@@ -107,6 +107,6 @@ public class BROWSER_WARNING implements Step {
 	 */
 	@Override
 	public String postStep(HTTPRequest request) {
-		return FirstTimeWizardToadlet.TOADLET_URL+"?step=MISC";
+		return FirstTimeWizardToadlet.WIZARD_STEP.MISC.name();
 	}
 }
