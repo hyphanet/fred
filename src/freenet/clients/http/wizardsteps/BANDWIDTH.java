@@ -29,13 +29,13 @@ public class BANDWIDTH implements Step {
 		HTMLNode bandwidthForm = helper.addFormChild(bandwidthInfoboxContent, ".", "bwForm");
 		bandwidthForm.addChild("input",
 		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "back", NodeL10n.getBase().getString("Toadlet.back")});
-		bandwidthForm.addChild("input",
-		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "yes", NodeL10n.getBase().getString("Toadlet.yes")});
 		bandwidthForm.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "no", NodeL10n.getBase().getString("Toadlet.no")});
+		bandwidthForm.addChild("div").addChild("input",
+		        new String[] { "type", "name", "value" },
+		        new String[] { "submit", "back", NodeL10n.getBase().getString("Toadlet.back")});
 	}
 
 	@Override

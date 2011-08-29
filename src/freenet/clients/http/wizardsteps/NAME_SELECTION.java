@@ -29,10 +29,11 @@ public class NAME_SELECTION implements Step {
 		HTMLNode nnameForm = helper.addFormChild(nnameInfoboxContent, ".", "nnameForm");
 		nnameForm.addChild("input", "name", "nname");
 
-		nnameForm.addChild("input",
+		HTMLNode lineBelow = nnameForm.addChild("div");
+		lineBelow.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "back", NodeL10n.getBase().getString("Toadlet.back")});
-		nnameForm.addChild("input",
+		lineBelow.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "next", NodeL10n.getBase().getString("Toadlet.next")});
 	}

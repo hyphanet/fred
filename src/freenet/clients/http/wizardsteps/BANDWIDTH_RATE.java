@@ -74,7 +74,7 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "customSelect", WizardL10n.l10n("bandwidthSelect")});
 
-		HTMLNode backForm = helper.addFormChild(contentNode, ".", "backForm");
+		HTMLNode backForm = helper.addFormChild(infoBox, ".", "backForm");
 		backForm.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "back", NodeL10n.getBase().getString("Toadlet.back")});
