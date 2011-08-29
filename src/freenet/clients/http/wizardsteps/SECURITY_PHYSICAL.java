@@ -24,7 +24,6 @@ public class SECURITY_PHYSICAL implements Step {
 	private final NodeClientCore core;
 
 	private enum PASSWORD_PROMPT {
-		SET_WRONG, //New password was wrong
 		SET_BLANK, //Requested new password was blank
 		DECRYPT_WRONG, //Decryption password was wrong
 		DECRYPT_BLANK  //Decryption password was blank
@@ -115,16 +114,9 @@ public class SECURITY_PHYSICAL implements Step {
 			final String infoboxTitleKey;
 			final boolean forDowngrade;
 			final boolean forUpgrade;
-			final boolean wasWrong = type == PASSWORD_PROMPT.SET_WRONG ||
-			         type == PASSWORD_PROMPT.DECRYPT_WRONG;
+			final boolean wasWrong = type == PASSWORD_PROMPT.DECRYPT_WRONG;
 
 			switch (type) {
-				case SET_WRONG:
-					pageTitleKey = "passwordPageTitle";
-					infoboxTitleKey = "passwordWrongTitle";
-					forDowngrade = false;
-					forUpgrade = true;
-					break;
 				case SET_BLANK:
 					pageTitleKey = "passwordPageTitle";
 					infoboxTitleKey = "enterPasswordTitle";
@@ -202,7 +194,10 @@ public class SECURITY_PHYSICAL implements Step {
 		}
 		//Changing to high physical threat level: set password.
 		if (newThreatLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.HIGH && oldThreatLevel != newThreatLevel) {
-			if (!passwordIsBlank) {
+			if (passwordIsBlank) {
+				// Must set the password to something non-blank.
+				return promptPassword(newThreatLevel, PASSWORD_PROMPT.SET_BLANK);
+			} else {
 				try {
 					if(oldThreatLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.NORMAL ||
 					        oldThreatLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.LOW) {
@@ -213,20 +208,20 @@ public class SECURITY_PHYSICAL implements Step {
 				} catch (Node.AlreadySetPasswordException e) {
 					// Do nothing, already set a password.
 				} catch (MasterKeysWrongPasswordException e) {
-					return promptPassword(newThreatLevel, PASSWORD_PROMPT.SET_WRONG);
+					throw new IOException("Incorrect password when changing from another level to high", e);
 				} catch (MasterKeysFileSizeException e) {
 					return errorCorrupt;
 				}
-			} else {
-				// Must set a password!
-				return promptPassword(newThreatLevel, PASSWORD_PROMPT.SET_BLANK);
 			}
 		}
 		//Decreasing to low or normal from high: remove password.
 		if ((newThreatLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.LOW || newThreatLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.NORMAL) &&
 			        oldThreatLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.HIGH) {
-			if (!passwordIsBlank) {
-				//Password was specified when decreasing the security level, so it's the old password intended to decrypt.
+			if (passwordIsBlank) {
+				//Prompt for the old password, which is needed to decrypt
+				return promptPassword(newThreatLevel, PASSWORD_PROMPT.DECRYPT_BLANK);
+			} else if (core.node.getMasterPasswordFile().exists()) {
+				//Old password for decryption specified.
 				try {
 					core.node.changeMasterPassword(pass, "", true);
 				} catch (IOException e) {
@@ -245,9 +240,6 @@ public class SECURITY_PHYSICAL implements Step {
 				} catch (Node.AlreadySetPasswordException e) {
 					System.err.println("Already set a password when changing it - maybe master.keys copied in at the wrong moment???");
 				}
-			} else if (core.node.getMasterPasswordFile().exists()) {
-				//Prompt for the old password, which is needed to decrypt
-				return promptPassword(newThreatLevel, PASSWORD_PROMPT.DECRYPT_BLANK);
 			}
 
 		}
@@ -271,7 +263,7 @@ public class SECURITY_PHYSICAL implements Step {
 	 * @return URL to display the requested page
 	 */
 	private String promptPassword(SecurityLevels.PHYSICAL_THREAT_LEVEL newThreatLevel, PASSWORD_PROMPT type) {
-		if (type == PASSWORD_PROMPT.SET_WRONG || type == PASSWORD_PROMPT.DECRYPT_WRONG) {
+		if (type == PASSWORD_PROMPT.DECRYPT_WRONG) {
 			System.err.println("Wrong password!");
 		}
 		StringBuilder destination = new StringBuilder(FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_PHYSICAL+
