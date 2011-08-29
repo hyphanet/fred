@@ -27,11 +27,9 @@ public class MISC implements Step {
 		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("stepMiscTitle"));
 		HTMLNode form = helper.addFormChild(contentNode, ".", "miscForm");
 
-		HTMLNode miscInfobox = form.addChild("div", "class", "infobox infobox-normal");
-		HTMLNode miscInfoboxHeader = miscInfobox.addChild("div", "class", "infobox-header");
-		HTMLNode miscInfoboxContent = miscInfobox.addChild("div", "class", "infobox-content");
+		HTMLNode miscInfoboxContent = helper.getInfobox("infobox-normal", WizardL10n.l10n("autoUpdate"),
+		        form, null, false);
 
-		miscInfoboxHeader.addChild("#", WizardL10n.l10n("autoUpdate"));
 		miscInfoboxContent.addChild("p", WizardL10n.l10n("autoUpdateLong"));
 		miscInfoboxContent.addChild("p").addChild("input",
 		        new String[] { "type", "checked", "name", "value" },
@@ -40,28 +38,26 @@ public class MISC implements Step {
 		        new String[] { "type", "name", "value" },
 		        new String[] { "radio", "autodeploy", "false" }, WizardL10n.l10n("autoUpdateNoAutodeploy"));
 
-		miscInfobox = form.addChild("div", "class", "infobox infobox-normal");
-		miscInfoboxHeader = miscInfobox.addChild("div", "class", "infobox-header");
-		miscInfoboxContent = miscInfobox.addChild("div", "class", "infobox-content");
+		miscInfoboxContent = helper.getInfobox("infobox-normal", WizardL10n.l10n("plugins"),
+		        form, null, false);
 
-		miscInfoboxHeader.addChild("#", WizardL10n.l10n("plugins"));
 		miscInfoboxContent.addChild("p", WizardL10n.l10n("pluginsLong"));
 		miscInfoboxContent.addChild("p").addChild("input",
 		        new String[] { "type", "checked", "name", "value" },
 		        new String[] { "checkbox", "on", "upnp", "true" }, WizardL10n.l10n("enableUPnP"));
 		miscInfoboxContent.addChild("input",
 		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "miscF", WizardL10n.l10n("continue")});
+		        new String[] { "submit", "back", NodeL10n.getBase().getString("Toadlet.back")});
 		miscInfoboxContent.addChild("input",
 		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
+		        new String[] { "submit", "next", NodeL10n.getBase().getString("Toadlet.next")});
 	}
 
 	@Override
 	public String postStep(HTTPRequest request) {
 		setAutoUpdate(Boolean.parseBoolean(request.getPartAsStringFailsafe("autodeploy", 10)));
 		setUPnP(request.isPartSet("upnp"));
-		return FirstTimeWizardToadlet.TOADLET_URL+"?step="+FirstTimeWizardToadlet.WIZARD_STEP.OPENNET;
+		return FirstTimeWizardToadlet.WIZARD_STEP.OPENNET.name();
 	}
 
 	/**

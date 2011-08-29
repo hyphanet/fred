@@ -638,7 +638,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 	public static void sendPasswordFileCorruptedPageInner(PageHelper helper, String masterPasswordFile) {
 		HTMLNode contentNode = helper.getPageContent(l10nSec("passwordFileCorruptedTitle"));
 		HTMLNode infoBox = helper.getInfobox("infobox-error",
-			l10nSec("passwordFileCorruptedTitle"), contentNode, "password-error", false).
+		        l10nSec("passwordFileCorruptedTitle"), contentNode, "password-error", false).
 		        addChild("div", "class", "infobox-content");
 		sendPasswordFileCorruptedPageInner(infoBox, masterPasswordFile);
 	}
@@ -700,11 +700,8 @@ public class SecurityLevelsToadlet extends Toadlet {
 	}
 
 	public static void generatePasswordFormPage(boolean wasWrong, HTMLNode formNode, HTMLNode content, boolean forDowngrade, boolean forUpgrade, String physicalSecurityLevel, String redirect) {
-		if(forDowngrade) {
-			if(!wasWrong)
-				content.addChild("#", l10nSec("passwordForDecrypt"));
-			else
-				content.addChild("#", l10nSec("passwordForDecryptPasswordWrong"));
+		if (forDowngrade && !wasWrong) {
+			content.addChild("#", l10nSec("passwordForDecrypt"));
 		} else if (wasWrong) {
 			content.addChild("#", l10nSec("passwordWrong"));
 		} else if (forUpgrade) {

@@ -13,15 +13,12 @@ public class OPENNET implements Step {
 	@Override
 	public void getStep(HTTPRequest request, PageHelper helper) {
 		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("opennetChoicePageTitle"));
-		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-		HTMLNode infoboxHeader = infobox.addChild("div", "class", "infobox-header");
-		HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-
-		infoboxHeader.addChild("#", WizardL10n.l10n("opennetChoiceTitle"));
+		HTMLNode infoboxContent = helper.getInfobox("infobox-normal", WizardL10n.l10n("opennetChoiceTitle"),
+		        contentNode, null, false);
 
 		infoboxContent.addChild("p", WizardL10n.l10n("opennetChoiceIntroduction"));
 
-		HTMLNode form = helper.addFormChild(infoboxContent, ".", "opennetForm");
+		HTMLNode form = helper.addFormChild(infoboxContent, ".", "opennetForm", false);
 
 		HTMLNode p = form.addChild("p");
 		HTMLNode input = p.addChild("input",
@@ -49,10 +46,11 @@ public class OPENNET implements Step {
 
 		form.addChild("input",
 		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "opennetF", WizardL10n.l10n("continue")});
+		        new String[] { "submit", "back", NodeL10n.getBase().getString("Toadlet.back")});
 		form.addChild("input",
 		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
+		        new String[] { "submit", "next", NodeL10n.getBase().getString("Toadlet.next")});
+
 		HTMLNode foot = infoboxContent.addChild("div", "class", "toggleable");
 		foot.addChild("i", "¹: " + WizardL10n.l10n("opennetChoiceHowSafeIsFreenetToggle"));
 		HTMLNode footHidden = foot.addChild("div", "class", "hidden");
@@ -78,10 +76,11 @@ public class OPENNET implements Step {
 	@Override
 	public String postStep(HTTPRequest request) {
 		if (request.isPartSet("opennet")) {
-			return FirstTimeWizardToadlet.TOADLET_URL+"?step=SECURITY_NETWORK&opennet="+request.getPartAsStringFailsafe("opennet", 5);
+			return FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_NETWORK+"&opennet="+
+			        request.getPartAsStringFailsafe("opennet", 5);
 		} else {
-			//Nothing selected when continue clicked. Display choice again.
-			return FirstTimeWizardToadlet.TOADLET_URL+"?step=OPENNET";
+			//Nothing selected when "next" clicked. Display choice again.
+			return FirstTimeWizardToadlet.WIZARD_STEP.OPENNET.name();
 		}
 	}
 }
