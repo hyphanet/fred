@@ -143,8 +143,14 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			super.writeTemporaryRedirect(ctx, "Need opennet choice",
 			        persistFields.appendTo(TOADLET_URL+"?step=OPENNET"));
 			return;
+		} else if (currentStep == WIZARD_STEP.NAME_SELECTION && core.node.isOpennetEnabled()) {
+			//Skip node name selection if not in darknet mode.
+			super.writeTemporaryRedirect(ctx, "Skip name selection",
+			        persistFields.appendTo(stepURL(WIZARD_STEP.DATASTORE_SIZE.name())));
+			return;
 		} else if (currentStep == WIZARD_STEP.COMPLETE) {
 			super.writeTemporaryRedirect(ctx, "Wizard complete", WelcomeToadlet.PATH);
+			return;
 		}
 
 		Step getStep = steps.get(currentStep);

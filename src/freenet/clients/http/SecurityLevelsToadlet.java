@@ -700,11 +700,8 @@ public class SecurityLevelsToadlet extends Toadlet {
 	}
 
 	public static void generatePasswordFormPage(boolean wasWrong, HTMLNode formNode, HTMLNode content, boolean forDowngrade, boolean forUpgrade, String physicalSecurityLevel, String redirect) {
-		if(forDowngrade) {
-			if(!wasWrong)
-				content.addChild("#", l10nSec("passwordForDecrypt"));
-			else
-				content.addChild("#", l10nSec("passwordForDecryptPasswordWrong"));
+		if (forDowngrade && !wasWrong) {
+			content.addChild("#", l10nSec("passwordForDecrypt"));
 		} else if (wasWrong) {
 			content.addChild("#", l10nSec("passwordWrong"));
 		} else if (forUpgrade) {
