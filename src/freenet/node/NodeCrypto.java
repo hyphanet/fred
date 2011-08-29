@@ -530,7 +530,7 @@ public class NodeCrypto {
 			if(pn.equals(peerNode)) continue;
 			if(pn.crypto.config.oneConnectionPerAddress()) {
 				if(pn instanceof DarknetPeerNode) {
-					if(!peerNode.isDarknet()) {
+					if(!(peerNode instanceof DarknetPeerNode)) {
 						// Darknet is only affected by other darknet peers.
 						// Opennet peers with the same IP will NOT cause darknet peers to be dropped, even if one connection per IP is set for darknet, and even if it isn't set for opennet.
 						// (Which would be a perverse configuration anyway!)
