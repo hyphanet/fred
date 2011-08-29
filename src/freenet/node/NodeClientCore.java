@@ -87,6 +87,7 @@ import freenet.support.io.FilenameGenerator;
 import freenet.support.io.NativeThread;
 import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.TempBucketFactory;
+import freenet.support.math.MersenneTwister;
 
 /**
  * The connection between the node and the client layer.
@@ -194,8 +195,20 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 		// Temp files
 
-		this.tempDir = node.setupProgramDir(installConfig, "tempDir", node.runDir().file("temp-"+portNumber).toString(),
+		this.tempDir = node.setupProgramDir(installConfig, "tempDir", node.runDir().file("temp").toString(),
 		  "NodeClientCore.tempDir", "NodeClientCore.tempDirLong", nodeConfig);
+		
+		// FIXME remove back compatibility hack.
+		File oldTemp = node.runDir().file("temp-"+node.getDarknetPortNumber());
+		if(oldTemp.exists() && oldTemp.isDirectory() && !FileUtil.equals(tempDir.dir, oldTemp)) {
+			System.err.println("Deleting old temporary dir: "+oldTemp);
+			try {
+				FileUtil.secureDeleteAll(oldTemp, new MersenneTwister(random.nextLong()));
+			} catch (IOException e) {
+				// Ignore.
+			}
+		}
+		
 		FileUtil.setOwnerRWX(getTempDir());
 
 		try {
@@ -857,7 +870,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		}
 	}
 
-	public void asyncGet(Key key, boolean offersOnly, final SimpleRequestSenderCompletionListener listener, boolean canReadClientCache, boolean canWriteClientCache, final boolean realTimeFlag) {
+	public void asyncGet(final Key key, boolean offersOnly, final RequestCompletionListener listener, boolean canReadClientCache, boolean canWriteClientCache, final boolean realTimeFlag, boolean localOnly, boolean ignoreStore) {
 		final long uid = makeUID();
 		final boolean isSSK = key instanceof NodeSSK;
 		final RequestTag tag = new RequestTag(isSSK, RequestTag.START.ASYNC_GET, null, realTimeFlag, uid, node);
@@ -874,8 +887,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			htl = node.failureTable.minOfferedHTL(key, htl);
 			if(logMINOR) Logger.minor(this, "Using old HTL for GetOfferedKey: "+htl);
 		}
-		asyncGet(key, isSSK, offersOnly, uid, new RequestSender.Listener() {
+		final long startTime = System.currentTimeMillis();
+		asyncGet(key, isSSK, offersOnly, uid, new RequestSenderListener() {
 
+			private boolean rejectedOverload;
+			
 			@Override
 			public void onCHKTransferBegins() {
 				// Ignore
@@ -883,7 +899,9 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 			@Override
 			public void onReceivedRejectOverload() {
-				// Ignore
+				synchronized(this) {
+					rejectedOverload = true;
+				}
 			}
 
 			/** The RequestSender finished.
@@ -891,16 +909,123 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			 * @param fromOfferedKey
 			 */
 			@Override
-			public void onRequestSenderFinished(int status, boolean fromOfferedKey) {
+			public void onRequestSenderFinished(int status, boolean fromOfferedKey, RequestSender rs) {
 				tag.unlockHandler();
-				if(listener != null) listener.completed(status == RequestSender.SUCCESS);
+				
+				if(rs.abortedDownstreamTransfers())
+					status = RequestSender.TRANSFER_FAILED;
+
+				if(status == RequestSender.NOT_FINISHED) {
+					Logger.error(this, "Bogus status in onRequestSenderFinished for "+rs, new Exception("error"));
+					listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
+					return;
+				}
+				
+				boolean rejectedOverload;
+				synchronized(this) {
+					rejectedOverload = this.rejectedOverload;
+				}
+
+				if(status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD && status != RequestSender.INTERNAL_ERROR) {
+					if(logMINOR)
+						Logger.minor(this, (isSSK ? "SSK" : "CHK") + " fetch cost " + rs.getTotalSentBytes() + '/' + rs.getTotalReceivedBytes() + " bytes (" + status + ')');
+					(isSSK ? nodeStats.localSskFetchBytesSentAverage : nodeStats.localChkFetchBytesSentAverage).report(rs.getTotalSentBytes());
+					(isSSK ? nodeStats.localSskFetchBytesReceivedAverage : nodeStats.localChkFetchBytesReceivedAverage).report(rs.getTotalReceivedBytes());
+					if(status == RequestSender.SUCCESS)
+						// See comments above declaration of successful* : We don't report sent bytes here.
+						//nodeStats.successfulChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
+						(isSSK ? nodeStats.successfulSskFetchBytesReceivedAverage : nodeStats.successfulChkFetchBytesReceivedAverage).report(rs.getTotalReceivedBytes());
+				}
+
+				if((status == RequestSender.TIMED_OUT) ||
+					(status == RequestSender.GENERATED_REJECTED_OVERLOAD)) {
+					if(!rejectedOverload) {
+						// See below
+						requestStarters.rejectedOverload(isSSK, false, realTimeFlag);
+						rejectedOverload = true;
+						long rtt = System.currentTimeMillis() - startTime;
+						double targetLocation=key.toNormalizedDouble();
+						if(isSSK) {
+							node.nodeStats.reportSSKOutcome(rtt, false, realTimeFlag);
+						} else {
+							node.nodeStats.reportCHKOutcome(rtt, false, targetLocation, realTimeFlag);
+						}
+					}
+				} else
+					if(rs.hasForwarded() &&
+						((status == RequestSender.DATA_NOT_FOUND) ||
+						(status == RequestSender.RECENTLY_FAILED) ||
+						(status == RequestSender.SUCCESS) ||
+						(status == RequestSender.ROUTE_NOT_FOUND) ||
+						(status == RequestSender.VERIFY_FAILURE) ||
+						(status == RequestSender.GET_OFFER_VERIFY_FAILURE))) {
+						long rtt = System.currentTimeMillis() - startTime;
+						double targetLocation=key.toNormalizedDouble();
+						if(!rejectedOverload)
+							requestStarters.requestCompleted(isSSK, false, key, realTimeFlag);
+						// Count towards RTT even if got a RejectedOverload - but not if timed out.
+						requestStarters.getThrottle(isSSK, false, realTimeFlag).successfulCompletion(rtt);
+						if(isSSK) {
+							node.nodeStats.reportSSKOutcome(rtt, status == RequestSender.SUCCESS, realTimeFlag);
+						} else {
+							node.nodeStats.reportCHKOutcome(rtt, status == RequestSender.SUCCESS, targetLocation, realTimeFlag);
+						}
+						if(status == RequestSender.SUCCESS) {
+							Logger.minor(this, "Successful " + (isSSK ? "SSK" : "CHK") + " fetch took "+rtt);
+						}
+					}
+
+				if(status == RequestSender.SUCCESS)
+					// FIXME how to identify failed to decode and report it back to the client layer??? do we even need to???
+					listener.onSucceeded();
+				else {
+					switch(status) {
+						case RequestSender.NOT_FINISHED:
+							Logger.error(this, "RS still running in get" + (isSSK ? "SSK" : "CHK") + "!: " + rs);
+							listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
+							return;
+						case RequestSender.DATA_NOT_FOUND:
+							listener.onFailed(new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND));
+							return;
+						case RequestSender.RECENTLY_FAILED:
+							listener.onFailed(new LowLevelGetException(LowLevelGetException.RECENTLY_FAILED));
+							return;
+						case RequestSender.ROUTE_NOT_FOUND:
+							listener.onFailed(new LowLevelGetException(LowLevelGetException.ROUTE_NOT_FOUND));
+							return;
+						case RequestSender.TRANSFER_FAILED:
+						case RequestSender.GET_OFFER_TRANSFER_FAILED:
+							listener.onFailed(new LowLevelGetException(LowLevelGetException.TRANSFER_FAILED));
+							return;
+						case RequestSender.VERIFY_FAILURE:
+						case RequestSender.GET_OFFER_VERIFY_FAILURE:
+							listener.onFailed(new LowLevelGetException(LowLevelGetException.VERIFY_FAILED));
+							return;
+						case RequestSender.GENERATED_REJECTED_OVERLOAD:
+						case RequestSender.TIMED_OUT:
+							listener.onFailed(new LowLevelGetException(LowLevelGetException.REJECTED_OVERLOAD));
+							return;
+						case RequestSender.INTERNAL_ERROR:
+							listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
+							return;
+						default:
+							Logger.error(this, "Unknown RequestSender code in get"+ (isSSK ? "SSK" : "CHK") +": " + status + " on " + rs);
+							listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
+							return;
+					}
+				}
 			}
 
 			@Override
 			public void onAbortDownstreamTransfers(int reason, String desc) {
 				// Ignore, onRequestSenderFinished will also be called.
 			}
-		}, tag, canReadClientCache, canWriteClientCache, htl, realTimeFlag);
+
+			@Override
+			public void onNotStarted() {
+				listener.onFailed(new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND_IN_STORE));
+			}
+		}, tag, canReadClientCache, canWriteClientCache, htl, realTimeFlag, localOnly, ignoreStore);
 	}
 
 	/**
@@ -909,13 +1034,18 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	 * anything and will run asynchronously. Caller is responsible for unlocking the UID.
 	 * @param key
 	 */
-	void asyncGet(Key key, boolean isSSK, boolean offersOnly, long uid, RequestSender.Listener listener, RequestTag tag, boolean canReadClientCache, boolean canWriteClientCache, short htl, boolean realTimeFlag) {
+	void asyncGet(Key key, boolean isSSK, boolean offersOnly, long uid, RequestSenderListener listener, RequestTag tag, boolean canReadClientCache, boolean canWriteClientCache, short htl, boolean realTimeFlag, boolean ignoreStore, boolean localOnly) {
 		try {
-			Object o = node.makeRequestSender(key, htl, uid, tag, null, false, false, offersOnly, canReadClientCache, canWriteClientCache, realTimeFlag);
+			Object o = node.makeRequestSender(key, htl, uid, tag, null, localOnly, ignoreStore, offersOnly, canReadClientCache, canWriteClientCache, realTimeFlag);
 			if(o instanceof KeyBlock) {
 				tag.servedFromDatastore = true;
 				tag.unlockHandler();
 				return; // Already have it.
+			}
+			if(o == null) {
+				listener.onNotStarted();
+				tag.unlockHandler();
+				return;
 			}
 			RequestSender rs = (RequestSender) o;
 			rs.addListener(listener);

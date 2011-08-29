@@ -624,6 +624,11 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			req.onInsertSuccess(context);
 			return true;
 		}
+
+		@Override
+		public boolean sendIsBlocking() {
+			return true;
+		}
 	}
 
 	

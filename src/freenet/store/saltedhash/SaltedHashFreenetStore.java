@@ -889,7 +889,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			}
 			if (!Arrays.equals(digestedRoutingKey, slotDigestedRoutingKey)) {
 				if(validCache && likelyMatch) {
-					Logger.error(this, "False positive from slot cache on slot "+offset+" cache was "+cache);
+					Logger.normal(this, "False positive from slot cache on slot "+offset+" cache was "+cache);
 					bloomFalsePos.incrementAndGet();
 				} else if(logMINOR && validCache && !likelyMatch)
 					Logger.minor(this, "True negative!");

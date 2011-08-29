@@ -72,14 +72,9 @@ public abstract class BaseSender implements ByteCounter {
     static final double EXTRA_HOPS_AT_BOTTOM = 1.0 / Node.DECREMENT_AT_MIN_PROB;
     
 	static public int calculateTimeout(boolean realTimeFlag, short htl, Node node) {
-		//double timeout = realTimeFlag ? SEARCH_TIMEOUT_REALTIME : SEARCH_TIMEOUT_BULK;
-		//timeout = (timeout * ((double)htl + EXTRA_HOPS_AT_BOTTOM) / (EXTRA_HOPS_AT_BOTTOM + (double) node.maxHTL())); 
-		//return (int)timeout;
-		
-		// FIXME reinstate timeout-per-htl.
-		// This is important, but needs to be deployed on its own as it is potentially very disruptive in the short term.
-		
-		return realTimeFlag ? SEARCH_TIMEOUT_REALTIME : SEARCH_TIMEOUT_BULK;
+		double timeout = realTimeFlag ? SEARCH_TIMEOUT_REALTIME : SEARCH_TIMEOUT_BULK;
+		timeout = (timeout * ((double)htl + EXTRA_HOPS_AT_BOTTOM) / (EXTRA_HOPS_AT_BOTTOM + (double) node.maxHTL())); 
+		return (int)timeout;
 	}
 	
 	protected int calculateTimeout(short htl) {
@@ -89,7 +84,7 @@ public abstract class BaseSender implements ByteCounter {
 	private short hopsForTime(long time) {
 		double timeout = realTimeFlag ? SEARCH_TIMEOUT_REALTIME : SEARCH_TIMEOUT_BULK;
 		double timePerHop = timeout / ((double)EXTRA_HOPS_AT_BOTTOM + (double) node.maxHTL());
-		return (short) Math.max(node.maxHTL(), time / timePerHop);
+		return (short) Math.min(node.maxHTL(), time / timePerHop);
 	}
 
 	protected abstract Message createDataRequest();
@@ -300,7 +295,7 @@ loadWaiterLoop:
     						(expectedAcceptState == RequestLikelyAcceptedState.GUARANTEED)) {
     					// We routed it, thinking it was GUARANTEED.
     					// It was rejected, and as far as we know it's still GUARANTEED. :(
-    					Logger.error(this, "Rejected overload (last time) yet expected state was "+lastExpectedAcceptState+" is now "+expectedAcceptState+" from "+next.shortToString()+" ("+next.getVersionNumber()+")");
+    					Logger.warning(this, "Rejected overload (last time) yet expected state was "+lastExpectedAcceptState+" is now "+expectedAcceptState+" from "+next.shortToString()+" ("+next.getVersionNumber()+")");
     					next.rejectedGuaranteed(realTimeFlag);
     					next.noLongerRoutingTo(origTag, false);
     					expectedAcceptState = null;
@@ -676,6 +671,7 @@ loadWaiterLoop:
     					return DO.WAIT;
     				}
     				
+        			forwardRejectedOverload();
     				next.localRejectedOverload("ForwardRejectedOverload", realTimeFlag);
     				int t = timeSinceSent();
     				node.failureTable.onFailed(key, next, htl, t, t);

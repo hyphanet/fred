@@ -241,7 +241,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		
 		final int mode = ctx.getPageMaker().parseMode(request, container);
 		
-		PageNode page = ctx.getPageMaker().getPageNode(getPageTitle(titleCountString, node.getMyName()), ctx);
+		PageNode page = ctx.getPageMaker().getPageNode(getPageTitle(titleCountString), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
@@ -407,6 +407,16 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 			HTMLNode peerTableInfoboxContent = peerTableInfobox.addChild("div", "class", "infobox-content");
 
+			if (!isOpennet()) {
+				HTMLNode myName = peerTableInfoboxContent.addChild("p");
+				myName.addChild("span",
+						NodeL10n.getBase().getString("DarknetConnectionsToadlet.myName", "name", node.getMyName()));
+				myName.addChild("span", " [");
+				myName.addChild("span").addChild("a", "href", "/config/node#name",
+						NodeL10n.getBase().getString("DarknetConnectionsToadlet.changeMyName"));
+				myName.addChild("span", "]");
+			}
+
 			if (peerNodeStatuses.length == 0) {
 				NodeL10n.getBase().addL10nSubstitution(peerTableInfoboxContent, "DarknetConnectionsToadlet.noPeersWithHomepageLink", 
 						new String[] { "link" }, new HTMLNode[] { HTMLNode.link("/") });
@@ -521,7 +531,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			return;
 		}
 		
-		String pass = request.getPartAsString("formPassword", 32);
+		String pass = request.getPartAsStringFailsafe("formPassword", 32);
 		if((pass == null) || !pass.equals(core.formPassword)) {
 			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", defaultRedirectLocation());
@@ -532,17 +542,17 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		
 		if (request.isPartSet("add")) {
 			// add a new node
-			String urltext = request.getPartAsString("url", 200);
+			String urltext = request.getPartAsStringFailsafe("url", 200);
 			urltext = urltext.trim();
-			String reftext = request.getPartAsString("ref", Integer.MAX_VALUE);
+			String reftext = request.getPartAsStringFailsafe("ref", Integer.MAX_VALUE);
 			reftext = reftext.trim();
 			if (reftext.length() < 200) {
-				reftext = request.getPartAsString("reffile", Integer.MAX_VALUE);
+				reftext = request.getPartAsStringFailsafe("reffile", Integer.MAX_VALUE);
 				reftext = reftext.trim();
 			}
 			String privateComment = null;
 			if(!isOpennet())
-				privateComment = request.getPartAsString("peerPrivateNote", 250).trim();
+				privateComment = request.getPartAsStringFailsafe("peerPrivateNote", 250).trim();
 			
 			String trustS = request.getPartAsStringFailsafe("trust", 10);
 			FRIEND_TRUST trust = null;
@@ -766,6 +776,15 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				new String[] { "linkref", "linktext" },
 				new HTMLNode[] { REF_LINK, REFTEXT_LINK });
 		HTMLNode referenceInfoboxContent = referenceInfobox.addChild("div", "class", "infobox-content");
+		
+		HTMLNode myName = referenceInfoboxContent.addChild("p");
+		myName.addChild("span",
+				NodeL10n.getBase().getString("DarknetConnectionsToadlet.myName", "name", fs.get("myName")));
+		myName.addChild("span", " [");
+		myName.addChild("span").addChild("a", "href", "/config/node#name",
+				NodeL10n.getBase().getString("DarknetConnectionsToadlet.changeMyName"));
+		myName.addChild("span", "]");
+		
 		HTMLNode warningSentence = referenceInfoboxContent.addChild("p");
 		NodeL10n.getBase().addL10nSubstitution(warningSentence, "DarknetConnectionsToadlet.referenceCopyWarning",
 				new String[] { "bold" },
@@ -773,7 +792,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		referenceInfoboxContent.addChild("pre", "id", "reference", fs.toString() + '\n');
 	}
 
-	protected abstract String getPageTitle(String titleCountString, String myName);
+	protected abstract String getPageTitle(String titleCountString);
 
 	/** Draw the add a peer box. This comes immediately after the main peers table and before the noderef box.
 	 * Implementors may skip it by not doing anything in this method. */

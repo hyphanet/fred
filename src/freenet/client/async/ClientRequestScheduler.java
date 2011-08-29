@@ -913,7 +913,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					return TRIP_PENDING_PRIORITY;
 				}
 				
-			});
+			}, "Trip pending key (transient)");
 		}
 		if(schedCore == null) return;
 		if(schedCore.anyProbablyWantKey(key, clientContext)) {

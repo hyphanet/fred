@@ -61,7 +61,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 			return;
 		}
 
-		String formPassword = request.getPartAsString("formPassword", 32);
+		String formPassword = request.getPartAsStringFailsafe("formPassword", 32);
 		if((formPassword == null) || !formPassword.equals(core.formPassword)) {
 			MultiValueTable<String,String> headers = new MultiValueTable<String,String>();
 			headers.put("Location", "/seclevels/");
@@ -79,14 +79,14 @@ public class SecurityLevelsToadlet extends Toadlet {
 			String configName = "security-levels.networkThreatLevel";
 			String confirm = "security-levels.networkThreatLevel.confirm";
 			String tryConfirm = "security-levels.networkThreatLevel.tryConfirm";
-			String networkThreatLevel = request.getPartAsString(configName, 128);
+			String networkThreatLevel = request.getPartAsStringFailsafe(configName, 128);
 			NETWORK_THREAT_LEVEL newThreatLevel = SecurityLevels.parseNetworkThreatLevel(networkThreatLevel);
 			if(newThreatLevel != null) {
 				if(newThreatLevel != node.securityLevels.getNetworkThreatLevel()) {
 					if(!request.isPartSet(confirm) && !request.isPartSet(tryConfirm)) {
 						HTMLNode warning = node.securityLevels.getConfirmWarning(newThreatLevel, confirm);
 						if(warning != null) {
-							PageNode page = ctx.getPageMaker().getPageNode(NodeL10n.getBase().getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
+							PageNode page = ctx.getPageMaker().getPageNode(NodeL10n.getBase().getString("ConfigToadlet.fullTitle"), ctx);
 							pageNode = page.outer;
 							content = page.content;
 							formNode = ctx.addFormChild(content, ".", "configFormSecLevels");
@@ -115,14 +115,14 @@ public class SecurityLevelsToadlet extends Toadlet {
 			configName = "security-levels.physicalThreatLevel";
 			confirm = "security-levels.physicalThreatLevel.confirm";
 			tryConfirm = "security-levels.physicalThreatLevel.tryConfirm";
-			String physicalThreatLevel = request.getPartAsString(configName, 128);
+			String physicalThreatLevel = request.getPartAsStringFailsafe(configName, 128);
 			PHYSICAL_THREAT_LEVEL newPhysicalLevel = SecurityLevels.parsePhysicalThreatLevel(physicalThreatLevel);
 			PHYSICAL_THREAT_LEVEL oldPhysicalLevel = core.node.securityLevels.getPhysicalThreatLevel();
 			if(logMINOR) Logger.minor(this, "New physical threat level: "+newPhysicalLevel+" old = "+node.securityLevels.getPhysicalThreatLevel());
 			if(newPhysicalLevel != null) {
 				if(newPhysicalLevel == oldPhysicalLevel && newPhysicalLevel == PHYSICAL_THREAT_LEVEL.HIGH) {
-					String password = request.getPartAsString("masterPassword", MAX_PASSWORD_LENGTH);
-					String oldPassword = request.getPartAsString("oldPassword", MAX_PASSWORD_LENGTH);
+					String password = request.getPartAsStringFailsafe("masterPassword", MAX_PASSWORD_LENGTH);
+					String oldPassword = request.getPartAsStringFailsafe("oldPassword", MAX_PASSWORD_LENGTH);
 					if(password != null && oldPassword != null && password.length() > 0 && oldPassword.length() > 0) {
 						try {
 							core.node.changeMasterPassword(oldPassword, password, false);
@@ -151,7 +151,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 					// No confirmation for changes to physical threat level.
 					if(newPhysicalLevel == PHYSICAL_THREAT_LEVEL.HIGH && node.securityLevels.getPhysicalThreatLevel() != newPhysicalLevel) {
 						// Check for password
-						String password = request.getPartAsString("masterPassword", MAX_PASSWORD_LENGTH);
+						String password = request.getPartAsStringFailsafe("masterPassword", MAX_PASSWORD_LENGTH);
 						if(password != null && password.length() > 0) {
 							try {
 								if(oldPhysicalLevel == PHYSICAL_THREAT_LEVEL.NORMAL || oldPhysicalLevel == PHYSICAL_THREAT_LEVEL.LOW)
@@ -195,7 +195,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 					if((newPhysicalLevel == PHYSICAL_THREAT_LEVEL.LOW || newPhysicalLevel == PHYSICAL_THREAT_LEVEL.NORMAL) &&
 							oldPhysicalLevel == PHYSICAL_THREAT_LEVEL.HIGH) {
 						// Check for password
-						String password = request.getPartAsString("masterPassword", SecurityLevelsToadlet.MAX_PASSWORD_LENGTH);
+						String password = request.getPartAsStringFailsafe("masterPassword", SecurityLevelsToadlet.MAX_PASSWORD_LENGTH);
 						if(password != null && password.length() > 0) {
 							// This is actually the OLD password ...
 							try {
@@ -305,7 +305,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		} else {
 
 			if(request.isPartSet("masterPassword")) {
-				String masterPassword = request.getPartAsString("masterPassword", 1024);
+				String masterPassword = request.getPartAsStringFailsafe("masterPassword", 1024);
 				if(masterPassword.length() == 0) {
 					sendPasswordPage(ctx, true, null);
 					return;
@@ -329,7 +329,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 				}
 				MultiValueTable<String,String> headers = new MultiValueTable<String,String>();
 				if(request.isPartSet("redirect")) {
-					String to = request.getPartAsString("redirect", 100);
+					String to = request.getPartAsStringFailsafe("redirect", 100);
 					if(to.startsWith("/")) {
 						headers.put("Location", to);
 						ctx.sendReplyHeaders(302, "Found", headers, null, 0);
@@ -467,7 +467,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 			return;
 		}
 
-		PageNode page = ctx.getPageMaker().getPageNode(NodeL10n.getBase().getString("SecurityLevelsToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
+		PageNode page = ctx.getPageMaker().getPageNode(NodeL10n.getBase().getString("SecurityLevelsToadlet.fullTitle"), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 

@@ -1382,6 +1382,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			// wantPeer will call node.peers.addPeer(), we don't have to.
 		}
 		if((!dontWant) && !crypto.allowConnection(pn, replyTo.getFreenetAddress())) {
+			if(pn instanceof DarknetPeerNode) {
+				Logger.error(this, "Dropping peer "+pn+" because don't want connection due to others on the same IP address!");
+				System.out.println("Disconnecting permanently from your friend \""+((DarknetPeerNode)pn).getName()+"\" because other peers are using the same IP address!");
+			}
 			Logger.normal(this, "Rejecting connection because already have something with the same IP");
 			dontWant = true;
 		}
@@ -1398,7 +1402,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 					c, Ke, Ka, authenticator, hisRef, pn, replyTo, unknownInitiator, setupType, newTrackerID, newTrackerID == trackerID);
 
 			if(dontWant) {
-				node.peers.disconnect(pn, true, true, true); // Let it connect then tell it to remove it.
+				node.peers.disconnectAndRemove(pn, true, true, true); // Let it connect then tell it to remove it.
 			} else {
 				pn.maybeSendInitialMessages();
 			}
@@ -1635,7 +1639,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				pn.theirInitialMsgID);
 		if(newTrackerID >= 0) {
 			if(dontWant) {
-				node.peers.disconnect(pn, true, true, true);
+				node.peers.disconnectAndRemove(pn, true, true, true);
 			} else {
 				pn.maybeSendInitialMessages();
 			}

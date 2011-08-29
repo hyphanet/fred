@@ -123,6 +123,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		fctx.maxOutputLength = maxOutputLength;
 		fctx.maxTempLength = maxOutputLength;
 		fctx.canWriteClientCache = writeToClientCache;
+		// FIXME fctx.ignoreUSKDatehints = ignoreUSKDatehints;
 		Bucket ret = null;
 		this.returnType = returnType;
 		binaryBlob = false;
@@ -168,6 +169,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		fctx.maxTempLength = message.maxTempSize;
 		fctx.canWriteClientCache = message.writeToClientCache;
 		fctx.filterData = message.filterData;
+		fctx.ignoreUSKDatehints = message.ignoreUSKDatehints;
 
 		if(message.allowedMIMETypes != null) {
 			fctx.allowedMIMETypes = new HashSet<String>();

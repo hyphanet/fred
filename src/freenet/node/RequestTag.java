@@ -103,7 +103,8 @@ public class RequestTag extends UIDTag {
 			sb.append(" sent");
 		sb.append(" finishedCode=").append(requestSenderFinishedCode);
 		sb.append(" rejected=").append(rejected);
-		sb.append(" thrown=").append(handlerThrew);
+		if(handlerThrew != null)
+			sb.append(" thrown=").append(handlerThrew);
 		if(abortedDownstreamTransfer) {
 			sb.append(" abortedDownstreamTransfer reason=");
 			sb.append(abortedDownstreamReason);
@@ -114,7 +115,8 @@ public class RequestTag extends UIDTag {
 			sb.append(" handlerDisconnected=true");
 		if(waitingForOpennet != null) {
 			PeerNode pn = waitingForOpennet.get();
-			sb.append(" waitingForOpennet="+pn == null ? "(null)" : pn.shortToString());
+			sb.append(" waitingForOpennet=");
+			sb.append(pn == null ? "(null)" : pn.shortToString());
 		}
 		sb.append(" : ");
 		sb.append(super.toString());

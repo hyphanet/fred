@@ -289,7 +289,8 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 				continue;
 			}
 
-			if ((leftSize.getSizeFiles() == 0) && (leftSize.getSizeFilesNoLimit() > 0)) {
+			// getSizeFiles() includes 512 bytes for each file over the size limit
+			if (((leftSize.getSizeFiles() - (512*itemsLeft.size())) == 0) && (leftSize.getSizeFilesNoLimit() > 0)) {
 				// all items left are to big, make all external
 				Set<String> lKeySetset = itemsLeft.keySet();
 				for (String lname:lKeySetset) {

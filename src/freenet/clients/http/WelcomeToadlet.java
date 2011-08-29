@@ -111,7 +111,7 @@ public class WelcomeToadlet extends Toadlet {
             return;
 		}
 
-        String passwd = request.getPartAsString("formPassword", 32);
+        String passwd = request.getPartAsStringFailsafe("formPassword", 32);
         boolean noPassword = (passwd == null) || !passwd.equals(core.formPassword);
         if (noPassword) {
             if (logMINOR) {
@@ -119,7 +119,7 @@ public class WelcomeToadlet extends Toadlet {
             }
         }
 
-        if (request.getPartAsString("updateconfirm", 32).length() > 0) {
+        if (request.getPartAsStringFailsafe("updateconfirm", 32).length() > 0) {
             if (noPassword) {
                 redirectToRoot(ctx);
                 return;
@@ -134,7 +134,7 @@ public class WelcomeToadlet extends Toadlet {
             writeHTMLReply(ctx, 200, "OK", pageNode.generate());
             Logger.normal(this, "Node is updating/restarting");
             node.getNodeUpdater().arm();
-        } else if (request.getPartAsString("update", 32).length() > 0) {
+        } else if (request.getPartAsStringFailsafe("update", 32).length() > 0) {
         	PageNode page = ctx.getPageMaker().getPageNode(l10n("nodeUpdateConfirmTitle"), ctx);
             HTMLNode pageNode = page.outer;
             HTMLNode contentNode = page.content;
@@ -144,7 +144,7 @@ public class WelcomeToadlet extends Toadlet {
             updateForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
             updateForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "updateconfirm", l10n("update")});
             writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-        } else if (request.isPartSet("getThreadDump")) {
+	} else if (request.isPartSet("getThreadDump")) {
             if (noPassword) {
                 redirectToRoot(ctx);
                 return;
@@ -192,8 +192,8 @@ public class WelcomeToadlet extends Toadlet {
                 return;
             }
 
-            FreenetURI key = new FreenetURI(request.getPartAsString("key", 128));
-            String type = request.getPartAsString("content-type", 128);
+            FreenetURI key = new FreenetURI(request.getPartAsStringFailsafe("key", 128));
+            String type = request.getPartAsStringFailsafe("content-type", 128);
             if (type == null) {
                 type = "text/plain";
             }
@@ -302,7 +302,7 @@ public class WelcomeToadlet extends Toadlet {
 			return;
 		}
 
-        	String alertsToDump = request.getPartAsString("events", Integer.MAX_VALUE);
+        	String alertsToDump = request.getPartAsStringFailsafe("events", Integer.MAX_VALUE);
         	String[] alertAnchors = alertsToDump.split(",");
         	HashSet<String> toDump = new HashSet<String>();
         	for(String alertAnchor : alertAnchors) toDump.add(alertAnchor);
@@ -314,8 +314,6 @@ public class WelcomeToadlet extends Toadlet {
     }
 
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-        boolean advancedModeOutputEnabled = core.getToadletContainer().isAdvancedModeEnabled();
-
         if (ctx.isAllowedFullAccess()) {
 
             if (request.isParameterSet("latestlog")) {
@@ -392,10 +390,14 @@ public class WelcomeToadlet extends Toadlet {
 
                 this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
                 return;
-            }
+        } else if (uri.getQuery() != null && uri.getQuery().startsWith("_CHECKED_HTTP_=")) {
+		//Redirect requests for escaped URLs using the old destination to ExternalLinkToadlet.
+		super.writeTemporaryRedirect(ctx, "Depreciated", ExternalLinkToadlet.PATH+'?'+uri.getQuery());
+		return;
+        }
         }
 
-        PageNode page = ctx.getPageMaker().getPageNode(l10n("homepageFullTitleWithName", "name", node.getMyName()), ctx);
+        PageNode page = ctx.getPageMaker().getPageNode(l10n("homepageFullTitle"), ctx);
         HTMLNode pageNode = page.outer;
         HTMLNode contentNode = page.content;
 

@@ -223,12 +223,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					part = part.substring("identifier-".length());
 					if(part.length() > 50) continue; // It's just a number 
 					
-					String identifier = request.getPartAsString("identifier-"+part, MAX_IDENTIFIER_LENGTH);
+					String identifier = request.getPartAsStringFailsafe("identifier-"+part, MAX_IDENTIFIER_LENGTH);
 					if(identifier == null) continue;
-					String filename = request.getPartAsString("filename-"+part, MAX_FILENAME_LENGTH);
-					String keyString = request.getPartAsString("key-"+part, MAX_KEY_LENGTH);
-					String type = request.getPartAsString("type-"+part, MAX_TYPE_LENGTH);
-					String size = request.getPartAsString("size-"+part, 50);
+					String filename = request.getPartAsStringFailsafe("filename-"+part, MAX_FILENAME_LENGTH);
+					String keyString = request.getPartAsStringFailsafe("key-"+part, MAX_KEY_LENGTH);
+					String type = request.getPartAsStringFailsafe("type-"+part, MAX_TYPE_LENGTH);
+					String size = request.getPartAsStringFailsafe("size-"+part, 50);
 					if(filename != null) {
 						HTMLNode line = infoList.addChild("li");
 						line.addChild("#", NodeL10n.getBase().getString("FProxyToadlet.filenameLabel")+" ");
@@ -264,7 +264,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 				this.writeHTMLReply(ctx, 200, "OK", page.outer.generate());
 				return;
-			} else if(request.isPartSet("remove_request") && (request.getPartAsString("remove_request", 128).length() > 0)) {
+			} else if(request.isPartSet("remove_request") && (request.getPartAsStringFailsafe("remove_request", 128).length() > 0)) {
 				
 				// FIXME optimise into a single database job.
 				
@@ -274,7 +274,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						if(!part.startsWith("identifier-")) continue;
 						identifier = part.substring("identifier-".length());
 						if(identifier.length() > 50) continue;
-						identifier = request.getPartAsString(part, MAX_IDENTIFIER_LENGTH);
+						identifier = request.getPartAsStringFailsafe(part, MAX_IDENTIFIER_LENGTH);
 						if(logMINOR) Logger.minor(this, "Removing "+identifier);
 						fcp.removeGlobalRequestBlocking(identifier);
 					}
@@ -292,7 +292,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 				writePermanentRedirect(ctx, "Done", path());
 				return;
-			} else if(request.isPartSet("remove_finished_downloads_request") && (request.getPartAsString("remove_finished_downloads_request", 128).length() > 0)) {
+			} else if(request.isPartSet("remove_finished_downloads_request") && (request.getPartAsStringFailsafe("remove_finished_downloads_request", 128).length() > 0)) {
 				String identifier = "";
 				try {
 					RequestStatus[] reqs;
@@ -304,7 +304,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						hasIdentifier = true;
 						identifier = part.substring("identifier-".length());
 						if(identifier.length() > 50) continue;
-						identifier = request.getPartAsString(part, MAX_IDENTIFIER_LENGTH);
+						identifier = request.getPartAsStringFailsafe(part, MAX_IDENTIFIER_LENGTH);
 						if(logMINOR) Logger.minor(this, "Removing "+identifier);
 						fcp.removeGlobalRequestBlocking(identifier);
 					}
@@ -335,7 +335,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				writePermanentRedirect(ctx, "Done", path());
 				return;
 			}
-			else if(request.isPartSet("restart_request") && (request.getPartAsString("restart_request", 128).length() > 0)) {
+			else if(request.isPartSet("restart_request") && (request.getPartAsStringFailsafe("restart_request", 128).length() > 0)) {
 				boolean disableFilterData = request.isPartSet("disableFilterData");
 				
 				
@@ -344,7 +344,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					if(!part.startsWith("identifier-")) continue;
 					identifier = part.substring("identifier-".length());
 					if(identifier.length() > 50) continue;
-					identifier = request.getPartAsString(part, MAX_IDENTIFIER_LENGTH);
+					identifier = request.getPartAsStringFailsafe(part, MAX_IDENTIFIER_LENGTH);
 					if(logMINOR) Logger.minor(this, "Restarting "+identifier);
 					try {
 						fcp.restartBlocking(identifier, disableFilterData);
@@ -355,7 +355,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 				writePermanentRedirect(ctx, "Done", path());
 				return;
-			} else if(request.isPartSet("panic") && (request.getPartAsString("panic", 128).length() > 0)) {
+			} else if(request.isPartSet("panic") && (request.getPartAsStringFailsafe("panic", 128).length() > 0)) {
 				if(SimpleToadletServer.noConfirmPanic) {
 					core.node.killMasterKeysFile();
 					core.node.panic();
@@ -366,7 +366,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					sendConfirmPanicPage(ctx);
 					return;
 				}
-			} else if(request.isPartSet("confirmpanic") && (request.getPartAsString("confirmpanic", 128).length() > 0)) {
+			} else if(request.isPartSet("confirmpanic") && (request.getPartAsStringFailsafe("confirmpanic", 128).length() > 0)) {
 				core.node.killMasterKeysFile();
 				core.node.panic();
 				sendPanicingPage(ctx);
@@ -380,7 +380,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 				String expectedMIMEType = null;
 				if(request.isPartSet("type")) {
-					expectedMIMEType = request.getPartAsString("type", MAX_TYPE_LENGTH);
+					expectedMIMEType = request.getPartAsStringFailsafe("type", MAX_TYPE_LENGTH);
 				}
 				FreenetURI fetchURI;
 				try {
@@ -500,13 +500,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			} else if (request.isPartSet("change_priority")) {
-				short newPriority = Short.parseShort(request.getPartAsString("priority", 32));
+				short newPriority = Short.parseShort(request.getPartAsStringFailsafe("priority", 32));
 				String identifier = "";
 				for(String part : request.getParts()) {
 					if(!part.startsWith("identifier-")) continue;
 					identifier = part.substring("identifier-".length());
 					if(identifier.length() > 50) continue;
-					identifier = request.getPartAsString(part, MAX_IDENTIFIER_LENGTH);
+					identifier = request.getPartAsStringFailsafe(part, MAX_IDENTIFIER_LENGTH);
 					try {
 						fcp.modifyGlobalRequestBlocking(identifier, null, newPriority);
 					} catch (DatabaseDisabledException e) {
@@ -518,9 +518,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				return;
 
 				// FIXME factor out the next 3 items, they are very messy!
-			} else if (request.getPartAsString("insert", 128).length() > 0) {
+			} else if (request.getPartAsStringFailsafe("insert", 128).length() > 0) {
 				final FreenetURI insertURI;
-				String keyType = request.getPartAsString("keytype", 10);
+				String keyType = request.getPartAsStringFailsafe("keytype", 10);
 				if ("CHK".equals(keyType)) {
 					insertURI = new FreenetURI("CHK@");
 					if(fiw != null)
@@ -531,7 +531,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						fiw.reportRandomInsert();
 				} else if("specify".equals(keyType)) {
 					try {
-						String u = request.getPartAsString("key", MAX_KEY_LENGTH);
+						String u = request.getPartAsStringFailsafe("key", MAX_KEY_LENGTH);
 						insertURI = new FreenetURI(u);
 						if(logMINOR)
 							Logger.minor(this, "Inserting key: "+insertURI+" ("+u+")");
@@ -549,15 +549,15 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					writeError(l10n("errorNoFileSelected"), l10n("errorNoFileSelectedU"), ctx, false, true);
 					return;
 				}
-				final boolean compress = request.getPartAsString("compress", 128).length() > 0;
+				final boolean compress = request.getPartAsStringFailsafe("compress", 128).length() > 0;
 				final String identifier = file.getFilename() + "-fred-" + System.currentTimeMillis();
-				final String compatibilityMode = request.getPartAsString("compatibilityMode", 100);
+				final String compatibilityMode = request.getPartAsStringFailsafe("compatibilityMode", 100);
 				final CompatibilityMode cmode;
 				if(compatibilityMode.equals(""))
 					cmode = CompatibilityMode.COMPAT_CURRENT;
 				else
 					cmode = CompatibilityMode.valueOf(compatibilityMode);
-				String s = request.getPartAsString("overrideSplitfileKey", 65);
+				String s = request.getPartAsStringFailsafe("overrideSplitfileKey", 65);
 				final byte[] overrideSplitfileKey;
 				if(s != null && !s.equals(""))
 					overrideSplitfileKey = HexUtil.hexToBytes(s);
@@ -647,21 +647,21 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 				return;
 			} else if (request.isPartSet("select-file")) {
-				final String filename = request.getPartAsString("filename", MAX_FILENAME_LENGTH);
+				final String filename = request.getPartAsStringFailsafe("filename", MAX_FILENAME_LENGTH);
 				if(logMINOR) Logger.minor(this, "Inserting local file: "+filename);
 				final File file = new File(filename);
 				final String identifier = file.getName() + "-fred-" + System.currentTimeMillis();
 				final String contentType = DefaultMIMETypes.guessMIMEType(filename, false);
 				final FreenetURI furi;
-				final String key = request.getPartAsString("key", MAX_KEY_LENGTH);
+				final String key = request.getPartAsStringFailsafe("key", MAX_KEY_LENGTH);
 				final boolean compress = request.isPartSet("compress");
-				final String compatibilityMode = request.getPartAsString("compatibilityMode", 100);
+				final String compatibilityMode = request.getPartAsStringFailsafe("compatibilityMode", 100);
 				final CompatibilityMode cmode;
 				if(compatibilityMode.equals(""))
 					cmode = CompatibilityMode.COMPAT_CURRENT;
 				else
 					cmode = CompatibilityMode.valueOf(compatibilityMode);
-				String s = request.getPartAsString("overrideSplitfileKey", 65);
+				String s = request.getPartAsStringFailsafe("overrideSplitfileKey", 65);
 				final byte[] overrideSplitfileKey;
 				if(s != null && !s.equals(""))
 					overrideSplitfileKey = HexUtil.hexToBytes(s);
@@ -758,14 +758,14 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 				return;
 			} else if (request.isPartSet("select-dir")) {
-				final String filename = request.getPartAsString("filename", MAX_FILENAME_LENGTH);
+				final String filename = request.getPartAsStringFailsafe("filename", MAX_FILENAME_LENGTH);
 				if(logMINOR) Logger.minor(this, "Inserting local directory: "+filename);
 				final File file = new File(filename);
 				final String identifier = file.getName() + "-fred-" + System.currentTimeMillis();
 				final FreenetURI furi;
-				final String key = request.getPartAsString("key", MAX_KEY_LENGTH);
+				final String key = request.getPartAsStringFailsafe("key", MAX_KEY_LENGTH);
 				final boolean compress = request.isPartSet("compress");
-				String s = request.getPartAsString("overrideSplitfileKey", 65);
+				String s = request.getPartAsStringFailsafe("overrideSplitfileKey", 65);
 				final byte[] overrideSplitfileKey;
 				if(s != null && !s.equals(""))
 					overrideSplitfileKey = HexUtil.hexToBytes(s);
@@ -859,7 +859,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				int x = 0;
 				for(String part : request.getParts()) {
 					if(!part.startsWith("identifier-")) continue;
-					String key = request.getPartAsString("key-"+part.substring("identifier-".length()), MAX_KEY_LENGTH);
+					String key = request.getPartAsStringFailsafe("key-"+part.substring("identifier-".length()), MAX_KEY_LENGTH);
 					if(key == null || key.equals("")) continue;
 					form.addChild("#", l10n("key") + ":");
 					form.addChild("br");
@@ -892,11 +892,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			} else if(request.isPartSet("recommend_uri") && request.isPartSet("URI")) {
-				String description = request.getPartAsString("description", 32768);
+				String description = request.getPartAsStringFailsafe("description", 32768);
 				ArrayList<FreenetURI> uris = new ArrayList<FreenetURI>();
 				for(String part : request.getParts()) {
 					if(!part.startsWith("key-")) continue;
-					String key = request.getPartAsString(part, MAX_KEY_LENGTH);
+					String key = request.getPartAsStringFailsafe(part, MAX_KEY_LENGTH);
 					try {
 						FreenetURI furi = new FreenetURI(key);
 						uris.add(furi);
@@ -1097,7 +1097,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							Logger.minor(this, "Total waiting CHKs: "+queued);
 							long reallyQueued = core.requestStarters.chkFetchSchedulerBulk.countPersistentQueuedRequests(container) + core.requestStarters.chkFetchSchedulerRT.countPersistentQueuedRequests(container);
 							Logger.minor(this, "Total queued CHK requests: "+reallyQueued);
-							PageNode page = pageMaker.getPageNode(NodeL10n.getBase().getString("QueueToadlet.title", new String[]{ "nodeName" }, new String[]{ core.getMyName() }), ctx);
+							PageNode page = pageMaker.getPageNode(NodeL10n.getBase().getString("QueueToadlet.title"), ctx);
 							pageNode = page.outer;
 							HTMLNode contentNode = page.content;
 							/* add alert summary box */
@@ -1210,7 +1210,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			Logger.minor(this, "Request count: "+reqs.length);
 
 		if(reqs.length < 1){
-			PageNode page = pageMaker.getPageNode(NodeL10n.getBase().getString("QueueToadlet.title"+(uploads?"Uploads":"Downloads"), new String[]{ "nodeName" }, new String[]{ core.getMyName() }), ctx);
+			PageNode page = pageMaker.getPageNode(NodeL10n.getBase().getString("QueueToadlet.title"+(uploads?"Uploads":"Downloads")), ctx);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 			/* add alert summary box */
@@ -1381,13 +1381,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				"(" + (uncompletedDirUpload.size() + uncompletedUpload.size()) +
 				'/' + (failedDirUpload.size() + failedUpload.size()) +
 				'/' + (completedDirUpload.size() + completedUpload.size()) +
-				") "+NodeL10n.getBase().getString("QueueToadlet.titleUploads", "nodeName", core.getMyName());
+				") "+NodeL10n.getBase().getString("QueueToadlet.titleUploads");
 		else
 			pageName =
 				"(" + uncompletedDownload.size() +
 				'/' + failedDownload.size() +
 				'/' + (completedDownloadToDisk.size() + completedDownloadToTemp.size()) +
-				") "+NodeL10n.getBase().getString("QueueToadlet.titleDownloads", "nodeName", core.getMyName());
+				") "+NodeL10n.getBase().getString("QueueToadlet.titleDownloads");
 
 		final int mode = pageMaker.parseMode(request, this.container);
 

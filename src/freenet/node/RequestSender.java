@@ -84,7 +84,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     /** If true, only try to fetch the key from nodes which have offered it */
     private boolean tryOffersOnly;
     
-	private ArrayList<Listener> listeners=new ArrayList<Listener>();
+	private ArrayList<RequestSenderListener> listeners=new ArrayList<RequestSenderListener>();
 	
     // Terminal status
     // Always set finished AFTER setting the reason flag
@@ -192,7 +192,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				
     			boolean fromOfferedKey;
     			
-				synchronized(this) {
+				synchronized(RequestSender.this) {
 					if(status != NOT_FINISHED) return;
 					if(transferringFrom != null) return;
 					reassignedToSelfDueToMultipleTimeouts = true;
@@ -834,6 +834,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         		// FIXME kill the transfer if off-thread (two stage timeout, offers == null) and it's already completed successfully?
         		// FIXME we are also plotting to get rid of transfer cancels so maybe not?
         		synchronized(this) {
+        			transferringFrom = pn;
         			notifyAll();
         		}
         		fireCHKTransferBegins();
@@ -983,8 +984,8 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     	}
     	
     	if(msg.getSpec() == DMT.FNPRejectedOverload) {
-    		if(handleRejectedOverload(msg, source)) return DO.WAIT;
-    		else return DO.NEXT_PEER;
+    		if(handleRejectedOverload(msg, wasFork, source)) return DO.WAIT;
+    		else return DO.FINISHED;
     	}
 
     	if((!isSSK) && msg.getSpec() == DMT.FNPCHKDataFound) {
@@ -1222,7 +1223,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 
 	/** @param next 
 	 * @return True to continue waiting for this node, false to move on to another. */
-	private boolean handleRejectedOverload(Message msg, PeerNode next) {
+	private boolean handleRejectedOverload(Message msg, boolean wasFork, PeerNode next) {
 		
 		// Non-fatal - probably still have time left
 		forwardRejectedOverload();
@@ -1235,8 +1236,18 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			next.localRejectedOverload("ForwardRejectedOverload2", realTimeFlag);
 			// Node in trouble suddenly??
 			Logger.normal(this, "Local RejectedOverload after Accepted, moving on to next peer");
-			// Give up on this one, try another
+			// Local RejectedOverload, after already having Accepted.
+			// This indicates either:
+			// a) The node no longer has the resources to handle the request, even though it did initially.
+			// b) The node has a severe internal error.
+			// c) The node knows we will timeout fatally if it doesn't send something.
+			// In all 3 cases, it is possible that the request is continuing downstream.
+			// So this is fatal. Treat similarly to a DNF.
+			// FIXME use a different message for termination after accepted.
 			next.noLongerRoutingTo(origTag, false);
+			node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
+			if(!wasFork)
+				finish(TIMED_OUT, next, false);
 			return false;
 		}
 		//so long as the node does not send a (IS_LOCAL) message. Interestingly messages can often timeout having only received this message.
@@ -1697,8 +1708,13 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				}
 				// RequestHandler will send a noderef back up, eventually, and will unlockHandler() after that point.
 				// But if this is a local request, we need to send the ack now.
+				// Serious race condition not possible here as we set it.
 				if(source == null)
 					ackOpennet(next);
+				else if(origTag.shouldStop()) {
+					// Can't pass it on.
+					origTag.finishedWaitingForOpennet(next);
+				}
 				return false;
 			} else {
 				// opennetNoderef = null i.e. we want the noderef so we won't pass it further down.
@@ -1725,6 +1741,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			// Hmmm... let the LRU deal with it
 			if(logMINOR)
 				Logger.minor(this, "Not connected sending ConnectReply on "+this+" to "+next);
+			origTag.finishedWaitingForOpennet(next);
     	} catch (WaitedTooLongForOpennetNoderefException e) {
     		Logger.error(this, "RequestSender timed out waiting for noderef from "+next+" for "+this);
     		// Not an error since it can be caused downstream.
@@ -1874,20 +1891,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		return (source==null);
 	}
 	
-	/** All these methods should return quickly! */
-	interface Listener {
-		/** Should return quickly, allocate a thread if it needs to block etc */
-		void onReceivedRejectOverload();
-		/** Should return quickly, allocate a thread if it needs to block etc */
-		void onCHKTransferBegins();
-		/** Should return quickly, allocate a thread if it needs to block etc */
-		void onRequestSenderFinished(int status, boolean fromOfferedKey);
-		/** Abort downstream transfers (not necessarily upstream ones, so not via the PRB).
-		 * Should return quickly, allocate a thread if it needs to block etc. */
-		void onAbortDownstreamTransfers(int reason, String desc);
-	}
-	
-	public void addListener(Listener l) {
+	public void addListener(RequestSenderListener l) {
 		// Only call here if we've already called for the other listeners.
 		// Therefore the callbacks will only be called once.
 		boolean reject=false;
@@ -1924,7 +1928,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				status = this.status;
 			}
 			if (status!=NOT_FINISHED)
-				l.onRequestSenderFinished(status, sentFinishedFromOfferedKey);
+				l.onRequestSenderFinished(status, sentFinishedFromOfferedKey, this);
 			else
 				Logger.error(this, "sentFinished is true but status is still NOT_FINISHED?!?! on "+this, new Exception("error"));
 		}
@@ -1936,7 +1940,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		synchronized (listeners) {
 			if(sentReceivedRejectOverload) return;
 			sentReceivedRejectOverload = true;
-			for (Listener l : listeners) {
+			for (RequestSenderListener l : listeners) {
 				try {
 					l.onReceivedRejectOverload();
 				} catch (Throwable t) {
@@ -1952,7 +1956,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		synchronized (listeners) {
 			if(sentCHKTransferBegins) return;
 			sentCHKTransferBegins = true;
-			for (Listener l : listeners) {
+			for (RequestSenderListener l : listeners) {
 				try {
 					l.onCHKTransferBegins();
 				} catch (Throwable t) {
@@ -1975,9 +1979,9 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			sentRequestSenderFinished = true;
 			completedFromOfferedKey = fromOfferedKey;
 			if(logMINOR) Logger.minor(this, "Notifying "+listeners.size()+" listeners of status "+status);
-			for (Listener l : listeners) {
+			for (RequestSenderListener l : listeners) {
 				try {
-					l.onRequestSenderFinished(status, fromOfferedKey);
+					l.onRequestSenderFinished(status, fromOfferedKey, this);
 				} catch (Throwable t) {
 					Logger.error(this, "Caught: "+t, t);
 				}
@@ -1991,17 +1995,17 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	private boolean receivingAsync;
 	
 	private void reassignToSelfOnTimeout(boolean fromOfferedKey) {
-		Listener[] list;
+		RequestSenderListener[] list;
 		synchronized(listeners) {
 			if(sentCHKTransferBegins) {
 				Logger.error(this, "Transfer started, not dumping listeners when reassigning to self on timeout (race condition?) on "+this);
 				return;
 			}
-			list = listeners.toArray(new Listener[listeners.size()]);
+			list = listeners.toArray(new RequestSenderListener[listeners.size()]);
 			listeners.clear();
 		}
-		for(Listener l : list) {
-			l.onRequestSenderFinished(TIMED_OUT, fromOfferedKey);
+		for(RequestSenderListener l : list) {
+			l.onRequestSenderFinished(TIMED_OUT, fromOfferedKey, this);
 		}
 		origTag.timedOutToHandlerButContinued();
 	}
@@ -2047,9 +2051,9 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	
 	// FIXME this should not be necessary, we should be able to ask our listeners.
 	// However at the moment NodeClientCore's realGetCHK and realGetSSK (the blocking fetches)
-	// do not register a Listener. Eventually they will be replaced with something that does.
+	// do not register a RequestSenderListener. Eventually they will be replaced with something that does.
 	
-	// Also we should consider whether a local Listener added *after* the request starts should
+	// Also we should consider whether a local RequestSenderListener added *after* the request starts should
 	// impact on the decision or whether that leaks too much information. It's probably safe
 	// given the amount leaked anyway! (Note that if we start the request locally we will want
 	// to finish it even if incoming RequestHandler's are coalesced with it and they fail their 
@@ -2069,10 +2073,11 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	
 	@Override
 	protected void onAccepted(PeerNode next) {
-		onAccepted(next, false);
+		onAccepted(next, false, htl);
 	}
 	
-	protected void onAccepted(PeerNode next, boolean forked) {
+	/** If we handled a timeout, and forked, we need to know the original HTL. */
+	protected void onAccepted(PeerNode next, boolean forked, short htl) {
 		MainLoopCallback cb;
         synchronized(this) {
         	receivingAsync = true;
@@ -2088,7 +2093,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 
 	@Override
 	protected void timedOutWhileWaiting(double load) {
-		htl -= (short)Math.min(0, hopsForFatalTimeoutWaitingForPeer());
+		htl -= (short)Math.max(0, hopsForFatalTimeoutWaitingForPeer());
 		if(htl < 0) htl = 0;
 		// Timeouts while waiting for a slot are relatively normal.
 		// That is, in an ideal world they wouldn't happen.
@@ -2114,6 +2119,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	protected void handleAcceptedRejectedTimeout(final PeerNode next,
 			final UIDTag origTag) {
 		
+		final short htl = this.htl;
 		origTag.handlingTimeout(next);
 		
 		int timeout = 60*1000;
@@ -2130,7 +2136,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 						next.noLongerRoutingTo(origTag, false);
 					} else {
 						// Accepted. May as well wait for the data, if any.
-						onAccepted(next, true);
+						onAccepted(next, true, htl);
 					}
 				}
 				

@@ -1026,7 +1026,7 @@ public class DMT {
 		return msg;
 	}
 	
-	public static final MessageType FNPRHProbeReply = new MessageType("FNPRHProbeReply", PRIORITY_HIGH) {{
+	public static final MessageType FNPRHProbeReply = new MessageType("FNPRHProbeReply", PRIORITY_UNSPECIFIED) {{
 		addField(UID, Long.class);
 		addField(NEAREST_LOCATION, Double.class);
 		addField(BEST_LOCATION, Double.class);
@@ -1085,7 +1085,7 @@ public class DMT {
 		return msg;
 	}
 	
-	public static final MessageType FNPRHProbeTrace = new MessageType("FNPRHProbeTrace", PRIORITY_LOW) {{
+	public static final MessageType FNPRHProbeTrace = new MessageType("FNPRHProbeTrace", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
 		addField(NEAREST_LOCATION, Double.class);
 		addField(BEST_LOCATION, Double.class);

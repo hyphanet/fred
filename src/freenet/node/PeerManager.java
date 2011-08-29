@@ -42,6 +42,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
+import freenet.support.io.NativeThread;
 
 /**
  * @author amphibian
@@ -66,10 +67,8 @@ public class PeerManager {
 	private String darkFilename;
         private String openFilename;
         private String oldOpennetPeersFilename;
-        // FIXME either track dirty status separately for each of the three files,
-        // or implement a cheaper cache e.g. a secure hash, maybe with file size as a 
-        // short-cut. String.hashCode() unfortunately will give way too many false 
-        // positives and thus result in not writing important changes.
+        // FIXME MEMORY use a hash. Not hashCode() though.
+        // FIXME Strip metadata, except for peer locations.
         private String darknetPeersStringCache = null;
         private String opennetPeersStringCache = null;
         private String oldOpennetPeersStringCache = null;
@@ -98,23 +97,40 @@ public class PeerManager {
 	private static final long routableConnectionStatsUpdateInterval = 7 * 1000;  // 7 seconds
 	
 	/** Should update the peer-file ? */
-	private volatile boolean shouldWritePeers = false;
-	private static final int MIN_WRITEPEERS_DELAY = 5*1000; // 5sec
+	private volatile boolean shouldWritePeersDarknet = false;
+	private volatile boolean shouldWritePeersOpennet = false;
+	private static final int MIN_WRITEPEERS_DELAY = 5*60*1000; // 5 minutes. Urgent stuff calls write*PeersUrgent.
 	private final Runnable writePeersRunnable = new Runnable() {
 
 		@Override
 		public void run() {
 			try {
-				if(shouldWritePeers) {
-					shouldWritePeers = false;
-					writePeersInner();
-				}
+				writePeersNow(false);
 			} finally {
 				node.getTicker().queueTimedJob(writePeersRunnable, MIN_WRITEPEERS_DELAY);
 			}
 		}
 	};
 	
+	protected void writePeersNow(boolean rotateBackups) {
+		writePeersDarknetNow(rotateBackups);
+		writePeersOpennetNow(rotateBackups);
+	}
+
+	private void writePeersDarknetNow(boolean rotateBackups) {
+		if(shouldWritePeersDarknet) {
+			shouldWritePeersDarknet = false;
+			writePeersInnerDarknet(rotateBackups);
+		}
+	}
+
+	private void writePeersOpennetNow(boolean rotateBackups) {
+		if(shouldWritePeersOpennet) {
+			shouldWritePeersOpennet = false;
+			writePeersInnerOpennet(rotateBackups);
+		}
+	}
+
 	public static final int PEER_NODE_STATUS_CONNECTED = 1;
 	public static final int PEER_NODE_STATUS_ROUTING_BACKED_OFF = 2;
 	public static final int PEER_NODE_STATUS_TOO_NEW = 3;
@@ -140,7 +156,7 @@ public class PeerManager {
 	 * @param node
 	 * @param filename
 	 */
-	public PeerManager(Node node) {
+	public PeerManager(Node node, SemiOrderedShutdownHook shutdownHook) {
 		Logger.normal(this, "Creating PeerManager");
 		peerNodeStatuses = new HashMap<Integer, HashSet<PeerNode>>();
 		peerNodeStatusesDarknet = new HashMap<Integer, HashSet<PeerNode>>();
@@ -150,6 +166,11 @@ public class PeerManager {
 		myPeers = new PeerNode[0];
 		connectedPeers = new PeerNode[0];
 		this.node = node;
+		shutdownHook.addEarlyJob(new Thread() {
+			public void run() {
+				writePeersNow(false);
+			}
+		});
 	}
 
 	/**
@@ -171,41 +192,31 @@ public class PeerManager {
 					darkFilename = filename;
 		}
 		OutgoingPacketMangler mangler = crypto.packetMangler;
-		File peersFile = new File(filename);
-		File backupFile = new File(filename + ".bak");
-		// Try to read the node list from disk
-		if(peersFile.exists())
-			if(readPeers(peersFile, mangler, crypto, opennet, oldOpennetPeers)) {
-				String msg;
-				if(oldOpennetPeers)
-					msg = "Read " + opennet.countOldOpennetPeers() + " old-opennet-peers from " + peersFile;
-				else if(isOpennet)
-					msg = "Read " + getOpennetPeers().length + " opennet peers from " + peersFile;
-				else
-					msg = "Read " + getDarknetPeers().length + " darknet peers from " + peersFile;
-				Logger.normal(this, msg);
-				System.out.println(msg);
-				return;
-			}
-		// Try the backup
-		if(backupFile.exists())
-			if(readPeers(backupFile, mangler, crypto, opennet, oldOpennetPeers)) {
-				String msg;
-				if(oldOpennetPeers)
-					msg = "Read " + opennet.countOldOpennetPeers() + " old-opennet-peers from " + peersFile;
-				else if(isOpennet)
-					msg = "Read " + getOpennetPeers().length + " opennet peers from " + peersFile;
-				else
-					msg = "Read " + getDarknetPeers().length + " darknet peers from " + peersFile;
-				Logger.normal(this, msg);
-				System.out.println(msg);
-			} else {
-				Logger.error(this, "No (readable) peers file with peers in it found");
-				System.err.println("No (readable) peers file with peers in it found");
-			}
+		int maxBackups = isOpennet ? BACKUPS_OPENNET : BACKUPS_DARKNET;
+		for(int i=0;i<=maxBackups;i++) {
+			File peersFile = this.getBackupFilename(filename, i);
+			// Try to read the node list from disk
+			if(peersFile.exists())
+				if(readPeers(peersFile, mangler, crypto, opennet, oldOpennetPeers)) {
+					String msg;
+					if(oldOpennetPeers)
+						msg = "Read " + opennet.countOldOpennetPeers() + " old-opennet-peers from " + peersFile;
+					else if(isOpennet)
+						msg = "Read " + getOpennetPeers().length + " opennet peers from " + peersFile;
+					else
+						msg = "Read " + getDarknetPeers().length + " darknet peers from " + peersFile;
+					Logger.normal(this, msg);
+					System.out.println(msg);
+					return;
+				}
+		}
+		if(!isOpennet)
+			System.out.println("No darknet peers file found.");
+		// The other cases are less important.
 	}
 
 	private boolean readPeers(File peersFile, OutgoingPacketMangler mangler, NodeCrypto crypto, OpennetManager opennet, boolean oldOpennetPeers) {
+		boolean someBroken = false;
 		boolean gotSome = false;
 		FileInputStream fis;
 		try {
@@ -231,15 +242,31 @@ public class PeerManager {
 					pn = PeerNode.create(fs, node, crypto, opennet, this, mangler);
 				} catch(FSParseException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
+					if(mangler == null) {
+						System.err.println("Cannot parse a friend from the peers file: "+e2);
+						someBroken = true;
+					}
 					continue;
 				} catch(PeerParseException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
+					if(mangler == null) {
+						System.err.println("Cannot parse a friend from the peers file: "+e2);
+						someBroken = true;
+					}
 					continue;
 				} catch(ReferenceSignatureVerificationException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
+					if(mangler == null) {
+						System.err.println("Cannot parse a friend from the peers file: "+e2);
+						someBroken = true;
+					}
 					continue;
 				} catch (RuntimeException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
+					if(mangler == null) {
+						System.err.println("Cannot parse a friend from the peers file: "+e2);
+						someBroken = true;
+					}
 					continue;
 					// FIXME tell the user???
 				}
@@ -258,6 +285,20 @@ public class PeerManager {
 			br.close();
 		} catch(IOException e3) {
 			Logger.error(this, "Ignoring " + e3 + " caught reading " + peersFile, e3);
+		}
+		if(someBroken) {
+			File broken = new File(peersFile.getPath()+".broken");
+			try {
+				broken.delete();
+				FileOutputStream fos = new FileOutputStream(broken);
+				fis = new FileInputStream(peersFile);
+				FileUtil.copy(fis, fos, -1);
+				fos.close();
+				fis.close();
+				System.err.println("Broken peers file copied to "+broken);
+			} catch (IOException e) {
+				System.err.println("Unable to copy broken peers file.");
+			}
 		}
 		return gotSome;
 	}
@@ -498,7 +539,7 @@ public class PeerManager {
 		// Try a match by IP address if we can't match exactly by IP:port.
 		FreenetInetAddress addr = peer.getFreenetAddress();
 		for(int i = 0; i < peerList.length; i++) {
-			if(peerList[i].matchesIP(addr))
+			if(peerList[i].matchesIP(addr, false))
 				return peerList[i];
 		}
 		return null;
@@ -520,7 +561,7 @@ public class PeerManager {
 		// Try a match by IP address if we can't match exactly by IP:port.
 		FreenetInetAddress addr = peer.getFreenetAddress();
 		for(int i = 0; i < peerList.length; i++) {
-			if(peerList[i].matchesIP(addr) && peerList[i].getOutgoingMangler() == mangler)
+			if(peerList[i].matchesIP(addr, false) && peerList[i].getOutgoingMangler() == mangler)
 				return peerList[i];
 		}
 		return null;
@@ -529,7 +570,7 @@ public class PeerManager {
 	/**
 	 * Find nodes with a given IP address.
 	 */
-	public ArrayList<PeerNode> getAllConnectedByAddress(FreenetInetAddress a) {
+	public ArrayList<PeerNode> getAllConnectedByAddress(FreenetInetAddress a, boolean strict) {
 		ArrayList<PeerNode> found = null;
 		
 		PeerNode[] peerList = myPeers;
@@ -537,7 +578,7 @@ public class PeerManager {
 		for(PeerNode pn : peerList) {
 			if(!pn.isConnected()) continue;
 			if(!pn.isRoutable()) continue;
-			if(pn.matchesIP(a)) {
+			if(pn.matchesIP(a, strict)) {
 				if(found == null) found = new ArrayList<PeerNode>();
 				found.add(pn);
 			}
@@ -558,7 +599,7 @@ public class PeerManager {
 		addPeer(pn);
 	}
 	
-	public void disconnect(final PeerNode pn, boolean sendDisconnectMessage, final boolean waitForAck, boolean purge) {
+	public void disconnectAndRemove(final PeerNode pn, boolean sendDisconnectMessage, final boolean waitForAck, boolean purge) {
 		disconnect(pn, sendDisconnectMessage, waitForAck, purge, false, true, Node.MAX_PEER_INACTIVITY);
 	}
 
@@ -620,14 +661,14 @@ public class PeerManager {
 						}
 						if(remove) {
 							if(removePeer(pn) && !pn.isSeed())
-								writePeers();
+								writePeersUrgent(pn.isOpennet());
 						}
 					}
 				}, ctrDisconn);
 			} catch(NotConnectedException e) {
 				if(remove) {
 					if(pn.isDisconnecting() && removePeer(pn) && !pn.isSeed())
-						writePeers();
+						writePeersUrgent(pn.isOpennet());
 				}
 				return;
 			}
@@ -640,7 +681,7 @@ public class PeerManager {
                                     	if(remove) {
                                     		if(removePeer(pn)) {
                                     			if(!pn.isSeed()) {
-                                    				writePeers();
+                                    				writePeersUrgent(pn.isOpennet());
                                     			}
                                     		}
                                     	}
@@ -652,7 +693,7 @@ public class PeerManager {
 		} else {
 			if(remove) {
 				if(removePeer(pn) && !pn.isSeed())
-					writePeers();
+					writePeersUrgent(pn.isOpennet());
 			}
 		}
 	}
@@ -1439,9 +1480,59 @@ public class PeerManager {
 	}
 	private final Object writePeersSync = new Object();
 	private final Object writePeerFileSync = new Object();
+	
+	void writePeers(boolean opennet) {
+		if(opennet)
+			writePeersOpennet();
+		else
+			writePeersDarknet();
+	}
 
-	void writePeers() {
-		shouldWritePeers = true;
+	void writePeersUrgent(boolean opennet) {
+		if(opennet)
+			writePeersOpennetUrgent();
+		else
+			writePeersDarknetUrgent();
+	}
+	
+	void writePeersOpennetUrgent() {
+		node.executor.execute(new PrioRunnable() {
+
+			@Override
+			public void run() {
+				writePeersOpennetNow(true);
+			}
+
+			@Override
+			public int getPriority() {
+				return NativeThread.HIGH_PRIORITY;
+			}
+			
+		});
+	}
+
+	void writePeersDarknetUrgent() {
+		node.executor.execute(new PrioRunnable() {
+
+			@Override
+			public void run() {
+				writePeersDarknetNow(true);
+			}
+
+			@Override
+			public int getPriority() {
+				return NativeThread.HIGH_PRIORITY;
+			}
+			
+		});
+	}
+
+	void writePeersDarknet() {
+		shouldWritePeersDarknet = true;
+	}
+	
+	void writePeersOpennet() {
+		shouldWritePeersOpennet = true;
 	}
 	
 	protected String getDarknetPeersString() {
@@ -1481,15 +1572,26 @@ public class PeerManager {
 		
 		return sb.toString();
 	}
-
-	private void writePeersInner() {
-                String newDarknetPeersString = null,
-                        newOpennetPeersString = null,
-                        newOldOpennetPeersString =null;
-		
+	
+	private static final int BACKUPS_OPENNET = 1;
+	private static final int BACKUPS_DARKNET = 10;
+	
+	private void writePeersInnerDarknet(boolean rotateBackups) {
+        String newDarknetPeersString = null;
 		synchronized(writePeersSync) {
 			if(darkFilename != null)
 				newDarknetPeersString = getDarknetPeersString();
+		}
+		synchronized(writePeerFileSync) {
+			if(newDarknetPeersString != null && !newDarknetPeersString.equals(darknetPeersStringCache))
+				writePeersInner(darkFilename, darknetPeersStringCache = newDarknetPeersString, BACKUPS_DARKNET, rotateBackups);
+		}
+	}
+
+	private void writePeersInnerOpennet(boolean rotateBackups) {
+        String newOpennetPeersString = null;
+        String newOldOpennetPeersString = null;
+		synchronized(writePeersSync) {
 			OpennetManager om = node.getOpennet();
 			if(om != null) {
 				if(openFilename != null)
@@ -1498,31 +1600,39 @@ public class PeerManager {
 				newOldOpennetPeersString = getOldOpennetPeersString(om);
 			}
 		}
-
 		synchronized(writePeerFileSync) {
-			if(newDarknetPeersString != null && !newDarknetPeersString.equals(darknetPeersStringCache))
-				writePeersInner(darkFilename, darknetPeersStringCache = newDarknetPeersString);
-			if(newOldOpennetPeersString != null && !newOldOpennetPeersString.equals(oldOpennetPeersStringCache)) {
-				writePeersInner(oldOpennetPeersFilename, oldOpennetPeersStringCache = newOldOpennetPeersString);
-			}
 			if(newOpennetPeersString != null && !newOpennetPeersString.equals(opennetPeersStringCache)) {
-				writePeersInner(openFilename, opennetPeersStringCache = newOpennetPeersString);
+				writePeersInner(openFilename, opennetPeersStringCache = newOpennetPeersString, BACKUPS_OPENNET, rotateBackups);
+			}
+			if(newOldOpennetPeersString != null && !newOldOpennetPeersString.equals(oldOpennetPeersStringCache)) {
+				writePeersInner(oldOpennetPeersFilename, oldOpennetPeersStringCache = newOldOpennetPeersString, BACKUPS_OPENNET, rotateBackups);
 			}
 		}
 	}
-
+	
 	/**
 	 * Write the peers file to disk
+	 * @param rotateBackups If true, rotate backups. If false, just clobber the latest file.
 	 */
-	private void writePeersInner(String filename, String sb) {
+	private void writePeersInner(String filename, String sb, int maxBackups, boolean rotateBackups) {
+		assert(maxBackups >= 1);
 		synchronized(writePeerFileSync) {
 			FileOutputStream fos = null;
-			String f = filename + ".bak";
+			File f;
+			File full = new File(filename).getAbsoluteFile();
+			try {
+				f = File.createTempFile(full.getName()+".", ".tmp", full.getParentFile());
+			} catch (IOException e2) {
+				Logger.error(this, "Cannot write peers to disk: Cannot create temp file - " + e2, e2);
+				Closer.close(fos);
+				return;
+			}
 			try {
 				fos = new FileOutputStream(f);
 			} catch(FileNotFoundException e2) {
 				Logger.error(this, "Cannot write peers to disk: Cannot create " + f + " - " + e2, e2);
 				Closer.close(fos);
+				f.delete();
 				return;
 			}
 			OutputStreamWriter w = null;
@@ -1530,6 +1640,7 @@ public class PeerManager {
 				w = new OutputStreamWriter(fos, "UTF-8");
 			} catch(UnsupportedEncodingException e2) {
 				Closer.close(w);
+				f.delete();
 				throw new Error("Impossible: JVM doesn't support UTF-8: " + e2, e2);
 			}
 			try {
@@ -1538,9 +1649,24 @@ public class PeerManager {
 				fos.getFD().sync();
 				w.close();
 				w = null;
-
-				File fnam = new File(filename);
-				FileUtil.renameTo(new File(f), fnam);
+				
+				if(rotateBackups) {
+					File prevFile = null;
+					for(int i=maxBackups;i>=0;i--) {
+						File thisFile = getBackupFilename(filename, i);
+						if(prevFile == null) {
+							thisFile.delete();
+						} else {
+							if(thisFile.exists()) {
+								FileUtil.renameTo(thisFile, prevFile);
+							}
+						}
+						prevFile = thisFile;
+					}
+					FileUtil.renameTo(f, prevFile);
+				} else {
+					FileUtil.renameTo(f, getBackupFilename(filename, 0));
+				}
 			} catch(IOException e) {
 				try {
 					fos.close();
@@ -1548,12 +1674,20 @@ public class PeerManager {
 					Logger.error(this, "Cannot close peers file: " + e, e);
 				}
 				Logger.error(this, "Cannot write file: " + e, e);
+				f.delete();
 				return; // don't overwrite old file!
 			} finally {
 				Closer.close(w);
 				Closer.close(fos);
+				f.delete();
 			}
 		}
+	}
+
+	private File getBackupFilename(String filename, int i) {
+		if(i == 0) return new File(filename);
+		if(i == 1) return new File(filename+".bak");
+		return new File(filename+".bak."+i);
 	}
 
 	/**
@@ -2089,15 +2223,22 @@ public class PeerManager {
 		synchronized(this) {
 			peers = myPeers;
 		}
-		for(int i = 0; i < peers.length; i++) {
-			if(peers[i] == pn)
+		for(PeerNode p : peers) {
+			if(p == pn)
 				continue;
-			if(!peers[i].isConnected())
+			if(!p.isConnected())
 				continue;
-			if(!peers[i].isRealConnection())
+			if(!p.isRealConnection())
 				continue; // Ignore non-searchable peers i.e. bootstrapping peers
 			// If getPeer() is null then presumably !isConnected().
-			if(peers[i].getPeer().getFreenetAddress().equals(addr))
+			if(p.isDarknet() && !pn.isDarknet()) {
+				// Darknet is only affected by other darknet peers.
+				// Opennet peers with the same IP will NOT cause darknet peers to be dropped, even if one connection per IP is set for darknet, and even if it isn't set for opennet.
+				// (Which would be a perverse configuration anyway!)
+				// FIXME likewise, FOAFs should not boot darknet connections.
+				continue;
+			}
+			if(p.getPeer().getFreenetAddress().equals(addr))
 				return true;
 		}
 		return false;

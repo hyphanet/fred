@@ -525,7 +525,12 @@ public class PluginManager {
 			this.filename = filename;
 			this.official = official;
 			this.stillTryingOverFreenet = stillTryingOverFreenet;
-			String msg = e.getMessage();
+			String msg;
+			if(e instanceof PluginNotFoundException)
+				msg = e.getMessage();
+			else
+				// If it's something wierd, we need to know what it is.
+				msg = e.getClass() + ": " + e.getMessage();
 			if(msg == null) msg = e.toString();
 			this.message = msg;
 			this.officialFromFreenet = officialFromFreenet;

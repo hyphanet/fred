@@ -407,8 +407,13 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		// If true, remove from active routing table, likely to be down for a while.
 		// Otherwise just dump all current connection state and keep trying to connect.
 		boolean remove = m.getBoolean(DMT.REMOVE);
-		if(remove)
-			node.peers.disconnect(source, false, false, false);
+		if(remove) {
+			node.peers.disconnectAndRemove(source, false, false, false);
+			if(source instanceof DarknetPeerNode)
+				// FIXME remove, dirty logs.
+				// FIXME add a useralert?
+				System.out.println("Disconnecting permanently from your friend \""+((DarknetPeerNode)source).getName()+"\" because they asked us to remove them.");
+		}
 		// If true, purge all references to this node. Otherwise, we can keep the node
 		// around in secondary tables etc in order to more easily reconnect later. 
 		// (Mostly used on opennet)

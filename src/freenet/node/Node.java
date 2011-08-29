@@ -1710,9 +1710,8 @@ public class Node implements TimeSkewDetectorCallback {
 		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
 
 		// Then read the peers
-		peers = new PeerManager(this);
+		peers = new PeerManager(this, shutdownHook);
 		peers.tryReadPeers(nodeDir.file("peers-"+getDarknetPortNumber()).getPath(), darknetCrypto, null, false, false);
-		peers.writePeers();
 		peers.updatePMUserAlert();
 
 		uptime = new UptimeEstimator(runDir, ticker, darknetCrypto.identityHash);
@@ -2068,14 +2067,22 @@ public class Node implements TimeSkewDetectorCallback {
                     public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
 						storePreallocate = val;
 						if (storeType.equals("salt-hash")) {
-							((SaltedHashFreenetStore<CHKBlock>) chkDatastore.getStore()).setPreallocate(val);
-							((SaltedHashFreenetStore<CHKBlock>) chkDatacache.getStore()).setPreallocate(val);
-							((SaltedHashFreenetStore<DSAPublicKey>) pubKeyDatastore.getStore()).setPreallocate(val);
-							((SaltedHashFreenetStore<DSAPublicKey>) pubKeyDatacache.getStore()).setPreallocate(val);
-							((SaltedHashFreenetStore<SSKBlock>) sskDatastore.getStore()).setPreallocate(val);
-							((SaltedHashFreenetStore<SSKBlock>) sskDatacache.getStore()).setPreallocate(val);
+							setPreallocate(chkDatastore, val);
+							setPreallocate(chkDatacache, val);
+							setPreallocate(pubKeyDatastore, val);
+							setPreallocate(pubKeyDatacache, val);
+							setPreallocate(sskDatastore, val);
+							setPreallocate(sskDatacache, val);
 						}
-                    }}
+                    }
+
+					private void setPreallocate(StoreCallback<?> datastore,
+							boolean val) {
+						// Avoid race conditions by checking first.
+						FreenetStore<?> store = datastore.getStore();
+						if(store instanceof SaltedHashFreenetStore)
+							((SaltedHashFreenetStore<?>)store).setPreallocate(val);
+					}}
 		);
 		storePreallocate = nodeConfig.getBoolean("storePreallocate");
 
@@ -4786,6 +4793,27 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		}
 	}
+	
+	/**
+	 * @return [0] is the number of local requests waiting for slots, [1] is the
+	 * number of remote requests waiting for slots.
+	 */
+	public int[] countRequestsWaitingForSlots() {
+		// FIXME use a counter, but that means make sure it always removes it when something bad happens.
+		
+		int local = 0;
+		int remote = 0;
+		synchronized(runningUIDs) {
+			for(UIDTag tag : runningUIDs.values()) {
+				if(!tag.isWaitingForSlot()) continue;
+				if(tag.isLocal())
+					local++;
+				else
+					remote++;
+			}
+		}
+		return new int[] { local, remote };
+	}
 
 	void reassignTagToSelf(UIDTag tag) {
 		// The tag remains remote, but we flag it as adopted.
@@ -4843,7 +4871,8 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	// Must include bulk inserts so fairly long.
-	static final int TIMEOUT = 16 * 60 * 1000;
+	// 21 minutes is enough for a fatal timeout.
+	static final int TIMEOUT = 21 * 60 * 1000;
 
 	private void startDeadUIDChecker() {
 		getTicker().queueTimedJob(deadUIDChecker, TIMEOUT);
@@ -5347,12 +5376,12 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public boolean addPeerConnection(PeerNode pn) {
 		boolean retval = peers.addPeer(pn);
-		peers.writePeers();
+		peers.writePeersUrgent(pn.isOpennet());
 		return retval;
 	}
 
 	public void removePeerConnection(PeerNode pn) {
-		peers.disconnect(pn, true, false, false);
+		peers.disconnectAndRemove(pn, true, false, false);
 	}
 
 	public void onConnectedPeer() {
@@ -5926,9 +5955,9 @@ public class Node implements TimeSkewDetectorCallback {
 	public int getTotalRunningUIDsAlt() {
 		synchronized(runningUIDs) {
 			return this.runningCHKGetUIDsRT.size() + this.runningCHKPutUIDsRT.size() + this.runningSSKGetUIDsRT.size() +
-			this.runningSSKGetUIDsRT.size() + this.runningSSKOfferReplyUIDsRT.size() + this.runningCHKOfferReplyUIDsRT.size() +
+			this.runningSSKPutUIDsRT.size() + this.runningSSKOfferReplyUIDsRT.size() + this.runningCHKOfferReplyUIDsRT.size() +
 			this.runningCHKGetUIDsBulk.size() + this.runningCHKPutUIDsBulk.size() + this.runningSSKGetUIDsBulk.size() +
-			this.runningSSKGetUIDsBulk.size() + this.runningSSKOfferReplyUIDsBulk.size() + this.runningCHKOfferReplyUIDsBulk.size();
+			this.runningSSKPutUIDsBulk.size() + this.runningSSKOfferReplyUIDsBulk.size() + this.runningCHKOfferReplyUIDsBulk.size();
 		}
 	}
 

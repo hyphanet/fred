@@ -216,7 +216,7 @@ public class MessageCore {
 					f.setMessage(m);
 					if(logMINOR) Logger.minor(this, "Matched (1): "+f);
 					break; // Only one match permitted per message
-				} else if(logMINOR) Logger.minor(this, "Did not match "+f);
+				} else if(logDEBUG) Logger.minor(this, "Did not match "+f);
 			}
 		}
 		if(timedOut != null) {

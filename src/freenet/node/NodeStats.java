@@ -657,6 +657,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return NodeL10n.getBase().getString("NodeStats."+key);
 	}
 
+	protected String l10n(String key, String[] patterns, String[] values) {
+		return NodeL10n.getBase().getString("NodeStats."+key, patterns, values);
+	}
+
 	public void start() throws NodeInitException {
 		node.executor.execute(new Runnable() {
 			@Override
@@ -1233,6 +1237,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		 * before it is used and sent to the peer. This ensures that the peer
 		 * doesn't use more than it should after a restart. */
 		RunningRequestsSnapshot peerRequestsSnapshot = new RunningRequestsSnapshot(node, source, false, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, realTimeFlag);
+		if(logMINOR)
+			peerRequestsSnapshot.log(source);
 		
 		int maxTransfersOutUpperLimit = getMaxTransfersUpperLimit(realTimeFlag, nonOverheadFraction);
 		int maxTransfersOutLowerLimit = (int)Math.max(1,getLowerLimit(maxTransfersOutUpperLimit, peers));
@@ -1453,7 +1459,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			// Fair sharing between peers.
 			
 			if(logMINOR)
-				Logger.minor(this, "Allocation ("+name+") for "+source+" is "+thisAllocation+" total usage is "+bandwidthLiabilityOutput+" of lower limit"+bandwidthAvailableOutputLowerLimit+" upper limit is "+bandwidthAvailableOutputUpperLimit);
+				Logger.minor(this, "Allocation ("+name+") for "+source+" is "+thisAllocation+" total usage is "+bandwidthLiabilityOutput+" of lower limit"+bandwidthAvailableOutputLowerLimit+" upper limit is "+bandwidthAvailableOutputUpperLimit+" for "+name);
 			
 			double peerUsedBytes = getPeerBandwidthLiability(peerRequestsSnapshot, source, isSSK, transfersPerInsert, input);
 			if(peerUsedBytes > thisAllocation) {
@@ -1461,6 +1467,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 				return name+" bandwidth liability: fairness between peers (peer "+source+" used "+peerUsedBytes+" allowed "+thisAllocation+")";
 			}
 			
+		} else {
+			if(logMINOR)
+				Logger.minor(this, "Total usage is "+bandwidthLiabilityOutput+" below lower limit "+bandwidthAvailableOutputLowerLimit+" for "+name);
 		}
 		return null;
 	}
@@ -1548,8 +1557,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 * @return
 	 */
 	private double getPeerBandwidthLiability(RunningRequestsSnapshot requestsSnapshot, PeerNode source, boolean ignoreLocalVsRemote, int transfersOutPerInsert, boolean input) {
-		
-		requestsSnapshot.log(source);
 		
 		return requestsSnapshot.calculate(ignoreLocalVsRemoteBandwidthLiability, input);
 	}
@@ -1951,6 +1958,32 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("numberOfTransferringRequestHandlers", node.getNumTransferringRequestHandlers());
 		fs.put("numberOfCHKOfferReplys", node.getNumCHKOfferReplies());
 		fs.put("numberOfSSKOfferReplys", node.getNumSSKOfferReplies());
+
+		fs.put("delayTimeLocalRT", nlmDelayRTLocal.currentValue());
+		fs.put("delayTimeRemoteRT", nlmDelayRTRemote.currentValue());
+		fs.put("delayTimeLocalBulk", nlmDelayBulkLocal.currentValue());
+		fs.put("delayTimeRemoteBulk", nlmDelayBulkRemote.currentValue());
+		synchronized(slotTimeoutsSync) {
+		    // timeoutFractions = fatalTimeouts/(fatalTimeouts+allocatedSlot)
+		    fs.put("fatalTimeoutsLocal",fatalTimeoutsInWaitLocal);
+		    fs.put("fatalTimeoutsRemote",fatalTimeoutsInWaitRemote);
+		    fs.put("allocatedSlotLocal",allocatedSlotLocal);
+		    fs.put("allocatedSlotRemote",allocatedSlotRemote);
+		}
+
+		int[] waitingSlots = node.countRequestsWaitingForSlots();
+		fs.put("RequestsWaitingSlotsLocal", waitingSlots[0]);
+		fs.put("RequestsWaitingSlotsRemote", waitingSlots[1]);
+
+		fs.put("successfulLocalCHKFetchTimeBulk", successfulLocalCHKFetchTimeAverageBulk.currentValue());
+		fs.put("successfulLocalCHKFetchTimeRT", successfulLocalCHKFetchTimeAverageRT.currentValue());
+		fs.put("unsuccessfulLocalCHKFetchTimeBulk", unsuccessfulLocalCHKFetchTimeAverageBulk.currentValue());
+		fs.put("unsuccessfulLocalCHKFetchTimeRT", unsuccessfulLocalCHKFetchTimeAverageRT.currentValue());
+
+		fs.put("successfulLocalSSKFetchTimeBulk", successfulLocalSSKFetchTimeAverageBulk.currentValue());
+		fs.put("successfulLocalSSKFetchTimeRT", successfulLocalSSKFetchTimeAverageRT.currentValue());
+		fs.put("unsuccessfulLocalSSKFetchTimeBulk", unsuccessfulLocalSSKFetchTimeAverageBulk.currentValue());
+		fs.put("unsuccessfulLocalSSKFetchTimeRT", unsuccessfulLocalSSKFetchTimeAverageRT.currentValue());
 
 		long[] total = node.collector.getTotalIO();
 		long total_output_rate = (total[0]) / nodeUptimeSeconds;
@@ -3636,6 +3669,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public void drawNewLoadManagementDelayTimes(HTMLNode content) {
+		int[] waitingSlots = node.countRequestsWaitingForSlots();
+		content.addChild("p").addChild("#", l10n("slotsWaiting", new String[] { "local", "remote" }, new String[] { Integer.toString(waitingSlots[0]), Integer.toString(waitingSlots[1]) }));
 		HTMLNode table = content.addChild("table", "border", "0");
 		HTMLNode header = table.addChild("tr");
 		header.addChild("th", l10n("delayTimes"));
