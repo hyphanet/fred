@@ -538,7 +538,7 @@ public class NodeCrypto {
 						continue;
 					}
 					Logger.error(this, "Dropping peer "+pn+" because don't want connection due to others on the same IP address!");
-					System.out.println("Disconnecting permanently from your friend \""+((DarknetPeerNode)pn).getName()+"\" because your friend \""+((DarknetPeerNode)pn).getName()+"\" is using the same IP address "+address+"!");
+					System.out.println("Disconnecting permanently from your friend \""+((DarknetPeerNode)pn).getName()+"\" because your friend \""+((DarknetPeerNode)peerNode).getName()+"\" is using the same IP address "+address+"!");
 				}
 				node.peers.disconnectAndRemove(pn, true, true, pn.isOpennet());
 			}
