@@ -895,22 +895,15 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 
 		// Show the wizard until dismissed by the user (See bug #2624)
 		if(core != null && core.node != null && !fproxyHasCompletedWizard) {
-			if(!(core.node.isOpennetEnabled() || core.node.getPeerNodes().length > 0)) {
-
-				//If the user has not completed the wizard, only allow access to the wizard and static
-				//resources. Anything else redirects to the first page of the wizard.
-				if (!(path.startsWith(FirstTimeWizardToadlet.TOADLET_URL) ||
-				        path.startsWith(StaticToadlet.ROOT_URL) ||
-				        path.startsWith(ExternalLinkToadlet.PATH) ||
-				        path.equals("/favicon.ico"))) {
-					try {
-						throw new PermanentRedirectException(new URI(null, null, null, -1, FirstTimeWizardToadlet.TOADLET_URL, uri.getQuery(), null));
-					} catch(URISyntaxException e) { throw new Error(e); }
-				}
-				
-			} else {
-				// Assume it's okay.
-				fproxyHasCompletedWizard = true;
+			//If the user has not completed the wizard, only allow access to the wizard and static
+			//resources. Anything else redirects to the first page of the wizard.
+			if (!(path.startsWith(FirstTimeWizardToadlet.TOADLET_URL) ||
+				path.startsWith(StaticToadlet.ROOT_URL) ||
+				path.startsWith(ExternalLinkToadlet.PATH) ||
+				path.equals("/favicon.ico"))) {
+				try {
+					throw new PermanentRedirectException(new URI(null, null, null, -1, FirstTimeWizardToadlet.TOADLET_URL, uri.getQuery(), null));
+				} catch(URISyntaxException e) { throw new Error(e); }
 			}
 		}
 
