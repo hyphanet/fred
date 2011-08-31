@@ -3,15 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import java.io.BufferedOutputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
-import java.util.HashSet;
 import java.util.List;
 
 import com.db4o.ObjectContainer;
@@ -39,7 +36,6 @@ import freenet.client.filter.UnsafeContentTypeException;
 import freenet.crypt.HashResult;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
-import freenet.keys.Key;
 import freenet.node.RequestClient;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -82,6 +78,8 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	final Bucket returnBucket;
 	/** If not null, BucketWrapper to return a binary blob in */
 	private final BinaryBlobWriter binaryBlobWriter;
+	/** If true, someone else is responsible for this BlobWriter, usually its a shared one */
+	private final boolean dontFinalizeBlobWriter;
 	/** The expected MIME type, if we know it. Should not change. */
 	private String expectedMIME;
 	/** The expected size of the file, if we know it. */
@@ -96,22 +94,27 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	private final Bucket initialMetadata;
 
 	// Shorter constructors for convenience and backwards compatibility.
-	
+
 	public ClientGetter(ClientGetCallback client,
 		    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext) {
 		this(client, uri, ctx, priorityClass, clientContext, null, null, null);
 	}
-	
+
 	public ClientGetter(ClientGetCallback client,
 		    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket) {
 		this(client, uri, ctx, priorityClass, clientContext, returnBucket, null, null);
 	}
-	
+
 	public ClientGetter(ClientGetCallback client,
 		    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, BinaryBlobWriter binaryBlobWriter) {
 		this(client, uri, ctx, priorityClass, clientContext, returnBucket, binaryBlobWriter, null);
 	}
-	
+
+	public ClientGetter(ClientGetCallback client,
+		    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, BinaryBlobWriter binaryBlobWriter, Bucket initialMetadata) {
+		this(client, uri, ctx, priorityClass, clientContext, returnBucket, binaryBlobWriter, false, initialMetadata);
+	}
+
 	/**
 	 * Fetch a key.
 	 * @param client The callback we will call when it is completed.
@@ -123,11 +126,12 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	 * @param returnBucket The bucket to return the data in. Can be null. If not null, the ClientGetter must either
 	 * write the data directly to the bucket, or copy it and free the original temporary bucket. Preferably the
 	 * former, obviously!
-	 * @param binaryBlobBucket If non-null, we will write all the keys accessed (or that could have been
-	 * accessed in the case of redundant structures such as splitfiles) in the binary blob format to this bucket.
+	 * @param binaryBlobWriter If non-null, we will write all the keys accessed (or that could have been
+	 * accessed in the case of redundant structures such as splitfiles) to this binary blob writer.
+	 * @param dontFinalizeBlobWriter If true, the caller is responsible for BlobWriter finalization
 	 */
 	public ClientGetter(ClientGetCallback client,
-			    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, BinaryBlobWriter binaryBlobWriter, Bucket initialMetadata) {
+			FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, BinaryBlobWriter binaryBlobWriter, boolean dontFinalizeBlobWriter, Bucket initialMetadata) {
 		super(priorityClass, clientContext);
 		this.clientCallback = client;
 		this.returnBucket = returnBucket;
@@ -136,6 +140,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		this.finished = false;
 		this.actx = new ArchiveContext(ctx.maxTempLength, ctx.maxArchiveLevels);
 		this.binaryBlobWriter = binaryBlobWriter;
+		this.dontFinalizeBlobWriter = dontFinalizeBlobWriter;
 		this.initialMetadata = initialMetadata;
 		archiveRestarts = 0;
 	}
@@ -246,7 +251,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			container.activate(clientMetadata, Integer.MAX_VALUE);
 		}
 		try {
-			if (binaryBlobWriter != null) binaryBlobWriter.finalizeBucket();
+			if (binaryBlobWriter != null && !dontFinalizeBlobWriter) binaryBlobWriter.finalizeBucket();
 		} catch (IOException ioe) {
 			onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream: "+ioe), null, container, context);
 			return;
@@ -439,6 +444,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	 * @param e The reason for failure, in the form of a FetchException.
 	 * @param state The failing state.
 	 */
+	@Override
 	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
 		onFailure(e, state, container, context, false);
 	}
@@ -490,7 +496,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			}
 			if(!alreadyFinished) {
 				try {
-					if (binaryBlobWriter != null) binaryBlobWriter.finalizeBucket();
+					if (binaryBlobWriter != null && !dontFinalizeBlobWriter) binaryBlobWriter.finalizeBucket();
 				} catch (IOException ioe) {
 					// the request is already failed but fblob creation failed too
 					// the invalid fblob must be told, more important then an valid but incomplete fblob (ADNF for example)
