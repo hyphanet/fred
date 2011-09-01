@@ -121,8 +121,10 @@ public class FirstTimeWizardToadlet extends Toadlet {
 
 		PersistFields persistFields = new PersistFields(request);
 
-		//Skip the browser warning page if using Chrome because its incognito mode works from command line.
-		if (currentStep == WIZARD_STEP.BROWSER_WARNING && request.getHeader("user-agent").contains("Chrome")) {
+		//Skip the browser warning page if using Chrome in incognito mode
+		if (currentStep == WIZARD_STEP.BROWSER_WARNING &&
+		        request.getHeader("user-agent").contains("Chrome") && request.isParameterSet("incognito") &&
+		        Boolean.valueOf(request.getParam("incognito"))) {
 			super.writeTemporaryRedirect(ctx, "Skipping unneeded warning",
 			        persistFields.appendTo(TOADLET_URL+"?step=MISC"));
 			return;
