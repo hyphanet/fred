@@ -3233,8 +3233,6 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 
 	};
-	private boolean xmlRemoteCodeExec;
-
 	private void createPasswordUserAlert() {
 		this.clientCore.alerts.register(masterPasswordUserAlert);
 	}
@@ -3854,48 +3852,10 @@ public class Node implements TimeSkewDetectorCallback {
 		String jvmSpecVendor = System.getProperty("java.specification.vendor","");
 		String javaVersion = System.getProperty("java.version");
 		String jvmName = System.getProperty("java.vm.name");
-		String jvmVersion = System.getProperty("java.vm.version");
 		String osName = System.getProperty("os.name");
 		String osVersion = System.getProperty("os.version");
 
 		boolean isOpenJDK = false;
-
-		if(jvmName.startsWith("OpenJDK ")) {
-			isOpenJDK = true;
-			if(javaVersion.startsWith("1.6.0")) {
-				String subverString;
-				if(jvmVersion.startsWith("14.0-b"))
-					subverString = jvmVersion.substring("14.0-b".length());
-				else if(jvmVersion.startsWith("1.6.0_0-b"))
-					subverString = jvmVersion.substring("1.6.0_0-b".length());
-				else
-					subverString = null;
-				if(subverString != null) {
-					int subver;
-					try {
-						subver = Integer.parseInt(subverString);
-					} catch (NumberFormatException e) {
-						subver = -1;
-					}
-				if(subver > -1 && subver < 15) {
-					File javaDir = new File(System.getProperty("java.home"));
-
-					// Assume that if the java home dir has been updated since August 11th, we have the fix.
-
-					final Calendar _cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-					_cal.set(2009, Calendar.AUGUST, 11, 0, 0, 0);
-					if(javaDir.exists() && javaDir.isDirectory() && javaDir.lastModified() > _cal.getTimeInMillis()) {
-						System.err.println("Your Java appears to have been updated, we probably do not have the XML bug (http://www.cert.fi/en/reports/2009/vulnerability2009085.html).");
-					} else {
-						System.err.println("Old version of OpenJDK detected. It is possible that your Java may be vulnerable to a remote code execution vulnerability. Please update your operating system ASAP. We will not disable plugins because we cannot be sure whether there is a problem.");
-						System.err.println("See here: http://www.cert.fi/en/reports/2009/vulnerability2009085.html");
-						clientCore.alerts.register(new SimpleUserAlert(false, l10n("openJDKMightBeVulnerableXML"), l10n("openJDKMightBeVulnerableXML"), l10n("openJDKMightBeVulnerableXML"), UserAlert.ERROR));
-					}
-
-				}
-				}
-			}
-		}
 
 		if(javaVersion.startsWith("1.5.0_")) {
 			clientCore.alerts.register(new SimpleUserAlert(false, l10n("java15DeprecatedTitle"), l10n("java15Deprecated"), l10n("java15DeprecatedTitle"), UserAlert.CRITICAL_ERROR));
@@ -3929,15 +3889,6 @@ public class Node implements TimeSkewDetectorCallback {
 
 				Logger.minor(this, "JVM version: "+javaVersion+" subver: "+subver+" from "+secondPart);
 
-				if(is150 && subver < 20 || is160 && subver < 15)
-					xmlRemoteCodeExec = true;
-			}
-
-			if(xmlRemoteCodeExec) {
-				System.err.println("Please upgrade your Java to 1.6.0 update 15 or 1.5.0 update 20 IMMEDIATELY!");
-				System.err.println("Freenet plugins using XML, including the search function, and Freenet client applications such as Thaw which use XML are vulnerable to remote code execution!");
-
-				clientCore.alerts.register(new SimpleUserAlert(false, l10n("sunJVMxmlRemoteCodeExecTitle"), l10n("sunJVMxmlRemoteCodeExec"), l10n("sunJVMxmlRemoteCodeExecTitle"), UserAlert.CRITICAL_ERROR));
 			}
 
 		} else if (jvmVendor.startsWith("Apple ") || jvmVendor.startsWith("\"Apple ")) {
@@ -3964,10 +3915,6 @@ public class Node implements TimeSkewDetectorCallback {
 			clientCore.alerts.register(new SimpleUserAlert(true, l10n("notUsingWrapperTitle"), l10n("notUsingWrapper"), l10n("notUsingWrapperShort"), UserAlert.WARNING));
 		}
 
-	}
-
-	public boolean xmlRemoteCodeExecVuln() {
-		return xmlRemoteCodeExec;
 	}
 
 	public static boolean checkForGCJCharConversionBug() {
