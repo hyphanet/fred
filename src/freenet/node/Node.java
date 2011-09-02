@@ -3857,10 +3857,6 @@ public class Node implements TimeSkewDetectorCallback {
 
 		boolean isOpenJDK = false;
 
-		if(javaVersion.startsWith("1.5.0_")) {
-			clientCore.alerts.register(new SimpleUserAlert(false, l10n("java15DeprecatedTitle"), l10n("java15Deprecated"), l10n("java15DeprecatedTitle"), UserAlert.CRITICAL_ERROR));
-		}
-
 		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM name: "+jvmName+", JVM version: "+javaVersion+", OS name: "+osName+", OS version: "+osVersion);
 
 		//Add some checks for "Oracle" to futureproof against them renaming from "Sun".
