@@ -1079,4 +1079,10 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 		// Impossible
 		assert(false);
 	}
+
+	@Override
+	public void onDataFoundLocally() {
+		// Can't happen.
+		assert(false);
+	}
 }

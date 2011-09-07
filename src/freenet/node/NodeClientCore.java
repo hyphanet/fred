@@ -920,6 +920,12 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					rejectedOverload = true;
 				}
 			}
+			
+			@Override
+			public void onDataFoundLocally() {
+				tag.unlockHandler();
+				listener.onSucceeded();
+			}
 
 			/** The RequestSender finished.
 			 * @param status The completion status.
@@ -1071,7 +1077,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			Object o = node.makeRequestSender(key, htl, uid, tag, null, localOnly, ignoreStore, offersOnly, canReadClientCache, canWriteClientCache, realTimeFlag);
 			if(o instanceof KeyBlock) {
 				tag.servedFromDatastore = true;
-				tag.unlockHandler();
+				listener.onDataFoundLocally();
 				return; // Already have it.
 			}
 			if(o == null) {
