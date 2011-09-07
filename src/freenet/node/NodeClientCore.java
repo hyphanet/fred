@@ -1045,8 +1045,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			}
 
 			@Override
-			public void onNotStarted() {
-				listener.onFailed(new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND_IN_STORE));
+			public void onNotStarted(boolean internalError) {
+				if(internalError)
+					listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
+				else
+					listener.onFailed(new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND_IN_STORE));
 			}
 		}, tag, canReadClientCache, canWriteClientCache, htl, realTimeFlag, localOnly, ignoreStore);
 	}
@@ -1081,7 +1084,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				return; // Already have it.
 			}
 			if(o == null) {
-				listener.onNotStarted();
+				listener.onNotStarted(false);
 				tag.unlockHandler();
 				return;
 			}
@@ -1094,10 +1097,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				Logger.minor(this, "Started " + o + " for " + uid + " for " + key);
 		} catch(RuntimeException e) {
 			Logger.error(this, "Caught error trying to start request: " + e, e);
-			tag.unlockHandler();
+			listener.onNotStarted(true);
 		} catch(Error e) {
 			Logger.error(this, "Caught error trying to start request: " + e, e);
-			tag.unlockHandler();
+			listener.onNotStarted(true);
 		}
 	}
 

@@ -1075,7 +1075,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 	}
 
 	@Override
-	public void onNotStarted() {
+	public void onNotStarted(boolean internalError) {
 		// Impossible
 		assert(false);
 	}
