@@ -503,8 +503,10 @@ final public class FileUtil {
 	public static boolean secureDeleteAll(File wd, Random random) throws IOException {
 		if(!wd.isDirectory()) {
 			System.err.println("DELETING FILE "+wd);
-			if(!wd.delete() && wd.exists()) {
-				Logger.error(FileUtil.class, "Could not delete file: "+wd);
+			try {
+				secureDelete(wd, random);
+			} catch (IOException e) {
+				Logger.error(FileUtil.class, "Could not delete file: "+wd, e);
 				return false;
 			}
 		} else {
