@@ -508,7 +508,8 @@ public class NodeCrypto {
 	public boolean allowConnection(PeerNode pn, FreenetInetAddress addr) {
     	if(config.oneConnectionPerAddress()) {
     		// Disallow multiple connections to the same address
-    		if(node.peers.anyConnectedPeerHasAddress(addr, pn) && !detector.includes(addr)) {
+    		if(node.peers.anyConnectedPeerHasAddress(addr, pn) && !detector.includes(addr)
+    				&& addr.isRealInternetAddress(false, false, false)) {
     			Logger.normal(this, "Not sending handshake packets to "+addr+" for "+pn+" : Same IP address as another node");
     			return false;
     		}
@@ -523,6 +524,7 @@ public class NodeCrypto {
 	 */
 	public void maybeBootConnection(PeerNode peerNode,
 			FreenetInetAddress address) {
+		if(!address.isRealInternetAddress(false, false, false)) return;
 		ArrayList<PeerNode> possibleMatches = node.peers.getAllConnectedByAddress(address, true);
 		if(possibleMatches == null) return;
 		for(PeerNode pn : possibleMatches) {
