@@ -82,6 +82,11 @@ public class LowLevelGetException extends Exception {
 		this.code = code;
 	}
 
+	public LowLevelGetException(int code, String message) {
+		super(message);
+		this.code = code;
+	}
+
 	public LowLevelGetException(int reason) {
 		super(getMessage(reason));
 		this.code = reason;
