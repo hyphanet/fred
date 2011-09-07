@@ -870,6 +870,22 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		}
 	}
 
+	/** Start an asynchronous fetch for the key, which will complete by calling 
+	 * tripPendingKey() if successful, as well as calling the listener in most cases.
+	 * @param key The key to fetch.
+	 * @param offersOnly If true, only fetch the key from nodes that have offered it, using GetOfferedKeys,
+	 * don't do a normal fetch for it.
+	 * @param listener The listener is called if we start a request and fail to fetch, and also in most
+	 * cases on success or on not starting one. FIXME it may not always be called e.g. on fetching the data
+	 * from the datastore - is this a problem?
+	 * @param canReadClientCache Can this request read the client-cache?
+	 * @param canWriteClientCache Can this request write the client-cache?
+	 * @param htl The HTL to start the request at. See the caller, this can be modified in the case of 
+	 * fetching an offered key.
+	 * @param realTimeFlag Is this a real-time request? False = this is a bulk request.
+	 * @param localOnly If true, only check the datastore, don't create a request if nothing is found.
+	 * @param ignoreStore If true, don't check the datastore, create a request immediately.
+	 */
 	public void asyncGet(final Key key, boolean offersOnly, final RequestCompletionListener listener, boolean canReadClientCache, boolean canWriteClientCache, final boolean realTimeFlag, boolean localOnly, boolean ignoreStore) {
 		final long uid = makeUID();
 		final boolean isSSK = key instanceof NodeSSK;
