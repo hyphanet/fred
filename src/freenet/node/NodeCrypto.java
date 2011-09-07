@@ -524,6 +524,7 @@ public class NodeCrypto {
 	 */
 	public void maybeBootConnection(PeerNode peerNode,
 			FreenetInetAddress address) {
+		if(detector.includes(address)) return;
 		if(!address.isRealInternetAddress(false, false, false)) return;
 		ArrayList<PeerNode> possibleMatches = node.peers.getAllConnectedByAddress(address, true);
 		if(possibleMatches == null) return;
