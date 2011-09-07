@@ -1032,7 +1032,22 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	 * Start an asynchronous fetch of the key in question, which will complete to the datastore.
 	 * It will not decode the data because we don't provide a ClientKey. It will not return
 	 * anything and will run asynchronously. Caller is responsible for unlocking the UID.
-	 * @param key
+	 * @param key The key being fetched.
+	 * @param offersOnly If true, only fetch the key from nodes that have offered it, using GetOfferedKeys,
+	 * don't do a normal fetch for it.
+	 * @param uid The UID of the request. This should already be locked, see the tag.
+	 * @param tag The RequestTag for the request. In case of an error when starting it we will unlock it,
+	 * but in other cases the listener should unlock it.
+	 * @param listener Will be called by the request sender, if a request is started.
+	 * However, for example, if we fetch it from the store, it will be returned via the
+	 * tripPendingKeys mechanism.
+	 * @param canReadClientCache Can this request read the client-cache?
+	 * @param canWriteClientCache Can this request write the client-cache?
+	 * @param htl The HTL to start the request at. See the caller, this can be modified in the case of 
+	 * fetching an offered key.
+	 * @param realTimeFlag Is this a real-time request? False = this is a bulk request.
+	 * @param localOnly If true, only check the datastore, don't create a request if nothing is found.
+	 * @param ignoreStore If true, don't check the datastore, create a request immediately.
 	 */
 	void asyncGet(Key key, boolean offersOnly, long uid, RequestSenderListener listener, RequestTag tag, boolean canReadClientCache, boolean canWriteClientCache, short htl, boolean realTimeFlag, boolean localOnly, boolean ignoreStore) {
 		try {
