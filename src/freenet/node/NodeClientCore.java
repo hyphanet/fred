@@ -917,8 +917,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			@Override
 			public void onReceivedRejectOverload() {
 				synchronized(this) {
+					if(rejectedOverload) return;
 					rejectedOverload = true;
 				}
+				requestStarters.rejectedOverload(isSSK, false, realTimeFlag);
 			}
 			
 			@Override
