@@ -965,7 +965,9 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				if((status == RequestSender.TIMED_OUT) ||
 					(status == RequestSender.GENERATED_REJECTED_OVERLOAD)) {
 					if(!rejectedOverload) {
-						// See below
+						// If onRejectedOverload() is going to happen,
+						// it should have happened before this callback is called, so
+						// we don't need to check again here.
 						requestStarters.rejectedOverload(isSSK, false, realTimeFlag);
 						rejectedOverload = true;
 						long rtt = System.currentTimeMillis() - startTime;
