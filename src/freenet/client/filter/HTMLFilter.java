@@ -2152,8 +2152,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				// Allow, but only with standard elements
 				return hn;
 			}
-			String method = (String) h.get("method");
-			String action = (String) h.get("action");
+			String method = getHashString(h, "method");
+			String action = getHashString(h, "action");
 			String finalAction;
 			try {
 				finalAction = pc.cb.processForm(method, action);
