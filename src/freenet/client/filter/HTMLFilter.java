@@ -1460,6 +1460,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 
 		ParsedTag sanitize(ParsedTag t, HTMLParseContext pc) throws DataFilterException {
+			/** Map contains the attributes, in order. The key is always the name
+			 * of the attribute, but the value can be a raw Object if it has no value.
+			 * "src" is different to "src=". Arguably we should probably use null in 
+			 * the first case and "" in the second case ... FIXME */
 			Map<String, Object> h = new LinkedHashMap<String, Object>();
 			boolean equals = false;
 			String prevX = "";
