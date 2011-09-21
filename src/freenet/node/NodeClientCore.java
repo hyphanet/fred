@@ -338,8 +338,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			throw new NodeInitException(NodeInitException.EXIT_BAD_CONFIG, e1.toString());
 		}
 		
-		requestStarters.setUseAIMDsBulk(node.nodeStats.useAIMDsBulk());
-		requestStarters.setUseAIMDsRT(node.nodeStats.useAIMDsRT());
 		
 		clientContext.init(requestStarters, alerts);
 		initKeys(container);
@@ -2104,14 +2102,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		short origHTL = node.decrementHTL(null, node.maxHTL());
 		node.peers.closerPeer(null, new HashSet<PeerNode>(), key.toNormalizedDouble(), true, false, -1, null, 2.0, key, origHTL, 0, true, realTime, r, false, System.currentTimeMillis(), node.enableNewLoadManagement(realTime));
 		return r.recentlyFailed();
-	}
-
-	public void onSetUseAIMDsRT(boolean val) {
-		requestStarters.setUseAIMDsBulk(val);
-	}
-
-	public void onSetUseAIMDsBulk(boolean val) {
-		requestStarters.setUseAIMDsRT(val);
 	}
 
 }

@@ -1200,8 +1200,4 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return node;
 	}
 
-	public void setUseAIMDs(boolean val) {
-		starter.setUseAIMDs(val);
-	}
-	
 }
