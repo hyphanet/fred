@@ -383,6 +383,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				try {
 					BucketTools.copy(data, returnBucket);
 				} catch (IOException e) {
+					Logger.error(this, "Data != returnBucket and then failed to copy to "+returnBucket);
 					data.free();
 					returnBucket.free();
 					if(persistenceType == PERSIST_FOREVER) {
