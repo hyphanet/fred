@@ -437,7 +437,7 @@ public class TextModeClientInterface implements Runnable {
     	try {
     		inputStream = input.getInputStream();
     		outputStream = output.getOutputStream();
-    		ContentFilter.filter(inputStream, outputStream, "text/html", new URI("http://127.0.0.1:8888/"), null, null, null);
+    		ContentFilter.filter(inputStream, outputStream, "text/html", new URI("http://127.0.0.1:8888/"), null, null, null, core.getLinkFilterExceptionProvider());
     		inputStream.close();
     		outputStream.close();
 

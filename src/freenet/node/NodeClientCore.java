@@ -32,6 +32,7 @@ import freenet.client.events.SimpleEventProducer;
 import freenet.client.filter.FilterCallback;
 import freenet.client.filter.FoundURICallback;
 import freenet.client.filter.GenericReadFilterCallback;
+import freenet.client.filter.LinkFilterExceptionProvider;
 import freenet.clients.http.FProxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
 import freenet.config.Config;
@@ -328,7 +329,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 						0, 2, 0, 0, new SimpleEventProducer(),
 						false, Node.FORK_ON_CACHEABLE_DEFAULT, false, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, 0, 0, InsertContext.CompatibilityMode.COMPAT_CURRENT), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 
-		clientContext = new ClientContext(node.bootID, nodeDBHandle, this, fecQueue, node.executor, backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, tempBucketFactory, persistentTempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, node.getTicker(), tempFilenameGenerator, persistentFilenameGenerator, compressor, storeChecker);
+		clientContext = new ClientContext(node.bootID, nodeDBHandle, this, fecQueue, node.executor, backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, tempBucketFactory, persistentTempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, node.getTicker(), tempFilenameGenerator, persistentFilenameGenerator, compressor, storeChecker, toadlets);
 		compressor.setClientContext(clientContext);
 		storeChecker.setContext(clientContext);
 
@@ -1686,6 +1687,16 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		return toadletContainer;
 	}
 
+	/**
+	 * Returns the link filter exception provider of the node. At the moment
+	 * this is the {@link #getToadletContainer() toadlet container}.
+	 *
+	 * @return The link filter exception provider
+	 */
+	public LinkFilterExceptionProvider getLinkFilterExceptionProvider() {
+		return toadletContainer;
+	}
+
 	public TextModeClientInterfaceServer getTextModeClientInterface() {
 		return tmci;
 	}
@@ -1747,7 +1758,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	public FilterCallback createFilterCallback(URI uri, FoundURICallback cb) {
 		if(logMINOR)
 			Logger.minor(this, "Creating filter callback: " + uri + ", " + cb);
-		return new GenericReadFilterCallback(uri, cb,null);
+		return new GenericReadFilterCallback(uri, cb,null, toadletContainer);
 	}
 
 	public int maxBackgroundUSKFetchers() {

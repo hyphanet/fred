@@ -17,6 +17,7 @@ import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.client.filter.ContentFilter;
 import freenet.client.filter.FoundURICallback;
+import freenet.client.filter.LinkFilterExceptionProvider;
 import freenet.client.filter.TagReplacerCallback;
 import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.client.filter.UnsafeContentTypeException;
@@ -41,6 +42,10 @@ public class ClientGetWorkerThread extends Thread {
 	final private String charset;
 	final private FoundURICallback prefetchHook;
 	final private TagReplacerCallback tagReplacer;
+
+	/** Link filter exception provider. */
+	private final LinkFilterExceptionProvider linkFilterExceptionProvider;
+
 	final private String mimeType;
 	private OutputStream output;
 	private boolean finished = false;
@@ -70,11 +75,12 @@ public class ClientGetWorkerThread extends Thread {
 	 * Only needed if filterData is true.
 	 * @param prefetchHook Only needed if filterData is true.
 	 * @param tagReplacer Used for web-pushing. Only needed if filterData is true.
+	 * @param linkFilterExceptionProvider Provider for link filter exceptions
 	 * @throws URISyntaxException 
 	 */
 	public ClientGetWorkerThread(PipedInputStream input, OutputStream output, FreenetURI uri,
 			String mimeType, HashResult[] hashes, boolean filterData, String charset,
-			FoundURICallback prefetchHook, TagReplacerCallback tagReplacer) throws URISyntaxException {
+			FoundURICallback prefetchHook, TagReplacerCallback tagReplacer, LinkFilterExceptionProvider linkFilterExceptionProvider) throws URISyntaxException {
 		super("ClientGetWorkerThread-"+counter());
 		this.input = input;
 		if(uri != null) this.uri = uri.toURI("/");
@@ -87,6 +93,7 @@ public class ClientGetWorkerThread extends Thread {
 		this.charset = charset;
 		this.prefetchHook = prefetchHook;
 		this.tagReplacer = tagReplacer;
+		this.linkFilterExceptionProvider = linkFilterExceptionProvider;
 		if(logMINOR) Logger.minor(this, "Created worker thread for "+uri+" mime type "+mimeType+" filter data = "+filterData+" charset "+charset);
 	}
 
@@ -106,7 +113,7 @@ public class ClientGetWorkerThread extends Thread {
 				if(logMINOR) Logger.minor(this, "Running content filter... Prefetch hook: "+prefetchHook+" tagReplacer: "+tagReplacer);
 				if(mimeType == null || uri == null || input == null || output == null) throw new IOException("Insufficient arguements to worker thread");
 				// Send XHTML as HTML because we can't use web-pushing on XHTML.
-				FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri, prefetchHook, tagReplacer, charset);
+				FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri, prefetchHook, tagReplacer, charset, linkFilterExceptionProvider);
 
 				String detectedMIMEType = filterStatus.mimeType.concat(filterStatus.charset == null ? "" : "; charset="+filterStatus.charset);
 				synchronized(this) {

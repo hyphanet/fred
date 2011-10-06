@@ -47,6 +47,9 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 	private final FoundURICallback cb;
 	private final TagReplacerCallback trc;
 
+	/** Provider for link filter exceptions. */
+	private final LinkFilterExceptionProvider linkFilterExceptionProvider;
+
         private static volatile boolean logMINOR;
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
@@ -57,19 +60,21 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		});
 	}
 
-	public GenericReadFilterCallback(URI uri, FoundURICallback cb,TagReplacerCallback trc) {
+	public GenericReadFilterCallback(URI uri, FoundURICallback cb,TagReplacerCallback trc, LinkFilterExceptionProvider linkFilterExceptionProvider) {
 		this.baseURI = uri;
 		this.cb = cb;
 		this.trc=trc;
+		this.linkFilterExceptionProvider = linkFilterExceptionProvider;
 		setStrippedURI(uri.toString());
 	}
 	
-	public GenericReadFilterCallback(FreenetURI uri, FoundURICallback cb,TagReplacerCallback trc) {
+	public GenericReadFilterCallback(FreenetURI uri, FoundURICallback cb,TagReplacerCallback trc, LinkFilterExceptionProvider linkFilterExceptionProvider) {
 		try {
 			this.baseURI = uri.toRelativeURI();
 			setStrippedURI(baseURI.toString());
 			this.cb = cb;
 			this.trc=trc;
+			this.linkFilterExceptionProvider = linkFilterExceptionProvider;
 		} catch (URISyntaxException e) {
 			throw new Error(e);
 		}
@@ -165,6 +170,10 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 			} else if(path.startsWith(StaticToadlet.ROOT_URL)) {
 				// @see bug #2297
 				return path;
+			} else if (linkFilterExceptionProvider != null) {
+				if (linkFilterExceptionProvider.isLinkExcepted(uri)) {
+					return path + ((uri.getQuery() != null) ? ("?" + uri.getQuery()) : "");
+				}
 			}
 		}
 		
