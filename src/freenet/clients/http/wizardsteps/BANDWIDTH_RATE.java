@@ -129,7 +129,7 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 
 			//Success
 			setWizardComplete();
-			return "/?step=COMPLETE";
+			return FirstTimeWizardToadlet.WIZARD_STEP.COMPLETE.name();
 		}
 
 		//Pre-defined limit selected.
