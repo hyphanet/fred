@@ -48,7 +48,7 @@ public class PersistentBlobTempBucketTest extends TestCase {
 				null, null, null, null,
 				null, new DummyRandomSource(12345),
 				fastWeakRandom, ticker, 
-				null, null, null, null);
+				null, null, null, null, null);
 		jobRunner.start(exec, context);
 		PersistentBlobTempBucketFactory factory = new PersistentBlobTempBucketFactory(blockSize, -1, store);
 		factory.onInit(container, jobRunner, fastWeakRandom, store, blockSize, ticker);
@@ -100,7 +100,7 @@ public class PersistentBlobTempBucketTest extends TestCase {
 				null, null, null, null,
 				null, new DummyRandomSource(12345),
 				fastWeakRandom, ticker, 
-				null, null, null, null);
+				null, null, null, null, null);
 		jobRunner.start(exec, context);
 		PersistentBlobTempBucketFactory factory = new PersistentBlobTempBucketFactory(blockSize, -1, store);
 		factory.onInit(container, jobRunner, fastWeakRandom, store, blockSize, ticker);
@@ -155,7 +155,7 @@ public class PersistentBlobTempBucketTest extends TestCase {
 				null, null, null, null,
 				null, new DummyRandomSource(12345),
 				fastWeakRandom, ticker, 
-				null, null, null, null);
+				null, null, null, null, null);
 		jobRunner.start(exec, context);
 		PersistentBlobTempBucketFactory factory = new PersistentBlobTempBucketFactory(blockSize, -1, store);
 		factory.onInit(container, jobRunner, fastWeakRandom, store, blockSize, ticker);
@@ -220,7 +220,7 @@ public class PersistentBlobTempBucketTest extends TestCase {
 				null, null, null, null,
 				null, new DummyRandomSource(12345),
 				fastWeakRandom, ticker, 
-				null, null, null, null);
+				null, null, null, null, null);
 		jobRunner.start(exec, context);
 		PersistentBlobTempBucketFactory factory = new PersistentBlobTempBucketFactory(blockSize, -1, store);
 		factory.onInit(container, jobRunner, fastWeakRandom, store, blockSize, ticker);

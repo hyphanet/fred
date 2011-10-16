@@ -1027,7 +1027,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					pipeOut.connect(pipeIn);
 					DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(pipeIn, decompressors, maxLen);
 					pipeIn = decompressorManager.execute();
-					ClientGetWorkerThread worker = new ClientGetWorkerThread(pipeIn, output, null, null, null, false, null, null, null);
+					ClientGetWorkerThread worker = new ClientGetWorkerThread(pipeIn, output, null, null, null, false, null, null, null, context.linkFilterExceptionProvider);
 					worker.start();
 					streamGenerator.writeTo(pipeOut, container, context);
 					decompressorManager.waitFinished();
@@ -1263,7 +1263,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					pipeIn.connect(pipeOut);
 					DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(pipeIn, decompressors, maxLen);
 					pipeIn = decompressorManager.execute();
-					ClientGetWorkerThread worker = new ClientGetWorkerThread(pipeIn, output, null, null, null, false, null, null, null);
+					ClientGetWorkerThread worker = new ClientGetWorkerThread(pipeIn, output, null, null, null, false, null, null, null, context.linkFilterExceptionProvider);
 					worker.start();
 					streamGenerator.writeTo(pipeOut, container, context);
 					decompressorManager.waitFinished();

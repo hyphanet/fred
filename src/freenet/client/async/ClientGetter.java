@@ -312,7 +312,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 
 			output = finalResult.getOutputStream();
 			if(ctx.overrideMIME != null) mimeType = ctx.overrideMIME;
-			worker = new ClientGetWorkerThread(dataInput, output, uri, mimeType, hashes, ctx.filterData, ctx.charset, ctx.prefetchHook, ctx.tagReplacer);
+			worker = new ClientGetWorkerThread(dataInput, output, uri, mimeType, hashes, ctx.filterData, ctx.charset, ctx.prefetchHook, ctx.tagReplacer, context.linkFilterExceptionProvider);
 			worker.start();
 			try {
 				streamGenerator.writeTo(dataOutput, container, context);
