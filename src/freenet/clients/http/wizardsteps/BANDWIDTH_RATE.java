@@ -91,6 +91,7 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 
 		//Add custom option.
 		HTMLNode customForm = helper.addFormChild(table.addChild("tr"), ".", "custom-limit");
+		customForm.addChild("td", WizardL10n.l10n("bandwidthCustom"));
 		customForm.addChild("td").addChild("input",
 		        new String[] { "type", "name" },
 		        new String[] { "text", "customDown" });
