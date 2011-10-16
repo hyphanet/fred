@@ -103,9 +103,11 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 		customForm.addChild("td").addChild("input",
 		        new String[] { "type", "name" },
 		        new String[] { "text", "customUp" });
-		customForm.addChild("td").addChild("input",
-				new String[] { "type", "name", "value" },
-				new String[] { "radio", "bandwidth", "custom" });
+		// This is valid if it's filled in. So don't show the selector.
+		// FIXME javascript to auto-select it?
+//		customForm.addChild("td").addChild("input",
+//				new String[] { "type", "name", "value" },
+//				new String[] { "radio", "bandwidth", "custom" });
 
 		infoBox.addChild("input",
 		        new String[] { "type", "name", "value" },
@@ -119,12 +121,18 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 	public String postStep(HTTPRequest request)  {
 
 		String limitSelected = request.getPartAsStringFailsafe("bandwidth", 100);
+
+		String down = request.getPartAsStringFailsafe("customDown", 20);
+		String up = request.getPartAsStringFailsafe("customUp", 20);
+
+		// Try to parse custom limit first.
 		
-		if("custom".equals(limitSelected)) {
+		//Remove per second indicator so that it can be parsed.
+		down = cleanCustomLimit(down);
+		up = cleanCustomLimit(up);
+		
+		if(!down.equals("") && !up.equals("")) {
 			//Custom limit given
-			String down = request.getPartAsStringFailsafe("customDown", 20);
-			String up = request.getPartAsStringFailsafe("customUp", 20);
-			//Remove per second indicator so that it can be parsed.
 			down = cleanCustomLimit(down);
 			up = cleanCustomLimit(up);
 
@@ -167,6 +175,7 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 
 	private String cleanCustomLimit(String limit) {
 		limit = limit.trim().toLowerCase();
+		if(limit.isEmpty()) return "";
 		for(String ending :
 			new String[] {
 				"/s", "/sec", "/second", "ps", WizardL10n.l10n("bandwidthPerSecond")
@@ -174,6 +183,9 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 			if(limit.endsWith(ending))
 				limit = limit.substring(0, limit.length() - ending.length());
 		}
+		limit = limit.trim();
+		if(limit.endsWith("b"))
+			limit = limit.substring(0, limit.length()-1);
 		limit = limit.trim();
 		return limit;
 	}
