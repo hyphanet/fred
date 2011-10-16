@@ -1,5 +1,7 @@
 package freenet.clients.http.wizardsteps;
 
+import java.text.DecimalFormat;
+
 import freenet.clients.http.FirstTimeWizardToadlet;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
@@ -177,7 +179,16 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 	private void addLimitRow(HTMLNode table, PageHelper helper, BandwidthLimit limit, boolean recommended) {
 		HTMLNode row = table.addChild("tr");
 		row.addChild("td", WizardL10n.l10n(limit.descriptionKey));
-		row.addChild("td", SizeUtil.formatSize(limit.downBytes)+WizardL10n.l10n("bandwidthPerSecond"));
+		String downColumn = SizeUtil.formatSize(limit.downBytes)+WizardL10n.l10n("bandwidthPerSecond");
+		if(limit.downBytes >= 32*1024) {
+			downColumn += " (= ";
+			if(limit.downBytes < 256*1024)
+				downColumn += new DecimalFormat("0.0").format(((double)((limit.downBytes*8)))/(1024*1024));
+			else
+				downColumn += ((limit.downBytes*8)/(1024*1024));
+			downColumn+="Mbps)";
+		}
+		row.addChild("td", downColumn);
 		row.addChild("td", SizeUtil.formatSize(limit.upBytes)+WizardL10n.l10n("bandwidthPerSecond"));
 
 		HTMLNode buttonCell = row.addChild("td");
