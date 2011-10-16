@@ -125,8 +125,8 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 			String down = request.getPartAsStringFailsafe("customDown", 20);
 			String up = request.getPartAsStringFailsafe("customUp", 20);
 			//Remove per second indicator so that it can be parsed.
-			down = down.replace(WizardL10n.l10n("bandwidthPerSecond"), "");
-			up = up.replace(WizardL10n.l10n("bandwidthPerSecond"), "");
+			down = cleanCustomLimit(down);
+			up = cleanCustomLimit(up);
 
 			String failedLimits = attemptSet(up, down);
 
@@ -163,6 +163,19 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 		
 		setWizardComplete();
 		return FirstTimeWizardToadlet.WIZARD_STEP.COMPLETE.name();
+	}
+
+	private String cleanCustomLimit(String limit) {
+		limit = limit.trim().toLowerCase();
+		for(String ending :
+			new String[] {
+				"/s", "/sec", "/second", "ps", WizardL10n.l10n("bandwidthPerSecond")
+		}) {
+			if(limit.endsWith(ending))
+				limit = limit.substring(0, limit.length() - ending.length());
+		}
+		limit = limit.trim();
+		return limit;
 	}
 
 	/**
