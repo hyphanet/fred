@@ -132,7 +132,7 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 
 			if (!failedLimits.isEmpty()) {
 				//Some at least one limit failed to parse.
-				return FirstTimeWizardToadlet.TOADLET_URL+"?step=BANDWIDTH_RATE&parseError=true&parseTarget="+
+				return "BANDWIDTH_RATE&parseError=true&parseTarget="+
 				        URLEncoder.encode(failedLimits, true);
 			}
 
