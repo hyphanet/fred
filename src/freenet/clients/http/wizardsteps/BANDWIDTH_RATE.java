@@ -59,13 +59,15 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 	@Override
 	public void getStep(HTTPRequest request, PageHelper helper) {
 		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("bandwidthLimit"));
+		
+		HTMLNode formNode = helper.addFormChild(contentNode, ".", "limit");
 
 		if (request.isParameterSet("parseError")) {
 			parseErrorBox(contentNode, helper, request.getParam("parseTarget"));
 		}
 
 		HTMLNode infoBox = helper.getInfobox("infobox-normal", WizardL10n.l10n("bandwidthLimitRateTitle"),
-		        contentNode, null, false);
+		        formNode, null, false);
 		NodeL10n.getBase().addL10nSubstitution(infoBox, "FirstTimeWizardToadlet.bandwidthLimitRate",
 		        new String[] { "bold", "coreSettings" }, new HTMLNode[] { HTMLNode.STRONG, 
 		                new HTMLNode("#", NodeL10n.getBase().getString("ConfigToadlet.node"))});
@@ -90,7 +92,7 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 		}
 
 		//Add custom option.
-		HTMLNode customForm = helper.addFormChild(table.addChild("tr"), ".", "custom-limit");
+		HTMLNode customForm = table.addChild("tr");
 		customForm.addChild("td", WizardL10n.l10n("bandwidthCustom"));
 		customForm.addChild("td").addChild("input",
 		        new String[] { "type", "name" },
@@ -99,20 +101,24 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 		        new String[] { "type", "name" },
 		        new String[] { "text", "customUp" });
 		customForm.addChild("td").addChild("input",
-		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "customSelect", WizardL10n.l10n("bandwidthSelect")});
+				new String[] { "type", "name", "value" },
+				new String[] { "radio", "bandwidth", "custom" });
 
-		HTMLNode backForm = helper.addFormChild(infoBox, ".", "backForm");
-		backForm.addChild("input",
+		infoBox.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "back", NodeL10n.getBase().getString("Toadlet.back")});
+		infoBox.addChild("input",
+		        new String[] { "type", "name", "value" },
+		        new String[] { "submit", "next", NodeL10n.getBase().getString("Toadlet.next")});
 	}
 
 	@Override
 	public String postStep(HTTPRequest request)  {
 
-		//Custom limit given
-		if (request.isPartSet("customSelect")) {
+		String limitSelected = request.getPartAsStringFailsafe("bandwidth", 100);
+		
+		if("custom".equals(limitSelected)) {
+			//Custom limit given
 			String down = request.getPartAsStringFailsafe("customDown", 20);
 			String up = request.getPartAsStringFailsafe("customUp", 20);
 			//Remove per second indicator so that it can be parsed.
@@ -132,18 +138,26 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 			return FirstTimeWizardToadlet.WIZARD_STEP.COMPLETE.name();
 		}
 
-		//Pre-defined limit selected.
-		String preset = attemptSet(request.getPartAsStringFailsafe("upBytes", 20),
-		        request.getPartAsStringFailsafe("downBytes", 20));
-
-		if(!preset.isEmpty()) {
-			//Error parsing predefined limit.
-			//This should not happen, as there are no units to confound the parser.
-			Logger.error(this, "Failed to parse pre-defined limit! Please report.");
-			return FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH_RATE+"&parseError=true&parseTarget="+
-				        URLEncoder.encode(preset, true);
+		if(!limitSelected.isEmpty()) {
+			int x = limitSelected.indexOf('/');
+			if(x != -1) {
+				String downString = limitSelected.substring(0, x);
+				String upString = limitSelected.substring(x+1);
+				//Pre-defined limit selected.
+				String preset = attemptSet(upString, downString);
+				if(!preset.isEmpty()) {
+					//Error parsing predefined limit.
+					//This should not happen, as there are no units to confound the parser.
+					Logger.error(this, "Failed to parse pre-defined limit! Please report.");
+					return FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH_RATE+"&parseError=true&parseTarget="+
+							URLEncoder.encode(preset, true);
+				}
+			}
+		} else {
+			Logger.error(this, "No bandwidth limit set!");
+			return FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH_RATE.name();
 		}
-
+		
 		setWizardComplete();
 		return FirstTimeWizardToadlet.WIZARD_STEP.COMPLETE.name();
 	}
@@ -193,17 +207,13 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 		row.addChild("td", SizeUtil.formatSize(limit.upBytes)+WizardL10n.l10n("bandwidthPerSecond"));
 
 		HTMLNode buttonCell = row.addChild("td");
-		HTMLNode form = helper.addFormChild(buttonCell, ".", "limit");
-		form.addChild("input",
-		        new String[] { "type", "name", "value" },
-		        new String[] { "hidden", "downBytes", String.valueOf(limit.downBytes)});
-		form.addChild("input",
-		        new String[] { "type", "name", "value" },
-		        new String[] { "hidden", "upBytes", String.valueOf(limit.upBytes)});
-		form.addChild("input",
-		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "select", WizardL10n.l10n("bandwidthSelect")});
+		
+		HTMLNode radio = 
+			buttonCell.addChild("input",
+					new String[] { "type", "name", "value" },
+					new String[] { "radio", "bandwidth", limit.downBytes+"/"+limit.upBytes });
 		if (recommended) {
+			radio.addAttribute("checked", "checked");
 			buttonCell.addChild("#", WizardL10n.l10n("autodetectedSuggestedLimit"));
 		}
 	}
