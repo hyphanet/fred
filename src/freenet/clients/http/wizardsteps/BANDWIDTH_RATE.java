@@ -35,8 +35,8 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 //				new BandwidthLimit(16*KiB, 4*KiB, "bandwidthConnectionSlow256"),
 //				// 512kbps/128kbps very slow broadband
 //				new BandwidthLimit(32*KiB, 8*KiB, "bandwidthConnectionSlow512"),
-				// 1Mbps/128kbps
-				new BandwidthLimit(64*KiB, 8*KiB, "bandwidthConnection1M"),
+//				// 1Mbps/128kbps
+//				new BandwidthLimit(64*KiB, 8*KiB, "bandwidthConnection1M"),
 //				// 2Mbps/128kbps (slow often => poor ratios)
 //				new BandwidthLimit(128*KiB, 8*KiB, "bandwidthConnection2M"),
 				// 4Mbps/256kbps
