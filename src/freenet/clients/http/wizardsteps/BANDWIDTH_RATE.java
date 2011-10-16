@@ -90,6 +90,12 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 			addedDefault = true;
 		}
 
+		BandwidthLimit current = getCurrentBandwidthLimitsOrNull();
+		if(current != null) {
+			addLimitRow(table, helper, current, false, !addedDefault);
+			addedDefault = true;
+		}
+		
 		for (BandwidthLimit limit : limits) {
 			addLimitRow(table, helper, limit, false, !addedDefault);
 		}

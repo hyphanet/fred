@@ -3,6 +3,7 @@ package freenet.clients.http.wizardsteps;
 import freenet.config.Config;
 import freenet.config.ConfigException;
 import freenet.config.InvalidConfigValueException;
+import freenet.config.SubConfig;
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
 import freenet.pluginmanager.FredPluginBandwidthIndicator;
@@ -50,6 +51,13 @@ public abstract class BandwidthManipulator {
 		        new String[] { "limit" }, new HTMLNode[] { new HTMLNode("#", parsingFailedOn) });
 	}
 
+	protected BandwidthLimit getCurrentBandwidthLimitsOrNull() {
+		if (!config.get("node").getOption("outputBandwidthLimit").isDefault()) {
+			return new BandwidthLimit(core.node.getInputBandwidthLimit(), core.node.getOutputBandwidthLimit(), "bandwidthCurrent", false);
+		}
+		return null;
+	}
+	
 	/**
 	 * Attempts to detect upstream and downstream bandwidth limits.
 	 * @return Upstream and downstream bandwidth in bytes per second. If a limit is set to -1, it is unavailable or
@@ -58,9 +66,6 @@ public abstract class BandwidthManipulator {
 	 * -3 if the UPnP plugin is not loaded or done starting up.
 	 */
 	protected BandwidthLimit detectBandwidthLimits() {
-		if (!config.get("node").getOption("outputBandwidthLimit").isDefault()) {
-			return new BandwidthLimit(-2, -2, "bandwidthDetected", false);
-		}
 		FredPluginBandwidthIndicator bwIndicator = core.node.ipDetector.getBandwidthIndicator();
 		if (bwIndicator == null) {
 			Logger.normal(this, "The node does not have a bandwidthIndicator.");
