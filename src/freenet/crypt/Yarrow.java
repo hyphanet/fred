@@ -169,7 +169,7 @@ public class Yarrow extends RandomSource {
 				Closer.close(dis);
 				Closer.close(fis);
 			}
-			if(canBlock && isSystemEntropyAvailable)
+			if(canBlock)
 				// Read some bits from /dev/random
 				try {
 					fis = new FileInputStream("/dev/random");
