@@ -9,8 +9,6 @@ import freenet.pluginmanager.FredPluginBandwidthIndicator;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 
-import javax.swing.text.html.HTML;
-
 /**
  * Utility class used by bandwidth steps to detect and set bandwidth, and set the wizard completion flag.
  */
