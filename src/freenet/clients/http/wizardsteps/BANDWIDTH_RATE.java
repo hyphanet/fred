@@ -26,19 +26,19 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 		limits = new BandwidthLimit[] {
 				// FIXME feedback on typical real world ratios on slow connections would be helpful.
 				
-				// Dial-up
-				// 57.6/33.6; call it 4KB/sec each way
-				new BandwidthLimit(4*KiB, 4*KiB, "bandwidthConnectionDialUp"),
-				// 128kbps symmetrical = 16KB/sec each way, take half so 8KB/sec each way
-				new BandwidthLimit(8*KiB, 8*KiB, "bandwidthConnectionISDN"),
-				// 256kbps/64kbps developing world broadband
-				new BandwidthLimit(16*KiB, 4*KiB, "bandwidthConnectionSlow256"),
-				// 512kbps/128kbps very slow broadband
-				new BandwidthLimit(32*KiB, 8*KiB, "bandwidthConnectionSlow512"),
+//				// Dial-up
+//				// 57.6/33.6; call it 4KB/sec each way
+//				new BandwidthLimit(4*KiB, 4*KiB, "bandwidthConnectionDialUp"),
+//				// 128kbps symmetrical = 16KB/sec each way, take half so 8KB/sec each way
+//				new BandwidthLimit(8*KiB, 8*KiB, "bandwidthConnectionISDN"),
+//				// 256kbps/64kbps developing world broadband
+//				new BandwidthLimit(16*KiB, 4*KiB, "bandwidthConnectionSlow256"),
+//				// 512kbps/128kbps very slow broadband
+//				new BandwidthLimit(32*KiB, 8*KiB, "bandwidthConnectionSlow512"),
 				// 1Mbps/128kbps
 				new BandwidthLimit(64*KiB, 8*KiB, "bandwidthConnection1M"),
-				// 2Mbps/128kbps (slow often => poor ratios)
-				new BandwidthLimit(128*KiB, 8*KiB, "bandwidthConnection2M"),
+//				// 2Mbps/128kbps (slow often => poor ratios)
+//				new BandwidthLimit(128*KiB, 8*KiB, "bandwidthConnection2M"),
 				// 4Mbps/256kbps
 				new BandwidthLimit(256*KiB, 16*KiB, "bandwidthConnection4M"),
 				// 6Mbps/256kbps - 6Mbps is common in parts of china, as well as being the real value in lots of DSL areas
