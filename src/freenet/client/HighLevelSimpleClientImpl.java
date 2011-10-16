@@ -244,10 +244,9 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	}
 	
 	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, short priority, InsertContext ctx) throws InsertException {
-		InsertContext context = getInsertContext(true);
 		PutWaiter pw = new PutWaiter();
 		ClientPutter put = new ClientPutter(pw, insert.getData(), insert.desiredURI, insert.clientMetadata,
-				context, priority,
+				ctx, priority,
 				getCHKOnly, isMetadata, this, filenameHint, false, core.clientContext, null, -1);
 		try {
 			core.clientContext.start(put, false);
