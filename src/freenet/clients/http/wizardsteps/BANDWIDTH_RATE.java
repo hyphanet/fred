@@ -52,7 +52,7 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 				// 20Mbps/5Mbps - Slow end of VDSL
 				new BandwidthLimit(1280*KiB, 320*KiB, "bandwidthConnectionVDSL"),
 				// 100Mbps fibre etc
-				new BandwidthLimit(2048*KiB, 512*KiB, "bandwidthConnection100M")
+				new BandwidthLimit(2048*KiB, 2048*KiB, "bandwidthConnection100M")
 		};
 	}
 
