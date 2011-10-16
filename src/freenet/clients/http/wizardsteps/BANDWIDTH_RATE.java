@@ -46,7 +46,7 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 				// 8Mbps/512kbps - UK DSL1 is either 448k up or 832k up
 				new BandwidthLimit(512*KiB, 32*KiB, "bandwidthConnection8M"),
 				// 12Mbps/1Mbps - typical DSL2
-				new BandwidthLimit(768*KiB, 32*KiB, "bandwidthConnection12M"),
+				new BandwidthLimit(768*KiB, 64*KiB, "bandwidthConnection12M"),
 				// 20Mbps/1Mbps - fast DSL2
 				new BandwidthLimit(1280*KiB, 64*KiB, "bandwidthConnection20M"),
 				// 20Mbps/5Mbps - Slow end of VDSL
