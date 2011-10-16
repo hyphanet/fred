@@ -1094,6 +1094,11 @@ public class Node implements TimeSkewDetectorCallback {
 
 				@Override
 				public void run() {
+					try {
+						// Delay entropy generation helper hack if enough entropy available
+						Thread.sleep(100);
+					} catch (InterruptedException e) {
+					}
 					for(File root : File.listRoots()) {
 						if(isPRNGReady)
 							return;
