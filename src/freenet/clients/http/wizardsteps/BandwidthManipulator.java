@@ -61,12 +61,12 @@ public abstract class BandwidthManipulator {
 	 */
 	protected BandwidthLimit detectBandwidthLimits() {
 		if (!config.get("node").getOption("outputBandwidthLimit").isDefault()) {
-			return new BandwidthLimit(-2, -2, "bandwidthDetected");
+			return new BandwidthLimit(-2, -2, "bandwidthDetected", false);
 		}
 		FredPluginBandwidthIndicator bwIndicator = core.node.ipDetector.getBandwidthIndicator();
 		if (bwIndicator == null) {
 			Logger.normal(this, "The node does not have a bandwidthIndicator.");
-			return new BandwidthLimit(-3, -3, "bandwidthDetected");
+			return new BandwidthLimit(-3, -3, "bandwidthDetected", false);
 		}
 
 		int downstreamBits = bwIndicator.getDownstreamMaxBitRate();
@@ -100,7 +100,7 @@ public abstract class BandwidthManipulator {
 			upstreamBytes = upstreamBits/8;
 		}
 
-		return new BandwidthLimit(downstreamBytes, upstreamBytes, "bandwidthDetected");
+		return new BandwidthLimit(downstreamBytes, upstreamBytes, "bandwidthDetected", false);
 	}
 
 	protected void setWizardComplete() {

@@ -16,10 +16,13 @@ public class BandwidthLimit {
 	public final long upBytes;
 	
 	public final String descriptionKey;
+	
+	public final boolean maybeDefault;
 
-	public BandwidthLimit(long downBytes, long upBytes, String descriptionKey) {
+	public BandwidthLimit(long downBytes, long upBytes, String descriptionKey, boolean maybeDefault) {
 		this.downBytes = downBytes;
 		this.upBytes = upBytes;
 		this.descriptionKey = descriptionKey;
+		this.maybeDefault = maybeDefault;
 	}
 }

@@ -40,19 +40,19 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 //				// 2Mbps/128kbps (slow often => poor ratios)
 //				new BandwidthLimit(128*KiB, 8*KiB, "bandwidthConnection2M"),
 				// 4Mbps/256kbps
-				new BandwidthLimit(256*KiB, 16*KiB, "bandwidthConnection4M"),
+				new BandwidthLimit(256*KiB, 16*KiB, "bandwidthConnection4M", false),
 				// 6Mbps/256kbps - 6Mbps is common in parts of china, as well as being the real value in lots of DSL areas
-				new BandwidthLimit(384*KiB, 16*KiB, "bandwidthConnection6M"),
+				new BandwidthLimit(384*KiB, 16*KiB, "bandwidthConnection6M", true),
 				// 8Mbps/512kbps - UK DSL1 is either 448k up or 832k up
-				new BandwidthLimit(512*KiB, 32*KiB, "bandwidthConnection8M"),
+				new BandwidthLimit(512*KiB, 32*KiB, "bandwidthConnection8M", false),
 				// 12Mbps/1Mbps - typical DSL2
-				new BandwidthLimit(768*KiB, 64*KiB, "bandwidthConnection12M"),
+				new BandwidthLimit(768*KiB, 64*KiB, "bandwidthConnection12M", false),
 				// 20Mbps/1Mbps - fast DSL2
-				new BandwidthLimit(1280*KiB, 64*KiB, "bandwidthConnection20M"),
+				new BandwidthLimit(1280*KiB, 64*KiB, "bandwidthConnection20M", false),
 				// 20Mbps/5Mbps - Slow end of VDSL
-				new BandwidthLimit(1280*KiB, 320*KiB, "bandwidthConnectionVDSL"),
+				new BandwidthLimit(1280*KiB, 320*KiB, "bandwidthConnectionVDSL", false),
 				// 100Mbps fibre etc
-				new BandwidthLimit(2048*KiB, 2048*KiB, "bandwidthConnection100M")
+				new BandwidthLimit(2048*KiB, 2048*KiB, "bandwidthConnection100M", false)
 		};
 	}
 
@@ -80,15 +80,18 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 		headerRow.addChild("th", WizardL10n.l10n("bandwidthUploadHeader"));
 		headerRow.addChild("th", WizardL10n.l10n("bandwidthSelect"));
 
+		boolean addedDefault = false;
+		
 		BandwidthLimit detected = detectBandwidthLimits();
 		if (detected.downBytes > 0 && detected.upBytes > 0) {
 			//Detected limits reasonable; add half of both as recommended option.
-			BandwidthLimit usable = new BandwidthLimit(detected.downBytes/2, detected.upBytes/2, "bandwidthDetected");
-			addLimitRow(table, helper, usable, true);
+			BandwidthLimit usable = new BandwidthLimit(detected.downBytes/2, detected.upBytes/2, "bandwidthDetected", true);
+			addLimitRow(table, helper, usable, true, true);
+			addedDefault = true;
 		}
 
 		for (BandwidthLimit limit : limits) {
-			addLimitRow(table, helper, limit, false);
+			addLimitRow(table, helper, limit, false, !addedDefault);
 		}
 
 		//Add custom option.
@@ -191,7 +194,7 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 	 * @param limit Limit to display.
 	 * @param recommended Whether to mark the limit with (Recommended) next to the select button.
 	 */
-	private void addLimitRow(HTMLNode table, PageHelper helper, BandwidthLimit limit, boolean recommended) {
+	private void addLimitRow(HTMLNode table, PageHelper helper, BandwidthLimit limit, boolean recommended, boolean useMaybeDefault) {
 		HTMLNode row = table.addChild("tr");
 		row.addChild("td", WizardL10n.l10n(limit.descriptionKey));
 		String downColumn = SizeUtil.formatSize(limit.downBytes)+WizardL10n.l10n("bandwidthPerSecond");
@@ -212,8 +215,9 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 			buttonCell.addChild("input",
 					new String[] { "type", "name", "value" },
 					new String[] { "radio", "bandwidth", limit.downBytes+"/"+limit.upBytes });
-		if (recommended) {
+		if(recommended || (useMaybeDefault && limit.maybeDefault))
 			radio.addAttribute("checked", "checked");
+		if (recommended) {
 			buttonCell.addChild("#", WizardL10n.l10n("autodetectedSuggestedLimit"));
 		}
 	}
