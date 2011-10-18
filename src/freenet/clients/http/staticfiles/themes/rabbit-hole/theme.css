@@ -621,7 +621,7 @@ section {
 }
 
 #topbar {
-    max-width: 34%;
+    max-width: 21%;
     margin: 0px;
     min-height: 41px; /* as big as the rabbit */
 }
@@ -678,7 +678,7 @@ div #navbar {
     z-index:19; /* above status */
     right: 0px;
     top: 0.35em;
-    width: 65%;
+    width: 78%;
     white-space: nowrap;
     text-align: right;
     color: gray;
