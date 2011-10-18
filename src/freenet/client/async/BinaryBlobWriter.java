@@ -105,7 +105,7 @@ public final class BinaryBlobWriter {
 		finalizeBucket(true);
 	}
 
-	private void finalizeBucket(Boolean mark) throws IOException, BinaryBlobAlreadyClosedException {
+	private void finalizeBucket(boolean mark) throws IOException, BinaryBlobAlreadyClosedException {
 		if (_finalized) throw new BinaryBlobAlreadyClosedException("Already finalized (closing blob - 2).");
 		if (!_isSingleBucket) {
 			if (!mark && (_buckets.size()==1)) {
@@ -168,12 +168,18 @@ public final class BinaryBlobWriter {
 			return _buckets.get(0);
 		}
 	}
-	
-	static class BinaryBlobAlreadyClosedException extends Exception {
+
+	public static class BinaryBlobAlreadyClosedException extends Exception {
+
+		private static final long serialVersionUID = -1L;
 
 		public BinaryBlobAlreadyClosedException(String message) {
 			super(message);
 		}
 		
+	}
+
+	public boolean isFinalized() {
+		return _finalized;
 	}
 }

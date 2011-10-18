@@ -1094,6 +1094,11 @@ public class Node implements TimeSkewDetectorCallback {
 
 				@Override
 				public void run() {
+					try {
+						// Delay entropy generation helper hack if enough entropy available
+						Thread.sleep(100);
+					} catch (InterruptedException e) {
+					}
 					for(File root : File.listRoots()) {
 						if(isPRNGReady)
 							return;
@@ -1710,9 +1715,8 @@ public class Node implements TimeSkewDetectorCallback {
 		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
 
 		// Then read the peers
-		peers = new PeerManager(this);
+		peers = new PeerManager(this, shutdownHook);
 		peers.tryReadPeers(nodeDir.file("peers-"+getDarknetPortNumber()).getPath(), darknetCrypto, null, false, false);
-		peers.writePeers();
 		peers.updatePMUserAlert();
 
 		uptime = new UptimeEstimator(runDir, ticker, darknetCrypto.identityHash);
@@ -2068,14 +2072,22 @@ public class Node implements TimeSkewDetectorCallback {
                     public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
 						storePreallocate = val;
 						if (storeType.equals("salt-hash")) {
-							((SaltedHashFreenetStore<CHKBlock>) chkDatastore.getStore()).setPreallocate(val);
-							((SaltedHashFreenetStore<CHKBlock>) chkDatacache.getStore()).setPreallocate(val);
-							((SaltedHashFreenetStore<DSAPublicKey>) pubKeyDatastore.getStore()).setPreallocate(val);
-							((SaltedHashFreenetStore<DSAPublicKey>) pubKeyDatacache.getStore()).setPreallocate(val);
-							((SaltedHashFreenetStore<SSKBlock>) sskDatastore.getStore()).setPreallocate(val);
-							((SaltedHashFreenetStore<SSKBlock>) sskDatacache.getStore()).setPreallocate(val);
+							setPreallocate(chkDatastore, val);
+							setPreallocate(chkDatacache, val);
+							setPreallocate(pubKeyDatastore, val);
+							setPreallocate(pubKeyDatacache, val);
+							setPreallocate(sskDatastore, val);
+							setPreallocate(sskDatacache, val);
 						}
-                    }}
+                    }
+
+					private void setPreallocate(StoreCallback<?> datastore,
+							boolean val) {
+						// Avoid race conditions by checking first.
+						FreenetStore<?> store = datastore.getStore();
+						if(store instanceof SaltedHashFreenetStore)
+							((SaltedHashFreenetStore<?>)store).setPreallocate(val);
+					}}
 		);
 		storePreallocate = nodeConfig.getBoolean("storePreallocate");
 
@@ -3226,8 +3238,6 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 
 	};
-	private boolean xmlRemoteCodeExec;
-
 	private void createPasswordUserAlert() {
 		this.clientCore.alerts.register(masterPasswordUserAlert);
 	}
@@ -3847,52 +3857,10 @@ public class Node implements TimeSkewDetectorCallback {
 		String jvmSpecVendor = System.getProperty("java.specification.vendor","");
 		String javaVersion = System.getProperty("java.version");
 		String jvmName = System.getProperty("java.vm.name");
-		String jvmVersion = System.getProperty("java.vm.version");
 		String osName = System.getProperty("os.name");
 		String osVersion = System.getProperty("os.version");
 
 		boolean isOpenJDK = false;
-
-		if(jvmName.startsWith("OpenJDK ")) {
-			isOpenJDK = true;
-			if(javaVersion.startsWith("1.6.0")) {
-				String subverString;
-				if(jvmVersion.startsWith("14.0-b"))
-					subverString = jvmVersion.substring("14.0-b".length());
-				else if(jvmVersion.startsWith("1.6.0_0-b"))
-					subverString = jvmVersion.substring("1.6.0_0-b".length());
-				else
-					subverString = null;
-				if(subverString != null) {
-					int subver;
-					try {
-						subver = Integer.parseInt(subverString);
-					} catch (NumberFormatException e) {
-						subver = -1;
-					}
-				if(subver > -1 && subver < 15) {
-					File javaDir = new File(System.getProperty("java.home"));
-
-					// Assume that if the java home dir has been updated since August 11th, we have the fix.
-
-					final Calendar _cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-					_cal.set(2009, Calendar.AUGUST, 11, 0, 0, 0);
-					if(javaDir.exists() && javaDir.isDirectory() && javaDir.lastModified() > _cal.getTimeInMillis()) {
-						System.err.println("Your Java appears to have been updated, we probably do not have the XML bug (http://www.cert.fi/en/reports/2009/vulnerability2009085.html).");
-					} else {
-						System.err.println("Old version of OpenJDK detected. It is possible that your Java may be vulnerable to a remote code execution vulnerability. Please update your operating system ASAP. We will not disable plugins because we cannot be sure whether there is a problem.");
-						System.err.println("See here: http://www.cert.fi/en/reports/2009/vulnerability2009085.html");
-						clientCore.alerts.register(new SimpleUserAlert(false, l10n("openJDKMightBeVulnerableXML"), l10n("openJDKMightBeVulnerableXML"), l10n("openJDKMightBeVulnerableXML"), UserAlert.ERROR));
-					}
-
-				}
-				}
-			}
-		}
-
-		if(javaVersion.startsWith("1.5.0_")) {
-			clientCore.alerts.register(new SimpleUserAlert(false, l10n("java15DeprecatedTitle"), l10n("java15Deprecated"), l10n("java15DeprecatedTitle"), UserAlert.CRITICAL_ERROR));
-		}
 
 		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM name: "+jvmName+", JVM version: "+javaVersion+", OS name: "+osName+", OS version: "+osVersion);
 
@@ -3922,15 +3890,6 @@ public class Node implements TimeSkewDetectorCallback {
 
 				Logger.minor(this, "JVM version: "+javaVersion+" subver: "+subver+" from "+secondPart);
 
-				if(is150 && subver < 20 || is160 && subver < 15)
-					xmlRemoteCodeExec = true;
-			}
-
-			if(xmlRemoteCodeExec) {
-				System.err.println("Please upgrade your Java to 1.6.0 update 15 or 1.5.0 update 20 IMMEDIATELY!");
-				System.err.println("Freenet plugins using XML, including the search function, and Freenet client applications such as Thaw which use XML are vulnerable to remote code execution!");
-
-				clientCore.alerts.register(new SimpleUserAlert(false, l10n("sunJVMxmlRemoteCodeExecTitle"), l10n("sunJVMxmlRemoteCodeExec"), l10n("sunJVMxmlRemoteCodeExecTitle"), UserAlert.CRITICAL_ERROR));
 			}
 
 		} else if (jvmVendor.startsWith("Apple ") || jvmVendor.startsWith("\"Apple ")) {
@@ -3957,10 +3916,6 @@ public class Node implements TimeSkewDetectorCallback {
 			clientCore.alerts.register(new SimpleUserAlert(true, l10n("notUsingWrapperTitle"), l10n("notUsingWrapper"), l10n("notUsingWrapperShort"), UserAlert.WARNING));
 		}
 
-	}
-
-	public boolean xmlRemoteCodeExecVuln() {
-		return xmlRemoteCodeExec;
 	}
 
 	public static boolean checkForGCJCharConversionBug() {
@@ -4588,6 +4543,10 @@ public class Node implements TimeSkewDetectorCallback {
 		is.start();
 		return is;
 	}
+	
+	public boolean lockUID(UIDTag tag) {
+		return lockUID(tag.uid, tag.isSSK(), tag.isInsert(), tag.isOfferReply(), tag.wasLocal(), tag.realTimeFlag, tag);
+	}
 
 	public boolean lockUID(long uid, boolean ssk, boolean insert, boolean offerReply, boolean local, boolean realTimeFlag, UIDTag tag) {
 		synchronized(runningUIDs) {
@@ -4669,57 +4628,95 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-	public class CountedRequests {
-		final int total;
-		final int expectedTransfersOut;
-		final int expectedTransfersIn;
+	public static class CountedRequests {
+		int total;
+		int expectedTransfersOut;
+		int expectedTransfersIn;
 		private CountedRequests(int count, int out, int in) {
 			total = count;
 			expectedTransfersOut = out;
 			expectedTransfersIn = in;
 		}
+		public CountedRequests() {
+			// Initially empty.
+		}
 	}
 
-	public synchronized CountedRequests countRequests(boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote) {
+	public synchronized void countRequests(boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, CountedRequests counter, CountedRequests counterSourceRestarted) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
 		synchronized(map) {
 			int count = 0;
 			int transfersOut = 0;
 			int transfersIn = 0;
+			int countSR = 0;
+			int transfersOutSR = 0;
+			int transfersInSR = 0;
 			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
 				UIDTag tag = entry.getValue();
+				int out = tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, true);
+				int in = tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, true);
 				count++;
-				transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert);
-				transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
+				transfersOut += out;
+				transfersIn += in;
+				if(counterSourceRestarted != null && tag.countAsSourceRestarted()) {
+					countSR++;
+					transfersOutSR += out;
+					transfersInSR += in;
+				}
 				if(logDEBUG) Logger.debug(this, "UID "+entry.getKey()+" : out "+transfersOut+" in "+transfersIn);
 			}
-			return new CountedRequests(count, transfersOut, transfersIn);
+			counter.total += count;
+			counter.expectedTransfersIn += transfersIn;
+			counter.expectedTransfersOut += transfersOut;
+			if(counterSourceRestarted != null) {
+				counterSourceRestarted.total += countSR;
+				counterSourceRestarted.expectedTransfersIn += transfersInSR;
+				counterSourceRestarted.expectedTransfersOut += transfersOutSR;
+			}
 		}
 	}
 
-	public CountedRequests countRequests(PeerNode source, boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote) {
+	public void countRequests(PeerNode source, boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, CountedRequests counter, CountedRequests counterSR) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
 		synchronized(map) {
 		int count = 0;
 		int transfersOut = 0;
 		int transfersIn = 0;
+		int countSR = 0;
+		int transfersOutSR = 0;
+		int transfersInSR = 0;
 		if(!requestsToNode) {
 			// If a request is adopted by us as a result of a timeout, it can be in the
 			// remote map despite having source == null. However, if a request is in the
 			// local map it will always have source == null.
-			if(source != null && local) return new CountedRequests(0, 0, 0);
+			if(source != null && local) return;
 			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
 				UIDTag tag = entry.getValue();
 				if(tag.getSource() == source) {
+					int out = tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, true);
+					int in = tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, true);
 					count++;
-					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert);
-					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
+					transfersOut += out;
+					transfersIn += in;
+					if(counterSR != null && tag.countAsSourceRestarted()) {
+						countSR++;
+						transfersOutSR += out;
+						transfersInSR += in;
+					}
 					if(logMINOR) Logger.minor(this, "Counting "+tag+" from "+entry.getKey()+" from "+source+" count now "+count+" out now "+transfersOut+" in now "+transfersIn);
 				} else if(logDEBUG) Logger.debug(this, "Not counting "+entry.getKey());
 			}
 			if(logMINOR) Logger.minor(this, "Returning count: "+count+" in: "+transfersIn+" out: "+transfersOut);
-			return new CountedRequests(count, transfersOut, transfersIn);
+			counter.total += count;
+			counter.expectedTransfersIn += transfersIn;
+			counter.expectedTransfersOut += transfersOut;
+			if(counterSR != null) {
+				counterSR.total += countSR;
+				counterSR.expectedTransfersIn += transfersInSR;
+				counterSR.expectedTransfersOut += transfersOutSR;
+			}
 		} else {
+			// hasSourceRestarted is irrelevant for requests *to* a node.
 			// FIXME improve efficiency!
 			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
 				UIDTag tag = entry.getValue();
@@ -4727,20 +4724,43 @@ public class Node implements TimeSkewDetectorCallback {
 				// So we *DO NOT* care whether it's an ordinary routed relayed request or a GetOfferedKey, if we are counting outgoing requests.
 				if(tag.currentlyFetchingOfferedKeyFrom(source)) {
 					if(logMINOR) Logger.minor(this, "Counting "+tag+" to "+entry.getKey());
-					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert);
-					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
+					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, false);
+					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, false);
 					count++;
 				} else if(tag.currentlyRoutingTo(source)) {
 					if(logMINOR) Logger.minor(this, "Counting "+tag+" to "+entry.getKey());
-					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert);
-					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
+					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, false);
+					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, false);
 					count++;
 				} else if(logDEBUG) Logger.debug(this, "Not counting "+entry.getKey());
 			}
 			if(logMINOR) Logger.minor(this, "Counted for "+(local?"local":"remote")+" "+(ssk?"ssk":"chk")+" "+(insert?"insert":"request")+" "+(offer?"offer":"")+" : "+count+" of "+map.size()+" for "+source);
-			return new CountedRequests(count, transfersOut, transfersIn);
+			counter.total += count;
+			counter.expectedTransfersIn += transfersIn;
+			counter.expectedTransfersOut += transfersOut;
 		}
 		}
+	}
+	
+	/**
+	 * @return [0] is the number of local requests waiting for slots, [1] is the
+	 * number of remote requests waiting for slots.
+	 */
+	public int[] countRequestsWaitingForSlots() {
+		// FIXME use a counter, but that means make sure it always removes it when something bad happens.
+		
+		int local = 0;
+		int remote = 0;
+		synchronized(runningUIDs) {
+			for(UIDTag tag : runningUIDs.values()) {
+				if(!tag.isWaitingForSlot()) continue;
+				if(tag.isLocal())
+					local++;
+				else
+					remote++;
+			}
+		}
+		return new int[] { local, remote };
 	}
 
 	void reassignTagToSelf(UIDTag tag) {
@@ -4799,7 +4819,8 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	// Must include bulk inserts so fairly long.
-	static final int TIMEOUT = 16 * 60 * 1000;
+	// 21 minutes is enough for a fatal timeout.
+	static final int TIMEOUT = 21 * 60 * 1000;
 
 	private void startDeadUIDChecker() {
 		getTicker().queueTimedJob(deadUIDChecker, TIMEOUT);
@@ -4847,6 +4868,32 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 		}
 	};
+	
+
+	public void onRestartOrDisconnect(PeerNode pn) {
+		onRestartOrDisconnect(pn, runningSSKGetUIDsRT);
+		onRestartOrDisconnect(pn, runningCHKGetUIDsRT);
+		onRestartOrDisconnect(pn, runningSSKPutUIDsRT);
+		onRestartOrDisconnect(pn, runningCHKPutUIDsRT);
+		onRestartOrDisconnect(pn, runningSSKOfferReplyUIDsRT);
+		onRestartOrDisconnect(pn, runningCHKOfferReplyUIDsRT);
+		onRestartOrDisconnect(pn, runningSSKGetUIDsBulk);
+		onRestartOrDisconnect(pn, runningCHKGetUIDsBulk);
+		onRestartOrDisconnect(pn, runningSSKPutUIDsBulk);
+		onRestartOrDisconnect(pn, runningCHKPutUIDsBulk);
+		onRestartOrDisconnect(pn, runningSSKOfferReplyUIDsBulk);
+		onRestartOrDisconnect(pn, runningCHKOfferReplyUIDsBulk);
+	}
+
+	private void onRestartOrDisconnect(PeerNode pn,
+			HashMap<Long, ? extends UIDTag> uids) {
+		synchronized(uids) {
+			for(UIDTag tag : uids.values()) {
+				if(tag.isSource(pn))
+					tag.onRestartOrDisconnectSource();
+			}
+		}
+	}
 
 
 	/**
@@ -5277,12 +5324,12 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public boolean addPeerConnection(PeerNode pn) {
 		boolean retval = peers.addPeer(pn);
-		peers.writePeers();
+		peers.writePeersUrgent(pn.isOpennet());
 		return retval;
 	}
 
 	public void removePeerConnection(PeerNode pn) {
-		peers.disconnect(pn, true, false, false);
+		peers.disconnectAndRemove(pn, true, false, false);
 	}
 
 	public void onConnectedPeer() {
@@ -5856,9 +5903,9 @@ public class Node implements TimeSkewDetectorCallback {
 	public int getTotalRunningUIDsAlt() {
 		synchronized(runningUIDs) {
 			return this.runningCHKGetUIDsRT.size() + this.runningCHKPutUIDsRT.size() + this.runningSSKGetUIDsRT.size() +
-			this.runningSSKGetUIDsRT.size() + this.runningSSKOfferReplyUIDsRT.size() + this.runningCHKOfferReplyUIDsRT.size() +
+			this.runningSSKPutUIDsRT.size() + this.runningSSKOfferReplyUIDsRT.size() + this.runningCHKOfferReplyUIDsRT.size() +
 			this.runningCHKGetUIDsBulk.size() + this.runningCHKPutUIDsBulk.size() + this.runningSSKGetUIDsBulk.size() +
-			this.runningSSKGetUIDsBulk.size() + this.runningSSKOfferReplyUIDsBulk.size() + this.runningCHKOfferReplyUIDsBulk.size();
+			this.runningSSKPutUIDsBulk.size() + this.runningSSKOfferReplyUIDsBulk.size() + this.runningCHKOfferReplyUIDsBulk.size();
 		}
 	}
 
@@ -6274,4 +6321,5 @@ public class Node implements TimeSkewDetectorCallback {
 	public boolean enableNewLoadManagement(boolean realTimeFlag) {
 		return nodeStats.enableNewLoadManagement(realTimeFlag);
 	}
+
 }

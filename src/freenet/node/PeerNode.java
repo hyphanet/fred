@@ -383,7 +383,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	private Set<PeerManager.PeerStatusChangeListener> listeners=Collections.synchronizedSet(new WeakHashSet<PeerStatusChangeListener>());
 
 	// NodeCrypto for the relevant node reference for this peer's type (Darknet or Opennet at this time))
-	protected NodeCrypto crypto;
+	protected final NodeCrypto crypto;
 
 	/**
 	 * Some alchemy we use in PeerNode.shouldBeExcludedFromPeerList()
@@ -448,6 +448,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		this.outgoingMangler = mangler;
 		this.node = node2;
 		this.crypto = crypto;
+		assert(crypto.isOpennet == (isOpennet() || isSeed()));
 		this.peers = peers;
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercentRT = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
@@ -461,15 +462,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			throw new FSParseException("Invalid version "+version+" : "+e2);
 		}
 		String locationString = fs.get("location");
-		String[] peerLocationsString = fs.getAll("peersLocation");
 
 		currentLocation = Location.getLocation(locationString);
-		if(peerLocationsString != null) {
-			double[] peerLocations = new double[peerLocationsString.length];
-			for(int i = 0; i < peerLocationsString.length; i++)
-				peerLocations[i] = Location.getLocation(peerLocationsString[i]);
-			currentPeersLocation = peerLocations;
-		}
 		locSetTime = System.currentTimeMillis();
 
 		disableRouting = disableRoutingHasBeenSetLocally = false;
@@ -705,6 +699,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			SimpleFieldSet metadata = fs.subset("metadata");
 
 			if(metadata != null) {
+				
+				String[] peerLocationsString = fs.getAll("peersLocation");
+				if(peerLocationsString != null) {
+					double[] peerLocations = new double[peerLocationsString.length];
+					for(int i = 0; i < peerLocationsString.length; i++)
+						peerLocations[i] = Location.getLocation(peerLocationsString[i]);
+					currentPeersLocation = peerLocations;
+				}
 
 				// Don't be tolerant of nonexistant domains; this should be an IP address.
 				Peer p;
@@ -1280,6 +1282,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		else if(logMINOR)
 			Logger.minor(this, "Disconnected "+this, new Exception("debug"));
 		node.usm.onDisconnect(this);
+		if(dumpMessageQueue)
+			node.onRestartOrDisconnect(this);
 		node.failureTable.onDisconnect(this);
 		node.peers.disconnected(this);
 		node.nodeUpdater.disconnected(this);
@@ -1837,14 +1841,36 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 
 		Arrays.sort(newLocs);
+		
+		boolean anythingChanged = false;
 
 		synchronized(this) {
+			if(!Location.equals(currentLocation, newLoc))
+				anythingChanged = true;
 			currentLocation = newLoc;
+			if(newLocs != null && currentPeersLocation == null || 
+					newLocs == null && currentPeersLocation != null)
+				anythingChanged = true;
+			else if(currentPeersLocation != null && newLocs != null && !anythingChanged) {
+				if(currentPeersLocation.length != newLocs.length)
+					anythingChanged = true;
+				else {
+					for(int i=0;i<currentPeersLocation.length;i++) {
+						if(!Location.equals(currentPeersLocation[i], newLocs[i])) {
+							anythingChanged = true;
+							break;
+						}
+					}
+				}
+			}
 			currentPeersLocation = newLocs;
 			locSetTime = System.currentTimeMillis();
 		}
 		node.peers.updatePMUserAlert();
-		node.peers.writePeers();
+		if(anythingChanged)
+			// Not urgent. This makes up the majority of the total writes.
+			// Writing it on shutdown is sufficient.
+			node.peers.writePeers(isOpennet());
 		setPeerNodeStatus(System.currentTimeMillis());
 	}
 
@@ -2303,6 +2329,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		if(bootIDChanged) {
 			node.lm.lostOrRestartedNode(this);
 			node.usm.onRestart(this);
+			node.onRestartOrDisconnect(this);
 		}
 		if(oldPrev != null && oldPrev.packets != newTracker.packets)
 			oldPrev.packets.completelyDeprecated(newTracker);
@@ -2676,7 +2703,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			Logger.minor(this, "Parsing: \n" + fs);
 		boolean changedAnything = innerProcessNewNoderef(fs, forARK, forDiffNodeRef, forFullNodeRef) || forARK;
 		if(changedAnything && !isSeed())
-			node.peers.writePeers();
+			node.peers.writePeers(isOpennet());
+		// FIXME should this be urgent if IPs change? Dunno.
 	}
 
 	/**
@@ -2772,11 +2800,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			throw new FSParseException("No dsaPubKey - very old reference?");
 		else if(sfs != null) {
 			DSAPublicKey key;
-			try {
-				key = DSAPublicKey.create(sfs, peerCryptoGroup);
-			} catch (IllegalBase64Exception e) {
-				throw new FSParseException(e);
-			}
+			key = DSAPublicKey.create(sfs, peerCryptoGroup);
 			if(!key.equals(this.peerPubKey))
 				throw new FSParseException("Changed pubkey?!");
 		}
@@ -5187,6 +5211,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		 * a race condition and the waiter has already completed.
 		 */
 		public boolean addWaitingFor(PeerNode peer) {
+			boolean cantQueue = (!peer.isRoutable()) || peer.isInMandatoryBackoff(System.currentTimeMillis(), realTime);
 			synchronized(this) {
 				if(acceptedBy != null) {
 					if(logMINOR) Logger.minor(this, "Not adding "+peer.shortToString+" because already matched on "+this);
@@ -5197,11 +5222,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					return true;
 				}
 				if(waitingFor.contains(peer)) return true;
+				// Race condition if contains() && cantQueue (i.e. it was accepted then it became backed off), but probably not serious.
+				if(cantQueue) return false;
 				waitingFor.add(peer);
+				tag.setWaitingForSlot();
 			}
 			if(!peer.outputLoadTracker(realTime).queueSlotWaiter(this)) {
 				synchronized(this) {
 					waitingFor.remove(peer);
+					if(acceptedBy != null || failed) return true;
 				}
 				return false;
 			} else return true;
@@ -5248,6 +5277,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			// If we want to wait for it again it must be re-queued.
 			PeerNode[] toUnreg = waitingFor.toArray(new PeerNode[waitingFor.size()]);
 			waitingFor.clear();
+			tag.clearWaitingForSlot();
 			return toUnreg;
 		}
 		
@@ -5277,6 +5307,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				// FIXME get rid of parameter.
 				failed = true;
 				fe = new SlotWaiterFailedException(peer, reallyFailed);
+				tag.clearWaitingForSlot();
 				notifyAll();
 			}
 		}
@@ -5320,6 +5351,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
 				if(ret != null)
 					waitingFor.clear();
+				if(grabbed || all.length == 0)
+					tag.clearWaitingForSlot();
 			}
 			if(grabbed) {
 				unregister(ret, all);
@@ -5360,6 +5393,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 							failed = false;
 							fe = null;
 						}						
+						tag.clearWaitingForSlot();
 					}
 					unregister(null, unreg);
 					if(other != null) {
@@ -5373,6 +5407,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				}
 			}
 			if(maxWait == 0) return null;
+			// Don't need to clear waiting here because we are still waiting.
 			if(!anyValid) {
 				synchronized(this) {
 					if(fe != null) {
@@ -5388,6 +5423,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(logMINOR) Logger.minor(this, "None valid to wait for on "+this);
 				unregister(ret, all);
 				if(f != null && ret == null) throw f;
+				tag.clearWaitingForSlot();
 				return ret;
 			}
 			synchronized(this) {
@@ -5425,9 +5461,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(!timedOut) {
 					long waitEnd = System.currentTimeMillis();
 					if(waitEnd - waitStart > (realTime ? 6000 : 60000)) {
-						Logger.error(this, "Waited "+(waitEnd - waitStart)+"ms for "+this);
-					} else if(waitEnd - waitStart > (realTime ? 1000 : 10000)) {
 						Logger.warning(this, "Waited "+(waitEnd - waitStart)+"ms for "+this);
+					} else if(waitEnd - waitStart > (realTime ? 1000 : 10000)) {
+						Logger.normal(this, "Waited "+(waitEnd - waitStart)+"ms for "+this);
 					} else {
 						if(logMINOR) Logger.minor(this, "Waited "+(waitEnd - waitStart)+"ms for "+this);
 					}
@@ -5439,6 +5475,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				waitingFor.clear();
 				failed = false;
 				fe = null;
+				tag.clearWaitingForSlot();
 			}
 			if(timeOutIsFatal && all != null) {
 				for(PeerNode pn : all) {
@@ -6059,11 +6096,23 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return false;
 	}
 
-	public synchronized boolean matchesIP(FreenetInetAddress addr) {
-		if(detectedPeer != null && detectedPeer.getFreenetAddress().laxEquals(addr)) return true;
-		if(nominalPeer != null) { // FIXME condition necessary???
+	/** Does this PeerNode match the given IP address? 
+	 * @param strict If true, only match if the IP is actually in use. If false,
+	 * also match from nominal IP addresses and domain names etc. */
+	public synchronized boolean matchesIP(FreenetInetAddress addr, boolean strict) {
+		if(detectedPeer != null) {
+			FreenetInetAddress a = detectedPeer.getFreenetAddress();
+			if(a != null) {
+				if(strict ? a.equals(addr) : a.laxEquals(addr))
+					return true;
+			}
+		}
+		if((!strict) && nominalPeer != null) {
 			for(Peer p : nominalPeer) {
-				if(p != null && p.getFreenetAddress().laxEquals(addr)) return true;
+				if(p == null) continue;
+				FreenetInetAddress a = p.getFreenetAddress();
+				if(a == null) continue;
+				if(a.laxEquals(addr)) return true;
 			}
 		}
 		return false;
@@ -6150,8 +6199,40 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return false;
 	}
 
-	public void reportRoutedTo(double target, boolean isLocal, boolean realTime) {
+	public void reportRoutedTo(double target, boolean isLocal, boolean realTime, PeerNode prev, Set<PeerNode> routedTo) {
 		double distance = Location.distance(target, getLocation());
+		
+		double myLoc = node.getLocation();
+		double prevLoc;
+		if(prev != null)
+			prevLoc = prev.getLocation();
+		else
+			prevLoc = -1.0;
+		
+		double[] peersLocation = getPeersLocation();
+		if((peersLocation != null) && (shallWeRouteAccordingToOurPeersLocation())) {
+			for(double l : peersLocation) {
+				boolean ignoreLoc = false; // Because we've already been there
+				if(Math.abs(l - myLoc) < Double.MIN_VALUE * 2 ||
+						Math.abs(l - prevLoc) < Double.MIN_VALUE * 2)
+					ignoreLoc = true;
+				else {
+					for(PeerNode cmpPN : routedTo)
+						if(Math.abs(l - cmpPN.getLocation()) < Double.MIN_VALUE * 2) {
+							ignoreLoc = true;
+							break;
+						}
+				}
+				if(ignoreLoc) continue;
+				double newDiff = Location.distance(l, target);
+				if(newDiff < distance) {
+					distance = newDiff;
+				}
+			}
+			if(logMINOR)
+				Logger.minor(this, "The peer "+this+" has published his peer's locations and the closest we have found to the target is "+distance+" away.");
+		}
+		
 		node.nodeStats.routingMissDistanceOverall.report(distance);
 		(isLocal ? node.nodeStats.routingMissDistanceLocal : node.nodeStats.routingMissDistanceRemote).report(distance);
 		(realTime ? node.nodeStats.routingMissDistanceRT : node.nodeStats.routingMissDistanceBulk).report(distance);
@@ -6252,6 +6333,65 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	
 	public synchronized SimpleFieldSet getFullNoderef() {
 		return fullFieldSet;
+	}
+
+	private int consecutiveGuaranteedRejectsRT = 0;
+	private int consecutiveGuaranteedRejectsBulk = 0;
+	
+	private int CONSECUTIVE_REJECTS_MANDATORY_BACKOFF = 5;
+	
+	/** After 5 consecutive GUARANTEED soft rejections, we enter mandatory backoff.
+	 * The reason why we don't immediately enter mandatory backoff is as follows:
+	 * PROBLEM: Requests could have completed between the time when the request 
+	 * was rejected and now.
+	 * SOLUTION A: Tracking all possible requests which completed since the 
+	 * request was sent. CON: This would be rather complex, and I'm not sure
+	 * how well it would work when there are many requests in flight; would it
+	 * even be possible without stopping sending requests after some arbitrary
+	 * threshold? We might need a time element, and would probably need parameters...
+	 * SOLUTION B: Enforcing a hard peer limit on both sides, as opposed to 
+	 * accepting a request if the *current* usage, without the new request, is 
+	 * over the limit. CON: This would break fairness between request types.
+	 * 
+	 * Of course, the problem with just using a counter is it may need to be 
+	 * changed frequently ... FIXME create a better solution!
+	 *
+	 * Fortunately, this is pretty rare. It happens when e.g. we send an SSK,
+	 * then we send a CHK, the messages are reordered and the CHK is accepted,
+	 * and then the SSK is rejected. Both were GUARANTEED because if they 
+	 * are accepted in order, thanks to the mechanism referred to in solution B,
+	 * they will both be accepted.
+	 */
+	public void rejectedGuaranteed(boolean realTimeFlag) {
+		synchronized(this) {
+			if(realTimeFlag) {
+				consecutiveGuaranteedRejectsRT++;
+				if(consecutiveGuaranteedRejectsRT != CONSECUTIVE_REJECTS_MANDATORY_BACKOFF) {
+					return;
+				}
+				consecutiveGuaranteedRejectsRT = 0;
+			} else {
+				consecutiveGuaranteedRejectsBulk++;
+				if(consecutiveGuaranteedRejectsBulk != CONSECUTIVE_REJECTS_MANDATORY_BACKOFF) {
+					return;
+				}
+				consecutiveGuaranteedRejectsBulk = 0;
+			}
+		}
+		enterMandatoryBackoff("Mandatory:RejectedGUARANTEED", realTimeFlag);
+	}
+
+	/** Accepting a request, even if it was not GUARANTEED, resets the counters
+	 * for consecutive guaranteed rejections. @see rejectedGuaranteed(boolean realTimeFlag).
+	 */
+	public void acceptedAny(boolean realTimeFlag) {
+		synchronized(this) {
+			if(realTimeFlag) {
+				consecutiveGuaranteedRejectsRT = 0;
+			} else {
+				consecutiveGuaranteedRejectsBulk = 0;
+			}
+		}
 	}
 	
 }

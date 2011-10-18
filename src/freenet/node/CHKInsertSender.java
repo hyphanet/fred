@@ -3,9 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import java.util.HashSet;
 import java.util.Vector;
 
+import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.AsyncMessageFilterCallback;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
@@ -24,12 +24,11 @@ import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
-import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
-public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, ByteCounter {
+public final class CHKInsertSender extends BaseSender implements PrioRunnable, AnyInsertSender, ByteCounter {
 	
-	private class BackgroundTransfer implements PrioRunnable, AsyncMessageFilterCallback {
+	private class BackgroundTransfer implements PrioRunnable, SlowAsyncMessageFilterCallback {
 		private final long uid;
 		/** Node we are waiting for response from */
 		final PeerNode pn;
@@ -50,6 +49,16 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		/** Did it succeed? */
 		boolean transferSucceeded;
 		
+		/** Do we have the InsertReply, RNF or similar completion? If not,
+		 * there is no point starting to wait for a timeout. */
+		boolean gotInsertReply;
+		/** Have we started the first wait? We start waiting when we have 
+		 * completed the transfer AND received an InsertReply, RNF or similar. */
+		private boolean startedWait;
+		/** Has the background transfer been terminated due to not receiving
+		 * an InsertReply, or due to disconnection etc? */
+		private boolean killed;
+		
 		private final InsertTag thisTag;
 		
 		BackgroundTransfer(final PeerNode pn, PartiallyReceivedBlock prb, InsertTag thisTag) {
@@ -61,27 +70,42 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 
 				@Override
 				public void blockTransferFinished(boolean success) {
+					if(logMINOR) Logger.minor(this, "Transfer completed: "+success+" for "+this);
 					BackgroundTransfer.this.completedTransfer(success);
 					// Double-check that the node is still connected. Pointless to wait otherwise.
-					if (pn.isConnected() && transferSucceeded) {
-						//synch-version: this.receivedNotice(waitForReceivedNotification(this));
-						//Add ourselves as a listener for the longterm completion message of this transfer, then gracefully exit.
-						try {
-							node.usm.addAsyncFilter(getNotificationMessageFilter(), BackgroundTransfer.this, null);
-						} catch (DisconnectedException e) {
-							// Normal
-							if(logMINOR)
-								Logger.minor(this, "Disconnected while adding filter");
-							BackgroundTransfer.this.completedTransfer(false);
-							BackgroundTransfer.this.receivedNotice(false, false);
+					if (pn.isConnected() && success) {
+						synchronized(backgroundTransfers) {
+							if(!gotInsertReply) return;
+							if(startedWait) return;
+							startedWait = true;
 						}
+						startWait();
 					} else {
-						BackgroundTransfer.this.receivedNotice(false, false);
+						BackgroundTransfer.this.receivedNotice(false, false, false);
 						pn.localRejectedOverload("TransferFailedInsert", realTimeFlag);
 					}
 				}
 				
 			}, realTimeFlag, node.nodeStats);
+		}
+		
+		/** Start waiting for an acknowledgement or timeout. Caller must ensure
+		 * that the transfer has succeeded and we have received an RNF, InsertReply
+		 * or other valid completion. The timeout is relative to that, since up
+		 * to that point we could still be routing. */
+		private void startWait() {
+			if(logMINOR) Logger.minor(this, "Waiting for completion notification from "+this);
+			//synch-version: this.receivedNotice(waitForReceivedNotification(this));
+			//Add ourselves as a listener for the longterm completion message of this transfer, then gracefully exit.
+			try {
+				node.usm.addAsyncFilter(getNotificationMessageFilter(false), BackgroundTransfer.this, null);
+			} catch (DisconnectedException e) {
+				// Normal
+				if(logMINOR)
+					Logger.minor(this, "Disconnected while adding filter");
+				BackgroundTransfer.this.completedTransfer(false);
+				BackgroundTransfer.this.receivedNotice(false, false, true);
+			}
 		}
 		
 		void start() {
@@ -95,7 +119,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				this.realRun();
 			} catch (Throwable t) {
 				this.completedTransfer(false);
-				this.receivedNotice(false, false);
+				this.receivedNotice(false, false, true);
 				Logger.error(this, "Caught "+t, t);
 			}
 		}
@@ -120,41 +144,52 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		
 		/** @param timeout Whether this completion is the result of a timeout.
 		 * @return True if we should wait again, false if we have already received a notice or timed out. */
-		private boolean receivedNotice(boolean success, boolean timeout) {
+		private boolean receivedNotice(boolean success, boolean timeout, boolean kill) {
 			if(logMINOR) Logger.minor(this, "Received notice: "+success+(timeout ? " (timeout)" : "")+" on "+this);
 			boolean noUnlockPeer = false;
-			boolean noNotifyOriginator = false;
+			boolean gotFatalTimeout = false;
 			synchronized(backgroundTransfers) {
 				if(finishedWaiting) {
-					Logger.error(this, "Finished waiting already yet receivedNotice("+success+","+timeout+")", new Exception("error"));
+					if(!(killed || kill))
+						Logger.error(this, "Finished waiting already yet receivedNotice("+success+","+timeout+")", new Exception("error"));
 					return false;
 				}
-				if (receivedCompletionNotice) {
-					if(logMINOR) Logger.minor(this, "receivedNotice("+success+"), already had receivedNotice("+completionSucceeded+")");
-					if(timeout) {
-						// Fatal timeout.
-						finishedWaiting = true;
-						noNotifyOriginator = true;
-					}
-				} else {
-					completionSucceeded = success;
+				if(killed) {
+					// Do nothing. But do unlock.
+				} else if(kill) {
+					killed = true;
+					finishedWaiting = true;
 					receivedCompletionNotice = true;
-					if(!timeout) // Any completion mode other than a timeout immediately sets finishedWaiting, because we won't wait any longer.
-						finishedWaiting = true;
-					else {
-						// First timeout but not had second timeout yet.
-						// Unlock downstream (below), but will wait here for the peer to fatally timeout.
-						// UIDTag will automatically reassign to self when the time comes if we call handlingTimeout() here, and will avoid unnecessarily logging errors.
-						// LOCKING: Note that it is safe to call the tag within the lock since we always take the UIDTag lock last.
-						thisTag.handlingTimeout(pn);
-						noUnlockPeer = true;
+					completionSucceeded = false;
+				} else {
+					if (receivedCompletionNotice) {
+						// Two stage timeout.
+						if(logMINOR) Logger.minor(this, "receivedNotice("+success+"), already had receivedNotice("+completionSucceeded+")");
+						if(timeout) {
+							// Fatal timeout.
+							finishedWaiting = true;
+							gotFatalTimeout = true;
+						}
+					} else {
+						// Normal completion.
+						completionSucceeded = success;
+						receivedCompletionNotice = true;
+						if(!timeout) // Any completion mode other than a timeout immediately sets finishedWaiting, because we won't wait any longer.
+							finishedWaiting = true;
+						else {
+							// First timeout but not had second timeout yet.
+							// Unlock downstream (below), but will wait here for the peer to fatally timeout.
+							// UIDTag will automatically reassign to self when the time comes if we call handlingTimeout() here, and will avoid unnecessarily logging errors.
+							// LOCKING: Note that it is safe to call the tag within the lock since we always take the UIDTag lock last.
+							thisTag.handlingTimeout(pn);
+							noUnlockPeer = true;
+						}
 					}
 				}
-				if(!noNotifyOriginator) {
-					backgroundTransfers.notifyAll();
-				}
+				if(!noUnlockPeer)
+					startedWait = true; // Prevent further wait's.
 			}
-			if((!noNotifyOriginator) && (!success)) {
+			if((!gotFatalTimeout) && (!success)) {
 				setTransferTimedOut();
 			}
 			if(!noUnlockPeer)
@@ -162,7 +197,17 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				// Upstream (towards originator), of course, we can unlockHandler() as soon as all the transfers are finished.
 				// LOCKING: Do this outside the lock as pn can do heavy stuff in response (new load management).
 				pn.noLongerRoutingTo(thisTag, false);
-			if(noNotifyOriginator) return false;
+			synchronized(backgroundTransfers) {
+				// Avoid "Unlocked handler but still routing to yet not reassigned".
+				if(!gotFatalTimeout) {
+					backgroundTransfers.notifyAll();
+				}
+			}
+			if(timeout && gotFatalTimeout) {
+				Logger.error(this, "Second timeout waiting for final ack from "+pn+" on "+this);
+				pn.fatalTimeout(thisTag, false);
+				return false;
+			}
 			return true;
 		}
 		
@@ -177,7 +222,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				if(anyTimedOut) {
 					CHKInsertSender.this.setTransferTimedOut();
 				}
-				receivedNotice(!anyTimedOut, false);
+				receivedNotice(!anyTimedOut, false, false);
 			} else {
 				Logger.error(this, "received completion notice for wrong node: "+pn+" != "+this.pn);
 			}			
@@ -189,8 +234,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			return finishedWaiting;
 		}
 		
-		private MessageFilter getNotificationMessageFilter() {
-			return MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPInsertTransfersCompleted).setSource(pn).setTimeout(transferCompletionTimeout);
+		private MessageFilter getNotificationMessageFilter(boolean longTimeoutAnyway) {
+			return MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPInsertTransfersCompleted).setSource(pn).setTimeout(longTimeoutAnyway ? TRANSFER_COMPLETION_ACK_TIMEOUT_BULK : transferCompletionTimeout);
 		}
 
 		@Override
@@ -200,34 +245,31 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			 */
 			// NORMAL priority because it is normally caused by a transfer taking too long downstream, and that doesn't usually indicate a bug.
 			Logger.normal(this, "Timed out waiting for a final ack from: "+pn+" on "+this, new Exception("debug"));
-			if(receivedNotice(false, true)) {
+			if(receivedNotice(false, true, false)) {
 				pn.localRejectedOverload("InsertTimeoutNoFinalAck", realTimeFlag);
 				// First timeout. Wait for second timeout.
 				try {
-					node.usm.addAsyncFilter(getNotificationMessageFilter(), this, CHKInsertSender.this);
+					node.usm.addAsyncFilter(getNotificationMessageFilter(true), this, CHKInsertSender.this);
 				} catch (DisconnectedException e) {
 					// Normal
 					if(logMINOR)
 						Logger.minor(this, "Disconnected while adding filter after first timeout");
 					pn.noLongerRoutingTo(thisTag, false);
 				}
-			} else {
-				Logger.error(this, "Second timeout waiting for final ack from "+pn+" on "+this);
-				pn.fatalTimeout(thisTag, false);
 			}
 		}
 
 		@Override
 		public void onDisconnect(PeerContext ctx) {
 			Logger.normal(this, "Disconnected "+ctx+" for "+this);
-			receivedNotice(true, false); // as far as we know
+			receivedNotice(true, false, true); // as far as we know
 			pn.noLongerRoutingTo(thisTag, false);
 		}
 
 		@Override
 		public void onRestarted(PeerContext ctx) {
 			Logger.normal(this, "Restarted "+ctx+" for "+this);
-			receivedNotice(true, false);
+			receivedNotice(true, false, true);
 			pn.noLongerRoutingTo(thisTag, false);
 		}
 
@@ -240,20 +282,36 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		public String toString() {
 			return super.toString()+":"+uid+":"+pn;
 		}
+
+		/** Called when we have received an InsertReply, RouteNotFound or other
+		 * successful or quasi-successful completion to routing. */
+		public void onCompleted() {
+			synchronized(backgroundTransfers) {
+				if(finishedWaiting) return;
+				if(gotInsertReply) return;
+				gotInsertReply = true;
+				if(!completedTransfer) return;
+				if(startedWait) return;
+				startedWait = true;
+			}
+			startWait();
+		}
+
+		/** Called when we get a failure, e.g. DataInsertRejected. */
+		public void kill() {
+			Logger.normal(this, "Killed "+this);
+			receivedNotice(false, false, true); // as far as we know
+			pn.noLongerRoutingTo(thisTag, false);
+		}
 	}
 	
 	CHKInsertSender(NodeCHK myKey, long uid, InsertTag tag, byte[] headers, short htl, 
             PeerNode source, Node node, PartiallyReceivedBlock prb, boolean fromStore,
             boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
-        this.myKey = myKey;
-        this.target = myKey.toNormalizedDouble();
+		super(myKey, realTimeFlag, source, node, htl, uid);
         this.origUID = uid;
-        this.uid = uid;
         this.origTag = tag;
         this.headers = headers;
-        this.htl = htl;
-        this.source = source;
-        this.node = node;
         this.prb = prb;
         this.fromStore = fromStore;
         this.startTime = System.currentTimeMillis();
@@ -261,15 +319,11 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
         this.forkOnCacheable = forkOnCacheable;
         this.preferInsert = preferInsert;
         this.ignoreLowBackoff = ignoreLowBackoff;
-        this.realTimeFlag = realTimeFlag;
         if(realTimeFlag) {
-        	searchTimeout = SEARCH_TIMEOUT_REALTIME;
         	transferCompletionTimeout = TRANSFER_COMPLETION_ACK_TIMEOUT_REALTIME;
         } else {
-        	searchTimeout = SEARCH_TIMEOUT_BULK;
         	transferCompletionTimeout = TRANSFER_COMPLETION_ACK_TIMEOUT_BULK;
         }
-        logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
     }
 
 	void start() {
@@ -277,38 +331,31 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 	}
 
 	static boolean logMINOR;
+	static boolean logDEBUG;
+	
+	static {
+		Logger.registerClass(CHKInsertSender.class);
+	}
 	
     // Constants
     static final int ACCEPTED_TIMEOUT = 10000;
-    static final int SEARCH_TIMEOUT_REALTIME = 60*1000;
-    static final int SEARCH_TIMEOUT_BULK = 300*1000;
     static final int TRANSFER_COMPLETION_ACK_TIMEOUT_REALTIME = 60*1000;
     static final int TRANSFER_COMPLETION_ACK_TIMEOUT_BULK = 300*1000;
 
-    final int searchTimeout;
     final int transferCompletionTimeout;
     
     // Basics
-    final NodeCHK myKey;
-    final double target;
     final long origUID;
     final InsertTag origTag;
-    long uid;
     private InsertTag forkedRequestTag;
-    short htl;
-    final PeerNode source;
-    final Node node;
     final byte[] headers; // received BEFORE creation => we handle Accepted elsewhere
     final PartiallyReceivedBlock prb;
     final boolean fromStore;
     private boolean receiveFailed;
     final long startTime;
-    private boolean sentRequest;
     private final boolean forkOnCacheable;
     private final boolean preferInsert;
     private final boolean ignoreLowBackoff;
-    private final boolean realTimeFlag;
-    private HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
 
     
     /** List of nodes we are waiting for either a transfer completion
@@ -347,13 +394,9 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     @Override
     public void run() {
 	    freenet.support.Logger.OSThread.logPID(this);
-        short origHTL;
-    	synchronized (this) {
-            origHTL = htl;
-		}
     	origTag.startedSender();
         try {
-        	realRun();
+        	routeRequests();
 		} catch (OutOfMemoryError e) {
 			OOMHandler.handleOOM(e);
         } catch (Throwable t) {
@@ -374,7 +417,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     
 	static final int MAX_HIGH_HTL_FAILURES = 5;
 	
-    private void realRun() {
+	@Override
+    protected void routeRequests() {
         
         PeerNode next = null;
         // While in no-cache mode, we don't decrement HTL on a RejectedLoop or similar, but we only allow a limited number of such failures before RNFing.
@@ -383,6 +427,11 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
         while(true) {
         	if(failIfReceiveFailed(null, null)) return; // don't need to set status as killed by CHKInsertHandler
             
+        	if(origTag.shouldStop()) {
+        		finish(SUCCESS, null);
+        		return;
+        	}
+        	
             /*
              * If we haven't routed to any node yet, decrement according to the source.
              * If we have, decrement according to the node which just failed.
@@ -406,17 +455,17 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             	}
             	if(logMINOR) Logger.minor(this, "Allowing failure "+highHTLFailureCount+" htl is still "+htl);
             } else {
-                htl = node.decrementHTL(sentRequest ? next : source, htl);
+                htl = node.decrementHTL(hasForwarded ? next : source, htl);
                 if(logMINOR) Logger.minor(this, "Decremented HTL to "+htl);
             }
             starting = false;
             boolean successNow = false;
             boolean noRequest = false;
             synchronized (this) {
-            	if(htl == 0) {
+            	if(htl <= 0) {
             		successNow = true;
             		// Send an InsertReply back
-            		noRequest = !sentRequest;
+            		noRequest = !hasForwarded;
             	}
             }
             if(successNow) {
@@ -432,25 +481,27 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             	// So we fork: Create a new UID so we can go over the previous hops again if they happen to be good places to store the data.
             	
             	// Existing transfers will keep their existing UIDs, since they copied the UID in the constructor.
+            	// Both local and remote inserts can be forked here: If it has reached this HTL, it means it's already been routed to some nodes.
             	
             	uid = node.clientCore.makeUID();
 				forkedRequestTag = new InsertTag(false, InsertTag.START.REMOTE, source, realTimeFlag, uid, node);
 				forkedRequestTag.reassignToSelf();
 				forkedRequestTag.startedSender();
 				forkedRequestTag.unlockHandler();
+				forkedRequestTag.setAccepted();
             	Logger.normal(this, "FORKING CHK INSERT "+origUID+" to "+uid);
             	nodesRoutedTo.clear();
-            	node.lockUID(uid, false, true, false, false, realTimeFlag, forkedRequestTag);
+            	node.lockUID(forkedRequestTag);
             }
             
             // Route it
             // Can backtrack, so only route to nodes closer than we are to target.
             next = node.peers.closerPeer(forkedRequestTag == null ? source : null, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-			        null, htl, ignoreLowBackoff ? Node.LOW_BACKOFF : 0, source == null, realTimeFlag, false);
+			        null, htl, ignoreLowBackoff ? Node.LOW_BACKOFF : 0, source == null, realTimeFlag);
 			
             if(next == null) {
                 // Backtrack
-        		if(!sentRequest)
+        		if(!hasForwarded)
         			origTag.setNotRoutedOnwards();
                 finish(ROUTE_NOT_FOUND, null);
                 return;
@@ -459,47 +510,9 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             if(logMINOR) Logger.minor(this, "Routing insert to "+next);
             nodesRoutedTo.add(next);
             
-            Message req;
-            
-            req = DMT.createFNPInsertRequest(uid, htl, myKey);
-            if(forkOnCacheable != Node.FORK_ON_CACHEABLE_DEFAULT) {
-            	req.addSubMessage(DMT.createFNPSubInsertForkControl(forkOnCacheable));
-            }
-            if(ignoreLowBackoff != Node.IGNORE_LOW_BACKOFF_DEFAULT) {
-            	req.addSubMessage(DMT.createFNPSubInsertIgnoreLowBackoff(ignoreLowBackoff));
-            }
-            if(preferInsert != Node.PREFER_INSERT_DEFAULT) {
-            	req.addSubMessage(DMT.createFNPSubInsertPreferInsert(preferInsert));
-            }
-        	req.addSubMessage(DMT.createFNPRealTimeFlag(realTimeFlag));
-            
             InsertTag thisTag = forkedRequestTag;
             if(forkedRequestTag == null) thisTag = origTag;
             
-            thisTag.addRoutedTo(next, false);
-            
-            // Send to next node
-            
-            try {
-    			next.reportRoutedTo(myKey.toNormalizedDouble(), source == null, realTimeFlag);
-				/*
-				 Note also that we won't fork here, unlike in RequestSender, because the data won't be sent after a timeout, and the
-				 insert will not be routed any further without the DataInsert.
-				 */
-				next.sendSync(req, this, realTimeFlag);
-			} catch (NotConnectedException e1) {
-				if(logMINOR) Logger.minor(this, "Not connected to "+next);
-				next.noLongerRoutingTo(thisTag, false);
-				continue;
-			} catch (SyncSendWaitedTooLongException e) {
-				Logger.warning(this, "Failed to send request to "+next);
-				next.noLongerRoutingTo(thisTag, false);
-				continue;
-			}
-			synchronized (this) {
-				sentRequest = true;				
-			}
-
 			if(failIfReceiveFailed(thisTag, next)) {
 				// Need to tell the peer that the DataInsert is not forthcoming.
 				// DataInsertRejected is overridden to work both ways.
@@ -511,229 +524,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				return;
 			}
 			
-            Message msg = null;
-            
-            if(!waitAccepted(next, thisTag)) {
-				next.noLongerRoutingTo(thisTag, false);
-				if(failIfReceiveFailed(thisTag, next)) {
-					// Need to tell the peer that the DataInsert is not forthcoming.
-					// DataInsertRejected is overridden to work both ways.
-					try {
-						next.sendAsync(DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED), null, this);
-					} catch (NotConnectedException e) {
-						// Ignore
-					}
-					return;
-				}
-				continue; // Try another node
-            }
-            	
-            if(logMINOR) Logger.minor(this, "Got Accepted on "+this);
-            
-            // Send them the data.
-            // Which might be the new data resulting from a collision...
-
-            Message dataInsert;
-            dataInsert = DMT.createFNPDataInsert(uid, headers);
-            /** What are we waiting for now??:
-             * - FNPRouteNotFound - couldn't exhaust HTL, but send us the 
-             *   data anyway please
-             * - FNPInsertReply - used up all HTL, yay
-             * - FNPRejectOverload - propagating an overload error :(
-             * - FNPRejectTimeout - we took too long to send the DataInsert
-             * - FNPDataInsertRejected - the insert was invalid
-             */
-            
-            MessageFilter mfInsertReply = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPInsertReply);
-            MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRejectedOverload);
-            MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRouteNotFound);
-            MessageFilter mfDataInsertRejected = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPDataInsertRejected);
-            MessageFilter mfTimeout = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRejectedTimeout);
-            
-            MessageFilter mf = mfInsertReply.or(mfRouteNotFound.or(mfDataInsertRejected.or(mfTimeout.or(mfRejectedOverload))));
-
-            if(logMINOR) Logger.minor(this, "Sending DataInsert");
-            try {
-				next.sendSync(dataInsert, this, realTimeFlag);
-			} catch (NotConnectedException e1) {
-				if(logMINOR) Logger.minor(this, "Not connected sending DataInsert: "+next+" for "+uid);
-				next.noLongerRoutingTo(thisTag, false);
-				continue;
-			} catch (SyncSendWaitedTooLongException e) {
-				Logger.error(this, "Unable to send "+dataInsert+" to "+next+" in a reasonable time");
-				// Other side will fail. No need to do anything.
-				next.noLongerRoutingTo(thisTag, false);
-				continue;
-			}
-
-			if(logMINOR) Logger.minor(this, "Sending data");
-			startBackgroundTransfer(next, prb, thisTag);
-			
-			// Once the transfer has started, we only unlock the tag after the transfer completes (successfully or not).
-			
-            while (true) {
-
-    			if(failIfReceiveFailed(thisTag, next)) {
-    				// The transfer has started, it will be cancelled.
-    				return;
-    			}
-				
-				try {
-					msg = node.usm.waitFor(mf, this);
-				} catch (DisconnectedException e) {
-					Logger.normal(this, "Disconnected from " + next
-							+ " while waiting for InsertReply on " + this);
-					break;
-				}
-    			if(failIfReceiveFailed(thisTag, next)) {
-    				// The transfer has started, it will be cancelled.
-    				return;
-    			}
-				
-				if (msg == null) {
-					
-					Logger.warning(this, "Timeout on insert "+this+" to "+next);
-					
-					// First timeout.
-					// Could be caused by the next node, or could be caused downstream.
-					next.localRejectedOverload("AfterInsertAcceptedTimeout2", realTimeFlag);
-					forwardRejectedOverload();
-
-					synchronized(this) {
-						status = TIMED_OUT;
-						notifyAll();
-					}
-					
-					// Wait for the second timeout off-thread.
-					// FIXME wait asynchronously.
-					
-					final InsertTag tag = thisTag;
-					final PeerNode waitingFor = next;
-					
-					Runnable r = new Runnable() {
-
-						@Override
-						public void run() {
-							// We do not need to unlock the tag here.
-							// That will happen in the BackgroundTransfer, which has already started.
-							
-							// FIXME factor out
-			                MessageFilter mfInsertReply = MessageFilter.create().setSource(waitingFor).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPInsertReply);
-			                MessageFilter mfRejectedOverload = MessageFilter.create().setSource(waitingFor).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRejectedOverload);
-			                MessageFilter mfRouteNotFound = MessageFilter.create().setSource(waitingFor).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRouteNotFound);
-			                MessageFilter mfDataInsertRejected = MessageFilter.create().setSource(waitingFor).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPDataInsertRejected);
-			                MessageFilter mfTimeout = MessageFilter.create().setSource(waitingFor).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRejectedTimeout);
-			                
-			                MessageFilter mf = mfInsertReply.or(mfRouteNotFound.or(mfDataInsertRejected.or(mfTimeout.or(mfRejectedOverload))));
-
-				            while (true) {
-				            	
-				            	Message msg;
-
-				    			if(failIfReceiveFailed(tag, waitingFor)) return;
-								
-								try {
-									msg = node.usm.waitFor(mf, CHKInsertSender.this);
-								} catch (DisconnectedException e) {
-									Logger.normal(this, "Disconnected from " + waitingFor
-											+ " while waiting for InsertReply on " + CHKInsertSender.this);
-									return;
-								}
-								
-				    			if(failIfReceiveFailed(tag, waitingFor)) return;
-								
-								if(msg == null) {
-									// Second timeout.
-									// Definitely caused by the next node, fatal.
-									Logger.error(this, "Got second (local) timeout on "+CHKInsertSender.this+" from "+waitingFor);
-									waitingFor.fatalTimeout();
-									return;
-								}
-								
-								if (msg.getSpec() == DMT.FNPRejectedTimeout) {
-									// Next node timed out awaiting our DataInsert.
-									// But we already sent it, so something is wrong. :(
-									handleRejectedTimeout(msg, waitingFor);
-									return;
-								}
-
-								if (msg.getSpec() == DMT.FNPRejectedOverload) {
-									if(handleRejectedOverload(msg, waitingFor, tag)) {
-										// Already set the status, and handle... will have unlocked the next node, so no need to call finished().
-										return; // Don't try another node.
-									}
-									else continue;
-								}
-
-								if (msg.getSpec() == DMT.FNPRouteNotFound) {
-									return; // Don't try another node.
-								}
-								
-								if (msg.getSpec() == DMT.FNPDataInsertRejected) {
-									handleDataInsertRejected(msg, waitingFor, tag);
-									return; // Don't try another node.
-								}
-								
-								if (msg.getSpec() != DMT.FNPInsertReply) {
-									Logger.error(this, "Unknown reply: " + msg);
-									return;
-								} else {
-									// Our task is complete, one node (quite deep), has accepted the insert.
-									// The request will not be routed to any other nodes, this is where the data *should* be.
-									// We will removeRoutingTo() after the node has sent the transfer completion notice, which never happens before the InsertReply.
-									return;
-								}
-				            }
-						}
-						
-					};
-					
-					// Wait for the timeout off-thread.
-					node.executor.execute(r);
-					// Meanwhile, finish() to update allTransfersCompleted and hence allow the CHKInsertHandler to send the message downstream.
-					// We have already set the status code, this is necessary in order to avoid race conditions.
-					// However since it is set to TIMED_OUT, we are allowed to set it again.
-					finish(TIMED_OUT, next);
-					return;
-				}
-
-				if (msg.getSpec() == DMT.FNPRejectedTimeout) {
-					// Next node timed out awaiting our DataInsert.
-					// But we already sent it, so something is wrong. :(
-					handleRejectedTimeout(msg, next);
-					return;
-				}
-
-				if (msg.getSpec() == DMT.FNPRejectedOverload) {
-					if(handleRejectedOverload(msg, next, thisTag)) break;
-					else continue;
-				}
-
-				if (msg.getSpec() == DMT.FNPRouteNotFound) {
-					//RNF means that the HTL was not exhausted, but that the data will still be stored.
-					handleRNF(msg, next, thisTag);
-					break;
-				}
-
-				//Can occur after reception of the entire chk block
-				if (msg.getSpec() == DMT.FNPDataInsertRejected) {
-					handleDataInsertRejected(msg, next, thisTag);
-					break;
-				}
-				
-				if (msg.getSpec() != DMT.FNPInsertReply) {
-					Logger.error(this, "Unknown reply: " + msg);
-					finish(INTERNAL_ERROR, next);
-					return;
-				} else {
-					// Our task is complete, one node (quite deep), has accepted the insert.
-					// The request will not be routed to any other nodes, this is where the data *should* be.
-					// We will removeRoutingTo() after the node has sent the transfer completion notice, which never happens before the InsertReply.
-					finish(SUCCESS, next);
-					return;
-				}
-			}
-			if (logMINOR) Logger.debug(this, "Trying alternate node for insert");
+			innerRouteRequests(next, thisTag);
+			return;
 		}
 	}
 
@@ -770,6 +562,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 	private void handleRNF(Message msg, PeerNode next, InsertTag thisTag) {
 		if(logMINOR) Logger.minor(this, "Rejected: RNF");
 		short newHtl = msg.getShort(DMT.HTL);
+		if(newHtl < 0) newHtl = 0;
 		synchronized (this) {
 			if (htl > newHtl)
 				htl = newHtl;						
@@ -796,7 +589,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					else {
 						// Check the data
 						new CHKBlock(prb.getBlock(), headers,
-								myKey);
+								(NodeCHK) key);
 						Logger.error(this,
 								"Verify failed on " + next
 								+ " but data was valid!");
@@ -836,85 +629,10 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				+ DMT.getDataInsertRejectedReason(reason));
 	}
 
-	/** @return True if accepted, false if we should try another node. */
-	private boolean waitAccepted(PeerNode next, InsertTag thisTag) {
-		
-		// We have not yet started the data transfer, so if we fail here we need to tell the tag we are not routing to next any more.
-		
-		Message msg = null;
-		
-        // Wait for ack or reject... will come before even a locally generated DataReply
-    	MessageFilter mf = makeAcceptedRejectedFilter(next, ACCEPTED_TIMEOUT);
-        
-        /*
-         * Because messages may be re-ordered, it is
-         * entirely possible that we get a non-local RejectedOverload,
-         * followed by an Accepted. So we must loop here.
-         */
-        
-        while ((msg==null) || (msg.getSpec() != DMT.FNPAccepted)) {
-        	
-			try {
-				msg = node.usm.waitFor(mf, this);
-			} catch (DisconnectedException e) {
-				Logger.normal(this, "Disconnected from " + next
-						+ " while waiting for Accepted");
-				next.noLongerRoutingTo(thisTag, false);
-				break;
-			}
-
-			if(failIfReceiveFailed(thisTag, next)) return false;
-			
-			if (msg == null) {
-				// Terminal overload
-				// Try to propagate back to source
-				if(logMINOR) Logger.minor(this, "Timeout");
-				next.localRejectedOverload("Timeout3", realTimeFlag);
-				// Try another node.
-				forwardRejectedOverload();
-    			handleAcceptedRejectedTimeout(next, thisTag);
-				break;
-			}
-			
-			if (msg.getSpec() == DMT.FNPRejectedOverload) {
-				// Non-fatal - probably still have time left
-				if (msg.getBoolean(DMT.IS_LOCAL)) {
-					next.localRejectedOverload("ForwardRejectedOverload5", realTimeFlag);
-					if(logMINOR) Logger.minor(this,
-									"Local RejectedOverload, moving on to next peer");
-					// Give up on this one, try another
-					next.noLongerRoutingTo(thisTag, false);
-					break;
-				} else {
-					forwardRejectedOverload();
-				}
-				continue;
-			}
-			
-			if (msg.getSpec() == DMT.FNPRejectedLoop) {
-				if(logMINOR) Logger.minor(this, "Rejected (loop) on "+this);
-				next.successNotOverload(realTimeFlag);
-				// Loop - we don't want to send the data to this one
-				next.noLongerRoutingTo(thisTag, false);
-				break;
-			}
-			
-			if (msg.getSpec() != DMT.FNPAccepted) {
-				Logger.error(this,
-						"Unexpected message waiting for Accepted: "
-								+ msg);
-				next.noLongerRoutingTo(thisTag, false);
-				break;
-			}
-			// Otherwise is an FNPAccepted
-		}
-        
-        if((msg == null) || (msg.getSpec() != DMT.FNPAccepted)) return false;
-        return true;
-        
-	}
-	
-	private MessageFilter makeAcceptedRejectedFilter(PeerNode next, int acceptedTimeout) {
+	@Override
+	protected MessageFilter makeAcceptedRejectedFilter(PeerNode next, int acceptedTimeout, UIDTag tag) {
+		// Use the right UID here, in case we fork on cacheable.
+		final long uid = tag.uid;
         MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPAccepted);
         MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPRejectedLoop);
         MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPRejectedOverload);
@@ -928,16 +646,19 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 	
 	private final int TIMEOUT_AFTER_ACCEPTEDREJECTED_TIMEOUT = 60*1000;
 
-	private void handleAcceptedRejectedTimeout(final PeerNode next, final InsertTag tag) {
+	@Override
+	protected void handleAcceptedRejectedTimeout(final PeerNode next, final UIDTag tag) {
 		// It could still be running. So the timeout is fatal to the node.
 		// This is a WARNING not an ERROR because it's possible that the problem is we simply haven't been able to send the message yet, because we don't use sendSync().
 		// FIXME use a callback to rule this out and log an ERROR.
 		Logger.warning(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
+		// Use the right UID here, in case we fork.
+		final long uid = tag.uid;
 		tag.handlingTimeout(next);
 		// The node didn't accept the request. So we don't need to send them the data.
 		// However, we do need to wait a bit longer to try to postpone the fatalTimeout().
 		// Somewhat intricate logic to try to avoid fatalTimeout() if at all possible.
-		MessageFilter mf = makeAcceptedRejectedFilter(next, TIMEOUT_AFTER_ACCEPTEDREJECTED_TIMEOUT);
+		MessageFilter mf = makeAcceptedRejectedFilter(next, TIMEOUT_AFTER_ACCEPTEDREJECTED_TIMEOUT, tag);
 		try {
 			node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
 
@@ -949,41 +670,40 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 						next.noLongerRoutingTo(tag, false);
 					} else {
 						assert(m.getSpec() == DMT.FNPAccepted);
+						if(logMINOR)
+							Logger.minor(this, "Accepted after timeout on "+CHKInsertSender.this+" - will not send DataInsert, waiting for RejectedTimeout");
 						// We are not going to send the DataInsert.
 						// We have moved on, and we don't want inserts to fork unnecessarily.
-			            MessageFilter mfTimeout = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRejectedTimeout);
-			            try {
-							node.usm.addAsyncFilter(mfTimeout, new AsyncMessageFilterCallback() {
+						// However, we need to send a DataInsertRejected, or two-stage timeout will happen.
+						try {
+							next.sendAsync(DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_TIMEOUT_WAITING_FOR_ACCEPTED), new AsyncMessageCallback() {
 
 								@Override
-								public void onMatched(Message m) {
-									// Cool.
+								public void sent() {
+									// Ignore.
+									if(logDEBUG) Logger.debug(this, "DataInsertRejected sent after accepted timeout on "+CHKInsertSender.this);
 								}
 
 								@Override
-								public boolean shouldTimeout() {
-									return false;
-								}
-
-								@Override
-								public void onTimeout() {
-									// Grrr!
-									Logger.error(this, "Timed out awaiting FNPRejectedTimeout on insert to "+next);
-									next.fatalTimeout(tag, false);
-								}
-
-								@Override
-								public void onDisconnect(PeerContext ctx) {
+								public void acknowledged() {
+									if(logDEBUG) Logger.debug(this, "DataInsertRejected acknowledged after accepted timeout on "+CHKInsertSender.this);
 									next.noLongerRoutingTo(tag, false);
 								}
 
 								@Override
-								public void onRestarted(PeerContext ctx) {
+								public void disconnected() {
+									if(logDEBUG) Logger.debug(this, "DataInsertRejected peer disconnected after accepted timeout on "+CHKInsertSender.this);
+									next.noLongerRoutingTo(tag, false);
+								}
+
+								@Override
+								public void fatalError() {
+									if(logDEBUG) Logger.debug(this, "DataInsertRejected fatal error after accepted timeout on "+CHKInsertSender.this);
 									next.noLongerRoutingTo(tag, false);
 								}
 								
 							}, CHKInsertSender.this);
-						} catch (DisconnectedException e) {
+						} catch (NotConnectedException e) {
 							next.noLongerRoutingTo(tag, false);
 						}
 					}
@@ -1021,13 +741,14 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		}
 	}
 
-	private void startBackgroundTransfer(PeerNode node, PartiallyReceivedBlock prb, InsertTag tag) {
+	private BackgroundTransfer startBackgroundTransfer(PeerNode node, PartiallyReceivedBlock prb, InsertTag tag) {
 		BackgroundTransfer ac = new BackgroundTransfer(node, prb, tag);
 		synchronized(backgroundTransfers) {
 			backgroundTransfers.add(ac);
 			backgroundTransfers.notifyAll();
 		}
 		ac.start();
+		return ac;
 	}
 	
 	private boolean hasForwardedRejectedOverload;
@@ -1039,7 +760,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     /** Forward RejectedOverload to the request originator.
      * DO NOT CALL if have a *local* RejectedOverload.
      */
-    private synchronized void forwardRejectedOverload() {
+    @Override
+    protected synchronized void forwardRejectedOverload() {
     	if(hasForwardedRejectedOverload) return;
     	hasForwardedRejectedOverload = true;
    		notifyAll();
@@ -1068,7 +790,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     	
         synchronized(this) {
         	if(allTransfersCompleted) return; // Already called. Doesn't prevent race condition resulting in the next bit running but that's not really a problem.
-        	if((code == ROUTE_NOT_FOUND) && !sentRequest)
+        	if((code == ROUTE_NOT_FOUND) && !hasForwarded)
         		code = ROUTE_REALLY_NOT_FOUND;
 
         	if(status != NOT_FINISHED) {
@@ -1190,7 +912,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 
 	@Override
 	public synchronized boolean sentRequest() {
-		return sentRequest;
+		return hasForwarded;
 	}
 		
 		private void waitForBackgroundTransferCompletions() {
@@ -1368,4 +1090,303 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 	public PeerNode[] getRoutedTo() {
 		return this.nodesRoutedTo.toArray(new PeerNode[nodesRoutedTo.size()]);
 	}
+
+	@Override
+	protected Message createDataRequest() {
+        Message req;
+        
+        req = DMT.createFNPInsertRequest(uid, htl, key);
+        if(forkOnCacheable != Node.FORK_ON_CACHEABLE_DEFAULT) {
+        	req.addSubMessage(DMT.createFNPSubInsertForkControl(forkOnCacheable));
+        }
+        if(ignoreLowBackoff != Node.IGNORE_LOW_BACKOFF_DEFAULT) {
+        	req.addSubMessage(DMT.createFNPSubInsertIgnoreLowBackoff(ignoreLowBackoff));
+        }
+        if(preferInsert != Node.PREFER_INSERT_DEFAULT) {
+        	req.addSubMessage(DMT.createFNPSubInsertPreferInsert(preferInsert));
+        }
+    	req.addSubMessage(DMT.createFNPRealTimeFlag(realTimeFlag));
+        
+    	return req;
+	}
+
+	@Override
+	protected int getAcceptedTimeout() {
+		return ACCEPTED_TIMEOUT;
+	}
+
+	@Override
+	protected void timedOutWhileWaiting(double load) {
+		htl -= (short)Math.max(0, hopsForFatalTimeoutWaitingForPeer());
+		if(htl < 0) htl = 0;
+        // Backtrack, i.e. RNF.
+		if(!hasForwarded)
+			origTag.setNotRoutedOnwards();
+        finish(ROUTE_NOT_FOUND, null);
+	}
+
+	@Override
+	protected void onAccepted(PeerNode next) {
+        // Send them the data.
+        // Which might be the new data resulting from a collision...
+
+        Message dataInsert;
+        dataInsert = DMT.createFNPDataInsert(uid, headers);
+        /** What are we waiting for now??:
+         * - FNPRouteNotFound - couldn't exhaust HTL, but send us the 
+         *   data anyway please
+         * - FNPInsertReply - used up all HTL, yay
+         * - FNPRejectOverload - propagating an overload error :(
+         * - FNPRejectTimeout - we took too long to send the DataInsert
+         * - FNPDataInsertRejected - the insert was invalid
+         */
+        
+        int searchTimeout = calculateTimeout(htl);
+        MessageFilter mfInsertReply = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPInsertReply);
+        MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRejectedOverload);
+        MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRouteNotFound);
+        MessageFilter mfDataInsertRejected = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPDataInsertRejected);
+        MessageFilter mfTimeout = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRejectedTimeout);
+        
+        MessageFilter mf = mfInsertReply.or(mfRouteNotFound.or(mfDataInsertRejected.or(mfTimeout.or(mfRejectedOverload))));
+
+        InsertTag thisTag = forkedRequestTag;
+        if(forkedRequestTag == null) thisTag = origTag;
+        
+        if(logMINOR) Logger.minor(this, "Sending DataInsert");
+        try {
+			next.sendSync(dataInsert, this, realTimeFlag);
+		} catch (NotConnectedException e1) {
+			if(logMINOR) Logger.minor(this, "Not connected sending DataInsert: "+next+" for "+uid);
+			next.noLongerRoutingTo(thisTag, false);
+			routeRequests();
+			return;
+		} catch (SyncSendWaitedTooLongException e) {
+			Logger.error(this, "Unable to send "+dataInsert+" to "+next+" in a reasonable time");
+			// Other side will fail. No need to do anything.
+			next.noLongerRoutingTo(thisTag, false);
+			routeRequests();
+			return;
+		}
+
+		if(logMINOR) Logger.minor(this, "Sending data");
+		final BackgroundTransfer transfer = 
+			startBackgroundTransfer(next, prb, thisTag);
+		
+		// Once the transfer has started, we only unlock the tag after the transfer completes (successfully or not).
+		
+        while (true) {
+
+        	Message msg;
+        	
+			if(failIfReceiveFailed(thisTag, next)) {
+				// The transfer has started, it will be cancelled.
+				transfer.onCompleted();
+				return;
+			}
+			
+			try {
+				msg = node.usm.waitFor(mf, this);
+			} catch (DisconnectedException e) {
+				Logger.normal(this, "Disconnected from " + next
+						+ " while waiting for InsertReply on " + this);
+				transfer.onDisconnect(next);
+				break;
+			}
+			if(failIfReceiveFailed(thisTag, next)) {
+				// The transfer has started, it will be cancelled.
+				transfer.onCompleted();
+				return;
+			}
+			
+			if (msg == null) {
+				
+				Logger.warning(this, "Timeout on insert "+this+" to "+next);
+				
+				// First timeout.
+				// Could be caused by the next node, or could be caused downstream.
+				next.localRejectedOverload("AfterInsertAcceptedTimeout2", realTimeFlag);
+				forwardRejectedOverload();
+
+				synchronized(this) {
+					status = TIMED_OUT;
+					notifyAll();
+				}
+				
+				// Wait for the second timeout off-thread.
+				// FIXME wait asynchronously.
+				
+				final InsertTag tag = thisTag;
+				final PeerNode waitingFor = next;
+				final short htl = this.htl;
+				
+				Runnable r = new Runnable() {
+
+					@Override
+					public void run() {
+						// We do not need to unlock the tag here.
+						// That will happen in the BackgroundTransfer, which has already started.
+						
+						// FIXME factor out
+				        int searchTimeout = calculateTimeout(htl);
+		                MessageFilter mfInsertReply = MessageFilter.create().setSource(waitingFor).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPInsertReply);
+		                MessageFilter mfRejectedOverload = MessageFilter.create().setSource(waitingFor).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRejectedOverload);
+		                MessageFilter mfRouteNotFound = MessageFilter.create().setSource(waitingFor).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRouteNotFound);
+		                MessageFilter mfDataInsertRejected = MessageFilter.create().setSource(waitingFor).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPDataInsertRejected);
+		                MessageFilter mfTimeout = MessageFilter.create().setSource(waitingFor).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRejectedTimeout);
+		                
+		                MessageFilter mf = mfInsertReply.or(mfRouteNotFound.or(mfDataInsertRejected.or(mfTimeout.or(mfRejectedOverload))));
+
+			            while (true) {
+			            	
+			            	Message msg;
+
+			    			if(failIfReceiveFailed(tag, waitingFor)) {
+			    				transfer.onCompleted();
+			    				return;
+			    			}
+							
+							try {
+								msg = node.usm.waitFor(mf, CHKInsertSender.this);
+							} catch (DisconnectedException e) {
+								Logger.normal(this, "Disconnected from " + waitingFor
+										+ " while waiting for InsertReply on " + CHKInsertSender.this);
+								transfer.onDisconnect(waitingFor);
+								return;
+							}
+							
+			    			if(failIfReceiveFailed(tag, waitingFor)) {
+			    				transfer.onCompleted();
+			    				return;
+			    			}
+							
+							if(msg == null) {
+								// Second timeout.
+								// Definitely caused by the next node, fatal.
+								Logger.error(this, "Got second (local) timeout on "+CHKInsertSender.this+" from "+waitingFor);
+			    				transfer.onCompleted();
+								waitingFor.fatalTimeout();
+								return;
+							}
+							
+							if (msg.getSpec() == DMT.FNPRejectedTimeout) {
+								// Next node timed out awaiting our DataInsert.
+								// But we already sent it, so something is wrong. :(
+								handleRejectedTimeout(msg, waitingFor);
+								transfer.kill();
+								return;
+							}
+
+							if (msg.getSpec() == DMT.FNPRejectedOverload) {
+								if(handleRejectedOverload(msg, waitingFor, tag)) {
+									// Already set the status, and handle... will have unlocked the next node, so no need to call finished().
+									transfer.onCompleted();
+									return; // Don't try another node.
+								}
+								else continue;
+							}
+
+							if (msg.getSpec() == DMT.FNPRouteNotFound) {
+								transfer.onCompleted();
+								return; // Don't try another node.
+							}
+							
+							if (msg.getSpec() == DMT.FNPDataInsertRejected) {
+								handleDataInsertRejected(msg, waitingFor, tag);
+								transfer.kill();
+								return; // Don't try another node.
+							}
+							
+							if (msg.getSpec() != DMT.FNPInsertReply) {
+								Logger.error(this, "Unknown reply: " + msg);
+								transfer.onCompleted();
+								return;
+							} else {
+								// Our task is complete, one node (quite deep), has accepted the insert.
+								// The request will not be routed to any other nodes, this is where the data *should* be.
+								// We will removeRoutingTo() after the node has sent the transfer completion notice, which never happens before the InsertReply.
+								transfer.onCompleted();
+								return;
+							}
+			            }
+					}
+					
+				};
+				
+				// Wait for the timeout off-thread.
+				node.executor.execute(r);
+				// Meanwhile, finish() to update allTransfersCompleted and hence allow the CHKInsertHandler to send the message downstream.
+				// We have already set the status code, this is necessary in order to avoid race conditions.
+				// However since it is set to TIMED_OUT, we are allowed to set it again.
+				finish(TIMED_OUT, next);
+				return;
+			}
+
+			if (msg.getSpec() == DMT.FNPRejectedTimeout) {
+				// Next node timed out awaiting our DataInsert.
+				// But we already sent it, so something is wrong. :(
+				transfer.kill();
+				handleRejectedTimeout(msg, next);
+				return;
+			}
+
+			if (msg.getSpec() == DMT.FNPRejectedOverload) {
+				if(handleRejectedOverload(msg, next, thisTag)) {
+					// We have had an Accepted. This happens on a timeout downstream.
+					// They will complete it (finish()), so we need to wait for a transfer completion.
+					// FIXME it might be less confusing and therefore less likely to cause problems
+					// if we had a different message sent post-accept???
+					transfer.onCompleted();
+					break;
+				}
+				else continue;
+			}
+
+			if (msg.getSpec() == DMT.FNPRouteNotFound) {
+				//RNF means that the HTL was not exhausted, but that the data will still be stored.
+				handleRNF(msg, next, thisTag);
+				transfer.onCompleted();
+				break;
+			}
+
+			//Can occur after reception of the entire chk block
+			if (msg.getSpec() == DMT.FNPDataInsertRejected) {
+				handleDataInsertRejected(msg, next, thisTag);
+				transfer.kill();
+				break;
+			}
+			
+			if (msg.getSpec() != DMT.FNPInsertReply) {
+				Logger.error(this, "Unknown reply: " + msg);
+				transfer.onCompleted();
+				finish(INTERNAL_ERROR, next);
+				return;
+			} else {
+				transfer.onCompleted();
+				// Our task is complete, one node (quite deep), has accepted the insert.
+				// The request will not be routed to any other nodes, this is where the data *should* be.
+				// We will removeRoutingTo() after the node has sent the transfer completion notice, which never happens before the InsertReply.
+				finish(SUCCESS, next);
+				return;
+			}
+		}
+		routeRequests();
+	}
+
+	@Override
+	protected boolean isInsert() {
+		return true;
+	}
+
+	@Override
+	protected PeerNode sourceForRouting() {
+		if(forkedRequestTag != null) return null;
+		return source;
+	}
+	
+	@Override
+	protected int ignoreLowBackoff() {
+		return ignoreLowBackoff ? Node.LOW_BACKOFF : 0;
+	}
+
 }

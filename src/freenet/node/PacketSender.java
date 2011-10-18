@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Vector;
 
+import freenet.clients.http.ExternalLinkToadlet;
 import freenet.io.comm.Peer;
 import freenet.l10n.NodeL10n;
 import freenet.node.useralerts.AbstractUserAlert;
@@ -203,7 +204,7 @@ public class PacketSender implements Runnable {
 			pn.maybeOnConnect();
 			if(pn.shouldDisconnectAndRemoveNow() && !pn.isDisconnecting()) {
 				// Might as well do it properly.
-				node.peers.disconnect(pn, true, true, false);
+				node.peers.disconnectAndRemove(pn, true, true, false);
 			}
 
 			if(pn.isConnected()) {
@@ -550,9 +551,11 @@ public class PacketSender implements Runnable {
 			synchronized(peersDumpedBlockedTooLong) {
 				peers = peersDumpedBlockedTooLong.toArray(new Peer[peersDumpedBlockedTooLong.size()]);
 			}
-			NodeL10n.getBase().addL10nSubstitution(div, "PacketSender.somePeersDisconnectedBlockedTooLongDetail",
-					new String[] { "count", "link" }
-					, new HTMLNode[] { HTMLNode.text(peers.length), HTMLNode.link("/?_CHECKED_HTTP_=https://bugs.freenetproject.org/")});
+			NodeL10n.getBase().addL10nSubstitution(div,
+			        "PacketSender.somePeersDisconnectedBlockedTooLongDetail",
+			        new String[] { "count", "link" },
+			        new HTMLNode[] { HTMLNode.text(peers.length),
+			                HTMLNode.link(ExternalLinkToadlet.escape("https://bugs.freenetproject.org/"))});
 			HTMLNode list = div.addChild("ul");
 			for(Peer peer : peers) {
 				list.addChild("li", peer.toString());

@@ -13,12 +13,14 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerRestartedException;
+import freenet.node.PrioRunnable;
 import freenet.node.SyncSendWaitedTooLongException;
 import freenet.support.BitArray;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
+import freenet.support.io.NativeThread;
 
 /**
  * Bulk data transfer (not block). Bulk transfer is designed for files which may be much bigger than a 
@@ -243,8 +245,9 @@ public class BulkTransmitter {
 	/**
 	 * Send the file.
 	 * @return True if the file was successfully sent. False otherwise.
+	 * @throws DisconnectedException 
 	 */
-	public boolean send() {
+	public boolean send() throws DisconnectedException {
 		long lastSentPacket = System.currentTimeMillis();
 outer:	while(true) {
 			int max = Math.min(Integer.MAX_VALUE, prb.blocks);
@@ -269,7 +272,7 @@ outer:	while(true) {
 				prb.remove(BulkTransmitter.this);
 				if(logMINOR)
 					Logger.minor(this, "Failed to send "+uid+": peer restarted: "+peer);
-				return false;
+				throw new DisconnectedException();
 			}
 			synchronized(this) {
 				if(finished) return true;
@@ -356,13 +359,13 @@ outer:	while(true) {
 			} catch (NotConnectedException e) {
 				cancel("Disconnected");
 				if(logMINOR)
-					Logger.minor(this, "Canclled: not connected "+this);
-				return false;
+					Logger.minor(this, "Cancelled: not connected "+this);
+				throw new DisconnectedException();
 			} catch (PeerRestartedException e) {
 				cancel("PeerRestarted");
 				if(logMINOR)
-					Logger.minor(this, "Canclled: not connected "+this);
-				return false;
+					Logger.minor(this, "Cancelled: not connected "+this);
+				throw new DisconnectedException();
 			} catch (WaitedTooLongException e) {
 				long rtt = peer.getThrottle().getRoundTripTime();
 				Logger.error(this, "Failed to send bulk packet "+blockNo+" for "+this+" RTT is "+TimeUtil.formatTime(rtt));
@@ -386,11 +389,30 @@ outer:	while(true) {
 					callAllSent = true;
 					calledAllSent = true;
 					anyFailed = failedPacket;
+				} else if(!calledAllSent) {
+					if(logMINOR) Logger.minor(this, "Still waiting for "+unsentPackets);
 				}
 			}
-			if(callAllSent)
-				allSentCallback.allSent(this, anyFailed);
+			if(callAllSent) {
+				callAllSentCallbackInner(anyFailed);
+			}
 		}
+	}
+	
+	private void callAllSentCallbackInner(final boolean anyFailed) {
+		prb.usm.getExecutor().execute(new PrioRunnable() {
+
+			@Override
+			public void run() {
+				allSentCallback.allSent(BulkTransmitter.this, anyFailed);
+			}
+
+			@Override
+			public int getPriority() {
+				return NativeThread.HIGH_PRIORITY;
+			}
+			
+		});
 	}
 	private int inFlightPackets = 0;
 	private int unsentPackets = 0;
@@ -433,7 +455,8 @@ outer:	while(true) {
 				finished = true;
 				notifyAll();
 			}
-			ctr.sentPayload(prb.blockSize);
+			if(!failed)
+				ctr.sentPayload(prb.blockSize);
 			synchronized(BulkTransmitter.this) {
 				if(failed) {
 					failedPacket = true;
@@ -445,7 +468,7 @@ outer:	while(true) {
 					if(logMINOR) Logger.minor(this, "Packet sent "+BulkTransmitter.this+" remaining in flight: "+inFlightPackets);
 				}
 			}
-			sent();
+			sent(true);
 		}
 
 		@Override
@@ -460,14 +483,18 @@ outer:	while(true) {
 
 		@Override
 		public void sent() {
+			sent(false);
+		}
+		
+		public void sent(boolean ignoreFinished) {
 			if(allSentCallback == null) return;
 			synchronized(this) {
-				if(finished) return;
+				if(finished && !ignoreFinished) return;
 				if(sent) return;
 				sent = true;
 				notifyAll();
 			}
-			boolean anyFailed;
+			final boolean anyFailed;
 			synchronized(BulkTransmitter.this) {
 				unsentPackets--;
 				if(unsentPackets > 0) return;
@@ -477,7 +504,7 @@ outer:	while(true) {
 				anyFailed = failedPacket;
 			}
 			if(logMINOR) Logger.minor(this, "Calling all sent callback on "+this);
-			allSentCallback.allSent(BulkTransmitter.this, anyFailed);
+			callAllSentCallbackInner(anyFailed);
 		}
 		
 	}

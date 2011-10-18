@@ -210,6 +210,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 						new HTMLNode[] {
 						HTMLNode.link(basePath + key.toString() + "?type=application/xml+rss&force=" + getForceValue(key, now)+extrasNoMime),
 						HTMLNode.STRONG });
+				addDownloadOptions(ctx, optionList, key, mimeType, true, false, core); // FIXME Or false, false? Or true, true? We don't have filter for rss/atom anyway, so it will be useless - only more confusion and clicking for user. When we *will* have one, we can just get rid of this warning page.
 				if(referrer != null) {
 					option = optionList.addChild("li");
 					NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.backToReferrer", new String[] { "link" },
@@ -1190,6 +1191,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 		WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, core, node, bookmarks);
 		server.register(welcometoadlet, null, "/welcome/", true, false);
+
+		ExternalLinkToadlet externalLinkToadlet = new ExternalLinkToadlet(client, core, node);
+		server.register(externalLinkToadlet, null, ExternalLinkToadlet.PATH, true, false);
 
 		DarknetConnectionsToadlet friendsToadlet = new DarknetConnectionsToadlet(node, core, client);
 		server.register(friendsToadlet, "FProxyToadlet.categoryFriends", "/friends/", true,

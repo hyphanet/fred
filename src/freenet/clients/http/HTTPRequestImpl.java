@@ -323,7 +323,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	@Override
 	public String getParam(String name, String defaultValue) {
 		String value = this.getParameterValue(name);
-		if (value == null) {
+		if (value == null || value.isEmpty()) {
 			return defaultValue;
 		}
 		return value;

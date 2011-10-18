@@ -1460,6 +1460,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 
 		ParsedTag sanitize(ParsedTag t, HTMLParseContext pc) throws DataFilterException {
+			/** Map contains the attributes, in order. The key is always the name
+			 * of the attribute, but the value can be a raw Object if it has no value.
+			 * "src" is different to "src=". Arguably we should probably use null in 
+			 * the first case and "" in the second case ... FIXME */
 			Map<String, Object> h = new LinkedHashMap<String, Object>();
 			boolean equals = false;
 			String prevX = "";
@@ -1588,7 +1592,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				// lang, xml:lang and dir can go on anything
 				// lang or xml:lang = language [ "-" country [ "-" variant ] ]
 				// The variant can be just about anything; no way to test (avian)
-				if (x.equals("xml:lang") ||x.equals("lang") || (x.equals("dir") && (((String)o).equalsIgnoreCase("ltr") || ((String)o).equalsIgnoreCase("rtl")))) {
+				if (x.equals("xml:lang") ||x.equals("lang") || (x.equals("dir") && (o instanceof String) && (((String)o).equalsIgnoreCase("ltr") || ((String)o).equalsIgnoreCase("rtl")))) {
 					if(logDEBUG) Logger.debug(this, "HTML Filter is putting attribute: "+x+" =  "+o);
 					hn.put(x, o);
 				}
@@ -2148,8 +2152,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				// Allow, but only with standard elements
 				return hn;
 			}
-			String method = (String) h.get("method");
-			String action = (String) h.get("action");
+			String method = getHashString(h, "method");
+			String action = getHashString(h, "action");
 			String finalAction;
 			try {
 				finalAction = pc.cb.processForm(method, action);

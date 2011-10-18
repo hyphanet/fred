@@ -11,6 +11,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+
+import freenet.clients.http.ExternalLinkToadlet;
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.BlockCipher;
 import freenet.crypt.DSA;
@@ -467,7 +469,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 * @param offset The offset at which to start reading
 	 * @param length The number of bytes to read
 	 * @param peer The Peer to send a reply to
-	 * @param now The time at which the packet was received
 	 * @return True if we handled a negotiation packet, false otherwise.
 	 */
 	private boolean tryProcessAuthAnon(byte[] buf, int offset, int length, Peer peer) {
@@ -1381,6 +1382,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			// wantPeer will call node.peers.addPeer(), we don't have to.
 		}
 		if((!dontWant) && !crypto.allowConnection(pn, replyTo.getFreenetAddress())) {
+			if(pn instanceof DarknetPeerNode) {
+				Logger.error(this, "Dropping peer "+pn+" because don't want connection due to others on the same IP address!");
+				System.out.println("Disconnecting permanently from your friend \""+((DarknetPeerNode)pn).getName()+"\" because other peers are using the same IP address!");
+			}
 			Logger.normal(this, "Rejecting connection because already have something with the same IP");
 			dontWant = true;
 		}
@@ -1397,7 +1402,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 					c, Ke, Ka, authenticator, hisRef, pn, replyTo, unknownInitiator, setupType, newTrackerID, newTrackerID == trackerID);
 
 			if(dontWant) {
-				node.peers.disconnect(pn, true, true, true); // Let it connect then tell it to remove it.
+				node.peers.disconnectAndRemove(pn, true, true, true); // Let it connect then tell it to remove it.
 			} else {
 				pn.maybeSendInitialMessages();
 			}
@@ -1634,7 +1639,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				pn.theirInitialMsgID);
 		if(newTrackerID >= 0) {
 			if(dontWant) {
-				node.peers.disconnect(pn, true, true, true);
+				node.peers.disconnectAndRemove(pn, true, true, true);
 			} else {
 				pn.maybeSendInitialMessages();
 			}
@@ -3007,9 +3012,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			synchronized(peersWithProblems) {
 				peers = peersWithProblems.toArray(new Peer[peersWithProblems.size()]);
 			}
-			NodeL10n.getBase().addL10nSubstitution(div, "FNPPacketMangler.somePeersDisconnectedStillNotAckedDetail",
-					new String[] { "count", "link" },
-					new HTMLNode[] { HTMLNode.text(peers.length), HTMLNode.link("/?_CHECKED_HTTP_=https://bugs.freenetproject.org/view.php?id=2692") });
+			NodeL10n.getBase().addL10nSubstitution(div,
+			        "FNPPacketMangler.somePeersDisconnectedStillNotAckedDetail",
+			        new String[] { "count", "link" },
+			        new HTMLNode[] { HTMLNode.text(peers.length),
+			                HTMLNode.link(ExternalLinkToadlet.escape("https://bugs.freenetproject.org/view.php?id=2692")) });
 			HTMLNode list = div.addChild("ul");
 			for(Peer peer : peers) {
 				list.addChild("li", peer.toString());

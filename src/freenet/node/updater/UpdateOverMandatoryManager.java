@@ -795,11 +795,17 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 			@Override
 			public void run() {
-				if(!bt.send())
-					Logger.error(this, "Failed to send revocation key blob to " + source.userToString() + " : " + bt.getCancelReason());
-				else
-					Logger.normal(this, "Sent revocation key blob to " + source.userToString());
-				data.close();
+				try {
+					if(!bt.send())
+						Logger.error(this, "Failed to send revocation key blob to " + source.userToString() + " : " + bt.getCancelReason());
+					else
+						Logger.normal(this, "Sent revocation key blob to " + source.userToString());
+				} catch (DisconnectedException e) {
+					// Not much we can do here either.
+					Logger.warning(this, "Failed to send revocation key blob (disconnected) to " + source.userToString() + " : " + bt.getCancelReason());
+				} finally {
+					data.close();
+				}
 			}
 		};
 
@@ -1299,6 +1305,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					else
 						Logger.normal(this, "Sent "+name+" jar blob to " + source.userToString());
 					raf.close();
+				} catch (DisconnectedException e) {
+					// Not much we can do.
 				} finally {
 					source.finishedSendingUOMJar(isExt);
 				}

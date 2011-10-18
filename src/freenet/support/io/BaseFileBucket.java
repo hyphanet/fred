@@ -474,7 +474,11 @@ public abstract class BaseFileBucket implements Bucket {
 		StringBuffer sb = new StringBuffer();
 		sb.append(super.toString());
 		sb.append(':');
-		sb.append(getFile().getPath());
+		File f = getFile();
+		if(f != null)
+			sb.append(f.getPath());
+		else
+			sb.append("???");
 		sb.append(":streams=");
 		sb.append(streams == null ? 0 : streams.size());
 		return sb.toString();

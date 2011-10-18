@@ -34,7 +34,7 @@ public class PersistentSendableRequestSet implements SendableRequestSet {
 	@Override
 	public synchronized boolean addRequest(SendableRequest req, ObjectContainer container) {
 		container.activate(list, 1);
-		int idx = find(req);
+		int idx = find(req, container);
 		if(idx == -1) {
 			list.add(req);
 			container.store(req);
@@ -44,9 +44,19 @@ public class PersistentSendableRequestSet implements SendableRequestSet {
 		} else return false;
 	}
 
-	private synchronized int find(SendableRequest req) {
-		for(int i=0;i<list.size();i++)
+	private synchronized int find(SendableRequest req, ObjectContainer container) {
+		for(int i=0;i<list.size();i++) {
 			if(list.get(i) == req) return i;
+		}
+		if(container.ext().isStored(req)) {
+			long id = container.ext().getID(req);
+			for(int i=0;i<list.size();i++) {
+				if(container.ext().getID(list.get(i)) == id) {
+					Logger.warning(this, "db4o being wierd: found on second round");
+					return i;
+				}
+			}
+		}
 		return -1;
 	}
 
@@ -62,7 +72,7 @@ public class PersistentSendableRequestSet implements SendableRequestSet {
 		container.activate(list, 1);
 		boolean success = false;
 		while(true) {
-			int idx = find(req);
+			int idx = find(req, container);
 			if(idx == -1) break;
 			if(success)
 				Logger.error(this, "Request is in "+this+" twice or more : "+req);

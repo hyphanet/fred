@@ -62,8 +62,6 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	 * buckets and the thread limit. FIXME make configurable. */
 	static final boolean LOCAL_REQUESTS_COMPETE_FAIRLY = true;
 	
-	boolean doAIMD = true;
-	
 	public static boolean isValidPriorityClass(int prio) {
 		return !((prio < MAXIMUM_PRIORITY_CLASS) || (prio > MINIMUM_PRIORITY_CLASS));
 	}
@@ -80,6 +78,8 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	private final boolean isInsert;
 	private final boolean isSSK;
 	final boolean realTime;
+	
+	static final int MAX_WAITING_FOR_SLOTS = 50;
 	
 	public RequestStarter(NodeClientCore node, BaseRequestThrottle throttle, String name, TokenBucket outputBucket, TokenBucket inputBucket,
 			RunningAverage averageOutputBytesPerRequest, RunningAverage averageInputBytesPerRequest, boolean isInsert, boolean isSSK, boolean realTime) {
@@ -141,10 +141,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				if(!req.localRequestOnly) {
 					// Wait
 					long delay;
-					if(doAIMD)
-						delay = throttle.getDelay();
-					else
-						delay = 100;
+					delay = throttle.getDelay();
 					if(logMINOR) Logger.minor(this, "Delay="+delay+" from "+throttle);
 					long sleepUntil = cycleTime + delay;
 					if(!LOCAL_REQUESTS_COMPETE_FAIRLY) {
@@ -163,10 +160,28 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 							}
 					} while(now < sleepUntil);
 				}
+//				if(!doAIMD) {
+//					// Arbitrary limit on number of local requests waiting for slots.
+//					// Firstly, they use threads. This could be a serious problem for faster nodes.
+//					// Secondly, it may help to prevent wider problems:
+//					// If all queues are full, the network will die.
+//					int[] waiting = core.node.countRequestsWaitingForSlots();
+//					int localRequestsWaitingForSlots = waiting[0];
+//					int maxWaitingForSlots = MAX_WAITING_FOR_SLOTS;
+//					// FIXME calibrate this by the number of local timeouts.
+//					// FIXME consider an AIMD, or some similar mechanism.
+//					// Local timeout-waiting-for-slots is largely dependant on
+//					// the number of requests running, due to strict round-robin,
+//					// so we can probably do something even simpler than an AIMD.
+//					// For now we'll just have a fixed number.
+//					// This should partially address the problem.
+//					// Note that while waitFor() is blocking, we need such a limit anyway.
+//					if(localRequestsWaitingForSlots > maxWaitingForSlots) continue;
+//				}
 				RejectReason reason;
 				assert(req.realTimeFlag == realTime);
 				if(LOCAL_REQUESTS_COMPETE_FAIRLY && !req.localRequestOnly) {
-					if((reason = stats.shouldRejectRequest(true, isInsert, isSSK, true, false, null, false, isInsert && Node.PREFER_INSERT_DEFAULT, req.realTimeFlag)) != null) {
+					if((reason = stats.shouldRejectRequest(true, isInsert, isSSK, true, false, null, false, isInsert && Node.PREFER_INSERT_DEFAULT, req.realTimeFlag, null)) != null) {
 						if(logMINOR)
 							Logger.minor(this, "Not sending local request: "+reason);
 						// Wait one throttle-delay before trying again
@@ -265,12 +280,14 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 			if(logMINOR) 
 				Logger.minor(this, "Finished "+req);
 			} finally {
-				if(key != null) sched.removeFetchingKey(key);
-				else if((!req.isPersistent()) && ((TransientChosenBlock)req).request instanceof SendableInsert)
-					sched.removeTransientInsertFetching((SendableInsert)(((TransientChosenBlock)req).request), req.token);
-				// Something might be waiting for a request to complete (e.g. if we have two requests for the same key), 
-				// so wake the starter thread.
-				wakeUp();
+				if(req.sendIsBlocking()) {
+					if(key != null) sched.removeFetchingKey(key);
+					else if((!req.isPersistent()) && ((TransientChosenBlock)req).request instanceof SendableInsert)
+						sched.removeTransientInsertFetching((SendableInsert)(((TransientChosenBlock)req).request), req.token);
+					// Something might be waiting for a request to complete (e.g. if we have two requests for the same key), 
+					// so wake the starter thread.
+					wakeUp();
+				}
 			}
 		}
 		
@@ -309,10 +326,6 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	public long excludeSummarily(HasCooldownCacheItem item,
 			HasCooldownCacheItem parent, ObjectContainer container, boolean persistent, long now) {
 		return core.clientContext.cooldownTracker.getCachedWakeup(item, persistent, container, now);
-	}
-
-	public void setUseAIMDs(boolean val) {
-		doAIMD = val;
 	}
 
 }

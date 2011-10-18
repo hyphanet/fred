@@ -31,6 +31,8 @@ public abstract class UIDTag {
 	private final WeakReference<PeerNode> sourceRef;
 	final boolean realTimeFlag;
 	private final Node node;
+	protected boolean accepted;
+	protected boolean sourceRestarted;
 	
 	/** Nodes we have routed to at some point */
 	private HashSet<PeerNode> routedTo = null;
@@ -46,9 +48,11 @@ public abstract class UIDTag {
 	protected boolean notRoutedOnwards;
 	final long uid;
 	
-	private boolean unlockedHandler;
+	protected boolean unlockedHandler;
 	protected boolean noRecordUnlock;
 	private boolean hasUnlocked;
+	
+	private boolean waitingForSlot;
 	
 	UIDTag(PeerNode source, boolean realTimeFlag, long uid, Node node) {
 		createdTime = System.currentTimeMillis();
@@ -59,6 +63,7 @@ public abstract class UIDTag {
 		this.uid = uid;
 		if(logMINOR)
 			Logger.minor(this, "Created "+this);
+		if(wasLocal) accepted = true; // FIXME remove, but it's always true at the moment.
 	}
 
 	public abstract void logStillPresent(Long uid);
@@ -184,10 +189,26 @@ public abstract class UIDTag {
 			for(PeerNode p : peers)
 				p.postUnlock(this);
 	}
+
+	/** Add up the expected transfers in.
+	 * @param ignoreLocalVsRemote If true, pretend that the request is remote even if it's local.
+	 * @param outwardTransfersPerInsert Expected number of outward transfers for an insert.
+	 * @param forAccept If true, we are deciding whether to accept a request.
+	 * If false, we are deciding whether to SEND a request. We need to be more
+	 * careful for the latter than the former, to avoid unnecessary rejections 
+	 * and mandatory backoffs.
+	 */
+	public abstract int expectedTransfersIn(boolean ignoreLocalVsRemote, int outwardTransfersPerInsert, boolean forAccept);
 	
-	public abstract int expectedTransfersIn(boolean ignoreLocalVsRemote, int outwardTransfersPerInsert);
-	
-	public abstract int expectedTransfersOut(boolean ignoreLocalVsRemote, int outwardTransfersPerInsert);
+	/** Add up the expected transfers out.
+	 * @param ignoreLocalVsRemote If true, pretend that the request is remote even if it's local.
+	 * @param outwardTransfersPerInsert Expected number of outward transfers for an insert.
+	 * @param forAccept If true, we are deciding whether to accept a request.
+	 * If false, we are deciding whether to SEND a request. We need to be more
+	 * careful for the latter than the former, to avoid unnecessary rejections 
+	 * and mandatory backoffs.
+	 */
+	public abstract int expectedTransfersOut(boolean ignoreLocalVsRemote, int outwardTransfersPerInsert, boolean forAccept);
 	
 	public synchronized void setNotRoutedOnwards() {
 		this.notRoutedOnwards = true;
@@ -237,7 +258,7 @@ public abstract class UIDTag {
 		if(hasUnlocked) return false;
 		if(!unlockedHandler) return false;
 		if(currentlyRoutingTo != null && !currentlyRoutingTo.isEmpty()) {
-			if(!(reassigned || wasLocal)) {
+			if(!(reassigned || wasLocal || sourceRestarted || timedOutButContinued)) {
 				boolean expected = false;
 				if(handlingTimeouts != null) {
 					expected = true;
@@ -339,6 +360,10 @@ public abstract class UIDTag {
 		}
 		if(fetchingOfferedKeyFrom != null)
 			sb.append(" (fetch offered keys from ").append(fetchingOfferedKeyFrom.size()).append(")");
+		if(sourceRestarted)
+			sb.append(" (source restarted)");
+		if(timedOutButContinued)
+			sb.append(" (timed out but continued)");
 		return sb.toString();
 	}
 
@@ -364,6 +389,76 @@ public abstract class UIDTag {
 			}
 			logStillPresent(uid);
 		}
+	}
+
+	public synchronized void setAccepted() {
+		accepted = true;
+	}
+	
+	private boolean timedOutButContinued;
+
+	/** Set when we are going to tell downstream that the request has timed out,
+	 * but can't terminate it yet. We will terminate the request if we have to
+	 * reroute it, and we count it towards the peer's limit, but we don't stop
+	 * messages to the request source. */
+	public synchronized void timedOutToHandlerButContinued() {
+		timedOutButContinued = true;
+	}
+	
+	/** The handler disconnected or restarted. */
+	public synchronized void onRestartOrDisconnectSource() {
+		sourceRestarted = true;
+	}
+	
+	// The third option is reassignToSelf(). We only use that when we actually
+	// want the data, and mean to continue. In that case, none of the next three
+	// are appropriate.
+	
+	/** Should we deduct this request from the source's limit, instead of 
+	 * counting it towards it? A normal request is counted towards it. A hidden
+	 * request is deducted from it. This is used when the source has restarted
+	 * but also in some other cases. */
+	public synchronized boolean countAsSourceRestarted() {
+		return sourceRestarted || timedOutButContinued;
+	}
+	
+	/** Should we send messages to the source? */
+	public synchronized boolean hasSourceReallyRestarted() {
+		return sourceRestarted;
+	}
+	
+	/** Should we stop the request as soon as is convenient? Normally this 
+	 * happens when the source is restarted or disconnected. */
+	public synchronized boolean shouldStop() {
+		return sourceRestarted || timedOutButContinued;
+	}
+
+	public synchronized boolean isSource(PeerNode pn) {
+		if(reassigned) return false;
+		if(wasLocal) return false;
+		if(sourceRef == null) return false;
+		return sourceRef == pn.myRef;
+	}
+	
+	public synchronized void setWaitingForSlot() {
+		// FIXME use a counter on Node.
+		// We'd need to ensure it ALWAYS gets unset when some wierd
+		// error happens.
+		if(waitingForSlot) return;
+		waitingForSlot = true;
+	}
+	
+	public synchronized void clearWaitingForSlot() {
+		// FIXME use a counter on Node.
+		// We'd need to ensure it ALWAYS gets unset when some wierd
+		// error happens.
+		// Probably we can do this just by calling clearWaitingForSlot() when unlocking???
+		if(!waitingForSlot) return;
+		waitingForSlot = false;
+	}
+	
+	public synchronized boolean isWaitingForSlot() {
+		return waitingForSlot;
 	}
 
 }

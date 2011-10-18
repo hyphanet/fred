@@ -244,11 +244,14 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	}
 	
 	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, short priority, InsertContext ctx) throws InsertException {
-		InsertContext context = getInsertContext(true);
+		return insert(insert, getCHKOnly, filenameHint, isMetadata, priority, ctx, null);
+	}
+	
+	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, short priority, InsertContext ctx, byte[] forceCryptoKey) throws InsertException {
 		PutWaiter pw = new PutWaiter();
 		ClientPutter put = new ClientPutter(pw, insert.getData(), insert.desiredURI, insert.clientMetadata,
-				context, priority,
-				getCHKOnly, isMetadata, this, filenameHint, false, core.clientContext, null, -1);
+				ctx, priority,
+				getCHKOnly, isMetadata, this, filenameHint, false, core.clientContext, forceCryptoKey, -1);
 		try {
 			core.clientContext.start(put, false);
 		} catch (DatabaseDisabledException e) {

@@ -983,7 +983,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		synchronized(this) {
 			if(cancelled) return;
 			if(completed) return;
-			if(!scheduledDBRs) {
+			if(!scheduledDBRs && !ctx.ignoreUSKDatehints) {
 				atts = addDBRs(context);
 			}
 			scheduledDBRs = true;

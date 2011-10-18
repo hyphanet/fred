@@ -72,8 +72,8 @@ public class DSA {
 		BigInteger s1=m.add(x.getX().multiply(r)).mod(g.getQ());
 		BigInteger s=kInv.multiply(s1).mod(g.getQ());
 		if((r.compareTo(BigInteger.ZERO) == 0) || (s.compareTo(BigInteger.ZERO) == 0)) {
-			Logger.normal(DSA.class, "R or S equals 0 : Weird behaviour detected, please report if seen too often.");
-			return sign(g, x, r, generateK(g, random), m, random);
+			Logger.warning(DSA.class, "R or S equals 0 : Weird behaviour detected, please report if seen too often.");
+			return sign(g, x, generateK(g, random), m, random);
 		}
 		return new DSASignature(r,s);
 	}

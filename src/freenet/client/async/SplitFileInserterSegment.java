@@ -1256,6 +1256,11 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				req.onInsertSuccess(context);
 				return true;
 			}
+		
+		@Override
+		public boolean sendIsBlocking() {
+			return true;
+		}
 
 
 	}

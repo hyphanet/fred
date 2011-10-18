@@ -364,9 +364,8 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 
 		final int mode = ctx.getPageMaker().parseMode(req, container);
 
-		PageNode page = ctx.getPageMaker().getPageNode(NodeL10n.getBase().
-		        getString("ConfigToadlet.fullTitle", new String[]{"name"},
-		        new String[]{node.getMyName()}), ctx);
+		PageNode page = ctx.getPageMaker().getPageNode(
+				NodeL10n.getBase().getString("ConfigToadlet.fullTitle"), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 

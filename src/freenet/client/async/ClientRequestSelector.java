@@ -128,7 +128,12 @@ class ClientRequestSelector implements KeysFetchingLocally {
 					long cooldownTime = context.cooldownTracker.getCachedWakeup(result, true, container, now);
 					if(cooldownTime > 0) {
 						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
-						Logger.normal(this, "Priority "+priority+" (persistent) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+						if(logMINOR) {
+							if(cooldownTime == Long.MAX_VALUE)
+								Logger.minor(this, "Priority "+priority+" (persistent) is waiting until a request finishes or is empty");
+							else
+								Logger.minor(this, "Priority "+priority+" (persistent) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+						}
 						result = null;
 					} else {
 						container.activate(result, 1);
@@ -142,7 +147,12 @@ class ClientRequestSelector implements KeysFetchingLocally {
 					long cooldownTime = context.cooldownTracker.getCachedWakeup(result, false, container, now);
 					if(cooldownTime > 0) {
 						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
-						Logger.normal(this, "Priority "+priority+" (transient) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now)+" : "+result);
+						if(logMINOR) {
+							if(cooldownTime == Long.MAX_VALUE)
+								Logger.minor(this, "Priority "+priority+" (transient) is waiting until a request finishes or is empty");
+							else
+								Logger.minor(this, "Priority "+priority+" (transient) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+						}
 						result = null;
 					}
 				}

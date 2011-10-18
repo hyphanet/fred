@@ -87,6 +87,7 @@ import freenet.support.io.FilenameGenerator;
 import freenet.support.io.NativeThread;
 import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.TempBucketFactory;
+import freenet.support.math.MersenneTwister;
 
 /**
  * The connection between the node and the client layer.
@@ -194,8 +195,20 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 		// Temp files
 
-		this.tempDir = node.setupProgramDir(installConfig, "tempDir", node.runDir().file("temp-"+portNumber).toString(),
+		this.tempDir = node.setupProgramDir(installConfig, "tempDir", node.runDir().file("temp").toString(),
 		  "NodeClientCore.tempDir", "NodeClientCore.tempDirLong", nodeConfig);
+		
+		// FIXME remove back compatibility hack.
+		File oldTemp = node.runDir().file("temp-"+node.getDarknetPortNumber());
+		if(oldTemp.exists() && oldTemp.isDirectory() && !FileUtil.equals(tempDir.dir, oldTemp)) {
+			System.err.println("Deleting old temporary dir: "+oldTemp);
+			try {
+				FileUtil.secureDeleteAll(oldTemp, new MersenneTwister(random.nextLong()));
+			} catch (IOException e) {
+				// Ignore.
+			}
+		}
+		
 		FileUtil.setOwnerRWX(getTempDir());
 
 		try {
@@ -325,8 +338,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			throw new NodeInitException(NodeInitException.EXIT_BAD_CONFIG, e1.toString());
 		}
 		
-		requestStarters.setUseAIMDsBulk(node.nodeStats.useAIMDsBulk());
-		requestStarters.setUseAIMDsRT(node.nodeStats.useAIMDsRT());
 		
 		clientContext.init(requestStarters, alerts);
 		initKeys(container);
@@ -857,14 +868,32 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		}
 	}
 
-	public void asyncGet(Key key, boolean offersOnly, final SimpleRequestSenderCompletionListener listener, boolean canReadClientCache, boolean canWriteClientCache, final boolean realTimeFlag) {
+	/** Start an asynchronous fetch for the key, which will complete by calling 
+	 * tripPendingKey() if successful, as well as calling the listener in most cases.
+	 * @param key The key to fetch.
+	 * @param offersOnly If true, only fetch the key from nodes that have offered it, using GetOfferedKeys,
+	 * don't do a normal fetch for it.
+	 * @param listener The listener is called if we start a request and fail to fetch, and also in most
+	 * cases on success or on not starting one. FIXME it may not always be called e.g. on fetching the data
+	 * from the datastore - is this a problem?
+	 * @param canReadClientCache Can this request read the client-cache?
+	 * @param canWriteClientCache Can this request write the client-cache?
+	 * @param htl The HTL to start the request at. See the caller, this can be modified in the case of 
+	 * fetching an offered key.
+	 * @param realTimeFlag Is this a real-time request? False = this is a bulk request.
+	 * @param localOnly If true, only check the datastore, don't create a request if nothing is found.
+	 * @param ignoreStore If true, don't check the datastore, create a request immediately.
+	 */
+	public void asyncGet(final Key key, boolean offersOnly, final RequestCompletionListener listener, boolean canReadClientCache, boolean canWriteClientCache, final boolean realTimeFlag, boolean localOnly, boolean ignoreStore) {
 		final long uid = makeUID();
 		final boolean isSSK = key instanceof NodeSSK;
 		final RequestTag tag = new RequestTag(isSSK, RequestTag.START.ASYNC_GET, null, realTimeFlag, uid, node);
 		if(!node.lockUID(uid, isSSK, false, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
+			listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, "Could not lock random UID - serious PRNG problem???"));
 			return;
 		}
+		tag.setAccepted();
 		short htl = node.maxHTL();
 		// If another node requested it within the ULPR period at a lower HTL, that may allow
 		// us to cache it in the datastore. Find the lowest HTL fetching the key in that period,
@@ -873,8 +902,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			htl = node.failureTable.minOfferedHTL(key, htl);
 			if(logMINOR) Logger.minor(this, "Using old HTL for GetOfferedKey: "+htl);
 		}
-		asyncGet(key, isSSK, offersOnly, uid, new RequestSender.Listener() {
+		final long startTime = System.currentTimeMillis();
+		asyncGet(key, offersOnly, uid, new RequestSenderListener() {
 
+			private boolean rejectedOverload;
+			
 			@Override
 			public void onCHKTransferBegins() {
 				// Ignore
@@ -882,7 +914,17 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 			@Override
 			public void onReceivedRejectOverload() {
-				// Ignore
+				synchronized(this) {
+					if(rejectedOverload) return;
+					rejectedOverload = true;
+				}
+				requestStarters.rejectedOverload(isSSK, false, realTimeFlag);
+			}
+			
+			@Override
+			public void onDataFoundLocally() {
+				tag.unlockHandler();
+				listener.onSucceeded();
 			}
 
 			/** The RequestSender finished.
@@ -890,31 +932,163 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			 * @param fromOfferedKey
 			 */
 			@Override
-			public void onRequestSenderFinished(int status, boolean fromOfferedKey) {
+			public void onRequestSenderFinished(int status, boolean fromOfferedKey, RequestSender rs) {
 				tag.unlockHandler();
-				if(listener != null) listener.completed(status == RequestSender.SUCCESS);
+				
+				if(rs.abortedDownstreamTransfers())
+					status = RequestSender.TRANSFER_FAILED;
+
+				if(status == RequestSender.NOT_FINISHED) {
+					Logger.error(this, "Bogus status in onRequestSenderFinished for "+rs, new Exception("error"));
+					listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
+					return;
+				}
+				
+				boolean rejectedOverload;
+				synchronized(this) {
+					rejectedOverload = this.rejectedOverload;
+				}
+
+				if(status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD && status != RequestSender.INTERNAL_ERROR) {
+					if(logMINOR)
+						Logger.minor(this, (isSSK ? "SSK" : "CHK") + " fetch cost " + rs.getTotalSentBytes() + '/' + rs.getTotalReceivedBytes() + " bytes (" + status + ')');
+					(isSSK ? nodeStats.localSskFetchBytesSentAverage : nodeStats.localChkFetchBytesSentAverage).report(rs.getTotalSentBytes());
+					(isSSK ? nodeStats.localSskFetchBytesReceivedAverage : nodeStats.localChkFetchBytesReceivedAverage).report(rs.getTotalReceivedBytes());
+					if(status == RequestSender.SUCCESS)
+						// See comments above declaration of successful* : We don't report sent bytes here.
+						//nodeStats.successfulChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
+						(isSSK ? nodeStats.successfulSskFetchBytesReceivedAverage : nodeStats.successfulChkFetchBytesReceivedAverage).report(rs.getTotalReceivedBytes());
+				}
+
+				if((status == RequestSender.TIMED_OUT) ||
+					(status == RequestSender.GENERATED_REJECTED_OVERLOAD)) {
+					if(!rejectedOverload) {
+						// If onRejectedOverload() is going to happen,
+						// it should have happened before this callback is called, so
+						// we don't need to check again here.
+						requestStarters.rejectedOverload(isSSK, false, realTimeFlag);
+						rejectedOverload = true;
+						long rtt = System.currentTimeMillis() - startTime;
+						double targetLocation=key.toNormalizedDouble();
+						if(isSSK) {
+							node.nodeStats.reportSSKOutcome(rtt, false, realTimeFlag);
+						} else {
+							node.nodeStats.reportCHKOutcome(rtt, false, targetLocation, realTimeFlag);
+						}
+					}
+				} else
+					if(rs.hasForwarded() &&
+						((status == RequestSender.DATA_NOT_FOUND) ||
+						(status == RequestSender.RECENTLY_FAILED) ||
+						(status == RequestSender.SUCCESS) ||
+						(status == RequestSender.ROUTE_NOT_FOUND) ||
+						(status == RequestSender.VERIFY_FAILURE) ||
+						(status == RequestSender.GET_OFFER_VERIFY_FAILURE))) {
+						long rtt = System.currentTimeMillis() - startTime;
+						double targetLocation=key.toNormalizedDouble();
+						if(!rejectedOverload)
+							requestStarters.requestCompleted(isSSK, false, key, realTimeFlag);
+						// Count towards RTT even if got a RejectedOverload - but not if timed out.
+						requestStarters.getThrottle(isSSK, false, realTimeFlag).successfulCompletion(rtt);
+						if(isSSK) {
+							node.nodeStats.reportSSKOutcome(rtt, status == RequestSender.SUCCESS, realTimeFlag);
+						} else {
+							node.nodeStats.reportCHKOutcome(rtt, status == RequestSender.SUCCESS, targetLocation, realTimeFlag);
+						}
+						if(status == RequestSender.SUCCESS) {
+							Logger.minor(this, "Successful " + (isSSK ? "SSK" : "CHK") + " fetch took "+rtt);
+						}
+					}
+
+				if(status == RequestSender.SUCCESS)
+					// FIXME how to identify failed to decode and report it back to the client layer??? do we even need to???
+					listener.onSucceeded();
+				else {
+					switch(status) {
+						case RequestSender.NOT_FINISHED:
+							Logger.error(this, "RS still running in get" + (isSSK ? "SSK" : "CHK") + "!: " + rs);
+							listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
+							return;
+						case RequestSender.DATA_NOT_FOUND:
+							listener.onFailed(new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND));
+							return;
+						case RequestSender.RECENTLY_FAILED:
+							listener.onFailed(new LowLevelGetException(LowLevelGetException.RECENTLY_FAILED));
+							return;
+						case RequestSender.ROUTE_NOT_FOUND:
+							listener.onFailed(new LowLevelGetException(LowLevelGetException.ROUTE_NOT_FOUND));
+							return;
+						case RequestSender.TRANSFER_FAILED:
+						case RequestSender.GET_OFFER_TRANSFER_FAILED:
+							listener.onFailed(new LowLevelGetException(LowLevelGetException.TRANSFER_FAILED));
+							return;
+						case RequestSender.VERIFY_FAILURE:
+						case RequestSender.GET_OFFER_VERIFY_FAILURE:
+							listener.onFailed(new LowLevelGetException(LowLevelGetException.VERIFY_FAILED));
+							return;
+						case RequestSender.GENERATED_REJECTED_OVERLOAD:
+						case RequestSender.TIMED_OUT:
+							listener.onFailed(new LowLevelGetException(LowLevelGetException.REJECTED_OVERLOAD));
+							return;
+						case RequestSender.INTERNAL_ERROR:
+							listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
+							return;
+						default:
+							Logger.error(this, "Unknown RequestSender code in get"+ (isSSK ? "SSK" : "CHK") +": " + status + " on " + rs);
+							listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
+							return;
+					}
+				}
 			}
 
 			@Override
 			public void onAbortDownstreamTransfers(int reason, String desc) {
 				// Ignore, onRequestSenderFinished will also be called.
 			}
-		}, tag, canReadClientCache, canWriteClientCache, htl, realTimeFlag);
+
+			@Override
+			public void onNotStarted(boolean internalError) {
+				if(internalError)
+					listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
+				else
+					listener.onFailed(new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND_IN_STORE));
+			}
+		}, tag, canReadClientCache, canWriteClientCache, htl, realTimeFlag, localOnly, ignoreStore);
 	}
 
 	/**
 	 * Start an asynchronous fetch of the key in question, which will complete to the datastore.
 	 * It will not decode the data because we don't provide a ClientKey. It will not return
 	 * anything and will run asynchronously. Caller is responsible for unlocking the UID.
-	 * @param key
+	 * @param key The key being fetched.
+	 * @param offersOnly If true, only fetch the key from nodes that have offered it, using GetOfferedKeys,
+	 * don't do a normal fetch for it.
+	 * @param uid The UID of the request. This should already be locked, see the tag.
+	 * @param tag The RequestTag for the request. In case of an error when starting it we will unlock it,
+	 * but in other cases the listener should unlock it.
+	 * @param listener Will be called by the request sender, if a request is started.
+	 * However, for example, if we fetch it from the store, it will be returned via the
+	 * tripPendingKeys mechanism.
+	 * @param canReadClientCache Can this request read the client-cache?
+	 * @param canWriteClientCache Can this request write the client-cache?
+	 * @param htl The HTL to start the request at. See the caller, this can be modified in the case of 
+	 * fetching an offered key.
+	 * @param realTimeFlag Is this a real-time request? False = this is a bulk request.
+	 * @param localOnly If true, only check the datastore, don't create a request if nothing is found.
+	 * @param ignoreStore If true, don't check the datastore, create a request immediately.
 	 */
-	void asyncGet(Key key, boolean isSSK, boolean offersOnly, long uid, RequestSender.Listener listener, RequestTag tag, boolean canReadClientCache, boolean canWriteClientCache, short htl, boolean realTimeFlag) {
+	void asyncGet(Key key, boolean offersOnly, long uid, RequestSenderListener listener, RequestTag tag, boolean canReadClientCache, boolean canWriteClientCache, short htl, boolean realTimeFlag, boolean localOnly, boolean ignoreStore) {
 		try {
-			Object o = node.makeRequestSender(key, htl, uid, tag, null, false, false, offersOnly, canReadClientCache, canWriteClientCache, realTimeFlag);
+			Object o = node.makeRequestSender(key, htl, uid, tag, null, localOnly, ignoreStore, offersOnly, canReadClientCache, canWriteClientCache, realTimeFlag);
 			if(o instanceof KeyBlock) {
 				tag.servedFromDatastore = true;
-				tag.unlockHandler();
+				listener.onDataFoundLocally();
 				return; // Already have it.
+			}
+			if(o == null) {
+				listener.onNotStarted(false);
+				tag.unlockHandler();
+				return;
 			}
 			RequestSender rs = (RequestSender) o;
 			rs.addListener(listener);
@@ -925,10 +1099,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				Logger.minor(this, "Started " + o + " for " + uid + " for " + key);
 		} catch(RuntimeException e) {
 			Logger.error(this, "Caught error trying to start request: " + e, e);
-			tag.unlockHandler();
+			listener.onNotStarted(true);
 		} catch(Error e) {
 			Logger.error(this, "Caught error trying to start request: " + e, e);
-			tag.unlockHandler();
+			listener.onNotStarted(true);
 		}
 	}
 
@@ -959,6 +1133,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
+		tag.setAccepted();
 		RequestSender rs = null;
 		try {
 			Object o = node.makeRequestSender(key.getNodeCHK(), node.maxHTL(), uid, tag, null, localOnly, ignoreStore, false, true, canWriteClientCache, realTimeFlag);
@@ -1083,6 +1258,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
+		tag.setAccepted();
 		RequestSender rs = null;
 		try {
 			Object o = node.makeRequestSender(key.getNodeKey(true), node.maxHTL(), uid, tag, null, localOnly, ignoreStore, false, true, canWriteClientCache, realTimeFlag);
@@ -1217,6 +1393,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
 		}
+		tag.setAccepted();
 		try {
 			long startTime = System.currentTimeMillis();
 			is = node.makeInsertSender(block.getKey(),
@@ -1336,6 +1513,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
 		}
+		tag.setAccepted();
 		try {
 			long startTime = System.currentTimeMillis();
 			// Be consistent: use the client cache to check for collisions as this is a local insert.
@@ -1924,14 +2102,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		short origHTL = node.decrementHTL(null, node.maxHTL());
 		node.peers.closerPeer(null, new HashSet<PeerNode>(), key.toNormalizedDouble(), true, false, -1, null, 2.0, key, origHTL, 0, true, realTime, r, false, System.currentTimeMillis(), node.enableNewLoadManagement(realTime));
 		return r.recentlyFailed();
-	}
-
-	public void onSetUseAIMDsRT(boolean val) {
-		requestStarters.setUseAIMDsBulk(val);
-	}
-
-	public void onSetUseAIMDsBulk(boolean val) {
-		requestStarters.setUseAIMDsRT(val);
 	}
 
 }

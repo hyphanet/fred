@@ -508,7 +508,8 @@ public class NodeCrypto {
 	public boolean allowConnection(PeerNode pn, FreenetInetAddress addr) {
     	if(config.oneConnectionPerAddress()) {
     		// Disallow multiple connections to the same address
-    		if(node.peers.anyConnectedPeerHasAddress(addr, pn) && !detector.includes(addr)) {
+    		if(node.peers.anyConnectedPeerHasAddress(addr, pn) && !detector.includes(addr)
+    				&& addr.isRealInternetAddress(false, false, false)) {
     			Logger.normal(this, "Not sending handshake packets to "+addr+" for "+pn+" : Same IP address as another node");
     			return false;
     		}
@@ -523,15 +524,26 @@ public class NodeCrypto {
 	 */
 	public void maybeBootConnection(PeerNode peerNode,
 			FreenetInetAddress address) {
-		if(config.oneConnectionPerAddress())
-			return; // If it's set here then we've already checked, we're not going to boot anyone else.
-		
-		ArrayList<PeerNode> possibleMatches = node.peers.getAllConnectedByAddress(address);
+		if(detector.includes(address)) return;
+		if(!address.isRealInternetAddress(false, false, false)) return;
+		ArrayList<PeerNode> possibleMatches = node.peers.getAllConnectedByAddress(address, true);
 		if(possibleMatches == null) return;
 		for(PeerNode pn : possibleMatches) {
-			if(pn.crypto == this) continue;
+			if(pn == peerNode) continue;
+			if(pn.equals(peerNode)) continue;
 			if(pn.crypto.config.oneConnectionPerAddress()) {
-				node.peers.disconnect(pn, true, true, pn.isOpennet());
+				if(pn instanceof DarknetPeerNode) {
+					if(!(peerNode instanceof DarknetPeerNode)) {
+						// Darknet is only affected by other darknet peers.
+						// Opennet peers with the same IP will NOT cause darknet peers to be dropped, even if one connection per IP is set for darknet, and even if it isn't set for opennet.
+						// (Which would be a perverse configuration anyway!)
+						// FIXME likewise, FOAFs should not boot darknet connections.
+						continue;
+					}
+					Logger.error(this, "Dropping peer "+pn+" because don't want connection due to others on the same IP address!");
+					System.out.println("Disconnecting permanently from your friend \""+((DarknetPeerNode)pn).getName()+"\" because your friend \""+((DarknetPeerNode)peerNode).getName()+"\" is using the same IP address "+address+"!");
+				}
+				node.peers.disconnectAndRemove(pn, true, true, pn.isOpennet());
 			}
 		}
 	}

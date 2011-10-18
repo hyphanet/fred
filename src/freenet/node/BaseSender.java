@@ -47,7 +47,10 @@ public abstract class BaseSender implements ByteCounter {
     protected final short origHTL;
     final Node node;
     protected final long startTime;
-    final long uid;
+    long uid;
+    static final int SEARCH_TIMEOUT_BULK = 600*1000;
+    static final int SEARCH_TIMEOUT_REALTIME = 60*1000;
+    final int incomingSearchTimeout;
     
     BaseSender(Key key, boolean realTimeFlag, PeerNode source, Node node, short htl, long uid) {
     	if(key.getRoutingKey() == null) throw new NullPointerException();
@@ -62,8 +65,28 @@ public abstract class BaseSender implements ByteCounter {
         assert(isSSK || key instanceof NodeCHK);
         this.htl = htl;
         this.origHTL = htl;
+        newLoadManagement = node.enableNewLoadManagement(realTimeFlag);
+        incomingSearchTimeout = calculateTimeout(realTimeFlag, htl, node);
     }
     
+    static final double EXTRA_HOPS_AT_BOTTOM = 1.0 / Node.DECREMENT_AT_MIN_PROB;
+    
+	static public int calculateTimeout(boolean realTimeFlag, short htl, Node node) {
+		double timeout = realTimeFlag ? SEARCH_TIMEOUT_REALTIME : SEARCH_TIMEOUT_BULK;
+		timeout = (timeout * ((double)htl + EXTRA_HOPS_AT_BOTTOM) / (EXTRA_HOPS_AT_BOTTOM + (double) node.maxHTL())); 
+		return (int)timeout;
+	}
+	
+	protected int calculateTimeout(short htl) {
+		return calculateTimeout(realTimeFlag, htl, node);
+	}
+	
+	private short hopsForTime(long time) {
+		double timeout = realTimeFlag ? SEARCH_TIMEOUT_REALTIME : SEARCH_TIMEOUT_BULK;
+		double timePerHop = timeout / ((double)EXTRA_HOPS_AT_BOTTOM + (double) node.maxHTL());
+		return (short) Math.min(node.maxHTL(), time / timePerHop);
+	}
+
 	protected abstract Message createDataRequest();
 
     protected PeerNode lastNode;
@@ -93,7 +116,26 @@ public abstract class BaseSender implements ByteCounter {
 	
     private HashMap<PeerNode, Integer> softRejectCount;
     
-    protected boolean innerRouteRequestsOld(PeerNode next, UIDTag origTag) {
+    /** If this is set, don't decrement HTL, and then unset it. */
+    protected boolean dontDecrementHTLThisTime;
+    
+    final boolean newLoadManagement;
+    
+    /** The main route requests loop. This must be filled in by the implementation. 
+     * It will deal with decrementing the HTL, completing on running out of HTL,
+     * RecentlyFailed for requests, fork on cacheable for inserts, and so on. It 
+     * will choose a peer and then chain to innerRouteRequests(), which in turn 
+     * can call back to routeRequests() if it needs a new peer. */
+    protected abstract void routeRequests();
+    
+	protected void innerRouteRequests(PeerNode next, UIDTag origTag) {
+        if(newLoadManagement) 
+        	innerRouteRequestsNew(next, origTag);
+        else
+        	innerRouteRequestsOld(next, origTag);
+	}
+
+    protected void innerRouteRequestsOld(PeerNode next, UIDTag origTag) {
         
         synchronized(this) {
         	lastNode = next;
@@ -128,17 +170,19 @@ public abstract class BaseSender implements ByteCounter {
 			 * Don't use sendAsync().
 			 */
         	next.sendSync(req, this, realTimeFlag);
-        	next.reportRoutedTo(key.toNormalizedDouble(), source == null, realTimeFlag);
+        	next.reportRoutedTo(key.toNormalizedDouble(), source == null, realTimeFlag, source, nodesRoutedTo);
 			node.peers.incrementSelectionSamples(System.currentTimeMillis(), next);
         } catch (NotConnectedException e) {
         	Logger.minor(this, "Not connected");
         	next.noLongerRoutingTo(origTag, false);
-        	return true;
+        	routeRequests();
+        	return;
         } catch (SyncSendWaitedTooLongException e) {
         	Logger.error(this, "Failed to send "+req+" to "+next+" in a reasonable time.");
         	next.noLongerRoutingTo(origTag, false);
         	// Try another node.
-        	return true;
+        	routeRequests();
+        	return;
 		}
         
         synchronized(this) {
@@ -153,7 +197,8 @@ loadWaiterLoop:
 				//retriedForLoadManagement = true;
         		continue loadWaiterLoop;
         	} else if(action == DO.NEXT_PEER) {
-        		return true;
+            	routeRequests();
+            	return;
         	} else { // FINISHED => accepted
         		break;
         	}
@@ -167,8 +212,6 @@ loadWaiterLoop:
         lastMessage = null;
         
         onAccepted(next);
-        
-        return false;
 	}
     
     /** Limit the number of nodes that we route to that reject the request due to
@@ -180,11 +223,25 @@ loadWaiterLoop:
      * to a slow network. */
     private static int MAX_REJECTED_LOOPS = 3;
 
+    private boolean addedExtraNode = false;
+    
     /**
-     * @param next
-     * @return True to try another peer.
+     * New load management. Give it the peer you want to route to, it might 
+     * route to a different one, but it will either get accepted and call
+     * onAccepted(), or decide it needs to reroute and call routeRequests().
+     * 
+     * IMPORTANT: Caller must not decrement htl when rerouting if 
+     * dontDecrementHTLThisTime is set (but must still reroute); this happens
+     * when we discover too that the proposed peer is no longer suitable. One 
+     * of the reasons for this is that BaseSender does not handle 
+     * RecentlyFailedReturn, which can only happen in the main peer selection
+     * loop. If we set it, we haven't routed to a peer (we might have been
+     * soft-rejected, but that is not serious in NLM).
+     * @param next The peer that we have routed to. We won't necessarily route
+     * to this one in all cases.
+     * @return True to try another peer. False if the request has been accepted.
      */
-    protected boolean innerRouteRequestsNew(PeerNode next, UIDTag origTag) {
+    protected void innerRouteRequestsNew(PeerNode next, UIDTag origTag) {
         
     	NodeStats.RequestType type =
     		isSSK ? NodeStats.RequestType.SSK_REQUEST : NodeStats.RequestType.CHK_REQUEST;
@@ -202,8 +259,6 @@ loadWaiterLoop:
         RequestLikelyAcceptedState lastExpectedAcceptState = null;
         RequestLikelyAcceptedState expectedAcceptState = null;
         
-        boolean addedExtraNode = false;
-        
     loadWaiterLoop:
     	while(true) {
     		
@@ -218,14 +273,9 @@ loadWaiterLoop:
     		long now = System.currentTimeMillis();
     		
     		if(next == null) {
-    			next = closerPeer(nodesRoutedTo, now, true);
-				if(next == null) {
-					if (logMINOR && rejectOverloads>0)
-						Logger.minor(this, "no more peers, but overloads ("+rejectOverloads+"/"+routeAttempts+" overloaded)");
-					// Backtrack
-					rnf();
-					return false;
-				}
+				dontDecrementHTLThisTime = true;
+	        	routeRequests();
+	        	return;
     		}
         
    			expectedAcceptState = 
@@ -245,13 +295,13 @@ loadWaiterLoop:
     						(expectedAcceptState == RequestLikelyAcceptedState.GUARANTEED)) {
     					// We routed it, thinking it was GUARANTEED.
     					// It was rejected, and as far as we know it's still GUARANTEED. :(
-    					Logger.error(this, "Rejected overload (last time) yet expected state was "+lastExpectedAcceptState+" is now "+expectedAcceptState+" from "+next.shortToString()+" ("+next.getVersionNumber()+")");
-    					next.enterMandatoryBackoff("Mandatory:RejectedGUARANTEED", realTimeFlag);
+    					Logger.warning(this, "Rejected overload (last time) yet expected state was "+lastExpectedAcceptState+" is now "+expectedAcceptState+" from "+next.shortToString()+" ("+next.getVersionNumber()+")");
+    					next.rejectedGuaranteed(realTimeFlag);
     					next.noLongerRoutingTo(origTag, false);
     					expectedAcceptState = null;
-    					next = null;
-    					// Will reroute.
-    					continue;
+    					dontDecrementHTLThisTime = true;
+    		        	routeRequests();
+    		        	return;
     				}
     			}
     			
@@ -265,8 +315,9 @@ loadWaiterLoop:
     					waiter = PeerNode.createSlotWaiter(origTag, type, false, realTimeFlag, source);
     				if(next != null) {
     					if(!waiter.addWaitingFor(next)) {
-    						next = null;
-    						continue;
+        					dontDecrementHTLThisTime = true;
+        		        	routeRequests();
+        		        	return;
     						// Will be rerouted.
     						// This is essential to avoid adding the same bogus node again and again.
     						// This is only an issue with next. Hence the other places we route explicitly so there is no risk as they won't return the same node repeatedly after it is no longer routable.
@@ -371,6 +422,7 @@ loadWaiterLoop:
     				}
     				HashSet<PeerNode> waitedFor = waiter.waitingForList();
     				PeerNode waited;
+    				// FIXME figure out a way to wake-up mid-wait if origTag.hasSourceRestarted().
 					try {
 						waited = waiter.waitForAny(maxWait, addedExtraNode);
 					} catch (SlotWaiterFailedException e) {
@@ -384,7 +436,8 @@ loadWaiterLoop:
     					if(addedExtraNode) {
     						// Backtrack
     						timedOutWhileWaiting(getLoad(waitedFor));
-    						return false;
+    						// Above is responsible for termination or rerouting.
+    						return;
     					} else {
     						addedExtraNode = true;
     						continue;
@@ -408,6 +461,13 @@ loadWaiterLoop:
     		}
     		if(logMINOR) Logger.minor(this, "Routing to "+next);
     		
+        	if(origTag.hasSourceReallyRestarted()) {
+        		origTag.removeRoutingTo(next);
+        		// FIXME finish more directly.
+	        	routeRequests();
+	        	return;
+        	}
+        	
     		synchronized(this) {
     			lastNode = next;
     		}
@@ -443,12 +503,13 @@ loadWaiterLoop:
     			 * Don't use sendAsync().
     			 */
     			if(logMINOR) Logger.minor(this, "Sending "+req+" to "+next);
-    			next.reportRoutedTo(key.toNormalizedDouble(), source == null, realTimeFlag);
+    			next.reportRoutedTo(key.toNormalizedDouble(), source == null, realTimeFlag, source, nodesRoutedTo);
     			next.sendSync(req, this, realTimeFlag);
     		} catch (NotConnectedException e) {
     			Logger.minor(this, "Not connected");
     			next.noLongerRoutingTo(origTag, false);
-    			return true;
+            	routeRequests();
+            	return;
             } catch (SyncSendWaitedTooLongException e) {
             	Logger.error(this, "Failed to send "+req+" to "+next+" in a reasonable time.");
             	next.noLongerRoutingTo(origTag, false);
@@ -469,8 +530,10 @@ loadWaiterLoop:
         		continue loadWaiterLoop;
         	} else if(action == DO.NEXT_PEER) {
 				if(logMINOR) Logger.minor(this, "Trying next peer");
-				return true;
+	        	routeRequests();
+	        	return;
         	} else { // FINISHED => accepted
+        		addedExtraNode = false;
 				if(logMINOR) Logger.minor(this, "Accepted!");
         		break;
         	}
@@ -489,17 +552,17 @@ loadWaiterLoop:
         gotMessages = 0;
         lastMessage = null;
         
-        onAccepted(next);
+        next.acceptedAny(realTimeFlag);
         
-        return false;
+        onAccepted(next);
 	}
     
     private PeerNode closerPeer(HashSet<PeerNode> exclude, long now, boolean newLoadManagement) {
 		return node.peers.closerPeer(sourceForRouting(), exclude, target, true, node.isAdvancedModeEnabled(), -1, null,
-				2.0, isInsert() ? null : key, htl, 0, source == null, realTimeFlag, null, true, now, newLoadManagement);
+				2.0, isInsert() ? null : key, htl, ignoreLowBackoff(), source == null, realTimeFlag, null, false, now, newLoadManagement);
 	}
 
-	private PeerNode sourceForRouting() {
+	protected PeerNode sourceForRouting() {
 		return source;
 	}
 
@@ -511,9 +574,17 @@ loadWaiterLoop:
     	return total / waitedFor.size();
 	}
 
-	protected abstract long getLongSlotWaiterTimeout();
-    
-    protected abstract long getShortSlotWaiterTimeout();
+	protected long getLongSlotWaiterTimeout() {
+		return (realTimeFlag ? SEARCH_TIMEOUT_REALTIME : SEARCH_TIMEOUT_BULK) / 5;
+	}
+
+	protected long getShortSlotWaiterTimeout() {
+		return (realTimeFlag ? SEARCH_TIMEOUT_REALTIME : SEARCH_TIMEOUT_BULK) / 20;
+	}
+	
+	protected short hopsForFatalTimeoutWaitingForPeer() {
+		return hopsForTime(getLongSlotWaiterTimeout());
+	}
 
 	private void logDelta(long delta, int tryCount, boolean waitedForLoadManagement, boolean retriedForLoadManagement) {
 		long longTimeout = getLongSlotWaiterTimeout();
@@ -534,7 +605,7 @@ loadWaiterLoop:
     		
     		Message msg;
     		
-    		MessageFilter mf = makeAcceptedRejectedFilter(next, getAcceptedTimeout());
+    		MessageFilter mf = makeAcceptedRejectedFilter(next, getAcceptedTimeout(), origTag);
     		
     		try {
     			msg = node.usm.waitFor(mf, this);
@@ -573,7 +644,6 @@ loadWaiterLoop:
     		if(msg.getSpec() == DMT.FNPRejectedOverload) {
     			if(logMINOR) Logger.minor(this, "Rejected: overload");
     			// Non-fatal - probably still have time left
-    			forwardRejectedOverload();
     			if (msg.getBoolean(DMT.IS_LOCAL)) {
     				
     				if(logMINOR) Logger.minor(this, "Is local");
@@ -601,6 +671,7 @@ loadWaiterLoop:
     					return DO.WAIT;
     				}
     				
+        			forwardRejectedOverload();
     				next.localRejectedOverload("ForwardRejectedOverload", realTimeFlag);
     				int t = timeSinceSent();
     				node.failureTable.onFailed(key, next, htl, t, t);
@@ -608,6 +679,8 @@ loadWaiterLoop:
     				// Give up on this one, try another
     				next.noLongerRoutingTo(origTag, false);
     				return DO.NEXT_PEER;
+    			} else {
+        			forwardRejectedOverload();
     			}
     			//Could be a previous rejection, the timeout to incur another ACCEPTED_TIMEOUT is minimal...
     			continue;
@@ -624,70 +697,16 @@ loadWaiterLoop:
     		
     	}
 	}
+
+	protected abstract void handleAcceptedRejectedTimeout(final PeerNode next,
+			final UIDTag origTag);
     
-	private void handleAcceptedRejectedTimeout(final PeerNode next,
-			final UIDTag origTag) {
-		
-		origTag.handlingTimeout(next);
-		
-		int timeout = 60*1000;
-		
-		MessageFilter mf = makeAcceptedRejectedFilter(next, timeout);
-		try {
-			node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
-
-				@Override
-				public void onMatched(Message m) {
-					if(m.getSpec() == DMT.FNPRejectedLoop ||
-							m.getSpec() == DMT.FNPRejectedOverload) {
-						// Ok.
-						next.noLongerRoutingTo(origTag, false);
-					} else {
-						// Accepted. May as well wait for the data, if any.
-						onAccepted(next);
-					}
-				}
-				
-				@Override
-				public boolean shouldTimeout() {
-					return false;
-				}
-
-				@Override
-				public void onTimeout() {
-					Logger.error(this, "Fatal timeout waiting for Accepted/Rejected from "+next+" on "+BaseSender.this);
-					next.fatalTimeout(origTag, false);
-				}
-
-				@Override
-				public void onDisconnect(PeerContext ctx) {
-					next.noLongerRoutingTo(origTag, false);
-				}
-
-				@Override
-				public void onRestarted(PeerContext ctx) {
-					next.noLongerRoutingTo(origTag, false);
-				}
-
-				@Override
-				public int getPriority() {
-					return NativeThread.NORM_PRIORITY;
-				}
-				
-			}, this);
-		} catch (DisconnectedException e) {
-			next.noLongerRoutingTo(origTag, false);
-		}
-	}
-
 	protected boolean isAccepted(Message msg) {
 		// SSKInsertSender needs an alternative accepted message.
 		return msg.getSpec() == DMT.FNPAccepted;
 	}
 
 	protected abstract int getAcceptedTimeout();
-	
-	protected abstract void rnf();
 	
 	/** We timed out while waiting for a slot from any node. Fail the request.
 	 * @param load The proportion of requests getting timed out, on average,
@@ -703,11 +722,23 @@ loadWaiterLoop:
     	NEXT_PEER
     }
 
+	/** Construct a filter to wait the specified time for accepted or rejected.
+	 * The actual messages may vary.
+	 * @param next The peer we are waiting for a response from.
+	 * @param acceptedTimeout The time to wait.
+	 * @param tag Use the UID from this tag. Some requests may change the tag
+	 * after some hops, and if e.g. waiting for confirmation after a timeout,
+	 * we need to use the old tag.
+	 */
 	protected abstract MessageFilter makeAcceptedRejectedFilter(PeerNode next,
-			int acceptedTimeout);
+			int acceptedTimeout, UIDTag tag);
 	
 	protected abstract void forwardRejectedOverload();
 	
 	protected abstract boolean isInsert();
+	
+	protected int ignoreLowBackoff() {
+		return 0;
+	}
 	
 }

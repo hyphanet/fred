@@ -10,6 +10,7 @@ import net.i2p.util.NativeBigInteger;
 
 import com.db4o.ObjectContainer;
 
+import freenet.node.FSParseException;
 import freenet.store.StorableBlock;
 import freenet.support.Base64;
 import freenet.support.HexUtil;
@@ -203,10 +204,18 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 		return fs;
 	}
 
-	public static DSAPublicKey create(SimpleFieldSet set, DSAGroup group) throws IllegalBase64Exception {
-		NativeBigInteger x =
-			new NativeBigInteger(1, Base64.decode(set.get("y")));
-		return new DSAPublicKey(group, x);
+	public static DSAPublicKey create(SimpleFieldSet set, DSAGroup group) throws FSParseException {
+		NativeBigInteger x;
+		try {
+			x = new NativeBigInteger(1, Base64.decode(set.get("y")));
+		} catch (IllegalBase64Exception e) {
+			throw new FSParseException(e);
+		}
+		try {
+			return new DSAPublicKey(group, x);
+		} catch (IllegalArgumentException e) {
+			throw new FSParseException(e);
+		}
 	}
 
 	@Override

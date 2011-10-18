@@ -318,7 +318,6 @@ public class ContainerInserter implements ClientPutState {
 			tarOS.closeArchiveEntry();
 		}
 		
-		tarOS.closeArchiveEntry();
 		tarOS.close();
 		
 		return ARCHIVE_TYPE.TAR.mimeTypes[0];
@@ -338,7 +337,6 @@ public class ContainerInserter implements ClientPutState {
 			zos.closeEntry();
 		}
 		
-		zos.closeEntry();
 		// Both finish() and close() are necessary.
 		zos.finish();
 		

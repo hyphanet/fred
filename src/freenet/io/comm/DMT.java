@@ -616,6 +616,7 @@ public class DMT {
 	public static final short DATA_INSERT_REJECTED_VERIFY_FAILED = 1;
 	public static final short DATA_INSERT_REJECTED_RECEIVE_FAILED = 2;
 	public static final short DATA_INSERT_REJECTED_SSK_ERROR = 3;
+	public static final short DATA_INSERT_REJECTED_TIMEOUT_WAITING_FOR_ACCEPTED = 4;
 	
 	public static final String getDataInsertRejectedReason(short reason) {
 		if(reason == DATA_INSERT_REJECTED_VERIFY_FAILED)
@@ -624,6 +625,8 @@ public class DMT {
 			return "Receive failed";
 		else if(reason == DATA_INSERT_REJECTED_SSK_ERROR)
 			return "SSK error";
+		else if(reason == DATA_INSERT_REJECTED_TIMEOUT_WAITING_FOR_ACCEPTED)
+			return "Timeout waiting for Accepted (moved on)";
 		return "Unknown reason code: "+reason;
 	}
 
@@ -1023,7 +1026,7 @@ public class DMT {
 		return msg;
 	}
 	
-	public static final MessageType FNPRHProbeReply = new MessageType("FNPRHProbeReply", PRIORITY_HIGH) {{
+	public static final MessageType FNPRHProbeReply = new MessageType("FNPRHProbeReply", PRIORITY_UNSPECIFIED) {{
 		addField(UID, Long.class);
 		addField(NEAREST_LOCATION, Double.class);
 		addField(BEST_LOCATION, Double.class);
@@ -1082,7 +1085,7 @@ public class DMT {
 		return msg;
 	}
 	
-	public static final MessageType FNPRHProbeTrace = new MessageType("FNPRHProbeTrace", PRIORITY_LOW) {{
+	public static final MessageType FNPRHProbeTrace = new MessageType("FNPRHProbeTrace", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
 		addField(NEAREST_LOCATION, Double.class);
 		addField(BEST_LOCATION, Double.class);

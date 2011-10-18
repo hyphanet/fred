@@ -161,7 +161,11 @@ final public class FileUtil {
 		// (where /var/lib/freenet-experimental is the current working dir)
 		// Regenerating from path worked. So do that here.
 		// And yes, it's voodoo.
-		file = new File(file.getPath());
+		String name = file.getPath();
+		if(File.pathSeparatorChar == '\\') {
+			name = name.toLowerCase();
+		}
+		file = new File(name);
 		File result;
 		try {
 			result = file.getAbsoluteFile().getCanonicalFile();
@@ -495,6 +499,28 @@ final public class FileUtil {
 				remaining -= read;
 		}
 	}
+	
+	public static boolean secureDeleteAll(File wd, Random random) throws IOException {
+		if(!wd.isDirectory()) {
+			System.err.println("DELETING FILE "+wd);
+			try {
+				secureDelete(wd, random);
+			} catch (IOException e) {
+				Logger.error(FileUtil.class, "Could not delete file: "+wd, e);
+				return false;
+			}
+		} else {
+			File[] subfiles = wd.listFiles();
+			for(int i=0;i<subfiles.length;i++) {
+				if(!removeAll(subfiles[i])) return false;
+			}
+			if(!wd.delete()) {
+				Logger.error(FileUtil.class, "Could not delete directory: "+wd);
+			}
+		}
+		return true;
+	}
+
 
 	/** Delete everything in a directory. Only use this when we are *very sure* there is no
 	 * important data below it! */
@@ -656,6 +682,12 @@ final public class FileUtil {
 			success = false;
 		}
 		return success;
+	}
+
+	public static boolean equals(File a, File b) {
+		a = getCanonicalFile(a);
+		b = getCanonicalFile(b);
+		return a.equals(b);
 	}
 
 }

@@ -56,7 +56,7 @@ public class PproxyToadlet extends Toadlet {
 
 		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 
-		String pass = request.getPartAsString("formPassword", 32);
+		String pass = request.getPartAsStringFailsafe("formPassword", 32);
 		if((pass == null) || !pass.equals(core.formPassword)) {
 			headers.put("Location", "/plugins/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
@@ -127,14 +127,13 @@ public class PproxyToadlet extends Toadlet {
 			PageMaker pageMaker = ctx.getPageMaker();
 			
 			if (request.isPartSet("submit-official")) {
-				final String pluginName = request.getPartAsString("plugin-name", 40);
+				final String pluginName = request.getPartAsStringFailsafe("plugin-name", 40);
+				
 				node.executor.execute(new Runnable() {
-
 					@Override
 					public void run() {
-						pm.startPluginOfficial(pluginName, true, true, "https".equals(request.getPartAsString("pluginSource", 10)));
+						pm.startPluginOfficial(pluginName, true, true, "https".equals(request.getPartAsStringFailsafe("pluginSource", 10)));
 					}
-					
 				});
 				
 				headers.put("Location", ".");
@@ -142,21 +141,33 @@ public class PproxyToadlet extends Toadlet {
 				return;
 			}
 			if (request.isPartSet("submit-other")) {
-				String pluginName = null;
-				pluginName = request.getPartAsString("plugin-url", 200);
-				boolean fileonly = "on".equalsIgnoreCase(request.getPartAsString("fileonly", 20));
-				if (fileonly) 
-					pm.startPluginFile(pluginName, true);
-				else
-					pm.startPluginURL(pluginName, true);
+				final String pluginName = request.getPartAsStringFailsafe("plugin-url", 200);
+				final boolean fileonly = "on".equalsIgnoreCase(request.getPartAsStringFailsafe("fileonly", 20));
+				
+				node.executor.execute(new Runnable() {
+					@Override
+					public void run() {
+						if (fileonly) 
+							pm.startPluginFile(pluginName, true);
+						else
+							pm.startPluginURL(pluginName, true);
+					}
+				});
+
 				headers.put("Location", ".");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
 			}
 			if (request.isPartSet("submit-freenet")) {
-				String pluginName = null;
-				pluginName = request.getPartAsString("plugin-uri", 300);
-				pm.startPluginFreenet(pluginName, true);
+				final String pluginName = request.getPartAsStringFailsafe("plugin-uri", 300);
+				
+				node.executor.execute(new Runnable() {
+					@Override
+					public void run() {
+						pm.startPluginFreenet(pluginName, true);
+					}
+				});
+
 				headers.put("Location", ".");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
@@ -166,8 +177,8 @@ public class PproxyToadlet extends Toadlet {
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
 			}
-			if (request.getPartAsString("unloadconfirm", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
-				String pluginThreadName = request.getPartAsString("unloadconfirm", MAX_PLUGIN_NAME_LENGTH);
+			if (request.getPartAsStringFailsafe("unloadconfirm", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
+				String pluginThreadName = request.getPartAsStringFailsafe("unloadconfirm", MAX_PLUGIN_NAME_LENGTH);
 				String pluginSpecification = getPluginSpecification(pm, pluginThreadName);
 				pm.killPlugin(pluginThreadName, MAX_THREADED_UNLOAD_WAIT_TIME, false);
 				if (request.isPartSet("purge")) {
@@ -184,17 +195,17 @@ public class PproxyToadlet extends Toadlet {
 				infoboxContent.addChild("a", "href", "/plugins/", l10n("returnToPluginPage"));
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
-			}if (request.getPartAsString("unload", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
+			}if (request.getPartAsStringFailsafe("unload", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
 				PageNode page = pageMaker.getPageNode(l10n("plugins"), ctx);
 				HTMLNode pageNode = page.outer;
 				HTMLNode contentNode = page.content;
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-query");
 				infobox.addChild("div", "class", "infobox-header", l10n("unloadPluginTitle"));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-				infoboxContent.addChild("#", l10n("unloadPluginWithName", "name", request.getPartAsString("unload", MAX_PLUGIN_NAME_LENGTH)));
+				infoboxContent.addChild("#", l10n("unloadPluginWithName", "name", request.getPartAsStringFailsafe("unload", MAX_PLUGIN_NAME_LENGTH)));
 				HTMLNode unloadForm = 
 					ctx.addFormChild(infoboxContent, "/plugins/", "unloadPluginConfirmForm");
-				unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "unloadconfirm", request.getPartAsString("unload", MAX_PLUGIN_NAME_LENGTH) });
+				unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "unloadconfirm", request.getPartAsStringFailsafe("unload", MAX_PLUGIN_NAME_LENGTH) });
 				HTMLNode tempNode = unloadForm.addChild("p");
 				tempNode.addChild("input", new String[] { "type", "name" }, new String[] { "checkbox", "purge" });
 				tempNode.addChild("#", l10n("unloadPurge"));
@@ -204,7 +215,7 @@ public class PproxyToadlet extends Toadlet {
 				tempNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel") });
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
-			} else if (request.getPartAsString("reload", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
+			} else if (request.getPartAsStringFailsafe("reload", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
 				PageNode page = pageMaker.getPageNode(l10n("plugins"), ctx);
 				HTMLNode pageNode = page.outer;
 				HTMLNode contentNode = page.content;
@@ -212,7 +223,7 @@ public class PproxyToadlet extends Toadlet {
 				reloadContent.addChild("p", l10n("reloadExplanation"));
 				reloadContent.addChild("p", l10n("reloadWarning"));
 				HTMLNode reloadForm = ctx.addFormChild(reloadContent, "/plugins/", "reloadPluginConfirmForm");
-				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "reloadconfirm", request.getPartAsString("reload", MAX_PLUGIN_NAME_LENGTH) });
+				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "reloadconfirm", request.getPartAsStringFailsafe("reload", MAX_PLUGIN_NAME_LENGTH) });
 				HTMLNode tempNode = reloadForm.addChild("p");
 				tempNode.addChild("input", new String[] { "type", "name" }, new String[] { "checkbox", "purge" });
 				tempNode.addChild("#", l10n("reloadPurgeWarning"));
@@ -223,9 +234,9 @@ public class PproxyToadlet extends Toadlet {
 				
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
-			} else if (request.getPartAsString("update", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
+			} else if (request.getPartAsStringFailsafe("update", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
 				// Deploy the plugin update
-				final String pluginFilename = request.getPartAsString("update", MAX_PLUGIN_NAME_LENGTH);
+				final String pluginFilename = request.getPartAsStringFailsafe("update", MAX_PLUGIN_NAME_LENGTH);
 
 				if (!pm.isPluginLoaded(pluginFilename)) {
 					sendErrorPage(ctx, 404, l10n("pluginNotFoundUpdatingTitle"), 
@@ -238,9 +249,9 @@ public class PproxyToadlet extends Toadlet {
 				}
 				return;
 				
-			}else if (request.getPartAsString("reloadconfirm", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
+			}else if (request.getPartAsStringFailsafe("reloadconfirm", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
 				boolean purge = request.isPartSet("purge");
-				String pluginThreadName = request.getPartAsString("reloadconfirm", MAX_PLUGIN_NAME_LENGTH);
+				String pluginThreadName = request.getPartAsStringFailsafe("reloadconfirm", MAX_PLUGIN_NAME_LENGTH);
 				final String fn = getPluginSpecification(pm, pluginThreadName);
 
 				if (fn == null) {
@@ -331,7 +342,7 @@ public class PproxyToadlet extends Toadlet {
 
 				Iterator<PluginProgress> loadingPlugins = pm.getStartingPlugins().iterator();
 
-				PageNode page = ctx.getPageMaker().getPageNode(l10n("pluginsWithNodeName", "name", core.getMyName()), ctx);
+				PageNode page = ctx.getPageMaker().getPageNode(l10n("plugins"), ctx);
 				HTMLNode pageNode = page.outer;
 				if (loadingPlugins.hasNext()) {
 					/* okay, add a refresh. */

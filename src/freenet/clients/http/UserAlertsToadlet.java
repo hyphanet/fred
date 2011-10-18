@@ -36,7 +36,7 @@ public class UserAlertsToadlet extends Toadlet {
 			return;
 		}
 
-		PageNode page = ctx.getPageMaker().getPageNode(l10n("titleWithName", "name", node.getMyName()), ctx);
+		PageNode page = ctx.getPageMaker().getPageNode(l10n("title"), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		HTMLNode alertsNode = alerts.createAlerts(false);
@@ -53,7 +53,7 @@ public class UserAlertsToadlet extends Toadlet {
 
 		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 
-		String pass = request.getPartAsString("formPassword", 32);
+		String pass = request.getPartAsStringFailsafe("formPassword", 32);
 		if((pass == null) || !pass.equals(node.clientCore.formPassword)) {
 			sendErrorPage(ctx, 403, "Forbidden", "Invalid form password.");
 			return;
@@ -67,8 +67,8 @@ public class UserAlertsToadlet extends Toadlet {
 	}
 
 
-	protected String l10n(String name, String pattern, String value) {
-		return NodeL10n.getBase().getString("UserAlertsToadlet."+name, pattern, value);
+	protected String l10n(String name) {
+		return NodeL10n.getBase().getString("UserAlertsToadlet."+name);
 	}
 
 	@Override
