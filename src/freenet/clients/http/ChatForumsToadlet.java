@@ -52,6 +52,11 @@ public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 			                HTMLNode.link("/freenet:USK@QRZAI1nSm~dAY2hTdzVWXmEhkaI~dso0OadnppBR7kE,wq5rHGBI7kpChBe4yRmgBChIGDug7Xa5SG9vYGXdxR0,AQACAAE/frost/14/"),
 			                HTMLNode.link(ExternalLinkToadlet.escape("http://jtcfrost.sourceforge.net/")),
 			                HTMLNode.link("/SSK@ugb~uuscsidMI-Ze8laZe~o3BUIb3S50i25RIwDH99M,9T20t3xoG-dQfMO94LGOl9AxRTkaz~TykFY-voqaTQI,AQACAAE/FAFS-49/files/frost.htm")});
+		HTMLNode li = ul.addChild("li");
+		NodeL10n.getBase().addL10nSubstitution(li, "ChatForumsToadlet.sone",
+		       new String[] { "sone"},
+			       new HTMLNode[] {
+				   HTMLNode.link("/USK@nwa8lHa271k2QvJ8aa0Ov7IHAV-DFOCFgmDt3X6BpCI,DuQSUZiI~agF8c-6tjsFFGuZ8eICrzWCILB60nT8KKo,AQACAAE/sone/43/")});
 		contentBox.addChild("p", l10n("content2"));
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
