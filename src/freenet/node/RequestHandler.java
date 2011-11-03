@@ -780,8 +780,9 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 	 */
 	private void finishOpennetChecked() throws NotConnectedException {
 		OpennetManager om = node.getOpennet();
-		if(om != null &&
-			(node.passOpennetRefsThroughDarknet() || source.isOpennet())) {
+		if(node.canPathFold(htl) &&
+				om != null &&
+				(node.passOpennetRefsThroughDarknet() || source.isOpennet())) {
 			finishOpennetInner(om);
 		} else {
 			ackOpennet();
@@ -795,7 +796,9 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 	private void finishOpennetNoRelay() throws NotConnectedException {
 		OpennetManager om = node.getOpennet();
 
-		if(om != null && (source.isOpennet() || node.passOpennetRefsThroughDarknet())) {
+		if(node.canPathFold(htl) &&
+				om != null && 
+				(source.isOpennet() || node.passOpennetRefsThroughDarknet())) {
 			finishOpennetNoRelayInner(om);
 		} else {
 			ackOpennet();

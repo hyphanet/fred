@@ -1675,7 +1675,11 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
      * @return True only if there was a fatal timeout and the caller should not unlock.
      */
     private boolean finishOpennet(PeerNode next) {
-    	
+    	if(!node.canPathFold(htl)) {
+        	ackOpennet(next);
+        	return false;
+        }
+		
     	OpennetManager om;
     	
     	try {

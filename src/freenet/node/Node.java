@@ -4100,6 +4100,15 @@ public class Node implements TimeSkewDetectorCallback {
 	boolean canWriteDatastoreInsert(short htl) {
 		return htl <= (maxHTL - 3);
 	}
+	
+	/**	Are we far enough from the source of a request request to path fold?
+	 * We don't want to initiate or accept path folding requests when the htl is
+	 * too high.  Doing so can cause our peer location distribution to get too
+	 * uniformly spread, especially when doing local requests.  
+	 */
+	boolean canPathFold(short htl) {
+		return htl <= (maxHTL - 3);
+	}
 
 	/**
 	 * Add a transferring RequestSender to our HashMap.
