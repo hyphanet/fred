@@ -2370,7 +2370,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			/* try HTML5 meta charset declaration. */
 			String charset = getHashString(h, "charset");
 			if (charset != null) {
-				if (pc.detectedCharset != null) {
+				if ((pc.detectedCharset != null) && !charset.equals(pc.detectedCharset)) {
 					throwFilterException(l10n("multipleCharsetsInMeta"));
 				}
 				pc.detectedCharset = charset;
