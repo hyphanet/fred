@@ -72,7 +72,8 @@ public class PersistentPutDir extends FCPMessage {
 		SimpleFieldSet fs = new SimpleFieldSet(false); // false because this can get HUGE
 		fs.putSingle("Identifier", identifier);
 		fs.putSingle("URI", uri.toString(false, false));
-		fs.putSingle("PrivateURI", privateURI.toString(false, false));
+		if(privateURI != null)
+			fs.putSingle("PrivateURI", privateURI.toString(false, false));
 		fs.put("Verbosity", verbosity);
 		fs.putSingle("Persistence", ClientRequest.persistenceTypeString(persistenceType));
 		fs.put("PriorityClass", priorityClass);
