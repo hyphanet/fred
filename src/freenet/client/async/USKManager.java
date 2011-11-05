@@ -117,6 +117,7 @@ public class USKManager {
 	final WeakHashMap<USK, Long> temporaryBackgroundFetchersPrefetch;
 	
 	final FetchContext backgroundFetchContext;
+	final FetchContext backgroundFetchContextIgnoreDBR;
 	/** This one actually fetches data */
 	final FetchContext realFetchContext;
 	
@@ -130,6 +131,8 @@ public class USKManager {
 		client.setMaxLength(FProxyToadlet.MAX_LENGTH);
 		backgroundFetchContext = client.getFetchContext();
 		backgroundFetchContext.followRedirects = false;
+		backgroundFetchContextIgnoreDBR = backgroundFetchContext.clone();
+		backgroundFetchContextIgnoreDBR.ignoreUSKDatehints = true;
 		realFetchContext = client.getFetchContext();
 		latestKnownGoodByClearUSK = new HashMap<USK, Long>();
 		latestSlotByClearUSK = new HashMap<USK, Long>();
@@ -318,7 +321,7 @@ public class USKManager {
 //			}
 			USKFetcher f = temporaryBackgroundFetchersLRU.get(clear);
 			if(f == null) {
-				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.UPDATE_PRIORITY_CLASS, realTimeFlag ? rcRT : rcBulk), 3, false, false, false);
+				f = new USKFetcher(usk, this, fctx.ignoreUSKDatehints ? backgroundFetchContextIgnoreDBR : backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.UPDATE_PRIORITY_CLASS, realTimeFlag ? rcRT : rcBulk), 3, false, false, false);
 				sched = f;
 				temporaryBackgroundFetchersLRU.push(clear, f);
 			} else {
