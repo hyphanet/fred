@@ -518,10 +518,14 @@ public class USKManager {
 	 * @return The proxy object which was actually subscribed. The caller MUST
 	 * record this and pass it in to unsubscribe() when unsubscribing.  
 	 * */
-	public USKSparseProxyCallback subscribeSparse(USK origUSK, USKCallback cb, RequestClient client) {
+	public USKSparseProxyCallback subscribeSparse(USK origUSK, USKCallback cb, boolean ignoreUSKDatehints, RequestClient client) {
 		USKSparseProxyCallback proxy = new USKSparseProxyCallback(cb, origUSK);
-		subscribe(origUSK, proxy, true, client);
+		subscribe(origUSK, proxy, true, ignoreUSKDatehints, client);
 		return proxy;
+	}
+	
+	public USKSparseProxyCallback subscribeSparse(USK origUSK, USKCallback cb, RequestClient client) {
+		return subscribeSparse(origUSK, cb, false, client);
 	}
 	
 	/**
@@ -529,7 +533,7 @@ public class USKManager {
 	 * updated. Note that this does not imply that the USK will be
 	 * checked on a regular basis, unless runBackgroundFetch=true.
 	 */
-	public void subscribe(USK origUSK, USKCallback cb, boolean runBackgroundFetch, RequestClient client) {
+	public void subscribe(USK origUSK, USKCallback cb, boolean runBackgroundFetch, boolean ignoreUSKDatehints, RequestClient client) {
 		if(logMINOR) Logger.minor(this, "Subscribing to "+origUSK+" for "+cb);
 		if(client.persistent()) throw new UnsupportedOperationException("USKManager subscriptions cannot be persistent");
 		USKFetcher sched = null;
@@ -568,7 +572,7 @@ public class USKManager {
 			if(runBackgroundFetch) {
 				USKFetcher f = backgroundFetchersByClearUSK.get(clear);
 				if(f == null) {
-					f = new USKFetcher(origUSK, this, backgroundFetchContext, new USKFetcherWrapper(origUSK, RequestStarter.UPDATE_PRIORITY_CLASS, client), 3, true, false, false);
+					f = new USKFetcher(origUSK, this, ignoreUSKDatehints ? backgroundFetchContextIgnoreDBR : backgroundFetchContext, new USKFetcherWrapper(origUSK, RequestStarter.UPDATE_PRIORITY_CLASS, client), 3, true, false, false);
 					sched = f;
 					backgroundFetchersByClearUSK.put(clear, f);
 				}
@@ -589,6 +593,10 @@ public class USKManager {
 				}
 			}, "USKManager.schedule for "+fetcher);
 		}
+	}
+	
+	public void subscribe(USK origUSK, USKCallback cb, boolean runBackgroundFetch, RequestClient client) {
+		subscribe(origUSK, cb, runBackgroundFetch, false, client);
 	}
 	
 	public void unsubscribe(USK origUSK, USKCallback cb) {
@@ -655,7 +663,7 @@ public class USKManager {
 			ret.setProxy(proxy);
 			toSub = proxy;
 		}
-		subscribe(origUSK, toSub, runBackgroundFetch, client);
+		subscribe(origUSK, toSub, runBackgroundFetch, fctx.ignoreUSKDatehints, client);
 		return ret;
 	}
 	
@@ -670,6 +678,7 @@ public class USKManager {
 		USKSparseProxyCallback proxy = new USKSparseProxyCallback(ret, origUSK);
 		ret.setProxy(proxy);
 		toSub = proxy;
+		/* runBackgroundFetch=false -> ignoreUSKDatehints unused */
 		subscribe(origUSK, toSub, false, client);
 		USKFetcher f = new USKFetcher(origUSK, this, fctx, new USKFetcherWrapper(origUSK, prio, client), 3, true, false, false);
 		ret.setFetcher(f);
