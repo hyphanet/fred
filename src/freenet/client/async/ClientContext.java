@@ -11,6 +11,7 @@ import freenet.client.ArchiveManager;
 import freenet.client.FECQueue;
 import freenet.client.FetchException;
 import freenet.client.InsertException;
+import freenet.client.filter.LinkFilterExceptionProvider;
 import freenet.crypt.RandomSource;
 import freenet.node.RequestScheduler;
 import freenet.node.RequestStarterGroup;
@@ -64,12 +65,15 @@ public class ClientContext {
 	public transient final CooldownTracker cooldownTracker;
 	public transient DownloadCache downloadCache;
 
+	/** Provider for link filter exceptions. */
+	public transient final LinkFilterExceptionProvider linkFilterExceptionProvider;
+
 	public ClientContext(long bootID, long nodeDBHandle, DBJobRunner jobRunner, FECQueue fecQueue, Executor mainExecutor,
 			BackgroundBlockEncoder blockEncoder, ArchiveManager archiveManager,
 			PersistentTempBucketFactory ptbf, BucketFactory tbf, PersistentFileTracker tracker, HealingQueue hq,
-			USKManager uskManager, RandomSource strongRandom, 
-			Random fastWeakRandom, Ticker ticker, 
-			FilenameGenerator fg, FilenameGenerator persistentFG, RealCompressor rc, DatastoreChecker checker) {
+			USKManager uskManager, RandomSource strongRandom,
+			Random fastWeakRandom, Ticker ticker,
+			FilenameGenerator fg, FilenameGenerator persistentFG, RealCompressor rc, DatastoreChecker checker, LinkFilterExceptionProvider linkFilterExceptionProvider) {
 		this.bootID = bootID;
 		this.fecQueue = fecQueue;
 		this.jobRunner = jobRunner;
@@ -88,6 +92,7 @@ public class ClientContext {
 		this.persistentFG = persistentFG;
 		this.rc = rc;
 		this.checker = checker;
+		this.linkFilterExceptionProvider = linkFilterExceptionProvider;
 		this.cooldownTracker = new CooldownTracker();
 	}
 	

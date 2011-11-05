@@ -16,6 +16,7 @@ import java.util.LinkedList;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.filter.HTMLFilter;
+import freenet.client.filter.LinkFilterExceptionProvider;
 import freenet.clients.http.FProxyFetchInProgress.REFILTER_POLICY;
 import freenet.clients.http.PageMaker.THEME;
 import freenet.clients.http.bookmark.BookmarkManager;
@@ -57,7 +58,7 @@ import freenet.support.io.NativeThread;
  * 
  * Provide a HTTP server for FProxy
  */
-public final class SimpleToadletServer implements ToadletContainer, Runnable {
+public final class SimpleToadletServer implements ToadletContainer, Runnable, LinkFilterExceptionProvider {
 	/** List of urlPrefix / Toadlet */ 
 	private final LinkedList<ToadletElement> toadlets;
 	private static class ToadletElement {
@@ -1195,6 +1196,27 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		sb.append(this.port);
 		sb.append("/");
 		return sb.toString();
+	}
+
+	//
+	// LINKFILTEREXCEPTIONPROVIDER METHODS
+	//
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public boolean isLinkExcepted(URI link) {
+		Toadlet toadlet = null;
+		try {
+			toadlet = findToadlet(link);
+		} catch (PermanentRedirectException pre1) {
+			/* ignore. */
+		}
+		if (toadlet instanceof LinkFilterExceptedToadlet) {
+			return ((LinkFilterExceptedToadlet) toadlet).isLinkExcepted(link);
+		}
+		return false;
 	}
 
 }
