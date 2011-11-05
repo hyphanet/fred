@@ -222,7 +222,8 @@ maintainers may prefer to use this instead of build.xml.
 
 	<target name="package" depends="unit, package-only" description="build standard binary packages (Freenet daemon)"/>
 
-	<target name="unit-build" depends="build, libdep-junit" unless="${test.skip}">
+	<target name="unit-build" depends="build" unless="${test.skip}">
+		<antcall target="libdep-junit"/>
 		<javac srcdir="${test.src}" destdir="${test.make}" debug="on" optimize="on" source="1.6" target="1.6" encoding="UTF-8">
 			<compilerarg line="${javac.args}"/>
 			<classpath refid="libtest.path"/>
