@@ -109,6 +109,11 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			onSuccess(state, container, context);
 			return;
 		}
+		if(persistent) {
+			container.activate(waitingFor, 2);
+			container.activate(waitingForBlockSet, 2);
+			container.activate(waitingForFetchable, 2);
+		}
 		boolean complete = true;
 		synchronized(this) {
 			if(finished) {
@@ -271,13 +276,13 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		for(int i=0;i<waitingForBlockSet.size();i++) {
 			if(waitingForBlockSet.get(i) == oldState) {
 				waitingForBlockSet.set(i, newState);
-				if(persistent) container.ext().store(waitingFor, 2);
+				if(persistent) container.ext().store(waitingForBlockSet, 2);
 			}
 		}
 		for(int i=0;i<waitingForFetchable.size();i++) {
 			if(waitingForFetchable.get(i) == oldState) {
 				waitingForFetchable.set(i, newState);
-				if(persistent) container.ext().store(waitingFor, 2);
+				if(persistent) container.ext().store(waitingForFetchable, 2);
 			}
 		}
 		if(persistent) container.store(this);
