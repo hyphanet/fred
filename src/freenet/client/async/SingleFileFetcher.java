@@ -807,8 +807,34 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
 				final SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, redirectedKey, metaStrings, this.uri, addedMetaStrings, ctx, deleteFetchContext, realTimeFlag, actx, ah, archiveMetadata, maxRetries, recursionLevel, false, token, true, isFinal, topDontCompress, topCompatibilityMode, container, context, false);
 				this.deleteFetchContext = false;
-				if((redirectedKey instanceof ClientCHK) && !((ClientCHK)redirectedKey).isMetadata())
+				if((redirectedKey instanceof ClientCHK) && !((ClientCHK)redirectedKey).isMetadata()) {
 					rcb.onBlockSetFinished(this, container, context);
+					// not splitfile, synthesize CompatibilityMode event
+					if (metadata.getParsedVersion() == 0)
+						rcb.onSplitfileCompatibilityMode(
+								CompatibilityMode.COMPAT_1250_EXACT,
+								CompatibilityMode.COMPAT_1251,
+								null,
+								!((ClientCHK)redirectedKey).isCompressed(),
+								true, true,
+								container, context);
+					else if (metadata.getParsedVersion() == 1)
+						rcb.onSplitfileCompatibilityMode(
+								CompatibilityMode.COMPAT_1255,
+								CompatibilityMode.COMPAT_1255,
+								((ClientCHK)redirectedKey).getCryptoKey(),
+								!((ClientCHK)redirectedKey).isCompressed(),
+								true, true,
+								container, context);
+					else
+						rcb.onSplitfileCompatibilityMode(
+								CompatibilityMode.COMPAT_UNKNOWN,
+								CompatibilityMode.COMPAT_UNKNOWN,
+								((ClientCHK)redirectedKey).getCryptoKey(),
+								!((ClientCHK)redirectedKey).isCompressed(),
+								true, true,
+								container, context);
+				}
 				if(metadata.isCompressed()) {
 					COMPRESSOR_TYPE codec = metadata.getCompressionCodec();
 					f.addDecompressor(codec);
