@@ -284,6 +284,7 @@ public class ClientPutDir extends ClientPutBase {
 	protected FCPMessage persistentTagMessage(ObjectContainer container) {
 		if(persistenceType == PERSIST_FOREVER) {
 			container.activate(publicURI, 5);
+			container.activate(uri, 5);
 			container.activate(ctx, 1);
 			container.activate(manifestElements, 5);
 		}
@@ -293,7 +294,7 @@ public class ClientPutDir extends ClientPutBase {
 		if (putter == null)
 			Logger.error(this, "putter == null", new Exception("error"));
 		// FIXME end
-		return new PersistentPutDir(identifier, publicURI, verbosity, priorityClass,
+		return new PersistentPutDir(identifier, publicURI, uri, verbosity, priorityClass,
 				persistenceType, global, defaultName, manifestElements, clientToken, started, ctx.maxInsertRetries, ctx.dontCompress, ctx.compressorDescriptor, wasDiskPut, isRealTime(), putter != null ? putter.getSplitfileCryptoKey() : null, container);
 	}
 	

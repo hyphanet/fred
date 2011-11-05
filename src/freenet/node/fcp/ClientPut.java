@@ -347,6 +347,7 @@ public class ClientPut extends ClientPutBase {
 	protected FCPMessage persistentTagMessage(ObjectContainer container) {
 		if(persistenceType == PERSIST_FOREVER) {
 			container.activate(publicURI, 5);
+			container.activate(uri, 5);
 			container.activate(clientMetadata, 5);
 			container.activate(origFilename, 5);
 			container.activate(ctx, 1);
@@ -356,7 +357,7 @@ public class ClientPut extends ClientPutBase {
 		if (putter == null)
 			Logger.error(this, "putter == null", new Exception("error"));
 		// FIXME end
-		return new PersistentPut(identifier, publicURI, verbosity, priorityClass, uploadFrom, targetURI, 
+		return new PersistentPut(identifier, publicURI, uri, verbosity, priorityClass, uploadFrom, targetURI, 
 				persistenceType, origFilename, clientMetadata.getMIMEType(), client.isGlobalQueue,
 				getDataSize(container), clientToken, started, ctx.maxInsertRetries, targetFilename, binaryBlob, this.ctx.getCompatibilityMode(), this.ctx.dontCompress, this.ctx.compressorDescriptor, isRealTime(), putter != null ? putter.getSplitfileCryptoKey() : null);
 	}
