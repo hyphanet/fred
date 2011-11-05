@@ -583,17 +583,6 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			container.activate(parent, 1);
 			container.store(this);
 		}
-		if(getCHKOnly) {
-			byte cryptoAlgorithm = getCryptoAlgorithm(container);
-			// FIXME refactor onSuccess to avoid creating the bucket.
-			// Sometimes shadowing will fail and creating the bucket will involve copying. This is bad!
-			try {
-				BlockItem block = getBlockItem(container, context, x, cryptoAlgorithm);
-				onSuccess(block, container, context);
-			} catch (IOException e) {
-				fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
-			}
-		}
 		if(gotAllURIs) {
 			if(!persistent) {
 				context.mainExecutor.execute(new Runnable() {
@@ -606,6 +595,17 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				});
 			} else {
 				parent.segmentHasURIs(this, container, context);
+			}
+		}
+		if(getCHKOnly) {
+			byte cryptoAlgorithm = getCryptoAlgorithm(container);
+			// FIXME refactor onSuccess to avoid creating the bucket.
+			// Sometimes shadowing will fail and creating the bucket will involve copying. This is bad!
+			try {
+				BlockItem block = getBlockItem(container, context, x, cryptoAlgorithm);
+				onSuccess(block, container, context);
+			} catch (IOException e) {
+				fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
 			}
 		}
 		if(persistent)
