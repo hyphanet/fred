@@ -309,6 +309,7 @@ public final class PageMaker {
 			statusBarDiv.addChild("div", "id", "statusbar-language").addChild("a", "href", "/config/node#l10n", NodeL10n.getBase().getSelectedLanguage().fullName);
 
 			if (node.clientCore != null && ctx != null) {
+				parseMode(ctx);
 				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
 				final HTMLNode switchMode = statusBarDiv.addChild("div", "id", "statusbar-switchmode");
 				if (ctx.activeToadlet().container.isAdvancedModeEnabled()) {
@@ -592,6 +593,7 @@ public final class PageMaker {
 	}
 	
 	/** Call this before getPageNode(), so the menus reflect the advanced mode setting. */
+	@Deprecated
 	public int parseMode(HTTPRequest req, ToadletContainer container) {
 		int mode = container.isAdvancedModeEnabled() ? MODE_ADVANCED : MODE_SIMPLE;
 		
@@ -604,6 +606,12 @@ public final class PageMaker {
 		}
 		
 		return mode;
+	}
+	
+	private void parseMode(ToadletContext ctx) {
+		HTTPRequest req = new HTTPRequestImpl(ctx.getUri(), "GET");
+		if(req.isParameterSet("mode"))
+			ctx.getContainer().setAdvancedMode(req.getIntParam("mode") == MODE_ADVANCED);
 	}
 	
 	private static final String l10n(String string) {
