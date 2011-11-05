@@ -285,7 +285,7 @@ public class FreenetURI implements Cloneable {
 		this.docName = docName;
 		this.metaStr = metaStr;
 		this.routingKey = routingKey;
-		if(routingKey != null && routingKey.length != 32)
+		if(routingKey != null && keyType.equals("CHK") && routingKey.length != 32)
 			throw new IllegalArgumentException("Bad URI: Routing key should be 32 bytes");
 		this.cryptoKey = cryptoKey;
 		if(cryptoKey != null && cryptoKey.length != 32)
@@ -307,7 +307,7 @@ public class FreenetURI implements Cloneable {
 		this.docName = docName;
 		this.metaStr = metaStr;
 		this.routingKey = routingKey;
-		if(routingKey != null && routingKey.length != 32)
+		if(routingKey != null && keyType.equals("CHK") && routingKey.length != 32)
 			throw new IllegalArgumentException("Bad URI: Routing key should be 32 bytes");
 		this.cryptoKey = cryptoKey;
 		if(cryptoKey != null && cryptoKey.length != 32)
@@ -448,7 +448,7 @@ public class FreenetURI implements Cloneable {
 		try {
 			if(st.hasMoreTokens()) {
 				routingKey = Base64.decode(st.nextToken());
-				if(routingKey.length != 32)
+				if(routingKey.length != 32 && keyType.equals("CHK"))
 					throw new MalformedURLException("Bad URI: Routing key should be 32 bytes long");
 			} else {
 				routingKey = cryptoKey = extra = null;
@@ -481,8 +481,7 @@ public class FreenetURI implements Cloneable {
 //		this.uniqueHashCode = super.hashCode();
 		this.keyType = "USK";
 		this.routingKey = pubKeyHash;
-		if(routingKey != null && routingKey.length != 32)
-			throw new IllegalArgumentException("Bad URI: Routing key should be 32 bytes");
+		// Don't check routingKey as it could be an insertable USK
 		this.cryptoKey = cryptoKey;
 		if(cryptoKey != null && cryptoKey.length != 32)
 			throw new IllegalArgumentException("Bad URI: Crypto key should be 32 bytes");
