@@ -285,7 +285,11 @@ public class FreenetURI implements Cloneable {
 		this.docName = docName;
 		this.metaStr = metaStr;
 		this.routingKey = routingKey;
+		if(routingKey != null && routingKey.length != 32)
+			throw new IllegalArgumentException("Bad URI: Routing key should be 32 bytes");
 		this.cryptoKey = cryptoKey;
+		if(cryptoKey != null && cryptoKey.length != 32)
+			throw new IllegalArgumentException("Bad URI: Crypto key should be 32 bytes");
 		this.extra = extra2;
 		this.suggestedEdition = -1;
 		if (logDEBUG) Logger.minor(this, "Created from components: "+toString(), new Exception("debug"));
@@ -303,7 +307,11 @@ public class FreenetURI implements Cloneable {
 		this.docName = docName;
 		this.metaStr = metaStr;
 		this.routingKey = routingKey;
+		if(routingKey != null && routingKey.length != 32)
+			throw new IllegalArgumentException("Bad URI: Routing key should be 32 bytes");
 		this.cryptoKey = cryptoKey;
+		if(cryptoKey != null && cryptoKey.length != 32)
+			throw new IllegalArgumentException("Bad URI: Crypto key should be 32 bytes");
 		this.extra = extra2;
 		this.suggestedEdition = suggestedEdition;
 		if (logDEBUG) Logger.minor(this, "Created from components (B): "+toString(), new Exception("debug"));
@@ -438,9 +446,11 @@ public class FreenetURI implements Cloneable {
 		// URI now contains: routingKey[,cryptoKey][,metaInfo]
 		StringTokenizer st = new StringTokenizer(URI, ",");
 		try {
-			if(st.hasMoreTokens())
+			if(st.hasMoreTokens()) {
 				routingKey = Base64.decode(st.nextToken());
-			else {
+				if(routingKey.length != 32)
+					throw new MalformedURLException("Bad URI: Routing key should be 32 bytes long");
+			} else {
 				routingKey = cryptoKey = extra = null;
 				return;
 			}
@@ -452,6 +462,8 @@ public class FreenetURI implements Cloneable {
 			// Can be cryptokey or name-value pair.
 			String t = st.nextToken();
 			cryptoKey = Base64.decode(t);
+			if(cryptoKey.length != 32)
+				throw new MalformedURLException("Bad URI: Routing key should be 32 bytes long");
 			if(!st.hasMoreTokens()) {
 				extra = null;
 				return;
@@ -469,7 +481,11 @@ public class FreenetURI implements Cloneable {
 //		this.uniqueHashCode = super.hashCode();
 		this.keyType = "USK";
 		this.routingKey = pubKeyHash;
+		if(routingKey != null && routingKey.length != 32)
+			throw new IllegalArgumentException("Bad URI: Routing key should be 32 bytes");
 		this.cryptoKey = cryptoKey;
+		if(cryptoKey != null && cryptoKey.length != 32)
+			throw new IllegalArgumentException("Bad URI: Crypto key should be 32 bytes");
 		this.extra = extra;
 		this.docName = siteName;
 		this.suggestedEdition = suggestedEdition2;
