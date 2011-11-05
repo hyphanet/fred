@@ -188,6 +188,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				cryptoKey = null;
 				if(overrideSplitfileCrypto != null) {
 					cryptoKey = overrideSplitfileCrypto;
+					if (cryptoKey.length != 32)
+						throw new InsertException(InsertException.INVALID_URI, "overrideSplitfileCryptoKey must be of length 32", null);
 				} else if(randomiseSplitfileKeys) {
 					cryptoKey = new byte[32];
 					context.random.nextBytes(cryptoKey);
