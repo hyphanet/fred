@@ -427,7 +427,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			return;
 		}
 		synchronized(this) {
-			if(extraInserts > 0) {
+			if(extraInserts > 0 && !getCHKOnly) {
 				if(++completedInserts <= extraInserts) {
 					if(logMINOR) Logger.minor(this, "Completed inserts "+completedInserts+" of extra inserts "+extraInserts+" on "+this);
 					if(persistent) container.store(this);
