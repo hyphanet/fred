@@ -332,9 +332,9 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		String compressorDescriptor = parent.ctx.compressorDescriptor;
 		if(persistent) {
 			if (deactivateParent)
-				container.activate(parent, 1);
+				container.deactivate(parent, 1);
 			if (deactivateParentCtx)
-				container.activate(parent.ctx, 1);
+				container.deactivate(parent.ctx, 1);
 		}
 		byte cryptoAlgorithm = getCryptoAlgorithm(container);
 		for(int i=0;i<dataBlocks.length;i++) {
