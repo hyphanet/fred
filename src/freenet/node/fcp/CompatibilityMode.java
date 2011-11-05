@@ -31,6 +31,10 @@ public class CompatibilityMode extends FCPMessage {
 	}
 	
 	void merge(long min, long max, byte[] cryptoKey, boolean dontCompress, boolean definitive) {
+		if(this.definitive) {
+			Logger.warning(this, "merge() after definitive", new Exception("debug"));
+			return;
+		}
 		if(definitive) definitive = true;
 		if(!dontCompress) this.dontCompress = false;
 		if(min > this.min && !definitive) this.min = min;
