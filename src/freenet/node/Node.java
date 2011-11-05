@@ -307,7 +307,7 @@ public class Node implements TimeSkewDetectorCallback {
 			synchronized(this) {
 				name = myName;
 			}
-			if(name.startsWith("Node id|")|| name.equals("MyFirstFreenetNode")){
+			if(name.startsWith("Node id|")|| name.equals("MyFirstFreenetNode") || name.startsWith("Freenet node with no name #")){
 				clientCore.alerts.register(nodeNameUserAlert);
 			}else{
 				clientCore.alerts.unregister(nodeNameUserAlert);
@@ -926,7 +926,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 
 	private String newName() {
-		return "Node id|"+random.nextLong();
+		return "Freenet node with no name #"+random.nextLong();
 	}
 
 	private final Object writeNodeFileSync = new Object();
