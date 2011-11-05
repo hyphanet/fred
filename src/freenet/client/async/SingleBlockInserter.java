@@ -386,23 +386,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			}
 		}
 		if(getCHKOnly) {
-			boolean deactivateCB = false;
-			if(persistent) {
-				deactivateCB = !container.ext().isActive(cb);
-				if(deactivateCB)
-					container.activate(cb, 1);
-				container.activate(parent, 1);
-			}
-			ClientKeyBlock block = encode(container, context, true);
-			cb.onEncode(block.getClientKey(), this, container, context);
-			parent.completedBlock(false, container, context);
-			cb.onSuccess(this, container, context);
-			finished = true;
-			if(persistent) {
-				container.store(this);
-				if(deactivateCB)
-					container.deactivate(cb, 1);
-			}
+			tryEncode(container, context);
+			onSuccess(null, container, context);
 		} else {
 			getScheduler(container, context).registerInsert(this, persistent, true, container);
 		}
