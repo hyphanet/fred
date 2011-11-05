@@ -607,9 +607,9 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			} else {
 				parent.segmentHasURIs(this, container, context);
 			}
-			if(persistent)
-				container.deactivate(parent, 1);
 		}
+		if(persistent)
+			container.deactivate(parent, 1);
 		return gotAllURIs;
 	}
 
