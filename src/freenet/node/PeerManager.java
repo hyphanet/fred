@@ -1083,7 +1083,7 @@ public class PeerManager {
 					Logger.minor(this, "Skipping (disconnecting): "+p.getPeer());
 				continue;
 			}
-			if(p.outputLoadTracker(realTime, isSSK).getLastIncomingLoadStats() == null) {
+			if(excludeMandatoryBackoff && p.outputLoadTracker(realTime, isSSK).getLastIncomingLoadStats() == null) {
 				if(logMINOR)
 					Logger.minor(this, "Skipping (no load stats): "+p.getPeer());
 				continue;
