@@ -3883,9 +3883,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		int oldPeerNodeStatus;
 		long threshold = maxPeerPingTime();
 		boolean noLoadStats = noLoadStats();
-		if(node.enableNewLoadManagement(true) || node.enableNewLoadManagement(false))
-			// New load management off -> don't care whether they have load stats or not.
-			noLoadStats = false;
+		if(noLoadStats) {
+			if(node.enableNewLoadManagement(true) || node.enableNewLoadManagement(false))
+				// New load management off -> don't care whether they have load stats or not.
+				noLoadStats = false;
+		}
 		synchronized(this) {
 			oldPeerNodeStatus = peerNodeStatus;
 			peerNodeStatus = getPeerNodeStatus(now, localRoutingBackedOffUntilRT, localRoutingBackedOffUntilBulk, averagePingTime() > threshold, noLoadStats);

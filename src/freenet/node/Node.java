@@ -6319,6 +6319,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 	
 	public boolean enableNewLoadManagement(boolean realTimeFlag) {
+		if(nodeStats == null) return false;
 		return nodeStats.enableNewLoadManagement(realTimeFlag);
 	}
 
