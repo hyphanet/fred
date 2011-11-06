@@ -559,7 +559,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				container.store(this);
 			if(logMINOR)
 				Logger.minor(this, "Blocks got URI: "+blocksGotURI+" of "+(dataBlocks.length + checkBlocks.length));
-			gotAllURIs = blocksGotURI != dataBlocks.length + checkBlocks.length;
+			gotAllURIs = blocksGotURI == dataBlocks.length + checkBlocks.length;
 			if(gotAllURIs) {
 				// Double check
 				for (int i = 0; i < checkURIs.length; i++) {
