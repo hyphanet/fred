@@ -35,7 +35,7 @@ public class CompatibilityMode extends FCPMessage {
 			Logger.warning(this, "merge() after definitive", new Exception("debug"));
 			return;
 		}
-		if(definitive) definitive = true;
+		if(definitive) this.definitive = true;
 		if(!dontCompress) this.dontCompress = false;
 		if(min > this.min && !definitive) this.min = min;
 		if((!definitive) && max < this.max || this.max == InsertContext.CompatibilityMode.COMPAT_UNKNOWN.ordinal()) this.max = max;
