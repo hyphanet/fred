@@ -149,7 +149,8 @@ public class Message {
 			// FIXME remove this after all the old builds have gone away
 			if(mspec.getName().startsWith("FNPPeerLoadStatus"))
 				Logger.warning(Message.class, "Unexpected IOException: "+e+" reading from buffer stream", e); // FIXME remove this after all the old builds have gone away
-		    Logger.error(Message.class, "Unexpected IOException: "+e+" reading from buffer stream", e);
+			else
+				Logger.error(Message.class, "Unexpected IOException: "+e+" reading from buffer stream", e);
 		    return null;
 		}
 		if(logMINOR) Logger.minor(Message.class, "Returning message: "+m+" from "+m.getSource());
