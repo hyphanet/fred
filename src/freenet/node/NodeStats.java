@@ -664,11 +664,11 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	
 	/** All requests must be able to complete in this many seconds given the bandwidth
 	 * available, even if they all succeed. Bulk requests. */
-	static final int BANDWIDTH_LIABILITY_LIMIT_SECONDS_BULK_OVERALL = 120;
+	static final int BANDWIDTH_LIABILITY_LIMIT_SECONDS_BULK_OVERALL = 160;
 	/** All requests must be able to complete in this many seconds given the bandwidth
 	 * available, even if they all succeed. Realtime requests - separate from bulk 
 	 * requests, given higher priority but expected to be bursty and lower capacity. */
-	static final int BANDWIDTH_LIABILITY_LIMIT_SECONDS_REALTIME_OVERALL = 60;
+	static final int BANDWIDTH_LIABILITY_LIMIT_SECONDS_REALTIME_OVERALL = 80;
 	
 	/** Account for SSKs separately to CHKs. This proportion determines how they
 	 * are split up. */
