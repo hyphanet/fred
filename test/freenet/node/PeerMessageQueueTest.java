@@ -16,7 +16,7 @@ public class PeerMessageQueueTest extends TestCase {
 
 		//Constructor might take some time, so grab a range
 		long start = System.currentTimeMillis();
-		MessageItem item = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
+		MessageItem item = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false, false, false);
 		long end = System.currentTimeMillis();
 
 		pmq.queueAndEstimateSize(item, 1024);
@@ -36,7 +36,7 @@ public class PeerMessageQueueTest extends TestCase {
 
 		//Constructor might take some time, so grab a range
 		long start = System.currentTimeMillis();
-		MessageItem itemUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
+		MessageItem itemUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false, false, false);
 		long end = System.currentTimeMillis();
 
 		//Sleep for a little while to get a later timeout
@@ -46,7 +46,7 @@ public class PeerMessageQueueTest extends TestCase {
 
 		}
 
-		MessageItem itemNonUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
+		MessageItem itemNonUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false, false, false);
 
 		//Queue the least urgent item first to get the wrong order
 		pmq.queueAndEstimateSize(itemNonUrgent, 1024);
@@ -63,7 +63,7 @@ public class PeerMessageQueueTest extends TestCase {
 	public void testGrabQueuedMessageItem() {
 		PeerMessageQueue pmq = new PeerMessageQueue(null);
 
-		MessageItem itemUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
+		MessageItem itemUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false, false, false);
 
 		//Sleep for a little while to get a later timeout
 		try {
@@ -72,7 +72,7 @@ public class PeerMessageQueueTest extends TestCase {
 
 		}
 
-		MessageItem itemNonUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
+		MessageItem itemNonUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false, false, false);
 
 		//Queue the least urgent item first to get the wrong order
 		pmq.queueAndEstimateSize(itemNonUrgent, 1024);

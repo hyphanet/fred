@@ -63,7 +63,7 @@ public class ProbeRequestHandler implements ProbeRequestSender.Listener {
 
 	@Override
 	public void onReceivedRejectOverload(double nearest, double best, short counter, short uniqueCounter, short linearCounter, String reason) throws NotConnectedException {
-		Message ro = DMT.createFNPRejectedOverload(uid, false, false, false);
+		Message ro = DMT.createFNPRejectedOverload(uid, false, false, false, false);
 		Message sub = DMT.createFNPRHReturnSubMessage(nearest, best, counter, uniqueCounter, linearCounter, reason);
 		ro.addSubMessage(sub);
 		source.sendAsync(ro, null, sender);
@@ -71,7 +71,7 @@ public class ProbeRequestHandler implements ProbeRequestSender.Listener {
 
 	@Override
 	public void onTimeout(double nearest, double best, short counter, short uniqueCounter, short linearCounter, String reason) throws NotConnectedException {
-		Message ro = DMT.createFNPRejectedOverload(uid, true, false, false);
+		Message ro = DMT.createFNPRejectedOverload(uid, true, false, false, false);
 		Message sub = DMT.createFNPRHReturnSubMessage(nearest, best, counter, uniqueCounter, linearCounter, reason);
 		ro.addSubMessage(sub);
 		source.sendAsync(ro, null, sender);

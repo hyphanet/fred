@@ -465,15 +465,15 @@ public class DMT {
 		addField(IS_LOCAL, Boolean.class);
 	}};
 	
-	public static final Message createFNPRejectedOverload(long id, boolean isLocal, boolean needsLoad, boolean realTimeFlag) {
+	public static final Message createFNPRejectedOverload(long id, boolean isLocal, boolean needsLoad, boolean realTimeFlag, boolean forSSK) {
 		Message msg = new Message(FNPRejectedOverload);
 		msg.set(UID, id);
 		msg.set(IS_LOCAL, isLocal);
 		if(needsLoad) {
 			if(realTimeFlag)
-				msg.setNeedsLoadRT();
+				msg.setNeedsLoadRT(forSSK);
 			else
-				msg.setNeedsLoadBulk();
+				msg.setNeedsLoadBulk(forSSK);
 		}
 		return msg;
 	}
@@ -1637,10 +1637,8 @@ public class DMT {
 	// New load management
 	
 	public static final MessageType FNPPeerLoadStatusByte = new MessageType("FNPPeerLoadStatusByte", PRIORITY_HIGH, false, true) {{
-		addField(OTHER_TRANSFERS_OUT_CHK, Byte.class);
-		addField(OTHER_TRANSFERS_IN_CHK, Byte.class);
-		addField(OTHER_TRANSFERS_OUT_SSK, Byte.class);
-		addField(OTHER_TRANSFERS_IN_SSK, Byte.class);
+		addField(OTHER_TRANSFERS_OUT, Byte.class);
+		addField(OTHER_TRANSFERS_IN, Byte.class);
 		addField(AVERAGE_TRANSFERS_OUT_PER_INSERT, Byte.class);
 		addField(OUTPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
 		addField(OUTPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
@@ -1653,13 +1651,12 @@ public class DMT {
 		addField(MAX_TRANSFERS_OUT_LOWER_LIMIT, Byte.class);
 		addField(MAX_TRANSFERS_OUT_UPPER_LIMIT, Byte.class);
 		addField(REAL_TIME_FLAG, Boolean.class);
+		addField(LOAD_FOR_SSK, Boolean.class);
 	}};
 	
 	public static final MessageType FNPPeerLoadStatusShort = new MessageType("FNPPeerLoadStatusShort", PRIORITY_HIGH, false, true) {{
-		addField(OTHER_TRANSFERS_OUT_CHK, Short.class);
-		addField(OTHER_TRANSFERS_IN_CHK, Short.class);
-		addField(OTHER_TRANSFERS_OUT_SSK, Short.class);
-		addField(OTHER_TRANSFERS_IN_SSK, Short.class);
+		addField(OTHER_TRANSFERS_OUT, Short.class);
+		addField(OTHER_TRANSFERS_IN, Short.class);
 		addField(AVERAGE_TRANSFERS_OUT_PER_INSERT, Short.class);
 		addField(OUTPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
 		addField(OUTPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
@@ -1672,13 +1669,12 @@ public class DMT {
 		addField(MAX_TRANSFERS_OUT_LOWER_LIMIT, Short.class);
 		addField(MAX_TRANSFERS_OUT_UPPER_LIMIT, Short.class);
 		addField(REAL_TIME_FLAG, Boolean.class);
+		addField(LOAD_FOR_SSK, Boolean.class);
 	}};
 	
 	public static final MessageType FNPPeerLoadStatusInt = new MessageType("FNPPeerLoadStatusInt", PRIORITY_HIGH, false, true) {{
-		addField(OTHER_TRANSFERS_OUT_CHK, Integer.class);
-		addField(OTHER_TRANSFERS_IN_CHK, Integer.class);
-		addField(OTHER_TRANSFERS_OUT_SSK, Integer.class);
-		addField(OTHER_TRANSFERS_IN_SSK, Integer.class);
+		addField(OTHER_TRANSFERS_OUT, Integer.class);
+		addField(OTHER_TRANSFERS_IN, Integer.class);
 		addField(AVERAGE_TRANSFERS_OUT_PER_INSERT, Integer.class);
 		addField(OUTPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
 		addField(OUTPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
@@ -1691,35 +1687,32 @@ public class DMT {
 		addField(MAX_TRANSFERS_OUT_LOWER_LIMIT, Integer.class);
 		addField(MAX_TRANSFERS_OUT_UPPER_LIMIT, Integer.class);
 		addField(REAL_TIME_FLAG, Boolean.class);
+		addField(LOAD_FOR_SSK, Boolean.class);
 	}};
 	
 	public static final Message createFNPPeerLoadStatus(PeerLoadStats stats) {
 		Message msg;
-		if(stats.expectedTransfersInCHK < 256 && stats.expectedTransfersInSSK < 256 &&
-				stats.expectedTransfersOutCHK < 256 && stats.expectedTransfersOutSSK < 256 &&
+		if(stats.expectedTransfersIn < 256 && 
+				stats.expectedTransfersOut < 256 && 
 				stats.averageTransfersOutPerInsert < 256 && stats.maxTransfersOut < 256 && 
 				stats.maxTransfersOutLowerLimit < 256 && stats.maxTransfersOutPeerLimit < 256 &&
 				stats.maxTransfersOutUpperLimit < 256) {
 			msg = new Message(FNPPeerLoadStatusByte);
-			msg.set(OTHER_TRANSFERS_OUT_CHK, (byte)stats.expectedTransfersOutCHK);
-			msg.set(OTHER_TRANSFERS_IN_CHK, (byte)stats.expectedTransfersInCHK);
-			msg.set(OTHER_TRANSFERS_OUT_SSK, (byte)stats.expectedTransfersOutSSK);
-			msg.set(OTHER_TRANSFERS_IN_SSK, (byte)stats.expectedTransfersInSSK);
+			msg.set(OTHER_TRANSFERS_OUT, (byte)stats.expectedTransfersOut);
+			msg.set(OTHER_TRANSFERS_IN, (byte)stats.expectedTransfersIn);
 			msg.set(AVERAGE_TRANSFERS_OUT_PER_INSERT, (byte)stats.averageTransfersOutPerInsert);
 			msg.set(MAX_TRANSFERS_OUT, (byte)stats.maxTransfersOut);
 			msg.set(MAX_TRANSFERS_OUT_PEER_LIMIT, (byte)stats.maxTransfersOutPeerLimit);
 			msg.set(MAX_TRANSFERS_OUT_LOWER_LIMIT, (byte)stats.maxTransfersOutLowerLimit);
 			msg.set(MAX_TRANSFERS_OUT_UPPER_LIMIT, (byte)stats.maxTransfersOutUpperLimit);
-		} else if(stats.expectedTransfersInCHK < 65536 && stats.expectedTransfersInSSK < 65536 &&
-				stats.expectedTransfersOutCHK < 65536 && stats.expectedTransfersOutSSK < 65536 &&
+		} else if(stats.expectedTransfersIn < 65536 && 
+				stats.expectedTransfersOut < 65536 && 
 				stats.averageTransfersOutPerInsert < 65536 && stats.maxTransfersOut < 65536 && 
 				stats.maxTransfersOutLowerLimit < 65536 && stats.maxTransfersOutPeerLimit < 65536 &&
 				stats.maxTransfersOutUpperLimit < 65536) {
 			msg = new Message(FNPPeerLoadStatusShort);
-			msg.set(OTHER_TRANSFERS_OUT_CHK, (short)stats.expectedTransfersOutCHK);
-			msg.set(OTHER_TRANSFERS_IN_CHK, (short)stats.expectedTransfersInCHK);
-			msg.set(OTHER_TRANSFERS_OUT_SSK, (short)stats.expectedTransfersOutSSK);
-			msg.set(OTHER_TRANSFERS_IN_SSK, (short)stats.expectedTransfersInSSK);
+			msg.set(OTHER_TRANSFERS_OUT, (short)stats.expectedTransfersOut);
+			msg.set(OTHER_TRANSFERS_IN, (short)stats.expectedTransfersIn);
 			msg.set(AVERAGE_TRANSFERS_OUT_PER_INSERT, (short)stats.averageTransfersOutPerInsert);
 			msg.set(MAX_TRANSFERS_OUT, (short)stats.maxTransfersOut);
 			msg.set(MAX_TRANSFERS_OUT_PEER_LIMIT, (short)stats.maxTransfersOutPeerLimit);
@@ -1727,10 +1720,8 @@ public class DMT {
 			msg.set(MAX_TRANSFERS_OUT_UPPER_LIMIT, (short)stats.maxTransfersOutUpperLimit);
 		} else {
 			msg = new Message(FNPPeerLoadStatusInt);
-			msg.set(OTHER_TRANSFERS_OUT_CHK, stats.expectedTransfersOutCHK);
-			msg.set(OTHER_TRANSFERS_IN_CHK, stats.expectedTransfersInCHK);
-			msg.set(OTHER_TRANSFERS_OUT_SSK, stats.expectedTransfersOutSSK);
-			msg.set(OTHER_TRANSFERS_IN_SSK, stats.expectedTransfersInSSK);
+			msg.set(OTHER_TRANSFERS_OUT, stats.expectedTransfersOut);
+			msg.set(OTHER_TRANSFERS_IN, stats.expectedTransfersIn);
 			msg.set(AVERAGE_TRANSFERS_OUT_PER_INSERT, stats.averageTransfersOutPerInsert);
 			msg.set(MAX_TRANSFERS_OUT, stats.maxTransfersOut);
 			msg.set(MAX_TRANSFERS_OUT_PEER_LIMIT, stats.maxTransfersOutPeerLimit);
@@ -1744,15 +1735,15 @@ public class DMT {
 		msg.set(INPUT_BANDWIDTH_UPPER_LIMIT, (int)stats.inputBandwidthUpperLimit);
 		msg.set(INPUT_BANDWIDTH_PEER_LIMIT, (int)stats.inputBandwidthPeerLimit);
 		msg.set(REAL_TIME_FLAG, stats.realTime);
+		msg.set(LOAD_FOR_SSK, stats.forSSK);
 		return msg;
 	}
 	
 	public static final String AVERAGE_TRANSFERS_OUT_PER_INSERT = "averageTransfersOutPerInsert";
+	public static final String LOAD_FOR_SSK = "loadForSSK";
 	
-	public static final String OTHER_TRANSFERS_OUT_CHK = "otherTransfersOutCHK";
-	public static final String OTHER_TRANSFERS_IN_CHK = "otherTransfersInCHK";
-	public static final String OTHER_TRANSFERS_OUT_SSK = "otherTransfersOutSSK";
-	public static final String OTHER_TRANSFERS_IN_SSK = "otherTransfersInSSK";
+	public static final String OTHER_TRANSFERS_OUT = "otherTransfersOut";
+	public static final String OTHER_TRANSFERS_IN = "otherTransfersIn";
 	/** Maximum transfers out, hard limit based on congestion control; we will be rejected if our usage
 	 * is over this. */
 	public static final String MAX_TRANSFERS_OUT = "maxTransfersOut";

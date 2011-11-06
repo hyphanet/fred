@@ -26,8 +26,10 @@ public class MessageItem {
 	private final short priority;
 	private long cachedID;
 	private boolean hasCachedID;
-	final boolean sendLoadRT;
-	final boolean sendLoadBulk;
+	final boolean sendLoadRTCHK;
+	final boolean sendLoadRTSSK;
+	final boolean sendLoadBulkCHK;
+	final boolean sendLoadBulkSSK;
 	private long deadline;
 
 	public MessageItem(Message msg2, AsyncMessageCallback[] cb2, ByteCounter ctr, short overridePriority) {
@@ -40,8 +42,10 @@ public class MessageItem {
 			priority = overridePriority;
 		else
 			priority = msg2.getPriority();
-		this.sendLoadRT = msg2 == null ? false : msg2.needsLoadRT();
-		this.sendLoadBulk = msg2 == null ? false : msg2.needsLoadBulk();
+		this.sendLoadRTCHK = msg2 == null ? false : msg2.needsLoadRTCHK();
+		this.sendLoadRTSSK = msg2 == null ? false : msg2.needsLoadRTSSK();
+		this.sendLoadBulkCHK = msg2 == null ? false : msg2.needsLoadBulkCHK();
+		this.sendLoadBulkSSK = msg2 == null ? false : msg2.needsLoadBulkSSK();
 		buf = msg.encodeToPacket();
 		if(buf.length > NewPacketFormat.MAX_MESSAGE_SIZE) {
 			// This is bad because fairness between UID's happens at the level of message queueing,
@@ -59,8 +63,10 @@ public class MessageItem {
 		this.ctrCallback = ctr;
 		this.submitted = System.currentTimeMillis();
 		priority = msg2.getPriority();
-		this.sendLoadRT = msg2.needsLoadRT();
-		this.sendLoadBulk = msg2.needsLoadBulk();
+		this.sendLoadRTCHK = msg2.needsLoadRTCHK();
+		this.sendLoadRTSSK = msg2.needsLoadRTSSK();
+		this.sendLoadBulkCHK = msg2.needsLoadBulkCHK();
+		this.sendLoadBulkSSK = msg2.needsLoadBulkSSK();
 		buf = msg.encodeToPacket();
 		if(buf.length > NewPacketFormat.MAX_MESSAGE_SIZE) {
 			// This is bad because fairness between UID's happens at the level of message queueing,
@@ -71,7 +77,7 @@ public class MessageItem {
 		}
 	}
 
-	public MessageItem(byte[] data, AsyncMessageCallback[] cb2, boolean formatted, ByteCounter ctr, short priority, boolean sendLoadRT, boolean sendLoadBulk) {
+	public MessageItem(byte[] data, AsyncMessageCallback[] cb2, boolean formatted, ByteCounter ctr, short priority, boolean sendLoadRTCHK, boolean sendLoadRTSSK, boolean sendLoadBulkCHK, boolean sendLoadBulkSSK) {
 		this.cb = cb2;
 		this.msg = null;
 		this.buf = data;
@@ -81,8 +87,10 @@ public class MessageItem {
 		this.ctrCallback = ctr;
 		this.submitted = System.currentTimeMillis();
 		this.priority = priority;
-		this.sendLoadRT = sendLoadRT;
-		this.sendLoadBulk = sendLoadBulk;
+		this.sendLoadRTCHK = sendLoadRTCHK;
+		this.sendLoadRTSSK = sendLoadRTSSK;
+		this.sendLoadBulkCHK = sendLoadBulkCHK;
+		this.sendLoadBulkSSK = sendLoadBulkSSK;
 	}
 
 	/**

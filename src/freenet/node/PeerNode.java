@@ -1386,10 +1386,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		OpennetManager om = node.getOpennet();
 		if(om != null)
 			om.onDisconnect(this);
-		outputLoadTrackerRealTime.failSlotWaiters(true);
-		outputLoadTrackerBulk.failSlotWaiters(true);
-		loadSenderRealTime.onDisconnect();
-		loadSenderBulk.onDisconnect();
+		outputLoadTrackerRealTimeSSK.failSlotWaiters(true);
+		outputLoadTrackerRealTimeCHK.failSlotWaiters(true);
+		outputLoadTrackerBulkSSK.failSlotWaiters(true);
+		outputLoadTrackerBulkCHK.failSlotWaiters(true);
+		loadSenderRealTimeSSK.onDisconnect();
+		loadSenderRealTimeCHK.onDisconnect();
+		loadSenderBulkSSK.onDisconnect();
+		loadSenderBulkCHK.onDisconnect();
 		return ret;
 	}
 
@@ -2488,8 +2492,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	* Send any high level messages that need to be sent on connect.
 	*/
 	protected void sendInitialMessages() {
-		loadSender(true).setSendASAP();
-		loadSender(false).setSendASAP();
+		loadSender(true, false).setSendASAP();
+		loadSender(true, true).setSendASAP();
+		loadSender(false, false).setSendASAP();
+		loadSender(false, true).setSendASAP();
 		Message locMsg = DMT.createFNPLocChangeNotificationNew(node.lm.getLocation(), node.peers.getPeerLocationDoubles(true));
 		Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
 		Message timeMsg = DMT.createFNPTime(System.currentTimeMillis());
@@ -3186,7 +3192,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				Logger.error(this, "No tracker to resend packet " + item.packetNumber + " on");
 				continue;
 			}
-			MessageItem mi = new MessageItem(item.buf, item.callbacks, true, resendByteCounter, item.priority, false, false);
+			MessageItem mi = new MessageItem(item.buf, item.callbacks, true, resendByteCounter, item.priority, false, false, false, false);
 			requeueMessageItems(new MessageItem[]{mi}, 0, 1, true);
 		}
 	}
@@ -3295,6 +3301,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	// But there has not been a timeout, so we haven't called fatalTimeout() and reconnected.
 	
 	// FIXME 3 different kinds of backoff? Can we get rid of some???
+
+	// FIXME split up into CHK vs SSK ???
 	
 	long mandatoryBackoffUntilRT = -1;
 	int mandatoryBackoffLengthRT = INITIAL_MANDATORY_BACKOFF_LENGTH;
@@ -3325,10 +3333,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 			setLastBackoffReason(reason, realTime);
 		}
-		if(realTime)
-			outputLoadTrackerRealTime.failSlotWaiters(true);
-		else
-			outputLoadTrackerBulk.failSlotWaiters(true);
+		if(realTime) {
+			outputLoadTrackerRealTimeSSK.failSlotWaiters(true);
+			outputLoadTrackerRealTimeCHK.failSlotWaiters(true);
+		} else {
+			outputLoadTrackerBulkSSK.failSlotWaiters(true);
+			outputLoadTrackerBulkCHK.failSlotWaiters(true);
+		}
 	}
 	
 	/** Called when a request is accepted. We don't wait for completion, unlike 
@@ -3426,10 +3437,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			setLastBackoffReason(reason, realTime);
 		}
 		setPeerNodeStatus(now);
-		if(realTime)
-			outputLoadTrackerRealTime.failSlotWaiters(true);
-		else
-			outputLoadTrackerBulk.failSlotWaiters(true);
+		if(realTime) {
+			outputLoadTrackerRealTimeCHK.failSlotWaiters(true);
+			outputLoadTrackerRealTimeSSK.failSlotWaiters(true);
+		} else {
+			outputLoadTrackerBulkCHK.failSlotWaiters(true);
+			outputLoadTrackerBulkSSK.failSlotWaiters(true);
+		}
 	}
 
 	/**
@@ -3506,10 +3520,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 			setLastBackoffReason(reason, realTime);
 		}
-		if(realTime)
-			outputLoadTrackerRealTime.failSlotWaiters(true);
-		else
-			outputLoadTrackerBulk.failSlotWaiters(true);
+		if(realTime) {
+			outputLoadTrackerRealTimeCHK.failSlotWaiters(true);
+			outputLoadTrackerRealTimeSSK.failSlotWaiters(true);
+		} else {
+			outputLoadTrackerBulkCHK.failSlotWaiters(true);
+			outputLoadTrackerBulkSSK.failSlotWaiters(true);
+		}
 		setPeerNodeStatus(now);
 	}
 
@@ -3879,8 +3896,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		if(logMINOR) Logger.minor(this, "Peer node status now "+peerNodeStatus+" was "+oldPeerNodeStatus);
 		if(peerNodeStatus!=oldPeerNodeStatus){
 			if(oldPeerNodeStatus == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
-				outputLoadTrackerRealTime.maybeNotifySlotWaiter();
-				outputLoadTrackerBulk.maybeNotifySlotWaiter();
+				outputLoadTrackerRealTimeSSK.maybeNotifySlotWaiter();
+				outputLoadTrackerRealTimeCHK.maybeNotifySlotWaiter();
+				outputLoadTrackerBulkSSK.maybeNotifySlotWaiter();
+				outputLoadTrackerBulkCHK.maybeNotifySlotWaiter();
 			}
 			notifyPeerNodeStatusChangeListeners();
 		}
@@ -3896,14 +3915,24 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * stats message. If so, we will not be able to route requests to the node under new 
 	 * load management. */
 	private boolean noLoadStats() {
-		if(outputLoadTrackerRealTime.getLastIncomingLoadStats() == null) {
+		if(outputLoadTrackerRealTimeCHK.getLastIncomingLoadStats() == null) {
 			if(isRoutable())
-				Logger.normal(this, "No realtime load stats on "+this);
+				Logger.normal(this, "No realtime CHK load stats on "+this);
 			return true;
 		}
-		if(outputLoadTrackerBulk.getLastIncomingLoadStats() == null) {
+		if(outputLoadTrackerRealTimeSSK.getLastIncomingLoadStats() == null) {
 			if(isRoutable())
-				Logger.normal(this, "No bulk load stats on "+this);
+				Logger.normal(this, "No realtime SSK load stats on "+this);
+			return true;
+		}
+		if(outputLoadTrackerBulkCHK.getLastIncomingLoadStats() == null) {
+			if(isRoutable())
+				Logger.normal(this, "No bulk CHK load stats on "+this);
+			return true;
+		}
+		if(outputLoadTrackerBulkSSK.getLastIncomingLoadStats() == null) {
+			if(isRoutable())
+				Logger.normal(this, "No bulk SSK load stats on "+this);
 			return true;
 		}
 		return false;
@@ -4996,13 +5025,16 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	
 	private final Object routedToLock = new Object();
 	
-	final LoadSender loadSenderRealTime = new LoadSender(true);
-	final LoadSender loadSenderBulk = new LoadSender(false);
+	final LoadSender loadSenderRealTimeCHK = new LoadSender(true, false);
+	final LoadSender loadSenderRealTimeSSK = new LoadSender(true, true);
+	final LoadSender loadSenderBulkCHK = new LoadSender(false, false);
+	final LoadSender loadSenderBulkSSK = new LoadSender(false, true);
 	
 	class LoadSender {
 	
-		LoadSender(boolean realTimeFlag) {
+		LoadSender(boolean realTimeFlag, boolean forSSK) {
 			this.realTimeFlag = realTimeFlag;
+			this.forSSK = forSSK;
 		}
 		
 		public void onDisconnect() {
@@ -5020,6 +5052,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		private long countAllocationNotices;
 		private PeerLoadStats lastFullStats;
 		private final boolean realTimeFlag;
+		private final boolean forSSK;
 		private boolean sendASAP;
 		
 		public void onSetPeerAllocation(boolean input, int thisAllocation, int transfersPerInsert) {
@@ -5070,7 +5103,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		
 		Message makeLoadStats(long now, int transfersPerInsert, boolean noRemember) {
-			PeerLoadStats stats = node.nodeStats.createPeerLoadStats(PeerNode.this, transfersPerInsert, realTimeFlag);
+			PeerLoadStats stats = node.nodeStats.createPeerLoadStats(PeerNode.this, transfersPerInsert, realTimeFlag, forSSK);
 			synchronized(this) {
 				lastSentAllocationInput = (int) stats.inputBandwidthPeerLimit;
 				lastSentAllocationOutput = (int) stats.outputBandwidthPeerLimit;
@@ -5103,16 +5136,16 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		this.messageQueue.removeUIDsFromMessageQueues(list);
 	}
 
-	public void onSetMaxOutputTransfers(boolean realTime, int maxOutputTransfers) {
-		(realTime ? loadSenderRealTime : loadSenderBulk).onSetMaxOutputTransfers(maxOutputTransfers);
+	public void onSetMaxOutputTransfers(boolean realTime, boolean forSSK, int maxOutputTransfers) {
+		loadSender(realTime, forSSK).onSetMaxOutputTransfers(maxOutputTransfers);
 	}
 	
-	public void onSetMaxOutputTransfersPeerLimit(boolean realTime, int maxOutputTransfers) {
-		(realTime ? loadSenderRealTime : loadSenderBulk).onSetMaxOutputTransfersPeerLimit(maxOutputTransfers);
+	public void onSetMaxOutputTransfersPeerLimit(boolean realTime, boolean forSSK, int maxOutputTransfers) {
+		loadSender(realTime, forSSK).onSetMaxOutputTransfersPeerLimit(maxOutputTransfers);
 	}
 	
-	public void onSetPeerAllocation(boolean input, int thisAllocation, int transfersPerInsert, int maxOutputTransfers, boolean realTime) {
-		(realTime ? loadSenderRealTime : loadSenderBulk).onSetPeerAllocation(input, thisAllocation, transfersPerInsert);
+	public void onSetPeerAllocation(boolean input, int thisAllocation, int transfersPerInsert, int maxOutputTransfers, boolean realTime, boolean forSSK) {
+		loadSender(realTime, forSSK).onSetPeerAllocation(input, thisAllocation, transfersPerInsert);
 	}
 
 	public class IncomingLoadSummaryStats {
@@ -5157,15 +5190,20 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	// FIXME add LOW_CAPACITY/BROKEN. Set this when the published capacity is way below the median.
 	// FIXME will need to calculate the median first!
 	
-	OutputLoadTracker outputLoadTrackerRealTime = new OutputLoadTracker(true);
-	OutputLoadTracker outputLoadTrackerBulk = new OutputLoadTracker(false);
+	OutputLoadTracker outputLoadTrackerRealTimeCHK = new OutputLoadTracker(true, false);
+	OutputLoadTracker outputLoadTrackerRealTimeSSK = new OutputLoadTracker(true, true);
+	OutputLoadTracker outputLoadTrackerBulkCHK = new OutputLoadTracker(false, false);
+	OutputLoadTracker outputLoadTrackerBulkSSK = new OutputLoadTracker(false, true);
 	
-	public OutputLoadTracker outputLoadTracker(boolean realTime) {
-		return realTime ? outputLoadTrackerRealTime : outputLoadTrackerBulk;
+	public OutputLoadTracker outputLoadTracker(boolean realTime, boolean forSSK) {
+		if(forSSK)
+			return realTime ? outputLoadTrackerRealTimeSSK : outputLoadTrackerBulkSSK;
+		else
+			return realTime ? outputLoadTrackerRealTimeCHK : outputLoadTrackerBulkCHK;
 	}
 
 	public void reportLoadStatus(PeerLoadStats stat) {
-		outputLoadTracker(stat.realTime).reportLoadStatus(stat);
+		outputLoadTracker(stat.realTime, stat.forSSK).reportLoadStatus(stat);
 		node.executor.execute(checkStatusAfterBackoff);
 	}
 	
@@ -5227,7 +5265,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				waitingFor.add(peer);
 				tag.setWaitingForSlot();
 			}
-			if(!peer.outputLoadTracker(realTime).queueSlotWaiter(this)) {
+			if(!peer.outputLoadTracker(realTime, tag.isSSK()).queueSlotWaiter(this)) {
 				synchronized(this) {
 					waitingFor.remove(peer);
 					if(acceptedBy != null || failed) return true;
@@ -5286,7 +5324,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		void unregister(PeerNode exclude, PeerNode[] all) {
 			if(all == null) return;
 			for(PeerNode p : all)
-				if(p != exclude) p.outputLoadTracker(realTime).unqueueSlotWaiter(this);
+				if(p != exclude) p.outputLoadTracker(realTime, tag.isSSK()).unqueueSlotWaiter(this);
 		}
 		
 		/** Some sort of failure.
@@ -5374,7 +5412,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					continue;
 				}
 				anyValid = true;
-				RequestLikelyAcceptedState accept = p.outputLoadTracker(realTime).tryRouteTo(tag, RequestLikelyAcceptedState.LIKELY, offeredKey);
+				RequestLikelyAcceptedState accept = p.outputLoadTracker(realTime, tag.isSSK()).tryRouteTo(tag, RequestLikelyAcceptedState.LIKELY, offeredKey);
 				if(accept != null) {
 					if(logMINOR) Logger.minor(this, "tryRouteTo() pre-wait check returned "+accept);
 					PeerNode[] unreg;
@@ -5401,7 +5439,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						tag.removeRoutingTo(p);
 						return other;
 					}
-					p.outputLoadTracker(realTime).reportAllocated(isLocal());
+					p.outputLoadTracker(realTime, tag.isSSK()).reportAllocated(isLocal());
 					// p != null so in this one instance we're going to ignore fe.
 					return p;
 				}
@@ -5479,7 +5517,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 			if(timeOutIsFatal && all != null) {
 				for(PeerNode pn : all) {
-					pn.outputLoadTracker(realTime).reportFatalTimeoutInWait(isLocal());
+					pn.outputLoadTracker(realTime, tag.isSSK()).reportFatalTimeoutInWait(isLocal());
 				}
 			}
 			unregister(ret, all);
@@ -5592,6 +5630,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	class OutputLoadTracker {
 		
 		final boolean realTime;
+		final boolean forSSK;
 		
 		private PeerLoadStats lastIncomingLoadStats;
 		
@@ -5612,6 +5651,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			synchronized(routedToLock) {
 				lastIncomingLoadStats = stat;
 			}
+			assert(stat.forSSK == forSSK);
 			maybeNotifySlotWaiter();
 		}
 		
@@ -5638,8 +5678,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 		}
 		
-		OutputLoadTracker(boolean realTime) {
+		OutputLoadTracker(boolean realTime, boolean forSSK) {
 			this.realTime = realTime;
+			this.forSSK = forSSK;
 		}
 		
 		public IncomingLoadSummaryStats getIncomingLoadStats() {
@@ -5648,7 +5689,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(lastIncomingLoadStats == null) return null;
 				loadStats = lastIncomingLoadStats;
 			}
-			RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, loadStats.averageTransfersOutPerInsert, realTime);
+			RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, loadStats.averageTransfersOutPerInsert, realTime, forSSK);
 			RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
 			boolean ignoreLocalVsRemoteBandwidthLiability = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
 			return new IncomingLoadSummaryStats(runningRequests.totalRequests(), 
@@ -5681,7 +5722,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(dontSendUnlessGuaranteed)
 					worstAcceptable = RequestLikelyAcceptedState.GUARANTEED;
 				// Requests already running to this node
-				RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, loadStats.averageTransfersOutPerInsert, realTime);
+				RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, loadStats.averageTransfersOutPerInsert, realTime, forSSK);
 				runningRequests.log(PeerNode.this);
 				// Requests running from its other peers
 				RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
@@ -5820,7 +5861,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						foundNone = false;
 						foundNever = false;
 						// Requests already running to this node
-						RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, loadStats.averageTransfersOutPerInsert, realTime);
+						RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, loadStats.averageTransfersOutPerInsert, realTime, forSSK);
 						runningRequests.log(PeerNode.this);
 						// Requests running from its other peers
 						RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
@@ -5939,23 +5980,26 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				tag.removeRoutingTo(this);
 		}
 		if(logMINOR) Logger.minor(this, "No longer routing "+tag+" to "+this);
-		outputLoadTracker(tag.realTimeFlag).maybeNotifySlotWaiter();
+		outputLoadTracker(tag.realTimeFlag, tag.isSSK()).maybeNotifySlotWaiter();
 	}
 	
 	public void postUnlock(UIDTag tag) {
-		outputLoadTracker(tag.realTimeFlag).maybeNotifySlotWaiter();
+		outputLoadTracker(tag.realTimeFlag, tag.isSSK()).maybeNotifySlotWaiter();
 	}
 	
 	static SlotWaiter createSlotWaiter(UIDTag tag, RequestType type, boolean offeredKey, boolean realTime, PeerNode source) {
 		return new SlotWaiter(tag, type, offeredKey, realTime, source);
 	}
 
-	public IncomingLoadSummaryStats getIncomingLoadStats(boolean realTime) {
-		return outputLoadTracker(realTime).getIncomingLoadStats();
+	public IncomingLoadSummaryStats getIncomingLoadStats(boolean realTime, boolean forSSK) {
+		return outputLoadTracker(realTime, forSSK).getIncomingLoadStats();
 	}
 
-	public LoadSender loadSender(boolean realtime) {
-		return realtime ? loadSenderRealTime : loadSenderBulk;
+	public LoadSender loadSender(boolean realtime, boolean forSSK) {
+		if(forSSK)
+			return realtime ? loadSenderRealTimeSSK : loadSenderBulkSSK;
+		else
+			return realtime ? loadSenderRealTimeCHK : loadSenderBulkCHK;
 	}
 	
 	/** A fatal timeout occurred, and we don't know whether the peer is still running the
@@ -6119,20 +6163,20 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 	
 	@Override
-	public MessageItem makeLoadStats(boolean realtime, boolean boostPriority, boolean noRemember) {
-		Message msg = loadSender(realtime).makeLoadStats(System.currentTimeMillis(), node.nodeStats.outwardTransfersPerInsert(), noRemember);
+	public MessageItem makeLoadStats(boolean realtime, boolean boostPriority, boolean noRemember, boolean forSSK) {
+		Message msg = loadSender(realtime, forSSK).makeLoadStats(System.currentTimeMillis(), node.nodeStats.outwardTransfersPerInsert(), noRemember);
 		if(msg == null) return null;
 		return new MessageItem(msg, null, node.nodeStats.allocationNoticesCounter, boostPriority ? DMT.PRIORITY_NOW : (short)-1);
 	}
 
 	@Override
-	public boolean grabSendLoadStatsASAP(boolean realtime) {
-		return loadSender(realtime).grabSendASAP();
+	public boolean grabSendLoadStatsASAP(boolean realtime, boolean forSSK) {
+		return loadSender(realtime, forSSK).grabSendASAP();
 	}
 
 	@Override
-	public void setSendLoadStatsASAP(boolean realtime) {
-		loadSender(realtime).setSendASAP();
+	public void setSendLoadStatsASAP(boolean realtime, boolean forSSK) {
+		loadSender(realtime, forSSK).setSendASAP();
 	}
 
 	@Override
@@ -6189,13 +6233,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		
 	}
 	
-	public boolean isLowCapacity(boolean isRealtime) {
-		PeerLoadStats stats = outputLoadTracker(isRealtime).getLastIncomingLoadStats();
+	public boolean isLowCapacity(boolean isRealtime, boolean forSSK) {
+		PeerLoadStats stats = outputLoadTracker(isRealtime, forSSK).getLastIncomingLoadStats();
 		if(stats == null) return false;
 		NodePinger pinger = node.nodeStats.nodePinger;
 		if(pinger == null) return false; // FIXME possible?
-		if(pinger.capacityThreshold(isRealtime, true) > stats.peerLimit(true)) return true;
-		if(pinger.capacityThreshold(isRealtime, false) > stats.peerLimit(false)) return true;
+		if(pinger.capacityThreshold(isRealtime, true, forSSK) > stats.peerLimit(true)) return true;
+		if(pinger.capacityThreshold(isRealtime, false, forSSK) > stats.peerLimit(false)) return true;
 		return false;
 	}
 

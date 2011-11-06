@@ -239,7 +239,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
             	receivedRejectedOverload = true;
             	// Forward it
             	// Does not need to be sent synchronously since is non-terminal.
-            	Message m = DMT.createFNPRejectedOverload(uid, false, true, realTimeFlag);
+            	Message m = DMT.createFNPRejectedOverload(uid, false, true, realTimeFlag, true);
             	try {
 					source.sendAsync(m, null, this);
 				} catch (NotConnectedException e) {
@@ -290,7 +290,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
             		(status == SSKInsertSender.INTERNAL_ERROR)) {
             	// Unlock early for originator, late for target; see UIDTag comments.
             	tag.unlockHandler();
-                Message msg = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
+                Message msg = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag, true);
                 try {
 					source.sendSync(msg, this, realTimeFlag);
 				} catch (NotConnectedException e) {
@@ -346,7 +346,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
             Logger.error(this, "Unknown status code: "+sender.getStatusString());
         	// Unlock early for originator, late for target; see UIDTag comments.
         	tag.unlockHandler();
-            Message msg = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
+            Message msg = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag, true);
             try {
 				source.sendSync(msg, this, realTimeFlag);
 			} catch (NotConnectedException e) {
@@ -392,7 +392,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 
     private void commit() {
 		try {
-			node.store(block, node.shouldStoreDeep(key, source, sender == null ? new PeerNode[0] : sender.getRoutedTo()), collided, false, canWriteDatastore, false);
+			node.store(block, node.shouldStoreDeep(key, source, sender == null ? new PeerNode[0] : sender.getRoutedTo(), true), collided, false, canWriteDatastore, false);
 		} catch (KeyCollisionException e) {
 			Logger.normal(this, "Collision on "+this);
 		}

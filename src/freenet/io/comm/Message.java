@@ -66,8 +66,10 @@ public class Message {
 	public final long localInstantiationTime;
 	final int _receivedByteCount;
 	short priority;
-	private boolean needsLoadRT;
-	private boolean needsLoadBulk;
+	private boolean needsLoadRTCHK;
+	private boolean needsLoadRTSSK;
+	private boolean needsLoadBulkCHK;
+	private boolean needsLoadBulkSSK;
 	
 	public static Message decodeMessageFromPacket(byte[] buf, int offset, int length, PeerContext peer, int overhead) {
 		ByteBufferInputStream bb = new ByteBufferInputStream(buf, offset, length);
@@ -376,20 +378,34 @@ public class Message {
 		priority--;
 	}
 
-	public boolean needsLoadRT() {
-		return needsLoadRT;
+	public boolean needsLoadRTCHK() {
+		return needsLoadRTCHK;
 	}
 	
-	public boolean needsLoadBulk() {
-		return needsLoadBulk;
+	public boolean needsLoadRTSSK() {
+		return needsLoadRTSSK;
 	}
 	
-	public void setNeedsLoadRT() {
-		needsLoadRT = true;
+	public boolean needsLoadBulkCHK() {
+		return needsLoadBulkCHK;
 	}
 	
-	public void setNeedsLoadBulk() {
-		needsLoadBulk = true;
+	public boolean needsLoadBulkSSK() {
+		return needsLoadBulkSSK;
+	}
+	
+	public void setNeedsLoadRT(boolean ssk) {
+		if(ssk)
+			needsLoadRTSSK = true;
+		else
+			needsLoadRTCHK = true;
+	}
+	
+	public void setNeedsLoadBulk(boolean ssk) {
+		if(ssk)
+			needsLoadBulkSSK = true;
+		else
+			needsLoadBulkCHK = true;
 	}
 
 }

@@ -279,7 +279,7 @@ loadWaiterLoop:
     		}
         
    			expectedAcceptState = 
-   				next.outputLoadTracker(realTimeFlag).tryRouteTo(origTag, RequestLikelyAcceptedState.LIKELY, false);
+   				next.outputLoadTracker(realTimeFlag, isSSK).tryRouteTo(origTag, RequestLikelyAcceptedState.LIKELY, false);
     		
     		if(expectedAcceptState == RequestLikelyAcceptedState.UNKNOWN) {
     			// No stats, old style, just go for it.
@@ -324,7 +324,7 @@ loadWaiterLoop:
     					}
     				}
 				
-    	            if(next.isLowCapacity(realTimeFlag)) {
+    	            if(next.isLowCapacity(realTimeFlag, isSSK)) {
     	            	if(waiter.waitingForCount() == 1 // if not, already accepted 
     	            			&& canRerouteWhileWaiting) {
     	            		canWaitFor++;
@@ -569,7 +569,7 @@ loadWaiterLoop:
 	private double getLoad(HashSet<PeerNode> waitedFor) {
     	double total = 0;
     	for(PeerNode pn : waitedFor) {
-    		total += pn.outputLoadTracker(realTimeFlag).proportionTimingOutFatallyInWait();
+    		total += pn.outputLoadTracker(realTimeFlag, isSSK).proportionTimingOutFatallyInWait();
     	}
     	return total / waitedFor.size();
 	}
@@ -665,7 +665,7 @@ loadWaiterLoop:
     						softRejectCount.put(next, i+1);
     						if(i > 3) {
     							Logger.error(this, "Rejected repeatedly ("+i+") by "+next+" : "+this);
-    							next.outputLoadTracker(realTimeFlag).setDontSendUnlessGuaranteed();
+    							next.outputLoadTracker(realTimeFlag, isSSK).setDontSendUnlessGuaranteed();
     						}
     					}
     					return DO.WAIT;
@@ -692,7 +692,8 @@ loadWaiterLoop:
     		}
     		
     		next.resetMandatoryBackoff(realTimeFlag);
-    		next.outputLoadTracker(realTimeFlag).clearDontSendUnlessGuaranteed();
+    		next.outputLoadTracker(realTimeFlag, false).clearDontSendUnlessGuaranteed();
+    		next.outputLoadTracker(realTimeFlag, true).clearDontSendUnlessGuaranteed();
     		return DO.FINISHED;
     		
     	}

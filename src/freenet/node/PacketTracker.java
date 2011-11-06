@@ -1053,7 +1053,7 @@ public class PacketTracker {
 			// Ignore packet#
 			if(logMINOR)
 				Logger.minor(this, "Queueing resend of what was once " + element.packetNumber);
-			messages[i] = new MessageItem(buf, callbacks, true, pn.resendByteCounter, element.priority, false, false);
+			messages[i] = new MessageItem(buf, callbacks, true, pn.resendByteCounter, element.priority, false, false, false, false);
 		}
 		pn.requeueMessageItems(messages, 0, messages.length, true);
 

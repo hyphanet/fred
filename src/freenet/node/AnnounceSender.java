@@ -461,7 +461,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 	}
 
 	private void timedOut(PeerNode next) {
-		Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);
+		Message msg = DMT.createFNPRejectedOverload(uid, true, false, false, false);
 		if(source != null) {
 			try {
 				source.sendAsync(msg, null, this);

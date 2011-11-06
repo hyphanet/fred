@@ -117,9 +117,13 @@ public class PeerNodeStatus {
 	private final long messageQueueLengthTime;
 	// int's because that's what they are transferred as
 	
-	public final IncomingLoadSummaryStats incomingLoadStatsRealTime;
+	public final IncomingLoadSummaryStats incomingLoadStatsRealTimeCHK;
 
-	public final IncomingLoadSummaryStats incomingLoadStatsBulk;
+	public final IncomingLoadSummaryStats incomingLoadStatsRealTimeSSK;
+
+	public final IncomingLoadSummaryStats incomingLoadStatsBulkCHK;
+	
+	public final IncomingLoadSummaryStats incomingLoadStatsBulkSSK;
 	
 	public final boolean hasFullNoderef;
 
@@ -192,8 +196,10 @@ public class PeerNodeStatus {
 		this.reportedUptimePercentage = peerNode.getUptime();
 		messageQueueLengthBytes = peerNode.getMessageQueueLengthBytes();
 		messageQueueLengthTime = peerNode.getProbableSendQueueTime();
-		incomingLoadStatsRealTime = peerNode.getIncomingLoadStats(true);
-		incomingLoadStatsBulk = peerNode.getIncomingLoadStats(false);
+		incomingLoadStatsRealTimeCHK = peerNode.getIncomingLoadStats(true, false);
+		incomingLoadStatsRealTimeSSK = peerNode.getIncomingLoadStats(true, true);
+		incomingLoadStatsBulkCHK = peerNode.getIncomingLoadStats(false, false);
+		incomingLoadStatsBulkSSK = peerNode.getIncomingLoadStats(false, true);
 		hasFullNoderef = peerNode.hasFullNoderef();
 	}
 	

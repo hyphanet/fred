@@ -245,6 +245,7 @@ public abstract class UIDTag {
 		}
 	}
 
+	/** Is the request an SSK? If not it is a CHK. Must not change! */
 	public abstract boolean isSSK();
 
 	public abstract boolean isInsert();

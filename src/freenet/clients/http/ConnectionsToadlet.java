@@ -463,8 +463,10 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "time_delta")).addChild("#", "Time\u00a0Delta");
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "uptime")).addChild("#", "Reported\u00a0Uptime");
 					peerTableHeaderRow.addChild("th", "Transmit\u00a0Queue");
-					peerTableHeaderRow.addChild("th", "Peer\u00a0Capacity\u00a0Bulk");
-					peerTableHeaderRow.addChild("th", "Peer\u00a0Capacity\u00a0Realtime");
+					peerTableHeaderRow.addChild("th", "Peer\u00a0Capacity\u00a0Bulk\u00a0CHK");
+					peerTableHeaderRow.addChild("th", "Peer\u00a0Capacity\u00a0Bulk\u00a0SSK");
+					peerTableHeaderRow.addChild("th", "Peer\u00a0Capacity\u00a0Realtime\u00a0CHK");
+					peerTableHeaderRow.addChild("th", "Peer\u00a0Capacity\u00a0Realtime\u00a0SSK");
 				}
 				
 				SimpleColumn[] endCols = endColumnHeaders(mode >= PageMaker.MODE_ADVANCED);
@@ -990,12 +992,22 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", TimeUtil.formatTime(peerNodeStatus.getClockDelta()));
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", peerNodeStatus.getReportedUptimePercentage()+"%");
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(peerNodeStatus.getMessageQueueLengthBytes())+":"+TimeUtil.formatTime(peerNodeStatus.getMessageQueueLengthTime()));
-			IncomingLoadSummaryStats loadStatsBulk = peerNodeStatus.incomingLoadStatsBulk;
+			IncomingLoadSummaryStats loadStatsBulk = peerNodeStatus.incomingLoadStatsBulkCHK;
 			if(loadStatsBulk == null)
 				peerRow.addChild("td", "class", "peer-idle" /* FIXME */);
 			else
 				peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", loadStatsBulk.runningRequestsTotal+"reqs:out:"+SizeUtil.formatSize(loadStatsBulk.usedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.othersUsedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.peerCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.totalCapacityOutputBytes)+":in:"+SizeUtil.formatSize(loadStatsBulk.usedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.othersUsedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.peerCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.totalCapacityInputBytes));
-			IncomingLoadSummaryStats loadStatsRT = peerNodeStatus.incomingLoadStatsRealTime;
+			loadStatsBulk = peerNodeStatus.incomingLoadStatsBulkSSK;
+			if(loadStatsBulk == null)
+				peerRow.addChild("td", "class", "peer-idle" /* FIXME */);
+			else
+				peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", loadStatsBulk.runningRequestsTotal+"reqs:out:"+SizeUtil.formatSize(loadStatsBulk.usedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.othersUsedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.peerCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.totalCapacityOutputBytes)+":in:"+SizeUtil.formatSize(loadStatsBulk.usedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.othersUsedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.peerCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.totalCapacityInputBytes));
+			IncomingLoadSummaryStats loadStatsRT = peerNodeStatus.incomingLoadStatsRealTimeCHK;
+			if(loadStatsRT == null)
+				peerRow.addChild("td", "class", "peer-idle" /* FIXME */);
+			else
+				peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", loadStatsRT.runningRequestsTotal+"reqs:out:"+SizeUtil.formatSize(loadStatsRT.usedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.othersUsedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.peerCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.totalCapacityOutputBytes)+":in:"+SizeUtil.formatSize(loadStatsRT.usedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.othersUsedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.peerCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.totalCapacityInputBytes));
+			loadStatsRT = peerNodeStatus.incomingLoadStatsRealTimeSSK;
 			if(loadStatsRT == null)
 				peerRow.addChild("td", "class", "peer-idle" /* FIXME */);
 			else

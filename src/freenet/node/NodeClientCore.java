@@ -1465,7 +1465,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					nodeStats.successfulChkInsertBytesSentAverage.report(sent);
 			}
 
-			boolean deep = node.shouldStoreDeep(block.getKey(), null, is == null ? new PeerNode[0] : is.getRoutedTo());
+			boolean deep = node.shouldStoreDeep(block.getKey(), null, is == null ? new PeerNode[0] : is.getRoutedTo(), false);
 			try {
 				node.store(block, deep, canWriteClientCache, false, false);
 			} catch (KeyCollisionException e) {
@@ -1583,7 +1583,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					nodeStats.successfulSskInsertBytesSentAverage.report(sent);
 			}
 
-			boolean deep = node.shouldStoreDeep(block.getKey(), null, is == null ? new PeerNode[0] : is.getRoutedTo());
+			boolean deep = node.shouldStoreDeep(block.getKey(), null, is == null ? new PeerNode[0] : is.getRoutedTo(), true);
 
 			if(is.hasCollided()) {
 				SSKBlock collided = is.getBlock();

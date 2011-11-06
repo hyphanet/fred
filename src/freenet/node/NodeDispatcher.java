@@ -212,17 +212,17 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			if(logDEBUG) Logger.debug(this, "Not routable");
 
 			if(spec == DMT.FNPCHKDataRequest) {
-				rejectRequest(m, node.nodeStats.chkRequestCtr);
+				rejectRequest(m, node.nodeStats.chkRequestCtr, false);
 			} else if(spec == DMT.FNPSSKDataRequest) {
-				rejectRequest(m, node.nodeStats.sskRequestCtr);
+				rejectRequest(m, node.nodeStats.sskRequestCtr, true);
 			} else if(spec == DMT.FNPInsertRequest) {
-				rejectRequest(m, node.nodeStats.chkInsertCtr);
+				rejectRequest(m, node.nodeStats.chkInsertCtr, false);
 			} else if(spec == DMT.FNPSSKInsertRequest) {
-				rejectRequest(m, node.nodeStats.sskInsertCtr);
+				rejectRequest(m, node.nodeStats.sskInsertCtr, true);
 			} else if(spec == DMT.FNPSSKInsertRequestNew) {
-				rejectRequest(m, node.nodeStats.sskInsertCtr);
+				rejectRequest(m, node.nodeStats.sskInsertCtr, true);
 			} else if(spec == DMT.FNPGetOfferedKey) {
-				rejectRequest(m, node.failureTable.senderCounter);
+				rejectRequest(m, node.failureTable.senderCounter, ((Key)m.getObject(DMT.KEY)) instanceof NodeSSK);
 			}
 			return false;
 		}
@@ -289,12 +289,12 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		return false;
 	}
 
-	private void rejectRequest(Message m, ByteCounter ctr) {
+	private void rejectRequest(Message m, ByteCounter ctr, boolean isSSK) {
 		long uid = m.getLong(DMT.UID);
-		Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);
+		Message msg = DMT.createFNPRejectedOverload(uid, true, false, false, isSSK);
 		// Send the load status anyway, hopefully this is a temporary problem.
-		msg.setNeedsLoadBulk();
-		msg.setNeedsLoadRT();
+		msg.setNeedsLoadBulk(isSSK);
+		msg.setNeedsLoadRT(isSSK);
 		try {
 			m.getSource().sendAsync(msg, null, ctr);
 		} catch (NotConnectedException e) {
@@ -360,7 +360,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			nodeStats.shouldRejectRequest(true, false, isSSK, false, true, source, false, false, realTimeFlag, tag);
 		if(reject != null) {
 			Logger.normal(this, "Rejecting FNPGetOfferedKey from "+source+" for "+key+" : "+reject);
-			Message rejected = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
+			Message rejected = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag, isSSK);
 			if(reject.soft)
 				rejected.addSubMessage(DMT.createFNPRejectIsSoft());
 			try {
@@ -470,7 +470,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		// This and DatastoreChecker require that method be implemented...
 		// For now just handle everything on the thread...
 		if(!requestQueue.offer(m)) {
-			rejectRequest(m, isSSK ? node.nodeStats.sskRequestCtr : node.nodeStats.chkRequestCtr);
+			rejectRequest(m, isSSK ? node.nodeStats.sskRequestCtr : node.nodeStats.chkRequestCtr, isSSK);
 		}
 	}
 	
@@ -484,7 +484,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		}
 		if(!source.isRoutable()) {
 			if(logMINOR) Logger.minor(this, "Handling request off thread, source no longer routable: "+source+" for "+m);
-			rejectRequest(m, isSSK ? node.nodeStats.sskRequestCtr : node.nodeStats.chkRequestCtr);
+			rejectRequest(m, isSSK ? node.nodeStats.sskRequestCtr : node.nodeStats.chkRequestCtr, isSSK);
 			return;
 		}
 		long id = m.getLong(DMT.UID);
@@ -529,7 +529,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		if(rejectReason != null) {
 			// can accept 1 CHK request every so often, but not with SSKs because they aren't throttled so won't sort out bwlimitDelayTime, which was the whole reason for accepting them when overloaded...
 			Logger.normal(this, "Rejecting "+(isSSK ? "SSK" : "CHK")+" request from "+source.getPeer()+" preemptively because "+rejectReason);
-			Message rejected = DMT.createFNPRejectedOverload(id, true, true, realTimeFlag);
+			Message rejected = DMT.createFNPRejectedOverload(id, true, true, realTimeFlag, isSSK);
 			if(rejectReason.soft)
 				rejected.addSubMessage(DMT.createFNPRejectIsSoft());
 			try {
@@ -590,7 +590,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		RejectReason rejectReason = nodeStats.shouldRejectRequest(!isSSK, true, isSSK, false, false, source, false, preferInsert, realTimeFlag, tag);
 		if(rejectReason != null) {
 			Logger.normal(this, "Rejecting insert from "+source.getPeer()+" preemptively because "+rejectReason);
-			Message rejected = DMT.createFNPRejectedOverload(id, true, true, realTimeFlag);
+			Message rejected = DMT.createFNPRejectedOverload(id, true, true, realTimeFlag, isSSK);
 			if(rejectReason.soft)
 				rejected.addSubMessage(DMT.createFNPRejectIsSoft());
 			try {
@@ -639,7 +639,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		// SSKs don't fix bwlimitDelayTime so shouldn't be accepted when overloaded.
 		if(source.shouldRejectProbeRequest()) {
 			Logger.normal(this, "Rejecting probe request from "+source.getPeer());
-			Message rejected = DMT.createFNPRejectedOverload(id, true, false, false);
+			Message rejected = DMT.createFNPRejectedOverload(id, true, false, false, false);
 			try {
 				source.sendAsync(rejected, null, node.nodeStats.probeRequestCtr);
 			} catch (NotConnectedException e) {
@@ -650,7 +650,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		double target = m.getDouble(DMT.TARGET_LOCATION);
 		if(target > 1.0 || target < 0.0) {
 			Logger.normal(this, "Rejecting invalid (target="+target+") probe request from "+source.getPeer());
-			Message rejected = DMT.createFNPRejectedOverload(id, true, false, false);
+			Message rejected = DMT.createFNPRejectedOverload(id, true, false, false, false);
 			try {
 				source.sendAsync(rejected, null, node.nodeStats.probeRequestCtr);
 			} catch (NotConnectedException e) {
@@ -695,7 +695,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			if(!node.nodeStats.shouldAcceptAnnouncement(uid)) {
 				if(om != null && source instanceof SeedClientPeerNode)
 					om.seedTracker.rejectedAnnounce((SeedClientPeerNode)source);
-				Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);
+				Message msg = DMT.createFNPRejectedOverload(uid, true, false, false, false);
 				try {
 					source.sendAsync(msg, null, node.nodeStats.announceByteCounter);
 				} catch (NotConnectedException e) {
@@ -707,7 +707,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				if(om != null && source instanceof SeedClientPeerNode)
 					om.seedTracker.rejectedAnnounce((SeedClientPeerNode)source);
 				node.nodeStats.endAnnouncement(uid);
-				Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);
+				Message msg = DMT.createFNPRejectedOverload(uid, true, false, false, false);
 				try {
 					source.sendAsync(msg, null, node.nodeStats.announceByteCounter);
 				} catch (NotConnectedException e) {
@@ -718,7 +718,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			if(om != null && source instanceof SeedClientPeerNode) {
 				if(!om.seedTracker.acceptAnnounce((SeedClientPeerNode)source, node.fastWeakRandom)) {
 					node.nodeStats.endAnnouncement(uid);
-					Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);
+					Message msg = DMT.createFNPRejectedOverload(uid, true, false, false, false);
 					try {
 						source.sendAsync(msg, null, node.nodeStats.announceByteCounter);
 					} catch (NotConnectedException e) {

@@ -51,10 +51,14 @@ public class NodePinger implements Runnable {
 
         // Now we don't have to care about synchronization anymore
         recalculateMean(peers);
-        capacityInputRealtime.calculate(peers);
-        capacityInputBulk.calculate(peers);
-        capacityOutputRealtime.calculate(peers);
-        capacityOutputBulk.calculate(peers);
+        capacityInputRealtimeSSK.calculate(peers);
+        capacityInputRealtimeCHK.calculate(peers);
+        capacityInputBulkSSK.calculate(peers);
+        capacityInputBulkCHK.calculate(peers);
+        capacityOutputRealtimeSSK.calculate(peers);
+        capacityOutputRealtimeCHK.calculate(peers);
+        capacityOutputBulkSSK.calculate(peers);
+        capacityOutputBulkCHK.calculate(peers);
         } finally {
         	// Requeue after to avoid exacerbating overload
         	node.getTicker().queueTimedJob(this, 200);
@@ -84,23 +88,29 @@ public class NodePinger implements Runnable {
 		return meanPing;
 	}
 	
-	final CapacityChecker capacityInputRealtime = new CapacityChecker(true, true);
-	final CapacityChecker capacityInputBulk = new CapacityChecker(true, false);
-	final CapacityChecker capacityOutputRealtime = new CapacityChecker(false, true);
-	final CapacityChecker capacityOutputBulk = new CapacityChecker(false, false);
+	final CapacityChecker capacityInputRealtimeCHK = new CapacityChecker(true, true, false);
+	final CapacityChecker capacityInputRealtimeSSK = new CapacityChecker(true, true, true);
+	final CapacityChecker capacityInputBulkCHK = new CapacityChecker(true, false, false);
+	final CapacityChecker capacityInputBulkSSK = new CapacityChecker(true, false, true);
+	final CapacityChecker capacityOutputRealtimeCHK = new CapacityChecker(false, true, false);
+	final CapacityChecker capacityOutputRealtimeSSK = new CapacityChecker(false, true, true);
+	final CapacityChecker capacityOutputBulkCHK = new CapacityChecker(false, false, false);
+	final CapacityChecker capacityOutputBulkSSK = new CapacityChecker(false, false, true);
 	
 	class CapacityChecker {
 		final boolean isInput;
 		final boolean isRealtime;
+		final boolean isSSK;
 		private double min;
 		private double median;
 		private double firstQuartile;
 		private double lastQuartile;
 		private double max;
 		
-		CapacityChecker(boolean input, boolean realtime) {
+		CapacityChecker(boolean input, boolean realtime, boolean ssk) {
 			isInput = input;
 			isRealtime = realtime;
+			isSSK = ssk;
 		}
 		
 		void calculate(PeerNode[] peers) {
@@ -108,7 +118,7 @@ public class NodePinger implements Runnable {
 			int x = 0;
 			for(int i = 0; i < peers.length; i++) {
 				PeerNode peer = peers[i];
-				PeerLoadStats stats = peer.outputLoadTracker(isRealtime).getLastIncomingLoadStats();
+				PeerLoadStats stats = peer.outputLoadTracker(isRealtime, isSSK).getLastIncomingLoadStats();
 				if(stats == null) continue;
 				allPeers[x++] = stats.peerLimit(isInput);
 			}
@@ -139,15 +149,23 @@ public class NodePinger implements Runnable {
 		}
 	}
 
-	public double capacityThreshold(boolean isRealtime, boolean isInput) {
-		return capacityChecker(isRealtime, isInput).getThreshold();
+	public double capacityThreshold(boolean isRealtime, boolean isInput, boolean isSSK) {
+		return capacityChecker(isRealtime, isInput, isSSK).getThreshold();
 	}
 
-	private CapacityChecker capacityChecker(boolean isRealtime, boolean isInput) {
-		if(isRealtime) {
-			return isInput ? capacityInputRealtime : capacityOutputRealtime;
+	private CapacityChecker capacityChecker(boolean isRealtime, boolean isInput, boolean isSSK) {
+		if(isSSK) {
+			if(isRealtime) {
+				return isInput ? capacityInputRealtimeSSK : capacityOutputRealtimeSSK;
+			} else {
+				return isInput ? capacityInputBulkSSK : capacityOutputBulkSSK;
+			}
 		} else {
-			return isInput ? capacityInputBulk: capacityOutputBulk;
+			if(isRealtime) {
+				return isInput ? capacityInputRealtimeCHK : capacityOutputRealtimeCHK;
+			} else {
+				return isInput ? capacityInputBulkCHK : capacityOutputBulkCHK;
+			}
 		}
 	}
 }

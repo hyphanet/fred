@@ -32,6 +32,7 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.Key;
+import freenet.keys.NodeSSK;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.node.useralerts.PeerManagerUserAlert;
@@ -884,7 +885,7 @@ public class PeerManager {
 		return getRandomPeer(null);
 	}
 
-	public double closestPeerLocation(double loc, double ignoreLoc, int minUptimePercent) {
+	public double closestPeerLocation(double loc, double ignoreLoc, int minUptimePercent, boolean forSSK) {
 		PeerNode[] peers;
 		synchronized(this) {
 			peers = connectedPeers;
@@ -896,12 +897,12 @@ public class PeerManager {
 			PeerNode p = peers[i];
 			if(!p.isRoutable())
 				continue;
-			if(p.outputLoadTracker(true).getLastIncomingLoadStats() == null) {
+			if(p.outputLoadTracker(true, forSSK).getLastIncomingLoadStats() == null) {
 				if(logMINOR)
 					Logger.minor(this, "Skipping (no load stats RT): "+p.getPeer());
 				continue;
 			}
-			if(p.outputLoadTracker(false).getLastIncomingLoadStats() == null) {
+			if(p.outputLoadTracker(false, forSSK).getLastIncomingLoadStats() == null) {
 				if(logMINOR)
 					Logger.minor(this, "Skipping (no load stats bulk): "+p.getPeer());
 				continue;
@@ -947,11 +948,11 @@ public class PeerManager {
 		return bestLoc;
 	}
 
-	public boolean isCloserLocation(double loc, int minUptimePercent) {
+	public boolean isCloserLocation(double loc, int minUptimePercent, boolean forSSK) {
 		double nodeLoc = node.lm.getLocation();
 		double nodeDist = Location.distance(nodeLoc, loc);
 		if(logMINOR) Logger.minor(this, "My loc is "+nodeLoc+" my dist is "+nodeDist+" target is "+loc);
-		double closest = closestPeerLocation(loc, nodeLoc, minUptimePercent);
+		double closest = closestPeerLocation(loc, nodeLoc, minUptimePercent, forSSK);
 		if(closest > 1.0)
 			// No peers found
 			return false;
@@ -1001,6 +1002,7 @@ public class PeerManager {
 		synchronized(this) {
 			peers = connectedPeers;
 		}
+		boolean isSSK = (key instanceof NodeSSK);
 		if(!node.enablePerNodeFailureTables)
 			key = null;
 		if(logMINOR)
@@ -1081,7 +1083,7 @@ public class PeerManager {
 					Logger.minor(this, "Skipping (disconnecting): "+p.getPeer());
 				continue;
 			}
-			if(p.outputLoadTracker(realTime).getLastIncomingLoadStats() == null) {
+			if(p.outputLoadTracker(realTime, isSSK).getLastIncomingLoadStats() == null) {
 				if(logMINOR)
 					Logger.minor(this, "Skipping (no load stats): "+p.getPeer());
 				continue;

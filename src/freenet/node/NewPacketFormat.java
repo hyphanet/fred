@@ -588,8 +588,10 @@ outer:
 			if(logDEBUG) Logger.debug(this, "Added acks for "+this+" for "+pn.shortToString());
 		}
 		
-		byte[] haveAddedStatsBulk = null;
-		byte[] haveAddedStatsRT = null;
+		byte[] haveAddedStatsBulkCHK = null;
+		byte[] haveAddedStatsBulkSSK = null;
+		byte[] haveAddedStatsRTCHK = null;
+		byte[] haveAddedStatsRTSSK = null;
 		
 		if(!ackOnly) {
 			
@@ -597,8 +599,10 @@ outer:
 			
 			while(true) {
 				
-				boolean addStatsBulk = false;
-				boolean addStatsRT = false;
+				boolean addStatsBulkCHK = false;
+				boolean addStatsBulkSSK = false;
+				boolean addStatsRTCHK = false;
+				boolean addStatsRTSSK = false;
 				
 				synchronized(sendBufferLock) {
 					// Always finish what we have started before considering sending more packets.
@@ -618,12 +622,20 @@ outer:
 								packet.addMessageFragment(frag);
 								sentPacket.addFragment(frag);
 								if(wrapper.allSent()) {
-									if((haveAddedStatsBulk == null) && wrapper.getItem().sendLoadBulk) {
-										addStatsBulk = true;
+									if((haveAddedStatsBulkCHK == null) && wrapper.getItem().sendLoadBulkCHK) {
+										addStatsBulkCHK = true;
 										break;
 									}
-									if((haveAddedStatsRT == null) && wrapper.getItem().sendLoadRT) {
-										addStatsRT = true;
+									if((haveAddedStatsBulkSSK == null) && wrapper.getItem().sendLoadBulkSSK) {
+										addStatsBulkSSK = true;
+										break;
+									}
+									if((haveAddedStatsRTCHK == null) && wrapper.getItem().sendLoadRTCHK) {
+										addStatsRTCHK = true;
+										break;
+									}
+									if((haveAddedStatsRTSSK == null) && wrapper.getItem().sendLoadRTSSK) {
+										addStatsRTSSK = true;
 										break;
 									}
 								}
@@ -632,23 +644,43 @@ outer:
 					}
 				}
 				
-				if(!(addStatsBulk || addStatsRT)) break;
+				if(!(addStatsBulkCHK || addStatsBulkSSK || addStatsRTCHK || addStatsRTSSK)) break;
 				
-				if(addStatsBulk) {
-					MessageItem item = pn.makeLoadStats(false, false, true);
+				if(addStatsBulkCHK) {
+					MessageItem item = pn.makeLoadStats(false, false, true, false);
 					if(item != null) {
 						byte[] buf = item.getData();
-						haveAddedStatsBulk = buf;
+						haveAddedStatsBulkCHK = buf;
 						// FIXME if this fails, drop some messages.
 						packet.addLossyMessage(buf, maxPacketSize);
 					}
 				}
 				
-				if(addStatsRT) {
-					MessageItem item = pn.makeLoadStats(true, false, true);
+				if(addStatsBulkSSK) {
+					MessageItem item = pn.makeLoadStats(false, false, true, true);
 					if(item != null) {
 						byte[] buf = item.getData();
-						haveAddedStatsRT = buf;
+						haveAddedStatsBulkSSK = buf;
+						// FIXME if this fails, drop some messages.
+						packet.addLossyMessage(buf, maxPacketSize);
+					}
+				}
+				
+				if(addStatsRTCHK) {
+					MessageItem item = pn.makeLoadStats(true, false, true, false);
+					if(item != null) {
+						byte[] buf = item.getData();
+						haveAddedStatsRTCHK = buf;
+						// FIXME if this fails, drop some messages.
+						packet.addLossyMessage(buf, maxPacketSize);
+					}
+				}
+				
+				if(addStatsRTSSK) {
+					MessageItem item = pn.makeLoadStats(true, false, true, true);
+					if(item != null) {
+						byte[] buf = item.getData();
+						haveAddedStatsRTSSK = buf;
 						// FIXME if this fails, drop some messages.
 						packet.addLossyMessage(buf, maxPacketSize);
 					}
@@ -725,22 +757,29 @@ outer:
 			return null;
 		}
 		
-		boolean sendStatsBulk = false, sendStatsRT = false;
+		boolean sendStatsBulkCHK = false, sendStatsRTCHK = false;
+		boolean sendStatsBulkSSK = false, sendStatsRTSSK = false;
 		
 		if(!ackOnly) {
 			
-			sendStatsBulk = pn.grabSendLoadStatsASAP(false);
-			sendStatsRT = pn.grabSendLoadStatsASAP(true);
+			sendStatsBulkCHK = pn.grabSendLoadStatsASAP(false, false);
+			sendStatsBulkSSK = pn.grabSendLoadStatsASAP(false, true);
+			sendStatsRTCHK = pn.grabSendLoadStatsASAP(true, false);
+			sendStatsRTSSK = pn.grabSendLoadStatsASAP(true, true);
 			
-			if(sendStatsBulk || sendStatsRT) {
+			if(sendStatsBulkCHK || sendStatsRTCHK || sendStatsBulkSSK || sendStatsRTSSK) {
 				if(!checkedCanSend)
 					cantSend = !canSend(sessionKey);
 				checkedCanSend = true;
 				if(cantSend) {
-					if(sendStatsBulk)
-						pn.setSendLoadStatsASAP(false);
-					if(sendStatsRT)
-						pn.setSendLoadStatsASAP(true);
+					if(sendStatsBulkCHK)
+						pn.setSendLoadStatsASAP(false, false);
+					if(sendStatsBulkSSK)
+						pn.setSendLoadStatsASAP(false, true);
+					if(sendStatsRTCHK)
+						pn.setSendLoadStatsASAP(true, false);
+					if(sendStatsRTSSK)
+						pn.setSendLoadStatsASAP(true, true);
 				} else {
 					mustSend = true;
 				}
@@ -751,25 +790,47 @@ outer:
 		
 		if((!ackOnly) && (!cantSend)) {
 			
-			if(sendStatsBulk) {
-				MessageItem item = pn.makeLoadStats(false, true, false);
+			if(sendStatsBulkCHK) {
+				MessageItem item = pn.makeLoadStats(false, true, false, false);
 				if(item != null) {
-					if(haveAddedStatsBulk != null) {
-						packet.removeLossyMessage(haveAddedStatsBulk);
+					if(haveAddedStatsBulkCHK != null) {
+						packet.removeLossyMessage(haveAddedStatsBulkCHK);
 					}
 					messageQueue.pushfrontPrioritizedMessageItem(item);
-					haveAddedStatsBulk = item.buf;
+					haveAddedStatsBulkCHK = item.buf;
 				}
 			}
 			
-			if(sendStatsRT) {
-				MessageItem item = pn.makeLoadStats(true, true, false);
+			if(sendStatsBulkSSK) {
+				MessageItem item = pn.makeLoadStats(false, true, false, true);
 				if(item != null) {
-					if(haveAddedStatsRT != null) {
-						packet.removeLossyMessage(haveAddedStatsRT);
+					if(haveAddedStatsBulkSSK != null) {
+						packet.removeLossyMessage(haveAddedStatsBulkSSK);
 					}
 					messageQueue.pushfrontPrioritizedMessageItem(item);
-					haveAddedStatsRT = item.buf;
+					haveAddedStatsBulkSSK = item.buf;
+				}
+			}
+			
+			if(sendStatsRTCHK) {
+				MessageItem item = pn.makeLoadStats(true, true, false, false);
+				if(item != null) {
+					if(haveAddedStatsRTCHK != null) {
+						packet.removeLossyMessage(haveAddedStatsRTCHK);
+					}
+					messageQueue.pushfrontPrioritizedMessageItem(item);
+					haveAddedStatsRTCHK = item.buf;
+				}
+			}
+			
+			if(sendStatsRTSSK) {
+				MessageItem item = pn.makeLoadStats(true, true, false, true);
+				if(item != null) {
+					if(haveAddedStatsRTSSK != null) {
+						packet.removeLossyMessage(haveAddedStatsRTSSK);
+					}
+					messageQueue.pushfrontPrioritizedMessageItem(item);
+					haveAddedStatsRTSSK = item.buf;
 				}
 			}
 			
@@ -779,8 +840,10 @@ outer:
 					prio:
 					while(true) {
 						
-						boolean addStatsBulk = false;
-						boolean addStatsRT = false;
+						boolean addStatsBulkCHK = false;
+						boolean addStatsBulkSSK = false;
+						boolean addStatsRTCHK = false;
+						boolean addStatsRTSSK = false;
 						
 						//Add messages from the message queue
 						while ((packet.getLength() + 10) < maxPacketSize) { //Fragment header is max 9 bytes, allow min 1 byte data
@@ -854,35 +917,63 @@ outer:
 							}
 							
 							if(wrapper.allSent()) {
-								if((haveAddedStatsBulk == null) && wrapper.getItem().sendLoadBulk) {
-									addStatsBulk = true;
+								if((haveAddedStatsBulkCHK == null) && wrapper.getItem().sendLoadBulkCHK) {
+									addStatsBulkCHK = true;
 									break;
 								}
-								if((haveAddedStatsRT == null) && wrapper.getItem().sendLoadRT) {
-									addStatsRT = true;
+								if((haveAddedStatsBulkSSK == null) && wrapper.getItem().sendLoadBulkSSK) {
+									addStatsBulkSSK = true;
+									break;
+								}
+								if((haveAddedStatsRTCHK == null) && wrapper.getItem().sendLoadRTCHK) {
+									addStatsRTCHK = true;
+									break;
+								}
+								if((haveAddedStatsRTSSK == null) && wrapper.getItem().sendLoadRTSSK) {
+									addStatsRTSSK = true;
 									break;
 								}
 							}
 
 						}
 						
-						if(!(addStatsBulk || addStatsRT)) break;
+						if(!(addStatsBulkCHK || addStatsBulkSSK || addStatsRTCHK || addStatsRTSSK)) break;
 						
-						if(addStatsBulk) {
-							MessageItem item = pn.makeLoadStats(false, false, true);
+						if(addStatsBulkCHK) {
+							MessageItem item = pn.makeLoadStats(false, false, true, false);
 							if(item != null) {
 								byte[] buf = item.getData();
-								haveAddedStatsBulk = item.buf;
+								haveAddedStatsBulkCHK = item.buf;
 								// FIXME if this fails, drop some messages.
 								packet.addLossyMessage(buf, maxPacketSize);
 							}
 						}
 						
-						if(addStatsRT) {
-							MessageItem item = pn.makeLoadStats(true, false, true);
+						if(addStatsBulkSSK) {
+							MessageItem item = pn.makeLoadStats(false, false, true, true);
 							if(item != null) {
 								byte[] buf = item.getData();
-								haveAddedStatsRT = item.buf;
+								haveAddedStatsBulkSSK = item.buf;
+								// FIXME if this fails, drop some messages.
+								packet.addLossyMessage(buf, maxPacketSize);
+							}
+						}
+						
+						if(addStatsRTCHK) {
+							MessageItem item = pn.makeLoadStats(true, false, true, false);
+							if(item != null) {
+								byte[] buf = item.getData();
+								haveAddedStatsRTCHK = item.buf;
+								// FIXME if this fails, drop some messages.
+								packet.addLossyMessage(buf, maxPacketSize);
+							}
+						}
+						
+						if(addStatsRTSSK) {
+							MessageItem item = pn.makeLoadStats(true, false, true, true);
+							if(item != null) {
+								byte[] buf = item.getData();
+								haveAddedStatsRTSSK = item.buf;
 								// FIXME if this fails, drop some messages.
 								packet.addLossyMessage(buf, maxPacketSize);
 							}

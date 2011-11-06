@@ -225,18 +225,18 @@ public class NullBasePeerNode implements BasePeerNode {
 	}
 
 	@Override
-	public MessageItem makeLoadStats(boolean realtime, boolean highPriority, boolean lossy) {
+	public MessageItem makeLoadStats(boolean realtime, boolean highPriority, boolean lossy, boolean forSSK) {
 		// Don't send load stats.
 		return null;
 	}
 
 	@Override
-	public boolean grabSendLoadStatsASAP(boolean realtime) {
+	public boolean grabSendLoadStatsASAP(boolean realtime, boolean forSSK) {
 		return false;
 	}
 
 	@Override
-	public void setSendLoadStatsASAP(boolean realtime) {
+	public void setSendLoadStatsASAP(boolean realtime, boolean forSSK) {
 		throw new UnsupportedOperationException();
 	}
 

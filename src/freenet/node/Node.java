@@ -6166,12 +6166,12 @@ public class Node implements TimeSkewDetectorCallback {
 	 * @param routedTo
 	 * @return
 	 */
-	public boolean shouldStoreDeep(Key key, PeerNode source, PeerNode[] routedTo) {
+	public boolean shouldStoreDeep(Key key, PeerNode source, PeerNode[] routedTo, boolean forSSK) {
     	double myLoc = getLocation();
     	double target = key.toNormalizedDouble();
     	double myDist = Location.distance(myLoc, target);
 
-    	boolean wouldHaveStored = !peers.isCloserLocation(target, MIN_UPTIME_STORE_KEY);
+    	boolean wouldHaveStored = !peers.isCloserLocation(target, MIN_UPTIME_STORE_KEY, forSSK);
 
     	// First, calculate whether we would have stored it using the old formula.
 		if(wouldHaveStored)

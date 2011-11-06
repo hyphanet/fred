@@ -65,14 +65,17 @@ public interface BasePeerNode extends PeerContext {
 	 * @param highPriority If true, boost the priority so it gets sent fast.
 	 * @param noRemember If true, generating it for a lossy message in a packet; don't 
 	 * remember that we sent it, since it might be lost, and generate it even if the last 
-	 * one was the same, since the last one might be delayed. */
-	MessageItem makeLoadStats(boolean realtime, boolean highPriority, boolean noRemember);
+	 * one was the same, since the last one might be delayed. 
+	 * @param forSSK If true, for SSKs; if false, for CHKs. These are now managed 
+	 * separately, as they have radically different completion times and resource uses,
+	 * so combining them results in Bad Things especially with New Load Management. */
+	MessageItem makeLoadStats(boolean realtime, boolean highPriority, boolean noRemember, boolean forSSK);
 	
-	boolean grabSendLoadStatsASAP(boolean realtime);
+	boolean grabSendLoadStatsASAP(boolean realtime, boolean forSSK);
 
 	/** Set the load stats to be sent asap. E.g. if we grabbed it and can't actually 
 	 * execute the send for some reason. */
-	void setSendLoadStatsASAP(boolean realtime);
+	void setSendLoadStatsASAP(boolean realtime, boolean forSSK);
 
 	/** Average ping time incorporating variance, calculated like TCP SRTT, as with RFC 2988. */
 	double averagePingTimeCorrected();

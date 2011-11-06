@@ -4,7 +4,7 @@ import junit.framework.TestCase;
 
 public class MessageWrapperTest extends TestCase {
 	public void testGetFragment() {
-		MessageItem item = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
+		MessageItem item = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false, false, false);
 		MessageWrapper wrapper = new MessageWrapper(item, 0);
 
 		MessageFragment frag = wrapper.getMessageFragment(128);
@@ -49,7 +49,7 @@ public class MessageWrapperTest extends TestCase {
 	}
 	
 	public void testGetFragmentWithLoss() {
-		MessageItem item = new MessageItem(new byte[363], null, false, null, (short) 0, false, false);
+		MessageItem item = new MessageItem(new byte[363], null, false, null, (short) 0, false, false, false, false);
 		MessageWrapper wrapper = new MessageWrapper(item, 0);
 
 		MessageFragment frag1 = wrapper.getMessageFragment(128);
