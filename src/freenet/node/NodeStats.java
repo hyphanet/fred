@@ -1266,7 +1266,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	private int getAcceptableBlockTime(boolean realTime) {
-		return realTime ? 2 : 15;
+		// Transfer timeouts are 10 seconds and 30 seconds per block.
+		// However, they apply separately to each of SSK/CHK * bulk / realtime
+		return realTime ? 1 : 8;
 	}
 
 	static final double ONE_PEER_MAX_PEERS_EQUIVALENT = 2.0;
