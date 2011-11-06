@@ -822,7 +822,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						rcb.onSplitfileCompatibilityMode(
 								CompatibilityMode.COMPAT_1255,
 								CompatibilityMode.COMPAT_1255,
-								((ClientCHK)redirectedKey).getCryptoKey(),
+								null, // FIXME can we use the block key? Only if the parent was a CHK with the same override, or the parent was an SSK.
 								!((ClientCHK)redirectedKey).isCompressed(),
 								true, true,
 								container, context);
@@ -830,7 +830,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						rcb.onSplitfileCompatibilityMode(
 								CompatibilityMode.COMPAT_UNKNOWN,
 								CompatibilityMode.COMPAT_UNKNOWN,
-								((ClientCHK)redirectedKey).getCryptoKey(),
+								null, // FIXME can we use the block key? Only if the parent was a CHK with the same override, or the parent was an SSK.
 								!((ClientCHK)redirectedKey).isCompressed(),
 								true, true,
 								container, context);
