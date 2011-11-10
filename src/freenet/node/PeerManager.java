@@ -987,7 +987,7 @@ public class PeerManager {
 	 */
 	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, double target, boolean ignoreSelf,
 	        boolean calculateMisrouting, int minVersion, List<Double> addUnpickedLocsTo, double maxDistance, Key key, short outgoingHTL, int ignoreBackoffUnder, boolean isLocal, boolean realTime,
-	        RecentlyFailedReturn recentlyFailed, boolean ignoreTimeout, long now, boolean excludeMandatoryBackoff) {
+	        RecentlyFailedReturn recentlyFailed, boolean ignoreTimeout, long now, boolean newLoadManagement) {
 		
 		int countWaiting = 0;
 		long soonestTimeoutWakeup = Long.MAX_VALUE;
@@ -1076,7 +1076,7 @@ public class PeerManager {
 					Logger.minor(this, "Skipping (disconnecting): "+p.getPeer());
 				continue;
 			}
-			if(excludeMandatoryBackoff && p.outputLoadTracker(realTime).getLastIncomingLoadStats() == null) {
+			if(newLoadManagement && p.outputLoadTracker(realTime).getLastIncomingLoadStats() == null) {
 				if(logMINOR)
 					Logger.minor(this, "Skipping (no load stats): "+p.getPeer());
 				continue;
@@ -1095,7 +1095,7 @@ public class PeerManager {
 					continue;
 				}
 			}
-			if(excludeMandatoryBackoff && p.isInMandatoryBackoff(now, realTime)) {
+			if(newLoadManagement && p.isInMandatoryBackoff(now, realTime)) {
 				if(logMINOR) Logger.minor(this, "Skipping (mandatory backoff): "+p.getPeer());
 				continue;
 			}
@@ -1253,7 +1253,7 @@ public class PeerManager {
 			// Recently failed is possible.
 			// Route twice, each time ignoring timeout.
 			// If both return a node which is in timeout, we should do RecentlyFailed.
-			PeerNode first = closerPeer(pn, routedTo, target, ignoreSelf, false, minVersion, null, maxDistance, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, true, now, excludeMandatoryBackoff);
+			PeerNode first = closerPeer(pn, routedTo, target, ignoreSelf, false, minVersion, null, maxDistance, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, true, now, newLoadManagement);
 			if(first != null) {
 				long firstTime;
 				long secondTime;
@@ -1261,7 +1261,7 @@ public class PeerManager {
 					if(logMINOR) Logger.minor(this, "First choice is past now");
 					HashSet<PeerNode> newRoutedTo = new HashSet<PeerNode>(routedTo);
 					newRoutedTo.add(first);
-					PeerNode second = closerPeer(pn, newRoutedTo, target, ignoreSelf, false, minVersion, null, maxDistance, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, true, now, excludeMandatoryBackoff);
+					PeerNode second = closerPeer(pn, newRoutedTo, target, ignoreSelf, false, minVersion, null, maxDistance, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, true, now, newLoadManagement);
 					if(second != null) {
 						if((secondTime = entry.getTimeoutTime(first, outgoingHTL, now, false)) > now) {
 							if(logMINOR) Logger.minor(this, "Second choice is past now");
