@@ -934,7 +934,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					}
 					option = optionList.addChild("li");
 					// FIXME: is this safe? See bug #131
-					NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openAsText", new String[] { "link" }, new HTMLNode[] { HTMLNode.link(getLink(key, "text/plain", maxSize, null, false, maxRetries)) });
+					String mimeTypeExtra = ((e.getExpectedMimeType() != null) && (e.getExpectedMimeType().indexOf(';') > -1)) ? (e.getExpectedMimeType().substring(e.getExpectedMimeType().indexOf(';'))) : "";
+					NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openAsText", new String[] { "link" }, new HTMLNode[] { HTMLNode.link(getLink(key, "text/plain" + mimeTypeExtra, maxSize, null, false, maxRetries)) });
 					option = optionList.addChild("li");
 					NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openForceDisk", new String[] { "link" }, new HTMLNode[] { HTMLNode.link(getLink(key, mime, maxSize, null, true, maxRetries)) });
 					if(!(mime.equals("application/octet-stream") || mime.equals("application/x-msdownload"))) {
