@@ -52,6 +52,7 @@ import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.MediaType;
 import freenet.support.MultiValueTable;
 import freenet.support.SizeUtil;
 import freenet.support.URIPreEncoder;
@@ -934,8 +935,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					}
 					option = optionList.addChild("li");
 					// FIXME: is this safe? See bug #131
-					String mimeTypeExtra = ((e.getExpectedMimeType() != null) && (e.getExpectedMimeType().indexOf(';') > -1)) ? (e.getExpectedMimeType().substring(e.getExpectedMimeType().indexOf(';'))) : "";
-					NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openAsText", new String[] { "link" }, new HTMLNode[] { HTMLNode.link(getLink(key, "text/plain" + mimeTypeExtra, maxSize, null, false, maxRetries)) });
+					MediaType textMediaType = new MediaType("text/plain").setParameter("charset", (e.getExpectedMimeType() != null) ? new MediaType(e.getExpectedMimeType()).getParameter("charset") : null);
+					NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openAsText", new String[] { "link" }, new HTMLNode[] { HTMLNode.link(getLink(key, textMediaType.toString(), maxSize, null, false, maxRetries)) });
 					option = optionList.addChild("li");
 					NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openForceDisk", new String[] { "link" }, new HTMLNode[] { HTMLNode.link(getLink(key, mime, maxSize, null, true, maxRetries)) });
 					if(!(mime.equals("application/octet-stream") || mime.equals("application/x-msdownload"))) {
