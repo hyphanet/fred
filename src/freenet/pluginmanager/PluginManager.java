@@ -893,7 +893,7 @@ public class PluginManager {
 		synchronized(pluginWrappers) {
 			for(int i = 0; i < pluginWrappers.size(); i++) {
 				PluginInfoWrapper pi = pluginWrappers.get(i);
-				if(pi.isFCPPlugin() && pi.getPluginClassName().equals(plugname))
+				if(pi.isFCPPlugin() && pi.getPluginClassName().equals(plugname) && !pi.isStopping())
 					return (FredPluginFCP) pi.plug;
 			}
 		}
