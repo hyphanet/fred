@@ -384,6 +384,9 @@ public class PproxyToadlet extends Toadlet {
 				/* sort available plugins into groups. */
 				SortedMap<String, List<OfficialPluginDescription>> groupedAvailablePlugins = new TreeMap<String, List<OfficialPluginDescription>>();
 				for (OfficialPluginDescription pluginDescription : availablePlugins) {
+					if (advancedModeEnabled && (pluginDescription.advanced || pluginDescription.experimental || pluginDescription.deprecated)) {
+						continue;
+					}
 					String translatedGroup = l10n("pluginGroup." + pluginDescription.group);
 					if (!groupedAvailablePlugins.containsKey(translatedGroup)) {
 						groupedAvailablePlugins.put(translatedGroup, new ArrayList<OfficialPluginDescription>());
@@ -404,7 +407,7 @@ public class PproxyToadlet extends Toadlet {
 
 				showStartingPlugins(pm, contentNode);
 				showPluginList(ctx, pm, contentNode, advancedModeEnabled);
-				showOfficialPluginLoader(ctx, contentNode, groupedAvailablePlugins, pm, advancedModeEnabled);
+				showOfficialPluginLoader(ctx, contentNode, groupedAvailablePlugins, pm);
 				showUnofficialPluginLoader(ctx, contentNode);
 				showFreenetPluginLoader(ctx, contentNode);
 
@@ -537,7 +540,7 @@ public class PproxyToadlet extends Toadlet {
 		}
 	}
 	
-	private void showOfficialPluginLoader(ToadletContext toadletContext, HTMLNode contentNode, Map<String, List<OfficialPluginDescription>> availablePlugins, PluginManager pm, boolean advancedModeEnabled) {
+	private void showOfficialPluginLoader(ToadletContext toadletContext, HTMLNode contentNode, Map<String, List<OfficialPluginDescription>> availablePlugins, PluginManager pm) {
 		/* box for "official" plugins. */
 		HTMLNode addOfficialPluginBox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		addOfficialPluginBox.addChild("div", "class", "infobox-header", l10n("loadOfficialPlugin"));
@@ -582,10 +585,6 @@ public class PproxyToadlet extends Toadlet {
 				HTMLNode pluginNode = pluginGroupNode.addChild("div", "class", "plugin");
 				String pluginName = pluginDescription.name;
 				if(!pm.isPluginLoaded(pluginName)) {
-					if(!advancedModeEnabled) {
-						if(pluginDescription.advanced || pluginDescription.deprecated || pluginDescription.experimental)
-							continue;
-					}
 					HTMLNode option = pluginNode.addChild("input", new String[] { "type", "name", "value" },
 							new String[] { "radio", "plugin-name", pluginName });
 					option.addChild("i", pluginName);
