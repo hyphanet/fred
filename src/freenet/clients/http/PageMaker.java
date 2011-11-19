@@ -225,28 +225,65 @@ public final class PageMaker {
 		}
 		return new HTMLNode("a", new String[] { "href", "title" }, new String[] { "javascript:back()", name }, name);
 	}
-	
+
+	/**
+	 * Generates an FProxy template page suitable for adding content to.
+	 *
+	 * @param title
+	 *            Title of the page.
+	 * @param ctx
+	 *            ToadletContext to use to render the page.
+	 * @return A template PageNode.
+	 */
 	public PageNode getPageNode(String title, ToadletContext ctx) {
 		return getPageNode(title, true, ctx);
 	}
 
+	/**
+	 * Generates an FProxy template page with optional navigation bar suitable
+	 * for adding content to.
+	 *
+	 * @param title
+	 *            Title of the page.
+	 * @param renderNavigationLinks
+	 *            Whether to render navigation links.
+	 * @param ctx
+	 *            ToadletContext to use to render the page.
+	 * @return A template PageNode.
+	 */
 	public PageNode getPageNode(String title, boolean renderNavigationLinks, ToadletContext ctx) {
 		return getPageNode(title, renderNavigationLinks, true, ctx);
 	}
 
 	/**
-	 * Generates an FProxy template page with optional navigation bar and status information suitable for adding
-	 * content to.
-	 * @param title Title of the page.
-	 * @param renderNavigationLinks Whether to render navigation links.
-	 * @param renderStatus Whether to render the status display.
-	 * @param ctx ToadletContext to use to render the page.
+	 * Generates an FProxy template page with optional navigation bar and status
+	 * information suitable for adding content to.
+	 *
+	 * @param title
+	 *            Title of the page.
+	 * @param renderNavigationLinks
+	 *            Whether to render navigation links.
+	 * @param renderStatus
+	 *            Whether to render the status display.
+	 * @param ctx
+	 *            ToadletContext to use to render the page.
 	 * @return A template PageNode.
 	 */
 	public PageNode getPageNode(String title, boolean renderNavigationLinks, boolean renderStatus, ToadletContext ctx) {
 		return getPageNode(title, ctx, new RenderParameters(renderNavigationLinks, renderStatus, true));
 	}
 
+	/**
+	 * Generates an FProxy template page suitable for adding content to.
+	 *
+	 * @param title
+	 *            Title of the page.
+	 * @param ctx
+	 *            ToadletContext to use to render the page.
+	 * @param renderParameters
+	 *            Parameters for inclusion or omission of certain page elements
+	 * @return A template PageNode.
+	 */
 	public PageNode getPageNode(String title, ToadletContext ctx, RenderParameters renderParameters) {
 		boolean fullAccess = ctx == null ? false : ctx.isAllowedFullAccess();
 		HTMLNode pageNode = new HTMLNode.HTMLDoctype("html", "-//W3C//DTD XHTML 1.1//EN");
@@ -622,30 +659,76 @@ public final class PageMaker {
 		return NodeL10n.getBase().getString("PageMaker." + string);
 	}
 
+	/**
+	 * Bundles parameters that are used to create the page node.
+	 *
+	 * @see PageMaker#getPageNode(String, ToadletContext, RenderParameters)
+	 * @author <a href="mailto:bombe@pterodactylus.net">David ‘Bombe’ Roden</a>
+	 */
 	public static class RenderParameters {
 
+		/** Whether to include navigation links in the page. */
 		private final boolean renderNavigationLinks;
+
+		/** Whether to include the status bar in the page. */
 		private final boolean renderStatus;
+
+		/** Whether to include the mode switch in the page. */
 		private final boolean renderModeSwitch;
 
+		/**
+		 * Creates default render parameters that include all elements.
+		 */
 		public RenderParameters() {
 			this(true, true, true);
 		}
 
+		/**
+		 * Creates render parameters.
+		 *
+		 * @param renderNavigationLinks
+		 *            {@code true} to include navigation links in the page
+		 * @param renderStatus
+		 *            {@code true} to include the status bar in the page
+		 * @param renderModeSwitch
+		 *            {@code true} to include the mode switch in the status bar
+		 */
 		public RenderParameters(boolean renderNavigationLinks, boolean renderStatus, boolean renderModeSwitch) {
 			this.renderNavigationLinks = renderNavigationLinks;
 			this.renderStatus = renderStatus;
 			this.renderModeSwitch = renderModeSwitch;
 		}
 
+		//
+		// ACCESSORS
+		//
+
+		/**
+		 * Returns whether the navigation links should be included in the page.
+		 *
+		 * @return {@code true} if the navigation links should be included in
+		 *         the page, {@code false} otherwise
+		 */
 		public boolean isRenderNavigationLinks() {
 			return renderNavigationLinks;
 		}
 
+		/**
+		 * Returns whether the status bar should be included in the page.
+		 *
+		 * @return {@code true} if the status bar should be included in the
+		 *         page, {@code false} otherwise
+		 */
 		public boolean isRenderStatus() {
 			return renderStatus;
 		}
 
+		/**
+		 * Returns whether the mode switch should be included in the page.
+		 *
+		 * @return {@code true} if the mode switch should be included in the
+		 *         page, {@code false} otherwise
+		 */
 		public boolean isRenderModeSwitch() {
 			return renderModeSwitch;
 		}
