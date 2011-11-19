@@ -250,7 +250,11 @@ public final class PageMaker {
 	 * @param ctx
 	 *            ToadletContext to use to render the page.
 	 * @return A template PageNode.
+	 * @deprecated Use
+	 *             {@link #getPageNode(String, ToadletContext, RenderParameters)}
+	 *             instead
 	 */
+	@Deprecated
 	public PageNode getPageNode(String title, boolean renderNavigationLinks, ToadletContext ctx) {
 		return getPageNode(title, renderNavigationLinks, true, ctx);
 	}
@@ -268,7 +272,11 @@ public final class PageMaker {
 	 * @param ctx
 	 *            ToadletContext to use to render the page.
 	 * @return A template PageNode.
+	 * @deprecated Use
+	 *             {@link #getPageNode(String, ToadletContext, RenderParameters)}
+	 *             instead
 	 */
+	@Deprecated
 	public PageNode getPageNode(String title, boolean renderNavigationLinks, boolean renderStatus, ToadletContext ctx) {
 		return getPageNode(title, ctx, new RenderParameters(renderNavigationLinks, renderStatus, true));
 	}
