@@ -244,6 +244,10 @@ public final class PageMaker {
 	 * @return A template PageNode.
 	 */
 	public PageNode getPageNode(String title, boolean renderNavigationLinks, boolean renderStatus, ToadletContext ctx) {
+		return getPageNode(title, ctx, new RenderParameters(renderNavigationLinks, renderStatus, true));
+	}
+
+	public PageNode getPageNode(String title, ToadletContext ctx, RenderParameters renderParameters) {
 		boolean fullAccess = ctx == null ? false : ctx.isAllowedFullAccess();
 		HTMLNode pageNode = new HTMLNode.HTMLDoctype("html", "-//W3C//DTD XHTML 1.1//EN");
 		HTMLNode htmlNode = pageNode.addChild("html", "xml:lang", NodeL10n.getBase().getSelectedLanguage().isoCode);
@@ -294,7 +298,7 @@ public final class PageMaker {
 		HTMLNode pageDiv = bodyNode.addChild("div", "id", "page");
 		HTMLNode topBarDiv = pageDiv.addChild("div", "id", "topbar");
 
-		if (renderStatus) {
+		if (renderParameters.isRenderStatus()) {
 			final HTMLNode statusBarDiv = pageDiv.addChild("div", "id", "statusbar-container").addChild("div", "id", "statusbar");
 
 			 if (node != null && node.clientCore != null) {
@@ -308,7 +312,7 @@ public final class PageMaker {
 
 			statusBarDiv.addChild("div", "id", "statusbar-language").addChild("a", "href", "/config/node#l10n", NodeL10n.getBase().getSelectedLanguage().fullName);
 
-			if (node.clientCore != null && ctx != null) {
+			if (node.clientCore != null && ctx != null && renderParameters.isRenderModeSwitch()) {
 				parseMode(ctx);
 				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
 				final HTMLNode switchMode = statusBarDiv.addChild("div", "id", "statusbar-switchmode");
@@ -382,7 +386,7 @@ public final class PageMaker {
 		}
 
 		topBarDiv.addChild("h1", title);
-		if (renderNavigationLinks) {
+		if (renderParameters.isRenderNavigationLinks()) {
 			SubMenu selected = null;
 			// Render the full menu.
 			HTMLNode navbarDiv = pageDiv.addChild("div", "id", "navbar");
@@ -617,4 +621,35 @@ public final class PageMaker {
 	private static final String l10n(String string) {
 		return NodeL10n.getBase().getString("PageMaker." + string);
 	}
+
+	public static class RenderParameters {
+
+		private final boolean renderNavigationLinks;
+		private final boolean renderStatus;
+		private final boolean renderModeSwitch;
+
+		public RenderParameters() {
+			this(true, true, true);
+		}
+
+		public RenderParameters(boolean renderNavigationLinks, boolean renderStatus, boolean renderModeSwitch) {
+			this.renderNavigationLinks = renderNavigationLinks;
+			this.renderStatus = renderStatus;
+			this.renderModeSwitch = renderModeSwitch;
+		}
+
+		public boolean isRenderNavigationLinks() {
+			return renderNavigationLinks;
+		}
+
+		public boolean isRenderStatus() {
+			return renderStatus;
+		}
+
+		public boolean isRenderModeSwitch() {
+			return renderModeSwitch;
+		}
+
+	}
+
 }
