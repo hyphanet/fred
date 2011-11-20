@@ -2,10 +2,17 @@ package freenet.clients.http;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.NodeL10n;
@@ -374,9 +381,30 @@ public class PproxyToadlet extends Toadlet {
 					availablePlugins.remove(pm.isOfficialPlugin(pluginName));
 				}
 
+				/* sort available plugins into groups. */
+				SortedMap<String, List<OfficialPluginDescription>> groupedAvailablePlugins = new TreeMap<String, List<OfficialPluginDescription>>();
+				for (OfficialPluginDescription pluginDescription : availablePlugins) {
+					String translatedGroup = l10n("pluginGroup." + pluginDescription.group);
+					if (!groupedAvailablePlugins.containsKey(translatedGroup)) {
+						groupedAvailablePlugins.put(translatedGroup, new ArrayList<OfficialPluginDescription>());
+					}
+					groupedAvailablePlugins.get(translatedGroup).add(pluginDescription);
+				}
+				for (List<OfficialPluginDescription> pluginDescriptions : groupedAvailablePlugins.values()) {
+					Collections.sort(pluginDescriptions, new Comparator<OfficialPluginDescription>() {
+						/**
+						 * {@inheritDoc}
+						 */
+						@Override
+						public int compare(OfficialPluginDescription o1, OfficialPluginDescription o2) {
+							return o1.name.compareTo(o2.name);
+						}
+					});
+				}
+
 				showStartingPlugins(pm, contentNode);
 				showPluginList(ctx, pm, contentNode, advancedModeEnabled);
-				showOfficialPluginLoader(ctx, contentNode, availablePlugins, pm, advancedModeEnabled);
+				showOfficialPluginLoader(ctx, contentNode, groupedAvailablePlugins, pm, advancedModeEnabled);
 				showUnofficialPluginLoader(ctx, contentNode);
 				showFreenetPluginLoader(ctx, contentNode);
 
@@ -509,7 +537,7 @@ public class PproxyToadlet extends Toadlet {
 		}
 	}
 	
-	private void showOfficialPluginLoader(ToadletContext toadletContext, HTMLNode contentNode, List<OfficialPluginDescription> availablePlugins, PluginManager pm, boolean advancedModeEnabled) {
+	private void showOfficialPluginLoader(ToadletContext toadletContext, HTMLNode contentNode, Map<String, List<OfficialPluginDescription>> availablePlugins, PluginManager pm, boolean advancedModeEnabled) {
 		/* box for "official" plugins. */
 		HTMLNode addOfficialPluginBox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		addOfficialPluginBox.addChild("div", "class", "infobox-header", l10n("loadOfficialPlugin"));
@@ -547,31 +575,26 @@ public class PproxyToadlet extends Toadlet {
 		p = addOfficialForm.addChild("p");
 		
 		p.addChild("#", (l10n("loadOfficialPluginLabel") + ": "));
-		Iterator<OfficialPluginDescription> availablePluginIterator = availablePlugins.iterator();
-		boolean first = true;
-		while (availablePluginIterator.hasNext()) {
-			OfficialPluginDescription plugin = availablePluginIterator.next();
-			String pluginName = plugin.name;
-			if(!pm.isPluginLoaded(pluginName)) {
-				if(!advancedModeEnabled) {
-					if(plugin.advanced || plugin.deprecated || plugin.experimental)
-						continue;
+		for (Entry<String, List<OfficialPluginDescription>> groupPlugins : availablePlugins.entrySet()) {
+			HTMLNode pluginGroupNode = addOfficialForm.addChild("div", "class", "plugin-group");
+			pluginGroupNode.addChild("div", "class", "plugin-group-title", l10n("pluginGroupTitle", "pluginGroup", groupPlugins.getKey()));
+			for (OfficialPluginDescription pluginDescription : groupPlugins.getValue()) {
+				HTMLNode pluginNode = pluginGroupNode.addChild("div", "class", "plugin");
+				String pluginName = pluginDescription.name;
+				if(!pm.isPluginLoaded(pluginName)) {
+					if(!advancedModeEnabled) {
+						if(pluginDescription.advanced || pluginDescription.deprecated || pluginDescription.experimental)
+							continue;
+					}
+					HTMLNode option = pluginNode.addChild("input", new String[] { "type", "name", "value" },
+							new String[] { "radio", "plugin-name", pluginName });
+					option.addChild("i", pluginName);
+					if(pluginDescription.deprecated)
+						option.addChild("b", " ("+l10n("loadLabelDeprecated")+")");
+					if(pluginDescription.experimental)
+						option.addChild("b", " ("+l10n("loadLabelExperimental")+")");
+					option.addChild("#", " - "+l10n("pluginDesc."+pluginName));
 				}
-				HTMLNode option;
-				if(first) {
-					option = addOfficialForm;
-					first = false;
-				} else {
-					option = addOfficialForm.addChild("br");
-				}
-				option = option.addChild("input", new String[] { "type", "name", "value" },
-						new String[] { "radio", "plugin-name", pluginName });
-				option.addChild("i", pluginName);
-				if(plugin.deprecated)
-					option.addChild("b", " ("+l10n("loadLabelDeprecated")+")");
-				if(plugin.experimental)
-					option.addChild("b", " ("+l10n("loadLabelExperimental")+")");
-				option.addChild("#", " - "+l10n("pluginDesc."+pluginName));
 			}
 		}
 		addOfficialForm.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-official", l10n("Load") });
