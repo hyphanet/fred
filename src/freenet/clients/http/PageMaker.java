@@ -88,6 +88,10 @@ public final class PageMaker {
 	
 	public static final int MODE_SIMPLE = 1;
 	public static final int MODE_ADVANCED = 2;
+
+	/** Parameter for simple/advanced mode switch. */
+	private static final String MODE_SWITCH_PARAMETER = "fproxyAdvancedMode";
+
 	private THEME theme;
 	private String override;
 	private final Node node;
@@ -361,12 +365,18 @@ public final class PageMaker {
 				parseMode(ctx);
 				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
 				final HTMLNode switchMode = statusBarDiv.addChild("div", "id", "statusbar-switchmode");
+				String uri = ctx.getUri().getQuery();
+				if (uri == null) {
+					uri = "?";
+				} else {
+					uri = "?" + uri + "&";
+				}
 				if (ctx.activeToadlet().container.isAdvancedModeEnabled()) {
 					switchMode.addAttribute("class", "simple");
-					switchMode.addChild("a", "href", "?mode=1", NodeL10n.getBase().getString("StatusBar.switchToSimpleMode"));
+					switchMode.addChild("a", "href", uri + MODE_SWITCH_PARAMETER + "=" + MODE_SIMPLE, NodeL10n.getBase().getString("StatusBar.switchToSimpleMode"));
 				} else {
 					switchMode.addAttribute("class", "advanced");
-					switchMode.addChild("a", "href", "?mode=2", NodeL10n.getBase().getString("StatusBar.switchToAdvancedMode"));
+					switchMode.addChild("a", "href", uri + MODE_SWITCH_PARAMETER + "=" + MODE_ADVANCED, NodeL10n.getBase().getString("StatusBar.switchToAdvancedMode"));
 				}
 			}
 
@@ -645,9 +655,9 @@ public final class PageMaker {
 	@Deprecated
 	public int parseMode(HTTPRequest req, ToadletContainer container) {
 		int mode = container.isAdvancedModeEnabled() ? MODE_ADVANCED : MODE_SIMPLE;
-		
-		if(req.isParameterSet("mode")) {
-			mode = req.getIntParam("mode", mode);
+
+		if(req.isParameterSet(MODE_SWITCH_PARAMETER)) {
+			mode = req.getIntParam(MODE_SWITCH_PARAMETER, mode);
 			if(mode == MODE_ADVANCED)
 				container.setAdvancedMode(true);
 			else
@@ -659,8 +669,8 @@ public final class PageMaker {
 	
 	private void parseMode(ToadletContext ctx) {
 		HTTPRequest req = new HTTPRequestImpl(ctx.getUri(), "GET");
-		if(req.isParameterSet("mode"))
-			ctx.getContainer().setAdvancedMode(req.getIntParam("mode") == MODE_ADVANCED);
+		if(req.isParameterSet(MODE_SWITCH_PARAMETER))
+			ctx.getContainer().setAdvancedMode(req.getIntParam(MODE_SWITCH_PARAMETER) == MODE_ADVANCED);
 	}
 	
 	private static final String l10n(String string) {
