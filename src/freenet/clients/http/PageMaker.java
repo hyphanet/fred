@@ -282,7 +282,7 @@ public final class PageMaker {
 	 */
 	@Deprecated
 	public PageNode getPageNode(String title, boolean renderNavigationLinks, boolean renderStatus, ToadletContext ctx) {
-		return getPageNode(title, ctx, new RenderParameters(renderNavigationLinks, renderStatus, true));
+		return getPageNode(title, ctx, new RenderParameters().renderNavigationLinks(renderNavigationLinks).renderStatus(renderStatus).renderModeSwitch(true));
 	}
 
 	/**
@@ -678,7 +678,11 @@ public final class PageMaker {
 	}
 
 	/**
-	 * Bundles parameters that are used to create the page node.
+	 * Bundles parameters that are used to create the page node. The default for
+	 * the render parameters is to include all optional render tasks. Individual
+	 * tasks may be enabled or disabled by calling the appropriate methods which
+	 * returns a new {@link RenderParameters} object as {@link RenderParameters}
+	 * are immutable.
 	 *
 	 * @see PageMaker#getPageNode(String, ToadletContext, RenderParameters)
 	 * @author <a href="mailto:bombe@pterodactylus.net">David ‘Bombe’ Roden</a>
@@ -711,7 +715,7 @@ public final class PageMaker {
 		 * @param renderModeSwitch
 		 *            {@code true} to include the mode switch in the status bar
 		 */
-		public RenderParameters(boolean renderNavigationLinks, boolean renderStatus, boolean renderModeSwitch) {
+		private RenderParameters(boolean renderNavigationLinks, boolean renderStatus, boolean renderModeSwitch) {
 			this.renderNavigationLinks = renderNavigationLinks;
 			this.renderStatus = renderStatus;
 			this.renderModeSwitch = renderModeSwitch;
@@ -732,6 +736,19 @@ public final class PageMaker {
 		}
 
 		/**
+		 * Returns a new {@link RenderParameters} object that renders the
+		 * navigation links according to the given parameter.
+		 *
+		 * @param renderNavigationLinks
+		 *            {@code true} to render the navigation links, {@code false}
+		 *            otherwise
+		 * @return A new {@link RenderParameters} object
+		 */
+		public RenderParameters renderNavigationLinks(boolean renderNavigationLinks) {
+			return new RenderParameters(renderNavigationLinks, renderStatus, renderModeSwitch);
+		}
+
+		/**
 		 * Returns whether the status bar should be included in the page.
 		 *
 		 * @return {@code true} if the status bar should be included in the
@@ -742,6 +759,19 @@ public final class PageMaker {
 		}
 
 		/**
+		 * Returns a new {@link RenderParameters} object that renders the status
+		 * bar according to the given parameter.
+		 *
+		 * @param renderStatus
+		 *            {@code true} to render the status bar, {@code false}
+		 *            otherwise
+		 * @return A new {@link RenderParameters} object
+		 */
+		public RenderParameters renderStatus(boolean renderStatus) {
+			return new RenderParameters(renderNavigationLinks, renderStatus, renderModeSwitch);
+		}
+
+		/**
 		 * Returns whether the mode switch should be included in the page.
 		 *
 		 * @return {@code true} if the mode switch should be included in the
@@ -749,6 +779,19 @@ public final class PageMaker {
 		 */
 		public boolean isRenderModeSwitch() {
 			return renderModeSwitch;
+		}
+
+		/**
+		 * Returns a new {@link RenderParameters} object that renders the mode
+		 * switch according to the given parameter.
+		 *
+		 * @param renderModeSwitch
+		 *            {@code true} to render the mode switch, {@code false}
+		 *            otherwise
+		 * @return A new {@link RenderParameters} object
+		 */
+		public RenderParameters renderModeSwitch(boolean renderModeSwitch) {
+			return new RenderParameters(renderNavigationLinks, renderStatus, renderModeSwitch);
 		}
 
 	}
