@@ -11,6 +11,7 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -824,6 +825,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				this.deleteFetchContext = false;
 				if((redirectedKey instanceof ClientCHK) && !((ClientCHK)redirectedKey).isMetadata()) {
 					rcb.onBlockSetFinished(this, container, context);
+					byte [] redirectedCryptoKey = ((ClientCHK)redirectedKey).getCryptoKey();
+					if (key instanceof ClientCHK && !Arrays.equals(
+							((ClientCHK)key).getCryptoKey(),
+							redirectedCryptoKey))
+						redirectedCryptoKey = null;
 					// not splitfile, synthesize CompatibilityMode event
 					if (metadata.getParsedVersion() == 0)
 						rcb.onSplitfileCompatibilityMode(
@@ -837,7 +843,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						rcb.onSplitfileCompatibilityMode(
 								CompatibilityMode.COMPAT_1255,
 								CompatibilityMode.COMPAT_1255,
-								null, // FIXME can we use the block key? Only if the parent was a CHK with the same override, or the parent was an SSK.
+								redirectedCryptoKey,
 								!((ClientCHK)redirectedKey).isCompressed(),
 								true, true,
 								container, context);
@@ -845,7 +851,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						rcb.onSplitfileCompatibilityMode(
 								CompatibilityMode.COMPAT_UNKNOWN,
 								CompatibilityMode.COMPAT_UNKNOWN,
-								null, // FIXME can we use the block key? Only if the parent was a CHK with the same override, or the parent was an SSK.
+								redirectedCryptoKey,
 								!((ClientCHK)redirectedKey).isCompressed(),
 								true, true,
 								container, context);
