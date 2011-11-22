@@ -337,6 +337,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	 * Handle the current metadata. I.e. do something with it: transition to a splitfile, look up a manifest, etc.
 	 * LOCKING: Synchronized as it changes so many variables; if we want to write the structure to disk, we don't
 	 * want this running at the same time.
+	 * LOCKING: Therefore it should not directly call e.g. onFailed, innerWrapHandleMetadata, other stuff that might 
+	 * cause lots of stuff to happen on other objects, eventually ClientRequestScheduler gets locked -> deadlock. This is
+	 * irrelevant for persistent requests however, as they are single thread.
 	 * @throws FetchException
 	 * @throws MetadataParseException
 	 * @throws ArchiveFailureException
@@ -750,8 +753,20 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// We must transition to the sub-fetcher so that if the request is cancelled, it will get deleted.
 				parent.onTransition(this, f, container);
 				
-				f.innerWrapHandleMetadata(true, container, context);
-				if(persistent) container.deactivate(f, 1);
+				if(persistent) {
+					f.innerWrapHandleMetadata(true, container, context);
+					container.deactivate(f, 1);
+				} else {
+					// Break locks. Must not call onFailure(), etc, from within SFF lock.
+					context.mainExecutor.execute(new Runnable() {
+
+						@Override
+						public void run() {
+							f.innerWrapHandleMetadata(true, container, context);
+						}
+						
+					});
+				}
 				return;
 			} else if(metadata.isSingleFileRedirect()) {
 				if(logMINOR) Logger.minor(this, "Is single-file redirect");
@@ -971,7 +986,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		decompressors.add(codec);
 	}
 
-	private void fetchArchive(boolean forData, Metadata meta, String element, ArchiveExtractCallback callback, final ObjectContainer container, ClientContext context) throws FetchException, MetadataParseException, ArchiveFailureException, ArchiveRestartException {
+	private void fetchArchive(boolean forData, Metadata meta, String element, ArchiveExtractCallback callback, final ObjectContainer container, final ClientContext context) throws FetchException, MetadataParseException, ArchiveFailureException, ArchiveRestartException {
 		if(logMINOR) Logger.minor(this, "fetchArchive()");
 		// Fetch the archive
 		// How?
@@ -995,10 +1010,23 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		if(persistent) container.activate(parent, 1);
 		parent.onTransition(this, f, container);
 		
-		f.innerWrapHandleMetadata(true, container, context);
-		if(persistent) container.deactivate(f, 1);
+		if(!persistent) {
+			// Break locks. Must not call onFailure(), etc, from within SFF lock.
+			context.mainExecutor.execute(new Runnable() {
+
+				@Override
+				public void run() {
+					f.innerWrapHandleMetadata(true, container, context);
+				}
+				
+			});
+		} else {
+			f.innerWrapHandleMetadata(true, container, context);
+			container.deactivate(f, 1);
+		}
 	}
 
+	// LOCKING: If transient, DO NOT call this method from within handleMetadata.
 	protected void innerWrapHandleMetadata(boolean notFinalizedSize, ObjectContainer container, ClientContext context) {
 		try {
 			handleMetadata(container, context);
