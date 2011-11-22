@@ -2445,14 +2445,24 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		if(!node.enableARKs) return;
 		Logger.minor(this, "Stopping ARK fetcher for " + this + " : " + myARK);
 		// FIXME any way to reduce locking here?
+		USKRetriever ret;
 		synchronized(arkFetcherSync) {
 			if(arkFetcher == null) {
 				if(logMINOR) Logger.minor(this, "ARK fetcher not running for "+this);
 				return;
 			}
-			node.clientCore.uskManager.unsubscribeContent(myARK, this.arkFetcher, true);
+			ret = arkFetcher;
 			arkFetcher = null;
 		}
+		final USKRetriever unsub = ret;
+		node.executor.execute(new Runnable() {
+
+			@Override
+			public void run() {
+				node.clientCore.uskManager.unsubscribeContent(myARK, unsub, true);
+			}
+			
+		});
 	}
 
 
