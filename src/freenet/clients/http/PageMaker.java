@@ -281,7 +281,9 @@ public final class PageMaker {
 			t = null;
 		String activePath = "";
 		if(t != null) activePath = t.path();
-		HTMLNode bodyNode = htmlNode.addChild("body", "id", "fproxy-page");
+		HTMLNode bodyNode = htmlNode.addChild("body",
+		        new String[] { "class", "id" },
+		        new String[] { "fproxy-page", activePath });
 		//Add a hidden input that has the request's id
 		if(webPushingEnabled)
 			bodyNode.addChild("input",new String[]{"type","name","value","id"},new String[]{"hidden","requestId",ctx.getUniqueId(),"requestId"});
