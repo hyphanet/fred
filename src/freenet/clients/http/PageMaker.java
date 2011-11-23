@@ -449,9 +449,30 @@ public final class PageMaker {
 						String menuItemTitle = menu.defaultNavigationLinkTitle;
 						String text = menu.navigationLinkText;
 						if(menu.plugin == null) {
+							/* If not from a plugin, add the localization key as id. So it
+							 * will almost always be a valid CSS ID, it replaces any
+							 * characters in this key that are not an underscore, dash, or
+							 * alphanumeric with an underscore. The only circumstances in
+							 * which this does not result in a valid CSS ID are when the
+							 * key is only one character long or first character is a dash
+							 * and the next is not a letter, underscore, or replaced with
+							 * an underscore.
+							 * Source: http://stackoverflow.com/questions/448981/
+							 */
+							listItem.addAttribute("id", menuItemTitle.replaceAll("[^-_a-zA-Z0-9]", "_"));
+
 							menuItemTitle = NodeL10n.getBase().getString(menuItemTitle);
 							text = NodeL10n.getBase().getString(text);
 						} else {
+							/* If from a plugin, add localization key appended to class
+							 * name, so that plugins with multiple menus still have
+							 * distinguishable IDs. Please note that if the plugin is
+							 * misbehaving and does not register its menu with localization
+							 * keys, this will be the same as the displayed title.
+							 */
+							String id = menu.plugin.getClass().getName()+'-'+text;
+							listItem.addAttribute("id", id.replaceAll("[^-_a-zA-Z0-9]", "_"));
+
 							String newTitle = menu.plugin.getString(menuItemTitle);
 							if(newTitle == null) {
 								Logger.error(this, "Plugin '"+menu.plugin+"' did return null in getString(key)!");
