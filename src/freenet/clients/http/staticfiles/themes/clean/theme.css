@@ -139,16 +139,16 @@ div#navbar ul:hover + li ul.subnavlist {
 	display: block;
 }
 
-div#navbar ul#navlist li#navlist-selected ul.subnavlist-selected li.submenuitem-selected a {
+div#navbar ul#navlist li.navlist-selected ul.subnavlist-selected li.submenuitem-selected a {
 	color: blue;
 }
 
-div#navbar ul#navlist li#navlist-selected a {
+div#navbar ul#navlist li.navlist-selected a {
 	color: blue;	
 	background-color: #ddd;
 }
 
-div#navbar ul#navlist li#navlist-selected ul li a, div#navbar ul#navlist li ul li a {
+div#navbar ul#navlist li.navlist-selected ul li a, div#navbar ul#navlist li ul li a {
 	background-color: inherit;
 	color: #666;
 	font-size: 0.9em;
@@ -159,11 +159,11 @@ div#navbar ul#navlist li:hover ul.subnavlist {
 	color: gray;
 }
 
-div#navbar a:hover, div#navbar ul#navlist li#navlist-selected ul.subnavlist-selected li.submenuitem-selected a {
+div#navbar a:hover, div#navbar ul#navlist li.navlist-selected ul.subnavlist-selected li.submenuitem-selected a {
 	background-color: #e0e0e0;
 }
 
-div#navbar ul#navlist li ul li a:hover, div#navbar ul#navlist li#navlist-selected ul.subnavlist-selected li a:hover {
+div#navbar ul#navlist li ul li a:hover, div#navbar ul#navlist li.navlist-selected ul.subnavlist-selected li a:hover {
 	color: #111;
 	background-color: #e0e0e0;
 }

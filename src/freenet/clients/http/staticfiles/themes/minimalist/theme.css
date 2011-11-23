@@ -160,30 +160,30 @@ div#navbar ul li ul {
 	border: 1px solid blue;
 }
 
-div#navbar ul li a, div#navbar ul li a:hover, div#navbar ul#navlist li#navlist-selected ul.subnavlist-selected li.submenuitem-selected a {
+div#navbar ul li a, div#navbar ul li a:hover, div#navbar ul#navlist li.navlist-selected ul.subnavlist-selected li.submenuitem-selected a {
 	color: blue;
 	background-color: white;
 }
 
-div#navbar ul#navlist li#navlist-selected a {
+div#navbar ul#navlist li.navlist-selected a {
 	color: black;
 	font-weight: bold;
 	background-color: white;
 	text-decoration: none;
 }
 
-div#navbar ul#navlist li ul li a:hover, div#navbar ul#navlist li#navlist-selected ul.subnavlist-selected li a:hover {
+div#navbar ul#navlist li ul li a:hover, div#navbar ul#navlist li.navlist-selected ul.subnavlist-selected li a:hover {
 	color: white;
 	background-color: blue;
 }
 
-div#navbar ul#navlist li ul li a, div#navbar ul#navlist li#navlist-selected ul li a {
+div#navbar ul#navlist li ul li a, div#navbar ul#navlist li.navlist-selected ul li a {
 	color: blue;
 	font-weight: normal;
 	background-color: white;
 }
 
-div#navbar ul#navlist li#navlist-selected ul li.submenuitem-selected a {
+div#navbar ul#navlist li.navlist-selected ul li.submenuitem-selected a {
 	color: black;
 	background-color: white;
 	font-weight: bold;

@@ -441,7 +441,7 @@ public final class PageMaker {
 						if(isSelected) {
 							selected = menu;
 							subnavlist.addAttribute("class", "subnavlist-selected");
-							listItem = new HTMLNode("li", "id", "navlist-selected");
+							listItem = new HTMLNode("li", "class", "navlist-selected");
 						} else {
 							subnavlist.addAttribute("class", "subnavlist");
 							listItem = new HTMLNode("li", "class", "navlist-not-selected");
