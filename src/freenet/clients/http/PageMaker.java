@@ -281,9 +281,10 @@ public final class PageMaker {
 			t = null;
 		String activePath = "";
 		if(t != null) activePath = t.path();
+		//The regex removes characters which are not valid in a CSS attribute.
 		HTMLNode bodyNode = htmlNode.addChild("body",
 		        new String[] { "class", "id" },
-		        new String[] { "fproxy-page", activePath });
+		        new String[] { "fproxy-page", "page-"+activePath.replaceAll("[^-_a-zA-Z0-9]", "_") });
 		//Add a hidden input that has the request's id
 		if(webPushingEnabled)
 			bodyNode.addChild("input",new String[]{"type","name","value","id"},new String[]{"hidden","requestId",ctx.getUniqueId(),"requestId"});
