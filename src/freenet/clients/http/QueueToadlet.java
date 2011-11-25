@@ -1988,50 +1988,52 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 		// Checkbox header
 		headerRow.addChild("th"); // No description
-		
+
+		//Add a header for each column.
 		for (QueueTableColumns column : columns) {
 			switch (column) {
-			case IDENTIFIER:
-				headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=id" : "?sortBy=id&reversed")).addChild("#", l10n("identifier"));
-				break;
-			case SIZE:
-				headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=size" : "?sortBy=size&reversed")).addChild("#", l10n("size"));
-				break;
-			case MIME_TYPE:
-				headerRow.addChild("th", l10n("mimeType"));
-				break;
-			case PERSISTENCE:
-				headerRow.addChild("th", l10n("persistence"));
-				break;
-			case KEY:
-				headerRow.addChild("th", l10n("key"));
-				break;
-			case FILENAME:
-				headerRow.addChild("th", l10n("fileName"));
-				break;
-			case PRIORITY:
-				headerRow.addChild("th", l10n("priority"));
-				break;
-			case FILES:
-				headerRow.addChild("th", l10n("files"));
-				break;
-			case TOTAL_SIZE:
-				headerRow.addChild("th", l10n("totalSize"));
-				break;
-			case PROGRESS:
-				headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=progress" : "?sortBy=progress&reversed")).addChild("#", l10n("progress"));
-				break;
-			case REASON:
-				headerRow.addChild("th", l10n("reason"));
-				break;
-			case LAST_ACTIVITY:
-				headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=lastActivity" : "?sortBy=lastActivity&reversed"),  l10n("lastActivity"));
-				break;
-			case COMPAT_MODE:
-				headerRow.addChild("th", l10n("compatibilityMode"));
-				break;
+				case IDENTIFIER:
+					headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=id" : "?sortBy=id&reversed")).addChild("#", l10n("identifier"));
+					break;
+				case SIZE:
+					headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=size" : "?sortBy=size&reversed")).addChild("#", l10n("size"));
+					break;
+				case MIME_TYPE:
+					headerRow.addChild("th", l10n("mimeType"));
+					break;
+				case PERSISTENCE:
+					headerRow.addChild("th", l10n("persistence"));
+					break;
+				case KEY:
+					headerRow.addChild("th", l10n("key"));
+					break;
+				case FILENAME:
+					headerRow.addChild("th", l10n("fileName"));
+					break;
+				case PRIORITY:
+					headerRow.addChild("th", l10n("priority"));
+					break;
+				case FILES:
+					headerRow.addChild("th", l10n("files"));
+					break;
+				case TOTAL_SIZE:
+					headerRow.addChild("th", l10n("totalSize"));
+					break;
+				case PROGRESS:
+					headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=progress" : "?sortBy=progress&reversed")).addChild("#", l10n("progress"));
+					break;
+				case REASON:
+					headerRow.addChild("th", l10n("reason"));
+					break;
+				case LAST_ACTIVITY:
+					headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=lastActivity" : "?sortBy=lastActivity&reversed"),  l10n("lastActivity"));
+					break;
+				case COMPAT_MODE:
+					headerRow.addChild("th", l10n("compatibilityMode"));
+					break;
 			}
 		}
+		//Add a row with a checkbox for each request.
 		int x = 0;
 		for (RequestStatus clientRequest : requests) {
 			HTMLNode requestRow = table.addChild("tr", "class", "priority" + clientRequest.getPriority());
@@ -2039,69 +2041,69 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 			for (QueueTableColumns column : columns) {
 				switch (column) {
-				case IDENTIFIER:
-					requestRow.addChild(createIdentifierCell(clientRequest.getURI(), clientRequest.getIdentifier(), clientRequest instanceof UploadDirRequestStatus));
-					break;
-				case SIZE:
-					boolean isFinal = true;
-					if(clientRequest instanceof DownloadRequestStatus)
-						isFinal = ((DownloadRequestStatus)clientRequest).isTotalFinalized();
-					requestRow.addChild(createSizeCell(clientRequest.getDataSize(), isFinal, advancedModeEnabled));
-					break;
-				case MIME_TYPE:
-					if (clientRequest instanceof DownloadRequestStatus) {
-						requestRow.addChild(createTypeCell(((DownloadRequestStatus) clientRequest).getMIMEType()));
-					} else if (clientRequest instanceof UploadFileRequestStatus) {
-						requestRow.addChild(createTypeCell(((UploadFileRequestStatus) clientRequest).getMIMEType()));
-					}
-					break;
-				case PERSISTENCE:
-					requestRow.addChild(createPersistenceCell(clientRequest.isPersistent(), clientRequest.isPersistentForever()));
-					break;
-				case KEY:
-					if (clientRequest instanceof DownloadRequestStatus) {
-						requestRow.addChild(createKeyCell(((DownloadRequestStatus) clientRequest).getURI(), false));
-					} else if (clientRequest instanceof UploadFileRequestStatus) {
-						requestRow.addChild(createKeyCell(((UploadFileRequestStatus) clientRequest).getFinalURI(), false));
-					}else {
-						requestRow.addChild(createKeyCell(((UploadDirRequestStatus) clientRequest).getFinalURI(), true));
-					}
-					break;
-				case FILENAME:
-					if (clientRequest instanceof DownloadRequestStatus) {
-						requestRow.addChild(createFilenameCell(((DownloadRequestStatus) clientRequest).getDestFilename()));
-					} else if (clientRequest instanceof UploadFileRequestStatus) {
-						requestRow.addChild(createFilenameCell(((UploadFileRequestStatus) clientRequest).getOrigFilename()));
-					}
-					break;
-				case PRIORITY:
-					requestRow.addChild(createPriorityCell(clientRequest.getPriority(), priorityClasses));
-					break;
-				case FILES:
-					requestRow.addChild(createNumberCell(((UploadDirRequestStatus) clientRequest).getNumberOfFiles()));
-					break;
-				case TOTAL_SIZE:
-					requestRow.addChild(createSizeCell(((UploadDirRequestStatus) clientRequest).getTotalDataSize(), true, advancedModeEnabled));
-					break;
-				case PROGRESS:
-					if(clientRequest instanceof UploadFileRequestStatus)
-						requestRow.addChild(createProgressCell(clientRequest.isStarted(), ((UploadFileRequestStatus)clientRequest).isCompressing(), clientRequest.getFetchedBlocks(), clientRequest.getFailedBlocks(), clientRequest.getFatalyFailedBlocks(), clientRequest.getMinBlocks(), clientRequest.getTotalBlocks(), clientRequest.isTotalFinalized() || clientRequest instanceof UploadFileRequestStatus, isUpload));
-					else
-						requestRow.addChild(createProgressCell(clientRequest.isStarted(), COMPRESS_STATE.WORKING, clientRequest.getFetchedBlocks(), clientRequest.getFailedBlocks(), clientRequest.getFatalyFailedBlocks(), clientRequest.getMinBlocks(), clientRequest.getTotalBlocks(), clientRequest.isTotalFinalized() || clientRequest instanceof UploadFileRequestStatus, isUpload));
-					break;
-				case REASON:
-					requestRow.addChild(createReasonCell(clientRequest.getFailureReason(false)));
-					break;
-				case LAST_ACTIVITY:
-					requestRow.addChild(createLastActivityCell(now, clientRequest.getLastActivity()));
-					break;
-				case COMPAT_MODE:
-					if(clientRequest instanceof DownloadRequestStatus) {
-						requestRow.addChild(createCompatModeCell((DownloadRequestStatus)clientRequest));
-					} else {
-						requestRow.addChild("td");
-					}
-					break;
+					case IDENTIFIER:
+						requestRow.addChild(createIdentifierCell(clientRequest.getURI(), clientRequest.getIdentifier(), clientRequest instanceof UploadDirRequestStatus));
+						break;
+					case SIZE:
+						boolean isFinal = true;
+						if(clientRequest instanceof DownloadRequestStatus)
+							isFinal = ((DownloadRequestStatus)clientRequest).isTotalFinalized();
+						requestRow.addChild(createSizeCell(clientRequest.getDataSize(), isFinal, advancedModeEnabled));
+						break;
+					case MIME_TYPE:
+						if (clientRequest instanceof DownloadRequestStatus) {
+							requestRow.addChild(createTypeCell(((DownloadRequestStatus) clientRequest).getMIMEType()));
+						} else if (clientRequest instanceof UploadFileRequestStatus) {
+							requestRow.addChild(createTypeCell(((UploadFileRequestStatus) clientRequest).getMIMEType()));
+						}
+						break;
+					case PERSISTENCE:
+						requestRow.addChild(createPersistenceCell(clientRequest.isPersistent(), clientRequest.isPersistentForever()));
+						break;
+					case KEY:
+						if (clientRequest instanceof DownloadRequestStatus) {
+							requestRow.addChild(createKeyCell(((DownloadRequestStatus) clientRequest).getURI(), false));
+						} else if (clientRequest instanceof UploadFileRequestStatus) {
+							requestRow.addChild(createKeyCell(((UploadFileRequestStatus) clientRequest).getFinalURI(), false));
+						}else {
+							requestRow.addChild(createKeyCell(((UploadDirRequestStatus) clientRequest).getFinalURI(), true));
+						}
+						break;
+					case FILENAME:
+						if (clientRequest instanceof DownloadRequestStatus) {
+							requestRow.addChild(createFilenameCell(((DownloadRequestStatus) clientRequest).getDestFilename()));
+						} else if (clientRequest instanceof UploadFileRequestStatus) {
+							requestRow.addChild(createFilenameCell(((UploadFileRequestStatus) clientRequest).getOrigFilename()));
+						}
+						break;
+					case PRIORITY:
+						requestRow.addChild(createPriorityCell(clientRequest.getPriority(), priorityClasses));
+						break;
+					case FILES:
+						requestRow.addChild(createNumberCell(((UploadDirRequestStatus) clientRequest).getNumberOfFiles()));
+						break;
+					case TOTAL_SIZE:
+						requestRow.addChild(createSizeCell(((UploadDirRequestStatus) clientRequest).getTotalDataSize(), true, advancedModeEnabled));
+						break;
+					case PROGRESS:
+						if(clientRequest instanceof UploadFileRequestStatus)
+							requestRow.addChild(createProgressCell(clientRequest.isStarted(), ((UploadFileRequestStatus)clientRequest).isCompressing(), clientRequest.getFetchedBlocks(), clientRequest.getFailedBlocks(), clientRequest.getFatalyFailedBlocks(), clientRequest.getMinBlocks(), clientRequest.getTotalBlocks(), clientRequest.isTotalFinalized() || clientRequest instanceof UploadFileRequestStatus, isUpload));
+						else
+							requestRow.addChild(createProgressCell(clientRequest.isStarted(), COMPRESS_STATE.WORKING, clientRequest.getFetchedBlocks(), clientRequest.getFailedBlocks(), clientRequest.getFatalyFailedBlocks(), clientRequest.getMinBlocks(), clientRequest.getTotalBlocks(), clientRequest.isTotalFinalized() || clientRequest instanceof UploadFileRequestStatus, isUpload));
+						break;
+					case REASON:
+						requestRow.addChild(createReasonCell(clientRequest.getFailureReason(false)));
+						break;
+					case LAST_ACTIVITY:
+						requestRow.addChild(createLastActivityCell(now, clientRequest.getLastActivity()));
+						break;
+					case COMPAT_MODE:
+						if(clientRequest instanceof DownloadRequestStatus) {
+							requestRow.addChild(createCompatModeCell((DownloadRequestStatus)clientRequest));
+						} else {
+							requestRow.addChild("td");
+						}
+						break;
 				}
 			}
 		}
