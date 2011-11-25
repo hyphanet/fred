@@ -1990,32 +1990,46 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		headerRow.addChild("th"); // No description
 		
 		for (QueueTableColumns column : columns) {
-			if (column == QueueTableColumns.IDENTIFIER) {
+			switch (column) {
+			case IDENTIFIER:
 				headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=id" : "?sortBy=id&reversed")).addChild("#", NodeL10n.getBase().getString("QueueToadlet.identifier"));
-			} else if (column == QueueTableColumns.SIZE) {
+				break;
+			case SIZE:
 				headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=size" : "?sortBy=size&reversed")).addChild("#", NodeL10n.getBase().getString("QueueToadlet.size"));
-			} else if (column == QueueTableColumns.MIME_TYPE) {
+				break;
+			case MIME_TYPE:
 				headerRow.addChild("th", NodeL10n.getBase().getString("QueueToadlet.mimeType"));
-			} else if (column == QueueTableColumns.PERSISTENCE) {
+				break;
+			case PERSISTENCE:
 				headerRow.addChild("th", NodeL10n.getBase().getString("QueueToadlet.persistence"));
-			} else if (column == QueueTableColumns.KEY) {
+				break;
+			case KEY:
 				headerRow.addChild("th", NodeL10n.getBase().getString("QueueToadlet.key"));
-			} else if (column == QueueTableColumns.FILENAME) {
+				break;
+			case FILENAME:
 				headerRow.addChild("th", NodeL10n.getBase().getString("QueueToadlet.fileName"));
-			} else if (column == QueueTableColumns.PRIORITY) {
+				break;
+			case PRIORITY:
 				headerRow.addChild("th", NodeL10n.getBase().getString("QueueToadlet.priority"));
-			} else if (column == QueueTableColumns.FILES) {
+				break;
+			case FILES:
 				headerRow.addChild("th", NodeL10n.getBase().getString("QueueToadlet.files"));
-			} else if (column == QueueTableColumns.TOTAL_SIZE) {
+				break;
+			case TOTAL_SIZE:
 				headerRow.addChild("th", NodeL10n.getBase().getString("QueueToadlet.totalSize"));
-			} else if (column == QueueTableColumns.PROGRESS) {
+				break;
+			case PROGRESS:
 				headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=progress" : "?sortBy=progress&reversed")).addChild("#", NodeL10n.getBase().getString("QueueToadlet.progress"));
-			} else if (column == QueueTableColumns.REASON) {
+				break;
+			case REASON:
 				headerRow.addChild("th", NodeL10n.getBase().getString("QueueToadlet.reason"));
-			} else if (column == QueueTableColumns.LAST_ACTIVITY) {
+				break;
+			case LAST_ACTIVITY:
 				headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=lastActivity" : "?sortBy=lastActivity&reversed"),  NodeL10n.getBase().getString("QueueToadlet.lastActivity"));
-			} else if (column == QueueTableColumns.COMPAT_MODE) {
+				break;
+			case COMPAT_MODE:
 				headerRow.addChild("th", NodeL10n.getBase().getString("QueueToadlet.compatibilityMode"));
+				break;
 			}
 		}
 		int x = 0;
@@ -2024,22 +2038,27 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			requestRow.addChild(createCheckboxCell(clientRequest, x++));
 
 			for (QueueTableColumns column : columns) {
-				if (column == QueueTableColumns.IDENTIFIER) {
+				switch (column) {
+				case IDENTIFIER:
 					requestRow.addChild(createIdentifierCell(clientRequest.getURI(), clientRequest.getIdentifier(), clientRequest instanceof UploadDirRequestStatus));
-				} else if (column == QueueTableColumns.SIZE) {
+					break;
+				case SIZE:
 					boolean isFinal = true;
 					if(clientRequest instanceof DownloadRequestStatus)
 						isFinal = ((DownloadRequestStatus)clientRequest).isTotalFinalized();
 					requestRow.addChild(createSizeCell(clientRequest.getDataSize(), isFinal, advancedModeEnabled));
-				} else if (column == QueueTableColumns.MIME_TYPE) {
+					break;
+				case MIME_TYPE:
 					if (clientRequest instanceof DownloadRequestStatus) {
 						requestRow.addChild(createTypeCell(((DownloadRequestStatus) clientRequest).getMIMEType()));
 					} else if (clientRequest instanceof UploadFileRequestStatus) {
 						requestRow.addChild(createTypeCell(((UploadFileRequestStatus) clientRequest).getMIMEType()));
 					}
-				} else if (column == QueueTableColumns.PERSISTENCE) {
+					break;
+				case PERSISTENCE:
 					requestRow.addChild(createPersistenceCell(clientRequest.isPersistent(), clientRequest.isPersistentForever()));
-				} else if (column == QueueTableColumns.KEY) {
+					break;
+				case KEY:
 					if (clientRequest instanceof DownloadRequestStatus) {
 						requestRow.addChild(createKeyCell(((DownloadRequestStatus) clientRequest).getURI(), false));
 					} else if (clientRequest instanceof UploadFileRequestStatus) {
@@ -2047,33 +2066,42 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					}else {
 						requestRow.addChild(createKeyCell(((UploadDirRequestStatus) clientRequest).getFinalURI(), true));
 					}
-				} else if (column == QueueTableColumns.FILENAME) {
+					break;
+				case FILENAME:
 					if (clientRequest instanceof DownloadRequestStatus) {
 						requestRow.addChild(createFilenameCell(((DownloadRequestStatus) clientRequest).getDestFilename()));
 					} else if (clientRequest instanceof UploadFileRequestStatus) {
 						requestRow.addChild(createFilenameCell(((UploadFileRequestStatus) clientRequest).getOrigFilename()));
 					}
-				} else if (column == QueueTableColumns.PRIORITY) {
+					break;
+				case PRIORITY:
 					requestRow.addChild(createPriorityCell(clientRequest.getPriority(), priorityClasses));
-				} else if (column == QueueTableColumns.FILES) {
+					break;
+				case FILES:
 					requestRow.addChild(createNumberCell(((UploadDirRequestStatus) clientRequest).getNumberOfFiles()));
-				} else if (column == QueueTableColumns.TOTAL_SIZE) {
+					break;
+				case TOTAL_SIZE:
 					requestRow.addChild(createSizeCell(((UploadDirRequestStatus) clientRequest).getTotalDataSize(), true, advancedModeEnabled));
-				} else if (column == QueueTableColumns.PROGRESS) {
+					break;
+				case PROGRESS:
 					if(clientRequest instanceof UploadFileRequestStatus)
 						requestRow.addChild(createProgressCell(clientRequest.isStarted(), ((UploadFileRequestStatus)clientRequest).isCompressing(), clientRequest.getFetchedBlocks(), clientRequest.getFailedBlocks(), clientRequest.getFatalyFailedBlocks(), clientRequest.getMinBlocks(), clientRequest.getTotalBlocks(), clientRequest.isTotalFinalized() || clientRequest instanceof UploadFileRequestStatus, isUpload));
 					else
 						requestRow.addChild(createProgressCell(clientRequest.isStarted(), COMPRESS_STATE.WORKING, clientRequest.getFetchedBlocks(), clientRequest.getFailedBlocks(), clientRequest.getFatalyFailedBlocks(), clientRequest.getMinBlocks(), clientRequest.getTotalBlocks(), clientRequest.isTotalFinalized() || clientRequest instanceof UploadFileRequestStatus, isUpload));
-				} else if (column == QueueTableColumns.REASON) {
+					break;
+				case REASON:
 					requestRow.addChild(createReasonCell(clientRequest.getFailureReason(false)));
-				} else if (column == QueueTableColumns.LAST_ACTIVITY) {
+					break;
+				case LAST_ACTIVITY:
 					requestRow.addChild(createLastActivityCell(now, clientRequest.getLastActivity()));
-				} else if (column == QueueTableColumns.COMPAT_MODE) {
+					break;
+				case COMPAT_MODE:
 					if(clientRequest instanceof DownloadRequestStatus) {
 						requestRow.addChild(createCompatModeCell((DownloadRequestStatus)clientRequest));
 					} else {
 						requestRow.addChild("td");
 					}
+					break;
 				}
 			}
 		}
