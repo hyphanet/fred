@@ -301,8 +301,6 @@ maintainers may prefer to use this instead of build.xml.
 
 	<target name="javadoc" depends="init-doc, dep" unless="${doc.skip}">
 		<javadoc classpathref="lib.path" sourcepath="${main.src}" destdir="${doc.api}" use="true">
-			<fileset dir="${main.src}" includes="**/*.java" />
-			<classpath refid="lib.path"/>
 			<link href="http://java.sun.com/j2se/1.6.0/docs/api"/>
 		</javadoc>
 	</target>
