@@ -16,6 +16,12 @@ public class LocalDirectoryConfigToadlet extends LocalDirectoryToadlet {
 	}
 
 	@Override
+	protected String startingDir() {
+		//Start out in user home directory.
+		return System.getProperty("user.home");
+	}
+
+	@Override
 	protected boolean allowedDir(File path) {
 		//When configuring, can select any directory.
 		return true;

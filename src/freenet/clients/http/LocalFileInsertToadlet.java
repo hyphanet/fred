@@ -35,6 +35,11 @@ public class LocalFileInsertToadlet extends LocalFileBrowserToadlet {
 		return core.allowUploadFrom(path);
 	}
 
+	@Override
+	protected String startingDir() {
+		return defaultUploadDir();
+	}
+
     @Override
 	protected Hashtable<String, String> persistenceFields (Hashtable<String, String> set) {
 		Hashtable<String, String> fieldPairs = new Hashtable<String, String>();

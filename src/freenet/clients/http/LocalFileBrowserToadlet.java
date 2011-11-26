@@ -48,6 +48,47 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 	 * @return fieldPairs correct fields to persist for this browser type
 	 */
 	protected abstract Hashtable<String, String> persistenceFields (Hashtable<String, String> set);
+
+	/**
+	 * Determines the appropriate directory to start out in for the given browser. If a path is not already
+	 * specified, the browser will attempt to display this directory.
+	 * @return path to directory
+	 */
+	protected abstract String startingDir();
+
+	/**
+	 * Determines the appropriate directory to start out in if browsing for something to upload.
+	 * @return If all directories or no directories are allowed, returns the user's home directory.
+	 * Otherwise, returns the first allowed directory.
+	 */
+	protected String defaultUploadDir() {
+		if ((core.getAllowedUploadDirs().length == 1 && core.getAllowedUploadDirs()[0].toString().equals("all"))
+		        || core.getAllowedUploadDirs().length == 0) {
+			/* If all directories are allowed, or none are, go for the home directory.
+			 * If none are allowed, any directory will result in an error anyway.
+			 */
+			return System.getProperty("user.home");
+		}
+		//If locations are explicitly specified take the first one.
+		return core.getAllowedUploadDirs()[0].getAbsolutePath();
+	}
+
+	/**
+	 * Determines the appropriate directory to start out in if browsing for something to download.
+	 * @return If all directories or no directories are allowed, the default downloads directory is returned.
+	 * Otherwise, returns the first allowed directory.
+	 */
+	protected String defaultDownloadDir() {
+		if ((core.getAllowedDownloadDirs().length == 1 && core.getAllowedDownloadDirs()[0].toString().equals("all"))
+		        || core.getAllowedDownloadDirs().length == 0) {
+			/* If all directories are allowed, or none are, go for the default download directory.
+			 * If none are allowed, any directory will result in an error anyway.
+			 */
+			return core.getDownloadsDir().getAbsolutePath();
+		}
+		//If locations are explicitly specified take the first one.
+		return core.getAllowedDownloadDirs()[0].getAbsolutePath();
+	}
 	
 	protected void createSelectDirectoryButton (HTMLNode node, String absolutePath, HTMLNode persistence) {
 		node.addChild("input",
@@ -147,8 +188,8 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 		HTMLNode persistenceFields = renderPersistenceFields(fieldPairs);
 
 		if (path.length() == 0) {
-			sendErrorPage(ctx, 403, "Forbidden", l10n("dirNotSpecified"));
-			return;
+			//Path not specified, fall back to default.
+			path = startingDir();
 		}
 
 		File currentPath = new File(path).getCanonicalFile();

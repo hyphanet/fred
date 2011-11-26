@@ -15,6 +15,11 @@ public class LocalDownloadDirectoryToadlet extends LocalDirectoryToadlet {
 	}
 
 	@Override
+	protected String startingDir() {
+		return defaultDownloadDir();
+	}
+
+	@Override
 	protected boolean allowedDir(File path) {
 		return core.allowDownloadTo(path);
 	}

@@ -31,6 +31,11 @@ public class LocalFileN2NMToadlet extends LocalFileBrowserToadlet {
 	}
 
 	@Override
+	protected String startingDir() {
+		return defaultUploadDir();
+	}
+
+	@Override
 	protected boolean allowedDir(File path) {
 		return core.allowUploadFrom(path);
 	}
