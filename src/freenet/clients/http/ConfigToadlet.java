@@ -226,77 +226,66 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		StringBuilder errbuf = new StringBuilder();
 		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 
-		String desiredPrefix = request.getPartAsStringFailsafe("subconfig", MAX_PARAM_VALUE_SIZE);
+		String prefix = request.getPartAsStringFailsafe("subconfig", MAX_PARAM_VALUE_SIZE);
 		if (logMINOR) {
-			Logger.minor(this, "Current config prefix is "+desiredPrefix);
+			Logger.minor(this, "Current config prefix is "+prefix);
 		}
 		boolean resetToDefault = request.isPartSet("reset-to-defaults");
 		if (resetToDefault && logMINOR) {
 			Logger.minor(this, "Resetting to defaults");
 		}
 
-		for(SubConfig sc : config.getConfigs()) {
-			String prefix = sc.getPrefix();
-			String configName;
-
-			if (prefix.equals(desiredPrefix)) {
-
-				for(Option<?> o : sc.getOptions()) {
-					configName=o.getName();
-					if(logMINOR) {
-						Logger.minor(this, "Checking option "+prefix+ '.' +configName);
-					}
-
-					//This ignores unrecognized parameters.
-					if (request.isPartSet(prefix+ '.' +configName)) {
-						//Current subconfig is to be reset to default.
-						if (resetToDefault) {
-							// Disallow resetting fproxy port number to default as it might break the link to start fproxy on the system tray, shortcuts etc.
-							if(prefix.equals("fproxy") && configName.equals("port")) continue;
-							value = o.getDefault();
-						} else {
-							value = request.getPartAsStringFailsafe(prefix+ '.' +configName,
-							        MAX_PARAM_VALUE_SIZE);
-						}
-
-						if(!(o.getValueString().equals(value))){
-
-							if(logMINOR) {
-								Logger.minor(this, "Changing "+prefix+ '.' +configName+
-								        " to "+value);
-							}
-
-							try{
-								o.setValue(value);
-							} catch (InvalidConfigValueException e) {
-								errbuf.append(o.getName()).append(' ')
-								        .append(e.getMessage()).append('\n');
-							} catch (NodeNeedRestartException e) {
-								needRestart = true;
-							} catch (Exception e){
-								errbuf.append(o.getName()).append(' ').append(e).
-								        append('\n');
-								Logger.error(this, "Caught "+e, e);
-							}
-						} else if(logMINOR) {
-							Logger.minor(this, prefix+ '.' +configName+" not changed");
-						}
-					}
-				}
+		for(Option<?> o : config.get(prefix).getOptions()) {
+			String configName=o.getName();
+			if(logMINOR) {
+				Logger.minor(this, "Checking option "+prefix+ '.' +configName);
 			}
 
-			// Wrapper params
-			String wrapperConfigName = "wrapper.java.maxmemory";
-			if(request.isPartSet(wrapperConfigName)) {
-				value = request.getPartAsStringFailsafe(wrapperConfigName, MAX_PARAM_VALUE_SIZE);
-				if(!WrapperConfig.getWrapperProperty(wrapperConfigName).equals(value)) {
+			//This ignores unrecognized parameters.
+			if (request.isPartSet(prefix+ '.' +configName)) {
+				//Current subconfig is to be reset to default.
+				if (resetToDefault) {
+					// Disallow resetting fproxy port number to default as it might break the link to start fproxy on the system tray, shortcuts etc.
+					if(prefix.equals("fproxy") && configName.equals("port")) continue;
+					value = o.getDefault();
+				} else {
+					value = request.getPartAsStringFailsafe(prefix+ '.' +configName, MAX_PARAM_VALUE_SIZE);
+				}
+
+				if(!(o.getValueString().equals(value))){
+
 					if(logMINOR) {
-						Logger.minor(this, "Setting "+wrapperConfigName+" to "+value);
+						Logger.minor(this, "Changing "+prefix+ '.' +configName+" to "+value);
 					}
-					WrapperConfig.setWrapperProperty(wrapperConfigName, value);
+
+					try{
+						o.setValue(value);
+					} catch (InvalidConfigValueException e) {
+						errbuf.append(o.getName()).append(' ').append(e.getMessage()).append('\n');
+					} catch (NodeNeedRestartException e) {
+						needRestart = true;
+					} catch (Exception e){
+						errbuf.append(o.getName()).append(' ').append(e).append('\n');
+						Logger.error(this, "Caught "+e, e);
+					}
+				} else if(logMINOR) {
+					Logger.minor(this, prefix+ '.' +configName+" not changed");
 				}
 			}
 		}
+
+		// Wrapper params
+		String wrapperConfigName = "wrapper.java.maxmemory";
+		if(request.isPartSet(wrapperConfigName)) {
+			value = request.getPartAsStringFailsafe(wrapperConfigName, MAX_PARAM_VALUE_SIZE);
+			if(!WrapperConfig.getWrapperProperty(wrapperConfigName).equals(value)) {
+				if(logMINOR) {
+					Logger.minor(this, "Setting "+wrapperConfigName+" to "+value);
+				}
+				WrapperConfig.setWrapperProperty(wrapperConfigName, value);
+			}
+		}
+
 		config.store();
 
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("appliedTitle"), ctx);
