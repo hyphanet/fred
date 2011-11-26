@@ -1,5 +1,6 @@
 package freenet.clients.http;
 
+import java.io.File;
 import java.util.Hashtable;
 
 import freenet.client.HighLevelSimpleClient;
@@ -12,6 +13,12 @@ public class LocalDirectoryConfigToadlet extends LocalDirectoryToadlet {
 	public LocalDirectoryConfigToadlet (NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient,
 	        String postTo) {
 		super(core, highLevelSimpleClient, postTo);
+	}
+
+	@Override
+	protected boolean allowedDir(File path) {
+		//When configuring, can select any directory.
+		return true;
 	}
 	
 	@Override
