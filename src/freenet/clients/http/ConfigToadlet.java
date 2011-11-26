@@ -235,60 +235,57 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			Logger.minor(this, "Resetting to defaults");
 		}
 
-				for(Option<?> o : config.get(prefix).getOptions()) {
-					String configName=o.getName();
-					if(logMINOR) {
-						Logger.minor(this, "Checking option "+prefix+ '.' +configName);
-					}
+		for(Option<?> o : config.get(prefix).getOptions()) {
+			String configName=o.getName();
+			if(logMINOR) {
+				Logger.minor(this, "Checking option "+prefix+ '.' +configName);
+			}
 
-					//This ignores unrecognized parameters.
-					if (request.isPartSet(prefix+ '.' +configName)) {
-						//Current subconfig is to be reset to default.
-						if (resetToDefault) {
-							// Disallow resetting fproxy port number to default as it might break the link to start fproxy on the system tray, shortcuts etc.
-							if(prefix.equals("fproxy") && configName.equals("port")) continue;
-							value = o.getDefault();
-						} else {
-							value = request.getPartAsStringFailsafe(prefix+ '.' +configName,
-							        MAX_PARAM_VALUE_SIZE);
-						}
-
-						if(!(o.getValueString().equals(value))){
-
-							if(logMINOR) {
-								Logger.minor(this, "Changing "+prefix+ '.' +configName+
-								        " to "+value);
-							}
-
-							try{
-								o.setValue(value);
-							} catch (InvalidConfigValueException e) {
-								errbuf.append(o.getName()).append(' ')
-								        .append(e.getMessage()).append('\n');
-							} catch (NodeNeedRestartException e) {
-								needRestart = true;
-							} catch (Exception e){
-								errbuf.append(o.getName()).append(' ').append(e).
-								        append('\n');
-								Logger.error(this, "Caught "+e, e);
-							}
-						} else if(logMINOR) {
-							Logger.minor(this, prefix+ '.' +configName+" not changed");
-						}
-					}
+			//This ignores unrecognized parameters.
+			if (request.isPartSet(prefix+ '.' +configName)) {
+				//Current subconfig is to be reset to default.
+				if (resetToDefault) {
+					// Disallow resetting fproxy port number to default as it might break the link to start fproxy on the system tray, shortcuts etc.
+					if(prefix.equals("fproxy") && configName.equals("port")) continue;
+					value = o.getDefault();
+				} else {
+					value = request.getPartAsStringFailsafe(prefix+ '.' +configName, MAX_PARAM_VALUE_SIZE);
 				}
 
-			// Wrapper params
-			String wrapperConfigName = "wrapper.java.maxmemory";
-			if(request.isPartSet(wrapperConfigName)) {
-				value = request.getPartAsStringFailsafe(wrapperConfigName, MAX_PARAM_VALUE_SIZE);
-				if(!WrapperConfig.getWrapperProperty(wrapperConfigName).equals(value)) {
+				if(!(o.getValueString().equals(value))){
+
 					if(logMINOR) {
-						Logger.minor(this, "Setting "+wrapperConfigName+" to "+value);
+						Logger.minor(this, "Changing "+prefix+ '.' +configName+" to "+value);
 					}
-					WrapperConfig.setWrapperProperty(wrapperConfigName, value);
+
+					try{
+						o.setValue(value);
+					} catch (InvalidConfigValueException e) {
+						errbuf.append(o.getName()).append(' ').append(e.getMessage()).append('\n');
+					} catch (NodeNeedRestartException e) {
+						needRestart = true;
+					} catch (Exception e){
+						errbuf.append(o.getName()).append(' ').append(e).append('\n');
+						Logger.error(this, "Caught "+e, e);
+					}
+				} else if(logMINOR) {
+					Logger.minor(this, prefix+ '.' +configName+" not changed");
 				}
 			}
+		}
+
+		// Wrapper params
+		String wrapperConfigName = "wrapper.java.maxmemory";
+		if(request.isPartSet(wrapperConfigName)) {
+			value = request.getPartAsStringFailsafe(wrapperConfigName, MAX_PARAM_VALUE_SIZE);
+			if(!WrapperConfig.getWrapperProperty(wrapperConfigName).equals(value)) {
+				if(logMINOR) {
+					Logger.minor(this, "Setting "+wrapperConfigName+" to "+value);
+				}
+				WrapperConfig.setWrapperProperty(wrapperConfigName, value);
+			}
+		}
+
 		config.store();
 
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("appliedTitle"), ctx);
