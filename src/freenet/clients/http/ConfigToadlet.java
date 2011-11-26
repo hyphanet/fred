@@ -226,23 +226,17 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		StringBuilder errbuf = new StringBuilder();
 		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 
-		String desiredPrefix = request.getPartAsStringFailsafe("subconfig", MAX_PARAM_VALUE_SIZE);
+		String prefix = request.getPartAsStringFailsafe("subconfig", MAX_PARAM_VALUE_SIZE);
 		if (logMINOR) {
-			Logger.minor(this, "Current config prefix is "+desiredPrefix);
+			Logger.minor(this, "Current config prefix is "+prefix);
 		}
 		boolean resetToDefault = request.isPartSet("reset-to-defaults");
 		if (resetToDefault && logMINOR) {
 			Logger.minor(this, "Resetting to defaults");
 		}
 
-		for(SubConfig sc : config.getConfigs()) {
-			String prefix = sc.getPrefix();
-			String configName;
-
-			if (prefix.equals(desiredPrefix)) {
-
-				for(Option<?> o : sc.getOptions()) {
-					configName=o.getName();
+				for(Option<?> o : config.get(prefix).getOptions()) {
+					String configName=o.getName();
 					if(logMINOR) {
 						Logger.minor(this, "Checking option "+prefix+ '.' +configName);
 					}
@@ -283,7 +277,6 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 						}
 					}
 				}
-			}
 
 			// Wrapper params
 			String wrapperConfigName = "wrapper.java.maxmemory";
@@ -296,7 +289,6 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 					WrapperConfig.setWrapperProperty(wrapperConfigName, value);
 				}
 			}
-		}
 		config.store();
 
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("appliedTitle"), ctx);
