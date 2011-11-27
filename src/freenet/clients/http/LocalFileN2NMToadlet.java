@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
+import java.io.File;
 import java.util.Hashtable;
 import java.util.Set;
 
@@ -28,7 +29,17 @@ public class LocalFileN2NMToadlet extends LocalFileBrowserToadlet {
 	protected String postTo() {
 		return POST_TO;
 	}
-	
+
+	@Override
+	protected String startingDir() {
+		return defaultUploadDir();
+	}
+
+	@Override
+	protected boolean allowedDir(File path) {
+		return core.allowUploadFrom(path);
+	}
+
 	@Override
 	protected void createSelectDirectoryButton(HTMLNode fileRow, String path, HTMLNode persistence) {
 	}
