@@ -199,8 +199,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 		PageMaker pageMaker = ctx.getPageMaker();
 
 		if (currentPath != null && !allowedDir(currentPath)) {
-			PageNode page = pageMaker.getPageNode(l10n("listingTitle", "path", attemptedPath),
-			        ctx);
+			PageNode page = pageMaker.getPageNode(l10n("listingTitle", "path", attemptedPath), ctx);
 			pageMaker.getInfobox("infobox-error",  "Forbidden", page.content, "access-denied", true).
 			        addChild("#", l10n("dirAccessDenied"));
 
@@ -322,15 +321,13 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 				}
 			}
 		} else {
-			PageNode page = pageMaker.getPageNode(l10n("listingTitle", "path",
-			        attemptedPath), ctx);
+			PageNode page = pageMaker.getPageNode(l10n("listingTitle", "path", attemptedPath), ctx);
 			pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 			if (ctx.isAllowedFullAccess()) contentNode.addChild(core.alerts.createSummary());
 			
 			HTMLNode infoboxDiv = contentNode.addChild("div", "class", "infobox");
-			infoboxDiv.addChild("div", "class", "infobox-header", l10n("listing", "path",
-			        attemptedPath));
+			infoboxDiv.addChild("div", "class", "infobox-header", l10n("listing", "path", attemptedPath));
 			HTMLNode listingDiv = infoboxDiv.addChild("div", "class", "infobox-content");
 
 			listingDiv.addChild("#", l10n("dirCannotBeRead", "path", attemptedPath));
