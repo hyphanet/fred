@@ -38,7 +38,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 	 * allow downloading to the given directory?
 	 * @param path The path to check permissions for.
 	 * @return Whether browsing that directory is allowed. If it is not, the LocalFileBrowserToadlet will not render
-	 * a selection button for it and its name will be text instead of a directory-changing button.
+	 * a selection button or directory-changing button for it.
 	 */
 	protected abstract boolean allowedDir(File path);
 	
@@ -249,47 +249,46 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 			headerRow.addChild("th", l10n("sizeHeader"));
 			/* add filesystem roots (fsck windows) */
 			for (File currentRoot : File.listRoots()) {
+				if (allowedDir(currentRoot)) {
 				HTMLNode rootRow = listingTable.addChild("tr");
 				rootRow.addChild("td");
 				HTMLNode rootLinkCellNode = rootRow.addChild("td");
 				HTMLNode rootLinkFormNode = ctx.addFormChild(rootLinkCellNode, path(),
 				        "insertLocalFileForm");
-				if (allowedDir(currentRoot)) {
 					createChangeDirButton(rootLinkFormNode, currentRoot.getCanonicalPath(),
 					        currentRoot.getAbsolutePath(), persistenceFields);
-				}
 				rootRow.addChild("td");
+				}
 			}
 			/* add back link */
 			if (currentPath.getParent() != null) {
+				if (allowedDir(currentPath.getParentFile())) {
 				HTMLNode backlinkRow = listingTable.addChild("tr");
 				backlinkRow.addChild("td");
 				HTMLNode backLinkCellNode = backlinkRow.addChild("td");
 				HTMLNode backLinkFormNode = ctx.addFormChild(backLinkCellNode, path(),
 				        "insertLocalFileForm");
-				if (allowedDir(currentPath.getParentFile())) {
 					createChangeDirButton(backLinkFormNode, "..", currentPath.getParent(), persistenceFields);
-				}
 				backlinkRow.addChild("td");
+				}
 			}
 			for (File currentFile : files) {
 				HTMLNode fileRow = listingTable.addChild("tr");
 				if (currentFile.isDirectory()) {
 					if (currentFile.canRead()) {
 						// Select directory
+						if (allowedDir(currentFile)) {
 						HTMLNode cellNode = fileRow.addChild("td");
 						HTMLNode formNode = ctx.addFormChild(cellNode, postTo(),
 						        "insertLocalFileForm");
-						if (allowedDir(currentFile)) {
+
 							createSelectDirectoryButton(formNode, currentFile.getAbsolutePath(),
 							        persistenceFields);
-						}
 
 						// Change directory
 						HTMLNode directoryCellNode = fileRow.addChild("td");
 						HTMLNode directoryFormNode = ctx.addFormChild(directoryCellNode, path(),
 						        "insertLocalFileForm");
-						if (allowedDir(currentFile)) {
 							createChangeDirButton(directoryFormNode, currentFile.getName(),
 							        currentFile.getAbsolutePath(), persistenceFields);
 						}
