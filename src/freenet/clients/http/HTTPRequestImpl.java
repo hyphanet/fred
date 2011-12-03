@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
+import java.util.Map.Entry;
 
 import javax.naming.SizeLimitExceededException;
 
@@ -195,55 +196,13 @@ public class HTTPRequestImpl implements HTTPRequest {
 	private void parseRequestParameters(String queryString, boolean doUrlDecoding, boolean asParts) {
 
 		if(logMINOR) Logger.minor(this, "queryString is "+queryString+", doUrlDecoding="+doUrlDecoding);
-		
-		// nothing to do if there was no query string in the URI
-		if ((queryString == null) || (queryString.length() == 0)) {
-			return;
-		}
 
-		// iterate over all tokens in the query string (separated by &)
-		StringTokenizer tokenizer = new StringTokenizer(queryString, "&");
-		while (tokenizer.hasMoreTokens()) {
-			String nameValueToken = tokenizer.nextToken();
-			
-			if(logMINOR) Logger.minor(this, "Token: "+nameValueToken);
+		Map<String, List<String>> parameters = parseUriParameters(queryString, doUrlDecoding);
 
-			// a token can be either a name, or a name value pair...
-			String name = null;
-			String value = "";
-			int indexOfEqualsChar = nameValueToken.indexOf('=');
-			if (indexOfEqualsChar < 0) {
-				// ...it's only a name, so the value stays emptys
-				name = nameValueToken;
-				if(logMINOR) Logger.minor(this, "Name: "+name);
-			} else if (indexOfEqualsChar == nameValueToken.length() - 1) {
-				// ...it's a name with an empty value, so remove the '='
-				// character
-				name = nameValueToken.substring(0, indexOfEqualsChar);
-				if(logMINOR) Logger.minor(this, "Name: "+name);
-			} else {
-				// ...it's a name value pair, split into name and value
-				name = nameValueToken.substring(0, indexOfEqualsChar);
-				value = nameValueToken.substring(indexOfEqualsChar + 1);
-				if(logMINOR) Logger.minor(this, "Name: "+name+" Value: "+value);
-			}
-
-			// url-decode the name and value
-			if (doUrlDecoding) {
-					try {
-						name = URLDecoder.decode(name, "UTF-8");
-						value = URLDecoder.decode(value, "UTF-8");
-					} catch (UnsupportedEncodingException e) {
-						throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-					}
-				if(logMINOR) {
-					Logger.minor(this, "Decoded name: "+name);
-					Logger.minor(this, "Decoded value: "+value);
-				}
-			}
-			
-			if(asParts) {
-				// Store as a part
+		if (asParts) {
+			for (Entry<String, List<String>> parameterValues : parameterNameValuesMap.entrySet()) {
+				List<String> values = parameterValues.getValue();
+				String value = values.get(values.size() - 1);
 				byte[] buf;
 				try {
 					buf = value.getBytes("UTF-8");
@@ -251,15 +210,13 @@ public class HTTPRequestImpl implements HTTPRequest {
 					throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 				} // FIXME some other encoding?
 				Bucket b = new SimpleReadOnlyArrayBucket(buf);
-				parts.put(name, b);
+				parts.put(parameterValues.getKey(), b);
 				if(logMINOR)
-					Logger.minor(this, "Added as part: name="+name+" value="+value);
-			} else {
-				// get the list of values for this parameter that were parsed so far
-				List<String> valueList = this.getParameterValueList(name);
-				// add this value to the list
-				valueList.add(value);
+					Logger.minor(this, "Added as part: name="+parameterValues.getKey()+" value="+value);
 			}
+		} else {
+			parameterNameValuesMap.clear();
+			parameterNameValuesMap.putAll(parameters);
 		}
 	}
 
@@ -299,6 +256,69 @@ public class HTTPRequestImpl implements HTTPRequest {
 			this.parameterNameValuesMap.put(name, values);
 		}
 		return values;
+	}
+
+	public static Map<String, List<String>> parseUriParameters(String queryString, boolean doUrlDecoding) {
+		if(logMINOR) Logger.minor(HTTPRequestImpl.class, "queryString is "+queryString+", doUrlDecoding="+doUrlDecoding);
+
+		/* create result map. */
+		Map<String, List<String>> parameters = new HashMap<String, List<String>>();
+
+		// nothing to do if there was no query string in the URI
+		if ((queryString == null) || (queryString.length() == 0)) {
+			return parameters;
+		}
+
+		// iterate over all tokens in the query string (separated by &)
+		StringTokenizer tokenizer = new StringTokenizer(queryString, "&");
+		while (tokenizer.hasMoreTokens()) {
+			String nameValueToken = tokenizer.nextToken();
+
+			if(logMINOR) Logger.minor(HTTPRequestImpl.class, "Token: "+nameValueToken);
+
+			// a token can be either a name, or a name value pair...
+			String name = null;
+			String value = "";
+			int indexOfEqualsChar = nameValueToken.indexOf('=');
+			if (indexOfEqualsChar < 0) {
+				// ...it's only a name, so the value stays emptys
+				name = nameValueToken;
+				if(logMINOR) Logger.minor(HTTPRequestImpl.class, "Name: "+name);
+			} else if (indexOfEqualsChar == nameValueToken.length() - 1) {
+				// ...it's a name with an empty value, so remove the '='
+				// character
+				name = nameValueToken.substring(0, indexOfEqualsChar);
+				if(logMINOR) Logger.minor(HTTPRequestImpl.class, "Name: "+name);
+			} else {
+				// ...it's a name value pair, split into name and value
+				name = nameValueToken.substring(0, indexOfEqualsChar);
+				value = nameValueToken.substring(indexOfEqualsChar + 1);
+				if(logMINOR) Logger.minor(HTTPRequestImpl.class, "Name: "+name+" Value: "+value);
+			}
+
+			// url-decode the name and value
+			if (doUrlDecoding) {
+					try {
+						name = URLDecoder.decode(name, "UTF-8");
+						value = URLDecoder.decode(value, "UTF-8");
+					} catch (UnsupportedEncodingException e) {
+						throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
+					}
+				if(logMINOR) {
+					Logger.minor(HTTPRequestImpl.class, "Decoded name: "+name);
+					Logger.minor(HTTPRequestImpl.class, "Decoded value: "+value);
+				}
+			}
+
+			List<String> values = parameters.get(name);
+			if (values == null) {
+				values = new ArrayList<String>();
+				parameters.put(name, values);
+			}
+			values.add(value);
+		}
+
+		return parameters;
 	}
 
 	/* (non-Javadoc)
