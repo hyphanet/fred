@@ -384,7 +384,7 @@ public class PproxyToadlet extends Toadlet {
 				/* sort available plugins into groups. */
 				SortedMap<String, List<OfficialPluginDescription>> groupedAvailablePlugins = new TreeMap<String, List<OfficialPluginDescription>>();
 				for (OfficialPluginDescription pluginDescription : availablePlugins) {
-					if (advancedModeEnabled && (pluginDescription.advanced || pluginDescription.experimental || pluginDescription.deprecated)) {
+					if (!advancedModeEnabled && (pluginDescription.advanced || pluginDescription.experimental || pluginDescription.deprecated)) {
 						continue;
 					}
 					String translatedGroup = l10n("pluginGroup." + pluginDescription.group);
