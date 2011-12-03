@@ -363,21 +363,18 @@ public final class PageMaker {
 
 			if (node.clientCore != null && ctx != null && renderParameters.isRenderModeSwitch()) {
 				parseMode(ctx);
+				boolean isAdvancedMode = ctx.activeToadlet().container.isAdvancedModeEnabled();
+				String uri = ctx.getUri().getQuery();
+				Map<String, List<String>> parameters = HTTPRequestImpl.parseUriParameters(uri, true);
+				List<String> newModeSwitchValues = new ArrayList<String>();
+				newModeSwitchValues.add(String.valueOf(isAdvancedMode ? MODE_SIMPLE : MODE_ADVANCED));
+				/* overwrite any previously existing parameter value. */
+				parameters.put(MODE_SWITCH_PARAMETER, newModeSwitchValues);
+
 				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
 				final HTMLNode switchMode = statusBarDiv.addChild("div", "id", "statusbar-switchmode");
-				String uri = ctx.getUri().getQuery();
-				if (uri == null) {
-					uri = "?";
-				} else {
-					uri = "?" + uri + "&";
-				}
-				if (ctx.activeToadlet().container.isAdvancedModeEnabled()) {
-					switchMode.addAttribute("class", "simple");
-					switchMode.addChild("a", "href", uri + MODE_SWITCH_PARAMETER + "=" + MODE_SIMPLE, NodeL10n.getBase().getString("StatusBar.switchToSimpleMode"));
-				} else {
-					switchMode.addAttribute("class", "advanced");
-					switchMode.addChild("a", "href", uri + MODE_SWITCH_PARAMETER + "=" + MODE_ADVANCED, NodeL10n.getBase().getString("StatusBar.switchToAdvancedMode"));
-				}
+				switchMode.addAttribute("class", isAdvancedMode ? "simple" : "advanced");
+				switchMode.addChild("a", "href", "?" + HTTPRequestImpl.createQueryString(parameters, false), isAdvancedMode ? NodeL10n.getBase().getString("StatusBar.switchToSimpleMode") : NodeL10n.getBase().getString("StatusBar.switchToAdvancedMode"));
 			}
 
 			if (node != null && node.clientCore != null) {
