@@ -30,6 +30,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SimpleReadOnlyArrayBucket;
+import freenet.support.URLEncoder;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -329,6 +330,31 @@ public class HTTPRequestImpl implements HTTPRequest {
 		}
 
 		return parameters;
+	}
+
+	/**
+	 * Creates a query string from the given parameters.
+	 *
+	 * @param parameterValues
+	 *            The parameters to create a query string from
+	 * @param doUrlEncoding
+	 *            {@code true} if encoding for HTTP headers, {@code false} to
+	 *            only encode unsafe characters
+	 * @return The query string
+	 */
+	public static String createQueryString(Map<String, List<String>> parameterValues, boolean doUrlEncoding) {
+		StringBuilder queryString = new StringBuilder();
+		for (Entry<String, List<String>> parameter : parameterValues.entrySet()) {
+			for (String value : parameter.getValue()) {
+				if (queryString.length() > 0) {
+					queryString.append('&');
+				}
+				queryString.append(URLEncoder.encode(parameter.getKey(), doUrlEncoding));
+				queryString.append('=');
+				queryString.append(URLEncoder.encode(value, doUrlEncoding));
+			}
+		}
+		return queryString.toString();
 	}
 
 	/* (non-Javadoc)
