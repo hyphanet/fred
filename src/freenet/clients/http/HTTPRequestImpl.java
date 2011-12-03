@@ -258,6 +258,16 @@ public class HTTPRequestImpl implements HTTPRequest {
 		return values;
 	}
 
+	/**
+	 * Parses the parameters from the given query string, optionally decoding
+	 * the parameters using UTF-8.
+	 *
+	 * @param queryString
+	 *            The query string to decode
+	 * @param doUrlDecoding
+	 *            {@code true} to decode the parameter names and values
+	 * @return The decoded parameters
+	 */
 	public static Map<String, List<String>> parseUriParameters(String queryString, boolean doUrlDecoding) {
 		if(logMINOR) Logger.minor(HTTPRequestImpl.class, "queryString is "+queryString+", doUrlDecoding="+doUrlDecoding);
 
