@@ -281,10 +281,9 @@ public final class PageMaker {
 			t = null;
 		String activePath = "";
 		if(t != null) activePath = t.path();
-		//The regex removes characters which are not valid in a CSS attribute.
 		HTMLNode bodyNode = htmlNode.addChild("body",
 		        new String[] { "class", "id" },
-		        new String[] { "fproxy-page", "page-"+activePath.replaceAll("[^-_a-zA-Z0-9]", "_") });
+		        new String[] { "fproxy-page", filterCSSIdentifier("page-"+activePath) });
 		//Add a hidden input that has the request's id
 		if(webPushingEnabled)
 			bodyNode.addChild("input",new String[]{"type","name","value","id"},new String[]{"hidden","requestId",ctx.getUniqueId(),"requestId"});
@@ -450,16 +449,8 @@ public final class PageMaker {
 						String menuItemTitle = menu.defaultNavigationLinkTitle;
 						String text = menu.navigationLinkText;
 						if(menu.plugin == null) {
-							/* If not from a plugin, add the localization key as id. It
-							 * replaces any characters in the key that are not an
-							 * underscore, dash, or alphanumeric character with an
-							 * underscore. The only circumstances under which this does not
-							 * result in a valid CSS ID are when the key is only one
-							 * character long or first character is a dash and the next is
-							 * not a letter, underscore, or replaced with an underscore.
-							 * Source: http://stackoverflow.com/questions/448981/
-							 */
-							listItem.addAttribute("id", menuItemTitle.replaceAll("[^-_a-zA-Z0-9]", "_"));
+							//If not from a plugin, add the localization key as id.
+							listItem.addAttribute("id", filterCSSIdentifier(menuItemTitle));
 
 							menuItemTitle = NodeL10n.getBase().getString(menuItemTitle);
 							text = NodeL10n.getBase().getString(text);
@@ -471,7 +462,7 @@ public final class PageMaker {
 							 * localization keys.
 							 */
 							String id = menu.plugin.getClass().getName()+'-'+text;
-							listItem.addAttribute("id", id.replaceAll("[^-_a-zA-Z0-9]", "_"));
+							listItem.addAttribute("id", filterCSSIdentifier(id));
 
 							String newTitle = menu.plugin.getString(menuItemTitle);
 							if(newTitle == null) {
@@ -531,6 +522,24 @@ public final class PageMaker {
 		}
 		HTMLNode contentDiv = pageDiv.addChild("div", "id", "content");
 		return new PageNode(pageNode, headNode, contentDiv);
+	}
+
+	/**
+	 * Filters a given string so that it will be a valid CSS identifier. It replaces all characters that are not
+	 * a dash, underscore, or alphanumeric with an underscore. If the first character is a dash and the second
+	 * character is not a letter or underscore, replaces the second character with an underscore. This filter is
+	 * overly strict as it does not allow non-ASCII characters or escapes. If the given string is below two
+	 * characters in length, it appends underscores until it is not.
+	 * @param input string to filter
+	 * @return a filtered string guaranteed to be a syntactically valid CSS identifier.
+	 * @link http://www.w3.org/TR/CSS21/syndata.html#tokenization
+	 * @link http://www.w3.org/TR/CSS21/grammar.html#scanner
+	 * @link http://stackoverflow.com/questions/448981/
+	 */
+	public static String filterCSSIdentifier(String input) {
+		while (input.length() < 2) input = input.concat("_");
+
+		return input.replaceFirst("^-[^_a-zA-Z]", "-_").replaceAll("[^-_a-zA-Z0-9]", "_");
 	}
 
 	public THEME getTheme() {
