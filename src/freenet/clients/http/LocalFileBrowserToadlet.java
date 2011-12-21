@@ -22,7 +22,6 @@ import java.util.Hashtable;
  */
 public abstract class LocalFileBrowserToadlet extends Toadlet {	
 	protected final NodeClientCore core;
-	private File currentPath;
 
 	public LocalFileBrowserToadlet (NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient) {
 		super(highLevelSimpleClient);
@@ -33,6 +32,15 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 	public abstract String path();
 	
 	protected abstract String postTo();
+
+	/**
+	 * Whether the directory is allowed for the purposes of the specific browser. For example, do the node settings
+	 * allow downloading to the given directory?
+	 * @param path The path to check permissions for.
+	 * @return Whether browsing that directory is allowed. If it is not, the LocalFileBrowserToadlet will not render
+	 * a selection button or directory-changing button for it.
+	 */
+	protected abstract boolean allowedDir(File path);
 	
 	/**
 	 * Performs sanity checks and generates parameter persistence fields.
@@ -40,6 +48,47 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 	 * @return fieldPairs correct fields to persist for this browser type
 	 */
 	protected abstract Hashtable<String, String> persistenceFields (Hashtable<String, String> set);
+
+	/**
+	 * Determines the appropriate directory to start out in for the given browser. If a path is not already
+	 * specified, the browser will attempt to display this directory.
+	 * @return path to directory
+	 */
+	protected abstract String startingDir();
+
+	/**
+	 * Determines the appropriate directory to start out in if browsing for something to upload.
+	 * @return If all directories or no directories are allowed, returns the user's home directory.
+	 * Otherwise, returns the first allowed directory.
+	 */
+	protected String defaultUploadDir() {
+		if ((core.getAllowedUploadDirs().length == 1 && core.getAllowedUploadDirs()[0].toString().equals("all"))
+		        || core.getAllowedUploadDirs().length == 0) {
+			/* If all directories are allowed, or none are, go for the home directory.
+			 * If none are allowed, any directory will result in an error anyway.
+			 */
+			return System.getProperty("user.home");
+		}
+		//If locations are explicitly specified take the first one.
+		return core.getAllowedUploadDirs()[0].getAbsolutePath();
+	}
+
+	/**
+	 * Determines the appropriate directory to start out in if browsing for something to download.
+	 * @return If all directories or no directories are allowed, the default downloads directory is returned.
+	 * Otherwise, returns the first allowed directory.
+	 */
+	protected String defaultDownloadDir() {
+		if ((core.getAllowedDownloadDirs().length == 1 && core.getAllowedDownloadDirs()[0].toString().equals("all"))
+		        || core.getAllowedDownloadDirs().length == 0) {
+			/* If all directories are allowed, or none are, go for the default download directory.
+			 * If none are allowed, any directory will result in an error anyway.
+			 */
+			return core.getDownloadsDir().getAbsolutePath();
+		}
+		//If locations are explicitly specified take the first one.
+		return core.getAllowedDownloadDirs()[0].getAbsolutePath();
+	}
 	
 	protected void createSelectDirectoryButton (HTMLNode node, String absolutePath, HTMLNode persistence) {
 		node.addChild("input",
@@ -112,7 +161,6 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 		return result;
 	}
 
-	// FIXME reentrancy issues with currentPath - fix running two at once.
 	/**
 	 * @param uri is unused,
 	 * @param request contains parameters.
@@ -138,44 +186,30 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 	private void renderPage (Hashtable<String, String> fieldPairs, String path, final ToadletContext ctx)
 	        throws ToadletContextClosedException, IOException {
 		HTMLNode persistenceFields = renderPersistenceFields(fieldPairs);
+
 		if (path.length() == 0) {
-			if (currentPath == null) {
-				// FIXME what if user.home is denied?
-				currentPath = new File(System.getProperty("user.home"));
-			}
-			path = currentPath.getCanonicalPath();
+			//Path not specified, fall back to default.
+			path = startingDir();
 		}
 
-		File thisPath = new File(path).getCanonicalFile();
+		File currentPath = new File(path).getCanonicalFile();
+		//For use in error messages.
+		String attemptedPath = currentPath == null ? "null" : currentPath.getAbsolutePath();
 
 		PageMaker pageMaker = ctx.getPageMaker();
 
-		if (!core.allowUploadFrom(thisPath)) {
-			PageNode page = pageMaker.getPageNode(l10n("listingTitle", "path", thisPath.getAbsolutePath()),
-			        ctx);
+		if (currentPath != null && !allowedDir(currentPath)) {
+			PageNode page = pageMaker.getPageNode(l10n("listingTitle", "path", attemptedPath), ctx);
 			pageMaker.getInfobox("infobox-error",  "Forbidden", page.content, "access-denied", true).
 			        addChild("#", l10n("dirAccessDenied"));
 
-			thisPath = currentPath;
-			if (!core.allowUploadFrom(thisPath)) {
-				File[] allowedDirs = core.getAllowedUploadDirs();
-				if (allowedDirs.length == 0) {
-					sendErrorPage(ctx, 403, "Forbidden", l10n("dirAccessDenied"));
-					return;
-				} else {
-					thisPath = allowedDirs[core.node.fastWeakRandom.nextInt(allowedDirs.length)];
-				}
-			}
+			sendErrorPage(ctx, 403, "Forbidden", l10n("dirAccessDenied"));
+			return;
 		}
-		
-		if (currentPath == null) currentPath = thisPath;
 		
 		HTMLNode pageNode;
 
-		if (thisPath.exists() && thisPath.isDirectory() && thisPath.canRead()) {
-			// Known safe at this point
-			currentPath = thisPath;
-
+		if (currentPath != null && currentPath.exists() && currentPath.isDirectory() && currentPath.canRead()) {
 			PageNode page = pageMaker.getPageNode(l10n("listingTitle", "path",
 			        currentPath.getAbsolutePath()), ctx);
 			pageNode = page.outer;
@@ -190,20 +224,16 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 			File[] files = currentPath.listFiles();
 			
 			if (files == null) {
-				// FIXME what if user.home is denied?
-				File home = new File(System.getProperty("user.home"));
-				if (home.equals(currentPath)) {
-					sendErrorPage(ctx, 403, "Forbidden", l10n("dirAccessDenied"));
-					return;
-				}
-				currentPath = home;
-				renderPage(fieldPairs, "", ctx);
+				sendErrorPage(ctx, 403, "Forbidden", l10n("dirAccessDenied"));
 				return;
 			}
 			
 			Arrays.sort(files, new Comparator<File>() {
 				@Override
 				public int compare(File firstFile, File secondFile) {
+					/* Put directories above files, sorting each alphabetically and
+					 * case-insensitively.
+					 */
 					if (firstFile.isDirectory() && !secondFile.isDirectory()) {
 						return -1;
 					}
@@ -219,46 +249,50 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 			headerRow.addChild("th", l10n("fileHeader"));
 			headerRow.addChild("th", l10n("sizeHeader"));
 			/* add filesystem roots (fsck windows) */
-			File[] roots = File.listRoots();
-			for (int rootIndex = 0, rootCount = roots.length; rootIndex < rootCount; rootIndex++) {
-				File currentRoot = roots[rootIndex];
+			for (File currentRoot : File.listRoots()) {
+				if (allowedDir(currentRoot)) {
 				HTMLNode rootRow = listingTable.addChild("tr");
 				rootRow.addChild("td");
 				HTMLNode rootLinkCellNode = rootRow.addChild("td");
 				HTMLNode rootLinkFormNode = ctx.addFormChild(rootLinkCellNode, path(),
 				        "insertLocalFileForm");
-				createChangeDirButton(rootLinkFormNode, currentRoot.getCanonicalPath(),
-				        currentRoot.getAbsolutePath(), persistenceFields);
+					createChangeDirButton(rootLinkFormNode, currentRoot.getCanonicalPath(),
+					        currentRoot.getAbsolutePath(), persistenceFields);
 				rootRow.addChild("td");
+				}
 			}
 			/* add back link */
 			if (currentPath.getParent() != null) {
+				if (allowedDir(currentPath.getParentFile())) {
 				HTMLNode backlinkRow = listingTable.addChild("tr");
 				backlinkRow.addChild("td");
 				HTMLNode backLinkCellNode = backlinkRow.addChild("td");
 				HTMLNode backLinkFormNode = ctx.addFormChild(backLinkCellNode, path(),
 				        "insertLocalFileForm");
-				createChangeDirButton(backLinkFormNode, "..", currentPath.getParent(), persistenceFields);
+					createChangeDirButton(backLinkFormNode, "..", currentPath.getParent(), persistenceFields);
 				backlinkRow.addChild("td");
+				}
 			}
-			for (int fileIndex = 0, fileCount = files.length; fileIndex < fileCount; fileIndex++) {
-				File currentFile = files[fileIndex];
+			for (File currentFile : files) {
 				HTMLNode fileRow = listingTable.addChild("tr");
 				if (currentFile.isDirectory()) {
 					if (currentFile.canRead()) {
 						// Select directory
+						if (allowedDir(currentFile)) {
 						HTMLNode cellNode = fileRow.addChild("td");
 						HTMLNode formNode = ctx.addFormChild(cellNode, postTo(),
 						        "insertLocalFileForm");
-						createSelectDirectoryButton(formNode, currentFile.getAbsolutePath(),
-						        persistenceFields);
+
+							createSelectDirectoryButton(formNode, currentFile.getAbsolutePath(),
+							        persistenceFields);
 
 						// Change directory
 						HTMLNode directoryCellNode = fileRow.addChild("td");
 						HTMLNode directoryFormNode = ctx.addFormChild(directoryCellNode, path(),
 						        "insertLocalFileForm");
-						createChangeDirButton(directoryFormNode, currentFile.getName(),
-						        currentFile.getAbsolutePath(), persistenceFields);
+							createChangeDirButton(directoryFormNode, currentFile.getName(),
+							        currentFile.getAbsolutePath(), persistenceFields);
+						}
 					} else {
 						fileRow.addChild("td");
 						fileRow.addChild("td", "class", "unreadable-file",
@@ -287,18 +321,16 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 				}
 			}
 		} else {
-			PageNode page = pageMaker.getPageNode(l10n("listingTitle", "path",
-			        currentPath.getAbsolutePath()), ctx);
+			PageNode page = pageMaker.getPageNode(l10n("listingTitle", "path", attemptedPath), ctx);
 			pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 			if (ctx.isAllowedFullAccess()) contentNode.addChild(core.alerts.createSummary());
 			
 			HTMLNode infoboxDiv = contentNode.addChild("div", "class", "infobox");
-			infoboxDiv.addChild("div", "class", "infobox-header", l10n("listing", "path",
-			        currentPath.getAbsolutePath()));
+			infoboxDiv.addChild("div", "class", "infobox-header", l10n("listing", "path", attemptedPath));
 			HTMLNode listingDiv = infoboxDiv.addChild("div", "class", "infobox-content");
 
-			listingDiv.addChild("#", l10n("dirCannotBeRead", "path", currentPath.getAbsolutePath()));
+			listingDiv.addChild("#", l10n("dirCannotBeRead", "path", attemptedPath));
 			HTMLNode ulNode = listingDiv.addChild("ul");
 			ulNode.addChild("li", l10n("checkPathExist"));
 			ulNode.addChild("li", l10n("checkPathIsDir"));
