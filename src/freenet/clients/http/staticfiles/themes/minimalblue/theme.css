@@ -166,7 +166,7 @@ padding-left: 4px;
 padding-right: 4px;
 }
 
-#navlist-selected a{
+.navlist-selected a{
     background: #035196;
     color: #fff;
 }
