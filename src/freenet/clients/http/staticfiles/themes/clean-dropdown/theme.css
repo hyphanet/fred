@@ -68,7 +68,7 @@ div#navbar ul li ul li a {
 	padding-bottom: 2px;
 }
 
-div#navbar ul#navlist li#navlist-selected a, div#navbar ul#navlist li#navlist-selected ul li.submenuitem-selected a {
+div#navbar ul#navlist li.navlist-selected a, div#navbar ul#navlist li.navlist-selected ul li.submenuitem-selected a {
 	color: blue;
 	background-color: inherit;
 }
