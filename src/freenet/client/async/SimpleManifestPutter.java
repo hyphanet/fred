@@ -707,8 +707,8 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		checkZips();
 	}
 
-	private void checkDefaultName(HashMap<String, Object> manifestElements,
-			String defaultName2) {
+	static private void checkDefaultName(HashMap<String, Object> manifestElements,
+			String defaultName) {
 		int idx;
 		if((idx = defaultName.indexOf('/')) == -1) {
 			Object o = manifestElements.get(defaultName);
