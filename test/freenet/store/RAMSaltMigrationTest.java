@@ -113,6 +113,8 @@ public class RAMSaltMigrationTest extends TestCase {
 			String data = decodeBlock(verify, key);
 			assertEquals(test, data);
 		}
+		
+		saltStore.close();
 	}
 
 	public void testSaltedStoreOldBlock() throws CHKEncodeException, CHKVerifyException, CHKDecodeException, IOException {
@@ -158,6 +160,8 @@ public class RAMSaltMigrationTest extends TestCase {
 			data = decodeBlock(verify, key);
 			assertEquals(test[i], data);
 		}
+		
+		saltStore.close();
 	}
 	
 	public void testSaltedStoreResize() throws CHKEncodeException, CHKVerifyException, CHKDecodeException, IOException {
@@ -198,6 +202,8 @@ public class RAMSaltMigrationTest extends TestCase {
 			String data = decodeBlock(verify, key);
 			assertEquals(test[i], data);
 		}
+		
+		saltStore.close();
 	}
 
 	public void testMigrate() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
