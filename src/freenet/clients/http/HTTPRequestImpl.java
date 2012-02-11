@@ -201,7 +201,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		Map<String, List<String>> parameters = parseUriParameters(queryString, doUrlDecoding);
 
 		if (asParts) {
-			for (Entry<String, List<String>> parameterValues : parameterNameValuesMap.entrySet()) {
+			for (Entry<String, List<String>> parameterValues : parameters.entrySet()) {
 				List<String> values = parameterValues.getValue();
 				String value = values.get(values.size() - 1);
 				byte[] buf;
