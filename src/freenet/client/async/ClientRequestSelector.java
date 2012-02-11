@@ -115,14 +115,28 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		short iteration = 0, priority;
 		// we loop to ensure we try every possibilities ( n + 1)
 		//
-		// PRIO will do 0,1,2,3,4,5,6,0
-		// TWEAKED will do rand%6,0,1,2,3,4,5,6
-		while(iteration++ < RequestStarter.NUMBER_OF_PRIORITY_CLASSES + 1){
+		// PRIO will do 0,1,2,3,4,5,0
+		// TWEAKED will do rand%6,0,1,2,3,4,5
+		// min prio is 'paused', so we skip it
+		while(iteration < RequestStarter.NUMBER_OF_PRIORITY_CLASSES -1){
 			boolean persistent = false;
-			priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
-			if(transientOnly || schedCore == null)
-				result = null;
-			else {
+			priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[iteration];
+			if(transientOnly || schedCore == null) {
+				result = schedTransient.newPriorities[priority];
+				if(result != null) {
+					long cooldownTime = context.cooldownTracker.getCachedWakeup(result, false, container, now);
+					if(cooldownTime > 0) {
+						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
+						if(logMINOR) {
+							if(cooldownTime == Long.MAX_VALUE)
+								Logger.minor(this, "Priority "+priority+" (transient) is waiting until a request finishes or is empty");
+							else
+								Logger.minor(this, "Priority "+priority+" (transient) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+						}
+						result = null;
+					}
+				}
+			} else {
 				result = schedCore.newPriorities[priority];
 				if(result != null) {
 					long cooldownTime = context.cooldownTracker.getCachedWakeup(result, true, container, now);
@@ -141,36 +155,20 @@ class ClientRequestSelector implements KeysFetchingLocally {
 					}
 				}
 			}
-			if(result == null) {
-				result = schedTransient.newPriorities[priority];
-				if(result != null) {
-					long cooldownTime = context.cooldownTracker.getCachedWakeup(result, false, container, now);
-					if(cooldownTime > 0) {
-						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
-						if(logMINOR) {
-							if(cooldownTime == Long.MAX_VALUE)
-								Logger.minor(this, "Priority "+priority+" (transient) is waiting until a request finishes or is empty");
-							else
-								Logger.minor(this, "Priority "+priority+" (transient) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
-						}
-						result = null;
-					}
-				}
-			}
-			if(priority > maxPrio) {
-				fuzz++;
-				continue; // Don't return because first round may be higher with soft scheduling
-			}
 			if(((result != null) && (!result.isEmpty(persistent ? container : null)))) {
 				if(logMINOR) Logger.minor(this, "using priority : "+priority);
 				return priority;
 			}
 			
-			if(logMINOR) Logger.minor(this, "Priority "+priority+" is null (fuzz = "+fuzz+ ')');
-			fuzz++;
+			if(logMINOR) {
+				if (result == null)
+					Logger.minor(this, "Priority "+priority+" is null (fuzz = "+fuzz+ ", iteration = " + iteration + ",persistence = " + Boolean.toString(persistent) + ")");
+				else
+					Logger.minor(this, "Priority "+priority+" result is empty (fuzz = "+fuzz+ ", iteration = " + iteration + ",persistence = " + Boolean.toString(persistent) + ")");
+			}
+			iteration++;
 		}
 		
-		//FIXME: implement NONE
 		return wakeupTime;
 	}
 	
@@ -543,7 +541,8 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 		if(logMINOR) Logger.minor(this, "No requests to run");
 		return null;
 	}
-	
+
+	//minimum prio calss is paused, never try these keys!
 	private static final short[] tweakedPrioritySelector = { 
 		RequestStarter.MAXIMUM_PRIORITY_CLASS,
 		RequestStarter.MAXIMUM_PRIORITY_CLASS,
@@ -551,9 +550,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 		RequestStarter.MAXIMUM_PRIORITY_CLASS,
 		RequestStarter.MAXIMUM_PRIORITY_CLASS,
 		RequestStarter.MAXIMUM_PRIORITY_CLASS,
-		RequestStarter.MAXIMUM_PRIORITY_CLASS,
 		
-		RequestStarter.INTERACTIVE_PRIORITY_CLASS,
 		RequestStarter.INTERACTIVE_PRIORITY_CLASS,
 		RequestStarter.INTERACTIVE_PRIORITY_CLASS,
 		RequestStarter.INTERACTIVE_PRIORITY_CLASS,
@@ -564,30 +561,24 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 		RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
 		RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
 		RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
-		RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
 		
 		RequestStarter.UPDATE_PRIORITY_CLASS,
 		RequestStarter.UPDATE_PRIORITY_CLASS, 
 		RequestStarter.UPDATE_PRIORITY_CLASS, 
-		RequestStarter.UPDATE_PRIORITY_CLASS,
 		
 		RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, 
 		RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, 
-		RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS,
 		
 		RequestStarter.PREFETCH_PRIORITY_CLASS, 
-		RequestStarter.PREFETCH_PRIORITY_CLASS,
-		
-		RequestStarter.MINIMUM_PRIORITY_CLASS
+
 	};
 	private static final short[] prioritySelector = {
 		RequestStarter.MAXIMUM_PRIORITY_CLASS,
 		RequestStarter.INTERACTIVE_PRIORITY_CLASS,
-		RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
+		RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
 		RequestStarter.UPDATE_PRIORITY_CLASS,
 		RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS,
-		RequestStarter.PREFETCH_PRIORITY_CLASS,
-		RequestStarter.MINIMUM_PRIORITY_CLASS
+		RequestStarter.PREFETCH_PRIORITY_CLASS
 	};
 
 	/**
