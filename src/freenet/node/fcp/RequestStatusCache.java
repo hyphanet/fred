@@ -82,7 +82,7 @@ public class RequestStatusCache {
 			String failureReasonLong) {
 		UploadRequestStatus status = (UploadRequestStatus) requestsByIdentifier.get(identifier);
 		if(status == null) return; // Can happen during cancel etc.
-		if(status.getFinalURI() == null) {
+		if(status.getFinalURI() == null && finalURI != null) {
 			uploadsByFinalURI.put(finalURI, status);
 		}
 		status.setFinished(success, finalURI, failureCode, failureReasonShort, failureReasonLong);
