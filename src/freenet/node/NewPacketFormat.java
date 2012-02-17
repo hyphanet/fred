@@ -134,7 +134,7 @@ public class NewPacketFormat implements PacketFormat {
 			}
 		}
 		if(packet == null) {
-			Logger.warning(this, "Could not decrypt received packet");
+			if(logMINOR) Logger.minor(this, "Could not decrypt received packet");
 			return false;
 		}
 
