@@ -336,6 +336,8 @@ public class NewPacketFormatTest extends TestCase {
 		}
 	}
 	
+	/* This checks the output of the sequence number encryption function to
+	 * make sure it doesn't change accidentally. */
 	public void testSequenceNumberEncryption() {
 		BlockCipher ivCipher = new Rijndael();
 		ivCipher.initialize(new byte[] {
@@ -359,7 +361,9 @@ public class NewPacketFormatTest extends TestCase {
 
 		byte[] encrypted = NewPacketFormat.encryptSequenceNumber(0, sessionKey);
 
-		//This has not actually been checked
+		/* This result has not been checked, but it was the output when
+		 * this test was added and we are (in this test) only
+		 * interested in making sure the output doesn't change. */
 		byte[] correct = new byte[] {(byte) 0xF7, (byte) 0x95, (byte) 0xBD, (byte) 0x4A};
 
 		assertTrue(Arrays.equals(correct, encrypted));
