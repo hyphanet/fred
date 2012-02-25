@@ -58,10 +58,6 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	
 	public static final short NUMBER_OF_PRIORITY_CLASSES = MINIMUM_PRIORITY_CLASS - MAXIMUM_PRIORITY_CLASS + 1; // include 0 and max !!
 	
-	/** If true, local requests are subject to shouldRejectRequest(). If false, they are only subject to the token
-	 * buckets and the thread limit. FIXME make configurable. */
-	static final boolean LOCAL_REQUESTS_COMPETE_FAIRLY = true;
-	
 	public static boolean isValidPriorityClass(int prio) {
 		return !((prio < MAXIMUM_PRIORITY_CLASS) || (prio > MINIMUM_PRIORITY_CLASS));
 	}
@@ -144,7 +140,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 					delay = throttle.getDelay();
 					if(logMINOR) Logger.minor(this, "Delay="+delay+" from "+throttle);
 					long sleepUntil = cycleTime + delay;
-					if(!LOCAL_REQUESTS_COMPETE_FAIRLY) {
+					if(!stats.ignoreLocalVsRemoteBandwidthLiability()) {
 						inputBucket.blockingGrab((int)(Math.max(0, averageInputBytesPerRequest.currentValue())));
 						outputBucket.blockingGrab((int)(Math.max(0, averageOutputBytesPerRequest.currentValue())));
 					}
@@ -180,7 +176,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 //				}
 				RejectReason reason;
 				assert(req.realTimeFlag == realTime);
-				if(LOCAL_REQUESTS_COMPETE_FAIRLY && !req.localRequestOnly) {
+				if(stats.ignoreLocalVsRemoteBandwidthLiability() && !req.localRequestOnly) {
 					if((reason = stats.shouldRejectRequest(true, isInsert, isSSK, true, false, null, false, isInsert && Node.PREFER_INSERT_DEFAULT, req.realTimeFlag, null)) != null) {
 						if(logMINOR)
 							Logger.minor(this, "Not sending local request: "+reason);

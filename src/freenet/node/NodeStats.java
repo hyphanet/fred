@@ -18,6 +18,8 @@ import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.xfer.BlockTransmitter.BlockTimeCallback;
 import freenet.io.xfer.BulkTransmitter;
+import freenet.keys.CHKBlock;
+import freenet.keys.SSKBlock;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node.CountedRequests;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
@@ -37,6 +39,7 @@ import freenet.support.TokenBucket;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
+import freenet.support.api.StringCallback;
 import freenet.support.io.NativeThread;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.DecayingKeyspaceAverage;
@@ -124,6 +127,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	/** Average proportion of requests rejected immediately due to overload */
 	public final TimeDecayingRunningAverage pInstantRejectIncoming;
 	private boolean ignoreLocalVsRemoteBandwidthLiability;
+	private double localRequestFraction;
 
 	/** Average delay caused by throttling for sending a packet */
 	private final RunningAverage throttledPacketSendAverage;
@@ -417,6 +421,32 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 				}
 			}
 		});
+		ignoreLocalVsRemoteBandwidthLiability = statsConfig.getBoolean("ignoreLocalVsRemoteBandwidthLiability");
+
+		statsConfig.register("localRequestFraction", "0.35", sortOrder++, true, false, "NodeStat.localRequestFraction", "NodeStat.localRequestFractionLong", new StringCallback() {
+
+			@Override
+			public String get() {
+				synchronized(NodeStats.this) {
+					return String.valueOf(localRequestFraction);
+				}
+			}
+
+			@Override
+			public void set(String val) throws InvalidConfigValueException {
+				synchronized(NodeStats.this) {
+					try {
+						double tmp = Double.valueOf(val);
+						if (tmp < 1 && tmp > 0)
+							localRequestFraction = tmp;
+					}
+					finally {
+						return;
+					}
+				}
+			}
+		});
+		localRequestFraction = Double.valueOf(statsConfig.getString("localRequestFraction"));
 
 		statsConfig.register("maxPingTime", DEFAULT_MAX_PING_TIME, sortOrder++, true, true, "NodeStat.maxPingTime", "NodeStat.maxPingTimeLong", new LongCallback() {
 
@@ -457,6 +487,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
 				if(newLevel == NETWORK_THREAT_LEVEL.MAXIMUM)
 					ignoreLocalVsRemoteBandwidthLiability = true;
+				else if(newLevel == NETWORK_THREAT_LEVEL.HIGH)
+					localRequestFraction = 0.20;
+				else if(newLevel == NETWORK_THREAT_LEVEL.NORMAL)
+					localRequestFraction = 0.35;
+				else if(newLevel == NETWORK_THREAT_LEVEL.LOW)
+					localRequestFraction = 0.50;
 				if(oldLevel == NETWORK_THREAT_LEVEL.MAXIMUM)
 					ignoreLocalVsRemoteBandwidthLiability = false;
 				// Otherwise leave it as it was. It defaults to false.
@@ -992,13 +1028,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		public double calculate(boolean ignoreLocalVsRemoteBandwidthLiability, boolean input) {
 			
 			if(input)
-				return this.expectedTransfersInCHK * (32768+256) +
-					this.expectedTransfersInSSK * (2048+256) +
-					this.expectedTransfersOutCHK * TRANSFER_OUT_IN_OVERHEAD +
-					this.expectedTransfersOutSSK * TRANSFER_OUT_IN_OVERHEAD;
+				return expectedTransfersInCHK * (CHKBlock.DATA_LENGTH + TRANSFER_OUT_IN_OVERHEAD) +
+					expectedTransfersInSSK * (SSKBlock.DATA_LENGTH + TRANSFER_OUT_IN_OVERHEAD) +
+					expectedTransfersOutCHK * TRANSFER_OUT_IN_OVERHEAD +
+					expectedTransfersOutSSK * TRANSFER_OUT_IN_OVERHEAD;
 			else
-				return this.expectedTransfersOutCHK * (32768+256) +
-					this.expectedTransfersOutSSK * (2048+256) +
+				return expectedTransfersOutCHK * (CHKBlock.DATA_LENGTH + TRANSFER_IN_OUT_OVERHEAD) +
+					expectedTransfersOutSSK * (SSKBlock.DATA_LENGTH + TRANSFER_IN_OUT_OVERHEAD) +
 					expectedTransfersInCHK * TRANSFER_IN_OUT_OVERHEAD +
 					expectedTransfersInSSK * TRANSFER_IN_OUT_OVERHEAD;
 		}
@@ -1006,13 +1042,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		public double calculateSR(boolean ignoreLocalVsRemoteBandwidthLiability, boolean input) {
 			
 			if(input)
-				return this.expectedTransfersInCHKSR * (32768+256) +
-					this.expectedTransfersInSSKSR * (2048+256) +
-					this.expectedTransfersOutCHKSR * TRANSFER_OUT_IN_OVERHEAD +
-					this.expectedTransfersOutSSKSR * TRANSFER_OUT_IN_OVERHEAD;
+				return expectedTransfersInCHKSR * (CHKBlock.DATA_LENGTH + TRANSFER_OUT_IN_OVERHEAD) +
+					expectedTransfersInSSKSR * (SSKBlock.DATA_LENGTH + TRANSFER_OUT_IN_OVERHEAD) +
+					expectedTransfersOutCHKSR * TRANSFER_OUT_IN_OVERHEAD +
+					expectedTransfersOutSSKSR * TRANSFER_OUT_IN_OVERHEAD;
 			else
-				return this.expectedTransfersOutCHKSR * (32768+256) +
-					this.expectedTransfersOutSSKSR * (2048+256) +
+				return expectedTransfersOutCHKSR * (CHKBlock.DATA_LENGTH + TRANSFER_IN_OUT_OVERHEAD) +
+					expectedTransfersOutSSKSR * (SSKBlock.DATA_LENGTH + TRANSFER_IN_OUT_OVERHEAD) +
 					expectedTransfersInCHKSR * TRANSFER_IN_OUT_OVERHEAD +
 					expectedTransfersInSSKSR * TRANSFER_IN_OUT_OVERHEAD;
 		}
@@ -1474,13 +1510,11 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 		double thisAllocation;
 		
-		// FIXME: MAKE CONFIGURABLE AND SECLEVEL DEPENDANT!
-		if(RequestStarter.LOCAL_REQUESTS_COMPETE_FAIRLY) {
+		if(ignoreLocalVsRemoteBandwidthLiability) {
 			thisAllocation = totalGuaranteedBandwidth / (peers + 1);
 		} else {
 			double totalAllocation = totalGuaranteedBandwidth;
-			// FIXME: MAKE CONFIGURABLE AND SECLEVEL DEPENDANT!
-			double localAllocation = totalAllocation * 0.5;
+			double localAllocation = totalAllocation * localRequestFraction;
 			if(source == null)
 				thisAllocation = localAllocation;
 			else {
