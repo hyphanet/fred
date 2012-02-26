@@ -117,7 +117,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		//
 		// PRIO will do 0,1,2,3,4,5,6,0
 		// TWEAKED will do rand%6,0,1,2,3,4,5,6
-		while(iteration++ < RequestStarter.NUMBER_OF_PRIORITY_CLASSES + 1){
+		while(iteration++ < prioritySelector.length + 1){
 			boolean persistent = false;
 			priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
 			if(transientOnly || schedCore == null) { //transient request
@@ -306,7 +306,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		}
 		long wakeupTime = Long.MAX_VALUE;
 		if(minPrio >= RequestStarter.MINIMUM_PRIORITY_CLASS)
-			minPrio = RequestStarter.MINIMUM_PRIORITY_CLASS;
+			minPrio = RequestStarter.MINIMUM_PRIORITY_CLASS-1; //skip minimum priority. (paused)
 outer:	for(;choosenPriorityClass <= minPrio;choosenPriorityClass++) {
 			if(logMINOR) Logger.minor(this, "Using priority "+choosenPriorityClass);
 			SectoredRandomGrabArray perm = null;
@@ -541,6 +541,7 @@ outer:	for(;choosenPriorityClass <= minPrio;choosenPriorityClass++) {
 		return null;
 	}
 	
+	//minimum prio class is paused, never try these keys!
 	private static final short[] tweakedPrioritySelector = { 
 		RequestStarter.MAXIMUM_PRIORITY_CLASS,
 		RequestStarter.MAXIMUM_PRIORITY_CLASS,
@@ -548,9 +549,7 @@ outer:	for(;choosenPriorityClass <= minPrio;choosenPriorityClass++) {
 		RequestStarter.MAXIMUM_PRIORITY_CLASS,
 		RequestStarter.MAXIMUM_PRIORITY_CLASS,
 		RequestStarter.MAXIMUM_PRIORITY_CLASS,
-		RequestStarter.MAXIMUM_PRIORITY_CLASS,
 		
-		RequestStarter.INTERACTIVE_PRIORITY_CLASS,
 		RequestStarter.INTERACTIVE_PRIORITY_CLASS,
 		RequestStarter.INTERACTIVE_PRIORITY_CLASS,
 		RequestStarter.INTERACTIVE_PRIORITY_CLASS,
@@ -561,21 +560,16 @@ outer:	for(;choosenPriorityClass <= minPrio;choosenPriorityClass++) {
 		RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
 		RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
 		RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
-		RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
 		
 		RequestStarter.UPDATE_PRIORITY_CLASS,
 		RequestStarter.UPDATE_PRIORITY_CLASS, 
 		RequestStarter.UPDATE_PRIORITY_CLASS, 
-		RequestStarter.UPDATE_PRIORITY_CLASS,
 		
 		RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, 
 		RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, 
-		RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS,
 		
 		RequestStarter.PREFETCH_PRIORITY_CLASS, 
-		RequestStarter.PREFETCH_PRIORITY_CLASS,
 		
-		RequestStarter.MINIMUM_PRIORITY_CLASS
 	};
 	private static final short[] prioritySelector = {
 		RequestStarter.MAXIMUM_PRIORITY_CLASS,
@@ -583,8 +577,7 @@ outer:	for(;choosenPriorityClass <= minPrio;choosenPriorityClass++) {
 		RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
 		RequestStarter.UPDATE_PRIORITY_CLASS,
 		RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS,
-		RequestStarter.PREFETCH_PRIORITY_CLASS,
-		RequestStarter.MINIMUM_PRIORITY_CLASS
+		RequestStarter.PREFETCH_PRIORITY_CLASS
 	};
 
 	/**
