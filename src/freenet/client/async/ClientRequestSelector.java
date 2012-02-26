@@ -111,7 +111,8 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		SectoredRandomGrabArray result = null;
 		
 		long wakeupTime = Long.MAX_VALUE;
-		short iteration = 0, priority, numPrios = RequestStarter.NUMBER_OF_PRIORITY_CLASSES -1;
+		short iteration = 0, priority;
+		int numPrios = prioritySelector.length;
 
 		// we loop to ensure we try every possibilities ( n + 1)
 		//
@@ -135,7 +136,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 				break;
 		}
 
-		while((iteration < numPrios) && (priority <= minPrio)) { 
+		while((++iteration < numPrios) && (priority <= minPrio)) { 
 			boolean persistent = false;
 			if(transientOnly || schedCore == null) { //transient request
 				result = schedTransient.newPriorities[priority];
@@ -184,8 +185,6 @@ class ClientRequestSelector implements KeysFetchingLocally {
 				else
 					Logger.minor(this, "Priority "+priority+" result is empty (scheduler = "+curSched+ ", iteration = " + iteration + ",persistence = " + Boolean.toString(persistent) + ")");
 			}
-
-			iteration++;
 
 			switch (scheduler) {
 				case ClientRequestScheduler.PRIORITY_HARD:
