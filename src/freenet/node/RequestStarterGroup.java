@@ -150,7 +150,7 @@ public class RequestStarterGroup {
 			String name, ClientRequestScheduler csBulk,
 			ClientRequestScheduler csRT, boolean forSSKs, boolean forInserts) throws InvalidConfigValueException {
 		PrioritySchedulerCallback callback = new PrioritySchedulerCallback();
-		schedulerConfig.register(name+"_priority_policy", ClientRequestScheduler.PRIORITY_SOFT, name.hashCode(), true, false,
+		schedulerConfig.register(name+"_priority_policy", ClientRequestScheduler.PRIORITY_STRINGS.get(ClientRequestScheduler.PRIORITY_SOFT), name.hashCode(), true, false,
 				"RequestStarterGroup.scheduler"+(forSSKs?"SSK" : "CHK")+(forInserts?"Inserts":"Requests"),
 				"RequestStarterGroup.schedulerLong",
 				callback);
@@ -247,7 +247,10 @@ public class RequestStarterGroup {
 	public static class PrioritySchedulerCallback extends StringCallback implements EnumerableOptionCallback {
 		ClientRequestScheduler csRT;
 		ClientRequestScheduler csBulk;
-		private final String[] possibleValues = new String[]{ ClientRequestScheduler.PRIORITY_HARD, ClientRequestScheduler.PRIORITY_SOFT };
+		private final String[] possibleValues = new String[]{
+			ClientRequestScheduler.PRIORITY_STRINGS.get(ClientRequestScheduler.PRIORITY_HARD),
+			ClientRequestScheduler.PRIORITY_STRINGS.get(ClientRequestScheduler.PRIORITY_SOFT)
+		};
 		
 		public void init(ClientRequestScheduler csRT, ClientRequestScheduler csBulk, String config) throws InvalidConfigValueException{
 			this.csRT = csRT;
@@ -258,24 +261,24 @@ public class RequestStarterGroup {
 		@Override
 		public String get(){
 			if(csBulk != null)
-				return csBulk.getChoosenPriorityScheduler();
+				return ClientRequestScheduler.PRIORITY_STRINGS.get(csBulk.getChoosenPriorityScheduler());
 			else
-				return ClientRequestScheduler.PRIORITY_SOFT;
+				return ClientRequestScheduler.PRIORITY_STRINGS.get(ClientRequestScheduler.PRIORITY_SOFT);
 		}
 		
 		@Override
 		public void set(String val) throws InvalidConfigValueException{
 			String value;
 			if(val == null || val.equalsIgnoreCase(get())) return;
-			if(val.equalsIgnoreCase(ClientRequestScheduler.PRIORITY_HARD)){
-				value = ClientRequestScheduler.PRIORITY_HARD;
-			}else if(val.equalsIgnoreCase(ClientRequestScheduler.PRIORITY_SOFT)){
-				value = ClientRequestScheduler.PRIORITY_SOFT;
+			if(val.equalsIgnoreCase(ClientRequestScheduler.PRIORITY_STRINGS.get(ClientRequestScheduler.PRIORITY_HARD))){
+				value = ClientRequestScheduler.PRIORITY_STRINGS.get(ClientRequestScheduler.PRIORITY_HARD);
+			}else if(val.equalsIgnoreCase(ClientRequestScheduler.PRIORITY_STRINGS.get(ClientRequestScheduler.PRIORITY_SOFT))){
+				value = ClientRequestScheduler.PRIORITY_STRINGS.get(ClientRequestScheduler.PRIORITY_SOFT);
 			}else{
 				throw new InvalidConfigValueException("Invalid priority scheme");
 			}
-			csBulk.setPriorityScheduler(value);
-			csRT.setPriorityScheduler(value);
+			csBulk.setPriorityScheduler((short)ClientRequestScheduler.PRIORITY_STRINGS.indexOf(value));
+			csRT.setPriorityScheduler((short)ClientRequestScheduler.PRIORITY_STRINGS.indexOf(value));
 		}
 		
 		@Override

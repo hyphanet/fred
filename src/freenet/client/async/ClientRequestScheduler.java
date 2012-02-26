@@ -70,10 +70,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public final ClientContext clientContext;
 	final DBJobRunner jobRunner;
 	
-	public static final String PRIORITY_NONE = "NONE";
-	public static final String PRIORITY_SOFT = "SOFT";
-	public static final String PRIORITY_HARD = "HARD";
-	private String choosenPriorityScheduler; 
+	public static final short PRIORITY_NONE = 0;
+	public static final short PRIORITY_SOFT = 1;
+	public static final short PRIORITY_HARD = 2;
+	
+	public static final ArrayList<String> PRIORITY_STRINGS = new ArrayList<String>() {{
+			add("NONE"); add("SOFT"); add( "HARD");
+	}};
+	private short choosenPriorityScheduler;
 	
 	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, boolean forRT, RandomSource random, RequestStarter starter, Node node, NodeClientCore core, String name, ClientContext context) {
 		this.isInsertScheduler = forInserts;
@@ -148,7 +152,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * 
 	 * @param val
 	 */
-	public synchronized void setPriorityScheduler(String val){
+	public synchronized void setPriorityScheduler(short val){
 		choosenPriorityScheduler = val;
 	}
 	
@@ -366,12 +370,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 		// We want to be fair on persistent vs transient, so we give it a 50% chance of wanting it to be *better* than the current priority, and a 50% chance of wanting it to be *at least as good as* the current priority.
 		prio -= node.fastWeakRandom.nextBoolean() ? 1 : 0;
 		if(prio < 0) return null;
-		short fuzz = -1;
-		if(PRIORITY_SOFT.equals(choosenPriorityScheduler))
-			fuzz = -1;
-		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
-			fuzz = 0;
-		return selector.removeFirstTransient(fuzz, random, offeredKeys, starter, schedTransient, prio, isRTScheduler, clientContext, null);
+
+		return selector.removeFirstTransient((short)(choosenPriorityScheduler-2), random, offeredKeys, starter, schedTransient, prio, isRTScheduler, clientContext, null);
 	}
 	
 	/**
@@ -629,11 +629,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			noLaterThan = Math.min(noLaterThan, moveKeysFromCooldownQueue(transientCooldownQueue, false, container));
 		}
 		// If anything has been re-added, the request starter will have been woken up.
-		short fuzz = -1;
-		if(PRIORITY_SOFT.equals(choosenPriorityScheduler))
-			fuzz = -1;
-		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
-			fuzz = 0;
+
 		boolean added = false;
 		synchronized(starterQueue) {
 			if(logMINOR && (!isSSKScheduler) && (!isInsertScheduler)) {
@@ -681,7 +677,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			SelectorReturn r;
 			// Must synchronize on scheduler to avoid problems with cooldown queue. See notes on CooldownTracker.clearCachedWakeup, which also applies to other cooldown operations.
 			synchronized(this) {
-				r = selector.removeFirstInner(fuzz, random, offeredKeys, starter, schedCore, schedTransient, false, true, Short.MAX_VALUE, isRTScheduler, context, container, now);
+				r = selector.removeFirstInner((short)(choosenPriorityScheduler-2), random, offeredKeys, starter, schedCore, schedTransient, false, true, Short.MAX_VALUE, isRTScheduler, context, container, now);
 			}
 			SendableRequest request = null;
 			if(r != null && r.req != null) request = r.req;
@@ -858,7 +854,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		starter.wakeUp();
 	}
 	
-	public String getChoosenPriorityScheduler() {
+	public short getChoosenPriorityScheduler() {
 		return choosenPriorityScheduler;
 	}
 
