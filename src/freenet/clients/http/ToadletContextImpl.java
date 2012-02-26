@@ -362,12 +362,26 @@ public class ToadletContextImpl implements ToadletContext {
 		}
 		return sb.toString();
 	}
+
+	/** 
+	 * Compatibility stub
+	 */
+	public static void handle(Socket sock, ToadletContainer container, PageMaker pageMaker) {
+		handle(sock, container, pageMaker, 0);
+	}
 	
 	/**
 	 * Handle an incoming connection. Blocking, obviously.
 	 */
-	public static void handle(Socket sock, ToadletContainer container, PageMaker pageMaker) {
+	public static void handle(Socket sock, ToadletContainer container, PageMaker pageMaker, int errCode) {
 		try {
+			//FIXME: Be less hackish, use l10n ... maybe meta-refresh to freenetproject.org ?
+			if (errCode != 0) {
+				if(errCode == 503) {
+					sendError(sock.getOutputStream(), 503, "Too Many Requests", "You have exceeded the limit of simultaneous requests allowed per host on this gateway.<br><br>You should consider setting up your own Freenet node.  You can find instructions here: <a href=\"https://freenetproject.org/\">https://freenetproject.org/</a>", true, null);
+					return;
+				}
+			}
 			InputStream is = new BufferedInputStream(sock.getInputStream(), 4096);
 			
 			LineReadingInputStream lis = new LineReadingInputStream(is);

@@ -1000,19 +1000,22 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 				return;
             if(conn == null)
                 continue; // timeout
+
+			int sendErr = 0;
 			InetAddress addr = conn.getInetAddress();
+
 			if(publicGatewayMode) {
 				int connCount = getIPCount(addr);
-				if(connCount >= maxGatewayConnectionsPerIP) {
-					conn.close();
-					return;
-				}
+				if(connCount >= maxGatewayConnectionsPerIP)
+					sendErr = 503;
 				//add it to the connection to the list of active connections.
 				connsPerIP.add(conn);
 			}
+
 			if(logMINOR)
                 Logger.minor(this, "Accepted connection");
-            SocketHandler sh = new SocketHandler(conn, finishedStartup);
+
+            SocketHandler sh = new SocketHandler(conn, hasFinishedStartup, sendErr);
             sh.start();
 		}
 	}
@@ -1021,10 +1024,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 
 		Socket sock;
 		final boolean finishedStartup;
+		final int errCode;
 		
-		public SocketHandler(Socket conn, boolean finishedStartup) {
+		public SocketHandler(Socket conn, boolean finishedStartup, int errCode) {
 			this.sock = conn;
 			this.finishedStartup = finishedStartup;
+			this.errCode = errCode;
 		}
 
 		void start() {
@@ -1042,7 +1047,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		    freenet.support.Logger.OSThread.logPID(this);
 			if(logMINOR) Logger.minor(this, "Handling connection");
 			try {
-				ToadletContextImpl.handle(sock, SimpleToadletServer.this, pageMaker);
+				ToadletContextImpl.handle(sock, SimpleToadletServer.this, pageMaker, errCode);
 			} catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 				System.err.println("SimpleToadletServer request above failed.");
