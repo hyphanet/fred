@@ -173,7 +173,15 @@ class ClientRequestSelector implements KeysFetchingLocally {
 				if(logMINOR) Logger.minor(this, "using priority : "+priority);
 				return priority;
 			}
-			
+
+			if(logMINOR) {
+				String curSched = ClientRequestScheduler.PRIORITY_STRINGS.get(scheduler);
+				if (result == null)
+					Logger.minor(this, "Priority "+priority+" is null (scheduler = "+curSched+ ", iteration = " + iteration + ",persistence = " + Boolean.toString(persistent) + ")");
+				else
+					Logger.minor(this, "Priority "+priority+" result is empty (scheduler = "+curSched+ ", iteration = " + iteration + ",persistence = " + Boolean.toString(persistent) + ")");
+			}
+
 			iteration++;
 
 			switch (scheduler) {
