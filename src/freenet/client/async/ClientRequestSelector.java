@@ -112,17 +112,20 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		
 		long wakeupTime = Long.MAX_VALUE;
 		short iteration = 0, priority, numPrios = RequestStarter.NUMBER_OF_PRIORITY_CLASSES -1;
-		
+
 		// we loop to ensure we try every possibilities ( n + 1)
 		//
 		// scheduler=1 (SOFT) will try weightedRand, then start over as HARD if it fails.
 		// scheduler=2 (HARD) will do 0,1,2,3,4,5
+		// scheduler-3 (SOFTER) will try weightedRand, walk up the prio chain to max,
+		//             then start down the list until all prios are tried
 		// min prio is 'paused', so we skip it
 		switch (scheduler) {
 			case ClientRequestScheduler.PRIORITY_HARD:
 				priority = prioritySelector[iteration];
 				break;			
 			case ClientRequestScheduler.PRIORITY_SOFT:
+			case ClientRequestScheduler.PRIORITY_SOFTER:
 			default:
 				//make sure the first prio we try is at least minPrio priority
 				//remember that the highest priority is 0;
@@ -173,7 +176,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 				if(logMINOR) Logger.minor(this, "using priority : "+priority);
 				return priority;
 			}
-
+			
 			if(logMINOR) {
 				String curSched = ClientRequestScheduler.PRIORITY_STRINGS.get(scheduler);
 				if (result == null)
@@ -187,6 +190,16 @@ class ClientRequestSelector implements KeysFetchingLocally {
 			switch (scheduler) {
 				case ClientRequestScheduler.PRIORITY_HARD:
 					priority = prioritySelector[iteration];
+					break;
+				case ClientRequestScheduler.PRIORITY_SOFTER:
+					//check ever-higher priorities first
+					priority--;
+					//once we've walked backwards to maximum priority looking for a
+					//better one to try, start trying lower priorities.
+					if(priority <0) {
+						priority = prioritySelector[iteration];
+						scheduler=ClientRequestScheduler.PRIORITY_HARD;
+					}
 					break;
 				case ClientRequestScheduler.PRIORITY_SOFT:
 				default:

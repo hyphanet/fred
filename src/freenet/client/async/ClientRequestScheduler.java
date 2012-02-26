@@ -73,9 +73,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public static final short PRIORITY_NONE = 0;
 	public static final short PRIORITY_SOFT = 1;
 	public static final short PRIORITY_HARD = 2;
+	public static final short PRIORITY_SOFTER = 3;
 	
 	public static final ArrayList<String> PRIORITY_STRINGS = new ArrayList<String>() {{
-			add("NONE"); add("SOFT"); add( "HARD");
+			add("NONE"); add("SOFT"); add("HARD"); add("SOFTER");
 	}};
 	private short choosenPriorityScheduler;
 	
