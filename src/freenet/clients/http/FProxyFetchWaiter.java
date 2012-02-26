@@ -25,7 +25,9 @@ public class FProxyFetchWaiter {
 			if(waitForever) {
 				while(!finished) {
 					try {
-						wait();
+						//timeouts were somehow being missed with wait()
+						//so limit wait() to 10 seconds.
+						wait(10000);
 						hasWaited = true;
 					} catch (InterruptedException e) {
 						// Ignore
