@@ -114,7 +114,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	private volatile boolean fProxyWebPushingEnabled;	// ugh?
 	private volatile boolean fproxyHasCompletedWizard;	// hmmm..
 	private volatile boolean disableProgressPage;
-	private int maxFproxyConnections;
+	private int maxFproxyConnections;					//total fproxy connections allowed.
+	private int maxGatewayConnectionsPerIP;				//total connections per IP address allowed in gateqway mode.
 	
 	private int fproxyConnections;
 	
@@ -677,6 +678,27 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			
 		}, false);
 		maxFproxyConnections = fproxyConfig.getInt("maxFproxyConnections");
+
+		fproxyConfig.register("maxGatewayConnectionsPerIP", 8, configItemOrder++, true, false, "SimpleToadletServer.maxGatewayConnectionsPerIP", "SimpleToadletServer.maxGatewayConnectionsPerIP",
+				new IntCallback() {
+
+					@Override
+					public Integer get() {
+						synchronized(SimpleToadletServer.this) {
+							return maxGatewayConnectionsPerIP;
+						}
+					}
+
+					@Override
+					public void set(Integer val) {
+						synchronized(SimpleToadletServer.this) {
+							maxGatewayConnectionsPerIP = val;
+							SimpleToadletServer.this.notifyAll();
+						}
+					}
+			
+		}, false);
+		maxGatewayConnectionsPerIP = fproxyConfig.getInt("maxGatewayConnectionsPerIP");
 		
 		fproxyConfig.register("metaRefreshSamePageInterval", 1, configItemOrder++, true, false, "SimpleToadletServer.metaRefreshSamePageInterval", "SimpleToadletServer.metaRefreshSamePageIntervalLong",
 				new IntCallback() {
