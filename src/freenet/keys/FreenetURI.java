@@ -1071,13 +1071,13 @@ public class FreenetURI implements Cloneable {
 	public URI toRelativeURI() throws URISyntaxException {
 		// Single-argument constructor used because it preserves encoded /'es in path.
 		// Hence we can have slashes, question marks etc in the path, but they are encoded.
-		return new URI('/' + toString(false, false));
+		return new URI('/' + toString(false, true));
 	}
 
 	/** Convert to a relative URI in the form of a URI, with the base path
 	 * not necessarily /. */
 	public URI toURI(String basePath) throws URISyntaxException {
-		return new URI(basePath + toString(false, false));
+		return new URI(basePath + toString(false, true));
 	}
 
 	/** Is this key an SSK? */
