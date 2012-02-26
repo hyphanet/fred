@@ -120,9 +120,22 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		while(iteration++ < RequestStarter.NUMBER_OF_PRIORITY_CLASSES + 1){
 			boolean persistent = false;
 			priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
-			if(transientOnly || schedCore == null)
-				result = null;
-			else {
+			if(transientOnly || schedCore == null) { //transient request
+				result = schedTransient.newPriorities[priority];
+				if(result != null) {
+					long cooldownTime = context.cooldownTracker.getCachedWakeup(result, false, container, now);
+					if(cooldownTime > 0) {
+						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
+						if(logMINOR) {
+							if(cooldownTime == Long.MAX_VALUE)
+								Logger.minor(this, "Priority "+priority+" (transient) is waiting until a request finishes or is empty");
+							else
+								Logger.minor(this, "Priority "+priority+" (transient) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+						}
+						result = null;
+					}
+				}
+			} else { //persistent request
 				result = schedCore.newPriorities[priority];
 				if(result != null) {
 					long cooldownTime = context.cooldownTracker.getCachedWakeup(result, true, container, now);
@@ -138,22 +151,6 @@ class ClientRequestSelector implements KeysFetchingLocally {
 					} else {
 						container.activate(result, 1);
 						persistent = true;
-					}
-				}
-			}
-			if(result == null) {
-				result = schedTransient.newPriorities[priority];
-				if(result != null) {
-					long cooldownTime = context.cooldownTracker.getCachedWakeup(result, false, container, now);
-					if(cooldownTime > 0) {
-						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
-						if(logMINOR) {
-							if(cooldownTime == Long.MAX_VALUE)
-								Logger.minor(this, "Priority "+priority+" (transient) is waiting until a request finishes or is empty");
-							else
-								Logger.minor(this, "Priority "+priority+" (transient) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
-						}
-						result = null;
 					}
 				}
 			}
