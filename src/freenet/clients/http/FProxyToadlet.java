@@ -711,7 +711,15 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				}
 				HTMLNode contentNode = page.content;
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-information");
-				infobox.addChild("div", "class", "infobox-header", l10n("fetchingPageBox"));
+				if (!ctx.isAllowedFullAccess()) { // container.publicGatewayMode() && !ctx.isAllowedFullAccess()
+					int HTTPHandlers = core.node.nodeStats.getNativeThreadsByNormalizedName("HTTP socket handler").size();
+					String infoboxText = l10n("fetchingPageBox") + ".  " + String.valueOf(HTTPHandlers-1) +
+							" other HTTP requests are pending.  Your speeds will be better if you install ";
+					infobox.addChild("div", "class", "infobox-header", infoboxText).
+					addChild("a", "href", "https://freenetproject.org", "your own freenet node.");
+				} else {
+					infobox.addChild("div", "class", "infobox-header", l10n("fetchingPageBox"));
+				}
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				infoboxContent.addAttribute("id", "infoContent");
 				infoboxContent.addChild(new ProgressInfoElement(fetchTracker, key, fctx, maxSize, core.isAdvancedModeEnabled(), ctx, isWebPushingEnabled));
