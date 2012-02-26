@@ -1017,7 +1017,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			if(logMINOR)
                 Logger.minor(this, "Accepted connection");
 
-            SocketHandler sh = new SocketHandler(conn, hasFinishedStartup, sendErr);
+            SocketHandler sh = new SocketHandler(conn, finishedStartup, sendErr);
             sh.start();
 		}
 	}
