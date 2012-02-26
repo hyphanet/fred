@@ -983,6 +983,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		}
 		boolean finishedStartup = false;
 		while(true) {
+			if (WrapperManager.hasShutdownHookBeenTriggered())
+				return;
+
 			synchronized(this) {
 				while(fproxyConnections > maxFproxyConnections) {
 					try {
@@ -995,9 +998,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 					finishedStartup = true;
 				if(myThread == null) return;
 			}
+
 			Socket conn = networkInterface.accept();
-			if (WrapperManager.hasShutdownHookBeenTriggered())
-				return;
             if(conn == null)
                 continue; // timeout
 
