@@ -1600,7 +1600,8 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
        				shouldUnlock = false;
        		}
         } else {
-        	node.nodeStats.requestCompleted(false, source != null, isSSK);
+			if(status != RECENTLY_FAILED)
+				node.nodeStats.requestCompleted(false, source != null, isSSK);
 			fireRequestSenderFinished(code, fromOfferedKey);
 		}
         

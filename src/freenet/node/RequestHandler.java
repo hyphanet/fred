@@ -417,7 +417,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 			tooLate = responseDeadline > 0 && now > responseDeadline;
 		}
 		
-		node.nodeStats.remoteRequest(key instanceof NodeSSK, status == RequestSender.SUCCESS, false, htl, key.toNormalizedDouble(), realTimeFlag, fromOfferedKey);
+		if(status != RequestSender.RECENTLY_FAILED)
+			node.nodeStats.remoteRequest(key instanceof NodeSSK, status == RequestSender.SUCCESS, false, htl, key.toNormalizedDouble(), realTimeFlag, fromOfferedKey);
 
 		if(tooLate) {
 			if(logMINOR) Logger.minor(this, "Too late");
