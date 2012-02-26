@@ -371,7 +371,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		prio -= node.fastWeakRandom.nextBoolean() ? 1 : 0;
 		if(prio < 0) return null;
 
-		return selector.removeFirstTransient((short)(choosenPriorityScheduler-2), random, offeredKeys, starter, schedTransient, prio, isRTScheduler, clientContext, null);
+		return selector.removeFirstTransient((short)(choosenPriorityScheduler), random, offeredKeys, starter, schedTransient, prio, isRTScheduler, clientContext, null);
 	}
 	
 	/**
@@ -677,7 +677,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			SelectorReturn r;
 			// Must synchronize on scheduler to avoid problems with cooldown queue. See notes on CooldownTracker.clearCachedWakeup, which also applies to other cooldown operations.
 			synchronized(this) {
-				r = selector.removeFirstInner((short)(choosenPriorityScheduler-2), random, offeredKeys, starter, schedCore, schedTransient, false, true, Short.MAX_VALUE, isRTScheduler, context, container, now);
+				r = selector.removeFirstInner((short)(choosenPriorityScheduler), random, offeredKeys, starter, schedCore, schedTransient, false, true, Short.MAX_VALUE, isRTScheduler, context, container, now);
 			}
 			SendableRequest request = null;
 			if(r != null && r.req != null) request = r.req;
