@@ -107,7 +107,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 	
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
 	
-	private long removeFirstAccordingToPriorities(int fuzz, RandomSource random, ClientRequestSchedulerCore schedCore, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio, ObjectContainer container, ClientContext context, long now){
+	private long removeFirstAccordingToPriorities(int fuzz, RandomSource random, ClientRequestSchedulerCore schedCore, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short minPrio, ObjectContainer container, ClientContext context, long now){
 		SectoredRandomGrabArray result = null;
 		
 		long wakeupTime = Long.MAX_VALUE;
@@ -154,7 +154,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 					}
 				}
 			}
-			if(priority > maxPrio) {
+			if(priority > minPrio) {
 				fuzz++;
 				continue; // Don't return because first round may be higher with soft scheduling
 			}
@@ -175,14 +175,14 @@ class ClientRequestSelector implements KeysFetchingLocally {
 	// We prevent a number of race conditions (e.g. adding a retry count and then another 
 	// thread removes it cos its empty) ... and in addToGrabArray etc we already sync on this.
 	// The worry is ... is there any nested locking outside of the hierarchy?
-	ChosenBlock removeFirstTransient(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, short maxPrio, boolean realTime, ClientContext context, ObjectContainer container) {
+	ChosenBlock removeFirstTransient(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, short minPrio, boolean realTime, ClientContext context, ObjectContainer container) {
 		// If a block is already running it will return null. Try to find a valid block in that case.
 		long now = System.currentTimeMillis();
 		for(int i=0;i<5;i++) {
 			// Must synchronize on scheduler to avoid problems with cooldown queue. See notes on CooldownTracker.clearCachedWakeup, which also applies to other cooldown operations.
 			SelectorReturn r;
 			synchronized(sched) {
-				r = removeFirstInner(fuzz, random, offeredKeys, starter, null, schedTransient, true, false, maxPrio, realTime, context, container, now);
+				r = removeFirstInner(fuzz, random, offeredKeys, starter, null, schedTransient, true, false, minPrio, realTime, context, container, now);
 			}
 			SendableRequest req = null;
 			if(r != null && r.req != null) req = r.req;
@@ -276,8 +276,8 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		}
 	}
 	
-	SelectorReturn removeFirstInner(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerCore schedCore, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, boolean notTransient, short maxPrio, boolean realTime, ClientContext context, ObjectContainer container, long now) {
-		// Priorities start at 0
+	SelectorReturn removeFirstInner(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerCore schedCore, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, boolean notTransient, short minPrio, boolean realTime, ClientContext context, ObjectContainer container, long now) {
+		// Priorities start at 0 as the maximum
 		if(logMINOR) Logger.minor(this, "removeFirst()");
 		if(schedCore == null) transientOnly = true;
 		if(transientOnly && notTransient) {
@@ -289,7 +289,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 			if(offeredKeys.getCooldownTime(container, context, now) == 0)
 				return new SelectorReturn(offeredKeys);
 		}
-		long l = removeFirstAccordingToPriorities(fuzz, random, schedCore, schedTransient, transientOnly, maxPrio, container, context, now);
+		long l = removeFirstAccordingToPriorities(fuzz, random, schedCore, schedTransient, transientOnly, minPrio, container, context, now);
 		if(l > Integer.MAX_VALUE) {
 			if(logMINOR) Logger.minor(this, "No priority available for the next "+TimeUtil.formatTime(l - now));
 			return null;
@@ -305,9 +305,9 @@ class ClientRequestSelector implements KeysFetchingLocally {
 			return null;
 		}
 		long wakeupTime = Long.MAX_VALUE;
-		if(maxPrio >= RequestStarter.MINIMUM_PRIORITY_CLASS)
-			maxPrio = RequestStarter.MINIMUM_PRIORITY_CLASS;
-outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
+		if(minPrio >= RequestStarter.MINIMUM_PRIORITY_CLASS)
+			minPrio = RequestStarter.MINIMUM_PRIORITY_CLASS;
+outer:	for(;choosenPriorityClass <= minPrio;choosenPriorityClass++) {
 			if(logMINOR) Logger.minor(this, "Using priority "+choosenPriorityClass);
 			SectoredRandomGrabArray perm = null;
 			if(!transientOnly)
