@@ -12,6 +12,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.ArrayList;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -116,6 +117,28 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	private volatile boolean disableProgressPage;
 	private int maxFproxyConnections;					//total fproxy connections allowed.
 	private int maxGatewayConnectionsPerIP;				//total connections per IP address allowed in gateqway mode.
+	
+	private ArrayList<Socket> connsPerIP = new ArrayList<Socket>();
+
+	private synchronized int getIPCount(InetAddress curAddr) {		
+		int count = 0;
+		//only bother counting the sockets of hosts without full access.
+		if (!allowedFullAccess.allowed(curAddr)) {			
+			Iterator<Socket> itr = connsPerIP.iterator();
+			Socket tmpSock;
+			InetAddress tmpInetAddr;
+			//Iterate over the list of connections, and count the ones that have
+			//IPs that match our new connection.
+			while(itr.hasNext()) {
+				tmpSock = itr.next();
+				tmpInetAddr = tmpSock.getInetAddress();
+				if(tmpInetAddr.equals(curAddr)) {
+					count++;
+				}
+			}
+		}
+		return count;
+	}
 	
 	private int fproxyConnections;
 	
@@ -977,7 +1000,17 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 				return;
             if(conn == null)
                 continue; // timeout
-            if(logMINOR)
+			InetAddress addr = conn.getInetAddress();
+			if(publicGatewayMode) {
+				int connCount = getIPCount(addr);
+				if(connCount >= maxGatewayConnectionsPerIP) {
+					conn.close();
+					return;
+				}
+				//add it to the connection to the list of active connections.
+				connsPerIP.add(conn);
+			}
+			if(logMINOR)
                 Logger.minor(this, "Accepted connection");
             SocketHandler sh = new SocketHandler(conn, finishedStartup);
             sh.start();
@@ -1019,10 +1052,15 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 				t.printStackTrace();
 				Logger.error(this, "Caught in SimpleToadletServer: "+t, t);
 			} finally {
-	            synchronized(SimpleToadletServer.this) {
-	            	fproxyConnections--;
-	            	SimpleToadletServer.this.notifyAll();
-	            }
+				synchronized(SimpleToadletServer.this) {
+					fproxyConnections--;
+					if(publicGatewayMode) {
+						boolean success = connsPerIP.remove(sock);
+						if(!success)
+							System.err.println("SimpleToadletServer socket not removed from list!.");
+					}
+					SimpleToadletServer.this.notifyAll();
+				}
 			}
 			if(logMINOR) Logger.minor(this, "Handled connection");
 		}
