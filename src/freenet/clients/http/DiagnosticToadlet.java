@@ -61,6 +61,14 @@ public class DiagnosticToadlet extends Toadlet {
 	private final PeerManager peers;
 	private final NumberFormat thousandPoint = NumberFormat.getInstance();
 	private final FCPServer fcp;
+	private final DecimalFormat fix1p1 = new DecimalFormat("0.0");
+	private final DecimalFormat fix1p2 = new DecimalFormat("0.00");
+	private final DecimalFormat fix1p4 = new DecimalFormat("0.0000");
+	private final DecimalFormat fix1p6sci = new DecimalFormat("0.######E0");
+	private final DecimalFormat fix3p1pct = new DecimalFormat("##0.0%");
+	private final DecimalFormat fix3p1US = new DecimalFormat("##0.0", new DecimalFormatSymbols(Locale.US));
+	private final DecimalFormat fix3pctUS = new DecimalFormat("##0%", new DecimalFormatSymbols(Locale.US));
+	private final DecimalFormat fix6p6 = new DecimalFormat("#####0.0#####");
 	public static final String TOADLET_URL = "/diagnostic/";
 
 	protected DiagnosticToadlet(Node n, NodeClientCore core, FCPServer fcp, HighLevelSimpleClient client) {
@@ -92,6 +100,7 @@ public class DiagnosticToadlet extends Toadlet {
 		// Synchronize to avoid problems with DecimalFormat.
 		synchronized(this) {
 		// drawNodeVersionBox
+		text += "Freenet Version:\n";
 		text += NodeL10n.getBase().getString("WelcomeToadlet.version", new String[] { "fullVersion", "build", "rev" },
 				new String[] { Version.publicVersion(), Integer.toString(Version.buildNumber()), Version.cvsRevision() }) + "\n";
 		if(NodeStarter.extBuildNumber < NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER)
@@ -101,9 +110,10 @@ public class DiagnosticToadlet extends Toadlet {
 		else
 			text += NodeL10n.getBase().getString("WelcomeToadlet.extVersion", new String[] { "build", "rev" },
 					new String[] { Integer.toString(NodeStarter.extBuildNumber), NodeStarter.extRevisionNumber });
-		text += "\n\n";
+		text += "\n";
 
 		// drawNodeVersionBox
+		text += "System Information:\n";
 		Runtime rt = Runtime.getRuntime();
 		long freeMemory = rt.freeMemory();
 		long totalMemory = rt.totalMemory();
@@ -126,8 +136,52 @@ public class DiagnosticToadlet extends Toadlet {
 		text += l10n("osName", "name", System.getProperty("os.name")) + "\n";
 		text += l10n("osVersion", "version", System.getProperty("os.version")) + "\n";
 		text += l10n("osArch", "arch", System.getProperty("os.arch")) + "\n";
+		text += "\n";
+
+		// drawStoreSizeBox
+		text += "Store Size:\n";
+		Map<DataStoreInstanceType, DataStoreStats> storeStats = node.getDataStoreStats();
+		for (Map.Entry<DataStoreInstanceType, DataStoreStats> entry : storeStats.entrySet()) {
+			DataStoreInstanceType instance = entry.getKey();
+			DataStoreStats stats = entry.getValue();
+			StoreAccessStats sessionAccess = stats.getSessionAccessStats();
+			StoreAccessStats totalAccess;
+			long totalUptimeSeconds = 0;
+			try {
+				totalAccess = stats.getTotalAccessStats();
+				// FIXME this is not necessarily the same as the datastore's uptime if we've switched.
+				// Ideally we'd track uptime there too.
+				totalUptimeSeconds = 
+					node.clientCore.bandwidthStatsPutter.getLatestUptimeData().totalUptime;
+			} catch (StatsNotAvailableException e) {
+				totalAccess = null;
+			}
+			text += l10n(instance.store.name()) + ": (" + l10n(instance.key.name()) + ")\n";
+			text += "  " + l10n("keys") + ": " + thousandPoint.format(stats.keys()) + "\n";
+			text += "  " + l10n("capacity") + ": " + thousandPoint.format(stats.capacity()) + "\n";
+			text += "  " + l10n("datasize") + ": " + SizeUtil.formatSize(stats.dataSize()) + "\n";
+			text += "  " + l10n("utilization") + ": " + fix3p1pct.format(stats.utilization()) + "\n";
+			text += "  " + l10n("readRequests") + ": " + thousandPoint.format(sessionAccess.readRequests()) +
+					(totalAccess == null ? "" : (" ("+thousandPoint.format(totalAccess.readRequests())+")")) + "\n";
+			text += "  " + l10n("successfulReads") + ": " + thousandPoint.format(sessionAccess.successfulReads()) +
+					(totalAccess == null ? "" : (" ("+thousandPoint.format(totalAccess.successfulReads())+")")) + "\n";
+			try {
+				text += fix1p4.format(sessionAccess.successRate()) + "%";
+				if(totalAccess != null) {
+					try {
+						text += " (" + fix1p4.format(totalAccess.successRate()) + "%)";
+					} catch (StatsNotAvailableException e) {
+						// Ignore
+					}
+				}
+				text += "\n";
+			} catch (StatsNotAvailableException e) {
+			}
+		}
+		text += "\n";
 
 		// drawActivity
+		text += "Activity:\n";
 		int numLocalCHKInserts = node.getNumLocalCHKInserts();
 		int numRemoteCHKInserts = node.getNumRemoteCHKInserts();
 		int numLocalSSKInserts = node.getNumLocalSSKInserts();
@@ -177,8 +231,10 @@ public class DiagnosticToadlet extends Toadlet {
 					new String[] { "sends", "receives" }, new String[] { Integer.toString(BlockTransmitter.getRunningSends()), Integer.toString(BlockReceiver.getRunningReceives()) })
 					+ "\n";
 		}
+		text += "\n";
 
 		// drawPeerStatsBox
+		text += "Peer Statistics:\n";
 		PeerNodeStatus[] peerNodeStatuses = peers.getPeerNodeStatuses(true);
 		Arrays.sort(peerNodeStatuses, new Comparator<PeerNodeStatus>() {
 			@Override
@@ -246,8 +302,10 @@ public class DiagnosticToadlet extends Toadlet {
 			text += l10n("maxTotalPeers")+": "+om.getNumberOfConnectedPeersToAimIncludingDarknet() + "\n";
 			text += l10n("maxOpennetPeers")+": "+om.getNumberOfConnectedPeersToAim() + "\n";
 		}
+		text += "\n";
 
 		// drawBandwidth
+		text += "Bandwidth:\n";
 		long[] total = node.collector.getTotalIO();
 		if(total[0] == 0 || total[1] == 0)
 			text += "bandwidth error\n";
@@ -336,8 +394,10 @@ public class DiagnosticToadlet extends Toadlet {
 			text += l10n("totalOverhead", new String[] { "rate", "percent" }, 
 					new String[] { SizeUtil.formatSize((long)sentOverheadPerSecond), Integer.toString((int)((100 * sentOverheadPerSecond) / total_output_rate)) }) + "\n";
 		}
+		text += "\n";
 
 		// showStartingPlugins
+		text += "Plugins:\n";
 		PluginManager pm = node.pluginManager;
 		if (!pm.getPlugins().isEmpty()) {
 			text += NodeL10n.getBase().getString("PluginToadlet.pluginListTitle") + "\n";
@@ -351,8 +411,10 @@ public class DiagnosticToadlet extends Toadlet {
 					text += pi.getFilename() + " (" + pi.getPluginClassName() + ") - " + pi.getPluginVersion() + " " + pi.getThreadName() + "\n";
 			}
 		}
+		text += "\n";
 
 		// handleGetInner
+		text += "Queue:\n";
 		try {
 			RequestStatus[] reqs = fcp.getGlobalRequests();
 			if(reqs.length < 1)
@@ -390,6 +452,7 @@ public class DiagnosticToadlet extends Toadlet {
 		} catch (DatabaseDisabledException e) {
 			text += "DatabaseDisabledException\n";
 		}
+		text += "\n";
 		}
 
 		this.writeTextReply(ctx, 200, "OK", text);
