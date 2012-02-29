@@ -264,7 +264,7 @@ public class DiagnosticToadlet extends Toadlet {
 		int numberOfDisconnecting = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_DISCONNECTING);
 		int numberOfNoLoadStats = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_NO_LOAD_STATS);
 		if (numberOfConnected > 0)
-			text += l10nDark("connectedShort") + ": " + numberOfConnected;
+			text += l10nDark("connectedShort") + ": " + numberOfConnected + "\n";
 		if (numberOfRoutingBackedOff > 0)
 			text += l10nDark("backedOffShort") + ": " + numberOfRoutingBackedOff + "\n";
 		if (numberOfTooNew > 0)
