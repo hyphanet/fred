@@ -116,7 +116,7 @@ public class ToadletContextImpl implements ToadletContext {
 		if(closed) throw new ToadletContextClosedException();
 		MultiValueTable<String,String> mvt = new MultiValueTable<String,String>();
 		mvt.put("Allow", "GET, PUT");
-		sendError(sockOutputStream, 405, "Method Not Allowed", l10n("methodNotAllowed"), shouldDisconnect, mvt);
+		sendError(sockOutputStream, 405, method +"Not Allowed", l10n("methodNotAllowed"), shouldDisconnect, mvt);
 	}
 	
 	private static String l10n(String key) {
