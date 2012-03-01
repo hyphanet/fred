@@ -123,7 +123,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	private synchronized int getIPCount(InetAddress curAddr) {		
 		int count = 0;
 		//only bother counting the sockets of hosts without full access.
-		if (!allowedFullAccess.allowed(curAddr)) {			
+		if (!isAllowedFullAccess(curAddr)) {			
 			Iterator<Socket> itr = connsPerIP.iterator();
 			Socket tmpSock;
 			InetAddress tmpInetAddr;
@@ -138,6 +138,26 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			}
 		}
 		return count;
+	}
+	
+	private synchronized void killOldSockets(int numToKill) {
+		int count = 0;
+		Iterator<Socket> itr = connsPerIP.iterator();
+		Socket tmpSock;		
+		InetAddress tmpInetAddr;
+		//iterate over the list of connections and kill the first numToKill
+		//connections that aren't allowed full access.
+		while(itr.hasNext() && count < numToKill) {
+			tmpSock = itr.next();
+			tmpInetAddr = tmpSock.getInetAddress();
+			try {
+				if (tmpInetAddr != null && !isAllowedFullAccess(tmpInetAddr)){
+					tmpSock.close();
+					count++;
+				}
+			} catch(IOException e) {
+			}			
+		}
 	}
 	
 	private int fproxyConnections;
@@ -983,21 +1003,14 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		}
 		boolean finishedStartup = false;
 		while(true) {
-			if (WrapperManager.hasShutdownHookBeenTriggered())
-				return;
-
 			synchronized(this) {
-				while(fproxyConnections > maxFproxyConnections) {
-					try {
-						wait();
-					} catch (InterruptedException e) {
-						// Ignore
-					}
-				}
 				if((!finishedStartup) && this.finishedStartup)
 					finishedStartup = true;
 				if(myThread == null) return;
 			}
+
+			if (WrapperManager.hasShutdownHookBeenTriggered())
+				return;
 
 			Socket conn = networkInterface.accept();
             if(conn == null)
@@ -1006,7 +1019,28 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			int sendErr = 0;
 			String sendErrString = null;
 			String sendErrStringLong = null;
+
 			InetAddress addr = conn.getInetAddress();
+			
+			if(fproxyConnections > maxFproxyConnections && !isAllowedFullAccess(addr)) {
+				if(publicGatewayMode) {
+					sendErr = 503;
+					//FIXME: needs l10n.
+					sendErrString = "Gateway overloaded";
+					sendErrStringLong = "There are too many total requests for this gateway to handle.<br><br>You should consider setting up your own Freenet node.  You can find instructions here: <a href=\"https://freenetproject.org/\">https://freenetproject.org/</a>";
+					killOldSockets(maxGatewayConnectionsPerIP);
+				} else {
+					synchronized(this) {
+						while(fproxyConnections > maxFproxyConnections) {
+							try {
+								wait(5000);
+							} catch (InterruptedException e) {
+								// Ignore
+							}
+						}
+					}
+				}
+			}
 
 			if(publicGatewayMode) {
 				int connCount = getIPCount(addr);
