@@ -367,18 +367,18 @@ public class ToadletContextImpl implements ToadletContext {
 	 * Compatibility stub
 	 */
 	public static void handle(Socket sock, ToadletContainer container, PageMaker pageMaker) {
-		handle(sock, container, pageMaker, 0);
+		handle(sock, container, pageMaker, 0, null, null);
 	}
 	
 	/**
 	 * Handle an incoming connection. Blocking, obviously.
 	 */
-	public static void handle(Socket sock, ToadletContainer container, PageMaker pageMaker, int errCode) {
+	public static void handle(Socket sock, ToadletContainer container, PageMaker pageMaker, int errCode, String errString, String errStringLong) {
 		try {
 			//FIXME: Be less hackish, use l10n ... maybe meta-refresh to freenetproject.org ?
 			if (errCode != 0) {
 				if(errCode == 503) {
-					sendError(sock.getOutputStream(), 503, "Too Many Requests", "You have exceeded the limit of simultaneous requests allowed per host on this gateway.<br><br>You should consider setting up your own Freenet node.  You can find instructions here: <a href=\"https://freenetproject.org/\">https://freenetproject.org/</a>", true, null);
+					sendError(sock.getOutputStream(), 503, errString, errStringLong, true, null);
 					return;
 				}
 			}

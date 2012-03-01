@@ -1004,12 +1004,18 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
                 continue; // timeout
 
 			int sendErr = 0;
+			String sendErrString = null;
+			String sendErrStringLong = null;
 			InetAddress addr = conn.getInetAddress();
 
 			if(publicGatewayMode) {
 				int connCount = getIPCount(addr);
-				if(connCount >= maxGatewayConnectionsPerIP)
+				if(connCount >= maxGatewayConnectionsPerIP) {
 					sendErr = 503;
+					//FIXME: needs l10n.
+					sendErrString = "Too Many Requests";
+					sendErrStringLong = "You have exceeded the limit of simultaneous requests allowed per host on this gateway.<br><br>You should consider setting up your own Freenet node.  You can find instructions here: <a href=\"https://freenetproject.org/\">https://freenetproject.org/</a>";
+				}
 				//add it to the connection to the list of active connections.
 				connsPerIP.add(conn);
 			}
@@ -1017,7 +1023,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			if(logMINOR)
                 Logger.minor(this, "Accepted connection");
 
-            SocketHandler sh = new SocketHandler(conn, finishedStartup, sendErr);
+            SocketHandler sh = new SocketHandler(conn, finishedStartup, sendErr, sendErrString, sendErrStringLong);
             sh.start();
 		}
 	}
@@ -1027,11 +1033,15 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		Socket sock;
 		final boolean finishedStartup;
 		final int errCode;
+		final String errString;
+		final String errStringLong;
 		
-		public SocketHandler(Socket conn, boolean finishedStartup, int errCode) {
+		public SocketHandler(Socket conn, boolean finishedStartup, int errCode, String errString, String errStringLong) {
 			this.sock = conn;
 			this.finishedStartup = finishedStartup;
 			this.errCode = errCode;
+			this.errString = errString;
+			this.errStringLong = errStringLong;
 		}
 
 		void start() {
@@ -1049,7 +1059,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		    freenet.support.Logger.OSThread.logPID(this);
 			if(logMINOR) Logger.minor(this, "Handling connection");
 			try {
-				ToadletContextImpl.handle(sock, SimpleToadletServer.this, pageMaker, errCode);
+				ToadletContextImpl.handle(sock, SimpleToadletServer.this, pageMaker, errCode, errString, errStringLong);
 			} catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 				System.err.println("SimpleToadletServer request above failed.");
