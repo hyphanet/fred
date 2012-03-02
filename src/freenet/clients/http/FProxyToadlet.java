@@ -1229,6 +1229,10 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		server.register(statisticsToadlet, "FProxyToadlet.categoryStatus", "/stats/", true,
 		        "FProxyToadlet.statsTitle", "FProxyToadlet.stats", true, null);
 
+		DiagnosticToadlet diagnosticToadlet = new DiagnosticToadlet(node, core, core.getFCPServer(), client);
+		server.register(diagnosticToadlet, "FProxyToadlet.categoryStatus", "/diagnostic/", true,
+		        "FProxyToadlet.diagnosticTitle", "FProxyToadlet.diagnostic", true, null);
+
 		ConnectivityToadlet connectivityToadlet = new ConnectivityToadlet(client, node, core);
 		server.register(connectivityToadlet, "FProxyToadlet.categoryStatus", "/connectivity/", true,
 		        "ConnectivityToadlet.connectivityTitle", "ConnectivityToadlet.connectivity", true, null);
