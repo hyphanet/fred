@@ -131,6 +131,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			//IPs that match our new connection.
 			while(itr.hasNext()) {
 				tmpSock = itr.next();
+				if(tmpSock == null) { //how can this happen?
+					continue;				
+				}
 				tmpInetAddr = tmpSock.getInetAddress();
 				if(tmpInetAddr.equals(curAddr)) {
 					count++;
@@ -149,6 +152,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		//connections that aren't allowed full access.
 		while(itr.hasNext() && count < numToKill) {
 			tmpSock = itr.next();
+			if(tmpSock == null) { //how can this happen?
+					continue;				
+				}
 			tmpInetAddr = tmpSock.getInetAddress();
 			try {
 				if (tmpInetAddr != null && !isAllowedFullAccess(tmpInetAddr)){
