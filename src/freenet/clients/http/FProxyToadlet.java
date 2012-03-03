@@ -52,6 +52,7 @@ import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.MediaType;
 import freenet.support.MultiValueTable;
 import freenet.support.SizeUtil;
 import freenet.support.URIPreEncoder;
@@ -934,7 +935,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					}
 					option = optionList.addChild("li");
 					// FIXME: is this safe? See bug #131
-					NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openAsText", new String[] { "link" }, new HTMLNode[] { HTMLNode.link(getLink(key, "text/plain", maxSize, null, false, maxRetries)) });
+					MediaType textMediaType = new MediaType("text/plain").setParameter("charset", (e.getExpectedMimeType() != null) ? new MediaType(e.getExpectedMimeType()).getParameter("charset") : null);
+					NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openAsText", new String[] { "link" }, new HTMLNode[] { HTMLNode.link(getLink(key, textMediaType.toString(), maxSize, null, false, maxRetries)) });
 					option = optionList.addChild("li");
 					NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openForceDisk", new String[] { "link" }, new HTMLNode[] { HTMLNode.link(getLink(key, mime, maxSize, null, true, maxRetries)) });
 					if(!(mime.equals("application/octet-stream") || mime.equals("application/x-msdownload"))) {
@@ -1226,6 +1228,10 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		StatisticsToadlet statisticsToadlet = new StatisticsToadlet(node, core, client);
 		server.register(statisticsToadlet, "FProxyToadlet.categoryStatus", "/stats/", true,
 		        "FProxyToadlet.statsTitle", "FProxyToadlet.stats", true, null);
+
+		DiagnosticToadlet diagnosticToadlet = new DiagnosticToadlet(node, core, core.getFCPServer(), client);
+		server.register(diagnosticToadlet, "FProxyToadlet.categoryStatus", "/diagnostic/", true,
+		        "FProxyToadlet.diagnosticTitle", "FProxyToadlet.diagnostic", true, null);
 
 		ConnectivityToadlet connectivityToadlet = new ConnectivityToadlet(client, node, core);
 		server.register(connectivityToadlet, "FProxyToadlet.categoryStatus", "/connectivity/", true,

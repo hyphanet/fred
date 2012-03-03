@@ -860,7 +860,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		long t2=System.currentTimeMillis();
 		if((t2-t1)>500) {
-			Logger.error(this,"Message1 timeout error:Processing packet for"+pn);
+			Logger.error(this,"Message1 timeout error:Processing packet for "+pn);
 		}
 	}
 	
@@ -934,7 +934,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 		long t2=System.currentTimeMillis();
 		if((t2-now)>500) {
-			Logger.error(this,"Message1 timeout error:Sending packet for"+pn.getPeer());
+			Logger.error(this,"Message1 timeout error:Sending packet for "+pn.getPeer());
 		}
 	}
 
@@ -1112,7 +1112,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		long t2=System.currentTimeMillis();
 		if((t2-t1)>500) {
-			Logger.error(this,"Message2 timeout error:Processing packet for"+pn.getPeer());
+			Logger.error(this,"Message2 timeout error:Processing packet for "+pn.getPeer());
 		}
 	}
 
@@ -1413,7 +1413,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		final long t2=System.currentTimeMillis();
 		if((t2-t1)>500) {
-			Logger.error(this,"Message3 Processing packet for"+pn.getPeer()+" took "+TimeUtil.formatTime(t2-t1, 3, true));
+			Logger.error(this,"Message3 Processing packet for "+pn.getPeer()+" took "+TimeUtil.formatTime(t2-t1, 3, true));
 		}
 	}
 
@@ -1859,7 +1859,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}, 5*1000);
 		long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
-			Logger.error(this,"Message3 timeout error:Sending packet for"+pn.getPeer());
+			Logger.error(this,"Message3 timeout error:Sending packet for "+pn.getPeer());
 	}
 
 	private int getInitialMessageID(byte[] identity) {
@@ -1980,7 +1980,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 		long t2=System.currentTimeMillis();
 		if((t2-t1)>500)
-			Logger.error(this,"Message4 timeout error:Sending packet for"+pn.getPeer());
+			Logger.error(this,"Message4 timeout error:Sending packet for "+pn.getPeer());
 	}
 
 	/**
