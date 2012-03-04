@@ -442,6 +442,24 @@ public class DiagnosticToadlet extends Toadlet {
 			text += "DatabaseDisabledException\n";
 		}
 		text += "\n";
+
+		// drawThreadPriorityStatsBox
+		text += "Threads:\n";
+		int[] activeThreadsByPriority = stats.getActiveThreadsByPriority();
+		int[] waitingThreadsByPriority = stats.getWaitingThreadsByPriority();
+		for(int i=0; i<activeThreadsByPriority.length; i++) {
+			text += l10n("running") + ": " + String.valueOf(activeThreadsByPriority[i]) + " (" + String.valueOf(i+1) + ")\n";
+			text += l10n("waiting") + ": " + String.valueOf(waitingThreadsByPriority[i]) + " (" + String.valueOf(i+1) + ")\n";
+		}
+		text += "\n";
+
+		// drawDatabaseJobsBox
+		int[] jobsByPriority = core.clientDatabaseExecutor.getQueuedJobsCountByPriority();
+		for(int i=0; i<jobsByPriority.length; i++) {
+			text += l10n("waiting") + ": " + String.valueOf(i) + " (" + String.valueOf(jobsByPriority[i]) + ")\n";
+		}
+		text += "\n";
+		
 		}
 
 		this.writeTextReply(ctx, 200, "OK", text);
