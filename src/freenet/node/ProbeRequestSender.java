@@ -73,7 +73,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
         this.uniqueCounter = 1;
         logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
     	updateBest();
-    	if(target < 0.0 || target > 1.0)
+    	if(target < 0.0 || target >= 1.0)
     		throw new IllegalArgumentException();
     }
 
