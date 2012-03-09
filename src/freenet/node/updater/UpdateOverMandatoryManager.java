@@ -1309,6 +1309,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					// Not much we can do.
 				} finally {
 					source.finishedSendingUOMJar(isExt);
+					raf.close();
 				}
 			}
 		};
