@@ -60,6 +60,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 	final boolean localRequestOnly;
 	final boolean realTimeFlag;
 	final short manifestPutterType;
+	final String targetFilename;
 	
 	public ClientPutDirMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		identifier = fs.get("Identifier");
@@ -162,6 +163,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 		}
 		canWriteClientCache = fs.getBoolean("WriteToClientCache", false);
 		clientToken = fs.get("ClientToken");
+		targetFilename = fs.get("TargetFilename");
 		earlyEncode = Fields.stringToBool(fs.get("EarlyEncode"), false);
 		String codecs = fs.get("Codecs");
 		if (codecs != null) {
