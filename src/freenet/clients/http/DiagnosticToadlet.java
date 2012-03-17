@@ -9,36 +9,26 @@ import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import freenet.client.async.ClientRequester;
 import freenet.client.async.DatabaseDisabledException;
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.SubConfig;
-import freenet.io.comm.IncomingPacketFilterImpl;
 import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.BlockTransmitter;
 import freenet.l10n.BaseL10n;
 import freenet.l10n.NodeL10n;
-import freenet.keys.FreenetURI;
 import freenet.node.fcp.FCPServer;
 import freenet.node.fcp.DownloadRequestStatus;
-import freenet.node.fcp.RequestStatus;
 import freenet.node.fcp.UploadDirRequestStatus;
 import freenet.node.fcp.UploadFileRequestStatus;
-import freenet.node.fcp.UploadRequestStatus;
-import freenet.node.Location;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.NodeStarter;
 import freenet.node.NodeStats;
-import freenet.node.OpennetManager;
 import freenet.node.PeerManager;
 import freenet.node.PeerNodeStatus;
-import freenet.node.RequestClient;
-import freenet.node.RequestStarterGroup;
 import freenet.node.Version;
 import freenet.node.stats.DataStoreInstanceType;
 import freenet.node.stats.DataStoreStats;
@@ -47,11 +37,8 @@ import freenet.node.stats.StoreAccessStats;
 import freenet.pluginmanager.PluginManager;
 import freenet.pluginmanager.PluginInfoWrapper;
 import freenet.support.BandwidthStatsContainer;
-import freenet.support.HTMLNode;
 import freenet.support.SizeUtil;
-import freenet.support.TimeUtil;
 import freenet.support.api.HTTPRequest;
-import freenet.support.io.NativeThread;
 
 public class DiagnosticToadlet extends Toadlet {
 
