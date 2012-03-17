@@ -20,6 +20,7 @@ import freenet.io.xfer.BlockTransmitter;
 import freenet.l10n.BaseL10n;
 import freenet.l10n.NodeL10n;
 import freenet.node.fcp.FCPServer;
+import freenet.node.fcp.RequestStatus;
 import freenet.node.fcp.DownloadRequestStatus;
 import freenet.node.fcp.UploadDirRequestStatus;
 import freenet.node.fcp.UploadFileRequestStatus;
@@ -27,6 +28,7 @@ import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.NodeStarter;
 import freenet.node.NodeStats;
+import freenet.node.OpennetManager;
 import freenet.node.PeerManager;
 import freenet.node.PeerNodeStatus;
 import freenet.node.Version;
@@ -57,6 +59,7 @@ public class DiagnosticToadlet extends Toadlet {
 	private final DecimalFormat fix3pctUS = new DecimalFormat("##0%", new DecimalFormatSymbols(Locale.US));
 	private final DecimalFormat fix6p6 = new DecimalFormat("#####0.0#####");
 	public static final String TOADLET_URL = "/diagnostic/";
+	private final BaseL10n ENGLISH = new BaseL10n("freenet/l10n/", "freenet.l10n.${lang}.properties", (new File(".")).getPath()+File.separator+"freenet.l10n.${lang}.override.properties", BaseL10n.LANGUAGE.ENGLISH);
 
 	protected DiagnosticToadlet(Node n, NodeClientCore core, FCPServer fcp, HighLevelSimpleClient client) {
 		super(client);
@@ -72,7 +75,7 @@ public class DiagnosticToadlet extends Toadlet {
 		new NodeL10n(BaseL10n.LANGUAGE.ENGLISH, new File("."));
 
 		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"), NodeL10n.getBase().getString("Toadlet.unauthorized"));
+			super.sendErrorPage(ctx, 403, this.ENGLISH.getString("Toadlet.unauthorizedTitle"), this.ENGLISH.getString("Toadlet.unauthorized"));
 			return;
 		}
 
@@ -88,14 +91,14 @@ public class DiagnosticToadlet extends Toadlet {
 		synchronized(this) {
 		// drawNodeVersionBox
 		text += "Freenet Version:\n";
-		text += NodeL10n.getBase().getString("WelcomeToadlet.version", new String[] { "fullVersion", "build", "rev" },
+		text += this.ENGLISH.getString("WelcomeToadlet.version", new String[] { "fullVersion", "build", "rev" },
 				new String[] { Version.publicVersion(), Integer.toString(Version.buildNumber()), Version.cvsRevision() }) + "\n";
 		if(NodeStarter.extBuildNumber < NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER)
-			text += NodeL10n.getBase().getString("WelcomeToadlet.extVersionWithRecommended", 
+			text += this.ENGLISH.getString("WelcomeToadlet.extVersionWithRecommended", 
 					new String[] { "build", "recbuild", "rev" }, 
 					new String[] { Integer.toString(NodeStarter.extBuildNumber), Integer.toString(NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER), NodeStarter.extRevisionNumber });
 		else
-			text += NodeL10n.getBase().getString("WelcomeToadlet.extVersion", new String[] { "build", "rev" },
+			text += this.ENGLISH.getString("WelcomeToadlet.extVersion", new String[] { "build", "rev" },
 					new String[] { Integer.toString(NodeStarter.extBuildNumber), NodeStarter.extRevisionNumber });
 		text += "\n";
 
@@ -387,7 +390,7 @@ public class DiagnosticToadlet extends Toadlet {
 		text += "Plugins:\n";
 		PluginManager pm = node.pluginManager;
 		if (!pm.getPlugins().isEmpty()) {
-			text += NodeL10n.getBase().getString("PluginToadlet.pluginListTitle") + "\n";
+			text += this.ENGLISH.getString("PluginToadlet.pluginListTitle") + "\n";
 			Iterator<PluginInfoWrapper> it = pm.getPlugins().iterator();
 			while (it.hasNext()) {
 				PluginInfoWrapper pi = it.next();
@@ -405,7 +408,7 @@ public class DiagnosticToadlet extends Toadlet {
 		try {
 			RequestStatus[] reqs = fcp.getGlobalRequests();
 			if(reqs.length < 1)
-				text += NodeL10n.getBase().getString("QueueToadlet.globalQueueIsEmpty") + "\n";
+				text += this.ENGLISH.getString("QueueToadlet.globalQueueIsEmpty") + "\n";
 			else {
 				long totalQueuedDownloadSize = 0;
 				long totalQueuedDownload = 0;
@@ -492,19 +495,19 @@ public class DiagnosticToadlet extends Toadlet {
 	}
 
 	private static String l10n(String key) {
-		return NodeL10n.getBase().getString("StatisticsToadlet."+key);
+		return this.ENGLISH.getString("StatisticsToadlet."+key);
 	}
 
 	private static String l10nDark(String key) {
-		return NodeL10n.getBase().getString("DarknetConnectionsToadlet."+key);
+		return this.ENGLISH.getString("DarknetConnectionsToadlet."+key);
 	}
 
 	private static String l10n(String key, String pattern, String value) {
-		return NodeL10n.getBase().getString("StatisticsToadlet."+key, new String[] { pattern }, new String[] { value });
+		return this.ENGLISH.getString("StatisticsToadlet."+key, new String[] { pattern }, new String[] { value });
 	}
 
 	private static String l10n(String key, String[] patterns, String[] values) {
-		return NodeL10n.getBase().getString("StatisticsToadlet."+key, patterns, values);
+		return this.ENGLISH.getString("StatisticsToadlet."+key, patterns, values);
 	}
 
 	@Override
