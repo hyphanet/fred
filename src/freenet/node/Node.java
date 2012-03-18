@@ -299,8 +299,6 @@ public class Node implements TimeSkewDetectorCallback {
 	private static TimeSkewDetectedUserAlert timeSkewDetectedUserAlert;
 
 	public class NodeNameCallback extends StringCallback  {
-		NodeNameCallback() {
-		}
 		@Override
 		public String get() {
 			String name;
@@ -1286,7 +1284,7 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 
 		});
-		
+
 		nodeConfig.register("showFriendsVisibilityAlert", false, sortOrder++, true, false, "Node.showFriendsVisibilityAlert", "Node.showFriendsVisibilityAlertLong", new BooleanCallback() {
 
 			@Override
@@ -1305,11 +1303,11 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 				unregisterFriendsVisibilityAlert();
 			}
-			
-			
-			
+
+
+
 		});
-		
+
 		showFriendsVisibilityAlert = nodeConfig.getBoolean("showFriendsVisibilityAlert");
 
 		defragOnce = nodeConfig.getBoolean("defragOnce");
@@ -1732,7 +1730,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		if(showFriendsVisibilityAlert)
 			registerFriendsVisibilityAlert();
-		
+
 		// Node updater support
 
 		System.out.println("Initializing Node Updater");
@@ -2007,7 +2005,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 
 		maxTotalKeys = maxTotalDatastoreSize / sizePerKey;
-		
+
 		nodeConfig.register("storeUseSlotFilters", true, sortOrder++, true, false, "Node.storeUseSlotFilters", "Node.storeUseSlotFiltersLong", new BooleanCallback() {
 
 			public Boolean get() {
@@ -2021,13 +2019,13 @@ public class Node implements TimeSkewDetectorCallback {
 				synchronized(Node.this) {
 					storeUseSlotFilters = val;
 				}
-				
+
 				// FIXME l10n
 				throw new NodeNeedRestartException("Need to restart to change storeUseSlotFilters");
 			}
-			
+
 		});
-		
+
 		storeUseSlotFilters = nodeConfig.getBoolean("storeUseSlotFilters");
 
 		nodeConfig.register("storeSaltHashResizeOnStart", false, sortOrder++, true, false,
@@ -2192,7 +2190,7 @@ public class Node implements TimeSkewDetectorCallback {
 				int extraMemoryMB = (int)Math.min(Integer.MAX_VALUE, ((extraMemory + 1024 * 1024 - 1) / (1024 * 1024)));
 				if(extraMemoryMB >= 10) {
 					System.out.println("Need "+extraMemoryMB+"MB extra space in heap for slot filters.");
-					UpdateDeployContext.CHANGED changed = 
+					UpdateDeployContext.CHANGED changed =
 						UpdateDeployContext.tryIncreaseMemoryLimit(extraMemoryMB, " Increased because of slot filters in "+(lastVersionWithBloom+1));
 					if(changed == CHANGED.SUCCESS) {
 						WrapperManager.restart();
@@ -2524,7 +2522,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		maxPacketSize = nodeConfig.getInt("maxPacketSize");
 		updateMTU();
-		
+
 		nodeConfig.finishedInitialization();
 		if(shouldWriteConfig)
 			config.store();
@@ -4543,7 +4541,7 @@ public class Node implements TimeSkewDetectorCallback {
 		is.start();
 		return is;
 	}
-	
+
 	public boolean lockUID(UIDTag tag) {
 		return lockUID(tag.uid, tag.isSSK(), tag.isInsert(), tag.isOfferReply(), tag.wasLocal(), tag.realTimeFlag, tag);
 	}
@@ -4741,14 +4739,14 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		}
 	}
-	
+
 	/**
 	 * @return [0] is the number of local requests waiting for slots, [1] is the
 	 * number of remote requests waiting for slots.
 	 */
 	public int[] countRequestsWaitingForSlots() {
 		// FIXME use a counter, but that means make sure it always removes it when something bad happens.
-		
+
 		int local = 0;
 		int remote = 0;
 		synchronized(runningUIDs) {
@@ -4868,7 +4866,7 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 		}
 	};
-	
+
 
 	public void onRestartOrDisconnect(PeerNode pn) {
 		onRestartOrDisconnect(pn, runningSSKGetUIDsRT);
@@ -6251,9 +6249,9 @@ public class Node implements TimeSkewDetectorCallback {
 		}, 0);
 		registerFriendsVisibilityAlert();
 	}
-	
+
 	private UserAlert visibilityAlert = new SimpleUserAlert(true, l10n("pleaseSetPeersVisibilityAlertTitle"), l10n("pleaseSetPeersVisibilityAlert"), l10n("pleaseSetPeersVisibilityAlert"), UserAlert.ERROR) {
-		
+
 		@Override
 		public void onDismiss() {
 			synchronized(Node.this) {
@@ -6262,9 +6260,9 @@ public class Node implements TimeSkewDetectorCallback {
 			config.store();
 			unregisterFriendsVisibilityAlert();
 		}
-		
+
 	};
-	
+
 	private void registerFriendsVisibilityAlert() {
 		if(clientCore == null || clientCore.alerts == null) {
 			// Wait until startup completed.
@@ -6274,13 +6272,13 @@ public class Node implements TimeSkewDetectorCallback {
 				public void run() {
 					registerFriendsVisibilityAlert();
 				}
-				
+
 			}, 0);
 			return;
 		}
 		clientCore.alerts.register(visibilityAlert);
 	}
-	
+
 	private void unregisterFriendsVisibilityAlert() {
 		clientCore.alerts.unregister(visibilityAlert);
 	}
@@ -6317,7 +6315,7 @@ public class Node implements TimeSkewDetectorCallback {
 		random.nextBytes(buf);
 		return new MersenneTwister(buf);
 	}
-	
+
 	public boolean enableNewLoadManagement(boolean realTimeFlag) {
 		return nodeStats.enableNewLoadManagement(realTimeFlag);
 	}

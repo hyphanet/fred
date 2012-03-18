@@ -55,19 +55,6 @@ public class NodeStarter implements WrapperListener {
 
 	private FreenetFilePersistentConfig cfg;
 
-	// experimental osgi support
-	private static NodeStarter nodestarter_osgi = null;
-
-	/*---------------------------------------------------------------
-	 * Constructors
-	 *-------------------------------------------------------------*/
-	private NodeStarter() {
-	}
-
-	public NodeStarter get() {
-		return this;
-	}
-
 	/*---------------------------------------------------------------
 	 * WrapperListener Methods
 	 *-------------------------------------------------------------*/
@@ -87,7 +74,7 @@ public class NodeStarter implements WrapperListener {
 	public Integer start(String[] args) {
 		if(args.length > 1) {
 			System.out.println("Usage: $ java freenet.node.Node <configFile>");
-			return Integer.valueOf(-1);
+			return -1;
 		}
 
 		String builtWithMessage = "freenet.jar built with freenet-ext.jar Build #" + ExtVersion.buildNumber + " r" + ExtVersion.cvsRevision+" running with ext build "+extBuildNumber+" r" + extRevisionNumber;
@@ -112,7 +99,7 @@ public class NodeStarter implements WrapperListener {
 		} catch(IOException e) {
 			System.out.println("Error : " + e);
 			e.printStackTrace();
-			return Integer.valueOf(-1);
+			return -1;
 		}
 
 		// First, set up logging. It is global, and may be shared between several nodes.
@@ -126,7 +113,7 @@ public class NodeStarter implements WrapperListener {
 		} catch(InvalidConfigValueException e) {
 			System.err.println("Error: could not set up logging: " + e.getMessage());
 			e.printStackTrace();
-			return Integer.valueOf(-2);
+			return -2;
 		}
 
 		System.out.println("Starting executor...");
@@ -405,17 +392,5 @@ public class NodeStarter implements WrapperListener {
 		node.peers.removeAllPeers();
 
 		return node;
-	}
-
-	// experimental osgi support
-	public static void start_osgi(String[] args) {
-		nodestarter_osgi = new NodeStarter();
-		nodestarter_osgi.start(args);
-	}
-
-	// experimental osgi support
-	public static void stop_osgi(int exitCode) {
-		nodestarter_osgi.stop(exitCode);
-		nodestarter_osgi = null;
 	}
 }
