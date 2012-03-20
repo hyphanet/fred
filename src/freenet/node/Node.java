@@ -2592,24 +2592,6 @@ public class Node implements TimeSkewDetectorCallback {
 		// forceWrite=true because currently it can't be changed on the fly, also for packages
 		installConfig.register(cfgKey, defaultValue, sortOrder, true, true, shortdesc, longdesc, dir.getStringCallback());
 		String dirName = installConfig.getString(cfgKey);
-		if (oldConfig != null) {
-			// TODO HACK FIXME remove this after the next few mandatory builds. current build is 1366
-			oldConfig.register(cfgKey, "nonexistent", sortOrder, true, false, shortdesc, longdesc, dir.getStringCallback());
-			String oldValue = oldConfig.getString(cfgKey);
-			if (!oldValue.equals("nonexistent")) {
-				System.err.println("migrating node." + cfgKey + " to node.install." + cfgKey + ": " + oldValue);
-				dirName = oldValue;
-				try {
-					installConfig.set(cfgKey, dirName);
-				} catch (NodeNeedRestartException e) {
-					// Ignore
-				} catch (InvalidConfigValueException e) {
-					// can't happen since we use the same config settings
-				}
-			}
-			oldConfig.removeOption(cfgKey);
-			// end TODO
-		}
 		try {
 			dir.move(dirName);
 		} catch (IOException e) {
