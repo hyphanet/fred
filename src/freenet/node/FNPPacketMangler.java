@@ -735,7 +735,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			Logger.error(this, "Old StationToStation (negType 1) not supported.");
 			return;
 		} else if (negType==2 || negType == 4 || negType == 6 || negType == 7) {
-			// negType == 3 was buggy
+			// negType == 3 => was buggy
 			// negType == 4 => negotiate whether to use a new PacketTracker when rekeying
 			// negType == 5 => same as 4, but use new packet format after negotiation
 			/*
