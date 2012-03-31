@@ -738,6 +738,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			// negType == 3 => was buggy
 			// negType == 4 => negotiate whether to use a new PacketTracker when rekeying
 			// negType == 5 => same as 4, but use new packet format after negotiation
+			// negType == 6 => same as 5, but with a 10 byte HMAC instead of 4 bytes
+			// negType == 7 => same as 6, but determine the initial sequence number by hashing the identity
+			//                 instead of negotiating it
 			/*
 			 * We implement Just Fast Keying key management protocol with active identity protection
 			 * for the initiator and no identity protection for the responder
