@@ -26,6 +26,7 @@ import freenet.crypt.HMAC;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
+import freenet.crypt.ciphers.JCACipher;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.io.AddressTracker;
 import freenet.io.AddressTracker.Status;
@@ -621,7 +622,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
 			return;
 		}
-		if(!(negType == 2 || negType == 4 || negType == 6 || negType == 7)) {
+		if(!(negType == 2 || negType == 4 || negType == 6 || negType == 7 || negType == 8)) {
 			Logger.error(this, "Unknown neg type: "+negType);
 			return;
 		}
@@ -668,7 +669,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
 			return;
 		}
-		if(!(negType == 2 || negType == 4 || negType == 6 || negType == 7)) {
+		if(!(negType == 2 || negType == 4 || negType == 6 || negType == 7 || negType == 8)) {
 			Logger.error(this, "Unknown neg type: "+negType);
 			return;
 		}
@@ -734,7 +735,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		} else if (negType == 1) {
 			Logger.error(this, "Old StationToStation (negType 1) not supported.");
 			return;
-		} else if (negType==2 || negType == 4 || negType == 6 || negType == 7) {
+		} else if (negType==2 || negType == 4 || negType == 6 || negType == 7 || negType == 8) {
 			// negType == 3 was buggy
 			// negType == 4 => negotiate whether to use a new PacketTracker when rekeying
 			// negType == 5 => same as 4, but use new packet format after negotiation
@@ -1351,17 +1352,26 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		BlockCipher outgoingCipher = null;
 		BlockCipher incommingCipher = null;
 		BlockCipher ivCipher = null;
-		try {
-			outgoingCipher = new Rijndael(256, 256);
-			incommingCipher = new Rijndael(256, 256);
-			ivCipher = new Rijndael(256, 256);
-		} catch (UnsupportedCipherException e) {
-			throw new RuntimeException(e);
+		if(negType != 8){
+			try {
+				outgoingCipher = new Rijndael(256, 256);
+				incommingCipher = new Rijndael(256, 256);
+				ivCipher = new Rijndael(256, 256);
+			} catch (UnsupportedCipherException e) {
+				throw new RuntimeException(e);
+			}
+			outgoingCipher.initialize(outgoingKey);
+			incommingCipher.initialize(incommingKey);
+			ivCipher.initialize(ivKey);
 		}
-		outgoingCipher.initialize(outgoingKey);
-		incommingCipher.initialize(incommingKey);
-		ivCipher.initialize(ivKey);
-
+		else{
+			outgoingCipher = new JCACipher(256, 256);
+			incommingCipher = new JCACipher(256, 256);
+			ivCipher = new JCACipher(256, 256);
+			outgoingCipher.initialize(outgoingKey);
+			incommingCipher.initialize(incommingKey);
+			ivCipher.initialize(ivKey);
+		}
 		// Promote if necessary
 		boolean dontWant = false;
 		if(oldOpennetPeer) {
@@ -1620,17 +1630,28 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		BlockCipher ivCipher = null;
 		BlockCipher outgoingCipher = null;
 		BlockCipher incommingCipher = null;
-		try {
-			ivCipher = new Rijndael(256, 256);
-			outgoingCipher = new Rijndael(256, 256);
-			incommingCipher = new Rijndael(256, 256);
-		} catch (UnsupportedCipherException e) {
-			throw new RuntimeException(e);
+		if(negType != 8){
+			try {
+				outgoingCipher = new Rijndael(256, 256);
+				incommingCipher = new Rijndael(256, 256);
+				ivCipher = new Rijndael(256, 256);
+			} catch (UnsupportedCipherException e) {
+				throw new RuntimeException(e);
+			}
+			outgoingCipher.initialize(pn.outgoingKey);
+			incommingCipher.initialize(pn.incommingKey);
+			ivCipher.initialize(pn.ivKey);
+		}
+		else{
+			outgoingCipher = new JCACipher(256, 256);
+			incommingCipher = new JCACipher(256, 256);
+			ivCipher = new JCACipher(256, 256);
+			outgoingCipher.initialize(pn.outgoingKey);
+			incommingCipher.initialize(pn.incommingKey);
+			ivCipher.initialize(pn.ivKey);
 		}
 
-		outgoingCipher.initialize(pn.outgoingKey);
-		incommingCipher.initialize(pn.incommingKey);
-		ivCipher.initialize(pn.ivKey);
+
 
 		long newTrackerID = pn.completedHandshake(
 				bootID, hisRef, 0, hisRef.length, outgoingCipher, pn.outgoingKey, incommingCipher,
@@ -3214,9 +3235,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	@Override
 	public int[] supportedNegTypes(boolean forPublic) {
 		if(forPublic)
-			return new int[] { 2, 4, 6, 7 };
+			return new int[] { 2, 4, 6, 7, 8 };
 		else
-			return new int[] { 2, 4, 6, 7 };
+			return new int[] { 2, 4, 6, 7, 8 };
 	}
 
 	@Override
