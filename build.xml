@@ -39,10 +39,10 @@ If you want to proceed with the download, please add "lib.contrib.get = true"
 to the file override.properties (create it if it doesn't exist), and then run
 me again. (This is the easier option, for newbies.)
 
-If you want to build freenet-ext from source, please clone the "contrib" repo,
-add "lib.contrib.dir = [path/to/repo]/dist" to override.properties, and then
-run me again. (You do not need to build freenet-ext explicitly, I will do that
-automatically; however you need ant-contrib installed for that to work.)
+If you want to build freenet-ext from source, please set "lib.contrib.dir"
+instead - see build.properties for help on what values to use. You do not need
+to build freenet-ext explicitly, I will do that automatically; but you need
+ant-contrib installed for that to work.
 
 For more options on how to tune the build process, see build.properties.
 		</echo>
