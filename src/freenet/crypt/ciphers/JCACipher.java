@@ -119,10 +119,13 @@ public class JCACipher implements BlockCipher {
 				result = aesCipher.doFinal(block);
 			} catch (IllegalBlockSizeException e) {
 				e.printStackTrace();
+				Logger.error(this,"Invalid block size");
 			} catch (BadPaddingException e) {
 				e.printStackTrace();
+				Logger.error(this,"Invalid padding of data");
 			} catch (InvalidKeyException e) {
 				e.printStackTrace();
+				Logger.error(this,"Invalid keys");
 			}
 		}
 		else
