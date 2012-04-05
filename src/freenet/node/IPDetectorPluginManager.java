@@ -866,11 +866,13 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 						node.clientCore.alerts.unregister(toKill);
 				}
 			} finally {
+				boolean finished;
 				synchronized(IPDetectorPluginManager.this) {
 					runners.remove(plugin);
-					if(!runners.isEmpty()) return;
+					finished = runners.isEmpty();
 				}
-				detector.hasDetectedPM();
+				if(finished)
+					detector.hasDetectedPM();
 			}
 		}
 

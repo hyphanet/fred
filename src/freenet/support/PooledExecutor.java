@@ -158,8 +158,8 @@ public class PooledExecutor implements Executor {
 	}
 
 	private static class Job {
-		private Runnable runnable;
-		private String name;
+		private final Runnable runnable;
+		private final String name;
 
 		Job(Runnable runnable, String name) {
 			this.runnable = runnable;
@@ -214,6 +214,7 @@ public class PooledExecutor implements Executor {
 						synchronized(this) {
 							job = nextJob;
 							nextJob = null;
+							// FIXME Fortify thinks this is double-checked locking. IMHO this is a false alarm.
 							if(job == null)
 								alive = false;
 						}

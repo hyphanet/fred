@@ -67,7 +67,7 @@ public class TrivialRunningAverage implements RunningAverage {
 	}
 
 	@Override
-	public Object clone() {
+	public TrivialRunningAverage clone() {
 		synchronized (this) {
 			return new TrivialRunningAverage(this);
 		}

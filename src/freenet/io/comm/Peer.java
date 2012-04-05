@@ -46,11 +46,6 @@ public class Peer implements WritableToDataOutputStream {
     private final FreenetInetAddress addr;
 	private final int _port;
 
-	// Create a null peer
-	public Peer() throws Exception {
-		this(InetAddress.getLocalHost(), 0);
-	}
-
 	public Peer(DataInput dis) throws IOException {
 		addr = new FreenetInetAddress(dis);
 		_port = dis.readInt();

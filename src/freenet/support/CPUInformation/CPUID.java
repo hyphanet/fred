@@ -425,6 +425,8 @@ public class CPUID {
      * If it can find a custom built jcpuid.dll / libjcpuid.so, it'll use that.  Otherwise
      * it'll try to look in the classpath for the correct library (see loadFromResource).
      * If the user specifies -Djcpuid.enable=false it'll skip all of this.</p>
+     * 
+     * FIXME: Is it a good idea to trust the classpath that much?
      *
      */
     private static final void loadNative() {

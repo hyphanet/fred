@@ -14,6 +14,7 @@ public class UptimeContainer {
 
 	@Override
 	public boolean equals(Object o) {
+		if(o == null) return false;
 	if(o.getClass() == UptimeContainer.class) {
 		UptimeContainer oB = (UptimeContainer) o;
 		return (oB.creationTime == this.creationTime) &&

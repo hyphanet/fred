@@ -299,6 +299,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(targetFile != null)
 				container.activate(targetFile, 5);
 		}
+		// FIXME: Fortify thinks this is double-checked locking. Technically it is, but 
+		// since returnBucket is only set to non-null in this method and the constructor is it safe.
 		boolean bucketChanged = (returnBucket != data && !binaryBlob);
 		if(bucketChanged) {
 			// FIXME A succession of increasingly wierd failure modes. Most of which have been observed in practice. :<

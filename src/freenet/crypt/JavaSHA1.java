@@ -4,6 +4,7 @@
 package freenet.crypt;
 import java.security.DigestException;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 class JavaSHA1 implements Digest, Cloneable {
     
@@ -18,7 +19,7 @@ class JavaSHA1 implements Digest, Cloneable {
 	digest = d;
     }
     
-    public JavaSHA1() throws Exception {
+    public JavaSHA1() throws NoSuchAlgorithmException {
 	digest = MessageDigest.getInstance("SHA1");
     }
     

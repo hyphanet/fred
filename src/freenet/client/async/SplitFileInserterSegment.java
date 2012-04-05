@@ -244,6 +244,10 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		// parent.parent.notifyClients();
 		FECJob job = null;
 		FECCodec splitfileAlgo = null;
+		// FIXME double checked locking. It does however work because encoded is volatile.
+		// But we could probably improve performance by synchronizing the whole block, 
+		// and making encoded non-volatile, since the long lock time wouldn't matter as 
+		// we don't do anything before this method returns anyway.
 		if (!encoded) {
 			if (logMINOR)
 				Logger.minor(this, "Segment " + segNo + " of " + parent + " ("

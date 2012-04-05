@@ -48,6 +48,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		} else {
 			keysFetching = null;
 			runningTransientInserts = new HashSet<RunningTransientInsert>();
+			this.recentSuccesses = null;
 		}
 	}
 	
@@ -101,9 +102,9 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		
 	}
 	
-	private transient HashSet<RunningTransientInsert> runningTransientInserts;
+	private transient final HashSet<RunningTransientInsert> runningTransientInserts;
 	
-	private transient List<RandomGrabArray> recentSuccesses;
+	private transient final List<RandomGrabArray> recentSuccesses;
 	
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
 	

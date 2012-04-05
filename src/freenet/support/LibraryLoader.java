@@ -51,7 +51,7 @@ public class LibraryLoader {
 		File nativeLib = new File((System.getProperty("java.library.path")) + "/lib" + libraryName + prefix);
 		if (nativeLib.exists()) {
 			System.out.println("Attempting to load the NativeThread library ["+libraryName+']');
-			System.loadLibrary(libraryName);
+			System.loadLibrary(nativeLib.getAbsolutePath());
 			success = true;
 		} else {
 			try {

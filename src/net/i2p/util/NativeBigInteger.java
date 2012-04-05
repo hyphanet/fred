@@ -306,6 +306,7 @@ public class NativeBigInteger extends BigInteger {
 	 * it'll try to look in the classpath for the correct library (see loadFromResource).
 	 * If the user specifies -Djbigi.enable=false it'll skip all of this.</p>
 	 *
+	 * FIXME: Is it a good idea to load it from the path? Shouldn't we not trust the path?
 	 */
 	private static final void loadNative() {
 		try {

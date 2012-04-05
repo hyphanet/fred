@@ -29,7 +29,7 @@ public class TimeDecayingRunningAverage implements RunningAverage {
     static final int MAGIC = 0x5ff4ac94;
     
     @Override
-	public final Object clone() {
+	public final TimeDecayingRunningAverage clone() {
         return new TimeDecayingRunningAverage(this);
     }
     
