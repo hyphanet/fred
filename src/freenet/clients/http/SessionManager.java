@@ -127,8 +127,9 @@ public final class SessionManager {
 		
 		@Override
 		public boolean equals(Object obj) {
+			if(obj == null) return false;
+			if(!(obj instanceof Session)) return false;
 			Session other = ((Session)obj);
-			if(other == null) return false;
 			return other.getID().equals(mID);
 		}
 		
