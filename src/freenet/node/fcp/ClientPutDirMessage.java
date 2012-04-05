@@ -201,7 +201,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 			manifestType = ManifestPutter.MANIFEST_DEFAULTPUTTER;
 			if(overrideSplitfileCryptoKey != null)
 				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "OverrideSplitfileCryptoKey can only be used with the simple ManifestPutter", identifier, global);
-		} else {
+		} else if(manifestPutter != null) {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid ManifestPutter value: "+manifestPutter, identifier, global);
 		}
 		manifestPutterType = manifestType;
