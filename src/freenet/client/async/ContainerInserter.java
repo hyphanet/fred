@@ -217,7 +217,6 @@ public class ContainerInserter implements ClientPutState {
 			fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
 			return;
 		}
-		cb.onBlockSetFinished(this, container, context);
 	}
 
 	private void makeMetadata(ClientContext context, ObjectContainer container) {
