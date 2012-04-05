@@ -740,7 +740,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		@Override
 		public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 			if(newState == null) throw new NullPointerException();
-			Logger.error(this, "onTransition: cur=" + currentState + ", old=" + oldState + ", new=" + newState+" for "+this, new Exception("trace transition"));
 
 			// onTransition is *not* responsible for removing the old state, the caller is.
 			synchronized (this) {
