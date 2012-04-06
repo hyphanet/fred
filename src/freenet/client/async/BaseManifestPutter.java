@@ -1417,7 +1417,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	}
 
 	private void complete(ObjectContainer container, ClientContext context) {
-		new Error("TraceME complete()").printStackTrace();
 		// FIXME we could remove the put handlers after inserting all files but not having finished the insert of the manifest
 		// However it would complicate matters for no real gain in most cases...
 		// Also doing it this way means we don't need to worry about
