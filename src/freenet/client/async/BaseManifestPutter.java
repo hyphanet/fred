@@ -106,8 +106,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 		@Override
 		public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
-			if (logMINOR) Logger.minor(this, "onEncode(" + key + ") for " + this);
-			System.out.println("Got a URI: " + key.getURI().toString(false, false) + " for " + this);
+			if (logMINOR) Logger.minor(this, "onEncode(" + key.getURI().toString(false, false) + ") for " + this);
 
 			if(persistent) {
 				container.activate(key, 5);
