@@ -1672,7 +1672,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	private synchronized boolean checkFetchable(PutHandler handler) {
 		//new Error("RefactorME").printStackTrace();
 		if (!putHandlersWaitingForFetchable.contains(handler)) {
-			throw new IllegalStateException("was not in putHandlersWaitingForFetchable!");
+			throw new IllegalStateException("was not in putHandlersWaitingForFetchable! : "+handler);
 		}
 		putHandlersWaitingForFetchable.remove(handler);
 		if(fetchable) return false;
