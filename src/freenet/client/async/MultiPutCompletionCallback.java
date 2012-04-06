@@ -39,6 +39,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	private boolean cancelling;
 	private boolean finished;
 	private boolean started;
+	private boolean calledFetchable;
 	public final Object token;
 	private final boolean persistent;
 	private final boolean collisionIsOK;
@@ -370,9 +371,16 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 				container.ext().store(waitingForFetchable, 2);
 			if(!started) return;
 			if(!waitingForFetchable.isEmpty()) return;
+			if(calledFetchable) {
+				if(logMINOR) Logger.minor(this, "Trying to call onFetchable() twice");
+				return;
+			}
+			calledFetchable = true;
 		}
-		if(persistent)
+		if(persistent) {
+			container.ext().store(this, 1);
 			container.activate(cb, 1);
+		}
 		cb.onFetchable(this, container);
 	}
 
