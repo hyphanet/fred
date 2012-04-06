@@ -1003,6 +1003,8 @@ class SingleFileInserter implements ClientPutState {
 					splitInsertSetBlocks = true;
 				else if (state == metadataPutter)
 					metaInsertSetBlocks = true;
+				else
+					if(logMINOR) Logger.minor(this, "Unrecognised: "+state+" in onBlockSetFinished()");
 				if(persistent)
 					container.store(this);
 				if(!(splitInsertSetBlocks && metaInsertSetBlocks)) 
