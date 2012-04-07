@@ -117,7 +117,7 @@ body {
     border-bottom: 3px solid #d0d0f0;
 }
 
-#navlist-selected {
+.navlist-selected {
     background:#999;
 }
 
