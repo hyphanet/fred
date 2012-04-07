@@ -244,8 +244,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	// ThreadCounting stuffs
 	public final ThreadGroup rootThreadGroup;
-	private int[] activeThreadsByPriorities = new int[NativeThread.JAVA_PRIORITY_RANGE];
-	private int[] waitingThreadsByPriorities = new int[NativeThread.JAVA_PRIORITY_RANGE];
 	private int threadLimit;
 
 	final NodePinger nodePinger;
@@ -307,8 +305,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		ThreadGroup tg = Thread.currentThread().getThreadGroup();
 		while(tg.getParent() != null) tg = tg.getParent();
 		this.rootThreadGroup = tg;
-		this.activeThreadsByPriorities = new int[NativeThread.JAVA_PRIORITY_RANGE];
-		this.waitingThreadsByPriorities = new int[NativeThread.JAVA_PRIORITY_RANGE];
 		throttledPacketSendAverage =
 			new BootstrappingDecayingRunningAverage(0, 0, Long.MAX_VALUE, 100, null);
 		throttledPacketSendAverageRT =
@@ -1763,11 +1759,11 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public int[] getActiveThreadsByPriority() {
-		return activeThreadsByPriorities;
+		return node.executor.runningThreads();
 	}
 
 	public int[] getWaitingThreadsByPriority() {
-		return waitingThreadsByPriorities;
+		return node.executor.waitingThreads();
 	}
 
 	public int getThreadLimit() {
