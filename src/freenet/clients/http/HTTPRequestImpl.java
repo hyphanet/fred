@@ -77,6 +77,8 @@ public class HTTPRequestImpl implements HTTPRequest {
 	 */
 	private HashMap<String, Bucket> parts;
 	
+	private boolean freedParts;
+	
 	/** A map for uploaded files. */
 	private Map<String, HTTPUploadedFileImpl> uploadedFiles = new HashMap<String, HTTPUploadedFileImpl>();
 	
@@ -643,6 +645,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	 */
 	@Override
 	public Bucket getPart(String name) {
+		if(freedParts) throw new IllegalStateException("Already freed");
 		return this.parts.get(name);
 	}
 	
@@ -651,6 +654,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	 */
 	@Override
 	public boolean isPartSet(String name) {
+		if(freedParts) throw new IllegalStateException("Already freed");
 		if(parts == null)
 			return false;
 
@@ -669,6 +673,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	
 	@Override
 	public String getPartAsStringThrowing(String name, int maxLength) throws NoSuchElementException, SizeLimitExceededException {
+		if(freedParts) throw new IllegalStateException("Already freed");
 		Bucket part = this.parts.get(name);
 		
 		if(part == null)
@@ -682,6 +687,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	
 	@Override
 	public String getPartAsStringFailsafe(String name, int maxLength) {
+		if(freedParts) throw new IllegalStateException("Already freed");
 		Bucket part = this.parts.get(name);
 		return part == null ? "" : getPartAsLimitedString(part, maxLength);
 	}
@@ -700,6 +706,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	@Override
 	@Deprecated
 	public byte[] getPartAsBytes(String name, int maxlength) {
+		if(freedParts) throw new IllegalStateException("Already freed");
 		Bucket part = this.parts.get(name);
 		if(part == null) return new byte[0];
 		
@@ -725,6 +732,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	
 	@Override
 	public byte[] getPartAsBytesThrowing(String name, int maxLength) throws NoSuchElementException, SizeLimitExceededException {
+		if(freedParts) throw new IllegalStateException("Already freed");
 		Bucket part = this.parts.get(name);
 		
 		if(part == null)
@@ -738,6 +746,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	
 	@Override
 	public byte[] getPartAsBytesFailsafe(String name, int maxLength) {
+		if(freedParts) throw new IllegalStateException("Already freed");
 		Bucket part = this.parts.get(name);
 		return part == null ? new byte[0] : getPartAsLimitedBytes(part, maxLength);
 	}
@@ -771,7 +780,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 			b.free();
 		}
 		parts.clear();
-		
+		freedParts = true;
 		// Do not free data. Caller is responsible for that.
 	}
 
@@ -878,6 +887,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 
 	@Override
 	public String[] getParts() {
+		if(freedParts) throw new IllegalStateException("Already freed");
 		return parts.keySet().toArray(new String[parts.size()]);
 	}
 
