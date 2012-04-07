@@ -168,18 +168,24 @@ public abstract class Toadlet {
 	}
 
 	/**
-	 * @param data The Bucket which contains the reply data. This function does not free() the Bucket! 
-	 * 
-	 * FIXME: For all references to this function, check whether they free() the Bucket.
+	 * @param data The Bucket which contains the reply data. This
+	 *        function assumes ownership of the Bucket, calling free()
+	 *        on it when done. If this behavior is undesired, callers
+	 *        can wrap their Bucket in a NoFreeBucket.
+	 *
+	 * @see freenet.support.io.NoFreeBucket
 	 */
 	protected void writeReply(ToadletContext ctx, int code, String mimeType, String desc, Bucket data) throws ToadletContextClosedException, IOException {
 		writeReply(ctx, code, mimeType, desc, null, data);
 	}
 	
 	/**
-	 * @param data The Bucket which contains the reply data. This function does not free() the Bucket!
-	 * 
-	 * FIXME: For all references to this function, check whether they free() the Bucket.
+	 * @param data The Bucket which contains the reply data. This
+	 *        function assumes ownership of the Bucket, calling free()
+	 *        on it when done. If this behavior is undesired, callers
+	 *        can wrap their Bucket in a NoFreeBucket.
+	 *
+	 * @see freenet.support.io.NoFreeBucket
 	 */
 	protected void writeReply(ToadletContext context, int code, String mimeType, String desc, MultiValueTable<String, String> headers, Bucket data) throws ToadletContextClosedException, IOException {
 		context.sendReplyHeaders(code, desc, headers, mimeType, data.size());
