@@ -176,8 +176,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 		@Override
 		public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
-			if (logMINOR) Logger.minor(this, "onEncode(" + key + ") for " + this);
-			System.out.println("Got a URI: " + key.getURI().toString(false, false) + " for " + this);
+			if (logMINOR) Logger.minor(this, "onEncode(" + key.getURI().toString(false, false) + ") for " + this);
 
 			if(persistent) {
 				container.activate(key, 5);
@@ -385,8 +384,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 		@Override
 		public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
-			if (logMINOR) Logger.minor(this, "onEncode(" + key + ") for " + this);
-			System.out.println("Got a URI: " + key.getURI().toString(false, false) + " for " + this);
+			if (logMINOR) Logger.minor(this, "onEncode(" + key.getURI().toString(false, false) + ") for " + this);
 
 			if (rootMetaPutHandler == this) {
 				finalURI = key.getURI();
@@ -1779,7 +1777,8 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			containerHandle2.start(container, context);
 		} else {
 			//System.out.println(" waiting m:"+perContainerPutHandlersWaitingForMetadata.get(containerHandle2).size()+" F:"+perContainerPutHandlersWaitingForFetchable.get(containerHandle2).size() + " for "+containerHandle2);
-			System.out.println("(spc) waiting m:"+perContainerPutHandlersWaitingForMetadata.get(containerHandle2).size() + " for "+containerHandle2);
+			if(logMINOR)
+				Logger.minor(this, "(spc) waiting m:"+perContainerPutHandlersWaitingForMetadata.get(containerHandle2).size() + " for "+containerHandle2);
 		}
 	}
 
