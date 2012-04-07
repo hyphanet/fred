@@ -1079,6 +1079,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			for(Map.Entry<String, Object> entry : manifestElements.entrySet()) {
 				if(entry.getKey().equalsIgnoreCase(name)) {
 					found = true;
+					name = entry.getKey();
 					break;
 				}
 			}
