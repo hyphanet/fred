@@ -334,7 +334,9 @@ public final class PageMaker {
 			t = null;
 		String activePath = "";
 		if(t != null) activePath = t.path();
-		HTMLNode bodyNode = htmlNode.addChild("body", "id", "fproxy-page");
+		HTMLNode bodyNode = htmlNode.addChild("body",
+		        new String[] { "class", "id" },
+		        new String[] { "fproxy-page", filterCSSIdentifier("page-"+activePath) });
 		//Add a hidden input that has the request's id
 		if(webPushingEnabled)
 			bodyNode.addChild("input",new String[]{"type","name","value","id"},new String[]{"hidden","requestId",ctx.getUniqueId(),"requestId"});
@@ -495,7 +497,7 @@ public final class PageMaker {
 						if(isSelected) {
 							selected = menu;
 							subnavlist.addAttribute("class", "subnavlist-selected");
-							listItem = new HTMLNode("li", "id", "navlist-selected");
+							listItem = new HTMLNode("li", "class", "navlist-selected");
 						} else {
 							subnavlist.addAttribute("class", "subnavlist");
 							listItem = new HTMLNode("li", "class", "navlist-not-selected");
@@ -503,9 +505,21 @@ public final class PageMaker {
 						String menuItemTitle = menu.defaultNavigationLinkTitle;
 						String text = menu.navigationLinkText;
 						if(menu.plugin == null) {
+							//If not from a plugin, add the localization key as id.
+							listItem.addAttribute("id", filterCSSIdentifier(menuItemTitle));
+
 							menuItemTitle = NodeL10n.getBase().getString(menuItemTitle);
 							text = NodeL10n.getBase().getString(text);
 						} else {
+							/* If from a plugin, add localization key appended to class
+							 * name, separated by a dash, so that plugins with multiple
+							 * menus still have distinguishable IDs. Please note that a
+							 * plugin could misbehave and not register its menu with proper
+							 * localization keys.
+							 */
+							String id = menu.plugin.getClass().getName()+'-'+text;
+							listItem.addAttribute("id", filterCSSIdentifier(id));
+
 							String newTitle = menu.plugin.getString(menuItemTitle);
 							if(newTitle == null) {
 								Logger.error(this, "Plugin '"+menu.plugin+"' did return null in getString(key)!");
@@ -564,6 +578,24 @@ public final class PageMaker {
 		}
 		HTMLNode contentDiv = pageDiv.addChild("div", "id", "content");
 		return new PageNode(pageNode, headNode, contentDiv);
+	}
+
+	/**
+	 * Filters a given string so that it will be a valid CSS identifier. It replaces all characters that are not
+	 * a dash, underscore, or alphanumeric with an underscore. If the first character is a dash and the second
+	 * character is not a letter or underscore, replaces the second character with an underscore. This filter is
+	 * overly strict as it does not allow non-ASCII characters or escapes. If the given string is below two
+	 * characters in length, it appends underscores until it is not.
+	 * @param input string to filter
+	 * @return a filtered string guaranteed to be a syntactically valid CSS identifier.
+	 * @link http://www.w3.org/TR/CSS21/syndata.html#tokenization
+	 * @link http://www.w3.org/TR/CSS21/grammar.html#scanner
+	 * @link http://stackoverflow.com/questions/448981/
+	 */
+	public static String filterCSSIdentifier(String input) {
+		while (input.length() < 2) input = input.concat("_");
+
+		return input.replaceFirst("^-[^_a-zA-Z]", "-_").replaceAll("[^-_a-zA-Z0-9]", "_");
 	}
 
 	public THEME getTheme() {

@@ -761,7 +761,7 @@ div #navbar {
 }
 
 
-#navlist-selected{
+.navlist-selected{
 	z-index: 0;
 	width: 100%; /* note change in width*/
 	height: 2em;
@@ -770,7 +770,7 @@ div #navbar {
 	background-repeat: no-repeat;
 }
 
-#navlist-selected ul{
+.navlist-selected ul{
 	z-index: 0;
 	display: block;
 	position: absolute;
@@ -782,7 +782,7 @@ div #navbar {
 	width: 100%; /* note change in width*/
 }
 
-#navlist-selected ul li{
+.navlist-selected ul li{
     z-index: 0;
     display: inline;
     list-style: none;
@@ -791,11 +791,11 @@ div #navbar {
     margin-top: 0.1em;
 }
 
-#navlist-selected ul li:after {
+.navlist-selected ul li:after {
     content: " ";
 }
 
-#navlist-selected ul li a span{
+.navlist-selected ul li a span{
     z-index: 0;
     display: inline;
     visibility: hidden; /* BUG: In Mozilla, if this is display: none a render bug happens. */

@@ -155,11 +155,11 @@ li.alert-summary-text-minor {
     display:none;
 }
 
-#navlist-selected {
+.navlist-selected {
     border-bottom:3px solid #000;
 }
 
-#navlist-selected .subnavlist-selected { 
+.navlist-selected .subnavlist-selected { 
     margin:auto;
     width:50%;
     display:block;
