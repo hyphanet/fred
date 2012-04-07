@@ -1056,7 +1056,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		perContainerPutHandlersWaitingForMetadata = new HashMap<PutHandler, HashSet<PutHandler>>();
 		putHandlersTransformMap = new HashMap<PutHandler, HashMap<String, Object>>();
 		putHandlersArchiveTransformMap = new HashMap<ArchivePutHandler, Vector<PutHandler>>();
-		if(defaultName == null || defaultName.equals(""))
+		if(defaultName == null)
 			defaultName = findDefaultName(manifestElements, defaultName);
 		makePutHandlers(manifestElements, defaultName);
 		// builders are not longer needed after constructor
