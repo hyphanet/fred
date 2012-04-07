@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Stack;
 import java.util.Vector;
 
@@ -1069,6 +1070,21 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		// Find the default name if it has not been set explicitly.
 		for(int j=0;j<defaultDefaultNames.length;j++) {
 			String name = defaultDefaultNames[j];
+			Object o = manifestElements.get(name);
+			if(o == null) continue;
+			if(o instanceof HashMap) continue;
+			return name;
+		}
+		for(int j=0;j<defaultDefaultNames.length;j++) {
+			String name = defaultDefaultNames[j];
+			boolean found = false;
+			for(Map.Entry<String, Object> entry : manifestElements.entrySet()) {
+				if(entry.getKey().equalsIgnoreCase(name)) {
+					found = true;
+					break;
+				}
+			}
+			if(!found) continue;
 			Object o = manifestElements.get(name);
 			if(o == null) continue;
 			if(o instanceof HashMap) continue;
