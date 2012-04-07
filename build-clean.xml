@@ -102,7 +102,7 @@ maintainers may prefer to use this instead of build.xml.
 
 	<target name="env">
 		<available property="lib.contrib.present" classname="freenet.node.ExtVersion" classpathref="lib.path"/>
-		<available property="lib.junit.present" classname="junit.framework.Test" classpathref="lib.path"/>
+		<available property="lib.junit.present" classname="junit.framework.Test" classpathref="libtest.path"/>
 		<available property="gjs.lib.gwt-user.present" classname="com.google.gwt.user.client.Window" classpathref="gjs.lib.path"/>
 		<available property="gjs.lib.gwt-dev.present" classname="com.google.gwt.dev.About" classpathref="gjs.lib.path"/>
 		<condition property="gjs.lib.gwt.present">
