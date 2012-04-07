@@ -1066,15 +1066,13 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	private String findDefaultName(HashMap<String, Object> manifestElements,
 			String defaultName) {
 		// Find the default name if it has not been set explicitly.
-		for(int j=0;j<defaultDefaultNames.length;j++) {
-			String name = defaultDefaultNames[j];
+		for(String name : defaultDefaultNames) {
 			Object o = manifestElements.get(name);
 			if(o == null) continue;
 			if(o instanceof HashMap) continue;
 			return name;
 		}
-		for(int j=0;j<defaultDefaultNames.length;j++) {
-			String name = defaultDefaultNames[j];
+		for(String name : defaultDefaultNames) {
 			boolean found = false;
 			for(Map.Entry<String, Object> entry : manifestElements.entrySet()) {
 				if(entry.getKey().equalsIgnoreCase(name)) {
