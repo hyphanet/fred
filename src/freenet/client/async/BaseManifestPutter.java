@@ -87,7 +87,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	static {
 		Logger.registerClass(BaseManifestPutter.class);
 	}
-
+	
 	/**
 	 * ArchivePutHandler - wrapper for ContainerInserter
 	 *
@@ -977,6 +977,11 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		
 	}
 
+	private final static String[] defaultDefaultNames =
+		new String[] { "/index.html", "/index.htm", "/default.html", "/default.htm" };
+	// All the default names are in the root.
+	// Code will need to be changed if we have index/index.html or similar.
+	
 	/** if true top level metadata is a container */
 	private boolean containerMode = false;
 	/** if true top level metadata is a single chunk */
@@ -1051,10 +1056,25 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		perContainerPutHandlersWaitingForMetadata = new HashMap<PutHandler, HashSet<PutHandler>>();
 		putHandlersTransformMap = new HashMap<PutHandler, HashMap<String, Object>>();
 		putHandlersArchiveTransformMap = new HashMap<ArchivePutHandler, Vector<PutHandler>>();
+		if(defaultName == null || defaultName.equals(""))
+			defaultName = findDefaultName(manifestElements, defaultName);
 		makePutHandlers(manifestElements, defaultName);
 		// builders are not longer needed after constructor
 		rootBuilder = null;
 		rootContainerBuilder = null;
+	}
+	
+	private String findDefaultName(HashMap<String, Object> manifestElements,
+			String defaultName) {
+		// Find the default name if it has not been set explicitly.
+		for(int j=0;j<defaultDefaultNames.length;j++) {
+			String name = defaultDefaultNames[j];
+			Object o = manifestElements.get(name);
+			if(o == null) continue;
+			if(o instanceof HashMap) continue;
+			return name;
+		}
+		return "";
 	}
 
 	public void start(ObjectContainer container, ClientContext context) throws InsertException {
