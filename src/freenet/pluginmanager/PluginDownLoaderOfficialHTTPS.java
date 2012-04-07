@@ -31,7 +31,7 @@ public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
 	private static final String certurlOld = "freenet/clients/http/staticfiles/startssl.pem";
 	private static final String certurlNew = "freenet/clients/http/staticfiles/globalsign-intermediate-2012.pem";
 	private static final String[] certURLs = new String[] { certurlOld, certurlNew };
-	private static final String certfileOld = "startssl.pem";
+	public static final String certfileOld = "startssl.pem";
 	private static final String certfile = "sslcerts.pem";
 
 	@Override
@@ -146,7 +146,7 @@ public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
 		}
 	}
 
-	private void writeCerts(OutputStream os) throws IOException {
+	private static void writeCerts(OutputStream os) throws IOException {
 		// try to create pem file
 		ClassLoader loader = ClassLoader.getSystemClassLoader();
 		for(String certurl : certURLs) {
@@ -157,6 +157,14 @@ public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
 				throw new IOException("Could not find certificates in fred source nor find certificates file");
 			}
 		}
+	}
+	
+	/** For the benefit mainly of the Windows updater script.
+	 * It uses startssl.pem */
+	public static void writeCertsTo(File file) throws IOException {
+		FileOutputStream fos = new FileOutputStream(file);
+		writeCerts(fos);
+		fos.close();
 	}
 
 }

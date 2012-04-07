@@ -132,6 +132,7 @@ import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.TimeSkewDetectedUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.ForwardPort;
+import freenet.pluginmanager.PluginDownLoaderOfficialHTTPS;
 import freenet.pluginmanager.PluginManager;
 import freenet.pluginmanager.PluginStore;
 import freenet.store.BerkeleyDBFreenetStore;
@@ -1009,6 +1010,7 @@ public class Node implements TimeSkewDetectorCallback {
 		this.shutdownHook = SemiOrderedShutdownHook.get();
 		// Easy stuff
 		String tmp = "Initializing Node using Freenet Build #"+Version.buildNumber()+" r"+Version.cvsRevision()+" and freenet-ext Build #"+NodeStarter.extBuildNumber+" r"+NodeStarter.extRevisionNumber+" with "+System.getProperty("java.vendor")+" JVM version "+System.getProperty("java.version")+" running on "+System.getProperty("os.arch")+' '+System.getProperty("os.name")+' '+System.getProperty("os.version");
+		fixCertsFile();
 		Logger.normal(this, tmp);
 		System.out.println(tmp);
 		collector = new IOStatisticCollector();
@@ -2579,6 +2581,35 @@ public class Node implements TimeSkewDetectorCallback {
 		Logger.normal(this, "Node constructor completed");
 		System.out.println("Node constructor completed");
 	}
+
+	private void fixCertsFile() {
+		// Hack to update certificates file to fix update.cmd
+		File certs = new File(PluginDownLoaderOfficialHTTPS.certfileOld);
+		if(certs.exists()) {
+			long oldLength = certs.length();
+			try {
+				File tmpFile = File.createTempFile(PluginDownLoaderOfficialHTTPS.certfileOld, ".tmp", new File("."));
+				PluginDownLoaderOfficialHTTPS.writeCertsTo(tmpFile);
+				if(FileUtil.renameTo(tmpFile, certs)) {
+					long newLength = certs.length();
+					if(newLength != oldLength)
+						System.err.println("Updated "+certs+" so that update scripts will work");
+				} else {
+					if(certs.length() != tmpFile.length()) {
+						System.err.println("Cannot update "+certs+" : last-resort update scripts (in particular update.cmd on Windows) may not work");
+						File manual = new File(PluginDownLoaderOfficialHTTPS.certfileOld+".new");
+						manual.delete();
+						if(tmpFile.renameTo(manual))
+							System.err.println("Please delete "+certs+" and rename "+manual+" over it");
+						else
+							tmpFile.delete();
+					}
+				}
+			} catch (IOException e) {
+			}
+		}
+	}
+
 
 	/**
 	** Sets up a program directory using the config value defined by the given
