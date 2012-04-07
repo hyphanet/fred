@@ -977,7 +977,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	}
 
 	private final static String[] defaultDefaultNames =
-		new String[] { "/index.html", "/index.htm", "/default.html", "/default.htm" };
+		new String[] { "index.html", "index.htm", "default.html", "default.htm" };
 	// All the default names are in the root.
 	// Code will need to be changed if we have index/index.html or similar.
 	
