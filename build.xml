@@ -13,8 +13,7 @@ available (possibly using *pre-built blobs*).
 
 	<import file="build-clean.xml"/>
 	<property name="contrib.ant" value="${lib.contrib.dir}/../build.xml"/>
-	<property name="get.contrib.dir" value="http://checksums.freenetproject.org/cc"/>
-	<property name="get.contrib.dir.secure" value="https://checksums.freenetproject.org/cc"/>
+	<property name="get.contrib.dir" value="https://downloads.freenetproject.org/latest"/>
 	<available property="contrib.present" file="${contrib.ant}"/>
 
 	<!-- =================================================================== -->
@@ -52,14 +51,10 @@ For more options on how to tune the build process, see build.properties.
 	<target name="get-ext" depends="warn-ext">
 		<get src="${get.contrib.dir}/freenet-ext.jar" dest="${lib.contrib.dir}/freenet-ext.jar"
 		  usetimestamp="true" verbose="true"/>
-		<get src="${get.contrib.dir.secure}/freenet-ext.jar.sha1" dest="${lib.contrib.dir}/freenet-ext.jar.sha1"
+		<get src="${get.contrib.dir}/freenet-ext.jar.sha1" dest="${lib.contrib.dir}/freenet-ext.jar.sha1"
 		  usetimestamp="true" verbose="true"/>
 		<checksum file="${lib.contrib.dir}/freenet-ext.jar" algorithm="sha1" pattern="{0} {1}"
 		  verifyproperty="get.contrib.pass"/>
-		<!-- 
-		   the .jar is fetched using HTTP/CoralCache
-		   the .sha1 is fetched from the main server using HTTPS
-		 -->
 		<fail unless="${get.contrib.pass}" message="checksum mismatch; please delete the files and try again"/>
 	</target>
 
