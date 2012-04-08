@@ -36,7 +36,7 @@ public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
 
 	@Override
 	public URL checkSource(String source) throws PluginNotFoundException {
-		return super.checkSource("https://checksums.freenetproject.org/latest/" +
+		return super.checkSource("https://downloads.freenetproject.org/latest/" +
 		source + ".jar");
 	}
 
