@@ -43,6 +43,9 @@ add "lib.contrib.dir = [path/to/repo]/dist" to override.properties, and then
 run me again. (You do not need to build freenet-ext explicitly, I will do that
 automatically; however you need ant-contrib installed for that to work.)
 
+Or you can manually put the jar in lib/freenet/freenet-ext.jar, if you want to
+use an "official" version you have downloaded already.
+
 For more options on how to tune the build process, see build.properties.
 		</echo>
 		<fail message="either set lib.contrib.get or lib.contrib.dir" />
