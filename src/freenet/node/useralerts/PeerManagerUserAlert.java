@@ -66,9 +66,9 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 			if(conns < MIN_CONN_ALERT_THRESHOLD)
 				return l10n("onlyFewConnsTitle", "count", Integer.toString(conns));
 		}
-		if(n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > NodeStats.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD))
+		if(n.wantBWLimitAlert() && (bwlimitDelayTime > NodeStats.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD))
 			return l10n("tooHighBwlimitDelayTimeTitle");
-		if(n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > NodeStats.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD))
+		if(n.wantAveragePingAlert() && (nodeAveragePingTime > NodeStats.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD))
 			return l10n("tooHighPingTimeTitle");
 		if(clockProblem > MIN_CLOCK_PROBLEM_PEER_ALERT_THRESHOLD)
 			return l10n("clockProblemTitle");
@@ -122,11 +122,11 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 			return l10n("oneConn");
 		} else if(conns == 2 && !isOpennetEnabled) {
 			return l10n("twoConns");
-		} else if(n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > NodeStats.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) {
+		} else if(n.wantBWLimitAlert() && (bwlimitDelayTime > NodeStats.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) {
 			s = l10n("tooHighBwlimitDelayTime", new String[] { "delay", "max" },
 					new String[] { Integer.toString(bwlimitDelayTime), Long.toString(NodeStats.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)});
 			// FIXME I'm not convinced about the next one!
-		} else if(n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > NodeStats.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)) {
+		} else if(n.wantAveragePingAlert() && (nodeAveragePingTime > NodeStats.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)) {
 			s = l10n("tooHighPingTime", new String[] { "ping", "max" },
 					new String[] { Integer.toString(nodeAveragePingTime), Long.toString(NodeStats.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD) });
 		} else if(clockProblem > MIN_CLOCK_PROBLEM_PEER_ALERT_THRESHOLD) {
@@ -192,10 +192,10 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 			alertNode.addChild("#", l10n("oneConn"));
 		} else if (conns == 2 && !isOpennetEnabled) {
 			alertNode.addChild("#", l10n("twoConns"));
-		} else if (n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > NodeStats.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) {
+		} else if (n.wantBWLimitAlert() && (bwlimitDelayTime > NodeStats.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) {
 			alertNode.addChild("#", l10n("tooHighBwlimitDelayTime", new String[] { "delay", "max" },
 					new String[] { Integer.toString(bwlimitDelayTime), Long.toString(NodeStats.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)}));
-		} else if (n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > NodeStats.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)) {
+		} else if (n.wantAveragePingAlert() && (nodeAveragePingTime > NodeStats.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)) {
 			alertNode.addChild("#", l10n("tooHighPingTime", new String[] { "ping", "max" },
 					new String[] { Integer.toString(nodeAveragePingTime), Long.toString(NodeStats.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD) }));
 		} else if (clockProblem > MIN_CLOCK_PROBLEM_PEER_ALERT_THRESHOLD) {
@@ -233,9 +233,9 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 			return ERROR;
 		if(conns < 3 && !isOpennetEnabled)
 			return ERROR;
-		if(n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > NodeStats.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD))
+		if(n.wantBWLimitAlert() && (bwlimitDelayTime > NodeStats.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD))
 			return ERROR;
-		if(n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > NodeStats.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD))
+		if(n.wantAveragePingAlert() && (nodeAveragePingTime > NodeStats.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD))
 			return ERROR;
 		if(clockProblem > MIN_CLOCK_PROBLEM_PEER_ALERT_THRESHOLD)
 			return ERROR;
@@ -268,8 +268,8 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 				(peers > MAX_PEER_ALERT_THRESHOLD) ||
 				(clockProblem > MIN_CLOCK_PROBLEM_PEER_ALERT_THRESHOLD) ||
 				(connError > MIN_CONN_ERROR_ALERT_THRESHOLD) ||
-				(n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > NodeStats.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) ||
-				(n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > NodeStats.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)) ||
+				(n.wantBWLimitAlert() && (bwlimitDelayTime > NodeStats.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) ||
+				(n.wantAveragePingAlert() && (nodeAveragePingTime > NodeStats.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)) ||
 				(oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD)) &&
 				super.isValid();
 	}

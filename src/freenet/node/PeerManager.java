@@ -1316,7 +1316,7 @@ public class PeerManager {
 				int numberOfConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED, false);
 				int numberOfRoutingBackedOff = getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF, false);
 				if(numberOfRoutingBackedOff + numberOfConnected > 0)
-					node.nodeStats.backedOffPercent.report((double) numberOfRoutingBackedOff / (double) (numberOfRoutingBackedOff + numberOfConnected));
+					node.nodeStats.reportBackedOffPercent((double) numberOfRoutingBackedOff / (double) (numberOfRoutingBackedOff + numberOfConnected));
 			}
 			//racy... getLocation() could have changed
 			if(addUnpickedLocsTo != null)

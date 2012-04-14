@@ -6245,9 +6245,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				Logger.minor(this, "The peer "+this+" has published his peer's locations and the closest we have found to the target is "+distance+" away.");
 		}
 		
-		node.nodeStats.routingMissDistanceOverall.report(distance);
-		(isLocal ? node.nodeStats.routingMissDistanceLocal : node.nodeStats.routingMissDistanceRemote).report(distance);
-		(realTime ? node.nodeStats.routingMissDistanceRT : node.nodeStats.routingMissDistanceBulk).report(distance);
+		node.nodeStats.reportRoutingMiss(isLocal, realTime, distance);
 		node.peers.incrementSelectionSamples(System.currentTimeMillis(), this);
 	}
 

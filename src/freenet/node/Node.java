@@ -1944,15 +1944,7 @@ public class Node implements TimeSkewDetectorCallback, CompletedGroupHandler {
 							e.printStackTrace();
 						}
 						//Perhaps a bit hackish...? Seems like this should be near it's definition in NodeStats.
-						nodeStats.avgStoreCHKLocation.changeMaxReports((int)maxStoreKeys);
-						nodeStats.avgCacheCHKLocation.changeMaxReports((int)maxCacheKeys);
-						nodeStats.avgSlashdotCacheCHKLocation.changeMaxReports((int)maxCacheKeys);
-						nodeStats.avgClientCacheCHKLocation.changeMaxReports((int)maxCacheKeys);
-
-						nodeStats.avgStoreSSKLocation.changeMaxReports((int)maxStoreKeys);
-						nodeStats.avgCacheSSKLocation.changeMaxReports((int)maxCacheKeys);
-						nodeStats.avgSlashdotCacheSSKLocation.changeMaxReports((int)maxCacheKeys);
-						nodeStats.avgClientCacheSSKLocation.changeMaxReports((int)maxCacheKeys);
+						nodeStats.setMaxStoreKeys(maxStoreKeys, maxCacheKeys);
 					}
 		}, true);
 
@@ -4092,9 +4084,7 @@ public class Node implements TimeSkewDetectorCallback, CompletedGroupHandler {
 			try {
 				SSKBlock block = sskClientcache.fetch(key, dontPromote || !canWriteClientCache, canReadClientCache, forULPR, false, meta);
 				if(block != null) {
-					nodeStats.avgClientCacheSSKSuccess.report(loc);
-					if (dist > nodeStats.furthestClientCacheSSKSuccess)
-					nodeStats.furthestClientCacheSSKSuccess=dist;
+					nodeStats.reportClientCacheSSKSuccess(loc, dist);
 					if(logDEBUG) Logger.debug(this, "Found key "+key+" in client-cache");
 					return block;
 				}
@@ -4106,9 +4096,7 @@ public class Node implements TimeSkewDetectorCallback, CompletedGroupHandler {
 			try {
 				SSKBlock block = sskSlashdotcache.fetch(key, dontPromote, canReadClientCache, forULPR, false, meta);
 				if(block != null) {
-					nodeStats.avgSlashdotCacheSSKSuccess.report(loc);
-					if (dist > nodeStats.furthestSlashdotCacheSSKSuccess)
-					nodeStats.furthestSlashdotCacheSSKSuccess=dist;
+					nodeStats.reportSlashdotCacheSSKSuccess(loc, dist);
 					if(logDEBUG) Logger.debug(this, "Found key "+key+" in slashdot-cache");
 					return block;
 				}
@@ -4129,9 +4117,7 @@ public class Node implements TimeSkewDetectorCallback, CompletedGroupHandler {
 					block = store.fetch(key, dontPromote || !canWriteDatastore, canReadClientCache, forULPR, ignoreOldBlocks, meta);
 			}
 			if(block != null) {
-			nodeStats.avgStoreSSKSuccess.report(loc);
-			if (dist > nodeStats.furthestStoreSSKSuccess)
-				nodeStats.furthestStoreSSKSuccess=dist;
+				nodeStats.reportStoreSSKSuccess(loc, dist);
 				if(logDEBUG) Logger.debug(this, "Found key "+key+" in store");
 				return block;
 			}
@@ -4142,9 +4128,7 @@ public class Node implements TimeSkewDetectorCallback, CompletedGroupHandler {
 					block = store.fetch(key, dontPromote || !canWriteDatastore, canReadClientCache, forULPR, ignoreOldBlocks, meta);
 			}
 			if (block != null) {
-			nodeStats.avgCacheSSKSuccess.report(loc);
-			if (dist > nodeStats.furthestCacheSSKSuccess)
-				nodeStats.furthestCacheSSKSuccess=dist;
+				nodeStats.reportCacheSSKSuccess(loc, dist);
 			}
 			if(logDEBUG) Logger.debug(this, "Found key "+key+" in cache");
 			return block;
@@ -4161,9 +4145,7 @@ public class Node implements TimeSkewDetectorCallback, CompletedGroupHandler {
 			try {
 				CHKBlock block = chkClientcache.fetch(key, dontPromote || !canWriteClientCache, false, meta);
 				if(block != null) {
-					nodeStats.avgClientCacheCHKSuccess.report(loc);
-					if (dist > nodeStats.furthestClientCacheCHKSuccess)
-					nodeStats.furthestClientCacheCHKSuccess=dist;
+					nodeStats.reportClientCacheCHKSuccess(loc, dist);
 					return block;
 				}
 			} catch (IOException e) {
@@ -4174,9 +4156,7 @@ public class Node implements TimeSkewDetectorCallback, CompletedGroupHandler {
 			try {
 				CHKBlock block = chkSlashdotcache.fetch(key, dontPromote, false, meta);
 				if(block != null) {
-					nodeStats.avgSlashdotCacheCHKSucess.report(loc);
-					if (dist > nodeStats.furthestSlashdotCacheCHKSuccess)
-					nodeStats.furthestSlashdotCacheCHKSuccess=dist;
+					nodeStats.reportSlashdotCacheCHKSuccess(loc, dist);
 					return block;
 				}
 			} catch (IOException e) {
@@ -4195,9 +4175,7 @@ public class Node implements TimeSkewDetectorCallback, CompletedGroupHandler {
 					block = store.fetch(key, dontPromote || !canWriteDatastore, ignoreOldBlocks, meta);
 			}
 			if (block != null) {
-				nodeStats.avgStoreCHKSuccess.report(loc);
-				if (dist > nodeStats.furthestStoreCHKSuccess)
-					nodeStats.furthestStoreCHKSuccess=dist;
+				nodeStats.reportStoreCHKSuccess(loc, dist);
 				return block;
 			}
 			block=chkDatacache.fetch(key, dontPromote || !canWriteDatastore, ignoreOldBlocks, meta);
@@ -4207,9 +4185,7 @@ public class Node implements TimeSkewDetectorCallback, CompletedGroupHandler {
 					block = store.fetch(key, dontPromote || !canWriteDatastore, ignoreOldBlocks, meta);
 			}
 			if (block != null) {
-				nodeStats.avgCacheCHKSuccess.report(loc);
-				if (dist > nodeStats.furthestCacheCHKSuccess)
-					nodeStats.furthestCacheCHKSuccess=dist;
+				nodeStats.reportCacheCHKSuccess(loc, dist);
 			}
 			return block;
 		} catch (IOException e) {
@@ -4301,22 +4277,22 @@ public class Node implements TimeSkewDetectorCallback, CompletedGroupHandler {
 			double loc = block.getKey().toNormalizedDouble();
 			if (canWriteClientCache) {
 				chkClientcache.put(block, false);
-				nodeStats.avgClientCacheCHKLocation.report(loc);
+				nodeStats.reportClientCacheCHKLocation(loc);
 			}
 
 			if ((forULPR || useSlashdotCache) && !(canWriteDatastore || writeLocalToDatastore)) {
 				chkSlashdotcache.put(block, false);
-				nodeStats.avgSlashdotCacheCHKLocation.report(loc);
+				nodeStats.reportSlashdotCacheCHKLocation(loc);
 			}
 			if (canWriteDatastore || writeLocalToDatastore) {
 
 				if (deep) {
 					chkDatastore.put(block, !canWriteDatastore);
-					nodeStats.avgStoreCHKLocation.report(loc);
+					nodeStats.reportStoreCHKLocation(loc);
 
 				}
 				chkDatacache.put(block, !canWriteDatastore);
-				nodeStats.avgCacheCHKLocation.report(loc);
+				nodeStats.reportCacheCHKLocation(loc);
 			}
 			if (canWriteDatastore || forULPR || useSlashdotCache)
 				failureTable.onFound(block);
@@ -4354,19 +4330,19 @@ public class Node implements TimeSkewDetectorCallback, CompletedGroupHandler {
 			getPubKey.cacheKey((block.getKey()).getPubKeyHash(), (block.getKey()).getPubKey(), deep, canWriteClientCache, canWriteDatastore, forULPR || useSlashdotCache, writeLocalToDatastore);
 			if(canWriteClientCache) {
 				sskClientcache.put(block, overwrite, false);
-				nodeStats.avgClientCacheSSKLocation.report(loc);
+				nodeStats.reportClientCacheSSKLocation(loc);
 			}
 			if((forULPR || useSlashdotCache) && !(canWriteDatastore || writeLocalToDatastore)) {
 				sskSlashdotcache.put(block, overwrite, false);
-				nodeStats.avgSlashdotCacheSSKLocation.report(loc);
+				nodeStats.reportSlashdotCacheSSKLocation(loc);
 			}
 			if(canWriteDatastore || writeLocalToDatastore) {
 				if(deep) {
 					sskDatastore.put(block, overwrite, !canWriteDatastore);
-					nodeStats.avgStoreSSKLocation.report(loc);
+					nodeStats.reportStoreSSKLocation(loc);
 				}
 				sskDatacache.put(block, overwrite, !canWriteDatastore);
-				nodeStats.avgCacheSSKLocation.report(loc);
+				nodeStats.reportCacheSSKLocation(loc);
 			}
 			if(canWriteDatastore || forULPR || useSlashdotCache)
 				failureTable.onFound(block);

@@ -510,7 +510,7 @@ public class StatisticsToadlet extends Toadlet {
 			nextTableCell = overviewTableRow.addChild("td", "class", "first");
 
 			// success rate per location
-			int[] locationSuccessRatesArray = stats.chkSuccessRatesByLocation.getPercentageArray(1000);
+			int[] locationSuccessRatesArray = stats.getCHKSuccessRatesByLocationPercentageArray(1000);
 
 			{
 				HTMLNode nodeSpecialisationInfobox = nextTableCell.addChild("div", "class", "infobox");
@@ -1276,12 +1276,12 @@ public class StatisticsToadlet extends Toadlet {
 			opennetSizeEstimate48h = stats.getOpennetSizeEstimate(now - (48 * 60 * 60 * 1000)); // 48 hours
 		}
 		
-		double routingMissDistanceLocal =  stats.routingMissDistanceLocal.currentValue();
-		double routingMissDistanceRemote =  stats.routingMissDistanceRemote.currentValue();
-		double routingMissDistanceOverall =  stats.routingMissDistanceOverall.currentValue();
-		double routingMissDistanceBulk =  stats.routingMissDistanceBulk.currentValue();
-		double routingMissDistanceRT =  stats.routingMissDistanceRT.currentValue();
-		double backedOffPercent =  stats.backedOffPercent.currentValue();
+		double routingMissDistanceLocal =  stats.routingMissDistanceLocal();
+		double routingMissDistanceRemote =  stats.routingMissDistanceRemote();
+		double routingMissDistanceOverall =  stats.routingMissDistanceOverall();
+		double routingMissDistanceBulk =  stats.routingMissDistanceBulk();
+		double routingMissDistanceRT =  stats.routingMissDistanceRT();
+		double backedOffPercent =  stats.backedOffPercent();
 		overviewList.addChild("li", "bwlimitDelayTime:\u00a0" + bwlimitDelayTime + "ms");
 		overviewList.addChild("li", "bwlimitDelayTimeBulk:\u00a0" + bwlimitDelayTimeBulk + "ms");
 		overviewList.addChild("li", "bwlimitDelayTimeRT:\u00a0" + bwlimitDelayTimeRT + "ms");

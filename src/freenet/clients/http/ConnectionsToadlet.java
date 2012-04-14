@@ -265,12 +265,12 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					networkSizeEstimateRecent = stats.getDarknetSizeEstimate(now - (48*60*60*1000));  // 48 hours
 				}
 				DecimalFormat fix4 = new DecimalFormat("0.0000");
-				double routingMissDistanceLocal =  stats.routingMissDistanceLocal.currentValue();
-				double routingMissDistanceRemote =  stats.routingMissDistanceRemote.currentValue();
-				double routingMissDistanceOverall =  stats.routingMissDistanceOverall.currentValue();
-				double routingMissDistanceBulk =  stats.routingMissDistanceBulk.currentValue();
-				double routingMissDistanceRT =  stats.routingMissDistanceRT.currentValue();
-				double backedOffPercent =  stats.backedOffPercent.currentValue();
+				double routingMissDistanceLocal =  stats.routingMissDistanceLocal();
+				double routingMissDistanceRemote =  stats.routingMissDistanceRemote();
+				double routingMissDistanceOverall =  stats.routingMissDistanceOverall();
+				double routingMissDistanceBulk =  stats.routingMissDistanceBulk();
+				double routingMissDistanceRT =  stats.routingMissDistanceRT();
+				double backedOffPercent =  stats.backedOffPercent();
 				String nodeUptimeString = TimeUtil.formatTime(nodeUptimeSeconds * 1000);  // *1000 to convert to milliseconds
 				
 				// BEGIN OVERVIEW TABLE

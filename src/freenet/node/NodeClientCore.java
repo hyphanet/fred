@@ -961,12 +961,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				if(status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD && status != RequestSender.INTERNAL_ERROR) {
 					if(logMINOR)
 						Logger.minor(this, (isSSK ? "SSK" : "CHK") + " fetch cost " + rs.getTotalSentBytes() + '/' + rs.getTotalReceivedBytes() + " bytes (" + status + ')');
-					(isSSK ? nodeStats.localSskFetchBytesSentAverage : nodeStats.localChkFetchBytesSentAverage).report(rs.getTotalSentBytes());
-					(isSSK ? nodeStats.localSskFetchBytesReceivedAverage : nodeStats.localChkFetchBytesReceivedAverage).report(rs.getTotalReceivedBytes());
-					if(status == RequestSender.SUCCESS)
-						// See comments above declaration of successful* : We don't report sent bytes here.
-						//nodeStats.successfulChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
-						(isSSK ? nodeStats.successfulSskFetchBytesReceivedAverage : nodeStats.successfulChkFetchBytesReceivedAverage).report(rs.getTotalReceivedBytes());
+					nodeStats.reportLocalRequestBytes(isSSK, rs.getTotalSentBytes(), rs.getTotalReceivedBytes(), status == RequestSender.SUCCESS);
 				}
 
 				if((status == RequestSender.TIMED_OUT) ||
@@ -1178,12 +1173,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				if(status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD && status != RequestSender.INTERNAL_ERROR) {
 					if(logMINOR)
 						Logger.minor(this, "CHK fetch cost " + rs.getTotalSentBytes() + '/' + rs.getTotalReceivedBytes() + " bytes (" + status + ')');
-					nodeStats.localChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
-					nodeStats.localChkFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
-					if(status == RequestSender.SUCCESS)
-						// See comments above declaration of successful* : We don't report sent bytes here.
-						//nodeStats.successfulChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
-						nodeStats.successfulChkFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
+					nodeStats.reportLocalRequestBytes(false, rs.getTotalSentBytes(), rs.getTotalReceivedBytes(), status == RequestSender.SUCCESS);
 				}
 
 				if((status == RequestSender.TIMED_OUT) ||
@@ -1301,13 +1291,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				if(status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD && status != RequestSender.INTERNAL_ERROR) {
 					if(logMINOR)
 						Logger.minor(this, "SSK fetch cost " + rs.getTotalSentBytes() + '/' + rs.getTotalReceivedBytes() + " bytes (" + status + ')');
-					nodeStats.localSskFetchBytesSentAverage.report(rs.getTotalSentBytes());
-					nodeStats.localSskFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
-					if(status == RequestSender.SUCCESS)
-						// See comments above successfulSskFetchBytesSentAverage : we don't relay the data, so
-						// reporting the sent bytes would be inaccurate.
-						//nodeStats.successfulSskFetchBytesSentAverage.report(rs.getTotalSentBytes());
-						nodeStats.successfulSskFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
+					nodeStats.reportLocalRequestBytes(true, rs.getTotalSentBytes(), rs.getTotalReceivedBytes(), status == RequestSender.SUCCESS);
 				}
 
 				long rtt = System.currentTimeMillis() - startTime;
@@ -1466,11 +1450,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				int received = is.getTotalReceivedBytes();
 				if(logMINOR)
 					Logger.minor(this, "Local CHK insert cost " + sent + '/' + received + " bytes (" + status + ')');
-				nodeStats.localChkInsertBytesSentAverage.report(sent);
-				nodeStats.localChkInsertBytesReceivedAverage.report(received);
-				if(status == CHKInsertSender.SUCCESS)
-					// Only report Sent bytes because we did not receive the data.
-					nodeStats.successfulChkInsertBytesSentAverage.report(sent);
+				nodeStats.reportLocalInsertBytes(false, sent, received, status == CHKInsertSender.SUCCESS);
 			}
 
 			boolean deep = node.shouldStoreDeep(block.getKey(), null, is == null ? new PeerNode[0] : is.getRoutedTo());
@@ -1584,11 +1564,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				int received = is.getTotalReceivedBytes();
 				if(logMINOR)
 					Logger.minor(this, "Local SSK insert cost " + sent + '/' + received + " bytes (" + status + ')');
-				nodeStats.localSskInsertBytesSentAverage.report(sent);
-				nodeStats.localSskInsertBytesReceivedAverage.report(received);
-				if(status == SSKInsertSender.SUCCESS)
-					// Only report Sent bytes as we haven't received anything.
-					nodeStats.successfulSskInsertBytesSentAverage.report(sent);
+				nodeStats.reportLocalInsertBytes(true, sent, received, status == SSKInsertSender.SUCCESS);
 			}
 
 			boolean deep = node.shouldStoreDeep(block.getKey(), null, is == null ? new PeerNode[0] : is.getRoutedTo());

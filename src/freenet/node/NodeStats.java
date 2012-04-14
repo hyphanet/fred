@@ -18,7 +18,10 @@ import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.xfer.BlockTransmitter.BlockTimeCallback;
 import freenet.io.xfer.BulkTransmitter;
+import freenet.keys.NodeSSK;
 import freenet.l10n.NodeL10n;
+import freenet.node.requests.CHKInsertSender;
+import freenet.node.requests.RequestSender;
 import freenet.node.requests.RequestTracker;
 import freenet.node.requests.RequestTracker.CountedRequests;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
@@ -120,11 +123,11 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	/** first time nodeAveragePing was over PeerManagerUserAlert threshold */
 	private long firstNodeAveragePingTimeThresholdBreak;
 	/** bwlimitDelay PeerManagerUserAlert should happen if true */
-	public boolean bwlimitDelayAlertRelevant;
+	private boolean bwlimitDelayAlertRelevant;
 	/** nodeAveragePing PeerManagerUserAlert should happen if true */
-	public boolean nodeAveragePingAlertRelevant;
+	private boolean nodeAveragePingAlertRelevant;
 	/** Average proportion of requests rejected immediately due to overload */
-	public final TimeDecayingRunningAverage pInstantRejectIncoming;
+	private final TimeDecayingRunningAverage pInstantRejectIncoming;
 	private boolean ignoreLocalVsRemoteBandwidthLiability;
 
 	/** Average delay caused by throttling for sending a packet */
@@ -134,14 +137,14 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	// Bytes used by each different type of local/remote chk/ssk request/insert
 	// FIXME these should not be accessed directly, they should be accessed via a method.
-	public final TimeDecayingRunningAverage remoteChkFetchBytesSentAverage;
-	public final TimeDecayingRunningAverage remoteSskFetchBytesSentAverage;
-	public final TimeDecayingRunningAverage remoteChkInsertBytesSentAverage;
-	public final TimeDecayingRunningAverage remoteSskInsertBytesSentAverage;
-	public final TimeDecayingRunningAverage remoteChkFetchBytesReceivedAverage;
-	public final TimeDecayingRunningAverage remoteSskFetchBytesReceivedAverage;
-	public final TimeDecayingRunningAverage remoteChkInsertBytesReceivedAverage;
-	public final TimeDecayingRunningAverage remoteSskInsertBytesReceivedAverage;
+	private final TimeDecayingRunningAverage remoteChkFetchBytesSentAverage;
+	private final TimeDecayingRunningAverage remoteSskFetchBytesSentAverage;
+	private final TimeDecayingRunningAverage remoteChkInsertBytesSentAverage;
+	private final TimeDecayingRunningAverage remoteSskInsertBytesSentAverage;
+	private final TimeDecayingRunningAverage remoteChkFetchBytesReceivedAverage;
+	private final TimeDecayingRunningAverage remoteSskFetchBytesReceivedAverage;
+	private final TimeDecayingRunningAverage remoteChkInsertBytesReceivedAverage;
+	private final TimeDecayingRunningAverage remoteSskInsertBytesReceivedAverage;
 	final TimeDecayingRunningAverage localChkFetchBytesSentAverage;
 	final TimeDecayingRunningAverage localSskFetchBytesSentAverage;
 	final TimeDecayingRunningAverage localChkInsertBytesSentAverage;
@@ -162,44 +165,44 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	// Note that these are always reported in the Handler or the NodeClientCore
 	// call taking its place.
-	public final TimeDecayingRunningAverage successfulChkFetchBytesSentAverage;
-	public final TimeDecayingRunningAverage successfulSskFetchBytesSentAverage;
-	public final TimeDecayingRunningAverage successfulChkInsertBytesSentAverage;
-	public final TimeDecayingRunningAverage successfulSskInsertBytesSentAverage;
-	final TimeDecayingRunningAverage successfulChkOfferReplyBytesSentAverage;
-	final TimeDecayingRunningAverage successfulSskOfferReplyBytesSentAverage;
-	public final TimeDecayingRunningAverage successfulChkFetchBytesReceivedAverage;
-	public final TimeDecayingRunningAverage successfulSskFetchBytesReceivedAverage;
-	public final TimeDecayingRunningAverage successfulChkInsertBytesReceivedAverage;
-	public final TimeDecayingRunningAverage successfulSskInsertBytesReceivedAverage;
-	final TimeDecayingRunningAverage successfulChkOfferReplyBytesReceivedAverage;
-	final TimeDecayingRunningAverage successfulSskOfferReplyBytesReceivedAverage;
+	private final TimeDecayingRunningAverage successfulChkFetchBytesSentAverage;
+	private final TimeDecayingRunningAverage successfulSskFetchBytesSentAverage;
+	private final TimeDecayingRunningAverage successfulChkInsertBytesSentAverage;
+	private final TimeDecayingRunningAverage successfulSskInsertBytesSentAverage;
+	private final TimeDecayingRunningAverage successfulChkOfferReplyBytesSentAverage;
+	private final TimeDecayingRunningAverage successfulSskOfferReplyBytesSentAverage;
+	private final TimeDecayingRunningAverage successfulChkFetchBytesReceivedAverage;
+	private final TimeDecayingRunningAverage successfulSskFetchBytesReceivedAverage;
+	private final TimeDecayingRunningAverage successfulChkInsertBytesReceivedAverage;
+	private final TimeDecayingRunningAverage successfulSskInsertBytesReceivedAverage;
+	private final TimeDecayingRunningAverage successfulChkOfferReplyBytesReceivedAverage;
+	private final TimeDecayingRunningAverage successfulSskOfferReplyBytesReceivedAverage;
 
-	final TrivialRunningAverage globalFetchPSuccess;
-	final TrivialRunningAverage chkLocalFetchPSuccess;
-	final TrivialRunningAverage chkRemoteFetchPSuccess;
-	final TrivialRunningAverage sskLocalFetchPSuccess;
-	final TrivialRunningAverage sskRemoteFetchPSuccess;
-	final TrivialRunningAverage blockTransferPSuccessRT;
-	final TrivialRunningAverage blockTransferPSuccessBulk;
-	final TrivialRunningAverage blockTransferPSuccessLocal;
-	final TrivialRunningAverage blockTransferFailTimeout;
+	private final TrivialRunningAverage globalFetchPSuccess;
+	private final TrivialRunningAverage chkLocalFetchPSuccess;
+	private final TrivialRunningAverage chkRemoteFetchPSuccess;
+	private final TrivialRunningAverage sskLocalFetchPSuccess;
+	private final TrivialRunningAverage sskRemoteFetchPSuccess;
+	private final TrivialRunningAverage blockTransferPSuccessRT;
+	private final TrivialRunningAverage blockTransferPSuccessBulk;
+	private final TrivialRunningAverage blockTransferPSuccessLocal;
+	private final TrivialRunningAverage blockTransferFailTimeout;
+	
+	private final TrivialRunningAverage successfulLocalCHKFetchTimeAverageRT;
+	private final TrivialRunningAverage unsuccessfulLocalCHKFetchTimeAverageRT;
+	private final TrivialRunningAverage localCHKFetchTimeAverageRT;
+	private final TrivialRunningAverage successfulLocalCHKFetchTimeAverageBulk;
+	private final TrivialRunningAverage unsuccessfulLocalCHKFetchTimeAverageBulk;
+	private final TrivialRunningAverage localCHKFetchTimeAverageBulk;
 
-	final TrivialRunningAverage successfulLocalCHKFetchTimeAverageRT;
-	final TrivialRunningAverage unsuccessfulLocalCHKFetchTimeAverageRT;
-	final TrivialRunningAverage localCHKFetchTimeAverageRT;
-	final TrivialRunningAverage successfulLocalCHKFetchTimeAverageBulk;
-	final TrivialRunningAverage unsuccessfulLocalCHKFetchTimeAverageBulk;
-	final TrivialRunningAverage localCHKFetchTimeAverageBulk;
+	private final TrivialRunningAverage successfulLocalSSKFetchTimeAverageRT;
+	private final TrivialRunningAverage unsuccessfulLocalSSKFetchTimeAverageRT;
+	private final TrivialRunningAverage localSSKFetchTimeAverageRT;
+	private final TrivialRunningAverage successfulLocalSSKFetchTimeAverageBulk;
+	private final TrivialRunningAverage unsuccessfulLocalSSKFetchTimeAverageBulk;
+	private final TrivialRunningAverage localSSKFetchTimeAverageBulk;
 
-	final TrivialRunningAverage successfulLocalSSKFetchTimeAverageRT;
-	final TrivialRunningAverage unsuccessfulLocalSSKFetchTimeAverageRT;
-	final TrivialRunningAverage localSSKFetchTimeAverageRT;
-	final TrivialRunningAverage successfulLocalSSKFetchTimeAverageBulk;
-	final TrivialRunningAverage unsuccessfulLocalSSKFetchTimeAverageBulk;
-	final TrivialRunningAverage localSSKFetchTimeAverageBulk;
-
-	final public Histogram2 chkSuccessRatesByLocation;
+	private final Histogram2 chkSuccessRatesByLocation;
 
 	private long previous_input_stat;
 	private long previous_output_stat;
@@ -219,28 +222,28 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	final TokenBucket requestInputThrottle;
 
 	// various metrics
-	public final RunningAverage routingMissDistanceLocal;
-	public final RunningAverage routingMissDistanceRemote;
-	public final RunningAverage routingMissDistanceOverall;
-	public final RunningAverage routingMissDistanceBulk;
-	public final RunningAverage routingMissDistanceRT;
-	public final RunningAverage backedOffPercent;
-	public final DecayingKeyspaceAverage avgCacheCHKLocation;
-	public final DecayingKeyspaceAverage avgSlashdotCacheCHKLocation;
+	private final RunningAverage routingMissDistanceLocal;
+	private final RunningAverage routingMissDistanceRemote;
+	private final RunningAverage routingMissDistanceOverall;
+	private final RunningAverage routingMissDistanceBulk;
+	private final RunningAverage routingMissDistanceRT;
+	private final RunningAverage backedOffPercent;
+	private final DecayingKeyspaceAverage avgCacheCHKLocation;
+	private final DecayingKeyspaceAverage avgSlashdotCacheCHKLocation;
 	//public final DecayingKeyspaceAverage avgSlashdotCacheLocation;
-	public final DecayingKeyspaceAverage avgStoreCHKLocation;
+	private final DecayingKeyspaceAverage avgStoreCHKLocation;
 	//public final DecayingKeyspaceAverage avgStoreLocation;
-	public final DecayingKeyspaceAverage avgStoreCHKSuccess;
+	private final DecayingKeyspaceAverage avgStoreCHKSuccess;
 
 	// FIXME: does furthest{Store,Cache}Success need to be synchronized?
-	public double furthestCacheCHKSuccess=0.0;
-	public double furthestClientCacheCHKSuccess=0.0;
-	public double furthestSlashdotCacheCHKSuccess=0.0;
-	public double furthestStoreCHKSuccess=0.0;
-	public double furthestStoreSSKSuccess=0.0;
-	public double furthestCacheSSKSuccess=0.0;
-	public double furthestClientCacheSSKSuccess=0.0;
-	public double furthestSlashdotCacheSSKSuccess=0.0;
+	private double furthestCacheCHKSuccess=0.0;
+	private double furthestClientCacheCHKSuccess=0.0;
+	private double furthestSlashdotCacheCHKSuccess=0.0;
+	private double furthestStoreCHKSuccess=0.0;
+	private double furthestStoreSSKSuccess=0.0;
+	private double furthestCacheSSKSuccess=0.0;
+	private double furthestClientCacheSSKSuccess=0.0;
+	private double furthestSlashdotCacheSSKSuccess=0.0;
 	protected final Persister persister;
 
 	protected final DecayingKeyspaceAverage avgRequestLocation;
@@ -251,8 +254,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	final NodePinger nodePinger;
 
-	final StringCounter preemptiveRejectReasons;
-	final StringCounter localPreemptiveRejectReasons;
+	private final StringCounter preemptiveRejectReasons;
+	private final StringCounter localPreemptiveRejectReasons;
 
 	// Enable this if you run into hard to debug OOMs.
 	// Disabled to prevent long pauses every 30 seconds.
@@ -265,29 +268,29 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private static final long peerManagerUserAlertStatsUpdateInterval = 1000;  // 1 second
 
 	// Backoff stats
-	final Hashtable<String, TrivialRunningAverage> avgMandatoryBackoffTimesRT;
-	final Hashtable<String, TrivialRunningAverage> avgMandatoryBackoffTimesBulk;
-	final Hashtable<String, TrivialRunningAverage> avgRoutingBackoffTimesRT;
-	final Hashtable<String, TrivialRunningAverage> avgRoutingBackoffTimesBulk;
-	final Hashtable<String, TrivialRunningAverage> avgTransferBackoffTimesRT;
-	final Hashtable<String, TrivialRunningAverage> avgTransferBackoffTimesBulk;
+	private final Hashtable<String, TrivialRunningAverage> avgMandatoryBackoffTimesRT;
+	private final Hashtable<String, TrivialRunningAverage> avgMandatoryBackoffTimesBulk;
+	private final Hashtable<String, TrivialRunningAverage> avgRoutingBackoffTimesRT;
+	private final Hashtable<String, TrivialRunningAverage> avgRoutingBackoffTimesBulk;
+	private final Hashtable<String, TrivialRunningAverage> avgTransferBackoffTimesRT;
+	private final Hashtable<String, TrivialRunningAverage> avgTransferBackoffTimesBulk;
 
 	// Database stats
-	final Hashtable<String, TrivialRunningAverage> avgDatabaseJobExecutionTimes;
-	public final DecayingKeyspaceAverage avgClientCacheCHKLocation;
-	public final DecayingKeyspaceAverage avgCacheCHKSuccess;
-	public final DecayingKeyspaceAverage avgSlashdotCacheCHKSucess;
-	public final DecayingKeyspaceAverage avgClientCacheCHKSuccess;
+	private final Hashtable<String, TrivialRunningAverage> avgDatabaseJobExecutionTimes;
+	private final DecayingKeyspaceAverage avgClientCacheCHKLocation;
+	private final DecayingKeyspaceAverage avgCacheCHKSuccess;
+	private final DecayingKeyspaceAverage avgSlashdotCacheCHKSucess;
+	private final DecayingKeyspaceAverage avgClientCacheCHKSuccess;
 
-	public final DecayingKeyspaceAverage avgStoreSSKLocation;
-	public final DecayingKeyspaceAverage avgCacheSSKLocation;
-	public final DecayingKeyspaceAverage avgSlashdotCacheSSKLocation;
-	public final DecayingKeyspaceAverage avgClientCacheSSKLocation;
+	private final DecayingKeyspaceAverage avgStoreSSKLocation;
+	private final DecayingKeyspaceAverage avgCacheSSKLocation;
+	private final DecayingKeyspaceAverage avgSlashdotCacheSSKLocation;
+	private final DecayingKeyspaceAverage avgClientCacheSSKLocation;
 
-	public final DecayingKeyspaceAverage avgCacheSSKSuccess;
-	public final DecayingKeyspaceAverage avgSlashdotCacheSSKSuccess;
-	public final DecayingKeyspaceAverage avgClientCacheSSKSuccess;
-	public final DecayingKeyspaceAverage avgStoreSSKSuccess;
+	private final DecayingKeyspaceAverage avgCacheSSKSuccess;
+	private final DecayingKeyspaceAverage avgSlashdotCacheSSKSuccess;
+	private final DecayingKeyspaceAverage avgClientCacheSSKSuccess;
+	private final DecayingKeyspaceAverage avgStoreSSKSuccess;
 	
 	private volatile boolean enableNewLoadManagementRT;
 	private volatile boolean enableNewLoadManagementBulk;
@@ -3678,6 +3681,276 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	
 	public boolean enableNewLoadManagement(boolean realTimeFlag) {
 		return realTimeFlag ? enableNewLoadManagementRT : enableNewLoadManagementBulk;
+	}
+
+	public double routingMissDistanceLocal() {
+		return routingMissDistanceLocal.currentValue();
+	}
+	
+	public double routingMissDistanceRemote() {
+		return routingMissDistanceRemote.currentValue();
+	}
+	
+	public double routingMissDistanceOverall() {
+		return routingMissDistanceOverall.currentValue();
+	}
+	
+	public double routingMissDistanceBulk() {
+		return routingMissDistanceBulk.currentValue();
+	}
+	
+	public double routingMissDistanceRT() {
+		return routingMissDistanceRT.currentValue();
+	}
+	
+	public double backedOffPercent() {
+		return backedOffPercent.currentValue();
+	}
+
+	public int[] getCHKSuccessRatesByLocationPercentageArray(int size) {
+		return chkSuccessRatesByLocation.getPercentageArray(size);
+	}
+
+	public void setMaxStoreKeys(long store, long cache) {
+		int maxStoreKeys, maxCacheKeys;
+		if(store > Integer.MAX_VALUE) {
+			// FIXME ARBITRARY LIMITS
+			Logger.warning(this, "Stats may be inaccurate: Store locations stats only support "+Integer.MAX_VALUE+" keys (store)");
+			maxStoreKeys = Integer.MAX_VALUE;
+		} else maxStoreKeys = (int) store;
+		if(cache > Integer.MAX_VALUE) {
+			// FIXME ARBITRARY LIMITS
+			Logger.warning(this, "Stats may be inaccurate: Store locations stats only support "+Integer.MAX_VALUE+" keys (cache)");
+			maxCacheKeys = Integer.MAX_VALUE;
+		} else maxCacheKeys = (int) cache;
+		avgStoreCHKLocation.changeMaxReports((int)maxStoreKeys);
+		avgCacheCHKLocation.changeMaxReports((int)maxCacheKeys);
+		avgSlashdotCacheCHKLocation.changeMaxReports((int)maxCacheKeys);
+		avgClientCacheCHKLocation.changeMaxReports((int)maxCacheKeys);
+
+		avgStoreSSKLocation.changeMaxReports((int)maxStoreKeys);
+		avgCacheSSKLocation.changeMaxReports((int)maxCacheKeys);
+		avgSlashdotCacheSSKLocation.changeMaxReports((int)maxCacheKeys);
+		avgClientCacheSSKLocation.changeMaxReports((int)maxCacheKeys);
+	}
+	
+	// FIXME these should be broken into separate objects for each store/cache type???
+	// FIXME there are similar objects already (see node.stats) ... they just need extending ...
+
+	/**
+	 * Report a successful fetch from the client-cache.
+	 * @param loc The location of the key.
+	 * @param dist The distance of the key from the node's location, at the
+	 * time of reporting.
+	 */
+	public void reportClientCacheSSKSuccess(double loc, double dist) {
+		avgClientCacheSSKSuccess.report(loc);
+		synchronized(this) {
+			if (dist > furthestClientCacheSSKSuccess)
+				furthestClientCacheSSKSuccess=dist;
+		}
+	}
+
+	/**
+	 * Report a successful fetch from the slashdot cache.
+	 * @param loc The location of the key.
+	 * @param dist The distance of the key from the node's location, at the
+	 * time of reporting.
+	 */
+	public void reportSlashdotCacheSSKSuccess(double loc, double dist) {
+		avgSlashdotCacheSSKSuccess.report(loc);
+		synchronized(this) {
+			if (dist > furthestSlashdotCacheSSKSuccess)
+				furthestSlashdotCacheSSKSuccess=dist;
+		}
+	}
+	
+	/**
+	 * Report a successful fetch from the store.
+	 * @param loc The location of the key.
+	 * @param dist The distance of the key from the node's location, at the
+	 * time of reporting.
+	 */
+	public void reportStoreSSKSuccess(double loc, double dist) {
+		avgStoreSSKSuccess.report(loc);
+		synchronized(this) {
+			if (dist > furthestStoreSSKSuccess)
+				furthestStoreSSKSuccess=dist;
+		}
+	}
+
+	/**
+	 * Report a successful fetch from the store.
+	 * @param loc The location of the key.
+	 * @param dist The distance of the key from the node's location, at the
+	 * time of reporting.
+	 */
+	public void reportCacheSSKSuccess(double loc, double dist) {
+		avgCacheSSKSuccess.report(loc);
+		synchronized(this) {
+			if (dist > furthestCacheSSKSuccess)
+				furthestCacheSSKSuccess=dist;
+		}
+	}
+
+	/**
+	 * Report a successful fetch from the client-cache.
+	 * @param loc The location of the key.
+	 * @param dist The distance of the key from the node's location, at the
+	 * time of reporting.
+	 */
+	public void reportClientCacheCHKSuccess(double loc, double dist) {
+		avgClientCacheCHKSuccess.report(loc);
+		synchronized(this) {
+			if (dist > furthestClientCacheCHKSuccess)
+				furthestClientCacheCHKSuccess=dist;
+		}
+	}
+
+	/**
+	 * Report a successful fetch from the slashdot cache.
+	 * @param loc The location of the key.
+	 * @param dist The distance of the key from the node's location, at the
+	 * time of reporting.
+	 */
+	public void reportSlashdotCacheCHKSuccess(double loc, double dist) {
+		avgSlashdotCacheCHKSucess.report(loc);
+		synchronized(this) {
+			if (dist > furthestSlashdotCacheCHKSuccess)
+				furthestSlashdotCacheCHKSuccess=dist;
+		}
+	}
+	
+	/**
+	 * Report a successful fetch from the store.
+	 * @param loc The location of the key.
+	 * @param dist The distance of the key from the node's location, at the
+	 * time of reporting.
+	 */
+	public void reportStoreCHKSuccess(double loc, double dist) {
+		avgStoreCHKSuccess.report(loc);
+		synchronized(this) {
+			if (dist > furthestStoreCHKSuccess)
+				furthestStoreCHKSuccess=dist;
+		}
+	}
+
+	/**
+	 * Report a successful fetch from the store.
+	 * @param loc The location of the key.
+	 * @param dist The distance of the key from the node's location, at the
+	 * time of reporting.
+	 */
+	public void reportCacheCHKSuccess(double loc, double dist) {
+		avgCacheCHKSuccess.report(loc);
+		synchronized(this) {
+			if (dist > furthestCacheCHKSuccess)
+				furthestCacheCHKSuccess=dist;
+		}
+	}
+
+	public void reportClientCacheCHKLocation(double loc) {
+		avgClientCacheCHKLocation.report(loc);
+	}
+
+	public void reportSlashdotCacheCHKLocation(double loc) {
+		avgSlashdotCacheCHKLocation.report(loc);
+	}
+
+	public void reportCacheCHKLocation(double loc) {
+		avgCacheCHKLocation.report(loc);
+	}
+
+	public void reportStoreCHKLocation(double loc) {
+		avgStoreCHKLocation.report(loc);
+	}
+
+	public void reportClientCacheSSKLocation(double loc) {
+		avgClientCacheSSKLocation.report(loc);
+	}
+
+	public void reportSlashdotCacheSSKLocation(double loc) {
+		avgSlashdotCacheSSKLocation.report(loc);
+	}
+
+	public void reportCacheSSKLocation(double loc) {
+		avgCacheSSKLocation.report(loc);
+	}
+
+	public void reportStoreSSKLocation(double loc) {
+		avgStoreSSKLocation.report(loc);
+	}
+
+	public void reportLocalRequestBytes(boolean isSSK, int totalSentBytes,
+			int totalReceivedBytes, boolean success) {
+		(isSSK ? localSskFetchBytesSentAverage : localChkFetchBytesSentAverage).report(totalSentBytes);
+		(isSSK ? localSskFetchBytesReceivedAverage : localChkFetchBytesReceivedAverage).report(totalReceivedBytes);
+		if(success)
+			// See comments above declaration of successful* : We don't report sent bytes here.
+			//nodeStats.successfulChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
+			(isSSK ? successfulSskFetchBytesReceivedAverage : successfulChkFetchBytesReceivedAverage).report(totalReceivedBytes);
+	}
+	
+	public void reportRemoteRequestBytes(boolean isSSK, int sent,
+			int rcvd, boolean success) {
+		if(isSSK) {
+			remoteSskFetchBytesSentAverage.report(sent);
+			remoteSskFetchBytesReceivedAverage.report(rcvd);
+			if(success) {
+				// Can report both parts, because we had both a Handler and a Sender
+				successfulSskFetchBytesSentAverage.report(sent);
+				successfulSskFetchBytesReceivedAverage.report(rcvd);
+			}
+		} else {
+			remoteChkFetchBytesSentAverage.report(sent);
+			remoteChkFetchBytesReceivedAverage.report(rcvd);
+			if(success) {
+				// Can report both parts, because we had both a Handler and a Sender
+				successfulChkFetchBytesSentAverage.report(sent);
+				successfulChkFetchBytesReceivedAverage.report(rcvd);
+			}
+		}
+	}
+
+	public void reportLocalInsertBytes(boolean isSSK, int totalSentBytes,
+			int totalReceivedBytes, boolean success) {
+		(isSSK ? localSskInsertBytesSentAverage : localChkInsertBytesSentAverage).report(totalSentBytes);
+		(isSSK ? localSskInsertBytesReceivedAverage : localChkInsertBytesReceivedAverage).report(totalReceivedBytes);
+		if(success) {
+			// Only report Sent bytes because we did not receive the data.
+			(isSSK ? successfulSskInsertBytesSentAverage : successfulChkInsertBytesSentAverage).report(totalSentBytes);
+		}
+	}
+	
+	public void reportRemoteInsertBytes(boolean isSSK, int totalSent,
+			int totalReceived, boolean reportSuccessSent, boolean reportSuccessReceived) {
+    	(isSSK ? remoteSskInsertBytesSentAverage : remoteChkInsertBytesSentAverage).report(totalSent);
+    	(isSSK ? remoteSskInsertBytesReceivedAverage : remoteChkInsertBytesReceivedAverage).report(totalReceived);
+    	if(reportSuccessSent) {
+    		(isSSK ? successfulSskInsertBytesSentAverage : successfulChkInsertBytesSentAverage).report(totalSent);
+    	}
+    	if(reportSuccessReceived) {
+    		(isSSK ? successfulSskInsertBytesReceivedAverage : successfulChkInsertBytesReceivedAverage).report(totalReceived);
+    	}
+	}
+
+	void reportBackedOffPercent(double backedOff) {
+		this.backedOffPercent.report(backedOff);
+	}
+
+	public void reportRoutingMiss(boolean isLocal, boolean realTime,
+			double distance) {
+		routingMissDistanceOverall.report(distance);
+		(isLocal ? routingMissDistanceLocal : routingMissDistanceRemote).report(distance);
+		(realTime ? routingMissDistanceRT : routingMissDistanceBulk).report(distance);
+	}
+
+	public boolean wantBWLimitAlert() {
+		return bwlimitDelayAlertRelevant;
+	}
+
+	public boolean wantAveragePingAlert() {
+		return nodeAveragePingAlertRelevant;
 	}
 
 }
