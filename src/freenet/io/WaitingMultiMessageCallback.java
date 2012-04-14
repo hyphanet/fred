@@ -1,11 +1,11 @@
-package freenet.node;
+package freenet.io;
 
 public class WaitingMultiMessageCallback extends MultiMessageCallback {
 
 	
 	
 	@Override
-	synchronized void finish(boolean success) {
+	protected synchronized void finish(boolean success) {
 		notifyAll();
 	}
 
@@ -20,7 +20,7 @@ public class WaitingMultiMessageCallback extends MultiMessageCallback {
 	}
 
 	@Override
-	void sent(boolean success) {
+	protected void sent(boolean success) {
 		// Ignore
 	}
 

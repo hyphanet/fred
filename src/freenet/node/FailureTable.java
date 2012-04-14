@@ -21,6 +21,7 @@ import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
+import freenet.node.requests.OfferReplyTag;
 import freenet.support.LRUHashtable;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -73,12 +74,12 @@ public class FailureTable implements OOMHook {
 	/** Terminate a request if there was a DNF on the same key less than 10 minutes ago.
 	 * Maximum time for any FailureTable i.e. for this period after a DNF, we will avoid the node that 
 	 * DNFed. */
-	static final int REJECT_TIME = 10*60*1000;
+	public static final int REJECT_TIME = 10*60*1000;
 	/** Maximum time for a RecentlyFailed. I.e. until this period expires, we take a request into account
 	 * when deciding whether we have recently failed to this peer. If we get a DNF, we use this figure.
 	 * If we get a RF, we use what it tells us, which can be less than this. Most other failures use
 	 * shorter periods. */
-	static final int RECENTLY_FAILED_TIME = 30*60*1000;
+	public static final int RECENTLY_FAILED_TIME = 30*60*1000;
 	/** After 1 hour we forget about an entry completely */
 	static final int MAX_LIFETIME = 60*60*1000;
 	/** Offers expire after 10 minutes */
@@ -246,14 +247,14 @@ public class FailureTable implements OOMHook {
 		}
 	}
 	
-	static final class BlockOffer {
-		final long offeredTime;
+	public static final class BlockOffer {
+		public final long offeredTime;
 		/** Either offered by or offered to this node */
-		final WeakReference<PeerNode> nodeRef;
+		public final WeakReference<PeerNode> nodeRef;
 		/** Authenticator */
-		final byte[] authenticator;
+		public final byte[] authenticator;
 		/** Boot ID when the offer was made */
-		final long bootID;
+		public final long bootID;
 		
 		BlockOffer(PeerNode pn, long now, byte[] authenticator, long bootID) {
 			this.nodeRef = pn.myRef;
@@ -594,7 +595,7 @@ public class FailureTable implements OOMHook {
 		
 	}
 	
-	class OfferList {
+	public class OfferList {
 
 		OfferList(BlockOfferList offerList) {
 			this.offerList = offerList;

@@ -1,4 +1,4 @@
-package freenet.node;
+package freenet.node.requests;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -14,6 +14,11 @@ import freenet.io.comm.SlowAsyncMessageFilterCallback;
 import freenet.keys.Key;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
+import freenet.node.Node;
+import freenet.node.NodeStats;
+import freenet.node.PeerNode;
+import freenet.node.SyncSendWaitedTooLongException;
+import freenet.node.NodeStats.RequestType;
 import freenet.node.PeerNode.RequestLikelyAcceptedState;
 import freenet.node.PeerNode.SlotWaiter;
 import freenet.node.PeerNode.SlotWaiterFailedException;
@@ -38,7 +43,7 @@ public abstract class BaseSender implements ByteCounter {
 	});
     }
     
-    final boolean realTimeFlag;
+    public final boolean realTimeFlag;
     final Key key;
     /** The source of this request if any - purely so we can avoid routing to it */
     final PeerNode source;
@@ -739,6 +744,10 @@ loadWaiterLoop:
 	
 	protected int ignoreLowBackoff() {
 		return 0;
+	}
+	
+	public long getUID() {
+		return uid;
 	}
 	
 }

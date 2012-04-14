@@ -1,5 +1,7 @@
-package freenet.node;
+package freenet.node.requests;
 
+import freenet.node.Node;
+import freenet.node.PeerNode;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
 

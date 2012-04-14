@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node;
+package freenet.node.requests;
 
 import java.util.Vector;
 
@@ -22,6 +22,12 @@ import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
+import freenet.node.AnyInsertSender;
+import freenet.node.Node;
+import freenet.node.PeerNode;
+import freenet.node.PrioRunnable;
+import freenet.node.SyncSendWaitedTooLongException;
+import freenet.node.requests.InsertTag.START;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.io.NativeThread;
@@ -305,7 +311,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		}
 	}
 	
-	CHKInsertSender(NodeCHK myKey, long uid, InsertTag tag, byte[] headers, short htl, 
+	public CHKInsertSender(NodeCHK myKey, long uid, InsertTag tag, byte[] headers, short htl, 
             PeerNode source, Node node, PartiallyReceivedBlock prb, boolean fromStore,
             boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
 		super(myKey, realTimeFlag, source, node, htl, uid);
@@ -326,7 +332,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
         }
     }
 
-	void start() {
+	public void start() {
 		node.executor.execute(this, "CHKInsertSender for UID "+uid+" on "+node.getDarknetPortNumber()+" at "+System.currentTimeMillis());
 	}
 
@@ -370,21 +376,21 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
     
     private int status = -1;
     /** Still running */
-    static final int NOT_FINISHED = -1;
+    public static final int NOT_FINISHED = -1;
     /** Successful insert */
-    static final int SUCCESS = 0;
+    public static final int SUCCESS = 0;
     /** Route not found */
-    static final int ROUTE_NOT_FOUND = 1;
+    public static final int ROUTE_NOT_FOUND = 1;
     /** Internal error */
-    static final int INTERNAL_ERROR = 3;
+    public static final int INTERNAL_ERROR = 3;
     /** Timed out waiting for response */
-    static final int TIMED_OUT = 4;
+    public static final int TIMED_OUT = 4;
     /** Locally Generated a RejectedOverload */
-    static final int GENERATED_REJECTED_OVERLOAD = 5;
+    public static final int GENERATED_REJECTED_OVERLOAD = 5;
     /** Could not get off the node at all! */
-    static final int ROUTE_REALLY_NOT_FOUND = 6;
+    public static final int ROUTE_REALLY_NOT_FOUND = 6;
     /** Receive failed. Not used internally; only used by CHKInsertHandler. */
-    static final int RECEIVE_FAILED = 7;
+    public static final int RECEIVE_FAILED = 7;
     
     @Override
 	public String toString() {
@@ -491,7 +497,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				forkedRequestTag.setAccepted();
             	Logger.normal(this, "FORKING CHK INSERT "+origUID+" to "+uid);
             	nodesRoutedTo.clear();
-            	node.lockUID(forkedRequestTag);
+            	node.requestTracker.lockUID(forkedRequestTag);
             }
             
             // Route it
@@ -753,7 +759,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 	
 	private boolean hasForwardedRejectedOverload;
     
-    synchronized boolean receivedRejectedOverload() {
+    public synchronized boolean receivedRejectedOverload() {
     	return hasForwardedRejectedOverload;
     }
     

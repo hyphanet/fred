@@ -60,6 +60,12 @@ import freenet.l10n.NodeL10n;
 import freenet.node.NodeRestartJobsQueue.RestartDBJob;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.fcp.FCPServer;
+import freenet.node.requests.CHKInsertSender;
+import freenet.node.requests.InsertTag;
+import freenet.node.requests.RequestSender;
+import freenet.node.requests.RequestSenderListener;
+import freenet.node.requests.RequestTag;
+import freenet.node.requests.SSKInsertSender;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
@@ -861,8 +867,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	/** UID -1 is used internally, so never generate it.
 	 * It is not however a problem if a node does use it; it will slow its messages down
 	 * by them being round-robin'ed in PeerMessageQueue with messages with no UID, that's
-	 * all. */
-	long makeUID() {
+	 * all. 
+	 * FIXME move to RequestTracker???
+	 * */
+	public long makeUID() {
 		while(true) {
 			long uid = random.nextLong();
 			if(uid != -1) return uid;
@@ -889,7 +897,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		final long uid = makeUID();
 		final boolean isSSK = key instanceof NodeSSK;
 		final RequestTag tag = new RequestTag(isSSK, RequestTag.START.ASYNC_GET, null, realTimeFlag, uid, node);
-		if(!node.lockUID(uid, isSSK, false, false, true, realTimeFlag, tag)) {
+		if(!node.requestTracker.lockUID(uid, isSSK, false, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, "Could not lock random UID - serious PRNG problem???"));
 			return;
@@ -1082,7 +1090,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		try {
 			Object o = node.makeRequestSender(key, htl, uid, tag, null, localOnly, ignoreStore, offersOnly, canReadClientCache, canWriteClientCache, realTimeFlag);
 			if(o instanceof KeyBlock) {
-				tag.servedFromDatastore = true;
+				tag.setServedFromDatastore();
 				listener.onDataFoundLocally();
 				return; // Already have it.
 			}
@@ -1093,7 +1101,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			}
 			RequestSender rs = (RequestSender) o;
 			rs.addListener(listener);
-			if(rs.uid != uid)
+			if(rs.getUID() != uid)
 				tag.unlockHandler();
 			// Else it has started a request.
 			if(logMINOR)
@@ -1130,7 +1138,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		long startTime = System.currentTimeMillis();
 		long uid = makeUID();
 		RequestTag tag = new RequestTag(false, RequestTag.START.LOCAL, null, realTimeFlag, uid, node);
-		if(!node.lockUID(uid, false, false, false, true, realTimeFlag, tag)) {
+		if(!node.requestTracker.lockUID(uid, false, false, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
@@ -1255,7 +1263,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		long startTime = System.currentTimeMillis();
 		long uid = makeUID();
 		RequestTag tag = new RequestTag(true, RequestTag.START.LOCAL, null, realTimeFlag, uid, node);
-		if(!node.lockUID(uid, true, false, false, true, realTimeFlag, tag)) {
+		if(!node.requestTracker.lockUID(uid, true, false, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
@@ -1390,7 +1398,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		CHKInsertSender is;
 		long uid = makeUID();
 		InsertTag tag = new InsertTag(false, InsertTag.START.LOCAL, null, realTimeFlag, uid, node);
-		if(!node.lockUID(uid, false, true, false, true, realTimeFlag, tag)) {
+		if(!node.requestTracker.lockUID(uid, false, true, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
 		}
@@ -1441,7 +1449,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			// Finished?
 			if(!hasReceivedRejectedOverload)
 				// Is it ours? Did we send a request?
-				if(is.sentRequest() && (is.uid == uid) && ((is.getStatus() == CHKInsertSender.ROUTE_NOT_FOUND) || (is.getStatus() == CHKInsertSender.SUCCESS))) {
+				if(is.sentRequest() && (is.getUID() == uid) && ((is.getStatus() == CHKInsertSender.ROUTE_NOT_FOUND) || (is.getStatus() == CHKInsertSender.SUCCESS))) {
 					// It worked!
 					long endTime = System.currentTimeMillis();
 					long len = endTime - startTime;
@@ -1510,7 +1518,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		SSKInsertSender is;
 		long uid = makeUID();
 		InsertTag tag = new InsertTag(true, InsertTag.START.LOCAL, null, realTimeFlag, uid, node);
-		if(!node.lockUID(uid, true, true, false, true, realTimeFlag, tag)) {
+		if(!node.requestTracker.lockUID(uid, true, true, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
 		}
@@ -1561,7 +1569,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			// Finished?
 			if(!hasReceivedRejectedOverload)
 				// Is it ours? Did we send a request?
-				if(is.sentRequest() && (is.uid == uid) && ((is.getStatus() == SSKInsertSender.ROUTE_NOT_FOUND) || (is.getStatus() == SSKInsertSender.SUCCESS))) {
+				if(is.sentRequest() && (is.getUID() == uid) && ((is.getStatus() == SSKInsertSender.ROUTE_NOT_FOUND) || (is.getStatus() == SSKInsertSender.SUCCESS))) {
 					// It worked!
 					long endTime = System.currentTimeMillis();
 					long rtt = endTime - startTime;

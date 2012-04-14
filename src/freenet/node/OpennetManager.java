@@ -37,6 +37,7 @@ import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.BulkTransmitter.AllSentCallback;
 import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.node.OpennetPeerNode.NOT_DROP_REASON;
+import freenet.node.requests.RequestSender;
 import freenet.support.HTMLNode;
 import freenet.support.LRUQueue;
 import freenet.support.LogThresholdCallback;
@@ -939,7 +940,7 @@ public class OpennetManager {
 		innerSendOpennetRef(xferUID, padded, peer, ctr, null);
 	}
 
-	interface NoderefCallback {
+	public interface NoderefCallback {
 		/** Got a noderef. */
 		void gotNoderef(byte[] noderef);
 		/** Timed out waiting for a noderef. */
@@ -988,6 +989,7 @@ public class OpennetManager {
 	}
 	
 	@SuppressWarnings("serial")
+	public
 	static class WaitedTooLongForOpennetNoderefException extends Exception {
 		
 	}
@@ -1259,6 +1261,10 @@ public class OpennetManager {
 
 	public void drawSeedStatsBox(HTMLNode content) {
 		seedTracker.drawSeedStats(content);
+	}
+
+	public byte[] getCompressedFullRef() {
+		return crypto.myCompressedFullRef();
 	}
 
 }

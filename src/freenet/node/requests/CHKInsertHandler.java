@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node;
+package freenet.node.requests;
 
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
@@ -20,6 +20,10 @@ import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
+import freenet.node.Node;
+import freenet.node.PeerNode;
+import freenet.node.PrioRunnable;
+import freenet.node.SyncSendWaitedTooLongException;
 import freenet.store.KeyCollisionException;
 import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
@@ -68,7 +72,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 	private final boolean ignoreLowBackoff;
 	private final boolean realTimeFlag;
 
-    CHKInsertHandler(Message req, PeerNode source, long id, Node node, long startTime, InsertTag tag, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
+    public CHKInsertHandler(Message req, PeerNode source, long id, Node node, long startTime, InsertTag tag, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
         this.req = req;
         this.node = node;
         this.uid = id;
@@ -508,14 +512,10 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         		totalReceived += sender.getTotalReceivedBytes();
         	}
         	if(logMINOR) Logger.minor(this, "Remote CHK insert cost "+totalSent+ '/' +totalReceived+" bytes ("+code+ ") receive failed = "+receiveFailed());
-        	node.nodeStats.remoteChkInsertBytesSentAverage.report(totalSent);
-        	node.nodeStats.remoteChkInsertBytesReceivedAverage.report(totalReceived);
-        	if(code == CHKInsertSender.SUCCESS) {
-        		// Report both sent and received because we have both a Handler and a Sender
-        		if(sender != null && sender.startedSendingData())
-        			node.nodeStats.successfulChkInsertBytesSentAverage.report(totalSent);
-        		node.nodeStats.successfulChkInsertBytesReceivedAverage.report(totalReceived);
-        	}
+        	node.nodeStats.reportRemoteInsertBytes(false, totalSent, totalReceived, 
+            		// Report both sent and received because we have both a Handler and a Sender
+        			code == CHKInsertSender.SUCCESS && sender != null && sender.startedSendingData(), 
+        			code == CHKInsertSender.SUCCESS);
         }
     }
     

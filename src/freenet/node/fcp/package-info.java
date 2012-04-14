@@ -11,5 +11,9 @@
  * Some of the messages have support for parsing as a client, some code in 
  * @see freenet.tools uses this, but we don't have a proper official Java 
  * FCP library.
+ * 
+ * FIXME this should be moved to top-level freenet.fcp however FCPClient 
+ * is persistent in node.db4o so that will break backward compaibility on
+ * databases unless migration code is put in.
  */
 package freenet.node.fcp;

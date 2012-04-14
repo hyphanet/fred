@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node;
+package freenet.node.requests;
 
 import freenet.crypt.CryptFormatException;
 import freenet.crypt.DSAPublicKey;
@@ -16,6 +16,10 @@ import freenet.io.xfer.WaitedTooLongException;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
+import freenet.node.Node;
+import freenet.node.PeerNode;
+import freenet.node.PrioRunnable;
+import freenet.node.SyncSendWaitedTooLongException;
 import freenet.store.KeyCollisionException;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -54,7 +58,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 
 	private boolean collided = false;
     
-    SSKInsertHandler(NodeSSK key, byte[] data, byte[] headers, short htl, PeerNode source, long id, Node node, long startTime, InsertTag tag, boolean canWriteDatastore, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
+    public SSKInsertHandler(NodeSSK key, byte[] data, byte[] headers, short htl, PeerNode source, long id, Node node, long startTime, InsertTag tag, boolean canWriteDatastore, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
         this.node = node;
         this.uid = id;
         this.source = source;
@@ -379,13 +383,8 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
         		totalReceived += sender.getTotalReceivedBytes();
         	}
         	if(logMINOR) Logger.minor(this, "Remote SSK insert cost "+totalSent+ '/' +totalReceived+" bytes ("+code+ ')');
-        	node.nodeStats.remoteSskInsertBytesSentAverage.report(totalSent);
-        	node.nodeStats.remoteSskInsertBytesReceivedAverage.report(totalReceived);
-        	if(code == SSKInsertSender.SUCCESS) {
-        		// Can report both sides
-        		node.nodeStats.successfulSskInsertBytesSentAverage.report(totalSent);
-        		node.nodeStats.successfulSskInsertBytesReceivedAverage.report(totalReceived);
-        	}
+    		// Can report both sides if successful.
+        	node.nodeStats.reportRemoteInsertBytes(true, totalSent, totalReceived, true, true);
         }
 
     }

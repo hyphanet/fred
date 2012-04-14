@@ -21,6 +21,12 @@ import freenet.keys.KeyBlock;
 import freenet.keys.NodeSSK;
 import freenet.node.NodeStats.PeerLoadStats;
 import freenet.node.NodeStats.RejectReason;
+import freenet.node.requests.CHKInsertHandler;
+import freenet.node.requests.InsertTag;
+import freenet.node.requests.OfferReplyTag;
+import freenet.node.requests.RequestHandler;
+import freenet.node.requests.RequestTag;
+import freenet.node.requests.SSKInsertHandler;
 import freenet.store.BlockMetadata;
 import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
@@ -341,7 +347,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
         boolean realTimeFlag = DMT.getRealTimeFlag(m);
 		OfferReplyTag tag = new OfferReplyTag(isSSK, source, realTimeFlag, uid, node);
 		
-		if(!node.lockUID(uid, isSSK, false, true, false, realTimeFlag, tag)) {
+		if(!node.requestTracker.lockUID(uid, isSSK, false, true, false, realTimeFlag, tag)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+uid+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(uid);
 			try {
@@ -489,7 +495,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		}
 		long id = m.getLong(DMT.UID);
 		ByteCounter ctr = isSSK ? node.nodeStats.sskRequestCtr : node.nodeStats.chkRequestCtr;
-		if(node.recentlyCompleted(id)) {
+		if(node.requestTracker.recentlyCompleted(id)) {
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
 				source.sendAsync(rejected, null, ctr);
@@ -502,7 +508,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
         Key key = (Key) m.getObject(DMT.FREENET_ROUTING_KEY);
         boolean realTimeFlag = DMT.getRealTimeFlag(m);
         final RequestTag tag = new RequestTag(isSSK, RequestTag.START.REMOTE, source, realTimeFlag, id, node);
-		if(!node.lockUID(id, isSSK, false, false, false, realTimeFlag, tag)) {
+		if(!node.requestTracker.lockUID(id, isSSK, false, false, false, realTimeFlag, tag)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
@@ -553,7 +559,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	private void handleInsertRequest(Message m, PeerNode source, boolean isSSK) {
 		ByteCounter ctr = isSSK ? node.nodeStats.sskInsertCtr : node.nodeStats.chkInsertCtr;
 		long id = m.getLong(DMT.UID);
-		if(node.recentlyCompleted(id)) {
+		if(node.requestTracker.recentlyCompleted(id)) {
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
 				source.sendAsync(rejected, null, ctr);
@@ -564,7 +570,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		}
         boolean realTimeFlag = DMT.getRealTimeFlag(m);
 		InsertTag tag = new InsertTag(isSSK, InsertTag.START.REMOTE, source, realTimeFlag, id, node);
-		if(!node.lockUID(id, isSSK, true, false, false, realTimeFlag, tag)) {
+		if(!node.requestTracker.lockUID(id, isSSK, true, false, false, realTimeFlag, tag)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
@@ -625,7 +631,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	
 	private boolean handleProbeRequest(Message m, PeerNode source) {
 		long id = m.getLong(DMT.UID);
-		if(node.recentlyCompleted(id)) {
+		if(node.requestTracker.recentlyCompleted(id)) {
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
 				source.sendAsync(rejected, null, node.nodeStats.probeRequestCtr);
@@ -635,7 +641,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			return true;
 		}
 		// Lets not bother with full lockUID, just add it to the recently completed list.
-		node.completed(id);
+		node.requestTracker.completed(id);
 		// SSKs don't fix bwlimitDelayTime so shouldn't be accepted when overloaded.
 		if(source.shouldRejectProbeRequest()) {
 			Logger.normal(this, "Rejecting probe request from "+source.getPeer());
@@ -676,7 +682,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			}
 			return true;
 		}
-		if(node.recentlyCompleted(uid)) {
+		if(node.requestTracker.recentlyCompleted(uid)) {
 			if(om != null && source instanceof SeedClientPeerNode)
 				om.seedTracker.rejectedAnnounce((SeedClientPeerNode)source);
 			Message msg = DMT.createFNPRejectedLoop(uid);
@@ -690,7 +696,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		boolean success = false;
 		// No way to check whether it's actually running atm, so lets report it to the completed list immediately.
 		// FIXME we should probably keep a list!
-		node.completed(uid);
+		node.requestTracker.completed(uid);
 		try {
 			if(!node.nodeStats.shouldAcceptAnnouncement(uid)) {
 				if(om != null && source instanceof SeedClientPeerNode)

@@ -1,4 +1,4 @@
-package freenet.node;
+package freenet.node.requests;
 
 /** All these methods should return quickly! */
 public interface RequestSenderListener {

@@ -1,9 +1,11 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node;
+package freenet.node.requests;
 
 import freenet.crypt.DSAPublicKey;
+import freenet.io.MultiMessageCallback;
+import freenet.io.WaitingMultiMessageCallback;
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
@@ -25,6 +27,13 @@ import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
+import freenet.node.FSParseException;
+import freenet.node.FailureTable;
+import freenet.node.Node;
+import freenet.node.OpennetManager;
+import freenet.node.PeerNode;
+import freenet.node.PrioRunnable;
+import freenet.node.SyncSendWaitedTooLongException;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.OpennetManager.NoderefCallback;
 import freenet.node.OpennetManager.WaitedTooLongForOpennetNoderefException;
@@ -112,12 +121,12 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 		//The last thing that realRun() does is register as a request-sender listener, so any exception here is the end.
 		} catch(NotConnectedException e) {
 			Logger.normal(this, "requestor gone, could not start request handler wait");
-			node.removeTransferringRequestHandler(uid);
+			node.requestTracker.removeTransferringRequestHandler(uid);
 			tag.handlerThrew(e);
 			tag.unlockHandler();
 		} catch(Throwable t) {
 			Logger.error(this, "Caught " + t, t);
-			node.removeTransferringRequestHandler(uid);
+			node.requestTracker.removeTransferringRequestHandler(uid);
 			tag.handlerThrew(t);
 			tag.unlockHandler();
 		}
@@ -143,27 +152,13 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 		}
 		sent += rs.getTotalSentBytes();
 		rcvd += rs.getTotalReceivedBytes();
-		if(key instanceof NodeSSK) {
-			if(logMINOR)
-				Logger.minor(this, "Remote SSK fetch cost " + sent + '/' + rcvd + " bytes (" + status + ')');
-			node.nodeStats.remoteSskFetchBytesSentAverage.report(sent);
-			node.nodeStats.remoteSskFetchBytesReceivedAverage.report(rcvd);
-			if(status == RequestSender.SUCCESS) {
+		boolean isSSK = key instanceof NodeSSK; // FIXME factor out isSSK into a member?
+		if(logMINOR)
+			Logger.minor(this, "Remote "+(isSSK ? "SSK" : "CHK") + " fetch cost " + sent + '/' + rcvd + " bytes (" + status + ')');
+		
+		node.nodeStats.reportRemoteRequestBytes(isSSK, sent, rcvd,
 				// Can report both parts, because we had both a Handler and a Sender
-				node.nodeStats.successfulSskFetchBytesSentAverage.report(sent);
-				node.nodeStats.successfulSskFetchBytesReceivedAverage.report(rcvd);
-			}
-		} else {
-			if(logMINOR)
-				Logger.minor(this, "Remote CHK fetch cost " + sent + '/' + rcvd + " bytes (" + status + ')');
-			node.nodeStats.remoteChkFetchBytesSentAverage.report(sent);
-			node.nodeStats.remoteChkFetchBytesReceivedAverage.report(rcvd);
-			if(status == RequestSender.SUCCESS) {
-				// Can report both parts, because we had both a Handler and a Sender
-				node.nodeStats.successfulChkFetchBytesSentAverage.report(sent);
-				node.nodeStats.successfulChkFetchBytesReceivedAverage.report(rcvd);
-			}
-		}
+				status == RequestSender.SUCCESS);
 	}
 
 	private void realRun() throws NotConnectedException {
@@ -249,13 +244,13 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 						if(rs != null && rs.isTransferCoalesced()) {
 							if(logMINOR) Logger.minor(this, "Not cancelling transfer because others want the data on "+RequestHandler.this);
 							// We do need to reassign the tag because the RS has the same UID.
-							node.reassignTagToSelf(tag);
+							node.requestTracker.reassignTagToSelf(tag);
 							return false;
 						}
 						if(node.failureTable.peersWantKey(key, source)) {
 							// This may indicate downstream is having trouble communicating with us.
 							Logger.error(this, "Downstream transfer successful but upstream transfer to "+source.shortToString()+" failed. Reassigning tag to self because want the data for peers on "+RequestHandler.this);
-							node.reassignTagToSelf(tag);
+							node.requestTracker.reassignTagToSelf(tag);
 							return false; // Want it
 						}
 						if(node.clientCore != null && node.clientCore.wantKey(key)) {
@@ -282,7 +277,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 							 * discussion in BlockReceiver's top comments.
 							 */
 							Logger.error(this, "Downstream transfer successful but upstream transfer to "+source.shortToString()+" failed. Reassigning tag to self because want the data for ourselves on "+RequestHandler.this);
-							node.reassignTagToSelf(tag);
+							node.requestTracker.reassignTagToSelf(tag);
 							return false; // Want it
 						}
 						return true;
@@ -306,7 +301,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 					}
 					
 				}, realTimeFlag, node.nodeStats);
-			node.addTransferringRequestHandler(uid);
+			node.requestTracker.addTransferringRequestHandler(uid);
 			bt.sendAsync();
 		} catch(NotConnectedException e) {
 			synchronized(this) {
@@ -545,7 +540,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 				unregisterRequestHandlerWithNode();
 			}
 			@Override
-			void sent(boolean success) {
+			protected void sent(boolean success) {
 				// As soon as the originator receives the messages, he can reuse the slot.
 				// Unlocking on sent is a reasonable compromise between:
 				// 1. Unlocking immediately avoids problems with the recipient reusing the slot when he's received the data, therefore us rejecting the request and getting a mandatory backoff, and
@@ -662,7 +657,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 								finishOpennetNoRelay();
 							} catch (NotConnectedException e) {
 								Logger.normal(this, "requestor gone, could not start request handler wait");
-								node.removeTransferringRequestHandler(uid);
+								node.requestTracker.removeTransferringRequestHandler(uid);
 								tag.handlerThrew(e);
 								tag.unlockHandler();
 							}
@@ -675,7 +670,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 					}
 					
 				}, realTimeFlag, node.nodeStats);
-			node.addTransferringRequestHandler(uid);
+			node.requestTracker.addTransferringRequestHandler(uid);
 			source.sendAsync(df, null, this);
 			bt.sendAsync();
 		} else
@@ -683,7 +678,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 	}
 
 	private void unregisterRequestHandlerWithNode() {
-		node.removeTransferringRequestHandler(uid);
+		node.requestTracker.removeTransferringRequestHandler(uid);
 		RequestSender r;
 		synchronized(this) {
 			r = rs;
@@ -874,7 +869,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 		}
 
 		try {
-			om.sendOpennetRef(false, uid, source, om.crypto.myCompressedFullRef(), this);
+			om.sendOpennetRef(false, uid, source, om.getCompressedFullRef(), this);
 		} catch(NotConnectedException e) {
 			Logger.normal(this, "Can't send opennet ref because node disconnected on " + this);
 			// Oh well...
@@ -1007,7 +1002,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 					applyByteCounts();
 				}
 				
-				node.removeTransferringRequestHandler(uid);
+				node.requestTracker.removeTransferringRequestHandler(uid);
 			}
 
 			@Override
@@ -1020,7 +1015,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 				}
 				rs.ackOpennet(rs.successFrom());
 				applyByteCounts();
-				node.removeTransferringRequestHandler(uid);
+				node.requestTracker.removeTransferringRequestHandler(uid);
 			}
 
 			@Override
@@ -1028,7 +1023,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 				tag.unlockHandler();
 				rs.ackOpennet(dataSource);
 				applyByteCounts();
-				node.removeTransferringRequestHandler(uid);
+				node.requestTracker.removeTransferringRequestHandler(uid);
 			}
 			
 		}, node);

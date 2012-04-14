@@ -133,7 +133,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 	 */
 	private boolean _handleSecretPing(Message m, PeerNode source, long uid, short htl, short dawnHtl, int counter) throws NotConnectedException {
 		
-		if (disableSecretPings || node.recentlyCompleted(uid)) {
+		if (disableSecretPings || node.requestTracker.recentlyCompleted(uid)) {
 			if (logMINOR) Logger.minor(this, "recently complete/loop: "+uid);
 			source.sendAsync(DMT.createFNPRejectedLoop(uid), null, ctr);
 		} else {
@@ -154,7 +154,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 				}
 			} else {
 				//Set the completed flag immediately for determining reject loops rather than locking the uid.
-				node.completed(uid);
+				node.requestTracker.completed(uid);
 				
 				//Not a local match... forward
 				double target=m.getDouble(DMT.TARGET_LOCATION);

@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node;
+package freenet.node.requests;
 
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
@@ -19,6 +19,12 @@ import freenet.io.xfer.WaitedTooLongException;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
+import freenet.node.AnyInsertSender;
+import freenet.node.Node;
+import freenet.node.PeerNode;
+import freenet.node.PrioRunnable;
+import freenet.node.SyncSendWaitedTooLongException;
+import freenet.node.requests.InsertTag.START;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.ShortBuffer;
@@ -66,21 +72,21 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
     
     private int status = -1;
     /** Still running */
-    static final int NOT_FINISHED = -1;
+    public static final int NOT_FINISHED = -1;
     /** Successful insert */
-    static final int SUCCESS = 0;
+    public static final int SUCCESS = 0;
     /** Route not found */
-    static final int ROUTE_NOT_FOUND = 1;
+    public static final int ROUTE_NOT_FOUND = 1;
     /** Internal error */
-    static final int INTERNAL_ERROR = 3;
+    public static final int INTERNAL_ERROR = 3;
     /** Timed out waiting for response */
-    static final int TIMED_OUT = 4;
+    public static final int TIMED_OUT = 4;
     /** Locally Generated a RejectedOverload */
-    static final int GENERATED_REJECTED_OVERLOAD = 5;
+    public static final int GENERATED_REJECTED_OVERLOAD = 5;
     /** Could not get off the node at all! */
-    static final int ROUTE_REALLY_NOT_FOUND = 6;
+    public static final int ROUTE_REALLY_NOT_FOUND = 6;
     
-    SSKInsertSender(SSKBlock block, long uid, InsertTag tag, short htl, PeerNode source, Node node, boolean fromStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
+    public SSKInsertSender(SSKBlock block, long uid, InsertTag tag, short htl, PeerNode source, Node node, boolean fromStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
     	super(block.getKey(), realTimeFlag, source, node, htl, uid);
     	this.fromStore = fromStore;
     	this.origUID = uid;
@@ -102,7 +108,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
     	this.realTimeFlag = realTimeFlag;
     }
 
-    void start() {
+    public void start() {
     	node.executor.execute(this, "SSKInsertSender for UID "+uid+" on "+node.getDarknetPortNumber()+" at "+System.currentTimeMillis());
     }
     
@@ -194,7 +200,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 				forkedRequestTag.setAccepted();
             	Logger.normal(this, "FORKING SSK INSERT "+origUID+" to "+uid);
             	nodesRoutedTo.clear();
-            	node.lockUID(forkedRequestTag);
+            	node.requestTracker.lockUID(forkedRequestTag);
             }
             
             // Route it
@@ -514,7 +520,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 
 	private boolean hasForwardedRejectedOverload;
     
-    synchronized boolean receivedRejectedOverload() {
+    public synchronized boolean receivedRejectedOverload() {
     	return hasForwardedRejectedOverload;
     }
     

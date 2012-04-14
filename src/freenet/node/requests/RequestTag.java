@@ -1,7 +1,9 @@
-package freenet.node;
+package freenet.node.requests;
 
 import java.lang.ref.WeakReference;
 
+import freenet.node.Node;
+import freenet.node.PeerNode;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
 
@@ -18,7 +20,7 @@ public class RequestTag extends UIDTag {
     	Logger.registerClass(RequestTag.class);
     }
 	
-	enum START {
+	public enum START {
 		ASYNC_GET,
 		LOCAL,
 		REMOTE
@@ -176,7 +178,7 @@ public class RequestTag extends UIDTag {
 	public synchronized void waitingForOpennet(PeerNode next) {
 		if(waitingForOpennet != null)
 			Logger.error(this, "Have already waited for opennet: "+waitingForOpennet.get()+" on "+this, new Exception("error"));
-		this.waitingForOpennet = next.myRef;
+		this.waitingForOpennet = next.getWeakRef();
 	}
 
 	public void finishedWaitingForOpennet(PeerNode next) {
@@ -199,7 +201,7 @@ public class RequestTag extends UIDTag {
 	
 	@Override
 	public synchronized boolean currentlyRoutingTo(PeerNode peer) {
-		if(waitingForOpennet != null && waitingForOpennet == peer.myRef)
+		if(waitingForOpennet != null && waitingForOpennet == peer.getWeakRef())
 			return true;
 		return super.currentlyRoutingTo(peer);
 	}

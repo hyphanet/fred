@@ -1,4 +1,4 @@
-package freenet.node;
+package freenet.io;
 
 import freenet.io.comm.AsyncMessageCallback;
 
@@ -13,10 +13,10 @@ public abstract class MultiMessageCallback {
 	private boolean someFailed;
 	
 	/** This is called when all messages have been acked, or failed */
-	abstract void finish(boolean success);
+	protected abstract void finish(boolean success);
 	
 	/** This is called when all messages have been sent (but not acked) or failed to send */
-	abstract void sent(boolean success);
+	protected abstract void sent(boolean success);
 
 	public AsyncMessageCallback make() {
 		synchronized(this) {

@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node;
+package freenet.node.requests;
 
 import java.util.ArrayList;
 
@@ -29,6 +29,14 @@ import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
+import freenet.node.FSParseException;
+import freenet.node.FailureTable;
+import freenet.node.Node;
+import freenet.node.OpennetManager;
+import freenet.node.PeerNode;
+import freenet.node.PrioRunnable;
+import freenet.node.RecentlyFailedReturn;
+import freenet.node.SyncSendWaitedTooLongException;
 import freenet.node.FailureTable.BlockOffer;
 import freenet.node.FailureTable.OfferList;
 import freenet.node.OpennetManager.ConnectionType;
@@ -64,7 +72,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     static final int GET_OFFER_LONG_TIMEOUT = 60*1000;
     final int getOfferedTimeout;
     /** Wait up to this long to get a path folding reply */
-    static final int OPENNET_TIMEOUT = 120000;
+    public static final int OPENNET_TIMEOUT = 120000;
     /** One in this many successful requests is randomly reinserted.
      * This is probably a good idea anyway but with the split store it's essential. */
     static final int RANDOM_REINSERT_INTERVAL = 200;
@@ -90,18 +98,18 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     // Always set finished AFTER setting the reason flag
 
     private int status = -1;
-    static final int NOT_FINISHED = -1;
-    static final int SUCCESS = 0;
-    static final int ROUTE_NOT_FOUND = 1;
-    static final int DATA_NOT_FOUND = 3;
-    static final int TRANSFER_FAILED = 4;
-    static final int VERIFY_FAILURE = 5;
-    static final int TIMED_OUT = 6;
-    static final int GENERATED_REJECTED_OVERLOAD = 7;
-    static final int INTERNAL_ERROR = 8;
-    static final int RECENTLY_FAILED = 9;
-    static final int GET_OFFER_VERIFY_FAILURE = 10;
-    static final int GET_OFFER_TRANSFER_FAILED = 11;
+    public static final int NOT_FINISHED = -1;
+    public static final int SUCCESS = 0;
+    public static final int ROUTE_NOT_FOUND = 1;
+    public static final int DATA_NOT_FOUND = 3;
+    public static final int TRANSFER_FAILED = 4;
+    public static final int VERIFY_FAILURE = 5;
+    public static final int TIMED_OUT = 6;
+    public static final int GENERATED_REJECTED_OVERLOAD = 7;
+    public static final int INTERNAL_ERROR = 8;
+    public static final int RECENTLY_FAILED = 9;
+    public static final int GET_OFFER_VERIFY_FAILURE = 10;
+    public static final int GET_OFFER_TRANSFER_FAILED = 11;
     private PeerNode successFrom;
     
     static String getStatusString(int status) {
@@ -825,7 +833,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			
         	// FIXME: Validate headers
         	
-        	node.addTransferringSender((NodeCHK)key, this);
+        	node.requestTracker.addTransferringSender((NodeCHK)key, this);
         	
         	try {
         		
@@ -850,7 +858,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         				synchronized(RequestSender.this) {
         					transferringFrom = null;
         				}
-        				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
+        				node.requestTracker.removeTransferringSender((NodeCHK)key, RequestSender.this);
                 		try {
 	                		// Received data
 	               			pn.transferSuccess(realTimeFlag);
@@ -881,7 +889,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         				synchronized(RequestSender.this) {
         					transferringFrom = null;
         				}
-        				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
+        				node.requestTracker.removeTransferringSender((NodeCHK)key, RequestSender.this);
 						try {
 							if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
 								Logger.normal(this, "Transfer failed (disconnect): "+e, e);
@@ -912,7 +920,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         		});
         		return OFFER_STATUS.FETCHING;
         	} finally {
-        		node.removeTransferringSender((NodeCHK)key, this);
+        		node.requestTracker.removeTransferringSender((NodeCHK)key, this);
         	}
 		} else {
 			// Impossible.
@@ -1074,7 +1082,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     	// FIXME: Validate headers
     	
     	if(!wasFork)
-    		node.addTransferringSender((NodeCHK)key, this);
+    		node.requestTracker.addTransferringSender((NodeCHK)key, this);
     	
     	final PartiallyReceivedBlock prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
     	
@@ -1140,7 +1148,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     					}
     				}
     				if(!wasFork)
-    					node.removeTransferringSender((NodeCHK)key, RequestSender.this);
+    					node.requestTracker.removeTransferringSender((NodeCHK)key, RequestSender.this);
    					next.transferSuccess(realTimeFlag);
     				next.successNotOverload(realTimeFlag);
    					node.nodeStats.successfulBlockReceive(realTimeFlag, source == null);
@@ -1178,7 +1186,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     				synchronized(RequestSender.this) {
     					transferringFrom = null;
     				}
-    				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
+    				node.requestTracker.removeTransferringSender((NodeCHK)key, RequestSender.this);
     				if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
     					Logger.normal(this, "Transfer failed (disconnect): "+e, e);
     				else
@@ -1477,11 +1485,11 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     }
 
     // these are bit-masks
-    static final short WAIT_REJECTED_OVERLOAD = 1;
-    static final short WAIT_TRANSFERRING_DATA = 2;
-    static final short WAIT_FINISHED = 4;
+    public static final short WAIT_REJECTED_OVERLOAD = 1;
+    public static final short WAIT_TRANSFERRING_DATA = 2;
+    public static final short WAIT_FINISHED = 4;
     
-    static final short WAIT_ALL = 
+    public static final short WAIT_ALL = 
     	WAIT_REJECTED_OVERLOAD | WAIT_TRANSFERRING_DATA | WAIT_FINISHED;
     
     /**
@@ -1722,7 +1730,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			}
 			
 	    	// We want the node: send our reference
-    		om.sendOpennetRef(true, uid, next, om.crypto.myCompressedFullRef(), this);
+    		om.sendOpennetRef(true, uid, next, om.getCompressedFullRef(), this);
 			origTag.finishedWaitingForOpennet(next);
 
 		} catch (FSParseException e) {
@@ -1871,7 +1879,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		}
 	}
 	
-	synchronized boolean hasForwarded() {
+	public synchronized boolean hasForwarded() {
 		return hasForwarded;
 	}
 

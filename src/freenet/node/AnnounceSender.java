@@ -67,7 +67,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		source = null;
 		this.uid = node.random.nextLong();
 		// Prevent it being routed back to us.
-		node.completed(uid);
+		node.requestTracker.completed(uid);
 		msg = null;
 		this.om = om;
 		this.node = node;
@@ -89,7 +89,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 			if(source != null) {
 				source.completedAnnounce(uid);
 			}
-			node.completed(uid);
+			node.requestTracker.completed(uid);
 			if(cb != null)
 				cb.completed();
 			node.nodeStats.endAnnouncement(uid);

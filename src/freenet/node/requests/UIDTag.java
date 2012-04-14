@@ -1,8 +1,10 @@
-package freenet.node;
+package freenet.node.requests;
 
 import java.lang.ref.WeakReference;
 import java.util.HashSet;
 
+import freenet.node.Node;
+import freenet.node.PeerNode;
 import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger.LogLevel;
@@ -29,7 +31,7 @@ public abstract class UIDTag {
 	final long createdTime;
 	final boolean wasLocal;
 	private final WeakReference<PeerNode> sourceRef;
-	final boolean realTimeFlag;
+	public final boolean realTimeFlag;
 	private final Node node;
 	protected boolean accepted;
 	protected boolean sourceRestarted;
@@ -56,7 +58,7 @@ public abstract class UIDTag {
 	
 	UIDTag(PeerNode source, boolean realTimeFlag, long uid, Node node) {
 		createdTime = System.currentTimeMillis();
-		this.sourceRef = source == null ? null : source.myRef;
+		this.sourceRef = source == null ? null : source.getWeakRef();
 		wasLocal = source == null;
 		this.realTimeFlag = realTimeFlag;
 		this.node = node;
@@ -174,7 +176,7 @@ public abstract class UIDTag {
 	}
 	
 	protected final void innerUnlock(boolean noRecordUnlock) {
-		node.unlockUID(this, false, noRecordUnlock);
+		node.requestTracker.unlockUID(this, false, noRecordUnlock);
 	}
 
 	public void postUnlock() {
@@ -382,7 +384,7 @@ public abstract class UIDTag {
 	private int LOGGED_STILL_PRESENT_INTERVAL = 60*1000;
 	
 	public void maybeLogStillPresent(long now, Long uid) {
-		if(now - createdTime > Node.TIMEOUT) {
+		if(now - createdTime > RequestTracker.TIMEOUT) {
 			synchronized(this) {
 				if(now - loggedStillPresent < LOGGED_STILL_PRESENT_INTERVAL) return;
 				loggedStillPresent = now;
@@ -437,7 +439,7 @@ public abstract class UIDTag {
 		if(reassigned) return false;
 		if(wasLocal) return false;
 		if(sourceRef == null) return false;
-		return sourceRef == pn.myRef;
+		return sourceRef == pn.getWeakRef();
 	}
 	
 	public synchronized void setWaitingForSlot() {

@@ -69,6 +69,8 @@ import freenet.node.NodeStats.RequestType;
 import freenet.node.NodeStats.RunningRequestsSnapshot;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.PeerManager.PeerStatusChangeListener;
+import freenet.node.requests.RequestTag;
+import freenet.node.requests.UIDTag;
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -1283,7 +1285,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			Logger.minor(this, "Disconnected "+this, new Exception("debug"));
 		node.usm.onDisconnect(this);
 		if(dumpMessageQueue)
-			node.onRestartOrDisconnect(this);
+			node.requestTracker.onRestartOrDisconnect(this);
 		node.failureTable.onDisconnect(this);
 		node.peers.disconnected(this);
 		node.nodeUpdater.disconnected(this);
@@ -2329,7 +2331,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		if(bootIDChanged) {
 			node.lm.lostOrRestartedNode(this);
 			node.usm.onRestart(this);
-			node.onRestartOrDisconnect(this);
+			node.requestTracker.onRestartOrDisconnect(this);
 		}
 		if(oldPrev != null && oldPrev.packets != newTracker.packets)
 			oldPrev.packets.completelyDeprecated(newTracker);
@@ -5157,7 +5159,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		public final int othersUsedCapacityInputBytes;
 	}
 	
-	enum RequestLikelyAcceptedState {
+	public enum RequestLikelyAcceptedState {
 		GUARANTEED, // guaranteed to be accepted, under the per-peer guaranteed limit
 		LIKELY, // likely to be accepted even though above the per-peer guaranteed limit, as overall is below the overall lower limit
 		UNLIKELY, // not likely to be accepted; peer is over the per-peer guaranteed limit, and global is over the overall lower limit
@@ -5527,7 +5529,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	}
 	
-	static class SlotWaiterFailedException extends Exception {
+	public static class SlotWaiterFailedException extends Exception {
 		final PeerNode pn;
 		final boolean fatal;
 		SlotWaiterFailedException(PeerNode p, boolean f) {
@@ -5599,7 +5601,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/** Uses the information we receive on the load on the target node to determine whether
 	 * we can route to it and when we can route to it.
 	 */
-	class OutputLoadTracker {
+	public class OutputLoadTracker {
 		
 		final boolean realTime;
 		
@@ -5956,7 +5958,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		outputLoadTracker(tag.realTimeFlag).maybeNotifySlotWaiter();
 	}
 	
-	static SlotWaiter createSlotWaiter(UIDTag tag, RequestType type, boolean offeredKey, boolean realTime, PeerNode source) {
+	public static SlotWaiter createSlotWaiter(UIDTag tag, RequestType type, boolean offeredKey, boolean realTime, PeerNode source) {
 		return new SlotWaiter(tag, type, offeredKey, realTime, source);
 	}
 

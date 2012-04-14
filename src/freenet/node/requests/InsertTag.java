@@ -1,5 +1,7 @@
-package freenet.node;
+package freenet.node.requests;
 
+import freenet.node.Node;
+import freenet.node.PeerNode;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
 
@@ -11,7 +13,7 @@ public class InsertTag extends UIDTag {
 	
 	final boolean ssk;
 	
-	enum START {
+	public enum START {
 		LOCAL,
 		REMOTE
 	}
@@ -21,7 +23,7 @@ public class InsertTag extends UIDTag {
 	private boolean senderStarted;
 	private boolean senderFinished;
 	
-	InsertTag(boolean ssk, START start, PeerNode source, boolean realTimeFlag, long uid, Node node) {
+	public InsertTag(boolean ssk, START start, PeerNode source, boolean realTimeFlag, long uid, Node node) {
 		super(source, realTimeFlag, uid, node);
 		this.start = start;
 		this.ssk = ssk;

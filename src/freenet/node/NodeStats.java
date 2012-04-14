@@ -19,8 +19,10 @@ import freenet.io.comm.Message;
 import freenet.io.xfer.BlockTransmitter.BlockTimeCallback;
 import freenet.io.xfer.BulkTransmitter;
 import freenet.l10n.NodeL10n;
-import freenet.node.Node.CountedRequests;
+import freenet.node.requests.RequestTracker;
+import freenet.node.requests.RequestTracker.CountedRequests;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
+import freenet.node.requests.UIDTag;
 import freenet.node.stats.StatsNotAvailableException;
 import freenet.node.stats.StoreLocationStats;
 import freenet.store.CHKStore;
@@ -131,14 +133,15 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private final RunningAverage throttledPacketSendAverageBulk;
 
 	// Bytes used by each different type of local/remote chk/ssk request/insert
-	final TimeDecayingRunningAverage remoteChkFetchBytesSentAverage;
-	final TimeDecayingRunningAverage remoteSskFetchBytesSentAverage;
-	final TimeDecayingRunningAverage remoteChkInsertBytesSentAverage;
-	final TimeDecayingRunningAverage remoteSskInsertBytesSentAverage;
-	final TimeDecayingRunningAverage remoteChkFetchBytesReceivedAverage;
-	final TimeDecayingRunningAverage remoteSskFetchBytesReceivedAverage;
-	final TimeDecayingRunningAverage remoteChkInsertBytesReceivedAverage;
-	final TimeDecayingRunningAverage remoteSskInsertBytesReceivedAverage;
+	// FIXME these should not be accessed directly, they should be accessed via a method.
+	public final TimeDecayingRunningAverage remoteChkFetchBytesSentAverage;
+	public final TimeDecayingRunningAverage remoteSskFetchBytesSentAverage;
+	public final TimeDecayingRunningAverage remoteChkInsertBytesSentAverage;
+	public final TimeDecayingRunningAverage remoteSskInsertBytesSentAverage;
+	public final TimeDecayingRunningAverage remoteChkFetchBytesReceivedAverage;
+	public final TimeDecayingRunningAverage remoteSskFetchBytesReceivedAverage;
+	public final TimeDecayingRunningAverage remoteChkInsertBytesReceivedAverage;
+	public final TimeDecayingRunningAverage remoteSskInsertBytesReceivedAverage;
 	final TimeDecayingRunningAverage localChkFetchBytesSentAverage;
 	final TimeDecayingRunningAverage localSskFetchBytesSentAverage;
 	final TimeDecayingRunningAverage localChkInsertBytesSentAverage;
@@ -159,16 +162,16 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	// Note that these are always reported in the Handler or the NodeClientCore
 	// call taking its place.
-	final TimeDecayingRunningAverage successfulChkFetchBytesSentAverage;
-	final TimeDecayingRunningAverage successfulSskFetchBytesSentAverage;
-	final TimeDecayingRunningAverage successfulChkInsertBytesSentAverage;
-	final TimeDecayingRunningAverage successfulSskInsertBytesSentAverage;
+	public final TimeDecayingRunningAverage successfulChkFetchBytesSentAverage;
+	public final TimeDecayingRunningAverage successfulSskFetchBytesSentAverage;
+	public final TimeDecayingRunningAverage successfulChkInsertBytesSentAverage;
+	public final TimeDecayingRunningAverage successfulSskInsertBytesSentAverage;
 	final TimeDecayingRunningAverage successfulChkOfferReplyBytesSentAverage;
 	final TimeDecayingRunningAverage successfulSskOfferReplyBytesSentAverage;
-	final TimeDecayingRunningAverage successfulChkFetchBytesReceivedAverage;
-	final TimeDecayingRunningAverage successfulSskFetchBytesReceivedAverage;
-	final TimeDecayingRunningAverage successfulChkInsertBytesReceivedAverage;
-	final TimeDecayingRunningAverage successfulSskInsertBytesReceivedAverage;
+	public final TimeDecayingRunningAverage successfulChkFetchBytesReceivedAverage;
+	public final TimeDecayingRunningAverage successfulSskFetchBytesReceivedAverage;
+	public final TimeDecayingRunningAverage successfulChkInsertBytesReceivedAverage;
+	public final TimeDecayingRunningAverage successfulSskInsertBytesReceivedAverage;
 	final TimeDecayingRunningAverage successfulChkOfferReplyBytesReceivedAverage;
 	final TimeDecayingRunningAverage successfulSskOfferReplyBytesReceivedAverage;
 
@@ -746,7 +749,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			
 			boolean ignoreLocalVsRemote = ignoreLocalVsRemoteBandwidthLiability();
 			
-			RunningRequestsSnapshot runningLocal = new RunningRequestsSnapshot(node, peer, false, ignoreLocalVsRemote, transfersPerInsert, realTimeFlag);
+			RunningRequestsSnapshot runningLocal = new RunningRequestsSnapshot(node.requestTracker, peer, false, ignoreLocalVsRemote, transfersPerInsert, realTimeFlag);
 			
 			int peers = node.peers.countConnectedPeers();
 			
@@ -772,7 +775,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			
 			this.averageTransfersOutPerInsert = transfersPerInsert;
 			
-			RunningRequestsSnapshot runningGlobal = new RunningRequestsSnapshot(node, ignoreLocalVsRemote, transfersPerInsert, realTimeFlag);
+			RunningRequestsSnapshot runningGlobal = new RunningRequestsSnapshot(node.requestTracker, ignoreLocalVsRemote, transfersPerInsert, realTimeFlag);
 			expectedTransfersInCHK = runningGlobal.expectedTransfersInCHK - runningLocal.expectedTransfersInCHK;
 			expectedTransfersInSSK = runningGlobal.expectedTransfersInSSK - runningLocal.expectedTransfersInSSK;
 			expectedTransfersOutCHK = runningGlobal.expectedTransfersOutCHK - runningLocal.expectedTransfersOutCHK;
@@ -858,7 +861,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		final int averageTransfersPerInsert;
 		final boolean realTimeFlag;
 		
-		RunningRequestsSnapshot(Node node, boolean ignoreLocalVsRemote, int transfersPerInsert, boolean realTimeFlag) {
+		RunningRequestsSnapshot(RequestTracker node, boolean ignoreLocalVsRemote, int transfersPerInsert, boolean realTimeFlag) {
 			this.averageTransfersPerInsert = transfersPerInsert;
 			this.realTimeFlag = realTimeFlag;
 			CountedRequests countCHK = new CountedRequests();
@@ -902,7 +905,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		 * @param requestsToNode If true, count requests sent to the node and currently
 		 * running. If false, count requests originated by the node.
 		 */
-		RunningRequestsSnapshot(Node node, PeerNode source, boolean requestsToNode, boolean ignoreLocalVsRemote, int transfersPerInsert, boolean realTimeFlag) {
+		RunningRequestsSnapshot(RequestTracker node, PeerNode source, boolean requestsToNode, boolean ignoreLocalVsRemote, int transfersPerInsert, boolean realTimeFlag) {
 			this.averageTransfersPerInsert = transfersPerInsert;
 			this.realTimeFlag = realTimeFlag;
 			// We are calculating what part of their resources we use. Therefore, we have
@@ -1151,7 +1154,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		int transfersPerInsert = outwardTransfersPerInsert();
 		
 		/** Requests running, globally */
-		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, realTimeFlag);
+		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node.requestTracker, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, realTimeFlag);
 		
 		// Don't need to decrement because it won't be counted until setAccepted() below.
 
@@ -1182,7 +1185,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		 * which are not included in the count, and are decremented from the peer limit
 		 * before it is used and sent to the peer. This ensures that the peer
 		 * doesn't use more than it should after a restart. */
-		RunningRequestsSnapshot peerRequestsSnapshot = new RunningRequestsSnapshot(node, source, false, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, realTimeFlag);
+		RunningRequestsSnapshot peerRequestsSnapshot = new RunningRequestsSnapshot(node.requestTracker, source, false, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, realTimeFlag);
 		if(logMINOR)
 			peerRequestsSnapshot.log(source);
 		
@@ -1890,20 +1893,22 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("numberOfSimpleConnected", numberOfSimpleConnected);
 		fs.put("numberOfNotConnected", numberOfNotConnected);
 
-		fs.put("numberOfTransferringRequestSenders", node.getNumTransferringRequestSenders());
+		RequestTracker tracker = node.requestTracker;
+		
+		fs.put("numberOfTransferringRequestSenders", tracker.getNumTransferringRequestSenders());
 		fs.put("numberOfARKFetchers", node.getNumARKFetchers());
 
-		fs.put("numberOfLocalCHKInserts", node.getNumLocalCHKInserts());
-		fs.put("numberOfRemoteCHKInserts", node.getNumRemoteCHKInserts());
-		fs.put("numberOfLocalSSKInserts", node.getNumLocalSSKInserts());
-		fs.put("numberOfRemoteSSKInserts", node.getNumRemoteSSKInserts());
-		fs.put("numberOfLocalCHKRequests", node.getNumLocalCHKRequests());
-		fs.put("numberOfRemoteCHKRequests", node.getNumRemoteCHKRequests());
-		fs.put("numberOfLocalSSKRequests", node.getNumLocalSSKRequests());
-		fs.put("numberOfRemoteSSKRequests", node.getNumRemoteSSKRequests());
-		fs.put("numberOfTransferringRequestHandlers", node.getNumTransferringRequestHandlers());
-		fs.put("numberOfCHKOfferReplys", node.getNumCHKOfferReplies());
-		fs.put("numberOfSSKOfferReplys", node.getNumSSKOfferReplies());
+		fs.put("numberOfLocalCHKInserts", tracker.getNumLocalCHKInserts());
+		fs.put("numberOfRemoteCHKInserts", tracker.getNumRemoteCHKInserts());
+		fs.put("numberOfLocalSSKInserts", tracker.getNumLocalSSKInserts());
+		fs.put("numberOfRemoteSSKInserts", tracker.getNumRemoteSSKInserts());
+		fs.put("numberOfLocalCHKRequests", tracker.getNumLocalCHKRequests());
+		fs.put("numberOfRemoteCHKRequests", tracker.getNumRemoteCHKRequests());
+		fs.put("numberOfLocalSSKRequests", tracker.getNumLocalSSKRequests());
+		fs.put("numberOfRemoteSSKRequests", tracker.getNumRemoteSSKRequests());
+		fs.put("numberOfTransferringRequestHandlers", tracker.getNumTransferringRequestHandlers());
+		fs.put("numberOfCHKOfferReplys", tracker.getNumCHKOfferReplies());
+		fs.put("numberOfSSKOfferReplys", tracker.getNumSSKOfferReplies());
 
 		fs.put("delayTimeLocalRT", nlmDelayRTLocal.currentValue());
 		fs.put("delayTimeRemoteRT", nlmDelayRTRemote.currentValue());
@@ -1917,7 +1922,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		    fs.put("allocatedSlotRemote",allocatedSlotRemote);
 		}
 
-		int[] waitingSlots = node.countRequestsWaitingForSlots();
+		int[] waitingSlots = tracker.countRequestsWaitingForSlots();
 		fs.put("RequestsWaitingSlotsLocal", waitingSlots[0]);
 		fs.put("RequestsWaitingSlotsRemote", waitingSlots[1]);
 
@@ -2953,7 +2958,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private HourlyStats hourlyStatsRT;
 	private HourlyStats hourlyStatsBulk;
 
-	void remoteRequest(boolean ssk, boolean success, boolean local, short htl, double location, boolean realTime, boolean fromOfferedKey) {
+	public void remoteRequest(boolean ssk, boolean success, boolean local, short htl, double location, boolean realTime, boolean fromOfferedKey) {
 		if(logMINOR) Logger.minor(this, "Remote request: sucess="+success+" htl="+htl+" locally answered="+local+" location of key="+location+" from offered key = "+fromOfferedKey);
 		if(!fromOfferedKey) {
 			if(realTime)
@@ -3516,7 +3521,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public RunningRequestsSnapshot getRunningRequestsTo(PeerNode peerNode, int transfersPerInsert, boolean realTimeFlag) {
-		return new RunningRequestsSnapshot(node, peerNode, true, false, outwardTransfersPerInsert(), realTimeFlag);
+		return new RunningRequestsSnapshot(node.requestTracker, peerNode, true, false, outwardTransfersPerInsert(), realTimeFlag);
 	}
 	
 	public boolean ignoreLocalVsRemoteBandwidthLiability() {
@@ -3615,7 +3620,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public void drawNewLoadManagementDelayTimes(HTMLNode content) {
-		int[] waitingSlots = node.countRequestsWaitingForSlots();
+		int[] waitingSlots = node.requestTracker.countRequestsWaitingForSlots();
 		content.addChild("p").addChild("#", l10n("slotsWaiting", new String[] { "local", "remote" }, new String[] { Integer.toString(waitingSlots[0]), Integer.toString(waitingSlots[1]) }));
 		HTMLNode table = content.addChild("table", "border", "0");
 		HTMLNode header = table.addChild("tr");
