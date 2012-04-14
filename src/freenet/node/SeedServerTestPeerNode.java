@@ -5,6 +5,7 @@ package freenet.node;
 
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.node.transport.NodeCrypto;
 import freenet.support.SimpleFieldSet;
 
 /**

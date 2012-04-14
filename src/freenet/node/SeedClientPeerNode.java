@@ -5,6 +5,8 @@ package freenet.node;
 
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.node.transport.FNPPacketMangler;
+import freenet.node.transport.NodeCrypto;
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -105,7 +107,7 @@ public class SeedClientPeerNode extends PeerNode {
 	}
 	
 	@Override
-	void startARKFetcher() {
+	public void startARKFetcher() {
 		// Do not start an ARK fetcher.
 	}
 	

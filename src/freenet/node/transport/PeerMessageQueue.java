@@ -1,4 +1,4 @@
-package freenet.node;
+package freenet.node.transport;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -8,6 +8,7 @@ import java.util.ListIterator;
 import java.util.Map;
 
 import freenet.io.comm.DMT;
+import freenet.node.BasePeerNode;
 import freenet.support.DoublyLinkedList;
 import freenet.support.DoublyLinkedListImpl;
 import freenet.support.LogThresholdCallback;
@@ -810,7 +811,7 @@ public class PeerMessageQueue {
 
 	}
 
-	PeerMessageQueue(BasePeerNode parent) {
+	public PeerMessageQueue(BasePeerNode parent) {
 		pn = parent;
 		queuesByPriority = new PrioQueue[DMT.NUM_PRIORITIES];
 		for(int i=0;i<queuesByPriority.length;i++) {
@@ -884,7 +885,7 @@ public class PeerMessageQueue {
 	 * WARNING: Pulling a message and then pushing it back will mess up the fairness 
 	 * between UID's send order. Try to avoid it.
 	 */
-	synchronized void pushfrontPrioritizedMessageItem(MessageItem addMe) {
+	public synchronized void pushfrontPrioritizedMessageItem(MessageItem addMe) {
 		//Assume it goes on the front
 		short prio = addMe.getPriority();
 		queuesByPriority[prio].addFirst(addMe);

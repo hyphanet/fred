@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import freenet.node.transport.MessageItem;
+import freenet.node.transport.PeerMessageQueue;
 import junit.framework.TestCase;
 
 public class PeerMessageQueueTest extends TestCase {

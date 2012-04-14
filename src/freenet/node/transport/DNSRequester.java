@@ -1,8 +1,10 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node;
+package freenet.node.transport;
 
+import freenet.node.Node;
+import freenet.node.PeerNode;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -18,7 +20,7 @@ public class DNSRequester implements Runnable {
     final Node node;
     private long lastLogTime;
     // Only set when doing simulations.
-    static boolean DISABLE = false;
+    public static boolean DISABLE = false;
 
 
     private static volatile boolean logMINOR;
@@ -32,11 +34,11 @@ public class DNSRequester implements Runnable {
         });
     }
 
-    DNSRequester(Node node) {
+    public DNSRequester(Node node) {
         this.node = node;
     }
 
-    void start() {
+    public void start() {
     	Logger.normal(this, "Starting DNSRequester");
     	System.out.println("Starting DNSRequester");
     	node.executor.execute(this, "DNSRequester thread for "+node.getDarknetPortNumber());
@@ -58,7 +60,7 @@ public class DNSRequester implements Runnable {
     }
 
     private void realRun() {
-        PeerNode[] nodes = node.peers.myPeers;
+        PeerNode[] nodes = node.peers.getPeers();
         long now = System.currentTimeMillis();
         if((now - lastLogTime) > 1000) {
         	if(logMINOR)

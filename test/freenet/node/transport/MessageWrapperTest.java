@@ -1,5 +1,8 @@
-package freenet.node;
+package freenet.node.transport;
 
+import freenet.node.transport.MessageFragment;
+import freenet.node.transport.MessageItem;
+import freenet.node.transport.MessageWrapper;
 import junit.framework.TestCase;
 
 public class MessageWrapperTest extends TestCase {

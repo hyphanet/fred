@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node;
+package freenet.node.transport;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
@@ -43,6 +43,17 @@ import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.SocketHandler;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.l10n.NodeL10n;
+import freenet.node.BlockedTooLongException;
+import freenet.node.DarknetPeerNode;
+import freenet.node.FSParseException;
+import freenet.node.KeyChangedException;
+import freenet.node.Node;
+import freenet.node.OpennetManager;
+import freenet.node.OutgoingPacketMangler;
+import freenet.node.PeerNode;
+import freenet.node.PrioRunnable;
+import freenet.node.SeedClientPeerNode;
+import freenet.node.StillNotAckedException;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
@@ -582,7 +593,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 	// Anonymous-initiator setup types
 	/** Connect to a node hoping it will act as a seednode for us */
-	static final byte SETUP_OPENNET_SEEDNODE = 1;
+	public static final byte SETUP_OPENNET_SEEDNODE = 1;
 
 	/**
 	 * Process an anonymous-initiator connection setup packet. For a normal setup
@@ -889,8 +900,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		return false;
 	}
 
-	private final int MAX_NONCES_PER_PEER = 10;
-	
 	/*
 	 * format:
 	 * Ni,g^i
@@ -902,9 +911,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	private void sendJFKMessage1(PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType, int negType) {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(1) message to "+replyTo+" for "+pn.getPeer());
 		final long now = System.currentTimeMillis();
+		// FIXME does this need synchronization? Probably not if there's only one packet handler thread ...
+		// FIXME do more of this in PeerNode ... or less, some sort of context object so we're not putting JFK stuff into PeerNode?
 		DiffieHellmanLightContext ctx = (DiffieHellmanLightContext) pn.getKeyAgreementSchemeContext();
-		if((ctx == null) || ((pn.jfkContextLifetime + DH_GENERATION_INTERVAL*DH_CONTEXT_BUFFER_SIZE) < now)) {
-			pn.jfkContextLifetime = now;
+		if(pn.updateJFKContextLifetime(ctx == null, now, DH_GENERATION_INTERVAL*DH_CONTEXT_BUFFER_SIZE)) {
 			pn.setKeyAgreementSchemeContext(ctx = getLightDiffieHellmanContext());
 		}
 		int offset = 0;
@@ -913,9 +923,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		node.random.nextBytes(nonce);
 
 		synchronized (pn) {
-			pn.jfkNoncesSent.add(nonce);
-			if(pn.jfkNoncesSent.size() > MAX_NONCES_PER_PEER)
-				pn.jfkNoncesSent.removeFirst();
+			pn.addJFKNonce(nonce);
 		}
 
 		int modulusLength = DiffieHellman.modulusLengthInBytes();
@@ -1070,13 +1078,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 
 		// sanity check
-		byte[] myNi = null;
-		synchronized (pn) {
-			for(byte[] buf : pn.jfkNoncesSent) {
-				if(Arrays.equals(nonceInitiator, buf))
-					myNi = buf;
-			}
-		}
+		byte[] myNi = pn.findJFKNonceEqualTo(nonceInitiator);
 		// We don't except such a message;
 		if(myNi == null) {
 			if(shouldLogErrorInHandshake(t1)) {
@@ -1664,11 +1666,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		// We want to clear it here so that new handshake requests
 		// will be sent with a different DH pair
 		pn.setKeyAgreementSchemeContext(null);
-		synchronized (pn) {
-			// FIXME TRUE MULTI-HOMING: winner-takes-all, kill all other connection attempts since we can't deal with multiple active connections
-			// Also avoids leaking
-			pn.jfkNoncesSent.clear();
-		}
+		// FIXME TRUE MULTI-HOMING: winner-takes-all, kill all other connection attempts since we can't deal with multiple active connections
+		// Also avoids leaking
+		pn.clearNonces();
 
 		final long t2=System.currentTimeMillis();
 		if((t2-t1)>500)

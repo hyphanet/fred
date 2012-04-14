@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node;
+package freenet.node.transport;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -36,6 +36,14 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.UdpSocketHandler;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
+import freenet.node.DarknetPeerNode;
+import freenet.node.FSParseException;
+import freenet.node.HandlePortTuple;
+import freenet.node.Node;
+import freenet.node.NodeIPPortDetector;
+import freenet.node.NodeInitException;
+import freenet.node.PeerNode;
+import freenet.node.Version;
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.IllegalBase64Exception;
@@ -53,19 +61,19 @@ public class NodeCrypto {
 
 	/** Length of a node identity */
 	public static final int IDENTITY_LENGTH = 32;
-	final Node node;
-	final boolean isOpennet;
-	final RandomSource random;
+	public final Node node;
+	public final boolean isOpennet;
+	public final RandomSource random;
 	/** The object which handles our specific UDP port, pulls messages from it, feeds them to the packet mangler for decryption etc */
-	final UdpSocketHandler socket;
+	public final UdpSocketHandler socket;
 	public FNPPacketMangler packetMangler;
 	// FIXME: abstract out address stuff? Possibly to something like NodeReference?
-	final int portNumber;
-	byte[] myIdentity; // FIXME: simple identity block; should be unique
+	public final int portNumber;
+	public byte[] myIdentity; // FIXME: simple identity block; should be unique
 	/** Hash of identity. Used as setup key. */
-	byte[] identityHash;
+	public byte[] identityHash;
 	/** Hash of hash of identity i.e. hash of setup key. */
-	byte[] identityHashHash;
+	public byte[] identityHashHash;
 	/** Nonce used to generate ?secureid= for fproxy etc */
 	byte[] clientNonce;
 	/** My crypto group */
@@ -74,13 +82,13 @@ public class NodeCrypto {
 	private DSAPrivateKey privKey;
 	/** My public key */
 	private DSAPublicKey pubKey;
-	byte[] pubKeyHash;
+	public byte[] pubKeyHash;
 	byte[] pubKeyHashHash;
-	/** My ARK SSK private key */
-	InsertableClientSSK myARK;
-	/** My ARK sequence number */
-	long myARKNumber;
-	final NodeCryptoConfig config;
+	/** My ARK SSK private key. FIXME put this somewhere else so it doesn't need to be public */
+	public InsertableClientSSK myARK;
+	/** My ARK sequence number. FIXME put this somewhere else so it doesn't need to be public */
+	public long myARKNumber;
+	public final NodeCryptoConfig config;
 	final NodeIPPortDetector detector;
 	final BlockCipher anonSetupCipher;
 
@@ -319,7 +327,7 @@ public class NodeCrypto {
 	 * exchange. Minimal noderef which we can construct a PeerNode from. Short lived so no ARK etc.
 	 * Already signed so dump the signature.
 	 */
-	SimpleFieldSet exportPublicFieldSet(boolean forSetup, boolean forAnonInitiator, boolean forARK) {
+	public SimpleFieldSet exportPublicFieldSet(boolean forSetup, boolean forAnonInitiator, boolean forARK) {
 		SimpleFieldSet fs = exportPublicCryptoFieldSet(forSetup || forARK, forAnonInitiator);
 		if((!forAnonInitiator) && (!forSetup)) {
 			// IP addresses
@@ -561,7 +569,7 @@ public class NodeCrypto {
 
 	public PeerNode[] getAnonSetupPeerNodes() {
 		ArrayList<PeerNode> v = new ArrayList<PeerNode>();
-		PeerNode[] peers = node.peers.myPeers;
+		PeerNode[] peers = node.peers.getPeers();
 		for(int i=0;i<peers.length;i++) {
 			PeerNode pn = peers[i];
 			if(pn.handshakeUnknownInitiator() && pn.getOutgoingMangler() == packetMangler)

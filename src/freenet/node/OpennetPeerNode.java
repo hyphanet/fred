@@ -3,6 +3,7 @@ package freenet.node;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.node.OpennetManager.ConnectionType;
+import freenet.node.transport.NodeCrypto;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.updater.UpdateOverMandatoryManager;
 import freenet.support.Logger;

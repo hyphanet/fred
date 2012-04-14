@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node;
+package freenet.node.transport;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -13,6 +13,11 @@ import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.DMT;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.xfer.PacketThrottle;
+import freenet.node.BlockedTooLongException;
+import freenet.node.KeyChangedException;
+import freenet.node.Node;
+import freenet.node.PeerNode;
+import freenet.node.StillNotAckedException;
 import freenet.support.DoublyLinkedList;
 import freenet.support.IndexableUpdatableSortedLinkedListItem;
 import freenet.support.LimitedRangeIntByteArrayMap;
@@ -86,19 +91,19 @@ public class PacketTracker {
 	private final ReceivedPacketNumbers packetNumbersReceived;
 	/** Counter to generate the next packet number */
 	private int nextPacketNumber;
-	final long createdTime;
+	public final long createdTime;
 	/** The time at which we last successfully decoded a packet. */
 	private long timeLastDecodedPacket;
 	/** Tracker ID. Must be positive. */
-	final long trackerID;
+	public final long trackerID;
 	private boolean wasUsed;
 
 	/** Everything is clear to start with */
-	PacketTracker(PeerNode pn, int firstPacketNumber) {
+	public PacketTracker(PeerNode pn, int firstPacketNumber) {
 		this(pn, firstPacketNumber, pn.node.random.nextLong() & Long.MAX_VALUE);
 	}
 
-	PacketTracker(PeerNode pn, int firstPacketNumber, long tid) {
+	public PacketTracker(PeerNode pn, int firstPacketNumber, long tid) {
 		trackerID = tid;
 		this.pn = pn;
 		ackQueue = new LinkedList<QueuedAck>();

@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import freenet.node.transport.PacketTracker;
+
 /**
  * Thrown when a packet hasn't been acked despite 10 minutes of asking for
  * an ack. This results in the connection being closed and the packet

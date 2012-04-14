@@ -10,6 +10,8 @@ import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.node.transport.FNPPacketMangler;
+import freenet.node.transport.NodeCrypto;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 

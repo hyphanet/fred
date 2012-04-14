@@ -34,6 +34,8 @@ import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.Key;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
+import freenet.node.transport.FNPPacketMangler;
+import freenet.node.transport.NodeCrypto;
 import freenet.node.useralerts.PeerManagerUserAlert;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.Logger;
@@ -2488,5 +2490,10 @@ public class PeerManager {
 	public static interface PeerStatusChangeListener{
 		/** Peers status have changed*/
 		public void onPeerStatusChange();
+	}
+
+	/** Should only be used by low-level code. */
+	public synchronized PeerNode[] getPeers() {
+		return myPeers;
 	}
 }

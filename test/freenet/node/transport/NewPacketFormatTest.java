@@ -1,12 +1,24 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node;
+package freenet.node.transport;
 
 import java.util.LinkedList;
 
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
+import freenet.node.BasePeerNode;
+import freenet.node.BlockedTooLongException;
+import freenet.node.NullBasePeerNode;
+import freenet.node.transport.DecodingMessageGroup;
+import freenet.node.transport.MessageFragment;
+import freenet.node.transport.MessageItem;
+import freenet.node.transport.NPFPacket;
+import freenet.node.transport.NewPacketFormat;
+import freenet.node.transport.NewPacketFormatKeyContext;
+import freenet.node.transport.PacketSender;
+import freenet.node.transport.PeerMessageQueue;
+import freenet.node.transport.SessionKey;
 import freenet.support.MutableBoolean;
 import junit.framework.TestCase;
 

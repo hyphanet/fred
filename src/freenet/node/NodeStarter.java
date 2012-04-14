@@ -17,6 +17,7 @@ import freenet.crypt.DiffieHellman;
 import freenet.crypt.RandomSource;
 import freenet.crypt.SSL;
 import freenet.crypt.Yarrow;
+import freenet.node.transport.DNSRequester;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;

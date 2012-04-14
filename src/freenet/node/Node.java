@@ -124,6 +124,10 @@ import freenet.node.stats.DataStoreInstanceType;
 import freenet.node.stats.DataStoreStats;
 import freenet.node.stats.NotAvailNodeStoreStats;
 import freenet.node.stats.StoreCallbackStats;
+import freenet.node.transport.DNSRequester;
+import freenet.node.transport.NodeCrypto;
+import freenet.node.transport.NodeCryptoConfig;
+import freenet.node.transport.PacketSender;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.updater.UpdateDeployContext;
 import freenet.node.updater.UpdateDeployContext.CHANGED;
@@ -693,7 +697,7 @@ public class Node implements TimeSkewDetectorCallback, CompletedGroupHandler {
 
 	// Darknet stuff
 
-	NodeCrypto darknetCrypto;
+	public NodeCrypto darknetCrypto;
 	// Back compat
 	private boolean showFriendsVisibilityAlert;
 
@@ -814,7 +818,7 @@ public class Node implements TimeSkewDetectorCallback, CompletedGroupHandler {
 	private boolean storePreallocate;
 	
 	/** Length of signature parameters R and S */
-	static final int SIGNATURE_PARAMETER_LENGTH = 32;
+	public static final int SIGNATURE_PARAMETER_LENGTH = 32;
 
 	/**
 	 * Read all storable settings (identity etc) from the node file.

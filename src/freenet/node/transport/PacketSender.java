@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node;
+package freenet.node.transport;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -10,6 +10,12 @@ import java.util.Vector;
 import freenet.clients.http.ExternalLinkToadlet;
 import freenet.io.comm.Peer;
 import freenet.l10n.NodeL10n;
+import freenet.node.BlockedTooLongException;
+import freenet.node.Node;
+import freenet.node.NodeStats;
+import freenet.node.OpennetManager;
+import freenet.node.PeerManager;
+import freenet.node.PeerNode;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
@@ -71,7 +77,7 @@ public class PacketSender implements Runnable {
 	private int[] rpiIntTemp;
 	private MersenneTwister localRandom;
 
-	PacketSender(Node node) {
+	public PacketSender(Node node) {
 		this.node = node;
 		myThread = new NativeThread(this, "PacketSender thread for " + node.getDarknetPortNumber(), NativeThread.MAX_PRIORITY, false);
 		myThread.setDaemon(true);
@@ -80,7 +86,7 @@ public class PacketSender implements Runnable {
 		localRandom = node.createRandom();
 	}
 
-	void start(NodeStats stats) {
+	public void start(NodeStats stats) {
 		this.stats = stats;
 		Logger.normal(this, "Starting PacketSender");
 		System.out.println("Starting PacketSender");
@@ -148,9 +154,7 @@ public class PacketSender implements Runnable {
 		PeerNode[] nodes;
 
         pm = node.peers;
-        synchronized(pm) {
-        	nodes = pm.myPeers;
-        }
+        nodes = pm.getPeers();
 
 		long nextActionTime = Long.MAX_VALUE;
 		long oldTempNow = now;
@@ -625,7 +629,7 @@ public class PacketSender implements Runnable {
 	};
 
 	/** Wake up, and send any queued packets. */
-	void wakeUp() {
+	public void wakeUp() {
 		// Wake up if needed
 		synchronized(this) {
 			notifyAll();

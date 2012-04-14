@@ -35,6 +35,7 @@ import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
+import freenet.node.transport.NodeCrypto;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.BookmarkFeedUserAlert;
 import freenet.node.useralerts.DownloadFeedUserAlert;
@@ -853,7 +854,7 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	@Override
-	void startARKFetcher() {
+	public void startARKFetcher() {
 		synchronized(this) {
 			if(isListenOnly) {
 				Logger.minor(this, "Not starting ark fetcher for "+this+" as it's in listen-only mode.");

@@ -14,6 +14,10 @@ import freenet.io.comm.SocketHandler;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.io.xfer.PacketThrottle;
 import freenet.io.xfer.WaitedTooLongException;
+import freenet.node.transport.DecodingMessageGroup;
+import freenet.node.transport.MessageItem;
+import freenet.node.transport.PeerMessageQueue;
+import freenet.node.transport.SessionKey;
 
 /** Tests can override this to record specific events e.g. rekey */
 public class NullBasePeerNode implements BasePeerNode {
@@ -98,9 +102,9 @@ public class NullBasePeerNode implements BasePeerNode {
 		throw new UnsupportedOperationException();
 	}
 	
-	SessionKey currentKey;
-	SessionKey previousKey;
-	SessionKey unverifiedKey;
+	public SessionKey currentKey;
+	public SessionKey previousKey;
+	public SessionKey unverifiedKey;
 
 	@Override
 	public SessionKey getCurrentKeyTracker() {

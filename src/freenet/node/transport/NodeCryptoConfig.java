@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node;
+package freenet.node.transport;
 
 import java.net.UnknownHostException;
 
@@ -9,6 +9,9 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
 import freenet.io.comm.FreenetInetAddress;
+import freenet.node.NodeInitException;
+import freenet.node.SecurityLevelListener;
+import freenet.node.SecurityLevels;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
@@ -54,7 +57,7 @@ public class NodeCryptoConfig {
 	/** If false we won't make any effort do disguise the length of packets */
 	private boolean paddDataPackets;
 	
-	NodeCryptoConfig(SubConfig config, int sortOrder, boolean isOpennet, SecurityLevels securityLevels) throws NodeInitException {
+	public NodeCryptoConfig(SubConfig config, int sortOrder, boolean isOpennet, SecurityLevels securityLevels) throws NodeInitException {
 		config.register("listenPort", -1 /* means random */, sortOrder++, true, true,
 				isOpennet ? "Node.opennetPort" : "Node.port", 
 				isOpennet ? "Node.opennetPortLong" : "Node.portLong", 

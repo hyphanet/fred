@@ -11,6 +11,7 @@ import java.util.Map;
 
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
+import freenet.node.transport.NodeCrypto;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -44,7 +45,7 @@ public class NodeIPPortDetector {
 		});
 	}
 	
-	NodeIPPortDetector(Node node, NodeIPDetector ipDetector, NodeCrypto crypto, boolean enableARKs) {
+	public NodeIPPortDetector(Node node, NodeIPDetector ipDetector, NodeCrypto crypto, boolean enableARKs) {
 		this.node = node;
 		this.ipDetector = ipDetector;
 		this.crypto = crypto;
@@ -72,7 +73,7 @@ public class NodeIPPortDetector {
 	 * port number, some of them may not. (If we're behind a symmetric NAT which rewrites it 
 	 * differently for each connection, we're stuffed, and we tell the user).
 	 */
-	Peer[] detectPrimaryPeers() {
+	public Peer[] detectPrimaryPeers() {
 		ArrayList<Peer> addresses = new ArrayList<Peer>();
 		FreenetInetAddress[] addrs = detectPrimaryIPAddress();
 		for(int i=0;i<addrs.length;i++) {

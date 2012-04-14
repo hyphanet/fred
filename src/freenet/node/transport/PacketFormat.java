@@ -1,9 +1,10 @@
-package freenet.node;
+package freenet.node.transport;
 
 import java.util.List;
 import java.util.Vector;
 
 import freenet.io.comm.Peer;
+import freenet.node.BlockedTooLongException;
 
 public interface PacketFormat {
 

@@ -18,6 +18,7 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
+import freenet.node.transport.NodeCrypto;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SimpleReadOnlyArrayBucket;

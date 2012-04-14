@@ -37,6 +37,7 @@ import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DSASignature;
+import freenet.crypt.DiffieHellmanLightContext;
 import freenet.crypt.Global;
 import freenet.crypt.HMAC;
 import freenet.crypt.KeyAgreementSchemeContext;
@@ -71,6 +72,19 @@ import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.PeerManager.PeerStatusChangeListener;
 import freenet.node.requests.RequestTag;
 import freenet.node.requests.UIDTag;
+import freenet.node.transport.DecodingMessageGroup;
+import freenet.node.transport.FNPPacketMangler;
+import freenet.node.transport.FNPWrapper;
+import freenet.node.transport.MessageItem;
+import freenet.node.transport.NewPacketFormat;
+import freenet.node.transport.NewPacketFormatKeyContext;
+import freenet.node.transport.NodeCrypto;
+import freenet.node.transport.PacketFormat;
+import freenet.node.transport.PacketSequenceException;
+import freenet.node.transport.PacketTracker;
+import freenet.node.transport.PeerMessageQueue;
+import freenet.node.transport.ResendPacketItem;
+import freenet.node.transport.SessionKey;
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -118,21 +132,21 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/*
 	* Buffer of Ni,Nr,g^i,g^r,ID
 	*/
-	private byte[] jfkBuffer;
+	public byte[] jfkBuffer;
 	//TODO: sync ?
 
-	protected byte[] jfkKa;
-	protected byte[] incommingKey;
-	protected byte[] jfkKe;
-	protected byte[] outgoingKey;
-	protected byte[] jfkMyRef;
-	protected byte[] hmacKey;
-	protected byte[] ivKey;
-	protected byte[] ivNonce;
-	protected int ourInitialSeqNum;
-	protected int theirInitialSeqNum;
-	protected int ourInitialMsgID;
-	protected int theirInitialMsgID;
+	public byte[] jfkKa;
+	public byte[] incommingKey;
+	public byte[] jfkKe;
+	public byte[] outgoingKey;
+	public byte[] jfkMyRef;
+	public byte[] hmacKey;
+	public byte[] ivKey;
+	public byte[] ivNonce;
+	public int ourInitialSeqNum;
+	public int theirInitialSeqNum;
+	public int ourInitialMsgID;
+	public int theirInitialMsgID;
 	// The following is used only if we are the initiator
 
 	protected long jfkContextLifetime = 0;
@@ -219,10 +233,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/** Node identity; for now a block of data, in future a
 	* public key (FIXME). Cannot be changed.
 	*/
-	final byte[] identity;
+	public final byte[] identity;
 	final String identityAsBase64String;
 	/** Hash of node identity. Used in setup key. */
-	final byte[] identityHash;
+	public final byte[] identityHash;
 	/** Hash of hash of node identity. Used in setup key. */
 	final byte[] identityHashHash;
 	/** Semi-unique ID used to help in mapping the network (see the code that uses it). Note this is for diagnostic
@@ -233,7 +247,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/** Integer hash of node identity. Used as hashCode(). */
 	final int hashCode;
 	/** The Node we serve */
-	final Node node;
+	public final Node node;
 	/** The PeerManager we serve */
 	final PeerManager peers;
 	/** MessageItem's to send ASAP.
@@ -271,29 +285,29 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/** Total output */
 	private long totalOutputSinceStartup;
 	/** Peer node crypto group; changing this means new noderef */
-	final DSAGroup peerCryptoGroup;
+	public final DSAGroup peerCryptoGroup;
 
 	/** Peer node public key; changing this means new noderef */
-	final DSAPublicKey peerPubKey;
+	public final DSAPublicKey peerPubKey;
 	final byte[] pubKeyHash;
 	final byte[] pubKeyHashHash;
 	private boolean isSignatureVerificationSuccessfull;
 	/** Incoming setup key. Used to decrypt incoming auth packets.
 	* Specifically: K_node XOR H(setupKey).
 	*/
-	final byte[] incomingSetupKey;
+	public final byte[] incomingSetupKey;
 	/** Outgoing setup key. Used to encrypt outgoing auth packets.
 	* Specifically: setupKey XOR H(K_node).
 	*/
 	final byte[] outgoingSetupKey;
 	/** Incoming setup cipher (see above) */
-	final BlockCipher incomingSetupCipher;
+	public final BlockCipher incomingSetupCipher;
 	/** Outgoing setup cipher (see above) */
-	final BlockCipher outgoingSetupCipher;
+	public final BlockCipher outgoingSetupCipher;
 	/** Anonymous-connect cipher. This is used in link setup if
 	 * we are trying to get a connection to this node even though
 	 * it doesn't know us, e.g. as a seednode. */
-	final BlockCipher anonymousInitiatorSetupCipher;
+	public final BlockCipher anonymousInitiatorSetupCipher;
 	/** The context object for the currently running negotiation. */
 	private KeyAgreementSchemeContext ctx;
 	/** The other side's boot ID. This is a random number generated
@@ -385,7 +399,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	private Set<PeerManager.PeerStatusChangeListener> listeners=Collections.synchronizedSet(new WeakHashSet<PeerStatusChangeListener>());
 
 	// NodeCrypto for the relevant node reference for this peer's type (Darknet or Opennet at this time))
-	protected final NodeCrypto crypto;
+	public final NodeCrypto crypto;
 
 	/**
 	 * Some alchemy we use in PeerNode.shouldBeExcludedFromPeerList()
@@ -413,7 +427,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 
 	private PacketFormat packetFormat;
-	MersenneTwister paddingGen;
+	public final MersenneTwister paddingGen;
 	
 	protected SimpleFieldSet fullFieldSet;
 
@@ -2428,7 +2442,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 	private final Object arkFetcherSync = new Object();
 
-	void startARKFetcher() {
+	public void startARKFetcher() {
 		// FIXME any way to reduce locking here?
 		if(!node.enableARKs) return;
 		synchronized(arkFetcherSync) {
@@ -2483,7 +2497,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	boolean sentInitialMessages;
 
-	void maybeSendInitialMessages() {
+	public void maybeSendInitialMessages() {
 		synchronized(this) {
 			if(sentInitialMessages)
 				return;
@@ -3983,7 +3997,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return false;
 	}
 
-	final void invalidate(long now) {
+	public final void invalidate(long now) {
 		synchronized(this) {
 			isRoutable = false;
 		}
@@ -4305,11 +4319,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return disconnecting;
 	}
 
-	protected byte[] getJFKBuffer() {
+	public byte[] getJFKBuffer() {
 		return jfkBuffer;
 	}
 
-	protected void setJFKBuffer(byte[] bufferJFK) {
+	public void setJFKBuffer(byte[] bufferJFK) {
 		this.jfkBuffer = bufferJFK;
 	}
 
@@ -4756,8 +4770,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return IPUtil.isValidAddress(addr, false);
 	}
 
-	static final double MAX_RTO = 60*1000;
-	static final double MIN_RTO = 1000;
+	public static final double MAX_RTO = 60*1000;
+	public static final double MIN_RTO = 1000;
 	private int consecutiveRTOBackoffs;
 	
 	// Clock generally has 20ms granularity or better, right?
@@ -6289,7 +6303,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	private long lastIncomingRekey;
 	
-	static final long THROTTLE_REKEY = 1000;
+	public static final long THROTTLE_REKEY = 1000;
 	
 	public synchronized boolean throttleRekey() {
 		long now = System.currentTimeMillis();
@@ -6403,5 +6417,33 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 		}
 	}
+
+	public boolean updateJFKContextLifetime(boolean force, long now, long lifetime) {
+		if(force || ((jfkContextLifetime + lifetime) < now)) {
+			jfkContextLifetime = now;
+			return true;
+		}
+		return false;
+	}
 	
+	private final int MAX_NONCES_PER_PEER = 10;
+	
+	public synchronized void addJFKNonce(byte[] nonce) {
+		jfkNoncesSent.add(nonce);
+		if(jfkNoncesSent.size() > MAX_NONCES_PER_PEER)
+			jfkNoncesSent.removeFirst();
+	}
+
+	public synchronized byte[] findJFKNonceEqualTo(byte[] nonceInitiator) {
+		for(byte[] buf : jfkNoncesSent) {
+			if(Arrays.equals(nonceInitiator, buf))
+				return buf;
+		}
+		return null;
+	}
+
+	public synchronized void clearNonces() {
+		jfkNoncesSent.clear();
+	}
+
 }

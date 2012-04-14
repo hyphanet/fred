@@ -10,6 +10,10 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.SocketHandler;
+import freenet.node.transport.MessageItem;
+import freenet.node.transport.PacketSequenceException;
+import freenet.node.transport.ResendPacketItem;
+import freenet.node.transport.SessionKey;
 import freenet.support.WouldBlockException;
 
 /**
@@ -17,7 +21,7 @@ import freenet.support.WouldBlockException;
  * A UDP-based transport will have to implement both this and IncomingPacketFilter, usually
  * on the same class. 
  * @see freenet.io.comm.IncomingPacketFilter
- * @see freenet.node.FNPPacketMangler
+ * @see freenet.node.transport.FNPPacketMangler
  */
 public interface OutgoingPacketMangler {
 

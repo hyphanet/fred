@@ -1,9 +1,10 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node;
+package freenet.node.transport;
 
 import freenet.crypt.BlockCipher;
+import freenet.node.PeerNode;
 
 /**
  * Class representing a single session key.
@@ -16,7 +17,7 @@ public class SessionKey {
 	 * possible to change the session key without invalidating the packet
 	 * sequence, but it is never possible to invalidate the packet sequence
 	 * without changing the session key. */
-	final PacketTracker packets;
+	public final PacketTracker packets;
 	
 	/** Parent PeerNode */
 	public final PeerNode pn;
@@ -36,7 +37,7 @@ public class SessionKey {
 	
 	public final NewPacketFormatKeyContext packetContext;
 
-	SessionKey(PeerNode parent, PacketTracker tracker, BlockCipher outgoingCipher, byte[] outgoingKey,
+	public SessionKey(PeerNode parent, PacketTracker tracker, BlockCipher outgoingCipher, byte[] outgoingKey,
 	                BlockCipher incommingCipher, byte[] incommingKey, BlockCipher ivCipher,
 			byte[] ivNonce, byte[] hmacKey, NewPacketFormatKeyContext context) {
 		this.pn = parent;

@@ -38,6 +38,8 @@ import freenet.io.xfer.BulkTransmitter.AllSentCallback;
 import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.node.OpennetPeerNode.NOT_DROP_REASON;
 import freenet.node.requests.RequestSender;
+import freenet.node.transport.NodeCrypto;
+import freenet.node.transport.NodeCryptoConfig;
 import freenet.support.HTMLNode;
 import freenet.support.LRUQueue;
 import freenet.support.LogThresholdCallback;
@@ -797,7 +799,7 @@ public class OpennetManager {
 		}
 	}
 
-	synchronized PeerNode[] getOldPeers() {
+	public synchronized PeerNode[] getOldPeers() {
 		return oldPeers.toArrayOrdered(new PeerNode[oldPeers.size()]);
 	}
 
