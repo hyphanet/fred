@@ -11,6 +11,8 @@ import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
 import freenet.io.xfer.PacketThrottle;
 import freenet.node.PeerNode.IncomingLoadSummaryStats;
+import freenet.node.opennet.SeedClientPeerNode;
+import freenet.node.opennet.SeedServerPeerNode;
 
 /**
  * Contains various status information for a {@link PeerNode}. Used e.g. in
@@ -123,7 +125,7 @@ public class PeerNodeStatus {
 	
 	public final boolean hasFullNoderef;
 
-	PeerNodeStatus(PeerNode peerNode, boolean noHeavy) {
+	public PeerNodeStatus(PeerNode peerNode, boolean noHeavy) {
 		Peer p = peerNode.getPeer();
 		if(p == null) {
 			peerAddress = null;

@@ -20,6 +20,8 @@ import freenet.io.xfer.BlockTransmitter.BlockTimeCallback;
 import freenet.io.xfer.BulkTransmitter;
 import freenet.keys.NodeSSK;
 import freenet.l10n.NodeL10n;
+import freenet.node.opennet.OpennetManager;
+import freenet.node.opennet.SeedClientPeerNode;
 import freenet.node.requests.CHKInsertSender;
 import freenet.node.requests.RequestSender;
 import freenet.node.requests.RequestTracker;

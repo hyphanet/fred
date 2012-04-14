@@ -1,4 +1,6 @@
-package freenet.node;
+package freenet.node.opennet;
+
+import freenet.node.PeerNode;
 
 /**
  * Callback for a local announcement.

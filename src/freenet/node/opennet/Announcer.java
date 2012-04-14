@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node;
+package freenet.node.opennet;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -19,6 +19,10 @@ import java.util.Vector;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.l10n.NodeL10n;
+import freenet.node.FSParseException;
+import freenet.node.Node;
+import freenet.node.PeerManager;
+import freenet.node.PeerNode;
 import freenet.node.useralerts.AbstractUserEvent;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
@@ -411,7 +415,7 @@ public class Announcer {
 		}, 0);
 	}
 
-	protected void maybeSendAnnouncement() {
+	public void maybeSendAnnouncement() {
 		synchronized(this) {
 			if(!started) return;
 		}

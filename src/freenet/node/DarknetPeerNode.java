@@ -1797,7 +1797,7 @@ public class DarknetPeerNode extends PeerNode {
 	}
 	
 	@Override
-	boolean dontKeepFullFieldSet() {
+	protected boolean dontKeepFullFieldSet() {
 		return false;
 	}
 	

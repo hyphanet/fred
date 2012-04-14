@@ -14,6 +14,7 @@ import freenet.io.AddressTracker.Status;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
 import freenet.l10n.NodeL10n;
+import freenet.node.opennet.OpennetManager;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.ProxyUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;

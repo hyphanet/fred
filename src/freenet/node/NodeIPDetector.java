@@ -15,6 +15,7 @@ import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
 import freenet.io.comm.UdpSocketHandler;
 import freenet.l10n.NodeL10n;
+import freenet.node.opennet.SeedServerPeerNode;
 import freenet.node.useralerts.IPUndetectedUserAlert;
 import freenet.node.useralerts.InvalidAddressOverrideUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;

@@ -1,4 +1,7 @@
-package freenet.node;
+package freenet.node.opennet;
+
+import freenet.node.PeerNode;
+import freenet.node.PeerNodeStatus;
 
 public class OpennetPeerNodeStatus extends PeerNodeStatus {
 

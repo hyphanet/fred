@@ -68,8 +68,11 @@ import freenet.keys.USK;
 import freenet.node.NodeStats.PeerLoadStats;
 import freenet.node.NodeStats.RequestType;
 import freenet.node.NodeStats.RunningRequestsSnapshot;
-import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.PeerManager.PeerStatusChangeListener;
+import freenet.node.opennet.OpennetManager;
+import freenet.node.opennet.OpennetPeerNode;
+import freenet.node.opennet.SeedServerPeerNode;
+import freenet.node.opennet.OpennetManager.ConnectionType;
 import freenet.node.requests.RequestTag;
 import freenet.node.requests.UIDTag;
 import freenet.node.transport.DecodingMessageGroup;
@@ -245,7 +248,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/** Negotiation types supported */
 	int[] negTypes;
 	/** Integer hash of node identity. Used as hashCode(). */
-	final int hashCode;
+	public final int hashCode;
 	/** The Node we serve */
 	public final Node node;
 	/** The PeerManager we serve */
@@ -289,7 +292,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	/** Peer node public key; changing this means new noderef */
 	public final DSAPublicKey peerPubKey;
-	final byte[] pubKeyHash;
+	public final byte[] pubKeyHash;
 	final byte[] pubKeyHashHash;
 	private boolean isSignatureVerificationSuccessfull;
 	/** Incoming setup key. Used to decrypt incoming auth packets.
@@ -383,9 +386,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/** The node is being disconnected, but it may take a while. */
 	private boolean disconnecting;
 	/** When did we last disconnect? Not Disconnected because a discrete event */
-	long timeLastDisconnect;
+	protected long timeLastDisconnect;
 	/** Previous time of disconnection */
-	long timePrevDisconnect;
+	protected long timePrevDisconnect;
 
 	// Burst-only mode
 	/** True if we are currently sending this peer a burst of handshake requests */
@@ -821,7 +824,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	// status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
 	}
 
-	abstract boolean dontKeepFullFieldSet();
+	protected abstract boolean dontKeepFullFieldSet();
 
 	protected abstract void maybeClearPeerAddedTimeOnRestart(long now);
 
@@ -882,7 +885,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/**
 	* Returns an array with the advertised addresses and the detected one
 	*/
-	protected synchronized Peer[] getHandshakeIPs() {
+	public synchronized Peer[] getHandshakeIPs() {
 		return handshakeIPs;
 	}
 
@@ -2661,7 +2664,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		processNewNoderef(fs, false, false, false);
 	}
 
-	static SimpleFieldSet compressedNoderefToFieldSet(byte[] data, int offset, int length) throws FSParseException {
+	public static SimpleFieldSet compressedNoderefToFieldSet(byte[] data, int offset, int length) throws FSParseException {
 		if(length <= 5)
 			throw new FSParseException("Too short");
 		// Lookup table for groups.

@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node;
+package freenet.node.opennet;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -10,6 +10,12 @@ import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.node.FSParseException;
+import freenet.node.Node;
+import freenet.node.OutgoingPacketMangler;
+import freenet.node.PeerManager;
+import freenet.node.PeerNode;
+import freenet.node.PeerNodeStatus;
 import freenet.node.transport.FNPPacketMangler;
 import freenet.node.transport.NodeCrypto;
 import freenet.support.Logger;
@@ -174,7 +180,7 @@ public class SeedServerPeerNode extends PeerNode {
 	}
 
 	@Override
-	boolean dontKeepFullFieldSet() {
+	protected boolean dontKeepFullFieldSet() {
 		return false;
 	}
 

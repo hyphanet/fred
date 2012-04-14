@@ -1,4 +1,4 @@
-package freenet.node;
+package freenet.node.opennet;
 
 import java.net.InetAddress;
 import java.util.Arrays;

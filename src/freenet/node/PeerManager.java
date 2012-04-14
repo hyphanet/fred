@@ -34,6 +34,11 @@ import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.Key;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
+import freenet.node.opennet.OpennetManager;
+import freenet.node.opennet.OpennetPeerNode;
+import freenet.node.opennet.OpennetPeerNodeStatus;
+import freenet.node.opennet.SeedClientPeerNode;
+import freenet.node.opennet.SeedServerPeerNode;
 import freenet.node.transport.FNPPacketMangler;
 import freenet.node.transport.NodeCrypto;
 import freenet.node.useralerts.PeerManagerUserAlert;
@@ -185,7 +190,7 @@ public class PeerManager {
 	 * @param oldOpennetPeers If true, don't add the nodes to the routing table, pass them to the opennet
 	 * manager as "old peers" i.e. inactive nodes which may try to reconnect.
 	 */
-	void tryReadPeers(String filename, NodeCrypto crypto, OpennetManager opennet, boolean isOpennet, boolean oldOpennetPeers) {
+	public void tryReadPeers(String filename, NodeCrypto crypto, OpennetManager opennet, boolean isOpennet, boolean oldOpennetPeers) {
 		synchronized(writePeersSync) {
 			if(!oldOpennetPeers)
 				if(isOpennet)
@@ -318,7 +323,7 @@ public class PeerManager {
 	 * @return True if the node was successfully added. False if it was already present, or if we tried to add
 	 * an opennet peer when opennet was disabled.
 	 */
-	boolean addPeer(PeerNode pn, boolean ignoreOpennet, boolean reactivate) {
+	public boolean addPeer(PeerNode pn, boolean ignoreOpennet, boolean reactivate) {
 		assert (pn != null);
 		if(reactivate)
 			pn.forceCancelDisconnecting();

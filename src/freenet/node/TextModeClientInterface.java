@@ -44,6 +44,8 @@ import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
+import freenet.node.opennet.AnnouncementCallback;
+import freenet.node.opennet.OpennetManager;
 import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;

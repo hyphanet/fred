@@ -1,8 +1,15 @@
-package freenet.node;
+package freenet.node.opennet;
 
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
-import freenet.node.OpennetManager.ConnectionType;
+import freenet.node.FSParseException;
+import freenet.node.FastRunnable;
+import freenet.node.Node;
+import freenet.node.OutgoingPacketMangler;
+import freenet.node.PeerManager;
+import freenet.node.PeerNode;
+import freenet.node.PeerNodeStatus;
+import freenet.node.opennet.OpennetManager.ConnectionType;
 import freenet.node.transport.NodeCrypto;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.updater.UpdateOverMandatoryManager;
@@ -267,7 +274,7 @@ public class OpennetPeerNode extends PeerNode {
 	}
 
 	@Override
-	boolean dontKeepFullFieldSet() {
+	protected boolean dontKeepFullFieldSet() {
 		return true;
 	}
 

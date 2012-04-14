@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node;
+package freenet.node.opennet;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -36,7 +36,11 @@ import freenet.io.xfer.BulkReceiver;
 import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.BulkTransmitter.AllSentCallback;
 import freenet.io.xfer.PartiallyReceivedBulk;
-import freenet.node.OpennetPeerNode.NOT_DROP_REASON;
+import freenet.node.FSParseException;
+import freenet.node.Node;
+import freenet.node.NodeInitException;
+import freenet.node.PeerNode;
+import freenet.node.opennet.OpennetPeerNode.NOT_DROP_REASON;
 import freenet.node.requests.RequestSender;
 import freenet.node.transport.NodeCrypto;
 import freenet.node.transport.NodeCryptoConfig;
@@ -64,9 +68,9 @@ import freenet.support.transport.ip.HostnameSyntaxException;
 public class OpennetManager {
 
 	final Node node;
-	final NodeCrypto crypto;
-	final Announcer announcer;
-	final SeedAnnounceTracker seedTracker = new SeedAnnounceTracker();
+	public final NodeCrypto crypto;
+	public final Announcer announcer;
+	public final SeedAnnounceTracker seedTracker = new SeedAnnounceTracker();
 
 	/** Our peers. PeerNode's are promoted when they successfully fetch a key. Normally we take
 	 * the bottom peer, but if that isn't eligible to be dropped, we iterate up the list. */
@@ -386,7 +390,7 @@ public class OpennetManager {
 	/** When did we last offer our noderef to some other node? */
 	private long timeLastOffered;
 
-	void forceAddPeer(PeerNode nodeToAddNow, boolean addAtLRU) {
+	public void forceAddPeer(PeerNode nodeToAddNow, boolean addAtLRU) {
 		synchronized(this) {
 			if(addAtLRU)
 				peersLRU.pushLeast(nodeToAddNow);
@@ -645,7 +649,7 @@ public class OpennetManager {
 		return false;
 	}
 
-	void dropExcessPeers() {
+	public void dropExcessPeers() {
 		while(getSize() > getNumberOfConnectedPeersToAim()) {
 			if(logMINOR)
 				Logger.minor(this, "Dropping opennet peers: currently "+peersLRU.size());
@@ -812,15 +816,15 @@ public class OpennetManager {
 	 * if we are desperate.
 	 * @param pn The node to add to the old opennet nodes LRU.
 	 */
-	synchronized void addOldOpennetNode(PeerNode pn) {
+	public synchronized void addOldOpennetNode(PeerNode pn) {
 		oldPeers.push(pn);
 	}
 
-	final String getOldPeersFilename() {
+	public final String getOldPeersFilename() {
 		return node.nodeDir().file("openpeers-old-"+crypto.portNumber).toString();
 	}
 
-	synchronized int countOldOpennetPeers() {
+	public synchronized int countOldOpennetPeers() {
 		return oldPeers.size();
 	}
 
