@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import com.sleepycat.je.DatabaseException;
 
-import freenet.node.stats.StoreAccessStats;
+import freenet.node.stats.store.StoreAccessStats;
 
 public class NullFreenetStore<T extends StorableBlock> implements FreenetStore<T> {
 

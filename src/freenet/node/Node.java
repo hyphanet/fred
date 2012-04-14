@@ -4,13 +4,13 @@
 /* Freenet 0.7 node. */
 package freenet.node;
 
-import static freenet.node.stats.DataStoreKeyType.CHK;
-import static freenet.node.stats.DataStoreKeyType.PUB_KEY;
-import static freenet.node.stats.DataStoreKeyType.SSK;
-import static freenet.node.stats.DataStoreType.CACHE;
-import static freenet.node.stats.DataStoreType.CLIENT;
-import static freenet.node.stats.DataStoreType.SLASHDOT;
-import static freenet.node.stats.DataStoreType.STORE;
+import static freenet.node.stats.store.DataStoreKeyType.CHK;
+import static freenet.node.stats.store.DataStoreKeyType.PUB_KEY;
+import static freenet.node.stats.store.DataStoreKeyType.SSK;
+import static freenet.node.stats.store.DataStoreType.CACHE;
+import static freenet.node.stats.store.DataStoreType.CLIENT;
+import static freenet.node.stats.store.DataStoreType.SLASHDOT;
+import static freenet.node.stats.store.DataStoreType.STORE;
 
 import java.io.BufferedReader;
 import java.io.EOFException;
@@ -120,10 +120,10 @@ import freenet.node.requests.RequestSender;
 import freenet.node.requests.RequestTag;
 import freenet.node.requests.RequestTracker;
 import freenet.node.requests.SSKInsertSender;
-import freenet.node.stats.DataStoreInstanceType;
-import freenet.node.stats.DataStoreStats;
-import freenet.node.stats.NotAvailNodeStoreStats;
-import freenet.node.stats.StoreCallbackStats;
+import freenet.node.stats.store.DataStoreInstanceType;
+import freenet.node.stats.store.DataStoreStats;
+import freenet.node.stats.store.NotAvailNodeStoreStats;
+import freenet.node.stats.store.StoreCallbackStats;
 import freenet.node.transport.DNSRequester;
 import freenet.node.transport.NodeCrypto;
 import freenet.node.transport.NodeCryptoConfig;

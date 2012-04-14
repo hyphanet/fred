@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node.stats;
+package freenet.node.stats.store;
 
 /**
  * This interface represents the data we can publish on our stats page for a given instance of a data store.

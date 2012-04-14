@@ -10,7 +10,7 @@ import java.util.List;
 import com.sleepycat.je.DatabaseException;
 
 import freenet.keys.KeyVerifyException;
-import freenet.node.stats.StoreAccessStats;
+import freenet.node.stats.store.StoreAccessStats;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.LRUHashtable;
 import freenet.support.LogThresholdCallback;

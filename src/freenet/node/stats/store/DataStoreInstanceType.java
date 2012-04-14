@@ -1,4 +1,4 @@
-package freenet.node.stats;
+package freenet.node.stats.store;
 
 /**
  * This class represents one instance of data store.

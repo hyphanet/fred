@@ -40,7 +40,7 @@ import freenet.crypt.RandomSource;
 import freenet.keys.KeyVerifyException;
 import freenet.keys.SSKBlock;
 import freenet.node.SemiOrderedShutdownHook;
-import freenet.node.stats.StoreAccessStats;
+import freenet.node.stats.store.StoreAccessStats;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;

@@ -37,7 +37,7 @@ import freenet.keys.SSKBlock;
 import freenet.l10n.NodeL10n;
 import freenet.node.FastRunnable;
 import freenet.node.SemiOrderedShutdownHook;
-import freenet.node.stats.StoreAccessStats;
+import freenet.node.stats.store.StoreAccessStats;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;

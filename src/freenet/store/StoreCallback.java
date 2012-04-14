@@ -9,7 +9,7 @@ import com.sleepycat.je.DatabaseException;
 
 import freenet.crypt.DSAPublicKey;
 import freenet.keys.KeyVerifyException;
-import freenet.node.stats.StoreAccessStats;
+import freenet.node.stats.store.StoreAccessStats;
 
 /**
  * @author toad
