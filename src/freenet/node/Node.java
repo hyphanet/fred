@@ -120,6 +120,7 @@ import freenet.node.requests.RequestSender;
 import freenet.node.requests.RequestTag;
 import freenet.node.requests.RequestTracker;
 import freenet.node.requests.SSKInsertSender;
+import freenet.node.stats.UptimeEstimator;
 import freenet.node.stats.store.DataStoreInstanceType;
 import freenet.node.stats.store.DataStoreStats;
 import freenet.node.stats.store.NotAvailNodeStoreStats;

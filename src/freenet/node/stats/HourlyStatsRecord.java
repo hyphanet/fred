@@ -1,4 +1,4 @@
-package freenet.node;
+package freenet.node.stats;
 
 import java.text.DecimalFormat;
 import java.text.FieldPosition;
@@ -6,6 +6,9 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
+import freenet.node.Location;
+import freenet.node.Node;
+import freenet.node.Version;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.math.TrivialRunningAverage;

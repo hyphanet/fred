@@ -26,6 +26,7 @@ import freenet.node.requests.RequestTracker;
 import freenet.node.requests.RequestTracker.CountedRequests;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.requests.UIDTag;
+import freenet.node.stats.HourlyStats;
 import freenet.node.stats.store.StatsNotAvailableException;
 import freenet.node.stats.store.StoreLocationStats;
 import freenet.store.CHKStore;

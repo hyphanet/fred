@@ -1,9 +1,10 @@
-package freenet.node;
+package freenet.node.stats;
 
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
+import freenet.node.Node;
 import freenet.support.HTMLNode;
 
 /** Statistics tracking for performance analysis. */
