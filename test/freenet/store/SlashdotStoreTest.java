@@ -5,8 +5,6 @@ import java.io.IOException;
 import java.util.Random;
 
 import junit.framework.TestCase;
-import freenet.crypt.DummyRandomSource;
-import freenet.crypt.RandomSource;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKDecodeException;
 import freenet.keys.CHKEncodeException;
@@ -18,6 +16,8 @@ import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.TrivialTicker;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
+import freenet.support.crypt.DummyRandomSource;
+import freenet.support.crypt.RandomSource;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileUtil;

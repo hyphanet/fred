@@ -1,6 +1,6 @@
 package freenet.keys;
 
-import freenet.crypt.CryptFormatException;
+import freenet.support.crypt.CryptFormatException;
 
 public class PubkeyVerifyException extends KeyVerifyException {
 

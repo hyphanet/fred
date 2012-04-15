@@ -1,6 +1,6 @@
 package freenet.client.events;
 
-import freenet.crypt.HashResult;
+import freenet.support.crypt.HashResult;
 
 public class ExpectedHashesEvent implements ClientEvent {
 

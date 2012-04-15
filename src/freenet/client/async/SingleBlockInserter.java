@@ -15,7 +15,6 @@ import freenet.client.FailureCodeTracker;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.InsertContext.CompatibilityMode;
-import freenet.crypt.RandomSource;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKey;
@@ -46,6 +45,7 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.compress.InvalidCompressionCodecException;
+import freenet.support.crypt.RandomSource;
 import freenet.support.io.BucketTools;
 
 /**

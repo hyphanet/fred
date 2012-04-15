@@ -35,8 +35,6 @@ import com.sleepycat.je.Transaction;
 import com.sleepycat.je.log.DbChecksumException;
 import com.sleepycat.je.log.LogFileNotFoundException;
 
-import freenet.crypt.DSAPublicKey;
-import freenet.crypt.RandomSource;
 import freenet.keys.KeyVerifyException;
 import freenet.keys.SSKBlock;
 import freenet.node.SemiOrderedShutdownHook;
@@ -48,6 +46,8 @@ import freenet.support.OOMHandler;
 import freenet.support.OOMHook;
 import freenet.support.SortedLongSet;
 import freenet.support.Logger.LogLevel;
+import freenet.support.crypt.DSAPublicKey;
+import freenet.support.crypt.RandomSource;
 import freenet.support.io.NativeThread;
 
 /**

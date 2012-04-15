@@ -24,7 +24,6 @@ import freenet.client.async.BaseClientPutter;
 import freenet.client.async.BinaryBlob;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientPutter;
-import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
 import freenet.support.IllegalBase64Exception;
@@ -33,6 +32,7 @@ import freenet.support.Logger;
 import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.crypt.SHA256;
 
 public class ClientPut extends ClientPutBase {
 

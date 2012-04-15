@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.requests;
 
-import freenet.crypt.DSAPublicKey;
 import freenet.io.xfer.BlockTransmitter;
 import freenet.io.xfer.BlockTransmitter.BlockTransmitterCompletion;
 import freenet.io.xfer.BlockTransmitter.ReceiverAbortHandler;
@@ -40,6 +39,7 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
+import freenet.support.crypt.DSAPublicKey;
 import freenet.support.io.NativeThread;
 import freenet.support.net.MultiMessageCallback;
 import freenet.support.net.WaitingMultiMessageCallback;

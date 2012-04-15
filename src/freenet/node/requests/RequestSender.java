@@ -5,8 +5,6 @@ package freenet.node.requests;
 
 import java.util.ArrayList;
 
-import freenet.crypt.CryptFormatException;
-import freenet.crypt.DSAPublicKey;
 import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.BlockReceiver.BlockReceiverCompletion;
 import freenet.io.xfer.BlockReceiver.BlockReceiverTimeoutHandler;
@@ -48,6 +46,8 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
+import freenet.support.crypt.CryptFormatException;
+import freenet.support.crypt.DSAPublicKey;
 import freenet.support.io.NativeThread;
 import freenet.support.math.MedianMeanRunningAverage;
 

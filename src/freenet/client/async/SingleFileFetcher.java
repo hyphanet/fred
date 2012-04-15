@@ -30,8 +30,6 @@ import freenet.client.FetchResult;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.client.InsertContext.CompatibilityMode;
-import freenet.crypt.HashResult;
-import freenet.crypt.MultiHashInputStream;
 import freenet.keys.BaseClientKey;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientKey;
@@ -47,6 +45,8 @@ import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
 import freenet.support.compress.DecompressorThreadManager;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
+import freenet.support.crypt.HashResult;
+import freenet.support.crypt.MultiHashInputStream;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 

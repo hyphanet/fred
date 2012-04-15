@@ -17,12 +17,12 @@ import freenet.support.math.MersenneTwister;
 
 import com.db4o.ObjectContainer;
 
-import freenet.crypt.SHA256;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.crypt.SHA256;
 
 /**
  * Helper functions for working with Buckets.

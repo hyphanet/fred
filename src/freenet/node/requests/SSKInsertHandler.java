@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.requests;
 
-import freenet.crypt.CryptFormatException;
-import freenet.crypt.DSAPublicKey;
 import freenet.io.xfer.WaitedTooLongException;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
@@ -25,6 +23,8 @@ import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.ShortBuffer;
 import freenet.support.Logger.LogLevel;
+import freenet.support.crypt.CryptFormatException;
+import freenet.support.crypt.DSAPublicKey;
 import freenet.support.io.NativeThread;
 
 /**

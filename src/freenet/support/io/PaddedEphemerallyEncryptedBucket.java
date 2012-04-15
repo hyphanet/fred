@@ -10,14 +10,14 @@ import java.util.Random;
 
 import com.db4o.ObjectContainer;
 
-import freenet.crypt.PCFBMode;
-import freenet.crypt.RandomSource;
-import freenet.crypt.UnsupportedCipherException;
-import freenet.crypt.ciphers.Rijndael;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.crypt.PCFBMode;
+import freenet.support.crypt.RandomSource;
+import freenet.support.crypt.UnsupportedCipherException;
+import freenet.support.crypt.ciphers.Rijndael;
 import freenet.support.math.MersenneTwister;
 
 /**

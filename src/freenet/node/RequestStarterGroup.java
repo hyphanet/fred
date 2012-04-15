@@ -11,7 +11,6 @@ import freenet.config.Config;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
-import freenet.crypt.RandomSource;
 import freenet.keys.Key;
 import freenet.node.load.BaseRequestThrottle;
 import freenet.node.load.NodeStats;
@@ -21,6 +20,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.StringCallback;
+import freenet.support.crypt.RandomSource;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 
 public class RequestStarterGroup {

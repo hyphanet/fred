@@ -2,11 +2,11 @@ package freenet.store;
 
 import java.io.IOException;
 
-import freenet.crypt.DSAPublicKey;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.node.GetPubkey;
+import freenet.support.crypt.DSAPublicKey;
 
 public class SSKStore extends StoreCallback<SSKBlock> {
 

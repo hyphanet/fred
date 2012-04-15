@@ -8,10 +8,10 @@ import java.util.List;
 
 import com.db4o.ObjectContainer;
 
-import freenet.crypt.RandomSource;
 import freenet.node.BaseSendableGet;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.crypt.RandomSource;
 
 /**
  * Parallel scheduler structures for non-persistent requests.

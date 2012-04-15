@@ -10,6 +10,14 @@ import java.security.NoSuchAlgorithmException;
 import net.i2p.util.NativeBigInteger;
 
 import freenet.support.HexUtil;
+import freenet.support.crypt.DSA;
+import freenet.support.crypt.DSAGroup;
+import freenet.support.crypt.DSAPrivateKey;
+import freenet.support.crypt.DSAPublicKey;
+import freenet.support.crypt.DSASignature;
+import freenet.support.crypt.RandomSource;
+import freenet.support.crypt.SHA256;
+import freenet.support.crypt.Yarrow;
 
 /**
  * DSA Group Generator.

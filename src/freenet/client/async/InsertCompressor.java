@@ -9,8 +9,6 @@ import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
 import freenet.client.InsertException;
-import freenet.crypt.HashResult;
-import freenet.crypt.MultiHashInputStream;
 import freenet.keys.CHKBlock;
 import freenet.node.PrioRunnable;
 import freenet.support.LogThresholdCallback;
@@ -22,6 +20,8 @@ import freenet.support.compress.CompressJob;
 import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
+import freenet.support.crypt.HashResult;
+import freenet.support.crypt.MultiHashInputStream;
 import freenet.support.io.BucketChainBucketFactory;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;

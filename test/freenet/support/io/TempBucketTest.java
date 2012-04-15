@@ -12,11 +12,11 @@ import java.util.Random;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import freenet.crypt.DummyRandomSource;
-import freenet.crypt.RandomSource;
 import freenet.support.Executor;
 import freenet.support.SerialExecutor;
 import freenet.support.api.Bucket;
+import freenet.support.crypt.DummyRandomSource;
+import freenet.support.crypt.RandomSource;
 import freenet.support.io.TempBucketFactory.TempBucket;
 
 public class TempBucketTest extends TestSuite {

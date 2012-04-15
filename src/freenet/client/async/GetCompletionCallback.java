@@ -10,8 +10,8 @@ import com.db4o.ObjectContainer;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.support.compress.Compressor;
+import freenet.support.crypt.HashResult;
 import freenet.client.InsertContext.CompatibilityMode;
-import freenet.crypt.HashResult;
 
 /**
  * Callback called when part of a get request completes - either with a 

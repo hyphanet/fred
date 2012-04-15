@@ -21,11 +21,11 @@ import freenet.client.filter.LinkFilterExceptionProvider;
 import freenet.client.filter.TagReplacerCallback;
 import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.client.filter.UnsafeContentTypeException;
-import freenet.crypt.HashResult;
-import freenet.crypt.MultiHashInputStream;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.compress.CompressionOutputSizeException;
+import freenet.support.crypt.HashResult;
+import freenet.support.crypt.MultiHashInputStream;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 

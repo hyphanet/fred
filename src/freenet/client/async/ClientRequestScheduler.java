@@ -12,7 +12,6 @@ import com.db4o.ObjectSet;
 import freenet.client.FECQueue;
 import freenet.client.FetchException;
 import freenet.client.async.ClientRequestSelector.SelectorReturn;
-import freenet.crypt.RandomSource;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeSSK;
@@ -31,6 +30,7 @@ import freenet.node.SendableRequest;
 import freenet.support.Logger;
 import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.TimeUtil;
+import freenet.support.crypt.RandomSource;
 import freenet.support.io.NativeThread;
 
 /**

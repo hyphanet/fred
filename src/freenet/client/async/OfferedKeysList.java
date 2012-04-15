@@ -9,7 +9,6 @@ import java.util.Vector;
 
 import com.db4o.ObjectContainer;
 
-import freenet.crypt.RandomSource;
 import freenet.keys.Key;
 import freenet.node.BaseSendableGet;
 import freenet.node.KeysFetchingLocally;
@@ -27,6 +26,7 @@ import freenet.node.requests.RequestSenderListener;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.crypt.RandomSource;
 
 /**
  * All the keys at a given priority which we have received key offers from other nodes for.

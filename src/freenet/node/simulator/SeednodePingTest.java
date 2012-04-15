@@ -15,7 +15,6 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-import freenet.crypt.RandomSource;
 import freenet.message.NotConnectedException;
 import freenet.message.PeerParseException;
 import freenet.message.ReferenceSignatureVerificationException;
@@ -35,6 +34,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
+import freenet.support.crypt.RandomSource;
 
 /**
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;

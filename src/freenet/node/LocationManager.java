@@ -17,8 +17,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 
-import freenet.crypt.RandomSource;
-import freenet.crypt.SHA256;
 import freenet.message.ByteCounter;
 import freenet.message.DMT;
 import freenet.message.DisconnectedException;
@@ -31,6 +29,8 @@ import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.TimeSortedHashtable;
 import freenet.support.Logger.LogLevel;
+import freenet.support.crypt.RandomSource;
+import freenet.support.crypt.SHA256;
 import freenet.support.io.Closer;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 

@@ -7,6 +7,8 @@ import java.io.File;
 import java.io.FileWriter;
 import org.spaceroots.mantissa.random.ScalarSampleStatistics;
 
+import freenet.support.crypt.Yarrow;
+
 import junit.framework.*;
 
 public class YarrowTest extends TestCase {

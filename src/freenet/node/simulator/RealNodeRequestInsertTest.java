@@ -7,7 +7,6 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Vector;
 
-import freenet.crypt.DummyRandomSource;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKSK;
@@ -28,6 +27,7 @@ import freenet.support.PooledExecutor;
 import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
+import freenet.support.crypt.DummyRandomSource;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.math.RunningAverage;

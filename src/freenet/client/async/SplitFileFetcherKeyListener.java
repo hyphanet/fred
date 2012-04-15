@@ -10,7 +10,6 @@ import java.util.ArrayList;
 
 import com.db4o.ObjectContainer;
 
-import freenet.crypt.SHA256;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.node.SendableGet;
@@ -19,6 +18,7 @@ import freenet.support.CountingBloomFilter;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.crypt.SHA256;
 import freenet.support.io.NativeThread;
 
 /**

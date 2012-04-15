@@ -33,7 +33,6 @@ import freenet.client.InsertException;
 import freenet.client.async.ClientContext;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
-import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.NodeStarter;
@@ -43,6 +42,7 @@ import freenet.support.Logger;
 import freenet.support.PooledExecutor;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.crypt.RandomSource;
 import freenet.support.io.FileUtil;
 
 /**

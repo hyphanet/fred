@@ -3,8 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.transport;
 
-import freenet.crypt.BlockCipher;
 import freenet.node.PeerNode;
+import freenet.support.crypt.BlockCipher;
 
 /**
  * Class representing a single session key.

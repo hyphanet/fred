@@ -33,7 +33,6 @@ import freenet.client.filter.KnownUnsafeContentTypeException;
 import freenet.client.filter.MIMEType;
 import freenet.client.filter.UnknownContentTypeException;
 import freenet.client.filter.UnsafeContentTypeException;
-import freenet.crypt.HashResult;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
@@ -43,6 +42,7 @@ import freenet.support.api.Bucket;
 import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
 import freenet.support.compress.DecompressorThreadManager;
+import freenet.support.crypt.HashResult;
 import freenet.support.io.Closer;
 
 /**

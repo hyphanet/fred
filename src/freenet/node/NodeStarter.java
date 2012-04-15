@@ -13,10 +13,6 @@ import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
-import freenet.crypt.DiffieHellman;
-import freenet.crypt.RandomSource;
-import freenet.crypt.SSL;
-import freenet.crypt.Yarrow;
 import freenet.node.transport.DNSRequester;
 import freenet.support.Executor;
 import freenet.support.Logger;
@@ -24,6 +20,10 @@ import freenet.support.PooledExecutor;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
+import freenet.support.crypt.DiffieHellman;
+import freenet.support.crypt.RandomSource;
+import freenet.support.crypt.SSL;
+import freenet.support.crypt.Yarrow;
 import freenet.support.io.NativeThread;
 
 /**

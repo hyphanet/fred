@@ -13,20 +13,20 @@ import freenet.support.math.MersenneTwister;
 
 import com.db4o.ObjectContainer;
 
-import freenet.crypt.DSA;
-import freenet.crypt.DSAGroup;
-import freenet.crypt.DSAPrivateKey;
-import freenet.crypt.DSAPublicKey;
-import freenet.crypt.DSASignature;
-import freenet.crypt.Global;
-import freenet.crypt.PCFBMode;
-import freenet.crypt.RandomSource;
-import freenet.crypt.SHA256;
-import freenet.crypt.UnsupportedCipherException;
-import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.Key.Compressed;
 import freenet.support.api.Bucket;
 import freenet.support.compress.InvalidCompressionCodecException;
+import freenet.support.crypt.DSA;
+import freenet.support.crypt.DSAGroup;
+import freenet.support.crypt.DSAPrivateKey;
+import freenet.support.crypt.DSAPublicKey;
+import freenet.support.crypt.DSASignature;
+import freenet.support.crypt.Global;
+import freenet.support.crypt.PCFBMode;
+import freenet.support.crypt.RandomSource;
+import freenet.support.crypt.SHA256;
+import freenet.support.crypt.UnsupportedCipherException;
+import freenet.support.crypt.ciphers.Rijndael;
 
 /** A ClientSSK that has a private key and therefore can be inserted. */
 public class InsertableClientSSK extends ClientSSK {

@@ -12,13 +12,13 @@ import java.util.Arrays;
 
 import com.db4o.ObjectContainer;
 
-import freenet.crypt.DSAPublicKey;
-import freenet.crypt.SHA256;
 import freenet.node.GetPubkey;
 import freenet.store.BlockMetadata;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.crypt.DSAPublicKey;
+import freenet.support.crypt.SHA256;
 
 /**
  * An SSK is a Signed Subspace Key.

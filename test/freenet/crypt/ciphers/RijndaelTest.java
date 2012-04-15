@@ -7,8 +7,9 @@ import java.util.Arrays;
 import java.util.Random;
 
 import junit.framework.TestCase;
-import freenet.crypt.UnsupportedCipherException;
 import freenet.support.HexUtil;
+import freenet.support.crypt.UnsupportedCipherException;
+import freenet.support.crypt.ciphers.Rijndael;
 
 /**
  * @author sdiz

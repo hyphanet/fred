@@ -9,12 +9,12 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
 
+import freenet.support.crypt.DSAPrivateKey;
+import freenet.support.crypt.DSAPublicKey;
+import freenet.support.crypt.Global;
+import freenet.support.crypt.SHA256;
 import freenet.support.math.MersenneTwister;
 
-import freenet.crypt.DSAPrivateKey;
-import freenet.crypt.DSAPublicKey;
-import freenet.crypt.Global;
-import freenet.crypt.SHA256;
 
 public class ClientKSK extends InsertableClientSSK {
 

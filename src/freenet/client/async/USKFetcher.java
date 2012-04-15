@@ -30,7 +30,6 @@ import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.InsertContext.CompatibilityMode;
-import freenet.crypt.HashResult;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientSSK;
 import freenet.keys.ClientSSKBlock;
@@ -57,6 +56,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
 import freenet.support.compress.DecompressorThreadManager;
+import freenet.support.crypt.HashResult;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 

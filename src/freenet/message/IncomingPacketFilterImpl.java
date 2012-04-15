@@ -5,7 +5,6 @@ package freenet.message;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import freenet.crypt.EntropySource;
 import freenet.node.Node;
 import freenet.node.PeerNode;
 import freenet.node.transport.FNPPacketMangler;
@@ -13,6 +12,7 @@ import freenet.node.transport.NodeCrypto;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.crypt.EntropySource;
 
 public class IncomingPacketFilterImpl implements IncomingPacketFilter {
 

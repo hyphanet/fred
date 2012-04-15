@@ -6,9 +6,9 @@ package freenet.support.io;
 import java.io.IOException;
 import java.util.Random;
 
-import freenet.crypt.DummyRandomSource;
-import freenet.crypt.RandomSource;
 import freenet.support.api.Bucket;
+import freenet.support.crypt.DummyRandomSource;
+import freenet.support.crypt.RandomSource;
 
 public class PaddedEphemerallyEncryptedBucketTest extends BucketTestBase {
 	private RandomSource strongPRNG = new DummyRandomSource(12345);

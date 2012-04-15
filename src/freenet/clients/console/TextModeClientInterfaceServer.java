@@ -14,8 +14,6 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
-import freenet.crypt.RandomSource;
-import freenet.crypt.SSL;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
@@ -23,6 +21,8 @@ import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.StringCallback;
+import freenet.support.crypt.RandomSource;
+import freenet.support.crypt.SSL;
 import freenet.support.net.NetworkInterface;
 import freenet.support.net.SSLNetworkInterface;
 

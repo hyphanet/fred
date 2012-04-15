@@ -9,14 +9,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
 
-import freenet.crypt.BlockCipher;
-import freenet.crypt.PCFBMode;
-import freenet.crypt.SHA256;
-import freenet.crypt.UnsupportedCipherException;
-import freenet.crypt.ciphers.Rijndael;
 import freenet.node.MasterKeys;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.Logger;
+import freenet.support.crypt.BlockCipher;
+import freenet.support.crypt.PCFBMode;
+import freenet.support.crypt.SHA256;
+import freenet.support.crypt.UnsupportedCipherException;
+import freenet.support.crypt.ciphers.Rijndael;
 
 /**
  * Cipher Manager

@@ -6,7 +6,6 @@ package freenet.node.simulator;
 import java.io.File;
 import java.io.IOException;
 
-import freenet.crypt.DummyRandomSource;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKSK;
@@ -39,6 +38,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
+import freenet.support.crypt.DummyRandomSource;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.FileUtil;
 

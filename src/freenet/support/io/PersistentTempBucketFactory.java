@@ -17,7 +17,6 @@ import com.db4o.query.Predicate;
 import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
 import freenet.client.async.DatabaseDisabledException;
-import freenet.crypt.RandomSource;
 import freenet.keys.CHKBlock;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -25,6 +24,7 @@ import freenet.support.Ticker;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.crypt.RandomSource;
 
 /**
  * Handles persistent temp files. These are used for e.g. persistent downloads. Anything of exactly 32KB

@@ -16,11 +16,20 @@
 package freenet.crypt;
 
 import java.math.BigInteger;
+
+import freenet.support.crypt.DSA;
+import freenet.support.crypt.DSAGroup;
+import freenet.support.crypt.DSAPrivateKey;
+import freenet.support.crypt.DSAPublicKey;
+import freenet.support.crypt.DSASignature;
+import freenet.support.crypt.DummyRandomSource;
+import freenet.support.crypt.Global;
+import freenet.support.crypt.RandomSource;
 import junit.framework.TestCase;
 import net.i2p.util.NativeBigInteger;
 
 /**
- * Test case for {@link freenet.crypt.DSA} class.
+ * Test case for {@link freenet.support.crypt.DSA} class.
  *
  * @author Alberto Bacchelli &lt;sback@freenetproject.org&gt;
  */

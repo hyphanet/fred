@@ -10,11 +10,11 @@ import com.db4o.ObjectContainer;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.client.InsertContext.CompatibilityMode;
-import freenet.crypt.HashResult;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.node.RequestClient;
 import freenet.support.compress.Compressor;
+import freenet.support.crypt.HashResult;
 
 /**
  * Wrapper for a backgrounded USKFetcher.

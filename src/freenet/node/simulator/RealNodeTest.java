@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.simulator;
 
-import freenet.crypt.RandomSource;
 import freenet.message.PeerParseException;
 import freenet.node.FSParseException;
 import freenet.node.Location;
@@ -16,6 +15,7 @@ import freenet.node.load.NodeStats;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.crypt.RandomSource;
 
 /**
  * Optional base class for RealNode*Test.

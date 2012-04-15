@@ -9,7 +9,6 @@ import java.util.List;
 import com.db4o.ObjectContainer;
 
 import freenet.client.FetchContext;
-import freenet.crypt.RandomSource;
 import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.node.BaseSendableGet;
@@ -25,6 +24,7 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.RandomGrabArray;
 import freenet.support.RemoveRandom.RemoveRandomReturn;
+import freenet.support.crypt.RandomSource;
 import freenet.support.SectoredRandomGrabArray;
 import freenet.support.SectoredRandomGrabArrayWithObject;
 import freenet.support.TimeUtil;

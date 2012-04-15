@@ -3,10 +3,10 @@ package freenet.node.fcp;
 import com.db4o.ObjectContainer;
 
 import freenet.client.events.ExpectedHashesEvent;
-import freenet.crypt.HashResult;
 import freenet.node.Node;
 import freenet.support.HexUtil;
 import freenet.support.SimpleFieldSet;
+import freenet.support.crypt.HashResult;
 
 public class ExpectedHashes extends FCPMessage {
 

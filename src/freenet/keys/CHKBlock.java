@@ -8,8 +8,8 @@ import java.util.Arrays;
 
 import com.db4o.ObjectContainer;
 
-import freenet.crypt.SHA256;
 import freenet.support.Fields;
+import freenet.support.crypt.SHA256;
 
 /**
  * @author amphibian

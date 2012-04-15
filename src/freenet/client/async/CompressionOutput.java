@@ -1,8 +1,8 @@
 package freenet.client.async;
 
-import freenet.crypt.HashResult;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
+import freenet.support.crypt.HashResult;
 
 class CompressionOutput {
 	public CompressionOutput(Bucket bestCompressedData, COMPRESSOR_TYPE bestCodec2, HashResult[] hashes) {

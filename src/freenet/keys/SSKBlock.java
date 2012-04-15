@@ -10,13 +10,13 @@ import net.i2p.util.NativeBigInteger;
 
 import com.db4o.ObjectContainer;
 
-import freenet.crypt.DSA;
-import freenet.crypt.DSAPublicKey;
-import freenet.crypt.DSASignature;
-import freenet.crypt.SHA256;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.crypt.DSA;
+import freenet.support.crypt.DSAPublicKey;
+import freenet.support.crypt.DSASignature;
+import freenet.support.crypt.SHA256;
 
 /**
  * SSKBlock. Contains a full fetched key. Can do a node-level verification. Can 

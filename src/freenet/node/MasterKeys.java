@@ -12,13 +12,13 @@ import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 
-import freenet.crypt.BlockCipher;
-import freenet.crypt.PCFBMode;
-import freenet.crypt.RandomSource;
-import freenet.crypt.SHA256;
-import freenet.crypt.UnsupportedCipherException;
-import freenet.crypt.ciphers.Rijndael;
 import freenet.support.Fields;
+import freenet.support.crypt.BlockCipher;
+import freenet.support.crypt.PCFBMode;
+import freenet.support.crypt.RandomSource;
+import freenet.support.crypt.SHA256;
+import freenet.support.crypt.UnsupportedCipherException;
+import freenet.support.crypt.ciphers.Rijndael;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 

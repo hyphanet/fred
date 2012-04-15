@@ -28,10 +28,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
-import freenet.crypt.BlockCipher;
-import freenet.crypt.DSAPublicKey;
-import freenet.crypt.UnsupportedCipherException;
-import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.KeyVerifyException;
 import freenet.keys.SSKBlock;
 import freenet.node.FastRunnable;
@@ -52,6 +48,10 @@ import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.Ticker;
+import freenet.support.crypt.BlockCipher;
+import freenet.support.crypt.DSAPublicKey;
+import freenet.support.crypt.UnsupportedCipherException;
+import freenet.support.crypt.ciphers.Rijndael;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;

@@ -9,8 +9,6 @@ import java.util.Iterator;
 
 import com.db4o.ObjectContainer;
 
-import freenet.crypt.RandomSource;
-import freenet.crypt.SHA256;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeSSK;
@@ -29,6 +27,8 @@ import freenet.support.SectoredRandomGrabArrayWithInt;
 import freenet.support.SectoredRandomGrabArrayWithObject;
 import freenet.support.SortedVectorByNumber;
 import freenet.support.Logger.LogLevel;
+import freenet.support.crypt.RandomSource;
+import freenet.support.crypt.SHA256;
 
 /**
  * Base class for ClientRequestSchedulerCore and ClientRequestSchedulerNonPersistent, 

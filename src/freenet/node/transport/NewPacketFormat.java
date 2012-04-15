@@ -10,9 +10,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Vector;
 
-import freenet.crypt.BlockCipher;
-import freenet.crypt.HMAC;
-import freenet.crypt.PCFBMode;
 import freenet.io.xfer.PacketThrottle;
 import freenet.message.DMT;
 import freenet.message.Message;
@@ -25,6 +22,9 @@ import freenet.node.transport.NewPacketFormatKeyContext.AddedAcks;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.crypt.BlockCipher;
+import freenet.support.crypt.HMAC;
+import freenet.support.crypt.PCFBMode;
 import freenet.support.SparseBitmap;
 
 public class NewPacketFormat implements PacketFormat {

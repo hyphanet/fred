@@ -7,9 +7,9 @@ import java.io.IOException;
 
 import com.sleepycat.je.DatabaseException;
 
-import freenet.crypt.DSAPublicKey;
 import freenet.keys.KeyVerifyException;
 import freenet.node.stats.store.StoreAccessStats;
+import freenet.support.crypt.DSAPublicKey;
 
 /**
  * @author toad

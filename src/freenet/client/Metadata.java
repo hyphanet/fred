@@ -29,9 +29,6 @@ import freenet.keys.ClientCHK;
 import freenet.keys.FreenetURI;
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.InsertContext.CompatibilityMode;
-import freenet.crypt.HashResult;
-import freenet.crypt.HashType;
-import freenet.crypt.SHA256;
 import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -39,6 +36,9 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
+import freenet.support.crypt.HashResult;
+import freenet.support.crypt.HashType;
+import freenet.support.crypt.SHA256;
 import freenet.support.io.BucketTools;
 
 /** Metadata parser/writer class. */

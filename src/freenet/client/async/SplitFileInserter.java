@@ -17,7 +17,6 @@ import freenet.client.InsertContext;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
-import freenet.crypt.HashResult;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
 import freenet.support.Executor;
@@ -27,6 +26,7 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
+import freenet.support.crypt.HashResult;
 import freenet.support.io.BucketTools;
 import freenet.support.math.MersenneTwister;
 

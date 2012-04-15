@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-import freenet.crypt.RandomSource;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
@@ -14,6 +13,7 @@ import freenet.support.PooledExecutor;
 import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
+import freenet.support.crypt.RandomSource;
 import freenet.support.io.FileUtil;
 
 public class BootstrapSeedTest {

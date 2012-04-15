@@ -5,13 +5,13 @@ package freenet.node;
 
 import java.io.IOException;
 
-import freenet.crypt.DSAPublicKey;
 import freenet.store.BlockMetadata;
 import freenet.store.PubkeyStore;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.HexUtil;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
+import freenet.support.crypt.DSAPublicKey;
 
 public class GetPubkey {
 	private static volatile boolean logMINOR;

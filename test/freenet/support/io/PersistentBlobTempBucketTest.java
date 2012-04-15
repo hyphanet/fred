@@ -12,11 +12,11 @@ import com.db4o.ObjectContainer;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DatabaseDisabledException;
 import freenet.client.async.TrivialDBJobRunner;
-import freenet.crypt.DummyRandomSource;
 import freenet.support.Executor;
 import freenet.support.PooledExecutor;
 import freenet.support.TrivialTicker;
 import freenet.support.api.Bucket;
+import freenet.support.crypt.DummyRandomSource;
 import freenet.support.math.MersenneTwister;
 
 import junit.framework.TestCase;

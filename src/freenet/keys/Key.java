@@ -13,9 +13,6 @@ import java.util.Arrays;
 
 import com.db4o.ObjectContainer;
 
-import freenet.crypt.CryptFormatException;
-import freenet.crypt.DSAPublicKey;
-import freenet.crypt.SHA256;
 import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -26,6 +23,9 @@ import freenet.support.api.BucketFactory;
 import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
+import freenet.support.crypt.CryptFormatException;
+import freenet.support.crypt.DSAPublicKey;
+import freenet.support.crypt.SHA256;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;

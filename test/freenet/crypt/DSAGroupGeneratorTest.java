@@ -21,7 +21,7 @@ import java.math.BigInteger;
 import junit.framework.TestCase;
 
 /**
- * Test case for the {@link freenet.crypt.DSAGroupGeneratorTest} class.
+ * Test case for the {@link freenet.support.crypt.DSAGroupGeneratorTest} class.
  * 
  * @author Florent Daigni�re &lt;nextgens@freenetproject.org&gt;
  */

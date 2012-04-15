@@ -10,13 +10,13 @@ import java.util.Arrays;
 
 import com.db4o.ObjectContainer;
 
-import freenet.crypt.DSAPublicKey;
-import freenet.crypt.SHA256;
-import freenet.crypt.UnsupportedCipherException;
-import freenet.crypt.ciphers.Rijndael;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.crypt.DSAPublicKey;
+import freenet.support.crypt.SHA256;
+import freenet.support.crypt.UnsupportedCipherException;
+import freenet.support.crypt.ciphers.Rijndael;
 
 /** Client-level SSK, i.e. a low level SSK with the decryption key needed to
  * decrypt the data once it is fetched. Note that you can only use this to

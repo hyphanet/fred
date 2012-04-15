@@ -8,7 +8,6 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import freenet.crypt.HMAC;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeSSK;
@@ -39,6 +38,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.Logger.LogLevel;
+import freenet.support.crypt.HMAC;
 import freenet.support.io.NativeThread;
 
 /**

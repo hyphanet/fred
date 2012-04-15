@@ -15,7 +15,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import com.db4o.ObjectContainer;
 
-import freenet.crypt.RandomSource;
 import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -24,6 +23,8 @@ import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.crypt.RandomSource;
+
 import java.util.ArrayList;
 
 /**

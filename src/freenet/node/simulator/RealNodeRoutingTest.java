@@ -5,8 +5,6 @@ package freenet.node.simulator;
 
 import java.io.File;
 
-import freenet.crypt.DummyRandomSource;
-import freenet.crypt.RandomSource;
 import freenet.node.LocationManager;
 import freenet.node.Node;
 import freenet.node.NodeStarter;
@@ -14,6 +12,8 @@ import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
 import freenet.support.Logger.LogLevel;
+import freenet.support.crypt.DummyRandomSource;
+import freenet.support.crypt.RandomSource;
 import freenet.support.io.FileUtil;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.RunningAverage;

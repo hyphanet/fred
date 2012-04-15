@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.UnsupportedEncodingException;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.crypt.DummyRandomSource;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKDecodeException;
 import freenet.keys.CHKEncodeException;
@@ -30,6 +29,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
+import freenet.support.crypt.DummyRandomSource;
 import freenet.support.io.FileUtil;
 
 /**

@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.simulator;
 
-import freenet.crypt.RandomSource;
 import freenet.message.NotConnectedException;
 import freenet.message.PeerParseException;
 import freenet.message.ReferenceSignatureVerificationException;
@@ -19,6 +18,7 @@ import freenet.support.Logger;
 import freenet.support.PooledExecutor;
 import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
+import freenet.support.crypt.RandomSource;
 
 /**
  * @author amphibian

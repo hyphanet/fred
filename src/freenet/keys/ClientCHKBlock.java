@@ -11,11 +11,6 @@ import freenet.support.math.MersenneTwister;
 
 import com.db4o.ObjectContainer;
 
-import freenet.crypt.BlockCipher;
-import freenet.crypt.PCFBMode;
-import freenet.crypt.SHA256;
-import freenet.crypt.UnsupportedCipherException;
-import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.Key.Compressed;
 import freenet.node.Node;
 import freenet.support.LogThresholdCallback;
@@ -24,6 +19,11 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.InvalidCompressionCodecException;
+import freenet.support.crypt.BlockCipher;
+import freenet.support.crypt.PCFBMode;
+import freenet.support.crypt.SHA256;
+import freenet.support.crypt.UnsupportedCipherException;
+import freenet.support.crypt.ciphers.Rijndael;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;

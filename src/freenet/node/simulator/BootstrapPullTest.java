@@ -14,7 +14,6 @@ import freenet.support.math.MersenneTwister;
 
 import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;
-import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
@@ -24,6 +23,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
+import freenet.support.crypt.RandomSource;
 import freenet.support.io.FileUtil;
 import freenet.support.io.LineReadingInputStream;
 

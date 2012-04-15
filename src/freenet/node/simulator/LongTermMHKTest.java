@@ -24,7 +24,6 @@ import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertException;
-import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.NodeStarter;
@@ -34,6 +33,7 @@ import freenet.support.Logger;
 import freenet.support.PooledExecutor;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.crypt.RandomSource;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 

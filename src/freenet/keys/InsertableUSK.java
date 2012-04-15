@@ -7,10 +7,10 @@ import java.net.MalformedURLException;
 
 import com.db4o.ObjectContainer;
 
-import freenet.crypt.DSAGroup;
-import freenet.crypt.DSAPrivateKey;
-import freenet.crypt.DSAPublicKey;
 import freenet.support.Logger;
+import freenet.support.crypt.DSAGroup;
+import freenet.support.crypt.DSAPrivateKey;
+import freenet.support.crypt.DSAPublicKey;
 
 /**
  * An insertable USK.
