@@ -3,16 +3,16 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.io.xfer;
 
-import freenet.io.comm.AsyncMessageCallback;
-import freenet.io.comm.AsyncMessageFilterCallback;
-import freenet.io.comm.ByteCounter;
-import freenet.io.comm.DMT;
-import freenet.io.comm.DisconnectedException;
-import freenet.io.comm.Message;
-import freenet.io.comm.MessageFilter;
-import freenet.io.comm.NotConnectedException;
-import freenet.io.comm.PeerContext;
-import freenet.io.comm.PeerRestartedException;
+import freenet.message.AsyncMessageCallback;
+import freenet.message.AsyncMessageFilterCallback;
+import freenet.message.ByteCounter;
+import freenet.message.DMT;
+import freenet.message.DisconnectedException;
+import freenet.message.Message;
+import freenet.message.MessageFilter;
+import freenet.message.NotConnectedException;
+import freenet.message.PeerContext;
+import freenet.message.PeerRestartedException;
 import freenet.node.PrioRunnable;
 import freenet.node.SyncSendWaitedTooLongException;
 import freenet.support.BitArray;

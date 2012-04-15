@@ -5,8 +5,8 @@ package freenet.node.transport;
 
 import java.util.LinkedList;
 
-import freenet.io.comm.DMT;
-import freenet.io.comm.Message;
+import freenet.message.DMT;
+import freenet.message.Message;
 import freenet.node.BasePeerNode;
 import freenet.node.NullBasePeerNode;
 import freenet.node.transport.DecodingMessageGroup;

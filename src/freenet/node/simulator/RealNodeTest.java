@@ -4,7 +4,7 @@
 package freenet.node.simulator;
 
 import freenet.crypt.RandomSource;
-import freenet.io.comm.PeerParseException;
+import freenet.message.PeerParseException;
 import freenet.node.FSParseException;
 import freenet.node.Location;
 import freenet.node.Node;
@@ -105,7 +105,7 @@ public class RealNodeTest {
 			Logger.error(RealNodeTest.class, "cannot connect!!!!", e);
 		} catch (PeerParseException e) {
 			Logger.error(RealNodeTest.class, "cannot connect #2!!!!", e);
-		} catch (freenet.io.comm.ReferenceSignatureVerificationException e) {
+		} catch (freenet.message.ReferenceSignatureVerificationException e) {
 			Logger.error(RealNodeTest.class, "cannot connect #3!!!!", e);
 		}
 	}

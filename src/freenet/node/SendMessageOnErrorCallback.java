@@ -3,10 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import freenet.io.comm.AsyncMessageCallback;
-import freenet.io.comm.ByteCounter;
-import freenet.io.comm.Message;
-import freenet.io.comm.NotConnectedException;
+import freenet.message.AsyncMessageCallback;
+import freenet.message.ByteCounter;
+import freenet.message.Message;
+import freenet.message.NotConnectedException;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;

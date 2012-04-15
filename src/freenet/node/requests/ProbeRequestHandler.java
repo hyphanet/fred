@@ -3,9 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.requests;
 
-import freenet.io.comm.DMT;
-import freenet.io.comm.Message;
-import freenet.io.comm.NotConnectedException;
+import freenet.message.DMT;
+import freenet.message.Message;
+import freenet.message.NotConnectedException;
 import freenet.node.LocationManager;
 import freenet.node.Node;
 import freenet.node.PeerNode;

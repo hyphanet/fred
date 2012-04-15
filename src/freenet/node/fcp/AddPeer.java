@@ -16,8 +16,8 @@ import java.util.Arrays;
 
 import com.db4o.ObjectContainer;
 
-import freenet.io.comm.PeerParseException;
-import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.message.PeerParseException;
+import freenet.message.ReferenceSignatureVerificationException;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.node.opennet.OpennetDisabledException;

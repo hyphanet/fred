@@ -1,4 +1,4 @@
-package freenet.io.comm;
+package freenet.message;
 
 public class NullAsyncMessageFilterCallback implements
 		AsyncMessageFilterCallback {

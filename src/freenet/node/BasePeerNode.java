@@ -2,9 +2,9 @@ package freenet.node;
 
 import java.util.Random;
 
-import freenet.io.comm.Message;
-import freenet.io.comm.Peer.LocalAddressException;
-import freenet.io.comm.PeerContext;
+import freenet.message.Message;
+import freenet.message.PeerContext;
+import freenet.message.Peer.LocalAddressException;
 import freenet.node.transport.DecodingMessageGroup;
 import freenet.node.transport.MessageItem;
 import freenet.node.transport.PeerMessageQueue;

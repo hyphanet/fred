@@ -3,10 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.transport;
 
-import freenet.io.comm.AsyncMessageCallback;
-import freenet.io.comm.ByteCounter;
-import freenet.io.comm.DMT;
-import freenet.io.comm.Message;
+import freenet.message.AsyncMessageCallback;
+import freenet.message.ByteCounter;
+import freenet.message.DMT;
+import freenet.message.Message;
 import freenet.support.Logger;
 
 /** A queued byte[], maybe including a Message, and a callback, which may be null.

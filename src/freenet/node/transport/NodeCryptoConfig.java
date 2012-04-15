@@ -8,7 +8,7 @@ import java.net.UnknownHostException;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
-import freenet.io.comm.FreenetInetAddress;
+import freenet.message.FreenetInetAddress;
 import freenet.node.NodeInitException;
 import freenet.node.SecurityLevelListener;
 import freenet.node.SecurityLevels;

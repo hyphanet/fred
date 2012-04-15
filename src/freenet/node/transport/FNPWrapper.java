@@ -4,12 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
-import freenet.io.comm.DMT;
-import freenet.io.comm.IncomingPacketFilter.DECODED;
-import freenet.io.comm.Message;
-import freenet.io.comm.NotConnectedException;
-import freenet.io.comm.PacketSocketHandler;
-import freenet.io.comm.Peer;
+import freenet.message.DMT;
+import freenet.message.Message;
+import freenet.message.NotConnectedException;
+import freenet.message.PacketSocketHandler;
+import freenet.message.Peer;
+import freenet.message.IncomingPacketFilter.DECODED;
 import freenet.node.Node;
 import freenet.node.PeerNode;
 import freenet.support.LogThresholdCallback;

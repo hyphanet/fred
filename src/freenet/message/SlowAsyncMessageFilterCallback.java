@@ -1,4 +1,4 @@
-package freenet.io.comm;
+package freenet.message;
 
 /** AsyncMessageFilterCallback where the callbacks may do things that take significant time. */
 public interface SlowAsyncMessageFilterCallback extends

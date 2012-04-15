@@ -26,10 +26,10 @@ import java.util.LinkedList;
 import java.util.List;
 
 import freenet.io.WritableToDataOutputStream;
-import freenet.io.comm.Peer;
 import freenet.keys.Key;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
+import freenet.message.Peer;
 
 /**
  * @author ian

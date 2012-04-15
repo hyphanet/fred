@@ -4,12 +4,12 @@
 package freenet.node.transport;
 
 import freenet.io.AddressTracker.Status;
-import freenet.io.comm.AsyncMessageCallback;
-import freenet.io.comm.FreenetInetAddress;
-import freenet.io.comm.NotConnectedException;
-import freenet.io.comm.Peer;
-import freenet.io.comm.PeerContext;
-import freenet.io.comm.SocketHandler;
+import freenet.message.AsyncMessageCallback;
+import freenet.message.FreenetInetAddress;
+import freenet.message.NotConnectedException;
+import freenet.message.Peer;
+import freenet.message.PeerContext;
+import freenet.message.SocketHandler;
 import freenet.node.PeerNode;
 import freenet.support.WouldBlockException;
 
@@ -17,7 +17,7 @@ import freenet.support.WouldBlockException;
  * Low-level interface for sending packets.
  * A UDP-based transport will have to implement both this and IncomingPacketFilter, usually
  * on the same class. 
- * @see freenet.io.comm.IncomingPacketFilter
+ * @see freenet.message.IncomingPacketFilter
  * @see freenet.node.transport.FNPPacketMangler
  */
 public interface OutgoingPacketMangler {

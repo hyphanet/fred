@@ -29,8 +29,8 @@ import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import freenet.io.comm.Peer;
 import freenet.l10n.NodeL10n;
+import freenet.message.Peer;
 import freenet.node.FSParseException;
 import freenet.node.ProgramDirectory;
 import freenet.support.Logger;

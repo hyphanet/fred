@@ -8,14 +8,14 @@ import java.io.UnsupportedEncodingException;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.crypt.DummyRandomSource;
-import freenet.io.comm.PeerParseException;
-import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKDecodeException;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
+import freenet.message.PeerParseException;
+import freenet.message.ReferenceSignatureVerificationException;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
@@ -71,8 +71,8 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
         wd.mkdir();
         //NOTE: globalTestInit returns in ignored random source
         //NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNode:minor,freenet.node.Insert:MINOR,freenet.node.Request:MINOR,freenet.node.Node:MINOR");
-        //NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "freenet.node.Location:MINOR,freenet.io.comm:MINOR,freenet.node.NodeDispatcher:MINOR,freenet.node.simulator:MINOR,freenet.node.PeerManager:MINOR,freenet.node.RequestSender:MINOR");
-        //NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "freenet.node.FNP:MINOR,freenet.node.Packet:MINOR,freenet.io.comm:MINOR,freenet.node.PeerNode:MINOR,freenet.node.DarknetPeerNode:MINOR");
+        //NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "freenet.node.Location:MINOR,freenet.message:MINOR,freenet.node.NodeDispatcher:MINOR,freenet.node.simulator:MINOR,freenet.node.PeerManager:MINOR,freenet.node.RequestSender:MINOR");
+        //NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "freenet.node.FNP:MINOR,freenet.node.Packet:MINOR,freenet.message:MINOR,freenet.node.PeerNode:MINOR,freenet.node.DarknetPeerNode:MINOR");
         NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "", true);
         System.out.println("Busy network test (inserts/retrieves in quantity/stress test)");
         System.out.println();

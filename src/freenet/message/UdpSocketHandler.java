@@ -1,4 +1,4 @@
-package freenet.io.comm;
+package freenet.message;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -10,7 +10,7 @@ import java.net.SocketTimeoutException;
 import java.util.Random;
 
 import freenet.io.AddressTracker;
-import freenet.io.comm.Peer.LocalAddressException;
+import freenet.message.Peer.LocalAddressException;
 import freenet.node.Node;
 import freenet.node.PrioRunnable;
 import freenet.support.Logger;

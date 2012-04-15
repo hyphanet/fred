@@ -1,6 +1,6 @@
 package freenet.support;
 
-import freenet.io.comm.AsyncMessageCallback;
+import freenet.message.AsyncMessageCallback;
 
 
 public class LimitedRangeIntByteArrayMapElement {

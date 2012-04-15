@@ -1,4 +1,4 @@
-package freenet.io.comm;
+package freenet.message;
 
 /** Thrown if a peer is restarted during an attempt to send a throttled packet, wait
  * for an incoming packet from a peer, etc. */ 

@@ -5,8 +5,8 @@ package freenet.io.xfer;
 
 import java.io.IOException;
 
-import freenet.io.comm.MessageCore;
-import freenet.io.comm.RetrievalException;
+import freenet.message.MessageCore;
+import freenet.message.RetrievalException;
 import freenet.support.BitArray;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;

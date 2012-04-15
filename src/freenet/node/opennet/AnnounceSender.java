@@ -5,14 +5,14 @@ package freenet.node.opennet;
 
 import java.util.HashSet;
 
-import freenet.io.comm.ByteCounter;
-import freenet.io.comm.DMT;
-import freenet.io.comm.DisconnectedException;
-import freenet.io.comm.Message;
-import freenet.io.comm.MessageFilter;
-import freenet.io.comm.NotConnectedException;
-import freenet.io.comm.PeerParseException;
-import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.message.ByteCounter;
+import freenet.message.DMT;
+import freenet.message.DisconnectedException;
+import freenet.message.Message;
+import freenet.message.MessageFilter;
+import freenet.message.NotConnectedException;
+import freenet.message.PeerParseException;
+import freenet.message.ReferenceSignatureVerificationException;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.PeerNode;

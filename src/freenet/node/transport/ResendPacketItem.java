@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.transport;
 
-import freenet.io.comm.AsyncMessageCallback;
+import freenet.message.AsyncMessageCallback;
 import freenet.node.PeerNode;
 
 /**

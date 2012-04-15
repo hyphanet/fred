@@ -17,8 +17,8 @@ package freenet.io;
 
 import java.net.UnknownHostException;
 
-import freenet.io.comm.Peer;
-import freenet.io.comm.PeerParseException;
+import freenet.message.Peer;
+import freenet.message.PeerParseException;
 import freenet.node.FSParseException;
 import freenet.support.SimpleFieldSet;
 

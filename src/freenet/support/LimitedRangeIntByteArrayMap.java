@@ -3,7 +3,7 @@ package freenet.support;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import freenet.io.comm.AsyncMessageCallback;
+import freenet.message.AsyncMessageCallback;
 import freenet.support.Logger.LogLevel;
 
 /**

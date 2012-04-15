@@ -11,10 +11,10 @@ import java.util.Map;
 
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
-import freenet.io.comm.FreenetInetAddress;
-import freenet.io.comm.Peer;
-import freenet.io.comm.UdpSocketHandler;
 import freenet.l10n.NodeL10n;
+import freenet.message.FreenetInetAddress;
+import freenet.message.Peer;
+import freenet.message.UdpSocketHandler;
 import freenet.node.opennet.SeedServerPeerNode;
 import freenet.node.useralerts.IPUndetectedUserAlert;
 import freenet.node.useralerts.InvalidAddressOverrideUserAlert;

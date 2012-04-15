@@ -8,8 +8,6 @@ import java.util.Arrays;
 import java.util.Vector;
 
 import freenet.crypt.DummyRandomSource;
-import freenet.io.comm.PeerParseException;
-import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKSK;
@@ -17,6 +15,8 @@ import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
+import freenet.message.PeerParseException;
+import freenet.message.ReferenceSignatureVerificationException;
 import freenet.node.FSParseException;
 import freenet.node.LowLevelGetException;
 import freenet.node.Node;
@@ -77,8 +77,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         wd.mkdir();
         //NOTE: globalTestInit returns in ignored random source
         //NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNode:minor,freenet.node.Insert:MINOR,freenet.node.Request:MINOR,freenet.node.Node:MINOR");
-        //NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "freenet.node.Location:MINOR,freenet.io.comm:MINOR,freenet.node.NodeDispatcher:MINOR,freenet.node.simulator:MINOR,freenet.node.PeerManager:MINOR,freenet.node.RequestSender:MINOR");
-        //NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "freenet.node.FNP:MINOR,freenet.node.Packet:MINOR,freenet.io.comm:MINOR,freenet.node.PeerNode:MINOR,freenet.node.DarknetPeerNode:MINOR");
+        //NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "freenet.node.Location:MINOR,freenet.message:MINOR,freenet.node.NodeDispatcher:MINOR,freenet.node.simulator:MINOR,freenet.node.PeerManager:MINOR,freenet.node.RequestSender:MINOR");
+        //NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "freenet.node.FNP:MINOR,freenet.node.Packet:MINOR,freenet.message:MINOR,freenet.node.PeerNode:MINOR,freenet.node.DarknetPeerNode:MINOR");
         NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "", true);
         System.out.println("Insert/retrieve test");
         System.out.println();

@@ -1,6 +1,6 @@
 package freenet.support;
 
-import freenet.io.comm.IncomingPacketFilterException;
+import freenet.message.IncomingPacketFilterException;
 import freenet.support.Logger.LogLevel;
 
 /**

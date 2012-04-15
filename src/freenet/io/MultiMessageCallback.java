@@ -1,6 +1,6 @@
 package freenet.io;
 
-import freenet.io.comm.AsyncMessageCallback;
+import freenet.message.AsyncMessageCallback;
 
 /** Waits for multiple asynchronous message sends, then calls finish(). */
 public abstract class MultiMessageCallback {

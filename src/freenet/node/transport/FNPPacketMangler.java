@@ -29,20 +29,20 @@ import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.io.AddressTracker;
 import freenet.io.AddressTracker.Status;
-import freenet.io.comm.AsyncMessageCallback;
-import freenet.io.comm.DMT;
-import freenet.io.comm.FreenetInetAddress;
-import freenet.io.comm.IncomingPacketFilter.DECODED;
-import freenet.io.comm.MessageCore;
-import freenet.io.comm.NotConnectedException;
-import freenet.io.comm.PacketSocketHandler;
-import freenet.io.comm.Peer;
-import freenet.io.comm.PeerContext;
-import freenet.io.comm.PeerParseException;
-import freenet.io.comm.ReferenceSignatureVerificationException;
-import freenet.io.comm.SocketHandler;
-import freenet.io.comm.Peer.LocalAddressException;
 import freenet.l10n.NodeL10n;
+import freenet.message.AsyncMessageCallback;
+import freenet.message.DMT;
+import freenet.message.FreenetInetAddress;
+import freenet.message.MessageCore;
+import freenet.message.NotConnectedException;
+import freenet.message.PacketSocketHandler;
+import freenet.message.Peer;
+import freenet.message.PeerContext;
+import freenet.message.PeerParseException;
+import freenet.message.ReferenceSignatureVerificationException;
+import freenet.message.SocketHandler;
+import freenet.message.IncomingPacketFilter.DECODED;
+import freenet.message.Peer.LocalAddressException;
 import freenet.node.DarknetPeerNode;
 import freenet.node.FSParseException;
 import freenet.node.Node;
@@ -3194,7 +3194,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	}
 
 	/* (non-Javadoc)
-	 * @see freenet.node.OutgoingPacketMangler#isDisconnected(freenet.io.comm.PeerContext)
+	 * @see freenet.node.OutgoingPacketMangler#isDisconnected(freenet.message.PeerContext)
 	 */
 	@Override
 	public boolean isDisconnected(PeerContext context) {

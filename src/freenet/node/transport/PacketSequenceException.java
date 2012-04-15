@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.transport;
 
-import freenet.io.comm.IncomingPacketFilterException;
+import freenet.message.IncomingPacketFilterException;
 
 public class PacketSequenceException extends IncomingPacketFilterException {
 	private static final long serialVersionUID = -1;

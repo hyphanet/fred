@@ -18,12 +18,12 @@
  */
 package freenet.io.xfer;
 
-import freenet.io.comm.AsyncMessageCallback;
-import freenet.io.comm.ByteCounter;
-import freenet.io.comm.Message;
-import freenet.io.comm.NotConnectedException;
-import freenet.io.comm.PeerContext;
-import freenet.io.comm.PeerRestartedException;
+import freenet.message.AsyncMessageCallback;
+import freenet.message.ByteCounter;
+import freenet.message.Message;
+import freenet.message.NotConnectedException;
+import freenet.message.PeerContext;
+import freenet.message.PeerRestartedException;
 import freenet.node.PeerNode;
 import freenet.node.SyncSendWaitedTooLongException;
 import freenet.node.transport.MessageItem;

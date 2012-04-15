@@ -16,9 +16,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Vector;
 
-import freenet.io.comm.PeerParseException;
-import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.l10n.NodeL10n;
+import freenet.message.PeerParseException;
+import freenet.message.ReferenceSignatureVerificationException;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.PeerManager;

@@ -4,9 +4,9 @@
 package freenet.node.simulator;
 
 import freenet.crypt.RandomSource;
-import freenet.io.comm.NotConnectedException;
-import freenet.io.comm.PeerParseException;
-import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.message.NotConnectedException;
+import freenet.message.PeerParseException;
+import freenet.message.ReferenceSignatureVerificationException;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.NodeInitException;

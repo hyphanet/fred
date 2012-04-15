@@ -1,7 +1,7 @@
 package freenet.node.opennet;
 
-import freenet.io.comm.PeerParseException;
-import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.message.PeerParseException;
+import freenet.message.ReferenceSignatureVerificationException;
 import freenet.node.FSParseException;
 import freenet.node.FastRunnable;
 import freenet.node.Node;

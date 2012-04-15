@@ -9,8 +9,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import freenet.io.comm.FreenetInetAddress;
-import freenet.io.comm.Peer;
+import freenet.message.FreenetInetAddress;
+import freenet.message.Peer;
 import freenet.node.transport.NodeCrypto;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;

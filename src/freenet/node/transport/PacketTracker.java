@@ -9,10 +9,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Vector;
 
-import freenet.io.comm.AsyncMessageCallback;
-import freenet.io.comm.DMT;
-import freenet.io.comm.NotConnectedException;
 import freenet.io.xfer.PacketThrottle;
+import freenet.message.AsyncMessageCallback;
+import freenet.message.DMT;
+import freenet.message.NotConnectedException;
 import freenet.node.Node;
 import freenet.node.PeerNode;
 import freenet.node.StillNotAckedException;

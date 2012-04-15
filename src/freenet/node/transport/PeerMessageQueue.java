@@ -7,7 +7,7 @@ import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Map;
 
-import freenet.io.comm.DMT;
+import freenet.message.DMT;
 import freenet.node.BasePeerNode;
 import freenet.support.DoublyLinkedList;
 import freenet.support.DoublyLinkedListImpl;

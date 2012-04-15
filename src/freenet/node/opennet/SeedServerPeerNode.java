@@ -6,10 +6,10 @@ package freenet.node.opennet;
 import java.net.InetAddress;
 import java.util.ArrayList;
 
-import freenet.io.comm.FreenetInetAddress;
-import freenet.io.comm.Peer;
-import freenet.io.comm.PeerParseException;
-import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.message.FreenetInetAddress;
+import freenet.message.Peer;
+import freenet.message.PeerParseException;
+import freenet.message.ReferenceSignatureVerificationException;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.PeerManager;

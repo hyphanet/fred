@@ -16,7 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-package freenet.io.comm;
+package freenet.message;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,7 +25,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Vector;
 
-import freenet.io.comm.MessageFilter.MATCHED;
+import freenet.message.MessageFilter.MATCHED;
 import freenet.node.PeerNode;
 import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;

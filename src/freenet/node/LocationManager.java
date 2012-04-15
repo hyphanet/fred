@@ -19,12 +19,12 @@ import java.util.TimeZone;
 
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
-import freenet.io.comm.ByteCounter;
-import freenet.io.comm.DMT;
-import freenet.io.comm.DisconnectedException;
-import freenet.io.comm.Message;
-import freenet.io.comm.MessageFilter;
-import freenet.io.comm.NotConnectedException;
+import freenet.message.ByteCounter;
+import freenet.message.DMT;
+import freenet.message.DisconnectedException;
+import freenet.message.Message;
+import freenet.message.MessageFilter;
+import freenet.message.NotConnectedException;
 import freenet.node.PeerManager.LocationUIDPair;
 import freenet.support.Fields;
 import freenet.support.Logger;
