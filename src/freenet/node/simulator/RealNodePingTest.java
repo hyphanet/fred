@@ -32,8 +32,8 @@ import freenet.support.LoggerHook.InvalidThresholdException;
  */
 public class RealNodePingTest {
 	
-	public static final int DARKNET_PORT1 = RealNodeNetworkColoringTest.DARKNET_PORT_END;
-	public static final int DARKNET_PORT2 = RealNodeNetworkColoringTest.DARKNET_PORT_END+1;
+	public static final int DARKNET_PORT1 = RealNodeBusyNetworkTest.DARKNET_PORT_END;
+	public static final int DARKNET_PORT2 = RealNodeBusyNetworkTest.DARKNET_PORT_END+1;
 	
 	static final FRIEND_TRUST trust = FRIEND_TRUST.LOW;
 	static final FRIEND_VISIBILITY visibility = FRIEND_VISIBILITY.NO;
