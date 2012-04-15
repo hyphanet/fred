@@ -23,7 +23,7 @@ import freenet.crypt.DSAPublicKey;
 import freenet.keys.Key;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
-import freenet.node.NodeStats.PeerLoadStats;
+import freenet.node.load.NodeStats.PeerLoadStats;
 import freenet.support.BitArray;
 import freenet.support.Buffer;
 import freenet.support.Fields;

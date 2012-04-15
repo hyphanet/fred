@@ -22,7 +22,7 @@ public class MemoryChecker implements Runnable {
 		this.aggressiveGCModificator = modificator;
 	}
 
-	protected synchronized void terminate() {
+	public synchronized void terminate() {
 		goon = false;
 		Logger.normal(this, "Terminating Memory Checker!");
 	}

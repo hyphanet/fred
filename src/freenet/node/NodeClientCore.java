@@ -60,6 +60,7 @@ import freenet.l10n.NodeL10n;
 import freenet.node.NodeRestartJobsQueue.RestartDBJob;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.fcp.FCPServer;
+import freenet.node.load.NodeStats;
 import freenet.node.load.RecentlyFailedReturn;
 import freenet.node.requests.CHKInsertSender;
 import freenet.node.requests.InsertTag;

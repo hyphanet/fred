@@ -112,6 +112,7 @@ import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.fcp.FCPMessage;
 import freenet.node.fcp.FeedMessage;
+import freenet.node.load.NodeStats;
 import freenet.node.opennet.Announcer;
 import freenet.node.opennet.OpennetDisabledException;
 import freenet.node.opennet.OpennetManager;
@@ -710,7 +711,7 @@ public class Node implements TimeSkewDetectorCallback, CompletedGroupHandler {
 	// Opennet stuff
 
 	private final NodeCryptoConfig opennetCryptoConfig;
-	OpennetManager opennet;
+	public OpennetManager opennet;
 	private volatile boolean isAllowedToConnectToSeednodes;
 	private int maxOpennetPeers;
 	private boolean acceptSeedConnections;
@@ -4119,7 +4120,7 @@ public class Node implements TimeSkewDetectorCallback, CompletedGroupHandler {
 		if(logMINOR) dumpStoreHits();
 		try {
 
-			nodeStats.avgRequestLocation.report(loc);
+			nodeStats.reportRequest(loc);
 			SSKBlock block = sskDatastore.fetch(key, dontPromote || !canWriteDatastore, canReadClientCache, forULPR, ignoreOldBlocks, meta);
 			if(block == null) {
 				SSKStore store = oldSSK;
@@ -4177,7 +4178,7 @@ public class Node implements TimeSkewDetectorCallback, CompletedGroupHandler {
 		if(canReadClientCache) ignoreOldBlocks = false;
 		if(logMINOR) dumpStoreHits();
 		try {
-			nodeStats.avgRequestLocation.report(loc);
+			nodeStats.reportRequest(loc);
 			CHKBlock block = chkDatastore.fetch(key, dontPromote || !canWriteDatastore, ignoreOldBlocks, meta);
 			if(block == null) {
 				CHKStore store = oldCHK;
@@ -5578,6 +5579,11 @@ public class Node implements TimeSkewDetectorCallback, CompletedGroupHandler {
 	
 	public boolean enableNewLoadManagement(boolean realTimeFlag) {
 		return nodeStats.enableNewLoadManagement(realTimeFlag);
+	}
+
+
+	public boolean isInputLimitDefault() {
+		return inputLimitDefault;
 	}
 
 }

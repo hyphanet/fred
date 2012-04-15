@@ -1,4 +1,4 @@
-package freenet.node;
+package freenet.node.load;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -20,6 +20,20 @@ import freenet.io.xfer.BlockTransmitter.BlockTimeCallback;
 import freenet.io.xfer.BulkTransmitter;
 import freenet.keys.NodeSSK;
 import freenet.l10n.NodeL10n;
+import freenet.node.ConfigurablePersister;
+import freenet.node.Location;
+import freenet.node.MemoryChecker;
+import freenet.node.Node;
+import freenet.node.NodeInitException;
+import freenet.node.NodePinger;
+import freenet.node.PeerManager;
+import freenet.node.PeerNode;
+import freenet.node.PeerNodeStatus;
+import freenet.node.Persistable;
+import freenet.node.Persister;
+import freenet.node.RequestStarter;
+import freenet.node.SecurityLevelListener;
+import freenet.node.SecurityLevels;
 import freenet.node.opennet.OpennetManager;
 import freenet.node.opennet.SeedClientPeerNode;
 import freenet.node.requests.CHKInsertSender;
@@ -148,14 +162,16 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private final TimeDecayingRunningAverage remoteSskFetchBytesReceivedAverage;
 	private final TimeDecayingRunningAverage remoteChkInsertBytesReceivedAverage;
 	private final TimeDecayingRunningAverage remoteSskInsertBytesReceivedAverage;
-	final TimeDecayingRunningAverage localChkFetchBytesSentAverage;
-	final TimeDecayingRunningAverage localSskFetchBytesSentAverage;
-	final TimeDecayingRunningAverage localChkInsertBytesSentAverage;
-	final TimeDecayingRunningAverage localSskInsertBytesSentAverage;
-	final TimeDecayingRunningAverage localChkFetchBytesReceivedAverage;
-	final TimeDecayingRunningAverage localSskFetchBytesReceivedAverage;
-	final TimeDecayingRunningAverage localChkInsertBytesReceivedAverage;
-	final TimeDecayingRunningAverage localSskInsertBytesReceivedAverage;
+	// FIXME these should be private. They are needed for RequestStarterGroup.
+	// It should just call a method with identifying parameters or something ...
+	public final TimeDecayingRunningAverage localChkFetchBytesSentAverage;
+	public final TimeDecayingRunningAverage localSskFetchBytesSentAverage;
+	public final TimeDecayingRunningAverage localChkInsertBytesSentAverage;
+	public final TimeDecayingRunningAverage localSskInsertBytesSentAverage;
+	public final TimeDecayingRunningAverage localChkFetchBytesReceivedAverage;
+	public final TimeDecayingRunningAverage localSskFetchBytesReceivedAverage;
+	public final TimeDecayingRunningAverage localChkInsertBytesReceivedAverage;
+	public final TimeDecayingRunningAverage localSskInsertBytesReceivedAverage;
 
 	// Bytes used by successful chk/ssk request/insert.
 	// Note: These are used to determine whether to accept a request,
@@ -220,9 +236,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private static final long nodeIOStatsUpdateInterval = 2000;
 
 	/** Token bucket for output bandwidth used by requests */
-	final TokenBucket requestOutputThrottle;
+	public final TokenBucket requestOutputThrottle;
 	/** Token bucket for input bandwidth used by requests */
-	final TokenBucket requestInputThrottle;
+	public final TokenBucket requestInputThrottle;
 
 	// various metrics
 	private final RunningAverage routingMissDistanceLocal;
@@ -255,7 +271,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public final ThreadGroup rootThreadGroup;
 	private int threadLimit;
 
-	final NodePinger nodePinger;
+	public final NodePinger nodePinger;
 
 	private final StringCounter preemptiveRejectReasons;
 	private final StringCounter localPreemptiveRejectReasons;
@@ -298,7 +314,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private volatile boolean enableNewLoadManagementRT;
 	private volatile boolean enableNewLoadManagementBulk;
 
-	NodeStats(Node node, int sortOrder, SubConfig statsConfig, int obwLimit, int ibwLimit, int lastVersion) throws NodeInitException {
+	public NodeStats(Node node, int sortOrder, SubConfig statsConfig, int obwLimit, int ibwLimit, int lastVersion) throws NodeInitException {
 		this.node = node;
 		this.peers = node.peers;
 		this.hardRandom = node.random;
@@ -852,7 +868,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 	}
 	
-	class RunningRequestsSnapshot {
+	public class RunningRequestsSnapshot {
 		
 		final int expectedTransfersOutCHK;
 		final int expectedTransfersInCHK;
@@ -1043,7 +1059,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 * etc. */
 	static final int TRANSFER_OUT_IN_OVERHEAD = 256;
 	
-	static class RejectReason {
+	public static class RejectReason {
 		public final String name;
 		/** If true, rejected because of preemptive bandwidth limiting, i.e. "soft", at least somewhat predictable, can be retried.
 		 * If false, hard rejection, should backoff and not retry. */
@@ -1305,7 +1321,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		double totalCouldSend = Math.max(totalSent,
 				(((node.getOutputBandwidthLimit() * uptime))/1000.0));
 		double nonOverheadFraction = (totalCouldSend - totalOverhead) / totalCouldSend;
-		long timeFirstAnyConnections = peers.timeFirstAnyConnections;
+		long timeFirstAnyConnections = peers.getTimeFirstAnyConnections();
 		if(timeFirstAnyConnections > 0) {
 			long time = now - timeFirstAnyConnections;
 			if(time < DEFAULT_ONLY_PERIOD) {
@@ -2122,7 +2138,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	public void setOutputLimit(int obwLimit) {
 		requestOutputThrottle.changeNanosAndBucketSize((int)((1000L*1000L*1000L) / (obwLimit)), Math.max(obwLimit*60, 32768*20));
-		if(node.inputLimitDefault) {
+		if(node.isInputLimitDefault()) {
 			setInputLimit(obwLimit * 4);
 		}
 	}
@@ -2293,7 +2309,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private long offerKeysRcvdBytes;
 	private long offerKeysSentBytes;
 
-	ByteCounter sendOffersCtr = new ByteCounter() {
+	public ByteCounter sendOffersCtr = new ByteCounter() {
 
 		@Override
 		public void receivedBytes(int x) {
@@ -2425,7 +2441,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	private long routingStatusBytesSent;
 
-	ByteCounter setRoutingStatusCtr = new ByteCounter() {
+	public ByteCounter setRoutingStatusCtr = new ByteCounter() {
 
 		@Override
 		public void receivedBytes(int x) {
@@ -2636,11 +2652,11 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private long disconnBytesReceived;
 	private long disconnBytesSent;
 
-	void disconnBytesReceived(int x) {
+	public void disconnBytesReceived(int x) {
 		this.disconnBytesReceived += x;
 	}
 
-	void disconnBytesSent(int x) {
+	public void disconnBytesSent(int x) {
 		this.disconnBytesSent += x;
 	}
 
@@ -2651,7 +2667,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private long initialMessagesBytesReceived;
 	private long initialMessagesBytesSent;
 
-	ByteCounter initialMessagesCtr = new ByteCounter() {
+	public ByteCounter initialMessagesCtr = new ByteCounter() {
 
 		@Override
 		public void receivedBytes(int x) {
@@ -2681,7 +2697,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private long changedIPBytesReceived;
 	private long changedIPBytesSent;
 
-	ByteCounter changedIPCtr = new ByteCounter() {
+	public ByteCounter changedIPCtr = new ByteCounter() {
 
 		@Override
 		public void receivedBytes(int x) {
@@ -2711,7 +2727,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private long nodeToNodeRcvdBytes;
 	private long nodeToNodeSentBytes;
 
-	final ByteCounter nodeToNodeCounter = new ByteCounter() {
+	public final ByteCounter nodeToNodeCounter = new ByteCounter() {
 
 		@Override
 		public void receivedBytes(int x) {
@@ -2741,7 +2757,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private long allocationNoticesCounterBytesReceived;
 	private long allocationNoticesCounterBytesSent;
 	
-	final ByteCounter allocationNoticesCounter = new ByteCounter() {
+	public final ByteCounter allocationNoticesCounter = new ByteCounter() {
 		
 		@Override
 		public void receivedBytes(int x) {
@@ -2771,7 +2787,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private long foafCounterBytesReceived;
 	private long foafCounterBytesSent;
 	
-	final ByteCounter foafCounter = new ByteCounter() {
+	public final ByteCounter foafCounter = new ByteCounter() {
 		
 		@Override
 		public void receivedBytes(int x) {
@@ -2803,7 +2819,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	private long notificationOnlySentBytes;
 
-	synchronized void reportNotificationOnlyPacketSent(int packetSize) {
+	public synchronized void reportNotificationOnlyPacketSent(int packetSize) {
 		notificationOnlySentBytes += packetSize;
 	}
 
@@ -3937,7 +3953,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
     	}
 	}
 
-	void reportBackedOffPercent(double backedOff) {
+	public void reportBackedOffPercent(double backedOff) {
 		this.backedOffPercent.report(backedOff);
 	}
 
@@ -3954,6 +3970,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	public boolean wantAveragePingAlert() {
 		return nodeAveragePingAlertRelevant;
+	}
+
+	public void reportRequest(double loc) {
+		avgRequestLocation.report(loc);
 	}
 
 }

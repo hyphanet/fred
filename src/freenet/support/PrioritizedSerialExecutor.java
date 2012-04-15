@@ -2,8 +2,8 @@ package freenet.support;
 
 import java.util.LinkedList;
 
-import freenet.node.NodeStats;
 import freenet.node.PrioRunnable;
+import freenet.node.load.NodeStats;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 

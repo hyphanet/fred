@@ -5,7 +5,7 @@ package freenet.node;
 
 import java.util.Arrays;
 
-import freenet.node.NodeStats.PeerLoadStats;
+import freenet.node.load.NodeStats.PeerLoadStats;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -31,11 +31,11 @@ public class NodePinger implements Runnable {
 	
 	public static final double CRAZY_MAX_PING_TIME = 365.25*24*60*60*1000;
 	
-	NodePinger(Node n) {
+	public NodePinger(Node n) {
 		this.node = n;
 	}
 
-	void start() {
+	public void start() {
 		run();
 	}
 	

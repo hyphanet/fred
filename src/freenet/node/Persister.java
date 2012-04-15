@@ -12,7 +12,7 @@ import freenet.support.Ticker;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
-class Persister implements Runnable {
+public class Persister implements Runnable {
         private static volatile boolean logMINOR;
         static {
             Logger.registerClass(Persister.class);

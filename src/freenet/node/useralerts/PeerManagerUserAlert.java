@@ -4,7 +4,7 @@
 package freenet.node.useralerts;
 
 import freenet.l10n.NodeL10n;
-import freenet.node.NodeStats;
+import freenet.node.load.NodeStats;
 import freenet.support.HTMLNode;
 
 public class PeerManagerUserAlert extends AbstractUserAlert {
