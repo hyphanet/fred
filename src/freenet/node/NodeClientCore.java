@@ -33,6 +33,8 @@ import freenet.client.filter.FilterCallback;
 import freenet.client.filter.FoundURICallback;
 import freenet.client.filter.GenericReadFilterCallback;
 import freenet.client.filter.LinkFilterExceptionProvider;
+import freenet.clients.console.TextModeClientInterface;
+import freenet.clients.console.TextModeClientInterfaceServer;
 import freenet.clients.http.FProxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
 import freenet.config.Config;
@@ -142,7 +144,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	public FECQueue fecQueue;
 	public final UserAlertManager alerts;
 	final TextModeClientInterfaceServer tmci;
-	TextModeClientInterface directTMCI;
+	public TextModeClientInterface directTMCI;
 	final FCPServer fcpServer;
 	FProxyToadlet fproxyServlet;
 	final SimpleToadletServer toadletContainer;

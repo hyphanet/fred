@@ -1515,7 +1515,7 @@ public class PeerManager {
 		});
 	}
 
-	void writePeersDarknetUrgent() {
+	public void writePeersDarknetUrgent() {
 		node.executor.execute(new PrioRunnable() {
 
 			@Override

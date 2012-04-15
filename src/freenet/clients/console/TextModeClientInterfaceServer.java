@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node;
+package freenet.clients.console;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,6 +18,9 @@ import freenet.crypt.RandomSource;
 import freenet.crypt.SSL;
 import freenet.io.NetworkInterface;
 import freenet.io.SSLNetworkInterface;
+import freenet.node.Node;
+import freenet.node.NodeClientCore;
+import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
@@ -52,7 +55,7 @@ public class TextModeClientInterfaceServer implements Runnable {
         }
     }
 
-    void start() {
+    public void start() {
 		Logger.normal(core, "TMCI started on "+networkInterface.getAllowedHosts()+ ':' +port);
 		System.out.println("TMCI started on "+networkInterface.getAllowedHosts()+ ':' +port);
 

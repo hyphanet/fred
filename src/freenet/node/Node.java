@@ -723,7 +723,7 @@ public class Node implements TimeSkewDetectorCallback, CompletedGroupHandler {
 	public final PacketSender ps;
 	public final PrioritizedTicker ticker;
 	public final DNSRequester dnsr;
-	final NodeDispatcher dispatcher;
+	public final NodeDispatcher dispatcher;
 	public final UptimeEstimator uptime;
 	public final TokenBucket outputThrottle;
 	public boolean throttleLocalData;
