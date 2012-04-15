@@ -132,10 +132,6 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				if(logMINOR) Logger.minor(this, "Lost connection replying to "+m);
 			}
 			return true;
-		} else if (spec == DMT.FNPStoreSecret) {
-			return node.netid.handleStoreSecret(m);
-		} else if(spec == DMT.FNPSecretPing) {
-			return node.netid.handleSecretPing(m);
 		} else if(spec == DMT.FNPDetectedIPAddress) {
 			Peer p = (Peer) m.getObject(DMT.EXTERNAL_ADDRESS);
 			source.setRemoteDetectedPeer(p);
@@ -239,10 +235,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			return false;
 		}
 
-		if(spec == DMT.FNPNetworkID) {
-			source.handleFNPNetworkID(m);
-			return true;
-		} else if(spec == DMT.FNPSwapRequest) {
+		if(spec == DMT.FNPSwapRequest) {
 			return node.lm.handleSwapRequest(m, source);
 		} else if(spec == DMT.FNPSwapReply) {
 			return node.lm.handleSwapReply(m, source);
