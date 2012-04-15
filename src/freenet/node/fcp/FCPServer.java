@@ -32,7 +32,6 @@ import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
-import freenet.node.fcp.whiteboard.Whiteboard;
 import freenet.support.Base64;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -79,7 +78,6 @@ public class FCPServer implements Runnable, DownloadCache {
 	private boolean assumeUploadDDAIsAllowed;
 	private boolean neverDropAMessage;
 	private int maxMessageQueueLength;
-	private final Whiteboard whiteboard=new Whiteboard();;
 
 	public FCPServer(String ipToBindTo, String allowedHosts, String allowedHostsFullAccess, int port, Node node, NodeClientCore core, boolean isEnabled, boolean assumeDDADownloadAllowed, boolean assumeDDAUploadAllowed, boolean neverDropAMessage, int maxMessageQueueLength, ObjectContainer container) throws IOException, InvalidConfigValueException {
 		this.bindTo = ipToBindTo;
@@ -101,7 +99,7 @@ public class FCPServer implements Runnable, DownloadCache {
 		defaultFetchContext = client.getFetchContext();
 		defaultInsertContext = client.getInsertContext(false);
 
-		globalRebootClient = new FCPClient("Global Queue", null, true, null, ClientRequest.PERSIST_REBOOT, null, whiteboard, null);
+		globalRebootClient = new FCPClient("Global Queue", null, true, null, ClientRequest.PERSIST_REBOOT, null, null);
 		globalRebootClient.setRequestStatusCache(new RequestStatusCache(), null);
 
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
@@ -109,7 +107,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	}
 
 	public void load(ObjectContainer container) {
-		persistentRoot = FCPPersistentRoot.create(node.nodeDBHandle, whiteboard, new RequestStatusCache(), container);
+		persistentRoot = FCPPersistentRoot.create(node.nodeDBHandle, new RequestStatusCache(), container);
 		globalForeverClient = persistentRoot.globalForeverClient;
 	}
 
@@ -461,7 +459,7 @@ public class FCPServer implements Runnable, DownloadCache {
 			oldClient = rebootClientsByName.get(name);
 			if(oldClient == null) {
 				// Create new client
-				FCPClient client = new FCPClient(name, handler, false, null, ClientRequest.PERSIST_REBOOT, null, whiteboard, null);
+				FCPClient client = new FCPClient(name, handler, false, null, ClientRequest.PERSIST_REBOOT, null, null);
 				rebootClientsByName.put(name, client);
 				return client;
 			} else {
@@ -1030,10 +1028,6 @@ public class FCPServer implements Runnable, DownloadCache {
 	public boolean objectCanNew(ObjectContainer container) {
 		Logger.error(this, "Not storing FCPServer in database", new Exception("error"));
 		return false;
-	}
-
-	public Whiteboard getWhiteboard(){
-		return whiteboard;
 	}
 
 	@Override
