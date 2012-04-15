@@ -28,6 +28,8 @@ import freenet.node.opennet.SeedClientPeerNode;
 import freenet.node.requests.CHKInsertHandler;
 import freenet.node.requests.InsertTag;
 import freenet.node.requests.OfferReplyTag;
+import freenet.node.requests.ProbeRequestHandler;
+import freenet.node.requests.ProbeRequestSender;
 import freenet.node.requests.RequestHandler;
 import freenet.node.requests.RequestTag;
 import freenet.node.requests.SSKInsertHandler;

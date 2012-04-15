@@ -248,7 +248,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	final byte[] identityHashHash;
 	/** Semi-unique ID used to help in mapping the network (see the code that uses it). Note this is for diagnostic
 	* purposes only and should be removed along with the code that uses it eventually - FIXME */
-	final long swapIdentifier;
+	public final long swapIdentifier;
 	/** Negotiation types supported */
 	int[] negTypes;
 	/** Integer hash of node identity. Used as hashCode(). */

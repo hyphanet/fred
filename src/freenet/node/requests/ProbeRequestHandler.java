@@ -1,11 +1,14 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node;
+package freenet.node.requests;
 
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
+import freenet.node.LocationManager;
+import freenet.node.Node;
+import freenet.node.PeerNode;
 import freenet.support.ShortBuffer;
 
 /**
@@ -24,7 +27,7 @@ public class ProbeRequestHandler implements ProbeRequestSender.Listener {
 		this.sender = sender;
 	}
 	
-	static void start(Message m, PeerNode source, Node n, double target) {
+	public static void start(Message m, PeerNode source, Node n, double target) {
 		long uid = m.getLong(DMT.UID);
 		double nearestLoc = m.getDouble(DMT.NEAREST_LOCATION);
 		double best = m.getDouble(DMT.BEST_LOCATION);
@@ -35,7 +38,7 @@ public class ProbeRequestHandler implements ProbeRequestSender.Listener {
 		ProbeRequestHandler handler = 
 			new ProbeRequestHandler(source, uid, sender);
 		sender.addListener(handler);
-		PeerNode[] peers = n.peers.connectedPeers;
+		PeerNode[] peers = n.peers.getQuickConnectedPeers();
 		Message accepted = DMT.createFNPAccepted(uid);
 		Message trace = DMT.createFNPRHProbeTrace(uid, sender.getNearestLoc(), sender.getBest(), htl, (short)1, (short)1, n.getLocation(), n.swapIdentifier, LocationManager.extractLocs(peers, true), LocationManager.extractUIDs(peers), (short)0, (short)1, "", source.swapIdentifier);
 		try {

@@ -2503,4 +2503,8 @@ public class PeerManager {
 	public synchronized PeerNode[] getPeers() {
 		return myPeers;
 	}
+
+	public PeerNode[] getQuickConnectedPeers() {
+		return connectedPeers;
+	}
 }

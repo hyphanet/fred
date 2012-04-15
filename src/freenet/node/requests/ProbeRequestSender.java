@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node;
+package freenet.node.requests;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -14,6 +14,11 @@ import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
+import freenet.node.Location;
+import freenet.node.Node;
+import freenet.node.PeerNode;
+import freenet.node.PrioRunnable;
+import freenet.node.SyncSendWaitedTooLongException;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.Logger.LogLevel;
@@ -529,7 +534,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
 	}
 	
 	/** All these methods should return quickly! */
-	interface Listener {
+	public interface Listener {
 		/** Should return quickly, allocate a thread if it needs to block etc 
 		 * @throws NotConnectedException */
 		void onReceivedRejectOverload(double nearest, double best, short counter, short uniqueCounter, short linearCounter, String reason) throws NotConnectedException;
@@ -604,7 +609,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
     }
     
 	private void updateBest() {
-		PeerNode[] nodes = node.peers.myPeers;
+		PeerNode[] nodes = node.peers.getPeers();
 		for(PeerNode node : nodes) {
 			if(!node.isConnected()) continue;
 			double loc = node.getLocation();
