@@ -25,7 +25,6 @@ import freenet.io.xfer.BulkReceiver;
 import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.keys.FreenetURI;
-import freenet.l10n.NodeL10n;
 import freenet.message.DMT;
 import freenet.message.DisconnectedException;
 import freenet.message.FreenetInetAddress;
@@ -56,6 +55,7 @@ import freenet.support.io.ByteArrayRandomAccessThing;
 import freenet.support.io.FileUtil;
 import freenet.support.io.RandomAccessFileWrapper;
 import freenet.support.io.RandomAccessThing;
+import freenet.support.l10n.NodeL10n;
 
 public class DarknetPeerNode extends PeerNode {
 

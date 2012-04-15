@@ -33,7 +33,6 @@ import java.util.StringTokenizer;
 import java.util.Map.Entry;
 
 import freenet.clients.http.ToadletContextImpl;
-import freenet.l10n.NodeL10n;
 import freenet.support.HTMLDecoder;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
@@ -41,6 +40,7 @@ import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.NullWriter;
+import freenet.support.l10n.NodeL10n;
 
 public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 

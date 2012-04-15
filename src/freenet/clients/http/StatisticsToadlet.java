@@ -16,7 +16,6 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.config.SubConfig;
 import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.BlockTransmitter;
-import freenet.l10n.NodeL10n;
 import freenet.message.IncomingPacketFilterImpl;
 import freenet.keys.FreenetURI;
 import freenet.node.Location;
@@ -41,6 +40,7 @@ import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.NativeThread;
+import freenet.support.l10n.NodeL10n;
 
 public class StatisticsToadlet extends Toadlet {
 

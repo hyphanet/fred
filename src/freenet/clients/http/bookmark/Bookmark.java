@@ -1,7 +1,7 @@
 package freenet.clients.http.bookmark;
 
-import freenet.l10n.NodeL10n;
 import freenet.support.SimpleFieldSet;
+import freenet.support.l10n.NodeL10n;
 
 public abstract class Bookmark {
 

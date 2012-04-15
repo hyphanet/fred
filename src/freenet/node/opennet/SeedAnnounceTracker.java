@@ -5,9 +5,9 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Random;
 
-import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 import freenet.support.LRUHashtable;
+import freenet.support.l10n.NodeL10n;
 
 /** Tracks announcements by IP address to identify nodes that announce repeatedly. */
 public class SeedAnnounceTracker {

@@ -6,7 +6,6 @@ import java.io.StringWriter;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.updater.NodeUpdateManager;
@@ -15,6 +14,7 @@ import freenet.support.MultiValueTable;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.FileBucket;
+import freenet.support.l10n.NodeL10n;
 
 public class DarknetAddRefToadlet extends Toadlet {
 

@@ -3,9 +3,9 @@ package freenet.clients.http.wizardsteps;
 import freenet.clients.http.PageNode;
 import freenet.clients.http.ToadletContext;
 import freenet.config.Config;
-import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
+import freenet.support.l10n.NodeL10n;
 
 import javax.naming.OperationNotSupportedException;
 

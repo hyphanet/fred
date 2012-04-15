@@ -29,13 +29,13 @@ import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import freenet.l10n.NodeL10n;
 import freenet.message.Peer;
 import freenet.node.FSParseException;
 import freenet.node.ProgramDirectory;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.FileUtil;
+import freenet.support.l10n.NodeL10n;
 
 /**
  * Track packet traffic to/from specific peers and IP addresses, in order to

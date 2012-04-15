@@ -34,7 +34,6 @@ import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.KeyVerifyException;
 import freenet.keys.SSKBlock;
-import freenet.l10n.NodeL10n;
 import freenet.node.FastRunnable;
 import freenet.node.SemiOrderedShutdownHook;
 import freenet.node.stats.store.StoreAccessStats;
@@ -56,6 +55,7 @@ import freenet.support.Ticker;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
+import freenet.support.l10n.NodeL10n;
 import freenet.support.math.MersenneTwister;
 
 /**

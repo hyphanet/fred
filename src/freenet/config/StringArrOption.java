@@ -2,11 +2,11 @@ package freenet.config;
 
 import java.util.Arrays;
 
-import freenet.l10n.NodeL10n;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
 import freenet.support.URLEncoder;
 import freenet.support.api.StringArrCallback;
+import freenet.support.l10n.NodeL10n;
 
 public class StringArrOption extends Option<String[]> {
     public static final String delimiter = ";";

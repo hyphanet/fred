@@ -19,13 +19,13 @@ import freenet.client.InsertBlock;
 import freenet.client.InsertException;
 import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
-import freenet.l10n.NodeL10n;
 import freenet.node.RequestClient;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
+import freenet.support.l10n.NodeL10n;
 
 /**
  * Replacement for servlets. Just an easy to use HTTP interface, which is

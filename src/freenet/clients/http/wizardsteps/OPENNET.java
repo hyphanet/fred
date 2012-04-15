@@ -1,9 +1,9 @@
 package freenet.clients.http.wizardsteps;
 
 import freenet.clients.http.FirstTimeWizardToadlet;
-import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
+import freenet.support.l10n.NodeL10n;
 
 /**
  * This step allows the user to choose between darknet and opennet, explaining each briefly.

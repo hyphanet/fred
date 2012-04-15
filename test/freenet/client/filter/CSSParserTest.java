@@ -25,12 +25,12 @@ import freenet.client.filter.UnsafeContentTypeException;
 import freenet.client.filter.UnsupportedCharsetInFilterException;
 import freenet.client.filter.CharsetExtractor.BOMDetection;
 import freenet.client.filter.ContentFilter.FilterStatus;
-import freenet.l10n.NodeL10n;
 import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
+import freenet.support.l10n.NodeL10n;
 
 public class CSSParserTest extends TestCase {
 

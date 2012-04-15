@@ -21,7 +21,6 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
-import freenet.l10n.NodeL10n;
 import freenet.message.ByteCounter;
 import freenet.message.DMT;
 import freenet.message.Message;
@@ -48,6 +47,7 @@ import freenet.support.api.StringCallback;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
+import freenet.support.l10n.NodeL10n;
 
 /**
  * Supervises NodeUpdater's. Enables us to easily update multiple files,

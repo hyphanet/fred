@@ -11,8 +11,8 @@ import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import freenet.l10n.NodeL10n;
 import freenet.support.io.FileUtil;
+import freenet.support.l10n.NodeL10n;
 
 /**
  * This class would verify whether the BMP header is valid or not

@@ -20,7 +20,6 @@ import freenet.client.async.USKCallback;
 import freenet.clients.http.FProxyToadlet;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
-import freenet.l10n.NodeL10n;
 import freenet.node.FSParseException;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
@@ -31,6 +30,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
+import freenet.support.l10n.NodeL10n;
 
 public class BookmarkManager implements RequestClient {
 

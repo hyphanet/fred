@@ -4,8 +4,8 @@
 package freenet.client.filter;
 
 import freenet.client.FetchException;
-import freenet.l10n.NodeL10n;
 import freenet.support.HTMLEncoder;
+import freenet.support.l10n.NodeL10n;
 
 public class UnknownContentTypeException extends UnsafeContentTypeException {
 	private static final long serialVersionUID = -1;

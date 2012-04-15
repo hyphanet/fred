@@ -16,11 +16,11 @@ import java.util.Hashtable;
 import java.util.LinkedHashMap;
 
 import freenet.client.filter.CharsetExtractor.BOMDetection;
-import freenet.l10n.NodeL10n;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.FileUtil;
+import freenet.support.l10n.NodeL10n;
 
 /**
  * Freenet content filter. This doesn't actually do any filtering,

@@ -16,7 +16,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Vector;
 
-import freenet.l10n.NodeL10n;
 import freenet.message.PeerParseException;
 import freenet.message.ReferenceSignatureVerificationException;
 import freenet.node.FSParseException;
@@ -34,6 +33,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
+import freenet.support.l10n.NodeL10n;
 import freenet.support.transport.ip.IPUtil;
 import java.util.Arrays;
 

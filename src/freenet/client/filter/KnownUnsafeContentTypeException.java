@@ -7,8 +7,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 import freenet.client.FetchException;
-import freenet.l10n.NodeL10n;
 import freenet.support.HTMLEncoder;
+import freenet.support.l10n.NodeL10n;
 
 public class KnownUnsafeContentTypeException extends UnsafeContentTypeException {
 	private static final long serialVersionUID = -1;

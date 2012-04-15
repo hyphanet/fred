@@ -22,7 +22,6 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.geoip.IPConverter;
 import freenet.clients.http.geoip.IPConverter.Country;
 import freenet.io.xfer.PacketThrottle;
-import freenet.l10n.NodeL10n;
 import freenet.message.PeerParseException;
 import freenet.message.ReferenceSignatureVerificationException;
 import freenet.node.DarknetPeerNode;
@@ -47,6 +46,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
 import freenet.support.api.HTTPRequest;
+import freenet.support.l10n.NodeL10n;
 
 /** Base class for DarknetConnectionsToadlet and OpennetConnectionsToadlet */
 public abstract class ConnectionsToadlet extends Toadlet {

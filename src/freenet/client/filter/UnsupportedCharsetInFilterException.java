@@ -1,6 +1,6 @@
 package freenet.client.filter;
 
-import freenet.l10n.NodeL10n;
+import freenet.support.l10n.NodeL10n;
 
 public class UnsupportedCharsetInFilterException extends UnsafeContentTypeException {
 

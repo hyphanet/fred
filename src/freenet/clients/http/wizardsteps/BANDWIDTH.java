@@ -5,13 +5,13 @@ import freenet.clients.http.WelcomeToadlet;
 import freenet.config.Config;
 import freenet.config.ConfigException;
 import freenet.config.InvalidConfigValueException;
-import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
 import freenet.pluginmanager.FredPluginBandwidthIndicator;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SizeUtil;
 import freenet.support.api.HTTPRequest;
+import freenet.support.l10n.NodeL10n;
 
 /**
  * Asks the user whether their connection has a monthly cap to inform how to prompt for bandwidth limits.

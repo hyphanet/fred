@@ -19,12 +19,12 @@ public class CleanupTranslations {
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws IOException {
-		File engFile = new File("src/freenet/l10n/freenet.l10n.en.properties");
+		File engFile = new File("src/freenet/l10n/freenet.support.l10n.en.properties");
 		SimpleFieldSet english = SimpleFieldSet.readFrom(engFile, false, true);
 		File[] translations = new File("src/freenet/l10n").listFiles();
 		for(File f : translations) {
 			String name = f.getName();
-			if(!name.startsWith("freenet.l10n.")) continue;
+			if(!name.startsWith("freenet.support.l10n.")) continue;
 			if(name.equals("freenet.1l0n.en.properties")) continue;
 			FileInputStream fis = new FileInputStream(f);
 			InputStreamReader isr = new InputStreamReader(new BufferedInputStream(fis), "UTF-8");

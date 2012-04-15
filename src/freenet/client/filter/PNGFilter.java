@@ -16,7 +16,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.zip.CRC32;
 
-import freenet.l10n.NodeL10n;
 import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -24,6 +23,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
+import freenet.support.l10n.NodeL10n;
 
 /**
  * Content filter for PNG's. Only allows valid chunks (valid CRC, known chunk type).

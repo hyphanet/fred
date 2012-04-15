@@ -3,10 +3,10 @@ package freenet.clients.http.wizardsteps;
 import freenet.clients.http.FirstTimeWizardToadlet;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
-import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
 import freenet.support.*;
 import freenet.support.api.HTTPRequest;
+import freenet.support.l10n.NodeL10n;
 
 /**
  * Allows the user to set bandwidth limits with an emphasis on capping to a monthly total.

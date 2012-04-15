@@ -15,7 +15,6 @@ import freenet.config.NodeNeedRestartException;
 import freenet.config.Option;
 import freenet.config.SubConfig;
 import freenet.config.WrapperConfig;
-import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.ProgramDirectory;
@@ -29,6 +28,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.URLEncoder;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.HTTPRequest;
+import freenet.support.l10n.NodeL10n;
 
 /**
  * Node Configuration Toadlet. Accessible from <code>http://.../config/</code>.

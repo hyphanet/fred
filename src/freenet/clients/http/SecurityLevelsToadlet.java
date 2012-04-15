@@ -11,7 +11,6 @@ import java.net.URISyntaxException;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.wizardsteps.PageHelper;
-import freenet.l10n.NodeL10n;
 import freenet.node.MasterKeysFileSizeException;
 import freenet.node.MasterKeysWrongPasswordException;
 import freenet.node.Node;
@@ -26,6 +25,7 @@ import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.HTTPRequest;
+import freenet.support.l10n.NodeL10n;
 
 /**
  * The security levels page.

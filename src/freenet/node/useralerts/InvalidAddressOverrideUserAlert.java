@@ -5,9 +5,9 @@ package freenet.node.useralerts;
 
 import freenet.config.Option;
 import freenet.config.SubConfig;
-import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.support.HTMLNode;
+import freenet.support.l10n.NodeL10n;
 
 public class InvalidAddressOverrideUserAlert extends AbstractUserAlert {
 	

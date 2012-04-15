@@ -4,7 +4,6 @@ import freenet.clients.http.FirstTimeWizardToadlet;
 import freenet.config.Config;
 import freenet.config.ConfigException;
 import freenet.config.Option;
-import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.support.Fields;
@@ -13,6 +12,7 @@ import freenet.support.Logger;
 import freenet.support.SizeUtil;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.FileUtil;
+import freenet.support.l10n.NodeL10n;
 
 /**
  * Allows the user to select datastore size, considering available storage space when offering options.

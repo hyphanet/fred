@@ -3,9 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
-import freenet.l10n.NodeL10n;
 import freenet.node.load.NodeStats;
 import freenet.support.HTMLNode;
+import freenet.support.l10n.NodeL10n;
 
 public class PeerManagerUserAlert extends AbstractUserAlert {
 

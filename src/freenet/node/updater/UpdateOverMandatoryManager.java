@@ -38,7 +38,6 @@ import freenet.io.xfer.BulkReceiver;
 import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.keys.FreenetURI;
-import freenet.l10n.NodeL10n;
 import freenet.message.AsyncMessageCallback;
 import freenet.message.DMT;
 import freenet.message.DisconnectedException;
@@ -63,6 +62,7 @@ import freenet.support.io.ArrayBucket;
 import freenet.support.io.FileBucket;
 import freenet.support.io.RandomAccessFileWrapper;
 import freenet.support.io.RandomAccessThing;
+import freenet.support.l10n.NodeL10n;
 
 /**
  * Co-ordinates update over mandatory. Update over mandatory = updating from your peers, even

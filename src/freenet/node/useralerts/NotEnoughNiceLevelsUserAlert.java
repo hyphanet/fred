@@ -4,9 +4,9 @@
 
 package freenet.node.useralerts;
 
-import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 import freenet.support.io.NativeThread;
+import freenet.support.l10n.NodeL10n;
 
 /**
  * Tell the user about the lack of room nice-level wise

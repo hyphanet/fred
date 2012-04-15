@@ -11,8 +11,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
 
-import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
+import freenet.support.l10n.NodeL10n;
 
 public class MP3Filter implements ContentDataFilter {
 

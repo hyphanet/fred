@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
-import freenet.l10n.BaseL10n.LANGUAGE;
+import freenet.support.l10n.BaseL10n.LANGUAGE;
 
 /**
  * Interface that has to be implemented for plugins that wants to use

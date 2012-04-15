@@ -92,8 +92,6 @@ import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
-import freenet.l10n.BaseL10n;
-import freenet.l10n.NodeL10n;
 import freenet.message.DMT;
 import freenet.message.DisconnectedException;
 import freenet.message.FreenetInetAddress;
@@ -188,6 +186,8 @@ import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
+import freenet.support.l10n.BaseL10n;
+import freenet.support.l10n.NodeL10n;
 import freenet.support.math.MersenneTwister;
 import freenet.support.transport.ip.HostnameSyntaxException;
 

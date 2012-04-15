@@ -4,8 +4,8 @@
 package freenet.node;
 
 import freenet.config.InvalidConfigValueException;
-import freenet.l10n.NodeL10n;
 import freenet.support.api.StringCallback;
+import freenet.support.l10n.NodeL10n;
 
 import java.util.HashSet;
 import java.io.File;

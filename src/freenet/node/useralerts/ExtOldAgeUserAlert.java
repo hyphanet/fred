@@ -1,7 +1,7 @@
 package freenet.node.useralerts;
 
-import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
+import freenet.support.l10n.NodeL10n;
 
 public class ExtOldAgeUserAlert extends AbstractUserAlert {
 	

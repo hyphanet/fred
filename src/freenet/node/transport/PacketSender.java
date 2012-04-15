@@ -8,7 +8,6 @@ import java.util.HashSet;
 import java.util.Vector;
 
 import freenet.clients.http.ExternalLinkToadlet;
-import freenet.l10n.NodeL10n;
 import freenet.message.Peer;
 import freenet.node.Node;
 import freenet.node.PeerManager;
@@ -24,6 +23,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.OOMHandler;
 import freenet.support.TimeUtil;
 import freenet.support.io.NativeThread;
+import freenet.support.l10n.NodeL10n;
 import freenet.support.math.MersenneTwister;
 
 /**

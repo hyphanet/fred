@@ -1,9 +1,10 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.l10n;
+package freenet.support.l10n;
 
-import freenet.l10n.BaseL10n.LANGUAGE;
+import freenet.support.l10n.BaseL10n.LANGUAGE;
+
 import java.io.File;
 
 /**
@@ -36,8 +37,8 @@ public class NodeL10n {
 	 * @see LANGUAGE.mapToLanguage(String)
 	 */
 	public NodeL10n(final LANGUAGE lang, File overrideDir) {
-		NodeL10n.b = new BaseL10n("freenet/l10n/", "freenet.l10n.${lang}.properties",
-		  overrideDir.getPath()+File.separator+"freenet.l10n.${lang}.override.properties", lang);
+		NodeL10n.b = new BaseL10n("freenet/l10n/", "freenet.support.l10n.${lang}.properties",
+		  overrideDir.getPath()+File.separator+"freenet.support.l10n.${lang}.override.properties", lang);
 	}
 
 	/**

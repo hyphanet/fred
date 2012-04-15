@@ -3,9 +3,9 @@ package freenet.clients.http;
 import java.io.IOException;
 import java.net.URI;
 
-import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
+import freenet.support.l10n.NodeL10n;
 
 /**
  * Toadlet for "Freenet is starting up" page.

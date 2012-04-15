@@ -44,8 +44,6 @@ import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
-import freenet.l10n.NodeL10n;
-import freenet.l10n.BaseL10n.LANGUAGE;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
@@ -68,6 +66,8 @@ import freenet.support.api.StringArrCallback;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
+import freenet.support.l10n.NodeL10n;
+import freenet.support.l10n.BaseL10n.LANGUAGE;
 
 public class PluginManager {
 

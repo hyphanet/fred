@@ -19,10 +19,10 @@ import freenet.client.filter.HTMLFilter;
 import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.client.filter.HTMLFilter.*;
 import freenet.clients.http.ExternalLinkToadlet;
-import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.ArrayBucket;
+import freenet.support.l10n.NodeL10n;
 
 import freenet.support.TestProperty;
 

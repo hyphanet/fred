@@ -3,8 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.config;
 
-import freenet.l10n.NodeL10n;
 import freenet.support.api.BooleanCallback;
+import freenet.support.l10n.NodeL10n;
 
 public class BooleanOption extends Option<Boolean> {
 	public BooleanOption(SubConfig conf, String optionName, boolean defaultValue, int sortOrder, 

@@ -11,7 +11,6 @@ import java.util.Map;
 
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
-import freenet.l10n.NodeL10n;
 import freenet.message.FreenetInetAddress;
 import freenet.message.Peer;
 import freenet.message.UdpSocketHandler;
@@ -30,6 +29,7 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.StringCallback;
 import freenet.support.io.NativeThread;
+import freenet.support.l10n.NodeL10n;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.IPAddressDetector;
 import freenet.support.transport.ip.IPUtil;

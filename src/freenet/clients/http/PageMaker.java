@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 
 import freenet.client.filter.PushingTagReplacerCallback;
-import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.Node;
 import freenet.node.SecurityLevels;
@@ -15,6 +14,7 @@ import freenet.pluginmanager.FredPluginL10n;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
+import freenet.support.l10n.NodeL10n;
 
 /** Simple class to output standard heads and tail for web interface pages. 
 */

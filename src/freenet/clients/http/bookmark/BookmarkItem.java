@@ -8,7 +8,6 @@ import java.net.MalformedURLException;
 import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
-import freenet.l10n.NodeL10n;
 import freenet.node.FSParseException;
 import freenet.node.NodeClientCore;
 import freenet.node.useralerts.AbstractUserAlert;
@@ -18,6 +17,7 @@ import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.l10n.NodeL10n;
 
 public class BookmarkItem extends Bookmark {
     public static final String NAME = "Bookmark";

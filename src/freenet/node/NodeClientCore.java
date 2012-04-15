@@ -58,7 +58,6 @@ import freenet.keys.KeyBlock;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
-import freenet.l10n.NodeL10n;
 import freenet.node.NodeRestartJobsQueue.RestartDBJob;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.fcp.FCPServer;
@@ -100,6 +99,7 @@ import freenet.support.io.Persistable;
 import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.Persister;
 import freenet.support.io.TempBucketFactory;
+import freenet.support.l10n.NodeL10n;
 import freenet.support.math.MersenneTwister;
 
 /**

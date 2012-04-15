@@ -1,13 +1,13 @@
 package freenet.clients.http.wizardsteps;
 
 import freenet.clients.http.*;
-import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
 import freenet.node.SecurityLevels;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
+import freenet.support.l10n.NodeL10n;
 
 import java.net.URI;
 

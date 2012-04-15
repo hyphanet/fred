@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.l10n.NodeL10n;
 import freenet.message.UdpSocketHandler;
 import freenet.node.FSParseException;
 import freenet.node.Node;
@@ -28,6 +27,7 @@ import freenet.support.HTMLNode;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.api.HTTPRequest;
+import freenet.support.l10n.NodeL10n;
 import freenet.support.net.AddressTracker;
 import freenet.support.net.AddressTrackerItem;
 import freenet.support.net.InetAddressAddressTrackerItem;

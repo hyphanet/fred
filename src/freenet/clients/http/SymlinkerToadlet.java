@@ -9,11 +9,11 @@ import java.util.Map;
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
-import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.StringArrCallback;
+import freenet.support.l10n.NodeL10n;
 
 /**
  * Symlinker Toadlet

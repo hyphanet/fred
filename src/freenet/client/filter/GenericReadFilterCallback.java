@@ -16,7 +16,6 @@ import freenet.clients.http.ExternalLinkToadlet;
 import freenet.clients.http.HTTPRequestImpl;
 import freenet.clients.http.StaticToadlet;
 import freenet.keys.FreenetURI;
-import freenet.l10n.NodeL10n;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.URIPreEncoder;
@@ -24,6 +23,7 @@ import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.HTTPRequest;
+import freenet.support.l10n.NodeL10n;
 
 public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 	public static final HashSet<String> allowedProtocols;

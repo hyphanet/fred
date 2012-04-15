@@ -14,12 +14,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
 import freenet.node.fcp.FCPConnectionHandler;
 import freenet.support.Base64;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
+import freenet.support.l10n.NodeL10n;
 
 /**
  * Collection of UserAlert's.

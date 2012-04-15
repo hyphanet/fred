@@ -5,11 +5,11 @@ import java.io.IOException;
 
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
-import freenet.l10n.NodeL10n;
 import freenet.support.Ticker;
 import freenet.support.api.StringCallback;
 import freenet.support.io.Persistable;
 import freenet.support.io.Persister;
+import freenet.support.l10n.NodeL10n;
 
 public class ConfigurablePersister extends Persister {
 

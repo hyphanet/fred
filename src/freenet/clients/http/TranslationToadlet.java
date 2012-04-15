@@ -8,9 +8,6 @@ import java.net.URI;
 import java.util.Vector;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.l10n.BaseL10n;
-import freenet.l10n.NodeL10n;
-import freenet.l10n.PluginL10n;
 import freenet.node.NodeClientCore;
 import freenet.pluginmanager.FredPluginBaseL10n;
 import freenet.pluginmanager.PluginInfoWrapper;
@@ -22,6 +19,9 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet.KeyIterator;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.BucketTools;
+import freenet.support.l10n.BaseL10n;
+import freenet.support.l10n.NodeL10n;
+import freenet.support.l10n.PluginL10n;
 
 /**
  * A toadlet dedicated to translations ... and easing the work of translators

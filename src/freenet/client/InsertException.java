@@ -6,10 +6,10 @@ package freenet.client;
 import com.db4o.ObjectContainer;
 
 import freenet.keys.FreenetURI;
-import freenet.l10n.NodeL10n;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.l10n.NodeL10n;
 
 /**
  * Thrown when a high-level insert fails. For most failures, there will not be a stack trace, or it 

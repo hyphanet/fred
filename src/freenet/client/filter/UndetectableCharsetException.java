@@ -1,6 +1,6 @@
 package freenet.client.filter;
 
-import freenet.l10n.NodeL10n;
+import freenet.support.l10n.NodeL10n;
 
 // This is thrown when a stylesheet starts with the CSS BOM, i.e. "@charset \"
 // in some encoding, but the declaration is invalid.

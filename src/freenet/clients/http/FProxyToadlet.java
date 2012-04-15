@@ -42,7 +42,6 @@ import freenet.config.SubConfig;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
-import freenet.l10n.NodeL10n;
 import freenet.node.*;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
@@ -65,6 +64,7 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NoFreeBucket;
+import freenet.support.l10n.NodeL10n;
 
 public final class FProxyToadlet extends Toadlet implements RequestClient {
 

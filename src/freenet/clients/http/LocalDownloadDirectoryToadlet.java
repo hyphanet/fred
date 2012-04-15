@@ -1,9 +1,9 @@
 package freenet.clients.http;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
+import freenet.support.l10n.NodeL10n;
 
 import java.io.File;
 import java.util.Hashtable;

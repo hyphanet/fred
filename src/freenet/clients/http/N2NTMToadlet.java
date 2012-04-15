@@ -10,7 +10,6 @@ import java.net.URISyntaxException;
 import java.util.HashMap;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -20,6 +19,7 @@ import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SizeUtil;
 import freenet.support.api.HTTPRequest;
+import freenet.support.l10n.NodeL10n;
 
 public class N2NTMToadlet extends Toadlet {
 	private Node node;

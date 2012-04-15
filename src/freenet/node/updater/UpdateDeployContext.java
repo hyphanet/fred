@@ -14,10 +14,10 @@ import java.util.ArrayList;
 import java.util.Properties;
 import org.tanukisoftware.wrapper.WrapperManager;
 
-import freenet.l10n.NodeL10n;
 import freenet.node.NodeInitException;
 import freenet.node.updater.UpdateDeployContext.CHANGED;
 import freenet.support.io.Closer;
+import freenet.support.l10n.NodeL10n;
 
 /**
  * Handles the wrapper.conf, essentially.

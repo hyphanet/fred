@@ -9,10 +9,10 @@ import java.net.URL;
 import java.util.Date;
 
 import freenet.client.DefaultMIMETypes;
-import freenet.l10n.NodeL10n;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.FileBucket;
+import freenet.support.l10n.NodeL10n;
 
 /**
  * Static Toadlet.

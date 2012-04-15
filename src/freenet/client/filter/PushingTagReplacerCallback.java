@@ -8,8 +8,8 @@ import freenet.clients.http.FProxyFetchTracker;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.updateableelements.ImageElement;
 import freenet.keys.FreenetURI;
-import freenet.l10n.NodeL10n;
 import freenet.support.HTMLEncoder;
+import freenet.support.l10n.NodeL10n;
 
 /** This TagReplcaerCallback adds pushing support for freesites, and replaces their img's to pushed ones */
 public class PushingTagReplacerCallback implements TagReplacerCallback {

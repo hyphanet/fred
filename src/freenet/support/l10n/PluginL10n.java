@@ -1,10 +1,10 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.l10n;
+package freenet.support.l10n;
 
-import freenet.l10n.BaseL10n.LANGUAGE;
 import freenet.pluginmanager.FredPluginBaseL10n;
+import freenet.support.l10n.BaseL10n.LANGUAGE;
 
 /**
  * That class basically do the same thing as NodeL10n, except that it's for

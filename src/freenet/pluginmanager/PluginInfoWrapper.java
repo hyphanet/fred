@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.io.File;
 import java.io.IOException;
 
-import freenet.l10n.NodeL10n;
 import freenet.clients.http.ConfigToadlet;
 import freenet.config.Config;
 import freenet.config.FilePersistentConfig;
@@ -14,6 +13,7 @@ import freenet.node.Node;
 import freenet.support.JarClassLoader;
 import freenet.support.Logger;
 import freenet.support.io.Closer;
+import freenet.support.l10n.NodeL10n;
 
 public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 

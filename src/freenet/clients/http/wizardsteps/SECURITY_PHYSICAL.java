@@ -3,7 +3,6 @@ package freenet.clients.http.wizardsteps;
 import freenet.clients.http.ExternalLinkToadlet;
 import freenet.clients.http.FirstTimeWizardToadlet;
 import freenet.clients.http.SecurityLevelsToadlet;
-import freenet.l10n.NodeL10n;
 import freenet.node.MasterKeysFileSizeException;
 import freenet.node.MasterKeysWrongPasswordException;
 import freenet.node.Node;
@@ -12,6 +11,7 @@ import freenet.node.SecurityLevels;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
+import freenet.support.l10n.NodeL10n;
 
 import java.io.File;
 import java.io.IOException;

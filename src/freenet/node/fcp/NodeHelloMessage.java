@@ -5,12 +5,12 @@ package freenet.node.fcp;
 
 import com.db4o.ObjectContainer;
 
-import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeStarter;
 import freenet.node.Version;
 import freenet.support.SimpleFieldSet;
 import freenet.support.compress.Compressor;
+import freenet.support.l10n.NodeL10n;
 
 /**
  * NodeHello

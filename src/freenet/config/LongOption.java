@@ -3,9 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.config;
 
-import freenet.l10n.NodeL10n;
 import freenet.support.Fields;
 import freenet.support.api.LongCallback;
+import freenet.support.l10n.NodeL10n;
 
 /** Long config variable */
 public class LongOption extends Option<Long> {

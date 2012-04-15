@@ -26,7 +26,6 @@ import freenet.clients.http.wizardsteps.SECURITY_PHYSICAL;
 import freenet.clients.http.wizardsteps.Step;
 import freenet.clients.http.wizardsteps.WELCOME;
 import freenet.config.Config;
-import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.SecurityLevels;
@@ -34,6 +33,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.HTTPRequest;
+import freenet.support.l10n.NodeL10n;
 
 /**
  * A first time wizard aimed to ease the configuration of the node.

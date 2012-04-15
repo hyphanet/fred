@@ -1,8 +1,8 @@
 package freenet.config;
 
-import freenet.l10n.NodeL10n;
 import freenet.support.Fields;
 import freenet.support.api.ShortCallback;
+import freenet.support.l10n.NodeL10n;
 
 public class ShortOption extends Option<Short> {
 	protected final boolean isSize;

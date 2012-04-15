@@ -3,11 +3,11 @@ package freenet.node.useralerts;
 import java.lang.ref.WeakReference;
 
 import freenet.keys.FreenetURI;
-import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.PeerNode;
 import freenet.node.fcp.BookmarkFeed;
 import freenet.support.HTMLNode;
+import freenet.support.l10n.NodeL10n;
 
 public class BookmarkFeedUserAlert extends AbstractUserAlert {
 	private final WeakReference<PeerNode> peerRef;
