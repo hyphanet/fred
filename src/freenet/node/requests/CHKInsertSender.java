@@ -22,7 +22,6 @@ import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
-import freenet.node.AnyInsertSender;
 import freenet.node.Node;
 import freenet.node.PeerNode;
 import freenet.node.PrioRunnable;
