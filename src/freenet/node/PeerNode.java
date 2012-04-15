@@ -82,6 +82,7 @@ import freenet.node.transport.MessageItem;
 import freenet.node.transport.NewPacketFormat;
 import freenet.node.transport.NewPacketFormatKeyContext;
 import freenet.node.transport.NodeCrypto;
+import freenet.node.transport.OutgoingPacketMangler;
 import freenet.node.transport.PacketFormat;
 import freenet.node.transport.PacketSequenceException;
 import freenet.node.transport.PacketTracker;

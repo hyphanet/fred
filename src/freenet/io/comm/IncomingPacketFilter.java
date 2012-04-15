@@ -5,7 +5,7 @@ package freenet.io.comm;
 
 /**
  * Filter interface used by Freenet to decrypt incoming UDP packets.
- * @see freenet.node.OutgoingPacketMangler
+ * @see freenet.node.transport.OutgoingPacketMangler
  */
 public interface IncomingPacketFilter {
 

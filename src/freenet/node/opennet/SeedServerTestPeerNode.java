@@ -7,9 +7,9 @@ import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.node.FSParseException;
 import freenet.node.Node;
-import freenet.node.OutgoingPacketMangler;
 import freenet.node.PeerManager;
 import freenet.node.transport.NodeCrypto;
+import freenet.node.transport.OutgoingPacketMangler;
 import freenet.support.SimpleFieldSet;
 
 /**

@@ -16,6 +16,7 @@ import freenet.io.xfer.PacketThrottle;
 import freenet.io.xfer.WaitedTooLongException;
 import freenet.node.transport.DecodingMessageGroup;
 import freenet.node.transport.MessageItem;
+import freenet.node.transport.OutgoingPacketMangler;
 import freenet.node.transport.PeerMessageQueue;
 import freenet.node.transport.SessionKey;
 

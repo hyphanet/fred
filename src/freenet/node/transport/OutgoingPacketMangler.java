@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node;
+package freenet.node.transport;
 
 import freenet.io.AddressTracker.Status;
 import freenet.io.comm.AsyncMessageCallback;
@@ -10,10 +10,9 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.SocketHandler;
-import freenet.node.transport.MessageItem;
-import freenet.node.transport.PacketSequenceException;
-import freenet.node.transport.ResendPacketItem;
-import freenet.node.transport.SessionKey;
+import freenet.node.BlockedTooLongException;
+import freenet.node.KeyChangedException;
+import freenet.node.PeerNode;
 import freenet.support.WouldBlockException;
 
 /**

@@ -41,6 +41,7 @@ import freenet.node.opennet.SeedClientPeerNode;
 import freenet.node.opennet.SeedServerPeerNode;
 import freenet.node.transport.FNPPacketMangler;
 import freenet.node.transport.NodeCrypto;
+import freenet.node.transport.OutgoingPacketMangler;
 import freenet.node.useralerts.PeerManagerUserAlert;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.Logger;

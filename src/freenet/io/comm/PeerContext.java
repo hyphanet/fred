@@ -7,9 +7,9 @@ import java.lang.ref.WeakReference;
 
 import freenet.io.xfer.PacketThrottle;
 import freenet.io.xfer.WaitedTooLongException;
-import freenet.node.OutgoingPacketMangler;
 import freenet.node.SyncSendWaitedTooLongException;
 import freenet.node.transport.MessageItem;
+import freenet.node.transport.OutgoingPacketMangler;
 
 /**
  * @author amphibian

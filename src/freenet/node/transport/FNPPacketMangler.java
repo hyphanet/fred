@@ -48,7 +48,6 @@ import freenet.node.DarknetPeerNode;
 import freenet.node.FSParseException;
 import freenet.node.KeyChangedException;
 import freenet.node.Node;
-import freenet.node.OutgoingPacketMangler;
 import freenet.node.PeerNode;
 import freenet.node.PrioRunnable;
 import freenet.node.StillNotAckedException;
