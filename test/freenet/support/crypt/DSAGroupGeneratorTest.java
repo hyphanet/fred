@@ -14,7 +14,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-package freenet.crypt;
+package freenet.support.crypt;
 
 import java.math.BigInteger;
 
