@@ -11,7 +11,6 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.SocketHandler;
 import freenet.node.BlockedTooLongException;
-import freenet.node.KeyChangedException;
 import freenet.node.PeerNode;
 import freenet.support.WouldBlockException;
 

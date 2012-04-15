@@ -46,7 +46,6 @@ import freenet.l10n.NodeL10n;
 import freenet.node.BlockedTooLongException;
 import freenet.node.DarknetPeerNode;
 import freenet.node.FSParseException;
-import freenet.node.KeyChangedException;
 import freenet.node.Node;
 import freenet.node.PeerNode;
 import freenet.node.PrioRunnable;

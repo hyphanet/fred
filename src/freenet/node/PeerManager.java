@@ -34,6 +34,7 @@ import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.Key;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
+import freenet.node.load.RecentlyFailedReturn;
 import freenet.node.opennet.OpennetManager;
 import freenet.node.opennet.OpennetPeerNode;
 import freenet.node.opennet.OpennetPeerNodeStatus;

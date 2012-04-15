@@ -1,4 +1,4 @@
-package freenet.node;
+package freenet.node.load;
 
 import freenet.support.Logger;
 import freenet.support.TimeUtil;

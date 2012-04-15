@@ -11,6 +11,7 @@ import freenet.client.async.HasCooldownCacheItem;
 import freenet.client.async.TransientChosenBlock;
 import freenet.keys.Key;
 import freenet.node.NodeStats.RejectReason;
+import freenet.node.load.BaseRequestThrottle;
 import freenet.node.opennet.OpennetManager;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;

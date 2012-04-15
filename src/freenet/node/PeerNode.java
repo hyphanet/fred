@@ -78,6 +78,7 @@ import freenet.node.requests.UIDTag;
 import freenet.node.transport.DecodingMessageGroup;
 import freenet.node.transport.FNPPacketMangler;
 import freenet.node.transport.FNPWrapper;
+import freenet.node.transport.KeyChangedException;
 import freenet.node.transport.MessageItem;
 import freenet.node.transport.NewPacketFormat;
 import freenet.node.transport.NewPacketFormatKeyContext;

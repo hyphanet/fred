@@ -13,6 +13,7 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.keys.Key;
+import freenet.node.load.BaseRequestThrottle;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
