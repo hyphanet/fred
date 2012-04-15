@@ -25,11 +25,11 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-import freenet.io.WritableToDataOutputStream;
 import freenet.keys.Key;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.message.Peer;
+import freenet.support.net.WritableToDataOutputStream;
 
 /**
  * @author ian

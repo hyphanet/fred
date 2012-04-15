@@ -9,8 +9,6 @@ import java.util.Vector;
 
 import freenet.clients.http.ConnectivityToadlet;
 import freenet.clients.http.ExternalLinkToadlet;
-import freenet.io.AddressTracker;
-import freenet.io.AddressTracker.Status;
 import freenet.l10n.NodeL10n;
 import freenet.message.FreenetInetAddress;
 import freenet.message.Peer;
@@ -31,6 +29,8 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.Logger.LogLevel;
+import freenet.support.net.AddressTracker;
+import freenet.support.net.AddressTracker.Status;
 import freenet.support.transport.ip.IPUtil;
 
 /**

@@ -44,7 +44,6 @@ import freenet.crypt.KeyAgreementSchemeContext;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
-import freenet.io.AddressTracker;
 import freenet.io.xfer.PacketThrottle;
 import freenet.io.xfer.WaitedTooLongException;
 import freenet.keys.ClientSSK;
@@ -108,6 +107,7 @@ import freenet.support.math.MersenneTwister;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
+import freenet.support.net.AddressTracker;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.IPUtil;
 

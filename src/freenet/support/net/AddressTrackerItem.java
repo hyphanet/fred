@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
-package freenet.io;
+package freenet.support.net;
 
 import freenet.node.FSParseException;
 import freenet.support.Logger;

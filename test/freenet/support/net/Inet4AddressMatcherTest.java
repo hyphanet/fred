@@ -14,9 +14,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-package freenet.io;
+package freenet.support.net;
 
 import java.net.InetAddress;
+
+import freenet.support.net.Inet4AddressMatcher;
 
 import junit.framework.TestCase;
 

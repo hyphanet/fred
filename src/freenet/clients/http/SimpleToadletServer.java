@@ -26,9 +26,6 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
 import freenet.crypt.SSL;
-import freenet.io.AllowedHosts;
-import freenet.io.NetworkInterface;
-import freenet.io.SSLNetworkInterface;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
@@ -52,6 +49,9 @@ import freenet.support.api.LongCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.NativeThread;
+import freenet.support.net.AllowedHosts;
+import freenet.support.net.NetworkInterface;
+import freenet.support.net.SSLNetworkInterface;
 
 /** 
  * The Toadlet (HTTP) Server

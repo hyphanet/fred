@@ -27,8 +27,6 @@ import freenet.crypt.PCFBMode;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
-import freenet.io.AddressTracker;
-import freenet.io.AddressTracker.Status;
 import freenet.l10n.NodeL10n;
 import freenet.message.AsyncMessageCallback;
 import freenet.message.DMT;
@@ -66,6 +64,8 @@ import freenet.support.TimeUtil;
 import freenet.support.WouldBlockException;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
+import freenet.support.net.AddressTracker;
+import freenet.support.net.AddressTracker.Status;
 
 /**
  * @author amphibian

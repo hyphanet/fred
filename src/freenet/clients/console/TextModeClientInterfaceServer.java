@@ -16,8 +16,6 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.crypt.SSL;
-import freenet.io.NetworkInterface;
-import freenet.io.SSLNetworkInterface;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
@@ -25,6 +23,8 @@ import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.StringCallback;
+import freenet.support.net.NetworkInterface;
+import freenet.support.net.SSLNetworkInterface;
 
 public class TextModeClientInterfaceServer implements Runnable {
 

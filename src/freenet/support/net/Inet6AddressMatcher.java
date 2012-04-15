@@ -14,14 +14,14 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-package freenet.io;
+package freenet.support.net;
 
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.StringTokenizer;
 
-import freenet.io.AddressIdentifier.AddressType;
+import freenet.support.net.AddressIdentifier.AddressType;
 
 /**
  * @author David Roden &lt;droden@gmail.com&gt;

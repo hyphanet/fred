@@ -29,7 +29,6 @@ import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
-import freenet.io.AddressTracker.Status;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.message.FreenetInetAddress;
@@ -52,6 +51,7 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
+import freenet.support.net.AddressTracker.Status;
 
 /**
  * Cryptographic and transport level node identity.

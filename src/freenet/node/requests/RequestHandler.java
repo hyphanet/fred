@@ -4,8 +4,6 @@
 package freenet.node.requests;
 
 import freenet.crypt.DSAPublicKey;
-import freenet.io.MultiMessageCallback;
-import freenet.io.WaitingMultiMessageCallback;
 import freenet.io.xfer.BlockTransmitter;
 import freenet.io.xfer.BlockTransmitter.BlockTransmitterCompletion;
 import freenet.io.xfer.BlockTransmitter.ReceiverAbortHandler;
@@ -43,6 +41,8 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
+import freenet.support.net.MultiMessageCallback;
+import freenet.support.net.WaitingMultiMessageCallback;
 
 /**
  * Handle an incoming request. Does not do the actual fetching; that

@@ -16,7 +16,6 @@ import com.db4o.ObjectContainer;
 import freenet.crypt.CryptFormatException;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
-import freenet.io.WritableToDataOutputStream;
 import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -30,6 +29,7 @@ import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
+import freenet.support.net.WritableToDataOutputStream;
 
 /**
  * @author amphibian

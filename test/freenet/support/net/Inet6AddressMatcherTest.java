@@ -17,15 +17,15 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-package freenet.io;
+package freenet.support.net;
 
 import java.net.InetAddress;
 
 import junit.framework.TestCase;
-import freenet.io.Inet6AddressMatcher;
+import freenet.support.net.Inet6AddressMatcher;
 
 /**
- * Test case for the {@link freenet.io.Inet6AddressMatcher} class. Contains some
+ * Test case for the {@link freenet.support.net.Inet6AddressMatcher} class. Contains some
  * very basic tests. Feel free to add more complicated tests!
  * 
  * @author David Roden &lt;droden@gmail.com&gt;

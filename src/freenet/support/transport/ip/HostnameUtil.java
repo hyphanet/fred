@@ -3,10 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.transport.ip;
 
-import freenet.io.AddressIdentifier;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.net.AddressIdentifier;
 
 public class HostnameUtil {
         private static volatile boolean logDEBUG;

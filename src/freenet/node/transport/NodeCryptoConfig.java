@@ -291,7 +291,7 @@ public class NodeCryptoConfig {
 		@Override
 		public void set(String val) throws InvalidConfigValueException {
 			if(val.equals(get())) return;
-			// FIXME why not? Can't we use freenet.io.NetworkInterface like everywhere else, just adapt it for UDP?
+			// FIXME why not? Can't we use freenet.support.net.NetworkInterface like everywhere else, just adapt it for UDP?
 			throw new InvalidConfigValueException("Cannot be updated on the fly");
 		}
 		@Override

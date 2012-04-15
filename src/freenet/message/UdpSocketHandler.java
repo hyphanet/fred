@@ -9,13 +9,13 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.Random;
 
-import freenet.io.AddressTracker;
 import freenet.message.Peer.LocalAddressException;
 import freenet.node.Node;
 import freenet.node.PrioRunnable;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.io.NativeThread;
+import freenet.support.net.AddressTracker;
 import freenet.support.transport.ip.IPUtil;
 
 public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, PortForwardSensitiveSocketHandler {

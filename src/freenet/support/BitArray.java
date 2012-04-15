@@ -23,7 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import freenet.io.WritableToDataOutputStream;
+import freenet.support.net.WritableToDataOutputStream;
 
 public class BitArray implements WritableToDataOutputStream {
 

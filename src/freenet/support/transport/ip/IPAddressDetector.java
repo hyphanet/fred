@@ -10,10 +10,10 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
 
-import freenet.io.AddressIdentifier;
 import freenet.node.NodeIPDetector;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.net.AddressIdentifier;
 
 /**
  * A class to autodetect our IP address(es)

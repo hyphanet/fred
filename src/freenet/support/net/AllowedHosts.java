@@ -13,15 +13,15 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
-package freenet.io;
+package freenet.support.net;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import freenet.io.AddressIdentifier.AddressType;
 import freenet.support.Logger;
+import freenet.support.net.AddressIdentifier.AddressType;
 
 /** Implementation of allowedHosts */
 public class AllowedHosts {

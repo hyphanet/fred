@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.transport;
 
-import freenet.io.AddressTracker.Status;
 import freenet.message.AsyncMessageCallback;
 import freenet.message.FreenetInetAddress;
 import freenet.message.NotConnectedException;
@@ -12,6 +11,7 @@ import freenet.message.PeerContext;
 import freenet.message.SocketHandler;
 import freenet.node.PeerNode;
 import freenet.support.WouldBlockException;
+import freenet.support.net.AddressTracker.Status;
 
 /**
  * Low-level interface for sending packets.

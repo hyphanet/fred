@@ -13,38 +13,41 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
-package freenet.io;
+package freenet.support.net;
 
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+import freenet.message.Peer;
+import freenet.message.PeerParseException;
 import freenet.node.FSParseException;
 import freenet.support.SimpleFieldSet;
 
-public class InetAddressAddressTrackerItem extends AddressTrackerItem {
+public class PeerAddressTrackerItem extends AddressTrackerItem {
+	
+	public final Peer peer;
 
-	public InetAddressAddressTrackerItem(long timeDefinitelyNoPacketsReceived, 
-			long timeDefinitelyNoPacketsSent, InetAddress addr) {
+	public PeerAddressTrackerItem(long timeDefinitelyNoPacketsReceived, 
+			long timeDefinitelyNoPacketsSent, Peer peer) {
 		super(timeDefinitelyNoPacketsReceived, timeDefinitelyNoPacketsSent);
-		this.addr = addr;
+		this.peer = peer;
+	}
+	
+	public PeerAddressTrackerItem(SimpleFieldSet fs) throws FSParseException {
+		super(fs);
+		try {
+			peer = new Peer(fs.getString("Address"), false);
+		} catch (UnknownHostException e) {
+			throw (FSParseException)new FSParseException("Unknown domain name in Address: "+e).initCause(e);
+		} catch (PeerParseException e) {
+			throw new FSParseException(e);
+		}
 	}
 
-	public final InetAddress addr;
-	
 	@Override
 	public SimpleFieldSet toFieldSet() {
 		SimpleFieldSet fs = super.toFieldSet();
-		fs.putOverwrite("Address", addr.getHostAddress());
+		fs.putOverwrite("Address", peer.toStringPrefNumeric());
 		return fs;
-	}
-	
-	public InetAddressAddressTrackerItem(SimpleFieldSet fs) throws FSParseException {
-		super(fs);
-		try {
-			addr = InetAddress.getByName(fs.getString("Address"));
-		} catch (UnknownHostException e) {
-			throw (FSParseException)new FSParseException("Unknown domain name in Address: "+e).initCause(e);
-		}
 	}
 
 }

@@ -1,4 +1,4 @@
-package freenet.io;
+package freenet.support.net;
 
 import freenet.message.AsyncMessageCallback;
 

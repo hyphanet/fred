@@ -14,7 +14,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-package freenet.io;
+package freenet.support.net;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -31,11 +31,11 @@ import java.util.StringTokenizer;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
-import freenet.io.AddressIdentifier.AddressType;
 import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.net.AddressIdentifier.AddressType;
 
 /**
  * Replacement for {@link ServerSocket} that can handle multiple bind addresses

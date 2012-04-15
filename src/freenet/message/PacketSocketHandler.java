@@ -3,8 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.message;
 
-import freenet.io.AddressTracker.Status;
 import freenet.message.Peer.LocalAddressException;
+import freenet.support.net.AddressTracker.Status;
 
 /**
  * Base class for UdpSocketHandler and any other datagram-based transports.

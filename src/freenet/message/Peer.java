@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import freenet.io.WritableToDataOutputStream;
+import freenet.support.net.WritableToDataOutputStream;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.IPUtil;
 

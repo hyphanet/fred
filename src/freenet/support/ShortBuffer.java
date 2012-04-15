@@ -24,7 +24,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 
-import freenet.io.WritableToDataOutputStream;
+import freenet.support.net.WritableToDataOutputStream;
 
 /**
  * Byte array which is limited to 32kB
