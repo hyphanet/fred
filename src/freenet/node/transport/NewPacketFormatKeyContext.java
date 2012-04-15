@@ -5,7 +5,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 
-import freenet.io.xfer.PacketThrottle;
+import freenet.message.xfer.PacketThrottle;
 import freenet.node.BasePeerNode;
 import freenet.node.transport.NewPacketFormat.SentPacket;
 import freenet.support.LogThresholdCallback;

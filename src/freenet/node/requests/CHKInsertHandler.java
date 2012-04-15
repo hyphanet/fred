@@ -3,11 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.requests;
 
-import freenet.io.xfer.AbortedException;
-import freenet.io.xfer.BlockReceiver;
-import freenet.io.xfer.BlockReceiver.BlockReceiverCompletion;
-import freenet.io.xfer.BlockReceiver.BlockReceiverTimeoutHandler;
-import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
@@ -20,6 +15,11 @@ import freenet.message.NotConnectedException;
 import freenet.message.PeerContext;
 import freenet.message.RetrievalException;
 import freenet.message.SlowAsyncMessageFilterCallback;
+import freenet.message.xfer.AbortedException;
+import freenet.message.xfer.BlockReceiver;
+import freenet.message.xfer.PartiallyReceivedBlock;
+import freenet.message.xfer.BlockReceiver.BlockReceiverCompletion;
+import freenet.message.xfer.BlockReceiver.BlockReceiverTimeoutHandler;
 import freenet.node.Node;
 import freenet.node.PeerNode;
 import freenet.node.PrioRunnable;

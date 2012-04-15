@@ -10,11 +10,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Vector;
 
-import freenet.io.xfer.PacketThrottle;
 import freenet.message.DMT;
 import freenet.message.Message;
 import freenet.message.Peer;
 import freenet.message.Peer.LocalAddressException;
+import freenet.message.xfer.PacketThrottle;
 import freenet.node.BasePeerNode;
 import freenet.node.Node;
 import freenet.node.PeerNode;

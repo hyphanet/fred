@@ -5,10 +5,6 @@ package freenet.node.requests;
 
 import java.util.Vector;
 
-import freenet.io.xfer.AbortedException;
-import freenet.io.xfer.BlockTransmitter;
-import freenet.io.xfer.BlockTransmitter.BlockTransmitterCompletion;
-import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
@@ -22,6 +18,10 @@ import freenet.message.MessageFilter;
 import freenet.message.NotConnectedException;
 import freenet.message.PeerContext;
 import freenet.message.SlowAsyncMessageFilterCallback;
+import freenet.message.xfer.AbortedException;
+import freenet.message.xfer.BlockTransmitter;
+import freenet.message.xfer.PartiallyReceivedBlock;
+import freenet.message.xfer.BlockTransmitter.BlockTransmitterCompletion;
 import freenet.node.Node;
 import freenet.node.PeerNode;
 import freenet.node.PrioRunnable;

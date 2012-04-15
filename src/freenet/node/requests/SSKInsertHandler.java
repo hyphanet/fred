@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.requests;
 
-import freenet.io.xfer.WaitedTooLongException;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
@@ -14,6 +13,7 @@ import freenet.message.Message;
 import freenet.message.MessageFilter;
 import freenet.message.NotConnectedException;
 import freenet.message.PeerRestartedException;
+import freenet.message.xfer.WaitedTooLongException;
 import freenet.node.Node;
 import freenet.node.PeerNode;
 import freenet.node.PrioRunnable;

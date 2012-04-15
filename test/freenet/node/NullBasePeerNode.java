@@ -3,8 +3,6 @@ package freenet.node;
 import java.lang.ref.WeakReference;
 import java.util.Random;
 
-import freenet.io.xfer.PacketThrottle;
-import freenet.io.xfer.WaitedTooLongException;
 import freenet.message.AsyncMessageCallback;
 import freenet.message.ByteCounter;
 import freenet.message.Message;
@@ -14,6 +12,8 @@ import freenet.message.PeerContext;
 import freenet.message.PeerRestartedException;
 import freenet.message.SocketHandler;
 import freenet.message.Peer.LocalAddressException;
+import freenet.message.xfer.PacketThrottle;
+import freenet.message.xfer.WaitedTooLongException;
 import freenet.node.transport.DecodingMessageGroup;
 import freenet.node.transport.MessageItem;
 import freenet.node.transport.OutgoingPacketMangler;

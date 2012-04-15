@@ -5,10 +5,6 @@ package freenet.node.requests;
 
 import java.util.ArrayList;
 
-import freenet.io.xfer.BlockReceiver;
-import freenet.io.xfer.BlockReceiver.BlockReceiverCompletion;
-import freenet.io.xfer.BlockReceiver.BlockReceiverTimeoutHandler;
-import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.Key;
 import freenet.keys.KeyVerifyException;
@@ -27,6 +23,10 @@ import freenet.message.PeerParseException;
 import freenet.message.ReferenceSignatureVerificationException;
 import freenet.message.RetrievalException;
 import freenet.message.SlowAsyncMessageFilterCallback;
+import freenet.message.xfer.BlockReceiver;
+import freenet.message.xfer.PartiallyReceivedBlock;
+import freenet.message.xfer.BlockReceiver.BlockReceiverCompletion;
+import freenet.message.xfer.BlockReceiver.BlockReceiverTimeoutHandler;
 import freenet.node.FSParseException;
 import freenet.node.FailureTable;
 import freenet.node.Node;

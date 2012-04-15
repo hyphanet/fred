@@ -3,13 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.requests;
 
-import freenet.io.xfer.BlockTransmitter;
-import freenet.io.xfer.BlockTransmitter.BlockTransmitterCompletion;
-import freenet.io.xfer.BlockTransmitter.ReceiverAbortHandler;
-import freenet.io.xfer.BulkTransmitter;
-import freenet.io.xfer.BulkTransmitter.AllSentCallback;
-import freenet.io.xfer.PartiallyReceivedBlock;
-import freenet.io.xfer.WaitedTooLongException;
 import freenet.keys.CHKBlock;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
@@ -24,6 +17,13 @@ import freenet.message.NotConnectedException;
 import freenet.message.PeerParseException;
 import freenet.message.PeerRestartedException;
 import freenet.message.ReferenceSignatureVerificationException;
+import freenet.message.xfer.BlockTransmitter;
+import freenet.message.xfer.BulkTransmitter;
+import freenet.message.xfer.PartiallyReceivedBlock;
+import freenet.message.xfer.WaitedTooLongException;
+import freenet.message.xfer.BlockTransmitter.BlockTransmitterCompletion;
+import freenet.message.xfer.BlockTransmitter.ReceiverAbortHandler;
+import freenet.message.xfer.BulkTransmitter.AllSentCallback;
 import freenet.node.FSParseException;
 import freenet.node.FailureTable;
 import freenet.node.Node;

@@ -7,9 +7,9 @@ import java.net.InetAddress;
 import java.util.Map;
 
 import freenet.clients.http.DarknetConnectionsToadlet;
-import freenet.io.xfer.PacketThrottle;
 import freenet.message.FreenetInetAddress;
 import freenet.message.Peer;
+import freenet.message.xfer.PacketThrottle;
 import freenet.node.PeerNode.IncomingLoadSummaryStats;
 import freenet.node.opennet.SeedClientPeerNode;
 import freenet.node.opennet.SeedServerPeerNode;
