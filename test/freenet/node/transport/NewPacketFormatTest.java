@@ -8,7 +8,6 @@ import java.util.LinkedList;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.node.BasePeerNode;
-import freenet.node.BlockedTooLongException;
 import freenet.node.NullBasePeerNode;
 import freenet.node.transport.DecodingMessageGroup;
 import freenet.node.transport.MessageFragment;

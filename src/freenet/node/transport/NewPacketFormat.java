@@ -19,7 +19,6 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.io.xfer.PacketThrottle;
 import freenet.node.BasePeerNode;
-import freenet.node.BlockedTooLongException;
 import freenet.node.Node;
 import freenet.node.PeerNode;
 import freenet.node.transport.NewPacketFormatKeyContext.AddedAcks;

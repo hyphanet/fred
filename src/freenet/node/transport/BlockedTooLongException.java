@@ -1,6 +1,5 @@
-package freenet.node;
+package freenet.node.transport;
 
-import freenet.node.transport.PacketTracker;
 
 public class BlockedTooLongException extends Exception {
 	private static final long serialVersionUID = 1L;

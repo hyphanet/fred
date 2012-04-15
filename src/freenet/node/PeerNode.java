@@ -76,6 +76,7 @@ import freenet.node.opennet.SeedServerPeerNode;
 import freenet.node.opennet.OpennetManager.ConnectionType;
 import freenet.node.requests.RequestTag;
 import freenet.node.requests.UIDTag;
+import freenet.node.transport.BlockedTooLongException;
 import freenet.node.transport.DecodingMessageGroup;
 import freenet.node.transport.FNPPacketMangler;
 import freenet.node.transport.FNPWrapper;

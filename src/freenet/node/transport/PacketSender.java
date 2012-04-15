@@ -10,7 +10,6 @@ import java.util.Vector;
 import freenet.clients.http.ExternalLinkToadlet;
 import freenet.io.comm.Peer;
 import freenet.l10n.NodeL10n;
-import freenet.node.BlockedTooLongException;
 import freenet.node.Node;
 import freenet.node.PeerManager;
 import freenet.node.PeerNode;

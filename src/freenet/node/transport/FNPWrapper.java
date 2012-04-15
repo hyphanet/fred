@@ -10,7 +10,6 @@ import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PacketSocketHandler;
 import freenet.io.comm.Peer;
-import freenet.node.BlockedTooLongException;
 import freenet.node.Node;
 import freenet.node.PeerNode;
 import freenet.support.LogThresholdCallback;

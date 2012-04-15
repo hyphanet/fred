@@ -13,7 +13,6 @@ import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.DMT;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.xfer.PacketThrottle;
-import freenet.node.BlockedTooLongException;
 import freenet.node.Node;
 import freenet.node.PeerNode;
 import freenet.node.StillNotAckedException;
