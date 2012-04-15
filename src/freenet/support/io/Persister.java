@@ -1,4 +1,4 @@
-package freenet.node;
+package freenet.support.io;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -9,8 +9,6 @@ import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Ticker;
-import freenet.support.io.Closer;
-import freenet.support.io.FileUtil;
 
 public class Persister implements Runnable {
         private static volatile boolean logMINOR;
@@ -33,8 +31,8 @@ public class Persister implements Runnable {
 	
 	final Persistable persistable;
 	private final Ticker ps;
-	File persistTemp;
-	File persistTarget;
+	protected File persistTemp;
+	public File persistTarget;
 	private boolean started;
 	
 	void interrupt() {

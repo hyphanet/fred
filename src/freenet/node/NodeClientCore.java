@@ -94,7 +94,9 @@ import freenet.support.compress.RealCompressor;
 import freenet.support.io.FileUtil;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.NativeThread;
+import freenet.support.io.Persistable;
 import freenet.support.io.PersistentTempBucketFactory;
+import freenet.support.io.Persister;
 import freenet.support.io.TempBucketFactory;
 import freenet.support.math.MersenneTwister;
 

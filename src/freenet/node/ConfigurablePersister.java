@@ -8,6 +8,8 @@ import freenet.config.SubConfig;
 import freenet.l10n.NodeL10n;
 import freenet.support.Ticker;
 import freenet.support.api.StringCallback;
+import freenet.support.io.Persistable;
+import freenet.support.io.Persister;
 
 public class ConfigurablePersister extends Persister {
 
