@@ -1391,8 +1391,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				'/' + (completedDownloadToDisk.size() + completedDownloadToTemp.size()) +
 				") "+l10n("titleDownloads");
 
-		final int mode = pageMaker.parseMode(request, this.container);
-
 		PageNode page = pageMaker.getPageNode(pageName, ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
@@ -1485,7 +1483,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				l10n("priority6")
 		};
 
-		boolean advancedModeEnabled = (mode >= PageMaker.MODE_ADVANCED);
+		boolean advancedModeEnabled = pageMaker.advancedMode(request, this.container);
 
 		if(advancedModeEnabled) {
 			HTMLNode legendContent = pageMaker.getInfobox("legend", l10n("legend"), contentNode, "queue-legend", true);
