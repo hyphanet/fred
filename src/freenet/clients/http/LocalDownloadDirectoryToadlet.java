@@ -25,6 +25,11 @@ public class LocalDownloadDirectoryToadlet extends LocalDirectoryToadlet {
 	}
 
 	@Override
+	protected String filenameField() {
+		return "path";
+	}
+
+	@Override
 	protected void createSelectDirectoryButton (HTMLNode formNode, String path, HTMLNode persist) {
 		formNode.addChild("input",
 			new String[] { "type", "name", "value" },
@@ -32,7 +37,7 @@ public class LocalDownloadDirectoryToadlet extends LocalDirectoryToadlet {
 				NodeL10n.getBase().getString("QueueToadlet.download")});
 		formNode.addChild("input",
 			new String[] { "type", "name", "value" },
-			new String[] { "hidden", "path", path});
+			new String[] { "hidden", filenameField(), path});
 		formNode.addChild(persist);
 	}
 
