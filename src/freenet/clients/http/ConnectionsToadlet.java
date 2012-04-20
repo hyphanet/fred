@@ -507,7 +507,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		// our reference
 		if(shouldDrawNoderefBox(mode >= PageMaker.MODE_ADVANCED)) {
 			drawAddPeerBox(contentNode, ctx);
-			drawNoderefBox(contentNode, ctx);
+			drawNoderefBox(contentNode, getNoderef(), true);
 		}
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
@@ -761,14 +761,17 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	
 	protected abstract boolean shouldDrawNoderefBox(boolean advancedModeEnabled);
 
-	private void drawNoderefBox(HTMLNode contentNode, ToadletContext ctx) {
-		drawNoderefBox(contentNode, ctx, getNoderef());
-	}
-	
 	static final HTMLNode REF_LINK = HTMLNode.link("myref.fref").setReadOnly();
 	static final HTMLNode REFTEXT_LINK = HTMLNode.link("myref.txt").setReadOnly();
-	
-	static void drawNoderefBox(HTMLNode contentNode, ToadletContext ctx, SimpleFieldSet fs) {
+
+	/**
+	 *
+	 * @param contentNode Node to add noderef box to.
+	 * @param fs Noderef to render as text if requested.
+	 * @param showNoderef If true, render the text of the noderef so that it may be copy-pasted. If false, only
+	 *                    show a link to download it.
+	 */
+	static void drawNoderefBox(HTMLNode contentNode, SimpleFieldSet fs, boolean showNoderef) {
 		HTMLNode referenceInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode headerReferenceInfobox = referenceInfobox.addChild("div", "class", "infobox-header");
 		// FIXME better way to deal with this sort of thing???
@@ -784,12 +787,14 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		myName.addChild("span").addChild("a", "href", "/config/node#name",
 				NodeL10n.getBase().getString("DarknetConnectionsToadlet.changeMyName"));
 		myName.addChild("span", "]");
-		
-		HTMLNode warningSentence = referenceInfoboxContent.addChild("p");
-		NodeL10n.getBase().addL10nSubstitution(warningSentence, "DarknetConnectionsToadlet.referenceCopyWarning",
-				new String[] { "bold" },
-				new HTMLNode[] { HTMLNode.STRONG });
-		referenceInfoboxContent.addChild("pre", "id", "reference", fs.toString() + '\n');
+
+		if (showNoderef) {
+			HTMLNode warningSentence = referenceInfoboxContent.addChild("p");
+			NodeL10n.getBase().addL10nSubstitution(warningSentence, "DarknetConnectionsToadlet.referenceCopyWarning",
+					new String[] { "bold" },
+					new HTMLNode[] { HTMLNode.STRONG });
+			referenceInfoboxContent.addChild("pre", "id", "reference", fs.toString() + '\n');
+		}
 	}
 
 	protected abstract String getPageTitle(String titleCountString);
