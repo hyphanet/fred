@@ -192,7 +192,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		//Returning from directory selector with a selection or declining resetting settings to defaults.
 		//Re-render config page with any changes made in the selector and/or persisting values changed but
 		//not applied.
-		if(request.isPartSet("select-dir") || request.isPartSet("decline-default-reset")) {
+		if(request.isPartSet(LocalFileBrowserToadlet.selectDir) || request.isPartSet("decline-default-reset")) {
 			handleMethodGET(uri, request, ctx);
 			return;
 		}
@@ -405,7 +405,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			String overriddenValue = null;
 			
 			//A value changed by the directory selector takes precedence.
-			if(req.isPartSet("select-for") && req.isPartSet("select-dir")) {
+			if(req.isPartSet("select-for") && req.isPartSet(LocalFileBrowserToadlet.selectDir)) {
 				overriddenOption = req.getPartAsStringFailsafe("select-for", MAX_PARAM_VALUE_SIZE);
 				overriddenValue = req.getPartAsStringFailsafe("filename", MAX_PARAM_VALUE_SIZE);
 			}
