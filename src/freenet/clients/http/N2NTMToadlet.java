@@ -151,7 +151,7 @@ public class N2NTMToadlet extends Toadlet {
 			return;
 		}
 
-		if (request.isPartSet("n2nm-upload") || request.isPartSet("select-file") || request.isPartSet("send")) {
+		if (request.isPartSet("n2nm-upload") || request.isPartSet(LocalFileBrowserToadlet.selectFile) || request.isPartSet("send")) {
 			File filename = null;
 			String message = request.getPartAsStringFailsafe("message", 5 * 1024);
 			message = message.trim();
@@ -164,7 +164,7 @@ public class N2NTMToadlet extends Toadlet {
 			HTMLNode contentNode = page.content;
 			HTMLNode peerTableInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
-			if(request.isPartSet("select-file")) {
+			if(request.isPartSet(LocalFileBrowserToadlet.selectFile)) {
 				String fnam = request.getPartAsStringFailsafe("filename", 1024);
 				if(fnam != null && fnam.length() > 0) {
 					filename = new File(fnam);

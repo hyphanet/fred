@@ -22,6 +22,7 @@ import java.util.Hashtable;
  */
 public abstract class LocalFileBrowserToadlet extends Toadlet {	
 	protected final NodeClientCore core;
+	private static final int maxPOSTSize = 1024*1024;
 
 	public LocalFileBrowserToadlet (NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient) {
 		super(highLevelSimpleClient);
@@ -32,6 +33,28 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 	public abstract String path();
 	
 	protected abstract String postTo();
+
+	/**
+	 * Part set when a directory is selected.
+	 */
+	public static final String selectDir = "select-dir";
+
+	/**
+	 * Part set when a file is selected.
+	 */
+	public static final String selectFile = "select-file";
+
+	/**
+	 * Part set when a directory is changed.
+	 */
+	public static final String changeDir = "change-dir";
+
+	/**
+	 * @return Part which contains selected directory or file.
+	 */
+	protected String filenameField() {
+		return "filename";
+	}
 
 	/**
 	 * Whether the directory is allowed for the purposes of the specific browser. For example, do the node settings
@@ -93,7 +116,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 	protected void createSelectDirectoryButton (HTMLNode node, String absolutePath, HTMLNode persistence) {
 		node.addChild("input",
 		        new String[]{"type", "name", "value"},
-		        new String[]{"submit", "select-dir", l10n("insert")});
+		        new String[]{"submit", selectDir, l10n("insert")});
 		node.addChild("input",
 		        new String[]{"type", "name", "value"},
 		        new String[]{"hidden", "filename", absolutePath});
@@ -103,7 +126,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 	protected void createSelectFileButton (HTMLNode node, String absolutePath, HTMLNode persistence) {
 		node.addChild("input",
 		        new String[]{"type", "name", "value"},
-		        new String[]{"submit", "select-file", l10n("insert")});
+		        new String[]{"submit", selectFile, l10n("insert")});
 		node.addChild("input",
 		        new String[]{"type", "name", "value"},
 		        new String[]{"hidden", "filename", absolutePath});
@@ -113,7 +136,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 	private void createChangeDirButton (HTMLNode node, String buttonText, String path, HTMLNode persistence) {
 		node.addChild("input",
 		        new String[]{"type", "name", "value"},
-		        new String[]{"submit", "change-dir", buttonText});
+		        new String[]{"submit", changeDir, buttonText});
 		node.addChild("input",
 		        new String[]{"type", "name", "value"},
 		        new String[]{"hidden", "path", path});
@@ -141,7 +164,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 	private Hashtable<String, String> readPOST (HTTPRequest request) {
 		Hashtable<String, String> set = new Hashtable<String, String>();
 		for (String key : request.getParts()) {
-			set.put(key, request.getPartAsStringFailsafe(key, 1024*1024));
+			set.put(key, request.getPartAsStringFailsafe(key, maxPOSTSize));
 		}
 		return set;
 	}

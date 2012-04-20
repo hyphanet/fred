@@ -648,7 +648,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						}
 				}
 				return;
-			} else if (request.isPartSet("select-file")) {
+			} else if (request.isPartSet(LocalFileBrowserToadlet.selectFile)) {
 				final String filename = request.getPartAsStringFailsafe("filename", MAX_FILENAME_LENGTH);
 				if(logMINOR) Logger.minor(this, "Inserting local file: "+filename);
 				final File file = new File(filename);
@@ -759,7 +759,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						}
 				}
 				return;
-			} else if (request.isPartSet("select-dir")) {
+			} else if (request.isPartSet(LocalFileBrowserToadlet.selectDir)) {
 				final String filename = request.getPartAsStringFailsafe("filename", MAX_FILENAME_LENGTH);
 				if(logMINOR) Logger.minor(this, "Inserting local directory: "+filename);
 				final File file = new File(filename);
