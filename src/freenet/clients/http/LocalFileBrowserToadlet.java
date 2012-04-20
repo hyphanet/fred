@@ -119,7 +119,13 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 		//If locations are explicitly specified take the first one.
 		return core.getAllowedDownloadDirs()[0].getAbsolutePath();
 	}
-	
+
+	/**
+	 * Renders directory selection button with selectDir and filenameField() set.
+	 * @param node Node to add the button to.
+	 * @param absolutePath Path to set the filenameField() field to.
+	 * @param persistence Additional persistence fields to include.
+	 */
 	protected void createSelectDirectoryButton (HTMLNode node, String absolutePath, HTMLNode persistence) {
 		node.addChild("input",
 		        new String[]{"type", "name", "value"},
@@ -129,7 +135,13 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 		        new String[]{"hidden", filenameField(), absolutePath});
 		node.addChild(persistence);
 	}
-	
+
+	/**
+	 * Renders file selection button with selectFile and filenameField() set.
+	 * @param node Node to add the button to.
+	 * @param absolutePath Path to set the filenameField() field to.
+	 * @param persistence Additional persistence fields to include.
+	 */
 	protected void createSelectFileButton (HTMLNode node, String absolutePath, HTMLNode persistence) {
 		node.addChild("input",
 		        new String[]{"type", "name", "value"},
@@ -140,6 +152,12 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 		node.addChild(persistence);
 	}
 
+	/**
+	 * Renders directory changing button with changeDir and filenameField() set.
+	 * @param node Node to add the button to.
+	 * @param path Path to set the "path" field to.
+	 * @param persistence Additional persistence fields to include.
+	 */
 	private void createChangeDirButton (HTMLNode node, String buttonText, String path, HTMLNode persistence) {
 		node.addChild("input",
 		        new String[]{"type", "name", "value"},
