@@ -185,8 +185,8 @@ maintainers may prefer to use this instead of build.xml.
 			<fileset dir="${main.src}/freenet/clients/http/staticfiles"/>
 		</copy>
 		<!-- Copy translation files to the build dir -->
-		<copy todir="${main.make}/freenet/l10n">
-			<fileset dir="${main.src}/freenet/l10n">
+		<copy todir="${main.make}/freenet/support/l10n">
+			<fileset dir="${main.src}/freenet/support/l10n">
 				<include name="freenet.l10n.*.properties"/>
 				<include name="iso-*.tab"/>
 			</fileset>

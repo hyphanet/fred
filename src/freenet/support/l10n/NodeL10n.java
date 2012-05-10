@@ -37,8 +37,8 @@ public class NodeL10n {
 	 * @see LANGUAGE.mapToLanguage(String)
 	 */
 	public NodeL10n(final LANGUAGE lang, File overrideDir) {
-		NodeL10n.b = new BaseL10n("freenet/support/l10n/", "freenet.support.l10n.${lang}.properties",
-		  overrideDir.getPath()+File.separator+"freenet.support.l10n.${lang}.override.properties", lang);
+		NodeL10n.b = new BaseL10n("freenet/support/l10n/", "freenet.l10n.${lang}.properties",
+		  overrideDir.getPath()+File.separator+"freenet.l10n.${lang}.override.properties", lang);
 	}
 
 	/**
