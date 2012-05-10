@@ -19,9 +19,9 @@ public class CleanupTranslations {
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws IOException {
-		File engFile = new File("src/freenet/l10n/freenet.support.l10n.en.properties");
+		File engFile = new File("src/freenet/support/l10n/freenet.support.l10n.en.properties");
 		SimpleFieldSet english = SimpleFieldSet.readFrom(engFile, false, true);
-		File[] translations = new File("src/freenet/l10n").listFiles();
+		File[] translations = new File("src/freenet/support/l10n").listFiles();
 		for(File f : translations) {
 			String name = f.getName();
 			if(!name.startsWith("freenet.support.l10n.")) continue;

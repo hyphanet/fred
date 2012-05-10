@@ -175,7 +175,7 @@ public final class ISO639_3 {
 		
 		try {
 			// Returns null on lookup failures:
-			in = ISO639_3.class.getClassLoader().getResourceAsStream("freenet/l10n/iso-639-3_20100707.tab");
+			in = ISO639_3.class.getClassLoader().getResourceAsStream("freenet/support/l10n/iso-639-3_20100707.tab");
 			
 			if (in == null)
 				throw new RuntimeException("Could not open the language codes resource");
