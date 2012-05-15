@@ -1138,7 +1138,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	@Override
 	public MessageItem sendAsync(Message msg, AsyncMessageCallback cb, ByteCounter ctr) throws NotConnectedException {
 		if(ctr == null)
-			Logger.error(this, "Bytes not logged", new Exception("debug"));
+			Logger.error(this, "ByteCounter null, so bandwidth usage cannot be logged. Refusing to send.", new Exception("debug"));
 		if(logMINOR)
 			Logger.minor(this, "Sending async: " + msg + " : " + cb + " on " + this+" for "+node.getDarknetPortNumber()+" priority "+msg.getPriority());
 		if(!isConnected()) {
