@@ -95,6 +95,10 @@ public class Serializer {
 			return Key.read(dis);
 		} else if (type.equals(Key.class)) {
 		    return Key.read(dis);
+		} else if (type.equals(double[].class)) {
+			double[] array = new double[dis.readInt()];
+			for (int i = 0; i < array.length; i++) array[i] = dis.readDouble();
+			return array;
 		} else {
 			throw new RuntimeException("Unrecognised field type: " + type);
 		}
@@ -131,6 +135,9 @@ public class Serializer {
 			}
 		} else if (type.equals(Byte.class)) {
 			dos.write(((Byte) object).byteValue());
+		} else if (type.equals(double[].class))  {
+			dos.writeInt(((double[])object).length);
+			for (double element : (double[])object) dos.writeDouble(element);
 		} else {
 			throw new RuntimeException("Unrecognised field type: " + type);
 		}

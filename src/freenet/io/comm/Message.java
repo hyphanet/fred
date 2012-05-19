@@ -193,6 +193,10 @@ public class Message {
 	    return ((Double) _payload.get(key)).doubleValue();
 	}
 
+	public double[] getDoubleArray(String key) {
+		return ((double[]) _payload.get(key));
+	}
+
 	public String getString(String key) {
 		return (String)_payload.get(key);
 	}
