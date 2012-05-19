@@ -737,7 +737,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public final PacketSender ps;
 	public final PrioritizedTicker ticker;
 	final DNSRequester dnsr;
-	final NodeDispatcher dispatcher;
+	public final NodeDispatcher dispatcher;
 	public final UptimeEstimator uptime;
 	public final TokenBucket outputThrottle;
 	public boolean throttleLocalData;
