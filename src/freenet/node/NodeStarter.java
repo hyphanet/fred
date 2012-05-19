@@ -314,6 +314,19 @@ public class NodeStarter implements WrapperListener {
 		return random;
 	}
 
+	public static Node createTestNode(int port, int opennetPort, String testName, boolean disableProbabilisticHTLs,
+	                                  short maxHTL, int dropProb, RandomSource random,
+	                                  Executor executor, int threadLimit, long storeSize, boolean ramStore,
+	                                  boolean enableSwapping, boolean enableARKs, boolean enableULPRs, boolean enablePerNodeFailureTables,
+	                                  boolean enableSwapQueueing, boolean enablePacketCoalescing,
+	                                  int outputBandwidthLimit, boolean enableFOAF,
+	                                  boolean connectToSeednodes, boolean longPingTimes, boolean useSlashdotCache, String ipAddressOverride) throws NodeInitException {
+		return createTestNode(port, opennetPort, testName, disableProbabilisticHTLs, maxHTL, dropProb, random, executor,
+		    threadLimit, storeSize, ramStore, enableSwapping, enableARKs, enableULPRs, enablePerNodeFailureTables,
+		    enableSwapQueueing, enablePacketCoalescing, outputBandwidthLimit, enableFOAF, connectToSeednodes,
+		    longPingTimes, useSlashdotCache, ipAddressOverride, false);
+	}
+
 	/**
 	 * Create a test node.
 	 * @param port The node port number. Each test node must have a different port
@@ -328,7 +341,7 @@ public class NodeStarter implements WrapperListener {
 		boolean enableSwapping, boolean enableARKs, boolean enableULPRs, boolean enablePerNodeFailureTables,
 		boolean enableSwapQueueing, boolean enablePacketCoalescing,
 		int outputBandwidthLimit, boolean enableFOAF,
-		boolean connectToSeednodes, boolean longPingTimes, boolean useSlashdotCache, String ipAddressOverride) throws NodeInitException {
+		boolean connectToSeednodes, boolean longPingTimes, boolean useSlashdotCache, String ipAddressOverride, boolean enableFCP) throws NodeInitException {
 
 		File baseDir = new File(testName);
 		File portDir = new File(baseDir, Integer.toString(port));
@@ -352,7 +365,9 @@ public class NodeStarter implements WrapperListener {
 		configFS.put("node.listenPort", port);
 		configFS.put("node.disableProbabilisticHTLs", disableProbabilisticHTLs);
 		configFS.put("fproxy.enabled", false);
-		configFS.put("fcp.enabled", false);
+		configFS.put("fcp.enabled", enableFCP);
+		configFS.put("fcp.port", 9481);
+		configFS.put("fcp.ssl", false);
 		configFS.put("console.enabled", false);
 		configFS.putSingle("pluginmanager.loadplugin", "");
 		configFS.put("node.updater.enabled", false);
