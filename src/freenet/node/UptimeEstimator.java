@@ -27,6 +27,9 @@ import freenet.support.io.Closer;
  */
 public class UptimeEstimator implements Runnable {
 
+	/**
+	 * Five minutes in milliseconds.
+	 */
 	static final int PERIOD = 5*60*1000;
 
 	Ticker ticker;
@@ -57,7 +60,7 @@ public class UptimeEstimator implements Runnable {
 		prevFile = runDir.file("uptime.old.dat");
 		timeOffset = (int)
 			((((double)(Math.abs(Fields.hashCode(bs, bs.length / 2, bs.length - bs.length / 2)))) /  Integer.MAX_VALUE)
-			* (5*60*1000));
+			* PERIOD);
 	}
 
 	public void start() {
