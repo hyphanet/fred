@@ -832,6 +832,24 @@ public class SimpleFieldSet {
 		}
 	}
 
+	public byte getByte(String key) throws FSParseException {
+		String s = get(key);
+		if(s == null) throw new FSParseException("No key " + key);
+		try {
+			return Byte.parseByte(s);
+		} catch (NumberFormatException e) {
+			throw new FSParseException("Cannot parse \"" + s + "\" as a byte.");
+		}
+	}
+
+	public byte getByte(String key, byte def) {
+		try {
+			return getByte(key);
+		} catch (FSParseException e) {
+			return def;
+		}
+	}
+
 	public char getChar(String key) throws FSParseException {
 		String s = get(key);
 		if(s == null) throw new FSParseException("No key "+key);
