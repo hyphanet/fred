@@ -837,6 +837,16 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private boolean storePreallocate;
 
+	//Whether to respond to different types of probe requests.
+	private boolean respondBandwidth;
+	private boolean respondBuild;
+	private boolean respondIdentifier;
+	private boolean respondLinkLengths;
+	private boolean respondStoreSize;
+	private boolean respondUptime;
+
+	private long probeIdentifier;
+
 	/**
 	 * Read all storable settings (identity etc) from the node file.
 	 * @param filename The name of the file to read from.
@@ -2526,10 +2536,131 @@ public class Node implements TimeSkewDetectorCallback {
 
 		maxPacketSize = nodeConfig.getInt("maxPacketSize");
 		updateMTU();
-		
+
+		/*
+		 * Probe responses. If true, the node will give information in response to a probe request of this type.
+		 * If false, the node will send a refusal. This refusal is for error estimation so opting out doesn't
+		 * semi-transparently bias the results, as would dropping the probe or routing it on.
+		 */
+		/* TODO: All this callback business is incredibly verbose and repetitive. Is there a cleaner way? There
+		 * doesn't appear to be a way to get the config name from the callback, or one could do something like
+		 * define one callback which uses a single HashMap of names and values, not to mention the loading
+		 * afterwards.
+		 */
+		nodeConfig.register("probeBandwidth", true, sortOrder++, false, true, "Node.probeBandwidthShort",
+		    "Node.probeBandwidthLong", new BooleanCallback() {
+			@Override
+			public Boolean get() {
+				return respondBandwidth;
+			}
+
+			@Override
+			public void set(Boolean val) {
+				respondBandwidth = val;
+			}
+		});
+		respondBandwidth = nodeConfig.getBoolean("probeBandwidth");
+		nodeConfig.register("probeBuild", true, sortOrder++, false, true, "Node.probeBuildShort",
+		    "Node.probeBuildLong", new BooleanCallback() {
+			@Override
+			public Boolean get() {
+				return respondBuild;
+			}
+
+			@Override
+			public void set(Boolean val) {
+				respondBuild = val;
+			}
+		});
+		respondBuild = nodeConfig.getBoolean("probeBuild");
+		nodeConfig.register("probeIdentifier", true, sortOrder++, false, true,
+		    "Node.probeRespondIdentifierShort", "Node.probeRespondIdentifierLong", new BooleanCallback() {
+			@Override
+			public Boolean get() {
+				return respondIdentifier;
+			}
+
+			@Override
+			public void set(Boolean val) {
+				respondIdentifier = val;
+			}
+		});
+		respondIdentifier = nodeConfig.getBoolean("probeIdentifier");
+		nodeConfig.register("probeLinkLengths", true, sortOrder++, false, true, "Node.probeLinkLengthsShort",
+		    "Node.probeLinkLengthsLong", new BooleanCallback() {
+			@Override
+			public Boolean get() {
+				return respondLinkLengths;
+			}
+
+			@Override
+			public void set(Boolean val) {
+				respondLinkLengths = val;
+			}
+		});
+		respondLinkLengths = nodeConfig.getBoolean("probeLinkLengths");
+		nodeConfig.register("probeStoreSize", true, sortOrder++, false, true, "Node.probeStoreSizeShort",
+		    "Node.probeStoreSizeLong", new BooleanCallback() {
+			@Override
+			public Boolean get() {
+				return respondStoreSize;
+			}
+
+			@Override
+			// throws InvalidConfigValueException, NodeNeedRestartException
+			public void set(Boolean val) {
+				respondStoreSize = val;
+			}
+		});
+		respondStoreSize = nodeConfig.getBoolean("probeLinkLengths");
+		nodeConfig.register("probeUptime", true, sortOrder++, false, true, "Node.probeUptimeShort",
+		    "Node.probeUptimeLong", new BooleanCallback() {
+			@Override
+			public Boolean get() {
+				return respondUptime;
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+				respondUptime = val;
+			}
+		});
+		respondUptime = nodeConfig.getBoolean("probeUptime");
+
+		nodeConfig.register("identifier", -1, sortOrder++, true, true, "Node.probeIdentifierShort",
+		    "Node.probeIdentifierLong", new LongCallback() {
+			@Override
+			public Long get() {
+				return probeIdentifier;
+			}
+
+			@Override
+			public void set(Long val) {
+				probeIdentifier = val;
+				//-1 is reserved for picking a random value; don't pick it randomly.
+				while(probeIdentifier == -1) probeIdentifier = random.nextLong();
+			}
+		}, false);
+		probeIdentifier = nodeConfig.getLong("identifier");
+
+		/*
+		 * set() is not used when setting up an option with its default value, so do so manually to avoid using
+		 * an identifier of -1.
+		 */
+		try {
+			if(probeIdentifier == -1) nodeConfig.getOption("identifier").setValue("-1");
+		} catch (InvalidConfigValueException e) {
+			Logger.error(Node.class, "node.identifier set() unexpectedly threw.", e);
+		} catch (NodeNeedRestartException e) {
+			Logger.error(Node.class, "node.identifier set() unexpectedly threw.", e);
+		}
+
+
+		/* Take care that no configuration options are registered after this point; they will not persist
+		 * between restarts.
+		 */
 		nodeConfig.finishedInitialization();
-		if(shouldWriteConfig)
-			config.store();
+		if(shouldWriteConfig) config.store();
 		writeNodeFile();
 
 		// Initialize the plugin manager

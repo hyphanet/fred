@@ -396,6 +396,12 @@ public class NodeStarter implements WrapperListener {
 			configFS.put("node.maxPingTime", 100000);
 			configFS.put("node.subMaxPingTime", 50000);
 		}
+		configFS.put("node.respondBandwidth", true);
+		configFS.put("node.respondBuild", true);
+		configFS.put("node.respondIdentifier", true);
+		configFS.put("node.respondLinkLengths", true);
+		configFS.put("node.respondStoreSize", true);
+		configFS.put("node.respondUptime", true);
 
 		PersistentConfig config = new PersistentConfig(configFS);
 
