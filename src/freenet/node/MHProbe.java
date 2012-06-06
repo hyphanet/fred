@@ -332,7 +332,7 @@ public class MHProbe implements ByteCounter {
 
 		/*
 		 * Route to a peer, using Metropolis-Hastings correction and ignoring backoff to get a more uniform
-		 * endpoint distribution. HTL is decremented before routing so that it's possible to respondlocally.
+		 * endpoint distribution. HTL is decremented before routing so that it's possible to respond locally.
 		 */
 		htl = probabilisticDecrement(htl);
 		if (htl == 0) {
@@ -380,12 +380,12 @@ public class MHProbe implements ByteCounter {
 				 * Cannot do M-H correction; fall back to random walk.
 				 */
 				if (logDEBUG) Logger.debug(MHProbe.class, "Peer (" + candidate.userToString() +
-					") has no FOAF data.", e);
+				                                          ") has no FOAF data.", e);
 				acceptProbability = 1.0;
 			} catch (NullPointerException e) {
 				//Candidate's peer location array is null. See above for reasoning.
 				if (logDEBUG) Logger.debug(MHProbe.class, "Peer (" + candidate.userToString() +
-					") has no FOAF data.", e);
+				                                          ") has no FOAF data.", e);
 				acceptProbability = 1.0;
 			}
 			if (logDEBUG) Logger.debug(MHProbe.class, "acceptProbability is " + acceptProbability);
@@ -406,7 +406,7 @@ public class MHProbe implements ByteCounter {
 					}
 					//Refusal or an error should also be listened for so it can be relayed.
 					filter.or(MessageFilter.create().setSource(candidate).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.MHProbeRefused)
-						.or(MessageFilter.create().setSource(candidate).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.MHProbeError)));
+					      .or(MessageFilter.create().setSource(candidate).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.MHProbeError)));
 					message.set(DMT.HTL, htl);
 					try {
 						node.usm.addAsyncFilter(filter, callback, this);
@@ -459,7 +459,7 @@ public class MHProbe implements ByteCounter {
 					int i = 0;
 					for (PeerNode peer : node.peers.connectedPeers) {
 						linkLengths[i++] = randomNoise(Math.min(Math.abs(peer.getLocation() - node.peers.node.getLocation()),
-							1.0 - Math.abs(peer.getLocation() - node.peers.node.getLocation())));
+						                                        1.0 - Math.abs(peer.getLocation() - node.peers.node.getLocation())));
 					}
 					result = DMT.createMHProbeLinkLengths(uid, linkLengths);
 					break;
@@ -506,7 +506,7 @@ public class MHProbe implements ByteCounter {
 		case UPTIME_7D: return nc.getBoolean("probeUptime");
 		default:
 			//There a valid ProbeType value that is not present here.
-			if (logDEBUG) Logger.debug(MHProbe.class, "Probe type \"" + type.name() + "\" does not check" +
+			if (logDEBUG) Logger.debug(MHProbe.class, "Probe type \"" + type.name() + "\" does not check " +
 			                                          "if a response is allowed by the user; refusing.");
 			return false;
 		}
@@ -578,13 +578,14 @@ public class MHProbe implements ByteCounter {
 				try {
 					if (errorType.equals(ProbeError.UNKNOWN.name()) && logWARNING) {
 						Logger.warning(MHProbe.class, "Unexpectedly received local error \"" +
-							errorType + "\" from remote node.");
+						                              errorType + "\" from remote node.");
 					}
 					listener.onError(ProbeError.valueOf(errorType), null);
 				} catch (IllegalArgumentException e) {
 					listener.onError(ProbeError.UNKNOWN, errorType);
-					if (logDEBUG) Logger.debug(MHProbe.class, "Unknown error type \"" + errorType +
-						"\".");
+					if (logDEBUG) {
+						Logger.debug(MHProbe.class, "Unknown error type \"" + errorType + "\".");
+					}
 				}
 			} else if (message.getSpec().equals(DMT.MHProbeRefused)) {
 				listener.onRefused();
