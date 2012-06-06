@@ -130,8 +130,9 @@ public class RealNodeProbeTest extends RealNodeTest {
 		};
 
 		int index = random.nextInt(NUMBER_OF_NODES);
+		byte htl = MHProbe.MAX_HTL;
 		while (true) {
-			System.out.println("Sending probes from node " + index + ".");
+			System.out.println("Sending probes from node " + index + " with HTL " + htl + ".");
 			System.out.println("0) BANDWIDTH");
 			System.out.println("1) BUILD");
 			System.out.println("2) IDENTIFIER");
@@ -140,12 +141,16 @@ public class RealNodeProbeTest extends RealNodeTest {
 			System.out.println("5) UPTIME 48-hour");
 			System.out.println("6) UPTIME 7-day");
 			System.out.println("7) Pick another node");
+			System.out.println("8) Pick another HTL");
 			System.out.println("Anything else to exit.");
 			System.out.println("Select: ");
 			try {
 				int selection = Integer.valueOf(System.console().readLine());
-				if (selection != 7) nodes[index].dispatcher.mhProbe.start(MHProbe.MAX_HTL, random.nextLong(), types[selection], print);
-				else index = random.nextInt(NUMBER_OF_NODES);
+				if (selection == 7) index = random.nextInt(NUMBER_OF_NODES);
+				else if (selection == 8) {
+					System.out.print("Enter new HTL: ");
+					htl = Byte.valueOf(System.console().readLine());
+				} else nodes[index].dispatcher.mhProbe.start(htl, random.nextLong(), types[selection], print);
 			} catch (Exception e) {
 				//If a non-number is entered or one outside the bounds.
 				System.out.print(e.toString());
