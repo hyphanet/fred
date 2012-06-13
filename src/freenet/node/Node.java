@@ -2612,7 +2612,7 @@ public class Node implements TimeSkewDetectorCallback {
 				respondStoreSize = val;
 			}
 		});
-		respondStoreSize = nodeConfig.getBoolean("probeLinkLengths");
+		respondStoreSize = nodeConfig.getBoolean("probeStoreSize");
 		nodeConfig.register("probeUptime", true, sortOrder++, false, true, "Node.probeUptimeShort",
 		    "Node.probeUptimeLong", new BooleanCallback() {
 			@Override
