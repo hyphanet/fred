@@ -415,6 +415,7 @@ public class NodeStarter implements WrapperListener {
 		configFS.put("node.respondBuild", true);
 		configFS.put("node.respondIdentifier", true);
 		configFS.put("node.respondLinkLengths", true);
+		configFS.put("node.respondLocation", true);
 		configFS.put("node.respondStoreSize", true);
 		configFS.put("node.respondUptime", true);
 

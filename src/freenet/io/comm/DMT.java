@@ -1179,6 +1179,24 @@ public class DMT {
 		return msg;
 	}
 
+	public static final MessageType MHProbeLocation = new MessageType("MHProbeLocation", PRIORITY_HIGH) {{
+		addField(UID, Long.class);
+		addField(LOCATION, Double.class);
+	}};
+
+	/**
+	 * Creates a probe response to a query for location.
+	 * @param uid Probe identifier.
+	 * @param location Endpoint location.
+	 * @return Message with the requested attributes.
+	 */
+	public static Message createMHProbeLocation(long uid, double location) {
+		Message msg = new Message(MHProbeLocation);
+		msg.set(UID, uid);
+		msg.set(LOCATION, location);
+		return msg;
+	}
+
 	public static final MessageType MHProbeStoreSize = new MessageType("MHProbeStoreSize", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
 		addField(STORE_SIZE, Long.class);

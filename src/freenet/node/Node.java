@@ -842,6 +842,7 @@ public class Node implements TimeSkewDetectorCallback {
 	private boolean respondBuild;
 	private boolean respondIdentifier;
 	private boolean respondLinkLengths;
+	private boolean respondLocation;
 	private boolean respondStoreSize;
 	private boolean respondUptime;
 
@@ -2599,6 +2600,19 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 		});
 		respondLinkLengths = nodeConfig.getBoolean("probeLinkLengths");
+		nodeConfig.register("probeLocation", true, sortOrder++, false, true, "Node.probeLocationShort",
+		    "Node.probeLocationLong", new BooleanCallback() {
+			@Override
+			public Boolean get() {
+				return respondLocation;
+			}
+
+			@Override
+			public void set(Boolean val) {
+				respondLocation = val;
+			}
+		});
+		respondLocation = nodeConfig.getBoolean("probeLocation");
 		nodeConfig.register("probeStoreSize", true, sortOrder++, false, true, "Node.probeStoreSizeShort",
 		    "Node.probeStoreSizeLong", new BooleanCallback() {
 			@Override

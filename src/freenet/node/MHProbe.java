@@ -117,6 +117,7 @@ public class MHProbe implements ByteCounter {
 		BUILD,
 		IDENTIFIER,
 		LINK_LENGTHS,
+		LOCATION,
 		STORE_SIZE,
 		UPTIME_48H,
 		UPTIME_7D
@@ -163,6 +164,12 @@ public class MHProbe implements ByteCounter {
 		 * @param linkLengths endpoint's reported link lengths.
 		 */
 		void onLinkLengths(double[] linkLengths);
+
+		/**
+		 * Location result.
+		 * @param location location given by endpoint.
+		 */
+		void onLocation(double location);
 
 		/**
 		 * Store size result.
@@ -265,6 +272,7 @@ public class MHProbe implements ByteCounter {
 	 *         <li>output bandwidth</li>
 	 *         <li>store size</li>
 	 *         <li>link lengths</li>
+	 *         <li>location</li>
 	 *         <li>build number</li>
 	 * </ul>
 	 *
@@ -400,6 +408,7 @@ public class MHProbe implements ByteCounter {
 						case BUILD: filter.setType(DMT.MHProbeBuild); break;
 						case IDENTIFIER: filter.setType(DMT.MHProbeIdentifier); break;
 						case LINK_LENGTHS: filter.setType(DMT.MHProbeLinkLengths); break;
+						case LOCATION: filter.setType(DMT.MHProbeLocation); break;
 						case STORE_SIZE: filter.setType(DMT.MHProbeStoreSize); break;
 						case UPTIME_48H:
 						case UPTIME_7D: filter.setType(DMT.MHProbeUptime); break;
@@ -463,6 +472,9 @@ public class MHProbe implements ByteCounter {
 					}
 					result = DMT.createMHProbeLinkLengths(uid, linkLengths);
 					break;
+				case LOCATION:
+					result = DMT.createMHProbeLocation(uid, node.getLocation());
+					break;
 				case STORE_SIZE:
 					//1,073,741,824 bytes (2^30) per GiB
 					result = DMT.createMHProbeStoreSize(uid, randomNoise(Math.round((double)node.config.get("node").getLong("storeSize")/1073741824)));
@@ -501,6 +513,7 @@ public class MHProbe implements ByteCounter {
 		case BUILD: return nc.getBoolean("probeBuild");
 		case IDENTIFIER: return nc.getBoolean("probeIdentifier");
 		case LINK_LENGTHS: return nc.getBoolean("probeLinkLengths");
+		case LOCATION: return nc.getBoolean("probeLocation");
 		case STORE_SIZE: return nc.getBoolean("probeStoreSize");
 		case UPTIME_48H:
 		case UPTIME_7D: return nc.getBoolean("probeUptime");
@@ -569,6 +582,8 @@ public class MHProbe implements ByteCounter {
 				listener.onIdentifier(message.getLong(DMT.IDENTIFIER), message.getLong(DMT.UPTIME_PERCENT));
 			} else if (message.getSpec().equals(DMT.MHProbeLinkLengths)) {
 				listener.onLinkLengths(message.getDoubleArray(DMT.LINK_LENGTHS));
+			} else if (message.getSpec().equals(DMT.MHProbeLocation)) {
+				listener.onLocation(message.getDouble(DMT.LOCATION));
 			} else if (message.getSpec().equals(DMT.MHProbeStoreSize)) {
 				listener.onStoreSize(message.getLong(DMT.STORE_SIZE));
 			} else if (message.getSpec().equals(DMT.MHProbeUptime)) {

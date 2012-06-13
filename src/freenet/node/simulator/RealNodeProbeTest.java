@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.simulator;
 
+import freenet.config.SubConfig;
 import freenet.crypt.DummyRandomSource;
 import freenet.node.MHProbe;
 import freenet.node.Node;
@@ -109,6 +110,11 @@ public class RealNodeProbeTest extends RealNodeTest {
 			}
 
 			@Override
+			public void onLocation(double location) {
+				System.out.println("Probe got location " + location + ".");
+			}
+
+			@Override
 			public void onStoreSize(long storeSize) {
 				System.out.println("Probe got store size " + nf.format(storeSize) + " GiB.");
 			}
@@ -124,12 +130,13 @@ public class RealNodeProbeTest extends RealNodeTest {
 			MHProbe.ProbeType.BUILD,
 			MHProbe.ProbeType.IDENTIFIER,
 			MHProbe.ProbeType.LINK_LENGTHS,
+			MHProbe.ProbeType.LOCATION,
 			MHProbe.ProbeType.STORE_SIZE,
 			MHProbe.ProbeType.UPTIME_48H,
 			MHProbe.ProbeType.UPTIME_7D
 		};
 
-		int index = random.nextInt(NUMBER_OF_NODES);
+		int index = 0;
 		byte htl = MHProbe.MAX_HTL;
 		while (true) {
 			System.out.println("Sending probes from node " + index + " with HTL " + htl + ".");
@@ -137,19 +144,31 @@ public class RealNodeProbeTest extends RealNodeTest {
 			System.out.println("1) BUILD");
 			System.out.println("2) IDENTIFIER");
 			System.out.println("3) LINK_LENGTHS");
-			System.out.println("4) STORE_SIZE");
-			System.out.println("5) UPTIME 48-hour");
-			System.out.println("6) UPTIME 7-day");
-			System.out.println("7) Pick another node");
-			System.out.println("8) Pick another HTL");
+			System.out.println("4) LOCATION");
+			System.out.println("5) STORE_SIZE");
+			System.out.println("6) UPTIME 48-hour");
+			System.out.println("7) UPTIME 7-day");
+			System.out.println("8) Pick another node");
+			System.out.println("9) Pick another HTL");
+			System.out.println("10) Pick current node's refusals");
 			System.out.println("Anything else to exit.");
 			System.out.println("Select: ");
 			try {
 				int selection = Integer.valueOf(System.console().readLine());
-				if (selection == 7) index = random.nextInt(NUMBER_OF_NODES);
-				else if (selection == 8) {
+				if (selection == 8) {
+					System.out.print("Enter new node index ([0-" + (NUMBER_OF_NODES - 1) + "]):");
+					index = Integer.valueOf(System.console().readLine());
+				}
+				else if (selection == 9) {
 					System.out.print("Enter new HTL: ");
 					htl = Byte.valueOf(System.console().readLine());
+				} else if (selection == 10) {
+					SubConfig nodeConfig = nodes[index].config.get("node");
+					String[] options = { "probeBandwidth", "probeBuild", "probeIdentifier", "probeLinkLengths", "probeLinkLengths", "probeUptime" };
+					for (String option : options) {
+						System.out.print(option + ": ");
+						nodeConfig.set(option, Boolean.valueOf(System.console().readLine()));
+					}
 				} else nodes[index].dispatcher.mhProbe.start(htl, random.nextLong(), types[selection], print);
 			} catch (Exception e) {
 				//If a non-number is entered or one outside the bounds.
