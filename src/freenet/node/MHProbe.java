@@ -68,7 +68,7 @@ public class MHProbe implements ByteCounter {
 	/**
 	 * Maximum number of accepted probes in the past minute.
 	 */
-	public static final byte MAX_ACCEPTED = 5;
+	public static final byte MAX_ACCEPTED = 10;
 
 	private class SynchronizedCounter {
 		private byte c = 0;
