@@ -286,10 +286,14 @@ public class MHProbe implements ByteCounter {
 	 */
 	public void request(final Message message, final PeerNode source, final AsyncMessageFilterCallback callback) {
 		final Long uid = message.getLong(DMT.UID);
-		if (!accepted.containsKey(source)) {
-			accepted.put(source, new SynchronizedCounter());
+		SynchronizedCounter temp;
+		synchronized (accepted) {
+			if (!accepted.containsKey(source)) {
+				accepted.put(source, new SynchronizedCounter());
+			}
+			temp = this.accepted.get(source);
 		}
-		final SynchronizedCounter accepted = this.accepted.get(source);
+		final SynchronizedCounter accepted = temp;
 		if (accepted.value() >= MAX_ACCEPTED) {
 			if (logDEBUG) Logger.debug(MHProbe.class, "Already accepted maximum number of probes; rejecting incoming.");
 			try {
@@ -342,6 +346,13 @@ public class MHProbe implements ByteCounter {
 			@Override
 			public void run() {
 				accepted.decrement();
+				/* Once the counter hits zero, there's no reason to keep it around as it can just be
+				 * recreated when this peer sends another probe request without changing behavior.
+				 * To do otherwise would accumulate counters at zero over time.
+				 */
+				if (accepted.value() == 0) {
+					MHProbe.this.accepted.remove(source);
+				}
 			}
 		}, MINUTE);
 
