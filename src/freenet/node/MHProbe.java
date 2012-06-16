@@ -12,6 +12,9 @@ import freenet.io.comm.PeerContext;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -79,9 +82,9 @@ public class MHProbe implements ByteCounter {
 	}
 
 	/**
-	 * Number of accepted probes in the last minute.
+	 * Number of accepted probes in the last minute, keyed by peer.
 	 */
-	private final SynchronizedCounter accepted;
+	private final Map<PeerNode, SynchronizedCounter> accepted;
 
 	private final Node node;
 
@@ -230,7 +233,7 @@ public class MHProbe implements ByteCounter {
 
 	public MHProbe(Node node) {
 		this.node = node;
-		this.accepted = new SynchronizedCounter();
+		this.accepted = Collections.synchronizedMap(new HashMap<PeerNode, SynchronizedCounter>());
 		this.timer = new Timer(true);
 	}
 
@@ -283,6 +286,10 @@ public class MHProbe implements ByteCounter {
 	 */
 	public void request(final Message message, final PeerNode source, final AsyncMessageFilterCallback callback) {
 		final Long uid = message.getLong(DMT.UID);
+		if (!accepted.containsKey(source)) {
+			accepted.put(source, new SynchronizedCounter());
+		}
+		final SynchronizedCounter accepted = this.accepted.get(source);
 		if (accepted.value() >= MAX_ACCEPTED) {
 			if (logDEBUG) Logger.debug(MHProbe.class, "Already accepted maximum number of probes; rejecting incoming.");
 			try {
