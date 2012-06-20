@@ -1054,7 +1054,7 @@ public class DMT {
 	public static final MessageType MHProbeRequest = new MessageType("MHProbeRequest", PRIORITY_HIGH) {{
 		addField(HTL, Byte.class);
 		addField(UID, Long.class);
-		addField(TYPE, String.class);
+		addField(TYPE, Byte.class);
 	}};
 
 	/**
@@ -1067,13 +1067,13 @@ public class DMT {
 		Message msg = new Message(MHProbeRequest);
 		msg.set(HTL, htl);
 		msg.set(UID, uid);
-		msg.set(TYPE, type.name());
+		msg.set(TYPE, type.code);
 		return msg;
 	}
 
 	public static final MessageType MHProbeError = new MessageType("MHProbeError", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
-		addField(TYPE, String.class);
+		addField(TYPE, Byte.class);
 	}};
 
 	/**
@@ -1085,7 +1085,7 @@ public class DMT {
 	public static Message createMHProbeError(long uid, MHProbe.ProbeError error) {
 		Message msg = new Message(MHProbeError);
 		msg.set(UID, uid);
-		msg.set(TYPE, error.name());
+		msg.set(TYPE, error.code);
 		return msg;
 	}
 

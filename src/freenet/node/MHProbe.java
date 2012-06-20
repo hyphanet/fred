@@ -106,36 +106,64 @@ public class MHProbe implements ByteCounter {
 		/**
 		 * The node being waited on to provide a response disconnected.
 		 */
-		DISCONNECTED,
+		DISCONNECTED((byte)0),
 		/**
 		 * A node cannot accept the request because its probe DoS protection has tripped.
 		 */
-		OVERLOAD,
+		OVERLOAD((byte)1),
 		/**
 		 * Timed out while waiting for a response.
 		 */
-		TIMEOUT,
+		TIMEOUT((byte)2),
 		/**
 		 * Only used locally, not sent over the network. The local node did not recognize the error used.
 		 * This should always be specified along with the description string containing the remote error.
 		 */
-		UNKNOWN,
+		UNKNOWN((byte)3),
 		/**
 		 * A remote node did not recognize the requested probe type. For locally started probes it will not be
 		 * a ProbeError but a ProtocolError.
 		 */
-		UNRECOGNIZED_TYPE
+		UNRECOGNIZED_TYPE((byte)4);
+
+		/**
+		 * Stable numerical value to represent the enum value. Used to send over the network instead of .name().
+		 * Ordinals are not acceptable because they rely on the number and ordering of enums.
+		 */
+		public final byte code;
+
+		ProbeError(byte code) { this.code = code; }
+
+		static ProbeError valueOf(byte code) {
+			//TODO: This is clean, but is it too much slower than a switch-case?
+			//Switch-case would be more work to maintain as it requires repeating the codes used in the value constructors.
+			for (ProbeError value : ProbeError.values()) {
+				if (value.code == code) return value;
+			}
+			throw new IllegalArgumentException("There is no ProbeError with code " + code + ".");
+		}
 	}
 
 	public enum ProbeType {
-		BANDWIDTH,
-		BUILD,
-		IDENTIFIER,
-		LINK_LENGTHS,
-		LOCATION,
-		STORE_SIZE,
-		UPTIME_48H,
-		UPTIME_7D
+		BANDWIDTH((byte)0),
+		BUILD((byte)1),
+		IDENTIFIER((byte)2),
+		LINK_LENGTHS((byte)3),
+		LOCATION((byte)4),
+		STORE_SIZE((byte)5),
+		UPTIME_48H((byte)6),
+		UPTIME_7D((byte)7);
+
+		public final byte code;
+
+		ProbeType(byte code) { this.code = code; }
+
+		static ProbeType valueOf(byte code) {
+			for (ProbeType value : ProbeType.values()) {
+				if (value.code == code) return value;
+			}
+			throw new IllegalArgumentException("There is no ProbeType with code " + code + ".");
+		}
 	}
 
 	/**
@@ -144,11 +172,11 @@ public class MHProbe implements ByteCounter {
 	public interface Listener {
 		/**
 		 * An error occurred.
-		 @param error type: What error occurred. Can be one of MHProbe.ProbeError.
-		 * @param description description: Arbitrary string, Defined if the error type is UNKNOWN,
-		 *                                 Contains the unrecognized error from the message.
+		 * @param error type: What error occurred. Can be one of MHProbe.ProbeError.
+		 * @param rawError Error byte value. Defined if the error type is UNKNOWN, when it contains the
+		 *                 unrecognized error from the message.
 		 */
-		void onError(ProbeError error, String description);
+		void onError(ProbeError error, Byte rawError);
 
 		/**
 		 * Endpoint opted not to respond with the requested information.
@@ -325,7 +353,7 @@ public class MHProbe implements ByteCounter {
 		}
 		ProbeType type;
 		try {
-			type = ProbeType.valueOf(message.getString(DMT.TYPE));
+			type = ProbeType.valueOf(message.getByte(DMT.TYPE));
 			if (logDEBUG) Logger.debug(MHProbe.class, "Probe type is " + type.name() + ".");
 		} catch (IllegalArgumentException e) {
 			if (logDEBUG) Logger.debug(MHProbe.class, "Invalid probe type \"" + message.getString(DMT.TYPE) + "\".", e);
@@ -632,23 +660,24 @@ public class MHProbe implements ByteCounter {
 			} else if (message.getSpec().equals(DMT.MHProbeUptime)) {
 				listener.onUptime(message.getDouble(DMT.UPTIME_PERCENT));
 			} else if (message.getSpec().equals(DMT.MHProbeError)) {
-				final String errorType = message.getString(DMT.TYPE);
+				final byte rawError = message.getByte(DMT.TYPE);
 				try {
-					if (errorType.equals(ProbeError.UNKNOWN.name()) && logWARNING) {
+					final ProbeError error = ProbeError.valueOf(rawError);
+					if (error.equals(ProbeError.UNKNOWN) && logWARNING) {
 						Logger.warning(MHProbe.class, "Unexpectedly received local error \"" +
-						                              errorType + "\" from remote node.");
+						                              "UNKNOWN\" from remote node.");
 					}
-					listener.onError(ProbeError.valueOf(errorType), null);
+					listener.onError(error, null);
 				} catch (IllegalArgumentException e) {
-					listener.onError(ProbeError.UNKNOWN, errorType);
+					listener.onError(ProbeError.UNKNOWN, rawError);
 					if (logDEBUG) {
-						Logger.debug(MHProbe.class, "Unknown error type \"" + errorType + "\".");
+						Logger.debug(MHProbe.class, "Unknown error type \"" + rawError + "\".");
 					}
 				}
 			} else if (message.getSpec().equals(DMT.MHProbeRefused)) {
 				listener.onRefused();
 			}  else {
-				if (logDEBUG) Logger.debug(MHProbe.class, "Unknown probe result set " + message.getSpec().getName());
+				if (logDEBUG) Logger.debug(MHProbe.class, "Matched probe result set " + message.getSpec().getName() + ", but handling not implemented.");
 			}
 		}
 

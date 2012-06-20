@@ -69,8 +69,8 @@ public class ProbeRequest extends FCPMessage {
 			                                               "hopsToLive cannot be negative.", null, false);
 			MHProbe.Listener listener = new MHProbe.Listener() {
 				@Override
-				public void onError(MHProbe.ProbeError error, String description) {
-					handler.outputHandler.queue(new ProbeError(identifier, error, description));
+				public void onError(MHProbe.ProbeError error, Byte rawError) {
+					handler.outputHandler.queue(new ProbeError(identifier, error, rawError));
 				}
 
 				@Override

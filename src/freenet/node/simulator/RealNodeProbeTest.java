@@ -76,9 +76,9 @@ public class RealNodeProbeTest extends RealNodeTest {
 		final NumberFormat nf = NumberFormat.getInstance();
 		MHProbe.Listener print = new MHProbe.Listener() {
 			@Override
-			public void onError(MHProbe.ProbeError error, String description) {
+			public void onError(MHProbe.ProbeError error, Byte rawError) {
 				System.out.print("Probe error: " + error.name());
-				System.out.println(description == null ? "" : "(" + description + ")");
+				System.out.println(rawError == null ? "" : "(" + rawError + ")");
 			}
 
 			@Override
