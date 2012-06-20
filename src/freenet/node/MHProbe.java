@@ -356,6 +356,7 @@ public class MHProbe implements ByteCounter {
 			if (logWARNING) Logger.warning(MHProbe.class, "Received out-of-bounds HTL of " + htl + "; interpreting as " + MAX_HTL + ".");
 			htl = MAX_HTL;
 		}
+		boolean availableSlot = true;
 		//Allocate one of this peer's probe request slots for 60 seconds; send an overload if none are available.
 		synchronized (accepted) {
 			//If no counter exists for the current source, add one.
@@ -370,22 +371,8 @@ public class MHProbe implements ByteCounter {
 				if (counter.value() == 0) {
 					accepted.remove(source);
 				}
-				//Send an overload error back to the source.
-				if (logDEBUG) Logger.debug(MHProbe.class, "Already accepted maximum number of probes; rejecting incoming.");
-				try {
-					Message overload = DMT.createMHProbeError(uid, ProbeError.OVERLOAD);
-					//Locally sent message.
-					if (source == null) {
-						callback.onMatched(overload);
-					} else {
-						source.sendAsync(overload, null, this);
-					}
-				} catch (NotConnectedException e) {
-					if (logDEBUG) Logger.debug(MHProbe.class, "Source of excess probe no longer connected.", e);
-				} catch (NullPointerException e) {
-					if (logDEBUG) Logger.debug(MHProbe.class, "Source of excess probe no longer connected.", e);
-				}
-				return;
+				//Set a flag instead of sending inside the lock.
+				availableSlot = false;
 			}
 			//There's a free slot; increment the counter.
 			counter.increment();
@@ -405,6 +392,24 @@ public class MHProbe implements ByteCounter {
 					}
 				}
 			}, MINUTE);
+		}
+		if (!availableSlot) {
+			//Send an overload error back to the source.
+			if (logDEBUG) Logger.debug(MHProbe.class, "Already accepted maximum number of probes; rejecting incoming.");
+			try {
+				Message overload = DMT.createMHProbeError(uid, ProbeError.OVERLOAD);
+				//Locally sent message.
+				if (source == null) {
+					callback.onMatched(overload);
+				} else {
+					source.sendAsync(overload, null, this);
+				}
+			} catch (NotConnectedException e) {
+				if (logDEBUG) Logger.debug(MHProbe.class, "Source of excess probe no longer connected.", e);
+			} catch (NullPointerException e) {
+				if (logDEBUG) Logger.debug(MHProbe.class, "Source of excess probe no longer connected.", e);
+			}
+			return;
 		}
 
 		/*
