@@ -1146,6 +1146,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				cb.disconnected();
 			throw new NotConnectedException();
 		}
+		if(msg.getSource() != null) {
+			Logger.error(this, "Messages should NOT be relayed as-is, they should always be re-created to clear any sub-messages etc, see comments in Message.java!: "+msg, new Exception("error"));
+		}
 		addToLocalNodeSentMessagesToStatistic(msg);
 		MessageItem item = new MessageItem(msg, cb == null ? null : new AsyncMessageCallback[]{cb}, ctr);
 		long now = System.currentTimeMillis();
