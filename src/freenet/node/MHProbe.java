@@ -529,7 +529,7 @@ public class MHProbe implements ByteCounter {
 		try {
 			long wait = WAIT_MAX;
 			while (wait >= WAIT_MAX) wait = (long)(-Math.log(node.random.nextDouble()) * WAIT_BASE / Math.E);
-			wait(wait);
+			Thread.sleep(wait);
 		} catch (InterruptedException e) {
 			if (logDEBUG) Logger.debug(MHProbe.class, "Interrupted while waiting before sending response.", e);
 		}
