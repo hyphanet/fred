@@ -331,7 +331,7 @@ public class MHProbe implements ByteCounter {
 			temp = ProbeType.valueOf(message.getByte(DMT.TYPE));
 			if (logDEBUG) Logger.debug(MHProbe.class, "Probe type is " + temp.name() + ".");
 		} catch (IllegalArgumentException e) {
-			if (logDEBUG) Logger.debug(MHProbe.class, "Invalid probe type \"" + message.getString(DMT.TYPE) + "\".", e);
+			if (logDEBUG) Logger.warning(MHProbe.class, "Invalid probe type " + message.getByte(DMT.TYPE) + ".", e);
 			try {
 				Message unrecognized = DMT.createMHProbeError(uid, ProbeError.UNRECOGNIZED_TYPE);
 				//Locally sent message.
