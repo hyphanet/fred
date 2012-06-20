@@ -356,12 +356,13 @@ public class MHProbe implements ByteCounter {
 			if (logWARNING) Logger.warning(MHProbe.class, "Received out-of-bounds HTL of " + htl + "; interpreting as " + MAX_HTL + ".");
 			htl = MAX_HTL;
 		}
-		//If no counter exists for the current source, add one.
+		//Allocate one of this peer's probe request slots for 60 seconds; send an overload if none are available.
 		synchronized (accepted) {
+			//If no counter exists for the current source, add one.
 			if (!accepted.containsKey(source)) {
 				accepted.put(source, new SynchronizedCounter());
 			}
-		final SynchronizedCounter counter = accepted.get(source);
+			final SynchronizedCounter counter = accepted.get(source);
 			if (accepted.containsKey(source) && accepted.get(source).value() >= MAX_ACCEPTED) {
 				/* The counter is at zero, but it will not be incremented and thus not decremented and
 				 * checked for removal.
@@ -386,23 +387,24 @@ public class MHProbe implements ByteCounter {
 				}
 				return;
 			}
+			//There's a free slot; increment the counter.
 			counter.increment();
-		//One-minute window on acceptance; free up this probe's slot in 60 seconds.
-		timer.schedule(new TimerTask() {
-			@Override
-			public void run() {
-				counter.decrement();
-				/* Once the counter hits zero, there's no reason to keep it around as it can just be
-				 * recreated when this peer sends another probe request without changing behavior.
-				 * To do otherwise would accumulate counters at zero over time.
-				 */
-				synchronized (accepted) {
-				if (counter.value() == 0) {
-					MHProbe.this.accepted.remove(source);
+			//One-minute window on acceptance; free up this probe's slot in 60 seconds.
+			timer.schedule(new TimerTask() {
+				@Override
+				public void run() {
+					counter.decrement();
+					/* Once the counter hits zero, there's no reason to keep it around as it can just be
+					 * recreated when this peer sends another probe request without changing behavior.
+					 * To do otherwise would accumulate counters at zero over time.
+					 */
+					synchronized (accepted) {
+						if (counter.value() == 0) {
+							MHProbe.this.accepted.remove(source);
+						}
+					}
 				}
-				}
-			}
-		}, MINUTE);
+			}, MINUTE);
 		}
 
 		/*
