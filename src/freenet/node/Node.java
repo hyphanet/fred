@@ -2662,7 +2662,10 @@ public class Node implements TimeSkewDetectorCallback {
 		 * an identifier of -1.
 		 */
 		try {
-			if(probeIdentifier == -1) nodeConfig.getOption("identifier").setValue("-1");
+			if(probeIdentifier == -1) {
+				nodeConfig.getOption("identifier").setValue("-1");
+				shouldWriteConfig = true;
+			}
 		} catch (InvalidConfigValueException e) {
 			Logger.error(Node.class, "node.identifier set() unexpectedly threw.", e);
 		} catch (NodeNeedRestartException e) {
