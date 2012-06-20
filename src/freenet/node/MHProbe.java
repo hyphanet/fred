@@ -361,10 +361,10 @@ public class MHProbe implements ByteCounter {
 	public void request(final Message message, final PeerNode source, final AsyncMessageFilterCallback callback) {
 		final Long uid = message.getLong(DMT.UID);
 		if (overloadedFrom(uid, source, callback)) return;
-		ProbeType type;
+		ProbeType temp;
 		try {
-			type = ProbeType.valueOf(message.getByte(DMT.TYPE));
-			if (logDEBUG) Logger.debug(MHProbe.class, "Probe type is " + type.name() + ".");
+			temp = ProbeType.valueOf(message.getByte(DMT.TYPE));
+			if (logDEBUG) Logger.debug(MHProbe.class, "Probe type is " + temp.name() + ".");
 		} catch (IllegalArgumentException e) {
 			if (logDEBUG) Logger.debug(MHProbe.class, "Invalid probe type \"" + message.getString(DMT.TYPE) + "\".", e);
 			try {
@@ -382,6 +382,7 @@ public class MHProbe implements ByteCounter {
 			}
 			return;
 		}
+		final ProbeType type = temp;
 		byte htl = message.getByte(DMT.HTL);
 		if (htl < 1) {
 			if (logWARNING) Logger.warning(MHProbe.class, "Received out-of-bounds HTL of " + htl + "; interpreting as 1.");
