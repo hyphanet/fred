@@ -38,7 +38,16 @@ import freenet.support.ShortBuffer;
 import freenet.support.Logger.LogLevel;
 
 /**
- * A Message which can be read from and written to a DatagramPacket
+ * A Message which can be read from and written to a DatagramPacket.
+ * 
+ * SECURITY REDFLAG WARNING: Messages should normally be recreated rather 
+ * than passed on. Messages can contain sub-messages, these are used to
+ * avoid having to add whole new message types every time we add one field
+ * to a message... Passing on a message as-is means it includes the 
+ * sub-messages, which could lead to e.g. labelling, communication between
+ * colluding nodes along a request route, and just wasting bytes.
+ * 
+ * FIXME we should get rid of sub-messages.
  *
  * @author ian
  */
