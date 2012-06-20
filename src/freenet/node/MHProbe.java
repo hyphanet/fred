@@ -305,40 +305,6 @@ public class MHProbe implements ByteCounter {
 	}
 
 	/**
-	 * Checks whether the source node has overloaded this node's willingness to accept its probe requests
-	 * @param uid UID of probe request.
-	 * @param source Source of probe request, or null if local.
-	 * @param callback Used only to respond to local requests.
-	 * @return True if the source node's counter has hit the maximum, false if not.
-	 */
-	private boolean overloadedFrom(final Long uid, final PeerNode source, final AsyncMessageFilterCallback callback) {
-		//TODO: This boolean is evaluated outside the if so that the if is not in the synchronized, in an attempt to minimize time in synchronized. Is it effective, and more importantly is it worth it?
-		boolean reject;
-		synchronized (accepted) {
-			//No counter means zero accepted from this source.
-			reject = accepted.containsKey(source) && accepted.get(source).value() >= MAX_ACCEPTED;
-		}
-		if (reject) {
-			if (logDEBUG) Logger.debug(MHProbe.class, "Already accepted maximum number of probes; rejecting incoming.");
-			try {
-				Message overload = DMT.createMHProbeError(uid, ProbeError.OVERLOAD);
-				//Locally sent message.
-				if (source == null) {
-					callback.onMatched(overload);
-				} else {
-					source.sendAsync(overload, null, this);
-				}
-				return true;
-			} catch (NotConnectedException e) {
-				if (logDEBUG) Logger.debug(MHProbe.class, "Source of excess probe no longer connected.", e);
-			} catch (NullPointerException e) {
-				if (logDEBUG) Logger.debug(MHProbe.class, "Source of excess probe no longer connected.", e);
-			}
-		}
-		return false;
-	}
-
-	/**
 	 * Processes an incoming probe request.
 	 * If the probe has a positive HTL, routes with MH correction and probabilistically decrements HTL.
 	 * If the probe comes to have an HTL of zero: (an incoming HTL of zero is taken to be one.)
@@ -360,7 +326,6 @@ public class MHProbe implements ByteCounter {
 	 */
 	public void request(final Message message, final PeerNode source, final AsyncMessageFilterCallback callback) {
 		final Long uid = message.getLong(DMT.UID);
-		if (overloadedFrom(uid, source, callback)) return;
 		ProbeType temp;
 		try {
 			temp = ProbeType.valueOf(message.getByte(DMT.TYPE));
@@ -396,20 +361,32 @@ public class MHProbe implements ByteCounter {
 			if (!accepted.containsKey(source)) {
 				accepted.put(source, new SynchronizedCounter());
 			}
-		}
 		final SynchronizedCounter counter = accepted.get(source);
-		synchronized (counter) {
-			if (overloadedFrom(uid, source, callback)) {
+			if (accepted.containsKey(source) && accepted.get(source).value() >= MAX_ACCEPTED) {
 				/* The counter is at zero, but it will not be incremented and thus not decremented and
 				 * checked for removal.
 				 */
 				if (counter.value() == 0) {
 					accepted.remove(source);
 				}
+				//Send an overload error back to the source.
+				if (logDEBUG) Logger.debug(MHProbe.class, "Already accepted maximum number of probes; rejecting incoming.");
+				try {
+					Message overload = DMT.createMHProbeError(uid, ProbeError.OVERLOAD);
+					//Locally sent message.
+					if (source == null) {
+						callback.onMatched(overload);
+					} else {
+						source.sendAsync(overload, null, this);
+					}
+				} catch (NotConnectedException e) {
+					if (logDEBUG) Logger.debug(MHProbe.class, "Source of excess probe no longer connected.", e);
+				} catch (NullPointerException e) {
+					if (logDEBUG) Logger.debug(MHProbe.class, "Source of excess probe no longer connected.", e);
+				}
 				return;
 			}
 			counter.increment();
-		}
 		//One-minute window on acceptance; free up this probe's slot in 60 seconds.
 		timer.schedule(new TimerTask() {
 			@Override
@@ -419,11 +396,14 @@ public class MHProbe implements ByteCounter {
 				 * recreated when this peer sends another probe request without changing behavior.
 				 * To do otherwise would accumulate counters at zero over time.
 				 */
+				synchronized (accepted) {
 				if (counter.value() == 0) {
 					MHProbe.this.accepted.remove(source);
 				}
+				}
 			}
 		}, MINUTE);
+		}
 
 		/*
 		 * Route to a peer, using Metropolis-Hastings correction and ignoring backoff to get a more uniform
