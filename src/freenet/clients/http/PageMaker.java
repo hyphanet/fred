@@ -679,7 +679,11 @@ public final class PageMaker {
 	private HTMLNode getOverrideContent() {
 		return new HTMLNode("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "stylesheet", override, "text/css", "screen", "custom" });
 	}
-	
+
+	public boolean advancedMode(HTTPRequest req, ToadletContainer container) {
+		return parseMode(req, container) >= MODE_ADVANCED;
+	}
+
 	/** Call this before getPageNode(), so the menus reflect the advanced mode setting. */
 	@Deprecated
 	public int parseMode(HTTPRequest req, ToadletContainer container) {
