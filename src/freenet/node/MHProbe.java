@@ -364,7 +364,7 @@ public class MHProbe implements ByteCounter {
 				accepted.put(source, new Counter());
 			}
 			final Counter counter = accepted.get(source);
-			if (accepted.containsKey(source) && accepted.get(source).value() >= MAX_ACCEPTED) {
+			if (counter.value() >= MAX_ACCEPTED) {
 				/* The counter is at zero, but it will not be incremented and thus not decremented and
 				 * checked for removal.
 				 */
