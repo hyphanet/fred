@@ -30,10 +30,10 @@ public class LocalDirectoryConfigToadlet extends LocalDirectoryToadlet {
 	@Override
 	protected void createSelectDirectoryButton (HTMLNode formNode, String path, HTMLNode persist) {
 		formNode.addChild("input", new String[] { "type", "name", "value" }, 
-		        new String[] { "submit", "select-dir",
+		        new String[] { "submit", selectDir,
 		                NodeL10n.getBase().getString("ConfigToadlet.selectDirectory")});
 		formNode.addChild("input", new String[] { "type", "name", "value" }, 
-		        new String[] { "hidden", "filename", path});
+		        new String[] { "hidden", filenameField(), path});
 		formNode.addChild(persist);
 	}
 

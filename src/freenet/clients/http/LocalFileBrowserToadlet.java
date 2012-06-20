@@ -12,6 +12,7 @@ import freenet.support.api.HTTPRequest;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Hashtable;
@@ -22,6 +23,7 @@ import java.util.Hashtable;
  */
 public abstract class LocalFileBrowserToadlet extends Toadlet {	
 	protected final NodeClientCore core;
+	private static final int maxPOSTSize = 1024*1024;
 
 	public LocalFileBrowserToadlet (NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient) {
 		super(highLevelSimpleClient);
@@ -32,6 +34,34 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 	public abstract String path();
 	
 	protected abstract String postTo();
+
+	/**
+	 * Last directory from which an action was performed. If accessible, this is used instead of the fallback
+	 * default directory.
+	 */
+	private File lastSuccessful;
+
+	/**
+	 * Part set when a directory is selected.
+	 */
+	public static final String selectDir = "select-dir";
+
+	/**
+	 * Part set when a file is selected.
+	 */
+	public static final String selectFile = "select-file";
+
+	/**
+	 * Part set when a directory is changed.
+	 */
+	public static final String changeDir = "change-dir";
+
+	/**
+	 * @return Part which contains selected directory or file.
+	 */
+	protected String filenameField() {
+		return "filename";
+	}
 
 	/**
 	 * Whether the directory is allowed for the purposes of the specific browser. For example, do the node settings
@@ -89,31 +119,49 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 		//If locations are explicitly specified take the first one.
 		return core.getAllowedDownloadDirs()[0].getAbsolutePath();
 	}
-	
+
+	/**
+	 * Renders directory selection button with selectDir and filenameField() set.
+	 * @param node Node to add the button to.
+	 * @param absolutePath Path to set the filenameField() field to.
+	 * @param persistence Additional persistence fields to include.
+	 */
 	protected void createSelectDirectoryButton (HTMLNode node, String absolutePath, HTMLNode persistence) {
 		node.addChild("input",
 		        new String[]{"type", "name", "value"},
-		        new String[]{"submit", "select-dir", l10n("insert")});
+		        new String[]{"submit", selectDir, l10n("insert")});
 		node.addChild("input",
 		        new String[]{"type", "name", "value"},
-		        new String[]{"hidden", "filename", absolutePath});
-		node.addChild(persistence);
-	}
-	
-	protected void createSelectFileButton (HTMLNode node, String absolutePath, HTMLNode persistence) {
-		node.addChild("input",
-		        new String[]{"type", "name", "value"},
-		        new String[]{"submit", "select-file", l10n("insert")});
-		node.addChild("input",
-		        new String[]{"type", "name", "value"},
-		        new String[]{"hidden", "filename", absolutePath});
+		        new String[]{"hidden", filenameField(), absolutePath});
 		node.addChild(persistence);
 	}
 
+	/**
+	 * Renders file selection button with selectFile and filenameField() set.
+	 * @param node Node to add the button to.
+	 * @param absolutePath Path to set the filenameField() field to.
+	 * @param persistence Additional persistence fields to include.
+	 */
+	protected void createSelectFileButton (HTMLNode node, String absolutePath, HTMLNode persistence) {
+		node.addChild("input",
+		        new String[]{"type", "name", "value"},
+		        new String[]{"submit", selectFile, l10n("insert")});
+		node.addChild("input",
+		        new String[]{"type", "name", "value"},
+		        new String[]{"hidden", filenameField(), absolutePath});
+		node.addChild(persistence);
+	}
+
+	/**
+	 * Renders directory changing button with changeDir and filenameField() set.
+	 * @param node Node to add the button to.
+	 * @param path Path to set the "path" field to.
+	 * @param persistence Additional persistence fields to include.
+	 */
 	private void createChangeDirButton (HTMLNode node, String buttonText, String path, HTMLNode persistence) {
 		node.addChild("input",
 		        new String[]{"type", "name", "value"},
-		        new String[]{"submit", "change-dir", buttonText});
+		        new String[]{"submit", changeDir, buttonText});
 		node.addChild("input",
 		        new String[]{"type", "name", "value"},
 		        new String[]{"hidden", "path", path});
@@ -141,7 +189,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 	private Hashtable<String, String> readPOST (HTTPRequest request) {
 		Hashtable<String, String> set = new Hashtable<String, String>();
 		for (String key : request.getParts()) {
-			set.put(key, request.getPartAsStringFailsafe(key, 1024*1024));
+			set.put(key, request.getPartAsStringFailsafe(key, maxPOSTSize));
 		}
 		return set;
 	}
@@ -161,6 +209,19 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 		return result;
 	}
 
+	private String selectedValue(HTTPRequest request) {
+		if (request.isParameterSet(filenameField()) &&
+		    (request.isParameterSet(selectDir) || request.isParameterSet(selectFile))) {
+			//Request is a GET.
+			return request.getParam(filenameField());
+		} else if (request.isPartSet(filenameField()) &&
+		           (request.isPartSet(selectDir) || request.isPartSet(selectFile))) {
+			//Request is a POST.
+			return request.getPartAsStringFailsafe(filenameField(), maxPOSTSize);
+		}
+		return null;
+	}
+
 	/**
 	 * @param uri is unused,
 	 * @param request contains parameters.
@@ -174,22 +235,51 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 	 * @see "<a href="freenet/clients/http/ToadletContext.html">ToadletContext</a>
 	 */
 	public void handleMethodGET (URI uri, HTTPRequest request, final ToadletContext ctx)
-	        throws ToadletContextClosedException, IOException {
-		renderPage(persistenceFields(readGET(request)), request.getParam("path"), ctx);
+	        throws ToadletContextClosedException, IOException, RedirectException {
+		renderPage(persistenceFields(readGET(request)), request.getParam("path"), ctx, selectedValue(request));
 	}
 
 	public void handleMethodPOST (URI uri, HTTPRequest request, final ToadletContext ctx)
-	        throws ToadletContextClosedException, IOException {
-		renderPage(persistenceFields(readPOST(request)), request.getPartAsStringFailsafe("path", 4096), ctx);
+	        throws ToadletContextClosedException, IOException, RedirectException {
+		renderPage(persistenceFields(readPOST(request)), request.getPartAsStringFailsafe("path", maxPOSTSize),
+		           ctx, selectedValue(request));
 	}
-	
-	private void renderPage (Hashtable<String, String> fieldPairs, String path, final ToadletContext ctx)
-	        throws ToadletContextClosedException, IOException {
+
+	/**
+	 * Presents a file selection screen, or a something has been selected notes its directory and redirects to the
+	 * POST target.
+	 * @param fieldPairs fields which are to be persisted between views
+	 * @param path current path to display
+	 * @param ctx context used for rendering
+	 * @param filename a filename if a file or directory is selected, NULL if not.
+	 * @throws ToadletContextClosedException
+	 * @throws IOException
+	 * @throws RedirectException
+	 */
+	private void renderPage (Hashtable<String, String> fieldPairs, String path, final ToadletContext ctx, String filename)
+	        throws ToadletContextClosedException, IOException, RedirectException {
 		HTMLNode persistenceFields = renderPersistenceFields(fieldPairs);
 
+		if (filename != null) {
+			File file = new File(filename);
+			if (file.isDirectory()) lastSuccessful = file.getAbsoluteFile();
+			else lastSuccessful = file.getParentFile().getAbsoluteFile();
+
+			try {
+				System.out.println(postTo());
+				throw new RedirectException(postTo());
+			} catch (URISyntaxException e) {
+				sendErrorPage(ctx, 500, NodeL10n.getBase().getString("Toadlet.internalErrorPleaseReport"),
+				              e.getMessage());
+			}
+		}
+
 		if (path.length() == 0) {
-			//Path not specified, fall back to default.
-			path = startingDir();
+			if (lastSuccessful != null && lastSuccessful.isDirectory() && allowedDir(lastSuccessful)) {
+				path = lastSuccessful.getAbsolutePath();
+			} else {
+				path = startingDir();
+			}
 		}
 
 		File currentPath = new File(path).getCanonicalFile();
@@ -280,7 +370,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 						// Select directory
 						if (allowedDir(currentFile)) {
 						HTMLNode cellNode = fileRow.addChild("td");
-						HTMLNode formNode = ctx.addFormChild(cellNode, postTo(),
+						HTMLNode formNode = ctx.addFormChild(cellNode, path(),
 						        "insertLocalFileForm");
 
 							createSelectDirectoryButton(formNode, currentFile.getAbsolutePath(),
@@ -303,7 +393,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 					if (currentFile.canRead()) {
 						//Select file
 						HTMLNode cellNode = fileRow.addChild("td");
-						HTMLNode formNode = ctx.addFormChild(cellNode, postTo(),
+						HTMLNode formNode = ctx.addFormChild(cellNode, path(),
 						        "insertLocalFileForm");
 						createSelectFileButton(formNode, currentFile.getAbsolutePath(),
 						        persistenceFields);
