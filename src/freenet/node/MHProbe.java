@@ -73,12 +73,12 @@ public class MHProbe implements ByteCounter {
 	 */
 	public static final byte MAX_ACCEPTED = 10;
 
-	private class SynchronizedCounter {
+	private class Counter {
 		private byte c = 0;
 
-		public synchronized void increment() { c++; }
-		public synchronized void decrement() { c--; }
-		public synchronized byte value() { return c; }
+		public void increment() { c++; }
+		public void decrement() { c--; }
+		public byte value() { return c; }
 	}
 
 	/**
@@ -96,7 +96,7 @@ public class MHProbe implements ByteCounter {
 	/**
 	 * Number of accepted probes in the last minute, keyed by peer.
 	 */
-	private final Map<PeerNode, SynchronizedCounter> accepted;
+	private final Map<PeerNode, Counter> accepted;
 
 	private final Node node;
 
@@ -273,7 +273,7 @@ public class MHProbe implements ByteCounter {
 
 	public MHProbe(Node node) {
 		this.node = node;
-		this.accepted = Collections.synchronizedMap(new HashMap<PeerNode, SynchronizedCounter>());
+		this.accepted = Collections.synchronizedMap(new HashMap<PeerNode, Counter>());
 		this.timer = new Timer(true);
 	}
 
@@ -361,9 +361,9 @@ public class MHProbe implements ByteCounter {
 		synchronized (accepted) {
 			//If no counter exists for the current source, add one.
 			if (!accepted.containsKey(source)) {
-				accepted.put(source, new SynchronizedCounter());
+				accepted.put(source, new Counter());
 			}
-			final SynchronizedCounter counter = accepted.get(source);
+			final Counter counter = accepted.get(source);
 			if (accepted.containsKey(source) && accepted.get(source).value() >= MAX_ACCEPTED) {
 				/* The counter is at zero, but it will not be incremented and thus not decremented and
 				 * checked for removal.
@@ -380,12 +380,13 @@ public class MHProbe implements ByteCounter {
 			timer.schedule(new TimerTask() {
 				@Override
 				public void run() {
-					counter.decrement();
-					/* Once the counter hits zero, there's no reason to keep it around as it can just be
-					 * recreated when this peer sends another probe request without changing behavior.
-					 * To do otherwise would accumulate counters at zero over time.
-					 */
 					synchronized (accepted) {
+						counter.decrement();
+						/* Once the counter hits zero, there's no reason to keep it around as it
+						 * can just be recreated when this peer sends another probe request
+						 * without changing behavior. To do otherwise would accumulate counters
+						 * at zero over time.
+						 */
 						if (counter.value() == 0) {
 							MHProbe.this.accepted.remove(source);
 						}
