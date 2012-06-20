@@ -305,6 +305,40 @@ public class MHProbe implements ByteCounter {
 	}
 
 	/**
+	 * Checks whether the source node has overloaded this node's willingness to accept its probe requests
+	 * @param uid UID of probe request.
+	 * @param source Source of probe request, or null if local.
+	 * @param callback Used only to respond to local requests.
+	 * @return True if the source node's counter has hit the maximum, false if not.
+	 */
+	private boolean overloadedFrom(final Long uid, final PeerNode source, final AsyncMessageFilterCallback callback) {
+		//TODO: This boolean is evaluated outside the if so that the if is not in the synchronized, in an attempt to minimize time in synchronized. Is it effective, and more importantly is it worth it?
+		boolean reject;
+		synchronized (accepted) {
+			//No counter means zero accepted from this source.
+			reject = accepted.containsKey(source) && accepted.get(source).value() >= MAX_ACCEPTED;
+		}
+		if (reject) {
+			if (logDEBUG) Logger.debug(MHProbe.class, "Already accepted maximum number of probes; rejecting incoming.");
+			try {
+				Message overload = DMT.createMHProbeError(uid, ProbeError.OVERLOAD);
+				//Locally sent message.
+				if (source == null) {
+					callback.onMatched(overload);
+				} else {
+					source.sendAsync(overload, null, this);
+				}
+				return true;
+			} catch (NotConnectedException e) {
+				if (logDEBUG) Logger.debug(MHProbe.class, "Source of excess probe no longer connected.", e);
+			} catch (NullPointerException e) {
+				if (logDEBUG) Logger.debug(MHProbe.class, "Source of excess probe no longer connected.", e);
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * Processes an incoming probe request.
 	 * If the probe has a positive HTL, routes with MH correction and probabilistically decrements HTL.
 	 * If the probe comes to have an HTL of zero: (an incoming HTL of zero is taken to be one.)
@@ -326,31 +360,7 @@ public class MHProbe implements ByteCounter {
 	 */
 	public void request(final Message message, final PeerNode source, final AsyncMessageFilterCallback callback) {
 		final Long uid = message.getLong(DMT.UID);
-		SynchronizedCounter temp;
-		synchronized (accepted) {
-			if (!accepted.containsKey(source)) {
-				accepted.put(source, new SynchronizedCounter());
-			}
-			temp = this.accepted.get(source);
-		}
-		final SynchronizedCounter accepted = temp;
-		if (accepted.value() >= MAX_ACCEPTED) {
-			if (logDEBUG) Logger.debug(MHProbe.class, "Already accepted maximum number of probes; rejecting incoming.");
-			try {
-				Message overload = DMT.createMHProbeError(uid, ProbeError.OVERLOAD);
-				//Locally sent message.
-				if (source == null) {
-					callback.onMatched(overload);
-				} else {
-					source.sendAsync(overload, null, this);
-				}
-			} catch (NotConnectedException e) {
-				if (logDEBUG) Logger.debug(MHProbe.class, "Source of excess probe no longer connected.", e);
-			} catch (NullPointerException e) {
-				if (logDEBUG) Logger.debug(MHProbe.class, "Source of excess probe no longer connected.", e);
-			}
-			return;
-		}
+		if (overloadedFrom(uid, source, callback)) return;
 		ProbeType type;
 		try {
 			type = ProbeType.valueOf(message.getByte(DMT.TYPE));
@@ -380,17 +390,35 @@ public class MHProbe implements ByteCounter {
 			if (logWARNING) Logger.warning(MHProbe.class, "Received out-of-bounds HTL of " + htl + "; interpreting as " + MAX_HTL + ".");
 			htl = MAX_HTL;
 		}
-		accepted.increment();
+		//If no counter exists for the current source, add one.
+		synchronized (accepted) {
+			if (!accepted.containsKey(source)) {
+				accepted.put(source, new SynchronizedCounter());
+			}
+		}
+		final SynchronizedCounter counter = accepted.get(source);
+		synchronized (counter) {
+			if (overloadedFrom(uid, source, callback)) {
+				/* The counter is at zero, but it will not be incremented and thus not decremented and
+				 * checked for removal.
+				 */
+				if (counter.value() == 0) {
+					accepted.remove(source);
+				}
+				return;
+			}
+			counter.increment();
+		}
 		//One-minute window on acceptance; free up this probe's slot in 60 seconds.
 		timer.schedule(new TimerTask() {
 			@Override
 			public void run() {
-				accepted.decrement();
+				counter.decrement();
 				/* Once the counter hits zero, there's no reason to keep it around as it can just be
 				 * recreated when this peer sends another probe request without changing behavior.
 				 * To do otherwise would accumulate counters at zero over time.
 				 */
-				if (accepted.value() == 0) {
+				if (counter.value() == 0) {
 					MHProbe.this.accepted.remove(source);
 				}
 			}
@@ -698,6 +726,7 @@ public class MHProbe implements ByteCounter {
 	/**
 	 * Filter listener which relays messages (intended to be responses to the probe) to the node (intended to be
 	 * that from which the probe request was received) given during construction. Used for received probe requests.
+	 * TODO: Replace with Listener which reconstructs the messages to remove submessages and sends them.
 	 */
 	private class ResultRelay implements AsyncMessageFilterCallback {
 
