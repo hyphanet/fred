@@ -407,8 +407,10 @@ public class MHProbe implements ByteCounter {
 	 */
 	private void route(final Message message, final ProbeType type, final long uid, byte htl,
 	                   final Listener listener) {
+		//TODO: When to update this array, and how to determine that an update is needed?
+		PeerNode[] peers = node.peers.connectedPeers;
 		//Degree of the local node.
-		int degree = degree();
+		int degree = peers.length;
 		PeerNode candidate;
 		//Loop until HTL runs out, in which case return a result, or the probe is relayed on to a peer.
 		for (; htl > 0; htl = probabilisticDecrement(htl)) {
@@ -422,31 +424,17 @@ public class MHProbe implements ByteCounter {
 				listener.onError(ProbeError.DISCONNECTED, null);
 				return;
 			}
-			try {
-				candidate = node.peers.myPeers[node.random.nextInt(degree)];
-			} catch (IndexOutOfBoundsException e) {
-				if (logDEBUG) Logger.debug(MHProbe.class, "Peer count changed during candidate search.", e);
-				degree = degree();
-				continue;
-			}
+			candidate = peers[node.random.nextInt(degree)];
+
 			//acceptProbability is the MH correction.
 			double acceptProbability;
-			try {
-				acceptProbability = (double)degree / candidate.getDegree();
-			} catch (ArithmeticException e) {
-				/*
-				 * Candidate's degree is zero: its peer locations are unknown.
-				 * Cannot do M-H correction; fall back to random walk.
-				 */
-				if (logDEBUG) Logger.debug(MHProbe.class, "Peer (" + candidate.userToString() +
-				                                          ") has no FOAF data.", e);
-				acceptProbability = 1.0;
-			} catch (NullPointerException e) {
-				//Candidate's peer location array is null. See above for reasoning.
-				if (logDEBUG) Logger.debug(MHProbe.class, "Peer (" + candidate.userToString() +
-				                                          ") has no FOAF data.", e);
-				acceptProbability = 1.0;
-			}
+			int candidateDegree = candidate.getDegree();
+			/* Candidate's degree is unknown; fall back to random walk by accepting this candidate
+			 * regardless of its degree.
+			 */
+			if (candidateDegree == 0) acceptProbability = 1.0;
+			else acceptProbability = (double)degree / candidateDegree;
+
 			if (logDEBUG) Logger.debug(MHProbe.class, "acceptProbability is " + acceptProbability);
 			if (node.random.nextDouble() < acceptProbability) {
 				if (logDEBUG) Logger.debug(MHProbe.class, "Accepted candidate.");
@@ -513,9 +501,10 @@ public class MHProbe implements ByteCounter {
 					                      Math.round(randomNoise(100*node.uptime.getUptimeWeek())));
 					break;
 				case LINK_LENGTHS:
-					double[] linkLengths = new double[degree()];
+					PeerNode[] peers = node.peers.connectedPeers;
+					double[] linkLengths = new double[peers.length];
 					int i = 0;
-					for (PeerNode peer : node.peers.connectedPeers) {
+					for (PeerNode peer : peers) {
 						linkLengths[i++] = randomNoise(Math.min(Math.abs(peer.getLocation() - node.peers.node.getLocation()),
 						                                        1.0 - Math.abs(peer.getLocation() - node.peers.node.getLocation())));
 					}
@@ -571,13 +560,6 @@ public class MHProbe implements ByteCounter {
 			return 1;
 		}
 		return (byte)(htl - 1);
-	}
-
-	/**
-	 * @return number of peers the local node is connected to.
-	 */
-	private int degree() {
-		return node.peers.connectedPeers.length;
 	}
 
 	/**

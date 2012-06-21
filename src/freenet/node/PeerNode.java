@@ -1825,7 +1825,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 	}
 
+	/**
+	 * Determines the degree of the peer via the locations of its peers it provides.
+	 * @return The number of peers this peer reports having, or 0 if this peer does not provide that information.
+	 */
 	public int getDegree() {
+		if (currentPeersLocation == null) return 0;
 		return currentPeersLocation.length;
 	}
 
