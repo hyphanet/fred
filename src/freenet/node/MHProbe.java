@@ -363,12 +363,6 @@ public class MHProbe implements ByteCounter {
 			}
 			final Counter counter = accepted.get(source);
 			if (counter.value() >= MAX_ACCEPTED) {
-				/* The counter is at zero, but it will not be incremented and thus not decremented and
-				 * checked for removal.
-				 */
-				if (counter.value() == 0) {
-					accepted.remove(source);
-				}
 				//Set a flag instead of sending inside the lock.
 				availableSlot = false;
 			} else {
