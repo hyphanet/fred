@@ -525,14 +525,14 @@ public class MHProbe implements ByteCounter {
 		switch (type) {
 			case BANDWIDTH:
 				//1,024 (2^10) bytes per KiB
-				listener.onOutputBandwidth(randomNoise(Math.round((double)node.config.get("node").getInt("outputBandwidthLimit")/1024)));
+				listener.onOutputBandwidth(randomNoise(Math.round((double)node.getOutputBandwidthLimit()/1024)));
 				break;
 			case BUILD:
 				listener.onBuild(node.nodeUpdater.getMainVersion());
 				break;
 			case IDENTIFIER:
 				//7-day uptime with random noise, then quantized.
-				listener.onIdentifier(node.config.get("node").getLong("identifier"),
+				listener.onIdentifier(node.getProbeIdentifier(),
 				                      Math.round(randomNoise(100*node.uptime.getUptimeWeek())));
 				break;
 			case LINK_LENGTHS:
@@ -540,8 +540,8 @@ public class MHProbe implements ByteCounter {
 				double[] linkLengths = new double[peers.length];
 				int i = 0;
 				for (PeerNode peer : peers) {
-					linkLengths[i++] = randomNoise(Math.min(Math.abs(peer.getLocation() - node.peers.node.getLocation()),
-					                                        1.0 - Math.abs(peer.getLocation() - node.peers.node.getLocation())));
+					linkLengths[i++] = randomNoise(Math.min(Math.abs(peer.getLocation() - node.getLocation()),
+					                                        1.0 - Math.abs(peer.getLocation() - node.getLocation())));
 				}
 				listener.onLinkLengths(linkLengths);
 				break;
@@ -550,7 +550,7 @@ public class MHProbe implements ByteCounter {
 				break;
 			case STORE_SIZE:
 				//1,073,741,824 bytes (2^30) per GiB
-				listener.onStoreSize(randomNoise(Math.round((double)node.config.get("node").getLong("storeSize")/1073741824)));
+				listener.onStoreSize(randomNoise(Math.round((double)node.getStoreSize()/1073741824)));
 				break;
 			case UPTIME_48H:
 				listener.onUptime(randomNoise(100*node.uptime.getUptime()));
@@ -564,16 +564,15 @@ public class MHProbe implements ByteCounter {
 	}
 
 	private boolean respondTo(ProbeType type) {
-		final SubConfig nc = node.config.get("node");
 		switch (type){
-		case BANDWIDTH: return nc.getBoolean("probeBandwidth");
-		case BUILD: return nc.getBoolean("probeBuild");
-		case IDENTIFIER: return nc.getBoolean("probeIdentifier");
-		case LINK_LENGTHS: return nc.getBoolean("probeLinkLengths");
-		case LOCATION: return nc.getBoolean("probeLocation");
-		case STORE_SIZE: return nc.getBoolean("probeStoreSize");
+		case BANDWIDTH: return node.getRespondBandwidth();
+		case BUILD: return node.getRespondBuild();
+		case IDENTIFIER: return node.getRespondIdentifier();
+		case LINK_LENGTHS: return node.getRespondLinkLengths();
+		case LOCATION: return node.getRespondLocation();
+		case STORE_SIZE: return node.getRespondStoreSize();
 		case UPTIME_48H:
-		case UPTIME_7D: return nc.getBoolean("probeUptime");
+		case UPTIME_7D: return node.getRespondUptime();
 		default:
 			//There a valid ProbeType value that is not present here.
 			if (logDEBUG) Logger.debug(MHProbe.class, "Probe type \"" + type.name() + "\" does not check " +

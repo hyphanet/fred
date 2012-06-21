@@ -5831,7 +5831,7 @@ public class Node implements TimeSkewDetectorCallback {
 		return darknetCrypto.portNumber;
 	}
 
-	public int getOutputBandwidthLimit() {
+	public synchronized int getOutputBandwidthLimit() {
 		return outputBandwidthLimit;
 	}
 
@@ -5839,6 +5839,70 @@ public class Node implements TimeSkewDetectorCallback {
 		if(inputLimitDefault)
 			return outputBandwidthLimit * 4;
 		return inputBandwidthLimit;
+	}
+
+	/**
+	 * @return node identifier used for probes.
+	 */
+	public synchronized long getProbeIdentifier() {
+		return probeIdentifier;
+	}
+
+	/**
+	 * @return total datastore size in bytes.
+	 */
+	public synchronized long getStoreSize() {
+		return maxTotalDatastoreSize;
+	}
+
+	/**
+	 * @return whether the node should respond to probe requests for outgoing bandwidth limit.
+	 */
+	public synchronized boolean getRespondBandwidth() {
+		return respondBandwidth;
+	}
+
+	/**
+	 * @return whether the node should respond to probe requests for build number.
+	 */
+	public synchronized boolean getRespondBuild() {
+		return respondBuild;
+	}
+
+	/**
+	 * @return whether the node should respond to probe requests for an identifier and low-precision uptime
+	 *         information.
+	 */
+	public synchronized boolean getRespondIdentifier() {
+		return respondIdentifier;
+	}
+
+	/**
+	 * @return whether the node should respond to probe requests for its link lengths.
+	 */
+	public synchronized boolean getRespondLinkLengths() {
+		return respondLinkLengths;
+	}
+
+	/**
+	 * @return whether the node should respond to probe requests for its location.
+	 */
+	public synchronized boolean getRespondLocation() {
+		return respondLocation;
+	}
+
+	/**
+	 * @return whether the node should respond to probe requests for its store size.
+	 */
+	public synchronized boolean getRespondStoreSize() {
+		return respondStoreSize;
+	}
+
+	/**
+	 * @return whether the node should respond to probe requests for its uptime.
+	 */
+	public synchronized boolean getRespondUptime() {
+		return respondUptime;
 	}
 
 	@Override
