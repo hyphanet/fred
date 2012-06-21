@@ -1,5 +1,7 @@
 package freenet.node;
 
+import freenet.config.InvalidConfigValueException;
+import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
 import freenet.io.comm.AsyncMessageFilterCallback;
 import freenet.io.comm.ByteCounter;
@@ -11,6 +13,8 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.api.BooleanCallback;
+import freenet.support.api.LongCallback;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -122,6 +126,17 @@ public class MHProbe implements ByteCounter {
 	private final Node node;
 
 	private final Timer timer;
+
+	//Whether to respond to different types of probe requests.
+	private volatile boolean respondBandwidth;
+	private volatile boolean respondBuild;
+	private volatile boolean respondIdentifier;
+	private volatile boolean respondLinkLengths;
+	private volatile boolean respondLocation;
+	private volatile boolean respondStoreSize;
+	private volatile boolean respondUptime;
+
+	private volatile long probeIdentifier;
 
 	public enum ProbeError {
 		/**
@@ -304,10 +319,138 @@ public class MHProbe implements ByteCounter {
 	@Override
 	public void sentPayload(int bytes) {}
 
-	public MHProbe(Node node) {
+	public MHProbe(final Node node) {
 		this.node = node;
 		this.accepted = Collections.synchronizedMap(new HashMap<PeerNode, Counter>());
 		this.timer = new Timer(true);
+
+		int sortOrder = 0;
+		final SubConfig nodeConfig = node.config.get("node");
+
+		nodeConfig.register("probeBandwidth", true, sortOrder++, false, true, "Node.probeBandwidthShort",
+			"Node.probeBandwidthLong", new BooleanCallback() {
+			@Override
+			public Boolean get() {
+				return respondBandwidth;
+			}
+
+			@Override
+			public void set(Boolean val) {
+				respondBandwidth = val;
+			}
+		});
+		respondBandwidth = nodeConfig.getBoolean("probeBandwidth");
+		nodeConfig.register("probeBuild", true, sortOrder++, false, true, "Node.probeBuildShort",
+			"Node.probeBuildLong", new BooleanCallback() {
+			@Override
+			public Boolean get() {
+				return respondBuild;
+			}
+
+			@Override
+			public void set(Boolean val) {
+				respondBuild = val;
+			}
+		});
+		respondBuild = nodeConfig.getBoolean("probeBuild");
+		nodeConfig.register("probeIdentifier", true, sortOrder++, false, true,
+			"Node.probeRespondIdentifierShort", "Node.probeRespondIdentifierLong", new BooleanCallback() {
+			@Override
+			public Boolean get() {
+				return respondIdentifier;
+			}
+
+			@Override
+			public void set(Boolean val) {
+				respondIdentifier = val;
+			}
+		});
+		respondIdentifier = nodeConfig.getBoolean("probeIdentifier");
+		nodeConfig.register("probeLinkLengths", true, sortOrder++, false, true, "Node.probeLinkLengthsShort",
+			"Node.probeLinkLengthsLong", new BooleanCallback() {
+			@Override
+			public Boolean get() {
+				return respondLinkLengths;
+			}
+
+			@Override
+			public void set(Boolean val) {
+				respondLinkLengths = val;
+			}
+		});
+		respondLinkLengths = nodeConfig.getBoolean("probeLinkLengths");
+		nodeConfig.register("probeLocation", true, sortOrder++, false, true, "Node.probeLocationShort",
+			"Node.probeLocationLong", new BooleanCallback() {
+			@Override
+			public Boolean get() {
+				return respondLocation;
+			}
+
+			@Override
+			public void set(Boolean val) {
+				respondLocation = val;
+			}
+		});
+		respondLocation = nodeConfig.getBoolean("probeLocation");
+		nodeConfig.register("probeStoreSize", true, sortOrder++, false, true, "Node.probeStoreSizeShort",
+			"Node.probeStoreSizeLong", new BooleanCallback() {
+			@Override
+			public Boolean get() {
+				return respondStoreSize;
+			}
+
+			@Override
+			// throws InvalidConfigValueException, NodeNeedRestartException
+			public void set(Boolean val) {
+				respondStoreSize = val;
+			}
+		});
+		respondStoreSize = nodeConfig.getBoolean("probeStoreSize");
+		nodeConfig.register("probeUptime", true, sortOrder++, false, true, "Node.probeUptimeShort",
+			"Node.probeUptimeLong", new BooleanCallback() {
+			@Override
+			public Boolean get() {
+				return respondUptime;
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+				respondUptime = val;
+			}
+		});
+		respondUptime = nodeConfig.getBoolean("probeUptime");
+
+		nodeConfig.register("identifier", -1, sortOrder++, true, true, "Node.probeIdentifierShort",
+			"Node.probeIdentifierLong", new LongCallback() {
+			@Override
+			public Long get() {
+				return probeIdentifier;
+			}
+
+			@Override
+			public void set(Long val) {
+				probeIdentifier = val;
+				//-1 is reserved for picking a random value; don't pick it randomly.
+				while(probeIdentifier == -1) probeIdentifier = node.random.nextLong();
+			}
+		}, false);
+		probeIdentifier = nodeConfig.getLong("identifier");
+
+		/*
+		 * set() is not used when setting up an option with its default value, so do so manually to avoid using
+		 * an identifier of -1.
+		 */
+		try {
+			if(probeIdentifier == -1) {
+				nodeConfig.getOption("identifier").setValue("-1");
+				//TODO: Store config here as it has changed?
+				node.config.store();
+			}
+		} catch (InvalidConfigValueException e) {
+			Logger.error(Node.class, "node.identifier set() unexpectedly threw.", e);
+		} catch (NodeNeedRestartException e) {
+			Logger.error(Node.class, "node.identifier set() unexpectedly threw.", e);
+		}
 	}
 
 	/**
@@ -532,7 +675,7 @@ public class MHProbe implements ByteCounter {
 				break;
 			case IDENTIFIER:
 				//7-day uptime with random noise, then quantized.
-				listener.onIdentifier(node.getProbeIdentifier(),
+				listener.onIdentifier(probeIdentifier,
 				                      Math.round(randomNoise(100*node.uptime.getUptimeWeek())));
 				break;
 			case LINK_LENGTHS:
@@ -565,14 +708,14 @@ public class MHProbe implements ByteCounter {
 
 	private boolean respondTo(ProbeType type) {
 		switch (type){
-		case BANDWIDTH: return node.getRespondBandwidth();
-		case BUILD: return node.getRespondBuild();
-		case IDENTIFIER: return node.getRespondIdentifier();
-		case LINK_LENGTHS: return node.getRespondLinkLengths();
-		case LOCATION: return node.getRespondLocation();
-		case STORE_SIZE: return node.getRespondStoreSize();
+		case BANDWIDTH: return respondBandwidth;
+		case BUILD: return respondBuild;
+		case IDENTIFIER: return respondIdentifier;
+		case LINK_LENGTHS: return respondLinkLengths;
+		case LOCATION: return respondLocation;
+		case STORE_SIZE: return respondStoreSize;
 		case UPTIME_48H:
-		case UPTIME_7D: return node.getRespondUptime();
+		case UPTIME_7D: return respondUptime;
 		default:
 			//There a valid ProbeType value that is not present here.
 			if (logDEBUG) Logger.debug(MHProbe.class, "Probe type \"" + type.name() + "\" does not check " +
