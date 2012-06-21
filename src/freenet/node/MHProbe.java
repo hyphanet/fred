@@ -372,24 +372,24 @@ public class MHProbe implements ByteCounter {
 				//Set a flag instead of sending inside the lock.
 				availableSlot = false;
 			} else {
-			//There's a free slot; increment the counter.
-			counter.increment();
+				//There's a free slot; increment the counter.
+				counter.increment();
 				task = new TimerTask() {
-				@Override
-				public void run() {
-					synchronized (accepted) {
-						counter.decrement();
-						/* Once the counter hits zero, there's no reason to keep it around as it
-						 * can just be recreated when this peer sends another probe request
-						 * without changing behavior. To do otherwise would accumulate counters
-						 * at zero over time.
-						 */
-						if (counter.value() == 0) {
-							MHProbe.this.accepted.remove(source);
+					@Override
+					public void run() {
+						synchronized (accepted) {
+							counter.decrement();
+							/* Once the counter hits zero, there's no reason to keep it around as it
+							 * can just be recreated when this peer sends another probe request
+							 * without changing behavior. To do otherwise would accumulate counters
+							 * at zero over time.
+							 */
+							if (counter.value() == 0) {
+								MHProbe.this.accepted.remove(source);
+							}
 						}
 					}
-				}
-			};
+				};
 			}
 		}
 		if (!availableSlot) {
@@ -429,16 +429,16 @@ public class MHProbe implements ByteCounter {
 				//First loop or the list of connected peers was updated.
 				peers = node.peers.connectedPeers;
 				degree = peers.length;
-			//Can't handle a probe request if not connected to any peers.
-			if (degree == 0) {
-				if (logMINOR) Logger.minor(MHProbe.class, "Aborting received probe request because there are no connections.");
-				/*
-				 * If this is a locally-started request, not a relayed one, give an error.
-				 * Otherwise, in this case there's nowhere to send the error.
-				 */
-				listener.onError(ProbeError.DISCONNECTED, null);
-				return;
-			}
+				//Can't handle a probe request if not connected to any peers.
+				if (degree == 0) {
+					if (logMINOR) Logger.minor(MHProbe.class, "Aborting received probe request because there are no connections.");
+					/*
+					 * If this is a locally-started request, not a relayed one, give an error.
+					 * Otherwise, in this case there's nowhere to send the error.
+					 */
+					listener.onError(ProbeError.DISCONNECTED, null);
+					return;
+				}
 			}
 			//Degree should have been changed from its initial sentinel value.
 			assert(degree != -1);
@@ -503,45 +503,45 @@ public class MHProbe implements ByteCounter {
 			return;
 		}
 
-			switch (type) {
-				case BANDWIDTH:
-					//1,024 (2^10) bytes per KiB
-					listener.onOutputBandwidth(randomNoise(Math.round((double)node.config.get("node").getInt("outputBandwidthLimit")/1024)));
-					break;
-				case BUILD:
-					listener.onBuild(node.nodeUpdater.getMainVersion());
-					break;
-				case IDENTIFIER:
-					//7-day uptime with random noise, then quantized.
-					listener.onIdentifier(node.config.get("node").getLong("identifier"),
-					                      Math.round(randomNoise(100*node.uptime.getUptimeWeek())));
-					break;
-				case LINK_LENGTHS:
-					PeerNode[] peers = node.peers.connectedPeers;
-					double[] linkLengths = new double[peers.length];
-					int i = 0;
-					for (PeerNode peer : peers) {
-						linkLengths[i++] = randomNoise(Math.min(Math.abs(peer.getLocation() - node.peers.node.getLocation()),
-						                                        1.0 - Math.abs(peer.getLocation() - node.peers.node.getLocation())));
-					}
-					listener.onLinkLengths(linkLengths);
-					break;
-				case LOCATION:
-					listener.onLocation(node.getLocation());
-					break;
-				case STORE_SIZE:
-					//1,073,741,824 bytes (2^30) per GiB
-					listener.onStoreSize(randomNoise(Math.round((double)node.config.get("node").getLong("storeSize")/1073741824)));
-					break;
-				case UPTIME_48H:
-					listener.onUptime(randomNoise(100*node.uptime.getUptime()));
-					break;
-				case UPTIME_7D:
-					listener.onUptime(randomNoise(100*node.uptime.getUptimeWeek()));
-					break;
-				default:
-					if (logDEBUG) Logger.debug(MHProbe.class, "Response for probe result type \"" + type + "\" is not implemented.");
-			}
+		switch (type) {
+			case BANDWIDTH:
+				//1,024 (2^10) bytes per KiB
+				listener.onOutputBandwidth(randomNoise(Math.round((double)node.config.get("node").getInt("outputBandwidthLimit")/1024)));
+				break;
+			case BUILD:
+				listener.onBuild(node.nodeUpdater.getMainVersion());
+				break;
+			case IDENTIFIER:
+				//7-day uptime with random noise, then quantized.
+				listener.onIdentifier(node.config.get("node").getLong("identifier"),
+				                      Math.round(randomNoise(100*node.uptime.getUptimeWeek())));
+				break;
+			case LINK_LENGTHS:
+				PeerNode[] peers = node.peers.connectedPeers;
+				double[] linkLengths = new double[peers.length];
+				int i = 0;
+				for (PeerNode peer : peers) {
+					linkLengths[i++] = randomNoise(Math.min(Math.abs(peer.getLocation() - node.peers.node.getLocation()),
+					                                        1.0 - Math.abs(peer.getLocation() - node.peers.node.getLocation())));
+				}
+				listener.onLinkLengths(linkLengths);
+				break;
+			case LOCATION:
+				listener.onLocation(node.getLocation());
+				break;
+			case STORE_SIZE:
+				//1,073,741,824 bytes (2^30) per GiB
+				listener.onStoreSize(randomNoise(Math.round((double)node.config.get("node").getLong("storeSize")/1073741824)));
+				break;
+			case UPTIME_48H:
+				listener.onUptime(randomNoise(100*node.uptime.getUptime()));
+				break;
+			case UPTIME_7D:
+				listener.onUptime(randomNoise(100*node.uptime.getUptimeWeek()));
+				break;
+			default:
+				if (logDEBUG) Logger.debug(MHProbe.class, "Response for probe result type \"" + type + "\" is not implemented.");
+		}
 	}
 
 	private boolean respondTo(ProbeType type) {
