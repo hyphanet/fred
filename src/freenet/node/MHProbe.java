@@ -676,6 +676,10 @@ public class MHProbe implements ByteCounter {
 		}
 
 		private void send(Message message) {
+			if (!source.isConnected()) {
+				if (logMINOR) Logger.minor(MHProbe.class, sourceDisconnect);
+				return;
+			}
 			//TODO: If result is a tracer request, can add local results to it here.
 			if (logDEBUG) Logger.debug(MHProbe.class, "Relaying " + message.getSpec().getName() + " back" +
 			                                          " to " + source.userToString());
