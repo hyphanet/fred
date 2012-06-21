@@ -354,6 +354,7 @@ public class MHProbe implements ByteCounter {
 			htl = MAX_HTL;
 		}
 		boolean availableSlot = true;
+		TimerTask task = null;
 		//Allocate one of this peer's probe request slots for 60 seconds; send an overload if none are available.
 		synchronized (accepted) {
 			//If no counter exists for the current source, add one.
@@ -373,8 +374,7 @@ public class MHProbe implements ByteCounter {
 			} else {
 			//There's a free slot; increment the counter.
 			counter.increment();
-			//One-minute window on acceptance; free up this probe's slot in 60 seconds.
-			timer.schedule(new TimerTask() {
+				task = new TimerTask() {
 				@Override
 				public void run() {
 					synchronized (accepted) {
@@ -389,7 +389,7 @@ public class MHProbe implements ByteCounter {
 						}
 					}
 				}
-			}, MINUTE);
+			};
 			}
 		}
 		if (!availableSlot) {
@@ -398,6 +398,9 @@ public class MHProbe implements ByteCounter {
 			listener.onError(ProbeError.OVERLOAD, null);
 			return;
 		}
+		//One-minute window on acceptance; free up this probe's slot in 60 seconds.
+		assert(task != null);
+		timer.schedule(task, MINUTE);
 
 		/*
 		 * Route to a peer, using Metropolis-Hastings correction and ignoring backoff to get a more uniform
