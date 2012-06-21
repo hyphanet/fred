@@ -228,7 +228,7 @@ public class NodeIPDetector {
 		
 		// Try to pick it up from our connections
 		if(node.peers != null) {
-			PeerNode[] peerList = node.peers.myPeers;
+			PeerNode[] peerList = node.peers.myPeers();
 			HashMap<FreenetInetAddress,Integer> countsByPeer = new HashMap<FreenetInetAddress,Integer>();
 			// FIXME use a standard mutable int object, we have one somewhere
 			for(int i=0;i<peerList.length;i++) {

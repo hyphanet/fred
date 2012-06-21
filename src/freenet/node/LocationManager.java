@@ -196,7 +196,7 @@ public class LocationManager implements ByteCounter {
                             try {
                                 boolean myFlag = false;
                                 double myLoc = getLocation();
-                                PeerNode[] peers = node.peers.connectedPeers;
+                                PeerNode[] peers = node.peers.connectedPeers();
                                 for(int i=0;i<peers.length;i++) {
                                     PeerNode pn = peers[i];
                                     if(pn.isRoutable()) {

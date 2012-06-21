@@ -3998,7 +3998,7 @@ public class Node implements TimeSkewDetectorCallback {
 				@Override
 				public void run() {
 					freenet.support.Logger.OSThread.logPID(this);
-					PeerNode[] nodes = peers.myPeers;
+					PeerNode[] nodes = peers.myPeers();
 					for(int i = 0; i < nodes.length; i++) {
 						PeerNode pn = nodes[i];
 						pn.updateVersionRoutablity();
@@ -5378,7 +5378,7 @@ public class Node implements TimeSkewDetectorCallback {
 			list = completedBuffer.toArray(new Long[completedBuffer.size()]);
 			completedBuffer.clear();
 		}
-		for(PeerNode pn : peers.myPeers) {
+		for(PeerNode pn : peers.myPeers()) {
 			if(!pn.isRoutingCompatible()) continue;
 			pn.removeUIDsFromMessageQueues(list);
 		}
@@ -5686,18 +5686,18 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public PeerNode[] getPeerNodes() {
-		return peers.myPeers;
+		return peers.myPeers();
 	}
 
 	public PeerNode[] getConnectedPeers() {
-		return peers.connectedPeers;
+		return peers.connectedPeers();
 	}
 
 	/**
 	 * Return a peer of the node given its ip and port, name or identity, as a String
 	 */
 	public PeerNode getPeerNode(String nodeIdentifier) {
-		PeerNode[] pn = peers.myPeers;
+		PeerNode[] pn = peers.myPeers();
 		for(int i=0;i<pn.length;i++)
 		{
 			Peer peer = pn[i].getPeer();
@@ -5770,7 +5770,7 @@ public class Node implements TimeSkewDetectorCallback {
 	// using the PacketSender/Ticker. Would save a few threads.
 
 	public int getNumARKFetchers() {
-		PeerNode[] p = peers.myPeers;
+		PeerNode[] p = peers.myPeers();
 		int x = 0;
 		for(int i=0;i<p.length;i++) {
 			if(p[i].isFetchingARK()) x++;

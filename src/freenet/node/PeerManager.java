@@ -61,9 +61,9 @@ public class PeerManager {
 	/** Our Node */
 	final Node node;
 	/** All the peers we want to connect to */
-	PeerNode[] myPeers;
+	private PeerNode[] myPeers;
 	/** All the peers we are actually connected to */
-	PeerNode[] connectedPeers;
+	private PeerNode[] connectedPeers;
 	private String darkFilename;
         private String openFilename;
         private String oldOpennetPeersFilename;
@@ -2488,5 +2488,25 @@ public class PeerManager {
 	public static interface PeerStatusChangeListener{
 		/** Peers status have changed*/
 		public void onPeerStatusChange();
+	}
+	
+	/** Get a non-copied snapshot of the peers list. NOTE: LOW LEVEL:
+	 * Should be up to date (but not guaranteed when exit lock), DO NOT
+	 * MODIFY THE RETURNED DATA! Package-local - stuff outside node/ 
+	 * should use the copying getters (which are a little more expensive). */
+	synchronized PeerNode[] myPeers() {
+		return myPeers;
+	}
+	
+	/** Get the last snapshot of the connected peers list. NOTE: This is
+	 * not as reliable as using the copying getters (or even using myPeers()
+	 * and then checking each peer). But it is fast.
+	 * 
+	 * FIXME: Check all callers. Should they use myPeers and check for 
+	 * connectedness, and/or should they use a copying method? I'm not sure
+	 * how reliable updating of connectedPeers is ...
+	 */
+	synchronized PeerNode[] connectedPeers() {
+		return connectedPeers;
 	}
 }
