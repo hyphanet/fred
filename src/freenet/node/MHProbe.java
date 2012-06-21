@@ -134,7 +134,13 @@ public class MHProbe implements ByteCounter {
 
 		ProbeError(byte code) { this.code = code; }
 
-		static ProbeError valueOf(byte code) {
+		/**
+		 * Determines the enum value with the given code.
+		 * @param code enum value code.
+		 * @return enum value with selected code.
+		 * @throws IllegalArgumentException There is no enum value with the requested code.
+		 */
+		static ProbeError valueOf(byte code) throws IllegalArgumentException {
 			//TODO: This is clean, but is it too much slower than a switch-case?
 			//Switch-case would be more work to maintain as it requires repeating the codes used in the value constructors.
 			for (ProbeError value : ProbeError.values()) {
@@ -158,7 +164,13 @@ public class MHProbe implements ByteCounter {
 
 		ProbeType(byte code) { this.code = code; }
 
-		static ProbeType valueOf(byte code) {
+		/**
+		 * Determines the enum value with the given code.
+		 * @param code enum value code.
+		 * @return enum value with selected code.
+		 * @throws IllegalArgumentException There is no enum value with the requested code.
+		 */
+		static ProbeType valueOf(byte code) throws IllegalArgumentException {
 			for (ProbeType value : ProbeType.values()) {
 				if (value.code == code) return value;
 			}
