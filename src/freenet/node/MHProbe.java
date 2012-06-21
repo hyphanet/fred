@@ -480,8 +480,6 @@ public class MHProbe implements ByteCounter {
 						if (logDEBUG) Logger.debug(MHProbe.class, "Peer became disconnected between check and send attempt.", e);
 					} catch (DisconnectedException e) {
 						if (logDEBUG) Logger.debug(MHProbe.class, "Peer became disconnected while attempting to add filter.", e);
-					} catch (NullPointerException e) {
-						if (logDEBUG) Logger.debug(MHProbe.class, "Peer became disconnected between check and send attempt.", e);
 					}
 				}
 			}
