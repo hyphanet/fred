@@ -407,17 +407,23 @@ public class MHProbe implements ByteCounter {
 		 * endpoint distribution. HTL is decremented before routing so that it's possible to respond locally.
 		 */
 		htl = probabilisticDecrement(htl);
-		if (htl == 0) {
-			respond(type, listener);
-		} else {
-			route(type, uid, htl, listener);
+		if (htl == 0 || !route(type, uid, htl, listener)) {
+			long wait = WAIT_MAX;
+			while (wait >= WAIT_MAX) wait = (long)(-Math.log(node.random.nextDouble()) * WAIT_BASE / Math.E);
+			timer.schedule(new TimerTask() {
+				@Override
+				public void run() {
+					respond(type, listener);
+				}
+			}, wait);
 		}
 	}
 
 	/**
 	 * Attempts to route the message to a peer. If HTL is decremented to zero before this is possible, responds.
+	 * @return true if the message has been handled; false if the local node should respond to the request.
 	 */
-	private void route(final ProbeType type, final long uid, byte htl, final Listener listener) {
+	private boolean route(final ProbeType type, final long uid, byte htl, final Listener listener) {
 		//Recreate the request so that any sub-messages or unintended fields are not forwarded.
 		final Message message = DMT.createMHProbeRequest(htl, uid, type);
 		PeerNode[] peers = null;
@@ -438,7 +444,7 @@ public class MHProbe implements ByteCounter {
 					 * Otherwise, in this case there's nowhere to send the error.
 					 */
 					listener.onError(ProbeError.DISCONNECTED, null);
-					return;
+					return true;
 				}
 			}
 			//Degree should have been changed from its initial sentinel value.
@@ -479,7 +485,7 @@ public class MHProbe implements ByteCounter {
 						node.usm.addAsyncFilter(filter, new ResultListener(listener), this);
 						if (logDEBUG) Logger.debug(MHProbe.class, "Sending.");
 						candidate.sendAsync(message, null, this);
-						return;
+						return true;
 					} catch (NotConnectedException e) {
 						if (logDEBUG) Logger.debug(MHProbe.class, "Peer became disconnected between check and send attempt.", e);
 					} catch (DisconnectedException e) {
@@ -488,10 +494,7 @@ public class MHProbe implements ByteCounter {
 				}
 			}
 		}
-		/*
-		 * HTL has been decremented to zero; return a result.
-		 */
-		respond(type, listener);
+		return false;
 	}
 
 	/**
