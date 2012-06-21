@@ -12,7 +12,7 @@ public class ProbeError extends FCPResponse {
 	 * An error was received.
 	 * @param fcpIdentifier Identifier: FCP-level identifier for pairing requests and responses.
 	 * @param error type: The error code.
-	 * @param rawError If the error is UNKNOWN, specifies remote error code. Not included otherwise.
+	 * @param rawError If the error is UNKNOWN, can specify remote error code. Not included otherwise.
 	 * @see MHProbe.Listener onError()
 	 * @see MHProbe.ProbeError
 	 */
