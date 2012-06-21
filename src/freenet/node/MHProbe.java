@@ -426,9 +426,9 @@ public class MHProbe implements ByteCounter {
 		PeerNode candidate;
 		//Loop until HTL runs out, in which case return a result, or the probe is relayed on to a peer.
 		for (; htl > 0; htl = probabilisticDecrement(htl)) {
-			if (peers != node.peers.connectedPeers) {
+			if (peers != node.peers.connectedPeers()) {
 				//First loop or the list of connected peers was updated.
-				peers = node.peers.connectedPeers;
+				peers = node.peers.connectedPeers();
 				degree = peers.length;
 				//Can't handle a probe request if not connected to any peers.
 				if (degree == 0) {
@@ -518,7 +518,7 @@ public class MHProbe implements ByteCounter {
 				                      Math.round(randomNoise(100*node.uptime.getUptimeWeek())));
 				break;
 			case LINK_LENGTHS:
-				PeerNode[] peers = node.peers.connectedPeers;
+				PeerNode[] peers = node.peers.connectedPeers();
 				double[] linkLengths = new double[peers.length];
 				int i = 0;
 				for (PeerNode peer : peers) {
