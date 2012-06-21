@@ -294,14 +294,11 @@ public class MHProbe implements ByteCounter {
 	 * @param source node from which the probe request was received. Used to relay back results.
 	 */
 	public void request(Message message, PeerNode source) {
-		Listener listener;
-		try {
-			listener = new ResultRelay(source, message.getLong(DMT.UID));
-		} catch (IllegalArgumentException e) {
-			if (logDEBUG) Logger.debug(MHProbe.class, "Received probe request from null source.", e);
+		if (source == null) {
+			if (logDEBUG) Logger.debug(MHProbe.class, "Received probe request from null source.", new Exception("Debug"));
 			return;
 		}
-		request(message, source, listener);
+		request(message, source, new ResultRelay(source, message.getLong(DMT.UID)));
 	}
 
 	/**
@@ -654,30 +651,18 @@ public class MHProbe implements ByteCounter {
 		 * @param source peer from which the request was received and to which send the response.
 		 * @throws IllegalArgumentException if source is null.
 		 */
-		public ResultRelay(PeerNode source, Long uid) throws IllegalArgumentException {
-			if (source == null) {
-				if (logDEBUG) Logger.debug(MHProbe.class, "Probe " + uid + " source is null.");
-				//No way to relay results back.
-				throw new IllegalArgumentException(sourceDisconnect);
-			}
+		public ResultRelay(PeerNode source, Long uid) {
 			this.source = source;
 			this.uid = uid;
 		}
 
 		private void send(Message message) {
-			if (source == null) {
-				if (logMINOR) Logger.minor(MHProbe.class, sourceDisconnect);
-				return;
-			}
-
 			//TODO: If result is a tracer request, can add local results to it here.
 			if (logDEBUG) Logger.debug(MHProbe.class, "Relaying " + message.getSpec().getName() + " back" +
 			                                          " to " + source.userToString());
 			try {
 				source.sendAsync(message, null, MHProbe.this);
 			} catch (NotConnectedException e) {
-				if (logMINOR) Logger.minor(MHProbe.class, sourceDisconnect, e);
-			} catch (NullPointerException e) {
 				if (logMINOR) Logger.minor(MHProbe.class, sourceDisconnect, e);
 			}
 		}
