@@ -148,9 +148,7 @@ public class PacketSender implements Runnable {
 		PeerNode[] nodes;
 
         pm = node.peers;
-        synchronized(pm) {
-        	nodes = pm.myPeers;
-        }
+        nodes = pm.myPeers();
 
 		long nextActionTime = Long.MAX_VALUE;
 		long oldTempNow = now;

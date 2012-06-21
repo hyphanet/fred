@@ -44,10 +44,9 @@ public class NodePinger implements Runnable {
         try {
         PeerNode[] peers = null;
         synchronized(node.peers) {
-	    if((node.peers.connectedPeers == null) || (node.peers.connectedPeers.length == 0)) return;
-	    peers = new PeerNode[node.peers.connectedPeers.length];
-            System.arraycopy(node.peers.connectedPeers, 0, peers, 0, node.peers.connectedPeers.length);
+        	peers = node.peers.connectedPeers();
         }
+        if(peers == null || peers.length == 0) return;
 
         // Now we don't have to care about synchronization anymore
         recalculateMean(peers);

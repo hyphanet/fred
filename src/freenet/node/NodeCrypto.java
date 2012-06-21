@@ -561,7 +561,7 @@ public class NodeCrypto {
 
 	public PeerNode[] getAnonSetupPeerNodes() {
 		ArrayList<PeerNode> v = new ArrayList<PeerNode>();
-		PeerNode[] peers = node.peers.myPeers;
+		PeerNode[] peers = node.peers.myPeers();
 		for(int i=0;i<peers.length;i++) {
 			PeerNode pn = peers[i];
 			if(pn.handshakeUnknownInitiator() && pn.getOutgoingMangler() == packetMangler)
