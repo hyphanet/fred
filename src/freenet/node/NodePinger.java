@@ -105,8 +105,7 @@ public class NodePinger implements Runnable {
 		void calculate(PeerNode[] peers) {
 			double[] allPeers = new double[peers.length];
 			int x = 0;
-			for(int i = 0; i < peers.length; i++) {
-				PeerNode peer = peers[i];
+			for(PeerNode peer : peers) {
 				PeerLoadStats stats = peer.outputLoadTracker(isRealtime).getLastIncomingLoadStats();
 				if(stats == null) continue;
 				allPeers[x++] = stats.peerLimit(isInput);
