@@ -361,7 +361,7 @@ public class MHProbe implements ByteCounter {
 				}
 				//Set a flag instead of sending inside the lock.
 				availableSlot = false;
-			}
+			} else {
 			//There's a free slot; increment the counter.
 			counter.increment();
 			//One-minute window on acceptance; free up this probe's slot in 60 seconds.
@@ -381,6 +381,7 @@ public class MHProbe implements ByteCounter {
 					}
 				}
 			}, MINUTE);
+			}
 		}
 		if (!availableSlot) {
 			//Send an overload error back to the source.
