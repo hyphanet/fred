@@ -404,13 +404,16 @@ public class MHProbe implements ByteCounter {
 	 */
 	private void route(final Message message, final ProbeType type, final long uid, byte htl,
 	                   final Listener listener) {
-		//TODO: When to update this array, and how to determine that an update is needed?
-		PeerNode[] peers = node.peers.connectedPeers;
+		PeerNode[] peers = null;
 		//Degree of the local node.
-		int degree = peers.length;
+		int degree = -1;
 		PeerNode candidate;
 		//Loop until HTL runs out, in which case return a result, or the probe is relayed on to a peer.
 		for (; htl > 0; htl = probabilisticDecrement(htl)) {
+			if (peers != node.peers.connectedPeers) {
+				//First loop or the list of connected peers was updated.
+				peers = node.peers.connectedPeers;
+				degree = peers.length;
 			//Can't handle a probe request if not connected to any peers.
 			if (degree == 0) {
 				if (logMINOR) Logger.minor(MHProbe.class, "Aborting received probe request because there are no connections.");
@@ -421,6 +424,9 @@ public class MHProbe implements ByteCounter {
 				listener.onError(ProbeError.DISCONNECTED, null);
 				return;
 			}
+			}
+			//Degree should have been changed from its initial sentinel value.
+			assert(degree != -1);
 			candidate = peers[node.random.nextInt(degree)];
 
 			//acceptProbability is the MH correction.
