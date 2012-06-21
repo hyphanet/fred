@@ -410,15 +410,16 @@ public class MHProbe implements ByteCounter {
 		if (htl == 0) {
 			respond(type, listener);
 		} else {
-			route(message, type, uid, htl, listener);
+			route(type, uid, htl, listener);
 		}
 	}
 
 	/**
 	 * Attempts to route the message to a peer. If HTL is decremented to zero before this is possible, responds.
 	 */
-	private void route(final Message message, final ProbeType type, final long uid, byte htl,
-	                   final Listener listener) {
+	private void route(final ProbeType type, final long uid, byte htl, final Listener listener) {
+		//Recreate the request so that any sub-messages or unintended fields are not forwarded.
+		final Message message = DMT.createMHProbeRequest(htl, uid, type);
 		PeerNode[] peers = null;
 		//Degree of the local node.
 		int degree = -1;
