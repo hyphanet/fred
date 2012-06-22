@@ -781,16 +781,10 @@ public class MHProbe implements ByteCounter {
 				final byte rawError = message.getByte(DMT.TYPE);
 				try {
 					final ProbeError error = ProbeError.valueOf(rawError);
-					if (error.equals(ProbeError.UNKNOWN) && logWARNING) {
-						Logger.warning(MHProbe.class, "Unexpectedly received local error \"" +
-						                              "UNKNOWN\" from remote node.");
-					}
 					listener.onError(error, null);
 				} catch (IllegalArgumentException e) {
+					//Not recognized locally.
 					listener.onError(ProbeError.UNKNOWN, rawError);
-					if (logDEBUG) {
-						Logger.debug(MHProbe.class, "Unknown error type \"" + rawError + "\".");
-					}
 				}
 			} else if (message.getSpec().equals(DMT.MHProbeRefused)) {
 				listener.onRefused();
