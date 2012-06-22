@@ -556,7 +556,7 @@ public class MHProbe implements ByteCounter {
 			listener.onError(ProbeError.OVERLOAD, null);
 			return;
 		}
-		//One-minute window on acceptance; free up this probe's slot in 60 seconds.
+		//One-minute window on acceptance; free up this probe slot in 60 seconds.
 		assert(task != null);
 		timer.schedule(task, MINUTE);
 
@@ -811,7 +811,8 @@ public class MHProbe implements ByteCounter {
 	/**
 	 * Listener which relays responses to the node specified during construction. Used for received probe requests.
 	 * This leads to reconstructing the messages, but removes potentially harmful sub-messages and also removes the
-	 * need for duplicate message sending code elsewhere,
+	 * need for duplicate message sending code elsewhere, If the result includes a trace,,this would be the place
+	 * to add local results to it.
 	 */
 	private class ResultRelay implements Listener {
 
@@ -832,7 +833,6 @@ public class MHProbe implements ByteCounter {
 				if (logMINOR) Logger.minor(MHProbe.class, sourceDisconnect);
 				return;
 			}
-			//TODO: If result is a tracer request, can add local results to it here.
 			if (logDEBUG) Logger.debug(MHProbe.class, "Relaying " + message.getSpec().getName() + " back" +
 			                                          " to " + source.userToString());
 			try {
