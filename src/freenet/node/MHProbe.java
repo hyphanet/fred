@@ -257,19 +257,19 @@ public class MHProbe implements ByteCounter {
 		 * @param identifier identifier given by endpoint.
 		 * @param uptimePercentage quantized noisy 7-day uptime percentage
 		 */
-		void onIdentifier(long identifier, long uptimePercentage);
+		void onIdentifier(long identifier, byte uptimePercentage);
 
 		/**
 		 * Link length result.
 		 * @param linkLengths endpoint's reported link lengths.
 		 */
-		void onLinkLengths(double[] linkLengths);
+		void onLinkLengths(float[] linkLengths);
 
 		/**
 		 * Location result.
 		 * @param location location given by endpoint.
 		 */
-		void onLocation(double location);
+		void onLocation(float location);
 
 		/**
 		 * Store size result.
@@ -282,7 +282,7 @@ public class MHProbe implements ByteCounter {
 		 * @param uptimePercentage endpoint's reported percentage uptime in the last requested period; either
 		 *                         48 hour or 7 days.
 		 */
-		void onUptime(double uptimePercentage);
+		void onUptime(float uptimePercentage);
 	}
 
 	/**
@@ -687,31 +687,34 @@ public class MHProbe implements ByteCounter {
 			break;
 		case IDENTIFIER:
 			//7-day uptime with random noise, then quantized.
-			listener.onIdentifier(probeIdentifier,
-			                      Math.round(randomNoise(100*node.uptime.getUptimeWeek())));
+			long percent = Math.round(randomNoise(100*node.uptime.getUptimeWeek()));
+			//Clamp to byte.
+			if (percent > Byte.MAX_VALUE) percent = Byte.MAX_VALUE;
+			else if (percent < Byte.MIN_VALUE) percent = Byte.MIN_VALUE;
+			listener.onIdentifier(probeIdentifier, (byte)percent);
 			break;
 		case LINK_LENGTHS:
 			PeerNode[] peers = node.peers.connectedPeers();
-			double[] linkLengths = new double[peers.length];
+			float[] linkLengths = new float[peers.length];
 			int i = 0;
 			for (PeerNode peer : peers) {
-				linkLengths[i++] = randomNoise(Math.min(Math.abs(peer.getLocation() - node.getLocation()),
-				                                        1.0 - Math.abs(peer.getLocation() - node.getLocation())));
+				linkLengths[i++] = (float)randomNoise(Math.min(Math.abs(peer.getLocation() - node.getLocation()),
+				                                         1.0 - Math.abs(peer.getLocation() - node.getLocation())));
 			}
 			listener.onLinkLengths(linkLengths);
 			break;
 		case LOCATION:
-			listener.onLocation(node.getLocation());
+			listener.onLocation((float)node.getLocation());
 			break;
 		case STORE_SIZE:
 			//1,073,741,824 bytes (2^30) per GiB
 			listener.onStoreSize(randomNoise(Math.round((double)node.getStoreSize()/1073741824)));
 			break;
 		case UPTIME_48H:
-			listener.onUptime(randomNoise(100*node.uptime.getUptime()));
+			listener.onUptime((float)randomNoise(100*node.uptime.getUptime()));
 			break;
 		case UPTIME_7D:
-			listener.onUptime(randomNoise(100*node.uptime.getUptimeWeek()));
+			listener.onUptime((float)randomNoise(100*node.uptime.getUptimeWeek()));
 			break;
 		default:
 			throw new UnsupportedOperationException("Missing response for " + type.name());
@@ -779,15 +782,15 @@ public class MHProbe implements ByteCounter {
 			} else if (message.getSpec().equals(DMT.MHProbeBuild)) {
 				listener.onBuild(message.getInt(DMT.BUILD));
 			} else if (message.getSpec().equals(DMT.MHProbeIdentifier)) {
-				listener.onIdentifier(message.getLong(DMT.IDENTIFIER), message.getLong(DMT.UPTIME_PERCENT));
+				listener.onIdentifier(message.getLong(DMT.IDENTIFIER), message.getByte(DMT.UPTIME_PERCENT));
 			} else if (message.getSpec().equals(DMT.MHProbeLinkLengths)) {
-				listener.onLinkLengths(message.getDoubleArray(DMT.LINK_LENGTHS));
+				listener.onLinkLengths(message.getFloatArray(DMT.LINK_LENGTHS));
 			} else if (message.getSpec().equals(DMT.MHProbeLocation)) {
-				listener.onLocation(message.getDouble(DMT.LOCATION));
+				listener.onLocation(message.getFloat(DMT.LOCATION));
 			} else if (message.getSpec().equals(DMT.MHProbeStoreSize)) {
 				listener.onStoreSize(message.getLong(DMT.STORE_SIZE));
 			} else if (message.getSpec().equals(DMT.MHProbeUptime)) {
-				listener.onUptime(message.getDouble(DMT.UPTIME_PERCENT));
+				listener.onUptime(message.getFloat(DMT.UPTIME_PERCENT));
 			} else if (message.getSpec().equals(DMT.MHProbeError)) {
 				final byte rawError = message.getByte(DMT.TYPE);
 				try {
@@ -874,17 +877,17 @@ public class MHProbe implements ByteCounter {
 		}
 
 		@Override
-		public void onIdentifier(long identifier, long uptimePercentage) {
+		public void onIdentifier(long identifier, byte uptimePercentage) {
 			send(DMT.createMHProbeIdentifier(uid, identifier, uptimePercentage));
 		}
 
 		@Override
-		public void onLinkLengths(double[] linkLengths) {
+		public void onLinkLengths(float[] linkLengths) {
 			send(DMT.createMHProbeLinkLengths(uid, linkLengths));
 		}
 
 		@Override
-		public void onLocation(double location) {
+		public void onLocation(float location) {
 			send(DMT.createMHProbeLocation(uid, location));
 		}
 
@@ -894,7 +897,7 @@ public class MHProbe implements ByteCounter {
 		}
 
 		@Override
-		public void onUptime(double uptimePercentage) {
+		public void onUptime(float uptimePercentage) {
 			send(DMT.createMHProbeUptime(uid, uptimePercentage));
 		}
 	}

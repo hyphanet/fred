@@ -1143,7 +1143,7 @@ public class DMT {
 	public static final MessageType MHProbeIdentifier = new MessageType("MHProbeIdentifier", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
 		addField(IDENTIFIER, Long.class);
-		addField(UPTIME_PERCENT, Long.class);
+		addField(UPTIME_PERCENT, Byte.class);
 	}};
 
 	/**
@@ -1153,7 +1153,7 @@ public class DMT {
 	 * @param uptimePercentage 7-day uptime percentage.
 	 * @return Message with requested attributes.
 	 */
-	public static Message createMHProbeIdentifier(long uid, long identifier, long uptimePercentage) {
+	public static Message createMHProbeIdentifier(long uid, long identifier, byte uptimePercentage) {
 		Message msg = new Message(MHProbeIdentifier);
 		msg.set(UID, uid);
 		msg.set(IDENTIFIER, identifier);
@@ -1163,7 +1163,7 @@ public class DMT {
 
 	public static final MessageType MHProbeLinkLengths = new MessageType("MHProbeLinkLengths", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
-		addField(LINK_LENGTHS, double[].class);
+		addField(LINK_LENGTHS, float[].class);
 	}};
 
 	/**
@@ -1172,7 +1172,7 @@ public class DMT {
 	 * @param linkLengths Endpoint link lengths.
 	 * @return Message with requested attributes.
 	 */
-	public static Message createMHProbeLinkLengths(long uid, double[] linkLengths) {
+	public static Message createMHProbeLinkLengths(long uid, float[] linkLengths) {
 		Message msg = new Message(MHProbeLinkLengths);
 		msg.set(UID, uid);
 		msg.set(LINK_LENGTHS, linkLengths);
@@ -1181,7 +1181,7 @@ public class DMT {
 
 	public static final MessageType MHProbeLocation = new MessageType("MHProbeLocation", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
-		addField(LOCATION, Double.class);
+		addField(LOCATION, Float.class);
 	}};
 
 	/**
@@ -1190,7 +1190,7 @@ public class DMT {
 	 * @param location Endpoint location.
 	 * @return Message with the requested attributes.
 	 */
-	public static Message createMHProbeLocation(long uid, double location) {
+	public static Message createMHProbeLocation(long uid, float location) {
 		Message msg = new Message(MHProbeLocation);
 		msg.set(UID, uid);
 		msg.set(LOCATION, location);
@@ -1217,7 +1217,7 @@ public class DMT {
 
 	public static final MessageType MHProbeUptime = new MessageType("MHProbeUptime", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
-		addField(UPTIME_PERCENT, Double.class);
+		addField(UPTIME_PERCENT, Float.class);
 	}};
 
 	/**
@@ -1226,7 +1226,7 @@ public class DMT {
 	 * @param uptimePercent Percent of the requested period (48 hours or 7 days) which the endpoint was online.
 	 * @return Message with requested attributes.
 	 */
-	public static Message createMHProbeUptime(long uid, double uptimePercent) {
+	public static Message createMHProbeUptime(long uid, float uptimePercent) {
 		Message msg = new Message(MHProbeUptime);
 		msg.set(UID, uid);
 		msg.set(UPTIME_PERCENT, uptimePercent);

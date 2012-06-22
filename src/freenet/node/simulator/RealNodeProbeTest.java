@@ -98,19 +98,19 @@ public class RealNodeProbeTest extends RealNodeTest {
 			}
 
 			@Override
-			public void onIdentifier(long identifier, long uptimePercentage) {
+			public void onIdentifier(long identifier, byte uptimePercentage) {
 				System.out.println("Probe got identifier " + identifier + " with uptime percentage " + uptimePercentage + ".");
 			}
 
 			@Override
-			public void onLinkLengths(double[] linkLengths) {
+			public void onLinkLengths(float[] linkLengths) {
 				System.out.print("Probe got link lengths: { ");
-				for (Double length : linkLengths) System.out.print(length + " ");
+				for (Float length : linkLengths) System.out.print(length + " ");
 				System.out.println("}.");
 			}
 
 			@Override
-			public void onLocation(double location) {
+			public void onLocation(float location) {
 				System.out.println("Probe got location " + location + ".");
 			}
 
@@ -120,7 +120,7 @@ public class RealNodeProbeTest extends RealNodeTest {
 			}
 
 			@Override
-			public void onUptime(double uptimePercentage) {
+			public void onUptime(float uptimePercentage) {
 				System.out.print("Probe got uptime " + nf.format(uptimePercentage) + "%.");
 			}
 		};

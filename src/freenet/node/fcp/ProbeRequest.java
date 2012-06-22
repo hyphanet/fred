@@ -89,17 +89,17 @@ public class ProbeRequest extends FCPMessage {
 				}
 
 				@Override
-				public void onIdentifier(long probeIdentifier, long percentageUptime) {
+				public void onIdentifier(long probeIdentifier, byte percentageUptime) {
 					handler.outputHandler.queue(new ProbeIdentifier(identifier, probeIdentifier, percentageUptime));
 				}
 
 				@Override
-				public void onLinkLengths(double[] linkLengths) {
+				public void onLinkLengths(float[] linkLengths) {
 					handler.outputHandler.queue(new ProbeLinkLengths(identifier, linkLengths));
 				}
 
 				@Override
-				public void onLocation(double location) {
+				public void onLocation(float location) {
 					handler.outputHandler.queue(new ProbeLocation(identifier, location));
 				}
 
@@ -109,7 +109,7 @@ public class ProbeRequest extends FCPMessage {
 				}
 
 				@Override
-				public void onUptime(double uptimePercent) {
+				public void onUptime(float uptimePercent) {
 					handler.outputHandler.queue(new ProbeUptime(identifier, uptimePercent));
 				}
 			};
