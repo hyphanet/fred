@@ -634,6 +634,7 @@ public class MHProbe implements ByteCounter {
 						case STORE_SIZE: filter.setType(DMT.MHProbeStoreSize); break;
 						case UPTIME_48H:
 						case UPTIME_7D: filter.setType(DMT.MHProbeUptime); break;
+						default: throw new UnsupportedOperationException("Missing filter for " + type.name());
 					}
 					//Refusal or an error should also be listened for so it can be relayed.
 					filter.or(MessageFilter.create().setSource(candidate).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.MHProbeRefused)
@@ -702,7 +703,7 @@ public class MHProbe implements ByteCounter {
 				listener.onUptime(randomNoise(100*node.uptime.getUptimeWeek()));
 				break;
 			default:
-				if (logDEBUG) Logger.debug(MHProbe.class, "Response for probe result type \"" + type + "\" is not implemented.");
+				throw new UnsupportedOperationException("Missing response for " + type.name());
 		}
 	}
 
@@ -716,11 +717,7 @@ public class MHProbe implements ByteCounter {
 		case STORE_SIZE: return respondStoreSize;
 		case UPTIME_48H:
 		case UPTIME_7D: return respondUptime;
-		default:
-			//There a valid ProbeType value that is not present here.
-			if (logDEBUG) Logger.debug(MHProbe.class, "Probe type \"" + type.name() + "\" does not check " +
-			                                          "if a response is allowed by the user; refusing.");
-			return false;
+		default: throw new UnsupportedOperationException("Missing permissions check for " + type.name());
 		}
 	}
 
@@ -798,7 +795,7 @@ public class MHProbe implements ByteCounter {
 			} else if (message.getSpec().equals(DMT.MHProbeRefused)) {
 				listener.onRefused();
 			}  else {
-				if (logDEBUG) Logger.debug(MHProbe.class, "Matched probe result set " + message.getSpec().getName() + ", but handling not implemented.");
+				throw new UnsupportedOperationException("Missing handling for " + message.getSpec().getName());
 			}
 		}
 
