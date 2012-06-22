@@ -327,7 +327,7 @@ public class MHProbe implements ByteCounter {
 		int sortOrder = 0;
 		final SubConfig nodeConfig = node.config.get("node");
 
-		nodeConfig.register("probeBandwidth", true, sortOrder++, false, true, "Node.probeBandwidthShort",
+		nodeConfig.register("probeBandwidth", true, sortOrder++, true, true, "Node.probeBandwidthShort",
 			"Node.probeBandwidthLong", new BooleanCallback() {
 			@Override
 			public Boolean get() {
@@ -340,7 +340,7 @@ public class MHProbe implements ByteCounter {
 			}
 		});
 		respondBandwidth = nodeConfig.getBoolean("probeBandwidth");
-		nodeConfig.register("probeBuild", true, sortOrder++, false, true, "Node.probeBuildShort",
+		nodeConfig.register("probeBuild", true, sortOrder++, true, true, "Node.probeBuildShort",
 			"Node.probeBuildLong", new BooleanCallback() {
 			@Override
 			public Boolean get() {
@@ -353,7 +353,7 @@ public class MHProbe implements ByteCounter {
 			}
 		});
 		respondBuild = nodeConfig.getBoolean("probeBuild");
-		nodeConfig.register("probeIdentifier", true, sortOrder++, false, true,
+		nodeConfig.register("probeIdentifier", true, sortOrder++, true, true,
 			"Node.probeRespondIdentifierShort", "Node.probeRespondIdentifierLong", new BooleanCallback() {
 			@Override
 			public Boolean get() {
@@ -366,7 +366,7 @@ public class MHProbe implements ByteCounter {
 			}
 		});
 		respondIdentifier = nodeConfig.getBoolean("probeIdentifier");
-		nodeConfig.register("probeLinkLengths", true, sortOrder++, false, true, "Node.probeLinkLengthsShort",
+		nodeConfig.register("probeLinkLengths", true, sortOrder++, true, true, "Node.probeLinkLengthsShort",
 			"Node.probeLinkLengthsLong", new BooleanCallback() {
 			@Override
 			public Boolean get() {
@@ -379,7 +379,7 @@ public class MHProbe implements ByteCounter {
 			}
 		});
 		respondLinkLengths = nodeConfig.getBoolean("probeLinkLengths");
-		nodeConfig.register("probeLocation", true, sortOrder++, false, true, "Node.probeLocationShort",
+		nodeConfig.register("probeLocation", true, sortOrder++, true, true, "Node.probeLocationShort",
 			"Node.probeLocationLong", new BooleanCallback() {
 			@Override
 			public Boolean get() {
@@ -392,7 +392,7 @@ public class MHProbe implements ByteCounter {
 			}
 		});
 		respondLocation = nodeConfig.getBoolean("probeLocation");
-		nodeConfig.register("probeStoreSize", true, sortOrder++, false, true, "Node.probeStoreSizeShort",
+		nodeConfig.register("probeStoreSize", true, sortOrder++, true, true, "Node.probeStoreSizeShort",
 			"Node.probeStoreSizeLong", new BooleanCallback() {
 			@Override
 			public Boolean get() {
@@ -406,7 +406,7 @@ public class MHProbe implements ByteCounter {
 			}
 		});
 		respondStoreSize = nodeConfig.getBoolean("probeStoreSize");
-		nodeConfig.register("probeUptime", true, sortOrder++, false, true, "Node.probeUptimeShort",
+		nodeConfig.register("probeUptime", true, sortOrder++, true, true, "Node.probeUptimeShort",
 			"Node.probeUptimeLong", new BooleanCallback() {
 			@Override
 			public Boolean get() {
