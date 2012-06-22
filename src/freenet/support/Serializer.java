@@ -70,6 +70,8 @@ public class Serializer {
 			return dis.readLong();
 		} else if (type.equals(Double.class)) {
 		    return dis.readDouble();
+		} else if (type.equals(Float.class)) {
+			return dis.readFloat();
 		} else if (type.equals(String.class)) {
 			int length = dis.readInt();
 			StringBuilder sb = new StringBuilder(length);
@@ -95,6 +97,10 @@ public class Serializer {
 			double[] array = new double[dis.readInt()];
 			for (int i = 0; i < array.length; i++) array[i] = dis.readDouble();
 			return array;
+		} else if (type.equals(float[].class)) {
+			float[] array = new float[dis.readInt()];
+			for (int i = 0; i < array.length; i++) array[i] = dis.readFloat();
+			return array;
 		} else {
 			throw new RuntimeException("Unrecognised field type: " + type);
 		}
@@ -112,6 +118,8 @@ public class Serializer {
 			dos.writeShort(((Short) object).shortValue());
 		} else if (type.equals(Double.class)) {
 		    dos.writeDouble(((Double) object).doubleValue());
+		} else if (type.equals(Float.class)) {
+			dos.writeFloat((Float)object);
 		} else if (WritableToDataOutputStream.class.isAssignableFrom(type)) {
 			WritableToDataOutputStream b = (WritableToDataOutputStream) object;
 			b.writeToDataOutputStream(dos);
@@ -134,6 +142,9 @@ public class Serializer {
 		} else if (type.equals(double[].class))  {
 			dos.writeInt(((double[])object).length);
 			for (double element : (double[])object) dos.writeDouble(element);
+		} else if (type.equals(float[].class)) {
+			dos.writeInt(((float[])object).length);
+			for (float element : (float[])object) dos.writeFloat(element);
 		} else {
 			throw new RuntimeException("Unrecognised field type: " + type);
 		}
