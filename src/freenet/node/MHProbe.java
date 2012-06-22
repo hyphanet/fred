@@ -177,12 +177,14 @@ public class MHProbe implements ByteCounter {
 		 * @throws IllegalArgumentException There is no enum value with the requested code.
 		 */
 		static ProbeError valueOf(byte code) throws IllegalArgumentException {
-			//TODO: This is clean, but is it too much slower than a switch-case?
-			//Switch-case would be more work to maintain as it requires repeating the codes used in the value constructors.
-			for (ProbeError value : ProbeError.values()) {
-				if (value.code == code) return value;
+			switch (code) {
+			case 0: return DISCONNECTED;
+			case 1: return OVERLOAD;
+			case 2: return TIMEOUT;
+			case 3: return UNKNOWN;
+			case 4: return UNRECOGNIZED_TYPE;
+			default: throw new IllegalArgumentException("There is no ProbeError with code " + code + ".");
 			}
-			throw new IllegalArgumentException("There is no ProbeError with code " + code + ".");
 		}
 	}
 
@@ -207,10 +209,17 @@ public class MHProbe implements ByteCounter {
 		 * @throws IllegalArgumentException There is no enum value with the requested code.
 		 */
 		static ProbeType valueOf(byte code) throws IllegalArgumentException {
-			for (ProbeType value : ProbeType.values()) {
-				if (value.code == code) return value;
+			switch (code) {
+			case 0: return BANDWIDTH;
+			case 1: return BUILD;
+			case 2: return IDENTIFIER;
+			case 3: return LINK_LENGTHS;
+			case 4: return LOCATION;
+			case 5: return STORE_SIZE;
+			case 6: return UPTIME_48H;
+			case 7: return UPTIME_7D;
+			default: throw new IllegalArgumentException("There is no ProbeType with code " + code + ".");
 			}
-			throw new IllegalArgumentException("There is no ProbeType with code " + code + ".");
 		}
 	}
 
