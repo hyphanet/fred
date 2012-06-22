@@ -634,17 +634,19 @@ public class MHProbe implements ByteCounter {
 					final int timeout = (htl - 1) * TIMEOUT_PER_HTL + TIMEOUT_HTL1;
 					//Filter for response to this probe with requested result type.
 					final MessageFilter filter = MessageFilter.create().setSource(candidate).setField(DMT.UID, uid).setTimeout(timeout);
+
 					switch (type) {
-						case BANDWIDTH: filter.setType(DMT.MHProbeBandwidth); break;
-						case BUILD: filter.setType(DMT.MHProbeBuild); break;
-						case IDENTIFIER: filter.setType(DMT.MHProbeIdentifier); break;
-						case LINK_LENGTHS: filter.setType(DMT.MHProbeLinkLengths); break;
-						case LOCATION: filter.setType(DMT.MHProbeLocation); break;
-						case STORE_SIZE: filter.setType(DMT.MHProbeStoreSize); break;
-						case UPTIME_48H:
-						case UPTIME_7D: filter.setType(DMT.MHProbeUptime); break;
-						default: throw new UnsupportedOperationException("Missing filter for " + type.name());
+					case BANDWIDTH: filter.setType(DMT.MHProbeBandwidth); break;
+					case BUILD: filter.setType(DMT.MHProbeBuild); break;
+					case IDENTIFIER: filter.setType(DMT.MHProbeIdentifier); break;
+					case LINK_LENGTHS: filter.setType(DMT.MHProbeLinkLengths); break;
+					case LOCATION: filter.setType(DMT.MHProbeLocation); break;
+					case STORE_SIZE: filter.setType(DMT.MHProbeStoreSize); break;
+					case UPTIME_48H:
+					case UPTIME_7D: filter.setType(DMT.MHProbeUptime); break;
+					default: throw new UnsupportedOperationException("Missing filter for " + type.name());
 					}
+
 					//Refusal or an error should also be listened for so it can be relayed.
 					filter.or(MessageFilter.create().setSource(candidate).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.MHProbeRefused)
 					      .or(MessageFilter.create().setSource(candidate).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.MHProbeError)));
@@ -676,43 +678,43 @@ public class MHProbe implements ByteCounter {
 		}
 
 		switch (type) {
-			case BANDWIDTH:
-				//1,024 (2^10) bytes per KiB
-				listener.onOutputBandwidth(randomNoise(Math.round((double)node.getOutputBandwidthLimit()/1024)));
-				break;
-			case BUILD:
-				listener.onBuild(node.nodeUpdater.getMainVersion());
-				break;
-			case IDENTIFIER:
-				//7-day uptime with random noise, then quantized.
-				listener.onIdentifier(probeIdentifier,
-				                      Math.round(randomNoise(100*node.uptime.getUptimeWeek())));
-				break;
-			case LINK_LENGTHS:
-				PeerNode[] peers = node.peers.connectedPeers();
-				double[] linkLengths = new double[peers.length];
-				int i = 0;
-				for (PeerNode peer : peers) {
-					linkLengths[i++] = randomNoise(Math.min(Math.abs(peer.getLocation() - node.getLocation()),
-					                                        1.0 - Math.abs(peer.getLocation() - node.getLocation())));
-				}
-				listener.onLinkLengths(linkLengths);
-				break;
-			case LOCATION:
-				listener.onLocation(node.getLocation());
-				break;
-			case STORE_SIZE:
-				//1,073,741,824 bytes (2^30) per GiB
-				listener.onStoreSize(randomNoise(Math.round((double)node.getStoreSize()/1073741824)));
-				break;
-			case UPTIME_48H:
-				listener.onUptime(randomNoise(100*node.uptime.getUptime()));
-				break;
-			case UPTIME_7D:
-				listener.onUptime(randomNoise(100*node.uptime.getUptimeWeek()));
-				break;
-			default:
-				throw new UnsupportedOperationException("Missing response for " + type.name());
+		case BANDWIDTH:
+			//1,024 (2^10) bytes per KiB
+			listener.onOutputBandwidth(randomNoise(Math.round((double)node.getOutputBandwidthLimit()/1024)));
+			break;
+		case BUILD:
+			listener.onBuild(node.nodeUpdater.getMainVersion());
+			break;
+		case IDENTIFIER:
+			//7-day uptime with random noise, then quantized.
+			listener.onIdentifier(probeIdentifier,
+			                      Math.round(randomNoise(100*node.uptime.getUptimeWeek())));
+			break;
+		case LINK_LENGTHS:
+			PeerNode[] peers = node.peers.connectedPeers();
+			double[] linkLengths = new double[peers.length];
+			int i = 0;
+			for (PeerNode peer : peers) {
+				linkLengths[i++] = randomNoise(Math.min(Math.abs(peer.getLocation() - node.getLocation()),
+				                                        1.0 - Math.abs(peer.getLocation() - node.getLocation())));
+			}
+			listener.onLinkLengths(linkLengths);
+			break;
+		case LOCATION:
+			listener.onLocation(node.getLocation());
+			break;
+		case STORE_SIZE:
+			//1,073,741,824 bytes (2^30) per GiB
+			listener.onStoreSize(randomNoise(Math.round((double)node.getStoreSize()/1073741824)));
+			break;
+		case UPTIME_48H:
+			listener.onUptime(randomNoise(100*node.uptime.getUptime()));
+			break;
+		case UPTIME_7D:
+			listener.onUptime(randomNoise(100*node.uptime.getUptimeWeek()));
+			break;
+		default:
+			throw new UnsupportedOperationException("Missing response for " + type.name());
 		}
 	}
 
