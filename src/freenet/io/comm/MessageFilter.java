@@ -170,10 +170,15 @@ public final class MessageFilter {
 		return this;
 	}
 
+	/**
+	 * Modifies the filter so that it returns true if either it or the filter in the argument returns true.
+	 * Multiple combinations must be nested: such as filter1.or(filter2.or(filter3))).
+	 * @return reference to this, the modified filter.
+	 */
 	public MessageFilter or(MessageFilter or) {
 		if((or != null) && (_or != null) && or != _or) {
 			// FIXME maybe throw? this is almost certainly a bug, and a nasty one too!
-			Logger.error(this, "or() replacement: "+_or+" -> "+or, new Exception("error"));
+			Logger.error(this, "or() cannot be called again on the same filter. To chain use filter1.or(filter2.or(filter3)).", new Exception("debug"));
 		}
 		_or = or;
 		return this;

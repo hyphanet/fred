@@ -35,7 +35,7 @@ public class ProbeRequestHandler implements ProbeRequestSender.Listener {
 		ProbeRequestHandler handler = 
 			new ProbeRequestHandler(source, uid, sender);
 		sender.addListener(handler);
-		PeerNode[] peers = n.peers.connectedPeers;
+		PeerNode[] peers = n.peers.connectedPeers();
 		Message accepted = DMT.createFNPAccepted(uid);
 		Message trace = DMT.createFNPRHProbeTrace(uid, sender.getNearestLoc(), sender.getBest(), htl, (short)1, (short)1, n.getLocation(), n.swapIdentifier, LocationManager.extractLocs(peers, true), LocationManager.extractUIDs(peers), (short)0, (short)1, "", source.swapIdentifier);
 		try {

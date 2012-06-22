@@ -604,7 +604,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
     }
     
 	private void updateBest() {
-		PeerNode[] nodes = node.peers.myPeers;
+		PeerNode[] nodes = node.peers.myPeers();
 		for(PeerNode node : nodes) {
 			if(!node.isConnected()) continue;
 			double loc = node.getLocation();
