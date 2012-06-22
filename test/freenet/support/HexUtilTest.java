@@ -368,4 +368,11 @@ public class HexUtilTest extends TestCase {
 		outputArray = HexUtil.bitsToBytes(methodBitSet,8);
 		assertTrue(Arrays.equals(expectedByteArray,outputArray));
 	}
+
+	/* Checks that offset == array length is allowed, which is needed for
+	 * handling zero length arrays */
+	public void testBytesToHexZeroLength() {
+		assertEquals("", HexUtil.bytesToHex(new byte[0], 0, 0));
+		assertEquals("", HexUtil.bytesToHex(new byte[2], 2, 0));
+	}
 }

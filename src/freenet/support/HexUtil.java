@@ -34,8 +34,8 @@ public class HexUtil {
 	 * @return the string of hex chars.
 	 */
 	public static final String bytesToHex(byte[] bs, int off, int length) {
-		if (bs.length <= off || bs.length < off+length)
-			throw new IllegalArgumentException();
+		if (bs.length < off+length)
+			throw new IllegalArgumentException("Total length: " + bs.length + ", offset: " + off + ", length: " + length);
 		StringBuilder sb = new StringBuilder(length * 2);
 		bytesToHexAppend(bs, off, length, sb);
 		return sb.toString();
@@ -46,7 +46,7 @@ public class HexUtil {
 		int off,
 		int length,
 		StringBuilder sb) {
-		if (bs.length <= off || bs.length < off+length)
+		if (bs.length < off+length)
 			throw new IllegalArgumentException();
 		sb.ensureCapacity(sb.length() + length * 2);
 		for (int i = off; i < (off + length); i++) {

@@ -3,8 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 
+import freenet.crypt.BlockCipher;
+import freenet.crypt.ciphers.Rijndael;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.support.MutableBoolean;
@@ -333,4 +336,36 @@ public class NewPacketFormatTest extends TestCase {
 		}
 	}
 	
+	/* This checks the output of the sequence number encryption function to
+	 * make sure it doesn't change accidentally. */
+	public void testSequenceNumberEncryption() {
+		BlockCipher ivCipher = new Rijndael();
+		ivCipher.initialize(new byte[] {
+				0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00
+		});
+
+		byte[] ivNonce = new byte[16];
+
+		BlockCipher incommingCipher = new Rijndael();
+		incommingCipher.initialize(new byte[] {
+				0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00
+		});
+
+		SessionKey sessionKey = new SessionKey(null, null, null, null, incommingCipher, null, ivCipher, ivNonce, null, null);
+
+		byte[] encrypted = NewPacketFormat.encryptSequenceNumber(0, sessionKey);
+
+		/* This result has not been checked, but it was the output when
+		 * this test was added and we are (in this test) only
+		 * interested in making sure the output doesn't change. */
+		byte[] correct = new byte[] {(byte) 0xF7, (byte) 0x95, (byte) 0xBD, (byte) 0x4A};
+
+		assertTrue(Arrays.equals(correct, encrypted));
+	}
 }

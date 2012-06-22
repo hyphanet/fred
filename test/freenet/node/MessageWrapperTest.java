@@ -100,4 +100,31 @@ public class MessageWrapperTest extends TestCase {
 		assertFalse(frag.shortMessage);
 		assertSame(wrapper, frag.wrapper);
 	}
+
+	public void testLost() {
+		MessageItem item = new MessageItem(new byte[363], null, false, null, (short) 0, false, false);
+		MessageWrapper wrapper = new MessageWrapper(item, 0);
+
+		MessageFragment frag = wrapper.getMessageFragment(128);
+		assertNotNull(frag);
+		assertEquals(121, frag.fragmentLength);
+		wrapper.ack(frag.fragmentOffset, frag.fragmentOffset + frag.fragmentLength - 1);
+
+		frag = wrapper.getMessageFragment(128);
+		assertNotNull(frag);
+		assertEquals(121, frag.fragmentLength);
+		assertEquals(121, wrapper.lost(frag.fragmentOffset, frag.fragmentOffset + frag.fragmentLength - 1));
+
+		// 0->120 should still be sent and acked, 121->241 should not
+		for(int[] range : wrapper.getSent()) {
+			if(range[0] >= 121 || range[1] >= 121) {
+				fail("Expected 0->120, but got " + wrapper.getSent());
+			}
+		}
+		for(int[] range : wrapper.getAcks()) {
+			if(range[0] >= 121 || range[1] >= 121) {
+				fail("Expected 0->120, but got " + wrapper.getSent());
+			}
+		}
+	}
 }
