@@ -892,6 +892,11 @@ public class SimpleFieldSet {
 			putAppend(key, String.valueOf(v));
 	}
 
+	public void put(String key, float[] value) {
+		removeValue(key);
+		for (float v : value) putAppend(key, String.valueOf(v));
+	}
+
 	public int[] getIntArray(String key) {
 		String[] strings = getAll(key);
 		if(strings == null) return null;
@@ -914,6 +919,22 @@ public class SimpleFieldSet {
 		for(int i=0;i<strings.length;i++) {
 			try {
 				ret[i] = Double.valueOf(strings[i]);
+			} catch(NumberFormatException e) {
+				Logger.error(this, "Cannot parse "+strings[i]+" : "+e,e);
+				return null;
+			}
+		}
+
+		return ret;
+	}
+
+	public float[] getFloatArray(String key) {
+		String[] strings = getAll(key);
+		if(strings == null) return null;
+		float[] ret = new float[strings.length];
+		for(int i=0;i<strings.length;i++) {
+			try {
+				ret[i] = Float.valueOf(strings[i]);
 			} catch(NumberFormatException e) {
 				Logger.error(this, "Cannot parse "+strings[i]+" : "+e,e);
 				return null;
