@@ -617,7 +617,7 @@ public class MHProbe implements ByteCounter {
 			//Degree should have been changed from its initial sentinel value.
 			assert(degree != -1);
 			candidate = peers[node.random.nextInt(degree)];
-
+			if (candidate.isConnected()) {
 			//acceptProbability is the MH correction.
 			double acceptProbability;
 			int candidateDegree = candidate.getDegree();
@@ -630,7 +630,6 @@ public class MHProbe implements ByteCounter {
 			if (logDEBUG) Logger.debug(MHProbe.class, "acceptProbability is " + acceptProbability);
 			if (node.random.nextDouble() < acceptProbability) {
 				if (logDEBUG) Logger.debug(MHProbe.class, "Accepted candidate.");
-				if (candidate.isConnected()) {
 					final int timeout = (htl - 1) * TIMEOUT_PER_HTL + TIMEOUT_HTL1;
 					//Filter for response to this probe with requested result type.
 					final MessageFilter filter = MessageFilter.create().setSource(candidate).setField(DMT.UID, uid).setTimeout(timeout);
