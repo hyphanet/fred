@@ -88,7 +88,7 @@ public class MHProbe implements ByteCounter {
 				 * only happen after it has been confirmed to be below the limit. If this happens, it
 				 * indicates a concurrency problem or logic error.
 				 */
-				throw new IllegalStateException("Number of accepted probes exceeds the maximum.");
+				throw new IllegalStateException("Number of accepted probes exceeds the maximum: " + c);
 			}
 		}
 		public void decrement() {
@@ -100,7 +100,7 @@ public class MHProbe implements ByteCounter {
 				 * removed to avoid memory leaks. If this happens, it indicates a concurrency problem or
 				 * logic error.
 				 */
-				throw new IllegalStateException("Number of accepted probes is negative.");
+				throw new IllegalStateException("Number of accepted probes is negative: " + c);
 			}
 		}
 		public byte value() { return c; }
