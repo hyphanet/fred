@@ -593,14 +593,12 @@ public class MHProbe implements ByteCounter {
 	private boolean route(final ProbeType type, final long uid, byte htl, final Listener listener) {
 		//Recreate the request so that any sub-messages or unintended fields are not forwarded.
 		final Message message = DMT.createMHProbeRequest(htl, uid, type);
-		PeerNode[] peers = null;
+		PeerNode[] peers;
 		//Degree of the local node.
-		int degree = -1;
+		int degree;
 		PeerNode candidate;
 		//Loop until HTL runs out, in which case return a result, or the probe is relayed on to a peer.
 		for (; htl > 0; htl = probabilisticDecrement(htl)) {
-			if (peers != node.peers.connectedPeers()) {
-				//First loop or the list of connected peers was updated.
 				peers = node.peers.connectedPeers();
 				degree = peers.length;
 				//Can't handle a probe request if not connected to any peers.
@@ -613,7 +611,6 @@ public class MHProbe implements ByteCounter {
 					listener.onError(ProbeError.DISCONNECTED, null);
 					return true;
 				}
-			}
 			//Degree should have been changed from its initial sentinel value.
 			assert(degree != -1);
 			candidate = peers[node.random.nextInt(degree)];
