@@ -68,12 +68,12 @@ public class Message {
 	short priority;
 	private boolean needsLoadRT;
 	private boolean needsLoadBulk;
-	
+
 	public static Message decodeMessageFromPacket(byte[] buf, int offset, int length, PeerContext peer, int overhead) {
 		ByteBufferInputStream bb = new ByteBufferInputStream(buf, offset, length);
 		return decodeMessage(bb, peer, length + overhead, true, false, false);
 	}
-	
+
 	public static Message decodeMessageLax(byte[] buf, PeerContext peer, int overhead) {
 		ByteBufferInputStream bb = new ByteBufferInputStream(buf);
 		return decodeMessage(bb, peer, buf.length + overhead, true, false, true);
@@ -83,67 +83,64 @@ public class Message {
 	        boolean mayHaveSubMessages, boolean inSubMessage, boolean veryLax) {
 		MessageType mspec;
 		try {
-			mspec = MessageType.getSpec(Integer.valueOf(bb.readInt()), veryLax);
+			mspec = MessageType.getSpec(bb.readInt(), veryLax);
 		} catch (IOException e1) {
-			if(logMINOR)
-				Logger.minor(Message.class,"Failed to read message type: "+e1, e1);
+			if (logMINOR) Logger.minor(Message.class,"Failed to read message type: "+e1, e1);
 			return null;
 		}
 		if (mspec == null) {
-			if(logMINOR)
-				Logger.minor(Message.class, "Bogus message type");
-		    return null;
+			if (logMINOR) Logger.minor(Message.class, "Bogus message type");
+			return null;
 		}
-		if(mspec.isInternalOnly()) {
-			if(logMINOR)
-				Logger.minor(Message.class, "Internal only message");
-		    return null; // silently discard internal-only messages
+		if (mspec.isInternalOnly()) {
+			if (logMINOR) Logger.minor(Message.class, "Internal only message");
+			return null; // silently discard internal-only messages
 		}
 		Message m = new Message(mspec, peer, recvByteCount);
 		try {
-		    for (String name : mspec.getOrderedFields()) {
-		        Class<?> type = mspec.getFields().get(name);
-		        if (type.equals(LinkedList.class)) { // Special handling for LinkedList to deal with element type
-		            m.set(name, Serializer
-					        .readListFromDataInputStream(mspec.getLinkedListTypes().get(name),
-					        bb));
-		        } else {
-		            m.set(name, Serializer.readFromDataInputStream(type, bb));
-		        }
+			for (String name : mspec.getOrderedFields()) {
+				Class<?> type = mspec.getFields().get(name);
+				if (type.equals(LinkedList.class)) { // Special handling for LinkedList to deal with element type
+					m.set(name,
+					      Serializer.readListFromDataInputStream(mspec.getLinkedListTypes().get(name),
+					      bb));
+				} else {
+					m.set(name, Serializer.readFromDataInputStream(type, bb));
+				}
 			}
 			if (mayHaveSubMessages) {
-		    	while (bb.remaining() > 2) { // sizeof(unsigned short) == 2
-		    		ByteBufferInputStream bb2;
-		    		try {
-		    			int size = bb.readUnsignedShort();
-						if (bb.remaining() < size)
-							return m;
-
+				while (bb.remaining() > 2) { // sizeof(unsigned short) == 2
+					ByteBufferInputStream bb2;
+					try {
+						int size = bb.readUnsignedShort();
+						if (bb.remaining() < size) return m;
 						bb2 = bb.slice(size);
-		    		} catch (EOFException e) {
-		    			if(logMINOR) Logger.minor(Message.class, "No submessages, returning: "+m);
-		    			return m;
-		    		}
-		    		try {
-		    			Message subMessage = decodeMessage(bb2, peer, 0, false, true, veryLax);
-		    			if(subMessage == null) return m;
-		    			if(logMINOR) Logger.minor(Message.class, "Adding submessage: "+subMessage);
-		    			m.addSubMessage(subMessage);
-		    		} catch (Throwable t) {
-		    			Logger.error(Message.class, "Failed to read sub-message: "+t, t);
-		    		}
-		    	}
-		    }
+					} catch (EOFException e) {
+						if (logMINOR) Logger.minor(Message.class, "No submessages, returning: "+m);
+						return m;
+					}
+					try {
+						Message subMessage = decodeMessage(bb2, peer, 0, false, true, veryLax);
+						if (subMessage == null) return m;
+						if (logMINOR) Logger.minor(Message.class, "Adding submessage: "+subMessage);
+						m.addSubMessage(subMessage);
+					} catch (Throwable t) {
+						Logger.error(Message.class, "Failed to read sub-message: "+t, t);
+					}
+				}
+			}
 		} catch (EOFException e) {
 			String msg = peer.getPeer()+" sent a message packet that ends prematurely while deserialising "+mspec.getName();
-			if(inSubMessage) if(logMINOR) Logger.minor(Message.class, msg+" in sub-message", e);
-			else Logger.error(Message.class, msg, e);
-		    return null;
+			if (inSubMessage) {
+				if (logMINOR) Logger.minor(Message.class, msg+" in sub-message", e);
+				else Logger.error(Message.class, msg, e);
+			}
+			return null;
 		} catch (IOException e) {
-		    Logger.error(Message.class, "Unexpected IOException: "+e+" reading from buffer stream", e);
-		    return null;
+			Logger.error(Message.class, "Unexpected IOException: "+e+" reading from buffer stream", e);
+			return null;
 		}
-		if(logMINOR) Logger.minor(Message.class, "Returning message: "+m+" from "+m.getSource());
+		if (logMINOR) Logger.minor(Message.class, "Returning message: "+m+" from "+m.getSource());
 		return m;
 	}
 
@@ -154,7 +151,7 @@ public class Message {
 	private Message(MessageType spec, PeerContext source, int recvByteCount) {
 		localInstantiationTime = System.currentTimeMillis();
 		_spec = spec;
-		if(source == null) {
+		if (source == null) {
 			_internal = true;
 			_sourceRef = null;
 		} else {
@@ -166,27 +163,27 @@ public class Message {
 	}
 
 	public boolean getBoolean(String key) {
-		return ((Boolean) _payload.get(key)).booleanValue();
+		return (Boolean) _payload.get(key);
 	}
 
 	public byte getByte(String key) {
-		return ((Byte) _payload.get(key)).byteValue();
+		return (Byte) _payload.get(key);
 	}
 
 	public short getShort(String key) {
-		return ((Short) _payload.get(key)).shortValue();
+		return (Short) _payload.get(key);
 	}
 
 	public int getInt(String key) {
-		return ((Integer) _payload.get(key)).intValue();
+		return (Integer) _payload.get(key);
 	}
 
 	public long getLong(String key) {
-		return ((Long) _payload.get(key)).longValue();
+		return (Long) _payload.get(key);
 	}
 
 	public double getDouble(String key) {
-	    return ((Double) _payload.get(key)).doubleValue();
+		return (Double) _payload.get(key);
 	}
 
 	public String getString(String key) {
@@ -218,7 +215,7 @@ public class Message {
 	}
 
 	public void set(String key, double d) {
-		set(key, new Double(d));
+		set(key, Double.valueOf(d));
 	}
 
 	public void set(String key, Object value) {
@@ -236,11 +233,8 @@ public class Message {
 	}
 
 	private byte[] encodeToPacket(boolean includeSubMessages, boolean isSubMessage) {
-//		if (this.getSpec() != MessageTypes.ping && this.getSpec() != MessageTypes.pong)
-//		Logger.logMinor("<<<<< Send message : " + this);
+		if (logDEBUG) Logger.debug(this, "My spec code: "+_spec.getName().hashCode()+" for "+_spec.getName());
 
-		if(logDEBUG)
-			Logger.debug(this, "My spec code: "+_spec.getName().hashCode()+" for "+_spec.getName());
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DataOutputStream dos = new DataOutputStream(baos);
 		try {
@@ -254,9 +248,9 @@ public class Message {
 			throw new IllegalStateException(e.getMessage());
 		}
 
-		if(_subMessages != null && includeSubMessages) {
-			for(int i=0;i<_subMessages.size();i++) {
-				byte[] temp = _subMessages.get(i).encodeToPacket(false, true);
+		if (_subMessages != null && includeSubMessages) {
+			for (Message _subMessage : _subMessages) {
+				byte[] temp = _subMessage.encodeToPacket(false, true);
 				try {
 					dos.writeShort(temp.length);
 					dos.write(temp);
@@ -268,8 +262,7 @@ public class Message {
 		}
 
 		byte[] buf = baos.toByteArray();
-		if(logDEBUG)
-			Logger.debug(this, "Length: "+buf.length+", hash: "+Fields.hashCode(buf));
+		if (logDEBUG) Logger.debug(this, "Length: "+buf.length+", hash: "+Fields.hashCode(buf));
 		return buf;
 	}
 
@@ -288,7 +281,7 @@ public class Message {
 	}
 
 	public PeerContext getSource() {
-		return _sourceRef == null ? null : (PeerContext) _sourceRef.get();
+		return _sourceRef == null ? null : _sourceRef.get();
 	}
 
 	public boolean isInternal() {
@@ -335,24 +328,23 @@ public class Message {
 	}
 
 	public void addSubMessage(Message subMessage) {
-		if(_subMessages == null) _subMessages = new ArrayList<Message>();
+		if (_subMessages == null) _subMessages = new ArrayList<Message>();
 		_subMessages.add(subMessage);
 	}
 
 	public Message getSubMessage(MessageType t) {
-		if(_subMessages == null) return null;
-		for(int i=0;i<_subMessages.size();i++) {
-			Message m = _subMessages.get(i);
-			if(m.getSpec() == t) return m;
+		if (_subMessages == null) return null;
+		for (Message m : _subMessages) {
+			if (m.getSpec() == t) return m;
 		}
 		return null;
 	}
 
 	public Message grabSubMessage(MessageType t) {
-		if(_subMessages == null) return null;
-		for(int i=0;i<_subMessages.size();i++) {
+		if (_subMessages == null) return null;
+		for (int i=0;i<_subMessages.size();i++) {
 			Message m = _subMessages.get(i);
-			if(m.getSpec() == t) {
+			if (m.getSpec() == t) {
 				_subMessages.remove(i);
 				return m;
 			}
