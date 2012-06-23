@@ -552,7 +552,7 @@ public class MHProbe implements ByteCounter {
 							 * at zero over time.
 							 */
 							if (counter.value() == 0) {
-								MHProbe.this.accepted.remove(source);
+								accepted.remove(source);
 							}
 						}
 					}
