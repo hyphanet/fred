@@ -599,21 +599,23 @@ public class MHProbe implements ByteCounter {
 		PeerNode candidate;
 		//Loop until HTL runs out, in which case return a result, or the probe is relayed on to a peer.
 		for (; htl > 0; htl = probabilisticDecrement(htl)) {
-				peers = node.peers.connectedPeers();
-				degree = peers.length;
-				//Can't handle a probe request if not connected to any peers.
-				if (degree == 0) {
-					if (logMINOR) Logger.minor(MHProbe.class, "Aborting received probe request because there are no connections.");
-					/*
-					 * If this is a locally-started request, not a relayed one, give an error.
-					 * Otherwise, in this case there's nowhere to send the error.
-					 */
-					listener.onError(ProbeError.DISCONNECTED, null);
-					return true;
-				}
+			peers = node.peers.connectedPeers();
+			degree = peers.length;
+			//Can't handle a probe request if not connected to any peers.
+			if (degree == 0) {
+				if (logMINOR) Logger.minor(MHProbe.class, "Aborting received probe request because there are no connections.");
+				/*
+				 * If this is a locally-started request, not a relayed one, give an error.
+				 * Otherwise, in this case there's nowhere to send the error.
+				 */
+				listener.onError(ProbeError.DISCONNECTED, null);
+				return true;
+			}
+
 			//Degree should have been changed from its initial sentinel value.
 			assert(degree != -1);
 			candidate = peers[node.random.nextInt(degree)];
+
 			if (candidate.isConnected()) {
 				//acceptProbability is the MH correction.
 				double acceptProbability;
