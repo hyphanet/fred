@@ -123,8 +123,8 @@ public class Serializer {
 			}
 		} else if (type.equals(LinkedList.class)) {
 			LinkedList<?> ll = (LinkedList<?>) object;
-			dos.writeInt(ll.size());
 			synchronized (ll) {
+				dos.writeInt(ll.size());
 				for (Object o : ll) {
 					writeToDataOutputStream(o, dos);
 				}
