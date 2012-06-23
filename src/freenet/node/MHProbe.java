@@ -479,10 +479,6 @@ public class MHProbe implements ByteCounter {
 	 * @param source node from which the probe request was received. Used to relay back results.
 	 */
 	public void request(Message message, PeerNode source) {
-		if (source == null) {
-			if (logDEBUG) Logger.debug(MHProbe.class, "Received probe request from null source.", new Exception("Debug"));
-			return;
-		}
 		request(message, source, new ResultRelay(source, message.getLong(DMT.UID)));
 	}
 
