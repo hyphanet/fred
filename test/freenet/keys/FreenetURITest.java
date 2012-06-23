@@ -19,26 +19,26 @@ public class FreenetURITest extends TestCase {
 
 		try {
 			uri1.uskForSSK();
-			fail("no excpetion throw!");
+			fail("no exception throw!");
 		} catch (IllegalStateException e) {
 			// pass
 		}
 		try {
 			uri2.sskForUSK();
-			fail("no excpetion throw!");
+			fail("no exception throw!");
 		} catch (IllegalStateException e) {
 			// pass
 		}
 
 		try {
 			new FreenetURI(WANNA_CHK_1).sskForUSK();
-			fail("no excpetion throw!");
+			fail("no exception throw!");
 		} catch (IllegalStateException e) {
 			// pass
 		}
 		try {
 			new FreenetURI(WANNA_CHK_1).uskForSSK();
-			fail("no excpetion throw!");
+			fail("no exception throw!");
 		} catch (IllegalStateException e) {
 			// pass
 		}
@@ -46,7 +46,7 @@ public class FreenetURITest extends TestCase {
 			new FreenetURI(
 			        "SSK@5hH~39FtjA7A9~VXWtBKI~prUDTuJZURudDG0xFn3KA,GDgRGt5f6xqbmo-WraQtU54x4H~871Sho9Hz6hC-0RA,AQACAAE/Search-17XXXX/index_d51.xml")
 			        .sskForUSK();
-			fail("no excpetion throw!");
+			fail("no exception throw!");
 		} catch (IllegalStateException e) {
 			// pass
 		}
@@ -54,7 +54,7 @@ public class FreenetURITest extends TestCase {
 			new FreenetURI(
 			        "SSK@5hH~39FtjA7A9~VXWtBKI~prUDTuJZURudDG0xFn3KA,GDgRGt5f6xqbmo-WraQtU54x4H~871Sho9Hz6hC-0RA,AQACAAE/Search17/index_d51.xml")
 			        .sskForUSK();
-			fail("no excpetion throw!");
+			fail("no exception throw!");
 		} catch (IllegalStateException e) {
 			// pass
 		}
