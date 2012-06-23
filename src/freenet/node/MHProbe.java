@@ -176,7 +176,7 @@ public class MHProbe implements ByteCounter {
 		 * @return enum value with selected code.
 		 * @throws IllegalArgumentException There is no enum value with the requested code.
 		 */
-		static ProbeError valueOf(byte code) throws IllegalArgumentException {
+		static ProbeError valueOf(byte code) {
 			switch (code) {
 			case 0: return DISCONNECTED;
 			case 1: return OVERLOAD;
@@ -208,7 +208,7 @@ public class MHProbe implements ByteCounter {
 		 * @return enum value with selected code.
 		 * @throws IllegalArgumentException There is no enum value with the requested code.
 		 */
-		static ProbeType valueOf(byte code) throws IllegalArgumentException {
+		static ProbeType valueOf(byte code) {
 			switch (code) {
 			case 0: return BANDWIDTH;
 			case 1: return BUILD;
