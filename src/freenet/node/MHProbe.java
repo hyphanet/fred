@@ -618,18 +618,18 @@ public class MHProbe implements ByteCounter {
 			assert(degree != -1);
 			candidate = peers[node.random.nextInt(degree)];
 			if (candidate.isConnected()) {
-			//acceptProbability is the MH correction.
-			double acceptProbability;
-			int candidateDegree = candidate.getDegree();
-			/* Candidate's degree is unknown; fall back to random walk by accepting this candidate
-			 * regardless of its degree.
-			 */
-			if (candidateDegree == 0) acceptProbability = 1.0;
-			else acceptProbability = (double)degree / candidateDegree;
+				//acceptProbability is the MH correction.
+				double acceptProbability;
+				int candidateDegree = candidate.getDegree();
+				/* Candidate's degree is unknown; fall back to random walk by accepting this candidate
+				 * regardless of its degree.
+				 */
+				if (candidateDegree == 0) acceptProbability = 1.0;
+				else acceptProbability = (double)degree / candidateDegree;
 
-			if (logDEBUG) Logger.debug(MHProbe.class, "acceptProbability is " + acceptProbability);
-			if (node.random.nextDouble() < acceptProbability) {
-				if (logDEBUG) Logger.debug(MHProbe.class, "Accepted candidate.");
+				if (logDEBUG) Logger.debug(MHProbe.class, "acceptProbability is " + acceptProbability);
+				if (node.random.nextDouble() < acceptProbability) {
+					if (logDEBUG) Logger.debug(MHProbe.class, "Accepted candidate.");
 					final int timeout = (htl - 1) * TIMEOUT_PER_HTL + TIMEOUT_HTL1;
 					//Filter for response to this probe with requested result type.
 					final MessageFilter filter = MessageFilter.create().setSource(candidate).setField(DMT.UID, uid).setTimeout(timeout);
