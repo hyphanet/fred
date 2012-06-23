@@ -230,8 +230,8 @@ public class MHProbe implements ByteCounter {
 		/**
 		 * An error occurred.
 		 * @param error type: What error occurred. Can be one of MHProbe.ProbeError.
-		 * @param rawError Error byte value. Defined if the error type is UNKNOWN, when it contains the
-		 *                 unrecognized error from the message.
+		 * @param rawError Error byte value. If the error is an UNKNOWN which occurred locally this contains the
+		 *                 unrecognized error code from the message. Otherwise it is null.
 		 */
 		void onError(ProbeError error, Byte rawError);
 
