@@ -509,7 +509,7 @@ public class MHProbe implements ByteCounter {
 			temp = ProbeType.valueOf(message.getByte(DMT.TYPE));
 			if (logDEBUG) Logger.debug(MHProbe.class, "Probe type is " + temp.name() + ".");
 		} catch (IllegalArgumentException e) {
-			if (logDEBUG) Logger.warning(MHProbe.class, "Invalid probe type " + message.getByte(DMT.TYPE) + ".", e);
+			if (logMINOR) Logger.minor(MHProbe.class, "Invalid probe type " + message.getByte(DMT.TYPE) + ".", e);
 			listener.onError(ProbeError.UNRECOGNIZED_TYPE, null);
 			return;
 		}
@@ -519,7 +519,7 @@ public class MHProbe implements ByteCounter {
 			if (logWARNING) Logger.warning(MHProbe.class, "Received out-of-bounds HTL of " + htl + "; interpreting as 1.");
 			htl = 1;
 		} else if (htl > MAX_HTL) {
-			if (logWARNING) Logger.warning(MHProbe.class, "Received out-of-bounds HTL of " + htl + "; interpreting as " + MAX_HTL + ".");
+			if (logMINOR) Logger.minor(MHProbe.class, "Received out-of-bounds HTL of " + htl + "; interpreting as " + MAX_HTL + ".");
 			htl = MAX_HTL;
 		}
 		boolean availableSlot = true;
@@ -651,9 +651,9 @@ public class MHProbe implements ByteCounter {
 						candidate.sendAsync(message, null, this);
 						return true;
 					} catch (NotConnectedException e) {
-						if (logDEBUG) Logger.debug(MHProbe.class, "Peer became disconnected between check and send attempt.", e);
+						if (logMINOR) Logger.minor(MHProbe.class, "Peer became disconnected between check and send attempt.", e);
 					} catch (DisconnectedException e) {
-						if (logDEBUG) Logger.debug(MHProbe.class, "Peer became disconnected while attempting to add filter.", e);
+						if (logMINOR) Logger.minor(MHProbe.class, "Peer became disconnected while attempting to add filter.", e);
 					}
 				}
 			}
@@ -838,7 +838,7 @@ public class MHProbe implements ByteCounter {
 
 		private void send(Message message) {
 			if (!source.isConnected()) {
-				if (logMINOR) Logger.minor(MHProbe.class, sourceDisconnect);
+				if (logDEBUG) Logger.debug(MHProbe.class, sourceDisconnect);
 				return;
 			}
 			if (logDEBUG) Logger.debug(MHProbe.class, "Relaying " + message.getSpec().getName() + " back" +
@@ -846,7 +846,7 @@ public class MHProbe implements ByteCounter {
 			try {
 				source.sendAsync(message, null, MHProbe.this);
 			} catch (NotConnectedException e) {
-				if (logMINOR) Logger.minor(MHProbe.class, sourceDisconnect, e);
+				if (logDEBUG) Logger.debug(MHProbe.class, sourceDisconnect, e);
 			}
 		}
 
