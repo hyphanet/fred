@@ -535,7 +535,7 @@ public class MHProbe implements ByteCounter {
 				accepted.put(source, new Counter());
 			}
 			final Counter counter = accepted.get(source);
-			if (counter.value() >= MAX_ACCEPTED) {
+			if (counter.value() == MAX_ACCEPTED) {
 				//Set a flag instead of sending inside the lock.
 				availableSlot = false;
 			} else {
