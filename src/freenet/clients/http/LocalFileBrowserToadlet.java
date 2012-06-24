@@ -23,7 +23,7 @@ import java.util.Hashtable;
  */
 public abstract class LocalFileBrowserToadlet extends Toadlet {	
 	protected final NodeClientCore core;
-	private static final int maxPOSTSize = 1024*1024;
+	private static final int MAX_POST_SIZE = 1024*1024;
 
 	public LocalFileBrowserToadlet (NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient) {
 		super(highLevelSimpleClient);
@@ -189,7 +189,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 	private Hashtable<String, String> readPOST (HTTPRequest request) {
 		Hashtable<String, String> set = new Hashtable<String, String>();
 		for (String key : request.getParts()) {
-			set.put(key, request.getPartAsStringFailsafe(key, maxPOSTSize));
+			set.put(key, request.getPartAsStringFailsafe(key, MAX_POST_SIZE));
 		}
 		return set;
 	}
@@ -217,7 +217,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 		} else if (request.isPartSet(filenameField()) &&
 		           (request.isPartSet(selectDir) || request.isPartSet(selectFile))) {
 			//Request is a POST.
-			return request.getPartAsStringFailsafe(filenameField(), maxPOSTSize);
+			return request.getPartAsStringFailsafe(filenameField(), MAX_POST_SIZE);
 		}
 		return null;
 	}
@@ -241,7 +241,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 
 	public void handleMethodPOST (URI uri, HTTPRequest request, final ToadletContext ctx)
 	        throws ToadletContextClosedException, IOException, RedirectException {
-		renderPage(persistenceFields(readPOST(request)), request.getPartAsStringFailsafe("path", maxPOSTSize),
+		renderPage(persistenceFields(readPOST(request)), request.getPartAsStringFailsafe("path", MAX_POST_SIZE),
 		           ctx, selectedValue(request));
 	}
 
