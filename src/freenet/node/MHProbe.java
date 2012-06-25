@@ -429,7 +429,6 @@ public class MHProbe implements ByteCounter {
 			}
 
 			@Override
-			// throws InvalidConfigValueException, NodeNeedRestartException
 			public void set(Boolean val) {
 				respondStoreSize = val;
 			}
