@@ -583,7 +583,7 @@ public class MHProbe implements ByteCounter {
 			return;
 		}
 		//One-minute window on acceptance; free up this probe slot in 60 seconds.
-		assert(task != null);
+		assert task != null;
 		timer.schedule(task, MINUTE);
 
 		/*
