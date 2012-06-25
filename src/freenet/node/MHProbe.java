@@ -171,6 +171,16 @@ public class MHProbe implements ByteCounter {
 		ProbeError(byte code) { this.code = code; }
 
 		/**
+		 * Checks whether valueOf() will throw for the given code. Intended to make things more concise and
+		 * faster than try-catch blocks.
+		 * @param code to be converted to an enum value.
+		 * @return true if the code can be converted to an enum value; false if not.
+		 */
+		static boolean isValid(byte code) {
+			return code >= 0 && code <= 4;
+		}
+
+		/**
 		 * Determines the enum value with the given code.
 		 * @param code enum value code.
 		 * @return enum value with selected code.
@@ -201,6 +211,16 @@ public class MHProbe implements ByteCounter {
 		public final byte code;
 
 		ProbeType(byte code) { this.code = code; }
+
+		/**
+		 * Checks whether valueOf() will throw for the given code. Intended to make things more concise and
+		 * faster than try-catch blocks.
+		 * @param code to be converted to an enum value.
+		 * @return true if the code can be converted to an enum value; false if not.
+		 */
+		static boolean isValid(byte code) {
+			return code >= 0 && code <= 7;
+		}
 
 		/**
 		 * Determines the enum value with the given code.
@@ -504,12 +524,13 @@ public class MHProbe implements ByteCounter {
 	 */
 	public void request(final Message message, final PeerNode source, final Listener listener) {
 		final Long uid = message.getLong(DMT.UID);
+		final byte typeCode = message.getByte(DMT.TYPE);
 		ProbeType temp;
-		try {
-			temp = ProbeType.valueOf(message.getByte(DMT.TYPE));
+		if (ProbeType.isValid(typeCode)) {
+			temp = ProbeType.valueOf(typeCode);
 			if (logDEBUG) Logger.debug(MHProbe.class, "Probe type is " + temp.name() + ".");
-		} catch (IllegalArgumentException e) {
-			if (logMINOR) Logger.minor(MHProbe.class, "Invalid probe type " + message.getByte(DMT.TYPE) + ".", e);
+		} else {
+			if (logMINOR) Logger.minor(MHProbe.class, "Invalid probe type " + typeCode + ".");
 			listener.onError(ProbeError.UNRECOGNIZED_TYPE, null);
 			return;
 		}
@@ -787,10 +808,9 @@ public class MHProbe implements ByteCounter {
 				listener.onUptime(message.getFloat(DMT.UPTIME_PERCENT));
 			} else if (message.getSpec().equals(DMT.MHProbeError)) {
 				final byte rawError = message.getByte(DMT.TYPE);
-				try {
-					final ProbeError error = ProbeError.valueOf(rawError);
-					listener.onError(error, null);
-				} catch (IllegalArgumentException e) {
+				if (ProbeError.isValid(rawError)) {
+					listener.onError(ProbeError.valueOf(rawError), null);
+				} else {
 					//Not recognized locally.
 					listener.onError(ProbeError.UNKNOWN, rawError);
 				}
