@@ -646,25 +646,8 @@ public class MHProbe implements ByteCounter {
 				if (logDEBUG) Logger.debug(MHProbe.class, "acceptProbability is " + acceptProbability);
 				if (node.random.nextDouble() < acceptProbability) {
 					if (logDEBUG) Logger.debug(MHProbe.class, "Accepted candidate.");
-					final int timeout = (htl - 1) * TIMEOUT_PER_HTL + TIMEOUT_HTL1;
 					//Filter for response to this probe with requested result type.
-					final MessageFilter filter = MessageFilter.create().setSource(candidate).setField(DMT.UID, uid).setTimeout(timeout);
-
-					switch (type) {
-					case BANDWIDTH: filter.setType(DMT.MHProbeBandwidth); break;
-					case BUILD: filter.setType(DMT.MHProbeBuild); break;
-					case IDENTIFIER: filter.setType(DMT.MHProbeIdentifier); break;
-					case LINK_LENGTHS: filter.setType(DMT.MHProbeLinkLengths); break;
-					case LOCATION: filter.setType(DMT.MHProbeLocation); break;
-					case STORE_SIZE: filter.setType(DMT.MHProbeStoreSize); break;
-					case UPTIME_48H:
-					case UPTIME_7D: filter.setType(DMT.MHProbeUptime); break;
-					default: throw new UnsupportedOperationException("Missing filter for " + type.name());
-					}
-
-					//Refusal or an error should also be listened for so it can be relayed.
-					filter.or(MessageFilter.create().setSource(candidate).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.MHProbeRefused)
-					      .or(MessageFilter.create().setSource(candidate).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.MHProbeError)));
+					final MessageFilter filter = createResponseFilter(type, candidate, uid, htl);
 					message.set(DMT.HTL, htl);
 					try {
 						node.usm.addAsyncFilter(filter, new ResultListener(listener), this);
@@ -680,6 +663,36 @@ public class MHProbe implements ByteCounter {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * @param type probe result type requested.
+	 * @param candidate node to filter for response from.
+	 * @param uid probe request uid, also to be used in any result.
+	 * @param htl current probe HTL; used to calculate timeout.
+	 * @return filter for the requested result type, probe error, and probe refusal.
+	 */
+	private MessageFilter createResponseFilter(ProbeType type, PeerNode candidate, long uid, byte htl) {
+		final int timeout = (htl - 1) * TIMEOUT_PER_HTL + TIMEOUT_HTL1;
+		final MessageFilter filter = MessageFilter.create().setSource(candidate).setField(DMT.UID, uid).setTimeout(timeout);
+
+		switch (type) {
+			case BANDWIDTH: filter.setType(DMT.MHProbeBandwidth); break;
+			case BUILD: filter.setType(DMT.MHProbeBuild); break;
+			case IDENTIFIER: filter.setType(DMT.MHProbeIdentifier); break;
+			case LINK_LENGTHS: filter.setType(DMT.MHProbeLinkLengths); break;
+			case LOCATION: filter.setType(DMT.MHProbeLocation); break;
+			case STORE_SIZE: filter.setType(DMT.MHProbeStoreSize); break;
+			case UPTIME_48H:
+			case UPTIME_7D: filter.setType(DMT.MHProbeUptime); break;
+			default: throw new UnsupportedOperationException("Missing filter for " + type.name());
+		}
+
+		//Refusal or an error should also be listened for so it can be relayed.
+		filter.or(MessageFilter.create().setSource(candidate).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.MHProbeRefused)
+		      .or(MessageFilter.create().setSource(candidate).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.MHProbeError)));
+
+		return filter;
 	}
 
 	/**
