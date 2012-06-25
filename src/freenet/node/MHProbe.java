@@ -629,8 +629,6 @@ public class MHProbe implements ByteCounter {
 				return true;
 			}
 
-			//Degree should have been changed from its initial sentinel value.
-			assert(degree != -1);
 			candidate = peers[node.random.nextInt(degree)];
 
 			if (candidate.isConnected()) {
