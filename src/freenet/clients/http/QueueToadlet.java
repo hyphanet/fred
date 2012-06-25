@@ -338,7 +338,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				return;
 			}
 			else if(request.isPartSet("restart_request") && (request.getPartAsStringFailsafe("restart_request", 128).length() > 0)) {
-				boolean disableFilterData = request.isPartSet("disableFilterData");
+				boolean filterData = request.isPartSet("filterDataRestart");
 				
 				
 				String identifier = "";
@@ -349,7 +349,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					identifier = request.getPartAsStringFailsafe(part, MAX_IDENTIFIER_LENGTH);
 					if(logMINOR) Logger.minor(this, "Restarting "+identifier);
 					try {
-						fcp.restartBlocking(identifier, disableFilterData);
+						/* The checkbox enables the filter if true, (checked) and
+						 * the argument enables the filter if false.
+						 */
+						fcp.restartBlocking(identifier, !filterData);
 					} catch (DatabaseDisabledException e) {
 						sendPersistenceDisabledError(ctx);
 						return;
@@ -1796,7 +1799,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	}
 	
 	/** Create a delete or restart control at the top of a table. It applies to whichever requests are checked in the table below. */
-	private HTMLNode createDeleteControl(PageMaker pageMaker, ToadletContext ctx, boolean isDownloadToTemp, boolean canRestart, boolean disableFilterChecked, boolean isUpload) {
+	private HTMLNode createDeleteControl(PageMaker pageMaker, ToadletContext ctx, boolean isDownloadToTemp, boolean canRestart, boolean disableFilter, boolean isUpload) {
 		HTMLNode deleteDiv = new HTMLNode("div", "class", "request-delete");
 		if(isDownloadToTemp) {
 			deleteDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete_request", l10n("deleteFilesFromTemp") });
@@ -1808,11 +1811,14 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			// FIXME: Split stuff with a permanent redirect to a separate grouping and use QueueToadlet.follow here?
 			String restartName = NodeL10n.getBase().getString(/*followRedirect ? "QueueToadlet.follow" : */ isUpload ? "QueueToadlet.restartUploads" : "QueueToadlet.restartDownloads");
 			deleteDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "restart_request", restartName });
-			HTMLNode input = deleteDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] {"checkbox", "disableFilterData", "disableFilterData" });
-			if(disableFilterChecked) {
+			/* Named filterDataRestart instead of filterData so it doesn't conflict with the filter checkbox
+			 * by the bulk download field.
+			 */
+			HTMLNode input = deleteDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] {"checkbox", "filterDataRestart", "filterDataRestart" });
+			if (!disableFilter) {
 				input.addAttribute("checked", "checked");
 			}
-			deleteDiv.addChild("#", l10n("disableFilter"));
+			deleteDiv.addChild("#", l10n("useFilter"));
 		}
 		return deleteDiv;
 	}
