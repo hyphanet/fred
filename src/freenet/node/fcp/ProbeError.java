@@ -1,7 +1,7 @@
 package freenet.node.fcp;
 
 import freenet.io.comm.DMT;
-import freenet.node.MHProbe;
+import freenet.node.probe.Error;
 
 /**
  * FCP message sent from the node to the client which indicates that an error has occurred.
@@ -13,10 +13,10 @@ public class ProbeError extends FCPResponse {
 	 * @param fcpIdentifier Identifier: FCP-level identifier for pairing requests and responses.
 	 * @param error type: The error code.
 	 * @param rawError If the error is UNKNOWN, can specify remote error code. Not included otherwise.
-	 * @see MHProbe.Listener onError()
-	 * @see MHProbe.ProbeError
+	 * @see freenet.node.probe.Listener onError()
+	 * @see freenet.node.probe.Error
 	 */
-	public ProbeError(String fcpIdentifier, MHProbe.ProbeError error, Byte rawError) {
+	public ProbeError(String fcpIdentifier, Error error, Byte rawError) {
 		super(fcpIdentifier);
 		fs.putOverwrite(DMT.TYPE, error.name());
 		if (rawError != null) fs.put(DMT.DESCRIPTION, rawError);

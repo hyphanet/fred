@@ -23,8 +23,9 @@ import freenet.crypt.DSAPublicKey;
 import freenet.keys.Key;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
-import freenet.node.MHProbe;
 import freenet.node.NodeStats.PeerLoadStats;
+import freenet.node.probe.Error;
+import freenet.node.probe.Type;
 import freenet.support.BitArray;
 import freenet.support.Buffer;
 import freenet.support.Fields;
@@ -1051,7 +1052,7 @@ public class DMT {
 		return msg;
 	}
 
-	public static final MessageType MHProbeRequest = new MessageType("MHProbeRequest", PRIORITY_HIGH) {{
+	public static final MessageType ProbeRequest = new MessageType("ProbeRequest", PRIORITY_HIGH) {{
 		addField(HTL, Byte.class);
 		addField(UID, Long.class);
 		addField(TYPE, Byte.class);
@@ -1063,15 +1064,15 @@ public class DMT {
 	 * @param uid Probe identifier: should be unique.
 	 * @return Message with requested attributes.
 	 */
-	public static Message createMHProbeRequest(byte htl, long uid, MHProbe.ProbeType type) {
-		Message msg = new Message(MHProbeRequest);
+	public static Message createProbeRequest(byte htl, long uid, Type type) {
+		Message msg = new Message(ProbeRequest);
 		msg.set(HTL, htl);
 		msg.set(UID, uid);
 		msg.set(TYPE, type.code);
 		return msg;
 	}
 
-	public static final MessageType MHProbeError = new MessageType("MHProbeError", PRIORITY_HIGH) {{
+	public static final MessageType ProbeError = new MessageType("ProbeError", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
 		addField(TYPE, Byte.class);
 	}};
@@ -1079,17 +1080,17 @@ public class DMT {
 	/**
 	 * Creates a probe response which indicates there was an error.
 	 * @param uid Probe identifier.
-	 * @param error The type of error that occurred. Can be one of MHProbe.ProbeError.
+	 * @param error The type of error that occurred. Can be one of Probe.ProbeError.
 	 * @return Message with the requested attributes.
 	 */
-	public static Message createMHProbeError(long uid, MHProbe.ProbeError error) {
-		Message msg = new Message(MHProbeError);
+	public static Message createProbeError(long uid, Error error) {
+		Message msg = new Message(ProbeError);
 		msg.set(UID, uid);
 		msg.set(TYPE, error.code);
 		return msg;
 	}
 
-	public static final MessageType MHProbeRefused = new MessageType("MHProbeRefused", PRIORITY_HIGH) {{
+	public static final MessageType ProbeRefused = new MessageType("ProbeRefused", PRIORITY_HIGH) {{
 		addField(DMT.UID, Long.class);
 	}};
 
@@ -1098,13 +1099,13 @@ public class DMT {
 	 * @param uid Probe identifier.
 	 * @return Message with the requested attribute.
 	 */
-	public static Message createMHProbeRefused(long uid) {
-		Message msg = new Message(MHProbeRefused);
+	public static Message createProbeRefused(long uid) {
+		Message msg = new Message(ProbeRefused);
 		msg.set(UID, uid);
 		return msg;
 	}
 
-	public static final MessageType MHProbeBandwidth = new MessageType("MHProbeBandwidth", PRIORITY_HIGH) {{
+	public static final MessageType ProbeBandwidth = new MessageType("ProbeBandwidth", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
 		addField(OUTPUT_BANDWIDTH_UPPER_LIMIT, Long.class);
 	}};
@@ -1115,14 +1116,14 @@ public class DMT {
 	 * @param limit Endpoint output bandwidth limit in KiB per second.
 	 * @return Message with requested attributes.
 	 */
-	public static Message createMHProbeBandwidth(long uid, long limit) {
-		Message msg = new Message(MHProbeBandwidth);
+	public static Message createProbeBandwidth(long uid, long limit) {
+		Message msg = new Message(ProbeBandwidth);
 		msg.set(UID, uid);
 		msg.set(OUTPUT_BANDWIDTH_UPPER_LIMIT, limit);
 		return msg;
 	}
 
-	public static final MessageType MHProbeBuild = new MessageType("MHProbeBuild", PRIORITY_HIGH) {{
+	public static final MessageType ProbeBuild = new MessageType("ProbeBuild", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
 		addField(BUILD, Integer.class);
 	}};
@@ -1133,14 +1134,14 @@ public class DMT {
 	 * @param build Endpoint build of Freenet.
 	 * @return Message with requested attributes.
 	 */
-	public static Message createMHProbeBuild(long uid, int build) {
-		Message msg = new Message(MHProbeBuild);
+	public static Message createProbeBuild(long uid, int build) {
+		Message msg = new Message(ProbeBuild);
 		msg.set(UID, uid);
 		msg.set(BUILD, build);
 		return msg;
 	}
 
-	public static final MessageType MHProbeIdentifier = new MessageType("MHProbeIdentifier", PRIORITY_HIGH) {{
+	public static final MessageType ProbeIdentifier = new MessageType("ProbeIdentifier", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
 		addField(IDENTIFIER, Long.class);
 		addField(UPTIME_PERCENT, Byte.class);
@@ -1153,15 +1154,15 @@ public class DMT {
 	 * @param uptimePercentage 7-day uptime percentage.
 	 * @return Message with requested attributes.
 	 */
-	public static Message createMHProbeIdentifier(long uid, long identifier, byte uptimePercentage) {
-		Message msg = new Message(MHProbeIdentifier);
+	public static Message createProbeIdentifier(long uid, long identifier, byte uptimePercentage) {
+		Message msg = new Message(ProbeIdentifier);
 		msg.set(UID, uid);
 		msg.set(IDENTIFIER, identifier);
 		msg.set(UPTIME_PERCENT, uptimePercentage);
 		return msg;
 	}
 
-	public static final MessageType MHProbeLinkLengths = new MessageType("MHProbeLinkLengths", PRIORITY_HIGH) {{
+	public static final MessageType ProbeLinkLengths = new MessageType("ProbeLinkLengths", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
 		addField(LINK_LENGTHS, float[].class);
 	}};
@@ -1172,14 +1173,14 @@ public class DMT {
 	 * @param linkLengths Endpoint link lengths.
 	 * @return Message with requested attributes.
 	 */
-	public static Message createMHProbeLinkLengths(long uid, float[] linkLengths) {
-		Message msg = new Message(MHProbeLinkLengths);
+	public static Message createProbeLinkLengths(long uid, float[] linkLengths) {
+		Message msg = new Message(ProbeLinkLengths);
 		msg.set(UID, uid);
 		msg.set(LINK_LENGTHS, linkLengths);
 		return msg;
 	}
 
-	public static final MessageType MHProbeLocation = new MessageType("MHProbeLocation", PRIORITY_HIGH) {{
+	public static final MessageType ProbeLocation = new MessageType("ProbeLocation", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
 		addField(LOCATION, Float.class);
 	}};
@@ -1190,14 +1191,14 @@ public class DMT {
 	 * @param location Endpoint location.
 	 * @return Message with the requested attributes.
 	 */
-	public static Message createMHProbeLocation(long uid, float location) {
-		Message msg = new Message(MHProbeLocation);
+	public static Message createProbeLocation(long uid, float location) {
+		Message msg = new Message(ProbeLocation);
 		msg.set(UID, uid);
 		msg.set(LOCATION, location);
 		return msg;
 	}
 
-	public static final MessageType MHProbeStoreSize = new MessageType("MHProbeStoreSize", PRIORITY_HIGH) {{
+	public static final MessageType ProbeStoreSize = new MessageType("ProbeStoreSize", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
 		addField(STORE_SIZE, Long.class);
 	}};
@@ -1208,14 +1209,14 @@ public class DMT {
 	 * @param storeSize Endpoint store size in GiB.
 	 * @return Message with requested attributes.
 	 */
-	public static Message createMHProbeStoreSize(long uid, long storeSize) {
-		Message msg = new Message(MHProbeStoreSize);
+	public static Message createProbeStoreSize(long uid, long storeSize) {
+		Message msg = new Message(ProbeStoreSize);
 		msg.set(UID, uid);
 		msg.set(STORE_SIZE, storeSize);
 		return msg;
 	}
 
-	public static final MessageType MHProbeUptime = new MessageType("MHProbeUptime", PRIORITY_HIGH) {{
+	public static final MessageType ProbeUptime = new MessageType("ProbeUptime", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
 		addField(UPTIME_PERCENT, Float.class);
 	}};
@@ -1226,8 +1227,8 @@ public class DMT {
 	 * @param uptimePercent Percent of the requested period (48 hours or 7 days) which the endpoint was online.
 	 * @return Message with requested attributes.
 	 */
-	public static Message createMHProbeUptime(long uid, float uptimePercent) {
-		Message msg = new Message(MHProbeUptime);
+	public static Message createProbeUptime(long uid, float uptimePercent) {
+		Message msg = new Message(ProbeUptime);
 		msg.set(UID, uid);
 		msg.set(UPTIME_PERCENT, uptimePercent);
 		return msg;

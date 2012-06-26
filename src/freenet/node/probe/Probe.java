@@ -1,4 +1,4 @@
-package freenet.node;
+package freenet.node.probe;
 
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
@@ -11,6 +11,8 @@ import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
+import freenet.node.Node;
+import freenet.node.PeerNode;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
@@ -31,7 +33,7 @@ import java.util.TimerTask;
  * <li>Success rates for remote requests by HTL; perhaps over some larger amount of time than the past hour.</li>
  * </ul>
  */
-public class MHProbe implements ByteCounter {
+public class Probe implements ByteCounter {
 
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
@@ -73,40 +75,6 @@ public class MHProbe implements ByteCounter {
 	private static final long MINUTE = 60 * 1000;
 
 	/**
-	 * Maximum number of accepted probes in the past minute.
-	 */
-	public static final byte MAX_ACCEPTED = 10;
-
-	private class Counter {
-		private byte c = 0;
-
-		public void increment() {
-			c++;
-			if (c > MAX_ACCEPTED) {
-				/*
-				 * The counter should never be incremented above the maximum, as an increment should
-				 * only happen after it has been confirmed to be below the limit. If this happens, it
-				 * indicates a concurrency problem or logic error.
-				 */
-				throw new IllegalStateException("Number of accepted probes exceeds the maximum: " + c);
-			}
-		}
-		public void decrement() {
-			c--;
-			if (c < 0) {
-				/*
-				 * The counter should never be decremented lower than zero, as a decrement should always
-				 * be paired with an increment before it, and if a counter reaches zero it should be
-				 * removed to avoid memory leaks. If this happens, it indicates a concurrency problem or
-				 * logic error.
-				 */
-				throw new IllegalStateException("Number of accepted probes is negative: " + c);
-			}
-		}
-		public byte value() { return c; }
-	}
-
-	/**
 	 * To make the timing less obvious when a node responds with a local result instead of forwarding at
 	 * HTL = 1, delay for a number of milliseconds, specifically an exponential distribution with this constant as
 	 * its mean.
@@ -137,173 +105,6 @@ public class MHProbe implements ByteCounter {
 	private volatile boolean respondUptime;
 
 	private volatile long probeIdentifier;
-
-	public enum ProbeError {
-		/**
-		 * The node being waited on to provide a response disconnected.
-		 */
-		DISCONNECTED((byte)0),
-		/**
-		 * A node cannot accept the request because its probe DoS protection has tripped.
-		 */
-		OVERLOAD((byte)1),
-		/**
-		 * Timed out while waiting for a response.
-		 */
-		TIMEOUT((byte)2),
-		/**
-		 * Only used locally, not sent over the network. The local node did not recognize the error used.
-		 * This should always be specified along with the description string containing the remote error.
-		 */
-		UNKNOWN((byte)3),
-		/**
-		 * A remote node did not recognize the requested probe type. For locally started probes it will not be
-		 * a ProbeError but a ProtocolError.
-		 */
-		UNRECOGNIZED_TYPE((byte)4);
-
-		/**
-		 * Stable numerical value to represent the enum value. Used to send over the network instead of .name().
-		 * Ordinals are not acceptable because they rely on the number and ordering of enums.
-		 */
-		public final byte code;
-
-		ProbeError(byte code) { this.code = code; }
-
-		/**
-		 * Checks whether valueOf() will throw for the given code. Intended to make things more concise and
-		 * faster than try-catch blocks.
-		 * @param code to be converted to an enum value.
-		 * @return true if the code can be converted to an enum value; false if not.
-		 */
-		static boolean isValid(byte code) {
-			return code >= 0 && code <= 4;
-		}
-
-		/**
-		 * Determines the enum value with the given code.
-		 * @param code enum value code.
-		 * @return enum value with selected code.
-		 * @throws IllegalArgumentException There is no enum value with the requested code.
-		 */
-		static ProbeError valueOf(byte code) {
-			switch (code) {
-			case 0: return DISCONNECTED;
-			case 1: return OVERLOAD;
-			case 2: return TIMEOUT;
-			case 3: return UNKNOWN;
-			case 4: return UNRECOGNIZED_TYPE;
-			default: throw new IllegalArgumentException("There is no ProbeError with code " + code + ".");
-			}
-		}
-	}
-
-	public enum ProbeType {
-		BANDWIDTH((byte)0),
-		BUILD((byte)1),
-		IDENTIFIER((byte)2),
-		LINK_LENGTHS((byte)3),
-		LOCATION((byte)4),
-		STORE_SIZE((byte)5),
-		UPTIME_48H((byte)6),
-		UPTIME_7D((byte)7);
-
-		public final byte code;
-
-		ProbeType(byte code) { this.code = code; }
-
-		/**
-		 * Checks whether valueOf() will throw for the given code. Intended to make things more concise and
-		 * faster than try-catch blocks.
-		 * @param code to be converted to an enum value.
-		 * @return true if the code can be converted to an enum value; false if not.
-		 */
-		static boolean isValid(byte code) {
-			return code >= 0 && code <= 7;
-		}
-
-		/**
-		 * Determines the enum value with the given code.
-		 * @param code enum value code.
-		 * @return enum value with selected code.
-		 * @throws IllegalArgumentException There is no enum value with the requested code.
-		 */
-		static ProbeType valueOf(byte code) {
-			switch (code) {
-			case 0: return BANDWIDTH;
-			case 1: return BUILD;
-			case 2: return IDENTIFIER;
-			case 3: return LINK_LENGTHS;
-			case 4: return LOCATION;
-			case 5: return STORE_SIZE;
-			case 6: return UPTIME_48H;
-			case 7: return UPTIME_7D;
-			default: throw new IllegalArgumentException("There is no ProbeType with code " + code + ".");
-			}
-		}
-	}
-
-	/**
-	 * Listener for the different types of probe results.
-	 */
-	public interface Listener {
-		/**
-		 * An error occurred.
-		 * @param error type: What error occurred. Can be one of MHProbe.ProbeError.
-		 * @param rawError Error byte value. If the error is an UNKNOWN which occurred locally this contains the
-		 *                 unrecognized error code from the message. Otherwise it is null.
-		 */
-		void onError(ProbeError error, Byte rawError);
-
-		/**
-		 * Endpoint opted not to respond with the requested information.
-		 */
-		void onRefused();
-
-		/**
-		 * Output bandwidth limit result.
-		 * @param outputBandwidth endpoint's reported output bandwidth limit in KiB per second.
-		 */
-		void onOutputBandwidth(long outputBandwidth);
-
-		/**
-		 * Build result.
-		 * @param build endpoint's reported build / main version.
-		 */
-		void onBuild(int build);
-
-		/**
-		 * Identifier result.
-		 * @param identifier identifier given by endpoint.
-		 * @param uptimePercentage quantized noisy 7-day uptime percentage
-		 */
-		void onIdentifier(long identifier, byte uptimePercentage);
-
-		/**
-		 * Link length result.
-		 * @param linkLengths endpoint's reported link lengths.
-		 */
-		void onLinkLengths(float[] linkLengths);
-
-		/**
-		 * Location result.
-		 * @param location location given by endpoint.
-		 */
-		void onLocation(float location);
-
-		/**
-		 * Store size result.
-		 * @param storeSize endpoint's reported store size in GiB.
-		 */
-		void onStoreSize(long storeSize);
-
-		/**
-		 * Uptime result.
-		 * @param uptimePercentage endpoint's reported percentage uptime in the last requested period; either
-		 *                         48 hour or 7 days.
-		 */
-		void onUptime(float uptimePercentage);
-	}
 
 	/**
 	 * Applies random noise proportional to the input value.
@@ -348,7 +149,7 @@ public class MHProbe implements ByteCounter {
 	@Override
 	public void sentPayload(int bytes) {}
 
-	public MHProbe(final Node node) {
+	public Probe(final Node node) {
 		this.node = node;
 		this.accepted = Collections.synchronizedMap(new HashMap<PeerNode, Counter>());
 		this.timer = new Timer(true);
@@ -484,17 +285,17 @@ public class MHProbe implements ByteCounter {
 	/**
 	 * Sends an outgoing probe request.
 	 * @param htl htl for this outgoing probe: should be [1, MAX_HTL]
-	 * @param listener Something which implements MHProbe.Listener and will be called with results.
-	 * @see MHProbe.Listener
+	 * @param listener Something which implements Probe.Listener and will be called with results.
+	 * @see Listener
 	 */
-	public void start(final byte htl, final long uid, final ProbeType type, final Listener listener) {
-		Message request = DMT.createMHProbeRequest(htl, uid, type);
+	public void start(final byte htl, final long uid, final Type type, final Listener listener) {
+		Message request = DMT.createProbeRequest(htl, uid, type);
 		request(request, null, listener);
 	}
 
 	/**
 	 * Same as its three-argument namesake, but responds to results by passing them on to source.
-	 * @param message probe request, (possibly made by DMT.createMHProbeRequest) containing HTL
+	 * @param message probe request, (possibly made by DMT.createProbeRequest) containing HTL
 	 * @param source node from which the probe request was received. Used to relay back results.
 	 */
 	public void request(Message message, PeerNode source) {
@@ -524,22 +325,22 @@ public class MHProbe implements ByteCounter {
 	public void request(final Message message, final PeerNode source, final Listener listener) {
 		final Long uid = message.getLong(DMT.UID);
 		final byte typeCode = message.getByte(DMT.TYPE);
-		ProbeType temp;
-		if (ProbeType.isValid(typeCode)) {
-			temp = ProbeType.valueOf(typeCode);
-			if (logDEBUG) Logger.debug(MHProbe.class, "Probe type is " + temp.name() + ".");
+		Type temp;
+		if (Type.isValid(typeCode)) {
+			temp = Type.valueOf(typeCode);
+			if (logDEBUG) Logger.debug(Probe.class, "Probe type is " + temp.name() + ".");
 		} else {
-			if (logMINOR) Logger.minor(MHProbe.class, "Invalid probe type " + typeCode + ".");
-			listener.onError(ProbeError.UNRECOGNIZED_TYPE, null);
+			if (logMINOR) Logger.minor(Probe.class, "Invalid probe type " + typeCode + ".");
+			listener.onError(Error.UNRECOGNIZED_TYPE, null);
 			return;
 		}
-		final ProbeType type = temp;
+		final Type type = temp;
 		byte htl = message.getByte(DMT.HTL);
 		if (htl < 1) {
-			if (logWARNING) Logger.warning(MHProbe.class, "Received out-of-bounds HTL of " + htl + "; interpreting as 1.");
+			if (logWARNING) Logger.warning(Probe.class, "Received out-of-bounds HTL of " + htl + "; interpreting as 1.");
 			htl = 1;
 		} else if (htl > MAX_HTL) {
-			if (logMINOR) Logger.minor(MHProbe.class, "Received out-of-bounds HTL of " + htl + "; interpreting as " + MAX_HTL + ".");
+			if (logMINOR) Logger.minor(Probe.class, "Received out-of-bounds HTL of " + htl + "; interpreting as " + MAX_HTL + ".");
 			htl = MAX_HTL;
 		}
 		boolean availableSlot = true;
@@ -551,7 +352,7 @@ public class MHProbe implements ByteCounter {
 				accepted.put(source, new Counter());
 			}
 			final Counter counter = accepted.get(source);
-			if (counter.value() == MAX_ACCEPTED) {
+			if (counter.value() == Counter.MAX_ACCEPTED) {
 				//Set a flag instead of sending inside the lock.
 				availableSlot = false;
 			} else {
@@ -577,8 +378,8 @@ public class MHProbe implements ByteCounter {
 		}
 		if (!availableSlot) {
 			//Send an overload error back to the source.
-			if (logDEBUG) Logger.debug(MHProbe.class, "Already accepted maximum number of probes; rejecting incoming.");
-			listener.onError(ProbeError.OVERLOAD, null);
+			if (logDEBUG) Logger.debug(Probe.class, "Already accepted maximum number of probes; rejecting incoming.");
+			listener.onError(Error.OVERLOAD, null);
 			return;
 		}
 		//One-minute window on acceptance; free up this probe slot in 60 seconds.
@@ -606,25 +407,25 @@ public class MHProbe implements ByteCounter {
 	 * Attempts to route the message to a peer. If HTL is decremented to zero before this is possible, responds.
 	 * @return true if the message has been handled; false if the local node should respond to the request.
 	 */
-	private boolean route(final ProbeType type, final long uid, byte htl, final Listener listener) {
+	private boolean route(final Type type, final long uid, byte htl, final Listener listener) {
 		//Recreate the request so that any sub-messages or unintended fields are not forwarded.
-		final Message message = DMT.createMHProbeRequest(htl, uid, type);
+		final Message message = DMT.createProbeRequest(htl, uid, type);
 		PeerNode[] peers;
 		//Degree of the local node.
 		int degree;
 		PeerNode candidate;
 		//Loop until HTL runs out, in which case return a result, or the probe is relayed on to a peer.
 		for (; htl > 0; htl = probabilisticDecrement(htl)) {
-			peers = node.peers.connectedPeers();
+			peers = node.getConnectedPeers();
 			degree = peers.length;
 			//Can't handle a probe request if not connected to any peers.
 			if (degree == 0) {
-				if (logMINOR) Logger.minor(MHProbe.class, "Aborting received probe request because there are no connections.");
+				if (logMINOR) Logger.minor(Probe.class, "Aborting received probe request because there are no connections.");
 				/*
 				 * If this is a locally-started request, not a relayed one, give an error.
 				 * Otherwise, in this case there's nowhere to send the error.
 				 */
-				listener.onError(ProbeError.DISCONNECTED, null);
+				listener.onError(Error.DISCONNECTED, null);
 				return true;
 			}
 
@@ -640,21 +441,21 @@ public class MHProbe implements ByteCounter {
 				if (candidateDegree == 0) acceptProbability = 1.0;
 				else acceptProbability = (double)degree / candidateDegree;
 
-				if (logDEBUG) Logger.debug(MHProbe.class, "acceptProbability is " + acceptProbability);
+				if (logDEBUG) Logger.debug(Probe.class, "acceptProbability is " + acceptProbability);
 				if (node.random.nextDouble() < acceptProbability) {
-					if (logDEBUG) Logger.debug(MHProbe.class, "Accepted candidate.");
+					if (logDEBUG) Logger.debug(Probe.class, "Accepted candidate.");
 					//Filter for response to this probe with requested result type.
 					final MessageFilter filter = createResponseFilter(type, candidate, uid, htl);
 					message.set(DMT.HTL, htl);
 					try {
-						node.usm.addAsyncFilter(filter, new ResultListener(listener), this);
-						if (logDEBUG) Logger.debug(MHProbe.class, "Sending.");
+						node.getUSM().addAsyncFilter(filter, new ResultListener(listener), this);
+						if (logDEBUG) Logger.debug(Probe.class, "Sending.");
 						candidate.sendAsync(message, null, this);
 						return true;
 					} catch (NotConnectedException e) {
-						if (logMINOR) Logger.minor(MHProbe.class, "Peer became disconnected between check and send attempt.", e);
+						if (logMINOR) Logger.minor(Probe.class, "Peer became disconnected between check and send attempt.", e);
 					} catch (DisconnectedException e) {
-						if (logMINOR) Logger.minor(MHProbe.class, "Peer became disconnected while attempting to add filter.", e);
+						if (logMINOR) Logger.minor(Probe.class, "Peer became disconnected while attempting to add filter.", e);
 					}
 				}
 			}
@@ -669,25 +470,25 @@ public class MHProbe implements ByteCounter {
 	 * @param htl current probe HTL; used to calculate timeout.
 	 * @return filter for the requested result type, probe error, and probe refusal.
 	 */
-	private MessageFilter createResponseFilter(ProbeType type, PeerNode candidate, long uid, byte htl) {
+	private MessageFilter createResponseFilter(Type type, PeerNode candidate, long uid, byte htl) {
 		final int timeout = (htl - 1) * TIMEOUT_PER_HTL + TIMEOUT_HTL1;
 		final MessageFilter filter = MessageFilter.create().setSource(candidate).setField(DMT.UID, uid).setTimeout(timeout);
 
 		switch (type) {
-			case BANDWIDTH: filter.setType(DMT.MHProbeBandwidth); break;
-			case BUILD: filter.setType(DMT.MHProbeBuild); break;
-			case IDENTIFIER: filter.setType(DMT.MHProbeIdentifier); break;
-			case LINK_LENGTHS: filter.setType(DMT.MHProbeLinkLengths); break;
-			case LOCATION: filter.setType(DMT.MHProbeLocation); break;
-			case STORE_SIZE: filter.setType(DMT.MHProbeStoreSize); break;
+			case BANDWIDTH: filter.setType(DMT.ProbeBandwidth); break;
+			case BUILD: filter.setType(DMT.ProbeBuild); break;
+			case IDENTIFIER: filter.setType(DMT.ProbeIdentifier); break;
+			case LINK_LENGTHS: filter.setType(DMT.ProbeLinkLengths); break;
+			case LOCATION: filter.setType(DMT.ProbeLocation); break;
+			case STORE_SIZE: filter.setType(DMT.ProbeStoreSize); break;
 			case UPTIME_48H:
-			case UPTIME_7D: filter.setType(DMT.MHProbeUptime); break;
+			case UPTIME_7D: filter.setType(DMT.ProbeUptime); break;
 			default: throw new UnsupportedOperationException("Missing filter for " + type.name());
 		}
 
 		//Refusal or an error should also be listened for so it can be relayed.
-		filter.or(MessageFilter.create().setSource(candidate).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.MHProbeRefused)
-		      .or(MessageFilter.create().setSource(candidate).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.MHProbeError)));
+		filter.or(MessageFilter.create().setSource(candidate).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.ProbeRefused)
+		      .or(MessageFilter.create().setSource(candidate).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.ProbeError)));
 
 		return filter;
 	}
@@ -695,7 +496,7 @@ public class MHProbe implements ByteCounter {
 	/**
 	 * Depending on node settings, sends a message to source containing either a refusal or the requested result.
 	 */
-	private void respond(final ProbeType type, final Listener listener) {
+	private void respond(final Type type, final Listener listener) {
 
 		if (!respondTo(type)) {
 			listener.onRefused();
@@ -719,7 +520,7 @@ public class MHProbe implements ByteCounter {
 			listener.onIdentifier(probeIdentifier, (byte)percent);
 			break;
 		case LINK_LENGTHS:
-			PeerNode[] peers = node.peers.connectedPeers();
+			PeerNode[] peers = node.getConnectedPeers();
 			float[] linkLengths = new float[peers.length];
 			int i = 0;
 			for (PeerNode peer : peers) {
@@ -746,7 +547,7 @@ public class MHProbe implements ByteCounter {
 		}
 	}
 
-	private boolean respondTo(ProbeType type) {
+	private boolean respondTo(Type type) {
 		switch (type){
 		case BANDWIDTH: return respondBandwidth;
 		case BUILD: return respondBuild;
@@ -791,40 +592,40 @@ public class MHProbe implements ByteCounter {
 
 		@Override
 		public void onDisconnect(PeerContext context) {
-			if (logDEBUG) Logger.debug(MHProbe.class, "Next node in chain disconnected.");
-			listener.onError(ProbeError.DISCONNECTED, null);
+			if (logDEBUG) Logger.debug(Probe.class, "Next node in chain disconnected.");
+			listener.onError(Error.DISCONNECTED, null);
 		}
 
 		/**
-		 * Parses provided message and calls appropriate MHProbe.Listener method for the type of result.
+		 * Parses provided message and calls appropriate Probe.Listener method for the type of result.
 		 * @param message Probe result.
 		 */
 		@Override
 		public void onMatched(Message message) {
-			if(logDEBUG) Logger.debug(MHProbe.class, "Matched " + message.getSpec().getName());
-			if (message.getSpec().equals(DMT.MHProbeBandwidth)) {
+			if(logDEBUG) Logger.debug(Probe.class, "Matched " + message.getSpec().getName());
+			if (message.getSpec().equals(DMT.ProbeBandwidth)) {
 				listener.onOutputBandwidth(message.getLong(DMT.OUTPUT_BANDWIDTH_UPPER_LIMIT));
-			} else if (message.getSpec().equals(DMT.MHProbeBuild)) {
+			} else if (message.getSpec().equals(DMT.ProbeBuild)) {
 				listener.onBuild(message.getInt(DMT.BUILD));
-			} else if (message.getSpec().equals(DMT.MHProbeIdentifier)) {
+			} else if (message.getSpec().equals(DMT.ProbeIdentifier)) {
 				listener.onIdentifier(message.getLong(DMT.IDENTIFIER), message.getByte(DMT.UPTIME_PERCENT));
-			} else if (message.getSpec().equals(DMT.MHProbeLinkLengths)) {
+			} else if (message.getSpec().equals(DMT.ProbeLinkLengths)) {
 				listener.onLinkLengths(message.getFloatArray(DMT.LINK_LENGTHS));
-			} else if (message.getSpec().equals(DMT.MHProbeLocation)) {
+			} else if (message.getSpec().equals(DMT.ProbeLocation)) {
 				listener.onLocation(message.getFloat(DMT.LOCATION));
-			} else if (message.getSpec().equals(DMT.MHProbeStoreSize)) {
+			} else if (message.getSpec().equals(DMT.ProbeStoreSize)) {
 				listener.onStoreSize(message.getLong(DMT.STORE_SIZE));
-			} else if (message.getSpec().equals(DMT.MHProbeUptime)) {
+			} else if (message.getSpec().equals(DMT.ProbeUptime)) {
 				listener.onUptime(message.getFloat(DMT.UPTIME_PERCENT));
-			} else if (message.getSpec().equals(DMT.MHProbeError)) {
+			} else if (message.getSpec().equals(DMT.ProbeError)) {
 				final byte rawError = message.getByte(DMT.TYPE);
-				if (ProbeError.isValid(rawError)) {
-					listener.onError(ProbeError.valueOf(rawError), null);
+				if (Error.isValid(rawError)) {
+					listener.onError(Error.valueOf(rawError), null);
 				} else {
 					//Not recognized locally.
-					listener.onError(ProbeError.UNKNOWN, rawError);
+					listener.onError(Error.UNKNOWN, rawError);
 				}
-			} else if (message.getSpec().equals(DMT.MHProbeRefused)) {
+			} else if (message.getSpec().equals(DMT.ProbeRefused)) {
 				listener.onRefused();
 			}  else {
 				throw new UnsupportedOperationException("Missing handling for " + message.getSpec().getName());
@@ -836,8 +637,8 @@ public class MHProbe implements ByteCounter {
 
 		@Override
 		public void onTimeout() {
-			if (logDEBUG) Logger.debug(MHProbe.class, "Timed out.");
-			listener.onError(ProbeError.TIMEOUT, null);
+			if (logDEBUG) Logger.debug(Probe.class, "Timed out.");
+			listener.onError(Error.TIMEOUT, null);
 		}
 
 		@Override
@@ -868,61 +669,61 @@ public class MHProbe implements ByteCounter {
 
 		private void send(Message message) {
 			if (!source.isConnected()) {
-				if (logDEBUG) Logger.debug(MHProbe.class, sourceDisconnect);
+				if (logDEBUG) Logger.debug(Probe.class, sourceDisconnect);
 				return;
 			}
-			if (logDEBUG) Logger.debug(MHProbe.class, "Relaying " + message.getSpec().getName() + " back" +
+			if (logDEBUG) Logger.debug(Probe.class, "Relaying " + message.getSpec().getName() + " back" +
 			                                          " to " + source.userToString());
 			try {
-				source.sendAsync(message, null, MHProbe.this);
+				source.sendAsync(message, null, Probe.this);
 			} catch (NotConnectedException e) {
-				if (logDEBUG) Logger.debug(MHProbe.class, sourceDisconnect, e);
+				if (logDEBUG) Logger.debug(Probe.class, sourceDisconnect, e);
 			}
 		}
 
 		@Override
-		public void onError(ProbeError error, Byte rawError) {
-			send(DMT.createMHProbeError(uid, error));
+		public void onError(Error error, Byte rawError) {
+			send(DMT.createProbeError(uid, error));
 		}
 
 		@Override
 		public void onRefused() {
-			send(DMT.createMHProbeRefused(uid));
+			send(DMT.createProbeRefused(uid));
 		}
 
 		@Override
 		public void onOutputBandwidth(long outputBandwidth) {
-			send(DMT.createMHProbeBandwidth(uid, outputBandwidth));
+			send(DMT.createProbeBandwidth(uid, outputBandwidth));
 		}
 
 		@Override
 		public void onBuild(int build) {
-			send(DMT.createMHProbeBuild(uid, build));
+			send(DMT.createProbeBuild(uid, build));
 		}
 
 		@Override
 		public void onIdentifier(long identifier, byte uptimePercentage) {
-			send(DMT.createMHProbeIdentifier(uid, identifier, uptimePercentage));
+			send(DMT.createProbeIdentifier(uid, identifier, uptimePercentage));
 		}
 
 		@Override
 		public void onLinkLengths(float[] linkLengths) {
-			send(DMT.createMHProbeLinkLengths(uid, linkLengths));
+			send(DMT.createProbeLinkLengths(uid, linkLengths));
 		}
 
 		@Override
 		public void onLocation(float location) {
-			send(DMT.createMHProbeLocation(uid, location));
+			send(DMT.createProbeLocation(uid, location));
 		}
 
 		@Override
 		public void onStoreSize(long storeSize) {
-			send(DMT.createMHProbeStoreSize(uid, storeSize));
+			send(DMT.createProbeStoreSize(uid, storeSize));
 		}
 
 		@Override
 		public void onUptime(float uptimePercentage) {
-			send(DMT.createMHProbeUptime(uid, uptimePercentage));
+			send(DMT.createProbeUptime(uid, uptimePercentage));
 		}
 	}
 }

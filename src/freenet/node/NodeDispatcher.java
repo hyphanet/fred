@@ -21,6 +21,7 @@ import freenet.keys.KeyBlock;
 import freenet.keys.NodeSSK;
 import freenet.node.NodeStats.PeerLoadStats;
 import freenet.node.NodeStats.RejectReason;
+import freenet.node.probe.Probe;
 import freenet.store.BlockMetadata;
 import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
@@ -62,7 +63,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	final Node node;
 	private NodeStats nodeStats;
 	private NodeDispatcherCallback callback;
-	public final MHProbe mhProbe;
+	public final Probe probe;
 	
 	private static final long STALE_CONTEXT=20000;
 	private static final long STALE_CONTEXT_CHECK=20000;
@@ -71,7 +72,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		this.node = node;
 		this.nodeStats = node.nodeStats;
 		node.getTicker().queueTimedJob(this, STALE_CONTEXT_CHECK);
-		this.mhProbe = new MHProbe(node);
+		this.probe = new Probe(node);
 	}
 
 	ByteCounter pingCounter = new ByteCounter() {
@@ -287,9 +288,9 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		} else if(spec == DMT.FNPMyFullNoderef && source instanceof DarknetPeerNode) {
 			((DarknetPeerNode)source).handleFullNoderef(m);
 			return true;
-		} else if(spec == DMT.MHProbeRequest) {
-			//Response is handled by callbacks within mhProbe.
-			mhProbe.request(m, source);
+		} else if(spec == DMT.ProbeRequest) {
+			//Response is handled by callbacks within probe.
+			probe.request(m, source);
 			return true;
 		}
 		return false;

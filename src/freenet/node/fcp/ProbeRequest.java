@@ -3,8 +3,11 @@ package freenet.node.fcp;
 import com.db4o.ObjectContainer;
 import freenet.io.comm.DMT;
 import freenet.node.FSParseException;
-import freenet.node.MHProbe;
 import freenet.node.Node;
+import freenet.node.probe.Error;
+import freenet.node.probe.Listener;
+import freenet.node.probe.Probe;
+import freenet.node.probe.Type;
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -23,7 +26,7 @@ import freenet.support.SimpleFieldSet;
  *     <li>UPTIME_7D - returns 7-day uptime percentage.</li>
  *     </ul></li>
  * <li>>hopsToLive: Optional; approximately how many hops the probe will take before possibly returning a result.
- *                            Valid values are [1, MHProbe.MAX_HTL]. If omitted MHProbe.MAX_HTL is used.</li>
+ *                            Valid values are [1, Probe.MAX_HTL]. If omitted Probe.MAX_HTL is used.</li>
  * </ul>
  */
 public class ProbeRequest extends FCPMessage {
@@ -62,14 +65,14 @@ public class ProbeRequest extends FCPMessage {
 		}
 
 		try {
-			MHProbe.ProbeType type =  MHProbe.ProbeType.valueOf(fs.get(DMT.TYPE));
+			Type type =  Type.valueOf(fs.get(DMT.TYPE));
 			//If HTL is not defined default to MAX_HTL.
-			final byte htl = fs.get(DMT.HTL) == null ? MHProbe.MAX_HTL : fs.getByte(DMT.HTL);
+			final byte htl = fs.get(DMT.HTL) == null ? Probe.MAX_HTL : fs.getByte(DMT.HTL);
 			if (htl < 0) throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE,
 			                                               "hopsToLive cannot be negative.", null, false);
-			MHProbe.Listener listener = new MHProbe.Listener() {
+			Listener listener = new Listener() {
 				@Override
-				public void onError(MHProbe.ProbeError error, Byte rawError) {
+				public void onError(Error error, Byte rawError) {
 					handler.outputHandler.queue(new ProbeError(identifier, error, rawError));
 				}
 
@@ -113,7 +116,7 @@ public class ProbeRequest extends FCPMessage {
 					handler.outputHandler.queue(new ProbeUptime(identifier, uptimePercent));
 				}
 			};
-			node.dispatcher.mhProbe.start(htl, node.random.nextLong(), type, listener);
+			node.dispatcher.probe.start(htl, node.random.nextLong(), type, listener);
 		} catch (IllegalArgumentException e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unrecognized parse probe type \"" + fs.get(DMT.TYPE) + "\": " + e, null, false);
 		} catch (FSParseException e) {

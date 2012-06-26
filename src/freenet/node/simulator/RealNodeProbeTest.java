@@ -5,9 +5,12 @@ package freenet.node.simulator;
 
 import freenet.config.SubConfig;
 import freenet.crypt.DummyRandomSource;
-import freenet.node.MHProbe;
 import freenet.node.Node;
 import freenet.node.NodeStarter;
+import freenet.node.probe.Error;
+import freenet.node.probe.Listener;
+import freenet.node.probe.Probe;
+import freenet.node.probe.Type;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -74,9 +77,9 @@ public class RealNodeProbeTest extends RealNodeTest {
 		waitForAllConnected(nodes);
 
 		final NumberFormat nf = NumberFormat.getInstance();
-		MHProbe.Listener print = new MHProbe.Listener() {
+		Listener print = new Listener() {
 			@Override
-			public void onError(MHProbe.ProbeError error, Byte rawError) {
+			public void onError(Error error, Byte rawError) {
 				System.out.print("Probe error: " + error.name());
 				System.out.println(rawError == null ? "" : "(" + rawError + ")");
 			}
@@ -125,19 +128,19 @@ public class RealNodeProbeTest extends RealNodeTest {
 			}
 		};
 
-		final MHProbe.ProbeType types[] = {
-			MHProbe.ProbeType.BANDWIDTH,
-			MHProbe.ProbeType.BUILD,
-			MHProbe.ProbeType.IDENTIFIER,
-			MHProbe.ProbeType.LINK_LENGTHS,
-			MHProbe.ProbeType.LOCATION,
-			MHProbe.ProbeType.STORE_SIZE,
-			MHProbe.ProbeType.UPTIME_48H,
-			MHProbe.ProbeType.UPTIME_7D
+		final Type types[] = {
+			Type.BANDWIDTH,
+			Type.BUILD,
+			Type.IDENTIFIER,
+			Type.LINK_LENGTHS,
+			Type.LOCATION,
+			Type.STORE_SIZE,
+			Type.UPTIME_48H,
+			Type.UPTIME_7D
 		};
 
 		int index = 0;
-		byte htl = MHProbe.MAX_HTL;
+		byte htl = Probe.MAX_HTL;
 		while (true) {
 			System.out.println("Sending probes from node " + index + " with HTL " + htl + ".");
 			System.out.println("0) BANDWIDTH");
@@ -169,7 +172,7 @@ public class RealNodeProbeTest extends RealNodeTest {
 						System.out.print(option + ": ");
 						nodeConfig.set(option, Boolean.valueOf(System.console().readLine()));
 					}
-				} else nodes[index].dispatcher.mhProbe.start(htl, random.nextLong(), types[selection], print);
+				} else nodes[index].dispatcher.probe.start(htl, random.nextLong(), types[selection], print);
 			} catch (Exception e) {
 				//If a non-number is entered or one outside the bounds.
 				System.out.print(e.toString());
