@@ -50,7 +50,7 @@ public class Probe implements ByteCounter {
 		});
 	}
 
-	private final static String sourceDisconnect = "Previous step in probe chain no longer connected.";
+	private final static String SOURCE_DISCONNECT = "Previous step in probe chain no longer connected.";
 
 	public static final byte MAX_HTL = 50;
 
@@ -668,7 +668,7 @@ public class Probe implements ByteCounter {
 
 		private void send(Message message) {
 			if (!source.isConnected()) {
-				if (logDEBUG) Logger.debug(Probe.class, sourceDisconnect);
+				if (logDEBUG) Logger.debug(Probe.class, SOURCE_DISCONNECT);
 				return;
 			}
 			if (logDEBUG) Logger.debug(Probe.class, "Relaying " + message.getSpec().getName() + " back" +
@@ -676,7 +676,7 @@ public class Probe implements ByteCounter {
 			try {
 				source.sendAsync(message, null, Probe.this);
 			} catch (NotConnectedException e) {
-				if (logDEBUG) Logger.debug(Probe.class, sourceDisconnect, e);
+				if (logDEBUG) Logger.debug(Probe.class, SOURCE_DISCONNECT, e);
 			}
 		}
 
