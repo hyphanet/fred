@@ -330,7 +330,7 @@ public class Probe implements ByteCounter {
 			if (logDEBUG) Logger.debug(Probe.class, "Probe type is " + temp.name() + ".");
 		} else {
 			if (logMINOR) Logger.minor(Probe.class, "Invalid probe type " + typeCode + ".");
-			listener.onError(Error.UNRECOGNIZED_TYPE, null);
+			listener.onError(Error.UNRECOGNIZED_TYPE, typeCode);
 			return;
 		}
 		final Type type = temp;
