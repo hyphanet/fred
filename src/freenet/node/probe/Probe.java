@@ -504,7 +504,7 @@ public class Probe implements ByteCounter {
 		switch (type) {
 		case BANDWIDTH:
 			//1,024 (2^10) bytes per KiB
-			listener.onOutputBandwidth(randomNoise(Math.round((double)node.getOutputBandwidthLimit()/1024)));
+			listener.onOutputBandwidth(randomNoise(Math.round((double)node.getOutputBandwidthLimit()/(1 << 10))));
 			break;
 		case BUILD:
 			listener.onBuild(node.nodeUpdater.getMainVersion());
@@ -532,7 +532,7 @@ public class Probe implements ByteCounter {
 			break;
 		case STORE_SIZE:
 			//1,073,741,824 bytes (2^30) per GiB
-			listener.onStoreSize(randomNoise(Math.round((double)node.getStoreSize()/1073741824)));
+			listener.onStoreSize(randomNoise(Math.round((double)node.getStoreSize()/(1 << 30))));
 			break;
 		case UPTIME_48H:
 			listener.onUptime((float)randomNoise(100*node.uptime.getUptime()));
