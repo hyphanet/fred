@@ -57,7 +57,7 @@ public final class MessageFilter {
     private MessageFilter _or;
     private Message _message;
     private long _oldBootID;
-    private AsyncMessageFilterCallback _callback;
+    private volatile AsyncMessageFilterCallback _callback;
     private ByteCounter _ctr;
     private boolean _setTimeout = false;
 
