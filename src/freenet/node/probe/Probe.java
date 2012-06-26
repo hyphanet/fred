@@ -681,7 +681,7 @@ public class Probe implements ByteCounter {
 		}
 
 		@Override
-		public void onError(Error error, Byte rawError) {
+		public void onError(Error error, Byte code) {
 			send(DMT.createProbeError(uid, error));
 		}
 

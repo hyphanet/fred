@@ -12,14 +12,14 @@ public class ProbeError extends FCPResponse {
 	 * An error was received.
 	 * @param fcpIdentifier Identifier: FCP-level identifier for pairing requests and responses.
 	 * @param error type: The error code.
-	 * @param rawError If error is UNKNOWN or UNRECOGNIZED_TYPE, can specify remote code. Not included otherwise.
+	 * @param code If error is UNKNOWN or UNRECOGNIZED_TYPE, can specify remote code. Not included otherwise.
 	 * @see freenet.node.probe.Listener onError()
 	 * @see freenet.node.probe.Error
 	 */
-	public ProbeError(String fcpIdentifier, Error error, Byte rawError) {
+	public ProbeError(String fcpIdentifier, Error error, Byte code) {
 		super(fcpIdentifier);
 		fs.putOverwrite(DMT.TYPE, error.name());
-		if (rawError != null) fs.put(DMT.DESCRIPTION, rawError);
+		if (code != null) fs.put(DMT.DESCRIPTION, code);
 	}
 
 	@Override

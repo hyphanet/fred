@@ -7,10 +7,10 @@ public interface Listener {
 	/**
 	 * An error occurred.
 	 * @param error type: What error occurred. Can be one of Probe.ProbeError.
-	 * @param rawError Code byte value. If the error is an UNKNOWN or UNRECOGNIZED_TYPE which occurred locally this
-	 *                 contains the unrecognized code from the message. Otherwise it is null.
+	 * @param code Code byte value. If the error is an UNKNOWN or UNRECOGNIZED_TYPE which occurred locally this
+	 *             contains the unrecognized code from the message. Otherwise it is null.
 	 */
-	void onError(Error error, Byte rawError);
+	void onError(Error error, Byte code);
 
 	/**
 	 * Endpoint opted not to respond with the requested information.

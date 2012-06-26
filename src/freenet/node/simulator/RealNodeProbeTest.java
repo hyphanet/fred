@@ -79,9 +79,9 @@ public class RealNodeProbeTest extends RealNodeTest {
 		final NumberFormat nf = NumberFormat.getInstance();
 		Listener print = new Listener() {
 			@Override
-			public void onError(Error error, Byte rawError) {
+			public void onError(Error error, Byte code) {
 				System.out.print("Probe error: " + error.name());
-				System.out.println(rawError == null ? "" : "(" + rawError + ")");
+				System.out.println(code == null ? "" : "(" + code + ")");
 			}
 
 			@Override

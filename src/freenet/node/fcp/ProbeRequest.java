@@ -72,8 +72,8 @@ public class ProbeRequest extends FCPMessage {
 			                                               "hopsToLive cannot be negative.", null, false);
 			Listener listener = new Listener() {
 				@Override
-				public void onError(Error error, Byte rawError) {
-					handler.outputHandler.queue(new ProbeError(identifier, error, rawError));
+				public void onError(Error error, Byte code) {
+					handler.outputHandler.queue(new ProbeError(identifier, error, code));
 				}
 
 				@Override
