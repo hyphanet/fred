@@ -276,9 +276,9 @@ public class Probe implements ByteCounter {
 				node.config.store();
 			}
 		} catch (InvalidConfigValueException e) {
-			Logger.error(Node.class, "node.identifier set() unexpectedly threw.", e);
+			Logger.error(Probe.class, "node.identifier set() unexpectedly threw.", e);
 		} catch (NodeNeedRestartException e) {
-			Logger.error(Node.class, "node.identifier set() unexpectedly threw.", e);
+			Logger.error(Probe.class, "node.identifier set() unexpectedly threw.", e);
 		}
 	}
 
