@@ -53,15 +53,17 @@ public class Serializer {
 
 	public static Object readFromDataInputStream(Class<?> type, DataInput dis) throws IOException {
 		if (type.equals(Boolean.class)) {
-			int bool = dis.readByte();
-			if (bool==1)
-				return Boolean.TRUE;
-			if (bool==0)
-				return Boolean.FALSE;
-			throw new IOException("Boolean is non boolean value: "+bool);
+			final byte bool = dis.readByte();
+			/* Using readByte() instead of readBoolean() because values other than 0 or 1 indicate
+			 * problems: only 0 and 1 are written.
+			 */
+			switch (bool) {
+				case 1: return Boolean.TRUE;
+				case 0: return Boolean.FALSE;
+				default: throw new IOException("Boolean is non boolean value: " + bool);
+			}
 		} else if (type.equals(Byte.class)) {
-			int b = dis.readByte();
-			return (byte) b;
+			return dis.readByte();
 		} else if (type.equals(Short.class)) {
 			return dis.readShort();
 		} else if (type.equals(Integer.class)) {
@@ -109,20 +111,19 @@ public class Serializer {
 	public static void writeToDataOutputStream(Object object, DataOutputStream dos) throws IOException {	
 		Class<?> type = object.getClass();
 		if (type.equals(Long.class)) {
-			dos.writeLong(((Long) object).longValue());
+			dos.writeLong((Long) object);
 		} else if (type.equals(Boolean.class)) {
-			dos.write(((Boolean) object).booleanValue() ? 1 : 0);
+			dos.writeBoolean((Boolean) object);
 		} else if (type.equals(Integer.class)) {
-			dos.writeInt(((Integer) object).intValue());
+			dos.writeInt((Integer) object);
 		} else if (type.equals(Short.class)) {
-			dos.writeShort(((Short) object).shortValue());
+			dos.writeShort((Short) object);
 		} else if (type.equals(Double.class)) {
-		    dos.writeDouble(((Double) object).doubleValue());
+			dos.writeDouble((Double) object);
 		} else if (type.equals(Float.class)) {
 			dos.writeFloat((Float)object);
 		} else if (WritableToDataOutputStream.class.isAssignableFrom(type)) {
-			WritableToDataOutputStream b = (WritableToDataOutputStream) object;
-			b.writeToDataOutputStream(dos);
+			((WritableToDataOutputStream) object).writeToDataOutputStream(dos);
 		} else if (type.equals(String.class)) {
 			String s = (String) object;
 			dos.writeInt(s.length());
@@ -138,7 +139,7 @@ public class Serializer {
 				}
 			}
 		} else if (type.equals(Byte.class)) {
-			dos.write(((Byte) object).byteValue());
+			dos.write((Byte) object);
 		} else if (type.equals(double[].class))  {
 			dos.writeInt(((double[])object).length);
 			for (double element : (double[])object) dos.writeDouble(element);
