@@ -336,8 +336,8 @@ public class Probe implements ByteCounter {
 		final Type type = temp;
 		byte htl = message.getByte(DMT.HTL);
 		if (htl < 1) {
-			if (logWARNING) Logger.warning(Probe.class, "Received out-of-bounds HTL of " + htl + "; interpreting as 1.");
-			htl = 1;
+			if (logWARNING) Logger.warning(Probe.class, "Received out-of-bounds HTL of " + htl + "; discarding.");
+			return;
 		} else if (htl > MAX_HTL) {
 			if (logMINOR) Logger.minor(Probe.class, "Received out-of-bounds HTL of " + htl + "; interpreting as " + MAX_HTL + ".");
 			htl = MAX_HTL;
