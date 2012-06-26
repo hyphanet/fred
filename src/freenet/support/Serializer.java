@@ -30,6 +30,7 @@ import freenet.io.comm.Peer;
 import freenet.keys.Key;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
+import freenet.node.NewPacketFormat;
 
 /**
  * @author ian
@@ -40,7 +41,15 @@ import freenet.keys.NodeSSK;
 public class Serializer {
 
     public static final String VERSION = "$Id: Serializer.java,v 1.5 2005/09/15 18:16:04 amphibian Exp $";
+	/**
+	 * Maximum bit array size in bits.
+	 */
 	public static final int MAX_BITARRAY_SIZE = 2048*8;
+	/**
+	 * Maximum incoming array length in bytes.
+	 */
+	//Max packet format size - 4 to account for starting size integer.
+	public static final int MAX_ARRAY_LENGTH = NewPacketFormat.MAX_MESSAGE_SIZE - 4;
 
 	public static List<Object> readListFromDataInputStream(Class<?> elementType, DataInput dis) throws IOException {
 		LinkedList<Object> ret = new LinkedList<Object>();
@@ -51,6 +60,13 @@ public class Serializer {
 		return ret;
 	}
 
+	/**
+	 * Attempts to read an object of the specified type from the input.
+	 * @param type type to read.
+	 * @param dis input to read from.
+	 * @return object read.
+	 * @throws IOException if a read operation result in an IO error or an unexpected value is encountered.
+	 */
 	public static Object readFromDataInputStream(Class<?> type, DataInput dis) throws IOException {
 		if (type.equals(Boolean.class)) {
 			int bool = dis.readByte();
@@ -71,7 +87,12 @@ public class Serializer {
 		} else if (type.equals(Double.class)) {
 		    return dis.readDouble();
 		} else if (type.equals(String.class)) {
-			int length = dis.readInt();
+			final int length = dis.readInt();
+			//TODO: Track read size so far and limit based on that? Might not be necessary.
+			//TODO: Should these be IO Exceptions or IllegalArgumentExceptions?
+			if (length < 0 || length > MAX_ARRAY_LENGTH) {
+				throw new IOException("Invalid string length: " + length);
+			}
 			StringBuilder sb = new StringBuilder(length);
 			for (int x = 0; x < length; x++) {
 				sb.append(dis.readChar());
