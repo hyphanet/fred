@@ -289,8 +289,7 @@ public class Probe implements ByteCounter {
 	 * @see Listener
 	 */
 	public void start(final byte htl, final long uid, final Type type, final Listener listener) {
-		Message request = DMT.createProbeRequest(htl, uid, type);
-		request(request, null, listener);
+		request(DMT.createProbeRequest(htl, uid, type), null, listener);
 	}
 
 	/**
