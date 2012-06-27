@@ -475,9 +475,9 @@ public class Probe implements ByteCounter {
 	 * @param htl current probe HTL; used to calculate timeout.
 	 * @return filter for the requested result type, probe error, and probe refusal.
 	 */
-	private MessageFilter createResponseFilter(Type type, PeerNode candidate, long uid, byte htl) {
+	private static MessageFilter createResponseFilter(final Type type, final PeerNode candidate, final long uid, final byte htl) {
 		final int timeout = (htl - 1) * TIMEOUT_PER_HTL + TIMEOUT_HTL1;
-		final MessageFilter filter = MessageFilter.create().setSource(candidate).setField(DMT.UID, uid).setTimeout(timeout);
+		final MessageFilter filter = createFilter(candidate, uid, timeout);
 
 		switch (type) {
 			case BANDWIDTH: filter.setType(DMT.ProbeBandwidth); break;
@@ -492,10 +492,14 @@ public class Probe implements ByteCounter {
 		}
 
 		//Refusal or an error should also be listened for so it can be relayed.
-		filter.or(MessageFilter.create().setSource(candidate).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.ProbeRefused)
-		      .or(MessageFilter.create().setSource(candidate).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.ProbeError)));
+		filter.or(createFilter(candidate, uid, timeout).setType(DMT.ProbeRefused)
+		      .or(createFilter(candidate, uid, timeout).setType(DMT.ProbeError)));
 
 		return filter;
+	}
+
+	private static MessageFilter createFilter(final PeerNode source, final long uid, final int timeout) {
+		return MessageFilter.create().setSource(source).setField(DMT.UID, uid).setTimeout(timeout);
 	}
 
 	/**
