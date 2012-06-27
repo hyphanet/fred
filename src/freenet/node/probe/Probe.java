@@ -304,7 +304,7 @@ public class Probe implements ByteCounter {
 	/**
 	 * Processes an incoming probe request.
 	 * If the probe has a positive HTL, routes with MH correction and probabilistically decrements HTL.
-	 * If the probe comes to have an HTL of zero: (an incoming HTL of zero is taken to be one.)
+	 * If the probe comes to have an HTL of zero: (an incoming HTL of less than one is discarded.)
 	 * Returns (as node settings allow) exactly one of:
 	 * <ul>
 	 *         <li>unique identifier and integer 7-day uptime percentage</li>
