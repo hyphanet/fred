@@ -290,8 +290,8 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
     	WAIT,
     	NEXT_PEER
     }
-    
-	private final int TIMEOUT_AFTER_ACCEPTEDREJECTED_TIMEOUT = 60*1000;
+
+	private static final int TIMEOUT_AFTER_ACCEPTEDREJECTED_TIMEOUT = 60*1000;
 
 	@Override
 	protected void handleAcceptedRejectedTimeout(final PeerNode next, final UIDTag tag) {

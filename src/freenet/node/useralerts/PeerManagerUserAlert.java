@@ -150,7 +150,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 		return s;
 	}
 
-	static final public String replace(String text, String find, String replace) {
+	static public String replace(String text, String find, String replace) {
 		return replaceCareful(text, find, replace);
 	}
 	

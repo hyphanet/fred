@@ -87,21 +87,21 @@ public class Version {
 	 *
 	 * @return The build number (not SVN revision number) of this node.
 	 */
-	public static final int buildNumber() {
+	public static int buildNumber() {
 		return buildNumber;
 	}
 
 	/**
 	 * Analogous to {@link #buildNumber()} but for {@link #publicVersion}.
 	 */
-	public static final String publicVersion() {
+	public static String publicVersion() {
 		return publicVersion;
 	}
 
 	/**
 	 * Analogous to {@link #buildNumber()} but for {@link #transitionTime}.
 	 */
-	public static final long transitionTime() {
+	public static long transitionTime() {
 		return transitionTime;
 	}
 
@@ -111,7 +111,7 @@ public class Version {
 	 * @return The lowest build number with which the node will connect and exchange
 	 * data normally.
 	 */
-	public static final int lastGoodBuild() {
+	public static int lastGoodBuild() {
 		if(System.currentTimeMillis() >= transitionTime)
 			return newLastGoodBuild;
 		else
@@ -136,20 +136,20 @@ public class Version {
 	/**
 	 * Analogous to {@link #buildNumber()} but for {@link #cvsRevision}.
 	 */
-	public static final String cvsRevision() {
+	public static String cvsRevision() {
 		return cvsRevision;
 	}
 
 	/**
 	 * @return the node's version designators as an array
 	 */
-	public static final String[] getVersion() {
+	public static String[] getVersion() {
 		String[] ret =
 			{ nodeName, nodeVersion, protocolVersion, "" + buildNumber };
 		return ret;
 	}
 
-	public static final String[] getLastGoodVersion() {
+	public static String[] getLastGoodVersion() {
 		String[] ret =
 			{ nodeName, nodeVersion, protocolVersion, "" + lastGoodBuild() };
 		return ret;
@@ -158,14 +158,14 @@ public class Version {
 	/**
 	 * @return the version string that should be presented in the NodeReference
 	 */
-	public static final String getVersionString() {
+	public static String getVersionString() {
 		return Fields.commaList(getVersion());
 	}
 
 	/**
 	 * @return is needed for the freeviz
 	 */
-	public static final String getLastGoodVersionString() {
+	public static String getLastGoodVersionString() {
 		return Fields.commaList(getLastGoodVersion());
 	}
 
@@ -186,7 +186,7 @@ public class Version {
 	 * @return true if requests should be accepted from nodes brandishing this
 	 *         version string
 	 */
-	public static final boolean checkGoodVersion(
+	public static boolean checkGoodVersion(
 		String version) {
 	    if(version == null) {
 	        Logger.error(Version.class, "version == null!",
@@ -248,7 +248,7 @@ public class Version {
 	 * @return true if requests should be accepted from nodes brandishing this
 	 *         version string, given an arbitrary lastGoodVersion
 	 */
-	public static final boolean checkArbitraryGoodVersion(
+	public static boolean checkArbitraryGoodVersion(
 		String version, String lastGoodVersion) {
 	    if(version == null) {
 	        Logger.error(Version.class, "version == null!",
@@ -318,7 +318,7 @@ public class Version {
 	/**
 	 * @return string explaining why a version string is rejected
 	 */
-	public static final String explainBadVersion(String version) {
+	public static String explainBadVersion(String version) {
 		String[] v = Fields.commaList(version);
 
 		if ((v.length < 3) || !goodProtocol(v[2])) {
@@ -353,7 +353,7 @@ public class Version {
 	/**
 	 * @return the build number of an arbitrary version string
 	 */
-	public static final int getArbitraryBuildNumber(
+	public static int getArbitraryBuildNumber(
 		String version ) throws VersionParseException {
 	    if(version == null) {
 	        Logger.error(Version.class, "version == null!",
@@ -372,7 +372,7 @@ public class Version {
 		}
 	}
 
-	public static final int getArbitraryBuildNumber(
+	public static int getArbitraryBuildNumber(
 			String version, int defaultValue ) {
 		try {
 			return getArbitraryBuildNumber(version);
@@ -384,7 +384,7 @@ public class Version {
 	 * Update static variable highestSeenBuild anytime we encounter
 	 * a new node with a higher version than we've seen before
 	 */
-	public static final void seenVersion(String version) {
+	public static void seenVersion(String version) {
 		String[] v = Fields.commaList(version);
 
 		if ((v == null) || (v.length < 3))
@@ -409,7 +409,7 @@ public class Version {
 		}
 	}
 	
-	public static final int getHighestSeenBuild() {
+	public static int getHighestSeenBuild() {
 		return highestSeenBuild;
 	}
 

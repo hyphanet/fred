@@ -46,14 +46,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 	private static boolean logMINOR;
 	private static boolean logDEBUG;
-	
-	private static boolean deleteWierdStuff = true;
-	private static boolean deleteErrors = true;
+
+	private static final boolean deleteWierdStuff = true;
+	private static final boolean deleteErrors = true;
 	/** If true, allow documents that don't have an <html> tag or have other tags before it.
 	 * In all cases we disallow text before the first valid tag. This is because if we don't,
 	 * charset detection can be ambiguous, potentially resulting in attacks. */
-	private static boolean allowNoHTMLTag = true;
-	
+	private static final boolean allowNoHTMLTag = true;
+
 	// FIXME make these configurable on a per-document level.
 	// Maybe by merging with TagReplacerCallback???
 	// For now they're just global.

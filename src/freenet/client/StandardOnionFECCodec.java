@@ -16,7 +16,7 @@ import freenet.support.Logger.LogLevel;
  */
 public class StandardOnionFECCodec extends FECCodec {
 	// REDFLAG: How big is one of these?
-	private static int MAX_CACHED_CODECS = 8;
+	private static final int MAX_CACHED_CODECS = 8;
 
 	static boolean noNative;
 

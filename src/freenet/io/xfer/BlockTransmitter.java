@@ -503,10 +503,7 @@ public class BlockTransmitter {
 	}
 	
 	private PartiallyReceivedBlock.PacketReceivedListener myListener = null;
-	
-	private MessageFilter mfAllReceived;
-	private MessageFilter mfSendAborted;
-	
+
 	private AsyncMessageFilterCallback cbAllReceived = new SlowAsyncMessageFilterCallback() {
 
 		@Override
@@ -678,9 +675,9 @@ public class BlockTransmitter {
 				});
 			}
 			_senderThread.schedule();
-			
-			mfAllReceived = MessageFilter.create().setType(DMT.allReceived).setField(DMT.UID, _uid).setSource(_destination).setNoTimeout();
-			mfSendAborted = MessageFilter.create().setType(DMT.sendAborted).setField(DMT.UID, _uid).setSource(_destination).setNoTimeout();
+
+			MessageFilter mfAllReceived = MessageFilter.create().setType(DMT.allReceived).setField(DMT.UID, _uid).setSource(_destination).setNoTimeout();
+			MessageFilter mfSendAborted = MessageFilter.create().setType(DMT.sendAborted).setField(DMT.UID, _uid).setSource(_destination).setNoTimeout();
 			
 			try {
 				_usm.addAsyncFilter(mfAllReceived, cbAllReceived, _ctr);

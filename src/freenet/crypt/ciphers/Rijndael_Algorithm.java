@@ -272,14 +272,14 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	}
 
 	// multiply two elements of GF(2^m)
-	private static final int mul(int a, int b) {
+	private static int mul(int a, int b) {
 		return ((a != 0) && (b != 0)) ?
 				alog[(log[a & 0xFF] + log[b & 0xFF]) % 255] :
 					0;
 	}
 
 	// convenience method used in generating Transposition boxes
-	private static final int mul4(int a, byte[] b) {
+	private static int mul4(int a, byte[] b) {
 		if (a == 0) return 0;
 		a = log[a & 0xFF];
 		int a0 = (b[0] != 0) ? alog[(a + log[b[0] & 0xFF]) % 255] & 0xFF : 0;
@@ -302,7 +302,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	 * @param  inOffset   Index of in from which to start considering data.
 	 * @param  sessionKey The session key to use for encryption.
 	 */
-	private static final void
+	private static void
 	blockEncrypt (byte[] in, byte[] result, int inOffset, Object sessionKey) {
 		if (RDEBUG) trace(IN, "blockEncrypt("+in+", "+inOffset+", "+sessionKey+ ')');
 		int[][] Ke = (int[][]) ((Object[]) sessionKey)[0]; // extract encryption round keys
@@ -391,7 +391,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	 * @param  inOffset   Index of in from which to start considering data.
 	 * @param  sessionKey The session key to use for decryption.
 	 */
-	private static final void
+	private static void
 	blockDecrypt (byte[] in, byte[] result, int inOffset, Object sessionKey) {
 		if (RDEBUG) trace(IN, "blockDecrypt("+in+", "+inOffset+", "+sessionKey+ ')');
 		int[][] Kd = (int[][]) ((Object[]) sessionKey)[1]; // extract decryption round keys
@@ -481,7 +481,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 //	...........................................................................
 
 	/** @return The default length in bytes of the Algorithm input block. */
-	static final int blockSize() {
+	static int blockSize() {
 		return BLOCK_SIZE;
 	}
 
@@ -502,7 +502,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	//a problem the callers should resolve among themselves.
 	//It is a fact that allowing no more than one makeKey on any given
 	//CPU will result in fewer cache misses.  -- ejhuff 2003-10-12
-	final static synchronized Object makeKey(byte[] k, int blockSize)
+	static synchronized Object makeKey(byte[] k, int blockSize)
 	throws InvalidKeyException {
 		if (RDEBUG) trace(IN, "makeKey("+k+", "+blockSize+ ')');
 		if (k == null)
@@ -598,7 +598,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	 * @param  sessionKey The session key to use for encryption.
 	 * @param  blockSize  The block size in bytes of this Rijndael.
 	 */
-	static final void
+	static void
 	blockEncrypt (byte[] in, byte[] result, int inOffset, Object sessionKey, int blockSize) {
 		if (blockSize == BLOCK_SIZE) {
 			blockEncrypt(in, result, inOffset, sessionKey);
@@ -622,7 +622,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	 * @param  sessionKey The session key to use for encryption.
 	 * @param  blockSize  The block size in bytes of this Rijndael.
 	 */
-	static final void
+	static void
 	blockEncrypt (byte[] in, byte[] result, int inOffset, Object sessionKey, int blockSize, int[] a, int[] t) {
 		if (blockSize == BLOCK_SIZE) {
 			blockEncrypt(in, result, inOffset, sessionKey);
@@ -678,7 +678,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	 * @param  sessionKey The session key to use for decryption.
 	 * @param  blockSize  The block size in bytes of this Rijndael.
 	 */
-	static final void
+	static void
 	blockDecrypt (byte[] in, byte[] result, int inOffset, Object sessionKey, int blockSize) {
 		if (blockSize == BLOCK_SIZE) {
 			blockDecrypt(in, result, inOffset, sessionKey);
@@ -790,7 +790,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	 * @return The number of rounds for a given Rijndael's key and
 	 *      block sizes.
 	 */
-	private static final int getRounds(int keySize, int blockSize) {
+	private static int getRounds(int keySize, int blockSize) {
 		switch (keySize) {
 		case 16:
 			return blockSize == 16 ? 10 : (blockSize == 24 ? 12 : 14);
@@ -810,7 +810,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	 *
 	 * @return true if the arrays have identical contents
 	 */
-	private static final boolean areEqual (byte[] a, byte[] b) {
+	private static boolean areEqual (byte[] a, byte[] b) {
 		int aLength = a.length;
 		if (aLength != b.length)
 			return false;
@@ -824,7 +824,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	 * Returns a string of 2 hexadecimal digits (most significant
 	 * digit first) corresponding to the lowest 8 bits of <i>n</i>.
 	 */
-	private static final String byteToString (int n) {
+	private static String byteToString (int n) {
 		char[] buf = {
 				HEX_DIGITS[(n >>> 4) & 0x0F],
 				HEX_DIGITS[ n        & 0x0F]
@@ -837,7 +837,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	 * digit first) corresponding to the integer <i>n</i>, which is
 	 * treated as unsigned.
 	 */
-	private static final String intToString (int n) {
+	private static String intToString (int n) {
 		char[] buf = new char[8];
 		for (int i = 7; i >= 0; i--) {
 			buf[i] = HEX_DIGITS[n & 0x0F];
@@ -850,7 +850,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	 * Returns a string of hexadecimal digits from a byte array. Each
 	 * byte is converted to 2 hex symbols.
 	 */
-	private static final String toString (byte[] ba) {
+	private static String toString (byte[] ba) {
 		int length = ba.length;
 		char[] buf = new char[length * 2];
 		for (int i = 0, j = 0, k; i < length; ) {
@@ -865,7 +865,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	 * Returns a string of hexadecimal digits from an integer array. Each
 	 * int is converted to 4 hex symbols.
 	 */
-	private static final String toString (int[] ia) {
+	private static String toString (int[] ia) {
 		int length = ia.length;
 		char[] buf = new char[length * 8];
 		for (int i = 0, j = 0, k; i < length; i++) {

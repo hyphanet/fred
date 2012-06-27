@@ -66,7 +66,7 @@ final public class FileUtil {
 	 * Detects the operating system in which the JVM is running. Returns OperatingSystem.All if the OS is unknown or an error occured.
 	 * Therefore this function should never throw.
 	 */
-	private static final OperatingSystem detectOperatingSystem() { // TODO: Move to the proper class
+	private static OperatingSystem detectOperatingSystem() { // TODO: Move to the proper class
 		try {
 			final String name =  System.getProperty("os.name").toLowerCase();
 
@@ -97,7 +97,7 @@ final public class FileUtil {
 	 *
 	 * If any error occurs, the default Charset is returned. Therefore this function should never throw.
 	 */
-	public static final Charset getFileEncodingCharset() {
+	public static Charset getFileEncodingCharset() {
 		try {
 			return Charset.forName(System.getProperty("file.encoding"));
 		} catch(Throwable t) {
@@ -107,7 +107,7 @@ final public class FileUtil {
 
 
 	/** Round up a value to the next multiple of a power of 2 */
-	private static final long roundup_2n (long val, int blocksize) {
+	private static long roundup_2n (long val, int blocksize) {
 		int mask=blocksize-1;
 		return (val+mask)&~mask;
 	}
@@ -605,7 +605,7 @@ final public class FileUtil {
 			throw new IOException("Unable to delete file "+file);
 	}
 
-	public static final long getFreeSpace(File dir) {
+	public static long getFreeSpace(File dir) {
 		// Use JNI to find out the free space on this partition.
 		long freeSpace = -1;
 		try {

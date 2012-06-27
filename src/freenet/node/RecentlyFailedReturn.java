@@ -14,10 +14,9 @@ public class RecentlyFailedReturn {
 	
 	private boolean recentlyFailed;
 	private long wakeup;
-	private int countWaiting;
+
 	public synchronized void fail(int countWaiting, long wakeupTime) {
  		if(logMINOR) Logger.minor(this, "RecentlyFailed until "+TimeUtil.formatTime(wakeupTime - System.currentTimeMillis()));
-		this.countWaiting = countWaiting;
 		this.wakeup = wakeupTime;
 		this.recentlyFailed = true;
 	}

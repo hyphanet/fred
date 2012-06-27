@@ -85,7 +85,7 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
      * @param raf The file to read from.
      * @return a Key, or throw an exception, or return null if the key is not parsable.
      */
-    public static final Key read(DataInput raf) throws IOException {
+    public static Key read(DataInput raf) throws IOException {
     	byte type = raf.readByte();
     	byte subtype = raf.readByte();
         if(type == NodeCHK.BASE_TYPE) {

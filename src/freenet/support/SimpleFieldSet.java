@@ -196,7 +196,7 @@ public class SimpleFieldSet {
     	return split(k);
     }
 
-    private static final String[] split(String string) {
+    private static String[] split(String string) {
     	if(string == null) return EMPTY_STRING_ARRAY;
     	return string.split(String.valueOf(MULTI_VALUE_CHAR)); // slower???
 //    	int index = string.indexOf(';');
@@ -215,7 +215,7 @@ public class SimpleFieldSet {
 //    	return (String[]) v.toArray();
 	}
 
-    private static final String unsplit(String[] strings) {
+    private static String unsplit(String[] strings) {
     	StringBuilder sb = new StringBuilder();
     	for(int i=0;i<strings.length;i++) {
     		if(i != 0) sb.append(MULTI_VALUE_CHAR);
@@ -299,7 +299,7 @@ public class SimpleFieldSet {
      * @return True unless allowMultiple was false and there was a pre-existing value,
      * or value was null.
      */
-	private synchronized final boolean put(String key, String value, boolean allowMultiple, boolean overwrite, boolean fromRead) {
+	private synchronized boolean put(String key, String value, boolean allowMultiple, boolean overwrite, boolean fromRead) {
 		int idx;
 		if(value == null) return true; // valid no-op
 		if(value.indexOf('\n') != -1) throw new IllegalArgumentException("A simplefieldSet can't accept newlines !");

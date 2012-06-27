@@ -308,7 +308,7 @@ public class NativeBigInteger extends BigInteger {
 	 *
 	 * FIXME: Is it a good idea to load it from the path? Shouldn't we not trust the path?
 	 */
-	private static final void loadNative() {
+	private static void loadNative() {
 		try {
 			String wantedProp = System.getProperty("jbigi.enable", "true");
 			boolean wantNative = "true".equalsIgnoreCase(wantedProp);
@@ -357,7 +357,7 @@ public class NativeBigInteger extends BigInteger {
 	 * @return true if it was loaded successfully, else false
 	 *
 	 */
-	private static final boolean loadGeneric(boolean optimized) {
+	private static boolean loadGeneric(boolean optimized) {
 		try {
 			String name = getMiddleName(optimized);
 			if(name == null)
@@ -377,7 +377,7 @@ public class NativeBigInteger extends BigInteger {
 	 * @throws FileNotFoundException If the library could not be read from the reference
 	 * @throws UnsatisfiedLinkError If and only if the library is incompatible with this system
 	 */
-	private static final boolean tryLoadResource(File f, URL resource)
+	private static boolean tryLoadResource(File f, URL resource)
 		throws FileNotFoundException, UnsatisfiedLinkError {
 		InputStream is;
 		try {
@@ -430,7 +430,7 @@ public class NativeBigInteger extends BigInteger {
 	 * @return true if it was loaded successfully, else false
 	 *
 	 */
-	private static final boolean loadFromResource(boolean optimized) {
+	private static boolean loadFromResource(boolean optimized) {
 		String resourceName = getResourceName(optimized);
 		if(resourceName == null)
 			return false;
@@ -465,7 +465,7 @@ public class NativeBigInteger extends BigInteger {
 		return false;
 	}
 
-	private static final String getResourceName(boolean optimized) {
+	private static String getResourceName(boolean optimized) {
 		String name = NativeBigInteger.class.getName();
 		int i = name.lastIndexOf('.');
 		if (i != -1) {
@@ -480,7 +480,7 @@ public class NativeBigInteger extends BigInteger {
 		return pname + '/' + pref + middle + '.' + suff;
 	}
 
-	private static final String getMiddleName(boolean optimized) {
+	private static String getMiddleName(boolean optimized) {
 
 		String sAppend;
 		if(optimized)
@@ -506,7 +506,7 @@ public class NativeBigInteger extends BigInteger {
 		throw new RuntimeException("Dont know jbigi library name for os type '" + System.getProperty("os.name") + '\'');
 	}
 
-	private static final String getLibrarySuffix() {
+	private static String getLibrarySuffix() {
 		boolean isWindows = System.getProperty("os.name").toLowerCase().indexOf("windows") != -1;
 		boolean isMacOS = (System.getProperty("os.name").toLowerCase().indexOf("mac os x") != -1);
 		if(isWindows)
@@ -517,7 +517,7 @@ public class NativeBigInteger extends BigInteger {
 			return "so";
 	}
 
-	private static final String getLibraryPrefix() {
+	private static String getLibraryPrefix() {
 		boolean isWindows = System.getProperty("os.name").toLowerCase().indexOf("windows") != -1;
 		if(isWindows)
 			return "";
