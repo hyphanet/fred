@@ -1,6 +1,6 @@
 package freenet.node.probe;
 
-public class Counter {
+class Counter {
 	/**
 	 * Maximum number of accepted probes in the past minute.
 	 */
