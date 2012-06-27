@@ -139,8 +139,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	/** Cancelled? */
 	private boolean cancelled;
 
-	/** Kill a background poll fetcher when it has lost its last subscriber? */
-	private boolean killOnLoseSubscribers;
 	private final boolean checkStoreOnly;
 	
 	final ClientRequester parent;
@@ -1217,10 +1215,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		if(lastRequestData == null) return;
 		lastRequestData.free(); // USKFetcher's cannot be persistent, so no need to removeFrom()
 		lastRequestData = null;
-	}
-
-	public synchronized void killOnLoseSubscribers() {
-		this.killOnLoseSubscribers = true;
 	}
 
 	@Override
