@@ -30,6 +30,8 @@ public enum Error {
 	 */
 	public final byte code;
 
+	private static final int MAX_CODE = Error.values().length;
+
 	Error(byte code) {
 		this.code = code;
 	}
@@ -42,7 +44,8 @@ public enum Error {
 	 * @return true if the code can be converted to an enum value; false if not.
 	 */
 	static boolean isValid(byte code) {
-		return code >= 0 && code <= 4;
+		//Assumes codes are consecutive, start at zero, and all are valid.
+		return code >= 0 && code < MAX_CODE;
 	}
 
 	/**

@@ -15,6 +15,8 @@ public enum Type {
 
 	public final byte code;
 
+	private static final int MAX_CODE = Type.values().length;
+
 	Type(byte code) { this.code = code; }
 
 	/**
@@ -24,7 +26,7 @@ public enum Type {
 	 * @return true if the code can be converted to an enum value; false if not.
 	 */
 	static boolean isValid(byte code) {
-		return code >= 0 && code <= 7;
+		return code >= 0 && code < MAX_CODE;
 	}
 
 	/**
