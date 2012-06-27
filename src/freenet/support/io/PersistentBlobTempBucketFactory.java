@@ -88,12 +88,9 @@ public class PersistentBlobTempBucketFactory {
 	private transient Random weakRandomSource;
 	
 	private transient Ticker ticker;
-	
-	private final long nodeDBHandle;
-	
+
 	public PersistentBlobTempBucketFactory(long blockSize2, long nodeDBHandle2, File storageFile2) {
 		blockSize = blockSize2;
-		nodeDBHandle = nodeDBHandle2;
 		storageFile = storageFile2;
 	}
 

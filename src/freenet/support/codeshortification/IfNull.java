@@ -14,12 +14,12 @@ package freenet.support.codeshortification;
  */
 public final class IfNull {
 	
-	public static final void thenThrow(Object value) {
+	public static void thenThrow(Object value) {
 		if(value == null)
 			throw new NullPointerException();
 	}
 	
-	public static final void thenThrow(Object value, String message) {
+	public static void thenThrow(Object value, String message) {
 		if(value == null)
 			throw new NullPointerException(message);
 	}

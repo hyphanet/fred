@@ -60,7 +60,6 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	}
 	private final RandomSource random;
 	private final short priorityClass;
-	private final NodeClientCore core;
 	private final boolean isSSK;
 	
 	OfferedKeysList(NodeClientCore core, RandomSource random, short priorityClass, boolean isSSK, boolean realTimeFlag) {
@@ -69,7 +68,6 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		this.keysList = new Vector<Key>();
 		this.random = random;
 		this.priorityClass = priorityClass;
-		this.core = core;
 		this.isSSK = isSSK;
 	}
 	

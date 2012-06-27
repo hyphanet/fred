@@ -317,13 +317,13 @@ public class Yarrow extends RandomSource {
 		fetch_counter = output_buffer.length;
 	}
 
-	private final void counterInc() {
+	private void counterInc() {
 		for(int i = counter.length - 1; i >= 0; i--)
 			if(++counter[i] != 0)
 				break;
 	}
 
-	private final void generateOutput() {
+	private void generateOutput() {
 		counterInc();
 
 		output_buffer = new byte[counter.length];

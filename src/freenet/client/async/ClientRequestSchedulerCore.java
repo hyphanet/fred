@@ -28,7 +28,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 	/** Identifier in the database for the node we are attached to */
 	private final long nodeDBHandle;
 	final PersistentCooldownQueue persistentCooldownQueue;
-	private transient long initTime;
 
 	private static volatile boolean logMINOR;
 
@@ -103,7 +102,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 			persistentCooldownQueue.setCooldownTime(cooldownTime);
 		}
 		this.sched = sched;
-		this.initTime = System.currentTimeMillis();
 		hintGlobalSalt(globalSalt);
 		// We DO NOT want to rerun the query after consuming the initial set...
 		if(isInsertScheduler) {
@@ -203,7 +201,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		startRegisterMeRunner(runner);
 	}
 
-	private final void startRegisterMeRunner(DBJobRunner runner) {
+	private void startRegisterMeRunner(DBJobRunner runner) {
 		if(isInsertScheduler)
 			try {
 				runner.queue(preRegisterMeRunner, NativeThread.NORM_PRIORITY, true);

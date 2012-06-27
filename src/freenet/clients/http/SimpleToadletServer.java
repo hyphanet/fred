@@ -395,9 +395,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		}
 		
 	};
-	
-	private final ReFilterCallback refilterPolicyCallback = new ReFilterCallback();
-	
+
 	public void createFproxy() {
 		synchronized(this) {
 			if(haveCalledFProxy) return;
@@ -713,9 +711,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 					}
 		}, false);
 		HTMLFilter.metaRefreshRedirectMinInterval = Math.max(-1, fproxyConfig.getInt("metaRefreshRedirectInterval"));
-		
-		fproxyConfig.register("refilterPolicy", "RE_FILTER", 
-				configItemOrder++, true, false, "SimpleToadletServer.refilterPolicy", "SimpleToadletServer.refilterPolicyLong", refilterPolicyCallback);
+
+		fproxyConfig.register("refilterPolicy", "RE_FILTER",
+				configItemOrder++, true, false, "SimpleToadletServer.refilterPolicy", "SimpleToadletServer.refilterPolicyLong", new ReFilterCallback());
 		
 		this.refilterPolicy = REFILTER_POLICY.valueOf(fproxyConfig.getString("refilterPolicy"));
 		

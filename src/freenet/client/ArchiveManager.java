@@ -102,7 +102,7 @@ public class ArchiveManager {
 			return null;
 		}
 
-		public final static ARCHIVE_TYPE getDefault() {
+		public static ARCHIVE_TYPE getDefault() {
 			return TAR;
 		}
 	}

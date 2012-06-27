@@ -114,18 +114,18 @@ public final class SHA1 implements Digest {
      * note that by making them final some compilers will
      * inline them when given the -O flag.
      */
-    private final int rol(int value, int bits) {
+    private int rol(int value, int bits) {
         int q = (value << bits) | (value >>> (32 - bits));
         return q;
     }
 
-    private final int blk0(int i) {
+    private int blk0(int i) {
         block[i] = (rol(block[i],24)&0xFF00FF00) |
          (rol(block[i],8)&0x00FF00FF);
         return block[i];
     }
 
-    private final int blk(int i) {
+    private int blk(int i) {
         block[i&15] = block[(i+13)&15]^block[(i+8)&15]^
                           block[(i+2)&15]^block[i&15];
         if(NSA)
@@ -135,31 +135,31 @@ public final class SHA1 implements Digest {
         return (block[i&15]);
     }
 
-    private final void R0(int data[], int v, int w, int x , int y, int z, int i) {
+    private void R0(int data[], int v, int w, int x , int y, int z, int i) {
         data[z] += ((data[w] & (data[x] ^ data[y] )) ^ data[y]) +
                                 blk0(i) + 0x5A827999 + rol(data[v] ,5);
         data[w] = rol(data[w], 30);
     }
 
-    private final void R1(int data[], int v, int w, int x, int y, int z, int i) {
+    private void R1(int data[], int v, int w, int x, int y, int z, int i) {
         data[z] += ((data[w] & (data[x] ^ data[y])) ^ data[y]) +
                                 blk(i) + 0x5A827999 + rol(data[v] ,5);
         data[w] = rol(data[w], 30);
     }
 
-    private final void R2(int data[], int v, int w, int x, int y, int z, int i) {
+    private void R2(int data[], int v, int w, int x, int y, int z, int i) {
         data[z] += (data[w] ^ data[x] ^ data[y]) +
                                 blk(i) + 0x6ED9EBA1 + rol(data[v] ,5);
         data[w] = rol(data[w], 30);
     }
 
-    private final void R3(int data[], int v, int w, int x, int y, int z, int i) {
+    private void R3(int data[], int v, int w, int x, int y, int z, int i) {
         data[z] += (((data[w] | data[x]) & data[y]) | (data[w] & data[x])) +
                                 blk(i) + 0x8F1BBCDC + rol(data[v] ,5);
         data[w] = rol(data[w], 30);
     }
 
-    private final void R4(int data[], int v, int w, int x, int y, int z, int i) {
+    private void R4(int data[], int v, int w, int x, int y, int z, int i) {
         data[z] += (data[w] ^ data[x] ^ data[y]) +
                                 blk(i) + 0xCA62C1D6 + rol(data[v] ,5);
         data[w] = rol(data[w], 30);
@@ -194,7 +194,7 @@ public final class SHA1 implements Digest {
      *
      */
 
-    private final void transform() {
+    private void transform() {
 
         /* Copy context->state[] to working vars */
         dd[0] = state[0];

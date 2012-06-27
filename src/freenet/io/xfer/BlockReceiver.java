@@ -110,21 +110,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		 * management problems as above. */
 		void onFatalTimeout(PeerContext source);
 	}
-	
-	private BlockReceiverTimeoutHandler nullTimeoutHandler = new BlockReceiverTimeoutHandler() {
 
-		@Override
-		public void onFirstTimeout() {
-			// Do nothing
-		}
-
-		@Override
-		public void onFatalTimeout(PeerContext source) {
-			// Do nothing
-		}
-		
-	};
-	
 	/*
 	 * RECEIPT_TIMEOUT must be less than 60 seconds because BlockTransmitter times out after not
 	 * hearing from us in 60 seconds. Without contact from the transmitter, we will try sending
@@ -175,6 +161,19 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	 * end up reusing the slot before the handler has completed (=true).
 	 */
 	public BlockReceiver(MessageCore usm, PeerContext sender, long uid, PartiallyReceivedBlock prb, ByteCounter ctr, Ticker ticker, boolean doTooLong, boolean realTime, BlockReceiverTimeoutHandler timeoutHandler, boolean completeAfterAckedAllReceived) {
+		BlockReceiverTimeoutHandler nullTimeoutHandler = new BlockReceiverTimeoutHandler() {
+
+			@Override
+			public void onFirstTimeout() {
+				// Do nothing
+			}
+
+			@Override
+			public void onFatalTimeout(PeerContext source) {
+				// Do nothing
+			}
+
+		};
 		_timeoutHandler = timeoutHandler == null ? nullTimeoutHandler : timeoutHandler;
 		_sender = sender;
 		_prb = prb;

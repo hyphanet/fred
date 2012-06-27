@@ -33,7 +33,7 @@ public class HexUtil {
 	 *            The number of bytes to read.
 	 * @return the string of hex chars.
 	 */
-	public static final String bytesToHex(byte[] bs, int off, int length) {
+	public static String bytesToHex(byte[] bs, int off, int length) {
 		if (bs.length <= off || bs.length < off+length)
 			throw new IllegalArgumentException();
 		StringBuilder sb = new StringBuilder(length * 2);
@@ -41,7 +41,7 @@ public class HexUtil {
 		return sb.toString();
 	}
 
-	public static final void bytesToHexAppend(
+	public static void bytesToHexAppend(
 		byte[] bs,
 		int off,
 		int length,
@@ -55,15 +55,15 @@ public class HexUtil {
 		}
 	}
 
-	public static final String bytesToHex(byte[] bs) {
+	public static String bytesToHex(byte[] bs) {
 		return bytesToHex(bs, 0, bs.length);
 	}
 
-	public static final byte[] hexToBytes(String s) {
+	public static byte[] hexToBytes(String s) {
 		return hexToBytes(s, 0);
 	}
 
-	public static final byte[] hexToBytes(String s, int off) {
+	public static byte[] hexToBytes(String s, int off) {
 		byte[] bs = new byte[off + (1 + s.length()) / 2];
 		hexToBytes(s, bs, off);
 		return bs;
@@ -80,7 +80,7 @@ public class HexUtil {
 	 * @param off
 	 *            The first byte to write of the array
 	 */
-	public static final void hexToBytes(String s, byte[] out, int off)
+	public static void hexToBytes(String s, byte[] out, int off)
 		throws NumberFormatException, IndexOutOfBoundsException {
 		
 		int slen = s.length();
@@ -116,7 +116,7 @@ public class HexUtil {
 	 * @param ba : the BitSet
 	 * @param size : How many bits shall be taken into account starting from the LSB?
 	 */
-	public final static byte[] bitsToBytes(BitSet ba, int size) {
+	public static byte[] bitsToBytes(BitSet ba, int size) {
 		int bytesAlloc = countBytesForBits(size);
 		byte[] b = new byte[bytesAlloc];
 		StringBuilder sb =null;
@@ -143,11 +143,11 @@ public class HexUtil {
 	 * Pack the bits in ba into a byte[] then convert that
 	 * to a hex string and return it.
 	 */
-	public final static String bitsToHexString(BitSet ba, int size) {
+	public static String bitsToHexString(BitSet ba, int size) {
 		return bytesToHex(bitsToBytes(ba, size));
 	}
 
-	public final static String toHexString(BigInteger i) {
+	public static String toHexString(BigInteger i) {
 		return bytesToHex(i.toByteArray());
 	}
 

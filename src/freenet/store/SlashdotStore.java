@@ -86,6 +86,18 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 		this.headerSize = callback.headerLength();
 		this.dataSize = callback.dataLength();
 		this.fullKeySize = callback.fullKeyLength();
+		Runnable purgeOldData = new Runnable() {
+
+			@Override
+			public void run() {
+				try {
+					purgeOldData();
+				} finally {
+					SlashdotStore.this.ticker.queueTimedJob(this, SlashdotStore.this.purgePeriod);
+				}
+			}
+
+		};
 		ticker.queueTimedJob(purgeOldData, maxLifetime + purgePeriod);
 	}
 	
@@ -211,19 +223,6 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 	public long writes() {
 		return writes;
 	}
-
-	private final Runnable purgeOldData = new Runnable() {
-
-		@Override
-		public void run() {
-			try {
-				purgeOldData();
-			} finally {
-				ticker.queueTimedJob(this, purgePeriod);
-			}
-		}
-		
-	};
 
 	protected void purgeOldData() {
 		purgeOldData(null, null);

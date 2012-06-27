@@ -55,7 +55,7 @@ public class InsertFreesiteToadlet extends Toadlet {
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
-	private static final String l10n(String string) {
+	private static String l10n(String string) {
 		return NodeL10n.getBase().getString("InsertFreesiteToadlet." + string);
 	}
 
