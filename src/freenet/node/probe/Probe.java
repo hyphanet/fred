@@ -285,7 +285,7 @@ public class Probe implements ByteCounter {
 	/**
 	 * Sends an outgoing probe request.
 	 * @param htl htl for this outgoing probe: should be [1, MAX_HTL]
-	 * @param listener Something which implements Probe.Listener and will be called with results.
+	 * @param listener will be called with results.
 	 * @see Listener
 	 */
 	public void start(final byte htl, final long uid, final Type type, final Listener listener) {
@@ -293,16 +293,7 @@ public class Probe implements ByteCounter {
 	}
 
 	/**
-	 * Same as its three-argument namesake, but responds to results by passing them on to source.
-	 * @param message probe request, (possibly made by DMT.createProbeRequest) containing HTL
-	 * @param source node from which the probe request was received. Used to relay back results.
-	 */
-	public void request(Message message, PeerNode source) {
-		request(message, source, new ResultRelay(source, message.getLong(DMT.UID)));
-	}
-
-	/**
-	 * Processes an incoming probe request.
+	 * Processes an incoming probe request; relays results back to source.
 	 * If the probe has a positive HTL, routes with MH correction and probabilistically decrements HTL.
 	 * If the probe comes to have an HTL of zero: (an incoming HTL of less than one is discarded.)
 	 * Returns (as node settings allow) exactly one of:
@@ -317,11 +308,18 @@ public class Probe implements ByteCounter {
 	 * </ul>
 	 *
 	 * @param message probe request, containing HTL
-	 * @param source node from which the probe request was received. Used to relay back results. If null, it is
-	 *               considered to have been sent from the local node.
+	 */
+	public void request(Message message, PeerNode source) {
+		request(message, source, new ResultRelay(source, message.getLong(DMT.UID)));
+	}
+
+	/**
+	 * Processes a probe request, calling the listener with any results.
+	 * @param source node from which the probe request was received. If null, it is considered to have been sent
+	 * by the local node.
 	 * @param listener listener for probe response.
 	 */
-	public void request(final Message message, final PeerNode source, final Listener listener) {
+	private void request(final Message message, final PeerNode source, final Listener listener) {
 		final Long uid = message.getLong(DMT.UID);
 		final byte typeCode = message.getByte(DMT.TYPE);
 		Type temp;
