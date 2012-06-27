@@ -336,10 +336,17 @@ public class Probe implements ByteCounter {
 		final Type type = temp;
 		byte htl = message.getByte(DMT.HTL);
 		if (htl < 1) {
-			if (logWARNING) Logger.warning(Probe.class, "Received out-of-bounds HTL of " + htl + "; discarding.");
+			if (logWARNING) {
+				Logger.warning(Probe.class, "Received out-of-bounds HTL of " + htl + " from " +
+				    source.getIdentityString() + " (" + source.userToString() + "); discarding.");
+			}
 			return;
 		} else if (htl > MAX_HTL) {
-			if (logMINOR) Logger.minor(Probe.class, "Received out-of-bounds HTL of " + htl + "; interpreting as " + MAX_HTL + ".");
+			if (logMINOR) {
+				Logger.minor(Probe.class, "Received out-of-bounds HTL of " + htl + " from " +
+				    source.getIdentityString() + " (" + source.userToString() + "); interpreting as " +
+				    MAX_HTL + ".");
+			}
 			htl = MAX_HTL;
 		}
 		boolean availableSlot = true;
