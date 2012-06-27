@@ -463,6 +463,8 @@ public class Probe implements ByteCounter {
 						if (logMINOR) Logger.minor(Probe.class, "Peer became disconnected while attempting to add filter.", e);
 					}
 				}
+			} else {
+				if (logMINOR) Logger.minor(Probe.class, "Peer in connectedPeers was not connected.", new Exception());
 			}
 		}
 		return false;
