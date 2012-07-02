@@ -178,6 +178,20 @@ public class Message {
 		priority = spec.getDefaultPriority();
 	}
 
+	/** Drops sub-messages, and makes it locally originated */
+	private Message(Message m) {
+		_spec = m._spec;
+		_sourceRef = null;
+		_internal = m._internal;
+		_payload.putAll(m._payload);
+		_subMessages = null;
+		localInstantiationTime = System.currentTimeMillis();
+		_receivedByteCount = 0;
+		priority = m.priority;
+		needsLoadRT = m.needsLoadRT;
+		needsLoadBulk = m.needsLoadBulk;
+	}
+
 	public boolean getBoolean(String key) {
 		return ((Boolean) _payload.get(key)).booleanValue();
 	}
@@ -399,6 +413,11 @@ public class Message {
 	
 	public void setNeedsLoadBulk() {
 		needsLoadBulk = true;
+	}
+
+	/** Clone the message, clear sub-messages and set originator to self. */
+	public Message cloneAndDropSubMessages() {
+		return new Message(this);
 	}
 
 }
