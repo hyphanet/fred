@@ -80,7 +80,7 @@ public final class MessageFilter {
         	if(waitFor && _callback != null)
         		throw new IllegalStateException("Cannot wait on a MessageFilter with a callback!");
     		if(!_setTimeout)
-    			Logger.error(this, "No timeout set on filter "+this, new Exception("error"));
+			throw new IllegalStateException("No timeout set on filter " + this + "; cannot wait.");
     		if(_initialTimeout > 0 && _timeoutFromWait)
     			_timeout = System.currentTimeMillis() + _initialTimeout;
     	if(_or != null)
@@ -180,8 +180,8 @@ public final class MessageFilter {
 	 */
 	public synchronized MessageFilter or(MessageFilter or) {
 		if((or != null) && (_or != null) && or != _or) {
-			// FIXME maybe throw? this is almost certainly a bug, and a nasty one too!
-			Logger.error(this, "or() cannot be called again on the same filter. To chain use filter1.or(filter2.or(filter3)).", new Exception("debug"));
+			throw new IllegalStateException("Setting a second .or() on the same filter will replace the " +
+			    "existing one, not add another. " + _or + " would be replaced by " + or + ".");
 		}
 		_or = or;
 		return this;
