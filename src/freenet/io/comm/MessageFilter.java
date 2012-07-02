@@ -330,15 +330,11 @@ public final class MessageFilter {
     }
     
     public synchronized boolean matchesDroppedConnection(PeerContext ctx) {
-    	if(_source == ctx) return true;
-    	if(_or != null) return _or.matchesDroppedConnection(ctx);
-    	return false;
+	return _source == ctx || (_or != null && _or.matchesDroppedConnection(ctx));
     }
     
     public synchronized boolean matchesRestartedConnection(PeerContext ctx) {
-    	if(_source == ctx) return true;
-    	if(_or != null) return _or.matchesRestartedConnection(ctx);
-    	return false;
+	return _source == ctx || (_or != null && _or.matchesRestartedConnection(ctx));
     }
     
     /**
@@ -490,9 +486,7 @@ public final class MessageFilter {
 				return true; // Counts as a disconnect.
 			}
 		}
-		if(_or != null)
-			return _or.anyConnectionsDropped();
-		return false;
+		return _or != null && _or.anyConnectionsDropped();
 	}
 
 	public synchronized boolean hasCallback() {
