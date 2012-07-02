@@ -83,9 +83,9 @@ public final class MessageFilter {
     			Logger.error(this, "No timeout set on filter "+this, new Exception("error"));
     		if(_initialTimeout > 0 && _timeoutFromWait)
     			_timeout = System.currentTimeMillis() + _initialTimeout;
-    	}
     	if(_or != null)
     		_or.onStartWaiting(waitFor);
+	}
     }
     
     /**
@@ -94,7 +94,7 @@ public final class MessageFilter {
      * @param b If true, the timeout is relative to the time at which setTimeout() was called,
      * if false, it's relative to the start of waitFor().
      */
-    public MessageFilter setTimeoutRelativeToCreation(boolean b) {
+    public synchronized MessageFilter setTimeoutRelativeToCreation(boolean b) {
     	_timeoutFromWait = !b;
     	return this;
     }
@@ -107,25 +107,28 @@ public final class MessageFilter {
      * @return This message filter
      */
 	public MessageFilter setTimeout(int timeout) {
+		long currentTime = System.currentTimeMillis();
+		synchronized (this) {
 		_setTimeout = true;
 		_initialTimeout = timeout;
-		_timeout = System.currentTimeMillis() + timeout;
+		_timeout = currentTime + timeout;
+		}
 		return this;
 	}
 
-	public MessageFilter setNoTimeout() {
+	public synchronized MessageFilter setNoTimeout() {
 		_setTimeout = true;
 		_timeout = Long.MAX_VALUE;
 		_initialTimeout = 0;
 		return this;
 	}
 	
-	public MessageFilter setType(MessageType type) {
+	public synchronized MessageFilter setType(MessageType type) {
 		_type = type;
 		return this;
 	}
 
-	public MessageFilter setSource(PeerContext source) {
+	public synchronized MessageFilter setSource(PeerContext source) {
 		_source = source;
 		if(source != null)
 			_oldBootID = source.getBootID();
@@ -135,7 +138,7 @@ public final class MessageFilter {
 	/**
 	 Returns the source that this filter (or chain) matches
 	 */
-	public PeerContext getSource() {
+	public synchronized PeerContext getSource() {
 		return _source;
 	}
 
@@ -160,10 +163,10 @@ public final class MessageFilter {
 	}
 
 	public MessageFilter setField(String fieldName, Object fieldValue) {
+		synchronized (this) {
 		if ((_type != null) && (!_type.checkType(fieldName, fieldValue))) {
 			throw new IncorrectTypeException("Got " + fieldValue.getClass() + ", expected " + _type.typeOf(fieldName) + " for " + _type.getName());
 		}
-		synchronized (_fields) {
 			if(_fields.put(fieldName, fieldValue) == null)
 				_fieldList.add(fieldName);
 		}
@@ -175,7 +178,7 @@ public final class MessageFilter {
 	 * Multiple combinations must be nested: such as filter1.or(filter2.or(filter3))).
 	 * @return reference to this, the modified filter.
 	 */
-	public MessageFilter or(MessageFilter or) {
+	public synchronized MessageFilter or(MessageFilter or) {
 		if((or != null) && (_or != null) && or != _or) {
 			// FIXME maybe throw? this is almost certainly a bug, and a nasty one too!
 			Logger.error(this, "or() cannot be called again on the same filter. To chain use filter1.or(filter2.or(filter3)).", new Exception("debug"));
@@ -184,7 +187,7 @@ public final class MessageFilter {
 		return this;
 	}
 
-	public MessageFilter setAsyncCallback(AsyncMessageFilterCallback cb, ByteCounter ctr) {
+	public synchronized MessageFilter setAsyncCallback(AsyncMessageFilterCallback cb, ByteCounter ctr) {
 		_callback = cb;
 		_ctr = ctr;
 		return this;
@@ -202,6 +205,7 @@ public final class MessageFilter {
 	}
 	
 	public MATCHED match(Message m, boolean noTimeout, long now) {
+		synchronized (this) {
 		if(_or != null) {
 			MATCHED matched = _or.match(m, noTimeout, now);
 			if(matched != MATCHED.NONE)
@@ -219,7 +223,6 @@ public final class MessageFilter {
 				return MATCHED.TIMED_OUT;
 			return MATCHED.NONE;
 		}
-		synchronized (_fields) {
 			for (String fieldName : _fieldList) {
 				if (!m.isSet(fieldName)) {
 					if(_timeout < now)
@@ -240,21 +243,32 @@ public final class MessageFilter {
 		return MATCHED.MATCHED;
 	}
 
-	public boolean matched() {
+	public synchronized boolean matched() {
 		return _matched;
 	}
 
 	/**
 	 * Which connection dropped or was restarted?
 	 */
-	public PeerContext droppedConnection() {
+	public synchronized PeerContext droppedConnection() {
 	    return _droppedConnection;
 	}
 	
 	boolean reallyTimedOut(long time) {
-		if(_callback != null && _callback.shouldTimeout())
+		AsyncMessageFilterCallback callback;
+		boolean timedOut;
+		synchronized (this) {
+			callback = _callback;
+			timedOut = _timeout < time;
+		}
+		// Avoid calling callback unless not otherwise timed out.
+		if(!timedOut && callback != null && callback.shouldTimeout()) {
+			synchronized (this) {
 			_timeout = -1; // timeout immediately
-		return _timeout < time;
+			}
+			return true;
+		}
+		return timedOut;
 	}
 	
 	/**
@@ -263,14 +277,18 @@ public final class MessageFilter {
 	 * remove the filter from _filters if we return true.
 	 */
 	boolean timedOut(long time) {
-		if(_matched) {
+		boolean matched;
+		synchronized (this) {
+			matched = _matched;
+		}
+		if(matched) {
 			Logger.error(this, "Impossible: filter already matched in timedOut(): "+this, new Exception("error"));
 			return true; // Remove it.
 		}
 		return reallyTimedOut(time);
 	}
 
-    public Message getMessage() {
+    public synchronized Message getMessage() {
         return _message;
     }
 
@@ -282,17 +300,21 @@ public final class MessageFilter {
         notifyAll();
     }
 
-    public int getInitialTimeout() {
+    public synchronized int getInitialTimeout() {
         return _initialTimeout;
     }
     
-    public long getTimeout() {
+    public synchronized long getTimeout() {
         return _timeout;
     }
 
     @Override
 	public String toString() {
-    	return super.toString()+":"+_type.getName();
+	MessageType type;
+	synchronized (this) {
+		type = _type;
+	}
+    	return super.toString()+":" + (type == null ? "" : type.getName());
     }
 
     public void clearMatched() {
@@ -308,17 +330,17 @@ public final class MessageFilter {
     		or.clearMatched();
     }
 
-    public void clearOr() {
+    public synchronized void clearOr() {
         _or = null;
     }
     
-    public boolean matchesDroppedConnection(PeerContext ctx) {
+    public synchronized boolean matchesDroppedConnection(PeerContext ctx) {
     	if(_source == ctx) return true;
     	if(_or != null) return _or.matchesDroppedConnection(ctx);
     	return false;
     }
     
-    public boolean matchesRestartedConnection(PeerContext ctx) {
+    public synchronized boolean matchesRestartedConnection(PeerContext ctx) {
     	if(_source == ctx) return true;
     	if(_or != null) return _or.matchesRestartedConnection(ctx);
     	return false;
@@ -464,7 +486,7 @@ public final class MessageFilter {
 	/**
 	 * Returns true if a connection related to this filter has been dropped or restarted.
 	 */
-	public boolean anyConnectionsDropped() {
+	public synchronized boolean anyConnectionsDropped() {
 		if(_matched) return false;
 		if(_source != null) {
 			if(!_source.isConnected()) {
