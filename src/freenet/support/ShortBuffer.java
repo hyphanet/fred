@@ -40,8 +40,9 @@ public class ShortBuffer implements WritableToDataOutputStream {
 	/**
 	 * Create a Buffer by reading a DataInputStream
 	 *
-	 * @param dis
-	 * @throws IOException If the length integer is negative or exceeds 32KiB.
+	 * @param dis to read bytes from
+	 * @throws IllegalArgumentException If the length integer is negative or exceeds 32KiB.
+	 * @throws IOException error reading from dis
 	 */
 	public ShortBuffer(DataInput dis) throws IOException {
 		_length = dis.readShort();
