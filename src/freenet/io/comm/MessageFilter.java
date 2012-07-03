@@ -69,8 +69,7 @@ public final class MessageFilter {
 		return new MessageFilter();
 	}
 
-	void onStartWaiting(boolean waitFor) {
-		synchronized(this) {
+	synchronized void onStartWaiting(boolean waitFor) {
 			/* We cannot wait on a MessageFilter with a callback, because onMatched() calls clearMatched()
 			 * if we have a callback. The solution would be to:
 			 * - Set a flag indicating we are waitFor()ing a filter here.
@@ -85,7 +84,6 @@ public final class MessageFilter {
 				_timeout = System.currentTimeMillis() + _initialTimeout;
 			if(_or != null)
 				_or.onStartWaiting(waitFor);
-		}
 	}
 
 	/**
