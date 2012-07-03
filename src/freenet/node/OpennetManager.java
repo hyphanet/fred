@@ -468,8 +468,7 @@ public class OpennetManager {
 					else
 						peersLRU.push(nodeToAddNow);
 					oldPeers.remove(nodeToAddNow);
-					if(nodeToAddNow != null)
-						connectionAttemptsAddedPlentySpace.put(connectionType, connectionAttemptsAddedPlentySpace.get(connectionType)+1);
+					connectionAttemptsAddedPlentySpace.put(connectionType, connectionAttemptsAddedPlentySpace.get(connectionType)+1);
 				} else {
 					if(logMINOR) Logger.minor(this, "Want peer because not enough opennet nodes");
 				}
