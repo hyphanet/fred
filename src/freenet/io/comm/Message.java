@@ -92,7 +92,7 @@ public class Message {
 	        boolean mayHaveSubMessages, boolean inSubMessage, boolean veryLax) {
 		MessageType mspec;
 		try {
-			mspec = MessageType.getSpec(Integer.valueOf(bb.readInt()), veryLax);
+			mspec = MessageType.getSpec(bb.readInt(), veryLax);
 		} catch (IOException e1) {
 			if(logMINOR)
 				Logger.minor(Message.class,"Failed to read message type: "+e1, e1);
@@ -175,27 +175,27 @@ public class Message {
 	}
 
 	public boolean getBoolean(String key) {
-		return ((Boolean) _payload.get(key)).booleanValue();
+		return (Boolean) _payload.get(key);
 	}
 
 	public byte getByte(String key) {
-		return ((Byte) _payload.get(key)).byteValue();
+		return (Byte) _payload.get(key);
 	}
 
 	public short getShort(String key) {
-		return ((Short) _payload.get(key)).shortValue();
+		return (Short) _payload.get(key);
 	}
 
 	public int getInt(String key) {
-		return ((Integer) _payload.get(key)).intValue();
+		return (Integer) _payload.get(key);
 	}
 
 	public long getLong(String key) {
-		return ((Long) _payload.get(key)).longValue();
+		return (Long) _payload.get(key);
 	}
 
 	public double getDouble(String key) {
-	    return ((Double) _payload.get(key)).doubleValue();
+		return (Double) _payload.get(key);
 	}
 
 	public String getString(String key) {
@@ -227,7 +227,7 @@ public class Message {
 	}
 
 	public void set(String key, double d) {
-		set(key, new Double(d));
+		set(key, Double.valueOf(d));
 	}
 
 	public void set(String key, Object value) {
@@ -245,8 +245,6 @@ public class Message {
 	}
 
 	private byte[] encodeToPacket(boolean includeSubMessages, boolean isSubMessage) {
-//		if (this.getSpec() != MessageTypes.ping && this.getSpec() != MessageTypes.pong)
-//		Logger.logMinor("<<<<< Send message : " + this);
 
 		if(logDEBUG)
 			Logger.debug(this, "My spec code: "+_spec.getName().hashCode()+" for "+_spec.getName());
@@ -264,8 +262,8 @@ public class Message {
 		}
 
 		if(_subMessages != null && includeSubMessages) {
-			for(int i=0;i<_subMessages.size();i++) {
-				byte[] temp = _subMessages.get(i).encodeToPacket(false, true);
+			for (Message _subMessage : _subMessages) {
+				byte[] temp = _subMessage.encodeToPacket(false, true);
 				try {
 					dos.writeShort(temp.length);
 					dos.write(temp);
@@ -297,7 +295,7 @@ public class Message {
 	}
 
 	public PeerContext getSource() {
-		return _sourceRef == null ? null : (PeerContext) _sourceRef.get();
+		return _sourceRef == null ? null : _sourceRef.get();
 	}
 
 	public boolean isInternal() {
@@ -350,8 +348,7 @@ public class Message {
 
 	public Message getSubMessage(MessageType t) {
 		if(_subMessages == null) return null;
-		for(int i=0;i<_subMessages.size();i++) {
-			Message m = _subMessages.get(i);
+		for (Message m : _subMessages) {
 			if(m.getSpec() == t) return m;
 		}
 		return null;

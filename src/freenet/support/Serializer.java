@@ -81,17 +81,13 @@ public class Serializer {
 			return new Buffer(dis);
 		} else if (type.equals(ShortBuffer.class)) {
 		    return new ShortBuffer(dis);
-//		} else if (type.equals(VeryLongInteger.class)) {
-//			return new VeryLongInteger(dis);
 		} else if (type.equals(Peer.class)) {
 			return new Peer(dis);
 		} else if (type.equals(BitArray.class)) {
 			return new BitArray(dis, MAX_BITARRAY_SIZE);
 		} else if (type.equals(NodeCHK.class)) {
-			// Use Key.read(...) because write(...) writes the TYPE field.
 			return Key.read(dis);
 		} else if (type.equals(NodeSSK.class)) {
-			// Use Key.read(...) because write(...) writes the TYPE field.
 			return Key.read(dis);
 		} else if (type.equals(Key.class)) {
 		    return Key.read(dis);
