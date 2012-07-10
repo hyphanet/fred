@@ -554,8 +554,7 @@ public class OpennetManager {
 						if(logMINOR) Logger.minor(this, "Dropped opennet peer: "+dropList.get(0));
 						timeLastDropped.put(connectionType, now);
 					}
-					if(nodeToAddNow != null)
-						connectionAttemptsAdded.put(connectionType, connectionAttemptsAdded.get(connectionType)+1);
+					connectionAttemptsAdded.put(connectionType, connectionAttemptsAdded.get(connectionType)+1);
 				} else {
 					// Do not update timeLastDropped, anything dropped was over the limit so doesn't count (because nodeToAddNow == null).
 					if(!justChecking) {
