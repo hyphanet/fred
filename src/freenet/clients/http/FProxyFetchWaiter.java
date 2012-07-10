@@ -9,7 +9,7 @@ public class FProxyFetchWaiter {
 		hasWaited = progress.hasWaited();
 	}
 
-	final FProxyFetchInProgress progress;
+	public final FProxyFetchInProgress progress;
 	
 	private boolean hasWaited;
 	private boolean finished;
