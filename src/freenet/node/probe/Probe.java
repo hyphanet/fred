@@ -322,16 +322,15 @@ public class Probe implements ByteCounter {
 	private void request(final Message message, final PeerNode source, final Listener listener) {
 		final Long uid = message.getLong(DMT.UID);
 		final byte typeCode = message.getByte(DMT.TYPE);
-		Type temp;
+		final Type type;
 		if (Type.isValid(typeCode)) {
-			temp = Type.valueOf(typeCode);
-			if (logDEBUG) Logger.debug(Probe.class, "Probe type is " + temp.name() + ".");
+			type = Type.valueOf(typeCode);
+			if (logDEBUG) Logger.debug(Probe.class, "Probe type is " + type.name() + ".");
 		} else {
 			if (logMINOR) Logger.minor(Probe.class, "Invalid probe type " + typeCode + ".");
 			listener.onError(Error.UNRECOGNIZED_TYPE, typeCode);
 			return;
 		}
-		final Type type = temp;
 		byte htl = message.getByte(DMT.HTL);
 		if (htl < 1) {
 			if (logWARNING) {
