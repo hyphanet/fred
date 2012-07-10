@@ -196,7 +196,7 @@ public class SimpleFieldSet {
     	return split(k);
     }
 
-    private static final String[] split(String string) {
+    private static String[] split(String string) {
     	if(string == null) return EMPTY_STRING_ARRAY;
     	return string.split(String.valueOf(MULTI_VALUE_CHAR)); // slower???
 //    	int index = string.indexOf(';');
@@ -215,7 +215,7 @@ public class SimpleFieldSet {
 //    	return (String[]) v.toArray();
 	}
 
-    private static final String unsplit(String[] strings) {
+    private static String unsplit(String[] strings) {
     	StringBuilder sb = new StringBuilder();
     	for(int i=0;i<strings.length;i++) {
     		if(i != 0) sb.append(MULTI_VALUE_CHAR);
@@ -299,7 +299,7 @@ public class SimpleFieldSet {
      * @return True unless allowMultiple was false and there was a pre-existing value,
      * or value was null.
      */
-	private synchronized final boolean put(String key, String value, boolean allowMultiple, boolean overwrite, boolean fromRead) {
+	private synchronized boolean put(String key, String value, boolean allowMultiple, boolean overwrite, boolean fromRead) {
 		int idx;
 		if(value == null) return true; // valid no-op
 		if(value.indexOf('\n') != -1) throw new IllegalArgumentException("A simplefieldSet can't accept newlines !");
@@ -832,6 +832,24 @@ public class SimpleFieldSet {
 		}
 	}
 
+	public byte getByte(String key) throws FSParseException {
+		String s = get(key);
+		if(s == null) throw new FSParseException("No key " + key);
+		try {
+			return Byte.parseByte(s);
+		} catch (NumberFormatException e) {
+			throw new FSParseException("Cannot parse \"" + s + "\" as a byte.");
+		}
+	}
+
+	public byte getByte(String key, byte def) {
+		try {
+			return getByte(key);
+		} catch (FSParseException e) {
+			return def;
+		}
+	}
+
 	public char getChar(String key) throws FSParseException {
 		String s = get(key);
 		if(s == null) throw new FSParseException("No key "+key);
@@ -874,6 +892,11 @@ public class SimpleFieldSet {
 			putAppend(key, String.valueOf(v));
 	}
 
+	public void put(String key, float[] value) {
+		removeValue(key);
+		for (float v : value) putAppend(key, String.valueOf(v));
+	}
+
 	public int[] getIntArray(String key) {
 		String[] strings = getAll(key);
 		if(strings == null) return null;
@@ -896,6 +919,22 @@ public class SimpleFieldSet {
 		for(int i=0;i<strings.length;i++) {
 			try {
 				ret[i] = Double.valueOf(strings[i]);
+			} catch(NumberFormatException e) {
+				Logger.error(this, "Cannot parse "+strings[i]+" : "+e,e);
+				return null;
+			}
+		}
+
+		return ret;
+	}
+
+	public float[] getFloatArray(String key) {
+		String[] strings = getAll(key);
+		if(strings == null) return null;
+		float[] ret = new float[strings.length];
+		for(int i=0;i<strings.length;i++) {
+			try {
+				ret[i] = Float.valueOf(strings[i]);
 			} catch(NumberFormatException e) {
 				Logger.error(this, "Cannot parse "+strings[i]+" : "+e,e);
 				return null;

@@ -139,9 +139,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	/** Cancelled? */
 	private boolean cancelled;
 
-	/** Kill a background poll fetcher when it has lost its last subscriber? */
-	private boolean killOnLoseSubscribers;
-	
 	private final boolean checkStoreOnly;
 	
 	final ClientRequester parent;
@@ -504,8 +501,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	
 	/** Keep going forever? */
 	private final boolean backgroundPoll;
-	private boolean progressed;
-	
+
 	/** Keep the last fetched data? */
 	final boolean keepLastData;
 	
@@ -723,9 +719,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				if(newSleepTime > maxSleepTime) newSleepTime = maxSleepTime;
 				sleepTime = newSleepTime;
 				end = now + context.random.nextInt(sleepTime);
-                
+
 				if(valAtEnd > valueAtSchedule && valAtEnd > origUSK.suggestedEdition) {
-					progressed = true;
 					// We have advanced; keep trying as if we just started.
 					// Only if we actually DO advance, not if we just confirm our suspicion (valueAtSchedule always starts at 0).
 					sleepTime = origSleepTime;
@@ -733,8 +728,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					end = now;
 					if(logMINOR)
 						Logger.minor(this, "We have advanced: at start, "+valueAtSchedule+" at end, "+valAtEnd);
-				} else
-					progressed = false;
+				}
 				if(logMINOR) Logger.minor(this, "Sleep time is "+sleepTime+" this sleep is "+(end-now)+" for "+this);
 			}
 			schedule(end-now, null, context);
@@ -1221,10 +1215,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		if(lastRequestData == null) return;
 		lastRequestData.free(); // USKFetcher's cannot be persistent, so no need to removeFrom()
 		lastRequestData = null;
-	}
-
-	public synchronized void killOnLoseSubscribers() {
-		this.killOnLoseSubscribers = true;
 	}
 
 	@Override

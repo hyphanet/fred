@@ -15,8 +15,6 @@ import freenet.support.api.HTTPRequest;
 
 public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabledCallback {
 
-	private final String _pluginURL;
-	private final String _pageName;
 	protected final PluginContext pluginContext;
 
 	private final String _path;
@@ -24,9 +22,7 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 	protected WebInterfaceToadlet(PluginContext pluginContext2, String pluginURL, String pageName) {
 		super(pluginContext2.hlsc);
 		pluginContext = pluginContext2;
-		_pageName = pageName;
-		_pluginURL = pluginURL;
-		_path = _pluginURL + "/" + _pageName;
+		_path = pluginURL + "/" + pageName;
 	}
 
 	@Override

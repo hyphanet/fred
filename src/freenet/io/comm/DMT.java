@@ -167,7 +167,7 @@ public class DMT {
 		addField(DATA, Buffer.class);
 	}};
 	
-	public static final Message createPacketTransmit(long uid, int packetNo, BitArray sent, Buffer data, boolean realTime) {
+	public static Message createPacketTransmit(long uid, int packetNo, BitArray sent, Buffer data, boolean realTime) {
 		Message msg = new Message(packetTransmit);
 		msg.set(UID, uid);
 		msg.set(PACKET_NO, packetNo);
@@ -192,7 +192,7 @@ public class DMT {
 		addField(UID, Long.class);
 	}};
 	
-	public static final Message createAllSent(long uid, boolean realTime) {
+	public static Message createAllSent(long uid, boolean realTime) {
 		Message msg = new Message(allSent);
 		msg.set(UID, uid);
 		return msg;
@@ -201,7 +201,7 @@ public class DMT {
 	public static final MessageType allReceived = new MessageType("allReceived", PRIORITY_UNSPECIFIED) {{
 		addField(UID, Long.class);
 	}};
-	public static final Message createAllReceived(long uid) {
+	public static Message createAllReceived(long uid) {
 		Message msg = new Message(allReceived);
 		msg.set(UID, uid);
 		return msg;
@@ -213,7 +213,7 @@ public class DMT {
 		addField(REASON, Integer.class);
 	}};
 
-	public static final Message createSendAborted(long uid, int reason, String description) {
+	public static Message createSendAborted(long uid, int reason, String description) {
 		Message msg = new Message(sendAborted);
 		msg.set(UID, uid);
 		msg.set(REASON, reason);
@@ -227,7 +227,7 @@ public class DMT {
 		addField(DATA, ShortBuffer.class);
 	}};
 	
-	public static final Message createFNPBulkPacketSend(long uid, int packetNo, ShortBuffer data, boolean realTime) {
+	public static Message createFNPBulkPacketSend(long uid, int packetNo, ShortBuffer data, boolean realTime) {
 		Message msg = new Message(FNPBulkPacketSend);
 		msg.set(UID, uid);
 		msg.set(PACKET_NO, packetNo);
@@ -235,7 +235,7 @@ public class DMT {
 		return msg;
 	}
 	
-	public static final Message createFNPBulkPacketSend(long uid, int packetNo, byte[] data, boolean realTime) {
+	public static Message createFNPBulkPacketSend(long uid, int packetNo, byte[] data, boolean realTime) {
 		return createFNPBulkPacketSend(uid, packetNo, new ShortBuffer(data), realTime);
 	}
 	
@@ -243,7 +243,7 @@ public class DMT {
 		addField(UID, Long.class);
 	}};
 	
-	public static final Message createFNPBulkSendAborted(long uid) {
+	public static Message createFNPBulkSendAborted(long uid) {
 		Message msg = new Message(FNPBulkSendAborted);
 		msg.set(UID, uid);
 		return msg;
@@ -253,7 +253,7 @@ public class DMT {
 		addField(UID, Long.class);
 	}};
 	
-	public static final Message createFNPBulkReceiveAborted(long uid) {
+	public static Message createFNPBulkReceiveAborted(long uid) {
 		Message msg = new Message(FNPBulkReceiveAborted);
 		msg.set(UID, uid);
 		return msg;
@@ -263,7 +263,7 @@ public class DMT {
 		addField(UID, Long.class);
 	}};
 	
-	public static final Message createFNPBulkReceivedAll(long uid) {
+	public static Message createFNPBulkReceivedAll(long uid) {
 		Message msg = new Message(FNPBulkReceivedAll);
 		msg.set(UID, uid);
 		return msg;
@@ -273,7 +273,7 @@ public class DMT {
 		addField(UID, Long.class);
 	}};
 	
-	public static final Message createTestTransferSend(long uid) {
+	public static Message createTestTransferSend(long uid) {
 		Message msg = new Message(testTransferSend);
 		msg.set(UID, uid);
 		return msg;
@@ -283,7 +283,7 @@ public class DMT {
 		addField(UID, Long.class);
 	}};
 	
-	public static final Message createTestTransferSendAck(long uid) {
+	public static Message createTestTransferSendAck(long uid) {
 		Message msg = new Message(testTransferSendAck);
 		msg.set(UID, uid);
 		return msg;
@@ -295,7 +295,7 @@ public class DMT {
 		addField(CHK_HEADER, Buffer.class);
 	}};
 	
-	public static final Message createTestSendCHK(long uid, String uri, Buffer header) {
+	public static Message createTestSendCHK(long uid, String uri, Buffer header) {
 		Message msg = new Message(testSendCHK);
 		msg.set(UID, uid);
 		msg.set(FREENET_URI, uri);
@@ -309,7 +309,7 @@ public class DMT {
 		addField(HTL, Integer.class);
 	}};
 	
-	public static final Message createTestRequest(Key Key, long id, int htl) {
+	public static Message createTestRequest(Key Key, long id, int htl) {
 		Message msg = new Message(testRequest);
 		msg.set(UID, id);
 		msg.set(FREENET_ROUTING_KEY, Key);
@@ -321,7 +321,7 @@ public class DMT {
 		addField(UID, Long.class);
 	}};
 	
-	public static final Message createTestDataNotFound(long uid) {
+	public static Message createTestDataNotFound(long uid) {
 		Message msg = new Message(testDataNotFound);
 		msg.set(UID, uid);
 		return msg;
@@ -332,7 +332,7 @@ public class DMT {
 		addField(TEST_CHK_HEADERS, Buffer.class);
 	}};
 	
-	public static final Message createTestDataReply(long uid, byte[] headers) {
+	public static Message createTestDataReply(long uid, byte[] headers) {
 		Message msg = new Message(testDataReply);
 		msg.set(UID, uid);
 		msg.set(TEST_CHK_HEADERS, new Buffer(headers));
@@ -343,7 +343,7 @@ public class DMT {
 		addField(UID, Long.class);
 		addField(FREENET_URI, String.class);
 	}};
-	public static final Message createTestSendCHKAck(long uid, String key) {
+	public static Message createTestSendCHKAck(long uid, String key) {
 		Message msg = new Message(testSendCHKAck);
 		msg.set(UID, uid);
 		msg.set(FREENET_URI, key);
@@ -354,7 +354,7 @@ public class DMT {
 		addField(UID, Long.class);
 	}};
 	
-	public static final Message createTestDataReplyAck(long id) {
+	public static Message createTestDataReplyAck(long id) {
 		Message msg = new Message(testDataReplyAck);
 		msg.set(UID, id);
 		return msg;
@@ -363,7 +363,7 @@ public class DMT {
 	public static final MessageType testDataNotFoundAck = new MessageType("testDataNotFoundAck", PRIORITY_UNSPECIFIED) {{
 		addField(UID, Long.class);
 	}};
-	public static final Message createTestDataNotFoundAck(long id) {
+	public static Message createTestDataNotFoundAck(long id) {
 		Message msg = new Message(testDataNotFoundAck);
 		msg.set(UID, id);
 		return msg;
@@ -377,7 +377,7 @@ public class DMT {
 		addField(REASON, String.class);
 	}};
 	
-	public static final Message createTestReceiveCompleted(long id, boolean success, String reason) {
+	public static Message createTestReceiveCompleted(long id, boolean success, String reason) {
 		Message msg = new Message(testReceiveCompleted);
 		msg.set(UID, id);
 		msg.set(SUCCESS, success);
@@ -391,7 +391,7 @@ public class DMT {
 		addField(REASON, String.class);
 	}};
 
-	public static final Message createTestSendCompleted(long id, boolean success, String reason) {
+	public static Message createTestSendCompleted(long id, boolean success, String reason) {
 		Message msg = new Message(testSendCompleted);
 		msg.set(UID, id);
 		msg.set(SUCCESS, success);
@@ -405,7 +405,7 @@ public class DMT {
 		addField(NODE_TO_NODE_MESSAGE_DATA, ShortBuffer.class);
 	}};
 
-	public static final Message createNodeToNodeMessage(int type, byte[] data) {
+	public static Message createNodeToNodeMessage(int type, byte[] data) {
 		Message msg = new Message(nodeToNodeMessage);
 		msg.set(NODE_TO_NODE_MESSAGE_TYPE, type);
 		msg.set(NODE_TO_NODE_MESSAGE_DATA, new ShortBuffer(data));
@@ -420,7 +420,7 @@ public class DMT {
 		addField(FREENET_ROUTING_KEY, NodeCHK.class);
 	}};
 	
-	public static final Message createFNPCHKDataRequest(long id, short htl, NodeCHK key) {
+	public static Message createFNPCHKDataRequest(long id, short htl, NodeCHK key) {
 		Message msg = new Message(FNPCHKDataRequest);
 		msg.set(UID, id);
 		msg.set(HTL, htl);
@@ -437,7 +437,7 @@ public class DMT {
 		addField(NEED_PUB_KEY, Boolean.class);
 	}};
 	
-	public static final Message createFNPSSKDataRequest(long id, short htl, NodeSSK key, boolean needPubKey) {
+	public static Message createFNPSSKDataRequest(long id, short htl, NodeSSK key, boolean needPubKey) {
 		Message msg = new Message(FNPSSKDataRequest);
 		msg.set(UID, id);
 		msg.set(HTL, htl);
@@ -452,7 +452,7 @@ public class DMT {
 		addField(UID, Long.class);
 	}};
 	
-	public static final Message createFNPRejectedLoop(long id) {
+	public static Message createFNPRejectedLoop(long id) {
 		Message msg = new Message(FNPRejectedLoop);
 		msg.set(UID, id);
 		return msg;
@@ -465,7 +465,7 @@ public class DMT {
 		addField(IS_LOCAL, Boolean.class);
 	}};
 	
-	public static final Message createFNPRejectedOverload(long id, boolean isLocal, boolean needsLoad, boolean realTimeFlag) {
+	public static Message createFNPRejectedOverload(long id, boolean isLocal, boolean needsLoad, boolean realTimeFlag) {
 		Message msg = new Message(FNPRejectedOverload);
 		msg.set(UID, id);
 		msg.set(IS_LOCAL, isLocal);
@@ -482,7 +482,7 @@ public class DMT {
 		addField(UID, Long.class);
 	}};
 	
-	public static final Message createFNPAccepted(long id) {
+	public static Message createFNPAccepted(long id) {
 		Message msg = new Message(FNPAccepted);
 		msg.set(UID, id);
 		return msg;
@@ -492,7 +492,7 @@ public class DMT {
 		addField(UID, Long.class);
 	}};
 	
-	public static final Message createFNPDataNotFound(long id) {
+	public static Message createFNPDataNotFound(long id) {
 		Message msg = new Message(FNPDataNotFound);
 		msg.set(UID, id);
 		return msg;
@@ -503,7 +503,7 @@ public class DMT {
 		addField(TIME_LEFT, Integer.class);
 	}};
 	
-	public static final Message createFNPRecentlyFailed(long id, int timeLeft) {
+	public static Message createFNPRecentlyFailed(long id, int timeLeft) {
 		Message msg = new Message(FNPRecentlyFailed);
 		msg.set(UID, id);
 		msg.set(TIME_LEFT, timeLeft);
@@ -515,7 +515,7 @@ public class DMT {
 		addField(BLOCK_HEADERS, ShortBuffer.class);
 	}};
 	
-	public static final Message createFNPCHKDataFound(long id, byte[] buf) {
+	public static Message createFNPCHKDataFound(long id, byte[] buf) {
 		Message msg = new Message(FNPCHKDataFound);
 		msg.set(UID, id);
 		msg.set(BLOCK_HEADERS, new ShortBuffer(buf));
@@ -527,7 +527,7 @@ public class DMT {
 		addField(HTL, Short.class);
 	}};
 	
-	public static final Message createFNPRouteNotFound(long id, short htl) {
+	public static Message createFNPRouteNotFound(long id, short htl) {
 		Message msg = new Message(FNPRouteNotFound);
 		msg.set(UID, id);
 		msg.set(HTL, htl);
@@ -541,7 +541,7 @@ public class DMT {
 		addField(FREENET_ROUTING_KEY, Key.class);
 	}};
 	
-	public static final Message createFNPInsertRequest(long id, short htl, Key key) {
+	public static Message createFNPInsertRequest(long id, short htl, Key key) {
 		Message msg = new Message(FNPInsertRequest);
 		msg.set(UID, id);
 		msg.set(HTL, htl);
@@ -554,7 +554,7 @@ public class DMT {
 		addField(UID, Long.class);
 	}};
 	
-	public static final Message createFNPInsertReply(long id) {
+	public static Message createFNPInsertReply(long id) {
 		Message msg = new Message(FNPInsertReply);
 		msg.set(UID, id);
 		return msg;
@@ -565,7 +565,7 @@ public class DMT {
 		addField(BLOCK_HEADERS, ShortBuffer.class);
 	}};
 	
-	public static final Message createFNPDataInsert(long uid, byte[] headers) {
+	public static Message createFNPDataInsert(long uid, byte[] headers) {
 		Message msg = new Message(FNPDataInsert);
 		msg.set(UID, uid);
 		msg.set(BLOCK_HEADERS, new ShortBuffer(headers));
@@ -577,7 +577,7 @@ public class DMT {
 		addField(ANY_TIMED_OUT, Boolean.class);
 	}};
 
-	public static final Message createFNPInsertTransfersCompleted(long uid, boolean anyTimedOut) {
+	public static Message createFNPInsertTransfersCompleted(long uid, boolean anyTimedOut) {
 		Message msg = new Message(FNPInsertTransfersCompleted);
 		msg.set(UID, uid);
 		msg.set(ANY_TIMED_OUT, anyTimedOut);
@@ -595,7 +595,7 @@ public class DMT {
 		addField(UID, Long.class);
 	}};
 	
-	public static final Message createFNPRejectedTimeout(long uid) {
+	public static Message createFNPRejectedTimeout(long uid) {
 		Message msg = new Message(FNPRejectedTimeout);
 		msg.set(UID, uid);
 		return msg;
@@ -606,7 +606,7 @@ public class DMT {
 		addField(DATA_INSERT_REJECTED_REASON, Short.class);
 	}};
 	
-	public static final Message createFNPDataInsertRejected(long uid, short reason) {
+	public static Message createFNPDataInsertRejected(long uid, short reason) {
 		Message msg = new Message(FNPDataInsertRejected);
 		msg.set(UID, uid);
 		msg.set(DATA_INSERT_REJECTED_REASON, reason);
@@ -618,7 +618,7 @@ public class DMT {
 	public static final short DATA_INSERT_REJECTED_SSK_ERROR = 3;
 	public static final short DATA_INSERT_REJECTED_TIMEOUT_WAITING_FOR_ACCEPTED = 4;
 	
-	public static final String getDataInsertRejectedReason(short reason) {
+	public static String getDataInsertRejectedReason(short reason) {
 		if(reason == DATA_INSERT_REJECTED_VERIFY_FAILED)
 			return "Verify failed";
 		else if(reason == DATA_INSERT_REJECTED_RECEIVE_FAILED)
@@ -677,7 +677,7 @@ public class DMT {
 		addField(BLOCK_HEADERS, ShortBuffer.class);
 	}};
 	
-	public static final Message createFNPSSKInsertRequestHeaders(long uid, byte[] headers, boolean realTime) {
+	public static Message createFNPSSKInsertRequestHeaders(long uid, byte[] headers, boolean realTime) {
 		Message msg = new Message(FNPSSKInsertRequestHeaders);
 		msg.set(UID, uid);
 		msg.set(BLOCK_HEADERS, new ShortBuffer(headers));
@@ -690,7 +690,7 @@ public class DMT {
 		addField(DATA, ShortBuffer.class);
 	}};
 	
-	public static final Message createFNPSSKInsertRequestData(long uid, byte[] data, boolean realTime) {
+	public static Message createFNPSSKInsertRequestData(long uid, byte[] data, boolean realTime) {
 		Message msg = new Message(FNPSSKInsertRequestData);
 		msg.set(UID, uid);
 		msg.set(DATA, new ShortBuffer(data));
@@ -734,7 +734,7 @@ public class DMT {
 		addField(NEED_PUB_KEY, Boolean.class);
 	}};
 	
-	public static final Message createFNPSSKAccepted(long uid, boolean needPubKey) {
+	public static Message createFNPSSKAccepted(long uid, boolean needPubKey) {
 		Message msg = new Message(FNPSSKAccepted);
 		msg.set(UID, uid);
 		msg.set(NEED_PUB_KEY, needPubKey);
@@ -1010,7 +1010,7 @@ public class DMT {
 		addField(PING_SEQNO, Integer.class);
 	}};
 	
-	public static final Message createFNPPing(int seqNo) {
+	public static Message createFNPPing(int seqNo) {
 		Message msg = new Message(FNPPing);
 		msg.set(PING_SEQNO, seqNo);
 		return msg;
@@ -1020,7 +1020,7 @@ public class DMT {
 		addField(PING_SEQNO, Integer.class);
 	}};
 	
-	public static final Message createFNPPong(int seqNo) {
+	public static Message createFNPPong(int seqNo) {
 		Message msg = new Message(FNPPong);
 		msg.set(PING_SEQNO, seqNo);
 		return msg;
@@ -1035,7 +1035,7 @@ public class DMT {
 		addField(LINEAR_COUNTER, Short.class);
 	}};
 	
-	public static final Message createFNPRHProbeReply(long uid, double nearest, double best, short counter, short uniqueCounter, short linearCounter) {
+	public static Message createFNPRHProbeReply(long uid, double nearest, double best, short counter, short uniqueCounter, short linearCounter) {
 		Message msg = new Message(FNPRHProbeReply);
 		msg.set(UID, uid);
 		msg.set(NEAREST_LOCATION, nearest);
@@ -1054,7 +1054,7 @@ public class DMT {
 		addField(HTL, Short.class);
 	}};
 	
-	public static final Message createFNPRHProbeRequest(long uid, double target, double nearest, 
+	public static Message createFNPRHProbeRequest(long uid, double target, double nearest,
 			double best, short htl) {
 		Message msg = new Message(FNPRHProbeRequest);
 		msg.set(UID, uid);
@@ -1074,7 +1074,7 @@ public class DMT {
 		addField(REASON, String.class);
 	}};
 	
-	public static final Message createFNPRHReturnSubMessage(double nearest, double best, short counter, short uniqueCounter, short linearCounter, String reason) {
+	public static Message createFNPRHReturnSubMessage(double nearest, double best, short counter, short uniqueCounter, short linearCounter, String reason) {
 		Message msg = new Message(FNPRHReturnSubMessage);
 		msg.set(NEAREST_LOCATION, nearest);
 		msg.set(BEST_LOCATION, best);
@@ -1182,7 +1182,7 @@ public class DMT {
 		addField(HTL, Integer.class);
 	}};
 	
-	public static final Message createFNPSwapRequest(long uid, byte[] buf, int htl) {
+	public static Message createFNPSwapRequest(long uid, byte[] buf, int htl) {
 		Message msg = new Message(FNPSwapRequest);
 		msg.set(UID, uid);
 		msg.set(HASH, new ShortBuffer(buf));
@@ -1194,7 +1194,7 @@ public class DMT {
 		addField(UID, Long.class);
 	}};
 	
-	public static final Message createFNPSwapRejected(long uid) {
+	public static Message createFNPSwapRejected(long uid) {
 		Message msg = new Message(FNPSwapRejected);
 		msg.set(UID, uid);
 		return msg;
@@ -1205,7 +1205,7 @@ public class DMT {
 		addField(HASH, ShortBuffer.class);
 	}};
 	
-	public static final Message createFNPSwapReply(long uid, byte[] buf) {
+	public static Message createFNPSwapReply(long uid, byte[] buf) {
 		Message msg = new Message(FNPSwapReply);
 		msg.set(UID, uid);
 		msg.set(HASH, new ShortBuffer(buf));
@@ -1217,7 +1217,7 @@ public class DMT {
 		addField(DATA, ShortBuffer.class);
 	}};
 	
-	public static final Message createFNPSwapCommit(long uid, byte[] buf) {
+	public static Message createFNPSwapCommit(long uid, byte[] buf) {
 		Message msg = new Message(FNPSwapCommit);
 		msg.set(UID, uid);
 		msg.set(DATA, new ShortBuffer(buf));
@@ -1229,7 +1229,7 @@ public class DMT {
 		addField(DATA, ShortBuffer.class);
 	}};
 	
-	public static final Message createFNPSwapComplete(long uid, byte[] buf) {
+	public static Message createFNPSwapComplete(long uid, byte[] buf) {
 		Message msg = new Message(FNPSwapComplete);
 		msg.set(UID, uid);
 		msg.set(DATA, new ShortBuffer(buf));
@@ -1241,7 +1241,7 @@ public class DMT {
 		addField(PEER_LOCATIONS, ShortBuffer.class);
 	}};
 	
-	public static final Message createFNPLocChangeNotificationNew(double myLocation, double[] locations) {
+	public static Message createFNPLocChangeNotificationNew(double myLocation, double[] locations) {
 		Message msg = new Message(FNPLocChangeNotificationNew);
 		ShortBuffer dst = new ShortBuffer(Fields.doublesToBytes(locations));
 		msg.set(LOCATION, myLocation);
@@ -1256,7 +1256,7 @@ public class DMT {
 		
 	}};
 	
-	public static final Message createFNPRoutedPing(long uid, double targetLocation, short htl, int counter, byte[] nodeIdentity) {
+	public static Message createFNPRoutedPing(long uid, double targetLocation, short htl, int counter, byte[] nodeIdentity) {
 		Message msg = new Message(FNPRoutedPing);
 		msg.setRoutedToNodeFields(uid, targetLocation, htl, nodeIdentity);
 		msg.set(COUNTER, counter);
@@ -1268,7 +1268,7 @@ public class DMT {
 		addField(COUNTER, Integer.class);
 	}};
 
-	public static final Message createFNPRoutedPong(long uid, int counter) {
+	public static Message createFNPRoutedPong(long uid, int counter) {
 		Message msg = new Message(FNPRoutedPong);
 		msg.set(UID, uid);
 		msg.set(COUNTER, counter);
@@ -1282,7 +1282,7 @@ public class DMT {
 	}};
 	
 	
-	public static final Message createFNPSecretPing(long uid, double targetLocation, short htl, short dawnHtl, int counter, byte[] nodeIdentity) {
+	public static Message createFNPSecretPing(long uid, double targetLocation, short htl, short dawnHtl, int counter, byte[] nodeIdentity) {
 		Message msg = new Message(FNPSecretPing);
 		msg.setRoutedToNodeFields(uid, targetLocation, htl, nodeIdentity);
 		msg.set(COUNTER, counter);
@@ -1296,7 +1296,7 @@ public class DMT {
 		addField(SECRET, Long.class);
 	}};
 	
-	public static final Message createFNPSecretPong(long uid, int counter, long secret) {
+	public static Message createFNPSecretPong(long uid, int counter, long secret) {
 		Message msg = new Message(FNPSecretPong);
 		msg.set(UID, uid);
 		msg.set(COUNTER, counter);
@@ -1309,7 +1309,7 @@ public class DMT {
 		addField(SECRET, Long.class);
 	}};
 	
-	public static final Message createFNPStoreSecret(long uid, long secret) {
+	public static Message createFNPStoreSecret(long uid, long secret) {
 		Message msg = new Message(FNPStoreSecret);
 		msg.set(UID, uid);
 		msg.set(SECRET, secret);
@@ -1320,7 +1320,7 @@ public class DMT {
 		addField(UID, Integer.class);
 	}};
 	
-	public static final Message createFNPNetworkID(int id) {
+	public static Message createFNPNetworkID(int id) {
 		Message msg = new Message(FNPNetworkID);
 		msg.set(UID, id);
 		return msg;
@@ -1331,7 +1331,7 @@ public class DMT {
 		addField(HTL, Short.class);
 	}};
 
-	public static final Message createFNPRoutedRejected(long uid, short htl) {
+	public static Message createFNPRoutedRejected(long uid, short htl) {
 		Message msg = new Message(FNPRoutedRejected);
 		msg.set(UID, uid);
 		msg.set(HTL, htl);
@@ -1342,7 +1342,7 @@ public class DMT {
 		addField(EXTERNAL_ADDRESS, Peer.class);
 	}};
 	
-	public static final Message createFNPDetectedIPAddress(Peer peer) {
+	public static Message createFNPDetectedIPAddress(Peer peer) {
 		Message msg = new Message(FNPDetectedIPAddress);
 		msg.set(EXTERNAL_ADDRESS, peer);
 		return msg;
@@ -1352,7 +1352,7 @@ public class DMT {
 		addField(TIME, Long.class);
 	}};
 	
-	public static final Message createFNPTime(long time) {
+	public static Message createFNPTime(long time) {
 		Message msg = new Message(FNPTime);
 		msg.set(TIME, time);
 		return msg;
@@ -1362,7 +1362,7 @@ public class DMT {
 		addField(UPTIME_PERCENT_48H, Byte.class);
 	}};
 	
-	public static final Message createFNPUptime(byte uptimePercent) {
+	public static Message createFNPUptime(byte uptimePercent) {
 		Message msg = new Message(FNPUptime);
 		msg.set(UPTIME_PERCENT_48H, uptimePercent);
 		return msg;
@@ -1372,7 +1372,7 @@ public class DMT {
 		addField(FRIEND_VISIBILITY, Short.class);
 	}};
 	
-	public static final Message createFNPVisibility(short visibility) {
+	public static Message createFNPVisibility(short visibility) {
 		Message msg = new Message(FNPVisibility);
 		msg.set(FRIEND_VISIBILITY, visibility);
 		return msg;
@@ -1384,7 +1384,7 @@ public class DMT {
 		addField(TIME, Long.class);
 	}};
 	
-	public static final Message createFNPSentPackets(int[] timeDeltas, long[] hashes, long baseTime) {
+	public static Message createFNPSentPackets(int[] timeDeltas, long[] hashes, long baseTime) {
 		Message msg = new Message(FNPSentPackets);
 		msg.set(TIME_DELTAS, new ShortBuffer(Fields.intsToBytes(timeDeltas)));
 		msg.set(HASHES, new ShortBuffer(Fields.longsToBytes(hashes)));
@@ -1395,7 +1395,7 @@ public class DMT {
 	public static final MessageType FNPVoid = new MessageType("FNPVoid", PRIORITY_LOW, false, true) {{
 	}};
 	
-	public static final Message createFNPVoid() {
+	public static Message createFNPVoid() {
 		Message msg = new Message(FNPVoid);
 		return msg;
 	}
@@ -1414,7 +1414,7 @@ public class DMT {
 		addField(NODE_TO_NODE_MESSAGE_DATA, ShortBuffer.class);
 	}};
 	
-	public static final Message createFNPDisconnect(boolean remove, boolean purge, int messageType, ShortBuffer messageData) {
+	public static Message createFNPDisconnect(boolean remove, boolean purge, int messageType, ShortBuffer messageData) {
 		Message msg = new Message(FNPDisconnect);
 		msg.set(REMOVE, remove);
 		msg.set(PURGE, purge);
@@ -1447,7 +1447,7 @@ public class DMT {
 		addField(BWLIMIT_DELAY_TIME, Integer.class);
 	}};
 
-	public static final Message createUOMAnnounce(String mainKey, String extraKey, String revocationKey,
+	public static Message createUOMAnnounce(String mainKey, String extraKey, String revocationKey,
 			boolean haveRevocation, long mainJarVersion, long extraJarVersion, long timeLastTriedRevocationFetch,
 			int revocationDNFCount, long revocationKeyLength, long mainJarLength, long extraJarLength, int pingTime, int bwlimitDelayTime) {
 		Message msg = new Message(UOMAnnounce);
@@ -1473,7 +1473,7 @@ public class DMT {
 		addField(UID, Long.class);
 	}};
 	
-	public static final Message createUOMRequestRevocation(long uid) {
+	public static Message createUOMRequestRevocation(long uid) {
 		Message msg = new Message(UOMRequestRevocation);
 		msg.set(UID, uid);
 		return msg;
@@ -1483,7 +1483,7 @@ public class DMT {
 		addField(UID, Long.class);
 	}};
 	
-	public static final Message createUOMRequestMain(long uid) {
+	public static Message createUOMRequestMain(long uid) {
 		Message msg = new Message(UOMRequestMain);
 		msg.set(UID, uid);
 		return msg;
@@ -1493,7 +1493,7 @@ public class DMT {
 		addField(UID, Long.class);
 	}};
 	
-	public static final Message createUOMRequestExtra(long uid) {
+	public static Message createUOMRequestExtra(long uid) {
 		Message msg = new Message(UOMRequestExtra);
 		msg.set(UID, uid);
 		return msg;
@@ -1507,7 +1507,7 @@ public class DMT {
 		addField(REVOCATION_KEY, String.class);
 	}};
 	
-	public static final Message createUOMSendingRevocation(long uid, long length, String key) {
+	public static Message createUOMSendingRevocation(long uid, long length, String key) {
 		Message msg = new Message(UOMSendingRevocation);
 		msg.set(UID, uid);
 		msg.set(FILE_LENGTH, length);
@@ -1522,7 +1522,7 @@ public class DMT {
 		addField(MAIN_JAR_VERSION, Integer.class);
 	}};
 	
-	public static final Message createUOMSendingMain(long uid, long length, String key, int version) {
+	public static Message createUOMSendingMain(long uid, long length, String key, int version) {
 		Message msg = new Message(UOMSendingMain);
 		msg.set(UID, uid);
 		msg.set(FILE_LENGTH, length);
@@ -1538,7 +1538,7 @@ public class DMT {
 		addField(EXTRA_JAR_VERSION, Integer.class);
 	}};
 	
-	public static final Message createUOMSendingExtra(long uid, long length, String key, int version) {
+	public static Message createUOMSendingExtra(long uid, long length, String key, int version) {
 		Message msg = new Message(UOMSendingExtra);
 		msg.set(UID, uid);
 		msg.set(FILE_LENGTH, length);
@@ -1553,7 +1553,7 @@ public class DMT {
 		addField(NODE_UIDS, ShortBuffer.class);
 	}};
 	
-	public static final Message createFNPSwapLocations(long[] uids) {
+	public static Message createFNPSwapLocations(long[] uids) {
 		Message msg = new Message(FNPSwapNodeUIDs);
 		msg.set(NODE_UIDS, new ShortBuffer(Fields.longsToBytes(uids)));
 		return msg;
@@ -1567,13 +1567,13 @@ public class DMT {
 		addField(BEST_LOCATIONS_NOT_VISITED, ShortBuffer.class);
 	}};
 	
-	public static final Message createFNPBestRoutesNotTaken(byte[] locs) {
+	public static Message createFNPBestRoutesNotTaken(byte[] locs) {
 		Message msg = new Message(FNPBestRoutesNotTaken);
 		msg.set(BEST_LOCATIONS_NOT_VISITED, new ShortBuffer(locs));
 		return msg;
 	}
 	
-	public static final Message createFNPBestRoutesNotTaken(double[] locs) {
+	public static Message createFNPBestRoutesNotTaken(double[] locs) {
 		return createFNPBestRoutesNotTaken(Fields.doublesToBytes(locs));
 	}
 	
@@ -1587,7 +1587,7 @@ public class DMT {
 		addField(ROUTING_ENABLED, Boolean.class);
 	}};
 	
-	public static final Message createRoutingStatus(boolean routeRequests) {
+	public static Message createRoutingStatus(boolean routeRequests) {
 		Message msg = new Message(FNPRoutingStatus);
 		msg.set(ROUTING_ENABLED, routeRequests);
 		
@@ -1598,7 +1598,7 @@ public class DMT {
 		addField(ENABLE_INSERT_FORK_WHEN_CACHEABLE, Boolean.class);
 	}};
 	
-	public static final Message createFNPSubInsertForkControl(boolean enableInsertForkWhenCacheable) {
+	public static Message createFNPSubInsertForkControl(boolean enableInsertForkWhenCacheable) {
 		Message msg = new Message(FNPSubInsertForkControl);
 		msg.set(ENABLE_INSERT_FORK_WHEN_CACHEABLE, enableInsertForkWhenCacheable);
 		return msg;
@@ -1608,7 +1608,7 @@ public class DMT {
 		addField(PREFER_INSERT, Boolean.class);
 	}};
 	
-	public static final Message createFNPSubInsertPreferInsert(boolean preferInsert) {
+	public static Message createFNPSubInsertPreferInsert(boolean preferInsert) {
 		Message msg = new Message(FNPSubInsertPreferInsert);
 		msg.set(PREFER_INSERT, preferInsert);
 		return msg;
@@ -1619,7 +1619,7 @@ public class DMT {
 		addField(IGNORE_LOW_BACKOFF, Boolean.class);
 	}};
 	
-	public static final Message createFNPSubInsertIgnoreLowBackoff(boolean ignoreLowBackoff) {
+	public static Message createFNPSubInsertIgnoreLowBackoff(boolean ignoreLowBackoff) {
 		Message msg = new Message(FNPSubInsertIgnoreLowBackoff);
 		msg.set(IGNORE_LOW_BACKOFF, ignoreLowBackoff);
 		return msg;
@@ -1630,7 +1630,7 @@ public class DMT {
 		// No fields???
 	}};
 	
-	public static final Message createFNPRejectIsSoft() {
+	public static Message createFNPRejectIsSoft() {
 		return new Message(FNPRejectIsSoft);
 	}
 	
@@ -1693,7 +1693,7 @@ public class DMT {
 		addField(REAL_TIME_FLAG, Boolean.class);
 	}};
 	
-	public static final Message createFNPPeerLoadStatus(PeerLoadStats stats) {
+	public static Message createFNPPeerLoadStatus(PeerLoadStats stats) {
 		Message msg;
 		if(stats.expectedTransfersInCHK < 256 && stats.expectedTransfersInSSK < 256 &&
 				stats.expectedTransfersOutCHK < 256 && stats.expectedTransfersOutSSK < 256 &&
@@ -1778,7 +1778,7 @@ public class DMT {
 		addField(REAL_TIME_FLAG, Boolean.class);
 	}};
 	
-	public static final Message createFNPRealTimeFlag(boolean isBulk) {
+	public static Message createFNPRealTimeFlag(boolean isBulk) {
 		Message msg = new Message(FNPRealTimeFlag);
 		msg.set(REAL_TIME_FLAG, isBulk);
 		return msg;
@@ -1818,7 +1818,7 @@ public class DMT {
 	public static final MessageType FNPGetYourFullNoderef = new MessageType("FNPGetYourFullNoderef", PRIORITY_LOW) {{
 	}};
 	
-	public static final Message createFNPGetYourFullNoderef() {
+	public static Message createFNPGetYourFullNoderef() {
 		return new Message(FNPGetYourFullNoderef);
 	}
 	
@@ -1830,7 +1830,7 @@ public class DMT {
 		addField(NODEREF_LENGTH, Integer.class);
 	}};
 	
-	public static final Message createFNPMyFullNoderef(long uid, int length) {
+	public static Message createFNPMyFullNoderef(long uid, int length) {
 		Message m = new Message(FNPMyFullNoderef);
 		m.set(UID, uid);
 		m.set(NODEREF_LENGTH, length);

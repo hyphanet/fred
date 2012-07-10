@@ -379,8 +379,8 @@ public abstract class UIDTag {
 	}
 
 	private long loggedStillPresent;
-	private int LOGGED_STILL_PRESENT_INTERVAL = 60*1000;
-	
+	private static final int LOGGED_STILL_PRESENT_INTERVAL = 60*1000;
+
 	public void maybeLogStillPresent(long now, Long uid) {
 		if(now - createdTime > Node.TIMEOUT) {
 			synchronized(this) {

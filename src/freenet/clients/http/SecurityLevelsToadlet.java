@@ -618,7 +618,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		return PATH;
 	}
 
-	private static final String l10n(String string) {
+	private static String l10n(String string) {
 		return NodeL10n.getBase().getString("ConfigToadlet." + string);
 	}
 

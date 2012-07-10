@@ -1756,7 +1756,7 @@ public class Metadata implements Cloneable {
 	** compiler warnings. Use only when you are sure the object matches this type!
 	*/
 	@SuppressWarnings("unchecked")
-	final public static HashMap<String, Object> forceMap(Object o) {
+	public static HashMap<String, Object> forceMap(Object o) {
 		return (HashMap<String, Object>)o;
 	}
 	

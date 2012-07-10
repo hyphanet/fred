@@ -88,7 +88,6 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	 * bit 0...23 - The first 3 bytes of the salted key.
 	 */
 	private final ResizablePersistentIntBuffer slotFilter;
-	private final File slotFilterFile;
 	/** If true, don't create a slot filter, don't keep it up to date, don't
 	 * do anything with it. */
 	private boolean slotFilterDisabled;
@@ -194,8 +193,8 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			System.err.println("Deleted old bloom filter for "+name+" - obsoleted by slot filter");
 			System.err.println("We will need to rebuild the slot filters, it will take a while and there will be a lot of disk access, but once it's done there should be a lot less disk access.");
 		}
-		
-		slotFilterFile = new File(this.baseDir, name + ".slotfilter");
+
+		File slotFilterFile = new File(this.baseDir, name + ".slotfilter");
 		int size = (int)Math.max(storeSize, prevStoreSize);
 		slotFilterDisabled = !enableSlotFilters;
 		if(!slotFilterDisabled) {

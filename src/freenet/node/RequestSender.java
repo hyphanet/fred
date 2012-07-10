@@ -84,7 +84,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     /** If true, only try to fetch the key from nodes which have offered it */
     private boolean tryOffersOnly;
     
-	private ArrayList<RequestSenderListener> listeners=new ArrayList<RequestSenderListener>();
+	private final ArrayList<RequestSenderListener> listeners=new ArrayList<RequestSenderListener>();
 	
     // Terminal status
     // Always set finished AFTER setting the reason flag
@@ -1837,7 +1837,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     	return block;
     }
 
-	private volatile Object totalBytesSync = new Object();
+	private final Object totalBytesSync = new Object();
 	private int totalBytesSent;
 	
 	@Override

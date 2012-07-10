@@ -185,7 +185,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 		}
 	}
 
-	private static String DEBUG_TARGET_URI = "CHK@.../chaosradio_131.mp3";
+	private static final String DEBUG_TARGET_URI = "CHK@.../chaosradio_131.mp3";
 
 	/**
 	 * Heavy logging and debugging point.

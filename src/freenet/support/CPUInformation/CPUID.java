@@ -429,7 +429,7 @@ public class CPUID {
      * FIXME: Is it a good idea to trust the classpath that much?
      *
      */
-    private static final void loadNative() {
+    private static void loadNative() {
     	try{
         String wantedProp = System.getProperty("jcpuid.enable", "true");
         boolean wantNative = "true".equalsIgnoreCase(wantedProp);
@@ -467,7 +467,7 @@ public class CPUID {
      * @return true if it was loaded successfully, else false
      *
      */
-    private static final boolean loadGeneric() {
+    private static boolean loadGeneric() {
         try {
             System.loadLibrary(getLibraryMiddlePart());
             return true;
@@ -488,7 +488,7 @@ public class CPUID {
      * @return true if it was loaded successfully, else false
      *
      */
-    private static final boolean loadFromResource() {
+    private static boolean loadFromResource() {
         String resourceName = getResourceName();
         if (resourceName == null) return false;
         URL resource = CPUID.class.getClassLoader().getResource(resourceName);
@@ -538,13 +538,13 @@ public class CPUID {
         }
     }
     
-    private static final String getResourceName()
+    private static String getResourceName()
     {
     	String pname = CPUID.class.getPackage().getName().replace('.','/');
     	return pname+ '/' +getLibraryPrefix()+getLibraryMiddlePart()+ '.' +getLibrarySuffix();
     }
     
-    private static final String getLibraryPrefix()
+    private static String getLibraryPrefix()
     {
     	boolean isWindows =System.getProperty("os.name").toLowerCase().indexOf("windows") != -1;
     	if(isWindows)
@@ -553,7 +553,7 @@ public class CPUID {
     		return "lib";
     }
 
-    private static final String getLibraryMiddlePart(){
+    private static String getLibraryMiddlePart(){
     	boolean isWindows =(System.getProperty("os.name").toLowerCase().indexOf("windows") != -1);
     	boolean isLinux =(System.getProperty("os.name").toLowerCase().indexOf("linux") != -1);
     	boolean isFreebsd =(System.getProperty("os.name").toLowerCase().indexOf("freebsd") != -1);
@@ -569,7 +569,7 @@ public class CPUID {
 		throw new RuntimeException("Dont know jcpuid library name for os type '"+System.getProperty("os.name")+ '\'');
     }
     
-    private static final String getLibrarySuffix()
+    private static String getLibrarySuffix()
     {
     	boolean isWindows =System.getProperty("os.name").toLowerCase().indexOf("windows") != -1;
     	if(isWindows)

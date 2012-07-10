@@ -706,7 +706,7 @@ public final class PageMaker {
 			ctx.getContainer().setAdvancedMode(req.getIntParam(MODE_SWITCH_PARAMETER) == MODE_ADVANCED);
 	}
 	
-	private static final String l10n(String string) {
+	private static String l10n(String string) {
 		return NodeL10n.getBase().getString("PageMaker." + string);
 	}
 
