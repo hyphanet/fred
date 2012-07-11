@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.io.comm;
 
+import freenet.pluginmanager.PluginAddress;
+
 /**
  * Filter interface used by Freenet to decrypt incoming UDP packets.
  * @see freenet.node.OutgoingPacketMangler
@@ -24,13 +26,13 @@ public interface IncomingPacketFilter {
      * data to keep must be copied.
      * @param offset The offset to start reading from.
      * @param length The length in bytes to read.
-     * @param peer The peer which sent us the packet. We only know
+     * @param peerAddress The address of the peer which sent us the packet. We only know
      * the Peer because it's incoming; we are supposed to create
      * or find PeerContext's for the Message's.
      * @param now The exact time at which the packet was received.
      * @return 
      */
-	DECODED process(byte[] buf, int offset, int length, Peer peer, long now);
+	DECODED process(byte[] buf, int offset, int length, PluginAddress peerAddress, long now);
 
     // Outgoing packets are handled elsewhere...
     

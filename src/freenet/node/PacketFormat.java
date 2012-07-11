@@ -3,11 +3,11 @@ package freenet.node;
 import java.util.List;
 import java.util.Vector;
 
-import freenet.io.comm.Peer;
+import freenet.pluginmanager.PluginAddress;
 
 public interface PacketFormat {
 
-	boolean handleReceivedPacket(byte[] buf, int offset, int length, long now, Peer replyTo);
+	boolean handleReceivedPacket(byte[] buf, int offset, int length, long now, PluginAddress replyTo);
 
 	/**
 	 * Maybe send something. A SINGLE PACKET. Don't send everything at once, for two reasons:

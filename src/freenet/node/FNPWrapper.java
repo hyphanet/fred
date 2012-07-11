@@ -9,7 +9,7 @@ import freenet.io.comm.IncomingPacketFilter.DECODED;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PacketSocketHandler;
-import freenet.io.comm.Peer;
+import freenet.pluginmanager.PluginAddress;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -180,7 +180,7 @@ public class FNPWrapper implements PacketFormat {
 	}
 
 	@Override
-	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now, Peer replyTo) {
+	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now, PluginAddress replyTo) {
 		return pn.crypto.packetMangler.process(buf, offset, length, replyTo, pn, now) == DECODED.DECODED;
 	}
 

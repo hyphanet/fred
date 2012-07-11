@@ -10,6 +10,7 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.SocketHandler;
+import freenet.pluginmanager.PacketTransportPlugin;
 import freenet.support.WouldBlockException;
 
 /**
@@ -19,7 +20,7 @@ import freenet.support.WouldBlockException;
  * @see freenet.io.comm.IncomingPacketFilter
  * @see freenet.node.FNPPacketMangler
  */
-public interface OutgoingPacketMangler {
+public interface OutgoingPacketMangler extends OutgoingMangler {
 
 	/**
 	 * Build one or more packets and send them, from a whole bunch of messages.
@@ -99,6 +100,11 @@ public interface OutgoingPacketMangler {
 	 * The SocketHandler we are connected to.
 	 */
 	public SocketHandler getSocketHandler();
+	
+	/**
+	 * The PacketTransportPlugin using this mangler
+	 */
+	public PacketTransportPlugin getTransport();
 
 	/**
 	 * Get our addresses, as peers.

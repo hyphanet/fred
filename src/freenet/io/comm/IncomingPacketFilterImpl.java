@@ -10,6 +10,7 @@ import freenet.node.FNPPacketMangler;
 import freenet.node.Node;
 import freenet.node.NodeCrypto;
 import freenet.node.PeerNode;
+import freenet.pluginmanager.PluginAddress;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -55,20 +56,21 @@ public class IncomingPacketFilterImpl implements IncomingPacketFilter {
 	}
 
 	@Override
-	public DECODED process(byte[] buf, int offset, int length, Peer peer, long now) {
-		if(logMINOR) Logger.minor(this, "Packet length "+length+" from "+peer);
+	public DECODED process(byte[] buf, int offset, int length, PluginAddress peerAddress, long now) {
+		
+		if(logMINOR) Logger.minor(this, "Packet length "+length+" from "+peerAddress);
 		node.random.acceptTimerEntropy(fnpTimingSource, 0.25);
-		PeerNode opn = node.peers.getByPeer(peer, mangler);
+		PeerNode opn = node.peers.getByAddress(peerAddress, mangler);
 
 		if(opn != null) {
-			if(opn.handleReceivedPacket(buf, offset, length, now, peer)) {
+			if(opn.handleReceivedPacket(buf, offset, length, now, peerAddress)) {
 				if(logMINOR) successfullyDecodedPackets.incrementAndGet();
 				return DECODED.DECODED;
 			}
 		} else {
 			Logger.normal(this, "Got packet from unknown address");
 		}
-		DECODED decoded = mangler.process(buf, offset, length, peer, opn, now);
+		DECODED decoded = mangler.process(buf, offset, length, peerAddress, opn, now);
 		if(decoded == DECODED.DECODED) {
 			if(logMINOR) successfullyDecodedPackets.incrementAndGet();
 		} else if(decoded == DECODED.NOT_DECODED) {
@@ -76,7 +78,7 @@ public class IncomingPacketFilterImpl implements IncomingPacketFilter {
 			for(PeerNode pn : crypto.getPeerNodes()) {
 				if(pn == opn) continue;
 				if(pn.isOldFNP()) continue;
-				if(pn.handleReceivedPacket(buf, offset, length, now, peer)) {
+				if(pn.handleReceivedPacket(buf, offset, length, now, peerAddress)) {
 					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
 					return DECODED.DECODED;
 				}

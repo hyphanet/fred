@@ -15,10 +15,10 @@ import freenet.crypt.HMAC;
 import freenet.crypt.PCFBMode;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
-import freenet.io.comm.Peer;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.io.xfer.PacketThrottle;
 import freenet.node.NewPacketFormatKeyContext.AddedAcks;
+import freenet.pluginmanager.PluginAddress;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -52,7 +52,7 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	private final BasePeerNode pn;
-
+	
 	/** The actual buffer of outgoing messages that have not yet been acked.
 	 * LOCKING: Protected by sendBufferLock. */
 	private final ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
@@ -115,7 +115,7 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	@Override
-	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now, Peer replyTo) {
+	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now, PluginAddress replyTo) {
 		NPFPacket packet = null;
 		SessionKey s = null;
 		for(int i = 0; i < 3; i++) {
