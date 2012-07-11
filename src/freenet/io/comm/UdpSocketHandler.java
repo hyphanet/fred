@@ -7,18 +7,26 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
+import java.util.List;
 import java.util.Random;
 
 import freenet.io.AddressTracker;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.node.Node;
+import freenet.node.PeerPluginAddress;
 import freenet.node.PrioRunnable;
+import freenet.node.TransportManager.TransportMode;
+import freenet.pluginmanager.MalformedPluginAddressException;
+import freenet.pluginmanager.PacketTransportPlugin;
+import freenet.pluginmanager.PluginAddress;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.io.NativeThread;
+import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.IPUtil;
 
-public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, PortForwardSensitiveSocketHandler {
+public class UdpSocketHandler extends PacketTransportPlugin  implements PrioRunnable, PortForwardSensitiveSocketHandler {
 
 	private final DatagramSocket _sock;
 	private final InetAddress _bindTo;
@@ -46,7 +54,8 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
             Logger.registerClass(UdpSocketHandler.class);
         }
 
-	public UdpSocketHandler(int listenPort, InetAddress bindto, Node node, long startupTime, String title, IOStatisticCollector collector) throws SocketException {
+	public UdpSocketHandler(TransportMode transportMode, int listenPort, InetAddress bindto, Node node, long startupTime, String title, IOStatisticCollector collector) throws SocketException {
+		super(Node.defaultPacketTransportName, transportMode, node);
 		this.node = node;
 		this.collector = collector;
 		this.title = title;
@@ -57,6 +66,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 //			_sock = (DatagramSocket) Updater.getResource();
 //		} else {
 		this.listenPort = listenPort;
+		
 		_sock = new DatagramSocket(listenPort, bindto);
 		int sz = _sock.getReceiveBufferSize();
 		if(sz < 65536) {
@@ -154,8 +164,8 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		long now = System.currentTimeMillis();
 		if (gotPacket) {
 			long startTime = System.currentTimeMillis();
-			Peer peer = new Peer(packet.getAddress(), packet.getPort());
-			tracker.receivedPacketFrom(peer);
+			PeerPluginAddress address = new PeerPluginAddress(packet.getAddress(), packet.getPort());
+			tracker.receivedPacketFrom(address.peer);
 			long endTime = System.currentTimeMillis();
 			if(endTime - startTime > 50) {
 				if(endTime-startTime > 3000) {
@@ -168,9 +178,9 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 			int offset = packet.getOffset();
 			int length = packet.getLength();
 			try {
-				if(logMINOR) Logger.minor(this, "Processing packet of length "+length+" from "+peer);
+				if(logMINOR) Logger.minor(this, "Processing packet of length "+length+" from "+address);
 				startTime = System.currentTimeMillis();
-				lowLevelFilter.process(data, offset, length, peer, now);
+				lowLevelFilter.process(data, offset, length, address, now);
 				endTime = System.currentTimeMillis();
 				if(endTime - startTime > 50) {
 					if(endTime-startTime > 3000) {
@@ -218,7 +228,6 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	 * @param blockToSend The data block to send.
 	 * @param destination The peer to send it to.
 	 */
-	@Override
 	public void sendPacket(byte[] blockToSend, Peer destination, boolean allowLocalAddresses) throws LocalAddressException {
 		assert(blockToSend != null);
 		if(!_active) {
@@ -261,6 +270,12 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 				Logger.error(this, "Error while sending packet to " + destination+": "+e, e);
 			}
 		}
+	}
+	
+	@Override
+	public void sendPacket(byte[] blockToSend, PluginAddress destination, boolean allowLocalAddresses) throws LocalAddressException {
+		Peer p = new Peer(destination.getFreenetAddress(), destination.getPortNumber());
+		sendPacket(blockToSend, p, allowLocalAddresses);
 	}
 
 	// CompuServe use 1400 MTU; AOL claim 1450; DFN@home use 1448.
@@ -389,4 +404,64 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		return startTime;
 	}
 
+	/*
+	 * The following methods implement TransportPlugin. This would be the default packet transport plugin.
+	 * Most methods are non-functional or are not used by fred. 
+	 * In the future we maybe able to use them.
+	 * I have written only a quick implementation (no logs, comments) as most of it won't be used.
+	 * 
+	 */
+	
+	@Override
+	public void startPlugin() {
+		start();
+	}
+	
+	@Override
+	public boolean pauseTransportPlugin() {
+		return false; 
+		/*
+		 * Default UDP cannot be paused for now.
+		 * It has been already discussed on freenet that pausing would encourage users to keep in pause state always.
+		 * This method is only for other transports which might need to be paused for other reasons
+		 */
+	}
+	
+	@Override
+	public boolean resumeTransportPlugin() {
+		return false;
+	}
+
+	@Override
+	public List<PluginAddress> getPluginAddress() {
+		return null;
+		//FIXME Presently these addresses are obtained from NodeIPDetector in the NodeCrypto. That must happen here.
+	}
+
+	@Override
+	public void stopPlugin() {
+		close();
+	}
+	
+	/**
+	 * Convert a simple string address into a plugin address
+	 */
+	@Override
+	public PluginAddress toPluginAddress(String address) throws MalformedPluginAddressException {
+		PluginAddress pluginAddress;
+		try {
+			pluginAddress = new PeerPluginAddress(address, true, true);
+		} catch (UnknownHostException e) {
+			throw new MalformedPluginAddressException("UnknownHostException " + e);
+		} catch (HostnameSyntaxException e) {
+			throw new MalformedPluginAddressException("HostnameSyntaxException " + e);
+		} catch (PeerParseException e) {
+			throw new MalformedPluginAddressException("PeerParseException " + e);
+		}
+		return pluginAddress;
+	}
+
 }
+
+
+
