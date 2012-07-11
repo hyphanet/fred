@@ -413,7 +413,7 @@ public class PacketSender implements Runnable {
 		if(toSendHandshake != null) {
 			// Send handshake if necessary
 			long beforeHandshakeTime = System.currentTimeMillis();
-			toSendHandshake.getOutgoingMangler().sendHandshake(toSendHandshake, false);
+			toSendHandshake.sendHandshake(false);
 			long afterHandshakeTime = System.currentTimeMillis();
 			if((afterHandshakeTime - beforeHandshakeTime) > (2 * 1000))
 				Logger.error(this, "afterHandshakeTime is more than 2 seconds past beforeHandshakeTime (" + (afterHandshakeTime - beforeHandshakeTime) + ") in PacketSender working with " + toSendHandshake.userToString());
@@ -455,7 +455,7 @@ public class PacketSender implements Runnable {
 				if(pn.shouldSendHandshake()) {
 					// Send handshake if necessary
 					long beforeHandshakeTime = System.currentTimeMillis();
-					pn.getOutgoingMangler().sendHandshake(pn, true);
+					pn.sendHandshake(true);
 					long afterHandshakeTime = System.currentTimeMillis();
 					if((afterHandshakeTime - beforeHandshakeTime) > (2 * 1000))
 						Logger.error(this, "afterHandshakeTime is more than 2 seconds past beforeHandshakeTime (" + (afterHandshakeTime - beforeHandshakeTime) + ") in PacketSender working with " + pn.userToString());
