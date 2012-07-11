@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
@@ -69,6 +70,13 @@ import freenet.node.NodeStats.RequestType;
 import freenet.node.NodeStats.RunningRequestsSnapshot;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.PeerManager.PeerStatusChangeListener;
+import freenet.pluginmanager.MalformedPluginAddressException;
+import freenet.pluginmanager.PacketTransportPlugin;
+import freenet.pluginmanager.PluginAddress;
+import freenet.pluginmanager.StreamTransportPlugin;
+import freenet.pluginmanager.TransportPlugin;
+import freenet.pluginmanager.TransportPlugin.TransportType;
+import freenet.pluginmanager.TransportPluginException;
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -119,6 +127,38 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	private byte[] jfkBuffer;
 	//TODO: sync ?
 
+	/**
+	 * This deals with a PeerPacketTransport object that will have a list of active transports for which setup can be done.
+	 */
+	private HashMap<String, PeerPacketTransport> peerPacketTransportMap = new HashMap<String, PeerPacketTransport> ();
+	
+	/**
+	 * This deals with a PeerConnection object that can handle all the keys for a transport.
+	 */
+	private HashMap<String, PeerPacketConnection> peerPacketConnMap = new HashMap<String, PeerPacketConnection> ();
+	
+	/**
+	 * This deals with a PeerStreamTransport object that will have a list of active transports for which setup can be done.
+	 */
+	private HashMap<String, PeerStreamTransport> peerStreamTransportMap = new HashMap<String, PeerStreamTransport> ();
+	
+	/**
+	 * This deals with a PeerConnection object that can handle all the keys for a transport.
+	 */
+	private HashMap<String, PeerStreamConnection> peerStreamConnMap = new HashMap<String, PeerStreamConnection> ();
+	
+	/** 
+	 * Track all the transports our peer is using. Update it whenever possible.
+	 * If a noderef contains a transport but we don't have it, store the addresses in the string format.
+	 * Also we can in the future notify the user of this plugin.
+	 */
+	private HashMap<String, String[]> peerEnabledTransports = new HashMap<String, String[]> ();
+	
+	private Object packetTransportMapLock = new Object();
+	private Object streamTransportMapLock = new Object();
+	private Object packetConnectionMapLock = new Object();
+	private Object streamConnectionMapLock = new Object();
+	
 	protected byte[] jfkKa;
 	protected byte[] incommingKey;
 	protected byte[] jfkKe;
@@ -448,6 +488,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		this.outgoingMangler = mangler;
 		this.node = node2;
 		this.crypto = crypto;
+		
 		assert(crypto.isOpennet == (isOpennet() || isSeed()));
 		this.peers = peers;
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
@@ -608,6 +649,19 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			Logger.error(this, "Caught: " + e1);
 			throw new Error(e1);
 		}
+		
+		SimpleFieldSet transports = fs.subset("physical");
+		while(transports.keyIterator().hasNext()) {
+			String transport = transports.keyIterator().next();
+			String[] address = transports.getAll(transport);
+			peerEnabledTransports.put(transport, address);
+		}
+		/*
+		 * Get a list of PeerTransport objects - Packets and Streams from the crypto object
+		 */
+		createPeerPacketTransportMap(crypto.getPacketTransportBundleMap());
+		createPeerStreamTransportMap(crypto.getStreamTransportBundleMap());
+		
 
 		nominalPeer = new Vector<Peer>();
 		try {
@@ -6402,6 +6456,143 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				consecutiveGuaranteedRejectsBulk = 0;
 			}
 		}
+	}
+	
+	/*
+	 * Must be careful using the following two methods as they use hashmap.
+	 * If transportName is same then the object is replaced. We want to use transportName as a unique identifier. 
+	 */
+	public synchronized void handleNewPeerTransport(PacketTransportBundle packetTransportBundle) {
+		String[] physical = peerEnabledTransports.get(packetTransportBundle.transportName);
+		if(physical.length == 0)
+			return;	//Don't load the transport if the peer does not use it.
+		PeerPacketTransport peerPacketTransport = new PeerPacketTransport(packetTransportBundle, this);
+		for(String address : physical) {
+			PluginAddress pluginAddress;
+			try {
+				pluginAddress = packetTransportBundle.transportPlugin.toPluginAddress(address);
+				if(!peerPacketTransport.nominalTransportAddress.contains(pluginAddress))
+					peerPacketTransport.nominalTransportAddress.add(pluginAddress);
+			} catch (MalformedPluginAddressException e) {
+				continue;
+				//FIXME Do we throw an FSParseException at the PeerNode constructor?
+			}
+		}
+		if(!peerPacketTransport.nominalTransportAddress.isEmpty())
+			peerPacketTransport.detectedTransportAddress = peerPacketTransport.nominalTransportAddress.firstElement();
+		synchronized(packetTransportMapLock) {
+			peerPacketTransportMap.put(peerPacketTransport.transportName, peerPacketTransport);
+		}
+	}
+	
+	public synchronized void handleNewPeerTransport(StreamTransportBundle streamTransportBundle) {
+		String[] physical = peerEnabledTransports.get(streamTransportBundle.transportName);
+		if(physical.length == 0)
+			return;	//Don't load the transport if the peer does not use it.
+		PeerStreamTransport peerStreamTransport = new PeerStreamTransport(streamTransportBundle, this);
+		for(String address : physical) {
+			PluginAddress pluginAddress;
+			try {
+				pluginAddress = streamTransportBundle.transportPlugin.toPluginAddress(address);
+				if(!peerStreamTransport.nominalTransportAddress.contains(pluginAddress))
+					peerStreamTransport.nominalTransportAddress.add(pluginAddress);
+			} catch (MalformedPluginAddressException e) {
+				continue;
+				//FIXME Do we throw an FSParseException at the PeerNode constructor?
+			}
+		}
+		if(!peerStreamTransport.nominalTransportAddress.isEmpty())
+			peerStreamTransport.detectedTransportAddress = peerStreamTransport.nominalTransportAddress.firstElement();
+		synchronized(streamTransportMapLock) {
+			peerStreamTransportMap.put(peerStreamTransport.transportName, peerStreamTransport);
+		}
+	}
+	
+	public void createPeerPacketTransportMap(HashMap<String, PacketTransportBundle> transportBundle) {
+		for(PacketTransportBundle bundle:transportBundle.values()) {
+			handleNewPeerTransport(bundle);
+		}
+	}
+	
+	public void createPeerStreamTransportMap(HashMap<String, StreamTransportBundle> transportBundle) {
+		for(StreamTransportBundle bundle:transportBundle.values()) {
+			handleNewPeerTransport(bundle);
+		}
+	}
+	
+	public synchronized void disableTransport(String transportName) {
+		if(peerPacketTransportMap.containsKey(transportName)) {
+			synchronized(packetTransportMapLock) {
+				peerPacketTransportMap.remove(transportName);
+			}
+		}
+		else if(peerStreamTransportMap.containsKey(transportName)) {
+			synchronized(streamTransportMapLock) {
+				peerStreamTransportMap.remove(transportName);
+			}
+		}
+		//Do other stuff. Inform of noderef change.
+	}
+	
+	public void sendHandshake(boolean notRegistered){
+		outgoingMangler.sendHandshake(this, notRegistered);
+		//FIXME make this for all transports
+	}
+	
+	/**
+	 * This method should be called when a particular transport has disconnected. 
+	 * @param transportPlugin The transport that we need to handshake with.
+	 * @param notRegistered
+	 * @throws TransportPluginException Thrown if this PeerNode does not use the transport
+	 */
+	public void sendTransportHandshake(String transportName, boolean notRegistered) throws TransportPluginException{
+		if(peerPacketTransportMap.containsKey(transportName))
+			peerPacketTransportMap.get(transportName).packetMangler.sendHandshake(this, notRegistered);
+		else if(peerStreamTransportMap.containsKey(transportName))
+			peerStreamTransportMap.get(transportName).streamMangler.sendHandshake(this, notRegistered);
+		else
+			throw new TransportPluginException("This plugin is not available for this PeerNode");
+	}
+	
+	public synchronized void setTransportAddress(SimpleFieldSet fs, boolean fromLocal, boolean checkHostnameOrIPSyntax) {
+		for(String transportName : peerPacketTransportMap.keySet()) {
+			String[] physical = fs.getAll(transportName);
+			peerPacketTransportMap.get(transportName).setTransportAddress(physical, fromLocal, checkHostnameOrIPSyntax);
+		}
+		for(String transportName : peerStreamTransportMap.keySet()) {
+			String[] physical = fs.getAll(transportName);
+			peerStreamTransportMap.get(transportName).setTransportAddress(physical, fromLocal, checkHostnameOrIPSyntax);
+		}
+	}
+	
+	public synchronized HashMap<String, PeerPacketTransport> getPeerPacketTransportMap(){
+		return peerPacketTransportMap;
+	}
+	
+	public synchronized HashMap<String, PeerStreamTransport> getPeerStreamTransportMap(){
+		return peerStreamTransportMap;
+	}
+	
+	public boolean containsTransport(String transportName){
+		if(peerPacketTransportMap.containsKey(transportName))
+			return true;
+		else if(peerStreamTransportMap.containsKey(transportName))
+			return true;
+		
+		return false;
+	}
+	
+	public boolean matchesPluginAddress(PluginAddress address, TransportPlugin transportPlugin) {
+		String transportName = transportPlugin.transportName;
+		if(peerPacketTransportMap.containsKey(transportName)) {
+			if(peerPacketTransportMap.get(transportName).detectedTransportAddress.laxEquals(address))
+				return true;
+		}
+		else if(peerStreamTransportMap.containsKey(transportName)) {
+			if(peerStreamTransportMap.get(transportName).detectedTransportAddress.laxEquals(address))
+				return true;
+		}
+		return false;
 	}
 	
 }
