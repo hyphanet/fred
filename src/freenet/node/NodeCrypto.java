@@ -413,6 +413,18 @@ public class NodeCrypto {
 				for(int i=0;i<ips.length;i++)
 					fs.putAppend("physical.udp", ips[i].toString()); // Keep; important that node know all our IPs
 			}
+			//FIXME Presently I have made UDPSocketHandler return null since we are adding it above.
+			// But once the detector is resolved it must happen here.
+			for(String transportName : packetTransportBundleMap.keySet()) {
+				List<PluginAddress> pluginAddress = packetTransportBundleMap.get(transportName).transportPlugin.getPluginAddress();
+				for(PluginAddress address : pluginAddress)
+					fs.putAppend("physical." + transportName, address.toStringAddress());
+			}
+			for(String transportName : streamTransportBundleMap.keySet()) {
+				List<PluginAddress> pluginAddress = streamTransportBundleMap.get(transportName).transportPlugin.getPluginAddress();
+				for(PluginAddress address : pluginAddress)
+					fs.putAppend("physical." + transportName, address.toStringAddress());
+			}
 		} // Don't include IPs for anonymous initiator.
 		// Negotiation types
 		fs.putSingle("version", Version.getVersionString()); // Keep, vital that peer know our version. For example, some types may be sent in different formats to different node versions (e.g. Peer).
@@ -609,31 +621,41 @@ public class NodeCrypto {
 	/** If oneConnectionPerAddress is not set, but there are peers with the same
 	 * IP for which it is set, disconnect them.
 	 * @param peerNode
-	 * @param freenetAddress
+	 * @param address
 	 */
 	public void maybeBootConnection(PeerNode peerNode,
-			FreenetInetAddress address) {
-		if(detector.includes(address)) return;
-		if(!address.isRealInternetAddress(false, false, false)) return;
-		ArrayList<PeerNode> possibleMatches = node.peers.getAllConnectedByAddress(address, true);
-		if(possibleMatches == null) return;
-		for(PeerNode pn : possibleMatches) {
-			if(pn == peerNode) continue;
-			if(pn.equals(peerNode)) continue;
-			if(pn.crypto.config.oneConnectionPerAddress()) {
-				if(pn instanceof DarknetPeerNode) {
-					if(!(peerNode instanceof DarknetPeerNode)) {
-						// Darknet is only affected by other darknet peers.
-						// Opennet peers with the same IP will NOT cause darknet peers to be dropped, even if one connection per IP is set for darknet, and even if it isn't set for opennet.
-						// (Which would be a perverse configuration anyway!)
-						// FIXME likewise, FOAFs should not boot darknet connections.
-						continue;
+			PluginAddress pluginAddress, TransportPlugin transportPlugin) {
+		ArrayList<PeerNode> possibleMatches;
+		try {
+			//For IP based addresses, if the plugin implements it in PluginAddress
+			FreenetInetAddress address = pluginAddress.getFreenetAddress();
+			if(detector.includes(address)) return;
+			if(!address.isRealInternetAddress(false, false, false)) return;
+			possibleMatches = node.peers.getAllConnectedByAddress(address, true);
+			
+			if(possibleMatches == null) return;
+			for(PeerNode pn : possibleMatches) {
+				if(pn == peerNode) continue;
+				if(pn.equals(peerNode)) continue;
+				if(pn.crypto.config.oneConnectionPerAddress()) {
+					if(pn instanceof DarknetPeerNode) {
+						if(!(peerNode instanceof DarknetPeerNode)) {
+							// Darknet is only affected by other darknet peers.
+							// Opennet peers with the same IP will NOT cause darknet peers to be dropped, even if one connection per IP is set for darknet, and even if it isn't set for opennet.
+							// (Which would be a perverse configuration anyway!)
+							// FIXME likewise, FOAFs should not boot darknet connections.
+							continue;
+						}
+						Logger.error(this, "Dropping peer "+pn+" because don't want connection due to others on the same IP address!");
+						System.out.println("Disconnecting permanently from your friend \""+((DarknetPeerNode)pn).getName()+"\" because your friend \""+((DarknetPeerNode)peerNode).getName()+"\" is using the same IP address "+address+"!");
 					}
-					Logger.error(this, "Dropping peer "+pn+" because don't want connection due to others on the same IP address!");
-					System.out.println("Disconnecting permanently from your friend \""+((DarknetPeerNode)pn).getName()+"\" because your friend \""+((DarknetPeerNode)peerNode).getName()+"\" is using the same IP address "+address+"!");
+					node.peers.disconnectAndRemove(pn, true, true, pn.isOpennet());
 				}
-				node.peers.disconnectAndRemove(pn, true, true, pn.isOpennet());
 			}
+		}catch(UnsupportedOperationException e) {
+			PluginAddress physical = pluginAddress.getPhysicalAddress();
+			possibleMatches = node.peers.getAllConnectedByAddress(physical, true, transportPlugin);
+			//Maybe do something for same physical locations which may not be IP based?
 		}
 	}
 
