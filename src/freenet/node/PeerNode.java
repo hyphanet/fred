@@ -1999,6 +1999,19 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		getThrottle().maybeDisconnected();
 		sendIPAddressMessage();
 	}
+	
+	public void changedAddress(PluginAddress newAddress, TransportPlugin transportPlugin) {
+		setDetectedAddress(newAddress, transportPlugin);
+	}
+	
+	private void setDetectedAddress(PluginAddress newAddress, TransportPlugin transportPlugin) {
+		String transportName = transportPlugin.transportName;
+		if(peerPacketTransportMap.containsKey(transportName))
+			peerPacketTransportMap.get(transportName).setDetectedAddress(newAddress);
+		else if(peerStreamTransportMap.containsKey(transportName))
+			peerStreamTransportMap.get(transportName).setDetectedAddress(newAddress);
+	}
+
 
 	/**
 	* @return The current primary SessionKey, or null if we
@@ -2031,6 +2044,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	private String shortToString;
 	private void updateShortToString() {
 		shortToString = super.toString() + '@' + detectedPeer + '@' + HexUtil.bytesToHex(pubKeyHash);
+		//FIXME Get rid of detectedPeer
 	}
 
 	/**
@@ -2191,7 +2205,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			routable = false;
 		} else
 			older = false;
-		changedIP(replyTo);
+		changedAddress(replyTo, transportPlugin);
 		boolean bootIDChanged = false;
 		boolean wasARekey = false;
 		SessionKey oldPrev = null;
@@ -3650,6 +3664,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public void setRemoteDetectedPeer(Peer p) {
 		this.remoteDetectedPeer = p;
 	}
+	
+	public void setRemoteDetectedTransportAddress(PluginAddress address, String transportName) throws TransportPluginException{
+		if(peerPacketTransportMap.containsKey(transportName))
+			peerPacketTransportMap.get(transportName).detectedTransportAddress = address;
+		else if(peerStreamTransportMap.containsKey(transportName))
+			peerStreamTransportMap.get(transportName).detectedTransportAddress = address;
+		else
+			throw new TransportPluginException("Plugin not found");
+	}
 
 	public Peer getRemoteDetectedPeer() {
 		return remoteDetectedPeer;
@@ -4701,6 +4724,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		if((loopTime2 - loopTime1) > 1000)
 			Logger.normal(this, "loopTime2 is more than a second after loopTime1 ("+(loopTime2 - loopTime1)+") working on "+userToString());
 		return ret;
+	}
+	
+	public PluginAddress getHandshakeAddress(TransportPlugin transportPlugin) {
+		return null;
 	}
 
 	private int handshakeIPAlternator;
@@ -6066,7 +6093,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return messageQueue;
 	}
 
-	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now, Peer replyTo) {
+	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now, PluginAddress replyTo) {
 		PacketFormat pf;
 		synchronized(this) {
 			pf = packetFormat;
@@ -6117,6 +6144,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	@Override
 	public void sendEncryptedPacket(byte[] data) throws LocalAddressException {
 		crypto.socket.sendPacket(data, getPeer(), allowLocalAddresses());
+	}
+	
+	public void sendEncryptedPacket(byte[] data, String transportName) throws LocalAddressException, TransportPluginException {
+		if(peerPacketConnMap.containsKey(transportName)) {
+			PeerPacketConnection conn = peerPacketConnMap.get(transportName);
+			conn.transportPlugin.sendPacket(data, getTransportAddress(transportName), allowLocalAddresses(transportName));
+		}
 	}
 	
 	@Override
