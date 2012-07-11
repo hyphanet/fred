@@ -24,6 +24,7 @@ import freenet.keys.Key;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.node.NodeStats.PeerLoadStats;
+import freenet.pluginmanager.PluginAddress;
 import freenet.support.BitArray;
 import freenet.support.Buffer;
 import freenet.support.Fields;
@@ -38,6 +39,7 @@ import freenet.support.ShortBuffer;
 public class DMT {
 
 	public static final String UID = "uid";
+	public static final String TRANSPORT_NAME = "transportName";
 	public static final String SEND_TIME = "sendTime";
 	public static final String EXTERNAL_ADDRESS = "externalAddress";
 	public static final String BUILD = "build";
@@ -1345,6 +1347,32 @@ public class DMT {
 	public static final Message createFNPDetectedIPAddress(Peer peer) {
 		Message msg = new Message(FNPDetectedIPAddress);
 		msg.set(EXTERNAL_ADDRESS, peer);
+		return msg;
+	}
+	
+	/**
+	 * Create new type for different transports. 
+	 * The old FNPDetectedIPAddress does not know which transport a Peer object belongs to.
+	 * Now we are using transportName field as the UID for a plugin. This field is present in Peer.
+	 * For compatibility reasons we have two types. The old builds will not know anything about transports.
+	 * So it is best to create a new message type.
+	 */
+	public static final MessageType FNPDetectedTransportAddress = new MessageType("FNPDetectedTransportIPAddress", PRIORITY_HIGH) {{
+		addField(EXTERNAL_ADDRESS, PluginAddress.class);
+		addField(TRANSPORT_NAME, String.class);
+	}};
+	
+	/**
+	 * Create new message type for different transports. 
+	 * The old FNPDetectedIPAddress does not know which transport a Peer object belongs to.
+	 * Now we are using transportName field as the UID for a plugin. This field is present in Peer.
+	 * For compatibility reasons we have two types. The old builds will not know anything about transports.
+	 * So it is best to create a new message type.
+	 */
+	public static final Message createFNPDetectedTransportIPAddress(PluginAddress address, String transportName) {
+		Message msg = new Message(FNPDetectedTransportAddress);
+		msg.set(EXTERNAL_ADDRESS, address);
+		msg.set(TRANSPORT_NAME, transportName);
 		return msg;
 	}
 
