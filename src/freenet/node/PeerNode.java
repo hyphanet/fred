@@ -916,6 +916,29 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public synchronized Peer getPeer() {
 		return detectedPeer;
 	}
+	
+	/**
+	 * This method is needed since different Transports might have different Peers.
+	 * This can be different port, different connection type(hence physical location itself)
+	 * @param transportName
+	 * @throws TransportPluginException If this PeerNode does not use this particular transport
+	 */
+	public synchronized PluginAddress getTransportAddress(String transportName) throws TransportPluginException {
+		if(peerPacketTransportMap.containsKey(transportName))
+			return (peerPacketTransportMap.get(transportName)).detectedTransportAddress;
+		else if(peerStreamTransportMap.containsKey(transportName))
+			return (peerStreamTransportMap.get(transportName)).detectedTransportAddress;
+		else
+			throw new TransportPluginException("This plugin is not available for this PeerNode");
+	}
+	//Function overloading to avoid exception handling when plugin instance is used directly
+	public PluginAddress getTransportAddress(TransportPlugin transportPlugin) {
+		try {
+			return getTransportAddress(transportPlugin.transportName);
+		} catch (TransportPluginException e) {
+			return null; //Not possible.
+		}
+	}
 
 	/**
 	* Returns an array with the advertised addresses and the detected one
@@ -2154,7 +2177,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	* @return The ID of the new PacketTracker. If this is different to the passed-in trackerID, then
 	* it's a new tracker. -1 to indicate failure.
 	*/
-	public long completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher outgoingCipher, byte[] outgoingKey, BlockCipher incommingCipher, byte[] incommingKey, Peer replyTo, boolean unverified, int negType, long trackerID, boolean isJFK4, boolean jfk4SameAsOld, byte[] hmacKey, BlockCipher ivCipher, byte[] ivNonce, int ourInitialSeqNum, int theirInitialSeqNum, int ourInitialMsgID, int theirInitialMsgID) {
+	public long completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher outgoingCipher, byte[] outgoingKey, BlockCipher incommingCipher, byte[] incommingKey, PluginAddress replyTo, boolean unverified, int negType, long trackerID, boolean isJFK4, boolean jfk4SameAsOld, byte[] hmacKey, BlockCipher ivCipher, byte[] ivNonce, int ourInitialSeqNum, int theirInitialSeqNum, int ourInitialMsgID, int theirInitialMsgID, TransportPlugin transportPlugin) {
 		long now = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Tracker ID "+trackerID+" isJFK4="+isJFK4+" jfk4SameAsOld="+jfk4SameAsOld);
 
@@ -2431,7 +2454,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			maybeOnConnect();
 		}
 		
-		crypto.maybeBootConnection(this, replyTo.getFreenetAddress());
+		crypto.maybeBootConnection(this, replyTo, transportPlugin);
 
 		return packets.trackerID;
 	}
@@ -2579,6 +2602,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(isRealConnection())
 				sendAsync(locMsg, null, node.nodeStats.initialMessagesCtr);
 			sendAsync(ipMsg, null, node.nodeStats.initialMessagesCtr);
+			/** Send IP message for each transport separately */
+			for(String transportName : peerPacketTransportMap.keySet()) {
+				sendAsync(peerPacketTransportMap.get(transportName).getIPAddressMessage(), null, node.nodeStats.initialMessagesCtr);
+			}
 			sendAsync(timeMsg, null, node.nodeStats.initialMessagesCtr);
 			sendAsync(packetsMsg, null, node.nodeStats.initialMessagesCtr);
 			sendAsync(dRoutingMsg, null, node.nodeStats.initialMessagesCtr);
@@ -4263,6 +4290,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public OutgoingPacketMangler getOutgoingMangler() {
 		return outgoingMangler;
 	}
+	
+	public OutgoingPacketMangler getOutgoingMangler(PacketTransportPlugin transportPlugin){
+		return peerPacketTransportMap.get(transportPlugin.transportName).packetMangler;
+	}
+	
+	public OutgoingStreamMangler getOutgoingMangler(StreamTransportPlugin transportPlugin){
+		return peerStreamTransportMap.get(transportPlugin.transportName).streamMangler;
+	}
 
 	@Override
 	public SocketHandler getSocketHandler() {
@@ -4279,6 +4314,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 */
 	public boolean allowLocalAddresses() {
 		return this.outgoingMangler.alwaysAllowLocalAddresses();
+	}
+	
+	public boolean allowLocalAddresses(String transportName) throws TransportPluginException {
+		if(peerPacketTransportMap.containsKey(transportName))
+			return peerPacketTransportMap.get(transportName).packetMangler.alwaysAllowLocalAddresses();
+		else if(peerStreamTransportMap.containsKey(transportName))
+			return peerStreamTransportMap.get(transportName).streamMangler.alwaysAllowLocalAddresses();
+		else
+			throw new TransportPluginException("Transport not available for this PeerNode");
 	}
 
 	/** Is this peer set to ignore source address? If so, we will always reply to the peer's official
@@ -4824,15 +4868,27 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	@Override
 	public boolean shouldThrottle() {
-		return shouldThrottle(getPeer(), node);
+		for(String transportName : peerPacketTransportMap.keySet()) {
+			boolean temp = shouldThrottle(peerPacketTransportMap.get(transportName).detectedTransportAddress, node);
+			//If one of the transports says it is not necessary to throttle then we can assume throttling is not necessary.
+			if(!temp)
+				return false;
+		}
+		return true;
 	}
-
-	public static boolean shouldThrottle(Peer peer, Node node) {
+	
+	public static boolean shouldThrottle(PluginAddress address, Node node) {
 		if(node.throttleLocalData) return true;
-		if(peer == null) return true; // presumably
-		InetAddress addr = peer.getAddress(false);
-		if(addr == null) return true; // presumably
-		return IPUtil.isValidAddress(addr, false);
+		if(address == null) return true; // presumably
+		InetAddress addr;
+		try {
+			addr = address.getFreenetAddress().getAddress();
+			if(addr == null) return true; // presumably
+			return IPUtil.isValidAddress(addr, false);
+		}catch(UnsupportedOperationException e) {
+			return false; //Non ip based plugin address. Since it is not null we can safely assume it is fine.
+		}
+		
 	}
 
 	static final double MAX_RTO = 60*1000;
@@ -6379,14 +6435,16 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	
 	static final long THROTTLE_REKEY = 1000;
 	
-	public synchronized boolean throttleRekey() {
-		long now = System.currentTimeMillis();
-		if(now - lastIncomingRekey < THROTTLE_REKEY) {
-			Logger.error(this, "Two rekeys initiated by other side within "+THROTTLE_REKEY+"ms");
-			return true;
+	public synchronized boolean throttleRekey(TransportPlugin transportPlugin) {
+		String transportName = transportPlugin.transportName;
+		if(peerPacketTransportMap.containsKey(transportName)) {
+			return peerPacketTransportMap.get(transportName).throttleRekey();
 		}
-		lastIncomingRekey = now;
-		return false;
+		else if(peerStreamTransportMap.containsKey(transportName)) {
+			return peerStreamTransportMap.get(transportName).throttleRekey();
+		}
+		Logger.error(this, "Transport was not found in both places. Not possible");
+		return false; //Unlikely case
 	}
 
 	public boolean fullPacketQueued() {
