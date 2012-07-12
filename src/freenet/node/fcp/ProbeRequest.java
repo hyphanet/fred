@@ -30,7 +30,7 @@ import freenet.support.SimpleFieldSet;
  * </ul>
  */
 public class ProbeRequest extends FCPMessage {
-	public static String NAME = "ProbeRequest";
+	public static final String NAME = "ProbeRequest";
 
 	private final SimpleFieldSet fs;
 	private final String identifier;
