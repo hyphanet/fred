@@ -65,7 +65,7 @@ public class ProbeRequest extends FCPMessage {
 		}
 
 		try {
-			Type type =  Type.valueOf(fs.get(DMT.TYPE));
+			final Type type =  Type.valueOf(fs.get(DMT.TYPE));
 			//If HTL is not defined default to MAX_HTL.
 			final byte htl = fs.get(DMT.HTL) == null ? Probe.MAX_HTL : fs.getByte(DMT.HTL);
 			if (htl < 0) throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE,
