@@ -4707,6 +4707,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * parts of our node reference not needed for handshake.
 	 * Should only be called by completedHandshake() after we're happy
 	 * with the connection
+	 * 
+	 * FIXME this should be sent when our noderef changes.
 	 */
 	protected void sendConnectedDiffNoderef() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);

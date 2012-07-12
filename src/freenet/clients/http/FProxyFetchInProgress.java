@@ -69,9 +69,9 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	}
 	
 	/** The key we are fetching */
-	final FreenetURI uri;
+	public final FreenetURI uri;
 	/** The maximum size specified by the client */
-	final long maxSize;
+	public final long maxSize;
 	/** Unique ID for the fetch */
 	private final long identifier;
 	/** Fetcher */
@@ -113,7 +113,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	private boolean hasNotifiedFailure;
 	/** Last time the fetch was accessed from the fproxy end */
 	private long lastTouched;
-	final FProxyFetchTracker tracker;
+	public final FProxyFetchTracker tracker;
 	/** Show even non-fatal failures for 5 seconds. Necessary for javascript to work,
 	 * because it fetches the page and then reloads it if it isn't a progress update. */
 	private long timeFailed;

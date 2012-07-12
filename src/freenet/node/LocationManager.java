@@ -1116,6 +1116,7 @@ public class LocationManager implements ByteCounter {
         removeRecentlyForwardedItem(item);
         item.lastMessageTime = System.currentTimeMillis();
         if(logMINOR) Logger.minor(this, "Forwarding SwapRejected "+uid+" from "+source+" to "+item.requestSender);
+        m = m.cloneAndDropSubMessages();
         // Returning to source - use incomingID
         m.set(DMT.UID, item.incomingID);
         try {
@@ -1142,6 +1143,7 @@ public class LocationManager implements ByteCounter {
         }
         item.lastMessageTime = System.currentTimeMillis();
         if(logMINOR) Logger.minor(this, "Forwarding SwapCommit "+uid+ ',' +item.outgoingID+" from "+source+" to "+item.routedTo);
+        m = m.cloneAndDropSubMessages();
         // Sending onwards - use outgoing ID
         m.set(DMT.UID, item.outgoingID);
         try {
@@ -1179,6 +1181,7 @@ public class LocationManager implements ByteCounter {
             return true;
         }
         if(logMINOR) Logger.minor(this, "Forwarding SwapComplete "+uid+" from "+source+" to "+item.requestSender);
+        m = m.cloneAndDropSubMessages();
         // Returning to source - use incomingID
         m.set(DMT.UID, item.incomingID);
         try {
