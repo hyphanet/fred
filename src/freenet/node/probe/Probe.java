@@ -674,7 +674,7 @@ public class Probe implements ByteCounter {
 	/**
 	 * Listener which relays responses to the node specified during construction. Used for received probe requests.
 	 * This leads to reconstructing the messages, but removes potentially harmful sub-messages and also removes the
-	 * need for duplicate message sending code elsewhere, If the result includes a trace,,this would be the place
+	 * need for duplicate message sending code elsewhere, If the result includes a trace this would be the place
 	 * to add local results to it.
 	 */
 	private class ResultRelay implements Listener {

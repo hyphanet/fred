@@ -14,7 +14,7 @@ import freenet.support.SimpleFieldSet;
  * FCP Message which is received from a client and requests a network probe of a specific type.
  * <ul>
  * <li>Identifier: Optional; identifier to match probe request with results.</li>
- * <li>type: Mandatory: denotes the desired response type. Valid values are:
+ * <li>type: Mandatory; denotes the desired response type. Valid values are:
  *     <ul>
  *     <li>BANDWIDTH - returns outgoing bandwidth limit in KiB per second.</li>
  *     <li>BUILD - returns Freenet build / main version.</li>
@@ -25,7 +25,7 @@ import freenet.support.SimpleFieldSet;
  *     <li>UPTIME_48H - returns 48-hour uptime percentage.</li>
  *     <li>UPTIME_7D - returns 7-day uptime percentage.</li>
  *     </ul></li>
- * <li>>hopsToLive: Optional; approximately how many hops the probe will take before possibly returning a result.
+ * <li>hopsToLive: Optional; approximately how many hops the probe will take before possibly returning a result.
  *                            Valid values are [1, Probe.MAX_HTL]. If omitted Probe.MAX_HTL is used.</li>
  * </ul>
  */
