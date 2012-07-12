@@ -82,52 +82,52 @@ public class ProbeRequest extends FCPMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Probe requires full access.", identifier, false);
 		}
 
-			Listener listener = new Listener() {
-				@Override
-				public void onError(Error error, Byte code) {
-					handler.outputHandler.queue(new ProbeError(identifier, error, code));
-				}
+		Listener listener = new Listener() {
+			@Override
+			public void onError(Error error, Byte code) {
+				handler.outputHandler.queue(new ProbeError(identifier, error, code));
+			}
 
-				@Override
-				public void onRefused() {
-					handler.outputHandler.queue(new ProbeRefused(identifier));
-				}
+			@Override
+			public void onRefused() {
+				handler.outputHandler.queue(new ProbeRefused(identifier));
+			}
 
-				@Override
-				public void onOutputBandwidth(long outputBandwidth) {
-					handler.outputHandler.queue(new ProbeBandwidth(identifier, outputBandwidth));
-				}
+			@Override
+			public void onOutputBandwidth(long outputBandwidth) {
+				handler.outputHandler.queue(new ProbeBandwidth(identifier, outputBandwidth));
+			}
 
-				@Override
-				public void onBuild(int build) {
-					handler.outputHandler.queue(new ProbeBuild(identifier, build));
-				}
+			@Override
+			public void onBuild(int build) {
+				handler.outputHandler.queue(new ProbeBuild(identifier, build));
+			}
 
-				@Override
-				public void onIdentifier(long probeIdentifier, byte percentageUptime) {
-					handler.outputHandler.queue(new ProbeIdentifier(identifier, probeIdentifier, percentageUptime));
-				}
+			@Override
+			public void onIdentifier(long probeIdentifier, byte percentageUptime) {
+				handler.outputHandler.queue(new ProbeIdentifier(identifier, probeIdentifier, percentageUptime));
+			}
 
-				@Override
-				public void onLinkLengths(float[] linkLengths) {
-					handler.outputHandler.queue(new ProbeLinkLengths(identifier, linkLengths));
-				}
+			@Override
+			public void onLinkLengths(float[] linkLengths) {
+				handler.outputHandler.queue(new ProbeLinkLengths(identifier, linkLengths));
+			}
 
-				@Override
-				public void onLocation(float location) {
-					handler.outputHandler.queue(new ProbeLocation(identifier, location));
-				}
+			@Override
+			public void onLocation(float location) {
+				handler.outputHandler.queue(new ProbeLocation(identifier, location));
+			}
 
-				@Override
-				public void onStoreSize(long storeSize) {
-					handler.outputHandler.queue(new ProbeStoreSize(identifier, storeSize));
-				}
+			@Override
+			public void onStoreSize(long storeSize) {
+				handler.outputHandler.queue(new ProbeStoreSize(identifier, storeSize));
+			}
 
-				@Override
-				public void onUptime(float uptimePercent) {
-					handler.outputHandler.queue(new ProbeUptime(identifier, uptimePercent));
-				}
-			};
-			node.dispatcher.probe.start(htl, node.random.nextLong(), type, listener);
+			@Override
+			public void onUptime(float uptimePercent) {
+				handler.outputHandler.queue(new ProbeUptime(identifier, uptimePercent));
+			}
+		};
+		node.dispatcher.probe.start(htl, node.random.nextLong(), type, listener);
 	}
 }
