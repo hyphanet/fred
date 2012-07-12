@@ -156,6 +156,9 @@ public class TransportManager {
 		TransportConfig config = transportPluginFactory.toTransportConfig(transportManagerConfig.getTransportConfig(factoryTransportName));
 		PacketTransportPlugin transportPlugin = transportPluginFactory.makeTransportPlugin(transportMode, config, node.collector, node.startupTime);
 		
+		if(transportPlugin == null)
+			throw new FaultyTransportPluginException("Returned null plugin instance");
+		
 		if(factoryTransportName != transportPlugin.transportName)
 			throw new FaultyTransportPluginException("Transport factory instance and transport instance do no have same transport name");
 		
@@ -186,6 +189,8 @@ public class TransportManager {
 		TransportConfig config = transportPluginFactory.toTransportConfig(transportManagerConfig.getTransportConfig(factoryTransportName));
 		StreamTransportPlugin transportPlugin = transportPluginFactory.makeTransportPlugin(transportMode, config, node.collector, node.startupTime);;
 		
+		if(transportPlugin == null)
+			throw new FaultyTransportPluginException("Returned null plugin instance");
 		
 		if(factoryTransportName != transportPlugin.transportName)
 			throw new FaultyTransportPluginException("Transport factory instance and transport instance do no have same transport name");

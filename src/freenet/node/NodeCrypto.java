@@ -417,11 +417,15 @@ public class NodeCrypto {
 			// But once the detector is resolved it must happen here.
 			for(String transportName : packetTransportBundleMap.keySet()) {
 				List<PluginAddress> pluginAddress = packetTransportBundleMap.get(transportName).transportPlugin.getPluginAddress();
+				if(pluginAddress == null)
+					continue;
 				for(PluginAddress address : pluginAddress)
 					fs.putAppend("physical." + transportName, address.toStringAddress());
 			}
 			for(String transportName : streamTransportBundleMap.keySet()) {
 				List<PluginAddress> pluginAddress = streamTransportBundleMap.get(transportName).transportPlugin.getPluginAddress();
+				if(pluginAddress == null)
+					continue;
 				for(PluginAddress address : pluginAddress)
 					fs.putAppend("physical." + transportName, address.toStringAddress());
 			}
@@ -781,7 +785,9 @@ public class NodeCrypto {
 	 */
 	private void notifyPeerNode(PacketTransportBundle packetTransportBundle) {
 		PeerNode[] peers = getPeerNodes();
-		for(PeerNode peer: peers){
+		if(peers == null)
+			return;
+		for(PeerNode peer : peers){
 			peer.handleNewPeerTransport(packetTransportBundle);
 		}
 	}
@@ -807,7 +813,9 @@ public class NodeCrypto {
 	 */
 	private void notifyPeerNode(StreamTransportBundle streamTransportBundle) {
 		PeerNode[] peers = getPeerNodes();
-		for(PeerNode peer: peers) {
+		if(peers == null)
+			return;
+		for(PeerNode peer : peers) {
 			peer.handleNewPeerTransport(streamTransportBundle);
 		}
 	}
@@ -836,7 +844,9 @@ public class NodeCrypto {
 			}
 		}
 		PeerNode[] peers = getPeerNodes();
-		for(PeerNode peer: peers) {
+		if(peers == null)
+			return;
+		for(PeerNode peer : peers) {
 			peer.disableTransport(transportName);
 		}
 	}
