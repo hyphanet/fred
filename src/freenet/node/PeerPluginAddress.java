@@ -98,8 +98,7 @@ public class PeerPluginAddress implements PluginAddress {
 	@Override
 	public FreenetInetAddress getFreenetAddress()
 			throws UnsupportedOperationException {
-		// TODO Auto-generated method stub
-		return null;
+		return peer.getFreenetAddress();
 	}
 
 	@Override

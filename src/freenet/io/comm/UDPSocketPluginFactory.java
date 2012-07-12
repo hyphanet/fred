@@ -15,6 +15,7 @@ import freenet.pluginmanager.PacketTransportPluginFactory;
 import freenet.pluginmanager.TransportConfig;
 import freenet.pluginmanager.TransportInitException;
 import freenet.pluginmanager.TransportPluginConfigurationException;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
 public class UDPSocketPluginFactory implements PacketTransportPluginFactory {
@@ -41,6 +42,7 @@ public class UDPSocketPluginFactory implements PacketTransportPluginFactory {
 		try {
 			return new UdpSocketHandler(transportMode, address.portNumber, address.inetAddress, node, startupTime, title, node.collector);
 		} catch (SocketException e) {
+			Logger.error(this, "UDP was not created", e);
 			return null;	
 		}
 	}
