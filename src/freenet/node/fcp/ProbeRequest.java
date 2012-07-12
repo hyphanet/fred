@@ -32,15 +32,33 @@ import freenet.support.SimpleFieldSet;
 public class ProbeRequest extends FCPMessage {
 	public static final String NAME = "ProbeRequest";
 
-	private final SimpleFieldSet fs;
 	private final String identifier;
+	private final Type type;
+	private final byte htl;
 
 	public ProbeRequest(SimpleFieldSet fs) throws MessageInvalidException {
-		this.fs = fs;
 		/* If not defined in the field set Identifier will be null. As adding a null value to the field set does
 		 * not actually add something under the key, it will also be omitted in the response messages.
 		 */
 		this.identifier = fs.get(FCPMessage.IDENTIFIER);
+
+		try {
+			this.type =  Type.valueOf(fs.get(DMT.TYPE));
+
+			//If HTL is not specified default to MAX_HTL.
+			this.htl = fs.get(DMT.HTL) == null ? Probe.MAX_HTL : fs.getByte(DMT.HTL);
+
+			if (this.htl < 0) {
+				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE,
+				                                  "hopsToLive cannot be negative.", null, false);
+			}
+
+		} catch (IllegalArgumentException e) {
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unrecognized parse probe type \"" + fs.get(DMT.TYPE) + "\": " + e, null, false);
+		} catch (FSParseException e) {
+			//Getting a String from a SimpleFieldSet does not throw - it can at worst return null.
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unable to parse hopsToLive: " + e, null, false);
+		}
 	}
 
 	@Override
@@ -64,12 +82,6 @@ public class ProbeRequest extends FCPMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Probe requires full access.", identifier, false);
 		}
 
-		try {
-			final Type type =  Type.valueOf(fs.get(DMT.TYPE));
-			//If HTL is not defined default to MAX_HTL.
-			final byte htl = fs.get(DMT.HTL) == null ? Probe.MAX_HTL : fs.getByte(DMT.HTL);
-			if (htl < 0) throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE,
-			                                               "hopsToLive cannot be negative.", null, false);
 			Listener listener = new Listener() {
 				@Override
 				public void onError(Error error, Byte code) {
@@ -117,11 +129,5 @@ public class ProbeRequest extends FCPMessage {
 				}
 			};
 			node.dispatcher.probe.start(htl, node.random.nextLong(), type, listener);
-		} catch (IllegalArgumentException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unrecognized parse probe type \"" + fs.get(DMT.TYPE) + "\": " + e, null, false);
-		} catch (FSParseException e) {
-			//Getting a String from a SimpleFieldSet does not throw - it can at worst return null.
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unable to parse hopsToLive: " + e, null, false);
-		}
 	}
 }
