@@ -19,6 +19,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -75,7 +76,6 @@ import freenet.pluginmanager.PacketTransportPlugin;
 import freenet.pluginmanager.PluginAddress;
 import freenet.pluginmanager.StreamTransportPlugin;
 import freenet.pluginmanager.TransportPlugin;
-import freenet.pluginmanager.TransportPlugin.TransportType;
 import freenet.pluginmanager.TransportPluginException;
 import freenet.support.Base64;
 import freenet.support.Fields;
@@ -651,8 +651,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		
 		SimpleFieldSet transports = fs.subset("physical");
-		while(transports.keyIterator().hasNext()) {
-			String transport = transports.keyIterator().next();
+		Iterator<String> it = transports.keyIterator();
+		while(it.hasNext()) {
+			String transport = it.next();
 			String[] address = transports.getAll(transport);
 			peerEnabledTransports.put(transport, address);
 		}
@@ -6578,8 +6579,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 */
 	public synchronized void handleNewPeerTransport(PacketTransportBundle packetTransportBundle) {
 		String[] physical = peerEnabledTransports.get(packetTransportBundle.transportName);
-		if(physical.length == 0)
+		if(physical == null)
 			return;	//Don't load the transport if the peer does not use it.
+		if(physical.length == 0)
+			return;
 		PeerPacketTransport peerPacketTransport = new PeerPacketTransport(packetTransportBundle, this);
 		for(String address : physical) {
 			PluginAddress pluginAddress;
@@ -6601,8 +6604,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	
 	public synchronized void handleNewPeerTransport(StreamTransportBundle streamTransportBundle) {
 		String[] physical = peerEnabledTransports.get(streamTransportBundle.transportName);
-		if(physical.length == 0)
+		if(physical == null)
 			return;	//Don't load the transport if the peer does not use it.
+		if(physical.length == 0)
+			return;
 		PeerStreamTransport peerStreamTransport = new PeerStreamTransport(streamTransportBundle, this);
 		for(String address : physical) {
 			PluginAddress pluginAddress;
