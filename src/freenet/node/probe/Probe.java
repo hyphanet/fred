@@ -55,6 +55,11 @@ public class Probe implements ByteCounter {
 	public static final byte MAX_HTL = 50;
 
 	/**
+	 * Maximum number of forwarding attempts to make before failing with DISCONNECTED.
+	 */
+	public static final int MAX_SEND_ATTEMPTS = 50;
+
+	/**
 	 * Probability of HTL decrement at HTL = 1.
 	 */
 	public static final double DECREMENT_PROBABILITY = 0.2;
@@ -393,7 +398,7 @@ public class Probe implements ByteCounter {
 		 * endpoint distribution. HTL is decremented before routing so that it's possible to respond locally.
 		 */
 		htl = probabilisticDecrement(htl);
-		if (htl == 0 || !route(type, uid, htl, listener)) {
+		if (htl == 0) {
 			long wait = WAIT_MAX;
 			while (wait >= WAIT_MAX) wait = (long)(-Math.log(node.random.nextDouble()) * WAIT_BASE / Math.E);
 			timer.schedule(new TimerTask() {
@@ -402,33 +407,45 @@ public class Probe implements ByteCounter {
 					respond(type, listener);
 				}
 			}, wait);
+		} else {
+			route(type, uid, htl, listener);
 		}
 	}
 
 	/**
-	 * Attempts to route the message to a peer. If HTL is decremented to zero before this is possible, responds.
-	 * @return true if the message has been handled; false if the local node should respond to the request.
+	 * Attempts to route the message to a peer. If the maximum number of send attempts is exceeded, fails with the
+	 * error DISCONNECTED.
 	 */
-	private boolean route(final Type type, final long uid, byte htl, final Listener listener) {
+	private void route(final Type type, final long uid, final byte htl, final Listener listener) {
 		//Recreate the request so that any sub-messages or unintended fields are not forwarded.
 		final Message message = DMT.createProbeRequest(htl, uid, type);
 		PeerNode[] peers;
 		//Degree of the local node.
 		int degree;
 		PeerNode candidate;
-		//Loop until HTL runs out, in which case return a result, or the probe is relayed on to a peer.
-		for (; htl > 0; htl = probabilisticDecrement(htl)) {
+		/*
+		 * Attempt to forward until success or until reaching the send attempt limit. Send limit checked along
+		 * with local degree.
+		 */
+		for (int sendAttempts = 0; ; sendAttempts++) {
 			peers = node.getConnectedPeers();
 			degree = peers.length;
-			//Can't handle a probe request if not connected to any peers.
-			if (degree == 0) {
-				if (logMINOR) Logger.minor(Probe.class, "Aborting received probe request because there are no connections.");
+			//Can't handle a probe request if not connected to peers; give up if send attempt limit reached.
+			if (degree == 0 || sendAttempts >= MAX_SEND_ATTEMPTS) {
+				if (logMINOR && degree == 0) {
+					Logger.minor(Probe.class, "Aborting probe request: no connections.");
+				}
+
+				if (logWARNING && sendAttempts >= MAX_SEND_ATTEMPTS) {
+					Logger.warning(Probe.class, "Aborting probe request: send attempt limit reached.");
+				}
+
 				/*
 				 * If this is a locally-started request, not a relayed one, give an error.
 				 * Otherwise, in this case there's nowhere to send the error.
 				 */
 				listener.onError(Error.DISCONNECTED, null);
-				return true;
+				return;
 			}
 
 			candidate = peers[node.random.nextInt(degree)];
@@ -453,7 +470,7 @@ public class Probe implements ByteCounter {
 						node.getUSM().addAsyncFilter(filter, new ResultListener(listener), this);
 						if (logDEBUG) Logger.debug(Probe.class, "Sending.");
 						candidate.sendAsync(message, null, this);
-						return true;
+						return;
 					} catch (NotConnectedException e) {
 						if (logMINOR) Logger.minor(Probe.class, "Peer became disconnected between check and send attempt.", e);
 					} catch (DisconnectedException e) {
@@ -464,7 +481,6 @@ public class Probe implements ByteCounter {
 				if (logMINOR) Logger.minor(Probe.class, "Peer in connectedPeers was not connected.", new Exception());
 			}
 		}
-		return false;
 	}
 
 	/**
