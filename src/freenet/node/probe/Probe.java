@@ -62,7 +62,7 @@ public class Probe implements ByteCounter {
 	/**
 	 * Probability of HTL decrement at HTL = 1.
 	 */
-	public static final double DECREMENT_PROBABILITY = 0.2;
+	public static final float DECREMENT_PROBABILITY = 0.2f;
 
 	/**
 	 * In ms, per HTL above HTL = 1.
@@ -594,7 +594,7 @@ public class Probe implements ByteCounter {
 	private byte probabilisticDecrement(byte htl) {
 		assert(htl > 0);
 		if (htl == 1) {
-			if (node.random.nextDouble() < DECREMENT_PROBABILITY) return 0;
+			if (node.random.nextFloat() < DECREMENT_PROBABILITY) return 0;
 			return 1;
 		}
 		return (byte)(htl - 1);
