@@ -137,7 +137,7 @@ public class DMT {
 	public static final String IGNORE_LOW_BACKOFF = "ignoreLowBackoff";
 	public static final String LIST_OF_UIDS = "listOfUIDs";
 	public static final String UID_STILL_RUNNING_FLAGS = "UIDStillRunningFlags";
-	public static final String IDENTIFIER = "identifier";
+	public static final String PROBE_IDENTIFIER = "probeIdentifier";
 	public static final String STORE_SIZE = "storeSize";
 	public static final String LINK_LENGTHS = "linkLengths";
 	public static final String UPTIME_PERCENT = "uptimePercent";
@@ -1143,21 +1143,21 @@ public class DMT {
 
 	public static final MessageType ProbeIdentifier = new MessageType("ProbeIdentifier", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
-		addField(IDENTIFIER, Long.class);
+		addField(PROBE_IDENTIFIER, Long.class);
 		addField(UPTIME_PERCENT, Byte.class);
 	}};
 
 	/**
 	 * Creates a probe response to a query for identifier.
-	 * @param uid Probe identifier.
-	 * @param identifier Endpoint identifier.
+	 * @param uid Probe UID.
+	 * @param probeIdentifier Endpoint identifier.
 	 * @param uptimePercentage 7-day uptime percentage.
 	 * @return Message with requested attributes.
 	 */
-	public static Message createProbeIdentifier(long uid, long identifier, byte uptimePercentage) {
+	public static Message createProbeIdentifier(long uid, long probeIdentifier, byte uptimePercentage) {
 		Message msg = new Message(ProbeIdentifier);
 		msg.set(UID, uid);
-		msg.set(IDENTIFIER, identifier);
+		msg.set(PROBE_IDENTIFIER, probeIdentifier);
 		msg.set(UPTIME_PERCENT, uptimePercentage);
 		return msg;
 	}

@@ -8,12 +8,12 @@ import freenet.io.comm.DMT;
 public class ProbeIdentifier extends FCPResponse {
 	/**
 	 * @param fcpIdentifier FCP-level identifier for pairing requests and responses
-	 * @param identifier probe endpoint identifier
+	 * @param probeIdentifier probe endpoint identifier
 	 * @param uptimePercentage 7-day uptime percentage
 	 */
-	public ProbeIdentifier(String fcpIdentifier, long identifier, long uptimePercentage) {
+	public ProbeIdentifier(String fcpIdentifier, long probeIdentifier, long uptimePercentage) {
 		super(fcpIdentifier);
-		fs.put(DMT.IDENTIFIER, identifier);
+		fs.put(DMT.PROBE_IDENTIFIER, probeIdentifier);
 		fs.put(DMT.UPTIME_PERCENT, uptimePercentage);
 	}
 

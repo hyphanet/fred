@@ -616,7 +616,7 @@ public class Probe implements ByteCounter {
 			} else if (message.getSpec().equals(DMT.ProbeBuild)) {
 				listener.onBuild(message.getInt(DMT.BUILD));
 			} else if (message.getSpec().equals(DMT.ProbeIdentifier)) {
-				listener.onIdentifier(message.getLong(DMT.IDENTIFIER), message.getByte(DMT.UPTIME_PERCENT));
+				listener.onIdentifier(message.getLong(DMT.PROBE_IDENTIFIER), message.getByte(DMT.UPTIME_PERCENT));
 			} else if (message.getSpec().equals(DMT.ProbeLinkLengths)) {
 				listener.onLinkLengths(message.getFloatArray(DMT.LINK_LENGTHS));
 			} else if (message.getSpec().equals(DMT.ProbeLocation)) {
