@@ -1,7 +1,5 @@
 package freenet.node.fcp;
 
-import freenet.io.comm.DMT;
-
 /**
  * FCP message sent from the node to the client which includes outgoing bandwidth limit returned by the endpoint.
  */
@@ -12,7 +10,7 @@ public class ProbeBandwidth extends FCPResponse {
 	 */
 	public ProbeBandwidth(String fcpIdentifier, long outputBandwidth) {
 		super(fcpIdentifier);
-		fs.put(DMT.OUTPUT_BANDWIDTH_UPPER_LIMIT, outputBandwidth);
+		fs.put(OUTPUT_BANDWIDTH, outputBandwidth);
 	}
 
 	@Override

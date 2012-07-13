@@ -1,7 +1,5 @@
 package freenet.node.fcp;
 
-import freenet.io.comm.DMT;
-
 /**
  * FCP message sent from the node to the client which includes uptime information returned by the endpoint.
  */
@@ -13,7 +11,7 @@ public class ProbeUptime extends FCPResponse {
 	 */
 	public ProbeUptime(String fcpIdentifier, double uptimePercent) {
 		super(fcpIdentifier);
-		fs.put(DMT.UPTIME_PERCENT, uptimePercent);
+		fs.put(UPTIME_PERCENT, uptimePercent);
 	}
 
 	public String getName() {

@@ -1,6 +1,5 @@
 package freenet.node.fcp;
 
-import freenet.io.comm.DMT;
 import freenet.node.probe.Error;
 
 /**
@@ -18,8 +17,8 @@ public class ProbeError extends FCPResponse {
 	 */
 	public ProbeError(String fcpIdentifier, Error error, Byte code) {
 		super(fcpIdentifier);
-		fs.putOverwrite(DMT.TYPE, error.name());
-		if (code != null) fs.put(DMT.DESCRIPTION, code);
+		fs.putOverwrite(TYPE, error.name());
+		if (code != null) fs.put(CODE, code);
 	}
 
 	@Override

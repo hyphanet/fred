@@ -1,7 +1,5 @@
 package freenet.node.fcp;
 
-import freenet.io.comm.DMT;
-
 /**
  * FCP message sent from the node to the client which includes an endpoint identifier and uptime information.
  */
@@ -13,8 +11,8 @@ public class ProbeIdentifier extends FCPResponse {
 	 */
 	public ProbeIdentifier(String fcpIdentifier, long probeIdentifier, long uptimePercentage) {
 		super(fcpIdentifier);
-		fs.put(DMT.PROBE_IDENTIFIER, probeIdentifier);
-		fs.put(DMT.UPTIME_PERCENT, uptimePercentage);
+		fs.put(PROBE_IDENTIFIER, probeIdentifier);
+		fs.put(UPTIME_PERCENT, uptimePercentage);
 	}
 
 	@Override

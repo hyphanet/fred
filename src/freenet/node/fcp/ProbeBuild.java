@@ -1,7 +1,5 @@
 package freenet.node.fcp;
 
-import freenet.io.comm.DMT;
-
 /**
  * FCP message sent from the node to the client which includes build / main version returned by the endpoint.
  */
@@ -12,7 +10,7 @@ public class ProbeBuild extends FCPResponse {
 	 */
 	public ProbeBuild(String fcpIdentifier, int build) {
 		super(fcpIdentifier);
-		fs.put(DMT.BUILD, build);
+		fs.put(BUILD, build);
 	}
 
 	@Override

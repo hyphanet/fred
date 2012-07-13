@@ -1,7 +1,6 @@
 package freenet.node.fcp;
 
 import com.db4o.ObjectContainer;
-import freenet.io.comm.DMT;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.probe.Error;
@@ -40,13 +39,13 @@ public class ProbeRequest extends FCPMessage {
 		/* If not defined in the field set Identifier will be null. As adding a null value to the field set does
 		 * not actually add something under the key, it will also be omitted in the response messages.
 		 */
-		this.identifier = fs.get(FCPMessage.IDENTIFIER);
+		this.identifier = fs.get(IDENTIFIER);
 
 		try {
-			this.type =  Type.valueOf(fs.get(DMT.TYPE));
+			this.type =  Type.valueOf(fs.get(TYPE));
 
 			//If HTL is not specified default to MAX_HTL.
-			this.htl = fs.get(DMT.HTL) == null ? Probe.MAX_HTL : fs.getByte(DMT.HTL);
+			this.htl = fs.get(HTL) == null ? Probe.MAX_HTL : fs.getByte(HTL);
 
 			if (this.htl < 0) {
 				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE,
@@ -54,7 +53,7 @@ public class ProbeRequest extends FCPMessage {
 			}
 
 		} catch (IllegalArgumentException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unrecognized parse probe type \"" + fs.get(DMT.TYPE) + "\": " + e, null, false);
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unrecognized parse probe type \"" + fs.get(TYPE) + "\": " + e, null, false);
 		} catch (FSParseException e) {
 			//Getting a String from a SimpleFieldSet does not throw - it can at worst return null.
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unable to parse hopsToLive: " + e, null, false);

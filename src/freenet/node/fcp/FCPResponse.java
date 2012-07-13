@@ -16,7 +16,7 @@ public abstract class FCPResponse extends FCPMessage {
 	 */
 	public FCPResponse(String fcpIdentifier) {
 		fs = new SimpleFieldSet(true);
-		fs.putOverwrite(FCPMessage.IDENTIFIER, fcpIdentifier);
+		fs.putOverwrite(IDENTIFIER, fcpIdentifier);
 	}
 
 	@Override
