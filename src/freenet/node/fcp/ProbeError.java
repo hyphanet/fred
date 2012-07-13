@@ -12,7 +12,7 @@ public class ProbeError extends FCPResponse {
 	 * @param fcpIdentifier Identifier: FCP-level identifier for pairing requests and responses.
 	 * @param error type: The error code.
 	 * @param code If error is UNKNOWN or UNRECOGNIZED_TYPE, can specify remote code. Not included otherwise.
-	 * @see freenet.node.probe.Listener onError()
+	 * @see freenet.node.probe.Listener#onError(freenet.node.probe.Error, Byte)
 	 * @see freenet.node.probe.Error
 	 */
 	public ProbeError(String fcpIdentifier, Error error, Byte code) {

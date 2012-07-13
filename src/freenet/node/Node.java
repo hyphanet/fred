@@ -841,7 +841,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	/**
 	 * Dispatches a probe request with the specified settings
-	 * @see freenet.node.probe.Probe#start(byte, long, Type, Listener) start
+	 * @see freenet.node.probe.Probe#start(byte, long, Type, Listener)
 	 */
 	public void startProbe(final byte htl, final long uid, final Type type, final Listener listener) {
 		dispatcher.probe.start(htl, uid, type, listener);

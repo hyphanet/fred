@@ -25,7 +25,7 @@ public enum Error {
 	UNRECOGNIZED_TYPE((byte) 4),
 	/**
 	 * A node received and understood the request, but failed to forward it to another node.
-	 * @see freenet.node.probe.Probe MAX_SEND_ATTEMPTS
+	 * @see freenet.node.probe.Probe#MAX_SEND_ATTEMPTS
 	 */
 	CANNOT_FORWARD((byte) 5);
 
