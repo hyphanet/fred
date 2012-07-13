@@ -414,7 +414,7 @@ public class Probe implements ByteCounter {
 
 	/**
 	 * Attempts to route the message to a peer. If the maximum number of send attempts is exceeded, fails with the
-	 * error DISCONNECTED.
+	 * error CANNOT_FORWARD.
 	 */
 	private void route(final Type type, final long uid, final byte htl, final Listener listener) {
 		//Recreate the request so that any sub-messages or unintended fields are not forwarded.
