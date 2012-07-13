@@ -22,7 +22,12 @@ public enum Error {
 	 * A remote node did not recognize the requested probe type. For locally started probes it will not be
 	 * a ProbeError but a ProtocolError.
 	 */
-	UNRECOGNIZED_TYPE((byte) 4);
+	UNRECOGNIZED_TYPE((byte) 4),
+	/**
+	 * A node received and understood the request, but failed to forward it to another node.
+	 * @see freenet.node.probe.Probe MAX_SEND_ATTEMPTS
+	 */
+	CANNOT_FORWARD((byte) 5);
 
 	/**
 	 * Stable numerical value to represent the enum value. Used to send over the network instead of .name().
@@ -67,6 +72,8 @@ public enum Error {
 				return UNKNOWN;
 			case 4:
 				return UNRECOGNIZED_TYPE;
+			case 5:
+				return CANNOT_FORWARD;
 			default:
 				throw new IllegalArgumentException("There is no ProbeError with code " + code + ".");
 		}

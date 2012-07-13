@@ -424,20 +424,15 @@ public class Probe implements ByteCounter {
 		int degree;
 		PeerNode candidate;
 		/*
-		 * Attempt to forward until success or until reaching the send attempt limit. Send limit checked along
-		 * with local degree.
+		 * Attempt to forward until success or until reaching the send attempt limit.
 		 */
-		for (int sendAttempts = 0; ; sendAttempts++) {
+		for (int sendAttempts = 0; sendAttempts < MAX_SEND_ATTEMPTS; sendAttempts++) {
 			peers = node.getConnectedPeers();
 			degree = peers.length;
-			//Can't handle a probe request if not connected to peers; give up if send attempt limit reached.
-			if (degree == 0 || sendAttempts >= MAX_SEND_ATTEMPTS) {
-				if (logMINOR && degree == 0) {
+			//Can't handle a probe request if not connected to peers.
+			if (degree == 0 ) {
+				if (logMINOR) {
 					Logger.minor(Probe.class, "Aborting probe request: no connections.");
-				}
-
-				if (logWARNING && sendAttempts >= MAX_SEND_ATTEMPTS) {
-					Logger.warning(Probe.class, "Aborting probe request: send attempt limit reached.");
 				}
 
 				/*
@@ -481,6 +476,13 @@ public class Probe implements ByteCounter {
 				if (logMINOR) Logger.minor(Probe.class, "Peer in connectedPeers was not connected.", new Exception());
 			}
 		}
+
+		// Send attempt limit reached.
+		if (logWARNING) {
+			Logger.warning(Probe.class, "Aborting probe request: send attempt limit reached.");
+		}
+
+		listener.onError(Error.CANNOT_FORWARD, null);
 	}
 
 	/**
