@@ -127,6 +127,6 @@ public class ProbeRequest extends FCPMessage {
 				handler.outputHandler.queue(new ProbeUptime(identifier, uptimePercent));
 			}
 		};
-		node.dispatcher.probe.start(htl, node.random.nextLong(), type, listener);
+		node.startProbe(htl, node.random.nextLong(), type, listener);
 	}
 }

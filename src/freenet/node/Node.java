@@ -40,6 +40,8 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.Vector;
 
+import freenet.node.probe.Listener;
+import freenet.node.probe.Type;
 import freenet.support.math.MersenneTwister;
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -737,7 +739,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public final PacketSender ps;
 	public final PrioritizedTicker ticker;
 	final DNSRequester dnsr;
-	public final NodeDispatcher dispatcher;
+	final NodeDispatcher dispatcher;
 	public final UptimeEstimator uptime;
 	public final TokenBucket outputThrottle;
 	public boolean throttleLocalData;
@@ -836,6 +838,14 @@ public class Node implements TimeSkewDetectorCallback {
 	private volatile boolean isPRNGReady = false;
 
 	private boolean storePreallocate;
+
+	/**
+	 * Dispatches a probe request with the specified settings
+	 * @see freenet.node.probe.Probe#start(byte, long, Type, Listener) start
+	 */
+	public void startProbe(final byte htl, final long uid, final Type type, final Listener listener) {
+		dispatcher.probe.start(htl, uid, type, listener);
+	}
 
 	/**
 	 * Read all storable settings (identity etc) from the node file.

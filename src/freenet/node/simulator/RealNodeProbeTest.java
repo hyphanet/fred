@@ -172,7 +172,7 @@ public class RealNodeProbeTest extends RealNodeTest {
 						System.out.print(option + ": ");
 						nodeConfig.set(option, Boolean.valueOf(System.console().readLine()));
 					}
-				} else nodes[index].dispatcher.probe.start(htl, random.nextLong(), types[selection], print);
+				} else nodes[index].startProbe(htl, random.nextLong(), types[selection], print);
 			} catch (Exception e) {
 				//If a non-number is entered or one outside the bounds.
 				System.out.print(e.toString());

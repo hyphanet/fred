@@ -63,7 +63,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	final Node node;
 	private NodeStats nodeStats;
 	private NodeDispatcherCallback callback;
-	public final Probe probe;
+	final Probe probe;
 	
 	private static final long STALE_CONTEXT=20000;
 	private static final long STALE_CONTEXT_CHECK=20000;
