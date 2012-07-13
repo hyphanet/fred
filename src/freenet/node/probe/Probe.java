@@ -592,7 +592,7 @@ public class Probe implements ByteCounter {
 	 * @return new HTL
 	 */
 	private byte probabilisticDecrement(byte htl) {
-		assert(htl > 0);
+		assert htl > 0;
 		if (htl == 1) {
 			if (node.random.nextFloat() < DECREMENT_PROBABILITY) return 0;
 			return 1;
