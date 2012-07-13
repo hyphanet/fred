@@ -131,7 +131,7 @@ public abstract class FCPMessage {
 	
 	/**
 	 * Create a message from a SimpleFieldSet, and the message's name, if possible. 
-	 * Usefull for FCPClients
+	 * Useful for FCPClients
 	 */
 	public static FCPMessage create(String name, SimpleFieldSet fs) throws MessageInvalidException {
 		return FCPMessage.create(name, fs, null, null);
@@ -141,7 +141,7 @@ public abstract class FCPMessage {
 	 * @throws MessageInvalidException */
 	public abstract void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException;
 
-	/** Remove this message and its dependancies (internal objects) from the database. */
+	/** Remove this message and its dependencies (internal objects) from the database. */
 	public abstract void removeFrom(ObjectContainer container);
 
 }
