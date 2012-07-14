@@ -448,16 +448,16 @@ public class Probe implements ByteCounter {
 
 			if (candidate.isConnected()) {
 				//acceptProbability is the MH correction.
-				double acceptProbability;
+				float acceptProbability;
 				int candidateDegree = candidate.getDegree();
 				/* Candidate's degree is unknown; fall back to random walk by accepting this candidate
 				 * regardless of its degree.
 				 */
-				if (candidateDegree == 0) acceptProbability = 1.0;
-				else acceptProbability = (double)degree / candidateDegree;
+				if (candidateDegree == 0) acceptProbability = 1.0f;
+				else acceptProbability = (float)degree / candidateDegree;
 
 				if (logDEBUG) Logger.debug(Probe.class, "acceptProbability is " + acceptProbability);
-				if (node.random.nextDouble() < acceptProbability) {
+				if (node.random.nextFloat() < acceptProbability) {
 					if (logDEBUG) Logger.debug(Probe.class, "Accepted candidate.");
 					//Filter for response to this probe with requested result type.
 					final MessageFilter filter = createResponseFilter(type, candidate, uid, htl);
