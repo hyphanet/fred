@@ -471,8 +471,10 @@ public class Probe implements ByteCounter {
 						return true;
 					} catch (NotConnectedException e) {
 						if (logMINOR) Logger.minor(Probe.class, "Peer became disconnected between check and send attempt.", e);
+						// Peer no longer connected - sending was not successful. Try again.
 					} catch (DisconnectedException e) {
 						if (logMINOR) Logger.minor(Probe.class, "Peer became disconnected while attempting to add filter.", e);
+						// Peer no longer connected - cannot send. Try again.
 					}
 				} else {
 					/*
