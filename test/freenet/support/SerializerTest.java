@@ -15,11 +15,34 @@ import java.util.Arrays;
 public class SerializerTest extends TestCase {
 
 	public void test() {
-		//Values for testing.
+		// Values for basic type testing.
 		final Object[] data = new Object[] { true, (byte)9, (short)0xDE, 1234567, 123467890123L, Math.E,
 			123.4567f, "testing string", new double[] { Math.PI, 0.1234d},
 			new float[] { 2345.678f, 8901.234f }};
 
+		readWrite(data);
+
+		// Double array stored with byte size - test edge cases: 0, 128, 255.
+		Object[] edgeCases = new Object[3];
+
+		edgeCases[0] = new double[0];
+		edgeCases[1] = new double[128];
+		edgeCases[2] = new double[255];
+
+		double value = 0.0;
+		for (Object edgeCase : edgeCases) {
+			double[] array = (double[]) edgeCase;
+			for (int i = 0; i < array.length; i++) {
+				array[i] = (value += 5);
+			}
+		}
+
+		readWrite(edgeCases);
+	}
+
+
+
+	private static void readWrite(Object[] data) {
 		ByteArrayOutputStream byteOutputStream = new ByteArrayOutputStream();
 		DataOutputStream dos = new DataOutputStream(byteOutputStream);
 
