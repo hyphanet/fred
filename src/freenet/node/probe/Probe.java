@@ -395,10 +395,12 @@ public class Probe implements ByteCounter {
 
 		/*
 		 * Route to a peer, using Metropolis-Hastings correction and ignoring backoff to get a more uniform
-		 * endpoint distribution. HTL is decremented before routing so that it's possible to respond locally.
+		 * endpoint distribution. HTL is decremented before routing so that it's possible to respond locally without
+		 * attempting to route first. Send a local response if HTL is zero now or becomes zero while trying to route.
+		 * During routing HTL decrements if a candidate is rejected by the Metropolis-Hastings correction.
 		 */
 		htl = probabilisticDecrement(htl);
-		if (htl == 0) {
+		if (htl == 0 || !route(type, uid, htl, listener)) {
 			long wait = WAIT_MAX;
 			while (wait >= WAIT_MAX) wait = (long)(-Math.log(node.random.nextDouble()) * WAIT_BASE / Math.E);
 			timer.schedule(new TimerTask() {
@@ -407,16 +409,15 @@ public class Probe implements ByteCounter {
 					respond(type, listener);
 				}
 			}, wait);
-		} else {
-			route(type, uid, htl, listener);
 		}
 	}
 
 	/**
 	 * Attempts to route the message to a peer. If the maximum number of send attempts is exceeded, fails with the
 	 * error CANNOT_FORWARD.
+	 * @return True if no further action needed; false if HTL decremented to zero and a local response is needed.
 	 */
-	private void route(final Type type, final long uid, final byte htl, final Listener listener) {
+	private boolean route(final Type type, final long uid, byte htl, final Listener listener) {
 		//Recreate the request so that any sub-messages or unintended fields are not forwarded.
 		final Message message = DMT.createProbeRequest(htl, uid, type);
 		PeerNode[] peers;
@@ -440,7 +441,7 @@ public class Probe implements ByteCounter {
 				 * Otherwise, in this case there's nowhere to send the error.
 				 */
 				listener.onError(Error.DISCONNECTED, null);
-				return;
+				return true;
 			}
 
 			candidate = peers[node.random.nextInt(degree)];
@@ -465,12 +466,20 @@ public class Probe implements ByteCounter {
 						node.getUSM().addAsyncFilter(filter, new ResultListener(listener), this);
 						if (logDEBUG) Logger.debug(Probe.class, "Sending.");
 						candidate.sendAsync(message, null, this);
-						return;
+						return true;
 					} catch (NotConnectedException e) {
 						if (logMINOR) Logger.minor(Probe.class, "Peer became disconnected between check and send attempt.", e);
 					} catch (DisconnectedException e) {
 						if (logMINOR) Logger.minor(Probe.class, "Peer became disconnected while attempting to add filter.", e);
 					}
+				} else {
+					/*
+					 * Metropolis-Hastings correction rejected - decrement HTL so that it can run out depending on
+					 * relative degrees.
+					 */
+					htl = probabilisticDecrement(htl);
+
+					if (htl == 0) return false;
 				}
 			} else {
 				if (logMINOR) Logger.minor(Probe.class, "Peer in connectedPeers was not connected.", new Exception());
@@ -483,6 +492,7 @@ public class Probe implements ByteCounter {
 		}
 
 		listener.onError(Error.CANNOT_FORWARD, null);
+		return true;
 	}
 
 	/**
