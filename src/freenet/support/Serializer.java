@@ -98,11 +98,12 @@ public class Serializer {
 		} else if (type.equals(Key.class)) {
 		    return Key.read(dis);
 		} else if (type.equals(double[].class)) {
-			double[] array = new double[dis.readInt()];
+			// & 0xFF for unsigned byte.
+			double[] array = new double[dis.readByte() & 0xFF];
 			for (int i = 0; i < array.length; i++) array[i] = dis.readDouble();
 			return array;
 		} else if (type.equals(float[].class)) {
-			float[] array = new float[dis.readInt()];
+			float[] array = new float[dis.readShort()];
 			for (int i = 0; i < array.length; i++) array[i] = dis.readFloat();
 			return array;
 		} else {
@@ -144,10 +145,11 @@ public class Serializer {
 		} else if (type.equals(Byte.class)) {
 			dos.write(((Byte) object).byteValue());
 		} else if (type.equals(double[].class))  {
-			dos.writeInt(((double[])object).length);
+			// writeByte() takes the eight lower-order bits - length capped to 255.
+			dos.writeByte(((double[])object).length);
 			for (double element : (double[])object) dos.writeDouble(element);
 		} else if (type.equals(float[].class)) {
-			dos.writeInt(((float[])object).length);
+			dos.writeShort(((float[])object).length);
 			for (float element : (float[])object) dos.writeFloat(element);
 		} else {
 			throw new RuntimeException("Unrecognised field type: " + type);
