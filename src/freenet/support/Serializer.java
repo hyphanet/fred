@@ -117,16 +117,12 @@ public class Serializer {
 		} else if (type.equals(Key.class)) {
 		    return Key.read(dis);
 		} else if (type.equals(double[].class)) {
-			final int length = dis.readInt();
-			//8 bytes per double.
-			if (length < 0 || length > MAX_ARRAY_LENGTH/8) {
-				throw new IOException("Invalid double array length: " + length);
-			}
-			double[] array = new double[length];
+			// & 0xFF for unsigned byte. Can be up to 255, no negatives.
+			double[] array = new double[dis.readByte() & 0xFF];
 			for (int i = 0; i < array.length; i++) array[i] = dis.readDouble();
 			return array;
 		} else if (type.equals(float[].class)) {
-			final int length = dis.readInt();
+			final short length = dis.readShort();
 			if (length < 0 || length > MAX_ARRAY_LENGTH/4) {
 				throw new IOException("Invalid flat array length: " + length);
 			}
@@ -171,10 +167,11 @@ public class Serializer {
 		} else if (type.equals(Byte.class)) {
 			dos.write((Byte) object);
 		} else if (type.equals(double[].class))  {
-			dos.writeInt(((double[])object).length);
+			// writeByte() takes the eight lower-order bits - length capped to 255.
+			dos.writeByte(((double[])object).length);
 			for (double element : (double[])object) dos.writeDouble(element);
 		} else if (type.equals(float[].class)) {
-			dos.writeInt(((float[])object).length);
+			dos.writeShort(((float[])object).length);
 			for (float element : (float[])object) dos.writeFloat(element);
 		} else {
 			throw new RuntimeException("Unrecognised field type: " + type);
