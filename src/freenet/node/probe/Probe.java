@@ -32,6 +32,8 @@ import java.util.TimerTask;
  * <li>Starting a regular request for a key.</li>
  * <li>Success rates for remote requests by HTL; perhaps over some larger amount of time than the past hour.</li>
  * </ul>
+ *
+ * @see freenet.node.probe Explanation of Metropolis-Hastings correction
  */
 public class Probe implements ByteCounter {
 
