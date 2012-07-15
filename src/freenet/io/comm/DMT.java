@@ -1200,16 +1200,16 @@ public class DMT {
 
 	public static final MessageType ProbeStoreSize = new MessageType("ProbeStoreSize", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
-		addField(STORE_SIZE, Long.class);
+		addField(STORE_SIZE, Float.class);
 	}};
 
 	/**
 	 * Creates a probe response to a query for store size.
 	 * @param uid Probe identifier.
-	 * @param storeSize Endpoint store size in GiB.
+	 * @param storeSize Endpoint store size in GiB multiplied by Gaussian noise.
 	 * @return Message with requested attributes.
 	 */
-	public static Message createProbeStoreSize(long uid, long storeSize) {
+	public static Message createProbeStoreSize(long uid, float storeSize) {
 		Message msg = new Message(ProbeStoreSize);
 		msg.set(UID, uid);
 		msg.set(STORE_SIZE, storeSize);

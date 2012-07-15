@@ -574,7 +574,8 @@ public class Probe implements ByteCounter {
 			break;
 		case STORE_SIZE:
 			//1,073,741,824 bytes (2^30) per GiB
-			listener.onStoreSize(randomNoise(Math.round((double)node.getStoreSize()/(1 << 30))));
+			//Multiplicative noise instead of randomNoise's additive percentage for similar effect on large and small.
+			listener.onStoreSize((float)(((double)node.getStoreSize()/(1 << 30)) * node.random.nextGaussian()));
 			break;
 		case UPTIME_48H:
 			listener.onUptime((float)randomNoise(100*node.uptime.getUptime()));
@@ -654,7 +655,7 @@ public class Probe implements ByteCounter {
 			} else if (message.getSpec().equals(DMT.ProbeLocation)) {
 				listener.onLocation(message.getFloat(DMT.LOCATION));
 			} else if (message.getSpec().equals(DMT.ProbeStoreSize)) {
-				listener.onStoreSize(message.getLong(DMT.STORE_SIZE));
+				listener.onStoreSize(message.getFloat(DMT.STORE_SIZE));
 			} else if (message.getSpec().equals(DMT.ProbeUptime)) {
 				listener.onUptime(message.getFloat(DMT.UPTIME_PERCENT));
 			} else if (message.getSpec().equals(DMT.ProbeError)) {
@@ -757,7 +758,7 @@ public class Probe implements ByteCounter {
 		}
 
 		@Override
-		public void onStoreSize(long storeSize) {
+		public void onStoreSize(float storeSize) {
 			send(DMT.createProbeStoreSize(uid, storeSize));
 		}
 

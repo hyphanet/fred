@@ -118,7 +118,7 @@ public class RealNodeProbeTest extends RealNodeTest {
 			}
 
 			@Override
-			public void onStoreSize(long storeSize) {
+			public void onStoreSize(float storeSize) {
 				System.out.println("Probe got store size " + nf.format(storeSize) + " GiB.");
 			}
 

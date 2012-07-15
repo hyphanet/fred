@@ -118,7 +118,7 @@ public class ProbeRequest extends FCPMessage {
 			}
 
 			@Override
-			public void onStoreSize(long storeSize) {
+			public void onStoreSize(float storeSize) {
 				handler.outputHandler.queue(new ProbeStoreSize(identifier, storeSize));
 			}
 

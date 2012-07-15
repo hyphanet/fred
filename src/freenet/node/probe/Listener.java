@@ -50,9 +50,9 @@ public interface Listener {
 
 	/**
 	 * Store size result.
-	 * @param storeSize endpoint's reported store size in GiB.
+	 * @param storeSize endpoint's reported store size in GiB multiplied by Gaussian noise.
 	 */
-	void onStoreSize(long storeSize);
+	void onStoreSize(float storeSize);
 
 	/**
 	 * Uptime result.
