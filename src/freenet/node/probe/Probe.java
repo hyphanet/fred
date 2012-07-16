@@ -57,7 +57,7 @@ public class Probe implements ByteCounter {
 	/**
 	 * Maximum hopsToLive value to clamp requests to.
 	 */
-	public static final byte MAX_HTL = 35;
+	public static final byte MAX_HTL = 70;
 
 	/**
 	 * Maximum number of forwarding attempts to make before failing with DISCONNECTED.
