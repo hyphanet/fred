@@ -54,7 +54,7 @@ public class Probe implements ByteCounter {
 
 	private final static String SOURCE_DISCONNECT = "Previous step in probe chain no longer connected.";
 
-	public static final byte MAX_HTL = 50;
+	public static final byte MAX_HTL = 35;
 
 	/**
 	 * Maximum number of forwarding attempts to make before failing with DISCONNECTED.
