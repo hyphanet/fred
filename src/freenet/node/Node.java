@@ -40,6 +40,8 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.Vector;
 
+import freenet.node.probe.Listener;
+import freenet.node.probe.Type;
 import freenet.support.math.MersenneTwister;
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -836,6 +838,14 @@ public class Node implements TimeSkewDetectorCallback {
 	private volatile boolean isPRNGReady = false;
 
 	private boolean storePreallocate;
+
+	/**
+	 * Dispatches a probe request with the specified settings
+	 * @see freenet.node.probe.Probe#start(byte, long, Type, Listener)
+	 */
+	public void startProbe(final byte htl, final long uid, final Type type, final Listener listener) {
+		dispatcher.probe.start(htl, uid, type, listener);
+	}
 
 	/**
 	 * Read all storable settings (identity etc) from the node file.
@@ -2526,10 +2536,12 @@ public class Node implements TimeSkewDetectorCallback {
 
 		maxPacketSize = nodeConfig.getInt("maxPacketSize");
 		updateMTU();
-		
+
+		/* Take care that no configuration options are registered after this point; they will not persist
+		 * between restarts.
+		 */
 		nodeConfig.finishedInitialization();
-		if(shouldWriteConfig)
-			config.store();
+		if(shouldWriteConfig) config.store();
 		writeNodeFile();
 
 		// Initialize the plugin manager
@@ -5683,7 +5695,7 @@ public class Node implements TimeSkewDetectorCallback {
 		return darknetCrypto.portNumber;
 	}
 
-	public int getOutputBandwidthLimit() {
+	public synchronized int getOutputBandwidthLimit() {
 		return outputBandwidthLimit;
 	}
 
@@ -5691,6 +5703,13 @@ public class Node implements TimeSkewDetectorCallback {
 		if(inputLimitDefault)
 			return outputBandwidthLimit * 4;
 		return inputBandwidthLimit;
+	}
+
+	/**
+	 * @return total datastore size in bytes.
+	 */
+	public synchronized long getStoreSize() {
+		return maxTotalDatastoreSize;
 	}
 
 	@Override

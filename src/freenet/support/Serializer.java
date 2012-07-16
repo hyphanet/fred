@@ -70,6 +70,8 @@ public class Serializer {
 			return dis.readLong();
 		} else if (type.equals(Double.class)) {
 		    return dis.readDouble();
+		} else if (type.equals(Float.class)) {
+			return dis.readFloat();
 		} else if (type.equals(String.class)) {
 			int length = dis.readInt();
 			StringBuilder sb = new StringBuilder(length);
@@ -95,6 +97,15 @@ public class Serializer {
 			return Key.read(dis);
 		} else if (type.equals(Key.class)) {
 		    return Key.read(dis);
+		} else if (type.equals(double[].class)) {
+			// & 0xFF for unsigned byte.
+			double[] array = new double[dis.readByte() & 0xFF];
+			for (int i = 0; i < array.length; i++) array[i] = dis.readDouble();
+			return array;
+		} else if (type.equals(float[].class)) {
+			float[] array = new float[dis.readShort()];
+			for (int i = 0; i < array.length; i++) array[i] = dis.readFloat();
+			return array;
 		} else {
 			throw new RuntimeException("Unrecognised field type: " + type);
 		}
@@ -112,6 +123,8 @@ public class Serializer {
 			dos.writeShort(((Short) object).shortValue());
 		} else if (type.equals(Double.class)) {
 		    dos.writeDouble(((Double) object).doubleValue());
+		} else if (type.equals(Float.class)) {
+			dos.writeFloat((Float)object);
 		} else if (WritableToDataOutputStream.class.isAssignableFrom(type)) {
 			WritableToDataOutputStream b = (WritableToDataOutputStream) object;
 			b.writeToDataOutputStream(dos);
@@ -131,6 +144,18 @@ public class Serializer {
 			}
 		} else if (type.equals(Byte.class)) {
 			dos.write(((Byte) object).byteValue());
+		} else if (type.equals(double[].class))  {
+			// writeByte() takes the eight lower-order bits - length capped to 255.
+			final double[] array = (double[])object;
+			if (array.length > 255) {
+				throw new IllegalArgumentException("Cannot serialize an array of more than 255 doubles; attempted to " +
+				                                   "serialize " + array.length + ".");
+			}
+			dos.writeByte(array.length);
+			for (double element : array) dos.writeDouble(element);
+		} else if (type.equals(float[].class)) {
+			dos.writeShort(((float[])object).length);
+			for (float element : (float[])object) dos.writeFloat(element);
 		} else {
 			throw new RuntimeException("Unrecognised field type: " + type);
 		}

@@ -832,6 +832,24 @@ public class SimpleFieldSet {
 		}
 	}
 
+	public byte getByte(String key) throws FSParseException {
+		String s = get(key);
+		if(s == null) throw new FSParseException("No key " + key);
+		try {
+			return Byte.parseByte(s);
+		} catch (NumberFormatException e) {
+			throw new FSParseException("Cannot parse \"" + s + "\" as a byte.");
+		}
+	}
+
+	public byte getByte(String key, byte def) {
+		try {
+			return getByte(key);
+		} catch (FSParseException e) {
+			return def;
+		}
+	}
+
 	public char getChar(String key) throws FSParseException {
 		String s = get(key);
 		if(s == null) throw new FSParseException("No key "+key);
@@ -874,6 +892,11 @@ public class SimpleFieldSet {
 			putAppend(key, String.valueOf(v));
 	}
 
+	public void put(String key, float[] value) {
+		removeValue(key);
+		for (float v : value) putAppend(key, String.valueOf(v));
+	}
+
 	public int[] getIntArray(String key) {
 		String[] strings = getAll(key);
 		if(strings == null) return null;
@@ -896,6 +919,22 @@ public class SimpleFieldSet {
 		for(int i=0;i<strings.length;i++) {
 			try {
 				ret[i] = Double.valueOf(strings[i]);
+			} catch(NumberFormatException e) {
+				Logger.error(this, "Cannot parse "+strings[i]+" : "+e,e);
+				return null;
+			}
+		}
+
+		return ret;
+	}
+
+	public float[] getFloatArray(String key) {
+		String[] strings = getAll(key);
+		if(strings == null) return null;
+		float[] ret = new float[strings.length];
+		for(int i=0;i<strings.length;i++) {
+			try {
+				ret[i] = Float.valueOf(strings[i]);
 			} catch(NumberFormatException e) {
 				Logger.error(this, "Cannot parse "+strings[i]+" : "+e,e);
 				return null;

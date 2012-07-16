@@ -1828,6 +1828,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 	}
 
+	/**
+	 * Determines the degree of the peer via the locations of its peers it provides.
+	 * @return The number of peers this peer reports having, or 0 if this peer does not provide that information.
+	 */
+	public synchronized int getDegree() {
+		if (currentPeersLocation == null) return 0;
+		return currentPeersLocation.length;
+	}
+
 	public void updateLocation(double newLoc, double[] newLocs) {
 		if(newLoc < 0.0 || newLoc > 1.0) {
 			Logger.error(this, "Invalid location update for " + this+ " ("+newLoc+')', new Exception("error"));
