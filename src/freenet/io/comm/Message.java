@@ -141,8 +141,7 @@ public class Message {
 			String msg = peer.getPeer()+" sent a message packet that ends prematurely while deserialising "+mspec.getName();
 			if (inSubMessage) {
 				if (logMINOR) Logger.minor(Message.class, msg+" in sub-message", e);
-				else Logger.error(Message.class, msg, e);
-			}
+			} else Logger.error(Message.class, msg, e);
 			return null;
 		} catch (IOException e) {
 			Logger.error(Message.class, "Unexpected IOException: "+e+" reading from buffer stream", e);
