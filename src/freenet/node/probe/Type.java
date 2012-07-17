@@ -35,7 +35,7 @@ public enum Type {
 	 * @return enum value with selected code.
 	 * @throws IllegalArgumentException There is no enum value with the requested code.
 	 */
-	static Type valueOf(byte code) {
+	static Type valueOf(byte code) throws IllegalArgumentException {
 		switch (code) {
 			case 0: return BANDWIDTH;
 			case 1: return BUILD;

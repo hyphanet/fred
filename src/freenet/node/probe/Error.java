@@ -60,7 +60,7 @@ public enum Error {
 	 * @return enum value with selected code.
 	 * @throws IllegalArgumentException There is no enum value with the requested code.
 	 */
-	static Error valueOf(byte code) {
+	static Error valueOf(byte code) throws IllegalArgumentException {
 		switch (code) {
 			case 0:
 				return DISCONNECTED;
