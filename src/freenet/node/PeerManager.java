@@ -28,7 +28,6 @@ import freenet.io.comm.DMT;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
-import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.Key;
@@ -543,7 +542,7 @@ public class PeerManager {
 		try {
 			FreenetInetAddress addr = peerAddress.getFreenetAddress();
 			for(PeerNode peer : peerList) {
-				if(peer.matchesIP(addr, false))
+				if(peer.matchesIP(addr, false, transportPlugin))
 					return peer;
 			}
 			return null;
@@ -571,7 +570,7 @@ public class PeerManager {
 		try {
 			FreenetInetAddress addr = peerAddress.getFreenetAddress();
 			for(PeerNode peer : peerList) {
-				if(peer.matchesIP(addr, false) && peer.getOutgoingMangler(mangler.getTransport()) == mangler)
+				if(peer.matchesIP(addr, false, mangler.getTransport()) && peer.getOutgoingMangler(mangler.getTransport()) == mangler)
 					return peer;
 			}
 		}catch(UnsupportedOperationException e) {
@@ -598,7 +597,7 @@ public class PeerManager {
 		try {
 			FreenetInetAddress addr = peerAddress.getFreenetAddress();
 			for(PeerNode peer : peerList) {
-				if(peer.matchesIP(addr, false) && peer.getOutgoingMangler(mangler.getTransport()) == mangler)
+				if(peer.matchesIP(addr, false, mangler.getTransport()) && peer.getOutgoingMangler(mangler.getTransport()) == mangler)
 					return peer;
 			}
 		}catch(UnsupportedOperationException e) {
@@ -610,7 +609,7 @@ public class PeerManager {
 	/**
 	 * Find nodes with a given IP address.
 	 */
-	public ArrayList<PeerNode> getAllConnectedByAddress(FreenetInetAddress a, boolean strict) {
+	public ArrayList<PeerNode> getAllConnectedByIPAddress(FreenetInetAddress a, boolean strict, TransportPlugin transportPlugin) {
 		ArrayList<PeerNode> found = null;
 		
 		PeerNode[] peerList = myPeers;
@@ -618,7 +617,7 @@ public class PeerManager {
 		for(PeerNode pn : peerList) {
 			if(!pn.isConnected()) continue;
 			if(!pn.isRoutable()) continue;
-			if(pn.matchesIP(a, strict)) {
+			if(pn.matchesIP(a, strict, transportPlugin)) {
 				if(found == null) found = new ArrayList<PeerNode>();
 				found.add(pn);
 			}
@@ -2272,7 +2271,7 @@ public class PeerManager {
 		return v.toArray(new PeerNode[v.size()]);
 	}
 
-	public boolean anyConnectedPeerHasAddress(FreenetInetAddress addr, PeerNode pn) {
+	public boolean anyConnectedPeerHasAddress(FreenetInetAddress addr, PeerNode pn, TransportPlugin transportPlugin) {
 		PeerNode[] peers;
 		synchronized(this) {
 			peers = myPeers;
@@ -2292,8 +2291,14 @@ public class PeerManager {
 				// FIXME likewise, FOAFs should not boot darknet connections.
 				continue;
 			}
-			if(p.getPeer().getFreenetAddress().equals(addr))
-				return true;
+			PluginAddress address =  p.getTransportAddress(transportPlugin);
+			try {
+				if(address.getFreenetAddress().equals(addr))
+					return true;
+			}catch(UnsupportedOperationException e) {
+				//Ignore for now, since we assume non ip based addresses won't have this situation
+			}
+			
 		}
 		return false;
 	}
