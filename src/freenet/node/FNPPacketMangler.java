@@ -882,7 +882,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 		long now = System.currentTimeMillis();
 		try {
-			addr.updateHostname();
+			addr.updateHostName();
 		}catch(UnsupportedOperationException e) {
 			//Ignore. It means non IP based address
 		}
@@ -1393,7 +1393,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			}
 			// wantPeer will call node.peers.addPeer(), we don't have to.
 		}
-		if((!dontWant) && !crypto.allowConnection(pn, replyTo.getFreenetAddress())) {
+		boolean allow;
+		try {
+			allow = crypto.allowConnection(pn, replyTo.getFreenetAddress(), sock);
+		}catch(UnsupportedOperationException e) {
+			allow = true;
+			//Non IP based address. Assume that only one PeerNode is using it.
+		}
+		if((!dontWant) && !allow) {
 			if(pn instanceof DarknetPeerNode) {
 				Logger.error(this, "Dropping peer "+pn+" because don't want connection due to others on the same IP address!");
 				System.out.println("Disconnecting permanently from your friend \""+((DarknetPeerNode)pn).getName()+"\" because other peers are using the same IP address!");
@@ -1623,7 +1630,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			}
 			// wantPeer will call node.peers.addPeer(), we don't have to.
 		}
-		if((!dontWant) && !crypto.allowConnection(pn, replyTo.getFreenetAddress())) {
+		boolean allow;
+		try {
+			allow = crypto.allowConnection(pn, replyTo.getFreenetAddress(), sock);
+		}catch(UnsupportedOperationException e) {
+			allow = true;
+			//Non IP based address. Assume that only one PeerNode is using it.
+		}
+		if((!dontWant) && !allow) {
 			Logger.normal(this, "Rejecting connection because already have something with the same IP");
 			dontWant = true;
 		}
@@ -2771,7 +2785,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 		} catch (StillNotAckedException e) {
 			Logger.error(this, "Forcing disconnect on "+tracker.pn+" for "+tracker+" because packets not acked after 10 minutes!");
-			tracker.pn.forceDisconnect(true);
+			tracker.pn.forceDisconnect(true, sock);
 			disconnectedStillNotAcked(tracker);
 			throw new NotConnectedException();
 		}
@@ -3196,7 +3210,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return;
 		}
 		PluginAddress oldAddress = address;
-		address.dropHostName();
+		try {
+			address.dropHostName();
+		}catch(UnsupportedOperationException e) {
+			//Do nothing. Non IP based address.
+		}
 		if(address.equals(null)) {
 			Logger.error(this, "No address for peer "+oldAddress+" so cannot send handshake");
 			pn.couldNotSendHandshake(notRegistered);
@@ -3494,7 +3512,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 	@Override
 	public boolean allowConnection(PeerNode pn, FreenetInetAddress addr) {
-		return crypto.allowConnection(pn, addr);
+		return crypto.allowConnection(pn, addr, sock);
 	}
 
 	@Override
