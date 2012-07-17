@@ -7,7 +7,6 @@ import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.pluginmanager.PluginAddress;
-import freenet.support.Logger;
 import freenet.support.transport.ip.HostnameSyntaxException;
 
 /**
@@ -40,31 +39,8 @@ public class PeerPluginAddress implements PluginAddress {
 		return peer.toString();
 	}
 	
-	public Peer getPeer(String physicalPeer, boolean fromLocal, boolean checkHostnameOrIPSyntax) {
-		Peer p;
-		try {
-			p = new Peer(physicalPeer, true, checkHostnameOrIPSyntax);
-		} catch(HostnameSyntaxException e) {
-			if(fromLocal)
-				Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference in local peers list: " + physicalPeer);
-			System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: " + physicalPeer);
-			return null;
-		} catch (PeerParseException e) {
-			if(fromLocal)
-				Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference in local peers list: " + physicalPeer);
-			System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: " + physicalPeer);
-			return null;
-		} catch (UnknownHostException e) {
-			if(fromLocal)
-				Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference in local peers list: " + physicalPeer);
-			System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: " + physicalPeer);
-			return null;
-		}
-		return p;
-	}
-
 	@Override
-	public void updateHostname() throws UnsupportedOperationException {
+	public void updateHostName() throws UnsupportedOperationException {
 		peer.getHandshakeAddress();
 	}
 
@@ -85,14 +61,12 @@ public class PeerPluginAddress implements PluginAddress {
 
 	@Override
 	public byte[] getBytes() {
-		// TODO Auto-generated method stub
-		return null;
+		return peer.getAddress().getAddress();
 	}
 
 	@Override
 	public PluginAddress getPhysicalAddress() {
-		// TODO Auto-generated method stub
-		return null;
+		return new PeerPluginAddress(peer.getFreenetAddress(), 0);
 	}
 
 	@Override
@@ -103,8 +77,7 @@ public class PeerPluginAddress implements PluginAddress {
 
 	@Override
 	public int getPortNumber() throws UnsupportedOperationException {
-		// TODO Auto-generated method stub
-		return 0;
+		return peer.getPort();
 	}
 
 }
