@@ -2546,6 +2546,7 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 			
 		});
+		enableRoutedPing = nodeConfig.getBoolean("enableRoutedPing");
 		
 		updateMTU();
 		
