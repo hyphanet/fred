@@ -48,7 +48,7 @@ public class TransportManager {
 	 * Basically someone might design a plugin that provides many transports in one bundle.
 	 * We can control each transport here.
 	 */
-	public HashMap<String, Boolean> enabledTransports;
+	private HashMap<String, Boolean> enabledTransports;
 	
 	
 	public TransportManager(Node node, TransportManagerConfig transportManagerConfig){
@@ -69,10 +69,11 @@ public class TransportManager {
 			if(enabledTransports.get(transportPluginFactory.getTransportName())) {	
 				try{
 					if(transportMode == TransportMode.opennet) {
-						if(node.opennet != null){
+						OpennetManager om = node.opennet;
+						if(om != null){
 							PacketTransportPlugin transportPlugin = createTransportPlugin(transportPluginFactory);
 							packetTransportMap.put(transportPlugin.transportName, transportPlugin);
-							node.opennet.crypto.handleNewTransport(transportPlugin);
+							om.crypto.handleNewTransport(transportPlugin);
 						}
 					}
 					else if(transportMode == TransportMode.darknet){
@@ -111,10 +112,11 @@ public class TransportManager {
 			if(enabledTransports.get(transportPluginFactory.getTransportName())) {	
 				try{
 					if(transportMode == TransportMode.opennet) {
-						if(node.opennet != null){
+						OpennetManager om = node.opennet;
+						if(om != null){
 							StreamTransportPlugin transportPlugin = createTransportPlugin(transportPluginFactory);
 							streamTransportMap.put(transportPlugin.transportName, transportPlugin);
-							node.opennet.crypto.handleNewTransport(transportPlugin);
+							om.crypto.handleNewTransport(transportPlugin);
 						}
 					}
 					else if(transportMode == TransportMode.darknet){
@@ -213,7 +215,7 @@ public class TransportManager {
 	 * @param transportName
 	 * @throws TransportPluginException
 	 */
-	public synchronized void removeTransportPlugin(String transportName) throws TransportPluginException {
+	protected synchronized void removeTransportPlugin(String transportName) throws TransportPluginException {
 		if(containsTransportFactory(transportName)){
 			disableTransport(transportName);
 			if(packetTransportFactoryMap.containsKey(transportName))
@@ -231,7 +233,7 @@ public class TransportManager {
 	 * @param transportName
 	 * @throws TransportPluginException
 	 */
-	public synchronized void disableTransport(String transportName) throws TransportPluginException {
+	protected synchronized void disableTransport(String transportName) throws TransportPluginException {
 		if(containsTransport(transportName)){
 			if(packetTransportMap.containsKey(transportName)){
 				PacketTransportPlugin transportPlugin = packetTransportMap.get(transportName);
@@ -280,7 +282,8 @@ public class TransportManager {
 		return packetTransportMap;
 	}
 	
-	synchronized PacketTransportPlugin initialiseNewPacketTransportPlugin(String transportName) throws TransportPluginException, MalformedPluginAddressException, TransportInitException {
+	//For now private. If we are changing it, then check thoroughly for possible deadlocks. 
+	private synchronized PacketTransportPlugin initialiseNewPacketTransportPlugin(String transportName) throws TransportPluginException, MalformedPluginAddressException, TransportInitException {
 		if(!packetTransportFactoryMap.containsKey(transportName))
 			throw new TransportPluginException("Transport not found");
 		if(enabledTransports.get(transportName) == false)
@@ -301,10 +304,11 @@ public class TransportManager {
 		return transportPlugin;
 	}
 	
-	public synchronized HashMap<String, PacketTransportPlugin> getPacketTransportMap(){
+	protected synchronized HashMap<String, PacketTransportPlugin> getPacketTransportMap(){
 		return packetTransportMap;
 	}
 	
+	//Do not change to public.
 	synchronized HashMap<String, StreamTransportPlugin> initialiseNewStreamTransportMap() {
 		for(String transportName : streamTransportFactoryMap.keySet()) {
 			if(transportName == Node.defaultStreamTransportName)
@@ -326,7 +330,8 @@ public class TransportManager {
 		return streamTransportMap;
 	}
 	
-	synchronized StreamTransportPlugin initialiseNewStreamTransportPlugin(String transportName) throws TransportPluginException, MalformedPluginAddressException, TransportInitException {
+	//For now private. If we are changing it, then check thoroughly for possible deadlocks. 
+	private synchronized StreamTransportPlugin initialiseNewStreamTransportPlugin(String transportName) throws TransportPluginException, MalformedPluginAddressException, TransportInitException {
 		if(!streamTransportFactoryMap.containsKey(transportName))
 			throw new TransportPluginException("Transport not found");
 		if(enabledTransports.get(transportName) == false)
@@ -347,7 +352,7 @@ public class TransportManager {
 		return transportPlugin;
 	}
 	
-	public synchronized HashMap<String, StreamTransportPlugin> getStreamTransportMap(){
+	protected synchronized HashMap<String, StreamTransportPlugin> getStreamTransportMap(){
 		return streamTransportMap;
 	}
 	
@@ -391,10 +396,6 @@ public class TransportManager {
 			StreamTransportPlugin transportPlugin = createTransportPlugin(transportPluginFactory);
 			streamTransportMap.put(transportPlugin.transportName, transportPlugin);
 			streamTransportFactoryMap.put(transportPluginFactory.getTransportName(), transportPluginFactory);
-			if(transportMode == TransportMode.opennet)
-				node.opennet.crypto.handleNewTransport(transportPlugin);
-			else if(transportMode == TransportMode.darknet)
-				node.darknetCrypto.handleNewTransport(transportPlugin);
 			return transportPlugin;
 		}
 		else {
@@ -403,7 +404,7 @@ public class TransportManager {
 		}
 	}
 	
-	public synchronized boolean containsTransport(String transportName){
+	private synchronized boolean containsTransport(String transportName){
 		if(packetTransportMap.containsKey(transportName))
 			return true;
 		else if(streamTransportMap.containsKey(transportName))
@@ -412,7 +413,7 @@ public class TransportManager {
 		return false;
 	}
 	
-	public synchronized boolean containsTransportFactory(String transportName){
+	private synchronized boolean containsTransportFactory(String transportName){
 		if(packetTransportFactoryMap.containsKey(transportName))
 			return true;
 		else if(streamTransportFactoryMap.containsKey(transportName))
@@ -421,7 +422,7 @@ public class TransportManager {
 		return false;
 	}
 	
-	public TransportManagerConfig getTransportManagerConfig(){
+	protected TransportManagerConfig getTransportManagerConfig(){
 		return transportManagerConfig;
 	}
 }
