@@ -42,7 +42,7 @@ public interface PluginAddress{
 	 */
 	public PluginAddress getPhysicalAddress();
 	
-	public void updateHostname() throws UnsupportedOperationException;
+	public void updateHostName() throws UnsupportedOperationException;
 	
 	/**
 	 * Drop the host name if it a IP based transport or else if applicable.
