@@ -14,6 +14,21 @@ import freenet.support.api.BucketFactory;
 import freenet.support.io.PersistentTempBucketFactory;
 
 public abstract class FCPMessage {
+	/*
+	 * Fields used by FCP messages. These are in TitleCaps by convention.
+	 */
+	public static final String BUILD = "Build";
+	public static final String CODE = "Code";
+	public static final String HTL = "HTL";
+	public static final String IDENTIFIER = "Identifier";
+	public static final String LINK_LENGTHS = "LinkLengths";
+	public static final String LOCATION = "Location";
+	public static final String OUTPUT_BANDWIDTH = "OutputBandwidth";
+	public static final String PROBE_IDENTIFIER = "ProbeIdentifier";
+	public static final String STORE_SIZE = "StoreSize";
+	public static final String TYPE = "Type";
+	public static final String UPTIME_PERCENT = "UptimePercent";
+
         private static volatile boolean logDEBUG;
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
@@ -123,6 +138,7 @@ public abstract class FCPMessage {
 			return new TestDDAResponseMessage(fs);
 		if(name.equals(WatchGlobal.NAME))
 			return new WatchGlobal(fs);
+		if(name.equals(ProbeRequest.NAME)) return new ProbeRequest(fs);
 		if(name.equals("Void"))
 			return null;
 

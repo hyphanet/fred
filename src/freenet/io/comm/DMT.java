@@ -24,6 +24,8 @@ import freenet.keys.Key;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.node.NodeStats.PeerLoadStats;
+import freenet.node.probe.Error;
+import freenet.node.probe.Type;
 import freenet.support.BitArray;
 import freenet.support.Buffer;
 import freenet.support.Fields;
@@ -135,6 +137,10 @@ public class DMT {
 	public static final String IGNORE_LOW_BACKOFF = "ignoreLowBackoff";
 	public static final String LIST_OF_UIDS = "listOfUIDs";
 	public static final String UID_STILL_RUNNING_FLAGS = "UIDStillRunningFlags";
+	public static final String PROBE_IDENTIFIER = "probeIdentifier";
+	public static final String STORE_SIZE = "storeSize";
+	public static final String LINK_LENGTHS = "linkLengths";
+	public static final String UPTIME_PERCENT = "uptimePercent";
 	
 	/** Very urgent */
 	public static final short PRIORITY_NOW=0;
@@ -1045,7 +1051,189 @@ public class DMT {
 		msg.set(LINEAR_COUNTER, linearCounter);
 		return msg;
 	}
-	
+
+	public static final MessageType ProbeRequest = new MessageType("ProbeRequest", PRIORITY_HIGH) {{
+		addField(HTL, Byte.class);
+		addField(UID, Long.class);
+		addField(TYPE, Byte.class);
+	}};
+
+	/**
+	 * Constructs a a probe request.
+	 * @param htl hopsToLive: hops until result is requested.
+	 * @param uid Probe identifier: should be unique.
+	 * @return Message with requested attributes.
+	 */
+	public static Message createProbeRequest(byte htl, long uid, Type type) {
+		Message msg = new Message(ProbeRequest);
+		msg.set(HTL, htl);
+		msg.set(UID, uid);
+		msg.set(TYPE, type.code);
+		return msg;
+	}
+
+	public static final MessageType ProbeError = new MessageType("ProbeError", PRIORITY_HIGH) {{
+		addField(UID, Long.class);
+		addField(TYPE, Byte.class);
+	}};
+
+	/**
+	 * Creates a probe response which indicates there was an error.
+	 * @param uid Probe identifier.
+	 * @param error The type of error that occurred. Can be one of Probe.ProbeError.
+	 * @return Message with the requested attributes.
+	 */
+	public static Message createProbeError(long uid, Error error) {
+		Message msg = new Message(ProbeError);
+		msg.set(UID, uid);
+		msg.set(TYPE, error.code);
+		return msg;
+	}
+
+	public static final MessageType ProbeRefused = new MessageType("ProbeRefused", PRIORITY_HIGH) {{
+		addField(DMT.UID, Long.class);
+	}};
+
+	/**
+	 * Creates a probe response which indicates that the endpoint opted not to respond with the requested result.
+	 * @param uid Probe identifier.
+	 * @return Message with the requested attribute.
+	 */
+	public static Message createProbeRefused(long uid) {
+		Message msg = new Message(ProbeRefused);
+		msg.set(UID, uid);
+		return msg;
+	}
+
+	public static final MessageType ProbeBandwidth = new MessageType("ProbeBandwidth", PRIORITY_HIGH) {{
+		addField(UID, Long.class);
+		addField(OUTPUT_BANDWIDTH_UPPER_LIMIT, Long.class);
+	}};
+
+	/**
+	 * Creates a probe response to a query for bandwidth limits.
+	 * @param uid Probe identifier.
+	 * @param limit Endpoint output bandwidth limit in KiB per second.
+	 * @return Message with requested attributes.
+	 */
+	public static Message createProbeBandwidth(long uid, long limit) {
+		Message msg = new Message(ProbeBandwidth);
+		msg.set(UID, uid);
+		msg.set(OUTPUT_BANDWIDTH_UPPER_LIMIT, limit);
+		return msg;
+	}
+
+	public static final MessageType ProbeBuild = new MessageType("ProbeBuild", PRIORITY_HIGH) {{
+		addField(UID, Long.class);
+		addField(BUILD, Integer.class);
+	}};
+
+	/**
+	 * Creates a probe response to a query for build.
+	 * @param uid Probe identifier.
+	 * @param build Endpoint build of Freenet.
+	 * @return Message with requested attributes.
+	 */
+	public static Message createProbeBuild(long uid, int build) {
+		Message msg = new Message(ProbeBuild);
+		msg.set(UID, uid);
+		msg.set(BUILD, build);
+		return msg;
+	}
+
+	public static final MessageType ProbeIdentifier = new MessageType("ProbeIdentifier", PRIORITY_HIGH) {{
+		addField(UID, Long.class);
+		addField(PROBE_IDENTIFIER, Long.class);
+		addField(UPTIME_PERCENT, Byte.class);
+	}};
+
+	/**
+	 * Creates a probe response to a query for identifier.
+	 * @param uid Probe UID.
+	 * @param probeIdentifier Endpoint identifier.
+	 * @param uptimePercentage 7-day uptime percentage.
+	 * @return Message with requested attributes.
+	 */
+	public static Message createProbeIdentifier(long uid, long probeIdentifier, byte uptimePercentage) {
+		Message msg = new Message(ProbeIdentifier);
+		msg.set(UID, uid);
+		msg.set(PROBE_IDENTIFIER, probeIdentifier);
+		msg.set(UPTIME_PERCENT, uptimePercentage);
+		return msg;
+	}
+
+	public static final MessageType ProbeLinkLengths = new MessageType("ProbeLinkLengths", PRIORITY_HIGH) {{
+		addField(UID, Long.class);
+		addField(LINK_LENGTHS, float[].class);
+	}};
+
+	/**
+	 * Creates a probe response to a query for link lengths.
+	 * @param uid Probe identifier.
+	 * @param linkLengths Endpoint link lengths.
+	 * @return Message with requested attributes.
+	 */
+	public static Message createProbeLinkLengths(long uid, float[] linkLengths) {
+		Message msg = new Message(ProbeLinkLengths);
+		msg.set(UID, uid);
+		msg.set(LINK_LENGTHS, linkLengths);
+		return msg;
+	}
+
+	public static final MessageType ProbeLocation = new MessageType("ProbeLocation", PRIORITY_HIGH) {{
+		addField(UID, Long.class);
+		addField(LOCATION, Float.class);
+	}};
+
+	/**
+	 * Creates a probe response to a query for location.
+	 * @param uid Probe identifier.
+	 * @param location Endpoint location.
+	 * @return Message with the requested attributes.
+	 */
+	public static Message createProbeLocation(long uid, float location) {
+		Message msg = new Message(ProbeLocation);
+		msg.set(UID, uid);
+		msg.set(LOCATION, location);
+		return msg;
+	}
+
+	public static final MessageType ProbeStoreSize = new MessageType("ProbeStoreSize", PRIORITY_HIGH) {{
+		addField(UID, Long.class);
+		addField(STORE_SIZE, Float.class);
+	}};
+
+	/**
+	 * Creates a probe response to a query for store size.
+	 * @param uid Probe identifier.
+	 * @param storeSize Endpoint store size in GiB multiplied by Gaussian noise.
+	 * @return Message with requested attributes.
+	 */
+	public static Message createProbeStoreSize(long uid, float storeSize) {
+		Message msg = new Message(ProbeStoreSize);
+		msg.set(UID, uid);
+		msg.set(STORE_SIZE, storeSize);
+		return msg;
+	}
+
+	public static final MessageType ProbeUptime = new MessageType("ProbeUptime", PRIORITY_HIGH) {{
+		addField(UID, Long.class);
+		addField(UPTIME_PERCENT, Float.class);
+	}};
+
+	/**
+	 * Creates a probe response to a query for uptime.
+	 * @param uid Probe identifier.
+	 * @param uptimePercent Percent of the requested period (48 hours or 7 days) which the endpoint was online.
+	 * @return Message with requested attributes.
+	 */
+	public static Message createProbeUptime(long uid, float uptimePercent) {
+		Message msg = new Message(ProbeUptime);
+		msg.set(UID, uid);
+		msg.set(UPTIME_PERCENT, uptimePercent);
+		return msg;
+	}
+
 	public static final MessageType FNPRHProbeRequest = new MessageType("FNPRHProbeRequest", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
 		addField(TARGET_LOCATION, Double.class);

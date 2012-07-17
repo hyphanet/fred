@@ -40,7 +40,25 @@ public class SerializerTest extends TestCase {
 		readWrite(edgeCases);
 	}
 
+	public void testTooLongDoubleArray() {
+		ByteArrayOutputStream byteOutputStream = new ByteArrayOutputStream();
+		DataOutputStream dos = new DataOutputStream(byteOutputStream);
 
+		double value = 0;
+		double[] tooLong = new double[256];
+		for (int i = 0; i < tooLong.length; i++) {
+			tooLong[i] += (value += 5);
+		}
+		try {
+			Serializer.writeToDataOutputStream(tooLong, dos);
+		} catch (IOException e) {
+			throw new IllegalStateException("This test should not throw an IOException.", e);
+		} catch (IllegalArgumentException e) {
+			//Serializer should throw when array is too long.
+			System.out.println("Threw when too long; should be something about how the array is too long to serialize:");
+			e.printStackTrace();
+		}
+	}
 
 	private static void readWrite(Object[] data) {
 		ByteArrayOutputStream byteOutputStream = new ByteArrayOutputStream();

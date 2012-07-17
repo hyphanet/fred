@@ -219,6 +219,18 @@ public class Message {
 		return (float[]) _payload.get(key);
 	}
 
+	public float getFloat(String key) {
+		return (Float) _payload.get(key);
+	}
+
+	public double[] getDoubleArray(String key) {
+		return ((double[]) _payload.get(key));
+	}
+
+	public float[] getFloatArray(String key) {
+		return (float[]) _payload.get(key);
+	}
+
 	public String getString(String key) {
 		return (String)_payload.get(key);
 	}
@@ -249,6 +261,10 @@ public class Message {
 
 	public void set(String key, double d) {
 		set(key, Double.valueOf(d));
+	}
+
+	public void set(String key, float f) {
+		set(key, Float.valueOf(f));
 	}
 
 	public void set(String key, float f) {

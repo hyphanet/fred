@@ -170,8 +170,13 @@ public class Serializer {
 			dos.write((Byte) object);
 		} else if (type.equals(double[].class))  {
 			// writeByte() takes the eight lower-order bits - length capped to 255.
-			dos.writeByte(((double[])object).length);
-			for (double element : (double[])object) dos.writeDouble(element);
+			final double[] array = (double[])object;
+			if (array.length > 255) {
+				throw new IllegalArgumentException("Cannot serialize an array of more than 255 doubles; attempted to " +
+				                                   "serialize " + array.length + ".");
+			}
+			dos.writeByte(array.length);
+			for (double element : array) dos.writeDouble(element);
 		} else if (type.equals(float[].class)) {
 			dos.writeShort(((float[])object).length);
 			for (float element : (float[])object) dos.writeFloat(element);

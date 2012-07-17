@@ -27,12 +27,17 @@ import freenet.support.io.Closer;
  */
 public class UptimeEstimator implements Runnable {
 
+	/**
+	 * Five minutes in milliseconds.
+	 */
 	static final int PERIOD = 5*60*1000;
 
 	Ticker ticker;
 
 	/** For each 5 minute slot in the last 48 hours, were we online? */
-	private boolean[] wasOnline = new boolean[48*12];
+	private boolean[] wasOnline = new boolean[48*12]; //48 hours * 12 5-minute slots/hour
+	/** Whether the node was online for each 5 minute slot in the last week, */
+	private boolean[] wasOnlineWeek = new boolean[7*24*12]; //7 days/week * 24 hours/day * 12 5-minute slots/hour
 
 	/** Which slot are we up to? We rotate around the array. Slots before us are before us,
 	 * slots after us are also before us (it wraps around). */
@@ -55,13 +60,13 @@ public class UptimeEstimator implements Runnable {
 		prevFile = runDir.file("uptime.old.dat");
 		timeOffset = (int)
 			((((double)(Math.abs(Fields.hashCode(bs, bs.length / 2, bs.length - bs.length / 2)))) /  Integer.MAX_VALUE)
-			* (5*60*1000));
+			* PERIOD);
 	}
 
 	public void start() {
 		long now = System.currentTimeMillis();
 		int fiveMinutesSinceEpoch = (int)(now / PERIOD);
-		int base = fiveMinutesSinceEpoch - wasOnline.length;
+		int base = fiveMinutesSinceEpoch - wasOnlineWeek.length;
 		// Read both files.
 		readData(prevFile, base);
 		readData(logFile, base);
@@ -79,13 +84,13 @@ public class UptimeEstimator implements Runnable {
 					int offset = dis.readInt();
 					if(offset < base) continue;
 					int slotNo = offset - base;
-					if(slotNo == wasOnline.length)
+					if(slotNo == wasOnlineWeek.length)
 						break; // Reached the end, restarted within the same timeslot.
-					if(slotNo > wasOnline.length || slotNo < 0) {
-						Logger.error(this, "Corrupt data read from uptime file "+file+": 5-minutes-from-epoch is now "+(base+wasOnline.length)+" but read "+slotNo);
+					if(slotNo > wasOnlineWeek.length || slotNo < 0) {
+						Logger.error(this, "Corrupt data read from uptime file "+file+": 5-minutes-from-epoch is now "+(base+wasOnlineWeek.length)+" but read "+slotNo);
 						break;
 					}
-					wasOnline[slotNo] = true;
+					wasOnline[slotNo % wasOnline.length] = wasOnlineWeek[slotNo] = true;
 				}
 			} catch (EOFException e) {
 				// Finished
@@ -102,11 +107,12 @@ public class UptimeEstimator implements Runnable {
 	@Override
 	public void run() {
 		synchronized(this) {
-			wasOnline[slot] = true;
-			slot = (slot + 1) % wasOnline.length;
+			wasOnlineWeek[slot] = true;
+			wasOnline[slot % wasOnline.length] = true;
+			slot = (slot + 1) % wasOnlineWeek.length;
 		}
 		long now = System.currentTimeMillis();
-		if(logFile.length() > wasOnline.length*4L) {
+		if(logFile.length() > wasOnlineWeek.length*4L) {
 			prevFile.delete();
 			logFile.renameTo(prevFile);
 		}
@@ -136,14 +142,28 @@ public class UptimeEstimator implements Runnable {
 	}
 
 	/**
-	 * Get the node's uptime fraction over the last 48 hours.
+	 * Get the node's uptime fraction over the selected uptime array.
+	 * @return fraction between 0.0 and 1.0.
 	 */
-	public synchronized double getUptime() {
+	private synchronized double getUptime(boolean[] uptime) {
 		int upCount = 0;
-		for(int i=0;i<wasOnline.length;i++) {
-			if(wasOnline[i]) upCount++;
-		}
-		return ((double) upCount) / ((double) wasOnline.length);
+		for(boolean sample : uptime) if(sample) upCount++;
+		return ((double) upCount) / ((double) uptime.length);
 	}
 
+	/**
+	 * Get the node's uptime fraction over the past 48 hours.
+	 * @return fraction between 0.0 and 1.0.
+	 */
+	public synchronized double getUptime() {
+		return getUptime(wasOnline);
+	}
+
+	/**
+	 * Get the node's uptime fraction over the past 168 hours.
+	 * @return fraction between 0.0 and 1.0.
+	 */
+	public synchronized double getUptimeWeek() {
+		return getUptime(wasOnlineWeek);
+	}
 }
