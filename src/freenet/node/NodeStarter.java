@@ -390,6 +390,7 @@ public class NodeStarter implements WrapperListener {
 		configFS.put("node.opennet.connectToSeednodes", connectToSeednodes);
 		configFS.put("node.encryptTempBuckets", false);
 		configFS.put("node.encryptPersistentTempBuckets", false);
+		configFS.put("node.enableRoutedPing", true);
 		if(ipAddressOverride != null)
 			configFS.putSingle("node.ipAddressOverride", ipAddressOverride);
 		if(longPingTimes) {

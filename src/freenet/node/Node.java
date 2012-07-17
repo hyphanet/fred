@@ -836,6 +836,8 @@ public class Node implements TimeSkewDetectorCallback {
 	private volatile boolean isPRNGReady = false;
 
 	private boolean storePreallocate;
+	
+	private boolean enableRoutedPing;
 
 	/**
 	 * Read all storable settings (identity etc) from the node file.
@@ -2525,6 +2527,26 @@ public class Node implements TimeSkewDetectorCallback {
 		}, true);
 
 		maxPacketSize = nodeConfig.getInt("maxPacketSize");
+		
+		nodeConfig.register("enableRoutedPing", false, sortOrder++, true, false, "Node.enableRoutedPing", "Node.enableRoutedPingLong", new BooleanCallback() {
+
+			@Override
+			public Boolean get() {
+				synchronized(Node.this) {
+					return enableRoutedPing;
+				}
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException,
+					NodeNeedRestartException {
+				synchronized(Node.this) {
+					enableRoutedPing = val;
+				}
+			}
+			
+		});
+		
 		updateMTU();
 		
 		nodeConfig.finishedInitialization();
@@ -6333,6 +6355,11 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	public boolean enableNewLoadManagement(boolean realTimeFlag) {
 		return nodeStats.enableNewLoadManagement(realTimeFlag);
+	}
+	
+	/** FIXME move to Probe.java? */
+	public boolean enableRoutedPing() {
+		return enableRoutedPing;
 	}
 
 }
