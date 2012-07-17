@@ -925,6 +925,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	 * Prepare a routed-to-node message for forwarding.
 	 */
 	private Message preForward(Message m, short newHTL) {
+		m = m.cloneAndDropSubMessages();
 		m.set(DMT.HTL, newHTL); // update htl
 		if(m.getSpec() == DMT.FNPRoutedPing) {
 			int x = m.getInt(DMT.COUNTER);
