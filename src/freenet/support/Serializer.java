@@ -111,8 +111,10 @@ public class Serializer {
 		} else if (type.equals(BitArray.class)) {
 			return new BitArray(dis, MAX_BITARRAY_SIZE);
 		} else if (type.equals(NodeCHK.class)) {
+			// Use Key.read(...) rather than NodeCHK-specific method because write(...) writes the TYPE field.
 			return Key.read(dis);
 		} else if (type.equals(NodeSSK.class)) {
+			// Use Key.read(...) rather than NodeSSK-specific method because write(...) writes the TYPE field.
 			return Key.read(dis);
 		} else if (type.equals(Key.class)) {
 		    return Key.read(dis);
