@@ -49,9 +49,11 @@ import freenet.support.Fields;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.SerialExecutor;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
+import freenet.support.io.NativeThread;
 
 /**
  * Cryptographic and transport level node identity.
@@ -74,6 +76,11 @@ public class NodeCrypto {
 	public final TransportManager transportManager;
 	/** The config for the transportManager */
 	public TransportManagerConfig transportManagerConfig;
+	/**
+	 * To notify PeerNode of new transports and disabling them.
+	 * We want them to happen in a fixed order only.
+	 */
+	private SerialExecutor serialEx = new SerialExecutor(NativeThread.NORM_PRIORITY);
 
 	/** A list of packet transport with mangler objects and keys. Each PeerNode will use a copy of it.
 	 * We must ensure we take inform existing PeerNode of a new transport.
@@ -610,10 +617,10 @@ public class NodeCrypto {
 			return node.peers.getDarknetPeers();
 	}
 
-	public boolean allowConnection(PeerNode pn, FreenetInetAddress addr) {
+	public boolean allowConnection(PeerNode pn, FreenetInetAddress addr, TransportPlugin transportPlugin) {
     	if(config.oneConnectionPerAddress()) {
     		// Disallow multiple connections to the same address
-    		if(node.peers.anyConnectedPeerHasAddress(addr, pn) && !detector.includes(addr)
+    		if(node.peers.anyConnectedPeerHasAddress(addr, pn, transportPlugin) && !detector.includes(addr)
     				&& addr.isRealInternetAddress(false, false, false)) {
     			Logger.normal(this, "Not sending handshake packets to "+addr+" for "+pn+" : Same IP address as another node");
     			return false;
@@ -635,7 +642,8 @@ public class NodeCrypto {
 			FreenetInetAddress address = pluginAddress.getFreenetAddress();
 			if(detector.includes(address)) return;
 			if(!address.isRealInternetAddress(false, false, false)) return;
-			possibleMatches = node.peers.getAllConnectedByAddress(address, true);
+			
+			possibleMatches = node.peers.getAllConnectedByIPAddress(address, true, transportPlugin);
 			
 			if(possibleMatches == null) return;
 			for(PeerNode pn : possibleMatches) {
@@ -765,7 +773,7 @@ public class NodeCrypto {
 	 * In case opennet is not started then on creation it'll directly access TransportManager for the transports.
 	 * @param transportPlugin Packet-type transport
 	 */
-	public void handleNewTransport(PacketTransportPlugin transportPlugin){
+	public void handleNewTransport(PacketTransportPlugin transportPlugin) {
 		
 		FNPPacketMangler mangler = new FNPPacketMangler(node, this, transportPlugin);
 		transportPlugin.setLowLevelFilter(new IncomingPacketFilterImpl(mangler, node, this));
@@ -781,15 +789,27 @@ public class NodeCrypto {
 	
 	/**
 	 * Notify all the PeerNode about our transports. They can use it if they want.
+	 * We are using a serial executor as we might be calling from a lock.
 	 * @param packetTransportBundle
 	 */
 	private void notifyPeerNode(PacketTransportBundle packetTransportBundle) {
-		PeerNode[] peers = getPeerNodes();
-		if(peers == null)
-			return;
-		for(PeerNode peer : peers){
-			peer.handleNewPeerTransport(packetTransportBundle);
+		class NotifyPeerNodes implements Runnable {
+			PacketTransportBundle packetTransportBundle;
+			PeerNode[] peers;
+			public NotifyPeerNodes(PacketTransportBundle packetTransportBundle, PeerNode[] peers) {
+				this.packetTransportBundle = packetTransportBundle;
+				this.peers = peers;
+			}
+			@Override
+			public void run() {
+				if(peers == null)
+					return;
+				for(PeerNode peer : peers) {
+					peer.handleNewPeerTransport(packetTransportBundle);
+				}
+			}
 		}
+		serialEx.execute(new NotifyPeerNodes(packetTransportBundle, getPeerNodes()));
 	}
 	
 	/**
@@ -812,12 +832,23 @@ public class NodeCrypto {
 	 * @param streamTransportBundle
 	 */
 	private void notifyPeerNode(StreamTransportBundle streamTransportBundle) {
-		PeerNode[] peers = getPeerNodes();
-		if(peers == null)
-			return;
-		for(PeerNode peer : peers) {
-			peer.handleNewPeerTransport(streamTransportBundle);
+		class NotifyPeerNodes implements Runnable {
+			StreamTransportBundle streamTransportBundle;
+			PeerNode[] peers;
+			public NotifyPeerNodes(StreamTransportBundle streamTransportBundle, PeerNode[] peers) {
+				this.streamTransportBundle = streamTransportBundle;
+				this.peers = peers;
+			}
+			@Override
+			public void run() {
+				if(peers == null)
+					return;
+				for(PeerNode peer : peers) {
+					peer.handleNewPeerTransport(streamTransportBundle);
+				}
+			}
 		}
+		serialEx.execute(new NotifyPeerNodes(streamTransportBundle, getPeerNodes()));
 	}
 	
 	public HashMap<String, PacketTransportBundle> getPacketTransportBundleMap() {
@@ -832,6 +863,12 @@ public class NodeCrypto {
 		}
 	}
 	
+	/**
+	 * This is used only if a particular transport is disabled by the user.
+	 * The transport manager stops the mangler and the plugin before calling this method.
+	 * If the mode is stopped, check stop() method.
+	 * @param transportName
+	 */
 	public void disableTransport(String transportName) {
 		if(packetTransportBundleMap.containsKey(transportName)) {
 			synchronized(packetBundleMapLock) {
@@ -843,12 +880,24 @@ public class NodeCrypto {
 				streamTransportBundleMap.remove(transportName);
 			}
 		}
-		PeerNode[] peers = getPeerNodes();
-		if(peers == null)
-			return;
-		for(PeerNode peer : peers) {
-			peer.disableTransport(transportName);
+		class NotifyPeerNodes implements Runnable {
+			String transportName;
+			PeerNode[] peers;
+			public NotifyPeerNodes(String transportName, PeerNode[] peers) {
+				this.transportName = transportName;
+				this.peers = peers;
+			}
+			@Override
+			public void run() {
+				if(peers == null)
+					return;
+				for(PeerNode peer : peers) {
+					peer.disableTransport(transportName);
+				}
+			}
 		}
+		serialEx.execute(new NotifyPeerNodes(transportName, getPeerNodes()));
+
 	}
 	
 }
