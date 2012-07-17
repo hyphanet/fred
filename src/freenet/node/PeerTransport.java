@@ -4,18 +4,22 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Vector;
 
+import freenet.crypt.KeyAgreementSchemeContext;
+import freenet.io.AddressTracker;
 import freenet.io.comm.DMT;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
+import freenet.pluginmanager.MalformedPluginAddressException;
 import freenet.pluginmanager.PluginAddress;
 import freenet.pluginmanager.TransportPlugin;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 /**
- * Base object for PeerPacketTransport and PeerStreamTransport. This includes common JKF fields and some others.<br><br>
+ * Base object for PeerPacketTransport and PeerStreamTransport. This includes common JFK fields and some others.<br><br>
  * 
  *  * <b>Convention:</b> The "Transport" word is used in fields that are transport specific, and are also present in PeerNode.
  * These fields will allow each Transport to behave differently. The existing fields in PeerNode will be used for 
@@ -38,6 +42,11 @@ public class PeerTransport {
 	
 	/** We need the PeerNode as the PeerTransport is PeerNode specific, while TransportBundle is not */
 	protected final PeerNode pn;
+	
+	/**
+	 * This deals with a PeerConnection object that can handle all the keys for a transport.
+	 */
+	protected PeerConnection peerConn;
 	
 	/*
 	 * 
@@ -76,6 +85,8 @@ public class PeerTransport {
 	protected boolean isTransportRekeying = false;
 	/** Number of handshake attempts since last successful connection or ARK fetch */
 	protected int transportHandshakeCount;
+	/** After this many failed handshakes, we start the ARK fetcher. */
+	private static final int MAX_HANDSHAKE_COUNT = 2;
 	
 	/** Transport input */
 	protected long totalTransportInputSinceStartup;
@@ -90,8 +101,10 @@ public class PeerTransport {
 	protected long timeAddedOrRestartedTransport;
 	/** Time at which we should send the next handshake request */
 	protected long sendTransportHandshakeTime;
+	/** When did we last rekey (promote the unverified tracker to new) ? */
+	private long timeTransportLastRekeyed;
 	
-	/** Hold collected IP addresses for handshake attempts, populated by DNSRequestor
+	/** Hold collected addresses for handshake attempts, populated by DNSRequestor
 	 * Equivalent to handshakeIPs in PeerNode.
 	 */
 	protected PluginAddress[] handshakeTransportAddresses;
@@ -101,6 +114,21 @@ public class PeerTransport {
 	/* Copied from PeerNode. */
 	private long lastIncomingRekey;
 	static final long THROTTLE_REKEY = 1000;
+	
+	private int handshakeIPAlternator = 0;
+	
+	/** The context object for the currently running negotiation. */
+	private KeyAgreementSchemeContext ctxTransport;
+	
+	// Burst-only mode
+	/** True if we are currently sending this peer a burst of handshake requests */
+	private boolean isTransportBursting;
+	/** Number of handshake attempts (while in ListenOnly mode) since the beginning of this burst */
+	private int listeningTransportHandshakeBurstCount;
+	/** Total number of handshake attempts (while in ListenOnly mode) to be in this burst */
+	private int listeningTransportHandshakeBurstSize;
+	
+	boolean firstHandshake = true;
 	
 	
 	private static volatile boolean logMINOR;
@@ -121,6 +149,9 @@ public class PeerTransport {
 		this.outgoingMangler = outgoingMangler;
 		this.transportName = transportPlugin.transportName;
 		this.pn = pn;
+		
+		// Initialised as per PeerNode constructor.
+		lastAttemptedHandshakeTransportAddressUpdateTime = 0;
 	}
 	
 	protected void sendTransportAddressMessage() {
@@ -136,21 +167,235 @@ public class PeerTransport {
 		
 	}
 	
-	public void setTransportAddress(String[] physical, boolean fromLocal, boolean checkHostnameOrIPSyntax) {
-		
+	
+	/*
+	 * 
+	 * 
+	 * All methods related to handshaking grouped together. Code mostly copied from PeerNode.
+	 * 
+	 * 
+	 */
+	
+	public void maybeRekey() {
+		long now = System.currentTimeMillis();
+		boolean shouldTransportDisconnect = false;
+		boolean shouldReturn = false;
+		boolean shouldRekey = false;
+		long timeWhenRekeyingShouldOccur = 0;
+
+		synchronized (this) {
+			timeWhenRekeyingShouldOccur = timeTransportLastRekeyed + FNPPacketMangler.SESSION_KEY_REKEYING_INTERVAL;
+			shouldTransportDisconnect = (timeWhenRekeyingShouldOccur + FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY < now) && isTransportRekeying;
+			shouldReturn = isTransportRekeying || !isTransportConnected;
+			shouldRekey = (timeWhenRekeyingShouldOccur < now);
+			if((!shouldRekey) && peerConn.totalBytesExchangedWithCurrentTracker > FNPPacketMangler.AMOUNT_OF_BYTES_ALLOWED_BEFORE_WE_REKEY) {
+				shouldRekey = true;
+				timeWhenRekeyingShouldOccur = now;
+			}
+		}
+
+		if(shouldTransportDisconnect) {
+			String time = TimeUtil.formatTime(FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY);
+			System.err.println("The peer (" + this + ") has been asked to rekey " + time + " ago... force disconnect.");
+			Logger.error(this, "The peer (" + this + ") has been asked to rekey " + time + " ago... force disconnect.");
+			pn.forceDisconnect(false, transportPlugin);
+		} else if (shouldReturn || hasLiveHandshake(now)) {
+			return;
+		} else if(shouldRekey) {
+			startRekeying();
+		}
+	}
+
+	public void startRekeying() {
+		long now = System.currentTimeMillis();
+		synchronized(this) {
+			if(isTransportRekeying) return;
+			isTransportRekeying = true;
+			sendTransportHandshakeTime = now; // Immediately
+			ctxTransport = null;
+		}
+		Logger.normal(this, "We are asking for the key to be renewed (" + this.detectedTransportAddress + ')');
+	}
+	
+	/**
+	 * Set sendHandshakeTime, and return whether to fetch the ARK.
+	 */
+	protected boolean innerCalcNextHandshake(boolean successfulHandshakeSend, boolean dontFetchARK, long now, boolean noLongerRoutable, boolean invalidVersion) {
+		if(isBurstOnly())
+			return calcNextHandshakeBurstOnly(now);
+		synchronized(this) {
+			long delay;
+			if(noLongerRoutable) {
+				// Let them know we're here, but have no hope of routing general data to them.
+				delay = Node.MIN_TIME_BETWEEN_VERSION_SENDS + pn.node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS);
+			} else if(invalidVersion && !firstHandshake) {
+				delay = Node.MIN_TIME_BETWEEN_VERSION_PROBES + pn.node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES);
+			} else {
+				delay = Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS + pn.node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
+			}
+			// FIXME proper multi-homing support!
+			delay /= (handshakeTransportAddresses == null ? 1 : handshakeTransportAddresses.length);
+			if(delay < 3000) delay = 3000;
+			sendTransportHandshakeTime = now + delay;
+			if(logMINOR) Logger.minor(this, "Next handshake in "+delay+" on "+this);
+
+			if(successfulHandshakeSend)
+				firstHandshake = false;
+			transportHandshakeCount++;
+			return transportHandshakeCount == MAX_HANDSHAKE_COUNT;
+		}
+	}
+
+	private synchronized boolean calcNextHandshakeBurstOnly(long now) {
+		boolean fetchARKFlag = false;
+		listeningTransportHandshakeBurstCount++;
+		if(isBurstOnly()) {
+			if(listeningTransportHandshakeBurstCount >= listeningTransportHandshakeBurstSize) {
+				listeningTransportHandshakeBurstCount = 0;
+				fetchARKFlag = true;
+			}
+		}
+		long delay;
+		if(listeningTransportHandshakeBurstCount == 0) {  // 0 only if we just reset it above
+			delay = Node.MIN_TIME_BETWEEN_BURSTING_HANDSHAKE_BURSTS
+				+ pn.node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_BURSTING_HANDSHAKE_BURSTS);
+			listeningTransportHandshakeBurstSize = Node.MIN_BURSTING_HANDSHAKE_BURST_SIZE
+					+ pn.node.random.nextInt(Node.RANDOMIZED_BURSTING_HANDSHAKE_BURST_SIZE);
+			isTransportBursting = false;
+		} else {
+			delay = Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
+				+ pn.node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
+		}
+		// FIXME proper multi-homing support!
+		delay /= (handshakeTransportAddresses == null ? 1 : handshakeTransportAddresses.length);
+		if(delay < 3000) delay = 3000;
+
+		sendTransportHandshakeTime = now + delay;
+		if(logMINOR) Logger.minor(this, "Next BurstOnly mode handshake in "+(sendTransportHandshakeTime - now)+"ms for "+pn.shortToString()+" (count: "+listeningTransportHandshakeBurstCount+", size: "+listeningTransportHandshakeBurstSize+ ") on "+this, new Exception("double-called debug"));
+		return fetchARKFlag;
+	}
+
+	/**
+	* @return True, if we are disconnected and it has been a
+	* sufficient time period since we last sent a handshake
+	* attempt.
+	*/
+	public boolean shouldSendHandshake() {
+		long now = System.currentTimeMillis();
+		boolean tempShouldSendHandshake = false;
+		synchronized(this) {
+			if(pn.isDisconnecting()) return false;
+			tempShouldSendHandshake = ((now > sendTransportHandshakeTime) && (handshakeTransportAddresses != null) && (isTransportRekeying || !pn.isConnected(transportPlugin)));
+		}
+		if(logMINOR) Logger.minor(this, "shouldSendHandshake(): initial = "+tempShouldSendHandshake);
+		if(tempShouldSendHandshake && (hasLiveHandshake(now)))
+			tempShouldSendHandshake = false;
+		if(tempShouldSendHandshake) {
+			if(isBurstOnly()) {
+				synchronized(this) {
+					isTransportBursting = true;
+				}
+				pn.setPeerNodeStatus(System.currentTimeMillis());
+			} else
+				return true;
+		}
+		if(logMINOR) Logger.minor(this, "shouldSendHandshake(): final = "+tempShouldSendHandshake);
+		return tempShouldSendHandshake;
+	}
+	
+	public long timeSendHandshake(long now) {
+		if(hasLiveHandshake(now)) return Long.MAX_VALUE;
+		synchronized(this) {
+			if(pn.isDisconnecting()) return Long.MAX_VALUE;
+			if(handshakeTransportAddresses == null) return Long.MAX_VALUE;
+			if(!(isTransportRekeying || !pn.isConnected(transportPlugin))) return Long.MAX_VALUE;
+			return sendTransportHandshakeTime;
+		}
+	}
+	
+	/**
+	* Does the node have a live handshake in progress?
+	* @param now The current time.
+	*/
+	public boolean hasLiveHandshake(long now) {
+		KeyAgreementSchemeContext c = null;
+		synchronized(this) {
+			c = ctxTransport;
+		}
+		if(c != null && logDEBUG)
+			Logger.minor(this, "Last used (handshake): " + (now - c.lastUsedTime()));
+		return !((c == null) || (now - c.lastUsedTime() > Node.HANDSHAKE_TIMEOUT));
+	}
+	
+	/** If the outgoingMangler allows bursting, we still don't want to burst *all the time*, because it may be mistaken
+	 * in its detection of a port forward. So from time to time we will aggressively handshake anyway. This flag is set
+	 * once every UPDATE_BURST_NOW_PERIOD. */
+	private boolean burstNow;
+	private long timeSetBurstNow;
+	static final int UPDATE_BURST_NOW_PERIOD = 5*60*1000;
+	/** Burst only 19 in 20 times if definitely port forwarded. Save entropy by writing this as 20 not 0.95. */
+	static final int P_BURST_IF_DEFINITELY_FORWARDED = 20;
+	
+	public boolean isBurstOnly() {
+		AddressTracker.Status status = outgoingMangler.getConnectivityStatus();
+		if(status == AddressTracker.Status.DONT_KNOW) return false;
+		if(status == AddressTracker.Status.DEFINITELY_NATED || status == AddressTracker.Status.MAYBE_NATED) return false;
+
+		// For now. FIXME try it with a lower probability when we're sure that the packet-deltas mechanisms works.
+		if(status == AddressTracker.Status.MAYBE_PORT_FORWARDED) return false;
+		long now = System.currentTimeMillis();
+		if(now - timeSetBurstNow > UPDATE_BURST_NOW_PERIOD) {
+			burstNow = (pn.node.random.nextInt(P_BURST_IF_DEFINITELY_FORWARDED) == 0);
+			timeSetBurstNow = now;
+		}
+		return burstNow;
+	}
+	
+	public synchronized KeyAgreementSchemeContext getKeyAgreementSchemeContext() {
+		return ctxTransport;
+	}
+	
+	public synchronized void setKeyAgreementSchemeContext(KeyAgreementSchemeContext ctx) {
+		this.ctxTransport = ctx;
+		if(logMINOR)
+			Logger.minor(this, "setKeyAgreementSchemeContext(" + ctx + ") on " + this);
+	}
+	
+	/*
+	 * 
+	 * 
+	 * End of handshaking related methods
+	 * 
+	 * 
+	 */
+	
+	public void setTransportAddress(String[] physical) {
+		for(String address : physical) {
+			PluginAddress pluginAddress;
+			try {
+				pluginAddress = transportPlugin.toPluginAddress(address);
+				if(!nominalTransportAddress.contains(pluginAddress))
+					nominalTransportAddress.add(pluginAddress);
+			} catch (MalformedPluginAddressException e) {
+				continue;
+				//FIXME Do we throw an FSParseException at the PeerNode constructor?
+			}
+		}
+		if(!nominalTransportAddress.isEmpty())
+			detectedTransportAddress = nominalTransportAddress.firstElement();
 	}
 	
 	protected void setDetectedAddress(PluginAddress newAddress) {
 		try {
-			newAddress.updateHostname();
+			newAddress.updateHostName();
 		}catch(UnsupportedOperationException e) {
 			//Non IP based address
 		}
 		synchronized(this) {
 			PluginAddress oldAddress = detectedTransportAddress;
 			if((newAddress != null) && ((oldAddress == null) || !oldAddress.equals(newAddress))) {
-				this.detectedTransportAddress = newAddress;
-				this.lastAttemptedHandshakeTransportAddressUpdateTime = 0;
+				detectedTransportAddress = newAddress;
+				lastAttemptedHandshakeTransportAddressUpdateTime = 0;
 				if(!isTransportConnected)
 					return;
 			} else
@@ -174,13 +419,19 @@ public class PeerTransport {
 	* Do the maybeUpdateHandshakeIPs DNS requests, but only if ignoreHostnames is false
 	* This method should only be called by maybeUpdateHandshakeIPs.
 	* Also removes dupes post-lookup.
+	* Ported from PeerNode. Uses PluginAddress instead of Peer
 	*/
-	public PluginAddress[] updateHandshakeAddresses(PluginAddress[] localHandshakeAddresses) {
+	public PluginAddress[] updateHandshakeAddresses(PluginAddress[] localHandshakeAddresses, boolean ignoreHostnames) {
+		if(localHandshakeAddresses == null)
+			return null;
 		for(PluginAddress localHandshakeAddress : localHandshakeAddresses) {
 				if(logMINOR)
 					Logger.debug(this, "updateHandshakeAddresses on PeerTransport" + localHandshakeAddress);
 				try {
-					localHandshakeAddress.updateHostname();
+					if(ignoreHostnames)
+						localHandshakeAddress.dropHostName();
+					else
+						localHandshakeAddress.updateHostName();
 				}catch(UnsupportedOperationException e) {
 					if(logMINOR)
 						Logger.debug(this, "Not IP based" + localHandshakeAddress, e);
@@ -197,7 +448,7 @@ public class PeerTransport {
 	* Do occasional DNS requests, but ignoreHostnames should be true
 	* on PeerNode construction
 	*/
-	public void maybeUpdateHandshakeIPs(boolean ignoreHostnames) {
+	public void maybeUpdateHandshakeAddresses(boolean ignoreHostnames) {
 		long now = System.currentTimeMillis();
 		PluginAddress localDetectedAddress = null;
 		synchronized(this) {
@@ -225,7 +476,7 @@ public class PeerTransport {
 				return;
 			}
 			localHandshakeAddresses = new PluginAddress[]{localDetectedAddress};
-			localHandshakeAddresses = updateHandshakeAddresses(localHandshakeAddresses);
+			localHandshakeAddresses = updateHandshakeAddresses(localHandshakeAddresses, ignoreHostnames);
 			synchronized(this) {
 				handshakeTransportAddresses = localHandshakeAddresses;
 			}
@@ -278,7 +529,7 @@ public class PeerTransport {
 			
 		}
 		localHandshakeAddresses = localAddresses.toArray(new PluginAddress[localAddresses.size()]);
-		localHandshakeAddresses = updateHandshakeAddresses(localHandshakeAddresses);
+		localHandshakeAddresses = updateHandshakeAddresses(localHandshakeAddresses, ignoreHostnames);
 		synchronized(this) {
 			handshakeTransportAddresses = localHandshakeAddresses;
 			if((detectedDuplicate != null) && detectedDuplicate.equals(localDetectedAddress))
@@ -286,6 +537,95 @@ public class PeerTransport {
 		}
 	}
 	
+	//FIXME Find the place where it needs to be used.
+	private String handshakeIPsToString() {
+		PluginAddress[] localHandshakeAddresses;
+		synchronized(this) {
+			localHandshakeAddresses = handshakeTransportAddresses;
+		}
+		if(localHandshakeAddresses == null)
+			return "null";
+		StringBuilder toOutputString = new StringBuilder(1024);
+		boolean needSep = false;
+		toOutputString.append("[ ");
+		for(PluginAddress localAddress : localHandshakeAddresses) {
+			if(needSep)
+				toOutputString.append(", ");
+			if(localAddress == null) {
+				toOutputString.append("null");
+				needSep = true;
+				continue;
+			}
+			toOutputString.append('\'');
+			// Actually do the DNS request for the member Peer of localHandshakeIPs
+			try {
+				localAddress.dropHostName();
+			}catch(UnsupportedOperationException e) {
+				// Ignore if non IP based
+			}
+			toOutputString.append(localAddress);
+			toOutputString.append('\'');
+			needSep = true;
+		}
+		toOutputString.append(" ]");
+		return toOutputString.toString();
+	}
 	
+	public PluginAddress[] getHandshakeAddresses() {
+		return handshakeTransportAddresses;
+	}
+	
+	public PluginAddress getHandshakeAddress() {
+		PluginAddress[] localHandshakeAddresses;
+		if(!shouldSendHandshake()) {
+			if(logMINOR) Logger.minor(this, "Not sending handshake to "+detectedTransportAddress+" because pn.shouldSendHandshake() returned false");
+			return null;
+		}
+		long firstTime = System.currentTimeMillis();
+		localHandshakeAddresses = getHandshakeAddresses();
+		long secondTime = System.currentTimeMillis();
+		if((secondTime - firstTime) > 1000)
+			Logger.error(this, "getHandshakeIPs() took more than a second to execute ("+(secondTime - firstTime)+") working on "+detectedTransportAddress);
+		if(localHandshakeAddresses.length == 0) {
+			long thirdTime = System.currentTimeMillis();
+			if((thirdTime - secondTime) > 1000)
+				Logger.error(this, "couldNotSendHandshake() (after getHandshakeIPs()) took more than a second to execute ("+(thirdTime - secondTime)+") working on "+detectedTransportAddress);
+			return null;
+		}
+		long loopTime1 = System.currentTimeMillis();
+		Vector<PluginAddress> validIPs = new Vector<PluginAddress>();
+		for(PluginAddress localHandshakeAddress : localHandshakeAddresses){
+			PluginAddress address = localHandshakeAddress;
+			FreenetInetAddress addr = address.getFreenetAddress();
+			if(!outgoingMangler.allowConnection(pn, addr)) {
+				if(logMINOR)
+					Logger.minor(this, "Not sending handshake packet to "+address+" for "+this);
+			}
+			if(addr.getAddress(false) == null) {
+				if(logMINOR) Logger.minor(this, "Not sending handshake to "+localHandshakeAddress+" for "+detectedTransportAddress+" because the DNS lookup failed or it's a currently unsupported IPv6 address");
+				continue;
+			}
+			if(!addr.isRealInternetAddress(false, false, outgoingMangler.alwaysAllowLocalAddresses())) {
+				if(logMINOR) Logger.minor(this, "Not sending handshake to "+localHandshakeAddress+" for "+detectedTransportAddress+" because it's not a real Internet address and metadata.allowLocalAddresses is not true");
+				continue;
+			}
+			validIPs.add(address);
+		}
+		PluginAddress ret;
+		if(validIPs.isEmpty()) {
+			ret = null;
+		} else if(validIPs.size() == 1) {
+			ret = validIPs.get(0);
+		} else {
+			// Don't need to synchronize for this value as we're only called from one thread anyway.
+			handshakeIPAlternator %= validIPs.size();
+			ret = validIPs.get(handshakeIPAlternator);
+			handshakeIPAlternator++;
+		}
+		long loopTime2 = System.currentTimeMillis();
+		if((loopTime2 - loopTime1) > 1000)
+			Logger.normal(this, "loopTime2 is more than a second after loopTime1 ("+(loopTime2 - loopTime1)+") working on "+detectedTransportAddress);
+		return ret;
+	}
 	
 }

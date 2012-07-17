@@ -1,5 +1,7 @@
 package freenet.node;
 
+import java.util.Vector;
+
 import freenet.pluginmanager.StreamTransportPlugin;
 /**
  * This class will be used to store keys, timing fields, etc. by PeerNode for each transport for handshaking. 
@@ -24,6 +26,8 @@ public class PeerStreamTransport extends PeerTransport {
 	protected final StreamTransportPlugin transportPlugin;
 	
 	protected final OutgoingStreamMangler streamMangler;
+	
+	protected StreamConnectionFormat streamConnection;
 	
 	/*
 	 * Time related fields

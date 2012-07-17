@@ -1,6 +1,10 @@
 package freenet.node;
 
+import freenet.io.comm.NotConnectedException;
 import freenet.pluginmanager.PacketTransportPlugin;
+import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 /**
  * This class will be used to store keys, timing fields, etc. by PeerNode for each transport for handshaking. 
  * Once handshake is completed a PeerPacketConnection object is used to store the session keys.<br><br>
@@ -22,6 +26,8 @@ public class PeerPacketTransport extends PeerTransport {
 	
 	protected final FNPPacketMangler packetMangler;
 	
+	protected NewPacketFormat packetFormat;
+	
 	/*
 	 * Time related fields
 	 */
@@ -34,6 +40,19 @@ public class PeerPacketTransport extends PeerTransport {
 	/** When did we last receive an ack? */
 	protected long timeLastReceivedTransportAck;
 	
+	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
+			}
+		});
+	}
+	
 
 	public PeerPacketTransport(PacketTransportPlugin transportPlugin, FNPPacketMangler packetMangler, PeerNode pn){
 		super(transportPlugin, packetMangler, pn);
@@ -43,5 +62,45 @@ public class PeerPacketTransport extends PeerTransport {
 	
 	public PeerPacketTransport(PacketTransportBundle packetTransportBundle, PeerNode pn){
 		this(packetTransportBundle.transportPlugin, packetTransportBundle.packetMangler, pn);
+	}
+	
+	/**
+	* Update timeLastReceivedPacket
+	* @throws NotConnectedException
+	* @param dontLog If true, don't log an error or throw an exception if we are not connected. This
+	* can be used in handshaking when the connection hasn't been verified yet.
+	* @param dataPacket If this is a real packet, as opposed to a handshake packet.
+	*/
+	public void receivedPacket(boolean dontLog, boolean dataPacket) {
+		synchronized(this) {
+			if((!isTransportConnected) && (!dontLog)) {
+				// Don't log if we are disconnecting, because receiving packets during disconnecting is normal.
+				// That includes receiving packets after we have technically disconnected already.
+				// A race condition involving forceCancelDisconnecting causing a mistaken log message anyway
+				// is conceivable, but unlikely...
+				if((peerConn.unverifiedTracker == null) && (peerConn.currentTracker == null) && !pn.isDisconnecting())
+					Logger.error(this, "Received packet while disconnected!: " + this, new Exception("error"));
+				else
+					if(logMINOR)
+						Logger.minor(this, "Received packet while disconnected on " + this + " - recently disconnected() ?");
+			} else {
+				if(logMINOR) Logger.minor(this, "Received packet on "+this);
+			}
+		}
+		long now = System.currentTimeMillis();
+		synchronized(this) {
+			timeLastReceivedTransportPacket = now;
+			if(dataPacket)
+				timeLastReceivedTransportDataPacket = now;
+		}
+	}
+	
+	public synchronized void receivedAck(long now) {
+		if(timeLastReceivedTransportAck < now)
+			timeLastReceivedTransportAck = now;
+	}
+	
+	public void sentPacket() {
+		timeLastSentTransportPacket = System.currentTimeMillis();
 	}
 }
