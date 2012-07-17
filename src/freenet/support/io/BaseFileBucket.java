@@ -332,7 +332,7 @@ public abstract class BaseFileBucket implements Bucket {
 	/**
 	 * Return directory used for temp files.
 	 */
-	public final synchronized static String getTempDir() {
+	public synchronized static String getTempDir() {
 		return tempDir;  // **FIXME**/TODO: locking on tempDir needs to be checked by a Java guru for consistency
 	}
 
@@ -341,7 +341,7 @@ public abstract class BaseFileBucket implements Bucket {
 	 * <p>
 	 * The directory must exist.
 	 */
-	public final synchronized static void setTempDir(String dirName) {
+	public synchronized static void setTempDir(String dirName) {
 		File dir = new File(dirName);
 		if (!(dir.exists() && dir.isDirectory() && dir.canWrite())) {
 			throw new IllegalArgumentException(

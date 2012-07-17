@@ -218,7 +218,7 @@ public abstract class LoggerHook extends Logger {
 		thresholdsCallbacks.remove(ltc);
 	}
 
-	private final void notifyLogThresholdCallbacks() {
+	private void notifyLogThresholdCallbacks() {
 		for(LogThresholdCallback ltc : thresholdsCallbacks)
 			ltc.shouldUpdate();
 	}

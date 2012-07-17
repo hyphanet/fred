@@ -914,8 +914,11 @@ outer:
 	}
 	
 	private int pingCounter;
-	
-	static final int MAX_MESSAGE_SIZE = 2048;
+
+	/**
+	 * Maximum message size in bytes.
+	 */
+	public static final int MAX_MESSAGE_SIZE = 2048;
 	
 	private int maxSendBufferSize() {
 		return MAX_RECEIVE_BUFFER_SIZE;

@@ -25,7 +25,6 @@ public class EncryptingIoAdapter extends IoAdapter {
 	private final RandomSource random;
 	private final byte[] key;
 	private final BlockCipher cipher;
-	private boolean closed;
 	private long position;
 	private byte[] blockOutput;
 	private long blockPosition;
@@ -57,7 +56,6 @@ public class EncryptingIoAdapter extends IoAdapter {
 	public void close() throws Db4oIOException {
 		baseAdapter.close();
 		synchronized(this) {
-			closed = true;
 			MasterKeys.clear(key);
 		}
 	}

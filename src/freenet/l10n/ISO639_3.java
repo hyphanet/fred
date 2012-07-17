@@ -166,7 +166,7 @@ public final class ISO639_3 {
 
 	}
 	
-	private static final Hashtable<String, LanguageCode> loadFromTabFile() {
+	private static Hashtable<String, LanguageCode> loadFromTabFile() {
 		final Hashtable<String, LanguageCode> codes = new Hashtable<String, LanguageCode>(7705 * 2);
 
 		InputStream in = null;

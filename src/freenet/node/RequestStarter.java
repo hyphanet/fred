@@ -74,7 +74,6 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	RequestScheduler sched;
 	final NodeClientCore core;
 	final NodeStats stats;
-	private long sentRequestTime;
 	private final boolean isInsert;
 	private final boolean isSSK;
 	final boolean realTime;
@@ -115,9 +114,8 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	
 	void realRun() {
 		ChosenBlock req = null;
-		sentRequestTime = System.currentTimeMillis();
 		// The last time at which we sent a request or decided not to
-		long cycleTime = sentRequestTime;
+		long cycleTime = System.currentTimeMillis();
 		while(true) {
 			// Allow 5 minutes before we start killing requests due to not connecting.
 			OpennetManager om;
@@ -214,7 +212,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 					Logger.normal(this, "No requests to start on "+req);
 			}
 			if(!req.localRequestOnly)
-				cycleTime = sentRequestTime = System.currentTimeMillis();
+				cycleTime = System.currentTimeMillis();
 			req = null;
 		}
 	}

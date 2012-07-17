@@ -9,12 +9,12 @@ import freenet.support.io.NullBucket;
 public class TextFeedMessage extends N2NFeedMessage {
 
 	public static final String NAME = "TextFeed";
-	private final Bucket messageTextBucket;
 
 	public TextFeedMessage(String header, String shortText, String text, short priorityClass, long updatedTime,
 			String sourceNodeName, long composed, long sent, long received,
 			String messageText) {
 		super(header, shortText, text, priorityClass, updatedTime, sourceNodeName, composed, sent, received);
+		final Bucket messageTextBucket;
 		try {
 			if(messageText != null)
 				messageTextBucket = new ArrayBucket(messageText.getBytes("UTF-8"));

@@ -48,7 +48,7 @@ public class BucketTools {
 	 * @param dst
 	 * @throws IOException
 	 */
-	public final static void copy(Bucket src, Bucket dst) throws IOException {
+	public static void copy(Bucket src, Bucket dst) throws IOException {
 		OutputStream out = dst.getOutputStream();
 		InputStream in = src.getInputStream();
 		ReadableByteChannel readChannel = Channels.newChannel(in);
@@ -66,7 +66,7 @@ public class BucketTools {
 		readChannel.close();
 	}
 
-	public final static void zeroPad(Bucket b, long size) throws IOException {
+	public static void zeroPad(Bucket b, long size) throws IOException {
 		OutputStream out = b.getOutputStream();
 
 		// Initialized to zero by default.
@@ -85,7 +85,7 @@ public class BucketTools {
 		out.close();
 	}
 
-	public final static void paddedCopy(Bucket from, Bucket to, long nBytes,
+	public static void paddedCopy(Bucket from, Bucket to, long nBytes,
 			int blockSize) throws IOException {
 
 		if (nBytes > blockSize) {
@@ -153,7 +153,7 @@ public class BucketTools {
 		return ret;
 	}
 
-	public final static int[] nullIndices(Bucket[] array) {
+	public static int[] nullIndices(Bucket[] array) {
 		List<Integer> list = new ArrayList<Integer>();
 		for (int i = 0; i < array.length; i++) {
 			if (array[i] == null) {
@@ -168,7 +168,7 @@ public class BucketTools {
 		return ret;
 	}
 
-	public final static int[] nonNullIndices(Bucket[] array) {
+	public static int[] nonNullIndices(Bucket[] array) {
 		List<Integer> list = new ArrayList<Integer>();
 		for (int i = 0; i < array.length; i++) {
 			if (array[i] != null) {
@@ -183,7 +183,7 @@ public class BucketTools {
 		return ret;
 	}
 
-	public final static Bucket[] nonNullBuckets(Bucket[] array) {
+	public static Bucket[] nonNullBuckets(Bucket[] array) {
 		List<Bucket> list = new ArrayList<Bucket>(array.length);
 		for (int i = 0; i < array.length; i++) {
 			if (array[i] != null) {
@@ -203,7 +203,7 @@ public class BucketTools {
 	 * @throws OutOfMemoryError If it was not possible to allocate enough 
 	 * memory to contain the entire bucket.
 	 */
-	public final static byte[] toByteArray(Bucket bucket) throws IOException {
+	public static byte[] toByteArray(Bucket bucket) throws IOException {
 		long size = bucket.size();
 		if(size > Integer.MAX_VALUE) throw new OutOfMemoryError();
 		byte[] data = new byte[(int)size];

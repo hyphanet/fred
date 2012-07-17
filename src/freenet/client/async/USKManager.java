@@ -348,8 +348,6 @@ public class USKManager {
 				} else {
 					if(logMINOR)
 						Logger.minor(this, "Allowing temporary background fetcher to continue as it has subscribers... "+fetcher);
-					// It will burn itself out anyway as it's a temp fetcher, so no big harm here.
-					fetcher.killOnLoseSubscribers();
 				}
 			}
 		}

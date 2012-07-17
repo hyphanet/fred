@@ -24,7 +24,7 @@ public class LowLevelPutException extends Exception {
 	
 	private KeyBlock collidedBlock;
 	
-	static final String getMessage(int reason) {
+	static String getMessage(int reason) {
 		switch(reason) {
 		case INTERNAL_ERROR:
 			return "Internal error - probably a bug";

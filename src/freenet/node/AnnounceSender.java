@@ -44,7 +44,6 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 	private final Node node;
 	private Message msg;
 	private byte[] noderefBuf;
-	private int noderefLength;
 	private short htl;
 	private double target;
 	private final AnnouncementCallback cb;
@@ -512,7 +511,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 	 */
 	private boolean transferNoderef() {
 		long xferUID = msg.getLong(DMT.TRANSFER_UID);
-		noderefLength = msg.getInt(DMT.NODEREF_LENGTH);
+		int noderefLength = msg.getInt(DMT.NODEREF_LENGTH);
 		int paddedLength = msg.getInt(DMT.PADDED_LENGTH);
 		noderefBuf = OpennetManager.innerWaitForOpennetNoderef(xferUID, paddedLength, noderefLength, source, false, uid, true, this, node);
 		if(noderefBuf == null) {

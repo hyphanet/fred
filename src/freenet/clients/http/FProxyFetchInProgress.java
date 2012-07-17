@@ -72,8 +72,6 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	public final FreenetURI uri;
 	/** The maximum size specified by the client */
 	public final long maxSize;
-	/** Unique ID for the fetch */
-	private final long identifier;
 	/** Fetcher */
 	private final ClientGetter getter;
 	/** Any request which is waiting for a progress screen or data.
@@ -129,7 +127,6 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		this.uri = key;
 		this.maxSize = maxSize2;
 		this.timeStarted = System.currentTimeMillis();
-		this.identifier = identifier;
 		this.fctx = fctx;
 		FetchContext alteredFctx = new FetchContext(fctx, FetchContext.IDENTICAL_MASK, false, null);
 		alteredFctx.maxOutputLength = fctx.maxTempLength = maxSize;
