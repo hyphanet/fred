@@ -52,7 +52,7 @@ public class RealNodeSecretPingTest {
 	static final FRIEND_TRUST trust = FRIEND_TRUST.LOW;
 	static final FRIEND_VISIBILITY visibility = FRIEND_VISIBILITY.NO;
 
-	public static int DARKNET_PORT_BASE = RealNodeRoutingTest.DARKNET_PORT_END;
+	public static int DARKNET_PORT_BASE = RealNodeProbeTest.DARKNET_PORT_END;
 	public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
 	
     public static void main(String[] args) throws FSParseException, PeerParseException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException {
