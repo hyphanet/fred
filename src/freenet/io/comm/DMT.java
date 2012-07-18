@@ -1107,7 +1107,7 @@ public class DMT {
 
 	public static final MessageType ProbeBandwidth = new MessageType("ProbeBandwidth", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
-		addField(OUTPUT_BANDWIDTH_UPPER_LIMIT, Long.class);
+		addField(OUTPUT_BANDWIDTH_UPPER_LIMIT, Float.class);
 	}};
 
 	/**
@@ -1116,7 +1116,7 @@ public class DMT {
 	 * @param limit Endpoint output bandwidth limit in KiB per second.
 	 * @return Message with requested attributes.
 	 */
-	public static Message createProbeBandwidth(long uid, long limit) {
+	public static Message createProbeBandwidth(long uid, float limit) {
 		Message msg = new Message(ProbeBandwidth);
 		msg.set(UID, uid);
 		msg.set(OUTPUT_BANDWIDTH_UPPER_LIMIT, limit);
