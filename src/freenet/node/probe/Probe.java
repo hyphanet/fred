@@ -126,15 +126,6 @@ public class Probe implements ByteCounter {
 	}
 
 	/**
-	 * Applies random noise proportional to the input value.
-	 * @param input Value to apply noise to.
-	 * @return Value +/- Gaussian percentage.
-	 */
-	private long randomNoise(long input) {
-		return input + Math.round(node.random.nextGaussian() * 0.01 * input);
-	}
-
-	/**
 	 * Counts as probe request transfer.
 	 * @param bytes Bytes received.
 	 */
