@@ -117,12 +117,22 @@ public class Probe implements ByteCounter {
 	private volatile long probeIdentifier;
 
 	/**
-	 * Applies random noise proportional to the input value.
+	 * Applies multiplicative Gaussian noise of mean 1.0 and the specified sigma to the input value.
 	 * @param input Value to apply noise to.
+	 * @param sigma Percentage change at one standard deviation.
 	 * @return Value +/- Gaussian percentage.
 	 */
-	private double randomNoise(double input) {
-		return input + (node.random.nextGaussian() * 0.01 * input);
+	private double randomNoise(final double input, final double sigma) {
+		double multiplier = (node.random.nextGaussian() * sigma) + 1.0;
+
+		/*
+		 * Cap noise to [0.5, 1.5]. Such amounts are very rare (5 sigma at 10%) and serve only to throw off the
+		 * statistics by including crazy things like negative values or impossibly huge limits.
+		 */
+		if (multiplier < 0.5) multiplier = 0.5;
+		else if (multiplier > 1.5) multiplier = 1.5;
+
+		return input * multiplier;
 	}
 
 	/**
@@ -545,15 +555,30 @@ public class Probe implements ByteCounter {
 		 */
 		switch (type) {
 		case BANDWIDTH:
-			//1,024 (2^10) bytes per KiB
-			listener.onOutputBandwidth((float)randomNoise((double)node.getOutputBandwidthLimit()/(1 << 10)));
+			/*
+			 * 5% noise:
+			 * Reasonable output bandwidth limit is 20 KiB and people are likely to set limits in increments
+			 * of 1 KiB. 1 KiB / 20 KiB = 0.05 sigma.
+			 * 1,024 (2^10) bytes per KiB.
+			 */
+			listener.onOutputBandwidth((float)randomNoise((double)node.getOutputBandwidthLimit()/(1 << 10), 0.05));
 			break;
 		case BUILD:
 			listener.onBuild(node.nodeUpdater.getMainVersion());
 			break;
 		case IDENTIFIER:
-			//7-day uptime with random noise, then quantized.
-			long percent = Math.round(randomNoise(100*node.uptime.getUptimeWeek()));
+			/*
+			 * 5% noise:
+			 * Reasonable uptime percentage is at least ~40 hours a week, or ~20%. This uptime is
+			 * quantized so only something above a full percentage point (0.01 * 168 hours = 1.68 hours) of
+			 * change will be guaranteed (from a percentage with a decimal component close to zero) to be
+			 * reflected. 1% / 20% = 0.05 sigma.
+			 *
+			 * 7-day uptime with random noise, then quantized. Quantization is to make it very, very
+			 * difficult to get useful information out of any given result because it is included with an
+			 * identifier,
+			 */
+			long percent = Math.round(randomNoise(100*node.uptime.getUptimeWeek(), 0.05));
 			//Clamp to byte.
 			if (percent > Byte.MAX_VALUE) percent = Byte.MAX_VALUE;
 			else if (percent < Byte.MIN_VALUE) percent = Byte.MIN_VALUE;
@@ -563,9 +588,16 @@ public class Probe implements ByteCounter {
 			PeerNode[] peers = node.getConnectedPeers();
 			float[] linkLengths = new float[peers.length];
 			int i = 0;
+			/*
+			 * 1% noise:
+			 * Link lengths are in the range [0.0, 0.5], and any change is enough to make the
+			 * match not exact between locations. Taking as an example a link length of 0.2. and with the
+			 * assumption that a change of 0.002 is enough to make it still useful for statistics but not
+			 * useful for identification, 0.002 change / 0.2 link length = 0.01 sigma.
+			 */
 			for (PeerNode peer : peers) {
 				linkLengths[i++] = (float)randomNoise(Math.min(Math.abs(peer.getLocation() - node.getLocation()),
-				                                         1.0 - Math.abs(peer.getLocation() - node.getLocation())));
+				                                         1.0 - Math.abs(peer.getLocation() - node.getLocation())), 0.01);
 			}
 			listener.onLinkLengths(linkLengths);
 			break;
@@ -573,15 +605,30 @@ public class Probe implements ByteCounter {
 			listener.onLocation((float)node.getLocation());
 			break;
 		case STORE_SIZE:
-			//1,073,741,824 bytes (2^30) per GiB
-			//Multiplicative noise instead of randomNoise's additive percentage for similar effect on large and small.
+			/*
+			 * 5% noise:
+			 * Reasonable datastore size is 20 GiB, and size is likely set in, at most, increments of 1 GiB.
+			 * 1 GiB / 20 GiB = 0.01 sigma.
+			 * 1,073,741,824 bytes (2^30) per GiB.
+			 */
 			listener.onStoreSize((float)(((double)node.getStoreSize()/(1 << 30)) * node.random.nextGaussian()));
 			break;
 		case UPTIME_48H:
-			listener.onUptime((float)randomNoise(100*node.uptime.getUptime()));
+			/*
+			 * 8% noise:
+			 * Continuing with the assumption that reasonable weekly uptime is around 40 hours, this allows
+			 * for 6 hours per day, 12 hours per 48 hours, or 25%. A half-hour seems a sufficent amount of
+			 * ambiguity, so 0.5 hours / 48 hours ~= 1%, and 2% / 25% = 0.04 sigma.
+			 */
+			listener.onUptime((float)randomNoise(100*node.uptime.getUptime(), 0.04));
 			break;
 		case UPTIME_7D:
-			listener.onUptime((float)randomNoise(100*node.uptime.getUptimeWeek()));
+			/*
+			 * 2.4% noise:
+			 * As a 168-hour uptime covers a longer period 1 hour of ambiguity seems sufficient.
+			 * 1 hour / 168 hours ~= 0.6%, and 0.6% / 20% = 0.024 sigma.
+			 */
+			listener.onUptime((float)randomNoise(100*node.uptime.getUptimeWeek(), 0.024));
 			break;
 		default:
 			throw new UnsupportedOperationException("Missing response for " + type.name());
