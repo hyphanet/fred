@@ -608,7 +608,7 @@ public class Probe implements ByteCounter {
 			/*
 			 * 5% noise:
 			 * Reasonable datastore size is 20 GiB, and size is likely set in, at most, increments of 1 GiB.
-			 * 1 GiB / 20 GiB = 0.01 sigma.
+			 * 1 GiB / 20 GiB = 0.05 sigma.
 			 * 1,073,741,824 bytes (2^30) per GiB.
 			 */
 			listener.onStoreSize((float)(((double)node.getStoreSize()/(1 << 30)) * node.random.nextGaussian()));
@@ -617,8 +617,8 @@ public class Probe implements ByteCounter {
 			/*
 			 * 8% noise:
 			 * Continuing with the assumption that reasonable weekly uptime is around 40 hours, this allows
-			 * for 6 hours per day, 12 hours per 48 hours, or 25%. A half-hour seems a sufficent amount of
-			 * ambiguity, so 0.5 hours / 48 hours ~= 1%, and 2% / 25% = 0.04 sigma.
+			 * for 6 hours per day, 12 hours per 48 hours, or 25%. A half-hour seems a sufficient amount of
+			 * ambiguity, so 0.5 hours / 48 hours ~= 1%, and 1% / 25% = 0.04 sigma.
 			 */
 			listener.onUptime((float)randomNoise(100*node.uptime.getUptime(), 0.04));
 			break;
@@ -626,9 +626,9 @@ public class Probe implements ByteCounter {
 			/*
 			 * 2.4% noise:
 			 * As a 168-hour uptime covers a longer period 1 hour of ambiguity seems sufficient.
-			 * 1 hour / 168 hours ~= 0.6%, and 0.6% / 20% = 0.024 sigma.
+			 * 1 hour / 168 hours ~= 0.6%, and 0.6% / 20% = 0.03 sigma.
 			 */
-			listener.onUptime((float)randomNoise(100*node.uptime.getUptimeWeek(), 0.024));
+			listener.onUptime((float)randomNoise(100*node.uptime.getUptimeWeek(), 0.03));
 			break;
 		default:
 			throw new UnsupportedOperationException("Missing response for " + type.name());
