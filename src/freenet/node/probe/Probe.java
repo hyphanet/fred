@@ -546,6 +546,12 @@ public class Probe implements ByteCounter {
 			return;
 		}
 
+		/*
+		 * This adds noise to the results to make information less identifiable. The goal is making it difficult
+		 * to determine which value a node actually has; that any given value could mean a small range of common
+		 * values. Different result types have different sigma values such that one sigma contains multiple
+		 * reasonable values.
+		 */
 		switch (type) {
 		case BANDWIDTH:
 			//1,024 (2^10) bytes per KiB
