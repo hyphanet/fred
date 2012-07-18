@@ -93,7 +93,7 @@ public class ProbeRequest extends FCPMessage {
 			}
 
 			@Override
-			public void onOutputBandwidth(long outputBandwidth) {
+			public void onOutputBandwidth(float outputBandwidth) {
 				handler.outputHandler.queue(new ProbeBandwidth(identifier, outputBandwidth));
 			}
 

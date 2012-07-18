@@ -90,7 +90,7 @@ public class RealNodeProbeTest extends RealNodeTest {
 			}
 
 			@Override
-			public void onOutputBandwidth(long outputBandwidth) {
+			public void onOutputBandwidth(float outputBandwidth) {
 				System.out.println("Probe got bandwidth limit " + nf.format(outputBandwidth) +
 					" KiB per second.");
 			}

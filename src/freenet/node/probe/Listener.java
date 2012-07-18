@@ -21,7 +21,7 @@ public interface Listener {
 	 * Output bandwidth limit result.
 	 * @param outputBandwidth endpoint's reported output bandwidth limit in KiB per second.
 	 */
-	void onOutputBandwidth(long outputBandwidth);
+	void onOutputBandwidth(float outputBandwidth);
 
 	/**
 	 * Build result.
