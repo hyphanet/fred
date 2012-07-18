@@ -611,7 +611,7 @@ public class Probe implements ByteCounter {
 			 * 1 GiB / 20 GiB = 0.05 sigma.
 			 * 1,073,741,824 bytes (2^30) per GiB.
 			 */
-			listener.onStoreSize((float)(((double)node.getStoreSize()/(1 << 30)) * node.random.nextGaussian()));
+			listener.onStoreSize((float)randomNoise((double)node.getStoreSize()/(1 << 30), 0.05));
 			break;
 		case UPTIME_48H:
 			/*
