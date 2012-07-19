@@ -1552,35 +1552,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return fetchARKFlag;
 	}
 
-	private synchronized boolean calcNextHandshakeBurstOnly(long now) {
-		boolean fetchARKFlag = false;
-		listeningHandshakeBurstCount++;
-		if(isBurstOnly()) {
-			if(listeningHandshakeBurstCount >= listeningHandshakeBurstSize) {
-				listeningHandshakeBurstCount = 0;
-				fetchARKFlag = true;
-			}
-		}
-		long delay;
-		if(listeningHandshakeBurstCount == 0) {  // 0 only if we just reset it above
-			delay = Node.MIN_TIME_BETWEEN_BURSTING_HANDSHAKE_BURSTS
-				+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_BURSTING_HANDSHAKE_BURSTS);
-			listeningHandshakeBurstSize = Node.MIN_BURSTING_HANDSHAKE_BURST_SIZE
-					+ node.random.nextInt(Node.RANDOMIZED_BURSTING_HANDSHAKE_BURST_SIZE);
-			isBursting = false;
-		} else {
-			delay = Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
-				+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
-		}
-		// FIXME proper multi-homing support!
-		delay /= (handshakeIPs == null ? 1 : handshakeIPs.length);
-		if(delay < 3000) delay = 3000;
-
-		sendHandshakeTime = now + delay;
-		if(logMINOR) Logger.minor(this, "Next BurstOnly mode handshake in "+(sendHandshakeTime - now)+"ms for "+shortToString()+" (count: "+listeningHandshakeBurstCount+", size: "+listeningHandshakeBurstSize+ ") on "+this, new Exception("double-called debug"));
-		return fetchARKFlag;
-	}
-
 	protected void calcNextHandshake(boolean successfulHandshakeSend, boolean dontFetchARK, boolean notRegistered) {
 		long now = System.currentTimeMillis();
 		boolean fetchARKFlag = innerCalcNextHandshakeAll(successfulHandshakeSend, dontFetchARK, now);
