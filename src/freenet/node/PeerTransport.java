@@ -48,6 +48,8 @@ public class PeerTransport {
 	 */
 	protected PeerConnection peerConn;
 	
+	private Object peerConnLock = new Object();
+	
 	/*
 	 * 
 	 */
@@ -102,8 +104,9 @@ public class PeerTransport {
 	/** Time at which we should send the next handshake request */
 	protected long sendTransportHandshakeTime;
 	/** When did we last rekey (promote the unverified tracker to new) ? */
-	private long timeTransportLastRekeyed;
-	
+	long timeTransportLastRekeyed;
+	protected boolean sentInitialMessagesTransport;
+
 	/** Hold collected addresses for handshake attempts, populated by DNSRequestor
 	 * Equivalent to handshakeIPs in PeerNode.
 	 */
@@ -118,7 +121,7 @@ public class PeerTransport {
 	private int handshakeIPAlternator = 0;
 	
 	/** The context object for the currently running negotiation. */
-	private KeyAgreementSchemeContext ctxTransport;
+	KeyAgreementSchemeContext ctxTransport;
 	
 	// Burst-only mode
 	/** True if we are currently sending this peer a burst of handshake requests */
@@ -129,6 +132,11 @@ public class PeerTransport {
 	private int listeningTransportHandshakeBurstSize;
 	
 	boolean firstHandshake = true;
+	
+	private boolean fetchARKFlag;
+	
+	/** When did we last receive an ack? */
+	protected long timeLastReceivedTransportAck;
 	
 	
 	private static volatile boolean logMINOR;
@@ -242,8 +250,14 @@ public class PeerTransport {
 			if(successfulHandshakeSend)
 				firstHandshake = false;
 			transportHandshakeCount++;
-			return transportHandshakeCount == MAX_HANDSHAKE_COUNT;
+			if(transportHandshakeCount == MAX_HANDSHAKE_COUNT)
+				fetchARKFlag = true;
+			return fetchARKFlag;
 		}
+	}
+	
+	public boolean getFetchARKFlag() {
+		return fetchARKFlag;
 	}
 
 	private synchronized boolean calcNextHandshakeBurstOnly(long now) {
@@ -626,6 +640,35 @@ public class PeerTransport {
 		if((loopTime2 - loopTime1) > 1000)
 			Logger.normal(this, "loopTime2 is more than a second after loopTime1 ("+(loopTime2 - loopTime1)+") working on "+detectedTransportAddress);
 		return ret;
+	}
+	
+	/*
+	 * 
+	 * Some get methods
+	 * 
+	 */
+	
+	public SessionKey getCurrentKeyTracker() {
+		synchronized(peerConnLock) {
+			return peerConn.currentTracker;
+		}
+	}
+	
+	public SessionKey getPreviousKeyTracker() {
+		synchronized(peerConnLock) {
+			return peerConn.currentTracker;
+		}			
+	}
+	
+	public SessionKey getUnverifiedKeyTracker() {
+		synchronized(peerConnLock) {
+			return peerConn.currentTracker;
+		}
+	}
+	
+	public synchronized void receivedAck(long now) {
+		if(timeLastReceivedTransportAck < now)
+			timeLastReceivedTransportAck = now;
 	}
 	
 }

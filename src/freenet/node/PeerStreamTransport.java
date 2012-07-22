@@ -1,7 +1,5 @@
 package freenet.node;
 
-import java.util.Vector;
-
 import freenet.pluginmanager.StreamTransportPlugin;
 /**
  * This class will be used to store keys, timing fields, etc. by PeerNode for each transport for handshaking. 
@@ -38,8 +36,6 @@ public class PeerStreamTransport extends PeerTransport {
 	protected long timeLastReceivedTransportStream;
 	/** When did we last receive a non-auth Stream? */
 	protected long timeLastReceivedTransportDataStream;
-	/** When did we last receive an ack? */
-	protected long timeLastReceivedTransportAck;
 	
 	
 	public PeerStreamTransport(StreamTransportPlugin transportPlugin, OutgoingStreamMangler streamMangler, PeerNode pn){
@@ -50,6 +46,10 @@ public class PeerStreamTransport extends PeerTransport {
 	
 	public PeerStreamTransport(StreamTransportBundle streamTransportBundle, PeerNode pn){
 		this(streamTransportBundle.transportPlugin, streamTransportBundle.streamMangler, pn);
+	}
+	
+	public long completedHandshake() {
+		return -1;
 	}
 	
 }
