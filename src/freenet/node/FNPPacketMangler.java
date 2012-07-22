@@ -717,7 +717,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		if(logMINOR) {
 			long now = System.currentTimeMillis();
-			long last = pn.lastSentPacketTime();
+			long last = pn.lastSentPacketTime(sock);
 			String delta = "never";
 			if (last>0) {
 				delta = TimeUtil.formatTime(now-last, 2, true)+" ago";
@@ -2022,7 +2022,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(logMINOR) {
 			long now = System.currentTimeMillis();
 			String delta = "never";
-			long last = pn.lastSentPacketTime();
+			long last = pn.lastSentPacketTime(sock);
 			delta = TimeUtil.formatTime(now - last, 2, true) + " ago";
 			Logger.minor(this, "Sending auth packet for "+ String.valueOf(pn.getPeer())+" (phase="+phase+", ver="+version+", nt="+negType+") (last packet sent "+delta+") to "+replyTo+" data.length="+data.length+" to "+replyTo);
 		}
@@ -3206,7 +3206,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		PluginAddress address = pn.getHandshakeAddress(sock);
 		if(address == null) {
-			pn.couldNotSendHandshake(notRegistered);
+			pn.couldNotSendHandshake(notRegistered, sock);
 			return;
 		}
 		PluginAddress oldAddress = address;
@@ -3217,13 +3217,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 		if(address.equals(null)) {
 			Logger.error(this, "No address for peer "+oldAddress+" so cannot send handshake");
-			pn.couldNotSendHandshake(notRegistered);
+			pn.couldNotSendHandshake(notRegistered, sock);
 			return;
 		}
 		sendJFKMessage1(pn, address, pn.handshakeUnknownInitiator(), pn.handshakeSetupType(), negType);
 		if(logMINOR)
 			Logger.minor(this, "Sending handshake to "+address+" for "+pn);
-		pn.sentHandshake(notRegistered);
+		pn.sentHandshake(notRegistered, sock);
 	}
 
 	/* (non-Javadoc)
