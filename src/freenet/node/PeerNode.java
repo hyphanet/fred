@@ -331,7 +331,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * whenever we call disconnected(true, ...) */
 	private long myBootID;
 	/** myBootID at the time of the last successful completed handshake. */
-	private long myLastSuccessfulBootID;
+	protected long myLastSuccessfulBootID;
 
 	/** If true, this means last time we tried, we got a bogus noderef */
 	private boolean bogusNoderef;
@@ -393,7 +393,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * long time, but without preventing it from being GC'ed. */
 	final WeakReference<PeerNode> myRef;
 	/** The node is being disconnected, but it may take a while. */
-	private boolean disconnecting;
+	public boolean disconnecting;
 	/** When did we last disconnect? Not Disconnected because a discrete event */
 	long timeLastDisconnect;
 	/** Previous time of disconnection */
@@ -1474,8 +1474,17 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/**
 	* @return The time at which we last sent a packet.
 	*/
+	public long lastSentPacketTime(PacketTransportPlugin transportPlugin) {
+		String transportName = transportPlugin.transportName;
+		if(peerPacketTransportMap.containsKey(transportName))
+			return peerPacketTransportMap.get(transportName).lastSentTransportPacketTime();
+		return 0; //Shouldn't get here
+	}
+	
+	/** Workaround for default udp transport */
 	public long lastSentPacketTime() {
-		return timeLastSentPacket;
+		String transportName = Node.defaultPacketTransportName;
+		return peerPacketTransportMap.get(transportName).lastSentTransportPacketTime();
 	}
 
 	/**
@@ -1532,7 +1541,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	boolean firstHandshake = true;
 
 	/**
-	 * Set sendHandshakeTime, and return whether to fetch the ARK.
+	 * Set sendHandshakeTime, and return whether to fetch the ARK for all transports.
+	 * Don't use it unnecessarily. PeerNode constructor may use it. Also maybe when we handshake all transports simultaneously.
 	 */
 	protected boolean innerCalcNextHandshakeAll(boolean successfulHandshakeSend, boolean dontFetchARK, long now) {
 		boolean noLongerRoutable = noLongerRoutable();
@@ -1551,13 +1561,50 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		return fetchARKFlag;
 	}
-
-	protected void calcNextHandshake(boolean successfulHandshakeSend, boolean dontFetchARK, boolean notRegistered) {
+	
+	/**
+	 * This method calls innerCalcNextHandshake for a specific transport.
+	 * Calls maybeARKFetcher
+	 * @param successfulHandshakeSend
+	 * @param dontFetchARK
+	 * @param notRegistered
+	 * @param transportPlugin
+	 */
+	protected void calcNextHandshake(boolean successfulHandshakeSend, boolean dontFetchARK, boolean notRegistered, TransportPlugin transportPlugin) {
+		boolean noLongerRoutable = noLongerRoutable();
+		boolean invalidVersion = invalidVersion();
+		boolean fetchARKFlag = false;
+		String transportName = transportPlugin.transportName;
 		long now = System.currentTimeMillis();
-		boolean fetchARKFlag = innerCalcNextHandshakeAll(successfulHandshakeSend, dontFetchARK, now);
+		if(peerPacketTransportMap.containsKey(transportName))
+			fetchARKFlag = peerPacketTransportMap.get(transportName).innerCalcNextHandshake(successfulHandshakeSend, dontFetchARK, now, noLongerRoutable, invalidVersion);
+		else if(peerStreamTransportMap.containsKey(transportName))
+			fetchARKFlag = peerStreamTransportMap.get(transportName).innerCalcNextHandshake(successfulHandshakeSend, dontFetchARK, now, noLongerRoutable, invalidVersion);
+		else
+			fetchARKFlag = false; //Not necessary, but make sure we don't call ark fetcher when we have no transports
 		if(!notRegistered)
 			setPeerNodeStatus(now);  // Because of isBursting being set above and it can't hurt others
 		// Don't fetch ARKs for peers we have verified (through handshake) to be incompatible with us
+		if(!fetchARKFlag)
+			maybeStartARKFetcher(dontFetchARK);
+	}
+	
+	/**
+	 * Check all transports and then decide whether to call ark fetcher
+	 * @param dontFetchARK
+	 */
+	protected void maybeStartARKFetcher(boolean dontFetchARK) {
+		boolean fetchARKFlag = true;
+		synchronized(packetTransportMapLock) {
+			for(String transportName : peerPacketTransportMap.keySet()) {
+				fetchARKFlag &= peerPacketTransportMap.get(transportName).getFetchARKFlag();
+			}
+		}
+		synchronized(streamTransportMapLock) {
+			for(String transportName : peerStreamTransportMap.keySet()) {
+				fetchARKFlag &= peerStreamTransportMap.get(transportName).getFetchARKFlag();
+			}
+		}
 		if(fetchARKFlag && !dontFetchARK) {
 			long arkFetcherStartTime1 = System.currentTimeMillis();
 			startARKFetcher();
@@ -1566,7 +1613,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				Logger.normal(this, "arkFetcherStartTime2 is more than half a second after arkFetcherStartTime1 (" + (arkFetcherStartTime2 - arkFetcherStartTime1) + ") working on " + shortToString());
 		}
 	}
-
+	
 	/** If the outgoingMangler allows bursting, we still don't want to burst *all the time*, because it may be mistaken
 	 * in its detection of a port forward. So from time to time we will aggressively handshake anyway. This flag is set
 	 * once every UPDATE_BURST_NOW_PERIOD. */
@@ -1595,20 +1642,20 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	* Call this method when a handshake request has been
 	* sent.
 	*/
-	public void sentHandshake(boolean notRegistered) {
+	public void sentHandshake(boolean notRegistered, TransportPlugin transportPlugin) {
 		if(logMINOR)
 			Logger.minor(this, "sentHandshake(): " + this);
-		calcNextHandshake(true, false, notRegistered);
+		calcNextHandshake(true, false, notRegistered, transportPlugin);
 	}
 
 	/**
 	* Call this method when a handshake request could not be sent (i.e. no IP address available)
 	* sent.
 	*/
-	public void couldNotSendHandshake(boolean notRegistered) {
+	public void couldNotSendHandshake(boolean notRegistered, TransportPlugin transportPlugin) {
 		if(logMINOR)
 			Logger.minor(this, "couldNotSendHandshake(): " + this);
-		calcNextHandshake(false, false, notRegistered);
+		calcNextHandshake(false, false, notRegistered, transportPlugin);
 	}
 
 	/**
@@ -1867,6 +1914,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public synchronized SessionKey getCurrentKeyTracker() {
 		return currentTracker;
 	}
+	
+	public SessionKey getCurrentKeyTracker(TransportPlugin transportPlugin) {
+		String transportName = transportPlugin.transportName;
+		if(peerPacketTransportMap.containsKey(transportName))
+			return peerPacketTransportMap.get(transportName).getCurrentKeyTracker();
+		else if(peerStreamTransportMap.containsKey(transportName))
+			return peerStreamTransportMap.get(transportName).getCurrentKeyTracker();
+		return null;
+	}
 
 	/**
 	* @return The previous primary SessionKey, or null if we
@@ -1875,6 +1931,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	@Override
 	public synchronized SessionKey getPreviousKeyTracker() {
 		return previousTracker;
+	}
+	
+	public SessionKey getPreviousKeyTracker(TransportPlugin transportPlugin) {
+		String transportName = transportPlugin.transportName;
+		if(peerPacketTransportMap.containsKey(transportName))
+			return peerPacketTransportMap.get(transportName).getPreviousKeyTracker();
+		else if(peerStreamTransportMap.containsKey(transportName))
+			return peerStreamTransportMap.get(transportName).getPreviousKeyTracker();
+		return null;
 	}
 
 	/**
@@ -1885,6 +1950,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	@Override
 	public synchronized SessionKey getUnverifiedKeyTracker() {
 		return unverifiedTracker;
+	}
+	
+	public SessionKey getUnverifiedKeyTracker(TransportPlugin transportPlugin) {
+		String transportName = transportPlugin.transportName;
+		if(peerPacketTransportMap.containsKey(transportName))
+			return peerPacketTransportMap.get(transportName).getUnverifiedKeyTracker();
+		else if(peerStreamTransportMap.containsKey(transportName))
+			return peerStreamTransportMap.get(transportName).getUnverifiedKeyTracker();
+		return null;
 	}
 
 	private String shortToString;
@@ -2001,13 +2075,16 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	* it's a new tracker. -1 to indicate failure.
 	*/
 	public long completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher outgoingCipher, byte[] outgoingKey, BlockCipher incommingCipher, byte[] incommingKey, PluginAddress replyTo, boolean unverified, int negType, long trackerID, boolean isJFK4, boolean jfk4SameAsOld, byte[] hmacKey, BlockCipher ivCipher, byte[] ivNonce, int ourInitialSeqNum, int theirInitialSeqNum, int ourInitialMsgID, int theirInitialMsgID, TransportPlugin transportPlugin) {
+		/*
+		 * PeerNode specific code
+		 */
 		long now = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Tracker ID "+trackerID+" isJFK4="+isJFK4+" jfk4SameAsOld="+jfk4SameAsOld);
 
 		// Update sendHandshakeTime; don't send another handshake for a while.
 		// If unverified, "a while" determines the timeout; if not, it's just good practice to avoid a race below.
 		if(!(isSeed() && this instanceof SeedServerPeerNode))
-                    calcNextHandshake(true, true, false);
+                    calcNextHandshake(true, true, false, transportPlugin);
 		stopARKFetcher();
 		try {
 			// First, the new noderef
@@ -2051,235 +2128,47 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			routable = false;
 		} else
 			older = false;
+		
 		changedAddress(replyTo, transportPlugin);
-		boolean bootIDChanged = false;
-		boolean wasARekey = false;
-		SessionKey oldPrev = null;
-		SessionKey oldCur = null;
-		SessionKey prev = null;
-		SessionKey newTracker;
-		MessageItem[] messagesTellDisconnected = null;
-		PacketFormat oldPacketFormat = null;
-		PacketTracker packets = null;
+		/*
+		 * PeerNode specific code ends
+		 */
+		
+		sentInitialMessages = false;//-> fix
+		
+		String transportName = transportPlugin.transportName;
+		long newID;
 		synchronized(this) {
-			disconnecting = false;
-			// FIXME this shouldn't happen, does it?
-			if(currentTracker != null) {
-				if(Arrays.equals(outgoingKey, currentTracker.outgoingKey)
-						&& Arrays.equals(incommingKey, currentTracker.incommingKey)) {
-					Logger.error(this, "completedHandshake() with identical key to current, maybe replayed JFK(4)?");
-					return -1;
-				}
+			if(peerPacketTransportMap.containsKey(transportName)) {
+				PeerPacketTransport peerTransport = peerPacketTransportMap.get(transportName);
+				newID = peerTransport.completedHandshake(thisBootID, outgoingCipher, outgoingKey, incommingCipher, incommingKey, replyTo, unverified, negType, trackerID, isJFK4, jfk4SameAsOld, hmacKey, ivCipher, ivNonce, ourInitialSeqNum, theirInitialSeqNum, ourInitialMsgID, theirInitialMsgID, now, newer, older);
 			}
-			if(previousTracker != null) {
-				if(Arrays.equals(outgoingKey, previousTracker.outgoingKey)
-						&& Arrays.equals(incommingKey, previousTracker.incommingKey)) {
-					Logger.error(this, "completedHandshake() with identical key to previous, maybe replayed JFK(4)?");
-					return -1;
-				}
+			else if(peerStreamTransportMap.containsKey(transportName)) {
+				PeerStreamTransport peerTransport = peerStreamTransportMap.get(transportName);
+				newID = peerTransport.completedHandshake();
 			}
-			if(unverifiedTracker != null) {
-				if(Arrays.equals(outgoingKey, unverifiedTracker.outgoingKey)
-						&& Arrays.equals(incommingKey, unverifiedTracker.incommingKey)) {
-					Logger.error(this, "completedHandshake() with identical key to unverified, maybe replayed JFK(4)?");
-					return -1;
-				}
-			}
-			handshakeCount = 0;
+			else
+				newID =1; //Situation not possible
+			
+			if(newID == 1)
+				return -1;
+			/*
+			 * Finish up some tasks at PeerNode level (not transport specific),
+			 * only if the completedHandshake above returned a successful newID.
+			 * I have gone through these variables and are not affected
+			 * if changed after calling PeerTransport.completedHandshake method.
+			 * We need to test more since some fields are changed there.
+			 * Check previous version of PeerNode.
+			 */
 			bogusNoderef = false;
-			// Don't reset the uptime if we rekey
-			if(!isConnected) {
-				connectedTime = now;
-				countSelectionsSinceConnected = 0;
-				sentInitialMessages = false;
-			} else
-				wasARekey = true;
-			isConnected = true;
 			disableRouting = disableRoutingHasBeenSetLocally || disableRoutingHasBeenSetRemotely;
 			isRoutable = routable;
 			unroutableNewerVersion = newer;
 			unroutableOlderVersion = older;
-			boolean notReusingTracker = false;
-			bootIDChanged = (thisBootID != this.bootID);
-			if(myLastSuccessfulBootID != this.myBootID) {
-				// If our own boot ID changed, because we forcibly disconnected, 
-				// we need to use a new tracker. This is equivalent to us having restarted,
-				// from the point of view of the other side, but since we haven't we need
-				// to track it here.
-				bootIDChanged = true;
-				myLastSuccessfulBootID = myBootID;
-			}
-			if(bootIDChanged && wasARekey) {
-				// This can happen if the other side thought we disconnected but we didn't think they did.
-				Logger.normal(this, "Changed boot ID while rekeying! from " + bootID + " to " + thisBootID + " for " + getPeer());
-				wasARekey = false;
-				connectedTime = now;
-				countSelectionsSinceConnected = 0;
-				sentInitialMessages = false;
-			} else if(bootIDChanged && logMINOR)
-				Logger.minor(this, "Changed boot ID from " + bootID + " to " + thisBootID + " for " + getPeer());
-			this.bootID = thisBootID;
-			int firstPacketNumber = (negType >= 5 ? 0 : node.random.nextInt(100 * 1000));
-			if(currentTracker != null && currentTracker.packets.trackerID == trackerID && !currentTracker.packets.isDeprecated()) {
-				if(isJFK4 && !jfk4SameAsOld)
-					Logger.error(this, "In JFK(4), found tracker ID "+trackerID+" but other side says is new! for "+this);
-				packets = currentTracker.packets;
-				if(logMINOR) Logger.minor(this, "Re-using packet tracker ID "+trackerID+" on "+this+" from current "+currentTracker);
-			} else if(previousTracker != null && previousTracker.packets.trackerID == trackerID && !previousTracker.packets.isDeprecated()) {
-				if(isJFK4 && !jfk4SameAsOld)
-					Logger.error(this, "In JFK(4), found tracker ID "+trackerID+" but other side says is new! for "+this);
-				packets = previousTracker.packets;
-				if(logMINOR) Logger.minor(this, "Re-using packet tracker ID "+trackerID+" on "+this+" from prev "+previousTracker);
-			} else if(isJFK4 && jfk4SameAsOld) {
-				isConnected = false;
-				Logger.error(this, "Can't reuse old tracker ID "+trackerID+" as instructed - disconnecting");
-				return -1;
-			} else if(trackerID == -1) {
-				// Create a new tracker unconditionally
-				packets = new PacketTracker(this, firstPacketNumber);
-				if(negType >= 5) {
-					if(previousTracker != null && previousTracker.packets.wasUsed()) {
-						oldPrev = previousTracker;
-						previousTracker = null;
-						Logger.error(this, "Moving from old packet format to new packet format, previous tracker had packets in progress.");
-					}
-					if(currentTracker != null && currentTracker.packets.wasUsed()) {
-						oldCur = currentTracker;
-						currentTracker = null;
-						Logger.error(this, "Moving from old packet format to new packet format, current tracker had packets in progress.");
-					}
-				} else {
-					notReusingTracker = true;
-				}
-				if(logMINOR) Logger.minor(this, "Creating new PacketTracker as instructed for "+this);
-			} else {
-				if(isJFK4 && negType >= 4 && trackerID < 0)
-					Logger.error(this, "JFK(4) packet with neg type "+negType+" has negative tracker ID: "+trackerID);
-
-				notReusingTracker = true;
-				if(isJFK4/* && !jfk4SameAsOld implied */ && trackerID >= 0) {
-					packets = new PacketTracker(this, firstPacketNumber, trackerID);
-				} else
-					packets = new PacketTracker(this, firstPacketNumber);
-				if(logMINOR) Logger.minor(this, "Creating new tracker (last resort) on "+this);
-			}
-			if(bootIDChanged || notReusingTracker) {
-				if((!bootIDChanged) && notReusingTracker && !(currentTracker == null && previousTracker == null))
-					// FIXME is this a real problem? Clearly the other side has changed trackers for some reason...
-					// Normally that shouldn't happen except when a connection times out ... it is probably possible
-					// for that to timeout on one side and not the other ...
-					Logger.error(this, "Not reusing tracker, so wiping old trackers for "+this);
-				oldPrev = previousTracker;
-				oldCur = currentTracker;
-				previousTracker = null;
-				currentTracker = null;
-			}
-			if(bootIDChanged) {
-				// Messages do not persist across restarts.
-				// Generally they would be incomprehensible, anything that isn't should be sent as
-				// connection initial messages by maybeOnConnect().
-				messagesTellDisconnected = grabQueuedMessageItems();
-				this.offeredMainJarVersion = 0;
-				oldPacketFormat = packetFormat;
-				packetFormat = null;
-			} else {
-				// else it's a rekey
-			}
-			newTracker = new SessionKey(this, packets, outgoingCipher, outgoingKey, incommingCipher, incommingKey, ivCipher, ivNonce, hmacKey, new NewPacketFormatKeyContext(ourInitialSeqNum, theirInitialSeqNum));
-			if(logMINOR) Logger.minor(this, "New key tracker in completedHandshake: "+newTracker+" for "+packets+" for "+shortToString()+" neg type "+negType);
-			if(unverified) {
-				if(unverifiedTracker != null) {
-					// Keep the old unverified tracker if possible.
-					if(previousTracker == null)
-						previousTracker = unverifiedTracker;
-				}
-				unverifiedTracker = newTracker;
-				if(currentTracker == null || currentTracker.packets.isDeprecated())
-					isConnected = false;
-			} else {
-				oldPrev = previousTracker;
-				previousTracker = currentTracker;
-				currentTracker = newTracker;
-				// Keep the old unverified tracker.
-				// In case of a race condition (two setups between A and B complete at the same time),
-				// we might want to keep the unverified tracker rather than the previous tracker.
-				neverConnected = false;
-				maybeClearPeerAddedTimeOnConnect();
-				maybeSwapTrackers();
-				prev = previousTracker;
-			}
-			ctx = null;
-			isRekeying = false;
-			timeLastRekeyed = now - (unverified ? 0 : FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY / 2);
-			totalBytesExchangedWithCurrentTracker = 0;
-			// This has happened in the past, and caused problems, check for it.
-			if(currentTracker != null && previousTracker != null &&
-					Arrays.equals(currentTracker.outgoingKey, previousTracker.outgoingKey) &&
-					Arrays.equals(currentTracker.incommingKey, previousTracker.incommingKey))
-				Logger.error(this, "currentTracker key equals previousTracker key: cur "+currentTracker+" prev "+previousTracker);
-			if(previousTracker != null && unverifiedTracker != null &&
-					Arrays.equals(previousTracker.outgoingKey, unverifiedTracker.outgoingKey) &&
-					Arrays.equals(previousTracker.incommingKey, unverifiedTracker.incommingKey))
-				Logger.error(this, "previousTracker key equals unverifiedTracker key: prev "+previousTracker+" unv "+unverifiedTracker);
-			timeLastSentPacket = now;
-			if(packetFormat == null) {
-				if(negType < 5) {
-					packetFormat = new FNPWrapper(this);
-				} else {
-					packetFormat = new NewPacketFormat(this, ourInitialMsgID, theirInitialMsgID);
-				}
-			}
-			// Completed setup counts as received data packet, for purposes of avoiding spurious disconnections.
-			timeLastReceivedPacket = now;
-			timeLastReceivedDataPacket = now;
-			timeLastReceivedAck = now;
-		}
-		if(messagesTellDisconnected != null) {
-			for(int i=0;i<messagesTellDisconnected.length;i++) {
-				messagesTellDisconnected[i].onDisconnect();
-			}
-		}
-
-		if(bootIDChanged) {
-			node.lm.lostOrRestartedNode(this);
-			node.usm.onRestart(this);
-			node.onRestartOrDisconnect(this);
-		}
-		if(oldPrev != null && oldPrev.packets != newTracker.packets)
-			oldPrev.packets.completelyDeprecated(newTracker);
-		if(oldPrev != null) oldPrev.disconnected(true);
-		if(oldCur != null && oldCur.packets != newTracker.packets)
-			oldCur.packets.completelyDeprecated(newTracker);
-		if(oldCur != null) oldCur.disconnected(true);
-		if(prev != null && prev.packets != newTracker.packets)
-			prev.packets.deprecated();
-		if(oldPacketFormat != null) {
-			List<MessageItem> tellDisconnect = oldPacketFormat.onDisconnect();
-			if(tellDisconnect != null)
-				for(MessageItem item : tellDisconnect) {
-					item.onDisconnect();
-				}
-		}
-		PacketThrottle throttle;
-		synchronized(this) {
-			throttle = _lastThrottle;
-		}
-		if(throttle != null) throttle.maybeDisconnected();
-		Logger.normal(this, "Completed handshake with " + this + " on " + replyTo + " - current: " + currentTracker +
-			" old: " + previousTracker + " unverified: " + unverifiedTracker + " bootID: " + thisBootID + (bootIDChanged ? "(changed) " : "") + " for " + shortToString());
-
-		setPeerNodeStatus(now);
-
-		if(newer || older || !isConnected())
-			node.peers.disconnected(this);
-		else if(!wasARekey) {
-			node.peers.addConnectedPeer(this);
-			maybeOnConnect();
 		}
 		
-		crypto.maybeBootConnection(this, replyTo, transportPlugin);
-
-		return packets.trackerID;
+		return newID;
+		
 	}
 
 	protected abstract void maybeClearPeerAddedTimeOnConnect();
@@ -2338,6 +2227,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public long getBootID() {
 		return bootID;
 	}
+	
+	public void setBootID(long bootID) {
+		this.bootID = bootID;
+	}
+	
 	private final Object arkFetcherSync = new Object();
 
 	void startARKFetcher() {
@@ -2428,6 +2322,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			/** Send IP message for each transport separately */
 			for(String transportName : peerPacketTransportMap.keySet()) {
 				sendAsync(peerPacketTransportMap.get(transportName).getIPAddressMessage(), null, node.nodeStats.initialMessagesCtr);
+			}
+			for(String transportName : peerStreamTransportMap.keySet()) {
+				sendAsync(peerStreamTransportMap.get(transportName).getIPAddressMessage(), null, node.nodeStats.initialMessagesCtr);
 			}
 			sendAsync(timeMsg, null, node.nodeStats.initialMessagesCtr);
 			sendAsync(packetsMsg, null, node.nodeStats.initialMessagesCtr);
@@ -4269,6 +4166,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public synchronized boolean isDisconnecting() {
 		return disconnecting;
 	}
+	
+	public synchronized void setDisconnecting(boolean disconnecting) {
+		this.disconnecting = disconnecting;
+	}
 
 	protected byte[] getJFKBuffer() {
 		return jfkBuffer;
@@ -4563,59 +4464,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * Alternates between valid values.
 	 * (FIXME!)
 	 */
-	public Peer getHandshakeIP() {
-		Peer[] localHandshakeIPs;
-		if(!shouldSendHandshake()) {
-			if(logMINOR) Logger.minor(this, "Not sending handshake to "+getPeer()+" because pn.shouldSendHandshake() returned false");
-			return null;
-		}
-		long firstTime = System.currentTimeMillis();
-		localHandshakeIPs = getHandshakeIPs();
-		long secondTime = System.currentTimeMillis();
-		if((secondTime - firstTime) > 1000)
-			Logger.error(this, "getHandshakeIPs() took more than a second to execute ("+(secondTime - firstTime)+") working on "+userToString());
-		if(localHandshakeIPs.length == 0) {
-			long thirdTime = System.currentTimeMillis();
-			if((thirdTime - secondTime) > 1000)
-				Logger.error(this, "couldNotSendHandshake() (after getHandshakeIPs()) took more than a second to execute ("+(thirdTime - secondTime)+") working on "+userToString());
-			return null;
-		}
-		long loopTime1 = System.currentTimeMillis();
-		Vector<Peer> validIPs = new Vector<Peer>();
-		for(int i=0;i<localHandshakeIPs.length;i++){
-			Peer peer = localHandshakeIPs[i];
-			FreenetInetAddress addr = peer.getFreenetAddress();
-			if(!outgoingMangler.allowConnection(this, addr)) {
-				if(logMINOR)
-					Logger.minor(this, "Not sending handshake packet to "+peer+" for "+this);
-			}
-			if(peer.getAddress(false) == null) {
-				if(logMINOR) Logger.minor(this, "Not sending handshake to "+localHandshakeIPs[i]+" for "+getPeer()+" because the DNS lookup failed or it's a currently unsupported IPv6 address");
-				continue;
-			}
-			if(!peer.isRealInternetAddress(false, false, allowLocalAddresses())) {
-				if(logMINOR) Logger.minor(this, "Not sending handshake to "+localHandshakeIPs[i]+" for "+getPeer()+" because it's not a real Internet address and metadata.allowLocalAddresses is not true");
-				continue;
-			}
-			validIPs.add(peer);
-		}
-		Peer ret;
-		if(validIPs.isEmpty()) {
-			ret = null;
-		} else if(validIPs.size() == 1) {
-			ret = validIPs.get(0);
-		} else {
-			// Don't need to synchronize for this value as we're only called from one thread anyway.
-			handshakeIPAlternator %= validIPs.size();
-			ret = validIPs.get(handshakeIPAlternator);
-			handshakeIPAlternator++;
-		}
-		long loopTime2 = System.currentTimeMillis();
-		if((loopTime2 - loopTime1) > 1000)
-			Logger.normal(this, "loopTime2 is more than a second after loopTime1 ("+(loopTime2 - loopTime1)+") working on "+userToString());
-		return ret;
-	}
-	
 	public PluginAddress getHandshakeAddress(TransportPlugin transportPlugin) {
 		String transportName = transportPlugin.transportName;
 		if(peerPacketTransportMap.containsKey(transportName))
@@ -4624,8 +4472,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			return peerStreamTransportMap.get(transportName).getHandshakeAddress();
 		return null;
 	}
-
-	private int handshakeIPAlternator;
 
 	public void sendNodeToNodeMessage(SimpleFieldSet fs, int n2nType, boolean includeSentTime, long now, boolean queueOnNotConnected) {
 		fs.putOverwrite("n2nType", Integer.toString(n2nType));
@@ -4887,6 +4733,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		// Avoid bias due to short uptime.
 		if(timeSinceConnected < 10*1000) return 0.0;
 		return countSelectionsSinceConnected / (double) timeSinceConnected;
+	}
+	
+	public synchronized void resetCountSelectionsSinceConnected() {
+		countSelectionsSinceConnected = 0;
 	}
 
 	private volatile long offeredMainJarVersion;
