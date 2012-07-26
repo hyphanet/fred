@@ -5,6 +5,8 @@ import java.util.Random;
 import freenet.io.comm.Message;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.io.comm.PeerContext;
+import freenet.pluginmanager.PacketTransportPlugin;
+import freenet.pluginmanager.TransportPlugin;
 
 /** Base interface for PeerNode, for purposes of the transport layer. Will be overridden
  * for unit tests to simplify testing. 
@@ -12,15 +14,15 @@ import freenet.io.comm.PeerContext;
  */
 public interface BasePeerNode extends PeerContext {
 
-	SessionKey getCurrentKeyTracker();
+	SessionKey getCurrentKeyTracker(TransportPlugin transportPlugin);
 
-	SessionKey getPreviousKeyTracker();
+	SessionKey getPreviousKeyTracker(TransportPlugin transportPlugin);
 
-	SessionKey getUnverifiedKeyTracker();
+	SessionKey getUnverifiedKeyTracker(TransportPlugin transportPlugin);
 
-	void receivedPacket(boolean dontLog, boolean dataPacket);
+	void receivedPacket(boolean dontLog, boolean dataPacket, PacketTransportPlugin transportPlugin);
 
-	void verified(SessionKey s);
+	void verified(SessionKey s, PacketTransportPlugin transportPlugin);
 
 	void startRekeying();
 
@@ -38,15 +40,15 @@ public interface BasePeerNode extends PeerContext {
 
 	void wakeUpSender();
 
-	int getMaxPacketSize();
+	int getMaxPacketSize(PacketTransportPlugin transportPlugi);
 
 	PeerMessageQueue getMessageQueue();
 
 	boolean shouldPadDataPackets();
 
-	void sendEncryptedPacket(byte[] data) throws LocalAddressException;
+	void sendEncryptedPacket(byte[] data, PacketTransportPlugin transportPlugin) throws LocalAddressException;
 
-	void sentPacket();
+	void sentPacket(PacketTransportPlugin transportPlugin);
 
 	boolean shouldThrottle();
 
@@ -80,7 +82,7 @@ public interface BasePeerNode extends PeerContext {
 	/** Double the RTT when we resend a packet. */
 	void backoffOnResend();
 
-	/** Report when a packet was acked. */
-	void receivedAck(long currentTimeMillis);
+	/** Report when we received an ack. */
+	void receivedAck(long currentTimeMillis, TransportPlugin transportPlugin);
 
 }

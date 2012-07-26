@@ -40,6 +40,7 @@ import freenet.node.useralerts.BookmarkFeedUserAlert;
 import freenet.node.useralerts.DownloadFeedUserAlert;
 import freenet.node.useralerts.N2NTMUserAlert;
 import freenet.node.useralerts.UserAlert;
+import freenet.pluginmanager.TransportPlugin;
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
@@ -421,11 +422,11 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	@Override
-	public boolean allowLocalAddresses() {
+	public boolean allowLocalAddresses(TransportPlugin transportPlugin) {
 		synchronized(this) {
 			if(allowLocalAddresses) return true;
 		}
-		return super.allowLocalAddresses();
+		return super.allowLocalAddresses(transportPlugin);
 	}
 
 	public void setAllowLocalAddresses(boolean setting) {

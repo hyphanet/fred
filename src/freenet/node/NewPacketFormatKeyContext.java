@@ -139,7 +139,7 @@ public class NewPacketFormatKeyContext {
 			pn.reportPing(rt);
 			throttle = pn.getThrottle();
 			if(validAck)
-				pn.receivedAck(System.currentTimeMillis());
+				pn.receivedAck(System.currentTimeMillis(), key.transportPlugin);
 		}
 		if(throttle != null) {
 			throttle.setRoundTripTime(rt);

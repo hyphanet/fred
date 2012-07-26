@@ -235,7 +235,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 */
 	public DECODED process(byte[] buf, int offset, int length, PluginAddress address, PeerNode opn, long now) {
 
-		if(opn != null && opn.getOutgoingMangler() != this) {
+		if(opn != null && opn.getOutgoingMangler(sock) != this) {
 			Logger.error(this, "Apparently contacted by "+opn+") on "+this, new Exception("error"));
 			opn = null;
 		}
@@ -246,17 +246,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			if(logMINOR) Logger.minor(this, "Trying exact match");
 			if(length > HEADERS_LENGTH_MINIMUM) {
 				if(logMINOR) Logger.minor(this, "Trying current key tracker for exact match");
-				if(tryProcess(buf, offset, length, opn.getCurrentKeyTracker(), now)) {
+				if(tryProcess(buf, offset, length, opn.getCurrentKeyTracker(sock), now)) {
 					return DECODED.DECODED;
 				}
 				// Try with old key
 				if(logMINOR) Logger.minor(this, "Trying previous key tracker for exact match");
-				if(tryProcess(buf, offset, length, opn.getPreviousKeyTracker(), now)) {
+				if(tryProcess(buf, offset, length, opn.getPreviousKeyTracker(sock), now)) {
 					return DECODED.DECODED;
 				}
 				// Try with unverified key
 				if(logMINOR) Logger.minor(this, "Trying unverified key tracker for exact match");
-				if(tryProcess(buf, offset, length, opn.getUnverifiedKeyTracker(), now)) {
+				if(tryProcess(buf, offset, length, opn.getUnverifiedKeyTracker(sock), now)) {
 					return DECODED.DECODED;
 				}
 			}
@@ -279,19 +279,19 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				pn = peers[i];
 				if(pn == opn) continue;
 				if(logDEBUG) Logger.debug(this, "Trying current key tracker for loop");
-				if(tryProcess(buf, offset, length, pn.getCurrentKeyTracker(), now)) {
+				if(tryProcess(buf, offset, length, pn.getCurrentKeyTracker(sock), now)) {
 					// IP address change
 					pn.changedAddress(address, sock);
 					return DECODED.DECODED;
 				}
 				if(logDEBUG) Logger.debug(this, "Trying previous key tracker for loop");
-				if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker(), now)) {
+				if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker(sock), now)) {
 					// IP address change
 					pn.changedAddress(address, sock);
 					return DECODED.DECODED;
 				}
 				if(logDEBUG) Logger.debug(this, "Trying unverified key tracker for loop");
-				if(tryProcess(buf, offset, length, pn.getUnverifiedKeyTracker(), now)) {
+				if(tryProcess(buf, offset, length, pn.getUnverifiedKeyTracker(sock), now)) {
 					// IP address change
 					pn.changedAddress(address, sock);
 					return DECODED.DECODED;
@@ -383,15 +383,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			for(int i=0;i<anonPeers.length;i++) {
 				pn = anonPeers[i];
 				if(pn == opn) continue;
-				if(tryProcess(buf, offset, length, pn.getCurrentKeyTracker(), now)) {
+				if(tryProcess(buf, offset, length, pn.getCurrentKeyTracker(sock), now)) {
 					pn.changedAddress(address, sock);
 					return true;
 				}
-				if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker(), now)) {
+				if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker(sock), now)) {
 					pn.changedAddress(address, sock);
 					return true;
 				}
-				if(tryProcess(buf, offset, length, pn.getUnverifiedKeyTracker(), now)) {
+				if(tryProcess(buf, offset, length, pn.getUnverifiedKeyTracker(sock), now)) {
 					pn.changedAddress(address, sock);
 					return true;
 				}
@@ -1118,7 +1118,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 
 		// At this point we know it's from the peer, so we can report a packet received.
-		pn.receivedPacket(true, false);
+		pn.receivedPacket(true, false, sock);
 
 		sendJFKMessage3(1, negType, 3, nonceInitiator, nonceResponder, hisExponential, authenticator, pn, replyTo, unknownInitiator, setupType);
 
@@ -1358,7 +1358,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 
 		// At this point we know it's from the peer, so we can report a packet received.
-		pn.receivedPacket(true, false);
+		pn.receivedPacket(true, false, sock);
 
 		BlockCipher outgoingCipher = null;
 		BlockCipher incommingCipher = null;
@@ -1423,7 +1423,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			if(dontWant) {
 				node.peers.disconnectAndRemove(pn, true, true, true); // Let it connect then tell it to remove it.
 			} else {
-				pn.maybeSendInitialMessages();
+				pn.maybeSendInitialMessages(sock);
 			}
 		} else {
 			Logger.error(this, "Handshake failure! with "+pn.getPeer());
@@ -1609,7 +1609,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 
 		// Received a packet
-		pn.receivedPacket(true, false);
+		pn.receivedPacket(true, false, sock);
 
 		// Promote if necessary
 		boolean dontWant = false;
@@ -1667,7 +1667,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			if(dontWant) {
 				node.peers.disconnectAndRemove(pn, true, true, true);
 			} else {
-				pn.maybeSendInitialMessages();
+				pn.maybeSendInitialMessages(sock);
 			}
 		} else {
 			Logger.error(this, "Handshake failed!");
@@ -2101,7 +2101,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				if(p != null) replyTo = p;
 			}
 		}
-		sock.sendPacket(data, replyTo, pn == null ? crypto.config.alwaysAllowLocalAddresses() : pn.allowLocalAddresses());
+		sock.sendPacket(data, replyTo, pn == null ? crypto.config.alwaysAllowLocalAddresses() : pn.allowLocalAddresses(sock));
 		if(pn != null)
 			pn.reportOutgoingPacket(data, 0, data.length, System.currentTimeMillis());
 		if(PeerNode.shouldThrottle(replyTo, node)) {
@@ -2219,7 +2219,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 
 		// Verify
-		tracker.pn.verified(tracker);
+		tracker.pn.verified(tracker, sock);
 
 		for(int i=0;i<HASH_LENGTH;i++) {
 			packetHash[i] ^= buf[offset+i];
@@ -2328,7 +2328,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		PacketTracker packets = tracker.packets;
 		if(packets.acknowledgedPackets(acks))
-			tracker.pn.receivedAck(System.currentTimeMillis());
+			tracker.pn.receivedAck(System.currentTimeMillis(), sock);
 
 		int retransmitCount = decrypted[ptr++] & 0xff;
 		if(logMINOR) Logger.minor(this, "Retransmit requests: "+retransmitCount);
@@ -2370,7 +2370,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			packets.destForgotPacket(realSeqNo);
 		}
 
-		tracker.pn.receivedPacket(false, true); // Must keep the connection open, even if it's an ack packet only and on an incompatible connection - we may want to do a UOM transfer e.g.
+		tracker.pn.receivedPacket(false, true, sock); // Must keep the connection open, even if it's an ack packet only and on an incompatible connection - we may want to do a UOM transfer e.g.
 //		System.err.println(tracker.pn.getIdentityString()+" : received packet");
 
 		// No sequence number == no messages
@@ -2426,7 +2426,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(logMINOR) Logger.minor(this, "processOutgoingOrRequeue "+messages.length+" messages for "+pn);
 		byte[][] messageData = new byte[messages.length][];
 		MessageItem[] newMsgs = new MessageItem[messages.length];
-		SessionKey kt = pn.getCurrentKeyTracker();
+		SessionKey kt = pn.getCurrentKeyTracker(sock);
 		if(kt == null) {
 			Logger.error(this, "Not connected while sending packets: "+pn);
 			if(!dontRequeue) {
@@ -2685,7 +2685,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			try {
 				if(!peer.isConnected())
 					throw new NotConnectedException();
-				SessionKey tracker = peer.getCurrentKeyTracker();
+				SessionKey tracker = peer.getCurrentKeyTracker(sock);
 				last = tracker;
 				if(tracker == null) {
 					Logger.normal(this, "Dropping packet: Not connected to "+peer.getPeer()+" yet(2)");
@@ -2696,7 +2696,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				return processOutgoingPreformatted(buf, offset, length, tracker, seqNo, callbacks, priority);
 			} catch (KeyChangedException e) {
 				Logger.normal(this, "Key changed(2) for "+peer.getPeer());
-				if(last == peer.getCurrentKeyTracker()) {
+				if(last == peer.getCurrentKeyTracker(sock)) {
 					if(peer.isConnected()) {
 						Logger.error(this, "Peer is connected, yet current tracker is deprecated !! (rekey ?): "+e, e);
 						throw new NotConnectedException("Peer is connected, yet current tracker is deprecated !! (rekey ?): "+e);
@@ -3176,9 +3176,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			sendPacket(output, kt.pn.getTransportAddress(sock), kt.pn);
 //			System.err.println(kt.pn.getIdentityString()+" : sent packet length "+output.length);
 		} catch (LocalAddressException e) {
-			Logger.error(this, "Tried to send data packet to local address: "+kt.pn.getPeer()+" for "+kt.pn.allowLocalAddresses());
+			Logger.error(this, "Tried to send data packet to local address: "+kt.pn.getPeer()+" for "+kt.pn.allowLocalAddresses(sock));
 		}
-		kt.pn.sentPacket();
+		kt.pn.sentPacket(sock);
 		return output.length + sock.getHeadersLength();
 	}
 

@@ -14,6 +14,8 @@ import freenet.io.comm.SocketHandler;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.io.xfer.PacketThrottle;
 import freenet.io.xfer.WaitedTooLongException;
+import freenet.pluginmanager.PacketTransportPlugin;
+import freenet.pluginmanager.TransportPlugin;
 
 /** Tests can override this to record specific events e.g. rekey */
 public class NullBasePeerNode implements BasePeerNode {
@@ -103,27 +105,27 @@ public class NullBasePeerNode implements BasePeerNode {
 	SessionKey unverifiedKey;
 
 	@Override
-	public SessionKey getCurrentKeyTracker() {
+	public SessionKey getCurrentKeyTracker(TransportPlugin transportPlugin) {
 		return currentKey;
 	}
 
 	@Override
-	public SessionKey getPreviousKeyTracker() {
+	public SessionKey getPreviousKeyTracker(TransportPlugin transportPlugin) {
 		return previousKey;
 	}
 
 	@Override
-	public SessionKey getUnverifiedKeyTracker() {
+	public SessionKey getUnverifiedKeyTracker(TransportPlugin transportPlugin) {
 		return unverifiedKey;
 	}
 
 	@Override
-	public void receivedPacket(boolean dontLog, boolean dataPacket) {
+	public void receivedPacket(boolean dontLog, boolean dataPacket, PacketTransportPlugin transportPlugin) {
 		// Do nothing by default
 	}
 
 	@Override
-	public void verified(SessionKey s) {
+	public void verified(SessionKey s, PacketTransportPlugin transportPlugin) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -170,7 +172,7 @@ public class NullBasePeerNode implements BasePeerNode {
 	}
 
 	@Override
-	public int getMaxPacketSize() {
+	public int getMaxPacketSize(PacketTransportPlugin transportPlugin) {
 		return 1280;
 	}
 
@@ -185,12 +187,12 @@ public class NullBasePeerNode implements BasePeerNode {
 	}
 
 	@Override
-	public void sendEncryptedPacket(byte[] data) throws LocalAddressException {
+	public void sendEncryptedPacket(byte[] data, PacketTransportPlugin transportPlugin) throws LocalAddressException {
 		// Do nothing
 	}
 
 	@Override
-	public void sentPacket() {
+	public void sentPacket(PacketTransportPlugin transportPlugin) {
 		// Do nothing
 	}
 
@@ -280,7 +282,7 @@ public class NullBasePeerNode implements BasePeerNode {
 	}
 
 	@Override
-	public void receivedAck(long currentTimeMillis) {
+	public void receivedAck(long currentTimeMillis, TransportPlugin transportPlugin) {
 		// Ignore
 	}
 
