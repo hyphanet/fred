@@ -14,7 +14,7 @@ public class PacketTransportBundle {
 	
 	public final PacketTransportPlugin transportPlugin;
 	
-	public final FNPPacketMangler packetMangler;
+	public final OutgoingPacketMangler packetMangler;
 	
 	public PacketTransportBundle(PacketTransportPlugin transportPlugin, FNPPacketMangler packetMangler){
 		this.transportName = transportPlugin.transportName;

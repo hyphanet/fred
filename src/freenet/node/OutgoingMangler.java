@@ -8,6 +8,12 @@ import freenet.pluginmanager.TransportPlugin;
 public interface OutgoingMangler {
 	
 	/**
+	 * Start up the FNPPacketMangler. By the time this is called, all objects will have been constructed,
+	 * but not all will have been started yet.
+	 */
+	public void startMangler();
+	
+	/**
 	 * Send a handshake, if possible, to the node.
 	 * @param pn
 	 */

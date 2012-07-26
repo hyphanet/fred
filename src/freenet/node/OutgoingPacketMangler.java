@@ -3,12 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import freenet.io.AddressTracker.Status;
 import freenet.io.comm.AsyncMessageCallback;
-import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
-import freenet.io.comm.PeerContext;
 import freenet.io.comm.SocketHandler;
 import freenet.pluginmanager.PacketTransportPlugin;
 import freenet.support.WouldBlockException;

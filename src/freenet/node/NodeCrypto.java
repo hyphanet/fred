@@ -245,7 +245,7 @@ public class NodeCrypto {
 			}
 			
 			//Till we finish refactoring
-			packetMangler = packetTransportBundleMap.get(Node.defaultPacketTransportName).packetMangler;
+			packetMangler = (FNPPacketMangler) packetTransportBundleMap.get(Node.defaultPacketTransportName).packetMangler;
 	
 			detector = new NodeIPPortDetector(node, node.ipDetector, this, enableARKs);
 	
@@ -382,7 +382,7 @@ public class NodeCrypto {
 		//socket.start();
 		//Happens in the loop
 		for(String transportName : packetTransportBundleMap.keySet()){
-			packetTransportBundleMap.get(transportName).packetMangler.start();
+			packetTransportBundleMap.get(transportName).packetMangler.startMangler();
 			packetTransportBundleMap.get(transportName).transportPlugin.startPlugin();
 		}
 	}
@@ -783,7 +783,7 @@ public class NodeCrypto {
 		}
 		notifyPeerNode(packetTransportBundle);
 		
-		mangler.start();
+		mangler.startMangler();
 		transportPlugin.startPlugin();
 	}
 	

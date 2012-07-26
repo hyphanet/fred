@@ -188,11 +188,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		fullHeadersLengthOneMessage = HEADERS_LENGTH_ONE_MESSAGE + sock.getHeadersLength();
 	}
 
-	/**
-	 * Start up the FNPPacketMangler. By the time this is called, all objects will have been constructed,
-	 * but not all will have been started yet.
-	 */
-	public void start() {
+	@Override
+	public void startMangler() {
 		// Run it directly so that the transient key is set.
 		maybeResetTransientKey();
 		// Fill the DH FIFO on-thread
