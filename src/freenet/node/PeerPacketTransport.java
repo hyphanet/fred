@@ -30,7 +30,7 @@ public class PeerPacketTransport extends PeerTransport {
 	
 	protected final PacketTransportPlugin transportPlugin;
 	
-	protected final FNPPacketMangler packetMangler;
+	protected final OutgoingPacketMangler packetMangler;
 	
 	protected PacketFormat packetFormat;
 	
@@ -58,7 +58,7 @@ public class PeerPacketTransport extends PeerTransport {
 	}
 	
 
-	public PeerPacketTransport(PacketTransportPlugin transportPlugin, FNPPacketMangler packetMangler, PeerNode pn){
+	public PeerPacketTransport(PacketTransportPlugin transportPlugin, OutgoingPacketMangler packetMangler, PeerNode pn){
 		super(transportPlugin, packetMangler, pn);
 		this.transportPlugin = transportPlugin;
 		this.packetMangler = packetMangler;
@@ -304,7 +304,7 @@ public class PeerPacketTransport extends PeerTransport {
 				} else {
 					// else it's a rekey
 				}
-				newTracker = new SessionKey(pn, packets, outgoingCipher, outgoingKey, incommingCipher, incommingKey, ivCipher, ivNonce, hmacKey, new NewPacketFormatKeyContext(ourInitialSeqNum, theirInitialSeqNum));
+				newTracker = new SessionKey(pn, packets, outgoingCipher, outgoingKey, incommingCipher, incommingKey, ivCipher, ivNonce, hmacKey, new NewPacketFormatKeyContext(ourInitialSeqNum, theirInitialSeqNum), transportPlugin);
 				if(logMINOR) Logger.minor(this, "New key tracker in completedHandshake: "+newTracker+" for "+packets+" for "+pn.shortToString()+" neg type "+negType);
 				if(unverified) {
 					if(peerConn.unverifiedTracker != null) {
@@ -345,7 +345,7 @@ public class PeerPacketTransport extends PeerTransport {
 					if(negType < 5) {
 						packetFormat = new FNPWrapper(pn);
 					} else {
-						packetFormat = new NewPacketFormat(pn, ourInitialMsgID, theirInitialMsgID);
+						packetFormat = new NewPacketFormat(pn, ourInitialMsgID, theirInitialMsgID, transportPlugin);
 					}
 				}
 				// Completed setup counts as received data packet, for purposes of avoiding spurious disconnections.
@@ -410,6 +410,38 @@ public class PeerPacketTransport extends PeerTransport {
 				return true;
 			}
 			return false;
+		}
+	}
+	
+	public void verified(SessionKey tracker) {
+		long now = System.currentTimeMillis();
+		SessionKey completelyDeprecatedTracker;
+		synchronized(peerConn) {
+			if(tracker == peerConn.unverifiedTracker && !tracker.packets.isDeprecated()) {
+				if(logMINOR)
+					Logger.minor(this, "Promoting unverified tracker " + tracker + " for " + detectedTransportAddress);
+				completelyDeprecatedTracker = peerConn.previousTracker;
+				peerConn.previousTracker = peerConn.currentTracker;
+				peerConn.currentTracker = peerConn.unverifiedTracker;
+				peerConn.unverifiedTracker = null;
+				isTransportConnected = true;
+				pn.neverConnected = false;
+				pn.maybeClearPeerAddedTimeOnConnect();
+				ctxTransport = null;
+				peerConn.maybeSwapTrackers();
+				if(peerConn.previousTracker != null && peerConn.previousTracker.packets != peerConn.currentTracker.packets)
+					peerConn.previousTracker.packets.deprecated();
+			} else
+				return;
+		}
+		pn.maybeSendInitialMessages(transportPlugin);
+		pn.setPeerNodeStatus(now);
+		pn.node.peers.addConnectedPeer(pn);
+		pn.maybeOnConnect();
+		if(completelyDeprecatedTracker != null) {
+			if(completelyDeprecatedTracker.packets != tracker.packets)
+				completelyDeprecatedTracker.packets.completelyDeprecated(tracker);
+			completelyDeprecatedTracker.disconnected(true);
 		}
 	}
 	

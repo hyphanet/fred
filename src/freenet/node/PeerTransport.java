@@ -642,6 +642,23 @@ public class PeerTransport {
 		return ret;
 	}
 	
+	public synchronized boolean getSentInitialMessageStatus() {
+		return sentInitialMessagesTransport;
+	}
+	
+	public boolean shouldSendInitialMessages() {
+		synchronized(this) {
+			if(sentInitialMessagesTransport)
+				return false;
+			if(getCurrentKeyTracker() != null && !getCurrentKeyTracker().packets.isDeprecated()) {
+				sentInitialMessagesTransport = true;
+				return true;
+			}
+			else
+				return false;
+		}
+	}
+	
 	/*
 	 * 
 	 * Some get methods
@@ -669,6 +686,10 @@ public class PeerTransport {
 	public synchronized void receivedAck(long now) {
 		if(timeLastReceivedTransportAck < now)
 			timeLastReceivedTransportAck = now;
+	}
+	
+	public boolean isTransportBursting() {
+		return isTransportBursting;
 	}
 	
 }
