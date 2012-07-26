@@ -43,13 +43,13 @@ public class PeerConnection {
 	static final int CHECK_FOR_SWAPPED_TRACKERS_INTERVAL = PeerNode.CHECK_FOR_SWAPPED_TRACKERS_INTERVAL;
 	
 	private static volatile boolean logMINOR;
-	private static volatile boolean logDEBUG;
+	//private static volatile boolean logDEBUG;
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
 				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
+				//logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
 	}
@@ -61,6 +61,13 @@ public class PeerConnection {
 		this.detectedTransportAddress = detectedTransportAddress;
 	}
 	
+	/**
+	 * Resolve race conditions where two connection setups between two peers complete simultaneously.
+	 * Swap prev and current if:
+	 * - There is a very short period between their respective creations.
+	 * - Current's hashcode (including the key, the word "test", and the xor of the boot IDs) is
+	 * greater than previous's.
+	 */
 	protected synchronized void maybeSwapTrackers() {
 		if(currentTracker == null || previousTracker == null) return;
 		if(currentTracker.packets == previousTracker.packets) return;
