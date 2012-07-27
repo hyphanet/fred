@@ -44,6 +44,7 @@ import freenet.pluginmanager.PacketTransportPlugin;
 import freenet.pluginmanager.PluginAddress;
 import freenet.pluginmanager.StreamTransportPlugin;
 import freenet.pluginmanager.TransportPlugin;
+import freenet.pluginmanager.UnsupportedIPAddressOperationException;
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.IllegalBase64Exception;
@@ -664,7 +665,7 @@ public class NodeCrypto {
 					node.peers.disconnectAndRemove(pn, true, true, pn.isOpennet());
 				}
 			}
-		}catch(UnsupportedOperationException e) {
+		}catch(UnsupportedIPAddressOperationException e) {
 			PluginAddress physical = pluginAddress.getPhysicalAddress();
 			possibleMatches = node.peers.getAllConnectedByAddress(physical, true, transportPlugin);
 			//Maybe do something for same physical locations which may not be IP based?

@@ -17,6 +17,7 @@ import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.Vector;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
@@ -40,7 +41,9 @@ import freenet.node.useralerts.BookmarkFeedUserAlert;
 import freenet.node.useralerts.DownloadFeedUserAlert;
 import freenet.node.useralerts.N2NTMUserAlert;
 import freenet.node.useralerts.UserAlert;
+import freenet.pluginmanager.PluginAddress;
 import freenet.pluginmanager.TransportPlugin;
+import freenet.pluginmanager.UnsupportedIPAddressOperationException;
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
@@ -208,21 +211,27 @@ public class DarknetPeerNode extends PeerNode {
 	 * Normally this is the address that packets have been received from from this node.
 	 * However, if ignoreSourcePort is set, we will search for a similar address with a different port
 	 * number in the node reference.
+	 * Only for IP based addresses
 	 */
 	@Override
-	public synchronized Peer getPeer(){
-		Peer detectedPeer = super.getPeer();
-		if(ignoreSourcePort) {
-			FreenetInetAddress addr = detectedPeer == null ? null : detectedPeer.getFreenetAddress();
-			int port = detectedPeer == null ? -1 : detectedPeer.getPort();
-			if(nominalPeer == null) return detectedPeer;
-			for(Peer p : nominalPeer) {
-				if(p.getPort() != port && p.getFreenetAddress().equals(addr)) {
-					return p;
+	public PluginAddress getTransportAddress(TransportPlugin transportPlugin) {
+		PluginAddress detectedTransportAddress = super.getTransportAddress(transportPlugin);
+		Vector<PluginAddress> nominalTransportAddress = super.getNominalTransportAddress(transportPlugin);
+		try {
+			if(ignoreSourcePort) {
+				FreenetInetAddress addr = detectedTransportAddress == null ? null : detectedTransportAddress.getFreenetAddress();
+				int port = detectedTransportAddress == null ? -1 : detectedTransportAddress.getPortNumber();
+				if(nominalTransportAddress == null) return detectedTransportAddress;
+				for(PluginAddress address : nominalTransportAddress) {
+					if(address.getPortNumber() != port && address.getFreenetAddress().equals(addr)) {
+						return address;
+					}
 				}
 			}
+		}catch(UnsupportedIPAddressOperationException e){
+			//Do nothing
 		}
-		return detectedPeer;
+		return detectedTransportAddress;
 	}
 
 	/**

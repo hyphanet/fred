@@ -42,21 +42,21 @@ public interface PluginAddress{
 	 */
 	public PluginAddress getPhysicalAddress();
 	
-	public void updateHostName() throws UnsupportedOperationException;
+	public void updateHostName() throws UnsupportedIPAddressOperationException;
 	
 	/**
 	 * Drop the host name if it a IP based transport or else if applicable.
-	 * @throws UnsupportedOperationException
+	 * @throws UnsupportedIPAddressOperationException
 	 */
-	public void dropHostName() throws UnsupportedOperationException;
+	public void dropHostName() throws UnsupportedIPAddressOperationException;
 	
 	/**
 	 * If the address uses Inet based IP addresses.
 	 * @return
-	 * @throws UnsupportedOperationException
+	 * @throws UnsupportedIPAddressOperationException
 	 */
-	public FreenetInetAddress getFreenetAddress() throws UnsupportedOperationException;
+	public FreenetInetAddress getFreenetAddress() throws UnsupportedIPAddressOperationException;
 	
-	public int getPortNumber() throws UnsupportedOperationException;
+	public int getPortNumber() throws UnsupportedIPAddressOperationException;
 	
 }

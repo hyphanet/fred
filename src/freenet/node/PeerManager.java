@@ -36,6 +36,7 @@ import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.node.useralerts.PeerManagerUserAlert;
 import freenet.pluginmanager.PluginAddress;
 import freenet.pluginmanager.TransportPlugin;
+import freenet.pluginmanager.UnsupportedIPAddressOperationException;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
@@ -546,7 +547,7 @@ public class PeerManager {
 					return peer;
 			}
 			return null;
-		}catch(UnsupportedOperationException e) {
+		}catch(UnsupportedIPAddressOperationException e) {
 			//Can't do anything
 		}
 		return null;
@@ -573,7 +574,7 @@ public class PeerManager {
 				if(peer.matchesIP(addr, false, mangler.getTransport()) && peer.getOutgoingMangler(mangler.getTransport()) == mangler)
 					return peer;
 			}
-		}catch(UnsupportedOperationException e) {
+		}catch(UnsupportedIPAddressOperationException e) {
 			//Can't do anything
 		}
 		return null;
@@ -600,7 +601,7 @@ public class PeerManager {
 				if(peer.matchesIP(addr, false, mangler.getTransport()) && peer.getOutgoingMangler(mangler.getTransport()) == mangler)
 					return peer;
 			}
-		}catch(UnsupportedOperationException e) {
+		}catch(UnsupportedIPAddressOperationException e) {
 			//Can't do anything
 		}
 		return null;
@@ -2295,7 +2296,7 @@ public class PeerManager {
 			try {
 				if(address.getFreenetAddress().equals(addr))
 					return true;
-			}catch(UnsupportedOperationException e) {
+			}catch(UnsupportedIPAddressOperationException e) {
 				//Ignore for now, since we assume non ip based addresses won't have this situation
 			}
 			

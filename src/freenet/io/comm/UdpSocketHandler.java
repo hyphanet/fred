@@ -20,6 +20,7 @@ import freenet.node.TransportManager.TransportMode;
 import freenet.pluginmanager.MalformedPluginAddressException;
 import freenet.pluginmanager.PacketTransportPlugin;
 import freenet.pluginmanager.PluginAddress;
+import freenet.pluginmanager.UnsupportedIPAddressOperationException;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.io.NativeThread;
@@ -274,8 +275,14 @@ public class UdpSocketHandler extends PacketTransportPlugin  implements PrioRunn
 	
 	@Override
 	public void sendPacket(byte[] blockToSend, PluginAddress destination, boolean allowLocalAddresses) throws LocalAddressException {
-		Peer p = new Peer(destination.getFreenetAddress(), destination.getPortNumber());
-		sendPacket(blockToSend, p, allowLocalAddresses);
+		Peer p;
+		try {
+			p = new Peer(destination.getFreenetAddress(), destination.getPortNumber());
+			sendPacket(blockToSend, p, allowLocalAddresses);
+		} catch (UnsupportedIPAddressOperationException e) {
+			// Not possible as field destination must be of PeerPluginAddress type 
+			Logger.error(this, "Something went wrong. destination should be an instance of PeerPluginAddress", e);
+		}
 	}
 
 	// CompuServe use 1400 MTU; AOL claim 1450; DFN@home use 1448.

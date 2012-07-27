@@ -48,6 +48,7 @@ import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.PacketTransportPlugin;
 import freenet.pluginmanager.PluginAddress;
+import freenet.pluginmanager.UnsupportedIPAddressOperationException;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
@@ -880,7 +881,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		long now = System.currentTimeMillis();
 		try {
 			addr.updateHostName();
-		}catch(UnsupportedOperationException e) {
+		}catch(UnsupportedIPAddressOperationException e) {
 			//Ignore. It means non IP based address
 		}
 		synchronized(throttleRekeysByIP) {
@@ -1393,7 +1394,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		boolean allow;
 		try {
 			allow = crypto.allowConnection(pn, replyTo.getFreenetAddress(), sock);
-		}catch(UnsupportedOperationException e) {
+		}catch(UnsupportedIPAddressOperationException e) {
 			allow = true;
 			//Non IP based address. Assume that only one PeerNode is using it.
 		}
@@ -1630,7 +1631,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		boolean allow;
 		try {
 			allow = crypto.allowConnection(pn, replyTo.getFreenetAddress(), sock);
-		}catch(UnsupportedOperationException e) {
+		}catch(UnsupportedIPAddressOperationException e) {
 			allow = true;
 			//Non IP based address. Assume that only one PeerNode is using it.
 		}
@@ -2407,7 +2408,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 		group.complete();
 
-		tracker.pn.maybeRekey();
+		tracker.pn.maybeRekey(sock);
 		if(logMINOR) Logger.minor(this, "Done");
 	}
 
@@ -3209,7 +3210,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		PluginAddress oldAddress = address;
 		try {
 			address.dropHostName();
-		}catch(UnsupportedOperationException e) {
+		}catch(UnsupportedIPAddressOperationException e) {
 			//Do nothing. Non IP based address.
 		}
 		if(address.equals(null)) {
