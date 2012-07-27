@@ -70,7 +70,6 @@ public abstract class TransportPlugin implements Runnable {
 	 * 
 	 * @param address
 	 * @return
-	 * @throws UnknownHostException
 	 */
 	public abstract PluginAddress toPluginAddress(String address) throws MalformedPluginAddressException;
 	
