@@ -8,7 +8,7 @@ public class ProbeBandwidth extends FCPResponse {
 	 * @param fcpIdentifier FCP-level identifier for pairing requests and responses
 	 * @param outputBandwidth reported endpoint output bandwidth limit in KiB per second.
 	 */
-	public ProbeBandwidth(String fcpIdentifier, long outputBandwidth) {
+	public ProbeBandwidth(String fcpIdentifier, float outputBandwidth) {
 		super(fcpIdentifier);
 		fs.put(OUTPUT_BANDWIDTH, outputBandwidth);
 	}
