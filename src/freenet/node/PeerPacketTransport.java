@@ -10,6 +10,7 @@ import freenet.pluginmanager.PacketTransportPlugin;
 import freenet.pluginmanager.PluginAddress;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 /**
  * This class will be used to store keys, timing fields, etc. by PeerNode for each transport for handshaking. 
@@ -402,6 +403,7 @@ public class PeerPacketTransport extends PeerTransport {
 		return packets.trackerID;
 	}
 	
+	@Override
 	public boolean isTransportConnected() {
 		long now = System.currentTimeMillis(); // no System.currentTimeMillis in synchronized
 		synchronized(this) {
@@ -413,6 +415,7 @@ public class PeerPacketTransport extends PeerTransport {
 		}
 	}
 	
+	@Override
 	public void verified(SessionKey tracker) {
 		long now = System.currentTimeMillis();
 		SessionKey completelyDeprecatedTracker;
@@ -442,6 +445,66 @@ public class PeerPacketTransport extends PeerTransport {
 			if(completelyDeprecatedTracker.packets != tracker.packets)
 				completelyDeprecatedTracker.packets.completelyDeprecated(tracker);
 			completelyDeprecatedTracker.disconnected(true);
+		}
+	}
+	
+	@Override
+	public synchronized void checkConnectionsAndTrackers() {
+		synchronized(peerConn) {
+			if(isTransportConnected) {
+				if(peerConn.currentTracker == null) {
+					if(peerConn.unverifiedTracker != null) {
+						if(peerConn.unverifiedTracker.packets.isDeprecated())
+							Logger.error(this, "Connected but primary tracker is null and unverified is deprecated ! " + peerConn.unverifiedTracker + " for " + this, new Exception("debug"));
+						else if(logMINOR)
+							Logger.minor(this, "Connected but primary tracker is null, but unverified = " + peerConn.unverifiedTracker + " for " + this, new Exception("debug"));
+					} else {
+						Logger.error(this, "Connected but both primary and unverified are null on " + this, new Exception("debug"));
+					}
+				} else if(peerConn.currentTracker.packets.isDeprecated()) {
+					if(peerConn.unverifiedTracker != null) {
+						if(peerConn.unverifiedTracker.packets.isDeprecated())
+							Logger.error(this, "Connected but primary tracker is deprecated, unverified is deprecated: primary=" + peerConn.currentTracker + " unverified: " + peerConn.unverifiedTracker + " for " + this, new Exception("debug"));
+						else if(logMINOR)
+							Logger.minor(this, "Connected, primary tracker deprecated, unverified is valid, " + peerConn.unverifiedTracker + " for " + this, new Exception("debug"));
+					} else {
+						// !!!!!!!
+						Logger.error(this, "Connected but primary tracker is deprecated and unverified tracker is null on " + this+" primary tracker = "+peerConn.currentTracker, new Exception("debug"));
+						isTransportConnected = false;
+					}
+				}
+			}
+		}
+	}
+	
+	@Override
+	public void maybeRekey() {
+		long now = System.currentTimeMillis();
+		boolean shouldTransportDisconnect = false;
+		boolean shouldReturn = false;
+		boolean shouldRekey = false;
+		long timeWhenRekeyingShouldOccur = 0;
+
+		synchronized (this) {
+			timeWhenRekeyingShouldOccur = timeTransportLastRekeyed + FNPPacketMangler.SESSION_KEY_REKEYING_INTERVAL;
+			shouldTransportDisconnect = (timeWhenRekeyingShouldOccur + FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY < now) && isTransportRekeying;
+			shouldReturn = isTransportRekeying || !isTransportConnected;
+			shouldRekey = (timeWhenRekeyingShouldOccur < now);
+			if((!shouldRekey) && peerConn.totalBytesExchangedWithCurrentTracker > FNPPacketMangler.AMOUNT_OF_BYTES_ALLOWED_BEFORE_WE_REKEY) {
+				shouldRekey = true;
+				timeWhenRekeyingShouldOccur = now;
+			}
+		}
+
+		if(shouldTransportDisconnect) {
+			String time = TimeUtil.formatTime(FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY);
+			System.err.println("The peer (" + this + ") has been asked to rekey " + time + " ago... force disconnect.");
+			Logger.error(this, "The peer (" + this + ") has been asked to rekey " + time + " ago... force disconnect.");
+			pn.forceDisconnect(false, transportPlugin);
+		} else if (shouldReturn || hasLiveHandshake(now)) {
+			return;
+		} else if(shouldRekey) {
+			startRekeying();
 		}
 	}
 	

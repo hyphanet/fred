@@ -14,6 +14,7 @@ import freenet.io.comm.Peer;
 import freenet.pluginmanager.MalformedPluginAddressException;
 import freenet.pluginmanager.PluginAddress;
 import freenet.pluginmanager.TransportPlugin;
+import freenet.pluginmanager.UnsupportedIPAddressOperationException;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
@@ -32,7 +33,7 @@ import freenet.support.Logger.LogLevel;
  * @author chetan
  *
  */
-public class PeerTransport {
+public abstract class PeerTransport {
 	
 	protected final String transportName;
 	
@@ -184,36 +185,6 @@ public class PeerTransport {
 	 * 
 	 */
 	
-	public void maybeRekey() {
-		long now = System.currentTimeMillis();
-		boolean shouldTransportDisconnect = false;
-		boolean shouldReturn = false;
-		boolean shouldRekey = false;
-		long timeWhenRekeyingShouldOccur = 0;
-
-		synchronized (this) {
-			timeWhenRekeyingShouldOccur = timeTransportLastRekeyed + FNPPacketMangler.SESSION_KEY_REKEYING_INTERVAL;
-			shouldTransportDisconnect = (timeWhenRekeyingShouldOccur + FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY < now) && isTransportRekeying;
-			shouldReturn = isTransportRekeying || !isTransportConnected;
-			shouldRekey = (timeWhenRekeyingShouldOccur < now);
-			if((!shouldRekey) && peerConn.totalBytesExchangedWithCurrentTracker > FNPPacketMangler.AMOUNT_OF_BYTES_ALLOWED_BEFORE_WE_REKEY) {
-				shouldRekey = true;
-				timeWhenRekeyingShouldOccur = now;
-			}
-		}
-
-		if(shouldTransportDisconnect) {
-			String time = TimeUtil.formatTime(FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY);
-			System.err.println("The peer (" + this + ") has been asked to rekey " + time + " ago... force disconnect.");
-			Logger.error(this, "The peer (" + this + ") has been asked to rekey " + time + " ago... force disconnect.");
-			pn.forceDisconnect(false, transportPlugin);
-		} else if (shouldReturn || hasLiveHandshake(now)) {
-			return;
-		} else if(shouldRekey) {
-			startRekeying();
-		}
-	}
-
 	public void startRekeying() {
 		long now = System.currentTimeMillis();
 		synchronized(this) {
@@ -383,26 +354,45 @@ public class PeerTransport {
 	 * 
 	 */
 	
-	public void setTransportAddress(String[] physical) {
+	/**
+	 * 
+	 * @param physical
+	 * @param setDetected If true, it is assumed that it is the metadata information and we can directly set
+	 * detectedTransportAddress.
+	 * @param purgeAddresses If true it will get rid of all previous addresses.
+	 * Use it only if a new noderef has been obtained
+	 */
+	public void setTransportAddress(Vector<String> physical, boolean setDetected, boolean purgeAddresses) {
+		if(purgeAddresses) {
+			nominalTransportAddress.removeAllElements();
+			detectedTransportAddress = null;
+			// Since it is purging, we assume there has been a handshake
+			lastAttemptedHandshakeTransportAddressUpdateTime = 0;
+			// Clear nonces to prevent leak. Will kill any in-progress connect attempts, but that is okay because
+			// either we got an ARK which changed our peers list, or we just connected.
+			jfkNoncesSent.clear();
+		}
 		for(String address : physical) {
 			PluginAddress pluginAddress;
 			try {
 				pluginAddress = transportPlugin.toPluginAddress(address);
 				if(!nominalTransportAddress.contains(pluginAddress))
 					nominalTransportAddress.add(pluginAddress);
+				if(setDetected)
+					detectedTransportAddress = pluginAddress;
 			} catch (MalformedPluginAddressException e) {
 				continue;
 				//FIXME Do we throw an FSParseException at the PeerNode constructor?
 			}
 		}
-		if(!nominalTransportAddress.isEmpty())
+		if(!nominalTransportAddress.isEmpty() && !setDetected)
 			detectedTransportAddress = nominalTransportAddress.firstElement();
 	}
 	
 	protected void setDetectedAddress(PluginAddress newAddress) {
 		try {
 			newAddress.updateHostName();
-		}catch(UnsupportedOperationException e) {
+		}catch(UnsupportedIPAddressOperationException e) {
 			//Non IP based address
 		}
 		synchronized(this) {
@@ -446,7 +436,7 @@ public class PeerTransport {
 						localHandshakeAddress.dropHostName();
 					else
 						localHandshakeAddress.updateHostName();
-				}catch(UnsupportedOperationException e) {
+				}catch(UnsupportedIPAddressOperationException e) {
 					if(logMINOR)
 						Logger.debug(this, "Not IP based" + localHandshakeAddress, e);
 				}
@@ -539,7 +529,7 @@ public class PeerTransport {
 					continue;
 				localAddresses.add(p);
 			}
-		}catch(UnsupportedOperationException e) {
+		}catch(UnsupportedIPAddressOperationException e) {
 			
 		}
 		localHandshakeAddresses = localAddresses.toArray(new PluginAddress[localAddresses.size()]);
@@ -574,7 +564,7 @@ public class PeerTransport {
 			// Actually do the DNS request for the member Peer of localHandshakeIPs
 			try {
 				localAddress.dropHostName();
-			}catch(UnsupportedOperationException e) {
+			}catch(UnsupportedIPAddressOperationException e) {
 				// Ignore if non IP based
 			}
 			toOutputString.append(localAddress);
@@ -610,18 +600,22 @@ public class PeerTransport {
 		Vector<PluginAddress> validIPs = new Vector<PluginAddress>();
 		for(PluginAddress localHandshakeAddress : localHandshakeAddresses){
 			PluginAddress address = localHandshakeAddress;
-			FreenetInetAddress addr = address.getFreenetAddress();
-			if(!outgoingMangler.allowConnection(pn, addr)) {
-				if(logMINOR)
-					Logger.minor(this, "Not sending handshake packet to "+address+" for "+this);
-			}
-			if(addr.getAddress(false) == null) {
-				if(logMINOR) Logger.minor(this, "Not sending handshake to "+localHandshakeAddress+" for "+detectedTransportAddress+" because the DNS lookup failed or it's a currently unsupported IPv6 address");
-				continue;
-			}
-			if(!addr.isRealInternetAddress(false, false, outgoingMangler.alwaysAllowLocalAddresses())) {
-				if(logMINOR) Logger.minor(this, "Not sending handshake to "+localHandshakeAddress+" for "+detectedTransportAddress+" because it's not a real Internet address and metadata.allowLocalAddresses is not true");
-				continue;
+			try {
+				FreenetInetAddress addr = address.getFreenetAddress();
+				if(!outgoingMangler.allowConnection(pn, addr)) {
+					if(logMINOR)
+						Logger.minor(this, "Not sending handshake packet to "+address+" for "+this);
+				}
+				if(addr.getAddress(false) == null) {
+					if(logMINOR) Logger.minor(this, "Not sending handshake to "+localHandshakeAddress+" for "+detectedTransportAddress+" because the DNS lookup failed or it's a currently unsupported IPv6 address");
+					continue;
+				}
+				if(!addr.isRealInternetAddress(false, false, outgoingMangler.alwaysAllowLocalAddresses())) {
+					if(logMINOR) Logger.minor(this, "Not sending handshake to "+localHandshakeAddress+" for "+detectedTransportAddress+" because it's not a real Internet address and metadata.allowLocalAddresses is not true");
+					continue;
+				}
+			}catch (UnsupportedIPAddressOperationException e) {
+				// We assume for non ip based addresses we don't need to check the above
 			}
 			validIPs.add(address);
 		}
@@ -691,5 +685,13 @@ public class PeerTransport {
 	public boolean isTransportBursting() {
 		return isTransportBursting;
 	}
+	
+	public abstract boolean isTransportConnected();
+	
+	public abstract void verified(SessionKey tracker);
+	
+	public abstract void checkConnectionsAndTrackers();
+	
+	public abstract void maybeRekey();
 	
 }

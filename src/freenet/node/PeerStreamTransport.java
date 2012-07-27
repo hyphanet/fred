@@ -51,5 +51,26 @@ public class PeerStreamTransport extends PeerTransport {
 	public long completedHandshake() {
 		return -1;
 	}
+
+	@Override
+	public boolean isTransportConnected() {
+		// TODO To be finished for stream transports.
+		return false;
+	}
+
+	@Override
+	public void verified(SessionKey tracker) {
+		//TODO To be finished for stream transports.
+	}
+
+	@Override
+	public void checkConnectionsAndTrackers() {
+		//TODO To be finished for stream transports.
+	}
+
+	@Override
+	public void maybeRekey() {
+		//TODO To be finished for stream transports.
+	}
 	
 }
