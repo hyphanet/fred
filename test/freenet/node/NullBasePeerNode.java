@@ -130,12 +130,12 @@ public class NullBasePeerNode implements BasePeerNode {
 	}
 
 	@Override
-	public void startRekeying() {
+	public void startRekeying(TransportPlugin transportPlugin) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public void maybeRekey() {
+	public void maybeRekey(TransportPlugin transportPlugin) {
 		// Do nothing
 	}
 

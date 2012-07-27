@@ -144,7 +144,7 @@ public class NewPacketFormat implements PacketFormat {
 
 		pn.receivedPacket(false, true, transportPlugin);
 		pn.verified(s, transportPlugin);
-		pn.maybeRekey();
+		pn.maybeRekey(transportPlugin);
 		pn.reportIncomingPacket(buf, offset, length, now);
 
 		LinkedList<byte[]> finished = handleDecryptedPacket(packet, s);
@@ -900,7 +900,7 @@ outer:
 
 		if(packet.getLength() == 5) return null;
 
-		int seqNum = keyContext.allocateSequenceNumber(pn);
+		int seqNum = keyContext.allocateSequenceNumber(pn, transportPlugin);
 		if(seqNum == -1) return null;
 		packet.setSequenceNumber(seqNum);
 		
@@ -1058,7 +1058,7 @@ outer:
 			NewPacketFormatKeyContext keyContext = tracker.packetContext;
 			if(!keyContext.canAllocateSeqNum()) {
 				// We can't allocate more sequence numbers because we haven't rekeyed yet
-				pn.startRekeying();
+				pn.startRekeying(transportPlugin);
 				Logger.error(this, "Can't send because we would block on "+this);
 				return false;
 			}

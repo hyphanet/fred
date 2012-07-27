@@ -24,9 +24,9 @@ public interface BasePeerNode extends PeerContext {
 
 	void verified(SessionKey s, PacketTransportPlugin transportPlugin);
 
-	void startRekeying();
+	void startRekeying(TransportPlugin transportPlugin);
 
-	void maybeRekey();
+	void maybeRekey(TransportPlugin transportPlugin);
 
 	void reportIncomingPacket(byte[] buf, int offset, int length, long now);
 

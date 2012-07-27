@@ -7,6 +7,7 @@ import java.util.TreeMap;
 
 import freenet.io.xfer.PacketThrottle;
 import freenet.node.NewPacketFormat.SentPacket;
+import freenet.pluginmanager.TransportPlugin;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SentTimes;
@@ -78,7 +79,7 @@ public class NewPacketFormatKeyContext {
 		}
 	}
 
-	int allocateSequenceNumber(BasePeerNode pn) {
+	int allocateSequenceNumber(BasePeerNode pn, TransportPlugin transportPlugin) {
 		synchronized(sequenceNumberLock) {
 			if(firstSeqNumUsed == -1) {
 				firstSeqNumUsed = nextSeqNum;
@@ -86,14 +87,14 @@ public class NewPacketFormatKeyContext {
 			} else {
 				if(nextSeqNum == firstSeqNumUsed) {
 					Logger.error(this, "Blocked because we haven't rekeyed yet");
-					pn.startRekeying();
+					pn.startRekeying(transportPlugin);
 					return -1;
 				}
 				
 				if(firstSeqNumUsed > nextSeqNum) {
-					if(firstSeqNumUsed - nextSeqNum < REKEY_THRESHOLD) pn.startRekeying();
+					if(firstSeqNumUsed - nextSeqNum < REKEY_THRESHOLD) pn.startRekeying(transportPlugin);
 				} else {
-					if((NewPacketFormat.NUM_SEQNUMS - nextSeqNum) + firstSeqNumUsed < REKEY_THRESHOLD) pn.startRekeying();
+					if((NewPacketFormat.NUM_SEQNUMS - nextSeqNum) + firstSeqNumUsed < REKEY_THRESHOLD) pn.startRekeying(transportPlugin);
 				}
 			}
 			int seqNum = nextSeqNum++;
