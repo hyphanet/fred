@@ -298,11 +298,11 @@ public class PNGFilter implements ContentDataFilter {
 				lastChunkType = chunkTypeString;
 			}
 
-			if (!(hasSeenIEND && hasSeenIHDR))
-				throwError("Missing IEND or IHDR!", "Missing IEND or IHDR!");
-                        
-			if (hasSeenIEND)
-				return; // Strip everything after IEND.
+			if (!hasSeenIEND)
+				throwError("Missing IEND", "Missing IEND");
+			if (!hasSeenIHDR)
+				throwError("Missing IHDR", "Missing IHDR");
+			return; // Strip everything after IEND.
 		} catch (ArrayIndexOutOfBoundsException e) {
 			throwError("ArrayIndexOutOfBoundsException while filtering", "ArrayIndexOutOfBoundsException while filtering");
 		} catch (NegativeArraySizeException e) {
