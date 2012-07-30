@@ -17,7 +17,7 @@ final public class Readers {
 	** A {@link LineReader} <a href="http://en.wikipedia.org/wiki/Adapter_pattern">Adapter</a>
 	** for {@link BufferedReader}.
 	*/
-	public static LineReader LineReaderFrom(final BufferedReader br) {
+	public static LineReader fromBufferedReader(final BufferedReader br) {
 		return new LineReader() {
 			@Override
 			public String readLine(int maxLength, int bufferSize, boolean utf) throws IOException {
@@ -30,7 +30,7 @@ final public class Readers {
 	 *  A {@link LineReader} <a href="http://en.wikipedia.org/wiki/Adapter_pattern">Adapter</a>
 	 * for {@link String} array.
 	 */
-	public static LineReader lineReaderFrom(final String[] lines) {
+	public static LineReader fromStringArray(final String[] lines) {
 		return new LineReader() {
 			private int currentLine = -1;
 			@Override
