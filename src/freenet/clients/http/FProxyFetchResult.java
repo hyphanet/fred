@@ -89,6 +89,10 @@ public class FProxyFetchResult {
 	public boolean hasData() {
 		return data != null;
 	}
+	
+	public Bucket getData() {
+		return data;
+	}
 
 	public boolean hasWaited() {
 		return hasWaited;
