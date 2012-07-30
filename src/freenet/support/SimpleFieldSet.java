@@ -75,7 +75,7 @@ public class SimpleFieldSet {
      */
     public SimpleFieldSet(BufferedReader br, boolean allowMultiple, boolean shortLived) throws IOException {
         this(shortLived);
-        read(br, allowMultiple);
+        read(Readers.fromBufferedReader(br), allowMultiple);
     }
 
     public SimpleFieldSet(SimpleFieldSet sfs){
@@ -107,7 +107,7 @@ public class SimpleFieldSet {
     	this(shortLived);
         StringReader sr = new StringReader(content);
         BufferedReader br = new BufferedReader(sr);
-	    read(br, allowMultiple);
+	    read(Readers.fromBufferedReader(br), allowMultiple);
     }
     
     /**
@@ -126,14 +126,14 @@ public class SimpleFieldSet {
      */
     public SimpleFieldSet(String[] content, boolean allowMultiple, boolean shortLived) throws IOException {
     	this(shortLived);
-    	read(Readers.lineReaderFrom(content), Integer.MAX_VALUE, 0x100, true, allowMultiple);
+    	read(Readers.fromStringArray(content), allowMultiple);
     }
     
     /**
      * @see #read(LineReader, int, int, boolean, boolean)
      */
-	private void read(BufferedReader br, boolean allowMultiple) throws IOException {
-		read(Readers.LineReaderFrom(br), Integer.MAX_VALUE, 0x100, true, allowMultiple);
+	private void read(LineReader lr, boolean allowMultiple) throws IOException {
+		read(lr, Integer.MAX_VALUE, 0x100, true, allowMultiple);
 	}
 	
 	/**
