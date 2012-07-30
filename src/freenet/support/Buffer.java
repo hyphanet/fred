@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import freenet.io.WritableToDataOutputStream;
+import freenet.node.NewPacketFormat;
 
 /**
  * Wrapper for a byte array which handles serialisation/deserialisation
@@ -53,6 +54,7 @@ public class Buffer implements WritableToDataOutputStream {
 		if(_length < 0)
 			throw new IllegalArgumentException("Negative Length: "+_length);
 		if (_length > Serializer.MAX_ARRAY_LENGTH) {
+			//TODO: Is it more appropriate for this to be an IOException?
 			throw new IllegalArgumentException("Length larger than " + Serializer.MAX_ARRAY_LENGTH);
 		}
 

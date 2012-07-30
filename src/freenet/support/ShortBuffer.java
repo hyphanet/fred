@@ -48,6 +48,9 @@ public class ShortBuffer implements WritableToDataOutputStream {
 		_length = dis.readShort();
 		if(_length < 0)
 			throw new IllegalArgumentException("Negative Length: "+_length);
+		if (_length > Short.MAX_VALUE) {
+			throw new IllegalArgumentException("Length too long: " + _length);
+		}
 
 		_data = new byte[_length];
 		_start = 0;
