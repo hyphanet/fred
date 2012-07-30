@@ -111,7 +111,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	private boolean hasNotifiedFailure;
 	/** Last time the fetch was accessed from the fproxy end */
 	private long lastTouched;
-	public final FProxyFetchTracker tracker;
+	final FProxyFetchTracker tracker;
 	/** Show even non-fatal failures for 5 seconds. Necessary for javascript to work,
 	 * because it fetches the page and then reloads it if it isn't a progress update. */
 	private long timeFailed;
@@ -141,6 +141,10 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		FProxyFetchWaiter waiter = new FProxyFetchWaiter(this);
 		waiters.add(waiter);
 		return waiter;
+	}
+	
+	public FProxyFetchTracker getTracker() {
+		return tracker;
 	}
 	
 	public void addCustomWaiter(FProxyFetchWaiter waiter){
