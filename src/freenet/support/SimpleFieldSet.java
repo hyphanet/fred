@@ -109,6 +109,51 @@ public class SimpleFieldSet {
         BufferedReader br = new BufferedReader(sr);
 	    read(br, allowMultiple);
     }
+    
+    /**
+     * Constructs from a {@link String} array.
+     * <p>
+     * This is comparable with {@link #SimpleFieldSet(String, boolean, boolean)},
+     * only the content is already splitted in lines.
+     * </p>
+     * @param content An array of {@link String}s to construct from
+     * @param allowMultiple If true, multiple lines with the same field name will be
+     * combined; if false, the constructor will throw.
+     * @param shortLived If false, strings will be interned to ensure that they use as
+     * little memory as possible. Only set to true if the SFS will be short-lived or
+     * small.
+     */
+    public SimpleFieldSet(String[] content, boolean allowMultiple,boolean shortLived) {
+    	this(shortLived);
+    	boolean headerSection = true;
+    	List<String> headers = new ArrayList<String>();
+    	List<String> keyValueLines = new ArrayList<String>();
+    	for (String line : content) {
+    		if(line.length()==0) continue; // ignore
+    		
+    		char first = line.charAt(0);
+			if (first == '#') {
+				if (headerSection) {
+					headers.add(line.substring(1).trim());
+				}
+
+			} else {
+				if (headerSection) {
+					if (headers.size() > 0) { this.header = headers.toArray(new String[headers.size()]); }
+					headerSection = false;
+				}
+
+				int index = line.indexOf(KEYVALUE_SEPARATOR_CHAR);
+				if(index >= 0) {
+					keyValueLines.add(line);
+				} else {
+					endMarker = line;
+					read(keyValueLines.toArray(new String[keyValueLines.size()]),allowMultiple);
+					break;
+				}
+			}
+    	}
+    }
 
     /**
      * @see #read(LineReader, int, int, boolean, boolean)
@@ -136,6 +181,7 @@ public class SimpleFieldSet {
 		boolean firstLine = true;
 		boolean headerSection = true;
 		List<String> headers = new ArrayList<String>();
+		List<String> keyValueLines = new ArrayList<String>();
 
 		while (true) {
 			String line = br.readLine(maxLength, bufferSize, utfOrIso88591);
@@ -161,15 +207,28 @@ public class SimpleFieldSet {
 
 				int index = line.indexOf(KEYVALUE_SEPARATOR_CHAR);
 				if(index >= 0) {
-					// Mapping
-					String before = line.substring(0, index);
-					String after = line.substring(index+1);
-					if(!shortLived) after = after.intern();
-					put(before, after, allowMultiple, false, true);
+					keyValueLines.add(line);
 				} else {
 					endMarker = line;
+					read(keyValueLines.toArray(new String[keyValueLines.size()]),allowMultiple);
 					break;
 				}
+			}
+		}
+	}
+	
+ 	/**
+ 	 * Parses an array of key-value pairs in {@link String} format
+ 	 */
+	private void read(String[] content, boolean allowMultiple) {
+		for(String line: content) {
+			int index = line.indexOf(KEYVALUE_SEPARATOR_CHAR);
+			if(index >= 0) {
+				// Mapping
+				String before = line.substring(0, index);
+				String after = line.substring(index+1);
+				if(!shortLived) after = after.intern();
+				put(before, after, allowMultiple, false, true);
 			}
 		}
 	}
