@@ -19,6 +19,10 @@ import freenet.pluginmanager.TransportPlugin;
 
 /** Tests can override this to record specific events e.g. rekey */
 public class NullBasePeerNode implements BasePeerNode {
+	
+	SessionKey currentKey;
+	SessionKey previousKey;
+	SessionKey unverifiedKey;
 
 	@Override
 	public Peer getPeer() {
@@ -100,57 +104,6 @@ public class NullBasePeerNode implements BasePeerNode {
 		throw new UnsupportedOperationException();
 	}
 	
-	SessionKey currentKey;
-	SessionKey previousKey;
-	SessionKey unverifiedKey;
-
-	@Override
-	public SessionKey getCurrentKeyTracker(TransportPlugin transportPlugin) {
-		return currentKey;
-	}
-
-	@Override
-	public SessionKey getPreviousKeyTracker(TransportPlugin transportPlugin) {
-		return previousKey;
-	}
-
-	@Override
-	public SessionKey getUnverifiedKeyTracker(TransportPlugin transportPlugin) {
-		return unverifiedKey;
-	}
-
-	@Override
-	public void receivedPacket(boolean dontLog, boolean dataPacket, PacketTransportPlugin transportPlugin) {
-		// Do nothing by default
-	}
-
-	@Override
-	public void verified(SessionKey s, PacketTransportPlugin transportPlugin) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void startRekeying(TransportPlugin transportPlugin) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void maybeRekey(TransportPlugin transportPlugin) {
-		// Do nothing
-	}
-
-	@Override
-	public void reportIncomingPacket(byte[] buf, int offset, int length,
-			long now) {
-		// Ignore
-	}
-
-	@Override
-	public void reportOutgoingPacket(byte[] data, int offset, int length,
-			long now) {
-		// Ignore
-	}
-
 	protected void processDecryptedMessage(byte[] data, int offset, int length,
 			int overhead) {
 		throw new UnsupportedOperationException();

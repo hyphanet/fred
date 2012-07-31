@@ -14,24 +14,6 @@ import freenet.pluginmanager.TransportPlugin;
  */
 public interface BasePeerNode extends PeerContext {
 
-	SessionKey getCurrentKeyTracker(TransportPlugin transportPlugin);
-
-	SessionKey getPreviousKeyTracker(TransportPlugin transportPlugin);
-
-	SessionKey getUnverifiedKeyTracker(TransportPlugin transportPlugin);
-
-	void receivedPacket(boolean dontLog, boolean dataPacket, PacketTransportPlugin transportPlugin);
-
-	void verified(SessionKey s, PacketTransportPlugin transportPlugin);
-
-	void startRekeying(TransportPlugin transportPlugin);
-
-	void maybeRekey(TransportPlugin transportPlugin);
-
-	void reportIncomingPacket(byte[] buf, int offset, int length, long now);
-
-	void reportOutgoingPacket(byte[] data, int offset, int length, long now);
-	
 	DecodingMessageGroup startProcessingDecryptedMessages(int count);
 	
 	void reportPing(long rt);

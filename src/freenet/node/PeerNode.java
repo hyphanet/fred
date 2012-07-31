@@ -118,11 +118,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	protected boolean disableRouting;
 	protected boolean disableRoutingHasBeenSetLocally;
 	protected boolean disableRoutingHasBeenSetRemotely;
-	/*
-	* Buffer of Ni,Nr,g^i,g^r,ID
-	*/
-	private byte[] jfkBuffer;
-	//TODO: sync ?
 
 	/**
 	 * This deals with a PeerPacketTransport object that will have a list of active transports for which setup can be done.
@@ -144,21 +139,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	private Object packetTransportMapLock = new Object();
 	private Object streamTransportMapLock = new Object();
 	
-	protected byte[] jfkKa;
-	protected byte[] incommingKey;
-	protected byte[] jfkKe;
-	protected byte[] outgoingKey;
-	protected byte[] jfkMyRef;
-	protected byte[] hmacKey;
-	protected byte[] ivKey;
-	protected byte[] ivNonce;
-	protected int ourInitialSeqNum;
-	protected int theirInitialSeqNum;
-	protected int ourInitialMsgID;
-	protected int theirInitialMsgID;
-	// The following is used only if we are the initiator
-
-	protected long jfkContextLifetime = 0;
 	/** My low-level address for SocketManager purposes */
 	private Peer detectedPeer;
 	/** My OutgoingPacketMangler i.e. the object which encrypts packets sent to this node */
@@ -843,7 +823,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public PluginAddress getTransportAddress(TransportPlugin transportPlugin) {
 		PeerTransport peerTransport = getPeerTransport(transportPlugin);
 		if(peerTransport != null)
-			return peerTransport.detectedTransportAddress;
+			return peerTransport.getAddress();
 		return null;
 	}
 	
@@ -1088,20 +1068,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	public synchronized long timeLastRoutable() {
 		return timeLastRoutable;
-	}
-
-	@Override
-	public void maybeRekey(TransportPlugin transportPlugin) {
-		PeerTransport peerTransport = getPeerTransport(transportPlugin);
-		if(peerTransport != null)
-			peerTransport.maybeRekey();
-	}
-
-	@Override
-	public void startRekeying(TransportPlugin transportPlugin) {
-		PeerTransport peerTransport = getPeerTransport(transportPlugin);
-		if(peerTransport != null)
-			peerTransport.startRekeying();
 	}
 
 	/**
@@ -1790,45 +1756,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			peerTransport.setDetectedAddress(newAddress);
 	}
 
-
-	/**
-	* @return The current primary SessionKey, or null if we
-	* don't have one.
-	*/
-	@Override
-	public SessionKey getCurrentKeyTracker(TransportPlugin transportPlugin) {
-		PeerTransport peerTransport = getPeerTransport(transportPlugin);
-		if(peerTransport != null)
-			return peerTransport.getCurrentKeyTracker();
-		return null;
-	}
-
-	/**
-	* @return The previous primary SessionKey, or null if we
-	* don't have one.
-	*/
-	@Override
-	public SessionKey getPreviousKeyTracker(TransportPlugin transportPlugin) {
-		PeerTransport peerTransport = getPeerTransport(transportPlugin);
-		if(peerTransport != null)
-			return peerTransport.getPreviousKeyTracker();
-		return null;
-		
-	}
-
-	/**
-	* @return The unverified SessionKey, if any, or null if we
-	* don't have one. The caller MUST call verified(KT) if a
-	* decrypt succeeds with this KT.
-	*/
-	@Override
-	public SessionKey getUnverifiedKeyTracker(TransportPlugin transportPlugin) {
-		PeerTransport peerTransport = getPeerTransport(transportPlugin);
-		if(peerTransport != null)
-			return peerTransport.getUnverifiedKeyTracker();
-		return null;
-	}
-	
 	//FIXME Get rid of these when we get rid of FNPWrapper
 	public synchronized SessionKey getCurrentKeyTracker() {
 		return currentTracker;
@@ -1863,19 +1790,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return shortToString()+'@'+Integer.toHexString(super.hashCode());
 	}
 
-	/**
-	* Update timeLastReceivedPacket
-	* @throws NotConnectedException
-	* @param dontLog If true, don't log an error or throw an exception if we are not connected. This
-	* can be used in handshaking when the connection hasn't been verified yet.
-	* @param dataPacket If this is a real packet, as opposed to a handshake packet.
-	*/
-	@Override
-	public void receivedPacket(boolean dontLog, boolean dataPacket, PacketTransportPlugin transportPlugin) {
-		PeerPacketTransport peerTransport = getPeerTransport(transportPlugin);
-		peerTransport.receivedPacket(dontLog, dataPacket);
-	}
-	
 	@Override
 	public synchronized void receivedAck(long now, TransportPlugin transportPlugin) {
 		PeerTransport peerTransport = getPeerTransport(transportPlugin);
@@ -2139,7 +2053,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		Message locMsg = DMT.createFNPLocChangeNotificationNew(node.lm.getLocation(), node.peers.getPeerLocationDoubles(true));
 		Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
 		Message timeMsg = DMT.createFNPTime(System.currentTimeMillis());
-		Message packetsMsg = createSentPacketsMessage();
 		Message dRoutingMsg = DMT.createRoutingStatus(!disableRoutingHasBeenSetLocally);
 		Message uptimeMsg = DMT.createFNPUptime((byte)(int)(100*node.uptime.getUptime()));
 
@@ -2150,12 +2063,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			/** Send IP message for each transport separately */
 			for(String transportName : peerPacketTransportMap.keySet()) {
 				sendAsync(peerPacketTransportMap.get(transportName).getIPAddressMessage(), null, node.nodeStats.initialMessagesCtr);
+				sendAsync(peerPacketTransportMap.get(transportName).createSentPacketsMessage(), null, node.nodeStats.initialMessagesCtr);
 			}
 			for(String transportName : peerStreamTransportMap.keySet()) {
 				sendAsync(peerStreamTransportMap.get(transportName).getIPAddressMessage(), null, node.nodeStats.initialMessagesCtr);
 			}
 			sendAsync(timeMsg, null, node.nodeStats.initialMessagesCtr);
-			sendAsync(packetsMsg, null, node.nodeStats.initialMessagesCtr);
 			sendAsync(dRoutingMsg, null, node.nodeStats.initialMessagesCtr);
 			sendAsync(uptimeMsg, null, node.nodeStats.initialMessagesCtr);
 		} catch(NotConnectedException e) {
@@ -2165,44 +2078,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		if(isRealConnection())
 			node.nodeUpdater.maybeSendUOMAnnounce(this);
 		sendConnectedDiffNoderef();
-	}
-
-	private Message createSentPacketsMessage() {
-		long[][] sent = getSentPacketTimesHashes();
-		long[] times = sent[0];
-		long[] hashes = sent[1];
-		long now = System.currentTimeMillis();
-		long horizon = now - Integer.MAX_VALUE;
-		int skip = 0;
-		for(int i = 0; i < times.length; i++) {
-			long time = times[i];
-			if(time < horizon)
-				skip++;
-			else
-				break;
-		}
-		int[] timeDeltas = new int[times.length - skip];
-		for(int i = skip; i < times.length; i++)
-			timeDeltas[i] = (int) (now - times[i]);
-		if(skip != 0) {
-			// Unlikely code path, only happens with very long uptime.
-			// Trim hashes too.
-			long[] newHashes = new long[hashes.length - skip];
-			System.arraycopy(hashes, skip, newHashes, 0, hashes.length - skip);
-		}
-		return DMT.createFNPSentPackets(timeDeltas, hashes, now);
-	}
-
-	/**
-	* Called when a packet is successfully decrypted on a given
-	* SessionKey for this node. Will promote the unverifiedTracker
-	* if necessary.
-	*/
-	@Override
-	public void verified(SessionKey tracker, PacketTransportPlugin transportPlugin) {
-		PeerPacketTransport peerTransport = getPeerTransport(transportPlugin);
-		if(peerTransport != null)
-			peerTransport.verified(tracker);
 	}
 
 	private synchronized boolean invalidVersion() {
@@ -2511,61 +2386,19 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 
 	/**
-	* Send a payload-less packet on either key if necessary.
-	* @throws PacketSequenceException If there is an error sending the packet
-	* caused by a sequence inconsistency.
+	* For now it returns the result from the default udp transport.
+	* We must avoid these hacks. But once FNPWrapper is gotten rid of we can remove this
 	*/
 	public boolean sendAnyUrgentNotifications(boolean forceSendPrimary) {
-		boolean sent = false;
-		if(logMINOR)
-			Logger.minor(this, "sendAnyUrgentNotifications");
-		long now = System.currentTimeMillis();
-		SessionKey cur,
-		 prev;
-		synchronized(this) {
-			cur = currentTracker;
-			prev = previousTracker;
+		String temp = Node.defaultPacketTransportName;
+		boolean ret = false;
+		for(String transportName : peerPacketTransportMap.keySet()) {
+			if(temp == transportName)	//FIXME Hack for FNPWrapper, which should be gotten rid of.
+				ret = peerPacketTransportMap.get(transportName).sendAnyUrgentNotifications(forceSendPrimary);
+			else
+				peerPacketTransportMap.get(transportName).sendAnyUrgentNotifications(forceSendPrimary);
 		}
-		SessionKey tracker = cur;
-		if(tracker != null) {
-			long t = tracker.packets.getNextUrgentTime();
-			if(t < now || forceSendPrimary) {
-				try {
-					if(logMINOR) Logger.minor(this, "Sending urgent notifications for current tracker on "+shortToString());
-					int size = outgoingMangler.processOutgoing(null, 0, 0, tracker, DMT.PRIORITY_NOW);
-					node.nodeStats.reportNotificationOnlyPacketSent(size);
-					sent = true;
-				} catch(NotConnectedException e) {
-				// Ignore
-				} catch(KeyChangedException e) {
-				// Ignore
-				} catch(WouldBlockException e) {
-					Logger.error(this, "Caught impossible: "+e, e);
-				} catch(PacketSequenceException e) {
-					Logger.error(this, "Caught impossible: "+e, e);
-				}
-			}
-		}
-		tracker = prev;
-		if(tracker != null) {
-			long t = tracker.packets.getNextUrgentTime();
-			if(t < now)
-				try {
-					if(logMINOR) Logger.minor(this, "Sending urgent notifications for previous tracker on "+shortToString());
-					int size = outgoingMangler.processOutgoing(null, 0, 0, tracker, DMT.PRIORITY_NOW);
-					node.nodeStats.reportNotificationOnlyPacketSent(size);
-					sent = true;
-				} catch(NotConnectedException e) {
-				// Ignore
-				} catch(KeyChangedException e) {
-				// Ignore
-				} catch(WouldBlockException e) {
-					Logger.error(this, "Caught impossible: "+e, e);
-				} catch(PacketSequenceException e) {
-					Logger.error(this, "Caught impossible: "+e, e);
-				}
-		}
-		return sent;
+		return ret;
 	}
 
 	/**
@@ -2639,18 +2472,23 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			PeerPacketTransport peerTransport = peerPacketTransportMap.get(transportName);
 			if(peerTransport.detectedTransportAddress != null)
 				fs.putOverwrite("detected." + transportName, peerTransport.detectedTransportAddress.toString());
+			if(peerTransport.lastSentTransportPacketTime() > 0)
+				fs.put("timeLastReceivedPacket." + transportName, peerTransport.timeLastReceivedTransportPacket);
+			if(peerTransport.lastReceivedTransportAckTime() > 0)
+				fs.put("timeLastReceivedAck." + transportName, peerTransport.timeLastReceivedTransportAck);
+			if(peerTransport.timeLastConnectedTransport() > 0)
+				fs.put("timeLastConnected." + transportName, peerTransport.timeLastConnectedTransport);
 		}
 		for(String transportName:peerStreamTransportMap.keySet()){
 			PeerStreamTransport peerTransport = peerStreamTransportMap.get(transportName);
 			if(peerTransport.detectedTransportAddress != null)
 				fs.putOverwrite("detected." + transportName, peerTransport.detectedTransportAddress.toString());
+			if(peerTransport.lastReceivedTransportAckTime() > 0)
+				fs.put("timeLastReceivedAck." + transportName, peerTransport.timeLastReceivedTransportAck);
+			if(peerTransport.timeLastConnectedTransport() > 0)
+				fs.put("timeLastConnected." + transportName, peerTransport.timeLastConnectedTransport);
 		}
-		if(lastReceivedPacketTime() > 0)
-			fs.put("timeLastReceivedPacket", timeLastReceivedPacket);
-		if(lastReceivedAckTime() > 0)
-			fs.put("timeLastReceivedAck", timeLastReceivedAck);
-		if(timeLastConnected() > 0)
-			fs.put("timeLastConnected", timeLastConnected);
+		
 		if(timeLastRoutable() > 0)
 			fs.put("timeLastRoutable", timeLastRoutable);
 		if(getPeerAddedTime() > 0 && shouldExportPeerAddedTime())
@@ -2745,52 +2583,22 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public abstract boolean isSeed();
 
 	/**
-	* @return The time at which we last connected (or reconnected).
-	*/
+	 * @return The time at which we last connected (or reconnected).
+	 */
 	public synchronized long timeLastConnectionCompleted() {
 		return connectedTime;
 	}
 
 	/**
-	* Requeue ResendPacketItem[]s if they are not sent.
-	* @param resendItems
-	*/
+	 * This method is changed to work only for UDP transport.
+	 * FNPWrapper should be gotten rid of. 
+	 * Requeue ResendPacketItem[]s if they are not sent.
+	 * @param resendItems
+	 */
 	public void requeueResendItems(Vector<ResendPacketItem> resendItems) {
-		SessionKey cur,
-		 prev,
-		 unv;
-		synchronized(this) {
-			cur = currentTracker;
-			prev = previousTracker;
-			unv = unverifiedTracker;
-		}
-		for(ResendPacketItem item : resendItems) {
-			if(item.pn != this)
-				throw new IllegalArgumentException("item.pn != this!");
-			SessionKey kt = cur;
-			if((kt != null) && (item.kt == kt.packets)) {
-				kt.packets.resendPacket(item.packetNumber);
-				continue;
-			}
-			kt = prev;
-			if((kt != null) && (item.kt == kt.packets)) {
-				kt.packets.resendPacket(item.packetNumber);
-				continue;
-			}
-			kt = unv;
-			if((kt != null) && (item.kt == kt.packets)) {
-				kt.packets.resendPacket(item.packetNumber);
-				continue;
-			}
-			// Doesn't match any of these, need to resend the data
-			kt = cur == null ? unv : cur;
-			if(kt == null) {
-				Logger.error(this, "No tracker to resend packet " + item.packetNumber + " on");
-				continue;
-			}
-			MessageItem mi = new MessageItem(item.buf, item.callbacks, true, resendByteCounter, item.priority, false, false);
-			requeueMessageItems(new MessageItem[]{mi}, 0, 1, true);
-		}
+		String transportName = Node.defaultPacketTransportName;
+		if(peerPacketTransportMap.containsKey(transportName))
+			peerPacketTransportMap.get(transportName).requeueResendItems(resendItems);
 	}
 
 	@Override
@@ -3643,11 +3451,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return handshakeIPs == null || handshakeIPs.length == 0;
 	}
 
-	private synchronized void reportIncomingBytes(int length) {
+	synchronized void reportIncomingBytes(int length) {
 		totalBytesIn += length;
 	}
 
-	private synchronized void reportOutgoingBytes(int length) {
+	synchronized void reportOutgoingBytes(int length) {
 		totalBytesOut += length;
 	}
 
@@ -3772,11 +3580,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 	
 	public OutgoingPacketMangler getOutgoingMangler(PacketTransportPlugin transportPlugin){
-		return peerPacketTransportMap.get(transportPlugin.transportName).packetMangler;
+		return peerPacketTransportMap.get(transportPlugin.transportName).outgoingMangler;
 	}
 	
 	public OutgoingStreamMangler getOutgoingMangler(StreamTransportPlugin transportPlugin){
-		return peerStreamTransportMap.get(transportPlugin.transportName).streamMangler;
+		return peerStreamTransportMap.get(transportPlugin.transportName).outgoingMangler;
 	}
 
 	@Override
@@ -3793,13 +3601,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * a local address even if it advertises them.
 	 */
 	public boolean allowLocalAddresses(TransportPlugin transportPlugin) {
-		String transportName = transportPlugin.transportName;
-		if(peerPacketTransportMap.containsKey(transportName))
-			return peerPacketTransportMap.get(transportName).packetMangler.alwaysAllowLocalAddresses();
-		else if(peerStreamTransportMap.containsKey(transportName))
-			return peerStreamTransportMap.get(transportName).streamMangler.alwaysAllowLocalAddresses();
-			
-		return true; // Not possible.
+		PeerTransport peerTransport = getPeerTransport(transportPlugin);
+		if(peerTransport != null)
+			return peerTransport.outgoingMangler.alwaysAllowLocalAddresses();
+		return true;
 	}
 
 	/** Is this peer set to ignore source address? If so, we will always reply to the peer's official
@@ -3905,220 +3710,27 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		this.disconnecting = disconnecting;
 	}
 
-	protected byte[] getJFKBuffer() {
-		return jfkBuffer;
-	}
-
-	protected void setJFKBuffer(byte[] bufferJFK) {
-		this.jfkBuffer = bufferJFK;
-	}
-
 	public int getSigParamsByteLength() {
 		int bitLen = this.peerCryptoGroup.getQ().bitLength();
 		int byteLen = bitLen / 8 + (bitLen % 8 != 0 ? 1 : 0);
 		return byteLen;
 	}
 
-	// Recent packets sent/received
-	// We record times and weak short hashes of the last 64 packets
-	// sent/received. When we connect successfully, we send the data
-	// on what packets we have sent, and the recipient can compare
-	// this to their records of received packets to determine if there
-	// is a problem, which usually indicates not being port forwarded.
-
-	static final short TRACK_PACKETS = 64;
-	private final long[] packetsSentTimes = new long[TRACK_PACKETS];
-	private final long[] packetsRecvTimes = new long[TRACK_PACKETS];
-	private final long[] packetsSentHashes = new long[TRACK_PACKETS];
-	private final long[] packetsRecvHashes = new long[TRACK_PACKETS];
-	private short sentPtr;
-	private short recvPtr;
-	private boolean sentTrackPackets;
-	private boolean recvTrackPackets;
-
-	@Override
-	public void reportIncomingPacket(byte[] buf, int offset, int length, long now) {
-		reportIncomingBytes(length);
-		long hash = Fields.longHashCode(buf, offset, length);
-		synchronized(this) {
-			packetsRecvTimes[recvPtr] = now;
-			packetsRecvHashes[recvPtr] = hash;
-			recvPtr++;
-			if(recvPtr == TRACK_PACKETS) {
-				recvPtr = 0;
-				recvTrackPackets = true;
-			}
-		}
-	}
-
-	@Override
-	public void reportOutgoingPacket(byte[] buf, int offset, int length, long now) {
-		reportOutgoingBytes(length);
-		long hash = Fields.longHashCode(buf, offset, length);
-		synchronized(this) {
-			packetsSentTimes[sentPtr] = now;
-			packetsSentHashes[sentPtr] = hash;
-			sentPtr++;
-			if(sentPtr == TRACK_PACKETS) {
-				sentPtr = 0;
-				sentTrackPackets = true;
-			}
-		}
-	}
-
-	/**
-	 * @return a long[] consisting of two arrays, the first being packet times,
-	 * the second being packet hashes.
-	 */
-	public synchronized long[][] getSentPacketTimesHashes() {
-		short count = sentTrackPackets ? TRACK_PACKETS : sentPtr;
-		long[] times = new long[count];
-		long[] hashes = new long[count];
-		if(!sentTrackPackets) {
-			System.arraycopy(packetsSentTimes, 0, times, 0, sentPtr);
-			System.arraycopy(packetsSentHashes, 0, hashes, 0, sentPtr);
-		} else {
-			System.arraycopy(packetsSentTimes, sentPtr, times, 0, TRACK_PACKETS - sentPtr);
-			System.arraycopy(packetsSentTimes, 0, times, TRACK_PACKETS - sentPtr, sentPtr);
-			System.arraycopy(packetsSentHashes, sentPtr, hashes, 0, TRACK_PACKETS - sentPtr);
-			System.arraycopy(packetsSentHashes, 0, hashes, TRACK_PACKETS - sentPtr, sentPtr);
-		}
-		return new long[][]{times, hashes};
-	}
-
-	/**
-	 * @return a long[] consisting of two arrays, the first being packet times,
-	 * the second being packet hashes.
-	 */
-	public synchronized long[][] getRecvPacketTimesHashes() {
-		short count = recvTrackPackets ? TRACK_PACKETS : recvPtr;
-		long[] times = new long[count];
-		long[] hashes = new long[count];
-		if(!recvTrackPackets) {
-			System.arraycopy(packetsRecvTimes, 0, times, 0, recvPtr);
-			System.arraycopy(packetsRecvHashes, 0, hashes, 0, recvPtr);
-		} else {
-			System.arraycopy(packetsRecvTimes, recvPtr, times, 0, TRACK_PACKETS - recvPtr);
-			System.arraycopy(packetsRecvTimes, 0, times, TRACK_PACKETS - recvPtr, recvPtr);
-			System.arraycopy(packetsRecvHashes, recvPtr, hashes, 0, TRACK_PACKETS - recvPtr);
-			System.arraycopy(packetsRecvHashes, 0, hashes, TRACK_PACKETS - recvPtr, recvPtr);
-		}
-		return new long[][]{times, hashes};
-	}
 	static final int SENT_PACKETS_MAX_TIME_AFTER_CONNECT = 5 * 60 * 1000;
 
 	/**
 	 * Handle an FNPSentPackets message
 	 */
 	public void handleSentPackets(Message m) {
-
-		// IMHO it's impossible to make this work reliably on lossy connections, especially highly saturated upstreams.
-		// If it was possible it would likely involve a lot of work, refactoring, voting between peers, marginal results,
-		// very slow accumulation of data etc.
-
-//		long now = System.currentTimeMillis();
-//		synchronized(this) {
-//			if(forceDisconnectCalled)
-//				return;
-//			/*
-//			 * I've had some very strange results from seed clients!
-//			 * One showed deltas of over 10 minutes... how is that possible? The PN wouldn't reconnect?!
-//			 */
-//			if(!isRealConnection())
-//				return; // The packets wouldn't have been assigned to this PeerNode!
-////			if(now - this.timeLastConnected < SENT_PACKETS_MAX_TIME_AFTER_CONNECT)
-////				return;
-//		}
-//		long baseTime = m.getLong(DMT.TIME);
-//		baseTime += this.clockDelta;
-//		// Should be a reasonable approximation now
-//		int[] timeDeltas = Fields.bytesToInts(((ShortBuffer) m.getObject(DMT.TIME_DELTAS)).getData());
-//		long[] packetHashes = Fields.bytesToLongs(((ShortBuffer) m.getObject(DMT.HASHES)).getData());
-//		long[] times = new long[timeDeltas.length];
-//		for(int i = 0; i < times.length; i++)
-//			times[i] = baseTime - timeDeltas[i];
-//		long tolerance = 60 * 1000 + (Math.abs(timeDeltas[0]) / 20); // 1 minute or 5% of full interval
-//		synchronized(this) {
-//			// They are in increasing order
-//			// Loop backwards
-//			long otime = Long.MAX_VALUE;
-//			long[][] sent = getRecvPacketTimesHashes();
-//			long[] sentTimes = sent[0];
-//			long[] sentHashes = sent[1];
-//			short sentPtr = (short) (sent.length - 1);
-//			short notFoundCount = 0;
-//			short consecutiveNotFound = 0;
-//			short longestConsecutiveNotFound = 0;
-//			short ignoredUptimeCount = 0;
-//			short found = 0;
-//			//The arrays are constructed from received data, don't throw an ArrayIndexOutOfBoundsException if they are different sizes.
-//			int shortestArray=times.length;
-//			if (shortestArray > packetHashes.length)
-//				shortestArray = packetHashes.length;
-//			for(short i = (short) (shortestArray-1); i >= 0; i--) {
-//				long time = times[i];
-//				if(time > otime) {
-//					Logger.error(this, "Inconsistent time order: [" + i + "]=" + time + " but [" + (i + 1) + "] is " + otime);
-//					return;
-//				} else
-//					otime = time;
-//				long hash = packetHashes[i];
-//				// Search for the hash.
-//				short match = -1;
-//				// First try forwards
-//				for(short j = sentPtr; j < sentTimes.length; j++) {
-//					long ttime = sentTimes[j];
-//					if(sentHashes[j] == hash) {
-//						match = j;
-//						sentPtr = j;
-//						break;
-//					}
-//					if(ttime - time > tolerance)
-//						break;
-//				}
-//				if(match == -1)
-//					for(short j = (short) (sentPtr - 1); j >= 0; j--) {
-//						long ttime = sentTimes[j];
-//						if(sentHashes[j] == hash) {
-//							match = j;
-//							sentPtr = j;
-//							break;
-//						}
-//						if(time - ttime > tolerance)
-//							break;
-//					}
-//				if(match == -1) {
-//					long mustHaveBeenUpAt = now - (int)(timeDeltas[i] * 1.1) - 100;
-//					if(this.crypto.socket.getStartTime() > mustHaveBeenUpAt) {
-//						ignoredUptimeCount++;
-//					} else {
-//						// Not found
-//						consecutiveNotFound++;
-//						notFoundCount++;
-//					}
-//				} else {
-//					if(consecutiveNotFound > longestConsecutiveNotFound)
-//						longestConsecutiveNotFound = consecutiveNotFound;
-//					consecutiveNotFound = 0;
-//					found++;
-//				}
-//			}
-//			if(consecutiveNotFound > longestConsecutiveNotFound)
-//				longestConsecutiveNotFound = consecutiveNotFound;
-//			Logger.error(this, "Packets: "+packetHashes.length+" not found "+notFoundCount+" consecutive not found "+consecutiveNotFound+" longest consecutive not found "+longestConsecutiveNotFound+" ignored due to uptime: "+ignoredUptimeCount+" found: "+found);
-//			if(longestConsecutiveNotFound > TRACK_PACKETS / 2) {
-//				manyPacketsClaimedSentNotReceived = true;
-//				timeManyPacketsClaimedSentNotReceived = now;
-//				Logger.error(this, "" + consecutiveNotFound + " consecutive packets not found on " + userToString());
-//				SocketHandler handler = outgoingMangler.getSocketHandler();
-//				if(handler instanceof PortForwardSensitiveSocketHandler) {
-//					((PortForwardSensitiveSocketHandler) handler).rescanPortForward();
-//				}
-//			}
-//		}
-//		if(manyPacketsClaimedSentNotReceived) {
-//			outgoingMangler.setPortForwardingBroken();
-//		}
+		//Commented code moved to PeerPacketTransport
+	}
+	
+	/**
+	 * Handle an FNPSentPacketsTransport message
+	 */
+	public void handleSentPackets(Message m, String transportName) {
+		if(peerPacketTransportMap.containsKey(transportName))
+			peerPacketTransportMap.get(transportName).handleSentPackets(m);
 	}
 	private boolean manyPacketsClaimedSentNotReceived = false;
 
@@ -4511,26 +4123,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			pf = packetFormat;
 		}
 		return pf.maybeSendPacket(now, rpiTemp, rpiIntTemp, ackOnly);
-	}
-
-	/**
-	 * @return The ID of a reusable PacketTracker if there is one, otherwise -1.
-	 */
-	public long getReusableTrackerID() {
-		SessionKey cur;
-		synchronized(this) {
-			cur = currentTracker;
-		}
-		if(cur == null) {
-			if(logMINOR) Logger.minor(this, "getReusableTrackerID(): cur = null on "+this);
-			return -1;
-		}
-		if(cur.packets.isDeprecated()) {
-			if(logMINOR) Logger.minor(this, "getReusableTrackerID(): cur.packets.isDeprecated on "+this);
-			return -1;
-		}
-		if(logMINOR) Logger.minor(this, "getReusableTrackerID(): "+cur.packets.trackerID+" on "+this);
-		return cur.packets.trackerID;
 	}
 
 	/** Reset on disconnection */
@@ -6031,13 +5623,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * @param notRegistered
 	 * @throws TransportPluginException Thrown if this PeerNode does not use the transport
 	 */
-	public void sendTransportHandshake(String transportName, boolean notRegistered) throws TransportPluginException{
-		if(peerPacketTransportMap.containsKey(transportName))
-			peerPacketTransportMap.get(transportName).packetMangler.sendHandshake(this, notRegistered);
-		else if(peerStreamTransportMap.containsKey(transportName))
-			peerStreamTransportMap.get(transportName).streamMangler.sendHandshake(this, notRegistered);
-		else
-			throw new TransportPluginException("This plugin is not available for this PeerNode");
+	public void sendTransportHandshake(TransportPlugin transportPlugin, boolean notRegistered){
+		PeerTransport peerTransport = getPeerTransport(transportPlugin);
+		if(peerTransport != null)
+			peerTransport.outgoingMangler.sendHandshake(this, notRegistered);
 	}
 	
 	/**
@@ -6151,7 +5740,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return true;
 	}
 	
-	private PeerTransport getPeerTransport(TransportPlugin transportPlugin) {
+	public PeerTransport getPeerTransport(TransportPlugin transportPlugin) {
 		String transportName = transportPlugin.transportName;
 		if(peerPacketTransportMap.containsKey(transportName))
 			return peerPacketTransportMap.get(transportName);
@@ -6160,14 +5749,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return null;
 	}
 	
-	private PeerPacketTransport getPeerTransport(PacketTransportPlugin transportPlugin) {
+	public PeerPacketTransport getPeerTransport(PacketTransportPlugin transportPlugin) {
 		String transportName = transportPlugin.transportName;
 		if(peerPacketTransportMap.containsKey(transportName))
 			return peerPacketTransportMap.get(transportName);
 		return null;
 	}
 	
-	private PeerStreamTransport getPeerTransport(StreamTransportPlugin transportPlugin) {
+	public PeerStreamTransport getPeerTransport(StreamTransportPlugin transportPlugin) {
 		String transportName = transportPlugin.transportName;
 		if(peerStreamTransportMap.containsKey(transportName))
 			return peerStreamTransportMap.get(transportName);
@@ -6201,4 +5790,5 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			temp.add(addr);
 		return recordAddress(transportName, temp);
 	}
+	
 }
