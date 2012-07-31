@@ -1420,6 +1420,22 @@ public class DMT {
 		return msg;
 	}
 	
+	public static final MessageType FNPSentPacketsTransport = new MessageType("FNPSentPacketsTransport", PRIORITY_HIGH) {{
+		addField(TRANSPORT_NAME, String.class);
+		addField(TIME_DELTAS, ShortBuffer.class);
+		addField(HASHES, ShortBuffer.class);
+		addField(TIME, Long.class);
+	}};
+	
+	public static final Message createFNPSentPacketsTransport(String transportName, int[] timeDeltas, long[] hashes, long baseTime) {
+		Message msg = new Message(FNPSentPacketsTransport);
+		msg.set(TRANSPORT_NAME, transportName);
+		msg.set(TIME_DELTAS, new ShortBuffer(Fields.intsToBytes(timeDeltas)));
+		msg.set(HASHES, new ShortBuffer(Fields.longsToBytes(hashes)));
+		msg.set(TIME, baseTime);
+		return msg;
+	}
+	
 	public static final MessageType FNPVoid = new MessageType("FNPVoid", PRIORITY_LOW, false, true) {{
 	}};
 	
