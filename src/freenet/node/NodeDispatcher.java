@@ -148,6 +148,10 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		} else if(spec == DMT.FNPSentPackets) {
 			source.handleSentPackets(m);
 			return true;
+		}else if(spec == DMT.FNPSentPacketsTransport) {
+			String transportName = (String) m.getObject(DMT.TRANSPORT_NAME);
+			source.handleSentPackets(m, transportName);
+			return true;
 		} else if(spec == DMT.FNPVisibility && source instanceof DarknetPeerNode) {
 			((DarknetPeerNode)source).handleVisibility(m);
 			return true;
