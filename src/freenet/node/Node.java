@@ -3105,7 +3105,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if(!defragDatabaseOnStartup) return;
 		}
 		
-		File backupFile = new File(databaseFile.getPath()+".tmp");
+		File backupFile = new File(databaseFile.getPath()+".bak");
 		
 		if(!databaseFile.exists()) {
 			if(backupFile.exists()) {
