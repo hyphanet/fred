@@ -15,6 +15,7 @@ import freenet.pluginmanager.MalformedPluginAddressException;
 import freenet.pluginmanager.PluginAddress;
 import freenet.pluginmanager.TransportPlugin;
 import freenet.pluginmanager.UnsupportedIPAddressOperationException;
+import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
@@ -75,6 +76,12 @@ public abstract class PeerTransport {
 	protected int theirInitialMsgID;
 	
 	protected long jfkContextLifetime = 0;
+	
+	/*
+	* Buffer of Ni,Nr,g^i,g^r,ID
+	*/
+	private byte[] jfkBuffer;
+	//TODO: sync ?
 	
 	/**
 	 * For FNP link setup:
@@ -389,6 +396,14 @@ public abstract class PeerTransport {
 			detectedTransportAddress = nominalTransportAddress.firstElement();
 	}
 	
+	public synchronized PluginAddress getAddress() {
+		return detectedTransportAddress;
+	}
+	
+	public void changedAddress(PluginAddress newAddress) {
+		setDetectedAddress(newAddress);
+	}
+	
 	protected void setDetectedAddress(PluginAddress newAddress) {
 		try {
 			newAddress.updateHostName();
@@ -655,26 +670,58 @@ public abstract class PeerTransport {
 	
 	/*
 	 * 
-	 * Some get methods
+	 * Some getter/setter methods
 	 * 
 	 */
+	protected byte[] getJFKBuffer() {
+		return jfkBuffer;
+	}
+
+	protected void setJFKBuffer(byte[] bufferJFK) {
+		this.jfkBuffer = bufferJFK;
+	}
 	
+	/**
+	* @return The current primary SessionKey, or null if we
+	* don't have one.
+	*/
 	public SessionKey getCurrentKeyTracker() {
 		synchronized(peerConnLock) {
 			return peerConn.currentTracker;
 		}
 	}
 	
+	/**
+	* @return The previous primary SessionKey, or null if we
+	* don't have one.
+	*/
 	public SessionKey getPreviousKeyTracker() {
 		synchronized(peerConnLock) {
 			return peerConn.currentTracker;
 		}			
 	}
 	
+	/**
+	* @return The unverified SessionKey, if any, or null if we
+	* don't have one. The caller MUST call verified(KT) if a
+	* decrypt succeeds with this KT.
+	*/
 	public SessionKey getUnverifiedKeyTracker() {
 		synchronized(peerConnLock) {
 			return peerConn.currentTracker;
 		}
+	}
+	
+	public synchronized long lastReceivedTransportAckTime() {
+		return timeLastReceivedTransportAck;
+	}
+	
+	public synchronized long timeLastConnectedTransport() {
+		return timeLastConnectedTransport;
+	}
+	
+	public synchronized long timeLastTransportConnectionCompleted() {
+		return transportConnectedTime;
 	}
 	
 	public synchronized void receivedAck(long now) {
@@ -686,6 +733,10 @@ public abstract class PeerTransport {
 		return isTransportBursting;
 	}
 	
+	public boolean allowLocalAddresses() {
+		return outgoingMangler.alwaysAllowLocalAddresses();
+	}
+	
 	public abstract boolean isTransportConnected();
 	
 	public abstract void verified(SessionKey tracker);
@@ -693,5 +744,7 @@ public abstract class PeerTransport {
 	public abstract void checkConnectionsAndTrackers();
 	
 	public abstract void maybeRekey();
+	
+	
 	
 }

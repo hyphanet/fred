@@ -2,15 +2,20 @@ package freenet.node;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Vector;
 
 import freenet.crypt.BlockCipher;
+import freenet.io.comm.DMT;
+import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.xfer.PacketThrottle;
 import freenet.pluginmanager.PacketTransportPlugin;
 import freenet.pluginmanager.PluginAddress;
+import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
+import freenet.support.WouldBlockException;
 import freenet.support.Logger.LogLevel;
 /**
  * This class will be used to store keys, timing fields, etc. by PeerNode for each transport for handshaking. 
@@ -31,7 +36,7 @@ public class PeerPacketTransport extends PeerTransport {
 	
 	protected final PacketTransportPlugin transportPlugin;
 	
-	protected final OutgoingPacketMangler packetMangler;
+	protected final OutgoingPacketMangler outgoingMangler;
 	
 	protected PacketFormat packetFormat;
 	
@@ -59,10 +64,10 @@ public class PeerPacketTransport extends PeerTransport {
 	}
 	
 
-	public PeerPacketTransport(PacketTransportPlugin transportPlugin, OutgoingPacketMangler packetMangler, PeerNode pn){
-		super(transportPlugin, packetMangler, pn);
+	public PeerPacketTransport(PacketTransportPlugin transportPlugin, OutgoingPacketMangler outgoingMangler, PeerNode pn){
+		super(transportPlugin, outgoingMangler, pn);
 		this.transportPlugin = transportPlugin;
-		this.packetMangler = packetMangler;
+		this.outgoingMangler = outgoingMangler;
 	}
 	
 	public PeerPacketTransport(PacketTransportBundle packetTransportBundle, PeerNode pn){
@@ -172,6 +177,10 @@ public class PeerPacketTransport extends PeerTransport {
 	
 	public long lastSentTransportPacketTime() {
 		return timeLastSentTransportPacket;
+	}
+	
+	public synchronized long lastReceivedTransportPacketTime() {
+		return timeLastReceivedTransportPacket;
 	}
 	
 	public long completedHandshake(long thisBootID, BlockCipher outgoingCipher, byte[] outgoingKey, BlockCipher incommingCipher, byte[] incommingKey, PluginAddress replyTo, boolean unverified, int negType, long trackerID, boolean isJFK4, boolean jfk4SameAsOld, byte[] hmacKey, BlockCipher ivCipher, byte[] ivNonce, int ourInitialSeqNum, int theirInitialSeqNum, int ourInitialMsgID, int theirInitialMsgID, long now, boolean newer, boolean older) {
@@ -346,7 +355,7 @@ public class PeerPacketTransport extends PeerTransport {
 					if(negType < 5) {
 						packetFormat = new FNPWrapper(pn);
 					} else {
-						packetFormat = new NewPacketFormat(pn, ourInitialMsgID, theirInitialMsgID, transportPlugin);
+						packetFormat = new NewPacketFormat(pn, ourInitialMsgID, theirInitialMsgID, this);
 					}
 				}
 				// Completed setup counts as received data packet, for purposes of avoiding spurious disconnections.
@@ -415,6 +424,11 @@ public class PeerPacketTransport extends PeerTransport {
 		}
 	}
 	
+	/**
+	* Called when a packet is successfully decrypted on a given
+	* SessionKey for this node. Will promote the unverifiedTracker
+	* if necessary.
+	*/
 	@Override
 	public void verified(SessionKey tracker) {
 		long now = System.currentTimeMillis();
@@ -506,6 +520,348 @@ public class PeerPacketTransport extends PeerTransport {
 		} else if(shouldRekey) {
 			startRekeying();
 		}
+	}
+	
+	/**
+	* Send a payload-less packet on either key if necessary.
+	* @throws PacketSequenceException If there is an error sending the packet
+	* caused by a sequence inconsistency.
+	*/
+	public boolean sendAnyUrgentNotifications(boolean forceSendPrimary) {
+		boolean sent = false;
+		if(logMINOR)
+			Logger.minor(this, "sendAnyUrgentNotifications");
+		long now = System.currentTimeMillis();
+		SessionKey cur,
+		 prev;
+		synchronized(peerConn) {
+			cur = peerConn.currentTracker;
+			prev = peerConn.previousTracker;
+		}
+		SessionKey tracker = cur;
+		if(tracker != null) {
+			long t = tracker.packets.getNextUrgentTime();
+			if(t < now || forceSendPrimary) {
+				try {
+					if(logMINOR) Logger.minor(this, "Sending urgent notifications for current tracker on "+pn.shortToString());
+					int size = outgoingMangler.processOutgoing(null, 0, 0, tracker, DMT.PRIORITY_NOW);
+					pn.node.nodeStats.reportNotificationOnlyPacketSent(size);
+					sent = true;
+				} catch(NotConnectedException e) {
+				// Ignore
+				} catch(KeyChangedException e) {
+				// Ignore
+				} catch(WouldBlockException e) {
+					Logger.error(this, "Caught impossible: "+e, e);
+				} catch(PacketSequenceException e) {
+					Logger.error(this, "Caught impossible: "+e, e);
+				}
+			}
+		}
+		tracker = prev;
+		if(tracker != null) {
+			long t = tracker.packets.getNextUrgentTime();
+			if(t < now)
+				try {
+					if(logMINOR) Logger.minor(this, "Sending urgent notifications for previous tracker on "+pn.shortToString());
+					int size = outgoingMangler.processOutgoing(null, 0, 0, tracker, DMT.PRIORITY_NOW);
+					pn.node.nodeStats.reportNotificationOnlyPacketSent(size);
+					sent = true;
+				} catch(NotConnectedException e) {
+				// Ignore
+				} catch(KeyChangedException e) {
+				// Ignore
+				} catch(WouldBlockException e) {
+					Logger.error(this, "Caught impossible: "+e, e);
+				} catch(PacketSequenceException e) {
+					Logger.error(this, "Caught impossible: "+e, e);
+				}
+		}
+		return sent;
+	}
+	
+	/**
+	 * We should get rid of this and FNPWrapper soon.
+	 * @deprecated
+	 */
+	public void requeueResendItems(Vector<ResendPacketItem> resendItems) {
+		SessionKey cur,
+		 prev,
+		 unv;
+		synchronized(this) {
+			cur = peerConn.currentTracker;
+			prev = peerConn.previousTracker;
+			unv = peerConn.unverifiedTracker;
+		}
+		for(ResendPacketItem item : resendItems) {
+			if(item.pn != pn)
+				throw new IllegalArgumentException("item.pn != pn!");
+			SessionKey kt = cur;
+			if((kt != null) && (item.kt == kt.packets)) {
+				kt.packets.resendPacket(item.packetNumber);
+				continue;
+			}
+			kt = prev;
+			if((kt != null) && (item.kt == kt.packets)) {
+				kt.packets.resendPacket(item.packetNumber);
+				continue;
+			}
+			kt = unv;
+			if((kt != null) && (item.kt == kt.packets)) {
+				kt.packets.resendPacket(item.packetNumber);
+				continue;
+			}
+			// Doesn't match any of these, need to resend the data
+			kt = cur == null ? unv : cur;
+			if(kt == null) {
+				Logger.error(this, "No tracker to resend packet " + item.packetNumber + " on");
+				continue;
+			}
+			MessageItem mi = new MessageItem(item.buf, item.callbacks, true, pn.resendByteCounter, item.priority, false, false);
+			pn.requeueMessageItems(new MessageItem[]{mi}, 0, 1, true);
+		}
+	}
+	
+	public Message createSentPacketsMessage() {
+		long[][] sent = getSentPacketTimesHashes();
+		long[] times = sent[0];
+		long[] hashes = sent[1];
+		long now = System.currentTimeMillis();
+		long horizon = now - Integer.MAX_VALUE;
+		int skip = 0;
+		for(int i = 0; i < times.length; i++) {
+			long time = times[i];
+			if(time < horizon)
+				skip++;
+			else
+				break;
+		}
+		int[] timeDeltas = new int[times.length - skip];
+		for(int i = skip; i < times.length; i++)
+			timeDeltas[i] = (int) (now - times[i]);
+		if(skip != 0) {
+			// Unlikely code path, only happens with very long uptime.
+			// Trim hashes too.
+			long[] newHashes = new long[hashes.length - skip];
+			System.arraycopy(hashes, skip, newHashes, 0, hashes.length - skip);
+		}
+		return DMT.createFNPSentPacketsTransport(transportName, timeDeltas, hashes, now);
+	}
+	
+	// Recent packets sent/received
+	// We record times and weak short hashes of the last 64 packets
+	// sent/received. When we connect successfully, we send the data
+	// on what packets we have sent, and the recipient can compare
+	// this to their records of received packets to determine if there
+	// is a problem, which usually indicates not being port forwarded.
+	
+	static final short TRACK_PACKETS = 64;
+	private final long[] packetsSentTimes = new long[TRACK_PACKETS];
+	private final long[] packetsRecvTimes = new long[TRACK_PACKETS];
+	private final long[] packetsSentHashes = new long[TRACK_PACKETS];
+	private final long[] packetsRecvHashes = new long[TRACK_PACKETS];
+	private short sentPtr;
+	private short recvPtr;
+	private boolean sentTrackPackets;
+	private boolean recvTrackPackets;
+
+	public void reportIncomingPacket(byte[] buf, int offset, int length, long now) {
+		pn.reportIncomingBytes(length);
+		long hash = Fields.longHashCode(buf, offset, length);
+		synchronized(this) {
+			packetsRecvTimes[recvPtr] = now;
+			packetsRecvHashes[recvPtr] = hash;
+			recvPtr++;
+			if(recvPtr == TRACK_PACKETS) {
+				recvPtr = 0;
+				recvTrackPackets = true;
+			}
+		}
+	}
+
+	public void reportOutgoingPacket(byte[] buf, int offset, int length, long now) {
+		pn.reportOutgoingBytes(length);
+		long hash = Fields.longHashCode(buf, offset, length);
+		synchronized(this) {
+			packetsSentTimes[sentPtr] = now;
+			packetsSentHashes[sentPtr] = hash;
+			sentPtr++;
+			if(sentPtr == TRACK_PACKETS) {
+				sentPtr = 0;
+				sentTrackPackets = true;
+			}
+		}
+	}
+
+	/**
+	 * @return a long[] consisting of two arrays, the first being packet times,
+	 * the second being packet hashes.
+	 */
+	public synchronized long[][] getSentPacketTimesHashes() {
+		short count = sentTrackPackets ? TRACK_PACKETS : sentPtr;
+		long[] times = new long[count];
+		long[] hashes = new long[count];
+		if(!sentTrackPackets) {
+			System.arraycopy(packetsSentTimes, 0, times, 0, sentPtr);
+			System.arraycopy(packetsSentHashes, 0, hashes, 0, sentPtr);
+		} else {
+			System.arraycopy(packetsSentTimes, sentPtr, times, 0, TRACK_PACKETS - sentPtr);
+			System.arraycopy(packetsSentTimes, 0, times, TRACK_PACKETS - sentPtr, sentPtr);
+			System.arraycopy(packetsSentHashes, sentPtr, hashes, 0, TRACK_PACKETS - sentPtr);
+			System.arraycopy(packetsSentHashes, 0, hashes, TRACK_PACKETS - sentPtr, sentPtr);
+		}
+		return new long[][]{times, hashes};
+	}
+
+	/**
+	 * @return a long[] consisting of two arrays, the first being packet times,
+	 * the second being packet hashes.
+	 */
+	public synchronized long[][] getRecvPacketTimesHashes() {
+		short count = recvTrackPackets ? TRACK_PACKETS : recvPtr;
+		long[] times = new long[count];
+		long[] hashes = new long[count];
+		if(!recvTrackPackets) {
+			System.arraycopy(packetsRecvTimes, 0, times, 0, recvPtr);
+			System.arraycopy(packetsRecvHashes, 0, hashes, 0, recvPtr);
+		} else {
+			System.arraycopy(packetsRecvTimes, recvPtr, times, 0, TRACK_PACKETS - recvPtr);
+			System.arraycopy(packetsRecvTimes, 0, times, TRACK_PACKETS - recvPtr, recvPtr);
+			System.arraycopy(packetsRecvHashes, recvPtr, hashes, 0, TRACK_PACKETS - recvPtr);
+			System.arraycopy(packetsRecvHashes, 0, hashes, TRACK_PACKETS - recvPtr, recvPtr);
+		}
+		return new long[][]{times, hashes};
+	}
+	
+	/**
+	 * @return The ID of a reusable PacketTracker if there is one, otherwise -1.
+	 */
+	public long getReusableTrackerID() {
+		SessionKey cur;
+		synchronized(peerConn) {
+			cur = peerConn.currentTracker;
+		}
+		if(cur == null) {
+			if(logMINOR) Logger.minor(this, "getReusableTrackerID(): cur = null on "+this);
+			return -1;
+		}
+		if(cur.packets.isDeprecated()) {
+			if(logMINOR) Logger.minor(this, "getReusableTrackerID(): cur.packets.isDeprecated on "+this);
+			return -1;
+		}
+		if(logMINOR) Logger.minor(this, "getReusableTrackerID(): "+cur.packets.trackerID+" on "+this);
+		return cur.packets.trackerID;
+	}
+	
+	public void handleSentPackets(Message m) {
+
+		// IMHO it's impossible to make this work reliably on lossy connections, especially highly saturated upstreams.
+		// If it was possible it would likely involve a lot of work, refactoring, voting between peers, marginal results,
+		// very slow accumulation of data etc.
+
+//		long now = System.currentTimeMillis();
+//		synchronized(this) {
+//			if(forceDisconnectCalled)
+//				return;
+//			/*
+//			 * I've had some very strange results from seed clients!
+//			 * One showed deltas of over 10 minutes... how is that possible? The PN wouldn't reconnect?!
+//			 */
+//			if(!isRealConnection())
+//				return; // The packets wouldn't have been assigned to this PeerNode!
+////			if(now - this.timeLastConnected < SENT_PACKETS_MAX_TIME_AFTER_CONNECT)
+////				return;
+//		}
+//		long baseTime = m.getLong(DMT.TIME);
+//		baseTime += this.clockDelta;
+//		// Should be a reasonable approximation now
+//		int[] timeDeltas = Fields.bytesToInts(((ShortBuffer) m.getObject(DMT.TIME_DELTAS)).getData());
+//		long[] packetHashes = Fields.bytesToLongs(((ShortBuffer) m.getObject(DMT.HASHES)).getData());
+//		long[] times = new long[timeDeltas.length];
+//		for(int i = 0; i < times.length; i++)
+//			times[i] = baseTime - timeDeltas[i];
+//		long tolerance = 60 * 1000 + (Math.abs(timeDeltas[0]) / 20); // 1 minute or 5% of full interval
+//		synchronized(this) {
+//			// They are in increasing order
+//			// Loop backwards
+//			long otime = Long.MAX_VALUE;
+//			long[][] sent = getRecvPacketTimesHashes();
+//			long[] sentTimes = sent[0];
+//			long[] sentHashes = sent[1];
+//			short sentPtr = (short) (sent.length - 1);
+//			short notFoundCount = 0;
+//			short consecutiveNotFound = 0;
+//			short longestConsecutiveNotFound = 0;
+//			short ignoredUptimeCount = 0;
+//			short found = 0;
+//			//The arrays are constructed from received data, don't throw an ArrayIndexOutOfBoundsException if they are different sizes.
+//			int shortestArray=times.length;
+//			if (shortestArray > packetHashes.length)
+//				shortestArray = packetHashes.length;
+//			for(short i = (short) (shortestArray-1); i >= 0; i--) {
+//				long time = times[i];
+//				if(time > otime) {
+//					Logger.error(this, "Inconsistent time order: [" + i + "]=" + time + " but [" + (i + 1) + "] is " + otime);
+//					return;
+//				} else
+//					otime = time;
+//				long hash = packetHashes[i];
+//				// Search for the hash.
+//				short match = -1;
+//				// First try forwards
+//				for(short j = sentPtr; j < sentTimes.length; j++) {
+//					long ttime = sentTimes[j];
+//					if(sentHashes[j] == hash) {
+//						match = j;
+//						sentPtr = j;
+//						break;
+//					}
+//					if(ttime - time > tolerance)
+//						break;
+//				}
+//				if(match == -1)
+//					for(short j = (short) (sentPtr - 1); j >= 0; j--) {
+//						long ttime = sentTimes[j];
+//						if(sentHashes[j] == hash) {
+//							match = j;
+//							sentPtr = j;
+//							break;
+//						}
+//						if(time - ttime > tolerance)
+//							break;
+//					}
+//				if(match == -1) {
+//					long mustHaveBeenUpAt = now - (int)(timeDeltas[i] * 1.1) - 100;
+//					if(this.crypto.socket.getStartTime() > mustHaveBeenUpAt) {
+//						ignoredUptimeCount++;
+//					} else {
+//						// Not found
+//						consecutiveNotFound++;
+//						notFoundCount++;
+//					}
+//				} else {
+//					if(consecutiveNotFound > longestConsecutiveNotFound)
+//						longestConsecutiveNotFound = consecutiveNotFound;
+//					consecutiveNotFound = 0;
+//					found++;
+//				}
+//			}
+//			if(consecutiveNotFound > longestConsecutiveNotFound)
+//				longestConsecutiveNotFound = consecutiveNotFound;
+//			Logger.error(this, "Packets: "+packetHashes.length+" not found "+notFoundCount+" consecutive not found "+consecutiveNotFound+" longest consecutive not found "+longestConsecutiveNotFound+" ignored due to uptime: "+ignoredUptimeCount+" found: "+found);
+//			if(longestConsecutiveNotFound > TRACK_PACKETS / 2) {
+//				manyPacketsClaimedSentNotReceived = true;
+//				timeManyPacketsClaimedSentNotReceived = now;
+//				Logger.error(this, "" + consecutiveNotFound + " consecutive packets not found on " + userToString());
+//				SocketHandler handler = outgoingMangler.getSocketHandler();
+//				if(handler instanceof PortForwardSensitiveSocketHandler) {
+//					((PortForwardSensitiveSocketHandler) handler).rescanPortForward();
+//				}
+//			}
+//		}
+//		if(manyPacketsClaimedSentNotReceived) {
+//			outgoingMangler.setPortForwardingBroken();
+//		}
 	}
 	
 }

@@ -23,7 +23,7 @@ public class PeerStreamTransport extends PeerTransport {
 	
 	protected final StreamTransportPlugin transportPlugin;
 	
-	protected final OutgoingStreamMangler streamMangler;
+	protected final OutgoingStreamMangler outgoingMangler;
 	
 	protected StreamConnectionFormat streamConnection;
 	
@@ -38,10 +38,10 @@ public class PeerStreamTransport extends PeerTransport {
 	protected long timeLastReceivedTransportDataStream;
 	
 	
-	public PeerStreamTransport(StreamTransportPlugin transportPlugin, OutgoingStreamMangler streamMangler, PeerNode pn){
-		super(transportPlugin, streamMangler, pn);
+	public PeerStreamTransport(StreamTransportPlugin transportPlugin, OutgoingStreamMangler outgoingMangler, PeerNode pn){
+		super(transportPlugin, outgoingMangler, pn);
 		this.transportPlugin = transportPlugin;
-		this.streamMangler = streamMangler;
+		this.outgoingMangler = outgoingMangler;
 	}
 	
 	public PeerStreamTransport(StreamTransportBundle streamTransportBundle, PeerNode pn){
