@@ -3128,6 +3128,23 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 			return;
 		}
+		
+		if(backupFile.exists()) {
+			if(backupFile.length() == 0) {
+				backupFile.delete();
+			} else {
+				System.err.println("Last defragment attempt failed: backup still exists: "+backupFile);
+				System.err.println("Restoring from backup...");
+				FileUtil.secureDelete(databaseFile, random);
+				if(!backupFile.renameTo(databaseFile)) {
+					System.err.println("Unable to rename pre-defrag backup file!");
+					// Try restarting, it might be open.
+					WrapperManager.restart();
+					// After restarting, we will go to the top bit of code above.
+				}
+				return;
+			}
+		}
 
 		// Open it first, because defrag will throw if it needs to upgrade the file.
 
