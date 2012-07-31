@@ -3112,6 +3112,18 @@ public class Node implements TimeSkewDetectorCallback {
 				System.err.println("Database does not exist but backup does, trying backup...");
 				if(!backupFile.renameTo(databaseFile)) {
 					System.err.println("Unable to rename backup database file "+backupFile+" to "+databaseFile);
+					// FIXME is it possible that it's open??? I don't think so, since this is the backup file ...
+					// Maybe if we shut down the client layer and then started it back up?
+					// Probably don't want to restart here.
+					// FIXME maybe a user-alert?
+					// It isn't very friendly to just delete it and start a new one ... on the other hand, breaking is worse, isn't it?
+					FileUtil.secureDelete(backupFile, random);
+					if(backupFile.exists()) {
+						System.err.println("Can't rename the backup file. Can't create a new one because we can't get rid of the old one (this might lead to data corruption). So can't load the downloads database, sorry.");
+						throw new IOException("Unable to rename backup database file "+backupFile+" to "+databaseFile);
+					} else {
+						System.err.println("Deleted the old backup file. Starting a new downloads database from scratch.");
+					}
 				}
 			}
 			return;
