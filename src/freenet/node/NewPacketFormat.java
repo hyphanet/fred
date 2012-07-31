@@ -54,7 +54,7 @@ public class NewPacketFormat implements PacketFormat {
 
 	private final BasePeerNode pn;
 	
-	public final PacketTransportPlugin transportPlugin;
+	public final PeerPacketTransport peerTransport;
 	
 	/** The actual buffer of outgoing messages that have not yet been acked.
 	 * LOCKING: Protected by sendBufferLock. */
@@ -99,9 +99,9 @@ public class NewPacketFormat implements PacketFormat {
 	private long timeLastSentPayload;
 	private long timeLastSentPing;
 
-	public NewPacketFormat(BasePeerNode pn, int ourInitialMsgID, int theirInitialMsgID, PacketTransportPlugin transportPlugin) {
+	public NewPacketFormat(BasePeerNode pn, int ourInitialMsgID, int theirInitialMsgID, PeerPacketTransport peerTransport) {
 		this.pn = pn;
-		this.transportPlugin = transportPlugin;
+		this.peerTransport = peerTransport;
 
 		startedByPrio = new ArrayList<HashMap<Integer, MessageWrapper>>(DMT.NUM_PRIORITIES);
 		for(int i = 0; i < DMT.NUM_PRIORITIES; i++) {
@@ -124,11 +124,11 @@ public class NewPacketFormat implements PacketFormat {
 		SessionKey s = null;
 		for(int i = 0; i < 3; i++) {
 			if(i == 0) {
-				s = pn.getCurrentKeyTracker(transportPlugin);
+				s = peerTransport.getCurrentKeyTracker();
 			} else if (i == 1) {
-				s = pn.getPreviousKeyTracker(transportPlugin);
+				s = peerTransport.getPreviousKeyTracker();
 			} else {
-				s = pn.getUnverifiedKeyTracker(transportPlugin);
+				s = peerTransport.getUnverifiedKeyTracker();
 			}
 			if(s == null) continue;
 			packet = tryDecipherPacket(buf, offset, length, s);
@@ -142,10 +142,10 @@ public class NewPacketFormat implements PacketFormat {
 			return false;
 		}
 
-		pn.receivedPacket(false, true, transportPlugin);
-		pn.verified(s, transportPlugin);
-		pn.maybeRekey(transportPlugin);
-		pn.reportIncomingPacket(buf, offset, length, now);
+		peerTransport.receivedPacket(false, true);
+		peerTransport.verified(s);
+		peerTransport.maybeRekey();
+		peerTransport.reportIncomingPacket(buf, offset, length, now);
 
 		LinkedList<byte[]> finished = handleDecryptedPacket(packet, s);
 		if(logMINOR && !finished.isEmpty()) 
@@ -454,17 +454,17 @@ outer:
 	@Override
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly)
 	throws BlockedTooLongException {
-		SessionKey sessionKey = pn.getPreviousKeyTracker(transportPlugin);
+		SessionKey sessionKey = peerTransport.getPreviousKeyTracker();
 		if(sessionKey != null) {
 			// Try to sent an ack-only packet.
 			if(maybeSendPacket(now, rpiTemp, rpiIntTemp, true, sessionKey)) return true;
 		}
-		sessionKey = pn.getUnverifiedKeyTracker(transportPlugin);
+		sessionKey = peerTransport.getUnverifiedKeyTracker();
 		if(sessionKey != null) {
 			// Try to sent an ack-only packet.
 			if(maybeSendPacket(now, rpiTemp, rpiIntTemp, true, sessionKey)) return true;
 		}
-		sessionKey = pn.getCurrentKeyTracker(transportPlugin);
+		sessionKey = peerTransport.getCurrentKeyTracker();
 		if(sessionKey == null) {
 			Logger.warning(this, "No key for encrypting hash");
 			return false;
@@ -474,7 +474,7 @@ outer:
 	
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly, SessionKey sessionKey)
 	throws BlockedTooLongException {
-		int maxPacketSize = pn.getMaxPacketSize(transportPlugin);
+		int maxPacketSize = peerTransport.transportPlugin.getMaxPacketSize();
 		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
 
 		NPFPacket packet = createPacket(maxPacketSize - hmacLength, pn.getMessageQueue(), sessionKey, ackOnly);
@@ -532,7 +532,7 @@ outer:
 				                + data.length + " bytes) with fragments " + fragments + " and "
 				                + packet.getAcks().size() + " acks on "+this);
 			}
-			pn.sendEncryptedPacket(data, transportPlugin);
+			pn.sendEncryptedPacket(data, peerTransport.transportPlugin);
 		} catch (LocalAddressException e) {
 			Logger.error(this, "Caught exception while sending packet", e);
 			return false;
@@ -545,8 +545,8 @@ outer:
 		}
 
 		now = System.currentTimeMillis();
-		pn.sentPacket(transportPlugin);
-		pn.reportOutgoingPacket(data, 0, data.length, now);
+		peerTransport.sentPacket();
+		peerTransport.reportOutgoingPacket(data, 0, data.length, now);
 		if(pn.shouldThrottle()) {
 			pn.sentThrottledBytes(data.length);
 		}
@@ -900,7 +900,7 @@ outer:
 
 		if(packet.getLength() == 5) return null;
 
-		int seqNum = keyContext.allocateSequenceNumber(pn, transportPlugin);
+		int seqNum = keyContext.allocateSequenceNumber(peerTransport);
 		if(seqNum == -1) return null;
 		packet.setSequenceNumber(seqNum);
 		
@@ -935,13 +935,13 @@ outer:
 	public long timeCheckForLostPackets() {
 		long timeCheck = Long.MAX_VALUE;
 		double averageRTT = averageRTT();
-		SessionKey key = pn.getCurrentKeyTracker(transportPlugin);
+		SessionKey key = peerTransport.getCurrentKeyTracker();
 		if(key != null)
 			timeCheck = Math.min(timeCheck, ((key.packetContext)).timeCheckForLostPackets(averageRTT));
-		key = pn.getPreviousKeyTracker(transportPlugin);
+		key = peerTransport.getPreviousKeyTracker();
 		if(key != null)
 			timeCheck = Math.min(timeCheck, ((key.packetContext)).timeCheckForLostPackets(averageRTT));
-		key = pn.getUnverifiedKeyTracker(transportPlugin);
+		key = peerTransport.getUnverifiedKeyTracker();
 		if(key != null)
 			timeCheck = Math.min(timeCheck, ((key.packetContext)).timeCheckForLostPackets(averageRTT));
 		return timeCheck;
@@ -949,13 +949,13 @@ outer:
 	
 	private long timeCheckForAcks() {
 		long timeCheck = Long.MAX_VALUE;
-		SessionKey key = pn.getCurrentKeyTracker(transportPlugin);
+		SessionKey key = peerTransport.getCurrentKeyTracker();
 		if(key != null)
 			timeCheck = Math.min(timeCheck, (key.packetContext).timeCheckForAcks());
-		key = pn.getPreviousKeyTracker(transportPlugin);
+		key = peerTransport.getPreviousKeyTracker();
 		if(key != null)
 			timeCheck = Math.min(timeCheck, (key.packetContext).timeCheckForAcks());
-		key = pn.getUnverifiedKeyTracker(transportPlugin);
+		key = peerTransport.getUnverifiedKeyTracker();
 		if(key != null)
 			timeCheck = Math.min(timeCheck, (key.packetContext).timeCheckForAcks());
 		return timeCheck;
@@ -966,13 +966,13 @@ outer:
 		if(pn == null) return;
 		double averageRTT = averageRTT();
 		long curTime = System.currentTimeMillis();
-		SessionKey key = pn.getCurrentKeyTracker(transportPlugin);
+		SessionKey key = peerTransport.getCurrentKeyTracker();
 		if(key != null)
 			((key.packetContext)).checkForLostPackets(averageRTT, curTime, pn);
-		key = pn.getPreviousKeyTracker(transportPlugin);
+		key = peerTransport.getPreviousKeyTracker();
 		if(key != null)
 			((key.packetContext)).checkForLostPackets(averageRTT, curTime, pn);
-		key = pn.getUnverifiedKeyTracker(transportPlugin);
+		key = peerTransport.getUnverifiedKeyTracker();
 		if(key != null)
 			((key.packetContext)).checkForLostPackets(averageRTT, curTime, pn);
 	}
@@ -1058,7 +1058,7 @@ outer:
 			NewPacketFormatKeyContext keyContext = tracker.packetContext;
 			if(!keyContext.canAllocateSeqNum()) {
 				// We can't allocate more sequence numbers because we haven't rekeyed yet
-				pn.startRekeying(transportPlugin);
+				peerTransport.startRekeying();
 				Logger.error(this, "Can't send because we would block on "+this);
 				return false;
 			}

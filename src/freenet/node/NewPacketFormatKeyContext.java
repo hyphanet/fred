@@ -79,7 +79,7 @@ public class NewPacketFormatKeyContext {
 		}
 	}
 
-	int allocateSequenceNumber(BasePeerNode pn, TransportPlugin transportPlugin) {
+	int allocateSequenceNumber(PeerTransport peerTransport) {
 		synchronized(sequenceNumberLock) {
 			if(firstSeqNumUsed == -1) {
 				firstSeqNumUsed = nextSeqNum;
@@ -87,14 +87,14 @@ public class NewPacketFormatKeyContext {
 			} else {
 				if(nextSeqNum == firstSeqNumUsed) {
 					Logger.error(this, "Blocked because we haven't rekeyed yet");
-					pn.startRekeying(transportPlugin);
+					peerTransport.startRekeying();
 					return -1;
 				}
 				
 				if(firstSeqNumUsed > nextSeqNum) {
-					if(firstSeqNumUsed - nextSeqNum < REKEY_THRESHOLD) pn.startRekeying(transportPlugin);
+					if(firstSeqNumUsed - nextSeqNum < REKEY_THRESHOLD) peerTransport.startRekeying();
 				} else {
-					if((NewPacketFormat.NUM_SEQNUMS - nextSeqNum) + firstSeqNumUsed < REKEY_THRESHOLD) pn.startRekeying(transportPlugin);
+					if((NewPacketFormat.NUM_SEQNUMS - nextSeqNum) + firstSeqNumUsed < REKEY_THRESHOLD) peerTransport.startRekeying();
 				}
 			}
 			int seqNum = nextSeqNum++;

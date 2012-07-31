@@ -194,11 +194,6 @@ public class NewPacketFormatTest extends TestCase {
 			public synchronized void setSendLoadStatsASAP(boolean realtime) {
 				shouldSend = true;
 			}
-			
-			@Override
-			public SessionKey getCurrentKeyTracker(TransportPlugin transportPlugin) {
-				return senderKey;
-			}
 
 		};
 		NewPacketFormat sender = new NewPacketFormat(senderNode, 0, 0, null);
@@ -257,11 +252,6 @@ public class NewPacketFormatTest extends TestCase {
 			@Override
 			public MessageItem makeLoadStats(boolean realtime, boolean highPriority, boolean noRemember) {
 				return new MessageItem(loadMessage, null, false, null, (short) 0, false, false);
-			}
-
-			@Override
-			public SessionKey getCurrentKeyTracker(TransportPlugin transportPlugin) {
-				return senderKey;
 			}
 
 		};
