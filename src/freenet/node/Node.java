@@ -3104,6 +3104,18 @@ public class Node implements TimeSkewDetectorCallback {
 		synchronized(this) {
 			if(!defragDatabaseOnStartup) return;
 		}
+		
+		File backupFile = new File(databaseFile.getPath()+".tmp");
+		
+		if(!databaseFile.exists()) {
+			if(backupFile.exists()) {
+				System.err.println("Database does not exist but backup does, trying backup...");
+				if(!backupFile.renameTo(databaseFile)) {
+					System.err.println("Unable to rename backup database file "+backupFile+" to "+databaseFile);
+				}
+			}
+			return;
+		}
 
 		// Open it first, because defrag will throw if it needs to upgrade the file.
 
@@ -3116,7 +3128,6 @@ public class Node implements TimeSkewDetectorCallback {
 		WrapperManager.signalStarting((int)Math.min(24*60*60*1000, 300*1000+length));
 		System.err.println("Defragmenting persistent downloads database.");
 
-		File backupFile = new File(databaseFile.getPath()+".tmp");
 		FileUtil.secureDelete(backupFile, random);
 
 		File tmpFile = new File(databaseFile.getPath()+".map");
