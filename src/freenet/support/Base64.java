@@ -1,5 +1,7 @@
 package freenet.support;
 
+import java.nio.charset.Charset;
+
 /**
  * This class provides encoding of byte arrays into Base64-encoded strings,
  * and decoding the other way.
@@ -17,25 +19,11 @@ package freenet.support;
  */
 public class Base64
 {
-  private static char[] base64Alphabet = {
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
-    'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-    'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
-    'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
-    'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-    'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
-    'w', 'x', 'y', 'z', '0', '1', '2', '3',
-    '4', '5', '6', '7', '8', '9', '~', '-'};
-  
-  private static char[] base64StandardAlphabet = {
-	    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
-	    'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-	    'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
-	    'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
-	    'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-	    'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
-	    'w', 'x', 'y', 'z', '0', '1', '2', '3',
-	    '4', '5', '6', '7', '8', '9', '+', '/'};
+	static final Charset UTF8 = Charset.forName("UTF-8");
+
+  private static byte[] base64Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~-".getBytes(UTF8);
+
+  private static byte[] base64StandardAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".getBytes(UTF8);
 
   /**
    * A reverse lookup table to convert base64 letters back into the
@@ -91,9 +79,9 @@ public class Base64
   /**
    * Caller should specify equalsPad=true if they want a standards compliant encoding.
    */
-  private static String encode(byte[] in, boolean equalsPad, char[] alphabet)
+  private static String encode(byte[] in, boolean equalsPad, byte[] alphabet)
   {
-    char[] out = new char[((in.length+2)/3)*4];
+    byte[] out = new byte[((in.length+2)/3)*4];
     int rem = in.length%3;
     int o = 0;
     for (int i = 0; i < in.length;) {
@@ -116,7 +104,7 @@ public class Base64
     if (equalsPad)
       while (outLen < out.length)
         out[outLen++] = '=';
-    return new String(out, 0, outLen);
+    return new String(out, 0, outLen, UTF8);
   }
 
   /**
@@ -143,7 +131,7 @@ public class Base64
     throws IllegalBase64Exception
   {
     try {
-      char[] in = inStr.toCharArray();
+      byte[] in = inStr.getBytes(UTF8);
       int inLength = in.length;
 
         // Strip trailing equals signs.
