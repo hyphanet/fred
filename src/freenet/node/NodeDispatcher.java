@@ -886,7 +886,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		PeerNode pn = ctx.source;
 		if(pn == null) return false;
 		try {
-			pn.sendAsync(m, null, nodeStats.routedMessageCtr);
+			pn.sendAsync(m.cloneAndDropSubMessages(), null, nodeStats.routedMessageCtr);
 		} catch (NotConnectedException e) {
 			if(logMINOR) Logger.minor(this, "Lost connection forwarding "+m+" to "+pn);
 		}
