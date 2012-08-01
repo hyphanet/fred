@@ -56,18 +56,18 @@ public class RealNodePingTest {
         Thread.sleep(20000);
         //node1.usm.setDropProbability(4);
         while(true) {
-            Logger.minor(RealNodePingTest.class, "Sending PING "+pingID);
+            Logger.error(RealNodePingTest.class, "Sending PING "+pingID);
             boolean success;
             try {
                 success = pn.ping(pingID);
             } catch (NotConnectedException e1) {
-                Logger.normal(RealNodePingTest.class, "Not connected");
+                Logger.error(RealNodePingTest.class, "Not connected");
                 continue;
             }
             if(success)
-                Logger.normal(RealNodePingTest.class, "PING "+pingID+" successful");
+                Logger.error(RealNodePingTest.class, "PING "+pingID+" successful");
             else
-                Logger.normal(RealNodePingTest.class, "PING FAILED: "+pingID);
+                Logger.error(RealNodePingTest.class, "PING FAILED: "+pingID);
             try {
                 Thread.sleep(2000);
             } catch (InterruptedException e) {
