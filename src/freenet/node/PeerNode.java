@@ -11,7 +11,6 @@ import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -79,7 +78,6 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.WeakHashSet;
-import freenet.support.WouldBlockException;
 import freenet.support.math.MersenneTwister;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
@@ -790,8 +788,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		totalInputSinceStartup = fs.getLong("totalInput", 0);
 		totalOutputSinceStartup = fs.getLong("totalOutput", 0);
 
-		int lastNegType = negTypes[negTypes.length - 1];
-		
 		byte buffer[] = new byte[16];
 		node.random.nextBytes(buffer);
 		paddingGen = new MersenneTwister(buffer);
@@ -1121,7 +1117,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public boolean isConnected() {
 		long now = System.currentTimeMillis(); // no System.currentTimeMillis in synchronized
 		synchronized(this) {
-			if(isConnected && currentTracker != null && !currentTracker.packets.isDeprecated()) {
+			if(isConnected && currentTracker != null) {
 				timeLastConnected = now;
 				return true;
 			}
@@ -1341,9 +1337,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				mi.onDisconnect();
 			}
 		}
-		if(cur != null) cur.disconnected(false);
-		if(prev != null) prev.disconnected(false);
-		if(unv != null) unv.disconnected(false);
+		if(cur != null) cur.disconnected();
+		if(prev != null) prev.disconnected();
+		if(unv != null) unv.disconnected();
 		if(_lastThrottle != null)
 			_lastThrottle.maybeDisconnected();
 		node.lm.lostOrRestartedNode(this);
@@ -1463,28 +1459,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			prev = previousTracker;
 			pf = packetFormat;
 			if(cur == null && prev == null) return Long.MAX_VALUE;
-		}
-		SessionKey kt = cur;
-		if(kt != null) {
-			long next = kt.packets.getNextUrgentTime();
-			t = Math.min(t, next);
-			if(next < now && logMINOR)
-				Logger.minor(this, "Next urgent time from curTracker less than now");
-			if(kt.packets.hasPacketsToResend()) {
-				// We could use the original packet send time, but I don't think it matters that much: Old peers with heavy packet loss are probably going to have problems anyway...
-				return now;
-			}
-		}
-		kt = prev;
-		if(kt != null) {
-			long next = kt.packets.getNextUrgentTime();
-			t = Math.min(t, next);
-			if(next < now && logMINOR)
-				Logger.minor(this, "Next urgent time from prevTracker less than now");
-			if(kt.packets.hasPacketsToResend()) {
-				// We could use the original packet send time, but I don't think it matters that much: Old peers with heavy packet loss are probably going to have problems anyway...
-				return now;
-			}
 		}
 		if(pf != null) {
 			boolean canSend = cur != null && pf.canSend(cur);
@@ -2101,6 +2075,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public long completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher outgoingCipher, byte[] outgoingKey, BlockCipher incommingCipher, byte[] incommingKey, Peer replyTo, boolean unverified, int negType, long trackerID, boolean isJFK4, boolean jfk4SameAsOld, byte[] hmacKey, BlockCipher ivCipher, byte[] ivNonce, int ourInitialSeqNum, int theirInitialSeqNum, int ourInitialMsgID, int theirInitialMsgID) {
 		long now = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Tracker ID "+trackerID+" isJFK4="+isJFK4+" jfk4SameAsOld="+jfk4SameAsOld);
+		if(trackerID < 0) trackerID = Math.abs(node.random.nextLong());
 
 		// Update sendHandshakeTime; don't send another handshake for a while.
 		// If unverified, "a while" determines the timeout; if not, it's just good practice to avoid a race below.
@@ -2154,11 +2129,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		boolean wasARekey = false;
 		SessionKey oldPrev = null;
 		SessionKey oldCur = null;
-		SessionKey prev = null;
 		SessionKey newTracker;
 		MessageItem[] messagesTellDisconnected = null;
 		PacketFormat oldPacketFormat = null;
-		PacketTracker packets = null;
 		synchronized(this) {
 			disconnecting = false;
 			// FIXME this shouldn't happen, does it?
@@ -2217,51 +2190,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			} else if(bootIDChanged && logMINOR)
 				Logger.minor(this, "Changed boot ID from " + bootID + " to " + thisBootID + " for " + getPeer());
 			this.bootID = thisBootID;
-			int firstPacketNumber = (negType >= 5 ? 0 : node.random.nextInt(100 * 1000));
-			if(currentTracker != null && currentTracker.packets.trackerID == trackerID && !currentTracker.packets.isDeprecated()) {
-				if(isJFK4 && !jfk4SameAsOld)
-					Logger.error(this, "In JFK(4), found tracker ID "+trackerID+" but other side says is new! for "+this);
-				packets = currentTracker.packets;
-				if(logMINOR) Logger.minor(this, "Re-using packet tracker ID "+trackerID+" on "+this+" from current "+currentTracker);
-			} else if(previousTracker != null && previousTracker.packets.trackerID == trackerID && !previousTracker.packets.isDeprecated()) {
-				if(isJFK4 && !jfk4SameAsOld)
-					Logger.error(this, "In JFK(4), found tracker ID "+trackerID+" but other side says is new! for "+this);
-				packets = previousTracker.packets;
-				if(logMINOR) Logger.minor(this, "Re-using packet tracker ID "+trackerID+" on "+this+" from prev "+previousTracker);
-			} else if(isJFK4 && jfk4SameAsOld) {
-				isConnected = false;
-				Logger.error(this, "Can't reuse old tracker ID "+trackerID+" as instructed - disconnecting");
-				return -1;
-			} else if(trackerID == -1) {
-				// Create a new tracker unconditionally
-				packets = new PacketTracker(this, firstPacketNumber);
-				if(negType >= 5) {
-					if(previousTracker != null && previousTracker.packets.wasUsed()) {
-						oldPrev = previousTracker;
-						previousTracker = null;
-						Logger.error(this, "Moving from old packet format to new packet format, previous tracker had packets in progress.");
-					}
-					if(currentTracker != null && currentTracker.packets.wasUsed()) {
-						oldCur = currentTracker;
-						currentTracker = null;
-						Logger.error(this, "Moving from old packet format to new packet format, current tracker had packets in progress.");
-					}
-				} else {
-					notReusingTracker = true;
-				}
-				if(logMINOR) Logger.minor(this, "Creating new PacketTracker as instructed for "+this);
-			} else {
-				if(isJFK4 && negType >= 4 && trackerID < 0)
-					Logger.error(this, "JFK(4) packet with neg type "+negType+" has negative tracker ID: "+trackerID);
-
-				notReusingTracker = true;
-				if(isJFK4/* && !jfk4SameAsOld implied */ && trackerID >= 0) {
-					packets = new PacketTracker(this, firstPacketNumber, trackerID);
-				} else
-					packets = new PacketTracker(this, firstPacketNumber);
-				if(logMINOR) Logger.minor(this, "Creating new tracker (last resort) on "+this);
-			}
-			if(bootIDChanged || notReusingTracker) {
+			if(bootIDChanged) {
 				if((!bootIDChanged) && notReusingTracker && !(currentTracker == null && previousTracker == null))
 					// FIXME is this a real problem? Clearly the other side has changed trackers for some reason...
 					// Normally that shouldn't happen except when a connection times out ... it is probably possible
@@ -2271,8 +2200,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				oldCur = currentTracker;
 				previousTracker = null;
 				currentTracker = null;
-			}
-			if(bootIDChanged) {
 				// Messages do not persist across restarts.
 				// Generally they would be incomprehensible, anything that isn't should be sent as
 				// connection initial messages by maybeOnConnect().
@@ -2283,8 +2210,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			} else {
 				// else it's a rekey
 			}
-			newTracker = new SessionKey(this, packets, outgoingCipher, outgoingKey, incommingCipher, incommingKey, ivCipher, ivNonce, hmacKey, new NewPacketFormatKeyContext(ourInitialSeqNum, theirInitialSeqNum));
-			if(logMINOR) Logger.minor(this, "New key tracker in completedHandshake: "+newTracker+" for "+packets+" for "+shortToString()+" neg type "+negType);
+			newTracker = new SessionKey(this, outgoingCipher, outgoingKey, incommingCipher, incommingKey, ivCipher, ivNonce, hmacKey, new NewPacketFormatKeyContext(ourInitialSeqNum, theirInitialSeqNum), trackerID);
+			if(logMINOR) Logger.minor(this, "New key tracker in completedHandshake: "+newTracker+" for "+shortToString()+" neg type "+negType);
 			if(unverified) {
 				if(unverifiedTracker != null) {
 					// Keep the old unverified tracker if possible.
@@ -2292,7 +2219,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						previousTracker = unverifiedTracker;
 				}
 				unverifiedTracker = newTracker;
-				if(currentTracker == null || currentTracker.packets.isDeprecated())
+				if(currentTracker == null)
 					isConnected = false;
 			} else {
 				oldPrev = previousTracker;
@@ -2303,8 +2230,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				// we might want to keep the unverified tracker rather than the previous tracker.
 				neverConnected = false;
 				maybeClearPeerAddedTimeOnConnect();
-				maybeSwapTrackers();
-				prev = previousTracker;
 			}
 			ctx = null;
 			isRekeying = false;
@@ -2321,11 +2246,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				Logger.error(this, "previousTracker key equals unverifiedTracker key: prev "+previousTracker+" unv "+unverifiedTracker);
 			timeLastSentPacket = now;
 			if(packetFormat == null) {
-				if(negType < 5) {
-					packetFormat = new FNPWrapper(this);
-				} else {
-					packetFormat = new NewPacketFormat(this, ourInitialMsgID, theirInitialMsgID);
-				}
+				packetFormat = new NewPacketFormat(this, ourInitialMsgID, theirInitialMsgID);
 			}
 			// Completed setup counts as received data packet, for purposes of avoiding spurious disconnections.
 			timeLastReceivedPacket = now;
@@ -2343,14 +2264,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			node.usm.onRestart(this);
 			node.onRestartOrDisconnect(this);
 		}
-		if(oldPrev != null && oldPrev.packets != newTracker.packets)
-			oldPrev.packets.completelyDeprecated(newTracker);
-		if(oldPrev != null) oldPrev.disconnected(true);
-		if(oldCur != null && oldCur.packets != newTracker.packets)
-			oldCur.packets.completelyDeprecated(newTracker);
-		if(oldCur != null) oldCur.disconnected(true);
-		if(prev != null && prev.packets != newTracker.packets)
-			prev.packets.deprecated();
+		if(oldPrev != null) oldPrev.disconnected();
+		if(oldCur != null) oldCur.disconnected();
 		if(oldPacketFormat != null) {
 			List<MessageItem> tellDisconnect = oldPacketFormat.onDisconnect();
 			if(tellDisconnect != null)
@@ -2377,60 +2292,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		
 		crypto.maybeBootConnection(this, replyTo.getFreenetAddress());
 
-		return packets.trackerID;
+		return trackerID;
 	}
 
 	protected abstract void maybeClearPeerAddedTimeOnConnect();
-
-	/**
-	 * Resolve race conditions where two connection setups between two peers complete simultaneously.
-	 * Swap prev and current if:
-	 * - There is a very short period between their respective creations.
-	 * - Current's hashcode (including the key, the word "test", and the xor of the boot IDs) is
-	 * greater than previous's.
-	 */
-	private synchronized void maybeSwapTrackers() {
-		if(currentTracker == null || previousTracker == null) return;
-		if(currentTracker.packets == previousTracker.packets) return;
-		long delta = Math.abs(currentTracker.packets.createdTime - previousTracker.packets.createdTime);
-		if(previousTracker != null && (!previousTracker.packets.isDeprecated()) &&
-				delta < CHECK_FOR_SWAPPED_TRACKERS_INTERVAL) {
-			// Swap prev and current iff H(new key) > H(old key).
-			// To deal with race conditions (node A gets 1 current 2 prev, node B gets 2 current 1 prev; when we rekey we lose data and cause problems).
-
-			// FIXME since this is a key dependancy, it needs to be looked at.
-			// However, an attacker cannot get this far without knowing the privkey, so it's unlikely to be an issue.
-
-			MessageDigest md = SHA256.getMessageDigest();
-			md.update(currentTracker.outgoingKey);
-			md.update(currentTracker.incommingKey);
-			md.update(TEST_AS_BYTES);
-			md.update(Fields.longToBytes(bootID ^ node.bootID));
-			int curHash = Fields.hashCode(md.digest());
-			md.reset();
-
-			md.update(previousTracker.outgoingKey);
-			md.update(previousTracker.incommingKey);
-			md.update(TEST_AS_BYTES);
-			md.update(Fields.longToBytes(bootID ^ node.bootID));
-			int prevHash = Fields.hashCode(md.digest());
-			SHA256.returnMessageDigest(md);
-
-			if(prevHash < curHash) {
-				// Swap over
-				SessionKey temp = previousTracker;
-				previousTracker = currentTracker;
-				currentTracker = temp;
-				if(logMINOR) Logger.minor(this, "Swapped SessionKey's on "+this+" cur "+currentTracker+" prev "+previousTracker+" delta "+delta+" cur.deprecated="+currentTracker.packets.isDeprecated()+" prev.deprecated="+previousTracker.packets.isDeprecated());
-			} else {
-				if(logMINOR) Logger.minor(this, "Not swapping SessionKey's on "+this+" cur "+currentTracker+" prev "+previousTracker+" delta "+delta+" cur.deprecated="+currentTracker.packets.isDeprecated()+" prev.deprecated="+previousTracker.packets.isDeprecated());
-			}
-		} else {
-			if (logMINOR)
-				Logger.minor(this, "Not swapping SessionKey's: previousTracker = " + previousTracker.toString()
-				        + (previousTracker.packets.isDeprecated() ? " (deprecated)" : "") + " time delta = " + delta);
-		}
-	}
 
 	@Override
 	public long getBootID() {
@@ -2497,7 +2362,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		synchronized(this) {
 			if(sentInitialMessages)
 				return;
-			if(currentTracker != null && !currentTracker.packets.isDeprecated()) // FIXME is that possible?
+			if(currentTracker != null)
 				sentInitialMessages = true;
 			else
 				return;
@@ -2581,7 +2446,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		long now = System.currentTimeMillis();
 		SessionKey completelyDeprecatedTracker;
 		synchronized(this) {
-			if(tracker == unverifiedTracker && !tracker.packets.isDeprecated()) {
+			if(tracker == unverifiedTracker) {
 				if(logMINOR)
 					Logger.minor(this, "Promoting unverified tracker " + tracker + " for " + getPeer());
 				completelyDeprecatedTracker = previousTracker;
@@ -2592,9 +2457,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				neverConnected = false;
 				maybeClearPeerAddedTimeOnConnect();
 				ctx = null;
-				maybeSwapTrackers();
-				if(previousTracker != null && previousTracker.packets != currentTracker.packets)
-					previousTracker.packets.deprecated();
 			} else
 				return;
 		}
@@ -2603,9 +2465,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		node.peers.addConnectedPeer(this);
 		maybeOnConnect();
 		if(completelyDeprecatedTracker != null) {
-			if(completelyDeprecatedTracker.packets != tracker.packets)
-				completelyDeprecatedTracker.packets.completelyDeprecated(tracker);
-			completelyDeprecatedTracker.disconnected(true);
+			completelyDeprecatedTracker.disconnected();
 		}
 	}
 
@@ -2958,56 +2818,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	* caused by a sequence inconsistency.
 	*/
 	public boolean sendAnyUrgentNotifications(boolean forceSendPrimary) {
-		boolean sent = false;
-		if(logMINOR)
-			Logger.minor(this, "sendAnyUrgentNotifications");
-		long now = System.currentTimeMillis();
-		SessionKey cur,
-		 prev;
-		synchronized(this) {
-			cur = currentTracker;
-			prev = previousTracker;
-		}
-		SessionKey tracker = cur;
-		if(tracker != null) {
-			long t = tracker.packets.getNextUrgentTime();
-			if(t < now || forceSendPrimary) {
-				try {
-					if(logMINOR) Logger.minor(this, "Sending urgent notifications for current tracker on "+shortToString());
-					int size = outgoingMangler.processOutgoing(null, 0, 0, tracker, DMT.PRIORITY_NOW);
-					node.nodeStats.reportNotificationOnlyPacketSent(size);
-					sent = true;
-				} catch(NotConnectedException e) {
-				// Ignore
-				} catch(KeyChangedException e) {
-				// Ignore
-				} catch(WouldBlockException e) {
-					Logger.error(this, "Caught impossible: "+e, e);
-				} catch(PacketSequenceException e) {
-					Logger.error(this, "Caught impossible: "+e, e);
-				}
-			}
-		}
-		tracker = prev;
-		if(tracker != null) {
-			long t = tracker.packets.getNextUrgentTime();
-			if(t < now)
-				try {
-					if(logMINOR) Logger.minor(this, "Sending urgent notifications for previous tracker on "+shortToString());
-					int size = outgoingMangler.processOutgoing(null, 0, 0, tracker, DMT.PRIORITY_NOW);
-					node.nodeStats.reportNotificationOnlyPacketSent(size);
-					sent = true;
-				} catch(NotConnectedException e) {
-				// Ignore
-				} catch(KeyChangedException e) {
-				// Ignore
-				} catch(WouldBlockException e) {
-					Logger.error(this, "Caught impossible: "+e, e);
-				} catch(PacketSequenceException e) {
-					Logger.error(this, "Caught impossible: "+e, e);
-				}
-		}
-		return sent;
+		return false;
 	}
 
 	/**
@@ -3169,48 +2980,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	*/
 	public synchronized long timeLastConnectionCompleted() {
 		return connectedTime;
-	}
-
-	/**
-	* Requeue ResendPacketItem[]s if they are not sent.
-	* @param resendItems
-	*/
-	public void requeueResendItems(Vector<ResendPacketItem> resendItems) {
-		SessionKey cur,
-		 prev,
-		 unv;
-		synchronized(this) {
-			cur = currentTracker;
-			prev = previousTracker;
-			unv = unverifiedTracker;
-		}
-		for(ResendPacketItem item : resendItems) {
-			if(item.pn != this)
-				throw new IllegalArgumentException("item.pn != this!");
-			SessionKey kt = cur;
-			if((kt != null) && (item.kt == kt.packets)) {
-				kt.packets.resendPacket(item.packetNumber);
-				continue;
-			}
-			kt = prev;
-			if((kt != null) && (item.kt == kt.packets)) {
-				kt.packets.resendPacket(item.packetNumber);
-				continue;
-			}
-			kt = unv;
-			if((kt != null) && (item.kt == kt.packets)) {
-				kt.packets.resendPacket(item.packetNumber);
-				continue;
-			}
-			// Doesn't match any of these, need to resend the data
-			kt = cur == null ? unv : cur;
-			if(kt == null) {
-				Logger.error(this, "No tracker to resend packet " + item.packetNumber + " on");
-				continue;
-			}
-			MessageItem mi = new MessageItem(item.buf, item.callbacks, true, resendByteCounter, item.priority, false, false);
-			requeueMessageItems(new MessageItem[]{mi}, 0, 1, true);
-		}
 	}
 
 	@Override
@@ -3805,7 +3574,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 
 	protected synchronized int getPeerNodeStatus(long now, long routingBackedOffUntilRT, long localRoutingBackedOffUntilBulk, boolean overPingTime, boolean noLoadStats) {
-		checkConnectionsAndTrackers();
 		if(disconnecting)
 			return PeerManager.PEER_NODE_STATUS_DISCONNECTING;
 		if(isRoutable()) {  // Function use also updates timeLastConnected and timeLastRoutable
@@ -3934,32 +3702,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	private final Runnable checkStatusAfterBackoff;
 
 	public abstract boolean recordStatus();
-
-	private synchronized void checkConnectionsAndTrackers() {
-		if(isConnected) {
-			if(currentTracker == null) {
-				if(unverifiedTracker != null) {
-					if(unverifiedTracker.packets.isDeprecated())
-						Logger.error(this, "Connected but primary tracker is null and unverified is deprecated ! " + unverifiedTracker + " for " + this, new Exception("debug"));
-					else if(logMINOR)
-						Logger.minor(this, "Connected but primary tracker is null, but unverified = " + unverifiedTracker + " for " + this, new Exception("debug"));
-				} else {
-					Logger.error(this, "Connected but both primary and unverified are null on " + this, new Exception("debug"));
-				}
-			} else if(currentTracker.packets.isDeprecated()) {
-				if(unverifiedTracker != null) {
-					if(unverifiedTracker.packets.isDeprecated())
-						Logger.error(this, "Connected but primary tracker is deprecated, unverified is deprecated: primary=" + currentTracker + " unverified: " + unverifiedTracker + " for " + this, new Exception("debug"));
-					else if(logMINOR)
-						Logger.minor(this, "Connected, primary tracker deprecated, unverified is valid, " + unverifiedTracker + " for " + this, new Exception("debug"));
-				} else {
-					// !!!!!!!
-					Logger.error(this, "Connected but primary tracker is deprecated and unverified tracker is null on " + this+" primary tracker = "+currentTracker, new Exception("debug"));
-					isConnected = false;
-				}
-			}
-		}
-	}
 
 	public String getIdentityString() {
 		return identityAsBase64String;
@@ -4948,13 +4690,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * @param rpiTemp
 	 * @throws BlockedTooLongException
 	 */
-	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly) throws BlockedTooLongException {
+	public boolean maybeSendPacket(long now, boolean ackOnly) throws BlockedTooLongException {
 		PacketFormat pf;
 		synchronized(this) {
 			if(packetFormat == null) return false;
 			pf = packetFormat;
 		}
-		return pf.maybeSendPacket(now, rpiTemp, rpiIntTemp, ackOnly);
+		return pf.maybeSendPacket(now, ackOnly);
 	}
 
 	/**
@@ -4969,12 +4711,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(logMINOR) Logger.minor(this, "getReusableTrackerID(): cur = null on "+this);
 			return -1;
 		}
-		if(cur.packets.isDeprecated()) {
-			if(logMINOR) Logger.minor(this, "getReusableTrackerID(): cur.packets.isDeprecated on "+this);
-			return -1;
-		}
-		if(logMINOR) Logger.minor(this, "getReusableTrackerID(): "+cur.packets.trackerID+" on "+this);
-		return cur.packets.trackerID;
+		if(logMINOR) Logger.minor(this, "getReusableTrackerID(): "+cur.trackerID+" on "+this);
+		return cur.trackerID;
 	}
 
 	private long lastFailedRevocationTransfer;
@@ -6161,10 +5899,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	@Override
 	public boolean isOldFNP() {
-		synchronized(this) {
-			if(packetFormat == null) return false;
-			return packetFormat instanceof FNPWrapper;
-		}
+		return false;
 	}
 	
 	@Override

@@ -12,8 +12,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 
-import freenet.clients.http.ExternalLinkToadlet;
 import net.i2p.util.NativeBigInteger;
+import freenet.clients.http.ExternalLinkToadlet;
 import freenet.crypt.BlockCipher;
 import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
@@ -29,19 +29,15 @@ import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.io.AddressTracker;
 import freenet.io.AddressTracker.Status;
-import freenet.io.comm.AsyncMessageCallback;
-import freenet.io.comm.DMT;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.IncomingPacketFilter.DECODED;
-import freenet.io.comm.MessageCore;
-import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PacketSocketHandler;
 import freenet.io.comm.Peer;
+import freenet.io.comm.Peer.LocalAddressException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.SocketHandler;
-import freenet.io.comm.Peer.LocalAddressException;
 import freenet.l10n.NodeL10n;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.useralerts.AbstractUserAlert;
@@ -53,10 +49,9 @@ import freenet.support.HexUtil;
 import freenet.support.LRUHashtable;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
-import freenet.support.WouldBlockException;
-import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 /**
@@ -85,7 +80,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	private final Node node;
 	private final NodeCrypto crypto;
 	private final PacketSocketHandler sock;
-	private final EntropySource myPacketDataSource;
 	/**
 	 * Objects cached during JFK message exchange: JFK(3,4) with authenticator as key
 	 * The messages are cached in hashmaps because the message retrieval from the cache
@@ -121,7 +115,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	private long jfkDHLastGenerationTimestamp = 0;
 
 	protected static final int NONCE_SIZE = 8;
-	private static final int MAX_PACKETS_IN_FLIGHT = 256;
 	private static final int RANDOM_BYTES_LENGTH = 12;
 	private static final int HASH_LENGTH = SHA256.getDigestLength();
 	/** The size of the key used to authenticate the hmac */
@@ -173,7 +166,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		this.node = node;
 		this.crypto = crypt;
 		this.sock = sock;
-		myPacketDataSource = new EntropySource();
 		authenticatorCache = new HashMap<ByteArrayWrapper, byte[]>();
 		fullHeadersLengthMinimum = HEADERS_LENGTH_MINIMUM + sock.getHeadersLength();
 		fullHeadersLengthOneMessage = HEADERS_LENGTH_ONE_MESSAGE + sock.getHeadersLength();
@@ -235,22 +227,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		if(opn != null) {
 			if(logMINOR) Logger.minor(this, "Trying exact match");
-			if(length > HEADERS_LENGTH_MINIMUM) {
-				if(logMINOR) Logger.minor(this, "Trying current key tracker for exact match");
-				if(tryProcess(buf, offset, length, opn.getCurrentKeyTracker(), now)) {
-					return DECODED.DECODED;
-				}
-				// Try with old key
-				if(logMINOR) Logger.minor(this, "Trying previous key tracker for exact match");
-				if(tryProcess(buf, offset, length, opn.getPreviousKeyTracker(), now)) {
-					return DECODED.DECODED;
-				}
-				// Try with unverified key
-				if(logMINOR) Logger.minor(this, "Trying unverified key tracker for exact match");
-				if(tryProcess(buf, offset, length, opn.getUnverifiedKeyTracker(), now)) {
-					return DECODED.DECODED;
-				}
-			}
 			if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2 && !node.isStopping()) {
 				// Might be an auth packet
 				if(tryProcessAuth(buf, offset, length, opn, peer, false, now)) {
@@ -264,31 +240,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			}
 		}
 		PeerNode[] peers = crypto.getPeerNodes();
-		// Existing connection, changed IP address?
-		if(length > HASH_LENGTH + RANDOM_BYTES_LENGTH + 4 + 6) {
-			for(int i=0;i<peers.length;i++) {
-				pn = peers[i];
-				if(pn == opn) continue;
-				if(logDEBUG) Logger.debug(this, "Trying current key tracker for loop");
-				if(tryProcess(buf, offset, length, pn.getCurrentKeyTracker(), now)) {
-					// IP address change
-					pn.changedIP(peer);
-					return DECODED.DECODED;
-				}
-				if(logDEBUG) Logger.debug(this, "Trying previous key tracker for loop");
-				if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker(), now)) {
-					// IP address change
-					pn.changedIP(peer);
-					return DECODED.DECODED;
-				}
-				if(logDEBUG) Logger.debug(this, "Trying unverified key tracker for loop");
-				if(tryProcess(buf, offset, length, pn.getUnverifiedKeyTracker(), now)) {
-					// IP address change
-					pn.changedIP(peer);
-					return DECODED.DECODED;
-				}
-			}
-		}
 		if(node.isStopping()) return DECODED.SHUTTING_DOWN;
 		// Disconnected node connecting on a new IP address?
 		if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2) {
@@ -366,24 +317,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				pn = anonPeers[i];
 				if(pn == opn) continue;
 				if(tryProcessAuthAnonReply(buf, offset, length, pn, peer, now)) {
-					return true;
-				}
-			}
-		}
-		if(length > HEADERS_LENGTH_MINIMUM) {
-			for(int i=0;i<anonPeers.length;i++) {
-				pn = anonPeers[i];
-				if(pn == opn) continue;
-				if(tryProcess(buf, offset, length, pn.getCurrentKeyTracker(), now)) {
-					pn.changedIP(peer);
-					return true;
-				}
-				if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker(), now)) {
-					pn.changedIP(peer);
-					return true;
-				}
-				if(tryProcess(buf, offset, length, pn.getUnverifiedKeyTracker(), now)) {
-					pn.changedIP(peer);
 					return true;
 				}
 			}
@@ -1310,13 +1243,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		System.arraycopy(decypheredPayload, decypheredPayloadOffset, data, 0, decypheredPayload.length - decypheredPayloadOffset);
 		int ptr = 0;
 		long trackerID;
-		if(negType >= 4) {
-			trackerID = Fields.bytesToLong(data, ptr);
-			if(trackerID < 0) trackerID = -1;
-			ptr += 8;
-		} else {
-			trackerID = -1;
-		}
+		trackerID = Fields.bytesToLong(data, ptr);
+		if(trackerID < 0) trackerID = -1;
+		ptr += 8;
 		long bootID = Fields.bytesToLong(data, ptr);
 		ptr += 8;
 		byte[] hisRef = new byte[data.length - ptr];
@@ -2091,594 +2020,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		return true;
 	}
 
-	/**
-	 * Try to process an incoming packet with a given PeerNode.
-	 * We need to know where the packet has come from in order to
-	 * decrypt and authenticate it.
-	 */
-	private boolean tryProcess(byte[] buf, int offset, int length, SessionKey tracker, long now) {
-		// Need to be able to call with tracker == null to simplify code above
-		if(tracker == null) {
-			if(logDEBUG) Logger.debug(this, "Tracker == null");
-			return false;
-		}
-		if(logDEBUG) Logger.debug(this,"Entering tryProcess: "+Fields.hashCode(buf)+ ',' +offset+ ',' +length+ ',' +tracker);
-		/**
-		 * E_pcbc_session(H(seq+random+data)) E_pcfb_session(seq+random+data)
-		 *
-		 * So first two blocks are the hash, PCBC encoded (meaning the
-		 * first one is ECB, and the second one is ECB XORed with the
-		 * ciphertext and plaintext of the first block).
-		 */
-		BlockCipher sessionCipher = tracker.incommingCipher;
-		if(sessionCipher == null) {
-			if(logMINOR) Logger.minor(this, "No cipher");
-			return false;
-		}
-		if(logDEBUG) Logger.debug(this, "Decrypting with "+HexUtil.bytesToHex(tracker.incommingKey));
-		int blockSize = sessionCipher.getBlockSize() >> 3;
-		if(sessionCipher.getKeySize() != sessionCipher.getBlockSize())
-			throw new IllegalStateException("Block size must be equal to key size");
-
-		if(HASH_LENGTH != blockSize)
-			throw new IllegalStateException("Block size must be digest length!");
-
-		byte[] packetHash = new byte[HASH_LENGTH];
-		System.arraycopy(buf, offset, packetHash, 0, HASH_LENGTH);
-
-		// Decrypt the sequence number and see if it's plausible
-		// Verify the hash later
-
-		PCFBMode pcfb;
-		// Set IV to the hash, after it is encrypted
-		pcfb = PCFBMode.create(sessionCipher, packetHash);
-		//Logger.minor(this,"IV:\n"+HexUtil.bytesToHex(packetHash));
-
-		byte[] seqBuf = new byte[4];
-		System.arraycopy(buf, offset+HASH_LENGTH, seqBuf, 0, 4);
-		//Logger.minor(this, "Encypted sequence number: "+HexUtil.bytesToHex(seqBuf));
-		pcfb.blockDecipher(seqBuf, 0, 4);
-		//Logger.minor(this, "Decrypted sequence number: "+HexUtil.bytesToHex(seqBuf));
-
-		int seqNumber = ((((((seqBuf[0] & 0xff) << 8)
-				+ (seqBuf[1] & 0xff)) << 8) +
-				(seqBuf[2] & 0xff)) << 8) +
-				(seqBuf[3] & 0xff);
-
-		PacketTracker packets = tracker.packets;
-
-		int targetSeqNumber = packets.highestReceivedIncomingSeqNumber();
-		if(logDEBUG) Logger.debug(this, "Seqno: "+seqNumber+" (highest seen "+targetSeqNumber+") receiving packet from "+tracker.pn.getPeer());
-
-		if(seqNumber == -1) {
-			// Ack/resendreq-only packet
-		} else {
-			// Now is it credible?
-			// As long as it's within +/- 256, this is valid.
-			if((targetSeqNumber != -1) && (Math.abs(targetSeqNumber - seqNumber) > MAX_PACKETS_IN_FLIGHT)) {
-				return false;
-			}
-		}
-		if(logDEBUG) Logger.debug(this, "Sequence number received: "+seqNumber);
-
-		// Plausible, so lets decrypt the rest of the data
-
-		byte[] plaintext = new byte[length-(4+HASH_LENGTH)];
-		System.arraycopy(buf, offset+HASH_LENGTH+4, plaintext, 0, length-(HASH_LENGTH+4));
-
-		pcfb.blockDecipher(plaintext, 0, length-(HASH_LENGTH+4));
-
-		//Logger.minor(this, "Plaintext:\n"+HexUtil.bytesToHex(plaintext));
-
-		MessageDigest md = SHA256.getMessageDigest();
-		md.update(seqBuf);
-		md.update(plaintext);
-		byte[] realHash = md.digest();
-		SHA256.returnMessageDigest(md); md = null;
-
-		// Now decrypt the original hash
-
-		byte[] temp = new byte[blockSize];
-		System.arraycopy(buf, offset, temp, 0, blockSize);
-		sessionCipher.decipher(temp, temp);
-		System.arraycopy(temp, 0, packetHash, 0, blockSize);
-
-		// Check the hash
-		if(!Arrays.equals(packetHash, realHash)) {
-			if(logDEBUG) Logger.debug(this, "Packet possibly from "+tracker+" hash does not match:\npacketHash="+
-					HexUtil.bytesToHex(packetHash)+"\n  realHash="+HexUtil.bytesToHex(realHash)+" ("+(length-HASH_LENGTH)+" bytes payload)");
-			return false;
-		}
-
-		// Verify
-		tracker.pn.verified(tracker);
-
-		for(int i=0;i<HASH_LENGTH;i++) {
-			packetHash[i] ^= buf[offset+i];
-		}
-		if(logDEBUG) Logger.minor(this, "Contributing entropy");
-		node.random.acceptEntropyBytes(myPacketDataSource, packetHash, 0, HASH_LENGTH, 0.5);
-		if(logDEBUG) Logger.minor(this, "Contributed entropy");
-
-		// Lots more to do yet!
-		processDecryptedData(plaintext, seqNumber, tracker, length - plaintext.length);
-		tracker.pn.reportIncomingPacket(buf, offset, length, now);
-		return true;
-	}
-
-	/**
-	 * Process an incoming packet, once it has been decrypted.
-	 * @param decrypted The packet's contents.
-	 * @param seqNumber The detected sequence number of the packet.
-	 * @param tracker The SessionKey responsible for the key used to encrypt the packet.
-	 */
-	private void processDecryptedData(byte[] decrypted, int seqNumber, SessionKey tracker, int overhead) {
-		/**
-		 * Decoded format:
-		 * 1 byte - version number (0)
-		 * 1 byte - number of acknowledgements
-		 * Acknowledgements:
-		 * 1 byte - ack (+ve integer, subtract from seq-1) to get seq# to ack
-		 *
-		 * 1 byte - number of explicit retransmit requests
-		 * Explicit retransmit requests:
-		 * 1 byte - retransmit request (+ve integer, subtract from seq-1) to get seq# to resend
-		 *
-		 * 1 byte - number of packets forgotten
-		 * Forgotten packets:
-		 * 1 byte - forgotten packet seq# (+ve integer, subtract from seq-1) to get seq# lost
-		 *
-		 * 1 byte - number of messages
-		 * 2 bytes - message length
-		 * first message
-		 * 2 bytes - second message length
-		 * second message
-		 * ...
-		 * last message
-		 * anything beyond this point is padding, to be ignored
-		 */
-
-		// Use ptr to simplify code
-		int ptr = RANDOM_BYTES_LENGTH;
-
-		int version = decrypted[ptr++];
-		if(ptr > decrypted.length) {
-			Logger.error(this, "Packet not long enough at byte "+ptr+" on "+tracker);
-			return;
-		}
-		if(version != 0) {
-			Logger.error(this,"Packet from "+tracker+" decrypted but invalid version: "+version);
-			return;
-		}
-
-		/** Highest sequence number sent - not the same as this packet's seq number */
-		int realSeqNumber = seqNumber;
-
-		if(seqNumber == -1) {
-			if(ptr+4 > decrypted.length) {
-				Logger.error(this, "Packet not long enough at byte "+ptr+" on "+tracker);
-				return;
-			}
-			realSeqNumber =
-				((((((decrypted[ptr+0] & 0xff) << 8) + (decrypted[ptr+1] & 0xff)) << 8) +
-						(decrypted[ptr+2] & 0xff)) << 8) + (decrypted[ptr+3] & 0xff);
-			ptr+=4;
-		} else {
-			if(ptr > decrypted.length) {
-				Logger.error(this, "Packet not long enough at byte "+ptr+" on "+tracker);
-				return;
-			}
-			realSeqNumber = seqNumber + (decrypted[ptr++] & 0xff);
-		}
-		if(logMINOR) Logger.minor(this, "Highest sent sequence number: "+realSeqNumber);
-
-		//Logger.minor(this, "Reference seq number: "+HexUtil.bytesToHex(decrypted, ptr, 4));
-
-		if(ptr+4 > decrypted.length) {
-			Logger.error(this, "Packet not long enough at byte "+ptr+" on "+tracker);
-			return;
-		}
-		int referenceSeqNumber =
-			((((((decrypted[ptr+0] & 0xff) << 8) + (decrypted[ptr+1] & 0xff)) << 8) +
-					(decrypted[ptr+2] & 0xff)) << 8) + (decrypted[ptr+3] & 0xff);
-		ptr+=4;
-
-		if(logMINOR) Logger.minor(this, "Reference sequence number: "+referenceSeqNumber);
-
-		int ackCount = decrypted[ptr++] & 0xff;
-		if(logMINOR) Logger.minor(this, "Acks: "+ackCount);
-
-		int[] acks = new int[ackCount];
-		for(int i=0;i<ackCount;i++) {
-			int offset = decrypted[ptr++] & 0xff;
-			if(ptr > decrypted.length) {
-				Logger.error(this, "Packet not long enough at byte "+ptr+" on "+tracker);
-				return;
-			}
-			acks[i] = referenceSeqNumber - offset;
-		}
-
-		PacketTracker packets = tracker.packets;
-		if(packets.acknowledgedPackets(acks))
-			tracker.pn.receivedAck(System.currentTimeMillis());
-
-		int retransmitCount = decrypted[ptr++] & 0xff;
-		if(logMINOR) Logger.minor(this, "Retransmit requests: "+retransmitCount);
-
-		for(int i=0;i<retransmitCount;i++) {
-			int offset = decrypted[ptr++] & 0xff;
-			if(ptr > decrypted.length) {
-				Logger.error(this, "Packet not long enough at byte "+ptr+" on "+tracker);
-			}
-			int realSeqNo = referenceSeqNumber - offset;
-			if(logMINOR) Logger.minor(this, "RetransmitRequest: "+realSeqNo);
-			packets.resendPacket(realSeqNo);
-		}
-
-		int ackRequestsCount = decrypted[ptr++] & 0xff;
-		if(logMINOR) Logger.minor(this, "Ack requests: "+ackRequestsCount);
-
-		// These two are relative to our outgoing packet number
-		// Because they relate to packets we have sent.
-		for(int i=0;i<ackRequestsCount;i++) {
-			int offset = decrypted[ptr++] & 0xff;
-			if(ptr > decrypted.length) {
-				Logger.error(this, "Packet not long enough at byte "+ptr+" on "+tracker);
-			}
-			int realSeqNo = realSeqNumber - offset;
-			if(logMINOR) Logger.minor(this, "AckRequest: "+realSeqNo);
-			packets.receivedAckRequest(realSeqNo);
-		}
-
-		int forgottenCount = decrypted[ptr++] & 0xff;
-		if(logMINOR) Logger.minor(this, "Forgotten packets: "+forgottenCount);
-
-		for(int i=0;i<forgottenCount;i++) {
-			int offset = decrypted[ptr++] & 0xff;
-			if(ptr > decrypted.length) {
-				Logger.error(this, "Packet not long enough at byte "+ptr+" on "+tracker);
-			}
-			int realSeqNo = realSeqNumber - offset;
-			packets.destForgotPacket(realSeqNo);
-		}
-
-		tracker.pn.receivedPacket(false, true); // Must keep the connection open, even if it's an ack packet only and on an incompatible connection - we may want to do a UOM transfer e.g.
-//		System.err.println(tracker.pn.getIdentityString()+" : received packet");
-
-		// No sequence number == no messages
-
-		if((seqNumber != -1) && packets.alreadyReceived(seqNumber)) {
-			packets.queueAck(seqNumber); // Must keep the connection open!
-			if(logMINOR) Logger.minor(this, "Received packet twice ("+seqNumber+") from "+tracker.pn.getPeer()+": "+seqNumber+" ("+TimeUtil.formatTime((long) tracker.pn.averagePingTime(), 2, true)+" ping avg)");
-			return;
-		}
-
-		packets.receivedPacket(seqNumber);
-
-		if(seqNumber == -1) {
-			if(logMINOR) Logger.minor(this, "Returning because seqno = "+seqNumber);
-			return;
-		}
-
-		int messages = decrypted[ptr++] & 0xff;
-
-		overhead += ptr;
-
-		DecodingMessageGroup group = tracker.pn.startProcessingDecryptedMessages(messages);
-		for(int i=0;i<messages;i++) {
-			if(ptr+1 >= decrypted.length) {
-				Logger.error(this, "Packet not long enough at byte "+ptr+" on "+tracker);
-			}
-			int length = ((decrypted[ptr++] & 0xff) << 8) +
-			(decrypted[ptr++] & 0xff);
-			if(length > decrypted.length - ptr) {
-				Logger.error(this, "Message longer than remaining space: "+length);
-				group.complete();
-				return;
-			}
-			if(logMINOR) Logger.minor(this, "Message "+i+" length "+length+", hash code: "+Fields.hashCode(decrypted, ptr, length));
-			group.processDecryptedMessage(decrypted, ptr, length, 1 + (overhead / messages));
-			ptr+=length;
-		}
-		group.complete();
-
-		tracker.pn.maybeRekey();
-		if(logMINOR) Logger.minor(this, "Done");
-	}
-
-	/* (non-Javadoc)
-	 * @see freenet.node.OutgoingPacketMangler#processOutgoingOrRequeue(freenet.node.MessageItem[], freenet.node.PeerNode, boolean, boolean)
-	 */
-	@Override
-	public boolean processOutgoingOrRequeue(MessageItem[] messages, PeerNode pn, boolean dontRequeue, boolean onePacket) throws BlockedTooLongException {
-		String requeueLogString = "";
-		if(!dontRequeue) {
-			requeueLogString = ", requeueing";
-		}
-		if(logMINOR) Logger.minor(this, "processOutgoingOrRequeue "+messages.length+" messages for "+pn);
-		byte[][] messageData = new byte[messages.length][];
-		MessageItem[] newMsgs = new MessageItem[messages.length];
-		SessionKey kt = pn.getCurrentKeyTracker();
-		if(kt == null) {
-			Logger.error(this, "Not connected while sending packets: "+pn);
-			if(!dontRequeue) {
-				for(MessageItem item : messages)
-					item.onDisconnect();
-			}
-			return false;
-		}
-		PacketTracker packets = kt.packets;
-		if(packets.wouldBlock(false)) {
-			if(logMINOR) Logger.minor(this, "Would block: "+kt);
-			// Requeue
-			if(!dontRequeue) {
-				pn.requeueMessageItems(messages, 0, messages.length, false, "WouldBlock");
-			}
-			return false;
-		}
-		int length = 1;
-		length += packets.countAcks() + packets.countAckRequests() + packets.countResendRequests();
-		int callbacksCount = 0;
-		int x = 0;
-		String mi_name = null;
-		for(int i=0;i<messageData.length;i++) {
-			MessageItem mi = messages[i];
-			if(logMINOR) Logger.minor(this, "Handling "+(mi.formatted ? "formatted " : "") +
-					"MessageItem "+mi+" : "+mi.getLength());
-			mi_name = (mi.msg == null ? "(not a Message)" : mi.msg.getSpec().getName());
-			if(mi.formatted) {
-				try {
-					byte[] buf = mi.getData();
-					int packetNumber = packets.allocateOutgoingPacketNumberNeverBlock();
-					int size = processOutgoingPreformatted(buf, 0, buf.length, kt, packetNumber, mi.cb, mi.getPriority());
-					//MARK: onSent()
-					mi.onSent(size);
-				} catch (NotConnectedException e) {
-					Logger.normal(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString);
-					// Requeue
-					if(!dontRequeue) {
-						pn.requeueMessageItems(newMsgs, 0, x, false, "NotConnectedException(1a)");
-						pn.requeueMessageItems(messages, i, messages.length-i, false, "NotConnectedException(1b)");
-					}
-					return false;
-				} catch (WouldBlockException e) {
-					if(logMINOR) Logger.minor(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
-					// Requeue
-					if(!dontRequeue) {
-						pn.requeueMessageItems(newMsgs, 0, x, false, "WouldBlockException(1a)");
-						pn.requeueMessageItems(messages, i, messages.length-i, false, "WouldBlockException(1b)");
-					}
-					return false;
-				} catch (KeyChangedException e) {
-					if(logMINOR) Logger.minor(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
-					// Requeue
-					if(!dontRequeue) {
-						pn.requeueMessageItems(newMsgs, 0, x, false, "KeyChangedException(1a)");
-						pn.requeueMessageItems(messages, i, messages.length-i, false, "KeyChangedException(1b)");
-					}
-					return false;
-				} catch (Throwable e) {
-					Logger.error(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
-					// Requeue
-					if(!dontRequeue) {
-						pn.requeueMessageItems(newMsgs, 0, x, false, "Throwable(1)");
-						pn.requeueMessageItems(messages, i, messages.length-i, false, "Throwable(1)");
-					}
-					return false;
-				}
-			} else {
-				byte[] data = mi.getData();
-				messageData[x] = data;
-				if(data.length > sock.getMaxPacketSize()) {
-					Logger.error(this, "Message exceeds packet size: "+messages[i]+" size "+data.length+" message "+mi.msg);
-					// Will be handled later
-				}
-				newMsgs[x] = mi;
-				x++;
-				if(mi.cb != null) callbacksCount += mi.cb.length;
-				if(logMINOR) Logger.minor(this, "Sending: "+mi+" length "+data.length+" cb "+ Arrays.toString(mi.cb));
-				length += (data.length + 2);
-			}
-		}
-		if(x != messageData.length) {
-			byte[][] newMessageData = new byte[x][];
-			System.arraycopy(messageData, 0, newMessageData, 0, x);
-			messageData = newMessageData;
-			messages = newMsgs;
-			newMsgs = new MessageItem[x];
-			System.arraycopy(messages, 0, newMsgs, 0, x);
-			messages = newMsgs;
-		}
-		AsyncMessageCallback callbacks[] = new AsyncMessageCallback[callbacksCount];
-		x=0;
-		short priority = DMT.PRIORITY_BULK_DATA;
-		for(int i=0;i<messages.length;i++) {
-			assert(!messages[i].formatted);
-			if(messages[i].cb != null) {
-				System.arraycopy(messages[i].cb, 0, callbacks, x, messages[i].cb.length);
-				x += messages[i].cb.length;
-			}
-			short messagePrio = messages[i].getPriority();
-			if(messagePrio < priority) priority = messagePrio;
-		}
-		if(x != callbacksCount) throw new IllegalStateException();
-
-		if((length + HEADERS_LENGTH_MINIMUM < sock.getMaxPacketSize()) &&
-				(messageData.length < 256)) {
-			mi_name = null;
-			try {
-				int size = innerProcessOutgoing(messageData, 0, messageData.length, length, pn, callbacks, priority);
-				int totalMessageSize = 0;
-				for(int i=0;i<messageData.length;i++) totalMessageSize += messageData[i].length;
-				int overhead = size - totalMessageSize;
-				if(logMINOR) Logger.minor(this, "Overhead: "+overhead+" total messages size "+totalMessageSize+" for "+messageData.length+" messages");
-				for(int i=0;i<messageData.length;i++) {
-					MessageItem mi = newMsgs[i];
-					mi_name = (mi.msg == null ? "(not a Message)" : mi.msg.getSpec().getName());
-					//FIXME: This onSent() is called before the (MARK:'d) onSent above for the same message item. Shouldn't they be mutually exclusive?
-					mi.onSent(messageData[i].length+(overhead/messageData.length));
-				}
-			} catch (NotConnectedException e) {
-				Logger.normal(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString);
-				// Requeue
-				if(!dontRequeue)
-					pn.requeueMessageItems(messages, 0, messages.length, false, "NotConnectedException(2)");
-				return false;
-			} catch (WouldBlockException e) {
-				if(logMINOR) Logger.minor(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
-				// Requeue
-				if(!dontRequeue)
-					pn.requeueMessageItems(messages, 0, messages.length, false, "WouldBlockException(2)");
-				return false;
-			} catch (Throwable e) {
-				Logger.error(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
-				// Requeue
-				if(!dontRequeue)
-					pn.requeueMessageItems(messages, 0, messages.length, false, "Throwable(2)");
-				return false;
-
-			}
-		} else {
-			if(!dontRequeue) {
-				requeueLogString = ", requeueing remaining messages";
-			}
-			length = 1;
-			length += packets.countAcks() + packets.countAckRequests() + packets.countResendRequests();
-			int count = 0;
-			int lastIndex = 0;
-			if(logMINOR) Logger.minor(this, "Sending "+messageData.length+" messages");
-			for(int i=0;i<=messageData.length;i++) {
-				if(logMINOR) Logger.minor(this, "Sending message "+i);
-				int thisLength;
-				if(i == messages.length) thisLength = 0;
-				else thisLength = (messageData[i].length + 2);
-				int newLength = length + thisLength;
-				count++;
-				if((newLength + HEADERS_LENGTH_MINIMUM > sock.getMaxPacketSize()) || (count > 255) || (i == messages.length)) {
-					// lastIndex up to the message right before this one
-					// e.g. lastIndex = 0, i = 1, we just send message 0
-					if(lastIndex != i) {
-						mi_name = null;
-						try {
-							// FIXME regenerate callbacks and priority!
-							int size = innerProcessOutgoing(messageData, lastIndex, i-lastIndex, length, pn, callbacks, priority);
-							int totalMessageSize = 0;
-							for(int j=lastIndex;j<i;j++) totalMessageSize += messageData[j].length;
-							int overhead = size - totalMessageSize;
-							for(int j=lastIndex;j<i;j++) {
-								MessageItem mi = newMsgs[j];
-								mi_name = (mi.msg == null ? "(not a Message)" : mi.msg.getSpec().getName());
-								mi.onSent(messageData[j].length + (overhead / (i-lastIndex)));
-							}
-						} catch (NotConnectedException e) {
-							Logger.normal(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString);
-							// Requeue
-							if(!dontRequeue) {
-								pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false, "NotConnectedException(3)");
-							}
-							return false;
-						} catch (WouldBlockException e) {
-							if(logMINOR) Logger.minor(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
-							// Requeue
-							if(!dontRequeue) {
-								pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false, "WouldBlockException(3)");
-							}
-							return false;
-						} catch (Throwable e) {
-							Logger.error(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
-							// Requeue
-							if(!dontRequeue) {
-								pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false, "Throwable(3)");
-							}
-							return false;
-						}
-						if(onePacket) {
-							pn.requeueMessageItems(messages, i, messageData.length - i, true, "Didn't fit in single packet");
-							return false;
-						}
-					}
-					lastIndex = i;
-					if(i != messageData.length) {
-						length = 1 + (messageData[i].length + 2);
-					}
-					count = 0;
-				} else {
-					length = newLength;
-				}
-			}
-		}
-		return true;
-	}
-
-	/**
-	 * Send some messages.
-	 * @param messageData An array block of messages.
-	 * @param start Index to start reading the array.
-	 * @param length Number of messages to read.
-	 * @param bufferLength Size of the buffer to write into.
-	 * @param pn Node to send the messages to.
-	 * @throws PacketSequenceException
-	 */
-	private int innerProcessOutgoing(byte[][] messageData, int start, int length, int bufferLength,
-			PeerNode pn, AsyncMessageCallback[] callbacks, short priority) throws NotConnectedException, WouldBlockException, PacketSequenceException {
-		if(logMINOR) Logger.minor(this, "innerProcessOutgoing(...,"+start+ ',' +length+ ',' +bufferLength+ ','+callbacks.length+')');
-		byte[] buf = new byte[bufferLength];
-		buf[0] = (byte)length;
-		int loc = 1;
-		for(int i=start;i<(start+length);i++) {
-			byte[] data = messageData[i];
-			int len = data.length;
-			buf[loc++] = (byte)(len >> 8);
-			buf[loc++] = (byte)len;
-			System.arraycopy(data, 0, buf, loc, len);
-			loc += len;
-		}
-		if(logMINOR) Logger.minor(this, "Packed data is "+loc+" bytes long.");
-		return processOutgoingPreformatted(buf, 0, loc, pn, callbacks, priority);
-	}
-
-	/* (non-Javadoc)
-	 * @see freenet.node.OutgoingPacketMangler#processOutgoing(byte[], int, int, freenet.node.SessionKey, int)
-	 */
-	@Override
-	public int processOutgoing(byte[] buf, int offset, int length, SessionKey tracker, short priority) throws KeyChangedException, NotConnectedException, PacketSequenceException, WouldBlockException {
-		byte[] newBuf = preformat(buf, offset, length);
-		return processOutgoingPreformatted(newBuf, 0, newBuf.length, tracker, -1, null, priority);
-	}
-
-	/**
-	 * Send a packet using the current key. Retry if it fails solely because
-	 * the key changes.
-	 * @throws PacketSequenceException
-	 */
-	int processOutgoingPreformatted(byte[] buf, int offset, int length, PeerNode peer, AsyncMessageCallback[] callbacks, short priority) throws NotConnectedException, WouldBlockException, PacketSequenceException {
-		SessionKey last = null;
-		while(true) {
-			try {
-				if(!peer.isConnected())
-					throw new NotConnectedException();
-				SessionKey tracker = peer.getCurrentKeyTracker();
-				last = tracker;
-				if(tracker == null) {
-					Logger.normal(this, "Dropping packet: Not connected to "+peer.getPeer()+" yet(2)");
-					throw new NotConnectedException();
-				}
-				PacketTracker packets = tracker.packets;
-				int seqNo = packets.allocateOutgoingPacketNumberNeverBlock();
-				return processOutgoingPreformatted(buf, offset, length, tracker, seqNo, callbacks, priority);
-			} catch (KeyChangedException e) {
-				Logger.normal(this, "Key changed(2) for "+peer.getPeer());
-				if(last == peer.getCurrentKeyTracker()) {
-					if(peer.isConnected()) {
-						Logger.error(this, "Peer is connected, yet current tracker is deprecated !! (rekey ?): "+e, e);
-						throw new NotConnectedException("Peer is connected, yet current tracker is deprecated !! (rekey ?): "+e);
-					}
-				}
-				// Go around again
-			}
-		}
-	}
-
 	byte[] preformat(byte[] buf, int offset, int length) {
 		byte[] newBuf;
 		if(buf != null) {
@@ -2694,287 +2035,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		return newBuf;
 	}
 
-	/* (non-Javadoc)
-	 * @see freenet.node.OutgoingPacketMangler#processOutgoingPreformatted(byte[], int, int, freenet.node.SessionKey, int, freenet.node.AsyncMessageCallback[], int)
-	 */
-	@Override
-	public int processOutgoingPreformatted(byte[] buf, int offset, int length, SessionKey tracker, int packetNumber, AsyncMessageCallback[] callbacks, short priority) throws KeyChangedException, NotConnectedException, PacketSequenceException, WouldBlockException {
-		if(logMINOR) {
-			String log = "processOutgoingPreformatted("+Fields.hashCode(buf)+", "+offset+ ',' +length+ ',' +tracker+ ',' +packetNumber+ ',';
-			if(callbacks == null) log += "null";
-			else log += ""+callbacks.length+Arrays.toString(callbacks); // FIXME too verbose?
-			Logger.minor(this, log);
-		}
-		if((tracker == null) || (!tracker.pn.isConnected())) {
-			throw new NotConnectedException();
-		}
-
-		// We do not support forgotten packets at present
-
-		int[] acks, resendRequests, ackRequests, forgotPackets;
-		int seqNumber;
-		PacketTracker packets = tracker.packets;
-		/* Locking:
-		 * Avoid allocating a packet number, then a long pause due to
-		 * overload, during which many other packets are sent,
-		 * resulting in the other side asking us to resend a packet
-		 * which doesn't exist yet.
-		 * => grabbing resend reqs, packet no etc must be as
-		 * close together as possible.
-		 *
-		 * HOWEVER, tracker.allocateOutgoingPacketNumber can block,
-		 * so should not be locked.
-		 */
-
-		if(packetNumber > 0) {
-			seqNumber = packetNumber;
-		} else {
-			if(buf.length == 1) {
-				// Ack/resendreq only packet
-				seqNumber = -1;
-			} else {
-				seqNumber = packets.allocateOutgoingPacketNumberNeverBlock();
-			}
-		}
-
-		if(logMINOR) Logger.minor(this, "Sequence number (sending): "+seqNumber+" ("+packetNumber+") to "+tracker.pn.getPeer());
-
-		/** The last sent sequence number, so that we can refer to packets
-		 * sent after this packet was originally sent (it may be a resend) */
-		int realSeqNumber;
-
-		int otherSideSeqNumber;
-
-		try {
-		synchronized(tracker) {
-			acks = packets.grabAcks();
-			forgotPackets = packets.grabForgotten();
-			resendRequests = packets.grabResendRequests();
-			ackRequests = packets.grabAckRequests();
-			realSeqNumber = packets.getLastOutgoingSeqNumber();
-			otherSideSeqNumber = packets.highestReceivedIncomingSeqNumber();
-			if(logMINOR) Logger.minor(this, "Sending packet to "+tracker.pn.getPeer()+", other side max seqno: "+otherSideSeqNumber);
-		}
-		} catch (StillNotAckedException e) {
-			Logger.error(this, "Forcing disconnect on "+tracker.pn+" for "+tracker+" because packets not acked after 10 minutes!");
-			tracker.pn.forceDisconnect(true);
-			disconnectedStillNotAcked(tracker);
-			throw new NotConnectedException();
-		}
-
-		int packetLength = 4 + // seq number
-		RANDOM_BYTES_LENGTH + // random junk
-		1 + // version
-		((packetNumber == -1) ? 4 : 1) + // highest sent seqno - 4 bytes if seqno = -1
-		4 + // other side's seqno
-		1 + // number of acks
-		acks.length + // acks
-		1 + // number of resend reqs
-		resendRequests.length + // resend requests
-		1 + // number of ack requests
-		ackRequests.length + // ack requests
-		1 + // number of forgotten packets
-		forgotPackets.length +
-		length; // the payload !
-		
-		if(logMINOR)
-			Logger.minor(this, "Fully packed data is "+packetLength+" bytes long");
-
-		boolean paddThisPacket = crypto.config.paddDataPackets();
-		int paddedLen;
-		if(paddThisPacket) {
-			if(logMINOR)
-				Logger.minor(this, "Pre-padding length: " + packetLength);
-
-			// Padding
-			// This will do an adequate job of disguising the contents, and a poor (but not totally
-			// worthless) job of disguising the traffic. FIXME!!!!!
-			// Ideally we'd mimic the size profile - and the session bytes! - of a common protocol.
-
-			if(packetLength < 64) {
-				// Up to 37 bytes of payload (after base overhead above of 27 bytes), padded size 96-128 bytes.
-				// Most small messages, and most ack only packets.
-				paddedLen = 64 + tracker.pn.paddingGen.nextInt(32);
-			} else {
-				// Up to 69 bytes of payload, final size 128-192 bytes (CHK request, CHK insert, opennet announcement, CHK offer, swap reply)
-				// Up to 133 bytes of payload, final size 192-256 bytes (SSK request, get offered CHK, offer SSK[, SSKInsertRequestNew], get offered SSK)
-				// Up to 197 bytes of payload, final size 256-320 bytes (swap commit/complete[, SSKDataFoundNew, SSKInsertRequestAltNew])
-				// Up to 1093 bytes of payload, final size 1152-1216 bytes (bulk transmit, block transmit, time deltas, SSK pubkey[, SSKData, SSKDataInsert])
-				packetLength += 32;
-				paddedLen = ((packetLength + 63) / 64) * 64;
-				paddedLen += tracker.pn.paddingGen.nextInt(64);
-				// FIXME get rid of this, we shouldn't be sending packets anywhere near this size unless
-				// we've done PMTU...
-				if(packetLength <= 1280 && paddedLen > 1280)
-					paddedLen = 1280;
-				int maxPacketSize = sock.getMaxPacketSize();
-				if(packetLength <= maxPacketSize && paddedLen > maxPacketSize)
-					paddedLen = maxPacketSize;
-				packetLength -= 32;
-				paddedLen -= 32;
-			}
-		} else {
-			if(logMINOR)
-				Logger.minor(this, "Don't padd the packet: we have been asked not to.");
-			paddedLen = packetLength;
-		}
-
-		if(paddThisPacket)
-			packetLength = paddedLen;
-
-		if(logMINOR) Logger.minor(this, "Packet length: "+packetLength+" ("+length+")");
-
-		byte[] plaintext = new byte[packetLength];
-
-		byte[] randomJunk = new byte[RANDOM_BYTES_LENGTH];
-
-		int ptr = offset;
-
-		plaintext[ptr++] = (byte)(seqNumber >> 24);
-		plaintext[ptr++] = (byte)(seqNumber >> 16);
-		plaintext[ptr++] = (byte)(seqNumber >> 8);
-		plaintext[ptr++] = (byte)seqNumber;
-
-		if(logMINOR) Logger.minor(this, "Getting random junk");
-		node.random.nextBytes(randomJunk);
-		System.arraycopy(randomJunk, 0, plaintext, ptr, RANDOM_BYTES_LENGTH);
-		ptr += RANDOM_BYTES_LENGTH;
-
-		plaintext[ptr++] = 0; // version number
-
-		if(seqNumber == -1) {
-			plaintext[ptr++] = (byte)(realSeqNumber >> 24);
-			plaintext[ptr++] = (byte)(realSeqNumber >> 16);
-			plaintext[ptr++] = (byte)(realSeqNumber >> 8);
-			plaintext[ptr++] = (byte)realSeqNumber;
-		} else {
-			plaintext[ptr++] = (byte)(realSeqNumber - seqNumber);
-		}
-
-		plaintext[ptr++] = (byte)(otherSideSeqNumber >> 24);
-		plaintext[ptr++] = (byte)(otherSideSeqNumber >> 16);
-		plaintext[ptr++] = (byte)(otherSideSeqNumber >> 8);
-		plaintext[ptr++] = (byte)otherSideSeqNumber;
-
-		plaintext[ptr++] = (byte) acks.length;
-		for(int i=0;i<acks.length;i++) {
-			int ackSeq = acks[i];
-			if(logMINOR) Logger.minor(this, "Acking "+ackSeq);
-			int offsetSeq = otherSideSeqNumber - ackSeq;
-			if((offsetSeq > 255) || (offsetSeq < 0))
-				throw new PacketSequenceException("bad ack offset "+offsetSeq+
-						" - seqNumber="+otherSideSeqNumber+", ackNumber="+ackSeq+" talking to "+tracker.pn.getPeer());
-			plaintext[ptr++] = (byte)offsetSeq;
-		}
-
-		plaintext[ptr++] = (byte) resendRequests.length;
-		for(int i=0;i<resendRequests.length;i++) {
-			int reqSeq = resendRequests[i];
-			if(logMINOR) Logger.minor(this, "Resend req: "+reqSeq);
-			int offsetSeq = otherSideSeqNumber - reqSeq;
-			if((offsetSeq > 255) || (offsetSeq < 0))
-				throw new PacketSequenceException("bad resend request offset "+offsetSeq+
-						" - reqSeq="+reqSeq+", otherSideSeqNumber="+otherSideSeqNumber+" talking to "+tracker.pn.getPeer());
-			plaintext[ptr++] = (byte)offsetSeq;
-		}
-
-		plaintext[ptr++] = (byte) ackRequests.length;
-		if(logMINOR) Logger.minor(this, "Ackrequests: "+ackRequests.length);
-		for(int i=0;i<ackRequests.length;i++) {
-			int ackReqSeq = ackRequests[i];
-			if(logMINOR) Logger.minor(this, "Ack request "+i+": "+ackReqSeq);
-			// Relative to packetNumber - we are asking them to ack
-			// a packet we sent to them.
-			int offsetSeq = realSeqNumber - ackReqSeq;
-			if((offsetSeq > 255) || (offsetSeq < 0))
-				throw new PacketSequenceException("bad ack requests offset: "+offsetSeq+
-						" - ackReqSeq="+ackReqSeq+", packetNumber="+realSeqNumber+" talking to "+tracker.pn.getPeer());
-			plaintext[ptr++] = (byte)offsetSeq;
-		}
-
-		byte[] forgotOffsets = null;
-		int forgotCount = 0;
-
-		if(forgotPackets.length > 0) {
-			for(int i=0;i<forgotPackets.length;i++) {
-				int seq = forgotPackets[i];
-				if(logMINOR) Logger.minor(this, "Forgot packet "+i+": "+seq);
-				int offsetSeq = realSeqNumber - seq;
-				if((offsetSeq > 255) || (offsetSeq < 0)) {
-					if(packets.isDeprecated()) {
-						// Oh well
-						Logger.error(this, "Dropping forgot-packet notification on deprecated tracker: "+seq+" on "+tracker+" - real seq="+realSeqNumber);
-						// Ignore it
-						continue;
-					} else {
-						Logger.error(this, "bad forgot packet offset: "+offsetSeq+
-								" - forgotSeq="+seq+", packetNumber="+realSeqNumber+" talking to "+tracker.pn.getPeer(), new Exception("error"));
-					}
-				} else {
-					if(forgotOffsets == null)
-						forgotOffsets = new byte[forgotPackets.length - i];
-
-					if(forgotCount >= 256) {
-						packets.requeueForgot(forgotPackets, forgotCount, forgotPackets.length - forgotCount);
-						break;
-					} else {
-						forgotOffsets[forgotCount++] = (byte) offsetSeq;
-					}
-				}
-			}
-			if(forgotCount >= 256) forgotCount = 255;
-		}
-
-		plaintext[ptr++] = (byte) forgotCount;
-
-		if(forgotOffsets != null) {
-			System.arraycopy(forgotOffsets, 0, plaintext, ptr, forgotCount);
-			ptr += forgotCount;
-		}
-
-		System.arraycopy(buf, offset, plaintext, ptr, length);
-		ptr += length;
-
-		if(paddThisPacket) {
-			byte[] padding = new byte[packetLength - ptr];
-			tracker.pn.paddingGen.nextBytes(padding);
-
-			System.arraycopy(padding, 0, plaintext, ptr, padding.length);
-			ptr += padding.length;
-		} else if(ptr != plaintext.length) {
-			Logger.error(this, "Inconsistent length: "+plaintext.length+" buffer but "+(ptr)+" actual");
-			byte[] newBuf = new byte[ptr];
-			System.arraycopy(plaintext, 0, newBuf, 0, ptr);
-			plaintext = newBuf;
-		}
-
-		if(seqNumber != -1) {
-			byte[] saveable = new byte[length];
-			System.arraycopy(buf, offset, saveable, 0, length);
-			packets.sentPacket(saveable, seqNumber, callbacks, priority);
-		}
-
-		if(logMINOR) Logger.minor(this, "Sending... "+seqNumber);
-
-		int ret = processOutgoingFullyFormatted(plaintext, tracker);
-		if(logMINOR) Logger.minor(this, "Sent packet "+seqNumber);
-		return ret;
-	}
-
 	private HashSet<Peer> peersWithProblems = new HashSet<Peer>();
-
-	private void disconnectedStillNotAcked(SessionKey tracker) {
-		synchronized(peersWithProblems) {
-			peersWithProblems.add(tracker.pn.getPeer());
-			if(peersWithProblems.size() > 1) return;
-		}
-		if(node.clientCore == null || node.clientCore.alerts == null)
-			return;
-		// FIXME XXX: We have had this alert enabled for MONTHS which got us hundreds of bug reports about it. Unfortunately, nobody spend any work on fixing
-		// the issue after the alert was added so I have disabled it to quit annoying our users. We should not waste their time if we don't do anything. xor
-		// Notice that the same alert is commented out in PacketSender.
-		// node.clientCore.alerts.register(disconnectedStillNotAckedAlert);
-	}
 
 	@SuppressWarnings("unused")
 	private UserAlert disconnectedStillNotAckedAlert = new AbstractUserAlert() {
@@ -3083,77 +2144,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 	};
 
-	/**
-	 * Encrypt and send a packet.
-	 * @param plaintext The packet's plaintext, including all formatting,
-	 * including acks and resend requests. Is clobbered.
-	 */
-	private int processOutgoingFullyFormatted(byte[] plaintext, SessionKey kt) {
-		BlockCipher sessionCipher = kt.outgoingCipher;
-		if(logMINOR) Logger.minor(this, "Encrypting with "+HexUtil.bytesToHex(kt.outgoingKey));
-		if(sessionCipher == null) {
-			Logger.error(this, "Dropping packet send - have not handshaked yet");
-			return 0;
-		}
-		int blockSize = sessionCipher.getBlockSize() >> 3;
-		if(sessionCipher.getKeySize() != sessionCipher.getBlockSize()) {
-			throw new IllegalStateException("Block size must be half key size: blockSize="+
-					sessionCipher.getBlockSize()+", keySize="+sessionCipher.getKeySize());
-		}
-
-		MessageDigest md = SHA256.getMessageDigest();
-
-		int digestLength = md.getDigestLength();
-
-		if(digestLength != blockSize) {
-			throw new IllegalStateException("Block size must be digest length!");
-		}
-
-		byte[] output = new byte[plaintext.length + digestLength];
-		System.arraycopy(plaintext, 0, output, digestLength, plaintext.length);
-
-		md.update(plaintext);
-
-		//Logger.minor(this, "Plaintext:\n"+HexUtil.bytesToHex(plaintext));
-
-		byte[] digestTemp;
-
-		digestTemp = md.digest();
-
-		SHA256.returnMessageDigest(md); md = null;
-
-		if(logMINOR) Logger.minor(this, "\nHash:      "+HexUtil.bytesToHex(digestTemp));
-
-		// Put encrypted digest in output
-		sessionCipher.encipher(digestTemp, digestTemp);
-
-		// Now copy it back
-		System.arraycopy(digestTemp, 0, output, 0, digestLength);
-		// Yay, we have an encrypted hash
-
-		if(logMINOR) Logger.minor(this, "\nEncrypted: "+HexUtil.bytesToHex(digestTemp)+" ("+plaintext.length+" bytes plaintext)");
-
-		PCFBMode pcfb = PCFBMode.create(sessionCipher, digestTemp);
-		pcfb.blockEncipher(output, digestLength, plaintext.length);
-
-		//Logger.minor(this, "Ciphertext:\n"+HexUtil.bytesToHex(output, digestLength, plaintext.length));
-
-		// We have a packet
-		// Send it
-
-		if(logMINOR) Logger.minor(this,"Sending packet of length "+output.length+" (" + Fields.hashCode(output) + ") to "+kt.pn);
-
-		// pn.getPeer() cannot be null
-		try {
-			sendPacket(output, kt.pn.getPeer(), kt.pn);
-//			System.err.println(kt.pn.getIdentityString()+" : sent packet length "+output.length);
-		} catch (LocalAddressException e) {
-			Logger.error(this, "Tried to send data packet to local address: "+kt.pn.getPeer()+" for "+kt.pn.allowLocalAddresses());
-		}
-		kt.pn.sentPacket();
-		return output.length + sock.getHeadersLength();
-	}
-
 	protected String l10n(String key, String[] patterns, String[] values) {
 		return NodeL10n.getBase().getString("FNPPacketMangler."+key, patterns, values);
 	}
@@ -3204,17 +2194,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	}
 
 	@Override
-	public void resend(ResendPacketItem item, SessionKey tracker) throws PacketSequenceException, WouldBlockException, KeyChangedException, NotConnectedException {
-		int size = processOutgoingPreformatted(item.buf, 0, item.buf.length, tracker, item.packetNumber, item.callbacks, item.priority);
-		item.pn.resendByteCounter.sentBytes(size);
-	}
-
-	@Override
 	public int[] supportedNegTypes(boolean forPublic) {
 		if(forPublic)
-			return new int[] { 2, 4, 6, 7 };
+			return new int[] { 6, 7 };
 		else
-			return new int[] { 2, 4, 6, 7 };
+			return new int[] { 6, 7 };
 	}
 
 	@Override

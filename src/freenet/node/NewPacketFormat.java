@@ -448,27 +448,27 @@ outer:
 	}
 
 	@Override
-	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly)
+	public boolean maybeSendPacket(long now, boolean ackOnly)
 	throws BlockedTooLongException {
 		SessionKey sessionKey = pn.getPreviousKeyTracker();
 		if(sessionKey != null) {
 			// Try to sent an ack-only packet.
-			if(maybeSendPacket(now, rpiTemp, rpiIntTemp, true, sessionKey)) return true;
+			if(maybeSendPacket(now, true, sessionKey)) return true;
 		}
 		sessionKey = pn.getUnverifiedKeyTracker();
 		if(sessionKey != null) {
 			// Try to sent an ack-only packet.
-			if(maybeSendPacket(now, rpiTemp, rpiIntTemp, true, sessionKey)) return true;
+			if(maybeSendPacket(now, true, sessionKey)) return true;
 		}
 		sessionKey = pn.getCurrentKeyTracker();
 		if(sessionKey == null) {
 			Logger.warning(this, "No key for encrypting hash");
 			return false;
 		}
-		return maybeSendPacket(now, rpiTemp, rpiIntTemp, ackOnly, sessionKey);
+		return maybeSendPacket(now, ackOnly, sessionKey);
 	}
 	
-	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly, SessionKey sessionKey)
+	public boolean maybeSendPacket(long now, boolean ackOnly, SessionKey sessionKey)
 	throws BlockedTooLongException {
 		int maxPacketSize = pn.getMaxPacketSize();
 		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
@@ -1126,7 +1126,7 @@ outer:
 				if(blockedSince == -1) {
 					blockedSince = System.currentTimeMillis();
 				} else if(System.currentTimeMillis() - blockedSince > MAX_MSGID_BLOCK_TIME) {
-					throw new BlockedTooLongException(null, System.currentTimeMillis() - blockedSince);
+					throw new BlockedTooLongException(System.currentTimeMillis() - blockedSince);
 				}
 				return -1;
 			}

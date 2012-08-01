@@ -19,7 +19,7 @@ public interface PacketFormat {
 	 * </ol>
 	 * @param ackOnly 
 	 */
-	boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly)
+	boolean maybeSendPacket(long now, boolean ackOnly)
 	                throws BlockedTooLongException;
 
 	/**
