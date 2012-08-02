@@ -147,7 +147,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		return tracker;
 	}
 	
-	public void addCustomWaiter(FProxyFetchWaiter waiter){
+	public synchronized void addCustomWaiter(FProxyFetchWaiter waiter){
 		waiters.add(waiter);
 	}
 
@@ -405,11 +405,11 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		wakeWaiters(true);
 	}
 
-	public boolean hasData() {
+	public synchronized boolean hasData() {
 		return data != null;
 	}
 
-	public boolean finished() {
+	public synchronized boolean finished() {
 		return finished;
 	}
 
@@ -501,7 +501,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	
 	/** Adds a listener that will be notified when a change occurs to this fetch
 	 * @param listener - The listener to be added*/
-	public void addListener(FProxyFetchListener listener){
+	public synchronized void addListener(FProxyFetchListener listener){
 		if(logMINOR){
 			Logger.minor(this,"Registered listener:"+listener);
 		}
@@ -510,7 +510,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	
 	/** Removes a listener
 	 * @param listener - The listener to be removed*/
-	public void removeListener(FProxyFetchListener listener){
+	public synchronized void removeListener(FProxyFetchListener listener){
 		if(logMINOR){
 			Logger.minor(this,"Removed listener:"+listener);
 		}
@@ -521,11 +521,11 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	}
 	
 	/** Allows the fetch to be removed immediately*/
-	public void requestImmediateCancel(){
+	public synchronized void requestImmediateCancel(){
 		requestImmediateCancel=true;
 	}
 
-	public long lastTouched() {
+	public synchronized long lastTouched() {
 		return lastTouched;
 	}
 	
