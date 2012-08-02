@@ -440,6 +440,8 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		return true;
 	}
 	
+	/** Finish the cancel process, freeing the data if necessary. The fetch
+	 * must have been removed from the tracker already, so it won't be reused. */
 	public void finishCancel() {
 		if(logMINOR) Logger.minor(this, "Finishing cancel for "+this+" : "+uri+" : "+maxSize);
 		if(data != null) {
