@@ -15,10 +15,8 @@ import freenet.pluginmanager.MalformedPluginAddressException;
 import freenet.pluginmanager.PluginAddress;
 import freenet.pluginmanager.TransportPlugin;
 import freenet.pluginmanager.UnsupportedIPAddressOperationException;
-import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 /**
  * Base object for PeerPacketTransport and PeerStreamTransport. This includes common JFK fields and some others.<br><br>
@@ -197,6 +195,17 @@ public abstract class PeerTransport {
 	 * 
 	 */
 	
+	public boolean isTransportConnected() {
+		long now = System.currentTimeMillis(); // no System.currentTimeMillis in synchronized
+		synchronized(peerConn) {
+			if(isTransportConnected && peerConn.currentTracker != null) {
+				timeLastConnectedTransport = now;
+				return true;
+			}
+			return false;
+		}
+	}
+	
 	public void startRekeying() {
 		long now = System.currentTimeMillis();
 		synchronized(this) {
@@ -282,7 +291,7 @@ public abstract class PeerTransport {
 		boolean tempShouldSendHandshake = false;
 		synchronized(this) {
 			if(pn.isDisconnecting()) return false;
-			tempShouldSendHandshake = ((now > sendTransportHandshakeTime) && (handshakeTransportAddresses != null) && (isTransportRekeying || !pn.isConnected(transportPlugin)));
+			tempShouldSendHandshake = ((now > sendTransportHandshakeTime) && (handshakeTransportAddresses != null) && (isTransportRekeying || !isTransportConnected()));
 		}
 		if(logMINOR) Logger.minor(this, "shouldSendHandshake(): initial = "+tempShouldSendHandshake);
 		if(tempShouldSendHandshake && (hasLiveHandshake(now)))
@@ -305,7 +314,7 @@ public abstract class PeerTransport {
 		synchronized(this) {
 			if(pn.isDisconnecting()) return Long.MAX_VALUE;
 			if(handshakeTransportAddresses == null) return Long.MAX_VALUE;
-			if(!(isTransportRekeying || !pn.isConnected(transportPlugin))) return Long.MAX_VALUE;
+			if(!(isTransportRekeying || !isTransportConnected())) return Long.MAX_VALUE;
 			return sendTransportHandshakeTime;
 		}
 	}
@@ -664,7 +673,7 @@ public abstract class PeerTransport {
 		synchronized(this) {
 			if(sentInitialMessagesTransport)
 				return false;
-			if(getCurrentKeyTracker() != null && !getCurrentKeyTracker().packets.isDeprecated()) {
+			if(getCurrentKeyTracker() != null) {
 				sentInitialMessagesTransport = true;
 				return true;
 			}
@@ -742,11 +751,7 @@ public abstract class PeerTransport {
 		return outgoingMangler.alwaysAllowLocalAddresses();
 	}
 	
-	public abstract boolean isTransportConnected();
-	
 	public abstract void verified(SessionKey tracker);
-	
-	public abstract void checkConnectionsAndTrackers();
 	
 	public abstract void maybeRekey();
 	

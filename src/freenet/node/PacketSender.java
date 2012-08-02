@@ -67,16 +67,12 @@ public class PacketSender implements Runnable {
 	NodeStats stats;
 	long lastReportedNoPackets;
 	long lastReceivedPacketFromAnyNode;
-	private Vector<ResendPacketItem> rpiTemp;
-	private int[] rpiIntTemp;
 	private MersenneTwister localRandom;
 
 	PacketSender(Node node) {
 		this.node = node;
 		myThread = new NativeThread(this, "PacketSender thread for " + node.getDarknetPortNumber(), NativeThread.MAX_PRIORITY, false);
 		myThread.setDaemon(true);
-		rpiTemp = new Vector<ResendPacketItem>();
-		rpiIntTemp = new int[64];
 		localRandom = node.createRandom();
 	}
 
@@ -349,7 +345,7 @@ public class PacketSender implements Runnable {
 		
 		if(toSendPacket != null) {
 			try {
-				if(toSendPacket.maybeSendPacket(now, rpiTemp, rpiIntTemp, false)) {
+				if(toSendPacket.maybeSendPacket(now, false)) {
 					count = node.outputThrottle.getCount();
 					if(count > MAX_PACKET_SIZE)
 						canSendThrottled = true;
@@ -363,7 +359,7 @@ public class PacketSender implements Runnable {
 					}
 				}
 			} catch (BlockedTooLongException e) {
-				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendPacket+" on "+e.tracker+" : "+(toSendPacket.isOldFNP() ? "(old packet format)" : "(new packet format)")+" (version "+toSendPacket.getVersionNumber()+") - DISCONNECTING!");
+				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendPacket+" : "+(toSendPacket.isOldFNP() ? "(old packet format)" : "(new packet format)")+" (version "+toSendPacket.getVersionNumber()+") - DISCONNECTING!");
 				toSendPacket.forceDisconnect(true);
 				onForceDisconnectBlockTooLong(toSendPacket, e);
 			}
@@ -380,7 +376,7 @@ public class PacketSender implements Runnable {
 
 		} else if(toSendAckOnly != null) {
 			try {
-				if(toSendAckOnly.maybeSendPacket(now, rpiTemp, rpiIntTemp, true)) {
+				if(toSendAckOnly.maybeSendPacket(now, true)) {
 					count = node.outputThrottle.getCount();
 					if(count > MAX_PACKET_SIZE)
 						canSendThrottled = true;
@@ -394,7 +390,7 @@ public class PacketSender implements Runnable {
 					}
 				}
 			} catch (BlockedTooLongException e) {
-				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendAckOnly+" on "+e.tracker+" : "+(toSendAckOnly.isOldFNP() ? "(old packet format)" : "(new packet format)")+" (version "+toSendAckOnly.getVersionNumber()+") - DISCONNECTING!");
+				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendAckOnly+" : "+(toSendAckOnly.isOldFNP() ? "(old packet format)" : "(new packet format)")+" (version "+toSendAckOnly.getVersionNumber()+") - DISCONNECTING!");
 				toSendAckOnly.forceDisconnect(true);
 				onForceDisconnectBlockTooLong(toSendAckOnly, e);
 			}

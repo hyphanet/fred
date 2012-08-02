@@ -64,11 +64,6 @@ public class PeerStreamTransport extends PeerTransport {
 	}
 
 	@Override
-	public void checkConnectionsAndTrackers() {
-		//TODO To be finished for stream transports.
-	}
-
-	@Override
 	public void maybeRekey() {
 		//TODO To be finished for stream transports.
 	}

@@ -85,7 +85,6 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.WeakHashSet;
-import freenet.support.WouldBlockException;
 import freenet.support.math.MersenneTwister;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
@@ -970,23 +969,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return isConnected;
 	}
 	
-	//FIXME this method is not completed for streams. Check the PacketTracker object being used.
-	public boolean isConnected(TransportPlugin transportPlugin) {
-		PeerTransport peerTransport = getPeerTransport(transportPlugin);
-		if(peerTransport == null)
-			return false;
-		PeerConnection conn = peerTransport.peerConn;
-		
-		long now = System.currentTimeMillis(); // no System.currentTimeMillis in synchronized
-		synchronized(this) {
-			if(peerTransport.isTransportConnected && conn.currentTracker != null && !conn.currentTracker.packets.isDeprecated()) {
-				peerTransport.timeLastConnectedTransport = now;
-				return true;
-			}
-			return false;
-		}
-	}
-
 	/**
 	* Send a message, off-thread, to this node.
 	* @param msg The message to be sent.
@@ -1158,9 +1140,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				mi.onDisconnect();
 			}
 		}
-		if(cur != null) cur.disconnected(false);
-		if(prev != null) prev.disconnected(false);
-		if(unv != null) unv.disconnected(false);
+		if(cur != null) cur.disconnected();
+		if(prev != null) prev.disconnected();
+		if(unv != null) unv.disconnected();
 		if(_lastThrottle != null)
 			_lastThrottle.maybeDisconnected();
 		node.lm.lostOrRestartedNode(this);
@@ -1285,28 +1267,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			prev = previousTracker;
 			pf = packetFormat;
 			if(cur == null && prev == null) return Long.MAX_VALUE;
-		}
-		SessionKey kt = cur;
-		if(kt != null) {
-			long next = kt.packets.getNextUrgentTime();
-			t = Math.min(t, next);
-			if(next < now && logMINOR)
-				Logger.minor(this, "Next urgent time from curTracker less than now");
-			if(kt.packets.hasPacketsToResend()) {
-				// We could use the original packet send time, but I don't think it matters that much: Old peers with heavy packet loss are probably going to have problems anyway...
-				return now;
-			}
-		}
-		kt = prev;
-		if(kt != null) {
-			long next = kt.packets.getNextUrgentTime();
-			t = Math.min(t, next);
-			if(next < now && logMINOR)
-				Logger.minor(this, "Next urgent time from prevTracker less than now");
-			if(kt.packets.hasPacketsToResend()) {
-				// We could use the original packet send time, but I don't think it matters that much: Old peers with heavy packet loss are probably going to have problems anyway...
-				return now;
-			}
 		}
 		if(pf != null) {
 			boolean canSend = cur != null && pf.canSend(cur);
@@ -1856,6 +1816,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		 */
 		long now = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Tracker ID "+trackerID+" isJFK4="+isJFK4+" jfk4SameAsOld="+jfk4SameAsOld);
+		if(trackerID < 0) trackerID = Math.abs(node.random.nextLong());
 
 		// Update sendHandshakeTime; don't send another handshake for a while.
 		// If unverified, "a while" determines the timeout; if not, it's just good practice to avoid a race below.
@@ -2589,18 +2550,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return connectedTime;
 	}
 
-	/**
-	 * This method is changed to work only for UDP transport.
-	 * FNPWrapper should be gotten rid of. 
-	 * Requeue ResendPacketItem[]s if they are not sent.
-	 * @param resendItems
-	 */
-	public void requeueResendItems(Vector<ResendPacketItem> resendItems) {
-		String transportName = Node.defaultPacketTransportName;
-		if(peerPacketTransportMap.containsKey(transportName))
-			peerPacketTransportMap.get(transportName).requeueResendItems(resendItems);
-	}
-
 	@Override
 	public boolean equals(Object o) {
 		if(o == this)
@@ -3202,7 +3151,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 
 	protected synchronized int getPeerNodeStatus(long now, long routingBackedOffUntilRT, long localRoutingBackedOffUntilBulk, boolean overPingTime, boolean noLoadStats) {
-		checkConnectionsAndTrackers();
 		if(disconnecting)
 			return PeerManager.PEER_NODE_STATUS_DISCONNECTING;
 		if(isRoutable()) {  // Function use also updates timeLastConnected and timeLastRoutable
@@ -3331,17 +3279,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	private final Runnable checkStatusAfterBackoff;
 
 	public abstract boolean recordStatus();
-
-	private void checkConnectionsAndTrackers() {
-		for(String transportName : peerPacketTransportMap.keySet()) {
-			peerPacketTransportMap.get(transportName).checkConnectionsAndTrackers();
-		}
-		for(String transportName : peerStreamTransportMap.keySet()) {
-			peerStreamTransportMap.get(transportName).checkConnectionsAndTrackers();
-		}
-		//Update the isConnected boolean
-		isConnected();
-	}
 
 	public String getIdentityString() {
 		return identityAsBase64String;
@@ -4116,13 +4053,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * @param rpiTemp
 	 * @throws BlockedTooLongException
 	 */
-	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly) throws BlockedTooLongException {
+	public boolean maybeSendPacket(long now, boolean ackOnly) throws BlockedTooLongException {
 		PacketFormat pf;
 		synchronized(this) {
 			if(packetFormat == null) return false;
 			pf = packetFormat;
 		}
-		return pf.maybeSendPacket(now, rpiTemp, rpiIntTemp, ackOnly);
+		return pf.maybeSendPacket(now, ackOnly);
 	}
 
 	/** Reset on disconnection */
@@ -5307,10 +5244,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	@Override
 	public boolean isOldFNP() {
-		synchronized(this) {
-			if(packetFormat == null) return false;
-			return packetFormat instanceof FNPWrapper;
-		}
+		return false;
 	}
 	
 	@Override

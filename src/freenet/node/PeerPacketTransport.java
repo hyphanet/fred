@@ -2,7 +2,6 @@ package freenet.node;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Vector;
 
 import freenet.crypt.BlockCipher;
 import freenet.io.comm.DMT;
@@ -15,7 +14,6 @@ import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
-import freenet.support.WouldBlockException;
 import freenet.support.Logger.LogLevel;
 /**
  * This class will be used to store keys, timing fields, etc. by PeerNode for each transport for handshaking. 
@@ -125,28 +123,6 @@ public class PeerPacketTransport extends PeerTransport {
 			pf = packetFormat;
 			if(cur == null && prev == null) return Long.MAX_VALUE;
 		}
-		SessionKey kt = cur;
-		if(kt != null) {
-			long next = kt.packets.getNextUrgentTime();
-			t = Math.min(t, next);
-			if(next < now && logMINOR)
-				Logger.minor(this, "Next urgent time from curTracker less than now");
-			if(kt.packets.hasPacketsToResend()) {
-				// We could use the original packet send time, but I don't think it matters that much: Old peers with heavy packet loss are probably going to have problems anyway...
-				return now;
-			}
-		}
-		kt = prev;
-		if(kt != null) {
-			long next = kt.packets.getNextUrgentTime();
-			t = Math.min(t, next);
-			if(next < now && logMINOR)
-				Logger.minor(this, "Next urgent time from prevTracker less than now");
-			if(kt.packets.hasPacketsToResend()) {
-				// We could use the original packet send time, but I don't think it matters that much: Old peers with heavy packet loss are probably going to have problems anyway...
-				return now;
-			}
-		}
 		if(pf != null) {
 			boolean canSend = cur != null && pf.canSend(cur);
 			if(canSend) { // New messages are only sent on cur.
@@ -189,11 +165,9 @@ public class PeerPacketTransport extends PeerTransport {
 		boolean wasARekey = false;
 		SessionKey oldPrev = null;
 		SessionKey oldCur = null;
-		SessionKey prev = null;
 		SessionKey newTracker;
 		MessageItem[] messagesTellDisconnected = null;
 		PacketFormat oldPacketFormat = null;
-		PacketTracker packets = null;
 		synchronized(this) {
 			pn.setDisconnecting(false);
 			// FIXME this shouldn't happen, does it?
@@ -248,51 +222,7 @@ public class PeerPacketTransport extends PeerTransport {
 				} else if(bootIDChanged && logMINOR)
 					Logger.minor(this, "Changed boot ID from " + pn.getBootID() + " to " + thisBootID + " for " + detectedTransportAddress);
 				pn.setBootID(thisBootID);
-				int firstPacketNumber = (negType >= 5 ? 0 : pn.node.random.nextInt(100 * 1000));
-				if(peerConn.currentTracker != null && peerConn.currentTracker.packets.trackerID == trackerID && !peerConn.currentTracker.packets.isDeprecated()) {
-					if(isJFK4 && !jfk4SameAsOld)
-						Logger.error(this, "In JFK(4), found tracker ID "+trackerID+" but other side says is new! for "+this);
-					packets = peerConn.currentTracker.packets;
-					if(logMINOR) Logger.minor(this, "Re-using packet tracker ID "+trackerID+" on "+this+" from current "+peerConn.currentTracker);
-				} else if(peerConn.previousTracker != null && peerConn.previousTracker.packets.trackerID == trackerID && !peerConn.previousTracker.packets.isDeprecated()) {
-					if(isJFK4 && !jfk4SameAsOld)
-						Logger.error(this, "In JFK(4), found tracker ID "+trackerID+" but other side says is new! for "+this);
-					packets = peerConn.previousTracker.packets;
-					if(logMINOR) Logger.minor(this, "Re-using packet tracker ID "+trackerID+" on "+this+" from prev "+peerConn.previousTracker);
-				} else if(isJFK4 && jfk4SameAsOld) {
-					isTransportConnected = false;
-					Logger.error(this, "Can't reuse old tracker ID "+trackerID+" as instructed - disconnecting");
-					return -1;
-				} else if(trackerID == -1) {
-					// Create a new tracker unconditionally
-					packets = new PacketTracker(pn, firstPacketNumber);
-					if(negType >= 5) {
-						if(peerConn.previousTracker != null && peerConn.previousTracker.packets.wasUsed()) {
-							oldPrev = peerConn.previousTracker;
-							peerConn.previousTracker = null;
-							Logger.error(this, "Moving from old packet format to new packet format, previous tracker had packets in progress.");
-						}
-						if(peerConn.currentTracker != null && peerConn.currentTracker.packets.wasUsed()) {
-							oldCur = peerConn.currentTracker;
-							peerConn.currentTracker = null;
-							Logger.error(this, "Moving from old packet format to new packet format, current tracker had packets in progress.");
-						}
-					} else {
-						notReusingTracker = true;
-					}
-					if(logMINOR) Logger.minor(this, "Creating new PacketTracker as instructed for "+this);
-				} else {
-					if(isJFK4 && negType >= 4 && trackerID < 0)
-						Logger.error(this, "JFK(4) packet with neg type "+negType+" has negative tracker ID: "+trackerID);
-	
-					notReusingTracker = true;
-					if(isJFK4/* && !jfk4SameAsOld implied */ && trackerID >= 0) {
-						packets = new PacketTracker(pn, firstPacketNumber, trackerID);
-					} else
-						packets = new PacketTracker(pn, firstPacketNumber);
-					if(logMINOR) Logger.minor(this, "Creating new tracker (last resort) on "+this);
-				}
-				if(bootIDChanged || notReusingTracker) {
+				if(bootIDChanged) {
 					if((!bootIDChanged) && notReusingTracker && !(peerConn.currentTracker == null && peerConn.previousTracker == null))
 						// FIXME is this a real problem? Clearly the other side has changed trackers for some reason...
 						// Normally that shouldn't happen except when a connection times out ... it is probably possible
@@ -302,8 +232,6 @@ public class PeerPacketTransport extends PeerTransport {
 					oldCur = peerConn.currentTracker;
 					peerConn.previousTracker = null;
 					peerConn.currentTracker = null;
-				}
-				if(bootIDChanged) {
 					// Messages do not persist across restarts.
 					// Generally they would be incomprehensible, anything that isn't should be sent as
 					// connection initial messages by maybeOnConnect().
@@ -314,8 +242,8 @@ public class PeerPacketTransport extends PeerTransport {
 				} else {
 					// else it's a rekey
 				}
-				newTracker = new SessionKey(pn, packets, outgoingCipher, outgoingKey, incommingCipher, incommingKey, ivCipher, ivNonce, hmacKey, new NewPacketFormatKeyContext(ourInitialSeqNum, theirInitialSeqNum), transportPlugin);
-				if(logMINOR) Logger.minor(this, "New key tracker in completedHandshake: "+newTracker+" for "+packets+" for "+pn.shortToString()+" neg type "+negType);
+				newTracker = new SessionKey(pn, outgoingCipher, outgoingKey, incommingCipher, incommingKey, ivCipher, ivNonce, hmacKey, new NewPacketFormatKeyContext(ourInitialSeqNum, theirInitialSeqNum), trackerID, transportPlugin);
+				if(logMINOR) Logger.minor(this, "New key tracker in completedHandshake: "+newTracker+" for "+pn.shortToString()+" neg type "+negType);
 				if(unverified) {
 					if(peerConn.unverifiedTracker != null) {
 						// Keep the old unverified tracker if possible.
@@ -323,7 +251,7 @@ public class PeerPacketTransport extends PeerTransport {
 							peerConn.previousTracker = peerConn.unverifiedTracker;
 					}
 					peerConn.unverifiedTracker = newTracker;
-					if(peerConn.currentTracker == null || peerConn.currentTracker.packets.isDeprecated())
+					if(peerConn.currentTracker == null)
 						isTransportConnected = false;
 				} else {
 					oldPrev = peerConn.previousTracker;
@@ -334,8 +262,6 @@ public class PeerPacketTransport extends PeerTransport {
 					// we might want to keep the unverified tracker rather than the previous tracker.
 					pn.neverConnected = false;
 					pn.maybeClearPeerAddedTimeOnConnect();
-					peerConn.maybeSwapTrackers();
-					prev = peerConn.previousTracker;
 				}
 				ctxTransport = null;
 				isTransportRekeying = false;
@@ -352,11 +278,7 @@ public class PeerPacketTransport extends PeerTransport {
 					Logger.error(this, "previousTracker key equals unverifiedTracker key: prev "+peerConn.previousTracker+" unv "+peerConn.unverifiedTracker);
 				timeLastSentTransportPacket = now;
 				if(packetFormat == null) {
-					if(negType < 5) {
-						packetFormat = new FNPWrapper(pn);
-					} else {
-						packetFormat = new NewPacketFormat(pn, ourInitialMsgID, theirInitialMsgID, this);
-					}
+					packetFormat = new NewPacketFormat(pn, ourInitialMsgID, theirInitialMsgID, this);
 				}
 				// Completed setup counts as received data packet, for purposes of avoiding spurious disconnections.
 				timeLastReceivedTransportPacket = now;
@@ -375,14 +297,8 @@ public class PeerPacketTransport extends PeerTransport {
 			pn.node.usm.onRestart(pn);
 			pn.node.onRestartOrDisconnect(pn);
 		}
-		if(oldPrev != null && oldPrev.packets != newTracker.packets)
-			oldPrev.packets.completelyDeprecated(newTracker);
-		if(oldPrev != null) oldPrev.disconnected(true);
-		if(oldCur != null && oldCur.packets != newTracker.packets)
-			oldCur.packets.completelyDeprecated(newTracker);
-		if(oldCur != null) oldCur.disconnected(true);
-		if(prev != null && prev.packets != newTracker.packets)
-			prev.packets.deprecated();
+		if(oldPrev != null) oldPrev.disconnected();
+		if(oldCur != null) oldCur.disconnected();
 		if(oldPacketFormat != null) {
 			List<MessageItem> tellDisconnect = oldPacketFormat.onDisconnect();
 			if(tellDisconnect != null)
@@ -409,19 +325,7 @@ public class PeerPacketTransport extends PeerTransport {
 		
 		pn.crypto.maybeBootConnection(pn, replyTo, transportPlugin);
 
-		return packets.trackerID;
-	}
-	
-	@Override
-	public boolean isTransportConnected() {
-		long now = System.currentTimeMillis(); // no System.currentTimeMillis in synchronized
-		synchronized(this) {
-			if(isTransportConnected && getCurrentKeyTracker() != null && !getCurrentKeyTracker().packets.isDeprecated()) {
-				timeLastConnectedTransport = now;
-				return true;
-			}
-			return false;
-		}
+		return trackerID;
 	}
 	
 	/**
@@ -434,7 +338,7 @@ public class PeerPacketTransport extends PeerTransport {
 		long now = System.currentTimeMillis();
 		SessionKey completelyDeprecatedTracker;
 		synchronized(peerConn) {
-			if(tracker == peerConn.unverifiedTracker && !tracker.packets.isDeprecated()) {
+			if(tracker == peerConn.unverifiedTracker) {
 				if(logMINOR)
 					Logger.minor(this, "Promoting unverified tracker " + tracker + " for " + detectedTransportAddress);
 				completelyDeprecatedTracker = peerConn.previousTracker;
@@ -445,9 +349,6 @@ public class PeerPacketTransport extends PeerTransport {
 				pn.neverConnected = false;
 				pn.maybeClearPeerAddedTimeOnConnect();
 				ctxTransport = null;
-				peerConn.maybeSwapTrackers();
-				if(peerConn.previousTracker != null && peerConn.previousTracker.packets != peerConn.currentTracker.packets)
-					peerConn.previousTracker.packets.deprecated();
 			} else
 				return;
 		}
@@ -456,38 +357,7 @@ public class PeerPacketTransport extends PeerTransport {
 		pn.node.peers.addConnectedPeer(pn);
 		pn.maybeOnConnect();
 		if(completelyDeprecatedTracker != null) {
-			if(completelyDeprecatedTracker.packets != tracker.packets)
-				completelyDeprecatedTracker.packets.completelyDeprecated(tracker);
-			completelyDeprecatedTracker.disconnected(true);
-		}
-	}
-	
-	@Override
-	public synchronized void checkConnectionsAndTrackers() {
-		synchronized(peerConn) {
-			if(isTransportConnected) {
-				if(peerConn.currentTracker == null) {
-					if(peerConn.unverifiedTracker != null) {
-						if(peerConn.unverifiedTracker.packets.isDeprecated())
-							Logger.error(this, "Connected but primary tracker is null and unverified is deprecated ! " + peerConn.unverifiedTracker + " for " + this, new Exception("debug"));
-						else if(logMINOR)
-							Logger.minor(this, "Connected but primary tracker is null, but unverified = " + peerConn.unverifiedTracker + " for " + this, new Exception("debug"));
-					} else {
-						Logger.error(this, "Connected but both primary and unverified are null on " + this, new Exception("debug"));
-					}
-				} else if(peerConn.currentTracker.packets.isDeprecated()) {
-					if(peerConn.unverifiedTracker != null) {
-						if(peerConn.unverifiedTracker.packets.isDeprecated())
-							Logger.error(this, "Connected but primary tracker is deprecated, unverified is deprecated: primary=" + peerConn.currentTracker + " unverified: " + peerConn.unverifiedTracker + " for " + this, new Exception("debug"));
-						else if(logMINOR)
-							Logger.minor(this, "Connected, primary tracker deprecated, unverified is valid, " + peerConn.unverifiedTracker + " for " + this, new Exception("debug"));
-					} else {
-						// !!!!!!!
-						Logger.error(this, "Connected but primary tracker is deprecated and unverified tracker is null on " + this+" primary tracker = "+peerConn.currentTracker, new Exception("debug"));
-						isTransportConnected = false;
-					}
-				}
-			}
+			completelyDeprecatedTracker.disconnected();
 		}
 	}
 	
@@ -528,98 +398,7 @@ public class PeerPacketTransport extends PeerTransport {
 	* caused by a sequence inconsistency.
 	*/
 	public boolean sendAnyUrgentNotifications(boolean forceSendPrimary) {
-		boolean sent = false;
-		if(logMINOR)
-			Logger.minor(this, "sendAnyUrgentNotifications");
-		long now = System.currentTimeMillis();
-		SessionKey cur,
-		 prev;
-		synchronized(peerConn) {
-			cur = peerConn.currentTracker;
-			prev = peerConn.previousTracker;
-		}
-		SessionKey tracker = cur;
-		if(tracker != null) {
-			long t = tracker.packets.getNextUrgentTime();
-			if(t < now || forceSendPrimary) {
-				try {
-					if(logMINOR) Logger.minor(this, "Sending urgent notifications for current tracker on "+pn.shortToString());
-					int size = outgoingMangler.processOutgoing(null, 0, 0, tracker, DMT.PRIORITY_NOW);
-					pn.node.nodeStats.reportNotificationOnlyPacketSent(size);
-					sent = true;
-				} catch(NotConnectedException e) {
-				// Ignore
-				} catch(KeyChangedException e) {
-				// Ignore
-				} catch(WouldBlockException e) {
-					Logger.error(this, "Caught impossible: "+e, e);
-				} catch(PacketSequenceException e) {
-					Logger.error(this, "Caught impossible: "+e, e);
-				}
-			}
-		}
-		tracker = prev;
-		if(tracker != null) {
-			long t = tracker.packets.getNextUrgentTime();
-			if(t < now)
-				try {
-					if(logMINOR) Logger.minor(this, "Sending urgent notifications for previous tracker on "+pn.shortToString());
-					int size = outgoingMangler.processOutgoing(null, 0, 0, tracker, DMT.PRIORITY_NOW);
-					pn.node.nodeStats.reportNotificationOnlyPacketSent(size);
-					sent = true;
-				} catch(NotConnectedException e) {
-				// Ignore
-				} catch(KeyChangedException e) {
-				// Ignore
-				} catch(WouldBlockException e) {
-					Logger.error(this, "Caught impossible: "+e, e);
-				} catch(PacketSequenceException e) {
-					Logger.error(this, "Caught impossible: "+e, e);
-				}
-		}
-		return sent;
-	}
-	
-	/**
-	 * We should get rid of this and FNPWrapper soon.
-	 * @deprecated
-	 */
-	public void requeueResendItems(Vector<ResendPacketItem> resendItems) {
-		SessionKey cur,
-		 prev,
-		 unv;
-		synchronized(this) {
-			cur = peerConn.currentTracker;
-			prev = peerConn.previousTracker;
-			unv = peerConn.unverifiedTracker;
-		}
-		for(ResendPacketItem item : resendItems) {
-			if(item.pn != pn)
-				throw new IllegalArgumentException("item.pn != pn!");
-			SessionKey kt = cur;
-			if((kt != null) && (item.kt == kt.packets)) {
-				kt.packets.resendPacket(item.packetNumber);
-				continue;
-			}
-			kt = prev;
-			if((kt != null) && (item.kt == kt.packets)) {
-				kt.packets.resendPacket(item.packetNumber);
-				continue;
-			}
-			kt = unv;
-			if((kt != null) && (item.kt == kt.packets)) {
-				kt.packets.resendPacket(item.packetNumber);
-				continue;
-			}
-			// Doesn't match any of these, need to resend the data
-			kt = cur == null ? unv : cur;
-			if(kt == null) {
-				Logger.error(this, "No tracker to resend packet " + item.packetNumber + " on");
-				continue;
-			}
-			MessageItem mi = new MessageItem(item.buf, item.callbacks, true, pn.resendByteCounter, item.priority, false, false);
-			pn.requeueMessageItems(new MessageItem[]{mi}, 0, 1, true);
-		}
+		return false;
 	}
 	
 	public Message createSentPacketsMessage() {
@@ -745,12 +524,8 @@ public class PeerPacketTransport extends PeerTransport {
 			if(logMINOR) Logger.minor(this, "getReusableTrackerID(): cur = null on "+this);
 			return -1;
 		}
-		if(cur.packets.isDeprecated()) {
-			if(logMINOR) Logger.minor(this, "getReusableTrackerID(): cur.packets.isDeprecated on "+this);
-			return -1;
-		}
-		if(logMINOR) Logger.minor(this, "getReusableTrackerID(): "+cur.packets.trackerID+" on "+this);
-		return cur.packets.trackerID;
+		if(logMINOR) Logger.minor(this, "getReusableTrackerID(): "+cur.trackerID+" on "+this);
+		return cur.trackerID;
 	}
 	
 	public void handleSentPackets(Message m) {
@@ -902,9 +677,9 @@ public class PeerPacketTransport extends PeerTransport {
 				mi.onDisconnect();
 			}
 		}
-		if(cur != null) cur.disconnected(false);
-		if(prev != null) prev.disconnected(false);
-		if(unv != null) unv.disconnected(false);
+		if(cur != null) cur.disconnected();
+		if(prev != null) prev.disconnected();
+		if(unv != null) unv.disconnected();
 		return ret;
 	}
 	

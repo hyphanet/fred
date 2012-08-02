@@ -1,7 +1,6 @@
 package freenet.node;
 
 import java.util.List;
-import java.util.Vector;
 
 import freenet.pluginmanager.PluginAddress;
 
@@ -19,7 +18,7 @@ public interface PacketFormat {
 	 * </ol>
 	 * @param ackOnly 
 	 */
-	boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly)
+	boolean maybeSendPacket(long now, boolean ackOnly)
 	                throws BlockedTooLongException;
 
 	/**
