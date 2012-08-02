@@ -56,6 +56,7 @@ public class FProxyFetchResult {
 
 	/** Constructor when we are returning the data */
 	FProxyFetchResult(FProxyFetchInProgress parent, Bucket data, String mimeType, long timeStarted, boolean goneToNetwork, long eta, boolean hasWaited) {
+		assert(data != null);
 		this.data = data;
 		this.mimeType = mimeType;
 		this.size = data.size();
