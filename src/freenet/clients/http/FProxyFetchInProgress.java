@@ -444,19 +444,23 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	 * must have been removed from the tracker already, so it won't be reused. */
 	public void finishCancel() {
 		if(logMINOR) Logger.minor(this, "Finishing cancel for "+this+" : "+uri+" : "+maxSize);
-		if(data != null) {
-			try {
-				data.free();
-			} catch (Throwable t) {
-				// Ensure we get to the next bit
-				Logger.error(this, "Failed to free: "+t, t);
-			}
-		}
 		try {
 			getter.cancel(null, tracker.context);
 		} catch (Throwable t) {
 			// Ensure we get to the next bit
 			Logger.error(this, "Failed to cancel: "+t, t);
+		}
+		Bucket d;
+		synchronized(this) {
+			d = data;
+		}
+		if(d != null) {
+			try {
+				d.free();
+			} catch (Throwable t) {
+				// Ensure we get to the next bit
+				Logger.error(this, "Failed to free: "+t, t);
+			}
 		}
 	}
 
