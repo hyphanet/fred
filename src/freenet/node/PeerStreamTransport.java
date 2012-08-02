@@ -72,5 +72,10 @@ public class PeerStreamTransport extends PeerTransport {
 	public void maybeRekey() {
 		//TODO To be finished for stream transports.
 	}
+
+	@Override
+	public boolean disconnectTransport(boolean dumpMessageQueue, boolean dumpTrackers) {
+		return false;
+	}
 	
 }

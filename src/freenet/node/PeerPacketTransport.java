@@ -863,5 +863,49 @@ public class PeerPacketTransport extends PeerTransport {
 //			outgoingMangler.setPortForwardingBroken();
 //		}
 	}
+
+	@Override
+	public boolean disconnectTransport(boolean dumpMessageQueue, boolean dumpTrackers) {
+		final long now = System.currentTimeMillis();
+		boolean ret;
+		SessionKey cur, prev, unv;
+		List<MessageItem> moreMessagesTellDisconnected = null;
+		PacketFormat oldPacketFormat = null;
+		synchronized(peerConn) {
+			ret = isTransportConnected;
+			// Force re negotiation.
+			isTransportConnected = false;
+			// Prevent sending packets to the node until that happens.
+			cur = peerConn.currentTracker;
+			prev = peerConn.previousTracker;
+			unv = peerConn.unverifiedTracker;
+			if(dumpTrackers) {
+				peerConn.currentTracker = null;
+				peerConn.previousTracker = null;
+				peerConn.unverifiedTracker = null;
+			}
+			sendTransportHandshakeTime = now;
+			timeTransportPrevDisconnect = timeTransportLastDisconnect;
+			timeTransportLastDisconnect = now;
+			if(dumpMessageQueue) {
+				oldPacketFormat = packetFormat;
+				packetFormat = null;
+			}
+		}
+		if(oldPacketFormat != null) {
+			moreMessagesTellDisconnected = oldPacketFormat.onDisconnect();
+		}
+		if(moreMessagesTellDisconnected != null) {
+			if(logMINOR)
+				Logger.minor(this, "Messages to dump: "+moreMessagesTellDisconnected.size());
+			for(MessageItem mi : moreMessagesTellDisconnected) {
+				mi.onDisconnect();
+			}
+		}
+		if(cur != null) cur.disconnected(false);
+		if(prev != null) prev.disconnected(false);
+		if(unv != null) unv.disconnected(false);
+		return ret;
+	}
 	
 }

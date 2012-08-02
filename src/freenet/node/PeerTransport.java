@@ -114,6 +114,11 @@ public abstract class PeerTransport {
 	/** When did we last rekey (promote the unverified tracker to new) ? */
 	long timeTransportLastRekeyed;
 	protected boolean sentInitialMessagesTransport;
+	
+	/** When did we last disconnect */
+	long timeTransportLastDisconnect;
+	/** Previous time of disconnection */
+	long timeTransportPrevDisconnect;
 
 	/** Hold collected addresses for handshake attempts, populated by DNSRequestor
 	 * Equivalent to handshakeIPs in PeerNode.
@@ -745,6 +750,6 @@ public abstract class PeerTransport {
 	
 	public abstract void maybeRekey();
 	
-	
+	public abstract boolean disconnectTransport(boolean dumpMessageQueue, boolean dumpTrackers);
 	
 }
