@@ -672,16 +672,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return;
 		}
 
-		if(negType == 0) {
-			Logger.error(this, "Old ephemeral Diffie-Hellman (negType 0) not supported.");
+		if(negType > 0 && negType < 6) {
+			Logger.warning(this, "Old neg type "+negType+" not supported");
 			return;
-		} else if (negType == 1) {
-			Logger.error(this, "Old StationToStation (negType 1) not supported.");
-			return;
-		} else if (negType==2 || negType == 4 || negType == 6 || negType == 7) {
-			// negType == 3 was buggy
-			// negType == 4 => negotiate whether to use a new PacketTracker when rekeying
-			// negType == 5 => same as 4, but use new packet format after negotiation
+		} else if (negType == 6 || negType == 7) {
 			/*
 			 * We implement Just Fast Keying key management protocol with active identity protection
 			 * for the initiator and no identity protection for the responder
@@ -1105,7 +1099,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			(c.getBlockSize() >> 3) + // IV
 			HASH_LENGTH + // it's at least a signature
 			8 +	      // a bootid
-			(negType >= 4 ? 8 : 0) + // packet tracker ID
+			8 +		  // packet tracker ID 
 			1;	      // znoderefI* is at least 1 byte long
 
 		if(payload.length < expectedLength + 3) {
@@ -1221,12 +1215,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 		if(logMINOR)
 			Logger.minor(this, "Their initial message ID: "+theirInitialMsgID+" ours "+ourInitialMsgID);
-
-		if(negType <= 4) {
-			/* Negtypes <= 4 were deployed when the keys were split, so use the initiator key to be
-			 * backwards compatible */
-			outgoingKey = incommingKey;
-		}
 
 		c.initialize(Ke);
 		int ivLength = PCFBMode.lengthIV(c);
@@ -1442,7 +1430,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			HASH_LENGTH + // HMAC of the cyphertext
 			(c.getBlockSize() >> 3) + // IV
 			Node.SIGNATURE_PARAMETER_LENGTH * 2 + // the signature
-			(negType >= 4 ? 9 : 0) + // ID of packet tracker, plus boolean byte
+			9 + // ID of packet tracker, plus boolean byte
 			8+ // bootID
 			1; // znoderefR
 
@@ -1510,14 +1498,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		int ptr = 0;
 		long trackerID;
 		boolean reusedTracker;
-		if(negType >= 4) {
-			trackerID = Fields.bytesToLong(data, ptr);
-			ptr += 8;
-			reusedTracker = data[ptr++] != 0;
-		} else {
-			trackerID = -1;
-			reusedTracker = false;
-		}
+		trackerID = Fields.bytesToLong(data, ptr);
+		ptr += 8;
+		reusedTracker = data[ptr++] != 0;
 		long bootID = Fields.bytesToLong(data, ptr);
 		ptr += 8;
 		byte[] hisRef = new byte[data.length - ptr];
@@ -1525,7 +1508,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		// verify the signature
 		DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s));
-		int dataLen = hisRef.length + 8 + (negType >= 4 ? 9 : 0);
+		int dataLen = hisRef.length + 8 + 9;
 		byte[] locallyGeneratedText = new byte[NONCE_SIZE * 2 + DiffieHellman.modulusLengthInBytes() * 2 + crypto.myIdentity.length + dataLen + peerTransport.jfkMyRef.length];
 		int bufferOffset = NONCE_SIZE * 2 + DiffieHellman.modulusLengthInBytes()*2;
 		System.arraycopy(jfkBuffer, 0, locallyGeneratedText, 0, bufferOffset);
@@ -1659,15 +1642,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(ctx == null) return;
 		byte[] ourExponential = stripBigIntegerToNetworkFormat(ctx.myExponential);
 		peerTransport.jfkMyRef = unknownInitiator ? crypto.myCompressedHeavySetupRef() : crypto.myCompressedSetupRef();
-		byte[] data = new byte[(negType >= 4 ? 8 : 0) + 8 + peerTransport.jfkMyRef.length];
+		byte[] data = new byte[8 + 8 + peerTransport.jfkMyRef.length];
 		int ptr = 0;
-		if(negType >= 4) {
-			long trackerID;
-			trackerID = peerTransport.getReusableTrackerID();
-			System.arraycopy(Fields.longToBytes(trackerID), 0, data, ptr, 8);
-			ptr += 8;
-			if(logMINOR) Logger.minor(this, "Sending tracker ID "+trackerID+" in JFK(3)");
-		}
+		long trackerID;
+		trackerID = peerTransport.getReusableTrackerID();
+		System.arraycopy(Fields.longToBytes(trackerID), 0, data, ptr, 8);
+		ptr += 8;
+		if(logMINOR) Logger.minor(this, "Sending tracker ID "+trackerID+" in JFK(3)");
 		System.arraycopy(Fields.longToBytes(pn.getOutgoingBootID()), 0, data, ptr, 8);
 		ptr += 8;
 		System.arraycopy(peerTransport.jfkMyRef, 0, data, ptr, peerTransport.jfkMyRef.length);
@@ -1755,12 +1736,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(logMINOR)
 			Logger.minor(this, "Their initial message ID: "+peerTransport.theirInitialMsgID+" ours "+peerTransport.ourInitialMsgID);
 
-
-		if(negType <= 4) {
-			/* Negtypes <= 4 were deployed when the keys were split, so use the initiator key to be
-			 * backwards compatible */
-			peerTransport.incommingKey = peerTransport.outgoingKey;
-		}
 
 		c.initialize(peerTransport.jfkKe);
 		int ivLength = PCFBMode.lengthIV(c);
@@ -1871,13 +1846,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		NativeBigInteger _initiatorExponential = new NativeBigInteger(1,initiatorExponential);
 
 		byte[] myRef = crypto.myCompressedSetupRef();
-		byte[] data = new byte[(negType >= 4 ? 9 : 0) + 8 + myRef.length + hisRef.length];
+		byte[] data = new byte[9 + 8 + myRef.length + hisRef.length];
 		int ptr = 0;
-		if(negType >= 4) {
-			System.arraycopy(Fields.longToBytes(newTrackerID), 0, data, ptr, 8);
-			ptr += 8;
-			data[ptr++] = (byte) (sameAsOldTrackerID ? 1 : 0);
-		}
+		System.arraycopy(Fields.longToBytes(newTrackerID), 0, data, ptr, 8);
+		ptr += 8;
+		data[ptr++] = (byte) (sameAsOldTrackerID ? 1 : 0);
 
 		System.arraycopy(Fields.longToBytes(pn.getOutgoingBootID()), 0, data, ptr, 8);
 		ptr += 8;
