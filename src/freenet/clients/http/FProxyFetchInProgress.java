@@ -120,6 +120,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	private int fetched = 0;
 	/** Stores the fetch context this class was created with*/
 	private FetchContext fctx;
+	private boolean cancelled = false;
 	
 	public FProxyFetchInProgress(FProxyFetchTracker tracker, FreenetURI key, long maxSize2, long identifier, ClientContext context, FetchContext fctx, RequestClient rc, REFILTER_POLICY refilter) {
 		this.refilterPolicy = refilter;
@@ -397,12 +398,18 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 
 	@Override
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+		Bucket droppedData = null;
 		synchronized(this) {
-			this.data = result.asBucket();
+			if(cancelled)
+				droppedData = result.asBucket();
+			else
+				this.data = result.asBucket();
 			this.mimeType = result.getMimeType();
 			this.finished = true;
 		}
 		wakeWaiters(true);
+		if(droppedData != null)
+			droppedData.free();
 	}
 
 	public synchronized boolean hasData() {
@@ -453,6 +460,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		Bucket d;
 		synchronized(this) {
 			d = data;
+			cancelled = true;
 		}
 		if(d != null) {
 			try {
