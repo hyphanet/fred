@@ -125,8 +125,8 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 			        NodeL10n.getBase().getString("QueueToadlet.insertFileCompressLabel"));
 		} else {
 			insertForm.addChild("input",
-			        new String[] { "type", "value" },
-			        new String[] { "hidden", "true" });
+			        new String[] { "type", "name", "value" },
+			        new String[] { "hidden", "compress", "true" });
 		}
 		if(isAdvancedModeEnabled) {
 			insertForm.addChild("br");
