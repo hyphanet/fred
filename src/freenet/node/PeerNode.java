@@ -1274,8 +1274,21 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	
 	/**
 	* Disconnected e.g. due to not receiving a packet for ages.
-	* @param dumpMessageQueue If true, clear the messages-to-send queue.
-	* @param dumpTrackers If true, dump the SessionKey's.
+	* @param dumpMessageQueue If true, clear the messages-to-send queue, and
+	* change the bootID so even if we reconnect the other side will know that
+	* a disconnect happened.
+	* @param dumpTrackers If true, dump the SessionKey's (i.e. dump the
+	* cryptographic data so we don't understand any packets they send us).
+	* <br>
+	* Possible arguments:<ul>
+	* <li>true, true => dump everything, immediate disconnect</li>
+	* <li>true, false => dump messages but keep trackers so we can 
+	* acknowledge messages on their end for a while.</li>
+	* <li>false, false => tell the rest of the node that we have 
+	* disconnected but do not immediately drop messages, continue to 
+	* respond to their messages.</li>
+	* <li>false, true => dump crypto but keep messages. DOES NOT MAKE 
+	* SENSE!!! DO NOT USE!!! </ul>
 	* @return True if the node was connected, false if it was not.
 	*/
 	public boolean disconnected(boolean dumpMessageQueue, boolean dumpTrackers) {
@@ -1350,6 +1363,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		if(peers.havePeer(this))
 			setPeerNodeStatus(now);
 		if(!dumpMessageQueue) {
+			// Wait for a while and then drop the messages if we haven't
+			// reconnected.
 			node.getTicker().queueTimedJob(new Runnable() {
 				@Override
 				public void run() {
