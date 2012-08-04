@@ -1238,7 +1238,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			String time = TimeUtil.formatTime(FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY);
 			System.err.println("The peer (" + this + ") has been asked to rekey " + time + " ago... force disconnect.");
 			Logger.error(this, "The peer (" + this + ") has been asked to rekey " + time + " ago... force disconnect.");
-			forceDisconnect(false);
+			forceDisconnect(true);
 		} else if (shouldReturn || hasLiveHandshake(now)) {
 			return;
 		} else if(shouldRekey) {
