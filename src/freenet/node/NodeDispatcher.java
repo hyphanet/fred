@@ -190,7 +190,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				if(locs.length > OpennetManager.PANIC_MAX_PEERS) {
 					// This can't happen by accident
 					Logger.error(this, "We received "+locs.length+ " locations from "+source.toString()+"! That should *NOT* happen! Possible attack!");
-					source.forceDisconnect(true);
+					source.forceDisconnect();
 					return true;
 				} else {
 					// A few extra can happen by accident. Just use the first 20.

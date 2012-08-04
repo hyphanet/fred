@@ -257,7 +257,7 @@ public class OpennetPeerNode extends PeerNode {
 		if(node.isStopping()) return;
 		Logger.error(this, "Disconnecting "+this+" because of fatal timeout");
 		// Disconnect.
-		forceDisconnect(true);
+		forceDisconnect();
 	}
 	
 	@Override

@@ -1238,7 +1238,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			String time = TimeUtil.formatTime(FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY);
 			System.err.println("The peer (" + this + ") has been asked to rekey " + time + " ago... force disconnect.");
 			Logger.error(this, "The peer (" + this + ") has been asked to rekey " + time + " ago... force disconnect.");
-			forceDisconnect(true);
+			forceDisconnect();
 		} else if (shouldReturn || hasLiveHandshake(now)) {
 			return;
 		} else if(shouldRekey) {
@@ -1414,9 +1414,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 
 	@Override
-	public void forceDisconnect(boolean purge) {
+	public void forceDisconnect() {
 		Logger.error(this, "Forcing disconnect on " + this, new Exception("debug"));
-		disconnected(purge, true); // always dump trackers, maybe dump messages
+		disconnected(true, true); // always dump trackers, maybe dump messages
 	}
 
 	/**
