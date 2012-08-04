@@ -1276,7 +1276,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	* Disconnected e.g. due to not receiving a packet for ages.
 	* @param dumpMessageQueue If true, clear the messages-to-send queue, and
 	* change the bootID so even if we reconnect the other side will know that
-	* a disconnect happened.
+	* a disconnect happened. If false, don't clear the messages yet. They 
+	* will be cleared after an hour if the peer is disconnected at that point.
 	* @param dumpTrackers If true, dump the SessionKey's (i.e. dump the
 	* cryptographic data so we don't understand any packets they send us).
 	* <br>
