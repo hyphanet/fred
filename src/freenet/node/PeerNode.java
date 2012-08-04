@@ -1293,6 +1293,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	* @return True if the node was connected, false if it was not.
 	*/
 	public boolean disconnected(boolean dumpMessageQueue, boolean dumpTrackers) {
+		assert(!((!dumpMessageQueue) && dumpTrackers)); // Invalid combination!
 		final long now = System.currentTimeMillis();
 		if(isRealConnection())
 			Logger.normal(this, "Disconnected " + this, new Exception("debug"));
