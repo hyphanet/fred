@@ -1887,9 +1887,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		        new String[] { "id", "name", "cols", "rows" },
 		        new String[] { "bulkDownloads", "bulkDownloads", "120", "8" });
 		downloadForm.addChild("br");
-		downloadForm.addChild("input",
-		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "insert", l10n("download") });
 		PHYSICAL_THREAT_LEVEL threatLevel = core.node.securityLevels.getPhysicalThreatLevel();
 		//Force downloading to encrypted space if high/maximum threat level or if the user has disabled
 		//downloading to disk.
@@ -1922,6 +1919,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		        new String[] { "type", "name", "value", "checked" },
 		        new String[] { "checkbox", "filterData", "filterData", "checked"});
 		filterControl.addChild("#", l10n("filterDataMessage"));
+		downloadForm.addChild("br");
+		downloadForm.addChild("input",
+		        new String[] { "type", "name", "value" },
+		        new String[] { "submit", "insert", l10n("download") });
 		return downloadBox;
 	}
 
