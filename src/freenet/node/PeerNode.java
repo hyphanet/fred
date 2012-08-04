@@ -1357,7 +1357,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 							timeLastDisconnect == now) {
 						PacketFormat oldPacketFormat = null;
 						synchronized(this) {
-							if(!isConnected) return;
+							if(isConnected) return;
 							// Reset the boot ID so that we get different trackers next time.
 							myBootID = node.fastWeakRandom.nextLong();
 							oldPacketFormat = packetFormat;
