@@ -19,7 +19,7 @@ public abstract class FCPMessage {
 	 */
 	public static final String BUILD = "Build";
 	public static final String CODE = "Code";
-	public static final String HTL = "HTL";
+	public static final String HTL = "HopsToLive";
 	public static final String IDENTIFIER = "Identifier";
 	public static final String LINK_LENGTHS = "LinkLengths";
 	public static final String LOCATION = "Location";
