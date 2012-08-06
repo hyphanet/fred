@@ -533,12 +533,14 @@ public class PeerManager {
 	public PeerNode getByPeer(Peer peer) {
 		PeerNode[] peerList = myPeers;
 		for(PeerNode pn : peerList) {
+			if(pn.isDisabled()) continue;
 			if(pn.matchesPeerAndPort(peer))
 				return pn;
 		}
 		// Try a match by IP address if we can't match exactly by IP:port.
 		FreenetInetAddress addr = peer.getFreenetAddress();
 		for(PeerNode pn : peerList) {
+			if(pn.isDisabled()) continue;
 			if(pn.matchesIP(addr, false))
 				return pn;
 		}
@@ -555,12 +557,14 @@ public class PeerManager {
 	public PeerNode getByPeer(Peer peer, FNPPacketMangler mangler) {
 		PeerNode[] peerList = myPeers;
 		for(PeerNode pn : peerList) {
+			if(pn.isDisabled()) continue;
 			if(pn.matchesPeerAndPort(peer) && pn.getOutgoingMangler() == mangler)
 				return pn;
 		}
 		// Try a match by IP address if we can't match exactly by IP:port.
 		FreenetInetAddress addr = peer.getFreenetAddress();
 		for(PeerNode pn : peerList) {
+			if(pn.isDisabled()) continue;
 			if(pn.matchesIP(addr, false) && pn.getOutgoingMangler() == mangler)
 				return pn;
 		}
