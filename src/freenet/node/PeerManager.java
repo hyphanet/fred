@@ -531,7 +531,7 @@ public class PeerManager {
 	 * non-isRealConnection()'s since they can also be connected.
 	 */
 	public PeerNode getByPeer(Peer peer) {
-		PeerNode[] peerList = myPeers;
+		PeerNode[] peerList = myPeers();
 		for(PeerNode pn : peerList) {
 			if(pn.isDisabled()) continue;
 			if(pn.matchesPeerAndPort(peer))
@@ -555,7 +555,7 @@ public class PeerManager {
 	 * @return
 	 */
 	public PeerNode getByPeer(Peer peer, FNPPacketMangler mangler) {
-		PeerNode[] peerList = myPeers;
+		PeerNode[] peerList = myPeers();
 		for(PeerNode pn : peerList) {
 			if(pn.isDisabled()) continue;
 			if(pn.matchesPeerAndPort(peer) && pn.getOutgoingMangler() == mangler)
