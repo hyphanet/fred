@@ -1,4 +1,4 @@
-/* rabbit-hole */
+﻿/* rabbit-hole */
 
 /* Basic CSS functions */
 @import url(/static/base.css);
@@ -9,6 +9,8 @@
 /* Base theme; commented out, since it is not really compatible. TODO: Get everything therein to here and integrate it. */
 /* First: Progress bars */
 /* @import url(/static/themes/clean/theme.css); */
+
+/* rabbit-hole overall settings */
 
 /* basic colors */
 body {

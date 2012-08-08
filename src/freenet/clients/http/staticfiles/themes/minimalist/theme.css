@@ -1,4 +1,4 @@
-/* minimalist */
+﻿/* minimalist */
 
 /* Basic CSS functions */
 @import url(/static/base.css);
@@ -15,6 +15,8 @@
 
 /* Default pictures won't render nice with this theme */
 @import url(/static/picturesnullifier.css);
+
+/* minimalist overall settings */
 
 /* *****************************************************************
  *                     minimalistic additions

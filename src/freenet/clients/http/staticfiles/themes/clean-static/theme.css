@@ -1,4 +1,4 @@
-/* clean-static */
+﻿/* clean-static */
 
 /* Basic CSS functions */
 @import url(/static/base.css);
@@ -8,6 +8,8 @@
 
 /* Base theme */
 @import url(/static/themes/clean/theme.css);
+
+/* clean-static overall settings */
 
 /* We want the submenus to be always visible */
 div#navbar ul li ul.subnavlist {

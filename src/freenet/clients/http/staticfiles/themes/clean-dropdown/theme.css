@@ -1,4 +1,4 @@
-/* clean-dropdown */
+﻿/* clean-dropdown */
 
 /* Basic CSS functions */
 @import url(/static/base.css);
@@ -8,6 +8,8 @@
 
 /* Base theme */
 @import url(/static/themes/clean/theme.css);
+
+/* clean-dropdown overall settings */
 
 div#content {
 	position: inherit;

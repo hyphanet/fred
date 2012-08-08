@@ -1,4 +1,4 @@
-/* grayandblue */
+﻿/* grayandblue */
 
 /* Basic CSS functions */
 @import url(/static/base.css);
@@ -9,9 +9,8 @@
 /* Status bar style & colors */
 @import url(/static/statusbar.css);
 
-/* [edward@rnahost.com] */
-
 /* grayandblue overall settings */
+/* [edward@rnahost.com] */
 
 p, span, div, td, th, li, h1, h2, h3, h4, h5 {
 	font-family: Verdana;
