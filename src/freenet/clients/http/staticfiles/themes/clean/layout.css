@@ -1,0 +1,455 @@
+﻿/* layout-clean */
+
+/* overall settings */
+
+p, span, div, td, th, li, h1, h2, h3, h4, h5 {
+	font-family: Arial;
+	font-weight: normal;
+	font-size: 11pt;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+th {
+	font-weight: bold;
+}
+
+th, td {
+	margin: 0;
+	padding: 5px;
+	border-width: 1px;
+	border-style: solid;
+}
+
+pre, textarea {
+	font-family: Courier;
+	font-weight: normal;
+	font-size: 8pt;
+}
+
+pre#reference {
+	overflow: auto;
+}
+
+table, pre {
+	margin: 0 0 5px 0;
+	padding: 0;
+}
+
+form {
+	margin: 0 0 5px 0;
+	padding: 0;
+}
+
+/* body and page header */
+
+body {
+	margin: 0 0 2em 0;
+	padding: 0;
+}
+
+#page {
+}
+
+/* page's topbar */
+
+#topbar {
+	margin: 0;
+	padding: 5px;
+	min-height: 50px;
+	background-image: url(logo.png);
+	background-repeat: no-repeat;
+	background-position: 30px 3px;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+#topbar h1 {
+	margin: 0;
+	padding: 7px 0 0 0;
+	text-align: center;
+	font-size: 20pt;
+}
+
+/* navigation */
+
+div#navbar {
+	border-width: 1px;
+	border-style: solid;
+	float: left;
+	width: 170px;
+	margin: 5px;
+	padding: 0;
+	margin-left: 0;
+	padding-bottom: 4em;
+	margin-top: 0;
+}
+
+div#navbar a {
+	text-decoration: none;
+	display: block;
+	padding: 1px;
+	padding-left: 5px;
+}
+
+div#navbar ul, div#navbar ul li ul {
+	list-style-type: none;
+	padding: 0;
+	margin: 0;
+}
+
+div#navbar ul li ul {
+	margin-left: 20px;
+	padding-bottom: 10px;
+	padding-top: 1px;
+}
+
+div#navbar ul li {
+	padding-top: 5px;
+}
+div#navbar ul li ul li:first-child {
+	padding-top: 0;
+}
+
+div#navbar ul#navlist li.navlist-selected ul li a, div#navbar ul#navlist li ul li a {
+	font-size: 0.9em;
+}
+
+/* alerts */
+
+/* infoboxes */
+
+div.infobox {
+	margin: 0 0 5px 0;
+	padding: 10px;
+	border-width: 1px;
+	border-style: solid;
+}
+
+div.infobox div.infobox-header {
+	margin: -10px -10px 10px -10px;
+	padding: 10px 35px 10px 10px;
+	border-bottom-width: 1px;
+	border-bottom-style: dotted;
+	font-weight: bold;
+	font-size: 11pt;
+	background-repeat: no-repeat;
+	background-position: right;
+}
+
+div.infobox-information div.infobox-header {
+	background-image: url(information.gif);
+}
+
+div.infobox-warning div.infobox-header {
+	background-image: url(warning.gif);
+}
+
+div.infobox-alert div.infobox-header {
+	background-image: url(alert.gif);
+}
+
+div.infobox-error div.infobox-header {
+	background-image: url(error.gif);
+}
+
+div.infobox-query div.infobox-header {
+	background-image: url(query.gif);
+}
+
+div.infobox-success div.infobox-header {
+	background-image: url(success.gif);
+}
+
+ul.alert-summary {
+	list-style-type: none;
+	text-indent: 20px;
+}
+
+li.alert-summary-text-error {
+	background: url(error-16.gif) left center no-repeat;
+}
+
+li.alert-summary-text-alert {
+	background: url(alert-16.gif) left center no-repeat;
+}
+
+li.alert-summary-text-warning {
+	background: url(warning-16.gif) left center no-repeat;
+}
+
+li.alert-summary-text-minor {
+	background: url(information-16.gif) left center no-repeat;
+}
+
+/* content */
+
+#content {
+	margin: 5px 5px 5px 0;
+	padding: 0 0 2em 0;
+	position: absolute;
+	left: 177px;
+	right: 0px;
+}
+
+.interfacelink {
+	text-decoration: underline;
+}
+
+#activity {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+/* plugins page */
+
+table.plugins th, table.plugins td {
+	font-size: 8pt;
+}
+
+table.plugins span {
+	font-weight: bold;
+	font-size: 8pt;
+}
+
+table.plugins form {
+	display: inline;
+}
+
+/* configuration page */
+
+td.config_navigation {
+	border-style: none;
+}
+
+ul.config {
+	margin: 0 0 5px 0;
+	padding: 0;
+	border-top-width: 1px;
+	border-top-style: solid;
+	border-right-width: 1px;
+	border-top-style: solid;
+	border-left-width: 1px;
+	border-top-style: solid;
+}
+
+ul.config li {
+	margin: 0;
+	padding: 15px 10px 15px 10px;
+	list-style: none;
+	text-align: left;
+	border-bottom-width: 1px
+	border-bottom-style: solid;
+}
+
+ul.config{
+	margin: 0;
+	padding: 10px 35px 10px 10px;
+	display: block;
+	border-bottom-width: 1px;
+	border-bottom-style: dotted;
+	font-weight: bold;
+	font-size: 16pt;
+}
+
+div.configprefix {
+	font-weight: bold;
+	font-size: 16pt;
+	font-variant: small-caps;
+}
+
+ul.config span.configshortdesc {
+	text-align: left;
+	font-weight: bold;
+	float: left;
+	width: 30%;
+}
+
+ul.config span.configlongdesc {
+	display: block;
+	text-align: left;
+	padding-top: 15px;
+}
+
+ul.config input[type=text] {
+	width: 70%;
+}
+
+/* darknet page */
+
+table.darknet_connections th, table.darknet_connections td {
+	font-size: 8pt;
+}
+
+table.column td {
+	vertical-align: top;
+}
+
+table.darknet_connections span, table.column span {
+	font-weight: bold;
+	font-size: 8pt;
+}
+
+table.column span {
+	text-transform: uppercase;
+}
+
+div.infobox-content ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+tr.messagetypes {
+	text-align: center;
+}
+
+table.sentmessagetypes {
+	display: inline;
+}
+
+table.receivedmessagetypes {
+	display: inline;
+}
+
+table.sentmessagetypes th, table.sentmessagetypes td, table.receivedmessagetypes th, table.receivedmessagetypes td {
+	font-size: 7pt;
+}
+
+/* statistics page */
+
+div.peercircle {
+  margin: 0 auto;
+}
+
+div.peercircle span.me {
+  font-weight: bold;
+}
+
+div.peercircle span.connected {
+  font-weight: bold;
+}
+
+div.peercircle span.backed_off {
+  font-weight: bold;
+}
+
+div.peercircle span.disconnected {
+  font-weight: bold;
+}
+
+div.histogramLabel {
+  margin-left: 3px;
+  margin-right: 3px;
+  font-size: 60%;
+}
+
+/* queue page */
+
+table.queue th, table.queue td {
+	font-size: 8pt;
+}
+
+div.queue_tabletitle {
+	margin: 0;
+	padding: 10px 0 10px 0;
+	font-size: 10pt;
+}
+
+table.queue span {
+	font-size: 8pt;
+}
+
+.progressbar {
+	position: relative;
+	height: 18px;
+	width: 130px;
+	border-width: 1px;
+	border-style: solid;
+}
+
+.progressbar-done {
+	float: left;
+	height: 18px;
+}
+
+.progressbar-min {
+	float: left;
+	height: 18px;
+}
+
+.progressbar-failed {
+	float: left;
+	height: 18px;
+}
+
+.progressbar-failed2 {
+	float: left;
+	height: 18px;
+}
+
+.progress_fraction_finalized {
+	position: absolute;
+	left: 5px;
+	font-weight: bold;
+}
+
+.progress_fraction_not_finalized {
+	position: absolute;
+	left: 5px;
+	font-style: italic;
+}
+
+div.n2ntm-message-text {
+	margin: 10px;
+	padding: 10px;
+}
+
+/* translation */
+
+/* statusbar */
+
+div#statusbar-container {
+	margin-left: 0;
+	margin-right: 0;
+	margin-top: 5px;
+	margin-bottom: 0px;
+	padding: 3px 3px 0px 3px;
+	border-top-width: 1px;
+	border-top-style: solid;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+	position:fixed;
+	bottom:0;
+	left:0;
+	right:0;
+	z-index:18;
+}
+
+div#statusbar {
+	margin: auto;
+	text-align: center;
+}
+
+div#statusbar div {
+	display: inline;
+}
+
+div#statusbar div.progressbar {
+	display: inline-block;
+	margin-bottom: -3px;
+}
+
+div#statusbar div.separator {
+	display: inline-block;
+	width: 1px;
+	margin-left: 9px;
+	margin-right: 9px;
+}
+
+div#statusbar div.infobox-header {
+	display: none;
+}

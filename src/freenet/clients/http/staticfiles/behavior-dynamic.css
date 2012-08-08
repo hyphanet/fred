@@ -1,0 +1,21 @@
+﻿/*benavior-dynamic */
+
+/* Basic CSS functions */
+@import url(/static/common_includes.css);
+
+div#selected-subnavbar {
+	display: none;
+}
+
+div#navbar ul li ul.subnavlist {
+	display: none;
+}
+
+div#navbar ul:hover + li ul.subnavlist {
+	display: block;
+}
+
+div#navbar ul#navlist li:hover ul.subnavlist {
+	display: block;
+}
+
