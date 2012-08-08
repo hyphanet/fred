@@ -536,6 +536,7 @@ public class PeerManager {
 	public PeerNode getByAddress(PluginAddress peerAddress, TransportPlugin transportPlugin) {
 		PeerNode[] peerList = myPeers;
 		for(PeerNode peer : peerList) {
+			if(peer.isDisabled()) continue;
 			if( peer.matchesPluginAddress(peerAddress, transportPlugin) ) 
 				return peer;
 		}
@@ -543,6 +544,7 @@ public class PeerManager {
 		try {
 			FreenetInetAddress addr = peerAddress.getFreenetAddress();
 			for(PeerNode peer : peerList) {
+				if(peer.isDisabled()) continue;
 				if(peer.matchesIP(addr, false, transportPlugin))
 					return peer;
 			}
@@ -563,6 +565,7 @@ public class PeerManager {
 	public PeerNode getByAddress(PluginAddress peerAddress, OutgoingPacketMangler mangler) {
 		PeerNode[] peerList = myPeers;
 		for(PeerNode peer : peerList) {
+			if(peer.isDisabled()) continue;
 			if( (peer.matchesPluginAddress(peerAddress, mangler.getTransport())) 
 				&& (peer.getOutgoingMangler(mangler.getTransport()) == mangler) )
 				return peer;
@@ -571,6 +574,7 @@ public class PeerManager {
 		try {
 			FreenetInetAddress addr = peerAddress.getFreenetAddress();
 			for(PeerNode peer : peerList) {
+				if(peer.isDisabled()) continue;
 				if(peer.matchesIP(addr, false, mangler.getTransport()) && peer.getOutgoingMangler(mangler.getTransport()) == mangler)
 					return peer;
 			}
@@ -590,6 +594,7 @@ public class PeerManager {
 	public PeerNode getByAddress(PluginAddress peerAddress, OutgoingStreamMangler mangler) {
 		PeerNode[] peerList = myPeers;
 		for(PeerNode peer : peerList) {
+			if(peer.isDisabled()) continue;
 			if( (peer.matchesPluginAddress(peerAddress, mangler.getTransport())) 
 				&& (peer.getOutgoingMangler(mangler.getTransport()) == mangler) )
 				return peer;
@@ -598,6 +603,7 @@ public class PeerManager {
 		try {
 			FreenetInetAddress addr = peerAddress.getFreenetAddress();
 			for(PeerNode peer : peerList) {
+				if(peer.isDisabled()) continue;
 				if(peer.matchesIP(addr, false, mangler.getTransport()) && peer.getOutgoingMangler(mangler.getTransport()) == mangler)
 					return peer;
 			}
@@ -744,7 +750,7 @@ public class PeerManager {
                                     			}
                                     		}
                                     	}
-                                    	pn.disconnected(true, true);
+                                    	pn.disconnectPeer(true, true);
                                     }
                                 }
                             }, timeout);
