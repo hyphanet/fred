@@ -1,13 +1,7 @@
-/* clean */
+﻿/* clean */
 
 /* Basic CSS functions */
-@import url(/static/base.css);
-
-/* Bookmarks & bookmark editor */
-@import url(/static/bookmark.css);
-
-/* Status bar style & colors */
-@import url(/static/statusbar.css);
+@import url(/static/common_includes.css);
 
 /* clean overall settings */
 
