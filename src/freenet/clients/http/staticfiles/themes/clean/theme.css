@@ -3,7 +3,10 @@
 /* Basic CSS functions */
 @import url(/static/common_includes.css);
 
-/* clean overall settings */
+/* color scheme */
+@import url(/static/themes/clean/color.css);
+
+/* overall settings */
 
 p, span, div, td, th, li, h1, h2, h3, h4, h5 {
 	font-family: Arial;
@@ -17,13 +20,13 @@ table {
 
 th {
 	font-weight: bold;
-	background-color: #e8e8e8;
 }
 
 th, td {
 	margin: 0;
 	padding: 5px;
-	border: 1px solid #d0d0d0;
+	border-width: 1px;
+	border-style: solid;
 }
 
 pre, textarea {
@@ -51,7 +54,6 @@ form {
 body {
 	margin: 0 0 2em 0;
 	padding: 0;
-	background-color: #f0f0f0;
 }
 
 #page {
@@ -63,11 +65,11 @@ body {
 	margin: 0;
 	padding: 5px;
 	min-height: 50px;
-	background-color: #e8e8e8;
 	background-image: url(logo.png);
 	background-repeat: no-repeat;
 	background-position: 30px 3px;
-	border-bottom: 1px solid #d0d0d0;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
 }
 
 #topbar h1 {
@@ -80,8 +82,8 @@ body {
 /* navigation */
 
 div#navbar {
-	background-color: #e8e8e8;
-	border: 1px solid #d0d0d0;
+	border-width: 1px;
+	border-style: solid;
 	float: left;
 	width: 170px;
 	margin: 5px;
@@ -96,10 +98,6 @@ div#navbar a {
 	display: block;
 	padding: 1px;
 	padding-left: 5px;
-}
-
-div#navbar a:hover {
-	color: red;
 }
 
 div#navbar ul, div#navbar ul li ul {
@@ -133,104 +131,57 @@ div#navbar ul:hover + li ul.subnavlist {
 	display: block;
 }
 
-div#navbar ul#navlist li.navlist-selected ul.subnavlist-selected li.submenuitem-selected a {
-	color: blue;
-}
-
-div#navbar ul#navlist li.navlist-selected a {
-	color: blue;	
-	background-color: #ddd;
-}
-
 div#navbar ul#navlist li.navlist-selected ul li a, div#navbar ul#navlist li ul li a {
-	background-color: inherit;
-	color: #666;
 	font-size: 0.9em;
 }
 
 div#navbar ul#navlist li:hover ul.subnavlist {
 	display: block;
-	color: gray;
-}
-
-div#navbar a:hover, div#navbar ul#navlist li.navlist-selected ul.subnavlist-selected li.submenuitem-selected a {
-	background-color: #e0e0e0;
-}
-
-div#navbar ul#navlist li ul li a:hover, div#navbar ul#navlist li.navlist-selected ul.subnavlist-selected li a:hover {
-	color: #111;
-	background-color: #e0e0e0;
 }
 
 /* alerts */
-
-.alert-error {
-	color: darkred;
-}
-
-.alert-warning {
-	color: blue;
-}
-
-.alert-minor {
-	color: green;
-}
 
 /* infoboxes */
 
 div.infobox {
 	margin: 0 0 5px 0;
 	padding: 10px;
-	background-color: #f0f0f0;
-	border: 1px solid #d0d0d0;
+	border-width: 1px;
+	border-style: solid;
 }
 
 div.infobox div.infobox-header {
 	margin: -10px -10px 10px -10px;
 	padding: 10px 35px 10px 10px;
-	border-bottom: 1px dotted #a0a0a0;
+	border-bottom-width: 1px;
+	border-bottom-style: dotted;
 	font-weight: bold;
 	font-size: 11pt;
-	background-color: #e8e8e8;
 	background-repeat: no-repeat;
 	background-position: right;
 }
 
 div.infobox-information div.infobox-header {
-	background-color: #e8e8f0;
 	background-image: url(information.gif);
 }
 
 div.infobox-warning div.infobox-header {
-	background-color: #f8f8c0;
 	background-image: url(warning.gif);
 }
 
-div.infobox-alert {
-	background-color: #f0e8e8;
-}
-
 div.infobox-alert div.infobox-header {
-	background-color: #ffd0d0;
 	background-image: url(alert.gif);
 }
 
-div.infobox-error {
-	background-color: #f0e8e8;
-}
-
 div.infobox-error div.infobox-header {
-	background-color: #ffd0d0;
 	background-image: url(error.gif);
 }
 
 div.infobox-query div.infobox-header {
-	background-color: #f0f0e8;
 	background-image: url(query.gif);
 }
 
 div.infobox-success div.infobox-header {
-	background-color: #e8f0e8;
 	background-image: url(success.gif);
 }
 
@@ -265,16 +216,7 @@ li.alert-summary-text-minor {
 	right: 0px;
 }
 
-a {
-	color: #000000;
-}
-
-a:hover {
-	color: #ff0000;
-}
-
 .interfacelink {
-	color: #000000;
 	text-decoration: underline;
 }
 
@@ -308,9 +250,12 @@ td.config_navigation {
 ul.config {
 	margin: 0 0 5px 0;
 	padding: 0;
-	border-top: 1px solid #d0d0d0;
-	border-right: 1px solid #d0d0d0;
-	border-left: 1px solid #d0d0d0;
+	border-top-width: 1px;
+	border-top-style: solid;
+	border-right-width: 1px;
+	border-top-style: solid;
+	border-left-width: 1px;
+	border-top-style: solid;
 }
 
 ul.config li {
@@ -318,17 +263,18 @@ ul.config li {
 	padding: 15px 10px 15px 10px;
 	list-style: none;
 	text-align: left;
-	border-bottom: 1px solid #d0d0d0;
+	border-bottom-width: 1px
+	border-bottom-style: solid;
 }
 
 ul.config{
 	margin: 0;
 	padding: 10px 35px 10px 10px;
 	display: block;
-	border-bottom: 1px dotted #a0a0a0;
+	border-bottom-width: 1px;
+	border-bottom-style: dotted;
 	font-weight: bold;
 	font-size: 16pt;
-	background-color: #e8e8e8;
 }
 
 div.configprefix {
@@ -379,64 +325,8 @@ div.infobox-content ul {
 	list-style: none;
 }
 
-span.peer_connected {
-	color: #008000;
-}
-
-span.peer_backed_off {
-	color: #ff8c00;
-}
-
-span.peer_too_new {
-	color: #ff0000;
-}
-
-span.peer_too_old {
-	color: #d0a0d0;
-}
-
-span.peer_disconnected {
-	color: #d0d0d0;
-}
-
-span.peer_routing_disabled {
-        color: #7b68ee;
-}
-
-span.peer_never_connected {
-	color: #a0a0a0;
-}
-
-span.peer_disabled {
-	color: #a0a0a0;
-}
-
-span.peer_bursting {
-	color: #a0a0a0;
-}
-
-span.peer_listening {
-	color: #a0a0a0;
-}
-
-span.peer_listen_only {
-	color: #a0a0a0;
-}
-
-span.peer_version_problem {
-	color: #d07070;
-}
-
-span.peer_idle_old {
-	color: #d07070;
-}
-
 tr.messagetypes {
 	text-align: center;
-}
-
-tr.darknet_connections_warning {
-	background-color: #ffff00;
 }
 
 table.sentmessagetypes {
@@ -457,27 +347,19 @@ div.peercircle {
   margin: 0 auto;
 }
 
-div.peercircle span.mark {
-  color: #d0d0d0;
-}
-
 div.peercircle span.me {
-  color: #0080ff;
   font-weight: bold;
 }
 
 div.peercircle span.connected {
-  color: #008000;
   font-weight: bold;
 }
 
 div.peercircle span.backed_off {
-  color: #008000;
   font-weight: bold;
 }
 
 div.peercircle span.disconnected {
-  color: #d0d0d0;
   font-weight: bold;
 }
 
@@ -485,14 +367,6 @@ div.histogramLabel {
   margin-left: 3px;
   margin-right: 3px;
   font-size: 60%;
-}
-
-div.histogramConnected {
-  background-color: #008000;
-}
-
-div.histogramDisconnected {
-  background-color: #d0d0d0;
 }
 
 /* queue page */
@@ -511,96 +385,32 @@ table.queue span {
 	font-size: 8pt;
 }
 
-table.queue span.failure_reason_unknown {
-	color: #d0d0d0;
-}
-
-table.queue span.failure_reason_is {
-}
-
-table.queue span.progress_fraction_unknown {
-	color: #d0d0d0;
-}
-
-table.queue span.number_of_files {
-}
-
-table.queue span.filename_direct {
-	color: #d0d0d0;
-}
-
-table.queue span.filename_none {
-	color: #d0d0d0;
-}
-
-table.queue span.filename_is {
-}
-
-table.queue span.identifier_with_uri {
-}
-
-table.queue span.persistence_none {
-}
-
-table.queue span.persistence_reboot {
-	color: #0000ff;
-}
-
-table.queue span.persistence_forever {
-	color: #00b000;
-}
-
-table.queue span.mimetype_unknown {
-	color: #d0d0d0;
-}
-
-table.queue span.mimetype_is {
-}
-
-table.queue span.filesize_unknown {
-	color: #d0d0d0;
-}
-
-table.queue span.filesize_is {
-}
-
-table.queue span.key_unknown {
-	color: #d0d0d0;
-}
-
-table.queue span.key_is {
-}
-
 .progressbar {
 	position: relative;
 	height: 18px;
 	width: 130px;
-	border: solid 1px #444444;
-	background-color: #e8e8e8;
+	border-width: 1px;
+	border-style: solid;
 }
 
 .progressbar-done {
 	float: left;
 	height: 18px;
-	background-color: #44cc44;
 }
 
 .progressbar-min {
 	float: left;
 	height: 18px;
-	background-color: #cce8cc;
 }
 
 .progressbar-failed {
 	float: left;
 	height: 18px;
-	background-color: #ffcccc;
 }
 
 .progressbar-failed2 {
 	float: left;
 	height: 18px;
-	background-color: #ff4444;
 }
 
 .progress_fraction_finalized {
@@ -615,68 +425,12 @@ table.queue span.key_is {
 	font-style: italic;
 }
 
-tr.priority0, td.priority0 {
-/*	background-color: #eb613d;*/
-	background-color: #ffb7b7;
-}
-
-tr.priority1, td.priority1 {
-/*	background-color: #007ee0;*/
-	background-color: #ffcea7;
-}
-
-tr.priority2, td.priority2 {
-/*	background-color: #00e0ce;*/
-	background-color: #ffeba7;
-}
-
-tr.priority3, td.priority3 {
-/*	background-color: #00e094;*/
-	background-color: #ddffa7;
-}
-
-tr.priority4, td.priority4 {
-/*	background-color: #00e069;*/
-	background-color: #a7ffbc;
-}
-
-tr.priority5, td.priority5 {
-/*	background-color: #00e010;*/
-	background-color: #a7fff8;
-}
-
-tr.priority6, td.priority6 {
-/*	background-color: grey;*/
-	background-color: #a7caff;
-}
-
 div.n2ntm-message-text {
 	margin: 10px;
 	padding: 10px;
-	background-color: #ffffff;
-}
-
-td.n2ntm-send-sent {
-	background-color: #a7ffbc;
-}
-
-td.n2ntm-send-delayed {
-	background-color: #ffeba7;
-}
-
-td.n2ntm-send-queued {
-	background-color: #ffa7a7;
-}
-
-td.n2ntm-send-failed {
-	background-color: #ffb7b7;
 }
 
 /* translation */
-
-.translate_d {
-	background-color: #f0fef0;
-}
 
 /* statusbar */
 
@@ -685,11 +439,11 @@ div#statusbar-container {
 	margin-right: 0;
 	margin-top: 5px;
 	margin-bottom: 0px;
-	border-bottom: 1px solid #d0d0d0;
 	padding: 3px 3px 0px 3px;
-	background-color: #d8d8d8;
-	border-top: 1px solid #d0d0d0;
-	border-bottom: 1px solid #d0d0d0;
+	border-top-width: 1px;
+	border-top-style: solid;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
 	position:fixed;
 	bottom:0;
 	left:0;
@@ -713,7 +467,6 @@ div#statusbar div.progressbar {
 
 div#statusbar div.separator {
 	display: inline-block;
-	background-color: #d0d0d0;
 	width: 1px;
 	margin-left: 9px;
 	margin-right: 9px;
