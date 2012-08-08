@@ -186,8 +186,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 		realTimeFlag = fs.getBoolean("RealTimeFlag", false);
 		String manifestPutter = fs.get("ManifestPutter");
 		short manifestType;
-		if(persistenceType == ClientRequest.PERSIST_FOREVER
-				|| overrideSplitfileCryptoKey != null)
+		if(persistenceType == ClientRequest.PERSIST_FOREVER)
 			// Unfortunately default isn't known to work with persistent inserts yet.
 			// It might work but is probably leaky and buggy. 
 			// FIXME Make default work with persistent site inserts then change this.
@@ -199,8 +198,6 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 			manifestType = ManifestPutter.MANIFEST_SIMPLEPUTTER;
 		} else if("default".equalsIgnoreCase(manifestPutter)) {
 			manifestType = ManifestPutter.MANIFEST_DEFAULTPUTTER;
-			if(overrideSplitfileCryptoKey != null)
-				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "OverrideSplitfileCryptoKey can only be used with the simple ManifestPutter", identifier, global);
 		} else if(manifestPutter != null) {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid ManifestPutter value: "+manifestPutter, identifier, global);
 		}

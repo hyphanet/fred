@@ -1263,7 +1263,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		});
 
-		nodeConfig.register("defragDatabaseOnStartup", true, sortOrder++, false, true, "Node.defragDatabaseOnStartup", "Node.defragDatabaseOnStartupLong", new BooleanCallback() {
+		nodeConfig.register("defragDatabaseOnStartup", false, sortOrder++, false, true, "Node.defragDatabaseOnStartup", "Node.defragDatabaseOnStartupLong", new BooleanCallback() {
 
 			@Override
 			public Boolean get() {

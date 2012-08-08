@@ -2757,7 +2757,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 		} catch (StillNotAckedException e) {
 			Logger.error(this, "Forcing disconnect on "+tracker.pn+" for "+tracker+" because packets not acked after 10 minutes!");
-			tracker.pn.forceDisconnect(true);
+			tracker.pn.forceDisconnect();
 			disconnectedStillNotAcked(tracker);
 			throw new NotConnectedException();
 		}

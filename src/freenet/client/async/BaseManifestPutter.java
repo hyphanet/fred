@@ -1030,7 +1030,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 	public BaseManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName,
-			InsertContext ctx, boolean getCHKOnly2, RequestClient clientContext, boolean earlyEncode, boolean randomiseCryptoKeys, ClientContext context) {
+			InsertContext ctx, boolean getCHKOnly2, RequestClient clientContext, boolean earlyEncode, boolean randomiseCryptoKeys, byte [] forceCryptoKey, ClientContext context) {
 		super(prioClass, clientContext);
 		if(client.persistent())
 			this.targetURI = target.clone();
@@ -1040,12 +1040,11 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		this.ctx = ctx;
 		this.getCHKOnly = getCHKOnly2;
 		this.earlyEncode = earlyEncode;
-		if(randomiseCryptoKeys) {
+		if(randomiseCryptoKeys && forceCryptoKey == null) {
 			forceCryptoKey = new byte[32];
 			context.random.nextBytes(forceCryptoKey);
-		} else {
-			forceCryptoKey = null;
 		}
+		this.forceCryptoKey = forceCryptoKey;
 		this.cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
 		runningPutHandlers = new HashSet<PutHandler>();
 		putHandlersWaitingForMetadata = new HashSet<PutHandler>();
@@ -1214,6 +1213,11 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	@Override
 	public synchronized boolean isFinished() {
 		return finished || cancelled;
+	}
+	
+	@Override
+	public byte[] getSplitfileCryptoKey() {
+		return forceCryptoKey;
 	}
 
 	private final DBJob runGotAllMetadata = new DBJob() {

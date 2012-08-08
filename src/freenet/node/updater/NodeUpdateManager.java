@@ -522,7 +522,8 @@ public class NodeUpdateManager {
 				return;
 			}
 		}
-		minVer = Math.max(minVer, info.getPluginLongVersion());
+		if(info != null)
+			minVer = Math.max(minVer, info.getPluginLongVersion());
 		FreenetURI uri = updateURI.setDocName(name).setSuggestedEdition(minVer);
 		PluginJarUpdater updater = new PluginJarUpdater(this, uri, (int) minVer, -1, Integer.MAX_VALUE, name+"-", name, node.pluginManager, autoDeployPluginsOnRestart);
 		synchronized(this) {

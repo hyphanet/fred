@@ -75,7 +75,7 @@ public class SimpleFieldSet {
      */
     public SimpleFieldSet(BufferedReader br, boolean allowMultiple, boolean shortLived) throws IOException {
         this(shortLived);
-        read(br, allowMultiple);
+        read(Readers.fromBufferedReader(br), allowMultiple);
     }
 
     public SimpleFieldSet(SimpleFieldSet sfs){
@@ -107,16 +107,35 @@ public class SimpleFieldSet {
     	this(shortLived);
         StringReader sr = new StringReader(content);
         BufferedReader br = new BufferedReader(sr);
-	    read(br, allowMultiple);
+	    read(Readers.fromBufferedReader(br), allowMultiple);
     }
-
+    
+    /**
+     * Construct from a {@link String} array.
+     * <p>
+     * Similar to {@link #SimpleFieldSet(String, boolean, boolean)},
+     * but each item of array represents a single line
+     * </p>
+     * @param content to be parsed 
+     * @param allowMultiple If {@code true}, multiple lines with the same field name will be
+     * combined; if {@code false}, the constructor will throw.
+     * @param shortLived If {@code false}, strings will be interned to ensure that they use as
+     * little memory as possible. Only set to {@code true} if the SFS will be short-lived or
+     * small.
+     * @throws IOException
+     */
+    public SimpleFieldSet(String[] content, boolean allowMultiple, boolean shortLived) throws IOException {
+    	this(shortLived);
+    	read(Readers.fromStringArray(content), allowMultiple);
+    }
+    
     /**
      * @see #read(LineReader, int, int, boolean, boolean)
      */
-	private void read(BufferedReader br, boolean allowMultiple) throws IOException {
-		read(Readers.LineReaderFrom(br), Integer.MAX_VALUE, 0x100, true, allowMultiple);
+	private void read(LineReader lr, boolean allowMultiple) throws IOException {
+		read(lr, Integer.MAX_VALUE, 0x100, true, allowMultiple);
 	}
-
+	
 	/**
 	 * Read from stream. Format:
 	 *

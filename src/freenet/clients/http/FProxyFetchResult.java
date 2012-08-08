@@ -4,7 +4,11 @@ import freenet.client.FetchException;
 import freenet.support.api.Bucket;
 
 /** The result of fproxy waiting for a fetch: It can either be the final data, or it
- * can be the progress of the fetch so far.
+ * can be the progress of the fetch so far. This is a snapshot, so should be
+ * consistent but could be out of date: if the snapshot says it is in progress,
+ * it might actually be finished. Note that close() must be called when fproxy
+ * has finished with the data (and is the only method that actually calls back 
+ * to the freenet.clients.http.FProxyFetchInProgress ).
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  */
 public class FProxyFetchResult {
@@ -46,9 +50,13 @@ public class FProxyFetchResult {
 	final boolean hasWaited;
 
 	public final long eta;
+	
+	/** At the time of creating the snapshot, has it finished? */
+	private final boolean finished;
 
 	/** Constructor when we are returning the data */
 	FProxyFetchResult(FProxyFetchInProgress parent, Bucket data, String mimeType, long timeStarted, boolean goneToNetwork, long eta, boolean hasWaited) {
+		assert(data != null);
 		this.data = data;
 		this.mimeType = mimeType;
 		this.size = data.size();
@@ -60,6 +68,7 @@ public class FProxyFetchResult {
 		this.progress = parent;
 		this.eta = eta;
 		this.hasWaited = hasWaited;
+		finished = true;
 	}
 
 	/** Constructor when we are not returning the data, because it is still running or it failed */
@@ -79,6 +88,7 @@ public class FProxyFetchResult {
 		this.progress = parent;
 		this.eta = eta;
 		this.hasWaited = hasWaited;
+		finished = (failed != null);
 	}
 	
 	/** Must be called when fproxy has finished with the data */
@@ -89,13 +99,17 @@ public class FProxyFetchResult {
 	public boolean hasData() {
 		return data != null;
 	}
+	
+	public Bucket getData() {
+		return data;
+	}
 
 	public boolean hasWaited() {
 		return hasWaited;
 	}
 	
 	public boolean isFinished(){
-		return progress.finished();
+		return finished;
 	}
 
 	public void setFetchCount(int fetched) {

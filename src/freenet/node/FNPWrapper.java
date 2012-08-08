@@ -79,7 +79,7 @@ public class FNPWrapper implements PacketFormat {
 					Logger.error(this, "Caught " + e + " - disconnecting", e);
 					// PSE is fairly drastic, something is broken between us, but maybe we can
 					// resync
-					pn.forceDisconnect(false);
+					pn.forceDisconnect();
 					return false;
 				} catch (WouldBlockException e) {
 					Logger.error(this, "Impossible: " + e, e);
