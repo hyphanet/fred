@@ -546,7 +546,7 @@ outer:
 		now = System.currentTimeMillis();
 		peerTransport.sentPacket();
 		peerTransport.reportOutgoingPacket(data, 0, data.length, now);
-		if(pn.shouldThrottle()) {
+		if(peerTransport.shouldThrottle()) {
 			pn.sentThrottledBytes(data.length);
 		}
 		if(packet.getFragments().size() == 0) {
