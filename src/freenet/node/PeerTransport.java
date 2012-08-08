@@ -173,6 +173,29 @@ public abstract class PeerTransport {
 		lastAttemptedHandshakeTransportAddressUpdateTime = 0;
 	}
 	
+	public abstract void verified(SessionKey tracker);
+	
+	public abstract void maybeRekey();
+	
+	public abstract boolean disconnectTransport(boolean dumpTrackers);
+	
+	public synchronized long lastReceivedTransportAckTime() {
+		return timeLastReceivedTransportAck;
+	}
+	
+	public synchronized long timeLastConnectedTransport() {
+		return timeLastConnectedTransport;
+	}
+	
+	public synchronized long timeLastTransportConnectionCompleted() {
+		return transportConnectedTime;
+	}
+	
+	public synchronized void receivedAck(long now) {
+		if(timeLastReceivedTransportAck < now)
+			timeLastReceivedTransportAck = now;
+	}
+	
 	protected void sendTransportAddressMessage() {
 		try {
 			pn.sendAsync(getIPAddressMessage(), null, pn.node.nodeStats.changedIPCtr);
@@ -248,10 +271,6 @@ public abstract class PeerTransport {
 		}
 	}
 	
-	public boolean getFetchARKFlag() {
-		return fetchARKFlag;
-	}
-
 	private synchronized boolean calcNextHandshakeBurstOnly(long now) {
 		boolean fetchARKFlag = false;
 		listeningTransportHandshakeBurstCount++;
@@ -695,6 +714,10 @@ public abstract class PeerTransport {
 		this.jfkBuffer = bufferJFK;
 	}
 	
+	public boolean getFetchARKFlag() {
+		return fetchARKFlag;
+	}
+	
 	/**
 	* @return The current primary SessionKey, or null if we
 	* don't have one.
@@ -726,23 +749,6 @@ public abstract class PeerTransport {
 		}
 	}
 	
-	public synchronized long lastReceivedTransportAckTime() {
-		return timeLastReceivedTransportAck;
-	}
-	
-	public synchronized long timeLastConnectedTransport() {
-		return timeLastConnectedTransport;
-	}
-	
-	public synchronized long timeLastTransportConnectionCompleted() {
-		return transportConnectedTime;
-	}
-	
-	public synchronized void receivedAck(long now) {
-		if(timeLastReceivedTransportAck < now)
-			timeLastReceivedTransportAck = now;
-	}
-	
 	public boolean isTransportBursting() {
 		return isTransportBursting;
 	}
@@ -751,10 +757,12 @@ public abstract class PeerTransport {
 		return outgoingMangler.alwaysAllowLocalAddresses();
 	}
 	
-	public abstract void verified(SessionKey tracker);
+	public void sendHandshake(boolean notRegistered){
+		outgoingMangler.sendHandshake(pn, notRegistered);
+	}
 	
-	public abstract void maybeRekey();
-	
-	public abstract boolean disconnectTransport(boolean dumpMessageQueue, boolean dumpTrackers);
+	public String userToString() {
+		return "" + detectedTransportAddress;
+	}
 	
 }

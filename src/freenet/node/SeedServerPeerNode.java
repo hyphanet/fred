@@ -123,12 +123,13 @@ public class SeedServerPeerNode extends PeerNode {
 	}
 
 	@Override
-	public boolean disconnected(boolean dumpMessageQueue, boolean dumpTrackers) {
-		boolean ret = super.disconnected(dumpMessageQueue, dumpTrackers);
+	public boolean disconnectPeer(boolean dumpMessageQueue, boolean dumpTrackers) {
+		boolean ret = super.disconnectPeer(dumpMessageQueue, dumpTrackers);
 		node.peers.disconnectAndRemove(this, false, false, false);
 		return ret;
 	}
 
+	
 	@Override
 	protected boolean generateIdentityFromPubkey() {
 		return false;

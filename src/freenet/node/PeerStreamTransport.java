@@ -69,7 +69,7 @@ public class PeerStreamTransport extends PeerTransport {
 	}
 
 	@Override
-	public boolean disconnectTransport(boolean dumpMessageQueue, boolean dumpTrackers) {
+	public boolean disconnectTransport(boolean dumpTrackers) {
 		return false;
 	}
 	

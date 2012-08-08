@@ -361,7 +361,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	final WeakReference<PeerNode> myRef;
 	/** The node is being disconnected, but it may take a while. */
 	public boolean disconnecting;
-	/** When did we last disconnect? Not Disconnected because a discrete event */
+	/** 
+	 * When did we last disconnect? Not Disconnected because a discrete event
+	 * This might now be more useful as when did we call the disconnectPeer method,
+	 * since we have multiple transports.
+	 * FIXME Check if sub classes of PeerNode are using it correctly
+	 */
 	long timeLastDisconnect;
 	/** Previous time of disconnection */
 	long timePrevDisconnect;
@@ -1066,18 +1071,16 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return System.currentTimeMillis() - timeAddedOrRestarted;
 	}
 	
-	public void maybeDisconnectPeerNode() {
+	public void maybeDisconnectPeer() {
 		
 	}
 	
 	/**
-	* Disconnected e.g. due to not receiving a packet for ages.
-	* 
-	* @param dumpMessageQueue If true, clear the messages-to-send queue.
-	* @param dumpTrackers If true, dump the SessionKey's.
-	* @return True if the node was connected, false if it was not.
-	*/
-	public boolean disconnected(boolean dumpMessageQueue, boolean dumpTrackers) {
+	 * This method disconnects all transports and the PeerNode.
+	 * It does not check the cause of the disconnect.
+	 * The cause could be that it's taking too long or the user removed the Peer.
+	 */
+	public boolean disconnectPeer(boolean dumpMessageQueue, boolean dumpTrackers) {
 		final long now = System.currentTimeMillis();
 		if(isRealConnection())
 			Logger.normal(this, "Disconnected " + this, new Exception("debug"));
@@ -1089,29 +1092,20 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		node.failureTable.onDisconnect(this);
 		node.peers.disconnected(this);
 		node.nodeUpdater.disconnected(this);
+		for(String transportName : peerPacketTransportMap.keySet())
+			peerPacketTransportMap.get(transportName).disconnectTransport(dumpTrackers);
+		for(String transportName : peerStreamTransportMap.keySet())
+			peerStreamTransportMap.get(transportName).disconnectTransport(dumpTrackers);
 		boolean ret;
-		SessionKey cur, prev, unv;
 		MessageItem[] messagesTellDisconnected = null;
-		List<MessageItem> moreMessagesTellDisconnected = null;
-		PacketFormat oldPacketFormat = null;
 		synchronized(this) {
 			disconnecting = false;
 			ret = isConnected;
-			// Force renegotiation.
+			// Force re negotiation.
 			isConnected = false;
 			isRoutable = false;
 			isRekeying = false;
-			// Prevent sending packets to the node until that happens.
-			cur = currentTracker;
-			prev = previousTracker;
-			unv = unverifiedTracker;
-			if(dumpTrackers) {
-				currentTracker = null;
-				previousTracker = null;
-				unverifiedTracker = null;
-			}
-			// Else DO NOT clear trackers, because hopefully it's a temporary connectivity glitch.
-			sendHandshakeTime = now;
+			
 			countFailedRevocationTransfers = 0;
 			timePrevDisconnect = timeLastDisconnect;
 			timeLastDisconnect = now;
@@ -1119,12 +1113,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				// Reset the boot ID so that we get different trackers next time.
 				myBootID = node.fastWeakRandom.nextLong();
 				messagesTellDisconnected = grabQueuedMessageItems();
-				oldPacketFormat = packetFormat;
-				packetFormat = null;
 			}
-		}
-		if(oldPacketFormat != null) {
-			moreMessagesTellDisconnected = oldPacketFormat.onDisconnect();
 		}
 		if(messagesTellDisconnected != null) {
 			if(logMINOR)
@@ -1133,16 +1122,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				mi.onDisconnect();
 			}
 		}
-		if(moreMessagesTellDisconnected != null) {
-			if(logMINOR)
-				Logger.minor(this, "Messages to dump: "+moreMessagesTellDisconnected.size());
-			for(MessageItem mi : moreMessagesTellDisconnected) {
-				mi.onDisconnect();
-			}
-		}
-		if(cur != null) cur.disconnected();
-		if(prev != null) prev.disconnected();
-		if(unv != null) unv.disconnected();
 		if(_lastThrottle != null)
 			_lastThrottle.maybeDisconnected();
 		node.lm.lostOrRestartedNode(this);
@@ -1154,29 +1133,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				public void run() {
 					if((!PeerNode.this.isConnected()) &&
 							timeLastDisconnect == now) {
-						PacketFormat oldPacketFormat = null;
 						synchronized(this) {
-							if(!isConnected) return;
+							if(isConnected) return;
 							// Reset the boot ID so that we get different trackers next time.
 							myBootID = node.fastWeakRandom.nextLong();
-							oldPacketFormat = packetFormat;
-							packetFormat = null;
 						}
 						MessageItem[] messagesTellDisconnected = grabQueuedMessageItems();
 						if(messagesTellDisconnected != null) {
 							for(MessageItem mi : messagesTellDisconnected) {
 								mi.onDisconnect();
-							}
-						}
-						if(oldPacketFormat != null) {
-							List<MessageItem> moreMessagesTellDisconnected = 
-								oldPacketFormat.onDisconnect();
-							if(moreMessagesTellDisconnected != null) {
-								if(logMINOR)
-									Logger.minor(this, "Messages to dump: "+moreMessagesTellDisconnected.size());
-								for(MessageItem mi : moreMessagesTellDisconnected) {
-									mi.onDisconnect();
-								}
 							}
 						}
 					}
@@ -1194,16 +1159,22 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		loadSenderBulk.onDisconnect();
 		return ret;
 	}
-
+	
 	@Override
 	public void forceDisconnect(boolean purge) {
 		Logger.error(this, "Forcing disconnect on " + this, new Exception("debug"));
-		disconnected(purge, true); // always dump trackers, maybe dump messages
+		disconnectPeer(purge, true); // always dump trackers, maybe dump messages
 	}
 	
-	public void forceDisconnect(boolean purge, TransportPlugin transportPlugin) {
-		//FIXME finish this code. This method is if the transport is requesting force disconnect.
-		// But PeerNode has to decide eventually.
+	/**
+	 * Disconnect a particular transport.
+	 * The reason can be anything- timeout, unloading transport, etc.
+	 * Used by PacketSender and PeerNode.disableTransport.
+	 * Will call maybeDisconnectPeerNode
+	 */
+	public void disconnectTransport(boolean dumpTrackers, PeerTransport peerTransport) {
+		peerTransport.disconnectTransport(dumpTrackers);
+		maybeDisconnectPeer();
 	}
 
 	/**
@@ -1249,112 +1220,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 
 	/**
-	* @return The time at which we must send a packet, even if
-	* it means it will only contains ack requests etc., or
-	* Long.MAX_VALUE if we have no pending ack request/acks/etc.
-	* Note that if this is less than now, it may not be entirely
-	* accurate i.e. we definitely must send a packet, but don't
-	* rely on it to tell you exactly how overdue we are.
-	*/
-	public long getNextUrgentTime(long now) {
-		long t = Long.MAX_VALUE;
-		SessionKey cur;
-		SessionKey prev;
-		PacketFormat pf;
-		synchronized(this) {
-			if(!isConnected) return Long.MAX_VALUE;
-			cur = currentTracker;
-			prev = previousTracker;
-			pf = packetFormat;
-			if(cur == null && prev == null) return Long.MAX_VALUE;
-		}
-		if(pf != null) {
-			boolean canSend = cur != null && pf.canSend(cur);
-			if(canSend) { // New messages are only sent on cur.
-				long l = messageQueue.getNextUrgentTime(t, 0); // Need an accurate value even if in the past.
-				if(t >= now && l < now && logMINOR)
-					Logger.minor(this, "Next urgent time from message queue less than now");
-				else if(logDEBUG)
-					Logger.debug(this, "Next urgent time is "+(l-now)+"ms on "+this);
-				t = l;
-			}
-			long l = pf.timeNextUrgent(canSend);
-			if(l < now && logMINOR)
-				Logger.minor(this, "Next urgent time from packet format less than now on "+this);
-			t = Math.min(t, l);
-		}
-		return t;
-	}
-
-	/**
-	* @return The time at which we last sent a packet.
-	*/
-	public long lastSentPacketTime(PacketTransportPlugin transportPlugin) {
-		String transportName = transportPlugin.transportName;
-		if(peerPacketTransportMap.containsKey(transportName))
-			return peerPacketTransportMap.get(transportName).lastSentTransportPacketTime();
-		return 0; //Shouldn't get here
-	}
-	
-	/** Workaround for default udp transport */
-	public long lastSentPacketTime() {
-		String transportName = Node.defaultPacketTransportName;
-		return peerPacketTransportMap.get(transportName).lastSentTransportPacketTime();
-	}
-
-	/**
-	* @return True, if we are disconnected and it has been a
-	* sufficient time period since we last sent a handshake
-	* attempt.
+	* Are we allowed to send handshake for this type of PeerNode
+	* Check overridden implementations in sub classes.
+	* Check PeerTransport.shouldSendhandshake for the logic.
 	*/
 	public boolean shouldSendHandshake() {
-		long now = System.currentTimeMillis();
-		boolean tempShouldSendHandshake = false;
-		synchronized(this) {
-			if(disconnecting) return false;
-			tempShouldSendHandshake = ((now > sendHandshakeTime) && (handshakeIPs != null) && (isRekeying || !isConnected()));
-		}
-		if(logMINOR) Logger.minor(this, "shouldSendHandshake(): initial = "+tempShouldSendHandshake);
-		if(tempShouldSendHandshake && (hasLiveHandshake(now)))
-			tempShouldSendHandshake = false;
-		if(tempShouldSendHandshake) {
-			if(isBurstOnly()) {
-				synchronized(this) {
-					isBursting = true;
-				}
-				setPeerNodeStatus(System.currentTimeMillis());
-			} else
-				return true;
-		}
-		if(logMINOR) Logger.minor(this, "shouldSendHandshake(): final = "+tempShouldSendHandshake);
-		return tempShouldSendHandshake;
+		return true;
 	}
 	
-	public long timeSendHandshake(long now) {
-		if(hasLiveHandshake(now)) return Long.MAX_VALUE;
-		synchronized(this) {
-			if(disconnecting) return Long.MAX_VALUE;
-			if(handshakeIPs == null) return Long.MAX_VALUE;
-			if(!(isRekeying || !isConnected())) return Long.MAX_VALUE;
-			return sendHandshakeTime;
-		}
-	}
-
-	/**
-	* Does the node have a live handshake in progress?
-	* @param now The current time.
-	*/
-	public boolean hasLiveHandshake(long now) {
-		KeyAgreementSchemeContext c = null;
-		synchronized(this) {
-			c = ctx;
-		}
-		if(c != null && logDEBUG)
-			Logger.minor(this, "Last used (handshake): " + (now - c.lastUsedTime()));
-		return !((c == null) || (now - c.lastUsedTime() > Node.HANDSHAKE_TIMEOUT));
-	}
-	boolean firstHandshake = true;
-
 	/**
 	 * Set sendHandshakeTime, and return whether to fetch the ARK for all transports.
 	 * Don't use it unnecessarily. PeerNode constructor may use it. Also maybe when we handshake all transports simultaneously.
@@ -1436,19 +1309,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/** Burst only 19 in 20 times if definitely port forwarded. Save entropy by writing this as 20 not 0.95. */
 	static final int P_BURST_IF_DEFINITELY_FORWARDED = 20;
 
+	/**
+	 * Check for sub class implementations.
+	 * Used in PeerTransport.isBurstlyOnly to check if we are allowed.
+	 * @return
+	 */
 	public boolean isBurstOnly() {
-		AddressTracker.Status status = outgoingMangler.getConnectivityStatus();
-		if(status == AddressTracker.Status.DONT_KNOW) return false;
-		if(status == AddressTracker.Status.DEFINITELY_NATED || status == AddressTracker.Status.MAYBE_NATED) return false;
-
-		// For now. FIXME try it with a lower probability when we're sure that the packet-deltas mechanisms works.
-		if(status == AddressTracker.Status.MAYBE_PORT_FORWARDED) return false;
-		long now = System.currentTimeMillis();
-		if(now - timeSetBurstNow > UPDATE_BURST_NOW_PERIOD) {
-			burstNow = (node.random.nextInt(P_BURST_IF_DEFINITELY_FORWARDED) == 0);
-			timeSetBurstNow = now;
-		}
-		return burstNow;
+		return false;
 	}
 
 	/**
@@ -3384,10 +3251,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	}
 
-	public synchronized boolean noContactDetails() {
-		return handshakeIPs == null || handshakeIPs.length == 0;
-	}
-
 	synchronized void reportIncomingBytes(int length) {
 		totalBytesIn += length;
 	}
@@ -3533,7 +3396,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public boolean isDisabled() {
 		return false;
 	}
-
+	
 	/** Is this peer allowed local addresses? If false, we will never connect to this peer via
 	 * a local address even if it advertises them.
 	 */
@@ -3630,7 +3493,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			removed = true;
 		}
 		node.getTicker().removeQueuedJob(checkStatusAfterBackoff);
-		disconnected(true, true);
+		disconnectPeer(true, true);
 		stopARKFetcher();
 	}
 	
@@ -4038,28 +3901,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	public long getExtJarOfferedVersion() {
 		return offeredExtJarVersion;
-	}
-
-	/**
-	 * Maybe send something. A SINGLE PACKET.
-	 * Don't send everything at once, for two reasons:
-	 * 1. It is possible for a node to have a very long backlog.
-	 * 2. Sometimes sending a packet can take a long time.
-	 * 3. In the near future PacketSender will be responsible for output bandwidth
-	 * throttling.
-	 * So it makes sense to send a single packet and round-robin.
-	 * @param now
-	 * @param rpiTemp
-	 * @param rpiTemp
-	 * @throws BlockedTooLongException
-	 */
-	public boolean maybeSendPacket(long now, boolean ackOnly) throws BlockedTooLongException {
-		PacketFormat pf;
-		synchronized(this) {
-			if(packetFormat == null) return false;
-			pf = packetFormat;
-		}
-		return pf.maybeSendPacket(now, ackOnly);
 	}
 
 	/** Reset on disconnection */
@@ -5114,24 +4955,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return pf.handleReceivedPacket(buf, offset, length, now, replyTo);
 	}
 
-	public void checkForLostPackets() {
-		PacketFormat pf;
-		synchronized(this) {
-			pf = packetFormat;
-			if(pf == null) return;
-		}
-		pf.checkForLostPackets();
-	}
-
-	public long timeCheckForLostPackets() {
-		PacketFormat pf;
-		synchronized(this) {
-			pf = packetFormat;
-			if(pf == null) return Long.MAX_VALUE;
-		}
-		return pf.timeCheckForLostPackets();
-	}
-
 	@Override
 	public void handleMessage(Message m) {
 		node.usm.checkFilters(m, crypto.socket);
@@ -5402,15 +5225,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return pf.fullPacketQueued(getMaxPacketSize());
 	}
 
-	public long timeSendAcks() {
-		PacketFormat pf;
-		synchronized(this) {
-			pf = packetFormat;
-			if(pf == null) return Long.MAX_VALUE;
-		}
-		return pf.timeSendAcks();
-	}
-
 	/** Calculate the maximum number of outgoing transfers to this peer that we
 	 * will accept in requests and inserts. */
 	public int calculateMaxTransfersOut(int timeout, double nonOverheadFraction) {
@@ -5535,20 +5349,17 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public synchronized void disableTransport(String transportName) {
 		if(peerPacketTransportMap.containsKey(transportName)) {
 			synchronized(packetTransportMapLock) {
+				disconnectTransport(true, peerPacketTransportMap.get(transportName));
 				peerPacketTransportMap.remove(transportName);
 			}
 		}
 		else if(peerStreamTransportMap.containsKey(transportName)) {
 			synchronized(streamTransportMapLock) {
+				disconnectTransport(true, peerStreamTransportMap.get(transportName));
 				peerStreamTransportMap.remove(transportName);
 			}
 		}
 		//Do other stuff. Inform of noderef change.
-	}
-	
-	public void sendHandshake(boolean notRegistered){
-		outgoingMangler.sendHandshake(this, notRegistered);
-		//FIXME make this for all transports
 	}
 	
 	/**

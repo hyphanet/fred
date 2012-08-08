@@ -1,5 +1,6 @@
 package freenet.node;
 
+import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.List;
 
@@ -10,11 +11,13 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.xfer.PacketThrottle;
 import freenet.pluginmanager.PacketTransportPlugin;
 import freenet.pluginmanager.PluginAddress;
+import freenet.pluginmanager.UnsupportedIPAddressOperationException;
 import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
+import freenet.support.transport.ip.IPUtil;
 /**
  * This class will be used to store keys, timing fields, etc. by PeerNode for each transport for handshaking. 
  * Once handshake is completed a PeerPacketConnection object is used to store the session keys.<br><br>
@@ -70,6 +73,28 @@ public class PeerPacketTransport extends PeerTransport {
 	
 	public PeerPacketTransport(PacketTransportBundle packetTransportBundle, PeerNode pn){
 		this(packetTransportBundle.transportPlugin, packetTransportBundle.packetMangler, pn);
+	}
+	
+	/*
+	 * 
+	 * Time related methods
+	 * 
+	 */
+	
+	public void sentPacket() {
+		timeLastSentTransportPacket = System.currentTimeMillis();
+	}
+	
+	public long lastSentTransportPacketTime() {
+		return timeLastSentTransportPacket;
+	}
+	
+	public synchronized long lastReceivedTransportPacketTime() {
+		return timeLastReceivedTransportPacket;
+	}
+
+	public synchronized long lastReceivedTransportDataPacketTime() {
+		return timeLastReceivedTransportDataPacket;
 	}
 	
 	/**
@@ -139,24 +164,6 @@ public class PeerPacketTransport extends PeerTransport {
 			t = Math.min(t, l);
 		}
 		return t;
-	}
-	
-	/*
-	 * 
-	 * Time related methods
-	 * 
-	 */
-	
-	public void sentPacket() {
-		timeLastSentTransportPacket = System.currentTimeMillis();
-	}
-	
-	public long lastSentTransportPacketTime() {
-		return timeLastSentTransportPacket;
-	}
-	
-	public synchronized long lastReceivedTransportPacketTime() {
-		return timeLastReceivedTransportPacket;
 	}
 	
 	public long completedHandshake(long thisBootID, BlockCipher outgoingCipher, byte[] outgoingKey, BlockCipher incommingCipher, byte[] incommingKey, PluginAddress replyTo, boolean unverified, int negType, long trackerID, boolean isJFK4, boolean jfk4SameAsOld, byte[] hmacKey, BlockCipher ivCipher, byte[] ivNonce, int ourInitialSeqNum, int theirInitialSeqNum, int ourInitialMsgID, int theirInitialMsgID, long now, boolean newer, boolean older) {
@@ -384,7 +391,7 @@ public class PeerPacketTransport extends PeerTransport {
 			String time = TimeUtil.formatTime(FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY);
 			System.err.println("The peer (" + this + ") has been asked to rekey " + time + " ago... force disconnect.");
 			Logger.error(this, "The peer (" + this + ") has been asked to rekey " + time + " ago... force disconnect.");
-			pn.forceDisconnect(false, transportPlugin);
+			pn.disconnectTransport(true, this);
 		} else if (shouldReturn || hasLiveHandshake(now)) {
 			return;
 		} else if(shouldRekey) {
@@ -639,13 +646,15 @@ public class PeerPacketTransport extends PeerTransport {
 //		}
 	}
 
+	// FIXME incomplete. Finish NPF completely
+	/**
+	 * Called only through PeerNode or PacketSender.
+	 */
 	@Override
-	public boolean disconnectTransport(boolean dumpMessageQueue, boolean dumpTrackers) {
+	public boolean disconnectTransport(boolean dumpTrackers) {
 		final long now = System.currentTimeMillis();
 		boolean ret;
 		SessionKey cur, prev, unv;
-		List<MessageItem> moreMessagesTellDisconnected = null;
-		PacketFormat oldPacketFormat = null;
 		synchronized(peerConn) {
 			ret = isTransportConnected;
 			// Force re negotiation.
@@ -662,25 +671,85 @@ public class PeerPacketTransport extends PeerTransport {
 			sendTransportHandshakeTime = now;
 			timeTransportPrevDisconnect = timeTransportLastDisconnect;
 			timeTransportLastDisconnect = now;
-			if(dumpMessageQueue) {
-				oldPacketFormat = packetFormat;
-				packetFormat = null;
-			}
-		}
-		if(oldPacketFormat != null) {
-			moreMessagesTellDisconnected = oldPacketFormat.onDisconnect();
-		}
-		if(moreMessagesTellDisconnected != null) {
-			if(logMINOR)
-				Logger.minor(this, "Messages to dump: "+moreMessagesTellDisconnected.size());
-			for(MessageItem mi : moreMessagesTellDisconnected) {
-				mi.onDisconnect();
-			}
+			
+			packetFormat.onDisconnect();
+			packetFormat = null;
 		}
 		if(cur != null) cur.disconnected();
 		if(prev != null) prev.disconnected();
 		if(unv != null) unv.disconnected();
 		return ret;
+	}
+	
+	public void checkForLostPackets() {
+		PacketFormat pf;
+		synchronized(this) {
+			pf = packetFormat;
+			if(pf == null) return;
+		}
+		pf.checkForLostPackets();
+	}
+	
+	public long timeSendAcks() {
+		PacketFormat pf;
+		synchronized(this) {
+			pf = packetFormat;
+			if(pf == null) return Long.MAX_VALUE;
+		}
+		return pf.timeSendAcks();
+	}
+	
+	public synchronized boolean noContactDetails() {
+		return handshakeTransportAddresses == null || handshakeTransportAddresses.length == 0;
+	}
+	
+	public boolean shouldThrottle() {
+		if(pn.node.throttleLocalData) return true;
+		PluginAddress address = null;
+		synchronized(this) {
+			address = detectedTransportAddress;
+		}
+		if(address == null) return true; // presumably
+		InetAddress addr;
+		try {
+			addr = address.getFreenetAddress().getAddress();
+			if(addr == null) return true; // presumably
+			return IPUtil.isValidAddress(addr, false);
+		}catch(UnsupportedIPAddressOperationException e) {
+			return false; //Non ip based plugin address. Since it is not null we can safely assume it is fine.
+		}
+		
+	}
+	
+	/**
+	 * Maybe send something. A SINGLE PACKET.
+	 * Don't send everything at once, for two reasons:
+	 * 1. It is possible for a node to have a very long backlog.
+	 * 2. Sometimes sending a packet can take a long time.
+	 * 3. In the near future PacketSender will be responsible for output bandwidth
+	 * throttling.
+	 * So it makes sense to send a single packet and round-robin.
+	 * @param now
+	 * @param rpiTemp
+	 * @param rpiTemp
+	 * @throws BlockedTooLongException
+	 */
+	public boolean maybeSendPacket(long now, boolean ackOnly) throws BlockedTooLongException {
+		PacketFormat pf;
+		synchronized(this) {
+			if(packetFormat == null) return false;
+			pf = packetFormat;
+		}
+		return pf.maybeSendPacket(now, ackOnly);
+	}
+	
+	public long timeCheckForLostPackets() {
+		PacketFormat pf;
+		synchronized(this) {
+			pf = packetFormat;
+			if(pf == null) return Long.MAX_VALUE;
+		}
+		return pf.timeCheckForLostPackets();
 	}
 	
 }
