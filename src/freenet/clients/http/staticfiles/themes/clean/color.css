@@ -74,6 +74,13 @@ li.submenuitem-not-selected a:hover {
 	color: #111111;
 }
 
+/* this border is only displayed in dropdown mode */
+
+ul.subnavlist-selected,
+ul.subnavlist {
+	border-color: #d0d0d0;
+}
+
 /*
  * Alerts
  */

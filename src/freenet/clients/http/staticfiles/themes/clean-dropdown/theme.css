@@ -1,10 +1,10 @@
 ﻿/* clean theme */
 
 /* navigation behavior */
-@import url(/static/behavior-dynamic.css);
+@import url(/static/behavior-dropdown.css);
 
 /* layout */
-@import url(/static/themes/clean-dropdown/layout.css);
+@import url(/static/themes/clean/layout.css);
 
 /* color scheme */
 @import url(/static/themes/clean/color.css);

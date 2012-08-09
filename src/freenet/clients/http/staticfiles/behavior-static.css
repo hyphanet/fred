@@ -18,3 +18,11 @@ div#selected-subnavbar {
 	display: none;
 }
 
+/* Submenus should only have borders in dropdown mode. They are disabled here
+ * because otherwise the color scheme would not be able to configure them without
+ * showing them in all modes. */
+
+ul.subnavlist-selected,
+ul.subnavlist {
+	border: none !important;
+}

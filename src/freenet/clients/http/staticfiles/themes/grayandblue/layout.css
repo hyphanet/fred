@@ -131,6 +131,14 @@ div#navbar ul#navlist li ul li a {
 	font-size: 0.9em;
 }
 
+/* this border is only displayed in dropdown mode */
+
+ul.subnavlist-selected,
+ul.subnavlist {
+	border-width: 1px;
+	border-style: dotted;
+}
+
 /* alerts */
 
 /* infoboxes */
