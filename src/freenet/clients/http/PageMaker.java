@@ -27,6 +27,7 @@ public final class PageMaker {
 		CLEAN_STATIC("clean-static", "Clean (Static menu)", "Clean theme with a static menu.", false, false),
 		GRAYANDBLUE("grayandblue", "Gray And Blue", "", false, false),
 		GRAYANDBLUE_CLASSIC("grayandblue-classic", "Gray And Blue (Classic menu)", "", false, false),
+		GRAYANDBLUE_DROPDOWN("grayandblue-dropdown", "Gray And Blue (Dropdown menu)", "", false, false),
 		GRAYANDBLUE_STATIC("grayandblue-static", "Gray And Blue (Static menu)", "", false, false),
 		SKY("sky", "Sky", "", false, false),
 		MINIMALBLUE("minimalblue", "Minimal Blue", "A minimalistic theme in blue", false, false),
@@ -41,6 +42,7 @@ public final class PageMaker {
 			CLEAN_STATIC.code,
 			GRAYANDBLUE.code,
 			GRAYANDBLUE_CLASSIC.code,
+			GRAYANDBLUE_DROPDOWN.code,
 			GRAYANDBLUE_STATIC.code,
 			SKY.code,
 			MINIMALBLUE.code,
@@ -722,7 +724,7 @@ public final class PageMaker {
 	 * are immutable.
 	 *
 	 * @see PageMaker#getPageNode(String, ToadletContext, RenderParameters)
-	 * @author <a href="mailto:bombe@pterodactylus.net">David ‘Bombe’ Roden</a>
+	 * @author <a href="mailto:bombe@pterodactylus.net">David ?Bombe? Roden</a>
 	 */
 	public static class RenderParameters {
 
