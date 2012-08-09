@@ -1,6 +1,8 @@
 ﻿/* layout-grayandblue */
 
-/* overall settings */
+/* 
+ * Overall Settings
+ */
 
 div,
 h1,
@@ -58,7 +60,9 @@ form {
 	padding: 0;
 }
 
-/* body and page header */
+/*
+ * Body and Page Header
+ */
 
 body {
 	margin: 0;
@@ -68,7 +72,9 @@ body {
 #page {
 }
 
-/* page's topbar */
+/*
+ * Top Title Area
+ */
 
 #topbar {
 	background-image: url(/static/themes/grayandblue/logo.png);
@@ -79,7 +85,6 @@ body {
 	padding: 5px;
 }
 
-/* Top Title Area */
 #topbar h1 {
 	font-size: 28px;
 	font-weight:900;
@@ -88,7 +93,9 @@ body {
 	text-align: center;
 }
 
-/* navigation */
+/* 
+ * Navigation
+ */
 
 div#navbar {
 	border-width: 1px;
@@ -139,9 +146,13 @@ ul.subnavlist {
 	border-style: dotted;
 }
 
-/* alerts */
+/*
+ * Alerts
+ */
 
-/* infoboxes */
+/* 
+ * Infoboxes
+ */
 
 div.infobox {
 	margin: 0 0 5px 0;
@@ -208,7 +219,9 @@ li.alert-summary-text-minor {
 	background: url(/static/themes/grayandblue/information-16.png) left center no-repeat;
 }
 
-/* content */
+/*
+ * Content
+ */
 
 #content {
 	margin: 5px 5px 5px 10px;
@@ -228,7 +241,9 @@ li.alert-summary-text-minor {
 	list-style: none;
 }
 
-/* plugins page */
+/*
+ * Plugins Page
+ */
 
 table.plugins td,
 table.plugins th {
@@ -244,7 +259,9 @@ table.plugins form {
 	display: inline;
 }
 
-/* configuration page */
+/* 
+ * Configuration Page
+ */
 
 ul.config {
 	margin: 0 0 5px 0;
@@ -293,7 +310,9 @@ ul.config input[type=text] {
 	width: 70%;
 }
 
-/* darknet page */
+/* 
+ * Darknet Page
+ */
 
 table.darknet_connections td,
 table.darknet_connections th {
@@ -339,7 +358,9 @@ table.sentmessagetypes th {
 	font-size: 7pt;
 }
 
-/* statistics page */
+/* 
+ * Statistics Page
+ */
 
 div.peercircle {
   margin: 0 auto;
@@ -367,7 +388,9 @@ div.histogramLabel {
   font-size: 60%;
 }
 
-/* queue page */
+/* 
+ * Queue Page
+ */
 
 table.queue td,
 table.queue th {
@@ -429,9 +452,13 @@ div.n2ntm-message-text {
 	padding: 10px;
 }
 
-/* translation */
+/* 
+ * Translation
+ */
 
-/* statusbar */
+/* 
+ * Statusbar
+ */
 
 div#statusbar-container {
 	border-width: 1px;
