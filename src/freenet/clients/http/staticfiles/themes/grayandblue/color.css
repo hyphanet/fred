@@ -131,59 +131,67 @@ ul.config li {
 	border-bottom-color: #d0d0d0;
 }
 
-ul.config span.configprefix {
+ul.config {
 	border-bottom-color: #a0a0a0;
 	background-color: #e8e8e8;
 }
 
 /* darknet page */
 
-table.darknet_connections span.peer_connected {
+span.peer_connected {
 	color: #008000;
 }
 
-table.darknet_connections span.peer_backed_off {
+span.peer_backed_off {
 	color: #ff0000;
 }
 
-table.darknet_connections span.peer_too_new {
+span.peer_too_new {
 	color: #d0a0a0;
 }
 
-table.darknet_connections span.peer_too_old {
+span.peer_too_old {
 	color: #d0a0d0;
 }
 
-table.darknet_connections span.peer_disconnected {
+span.peer_disconnected {
 	color: #7F7F7F;
 }
 
-table.darknet_connections span.peer_never_connected {
+span.peer_routing_disabled {
+        color: #7b68ee;
+}
+
+span.peer_never_connected {
 	color: #7F7F7F;
 }
 
-table.darknet_connections span.peer_disabled {
+span.peer_disabled {
 	color: #7F7F7F;
 }
 
-table.darknet_connections span.peer_bursting {
+span.peer_bursting {
 	color: #7F7F7F;
 }
 
-table.darknet_connections span.peer_listening {
+span.peer_listening {
 	color: #7F7F7F;
 }
 
-table.darknet_connections span.peer_listen_only {
+span.peer_listen_only {
 	color: #7F7F7F;
 }
 
-table.darknet_connections span.peer_version_problem {
+span.peer_version_problem {
 	color: #0089e1;
 }
 
-table.darknet_connections span.peer_idle_old {
+span.peer_idle_old {
 	color: #0089e1;
+}
+
+tr.darknet_connections_warning {
+	background-color: #ffff00;
 }
 
 /* statistics page */
@@ -258,6 +266,55 @@ table.queue span.key_unknown {
 	color: #d0d0d0;
 }
 
+.progressbar {
+	border-color: transparent;
+	background-color: transparent;
+}
+
+.progressbar-done {
+	background-color: transparent;
+}
+
+.progressbar-min {
+	background-color: transparent;
+}
+
+.progressbar-failed {
+	background-color: transparent;
+}
+
+.progressbar-failed2 {
+	background-color: transparent;
+}
+
+tr.priority0, td.priority0 {
+	background-color: transparent;
+}
+
+tr.priority1, td.priority1 {
+	background-color: transparent;
+}
+
+tr.priority2, td.priority2 {
+	background-color: transparent;
+}
+
+tr.priority3, td.priority3 {
+	background-color: transparent;
+}
+
+tr.priority4, td.priority4 {
+	background-color: transparent;
+}
+
+tr.priority5, td.priority5 {
+	background-color: transparent;
+}
+
+tr.priority6, td.priority6 {
+	background-color: transparent;
+}
+
 div.n2ntm-message-text {
 	background-color: #ffffff;
 }
@@ -279,6 +336,10 @@ td.n2ntm-send-failed {
 }
 
 /* translation */
+
+.translate_d {
+	background-color: transparent;
+}
 
 /* statusbar */
 
