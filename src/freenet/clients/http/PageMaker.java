@@ -1,4 +1,4 @@
-package freenet.clients.http;
+﻿package freenet.clients.http;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -23,6 +23,7 @@ public final class PageMaker {
 	public enum THEME {
 		BOXED("boxed", "Boxed", "", false, false),
 		CLEAN("clean", "Clean", "Mr. Proper", false, false),
+		CLEAN_CLASSIC("clean-dropdown", "Clean (Classic menu)", "Clean theme with a classic menu.", false, false),
 		CLEAN_DROPDOWN("clean-dropdown", "Clean (Dropdown menu)", "Clean theme with a dropdown menu.", false, false),
 		CLEAN_STATIC("clean-static", "Clean (Static menu)", "Clean theme with a static menu.", false, false),
 		GRAYANDBLUE("grayandblue", "Gray And Blue", "", false, false),
@@ -38,6 +39,7 @@ public final class PageMaker {
 		public static final String[] possibleValues = {
 			BOXED.code,
 			CLEAN.code,
+			CLEAN_CLASSIC.code,
 			CLEAN_DROPDOWN.code,
 			CLEAN_STATIC.code,
 			GRAYANDBLUE.code,
