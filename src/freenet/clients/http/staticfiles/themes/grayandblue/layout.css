@@ -94,7 +94,7 @@ div#navbar {
 	border-width: 1px;
 	border-style: dotted;
 	float: left;
-	margin: 5px 5px 10px 10px;
+	margin: 5px 0px 10px 10px;
 	padding: 10px;
 	width: 135px;
 }
@@ -211,11 +211,11 @@ li.alert-summary-text-minor {
 /* content */
 
 #content {
-	margin: 5px 5px 5px 0;
+	margin: 5px 5px 5px 10px;
 	padding: 0 0 2em 0;
 	position: absolute;
-	left: 177px;
-	right: 5px;
+	left: 167px;
+	right: 0px;
 }
 
 .interfacelink {
