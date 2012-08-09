@@ -287,6 +287,19 @@ div#statusbar-container {
 	background-color: #eee;
 }
 
+div#statusbar div.progressbar {
+	background-color: transparent;
+}
+
 div#statusbar div.separator {
 	border-left-color: #676767;
 }
+
+div#statusbar div.progressbar div.progressbar-peers.very-few-peers,
+div#statusbar div.progressbar div.progressbar-peers.few-peers,
+div#statusbar div.progressbar div.progressbar-peers.avg-peers,
+div#statusbar div.progressbar div.progressbar-peers.full-peers {
+
+  background-color: transparent;
+}
+

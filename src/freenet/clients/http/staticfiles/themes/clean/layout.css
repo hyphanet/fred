@@ -2,7 +2,17 @@
 
 /* overall settings */
 
-p, span, div, td, th, li, h1, h2, h3, h4, h5 {
+div,
+h1,
+h2,
+h3,
+h4,
+h5,
+li,
+p,
+span,
+td,
+th {
 	font-family: Arial;
 	font-weight: normal;
 	font-size: 11pt;
@@ -16,14 +26,16 @@ th {
 	font-weight: bold;
 }
 
-th, td {
+td,
+th {
 	margin: 0;
 	padding: 5px;
 	border-width: 1px;
 	border-style: solid;
 }
 
-pre, textarea {
+pre,
+textarea {
 	font-family: Courier;
 	font-weight: normal;
 	font-size: 8pt;
@@ -33,7 +45,8 @@ pre#reference {
 	overflow: auto;
 }
 
-table, pre {
+pre,
+table {
 	margin: 0 0 5px 0;
 	padding: 0;
 }
@@ -56,22 +69,22 @@ body {
 /* page's topbar */
 
 #topbar {
-	margin: 0;
-	padding: 5px;
-	min-height: 50px;
 	background-image: url(logo.png);
-	background-repeat: no-repeat;
 	background-position: 30px 3px;
-	border-bottom-width: 1px;
+	background-repeat: no-repeat;
 	border-bottom-style: solid;
+	border-bottom-width: 1px;
+	margin: 0;
+	min-height: 50px;
+	padding: 5px;
 }
 
 /* Top Title Area */
 #topbar h1 {
+	font-size: 20pt;
 	margin: 0;
 	padding: 7px 0 0 0;
 	text-align: center;
-	font-size: 20pt;
 }
 
 /* navigation */
@@ -80,10 +93,8 @@ div#navbar {
 	border-width: 1px;
 	border-style: solid;
 	float: left;
-	margin: 5px;
-	margin-top: 0;
-	margin-left: 0;
-	padding: 0;
+	margin: 0px 5px 5px 0px;
+	padding: 0px;
 	padding-bottom: 4em;
 	width: 170px;
 }
@@ -91,11 +102,11 @@ div#navbar {
 div#navbar a {
 	text-decoration: none;
 	display: block;
-	padding: 1px;
-	padding-left: 5px;
+	padding: 1px 1px 1px 5px;
 }
 
-div#navbar ul, div#navbar ul li ul {
+div#navbar ul,
+div#navbar ul li ul {
 	list-style-type: none;
 	padding: 0;
 	margin: 0;
@@ -114,7 +125,8 @@ div#navbar ul li ul li:first-child {
 	padding-top: 0;
 }
 
-div#navbar ul#navlist li.navlist-selected ul li a, div#navbar ul#navlist li ul li a {
+div#navbar ul#navlist li.navlist-selected ul li a,
+div#navbar ul#navlist li ul li a {
 	font-size: 0.9em;
 }
 
@@ -207,7 +219,9 @@ li.alert-summary-text-minor {
 
 /* plugins page */
 
-table.plugins th, table.plugins td {
+
+table.plugins td,
+table.plugins th {
 	font-size: 8pt;
 }
 
@@ -221,10 +235,6 @@ table.plugins form {
 }
 
 /* configuration page */
-
-td.config_navigation {
-	border-style: none;
-}
 
 ul.config {
 	margin: 0 0 5px 0;
@@ -246,17 +256,12 @@ ul.config li {
 	border-bottom-style: solid;
 }
 
-ul.config{
+div.configprefix {
 	margin: 0;
 	padding: 10px 35px 10px 10px;
 	display: block;
 	border-bottom-width: 1px;
 	border-bottom-style: dotted;
-	font-weight: bold;
-	font-size: 16pt;
-}
-
-div.configprefix {
 	font-weight: bold;
 	font-size: 16pt;
 	font-variant: small-caps;
@@ -281,7 +286,8 @@ ul.config input[type=text] {
 
 /* darknet page */
 
-table.darknet_connections th, table.darknet_connections td {
+table.darknet_connections td,
+table.darknet_connections th {
 	font-size: 8pt;
 }
 
@@ -289,7 +295,8 @@ table.column td {
 	vertical-align: top;
 }
 
-table.darknet_connections span, table.column span {
+table.darknet_connections span,
+table.column span {
 	font-weight: bold;
 	font-size: 8pt;
 }
@@ -316,7 +323,10 @@ table.receivedmessagetypes {
 	display: inline;
 }
 
-table.sentmessagetypes th, table.sentmessagetypes td, table.receivedmessagetypes th, table.receivedmessagetypes td {
+table.receivedmessagetypes td,
+table.receivedmessagetypes th,
+table.sentmessagetypes td,
+table.sentmessagetypes th {
 	font-size: 7pt;
 }
 
@@ -350,7 +360,8 @@ div.histogramLabel {
 
 /* queue page */
 
-table.queue th, table.queue td {
+table.queue td,
+table.queue th {
 	font-size: 8pt;
 }
 
@@ -418,10 +429,7 @@ div#statusbar-container {
 	border-top-style: solid;
 	border-bottom-width: 1px;
 	border-bottom-style: solid;
-	margin-top: 5px;
-	margin-right: 0;
-	margin-left: 0;
-	margin-bottom: 0px;
+	margin: 5px 0px 0px 0px;
 	padding: 3px 3px 0px 3px;
 	position: fixed;
 	right: 0;
