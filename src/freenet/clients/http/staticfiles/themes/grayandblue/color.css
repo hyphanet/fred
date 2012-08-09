@@ -27,17 +27,44 @@ body {
 
 /* navigation */
 
-#navbar {
+div#navbar {
+	background-color: #EEEEEE;
 	border-color: #676767;
-	background-color:#eee;
 }
 
 #navbar a {
 	color: #0089e1;
 }
 
-#navbar a:hover {
+div#navbar a:hover {
 	color: #09c;
+}
+
+div#navbar ul#navlist li.navlist-selected ul.subnavlist-selected li.submenuitem-selected a {
+	color: #0089e1;
+}
+
+div#navbar ul#navlist li.navlist-selected a {
+	color: #0089e1;	
+	background-color: #e5e5e5;
+}
+
+div#navbar ul#navlist li.navlist-selected ul li a, div#navbar ul#navlist li ul li a {
+	background-color: inherit;
+	color: #7fc4f0;
+}
+
+div#navbar ul#navlist li:hover ul.subnavlist {
+	color: inherit;
+}
+
+div#navbar a:hover, div#navbar ul#navlist li.navlist-selected ul.subnavlist-selected li.submenuitem-selected a {
+	background-color: #e5e5e5;
+}
+
+div#navbar ul#navlist li ul li a:hover, div#navbar ul#navlist li.navlist-selected ul.subnavlist-selected li a:hover {
+	color: blue;
+	background-color: #e5e5e5;
 }
 
 /* alerts */
