@@ -33,8 +33,8 @@ td,
 th {
 	margin: 0;
 	padding: 5px;
-	border-width: 1px;
 	border-style: dotted;
+	border-width: 1px;
 }
 
 pre,
@@ -67,9 +67,6 @@ form {
 body {
 	margin: 0;
 	padding: 0;
-}
-
-#page {
 }
 
 /*
@@ -155,22 +152,22 @@ ul.subnavlist {
  */
 
 div.infobox {
+	border-style: dotted;
+	border-width: 1px;
 	margin: 0 0 5px 0;
 	padding: 10px;
-	border-width: 1px;
-	border-style: dotted;
 }
 
 div.infobox div.infobox-header {
+	background-position: right;
+	background-repeat: no-repeat;
+	border-bottom-style: dotted;
+	border-bottom-width: 1px;
+	font-family: verdana;
+	font-size: 10pt;
+	font-weight: bold;
 	margin: -10px -10px 10px -10px;
 	padding: 10px 35px 10px 10px;
-	border-bottom-width: 1px;
-	border-bottom-style: dotted;
-	font-family: verdana;
-	font-weight: bold;
-	font-size: 10pt;
-	background-repeat: no-repeat;
-	background-position: right;
 }
 
 
@@ -264,40 +261,40 @@ table.plugins form {
  */
 
 ul.config {
-	margin: 0 0 5px 0;
-	padding: 0;
 	border-top-width: 1px;
 	border-top-style: solid;
 	border-right-width: 1px;
 	border-right-style: solid;
 	border-left-width: 1px;
 	border-left-style: solid;
+	margin: 0 0 5px 0;
+	padding: 0;
 }
 
 ul.config li {
-	margin: 0;
-	padding: 15px 10px 15px 10px;
-	list-style: none;
-	text-align: left;
 	border-bottom-width: 1px;
 	border-bottom-style: solid;
+	list-style: none;
+	margin: 0;
+	padding: 15px 10px 15px 10px;
+	text-align: left;
 }
 
 div.configprefix {
-	margin: 0;
-	padding: 10px 35px 10px 10px;
 	display: block;
 	border-bottom-width: 1px;
 	border-bottom-style: dotted;
-	font-weight: bold;
 	font-size: 16pt;
 	font-variant: small-caps;
+	font-weight: bold;
+	margin: 0;
+	padding: 10px 35px 10px 10px;
 }
 
 ul.config span.configshortdesc {
-	text-align: left;
 	font-weight: bold;
 	float: left;
+	text-align: left;
 	width: 30%;
 }
 
@@ -323,8 +320,8 @@ table.column td {
 	vertical-align: top;
 }
 
-table.darknet_connections span,
-table.column span {
+table.column span,
+table.darknet_connections span {
 	font-weight: bold;
 	font-size: 8pt;
 }
@@ -407,30 +404,30 @@ table.queue span {
 	font-size: 8pt;
 }
 
-.progressbar {
-	position: relative;
-	height: 18px;
-	width: 130px;
-	border-width: 1px;
+div.progressbar {
 	border-style: solid;
+	border-width: 1px;
+	height: 18px;
+	position: relative;
+	width: 130px;
 }
 
-.progressbar-done {
+div.progressbar-done {
 	float: left;
 	height: 18px;
 }
 
-.progressbar-min {
+div.progressbar-min {
 	float: left;
 	height: 18px;
 }
 
-.progressbar-failed {
+div.progressbar-failed {
 	float: left;
 	height: 18px;
 }
 
-.progressbar-failed2 {
+div.progressbar-failed2 {
 	float: left;
 	height: 18px;
 }
@@ -447,6 +444,8 @@ table.queue span {
 	font-style: italic;
 }
 
+/* Node to node text message */
+
 div.n2ntm-message-text {
 	margin: 10px;
 	padding: 10px;
@@ -461,14 +460,14 @@ div.n2ntm-message-text {
  */
 
 div#statusbar-container {
-	border-width: 1px;
 	border-style: dotted;
+	border-width: 1px;
 	margin: 10px 10px 0px 10px;
-	position:fixed;
-	right:0;
-	bottom:0;
-	left:0;
-	z-index:18;
+	position: fixed;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	z-index: 18;
 }
 
 div#statusbar {
@@ -493,9 +492,9 @@ div#statusbar div.progressbar div.progress_fraction_finalized {
 
 div#statusbar div.separator {
 	background: none;
-	display: inline-block;
-	border-left-width: 1px;
 	border-left-style: dotted;
+	border-left-width: 1px;
+	display: inline-block;
 	margin-left: 10px;
 	margin-right: 8px;
 	width: 1px;
