@@ -1,21 +1,25 @@
-﻿/*behavior-dynamic */
+﻿/*
+ * behavior-dynamic: Only show non-selected sub menus when the mouse is hovering
+ */
 
 /* Basic CSS functions */
 @import url(/static/common_includes.css);
 
+/* code */
+
+ul.subnavlist {
+	display: none;
+}
+
+ul.subnavlist:hover,
+li.navlist-not-selected:hover ul.subnavlist {
+	display: block;
+}
+
+/* The subnavbar appears under the main navbar and shows the currently selected
+ * submenu items. Most themes prefer to use the ul.subnavlist in the main navbar 
+ * instead so it is not shown by default. */
+
 div#selected-subnavbar {
 	display: none;
 }
-
-div#navbar ul li ul.subnavlist {
-	display: none;
-}
-
-div#navbar ul:hover + li ul.subnavlist {
-	display: block;
-}
-
-div#navbar ul#navlist li:hover ul.subnavlist {
-	display: block;
-}
-
