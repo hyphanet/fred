@@ -1,10 +1,6 @@
 ﻿/* layout-grayandblue */
 
-/* Basic CSS functions */
-@import url(/static/common_includes.css);
-
 /* grayandblue overall settings */
-/* [edward@rnahost.com] */
 
 p, span, div, td, th, li, h1, h2, h3, h4, h5 {
 	font-family: Verdana;
@@ -82,12 +78,12 @@ body {
 /* navigation */
 
 #navbar {
+	border-width: 1px;
+	border-style: dotted;
 	margin: 5px 5px 10px 10px;
+	padding: 10px;
 	position: absolute;
 	width: 135px;
-	border-width: 1px
-	border-style: dotted;
-	padding: 10px;
 }
 
 #navbar ul {
@@ -360,20 +356,15 @@ div.n2ntm-message-text {
 /* statusbar */
 
 div#statusbar-container {
-	text-align: center;
 	border-width: 1px;
 	border-style: dotted;
-	background-color: #eee;
 	margin: 10px 10px 0px 10px;
 	position:fixed;
-	bottom:0;
 	right:0;
+	bottom:0;
 	left:0;
+	text-align: center;
 	z-index:18;
-}
-
-div#statusbar div.infobox-header {
-	display: none;
 }
 
 div#statusbar div {
@@ -391,11 +382,15 @@ div#statusbar div.progressbar div.progress_fraction_finalized {
 }
 
 div#statusbar div.separator {
-	display: inline-block;
 	background: none;
-	border-left-color: 1px;
+	display: inline-block;
+	border-left-width: 1px;
 	border-left-style: dotted;
-	width: 1px;
 	margin-left: 10px;
 	margin-right: 8px;
+	width: 1px;
+}
+
+div#statusbar div.infobox-header {
+	display: none;
 }

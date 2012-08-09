@@ -66,6 +66,7 @@ body {
 	border-bottom-style: solid;
 }
 
+/* Top Title Area */
 #topbar h1 {
 	margin: 0;
 	padding: 7px 0 0 0;
@@ -79,12 +80,12 @@ div#navbar {
 	border-width: 1px;
 	border-style: solid;
 	float: left;
-	width: 170px;
 	margin: 5px;
-	padding: 0;
-	margin-left: 0;
-	padding-bottom: 4em;
 	margin-top: 0;
+	margin-left: 0;
+	padding: 0;
+	padding-bottom: 4em;
+	width: 170px;
 }
 
 div#navbar a {
@@ -140,27 +141,27 @@ div.infobox div.infobox-header {
 }
 
 div.infobox-information div.infobox-header {
-	background-image: url(information.gif);
+	background-image: url(information.png);
 }
 
 div.infobox-warning div.infobox-header {
-	background-image: url(warning.gif);
+	background-image: url(warning.png);
 }
 
 div.infobox-alert div.infobox-header {
-	background-image: url(alert.gif);
+	background-image: url(alert.png);
 }
 
 div.infobox-error div.infobox-header {
-	background-image: url(error.gif);
+	background-image: url(error.png);
 }
 
 div.infobox-query div.infobox-header {
-	background-image: url(query.gif);
+	background-image: url(query.png);
 }
 
 div.infobox-success div.infobox-header {
-	background-image: url(success.gif);
+	background-image: url(success.png);
 }
 
 ul.alert-summary {
@@ -169,19 +170,19 @@ ul.alert-summary {
 }
 
 li.alert-summary-text-error {
-	background: url(error-16.gif) left center no-repeat;
+	background: url(error-16.png) left center no-repeat;
 }
 
 li.alert-summary-text-alert {
-	background: url(alert-16.gif) left center no-repeat;
+	background: url(alert-16.png) left center no-repeat;
 }
 
 li.alert-summary-text-warning {
-	background: url(warning-16.gif) left center no-repeat;
+	background: url(warning-16.png) left center no-repeat;
 }
 
 li.alert-summary-text-minor {
-	background: url(information-16.gif) left center no-repeat;
+	background: url(information-16.png) left center no-repeat;
 }
 
 /* content */
@@ -231,9 +232,9 @@ ul.config {
 	border-top-width: 1px;
 	border-top-style: solid;
 	border-right-width: 1px;
-	border-top-style: solid;
+	border-right-style: solid;
 	border-left-width: 1px;
-	border-top-style: solid;
+	border-left-style: solid;
 }
 
 ul.config li {
@@ -241,7 +242,7 @@ ul.config li {
 	padding: 15px 10px 15px 10px;
 	list-style: none;
 	text-align: left;
-	border-bottom-width: 1px
+	border-bottom-width: 1px;
 	border-bottom-style: solid;
 }
 
@@ -413,19 +414,19 @@ div.n2ntm-message-text {
 /* statusbar */
 
 div#statusbar-container {
-	margin-left: 0;
-	margin-right: 0;
-	margin-top: 5px;
-	margin-bottom: 0px;
-	padding: 3px 3px 0px 3px;
 	border-top-width: 1px;
 	border-top-style: solid;
 	border-bottom-width: 1px;
 	border-bottom-style: solid;
-	position:fixed;
-	bottom:0;
-	left:0;
-	right:0;
+	margin-top: 5px;
+	margin-right: 0;
+	margin-left: 0;
+	margin-bottom: 0px;
+	padding: 3px 3px 0px 3px;
+	position: fixed;
+	right: 0;
+	bottom: 0;
+	left: 0;
 	z-index:18;
 }
 
@@ -445,9 +446,9 @@ div#statusbar div.progressbar {
 
 div#statusbar div.separator {
 	display: inline-block;
-	width: 1px;
 	margin-left: 9px;
 	margin-right: 9px;
+	width: 1px;
 }
 
 div#statusbar div.infobox-header {
