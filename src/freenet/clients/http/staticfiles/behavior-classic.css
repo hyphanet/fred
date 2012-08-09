@@ -1,0 +1,24 @@
+﻿/*
+ * behavior-classic: Never show non-selected submenus
+ */
+
+/* Basic CSS functions */
+@import url(/static/common_includes.css);
+
+/* code */
+
+ul.subnavlist {
+	display: none;
+}
+
+li.navlist-selected ul.subnavlist {
+	display: block;
+}
+
+/* The subnavbar appears under the main navbar and shows the currently selected
+ * submenu items. Most themes prefer to use the ul.subnavlist in the main navbar 
+ * instead so it is not shown by default. */
+
+div#selected-subnavbar {
+	display: none;
+}
