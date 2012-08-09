@@ -1,7 +1,9 @@
 ﻿/* color-grayandblue */
 /* [edward@rnahost.com] */
 
-/* overall settings */
+/* 
+ * Overall Settings
+ */
 
 th {
 	background-color: #e8e8e8;
@@ -11,63 +13,70 @@ th, td {
 	border-color: #676767;
 }
 
-/* body and page header */
+/*
+ * Body and Page Header
+ */
 
 body {
 	background-color: #ffffff;
 }
 
-/* page's topbar */
-
-/* Top Title Area */
+/*
+ * Top Title Area
+ */
 
 #topbar h1 {
 	color:#ccc;
 }
 
-/* navigation */
+/* 
+ * Navigation
+ */
 
 div#navbar {
-	background-color: #EEEEEE;
 	border-color: #676767;
 }
 
-#navbar a {
-	color: #0089e1;
+div#navbar,
+ul.subnavlist,
+ul.subnavlist-selected {
+	background-color: #eeeeee;
 }
 
-div#navbar a:hover {
-	color: #09c;
-}
+/* selected menu items */
 
-div#navbar ul#navlist li.navlist-selected ul.subnavlist-selected li.submenuitem-selected a {
-	color: #0089e1;
-}
-
-div#navbar ul#navlist li.navlist-selected a {
-	color: #0089e1;	
-	background-color: #e5e5e5;
-}
-
-div#navbar ul#navlist li.navlist-selected ul li a, div#navbar ul#navlist li ul li a {
+li.navlist-selected a,
+li.submenuitem-selected a {
 	background-color: inherit;
-	color: #7fc4f0;
+	color: #0089e1;	
 }
 
-div#navbar ul#navlist li:hover ul.subnavlist {
-	color: inherit;
+li.submenuitem-selected a {
+	background-color: inherit;	
 }
 
-div#navbar a:hover, div#navbar ul#navlist li.navlist-selected ul.subnavlist-selected li.submenuitem-selected a {
-	background-color: #e5e5e5;
+/* non-selected menu items */
+
+li.submenuitem-not-selected a {
+	background-color: inherit;
+	color: #0089e1;
 }
 
-div#navbar ul#navlist li ul li a:hover, div#navbar ul#navlist li.navlist-selected ul.subnavlist-selected li a:hover {
-	color: blue;
-	background-color: #e5e5e5;
+/* hovering rules */
+
+li.navlist-not-selected a:hover {
+	background-color: inherit;
+	color: #0089e1;
 }
 
-/* alerts */
+li.submenuitem-not-selected a:hover {
+	background-color: inherit;
+	color: #0089e1;
+}
+
+/*
+ * Alerts
+ */
 
 .alert-error {
 	color: darkred;
@@ -81,7 +90,9 @@ div#navbar ul#navlist li ul li a:hover, div#navbar ul#navlist li.navlist-selecte
 	color: green;
 }
 
-/* infoboxes */
+/* 
+ * Infoboxes
+ */
 
 div.infobox {
 	background-color: #f0f0f0;
@@ -126,7 +137,9 @@ div.infobox-success div.infobox-header {
 	background-color: #e8f0e8;
 }
 
-/* content */
+/*
+ * Content
+ */
 
 a, a:link {
 	color: #09c;
@@ -144,9 +157,13 @@ a:hover {
 	color: #000000;
 }
 
-/* plugins page */
+/*
+ * Plugins Page
+ */
 
-/* configuration page */
+/* 
+ * Configuration Page
+ */
 
 ul.config {
 	border-top-color: #d0d0d0;
@@ -163,7 +180,9 @@ ul.config {
 	background-color: #e8e8e8;
 }
 
-/* darknet page */
+/* 
+ * Darknet Page
+ */
 
 span.peer_connected {
 	color: #008000;
@@ -221,7 +240,9 @@ tr.darknet_connections_warning {
 	background-color: #ffff00;
 }
 
-/* statistics page */
+/* 
+ * Statistics Page
+ */
 
 div.peercircle span.mark {
   color: #d0d0d0;
@@ -251,7 +272,9 @@ div.histogramDisconnected {
   background-color: #d0d0d0;
 }
 
-/* queue page */
+/* 
+ * Queue Page
+ */
 
 table.queue span.failure_reason_unknown {
 	color: #d0d0d0;
@@ -362,13 +385,17 @@ td.n2ntm-send-failed {
 	background-color: #ffb7b7;
 }
 
-/* translation */
+/* 
+ * Translation
+ */
 
 .translate_d {
 	background-color: transparent;
 }
 
-/* statusbar */
+/* 
+ * Statusbar
+ */
 
 div#statusbar-container {
 	border-color: #676767;

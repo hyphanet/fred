@@ -1,6 +1,8 @@
 ﻿/* color-clean */
 
-/* overall settings */
+/* 
+ * Overall Settings
+ */
 
 th {
 	background-color: #e8e8e8;
@@ -10,59 +12,71 @@ th, td {
 	border-color: #d0d0d0;
 }
 
-/* body and page header */
+/*
+ * Body and Page Header
+ */
 
 body {
 	background-color: #f0f0f0;
 }
 
-/* page's topbar */
+/*
+ * Top Title Area
+ */
 
 #topbar {
 	background-color: #e8e8e8;
 	border-bottom-color: #d0d0d0;
 }
-/* Top Title Area */
 
-/* navigation */
+/* 
+ * Navigation
+ */
 
 div#navbar {
-	background-color: #e8e8e8;
 	border-color: #d0d0d0;
 }
 
-div#navbar a:hover {
+div#navbar,
+ul.subnavlist,
+ul.subnavlist-selected {
+	background-color: #e8e8e8;
+}
+
+/* selected menu items */
+
+li.navlist-selected a,
+li.submenuitem-selected a {
+	background-color: #dddddd;
+	color: blue;	
+}
+
+li.submenuitem-selected a {
+	background-color: #e0e0e0;	
+}
+
+/* non-selected menu items */
+
+li.submenuitem-not-selected a {
+	background-color: #e8e8e8;
+	color: #666666;
+}
+
+/* hovering rules */
+
+li.navlist-not-selected a:hover {
+	background-color: #dddddd;
 	color: red;
 }
 
-div#navbar ul#navlist li.navlist-selected ul.subnavlist-selected li.submenuitem-selected a {
-	color: blue;
-}
-
-div#navbar ul#navlist li.navlist-selected a {
-	color: blue;	
-	background-color: #ddd;
-}
-
-div#navbar ul#navlist li.navlist-selected ul li a, div#navbar ul#navlist li ul li a {
-	background-color: inherit;
-	color: #666;
-}
-
-div#navbar ul#navlist li:hover ul.subnavlist {
-	color: gray;
-}
-
-div#navbar a:hover, div#navbar ul#navlist li.navlist-selected ul.subnavlist-selected li.submenuitem-selected a {
+li.submenuitem-not-selected a:hover {
 	background-color: #e0e0e0;
+	color: #111111;
 }
 
-div#navbar ul#navlist li ul li a:hover, div#navbar ul#navlist li.navlist-selected ul.subnavlist-selected li a:hover {
-	color: #111;
-	background-color: #e0e0e0;
-}
-
-/* alerts */
+/*
+ * Alerts
+ */
 
 .alert-error {
 	color: darkred;
@@ -76,7 +90,9 @@ div#navbar ul#navlist li ul li a:hover, div#navbar ul#navlist li.navlist-selecte
 	color: green;
 }
 
-/* infoboxes */
+/* 
+ * Infoboxes
+ */
 
 div.infobox {
 	background-color: #f0f0f0;
@@ -120,7 +136,9 @@ div.infobox-success div.infobox-header {
 	background-color: #e8f0e8;
 }
 
-/* content */
+/*
+ * Content
+ */
 
 a {
 	color: #000000;
@@ -134,9 +152,13 @@ a:hover {
 	color: #000000;
 }
 
-/* plugins page */
+/*
+ * Plugins Page
+ */
 
-/* configuration page */
+/* 
+ * Configuration Page
+ */
 
 ul.config {
 	border-top-color: #d0d0d0;
@@ -153,7 +175,9 @@ ul.config {
 	background-color: #e8e8e8;
 }
 
-/* darknet page */
+/* 
+ * Darknet Page
+ */
 
 span.peer_connected {
 	color: #008000;
@@ -211,7 +235,9 @@ tr.darknet_connections_warning {
 	background-color: #ffff00;
 }
 
-/* statistics page */
+/* 
+ * Statistics Page
+ */
 
 div.peercircle span.mark {
   color: #d0d0d0;
@@ -241,7 +267,9 @@ div.histogramDisconnected {
   background-color: #d0d0d0;
 }
 
-/* queue page */
+/* 
+ * Queue Page
+ */
 
 table.queue span.failure_reason_unknown {
 	color: #d0d0d0;
@@ -348,13 +376,17 @@ td.n2ntm-send-failed {
 	background-color: #ffb7b7;
 }
 
-/* translation */
+/* 
+ * Translation
+ */
 
 .translate_d {
 	background-color: #f0fef0;
 }
 
-/* statusbar */
+/* 
+ * Statusbar
+ */
 
 div#statusbar-container {
 	background-color: #d8d8d8;

@@ -63,3 +63,12 @@ div#navbar ul li ul li a {
 	padding-top: 2px;
 	padding-bottom: 2px;
 }
+
+/* Top level menu background colors should behave differently in dropdown mode than
+ * they do with a side navigation bar */
+
+li.navlist-selected a,
+li.navlist-not-selected a:hover,
+li.submenuitem-not-selected a:hover {
+	background-color: inherit !important;
+}
