@@ -78,31 +78,24 @@ li.navlist-not-selected a:hover {
 
 /* current sub menu location */
 
-/* using !important here is a hack because there is no class="submenuitem-not-selected"
- * for children of ul.selected-subnavbar-list. The right way to fix it would be to add
- * that class or better yet, stop using div#selected-subnavbar entirely in favor of 
- * the ul.subnavlist* */
-
 li.submenuitem-selected a:hover {
-	background-color: #dddddd !important;
-	color: darkblue !important;
+	background-color: #dddddd;
+	color: darkblue;
 }
 
 li.submenuitem-selected a {
-	background-color: inherit !important;
-	color: blue !important;
+	background-color: inherit;
+	color: blue;
 }
 
 /* non-selected submenu */
 
-li.submenuitem-not-selected a,
-ul#selected-subnavbar-list li a {
+li.submenuitem-not-selected a {
 	background-color: inherit;
 	color: #0089e1;
 }
 
-li.submenuitem-not-selected a:hover,
-ul#selected-subnavbar-list li a:hover {
+li.submenuitem-not-selected a:hover {
 	background-color: #dddddd;
 	color: #0089e1;
 }
