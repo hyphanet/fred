@@ -33,11 +33,13 @@ body {
  * Navigation
  */
 
-div#navbar {
+div#navbar,
+div#selected-subnavbar {
 	border-color: #d0d0d0;
 }
 
 div#navbar,
+div#subnavbar,
 ul.subnavlist,
 ul.subnavlist-selected {
 	background-color: #e8e8e8;
@@ -69,7 +71,8 @@ li.navlist-not-selected a:hover {
 	color: red;
 }
 
-li.submenuitem-not-selected a:hover {
+li.submenuitem-not-selected a:hover,
+div#selected-subnavbar li:hover {
 	background-color: #e0e0e0;
 	color: #111111;
 }
@@ -80,6 +83,8 @@ ul.subnavlist-selected,
 ul.subnavlist {
 	border-color: #d0d0d0;
 }
+
+/* the subnavbar is only displayed in top mode */
 
 /*
  * Alerts

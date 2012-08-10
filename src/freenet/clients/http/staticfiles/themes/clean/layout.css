@@ -94,16 +94,20 @@ body {
  */
 
 div#navbar {
-	border-width: 1px;
-	border-style: solid;
 	float: left;
-	margin: 5px 5px 5px 0px;
 	padding: 0px;
 	padding-bottom: 4em;
 	width: 170px;
 }
 
+div#navbar, div#selected-subnavbar {
+	border-width: 1px;
+	border-style: solid;
+	margin: 5px 5px 5px 5px;
+}
+
 div#navbar a {
+	font-weight: normal;
 	text-decoration: none;
 	display: block;
 	padding: 1px 1px 1px 5px;
@@ -140,6 +144,38 @@ ul.subnavlist-selected,
 ul.subnavlist {
 	border-width: 1px;
 	border-style: solid;
+}
+
+/* the subnavbar is only displayed in top mode */
+
+#selected-subnavbar {
+	padding: 0;
+	border-top-width: 0px !important; 
+	position: relative;
+	top: -5px;
+}
+
+#selected-subnavbar ul {
+	margin: 0;
+	padding: 0;
+	width: 100%;
+	display: table;
+	border-collapse: collapse;
+	border: none;
+}
+
+#selected-subnavbar li {
+	display: table-cell;
+	list-style-type: none;
+	margin: 0px;
+	text-align: center;
+}
+
+#selected-subnavbar a {
+	text-decoration: none;
+	display: block;
+	width: 100%;
+	height: 100%;
 }
 
 /*
@@ -218,7 +254,7 @@ li.alert-summary-text-minor {
  */
 
 #content {
-	margin: 5px 5px 5px 0;
+	margin: 5px 5px 5px 5px;
 	padding: 0 0 2em 0;
 	position: absolute;
 	left: 177px;

@@ -80,14 +80,14 @@ body {
  * Navigation
  */
 
-#navbar {
+div#navbar {
 	border-top-style: solid;
 	border-top-width: 1px;
 	margin-bottom: 0px;
 	padding: 0;
 }
 
-#navbar ul {
+div#navbar ul {
 	margin: 0;
 	padding: 0;
 	width: 100%;
@@ -96,7 +96,7 @@ body {
 	border: 0px hidden;
 }
 
-#navbar li {
+div#navbar li {
 	border-left-style: solid;
 	border-left-width: 1px;
 	display: table-cell;
@@ -107,21 +107,31 @@ body {
 	text-align: center;
 }
 
-#navbar a {
+div#navbar a {
 	text-decoration: none;
 	display: block;
 	width: 100%;
 	height: 100%;
 }
 
-#navlist li {
+div#navlist li {
 	border-bottom-width: 3px;
 	border-bottom-style: solid;
 }
 
+/* this border is only displayed in dropdown mode */
+
+ul.subnavlist-selected,
+ul.subnavlist {
+	border-width: 1px;
+	border-style: solid;
+}
+
+/* the subnavbar is only displayed in top mode */
+
 #selected-subnavbar {
 	padding: 0;
-	border-bottom-style: #d0d0f0;
+	border-bottom-style: solid;
 	border-bottom-width: 1px
 }
 
@@ -148,14 +158,6 @@ body {
 	display: block;
 	width: 100%;
 	height: 100%;
-}
-
-#navlist .subnavlist {
-    display:none;
-}
-
-#navlist .subnavlist-selected {
-    display:none;
 }
 
 /*

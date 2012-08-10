@@ -33,11 +33,13 @@ body {
  * Navigation
  */
 
-div#navbar {
+div#navbar,
+div#selected-subnavbar {
 	border-color: #676767;
 }
 
 div#navbar,
+div#subnavbar,
 ul.subnavlist,
 ul.subnavlist-selected {
 	background-color: #eeeeee;
@@ -47,12 +49,12 @@ ul.subnavlist-selected {
 
 li.navlist-selected a,
 li.submenuitem-selected a {
-	background-color: inherit;
+	background-color: #dddddd;
 	color: #0089e1;	
 }
 
 li.submenuitem-selected a {
-	background-color: inherit;	
+	background-color: #eeeeee;	
 }
 
 /* non-selected menu items */
@@ -65,12 +67,13 @@ li.submenuitem-not-selected a {
 /* hovering rules */
 
 li.navlist-not-selected a:hover {
-	background-color: inherit;
+	background-color: #dddddd;
 	color: #0089e1;
 }
 
-li.submenuitem-not-selected a:hover {
-	background-color: inherit;
+li.submenuitem-not-selected a:hover,
+div#selected-subnavbar li:hover {
+	background-color: #eeeeee;
 	color: #0089e1;
 }
 
@@ -80,6 +83,8 @@ ul.subnavlist-selected,
 ul.subnavlist {
 	border-color: #676767;
 }
+
+/* the subnavbar is only displayed in top mode */
 
 /*
  * Alerts
@@ -157,7 +162,7 @@ a:visited {
 }
 
 a:hover {
-	background-color: #eee;
+	background-color: #eeeeee;
 }
 
 .interfacelink {

@@ -58,6 +58,8 @@ body {
     background-color: #999;
 }
 
+/* the subnavbar is only displayed in top mode */
+
 #selected-subnavbar {
 	border-bottom-color: #d0d0f0;
 	background-color: #999;

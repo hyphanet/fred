@@ -8,9 +8,7 @@
 
 /* code */
 
-/* The subnavbar appears under the main navbar and shows the currently selected
- * submenu items. Most themes prefer to use the ul.subnavlist in the main navbar 
- * instead so it is not shown by default. */
+/* The subnavbar is not used in dropdown mode */
 
 div#selected-subnavbar {
 	display: none;

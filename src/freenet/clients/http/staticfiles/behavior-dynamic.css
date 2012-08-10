@@ -16,9 +16,8 @@ li.navlist-not-selected:hover ul.subnavlist {
 	display: block;
 }
 
-/* The subnavbar appears under the main navbar and shows the currently selected
- * submenu items. Most themes prefer to use the ul.subnavlist in the main navbar 
- * instead so it is not shown by default. */
+/* The subnavbar is not used when the navigation menu is on the
+ * left side of the screen */
 
 div#selected-subnavbar {
 	display: none;
