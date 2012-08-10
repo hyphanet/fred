@@ -1,74 +1,10 @@
-/* clean-dropdown */
+﻿/* clean-dropdown theme */
 
-/* Basic CSS functions */
-@import url(/static/base.css);
+/* navigation behavior */
+@import url(/static/behavior-dropdown.css);
 
-/* Bookmarks & bookmark editor */
-@import url(/static/bookmark.css);
+/* layout */
+@import url(/static/themes/clean/layout.css);
 
-/* Base theme */
-@import url(/static/themes/clean/theme.css);
-
-div#content {
-	position: inherit;
-	margin: 5px;
-}
-
-div#navbar {
-	float: none;
-	margin-left: 5px;
-	margin-bottom:5px;
-	text-align: center;
-	padding: 3px;
-}
-
-div#navbar, div#navbar ul, div#navbar ul li {
-	width: auto;
-}
-
-div#navbar ul li ul {
-	display: none;
-	position: absolute;
-	top: 1.25em;
-	left: -1.5em;
-	width: 170px;
-	z-index: 20;
-	text-align: left;
-	background-color: #e8e8e8;
-	border: 1px solid black;
-	padding: 0;
-}
-
-div#navbar ul li:hover ul, div#navbar ul li ul:hover {
-	display: block;
-}
-
-div#navbar ul li ul li {
-	display: block;
-	margin: 0;
-}
-
-div#navbar ul li {
-	position: relative;
-	display: inline-block;
-	padding: 0;
-	margin: 0;
-	margin-left: 14px;
-	margin-right: 14px;
-}
-
-div#navbar ul li a {
-	text-decoration: underline;
-}
-
-div#navbar ul li ul li a {
-	text-decoration: none;
-	display: block;
-	padding-top: 2px;
-	padding-bottom: 2px;
-}
-
-div#navbar ul#navlist li.navlist-selected a, div#navbar ul#navlist li.navlist-selected ul li.submenuitem-selected a {
-	color: blue;
-	background-color: inherit;
-}
+/* color scheme */
+@import url(/static/themes/clean/color.css);

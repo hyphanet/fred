@@ -1,0 +1,455 @@
+﻿/* color-grayandblue */
+/* [edward@rnahost.com] */
+
+/* 
+ * Overall Settings
+ */
+
+th {
+	background-color: #e8e8e8;
+}
+
+td,
+th {
+	border-color: #676767;
+}
+
+/*
+ * Body and Page Header
+ */
+
+body {
+	background-color: #ffffff;
+}
+
+/*
+ * Top Title Area
+ */
+
+#topbar h1 {
+	color:#ccc;
+}
+
+/* 
+ * Navigation
+ */
+
+div#navbar,
+div#selected-subnavbar {
+	border-color: #676767;
+}
+
+div#navbar,
+ul#navlist,
+li.navlist-selected,
+li.navlist-not-selected,
+ul.subnavlist-selected,
+ul.subnavlist,
+li.submenuitem-selected,
+li.submenuitem-not-selected,
+div#subnavbar {
+	background-color: #eeeeee;
+}
+
+/* currently-enabled top level menu  */
+
+li.navlist-selected a,
+li.submenuitem-selected a {
+	background-color: inherit;
+	color: blue;	
+}
+
+li.navlist-selected a:hover,
+li.submenuitem-selected a:hover {
+	background-color: #dddddd;
+	color: darkblue;	
+}
+/* non-selected top level menu */
+
+li.navlist-not-selected a {
+	background-color: inherit;
+	color: #0089e1;
+}
+
+li.navlist-not-selected a:hover {
+	background-color: #dddddd;
+	color: #0089e1;
+}
+
+/* current sub menu location */
+
+li.submenuitem-selected a:hover {
+	background-color: #dddddd;
+	color: darkblue;
+}
+
+li.submenuitem-selected a {
+	background-color: inherit;
+	color: blue;
+}
+
+/* non-selected submenu */
+
+li.submenuitem-not-selected a {
+	background-color: inherit;
+	color: #0089e1;
+}
+
+li.submenuitem-not-selected a:hover {
+	background-color: #dddddd;
+	color: #0089e1;
+}
+
+/* this border is only displayed in dropdown mode */
+
+ul.subnavlist-selected,
+ul.subnavlist {
+	border-color: #676767;
+}
+
+/* the subnavbar is only displayed in top mode */
+
+/*
+ * Alerts
+ */
+
+.alert-error {
+	color: darkred;
+}
+
+.alert-warning {
+	color: blue;
+}
+
+.alert-minor {
+	color: green;
+}
+
+/* 
+ * Infoboxes
+ */
+
+div.infobox {
+	background-color: #f0f0f0;
+	border-color: #676767;
+}
+
+div.infobox div.infobox-header {
+	color: #000000;
+	border-bottom-color: #a0a0a0;
+	background-color: #eee;
+}
+
+div.infobox-information div.infobox-header {
+	background-color: #eee;
+}
+
+div.infobox-warning div.infobox-header {
+	background-color: #eee;
+}
+
+div.infobox-alert {
+	background-color: #f0e8e8;
+}
+
+div.infobox-alert div.infobox-header {
+	background-color: #ffd0d0;
+}
+
+div.infobox-error {
+	background-color: #f0e8e8;
+}
+
+div.infobox-error div.infobox-header {
+	background-color: #ffd0d0;
+}
+
+div.infobox-query div.infobox-header {
+	background-color: #f0f0e8;
+}
+
+div.infobox-success div.infobox-header {
+	background-color: #e8f0e8;
+}
+
+/*
+ * Content
+ */
+
+a, a:link {
+	color: #09c;
+}
+
+a:visited { 
+	color: #07a;
+}
+
+a:hover {
+	background-color: #eeeeee;
+}
+
+.interfacelink {
+	color: #000000;
+}
+
+/*
+ * Plugins Page
+ */
+
+/* 
+ * Configuration Page
+ */
+
+ul.config {
+	border-top-color: #d0d0d0;
+	border-right-color: #d0d0d0;
+	border-left-color: #d0d0d0;
+}
+
+ul.config li {
+	border-bottom-color: #d0d0d0;
+}
+
+ul.config {
+	border-bottom-color: #a0a0a0;
+	background-color: #e8e8e8;
+}
+
+/* 
+ * Darknet Page
+ */
+
+span.peer_connected {
+	color: #008000;
+}
+
+span.peer_backed_off {
+	color: #ff0000;
+}
+
+span.peer_too_new {
+	color: #d0a0a0;
+}
+
+span.peer_too_old {
+	color: #d0a0d0;
+}
+
+span.peer_disconnected {
+	color: #7F7F7F;
+}
+
+span.peer_routing_disabled {
+        color: #7b68ee;
+}
+
+span.peer_never_connected {
+	color: #7F7F7F;
+}
+
+span.peer_disabled {
+	color: #7F7F7F;
+}
+
+span.peer_bursting {
+	color: #7F7F7F;
+}
+
+span.peer_listening {
+	color: #7F7F7F;
+}
+
+span.peer_listen_only {
+	color: #7F7F7F;
+}
+
+span.peer_version_problem {
+	color: #0089e1;
+}
+
+span.peer_idle_old {
+	color: #0089e1;
+}
+
+tr.darknet_connections_warning {
+	background-color: #ffff00;
+}
+
+/* 
+ * Statistics Page
+ */
+
+div.peercircle span.mark {
+  color: #d0d0d0;
+}
+
+div.peercircle span.me {
+  color: #0080ff;
+}
+
+div.peercircle span.connected {
+  color: #008000;
+}
+
+div.peercircle span.backed_off {
+  color: #008000;
+}
+
+div.peercircle span.disconnected {
+  color: #d0d0d0;
+}
+
+div.histogramConnected {
+  background-color: #008000;
+}
+
+div.histogramDisconnected {
+  background-color: #d0d0d0;
+}
+
+/* 
+ * Queue Page
+ */
+
+table.queue span.failure_reason_unknown {
+	color: #d0d0d0;
+}
+
+table.queue span.progress_fraction_unknown {
+	color: #d0d0d0;
+}
+
+table.queue span.progress_fraction_finalized {
+	color: #008000;
+}
+
+table.queue span.filename_direct {
+	color: #d0d0d0;
+}
+
+table.queue span.filename_none {
+	color: #d0d0d0;
+}
+
+table.queue span.persistence_reboot {
+	color: #0000ff;
+}
+
+table.queue span.persistence_forever {
+	color: #00b000;
+}
+
+table.queue span.mimetype_unknown {
+	color: #d0d0d0;
+}
+
+table.queue span.filesize_unknown {
+	color: #d0d0d0;
+}
+
+table.queue span.key_unknown {
+	color: #d0d0d0;
+}
+
+.progressbar {
+	border-color: transparent;
+	background-color: transparent;
+}
+
+.progressbar-done {
+	background-color: transparent;
+}
+
+.progressbar-min {
+	background-color: transparent;
+}
+
+.progressbar-failed {
+	background-color: transparent;
+}
+
+.progressbar-failed2 {
+	background-color: transparent;
+}
+
+tr.priority0, td.priority0 {
+	background-color: transparent;
+}
+
+tr.priority1, td.priority1 {
+	background-color: transparent;
+}
+
+tr.priority2, td.priority2 {
+	background-color: transparent;
+}
+
+tr.priority3, td.priority3 {
+	background-color: transparent;
+}
+
+tr.priority4, td.priority4 {
+	background-color: transparent;
+}
+
+tr.priority5, td.priority5 {
+	background-color: transparent;
+}
+
+tr.priority6, td.priority6 {
+	background-color: transparent;
+}
+
+div.n2ntm-message-text {
+	background-color: #ffffff;
+}
+
+td.n2ntm-send-sent {
+	background-color: #a7ffbc;
+}
+
+td.n2ntm-send-delayed {
+	background-color: #ffeba7;
+}
+
+td.n2ntm-send-queued {
+	background-color: #ffa7a7;
+}
+
+td.n2ntm-send-failed {
+	background-color: #ffb7b7;
+}
+
+/* 
+ * Translation
+ */
+
+.translate_d {
+	background-color: transparent;
+}
+
+/* 
+ * Statusbar
+ */
+
+div#statusbar-container {
+	border-color: #676767;
+	background-color: #eee;
+}
+
+div#statusbar div.progressbar {
+	background-color: transparent;
+}
+
+div#statusbar div.separator {
+	border-left-color: #676767;
+}
+
+div#statusbar div.progressbar div.progressbar-peers.very-few-peers,
+div#statusbar div.progressbar div.progressbar-peers.few-peers,
+div#statusbar div.progressbar div.progressbar-peers.avg-peers,
+div#statusbar div.progressbar div.progressbar-peers.full-peers {
+
+  background-color: transparent;
+}
+

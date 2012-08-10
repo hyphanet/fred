@@ -1,8 +1,8 @@
-﻿/* grayandblue theme */
+﻿/* grayandblue-classic theme */
 
 /* navigation behavior */
-@import url(/static/behavior-dynamic.css);
- 
+@import url(/static/behavior-classic.css);
+
 /* layout */
 @import url(/static/themes/grayandblue/layout.css);
 
