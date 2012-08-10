@@ -339,7 +339,7 @@ public class Probe implements ByteCounter {
 			if (logDEBUG) Logger.debug(Probe.class, "Probe type is " + type.name() + ".");
 		} else {
 			if (logMINOR) Logger.minor(Probe.class, "Invalid probe type " + typeCode + ".");
-			listener.onError(Error.UNRECOGNIZED_TYPE, typeCode);
+			listener.onError(Error.UNRECOGNIZED_TYPE, typeCode, true);
 			return;
 		}
 		byte htl = message.getByte(DMT.HTL);
@@ -393,7 +393,7 @@ public class Probe implements ByteCounter {
 		if (!availableSlot) {
 			//Send an overload error back to the source.
 			if (logDEBUG) Logger.debug(Probe.class, "Already accepted maximum number of probes; rejecting incoming.");
-			listener.onError(Error.OVERLOAD, null);
+			listener.onError(Error.OVERLOAD, null, true);
 			return;
 		}
 		//One-minute window on acceptance; free up this probe slot in 60 seconds.
@@ -446,7 +446,7 @@ public class Probe implements ByteCounter {
 				 * If this is a locally-started request, not a relayed one, give an error.
 				 * Otherwise, in this case there's nowhere to send the error.
 				 */
-				listener.onError(Error.DISCONNECTED, null);
+				listener.onError(Error.DISCONNECTED, null, true);
 				return true;
 			}
 
@@ -499,7 +499,7 @@ public class Probe implements ByteCounter {
 			Logger.warning(Probe.class, "Aborting probe request: send attempt limit reached.");
 		}
 
-		listener.onError(Error.CANNOT_FORWARD, null);
+		listener.onError(Error.CANNOT_FORWARD, null, true);
 		return true;
 	}
 
@@ -681,7 +681,7 @@ public class Probe implements ByteCounter {
 		@Override
 		public void onDisconnect(PeerContext context) {
 			if (logDEBUG) Logger.debug(Probe.class, "Next node in chain disconnected.");
-			listener.onError(Error.DISCONNECTED, null);
+			listener.onError(Error.DISCONNECTED, null, true);
 		}
 
 		/**
@@ -708,10 +708,10 @@ public class Probe implements ByteCounter {
 			} else if (message.getSpec().equals(DMT.ProbeError)) {
 				final byte rawError = message.getByte(DMT.TYPE);
 				if (Error.isValid(rawError)) {
-					listener.onError(Error.valueOf(rawError), null);
+					listener.onError(Error.valueOf(rawError), null, false);
 				} else {
 					//Not recognized locally.
-					listener.onError(Error.UNKNOWN, rawError);
+					listener.onError(Error.UNKNOWN, rawError, false);
 				}
 			} else if (message.getSpec().equals(DMT.ProbeRefused)) {
 				listener.onRefused();
@@ -726,7 +726,7 @@ public class Probe implements ByteCounter {
 		@Override
 		public void onTimeout() {
 			if (logDEBUG) Logger.debug(Probe.class, "Timed out.");
-			listener.onError(Error.TIMEOUT, null);
+			listener.onError(Error.TIMEOUT, null, true);
 		}
 
 		@Override
@@ -770,7 +770,7 @@ public class Probe implements ByteCounter {
 		}
 
 		@Override
-		public void onError(Error error, Byte code) {
+		public void onError(Error error, Byte code, boolean local) {
 			send(DMT.createProbeError(uid, error));
 		}
 

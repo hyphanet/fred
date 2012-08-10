@@ -83,8 +83,8 @@ public class ProbeRequest extends FCPMessage {
 
 		Listener listener = new Listener() {
 			@Override
-			public void onError(Error error, Byte code) {
-				handler.outputHandler.queue(new ProbeError(identifier, error, code));
+			public void onError(Error error, Byte code, boolean local) {
+				handler.outputHandler.queue(new ProbeError(identifier, error, code, local));
 			}
 
 			@Override

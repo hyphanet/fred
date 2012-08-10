@@ -22,6 +22,7 @@ public abstract class FCPMessage {
 	public static final String HTL = "HopsToLive";
 	public static final String IDENTIFIER = "Identifier";
 	public static final String LINK_LENGTHS = "LinkLengths";
+	public static final String LOCAL = "Local";
 	public static final String LOCATION = "Location";
 	public static final String OUTPUT_BANDWIDTH = "OutputBandwidth";
 	public static final String PROBE_IDENTIFIER = "ProbeIdentifier";
