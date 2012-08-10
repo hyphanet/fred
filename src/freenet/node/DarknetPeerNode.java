@@ -321,7 +321,7 @@ public class DarknetPeerNode extends PeerNode {
 			isDisabled = true;
 		}
 		if(isConnected()) {
-			forceDisconnect(true);
+			forceDisconnect();
 		}
 		stopARKFetcher();
 		setPeerNodeStatus(System.currentTimeMillis());
@@ -1727,7 +1727,7 @@ public class DarknetPeerNode extends PeerNode {
 		System.err.println("Your friend node \""+getName()+"\" ("+getPeer()+" version "+getVersion()+") is having severe problems. We have disconnected to try to limit the effect on us. It will reconnect soon.");
 		// FIXME post a useralert
 		// Disconnect.
-		forceDisconnect(true);
+		forceDisconnect();
 	}
 
 	public synchronized FRIEND_TRUST getTrustLevel() {

@@ -4,15 +4,15 @@
 package freenet.node;
 
 class MessageFragment {
-	boolean shortMessage;
-	boolean isFragmented;
-	boolean firstFragment;
-	int messageID;
-	int fragmentLength;
-	int messageLength;
-	int fragmentOffset;
-	byte[] fragmentData;
-	MessageWrapper wrapper;
+	final boolean shortMessage;
+	final boolean isFragmented;
+	final boolean firstFragment;
+	final int messageID;
+	final int fragmentLength;
+	final int messageLength;
+	final int fragmentOffset;
+	final byte[] fragmentData;
+	final MessageWrapper wrapper;
 
 	public MessageFragment(boolean shortMessage, boolean isFragmented, boolean firstFragment, int messageID,
 	                int fragmentLength, int messageLength, int fragmentOffset, byte[] fragmentData,

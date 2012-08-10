@@ -54,6 +54,12 @@ public class AddressIdentifier {
 	/**
 	 * Tries to detemine the address type of the given address.
 	 * 
+	 * REDFLAG: IPv6 percent scope ID's could cause problems with URI's.
+	 * Should not be exploitable as we don't do anything important with 
+	 * URI's with hosts in anyway. In particular we MUST NOT do anything 
+	 * with hosts from URI's from untrusted sources e.g. content filter.
+	 * But then that would be completely stupid, so we don't.
+	 * 
 	 * @param address
 	 *            The address to determine the type of
 	 * @return {@link AddressType#OTHER} if <code>address</code> is a
@@ -61,7 +67,7 @@ public class AddressIdentifier {
 	 *         otherwise
 	 */
 	public static AddressType getAddressType(String address) {
-		return AddressIdentifier.getAddressType(address,false);
+		return AddressIdentifier.getAddressType(address,true);
 	}
 
 	/**

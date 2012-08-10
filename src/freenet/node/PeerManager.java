@@ -531,16 +531,18 @@ public class PeerManager {
 	 * non-isRealConnection()'s since they can also be connected.
 	 */
 	public PeerNode getByPeer(Peer peer) {
-		PeerNode[] peerList = myPeers;
-		for(int i = 0; i < peerList.length; i++) {
-			if(peerList[i].matchesPeerAndPort(peer))
-				return peerList[i];
+		PeerNode[] peerList = myPeers();
+		for(PeerNode pn : peerList) {
+			if(pn.isDisabled()) continue;
+			if(pn.matchesPeerAndPort(peer))
+				return pn;
 		}
 		// Try a match by IP address if we can't match exactly by IP:port.
 		FreenetInetAddress addr = peer.getFreenetAddress();
-		for(int i = 0; i < peerList.length; i++) {
-			if(peerList[i].matchesIP(addr, false))
-				return peerList[i];
+		for(PeerNode pn : peerList) {
+			if(pn.isDisabled()) continue;
+			if(pn.matchesIP(addr, false))
+				return pn;
 		}
 		return null;
 	}
@@ -553,16 +555,18 @@ public class PeerManager {
 	 * @return
 	 */
 	public PeerNode getByPeer(Peer peer, FNPPacketMangler mangler) {
-		PeerNode[] peerList = myPeers;
-		for(int i = 0; i < peerList.length; i++) {
-			if(peerList[i].matchesPeerAndPort(peer) && peerList[i].getOutgoingMangler() == mangler)
-				return peerList[i];
+		PeerNode[] peerList = myPeers();
+		for(PeerNode pn : peerList) {
+			if(pn.isDisabled()) continue;
+			if(pn.matchesPeerAndPort(peer) && pn.getOutgoingMangler() == mangler)
+				return pn;
 		}
 		// Try a match by IP address if we can't match exactly by IP:port.
 		FreenetInetAddress addr = peer.getFreenetAddress();
-		for(int i = 0; i < peerList.length; i++) {
-			if(peerList[i].matchesIP(addr, false) && peerList[i].getOutgoingMangler() == mangler)
-				return peerList[i];
+		for(PeerNode pn : peerList) {
+			if(pn.isDisabled()) continue;
+			if(pn.matchesIP(addr, false) && pn.getOutgoingMangler() == mangler)
+				return pn;
 		}
 		return null;
 	}

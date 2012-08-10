@@ -190,7 +190,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				if(locs.length > OpennetManager.PANIC_MAX_PEERS) {
 					// This can't happen by accident
 					Logger.error(this, "We received "+locs.length+ " locations from "+source.toString()+"! That should *NOT* happen! Possible attack!");
-					source.forceDisconnect(true);
+					source.forceDisconnect();
 					return true;
 				} else {
 					// A few extra can happen by accident. Just use the first 20.
@@ -791,7 +791,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	 * Handle an FNPRoutedRejected message.
 	 */
 	private boolean handleRoutedRejected(Message m) {
-		if(node.enableRoutedPing()) return true;
+		if(!node.enableRoutedPing()) return true;
 		long id = m.getLong(DMT.UID);
 		Long lid = Long.valueOf(id);
 		RoutedContext rc = routedContexts.get(lid);
@@ -829,7 +829,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	 * @return False if we want the message put back on the queue.
 	 */
 	boolean handleRouted(Message m, PeerNode source) {
-		if(node.enableRoutedPing()) return true;
+		if(!node.enableRoutedPing()) return true;
 		if(logMINOR) Logger.minor(this, "handleRouted("+m+ ')');
 
 		long id = m.getLong(DMT.UID);
@@ -874,7 +874,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	}
 
 	boolean handleRoutedReply(Message m) {
-		if(node.enableRoutedPing()) return true;
+		if(!node.enableRoutedPing()) return true;
 		long id = m.getLong(DMT.UID);
 		if(logMINOR) Logger.minor(this, "Got reply: "+m);
 		Long lid = Long.valueOf(id);
@@ -886,7 +886,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		PeerNode pn = ctx.source;
 		if(pn == null) return false;
 		try {
-			pn.sendAsync(m, null, nodeStats.routedMessageCtr);
+			pn.sendAsync(m.cloneAndDropSubMessages(), null, nodeStats.routedMessageCtr);
 		} catch (NotConnectedException e) {
 			if(logMINOR) Logger.minor(this, "Lost connection forwarding "+m+" to "+pn);
 		}

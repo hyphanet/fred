@@ -1,13 +1,7 @@
-/* boxed */
+﻿/* boxed */
 
 /* Basic CSS functions */
-@import url(/static/base.css);
-
-/* Bookmarks & bookmark editor */
-@import url(/static/bookmark.css);
-
-/* Status bar style & colors */
-@import url(/static/statusbar.css);
+@import url(/static/common_includes.css);
 
 /* boxed overall settings */ 
 
@@ -83,19 +77,19 @@ ul.alert-summary {
 }
 
 li.alert-summary-text-error {
-	background: url(error-16.gif) left center no-repeat;
+	background: url(error-16.png) left center no-repeat;
 }
 
 li.alert-summary-text-alert {
-	background: url(alert-16.gif) left center no-repeat;
+	background: url(alert-16.png) left center no-repeat;
 }
 
 li.alert-summary-text-warning {
-	background: url(warning-16.gif) left center no-repeat;
+	background: url(warning-16.png) left center no-repeat;
 }
 
 li.alert-summary-text-minor {
-	background: url(information-16.gif) left center no-repeat;
+	background: url(information-16.png) left center no-repeat;
 }
 
 #topbar, #navbar, .infobox-content, ul.config {

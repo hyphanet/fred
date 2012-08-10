@@ -1,0 +1,10 @@
+﻿/* grayandblue-static theme */
+
+/* navigation behavior */
+@import url(/static/behavior-static.css);
+ 
+/* layout */
+@import url(/static/themes/grayandblue/layout.css);
+
+/* color scheme */
+@import url(/static/themes/grayandblue/color.css);

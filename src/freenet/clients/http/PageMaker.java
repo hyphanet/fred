@@ -23,10 +23,20 @@ public final class PageMaker {
 	public enum THEME {
 		BOXED("boxed", "Boxed", "", false, false),
 		CLEAN("clean", "Clean", "Mr. Proper", false, false),
+		CLEAN_CLASSIC("clean-classic", "Clean (Classic menu)", "Clean theme with a classic menu.", false, false),
 		CLEAN_DROPDOWN("clean-dropdown", "Clean (Dropdown menu)", "Clean theme with a dropdown menu.", false, false),
 		CLEAN_STATIC("clean-static", "Clean (Static menu)", "Clean theme with a static menu.", false, false),
-		GRAYANDBLUE("grayandblue", "Gray And Blue", "", false, false),
-		SKY("sky", "Sky", "", false, false),
+		CLEAN_TOP("clean-top", "Clean (Top menu)", "Clean theme with a static top menu.", false, false),
+		GRAYANDBLUE("grayandblue", "Gray And Blue (Classic menu)", "", false, false),
+		GRAYANDBLUE_DYNAMIC("grayandblue-dynamic", "Gray And Blue (Dynamic menu)", "", false, false),
+		GRAYANDBLUE_DROPDOWN("grayandblue-dropdown", "Gray And Blue (Dropdown menu)", "", false, false),
+		GRAYANDBLUE_STATIC("grayandblue-static", "Gray And Blue (Static menu)", "", false, false),
+		GRAYANDBLUE_TOP("grayandblue-top", "Gray And Blue (Top menu)", "", false, false),
+		SKY("sky", "Sky (Top menu)", "", false, false),
+		SKY_CLASSIC("sky-classic", "Sky (Classic menu)", "", false, false),
+		SKY_DYNAMIC("sky-dynamic", "Sky (DYNAMIC menu)", "", false, false),
+		SKY_DROPDOWN("sky-dropdown", "Sky (Dropdown menu)", "", false, false),
+		SKY_STATIC("sky-static", "Sky (Static menu)", "", false, false),
 		MINIMALBLUE("minimalblue", "Minimal Blue", "A minimalistic theme in blue", false, false),
 		MINIMALISTIC("minimalist", "Minimalistic", "A very minimalistic theme based on Google's designs", true, true),
 		RABBIT_HOLE("rabbit-hole", "Into the Rabbit Hole", "Simple and clean theme", false, false);
@@ -35,10 +45,20 @@ public final class PageMaker {
 		public static final String[] possibleValues = {
 			BOXED.code,
 			CLEAN.code,
+			CLEAN_CLASSIC.code,
 			CLEAN_DROPDOWN.code,
 			CLEAN_STATIC.code,
+			CLEAN_TOP.code,
 			GRAYANDBLUE.code,
+			GRAYANDBLUE_DYNAMIC.code,
+			GRAYANDBLUE_DROPDOWN.code,
+			GRAYANDBLUE_STATIC.code,
+			GRAYANDBLUE_TOP.code,
 			SKY.code,
+			SKY_CLASSIC.code,
+			SKY_DYNAMIC.code,
+			SKY_DROPDOWN.code,
+			SKY_STATIC.code,
 			MINIMALBLUE.code,
 			MINIMALISTIC.code,
 			RABBIT_HOLE.code
@@ -555,7 +575,7 @@ public final class PageMaker {
 					if(activePath.equals(navigationPath)) {
 						sublistItem = subnavlist.addChild("li", "class", "submenuitem-selected");
 					} else {
-						sublistItem = subnavlist.addChild("li");
+						sublistItem = subnavlist.addChild("li", "class", "submenuitem-not-selected");
 					}
 					
 					FredPluginL10n l10n = selected.navigationLinkL10n.get(navigationLink);
@@ -718,7 +738,7 @@ public final class PageMaker {
 	 * are immutable.
 	 *
 	 * @see PageMaker#getPageNode(String, ToadletContext, RenderParameters)
-	 * @author <a href="mailto:bombe@pterodactylus.net">David ‘Bombe’ Roden</a>
+	 * @author <a href="mailto:bombe@pterodactylus.net">David ?Bombe? Roden</a>
 	 */
 	public static class RenderParameters {
 

@@ -8,6 +8,7 @@ import java.util.LinkedList;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
+import com.db4o.ext.Db4oException;
 
 import freenet.client.FECQueue;
 import freenet.client.FetchException;
@@ -111,7 +112,16 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public static void loadKeyListeners(final ObjectContainer container, ClientContext context) {
 		ObjectSet<HasKeyListener> results =
 			Db4oBugs.query(container, HasKeyListener.class);
-		for(HasKeyListener l : results) {
+		while(true) {
+			HasKeyListener l;
+			try {
+				if(!results.hasNext()) break;
+				l = results.next();
+			} catch (IllegalArgumentException e) {
+				throw new Db4oException("Something is broken: "+e, e);
+				// Allow caller to terminate database.
+				// IllegalArgumentException isn't caught, but here it is exclusively caused by corrupt database and/or database bugs. :(
+			}
 			container.activate(l, 1);
 			try {
 				if(l.isCancelled(container)) continue;

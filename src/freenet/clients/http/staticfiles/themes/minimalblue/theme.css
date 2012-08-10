@@ -1,18 +1,13 @@
-/* minimalblue */
+﻿/* minimalblue */
+
+/* Basic CSS functions */
+@import url(/static/common_includes.css);
+
+/* minimal blue overall settings */
 
 /*****************/
 /* Global config */
 /*****************/
-
-/* Basic CSS functions */
-@import url(/static/base.css);
-
-@import url(/static/bookmark.css);
-
-/* Status bar style & colors */
-@import url(/static/statusbar.css);
-
-/* minimal blue overall settings */
 
 body{
 width: 100%;
