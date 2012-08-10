@@ -1,6 +1,5 @@
 package freenet.pluginmanager;
 
-import java.net.UnknownHostException;
 import java.util.List;
 
 import freenet.node.Node;
