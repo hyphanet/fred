@@ -26,6 +26,9 @@ div#content {
 div#navbar {
 	float: none !important;
 	padding: 0px !important;
+	position: relative !important;
+	left: 0px !important;
+	top: 0px !important;
 }
 
 div#navbar,

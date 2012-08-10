@@ -61,9 +61,11 @@ body {
  */
 
 #topbar {
-	background-image: url(logo.png);
+	background-image: url(/static/themes/sky/logo.png);
 	background-position: 30px 3px;
 	background-repeat: no-repeat;
+	border-bottom-style: solid;
+	border-bottom-width: 0px;
 	margin: 0;
 	min-height: 50px;
 	padding: 5px;
@@ -81,42 +83,53 @@ body {
  */
 
 div#navbar {
-	border-top-style: solid;
-	border-top-width: 1px;
-	margin-bottom: 0px;
-	padding: 0;
-}
-
-div#navbar ul {
-	margin: 0;
-	padding: 0;
-	width: 100%;
-	display: table;
-	border-collapse: collapse;
-	border: 0px hidden;
-}
-
-div#navbar li {
-	border-left-style: solid;
-	border-left-width: 1px;
-	display: table-cell;
-	list-style-type: none;
+	float: left;
 	margin: 0px;
-	padding-left: 5px;
-	padding-right: 5px;
-	text-align: center;
+	margin-bottom: .5em;
+	padding: 0px;
+	position: relative;
+	left: 10px;
+	top: 10px;
+	width: 155px;
+}
+
+div#navbar, div#selected-subnavbar {
+	border-width: 1px;
+	border-style: solid;
+	margin: 0px;
 }
 
 div#navbar a {
 	text-decoration: none;
 	display: block;
-	width: 100%;
-	height: 100%;
+	padding: 0px;
+	padding-left: 1em;
+	padding-right: 5px;
+	padding-top: 5px;
 }
 
-div#navlist li {
-	border-bottom-width: 3px;
-	border-bottom-style: solid;
+div#navbar ul#navlist li a {
+	font-weight: bold;
+}
+
+div#navbar ul#navlist li ul a{
+	font-weight: normal;
+}
+
+div#navbar ul,
+div#navbar ul li ul {
+	list-style-type: none;
+	padding: 0;
+	margin: 0;
+}
+
+div#navbar ul li ul {
+	margin-left: 1.5em;
+}
+
+div#navbar ul#navlist li.navlist-selected ul li a,
+div#navbar ul#navlist li ul li a {
+	font-size: 0.9em;
 }
 
 /* this border is only displayed in dropdown mode */
@@ -130,9 +143,10 @@ ul.subnavlist {
 /* the subnavbar is only displayed in top mode */
 
 #selected-subnavbar {
+	border-top-width: 0px !important;
 	padding: 0;
-	border-bottom-style: solid;
-	border-bottom-width: 1px
+	position: relative;
+	top: 0px;
 }
 
 #selected-subnavbar ul {
@@ -141,12 +155,10 @@ ul.subnavlist {
 	width: 100%;
 	display: table;
 	border-collapse: collapse;
-	border: 0px hidden;
+	border: none;
 }
 
 #selected-subnavbar li {
-	border-left-style: solid;
-	border-left-width: 1px;
 	display: table-cell;
 	list-style-type: none;
 	margin: 0px;
@@ -171,7 +183,7 @@ ul.subnavlist {
 div.infobox {
 	border-style: solid;
 	border-width: 1px;
-	margin: 10px;
+	margin: 0 0 10px 0;
 	padding: 10px;
 }
 
@@ -215,8 +227,11 @@ li.alert-summary-text-minor {
  */
 
 #content {
-	margin-bottom: 2em;
+	margin: 10px;
 	padding: 0;
+	padding-bottom: 2em;
+	position: absolute;
+	left: 167px;
 }
 
 .interfacelink {

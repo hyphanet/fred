@@ -63,7 +63,7 @@ form {
  */
 
 body {
-	margin: 0 0 2em 0;
+	margin: 0;
 	padding: 0;
 }
 
@@ -95,22 +95,35 @@ body {
 
 div#navbar {
 	float: left;
+	margin: 0px;
 	padding: 0px;
-	padding-bottom: 4em;
-	width: 170px;
+	position: relative;
+	left: 5px;
+	top: 5px;
+	width: 155px;
 }
 
 div#navbar, div#selected-subnavbar {
 	border-width: 1px;
 	border-style: solid;
-	margin: 5px 5px 5px 5px;
+	margin: 0px;
 }
 
 div#navbar a {
-	font-weight: normal;
 	text-decoration: none;
 	display: block;
-	padding: 1px 1px 1px 5px;
+	padding: 0px;
+	padding-left: 1em;
+	padding-right: 5px;
+	padding-top: 5px;
+}
+
+div#navbar ul#navlist li a {
+	font-weight: normal;
+}
+
+div#navbar ul#navlist li ul a{
+	font-weight: normal;
 }
 
 div#navbar ul,
@@ -121,16 +134,7 @@ div#navbar ul li ul {
 }
 
 div#navbar ul li ul {
-	margin-left: 20px;
-	padding-bottom: 10px;
-	padding-top: 1px;
-}
-
-div#navbar ul li {
-	padding-top: 5px;
-}
-div#navbar ul li ul li:first-child {
-	padding-top: 0;
+	margin-left: 1.5em;
 }
 
 div#navbar ul#navlist li.navlist-selected ul li a,
@@ -149,10 +153,10 @@ ul.subnavlist {
 /* the subnavbar is only displayed in top mode */
 
 #selected-subnavbar {
-	padding: 0;
 	border-top-width: 0px !important; 
+	padding: 0;
 	position: relative;
-	top: -5px;
+	top: 0px;
 }
 
 #selected-subnavbar ul {
@@ -254,11 +258,11 @@ li.alert-summary-text-minor {
  */
 
 #content {
-	margin: 5px 5px 5px 5px;
-	padding: 0 0 2em 0;
+	margin: 5px;
+	padding: 0;
+	padding-bottom: 2em;
 	position: absolute;
-	left: 177px;
-	right: 0px;
+	left: 162px;
 }
 
 .interfacelink {

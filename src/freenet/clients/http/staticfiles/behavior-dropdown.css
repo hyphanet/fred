@@ -30,11 +30,9 @@ li.navlist-selected:hover ul.subnavlist-selected {
 /* Top level menu background colors should behave differently in dropdown mode than
  * they do with a side navigation bar */
 
-li.navlist-selected a,
-li.navlist-not-selected a:hover,
-li.submenuitem-not-selected a:hover {
+/* li.navlist-selected a {
 	background-color: inherit !important;
-}
+} */
 
 /* move the content window to the left side of the screen */
 
@@ -46,8 +44,20 @@ div#content {
 
 div#navbar {
 	float: none !important;
-	padding: 3px !important;
 	text-align: center !important;
+	padding: 0px !important;
+	position: relative !important;
+	top: 0px !important;
+	left: 0px !important;
+}
+
+div#navbar a {
+	 padding-left: 5px !important;
+	 padding-right: 5px! important;
+}
+
+#navlist li a {
+	 padding-bottom: 5px !important;
 }
 
 div#navbar,
@@ -82,11 +92,11 @@ ul.subnavlist-selected,
 ul.subnavlist {
 	margin: 0 !important;
 	position: absolute !important;
-	top: 1.25em !important;
+	top: 1.5em !important;
 	left: -1.5em !important;
 	padding: 0 0 0 0 !important;
 	text-align: left !important;
-	width: 15em !important;
+	width: 12em !important;
 	z-index: 20 !important;
 }
 

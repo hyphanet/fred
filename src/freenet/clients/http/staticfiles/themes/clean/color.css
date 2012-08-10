@@ -8,7 +8,8 @@ th {
 	background-color: #e8e8e8;
 }
 
-th, td {
+td,
+th {
 	border-color: #d0d0d0;
 }
 
@@ -39,42 +40,71 @@ div#selected-subnavbar {
 }
 
 div#navbar,
-div#subnavbar,
+ul#navlist,
+li.navlist-selected,
+li.navlist-not-selected,
+ul.subnavlist-selected,
 ul.subnavlist,
-ul.subnavlist-selected {
+li.submenuitem-selected,
+li.submenuitem-not-selected,
+div#subnavbar {
 	background-color: #e8e8e8;
 }
 
-/* selected menu items */
+/* currently-enabled top level menu  */
 
 li.navlist-selected a,
 li.submenuitem-selected a {
-	background-color: #dddddd;
+	background-color: inherit;
 	color: blue;	
 }
 
-li.submenuitem-selected a {
-	background-color: #e0e0e0;	
+li.navlist-selected a:hover,
+li.submenuitem-selected a:hover {
+	background-color: #e0e0e0;
+	color: red;	
 }
+/* non-selected top level menu */
 
-/* non-selected menu items */
-
-li.submenuitem-not-selected a {
-	background-color: #e8e8e8;
-	color: #666666;
+li.navlist-not-selected a {
+	background-color: inherit;
+	color: inherit;
 }
-
-/* hovering rules */
 
 li.navlist-not-selected a:hover {
-	background-color: #dddddd;
+	background-color: #e0e0e0;
 	color: red;
 }
 
+/* current sub menu location */
+
+/* using !important here is a hack because there is no class="submenuitem-not-selected"
+ * for children of ul.selected-subnavbar-list. The right way to fix it would be to add
+ * that class or better yet, stop using div#selected-subnavbar entirely in favor of 
+ * the ul.subnavlist* */
+
+li.submenuitem-selected a:hover {
+	background-color: #e0e0e0 !important;
+	color: red !important;
+}
+
+li.submenuitem-selected a {
+	background-color: inherit !important;
+	color: blue !important;
+}
+
+/* non-selected submenu */
+
+li.submenuitem-not-selected a,
+ul#selected-subnavbar-list li a {
+	background-color: inherit;
+	color: inherit;
+}
+
 li.submenuitem-not-selected a:hover,
-div#selected-subnavbar li:hover {
+ul#selected-subnavbar-list li a:hover {
 	background-color: #e0e0e0;
-	color: #111111;
+	color: red;
 }
 
 /* this border is only displayed in dropdown mode */
@@ -340,33 +370,42 @@ table.queue span.key_unknown {
 	background-color: #ff4444;
 }
 
-tr.priority0, td.priority0 {
+td.priority0,
+tr.priority0 {
 	background-color: #ffb7b7;
 }
 
-tr.priority1, td.priority1 {
+td.priority1,
+tr.priority1 {
 	background-color: #ffcea7;
 }
 
-tr.priority2, td.priority2 {
+td.priority2,
+tr.priority2 {
 	background-color: #ffeba7;
 }
 
-tr.priority3, td.priority3 {
+td.priority3,
+tr.priority3 {
 	background-color: #ddffa7;
 }
 
-tr.priority4, td.priority4 {
+td.priority4,
+tr.priority4 {
 	background-color: #a7ffbc;
 }
 
-tr.priority5, td.priority5 {
+td.priority5,
+tr.priority5 {
 	background-color: #a7fff8;
 }
 
-tr.priority6, td.priority6 {
+td.priority6,
+tr.priority6 {
 	background-color: #a7caff;
 }
+
+/* Node to node text message */
 
 div.n2ntm-message-text {
 	background-color: #ffffff;

@@ -33,53 +33,90 @@ body {
  * Navigation
  */
 
-#navbar {
-	border-top-color: #d0d0f0;
-	background-color: #eaf2ff;
+
+div#navbar,
+div#selected-subnavbar {
+	border-color: #d0d0f0;
 }
 
-#navbar li {
-	border-left-color: #d0d0f0;
+div#navbar,
+ul#navlist,
+li.navlist-selected,
+li.navlist-not-selected,
+ul.subnavlist-selected,
+ul.subnavlist,
+li.submenuitem-selected,
+li.submenuitem-not-selected,
+div#subnavbar {
+	background-color: #f5f9ff;
 }
 
-#navbar li:hover {
+/* currently-enabled top level menu  */
+
+li.navlist-selected a,
+li.submenuitem-selected a {
+	background-color: #ccccdd;
+	color: inherit;	
+}
+
+li.navlist-selected a:hover,
+li.submenuitem-selected a:hover {
 	background-color: #75a9ff;
+	color: inherit;	
+}
+/* non-selected top level menu */
+
+li.navlist-not-selected a {
+	background-color: inherit;
+	color: inherit;
 }
 
-#navbar a {
-	color: #000000;
+li.navlist-not-selected a:hover {
+	background-color: #75a9ff;
+	color: inherit;
 }
 
-#navlist li {
-    border-bottom-color: #d0d0f0;
+/* current sub menu location */
+
+/* using !important here is a hack because there is no class="submenuitem-not-selected"
+ * for children of ul.selected-subnavbar-list. The right way to fix it would be to add
+ * that class or better yet, stop using div#selected-subnavbar entirely in favor of 
+ * the ul.subnavlist* */
+
+li.submenuitem-selected a:hover {
+	background-color: #75a9ff !important;
+	color: inherit !important;
 }
 
-.navlist-selected {
-    background-color: #999;
+li.submenuitem-selected a {
+	/* background-color: #56a6d1 !important; */
+	background-color: #e3e3f0 !important;
+	color: inherit !important;
+}
+
+/* non-selected submenu */
+
+li.submenuitem-not-selected a,
+ul#selected-subnavbar-list li a {
+	/* background-color: #999999; */
+	background-color: #f5f9ff;
+	color: inherit;
+}
+
+li.submenuitem-not-selected a:hover,
+ul#selected-subnavbar-list li a:hover {
+	background-color: #75a9ff;
+	color: inherit;
+}
+
+/* this border is only displayed in dropdown mode */
+
+ul.subnavlist-selected,
+ul.subnavlist {
+	border-color: #d0d0f0;
 }
 
 /* the subnavbar is only displayed in top mode */
-
-#selected-subnavbar {
-	border-bottom-color: #d0d0f0;
-	background-color: #999;
-}
-
-#selected-subnavbar li {
-	border-left-color: #d0d0f0;
-}
-
-#selected-subnavbar li:hover {
-	background-color: #75a9ff;
-}
-
-#selected-subnavbar a {
-	color: #000000;
-}
-
-#selected-subnavbar .submenuitem-selected {
-    background:#56A6D1;
-}
 
 /*
  * Alerts
@@ -183,51 +220,51 @@ ul.config span.configprefix {
  * Darknet Page
  */
 
-table.darknet_connections span.peer_connected {
+span.peer_connected {
 	color: #008000;
 }
 
-table.darknet_connections span.peer_backed_off {
+span.peer_backed_off {
 	color: #706000;
 }
 
-table.darknet_connections span.peer_too_new {
+span.peer_too_new {
 	color: #d03333;
 }
 
-table.darknet_connections span.peer_too_old {
+span.peer_too_old {
 	color: #d0a0d0;
 }
 
-table.darknet_connections span.peer_disconnected {
+span.peer_disconnected {
 	color: #d0d0d0;
 }
 
-table.darknet_connections span.peer_never_connected {
+span.peer_never_connected {
 	color: #a0a0a0;
 }
 
-table.darknet_connections span.peer_disabled {
+span.peer_disabled {
 	color: #a0a0a0;
 }
 
-table.darknet_connections span.peer_bursting {
+span.peer_bursting {
 	color: #a0a0a0;
 }
 
-table.darknet_connections span.peer_listening {
+span.peer_listening {
 	color: #a0a0a0;
 }
 
-table.darknet_connections span.peer_listen_only {
+span.peer_listen_only {
 	color: #a0a0a0;
 }
 
-table.darknet_connections span.peer_version_problem {
+span.peer_version_problem {
 	color: #d07070;
 }
 
-table.darknet_connections span.peer_idle_old {
+span.peer_idle_old {
 	color: #d07070;
 }
 
@@ -307,24 +344,24 @@ table.queue span.key_unknown {
 	color: #d0d0d0;
 }
 
-div.progressbar {
+.progressbar {
 	background-color: #f6f9ff;
 	border-color: #97beff;
 }
 
-div.progressbar-done {
+.progressbar-done {
 	background-color: #8092ff;
 }
 
-div.progressbar-min {
+.progressbar-min {
 	background-color: #cad2ff;
 }
 
-div.progressbar-failed {
+.progressbar-failed {
 	background-color: #ffa0a0;
 }
 
-div.progressbar-failed2 {
+.progressbar-failed2 {
 	background-color: #dd4040;
 }
 
@@ -348,17 +385,17 @@ tr.priority3 {
 	background-color: #ddffa7;
 }
 
-td.priority4
+td.priority4,
 tr.priority4 {
 	background-color: #a7ffbc;
 }
 
-td.priority5
+td.priority5,
 tr.priority5 {
 	background-color: #a7fff8;
 }
 
-td.priority6
+td.priority6,
 tr.priority6 {
 	background-color: #a7caff;
 }
