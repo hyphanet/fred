@@ -121,12 +121,13 @@ div#navbar a {
 	padding-top: 5px;
 }
 
-div#navbar ul#navlist li a {
+ul#navlist li a {
 	font-weight: bold;
 }
 
-div#navbar ul#navlist li ul a{
-	font-weight: normal;
+ul#navlist li ul a,
+ul#selected-subnavbar-list li a {
+	font-weight: bold;
 }
 
 div#navbar ul,
@@ -137,7 +138,7 @@ div#navbar ul li ul {
 }
 
 div#navbar ul li ul {
-	margin-left: 1.5em;
+	margin-left: .75em;
 }
 
 div#navbar ul#navlist li.navlist-selected ul li a,

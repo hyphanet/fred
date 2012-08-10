@@ -85,7 +85,6 @@ body {
 div#navbar {
 	float: left;
 	margin: 0px;
-	margin-bottom: .5em;
 	padding: 0px;
 	position: relative;
 	left: 10px;
@@ -108,11 +107,12 @@ div#navbar a {
 	padding-top: 5px;
 }
 
-div#navbar ul#navlist li a {
+ul#navlist li a {
 	font-weight: bold;
 }
 
-div#navbar ul#navlist li ul a{
+ul#navlist li ul a,
+ul#selected-subnavbar-list li a {
 	font-weight: normal;
 }
 

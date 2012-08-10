@@ -89,7 +89,6 @@ li.submenuitem-selected a:hover {
 }
 
 li.submenuitem-selected a {
-	/* background-color: #56a6d1 !important; */
 	background-color: #e3e3f0 !important;
 	color: inherit !important;
 }
@@ -98,7 +97,6 @@ li.submenuitem-selected a {
 
 li.submenuitem-not-selected a,
 ul#selected-subnavbar-list li a {
-	/* background-color: #999999; */
 	background-color: #f5f9ff;
 	color: inherit;
 }

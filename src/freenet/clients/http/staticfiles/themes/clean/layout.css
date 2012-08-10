@@ -118,11 +118,12 @@ div#navbar a {
 	padding-top: 5px;
 }
 
-div#navbar ul#navlist li a {
+ul#navlist li a {
 	font-weight: normal;
 }
 
-div#navbar ul#navlist li ul a{
+ul#navlist li ul a,
+ul#selected-subnavbar-list li a {
 	font-weight: normal;
 }
 
