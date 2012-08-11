@@ -94,20 +94,6 @@ li.alert-summary-text-minor {
  * Plugins Page
  */
 
-table.plugins td,
-table.plugins th {
-	font-size: 8pt;
-}
-
-table.plugins span {
-	font-weight: bold;
-	font-size: 8pt;
-}
-
-table.plugins form {
-	display: inline;
-}
-
 /* 
  * Configuration Page
  */

@@ -69,18 +69,6 @@ li.alert-summary-text-minor {
  * Plugins Page
  */
 
-table.plugins {
-	width: 100%;
-}
-
-table.plugins span {
-	font-weight: bold;
-}
-
-table.plugins form {
-	display: inline;
-}
-
 /* 
  * Configuration Page
  */

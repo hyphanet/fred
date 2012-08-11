@@ -53,6 +53,12 @@ th {
 td,
 th {
 	padding: 0.333em;
+}
+
+table,
+td,
+th,
+thead {
 	border-style: solid;
 	border-width: 1px;
 }
@@ -290,5 +296,38 @@ li.alert-summary-text-minor {
 
 .interfacelink {
 	text-decoration: underline;
+}
+
+/*
+ * Plugins Page
+ */
+
+table.plugins {
+	width: 100%;
+}
+
+table.plugins td,
+table.plugins th {
+	font-size: 0.75em;
+}
+
+table.plugins span {
+	font-weight: bold;
+	font-size: 0.75em;
+}
+
+table.plugins form {
+	display: inline;
+}
+
+/* plugin manager settings */
+
+div.plugin-group {
+        margin-bottom: 0.5em;
+}
+
+div.plugin-group-title {
+        margin-bottom: 0.5em;
+        font-weight: bold;
 }
 
