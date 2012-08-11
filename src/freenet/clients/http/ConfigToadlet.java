@@ -109,6 +109,32 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		}
 	}
 
+	/**
+	 * Describes which UI element should be used to present an option.
+	 */
+	private enum OptionType {
+		/**
+		 * A writable option with an enumerable list of possible values.
+		 */
+		DROP_DOWN,
+		/**
+		 * A writable option which can be either true or false.
+		 */
+		BOOLEAN,
+		/**
+		 * A writable option which is a path to a directory.
+		 */
+		DIRECTORY,
+		/**
+		 * A writable option set with a string of text.
+		 */
+		TEXT,
+		/**
+		 * A read-only option presented in a text field.
+		 */
+		TEXT_READ_ONLY
+	}
+
 	public ConfigToadlet(String directoryBrowserPath, HighLevelSimpleClient client, Config conf,
 	        SubConfig subConfig, Node node, NodeClientCore core) {
 		this(directoryBrowserPath, client, conf, subConfig, node, core, null);
@@ -385,7 +411,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			if(curValue != null) {
 				formNode.addChild("div", "class", "configprefix", l10n("wrapper"));
 				HTMLNode list = formNode.addChild("ul", "class", "config");
-				HTMLNode item = list.addChild("li");
+				HTMLNode item = list.addChild("li", "class", "text");
 				// FIXME how to get the real default???
 				String defaultValue = "128";
 				item.addChild("span", new String[]{ "class", "title", "style" },
@@ -424,6 +450,21 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 					String fullName = subConfig.getPrefix() + '.' + configName;
 					String value = o.getValueString();
 
+					final ConfigCallback<?> callback = o.getCallback();
+					final OptionType optionType;
+					if (callback instanceof EnumerableOptionCallback) {
+						optionType = OptionType.DROP_DOWN;
+					} else if (callback instanceof BooleanCallback) {
+						optionType = OptionType.BOOLEAN;
+					} else if (callback instanceof ProgramDirectory.DirectoryCallback &&
+					           !callback.isReadOnly()) {
+						optionType = OptionType.DIRECTORY;
+					} else if (!callback.isReadOnly()) {
+						optionType = OptionType.TEXT;
+					} else /*if (callback.isReadOnly())*/ {
+						optionType = OptionType.TEXT_READ_ONLY;
+					}
+
 					// If ConfigToadlet is serving a plugin, ask the plugin to translate the
 					// config descriptions, otherwise use the node's BaseL10n instance like
 					// normal.
@@ -435,6 +476,27 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 					        new HTMLNode("#", plugin.getString(o.getLongDesc()));
 
 					HTMLNode configItemNode = configGroupUlNode.addChild("li");
+					final String optionClass;
+					switch (optionType) {
+						case DROP_DOWN:
+							optionClass = "dropdown";
+							break;
+						case BOOLEAN:
+							optionClass = "boolean";
+							break;
+						case DIRECTORY:
+							optionClass = "directory";
+							break;
+						case TEXT:
+							optionClass = "text";
+							break;
+						case TEXT_READ_ONLY:
+							optionClass = "text readonly";
+							break;
+						default:
+							throw new IllegalStateException("Missing class name for option type " + optionType.name());
+					}
+					configItemNode.addAttribute("class", optionClass);
 					configItemNode.addChild("a", new String[]{"name", "id"},
 					        new String[]{configName, configName}).addChild("span",
 					        new String[]{ "class", "title", "style" },
@@ -458,27 +520,32 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 					}
 					if(overriddenOption != null && overriddenOption.equals(fullName))
 						value = overriddenValue;
-					ConfigCallback<?> callback = o.getCallback();
-					if(callback instanceof EnumerableOptionCallback)
+
+					switch (optionType) {
+						case DROP_DOWN:
 						configItemValueNode.addChild(addComboBox(value,
 						        (EnumerableOptionCallback) callback, fullName,
 						        callback.isReadOnly()));
-					else if(callback instanceof BooleanCallback)
+						break;
+						case BOOLEAN:
 						configItemValueNode.addChild(addBooleanComboBox(Boolean.valueOf(value),
 						        fullName, callback.isReadOnly()));
-					else if(callback instanceof ProgramDirectory.DirectoryCallback &&
-					        !callback.isReadOnly()){
+						break;
+						case DIRECTORY:
 						configItemValueNode.addChild(addTextBox(value, fullName, o, false));
 						configItemValueNode.addChild("input",
 						        new String[] { "type", "name", "value" },
 						        new String[] { "submit", "select-directory."+fullName,
 						                NodeL10n.getBase().
 						                        getString("QueueToadlet.browseToChange") });
-					}
-					else if (callback.isReadOnly())
+						break;
+						case TEXT_READ_ONLY:
 						configItemValueNode.addChild(addTextBox(value, fullName, o, true));
-					else //if (!callback.isReadOnly())
+						break;
+						case TEXT:
 						configItemValueNode.addChild(addTextBox(value, fullName, o, false));
+						break;
+					}
 
 					configItemNode.addChild("span", "class", "configlongdesc").addChild(longDesc);
 				}
