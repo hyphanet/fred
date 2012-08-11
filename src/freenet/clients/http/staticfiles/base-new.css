@@ -49,13 +49,46 @@ pre,
 textarea {
 	font-family: Courier;
 	font-weight: normal;
-	font-size: .8em;
+	font-size: 0.8em; /* 0.8em ~ 9pt based on an 11pt reference */
 }
 
 form,
 pre,
 table {
-	margin: 0 0 5px 0;
+	margin: 0;
+	margin-bottom: 5px;
 	padding: 0;
+}
+
+/*
+ * Body and Page Header
+ */
+
+body {
+	margin: 0;
+	padding: 0;
+}
+
+/*
+ * Top Title Area
+ */
+
+#topbar {
+	background-image: url(logo.png);
+	background-position: 30px 3px;
+	background-repeat: no-repeat;
+	border-bottom-style: solid;
+	border-bottom-width: 1px;
+	margin: 0;
+	min-height: 50px;
+	padding: 5px;
+}
+
+#topbar h1 {
+	font-size: 1.818em; /* 1.818em = 20pt based on an 11pt reference */
+	margin: 0;
+	padding: 0;
+	padding-top: 0.35em; /* 7px based on an 20pt reference */
+	text-align: center;
 }
 

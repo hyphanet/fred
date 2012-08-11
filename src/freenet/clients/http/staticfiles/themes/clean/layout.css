@@ -11,31 +11,12 @@
  * Body and Page Header
  */
 
-body {
-	margin: 0;
-	padding: 0;
-}
-
 /*
  * Top Title Area
  */
 
 #topbar {
 	background-image: url(/static/themes/clean/logo.png);
-	background-position: 30px 3px;
-	background-repeat: no-repeat;
-	border-bottom-style: solid;
-	border-bottom-width: 1px;
-	margin: 0;
-	min-height: 50px;
-	padding: 5px;
-}
-
-#topbar h1 {
-	font-size: 20pt;
-	margin: 0;
-	padding: 7px 0 0 0;
-	text-align: center;
 }
 
 /* 
