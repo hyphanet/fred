@@ -37,46 +37,24 @@
  * Infoboxes
  */
 
-div.infobox {
-	border-style: solid;
-	border-width: 1px;
-	margin: 0 0 10px 0;
-	padding: 10px;
-}
-
-div.infobox div.infobox-header {
+div.infobox-header {
 	border-bottom-style: solid;
-	border-bottom-width: 1px;
-	font-size: 11pt;
-	font-weight: bold;
-	margin: -10px -10px 10px -10px;
-	padding: 10px 35px 10px 10px;
-}
-
-div.infobox-summary-status-content {
-	padding: 0px;
-}
-
-ul.alert-summary {
-	list-style-type: none;
-	text-indent: 20px;
-	padding-left: 20px;
 }
 
 li.alert-summary-text-error {
-	background: url(/static/themes/sky/error-16.png) left center no-repeat;
+	background-image: url(/static/themes/sky/error-16.png);
 }
 
 li.alert-summary-text-alert {
-	background: url(/static/themes/sky/alert-16.png) left center no-repeat;
+	background-image: url(/static/themes/sky/alert-16.png);
 }
 
 li.alert-summary-text-warning {
-	background: url(/static/themes/sky/warning-16.png) left center no-repeat;
+	background-image: url(/static/themes/sky/warning-16.png);
 }
 
 li.alert-summary-text-minor {
-	background: url(/static/themes/sky/information-16.png) left center no-repeat;
+	background-image: url(/static/themes/sky/information-16.png);
 }
 
 /*

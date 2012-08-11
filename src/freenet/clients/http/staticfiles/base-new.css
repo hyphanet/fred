@@ -145,7 +145,6 @@ body {
 }
 
 /* FIXME another rule that shouldn't be needed but is */
-
 #navlist,
 ul.subnavlist-selected,
 ul.subnavlist {
@@ -156,14 +155,11 @@ ul.subnavlist {
 /* FIXME "selected" should be its own class so that it's
  possible to match all submenus with a single selector
  the html spec allows elements to have more than one class */
- 
 ul.subnavlist-selected,
 ul.subnavlist {
 	margin-left: 1.5em;
 }
 
-/* FIXME another crime against humanity caused by not making
- * selected/not selected its own class" */
 li.submenuitem-selected,
 li.submenuitem-not-selected {
 	font-size: 0.81em;
@@ -177,12 +173,13 @@ ul.subnavlist {
 	border-style: solid;
 }
 
-/* the subnavbar is only displayed in top mode */
-
+/* the subnavbar won't look right if the top border is shown */
 #selected-subnavbar {
-	border-top-width: 0px !important; 
+	border-top-width: 0px; 
 }
 
+/* this is how the items in the subnavbar are made to display
+ * horizontally */
 #selected-subnavbar-list {
 	margin: 0;
 	padding: 0;
@@ -194,3 +191,89 @@ ul.subnavlist {
 	display: table-cell;
 	text-align: center;
 }
+
+/* 
+ * Infoboxes
+ */
+
+div.infobox {
+	border-style: solid;
+	border-width: 1px;
+	margin-bottom: 0.667em;
+}
+
+div.infobox-header {
+	background-position: right center;
+	background-repeat: no-repeat;
+	border-bottom-style: dotted;
+	border-bottom-width: 1px;
+	padding: 0.667em;
+	padding-right: 35px;
+}
+
+div.infobox-content {
+	padding: 0.667em;
+}
+
+/* FIXME I'm not sure why span.search-title-label exists at all. It would be better
+ * to put the text directly into the parent div and add a "search-title-label"
+ * class to that. This rule is necessary because the span isn't going to
+ * inherit font information from its parent because of a rule we set up a 
+ * long time ago that can't be changed without breaking other things. */
+
+div.infobox-header, span.search-title-label {
+	font-weight: bold;
+}
+
+ul.alert-summary {
+	text-indent: 20px;
+}
+
+li.alert-summary-text-error,
+li.alert-summary-text-alert,
+li.alert-summary-text-warning,
+li.alert-summary-text-minor {
+	background-position: left center;
+	background-repeat: no-repeat;
+}
+
+div.infobox-information div.infobox-header {
+	background-image: url(information.png);
+}
+
+div.infobox-warning div.infobox-header {
+	background-image: url(warning.png);
+}
+
+div.infobox-alert div.infobox-header {
+	background-image: url(alert.png);
+}
+
+div.infobox-error div.infobox-header {
+	background-image: url(error.png);
+}
+
+div.infobox-query div.infobox-header {
+	background-image: url(query.png);
+}
+
+div.infobox-success div.infobox-header {
+	background-image: url(success.png);
+}
+
+li.alert-summary-text-error {
+	background-image: url(error-16.png);
+}
+
+li.alert-summary-text-alert {
+	background-image: url(alert-16.png);
+}
+
+li.alert-summary-text-warning {
+	background-image: url(warning-16.png);
+}
+
+li.alert-summary-text-minor {
+	background-image: url(information-16.png);
+}
+
