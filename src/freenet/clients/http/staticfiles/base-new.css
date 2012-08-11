@@ -494,56 +494,42 @@ div.histogramLabel {
 
 table.queue td,
 table.queue th {
+	/*FIXME  use em here*/
 	font-size: 8pt;
 }
 
-div.queue_tabletitle {
-	margin: 0;
-	padding: 10px 0 10px 0;
-	font-size: 10pt;
-}
-
 table.queue span {
+	/*FIXME  use em here*/
 	font-size: 8pt;
 }
 
 div.progressbar {
 	border-style: solid;
 	border-width: 1px;
-	height: 18px;
 	position: relative;
-	width: 130px;
+	width: 8.864em;
 }
 
-div.progressbar-done {
-	float: left;
-	height: 18px;
-}
-
-div.progressbar-min {
-	float: left;
-	height: 18px;
-}
-
-div.progressbar-failed {
-	float: left;
-	height: 18px;
-}
-
+div.progressbar,
+div.progressbar-done,
+div.progressbar-min,
+div.progressbar-failed,
 div.progressbar-failed2 {
 	float: left;
-	height: 18px;
+	height: 1.227em;
+}
+
+div.progress_fraction_finalized,
+div.progress_fraction_not_finalized {
+	position: absolute;
+	left: 0.333em;
 }
 
 div.progress_fraction_finalized {
-	position: absolute;
-	left: 5px;
 	font-weight: bold;
 }
 
 div.progress_fraction_not_finalized {
-	position: absolute;
-	left: 5px;
 	font-style: italic;
 }
 
@@ -553,13 +539,13 @@ div.progress_fraction_not_finalized {
 	width: 100%;
 }
 
-#n2nbox input[type=submit] {
-	width: 100%;
+div.n2ntm-message-text {
+	margin: 0.667em;
+	padding: 0.667em;
 }
 
-div.n2ntm-message-text {
-	margin: 10px;
-	padding: 10px;
+#n2nbox li {
+	font-weight: bold;
 }
 
 /* 
