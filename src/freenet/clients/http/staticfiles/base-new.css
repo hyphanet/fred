@@ -29,6 +29,19 @@ th {
 	font-weight: normal;
 }*/
 
+div,
+form,
+li,
+pre,
+span,
+table,
+tr,
+td,
+ul {
+	margin: 0px;
+	padding: 0px;
+}
+
 table {
 	border-collapse: collapse;
 }
@@ -39,8 +52,7 @@ th {
 
 td,
 th {
-	margin: 0;
-	padding: 5px;
+	padding: 0.333em;
 	border-style: solid;
 	border-width: 1px;
 }
@@ -55,9 +67,13 @@ textarea {
 form,
 pre,
 table {
-	margin: 0;
-	margin-bottom: 5px;
-	padding: 0;
+	margin-bottom: 0.333em;
+}
+
+/* The web interface doesn't use bullet lists anywhere */
+
+ul {
+    list-style-type: none;
 }
 
 /*
@@ -79,16 +95,102 @@ body {
 	background-repeat: no-repeat;
 	border-bottom-style: solid;
 	border-bottom-width: 1px;
-	margin: 0;
 	min-height: 50px;
-	padding: 5px;
+	padding: 0.333em;
 }
 
 #topbar h1 {
 	font-size: 1.818em; /* 1.818em = 20pt based on an 11pt reference */
-	margin: 0;
-	padding: 0;
+	/* FIXME the following line looks redundant but things break if you remove it. */
+	margin: 0px;
 	padding-top: 0.35em; /* 7px based on an 20pt reference */
 	text-align: center;
 }
 
+/* 
+ * Navigation
+ */
+
+#navbar {
+	float: left;
+	position: relative;
+	left: 0.667em;
+	top: 0.667em;
+	width: 11.081em;
+}
+
+/* need to account for behavior-top too */
+#navbar, #selected-subnavbar {
+	border-width: 1px;
+	border-style: solid;
+}
+
+/*matches both top-level and submenu links */
+#navlist a,
+#selected-subnavbar a {
+	text-decoration: none;
+	display: block;
+	padding: 0.333em;
+}
+
+/*matches both top-level and submenu links */
+#navlist li {
+	font-weight: normal;
+}
+
+/*matches only submenu links */
+#navlist li ul li,
+#selected-subnavbar-list li {
+	font-weight: normal;
+}
+
+/* FIXME another rule that shouldn't be needed but is */
+
+#navlist,
+ul.subnavlist-selected,
+ul.subnavlist {
+	margin: 0;
+	padding: 0;
+}
+
+/* FIXME "selected" should be its own class so that it's
+ possible to match all submenus with a single selector
+ the html spec allows elements to have more than one class */
+ 
+ul.subnavlist-selected,
+ul.subnavlist {
+	margin-left: 1.5em;
+}
+
+/* FIXME another crime against humanity caused by not making
+ * selected/not selected its own class" */
+li.submenuitem-selected,
+li.submenuitem-not-selected {
+	font-size: 0.81em;
+}
+
+/* this border is only displayed in dropdown mode */
+
+ul.subnavlist-selected,
+ul.subnavlist {
+	border-width: 1px;
+	border-style: solid;
+}
+
+/* the subnavbar is only displayed in top mode */
+
+#selected-subnavbar {
+	border-top-width: 0px !important; 
+}
+
+#selected-subnavbar-list {
+	margin: 0;
+	padding: 0;
+	width: 100%;
+	display: table;
+}
+
+#selected-subnavbar li {
+	display: table-cell;
+	text-align: center;
+}
