@@ -163,56 +163,6 @@ li.alert-summary-text-minor {
  * Darknet Page
  */
 
-table.darknet_connections td,
-table.darknet_connections th {
-	font-size: 8pt;
-}
-
-table.column td {
-	vertical-align: top;
-}
-
-table.column span,
-table.darknet_connections span {
-	font-weight: bold;
-	font-size: 8pt;
-}
-
-table.column span {
-	text-transform: uppercase;
-}
-
-div.infobox-content ul {
-	margin: 0;
-	padding: 0;
-	list-style: none;
-}
-
-tr.messagetypes {
-	text-align: center;
-}
-
-table.sentmessagetypes {
-	display: inline;
-}
-
-table.receivedmessagetypes {
-	display: inline;
-}
-
-table.receivedmessagetypes td,
-table.receivedmessagetypes th,
-table.sentmessagetypes td,
-table.sentmessagetypes th {
-	font-size: 7pt;
-}
-
-/* node reference */
-
-pre#reference {
-	overflow: auto;
-}
-
 /* 
  * Statistics Page
  */

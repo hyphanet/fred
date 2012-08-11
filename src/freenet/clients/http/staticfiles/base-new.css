@@ -306,6 +306,7 @@ li.alert-summary-text-minor {
  */
 
 #content {
+	margin-bottom: 4em;
 	margin-top: 0.667em;
 	position: absolute;
 	left: 12.614em;
@@ -412,5 +413,48 @@ div.infobox-warning span.configlongdesc {
 	margin-left: 1em;
 	margin-top: 0px;
 	vertical-align: bottom;
+}
+
+/* 
+ * Darknet Page
+ */
+
+/* FIXME The node connections page needs an intervention.
+ * <a> tags with a <span> inside them??? Reciting the
+ * code that produces this probably summons Cthulhu. */
+
+table.darknet_connections td,
+table.darknet_connections th,
+table.darknet_connections span {
+	/* FIXME why is this a pt value instead of em?
+	 * see comment above. */
+	font-size: 8pt;
+}
+
+table.column td {
+	vertical-align: top;
+}
+
+table.darknet_connections span.peer_connected,
+table.darknet_connections span.peer_disconnected {
+	font-weight: bold;
+}
+
+table.darknet_connections span.peer_connected,
+table.darknet_connections span.peer_disconnected {
+	text-transform: uppercase;
+}
+
+/*FIXME magic keystone - remove these rules and the entire
+ * page collapses */
+div.infobox-content ul {
+	margin: 0;
+	padding: 0;
+}
+
+/* node reference */
+
+pre#reference {
+	overflow: auto;
 }
 
