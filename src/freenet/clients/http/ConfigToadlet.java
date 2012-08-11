@@ -116,23 +116,32 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		/**
 		 * A writable option with an enumerable list of possible values.
 		 */
-		DROP_DOWN,
+		DROP_DOWN("dropdown"),
 		/**
 		 * A writable option which can be either true or false.
 		 */
-		BOOLEAN,
+		BOOLEAN("boolean"),
 		/**
 		 * A writable option which is a path to a directory.
 		 */
-		DIRECTORY,
+		DIRECTORY("directory"),
 		/**
 		 * A writable option set with a string of text.
 		 */
-		TEXT,
+		TEXT("text"),
 		/**
 		 * A read-only option presented in a text field.
 		 */
-		TEXT_READ_ONLY
+		TEXT_READ_ONLY("text readonly");
+
+		/**
+		 * A CSS class descriptor for this option type.
+		 */
+		public final String cssClass;
+
+		private OptionType(String cssClass) {
+			this.cssClass = cssClass;
+		}
 	}
 
 	public ConfigToadlet(String directoryBrowserPath, HighLevelSimpleClient client, Config conf,
@@ -413,7 +422,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			if(curValue != null) {
 				formNode.addChild("div", "class", "configprefix", l10n("wrapper"));
 				HTMLNode list = formNode.addChild("ul", "class", "config");
-				HTMLNode item = list.addChild("li", "class", "text");
+				HTMLNode item = list.addChild("li", "class", OptionType.TEXT.cssClass);
 				// FIXME how to get the real default???
 				String defaultValue = "128";
 				item.addChild("span", new String[]{ "class", "title", "style" },
@@ -478,27 +487,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 				        new HTMLNode("#", plugin.getString(o.getLongDesc()));
 
 				HTMLNode configItemNode = configGroupUlNode.addChild("li");
-				final String optionClass;
-				switch (optionType) {
-					case DROP_DOWN:
-						optionClass = "dropdown";
-						break;
-					case BOOLEAN:
-						optionClass = "boolean";
-						break;
-					case DIRECTORY:
-						optionClass = "directory";
-						break;
-					case TEXT:
-						optionClass = "text";
-						break;
-					case TEXT_READ_ONLY:
-						optionClass = "text readonly";
-						break;
-					default:
-						throw new IllegalStateException("Missing class name for option type " + optionType.name());
-				}
-				configItemNode.addAttribute("class", optionClass);
+				configItemNode.addAttribute("class", optionType.cssClass);
 				configItemNode.addChild("a", new String[]{"name", "id"},
 				        new String[]{configName, configName}).addChild("span",
 				        new String[]{ "class", "title", "style" },
