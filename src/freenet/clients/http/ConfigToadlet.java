@@ -371,6 +371,10 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		        new String[] { "type", "value", "style" },
 		        new String[] { "submit", l10n("apply"), "visibility:hidden"});
 
+		/*
+		 * Special case: present an option for the wrapper's maximum memory under Core configuration, provided
+		 * the maximum memory property is defined. (the wrapper is being used)
+		 */
 		if(subConfig.getPrefix().equals("node") && WrapperConfig.canChangeProperties()) {
 			String configName = "wrapper.java.maxmemory";
 			String curValue = WrapperConfig.getWrapperProperty(configName);
@@ -410,6 +414,9 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 				overriddenValue = req.getPartAsStringFailsafe("filename", MAX_PARAM_VALUE_SIZE);
 			}
 
+		/*
+		 * Present all other options for this subconfig.
+		 */
 			for(Option<?> o : subConfig.getOptions()) {
 				if(! (mode == PageMaker.MODE_SIMPLE && o.isExpert())){
 					displayedConfigElements++;
