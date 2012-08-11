@@ -1,10 +1,16 @@
 ﻿/* layout-grayandblue */
 
+/* temporary included until this merged into base.css */
+@import url(/static/base-new.css);
+
 /* 
  * Overall Settings
  */
 
+/* base font settings for entire page */
+
 div,
+body,
 h1,
 h2,
 h3,
@@ -16,48 +22,16 @@ span,
 td,
 th {
 	font-family: Verdana;
-	font-weight: normal;
 	font-size: 10pt;
-	line-height: 22px;
-}
-
-table {
-	border-collapse: collapse;
-}
-
-th {
-	font-weight: bold;
-}
+}*/
 
 td,
 th {
-	margin: 0;
-	padding: 5px;
 	border-style: dotted;
-	border-width: 1px;
-}
-
-pre,
-textarea {
-	font-family: Courier;
-	font-weight: normal;
-	font-size: 8pt;
-}
-
-pre#reference {
-	font-size: 8pt;
-	overflow: auto;
-}
-
-pre,
-table {
-	margin: 0 0 5px 0;
-	padding: 0;
 }
 
 form {
 	margin: 0;
-	padding: 0;
 }
 
 /*
@@ -396,6 +370,12 @@ table.receivedmessagetypes th,
 table.sentmessagetypes td,
 table.sentmessagetypes th {
 	font-size: 7pt;
+}
+
+/* node reference */
+
+pre#reference {
+	overflow: auto;
 }
 
 /* 

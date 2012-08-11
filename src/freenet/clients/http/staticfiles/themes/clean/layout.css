@@ -1,62 +1,11 @@
 ﻿/* layout-clean */
 
+/* temporary included until this merged into base.css */
+@import url(/static/base-new.css);
+
 /* 
  * Overall Settings
  */
-
-div,
-h1,
-h2,
-h3,
-h4,
-h5,
-li,
-p,
-span,
-td,
-th {
-	font-family: Arial;
-	font-weight: normal;
-	font-size: 11pt;
-}
-
-table {
-	border-collapse: collapse;
-}
-
-th {
-	font-weight: bold;
-}
-
-td,
-th {
-	margin: 0;
-	padding: 5px;
-	border-style: solid;
-	border-width: 1px;
-}
-
-pre,
-textarea {
-	font-family: Courier;
-	font-weight: normal;
-	font-size: 8pt;
-}
-
-pre#reference {
-	overflow: auto;
-}
-
-pre,
-table {
-	margin: 0 0 5px 0;
-	padding: 0;
-}
-
-form {
-	margin: 0 0 5px 0;
-	padding: 0;
-}
 
 /*
  * Body and Page Header
@@ -198,16 +147,25 @@ div.infobox {
 	padding: 10px;
 }
 
-div.infobox div.infobox-header {
+div.infobox-header {
 	background-position: right;
 	background-repeat: no-repeat;
 	border-bottom-style: dotted;
 	border-bottom-width: 1px;
-	font-size: 11pt;
-	font-weight: bold;
 	margin: -10px -10px 10px -10px;
 	padding: 10px 35px 10px 10px;
 }
+
+/* I'm not sure why span.search-title-label exists at all. It would be better
+ * to put the text directly into the parent div and add a "search-title-label"
+ * class to that. This rule is necessary because the span isn't going to
+ * inherit font information from its parent because of a rule we set up a 
+ * long time ago that can't be changed without breaking other things. */
+
+div.infobox-header, span.search-title-label {
+	font-weight: bold;
+}
+
 
 div.infobox-information div.infobox-header {
 	background-image: url(/static/themes/clean/information.png);
@@ -392,6 +350,12 @@ table.receivedmessagetypes th,
 table.sentmessagetypes td,
 table.sentmessagetypes th {
 	font-size: 7pt;
+}
+
+/* node reference */
+
+pre#reference {
+	overflow: auto;
 }
 
 /* 

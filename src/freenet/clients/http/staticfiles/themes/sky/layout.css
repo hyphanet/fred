@@ -1,51 +1,11 @@
 /* layout-sky */
 
+/* temporary included until this merged into base.css */
+@import url(/static/base-new.css);
+
 /* 
  * Overall Settings
  */
-
-div,
-h1,
-h2,
-h3,
-h4,
-h5,
-li,
-p,
-span,
-td,
-th {
-	font-family: Arial;
-	font-weight: normal;
-	font-size: 11pt;
-}
-
-table {
-	border-collapse: collapse;
-}
-
-th {
-	font-weight: bold;
-}
-
-td,
-th {
-	margin: 0;
-	padding: 5px;
-	border-style: solid;
-	border-width: 1px;
-}
-
-pre,
-textarea {
-	font-family: Courier;
-	font-weight: normal;
-	font-size: 80%;
-}
-
-pre#reference {
-	overflow: auto;
-}
 
 /*
  * Body and Page Header
@@ -382,6 +342,12 @@ table.sentmessagetypes th {
 
 #reffile {
 	width: 100%;
+}
+
+/* node reference */
+
+pre#reference {
+	overflow: auto;
 }
 
 /* 
