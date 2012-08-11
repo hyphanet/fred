@@ -277,3 +277,18 @@ li.alert-summary-text-minor {
 	background-image: url(information-16.png);
 }
 
+/*
+ * Content
+ */
+
+#content {
+	margin-top: 0.667em;
+	position: absolute;
+	left: 12.614em;
+	right: 0.667em;
+}
+
+.interfacelink {
+	text-decoration: underline;
+}
+

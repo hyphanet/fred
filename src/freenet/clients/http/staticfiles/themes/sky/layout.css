@@ -62,20 +62,7 @@ li.alert-summary-text-minor {
  */
 
 #content {
-	margin-top: 10px;
-	position: absolute;
-	left: 185px;
-	right: 10px;
-}
-
-.interfacelink {
-	text-decoration: underline;
-}
-
-#activity {
-	margin: 0;
-	padding: 0;
-	list-style: none;
+	left: 12.614em;
 }
 
 /*
