@@ -1,5 +1,6 @@
 /* Basic css functions every theme should provide */
 
+
 /* Toggleable areas: hovering over them shows the hidden part */
 .toggleable .hidden {
     display: none;
@@ -8,4 +9,3 @@
 .toggleable:hover .hidden {
     display: block;
 }
-

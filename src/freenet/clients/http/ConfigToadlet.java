@@ -405,8 +405,8 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		//Invisible apply button at the top so that an enter keypress will apply settings instead of
 		//going to a directory browser if present.
 		formNode.addChild("input",
-		        new String[] { "type", "value", "style" },
-		        new String[] { "submit", l10n("apply"), "visibility:hidden"});
+		        new String[] { "type", "value", "class" },
+		        new String[] { "submit", l10n("apply"), "invisible"});
 
 		/*
 		 * Special case: present an option for the wrapper's maximum memory under Core configuration, provided

@@ -159,53 +159,6 @@ li.alert-summary-text-minor {
  * Configuration Page
  */
 
-ul.config {
-	border-top-width: 1px;
-	border-top-style: solid;
-	border-right-width: 1px;
-	border-right-style: solid;
-	border-left-width: 1px;
-	border-left-style: solid;
-	margin: 0 0 5px 0;
-	padding: 0;
-}
-
-ul.config li {
-	border-bottom-width: 1px;
-	border-bottom-style: solid;
-	list-style: none;
-	margin: 0;
-	padding: 15px 10px 15px 10px;
-	text-align: left;
-}
-
-div.configprefix {
-	display: block;
-	border-bottom-width: 1px;
-	border-bottom-style: dotted;
-	font-size: 16pt;
-	font-variant: small-caps;
-	font-weight: bold;
-	margin: 0;
-	padding: 10px 35px 10px 10px;
-}
-
-ul.config span.configshortdesc {
-	font-weight: bold;
-	float: left;
-	text-align: left;
-	width: 30%;
-}
-
-ul.config span.configlongdesc {
-	display: block;
-	text-align: left;
-}
-
-ul.config input[type=text] {
-	width: 70%;
-}
-
 /* 
  * Darknet Page
  */

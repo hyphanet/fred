@@ -10,6 +10,24 @@
  * that looks like it should be clickable isn't, or something
  * that should cause a hover effect doesn't. */ 
 
+/* Toggleable areas: hovering over them shows the hidden part */
+
+.toggleable .hidden {
+    display: none;
+}
+
+.toggleable:hover .hidden {
+    display: block;
+}
+
+/* FIXME The fproxy configuration page uses this. Need to
+ * determine if it is actually necessary since none of the
+ * other pages have it */
+
+.invisible {
+	display: none;
+}
+
 /* base font settings for entire page */
 
 div,
@@ -320,8 +338,6 @@ table.plugins form {
 	display: inline;
 }
 
-/* plugin manager settings */
-
 div.plugin-group {
         margin-bottom: 0.5em;
 }
@@ -329,5 +345,72 @@ div.plugin-group {
 div.plugin-group-title {
         margin-bottom: 0.5em;
         font-weight: bold;
+}
+
+/* 
+ * Configuration Page
+ */
+
+/* FIXME infobox-header divs on the configuration pages need
+ * a way to distinguish them from front page infobox-headers */
+
+/* FIXME get rid of the ul.config and use <div> instead */
+
+div.configprefix {
+	font-size: 1.4em;
+	font-variant: small-caps;
+	font-weight: bold;
+	padding: 0.667em;
+}
+
+ul.config {
+	border-width: 1px;
+	border-style: solid;
+	border-bottom-style: dotted;
+	/* FIXME more magic that shouldn't need to be here */
+	padding: 0px;
+}
+
+ul.config li {
+	border-bottom-style: solid;
+	border-bottom-width: 1px;
+	padding: 0.667em;
+}
+
+ul.config input[type=text] {
+	width: 100%;
+}
+
+span.configshortdesc {
+	font-weight: bold;
+}
+
+/* this span should be constrained in width if it has an adjacent
+ * input widget and unconstrained if it the widget is below */
+li.boolean span.configshortdesc,
+li.dropdown span.configshortdesc,
+div.infobox-warning span.configshortdesc {
+	display: inline-block;
+	width: 15em;
+}
+
+/* dropdown option boxes are aligned in a column to the right of the
+ * description*/
+ul.config span.config select {
+	vertical-align: top;
+	margin-left: 0.333em;
+}
+
+span.configlongdesc {
+	display: block;
+	margin-top: 0.333em;
+}
+
+div.infobox-warning span.configlongdesc {
+	display: inline-block;
+	padding-bottom: 0.333em;
+	margin-left: 1em;
+	margin-top: 0px;
+	vertical-align: bottom;
 }
 
