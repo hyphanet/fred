@@ -1,7 +1,7 @@
 ﻿/* minimalist */
 
 /* Base theme */
-@import url(/static/themes/clean-dropdown/theme.css);
+@import url(/static/clean-dropdown-old.css);
 
 /* Default pictures won't render nice with this theme */
 @import url(/static/picturesnullifier.css);
