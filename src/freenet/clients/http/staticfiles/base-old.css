@@ -1,0 +1,23 @@
+/* Basic css functions every theme should provide */
+
+
+/* Toggleable areas: hovering over them shows the hidden part */
+.toggleable .hidden {
+    display: none;
+}
+
+.toggleable:hover .hidden {
+    display: block;
+}
+
+/* plugin manager settings */
+div.plugin-group {
+        margin-bottom: 0.5em;
+}
+
+div.plugin-group-title {
+        margin-bottom: 0.5em;
+        font-weight: bold;
+}
+
+
