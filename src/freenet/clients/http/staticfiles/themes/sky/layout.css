@@ -1,8 +1,5 @@
 /* layout-sky */
 
-/* temporary included until this merged into base.css */
-@import url(/static/base-new.css);
-
 /* 
  * Overall Settings
  */
@@ -94,6 +91,10 @@ ul.config li {
 div.progress_fraction_finalized {
 	font-weight: normal;
 }
+
+/* 
+ * N2NTM page
+ */
 
 /* 
  * Translation

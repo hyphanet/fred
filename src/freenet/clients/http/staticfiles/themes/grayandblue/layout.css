@@ -1,8 +1,5 @@
 ﻿/* layout-grayandblue */
 
-/* temporary included until this merged into base.css */
-@import url(/static/base-new.css);
-
 /* 
  * Overall Settings
  */
@@ -60,11 +57,11 @@ form {
  * Navigation
  */
 
-div#navbar {
+#navbar {
 	width: 10.125em;
 }
 
-div#navbar, div#selected-subnavbar {
+#navbar, #selected-subnavbar {
 	border-style: dotted;
 }
 
@@ -174,6 +171,10 @@ li.alert-summary-text-minor {
 div.progress_fraction_finalized {
 	font-weight: normal;
 }
+
+/* 
+ * N2NTM page
+ */
 
 /* 
  * Translation
