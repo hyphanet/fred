@@ -20,7 +20,7 @@
  * Navigation
  */
 
-div#navbar {
+#navbar {
 	left: 0.333em;
 	top: 0.333em;
 }
@@ -105,6 +105,10 @@ li.alert-summary-text-minor {
 
 /* 
  * Queue Page
+ */
+
+/* 
+ * N2NTM page
  */
 
 /* 

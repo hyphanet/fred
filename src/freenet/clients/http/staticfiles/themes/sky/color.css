@@ -34,20 +34,20 @@ body {
  */
 
 
-div#navbar,
-div#selected-subnavbar {
+#navbar,
+#selected-subnavbar {
 	border-color: #d0d0f0;
 }
 
-div#navbar,
-ul#navlist,
+#navbar,
+#navlist,
 li.navlist-selected,
 li.navlist-not-selected,
 ul.subnavlist-selected,
 ul.subnavlist,
 li.submenuitem-selected,
 li.submenuitem-not-selected,
-div#subnavbar {
+#subnavbar {
 	background-color: #f5f9ff;
 }
 
@@ -67,7 +67,6 @@ li.submenuitem-selected a:hover {
 /* non-selected top level menu */
 
 li.navlist-not-selected a {
-	background-color: inherit;
 	color: inherit;
 }
 
@@ -107,23 +106,9 @@ ul.subnavlist {
 	border-color: #d0d0f0;
 }
 
-/* the subnavbar is only displayed in top mode */
-
 /*
  * Alerts
  */
-
-.alert-error {
-	color: darkred;
-}
-
-.alert-warning {
-	color: blue;
-}
-
-.alert-minor {
-	color: green;
-}
 
 /* 
  * Infoboxes
@@ -136,35 +121,11 @@ div.infobox {
 
 div.infobox div.infobox-header {
 	background-color: #eaf2ff;
-	border-bottom-color: #b1ceff;
+	border-color: #b1ceff;
 }
 
 div.infobox-information div.infobox-header {
 	background-color: #e5efff;
-}
-
-div.infobox-warning div.infobox-header {
-	background-color: #f8f8c0;
-}
-
-div.infobox-alert {
-	background-color: #f0e8e8;
-}
-
-div.infobox-alert div.infobox-header {
-	background-color: #ffd0d0;
-}
-
-div.infobox-error {
-	background-color: #f0e8e8;
-}
-
-div.infobox-error div.infobox-header {
-	background-color: #ffd0d0;
-}
-
-div.infobox-query div.infobox-header {
-	background-color: #f0f0e8;
 }
 
 div.infobox-success div.infobox-header {
@@ -175,16 +136,8 @@ div.infobox-success div.infobox-header {
  * Content
  */
 
-a {
-	color: #000000;
-}
-
 a:hover {
 	color: #7070bb;
-}
-
-.interfacelink {
-	color: #000000;
 }
 
 /*
@@ -195,10 +148,6 @@ a:hover {
  * Configuration Page
  */
 
-ul.config {
-	border-color: #d0d0d0;
-}
-
 ul.config li {
 	background-color: #e5efff;
 }
@@ -207,13 +156,13 @@ ul.config span.configprefix {
 	background-color: #e5efff;
 }
 
+ul.config {
+	background-color: transparent;
+}
+
 /* 
  * Darknet Page
  */
-
-span.peer_connected {
-	color: #008000;
-}
 
 span.peer_backed_off {
 	color: #706000;
@@ -223,116 +172,16 @@ span.peer_too_new {
 	color: #d03333;
 }
 
-span.peer_too_old {
-	color: #d0a0d0;
-}
-
-span.peer_disconnected {
-	color: #d0d0d0;
-}
-
-span.peer_never_connected {
-	color: #a0a0a0;
-}
-
-span.peer_disabled {
-	color: #a0a0a0;
-}
-
-span.peer_bursting {
-	color: #a0a0a0;
-}
-
-span.peer_listening {
-	color: #a0a0a0;
-}
-
-span.peer_listen_only {
-	color: #a0a0a0;
-}
-
-span.peer_version_problem {
-	color: #d07070;
-}
-
-span.peer_idle_old {
-	color: #d07070;
-}
-
 /* 
  * Statistics Page
  */
-
-div.peercircle span.mark {
-  color: #d0d0d0;
-}
-
-div.peercircle span.me {
-  color: #0080ff;
-}
-
-div.peercircle span.connected {
-  color: #008000;
-}
-
-div.peercircle span.backed_off {
-  color: #008000;
-}
-
-div.peercircle span.disconnected {
-  color: #d0d0d0;
-}
-
-div.histogramConnected {
-  background-color: #008000;
-}
-
-div.histogramDisconnected {
-  background-color: #d0d0d0;
-}
 
 /* 
  * Queue Page
  */
 
-table.queue span.failure_reason_unknown {
-	color: #d0d0d0;
-}
-
-table.queue span.progress_fraction_unknown {
-	color: #d0d0d0;
-}
-
 table.queue span.progress_fraction_finalized {
 	color: #008000;
-}
-
-table.queue span.filename_direct {
-	color: #d0d0d0;
-}
-
-table.queue span.filename_none {
-	color: #d0d0d0;
-}
-
-table.queue span.persistence_reboot {
-	color: #0000ff;
-}
-
-table.queue span.persistence_forever {
-	color: #00b000;
-}
-
-table.queue span.mimetype_unknown {
-	color: #d0d0d0;
-}
-
-table.queue span.filesize_unknown {
-	color: #d0d0d0;
-}
-
-table.queue span.key_unknown {
-	color: #d0d0d0;
 }
 
 .progressbar {
@@ -356,76 +205,27 @@ table.queue span.key_unknown {
 	background-color: #dd4040;
 }
 
-td.priority0,
-tr.priority0 {
-	background-color: #ffb7b7;
-}
-
-td.priority1,
-tr.priority1 {
-	background-color: #ffcea7;
-}
-
-td.priority2,
-tr.priority2 {
-	background-color: #ffeba7;
-}
-
-td.priority3,
-tr.priority3 {
-	background-color: #ddffa7;
-}
-
-td.priority4,
-tr.priority4 {
-	background-color: #a7ffbc;
-}
-
-td.priority5,
-tr.priority5 {
-	background-color: #a7fff8;
-}
-
-td.priority6,
-tr.priority6 {
-	background-color: #a7caff;
-}
-
-/* Node to node text message */
-
-div.n2ntm-message-text {
-	background-color: #ffffff;
-}
-
-td.n2ntm-send-sent {
-	background-color: #a7ffbc;
-}
-
-td.n2ntm-send-delayed {
-	background-color: #ffeba7;
-}
-
-td.n2ntm-send-queued {
-	background-color: #ffa7a7;
-}
-
-td.n2ntm-send-failed {
-	background-color: #ffb7b7;
-}
+/* 
+ * N2NTM page
+ */
 
 /* 
  * Translation
  */
 
+.translate_d {
+	background-color: transparent;
+}
+
 /* 
  * Statusbar
  */
 
-div#statusbar-container {
+#statusbar-container {
 	background-color: #eaf2ff;
 	border-top-color: #d0d0f0;
 }
 
-div#statusbar div.separator {
+#statusbar div.separator {
 	background-color: #d0d0f0;
 }

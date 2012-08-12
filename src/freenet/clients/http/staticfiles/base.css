@@ -1,3 +1,6 @@
+/* default color scheme */
+@import url(/static/color.css);
+
 /* FIXME these includes should be incorporated into this file */
 
 /* Bookmarks & bookmark editor */
@@ -77,7 +80,7 @@ th {
 	font-family: Arial;
 	font-size: 11pt;
 	font-weight: normal;
-}*/
+}
 
 div,
 form,
@@ -572,7 +575,9 @@ div.progress_fraction_not_finalized {
 	font-style: italic;
 }
 
-/* Node to node text message */
+/* 
+ * N2NTM page
+ */
 
 #n2ntmtext {
 	width: 100%;
