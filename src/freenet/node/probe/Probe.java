@@ -12,6 +12,7 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.node.Node;
+import freenet.node.OpennetManager;
 import freenet.node.PeerNode;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -95,6 +96,20 @@ public class Probe implements ByteCounter {
 	 * Maximum number of milliseconds to wait before sending a response.
 	 */
 	public static final long WAIT_MAX = 2000L;
+
+	/**
+	 * Maximum number of probes accepted from a single peer in the past minute.
+	 */
+	public final int COUNTER_MAX_PEER = 10;
+
+	/**
+	 * Maximum number of probes started locally in the past minute. This is the maximum conceivable value; the
+	 * probes should be used with a number of requests per minute closer to the per-peer limit times the minimum
+	 * expected number of peers. Around this value, and certainly above it, remote OVERLOADs may start coming
+	 * in, which are not useful. The Metropolis-Hastings correction makes behavior potentially inconsistent, so
+	 * keeping an eye on remote OVERLOADs is wise.
+	 */
+	public final int COUNTER_MAX_LOCAL = COUNTER_MAX_PEER * OpennetManager.MAX_PEERS_FOR_SCALING;
 
 	/**
 	 * Number of accepted probes in the last minute, keyed by peer.
@@ -363,10 +378,11 @@ public class Probe implements ByteCounter {
 		synchronized (accepted) {
 			//If no counter exists for the current source, add one.
 			if (!accepted.containsKey(source)) {
-				accepted.put(source, new Counter());
+				// Null source is started locally.
+				accepted.put(source, new Counter(source == null ? COUNTER_MAX_LOCAL : COUNTER_MAX_PEER));
 			}
 			final Counter counter = accepted.get(source);
-			if (counter.value() == Counter.MAX_ACCEPTED) {
+			if (counter.value() == counter.maxAccepted) {
 				//Set a flag instead of sending inside the lock.
 				availableSlot = false;
 			} else {
