@@ -1,7 +1,13 @@
 ﻿/* minimalblue */
 
 /* Basic CSS functions */
-@import url(/static/common_includes.css);
+@import url(/static/base-old.css);
+
+/* Bookmarks & bookmark editor */
+@import url(/static/bookmark.css);
+
+/* Status bar style & colors */
+@import url(/static/statusbar.css);
 
 /* minimal blue overall settings */
 
