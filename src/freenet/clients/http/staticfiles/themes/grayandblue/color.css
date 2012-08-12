@@ -56,13 +56,13 @@ div#subnavbar {
 li.navlist-selected a,
 li.submenuitem-selected a {
 	background-color: inherit;
-	color: blue;	
+	color: #005f9c;	
 }
 
 li.navlist-selected a:hover,
 li.submenuitem-selected a:hover {
 	background-color: #dddddd;
-	color: darkblue;	
+	color: black;	
 }
 /* non-selected top level menu */
 
@@ -80,19 +80,19 @@ li.navlist-not-selected a:hover {
 
 li.submenuitem-selected a:hover {
 	background-color: #dddddd;
-	color: darkblue;
+	color: black;
 }
 
 li.submenuitem-selected a {
 	background-color: inherit;
-	color: blue;
+	color: #0089e1;
 }
 
 /* non-selected submenu */
 
 li.submenuitem-not-selected a {
 	background-color: inherit;
-	color: #0089e1;
+	color: #90c4e1;
 }
 
 li.submenuitem-not-selected a:hover {

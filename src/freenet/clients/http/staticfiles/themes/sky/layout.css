@@ -1,60 +1,15 @@
 /* layout-sky */
 
+/* temporary included until this merged into base.css */
+@import url(/static/base-new.css);
+
 /* 
  * Overall Settings
  */
 
-div,
-h1,
-h2,
-h3,
-h4,
-h5,
-li,
-p,
-span,
-td,
-th {
-	font-family: Arial;
-	font-weight: normal;
-	font-size: 11pt;
-}
-
-table {
-	border-collapse: collapse;
-}
-
-th {
-	font-weight: bold;
-}
-
-td,
-th {
-	margin: 0;
-	padding: 5px;
-	border-style: solid;
-	border-width: 1px;
-}
-
-pre,
-textarea {
-	font-family: Courier;
-	font-weight: normal;
-	font-size: 80%;
-}
-
-pre#reference {
-	overflow: auto;
-}
-
 /*
  * Body and Page Header
  */
-
-body {
-	margin: 0;
-	padding: 0;
-}
 
 /*
  * Top Title Area
@@ -62,114 +17,16 @@ body {
 
 #topbar {
 	background-image: url(/static/themes/sky/logo.png);
-	background-position: 30px 3px;
-	background-repeat: no-repeat;
-	border-bottom-style: solid;
 	border-bottom-width: 0px;
-	margin: 0;
-	min-height: 50px;
-	padding: 5px;
-}
-
-#topbar h1 {
-	font-size: 20pt;
-	margin: 0;
-	padding: 7px 0 0 0;
-	text-align: center;
 }
 
 /* 
  * Navigation
  */
 
-div#navbar {
-	float: left;
-	margin: 0px;
-	padding: 0px;
-	position: relative;
-	left: 10px;
-	top: 10px;
-	width: 155px;
-}
-
-div#navbar, div#selected-subnavbar {
-	border-width: 1px;
-	border-style: solid;
-	margin: 0px;
-}
-
-div#navbar a {
-	text-decoration: none;
-	display: block;
-	padding: 0px;
-	padding-left: 1em;
-	padding-right: 5px;
-	padding-top: 5px;
-}
-
-ul#navlist li a {
+/*matches both top-level and submenu links */
+#navlist li {
 	font-weight: bold;
-}
-
-ul#navlist li ul a,
-ul#selected-subnavbar-list li a {
-	font-weight: normal;
-}
-
-div#navbar ul,
-div#navbar ul li ul {
-	list-style-type: none;
-	padding: 0;
-	margin: 0;
-}
-
-div#navbar ul li ul {
-	margin-left: 1.5em;
-}
-
-div#navbar ul#navlist li.navlist-selected ul li a,
-div#navbar ul#navlist li ul li a {
-	font-size: 0.9em;
-}
-
-/* this border is only displayed in dropdown mode */
-
-ul.subnavlist-selected,
-ul.subnavlist {
-	border-width: 1px;
-	border-style: solid;
-}
-
-/* the subnavbar is only displayed in top mode */
-
-#selected-subnavbar {
-	border-top-width: 0px !important;
-	padding: 0;
-	position: relative;
-	top: 0px;
-}
-
-#selected-subnavbar ul {
-	margin: 0;
-	padding: 0;
-	width: 100%;
-	display: table;
-	border-collapse: collapse;
-	border: none;
-}
-
-#selected-subnavbar li {
-	display: table-cell;
-	list-style-type: none;
-	margin: 0px;
-	text-align: center;
-}
-
-#selected-subnavbar a {
-	text-decoration: none;
-	display: block;
-	width: 100%;
-	height: 100%;
 }
 
 /*
@@ -180,46 +37,24 @@ ul.subnavlist {
  * Infoboxes
  */
 
-div.infobox {
-	border-style: solid;
-	border-width: 1px;
-	margin: 0 0 10px 0;
-	padding: 10px;
-}
-
-div.infobox div.infobox-header {
+div.infobox-header {
 	border-bottom-style: solid;
-	border-bottom-width: 1px;
-	font-size: 11pt;
-	font-weight: bold;
-	margin: -10px -10px 10px -10px;
-	padding: 10px 35px 10px 10px;
-}
-
-div.infobox-summary-status-content {
-	padding: 0px;
-}
-
-ul.alert-summary {
-	list-style-type: none;
-	text-indent: 20px;
-	padding-left: 20px;
 }
 
 li.alert-summary-text-error {
-	background: url(/static/themes/sky/error-16.png) left center no-repeat;
+	background-image: url(/static/themes/sky/error-16.png);
 }
 
 li.alert-summary-text-alert {
-	background: url(/static/themes/sky/alert-16.png) left center no-repeat;
+	background-image: url(/static/themes/sky/alert-16.png);
 }
 
 li.alert-summary-text-warning {
-	background: url(/static/themes/sky/warning-16.png) left center no-repeat;
+	background-image: url(/static/themes/sky/warning-16.png);
 }
 
 li.alert-summary-text-minor {
-	background: url(/static/themes/sky/information-16.png) left center no-repeat;
+	background-image: url(/static/themes/sky/information-16.png);
 }
 
 /*
@@ -227,255 +62,37 @@ li.alert-summary-text-minor {
  */
 
 #content {
-	margin: 10px;
-	padding: 0;
-	padding-bottom: 2em;
-	position: absolute;
-	left: 167px;
-}
-
-.interfacelink {
-	text-decoration: underline;
-}
-
-#activity {
-	margin: 0;
-	padding: 0;
-	list-style: none;
+	left: 12.614em;
 }
 
 /*
  * Plugins Page
  */
 
-table.plugins {
-	width: 100%;
-}
-
-table.plugins span {
-	font-weight: bold;
-}
-
-table.plugins form {
-	display: inline;
-}
-
 /* 
  * Configuration Page
  */
 
-table.config_navigation {
-	list-style-type: none;
-	margin-top: 10px;
-}
-
-ul.config {
-	border-style: solid;
-	border-width: 1px;
-	margin: 0 0 5px 0;
-	padding: 0;
-}
-
 ul.config li {
-	list-style: none;
-	margin: 5px;
-	padding: 5px;
-	text-align: left;
-}
-
-ul.config span.configprefix {
-	display: block;
-	font-size: 16pt;
-	font-weight: bold;
-	text-indent: 15px;
-	width: 100%;
-}
-
-ul.config span.configshortdesc {
-	display: block;
-	float: left;
-	font-weight: bold;
-	margin-right: 10px;
-	text-align: left;
-	width: 30%;
-}
-
-ul.config span.configlongdesc {
-	display: block;
-	clear: left;
-}
-
-ul.config input[type=text] {
-	width: 67%;
-}
-
-span.config {
-	width: 70%;
+	border: none;
+	margin: 0.667em;
+	padding: 0.333em;
 }
 
 /* 
  * Darknet Page
  */
 
-table.darknet_connections td,
-table.darknet_connections th {
-	font-size: 80%;
-}
-
-table.column {
-	width: 100%;
-	border: none;
-}
-
-table.column td {
-	vertical-align: top;
-	border: none;
-	padding: 0;
-}
-
-table.darknet_connections span {
-	font-weight: bold;
-	font-size: 80%;
-}
-
-table.column div {
-	margin-top: 0;
-	margin-bottom: 0;
-}
-
-table.column ul {
-	list-style-type: none;
-	margin: 0px;
-	padding: 0px;
-}
-
-table.darknet_connections {
-	width: 100%;
-}
-
-tr.messagetypes {
-	text-align: center;
-}
-
-table.sentmessagetypes {
-	display: inline;
-}
-
-table.receivedmessagetypes {
-	display: inline;
-}
-
-table.receivedmessagetypes td,
-table.receivedmessagetypes th,
-table.sentmessagetypes td,
-table.sentmessagetypes th {
-	font-size: 7pt;
-}
-
-#reftext {
-	width: 100%;
-}
-
-#refurl {
-	width: 100%;
-}
-
-#reffile {
-	width: 100%;
-}
-
 /* 
  * Statistics Page
  */
-
-div.peercircle {
-  margin: 0 auto;
-}
-
-div.peercircle span.me {
-  font-weight: bold;
-}
-
-div.peercircle span.connected {
-  font-weight: bold;
-}
-
-div.peercircle span.backed_off {
-  font-weight: bold;
-}
-
-div.peercircle span.disconnected {
-  font-weight: bold;
-}
-
-div.histogramLabel {
-  margin-left: 3px;
-  margin-right: 3px;
-  font-size: 60%;
-}
 
 /* 
  * Queue Page
  */
 
-table.queue td,
-table.queue th {
-	font-size: 8pt;
-}
-
-div.queue_tabletitle {
-	margin: 0;
-	padding: 10px 0 10px 0;
-	font-size: 10pt;
-}
-
-table.queue span {
-	font-size: 8pt;
-}
-
-div.progressbar {
-	border-style: solid;
-	border-width: 1px;
-	float: left;
-	height:15px;
-	margin: 0px;
-	margin-right: 3px;
-	width: 130px;
-}
-
-div.progressbar-done {
-	float: left;
-	height:15px;
-}
-
-div.progressbar-min {
-	float: left;
-	height:15px;
-}
-
-div.progressbar-failed {
-	float: left;
-	height:15px;
-}
-
-div.progressbar-failed2 {
-	float: left;
-	height:15px;
-}
-
-/* Node to node text message */
-
-#n2ntmtext {
-	width: 100%;
-}
-
-#n2nbox input[type=submit] {
-	width: 100%;
-}
-
-div.n2ntm-message-text {
-	margin: 10px;
-	padding: 10px;
+div.progress_fraction_finalized {
+	font-weight: normal;
 }
 
 /* 
@@ -485,44 +102,3 @@ div.n2ntm-message-text {
 /* 
  * Statusbar
  */
-
-div#statusbar-container {
-	border-bottom-style: solid;
-	border-bottom-width: 1px;
-	border-top-style: solid;
-	border-top-width: 1px;
-	font-size: 1.2em;
-	margin: 5px 0px 0px 0px;
-	padding: 3px 3px 0px 3px;
-	position: fixed;
-	right: 0;
-	bottom: 0;
-	left: 0;
-	z-index: 18;
-}
-
-div#statusbar {
-	margin: auto;
-	text-align: center;
-}
-
-div#statusbar div {
-	display: inline;
-}
-
-div#statusbar div.progressbar {
-	display: inline-block;
-	float: none;
-	margin-bottom: -3px;
-}
-
-div#statusbar div.separator {
-	display: inline-block;
-	margin-left: 9px;
-	margin-right: 9px;
-	width: 1px;
-}
-
-div#statusbar div.infobox-header {
-	display: none;
-}

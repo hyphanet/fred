@@ -92,7 +92,7 @@ li.submenuitem-selected a {
 
 li.submenuitem-not-selected a {
 	background-color: inherit;
-	color: inherit;
+	color: #666666;
 }
 
 li.submenuitem-not-selected a:hover {
