@@ -10,6 +10,30 @@
  * that looks like it should be clickable isn't, or something
  * that should cause a hover effect doesn't. */ 
 
+/* TODO theme the Search page */
+
+/* TODO the table of peers is excessively wide in advanced
+ * mode Something(tm) should be done about this. */
+
+/* TODO the Statistics page is also excessively wide. There's
+ * also something strange going on in the Success rates by HTL
+ * tables regarding entries at 0.000% */
+
+/* TODO the Connectivity section on the connectivity page
+ * could also use some theming. Also - what's up with all those
+ extra columns in the tables on this page? */
+
+/* TODO play with the various Configuration pages to find
+ * a better layout */
+
+/* TODO the table inside the "Plugins currently loaded" 
+ * infobox looks out of place. */
+
+/* TODO add theming to the translation page */
+
+/* TODO make sure all the plugins which are in common use
+ * work with the themes */
+
 /* Toggleable areas: hovering over them shows the hidden part */
 
 .toggleable .hidden {
@@ -253,6 +277,13 @@ ul.alert-summary {
 	text-indent: 20px;
 }
 
+/* these two input boxes go crazy if you don't bring their width
+ * under control */
+#searchform input[type=text],
+#keyfetchbox input[type=text] {
+	width: 100%;
+}
+
 li.alert-summary-text-error,
 li.alert-summary-text-alert,
 li.alert-summary-text-warning,
@@ -306,8 +337,8 @@ li.alert-summary-text-minor {
  */
 
 #content {
-	margin-bottom: 4em;
 	margin-top: 0.667em;
+	padding-bottom: 2em;
 	position: absolute;
 	left: 12.614em;
 	right: 0.667em;
@@ -579,6 +610,11 @@ div.n2ntm-message-text {
 	display: inline-block;
 	font-size: 0.9em;
 	vertical-align: bottom;
+}
+
+/* override any padding that the infobox divs might have */
+#statusbar div {
+	 padding: 0px;
 }
 
 /* this is needed for inheritance reasons */
