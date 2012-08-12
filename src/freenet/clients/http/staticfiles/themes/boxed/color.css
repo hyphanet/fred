@@ -1,0 +1,262 @@
+/* color-boxed */
+
+/* 
+ * Overall Settings
+ */
+
+/* LocalFileBrowserToadlet */
+.unreadable-file {
+	color: #ff0000;
+}
+
+#topbar, 
+#navbar,
+#selected-subnavbar,
+.infobox-content,
+ul.config {
+	border-color: #000000;
+	background-color: #dddddd;
+}
+
+th {
+	background-color: #aaaaaa;
+	border-top-color: #ffffff;
+	border-left-color: #ffffff;
+	border-bottom-color: #222222;
+	border-right-color: #222222;
+}
+
+/*
+ * Body and Page Header
+ */
+
+/*
+ * Top Title Area
+ */
+
+/* 
+ * Navigation
+ */
+
+ul.navlist-selected,
+ul.subnavlist-selected,
+ul.subnavlist {
+	border-color: #000000;
+}
+
+ul.navlist-selected ul.subnavlist-selected { 
+	background-color: #eeeeee;
+}
+
+/*
+ * Alerts
+ */
+
+/* 
+ * Infoboxes
+ */
+
+div.infobox {
+	background-color: transparent;
+}
+
+div.infobox-header,
+div.infobox-information div.infobox-header {
+	border-color: #000000;
+	background-color: #aaaaaa;
+}
+
+div.infobox-success div.infobox-header {
+	background-color: #aaffaa;
+}
+
+div.infobox-success div.infobox-content {
+	background-color: #ccffcc;
+}
+
+div.infobox-error div.infobox-header {
+	background-color: #ff0000;
+}
+
+div.infobox-error div.infobox-content, div.infobox-alert div.infobox-content {
+	background-color: #ffcccc;
+}
+
+/*
+ * Content
+ */
+
+a {
+	color: #0000ff;
+}
+
+a:hover {
+	color: inherit;
+	background-color: #888888;
+}
+
+/*
+ * Plugins Page
+ */
+
+/* 
+ * Configuration Page
+ */
+
+/* 
+ * Darknet Page
+ */
+
+.peer_connected {
+	color: #080;
+}
+
+.peer_backed_off {
+	color: #840;
+}
+
+.peer_disconnected, .peer_too_old {
+	color: #444;
+}
+
+.peer_too_new {
+	color: #f00;
+}
+
+.peer_never_connected {
+	color: #444;
+}
+
+.peer_disabled {
+	color: #444;
+}
+
+.peer_bursting {
+	color: #444;
+}
+
+.peer_listening {
+	color: #444;
+}
+
+.peer_listen_only {
+	color: #444;
+}
+
+.peer_version_problem {
+	color: #840;
+}
+
+.peer_idle_old {
+	color: #840;
+}
+
+/* 
+ * Statistics Page
+ */
+
+div.peercircle span.mark {
+  color: #d0d0d0;
+}
+
+div.peercircle span.me {
+  color: #0080ff;
+}
+
+div.peercircle span.connected {
+  color: #008000;
+}
+
+div.peercircle span.backed_off {
+  color: #008000;
+}
+
+div.peercircle span.disconnected {
+  color: #d0d0d0;
+}
+
+div.histogramConnected {
+  background-color: #008000;
+}
+
+div.histogramDisconnected {
+  background-color: #d0d0d0;
+}
+
+/* 
+ * Queue Page
+ */
+
+.progressbar {
+	border-color: #000000;
+}
+
+.progressbar-done {
+	background-color: #44cc44;
+}
+
+.progressbar-min {
+	background-color: #cccccc;
+}
+
+.progressbar-failed {
+	background-color: #ffcccc;
+}
+
+.progressbar-failed2 {
+	background-color: #ff4444;
+}
+
+.progress_fraction_not_finalized {
+	color: #333333;
+}
+
+.warning {
+	color: #ff0000;
+}
+
+/* 
+ * N2NTM page
+ */
+
+div.n2ntm-message-text {
+	background-color: #ffffff;
+}
+
+td.n2ntm-send-sent {
+	background-color: #a7ffbc;
+}
+
+td.n2ntm-send-delayed {
+	background-color: #ffeba7;
+}
+
+td.n2ntm-send-queued {
+	background-color: #ffa7a7;
+}
+
+td.n2ntm-send-failed {
+	background-color: #ffb7b7;
+}
+
+/* 
+ * Translation
+ */
+
+/* 
+ * Statusbar
+ */
+
+div#statusbar-container {
+	background-color: #dddddd;
+	border-color: black;
+}
+
+div#statusbar div.infobox-content {
+	background-color: #dddddd;
+}
+
+div#statusbar div.separator {
+	background-color: black;
+}
+

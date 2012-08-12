@@ -40,10 +40,18 @@
 /* TODO the table inside the "Plugins currently loaded" 
  * infobox looks out of place. */
 
+/* TODO In progress downloads has the same problem 
+ * Basically every time as put a table inside an infobox
+ * it doesn't look right. */
+
 /* TODO add theming to the translation page */
 
 /* TODO make sure all the plugins which are in common use
  * work with the themes */
+
+/* TODO theme the bookmark editor */
+
+/* TODO theme the local file browser */
 
 /* Toggleable areas: hovering over them shows the hidden part */
 
@@ -433,28 +441,28 @@ span.configshortdesc {
 li.boolean span.configshortdesc,
 li.dropdown span.configshortdesc,
 div.infobox-warning span.configshortdesc {
-	display: inline-block;
-	width: 15em;
+        display: inline-block;
+        width: 15em;
 }
 
 /* dropdown option boxes are aligned in a column to the right of the
  * description*/
 ul.config span.config select {
-	vertical-align: top;
-	margin-left: 0.333em;
+        vertical-align: top;
+        margin-left: 0.333em;
 }
 
 span.configlongdesc {
-	display: block;
-	margin-top: 0.333em;
+        display: block;
+        margin-top: 0.333em;
 }
 
 div.infobox-warning span.configlongdesc {
-	display: inline-block;
-	padding-bottom: 0.333em;
-	margin-left: 1em;
-	margin-top: 0px;
-	vertical-align: bottom;
+        display: inline-block;
+        padding-bottom: 0.333em;
+        margin-left: 1em;
+        margin-top: 0px;
+        vertical-align: bottom;
 }
 
 /* 

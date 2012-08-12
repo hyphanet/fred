@@ -55,3 +55,7 @@ li.navlist-not-selected {
 	text-align: center !important;
 }
 
+/* topbar bottom border conflicts with navbar top */
+#topbar {
+	border-bottom: none !important;
+}

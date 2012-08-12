@@ -32,20 +32,20 @@ body {
  * Navigation
  */
 
-div#navbar,
-div#selected-subnavbar {
+#navbar,
+#selected-subnavbar {
 	border-color: #d0d0d0;
 }
 
-div#navbar,
-ul#navlist,
+#navbar,
+#navlist,
 li.navlist-selected,
 li.navlist-not-selected,
 ul.subnavlist-selected,
 ul.subnavlist,
 li.submenuitem-selected,
 li.submenuitem-not-selected,
-div#subnavbar {
+#subnavbar {
 	background-color: #e8e8e8;
 }
 
@@ -118,7 +118,7 @@ div.infobox {
 	border-color: #d0d0d0;
 }
 
-div.infobox div.infobox-header {
+div.infobox-header {
 	border-color: #a0a0a0;
 	background-color: #e8e8e8;
 }

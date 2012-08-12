@@ -21,7 +21,11 @@ import freenet.support.api.HTTPRequest;
 public final class PageMaker {
 	
 	public enum THEME {
-		BOXED("boxed", "Boxed", "", false, false),
+		BOXED("boxed", "Boxed (Dynamic menu)", "", false, false),
+		BOXED_CLASSIC("boxed-classic", "Boxed (Classic menu)", "", false, false),
+		BOXED_DROPDOWN("boxed-dropdown", "Boxed (Dropdown menu)", "", false, false),
+		BOXED_STATIC("boxed-static", "Boxed (Static menu)", "", false, false),
+		BOXED_TOP("boxed-top", "Boxed (Top menu)", "", false, false),
 		CLEAN("clean", "Clean", "Mr. Proper", false, false),
 		CLEAN_CLASSIC("clean-classic", "Clean (Classic menu)", "Clean theme with a classic menu.", false, false),
 		CLEAN_DROPDOWN("clean-dropdown", "Clean (Dropdown menu)", "Clean theme with a dropdown menu.", false, false),
@@ -44,6 +48,10 @@ public final class PageMaker {
 		
 		public static final String[] possibleValues = {
 			BOXED.code,
+			BOXED_CLASSIC.code,
+			BOXED_DROPDOWN.code,
+			BOXED_STATIC.code,
+			BOXED_TOP.code,
 			CLEAN.code,
 			CLEAN_CLASSIC.code,
 			CLEAN_DROPDOWN.code,
