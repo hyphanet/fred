@@ -552,3 +552,52 @@ div.n2ntm-message-text {
  * Translation
  */
 
+/* 
+ * Statusbar
+ */
+
+/* FIXME div#statusbar is the same thing as div#statusbarcontainer
+ * do we really need both? */
+
+#statusbar-container {
+	border-bottom-style: solid;
+	border-bottom-width: 1px;
+	border-top-style: solid;
+	border-top-width: 1px;
+	position: fixed;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	z-index: 18;
+}
+
+#statusbar {
+	text-align: center;
+}
+
+#statusbar > div {
+	display: inline-block;
+	font-size: 0.9em;
+	vertical-align: bottom;
+}
+
+/* this is needed for inheritance reasons */
+#statusbar div.progressbar div {
+	font-size: 1em;
+}
+
+#statusbar div.progressbar {
+	float: none;
+	margin-bottom: 0;
+}
+
+#statusbar div.separator {
+	height: 1.5em;
+	margin-left: 0.666em;
+	margin-right: 0.667em;
+	width: 1px;
+}
+
+#statusbar div.infobox-header {
+	display: none;
+}

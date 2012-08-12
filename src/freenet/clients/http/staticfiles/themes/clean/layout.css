@@ -111,44 +111,13 @@ li.alert-summary-text-minor {
  */
 
 /* 
+ * Translation
+ */
+
+/* 
  * Statusbar
  */
 
-div#statusbar-container {
-	border-bottom-style: solid;
-	border-bottom-width: 1px;
-	border-top-style: solid;
-	border-top-width: 1px;
-	margin: 5px 0px 0px 0px;
-	padding: 3px 3px 0px 3px;
-	position: fixed;
-	right: 0;
-	bottom: 0;
-	left: 0;
-	z-index: 18;
-}
-
-div#statusbar {
-	margin: auto;
-	text-align: center;
-}
-
-div#statusbar div {
-	display: inline;
-}
-
-div#statusbar div.progressbar {
-	display: inline-block;
-	margin-bottom: -3px;
-}
-
-div#statusbar div.separator {
-	display: inline-block;
-	margin-left: 9px;
-	margin-right: 9px;
-	width: 1px;
-}
-
-div#statusbar div.infobox-header {
-	display: none;
+#statusbar > div {
+	font-size: 1em;
 }
