@@ -1952,7 +1952,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 
 	private void setDetectedPeer(Peer newPeer) {
-		// Only clear lastAttemptedHandshakeIPUpdateTime if we have a new IP.
 		// Also, we need to call .equals() to propagate any DNS lookups that have been done if the two have the same domain.
 		Peer p = newPeer;
 		newPeer = newPeer.dropHostName();
@@ -1965,6 +1964,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if((newPeer != null) && ((oldPeer == null) || !oldPeer.equals(newPeer))) {
 				this.detectedPeer = newPeer;
 				updateShortToString();
+				// IP has changed, it is worth looking up the DNS address again.
 				this.lastAttemptedHandshakeIPUpdateTime = 0;
 				if(!isConnected)
 					return;
@@ -2925,6 +2925,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(!Arrays.equals(oldPeers, nominalPeer.toArray(new Peer[nominalPeer.size()]))) {
 					changedAnything = true;
 					if(logMINOR) Logger.minor(this, "Got new physical.udp for "+this+" : "+Arrays.toString(nominalPeer.toArray()));
+					// Look up the DNS names if any ASAP
 					lastAttemptedHandshakeIPUpdateTime = 0;
 					// Clear nonces to prevent leak. Will kill any in-progress connect attempts, but that is okay because
 					// either we got an ARK which changed our peers list, or we just connected.
@@ -4999,6 +5000,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	private int countFailedRevocationTransfers;
 
 	public void failedRevocationTransfer() {
+		// Something odd happened, possibly a disconnect, maybe looking up the DNS names will help?
 		lastAttemptedHandshakeIPUpdateTime = System.currentTimeMillis();
 		countFailedRevocationTransfers++;
 	}
