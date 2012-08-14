@@ -23,7 +23,7 @@ import junit.framework.TestCase;
 
 /**
  * Test case for {@link freenet.support.Base64} class.
- * 
+ *
  * @author Alberto Bacchelli &lt;sback@freenetproject.org&gt;
  */
 public class Base64Test extends TestCase {
@@ -48,11 +48,11 @@ public class Base64Test extends TestCase {
 	 * (see http://en.wikipedia.org/wiki/Base_64 as reference)
 	 * to verify if it encode works correctly.
 	 */
-	public void testEncode() {
-		byte[] aByteArrayToEncode = toEncode.getBytes();
+	public void testEncode() throws Exception {
+		byte[] aByteArrayToEncode = toEncode.getBytes("UTF-8");
 		assertEquals(Base64.encode(aByteArrayToEncode), toDecode);
 	}
-	
+
 	/**
 	 * Test the decode(String) method
 	 * against a well-known example
@@ -68,8 +68,8 @@ public class Base64Test extends TestCase {
 	 * Test the encodeStandard(byte[]) method
 	 * This is the same as encode() from generator/js/src/freenet/client/tools/Base64.java
 	 */
-	public void testEncodeStandard() {
-		byte[] aByteArrayToEncode = testSample.getBytes();
+	public void testEncodeStandard() throws Exception {
+		byte[] aByteArrayToEncode = testSample.getBytes("UTF-8");
 		assertEquals(Base64.encodeStandard(aByteArrayToEncode), testSampleStandardEncoding);
 	}
 
@@ -78,7 +78,7 @@ public class Base64Test extends TestCase {
 	 * This is the same as decode() from generator/js/src/freenet/client/tools/Base64.java
 	 */
 	public void testDecodeStandard() throws Exception {
-		String decodedString = new String(Base64.decodeStandard(testSampleStandardEncoding));
+		String decodedString = new String(Base64.decodeStandard(testSampleStandardEncoding), "UTF-8");
 		assertEquals(decodedString, testSample);
 	}
 
@@ -92,24 +92,24 @@ public class Base64Test extends TestCase {
 	public void testEncodeDecode() {
 		byte[] bytesDecoded;
 		byte[] bytesToEncode = new byte[5];
-		
+
 		//byte upper bound
 		bytesToEncode[0] = 127;
 		bytesToEncode[1] = 64;
 		bytesToEncode[2] = 0;
 		bytesToEncode[3] = -64;
 		//byte lower bound
-		bytesToEncode[4] = -128;	
-		
+		bytesToEncode[4] = -128;
+
 		String aBase64EncodedString = Base64.encode(bytesToEncode);
-		
+
 		try {
 			bytesDecoded = Base64.decode(aBase64EncodedString);
-			assertTrue(Arrays.equals(bytesToEncode,bytesDecoded)); } 
+			assertTrue(Arrays.equals(bytesToEncode,bytesDecoded)); }
 		catch (IllegalBase64Exception aException) {
 			fail("Not expected exception thrown : " + aException.getMessage()); }
 	}
-	
+
 	/**
 	 * Test the encode(String,boolean)
 	 * method to verify if the padding
@@ -118,13 +118,13 @@ public class Base64Test extends TestCase {
 	public void testEncodePadding() {
 		byte[][] methodBytesArray = {
 				//three byte Array -> no padding char expected
-				{4,4,4},		
+				{4,4,4},
 				//two byte Array -> one padding char expected
-				{4,4},		
-				//one byte Array -> two padding-chars expected	
-				{4}};		
+				{4,4},
+				//one byte Array -> two padding-chars expected
+				{4}};
 		String encoded;
-		
+
 		for (int i = 0; i<methodBytesArray.length; i++) {
 			encoded = Base64.encode(methodBytesArray[i],true);
 			if (i == 0)
@@ -134,7 +134,7 @@ public class Base64Test extends TestCase {
 				assertEquals(encoded.indexOf('='),encoded.length()-i);
 		}
 	}
-	
+
 	/**
 	 * Test if the decode(String) method
 	 * raise correctly an exception when
@@ -150,11 +150,11 @@ public class Base64Test extends TestCase {
 		catch (IllegalBase64Exception exception) {
 			assertSame("illegal Base64 character",exception.getMessage()); }
 	}
-	
+
 	/**
 	 * Test if the decode(String) method
 	 * raise correctly an exception when
-	 * providing a string with a 
+	 * providing a string with a
 	 * wrong Base64 length.
 	 * (as we can consider not-padded strings too,
 	 *  the only wrong lengths are the ones
@@ -169,10 +169,10 @@ public class Base64Test extends TestCase {
 		catch (IllegalBase64Exception exception) {
 			assertSame("illegal Base64 length",exception.getMessage()); }
 	}
-	
+
 	/**
 	 * Random test
-	 * 
+	 *
 	 * @throws IllegalBase64Exception
 	 */
 	public void testRandom() throws IllegalBase64Exception {
