@@ -40,8 +40,6 @@ public class PeerMessageQueue {
 	private boolean mustSendLoadRT;
 	private boolean mustSendLoadBulk;
 	
-	private final BasePeerNode pn;
-	
 	private static final int MAX_PEER_LOAD_STATS_SIZE = DMT.FNPPeerLoadStatusInt.getMaxSize(0);
 	
 	private class PrioQueue {
@@ -810,8 +808,7 @@ public class PeerMessageQueue {
 
 	}
 
-	PeerMessageQueue(BasePeerNode parent) {
-		pn = parent;
+	PeerMessageQueue() {
 		queuesByPriority = new PrioQueue[DMT.NUM_PRIORITIES];
 		for(int i=0;i<queuesByPriority.length;i++) {
 			if(i == DMT.PRIORITY_BULK_DATA)
@@ -1096,15 +1093,6 @@ public class PeerMessageQueue {
 		return size;
 	}
 	
-	private void addLoadStats(long now, ArrayList<MessageItem> messages, boolean realtime) {
-		MessageItem load = pn.makeLoadStats(realtime, false, false);
-		if(load != null) {
-			if(logMINOR && load != null)
-				Logger.minor(this, "Adding load message (realtime) to packet for "+pn);
-			messages.add(load);
-		}
-	}
-
 	public boolean removeMessage(MessageItem message) {
 		synchronized(this) {
 			short prio = message.getPriority();

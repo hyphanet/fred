@@ -665,7 +665,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		// Not connected yet; need to handshake
 		isConnected = false;
 
-		messageQueue = new PeerMessageQueue(this);
+		messageQueue = new PeerMessageQueue();
 
 		decrementHTLAtMaximum = node.random.nextFloat() < Node.DECREMENT_AT_MAX_PROB;
 		decrementHTLAtMinimum = node.random.nextFloat() < Node.DECREMENT_AT_MIN_PROB;

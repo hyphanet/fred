@@ -21,7 +21,7 @@ public class NewPacketFormatTest extends TestCase {
 	
 	public void testEmptyCreation() throws BlockedTooLongException {
 		NewPacketFormat npf = new NewPacketFormat(null, 0, 0);
-		PeerMessageQueue pmq = new PeerMessageQueue(new NullBasePeerNode());
+		PeerMessageQueue pmq = new PeerMessageQueue();
 		SessionKey s = new SessionKey(null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0), 1);
 
 		NPFPacket p = npf.createPacket(1400, pmq, s, false);
@@ -31,7 +31,7 @@ public class NewPacketFormatTest extends TestCase {
 	public void testAckOnlyCreation() throws BlockedTooLongException, InterruptedException {
 		BasePeerNode pn = new NullBasePeerNode();
 		NewPacketFormat npf = new NewPacketFormat(pn, 0, 0);
-		PeerMessageQueue pmq = new PeerMessageQueue(pn);
+		PeerMessageQueue pmq = new PeerMessageQueue();
 		SessionKey s = new SessionKey(null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0), 1);
 
 		NPFPacket p = null;
@@ -51,10 +51,10 @@ public class NewPacketFormatTest extends TestCase {
 	public void testLostLastAck() throws BlockedTooLongException, InterruptedException {
 		NullBasePeerNode senderNode = new NullBasePeerNode();
 		NewPacketFormat sender = new NewPacketFormat(senderNode, 0, 0);
-		PeerMessageQueue senderQueue = new PeerMessageQueue(senderNode);
+		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NullBasePeerNode receiverNode = new NullBasePeerNode();
 		NewPacketFormat receiver = new NewPacketFormat(receiverNode, 0, 0);
-		PeerMessageQueue receiverQueue = new PeerMessageQueue(receiverNode);
+		PeerMessageQueue receiverQueue = new PeerMessageQueue();
 		SessionKey senderKey = new SessionKey(null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0), 1);
 		senderNode.currentKey = senderKey;
 		SessionKey receiverKey = new SessionKey(null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0), 1);
@@ -101,7 +101,7 @@ public class NewPacketFormatTest extends TestCase {
 	public void testOutOfOrderDelivery() throws BlockedTooLongException {
 		NullBasePeerNode senderNode = new NullBasePeerNode();
 		NewPacketFormat sender = new NewPacketFormat(senderNode, 0, 0);
-		PeerMessageQueue senderQueue = new PeerMessageQueue(senderNode);
+		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NullBasePeerNode receiverNode = new NullBasePeerNode();
 		NewPacketFormat receiver = new NewPacketFormat(receiverNode, 0, 0);
 		SessionKey senderKey = new SessionKey(null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0), 1);
@@ -126,7 +126,7 @@ public class NewPacketFormatTest extends TestCase {
 	public void testReceiveUnknownMessageLength() throws BlockedTooLongException {
 		NullBasePeerNode senderNode = new NullBasePeerNode();
 		NewPacketFormat sender = new NewPacketFormat(senderNode, 0, 0);
-		PeerMessageQueue senderQueue = new PeerMessageQueue(senderNode);
+		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NullBasePeerNode receiverNode = new NullBasePeerNode();
 		NewPacketFormat receiver = new NewPacketFormat(receiverNode, 0, 0);
 		SessionKey senderKey = new SessionKey(null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0), 1);
@@ -149,7 +149,7 @@ public class NewPacketFormatTest extends TestCase {
 	public void testResendAlreadyCompleted() throws BlockedTooLongException, InterruptedException {
 		NullBasePeerNode senderNode = new NullBasePeerNode();
 		NewPacketFormat sender = new NewPacketFormat(senderNode, 0, 0);
-		PeerMessageQueue senderQueue = new PeerMessageQueue(senderNode);
+		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NullBasePeerNode receiverNode = new NullBasePeerNode();
 		NewPacketFormat receiver = new NewPacketFormat(receiverNode, 0, 0);
 		SessionKey senderKey = new SessionKey(null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0), 1);
@@ -201,7 +201,7 @@ public class NewPacketFormatTest extends TestCase {
 
 		};
 		NewPacketFormat sender = new NewPacketFormat(senderNode, 0, 0);
-		PeerMessageQueue senderQueue = new PeerMessageQueue(senderNode);
+		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NullBasePeerNode receiverNode = new NullBasePeerNode() {
 			
 			@Override
@@ -265,7 +265,7 @@ public class NewPacketFormatTest extends TestCase {
 
 		};
 		NewPacketFormat sender = new NewPacketFormat(senderNode, 0, 0);
-		PeerMessageQueue senderQueue = new PeerMessageQueue(senderNode);
+		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NullBasePeerNode receiverNode = new NullBasePeerNode();
 		NewPacketFormat receiver = new NewPacketFormat(receiverNode, 0, 0);
 		SessionKey receiverKey = new SessionKey(null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0), 1);
@@ -302,7 +302,7 @@ public class NewPacketFormatTest extends TestCase {
 
 		};
 		NewPacketFormat sender = new NewPacketFormat(senderNode, 0, 0);
-		PeerMessageQueue senderQueue = new PeerMessageQueue(senderNode);
+		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NullBasePeerNode receiverNode = new NullBasePeerNode() {
 			
 			@Override
