@@ -788,7 +788,7 @@ outer:
 							MessageItem item = null;
 							item = messageQueue.grabQueuedMessageItem(i);
 							if(item == null) {
-								if(mustSendKeepalive && packet.getFragments().isEmpty()) {
+								if(mustSendKeepalive && packet.noFragments()) {
 									// Create a ping for keepalive purposes.
 									// It will be acked, this ensures both sides don't timeout.
 									Message msg;
