@@ -659,7 +659,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return;
 		}
 
-		if(negType > 0 && negType < 6) {
+		if(negType >= 0 && negType < 6) {
 			Logger.warning(this, "Old neg type "+negType+" not supported");
 			return;
 		} else if (negType == 6 || negType == 7) {
