@@ -94,7 +94,6 @@ public class NewPacketFormat implements PacketFormat {
 	
 	private long timeLastSentPacket;
 	private long timeLastSentPayload;
-	private long timeLastSentPing;
 
 	public NewPacketFormat(BasePeerNode pn, int ourInitialMsgID, int theirInitialMsgID) {
 		this.pn = pn;
@@ -794,7 +793,6 @@ outer:
 									Message msg;
 									synchronized(this) {
 										msg = DMT.createFNPPing(pingCounter++);
-										timeLastSentPing = now;
 									}
 									item = new MessageItem(msg, null, null);
 									item.setDeadline(now + PacketSender.MAX_COALESCING_DELAY);
