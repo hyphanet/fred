@@ -783,6 +783,7 @@ outer:
 							}
 							checkedCanSend = false;
 							if(cantSend) break;
+							boolean wasGeneratedPing = false;
 							
 							MessageItem item = null;
 							item = messageQueue.grabQueuedMessageItem(i);
@@ -796,6 +797,7 @@ outer:
 									}
 									item = new MessageItem(msg, null, null);
 									item.setDeadline(now + PacketSender.MAX_COALESCING_DELAY);
+									wasGeneratedPing = true;
 								} else {
 									break prio;
 								}
@@ -807,7 +809,12 @@ outer:
 								// This doesn't happen at the moment because we use a single PacketSender for all ports and all peers.
 								// We might in future split it across multiple threads but it'd be best to keep the same peer on the same thread.
 								Logger.error(this, "No availiable message ID, requeuing and sending packet (we already checked didn't we???)");
-								messageQueue.pushfrontPrioritizedMessageItem(item);
+								if(!wasGeneratedPing) {
+									messageQueue.pushfrontPrioritizedMessageItem(item);
+									// No point adding to queue if it's just a ping:
+									//  We will try again next time.
+									//  But odds are the connection is broken and the other side isn't responding...
+								}
 								break fragments;
 							}
 							
