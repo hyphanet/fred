@@ -63,7 +63,7 @@ public class IncomingPacketFilterImpl implements IncomingPacketFilter {
 		PeerNode opn = node.peers.getByAddress(peerAddress, mangler);
 
 		if(opn != null) {
-			if(opn.handleReceivedPacket(buf, offset, length, now, peerAddress)) {
+			if(opn.handleReceivedPacket(buf, offset, length, now, peerAddress, mangler.getTransport())) {
 				if(logMINOR) successfullyDecodedPackets.incrementAndGet();
 				return DECODED.DECODED;
 			}
@@ -78,7 +78,7 @@ public class IncomingPacketFilterImpl implements IncomingPacketFilter {
 			for(PeerNode pn : crypto.getPeerNodes()) {
 				if(pn == opn) continue;
 				if(pn.isOldFNP()) continue;
-				if(pn.handleReceivedPacket(buf, offset, length, now, peerAddress)) {
+				if(pn.handleReceivedPacket(buf, offset, length, now, peerAddress, mangler.getTransport())) {
 					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
 					return DECODED.DECODED;
 				}

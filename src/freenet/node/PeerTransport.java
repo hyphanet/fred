@@ -265,9 +265,7 @@ public abstract class PeerTransport {
 			if(successfulHandshakeSend)
 				firstHandshake = false;
 			transportHandshakeCount++;
-			if(transportHandshakeCount == MAX_HANDSHAKE_COUNT)
-				fetchARKFlag = true;
-			return fetchARKFlag;
+			return fetchARKFlag = (transportHandshakeCount >= MAX_HANDSHAKE_COUNT);
 		}
 	}
 	

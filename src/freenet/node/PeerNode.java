@@ -38,7 +38,6 @@ import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DSASignature;
 import freenet.crypt.Global;
 import freenet.crypt.HMAC;
-import freenet.crypt.KeyAgreementSchemeContext;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
@@ -144,16 +143,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	private Peer remoteDetectedPeer;
 	/** Is this a testnet node? */
 	public final boolean testnetEnabled;
-	/** Packets sent/received on the current preferred key */
-	private SessionKey currentTracker;
-	/** Previous key - has a separate packet number space */
-	private SessionKey previousTracker;
-	/** Are we rekeying ? */
-	private boolean isRekeying = false;
-	/** Unverified tracker - will be promoted to currentTracker if
-	* we receive packets on it
-	*/
-	private SessionKey unverifiedTracker;
 	/** When did we last receive a packet? */
 	private long timeLastReceivedPacket;
 	/** When did we last receive a non-auth packet? */
@@ -232,6 +221,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/** MessageItem's to send ASAP.
 	 * LOCKING: Lock on self, always take that lock last. Sometimes used inside PeerNode.this lock. */
 	private final PeerMessageQueue messageQueue;
+	/**
+	 * The Message tracker that tracks in flight messages. All PeerTransport objects deal with it.
+	 */
+	private PeerMessageTracker pmt;
 	/** When did we last receive a SwapRequest? */
 	private long timeLastReceivedSwapRequest;
 	/** Average interval between SwapRequest's */
@@ -287,8 +280,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * we are trying to get a connection to this node even though
 	 * it doesn't know us, e.g. as a seednode. */
 	final BlockCipher anonymousInitiatorSetupCipher;
-	/** The context object for the currently running negotiation. */
-	private KeyAgreementSchemeContext ctx;
 	/** The other side's boot ID. This is a random number generated
 	* at startup.
 	*/
@@ -408,7 +399,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		});
 	}
 
-	private PacketFormat packetFormat;
 	MersenneTwister paddingGen;
 	
 	protected SimpleFieldSet fullFieldSet;
@@ -1102,7 +1092,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			// Force re negotiation.
 			isConnected = false;
 			isRoutable = false;
-			isRekeying = false;
 			
 			countFailedRevocationTransfers = 0;
 			timePrevDisconnect = timeLastDisconnect;
@@ -1581,18 +1570,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			peerTransport.setDetectedAddress(newAddress);
 	}
 
-	//FIXME Get rid of these when we get rid of FNPWrapper
-	public synchronized SessionKey getCurrentKeyTracker() {
-		return currentTracker;
-	}
-	public synchronized SessionKey getPreviousKeyTracker() {
-		return previousTracker;
-	}
-	public synchronized SessionKey getUnverifiedKeyTracker() {
-		return unverifiedTracker;
-	}
-
-	
 	private String shortToString;
 	private void updateShortToString() {
 		shortToString = super.toString() + '@' + HexUtil.bytesToHex(pubKeyHash);
@@ -1628,16 +1605,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public void sentPacket(PacketTransportPlugin transportPlugin) {
 		PeerPacketTransport peerTransport = getPeerTransport(transportPlugin);
 		peerTransport.sentPacket();
-	}
-
-	public synchronized KeyAgreementSchemeContext getKeyAgreementSchemeContext() {
-		return ctx;
-	}
-
-	public synchronized void setKeyAgreementSchemeContext(KeyAgreementSchemeContext ctx2) {
-		this.ctx = ctx2;
-		if(logMINOR)
-			Logger.minor(this, "setKeyAgreementSchemeContext(" + ctx2 + ") on " + this);
 	}
 
 	/**
@@ -1753,9 +1720,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				newID = peerTransport.completedHandshake();
 			}
 			else
-				newID =1; //Situation not possible
+				newID = -1; //Situation not possible
 			
-			if(newID == 1)
+			if(newID == -1)
 				return -1;
 			/*
 			 * Finish up some tasks at PeerNode level (not transport specific),
@@ -1898,7 +1865,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			sendAsync(dRoutingMsg, null, node.nodeStats.initialMessagesCtr);
 			sendAsync(uptimeMsg, null, node.nodeStats.initialMessagesCtr);
 		} catch(NotConnectedException e) {
-			Logger.error(this, "Completed handshake with " + getPeer() + " but disconnected (" + isConnected + ':' + currentTracker + "!!!: " + e, e);
+			Logger.error(this, "Completed handshake with " + this + " but disconnected " + e, e);
 		}
 
 		if(isRealConnection())
@@ -4944,10 +4911,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return messageQueue;
 	}
 
-	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now, PluginAddress replyTo) {
+	public boolean handleReceivedPacket(byte[] buf, int offset, int length,
+			long now, PluginAddress replyTo, PacketTransportPlugin transportPlugin) {
+		PeerPacketTransport peerTransport = getPeerTransport(transportPlugin);
 		PacketFormat pf;
 		synchronized(this) {
-			pf = packetFormat;
+			pf = peerTransport.packetFormat;
 			if(pf == null) return false;
 		}
 		return pf.handleReceivedPacket(buf, offset, length, now, replyTo);
@@ -4968,12 +4937,16 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return transportPlugin.getMaxPacketSize();
 	}
 	
-	private int getMaxPacketSize() {
-		int maxPacketSize = 0;
+	/**
+	 * We want to return the smallest of all the maximum packet sizes.
+	 * @return
+	 */
+	public int getMaxPacketSize() {
+		int maxPacketSize = Integer.MAX_VALUE;
 		for(String transportName : peerPacketTransportMap.keySet()) {
 			PacketTransportPlugin transportPlugin = peerPacketTransportMap.get(transportName).transportPlugin;
 			int temp = transportPlugin.getMaxPacketSize();
-			if(temp > maxPacketSize)
+			if(temp < maxPacketSize)
 				maxPacketSize = temp;
 			
 		}
@@ -5212,15 +5185,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		Logger.error(this, "Transport was not found in both places. Not possible");
 		return false; //Unlikely case
-	}
-
-	public boolean fullPacketQueued() {
-		PacketFormat pf;
-		synchronized(this) {
-			pf = packetFormat;
-			if(pf == null) return false;
-		}
-		return pf.fullPacketQueued(getMaxPacketSize());
 	}
 
 	/** Calculate the maximum number of outgoing transfers to this peer that we
@@ -5504,6 +5468,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		if(peerStreamTransportMap.containsKey(transportName))
 			return peerStreamTransportMap.get(transportName);
 		return null;
+	}
+	
+	@Override
+	public PeerMessageTracker getPeerMessageTracker() {
+		return pmt;
 	}
 	
 	/**

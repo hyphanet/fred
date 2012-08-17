@@ -25,6 +25,8 @@ public interface BasePeerNode extends PeerContext {
 	int getMaxPacketSize(PacketTransportPlugin transportPlugi);
 
 	PeerMessageQueue getMessageQueue();
+	
+	PeerMessageTracker getPeerMessageTracker();
 
 	boolean shouldPadDataPackets();
 

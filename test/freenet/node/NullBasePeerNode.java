@@ -239,4 +239,9 @@ public class NullBasePeerNode implements BasePeerNode {
 		// Ignore
 	}
 
+	@Override
+	public PeerMessageTracker getPeerMessageTracker() {
+		return null;
+	}
+
 }

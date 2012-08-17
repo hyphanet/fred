@@ -209,7 +209,6 @@ public class PeerPacketTransport extends PeerTransport {
 				} else
 					wasARekey = true;
 				isTransportConnected = true;
-				boolean notReusingTracker = false;
 				bootIDChanged = (thisBootID != pn.getBootID());
 				if(pn.myLastSuccessfulBootID != pn.getOutgoingBootID()) {
 					// If our own boot ID changed, because we forcibly disconnected, 
@@ -230,11 +229,9 @@ public class PeerPacketTransport extends PeerTransport {
 					Logger.minor(this, "Changed boot ID from " + pn.getBootID() + " to " + thisBootID + " for " + detectedTransportAddress);
 				pn.setBootID(thisBootID);
 				if(bootIDChanged) {
-					if((!bootIDChanged) && notReusingTracker && !(peerConn.currentTracker == null && peerConn.previousTracker == null))
 						// FIXME is this a real problem? Clearly the other side has changed trackers for some reason...
 						// Normally that shouldn't happen except when a connection times out ... it is probably possible
 						// for that to timeout on one side and not the other ...
-						Logger.error(this, "Not reusing tracker, so wiping old trackers for "+this);
 					oldPrev = peerConn.previousTracker;
 					oldCur = peerConn.currentTracker;
 					peerConn.previousTracker = null;
@@ -750,6 +747,15 @@ public class PeerPacketTransport extends PeerTransport {
 			if(pf == null) return Long.MAX_VALUE;
 		}
 		return pf.timeCheckForLostPackets();
+	}
+	
+	public boolean fullPacketQueued() {
+		PacketFormat pf;
+		synchronized(this) {
+			pf = packetFormat;
+			if(pf == null) return false;
+		}
+		return pf.fullPacketQueued(pn.getMaxPacketSize());
 	}
 	
 }

@@ -258,7 +258,7 @@ public class PacketSender implements Runnable {
 									}
 									if(sendTime <= lowestUrgentSendTime)
 										urgentSendPeerTransports.add(peerTransport);
-								} else if(pn.fullPacketQueued()) {
+								} else if(peerTransport.fullPacketQueued()) {
 									if(sendTime < lowestFullPacketSendTime) {
 										lowestFullPacketSendTime = sendTime;
 										if(urgentFullPacketPeerTransports != null)
