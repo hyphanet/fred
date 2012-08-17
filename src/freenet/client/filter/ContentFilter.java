@@ -71,7 +71,7 @@ public class ContentFilter {
 				l10n("imageJpegWriteAdvice"), false, null, null, false));
 		
 		// PNG - has a filter
-		register(new MIMEType("image/png", "png", new String[0], new String[0],
+		register(new MIMEType("image/png", "png", new String[] { "image/x-png" }, new String[0],
 				true, false, new PNGFilter(true, true, true), null, false, false, false, false, true, false,
 				l10n("imagePngReadAdvice"),
 				l10n("imagePngWriteAdvice"), false, null, null, false));
