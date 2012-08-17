@@ -1,0 +1,10 @@
+/* sky-dropdown theme */
+
+/* navigation behavior */
+@import url(/static/behavior-dropdown.css);
+
+/* layout */
+@import url(/static/themes/sky/layout.css);
+
+/* color scheme */
+@import url(/static/themes/sky/color.css);

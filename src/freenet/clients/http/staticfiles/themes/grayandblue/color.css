@@ -1,0 +1,291 @@
+﻿/* color-grayandblue */
+/* [edward@rnahost.com] */
+
+/* 
+ * Overall Settings
+ */
+
+td,
+th {
+	border-color: #676767;
+}
+
+/*
+ * Body and Page Header
+ */
+
+body {
+	background-color: #ffffff;
+}
+
+/*
+ * Top Title Area
+ */
+
+#topbar h1 {
+	color:#ccc;
+}
+
+/* 
+ * Navigation
+ */
+
+#navbar,
+#selected-subnavbar {
+	border-color: #676767;
+}
+
+#navbar,
+#navlist,
+li.navlist-selected,
+li.navlist-not-selected,
+ul.subnavlist-selected,
+ul.subnavlist,
+li.submenuitem-selected,
+li.submenuitem-not-selected,
+#subnavbar {
+	background-color: #eeeeee;
+}
+
+/* currently-enabled top level menu  */
+
+li.navlist-selected a,
+li.submenuitem-selected a {
+	color: #005f9c;	
+}
+
+li.navlist-selected a:hover,
+li.submenuitem-selected a:hover {
+	background-color: #dddddd;
+	color: black;	
+}
+/* non-selected top level menu */
+
+li.navlist-not-selected a {
+	background-color: inherit;
+	color: #0089e1;
+}
+
+li.navlist-not-selected a:hover {
+	color: #0089e1;
+}
+
+/* current sub menu location */
+
+li.submenuitem-selected a:hover {
+	background-color: #dddddd;
+	color: black;
+}
+
+li.submenuitem-selected a {
+	color: #0089e1;
+}
+
+/* non-selected submenu */
+
+li.submenuitem-not-selected a {
+	background-color: inherit;
+	color: #90c4e1;
+}
+
+li.submenuitem-not-selected a:hover {
+	background-color: #dddddd;
+	color: #0089e1;
+}
+
+/* this border is only displayed in dropdown mode */
+
+ul.subnavlist-selected,
+ul.subnavlist {
+	border-color: #676767;
+}
+
+/*
+ * Alerts
+ */
+
+/* 
+ * Infoboxes
+ */
+
+div.infobox {
+	border-color: #676767;
+}
+
+div.infobox div.infobox-header {
+	color: #000000;
+	background-color: #eee;
+}
+
+div.infobox-information div.infobox-header {
+	background-color: #eee;
+}
+
+div.infobox-warning div.infobox-header {
+	background-color: #eee;
+}
+
+/*
+ * Content
+ */
+
+a, a:link {
+	color: #09c;
+}
+
+a:visited { 
+	color: #07a;
+}
+
+a:hover {
+	background-color: #eeeeee;
+}
+
+/*
+ * Plugins Page
+ */
+
+/* 
+ * Configuration Page
+ */
+
+/* 
+ * Darknet Page
+ */
+
+span.peer_backed_off {
+	color: #ff0000;
+}
+
+span.peer_too_new {
+	color: #d0a0a0;
+}
+
+span.peer_disconnected {
+	color: #7F7F7F;
+}
+
+span.peer_routing_disabled {
+        color: #7b68ee;
+}
+
+span.peer_never_connected {
+	color: #7F7F7F;
+}
+
+span.peer_disabled {
+	color: #7F7F7F;
+}
+
+span.peer_bursting {
+	color: #7F7F7F;
+}
+
+span.peer_listening {
+	color: #7F7F7F;
+}
+
+span.peer_listen_only {
+	color: #7F7F7F;
+}
+
+span.peer_version_problem {
+	color: #0089e1;
+}
+
+span.peer_idle_old {
+	color: #0089e1;
+}
+
+/* 
+ * Statistics Page
+ */
+
+/* 
+ * Queue Page
+ */
+
+table.queue span.progress_fraction_finalized {
+	color: #008000;
+}
+
+.progressbar {
+	border-color: transparent;
+	background-color: transparent;
+}
+
+.progressbar-done {
+	background-color: transparent;
+}
+
+.progressbar-min {
+	background-color: transparent;
+}
+
+.progressbar-failed {
+	background-color: transparent;
+}
+
+.progressbar-failed2 {
+	background-color: transparent;
+}
+
+tr.priority0, td.priority0 {
+	background-color: transparent;
+}
+
+tr.priority1, td.priority1 {
+	background-color: transparent;
+}
+
+tr.priority2, td.priority2 {
+	background-color: transparent;
+}
+
+tr.priority3, td.priority3 {
+	background-color: transparent;
+}
+
+tr.priority4, td.priority4 {
+	background-color: transparent;
+}
+
+tr.priority5, td.priority5 {
+	background-color: transparent;
+}
+
+tr.priority6, td.priority6 {
+	background-color: transparent;
+}
+
+/* 
+ * N2NTM page
+ */
+
+/* 
+ * Translation
+ */
+
+.translate_d {
+	background-color: transparent;
+}
+
+/* 
+ * Statusbar
+ */
+#statusbar-container {
+	border-color: #676767;
+	background-color: #eee;
+}
+
+#statusbar div.separator {
+	border-left-color: #676767;
+}
+
+#statusbar div.progressbar-peers.very-few-peers,
+#statusbar div.progressbar-peers.few-peers,
+#statusbar div.progressbar-peers.avg-peers,
+#statusbar div.progressbar-peers.full-peers {
+  background-color: transparent !important;
+}
+

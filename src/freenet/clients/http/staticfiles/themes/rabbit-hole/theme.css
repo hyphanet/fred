@@ -1,7 +1,7 @@
-/* rabbit-hole */
+﻿/* rabbit-hole */
 
 /* Basic CSS functions */
-@import url(/static/base.css);
+@import url(/static/base-old.css);
 
 /* Bookmarks & bookmark editor */
 @import url(/static/bookmark.css);
@@ -9,6 +9,8 @@
 /* Base theme; commented out, since it is not really compatible. TODO: Get everything therein to here and integrate it. */
 /* First: Progress bars */
 /* @import url(/static/themes/clean/theme.css); */
+
+/* rabbit-hole overall settings */
 
 /* basic colors */
 body {
@@ -43,12 +45,12 @@ div.infobox div.infobox-header {
 
 div.infobox-information div.infobox-header {
 	color: silver;
-	background-image: url(information.gif);
+	background-image: url(information.png);
 }
 
 div.infobox-warning div.infobox-header {
 	color: silver;
-	background-image: url(warning.gif);
+	background-image: url(warning.png);
 }
 
 div.infobox-alert {
@@ -56,7 +58,7 @@ div.infobox-alert {
 
 div.infobox-alert div.infobox-header {
 	color: red;
-	background-image: url(alert.gif);
+	background-image: url(alert.png);
 }
 
 div.infobox-error {
@@ -64,16 +66,16 @@ div.infobox-error {
 
 div.infobox-error div.infobox-header {
 	color: red;
-	background-image: url(error.gif);
+	background-image: url(error.png);
 }
 
 div.infobox-query div.infobox-header {
-	background-image: url(query.gif);
+	background-image: url(query.png);
 }
 
 div.infobox-success div.infobox-header {
     color: green;
-    background-image: url(success.gif);
+    background-image: url(success.png);
 }
 
 ul.alert-summary {
@@ -82,19 +84,19 @@ ul.alert-summary {
 }
 
 li.alert-summary-text-error {
-	background: url(error-16.gif) left center no-repeat;
+	background: url(error-16.png) left center no-repeat;
 }
 
 li.alert-summary-text-alert {
-	background: url(alert-16.gif) left center no-repeat;
+	background: url(alert-16.png) left center no-repeat;
 }
 
 li.alert-summary-text-warning {
-	background: url(warning-16.gif) left center no-repeat;
+	background: url(warning-16.png) left center no-repeat;
 }
 
 li.alert-summary-text-minor {
-	background: url(information-16.gif) left center no-repeat;
+	background: url(information-16.png) left center no-repeat;
 }
 
 

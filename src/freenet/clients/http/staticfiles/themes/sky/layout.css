@@ -1,0 +1,105 @@
+/* layout-sky */
+
+/* 
+ * Overall Settings
+ */
+
+/*
+ * Body and Page Header
+ */
+
+/*
+ * Top Title Area
+ */
+
+#topbar {
+	background-image: url(/static/themes/sky/logo.png);
+	border-bottom-width: 0px;
+}
+
+/* 
+ * Navigation
+ */
+
+/*matches both top-level and submenu links */
+#navlist li {
+	font-weight: bold;
+}
+
+/*
+ * Alerts
+ */
+
+/* 
+ * Infoboxes
+ */
+
+div.infobox-header {
+	border-bottom-style: solid;
+}
+
+li.alert-summary-text-error {
+	background-image: url(/static/themes/sky/error-16.png);
+}
+
+li.alert-summary-text-alert {
+	background-image: url(/static/themes/sky/alert-16.png);
+}
+
+li.alert-summary-text-warning {
+	background-image: url(/static/themes/sky/warning-16.png);
+}
+
+li.alert-summary-text-minor {
+	background-image: url(/static/themes/sky/information-16.png);
+}
+
+/*
+ * Content
+ */
+
+#content {
+	left: 12.614em;
+}
+
+/*
+ * Plugins Page
+ */
+
+/* 
+ * Configuration Page
+ */
+
+ul.config li {
+	border: none;
+	margin: 0.667em;
+	padding: 0.333em;
+}
+
+/* 
+ * Darknet Page
+ */
+
+/* 
+ * Statistics Page
+ */
+
+/* 
+ * Queue Page
+ */
+
+div.progress_fraction_finalized {
+	font-weight: normal;
+}
+
+/* 
+ * N2NTM page
+ */
+
+/* 
+ * Translation
+ */
+
+/* 
+ * Statusbar
+ */

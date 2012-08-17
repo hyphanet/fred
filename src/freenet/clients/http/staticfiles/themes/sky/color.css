@@ -1,0 +1,231 @@
+/* color-sky */
+
+/* 
+ * Overall Settings
+ */
+
+th {
+	background-color: #d0e2ff;
+}
+
+td,
+th {
+	border-color: #b0b0d0;
+}
+
+/*
+ * Body and Page Header
+ */
+
+body {
+	background-color: #f5f9ff;
+}
+
+/*
+ * Top Title Area
+ */
+
+#topbar {
+	background-color: #eaf2ff;
+}
+
+/* 
+ * Navigation
+ */
+
+
+#navbar,
+#selected-subnavbar {
+	border-color: #d0d0f0;
+}
+
+#navbar,
+#navlist,
+li.navlist-selected,
+li.navlist-not-selected,
+ul.subnavlist-selected,
+ul.subnavlist,
+li.submenuitem-selected,
+li.submenuitem-not-selected,
+#subnavbar {
+	background-color: #f5f9ff;
+}
+
+/* currently-enabled top level menu  */
+
+li.navlist-selected a,
+li.submenuitem-selected a {
+	background-color: #ccccdd;
+	color: inherit;	
+}
+
+li.navlist-selected a:hover,
+li.submenuitem-selected a:hover {
+	background-color: #75a9ff;
+	color: inherit;	
+}
+/* non-selected top level menu */
+
+li.navlist-not-selected a {
+	color: inherit;
+}
+
+li.navlist-not-selected a:hover {
+	background-color: #75a9ff;
+	color: inherit;
+}
+
+/* current sub menu location */
+
+li.submenuitem-selected a:hover {
+	background-color: #75a9ff;
+	color: inherit;
+}
+
+li.submenuitem-selected a {
+	background-color: #e3e3f0;
+	color: inherit;
+}
+
+/* non-selected submenu */
+
+li.submenuitem-not-selected a {
+	background-color: #f5f9ff;
+	color: inherit;
+}
+
+li.submenuitem-not-selected a:hover {
+	background-color: #75a9ff;
+	color: inherit;
+}
+
+/* this border is only displayed in dropdown mode */
+
+ul.subnavlist-selected,
+ul.subnavlist {
+	border-color: #d0d0f0;
+}
+
+/*
+ * Alerts
+ */
+
+/* 
+ * Infoboxes
+ */
+
+div.infobox {
+	background-color: #f6f9ff;
+	border-color: #b1ceff;
+}
+
+div.infobox div.infobox-header {
+	background-color: #eaf2ff;
+	border-color: #b1ceff;
+}
+
+div.infobox-information div.infobox-header {
+	background-color: #e5efff;
+}
+
+div.infobox-success div.infobox-header {
+	background-color: #c8f0c8;
+}
+
+/*
+ * Content
+ */
+
+a:hover {
+	color: #7070bb;
+}
+
+/*
+ * Plugins Page
+ */
+
+/* 
+ * Configuration Page
+ */
+
+ul.config li {
+	background-color: #e5efff;
+}
+
+ul.config span.configprefix {
+	background-color: #e5efff;
+}
+
+ul.config {
+	background-color: transparent;
+}
+
+/* 
+ * Darknet Page
+ */
+
+span.peer_backed_off {
+	color: #706000;
+}
+
+span.peer_too_new {
+	color: #d03333;
+}
+
+/* 
+ * Statistics Page
+ */
+
+/* 
+ * Queue Page
+ */
+
+table.queue span.progress_fraction_finalized {
+	color: #008000;
+}
+
+.progressbar {
+	background-color: #f6f9ff;
+	border-color: #97beff;
+}
+
+.progressbar-done {
+	background-color: #8092ff;
+}
+
+.progressbar-min {
+	background-color: #cad2ff;
+}
+
+.progressbar-failed {
+	background-color: #ffa0a0;
+}
+
+.progressbar-failed2 {
+	background-color: #dd4040;
+}
+
+/* 
+ * N2NTM page
+ */
+
+/* 
+ * Translation
+ */
+
+.translate_d {
+	background-color: transparent;
+}
+
+/* 
+ * Statusbar
+ */
+
+#statusbar-container {
+	background-color: #eaf2ff;
+	border-top-color: #d0d0f0;
+}
+
+#statusbar div.separator {
+	background-color: #d0d0f0;
+}
