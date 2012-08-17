@@ -56,7 +56,7 @@ public class ProbeRequest extends FCPMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unrecognized parse probe type \"" + fs.get(TYPE) + "\": " + e, null, false);
 		} catch (FSParseException e) {
 			//Getting a String from a SimpleFieldSet does not throw - it can at worst return null.
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unable to parse hopsToLive: " + e, null, false);
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unable to parse hopsToLive \"" + fs.get(HTL) + "\": " + e, null, false);
 		}
 	}
 
@@ -83,8 +83,8 @@ public class ProbeRequest extends FCPMessage {
 
 		Listener listener = new Listener() {
 			@Override
-			public void onError(Error error, Byte code) {
-				handler.outputHandler.queue(new ProbeError(identifier, error, code));
+			public void onError(Error error, Byte code, boolean local) {
+				handler.outputHandler.queue(new ProbeError(identifier, error, code, local));
 			}
 
 			@Override
