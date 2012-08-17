@@ -15,7 +15,7 @@ public enum Error {
 	TIMEOUT((byte) 2),
 	/**
 	 * An error occurred, but a node did not recognize the error used.
-	 * If this occurs locally, it will be specified along with the description string containing the remote error.
+	 * If this occurs locally, it will be specified along with the unrecognized code.
 	 */
 	UNKNOWN((byte) 3),
 	/**
