@@ -8,7 +8,6 @@ import java.util.List;
 
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
-import freenet.io.xfer.PacketThrottle;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.MutableBoolean;
@@ -49,9 +48,9 @@ public class PeerMessageTracker {
 	 */
 	private final ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
 	
-	public final PeerNode pn;
+	private final PeerNode pn;
 	
-	public PeerMessageQueue messageQueue;
+	private PeerMessageQueue messageQueue;
 	
 	/** The next message ID for outgoing messages.
 	 * LOCKING: Protected by (this). */
@@ -484,5 +483,175 @@ public class PeerMessageTracker {
 	private int maxSendBufferSize() {
 		return MAX_RECEIVE_BUFFER_SIZE;
 	}
+	
+	/**
+	 * This checks the messages for their deadlines only.
+	 * Refer to NewPacketFormat for the packet related timeNextUrgent
+	 * @param canSend
+	 * @return
+	 */
+	public long timeNextUrgent(boolean canSend) {
+		long ret = Long.MAX_VALUE;
+		if(canSend) {
+			synchronized(sendBufferLock) {
+				for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
+					for(MessageWrapper wrapper : started.values()) {
+						if(wrapper.allSent()) continue;
+						// We do not reset the deadline when we resend.
+						long d = wrapper.getItem().getDeadline();
+						if(d > 0)
+							ret = Math.min(ret, d);
+						else
+							Logger.error(this, "Started sending message "+wrapper.getItem()+" but deadline is "+d);
+					}
+				}
+			}
+		}
+		return ret;
+	}
+	
+	public List<MessageItem> onDisconnect() {
+		int messageSize = 0;
+		List<MessageItem> items = null;
+		// LOCKING: No packet may be sent while connected = false.
+		// So we guarantee that no more packets are sent by setting this here.
+		synchronized(sendBufferLock) {
+			for(HashMap<Integer, MessageWrapper> queue : startedByPrio) {
+				if(items == null)
+					items = new ArrayList<MessageItem>();
+				for(MessageWrapper wrapper : queue.values()) {
+					items.add(wrapper.getItem());
+					messageSize += wrapper.getLength();
+				}
+				queue.clear();
+			}
+			sendBufferUsed -= messageSize;
+			// This is just a check for logging/debugging purposes.
+			if(sendBufferUsed != 0) {
+				Logger.warning(this, "Possible leak in transport code: Buffer size not empty after disconnecting on "+this+" for "+pn+" after removing "+messageSize+" total was "+sendBufferUsed);
+				sendBufferUsed = 0;
+			}
+		}
+		return items;
+	}
+	
+	static class SentPacket {
+		final SessionKey sessionKey;
+		NewPacketFormat npf;
+		PeerMessageTracker pmt;
+		LinkedList<MessageWrapper> messages = new LinkedList<MessageWrapper>();
+		LinkedList<int[]> ranges = new LinkedList<int[]>();
+		long sentTime;
+		int packetLength;
 
+		public SentPacket(NewPacketFormat npf, SessionKey key) {
+			this.npf = npf;
+			this.pmt = npf.pmt;
+			this.sessionKey = key;
+		}
+
+		public void addFragment(MessageFragment frag) {
+			messages.add(frag.wrapper);
+			ranges.add(new int[] { frag.fragmentOffset, frag.fragmentOffset + frag.fragmentLength - 1 });
+		}
+
+		public long acked(SessionKey key) {
+			Iterator<MessageWrapper> msgIt = messages.iterator();
+			Iterator<int[]> rangeIt = ranges.iterator();
+
+			while(msgIt.hasNext()) {
+				MessageWrapper wrapper = msgIt.next();
+				int[] range = rangeIt.next();
+				
+				if(logDEBUG)
+					Logger.debug(this, "Acknowledging "+range[0]+" to "+range[1]+" on "+wrapper.getMessageID());
+
+				if(wrapper.ack(range[0], range[1], pmt.pn)) {
+					HashMap<Integer, MessageWrapper> started = pmt.startedByPrio.get(wrapper.getPriority());
+					MessageWrapper removed = null;
+					synchronized(pmt.sendBufferLock) {
+						removed = started.remove(wrapper.getMessageID());
+						if(removed != null) {
+							int size = wrapper.getLength();
+							pmt.sendBufferUsed -= size;
+							if(logDEBUG) Logger.debug(this, "Removed " + size + " from remote buffer. Total is now " + pmt.sendBufferUsed);
+						}
+					}
+					if(removed == null && logMINOR) {
+						// ack() can return true more than once, it just only calls the callbacks once.
+						Logger.minor(this, "Completed message "+wrapper.getMessageID()+" but it is not in the map from "+wrapper);
+					}
+
+					if(removed != null) {
+						if(logDEBUG) Logger.debug(this, "Completed message "+wrapper.getMessageID()+" from "+wrapper);
+
+						boolean couldSend = npf.canSend(key);
+						int id = wrapper.getMessageID();
+						synchronized(pmt) {
+							pmt.ackedMessages.add(id, id);
+
+							int oldWindow = pmt.messageWindowPtrAcked;
+							while(pmt.ackedMessages.contains(pmt.messageWindowPtrAcked, pmt.messageWindowPtrAcked)) {
+								pmt.messageWindowPtrAcked++;
+								if(pmt.messageWindowPtrAcked == NUM_MESSAGE_IDS) pmt.messageWindowPtrAcked = 0;
+							}
+
+							if(pmt.messageWindowPtrAcked < oldWindow) {
+								pmt.ackedMessages.remove(oldWindow, NUM_MESSAGE_IDS - 1);
+								pmt.ackedMessages.remove(0, pmt.messageWindowPtrAcked);
+							} else {
+								pmt.ackedMessages.remove(oldWindow, pmt.messageWindowPtrAcked);
+							}
+						}
+						if(!couldSend && npf.canSend(key)) {
+							//We aren't blocked anymore, notify packet sender
+							pmt.pn.wakeUpSender();
+						}
+					}
+				}
+			}
+
+			return System.currentTimeMillis() - sentTime;
+		}
+
+		public void lost() {
+			int bytesToResend = 0;
+			Iterator<MessageWrapper> msgIt = messages.iterator();
+			Iterator<int[]> rangeIt = ranges.iterator();
+
+			while(msgIt.hasNext()) {
+				MessageWrapper wrapper = msgIt.next();
+				int[] range = rangeIt.next();
+
+				bytesToResend += wrapper.lost(range[0], range[1]);
+			}
+		}
+
+		public void sent(int length) {
+			sentTime = System.currentTimeMillis();
+			this.packetLength = length;
+		}
+
+		public long getSentTime() {
+			return sentTime;
+		}
+	}
+	
+	public int countSendableMessages() {
+		int x = 0;
+		synchronized(sendBufferLock) {
+			for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
+				for(MessageWrapper wrapper : started.values()) {
+					if(!wrapper.allSent()) x++;
+				}
+			}
+		}
+		return x;
+	}
+	
+	public int getSendBufferSize() {
+		synchronized(sendBufferLock) {
+			return sendBufferUsed;
+		}
+	}
 }

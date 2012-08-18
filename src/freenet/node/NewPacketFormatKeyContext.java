@@ -6,8 +6,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import freenet.io.xfer.PacketThrottle;
-import freenet.node.NewPacketFormat.SentPacket;
-import freenet.pluginmanager.TransportPlugin;
+import freenet.node.PeerMessageTracker.SentPacket;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SentTimes;

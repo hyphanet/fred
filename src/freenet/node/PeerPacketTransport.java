@@ -304,11 +304,7 @@ public class PeerPacketTransport extends PeerTransport {
 		if(oldPrev != null) oldPrev.disconnected();
 		if(oldCur != null) oldCur.disconnected();
 		if(oldPacketFormat != null) {
-			List<MessageItem> tellDisconnect = oldPacketFormat.onDisconnect();
-			if(tellDisconnect != null)
-				for(MessageItem item : tellDisconnect) {
-					item.onDisconnect();
-				}
+			oldPacketFormat.onDisconnect();
 		}
 		PacketThrottle throttle;
 		synchronized(pn) {
