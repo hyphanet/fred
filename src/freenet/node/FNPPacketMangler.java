@@ -2184,11 +2184,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 		PluginAddress oldAddress = address;
 		try {
-			address.dropHostName();
+			address = address.dropHostName();
 		}catch(UnsupportedIPAddressOperationException e) {
 			//Do nothing. Non IP based address.
 		}
-		if(address.equals(null)) {
+		if(address == null) {
 			Logger.error(this, "No address for peer "+oldAddress+" so cannot send handshake");
 			pn.couldNotSendHandshake(notRegistered, sock);
 			return;

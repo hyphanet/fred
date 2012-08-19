@@ -40,13 +40,14 @@ public class PeerPluginAddress implements PluginAddress {
 	}
 	
 	@Override
-	public void updateHostName() throws UnsupportedOperationException {
+	public void updateHostName() {
 		peer.getHandshakeAddress();
 	}
 
 	@Override
-	public void dropHostName() throws UnsupportedOperationException {
-		peer.dropHostName();
+	public PluginAddress dropHostName() {
+		return new PeerPluginAddress(peer.dropHostName());
+		
 	}
 
 	@Override
@@ -76,7 +77,7 @@ public class PeerPluginAddress implements PluginAddress {
 	}
 
 	@Override
-	public int getPortNumber() throws UnsupportedOperationException {
+	public int getPortNumber() {
 		return peer.getPort();
 	}
 

@@ -111,7 +111,7 @@ public abstract class PeerTransport {
 	protected long sendTransportHandshakeTime;
 	/** When did we last rekey (promote the unverified tracker to new) ? */
 	long timeTransportLastRekeyed;
-	protected boolean sentInitialMessagesTransport;
+	protected boolean sentInitialMessagesTransport =false;
 	
 	/** When did we last disconnect */
 	long timeTransportLastDisconnect;
@@ -437,7 +437,7 @@ public abstract class PeerTransport {
 	
 	protected void setDetectedAddress(PluginAddress newAddress) {
 		try {
-			newAddress.updateHostName();
+			newAddress = newAddress.dropHostName();
 		}catch(UnsupportedIPAddressOperationException e) {
 			//Non IP based address
 		}
@@ -474,23 +474,23 @@ public abstract class PeerTransport {
 	public PluginAddress[] updateHandshakeAddresses(PluginAddress[] localHandshakeAddresses, boolean ignoreHostnames) {
 		if(localHandshakeAddresses == null)
 			return null;
+		HashSet<PluginAddress> ret = new HashSet<PluginAddress>();
 		for(PluginAddress localHandshakeAddress : localHandshakeAddresses) {
 				if(logMINOR)
 					Logger.debug(this, "updateHandshakeAddresses on PeerTransport" + localHandshakeAddress);
 				try {
-					if(ignoreHostnames)
-						localHandshakeAddress.dropHostName();
-					else
+					if(!ignoreHostnames)
 						localHandshakeAddress.updateHostName();
+					// De-duplicate
+					PluginAddress tempAddress = localHandshakeAddress.dropHostName();
+					if(tempAddress != null)
+						ret.add(tempAddress);
 				}catch(UnsupportedIPAddressOperationException e) {
 					if(logMINOR)
 						Logger.debug(this, "Not IP based" + localHandshakeAddress, e);
 				}
 		}
-		// De-dupe
-		HashSet<PluginAddress> ret = new HashSet<PluginAddress>();
-		for(PluginAddress localHandshakeAddress : localHandshakeAddresses)
-			ret.add(localHandshakeAddress);
+		
 		return ret.toArray(new PluginAddress[ret.size()]);
 	}
 	
@@ -588,7 +588,7 @@ public abstract class PeerTransport {
 	}
 	
 	//FIXME Find the place where it needs to be used.
-	private String handshakeIPsToString() {
+	private String handshakeAddressesToString() {
 		PluginAddress[] localHandshakeAddresses;
 		synchronized(this) {
 			localHandshakeAddresses = handshakeTransportAddresses;
@@ -607,9 +607,8 @@ public abstract class PeerTransport {
 				continue;
 			}
 			toOutputString.append('\'');
-			// Actually do the DNS request for the member Peer of localHandshakeIPs
 			try {
-				localAddress.dropHostName();
+				localAddress = localAddress.dropHostName();
 			}catch(UnsupportedIPAddressOperationException e) {
 				// Ignore if non IP based
 			}

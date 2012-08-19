@@ -45,10 +45,11 @@ public interface PluginAddress{
 	public void updateHostName() throws UnsupportedIPAddressOperationException;
 	
 	/**
-	 * Drop the host name if it a IP based transport or else if applicable.
+	 * @return Return a new address with the host name dropped,
+	 * if it is an IP based transport or else if applicable.
 	 * @throws UnsupportedIPAddressOperationException
 	 */
-	public void dropHostName() throws UnsupportedIPAddressOperationException;
+	public PluginAddress dropHostName() throws UnsupportedIPAddressOperationException;
 	
 	/**
 	 * If the address uses Inet based IP addresses.
