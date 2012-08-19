@@ -91,7 +91,7 @@ public class PeerMessageTracker {
 	
 	private int pingCounter;
 	
-	public PeerMessageTracker(PeerNode pn) {
+	public PeerMessageTracker(PeerNode pn, int ourInitialMsgID, int theirInitialMsgID) {
 		
 		this.pn = pn;
 		messageQueue = pn.getMessageQueue();
@@ -99,6 +99,14 @@ public class PeerMessageTracker {
 		for(int i = 0; i < DMT.NUM_PRIORITIES; i++) {
 			startedByPrio.add(new HashMap<Integer, MessageWrapper>());
 		}
+		
+		// Make sure the numbers are within the ranges we want
+		ourInitialMsgID = (ourInitialMsgID & 0x7FFFFFFF) % NUM_MESSAGE_IDS;
+		theirInitialMsgID = (theirInitialMsgID & 0x7FFFFFFF) % NUM_MESSAGE_IDS;
+
+		nextMessageID = ourInitialMsgID;
+		messageWindowPtrAcked = ourInitialMsgID;
+		messageWindowPtrReceived = theirInitialMsgID;
 	}
 	
 	/**

@@ -26,7 +26,6 @@ public class NewPacketFormat implements PacketFormat {
 	// FIXME increase this significantly to let it ride over network interruptions.
 	private static final int NUM_SEQNUMS_TO_WATCH_FOR = 1024;
 	static final int MAX_RECEIVE_BUFFER_SIZE = 256 * 1024;
-	private static final int NUM_MESSAGE_IDS = 268435456;
 	static final long NUM_SEQNUMS = 2147483648l;
 	private static final int MAX_ACKS = 500;
 	static boolean DO_KEEPALIVES = true;
@@ -56,10 +55,6 @@ public class NewPacketFormat implements PacketFormat {
 		this.pn = pn;
 		this.peerTransport = peerTransport;
 		this.pmt = pn.getPeerMessageTracker();
-
-		// Make sure the numbers are within the ranges we want
-		ourInitialMsgID = (ourInitialMsgID & 0x7FFFFFFF) % NUM_MESSAGE_IDS;
-		theirInitialMsgID = (theirInitialMsgID & 0x7FFFFFFF) % NUM_MESSAGE_IDS;
 		
 		hmacLength = HMAC_LENGTH;
 	}
@@ -154,24 +149,24 @@ public class NewPacketFormat implements PacketFormat {
 			keyContext.watchListOffset = (int) ((0l + keyContext.watchListOffset + moveBy) % NUM_SEQNUMS);
 		}
 
-outer:
-		for(int i = 0; i < keyContext.seqNumWatchList.length; i++) {
-			int index = (keyContext.watchListPointer + i) % keyContext.seqNumWatchList.length;
-			for(int j = 0; j < keyContext.seqNumWatchList[index].length; j++) {
-				if(keyContext.seqNumWatchList[index][j] != buf[offset + hmacLength + j]) continue outer;
+		outer:
+			for(int i = 0; i < keyContext.seqNumWatchList.length; i++) {
+				int index = (keyContext.watchListPointer + i) % keyContext.seqNumWatchList.length;
+				for(int j = 0; j < keyContext.seqNumWatchList[index].length; j++) {
+					if(keyContext.seqNumWatchList[index][j] != buf[offset + hmacLength + j]) continue outer;
+				}
+				
+				int sequenceNumber = (int) ((0l + keyContext.watchListOffset + i) % NUM_SEQNUMS);
+				if(logDEBUG) Logger.debug(this, "Received packet matches sequence number " + sequenceNumber);
+				// Copy it to avoid side-effects.
+				byte[] copy = new byte[length];
+				System.arraycopy(buf, offset, copy, 0, length);
+				NPFPacket p = decipherFromSeqnum(copy, 0, length, sessionKey, sequenceNumber);
+				if(p != null) {
+					if(logMINOR) Logger.minor(this, "Received packet " + p.getSequenceNumber()+" on "+sessionKey);
+					return p;
+				}
 			}
-			
-			int sequenceNumber = (int) ((0l + keyContext.watchListOffset + i) % NUM_SEQNUMS);
-			if(logDEBUG) Logger.debug(this, "Received packet matches sequence number " + sequenceNumber);
-			// Copy it to avoid side-effects.
-			byte[] copy = new byte[length];
-			System.arraycopy(buf, offset, copy, 0, length);
-			NPFPacket p = decipherFromSeqnum(copy, 0, length, sessionKey, sequenceNumber);
-			if(p != null) {
-				if(logMINOR) Logger.minor(this, "Received packet " + p.getSequenceNumber()+" on "+sessionKey);
-				return p;
-			}
-		}
 
 		return null;
 	}
