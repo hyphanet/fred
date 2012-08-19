@@ -852,15 +852,15 @@ public class NodeCrypto {
 		serialEx.execute(new NotifyPeerNodes(streamTransportBundle, getPeerNodes()));
 	}
 	
-	public HashMap<String, PacketTransportBundle> getPacketTransportBundleMap() {
+	PacketTransportBundle getPacketTransportBundleMap(String transportName) {
 		synchronized(packetBundleMapLock) {
-			return packetTransportBundleMap;
+			return packetTransportBundleMap.get(transportName);
 		}
 	}
 	
-	public HashMap<String, StreamTransportBundle> getStreamTransportBundleMap() {
+	StreamTransportBundle getStreamTransportBundleMap(String transportName) {
 		synchronized(streamBundleMapLock) {
-			return streamTransportBundleMap;
+			return streamTransportBundleMap.get(transportName);
 		}
 	}
 	

@@ -2,7 +2,6 @@ package freenet.node;
 
 import java.net.InetAddress;
 import java.util.Arrays;
-import java.util.List;
 
 import freenet.crypt.BlockCipher;
 import freenet.io.comm.DMT;

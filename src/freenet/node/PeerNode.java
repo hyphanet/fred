@@ -5352,6 +5352,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public synchronized void setTransportAddress(SimpleFieldSet fs, boolean setDetected, boolean purgeAddresses) {
 		Iterator<String> it = fs.keyIterator();
 		while(it.hasNext()) {
+			PacketTransportBundle packetBundle;
+			StreamTransportBundle streamBundle;
 			String transportName = it.next();
 			String[] addresses = fs.getAll(transportName);
 			Vector<String> vectorAddress = recordAddress(transportName, addresses);
@@ -5363,10 +5365,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				peerStreamTransportMap.get(transportName).setTransportAddress(vectorAddress, setDetected, purgeAddresses);
 			
 			//Condition 2: If we find that our peer has a new transport that we have, then get it
-			else if(crypto.getPacketTransportBundleMap().containsKey(transportName))
-				handleNewPeerTransport(crypto.getPacketTransportBundleMap().get(transportName));
-			else if(crypto.getStreamTransportBundleMap().containsKey(transportName))
-				handleNewPeerTransport(crypto.getStreamTransportBundleMap().get(transportName));
+			
+			else if((packetBundle = crypto.getPacketTransportBundleMap(transportName)) != null)
+				handleNewPeerTransport(packetBundle);
+			else if((streamBundle = crypto.getStreamTransportBundleMap(transportName)) != null)
+				handleNewPeerTransport(streamBundle);
 			
 			//Condition 3: Inform the user that we don't have this transport.
 			//TODO add user alerts
@@ -5449,25 +5452,30 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	
 	public PeerTransport getPeerTransport(TransportPlugin transportPlugin) {
 		String transportName = transportPlugin.transportName;
-		if(peerPacketTransportMap.containsKey(transportName))
-			return peerPacketTransportMap.get(transportName);
-		else if(peerStreamTransportMap.containsKey(transportName))
-			return peerStreamTransportMap.get(transportName);
+		PeerTransport peerTransport;
+		synchronized(packetTransportMapLock) {
+			peerTransport = peerPacketTransportMap.get(transportName);
+			if(peerTransport != null)
+				return peerTransport;
+		}
+		synchronized(streamTransportMapLock) {	
+			peerTransport = peerStreamTransportMap.get(transportName);
+			if(peerTransport != null)
+				return peerTransport;
+		}
 		return null;
 	}
 	
 	public PeerPacketTransport getPeerTransport(PacketTransportPlugin transportPlugin) {
-		String transportName = transportPlugin.transportName;
-		if(peerPacketTransportMap.containsKey(transportName))
-			return peerPacketTransportMap.get(transportName);
-		return null;
+		synchronized(packetTransportMapLock) {
+			return peerPacketTransportMap.get(transportPlugin.transportName);
+		}
 	}
 	
 	public PeerStreamTransport getPeerTransport(StreamTransportPlugin transportPlugin) {
-		String transportName = transportPlugin.transportName;
-		if(peerStreamTransportMap.containsKey(transportName))
-			return peerStreamTransportMap.get(transportName);
-		return null;
+		synchronized(streamTransportMapLock) {	
+			return peerStreamTransportMap.get(transportPlugin.transportName);
+		}
 	}
 	
 	@Override
