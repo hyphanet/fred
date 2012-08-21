@@ -127,8 +127,8 @@ public class USKManager {
 	
 	public USKManager(NodeClientCore core) {
 		HighLevelSimpleClient client = core.makeClient(RequestStarter.UPDATE_PRIORITY_CLASS);
-		client.setMaxIntermediateLength(FProxyToadlet.MAX_LENGTH);
-		client.setMaxLength(FProxyToadlet.MAX_LENGTH);
+		client.setMaxIntermediateLength(FProxyToadlet.MAX_LENGTH_NO_PROGRESS);
+		client.setMaxLength(FProxyToadlet.MAX_LENGTH_NO_PROGRESS);
 		backgroundFetchContext = client.getFetchContext();
 		backgroundFetchContext.followRedirects = false;
 		backgroundFetchContextIgnoreDBR = backgroundFetchContext.clone();
