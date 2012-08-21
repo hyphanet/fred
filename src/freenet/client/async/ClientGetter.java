@@ -879,7 +879,9 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			this.hashes = hashes;
 		}
 		if(persistent()) container.store(this);
-		ctx.eventProducer.produceEvent(new ExpectedHashesEvent(hashes), container, context);
+		HashResult[] clientHashes = hashes;
+		if(persistent()) clientHashes = HashResult.copy(hashes);
+		ctx.eventProducer.produceEvent(new ExpectedHashesEvent(clientHashes), container, context);
 	}
 
 	@Override
