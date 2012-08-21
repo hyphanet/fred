@@ -42,6 +42,10 @@ public abstract class FCPMessage {
 
 	public void send(OutputStream os) throws IOException {
 		SimpleFieldSet sfs = getFieldSet();
+		if(sfs == null) {
+			Logger.warning(this, "Not sending message "+this);
+			return;
+		}
 		sfs.setEndMarker(getEndString());
 		String msg = sfs.toString();
 		os.write((getName()+ '\n').getBytes("UTF-8"));
