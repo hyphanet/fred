@@ -730,18 +730,9 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			container.activate(ctx, 1);
 		}
 		expectedMIME = ctx.overrideMIME == null ? mime : ctx.overrideMIME;
-		if(!(expectedMIME == null || expectedMIME.equals("") || expectedMIME.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE))) {
-			MIMEType handler = ContentFilter.getMIMEType(expectedMIME);
-			if((handler == null || (handler.readFilter == null && !handler.safeToRead)) && ctx.filterData) {
-				UnsafeContentTypeException e;
-				if(handler == null) {
-					if(logMINOR) Logger.minor(this, "Unable to get filter handler for MIME type "+expectedMIME);
-					e = new UnknownContentTypeException(expectedMIME);
-				}
-				else {
-					if(logMINOR) Logger.minor(this, "Unable to filter unsafe MIME type "+expectedMIME);
-					e = new KnownUnsafeContentTypeException(handler);
-				}
+		if(ctx.filterData && !(expectedMIME == null || expectedMIME.equals("") || expectedMIME.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE))) {
+			UnsafeContentTypeException e = ContentFilter.checkMIMEType(expectedMIME);
+			if(e != null) {
 				throw new FetchException(e.getFetchErrorCode(), expectedSize, e, expectedMIME);
 			}
 		}

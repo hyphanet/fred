@@ -463,4 +463,23 @@ public class ContentFilter {
 			this.mimeType = mimeType;
 		}
 	}
+
+	/** Check whether we can safely handle a specific MIME type. Usually
+	 * called when we haven't downloaded the data yet so can't filter it,
+	 * so we can know whether there will be problems later.
+	 * @return An UnsafeContentTypeException if there is a problem. */
+	public static UnsafeContentTypeException checkMIMEType(String expectedMIME) {
+		MIMEType handler = getMIMEType(expectedMIME);
+		if(handler == null || (handler.readFilter == null && !handler.safeToRead)) {
+			if(handler == null) {
+				if(logMINOR) Logger.minor(ContentFilter.class, "Unable to get filter handler for MIME type "+expectedMIME);
+				return new UnknownContentTypeException(expectedMIME);
+			}
+			else {
+				if(logMINOR) Logger.minor(ContentFilter.class, "Unable to filter unsafe MIME type "+expectedMIME);
+				return new KnownUnsafeContentTypeException(handler);
+			}
+		}
+		return null;
+	}
 }
