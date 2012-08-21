@@ -457,11 +457,30 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context, boolean force) {
 		if(logMINOR)
 			Logger.minor(this, "Failed from "+state+" : "+e+" on "+this, e);
-		if(persistent())
+		if(persistent()) {
 			container.activate(uri, 5);
+			container.activate(ctx, 1);
+		}
 		ClientGetState oldState = null;
 		if(expectedSize > 0 && (e.expectedSize <= 0 || finalBlocksTotal != 0))
 			e.expectedSize = expectedSize;
+		
+		if(e.mode == FetchException.TOO_BIG && ctx.filterData) {
+			// Check for MIME type issues first. Because of the filtering behaviour the user needs to see these first.
+			if(e.finalizedSize()) {
+				// Since the size is finalized, so must the MIME type be.
+				String mime = e.getExpectedMimeType();
+				if(ctx.overrideMIME != null)
+					mime = ctx.overrideMIME;
+				if(mime != null && !"".equals(mime)) {
+					// Even if it's the default, it is set because we have the final size.
+					UnsafeContentTypeException unsafe = ContentFilter.checkMIMEType(mime);
+					if(unsafe != null)
+						e = new FetchException(unsafe.getFetchErrorCode(), e.expectedSize, unsafe, mime);
+				}
+			}
+		}
+		
 		while(true) {
 			if(e.mode == FetchException.ARCHIVE_RESTART) {
 				int ar;
