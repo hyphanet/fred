@@ -403,10 +403,6 @@ public class DarknetPeerNode extends PeerNode {
 
 	}
 
-	public boolean isIgnoreSourcePort() {
-		return ignoreSourcePort;
-	}
-
 	@Override
 	public boolean isIgnoreSource() {
 		return ignoreSourcePort;
