@@ -50,7 +50,6 @@ import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
-import freenet.io.comm.Peer.LocalAddressException;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.PeerRestartedException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
@@ -244,12 +243,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	/** Time at which we should send the next handshake request */
 	protected long sendHandshakeTime;
-	/** Time after which we log message requeues while rate limiting */
-	private long nextMessageRequeueLogTime;
-	/** Interval between rate limited message requeue logs (in milliseconds) */
-	private long messageRequeueLogRateLimitInterval = 1000;
-	/** Number of messages to be requeued after which we rate limit logging of such */
-	private int messageRequeueLogRateLimitThreshold = 15;
 	/** Version of the node */
 	private String version;
 	/** Total input */
@@ -1173,39 +1166,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return messageQueue.grabQueuedMessageItems();
 	}
 
-	public void requeueMessageItems(MessageItem[] messages, int offset, int length, boolean dontLog) {
-		requeueMessageItems(messages, offset, length, dontLog, "");
-	}
-
-	public void requeueMessageItems(MessageItem[] messages, int offset, int length, boolean dontLog, String reason) {
-		// Will usually indicate serious problems
-		if(!dontLog) {
-			long now = System.currentTimeMillis();
-			String rateLimitWrapper = "";
-			boolean rateLimitLogging = false;
-			if(messages.length > messageRequeueLogRateLimitThreshold) {
-				rateLimitWrapper = " (log message rate limited)";
-				if(nextMessageRequeueLogTime <= now) {
-					nextMessageRequeueLogTime = now + messageRequeueLogRateLimitInterval;
-				} else {
-					rateLimitLogging = true;
-				}
-			}
-			if(!rateLimitLogging) {
-				String reasonWrapper = "";
-				if(0 <= reason.length()) {
-					reasonWrapper = " because of '" + reason + '\'';
-				}
-				Logger.normal(this, "Requeueing " + messages.length + " messages" + reasonWrapper + " on " + this + rateLimitWrapper);
-			}
-		}
-		synchronized(messageQueue) {
-			for(int i = offset+length-1; i >= offset; i--)
-				if(messages[i] != null)
-					messageQueue.pushfrontPrioritizedMessageItem(messages[i]);
-		}
-	}
-
 	/**
 	* Are we allowed to send handshake for this type of PeerNode
 	* Check overridden implementations in sub classes.
@@ -1287,11 +1247,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 	}
 	
-	/** If the outgoingMangler allows bursting, we still don't want to burst *all the time*, because it may be mistaken
-	 * in its detection of a port forward. So from time to time we will aggressively handshake anyway. This flag is set
-	 * once every UPDATE_BURST_NOW_PERIOD. */
-	private boolean burstNow;
-	private long timeSetBurstNow;
 	static final int UPDATE_BURST_NOW_PERIOD = 5*60*1000;
 	/** Burst only 19 in 20 times if definitely port forwarded. Save entropy by writing this as 20 not 0.95. */
 	static final int P_BURST_IF_DEFINITELY_FORWARDED = 20;
@@ -3362,14 +3317,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return false;
 	}
 	
-	/** Is this peer allowed local addresses? If false, we will never connect to this peer via
-	 * a local address even if it advertises them.
-	 */
-	public boolean allowLocalAddresses(TransportPlugin transportPlugin) {
-		PeerTransport peerTransport = getPeerTransport(transportPlugin);
-		if(peerTransport != null)
-			return peerTransport.outgoingMangler.alwaysAllowLocalAddresses();
-		return true;
+
+	public boolean allowLocalAddress() {
+		return false;
 	}
 
 	/** Is this peer set to ignore source address? If so, we will always reply to the peer's official
@@ -4927,11 +4877,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		node.usm.checkFilters(m, crypto.socket);
 	}
 
-	@Override
-	public void sendEncryptedPacket(byte[] data, PacketTransportPlugin transportPlugin) throws LocalAddressException {
-		transportPlugin.sendPacket(data, getTransportAddress(transportPlugin), allowLocalAddresses(transportPlugin));
-	}
-	
 	@Override
 	public int getMaxPacketSize(PacketTransportPlugin transportPlugin) {
 		return transportPlugin.getMaxPacketSize();
