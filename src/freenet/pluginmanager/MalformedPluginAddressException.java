@@ -1,7 +1,9 @@
 package freenet.pluginmanager;
 
 /**
- * Thrown when a String could not be converted to a PluginAddress by the transport plugin.
+ * Thrown when a String could not be converted to a PluginAddress by the transport plugin. </br>
+ * Thrown when a PluginAddress is not the instance the TransportPlugin created. </br>
+ * Thrown when a PluginAddress is null. </br>
  * @author chetan
  *
  */
