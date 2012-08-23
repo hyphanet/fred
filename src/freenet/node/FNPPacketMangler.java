@@ -39,6 +39,7 @@ import freenet.l10n.NodeL10n;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
+import freenet.pluginmanager.MalformedPluginAddressException;
 import freenet.pluginmanager.PacketTransportPlugin;
 import freenet.pluginmanager.PluginAddress;
 import freenet.pluginmanager.UnsupportedIPAddressOperationException;
@@ -2004,14 +2005,23 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	}
 
 	private void sendPacket(byte[] data, PluginAddress replyTo, PeerPacketTransport peerTransport) throws LocalAddressException {
-		PeerNode pn = peerTransport.pn;
-		if(pn != null) {
-			if(pn.isIgnoreSource()) {
-				PluginAddress p = peerTransport.getAddress();
-				if(p != null) replyTo = p;
+		String transportName = "unknown"; //Logging
+		if(peerTransport != null) {
+			transportName = peerTransport.transportName;
+			PeerNode pn = peerTransport.pn;
+			if(pn != null) {
+				if(pn.isIgnoreSource()) {
+					PluginAddress p = peerTransport.getAddress();
+					if(p != null) replyTo = p;
+				}
 			}
 		}
-		sock.sendPacket(data, replyTo, pn == null ? crypto.config.alwaysAllowLocalAddresses() : peerTransport.allowLocalAddresses());
+		try {
+			sock.sendPacket(data, replyTo, peerTransport == null ? crypto.config.alwaysAllowLocalAddresses() : peerTransport.allowLocalAddresses());
+		} catch (MalformedPluginAddressException e) {
+			Logger.error(this, "replyTo can't be null. This means that the object is not the instance " 
+					+ transportName + " plugin created. Something went wrong", e);
+		}
 		if(peerTransport != null)
 			peerTransport.reportOutgoingPacket(data, 0, data.length, System.currentTimeMillis());
 		if(PeerNode.shouldThrottle(replyTo, node)) {
