@@ -7,7 +7,9 @@ import freenet.crypt.BlockCipher;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
+import freenet.io.comm.Peer.LocalAddressException;
 import freenet.io.xfer.PacketThrottle;
+import freenet.pluginmanager.MalformedPluginAddressException;
 import freenet.pluginmanager.PacketTransportPlugin;
 import freenet.pluginmanager.PluginAddress;
 import freenet.pluginmanager.UnsupportedIPAddressOperationException;
@@ -751,6 +753,15 @@ public class PeerPacketTransport extends PeerTransport {
 			if(pf == null) return false;
 		}
 		return pf.fullPacketQueued(pn.getMaxPacketSize());
+	}
+	
+	public void sendEncryptedPacket(byte[] data) throws LocalAddressException {
+		try {
+			transportPlugin.sendPacket(data, getAddress(), allowLocalAddresses());
+		} catch (MalformedPluginAddressException e) {
+			Logger.error(this, "It is highly unlikely that this Address does not belong to " 
+					+ transportName + " plugin. Something went wrong with getAddress()", e);
+		}
 	}
 	
 }
