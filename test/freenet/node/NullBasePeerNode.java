@@ -11,7 +11,6 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerRestartedException;
 import freenet.io.comm.SocketHandler;
-import freenet.io.comm.Peer.LocalAddressException;
 import freenet.io.xfer.PacketThrottle;
 import freenet.io.xfer.WaitedTooLongException;
 import freenet.pluginmanager.PacketTransportPlugin;
@@ -137,11 +136,6 @@ public class NullBasePeerNode implements BasePeerNode {
 	@Override
 	public boolean shouldPadDataPackets() {
 		return false;
-	}
-
-	@Override
-	public void sendEncryptedPacket(byte[] data, PacketTransportPlugin transportPlugin) throws LocalAddressException {
-		// Do nothing
 	}
 
 	@Override

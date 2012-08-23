@@ -304,6 +304,8 @@ public abstract class PeerTransport {
 	* attempt.
 	*/
 	public boolean shouldSendHandshake() {
+		if(!pn.shouldSendHandshake())
+			return false;
 		long now = System.currentTimeMillis();
 		boolean tempShouldSendHandshake = false;
 		synchronized(this) {
@@ -427,7 +429,27 @@ public abstract class PeerTransport {
 			detectedTransportAddress = nominalTransportAddress.firstElement();
 	}
 	
+	/**
+	 * Normally this is the address that data has been received from.
+	 * However, if ignoreSourcePort is set, we will search for a similar address with a different port
+	 * number in the node reference.
+	 * Only for IP based addresses the above is applicable.
+	 */
 	public synchronized PluginAddress getAddress() {
+		try {
+			if(pn.isIgnoreSource()) {
+				FreenetInetAddress addr = detectedTransportAddress == null ? null : detectedTransportAddress.getFreenetAddress();
+				int port = detectedTransportAddress == null ? -1 : detectedTransportAddress.getPortNumber();
+				if(nominalTransportAddress == null) return detectedTransportAddress;
+				for(PluginAddress address : nominalTransportAddress) {
+					if(address.getPortNumber() != port && address.getFreenetAddress().equals(addr)) {
+						return address;
+					}
+				}
+			}
+		}catch(UnsupportedIPAddressOperationException e){
+			//Do nothing
+		}
 		return detectedTransportAddress;
 	}
 	
@@ -750,7 +772,14 @@ public abstract class PeerTransport {
 		return isTransportBursting;
 	}
 	
+	/** 
+	 * Is this peer allowed local addresses? If false, we will never connect to this peer via
+	 * a local address even if it advertises them.
+	 */
 	public boolean allowLocalAddresses() {
+		synchronized(this) {
+			if(pn.allowLocalAddress()) return true;
+		}
 		return outgoingMangler.alwaysAllowLocalAddresses();
 	}
 	
