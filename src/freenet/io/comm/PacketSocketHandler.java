@@ -5,6 +5,7 @@ package freenet.io.comm;
 
 import freenet.io.AddressTracker.Status;
 import freenet.io.comm.Peer.LocalAddressException;
+import freenet.pluginmanager.MalformedPluginAddressException;
 import freenet.pluginmanager.PluginAddress;
 
 /**
@@ -21,7 +22,7 @@ public interface PacketSocketHandler extends SocketHandler {
      * @param blockToSend The data block to send.
      * @param destination The peer to send it to.
      */
-    public void sendPacket(byte[] blockToSend, PluginAddress destination, boolean allowLocalAddresses) throws LocalAddressException;
+    public void sendPacket(byte[] blockToSend, PluginAddress destination, boolean allowLocalAddresses) throws LocalAddressException, MalformedPluginAddressException;
 
     /**
      * Get the size of the transport layer headers, for byte accounting purposes.

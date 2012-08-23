@@ -3,7 +3,6 @@ package freenet.node;
 import java.util.Random;
 
 import freenet.io.comm.Message;
-import freenet.io.comm.Peer.LocalAddressException;
 import freenet.io.comm.PeerContext;
 import freenet.pluginmanager.PacketTransportPlugin;
 import freenet.pluginmanager.TransportPlugin;
@@ -29,8 +28,6 @@ public interface BasePeerNode extends PeerContext {
 	PeerMessageTracker getPeerMessageTracker();
 
 	boolean shouldPadDataPackets();
-
-	void sendEncryptedPacket(byte[] data, PacketTransportPlugin transportPlugin) throws LocalAddressException;
 
 	void sentPacket(PacketTransportPlugin transportPlugin);
 
