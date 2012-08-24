@@ -611,6 +611,7 @@ public class FECQueue implements OOMHook {
 		return true;
 	}
 
+	@SuppressWarnings("unchecked")
 	public static void dump(ObjectContainer container, int priorities) {
 		ObjectSet<FECQueue> queues = container.query(FECQueue.class);
 		System.out.println("Queues: "+queues.size());
