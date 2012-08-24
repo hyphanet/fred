@@ -126,7 +126,7 @@ public class USKManager {
 	private ClientContext context;
 	
 	public USKManager(NodeClientCore core) {
-		HighLevelSimpleClient client = core.makeClient(RequestStarter.UPDATE_PRIORITY_CLASS);
+		HighLevelSimpleClient client = core.makeClient(RequestStarter.UPDATE_PRIORITY_CLASS, false, false);
 		client.setMaxIntermediateLength(FProxyToadlet.MAX_LENGTH_NO_PROGRESS);
 		client.setMaxLength(FProxyToadlet.MAX_LENGTH_NO_PROGRESS);
 		backgroundFetchContext = client.getFetchContext();
