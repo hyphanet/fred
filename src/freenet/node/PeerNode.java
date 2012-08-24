@@ -5565,6 +5565,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	}
 	
+	@SuppressWarnings("serial")
 	static class SlotWaiterFailedException extends Exception {
 		final PeerNode pn;
 		final boolean fatal;
