@@ -383,7 +383,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 				HTMLNode list = formNode.addChild("ul", "class", "config");
 				HTMLNode item = list.addChild("li");
 				// FIXME how to get the real default???
-				String defaultValue = "128";
+				String defaultValue = "256";
 				item.addChild("span", new String[]{ "class", "title", "style" },
 				        new String[]{ "configshortdesc",
 				                NodeL10n.getBase().getString("ConfigToadlet.defaultIs",
