@@ -60,7 +60,7 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 	protected boolean isFormPassword(HTTPRequest req) {
 		String passwd = req.getParam("formPassword", null);
 		if (passwd == null)
-			passwd = req.getPartAsString("formPassword", 32);
+			passwd = req.getPartAsStringFailsafe("formPassword", 32);
 		return (passwd != null) && passwd.equals(pluginContext.clientCore.formPassword);
 	}
 
