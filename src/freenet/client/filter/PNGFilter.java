@@ -80,6 +80,7 @@ public class PNGFilter implements ContentDataFilter {
 		output.flush();
 	}
 
+	@SuppressWarnings("fallthrough")
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 			FilterCallback cb, boolean deleteText, boolean deleteTimestamp, boolean checkCRCs)
 			throws DataFilterException, IOException {
