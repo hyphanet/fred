@@ -602,7 +602,7 @@ outer:
 				synchronized(sendBufferLock) {
 					// Always finish what we have started before considering sending more packets.
 					// Anything beyond this is beyond the scope of NPF and is PeerMessageQueue's job.
-					for(int i = 0; i < startedByPrio.size(); i++) {
+addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 						HashMap<Integer, MessageWrapper> started = startedByPrio.get(i);
 						
 						//Try to finish messages that have been started
@@ -619,11 +619,13 @@ outer:
 								if(wrapper.allSent()) {
 									if((haveAddedStatsBulk == null) && wrapper.getItem().sendLoadBulk) {
 										addStatsBulk = true;
-										break;
+										// Add the lossy message outside the lock.
+										break addOldLoop;
 									}
 									if((haveAddedStatsRT == null) && wrapper.getItem().sendLoadRT) {
 										addStatsRT = true;
-										break;
+										// Add the lossy message outside the lock.
+										break addOldLoop;
 									}
 								}
 							}
