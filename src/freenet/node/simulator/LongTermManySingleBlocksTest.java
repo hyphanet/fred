@@ -236,7 +236,7 @@ public class LongTermManySingleBlocksTest {
 			System.out.println("SEED-TIME:" + (t2 - t1));
 			csvLine.add(String.valueOf(t2 - t1));
 
-			HighLevelSimpleClient client = node.clientCore.makeClient((short) 0);
+			HighLevelSimpleClient client = node.clientCore.makeClient((short) 0, false, false);
 
 			int successes = 0;
 			
