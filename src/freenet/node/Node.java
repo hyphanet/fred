@@ -5385,13 +5385,8 @@ public class Node implements TimeSkewDetectorCallback {
 		return this.getDarknetPortNumber();
 	}
 
-	public synchronized boolean isOudated() {
-		// FIXME arbitrary constants.
-		// We cannot count on the version announcements.
-		// Until we actually get a validated update jar it's all potentially bogus.
-		if(peers.countByStatus(PeerManager.PEER_NODE_STATUS_TOO_NEW) > 5) {
-			return peers.countConnectedPeers() < 5;
-		} else return false;
+	public boolean isOudated() {
+		return peers.isOutdated();
 	}
 
 	private Map<Integer, NodeToNodeMessageListener> n2nmListeners = new HashMap<Integer, NodeToNodeMessageListener>();

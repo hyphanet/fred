@@ -21,6 +21,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 	long oldestNeverConnectedPeerAge = 0;
 	public int darknetConns = 0;
 	public int darknetPeers = 0;
+	public int tooNewPeers = 0;
 	public boolean isOpennetEnabled;
 	public boolean darknetDefinitelyPortForwarded;
 	public boolean opennetDefinitelyPortForwarded;
