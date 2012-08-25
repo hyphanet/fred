@@ -1655,11 +1655,13 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	}
 
 	/** @deprecated Only provided for compatibility with old plugins! Plugins must specify! */
+	@Deprecated
 	public HighLevelSimpleClient makeClient(short prioClass) {
 		return makeClient(prioClass, false, false);
 	}
 
 	/** @deprecated Only provided for compatibility with old plugins! Plugins must specify! */
+	@Deprecated
 	public HighLevelSimpleClient makeClient(short prioClass, boolean forceDontIgnoreTooManyPathComponents) {
 		return makeClient(prioClass, forceDontIgnoreTooManyPathComponents, false);
 	}
