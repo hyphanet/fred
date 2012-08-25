@@ -327,7 +327,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 		HTMLNode pageNode = page.outer;
 		HTMLNode content = page.content;
 
-		String passwd = req.getPartAsString("formPassword", 32);
+		String passwd = req.getPartAsStringFailsafe("formPassword", 32);
 		boolean noPassword = (passwd == null) || !passwd.equals(core.formPassword);
 		if(noPassword) {
 			writePermanentRedirect(ctx, "Invalid", "");
@@ -340,7 +340,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 			return;
 		}
 
-		String bookmarkPath = req.getPartAsString("bookmark", MAX_BOOKMARK_PATH_LENGTH);
+		String bookmarkPath = req.getPartAsStringFailsafe("bookmark", MAX_BOOKMARK_PATH_LENGTH);
 		try {
 
 			Bookmark bookmark;
@@ -356,7 +356,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 			}
 
 
-			String action = req.getPartAsString("action", MAX_ACTION_LENGTH);
+			String action = req.getPartAsStringFailsafe("action", MAX_ACTION_LENGTH);
 
 			if(req.isPartSet("confirmdelete")) {
 				bookmarkManager.removeBookmark(bookmarkPath);
@@ -370,15 +370,15 @@ public class BookmarkEditorToadlet extends Toadlet {
 
 				String name = "unnamed";
 				if(req.isPartSet("name"))
-					name = req.getPartAsString("name", MAX_NAME_LENGTH);
+					name = req.getPartAsStringFailsafe("name", MAX_NAME_LENGTH);
 
 				if("edit".equals(action)) {
 					bookmarkManager.renameBookmark(bookmarkPath, name);
 					boolean hasAnActivelink = req.isPartSet("hasAnActivelink");
 					if(bookmark instanceof BookmarkItem) {
 						BookmarkItem item = (BookmarkItem) bookmark;
-						item.update(new FreenetURI(req.getPartAsString("key", MAX_KEY_LENGTH)), hasAnActivelink, req.getPartAsString("descB", MAX_KEY_LENGTH), req.getPartAsStringFailsafe("explain", MAX_EXPLANATION_LENGTH));
-						sendBookmarkFeeds(req, item, req.getPartAsString("publicDescB", MAX_KEY_LENGTH));
+						item.update(new FreenetURI(req.getPartAsStringFailsafe("key", MAX_KEY_LENGTH)), hasAnActivelink, req.getPartAsStringFailsafe("descB", MAX_KEY_LENGTH), req.getPartAsStringFailsafe("explain", MAX_EXPLANATION_LENGTH));
+						sendBookmarkFeeds(req, item, req.getPartAsStringFailsafe("publicDescB", MAX_KEY_LENGTH));
 					}
 					bookmarkManager.storeBookmarks();
 
@@ -389,7 +389,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 
 					Bookmark newBookmark = null;
 					if("addItem".equals(action)) {
-						FreenetURI key = new FreenetURI(req.getPartAsString("key", MAX_KEY_LENGTH));
+						FreenetURI key = new FreenetURI(req.getPartAsStringFailsafe("key", MAX_KEY_LENGTH));
 						/* TODO:
 						 * <nextgens> I suggest you implement a HTTPRequest.getBoolean(String name) using Fields.stringtobool
 						 * <nextgens> HTTPRequest.getBoolean(String name, boolean default) even
@@ -401,7 +401,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 							pageMaker.getInfobox("infobox-error", NodeL10n.getBase().getString("BookmarkEditorToadlet.invalidNameTitle"), content, "bookmark-error", false).
 								addChild("#", NodeL10n.getBase().getString("BookmarkEditorToadlet.invalidName"));
 						} else
-							newBookmark = new BookmarkItem(key, name, req.getPartAsString("descB", MAX_KEY_LENGTH), req.getPartAsString("explain", MAX_EXPLANATION_LENGTH), hasAnActivelink, core.alerts);
+							newBookmark = new BookmarkItem(key, name, req.getPartAsStringFailsafe("descB", MAX_KEY_LENGTH), req.getPartAsStringFailsafe("explain", MAX_EXPLANATION_LENGTH), hasAnActivelink, core.alerts);
 					} else
 						if (name.contains("/")) {
 							pageMaker.getInfobox("infobox-error", NodeL10n.getBase().getString("BookmarkEditorToadlet.invalidNameTitle"), content, "bookmark-error", false).
@@ -414,7 +414,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 						bookmarkManager.addBookmark(bookmarkPath, newBookmark);
 						bookmarkManager.storeBookmarks();
 						if(newBookmark instanceof BookmarkItem)
-							sendBookmarkFeeds(req, (BookmarkItem) newBookmark, req.getPartAsString("publicDescB", MAX_KEY_LENGTH));
+							sendBookmarkFeeds(req, (BookmarkItem) newBookmark, req.getPartAsStringFailsafe("publicDescB", MAX_KEY_LENGTH));
 
 						pageMaker.getInfobox("infobox-success", NodeL10n.getBase().getString("BookmarkEditorToadlet.addedNewBookmarkTitle"), content, "bookmark-add-new", false).
 							addChild("p", NodeL10n.getBase().getString("BookmarkEditorToadlet.addedNewBookmark"));
@@ -422,7 +422,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 				}
 			}
 			else if("share".equals(action))
-				sendBookmarkFeeds(req, (BookmarkItem) bookmark, req.getPartAsString("publicDescB", MAX_KEY_LENGTH));
+				sendBookmarkFeeds(req, (BookmarkItem) bookmark, req.getPartAsStringFailsafe("publicDescB", MAX_KEY_LENGTH));
 		} catch(MalformedURLException mue) {
 			pageMaker.getInfobox("infobox-error", NodeL10n.getBase().getString("BookmarkEditorToadlet.invalidKeyTitle"), content, "bookmark-error", false).
 				addChild("#", NodeL10n.getBase().getString("BookmarkEditorToadlet.invalidKey"));
