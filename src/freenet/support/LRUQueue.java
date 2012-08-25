@@ -169,6 +169,7 @@ public class LRUQueue<T> {
 	 *            same type will be allocated.
 	 */
 
+	@SuppressWarnings("unchecked")
 	public synchronized <E> E[] toArrayOrdered(E[] array) {
 		array = toArray(array);
 		int listSize = list.size();
