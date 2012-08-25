@@ -166,8 +166,8 @@ public class StatisticsToadlet extends Toadlet {
 		int numberOfDisconnecting = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_DISCONNECTING);
 		int numberOfNoLoadStats = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_NO_LOAD_STATS);
 
-		final int mode = ctx.getPageMaker().parseMode(request, container);
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("fullTitle"), ctx);
+		boolean advancedMode = ctx.getContainer().isAdvancedModeEnabled();
 		pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 
@@ -211,7 +211,7 @@ public class StatisticsToadlet extends Toadlet {
 		logsList.addChild("li").addChild("a", "href", TranslationToadlet.TOADLET_URL+"?getOverrideTranlationFile").addChild("#", NodeL10n.getBase().getString("TranslationToadlet.downloadTranslationsFile"));
 		logsList.addChild("li").addChild("a", "href", DiagnosticToadlet.TOADLET_URL).addChild("#", NodeL10n.getBase().getString("FProxyToadlet.diagnostic"));
 		
-		if(mode >= PageMaker.MODE_ADVANCED) {
+		if(advancedMode) {
 			// store size box
 			//HTMLNode storeSizeInfobox = nextTableCell.addChild("div", "class", "infobox");
              HTMLNode storeSizeInfobox = contentNode.addChild("div","class", "infobox");
@@ -255,16 +255,16 @@ public class StatisticsToadlet extends Toadlet {
 			}
 		}
 
-		if(mode >= PageMaker.MODE_ADVANCED || numberOfConnected + numberOfRoutingBackedOff > 0) {			
+		if(advancedMode || numberOfConnected + numberOfRoutingBackedOff > 0) {
 
 			// Activity box
 			nextTableCell = overviewTableRow.addChild("td", "class", "last");
 			HTMLNode activityInfobox = nextTableCell.addChild("div", "class", "infobox");
 			
-			drawActivityBox(activityInfobox, mode >= PageMaker.MODE_ADVANCED);
+			drawActivityBox(activityInfobox, advancedMode);
 
 			/* node status overview box */
-			if(mode >= PageMaker.MODE_ADVANCED) {
+			if(advancedMode) {
 				HTMLNode overviewInfobox = nextTableCell.addChild("div", "class", "infobox");
 				drawOverviewBox(overviewInfobox, nodeUptimeSeconds, node.clientCore.bandwidthStatsPutter.getLatestUptimeData().totalUptime, now, swaps, noSwaps);
 			}
@@ -272,7 +272,7 @@ public class StatisticsToadlet extends Toadlet {
 			// Peer statistics box
 			HTMLNode peerStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
 			
-			drawPeerStatsBox(peerStatsInfobox, mode >= PageMaker.MODE_ADVANCED, numberOfConnected, numberOfRoutingBackedOff, 
+			drawPeerStatsBox(peerStatsInfobox, advancedMode, numberOfConnected, numberOfRoutingBackedOff,
 					numberOfTooNew, numberOfTooOld, numberOfDisconnected, numberOfNeverConnected, numberOfDisabled, 
 					numberOfBursting, numberOfListening, numberOfListenOnly, numberOfSeedServers, numberOfSeedClients,
 					numberOfRoutingDisabled, numberOfClockProblem, numberOfConnError, numberOfDisconnecting, numberOfNoLoadStats, node);
@@ -280,10 +280,10 @@ public class StatisticsToadlet extends Toadlet {
 			// Bandwidth box
 			HTMLNode bandwidthInfobox = nextTableCell.addChild("div", "class", "infobox");
 			
-			drawBandwidthBox(bandwidthInfobox, nodeUptimeSeconds, mode >= PageMaker.MODE_ADVANCED);
+			drawBandwidthBox(bandwidthInfobox, nodeUptimeSeconds, advancedMode);
 		}
 
-		if(mode >= PageMaker.MODE_ADVANCED) {
+		if(advancedMode) {
 
 			// Peer routing backoff reason box
 			HTMLNode backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
