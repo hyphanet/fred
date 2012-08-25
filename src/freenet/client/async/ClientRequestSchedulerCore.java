@@ -215,7 +215,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		return true;
 	}
 
-	private transient ObjectSet registerMeSet;
+	private transient ObjectSet<?> registerMeSet;
 
 	private transient RegisterMeRunner registerMeRunner;
 
