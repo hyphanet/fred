@@ -73,7 +73,7 @@ public class DatastoreChecker implements PrioRunnable {
 		this.context = context;
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
     public DatastoreChecker(Node node) {
 		this.node = node;
 		int priorities = RequestStarter.NUMBER_OF_PRIORITY_CLASSES;
