@@ -344,13 +344,11 @@ public class PproxyToadlet extends Toadlet {
 					super.sendErrorPage(ctx, 403, "Unauthorized", NodeL10n.getBase().getString("Toadlet.unauthorized"));
 					return;
 				}
-				
-				final int mode = ctx.getPageMaker().parseMode(request, this.container);
-				boolean advancedModeEnabled = (mode >= PageMaker.MODE_ADVANCED);
 
 				Iterator<PluginProgress> loadingPlugins = pm.getStartingPlugins().iterator();
 
 				PageNode page = ctx.getPageMaker().getPageNode(l10n("plugins"), ctx);
+				boolean advancedModeEnabled = ctx.getContainer().isAdvancedModeEnabled();
 				HTMLNode pageNode = page.outer;
 				if (loadingPlugins.hasNext()) {
 					/* okay, add a refresh. */
