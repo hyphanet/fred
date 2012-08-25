@@ -506,6 +506,7 @@ public class FailureTable implements OOMHook {
 				}
 
 				@Override
+				@SuppressWarnings("deprecation")
 				public void run() {
 					try {
 						if(source.isOldFNP()) {
