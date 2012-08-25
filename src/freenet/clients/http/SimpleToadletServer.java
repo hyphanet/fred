@@ -883,6 +883,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	}
 
 	@Override
+	@SuppressWarnings("deprecation")
 	public synchronized void unregister(Toadlet t) {
 		for(Iterator<ToadletElement> i=toadlets.iterator();i.hasNext();) {
 			ToadletElement e = i.next();
