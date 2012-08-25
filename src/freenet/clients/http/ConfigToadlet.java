@@ -351,8 +351,6 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			return;
 		}
 
-		final int mode = ctx.getPageMaker().parseMode(req, container);
-
 		PageNode page = ctx.getPageMaker().getPageNode(
 				NodeL10n.getBase().getString("ConfigToadlet.fullTitle"), ctx);
 		HTMLNode pageNode = page.outer;
@@ -411,7 +409,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			}
 
 			for(Option<?> o : subConfig.getOptions()) {
-				if(! (mode == PageMaker.MODE_SIMPLE && o.isExpert())){
+				if(! (!ctx.getContainer().isAdvancedModeEnabled() && o.isExpert())){
 					displayedConfigElements++;
 					String configName = o.getName();
 					String fullName = subConfig.getPrefix() + '.' + configName;
@@ -435,7 +433,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 					                NodeL10n.getBase().getString("ConfigToadlet.defaultIs",
 					                new String[] { "default" },
 					                new String[] { o.getDefault() }) +
-					                (mode >= PageMaker.MODE_ADVANCED ? " ["+ fullName + ']' : ""),
+					                (ctx.getContainer().isAdvancedModeEnabled() ? " ["+ fullName + ']' : ""),
 					        "cursor: help;" }).addChild(shortDesc);
 					HTMLNode configItemValueNode =
 					        configItemNode.addChild("span", "class", "config");
