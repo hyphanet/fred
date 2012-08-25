@@ -120,14 +120,14 @@ public class TimeSortedHashtable<T extends Comparable<T>>  {
 	}
 
 	// FIXME this is broken if timestamp != -1
-	public final synchronized <E> Object[] pairsAfter(long timestamp, E[] valuesArray) {
+	public final synchronized Object[] pairsAfter(long timestamp, T[] valuesArray) {
     	Set<Element<T>> s = elements.tailSet(new Element<T>(timestamp, null));
     	Long[] timeArray = new Long[s.size()];
     	
     	int i = 0;
     	for (Element<T> e : s) {
     		timeArray[i] = e.time;
-    		valuesArray[i] = (E) e.value;
+    		valuesArray[i] = e.value;
     		i++;
     	}
     	
