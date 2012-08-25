@@ -106,7 +106,7 @@ public class FECQueue implements OOMHook {
 	}
 
 	/** Called after creating or deserializing the FECQueue. Initialises all the transient fields. */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
     public void init(int priorities, int maxCacheSize, DBJobRunner dbJobRunner, Executor exec, ClientContext clientContext) {
 		this.priorities = priorities;
 		this.maxPersistentQueueCacheSize = maxCacheSize;
