@@ -1088,7 +1088,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		// Fetch our revocation key from the datastore plus the binary blob
 
-		FetchContext seedContext = updateManager.node.clientCore.makeClient((short) 0, true).getFetchContext();
+		FetchContext seedContext = updateManager.node.clientCore.makeClient((short) 0, true, false).getFetchContext();
 		FetchContext tempContext = new FetchContext(seedContext, FetchContext.IDENTICAL_MASK, true, blocks);
 		// If it is too big, we get a TOO_BIG. This is fatal so we will blow, which is the right thing as it means the top block is valid.
 		tempContext.maxOutputLength = NodeUpdateManager.MAX_REVOCATION_KEY_LENGTH;
@@ -1197,7 +1197,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			}
 		};
 		// We are inserting a binary blob so we don't need to worry about CompatibilityMode etc.
-		InsertContext ctx = updateManager.node.clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS).getInsertContext(true);
+		InsertContext ctx = updateManager.node.clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false).getInsertContext(true);
 		ClientPutter putter = new ClientPutter(callback, bucket,
 			FreenetURI.EMPTY_CHK_URI, null, ctx,
 			RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, this, null, true, updateManager.node.clientCore.clientContext, null, -1);
@@ -1623,7 +1623,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		// Fetch the jar from the datastore plus the binary blob
 
-		FetchContext seedContext = updateManager.node.clientCore.makeClient((short) 0, true).getFetchContext();
+		FetchContext seedContext = updateManager.node.clientCore.makeClient((short) 0, true, false).getFetchContext();
 		FetchContext tempContext = new FetchContext(seedContext, FetchContext.IDENTICAL_MASK, true, blocks);
 		tempContext.localRequestOnly = true;
 
@@ -1733,7 +1733,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		// Fetch the jar from the datastore plus the binary blob
 
-		FetchContext seedContext = updateManager.node.clientCore.makeClient((short) 0, true).getFetchContext();
+		FetchContext seedContext = updateManager.node.clientCore.makeClient((short) 0, true, false).getFetchContext();
 		FetchContext tempContext = new FetchContext(seedContext, FetchContext.IDENTICAL_MASK, true, blocks);
 		tempContext.localRequestOnly = true;
 
