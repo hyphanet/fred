@@ -2148,11 +2148,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			routable = false;
 			//FIXME: It looks like bogusNoderef will just be set to false a few lines later...
 		} else if(reverseInvalidVersion()) {
-			try {
-				node.setNewestPeerLastGoodVersion(Version.getArbitraryBuildNumber(getLastGoodVersion(), Version.lastGoodBuild()));
-			} catch(NumberFormatException e) {
-			// ignore
-			}
 			Logger.normal(this, "Not routing traffic to " + this + " - reverse invalid version " + Version.getVersionString() + " for peer's lastGoodversion: " + getLastGoodVersion());
 			newer = true;
 		} else

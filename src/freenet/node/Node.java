@@ -126,7 +126,6 @@ import freenet.node.stats.StoreCallbackStats;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.updater.UpdateDeployContext;
 import freenet.node.updater.UpdateDeployContext.CHANGED;
-import freenet.node.useralerts.BuildOldAgeUserAlert;
 import freenet.node.useralerts.ExtOldAgeUserAlert;
 import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
 import freenet.node.useralerts.NotEnoughNiceLevelsUserAlert;
@@ -298,7 +297,6 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 	}
 	private static MeaningfulNodeNameUserAlert nodeNameUserAlert;
-	private static BuildOldAgeUserAlert buildOldAgeUserAlert;
 	private static TimeSkewDetectedUserAlert timeSkewDetectedUserAlert;
 
 	public class NodeNameCallback extends StringCallback  {
@@ -1384,8 +1382,6 @@ public class Node implements TimeSkewDetectorCallback {
 			Closer.close(raf);
 		}
 		lastBootID = oldBootID;
-
-		buildOldAgeUserAlert = new BuildOldAgeUserAlert();
 
 		nodeConfig.register("disableProbabilisticHTLs", false, sortOrder++, true, false, "Node.disablePHTLS", "Node.disablePHTLSLong",
 				new BooleanCallback() {
@@ -5389,19 +5385,13 @@ public class Node implements TimeSkewDetectorCallback {
 		return this.getDarknetPortNumber();
 	}
 
-	public synchronized boolean setNewestPeerLastGoodVersion( int version ) {
-		if( version > buildOldAgeUserAlert.lastGoodVersion ) {
-			if( buildOldAgeUserAlert.lastGoodVersion == 0 ) {
-				clientCore.alerts.register(buildOldAgeUserAlert);
-			}
-			buildOldAgeUserAlert.lastGoodVersion = version;
-			return true;
-		}
-		return false;
-	}
-
 	public synchronized boolean isOudated() {
-		return (buildOldAgeUserAlert.lastGoodVersion > 0);
+		// FIXME arbitrary constants.
+		// We cannot count on the version announcements.
+		// Until we actually get a validated update jar it's all potentially bogus.
+		if(peers.countByStatus(PeerManager.PEER_NODE_STATUS_TOO_NEW) > 5) {
+			return peers.countConnectedPeers() < 5;
+		} else return false;
 	}
 
 	private Map<Integer, NodeToNodeMessageListener> n2nmListeners = new HashMap<Integer, NodeToNodeMessageListener>();

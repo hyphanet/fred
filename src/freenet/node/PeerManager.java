@@ -2513,4 +2513,17 @@ public class PeerManager {
 	synchronized PeerNode[] connectedPeers() {
 		return connectedPeers;
 	}
+
+	/** Count the number of PeerNode's with a given status (right now, not 
+	 * based on a snapshot). Note you should not call this if holding lots 
+	 * of locks! */
+	public int countByStatus(int status) {
+		int count = 0;
+		PeerNode[] peers = myPeers();
+		for(PeerNode peer : peers) {
+			if(peer.getPeerNodeStatus() == status)
+				count++;
+		}
+		return count;
+	}
 }
