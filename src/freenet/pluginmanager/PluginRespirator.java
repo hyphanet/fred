@@ -37,7 +37,7 @@ public class PluginRespirator {
 	
 	public PluginRespirator(Node node, PluginInfoWrapper pi) {
 		this.node = node;
-		this.hlsc = node.clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS);
+		this.hlsc = node.clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false);
 		this.plugin = pi.getPlugin();
 		this.pi = pi;
 	}
