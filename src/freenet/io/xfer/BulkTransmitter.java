@@ -247,6 +247,7 @@ public class BulkTransmitter {
 	 * @return True if the file was successfully sent. False otherwise.
 	 * @throws DisconnectedException 
 	 */
+	@SuppressWarnings("deprecation")
 	public boolean send() throws DisconnectedException {
 		long lastSentPacket = System.currentTimeMillis();
 outer:	while(true) {
