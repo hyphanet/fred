@@ -83,7 +83,7 @@ public abstract class BaseSender implements ByteCounter {
 	
 	private short hopsForTime(long time) {
 		double timeout = realTimeFlag ? SEARCH_TIMEOUT_REALTIME : SEARCH_TIMEOUT_BULK;
-		double timePerHop = timeout / ((double)EXTRA_HOPS_AT_BOTTOM + (double) node.maxHTL());
+		double timePerHop = timeout / (EXTRA_HOPS_AT_BOTTOM + node.maxHTL());
 		return (short) Math.min(node.maxHTL(), time / timePerHop);
 	}
 
