@@ -237,7 +237,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 
 	private boolean isOutdated() {
 		if(conns < PeerManager.OUTDATED_MAX_CONNS && 
-			tooNewPeers > PeerManager.OUTDATED_MIN_TOO_NEW) {
+			tooNewPeers >= PeerManager.OUTDATED_MIN_TOO_NEW) {
 			// Do not show the message if updater is enabled.
 			return !nodeUpdater.isEnabled();
 		} else return false;

@@ -2529,7 +2529,7 @@ public class PeerManager {
 		return count;
 	}
 
-	public static final int OUTDATED_MIN_TOO_NEW = 5;
+	public static final int OUTDATED_MIN_TOO_NEW = 2;
 	public static final int OUTDATED_MAX_CONNS = 5;
 	
 	public boolean isOutdated() {
@@ -2542,8 +2542,8 @@ public class PeerManager {
 		int connections = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED, false) +
 			getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF, false);
 		
-		if(tooNew > 5) {
-			return connections < 5;
+		if(tooNew >= OUTDATED_MIN_TOO_NEW) {
+			return connections < OUTDATED_MAX_CONNS;
 		} else return false;
 	}
 }
