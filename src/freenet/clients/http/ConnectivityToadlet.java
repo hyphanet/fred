@@ -55,7 +55,6 @@ public class ConnectivityToadlet extends Toadlet {
 	public void handleMethodGET(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		PageMaker pageMaker = ctx.getPageMaker();
 		
-		final int mode = ctx.getPageMaker().parseMode(request, container);
 		PageNode page = pageMaker.getPageNode(NodeL10n.getBase().getString("ConnectivityToadlet.title"), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
@@ -114,7 +113,7 @@ public class ConnectivityToadlet extends Toadlet {
 			row.addChild("td", AddressTracker.statusString(tracker.getPortForwardStatus()));
 		}
 		
-		if(mode >= PageMaker.MODE_ADVANCED) {
+		if(ctx.getContainer().isAdvancedModeEnabled()) {
 		
 		// One box per port
 		
