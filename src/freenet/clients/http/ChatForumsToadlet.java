@@ -70,7 +70,7 @@ public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 			return;
 		}
 		
-		String pass = request.getPartAsString("formPassword", 32);
+		String pass = request.getPartAsStringFailsafe("formPassword", 32);
 		if((pass == null) || !pass.equals(node.clientCore.formPassword)) {
 			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", path());
