@@ -1,6 +1,7 @@
 package freenet.clients.http.wizardsteps;
 
 import freenet.clients.http.FirstTimeWizardToadlet;
+import freenet.clients.http.PageMaker.RenderParameters;
 import freenet.clients.http.PageNode;
 import freenet.clients.http.ToadletContext;
 import freenet.support.HTMLNode;
@@ -30,7 +31,7 @@ public class PageHelper {
 	 * @return Content HTMLNode to add content to
 	 */
 	public HTMLNode getPageContent(String title) {
-		pageNode = toadletContext.getPageMaker().getPageNode(title, false, false, toadletContext);
+		pageNode = toadletContext.getPageMaker().getPageNode(title, toadletContext, new RenderParameters().renderNavigationLinks(false).renderStatus(false));
 		return pageNode.content;
 	}
 
