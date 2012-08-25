@@ -1778,6 +1778,7 @@ class CSSTokenizerFilter {
 
 
 	// main function
+	@SuppressWarnings("fallthrough")
 	public void parse() throws IOException {
 
 		final int STATE1=1; //State corresponding to @page,@media etc
