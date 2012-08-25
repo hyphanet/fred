@@ -35,7 +35,7 @@ public class DecayingKeyspaceAverage implements RunningAverage {
          */
         public DecayingKeyspaceAverage(BootstrappingDecayingRunningAverage a) {
 		//check the max/min values? ignore them?
-		avg = (BootstrappingDecayingRunningAverage) a.clone();
+		avg = a.clone();
 	}
 
 	@Override
