@@ -15,6 +15,7 @@ import freenet.client.ClientMetadata;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertException;
+import freenet.clients.http.PageMaker.RenderParameters;
 import freenet.clients.http.bookmark.BookmarkCategory;
 import freenet.clients.http.bookmark.BookmarkItem;
 import freenet.clients.http.bookmark.BookmarkManager;
@@ -327,7 +328,7 @@ public class WelcomeToadlet extends Toadlet {
                     return;
                 }
                 // Tell the user that the node is shutting down
-                PageNode page = ctx.getPageMaker().getPageNode("Node Shutdown", false, ctx);
+                PageNode page = ctx.getPageMaker().getPageNode("Node Shutdown", ctx, new RenderParameters().renderNavigationLinks(false));
                 HTMLNode pageNode = page.outer;
                 HTMLNode contentNode = page.content;
                 ctx.getPageMaker().getInfobox("infobox-information", l10n("shutdownDone"), contentNode, "shutdown-progressing", true).
@@ -514,7 +515,7 @@ public class WelcomeToadlet extends Toadlet {
     
     static HTMLNode sendRestartingPageInner(ToadletContext ctx) {
         // Tell the user that the node is restarting
-        PageNode page = ctx.getPageMaker().getPageNode("Node Restart", false, ctx);
+        PageNode page = ctx.getPageMaker().getPageNode("Node Restart", ctx, new RenderParameters().renderNavigationLinks(false));
         HTMLNode pageNode = page.outer;
         HTMLNode headNode = page.headNode;
         headNode.addChild("meta", new String[]{"http-equiv", "content"}, new String[]{"refresh", "20; url="});
