@@ -293,6 +293,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 		return aes;
 	}
 
+	@SuppressWarnings("deprecation")
 	public PCFBMode getPCFB() {
 		Rijndael aes = getRijndael();
 		if(iv != null)
