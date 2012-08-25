@@ -722,6 +722,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 	}
 
 	@Override
+	@SuppressWarnings("deprecation")
 	protected void onAccepted(PeerNode next) {
         if(logMINOR) Logger.minor(this, "Got Accepted on "+this);
         
