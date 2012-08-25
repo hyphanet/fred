@@ -639,6 +639,7 @@ public class FCPClient {
 		return null;
 	}
 
+	@SuppressWarnings("unchecked")
 	public void init(ObjectContainer container) {
 		if(!container.ext().isActive(this))
 			throw new IllegalStateException("Initialising but not activated");
