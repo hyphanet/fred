@@ -5,11 +5,14 @@ package freenet.node.useralerts;
 
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeStats;
+import freenet.node.PeerManager;
+import freenet.node.updater.NodeUpdateManager;
 import freenet.support.HTMLNode;
 
 public class PeerManagerUserAlert extends AbstractUserAlert {
 
 	final NodeStats n;
+	final NodeUpdateManager nodeUpdater;
 	public int conns = 0;
 	public int peers = 0;
 	public int neverConn = 0;
@@ -52,13 +55,16 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 	/** How high can oldestNeverConnectedPeerAge be before we alert (in milliseconds)*/
 	public static final long MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD = ((long) 2)*7*24*60*60*1000;  // 2 weeks
 	
-	public PeerManagerUserAlert(NodeStats n) {
+	public PeerManagerUserAlert(NodeStats n, NodeUpdateManager nodeUpdater) {
 		super(false, null, null, null, null, (short) 0, true, NodeL10n.getBase().getString("UserAlert.hide"), false, null);
 		this.n = n;
+		this.nodeUpdater = nodeUpdater;
 	}
 	
 	@Override
 	public String getTitle() {
+		if(isOutdated())
+			return l10n("outdatedUpdateTitle");
 		if(!isOpennetEnabled) {
 			if(peers == 0)
 				return l10n("noPeersTitle");
@@ -107,6 +113,8 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 
 	@Override
 	public String getText() {
+		if(isOutdated())
+			return l10n("outdatedUpdate");
 		String s;
 		if(peers == 0 && !isOpennetEnabled) {
 			if(n.isTestnetEnabled())
@@ -177,8 +185,10 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 	@Override
 	public HTMLNode getHTMLText() {
 		HTMLNode alertNode = new HTMLNode("div");
-
-		if (peers == 0 && !isOpennetEnabled) {
+		
+		if(isOutdated())
+			alertNode.addChild("#", l10n("outdatedUpdate"));
+		else if (peers == 0 && !isOpennetEnabled) {
 			if(n.isTestnetEnabled())
 				alertNode.addChild("#", l10n("noPeersTestnet"));
 			else
@@ -222,8 +232,22 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 		return alertNode;
 	}
 
+	private boolean isOutdated() {
+		if(conns < PeerManager.OUTDATED_MAX_CONNS && 
+			tooNewPeers > PeerManager.OUTDATED_MIN_TOO_NEW) {
+			// Do not show the message if updater is enabled.
+			return !nodeUpdater.isEnabled();
+		} else return false;
+	}
+
 	@Override
 	public short getPriorityClass() {
+		if(isOutdated()) {
+			if(conns == 0)
+				return UserAlert.CRITICAL_ERROR;
+			else
+				return UserAlert.ERROR;
+		}
 		if(peers == 0 && !isOpennetEnabled)
 			return UserAlert.CRITICAL_ERROR;
 		if(conns == 0 && !isOpennetEnabled)

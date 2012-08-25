@@ -1782,7 +1782,7 @@ public class PeerManager {
 	}
 
 	public void start() {
-		ua = new PeerManagerUserAlert(node.nodeStats);
+		ua = new PeerManagerUserAlert(node.nodeStats, node.nodeUpdater);
 		updatePMUserAlert();
 		node.clientCore.alerts.register(ua);
 		node.getTicker().queueTimedJob(writePeersRunnable, 0);
