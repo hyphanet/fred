@@ -242,31 +242,23 @@ public class PeerManager {
 					pn = PeerNode.create(fs, node, crypto, opennet, this, mangler);
 				} catch(FSParseException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
-					if(mangler == null) {
-						System.err.println("Cannot parse a friend from the peers file: "+e2);
-						someBroken = true;
-					}
+					System.err.println("Cannot parse a friend from the peers file: "+e2);
+					someBroken = true;
 					continue;
 				} catch(PeerParseException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
-					if(mangler == null) {
-						System.err.println("Cannot parse a friend from the peers file: "+e2);
-						someBroken = true;
-					}
+					System.err.println("Cannot parse a friend from the peers file: "+e2);
+					someBroken = true;
 					continue;
 				} catch(ReferenceSignatureVerificationException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
-					if(mangler == null) {
-						System.err.println("Cannot parse a friend from the peers file: "+e2);
-						someBroken = true;
-					}
+					System.err.println("Cannot parse a friend from the peers file: "+e2);
+					someBroken = true;
 					continue;
 				} catch (RuntimeException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
-					if(mangler == null) {
-						System.err.println("Cannot parse a friend from the peers file: "+e2);
-						someBroken = true;
-					}
+					System.err.println("Cannot parse a friend from the peers file: "+e2);
+					someBroken = true;
 					continue;
 					// FIXME tell the user???
 				}
