@@ -445,6 +445,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		if(fromLocal || fromAnonymousInitiator) noSig = true;
 		myRef = new WeakReference<PeerNode>(this);
 		this.checkStatusAfterBackoff = new PeerNodeBackoffStatusChecker(myRef);
+		if(mangler == null) throw new NullPointerException();
 		this.outgoingMangler = mangler;
 		this.node = node2;
 		this.crypto = crypto;
