@@ -2521,7 +2521,8 @@ public class PeerManager {
 		return count;
 	}
 
-	public static final int OUTDATED_MIN_TOO_NEW = 2;
+	public static final int OUTDATED_MIN_TOO_NEW = 5;
+	public static final int OUTDATED_MIN_TOO_NEW_DARKNET = 1;
 	public static final int OUTDATED_MAX_CONNS = 5;
 	
 	public boolean isOutdated() {

@@ -4,6 +4,7 @@
 package freenet.node.useralerts;
 
 import freenet.l10n.NodeL10n;
+import freenet.node.Node;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.updater.RevocationChecker;
 import freenet.support.HTMLNode;
@@ -144,6 +145,9 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 				formText = l10n("updateASAPButton");
 			}
 			
+			if(updater.node.updateIsUrgent())
+				sb.append(l10n("updateIsUrgent"));
+			
 			return new UpdateThingy(sb.toString(), formText);
 		}
 		
@@ -152,6 +156,9 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 
 	@Override
 	public short getPriorityClass() {
+		Node node = updater.node;
+		if(node.updateIsUrgent())
+			return UserAlert.CRITICAL_ERROR;
 		if(updater.inFinalCheck() || updater.canUpdateNow() || !updater.isArmed())
 			return UserAlert.ERROR;
 		else

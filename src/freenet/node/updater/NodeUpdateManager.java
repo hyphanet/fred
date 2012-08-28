@@ -89,7 +89,7 @@ public class NodeUpdateManager {
 	final Object broadcastUOMAnnouncesSync = new Object();
 	boolean broadcastUOMAnnounces = false;
 
-	Node node;
+	public final Node node;
 
 	final RevocationChecker revocationChecker;
 	private String revocationMessage;
