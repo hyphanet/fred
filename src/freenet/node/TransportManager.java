@@ -11,6 +11,7 @@ import freenet.pluginmanager.StreamTransportPlugin;
 import freenet.pluginmanager.StreamTransportPluginFactory;
 import freenet.pluginmanager.TransportConfig;
 import freenet.pluginmanager.TransportInitException;
+import freenet.pluginmanager.TransportPlugin;
 import freenet.pluginmanager.TransportPluginConfigurationException;
 import freenet.pluginmanager.TransportPluginException;
 import freenet.support.Logger;
@@ -233,16 +234,16 @@ public class TransportManager {
 	 * @param transportName
 	 * @throws TransportPluginException
 	 */
-	protected synchronized void disableTransport(String transportName) throws TransportPluginException {
+	synchronized void disableTransport(String transportName) throws TransportPluginException {
 		if(containsTransport(transportName)){
 			if(packetTransportMap.containsKey(transportName)){
 				PacketTransportPlugin transportPlugin = packetTransportMap.get(transportName);
-				transportPlugin.stopPlugin();
+				node.executor.execute(new NotifyPlugin(transportPlugin));
 				packetTransportMap.remove(transportName);
 			}
 			else if(streamTransportMap.containsKey(transportName)){
 				StreamTransportPlugin transportPlugin = streamTransportMap.get(transportName);
-				transportPlugin.stopPlugin();
+				node.executor.execute(new NotifyPlugin(transportPlugin));
 				streamTransportMap.remove(transportName);
 			}
 			enabledTransports.put(transportName, false);
@@ -288,14 +289,14 @@ public class TransportManager {
 			throw new TransportPluginException("Transport not found");
 		if(enabledTransports.get(transportName) == false)
 			enabledTransports.put(transportName, true);
-		PacketTransportPluginFactory transportFactory = packetTransportFactoryMap.get(transportName);
+		PacketTransportPluginFactory transportPluginFactory = packetTransportFactoryMap.get(transportName);
 		PacketTransportPlugin transportPlugin;
 		try {
-			transportPlugin = createTransportPlugin(transportFactory);
+			transportPlugin = createTransportPlugin(transportPluginFactory);
 			packetTransportMap.put(transportPlugin.transportName, transportPlugin);
 		} catch(FaultyTransportPluginException e) {
 			packetTransportFactoryMap.remove(transportName);
-			transportFactory.invalidTransportCallback(e);
+			node.executor.execute((new PacketPluginCallback(transportPluginFactory, e)));
 			return null;
 		} catch (TransportPluginConfigurationException e) {
 			Logger.error(this, "TransportManagerConfig does not have config", e);
@@ -304,7 +305,7 @@ public class TransportManager {
 		return transportPlugin;
 	}
 	
-	protected synchronized HashMap<String, PacketTransportPlugin> getPacketTransportMap(){
+	synchronized HashMap<String, PacketTransportPlugin> getPacketTransportMap(){
 		return packetTransportMap;
 	}
 	
@@ -336,14 +337,14 @@ public class TransportManager {
 			throw new TransportPluginException("Transport not found");
 		if(enabledTransports.get(transportName) == false)
 			enabledTransports.put(transportName, true);
-		StreamTransportPluginFactory transportFactory = streamTransportFactoryMap.get(transportName);
+		StreamTransportPluginFactory transportPluginFactory = streamTransportFactoryMap.get(transportName);
 		StreamTransportPlugin transportPlugin;
 		try {
-			transportPlugin = createTransportPlugin(transportFactory);
+			transportPlugin = createTransportPlugin(transportPluginFactory);
 			streamTransportMap.put(transportPlugin.transportName, transportPlugin);
 		} catch(FaultyTransportPluginException e) {
 			packetTransportFactoryMap.remove(transportName);
-			transportFactory.invalidTransportCallback(e);
+			node.executor.execute((new StreamPluginCallback(transportPluginFactory, e)));
 			return null;
 		} catch (TransportPluginConfigurationException e) {
 			Logger.error(this, "TransportManagerConfig does not have config", e);
@@ -352,7 +353,7 @@ public class TransportManager {
 		return transportPlugin;
 	}
 	
-	protected synchronized HashMap<String, StreamTransportPlugin> getStreamTransportMap(){
+	synchronized HashMap<String, StreamTransportPlugin> getStreamTransportMap(){
 		return streamTransportMap;
 	}
 	
@@ -422,7 +423,65 @@ public class TransportManager {
 		return false;
 	}
 	
-	protected TransportManagerConfig getTransportManagerConfig(){
+	TransportManagerConfig getTransportManagerConfig(){
 		return transportManagerConfig;
+	}
+	
+	/**
+	 * Called only by NodeCrypto when shutting down.
+	 * Called on a separate thread (serial executor).
+	 */
+	synchronized void stopMode() {
+		for(String transportName : packetTransportMap.keySet()) {
+			try {
+				disableTransport(transportName);
+			} catch (TransportPluginException e) {
+				//Not possible, we even have the lock
+			}
+		}
+		for(String transportName : streamTransportMap.keySet()) {
+			try {
+				disableTransport(transportName);
+			} catch (TransportPluginException e) {
+				//Not possible, we even have the lock
+			}
+		}
+	}
+}
+
+class NotifyPlugin implements Runnable {
+	TransportPlugin transportPlugin;
+	public NotifyPlugin(TransportPlugin transportPlugin) {
+		this.transportPlugin = transportPlugin;
+	}
+	@Override
+	public void run() {
+		transportPlugin.stopPlugin();
+	}
+}
+
+class PacketPluginCallback implements Runnable {
+	PacketTransportPluginFactory factory;
+	FaultyTransportPluginException e;
+	public PacketPluginCallback(PacketTransportPluginFactory factory, FaultyTransportPluginException e) {
+		this.factory = factory;
+		this.e = e;
+	}
+	@Override
+	public void run() {
+		factory.invalidTransportCallback(e);
+	}
+}
+
+class StreamPluginCallback implements Runnable {
+	StreamTransportPluginFactory factory;
+	FaultyTransportPluginException e;
+	public StreamPluginCallback(StreamTransportPluginFactory factory, FaultyTransportPluginException e) {
+		this.factory = factory;
+		this.e = e;
+	}
+	@Override
+	public void run() {
+		factory.invalidTransportCallback(e);
 	}
 }

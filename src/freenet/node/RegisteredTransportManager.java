@@ -10,12 +10,14 @@ import freenet.pluginmanager.StreamTransportPluginFactory;
 
 public class RegisteredTransportManager {
 	
+	private final Node node;
 	private final HashMap<TransportMode, TransportManager> transportManagers;
 	
 	private HashMap<String, PacketTransportPluginFactory> packetTransportFactoryMap = new HashMap<String, PacketTransportPluginFactory> ();
 	private HashMap<String, StreamTransportPluginFactory> streamTransportFactoryMap = new HashMap<String, StreamTransportPluginFactory> ();
 	
 	public RegisteredTransportManager(Node node) {
+		this.node = node;
 		transportManagers = node.getTransports();
 	}
 	
@@ -26,6 +28,10 @@ public class RegisteredTransportManager {
 	 * @throws FaultyTransportPluginException The plugin must handle it if the mode is enabled, else a callback method is called later on.
 	 */
 	public void register(PacketTransportPluginFactory transportPluginFactory) {
+		if(containsTransportFactory(transportPluginFactory.getTransportName())) {
+			node.executor.execute((new PacketPluginCallback(transportPluginFactory, new FaultyTransportPluginException("Name already in use"))));
+				return;
+		}
 		synchronized(this) {
 			packetTransportFactoryMap.put(transportPluginFactory.getTransportName(), transportPluginFactory);
 		}
@@ -35,7 +41,7 @@ public class RegisteredTransportManager {
 			try {
 				transportManagers.get(mode).register(transportPluginFactory);
 			} catch (FaultyTransportPluginException e) {
-				transportPluginFactory.invalidTransportCallback(e);
+				node.executor.execute((new PacketPluginCallback(transportPluginFactory, e)));
 			}
 		}
 	}
@@ -47,6 +53,10 @@ public class RegisteredTransportManager {
 	 * @throws FaultyTransportPluginException The plugin must handle it if the mode is enabled, else a callback method is called later on.
 	 */
 	public void register(StreamTransportPluginFactory transportPluginFactory) {
+		if(containsTransportFactory(transportPluginFactory.getTransportName())) {
+			node.executor.execute((new StreamPluginCallback(transportPluginFactory, new FaultyTransportPluginException("Name already in use"))));
+			return;
+		}
 		synchronized(this) {
 			streamTransportFactoryMap.put(transportPluginFactory.getTransportName(), transportPluginFactory);
 		}
@@ -56,9 +66,18 @@ public class RegisteredTransportManager {
 			try {
 				transportManagers.get(mode).register(transportPluginFactory);
 			} catch (FaultyTransportPluginException e) {
-				transportPluginFactory.invalidTransportCallback(e);
+				node.executor.execute((new StreamPluginCallback(transportPluginFactory, e)));
 			}
 		}
+	}
+	
+	private boolean containsTransportFactory(String transportName){
+		if(packetTransportFactoryMap.containsKey(transportName))
+			return true;
+		else if(streamTransportFactoryMap.containsKey(transportName))
+			return true;
+		
+		return false;
 	}
 
 }
