@@ -62,7 +62,7 @@ public class PeerPluginAddress implements PluginAddress {
 
 	@Override
 	public byte[] getBytes() {
-		return peer.getAddress().getAddress();
+		return peer.toString().getBytes();
 	}
 
 	@Override
@@ -71,8 +71,7 @@ public class PeerPluginAddress implements PluginAddress {
 	}
 
 	@Override
-	public FreenetInetAddress getFreenetAddress()
-			throws UnsupportedOperationException {
+	public FreenetInetAddress getFreenetAddress() {
 		return peer.getFreenetAddress();
 	}
 
