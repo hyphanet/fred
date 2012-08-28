@@ -812,11 +812,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return peerTransport.throttleRekey();
 		}
 		long now = System.currentTimeMillis();
-		try {
-			addr.dropHostName();
-		}catch(UnsupportedIPAddressOperationException e) {
-			//Ignore. It means non IP based address
-		}
+		addr = addr.getPhysicalAddress();
 		synchronized(throttleRekeysByAddress) {
 			Long l = throttleRekeysByAddress.get(addr);
 			if(l == null || l != null && now > l)
