@@ -1,8 +1,8 @@
 package freenet.node;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.Vector;
 
 import freenet.crypt.KeyAgreementSchemeContext;
 import freenet.io.AddressTracker;
@@ -54,7 +54,7 @@ public abstract class PeerTransport {
 	 * 
 	 */
 	protected PluginAddress detectedTransportAddress;
-	protected Vector<PluginAddress> nominalTransportAddress = new Vector<PluginAddress> ();
+	protected ArrayList<PluginAddress> nominalTransportAddress = new ArrayList<PluginAddress> ();
 	protected PluginAddress remoteDetectedTransportAddress;
 	
 	/*
@@ -205,7 +205,7 @@ public abstract class PeerTransport {
 	}
 	
 	protected Message getIPAddressMessage() {
-		return DMT.createFNPDetectedTransportIPAddress(detectedTransportAddress, transportName);
+		return DMT.createFNPDetectedTransportIPAddress(detectedTransportAddress.getBytes(), transportName);
 		
 	}
 	
@@ -402,9 +402,9 @@ public abstract class PeerTransport {
 	 * @param purgeAddresses If true it will get rid of all previous addresses.
 	 * Use it only if a new noderef has been obtained
 	 */
-	public void setTransportAddress(Vector<String> physical, boolean setDetected, boolean purgeAddresses) {
+	public void setTransportAddress(ArrayList<String> physical, boolean setDetected, boolean purgeAddresses) {
 		if(purgeAddresses) {
-			nominalTransportAddress.removeAllElements();
+			nominalTransportAddress.clear();
 			detectedTransportAddress = null;
 			// Since it is purging, we assume there has been a handshake
 			lastAttemptedHandshakeTransportAddressUpdateTime = 0;
@@ -426,7 +426,7 @@ public abstract class PeerTransport {
 			}
 		}
 		if(!nominalTransportAddress.isEmpty() && !setDetected)
-			detectedTransportAddress = nominalTransportAddress.firstElement();
+			detectedTransportAddress = nominalTransportAddress.get(0);
 	}
 	
 	/**
@@ -442,8 +442,13 @@ public abstract class PeerTransport {
 				int port = detectedTransportAddress == null ? -1 : detectedTransportAddress.getPortNumber();
 				if(nominalTransportAddress == null) return detectedTransportAddress;
 				for(PluginAddress address : nominalTransportAddress) {
-					if(address.getPortNumber() != port && address.getFreenetAddress().equals(addr)) {
-						return address;
+					try {
+						if(address.getPortNumber() != port && address.getFreenetAddress().equals(addr)) {
+							return address;
+						}
+					} catch(NullPointerException e) {
+						// What if address is null or address.getFreenetAddress() is null
+						continue;
 					}
 				}
 			}
@@ -457,6 +462,12 @@ public abstract class PeerTransport {
 		setDetectedAddress(newAddress);
 	}
 	
+	/**
+	 * Use this to set detectedTransportAddress.
+	 * Used when we have detected an address from the incoming messages.
+	 * This is the address we reply to.
+	 * @param newAddress
+	 */
 	protected void setDetectedAddress(PluginAddress newAddress) {
 		try {
 			newAddress = newAddress.dropHostName();
@@ -561,9 +572,9 @@ public abstract class PeerTransport {
 		//Peer[] nodePeers = outgoingMangler.getPrimaryIPAddress();
 		Peer[] nodePeers = null; //FIXME finish this part
 
-		Vector<PluginAddress> localAddresses = null;
+		ArrayList<PluginAddress> localAddresses = null;
 		synchronized(this) {
-			localAddresses = new Vector<PluginAddress>(nominalTransportAddress);
+			localAddresses = new ArrayList<PluginAddress>(nominalTransportAddress);
 		}
 
 		boolean addedLocalhost = false;
@@ -579,6 +590,8 @@ public abstract class PeerTransport {
 					}
 				}
 				FreenetInetAddress addr = p.getFreenetAddress();
+				if(addr == null)
+					continue;
 				if(addr.equals(localhost)) {
 					if(addedLocalhost)
 						continue;
@@ -664,7 +677,7 @@ public abstract class PeerTransport {
 			return null;
 		}
 		long loopTime1 = System.currentTimeMillis();
-		Vector<PluginAddress> validIPs = new Vector<PluginAddress>();
+		ArrayList<PluginAddress> validIPs = new ArrayList<PluginAddress>();
 		for(PluginAddress localHandshakeAddress : localHandshakeAddresses){
 			PluginAddress address = localHandshakeAddress;
 			try {
@@ -789,6 +802,42 @@ public abstract class PeerTransport {
 	
 	public String userToString() {
 		return "" + detectedTransportAddress;
+	}
+	
+	/**
+	 * Base object of PeerPacketConnection and PeerStreamConnection. Fields common to both are present.
+	 * @author chetan
+	 *
+	 */
+	static class PeerConnection {
+		
+		protected final String transportName;
+		
+		protected final TransportPlugin transportPlugin;
+		
+		/** Every connection can belong to only one peernode. */
+		protected final PeerNode pn;
+		
+		/** The peer it connects to */
+		protected PluginAddress detectedTransportAddress;
+		
+		/** How much data did we send with the current tracker ? */
+		public long totalBytesExchangedWithCurrentTracker = 0;
+		
+		public SessionKey currentTracker = null;
+		public SessionKey previousTracker = null;
+		public SessionKey unverifiedTracker = null;
+		
+		static final byte[] TEST_AS_BYTES = PeerNode.TEST_AS_BYTES;
+		static final int CHECK_FOR_SWAPPED_TRACKERS_INTERVAL = PeerNode.CHECK_FOR_SWAPPED_TRACKERS_INTERVAL;
+		
+		public PeerConnection(TransportPlugin transportPlugin, PeerNode pn, PluginAddress detectedTransportAddress){
+			this.transportPlugin = transportPlugin;
+			this.transportName = transportPlugin.transportName;
+			this.pn = pn;
+			this.detectedTransportAddress = detectedTransportAddress;
+		}
+		
 	}
 	
 }
