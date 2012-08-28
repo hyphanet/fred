@@ -27,9 +27,9 @@ public interface PluginAddress{
 	public boolean strictEquals(Object o);
 	
 	/**
-	 * Byte representation of the physical location. We need this for authentication. 
-	 * So it should be constant for one object. Otherwise JFK may fail.
-	 * For IP based addresses it should return the same InetAddress in bytes.
+	 * Byte representation of the address.
+	 * This representation should be adequate so as to allow the plugin on the other end
+	 * to convert it back to a PluginAddress object.
 	 * @return
 	 */
 	public byte[] getBytes();
@@ -38,6 +38,7 @@ public interface PluginAddress{
 	 * Get only the physical location, excluding the transport specific/ user specific data.
 	 * For e.g. in case of Inet based addresses, it ignores the port number.
 	 * The implementation may not apply in all cases.
+	 * Make sure the JFK assembler will function. It should remain consistent during the handshake.
 	 * @return
 	 */
 	public PluginAddress getPhysicalAddress();
