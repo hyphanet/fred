@@ -318,7 +318,7 @@ public class NewPacketFormat implements PacketFormat {
 				                + data.length + " bytes) with fragments " + fragments + " and "
 				                + packet.getAcks().size() + " acks on "+this);
 			}
-			pn.sendEncryptedPacket(data, peerTransport.transportPlugin);
+			peerTransport.sendEncryptedPacket(data);
 		} catch (LocalAddressException e) {
 			Logger.error(this, "Caught exception while sending packet", e);
 			return false;
