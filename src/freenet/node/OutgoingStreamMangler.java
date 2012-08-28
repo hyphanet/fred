@@ -13,12 +13,6 @@ import freenet.pluginmanager.StreamTransportPlugin;
 public interface OutgoingStreamMangler extends OutgoingMangler {
 
 	/**
-	 * Send a handshake, if possible, to the node.
-	 * @param pn
-	 */
-	public void sendHandshake(PeerNode pn, boolean notRegistered);
-	
-	/**
 	 * Always allow local addresses?
 	 */
 	public boolean alwaysAllowLocalAddresses();

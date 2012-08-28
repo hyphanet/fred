@@ -17,11 +17,6 @@ import freenet.pluginmanager.PacketTransportPlugin;
 public interface OutgoingPacketMangler extends OutgoingMangler {
 
 	/**
-	 * List of supported negotiation types in preference order (best last)
-	 */
-	public int[] supportedNegTypes(boolean forPublic);
-	
-	/**
 	 * Size of the packet headers, in bytes, assuming only one message in this packet.
 	 */
 	public int fullHeadersLengthOneMessage();
