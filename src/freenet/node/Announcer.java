@@ -341,6 +341,14 @@ public class Announcer {
 							return sb.toString();
 						}
 						
+						@Override
+						public boolean isValid() {
+							if(node.nodeUpdater.isEnabled() && node.nodeUpdater.isArmed()) return false;
+							synchronized(Announcer.this) {
+								return killedAnnouncementTooOld;
+							}
+						}
+						
 					});
 				}
 			}
@@ -363,6 +371,9 @@ public class Announcer {
 			});
 			return true;
 		} else {
+			synchronized(this) {
+				killedAnnouncementTooOld = false;
+			}
 			if(node.nodeUpdater.isEnabled() && node.nodeUpdater.isArmed() &&
 					node.nodeUpdater.uom.fetchingFromTwo() &&
 					node.peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, false) > 5) {
