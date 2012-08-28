@@ -83,9 +83,9 @@ public class PeerManager {
 	private long nextPeerNodeStatusLogTime = -1;
 	/** PeerNode status summary log interval (milliseconds) */
 	private static final long peerNodeStatusLogInterval = 5000;
-	/** PeerNode statuses, by status */
+	/** PeerNode statuses, by status. WARNING: LOCK THIS LAST. Must NOT call PeerNode inside this lock. */
 	private final HashMap<Integer, HashSet<PeerNode>> peerNodeStatuses;
-	/** DarknetPeerNode statuses, by status */
+	/** DarknetPeerNode statuses, by status. WARNING: LOCK THIS LAST. Must NOT call PeerNode inside this lock. */
 	private final HashMap<Integer, HashSet<PeerNode>> peerNodeStatusesDarknet;
 	/** PeerNode routing backoff reasons, by reason (realtime) */
 	private final HashMap<String, HashSet<PeerNode>> peerNodeRoutingBackoffReasonsRT;
@@ -1937,6 +1937,7 @@ public class PeerManager {
 			statusSet.add(peerNode);
 			statuses.put(peerNodeStatus, statusSet);
 		}
+		updatePMUserAlert();
 	}
 
 	/**
@@ -1986,6 +1987,7 @@ public class PeerManager {
 			if(statusSet.contains(peerNode))
 				statusSet.remove(peerNode);
 		}
+		updatePMUserAlert();
 	}
 
 	/**
