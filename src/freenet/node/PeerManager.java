@@ -193,13 +193,13 @@ public class PeerManager {
 				else
 					darkFilename = filename;
 		}
-		OutgoingPacketMangler mangler = crypto.packetMangler;
+		
 		int maxBackups = isOpennet ? BACKUPS_OPENNET : BACKUPS_DARKNET;
 		for(int i=0;i<=maxBackups;i++) {
 			File peersFile = this.getBackupFilename(filename, i);
 			// Try to read the node list from disk
 			if(peersFile.exists())
-				if(readPeers(peersFile, mangler, crypto, opennet, oldOpennetPeers)) {
+				if(readPeers(peersFile, crypto, opennet, oldOpennetPeers)) {
 					String msg;
 					if(oldOpennetPeers)
 						msg = "Read " + opennet.countOldOpennetPeers() + " old-opennet-peers from " + peersFile;
@@ -217,7 +217,7 @@ public class PeerManager {
 		// The other cases are less important.
 	}
 
-	private boolean readPeers(File peersFile, OutgoingPacketMangler mangler, NodeCrypto crypto, OpennetManager opennet, boolean oldOpennetPeers) {
+	private boolean readPeers(File peersFile, NodeCrypto crypto, OpennetManager opennet, boolean oldOpennetPeers) {
 		boolean someBroken = false;
 		boolean gotSome = false;
 		FileInputStream fis;
@@ -241,34 +241,26 @@ public class PeerManager {
 				fs = new SimpleFieldSet(br, false, true);
 				PeerNode pn;
 				try {
-					pn = PeerNode.create(fs, node, crypto, opennet, this, mangler);
+					pn = PeerNode.create(fs, node, crypto, opennet, this);
 				} catch(FSParseException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
-					if(mangler == null) {
-						System.err.println("Cannot parse a friend from the peers file: "+e2);
-						someBroken = true;
-					}
+					System.err.println("Cannot parse a friend from the peers file: "+e2);
+					someBroken = true;
 					continue;
 				} catch(PeerParseException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
-					if(mangler == null) {
-						System.err.println("Cannot parse a friend from the peers file: "+e2);
-						someBroken = true;
-					}
+					System.err.println("Cannot parse a friend from the peers file: "+e2);
+					someBroken = true;
 					continue;
 				} catch(ReferenceSignatureVerificationException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
-					if(mangler == null) {
-						System.err.println("Cannot parse a friend from the peers file: "+e2);
-						someBroken = true;
-					}
+					System.err.println("Cannot parse a friend from the peers file: "+e2);
+					someBroken = true;
 					continue;
 				} catch (RuntimeException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
-					if(mangler == null) {
-						System.err.println("Cannot parse a friend from the peers file: "+e2);
-						someBroken = true;
-					}
+					System.err.println("Cannot parse a friend from the peers file: "+e2);
+					someBroken = true;
 					continue;
 					// FIXME tell the user???
 				}
@@ -654,7 +646,7 @@ public class PeerManager {
 	/**
 	 * Connect to a node provided the fieldset representing it.
 	 */
-	public void connect(SimpleFieldSet noderef, OutgoingPacketMangler mangler, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public void connect(SimpleFieldSet noderef, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		PeerNode pn = node.createNewDarknetNode(noderef, trust, visibility);
 		PeerNode[] peerList = myPeers;
 		for(int i = 0; i < peerList.length; i++) {

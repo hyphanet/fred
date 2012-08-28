@@ -5709,7 +5709,7 @@ public class Node implements TimeSkewDetectorCallback {
 		peers.addPeer(node,false,false);
 	}
 	public void connect(Node node, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		peers.connect(node.darknetCrypto.exportPublicFieldSet(), darknetCrypto.packetMangler, trust, visibility);
+		peers.connect(node.darknetCrypto.exportPublicFieldSet(), trust, visibility);
 	}
 
 	public short maxHTL() {
@@ -5754,17 +5754,17 @@ public class Node implements TimeSkewDetectorCallback {
 
 
 	public DarknetPeerNode createNewDarknetNode(SimpleFieldSet fs, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		return new DarknetPeerNode(fs, this, darknetCrypto, peers, false, darknetCrypto.packetMangler, trust, visibility);
+		return new DarknetPeerNode(fs, this, darknetCrypto, peers, false, trust, visibility);
 	}
 
 	public OpennetPeerNode createNewOpennetNode(SimpleFieldSet fs) throws FSParseException, OpennetDisabledException, PeerParseException, ReferenceSignatureVerificationException {
 		if(opennet == null) throw new OpennetDisabledException("Opennet is not currently enabled");
-		return new OpennetPeerNode(fs, this, opennet.crypto, opennet, peers, false, opennet.crypto.packetMangler);
+		return new OpennetPeerNode(fs, this, opennet.crypto, opennet, peers, false);
 	}
 
 	public SeedServerTestPeerNode createNewSeedServerTestPeerNode(SimpleFieldSet fs) throws FSParseException, OpennetDisabledException, PeerParseException, ReferenceSignatureVerificationException {
 		if(opennet == null) throw new OpennetDisabledException("Opennet is not currently enabled");
-		return new SeedServerTestPeerNode(fs, this, opennet.crypto, peers, true, opennet.crypto.packetMangler);
+		return new SeedServerTestPeerNode(fs, this, opennet.crypto, peers, true);
 	}
 
 	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs, ConnectionType connectionType) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
@@ -5787,10 +5787,6 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public byte[] getDarknetPubKeyHash() {
 		return darknetCrypto.pubKeyHash;
-	}
-
-	public int estimateFullHeadersLengthOneMessage() {
-		return darknetCrypto.packetMangler.fullHeadersLengthOneMessage();
 	}
 
 	public synchronized boolean isOpennetEnabled() {
