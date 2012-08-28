@@ -96,7 +96,6 @@ public class NodeCrypto {
 	final RandomSource random;
 	/** The object which handles our specific UDP port, pulls messages from it, feeds them to the packet mangler for decryption etc */
 	final UdpSocketHandler socket;
-	public FNPPacketMangler packetMangler;
 	// FIXME: abstract out address stuff? Possibly to something like NodeReference?
 	final int portNumber;
 	byte[] myIdentity; // FIXME: simple identity block; should be unique
@@ -246,8 +245,6 @@ public class NodeCrypto {
 			}
 			
 			//Till we finish refactoring
-			packetMangler = (FNPPacketMangler) packetTransportBundleMap.get(Node.defaultPacketTransportName).packetMangler;
-	
 			detector = new NodeIPPortDetector(node, node.ipDetector, this, enableARKs);
 	
 			anonSetupCipher = new Rijndael(256,256);
@@ -471,7 +468,7 @@ public class NodeCrypto {
 
 	SimpleFieldSet exportPublicCryptoFieldSet(boolean forSetup, boolean forAnonInitiator) {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
-		int[] negTypes = packetMangler.supportedNegTypes(true);
+		int[] negTypes = FNPPacketMangler.supportedNegTypes(true);
 		if(!(forSetup || forAnonInitiator))
 			// Can't change on setup.
 			// Anonymous initiator doesn't need identity as we don't use it.
@@ -604,10 +601,13 @@ public class NodeCrypto {
 	public void stop() {
 		config.stopping(this);
 		//socket.close(); Stopped in the following code
-		for(String transportName : packetTransportBundleMap.keySet()){
-			PacketTransportPlugin transportPlugin = packetTransportBundleMap.get(transportName).transportPlugin;
-			transportPlugin.stopPlugin();
+		class NotifyTransportManager implements Runnable {
+			@Override
+			public void run() {
+				transportManager.stopMode();
+			}
 		}
+		serialEx.execute(new NotifyTransportManager());
 	}
 
 	public PeerNode[] getPeerNodes() {
@@ -683,12 +683,12 @@ public class NodeCrypto {
 		return anonSetupCipher;
 	}
 
-	public PeerNode[] getAnonSetupPeerNodes() {
+	public PeerNode[] getAnonSetupPeerNodes(TransportPlugin plugin) {
 		ArrayList<PeerNode> v = new ArrayList<PeerNode>();
 		PeerNode[] peers = node.peers.myPeers;
 		for(int i=0;i<peers.length;i++) {
 			PeerNode pn = peers[i];
-			if(pn.handshakeUnknownInitiator() && pn.getOutgoingMangler() == packetMangler)
+			if(pn.handshakeUnknownInitiator() && pn.getMode() == transportMode && pn.containsTransport(plugin.transportName))
 				v.add(pn);
 		}
 		return v.toArray(new PeerNode[v.size()]);
@@ -772,9 +772,11 @@ public class NodeCrypto {
 	 * This method is for the issue that transport plugins might be loaded much later,
 	 * after initialisation of this object. 
 	 * In case opennet is not started then on creation it'll directly access TransportManager for the transports.
+	 * </br> </br>
+	 * Called only by TransportManager
 	 * @param transportPlugin Packet-type transport
 	 */
-	public void handleNewTransport(PacketTransportPlugin transportPlugin) {
+	void handleNewTransport(PacketTransportPlugin transportPlugin) {
 		
 		FNPPacketMangler mangler = new FNPPacketMangler(node, this, transportPlugin);
 		transportPlugin.setLowLevelFilter(new IncomingPacketFilterImpl(mangler, node, this));
@@ -819,12 +821,14 @@ public class NodeCrypto {
 	 * This method is for the issue that transport plugins might be loaded much later,
 	 * after initialisation of this object. 
 	 * In case opennet is not started then on creation it'll directly access TransportManager for the transports.
+	 * </br> </br>
+	 * Called only by TransportManager
 	 * @param transportPlugin Stream-type transport
 	 * <br>
 	 * FIXME This part will begin once designing packet transports are completed
 	 * FIXME Add implementation for OutgoingStreamMangler, StreamFormat(StreamConnectionFormat), IncomingStreamHandler, PeerMessageTracker
 	 */
-	public void handleNewTransport(StreamTransportPlugin transportPlugin) {
+	void handleNewTransport(StreamTransportPlugin transportPlugin) {
 		
 	}
 
@@ -867,10 +871,12 @@ public class NodeCrypto {
 	/**
 	 * This is used only if a particular transport is disabled by the user.
 	 * The transport manager stops the mangler and the plugin before calling this method.
-	 * If the mode is stopped, check stop() method.
+	 * If the mode is stopped, check stop() method.	 
+	 * </br> </br>
+	 * Called only by TransportManager
 	 * @param transportName
 	 */
-	public void disableTransport(String transportName) {
+	void disableTransport(String transportName) {
 		if(packetTransportBundleMap.containsKey(transportName)) {
 			synchronized(packetBundleMapLock) {
 				packetTransportBundleMap.remove(transportName);

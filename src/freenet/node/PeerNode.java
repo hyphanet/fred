@@ -23,7 +23,6 @@ import java.util.LinkedList;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.Vector;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
@@ -51,11 +50,8 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
-import freenet.io.comm.PeerRestartedException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
-import freenet.io.comm.SocketHandler;
 import freenet.io.xfer.PacketThrottle;
-import freenet.io.xfer.WaitedTooLongException;
 import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
@@ -65,6 +61,7 @@ import freenet.node.NodeStats.RequestType;
 import freenet.node.NodeStats.RunningRequestsSnapshot;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.PeerManager.PeerStatusChangeListener;
+import freenet.node.TransportManager.TransportMode;
 import freenet.pluginmanager.PacketTransportPlugin;
 import freenet.pluginmanager.PluginAddress;
 import freenet.pluginmanager.StreamTransportPlugin;
@@ -98,6 +95,8 @@ import freenet.support.transport.ip.IPUtil;
  * from this peer over the duration of a single key.
  */
 public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
+	
+	//public final TransportMode transportMode;
 
 	private String lastGoodVersion;
 	/**
@@ -129,15 +128,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * If a noderef contains a transport but we don't have it, store the addresses in the string format.
 	 * Also we can in the future notify the user of this plugin.
 	 */
-	private HashMap<String, Vector<String>> peerEnabledTransports = new HashMap<String, Vector<String>> ();
+	private HashMap<String, ArrayList<String>> peerEnabledTransports = new HashMap<String, ArrayList<String>> ();
 	
 	private Object packetTransportMapLock = new Object();
 	private Object streamTransportMapLock = new Object();
 	
-	/** My low-level address for SocketManager purposes */
+	/** This is a hack. It is the address of the default udp transport */
 	private Peer detectedPeer;
-	/** My OutgoingPacketMangler i.e. the object which encrypts packets sent to this node */
-	private final OutgoingPacketMangler outgoingMangler;
 	/** The PeerNode's report of our IP address */
 	private Peer remoteDetectedPeer;
 	/** Is this a testnet node? */
@@ -421,12 +418,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	* @param fs The SimpleFieldSet to parse
 	* @param node2 The running Node we are part of.
 	*/
-	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, boolean fromAnonymousInitiator, OutgoingPacketMangler mangler, boolean isOpennet) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, boolean fromAnonymousInitiator, boolean isOpennet) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		boolean noSig = false;
 		if(fromLocal || fromAnonymousInitiator) noSig = true;
 		myRef = new WeakReference<PeerNode>(this);
 		this.checkStatusAfterBackoff = new PeerNodeBackoffStatusChecker(myRef);
-		this.outgoingMangler = mangler;
 		this.node = node2;
 		this.crypto = crypto;
 		
@@ -464,7 +460,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		negTypes = fs.getIntArray("auth.negTypes");
 		if(negTypes == null || negTypes.length == 0) {
 			if(fromAnonymousInitiator)
-				negTypes = mangler.supportedNegTypes(false); // Assume compatible. Anonymous initiator = short-lived, and we already connected so we know we are.
+				negTypes = FNPPacketMangler.supportedNegTypes(false); // Assume compatible. Anonymous initiator = short-lived, and we already connected so we know we are.
 			else
 				throw new FSParseException("No negTypes!");
 		}
@@ -812,13 +808,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return null;
 	}
 	
-	public Vector<PluginAddress> getNominalTransportAddress(TransportPlugin transportPlugin) {
-		PeerTransport peerTransport = getPeerTransport(transportPlugin);
-		if(peerTransport != null)
-			return peerTransport.nominalTransportAddress;
-		return null;
-	}
-
 	/**
 	* Returns an array with the advertised addresses and the detected one
 	*/
@@ -952,6 +941,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		for(String transportName : peerStreamTransportMap.keySet()) {
 			isConnected |= peerStreamTransportMap.get(transportName).isTransportConnected();
 		}
+		if(isConnected)
+			timeLastConnected = System.currentTimeMillis();
 		return isConnected;
 	}
 	
@@ -2214,7 +2205,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public synchronized SimpleFieldSet exportMetadataFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		/*
-		 * Add detected peer for all transports.
+		 * Add information for all transports.
 		 */
 		for(String transportName:peerPacketTransportMap.keySet()){
 			PeerPacketTransport peerTransport = peerPacketTransportMap.get(transportName);
@@ -2329,6 +2320,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public abstract boolean isOpennet();
 
 	public abstract boolean isSeed();
+	
+	public abstract TransportMode getMode();
 
 	/**
 	 * @return The time at which we last connected (or reconnected).
@@ -3242,7 +3235,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 */
 	public int selectNegType(OutgoingPacketMangler mangler) {
 		int[] hisNegTypes;
-		int[] myNegTypes = mangler.supportedNegTypes(false);
+		int[] myNegTypes = FNPPacketMangler.supportedNegTypes(false);
 		synchronized(this) {
 			hisNegTypes = negTypes;
 		}
@@ -3294,22 +3287,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 	}
 
-	@Override
-	public OutgoingPacketMangler getOutgoingMangler() {
-		return outgoingMangler;
-	}
-	
 	public OutgoingPacketMangler getOutgoingMangler(PacketTransportPlugin transportPlugin){
 		return peerPacketTransportMap.get(transportPlugin.transportName).outgoingMangler;
 	}
 	
 	public OutgoingStreamMangler getOutgoingMangler(StreamTransportPlugin transportPlugin){
 		return peerStreamTransportMap.get(transportPlugin.transportName).outgoingMangler;
-	}
-
-	@Override
-	public SocketHandler getSocketHandler() {
-		return outgoingMangler.getSocketHandler();
 	}
 
 	/** Is this peer disabled? I.e. has the user explicitly disabled it? */
@@ -3332,11 +3315,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/**
 	 * Create a DarknetPeerNode or an OpennetPeerNode as appropriate
 	 */
-	public static PeerNode create(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, PeerManager manager, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public static PeerNode create(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, PeerManager manager) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		if(crypto.isOpennet)
-			return new OpennetPeerNode(fs, node2, crypto, opennet, manager, true, mangler);
+			return new OpennetPeerNode(fs, node2, crypto, opennet, manager, true);
 		else
-			return new DarknetPeerNode(fs, node2, crypto, manager, true, mangler, null, null);
+			return new DarknetPeerNode(fs, node2, crypto, manager, true, null, null);
 	}
 
 	public byte[] getIdentity() {
@@ -4933,7 +4916,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public synchronized boolean matchesIP(FreenetInetAddress addr, boolean strict, TransportPlugin transportPlugin) {
 		PeerTransport peerTransport = getPeerTransport(transportPlugin);
 		PluginAddress detectedTransportAddress = null;
-		Vector<PluginAddress> nominalTransportAddress = null;
+		ArrayList<PluginAddress> nominalTransportAddress = null;
 		if(peerTransport != null) {
 			detectedTransportAddress = peerTransport.detectedTransportAddress;
 			nominalTransportAddress = peerTransport.nominalTransportAddress;
@@ -4981,11 +4964,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		loadSender(realtime).setSendASAP();
 	}
 
-	@Override
-	public boolean isOldFNP() {
-		return false;
-	}
-	
 	@Override
 	public DecodingMessageGroup startProcessingDecryptedMessages(int size) {
 		return new MyDecodingMessageGroup(size);
@@ -5222,7 +5200,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * Checks if we have any address i.e if our peer has loaded the same transport, and then decides to use it.
 	 */
 	public synchronized void handleNewPeerTransport(PacketTransportBundle packetTransportBundle) {
-		Vector<String> physical = peerEnabledTransports.get(packetTransportBundle.transportName);
+		ArrayList<String> physical = peerEnabledTransports.get(packetTransportBundle.transportName);
 		if(physical == null)
 			return;	//Don't load the transport if the peer does not use it.
 		if(physical.size() == 0)
@@ -5240,7 +5218,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * Checks if we have any address i.e if our peer has loaded the same transport, and then decides to use it.
 	 */
 	public synchronized void handleNewPeerTransport(StreamTransportBundle streamTransportBundle) {
-		Vector<String> physical = peerEnabledTransports.get(streamTransportBundle.transportName);
+		ArrayList<String> physical = peerEnabledTransports.get(streamTransportBundle.transportName);
 		if(physical == null)
 			return;	//Don't load the transport if the peer does not use it.
 		if(physical.size() == 0)
@@ -5301,13 +5279,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			StreamTransportBundle streamBundle;
 			String transportName = it.next();
 			String[] addresses = fs.getAll(transportName);
-			Vector<String> vectorAddress = recordAddress(transportName, addresses);
+			ArrayList<String> arrayAddress = recordAddress(transportName, addresses);
 			
 			// Condition 1: Inform already loaded transports of the new addresses.
 			if(peerPacketTransportMap.containsKey(transportName))
-				peerPacketTransportMap.get(transportName).setTransportAddress(vectorAddress, setDetected, purgeAddresses);
+				peerPacketTransportMap.get(transportName).setTransportAddress(arrayAddress, setDetected, purgeAddresses);
 			else if(peerStreamTransportMap.containsKey(transportName))
-				peerStreamTransportMap.get(transportName).setTransportAddress(vectorAddress, setDetected, purgeAddresses);
+				peerStreamTransportMap.get(transportName).setTransportAddress(arrayAddress, setDetected, purgeAddresses);
 			
 			//Condition 2: If we find that our peer has a new transport that we have, then get it
 			
@@ -5432,12 +5410,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * Record the addresses in peerEnabledTransports which is referred later on.
 	 * @param transportName
 	 * @param address
-	 * @return The vector address that exists after the operation for that particular transport 
+	 * @return The address that exists after the operation for that particular transport 
 	 */
-	private Vector<String> recordAddress(String transportName, Vector<String> address) {
-		Vector<String> temp = peerEnabledTransports.get(transportName);
+	private ArrayList<String> recordAddress(String transportName, ArrayList<String> address) {
+		ArrayList<String> temp = peerEnabledTransports.get(transportName);
 		if(temp == null)
-			temp = new Vector<String> ();
+			temp = new ArrayList<String> ();
 		temp.addAll(address);
 		peerEnabledTransports.put(transportName, temp);
 		return temp;
@@ -5447,10 +5425,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * Record the addresses in peerEnabledTransports which is referred later on.
 	 * @param transportName
 	 * @param address
-	 * @return The vector address that exists after the operation for that particular transport
+	 * @return The address that exists after the operation for that particular transport
 	 */
-	private Vector<String> recordAddress(String transportName, String[] address) {
-		Vector<String> temp = new Vector<String> ();
+	private ArrayList<String> recordAddress(String transportName, String[] address) {
+		ArrayList<String> temp = new ArrayList<String> ();
 		for(String addr : address)
 			temp.add(addr);
 		return recordAddress(transportName, temp);
