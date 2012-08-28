@@ -24,7 +24,8 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 	long oldestNeverConnectedPeerAge = 0;
 	public int darknetConns = 0;
 	public int darknetPeers = 0;
-	public int tooNewPeers = 0;
+	public int tooNewPeersDarknet = 0;
+	public int tooNewPeersOpennet = 0;
 	public boolean isOpennetEnabled;
 	public boolean darknetDefinitelyPortForwarded;
 	public boolean opennetDefinitelyPortForwarded;
@@ -236,8 +237,10 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 	}
 
 	private boolean isOutdated() {
+		if(tooNewPeersDarknet >= PeerManager.OUTDATED_MIN_TOO_NEW_DARKNET)
+			return true;
 		if(conns < PeerManager.OUTDATED_MAX_CONNS && 
-			tooNewPeers >= PeerManager.OUTDATED_MIN_TOO_NEW) {
+			tooNewPeersOpennet >= PeerManager.OUTDATED_MIN_TOO_NEW_OPENNET) {
 			// Do not show the message if updater is enabled.
 			return !nodeUpdater.isEnabled();
 		} else return false;

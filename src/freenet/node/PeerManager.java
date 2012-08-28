@@ -1726,8 +1726,8 @@ public class PeerManager {
 			ua.clockProblem = getPeerNodeStatusSize(PEER_NODE_STATUS_CLOCK_PROBLEM, false);
 			ua.connError = getPeerNodeStatusSize(PEER_NODE_STATUS_CONN_ERROR, true);
 			ua.isOpennetEnabled = opennetEnabled;
-			ua.tooNewPeers = getPeerNodeStatusSize(PEER_NODE_STATUS_TOO_NEW, false) +
-				getPeerNodeStatusSize(PEER_NODE_STATUS_TOO_NEW, true);
+			ua.tooNewPeersDarknet = getPeerNodeStatusSize(PEER_NODE_STATUS_TOO_NEW, true);
+			ua.tooNewPeersOpennet = getPeerNodeStatusSize(PEER_NODE_STATUS_TOO_NEW, false);
 		}
 		if(anyConnectedPeers())
 			node.onConnectedPeer();
@@ -2521,21 +2521,29 @@ public class PeerManager {
 		return count;
 	}
 
-	public static final int OUTDATED_MIN_TOO_NEW = 5;
+	// We can't trust our strangers, so need a consensus.
+	public static final int OUTDATED_MIN_TOO_NEW_OPENNET = 5;
+	// We can trust our friends, so only 1 is needed.
 	public static final int OUTDATED_MIN_TOO_NEW_DARKNET = 1;
 	public static final int OUTDATED_MAX_CONNS = 5;
 	
 	public boolean isOutdated() {
+		
+		int tooNewDarknet = getPeerNodeStatusSize(PEER_NODE_STATUS_TOO_NEW, true);
+		
+		if(tooNewDarknet >= OUTDATED_MIN_TOO_NEW_DARKNET)
+			return true;
+		
+		int tooNewOpennet = getPeerNodeStatusSize(PEER_NODE_STATUS_TOO_NEW, false);
+		
 		// FIXME arbitrary constants.
 		// We cannot count on the version announcements.
 		// Until we actually get a validated update jar it's all potentially bogus.
-		int tooNew = getPeerNodeStatusSize(PEER_NODE_STATUS_TOO_NEW, false) +
-			getPeerNodeStatusSize(PEER_NODE_STATUS_TOO_NEW, true);
 		
 		int connections = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED, false) +
 			getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF, false);
 		
-		if(tooNew >= OUTDATED_MIN_TOO_NEW) {
+		if(tooNewOpennet >= OUTDATED_MIN_TOO_NEW_OPENNET) {
 			return connections < OUTDATED_MAX_CONNS;
 		} else return false;
 	}
