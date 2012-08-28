@@ -145,8 +145,10 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 				formText = l10n("updateASAPButton");
 			}
 			
-			if(updater.node.updateIsUrgent())
+			if(updater.node.updateIsUrgent()) {
+				sb.append(" ");
 				sb.append(l10n("updateIsUrgent"));
+			}
 			
 			return new UpdateThingy(sb.toString(), formText);
 		}
