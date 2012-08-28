@@ -332,7 +332,7 @@ public class OpennetManager {
 		try {
 			// FIXME OPT can we do this cheaper?
 			// Maybe just parse the pubkey, and then compare it with the existing peers?
-			OpennetPeerNode pn = new OpennetPeerNode(fs, node, crypto, this, node.peers, false, crypto.packetMangler);
+			OpennetPeerNode pn = new OpennetPeerNode(fs, node, crypto, this, node.peers, false);
 			if(peersLRU.contains(pn)) {
 				if(logMINOR) Logger.minor(this, "Not adding "+pn.userToString()+" to opennet list as already there");
 				return true;
@@ -348,7 +348,7 @@ public class OpennetManager {
 
 	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs, ConnectionType connectionType, boolean allowExisting) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		try {
-		OpennetPeerNode pn = new OpennetPeerNode(fs, node, crypto, this, node.peers, false, crypto.packetMangler);
+		OpennetPeerNode pn = new OpennetPeerNode(fs, node, crypto, this, node.peers, false);
 		if(Arrays.equals(pn.getIdentity(), crypto.myIdentity)) {
 			if(logMINOR) Logger.minor(this, "Not adding self as opennet peer");
 			return null; // Equal to myself

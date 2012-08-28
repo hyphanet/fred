@@ -3,6 +3,7 @@ package freenet.node;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.node.OpennetManager.ConnectionType;
+import freenet.node.TransportManager.TransportMode;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.updater.UpdateOverMandatoryManager;
 import freenet.support.Logger;
@@ -15,8 +16,8 @@ public class OpennetPeerNode extends PeerNode {
 	// Not persisted across restart, since after restart grace periods don't apply anyway (except disconnection, which is really separate anyway).
 	private ConnectionType opennetNodeAddedReason;
 	
-	public OpennetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		super(fs, node2, crypto, peers, fromLocal, false, mangler, true);
+	public OpennetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, PeerManager peers, boolean fromLocal) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		super(fs, node2, crypto, peers, fromLocal, false, true);
 
 		if (fromLocal) {
 			SimpleFieldSet metadata = fs.subset("metadata");
@@ -268,6 +269,11 @@ public class OpennetPeerNode extends PeerNode {
 	@Override
 	boolean dontKeepFullFieldSet() {
 		return true;
+	}
+
+	@Override
+	public TransportMode getMode() {
+		return TransportMode.opennet;
 	}
 
 }

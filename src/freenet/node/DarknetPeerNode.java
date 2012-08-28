@@ -33,6 +33,7 @@ import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
+import freenet.node.TransportManager.TransportMode;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.BookmarkFeedUserAlert;
 import freenet.node.useralerts.DownloadFeedUserAlert;
@@ -54,6 +55,8 @@ import freenet.support.io.RandomAccessFileWrapper;
 import freenet.support.io.RandomAccessThing;
 
 public class DarknetPeerNode extends PeerNode {
+	
+	
 
 	/** Name of this node */
 	String myName;
@@ -143,8 +146,8 @@ public class DarknetPeerNode extends PeerNode {
 	 * @param node2 The running Node we are part of.
 	 * @param trust If this is a new node, we will use this parameter to set the initial trust level.
 	 */
-	public DarknetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility2) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		super(fs, node2, crypto, peers, fromLocal, false, mangler, false);
+	public DarknetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility2) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		super(fs, node2, crypto, peers, fromLocal, false, false);
 
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 
@@ -1938,5 +1941,10 @@ public class DarknetPeerNode extends PeerNode {
 				// Ignore
 			}
 		}
+	}
+
+	@Override
+	public TransportMode getMode() {
+		return TransportMode.darknet;
 	}
 }

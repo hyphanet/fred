@@ -5,6 +5,7 @@ package freenet.node;
 
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.node.TransportManager.TransportMode;
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -13,8 +14,8 @@ import freenet.support.SimpleFieldSet;
  */
 public class SeedClientPeerNode extends PeerNode {
 
-	public SeedClientPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, boolean noSig, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		super(fs, node2, crypto, peers, fromLocal, noSig, mangler, true);
+	public SeedClientPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, boolean noSig) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		super(fs, node2, crypto, peers, fromLocal, noSig, true);
 	}
 
 	@Override
@@ -169,5 +170,9 @@ public class SeedClientPeerNode extends PeerNode {
 		return true;
 	}
 
-
+	@Override
+	public TransportMode getMode() {
+		// SeedNodes use the same NodeCrypto
+		return TransportMode.opennet;
+	}
 }
