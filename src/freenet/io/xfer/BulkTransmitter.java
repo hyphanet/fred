@@ -12,13 +12,10 @@ import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
-import freenet.io.comm.PeerRestartedException;
 import freenet.node.PrioRunnable;
-import freenet.node.SyncSendWaitedTooLongException;
 import freenet.support.BitArray;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
@@ -170,8 +167,7 @@ public class BulkTransmitter {
 			cancel("Disconnected");
 			throw e;
 		}
-		packetSize = DMT.bulkPacketTransmitSize(prb.blockSize) +
-			peer.getOutgoingMangler().fullHeadersLengthOneMessage();
+		packetSize = DMT.bulkPacketTransmitSize(prb.blockSize);
 	}
 
 	/**
@@ -337,20 +333,15 @@ outer:	while(true) {
 			try {
 				if(logMINOR) Logger.minor(this, "Sending packet "+blockNo);
 				Message msg = DMT.createFNPBulkPacketSend(uid, blockNo, buf, realTime);
-				boolean isOldFNP = peer.isOldFNP();
-				UnsentPacketTag tag = new UnsentPacketTag(isOldFNP);
-				if(isOldFNP) {
-					peer.sendThrottledMessage(msg, buf.length, ctr, BulkReceiver.TIMEOUT, false, tag);
-				} else {
-					peer.sendAsync(msg, tag, ctr);
-					synchronized(this) {
-						while(inFlightPackets >= max && !failedPacket)
-							try {
-								wait(1000);
-							} catch (InterruptedException e) {
-								// Ignore
-							}
-					}
+				UnsentPacketTag tag = new UnsentPacketTag();
+				peer.sendAsync(msg, tag, ctr);
+				synchronized(this) {
+					while(inFlightPackets >= max && !failedPacket)
+						try {
+							wait(1000);
+						} catch (InterruptedException e) {
+							// Ignore
+						}
 				}
 				synchronized(this) {
 					blocksNotSentButPresent.setBit(blockNo, false);
@@ -361,19 +352,6 @@ outer:	while(true) {
 				if(logMINOR)
 					Logger.minor(this, "Cancelled: not connected "+this);
 				throw new DisconnectedException();
-			} catch (PeerRestartedException e) {
-				cancel("PeerRestarted");
-				if(logMINOR)
-					Logger.minor(this, "Cancelled: not connected "+this);
-				throw new DisconnectedException();
-			} catch (WaitedTooLongException e) {
-				long rtt = peer.getThrottle().getRoundTripTime();
-				Logger.error(this, "Failed to send bulk packet "+blockNo+" for "+this+" RTT is "+TimeUtil.formatTime(rtt));
-				return false;
-			} catch (SyncSendWaitedTooLongException e) {
-				// Impossible
-				Logger.error(this, "Impossible: Caught "+e, e);
-				return false;
 			}
 		}
 	}
@@ -424,10 +402,8 @@ outer:	while(true) {
 
 		private boolean finished;
 		private boolean sent;
-		private final boolean isOldFNP;
 		
-		private UnsentPacketTag(boolean isOldFNP) {
-			this.isOldFNP = isOldFNP;
+		private UnsentPacketTag() {
 			synchronized(BulkTransmitter.this) {
 				inFlightPackets++;
 				unsentPackets++;

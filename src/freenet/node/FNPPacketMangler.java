@@ -319,7 +319,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	
 	private boolean checkAnonAuthChangeIP(PeerPacketTransport peerTransport, byte[] buf, int offset, int length, PluginAddress address, long now) {
 		PeerNode opn = peerTransport.pn;
-		PeerNode[] anonPeers = crypto.getAnonSetupPeerNodes();
+		PeerNode[] anonPeers = crypto.getAnonSetupPeerNodes(sock);
 		PeerNode pn;
 		PeerPacketTransport peerTransportPn;
 		if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 3) {
@@ -802,7 +802,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 	}
 	
-	private final LRUHashtable<PluginAddress, Long> throttleRekeysByIP = new LRUHashtable<PluginAddress, Long>();
+	private final LRUHashtable<PluginAddress, Long> throttleRekeysByAddress = new LRUHashtable<PluginAddress, Long>();
 	
 	private final int REKEY_BY_IP_TABLE_SIZE = 1024;
 
@@ -813,17 +813,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 		long now = System.currentTimeMillis();
 		try {
-			addr.updateHostName();
+			addr.dropHostName();
 		}catch(UnsupportedIPAddressOperationException e) {
 			//Ignore. It means non IP based address
 		}
-		synchronized(throttleRekeysByIP) {
-			Long l = throttleRekeysByIP.get(addr);
+		synchronized(throttleRekeysByAddress) {
+			Long l = throttleRekeysByAddress.get(addr);
 			if(l == null || l != null && now > l)
-				throttleRekeysByIP.push(addr, now);
-			while(throttleRekeysByIP.size() > REKEY_BY_IP_TABLE_SIZE || 
-					((!throttleRekeysByIP.isEmpty()) && throttleRekeysByIP.peekValue() < now - PeerNode.THROTTLE_REKEY))
-				throttleRekeysByIP.popKey();
+				throttleRekeysByAddress.push(addr, now);
+			while(throttleRekeysByAddress.size() > REKEY_BY_IP_TABLE_SIZE || 
+					((!throttleRekeysByAddress.isEmpty()) && throttleRekeysByAddress.peekValue() < now - PeerNode.THROTTLE_REKEY))
+				throttleRekeysByAddress.popKey();
 			if(l != null && now - l < PeerNode.THROTTLE_REKEY) {
 				Logger.error(this, "Two JFK(1)'s initiated by same IP within "+PeerNode.THROTTLE_REKEY+"ms");
 				return true;
@@ -902,7 +902,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		node.random.nextBytes(myNonce);
 		byte[] r = ctx.signature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] s = ctx.signature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
-		byte[] authenticator = HMAC.macWithSHA256(getTransientKey(),assembleJFKAuthenticator(myExponential, hisExponential, myNonce, nonceInitator, replyTo.getBytes()), HASH_LENGTH);
+		// replyTo.getPhysicalAddress().getBytes() is used.
+		// Otherwise authentication might fail consistently in some transports. 
+		byte[] authenticator = HMAC.macWithSHA256(getTransientKey(),assembleJFKAuthenticator(myExponential, hisExponential, myNonce, nonceInitator, replyTo.getPhysicalAddress().getBytes()), HASH_LENGTH);
 		if(logMINOR) Logger.minor(this, "We are using the following HMAC : " + HexUtil.bytesToHex(authenticator));
 
 		byte[] message2 = new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()+
@@ -1131,7 +1133,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		// We *WANT* to check the hmac before we do the lookup on the hashmap
 		// @see https://bugs.freenetproject.org/view.php?id=1604
-		if(!HMAC.verifyWithSHA256(getTransientKey(), assembleJFKAuthenticator(responderExponential, initiatorExponential, nonceResponder, nonceInitiator, replyTo.getBytes()) , authenticator)) {
+		// replyTo.getPhysicalAddress().getBytes() is used.
+		// Otherwise authentication might fail consistently in some transports. 
+		if(!HMAC.verifyWithSHA256(getTransientKey(), assembleJFKAuthenticator(responderExponential, initiatorExponential, nonceResponder, nonceInitiator, replyTo.getPhysicalAddress().getBytes()) , authenticator)) {
 			if(shouldLogErrorInHandshake(t1)) {
 				Logger.normal(this, "The HMAC doesn't match; let's discard the packet (either we rekeyed or we are victim of forgery) - JFK3 - "+peerTransport);
 			}
@@ -1375,7 +1379,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			}
 			PeerNode seed;
 			try {
-				seed = new SeedClientPeerNode(ref, node, crypto, node.peers, false, true, crypto.packetMangler);
+				seed = new SeedClientPeerNode(ref, node, crypto, node.peers, false, true);
 				// Don't tell tracker yet as we don't have the address yet.
 			} catch (FSParseException e) {
 				Logger.error(this, "Invalid seed client noderef: "+e+" from "+from, e);
@@ -2218,8 +2222,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		return !context.isConnected();
 	}
 
-	@Override
-	public int[] supportedNegTypes(boolean forPublic) {
+	/**
+	 * List of supported negotiation types in preference order (best last)
+	 */
+	public static int[] supportedNegTypes(boolean forPublic) {
 		if(forPublic)
 			return new int[] { 6, 7 };
 		else
