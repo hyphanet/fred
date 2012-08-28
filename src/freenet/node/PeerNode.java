@@ -62,6 +62,7 @@ import freenet.node.NodeStats.RunningRequestsSnapshot;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.PeerManager.PeerStatusChangeListener;
 import freenet.node.TransportManager.TransportMode;
+import freenet.pluginmanager.MalformedPluginAddressException;
 import freenet.pluginmanager.PacketTransportPlugin;
 import freenet.pluginmanager.PluginAddress;
 import freenet.pluginmanager.StreamTransportPlugin;
@@ -2726,13 +2727,20 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		this.remoteDetectedPeer = p;
 	}
 	
-	public void setRemoteDetectedTransportAddress(PluginAddress address, String transportName) throws TransportPluginException{
-		if(peerPacketTransportMap.containsKey(transportName))
-			peerPacketTransportMap.get(transportName).detectedTransportAddress = address;
-		else if(peerStreamTransportMap.containsKey(transportName))
-			peerStreamTransportMap.get(transportName).detectedTransportAddress = address;
-		else
-			throw new TransportPluginException("Plugin not found");
+	public void setRemoteDetectedTransportAddress(byte[] address, String transportName) throws TransportPluginException, MalformedPluginAddressException{
+		synchronized(packetTransportMapLock) {
+			if(peerPacketTransportMap.containsKey(transportName)) {
+				PeerTransport peerTransport = peerPacketTransportMap.get(transportName);
+				peerTransport.detectedTransportAddress = peerTransport.transportPlugin.toPluginAddress(address);
+			}
+		}
+		synchronized(streamTransportMapLock) {
+			if(peerStreamTransportMap.containsKey(transportName)) {
+				PeerTransport peerTransport = peerStreamTransportMap.get(transportName);
+				peerTransport.detectedTransportAddress = peerTransport.transportPlugin.toPluginAddress(address);
+			}
+		}
+		throw new TransportPluginException("Plugin not found");
 	}
 
 	public Peer getRemoteDetectedPeer() {
@@ -3736,13 +3744,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	public long getResendBytesSent() {
 		return resendBytesSent;
-	}
-
-	@Override
-	public MessageItem sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr, int timeout, boolean blockForSend, AsyncMessageCallback callback) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException {
-		long deadline = System.currentTimeMillis() + timeout;
-		if(logMINOR) Logger.minor(this, "Sending throttled message with timeout "+timeout+" packet size "+packetSize+" to "+shortToString());
-		return getThrottle().sendThrottledMessage(msg, this, packetSize, ctr, deadline, blockForSend, callback, msg.getPriority() == DMT.PRIORITY_REALTIME_DATA);
 	}
 
 	/**

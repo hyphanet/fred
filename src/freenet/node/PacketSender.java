@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.Vector;
 
 import freenet.clients.http.ExternalLinkToadlet;
-import freenet.io.comm.Peer;
 import freenet.l10n.NodeL10n;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
@@ -370,7 +369,7 @@ public class PacketSender implements Runnable {
 					}
 				}
 			} catch (BlockedTooLongException e) {
-				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendPacket+" : "+(toSendPacket.pn.isOldFNP() ? "(old packet format)" : "(new packet format)")+" (version "+toSendPacket.pn.getVersionNumber()+") - DISCONNECTING!");
+				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendPacket+" : (new packet format)"+" (version "+toSendPacket.pn.getVersionNumber()+") - DISCONNECTING!");
 				toSendPacket.disconnectTransport(true);
 				onForceDisconnectBlockTooLong(toSendPacket, e);
 			}
@@ -401,7 +400,7 @@ public class PacketSender implements Runnable {
 					}
 				}
 			} catch (BlockedTooLongException e) {
-				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendAckOnly+" : "+(toSendAckOnly.pn.isOldFNP() ? "(old packet format)" : "(new packet format)")+" (version "+toSendAckOnly.pn.getVersionNumber()+") - DISCONNECTING!");
+				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendAckOnly+" : (new packet format)"+" (version "+toSendAckOnly.pn.getVersionNumber()+") - DISCONNECTING!");
 				toSendAckOnly.disconnectTransport(true);
 				onForceDisconnectBlockTooLong(toSendAckOnly, e);
 			}
@@ -594,7 +593,6 @@ public class PacketSender implements Runnable {
         @Override
 		public String getText() {
 			StringBuilder sb = new StringBuilder();
-			Peer[] peers;
 			Vector<String> addressWithTransport = new Vector<String> ();
 			HashMap<String, Vector<PluginAddress>> peersBlocked;
 			synchronized(peersDumpedBlockedTooLong) {

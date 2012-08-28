@@ -13,9 +13,7 @@ import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
-import freenet.io.comm.PeerRestartedException;
 import freenet.io.comm.SlowAsyncMessageFilterCallback;
-import freenet.io.xfer.WaitedTooLongException;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
@@ -735,29 +733,15 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
         
         try {
 			next.sendAsync(headersMsg, null, this);
-			if(next.isOldFNP()) {
-				next.sendThrottledMessage(dataMsg, data.length, this, SSKInsertHandler.DATA_INSERT_TIMEOUT, false, null);
-			} else {
-				next.sendSync(dataMsg, this, realTimeFlag);
-				sentPayload(data.length);
-			}
+			next.sendSync(dataMsg, this, realTimeFlag);
+			sentPayload(data.length);
 		} catch (NotConnectedException e1) {
 			if(logMINOR) Logger.minor(this, "Not connected to "+next);
 			next.noLongerRoutingTo(thisTag, false);
 			routeRequests();
 			return;
-		} catch (WaitedTooLongException e) {
-			Logger.error(this, "Waited too long to send "+dataMsg+" to "+next+" on "+this);
-			next.noLongerRoutingTo(thisTag, false);
-			routeRequests();
-			return;
 		} catch (SyncSendWaitedTooLongException e) {
 			Logger.error(this, "Waited too long to send "+dataMsg+" to "+next+" on "+this);
-			next.noLongerRoutingTo(thisTag, false);
-			routeRequests();
-			return;
-		} catch (PeerRestartedException e) {
-			if(logMINOR) Logger.minor(this, "Peer restarted: "+next);
 			next.noLongerRoutingTo(thisTag, false);
 			routeRequests();
 			return;

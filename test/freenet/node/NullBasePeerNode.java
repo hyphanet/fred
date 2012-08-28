@@ -9,10 +9,7 @@ import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
-import freenet.io.comm.PeerRestartedException;
-import freenet.io.comm.SocketHandler;
 import freenet.io.xfer.PacketThrottle;
-import freenet.io.xfer.WaitedTooLongException;
 import freenet.pluginmanager.PacketTransportPlugin;
 import freenet.pluginmanager.TransportPlugin;
 
@@ -55,31 +52,12 @@ public class NullBasePeerNode implements BasePeerNode {
 	}
 
 	@Override
-	public MessageItem sendThrottledMessage(Message msg, int packetSize,
-			ByteCounter ctr, int timeout, boolean waitForSent,
-			AsyncMessageCallback callback) throws NotConnectedException,
-			WaitedTooLongException, SyncSendWaitedTooLongException,
-			PeerRestartedException {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
 	public long getBootID() {
 		return 0;
 	}
 
 	@Override
 	public PacketThrottle getThrottle() {
-		return null;
-	}
-
-	@Override
-	public SocketHandler getSocketHandler() {
-		return null;
-	}
-
-	@Override
-	public OutgoingPacketMangler getOutgoingMangler() {
 		return null;
 	}
 
@@ -210,11 +188,6 @@ public class NullBasePeerNode implements BasePeerNode {
 			}
 			
 		};
-	}
-
-	@Override
-	public boolean isOldFNP() {
-		return false;
 	}
 
 	@Override
