@@ -310,7 +310,8 @@ public class Announcer {
 		
 		@Override
 		public boolean isValid() {
-			if(node.nodeUpdater.isEnabled() && node.nodeUpdater.isArmed()) return false;
+			if(node.nodeUpdater.isEnabled()) return false;
+			// If it is enabled but not armed there will be a message from the updater.
 			synchronized(Announcer.this) {
 				return killedAnnouncementTooOld;
 			}
