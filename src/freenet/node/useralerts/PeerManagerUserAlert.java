@@ -237,13 +237,12 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 	}
 
 	private boolean isOutdated() {
+		// Do not show the message if updater is enabled.
+		if(nodeUpdater.isEnabled()) return false;
 		if(tooNewPeersDarknet >= PeerManager.OUTDATED_MIN_TOO_NEW_DARKNET)
 			return true;
-		if(conns < PeerManager.OUTDATED_MAX_CONNS && 
-			tooNewPeersOpennet >= PeerManager.OUTDATED_MIN_TOO_NEW_OPENNET) {
-			// Do not show the message if updater is enabled.
-			return !nodeUpdater.isEnabled();
-		} else return false;
+		return conns < PeerManager.OUTDATED_MAX_CONNS && 
+			tooNewPeersOpennet >= PeerManager.OUTDATED_MIN_TOO_NEW_OPENNET;
 	}
 
 	@Override
