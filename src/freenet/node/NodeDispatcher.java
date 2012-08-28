@@ -21,7 +21,7 @@ import freenet.keys.KeyBlock;
 import freenet.keys.NodeSSK;
 import freenet.node.NodeStats.PeerLoadStats;
 import freenet.node.NodeStats.RejectReason;
-import freenet.pluginmanager.PluginAddress;
+import freenet.pluginmanager.MalformedPluginAddressException;
 import freenet.pluginmanager.TransportPluginException;
 import freenet.store.BlockMetadata;
 import freenet.support.Fields;
@@ -132,12 +132,14 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			node.ipDetector.redetectAddress();
 			return true;
 		} else if(spec == DMT.FNPDetectedTransportAddress){
-			PluginAddress add = (PluginAddress) m.getObject(DMT.EXTERNAL_ADDRESS);
+			byte[] add = (byte[]) m.getObject(DMT.EXTERNAL_ADDRESS);
 			String transportName = (String) m.getObject(DMT.TRANSPORT_NAME);
 			try {
 				source.setRemoteDetectedTransportAddress(add, transportName);
 			} catch (TransportPluginException e) {
 				Logger.error(this, "Unknown transport plugin", e);
+			} catch (MalformedPluginAddressException e) {
+				Logger.error(this, "Address is broken", e);
 			}
 			node.ipDetector.redetectAddress();
 			return true;

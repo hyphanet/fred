@@ -24,7 +24,6 @@ import freenet.keys.Key;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.node.NodeStats.PeerLoadStats;
-import freenet.pluginmanager.PluginAddress;
 import freenet.support.BitArray;
 import freenet.support.Buffer;
 import freenet.support.Fields;
@@ -1358,7 +1357,7 @@ public class DMT {
 	 * So it is best to create a new message type.
 	 */
 	public static final MessageType FNPDetectedTransportAddress = new MessageType("FNPDetectedTransportIPAddress", PRIORITY_HIGH) {{
-		addField(EXTERNAL_ADDRESS, PluginAddress.class);
+		addField(EXTERNAL_ADDRESS, Byte[].class);
 		addField(TRANSPORT_NAME, String.class);
 	}};
 	
@@ -1369,9 +1368,9 @@ public class DMT {
 	 * For compatibility reasons we have two types. The old builds will not know anything about transports.
 	 * So it is best to create a new message type.
 	 */
-	public static final Message createFNPDetectedTransportIPAddress(PluginAddress address, String transportName) {
+	public static final Message createFNPDetectedTransportIPAddress(byte[] pluginAddress, String transportName) {
 		Message msg = new Message(FNPDetectedTransportAddress);
-		msg.set(EXTERNAL_ADDRESS, address);
+		msg.set(EXTERNAL_ADDRESS, pluginAddress);
 		msg.set(TRANSPORT_NAME, transportName);
 		return msg;
 	}

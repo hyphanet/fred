@@ -7,6 +7,12 @@ public interface PluginAddress{
 	/** 
 	 * An address that can be stored, and used later on for a noderef. 
 	 * The plugin should be able to rebuild it from the String.
+	 * 
+	 * Also note that the string should not contain ':' or ';' as
+	 * they are used inside the noderef as a separators.
+	 * 
+	 * This will only make the address not work as SFS will
+	 * break/split it up as two different addresses.
 	 * @return
 	 */
 	public String toStringAddress();

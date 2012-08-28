@@ -72,5 +72,13 @@ public abstract class TransportPlugin implements Runnable {
 	 */
 	public abstract PluginAddress toPluginAddress(String address) throws MalformedPluginAddressException;
 	
+	/**
+	 * This method must convert an address from messages in the byte format to the type PluginAddress.
+	 * 
+	 * @param address
+	 * @return
+	 */
+	public abstract PluginAddress toPluginAddress(byte[] address) throws MalformedPluginAddressException;
+	
 }
 
