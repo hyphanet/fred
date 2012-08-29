@@ -31,8 +31,9 @@ public class ResizablePersistentIntBuffer {
 	/** The buffer. When we resize we write-lock and replace this. */
 	private int[] buffer;
 	private final ReadWriteLock lock;
+	// FIXME is static the best way to do this? It seems simplest at least...
 	/** -1 = write immediately, 0 = write only on shutdown, +ve = write period in millis */
-	private int persistenceTime;
+	private static int globalPersistenceTime = 60000;
 	private Ticker ticker;
 	/** Is the buffer dirty? Protected by (this). */
 	private boolean dirty;
@@ -43,13 +44,21 @@ public class ResizablePersistentIntBuffer {
 	private boolean writing;
 	private boolean closed;
 	
+	public static synchronized void setPersistenceTime(int val) {
+		globalPersistenceTime = val;
+	}
+	
+	public static synchronized int getPersistenceTime() {
+		return globalPersistenceTime;
+	}
+	
 	/** Create the buffer. Open the file, creating if necessary, read in the data, and set
 	 * its size.
 	 * @param f The filename.
 	 * @param size The expected size in ints (i.e. multiply by four to get bytes).
 	 * @throws IOException 
 	 */
-	public ResizablePersistentIntBuffer(File f, int size, int persistenceTime) throws IOException {
+	public ResizablePersistentIntBuffer(File f, int size) throws IOException {
 		this.filename = f;
 		isNew = !f.exists();
 		this.raf = new RandomAccessFile(f, "rw");
@@ -63,7 +72,6 @@ public class ResizablePersistentIntBuffer {
 		readBuffer((int)Math.min(size, realLength/4));
 		if(realLength < expectedLength)
 			raf.setLength(expectedLength);
-		this.persistenceTime = persistenceTime;
 		channel = raf.getChannel();
 	}
 
@@ -102,6 +110,7 @@ public class ResizablePersistentIntBuffer {
 		lock.readLock().lock(); // Only resize needs write lock because it creates a new buffer.
 		if(closed) throw new IllegalStateException("Already shut down");
 		try {
+			int persistenceTime = getPersistenceTime();
 			buffer[offset] = value;
 			if(persistenceTime == -1 && !noWrite) {
 				channel.write(ByteBuffer.wrap(Fields.intToBytes(value)), ((long)offset)*4);

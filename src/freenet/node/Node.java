@@ -149,6 +149,7 @@ import freenet.store.SlashdotStore;
 import freenet.store.StorableBlock;
 import freenet.store.StoreCallback;
 import freenet.store.FreenetStore.StoreType;
+import freenet.store.saltedhash.ResizablePersistentIntBuffer;
 import freenet.store.saltedhash.SaltedHashFreenetStore;
 import freenet.support.Executor;
 import freenet.support.Fields;
@@ -2039,6 +2040,26 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 		
 		storeUseSlotFilters = nodeConfig.getBoolean("storeUseSlotFilters");
+		
+		nodeConfig.register("storeSaltHashSlotFilterPersistenceTime", 60000, sortOrder++, true, false, 
+				"Node.storeSaltHashSlotFilterPersistenceTime", "Node.storeSaltHashSlotFilterPersistenceTimeLong", new IntCallback() {
+
+					@Override
+					public Integer get() {
+						return ResizablePersistentIntBuffer.getPersistenceTime();
+					}
+
+					@Override
+					public void set(Integer val)
+							throws InvalidConfigValueException,
+							NodeNeedRestartException {
+						if(val >= -1)
+							ResizablePersistentIntBuffer.setPersistenceTime(val);
+						else
+							throw new InvalidConfigValueException(l10n("slotFilterPersistenceTimeError"));
+					}
+			
+		}, false);
 
 		nodeConfig.register("storeSaltHashResizeOnStart", false, sortOrder++, true, false,
 				"Node.storeSaltHashResizeOnStart", "Node.storeSaltHashResizeOnStartLong", new BooleanCallback() {
