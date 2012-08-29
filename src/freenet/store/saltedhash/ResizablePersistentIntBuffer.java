@@ -32,8 +32,9 @@ public class ResizablePersistentIntBuffer {
 	private int[] buffer;
 	private final ReadWriteLock lock;
 	// FIXME is static the best way to do this? It seems simplest at least...
+	public static final int DEFAULT_PERSISTENCE_TIME = 60000;
 	/** -1 = write immediately, 0 = write only on shutdown, +ve = write period in millis */
-	private static int globalPersistenceTime = 60000;
+	private static int globalPersistenceTime = DEFAULT_PERSISTENCE_TIME;
 	private Ticker ticker;
 	/** Is the buffer dirty? Protected by (this). */
 	private boolean dirty;

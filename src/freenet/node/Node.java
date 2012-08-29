@@ -2041,7 +2041,7 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		storeUseSlotFilters = nodeConfig.getBoolean("storeUseSlotFilters");
 		
-		nodeConfig.register("storeSaltHashSlotFilterPersistenceTime", 60000, sortOrder++, true, false, 
+		nodeConfig.register("storeSaltHashSlotFilterPersistenceTime", ResizablePersistentIntBuffer.DEFAULT_PERSISTENCE_TIME, sortOrder++, true, false, 
 				"Node.storeSaltHashSlotFilterPersistenceTime", "Node.storeSaltHashSlotFilterPersistenceTimeLong", new IntCallback() {
 
 					@Override
