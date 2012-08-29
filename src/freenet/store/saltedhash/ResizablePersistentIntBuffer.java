@@ -124,6 +124,7 @@ public class ResizablePersistentIntBuffer {
 				synchronized(this) {
 					dirty = true;
 					if(!scheduled) {
+						Logger.normal(this, "Scheduling write of slot cache "+this+" in "+persistenceTime);
 						ticker.queueTimedJob(writer, persistenceTime);
 						scheduled = true;
 					}
