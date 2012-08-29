@@ -121,10 +121,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 		String s;
 		synchronized(this) {
 			if(peers == 0 && !isOpennetEnabled) {
-				if(n.isTestnetEnabled())
-					return l10n("noPeersTestnet");
-				else
-					return l10n("noPeersDarknet"); 
+				return l10n("noPeersDarknet"); 
 			} else if(conns < 3 && clockProblem > MIN_CLOCK_PROBLEM_PEER_ALERT_THRESHOLD) {
 				s = l10n("clockProblem", "count", Integer.toString(clockProblem));
 			} else if(conns < 3 && connError > MIN_CONN_ERROR_ALERT_THRESHOLD && !isOpennetEnabled) {
@@ -199,10 +196,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 		else {
 			synchronized(this) {
 				if (peers == 0 && !isOpennetEnabled) {
-					if(n.isTestnetEnabled())
-						alertNode.addChild("#", l10n("noPeersTestnet"));
-					else
-						alertNode.addChild("#", l10n("noPeersDarknet")); 
+					alertNode.addChild("#", l10n("noPeersDarknet")); 
 				} else if(conns < 3 && clockProblem > MIN_CLOCK_PROBLEM_PEER_ALERT_THRESHOLD) {
 					alertNode.addChild("#", l10n("clockProblem", "count", Integer.toString(clockProblem)));
 				} else if(conns < 3 && connError > MIN_CONN_ERROR_ALERT_THRESHOLD) {
