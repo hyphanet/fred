@@ -1,6 +1,7 @@
 package freenet.node;
 
 import java.util.HashMap;
+import java.util.List;
 
 import freenet.support.Logger;
 import freenet.support.WeakHashSet;
@@ -72,6 +73,10 @@ class PeerStatusTracker<K extends Object> {
 		if(logMINOR) Logger.minor(this, "Peer status change: "+oldPeerNodeStatus+" -> "+peerNodeStatus+" on "+peerNode);
 		removeStatus(oldPeerNodeStatus, peerNode, noLog);
 		addStatus(peerNodeStatus, peerNode, noLog);
+	}
+	
+	public synchronized void addStatusList(List<K> list) {
+		list.addAll(statuses.keySet());
 	}
 
 }

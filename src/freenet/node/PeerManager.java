@@ -83,12 +83,14 @@ public class PeerManager {
 	private long nextPeerNodeStatusLogTime = -1;
 	/** PeerNode status summary log interval (milliseconds) */
 	private static final long peerNodeStatusLogInterval = 5000;
+	/** Statuses for all PeerNode's */
 	private final PeerStatusTracker<Integer> allPeersStatuses;
+	/** Statuses for darknet PeerNode's */
 	private final PeerStatusTracker<Integer> darknetPeersStatuses;
 	/** PeerNode routing backoff reasons, by reason (realtime) */
-	private final HashMap<String, HashSet<PeerNode>> peerNodeRoutingBackoffReasonsRT;
+	private final PeerStatusTracker<String> peerNodeRoutingBackoffReasonsRT;
 	/** PeerNode routing backoff reasons, by reason (bulk) */
-	private final HashMap<String, HashSet<PeerNode>> peerNodeRoutingBackoffReasonsBulk;
+	private final PeerStatusTracker<String> peerNodeRoutingBackoffReasonsBulk;
 	/** Next time to update routableConnectionStats */
 	private long nextRoutableConnectionStatsUpdateTime = -1;
 	/** routableConnectionStats update interval (milliseconds) */
@@ -156,8 +158,8 @@ public class PeerManager {
 	 */
 	public PeerManager(Node node, SemiOrderedShutdownHook shutdownHook) {
 		Logger.normal(this, "Creating PeerManager");
-		peerNodeRoutingBackoffReasonsRT = new HashMap<String, HashSet<PeerNode>>();
-		peerNodeRoutingBackoffReasonsBulk = new HashMap<String, HashSet<PeerNode>>();
+		peerNodeRoutingBackoffReasonsRT = new PeerStatusTracker<String>();
+		peerNodeRoutingBackoffReasonsBulk = new PeerStatusTracker<String>();
 		allPeersStatuses = new PeerStatusTracker<Integer>();
 		darknetPeersStatuses = new PeerStatusTracker<Integer>();
 		System.out.println("Creating PeerManager");
@@ -1977,80 +1979,38 @@ public class PeerManager {
 			Logger.error(this, "Impossible backoff reason null on "+peerNode+" realtime="+realTime, new Exception("error"));
 			return;
 		}
-		HashMap<String, HashSet<PeerNode>> peerNodeRoutingBackoffReasons =
+		PeerStatusTracker<String> peerNodeRoutingBackoffReasons =
 			realTime ? peerNodeRoutingBackoffReasonsRT : peerNodeRoutingBackoffReasonsBulk;
-		synchronized(peerNodeRoutingBackoffReasons) {
-			HashSet<PeerNode> reasonSet = null;
-			if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
-				reasonSet = peerNodeRoutingBackoffReasons.get(peerNodeRoutingBackoffReason);
-				if(reasonSet.contains(peerNode)) {
-					Logger.error(this, "addPeerNodeRoutingBackoffReason(): identity '" + peerNode.getIdentityString() + "' already in peerNodeRoutingBackoffReasons as " + peerNode.getPeer() + " with status code " + peerNodeRoutingBackoffReason);
-					return;
-				}
-				peerNodeRoutingBackoffReasons.remove(peerNodeRoutingBackoffReason);
-			} else
-				reasonSet = new HashSet<PeerNode>();
-			if(logMINOR)
-				Logger.minor(this, "addPeerNodeRoutingBackoffReason(): adding PeerNode for '" + peerNode.getIdentityString() + "' with status code " + peerNodeRoutingBackoffReason);
-			reasonSet.add(peerNode);
-			peerNodeRoutingBackoffReasons.put(peerNodeRoutingBackoffReason, reasonSet);
-		}
+		peerNodeRoutingBackoffReasons.addStatus(peerNodeRoutingBackoffReason, peerNode, false);
 	}
 
 	/**
 	 * What are the currently tracked PeerNode routing backoff reasons?
 	 */
 	public String[] getPeerNodeRoutingBackoffReasons(boolean realTime) {
-		HashMap<String, HashSet<PeerNode>> peerNodeRoutingBackoffReasons =
+		ArrayList<String> list = new ArrayList<String>();
+		PeerStatusTracker<String> peerNodeRoutingBackoffReasons =
 			realTime ? peerNodeRoutingBackoffReasonsRT : peerNodeRoutingBackoffReasonsBulk;
-		String[] reasonStrings;
-		synchronized(peerNodeRoutingBackoffReasons) {
-			reasonStrings = peerNodeRoutingBackoffReasons.keySet().toArray(new String[peerNodeRoutingBackoffReasons.size()]);
-		}
-		Arrays.sort(reasonStrings);
-		return reasonStrings;
+		peerNodeRoutingBackoffReasons.addStatusList(list);
+		return list.toArray(new String[list.size()]);
 	}
 
 	/**
 	 * How many PeerNodes have a particular routing backoff reason?
 	 */
 	public int getPeerNodeRoutingBackoffReasonSize(String peerNodeRoutingBackoffReason, boolean realTime) {
-		HashMap<String, HashSet<PeerNode>> peerNodeRoutingBackoffReasons =
+		PeerStatusTracker<String> peerNodeRoutingBackoffReasons =
 			realTime ? peerNodeRoutingBackoffReasonsRT : peerNodeRoutingBackoffReasonsBulk;
-		HashSet<PeerNode> reasonSet = null;
-		synchronized(peerNodeRoutingBackoffReasons) {
-			if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
-				reasonSet = peerNodeRoutingBackoffReasons.get(peerNodeRoutingBackoffReason);
-				return reasonSet.size();
-			} else
-				return 0;
-		}
+		return peerNodeRoutingBackoffReasons.statusSize(peerNodeRoutingBackoffReason);
 	}
 
 	/**
 	 * Remove a PeerNode routing backoff reason from the map
 	 */
 	public void removePeerNodeRoutingBackoffReason(String peerNodeRoutingBackoffReason, PeerNode peerNode, boolean realTime) {
-		HashSet<PeerNode> reasonSet = null;
-		HashMap<String, HashSet<PeerNode>> peerNodeRoutingBackoffReasons =
+		PeerStatusTracker<String> peerNodeRoutingBackoffReasons =
 			realTime ? peerNodeRoutingBackoffReasonsRT : peerNodeRoutingBackoffReasonsBulk;
-		synchronized(peerNodeRoutingBackoffReasons) {
-			if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
-				reasonSet = peerNodeRoutingBackoffReasons.get(peerNodeRoutingBackoffReason);
-				if(!reasonSet.contains(peerNode)) {
-					Logger.error(this, "removePeerNodeRoutingBackoffReason(): identity '" + peerNode.getIdentityString() + "' not in peerNodeRoutingBackoffReasons with status code " + peerNodeRoutingBackoffReason, new Exception("debug"));
-					return;
-				}
-				peerNodeRoutingBackoffReasons.remove(peerNodeRoutingBackoffReason);
-			} else
-				reasonSet = new HashSet<PeerNode>();
-			if(logMINOR)
-				Logger.minor(this, "removePeerNodeRoutingBackoffReason(): removing PeerNode for '" + peerNode.getIdentityString() + "' with status code " + peerNodeRoutingBackoffReason);
-			if(reasonSet.contains(peerNode))
-				reasonSet.remove(peerNode);
-			if(reasonSet.size() > 0)
-				peerNodeRoutingBackoffReasons.put(peerNodeRoutingBackoffReason, reasonSet);
-		}
+		peerNodeRoutingBackoffReasons.removeStatus(peerNodeRoutingBackoffReason, peerNode, false);
 	}
 
 	public PeerNodeStatus[] getPeerNodeStatuses(boolean noHeavy) {
