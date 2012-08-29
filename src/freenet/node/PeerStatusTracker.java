@@ -71,4 +71,11 @@ class PeerStatusTracker {
 				statusSet.remove(peerNode);
 		}
 	}
+	
+	public void changePeerNodeStatus(PeerNode peerNode, int oldPeerNodeStatus,
+			int peerNodeStatus, boolean noLog) {
+		removeStatus(oldPeerNodeStatus, peerNode, noLog);
+		addStatus(peerNodeStatus, peerNode, noLog);
+	}
+
 }

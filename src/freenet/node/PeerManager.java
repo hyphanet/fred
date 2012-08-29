@@ -1907,12 +1907,28 @@ public class PeerManager {
 			nextPeerNodeStatusLogTime = now + peerNodeStatusLogInterval;
 		}
 	}
+	
+	public void changePeerNodeStatus(PeerNode peerNode, int oldPeerNodeStatus,
+			int peerNodeStatus, boolean noLog) {
+		Integer newStatus = Integer.valueOf(peerNodeStatus);
+		Integer oldStatus = Integer.valueOf(oldPeerNodeStatus);
+		this.allPeersStatuses.changePeerNodeStatus(peerNode, oldStatus, newStatus, noLog);
+		if(!peerNode.isOpennet())
+			this.darknetPeersStatuses.changePeerNodeStatus(peerNode, oldStatus, newStatus, noLog);
+		node.executor.execute(new Runnable() {
+
+			@Override
+			public void run() {
+				updatePMUserAlert();
+			}
+			
+		});
+	}
 
 	/**
-	 * Add a PeerNode status to the map
+	 * Add a PeerNode status to the map. Used internally when a peer is added.
 	 */
-	public void addPeerNodeStatus(int pnStatus, PeerNode peerNode, boolean noLog) {
-		System.out.println("Adding status "+pnStatus+" for "+peerNode);
+	private void addPeerNodeStatus(int pnStatus, PeerNode peerNode, boolean noLog) {
 		Integer peerNodeStatus = Integer.valueOf(pnStatus);
 		this.allPeersStatuses.addStatus(peerNodeStatus, peerNode, noLog);
 		if(!peerNode.isOpennet())
@@ -1939,11 +1955,10 @@ public class PeerManager {
 	}
 
 	/**
-	 * Remove a PeerNode status from the map
+	 * Remove a PeerNode status from the map. Used internally when a peer is removed.
 	 * @param isInPeers If true, complain if the node is not in the peers list; if false, complain if it is.
 	 */
-	public void removePeerNodeStatus(int pnStatus, PeerNode peerNode, boolean noLog) {
-		System.out.println("Removing status "+pnStatus+" for "+peerNode);
+	private void removePeerNodeStatus(int pnStatus, PeerNode peerNode, boolean noLog) {
 		Integer peerNodeStatus = Integer.valueOf(pnStatus);
 		this.allPeersStatuses.removeStatus(peerNodeStatus, peerNode, noLog);
 		if(!peerNode.isOpennet())
@@ -2517,4 +2532,5 @@ public class PeerManager {
 			return connections < OUTDATED_MAX_CONNS;
 		} else return false;
 	}
+
 }

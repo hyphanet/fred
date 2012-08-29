@@ -3919,8 +3919,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			peerNodeStatus = getPeerNodeStatus(now, localRoutingBackedOffUntilRT, localRoutingBackedOffUntilBulk, averagePingTime() > threshold, noLoadStats);
 
 			if(peerNodeStatus != oldPeerNodeStatus && recordStatus()) {
-				peers.removePeerNodeStatus(oldPeerNodeStatus, this, noLog);
-				peers.addPeerNodeStatus(peerNodeStatus, this, noLog);
+				peers.changePeerNodeStatus(this, oldPeerNodeStatus, peerNodeStatus, noLog);
 			}
 
 		}
