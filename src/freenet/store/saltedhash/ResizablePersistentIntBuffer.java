@@ -209,6 +209,7 @@ public class ResizablePersistentIntBuffer {
 	}
 
 	private void writeBuffer() throws IOException {
+		// FIXME do we need to do partial writes?
 		raf.seek(0);
 		int written = 0;
 		while(written < size) {
