@@ -2964,8 +2964,17 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 		if(parseARK(fs, false, forDiffNodeRef))
 			changedAnything = true;
-		if(shouldUpdatePeerCounts)
-			node.peers.updatePMUserAlert();
+		if(shouldUpdatePeerCounts) {
+			node.executor.execute(new Runnable() {
+
+				@Override
+				public void run() {
+					node.peers.updatePMUserAlert();
+				}
+				
+			});
+
+		}
 		return changedAnything;
 	}
 
