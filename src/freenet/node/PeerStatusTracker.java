@@ -1,9 +1,9 @@
 package freenet.node;
 
 import java.util.HashMap;
-import java.util.HashSet;
 
 import freenet.support.Logger;
+import freenet.support.WeakHashSet;
 
 /** Track a collection of PeerNode's for each status. */
 class PeerStatusTracker {
@@ -14,14 +14,14 @@ class PeerStatusTracker {
     }
 
 	/** PeerNode statuses, by status. WARNING: LOCK THIS LAST. Must NOT call PeerNode inside this lock. */
-	private final HashMap<Integer, HashSet<PeerNode>> statuses;
+	private final HashMap<Integer, WeakHashSet<PeerNode>> statuses;
 
 	PeerStatusTracker() {
-		statuses = new HashMap<Integer, HashSet<PeerNode>>();
+		statuses = new HashMap<Integer, WeakHashSet<PeerNode>>();
 	}
 
 	public synchronized void addStatus(Integer peerNodeStatus, PeerNode peerNode, boolean noLog) {
-		HashSet<PeerNode> statusSet = null;
+		WeakHashSet<PeerNode> statusSet = null;
 		if(statuses.containsKey(peerNodeStatus)) {
 			statusSet = statuses.get(peerNodeStatus);
 			if(statusSet.contains(peerNode)) {
@@ -31,7 +31,7 @@ class PeerStatusTracker {
 			}
 			statuses.remove(peerNodeStatus);
 		} else
-			statusSet = new HashSet<PeerNode>();
+			statusSet = new WeakHashSet<PeerNode>();
 		if(logMINOR)
 			Logger.minor(this, "addPeerNodeStatus(): adding PeerNode for '" + peerNode.getIdentityString() + "' with status '" + PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue()) + "'");
 		statusSet.add(peerNode);
@@ -40,19 +40,19 @@ class PeerStatusTracker {
 
 	public int statusSize(int pnStatus) {
 		Integer peerNodeStatus = Integer.valueOf(pnStatus);
-		HashSet<PeerNode> statusSet = null;
+		WeakHashSet<PeerNode> statusSet = null;
 		synchronized(statuses) {
 			if(statuses.containsKey(peerNodeStatus))
 				statusSet = statuses.get(peerNodeStatus);
 			else
-				statusSet = new HashSet<PeerNode>();
+				statusSet = new WeakHashSet<PeerNode>();
 			return statusSet.size();
 		}
 	}
 
 	public void removeStatus(Integer peerNodeStatus, PeerNode peerNode,
 			boolean noLog) {
-		HashSet<PeerNode> statusSet = null;
+		WeakHashSet<PeerNode> statusSet = null;
 		synchronized(statuses) {
 			if(statuses.containsKey(peerNodeStatus)) {
 				statusSet = statuses.get(peerNodeStatus);
@@ -64,7 +64,7 @@ class PeerStatusTracker {
 				if(statuses.isEmpty())
 					statuses.remove(peerNodeStatus);
 			} else
-				statusSet = new HashSet<PeerNode>();
+				statusSet = new WeakHashSet<PeerNode>();
 			if(logMINOR)
 				Logger.minor(this, "removePeerNodeStatus(): removing PeerNode for '" + peerNode.getIdentityString() + "' with status '" + PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue()) + "'");
 			if(statusSet.contains(peerNode))
