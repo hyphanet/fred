@@ -15,6 +15,7 @@ import freenet.keys.CHKVerifyException;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
 import freenet.node.SemiOrderedShutdownHook;
+import freenet.store.saltedhash.ResizablePersistentIntBuffer;
 import freenet.store.saltedhash.SaltedHashFreenetStore;
 import freenet.support.PooledExecutor;
 import freenet.support.SimpleReadOnlyArrayBucket;
@@ -46,6 +47,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		fg = new FilenameGenerator(weakPRNG, true, tempDir, "temp-");
 		tbf = new TempBucketFactory(exec, fg, 4096, 65536, strongPRNG, weakPRNG, false);
 		exec.start();
+		ResizablePersistentIntBuffer.setPersistenceTime(-1);
 	}
 
 	@Override
