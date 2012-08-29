@@ -327,8 +327,6 @@ public class PeerManager {
 		if(pn.recordStatus())
 			addPeerNodeStatus(pn.getPeerNodeStatus(), pn, false);
 		pn.setPeerNodeStatus(System.currentTimeMillis());
-		if(!pn.isSeed())
-                    updatePMUserAlert();
 		if((!ignoreOpennet) && pn instanceof OpennetPeerNode) {
 			OpennetManager opennet = node.getOpennet();
 			if(opennet != null)
@@ -340,15 +338,17 @@ public class PeerManager {
 			}
 		}
 		notifyPeerStatusChangeListeners();
-		// LOCKING: addPeer() can be called inside PM lock, so must do this on a separate thread.
-		node.executor.execute(new Runnable() {
-
-			@Override
-			public void run() {
-				updatePMUserAlert();
-			}
-			
-		});
+		if(!pn.isSeed()) {
+			// LOCKING: addPeer() can be called inside PM lock, so must do this on a separate thread.
+			node.executor.execute(new Runnable() {
+				
+				@Override
+				public void run() {
+					updatePMUserAlert();
+				}
+				
+			});
+		}
 		return true;
 	}
 
