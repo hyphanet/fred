@@ -31,8 +31,13 @@ public class ResizablePersistentIntBuffer {
 	/** The buffer. When we resize we write-lock and replace this. */
 	private int[] buffer;
 	private final ReadWriteLock lock;
+	// 5 minutes by default. Disk I/O kills disks, and annoys users, so it's a fair tradeoff.
+	// Anything other than -1 risks data loss if the node is shut down uncleanly.
+	// But it does not damage the store: We recover from it transparently.
+	// Note also that any value other than -1 will trigger a bloom filter rebuild after an unclean shutdown, which arguably is the opposite of what we want... :|
+	// FIXME make that configurable.
+	public static final int DEFAULT_PERSISTENCE_TIME = 300000;
 	// FIXME is static the best way to do this? It seems simplest at least...
-	public static final int DEFAULT_PERSISTENCE_TIME = 60000;
 	/** -1 = write immediately, 0 = write only on shutdown, +ve = write period in millis */
 	private static int globalPersistenceTime = DEFAULT_PERSISTENCE_TIME;
 	private Ticker ticker;
@@ -136,6 +141,7 @@ public class ResizablePersistentIntBuffer {
 	private Runnable writer = new Runnable() {
 
 		public void run() {
+			Logger.normal(this, "Writing slot cache "+this);
 			lock.readLock().lock(); // Protect buffer.
 			try {
 				synchronized(ResizablePersistentIntBuffer.this) {
@@ -159,6 +165,7 @@ public class ResizablePersistentIntBuffer {
 				}
 				lock.readLock().unlock();
 			}
+			Logger.normal(this, "Written slot cache "+this);
 		}
 		
 	};
