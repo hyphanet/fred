@@ -340,6 +340,7 @@ public class PeerManager {
 			}
 		}
 		notifyPeerStatusChangeListeners();
+		// LOCKING: addPeer() can be called inside PM lock, so must do this on a separate thread.
 		node.executor.execute(new Runnable() {
 
 			@Override
@@ -359,6 +360,7 @@ public class PeerManager {
 		return false;
 	}
 
+	/** Remove a PeerNode. LOCKING: Caller should not hold locks on any PeerNode. */
 	private boolean removePeer(PeerNode pn) {
 		if(logMINOR)
 			Logger.minor(this, "Removing " + pn);
@@ -410,14 +412,7 @@ public class PeerManager {
 		if(isInPeers && !pn.isSeed())
 			updatePMUserAlert();
 		notifyPeerStatusChangeListeners();
-		node.executor.execute(new Runnable() {
-
-			@Override
-			public void run() {
-				updatePMUserAlert();
-			}
-			
-		});
+		updatePMUserAlert();
 		return true;
 	}
 
