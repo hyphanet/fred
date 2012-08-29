@@ -191,6 +191,7 @@ public class ResizablePersistentIntBuffer {
 				writing = true;
 			}
 			try {
+				Logger.normal(this, "Writing slot cache on shutdown: "+this);
 				writeBuffer();
 			} catch (IOException e) {
 				Logger.error(this, "Write failed during shutdown: "+e+" on "+filename, e);
@@ -242,6 +243,7 @@ public class ResizablePersistentIntBuffer {
 	}
 
 	public void forceWrite() {
+		Logger.normal(this, "Force write slot cache: "+this);
 		lock.readLock().lock();
 		try {
 			synchronized(this) {
@@ -261,7 +263,6 @@ public class ResizablePersistentIntBuffer {
 				writing = true;
 			}
 			try {
-				Logger.normal(this, "Writing slot cache on shutdown: "+this);
 				writeBuffer();
 			} catch (IOException e) {
 				Logger.error(this, "Write failed during shutdown: "+e+" on "+filename, e);
