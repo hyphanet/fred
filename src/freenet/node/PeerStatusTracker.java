@@ -41,11 +41,11 @@ class PeerStatusTracker<K extends Object> {
 
 	public synchronized int statusSize(K pnStatus) {
 		WeakHashSet<PeerNode> statusSet = null;
-		if(statuses.containsKey(pnStatus))
+		if(statuses.containsKey(pnStatus)) {
 			statusSet = statuses.get(pnStatus);
-		else
-			statusSet = new WeakHashSet<PeerNode>();
-		return statusSet.size();
+			return statusSet.size();
+		} else
+			return 0;
 	}
 
 	public synchronized void removeStatus(K peerNodeStatus, PeerNode peerNode,
