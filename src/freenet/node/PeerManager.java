@@ -1738,7 +1738,7 @@ public class PeerManager {
 			ua.connError = getPeerNodeStatusSize(PEER_NODE_STATUS_CONN_ERROR, true);
 			ua.isOpennetEnabled = opennetEnabled;
 			ua.tooNewPeersDarknet = getPeerNodeStatusSize(PEER_NODE_STATUS_TOO_NEW, true);
-			ua.tooNewPeersOpennet = getPeerNodeStatusSize(PEER_NODE_STATUS_TOO_NEW, false);
+			ua.tooNewPeersTotal = getPeerNodeStatusSize(PEER_NODE_STATUS_TOO_NEW, false);
 		}
 		if(anyConnectedPeers())
 			node.onConnectedPeer();
@@ -2503,7 +2503,7 @@ public class PeerManager {
 	}
 
 	// We can't trust our strangers, so need a consensus.
-	public static final int OUTDATED_MIN_TOO_NEW_OPENNET = 5;
+	public static final int OUTDATED_MIN_TOO_NEW_TOTAL = 5;
 	// We can trust our friends, so only 1 is needed.
 	public static final int OUTDATED_MIN_TOO_NEW_DARKNET = 1;
 	public static final int OUTDATED_MAX_CONNS = 5;
@@ -2524,7 +2524,7 @@ public class PeerManager {
 		int connections = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED, false) +
 			getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF, false);
 		
-		if(tooNewOpennet >= OUTDATED_MIN_TOO_NEW_OPENNET) {
+		if(tooNewOpennet >= OUTDATED_MIN_TOO_NEW_TOTAL) {
 			return connections < OUTDATED_MAX_CONNS;
 		} else return false;
 	}

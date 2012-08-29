@@ -25,7 +25,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 	public int darknetConns = 0;
 	public int darknetPeers = 0;
 	public int tooNewPeersDarknet = 0;
-	public int tooNewPeersOpennet = 0;
+	public int tooNewPeersTotal = 0;
 	public boolean isOpennetEnabled;
 	public boolean darknetDefinitelyPortForwarded;
 	public boolean opennetDefinitelyPortForwarded;
@@ -242,7 +242,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 		if(tooNewPeersDarknet >= PeerManager.OUTDATED_MIN_TOO_NEW_DARKNET)
 			return true;
 		return conns < PeerManager.OUTDATED_MAX_CONNS && 
-			tooNewPeersOpennet >= PeerManager.OUTDATED_MIN_TOO_NEW_OPENNET;
+			tooNewPeersTotal >= PeerManager.OUTDATED_MIN_TOO_NEW_TOTAL;
 	}
 
 	@Override
