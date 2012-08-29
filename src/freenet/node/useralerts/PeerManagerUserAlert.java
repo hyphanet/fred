@@ -13,6 +13,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 
 	final NodeStats n;
 	final NodeUpdateManager nodeUpdater;
+	// FIXME see comments in update().
 	public int conns = 0;
 	public int peers = 0;
 	public int neverConn = 0;
@@ -320,6 +321,8 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 		bwlimitDelayAlertRelevant = n.bwlimitDelayAlertRelevant;
 		nodeAveragePingAlertRelevant = n.nodeAveragePingAlertRelevant;
 		isOutdated = calculateIsOutdated();
+		// FIXME move PeerManager.updatePMUserAlert here.
+		// FIXME then make this subscribe to PeerManager's listener thingy.
 	}
 	
 }

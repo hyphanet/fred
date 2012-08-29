@@ -146,7 +146,8 @@ public class PeerManager {
 	public static final int PEER_NODE_STATUS_ROUTING_DISABLED = 14;
 	public static final int PEER_NODE_STATUS_NO_LOAD_STATS = 15;
 	
-	/** The list of listeners that needs to be notified when peers' statuses changed*/
+	/** The list of listeners that needs to be notified when peers' statuses changed.
+	 * FIXME use this for PeerManagerUserAlert. */
 	private List<PeerStatusChangeListener> listeners=new CopyOnWriteArrayList<PeerStatusChangeListener>();
 
 	/**
