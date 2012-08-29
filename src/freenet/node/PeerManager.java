@@ -83,10 +83,8 @@ public class PeerManager {
 	private long nextPeerNodeStatusLogTime = -1;
 	/** PeerNode status summary log interval (milliseconds) */
 	private static final long peerNodeStatusLogInterval = 5000;
-	/** PeerNode statuses, by status. WARNING: LOCK THIS LAST. Must NOT call PeerNode inside this lock. */
-	private final HashMap<Integer, HashSet<PeerNode>> peerNodeStatuses;
-	/** DarknetPeerNode statuses, by status. WARNING: LOCK THIS LAST. Must NOT call PeerNode inside this lock. */
-	private final HashMap<Integer, HashSet<PeerNode>> peerNodeStatusesDarknet;
+	private final PeerStatusTracker allPeersStatuses;
+	private final PeerStatusTracker darknetPeersStatuses;
 	/** PeerNode routing backoff reasons, by reason (realtime) */
 	private final HashMap<String, HashSet<PeerNode>> peerNodeRoutingBackoffReasonsRT;
 	/** PeerNode routing backoff reasons, by reason (bulk) */
@@ -158,10 +156,10 @@ public class PeerManager {
 	 */
 	public PeerManager(Node node, SemiOrderedShutdownHook shutdownHook) {
 		Logger.normal(this, "Creating PeerManager");
-		peerNodeStatuses = new HashMap<Integer, HashSet<PeerNode>>();
-		peerNodeStatusesDarknet = new HashMap<Integer, HashSet<PeerNode>>();
 		peerNodeRoutingBackoffReasonsRT = new HashMap<String, HashSet<PeerNode>>();
 		peerNodeRoutingBackoffReasonsBulk = new HashMap<String, HashSet<PeerNode>>();
+		allPeersStatuses = new PeerStatusTracker();
+		darknetPeersStatuses = new PeerStatusTracker();
 		System.out.println("Creating PeerManager");
 		myPeers = new PeerNode[0];
 		connectedPeers = new PeerNode[0];
@@ -1914,31 +1912,11 @@ public class PeerManager {
 	 * Add a PeerNode status to the map
 	 */
 	public void addPeerNodeStatus(int pnStatus, PeerNode peerNode, boolean noLog) {
-		Integer peerNodeStatus = Integer.valueOf(pnStatus);
 		System.out.println("Adding status "+pnStatus+" for "+peerNode);
-		addPeerNodeStatuses(pnStatus, peerNode, peerNodeStatus, peerNodeStatuses, noLog);
+		Integer peerNodeStatus = Integer.valueOf(pnStatus);
+		this.allPeersStatuses.addStatus(peerNodeStatus, peerNode, noLog);
 		if(!peerNode.isOpennet())
-			addPeerNodeStatuses(pnStatus, peerNode, peerNodeStatus, peerNodeStatusesDarknet, noLog);
-	}
-
-	private void addPeerNodeStatuses(int pnStatus, PeerNode peerNode, Integer peerNodeStatus, HashMap<Integer, HashSet<PeerNode>> statuses, boolean noLog) {
-		HashSet<PeerNode> statusSet = null;
-		synchronized(statuses) {
-			if(statuses.containsKey(peerNodeStatus)) {
-				statusSet = statuses.get(peerNodeStatus);
-				if(statusSet.contains(peerNode)) {
-					if(!noLog)
-						Logger.error(this, "addPeerNodeStatus(): node already in peerNodeStatuses: " + peerNode + " status " + PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue()), new Exception("debug"));
-					return;
-				}
-				statuses.remove(peerNodeStatus);
-			} else
-				statusSet = new HashSet<PeerNode>();
-			if(logMINOR)
-				Logger.minor(this, "addPeerNodeStatus(): adding PeerNode for '" + peerNode.getIdentityString() + "' with status '" + PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue()) + "'");
-			statusSet.add(peerNode);
-			statuses.put(peerNodeStatus, statusSet);
-		}
+			this.darknetPeersStatuses.addStatus(peerNodeStatus, peerNode, noLog);
 		node.executor.execute(new Runnable() {
 
 			@Override
@@ -1954,16 +1932,10 @@ public class PeerManager {
 	 * @param darknet If true, only count darknet nodes, if false, count all nodes.
 	 */
 	public int getPeerNodeStatusSize(int pnStatus, boolean darknet) {
-		Integer peerNodeStatus = Integer.valueOf(pnStatus);
-		HashSet<PeerNode> statusSet = null;
-		HashMap<Integer, HashSet<PeerNode>> statuses = darknet ? peerNodeStatusesDarknet : this.peerNodeStatuses;
-		synchronized(statuses) {
-			if(statuses.containsKey(peerNodeStatus))
-				statusSet = statuses.get(peerNodeStatus);
-			else
-				statusSet = new HashSet<PeerNode>();
-			return statusSet.size();
-		}
+		if(darknet)
+			return darknetPeersStatuses.statusSize(pnStatus);
+		else
+			return allPeersStatuses.statusSize(pnStatus);
 	}
 
 	/**
@@ -1973,30 +1945,9 @@ public class PeerManager {
 	public void removePeerNodeStatus(int pnStatus, PeerNode peerNode, boolean noLog) {
 		System.out.println("Removing status "+pnStatus+" for "+peerNode);
 		Integer peerNodeStatus = Integer.valueOf(pnStatus);
-		removePeerNodeStatus(pnStatus, peerNodeStatus, peerNode, peerNodeStatuses, noLog);
+		this.allPeersStatuses.removeStatus(peerNodeStatus, peerNode, noLog);
 		if(!peerNode.isOpennet())
-			removePeerNodeStatus(pnStatus, peerNodeStatus, peerNode, peerNodeStatusesDarknet, noLog);
-	}
-
-	private void removePeerNodeStatus(int pnStatus, Integer peerNodeStatus, PeerNode peerNode, HashMap<Integer, HashSet<PeerNode>> statuses, boolean noLog) {
-		HashSet<PeerNode> statusSet = null;
-		synchronized(statuses) {
-			if(statuses.containsKey(peerNodeStatus)) {
-				statusSet = statuses.get(peerNodeStatus);
-				if(!statusSet.contains(peerNode)) {
-					if(!noLog)
-						Logger.error(this, "removePeerNodeStatus(): identity '" + peerNode.getIdentityString() + " for " + peerNode.shortToString() + "' not in peerNodeStatuses with status '" + PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue()) + "'", new Exception("debug"));
-					return;
-				}
-				if(statuses.isEmpty())
-					statuses.remove(peerNodeStatus);
-			} else
-				statusSet = new HashSet<PeerNode>();
-			if(logMINOR)
-				Logger.minor(this, "removePeerNodeStatus(): removing PeerNode for '" + peerNode.getIdentityString() + "' with status '" + PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue()) + "'");
-			if(statusSet.contains(peerNode))
-				statusSet.remove(peerNode);
-		}
+			this.darknetPeersStatuses.removeStatus(peerNodeStatus, peerNode, noLog);
 		node.executor.execute(new Runnable() {
 
 			@Override
