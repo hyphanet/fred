@@ -340,6 +340,14 @@ public class PeerManager {
 			}
 		}
 		notifyPeerStatusChangeListeners();
+		node.executor.execute(new Runnable() {
+
+			@Override
+			public void run() {
+				updatePMUserAlert();
+			}
+			
+		});
 		return true;
 	}
 
@@ -402,6 +410,14 @@ public class PeerManager {
 		if(isInPeers && !pn.isSeed())
 			updatePMUserAlert();
 		notifyPeerStatusChangeListeners();
+		node.executor.execute(new Runnable() {
+
+			@Override
+			public void run() {
+				updatePMUserAlert();
+			}
+			
+		});
 		return true;
 	}
 
@@ -1933,14 +1949,6 @@ public class PeerManager {
 		this.allPeersStatuses.addStatus(peerNodeStatus, peerNode, noLog);
 		if(!peerNode.isOpennet())
 			this.darknetPeersStatuses.addStatus(peerNodeStatus, peerNode, noLog);
-		node.executor.execute(new Runnable() {
-
-			@Override
-			public void run() {
-				updatePMUserAlert();
-			}
-			
-		});
 	}
 
 	/**
@@ -1963,14 +1971,6 @@ public class PeerManager {
 		this.allPeersStatuses.removeStatus(peerNodeStatus, peerNode, noLog);
 		if(!peerNode.isOpennet())
 			this.darknetPeersStatuses.removeStatus(peerNodeStatus, peerNode, noLog);
-		node.executor.execute(new Runnable() {
-
-			@Override
-			public void run() {
-				updatePMUserAlert();
-			}
-			
-		});
 	}
 
 	/**
