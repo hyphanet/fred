@@ -1683,7 +1683,8 @@ public class PeerManager {
 
 	/**
 	 * Update the numbers needed by our PeerManagerUserAlert on the UAM.
-	 * Also run the node's onConnectedPeers() method if applicable
+	 * Also run the node's onConnectedPeers() method if applicable.
+	 * LOCKING: Do not call inside PeerNode lock.
 	 */
 	public void updatePMUserAlert() {
 		if(ua == null)
@@ -1938,7 +1939,14 @@ public class PeerManager {
 			statusSet.add(peerNode);
 			statuses.put(peerNodeStatus, statusSet);
 		}
-		updatePMUserAlert();
+		node.executor.execute(new Runnable() {
+
+			@Override
+			public void run() {
+				updatePMUserAlert();
+			}
+			
+		});
 	}
 
 	/**
@@ -1989,7 +1997,14 @@ public class PeerManager {
 			if(statusSet.contains(peerNode))
 				statusSet.remove(peerNode);
 		}
-		updatePMUserAlert();
+		node.executor.execute(new Runnable() {
+
+			@Override
+			public void run() {
+				updatePMUserAlert();
+			}
+			
+		});
 	}
 
 	/**
