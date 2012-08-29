@@ -70,6 +70,7 @@ class PeerStatusTracker {
 	
 	public synchronized void changePeerNodeStatus(PeerNode peerNode, int oldPeerNodeStatus,
 			int peerNodeStatus, boolean noLog) {
+		if(logMINOR) Logger.minor(this, "Peer status change: "+oldPeerNodeStatus+" -> "+peerNodeStatus+" on "+peerNode);
 		removeStatus(oldPeerNodeStatus, peerNode, noLog);
 		addStatus(peerNodeStatus, peerNode, noLog);
 	}
