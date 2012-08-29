@@ -1914,6 +1914,7 @@ public class PeerManager {
 	 */
 	public void addPeerNodeStatus(int pnStatus, PeerNode peerNode, boolean noLog) {
 		Integer peerNodeStatus = Integer.valueOf(pnStatus);
+		System.out.println("Adding status "+pnStatus+" for "+peerNode);
 		addPeerNodeStatuses(pnStatus, peerNode, peerNodeStatus, peerNodeStatuses, noLog);
 		if(!peerNode.isOpennet())
 			addPeerNodeStatuses(pnStatus, peerNode, peerNodeStatus, peerNodeStatusesDarknet, noLog);
@@ -1962,6 +1963,7 @@ public class PeerManager {
 	 * @param isInPeers If true, complain if the node is not in the peers list; if false, complain if it is.
 	 */
 	public void removePeerNodeStatus(int pnStatus, PeerNode peerNode, boolean noLog) {
+		System.out.println("Removing status "+pnStatus+" for "+peerNode);
 		Integer peerNodeStatus = Integer.valueOf(pnStatus);
 		removePeerNodeStatus(pnStatus, peerNodeStatus, peerNode, peerNodeStatuses, noLog);
 		if(!peerNode.isOpennet())

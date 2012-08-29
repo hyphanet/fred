@@ -887,6 +887,8 @@ public class DarknetPeerNode extends PeerNode {
 		final String filename;
 		final String mimeType;
 		final String comment;
+		/** Only valid if amIOffering == false. Set when start receiving. */
+		private File destination;
 		private RandomAccessThing data;
 		final long size;
 		/** Who is offering it? True = I am offering it, False = I am being offered it */
@@ -912,6 +914,7 @@ public class DarknetPeerNode extends PeerNode {
 			size = fs.getLong("size");
 			mimeType = fs.get("metadata.contentType");
 			filename = FileUtil.sanitize(fs.get("filename"), mimeType);
+			destination = null;
 			String s = fs.get("comment");
 			if(s != null) {
 				try {
@@ -937,6 +940,7 @@ public class DarknetPeerNode extends PeerNode {
 			acceptedOrRejected = true;
 			final String baseFilename = "direct-"+FileUtil.sanitize(getName())+"-"+filename;
 			final File dest = node.clientCore.downloadsDir().file(baseFilename+".part");
+			destination = node.clientCore.downloadsDir().file(baseFilename);
 			try {
 				data = new RandomAccessFileWrapper(dest, "rw");
 			} catch (FileNotFoundException e) {
@@ -1324,6 +1328,11 @@ public class DarknetPeerNode extends PeerNode {
 			HTMLNode row = table.addChild("tr");
 			row.addChild("td").addChild("#", l10n("fileLabel"));
 			row.addChild("td").addChild("#", filename);
+			if(destination != null) {
+				row = table.addChild("tr");
+				row.addChild("td").addChild("#", l10n("fileSavedToLabel"));
+				row.addChild("td").addChild("#", destination.getPath());
+			}
 			row = table.addChild("tr");
 			row.addChild("td").addChild("#", l10n("sizeLabel"));
 			row.addChild("td").addChild("#", SizeUtil.formatSize(size));
