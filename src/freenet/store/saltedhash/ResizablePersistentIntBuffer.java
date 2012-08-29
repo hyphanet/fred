@@ -142,7 +142,7 @@ public class ResizablePersistentIntBuffer {
 	private Runnable writer = new Runnable() {
 
 		public void run() {
-			Logger.normal(this, "Writing slot cache "+this);
+			Logger.normal(this, "Writing slot cache "+ResizablePersistentIntBuffer.this);
 			lock.readLock().lock(); // Protect buffer.
 			try {
 				synchronized(ResizablePersistentIntBuffer.this) {
@@ -166,7 +166,7 @@ public class ResizablePersistentIntBuffer {
 				}
 				lock.readLock().unlock();
 			}
-			Logger.normal(this, "Written slot cache "+this);
+			Logger.normal(this, "Written slot cache "+ResizablePersistentIntBuffer.this);
 		}
 		
 	};
