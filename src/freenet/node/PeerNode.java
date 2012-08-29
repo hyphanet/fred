@@ -96,6 +96,9 @@ import freenet.support.transport.ip.IPUtil;
  * packet numbers when this happens. Hence we separate a lot of
  * code into SessionKey, which handles all communications to and
  * from this peer over the duration of a single key.
+ * 
+ * LOCKING: Can hold PeerManager and then lock PeerNode. Cannot hold
+ * PeerNode and then lock PeerManager.
  */
 public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
