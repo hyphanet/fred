@@ -682,24 +682,24 @@ public class PeerManager {
 				}
 				return;
 			}
-                        if(!pn.isSeed()) {
-                            node.getTicker().queueTimedJob(new Runnable() {
-
-                                @Override
-                                public void run() {
-                                    if(pn.isDisconnecting()) {
-                                    	if(remove) {
-                                    		if(removePeer(pn)) {
-                                    			if(!pn.isSeed()) {
-                                    				writePeersUrgent(pn.isOpennet());
-                                    			}
-                                    		}
-                                    	}
-                                    	pn.disconnected(true, true);
-                                    }
-                                }
-                            }, timeout);
-                        }
+			if(!pn.isSeed()) {
+				node.getTicker().queueTimedJob(new Runnable() {
+					
+					@Override
+					public void run() {
+						if(pn.isDisconnecting()) {
+							if(remove) {
+								if(removePeer(pn)) {
+									if(!pn.isSeed()) {
+										writePeersUrgent(pn.isOpennet());
+									}
+								}
+							}
+							pn.disconnected(true, true);
+						}
+					}
+				}, timeout);
+			}
 		} else {
 			if(remove) {
 				if(removePeer(pn) && !pn.isSeed())
