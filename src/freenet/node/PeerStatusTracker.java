@@ -38,41 +38,37 @@ class PeerStatusTracker {
 		statuses.put(peerNodeStatus, statusSet);
 	}
 
-	public int statusSize(int pnStatus) {
+	public synchronized int statusSize(int pnStatus) {
 		Integer peerNodeStatus = Integer.valueOf(pnStatus);
 		WeakHashSet<PeerNode> statusSet = null;
-		synchronized(statuses) {
-			if(statuses.containsKey(peerNodeStatus))
-				statusSet = statuses.get(peerNodeStatus);
-			else
-				statusSet = new WeakHashSet<PeerNode>();
-			return statusSet.size();
-		}
+		if(statuses.containsKey(peerNodeStatus))
+			statusSet = statuses.get(peerNodeStatus);
+		else
+			statusSet = new WeakHashSet<PeerNode>();
+		return statusSet.size();
 	}
 
-	public void removeStatus(Integer peerNodeStatus, PeerNode peerNode,
+	public synchronized void removeStatus(Integer peerNodeStatus, PeerNode peerNode,
 			boolean noLog) {
 		WeakHashSet<PeerNode> statusSet = null;
-		synchronized(statuses) {
-			if(statuses.containsKey(peerNodeStatus)) {
-				statusSet = statuses.get(peerNodeStatus);
-				if(!statusSet.contains(peerNode)) {
-					if(!noLog)
-						Logger.error(this, "removePeerNodeStatus(): identity '" + peerNode.getIdentityString() + " for " + peerNode.shortToString() + "' not in peerNodeStatuses with status '" + PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue()) + "'", new Exception("debug"));
-					return;
-				}
-				if(statuses.isEmpty())
-					statuses.remove(peerNodeStatus);
-			} else
-				statusSet = new WeakHashSet<PeerNode>();
-			if(logMINOR)
-				Logger.minor(this, "removePeerNodeStatus(): removing PeerNode for '" + peerNode.getIdentityString() + "' with status '" + PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue()) + "'");
-			if(statusSet.contains(peerNode))
-				statusSet.remove(peerNode);
-		}
+		if(statuses.containsKey(peerNodeStatus)) {
+			statusSet = statuses.get(peerNodeStatus);
+			if(!statusSet.contains(peerNode)) {
+				if(!noLog)
+					Logger.error(this, "removePeerNodeStatus(): identity '" + peerNode.getIdentityString() + " for " + peerNode.shortToString() + "' not in peerNodeStatuses with status '" + PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue()) + "'", new Exception("debug"));
+				return;
+			}
+			if(statuses.isEmpty())
+				statuses.remove(peerNodeStatus);
+		} else
+			statusSet = new WeakHashSet<PeerNode>();
+		if(logMINOR)
+			Logger.minor(this, "removePeerNodeStatus(): removing PeerNode for '" + peerNode.getIdentityString() + "' with status '" + PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue()) + "'");
+		if(statusSet.contains(peerNode))
+			statusSet.remove(peerNode);
 	}
 	
-	public void changePeerNodeStatus(PeerNode peerNode, int oldPeerNodeStatus,
+	public synchronized void changePeerNodeStatus(PeerNode peerNode, int oldPeerNodeStatus,
 			int peerNodeStatus, boolean noLog) {
 		removeStatus(oldPeerNodeStatus, peerNode, noLog);
 		addStatus(peerNodeStatus, peerNode, noLog);
