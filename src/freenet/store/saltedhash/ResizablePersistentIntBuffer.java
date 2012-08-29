@@ -162,7 +162,7 @@ public class ResizablePersistentIntBuffer {
 			} finally {
 				synchronized(ResizablePersistentIntBuffer.this) {
 					writing = false;
-					notifyAll();
+					ResizablePersistentIntBuffer.this.notifyAll();
 				}
 				lock.readLock().unlock();
 			}
