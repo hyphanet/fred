@@ -83,8 +83,8 @@ public class PeerManager {
 	private long nextPeerNodeStatusLogTime = -1;
 	/** PeerNode status summary log interval (milliseconds) */
 	private static final long peerNodeStatusLogInterval = 5000;
-	private final PeerStatusTracker allPeersStatuses;
-	private final PeerStatusTracker darknetPeersStatuses;
+	private final PeerStatusTracker<Integer> allPeersStatuses;
+	private final PeerStatusTracker<Integer> darknetPeersStatuses;
 	/** PeerNode routing backoff reasons, by reason (realtime) */
 	private final HashMap<String, HashSet<PeerNode>> peerNodeRoutingBackoffReasonsRT;
 	/** PeerNode routing backoff reasons, by reason (bulk) */
@@ -158,8 +158,8 @@ public class PeerManager {
 		Logger.normal(this, "Creating PeerManager");
 		peerNodeRoutingBackoffReasonsRT = new HashMap<String, HashSet<PeerNode>>();
 		peerNodeRoutingBackoffReasonsBulk = new HashMap<String, HashSet<PeerNode>>();
-		allPeersStatuses = new PeerStatusTracker();
-		darknetPeersStatuses = new PeerStatusTracker();
+		allPeersStatuses = new PeerStatusTracker<Integer>();
+		darknetPeersStatuses = new PeerStatusTracker<Integer>();
 		System.out.println("Creating PeerManager");
 		myPeers = new PeerNode[0];
 		connectedPeers = new PeerNode[0];
