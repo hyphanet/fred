@@ -491,6 +491,7 @@ public class PeerManager {
 			}
 			if(!inMyPeers) {
 				Logger.error(this, "Connecting to " + pn + " but not in peers!");
+				// FIXME LOCKING calling inside PM lock - safe???
 				addPeer(pn);
 			}
 			if(logMINOR)
