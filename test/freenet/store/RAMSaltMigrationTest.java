@@ -273,15 +273,17 @@ public class RAMSaltMigrationTest extends TestCase {
 	}
 	
 	public void testSaltedStoreResize() throws CHKEncodeException, CHKVerifyException, CHKDecodeException, IOException {
-		checkSaltedStoreResize(5, 10, false, -1, false);
-		checkSaltedStoreResize(5, 10, true, -1, false);
+		checkSaltedStoreResize(5, 10, 20, false, -1, false, true);
+		checkSaltedStoreResize(5, 10, 20, true, -1, false, true);
 		// Will write to disk on shutdown.
-		checkSaltedStoreResize(5, 10, true, 60*60*1000, false);
+		checkSaltedStoreResize(5, 10, 20, true, 60*60*1000, false, true);
+		checkSaltedStoreResize(5, 10, 20, true, 60*60*1000, false, false);
 		// It will force to disk after resizing, so should still work even with a long write time.
-		checkSaltedStoreResize(5, 10, true, 60*60*1000, true);
+		checkSaltedStoreResize(5, 10, 20, true, 60*60*1000, true, true);
+		checkSaltedStoreResize(5, 10, 20, true, 60*60*1000, true, false);
 	}
 	
-	public void checkSaltedStoreResize(int keycount, int size, boolean useSlotFilter, int persistenceTime, boolean abort) throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
+	public void checkSaltedStoreResize(int keycount, int size, int newSize, boolean useSlotFilter, int persistenceTime, boolean abort, boolean openNewSize) throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		
 		File f = new File(tempDir, "saltstore-"+keycount+"-"+size+"-"+useSlotFilter);
 		FileUtil.removeAll(f);
@@ -307,12 +309,22 @@ public class RAMSaltMigrationTest extends TestCase {
 			keys[i] = block[i].getClientKey();
 		}
 		
-		saltStore.setMaxKeys(size*2, true);
+		saltStore.setMaxKeys(newSize, true);
+		
+		for(int i=0;i<keycount;i++) {
+			
+			ClientCHK key = keys[i];
+			
+			CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
+			assert(verify != null);
+			String data = decodeBlock(verify, key);
+			assertEquals(test[i], data);
+		}
 		
 		saltStore.close(abort);
 
 		store = new CHKStore();
-		saltStore = SaltedHashFreenetStore.construct(f, "teststore", store, weakPRNG, size, useSlotFilter, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		saltStore = SaltedHashFreenetStore.construct(f, "teststore", store, weakPRNG, openNewSize ? newSize : size, useSlotFilter, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(ticker, true);
 		
 		for(int i=0;i<keycount;i++) {
