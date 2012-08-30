@@ -1275,6 +1275,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				cbWasActive = container.ext().isActive(rcb);
 				container.activate(rcb, 1);
 			}
+			// This is fetching an archive, which may or may not contain the file we are looking for (it includes metadata).
+			// So we are definitely not the bottom layer nor definitive.
 			rcb.onSplitfileCompatibilityMode(min, max, splitfileKey, dontCompress, false, false, container, context);
 			if(!wasActive)
 				container.deactivate(SingleFileFetcher.this, 1);
