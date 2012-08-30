@@ -209,6 +209,23 @@ public class ResizablePersistentIntBuffer {
 		}
 		
 	}
+	
+	public void abort() {
+		lock.writeLock().lock();
+		try {
+			synchronized(this) {
+				if(closed) return;
+				closed = true;
+			}
+			try {
+				raf.close();
+			} catch (IOException e) {
+				Logger.error(this, "Close failed during shutdown: "+e+" on "+filename, e);
+			}
+		} finally {
+			lock.writeLock().unlock();
+		}
+	}
 
 	private void writeBuffer() throws IOException {
 		// FIXME do we need to do partial writes?

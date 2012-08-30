@@ -182,14 +182,14 @@ public class RAMSaltMigrationTest extends TestCase {
 
 		checkBlocks(store, true, false);
 		
-		saltStore.close(true);
-		
 		if(delay != 0)
 			try {
 				Thread.sleep(delay);
 			} catch (InterruptedException e) {
 				// Ignore
 			}
+		
+		saltStore.close(true);
 		
 		store = new CHKStore();
 		saltStore = SaltedHashFreenetStore.construct(f, "teststore", store, weakPRNG, 10, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
