@@ -274,8 +274,6 @@ public class RAMSaltMigrationTest extends TestCase {
 	
 	public void testSaltedStoreResize() throws CHKEncodeException, CHKVerifyException, CHKDecodeException, IOException {
 		checkSaltedStoreResize(5, 10, false);
-		// Bloom filters broken on resize?!?!??!?!?!?
-		//checkSaltedStoreResize(5, 10, false);
 		checkSaltedStoreResize(5, 10, true);
 	}
 	
