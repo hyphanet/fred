@@ -273,16 +273,16 @@ public class RAMSaltMigrationTest extends TestCase {
 	}
 	
 	public void testSaltedStoreResize() throws CHKEncodeException, CHKVerifyException, CHKDecodeException, IOException {
-		checkSaltedStoreResize(5, 10, 0, false);
+		checkSaltedStoreResize(5, 10, false);
 		// Bloom filters broken on resize?!?!??!?!?!?
-		//checkSaltedStoreResize(5, 10, 50, false);
-		checkSaltedStoreResize(5, 10, 0, true);
+		//checkSaltedStoreResize(5, 10, false);
+		checkSaltedStoreResize(5, 10, true);
 	}
 	
-	public void checkSaltedStoreResize(int keycount, int size, int bloomSize, boolean useSlotFilter) throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
+	public void checkSaltedStoreResize(int keycount, int size, boolean useSlotFilter) throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		CHKStore store = new CHKStore();
 		SaltedHashFreenetStore.NO_CLEANER_SLEEP = true;
-		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore-"+keycount+"-"+size+"-"+bloomSize+"-"+useSlotFilter), "teststore", store, weakPRNG, size, useSlotFilter, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore-"+keycount+"-"+size+"-"+useSlotFilter), "teststore", store, weakPRNG, size, useSlotFilter, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(null, true);
 		
 		ClientCHK[] keys = new ClientCHK[keycount];
