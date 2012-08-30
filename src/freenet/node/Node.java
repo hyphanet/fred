@@ -6392,7 +6392,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public boolean updateIsUrgent() {
 		OpennetManager om = getOpennet();
 		if(om != null) {
-			if(om.announcer.isWaitingForUpdater())
+			if(om.announcer != null && om.announcer.isWaitingForUpdater())
 				return true;
 		}
 		if(peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, true) > PeerManager.OUTDATED_MIN_TOO_NEW_DARKNET)
