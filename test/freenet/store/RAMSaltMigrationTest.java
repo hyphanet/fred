@@ -273,14 +273,24 @@ public class RAMSaltMigrationTest extends TestCase {
 	}
 	
 	public void testSaltedStoreResize() throws CHKEncodeException, CHKVerifyException, CHKDecodeException, IOException {
-		checkSaltedStoreResize(5, 10, false);
-		checkSaltedStoreResize(5, 10, true);
+		checkSaltedStoreResize(5, 10, false, -1, false);
+		checkSaltedStoreResize(5, 10, true, -1, false);
+		// Will write to disk on shutdown.
+		checkSaltedStoreResize(5, 10, true, 60*60*1000, false);
+		// It will force to disk after resizing, so should still work even with a long write time.
+		checkSaltedStoreResize(5, 10, true, 60*60*1000, true);
 	}
 	
-	public void checkSaltedStoreResize(int keycount, int size, boolean useSlotFilter) throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
+	public void checkSaltedStoreResize(int keycount, int size, boolean useSlotFilter, int persistenceTime, boolean abort) throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
+		
+		File f = new File(tempDir, "saltstore-"+keycount+"-"+size+"-"+useSlotFilter);
+		FileUtil.removeAll(f);
+		
+		ResizablePersistentIntBuffer.setPersistenceTime(persistenceTime);
+		
 		CHKStore store = new CHKStore();
 		SaltedHashFreenetStore.NO_CLEANER_SLEEP = true;
-		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore-"+keycount+"-"+size+"-"+useSlotFilter), "teststore", store, weakPRNG, size, useSlotFilter, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "teststore", store, weakPRNG, size, useSlotFilter, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(ticker, true);
 		
 		ClientCHK[] keys = new ClientCHK[keycount];
@@ -298,13 +308,19 @@ public class RAMSaltMigrationTest extends TestCase {
 		}
 		
 		saltStore.setMaxKeys(size*2, true);
-		// FIXME shrinkNow doesn't do anything - how to force cleaner to run immediately and wait for it???
+		
+		saltStore.close(abort);
+
+		store = new CHKStore();
+		saltStore = SaltedHashFreenetStore.construct(f, "teststore", store, weakPRNG, size, useSlotFilter, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		saltStore.start(ticker, true);
 		
 		for(int i=0;i<keycount;i++) {
 			
 			ClientCHK key = keys[i];
 			
 			CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
+			assert(verify != null);
 			String data = decodeBlock(verify, key);
 			assertEquals(test[i], data);
 		}
