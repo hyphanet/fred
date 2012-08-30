@@ -282,5 +282,11 @@ public class ResizablePersistentIntBuffer {
 	public String toString() {
 		return filename.getPath();
 	}
+
+	// Testing only! Hence no lock.
+	public void replaceAllEntries(int key, int value) {
+		for(int i=0;i<buffer.length;i++)
+			if(buffer[i] == key) buffer[i] = value;
+	}
 	
 }

@@ -1009,7 +1009,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		entry.curOffset = offset;
 	}
 
-	private void flushAndClose() {
+	private void flushAndClose(boolean abort) {
 		Logger.normal(this, "Flush and closing this store: " + name);
 		try {
 			metaFC.force(true);
@@ -1023,10 +1023,12 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		} catch (Exception e) {
 			Logger.error(this, "error flusing store", e);
 		}
-		if(!slotFilterDisabled)
-			slotFilter.shutdown();
+		if(!abort) {
+			if(!slotFilterDisabled)
+				slotFilter.shutdown();
+		}
 	}
-
+	
 	/**
 	 * Set preallocate storage space
 	 * @param preallocate
@@ -2050,6 +2052,10 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	}
 
 	public void close() {
+		close(false);
+	}
+	
+	public void close(boolean abort) {
 		shutdown = true;
 		lockManager.shutdown();
 
@@ -2063,7 +2069,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 		configLock.writeLock().lock();
 		try {
-			flushAndClose();
+			flushAndClose(abort);
 			flags &= ~FLAG_DIRTY; // clean shutdown
 			writeConfigFile();
 		} finally {
@@ -2313,6 +2319,12 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			}
 			
 		};
+	}
+
+	/** Testing only! Force all entries that say empty/unknown on the slot
+	 * filter to empty/certain. */
+	public void forceValidEmpty() {
+		slotFilter.replaceAllEntries(0, SLOT_CHECKED);
 	}
 
 

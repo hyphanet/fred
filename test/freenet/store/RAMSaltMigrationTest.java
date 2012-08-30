@@ -98,8 +98,11 @@ public class RAMSaltMigrationTest extends TestCase {
 	}
 
 	public void testSaltedStore() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
+		File f = new File(tempDir, "saltstore");
+		FileUtil.removeAll(f);
+
 		CHKStore store = new CHKStore();
-		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore"), "teststore", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(f, "teststore", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(null, true);
 
 		for(int i=0;i<5;i++) {
@@ -117,6 +120,115 @@ public class RAMSaltMigrationTest extends TestCase {
 		}
 		
 		saltStore.close();
+	}
+	
+	private void innerTestSaltedStoreWithClose(int persistenceTime, int delay) throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
+		ResizablePersistentIntBuffer.setPersistenceTime(persistenceTime);
+		
+		File f = new File(tempDir, "saltstore");
+		FileUtil.removeAll(f);
+
+		CHKStore store = new CHKStore();
+		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(f, "teststore", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		saltStore.start(null, true);
+
+		checkBlocks(store, true, false);
+		
+		saltStore.close();
+		
+		if(delay != 0)
+			try {
+				Thread.sleep(delay);
+			} catch (InterruptedException e) {
+				// Ignore
+			}
+		
+		saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore"), "teststore", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		
+		checkBlocks(store, false, false);
+
+		saltStore.close();
+	}
+
+	private void checkBlocks(CHKStore store,
+			boolean write, boolean expectFailure) throws CHKEncodeException, IOException, CHKVerifyException, CHKDecodeException {
+		
+		for(int i=0;i<5;i++) {
+			
+			// Encode a block
+			String test = "test" + i;
+			ClientCHKBlock block = encodeBlock(test);
+			if(write)
+				store.put(block, false);
+			
+			ClientCHK key = block.getClientKey();
+			
+			CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
+			if(expectFailure)
+				assertEquals(null, verify);
+			else {
+				String data = decodeBlock(verify, key);
+				assertEquals(test, data);
+			}
+		}
+	}
+
+	private void innerTestSaltedStoreSlotFilterWithAbort(int persistenceTime, int delay, boolean expectFailure, boolean forceValidEmpty) throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
+		ResizablePersistentIntBuffer.setPersistenceTime(persistenceTime);
+		
+		File f = new File(tempDir, "saltstore");
+		FileUtil.removeAll(f);
+
+		CHKStore store = new CHKStore();
+		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(f, "teststore", store, weakPRNG, 10, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		saltStore.start(ticker, true);
+		
+		// Make sure it's clear.
+		checkBlocks(store, false, true);
+
+		checkBlocks(store, true, false);
+		
+		saltStore.close(true);
+		
+		if(delay != 0)
+			try {
+				Thread.sleep(delay);
+			} catch (InterruptedException e) {
+				// Ignore
+			}
+		
+		store = new CHKStore();
+		saltStore = SaltedHashFreenetStore.construct(f, "teststore", store, weakPRNG, 10, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		saltStore.start(ticker, true);
+		if(forceValidEmpty)
+			saltStore.forceValidEmpty();
+		
+		checkBlocks(store, false, expectFailure);
+
+		saltStore.close();
+	}
+
+	public void testSaltedStoreWithClose() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
+		// Write straight through should work.
+		innerTestSaltedStoreWithClose(-1, 0);
+		// Write on shutdown should work.
+		innerTestSaltedStoreWithClose(0, 0);
+		// Shorter interval than delay should work.
+		innerTestSaltedStoreWithClose(1000, 2000);
+		// Longer interval than delay should work (write on shutdown).
+		innerTestSaltedStoreWithClose(5000, 0);
+		// Write straight through should work even with abort.
+		innerTestSaltedStoreSlotFilterWithAbort(-1, 0, false, false);
+		// Write straight through should work 
+		innerTestSaltedStoreSlotFilterWithAbort(1000, 2000, false, false);
+		// Even this should work, because the slots still say unknown.
+		innerTestSaltedStoreSlotFilterWithAbort(5000, 0, false, false);
+		// However if we set the unknown slots to known empty, it should fail.
+		innerTestSaltedStoreSlotFilterWithAbort(5000, 0, true, true);
+		// But if we do the same thing while giving it enough time to write, it should work.
+		innerTestSaltedStoreSlotFilterWithAbort(-1, 0, false, true);
+		innerTestSaltedStoreSlotFilterWithAbort(1000, 2000, false, true);
+		
 	}
 
 	public void testSaltedStoreOldBlock() throws CHKEncodeException, CHKVerifyException, CHKDecodeException, IOException {
