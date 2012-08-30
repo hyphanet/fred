@@ -305,5 +305,9 @@ public class ResizablePersistentIntBuffer {
 		for(int i=0;i<buffer.length;i++)
 			if(buffer[i] == key) buffer[i] = value;
 	}
+
+	public int size() {
+		return size;
+	}
 	
 }

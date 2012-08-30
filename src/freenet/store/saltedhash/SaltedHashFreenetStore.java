@@ -1498,8 +1498,12 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 						if (_prevStoreSize != prevStoreSize)
 							return;
 						prevStoreSize = 0;
-						if(!slotFilterDisabled)
-							slotFilter.resize((int)storeSize);
+						if(!slotFilterDisabled) {
+							if(slotFilter.size() != (int)storeSize)
+								slotFilter.resize((int)storeSize);
+							else
+								slotFilter.forceWrite();
+						}
 
 						flags &= ~FLAG_REBUILD_BLOOM;
 						resizeCompleteCondition.signalAll();
