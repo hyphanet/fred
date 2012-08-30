@@ -95,7 +95,15 @@ public class ResizablePersistentIntBuffer {
 	}
 	
 	public void start(Ticker ticker) {
-		this.ticker = ticker;
+		synchronized(this) {
+			this.ticker = ticker;
+			if(dirty) {
+				int persistenceTime = getPersistenceTime();
+				Logger.normal(this, "Scheduling write of slot cache "+this+" in "+persistenceTime);
+				ticker.queueTimedJob(writer, persistenceTime);
+				scheduled = true;
+			}
+		}
 	}
 
 	public int get(int offset) {
@@ -123,10 +131,14 @@ public class ResizablePersistentIntBuffer {
 			} else if(persistenceTime > 0) {
 				synchronized(this) {
 					dirty = true;
-					if(!scheduled) {
-						Logger.normal(this, "Scheduling write of slot cache "+this+" in "+persistenceTime);
-						ticker.queueTimedJob(writer, persistenceTime);
-						scheduled = true;
+					if(ticker != null) {
+						if(!scheduled) {
+							Logger.normal(this, "Scheduling write of slot cache "+this+" in "+persistenceTime);
+							ticker.queueTimedJob(writer, persistenceTime);
+							scheduled = true;
+						}
+					} else {
+						Logger.normal(this, "Will scheduling write of slot cache after startup: "+this+" in "+persistenceTime);
 					}
 				}
 			} else {
