@@ -281,7 +281,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		CHKStore store = new CHKStore();
 		SaltedHashFreenetStore.NO_CLEANER_SLEEP = true;
 		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore-"+keycount+"-"+size+"-"+useSlotFilter), "teststore", store, weakPRNG, size, useSlotFilter, SemiOrderedShutdownHook.get(), true, true, ticker, null);
-		saltStore.start(null, true);
+		saltStore.start(ticker, true);
 		
 		ClientCHK[] keys = new ClientCHK[keycount];
 		String[] test = new String[keycount];
