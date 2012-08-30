@@ -277,6 +277,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		checkSaltedStoreResize(5, 10, 20, true, -1, false, true);
 		// Will write to disk on shutdown.
 		checkSaltedStoreResize(5, 10, 20, true, 60*60*1000, false, true);
+		// Using the old size causes it to resize on startup back to the old size. This needs testing too, and revealed some odd bugs.
 		checkSaltedStoreResize(5, 10, 20, true, 60*60*1000, false, false);
 		// It will force to disk after resizing, so should still work even with a long write time.
 		checkSaltedStoreResize(5, 10, 20, true, 60*60*1000, true, true);
