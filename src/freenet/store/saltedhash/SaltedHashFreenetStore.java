@@ -1655,6 +1655,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				}
 				processor.finish();
 			} catch (Exception e) {
+				Logger.error(this, "Caught: "+e+" while shrinking", e);
 				processor.abort();
 			}
 		}
