@@ -45,7 +45,7 @@ public interface PluginAddress{
 	 * For e.g. in case of Inet based addresses, it ignores the port number.
 	 * The implementation may not apply in all cases.
 	 * Make sure the JFK assembler will function. It should remain consistent during the handshake.
-	 * @return
+	 * @return A new address. Can be null if no information exists. Does not updateHostname to get the physical address.
 	 */
 	public PluginAddress getPhysicalAddress();
 	
