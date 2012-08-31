@@ -67,7 +67,11 @@ public class PeerPluginAddress implements PluginAddress {
 
 	@Override
 	public PluginAddress getPhysicalAddress() {
-		return new PeerPluginAddress(peer.getFreenetAddress(), 0);
+		try {
+			return new PeerPluginAddress(peer.getFreenetAddress().getAddress(), 0);
+		} catch(NullPointerException e) {
+			return null;
+		}
 	}
 
 	@Override

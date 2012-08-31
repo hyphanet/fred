@@ -470,6 +470,11 @@ public class UdpSocketHandler extends PacketTransportPlugin  implements PrioRunn
 		return pluginAddress;
 	}
 
+	@Override
+	public PluginAddress toPluginAddress(byte[] address) {
+		return null;
+	}
+
 }
 
 
