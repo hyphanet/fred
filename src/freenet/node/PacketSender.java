@@ -357,7 +357,7 @@ public class PacketSender implements Runnable {
 					}
 				}
 			} catch (BlockedTooLongException e) {
-				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendPacket+" : "+(toSendPacket.isOldFNP() ? "(old packet format)" : "(new packet format)")+" (version "+toSendPacket.getVersionNumber()+") - DISCONNECTING!");
+				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendPacket+" : "+("(new packet format)")+" (version "+toSendPacket.getVersionNumber()+") - DISCONNECTING!");
 				toSendPacket.forceDisconnect(true);
 				onForceDisconnectBlockTooLong(toSendPacket, e);
 			}
@@ -388,7 +388,7 @@ public class PacketSender implements Runnable {
 					}
 				}
 			} catch (BlockedTooLongException e) {
-				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendAckOnly+" : "+(toSendAckOnly.isOldFNP() ? "(old packet format)" : "(new packet format)")+" (version "+toSendAckOnly.getVersionNumber()+") - DISCONNECTING!");
+				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendAckOnly+" : "+("(new packet format)")+" (version "+toSendAckOnly.getVersionNumber()+") - DISCONNECTING!");
 				toSendAckOnly.forceDisconnect(true);
 				onForceDisconnectBlockTooLong(toSendAckOnly, e);
 			}
