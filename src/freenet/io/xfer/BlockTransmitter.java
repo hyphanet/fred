@@ -31,12 +31,10 @@ import freenet.io.comm.MessageCore;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
-import freenet.io.comm.PeerRestartedException;
 import freenet.io.comm.RetrievalException;
 import freenet.node.MessageItem;
 import freenet.io.comm.SlowAsyncMessageFilterCallback;
 import freenet.node.PrioRunnable;
-import freenet.node.SyncSendWaitedTooLongException;
 import freenet.support.BitArray;
 import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
@@ -160,47 +158,21 @@ public class BlockTransmitter {
 
 		/** @return True . */
 		private boolean innerRun(int packetNo, BitArray copied) {
-			boolean isOldFNP = _destination.isOldFNP();
 			try {
 				Message msg = DMT.createPacketTransmit(_uid, packetNo, copied, _prb.getPacket(packetNo), realTime);
-				MyAsyncMessageCallback cb = new MyAsyncMessageCallback(isOldFNP);
+				MyAsyncMessageCallback cb = new MyAsyncMessageCallback();
 				MessageItem item;
-				if(!isOldFNP) {
-					// Everything is throttled.
-					item = _destination.sendAsync(msg, cb, _ctr);
-				} else {
-					item = _destination.sendThrottledMessage(msg, _prb._packetSize, _ctr, SEND_TIMEOUT, false, cb);
-				}
+				// Everything is throttled.
+				item = _destination.sendAsync(msg, cb, _ctr);
 				synchronized(itemsPending) {
 					itemsPending.add(item);
 				}
-			} catch (PeerRestartedException e) {
-				onDisconnect();
-				return false;
 			} catch (NotConnectedException e) {
 				onDisconnect();
 				return false;
 			} catch (AbortedException e) {
 				Logger.normal(this, "Terminating send due to abort: "+e);
 				// The PRB callback will deal with this.
-				return false;
-			} catch (WaitedTooLongException e) {
-				Logger.normal(this, "Waited too long to send packet, aborting on "+BlockTransmitter.this);
-				Future fail;
-				synchronized(_senderThread) {
-					fail = maybeFail(RetrievalException.TIMED_OUT, "Sender unable to send packets quickly enough");
-				}
-				fail.execute();
-				cancelItemsPending();
-				return false;
-			} catch (SyncSendWaitedTooLongException e) {
-				// Impossible, but lets cancel it anyway
-				Future fail;
-				synchronized(_senderThread) {
-					fail = maybeFail(RetrievalException.UNKNOWN, "Impossible: SyncSendWaitedTooLong");
-				}
-				Logger.error(this, "Impossible: Caught "+e+" on "+BlockTransmitter.this, e);
-				fail.execute();
 				return false;
 			}
 			boolean success = false;
@@ -726,10 +698,8 @@ public class BlockTransmitter {
 
 	private class MyAsyncMessageCallback implements AsyncMessageCallback {
 
-		final boolean isOldFNP;
 		
-		MyAsyncMessageCallback(boolean isOldFNP) {
-			this.isOldFNP = isOldFNP;
+		MyAsyncMessageCallback() {
 			synchronized(_senderThread) {
 				blockSendsPending++;
 			}
@@ -789,7 +759,7 @@ public class BlockTransmitter {
 					}
 				}
 			}
-			if((!isOldFNP) && (!failed))
+			if(!failed)
 				// Everything is throttled, but payload is not reported.
 				_ctr.sentPayload(PACKET_SIZE);
 			if(callCallback) {

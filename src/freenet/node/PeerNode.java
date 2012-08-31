@@ -54,11 +54,9 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.io.comm.PeerParseException;
-import freenet.io.comm.PeerRestartedException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.SocketHandler;
 import freenet.io.xfer.PacketThrottle;
-import freenet.io.xfer.WaitedTooLongException;
 import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
@@ -4618,13 +4616,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return resendBytesSent;
 	}
 
-	@Override
-	public MessageItem sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr, int timeout, boolean blockForSend, AsyncMessageCallback callback) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException {
-		long deadline = System.currentTimeMillis() + timeout;
-		if(logMINOR) Logger.minor(this, "Sending throttled message with timeout "+timeout+" packet size "+packetSize+" to "+shortToString());
-		return getThrottle().sendThrottledMessage(msg, this, packetSize, ctr, deadline, blockForSend, callback, msg.getPriority() == DMT.PRIORITY_REALTIME_DATA);
-	}
-
 	/**
 	 * Should this peer be disconnected and removed immediately?
 	 */
@@ -5895,11 +5886,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	@Override
 	public void setSendLoadStatsASAP(boolean realtime) {
 		loadSender(realtime).setSendASAP();
-	}
-
-	@Override
-	public boolean isOldFNP() {
-		return false;
 	}
 	
 	@Override

@@ -10,11 +10,9 @@ import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
-import freenet.io.comm.PeerRestartedException;
 import freenet.io.xfer.BlockTransmitter;
 import freenet.io.xfer.BlockTransmitter.BlockTransmitterCompletion;
 import freenet.io.xfer.PartiallyReceivedBlock;
-import freenet.io.xfer.WaitedTooLongException;
 import freenet.keys.CHKBlock;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
@@ -508,21 +506,12 @@ public class FailureTable implements OOMHook {
 				@Override
 				public void run() {
 					try {
-						if(source.isOldFNP()) {
-							source.sendThrottledMessage(data, dataLength, senderCounter, 60*1000, false, null);
-						} else {
-							source.sendSync(data, senderCounter, realTimeFlag);
-							senderCounter.sentPayload(dataLength);
-						}
+						source.sendSync(data, senderCounter, realTimeFlag);
+						senderCounter.sentPayload(dataLength);
 					} catch (NotConnectedException e) {
 						// :(
-					} catch (WaitedTooLongException e) {
-						// :<
-						Logger.error(this, "Waited too long sending SSK data");
 					} catch (SyncSendWaitedTooLongException e) {
 						// Impossible
-					} catch (PeerRestartedException e) {
-						// :(
 					} finally {
 						tag.unlockHandler();
 					}
