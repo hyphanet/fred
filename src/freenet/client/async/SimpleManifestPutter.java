@@ -707,6 +707,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		checkZips();
 	}
 
+	@SuppressWarnings("unchecked")
 	static private void checkDefaultName(HashMap<String, Object> manifestElements,
 			String defaultName) {
 		int idx;
@@ -721,7 +722,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			Object o = manifestElements.get(defaultName);
 			if(o == null) throw new IllegalArgumentException("Default name dir \""+dir+"\" does not exist");
 			if(o instanceof HashMap)
-				checkDefaultName((HashMap)o, subname);
+				checkDefaultName((HashMap<String, Object>)o, subname);
 			else
 				throw new IllegalArgumentException("Default name dir \""+dir+"\" is not a directory in \""+defaultName+"\"");
 		}

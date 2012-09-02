@@ -159,6 +159,7 @@ public class BlockTransmitter {
 		}
 
 		/** @return True . */
+		@SuppressWarnings("deprecation")
 		private boolean innerRun(int packetNo, BitArray copied) {
 			boolean isOldFNP = _destination.isOldFNP();
 			try {

@@ -598,6 +598,7 @@ public class NodeCrypto {
 		return config.getBindTo();
 	}
 
+	@SuppressWarnings("deprecation")
 	public long getNodeHandle(ObjectContainer setupContainer) {
 		if(setupContainer == null) return random.nextLong();
 		// Ignore warnings, this is db4o magic.

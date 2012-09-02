@@ -93,6 +93,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
      * @throws IOException If there is a bucket error.
      */
     @Override
+    @SuppressWarnings("deprecation")
     public Bucket decode(BucketFactory bf, int maxLength, boolean dontCompress) throws CHKDecodeException, IOException {
         // Overall hash already verified, so first job is to decrypt.
 		if(key.cryptoAlgorithm != Key.ALGO_AES_PCFB_256_SHA256)
@@ -215,6 +216,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         return innerEncode(data, dataLength, md256, encKey, asMetadata, compressionAlgorithm, cryptoAlgorithm);
     }
     
+    @SuppressWarnings("deprecation")
     public static ClientCHKBlock innerEncode(byte[] data, int dataLength, MessageDigest md256, byte[] encKey, boolean asMetadata, short compressionAlgorithm, byte cryptoAlgorithm) {
     	if(cryptoAlgorithm == 0) cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
     	if(cryptoAlgorithm != Key.ALGO_AES_PCFB_256_SHA256)

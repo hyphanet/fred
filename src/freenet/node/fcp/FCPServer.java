@@ -97,7 +97,7 @@ public class FCPServer implements Runnable, DownloadCache {
 
 		// This one is only used to get the default settings. Individual FCP conns
 		// will make their own.
-		HighLevelSimpleClient client = core.makeClient((short)0);
+		HighLevelSimpleClient client = core.makeClient((short)0, false, false);
 		defaultFetchContext = client.getFetchContext();
 		defaultInsertContext = client.getInsertContext(false);
 

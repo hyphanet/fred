@@ -1,6 +1,7 @@
 package freenet.clients.http;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.PageMaker.RenderParameters;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -68,7 +69,7 @@ public class ExternalLinkToadlet extends Toadlet {
 		//Confirm whether the user really means to access an HTTP link.
 		//Only render status and navigation bars if the user has completed the wizard.
 		boolean renderBars = node.clientCore.getToadletContainer().fproxyHasCompletedWizard();
-		PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmExternalLinkTitle"), renderBars, renderBars, ctx);
+		PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmExternalLinkTitle"), ctx, new RenderParameters().renderNavigationLinks(renderBars).renderStatus(renderBars));
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		HTMLNode warnboxContent = ctx.getPageMaker().getInfobox("infobox-warning",

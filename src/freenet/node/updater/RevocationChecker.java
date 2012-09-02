@@ -58,7 +58,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		this.revocationDNFCounter = 0;
 		this.blobFile = blobFile;
 		this.logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-		ctxRevocation = core.makeClient((short)0, true).getFetchContext();
+		ctxRevocation = core.makeClient((short)0, true, false).getFetchContext();
 		ctxRevocation.allowSplitfiles = false;
 		ctxRevocation.maxArchiveLevels = 1;
 		// big enough ?

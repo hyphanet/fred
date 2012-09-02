@@ -2201,7 +2201,7 @@ public class PeerManager {
 	}
 
 	public PeerNode containsPeer(PeerNode pn) {
-		PeerNode[] peers = pn.isOpennet() ? ((PeerNode[]) getOpennetAndSeedServerPeers()) : ((PeerNode[]) getDarknetPeers());
+		PeerNode[] peers = pn.isOpennet() ? getOpennetAndSeedServerPeers() : getDarknetPeers();
 
 		for(int i = 0; i < peers.length; i++)
 			if(Arrays.equals(pn.getIdentity(), peers[i].getIdentity()))

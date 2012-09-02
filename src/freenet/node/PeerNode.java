@@ -54,6 +54,7 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.Peer.LocalAddressException;
+import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.PeerRestartedException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
@@ -4901,7 +4902,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return resendBytesSent;
 	}
 
+	/**
+	 * @deprecated see {@link PeerContext#sendThrottledMessage(Message, int, ByteCounter, int, boolean, AsyncMessageCallback)}
+	 */
 	@Override
+	@Deprecated
 	public MessageItem sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr, int timeout, boolean blockForSend, AsyncMessageCallback callback) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException {
 		long deadline = System.currentTimeMillis() + timeout;
 		if(logMINOR) Logger.minor(this, "Sending throttled message with timeout "+timeout+" packet size "+packetSize+" to "+shortToString());
@@ -5567,6 +5572,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	}
 	
+	@SuppressWarnings("serial")
 	static class SlotWaiterFailedException extends Exception {
 		final PeerNode pn;
 		final boolean fatal;

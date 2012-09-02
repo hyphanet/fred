@@ -120,7 +120,7 @@ public class PluginManager {
 		if(logDEBUG)
 			Logger.debug(this, "Initialize Plugin Manager config");
 
-		client = core.makeClient(PRIO, true);
+		client = core.makeClient(PRIO, true, false);
 
 		// callback executor
 		executor = new SerialExecutor(NativeThread.NORM_PRIORITY);

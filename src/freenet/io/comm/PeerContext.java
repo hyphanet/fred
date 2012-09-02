@@ -47,6 +47,7 @@ public interface PeerContext {
 	 * @throws NotConnectedException If the peer is disconnected at the time of sending or becomes so later.
 	 * @throws PeerRestartedException If the peer is restarted.
 	 * */
+	@Deprecated
 	public MessageItem sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr, int timeout, boolean waitForSent, AsyncMessageCallback callback) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException;
 
 	/** Get the current boot ID. This is a random number that changes every time the node starts up. */
