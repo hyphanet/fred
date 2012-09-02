@@ -440,4 +440,8 @@ public class FreenetInetAddress {
 	public boolean hasHostnameNoIP() {
 		return hostname != null && hostname.length() > 0 && _address == null;
 	}
+	
+	public String getHostName() {
+		return hostname;
+	}
 }
