@@ -3,15 +3,19 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.HMAC;
 import freenet.crypt.PCFBMode;
+import freenet.io.comm.Message;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.io.xfer.PacketThrottle;
 import freenet.node.NewPacketFormatKeyContext.AddedAcks;
-import freenet.node.PeerMessageTracker.SentPacket;
 import freenet.pluginmanager.PluginAddress;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -25,7 +29,6 @@ public class NewPacketFormat implements PacketFormat {
 	// FIXME Use a more efficient structure - int[] or maybe just a big byte[].
 	// FIXME increase this significantly to let it ride over network interruptions.
 	private static final int NUM_SEQNUMS_TO_WATCH_FOR = 1024;
-	static final int MAX_RECEIVE_BUFFER_SIZE = 256 * 1024;
 	static final long NUM_SEQNUMS = 2147483648l;
 	private static final int MAX_ACKS = 500;
 	static boolean DO_KEEPALIVES = true;
@@ -88,7 +91,7 @@ public class NewPacketFormat implements PacketFormat {
 		peerTransport.maybeRekey();
 		peerTransport.reportIncomingPacket(buf, offset, length, now);
 
-		LinkedList<byte[]> finished = pmt.handleDecryptedPacket(packet, s);
+		LinkedList<byte[]> finished = handleDecryptedPacket(packet, s);
 		if(logMINOR && !finished.isEmpty()) 
 			Logger.minor(this, "Decoded messages: "+finished.size());
 		DecodingMessageGroup group = pn.startProcessingDecryptedMessages(finished.size());
@@ -99,6 +102,73 @@ public class NewPacketFormat implements PacketFormat {
 
 		return true;
 	}
+	
+	LinkedList<byte[]> handleDecryptedPacket(NPFPacket packet, SessionKey sessionKey) {
+		LinkedList<byte[]> fullyReceived = new LinkedList<byte[]>();
+
+		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
+		for(int ack : packet.getAcks()) {
+			keyContext.ack(ack, pn, sessionKey);
+		}
+		
+		MutableBoolean dontAck = new MutableBoolean(false);
+		boolean wakeUp = false;
+		if(packet.getError() || (packet.getFragments().size() == 0)) {
+			if(logMINOR) Logger.minor(this, "Not acking because " + (packet.getError() ? "error" : "no fragments"));
+			dontAck.value = true;
+		}
+		ArrayList<Message> lossyMessages = null;
+		List<byte[]> l = packet.getLossyMessages();
+		if(l != null && !l.isEmpty())
+			lossyMessages = new ArrayList<Message>(l.size());
+		for(byte[] buf : packet.getLossyMessages()) {
+			// FIXME factor out parsing once we are sure these are not bogus.
+			// For now we have to be careful.
+			Message msg = Message.decodeMessageLax(buf, pn, 0);
+			if(msg == null) {
+				lossyMessages.clear();
+				break;
+			}
+			if(!msg.getSpec().isLossyPacketMessage()) {
+				lossyMessages.clear();
+				break;
+			}
+			lossyMessages.add(msg);
+		}
+		if(lossyMessages != null) {
+			// Handle them *before* the rest.
+			if(logMINOR && lossyMessages.size() > 0) Logger.minor(this, "Successfully parsed "+lossyMessages.size()+" lossy packet messages");
+			for(Message msg : lossyMessages)
+				pn.handleMessage(msg);
+		}
+		synchronized(this) {	
+			for(MessageFragment fragment : packet.getFragments()) {
+				
+				byte[] received = pmt.handleMessageFragment(fragment, dontAck);
+				if(received == null)
+					continue;
+				fullyReceived.add(received);
+			}
+		}
+
+		if(!dontAck.value) {
+			int seqno = packet.getSequenceNumber();
+			int acksQueued = keyContext.queueAck(seqno);
+			boolean addedAck = acksQueued >= 0;
+			if(acksQueued > MAX_ACKS)
+				wakeUp = true;
+			if(addedAck) {
+				if(!wakeUp) {
+					wakeUp = pmt.receiveBufferHalfFull();
+				}
+				if(wakeUp)
+					pn.wakeUpSender();
+			}
+		}
+
+		return fullyReceived;
+	}
+
 
 	private NPFPacket tryDecipherPacket(byte[] buf, int offset, int length, SessionKey sessionKey) {
 		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
@@ -377,25 +447,21 @@ public class NewPacketFormat implements PacketFormat {
 		byte[] haveAddedStatsBulk = null;
 		byte[] haveAddedStatsRT = null;
 		
+		boolean addedFragments = false;
+		MutableBoolean addStatsBulk = new MutableBoolean();
+		MutableBoolean addStatsRT = new MutableBoolean();
+		boolean addedStatsBulk = addStatsBulk.value = false;
+		boolean addedStatsRT = addStatsRT.value = false;
+		
 		if(!ackOnly) {
 			
-			boolean addedFragments = false;
-			MutableBoolean addStatsBulk = new MutableBoolean();
-			MutableBoolean addStatsRT = new MutableBoolean();
-			boolean addedStatsBulk = addStatsBulk.value = false;
-			boolean addedStatsRT = addStatsRT.value = false;
-			
-			while(true) {
-				while(packet.getLength() < maxPacketSize) {
-					MessageFragment frag = pmt.getMessageFragment(maxPacketSize - packet.getLength(), addStatsBulk, addStatsRT);
-					if(frag == null) break;
-					mustSend = true;
-					addedFragments = true;
-					packet.addMessageFragment(frag);
-					sentPacket.addFragment(frag);
-				}
-				
-				if(!(addStatsBulk.value || addStatsRT.value)) break;
+			while(packet.getLength() < maxPacketSize) {
+				MessageFragment frag = pmt.getMessageFragment(maxPacketSize - packet.getLength(), addStatsBulk, addStatsRT);
+				if(frag == null) break;
+				mustSend = true;
+				addedFragments = true;
+				packet.addMessageFragment(frag);
+				sentPacket.addFragment(frag);
 				
 				if(addStatsBulk.value && !addedStatsBulk) {
 					MessageItem item = pn.makeLoadStats(false, false, true);
@@ -419,7 +485,7 @@ public class NewPacketFormat implements PacketFormat {
 					}
 				}
 			}
-			
+
 			if(addedFragments) {
 				if(logDEBUG) Logger.debug(this, "Added fragments for "+this+" (must send)");
 			}
@@ -439,7 +505,7 @@ public class NewPacketFormat implements PacketFormat {
 		}
 		
 		if((!mustSend) && numAcks > 0) {
-			int maxSendBufferSize = maxSendBufferSize();
+			int maxSendBufferSize = pmt.maxSendBufferSize();
 			int sendBuffer = pmt.getSendBufferSize();
 			if(sendBuffer > maxSendBufferSize / 2) {
 				if(logDEBUG) Logger.debug(this, "Must send because other side buffer size is "+sendBuffer);
@@ -527,30 +593,17 @@ public class NewPacketFormat implements PacketFormat {
 				}
 			}
 			
-			// Load new message fragments into the in-flight queue if necessary. Use the ping fragment.
-			MessageFragment ping = pmt.loadMessageFragments(now, true, maxPacketSize - packet.getLength());
+			MutableBoolean needsPingMessage = new MutableBoolean(false);
 			if(mustSendKeepalive && packet.noFragments()) {
-				if(ping != null) {
-					packet.addMessageFragment(ping);
-					sentPacket.addFragment(ping);
-				}
+				needsPingMessage.value = true;
 			}
 			
-			MutableBoolean addStatsBulk = new MutableBoolean();
-			MutableBoolean addStatsRT = new MutableBoolean();
-			boolean addedStatsBulk = addStatsBulk.value = false;
-			boolean addedStatsRT = addStatsRT.value = false;
-			
-			while(true) {
-				while(packet.getLength() < maxPacketSize) {
-					MessageFragment frag = pmt.getMessageFragment(maxPacketSize - packet.getLength(), addStatsBulk, addStatsRT);
-					if(frag == null) break;
-					mustSend = true;
-					packet.addMessageFragment(frag);
-					sentPacket.addFragment(frag);
-				}
-				
-				if(!(addStatsBulk.value || addStatsRT.value)) break;
+			while(packet.getLength() < maxPacketSize) {
+				MessageFragment frag = pmt.loadMessageFragments(now, maxPacketSize - packet.getLength(), needsPingMessage, addStatsBulk, addStatsRT);
+				if(frag == null) break;
+				mustSend = true;
+				packet.addMessageFragment(frag);
+				sentPacket.addFragment(frag);
 				
 				if(addStatsBulk.value && !addedStatsBulk) {
 					MessageItem item = pn.makeLoadStats(false, false, true);
@@ -597,10 +650,6 @@ public class NewPacketFormat implements PacketFormat {
 	
 	static final int MAX_MESSAGE_SIZE = 2048;
 	
-	private int maxSendBufferSize() {
-		return MAX_RECEIVE_BUFFER_SIZE;
-	}
-
 	/** For unit tests */
 	int countSentPackets(SessionKey key) {
 		NewPacketFormatKeyContext keyContext = key.packetContext;
@@ -739,5 +788,67 @@ public class NewPacketFormat implements PacketFormat {
 	@Override
 	public boolean fullPacketQueued(int maxPacketSize) {
 		return pn.getMessageQueue().mustSendSize(HMAC_LENGTH /* FIXME estimate headers */, maxPacketSize);
+	}
+	
+	static class SentPacket {
+		final SessionKey sessionKey;
+		NewPacketFormat npf;
+		PeerMessageTracker pmt;
+		LinkedList<MessageWrapper> messages = new LinkedList<MessageWrapper>();
+		LinkedList<int[]> ranges = new LinkedList<int[]>();
+		long sentTime;
+		int packetLength;
+
+		public SentPacket(NewPacketFormat npf, SessionKey key) {
+			this.npf = npf;
+			this.pmt = npf.pmt;
+			this.sessionKey = key;
+		}
+
+		public void addFragment(MessageFragment frag) {
+			messages.add(frag.wrapper);
+			ranges.add(new int[] { frag.fragmentOffset, frag.fragmentOffset + frag.fragmentLength - 1 });
+		}
+
+		public long acked(SessionKey key) {
+			Iterator<MessageWrapper> msgIt = messages.iterator();
+			Iterator<int[]> rangeIt = ranges.iterator();
+
+			while(msgIt.hasNext()) {
+				MessageWrapper wrapper = msgIt.next();
+				int[] range = rangeIt.next();
+				
+				if(logDEBUG)
+					Logger.debug(this, "Acknowledging "+range[0]+" to "+range[1]+" on "+wrapper.getMessageID());
+
+				if(wrapper.ack(range[0], range[1], npf.pn)) {
+					pmt.acked(wrapper, npf);
+				}
+			}
+
+			return System.currentTimeMillis() - sentTime;
+		}
+
+		public void lost() {
+			int bytesToResend = 0;
+			Iterator<MessageWrapper> msgIt = messages.iterator();
+			Iterator<int[]> rangeIt = ranges.iterator();
+
+			while(msgIt.hasNext()) {
+				MessageWrapper wrapper = msgIt.next();
+				int[] range = rangeIt.next();
+
+				bytesToResend += wrapper.lost(range[0], range[1]);
+			}
+		}
+
+		public void sent(int length) {
+			sentTime = System.currentTimeMillis();
+			this.packetLength = length;
+		}
+
+		public long getSentTime() {
+			return sentTime;
+		}
 	}
 }
