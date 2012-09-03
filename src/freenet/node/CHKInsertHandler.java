@@ -49,7 +49,6 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 
     static final int DATA_INSERT_TIMEOUT = 10000;
     
-    final Message req;
     final Node node;
     final long uid;
     final PeerNode source;
@@ -68,18 +67,30 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 	private final boolean ignoreLowBackoff;
 	private final boolean realTimeFlag;
 
-    CHKInsertHandler(Message req, PeerNode source, long id, Node node, long startTime, InsertTag tag, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
-        this.req = req;
+	/**
+	 * SECURITY: Do not pass messages into handler constructors. See note at top of NodeDispatcher.
+	 * @param key
+	 * @param htl
+	 * @param source
+	 * @param id
+	 * @param node
+	 * @param startTime
+	 * @param tag
+	 * @param forkOnCacheable
+	 * @param preferInsert
+	 * @param ignoreLowBackoff
+	 * @param realTimeFlag
+	 */
+    CHKInsertHandler(NodeCHK key, short htl, PeerNode source, long id, Node node, long startTime, InsertTag tag, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
         this.node = node;
         this.uid = id;
         this.source = source;
         this.startTime = startTime;
         this.tag = tag;
-        key = (NodeCHK) req.getObject(DMT.FREENET_ROUTING_KEY);
-        htl = req.getShort(DMT.HTL);
+        this.key = key;
+        this.htl = htl;
         if(htl <= 0) htl = 1;
         canWriteDatastore = node.canWriteDatastoreInsert(htl);
-        receivedBytes(req.receivedByteCount());
         this.forkOnCacheable = forkOnCacheable;
         this.preferInsert = preferInsert;
         this.ignoreLowBackoff = ignoreLowBackoff;
