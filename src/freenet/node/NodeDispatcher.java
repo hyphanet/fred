@@ -27,6 +27,7 @@ import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
+import freenet.support.SizeUtil;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
@@ -617,6 +618,26 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	
 	private boolean handleAnnounceRequest(Message m, PeerNode source) {
 		long uid = m.getLong(DMT.UID);
+		double target = m.getDouble(DMT.TARGET_LOCATION); // FIXME validate
+		short htl = (short) Math.min(m.getShort(DMT.HTL), node.maxHTL());
+		long xferUID = m.getLong(DMT.TRANSFER_UID);
+		int noderefLength = m.getInt(DMT.NODEREF_LENGTH);
+		int paddedLength = m.getInt(DMT.PADDED_LENGTH);
+
+		// SECURITY: Must check it is a valid message before checking recentlyCompleted.
+		// Otherwise can do fun tricks like probing recentlyCompleted!
+		if(target < 0.0 || target >= 1.0 || htl <= 0 || 
+				paddedLength < 0 || paddedLength > OpennetManager.MAX_OPENNET_NODEREF_LENGTH ||
+				noderefLength > paddedLength) {
+			Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);
+			try {
+				source.sendAsync(msg, null, node.nodeStats.announceByteCounter);
+			} catch (NotConnectedException e) {
+				// Ok
+			}
+			return true;
+		}
+		
 		OpennetManager om = node.getOpennet();
 		if(om == null || !source.canAcceptAnnouncements()) {
 			if(om != null && source instanceof SeedClientPeerNode)
@@ -669,7 +690,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 					return true;
 				}
 			}
-			AnnounceSender sender = new AnnounceSender(m, uid, source, om, node);
+			AnnounceSender sender = new AnnounceSender(target, htl, uid, source, om, node, xferUID, noderefLength, paddedLength);
 			node.executor.execute(sender, "Announcement sender for "+uid);
 			success = true;
 			return true;
