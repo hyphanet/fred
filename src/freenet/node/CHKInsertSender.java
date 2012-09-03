@@ -425,7 +425,9 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
         int highHTLFailureCount = 0;
         boolean starting = true;
         while(true) {
-        	if(failIfReceiveFailed(null, null)) return; // don't need to set status as killed by CHKInsertHandler
+        	// We route to the end regardless of whether the incoming transfer has succeeded or not.
+        	// This ensures that once a request has started it wil propagate the UID, so can't be used as a UID oracle; see NodeDispatcher comments.
+        	// The maximum cost is the same as a request for a random key, so is small.
             
         	if(origTag.shouldStop()) {
         		finish(SUCCESS, null);
@@ -513,17 +515,6 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
             InsertTag thisTag = forkedRequestTag;
             if(forkedRequestTag == null) thisTag = origTag;
             
-			if(failIfReceiveFailed(thisTag, next)) {
-				// Need to tell the peer that the DataInsert is not forthcoming.
-				// DataInsertRejected is overridden to work both ways.
-				try {
-					next.sendAsync(DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED), null, this);
-				} catch (NotConnectedException e) {
-					// Ignore
-				}
-				return;
-			}
-			
 			innerRouteRequests(next, thisTag);
 			return;
 		}
@@ -852,20 +843,10 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
         return htl;
     }
     
-    public boolean failIfReceiveFailed(InsertTag tag, PeerNode next) {
-    	synchronized(backgroundTransfers) {
-    		if(!receiveFailed) return false;
-    	}
-    	if(logMINOR) Logger.minor(this, "Failing because receive failed on "+this);
-    	if(tag != null && next != null) {
-   			next.noLongerRoutingTo(tag, false);
-    	}
-    	return true;
-    }
-
     /**
      * Called by CHKInsertHandler to notify that the receive has
-     * failed.
+     * failed. waitForBackgroundTransfers() will pick up on this and
+     * complete.
      */
     public void onReceiveFailed() {
     	if(logMINOR) Logger.minor(this, "Receive failed on "+this);
@@ -1179,12 +1160,6 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 
         	Message msg;
         	
-			if(failIfReceiveFailed(thisTag, next)) {
-				// The transfer has started, it will be cancelled.
-				transfer.onCompleted();
-				return;
-			}
-			
 			try {
 				msg = node.usm.waitFor(mf, this);
 			} catch (DisconnectedException e) {
@@ -1192,11 +1167,6 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 						+ " while waiting for InsertReply on " + this);
 				transfer.onDisconnect(next);
 				break;
-			}
-			if(failIfReceiveFailed(thisTag, next)) {
-				// The transfer has started, it will be cancelled.
-				transfer.onCompleted();
-				return;
 			}
 			
 			if (msg == null) {
@@ -1241,11 +1211,6 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			            	
 			            	Message msg;
 
-			    			if(failIfReceiveFailed(tag, waitingFor)) {
-			    				transfer.onCompleted();
-			    				return;
-			    			}
-							
 							try {
 								msg = node.usm.waitFor(mf, CHKInsertSender.this);
 							} catch (DisconnectedException e) {
@@ -1254,11 +1219,6 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 								transfer.onDisconnect(waitingFor);
 								return;
 							}
-							
-			    			if(failIfReceiveFailed(tag, waitingFor)) {
-			    				transfer.onCompleted();
-			    				return;
-			    			}
 							
 							if(msg == null) {
 								// Second timeout.
