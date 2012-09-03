@@ -44,6 +44,18 @@ import freenet.support.io.NativeThread;
  * InsertRequests
  * 
  * Probably a few others; those are the important bits.
+ * 
+ * Requests:
+ * - Loop detection only works when the request is actually running. We do
+ * NOT remember what UID's we have routed in the past. Hence there is no
+ * possibility of an attacker probing for old UID's. Also, even in the rare-ish
+ * case where a request forks because an Accepted is delayed, this isn't a
+ * big problem: Since we moved on, we're not waiting for it, there will be
+ * no timeout/snarl-up beyond what has already happened. 
+ * - We should parse the message completely before checking the UID, 
+ * overload, and passing it to the handler. Invalid requests should never
+ * be accepted. However, because of inserts, we cannot guarantee that we
+ * never check the UID before we know the request is fully routable.  
  */
 public class NodeDispatcher implements Dispatcher, Runnable {
 
@@ -487,15 +499,6 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		}
 		long id = m.getLong(DMT.UID);
 		ByteCounter ctr = isSSK ? node.nodeStats.sskRequestCtr : node.nodeStats.chkRequestCtr;
-		if(node.recentlyCompleted(id)) {
-			Message rejected = DMT.createFNPRejectedLoop(id);
-			try {
-				source.sendAsync(rejected, null, ctr);
-			} catch (NotConnectedException e) {
-				Logger.normal(this, "Rejecting data request (loop, finished): "+e);
-			}
-			return;
-		}
         short htl = m.getShort(DMT.HTL);
         Key key = (Key) m.getObject(DMT.FREENET_ROUTING_KEY);
         boolean realTimeFlag = DMT.getRealTimeFlag(m);
@@ -551,15 +554,6 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	private void handleInsertRequest(Message m, PeerNode source, boolean isSSK) {
 		ByteCounter ctr = isSSK ? node.nodeStats.sskInsertCtr : node.nodeStats.chkInsertCtr;
 		long id = m.getLong(DMT.UID);
-		if(node.recentlyCompleted(id)) {
-			Message rejected = DMT.createFNPRejectedLoop(id);
-			try {
-				source.sendAsync(rejected, null, ctr);
-			} catch (NotConnectedException e) {
-				Logger.normal(this, "Rejecting insert request from "+source.getPeer()+": "+e);
-			}
-			return;
-		}
         boolean realTimeFlag = DMT.getRealTimeFlag(m);
 		InsertTag tag = new InsertTag(isSSK, InsertTag.START.REMOTE, source, realTimeFlag, id, node);
 		if(!node.lockUID(id, isSSK, true, false, false, realTimeFlag, tag)) {
@@ -628,17 +622,6 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			if(om != null && source instanceof SeedClientPeerNode)
 				om.seedTracker.rejectedAnnounce((SeedClientPeerNode)source);
 			Message msg = DMT.createFNPOpennetDisabled(uid);
-			try {
-				source.sendAsync(msg, null, node.nodeStats.announceByteCounter);
-			} catch (NotConnectedException e) {
-				// Ok
-			}
-			return true;
-		}
-		if(node.recentlyCompleted(uid)) {
-			if(om != null && source instanceof SeedClientPeerNode)
-				om.seedTracker.rejectedAnnounce((SeedClientPeerNode)source);
-			Message msg = DMT.createFNPRejectedLoop(uid);
 			try {
 				source.sendAsync(msg, null, node.nodeStats.announceByteCounter);
 			} catch (NotConnectedException e) {
