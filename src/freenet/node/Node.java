@@ -508,7 +508,6 @@ public class Node implements TimeSkewDetectorCallback {
 
 	/** Stats */
 	public final NodeStats nodeStats;
-	public final NetworkIDManager netid;
 
 	/** Config object for the whole node. */
 	public final PersistentConfig config;
@@ -1138,7 +1137,6 @@ public class Node implements TimeSkewDetectorCallback {
 			this.fastWeakRandom = weakRandom;
 
 		nodeNameUserAlert = new MeaningfulNodeNameUserAlert(this);
-		recentlyCompletedIDs = new LRUQueue<Long>();
 		this.config = config;
 		lm = new LocationManager(random, this);
 
@@ -2248,8 +2246,6 @@ public class Node implements TimeSkewDetectorCallback {
 
 		if(databaseAwaitingPassword) createPasswordUserAlert();
 		if(notEnoughSpaceForAutoCrypt) createAutoCryptFailedUserAlert();
-
-		netid = new NetworkIDManager(this);
 
 		// Client cache
 
@@ -5247,20 +5243,8 @@ public class Node implements TimeSkewDetectorCallback {
 		return sb.toString();
 	}
 
-	final LRUQueue<Long> recentlyCompletedIDs;
-
-	static final int MAX_RECENTLY_COMPLETED_IDS = 10*1000;
 	/** Length of signature parameters R and S */
 	static final int SIGNATURE_PARAMETER_LENGTH = 32;
-
-	/**
-	 * Has a request completed with this ID recently?
-	 */
-	public boolean recentlyCompleted(long id) {
-		synchronized (recentlyCompletedIDs) {
-			return recentlyCompletedIDs.contains(id);
-		}
-	}
 
 	private ArrayList<Long> completedBuffer = new ArrayList<Long>();
 
@@ -5273,10 +5257,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 */
 	void completed(long id) {
 		Long[] list;
-		synchronized (recentlyCompletedIDs) {
-			recentlyCompletedIDs.push(id);
-			while(recentlyCompletedIDs.size() > MAX_RECENTLY_COMPLETED_IDS)
-				recentlyCompletedIDs.pop();
+		synchronized (completedBuffer) {
 			completedBuffer.add(id);
 			if(completedBuffer.size() < COMPLETED_THRESHOLD) return;
 			list = completedBuffer.toArray(new Long[completedBuffer.size()]);
