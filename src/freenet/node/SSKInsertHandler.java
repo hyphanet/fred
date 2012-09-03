@@ -54,6 +54,23 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 
 	private boolean collided = false;
     
+	/**
+	 * SECURITY: Do not pass messages into handler constructors. See note at top of NodeDispatcher.
+	 * @param key
+	 * @param data
+	 * @param headers
+	 * @param htl
+	 * @param source
+	 * @param id
+	 * @param node
+	 * @param startTime
+	 * @param tag
+	 * @param canWriteDatastore
+	 * @param forkOnCacheable
+	 * @param preferInsert
+	 * @param ignoreLowBackoff
+	 * @param realTimeFlag
+	 */
     SSKInsertHandler(NodeSSK key, byte[] data, byte[] headers, short htl, PeerNode source, long id, Node node, long startTime, InsertTag tag, boolean canWriteDatastore, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
         this.node = node;
         this.uid = id;

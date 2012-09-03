@@ -548,7 +548,11 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		}
 		nodeStats.reportIncomingRequestLocation(key.toNormalizedDouble());
 		//if(!node.lockUID(id)) return false;
-		RequestHandler rh = new RequestHandler(m, source, id, node, htl, key, tag, block, realTimeFlag);
+		boolean needsPubKey = false;
+		if(key instanceof NodeSSK)
+			needsPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
+		RequestHandler rh = new RequestHandler(source, id, node, htl, key, tag, block, realTimeFlag, needsPubKey);
+		rh.receivedBytes(m.receivedByteCount());
 		node.executor.execute(rh, "RequestHandler for UID "+id+" on "+node.getDarknetPortNumber());
 	}
 
