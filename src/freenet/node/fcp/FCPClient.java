@@ -393,7 +393,7 @@ public class FCPClient {
 			while(i.hasNext()) {
 				ClientRequest req = i.next();
 				if(container != null) container.activate(req, 1);
-				if(req.isPersistentForever() || !onlyForever)
+				if((req != null && req.isPersistentForever()) || !onlyForever)
 					v.add(req);
 			}
 			if(container != null) {
