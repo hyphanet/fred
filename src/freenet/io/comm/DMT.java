@@ -1384,57 +1384,6 @@ public class DMT {
 		return msg;
 	}
 	
-	public static final MessageType FNPSecretPing = new MessageType("FNPSecretPing", PRIORITY_LOW) {{
-		addRoutedToNodeMessageFields();
-		addField(COUNTER, Integer.class);
-		addField(DAWN_HTL, Short.class);
-	}};
-	
-	
-	public static Message createFNPSecretPing(long uid, double targetLocation, short htl, short dawnHtl, int counter, byte[] nodeIdentity) {
-		Message msg = new Message(FNPSecretPing);
-		msg.setRoutedToNodeFields(uid, targetLocation, htl, nodeIdentity);
-		msg.set(COUNTER, counter);
-		msg.set(DAWN_HTL, dawnHtl);
-		return msg;
-	}
-	
-	public static final MessageType FNPSecretPong = new MessageType("FNPSecretPong", PRIORITY_LOW) {{
-		addField(UID, Long.class);
-		addField(COUNTER, Integer.class);
-		addField(SECRET, Long.class);
-	}};
-	
-	public static Message createFNPSecretPong(long uid, int counter, long secret) {
-		Message msg = new Message(FNPSecretPong);
-		msg.set(UID, uid);
-		msg.set(COUNTER, counter);
-		msg.set(SECRET, secret);
-		return msg;
-	}
-	
-	public static final MessageType FNPStoreSecret = new MessageType("FNPStoreSecret", PRIORITY_LOW) {{
-		addField(UID, Long.class);
-		addField(SECRET, Long.class);
-	}};
-	
-	public static Message createFNPStoreSecret(long uid, long secret) {
-		Message msg = new Message(FNPStoreSecret);
-		msg.set(UID, uid);
-		msg.set(SECRET, secret);
-		return msg;
-	}
-	
-	public static final MessageType FNPNetworkID = new MessageType("FNPNetworkID", PRIORITY_LOW) {{
-		addField(UID, Integer.class);
-	}};
-	
-	public static Message createFNPNetworkID(int id) {
-		Message msg = new Message(FNPNetworkID);
-		msg.set(UID, id);
-		return msg;
-	}
-	
 	public static final MessageType FNPRoutedRejected = new MessageType("FNPRoutedRejected", PRIORITY_UNSPECIFIED) {{
 		addField(UID, Long.class);
 		addField(HTL, Short.class);

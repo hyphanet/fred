@@ -509,7 +509,6 @@ public class Node implements TimeSkewDetectorCallback {
 
 	/** Stats */
 	public final NodeStats nodeStats;
-	public final NetworkIDManager netid;
 
 	/** Config object for the whole node. */
 	public final PersistentConfig config;
@@ -2231,8 +2230,6 @@ public class Node implements TimeSkewDetectorCallback {
 
 		if(databaseAwaitingPassword) createPasswordUserAlert();
 		if(notEnoughSpaceForAutoCrypt) createAutoCryptFailedUserAlert();
-
-		netid = new NetworkIDManager(this);
 
 		// Client cache
 
