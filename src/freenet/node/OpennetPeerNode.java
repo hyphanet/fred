@@ -255,9 +255,12 @@ public class OpennetPeerNode extends PeerNode {
 	@Override
 	public void fatalTimeout() {
 		if(node.isStopping()) return;
-		Logger.error(this, "Disconnecting "+this+" because of fatal timeout");
-		// Disconnect.
-		forceDisconnect();
+		Logger.error(this, "Fatal timeout on "+this, new Exception("error"));
+		// With current load management this is not necessarily "fatal", so we don't need to disconnect.
+		// But it is serious, and with some versions of NLM it will be more so.
+//		Logger.error(this, "Disconnecting "+this+" because of fatal timeout");
+//		// Disconnect.
+//		forceDisconnect();
 	}
 	
 	@Override

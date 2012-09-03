@@ -1706,11 +1706,14 @@ public class DarknetPeerNode extends PeerNode {
 	@Override
 	public void fatalTimeout() {
 		if(node.isStopping()) return;
-		Logger.error(this, "Disconnecting from darknet node "+this+" because of fatal timeout", new Exception("error"));
-		System.err.println("Your friend node \""+getName()+"\" ("+getPeer()+" version "+getVersion()+") is having severe problems. We have disconnected to try to limit the effect on us. It will reconnect soon.");
-		// FIXME post a useralert
-		// Disconnect.
-		forceDisconnect();
+		// With current load management this is not necessarily "fatal", so we don't need to disconnect.
+		// But it is serious, and with some versions of NLM it will be more so.
+		Logger.error(this, "Fatal timeout on "+this, new Exception("error"));
+//		Logger.error(this, "Disconnecting from darknet node "+this+" because of fatal timeout", new Exception("error"));
+//		System.err.println("Your friend node \""+getName()+"\" ("+getPeer()+" version "+getVersion()+") is having severe problems. We have disconnected to try to limit the effect on us. It will reconnect soon.");
+//		// FIXME post a useralert
+//		// Disconnect.
+//		forceDisconnect();
 	}
 
 	public synchronized FRIEND_TRUST getTrustLevel() {
