@@ -258,8 +258,6 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		} else if(spec == DMT.FNPSSKInsertRequestNew) {
 			handleInsertRequest(m, source, true);
 			return true;
-		} else if(spec == DMT.FNPRHProbeRequest) {
-			return handleProbeRequest(m, source);
 		} else if(spec == DMT.FNPRoutedPing) {
 			return handleRouted(m, source);
 		} else if(spec == DMT.FNPRoutedPong) {
@@ -630,45 +628,6 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		if(logMINOR) Logger.minor(this, "Started InsertHandler for "+id);
 	}
 	
-	private boolean handleProbeRequest(Message m, PeerNode source) {
-		long id = m.getLong(DMT.UID);
-		if(node.recentlyCompleted(id)) {
-			Message rejected = DMT.createFNPRejectedLoop(id);
-			try {
-				source.sendAsync(rejected, null, node.nodeStats.probeRequestCtr);
-			} catch (NotConnectedException e) {
-				Logger.normal(this, "Rejecting probe request from "+source.getPeer()+": "+e);
-			}
-			return true;
-		}
-		// Lets not bother with full lockUID, just add it to the recently completed list.
-		node.completed(id);
-		// SSKs don't fix bwlimitDelayTime so shouldn't be accepted when overloaded.
-		if(source.shouldRejectProbeRequest()) {
-			Logger.normal(this, "Rejecting probe request from "+source.getPeer());
-			Message rejected = DMT.createFNPRejectedOverload(id, true, false, false);
-			try {
-				source.sendAsync(rejected, null, node.nodeStats.probeRequestCtr);
-			} catch (NotConnectedException e) {
-				Logger.normal(this, "Rejecting (overload) insert request from "+source.getPeer()+": "+e);
-			}
-			return true;
-		}
-		double target = m.getDouble(DMT.TARGET_LOCATION);
-		if(target > 1.0 || target < 0.0) {
-			Logger.normal(this, "Rejecting invalid (target="+target+") probe request from "+source.getPeer());
-			Message rejected = DMT.createFNPRejectedOverload(id, true, false, false);
-			try {
-				source.sendAsync(rejected, null, node.nodeStats.probeRequestCtr);
-			} catch (NotConnectedException e) {
-				Logger.normal(this, "Rejecting (invalid) insert request from "+source.getPeer()+": "+e);
-			}
-			return true;
-		}
-		ProbeRequestHandler.start(m, source, node, target);
-		return true;
-	}
-
 	private boolean handleAnnounceRequest(Message m, PeerNode source) {
 		long uid = m.getLong(DMT.UID);
 		OpennetManager om = node.getOpennet();
@@ -998,46 +957,6 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		return sb.toString();
 	}
 	
-	// Probe requests
-
-	// FIXME
-	public static final int PROBE_TYPE_RESETTING_HTL = 0;
-	
-	public void startProbe(final double target, final ProbeCallback cb) {
-		final long uid = node.random.nextLong();
-		
-			ProbeRequestSender rs = new ProbeRequestSender(target, node.maxHTL(), uid, node, node.getLocation(), null, 2.0);
-			rs.addListener(new ProbeRequestSender.Listener() {
-
-				@Override
-				public void onCompletion(double nearest, double best, short counter, short uniqueCounter, short linearCounter) throws NotConnectedException {
-					cb.onCompleted("completed", target, best, nearest, uid, counter, uniqueCounter, linearCounter);
-				}
-
-				@Override
-				public void onRNF(short htl, double nearest, double best, short counter, short uniqueCounter, short linearCounter) throws NotConnectedException {
-					cb.onCompleted("rnf", target, best, nearest, uid, counter, uniqueCounter, linearCounter);					
-				}
-
-				@Override
-				public void onReceivedRejectOverload(double nearest, double best, short counter, short uniqueCounter, short linearCounter, String reason) throws NotConnectedException {
-					cb.onRejectOverload();
-				}
-
-				@Override
-				public void onTimeout(double nearest, double best, short counter, short uniqueCounter, short linearCounter, String reason) throws NotConnectedException {
-					cb.onCompleted("timeout", target, best, nearest, uid, counter, uniqueCounter, linearCounter);					
-				}
-
-				@Override
-				public void onTrace(long uid, double nearest, double best, short htl, short counter, short uniqueCounter, double location, long myUID, ShortBuffer peerLocs, ShortBuffer peerUIDs, short forkCount, short linearCounter, String reason, long prevUID) throws NotConnectedException {
-					cb.onTrace(uid, target, nearest, best, htl, counter, location, myUID, Fields.bytesToDoubles(peerLocs.getData()), Fields.bytesToLongs(peerUIDs.getData()), new double[0], forkCount, linearCounter, reason, prevUID);
-				}
-				
-			});
-			rs.start();
-	}
-
 	public void setHook(NodeDispatcherCallback cb) {
 		this.callback = cb;
 	}
