@@ -50,17 +50,17 @@ public class Version {
 	public static final String protocolVersion = "1.0";
 
 	/** The build number of the current revision */
-	private static final int buildNumber = 1410;
+	private static final int buildNumber = 1411;
 
 	/** Oldest build of Fred we will talk to */
-	private static final int oldLastGoodBuild = 1407;
-	private static final int newLastGoodBuild = 1409;
+	private static final int oldLastGoodBuild = 1409;
+	private static final int newLastGoodBuild = 1411;
 	static final long transitionTime;
 
 	static {
 		final Calendar _cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
 		// year, month - 1 (or constant), day, hour, minute, second
-		_cal.set( 2012, Calendar.AUGUST, 7, 0, 0, 0 );
+		_cal.set( 2012, Calendar.SEPTEMBER, 5, 0, 0, 0 );
 		transitionTime = _cal.getTimeInMillis();
 	}
 
