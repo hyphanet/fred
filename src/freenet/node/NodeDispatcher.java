@@ -487,7 +487,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	}
 	
 	/**
-	 * Handle an incoming FNPDataRequest.
+	 * Handle an incoming FNPDataRequest. We should parse it and determine 
+	 * whether it is valid before we accept it.
 	 */
 	private void innerHandleDataRequest(Message m, PeerNode source, boolean isSSK) {
 		if(!source.isConnected()) {
@@ -557,6 +558,15 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		node.executor.execute(rh, "RequestHandler for UID "+id+" on "+node.getDarknetPortNumber());
 	}
 
+	/**
+	 * Handle an incoming insert. We should parse it and determine whether it
+	 * is valid before we accept it. However in the case of inserts it *IS* 
+	 * possible for the request sender to cause it to fail later during the 
+	 * receive of the data or the DataInsert.
+	 * @param m The incoming message.
+	 * @param source The node that sent the message.
+	 * @param isSSK True if it is an SSK insert, false if it is a CHK insert.
+	 */
 	private void handleInsertRequest(Message m, PeerNode source, boolean isSSK) {
 		ByteCounter ctr = isSSK ? node.nodeStats.sskInsertCtr : node.nodeStats.chkInsertCtr;
 		long id = m.getLong(DMT.UID);

@@ -67,20 +67,6 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 	private final boolean ignoreLowBackoff;
 	private final boolean realTimeFlag;
 
-	/**
-	 * SECURITY: Do not pass messages into handler constructors. See note at top of NodeDispatcher.
-	 * @param key
-	 * @param htl
-	 * @param source
-	 * @param id
-	 * @param node
-	 * @param startTime
-	 * @param tag
-	 * @param forkOnCacheable
-	 * @param preferInsert
-	 * @param ignoreLowBackoff
-	 * @param realTimeFlag
-	 */
     CHKInsertHandler(NodeCHK key, short htl, PeerNode source, long id, Node node, long startTime, InsertTag tag, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
         this.node = node;
         this.uid = id;
