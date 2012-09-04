@@ -263,7 +263,8 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		synchronized(this) {
 			finished = true;
 			currentState = null;
-			mimeType = expectedMIME = clientMetadata.getMIMEType();
+			mimeType = expectedMIME = 
+				clientMetadata == null ? null : clientMetadata.getMIMEType();
 		}
 		if(persistent()) {
 			container.store(this);
