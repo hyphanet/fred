@@ -670,6 +670,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		}
 		boolean success = false;
 		try {
+			// UIDs for announcements are separate from those for requests.
+			// So we don't need to, and should not, ask Node.
 			if(!node.nodeStats.shouldAcceptAnnouncement(uid)) {
 				if(om != null && source instanceof SeedClientPeerNode)
 					om.seedTracker.rejectedAnnounce((SeedClientPeerNode)source);
