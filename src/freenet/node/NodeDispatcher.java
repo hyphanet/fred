@@ -651,7 +651,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			try {
 				source.sendAsync(msg, null, node.nodeStats.announceByteCounter);
 			} catch (NotConnectedException e) {
-				// Ok
+				// OK
 			}
 			return true;
 		}
@@ -664,7 +664,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			try {
 				source.sendAsync(msg, null, node.nodeStats.announceByteCounter);
 			} catch (NotConnectedException e) {
-				// Ok
+				// OK
 			}
 			return true;
 		}
@@ -677,7 +677,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				try {
 					source.sendAsync(msg, null, node.nodeStats.announceByteCounter);
 				} catch (NotConnectedException e) {
-					// Ok
+					// OK
 				}
 				return true;
 			}
@@ -689,7 +689,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				try {
 					source.sendAsync(msg, null, node.nodeStats.announceByteCounter);
 				} catch (NotConnectedException e) {
-					// Ok
+					// OK
 				}
 				return true;
 			}
@@ -700,7 +700,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 					try {
 						source.sendAsync(msg, null, node.nodeStats.announceByteCounter);
 					} catch (NotConnectedException e) {
-						// Ok
+						// OK
 					}
 					return true;
 				}
