@@ -669,9 +669,6 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			return true;
 		}
 		boolean success = false;
-		// No way to check whether it's actually running atm, so lets report it to the completed list immediately.
-		// FIXME we should probably keep a list!
-		node.completed(uid);
 		try {
 			if(!node.nodeStats.shouldAcceptAnnouncement(uid)) {
 				if(om != null && source instanceof SeedClientPeerNode)
