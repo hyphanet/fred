@@ -416,6 +416,13 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 					String configName = o.getName();
 					String fullName = subConfig.getPrefix() + '.' + configName;
 					String value = o.getValueString();
+					
+					if(value == null){
+						Logger.error(this, fullName + "has returned null from config!);");
+						continue;
+					}
+					
+					ConfigCallback<?> callback = o.getCallback();
 
 					// If ConfigToadlet is serving a plugin, ask the plugin to translate the
 					// config descriptions, otherwise use the node's BaseL10n instance like
@@ -428,22 +435,25 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 					        new HTMLNode("#", plugin.getString(o.getLongDesc()));
 
 					HTMLNode configItemNode = configGroupUlNode.addChild("li");
+					String defaultValue;
+					if(callback instanceof BooleanCallback) {
+						// Only case where values are localised.
+						defaultValue = l10n(Boolean.toString(Boolean.valueOf(value)));
+					} else {
+						defaultValue = o.getDefault();
+					}
+					
 					configItemNode.addChild("a", new String[]{"name", "id"},
 					        new String[]{configName, configName}).addChild("span",
 					        new String[]{ "class", "title", "style" },
 					        new String[]{ "configshortdesc",
 					                NodeL10n.getBase().getString("ConfigToadlet.defaultIs",
 					                new String[] { "default" },
-					                new String[] { o.getDefault() }) +
+					                new String[] { defaultValue }) +
 					                (mode >= PageMaker.MODE_ADVANCED ? " ["+ fullName + ']' : ""),
 					        "cursor: help;" }).addChild(shortDesc);
 					HTMLNode configItemValueNode =
 					        configItemNode.addChild("span", "class", "config");
-					if(value == null){
-						Logger.error(this, fullName + "has returned null from config!);");
-						continue;
-					}
-
 					// Values persisted through browser or backing down from resetting to defaults
 					// override the currently applied ones.
 					if(req.isPartSet(fullName)) {
@@ -451,7 +461,6 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 					}
 					if(overriddenOption != null && overriddenOption.equals(fullName))
 						value = overriddenValue;
-					ConfigCallback<?> callback = o.getCallback();
 					if(callback instanceof EnumerableOptionCallback)
 						configItemValueNode.addChild(addComboBox(value,
 						        (EnumerableOptionCallback) callback, fullName,
