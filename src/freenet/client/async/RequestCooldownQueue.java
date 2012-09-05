@@ -12,7 +12,6 @@ import com.db4o.ObjectContainer;
 
 import freenet.keys.Key;
 import freenet.node.SendableGet;
-import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
