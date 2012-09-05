@@ -257,7 +257,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 		if(logMINOR) Logger.minor(this, "Remove key "+key+" client "+client+" at time "+time+" startPtr="+startPtr+" endPtr="+endPtr+" holes="+holes+" keys.length="+keys.length);
 		int idx = -1;
 		if(endPtr > startPtr) {
-			idx = Arrays.binarySearch(times, startPtr, endPtr+1, time);
+			idx = Arrays.binarySearch(times, startPtr, endPtr, time);
 		} else if(endPtr == startPtr) {
 			if(logMINOR) Logger.minor(this, "No keys queued");
 			return false;
