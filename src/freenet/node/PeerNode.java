@@ -1736,7 +1736,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	/**
 	* Decrement the HTL (or not), in accordance with our
-	* probabilistic HTL rules.
+	* probabilistic HTL rules. Whether to decrement is determined once for
+	* each connection, rather than for every request, because if we don't
+	* we would get a predictable fraction of requests with each HTL - this
+	* pattern could give away a lot of information close to the originator.
+	* Although it's debatable whether it's worth worrying about given all
+	* the other information they have if close by ...
 	* @param htl The old HTL.
 	* @return The new HTL.
 	*/
