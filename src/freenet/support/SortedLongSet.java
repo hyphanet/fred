@@ -1,5 +1,7 @@
 package freenet.support;
 
+import java.util.Arrays;
+
 import freenet.support.Logger.LogLevel;
 
 
@@ -183,6 +185,6 @@ public class SortedLongSet {
 	}
 
 	private int binarySearch(long key) {
-		return Fields.binarySearch(data, key, 0, length-1);
+		return Arrays.binarySearch(data, 0, length, key);
 	}
 }
