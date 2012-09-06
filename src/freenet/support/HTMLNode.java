@@ -253,8 +253,10 @@ public class HTMLNode implements XMLCharacterClasses {
 				}
 			}else{
 				tagBuffer.append(">");
-				tagBuffer.append(HTMLEncoder.encode(content));
-				tagBuffer.append("</"+name+">");
+				HTMLEncoder.encodeToBuffer(content, tagBuffer);
+				tagBuffer.append("</");
+				tagBuffer.append(name);
+				tagBuffer.append(">");
 			}
 			
 		} else {
