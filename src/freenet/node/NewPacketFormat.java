@@ -54,7 +54,7 @@ public class NewPacketFormat implements PacketFormat {
 	private long timeLastSentPacket;
 	private long timeLastSentPayload;
 
-	public NewPacketFormat(BasePeerNode pn, int ourInitialMsgID, int theirInitialMsgID, PeerPacketTransport peerTransport) {
+	public NewPacketFormat(BasePeerNode pn, PeerPacketTransport peerTransport) {
 		this.pn = pn;
 		this.peerTransport = peerTransport;
 		this.pmt = pn.getPeerMessageTracker();
