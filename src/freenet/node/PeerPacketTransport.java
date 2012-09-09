@@ -42,6 +42,8 @@ public class PeerPacketTransport extends PeerTransport {
 	
 	protected PacketFormat packetFormat;
 	
+	protected final PacketThrottle packetThrottle = null;
+	
 	/*
 	 * Time related fields
 	 */
@@ -167,12 +169,12 @@ public class PeerPacketTransport extends PeerTransport {
 		return t;
 	}
 	
-	public long completedHandshake(long thisBootID, BlockCipher outgoingCipher, byte[] outgoingKey, BlockCipher incommingCipher, byte[] incommingKey, PluginAddress replyTo, boolean unverified, int negType, long trackerID, boolean isJFK4, boolean jfk4SameAsOld, byte[] hmacKey, BlockCipher ivCipher, byte[] ivNonce, int ourInitialSeqNum, int theirInitialSeqNum, int ourInitialMsgID, int theirInitialMsgID, long now, boolean newer, boolean older) {
+	public long completedHandshake(final long thisBootID, BlockCipher outgoingCipher, byte[] outgoingKey, BlockCipher incommingCipher, byte[] incommingKey, final PluginAddress replyTo, boolean unverified, int negType, long trackerID, boolean isJFK4, boolean jfk4SameAsOld, byte[] hmacKey, BlockCipher ivCipher, byte[] ivNonce, int ourInitialSeqNum, int theirInitialSeqNum, final long now, final boolean newer, final boolean older) {
 		
 		boolean bootIDChanged = false;
 		boolean wasARekey = false;
 		SessionKey oldPrev = null;
-		SessionKey oldCur = null;
+		SessionKey oldCur = null;;
 		SessionKey newTracker;
 		MessageItem[] messagesTellDisconnected = null;
 		PacketFormat oldPacketFormat = null;
@@ -283,7 +285,7 @@ public class PeerPacketTransport extends PeerTransport {
 					Logger.error(this, "previousTracker key equals unverifiedTracker key: prev "+peerConn.previousTracker+" unv "+peerConn.unverifiedTracker);
 				timeLastSentTransportPacket = now;
 				if(packetFormat == null) {
-					packetFormat = new NewPacketFormat(pn, ourInitialMsgID, theirInitialMsgID, this);
+					packetFormat = new NewPacketFormat(pn, this);
 				}
 				// Completed setup counts as received data packet, for purposes of avoiding spurious disconnections.
 				timeLastReceivedTransportPacket = now;
@@ -291,40 +293,59 @@ public class PeerPacketTransport extends PeerTransport {
 				timeLastReceivedTransportAck = now;
 			}
 		}
-		if(messagesTellDisconnected != null) {
-			for(int i=0;i<messagesTellDisconnected.length;i++) {
-				messagesTellDisconnected[i].onDisconnect();
-			}
-		}
-
-		if(bootIDChanged) {
-			pn.node.lm.lostOrRestartedNode(pn);
-			pn.node.usm.onRestart(pn);
-			pn.node.onRestartOrDisconnect(pn);
-		}
-		if(oldPrev != null) oldPrev.disconnected();
-		if(oldCur != null) oldCur.disconnected();
-		if(oldPacketFormat != null) {
-			oldPacketFormat.onDisconnect();
-		}
-		PacketThrottle throttle;
-		synchronized(pn) {
-			throttle = pn.getThrottle();
-		}
-		if(throttle != null) throttle.maybeDisconnected();
-		Logger.normal(this, "Completed handshake with " + this + " on " + replyTo + " - current: " + peerConn.currentTracker +
-			" old: " + peerConn.previousTracker + " unverified: " + peerConn.unverifiedTracker + " bootID: " + thisBootID + (bootIDChanged ? "(changed) " : "") + " for " + pn.shortToString());
-
-		pn.setPeerNodeStatus(now);
-
-		if(newer || older || !isTransportConnected())
-			pn.node.peers.disconnected(pn);
-		else if(!wasARekey) {
-			pn.node.peers.addConnectedPeer(pn);
-			pn.maybeOnConnect();
-		}
 		
-		pn.crypto.maybeBootConnection(pn, replyTo, transportPlugin);
+		// The following is a separate job to avoid deadlocks
+		
+		final boolean bootIDChangedInst = bootIDChanged;
+		final SessionKey oldPrevInst = oldPrev;
+		final SessionKey oldCurInst = oldCur;
+		final boolean wasARekeyInst = wasARekey;
+		final MessageItem[] messagesTellDisconnectedInst = messagesTellDisconnected;
+		final PacketFormat oldPacketFormatInst = oldPacketFormat;
+		
+		pn.node.executor.execute(new Runnable() {
+			@Override
+			public void run() {
+				if(messagesTellDisconnectedInst != null) {
+					for(int i=0;i<messagesTellDisconnectedInst.length;i++) {
+						messagesTellDisconnectedInst[i].onDisconnect();
+					}
+				}
+
+				if(bootIDChangedInst) {
+					pn.node.lm.lostOrRestartedNode(pn);
+					pn.node.usm.onRestart(pn);
+					pn.node.onRestartOrDisconnect(pn);
+					// We need to disconnect all the other transports since the bootID has changed.
+					// We keep only this transport and reconnect the others
+					pn.disconnectAllExceptOne(PeerPacketTransport.this);
+				}
+				if(oldPrevInst != null) oldPrevInst.disconnected();
+				if(oldCurInst != null) oldCurInst.disconnected();
+				if(oldPacketFormatInst != null) {
+					oldPacketFormatInst.onDisconnect();
+				}
+				PacketThrottle throttle;
+				synchronized(pn) {
+					throttle = pn.getThrottle();
+				}
+				if(throttle != null) throttle.maybeDisconnected();
+				Logger.normal(this, "Completed handshake with " + this + " on " + replyTo + " - current: " + peerConn.currentTracker +
+					" old: " + peerConn.previousTracker + " unverified: " + peerConn.unverifiedTracker + " bootID: " + thisBootID + (bootIDChangedInst ? "(changed) " : "") + " for " + pn.shortToString());
+
+				pn.setPeerNodeStatus(now);
+
+				if(newer || older || !isTransportConnected())
+					pn.node.peers.disconnected(pn);
+				else if(!wasARekeyInst) {
+					pn.node.peers.addConnectedPeer(pn);
+					pn.maybeOnConnect();
+				}
+				
+				pn.crypto.maybeBootConnection(pn, replyTo, transportPlugin);
+			}
+		});
+		
 
 		return trackerID;
 	}

@@ -20,6 +20,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
@@ -1054,6 +1055,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * The cause could be that it's taking too long or the user removed the Peer.
 	 */
 	public boolean disconnectPeer(boolean dumpMessageQueue, boolean dumpTrackers) {
+		PeerMessageTracker oldPMT = null;
+		List<MessageItem> moreMessagesTellDisconnected = null;
 		final long now = System.currentTimeMillis();
 		if(isRealConnection())
 			Logger.normal(this, "Disconnected " + this, new Exception("debug"));
@@ -1085,12 +1088,24 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				// Reset the boot ID so that we get different trackers next time.
 				myBootID = node.fastWeakRandom.nextLong();
 				messagesTellDisconnected = grabQueuedMessageItems();
+				oldPMT = pmt;
+				pmt = null;
 			}
+		}
+		if(oldPMT != null) {
+			moreMessagesTellDisconnected = oldPMT.onDisconnect();
 		}
 		if(messagesTellDisconnected != null) {
 			if(logMINOR)
 				Logger.minor(this, "Messages to dump: "+messagesTellDisconnected.length);
 			for(MessageItem mi : messagesTellDisconnected) {
+				mi.onDisconnect();
+			}
+		}
+		if(moreMessagesTellDisconnected != null) {
+			if(logMINOR)
+				Logger.minor(this, "Messages to dump: "+moreMessagesTellDisconnected.size());
+			for(MessageItem mi : moreMessagesTellDisconnected) {
 				mi.onDisconnect();
 			}
 		}
@@ -1105,15 +1120,29 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				public void run() {
 					if((!PeerNode.this.isConnected()) &&
 							timeLastDisconnect == now) {
+						PeerMessageTracker oldPMT = null;
 						synchronized(this) {
 							if(isConnected) return;
 							// Reset the boot ID so that we get different trackers next time.
 							myBootID = node.fastWeakRandom.nextLong();
+							oldPMT = pmt;
+							pmt = null;
 						}
 						MessageItem[] messagesTellDisconnected = grabQueuedMessageItems();
 						if(messagesTellDisconnected != null) {
 							for(MessageItem mi : messagesTellDisconnected) {
 								mi.onDisconnect();
+							}
+						}
+						if(oldPMT != null) {
+							List<MessageItem> moreMessagesTellDisconnected = 
+									oldPMT.onDisconnect();
+							if(moreMessagesTellDisconnected != null) {
+								if(logMINOR)
+									Logger.minor(this, "Messages to dump: "+moreMessagesTellDisconnected.size());
+								for(MessageItem mi : moreMessagesTellDisconnected) {
+									mi.onDisconnect();
+								}
 							}
 						}
 					}
@@ -1147,6 +1176,29 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public void disconnectTransport(boolean dumpTrackers, PeerTransport peerTransport) {
 		peerTransport.disconnectTransport(dumpTrackers);
 		maybeDisconnectPeer();
+	}
+	
+	/**
+	 * This method is called if the boot ID has changed.
+	 * In which case we need to disconnect other transports and keep the current handshake
+	 * @param peerTransport
+	 */
+	public void disconnectAllExceptOne(PeerTransport peerTransport) {
+		String dontDisconnet = peerTransport.transportName;
+		synchronized(packetTransportMapLock) {
+			for(String transportName : peerPacketTransportMap.keySet()) {
+				if(transportName == dontDisconnet)
+					continue;
+				peerPacketTransportMap.get(transportName).disconnectTransport(true);
+			}
+		}
+		synchronized(streamTransportMapLock) {
+			for(String transportName : peerStreamTransportMap.keySet()) {
+				if(transportName == dontDisconnet)
+					continue;
+				peerStreamTransportMap.get(transportName).disconnectTransport(true);
+			}
+		}
 	}
 
 	/**
@@ -1593,6 +1645,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		/*
 		 * PeerNode specific code
 		 */
+		
+		// Create the pmt (PeerMessageTracker) only once
+		if(pmt == null)
+			pmt = new PeerMessageTracker(this, ourInitialMsgID, theirInitialMsgID);
+		
 		long now = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Tracker ID "+trackerID+" isJFK4="+isJFK4+" jfk4SameAsOld="+jfk4SameAsOld);
 		if(trackerID < 0) trackerID = Math.abs(node.random.nextLong());
@@ -1660,7 +1717,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		synchronized(this) {
 			if(peerPacketTransportMap.containsKey(transportName)) {
 				PeerPacketTransport peerTransport = peerPacketTransportMap.get(transportName);
-				newID = peerTransport.completedHandshake(thisBootID, outgoingCipher, outgoingKey, incommingCipher, incommingKey, replyTo, unverified, negType, trackerID, isJFK4, jfk4SameAsOld, hmacKey, ivCipher, ivNonce, ourInitialSeqNum, theirInitialSeqNum, ourInitialMsgID, theirInitialMsgID, now, newer, older);
+				newID = peerTransport.completedHandshake(thisBootID, outgoingCipher, outgoingKey, incommingCipher, incommingKey, replyTo, unverified, negType, trackerID, isJFK4, jfk4SameAsOld, hmacKey, ivCipher, ivNonce, ourInitialSeqNum, theirInitialSeqNum, now, newer, older);
 			}
 			else if(peerStreamTransportMap.containsKey(transportName)) {
 				PeerStreamTransport peerTransport = peerStreamTransportMap.get(transportName);
