@@ -268,4 +268,10 @@ public class NullBasePeerNode implements BasePeerNode {
 		// Ignore
 	}
 
+	@Override
+	public int getThrottleWindowSize() {
+		// Arbitrary.
+		return 10;
+	}
+
 }
