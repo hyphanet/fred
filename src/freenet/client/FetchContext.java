@@ -15,7 +15,9 @@ import freenet.client.filter.TagReplacerCallback;
 import freenet.node.RequestScheduler;
 import freenet.support.api.BucketFactory;
 
-/** Context for a Fetcher. Contains all the settings a Fetcher needs to know about. */
+/** Context for a Fetcher. Contains all the settings a Fetcher needs to know 
+ * about. FIXME these should be final or private, with getters/setters and 
+ * checking for valid values e.g. maxRecursionLevel >= 1. */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class FetchContext implements Cloneable {
 
