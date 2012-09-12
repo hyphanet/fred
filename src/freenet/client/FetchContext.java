@@ -27,6 +27,9 @@ public class FetchContext implements Cloneable {
 	public long maxOutputLength;
 	/** Maximum length of data fetched in order to obtain the final data - metadata, containers, etc. */
 	public long maxTempLength;
+	/** 1 = only fetch a single block. 2 = allow one redirect, e.g. metadata
+	 * block pointing to actual data block. Etc. 0 may work sometimes but 
+	 * is not recommended. */
 	public int maxRecursionLevel;
 	public int maxArchiveRestarts;
 	/** Maximum number of containers to fetch during a request */
