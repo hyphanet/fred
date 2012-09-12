@@ -75,7 +75,6 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         this.tag = tag;
         this.key = key;
         this.htl = htl;
-        if(htl <= 0) htl = 1;
         canWriteDatastore = node.canWriteDatastoreInsert(htl);
         this.forkOnCacheable = forkOnCacheable;
         this.preferInsert = preferInsert;

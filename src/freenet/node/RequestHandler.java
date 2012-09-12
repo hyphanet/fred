@@ -94,8 +94,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 		this.source = source;
 		this.htl = htl;
 		this.tag = tag;
-		if(htl <= 0)
-			htl = 1;
 		this.key = key;
 		this.passedInKeyBlock = passedInKeyBlock;
 		this.needsPubKey = needsPubKey;
