@@ -18,14 +18,6 @@
  */
 package freenet.io.xfer;
 
-import freenet.io.comm.AsyncMessageCallback;
-import freenet.io.comm.ByteCounter;
-import freenet.io.comm.Message;
-import freenet.io.comm.NotConnectedException;
-import freenet.io.comm.PeerContext;
-import freenet.io.comm.PeerRestartedException;
-import freenet.node.MessageItem;
-import freenet.node.SyncSendWaitedTooLongException;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -57,18 +49,12 @@ public class PacketThrottle {
 	private float _windowSize = 2;
 	private final int PACKET_SIZE;
 	private boolean slowStart = true;
-	/** Total packets in flight, including waiting for bandwidth from the central throttle. */
-	private int _packetsInFlight;
 	/** Incremented on each send; the sequence number of the packet last added to the window/sent */
 	private long _packetSeq;
 	/** Last time (seqno) the window was full */
 	private long _packetSeqWindowFull;
 	/** Last time (seqno) we checked whether the window was full, or dropped a packet. */
 	private long _packetSeqWindowFullChecked;
-	/** Holds the next number to be used for fifo packet pre-sequence numbers */
-	private long _packetTicketGenerator;
-	/** The number of would-be packets which are no longer waiting in line for the transmition window */
-	private long _abandonedTickets;
 	
 	public PacketThrottle(int packetSize) {
 		PACKET_SIZE = packetSize;
