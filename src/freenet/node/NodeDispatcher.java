@@ -646,8 +646,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		int noderefLength = m.getInt(DMT.NODEREF_LENGTH);
 		int paddedLength = m.getInt(DMT.PADDED_LENGTH);
 
-		// SECURITY: Must check it is a valid message before checking recentlyCompleted.
-		// Otherwise can do fun tricks like probing recentlyCompleted!
+		// Only accept a valid message. See comments at top of NodeDispatcher, but it's a good idea anyway.
 		if(target < 0.0 || target >= 1.0 || htl <= 0 || 
 				paddedLength < 0 || paddedLength > OpennetManager.MAX_OPENNET_NODEREF_LENGTH ||
 				noderefLength > paddedLength) {
