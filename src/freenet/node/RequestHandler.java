@@ -52,7 +52,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 			}
 		});
 	}
-	final Message req;
 	final Node node;
 	final long uid;
 	private final short htl;
@@ -86,22 +85,18 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 	 * @param key
 	 * @param tag
 	 * @param passedInKeyBlock We ALWAYS look up in the datastore before starting a request.
+	 * SECURITY: Do not pass messages into handler constructors. See note at top of NodeDispatcher.
 	 */
-	public RequestHandler(Message m, PeerNode source, long id, Node n, short htl, Key key, RequestTag tag, KeyBlock passedInKeyBlock, boolean realTimeFlag) {
-		req = m;
+	public RequestHandler(PeerNode source, long id, Node n, short htl, Key key, RequestTag tag, KeyBlock passedInKeyBlock, boolean realTimeFlag, boolean needsPubKey) {
 		node = n;
 		uid = id;
 		this.realTimeFlag = realTimeFlag;
 		this.source = source;
 		this.htl = htl;
 		this.tag = tag;
-		if(htl <= 0)
-			htl = 1;
 		this.key = key;
 		this.passedInKeyBlock = passedInKeyBlock;
-		if(key instanceof NodeSSK)
-			needsPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
-		receivedBytes(m.receivedByteCount());
+		this.needsPubKey = needsPubKey;
 	}
 
 	@Override

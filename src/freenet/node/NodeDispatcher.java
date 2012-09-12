@@ -18,6 +18,7 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
+import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.node.NodeStats.PeerLoadStats;
 import freenet.node.NodeStats.RejectReason;
@@ -27,6 +28,7 @@ import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
+import freenet.support.SizeUtil;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
@@ -485,7 +487,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	}
 	
 	/**
-	 * Handle an incoming FNPDataRequest.
+	 * Handle an incoming FNPDataRequest. We should parse it and determine 
+	 * whether it is valid before we accept it.
 	 */
 	private void innerHandleDataRequest(Message m, PeerNode source, boolean isSSK) {
 		if(!source.isConnected()) {
@@ -500,6 +503,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		long id = m.getLong(DMT.UID);
 		ByteCounter ctr = isSSK ? node.nodeStats.sskRequestCtr : node.nodeStats.chkRequestCtr;
         short htl = m.getShort(DMT.HTL);
+		if(htl <= 0) htl = 1;
         Key key = (Key) m.getObject(DMT.FREENET_ROUTING_KEY);
         boolean realTimeFlag = DMT.getRealTimeFlag(m);
         final RequestTag tag = new RequestTag(isSSK, RequestTag.START.REMOTE, source, realTimeFlag, id, node);
@@ -547,10 +551,23 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		}
 		nodeStats.reportIncomingRequestLocation(key.toNormalizedDouble());
 		//if(!node.lockUID(id)) return false;
-		RequestHandler rh = new RequestHandler(m, source, id, node, htl, key, tag, block, realTimeFlag);
+		boolean needsPubKey = false;
+		if(key instanceof NodeSSK)
+			needsPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
+		RequestHandler rh = new RequestHandler(source, id, node, htl, key, tag, block, realTimeFlag, needsPubKey);
+		rh.receivedBytes(m.receivedByteCount());
 		node.executor.execute(rh, "RequestHandler for UID "+id+" on "+node.getDarknetPortNumber());
 	}
 
+	/**
+	 * Handle an incoming insert. We should parse it and determine whether it
+	 * is valid before we accept it. However in the case of inserts it *IS* 
+	 * possible for the request sender to cause it to fail later during the 
+	 * receive of the data or the DataInsert.
+	 * @param m The incoming message.
+	 * @param source The node that sent the message.
+	 * @param isSSK True if it is an SSK insert, false if it is a CHK insert.
+	 */
 	private void handleInsertRequest(Message m, PeerNode source, boolean isSSK) {
 		ByteCounter ctr = isSSK ? node.nodeStats.sskInsertCtr : node.nodeStats.chkInsertCtr;
 		long id = m.getLong(DMT.UID);
@@ -599,17 +616,23 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	        byte[] data = ((ShortBuffer) m.getObject(DMT.DATA)).getData();
 	        byte[] headers = ((ShortBuffer) m.getObject(DMT.BLOCK_HEADERS)).getData();
 	        short htl = m.getShort(DMT.HTL);
+			if(htl <= 0) htl = 1;
 			SSKInsertHandler rh = new SSKInsertHandler(key, data, headers, htl, source, id, node, now, tag, node.canWriteDatastoreInsert(htl), forkOnCacheable, preferInsert, ignoreLowBackoff, realTimeFlag);
 	        rh.receivedBytes(m.receivedByteCount());
 			node.executor.execute(rh, "SSKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		} else if(m.getSpec().equals(DMT.FNPSSKInsertRequestNew)) {
 			NodeSSK key = (NodeSSK) m.getObject(DMT.FREENET_ROUTING_KEY);
 			short htl = m.getShort(DMT.HTL);
+			if(htl <= 0) htl = 1;
 			SSKInsertHandler rh = new SSKInsertHandler(key, null, null, htl, source, id, node, now, tag, node.canWriteDatastoreInsert(htl), forkOnCacheable, preferInsert, ignoreLowBackoff, realTimeFlag);
 	        rh.receivedBytes(m.receivedByteCount());
 			node.executor.execute(rh, "SSKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		} else {
-			CHKInsertHandler rh = new CHKInsertHandler(m, source, id, node, now, tag, forkOnCacheable, preferInsert, ignoreLowBackoff, realTimeFlag);
+	        NodeCHK key = (NodeCHK) m.getObject(DMT.FREENET_ROUTING_KEY);
+	        short htl = m.getShort(DMT.HTL);
+			if(htl <= 0) htl = 1;
+			CHKInsertHandler rh = new CHKInsertHandler(key, htl, source, id, node, now, tag, forkOnCacheable, preferInsert, ignoreLowBackoff, realTimeFlag);
+	        rh.receivedBytes(m.receivedByteCount());
 			node.executor.execute(rh, "CHKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		}
 		if(logMINOR) Logger.minor(this, "Started InsertHandler for "+id);
@@ -617,6 +640,25 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	
 	private boolean handleAnnounceRequest(Message m, PeerNode source) {
 		long uid = m.getLong(DMT.UID);
+		double target = m.getDouble(DMT.TARGET_LOCATION); // FIXME validate
+		short htl = (short) Math.min(m.getShort(DMT.HTL), node.maxHTL());
+		long xferUID = m.getLong(DMT.TRANSFER_UID);
+		int noderefLength = m.getInt(DMT.NODEREF_LENGTH);
+		int paddedLength = m.getInt(DMT.PADDED_LENGTH);
+
+		// Only accept a valid message. See comments at top of NodeDispatcher, but it's a good idea anyway.
+		if(target < 0.0 || target >= 1.0 || htl <= 0 || 
+				paddedLength < 0 || paddedLength > OpennetManager.MAX_OPENNET_NODEREF_LENGTH ||
+				noderefLength > paddedLength) {
+			Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);
+			try {
+				source.sendAsync(msg, null, node.nodeStats.announceByteCounter);
+			} catch (NotConnectedException e) {
+				// OK
+			}
+			return true;
+		}
+		
 		OpennetManager om = node.getOpennet();
 		if(om == null || !source.canAcceptAnnouncements()) {
 			if(om != null && source instanceof SeedClientPeerNode)
@@ -625,15 +667,14 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			try {
 				source.sendAsync(msg, null, node.nodeStats.announceByteCounter);
 			} catch (NotConnectedException e) {
-				// Ok
+				// OK
 			}
 			return true;
 		}
 		boolean success = false;
-		// No way to check whether it's actually running atm, so lets report it to the completed list immediately.
-		// FIXME we should probably keep a list!
-		node.completed(uid);
 		try {
+			// UIDs for announcements are separate from those for requests.
+			// So we don't need to, and should not, ask Node.
 			if(!node.nodeStats.shouldAcceptAnnouncement(uid)) {
 				if(om != null && source instanceof SeedClientPeerNode)
 					om.seedTracker.rejectedAnnounce((SeedClientPeerNode)source);
@@ -641,7 +682,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				try {
 					source.sendAsync(msg, null, node.nodeStats.announceByteCounter);
 				} catch (NotConnectedException e) {
-					// Ok
+					// OK
 				}
 				return true;
 			}
@@ -653,7 +694,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				try {
 					source.sendAsync(msg, null, node.nodeStats.announceByteCounter);
 				} catch (NotConnectedException e) {
-					// Ok
+					// OK
 				}
 				return true;
 			}
@@ -664,12 +705,12 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 					try {
 						source.sendAsync(msg, null, node.nodeStats.announceByteCounter);
 					} catch (NotConnectedException e) {
-						// Ok
+						// OK
 					}
 					return true;
 				}
 			}
-			AnnounceSender sender = new AnnounceSender(m, uid, source, om, node);
+			AnnounceSender sender = new AnnounceSender(target, htl, uid, source, om, node, xferUID, noderefLength, paddedLength);
 			node.executor.execute(sender, "Announcement sender for "+uid);
 			success = true;
 			return true;
