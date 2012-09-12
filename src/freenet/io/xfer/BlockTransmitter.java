@@ -83,7 +83,6 @@ public class BlockTransmitter {
 	private LinkedList<Integer> _unsent;
 	private BlockSenderJob _senderThread = new BlockSenderJob();
 	private BitArray _sentPackets;
-	final PacketThrottle throttle;
 	private long timeAllSent = -1;
 	final ByteCounter _ctr;
 	final int PACKET_SIZE;
@@ -225,9 +224,8 @@ public class BlockTransmitter {
 			Logger.error(this, "Aborted during setup");
 			// Will throw on running
 		}
-		throttle = _destination.getThrottle();
 		this.blockTimeCallback = blockTimes;
-		if(logMINOR) Logger.minor(this, "Starting block transmit for "+uid+" to "+destination.shortToString()+" realtime="+realTime+" throttle="+throttle);
+		if(logMINOR) Logger.minor(this, "Starting block transmit for "+uid+" to "+destination.shortToString()+" realtime="+realTime);
 	}
 
 	private Runnable timeoutJob;
@@ -581,7 +579,6 @@ public class BlockTransmitter {
 	};
 	
 	private void onDisconnect() {
-		throttle.maybeDisconnected();
 		Logger.normal(this, "Terminating send "+_uid+" to "+_destination+" from "+_destination.getSocketHandler()+" because node disconnected while waiting");
 		//They disconnected, can't send an abort to them then can we?
 		Future fail;
