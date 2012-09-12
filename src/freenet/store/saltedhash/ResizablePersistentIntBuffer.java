@@ -95,7 +95,15 @@ public class ResizablePersistentIntBuffer {
 	}
 	
 	public void start(Ticker ticker) {
-		this.ticker = ticker;
+		synchronized(this) {
+			this.ticker = ticker;
+			if(dirty) {
+				int persistenceTime = getPersistenceTime();
+				Logger.normal(this, "Scheduling write of slot cache "+this+" in "+persistenceTime);
+				ticker.queueTimedJob(writer, persistenceTime);
+				scheduled = true;
+			}
+		}
 	}
 
 	public int get(int offset) {
@@ -123,10 +131,14 @@ public class ResizablePersistentIntBuffer {
 			} else if(persistenceTime > 0) {
 				synchronized(this) {
 					dirty = true;
-					if(!scheduled) {
-						Logger.normal(this, "Scheduling write of slot cache "+this+" in "+persistenceTime);
-						ticker.queueTimedJob(writer, persistenceTime);
-						scheduled = true;
+					if(ticker != null) {
+						if(!scheduled) {
+							Logger.normal(this, "Scheduling write of slot cache "+this+" in "+persistenceTime);
+							ticker.queueTimedJob(writer, persistenceTime);
+							scheduled = true;
+						}
+					} else {
+						Logger.normal(this, "Will scheduling write of slot cache after startup: "+this+" in "+persistenceTime);
 					}
 				}
 			} else {
@@ -209,6 +221,23 @@ public class ResizablePersistentIntBuffer {
 		}
 		
 	}
+	
+	public void abort() {
+		lock.writeLock().lock();
+		try {
+			synchronized(this) {
+				if(closed) return;
+				closed = true;
+			}
+			try {
+				raf.close();
+			} catch (IOException e) {
+				Logger.error(this, "Close failed during shutdown: "+e+" on "+filename, e);
+			}
+		} finally {
+			lock.writeLock().unlock();
+		}
+	}
 
 	private void writeBuffer() throws IOException {
 		// FIXME do we need to do partial writes?
@@ -281,6 +310,16 @@ public class ResizablePersistentIntBuffer {
 	
 	public String toString() {
 		return filename.getPath();
+	}
+
+	// Testing only! Hence no lock.
+	public void replaceAllEntries(int key, int value) {
+		for(int i=0;i<buffer.length;i++)
+			if(buffer[i] == key) buffer[i] = value;
+	}
+
+	public int size() {
+		return size;
 	}
 	
 }
