@@ -6139,4 +6139,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 	}
 	
+	/** @return The largest throttle window size of any of our throttles.
+	 * This is just for guesstimating how many blocks we can have in flight. */
+	@Override
+	public int getThrottleWindowSize() {
+		PacketThrottle throttle = getThrottle();
+		if(throttle != null) return (int)(Math.min(throttle.getWindowSize(), Integer.MAX_VALUE));
+		else return Integer.MAX_VALUE;
+	}
+	
 }
