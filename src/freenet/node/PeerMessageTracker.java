@@ -316,7 +316,7 @@ public class PeerMessageTracker {
 	static class PartiallyReceivedBuffer {
 		private int messageLength;
 		private byte[] buffer;
-		private PeerMessageTracker pmt;
+		private final PeerMessageTracker pmt;
 
 		private PartiallyReceivedBuffer(PeerMessageTracker pmt) {
 			messageLength = -1;
