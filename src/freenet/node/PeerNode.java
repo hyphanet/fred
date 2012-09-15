@@ -1184,17 +1184,17 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * @param peerTransport
 	 */
 	public void disconnectAllExceptOne(PeerTransport peerTransport) {
-		String dontDisconnet = peerTransport.transportName;
+		String dontDisconnect = peerTransport.transportName;
 		synchronized(packetTransportMapLock) {
 			for(String transportName : peerPacketTransportMap.keySet()) {
-				if(transportName == dontDisconnet)
+				if(transportName == dontDisconnect)
 					continue;
 				peerPacketTransportMap.get(transportName).disconnectTransport(true);
 			}
 		}
 		synchronized(streamTransportMapLock) {
 			for(String transportName : peerStreamTransportMap.keySet()) {
-				if(transportName == dontDisconnet)
+				if(transportName == dontDisconnect)
 					continue;
 				peerStreamTransportMap.get(transportName).disconnectTransport(true);
 			}

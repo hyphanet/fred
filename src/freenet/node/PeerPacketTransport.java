@@ -174,7 +174,7 @@ public class PeerPacketTransport extends PeerTransport {
 		boolean bootIDChanged = false;
 		boolean wasARekey = false;
 		SessionKey oldPrev = null;
-		SessionKey oldCur = null;;
+		SessionKey oldCur = null;
 		SessionKey newTracker;
 		MessageItem[] messagesTellDisconnected = null;
 		PacketFormat oldPacketFormat = null;
