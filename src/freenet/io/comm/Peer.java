@@ -52,12 +52,6 @@ public class Peer implements WritableToDataOutputStream {
 		if(_port > 65535 || _port < 0) throw new IOException("bogus port");
 	}
 
-	public Peer(DataInput dis, boolean checkHostnameOrIPSyntax) throws HostnameSyntaxException, IOException {
-		addr = new FreenetInetAddress(dis, checkHostnameOrIPSyntax);
-		_port = dis.readInt();
-		if(_port > 65535 || _port < 0) throw new IOException("bogus port");
-	}
-
 	/**
 	 * Create a Peer from an InetAddress and a port. The IP address is primary; that is
 	 * to say, it will remain the same regardless of DNS changes. Don't do this if you

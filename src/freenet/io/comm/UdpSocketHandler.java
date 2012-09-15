@@ -471,8 +471,12 @@ public class UdpSocketHandler extends PacketTransportPlugin  implements PrioRunn
 	}
 
 	@Override
-	public PluginAddress toPluginAddress(byte[] address) {
-		return null;
+	public PluginAddress toPluginAddress(byte[] address) throws MalformedPluginAddressException {
+		try {
+			return new PeerPluginAddress(address);
+		} catch (IOException e) {
+			throw new MalformedPluginAddressException("An error occurred: " + e.getStackTrace());
+		}
 	}
 
 }

@@ -80,39 +80,10 @@ public class FreenetInetAddress {
 			name = s;
 		hostname = name;
 	}
-
-	/**
-	 * Create from serialized form on a DataInputStream.
-	 */
-	public FreenetInetAddress(DataInput dis, boolean checkHostnameOrIPSyntax) throws HostnameSyntaxException,
-	        IOException {
-		int firstByte = dis.readUnsignedByte();
-		byte[] ba;
-		if(firstByte == 255) {
-			if(logMINOR) Logger.minor(this, "New format IPv6 address");
-			// New format IPv6 address
-			ba = new byte[16];
-			dis.readFully(ba);
-		} else if(firstByte == 0) {
-			if(logMINOR) Logger.minor(this, "New format IPv4 address");
-			// New format IPv4 address
-			ba = new byte[4];
-			dis.readFully(ba);
-		} else {
-			// Old format IPv4 address
-			ba = new byte[4];
-			ba[0] = (byte)firstByte;
-			dis.readFully(ba, 1, 3);
-		}
-		_address = InetAddress.getByAddress(ba);
-		String name = null;
-		String s = dis.readUTF();
-		if(s.length() > 0)
-			name = s;
-		hostname = name;
-        if(checkHostnameOrIPSyntax && null != hostname) {
-        	if(!HostnameUtil.isValidHostname(hostname, true)) throw new HostnameSyntaxException();
-		}
+	
+	public FreenetInetAddress(InetAddress addr, String hostName) {
+		this._address = addr;
+		this.hostname = hostName;
 	}
 
 	/**
