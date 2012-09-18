@@ -5,7 +5,6 @@ package freenet.node;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Vector;
 
 import freenet.clients.http.ExternalLinkToadlet;
 import freenet.io.comm.Peer;
@@ -122,7 +121,6 @@ public class PacketSender implements Runnable {
 		 * Index of the point in the nodes list at which we sent a packet and then
 		 * ran out of bandwidth. We start the loop from here next time.
 		 */
-		int brokeAt = 0;
 		while(true) {
 			lastReceivedPacketFromAnyNode = lastReportedNoPackets;
 			try {
