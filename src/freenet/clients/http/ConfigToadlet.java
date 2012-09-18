@@ -408,8 +408,9 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 				overriddenValue = req.getPartAsStringFailsafe("filename", MAX_PARAM_VALUE_SIZE);
 			}
 
+			boolean advancedMode = ctx.getContainer().isAdvancedModeEnabled();
 			for(Option<?> o : subConfig.getOptions()) {
-				if(! (!ctx.getContainer().isAdvancedModeEnabled() && o.isExpert())){
+				if(! (!advancedMode && o.isExpert())){
 					displayedConfigElements++;
 					String configName = o.getName();
 					String fullName = subConfig.getPrefix() + '.' + configName;
@@ -433,7 +434,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 					                NodeL10n.getBase().getString("ConfigToadlet.defaultIs",
 					                new String[] { "default" },
 					                new String[] { o.getDefault() }) +
-					                (ctx.getContainer().isAdvancedModeEnabled() ? " ["+ fullName + ']' : ""),
+					                (advancedMode ? " ["+ fullName + ']' : ""),
 					        "cursor: help;" }).addChild(shortDesc);
 					HTMLNode configItemValueNode =
 					        configItemNode.addChild("span", "class", "config");
