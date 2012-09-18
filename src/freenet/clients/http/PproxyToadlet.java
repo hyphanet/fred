@@ -408,7 +408,7 @@ public class PproxyToadlet extends Toadlet {
 
 				showStartingPlugins(pm, contentNode);
 				showPluginList(ctx, pm, contentNode, advancedModeEnabled);
-				showOfficialPluginLoader(ctx, contentNode, groupedAvailablePlugins, pm);
+				showOfficialPluginLoader(ctx, contentNode, groupedAvailablePlugins, pm, advancedModeEnabled);
 				showUnofficialPluginLoader(ctx, contentNode);
 				showFreenetPluginLoader(ctx, contentNode);
 
@@ -541,7 +541,7 @@ public class PproxyToadlet extends Toadlet {
 		}
 	}
 	
-	private void showOfficialPluginLoader(ToadletContext toadletContext, HTMLNode contentNode, Map<String, List<OfficialPluginDescription>> availablePlugins, PluginManager pm) {
+	private void showOfficialPluginLoader(ToadletContext toadletContext, HTMLNode contentNode, Map<String, List<OfficialPluginDescription>> availablePlugins, PluginManager pm, boolean advancedModeEnabled) {
 		/* box for "official" plugins. */
 		HTMLNode addOfficialPluginBox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		addOfficialPluginBox.addChild("div", "class", "infobox-header", l10n("loadOfficialPlugin"));
@@ -593,7 +593,7 @@ public class PproxyToadlet extends Toadlet {
 						option.addChild("b", " ("+l10n("loadLabelDeprecated")+")");
 					if(pluginDescription.experimental)
 						option.addChild("b", " ("+l10n("loadLabelExperimental")+")");
-					if (pluginDescription.minimumVersion >= 0) {
+					if (advancedModeEnabled && pluginDescription.minimumVersion >= 0) {
 						option.addChild("#", " ("+l10n("pluginVersion")+" " + pluginDescription.minimumVersion + ")");
 					}
 					option.addChild("#", " - "+l10n("pluginDesc."+pluginName));
