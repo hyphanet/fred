@@ -1003,7 +1003,6 @@ public class PeerMessageQueue {
 		MutableBoolean addPeerLoadStatsRT = new MutableBoolean();
 		MutableBoolean addPeerLoadStatsBulk = new MutableBoolean();
 		
-		// Don't worry about it.
 		addPeerLoadStatsRT.value = true;
 		addPeerLoadStatsBulk.value = true;
 		
