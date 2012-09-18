@@ -266,7 +266,6 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 			else lastSuccessful = file.getParentFile().getAbsoluteFile();
 
 			try {
-				System.out.println(postTo());
 				throw new RedirectException(postTo());
 			} catch (URISyntaxException e) {
 				sendErrorPage(ctx, 500, NodeL10n.getBase().getString("Toadlet.internalErrorPleaseReport"),

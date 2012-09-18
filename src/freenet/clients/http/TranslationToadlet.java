@@ -272,7 +272,6 @@ public class TranslationToadlet extends Toadlet {
 				while(it.hasNext()) {
 					String newKey = it.nextKey();
 					boolean isOverriden = this.base.isOverridden(newKey);
-					System.out.println("newkey:"+newKey);
 					if(isOverriden || (this.base.getString(newKey, true) != null))
 						continue;
 					redirectTo(ctx, TOADLET_URL+"?gotoNext&translate="+newKey+ (toTranslateOnly ? "&toTranslateOnly" : ""));
