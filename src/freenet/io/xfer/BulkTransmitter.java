@@ -409,16 +409,6 @@ outer:	while(true) {
 			}
 		}
 		
-		public synchronized void waitForCompletion() {
-			while(!finished) {
-				try {
-					wait();
-				} catch (InterruptedException e) {
-					// Ignore
-				}
-			}
-		}
-
 		@Override
 		public void acknowledged() {
 			complete(false);
