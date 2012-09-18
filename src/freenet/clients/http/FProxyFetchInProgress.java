@@ -120,6 +120,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	private int fetched = 0;
 	/** Stores the fetch context this class was created with*/
 	private FetchContext fctx;
+	private boolean cancelled = false;
 	
 	public FProxyFetchInProgress(FProxyFetchTracker tracker, FreenetURI key, long maxSize2, long identifier, ClientContext context, FetchContext fctx, RequestClient rc, REFILTER_POLICY refilter) {
 		this.refilterPolicy = refilter;
@@ -147,7 +148,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		return tracker;
 	}
 	
-	public void addCustomWaiter(FProxyFetchWaiter waiter){
+	public synchronized void addCustomWaiter(FProxyFetchWaiter waiter){
 		waiters.add(waiter);
 	}
 
@@ -397,19 +398,25 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 
 	@Override
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+		Bucket droppedData = null;
 		synchronized(this) {
-			this.data = result.asBucket();
+			if(cancelled)
+				droppedData = result.asBucket();
+			else
+				this.data = result.asBucket();
 			this.mimeType = result.getMimeType();
 			this.finished = true;
 		}
 		wakeWaiters(true);
+		if(droppedData != null)
+			droppedData.free();
 	}
 
-	public boolean hasData() {
+	public synchronized boolean hasData() {
 		return data != null;
 	}
 
-	public boolean finished() {
+	public synchronized boolean finished() {
 		return finished;
 	}
 
@@ -440,21 +447,28 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		return true;
 	}
 	
+	/** Finish the cancel process, freeing the data if necessary. The fetch
+	 * must have been removed from the tracker already, so it won't be reused. */
 	public void finishCancel() {
 		if(logMINOR) Logger.minor(this, "Finishing cancel for "+this+" : "+uri+" : "+maxSize);
-		if(data != null) {
-			try {
-				data.free();
-			} catch (Throwable t) {
-				// Ensure we get to the next bit
-				Logger.error(this, "Failed to free: "+t, t);
-			}
-		}
 		try {
 			getter.cancel(null, tracker.context);
 		} catch (Throwable t) {
 			// Ensure we get to the next bit
 			Logger.error(this, "Failed to cancel: "+t, t);
+		}
+		Bucket d;
+		synchronized(this) {
+			d = data;
+			cancelled = true;
+		}
+		if(d != null) {
+			try {
+				d.free();
+			} catch (Throwable t) {
+				// Ensure we get to the next bit
+				Logger.error(this, "Failed to free: "+t, t);
+			}
 		}
 	}
 
@@ -501,7 +515,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	
 	/** Adds a listener that will be notified when a change occurs to this fetch
 	 * @param listener - The listener to be added*/
-	public void addListener(FProxyFetchListener listener){
+	public synchronized void addListener(FProxyFetchListener listener){
 		if(logMINOR){
 			Logger.minor(this,"Registered listener:"+listener);
 		}
@@ -510,7 +524,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	
 	/** Removes a listener
 	 * @param listener - The listener to be removed*/
-	public void removeListener(FProxyFetchListener listener){
+	public synchronized void removeListener(FProxyFetchListener listener){
 		if(logMINOR){
 			Logger.minor(this,"Removed listener:"+listener);
 		}
@@ -521,11 +535,11 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	}
 	
 	/** Allows the fetch to be removed immediately*/
-	public void requestImmediateCancel(){
+	public synchronized void requestImmediateCancel(){
 		requestImmediateCancel=true;
 	}
 
-	public long lastTouched() {
+	public synchronized long lastTouched() {
 		return lastTouched;
 	}
 	

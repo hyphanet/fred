@@ -27,7 +27,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -37,12 +36,8 @@ import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.Random;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.Vector;
 
-import freenet.node.probe.Listener;
-import freenet.node.probe.Type;
-import freenet.support.math.MersenneTwister;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import com.db4o.Db4o;
@@ -119,6 +114,8 @@ import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.fcp.FCPMessage;
 import freenet.node.fcp.FeedMessage;
+import freenet.node.probe.Listener;
+import freenet.node.probe.Type;
 import freenet.node.stats.DataStoreInstanceType;
 import freenet.node.stats.DataStoreStats;
 import freenet.node.stats.NotAvailNodeStoreStats;
@@ -126,7 +123,6 @@ import freenet.node.stats.StoreCallbackStats;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.updater.UpdateDeployContext;
 import freenet.node.updater.UpdateDeployContext.CHANGED;
-import freenet.node.useralerts.BuildOldAgeUserAlert;
 import freenet.node.useralerts.ExtOldAgeUserAlert;
 import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
 import freenet.node.useralerts.NotEnoughNiceLevelsUserAlert;
@@ -141,6 +137,7 @@ import freenet.store.BerkeleyDBFreenetStore;
 import freenet.store.BlockMetadata;
 import freenet.store.CHKStore;
 import freenet.store.FreenetStore;
+import freenet.store.FreenetStore.StoreType;
 import freenet.store.KeyCollisionException;
 import freenet.store.NullFreenetStore;
 import freenet.store.PubkeyStore;
@@ -149,15 +146,15 @@ import freenet.store.SSKStore;
 import freenet.store.SlashdotStore;
 import freenet.store.StorableBlock;
 import freenet.store.StoreCallback;
-import freenet.store.FreenetStore.StoreType;
+import freenet.store.saltedhash.ResizablePersistentIntBuffer;
 import freenet.store.saltedhash.SaltedHashFreenetStore;
 import freenet.support.Executor;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
-import freenet.support.LRUQueue;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.OOMHandler;
 import freenet.support.PooledExecutor;
 import freenet.support.PrioritizedTicker;
@@ -166,7 +163,6 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.Ticker;
 import freenet.support.TokenBucket;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
@@ -176,6 +172,7 @@ import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
+import freenet.support.math.MersenneTwister;
 import freenet.support.transport.ip.HostnameSyntaxException;
 
 /**
@@ -298,7 +295,6 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 	}
 	private static MeaningfulNodeNameUserAlert nodeNameUserAlert;
-	private static BuildOldAgeUserAlert buildOldAgeUserAlert;
 	private static TimeSkewDetectedUserAlert timeSkewDetectedUserAlert;
 
 	public class NodeNameCallback extends StringCallback  {
@@ -509,7 +505,6 @@ public class Node implements TimeSkewDetectorCallback {
 
 	/** Stats */
 	public final NodeStats nodeStats;
-	public final NetworkIDManager netid;
 
 	/** Config object for the whole node. */
 	public final PersistentConfig config;
@@ -1139,7 +1134,6 @@ public class Node implements TimeSkewDetectorCallback {
 			this.fastWeakRandom = weakRandom;
 
 		nodeNameUserAlert = new MeaningfulNodeNameUserAlert(this);
-		recentlyCompletedIDs = new LRUQueue<Long>();
 		this.config = config;
 		lm = new LocationManager(random, this);
 
@@ -1263,7 +1257,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		});
 
-		nodeConfig.register("defragDatabaseOnStartup", true, sortOrder++, false, true, "Node.defragDatabaseOnStartup", "Node.defragDatabaseOnStartupLong", new BooleanCallback() {
+		nodeConfig.register("defragDatabaseOnStartup", false, sortOrder++, false, true, "Node.defragDatabaseOnStartup", "Node.defragDatabaseOnStartupLong", new BooleanCallback() {
 
 			@Override
 			public Boolean get() {
@@ -1384,8 +1378,6 @@ public class Node implements TimeSkewDetectorCallback {
 			Closer.close(raf);
 		}
 		lastBootID = oldBootID;
-
-		buildOldAgeUserAlert = new BuildOldAgeUserAlert();
 
 		nodeConfig.register("disableProbabilisticHTLs", false, sortOrder++, true, false, "Node.disablePHTLS", "Node.disablePHTLSLong",
 				new BooleanCallback() {
@@ -2043,6 +2035,26 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 		
 		storeUseSlotFilters = nodeConfig.getBoolean("storeUseSlotFilters");
+		
+		nodeConfig.register("storeSaltHashSlotFilterPersistenceTime", ResizablePersistentIntBuffer.DEFAULT_PERSISTENCE_TIME, sortOrder++, true, false, 
+				"Node.storeSaltHashSlotFilterPersistenceTime", "Node.storeSaltHashSlotFilterPersistenceTimeLong", new IntCallback() {
+
+					@Override
+					public Integer get() {
+						return ResizablePersistentIntBuffer.getPersistenceTime();
+					}
+
+					@Override
+					public void set(Integer val)
+							throws InvalidConfigValueException,
+							NodeNeedRestartException {
+						if(val >= -1)
+							ResizablePersistentIntBuffer.setPersistenceTime(val);
+						else
+							throw new InvalidConfigValueException(l10n("slotFilterPersistenceTimeError"));
+					}
+			
+		}, false);
 
 		nodeConfig.register("storeSaltHashResizeOnStart", false, sortOrder++, true, false,
 				"Node.storeSaltHashResizeOnStart", "Node.storeSaltHashResizeOnStartLong", new BooleanCallback() {
@@ -2231,8 +2243,6 @@ public class Node implements TimeSkewDetectorCallback {
 
 		if(databaseAwaitingPassword) createPasswordUserAlert();
 		if(notEnoughSpaceForAutoCrypt) createAutoCryptFailedUserAlert();
-
-		netid = new NetworkIDManager(this);
 
 		// Client cache
 
@@ -5230,20 +5240,8 @@ public class Node implements TimeSkewDetectorCallback {
 		return sb.toString();
 	}
 
-	final LRUQueue<Long> recentlyCompletedIDs;
-
-	static final int MAX_RECENTLY_COMPLETED_IDS = 10*1000;
 	/** Length of signature parameters R and S */
 	static final int SIGNATURE_PARAMETER_LENGTH = 32;
-
-	/**
-	 * Has a request completed with this ID recently?
-	 */
-	public boolean recentlyCompleted(long id) {
-		synchronized (recentlyCompletedIDs) {
-			return recentlyCompletedIDs.contains(id);
-		}
-	}
 
 	private ArrayList<Long> completedBuffer = new ArrayList<Long>();
 
@@ -5256,10 +5254,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 */
 	void completed(long id) {
 		Long[] list;
-		synchronized (recentlyCompletedIDs) {
-			recentlyCompletedIDs.push(id);
-			while(recentlyCompletedIDs.size() > MAX_RECENTLY_COMPLETED_IDS)
-				recentlyCompletedIDs.pop();
+		synchronized (completedBuffer) {
 			completedBuffer.add(id);
 			if(completedBuffer.size() < COMPLETED_THRESHOLD) return;
 			list = completedBuffer.toArray(new Long[completedBuffer.size()]);
@@ -5389,19 +5384,8 @@ public class Node implements TimeSkewDetectorCallback {
 		return this.getDarknetPortNumber();
 	}
 
-	public synchronized boolean setNewestPeerLastGoodVersion( int version ) {
-		if( version > buildOldAgeUserAlert.lastGoodVersion ) {
-			if( buildOldAgeUserAlert.lastGoodVersion == 0 ) {
-				clientCore.alerts.register(buildOldAgeUserAlert);
-			}
-			buildOldAgeUserAlert.lastGoodVersion = version;
-			return true;
-		}
-		return false;
-	}
-
-	public synchronized boolean isOudated() {
-		return (buildOldAgeUserAlert.lastGoodVersion > 0);
+	public boolean isOudated() {
+		return peers.isOutdated();
 	}
 
 	private Map<Integer, NodeToNodeMessageListener> n2nmListeners = new HashMap<Integer, NodeToNodeMessageListener>();
@@ -6380,6 +6364,18 @@ public class Node implements TimeSkewDetectorCallback {
 	/** FIXME move to Probe.java? */
 	public boolean enableRoutedPing() {
 		return enableRoutedPing;
+	}
+
+
+	public boolean updateIsUrgent() {
+		OpennetManager om = getOpennet();
+		if(om != null) {
+			if(om.announcer != null && om.announcer.isWaitingForUpdater())
+				return true;
+		}
+		if(peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, true) > PeerManager.OUTDATED_MIN_TOO_NEW_DARKNET)
+			return true;
+		return false;
 	}
 
 }

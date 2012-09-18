@@ -358,7 +358,7 @@ public class PacketSender implements Runnable {
 				}
 			} catch (BlockedTooLongException e) {
 				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendPacket+" : "+("(new packet format)")+" (version "+toSendPacket.getVersionNumber()+") - DISCONNECTING!");
-				toSendPacket.forceDisconnect(true);
+				toSendPacket.forceDisconnect();
 				onForceDisconnectBlockTooLong(toSendPacket, e);
 			}
 
@@ -389,7 +389,7 @@ public class PacketSender implements Runnable {
 				}
 			} catch (BlockedTooLongException e) {
 				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendAckOnly+" : "+("(new packet format)")+" (version "+toSendAckOnly.getVersionNumber()+") - DISCONNECTING!");
-				toSendAckOnly.forceDisconnect(true);
+				toSendAckOnly.forceDisconnect();
 				onForceDisconnectBlockTooLong(toSendAckOnly, e);
 			}
 

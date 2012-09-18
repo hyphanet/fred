@@ -20,6 +20,7 @@ import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SizeUtil;
 import freenet.support.api.HTTPRequest;
+import freenet.support.api.HTTPUploadedFile;
 
 public class N2NTMToadlet extends Toadlet {
 	private Node node;
@@ -195,23 +196,28 @@ public class N2NTMToadlet extends Toadlet {
 							Toadlet.addHomepageLink(peerTableInfobox);
 							this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 							return;
-						}	
+						}
 					} else if(request.isPartSet("n2nm-upload")) {
 						try{
-							long size = request.getUploadedFile("n2nm-upload").getData().size();
-							long limit = maxSize();
-							if(size > limit){
-								peerTableInfobox.addChild("#", l10n("tooLarge", new String[] {"attempt", "limit"}, 
-										new String[] {SizeUtil.formatSize(size, true), SizeUtil.formatSize(limit, true)}));
-								HTMLNode list = peerTableInfobox.addChild("ul");
-								Toadlet.addHomepageLink(list);
-								list.addChild("li").addChild("a", new String[] { "href", "title" },
-										new String[] { "/friends/", l10n("returnToFriends") },
-										l10n("friends"));
-								this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-								return;
+							HTTPUploadedFile file = request.getUploadedFile("n2nm-upload");
+							if(!file.getFilename().equals("")) {
+								long size = request.getUploadedFile("n2nm-upload").getData().size();
+								if(size > 0) {
+									long limit = maxSize();
+									if(size > limit){
+										peerTableInfobox.addChild("#", l10n("tooLarge", new String[] {"attempt", "limit"}, 
+												new String[] {SizeUtil.formatSize(size, true), SizeUtil.formatSize(limit, true)}));
+										HTMLNode list = peerTableInfobox.addChild("ul");
+										Toadlet.addHomepageLink(list);
+										list.addChild("li").addChild("a", new String[] { "href", "title" },
+												new String[] { "/friends/", l10n("returnToFriends") },
+												l10n("friends"));
+										this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+										return;
+									}
+									status = pn.sendFileOffer(request.getUploadedFile("n2nm-upload"), message);
+								}
 							}
-							status = pn.sendFileOffer(request.getUploadedFile("n2nm-upload"), message);
 						} catch (IOException e) {
 							peerTableInfobox.addChild("#", l10n("uploadFailed"));
 							Toadlet.addHomepageLink(peerTableInfobox);
@@ -219,9 +225,7 @@ public class N2NTMToadlet extends Toadlet {
 							return;
 						}
 					}
-					else {
-						status = pn.sendTextFeed(message);
-					}
+					status = pn.sendTextFeed(message);
 					
 					String sendStatusShort;
 					String sendStatusLong;

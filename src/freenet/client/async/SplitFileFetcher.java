@@ -225,6 +225,8 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				} else
 					throw new FetchException(FetchException.INVALID_METADATA, "Top compatibility mode is incompatible with detected compatibility mode");
 			}
+			// We assume we are the bottom layer. 
+			// If the top-block stats are passed in then we can safely say the report is definitive.
 			cb.onSplitfileCompatibilityMode(minCompatMode, maxCompatMode, metadata.getCustomSplitfileKey(), dontCompress, true, topCompatibilityMode != 0, container, context);
 
 			if((blocksPerSegment > fetchContext.maxDataBlocksPerSegment)

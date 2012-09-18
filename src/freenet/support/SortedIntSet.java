@@ -1,6 +1,7 @@
 package freenet.support;
 
 import java.util.AbstractCollection;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -226,7 +227,7 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 	}
 
 	private int binarySearch(int key) {
-		return Fields.binarySearch(data, key, 0, length-1);
+		return Arrays.binarySearch(data, 0, length, key);
 	}
 
 	@Override

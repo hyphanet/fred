@@ -9,8 +9,10 @@ public interface Listener {
 	 * @param error type: What error occurred. Can be one of Probe.ProbeError.
 	 * @param code Code byte value. If the error is an UNKNOWN or UNRECOGNIZED_TYPE which occurred locally this
 	 *             contains the unrecognized code from the message. Otherwise it is null.
+	 * @param local True if the error occurred locally and was not prompted by an error relayed from a remote node.
+	 *              False if the error was relayed from a remote node.
 	 */
-	void onError(Error error, Byte code);
+	void onError(Error error, Byte code, boolean local);
 
 	/**
 	 * Endpoint opted not to respond with the requested information.

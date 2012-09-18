@@ -4,6 +4,7 @@
 package freenet.client.async;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -11,7 +12,6 @@ import com.db4o.ObjectContainer;
 
 import freenet.keys.Key;
 import freenet.node.SendableGet;
-import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -256,16 +256,16 @@ public class RequestCooldownQueue implements CooldownQueue {
 		if(logMINOR) Logger.minor(this, "Remove key "+key+" client "+client+" at time "+time+" startPtr="+startPtr+" endPtr="+endPtr+" holes="+holes+" keys.length="+keys.length);
 		int idx = -1;
 		if(endPtr > startPtr) {
-			idx = Fields.binarySearch(times, time, startPtr, endPtr);
+			idx = Arrays.binarySearch(times, startPtr, endPtr, time);
 		} else if(endPtr == startPtr) {
 			if(logMINOR) Logger.minor(this, "No keys queued");
 			return false;
 		} else { // endPtr < startPtr
 			// FIXME: ARGH! Java doesn't provide binarySearch with from and to!
 			if(startPtr != times.length - 1)
-				idx = Fields.binarySearch(times, time, startPtr, times.length - 1);
+				idx = Arrays.binarySearch(times, startPtr, times.length, time);
 			if(idx < 0 && startPtr != 0)
-				idx = Fields.binarySearch(times, time, 0, endPtr);
+				idx = Arrays.binarySearch(times, 0, endPtr, time);
 		}
 		if(logMINOR) Logger.minor(this, "idx = "+idx);
 		if(idx < 0) return false;

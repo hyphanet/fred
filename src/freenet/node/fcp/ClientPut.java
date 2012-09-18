@@ -496,8 +496,11 @@ public class ClientPut extends ClientPutBase {
 	}
 	
 	public enum COMPRESS_STATE {
+		/** Waiting for a slot on the compression scheduler */
 		WAITING,
+		/** Compressing the data */
 		COMPRESSING,
+		/** Inserting the data */
 		WORKING
 	}
 	

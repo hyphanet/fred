@@ -34,11 +34,13 @@ final public class FileUtil {
 	public static enum OperatingSystem {
 		All,
 		MacOS,
-		Unix,
+		Linux,
+		FreeBSD,
+		GenericUnix,
 		Windows
 	};
 
-	private static final OperatingSystem detectedOS;
+	public static final OperatingSystem detectedOS;
 
 	private static final Charset fileNameCharset;
 
@@ -80,8 +82,18 @@ final public class FileUtil {
 			if(name.indexOf("mac") >= 0)
 				return OperatingSystem.MacOS;
 
-			if(name.indexOf("unix") >= 0 || name.indexOf("linux") >= 0 || name.indexOf("freebsd") >= 0)
-				return OperatingSystem.Unix;
+			if(name.indexOf("linux") >= 0)
+				return OperatingSystem.Linux;
+			
+			if(name.indexOf("freebsd") >= 0)
+				return OperatingSystem.FreeBSD;
+			
+			if(name.indexOf("unix") >= 0)
+				return OperatingSystem.GenericUnix;
+			else if(File.separatorChar == '/')
+				return OperatingSystem.GenericUnix;
+			else if(File.separatorChar == '\\')
+				return OperatingSystem.Windows;
 
 			Logger.error(FileUtil.class, "Unknown operating system:" + name);
 		} catch(Throwable t) {
@@ -338,7 +350,9 @@ final public class FileUtil {
 		switch(targetOS) {
 			case All: break;
 			case MacOS: break;
-			case Unix: break;
+			case Linux: break;
+			case FreeBSD: break;
+			case GenericUnix: break;
 			case Windows: break;
 			default:
 				Logger.error(FileUtil.class, "Unsupported operating system: " + targetOS);
@@ -385,7 +399,7 @@ final public class FileUtil {
 				}
 			}
 			
-			if(targetOS == OperatingSystem.All || targetOS == OperatingSystem.Unix) {
+			if(targetOS == OperatingSystem.All || targetOS == OperatingSystem.GenericUnix || targetOS == OperatingSystem.Linux || targetOS == OperatingSystem.FreeBSD) {
 				if(StringValidityChecker.isUnixReservedPrintableFilenameCharacter(c)) {
 					sb.append(def);
 					continue;

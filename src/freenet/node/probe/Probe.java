@@ -12,6 +12,7 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.node.Node;
+import freenet.node.OpennetManager;
 import freenet.node.PeerNode;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -95,6 +96,20 @@ public class Probe implements ByteCounter {
 	 * Maximum number of milliseconds to wait before sending a response.
 	 */
 	public static final long WAIT_MAX = 2000L;
+
+	/**
+	 * Maximum number of probes accepted from a single peer in the past minute.
+	 */
+	public final int COUNTER_MAX_PEER = 10;
+
+	/**
+	 * Maximum number of probes started locally in the past minute. This is the maximum conceivable value; the
+	 * probes should be used with a number of requests per minute closer to the per-peer limit times the minimum
+	 * expected number of peers. Around this value, and certainly above it, remote OVERLOADs may start coming
+	 * in, which are not useful. The Metropolis-Hastings correction makes behavior potentially inconsistent, so
+	 * keeping an eye on remote OVERLOADs is wise.
+	 */
+	public final int COUNTER_MAX_LOCAL = COUNTER_MAX_PEER * OpennetManager.MAX_PEERS_FOR_SCALING;
 
 	/**
 	 * Number of accepted probes in the last minute, keyed by peer.
@@ -339,7 +354,7 @@ public class Probe implements ByteCounter {
 			if (logDEBUG) Logger.debug(Probe.class, "Probe type is " + type.name() + ".");
 		} else {
 			if (logMINOR) Logger.minor(Probe.class, "Invalid probe type " + typeCode + ".");
-			listener.onError(Error.UNRECOGNIZED_TYPE, typeCode);
+			listener.onError(Error.UNRECOGNIZED_TYPE, typeCode, true);
 			return;
 		}
 		byte htl = message.getByte(DMT.HTL);
@@ -363,10 +378,11 @@ public class Probe implements ByteCounter {
 		synchronized (accepted) {
 			//If no counter exists for the current source, add one.
 			if (!accepted.containsKey(source)) {
-				accepted.put(source, new Counter());
+				// Null source is started locally.
+				accepted.put(source, new Counter(source == null ? COUNTER_MAX_LOCAL : COUNTER_MAX_PEER));
 			}
 			final Counter counter = accepted.get(source);
-			if (counter.value() == Counter.MAX_ACCEPTED) {
+			if (counter.value() == counter.maxAccepted) {
 				//Set a flag instead of sending inside the lock.
 				availableSlot = false;
 			} else {
@@ -393,7 +409,7 @@ public class Probe implements ByteCounter {
 		if (!availableSlot) {
 			//Send an overload error back to the source.
 			if (logDEBUG) Logger.debug(Probe.class, "Already accepted maximum number of probes; rejecting incoming.");
-			listener.onError(Error.OVERLOAD, null);
+			listener.onError(Error.OVERLOAD, null, true);
 			return;
 		}
 		//One-minute window on acceptance; free up this probe slot in 60 seconds.
@@ -446,7 +462,7 @@ public class Probe implements ByteCounter {
 				 * If this is a locally-started request, not a relayed one, give an error.
 				 * Otherwise, in this case there's nowhere to send the error.
 				 */
-				listener.onError(Error.DISCONNECTED, null);
+				listener.onError(Error.DISCONNECTED, null, true);
 				return true;
 			}
 
@@ -499,7 +515,7 @@ public class Probe implements ByteCounter {
 			Logger.warning(Probe.class, "Aborting probe request: send attempt limit reached.");
 		}
 
-		listener.onError(Error.CANNOT_FORWARD, null);
+		listener.onError(Error.CANNOT_FORWARD, null, true);
 		return true;
 	}
 
@@ -681,7 +697,7 @@ public class Probe implements ByteCounter {
 		@Override
 		public void onDisconnect(PeerContext context) {
 			if (logDEBUG) Logger.debug(Probe.class, "Next node in chain disconnected.");
-			listener.onError(Error.DISCONNECTED, null);
+			listener.onError(Error.DISCONNECTED, null, true);
 		}
 
 		/**
@@ -708,10 +724,10 @@ public class Probe implements ByteCounter {
 			} else if (message.getSpec().equals(DMT.ProbeError)) {
 				final byte rawError = message.getByte(DMT.TYPE);
 				if (Error.isValid(rawError)) {
-					listener.onError(Error.valueOf(rawError), null);
+					listener.onError(Error.valueOf(rawError), null, false);
 				} else {
 					//Not recognized locally.
-					listener.onError(Error.UNKNOWN, rawError);
+					listener.onError(Error.UNKNOWN, rawError, false);
 				}
 			} else if (message.getSpec().equals(DMT.ProbeRefused)) {
 				listener.onRefused();
@@ -726,7 +742,7 @@ public class Probe implements ByteCounter {
 		@Override
 		public void onTimeout() {
 			if (logDEBUG) Logger.debug(Probe.class, "Timed out.");
-			listener.onError(Error.TIMEOUT, null);
+			listener.onError(Error.TIMEOUT, null, true);
 		}
 
 		@Override
@@ -770,7 +786,7 @@ public class Probe implements ByteCounter {
 		}
 
 		@Override
-		public void onError(Error error, Byte code) {
+		public void onError(Error error, Byte code, boolean local) {
 			send(DMT.createProbeError(uid, error));
 		}
 

@@ -852,6 +852,18 @@ public class FCPServer implements Runnable, DownloadCache {
 		globalRebootClient.addRequestCompletionCallback(cb);
 	}
 
+	/** Start a request on the global queue. Return after it has started, 
+	 * e.g. it will show up on the queue page, it will persist after 
+	 * restart etc. Actually it won't persist until the next commit, but 
+	 * it's close...
+	 * @param req The request (insert etc) to start.
+	 * @param container The database handle. This method must be called on a DBJob.
+	 * @param context The client layer context object.
+	 * @throws IdentifierCollisionException If there is already a request with that identifier.
+	 * @throws DatabaseDisabledException If the database is disabled/broken/turned off, 
+	 * if we are shutting down, if we are waiting for the user to give us the decryption 
+	 * password etc.
+	 */
 	public void startBlocking(final ClientRequest req, ObjectContainer container, ClientContext context) throws IdentifierCollisionException, DatabaseDisabledException {
 		if(req.persistenceType == ClientRequest.PERSIST_REBOOT) {
 			req.start(null, core.clientContext);

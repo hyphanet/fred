@@ -22,7 +22,7 @@ public class NullBasePeerNode implements BasePeerNode {
 	}
 
 	@Override
-	public void forceDisconnect(boolean dump) {
+	public void forceDisconnect() {
 		throw new UnsupportedOperationException();
 	}
 

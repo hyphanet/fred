@@ -203,7 +203,6 @@ maintainers may prefer to use this instead of build.xml.
 		<jar jarfile="${main.dst}/freenet.jar" basedir="${main.make}">
 			<manifest>
 				<attribute name="Main-Class" value="freenet.node.Node"/>
-				<attribute name="Built-By" value="${user.name}"/>
 				<attribute name="Required-Ext-Version" value="${contrib.version.min}"/>
 				<attribute name="Recommended-Ext-Version" value="${contrib.version.rec}"/>
 				<attribute name="Class-Path" value="${lib.jars.package}" />

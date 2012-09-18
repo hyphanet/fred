@@ -4,13 +4,17 @@ class Counter {
 	/**
 	 * Maximum number of accepted probes in the past minute.
 	 */
-	public static final byte MAX_ACCEPTED = 10;
+	public final int maxAccepted;
 
-	private byte c = 0;
+	private int c = 0;
+
+	public Counter(int maxAccepted) {
+		this.maxAccepted = maxAccepted;
+	}
 
 	public void increment() {
 		c++;
-		if (c > MAX_ACCEPTED) {
+		if (c > maxAccepted) {
 			/*
 			 * The counter should never be incremented above the maximum, as an increment should
 			 * only happen after it has been confirmed to be below the limit. If this happens, it
@@ -33,7 +37,7 @@ class Counter {
 		}
 	}
 
-	public byte value() {
+	public int value() {
 		return c;
 	}
 }
