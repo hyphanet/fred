@@ -905,7 +905,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 	/**
 	 * Maximum message size in bytes.
 	 */
-	public static final int MAX_MESSAGE_SIZE = 2048;
+	public static final int MAX_MESSAGE_SIZE = 4096;
 	
 	private int maxSendBufferSize() {
 		return MAX_RECEIVE_BUFFER_SIZE;
