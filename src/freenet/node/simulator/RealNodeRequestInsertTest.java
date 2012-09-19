@@ -214,8 +214,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 for(int i=0;i<nodes.length;i++) {
                 	load.append(i);
                 	load.append(':');
-                	nodes[i].addRunningUIDs(runningUIDsList);
-                	int runningUIDsAlt = nodes[i].getTotalRunningUIDsAlt();
+                	nodes[i].tracker.addRunningUIDs(runningUIDsList);
+                	int runningUIDsAlt = nodes[i].tracker.getTotalRunningUIDsAlt();
                 	totalRunningUIDsAlt += runningUIDsAlt;
                 	load.append(totalRunningUIDsAlt);
                 	if(i != nodes.length-1)
