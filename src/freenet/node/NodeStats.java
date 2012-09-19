@@ -20,6 +20,7 @@ import freenet.io.xfer.BlockTransmitter.BlockTimeCallback;
 import freenet.io.xfer.BulkTransmitter;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node.CountedRequests;
+import freenet.node.Node.WaitingForSlots;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.stats.StatsNotAvailableException;
 import freenet.node.stats.StoreLocationStats;
@@ -1917,9 +1918,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		    fs.put("allocatedSlotRemote",allocatedSlotRemote);
 		}
 
-		int[] waitingSlots = node.countRequestsWaitingForSlots();
-		fs.put("RequestsWaitingSlotsLocal", waitingSlots[0]);
-		fs.put("RequestsWaitingSlotsRemote", waitingSlots[1]);
+		WaitingForSlots waitingSlots = node.countRequestsWaitingForSlots();
+		fs.put("RequestsWaitingSlotsLocal", waitingSlots.local);
+		fs.put("RequestsWaitingSlotsRemote", waitingSlots.remote);
 
 		fs.put("successfulLocalCHKFetchTimeBulk", successfulLocalCHKFetchTimeAverageBulk.currentValue());
 		fs.put("successfulLocalCHKFetchTimeRT", successfulLocalCHKFetchTimeAverageRT.currentValue());
@@ -3615,8 +3616,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public void drawNewLoadManagementDelayTimes(HTMLNode content) {
-		int[] waitingSlots = node.countRequestsWaitingForSlots();
-		content.addChild("p").addChild("#", l10n("slotsWaiting", new String[] { "local", "remote" }, new String[] { Integer.toString(waitingSlots[0]), Integer.toString(waitingSlots[1]) }));
+		WaitingForSlots waitingSlots = node.countRequestsWaitingForSlots();
+		content.addChild("p").addChild("#", l10n("slotsWaiting", new String[] { "local", "remote" }, new String[] { Integer.toString(waitingSlots.local), Integer.toString(waitingSlots.remote) }));
 		HTMLNode table = content.addChild("table", "border", "0");
 		HTMLNode header = table.addChild("tr");
 		header.addChild("th", l10n("delayTimes"));

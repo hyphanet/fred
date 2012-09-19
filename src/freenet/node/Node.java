@@ -659,9 +659,6 @@ public class Node implements TimeSkewDetectorCallback {
 	 * probabilistic decrement at the edges of the HTLs. */
 	boolean disableProbabilisticHTLs;
 
-	/** HashSet of currently running request UIDs */
-	private final HashMap<Long,UIDTag> runningUIDs;
-	
 	// The runningLocal* are secondary. That is, we take the lock on the
 	// corresponding running* when accessing runningLocal*. Local requests
 	// have a tag in *both*.
@@ -1152,7 +1149,6 @@ public class Node implements TimeSkewDetectorCallback {
 		transferringRequestSendersRT = new HashMap<NodeCHK, RequestSender>();
 		transferringRequestSendersBulk = new HashMap<NodeCHK, RequestSender>();
 		transferringRequestHandlers = new HashSet<Long>();
-		runningUIDs = new HashMap<Long,UIDTag>();
 		runningCHKGetUIDsRT = new HashMap<Long,RequestTag>();
 		runningLocalCHKGetUIDsRT = new HashMap<Long,RequestTag>();
 		runningSSKGetUIDsRT = new HashMap<Long,RequestTag>();
@@ -4618,18 +4614,10 @@ public class Node implements TimeSkewDetectorCallback {
 			HashMap<Long,OfferReplyTag> map = getOfferTracker(ssk, realTimeFlag);
 			innerLock(map, null, (OfferReplyTag)tag, uid, ssk, insert, offerReply, false);
 		} else if(insert) {
-			synchronized(runningUIDs) {
-				if(runningUIDs.containsKey(uid)) return false; // Already present.
-				runningUIDs.put(uid, tag);
-			}
 			HashMap<Long,InsertTag> overallMap = getInsertTracker(ssk, false, realTimeFlag);
 			HashMap<Long,InsertTag> localMap = local ? getInsertTracker(ssk, local, realTimeFlag) : null;
 			innerLock(overallMap, localMap, (InsertTag)tag, uid, ssk, insert, offerReply, local);
 		} else {
-			synchronized(runningUIDs) {
-				if(runningUIDs.containsKey(uid)) return false; // Already present.
-				runningUIDs.put(uid, tag);
-			}
 			HashMap<Long,RequestTag> overallMap = getRequestTracker(ssk,false, realTimeFlag);
 			HashMap<Long,RequestTag> localMap = local ? getRequestTracker(ssk,local, realTimeFlag) : null;
 			innerLock(overallMap, localMap, (RequestTag)tag, uid, ssk, insert, offerReply, local);
@@ -4677,22 +4665,6 @@ public class Node implements TimeSkewDetectorCallback {
 			HashMap<Long,RequestTag> overallMap = getRequestTracker(ssk, false, realTimeFlag);
 			HashMap<Long,RequestTag> localMap = local ? getRequestTracker(ssk,local, realTimeFlag) : null;
 			innerUnlock(overallMap, localMap, (RequestTag)tag, uid, ssk, insert, offerReply, local, canFail);
-		}
-
-		if(!offerReply) {
-			synchronized(runningUIDs) {
-				UIDTag oldTag = runningUIDs.get(uid);
-				if(oldTag == null) {
-					if(canFail) return;
-					throw new IllegalStateException("Could not unlock "+uid+ "! : ssk="+ssk+" insert="+insert+" canFail="+canFail+" offerReply="+offerReply+" local="+local);
-				} else if(tag != oldTag) {
-					if(canFail) return;
-					Logger.error(this, "Removing "+tag+" for "+uid+" but "+tag+" is registered!");
-					return;
-				} else {
-					runningUIDs.remove(uid);
-				}
-			}
 		}
 	}
 
@@ -4861,25 +4833,42 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 	
+	public class WaitingForSlots {
+		int local;
+		int remote;
+	}
+	
 	/**
 	 * @return [0] is the number of local requests waiting for slots, [1] is the
 	 * number of remote requests waiting for slots.
 	 */
-	public int[] countRequestsWaitingForSlots() {
+	public WaitingForSlots countRequestsWaitingForSlots() {
+		WaitingForSlots slots = new WaitingForSlots();
+		countRequestsWaitingForSlots(runningSSKGetUIDsRT, slots);
+		countRequestsWaitingForSlots(runningCHKGetUIDsRT, slots);
+		countRequestsWaitingForSlots(runningSSKPutUIDsRT, slots);
+		countRequestsWaitingForSlots(runningCHKPutUIDsRT, slots);
+		countRequestsWaitingForSlots(runningSSKOfferReplyUIDsRT, slots);
+		countRequestsWaitingForSlots(runningCHKOfferReplyUIDsRT, slots);
+		countRequestsWaitingForSlots(runningSSKGetUIDsBulk, slots);
+		countRequestsWaitingForSlots(runningCHKGetUIDsBulk, slots);
+		countRequestsWaitingForSlots(runningSSKPutUIDsBulk, slots);
+		countRequestsWaitingForSlots(runningCHKPutUIDsBulk, slots);
+		return slots;
+	}
+	
+	private void countRequestsWaitingForSlots(HashMap<Long, ? extends UIDTag> runningUIDs, WaitingForSlots slots) {
 		// FIXME use a counter, but that means make sure it always removes it when something bad happens.
 		
-		int local = 0;
-		int remote = 0;
 		synchronized(runningUIDs) {
 			for(UIDTag tag : runningUIDs.values()) {
 				if(!tag.isWaitingForSlot()) continue;
 				if(tag.isLocal())
-					local++;
+					slots.local++;
 				else
-					remote++;
+					slots.remote++;
 			}
 		}
-		return new int[] { local, remote };
 	}
 
 	void reassignTagToSelf(UIDTag tag) {
@@ -5967,25 +5956,32 @@ public class Node implements TimeSkewDetectorCallback {
 			return fetch((NodeSSK)key, true, canReadClientCache, false, false, forULPR, null) != null;
 	}
 
-	public int getTotalRunningUIDs() {
-		synchronized(runningUIDs) {
-			return runningUIDs.size();
-		}
-	}
-
 	public void addRunningUIDs(Vector<Long> list) {
+		addRunningUIDs(runningSSKGetUIDsRT, list);
+		addRunningUIDs(runningCHKGetUIDsRT, list);
+		addRunningUIDs(runningSSKPutUIDsRT, list);
+		addRunningUIDs(runningCHKPutUIDsRT, list);
+		addRunningUIDs(runningSSKOfferReplyUIDsRT, list);
+		addRunningUIDs(runningCHKOfferReplyUIDsRT, list);
+		addRunningUIDs(runningSSKGetUIDsBulk, list);
+		addRunningUIDs(runningCHKGetUIDsBulk, list);
+		addRunningUIDs(runningSSKPutUIDsBulk, list);
+		addRunningUIDs(runningCHKPutUIDsBulk, list);
+		addRunningUIDs(runningSSKOfferReplyUIDsBulk, list);
+		addRunningUIDs(runningCHKOfferReplyUIDsBulk, list);
+	}
+	
+	private void addRunningUIDs(HashMap<Long, ? extends UIDTag> runningUIDs, Vector<Long> list) {
 		synchronized(runningUIDs) {
 			list.addAll(runningUIDs.keySet());
 		}
 	}
 
 	public int getTotalRunningUIDsAlt() {
-		synchronized(runningUIDs) {
-			return this.runningCHKGetUIDsRT.size() + this.runningCHKPutUIDsRT.size() + this.runningSSKGetUIDsRT.size() +
-			this.runningSSKPutUIDsRT.size() + this.runningSSKOfferReplyUIDsRT.size() + this.runningCHKOfferReplyUIDsRT.size() +
-			this.runningCHKGetUIDsBulk.size() + this.runningCHKPutUIDsBulk.size() + this.runningSSKGetUIDsBulk.size() +
-			this.runningSSKPutUIDsBulk.size() + this.runningSSKOfferReplyUIDsBulk.size() + this.runningCHKOfferReplyUIDsBulk.size();
-		}
+		return this.runningCHKGetUIDsRT.size() + this.runningCHKPutUIDsRT.size() + this.runningSSKGetUIDsRT.size() +
+		this.runningSSKPutUIDsRT.size() + this.runningSSKOfferReplyUIDsRT.size() + this.runningCHKOfferReplyUIDsRT.size() +
+		this.runningCHKGetUIDsBulk.size() + this.runningCHKPutUIDsBulk.size() + this.runningSSKGetUIDsBulk.size() +
+		this.runningSSKPutUIDsBulk.size() + this.runningSSKOfferReplyUIDsBulk.size() + this.runningCHKOfferReplyUIDsBulk.size();
 	}
 
 	/**
