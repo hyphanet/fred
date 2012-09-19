@@ -661,6 +661,11 @@ public class Node implements TimeSkewDetectorCallback {
 
 	/** HashSet of currently running request UIDs */
 	private final HashMap<Long,UIDTag> runningUIDs;
+	
+	// The runningLocal* are secondary. That is, we take the lock on the
+	// corresponding running* when accessing runningLocal*. Local requests
+	// have a tag in *both*.
+	
 	private final HashMap<Long,RequestTag> runningCHKGetUIDsBulk;
 	private final HashMap<Long,RequestTag> runningLocalCHKGetUIDsBulk;
 	private final HashMap<Long,RequestTag> runningSSKGetUIDsBulk;
@@ -4609,34 +4614,46 @@ public class Node implements TimeSkewDetectorCallback {
 	public boolean lockUID(long uid, boolean ssk, boolean insert, boolean offerReply, boolean local, boolean realTimeFlag, UIDTag tag) {
 		// If these are switched around, we must remember to remove from both.
 		if(offerReply) {
+			// local irrelevant for OfferReplyTag's.
 			HashMap<Long,OfferReplyTag> map = getOfferTracker(ssk, realTimeFlag);
-			innerLock(map, (OfferReplyTag)tag, uid, ssk, insert, offerReply, local);
+			innerLock(map, null, (OfferReplyTag)tag, uid, ssk, insert, offerReply, false);
 		} else if(insert) {
 			synchronized(runningUIDs) {
 				if(runningUIDs.containsKey(uid)) return false; // Already present.
 				runningUIDs.put(uid, tag);
 			}
-			HashMap<Long,InsertTag> map = getInsertTracker(ssk,local, realTimeFlag);
-			innerLock(map, (InsertTag)tag, uid, ssk, insert, offerReply, local);
+			HashMap<Long,InsertTag> overallMap = getInsertTracker(ssk, false, realTimeFlag);
+			HashMap<Long,InsertTag> localMap = local ? getInsertTracker(ssk, local, realTimeFlag) : null;
+			innerLock(overallMap, localMap, (InsertTag)tag, uid, ssk, insert, offerReply, local);
 		} else {
 			synchronized(runningUIDs) {
 				if(runningUIDs.containsKey(uid)) return false; // Already present.
 				runningUIDs.put(uid, tag);
 			}
-			HashMap<Long,RequestTag> map = getRequestTracker(ssk,local, realTimeFlag);
-			innerLock(map, (RequestTag)tag, uid, ssk, insert, offerReply, local);
+			HashMap<Long,RequestTag> overallMap = getRequestTracker(ssk,false, realTimeFlag);
+			HashMap<Long,RequestTag> localMap = local ? getRequestTracker(ssk,local, realTimeFlag) : null;
+			innerLock(overallMap, localMap, (RequestTag)tag, uid, ssk, insert, offerReply, local);
 		}
 		return true;
 	}
 
-	private<T extends UIDTag> void innerLock(HashMap<Long, T> map, T tag, Long uid, boolean ssk, boolean insert, boolean offerReply, boolean local) {
-		synchronized(map) {
-			if(logMINOR) Logger.minor(this, "Locking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+map.size(), new Exception("debug"));
-			if(map.containsKey(uid)) {
-				Logger.error(this, "Already have UID in specific map ("+ssk+","+insert+","+offerReply+","+local+") but not in general map: trying to register "+tag+" but already have "+map.get(uid));
+	private<T extends UIDTag> void innerLock(HashMap<Long, T> overallMap, HashMap<Long, T> localMap, T tag, Long uid, boolean ssk, boolean insert, boolean offerReply, boolean local) {
+		synchronized(overallMap) {
+			if(logMINOR) Logger.minor(this, "Locking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+overallMap.size(), new Exception("debug"));
+			if(overallMap.containsKey(uid)) {
+				Logger.error(this, "Already have UID in specific map ("+ssk+","+insert+","+offerReply+","+local+") but not in general map: trying to register "+tag+" but already have "+overallMap.get(uid));
 			}
-			map.put(uid, tag);
-			if(logMINOR) Logger.minor(this, "Locked "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+map.size());
+			overallMap.put(uid, tag);
+			if(logMINOR) Logger.minor(this, "Locked "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+overallMap.size());
+			if(local) {
+				if(logMINOR) Logger.minor(this, "Locking (local) "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+localMap.size(), new Exception("debug"));
+				if(localMap.containsKey(uid)) {
+					Logger.error(this, "Already have UID in specific map (local) ("+ssk+","+insert+","+offerReply+","+local+") but not in general map: trying to register "+tag+" but already have "+localMap.get(uid));
+				}
+				localMap.put(uid, tag);
+				if(logMINOR) Logger.minor(this, "Locked (local) "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+localMap.size());
+				
+			}
 		}
 	}
 
@@ -4651,13 +4668,15 @@ public class Node implements TimeSkewDetectorCallback {
 
 		if(offerReply) {
 			HashMap<Long,OfferReplyTag> map = getOfferTracker(ssk, realTimeFlag);
-			innerUnlock(map, (OfferReplyTag)tag, uid, ssk, insert, offerReply, local, canFail);
+			innerUnlock(map, null, (OfferReplyTag)tag, uid, ssk, insert, offerReply, false, canFail);
 		} else if(insert) {
-			HashMap<Long,InsertTag> map = getInsertTracker(ssk,local, realTimeFlag);
-			innerUnlock(map, (InsertTag)tag, uid, ssk, insert, offerReply, local, canFail);
+			HashMap<Long,InsertTag> overallMap = getInsertTracker(ssk, false, realTimeFlag);
+			HashMap<Long,InsertTag> localMap = local ? getInsertTracker(ssk,local, realTimeFlag) : null;
+			innerUnlock(overallMap, localMap, (InsertTag)tag, uid, ssk, insert, offerReply, local, canFail);
 		} else {
-			HashMap<Long,RequestTag> map = getRequestTracker(ssk,local, realTimeFlag);
-			innerUnlock(map, (RequestTag)tag, uid, ssk, insert, offerReply, local, canFail);
+			HashMap<Long,RequestTag> overallMap = getRequestTracker(ssk, false, realTimeFlag);
+			HashMap<Long,RequestTag> localMap = local ? getRequestTracker(ssk,local, realTimeFlag) : null;
+			innerUnlock(overallMap, localMap, (RequestTag)tag, uid, ssk, insert, offerReply, local, canFail);
 		}
 
 		if(!offerReply) {
@@ -4677,18 +4696,48 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-	private<T extends UIDTag> void innerUnlock(HashMap<Long, T> map, T tag, Long uid, boolean ssk, boolean insert, boolean offerReply, boolean local, boolean canFail) {
-		synchronized(map) {
-			if(logMINOR) Logger.minor(this, "Unlocking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+map.size(), new Exception("debug"));
-			if(map.get(uid) != tag) {
+	/**
+	 * Do the actual unlock.
+	 * @param <T> The type of the tag.
+	 * @param overallMap The overall map for this group of requests. LOCKING:
+	 * We use the overallMap as lock for both.
+	 * @param localMap The local map if any. We check on overallMap and then
+	 * remove from both.
+	 * @param tag The tag to remove.
+	 * @param uid The UID of the tag.
+	 * @param ssk Whether it is an SSK.
+	 * @param insert Whether it is an insert.
+	 * @param offerReply Whether it is an offer reply.
+	 * @param local Whether it is local. If it is local we use both maps. If
+	 * it is not we expect the latter to be null.
+	 * @param canFail
+	 */
+	private<T extends UIDTag> void innerUnlock(HashMap<Long, T> overallMap, HashMap<Long, T> localMap, T tag, Long uid, boolean ssk, boolean insert, boolean offerReply, boolean local, boolean canFail) {
+		synchronized(overallMap) {
+			if(logMINOR) Logger.minor(this, "Unlocking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+overallMap.size(), new Exception("debug"));
+			if(overallMap.get(uid) != tag) {
 				if(canFail) {
-					if(logMINOR) Logger.minor(this, "Can fail and did fail: removing "+tag+" got "+map.get(uid)+" for "+uid);
+					if(logMINOR) Logger.minor(this, "Can fail and did fail: removing "+tag+" got "+overallMap.get(uid)+" for "+uid);
 				} else {
-					Logger.error(this, "Removing "+tag+" for "+uid+" returned "+map.get(uid));
+					Logger.error(this, "Removing "+tag+" for "+uid+" returned "+overallMap.get(uid));
 				}
 			} else
-				map.remove(uid);
-			if(logMINOR) Logger.minor(this, "Unlocked "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+map.size());
+				overallMap.remove(uid);
+			if(logMINOR) Logger.minor(this, "Unlocked "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+overallMap.size());
+			if(local) {
+				if(localMap.get(uid) != tag) {
+					if(canFail) {
+						if(logMINOR) Logger.minor(this, "Can fail and did fail (local): removing "+tag+" got "+localMap.get(uid)+" for "+uid);
+					} else {
+						Logger.error(this, "Removing "+tag+" for "+uid+" returned (local) "+localMap.get(uid));
+					}
+				} else
+					localMap.remove(uid);
+				if(logMINOR) Logger.minor(this, "Unlocked (local) "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+localMap.size());
+				
+			} else {
+				assert(localMap == null);
+			}
 		}
 	}
 
@@ -4717,6 +4766,8 @@ public class Node implements TimeSkewDetectorCallback {
 			int transfersInSR = 0;
 			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
 				UIDTag tag = entry.getValue();
+				// The overall running* map can include local. But the local map can't include non-local.
+				if((!local) && tag.wasLocal) continue;
 				int out = tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, true);
 				int in = tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, true);
 				count++;
@@ -4756,6 +4807,8 @@ public class Node implements TimeSkewDetectorCallback {
 			if(source != null && local) return;
 			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
 				UIDTag tag = entry.getValue();
+				// The overall running* map can include local. But the local map can't include non-local.
+				if((!local) && tag.wasLocal) continue;
 				if(tag.getSource() == source) {
 					int out = tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, true);
 					int in = tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, true);
@@ -4784,6 +4837,8 @@ public class Node implements TimeSkewDetectorCallback {
 			// FIXME improve efficiency!
 			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
 				UIDTag tag = entry.getValue();
+				// The overall running* map can include local. But the local map can't include non-local.
+				if((!local) && tag.wasLocal) continue;
 				// Ordinary requests can be routed to an offered key.
 				// So we *DO NOT* care whether it's an ordinary routed relayed request or a GetOfferedKey, if we are counting outgoing requests.
 				if(tag.currentlyFetchingOfferedKeyFrom(source)) {
@@ -4894,20 +4949,12 @@ public class Node implements TimeSkewDetectorCallback {
 		@Override
 		public void run() {
 			try {
-				checkUIDs(runningLocalSSKGetUIDsRT);
-				checkUIDs(runningLocalCHKGetUIDsRT);
-				checkUIDs(runningLocalSSKPutUIDsRT);
-				checkUIDs(runningLocalCHKPutUIDsRT);
 				checkUIDs(runningSSKGetUIDsRT);
 				checkUIDs(runningCHKGetUIDsRT);
 				checkUIDs(runningSSKPutUIDsRT);
 				checkUIDs(runningCHKPutUIDsRT);
 				checkUIDs(runningSSKOfferReplyUIDsRT);
 				checkUIDs(runningCHKOfferReplyUIDsRT);
-				checkUIDs(runningLocalSSKGetUIDsBulk);
-				checkUIDs(runningLocalCHKGetUIDsBulk);
-				checkUIDs(runningLocalSSKPutUIDsBulk);
-				checkUIDs(runningLocalCHKPutUIDsBulk);
 				checkUIDs(runningSSKGetUIDsBulk);
 				checkUIDs(runningCHKGetUIDsBulk);
 				checkUIDs(runningSSKPutUIDsBulk);
@@ -4988,17 +5035,12 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public int getNumSSKRequests() {
 		int total = 0;
+		// running* include all requests, local and remote.
 		synchronized(runningSSKGetUIDsBulk) {
 			total += runningSSKGetUIDsBulk.size();
 		}
 		synchronized(runningSSKGetUIDsRT) {
 			total += runningSSKGetUIDsRT.size();
-		}
-		synchronized(runningLocalSSKGetUIDsBulk) {
-			total += runningLocalSSKGetUIDsBulk.size();
-		}
-		synchronized(runningLocalSSKGetUIDsRT) {
-			total += runningLocalSSKGetUIDsRT.size();
 		}
 		return total;
 	}
@@ -5011,12 +5053,6 @@ public class Node implements TimeSkewDetectorCallback {
 		synchronized(runningCHKGetUIDsRT) {
 			total += runningCHKGetUIDsRT.size();
 		}
-		synchronized(runningLocalCHKGetUIDsBulk) {
-			total += runningLocalCHKGetUIDsBulk.size();
-		}
-		synchronized(runningLocalCHKGetUIDsRT) {
-			total += runningLocalCHKGetUIDsRT.size();
-		}
 		return total;
 	}
 
@@ -5027,12 +5063,6 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		synchronized(runningSSKPutUIDsRT) {
 			total += runningSSKPutUIDsRT.size();
-		}
-		synchronized(runningLocalSSKPutUIDsBulk) {
-			total += runningLocalSSKPutUIDsBulk.size();
-		}
-		synchronized(runningLocalSSKPutUIDsRT) {
-			total += runningLocalSSKPutUIDsRT.size();
 		}
 		return total;
 	}
@@ -5045,21 +5075,15 @@ public class Node implements TimeSkewDetectorCallback {
 		synchronized(runningCHKPutUIDsRT) {
 			total += runningCHKPutUIDsRT.size();
 		}
-		synchronized(runningLocalCHKPutUIDsBulk) {
-			total += runningLocalCHKPutUIDsBulk.size();
-		}
-		synchronized(runningLocalCHKPutUIDsRT) {
-			total += runningLocalCHKPutUIDsRT.size();
-		}
 		return total;
 	}
 
 	public int getNumLocalSSKRequests() {
 		int total = 0;
-		synchronized(runningLocalSSKGetUIDsBulk) {
+		synchronized(runningSSKGetUIDsBulk) {
 			total += runningLocalSSKGetUIDsBulk.size();
 		}
-		synchronized(runningLocalSSKGetUIDsRT) {
+		synchronized(runningSSKGetUIDsRT) {
 			total += runningLocalSSKGetUIDsRT.size();
 		}
 		return total;
@@ -5067,10 +5091,10 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public int getNumLocalCHKRequests() {
 		int total = 0;
-		synchronized(runningLocalCHKGetUIDsBulk) {
+		synchronized(runningCHKGetUIDsBulk) {
 			total += runningLocalCHKGetUIDsBulk.size();
 		}
-		synchronized(runningLocalCHKGetUIDsRT) {
+		synchronized(runningCHKGetUIDsRT) {
 			total += runningLocalCHKGetUIDsRT.size();
 		}
 		return total;
@@ -5080,9 +5104,11 @@ public class Node implements TimeSkewDetectorCallback {
 		int total = 0;
 		synchronized(runningCHKGetUIDsBulk) {
 			total += runningCHKGetUIDsBulk.size();
+			total -= runningLocalCHKGetUIDsBulk.size();
 		}
 		synchronized(runningCHKGetUIDsRT) {
 			total += runningCHKGetUIDsRT.size();
+			total -= runningLocalCHKGetUIDsRT.size();
 		}
 		return total;
 	}
@@ -5091,9 +5117,11 @@ public class Node implements TimeSkewDetectorCallback {
 		int total = 0;
 		synchronized(runningSSKGetUIDsBulk) {
 			total += runningSSKGetUIDsBulk.size();
+			total -= runningLocalSSKGetUIDsBulk.size();
 		}
 		synchronized(runningSSKGetUIDsRT) {
 			total += runningSSKGetUIDsRT.size();
+			total -= runningLocalSSKGetUIDsRT.size();
 		}
 		return total;
 	}
@@ -5101,21 +5129,21 @@ public class Node implements TimeSkewDetectorCallback {
 	public int getNumRemoteSSKRequests(boolean realTimeFlag) {
 		if(realTimeFlag) {
 			synchronized(runningSSKGetUIDsRT) {
-				return runningSSKGetUIDsRT.size();
+				return runningSSKGetUIDsRT.size() - runningLocalSSKGetUIDsRT.size();
 			}
 		} else {
 			synchronized(runningSSKGetUIDsBulk) {
-				return runningSSKGetUIDsBulk.size();
+				return runningSSKGetUIDsBulk.size() - runningLocalSSKGetUIDsBulk.size();
 			}
 		}
 	}
 
 	public int getNumLocalCHKInserts() {
 		int total = 0;
-		synchronized(runningLocalCHKPutUIDsBulk) {
+		synchronized(runningCHKPutUIDsBulk) {
 			total += runningLocalCHKPutUIDsBulk.size();
 		}
-		synchronized(runningLocalCHKPutUIDsRT) {
+		synchronized(runningCHKPutUIDsRT) {
 			total += runningLocalCHKPutUIDsRT.size();
 		}
 		return total;
@@ -5123,10 +5151,10 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public int getNumLocalSSKInserts() {
 		int total = 0;
-		synchronized(runningLocalSSKPutUIDsBulk) {
+		synchronized(runningSSKPutUIDsBulk) {
 			total += runningLocalSSKPutUIDsBulk.size();
 		}
-		synchronized(runningLocalSSKPutUIDsRT) {
+		synchronized(runningSSKPutUIDsRT) {
 			total += runningLocalSSKPutUIDsRT.size();
 		}
 		return total;
@@ -5135,10 +5163,10 @@ public class Node implements TimeSkewDetectorCallback {
 	public int getNumRemoteCHKInserts() {
 		int total = 0;
 		synchronized(runningCHKPutUIDsBulk) {
-			total += runningCHKPutUIDsBulk.size();
+			total += runningCHKPutUIDsBulk.size() - runningLocalCHKPutUIDsBulk.size();
 		}
 		synchronized(runningCHKPutUIDsRT) {
-			total += runningCHKPutUIDsRT.size();
+			total += runningCHKPutUIDsRT.size() - runningLocalCHKPutUIDsRT.size();
 		}
 		return total;
 	}
@@ -5146,16 +5174,18 @@ public class Node implements TimeSkewDetectorCallback {
 	public int getNumRemoteSSKInserts() {
 		int total = 0;
 		synchronized(runningSSKPutUIDsRT) {
-			total += runningSSKPutUIDsRT.size();
+			total += runningSSKPutUIDsRT.size() - runningLocalSSKPutUIDsRT.size();
 		}
 		synchronized(runningSSKPutUIDsBulk) {
-			total += runningSSKPutUIDsBulk.size();
+			total += runningSSKPutUIDsBulk.size() - runningLocalSSKPutUIDsBulk.size();
 		}
 		return total;
 	}
 
 	public int getNumRemoteCHKRequests(boolean realTimeFlag) {
-		return realTimeFlag ? runningCHKGetUIDsRT.size() : runningCHKGetUIDsBulk.size();
+		return realTimeFlag ? 
+				(runningCHKGetUIDsRT.size() - runningLocalCHKGetUIDsRT.size()) : 
+					(runningCHKGetUIDsBulk.size() - runningLocalCHKGetUIDsBulk.size());
 	}
 
 	public int getNumLocalSSKInserts(boolean realTimeFlag) {
@@ -5175,11 +5205,15 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public int getNumRemoteSSKInserts(boolean realTimeFlag) {
-		return realTimeFlag ? runningSSKPutUIDsRT.size() : runningSSKPutUIDsBulk.size();
+		return realTimeFlag ? 
+				(runningSSKPutUIDsRT.size() - runningLocalSSKPutUIDsRT.size()) : 
+					(runningSSKPutUIDsBulk.size() - runningLocalSSKPutUIDsBulk.size());
 	}
 
 	public int getNumRemoteCHKInserts(boolean realTimeFlag) {
-		return realTimeFlag ? runningCHKPutUIDsRT.size() : runningCHKPutUIDsBulk.size();
+		return realTimeFlag ? 
+				(runningCHKPutUIDsRT.size() - runningLocalCHKPutUIDsRT.size()) : 
+					(runningCHKPutUIDsBulk.size() - runningLocalCHKPutUIDsBulk.size());
 	}
 
 	public int getNumSSKOfferReplies() {
