@@ -4607,18 +4607,22 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public boolean lockUID(long uid, boolean ssk, boolean insert, boolean offerReply, boolean local, boolean realTimeFlag, UIDTag tag) {
-		synchronized(runningUIDs) {
-			if(runningUIDs.containsKey(uid)) return false; // Already present.
-			runningUIDs.put(uid, tag);
-		}
 		// If these are switched around, we must remember to remove from both.
 		if(offerReply) {
 			HashMap<Long,OfferReplyTag> map = getOfferTracker(ssk, realTimeFlag);
 			innerLock(map, (OfferReplyTag)tag, uid, ssk, insert, offerReply, local);
 		} else if(insert) {
+			synchronized(runningUIDs) {
+				if(runningUIDs.containsKey(uid)) return false; // Already present.
+				runningUIDs.put(uid, tag);
+			}
 			HashMap<Long,InsertTag> map = getInsertTracker(ssk,local, realTimeFlag);
 			innerLock(map, (InsertTag)tag, uid, ssk, insert, offerReply, local);
 		} else {
+			synchronized(runningUIDs) {
+				if(runningUIDs.containsKey(uid)) return false; // Already present.
+				runningUIDs.put(uid, tag);
+			}
 			HashMap<Long,RequestTag> map = getRequestTracker(ssk,local, realTimeFlag);
 			innerLock(map, (RequestTag)tag, uid, ssk, insert, offerReply, local);
 		}
@@ -4656,17 +4660,19 @@ public class Node implements TimeSkewDetectorCallback {
 			innerUnlock(map, (RequestTag)tag, uid, ssk, insert, offerReply, local, canFail);
 		}
 
-		synchronized(runningUIDs) {
-			UIDTag oldTag = runningUIDs.get(uid);
-			if(oldTag == null) {
-				if(canFail) return;
-				throw new IllegalStateException("Could not unlock "+uid+ "! : ssk="+ssk+" insert="+insert+" canFail="+canFail+" offerReply="+offerReply+" local="+local);
-			} else if(tag != oldTag) {
-				if(canFail) return;
-				Logger.error(this, "Removing "+tag+" for "+uid+" but "+tag+" is registered!");
-				return;
-			} else {
-				runningUIDs.remove(uid);
+		if(!offerReply) {
+			synchronized(runningUIDs) {
+				UIDTag oldTag = runningUIDs.get(uid);
+				if(oldTag == null) {
+					if(canFail) return;
+					throw new IllegalStateException("Could not unlock "+uid+ "! : ssk="+ssk+" insert="+insert+" canFail="+canFail+" offerReply="+offerReply+" local="+local);
+				} else if(tag != oldTag) {
+					if(canFail) return;
+					Logger.error(this, "Removing "+tag+" for "+uid+" but "+tag+" is registered!");
+					return;
+				} else {
+					runningUIDs.remove(uid);
+				}
 			}
 		}
 	}
