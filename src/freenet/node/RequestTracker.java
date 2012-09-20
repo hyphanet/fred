@@ -83,27 +83,26 @@ public class RequestTracker {
 		if(offerReply) {
 			// local irrelevant for OfferReplyTag's.
 			HashMap<Long,OfferReplyTag> map = getOfferTracker(ssk, realTimeFlag);
-			innerLock(map, null, (OfferReplyTag)tag, uid, ssk, insert, offerReply, false);
+			return innerLock(map, null, (OfferReplyTag)tag, uid, ssk, insert, offerReply, false);
 		} else if(insert) {
 			HashMap<Long,InsertTag> overallMap = getInsertTracker(ssk, false, realTimeFlag);
 			HashMap<Long,InsertTag> localMap = local ? getInsertTracker(ssk, local, realTimeFlag) : null;
-			innerLock(overallMap, localMap, (InsertTag)tag, uid, ssk, insert, offerReply, local);
+			return innerLock(overallMap, localMap, (InsertTag)tag, uid, ssk, insert, offerReply, local);
 		} else {
 			HashMap<Long,RequestTag> overallMap = getRequestTracker(ssk,false, realTimeFlag);
 			HashMap<Long,RequestTag> localMap = local ? getRequestTracker(ssk,local, realTimeFlag) : null;
-			innerLock(overallMap, localMap, (RequestTag)tag, uid, ssk, insert, offerReply, local);
+			return innerLock(overallMap, localMap, (RequestTag)tag, uid, ssk, insert, offerReply, local);
 		}
-		return true;
 	}
 
-	private<T extends UIDTag> void innerLock(HashMap<Long, T> overallMap, HashMap<Long, T> localMap, T tag, Long uid, boolean ssk, boolean insert, boolean offerReply, boolean local) {
+	private<T extends UIDTag> boolean innerLock(HashMap<Long, T> overallMap, HashMap<Long, T> localMap, T tag, Long uid, boolean ssk, boolean insert, boolean offerReply, boolean local) {
 		synchronized(overallMap) {
 			if(logMINOR) Logger.minor(this, "Locking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+overallMap.size(), new Exception("debug"));
 			if(overallMap.containsKey(uid)) {
 				if(overallMap.get(uid) == tag) {
 					Logger.error(this, "Tag already registered: "+tag, new Exception("debug"));
 				} else {
-					Logger.error(this, "Already have UID in specific map ("+ssk+","+insert+","+offerReply+","+local+"): trying to register "+tag+" but already have "+overallMap.get(uid), new Exception("debug"));
+					return false;
 				}
 			}
 			overallMap.put(uid, tag);
@@ -114,14 +113,14 @@ public class RequestTracker {
 					if(localMap.get(uid) == tag) {
 						Logger.error(this, "Tag already registered (local): "+tag, new Exception("debug"));
 					} else {
-						Logger.error(this, "Already have UID in specific map (local) ("+ssk+","+insert+","+offerReply+","+local+"): trying to register "+tag+" but already have "+localMap.get(uid), new Exception("debug"));
+						return false;
 					}
 				}
 				localMap.put(uid, tag);
 				if(logMINOR) Logger.minor(this, "Locked (local) "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+localMap.size());
-				
 			}
 		}
+		return true;
 	}
 
 	/** Only used by UIDTag. */
