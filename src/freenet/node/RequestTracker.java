@@ -200,7 +200,11 @@ public class RequestTracker {
 
 	public synchronized void countRequests(boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, CountedRequests counter, CountedRequests counterSourceRestarted) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
-		synchronized(map) {
+		// Map is locked by the non-local version, although we're counting from the local version.
+		HashMap<Long, ? extends UIDTag> mapLock = map;
+		if(local)
+			mapLock = getTracker(false, ssk, insert, offer, realTimeFlag);
+		synchronized(mapLock) {
 			int count = 0;
 			int transfersOut = 0;
 			int transfersIn = 0;
@@ -236,7 +240,11 @@ public class RequestTracker {
 
 	public void countRequests(PeerNode source, boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, CountedRequests counter, CountedRequests counterSR) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
-		synchronized(map) {
+		// Map is locked by the non-local version, although we're counting from the local version.
+		HashMap<Long, ? extends UIDTag> mapLock = map;
+		if(local)
+			mapLock = getTracker(false, ssk, insert, offer, realTimeFlag);
+		synchronized(mapLock) {
 		int count = 0;
 		int transfersOut = 0;
 		int transfersIn = 0;

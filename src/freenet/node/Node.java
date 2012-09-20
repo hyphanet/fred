@@ -1673,14 +1673,14 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 		}
 
-		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
-
 		// Then read the peers
 		peers = new PeerManager(this, shutdownHook);
 		peers.tryReadPeers(nodeDir.file("peers-"+getDarknetPortNumber()).getPath(), darknetCrypto, null, false, false);
 		peers.updatePMUserAlert();
 		
 		tracker = new RequestTracker(peers, ticker);
+
+		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
 
 		uptime = new UptimeEstimator(runDir, ticker, darknetCrypto.identityHash);
 
