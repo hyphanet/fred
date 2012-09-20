@@ -100,14 +100,22 @@ public class RequestTracker {
 		synchronized(overallMap) {
 			if(logMINOR) Logger.minor(this, "Locking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+overallMap.size(), new Exception("debug"));
 			if(overallMap.containsKey(uid)) {
-				Logger.error(this, "Already have UID in specific map ("+ssk+","+insert+","+offerReply+","+local+") but not in general map: trying to register "+tag+" but already have "+overallMap.get(uid));
+				if(overallMap.get(uid) == tag) {
+					Logger.error(this, "Tag already registered: "+tag);
+				} else {
+					Logger.error(this, "Already have UID in specific map ("+ssk+","+insert+","+offerReply+","+local+"): trying to register "+tag+" but already have "+overallMap.get(uid));
+				}
 			}
 			overallMap.put(uid, tag);
 			if(logMINOR) Logger.minor(this, "Locked "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+overallMap.size());
 			if(local) {
 				if(logMINOR) Logger.minor(this, "Locking (local) "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+localMap.size(), new Exception("debug"));
 				if(localMap.containsKey(uid)) {
-					Logger.error(this, "Already have UID in specific map (local) ("+ssk+","+insert+","+offerReply+","+local+") but not in general map: trying to register "+tag+" but already have "+localMap.get(uid));
+					if(localMap.get(uid) == tag) {
+						Logger.error(this, "Tag already registered (local): "+tag);
+					} else {
+						Logger.error(this, "Already have UID in specific map (local) ("+ssk+","+insert+","+offerReply+","+local+"): trying to register "+tag+" but already have "+localMap.get(uid));
+					}
 				}
 				localMap.put(uid, tag);
 				if(logMINOR) Logger.minor(this, "Locked (local) "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+localMap.size());
