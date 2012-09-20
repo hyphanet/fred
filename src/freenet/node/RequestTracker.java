@@ -113,6 +113,9 @@ public class RequestTracker {
 					if(localMap.get(uid) == tag) {
 						Logger.error(this, "Tag already registered (local): "+tag, new Exception("debug"));
 					} else {
+						// Violates the invariant that local requests are always registered on the main (non-local) map too.
+						Logger.error(this, "Different tag already registered (local) EVEN THOUGH NOT ON MAIN MAP: "+tag, new Exception("debug"));
+						overallMap.remove(uid);
 						return false;
 					}
 				}
