@@ -105,6 +105,10 @@ public class NodeCHK extends Key {
 		System.arraycopy(routingKey, 0, buf, 2, routingKey.length);
 		return buf;
 	}
+	
+	public static byte cryptoAlgorithmFromFullKey(byte[] fullKey) {
+		return fullKey[1];
+	}
 
 	public static byte[] routingKeyFromFullKey(byte[] keyBuf) {
 		if(keyBuf.length == KEY_LENGTH) return keyBuf;
