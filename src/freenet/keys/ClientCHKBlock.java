@@ -297,6 +297,11 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         else
         	encKey = md256.digest(data);
         md256.reset();
+    	if(cryptoAlgorithm == 0) {
+    		// TODO find all such cases and fix them.
+    		Logger.error(ClientCHKBlock.class, "Passed in 0 crypto algorithm", new Exception("warning"));
+    		cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
+    	}
         if(cryptoAlgorithm == Key.ALGO_AES_PCFB_256_SHA256)
         	return innerEncode(data, dataLength, md256, encKey, asMetadata, compressionAlgorithm, cryptoAlgorithm);
 		else
@@ -348,7 +353,6 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
      * @throws CHKVerifyException 
      */
     public static ClientCHKBlock encodeNew(byte[] data, int dataLength, MessageDigest md256, byte[] encKey, boolean asMetadata, short compressionAlgorithm, byte cryptoAlgorithm, int blockHashAlgorithm) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, ShortBufferException, IllegalBlockSizeException, BadPaddingException {
-    	if(cryptoAlgorithm == 0) cryptoAlgorithm = Key.ALGO_AES_CTR_256_SHA256;
     	if(cryptoAlgorithm != Key.ALGO_AES_CTR_256_SHA256)
     		throw new IllegalArgumentException("Unsupported crypto algorithm "+cryptoAlgorithm);
     	// IV = HMAC<cryptokey>(plaintext).
@@ -401,7 +405,6 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
     }
     
     public static ClientCHKBlock innerEncode(byte[] data, int dataLength, MessageDigest md256, byte[] encKey, boolean asMetadata, short compressionAlgorithm, byte cryptoAlgorithm) {
-    	if(cryptoAlgorithm == 0) cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
     	if(cryptoAlgorithm != Key.ALGO_AES_PCFB_256_SHA256)
     		throw new IllegalArgumentException("Unsupported crypto algorithm "+cryptoAlgorithm);
         byte[] header;
