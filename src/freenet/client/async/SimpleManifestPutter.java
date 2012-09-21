@@ -649,14 +649,14 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 	public SimpleManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target,
 			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode, boolean persistent, ObjectContainer container, ClientContext context) {
-		this(cb, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, persistent, Key.ALGO_AES_PCFB_256_SHA256, null, container, context);
+		this(cb, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, persistent, Key.ALGO_AES_CTR_256_SHA256, null, container, context);
 
 	}
 		
 	public SimpleManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target,
 			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode, boolean persistent, byte[] forceCryptoKey, ObjectContainer container, ClientContext context) {
-		this(cb, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, persistent, Key.ALGO_AES_PCFB_256_SHA256, forceCryptoKey, container, context);
+		this(cb, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, persistent, Key.ALGO_AES_CTR_256_SHA256, forceCryptoKey, container, context);
 
 	}
 		

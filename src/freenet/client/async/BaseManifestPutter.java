@@ -1045,7 +1045,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			context.random.nextBytes(forceCryptoKey);
 		}
 		this.forceCryptoKey = forceCryptoKey;
-		this.cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
+		this.cryptoAlgorithm = Key.ALGO_AES_CTR_256_SHA256;
 		runningPutHandlers = new HashSet<PutHandler>();
 		putHandlersWaitingForMetadata = new HashSet<PutHandler>();
 		putHandlersWaitingForFetchable = new HashSet<PutHandler>();
