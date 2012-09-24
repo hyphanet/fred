@@ -75,6 +75,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	}
 
 	final Node node;
+	final RequestTracker tracker;
 	private NodeStats nodeStats;
 	private NodeDispatcherCallback callback;
 	final Probe probe;
@@ -84,6 +85,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 
 	NodeDispatcher(Node node) {
 		this.node = node;
+		this.tracker = node.tracker;
 		this.nodeStats = node.nodeStats;
 		node.getTicker().queueTimedJob(this, STALE_CONTEXT_CHECK);
 		this.probe = new Probe(node);
@@ -353,7 +355,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
         boolean realTimeFlag = DMT.getRealTimeFlag(m);
 		OfferReplyTag tag = new OfferReplyTag(isSSK, source, realTimeFlag, uid, node);
 		
-		if(!node.lockUID(uid, isSSK, false, true, false, realTimeFlag, tag)) {
+		if(!tracker.lockUID(uid, isSSK, false, true, false, realTimeFlag, tag)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+uid+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(uid);
 			try {
@@ -507,7 +509,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
         Key key = (Key) m.getObject(DMT.FREENET_ROUTING_KEY);
         boolean realTimeFlag = DMT.getRealTimeFlag(m);
         final RequestTag tag = new RequestTag(isSSK, RequestTag.START.REMOTE, source, realTimeFlag, id, node);
-		if(!node.lockUID(id, isSSK, false, false, false, realTimeFlag, tag)) {
+		if(!tracker.lockUID(id, isSSK, false, false, false, realTimeFlag, tag)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
@@ -573,7 +575,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		long id = m.getLong(DMT.UID);
         boolean realTimeFlag = DMT.getRealTimeFlag(m);
 		InsertTag tag = new InsertTag(isSSK, InsertTag.START.REMOTE, source, realTimeFlag, id, node);
-		if(!node.lockUID(id, isSSK, true, false, false, realTimeFlag, tag)) {
+		if(!tracker.lockUID(id, isSSK, true, false, false, realTimeFlag, tag)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {

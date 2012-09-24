@@ -244,13 +244,13 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 						if(rs != null && rs.isTransferCoalesced()) {
 							if(logMINOR) Logger.minor(this, "Not cancelling transfer because others want the data on "+RequestHandler.this);
 							// We do need to reassign the tag because the RS has the same UID.
-							node.reassignTagToSelf(tag);
+							node.tracker.reassignTagToSelf(tag);
 							return false;
 						}
 						if(node.failureTable.peersWantKey(key, source)) {
 							// This may indicate downstream is having trouble communicating with us.
 							Logger.error(this, "Downstream transfer successful but upstream transfer to "+source.shortToString()+" failed. Reassigning tag to self because want the data for peers on "+RequestHandler.this);
-							node.reassignTagToSelf(tag);
+							node.tracker.reassignTagToSelf(tag);
 							return false; // Want it
 						}
 						if(node.clientCore != null && node.clientCore.wantKey(key)) {
@@ -277,7 +277,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 							 * discussion in BlockReceiver's top comments.
 							 */
 							Logger.error(this, "Downstream transfer successful but upstream transfer to "+source.shortToString()+" failed. Reassigning tag to self because want the data for ourselves on "+RequestHandler.this);
-							node.reassignTagToSelf(tag);
+							node.tracker.reassignTagToSelf(tag);
 							return false; // Want it
 						}
 						return true;

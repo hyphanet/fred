@@ -25,6 +25,7 @@ import freenet.node.NodeStats;
 import freenet.node.OpennetManager;
 import freenet.node.PeerManager;
 import freenet.node.PeerNodeStatus;
+import freenet.node.RequestTracker;
 import freenet.node.Version;
 import freenet.node.fcp.DownloadRequestStatus;
 import freenet.node.fcp.FCPServer;
@@ -171,18 +172,19 @@ public class DiagnosticToadlet extends Toadlet {
 
 		// drawActivity
 		text += "Activity:\n";
-		int numLocalCHKInserts = node.getNumLocalCHKInserts();
-		int numRemoteCHKInserts = node.getNumRemoteCHKInserts();
-		int numLocalSSKInserts = node.getNumLocalSSKInserts();
-		int numRemoteSSKInserts = node.getNumRemoteSSKInserts();
-		int numLocalCHKRequests = node.getNumLocalCHKRequests();
-		int numRemoteCHKRequests = node.getNumRemoteCHKRequests();
-		int numLocalSSKRequests = node.getNumLocalSSKRequests();
-		int numRemoteSSKRequests = node.getNumRemoteSSKRequests();
+		RequestTracker tracker = node.tracker;
+		int numLocalCHKInserts = tracker.getNumLocalCHKInserts();
+		int numRemoteCHKInserts = tracker.getNumRemoteCHKInserts();
+		int numLocalSSKInserts = tracker.getNumLocalSSKInserts();
+		int numRemoteSSKInserts = tracker.getNumRemoteSSKInserts();
+		int numLocalCHKRequests = tracker.getNumLocalCHKRequests();
+		int numRemoteCHKRequests = tracker.getNumRemoteCHKRequests();
+		int numLocalSSKRequests = tracker.getNumLocalSSKRequests();
+		int numRemoteSSKRequests = tracker.getNumRemoteSSKRequests();
 		int numTransferringRequests = node.getNumTransferringRequestSenders();
 		int numTransferringRequestHandlers = node.getNumTransferringRequestHandlers();
-		int numCHKOfferReplys = node.getNumCHKOfferReplies();
-		int numSSKOfferReplys = node.getNumSSKOfferReplies();
+		int numCHKOfferReplys = tracker.getNumCHKOfferReplies();
+		int numSSKOfferReplys = tracker.getNumSSKOfferReplies();
 		int numCHKRequests = numLocalCHKRequests + numRemoteCHKRequests;
 		int numSSKRequests = numLocalSSKRequests + numRemoteSSKRequests;
 		int numCHKInserts = numLocalCHKInserts + numRemoteCHKInserts;
