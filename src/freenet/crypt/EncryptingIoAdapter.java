@@ -97,7 +97,23 @@ public class EncryptingIoAdapter extends IoAdapter {
 
 	@Override
 	public synchronized int read(byte[] buffer, int length) throws Db4oIOException {
-		int readBytes = baseAdapter.read(buffer, length);
+		int readBytes;
+		try {
+			readBytes = baseAdapter.read(buffer, length);
+		} catch (Db4oIOException e) {
+			System.err.println("Unable to read: "+e);
+			e.printStackTrace();
+			try {
+				// Position may have changed.
+				baseAdapter.seek(position);
+			} catch (Db4oIOException e1) {
+				System.err.println("Unable to seek, closing database file: "+e1);
+				e1.printStackTrace();
+				// Must close because don't know position accurately now.
+				close();
+			}
+			throw e;
+		}
 		if(readBytes <= 0) return readBytes;
 		// CTR mode decryption
 		int totalDecrypted = 0;
@@ -168,7 +184,21 @@ public class EncryptingIoAdapter extends IoAdapter {
 			blockOffset = 0;
 			blockRemaining = BLOCK_SIZE_BYTES;
 		}
-		baseAdapter.write(buffer, length);
+		try {
+			baseAdapter.write(buffer, length);
+		} catch (Db4oIOException e) {
+			System.err.println("Unable to write: "+e);
+			e.printStackTrace();
+			try {
+				baseAdapter.seek(position);
+			} catch (Db4oIOException e1) {
+				System.err.println("Unable to seek, closing database file: "+e1);
+				e1.printStackTrace();
+				// Must close because don't know position accurately now.
+				close();
+			}
+			throw e;
+		}
 	}
 
 }
