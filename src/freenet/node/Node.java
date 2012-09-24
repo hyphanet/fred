@@ -17,7 +17,6 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -132,7 +131,6 @@ import freenet.pluginmanager.PluginStore;
 import freenet.store.BlockMetadata;
 import freenet.store.CHKStore;
 import freenet.store.FreenetStore;
-import freenet.store.FreenetStore.StoreType;
 import freenet.store.KeyCollisionException;
 import freenet.store.NullFreenetStore;
 import freenet.store.PubkeyStore;
@@ -393,12 +391,6 @@ public class Node implements TimeSkewDetectorCallback {
 			if (!found)
 				throw new InvalidConfigValueException("Invalid store type");
 
-			String type;
-			synchronized(Node.this) {
-				type = clientCacheType;
-				if(clientCacheAwaitingPassword)
-					type = "ram";
-			}
 				synchronized(this) { // Serialise this part.
 					String suffix = getStoreSuffix();
 					if (val.equals("salt-hash")) {
@@ -4500,11 +4492,6 @@ public class Node implements TimeSkewDetectorCallback {
 		int total;
 		int expectedTransfersOut;
 		int expectedTransfersIn;
-		private CountedRequests(int count, int out, int in) {
-			total = count;
-			expectedTransfersOut = out;
-			expectedTransfersIn = in;
-		}
 		public CountedRequests() {
 			// Initially empty.
 		}
