@@ -53,7 +53,7 @@ public interface FreenetStore<T extends StorableBlock> {
      * @throws IOException 
      * @throws DatabaseException 
      */
-	public void setMaxKeys(long maxStoreKeys, boolean shrinkNow) throws DatabaseException, IOException;
+	public void setMaxKeys(long maxStoreKeys, boolean shrinkNow) throws IOException;
     
     public long getMaxKeys();
 	

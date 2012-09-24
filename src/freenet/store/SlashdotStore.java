@@ -201,7 +201,7 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 	}
 
 	@Override
-	public void setMaxKeys(long maxStoreKeys, boolean shrinkNow) throws DatabaseException, IOException {
+	public void setMaxKeys(long maxStoreKeys, boolean shrinkNow) throws IOException {
 		if(maxStoreKeys > Integer.MAX_VALUE) throw new IllegalArgumentException();
 		this.maxKeys = (int) maxStoreKeys;
 		if(shrinkNow) {

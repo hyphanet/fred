@@ -556,8 +556,12 @@ final public class FileUtil {
 		}
 		return true;
 	}
-
+	
 	public static void secureDelete(File file, Random random) throws IOException {
+		secureDelete(file, random, false);
+	}
+
+	public static void secureDelete(File file, Random random, boolean quick) throws IOException {
 		// FIXME somebody who understands these things should have a look at this...
 		if(!file.exists()) return;
 		long size = file.length();
@@ -577,38 +581,40 @@ final public class FileUtil {
 					count += written;
 				}
 				raf.getFD().sync();
-				// Then ffffff it out
-				for(int i=0;i<buf.length;i++)
-					buf[i] = (byte)0xFF;
-				raf.seek(0);
-				count = 0;
-				while(count < size) {
-					int written = (int) Math.min(buf.length, size - count);
-					raf.write(buf, 0, written);
-					count += written;
+				if(!quick) {
+					// Then ffffff it out
+					for(int i=0;i<buf.length;i++)
+						buf[i] = (byte)0xFF;
+					raf.seek(0);
+					count = 0;
+					while(count < size) {
+						int written = (int) Math.min(buf.length, size - count);
+						raf.write(buf, 0, written);
+						count += written;
+					}
+					raf.getFD().sync();
+					// Then random data
+					random.nextBytes(buf);
+					raf.seek(0);
+					count = 0;
+					while(count < size) {
+						int written = (int) Math.min(buf.length, size - count);
+						raf.write(buf, 0, written);
+						count += written;
+					}
+					raf.getFD().sync();
+					raf.seek(0);
+					// Then 0's again
+					for(int i=0;i<buf.length;i++)
+						buf[i] = 0;
+					count = 0;
+					while(count < size) {
+						int written = (int) Math.min(buf.length, size - count);
+						raf.write(buf, 0, written);
+						count += written;
+					}
+					raf.getFD().sync();
 				}
-				raf.getFD().sync();
-				// Then random data
-				random.nextBytes(buf);
-				raf.seek(0);
-				count = 0;
-				while(count < size) {
-					int written = (int) Math.min(buf.length, size - count);
-					raf.write(buf, 0, written);
-					count += written;
-				}
-				raf.getFD().sync();
-				raf.seek(0);
-				// Then 0's again
-				for(int i=0;i<buf.length;i++)
-					buf[i] = 0;
-				count = 0;
-				while(count < size) {
-					int written = (int) Math.min(buf.length, size - count);
-					raf.write(buf, 0, written);
-					count += written;
-				}
-				raf.getFD().sync();
 				raf.close();
 				raf = null;
 			} finally {
