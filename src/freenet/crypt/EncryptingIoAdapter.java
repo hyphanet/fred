@@ -157,7 +157,10 @@ public class EncryptingIoAdapter extends IoAdapter {
 	}
 
 	@Override
-	public synchronized void write(byte[] buffer, int length) throws Db4oIOException {
+	public synchronized void write(byte[] inputBuffer, int length) throws Db4oIOException {
+		// Do not clobber the buffer!
+		byte[] buffer = new byte[length];
+		System.arraycopy(inputBuffer, 0, buffer, 0, length);
 		// CTR mode encryption
 		int totalDecrypted = 0;
 		int blockOffset = (int) (position % BLOCK_SIZE_BYTES);
