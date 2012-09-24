@@ -130,6 +130,7 @@ public class EncryptingIoAdapter extends IoAdapter {
 
 	@Override
 	public synchronized void seek(long arg0) throws Db4oIOException {
+		if(arg0 < 0) throw new IllegalArgumentException();
 		baseAdapter.seek(arg0);
 		position = arg0;
 	}
