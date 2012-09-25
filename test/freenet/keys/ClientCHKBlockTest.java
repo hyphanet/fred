@@ -72,11 +72,23 @@ public class ClientCHKBlockTest extends TestCase {
 		// Not modified in-place.
 		assert(Arrays.equals(data, copyOfData));
 		ClientCHK key = encodedBlock.getClientKey();
+		if(newAlgo) {
+			// Check with no JCA.
+			ClientCHKBlock otherEncodedBlock = 
+				ClientCHKBlock.encode(new ArrayBucket(data), false, false, (short)-1, data.length, null, false, null, cryptoAlgorithm, true);
+			assertTrue(key.equals(otherEncodedBlock.getClientKey()));
+			assertTrue(Arrays.equals(otherEncodedBlock.data, encodedBlock.data));
+			assertTrue(Arrays.equals(otherEncodedBlock.headers, encodedBlock.headers));
+		}
 		// Verify it.
 		CHKBlock block = CHKBlock.construct(encodedBlock.data, encodedBlock.headers, cryptoAlgorithm);
 		ClientCHKBlock checkBlock = new ClientCHKBlock(block, key);
 		ArrayBucket checkData = (ArrayBucket) checkBlock.decode(new ArrayBucketFactory(), data.length, false);
 		assert(Arrays.equals(checkData.toByteArray(), data));
+		if(newAlgo) {
+			checkData = (ArrayBucket) checkBlock.decode(new ArrayBucketFactory(), data.length, false, true);
+			assert(Arrays.equals(checkData.toByteArray(), data));
+		}
 	}
 
 }

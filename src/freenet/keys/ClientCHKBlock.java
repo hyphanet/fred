@@ -26,6 +26,7 @@ import freenet.support.math.MersenneTwister;
 import com.db4o.ObjectContainer;
 
 import freenet.crypt.BlockCipher;
+import freenet.crypt.CTRBlockCipher;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
@@ -108,11 +109,19 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
      */
     @Override
     public Bucket decode(BucketFactory bf, int maxLength, boolean dontCompress) throws CHKDecodeException, IOException {
+    	return decode(bf, maxLength, dontCompress, false);
+    }
+    
+    // forceNoJCA for unit tests.
+    Bucket decode(BucketFactory bf, int maxLength, boolean dontCompress, boolean forceNoJCA) throws CHKDecodeException, IOException {
     	if(key.cryptoAlgorithm == Key.ALGO_AES_PCFB_256_SHA256)
     		return decodeOld(bf, maxLength, dontCompress);
     	else if(key.cryptoAlgorithm == Key.ALGO_AES_CTR_256_SHA256)
 			try {
-				return decodeNew(bf, maxLength, dontCompress);
+				if(Rijndael.isJCACrippled || forceNoJCA)
+					return decodeNewNoJCA(bf, maxLength, dontCompress);
+				else
+					return decodeNew(bf, maxLength, dontCompress);
 			} catch (InvalidKeyException e) {
 				throw new CHKDecodeException("JVM crypto problem: invalid key? Maybe your JVM doesn't support the JCA algorithms we need (AES with 256-bit keysize and HmacSHA256)");
 			} catch (NoSuchAlgorithmException e) {
@@ -227,6 +236,60 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
     }
 
     /**
+     * Decode using Freenet's built in crypto. FIXME remove once Java 1.7
+     * is mandatory. Note that we assume that HMAC SHA256 is available; the
+     * problem is AES is limited to 128 bits.
+     * @return the original data
+     * @throws IOException If there is a bucket error.
+     * @throws NoSuchAlgorithmException 
+     * @throws InvalidKeyException 
+     * @throws InvalidAlgorithmParameterException 
+     * @throws NoSuchPaddingException 
+     * @throws BadPaddingException 
+     * @throws IllegalBlockSizeException 
+     */
+    public Bucket decodeNewNoJCA(BucketFactory bf, int maxLength, boolean dontCompress) throws CHKDecodeException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
+		if(key.cryptoAlgorithm != Key.ALGO_AES_CTR_256_SHA256)
+			throw new UnsupportedOperationException();
+    	byte[] hash = new byte[32];
+    	System.arraycopy(headers, 2, hash, 0, 32);
+    	byte[] iv = new byte[16];
+    	System.arraycopy(hash, 0, iv, 0, iv.length);
+        byte[] cryptoKey = key.cryptoKey;
+        if(cryptoKey.length < Node.SYMMETRIC_KEY_LENGTH)
+            throw new CHKDecodeException("Crypto key too short");
+        Rijndael aes;
+        try {
+			aes = new Rijndael(256, 128);
+		} catch (UnsupportedCipherException e) {
+			// Impossible.
+			throw new Error(e);
+		}
+		aes.initialize(cryptoKey);
+        CTRBlockCipher cipher = new CTRBlockCipher(aes);
+        cipher.init(iv);
+        byte[] plaintext = new byte[data.length];
+        cipher.processBytes(data, 0, data.length, plaintext, 0);
+        byte[] lengthBytes = new byte[2];
+        cipher.processBytes(headers, hash.length+2, 2, lengthBytes, 0);
+        int size = ((lengthBytes[0] & 0xff) << 8) + (lengthBytes[1] & 0xff);
+        if((size > 32768) || (size < 0)) {
+            throw new CHKDecodeException("Invalid size: "+size);
+        }
+        // Check the hash.
+        Mac hmac = Mac.getInstance("HmacSHA256");
+        hmac.init(new SecretKeySpec(cryptoKey, "HmacSHA256"));
+        hmac.update(plaintext);
+        hmac.update(lengthBytes);
+        byte[] hashCheck = hmac.doFinal();
+        if(!Arrays.equals(hash, hashCheck)) {
+        	throw new CHKDecodeException("HMAC is wrong, wrong decryption key?");
+        }
+        return Key.decompress(dontCompress ? false : key.isCompressed(), plaintext, size, bf, 
+        		Math.min(maxLength, MAX_LENGTH_BEFORE_COMPRESSION), key.compressionAlgorithm, false);
+    }
+
+    /**
      * Encode a splitfile block.
      * @param data The data to encode. Must be exactly DATA_LENGTH bytes.
      * @param cryptoKey The encryption key. Can be null in which case this is equivalent to a normal block
@@ -259,6 +322,11 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
      * @throws InvalidCompressionCodecException 
      */
     static public ClientCHKBlock encode(Bucket sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, String compressorDescriptor, boolean pre1254, byte[] cryptoKey, byte cryptoAlgorithm) throws CHKEncodeException, IOException {
+    	return encode(sourceData, asMetadata, dontCompress, alreadyCompressedCodec, sourceLength, compressorDescriptor, pre1254, cryptoKey, cryptoAlgorithm, false);
+    }
+
+    // forceNoJCA for unit tests.
+    static ClientCHKBlock encode(Bucket sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, String compressorDescriptor, boolean pre1254, byte[] cryptoKey, byte cryptoAlgorithm, boolean forceNoJCA) throws CHKEncodeException, IOException {
         byte[] finalData = null;
         byte[] data;
         short compressionAlgorithm = -1;
@@ -306,7 +374,10 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         	return innerEncode(data, dataLength, md256, encKey, asMetadata, compressionAlgorithm, cryptoAlgorithm);
 		else
 			try {
-				return encodeNew(data, dataLength, md256, encKey, asMetadata, compressionAlgorithm, cryptoAlgorithm, KeyBlock.HASH_SHA256);
+				if(Rijndael.isJCACrippled || forceNoJCA)
+					return encodeNewNoJCA(data, dataLength, md256, encKey, asMetadata, compressionAlgorithm, cryptoAlgorithm, KeyBlock.HASH_SHA256);
+				else
+					return encodeNew(data, dataLength, md256, encKey, asMetadata, compressionAlgorithm, cryptoAlgorithm, KeyBlock.HASH_SHA256);
 			} catch (InvalidKeyException e) {
 				throw new CHKEncodeException("JVM crypto problem: invalid key? Maybe your JVM doesn't support the JCA algorithms we need (AES with 256-bit keysize and HmacSHA256)");
 			} catch (NoSuchAlgorithmException e) {
@@ -386,6 +457,84 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         byte[] cdata = cipher.update(data);
         assert(cdata.length == data.length); // Multiple of block size so shouldn't be buffered.
         cipher.doFinal(tmpLen, 0, 2, header, hash.length+2);
+        
+        // Now calculate the final hash
+        md256.update(header);
+        byte[] finalHash = md256.digest(cdata);
+        
+        SHA256.returnMessageDigest(md256);
+        
+        // Now convert it into a ClientCHK
+        ClientCHK finalKey = new ClientCHK(finalHash, encKey, asMetadata, cryptoAlgorithm, compressionAlgorithm);
+        
+        try {
+        	return new ClientCHKBlock(cdata, header, finalKey, false);
+        } catch (CHKVerifyException e3) {
+            //WTF?
+            throw new Error(e3);
+        }
+    }
+    
+    /**
+     * Encode using Freenet's built in crypto. FIXME remove once Java 1.7
+     * is mandatory. Note that we assume that HMAC SHA256 is available; the
+     * problem is AES is limited to 128 bits.
+     * @param data Data should already have been padded.
+     * @param dataLength Length of original data. Between 0 and 32768.
+     * @param md256 Convenient reuse of hash object.
+     * @param encKey Encryption key for the data, part of the URI.
+     * @param asMetadata Whether the final CHK is metadata or not.
+     * @param compressionAlgorithm The compression algorithm used.
+     * @param cryptoAlgorithm The encryption algorithm used.
+     * @return
+     * @throws NoSuchAlgorithmException 
+     * @throws InvalidKeyException 
+     * @throws NoSuchPaddingException 
+     * @throws InvalidAlgorithmParameterException 
+     * @throws ShortBufferException 
+     * @throws BadPaddingException 
+     * @throws IllegalBlockSizeException 
+     * @throws CHKVerifyException 
+     */
+    public static ClientCHKBlock encodeNewNoJCA(byte[] data, int dataLength, MessageDigest md256, byte[] encKey, boolean asMetadata, short compressionAlgorithm, byte cryptoAlgorithm, int blockHashAlgorithm) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, ShortBufferException, IllegalBlockSizeException, BadPaddingException {
+    	if(cryptoAlgorithm != Key.ALGO_AES_CTR_256_SHA256)
+    		throw new IllegalArgumentException("Unsupported crypto algorithm "+cryptoAlgorithm);
+    	// IV = HMAC<cryptokey>(plaintext).
+        // It's okay that this is the same for 2 blocks with the same key and the same content.
+        // In fact that's the point; this is still a Content Hash Key.
+        // FIXME And yes we should check on insert for multiple identical keys.
+        Mac hmac = Mac.getInstance("HmacSHA256");
+        hmac.init(new SecretKeySpec(encKey, "HmacSHA256"));
+        byte[] tmpLen = new byte[] { 
+            	(byte)(dataLength >> 8), (byte)(dataLength & 0xff)
+            };
+        hmac.update(data);
+        hmac.update(tmpLen);
+        byte[] hash = hmac.doFinal();
+        byte[] header = new byte[hash.length+2+2];
+    	if(blockHashAlgorithm == 0) cryptoAlgorithm = KeyBlock.HASH_SHA256;
+    	if(blockHashAlgorithm != KeyBlock.HASH_SHA256)
+    		throw new IllegalArgumentException("Unsupported block hash algorithm "+cryptoAlgorithm);
+        header[0] = (byte)(blockHashAlgorithm >> 8);
+        header[1] = (byte)(blockHashAlgorithm & 0xff);
+        Rijndael aes;
+		try {
+			aes = new Rijndael(256, 128);
+		} catch (UnsupportedCipherException e) {
+			// Impossible
+			throw new Error(e);
+		}
+        aes.initialize(encKey);
+        CTRBlockCipher ctr = new CTRBlockCipher(aes);
+        // CTR mode IV is only 16 bytes.
+        // That's still plenty though. It will still be unique.
+        byte[] iv = new byte[16];
+        System.arraycopy(hash, 0, iv, 0, iv.length);
+        ctr.init(iv);
+        System.arraycopy(hash, 0, header, 2, hash.length);
+        byte[] cdata = new byte[data.length];
+        ctr.processBytes(data, 0, data.length, cdata, 0);
+        ctr.processBytes(tmpLen, 0, 2, header, hash.length+2);
         
         // Now calculate the final hash
         md256.update(header);
