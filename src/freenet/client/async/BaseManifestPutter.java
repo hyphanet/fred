@@ -17,6 +17,7 @@ import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
+import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
@@ -1030,7 +1031,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 	public BaseManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName,
-			InsertContext ctx, boolean getCHKOnly2, RequestClient clientContext, boolean earlyEncode, boolean randomiseCryptoKeys, byte [] forceCryptoKey, ClientContext context) {
+			InsertContext ctx, boolean getCHKOnly2, RequestClient clientContext, boolean earlyEncode, boolean randomiseCryptoKeys, byte [] forceCryptoKey, ObjectContainer container, ClientContext context) {
 		super(prioClass, clientContext);
 		if(client.persistent())
 			this.targetURI = target.clone();
@@ -1045,7 +1046,14 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			context.random.nextBytes(forceCryptoKey);
 		}
 		this.forceCryptoKey = forceCryptoKey;
-		this.cryptoAlgorithm = Key.ALGO_AES_CTR_256_SHA256;
+		
+		if(client.persistent())
+			container.activate(ctx, 1);
+		CompatibilityMode mode = ctx.getCompatibilityMode();
+		if(!(mode == CompatibilityMode.COMPAT_CURRENT || mode.ordinal() >= CompatibilityMode.COMPAT_1416.ordinal()))
+			this.cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
+		else
+			this.cryptoAlgorithm = Key.ALGO_AES_CTR_256_SHA256;
 		runningPutHandlers = new HashSet<PutHandler>();
 		putHandlersWaitingForMetadata = new HashSet<PutHandler>();
 		putHandlersWaitingForFetchable = new HashSet<PutHandler>();
