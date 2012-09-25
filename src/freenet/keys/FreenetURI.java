@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 import com.db4o.ObjectContainer;
 
@@ -1134,7 +1135,7 @@ public class FreenetURI implements Cloneable {
 
 	private static final Pattern docNameWithEditionPattern;
 	static {
-		docNameWithEditionPattern = Pattern.compile(".*\\-[0-9]+");
+		docNameWithEditionPattern = Pattern.compile(".*\\-([0-9]+)");
 	}
 
 	/** Could this SSK be the result of sskForUSK()? */
@@ -1145,10 +1146,11 @@ public class FreenetURI implements Cloneable {
 	/** Convert an SSK into a USK, if possible. */
 	public FreenetURI uskForSSK() {
 		if(!keyType.equalsIgnoreCase("SSK")) throw new IllegalStateException();
-		if (!docNameWithEditionPattern.matcher(docName).matches())
+		Matcher matcher = docNameWithEditionPattern.matcher(docName);
+		if (!matcher.matches())
 			throw new IllegalStateException();
 
-		int offset = docName.lastIndexOf('-');
+		int offset = matcher.start(1) - 1;
 		String siteName = docName.substring(0, offset);
 		long edition = Long.valueOf(docName.substring(offset + 1, docName.length()));
 
@@ -1163,10 +1165,11 @@ public class FreenetURI implements Cloneable {
 		if(keyType.equalsIgnoreCase("USK"))
 			return suggestedEdition;
 		else if(keyType.equalsIgnoreCase("SSK")) {
-			if (!docNameWithEditionPattern.matcher(docName).matches()) /* Taken from uskForSSK, also modify there if necessary; TODO just use isSSKForUSK() here?! */
+			Matcher matcher = docNameWithEditionPattern.matcher(docName);
+			if (!matcher.matches()) /* Taken from uskForSSK, also modify there if necessary; TODO just use isSSKForUSK() here?! */
 				throw new IllegalStateException();
 
-			return Long.valueOf(docName.substring(docName.lastIndexOf('-') + 1, docName.length()));
+			return Long.valueOf(docName.substring(matcher.start(1), docName.length()));
 		} else
 			throw new IllegalStateException();
 	}
