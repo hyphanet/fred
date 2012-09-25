@@ -308,7 +308,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         	if(cryptoAlgorithm == Key.ALGO_AES_PCFB_256_SHA256)
         		return innerEncode(data, CHKBlock.DATA_LENGTH, md256, cryptoKey, false, (short)-1, cryptoAlgorithm);
         	else if(cryptoAlgorithm != Key.ALGO_AES_CTR_256_SHA256)
-        		throw new IllegalArgumentException();
+        		throw new IllegalArgumentException("Unknown crypto algorithm: "+cryptoAlgorithm);
         	if(Rijndael.isJCACrippled) {
         		return encodeNewNoJCA(data, CHKBlock.DATA_LENGTH, md256, cryptoKey, false, (short)-1, cryptoAlgorithm, KeyBlock.HASH_SHA256);
         	} else {
