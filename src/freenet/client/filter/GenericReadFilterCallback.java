@@ -108,9 +108,9 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 	//                / "*" / "+" / "," / ";" / "="
 	protected static final String SUB_DELIMS  = "[\\!\\$&'\\(\\)\\*\\+,;=]";
 	//  pchar         = unreserved / pct-encoded / sub-delims / ":" / "@"
-	protected static final String PCHAR      = "(?:" + UNRESERVED + "|" + PCT_ENCODED + "|" + SUB_DELIMS + "|[:@])";
+	protected static final String PCHAR      = "(?>" + UNRESERVED + "|" + PCT_ENCODED + "|" + SUB_DELIMS + "|[:@])";
 	//  fragment      = *( pchar / "/" / "?" )
-	protected static final String FRAGMENT   = "(?:" + PCHAR + "|\\/|\\?)*";
+	protected static final String FRAGMENT   = "(?>" + PCHAR + "|\\/|\\?)*";
 
 	@Override
 	public String processURI(String u, String overrideType, boolean forBaseHref, boolean inline) throws CommentException {

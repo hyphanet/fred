@@ -2316,7 +2316,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							throwFilterException(l10n("invalidMetaType"));
 					} else if (
 						http_equiv.equalsIgnoreCase("Content-Language")) {
-						if(content.matches("([a-zA-Z0-9]*(-[A-Za-z0-9]*)*(,\\s*)?)*")) {
+						if(content.matches("((?>[a-zA-Z0-9]*)(?>-[A-Za-z0-9]*)*(?>,\\s*)?)*")) {
 							hn.put("http-equiv", "Content-Language");
 							hn.put("content", content);
 						}

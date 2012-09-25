@@ -34,12 +34,12 @@ public class AddressIdentifier {
 	public static final Pattern ipv4Pattern, ipv6Pattern, ipv6PatternWithPercentScopeID, ipv6ISATAPPattern;
 	
 	static {
-		String byteRegex = "([01]?[0-9]?[0-9]?|2[0-4][0-9]|25[0-5])";
-		String ipv4AddressRegex = byteRegex + "\\.(" + byteRegex + "\\.)?(" + byteRegex + "\\.)?" + byteRegex;
+		String byteRegex = "(?>2[0-4][0-9]|25[0-5]|[01]?[0-9]?[0-9]?)";
+		String ipv4AddressRegex = byteRegex + "\\.(?>" + byteRegex + "\\.)?(?>" + byteRegex + "\\.)?" + byteRegex;
 		ipv4Pattern = Pattern.compile(ipv4AddressRegex);
 		
-		String wordRegex = "([0-9a-fA-F]{1,4})";
-		String percentScopeIDRegex = "(?:%[0-9]{1,3})?";
+		String wordRegex = "(?>[0-9a-fA-F]{1,4})";
+		String percentScopeIDRegex = "(?>%[0-9]{1,3})?";
 		String ipv6AddressRegex = wordRegex + "?:" + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex;
 		String ipv6ISATAPAddressRegex = wordRegex + "?:" + wordRegex + ':' + wordRegex + ':' + wordRegex + ":(0){1,4}:5(efe|EFE):" + wordRegex + ':' + wordRegex + percentScopeIDRegex;
 		ipv6Pattern = Pattern.compile(ipv6AddressRegex);
