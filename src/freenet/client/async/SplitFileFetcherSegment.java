@@ -488,7 +488,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 
 	private synchronized void migrateToKeys(ObjectContainer container) {
 		if(logMINOR) Logger.minor(this, "Migrating keys on "+this);
-		keys = new SplitFileSegmentKeys(dataKeys.length, checkBuckets.length, forceCryptoKey, cryptoAlgorithm);
+		keys = new SplitFileSegmentKeys(dataKeys.length, checkBuckets.length, forceCryptoKey, getCryptoAlgorithm());
 		foundKeys = new boolean[dataKeys.length + checkBuckets.length];
 		for(int i=0;i<dataKeys.length;i++) {
 			ClientCHK key = dataKeys[i];
@@ -1236,7 +1236,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 					}
 					if(block == null) {
 						block = 
-							ClientCHKBlock.encodeSplitfileBlock(buf, forceCryptoKey, cryptoAlgorithm);
+							ClientCHKBlock.encodeSplitfileBlock(buf, forceCryptoKey, getCryptoAlgorithm());
 					}
 					ClientCHK key = getBlockKey(blockNo, container);
 					if(key != null) {
@@ -1277,6 +1277,14 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		return true; // Assume it is encoded correctly.
 	}
 
+	private byte getCryptoAlgorithm() {
+		if(cryptoAlgorithm == 0) {
+			// Very old splitfile? FIXME remove this?
+			return Key.ALGO_AES_PCFB_256_SHA256;
+		} else
+			return cryptoAlgorithm;
+	}
+
 	/**
 	 * Queue the data for a healing insert. If the data is persistent, we copy it; the caller must free the 
 	 * original data when it is finished with it, the healing queue will free the copied data. If the data is 
@@ -1300,7 +1308,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			data = wrapper.getReaderBucket();
 		}
 		if(logMINOR) Logger.minor(this, "Queueing healing insert for "+data+" on "+this);
-		context.healingQueue.queue(copy, forceCryptoKey, cryptoAlgorithm, context);
+		context.healingQueue.queue(copy, forceCryptoKey, getCryptoAlgorithm(), context);
 		return data;
 	}
 	
