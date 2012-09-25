@@ -22,7 +22,12 @@ import freenet.support.math.MersenneTwister;
 public class CTRBlockCipherTest extends TestCase {
 
 	/** Whether to assume JCA is available, and non-crippled. */
-	public static final boolean TEST_JCA = true;
+	public static final boolean TEST_JCA = Rijndael.isJCACrippled;
+	
+	static {
+		if(!TEST_JCA)
+			System.out.println("JCA is crippled, not doing tests requiring JCA");
+	}
 
 	private MersenneTwister mt = new MersenneTwister(1634);
 

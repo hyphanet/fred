@@ -1,6 +1,15 @@
 package freenet.crypt.ciphers;
 
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.UnsupportedCipherException;
@@ -20,6 +29,35 @@ public class Rijndael implements BlockCipher {
 	private Object sessionKey;
 	private final int keysize, blocksize;
 
+	public static final boolean isJCACrippled = isJCACrippled();
+	
+	/** @return True if JCA is crippled (restricted to 128-bit) so we need 
+	 * to use this class. */
+	private static boolean isJCACrippled() {
+		try {
+			byte[] key = new byte[32]; // Test for whether 256-bit works.
+			byte[] iv = new byte[16];
+			byte[] plaintext = new byte[16];
+			SecretKeySpec k = new SecretKeySpec(key, "AES");
+			Cipher c = Cipher.getInstance("AES/CTR/NOPADDING");
+			c.init(Cipher.ENCRYPT_MODE, k, new IvParameterSpec(iv));
+			c.doFinal(plaintext);
+			return true;
+		} catch (NoSuchAlgorithmException e) {
+			return false;
+		} catch (NoSuchPaddingException e) {
+			return false;
+		} catch (InvalidKeyException e) {
+			return false;
+		} catch (InvalidAlgorithmParameterException e) {
+			return false;
+		} catch (IllegalBlockSizeException e) {
+			return false;
+		} catch (BadPaddingException e) {
+			return false;
+		}
+	}
+	
 	/**
 	 * Create a Rijndael instance.
 	 * @param keysize The key size.
