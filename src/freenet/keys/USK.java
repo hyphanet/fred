@@ -5,6 +5,7 @@ package freenet.keys;
 
 import java.net.MalformedURLException;
 import java.util.Arrays;
+import java.util.regex.Pattern;
 
 import com.db4o.ObjectContainer;
 
@@ -78,6 +79,11 @@ public class USK extends BaseClientKey {
 			siteName.hashCode() ^ (int)suggestedEdition ^ (int)(suggestedEdition >> 32);
 	}
 
+	private static final Pattern badDocNamePattern;
+	static {
+		badDocNamePattern = Pattern.compile(".*\\-[0-9]+(\\/.*)?$");
+	}
+
 	// FIXME: Be careful with this constructor! There must not be an edition in the ClientSSK!
 	public USK(ClientSSK ssk, long myARKNumber) {
 		this.pubKeyHash = ssk.pubKeyHash;
@@ -86,7 +92,7 @@ public class USK extends BaseClientKey {
 		this.suggestedEdition = myARKNumber;
 		this.cryptoAlgorithm = ssk.cryptoAlgorithm;
 
-		if (siteName.matches(".*\\-[0-9]+(\\/.*)?$"))	// not error -- just "possible" bug
+		if (badDocNamePattern.matcher(siteName).matches())	// not error -- just "possible" bug
 			Logger.normal(this, "POSSIBLE BUG: edition in ClientSSK " + ssk, new Exception("debug"));
 
 		hashCode = Fields.hashCode(pubKeyHash) ^ Fields.hashCode(cryptoKey) ^

@@ -1132,15 +1132,20 @@ public class FreenetURI implements Cloneable {
 		return new FreenetURI("SSK", docName+"-"+suggestedEdition, metaStr, routingKey, cryptoKey, extra, 0);
 	}
 
+	private static final Pattern docNameWithEditionPattern;
+	static {
+		docNameWithEditionPattern = Pattern.compile(".*\\-[0-9]+");
+	}
+
 	/** Could this SSK be the result of sskForUSK()? */
 	public boolean isSSKForUSK() {
-		return keyType.equalsIgnoreCase("SSK") && docName.matches(".*\\-[0-9]+");
+		return keyType.equalsIgnoreCase("SSK") && docNameWithEditionPattern.matcher(docName).matches();
 	}
 
 	/** Convert an SSK into a USK, if possible. */
 	public FreenetURI uskForSSK() {
 		if(!keyType.equalsIgnoreCase("SSK")) throw new IllegalStateException();
-		if (!docName.matches(".*\\-[0-9]+"))
+		if (!docNameWithEditionPattern.matcher(docName).matches())
 			throw new IllegalStateException();
 
 		int offset = docName.lastIndexOf('-');
@@ -1158,7 +1163,7 @@ public class FreenetURI implements Cloneable {
 		if(keyType.equalsIgnoreCase("USK"))
 			return suggestedEdition;
 		else if(keyType.equalsIgnoreCase("SSK")) {
-			if (!docName.matches(".*\\-[0-9]+")) /* Taken from uskForSSK, also modify there if necessary; TODO just use isSSKForUSK() here?! */
+			if (!docNameWithEditionPattern.matcher(docName).matches()) /* Taken from uskForSSK, also modify there if necessary; TODO just use isSSKForUSK() here?! */
 				throw new IllegalStateException();
 
 			return Long.valueOf(docName.substring(docName.lastIndexOf('-') + 1, docName.length()));
