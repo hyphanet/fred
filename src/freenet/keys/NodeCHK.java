@@ -116,7 +116,7 @@ public class NodeCHK extends Key {
 			Logger.error(NodeCHK.class, "routingKeyFromFullKey() on "+keyBuf.length+" bytes");
 			return null;
 		}
-		if(keyBuf[0] != 1 || keyBuf[1] != Key.ALGO_AES_PCFB_256_SHA256) {
+		if(keyBuf[0] != 1 || (keyBuf[1] != Key.ALGO_AES_PCFB_256_SHA256 && keyBuf[1] != Key.ALGO_AES_CTR_256_SHA256)) {
 			if(keyBuf[keyBuf.length-1] == 0 && keyBuf[keyBuf.length-2] == 0) {
 				// We are certain it's a routing-key
 				Logger.minor(NodeCHK.class, "Recovering routing-key stored wrong as full-key (two nulls at end)");

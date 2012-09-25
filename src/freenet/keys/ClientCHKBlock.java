@@ -307,7 +307,9 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         try {
         	if(cryptoAlgorithm == Key.ALGO_AES_PCFB_256_SHA256)
         		return innerEncode(data, CHKBlock.DATA_LENGTH, md256, cryptoKey, false, (short)-1, cryptoAlgorithm);
-        	else if(Rijndael.isJCACrippled) {
+        	else if(cryptoAlgorithm != Key.ALGO_AES_CTR_256_SHA256)
+        		throw new IllegalArgumentException();
+        	if(Rijndael.isJCACrippled) {
         		return encodeNewNoJCA(data, CHKBlock.DATA_LENGTH, md256, cryptoKey, false, (short)-1, cryptoAlgorithm, KeyBlock.HASH_SHA256);
         	} else {
         		return encodeNew(data, CHKBlock.DATA_LENGTH, md256, cryptoKey, false, (short)-1, cryptoAlgorithm, KeyBlock.HASH_SHA256);
@@ -644,7 +646,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
      */
     static public ClientCHKBlock encode(byte[] sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, int sourceLength, String compressorDescriptor, boolean pre1254) throws CHKEncodeException, InvalidCompressionCodecException {
     	try {
-			return encode(new ArrayBucket(sourceData), asMetadata, dontCompress, alreadyCompressedCodec, sourceLength, compressorDescriptor, pre1254, null, Key.ALGO_AES_PCFB_256_SHA256);
+			return encode(new ArrayBucket(sourceData), asMetadata, dontCompress, alreadyCompressedCodec, sourceLength, compressorDescriptor, pre1254, null, Key.ALGO_AES_CTR_256_SHA256);
 		} catch (IOException e) {
 			// Can't happen
 			throw new Error(e);
