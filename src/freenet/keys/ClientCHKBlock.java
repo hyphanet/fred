@@ -304,7 +304,30 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         	cryptoKey = md256.digest(data);
         	md256.reset();
         }
-        return innerEncode(data, CHKBlock.DATA_LENGTH, md256, cryptoKey, false, (short)-1, cryptoAlgorithm);
+        try {
+        	if(cryptoAlgorithm == Key.ALGO_AES_PCFB_256_SHA256)
+        		return innerEncode(data, CHKBlock.DATA_LENGTH, md256, cryptoKey, false, (short)-1, cryptoAlgorithm);
+        	else if(Rijndael.isJCACrippled) {
+        		return encodeNewNoJCA(data, CHKBlock.DATA_LENGTH, md256, cryptoKey, false, (short)-1, cryptoAlgorithm, KeyBlock.HASH_SHA256);
+        	} else {
+        		return encodeNew(data, CHKBlock.DATA_LENGTH, md256, cryptoKey, false, (short)-1, cryptoAlgorithm, KeyBlock.HASH_SHA256);
+			}
+		} catch (InvalidKeyException e) {
+			throw new CHKEncodeException("JVM crypto problem: invalid key? Maybe your JVM doesn't support the JCA algorithms we need (AES with 256-bit keysize and HmacSHA256)");
+		} catch (NoSuchAlgorithmException e) {
+			throw new CHKEncodeException("JVM crypto problem: no such algorithm. Maybe your JVM doesn't support the JCA algorithms we need (AES with 256-bit keysize and HmacSHA256)");
+		} catch (InvalidAlgorithmParameterException e) {
+			throw new CHKEncodeException("JVM crypto problem: invalid algorithm parameter. Maybe your JVM doesn't support the JCA algorithms we need (AES with 256-bit keysize and HmacSHA256)");
+		} catch (NoSuchPaddingException e) {
+			throw new CHKEncodeException("JVM crypto problem: no such padding. Maybe your JVM doesn't support the JCA algorithms we need (AES with 256-bit keysize and HmacSHA256)");
+		} catch (IllegalBlockSizeException e) {
+			throw new CHKEncodeException("JVM crypto problem: illegal block size. Maybe your JVM doesn't support the JCA algorithms we need (AES with 256-bit keysize and HmacSHA256)");
+		} catch (BadPaddingException e) {
+			throw new CHKEncodeException("JVM crypto problem: bad padding. This should be impossible, as we don't pad anything!");
+		} catch (ShortBufferException e) {
+			Logger.error(ClientCHKBlock.class, "Coding error encoding? : "+e, e);
+			throw new CHKEncodeException("Internal error: short buffer");
+        }
     }
     
     /**
