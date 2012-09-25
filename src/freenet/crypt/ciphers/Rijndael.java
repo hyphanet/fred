@@ -42,19 +42,19 @@ public class Rijndael implements BlockCipher {
 			Cipher c = Cipher.getInstance("AES/CTR/NOPADDING");
 			c.init(Cipher.ENCRYPT_MODE, k, new IvParameterSpec(iv));
 			c.doFinal(plaintext);
-			return true;
+			return false;
 		} catch (NoSuchAlgorithmException e) {
-			return false;
+			return true;
 		} catch (NoSuchPaddingException e) {
-			return false;
+			return true;
 		} catch (InvalidKeyException e) {
-			return false;
+			return true;
 		} catch (InvalidAlgorithmParameterException e) {
-			return false;
+			return true;
 		} catch (IllegalBlockSizeException e) {
-			return false;
+			return true;
 		} catch (BadPaddingException e) {
-			return false;
+			return true;
 		}
 	}
 	
