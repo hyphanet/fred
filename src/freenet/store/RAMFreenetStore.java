@@ -141,7 +141,7 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 
 	@Override
 	public synchronized void setMaxKeys(long maxStoreKeys, boolean shrinkNow)
-			throws DatabaseException, IOException {
+			throws IOException {
 		this.maxKeys = (int)Math.min(Integer.MAX_VALUE, maxStoreKeys);
 		// Always shrink now regardless of parameter as we will shrink on the next put() anyway.
 		while(blocksByRoutingKey.size() > maxKeys) {
