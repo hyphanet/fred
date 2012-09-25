@@ -241,6 +241,7 @@ public class CTRBlockCipherTest extends TestCase {
 	}
 	
 	public void testRandomJCA() throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
+		if(!TEST_JCA) return;
 		for(int i=0;i<1024;i++) {
 			byte[] plaintext = new byte[mt.nextInt(4096)+1];
 			byte[] key = new byte[32];
