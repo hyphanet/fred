@@ -46,6 +46,7 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
 
     /** Code for 256-bit AES with PCFB and SHA-256 */
     public static final byte ALGO_AES_PCFB_256_SHA256 = 2;
+    public static final byte ALGO_AES_CTR_256_SHA256 = 3;
 
     private static volatile boolean logMINOR;
     static {
@@ -100,7 +101,8 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
 		byte type = (byte)(keyType >> 8);
 		byte subtype = (byte)(keyType & 0xFF);
 		if(type == NodeCHK.BASE_TYPE) {
-			return CHKBlock.construct(dataBytes, headersBytes);
+			// For CHKs, the subtype is the crypto algorithm.
+			return CHKBlock.construct(dataBytes, headersBytes, subtype);
 		} else if(type == NodeSSK.BASE_TYPE) {
 			DSAPublicKey pubKey;
 			try {

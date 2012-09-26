@@ -3,10 +3,20 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt.ciphers;
 
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Random;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
 import junit.framework.TestCase;
+import freenet.crypt.CTRBlockCipherTest;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.support.HexUtil;
 
@@ -1039,6 +1049,31 @@ public class RijndaelTest extends TestCase {
 			byte[] cipher = new byte[128 / 8];
 			aes128.encipher(TEST_VK_PT, cipher);
 			assertTrue("ECB_VK KEYSIZE=128 I=" + (i + 1), Arrays.equals(cipher, TEST_VK128[i][1]));
+		}
+
+		/*- KEYSIZE=192 This case would fail
+		Rijndael aes192 = new Rijndael(192, 128);
+		for (int i = 0; i < TEST_VK192.length; i++) {
+			aes192.initialize(TEST_VK192[i][0]);
+
+			byte[] cipher = new byte[192 / 8];
+			aes192.encipher(TEST_VK_PT, cipher);
+			assertTrue("ECB_VK KEYSIZE=192 I=" + (i + 1), Arrays.equals(cipher, TEST_VK192[i][1]));
+		}
+		*/
+	}
+
+	public void testStandardTestVKJCA() throws UnsupportedCipherException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
+		if(!CTRBlockCipherTest.TEST_JCA) return;
+		// KEYSIZE=128
+		for (int i = 0; i < TEST_VK128.length; i++) {
+			SecretKeySpec k = 
+				new SecretKeySpec(TEST_VK128[i][0], "AES");
+			Cipher c = Cipher.getInstance("AES/ECB/NOPADDING");
+			c.init(Cipher.ENCRYPT_MODE, k);
+			
+			byte[] output = c.doFinal(TEST_VK_PT);
+			assertTrue(Arrays.equals(output, TEST_VK128[i][1]));
 		}
 
 		/*- KEYSIZE=192 This case would fail

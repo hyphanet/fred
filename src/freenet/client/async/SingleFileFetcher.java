@@ -842,7 +842,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					else if (metadata.getParsedVersion() == 1)
 						rcb.onSplitfileCompatibilityMode(
 								CompatibilityMode.COMPAT_1255,
-								CompatibilityMode.COMPAT_1255,
+								CompatibilityMode.COMPAT_1416,
 								redirectedCryptoKey,
 								!((ClientCHK)redirectedKey).isCompressed(),
 								true, true,

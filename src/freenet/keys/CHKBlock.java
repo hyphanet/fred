@@ -49,8 +49,8 @@ public class CHKBlock implements KeyBlock {
         return data;
     }
     
-    public static CHKBlock construct(byte[] data, byte[] header) throws CHKVerifyException {
-    	return new CHKBlock(data, header, null, true, Key.ALGO_AES_PCFB_256_SHA256);
+    public static CHKBlock construct(byte[] data, byte[] header, byte cryptoAlgorithm) throws CHKVerifyException {
+    	return new CHKBlock(data, header, null, true, cryptoAlgorithm);
      }
     
     public CHKBlock(byte[] data2, byte[] header2, NodeCHK key) throws CHKVerifyException {

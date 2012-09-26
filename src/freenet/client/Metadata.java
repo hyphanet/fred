@@ -27,6 +27,7 @@ import freenet.client.async.SplitFileSegmentKeys;
 import freenet.keys.BaseClientKey;
 import freenet.keys.ClientCHK;
 import freenet.keys.FreenetURI;
+import freenet.keys.Key;
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.crypt.HashResult;
@@ -355,6 +356,9 @@ public class Metadata implements Cloneable {
 					else
 						splitfileSingleCryptoKey = getCryptoKey(hashes);
 				}
+			} else {
+				// Pre-1010 isn't supported, so there is only one possibility.
+				splitfileSingleCryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
 			}
 			
 			if(logMINOR) Logger.minor(this, "Splitfile");

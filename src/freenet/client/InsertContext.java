@@ -63,7 +63,9 @@ public class InsertContext implements Cloneable {
 		/** 1251/2/3: Basic even splitting, 1 extra check block if data blocks < 128, max 131 data blocks. */
 		COMPAT_1251,
 		/** 1255: Second stage of even splitting, a whole bunch of segments lose one block rather than the last segment losing lots of blocks. And hashes too! */
-		COMPAT_1255;
+		COMPAT_1255,
+		/** 1416: New CHK encryption */
+		COMPAT_1416;
 		
 		// Inserts should be converted to a specific compatibility mode as soon as possible, to avoid
 		// problems when an insert is restarted on a newer build with a newer default compat mode.

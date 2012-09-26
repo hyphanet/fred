@@ -14,6 +14,7 @@ import freenet.keys.CHKEncodeException;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
+import freenet.keys.Key;
 import freenet.node.SemiOrderedShutdownHook;
 import freenet.store.saltedhash.ResizablePersistentIntBuffer;
 import freenet.store.saltedhash.SaltedHashFreenetStore;
@@ -50,12 +51,17 @@ public class RAMSaltMigrationTest extends TestCase {
 	}
 
 	public void testRAMStore() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
+		checkRAMStore(true);
+		checkRAMStore(false);
+	}
+	
+	private void checkRAMStore(boolean newFormat) throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		CHKStore store = new CHKStore();
 		new RAMFreenetStore<CHKBlock>(store, 10);
 
 		// Encode a block
 		String test = "test";
-		ClientCHKBlock block = encodeBlock(test);
+		ClientCHKBlock block = encodeBlock(test, newFormat);
 		store.put(block, false);
 
 		ClientCHK key = block.getClientKey();
@@ -71,7 +77,7 @@ public class RAMSaltMigrationTest extends TestCase {
 
 		// Encode a block
 		String test = "test";
-		ClientCHKBlock block = encodeBlock(test);
+		ClientCHKBlock block = encodeBlock(test, false);
 		store.put(block, true);
 
 		ClientCHK key = block.getClientKey();
@@ -92,6 +98,11 @@ public class RAMSaltMigrationTest extends TestCase {
 	}
 
 	public void testSaltedStore() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
+		checkSaltedStore(false);
+		checkSaltedStore(true);
+	}
+	
+	public void checkSaltedStore(boolean newFormat) throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		File f = new File(tempDir, "saltstore");
 		FileUtil.removeAll(f);
 
@@ -103,7 +114,7 @@ public class RAMSaltMigrationTest extends TestCase {
 			
 			// Encode a block
 			String test = "test" + i;
-			ClientCHKBlock block = encodeBlock(test);
+			ClientCHKBlock block = encodeBlock(test, newFormat);
 			store.put(block, false);
 			
 			ClientCHK key = block.getClientKey();
@@ -151,7 +162,8 @@ public class RAMSaltMigrationTest extends TestCase {
 			
 			// Encode a block
 			String test = "test" + i;
-			ClientCHKBlock block = encodeBlock(test);
+			// Use new format for every other block to ensure they are mixed in the same store.
+			ClientCHKBlock block = encodeBlock(test, (i & 1) == 1);
 			if(write)
 				store.put(block, false);
 			
@@ -244,7 +256,7 @@ public class RAMSaltMigrationTest extends TestCase {
 			
 			// Encode a block
 			test[i] = "test" + i;
-			block[i] = encodeBlock(test[i]);
+			block[i] = encodeBlock(test[i], true);
 			store.put(block[i], true);
 			
 			keys[i] = block[i].getClientKey();
@@ -304,7 +316,7 @@ public class RAMSaltMigrationTest extends TestCase {
 			
 			// Encode a block
 			test[i] = "test" + i;
-			block[i] = encodeBlock(test[i]);
+			block[i] = encodeBlock(test[i], true);
 			store.put(block[i], true);
 			
 			keys[i] = block[i].getClientKey();
@@ -347,7 +359,7 @@ public class RAMSaltMigrationTest extends TestCase {
 
 		// Encode a block
 		String test = "test";
-		ClientCHKBlock block = encodeBlock(test);
+		ClientCHKBlock block = encodeBlock(test, true);
 		store.put(block, false);
 
 		ClientCHK key = block.getClientKey();
@@ -374,7 +386,7 @@ public class RAMSaltMigrationTest extends TestCase {
 
 		// Encode a block
 		String test = "test";
-		ClientCHKBlock block = encodeBlock(test);
+		ClientCHKBlock block = encodeBlock(test, true);
 		store.put(block, false);
 
 		ClientCHK key = block.getClientKey();
@@ -404,13 +416,11 @@ public class RAMSaltMigrationTest extends TestCase {
 		byte[] buf = BucketTools.toByteArray(output);
 		return new String(buf, "UTF-8");
 	}
-
-	private ClientCHKBlock encodeBlock(String test) throws CHKEncodeException, IOException {
+	
+	private ClientCHKBlock encodeBlock(String test, boolean newFormat) throws CHKEncodeException, IOException {
 		byte[] data = test.getBytes("UTF-8");
 		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(data);
-		return ClientCHKBlock.encode(bucket, false, false, (short)-1, bucket.size(), Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false, null, (byte)0);
+		return ClientCHKBlock.encode(bucket, false, false, (short)-1, bucket.size(), Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false, null, newFormat ? Key.ALGO_AES_CTR_256_SHA256 : Key.ALGO_AES_PCFB_256_SHA256);
 	}
-
-
 
 }

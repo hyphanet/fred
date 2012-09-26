@@ -387,6 +387,8 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 
 	private byte getCryptoAlgorithm(ObjectContainer container) {
 		if(cryptoAlgorithm == 0) {
+			// Only happens with really old splitfiles.
+			// FIXME back compatibility, remove.
 			cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
 			if(persistent) container.store(this);
 		}
