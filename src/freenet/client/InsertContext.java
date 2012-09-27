@@ -54,8 +54,11 @@ public class InsertContext implements Cloneable {
 	public static enum CompatibilityMode {
 		/** We do not know. */
 		COMPAT_UNKNOWN,
-		/** No compatibility issues, use the most efficient metadata possible. */
+		/** No compatibility issues, use the most efficient metadata possible. 
+		 * Used only for configuring an insert, *NOT* in Metadata compatibility mode detection. */
 		COMPAT_CURRENT,
+		// The below *are* used in Metadata compatibility mode detection. And they are comparable by ordinal().
+		// This means we have to check for COMPAT_CURRENT as a special case.
 		/** Exactly as before 1250: Segments of exactly 128 data, 128 check, check = data */
 		COMPAT_1250_EXACT,
 		/** 1250 or previous: Segments up to 128 data 128 check, check <= data. */
