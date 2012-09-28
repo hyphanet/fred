@@ -14,6 +14,7 @@ import java.util.Map;
 import freenet.client.async.ClientRequester;
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.SubConfig;
+import freenet.crypt.ciphers.Rijndael;
 import freenet.io.comm.IncomingPacketFilterImpl;
 import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.BlockTransmitter;
@@ -196,7 +197,7 @@ public class StatisticsToadlet extends Toadlet {
 		// jvm stats box
 		HTMLNode jvmStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
 		
-		drawJVMStatsBox(jvmStatsInfobox);
+		drawJVMStatsBox(jvmStatsInfobox, advancedMode);
 		
 		// Statistic gathering box
 		HTMLNode statGatheringContent = ctx.getPageMaker().getInfobox("#", l10n("statisticGatheringTitle"), nextTableCell, "statistics-generating", true);
@@ -589,7 +590,7 @@ public class StatisticsToadlet extends Toadlet {
 		
 	}
 
-	private void drawJVMStatsBox(HTMLNode jvmStatsInfobox) {
+	private void drawJVMStatsBox(HTMLNode jvmStatsInfobox, boolean advancedModeEnabled) {
 		
 		jvmStatsInfobox.addChild("div", "class", "infobox-header", l10n("jvmInfoTitle"));
 		HTMLNode jvmStatsInfoboxContent = jvmStatsInfobox.addChild("div", "class", "infobox-content");
@@ -620,7 +621,12 @@ public class StatisticsToadlet extends Toadlet {
 		jvmStatsList.addChild("li", l10n("osName", "name", System.getProperty("os.name")));
 		jvmStatsList.addChild("li", l10n("osVersion", "version", System.getProperty("os.version")));
 		jvmStatsList.addChild("li", l10n("osArch", "arch", System.getProperty("os.arch")));
-		
+		if(advancedModeEnabled) {
+			if(Rijndael.isJCACrippled)
+				jvmStatsList.addChild("li", l10n("cryptoUsingBuiltin"));
+			else
+				jvmStatsList.addChild("li", l10n("cryptoUsingJCA", "provider", Rijndael.getProviderName()));
+		}
 	}
 	
 	private void drawThreadPriorityStatsBox(HTMLNode node) {

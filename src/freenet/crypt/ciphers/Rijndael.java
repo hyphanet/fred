@@ -32,7 +32,7 @@ public class Rijndael implements BlockCipher {
 	public static final boolean isJCACrippled = isJCACrippled();
 	private static String provider;
 	
-	public static String getProvider() {
+	public static String getProviderName() {
 		return provider;
 	}
 	
