@@ -61,7 +61,8 @@ public class CTRBlockCipher
     	if(iv.length != IV.length)
     		throw new IllegalArgumentException();
     	System.arraycopy(iv, 0, IV, 0, IV.length);
-    	reset();
+        System.arraycopy(IV, 0, counter, 0, counter.length);
+        processBlock();
     }
 
     public int getBlockSize()
@@ -126,12 +127,6 @@ public class CTRBlockCipher
             
             counter[i] = (byte)x;
         }
-    }
-
-    private void reset()
-    {
-        System.arraycopy(IV, 0, counter, 0, counter.length);
-        processBlock();
     }
 
 }
