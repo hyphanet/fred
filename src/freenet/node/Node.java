@@ -1058,11 +1058,13 @@ public class Node implements TimeSkewDetectorCallback {
 						Thread.sleep(100);
 					} catch (InterruptedException e) {
 					}
+					if(isPRNGReady)
+						return;
+					System.out.println("Not enough entropy available.");
+					System.out.println("Trying to gather entropy (randomness) by reading the disk...");
 					for(File root : File.listRoots()) {
 						if(isPRNGReady)
 							return;
-						System.out.println("Not enough entropy available.");
-						System.out.println("Trying to gather entropy (randomness) by reading the disk...");
 						recurse(root);
 					}
 				}
