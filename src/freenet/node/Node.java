@@ -1032,10 +1032,13 @@ public class Node implements TimeSkewDetectorCallback {
 		// Setup RNG if needed : DO NOT USE IT BEFORE THAT POINT!
 		if (r == null) {
 			final NativeThread entropyGatheringThread = new NativeThread(new Runnable() {
+				
+				long tLastAdded = -1;
 
 				private void recurse(File f) {
 					if(isPRNGReady)
 						return;
+					extendTimeouts();
 					File[] subDirs = f.listFiles(new FileFilter() {
 
 						@Override
@@ -1062,12 +1065,29 @@ public class Node implements TimeSkewDetectorCallback {
 						return;
 					System.out.println("Not enough entropy available.");
 					System.out.println("Trying to gather entropy (randomness) by reading the disk...");
+					extendTimeouts();
 					for(File root : File.listRoots()) {
 						if(isPRNGReady)
 							return;
 						recurse(root);
 					}
 				}
+				
+				static final int EXTEND_BY = 10*60*1000;
+				
+				private void extendTimeouts() {
+					long now = System.currentTimeMillis();
+					if(now - tLastAdded < EXTEND_BY/2) return;
+					long target = tLastAdded + EXTEND_BY;
+					while(target < now)
+						target += EXTEND_BY;
+					long extend = target - now;
+					assert(extend < Integer.MAX_VALUE);
+					assert(extend > 0);
+					WrapperManager.signalStarting((int)extend);
+					tLastAdded = now;
+				}
+
 			}, "Entropy Gathering Thread", NativeThread.MIN_PRIORITY, true);
 
 			File seed = userDir.file("prng.seed");
