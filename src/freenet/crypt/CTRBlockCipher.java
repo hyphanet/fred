@@ -9,11 +9,21 @@ package freenet.crypt;
  */
 public class CTRBlockCipher
 {
+	/** Block cipher */
     private final BlockCipher     cipher;
+    /** Block size in bytes. 
+     * Equal to IV.length = counter.length = counterOut.length. */
     private final int             blockSize;
     
+    /** Initialization vector, equal to the initial value of the plaintext 
+     * counter. */
     private byte[]          IV;
+    /** The plaintext block counter. This is incremented (from [31] 
+     * backwards) after each block encryption. */
     private byte[]          counter;
+    /** The ciphertext block counter. This is the result of encrypting the
+     * plaintext block counter. It is XOR'ed with the plaintext to get the
+     * ciphertext. */
     private byte[]          counterOut;
 
     /** Offset within the current block. */
@@ -93,7 +103,8 @@ public class CTRBlockCipher
     private void processBlock()
           throws IllegalStateException
     {
-    	// Our ciphers clobber the input buffer, so copy it.
+    	// Our ciphers clobber the input array, so it is essential to copy
+    	// the counter to counterOut and then encrypt in-place.
     	System.arraycopy(counter, 0, counterOut, 0, counter.length);
     	cipher.encipher(counterOut, counterOut);
     	
