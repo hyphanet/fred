@@ -54,7 +54,13 @@ public class CTRBlockCipher
         return cipher;
     }
 
-
+    /** Initialize the cipher with an IV. Must only be called once for any
+     * given IV!
+     * @param iv The initialization vector. This is the initial value of
+     * the plaintext counter. The plaintext is XORed with a sequence of
+     * bytes consisting of the encryption of successive values of the counter. 
+     * @throws IllegalArgumentException If the IV length is wrong.
+     */
     public void init(byte[] iv)
         throws IllegalArgumentException
     {
@@ -87,6 +93,8 @@ public class CTRBlockCipher
      * @param offsetOut The offset within the output data array to the first byte.
      */
     public void processBytes(byte[] input, int offsetIn, int length, byte[] output, int offsetOut) {
+    	// XOR the plaintext with counterOut until we run out of blockOffset,
+    	// then processBlock() to get a new counterOut.
     	int ptr = 0;
     	while(true) {
     		while(blockOffset != counterOut.length && ptr < length) {
@@ -101,6 +109,7 @@ public class CTRBlockCipher
     	}
     }
 
+    /** Encrypt counter to counterOut, and then increment counter. */
     private void processBlock()
           throws IllegalStateException
     {
