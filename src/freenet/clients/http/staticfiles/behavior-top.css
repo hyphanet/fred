@@ -1,0 +1,61 @@
+/*
+ * behavior-top: Show the navigation menu as a horizontal bar across the
+ * top of the screen with submenus on a second.
+*/
+
+/* Basic CSS functions */
+@import url(/static/base.css);
+
+/* code */
+
+/* The subnavlists are not used in top mode */
+
+#navlist .subnavlist,
+#navlist .subnavlist-selected {
+    display:none;
+}
+
+/* move the content window to the left side of the screen */
+
+div#content {
+	position: inherit !important;
+}
+
+/* move the navbar to the top of the screen */
+
+div#navbar {
+	float: none !important;
+	padding: 0px !important;
+	position: relative !important;
+	left: 0px !important;
+	top: 0px !important;
+}
+
+div#navbar,
+li.navlist-selected,
+li.navlist-not-selected {
+	width: auto !important;
+}
+
+/* make the top level menu items display horizontally instead of vertically */
+
+ul#navlist {
+	width: 100%;
+	display: table;
+	border-collapse: collapse;
+	border: none;
+}
+
+li.navlist-selected,
+li.navlist-not-selected {
+	display: table-cell !important;
+	margin: 0px !important;
+	padding: 0px !important;
+	position: relative !important;
+	text-align: center !important;
+}
+
+/* topbar bottom border conflicts with navbar top */
+#topbar {
+	border-bottom: none !important;
+}

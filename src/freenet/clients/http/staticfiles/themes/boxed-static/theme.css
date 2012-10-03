@@ -1,0 +1,10 @@
+/* boxed-static theme */
+
+/* navigation behavior */
+@import url(/static/behavior-static.css);
+
+/* layout */
+@import url(/static/themes/boxed/layout.css);
+
+/* color scheme */
+@import url(/static/themes/boxed/color.css);

@@ -1,20 +1,12 @@
-/* minimalist */
-
-/* Basic CSS functions */
-@import url(/static/base.css);
-
-/* Bookmarks & bookmark editor */
-@import url(/static/bookmark.css);
-
-/* Fix for old Iceweasels */
-@import url(/static/themes/clean/theme.css);
-@import url(/static/statusbar.css);
+﻿/* minimalist */
 
 /* Base theme */
-@import url(/static/themes/clean-dropdown/theme.css);
+@import url(/static/clean-dropdown-old.css);
 
 /* Default pictures won't render nice with this theme */
 @import url(/static/picturesnullifier.css);
+
+/* minimalist overall settings */
 
 /* *****************************************************************
  *                     minimalistic additions
@@ -379,15 +371,4 @@ div#freenet-version div.infobox-content form input[type=submit] {
 	border: none;
 	font-size: 0.9em;
 	border: 1px solid #CCF;
-}
-
-/* plugin manager settings */
-
-div.plugin-group {
-	margin-bottom: 0.5em;
-}
-
-div.plugin-group-title {
-	margin-bottom: 0.5em;
-	font-weight: bold;
 }
