@@ -521,7 +521,6 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 					}
 					if(overriddenOption != null && overriddenOption.equals(fullName))
 						value = overriddenValue;
-					if(callback instanceof EnumerableOptionCallback)
 				switch (optionType) {
 					case DROP_DOWN:
 						configItemValueNode.addChild(addComboBox(value,
