@@ -8,7 +8,10 @@ import java.util.TreeMap;
 import freenet.support.Logger.LogLevel;
 
 /**
- * An LRU map from K to V. 
+ * An LRU map from K to V. That is, when a mapping is added, it is 
+ * pushed to the top of the queue, even if it was already present, and 
+ * pop/peek operate from the bottom of the queue i.e. the least recently 
+ * pushed. The caller must implement any size limit needed.
  * FIXME most callers should be switched to LinkedHashMap.
  * @param <K> The key type.
  * @param <V> The value type.
