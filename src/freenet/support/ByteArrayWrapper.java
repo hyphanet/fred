@@ -9,7 +9,7 @@ import java.util.Arrays;
  * byte[], but can be put into HashSet etc *by content*.
  * @author toad
  */
-public class ByteArrayWrapper {
+public class ByteArrayWrapper implements Comparable<ByteArrayWrapper> {
 	
 	private final byte[] buf;
 	private int hashCode;
@@ -37,5 +37,10 @@ public class ByteArrayWrapper {
 	/** DO NOT MODIFY THE RETURNED DATA! */
 	public byte[] get() {
 		return buf;
+	}
+
+	@Override
+	public int compareTo(ByteArrayWrapper arg) {
+		return Fields.compareBytes(buf, arg.buf);
 	}
 }
