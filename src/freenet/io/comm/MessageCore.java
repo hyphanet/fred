@@ -119,7 +119,7 @@ public class MessageCore {
 		// Avoids exhaustive and unsuccessful search in waitFor() removal of a timed out filter.
 		if(logMINOR)
 			Logger.minor(this, "Removing timed out filters");
-		ArrayList<MessageFilter> _timedOutFilters = null;
+		ArrayList<MessageFilter> timedOutFilters = null;
 		synchronized (_filters) {
 			for (ListIterator<MessageFilter> i = _filters.listIterator(); i.hasNext();) {
 				MessageFilter f = i.next();
@@ -127,10 +127,10 @@ public class MessageCore {
 					if(logMINOR)
 						Logger.minor(this, "Removing "+f);
 					i.remove();
-					if(_timedOutFilters == null) 
-						_timedOutFilters = new ArrayList<MessageFilter>();
-					if(!_timedOutFilters.contains(f))
-						_timedOutFilters.add(f);
+					if(timedOutFilters == null) 
+						timedOutFilters = new ArrayList<MessageFilter>();
+					if(!timedOutFilters.contains(f))
+						timedOutFilters.add(f);
 					else
 						Logger.error(this, "Filter "+f+" is in filter list twice!");
 					if(logMINOR) {
@@ -156,8 +156,8 @@ public class MessageCore {
 			}
 		}
 		
-		if(_timedOutFilters != null) {
-			for(MessageFilter f : _timedOutFilters) {
+		if(timedOutFilters != null) {
+			for(MessageFilter f : timedOutFilters) {
 				f.setMessage(null);
 				f.onTimedOut(_executor);
 			}
