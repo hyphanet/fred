@@ -429,6 +429,17 @@ public class Metadata implements Cloneable {
 
 		if((!splitfile) && ((documentType == SIMPLE_REDIRECT) || (documentType == ARCHIVE_MANIFEST))) {
 			simpleRedirectKey = readKey(dis);
+			if(simpleRedirectKey.isCHK()) {
+				byte algo = ClientCHK.getCryptoAlgorithmFromExtra(simpleRedirectKey.getExtra());
+				if(algo == Key.ALGO_AES_CTR_256_SHA256) {
+					minCompatMode = CompatibilityMode.COMPAT_1416;
+					maxCompatMode = CompatibilityMode.latest();
+				} else {
+					// Older.
+					minCompatMode = CompatibilityMode.COMPAT_1250_EXACT;
+					maxCompatMode = CompatibilityMode.COMPAT_1255;
+				}
+			}
 		} else if(splitfile) {
 			splitfileAlgorithm = dis.readShort();
 			if(!((splitfileAlgorithm == SPLITFILE_NONREDUNDANT) ||
