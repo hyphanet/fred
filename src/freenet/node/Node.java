@@ -3727,6 +3727,7 @@ public class Node implements TimeSkewDetectorCallback {
 			//Note that Sun/Oracle does not produce VMs for the Macintosh operating system, dont ask the user to find one...
 		} else {
 			if(jvmVendor.startsWith("Free Software Foundation")) {
+				// GCJ/GIJ.
 				try {
 					javaVersion = System.getProperty("java.version").split(" ")[0].replaceAll("[.]","");
 					int jvmVersionInt = Integer.parseInt(javaVersion);
@@ -3740,7 +3741,7 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 			}
 
-			clientCore.alerts.register(new SimpleUserAlert(true, l10n("notUsingSunVMTitle"), l10n("notUsingSunVM", new String[] { "vendor", "name", "version" }, new String[] { jvmVendor, jvmName, javaVersion }), l10n("notUsingSunVMShort"), UserAlert.WARNING));
+			clientCore.alerts.register(new SimpleUserAlert(true, l10n("usingGCJTitle"), l10n("usingGCJ"), l10n("usingGCJTitle"), UserAlert.WARNING));
 		}
 
 		if(!isUsingWrapper() && !skipWrapperWarning) {
