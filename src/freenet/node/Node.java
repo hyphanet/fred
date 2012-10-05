@@ -3746,9 +3746,8 @@ public class Node implements TimeSkewDetectorCallback {
 				catch(Throwable t) {
 					Logger.error(this, "GCJ version check is broken!", t);
 				}
+				clientCore.alerts.register(new SimpleUserAlert(true, l10n("usingGCJTitle"), l10n("usingGCJ"), l10n("usingGCJTitle"), UserAlert.WARNING));
 			}
-
-			clientCore.alerts.register(new SimpleUserAlert(true, l10n("usingGCJTitle"), l10n("usingGCJ"), l10n("usingGCJTitle"), UserAlert.WARNING));
 		}
 
 		if(!isUsingWrapper() && !skipWrapperWarning) {
