@@ -41,6 +41,7 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper> {
 
 	@Override
 	public int compareTo(ByteArrayWrapper arg) {
+		if(this == arg) return 0;
 		return Fields.compareBytes(buf, arg.buf);
 	}
 }
