@@ -5,8 +5,8 @@ package freenet.client.async;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.Vector;
 import java.util.WeakHashMap;
 
@@ -113,7 +113,10 @@ public class USKManager {
 	/** Temporary fetchers where we have been asked to prefetch content. We track
 	 * the time we last had a new last-slot, so that if there is no new last-slot
 	 * found in 60 seconds, we start prefetching. We delete the entry when the 
-	 * fetcher finishes. */
+	 * fetcher finishes.
+	 * FIXME this should be TreeMap-based to prevent hash collision DoS'es.
+	 * But we also need it to be weak ... how to implement?
+	 */
 	final WeakHashMap<USK, Long> temporaryBackgroundFetchersPrefetch;
 	
 	final FetchContext backgroundFetchContext;
@@ -134,11 +137,11 @@ public class USKManager {
 		backgroundFetchContextIgnoreDBR = backgroundFetchContext.clone();
 		backgroundFetchContextIgnoreDBR.ignoreUSKDatehints = true;
 		realFetchContext = client.getFetchContext();
-		latestKnownGoodByClearUSK = new HashMap<USK, Long>();
-		latestSlotByClearUSK = new HashMap<USK, Long>();
-		subscribersByClearUSK = new HashMap<USK, USKCallback[]>();
-		backgroundFetchersByClearUSK = new HashMap<USK, USKFetcher>();
-		temporaryBackgroundFetchersLRU = new LRUMap<USK, USKFetcher>();
+		latestKnownGoodByClearUSK = new TreeMap<USK, Long>();
+		latestSlotByClearUSK = new TreeMap<USK, Long>();
+		subscribersByClearUSK = new TreeMap<USK, USKCallback[]>();
+		backgroundFetchersByClearUSK = new TreeMap<USK, USKFetcher>();
+		temporaryBackgroundFetchersLRU = LRUMap.createSafeMap();
 		temporaryBackgroundFetchersPrefetch = new WeakHashMap<USK, Long>();
 		executor = core.getExecutor();
 	}
