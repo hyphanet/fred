@@ -22,7 +22,7 @@ import freenet.support.Logger;
  * - Site edition number.
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-public class USK extends BaseClientKey {
+public class USK extends BaseClientKey implements Comparable<USK> {
 
 	/* The character to separate the site name from the edition number in its SSK form.
 	 * I chose "-", because it makes it ludicrously easy to go from the USK form to the
@@ -208,5 +208,21 @@ public class USK extends BaseClientKey {
 
 	public void removeFrom(ObjectContainer container) {
 		container.delete(this);
+	}
+
+	@Override
+	public int compareTo(USK o) {
+		if(this == o) return 0;
+		if(cryptoAlgorithm < o.cryptoAlgorithm) return -1;
+		if(cryptoAlgorithm > o.cryptoAlgorithm) return 1;
+		int cmp = Fields.compareBytes(pubKeyHash, o.pubKeyHash);
+		if(cmp != 0) return cmp;
+		cmp = siteName.compareTo(o.siteName);
+		if(cmp != 0) return cmp;
+		cmp = Fields.compareBytes(cryptoKey, o.cryptoKey);
+		if(cmp != 0) return cmp;
+		if(suggestedEdition > o.suggestedEdition) return 1;
+		if(suggestedEdition < o.suggestedEdition) return -1;
+		return 0;
 	}
 }
