@@ -1175,6 +1175,11 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 	}
 
 	@Override
+	/** This looks expensive, but 99% of the time it will quit out pretty 
+	 * early on: Either a different key type or a different routing key. The 
+	 * worst case cost is relatively bad though. Unfortunately we can't use
+	 * a HashMap if an attacker might be able to influence the keys and 
+	 * create a hash collision DoS, so we *do* need this. */
 	public int compareTo(FreenetURI o) {
 		if(this == o) return 0;
 		int cmp = keyType.compareTo(o.keyType);
