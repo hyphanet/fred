@@ -20,6 +20,7 @@ package freenet.io.comm;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Map;
@@ -118,7 +119,7 @@ public class MessageCore {
 		// Avoids exhaustive and unsuccessful search in waitFor() removal of a timed out filter.
 		if(logMINOR)
 			Logger.minor(this, "Removing timed out filters");
-		ArrayList<MessageFilter> timedOutFilters = null;
+		HashSet<MessageFilter> timedOutFilters = null;
 		synchronized (_filters) {
 			for (ListIterator<MessageFilter> i = _filters.listIterator(); i.hasNext();) {
 				MessageFilter f = i.next();
@@ -127,10 +128,8 @@ public class MessageCore {
 						Logger.minor(this, "Removing "+f);
 					i.remove();
 					if(timedOutFilters == null) 
-						timedOutFilters = new ArrayList<MessageFilter>();
-					if(!timedOutFilters.contains(f))
-						timedOutFilters.add(f);
-					else
+						timedOutFilters = new HashSet<MessageFilter>();
+					if(!timedOutFilters.add(f))
 						Logger.error(this, "Filter "+f+" is in filter list twice!");
 					if(logMINOR) {
 						for (ListIterator<Message> it = _unclaimed.listIterator(); it.hasNext();) {
