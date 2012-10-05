@@ -5324,7 +5324,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 		public synchronized SlotWaiter removeFirst() {
 			if(lru.isEmpty()) return null;
-			// FIXME better to use LRUHashtable?
+			// FIXME better to use LRUMap?
 			// Would need to update it to use Iterator and other modern APIs in values(), and creating two objects here isn't THAT expensive on modern VMs...
 			PeerNode source = lru.keySet().iterator().next();
 			TreeMap<Long, SlotWaiter> map = lru.get(source);

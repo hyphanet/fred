@@ -6,7 +6,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * Variant on LRUHashtable which provides an efficient how-many-since-time-T operation.
+ * Variant on LRUMap which provides an efficient how-many-since-time-T operation.
  */
 public class TimeSortedHashtable<T extends Comparable<T>>  {
 	public TimeSortedHashtable() {

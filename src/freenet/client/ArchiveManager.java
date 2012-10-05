@@ -27,7 +27,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.async.ClientContext;
 import freenet.keys.FreenetURI;
 import freenet.support.ExceptionWrapper;
-import freenet.support.LRUHashtable;
+import freenet.support.LRUMap;
 import freenet.support.Logger;
 import freenet.support.MutableBoolean;
 import freenet.support.Logger.LogLevel;
@@ -111,7 +111,7 @@ public class ArchiveManager {
 
 	// ArchiveHandler's
 	final int maxArchiveHandlers;
-	private final LRUHashtable<FreenetURI, ArchiveStoreContext> archiveHandlers;
+	private final LRUMap<FreenetURI, ArchiveStoreContext> archiveHandlers;
 
 	// Data cache
 	/** Maximum number of cached ArchiveStoreItems */
@@ -121,7 +121,7 @@ public class ArchiveManager {
 	/** Currently cached data in bytes */
 	private long cachedData;
 	/** Map from ArchiveKey to ArchiveStoreElement */
-	private final LRUHashtable<ArchiveKey, ArchiveStoreItem> storedData;
+	private final LRUMap<ArchiveKey, ArchiveStoreItem> storedData;
 	/** Bucket Factory */
 	private final BucketFactory tempBucketFactory;
 
@@ -142,10 +142,10 @@ public class ArchiveManager {
 	 */
 	public ArchiveManager(int maxHandlers, long maxCachedData, long maxArchivedFileSize, int maxCachedElements, BucketFactory tempBucketFactory) {
 		maxArchiveHandlers = maxHandlers;
-		archiveHandlers = new LRUHashtable<FreenetURI, ArchiveStoreContext>();
+		archiveHandlers = new LRUMap<FreenetURI, ArchiveStoreContext>();
 		this.maxCachedElements = maxCachedElements;
 		this.maxCachedData = maxCachedData;
-		storedData = new LRUHashtable<ArchiveKey, ArchiveStoreItem>();
+		storedData = new LRUMap<ArchiveKey, ArchiveStoreItem>();
 		this.maxArchivedFileSize = maxArchivedFileSize;
 		this.tempBucketFactory = tempBucketFactory;
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);

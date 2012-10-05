@@ -46,7 +46,7 @@ import freenet.support.ByteArrayWrapper;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
-import freenet.support.LRUHashtable;
+import freenet.support.LRUMap;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -792,7 +792,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 	}
 	
-	private final LRUHashtable<InetAddress, Long> throttleRekeysByIP = new LRUHashtable<InetAddress, Long>();
+	private final LRUMap<InetAddress, Long> throttleRekeysByIP = new LRUMap<InetAddress, Long>();
 
 	private static final int REKEY_BY_IP_TABLE_SIZE = 1024;
 

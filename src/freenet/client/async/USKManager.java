@@ -24,7 +24,7 @@ import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Executor;
-import freenet.support.LRUHashtable;
+import freenet.support.LRUMap;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -108,7 +108,7 @@ public class USKManager {
 	/** Temporary fetchers, started when a USK (with a positive edition number) is 
 	 * fetched. These have pollForever=false. Keyed by the clear USK, i.e. one per 
 	 * USK, not one per {USK, start edition}, unlike fetchersByUSK. */
-	final LRUHashtable<USK, USKFetcher> temporaryBackgroundFetchersLRU;
+	final LRUMap<USK, USKFetcher> temporaryBackgroundFetchersLRU;
 	
 	/** Temporary fetchers where we have been asked to prefetch content. We track
 	 * the time we last had a new last-slot, so that if there is no new last-slot
@@ -138,7 +138,7 @@ public class USKManager {
 		latestSlotByClearUSK = new HashMap<USK, Long>();
 		subscribersByClearUSK = new HashMap<USK, USKCallback[]>();
 		backgroundFetchersByClearUSK = new HashMap<USK, USKFetcher>();
-		temporaryBackgroundFetchersLRU = new LRUHashtable<USK, USKFetcher>();
+		temporaryBackgroundFetchersLRU = new LRUMap<USK, USKFetcher>();
 		temporaryBackgroundFetchersPrefetch = new WeakHashMap<USK, Long>();
 		executor = core.getExecutor();
 	}

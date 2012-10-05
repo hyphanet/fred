@@ -19,7 +19,7 @@ import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
-import freenet.support.LRUHashtable;
+import freenet.support.LRUMap;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -59,9 +59,9 @@ public class FailureTable implements OOMHook {
 	}
 
 	/** FailureTableEntry's by key. Note that we push an entry only when sentTime changes. */
-	private final LRUHashtable<Key,FailureTableEntry> entriesByKey;
+	private final LRUMap<Key,FailureTableEntry> entriesByKey;
 	/** BlockOfferList by key */
-	private final LRUHashtable<Key,BlockOfferList> blockOfferListByKey;
+	private final LRUMap<Key,BlockOfferList> blockOfferListByKey;
 	private final Node node;
 	
 	/** Maximum number of keys to track */
@@ -87,8 +87,8 @@ public class FailureTable implements OOMHook {
 	static final int CLEANUP_PERIOD = 10*60*1000;
 	
 	FailureTable(Node node) {
-		entriesByKey = new LRUHashtable<Key,FailureTableEntry>();
-		blockOfferListByKey = new LRUHashtable<Key,BlockOfferList>();
+		entriesByKey = new LRUMap<Key,FailureTableEntry>();
+		blockOfferListByKey = new LRUMap<Key,BlockOfferList>();
 		this.node = node;
 		offerAuthenticatorKey = new byte[32];
 		node.random.nextBytes(offerAuthenticatorKey);

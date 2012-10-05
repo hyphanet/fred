@@ -9,7 +9,7 @@ import com.sleepycat.je.DatabaseException;
 import freenet.keys.KeyVerifyException;
 import freenet.node.stats.StoreAccessStats;
 import freenet.support.ByteArrayWrapper;
-import freenet.support.LRUHashtable;
+import freenet.support.LRUMap;
 import freenet.support.Logger;
 
 /**
@@ -26,7 +26,7 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 		boolean oldBlock;
 	}
 	
-	private final LRUHashtable<ByteArrayWrapper, Block> blocksByRoutingKey;
+	private final LRUMap<ByteArrayWrapper, Block> blocksByRoutingKey;
 	
 	private final StoreCallback<T> callback;
 	
@@ -38,7 +38,7 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 	
 	public RAMFreenetStore(StoreCallback<T> callback, int maxKeys) {
 		this.callback = callback;
-		this.blocksByRoutingKey = new LRUHashtable<ByteArrayWrapper, Block>();
+		this.blocksByRoutingKey = new LRUMap<ByteArrayWrapper, Block>();
 		this.maxKeys = maxKeys;
 		callback.setStore(this);
 	}

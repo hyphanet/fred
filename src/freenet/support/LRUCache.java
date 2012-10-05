@@ -47,7 +47,7 @@ public final class LRUCache<Key, Value> {
 		}
 	}
 	
-	private final LRUHashtable<Key, Entry> mCache;
+	private final LRUMap<Key, Entry> mCache;
 
 
 	/**
@@ -55,7 +55,7 @@ public final class LRUCache<Key, Value> {
 	 * @param expirationDelay The amount of milliseconds after which an entry expires.
 	 */
 	public LRUCache(final int sizeLimit, final long expirationDelay) {
-		mCache = new LRUHashtable<Key, Entry>(sizeLimit * 2);
+		mCache = new LRUMap<Key, Entry>(sizeLimit * 2);
 		mSizeLimit = sizeLimit;
 		mExpirationDelay = expirationDelay;
 	}

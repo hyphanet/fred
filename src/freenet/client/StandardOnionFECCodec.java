@@ -6,7 +6,7 @@ package freenet.client;
 import com.onionnetworks.fec.FECCode;
 import com.onionnetworks.fec.PureCode;
 
-import freenet.support.LRUHashtable;
+import freenet.support.LRUMap;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -20,7 +20,7 @@ public class StandardOnionFECCodec extends FECCodec {
 
 	static boolean noNative;
 
-	private static final LRUHashtable<MyKey, StandardOnionFECCodec> recentlyUsedCodecs = new LRUHashtable<MyKey, StandardOnionFECCodec>();
+	private static final LRUMap<MyKey, StandardOnionFECCodec> recentlyUsedCodecs = new LRUMap<MyKey, StandardOnionFECCodec>();
 
         private static volatile boolean logMINOR;
 	static {

@@ -20,7 +20,7 @@ import java.util.Enumeration;
 import junit.framework.TestCase;
 
 /**
- * Test case for {@link freenet.support.LRUHashtable} class.
+ * Test case for {@link freenet.support.LRUMap} class.
  * 
  * @author Alberto Bacchelli &lt;sback@freenetproject.org&gt;
  */
@@ -46,9 +46,9 @@ public class LRUHashtableTest extends TestCase {
 	}
 	
 	/**
-	 * Creates a LRUHashtable filled with the specified objects number
+	 * Creates a LRUMap filled with the specified objects number
 	 * @param size HashTable size
-	 * @return the created LRUHashtable
+	 * @return the created LRUMap
 	 */
 	private LRUHashtable<Object, Object> createSampleHashTable(int size) {
 		LRUHashtable<Object, Object> methodLRUht = new LRUHashtable<Object, Object>();
@@ -60,8 +60,8 @@ public class LRUHashtableTest extends TestCase {
 	
 	/**
 	 * It verifies if a key-value pair is present in
-	 * a LRUHashtable
-	 * @param aLRUht a LRUHashtable to check in
+	 * a LRUMap
+	 * @param aLRUht a LRUMap to check in
 	 * @param aKey a key to find
 	 * @param aValue the correspondent value
 	 * @return true if the key is present and returned value is the same as in the argument
@@ -197,7 +197,7 @@ public class LRUHashtableTest extends TestCase {
 	/**
 	 * Tests popValue() method
 	 * popping a value from an empty
-	 * LRUHashtable.
+	 * LRUMap.
 	 */
 	public void testPopValueFromEmpty() {
 		LRUHashtable<?, ?> methodLRUht = new LRUHashtable<Object, Object>();
@@ -282,7 +282,7 @@ public class LRUHashtableTest extends TestCase {
 	/**
 	 * Tests removeKey(Object) method
 	 * trying to remove a not present key after 
-	 * setting up a sample LRUHashtable.
+	 * setting up a sample LRUMap.
 	 */
 	public void testRemoveNotPresent() {
 		LRUHashtable<Object, Object> methodLRUht = createSampleHashTable(sampleElemsNumber);

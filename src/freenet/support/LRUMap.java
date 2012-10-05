@@ -13,7 +13,7 @@ import freenet.support.Logger.LogLevel;
  * @param <K> The key type.
  * @param <V> The value type.
  */
-public class LRUHashtable<K, V> {
+public class LRUMap<K, V> {
 	private static volatile boolean logMINOR;
 
 	static {
@@ -30,24 +30,24 @@ public class LRUHashtable<K, V> {
 	private final DoublyLinkedListImpl<QItem<K, V>> list = new DoublyLinkedListImpl<QItem<K, V>>();
     private final Map<K, QItem<K, V>> hash;
     
-    public LRUHashtable() {
+    public LRUMap() {
     	hash = new HashMap<K, QItem<K, V>>();
     }
     
     /** Takes an arbitrary map */
-    private LRUHashtable(Map<K, QItem<K, V>> map) {
+    private LRUMap(Map<K, QItem<K, V>> map) {
     	hash = map;
     }
     
-    public LRUHashtable(int initialSize) {
+    public LRUMap(int initialSize) {
     	hash = new HashMap<K, QItem<K, V>>(initialSize);
     }
 
-    /** Create a LRUHashtable that is safe to use with keys that can be
+    /** Create a LRUMap that is safe to use with keys that can be
      * controlled by an attacker. Meaning one based on a TreeMap, not a 
      * HashMap (think hash collision DoS's). */
-    public static<K,V> LRUHashtable<K,V> createSafeMap() {
-    	return new LRUHashtable<K,V>(new TreeMap<K, QItem<K,V>>());
+    public static<K,V> LRUMap<K,V> createSafeMap() {
+    	return new LRUMap<K,V>(new TreeMap<K, QItem<K,V>>());
     }
     
     /**
@@ -155,14 +155,14 @@ public class LRUHashtable<K, V> {
        
         @Override
         public boolean hasMoreElements() {
-        	synchronized(LRUHashtable.this) {
+        	synchronized(LRUMap.this) {
         		return source.hasMoreElements();
         	}
         }
 
 		@Override
 		public K nextElement() {
-        	synchronized(LRUHashtable.this) {
+        	synchronized(LRUMap.this) {
         		return source.nextElement().obj;
         	}
         }
@@ -173,14 +173,14 @@ public class LRUHashtable<K, V> {
        
         @Override
         public boolean hasMoreElements() {
-        	synchronized(LRUHashtable.this) {
+        	synchronized(LRUMap.this) {
         		return source.hasMoreElements();
         	}
         }
 
 		@Override
 		public V nextElement() {
-        	synchronized(LRUHashtable.this) {
+        	synchronized(LRUMap.this) {
         		return source.nextElement().value;
         	}
         }
