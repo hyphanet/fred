@@ -141,12 +141,16 @@ public class LRUHashtable<K, V> {
        
         @Override
         public boolean hasMoreElements() {
-            return source.hasMoreElements();
+        	synchronized(LRUHashtable.this) {
+        		return source.hasMoreElements();
+        	}
         }
 
 		@Override
 		public K nextElement() {
-			return source.nextElement().obj;
+        	synchronized(LRUHashtable.this) {
+        		return source.nextElement().obj;
+        	}
         }
     }
 
@@ -155,12 +159,16 @@ public class LRUHashtable<K, V> {
        
         @Override
         public boolean hasMoreElements() {
-            return source.hasMoreElements();
+        	synchronized(LRUHashtable.this) {
+        		return source.hasMoreElements();
+        	}
         }
 
 		@Override
 		public V nextElement() {
-			return source.nextElement().value;
+        	synchronized(LRUHashtable.this) {
+        		return source.nextElement().value;
+        	}
         }
     }
 
