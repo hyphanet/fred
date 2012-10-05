@@ -3,6 +3,7 @@ package freenet.support;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import freenet.support.Logger.LogLevel;
 
@@ -33,8 +34,20 @@ public class LRUHashtable<K, V> {
     	hash = new HashMap<K, QItem<K, V>>();
     }
     
+    /** Takes an arbitrary map */
+    private LRUHashtable(Map<K, QItem<K, V>> map) {
+    	hash = map;
+    }
+    
     public LRUHashtable(int initialSize) {
     	hash = new HashMap<K, QItem<K, V>>(initialSize);
+    }
+
+    /** Create a LRUHashtable that is safe to use with keys that can be
+     * controlled by an attacker. Meaning one based on a TreeMap, not a 
+     * HashMap (think hash collision DoS's). */
+    public static<K,V> LRUHashtable<K,V> createSafeMap() {
+    	return new LRUHashtable<K,V>(new TreeMap<K, QItem<K,V>>());
     }
     
     /**
