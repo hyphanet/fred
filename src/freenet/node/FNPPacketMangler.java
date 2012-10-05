@@ -660,9 +660,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 
 		if(negType >= 0 && negType < 6) {
+			// negType 0 through 5 no longer supported, used old FNP.
 			Logger.warning(this, "Old neg type "+negType+" not supported");
 			return;
 		} else if (negType == 6 || negType == 7) {
+			// negType == 7 => same as 6, but determine the initial sequence number by hashing the identity
+			// instead of negotiating it
 			/*
 			 * We implement Just Fast Keying key management protocol with active identity protection
 			 * for the initiator and no identity protection for the responder

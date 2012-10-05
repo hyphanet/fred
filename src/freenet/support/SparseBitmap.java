@@ -12,6 +12,14 @@ public class SparseBitmap implements Iterable<int[]> {
 		ranges = new TreeSet<Range>(new RangeComparator());
 	}
 
+	public SparseBitmap(SparseBitmap original) {
+		ranges = new TreeSet<Range>(new RangeComparator());
+
+		for(int[] range : original) {
+			add(range[0], range[1]);
+		}
+	}
+
 	public void add(int start, int end) {
 		if(start > end) {
 			throw new IllegalArgumentException("Tried adding bad range. Start: " + start + ", end: " + end);
