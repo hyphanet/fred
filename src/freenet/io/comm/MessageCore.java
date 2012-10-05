@@ -68,7 +68,6 @@ public class MessageCore {
 	}
 
 	public MessageCore(Executor executor) {
-		_timedOutFilters = new Vector<MessageFilter>(32);
 		_executor = executor;
 	}
 
@@ -89,10 +88,6 @@ public class MessageCore {
         }
     }
 
-    /** Only used by removeTimedOutFilters() - if future code uses this elsewhere, we need to
-     * reconsider its locking. */
-    private final Vector<MessageFilter> _timedOutFilters;
-    
     public void start(final Ticker ticker) {
     	synchronized(this) {
     		startedTime = System.currentTimeMillis();
@@ -124,6 +119,7 @@ public class MessageCore {
 		// Avoids exhaustive and unsuccessful search in waitFor() removal of a timed out filter.
 		if(logMINOR)
 			Logger.minor(this, "Removing timed out filters");
+		ArrayList<MessageFilter> _timedOutFilters = new ArrayList<MessageFilter>();
 		synchronized (_filters) {
 			for (ListIterator<MessageFilter> i = _filters.listIterator(); i.hasNext();) {
 				MessageFilter f = i.next();
