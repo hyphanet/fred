@@ -13,6 +13,7 @@ import freenet.support.Logger.LogLevel;
  * pop/peek operate from the bottom of the queue i.e. the least recently 
  * pushed. The caller must implement any size limit needed.
  * FIXME most callers should be switched to LinkedHashMap.
+ * Does not support null keys.
  * @param <K> The key type.
  * @param <V> The value type.
  */
@@ -56,6 +57,8 @@ public class LRUMap<K, V> {
      *       a duplicate entry in the queue.
      */
     public final synchronized void push(K key, V value) {
+    	if(key == null)
+    		throw new NullPointerException();
         QItem<K,V> insert = hash.get(key);
         if (insert == null) {
             insert = new QItem<K, V>(key, value);
@@ -128,6 +131,8 @@ public class LRUMap<K, V> {
      * @return true if this queue contains obj.
      */
     public final synchronized boolean containsKey(K key) {
+    	if(key == null)
+    		throw new NullPointerException();
         return hash.containsKey(key);
     }
     
@@ -136,6 +141,8 @@ public class LRUMap<K, V> {
      * to do that by hand with push(key, value).
      */
     public final synchronized V get(K key) {
+    	if(key == null)
+    		throw new NullPointerException();
     	QItem<K,V> q = hash.get(key);
     	if(q == null) return null;
     	return q.value;
