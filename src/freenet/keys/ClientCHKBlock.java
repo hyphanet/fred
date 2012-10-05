@@ -13,7 +13,6 @@ import java.util.Arrays;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
@@ -470,8 +469,6 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         header[0] = (byte)(blockHashAlgorithm >> 8);
         header[1] = (byte)(blockHashAlgorithm & 0xff);
         System.arraycopy(hash, 0, header, 2, hash.length);
-        KeyGenerator keygen = KeyGenerator.getInstance("AES");
-        keygen.init(256);
         SecretKey ckey = new SecretKeySpec(encKey, "AES");
         // CTR mode IV is only 16 bytes.
         // That's still plenty though. It will still be unique.
