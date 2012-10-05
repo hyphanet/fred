@@ -79,7 +79,7 @@ import freenet.support.io.FileUtil;
  * in through name/value pairs. Do we want this?
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-public class FreenetURI implements Cloneable {
+public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
 	static {
@@ -1172,6 +1172,47 @@ public class FreenetURI implements Cloneable {
 			return Long.valueOf(docName.substring(matcher.start(1), docName.length()));
 		} else
 			throw new IllegalStateException();
+	}
+
+	@Override
+	public int compareTo(FreenetURI o) {
+		if(this == o) return 0;
+		int cmp = keyType.compareTo(o.keyType);
+		if(cmp != 0) return cmp;
+		if(routingKey != null) {
+			// Same type will have same routingKey != null
+			cmp = Fields.compareBytes(routingKey, o.routingKey);
+			if(cmp != 0) return cmp;
+		}
+		if(cryptoKey != null) {
+			// Same type will have same cryptoKey != null
+			cmp = Fields.compareBytes(cryptoKey, o.cryptoKey);
+			if(cmp != 0) return cmp;
+		}
+		if(docName == null && o.docName != null) return -1;
+		if(docName != null && o.docName == null) return 1;
+		if(docName != null && o.docName != null) {
+			cmp = docName.compareTo(o.docName);
+			if(cmp != 0) return cmp;
+		}
+		if(extra != null) {
+			// Same type will have same cryptoKey != null
+			cmp = Fields.compareBytes(extra, o.extra);
+			if(cmp != 0) return cmp;
+		}
+		if(metaStr != null && o.metaStr == null) return 1;
+		if(metaStr == null && o.metaStr != null) return -1;
+		if(metaStr != null && o.metaStr != null) {
+			if(metaStr.length > o.metaStr.length) return 1;
+			if(metaStr.length < o.metaStr.length) return -1;
+			for(int i=0;i<metaStr.length;i++) {
+				cmp = metaStr[i].compareTo(o.metaStr[i]);
+				if(cmp != 0) return cmp;
+			}
+		}
+		if(suggestedEdition > o.suggestedEdition) return 1;
+		if(suggestedEdition < o.suggestedEdition) return -1;
+		return 0;
 	}
 
 	// TODO add something like the following?
