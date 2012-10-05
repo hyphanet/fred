@@ -93,17 +93,17 @@ public class USKManager {
 	}
 	
 	/** Latest version successfully fetched by blanked-edition-number USK */
-	final HashMap<USK, Long> latestKnownGoodByClearUSK;
+	final Map<USK, Long> latestKnownGoodByClearUSK;
 	
 	/** Latest SSK slot known to be by the author by blanked-edition-number USK */
-	final HashMap<USK, Long> latestSlotByClearUSK;
+	final Map<USK, Long> latestSlotByClearUSK;
 	
 	/** Subscribers by clear USK */
-	final HashMap<USK, USKCallback[]> subscribersByClearUSK;
+	final Map<USK, USKCallback[]> subscribersByClearUSK;
 	
 	/** Backgrounded USKFetchers by USK. These have pollForever=true and are only
 	 * created when subscribe(,true) is called. */
-	final HashMap<USK, USKFetcher> backgroundFetchersByClearUSK;
+	final Map<USK, USKFetcher> backgroundFetchersByClearUSK;
 	
 	/** Temporary fetchers, started when a USK (with a positive edition number) is 
 	 * fetched. These have pollForever=false. Keyed by the clear USK, i.e. one per 
