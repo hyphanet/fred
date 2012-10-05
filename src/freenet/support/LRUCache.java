@@ -16,7 +16,7 @@ package freenet.support;
  * 
  * If you want to do a large cache and therefore need periodical garbage collection, please email me and I might implement it.
  * 
- * Pushing and getting are executed in O(1).
+ * Pushing and getting are executed in O(lg N) using a tree, to avoid hash collision DoS'es.
  * 
  * @author xor (xor@freenetproject.org)
  */
@@ -55,7 +55,7 @@ public final class LRUCache<Key, Value> {
 	 * @param expirationDelay The amount of milliseconds after which an entry expires.
 	 */
 	public LRUCache(final int sizeLimit, final long expirationDelay) {
-		mCache = new LRUMap<Key, Entry>(sizeLimit * 2);
+		mCache = LRUMap.createSafeMap();
 		mSizeLimit = sizeLimit;
 		mExpirationDelay = expirationDelay;
 	}
