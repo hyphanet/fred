@@ -3732,7 +3732,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		} else if (jvmVendor.startsWith("Apple ") || jvmVendor.startsWith("\"Apple ")) {
 			//Note that Sun/Oracle does not produce VMs for the Macintosh operating system, dont ask the user to find one...
-		} else {
+		} else if(!isOpenJDK) {
 			if(jvmVendor.startsWith("Free Software Foundation")) {
 				// GCJ/GIJ.
 				try {
