@@ -7,7 +7,6 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.Vector;
 import java.util.WeakHashMap;
 
 import com.db4o.ObjectContainer;
@@ -314,7 +313,7 @@ public class USKManager {
 	public void startTemporaryBackgroundFetcher(USK usk, ClientContext context, final FetchContext fctx, boolean prefetchContent, boolean realTimeFlag) {
 		final USK clear = usk.clearCopy();
 		USKFetcher sched = null;
-		Vector<USKFetcher> toCancel = null;
+		ArrayList<USKFetcher> toCancel = null;
 		synchronized(this) {
 //			java.util.Iterator i = backgroundFetchersByClearUSK.keySet().iterator();
 //			int x = 0;
@@ -346,7 +345,7 @@ public class USKManager {
 				USKFetcher fetcher = temporaryBackgroundFetchersLRU.popValue();
 				temporaryBackgroundFetchersPrefetch.remove(fetcher.getOriginalUSK().clearCopy());
 				if(!fetcher.hasSubscribers()) {
-					if(toCancel == null) toCancel = new Vector<USKFetcher>(2);
+					if(toCancel == null) toCancel = new ArrayList<USKFetcher>(2);
 					toCancel.add(fetcher);
 				} else {
 					if(logMINOR)
