@@ -1865,4 +1865,23 @@ public class Metadata implements Cloneable {
 		return deductBlocksFromSegments;
 	}
 
+	/** Return a best-guess compatibility mode, guaranteed not to be 
+	 * COMPAT_UNKNOWN or COMPAT_CURRENT. */
+	public CompatibilityMode guessCompatibilityMode() {
+		CompatibilityMode mode = getTopCompatibilityMode();
+		if(mode != CompatibilityMode.COMPAT_UNKNOWN) return mode;
+		CompatibilityMode min = minCompatMode;
+		CompatibilityMode max = maxCompatMode;
+		if(max == CompatibilityMode.COMPAT_CURRENT)
+			max = CompatibilityMode.latest();
+		if(min == max) return min;
+		if(min == CompatibilityMode.COMPAT_UNKNOWN &&
+				max != CompatibilityMode.COMPAT_UNKNOWN)
+			return max;
+		if(max == CompatibilityMode.COMPAT_UNKNOWN &&
+				min != CompatibilityMode.COMPAT_UNKNOWN)
+			return min;
+		return max;
+	}
+
 }
