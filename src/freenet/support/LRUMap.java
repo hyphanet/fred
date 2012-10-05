@@ -42,10 +42,6 @@ public class LRUMap<K, V> {
     	hash = map;
     }
     
-    public LRUMap(int initialSize) {
-    	hash = new HashMap<K, QItem<K, V>>(initialSize);
-    }
-
     /** Create a LRUMap that is safe to use with keys that can be
      * controlled by an attacker. Meaning one based on a TreeMap, not a 
      * HashMap (think hash collision DoS's). */
