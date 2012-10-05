@@ -6,6 +6,12 @@ import java.util.Map;
 
 import freenet.support.Logger.LogLevel;
 
+/**
+ * An LRU map from K to V. 
+ * FIXME most callers should be switched to LinkedHashMap.
+ * @param <K> The key type.
+ * @param <V> The value type.
+ */
 public class LRUHashtable<K, V> {
 	private static volatile boolean logMINOR;
 
@@ -18,13 +24,8 @@ public class LRUHashtable<K, V> {
 		});
 	}
 
-    /*
-     * I've just converted this to using the DLList and Hashtable
-     * this makes it Hashtable time instead of O(N) for push and
-     * remove, and Hashtable time instead of O(1) for pop.  Since
-     * push is by far the most done operation, this should be an
-     * overall improvement.
-     */
+	/** We use our own DoublyLinkedList implementation because it improves 
+	 * performance to be able to inherit from and refer to QItem's directly. */
 	private final DoublyLinkedListImpl<QItem<K, V>> list = new DoublyLinkedListImpl<QItem<K, V>>();
     private final Map<K, QItem<K, V>> hash;
     
