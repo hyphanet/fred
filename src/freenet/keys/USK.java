@@ -217,9 +217,9 @@ public class USK extends BaseClientKey implements Comparable<USK> {
 		if(cryptoAlgorithm > o.cryptoAlgorithm) return 1;
 		int cmp = Fields.compareBytes(pubKeyHash, o.pubKeyHash);
 		if(cmp != 0) return cmp;
-		cmp = siteName.compareTo(o.siteName);
-		if(cmp != 0) return cmp;
 		cmp = Fields.compareBytes(cryptoKey, o.cryptoKey);
+		if(cmp != 0) return cmp;
+		cmp = siteName.compareTo(o.siteName);
 		if(cmp != 0) return cmp;
 		if(suggestedEdition > o.suggestedEdition) return 1;
 		if(suggestedEdition < o.suggestedEdition) return -1;
