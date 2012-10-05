@@ -1,7 +1,7 @@
 package freenet.support;
 
 import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Map;
 
 import freenet.support.Logger.LogLevel;
@@ -29,11 +29,11 @@ public class LRUHashtable<K, V> {
     private final Map<K, QItem<K, V>> hash;
     
     public LRUHashtable() {
-    	hash = new Hashtable<K, QItem<K, V>>();
+    	hash = new HashMap<K, QItem<K, V>>();
     }
     
     public LRUHashtable(int initialSize) {
-    	hash = new Hashtable<K, QItem<K, V>>(initialSize);
+    	hash = new HashMap<K, QItem<K, V>>(initialSize);
     }
     
     /**
