@@ -515,8 +515,10 @@ public class Metadata implements Cloneable {
 					// Version 1 i.e. modern.
 					if(splitfileSingleCryptoAlgorithm == Key.ALGO_AES_PCFB_256_SHA256)
 						minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1255;
-					else if(splitfileSingleCryptoAlgorithm == Key.ALGO_AES_CTR_256_SHA256)
-						minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1416;
+					else if(splitfileSingleCryptoAlgorithm == Key.ALGO_AES_CTR_256_SHA256) {
+						minCompatMode = CompatibilityMode.COMPAT_1416;
+						maxCompatMode = CompatibilityMode.latest();
+					}
 					if(params.length < 10)
 						throw new MetadataParseException("Splitfile parameters too short for version 1");
 					short paramsType = Fields.bytesToShort(params, 0);
