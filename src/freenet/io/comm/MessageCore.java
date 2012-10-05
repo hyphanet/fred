@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.Vector;
 
 import freenet.io.comm.MessageFilter.MATCHED;
 import freenet.node.PeerNode;
