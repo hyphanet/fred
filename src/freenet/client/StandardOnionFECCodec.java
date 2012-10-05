@@ -20,7 +20,7 @@ public class StandardOnionFECCodec extends FECCodec {
 
 	static boolean noNative;
 
-	private static final LRUMap<MyKey, StandardOnionFECCodec> recentlyUsedCodecs = new LRUMap<MyKey, StandardOnionFECCodec>();
+	private static final LRUMap<MyKey, StandardOnionFECCodec> recentlyUsedCodecs = LRUMap.createSafeMap();
 
         private static volatile boolean logMINOR;
 	static {

@@ -792,7 +792,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 	}
 	
-	private final LRUMap<InetAddress, Long> throttleRekeysByIP = new LRUMap<InetAddress, Long>();
+	private final LRUMap<InetAddress, Long> throttleRekeysByIP = LRUMap.createSafeMap();
 
 	private static final int REKEY_BY_IP_TABLE_SIZE = 1024;
 

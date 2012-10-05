@@ -76,7 +76,7 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 	
 	public SlashdotStore(StoreCallback<T> callback, int maxKeys, long maxLifetime, long purgePeriod, Ticker ticker, TempBucketFactory tbf) {
 		this.callback = callback;
-		this.blocksByRoutingKey = new LRUMap<ByteArrayWrapper, DiskBlock>();
+		this.blocksByRoutingKey = LRUMap.createSafeMap();
 		this.maxKeys = maxKeys;
 		this.bf = tbf;
 		this.ticker = ticker;

@@ -87,8 +87,8 @@ public class FailureTable implements OOMHook {
 	static final int CLEANUP_PERIOD = 10*60*1000;
 	
 	FailureTable(Node node) {
-		entriesByKey = new LRUMap<Key,FailureTableEntry>();
-		blockOfferListByKey = new LRUMap<Key,BlockOfferList>();
+		entriesByKey = LRUMap.createSafeMap();
+		blockOfferListByKey = LRUMap.createSafeMap();
 		this.node = node;
 		offerAuthenticatorKey = new byte[32];
 		node.random.nextBytes(offerAuthenticatorKey);

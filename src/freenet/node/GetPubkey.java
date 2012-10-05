@@ -34,7 +34,7 @@ public class GetPubkey {
 	private final Node node;
 	
 	GetPubkey(Node node) {
-		cachedPubKeys = new LRUMap<ByteArrayWrapper, DSAPublicKey>();
+		cachedPubKeys = LRUMap.createSafeMap();
 		this.node = node;
 	}
 

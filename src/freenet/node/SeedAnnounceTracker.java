@@ -13,7 +13,7 @@ import freenet.support.LRUMap;
 public class SeedAnnounceTracker {
 	
 	private final LRUMap<InetAddress, TrackerItem> itemsByIP = 
-		new LRUMap<InetAddress, TrackerItem>();
+		LRUMap.createSafeMap();
 	
 	// This should be plenty for now and limits memory usage to something reasonable.
 	final int MAX_SIZE = 100*1000;
