@@ -2,6 +2,7 @@ package freenet.support;
 
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Map;
 
 import freenet.support.Logger.LogLevel;
 
@@ -25,7 +26,7 @@ public class LRUHashtable<K, V> {
      * overall improvement.
      */
 	private final DoublyLinkedListImpl<QItem<K, V>> list = new DoublyLinkedListImpl<QItem<K, V>>();
-    private final Hashtable<K, QItem<K, V>> hash;
+    private final Map<K, QItem<K, V>> hash;
     
     public LRUHashtable() {
     	hash = new Hashtable<K, QItem<K, V>>();
