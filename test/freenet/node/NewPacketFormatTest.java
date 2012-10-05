@@ -357,7 +357,7 @@ public class NewPacketFormatTest extends TestCase {
 				0x00, 0x00, 0x00, 0x00
 		});
 
-		SessionKey sessionKey = new SessionKey(null, null, null, null, incommingCipher, null, ivCipher, ivNonce, null, null);
+		SessionKey sessionKey = new SessionKey(null, null, null, incommingCipher, null, ivCipher, ivNonce, null, null, -1);
 
 		byte[] encrypted = NewPacketFormat.encryptSequenceNumber(0, sessionKey);
 
