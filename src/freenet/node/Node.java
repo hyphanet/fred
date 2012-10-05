@@ -25,7 +25,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -35,7 +34,6 @@ import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.Random;
 import java.util.Set;
-import java.util.Vector;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -2120,8 +2118,6 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		boolean shouldWriteConfig = false;
 
-		/* There are some JVMs (for example libgcj 4.1.1) whose Runtime.maxMemory() does not work. */
-		long maxHeapMemory = Runtime.getRuntime().maxMemory();
 		if(storeType.equals("bdb-index")) {
 			System.err.println("Old format Berkeley DB datastore detected.");
 			System.err.println("This datastore format is no longer supported.");
