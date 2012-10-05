@@ -32,7 +32,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		});
 	}
 
-	private static class MyKey {
+	private static class MyKey implements Comparable<MyKey> {
 		/** Number of input blocks */
 		int k;
 		/** Number of output blocks, including input blocks */
@@ -54,6 +54,15 @@ public class StandardOnionFECCodec extends FECCodec {
 		@Override
 		public int hashCode() {
 			return (n << 16) + k;
+		}
+
+		@Override
+		public int compareTo(MyKey o) {
+			if(n > o.n) return 1;
+			if(n < o.n) return -1;
+			if(k > o.k) return 1;
+			if(k < o.k) return -1;
+			return 0;
 		}
 	}
 
