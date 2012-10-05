@@ -24,7 +24,7 @@ import junit.framework.TestCase;
  * 
  * @author Alberto Bacchelli &lt;sback@freenetproject.org&gt;
  */
-public class LRUHashtableTest extends TestCase {
+public class LRUMapTest extends TestCase {
 
 	private final int sampleElemsNumber = 100;
 	
@@ -50,8 +50,8 @@ public class LRUHashtableTest extends TestCase {
 	 * @param size HashTable size
 	 * @return the created LRUMap
 	 */
-	private LRUHashtable<Object, Object> createSampleHashTable(int size) {
-		LRUHashtable<Object, Object> methodLRUht = new LRUHashtable<Object, Object>();
+	private LRUMap<Object, Object> createSampleHashTable(int size) {
+		LRUMap<Object, Object> methodLRUht = new LRUMap<Object, Object>();
 		Object[][] sampleObjects = createSampleKeyVal(size);
 		for (int i=0;i<sampleObjects.length;i++)
 			methodLRUht.push(sampleObjects[i][0],sampleObjects[i][1]);
@@ -66,7 +66,7 @@ public class LRUHashtableTest extends TestCase {
 	 * @param aValue the correspondent value
 	 * @return true if the key is present and returned value is the same as in the argument
 	 */
-	private boolean verifyKeyValPresence(LRUHashtable<Object, Object> aLRUht, Object aKey, Object aValue) {
+	private boolean verifyKeyValPresence(LRUMap<Object, Object> aLRUht, Object aKey, Object aValue) {
 		if (aLRUht.containsKey(aKey))
 			return aLRUht.get(aKey).equals(aValue);
 		return false;
@@ -80,7 +80,7 @@ public class LRUHashtableTest extends TestCase {
 	 * is raised
 	 */
 	public void testPushNull() {
-		LRUHashtable<Object, Object> methodLRUht = createSampleHashTable(sampleElemsNumber);
+		LRUMap<Object, Object> methodLRUht = createSampleHashTable(sampleElemsNumber);
 		try {
 			//a null value is admitted
 			methodLRUht.push(new Object(),null);}		
@@ -104,7 +104,7 @@ public class LRUHashtableTest extends TestCase {
 	 * time.
 	 */
 	public void testPushSameObjTwice() {
-		LRUHashtable<Object, Object> methodLRUht = createSampleHashTable(sampleElemsNumber);
+		LRUMap<Object, Object> methodLRUht = createSampleHashTable(sampleElemsNumber);
 		Object[][] sampleObj = {
 				{ new Integer(sampleElemsNumber), new Object() }, 
 				{ new Integer(sampleElemsNumber+1), new Object() } };
@@ -132,7 +132,7 @@ public class LRUHashtableTest extends TestCase {
 	 * values.
 	 */
 	public void testPushSameKey() {
-		LRUHashtable<Object, Object> methodLRUht = createSampleHashTable(sampleElemsNumber);
+		LRUMap<Object, Object> methodLRUht = createSampleHashTable(sampleElemsNumber);
 		Object[][] sampleObj = {
 				{ new Integer(sampleElemsNumber), new Object() }, 
 				{ new Integer(sampleElemsNumber+1), new Object() } };
@@ -162,7 +162,7 @@ public class LRUHashtableTest extends TestCase {
 	 * HashTable entry deleted
 	 */
 	public void testPopKey() {
-		LRUHashtable<Object, Object> methodLRUht = new LRUHashtable<Object, Object>();
+		LRUMap<Object, Object> methodLRUht = new LRUMap<Object, Object>();
 		Object[][] sampleObjects = createSampleKeyVal(sampleElemsNumber);
 		//pushing objects
 		for (int i=0; i<sampleObjects.length; i++)		
@@ -182,7 +182,7 @@ public class LRUHashtableTest extends TestCase {
 	 * HashTable entry deleted
 	 */
 	public void testPopValue() {
-		LRUHashtable<Object, Object> methodLRUht = new LRUHashtable<Object, Object>();
+		LRUMap<Object, Object> methodLRUht = new LRUMap<Object, Object>();
 		Object[][] sampleObjects = createSampleKeyVal(sampleElemsNumber);
 		//pushing objects
 		for (int i=0; i<sampleObjects.length; i++)
@@ -200,7 +200,7 @@ public class LRUHashtableTest extends TestCase {
 	 * LRUMap.
 	 */
 	public void testPopValueFromEmpty() {
-		LRUHashtable<?, ?> methodLRUht = new LRUHashtable<Object, Object>();
+		LRUMap<?, ?> methodLRUht = new LRUMap<Object, Object>();
 		assertNull(methodLRUht.popValue());
 	}
 
@@ -210,7 +210,7 @@ public class LRUHashtableTest extends TestCase {
 	 * verifying if their peekValue is correct
 	 */
 	public void testPeekValue() {
-		LRUHashtable<Object, Object> methodLRUht = new LRUHashtable<Object, Object>();
+		LRUMap<Object, Object> methodLRUht = new LRUMap<Object, Object>();
 		Object[][] sampleObjects = createSampleKeyVal(sampleElemsNumber);
 		//pushing objects
 		for (int i=0; i<sampleObjects.length; i++)
@@ -229,10 +229,10 @@ public class LRUHashtableTest extends TestCase {
 	/**
 	 * Tests size() method
 	 * pushing and popping elements into
-	 * the LRUHashTable
+	 * the LRUMap
 	 */
 	public void testSize() {
-		LRUHashtable<Object, Object> methodLRUht = new LRUHashtable<Object, Object>();
+		LRUMap<Object, Object> methodLRUht = new LRUMap<Object, Object>();
 		Object[][] sampleObjects = createSampleKeyVal(sampleElemsNumber);
 		assertTrue(methodLRUht.size()==0);
 		//pushing objects
@@ -253,7 +253,7 @@ public class LRUHashtableTest extends TestCase {
 	 * the HashTable size.
 	 */
 	public void testRemoveKey() {
-		LRUHashtable<Object, Object> methodLRUht = new LRUHashtable<Object, Object>();
+		LRUMap<Object, Object> methodLRUht = new LRUMap<Object, Object>();
 		Object[][] sampleObjects = createSampleKeyVal(sampleElemsNumber);
 		//pushing objects
 		for (int i=0; i<sampleObjects.length; i++)
@@ -271,7 +271,7 @@ public class LRUHashtableTest extends TestCase {
 	 * setting up a sample queue.
 	 */
 	public void testRemoveNullKey() {
-		LRUHashtable<Object, Object> methodLRUht = createSampleHashTable(sampleElemsNumber);
+		LRUMap<Object, Object> methodLRUht = createSampleHashTable(sampleElemsNumber);
 		try {
 			methodLRUht.removeKey(null);
 			fail("Expected Exception Error Not Thrown!"); }
@@ -285,7 +285,7 @@ public class LRUHashtableTest extends TestCase {
 	 * setting up a sample LRUMap.
 	 */
 	public void testRemoveNotPresent() {
-		LRUHashtable<Object, Object> methodLRUht = createSampleHashTable(sampleElemsNumber);
+		LRUMap<Object, Object> methodLRUht = createSampleHashTable(sampleElemsNumber);
 		assertFalse(methodLRUht.removeKey(new Object()));
 	}
 
@@ -296,7 +296,7 @@ public class LRUHashtableTest extends TestCase {
 	 * Then it search for a present one.
 	 */
 	public void testContainsKey() {
-		LRUHashtable<Object, Object> methodLRUht = createSampleHashTable(sampleElemsNumber);
+		LRUMap<Object, Object> methodLRUht = createSampleHashTable(sampleElemsNumber);
 		assertFalse(methodLRUht.containsKey(new Object()));
 		Object methodSampleObj = new Object();
 		methodLRUht.push(methodSampleObj,null);
@@ -310,7 +310,7 @@ public class LRUHashtableTest extends TestCase {
 	 * then it search a present key.
 	 */
 	public void testGet() {
-		LRUHashtable<Object, Object> methodLRUht = createSampleHashTable(sampleElemsNumber);
+		LRUMap<Object, Object> methodLRUht = createSampleHashTable(sampleElemsNumber);
 		assertNull(methodLRUht.get(new Object()));
 		Object methodSampleKey = new Object();
 		Object methodSampleValue = new Object();
@@ -323,7 +323,7 @@ public class LRUHashtableTest extends TestCase {
 	 * a null key.
 	 */
 	public void testGetNullKey() {
-		LRUHashtable<Object, Object> methodLRUht = createSampleHashTable(sampleElemsNumber);
+		LRUMap<Object, Object> methodLRUht = createSampleHashTable(sampleElemsNumber);
 		try {
 			methodLRUht.get(null);
 			fail("Expected Exception Error Not Thrown!"); }
@@ -337,7 +337,7 @@ public class LRUHashtableTest extends TestCase {
 	 * is correct
 	 */
 	public void testKeys() {
-		LRUHashtable<Object, Object> methodLRUht = new LRUHashtable<Object, Object>();
+		LRUMap<Object, Object> methodLRUht = new LRUMap<Object, Object>();
 		Object[][] sampleObjects = createSampleKeyVal(sampleElemsNumber);
 		//pushing objects
 		for (int i=0; i<sampleObjects.length; i++)
@@ -353,10 +353,10 @@ public class LRUHashtableTest extends TestCase {
 	 * Tests isEmpty() method
 	 * trying it with a new generated
 	 * HashTable and after popping
-	 * out all keys in a sample LRUHashTable
+	 * out all keys in a sample LRUMap
 	 */
 	public void testIsEmpty() {
-		LRUHashtable<Object, Object> methodLRUht = new LRUHashtable<Object, Object>();
+		LRUMap<Object, Object> methodLRUht = new LRUMap<Object, Object>();
 		assertTrue(methodLRUht.isEmpty());
 		methodLRUht = createSampleHashTable(sampleElemsNumber);
 		//popping keys
