@@ -184,14 +184,12 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
 			throw new UnsupportedOperationException();
     	byte[] hash = new byte[32];
     	System.arraycopy(headers, 2, hash, 0, 32);
-    	byte[] iv = new byte[16];
-    	System.arraycopy(hash, 0, iv, 0, iv.length);
         byte[] cryptoKey = key.cryptoKey;
         if(cryptoKey.length < Node.SYMMETRIC_KEY_LENGTH)
             throw new CHKDecodeException("Crypto key too short");
 		try {
         Cipher cipher = Cipher.getInstance("AES/CTR/NOPADDING");
-        cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(cryptoKey, "AES"), new IvParameterSpec(iv));
+        cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(cryptoKey, "AES"), new IvParameterSpec(hash, 0, 16));
         byte[] plaintext = cipher.update(data);
         byte[] lengthBytes = cipher.doFinal(headers, hash.length+2, 2);
         int size = ((lengthBytes[0] & 0xff) << 8) + (lengthBytes[1] & 0xff);
@@ -226,8 +224,6 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
 			throw new UnsupportedOperationException();
     	byte[] hash = new byte[32];
     	System.arraycopy(headers, 2, hash, 0, 32);
-    	byte[] iv = new byte[16];
-    	System.arraycopy(hash, 0, iv, 0, iv.length);
         byte[] cryptoKey = key.cryptoKey;
         if(cryptoKey.length < Node.SYMMETRIC_KEY_LENGTH)
             throw new CHKDecodeException("Crypto key too short");
@@ -240,7 +236,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
 		}
 		aes.initialize(cryptoKey);
         CTRBlockCipher cipher = new CTRBlockCipher(aes);
-        cipher.init(iv);
+        cipher.init(hash, 0, 16);
         byte[] plaintext = new byte[data.length];
         cipher.processBytes(data, 0, data.length, plaintext, 0);
         byte[] lengthBytes = new byte[2];
@@ -410,10 +406,8 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         SecretKey ckey = new SecretKeySpec(encKey, "AES");
         // CTR mode IV is only 16 bytes.
         // That's still plenty though. It will still be unique.
-        byte[] iv = new byte[16];
-        System.arraycopy(hash, 0, iv, 0, iv.length);
         Cipher cipher = Cipher.getInstance("AES/CTR/NOPADDING");
-        cipher.init(Cipher.ENCRYPT_MODE, ckey, new IvParameterSpec(iv));
+        cipher.init(Cipher.ENCRYPT_MODE, ckey, new IvParameterSpec(hash, 0, 16));
         byte[] cdata = cipher.update(data);
         assert(cdata.length == data.length); // Multiple of block size so shouldn't be buffered.
         cipher.doFinal(tmpLen, 0, 2, header, hash.length+2);
@@ -486,9 +480,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         CTRBlockCipher ctr = new CTRBlockCipher(aes);
         // CTR mode IV is only 16 bytes.
         // That's still plenty though. It will still be unique.
-        byte[] iv = new byte[16];
-        System.arraycopy(hash, 0, iv, 0, iv.length);
-        ctr.init(iv);
+        ctr.init(hash, 0, 16);
         System.arraycopy(hash, 0, header, 2, hash.length);
         byte[] cdata = new byte[data.length];
         ctr.processBytes(data, 0, data.length, cdata, 0);
