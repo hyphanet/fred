@@ -4,19 +4,13 @@
 package freenet.keys;
 
 import java.io.IOException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
+import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.Mac;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
-import javax.crypto.ShortBufferException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -116,24 +110,12 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
     	if(key.cryptoAlgorithm == Key.ALGO_AES_PCFB_256_SHA256)
     		return decodeOld(bf, maxLength, dontCompress);
     	else if(key.cryptoAlgorithm == Key.ALGO_AES_CTR_256_SHA256)
-			try {
+		{
 				if(Rijndael.isJCACrippled || forceNoJCA)
 					return decodeNewNoJCA(bf, maxLength, dontCompress);
 				else
 					return decodeNew(bf, maxLength, dontCompress);
-			} catch (InvalidKeyException e) {
-				throw new CHKDecodeException("JVM crypto problem: invalid key? Maybe your JVM doesn't support the JCA algorithms we need (AES with 256-bit keysize and HmacSHA256)");
-			} catch (NoSuchAlgorithmException e) {
-				throw new CHKDecodeException("JVM crypto problem: no such algorithm. Maybe your JVM doesn't support the JCA algorithms we need (AES with 256-bit keysize and HmacSHA256)");
-			} catch (InvalidAlgorithmParameterException e) {
-				throw new CHKDecodeException("JVM crypto problem: invalid algorithm parameter. Maybe your JVM doesn't support the JCA algorithms we need (AES with 256-bit keysize and HmacSHA256)");
-			} catch (NoSuchPaddingException e) {
-				throw new CHKDecodeException("JVM crypto problem: no such padding. Maybe your JVM doesn't support the JCA algorithms we need (AES with 256-bit keysize and HmacSHA256)");
-			} catch (IllegalBlockSizeException e) {
-				throw new CHKDecodeException("JVM crypto problem: illegal block size. Maybe your JVM doesn't support the JCA algorithms we need (AES with 256-bit keysize and HmacSHA256)");
-			} catch (BadPaddingException e) {
-				throw new CHKDecodeException("JVM crypto problem: bad padding. This should be impossible, as we don't pad anything!");
-			}
+		}
 		else
     		throw new UnsupportedOperationException();
     }
@@ -196,14 +178,8 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
      * Decode the CHK and recover the original data
      * @return the original data
      * @throws IOException If there is a bucket error.
-     * @throws NoSuchAlgorithmException 
-     * @throws InvalidKeyException 
-     * @throws InvalidAlgorithmParameterException 
-     * @throws NoSuchPaddingException 
-     * @throws BadPaddingException 
-     * @throws IllegalBlockSizeException 
      */
-    public Bucket decodeNew(BucketFactory bf, int maxLength, boolean dontCompress) throws CHKDecodeException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
+    public Bucket decodeNew(BucketFactory bf, int maxLength, boolean dontCompress) throws CHKDecodeException, IOException {
 		if(key.cryptoAlgorithm != Key.ALGO_AES_CTR_256_SHA256)
 			throw new UnsupportedOperationException();
     	byte[] hash = new byte[32];
@@ -213,6 +189,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         byte[] cryptoKey = key.cryptoKey;
         if(cryptoKey.length < Node.SYMMETRIC_KEY_LENGTH)
             throw new CHKDecodeException("Crypto key too short");
+		try {
         Cipher cipher = Cipher.getInstance("AES/CTR/NOPADDING");
         cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(cryptoKey, "AES"), new IvParameterSpec(iv));
         byte[] plaintext = cipher.update(data);
@@ -232,6 +209,9 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         }
         return Key.decompress(dontCompress ? false : key.isCompressed(), plaintext, size, bf, 
         		Math.min(maxLength, MAX_LENGTH_BEFORE_COMPRESSION), key.compressionAlgorithm, false);
+		} catch(GeneralSecurityException e) {
+			throw new CHKDecodeException("Problem with JCA, should be impossible!", e);
+		}
     }
 
     /**
@@ -240,14 +220,8 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
      * problem is AES is limited to 128 bits.
      * @return the original data
      * @throws IOException If there is a bucket error.
-     * @throws NoSuchAlgorithmException 
-     * @throws InvalidKeyException 
-     * @throws InvalidAlgorithmParameterException 
-     * @throws NoSuchPaddingException 
-     * @throws BadPaddingException 
-     * @throws IllegalBlockSizeException 
      */
-    public Bucket decodeNewNoJCA(BucketFactory bf, int maxLength, boolean dontCompress) throws CHKDecodeException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
+    public Bucket decodeNewNoJCA(BucketFactory bf, int maxLength, boolean dontCompress) throws CHKDecodeException, IOException {
 		if(key.cryptoAlgorithm != Key.ALGO_AES_CTR_256_SHA256)
 			throw new UnsupportedOperationException();
     	byte[] hash = new byte[32];
@@ -275,6 +249,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         if((size > 32768) || (size < 0)) {
             throw new CHKDecodeException("Invalid size: "+size);
         }
+		try {
         // Check the hash.
         Mac hmac = Mac.getInstance("HmacSHA256");
         hmac.init(new SecretKeySpec(cryptoKey, "HmacSHA256"));
@@ -284,6 +259,9 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         if(!Arrays.equals(hash, hashCheck)) {
         	throw new CHKDecodeException("HMAC is wrong, wrong decryption key?");
         }
+		} catch(GeneralSecurityException e) {
+			throw new CHKDecodeException("Problem with JCA, should be impossible!", e);
+		}
         return Key.decompress(dontCompress ? false : key.isCompressed(), plaintext, size, bf, 
         		Math.min(maxLength, MAX_LENGTH_BEFORE_COMPRESSION), key.compressionAlgorithm, false);
     }
@@ -303,7 +281,6 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         	cryptoKey = md256.digest(data);
         	md256.reset();
         }
-        try {
         	if(cryptoAlgorithm == Key.ALGO_AES_PCFB_256_SHA256)
         		return innerEncode(data, CHKBlock.DATA_LENGTH, md256, cryptoKey, false, (short)-1, cryptoAlgorithm);
         	else if(cryptoAlgorithm != Key.ALGO_AES_CTR_256_SHA256)
@@ -313,22 +290,6 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         	} else {
         		return encodeNew(data, CHKBlock.DATA_LENGTH, md256, cryptoKey, false, (short)-1, cryptoAlgorithm, KeyBlock.HASH_SHA256);
 			}
-		} catch (InvalidKeyException e) {
-			throw new CHKEncodeException("JVM crypto problem: invalid key? Maybe your JVM doesn't support the JCA algorithms we need (AES with 256-bit keysize and HmacSHA256)");
-		} catch (NoSuchAlgorithmException e) {
-			throw new CHKEncodeException("JVM crypto problem: no such algorithm. Maybe your JVM doesn't support the JCA algorithms we need (AES with 256-bit keysize and HmacSHA256)");
-		} catch (InvalidAlgorithmParameterException e) {
-			throw new CHKEncodeException("JVM crypto problem: invalid algorithm parameter. Maybe your JVM doesn't support the JCA algorithms we need (AES with 256-bit keysize and HmacSHA256)");
-		} catch (NoSuchPaddingException e) {
-			throw new CHKEncodeException("JVM crypto problem: no such padding. Maybe your JVM doesn't support the JCA algorithms we need (AES with 256-bit keysize and HmacSHA256)");
-		} catch (IllegalBlockSizeException e) {
-			throw new CHKEncodeException("JVM crypto problem: illegal block size. Maybe your JVM doesn't support the JCA algorithms we need (AES with 256-bit keysize and HmacSHA256)");
-		} catch (BadPaddingException e) {
-			throw new CHKEncodeException("JVM crypto problem: bad padding. This should be impossible, as we don't pad anything!");
-		} catch (ShortBufferException e) {
-			Logger.error(ClientCHKBlock.class, "Coding error encoding? : "+e, e);
-			throw new CHKEncodeException("Internal error: short buffer");
-        }
     }
     
     /**
@@ -396,28 +357,12 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
     	}
         if(cryptoAlgorithm == Key.ALGO_AES_PCFB_256_SHA256)
         	return innerEncode(data, dataLength, md256, encKey, asMetadata, compressionAlgorithm, cryptoAlgorithm);
-		else
-			try {
+		else {
 				if(Rijndael.isJCACrippled || forceNoJCA)
 					return encodeNewNoJCA(data, dataLength, md256, encKey, asMetadata, compressionAlgorithm, cryptoAlgorithm, KeyBlock.HASH_SHA256);
 				else
 					return encodeNew(data, dataLength, md256, encKey, asMetadata, compressionAlgorithm, cryptoAlgorithm, KeyBlock.HASH_SHA256);
-			} catch (InvalidKeyException e) {
-				throw new CHKEncodeException("JVM crypto problem: invalid key? Maybe your JVM doesn't support the JCA algorithms we need (AES with 256-bit keysize and HmacSHA256)");
-			} catch (NoSuchAlgorithmException e) {
-				throw new CHKEncodeException("JVM crypto problem: no such algorithm. Maybe your JVM doesn't support the JCA algorithms we need (AES with 256-bit keysize and HmacSHA256)");
-			} catch (InvalidAlgorithmParameterException e) {
-				throw new CHKEncodeException("JVM crypto problem: invalid algorithm parameter. Maybe your JVM doesn't support the JCA algorithms we need (AES with 256-bit keysize and HmacSHA256)");
-			} catch (NoSuchPaddingException e) {
-				throw new CHKEncodeException("JVM crypto problem: no such padding. Maybe your JVM doesn't support the JCA algorithms we need (AES with 256-bit keysize and HmacSHA256)");
-			} catch (IllegalBlockSizeException e) {
-				throw new CHKEncodeException("JVM crypto problem: illegal block size. Maybe your JVM doesn't support the JCA algorithms we need (AES with 256-bit keysize and HmacSHA256)");
-			} catch (BadPaddingException e) {
-				throw new CHKEncodeException("JVM crypto problem: bad padding. This should be impossible, as we don't pad anything!");
-			} catch (ShortBufferException e) {
-				Logger.error(ClientCHKBlock.class, "Coding error encoding? : "+e, e);
-				throw new CHKEncodeException("Internal error: short buffer");
-			}
+		}
     }
     
     /**
@@ -438,18 +383,11 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
      * @param compressionAlgorithm The compression algorithm used.
      * @param cryptoAlgorithm The encryption algorithm used.
      * @return
-     * @throws NoSuchAlgorithmException 
-     * @throws InvalidKeyException 
-     * @throws NoSuchPaddingException 
-     * @throws InvalidAlgorithmParameterException 
-     * @throws ShortBufferException 
-     * @throws BadPaddingException 
-     * @throws IllegalBlockSizeException 
-     * @throws CHKVerifyException 
      */
-    public static ClientCHKBlock encodeNew(byte[] data, int dataLength, MessageDigest md256, byte[] encKey, boolean asMetadata, short compressionAlgorithm, byte cryptoAlgorithm, int blockHashAlgorithm) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, ShortBufferException, IllegalBlockSizeException, BadPaddingException {
+    public static ClientCHKBlock encodeNew(byte[] data, int dataLength, MessageDigest md256, byte[] encKey, boolean asMetadata, short compressionAlgorithm, byte cryptoAlgorithm, int blockHashAlgorithm) throws CHKEncodeException {
     	if(cryptoAlgorithm != Key.ALGO_AES_CTR_256_SHA256)
     		throw new IllegalArgumentException("Unsupported crypto algorithm "+cryptoAlgorithm);
+		try {
     	// IV = HMAC<cryptokey>(plaintext).
         // It's okay that this is the same for 2 blocks with the same key and the same content.
         // In fact that's the point; this is still a Content Hash Key.
@@ -495,6 +433,9 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
             //WTF?
             throw new Error(e3);
         }
+		} catch (GeneralSecurityException e) {
+			throw new CHKEncodeException("Problem with JCA, should be impossible!", e);
+		}
     }
     
     /**
@@ -509,18 +450,13 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
      * @param compressionAlgorithm The compression algorithm used.
      * @param cryptoAlgorithm The encryption algorithm used.
      * @return
-     * @throws NoSuchAlgorithmException 
-     * @throws InvalidKeyException 
-     * @throws NoSuchPaddingException 
-     * @throws InvalidAlgorithmParameterException 
-     * @throws ShortBufferException 
-     * @throws BadPaddingException 
-     * @throws IllegalBlockSizeException 
-     * @throws CHKVerifyException 
+     * @throws CHKVerifyException
+     * @throws CHKEncodeException
      */
-    public static ClientCHKBlock encodeNewNoJCA(byte[] data, int dataLength, MessageDigest md256, byte[] encKey, boolean asMetadata, short compressionAlgorithm, byte cryptoAlgorithm, int blockHashAlgorithm) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, ShortBufferException, IllegalBlockSizeException, BadPaddingException {
+    public static ClientCHKBlock encodeNewNoJCA(byte[] data, int dataLength, MessageDigest md256, byte[] encKey, boolean asMetadata, short compressionAlgorithm, byte cryptoAlgorithm, int blockHashAlgorithm) throws CHKEncodeException {
     	if(cryptoAlgorithm != Key.ALGO_AES_CTR_256_SHA256)
     		throw new IllegalArgumentException("Unsupported crypto algorithm "+cryptoAlgorithm);
+		try {
     	// IV = HMAC<cryptokey>(plaintext).
         // It's okay that this is the same for 2 blocks with the same key and the same content.
         // In fact that's the point; this is still a Content Hash Key.
@@ -573,6 +509,9 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
             //WTF?
             throw new Error(e3);
         }
+		} catch (GeneralSecurityException e) {
+			throw new CHKEncodeException("Problem with JCA, should be impossible!", e);
+		}
     }
     
     public static ClientCHKBlock innerEncode(byte[] data, int dataLength, MessageDigest md256, byte[] encKey, boolean asMetadata, short compressionAlgorithm, byte cryptoAlgorithm) {
