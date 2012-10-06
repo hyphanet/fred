@@ -831,30 +831,13 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							redirectedCryptoKey))
 						redirectedCryptoKey = null;
 					// not splitfile, synthesize CompatibilityMode event
-					if (metadata.getParsedVersion() == 0)
-						rcb.onSplitfileCompatibilityMode(
-								CompatibilityMode.COMPAT_1250_EXACT,
-								CompatibilityMode.COMPAT_1251,
-								null,
-								!((ClientCHK)redirectedKey).isCompressed(),
-								true, true,
-								container, context);
-					else if (metadata.getParsedVersion() == 1)
-						rcb.onSplitfileCompatibilityMode(
-								CompatibilityMode.COMPAT_1255,
-								CompatibilityMode.COMPAT_1416,
-								redirectedCryptoKey,
-								!((ClientCHK)redirectedKey).isCompressed(),
-								true, true,
-								container, context);
-					else
-						rcb.onSplitfileCompatibilityMode(
-								CompatibilityMode.COMPAT_UNKNOWN,
-								CompatibilityMode.COMPAT_UNKNOWN,
-								redirectedCryptoKey,
-								!((ClientCHK)redirectedKey).isCompressed(),
-								true, true,
-								container, context);
+					rcb.onSplitfileCompatibilityMode(
+							metadata.getMinCompatMode(),
+							metadata.getMaxCompatMode(),
+							redirectedCryptoKey,
+							!((ClientCHK)redirectedKey).isCompressed(),
+							true, true,
+							container, context);
 				}
 				if(metadata.isCompressed()) {
 					COMPRESSOR_TYPE codec = metadata.getCompressionCodec();
