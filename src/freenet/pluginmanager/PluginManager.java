@@ -787,10 +787,11 @@ public class PluginManager {
 		else
 			pluginFilename = pluginSpecification.substring(lastSlash + 1);
 		if(logDEBUG)
-			Logger.minor(this, "Delete plugin - plugname: " + pluginSpecification + "filename: " + pluginFilename, new Exception("debug"));
+			Logger.minor(this, "Delete plugin - plugname: " + pluginSpecification + " filename: " + pluginFilename, new Exception("debug"));
 		File[] cachedFiles = getPreviousInstances(pluginDirectory, pluginFilename);
 		for (File cachedFile : cachedFiles) {
-			cachedFile.delete();
+			if (!cachedFile.delete())
+				Logger.error(this, "Can't delete file " + cachedFile);
 		}
 	}
 
