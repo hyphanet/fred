@@ -436,8 +436,11 @@ public class Metadata implements Cloneable {
 					maxCompatMode = CompatibilityMode.latest();
 				} else {
 					// Older.
-					minCompatMode = CompatibilityMode.COMPAT_1250_EXACT;
-					maxCompatMode = CompatibilityMode.COMPAT_1255;
+					if (getParsedVersion() == 0) {
+						minCompatMode = CompatibilityMode.COMPAT_1250_EXACT;
+						maxCompatMode = CompatibilityMode.COMPAT_1251;
+					} else
+						minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1255;
 				}
 			}
 		} else if(splitfile) {
