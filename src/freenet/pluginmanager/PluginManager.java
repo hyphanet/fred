@@ -781,10 +781,13 @@ public class PluginManager {
 			/* Windows, maybe? */
 			lastSlash = pluginSpecification.lastIndexOf('\\');
 		File pluginDirectory = node.getPluginDir();
-		if(lastSlash == -1)
-			/* it's an official plugin! */
-			pluginFilename = pluginSpecification + ".jar";
-		else
+		if(lastSlash == -1) {
+			/* it's an official plugin or filename without path */
+			if (pluginSpecification.toLowerCase().endsWith(".jar"))
+				pluginFilename = pluginSpecification;
+			else
+				pluginFilename = pluginSpecification + ".jar";
+		} else
 			pluginFilename = pluginSpecification.substring(lastSlash + 1);
 		if(logDEBUG)
 			Logger.minor(this, "Delete plugin - plugname: " + pluginSpecification + " filename: " + pluginFilename, new Exception("debug"));
