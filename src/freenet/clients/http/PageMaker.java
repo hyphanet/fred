@@ -377,7 +377,7 @@ public final class PageMaker {
 		HTMLNode pageDiv = bodyNode.addChild("div", "id", "page");
 		HTMLNode topBarDiv = pageDiv.addChild("div", "id", "topbar");
 
-		if (renderParameters.isRenderStatus() && ctx.isAllowedFullAccess()) {
+		if (renderParameters.isRenderStatus()) {
 			final HTMLNode statusBarDiv = pageDiv.addChild("div", "id", "statusbar-container").addChild("div", "id", "statusbar");
 
 			 if (node != null && node.clientCore != null) {
