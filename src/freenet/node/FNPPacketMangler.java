@@ -52,6 +52,7 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
+import freenet.support.io.InetAddressComparator;
 import freenet.support.io.NativeThread;
 
 /**
@@ -792,7 +793,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 	}
 	
-	private final LRUMap<InetAddress, Long> throttleRekeysByIP = LRUMap.createSafeMap();
+	private final LRUMap<InetAddress, Long> throttleRekeysByIP = LRUMap.createSafeMap(InetAddressComparator.COMPARATOR);
 
 	private static final int REKEY_BY_IP_TABLE_SIZE = 1024;
 

@@ -20,7 +20,7 @@ package freenet.support;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public final class LRUCache<Key, Value> {
+public final class LRUCache<Key extends Comparable<Key>, Value> {
 	
 	private final int mSizeLimit;
 	private final long mExpirationDelay;

@@ -1,5 +1,6 @@
 package freenet.support;
 
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -46,8 +47,15 @@ public class LRUMap<K, V> {
     /** Create a LRUMap that is safe to use with keys that can be
      * controlled by an attacker. Meaning one based on a TreeMap, not a 
      * HashMap (think hash collision DoS's). */
-    public static<K,V> LRUMap<K,V> createSafeMap() {
+    public static<K extends Comparable<K>,V> LRUMap<K,V> createSafeMap() {
     	return new LRUMap<K,V>(new TreeMap<K, QItem<K,V>>());
+    }
+    
+    /** Create a LRUMap that is safe to use with keys that can be
+     * controlled by an attacker. Meaning one based on a TreeMap, not a 
+     * HashMap (think hash collision DoS's). */
+    public static<K,V> LRUMap<K,V> createSafeMap(Comparator<K> comparator) {
+    	return new LRUMap<K,V>(new TreeMap<K, QItem<K,V>>(comparator));
     }
     
     /**
