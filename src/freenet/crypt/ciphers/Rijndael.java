@@ -1,13 +1,9 @@
 package freenet.crypt.ciphers;
 
-import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
+import java.security.GeneralSecurityException;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -50,23 +46,8 @@ public class Rijndael implements BlockCipher {
 			provider = c.getProvider().getName();
 			Logger.normal(Rijndael.class, "Using JCA: provider "+provider);
 			return false;
-		} catch (NoSuchAlgorithmException e) {
-			Logger.warning(Rijndael.class, "Not using JCA as it is crippled (can't use 256-bit keys). Will use built-in encryption.");
-			return true;
-		} catch (NoSuchPaddingException e) {
-			Logger.warning(Rijndael.class, "Not using JCA as it is crippled (can't use 256-bit keys). Will use built-in encryption.");
-			return true;
-		} catch (InvalidKeyException e) {
-			Logger.warning(Rijndael.class, "Not using JCA as it is crippled (can't use 256-bit keys). Will use built-in encryption.");
-			return true;
-		} catch (InvalidAlgorithmParameterException e) {
-			Logger.warning(Rijndael.class, "Not using JCA as it is crippled (can't use 256-bit keys). Will use built-in encryption.");
-			return true;
-		} catch (IllegalBlockSizeException e) {
-			Logger.warning(Rijndael.class, "Not using JCA as it is crippled (can't use 256-bit keys). Will use built-in encryption.");
-			return true;
-		} catch (BadPaddingException e) {
-			Logger.warning(Rijndael.class, "Not using JCA as it is crippled (can't use 256-bit keys). Will use built-in encryption.");
+		} catch (GeneralSecurityException e) {
+			Logger.warning(Rijndael.class, "Not using JCA as it is crippled (can't use 256-bit keys). Will use built-in encryption. ", e);
 			return true;
 		}
 	}

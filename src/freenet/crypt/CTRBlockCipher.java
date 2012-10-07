@@ -61,14 +61,20 @@ public class CTRBlockCipher
      * bytes consisting of the encryption of successive values of the counter. 
      * @throws IllegalArgumentException If the IV length is wrong.
      */
+    public void init(byte[] iv, int offset, int length)
+        throws IllegalArgumentException
+    {
+    	if(length != IV.length)
+    		throw new IllegalArgumentException();
+    	System.arraycopy(iv, offset, IV, 0, IV.length);
+        System.arraycopy(IV, 0, counter, 0, counter.length);
+        processBlock();
+    }
+    
     public void init(byte[] iv)
         throws IllegalArgumentException
     {
-    	if(iv.length != IV.length)
-    		throw new IllegalArgumentException();
-    	System.arraycopy(iv, 0, IV, 0, IV.length);
-        System.arraycopy(IV, 0, counter, 0, counter.length);
-        processBlock();
+	init(iv, 0, iv.length);
     }
 
     public int getBlockSize()

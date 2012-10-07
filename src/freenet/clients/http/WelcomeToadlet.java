@@ -435,7 +435,12 @@ public class WelcomeToadlet extends Toadlet {
         
         
         HTMLNode bookmarksList = bookmarkBoxContent.addChild("ul", "id", "bookmarks");
-        addCategoryToList(BookmarkManager.MAIN_CATEGORY, bookmarksList, (!container.enableActivelinks()) || (useragent != null && useragent.contains("khtml") && !useragent.contains("chrome")), ctx);
+		if (ctx.isAllowedFullAccess()) {
+			addCategoryToList(BookmarkManager.MAIN_CATEGORY, bookmarksList, (!container.enableActivelinks()) || (useragent != null && useragent.contains("khtml") && !useragent.contains("chrome")), ctx);
+		}
+		else {
+			addCategoryToList(BookmarkManager.DEFAULT_CATEGORY, bookmarksList, (!container.enableActivelinks()) || (useragent != null && useragent.contains("khtml") && !useragent.contains("chrome")), ctx);
+		}
 
 		// Search Box
         // FIXME search box is BELOW bookmarks for now, until we get search fixed properly.
