@@ -554,7 +554,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return;
 		}
 		if(!(negType == 6 || negType == 7)) {
-			Logger.error(this, "Unknown neg type: "+negType);
+			if(negType > 7)
+				Logger.error(this, "Unknown neg type: "+negType);
+			else
+				Logger.warning(this, "Received a setup packet with unsupported obsolete neg type: "+negType);
 			return;
 		}
 
@@ -601,7 +604,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return;
 		}
 		if(!(negType == 6 || negType == 7)) {
-			Logger.error(this, "Unknown neg type: "+negType);
+			if(negType > 7)
+				Logger.error(this, "Unknown neg type: "+negType);
+			else
+				Logger.warning(this, "Received a setup packet with unsupported obsolete neg type: "+negType);
 			return;
 		}
 
