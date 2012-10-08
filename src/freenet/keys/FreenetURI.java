@@ -13,6 +13,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
@@ -1219,6 +1220,21 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 		if(suggestedEdition < o.suggestedEdition) return -1;
 		return 0;
 	}
+	
+	public static final Comparator<FreenetURI> FAST_COMPARATOR = new Comparator<FreenetURI>() {
+
+		@Override
+		public int compare(FreenetURI uri0, FreenetURI uri1) {
+			// Unfortunately the hashCode's may not have been computed yet.
+			// But it's still cheaper to recompute them in the long run.
+			int hash0 = uri0.hashCode();
+			int hash1 = uri1.hashCode();
+			if(hash0 > hash1) return 1;
+			else if(hash1 > hash0) return -1;
+			return uri0.compareTo(uri1);
+		}
+		
+	};
 
 	// TODO add something like the following?
 	// public boolean isUpdatable() { return isUSK() || isSSKForUSK() }

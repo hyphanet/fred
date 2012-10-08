@@ -142,7 +142,7 @@ public class ArchiveManager {
 	 */
 	public ArchiveManager(int maxHandlers, long maxCachedData, long maxArchivedFileSize, int maxCachedElements, BucketFactory tempBucketFactory) {
 		maxArchiveHandlers = maxHandlers;
-		archiveHandlers = LRUMap.createSafeMap();
+		archiveHandlers = LRUMap.createSafeMap(FreenetURI.FAST_COMPARATOR);
 		this.maxCachedElements = maxCachedElements;
 		this.maxCachedData = maxCachedData;
 		storedData = new LRUMap<ArchiveKey, ArchiveStoreItem>();
