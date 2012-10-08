@@ -87,17 +87,18 @@ public class RequestTag extends UIDTag {
 			if(senderFinished) {
 				Logger.error(this, "Nobody called senderTransferEnds() for "+this, new Exception("debug"));
 				k = key;
-				assert(k != null);
 				s = sender.get();
-				assert(s != null);
 			}
 			senderTransferring = false;
 		}
 		super.innerUnlock(noRecordUnlock);
 		if(handlerFinished)
 			tracker.removeTransferringRequestHandler(uid);
-		if(senderFinished)
+		if(senderFinished) {
+			assert(k != null);
+			assert(s != null);
 			tracker.removeTransferringSender(k, s);
+		}
 	}
 
 	public void handlerThrew(Throwable t) {
