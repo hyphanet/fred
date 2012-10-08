@@ -127,12 +127,22 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		Bucket ret = null;
 		this.returnType = returnType;
 		binaryBlob = false;
+		String extensionCheck = null;
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			this.targetFile = returnFilename;
 			this.tempFile = returnTempFilename;
 			if(!(server.core.allowDownloadTo(returnTempFilename) && server.core.allowDownloadTo(returnFilename)))
 				throw new NotAllowedException();
 			ret = new FileBucket(returnTempFilename, false, true, false, false, false);
+			if(filterData) {
+				String name = returnFilename.getName();
+				int idx = name.lastIndexOf('.');
+				if(idx != -1) {
+					idx++;
+					if(idx != name.length())
+						extensionCheck = name.substring(idx);
+				}
+			}
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
 			targetFile = null;
 			tempFile = null;
@@ -144,16 +154,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 					ret = server.core.persistentTempBucketFactory.makeBucket(maxOutputLength);
 				else
 					ret = server.core.tempBucketFactory.makeBucket(maxOutputLength);
-		}
-		String extensionCheck = null;
-		if(filterData) {
-			String name = returnFilename.getName();
-			int idx = name.lastIndexOf('.');
-			if(idx != -1) {
-				idx++;
-				if(idx != name.length())
-					extensionCheck = name.substring(idx);
-			}
 		}
 		returnBucket = ret;
 			getter = new ClientGetter(this, uri, fctx, priorityClass,
