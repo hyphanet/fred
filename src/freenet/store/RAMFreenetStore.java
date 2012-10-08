@@ -38,7 +38,7 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 	
 	public RAMFreenetStore(StoreCallback<T> callback, int maxKeys) {
 		this.callback = callback;
-		this.blocksByRoutingKey = LRUMap.createSafeMap();
+		this.blocksByRoutingKey = LRUMap.createSafeMap(ByteArrayWrapper.FAST_COMPARATOR);
 		this.maxKeys = maxKeys;
 		callback.setStore(this);
 	}
