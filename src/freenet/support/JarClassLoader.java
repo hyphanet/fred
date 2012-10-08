@@ -31,6 +31,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.jar.Attributes.Name;
+import java.util.zip.ZipEntry;
 
 import freenet.support.io.FileUtil;
 
@@ -150,7 +151,7 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 	 */
 	@Override
 	protected URL findResource(String name) {
-		/* compatibility code. remove when all plugins are fixed. */
+		/* FIXME compatibility code. remove when all plugins are fixed. */
 		if (name.startsWith("/")) {
 			name = name.substring(1);
 		}
@@ -163,6 +164,42 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 		} catch (MalformedURLException e) {
 		}
 		return null;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * 
+	 * @see java.lang.ClassLoader#getResourceAsStream(java.lang.String)
+	 */
+	@Override
+	public InputStream getResourceAsStream(String name) {
+		URL url = getResource(name);
+		if (url == null)
+			return null;
+
+		// If the resource is not from our jar, return it as normal
+		if (!url.toString().equals(findResource(name).toString()))
+			try {
+				return url.openStream();
+			} catch (IOException e) {
+				return null;
+			}
+
+		// If the resource is from our jar, open InputStream explicitly from the jar
+		// so that we can close() all opened streams later and let the jar file
+		// to be deleted on Windows
+
+		/* FIXME compatibility code. remove when all plugins are fixed. */
+		if (name.startsWith("/")) {
+			name = name.substring(1);
+		}
+
+		ZipEntry entry = tempJarFile.getEntry(name);
+		try {
+			return entry != null ? tempJarFile.getInputStream(entry) : null;
+		} catch (IOException e) {
+			return null;
+		}
 	}
 
 	/**
