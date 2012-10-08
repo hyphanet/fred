@@ -190,6 +190,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		this.returnType = message.returnType;
 		this.binaryBlob = message.binaryBlob;
 		Bucket ret = null;
+		String extensionCheck = null;
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			this.targetFile = message.diskFile;
 			this.tempFile = message.tempFile;
@@ -198,6 +199,15 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			else if(!(handler.allowDDAFrom(tempFile, true) && handler.allowDDAFrom(targetFile, true)))
 				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "Not allowed to download to "+tempFile+" or "+targetFile + ". You might need to do a " + TestDDARequestMessage.NAME + " first.", identifier, global);
 			ret = new FileBucket(message.tempFile, false, true, false, false, false);
+			if(fctx.filterData) {
+				String name = targetFile.getName();
+				int idx = name.lastIndexOf('.');
+				if(idx != -1) {
+					idx++;
+					if(idx != name.length())
+						extensionCheck = name.substring(idx);
+				}
+			}
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
 			targetFile = null;
 			tempFile = null;
@@ -224,7 +234,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			getter = new ClientGetter(this,
 					uri, fctx, priorityClass,
 					lowLevelClient,
-					binaryBlob ? new NullBucket() : returnBucket, binaryBlob ? new BinaryBlobWriter(returnBucket) : null, message.getInitialMetadata());
+					binaryBlob ? new NullBucket() : returnBucket, binaryBlob ? new BinaryBlobWriter(returnBucket) : null, false, message.getInitialMetadata(), extensionCheck);
 	}
 
 	/**
