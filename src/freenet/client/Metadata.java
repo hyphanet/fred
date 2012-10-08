@@ -405,6 +405,8 @@ public class Metadata implements Cloneable {
 				// Use UTF-8 for everything, for simplicity
 				mimeType = new String(toRead, "UTF-8");
 				if(logMINOR) Logger.minor(this, "Raw MIME");
+				if(!DefaultMIMETypes.isPlausibleMIMEType(mimeType))
+					throw new MetadataParseException("Does not look like a MIME type: \""+mimeType+"\"");
 			}
 			if(logMINOR) Logger.minor(this, "MIME = "+mimeType);
 		}

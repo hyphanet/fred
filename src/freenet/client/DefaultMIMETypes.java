@@ -7,6 +7,8 @@ package freenet.client;
 
 import java.util.HashMap;
 import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import freenet.support.Logger;
 
@@ -783,5 +785,14 @@ public class DefaultMIMETypes {
 		for(int i=0;i<extensions.length;i++)
 			if(oldExt.equals(extensions[i])) return true;
 		return false;
+	}
+	
+	private static final String TOP_LEVEL = "(?>[a-zA-Z]*)";
+	private static final String CHARS = "(?:[a-zA-Z0-9+_\\-\\.]*)";
+	private static final String PARAM = "(?:;\\s*"+CHARS+"="+"(("+CHARS+")|(\".*\")))";
+	private static Pattern MIME_TYPE = Pattern.compile(TOP_LEVEL+"/"+CHARS+"\\s*"+PARAM+"*");
+
+	public static boolean isPlausibleMIMEType(String mimeType) {
+		return MIME_TYPE.matcher(mimeType).matches();
 	}
 }
