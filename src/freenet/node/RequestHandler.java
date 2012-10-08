@@ -108,11 +108,9 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 		} catch(NotConnectedException e) {
 			Logger.normal(this, "requestor gone, could not start request handler wait");
 			tag.handlerThrew(e);
-			tag.unlockHandler();
 		} catch(Throwable t) {
 			Logger.error(this, "Caught " + t, t);
 			tag.handlerThrew(t);
-			tag.unlockHandler();
 		}
 	}
 	
@@ -614,7 +612,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 							} catch (NotConnectedException e) {
 								Logger.normal(this, "requestor gone, could not start request handler wait");
 								tag.handlerThrew(e);
-								tag.unlockHandler();
 							}
 						} else {
 							//also for byte logging, since the block is the 'terminal' message.

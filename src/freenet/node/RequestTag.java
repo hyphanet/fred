@@ -101,8 +101,14 @@ public class RequestTag extends UIDTag {
 		}
 	}
 
-	public synchronized void handlerThrew(Throwable t) {
-		this.handlerThrew = t;
+	/** The handler threw a Throwable, i.e. failed due to a serious bug.
+	 * Unlock the handler, and record the throwable in case of future problems.
+	 * @param t The Throwable thrown by the RequestHandler. */
+	public void handlerThrew(Throwable t) {
+		synchronized(this) {
+			this.handlerThrew = t;
+		}
+		unlockHandler(); // FIXME optimise synchronization in a clean way.
 	}
 
 	public synchronized void setServedFromDatastore() {
