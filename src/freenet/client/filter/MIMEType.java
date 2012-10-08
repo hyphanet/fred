@@ -91,4 +91,13 @@ public class MIMEType {
 	public void throwUnsafeContentTypeException() throws KnownUnsafeContentTypeException {
 		throw new KnownUnsafeContentTypeException(this);
 	}
+
+	public boolean isValidExtension(String ext) {
+		ext = ext.toLowerCase();
+		if(ext.equals(primaryExtension)) return true;
+		for(String s : alternateExtensions) {
+			if(s.equals(ext)) return true;
+		}
+		return false;
+	}
 }
