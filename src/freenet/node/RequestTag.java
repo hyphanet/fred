@@ -27,16 +27,16 @@ public class RequestTag extends UIDTag {
 	
 	final START start;
 	final boolean isSSK;
-	boolean servedFromDatastore;
+	private boolean servedFromDatastore;
 	private WeakReference<RequestSender> sender;
 	private boolean sent;
 	private int requestSenderFinishedCode = RequestSender.NOT_FINISHED;
-	Throwable handlerThrew;
-	boolean rejected;
-	boolean abortedDownstreamTransfer;
-	int abortedDownstreamReason;
-	String abortedDownstreamDesc;
-	boolean handlerDisconnected;
+	private Throwable handlerThrew;
+	private boolean rejected;
+	private boolean abortedDownstreamTransfer;
+	private int abortedDownstreamReason;
+	private String abortedDownstreamDesc;
+	private boolean handlerDisconnected;
 	private WeakReference<PeerNode> waitingForOpennet;
 	private boolean handlerTransferring;
 	private boolean senderTransferring;
