@@ -229,12 +229,13 @@ public class RequestTag extends UIDTag {
 
 	// FIXME sanity checks, track whether sending as a boolean, check in unlockHandler etc.
 	
-	public void senderTransferBegins(NodeCHK key, RequestSender sender) {
+	public void senderTransferBegins(NodeCHK key, RequestSender requestSender) {
 		synchronized(this) {
 			if(senderTransferring) return;
 			senderTransferring = true;
+			assert(this.sender != null && this.sender.get() == requestSender);
 		}
-		tracker.addTransferringSender(key, sender);
+		tracker.addTransferringSender(key, requestSender);
 	}
 
 	public void senderTransferEnds(NodeCHK key, RequestSender requestSender) {
@@ -243,6 +244,7 @@ public class RequestTag extends UIDTag {
 				// Already unlocked. This is okay.
 				return;
 			senderTransferring = false;
+			assert(this.sender != null && this.sender.get() == requestSender);
 		}
 		tracker.removeTransferringSender(key, requestSender);
 	}
