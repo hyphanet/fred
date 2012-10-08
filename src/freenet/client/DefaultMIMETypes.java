@@ -7,7 +7,6 @@ package freenet.client;
 
 import java.util.HashMap;
 import java.util.Vector;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import freenet.support.Logger;
