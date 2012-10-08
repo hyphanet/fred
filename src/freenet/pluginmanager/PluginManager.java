@@ -791,7 +791,7 @@ public class PluginManager {
 		File[] cachedFiles = getPreviousInstances(pluginDirectory, pluginFilename);
 		for (File cachedFile : cachedFiles) {
 			if (!cachedFile.delete())
-				Logger.error(this, "Can't delete file " + cachedFile);
+				if(logMINOR) Logger.minor(this, "Can't delete file " + cachedFile);
 		}
 	}
 
