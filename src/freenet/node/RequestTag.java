@@ -2,6 +2,7 @@ package freenet.node;
 
 import java.lang.ref.WeakReference;
 
+import freenet.keys.NodeCHK;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
 
@@ -37,6 +38,7 @@ public class RequestTag extends UIDTag {
 	String abortedDownstreamDesc;
 	boolean handlerDisconnected;
 	private WeakReference<PeerNode> waitingForOpennet;
+	private boolean handlerTransferring;
 
 	public RequestTag(boolean isSSK, START start, PeerNode source, boolean realTimeFlag, long uid, Node node) {
 		super(source, realTimeFlag, uid, node);
@@ -67,6 +69,18 @@ public class RequestTag extends UIDTag {
 		if(sent && requestSenderFinishedCode == RequestSender.NOT_FINISHED) return false;
 		if(waitingForOpennet != null && waitingForOpennet.get() != null) return false;
 		return super.mustUnlock();
+	}
+
+	@Override
+	protected final void innerUnlock(boolean noRecordUnlock) {
+		boolean handlerFinished;
+		synchronized(this) {
+			handlerFinished = this.handlerTransferring;
+			handlerTransferring = false;
+		}
+		super.innerUnlock(noRecordUnlock);
+		if(handlerFinished)
+			tracker.removeTransferringRequestHandler(uid);
 	}
 
 	public void handlerThrew(Throwable t) {
@@ -203,5 +217,13 @@ public class RequestTag extends UIDTag {
 			return true;
 		return super.currentlyRoutingTo(peer);
 	}
-	
+
+	public void handlerTransferBegins() {
+		synchronized(this) {
+			if(handlerTransferring) return;
+			handlerTransferring = true;
+		}
+		tracker.addTransferringRequestHandler(uid);
+	}
+
 }

@@ -771,6 +771,7 @@ public class RequestTracker {
 	
 	/**
 	 * Add a transferring RequestSender to our HashMap.
+	 * Should only be called by UIDTag.
 	 */
 	public void addTransferringSender(NodeCHK key, RequestSender sender) {
 		HashMap<NodeCHK, RequestSender> transferringRequestSenders =
@@ -780,12 +781,14 @@ public class RequestTracker {
 		}
 	}
 
+	/** Should only be called by RequestTag. */
 	void addTransferringRequestHandler(long id) {
 		synchronized(transferringRequestHandlers) {
 			transferringRequestHandlers.add(id);
 		}
 	}
 
+	/** Should only be called by RequestTag. */
 	void removeTransferringRequestHandler(long id) {
 		synchronized(transferringRequestHandlers) {
 			transferringRequestHandlers.remove(id);
