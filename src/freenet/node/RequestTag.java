@@ -101,7 +101,7 @@ public class RequestTag extends UIDTag {
 		}
 	}
 
-	public void handlerThrew(Throwable t) {
+	public synchronized void handlerThrew(Throwable t) {
 		this.handlerThrew = t;
 	}
 
@@ -109,7 +109,7 @@ public class RequestTag extends UIDTag {
 		servedFromDatastore = true;
 	}
 
-	public void setRejected() {
+	public synchronized void setRejected() {
 		rejected = true;
 	}
 
@@ -158,13 +158,13 @@ public class RequestTag extends UIDTag {
 			Logger.error(this, sb.toString());
 	}
 
-	public void onAbortDownstreamTransfers(int reason, String desc) {
+	public synchronized void onAbortDownstreamTransfers(int reason, String desc) {
 		abortedDownstreamTransfer = true;
 		abortedDownstreamReason = reason;
 		abortedDownstreamDesc = desc;
 	}
 
-	public void handlerDisconnected() {
+	public synchronized void handlerDisconnected() {
 		handlerDisconnected = true;
 	}
 
