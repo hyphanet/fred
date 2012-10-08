@@ -226,4 +226,14 @@ public class RequestTag extends UIDTag {
 		tracker.addTransferringRequestHandler(uid);
 	}
 
+	// FIXME sanity checks, track whether sending as a boolean, check in unlockHandler etc.
+	
+	public void senderTransferBegins(NodeCHK key, RequestSender sender) {
+		tracker.addTransferringSender(key, sender);
+	}
+
+	public void senderTransferEnds(NodeCHK key, RequestSender requestSender) {
+		tracker.removeTransferringSender(key, requestSender);
+	}
+	
 }

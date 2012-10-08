@@ -825,7 +825,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			
         	// FIXME: Validate headers
         	
-        	node.tracker.addTransferringSender((NodeCHK)key, this);
+			origTag.senderTransferBegins((NodeCHK)key, this);
         	
         	try {
         		
@@ -850,7 +850,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         				synchronized(RequestSender.this) {
         					transferringFrom = null;
         				}
-        				node.tracker.removeTransferringSender((NodeCHK)key, RequestSender.this);
+        				origTag.senderTransferEnds((NodeCHK)key, RequestSender.this);
                 		try {
 	                		// Received data
 	               			pn.transferSuccess(realTimeFlag);
@@ -881,7 +881,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         				synchronized(RequestSender.this) {
         					transferringFrom = null;
         				}
-        				node.tracker.removeTransferringSender((NodeCHK)key, RequestSender.this);
+        				origTag.senderTransferEnds((NodeCHK)key, RequestSender.this);
 						try {
 							if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
 								Logger.normal(this, "Transfer failed (disconnect): "+e, e);
@@ -912,7 +912,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         		});
         		return OFFER_STATUS.FETCHING;
         	} finally {
-        		node.tracker.removeTransferringSender((NodeCHK)key, this);
+        		origTag.senderTransferEnds((NodeCHK)key, this);
         	}
 		} else {
 			// Impossible.
@@ -1074,7 +1074,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     	// FIXME: Validate headers
     	
     	if(!wasFork)
-    		node.tracker.addTransferringSender((NodeCHK)key, this);
+    		origTag.senderTransferBegins((NodeCHK)key, this);
     	
     	final PartiallyReceivedBlock prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
     	
@@ -1140,7 +1140,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     					}
     				}
     				if(!wasFork)
-    					node.tracker.removeTransferringSender((NodeCHK)key, RequestSender.this);
+    					origTag.senderTransferEnds((NodeCHK)key, RequestSender.this);
    					next.transferSuccess(realTimeFlag);
     				next.successNotOverload(realTimeFlag);
    					node.nodeStats.successfulBlockReceive(realTimeFlag, source == null);
@@ -1178,7 +1178,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     				synchronized(RequestSender.this) {
     					transferringFrom = null;
     				}
-    				node.tracker.removeTransferringSender((NodeCHK)key, RequestSender.this);
+    				origTag.senderTransferEnds((NodeCHK)key, RequestSender.this);
     				if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
     					Logger.normal(this, "Transfer failed (disconnect): "+e, e);
     				else
