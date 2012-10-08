@@ -171,12 +171,24 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 	}
 
 	/**
-	 * {@inheritDoc}
-	 * 
-	 * @see java.lang.ClassLoader#getResourceAsStream(java.lang.String)
+	 * Load a resource from this jar or from the parent ClassLoader.
 	 */
 	@Override
 	public InputStream getResourceAsStream(String name) {
+		InputStream is = getResourceAsStreamInner(name);
+		if(is != null)
+			return is;
+		else
+			return super.getResourceAsStream(name);
+	}
+
+	/** Only checks the jar, but opens the stream using ZipEntry's, so when
+	 * tempJarFile is closed, so are all the streams, hence we can delete 
+	 * the jar on Windows.
+	 * @return An InputStream from the jar if the name refers to a resource
+	 * within this jar file. 
+	 */
+	public InputStream getResourceAsStreamInner(String name) {
 		if(logMINOR) Logger.minor(this, "Requested resource: " + name, new Exception("debug"));
 		URL url = getResource(name);
 		if (url == null)
