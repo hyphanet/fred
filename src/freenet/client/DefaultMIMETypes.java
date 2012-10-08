@@ -794,4 +794,8 @@ public class DefaultMIMETypes {
 	public static boolean isPlausibleMIMEType(String mimeType) {
 		return MIME_TYPE.matcher(mimeType).matches();
 	}
+	
+	static String[] getMIMETypes() {
+		return mimeTypesByNumber.toArray(new String[mimeTypesByNumber.size()]);
+	}
 }
