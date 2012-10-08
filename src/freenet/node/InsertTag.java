@@ -16,7 +16,7 @@ public class InsertTag extends UIDTag {
 		REMOTE
 	}
 	
-	START start;
+	final START start;
 	private Throwable handlerThrew;
 	private boolean senderStarted;
 	private boolean senderFinished;
