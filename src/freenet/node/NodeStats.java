@@ -1891,7 +1891,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("numberOfSimpleConnected", numberOfSimpleConnected);
 		fs.put("numberOfNotConnected", numberOfNotConnected);
 
-		fs.put("numberOfTransferringRequestSenders", node.getNumTransferringRequestSenders());
+		fs.put("numberOfTransferringRequestSenders", node.tracker.getNumTransferringRequestSenders());
 		fs.put("numberOfARKFetchers", node.getNumARKFetchers());
 		
 		RequestTracker tracker = node.tracker;
@@ -1904,7 +1904,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("numberOfRemoteCHKRequests", tracker.getNumRemoteCHKRequests());
 		fs.put("numberOfLocalSSKRequests", tracker.getNumLocalSSKRequests());
 		fs.put("numberOfRemoteSSKRequests", tracker.getNumRemoteSSKRequests());
-		fs.put("numberOfTransferringRequestHandlers", node.getNumTransferringRequestHandlers());
+		fs.put("numberOfTransferringRequestHandlers", node.tracker.getNumTransferringRequestHandlers());
 		fs.put("numberOfCHKOfferReplys", tracker.getNumCHKOfferReplies());
 		fs.put("numberOfSSKOfferReplys", tracker.getNumSSKOfferReplies());
 

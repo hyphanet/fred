@@ -107,12 +107,12 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 		//The last thing that realRun() does is register as a request-sender listener, so any exception here is the end.
 		} catch(NotConnectedException e) {
 			Logger.normal(this, "requestor gone, could not start request handler wait");
-			node.removeTransferringRequestHandler(uid);
+			node.tracker.removeTransferringRequestHandler(uid);
 			tag.handlerThrew(e);
 			tag.unlockHandler();
 		} catch(Throwable t) {
 			Logger.error(this, "Caught " + t, t);
-			node.removeTransferringRequestHandler(uid);
+			node.tracker.removeTransferringRequestHandler(uid);
 			tag.handlerThrew(t);
 			tag.unlockHandler();
 		}
@@ -301,7 +301,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 					}
 					
 				}, realTimeFlag, node.nodeStats);
-			node.addTransferringRequestHandler(uid);
+			node.tracker.addTransferringRequestHandler(uid);
 			bt.sendAsync();
 		} catch(NotConnectedException e) {
 			synchronized(this) {
@@ -615,7 +615,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 								finishOpennetNoRelay();
 							} catch (NotConnectedException e) {
 								Logger.normal(this, "requestor gone, could not start request handler wait");
-								node.removeTransferringRequestHandler(uid);
+								node.tracker.removeTransferringRequestHandler(uid);
 								tag.handlerThrew(e);
 								tag.unlockHandler();
 							}
@@ -628,7 +628,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 					}
 					
 				}, realTimeFlag, node.nodeStats);
-			node.addTransferringRequestHandler(uid);
+			node.tracker.addTransferringRequestHandler(uid);
 			source.sendAsync(df, null, this);
 			bt.sendAsync();
 		} else
@@ -636,7 +636,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 	}
 
 	private void unregisterRequestHandlerWithNode() {
-		node.removeTransferringRequestHandler(uid);
+		node.tracker.removeTransferringRequestHandler(uid);
 		RequestSender r;
 		synchronized(this) {
 			r = rs;
@@ -960,7 +960,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 					applyByteCounts();
 				}
 				
-				node.removeTransferringRequestHandler(uid);
+				node.tracker.removeTransferringRequestHandler(uid);
 			}
 
 			@Override
@@ -973,7 +973,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 				}
 				rs.ackOpennet(rs.successFrom());
 				applyByteCounts();
-				node.removeTransferringRequestHandler(uid);
+				node.tracker.removeTransferringRequestHandler(uid);
 			}
 
 			@Override
@@ -981,7 +981,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 				tag.unlockHandler();
 				rs.ackOpennet(dataSource);
 				applyByteCounts();
-				node.removeTransferringRequestHandler(uid);
+				node.tracker.removeTransferringRequestHandler(uid);
 			}
 			
 		}, node);
