@@ -507,6 +507,7 @@ public class FetchException extends Exception {
 			case CONTENT_VALIDATION_FAILED:
 			case CONTENT_VALIDATION_UNKNOWN_MIME:
 			case CONTENT_VALIDATION_BAD_MIME:
+			case MIME_INCOMPATIBLE_WITH_EXTENSION:
 				return true;
 
 		// Wierd ones
@@ -572,6 +573,7 @@ public class FetchException extends Exception {
 			case CONTENT_VALIDATION_FAILED:
 			case CONTENT_VALIDATION_UNKNOWN_MIME:
 			case CONTENT_VALIDATION_BAD_MIME:
+			case MIME_INCOMPATIBLE_WITH_EXTENSION:
 				return true;
 
 		// Wierd ones
