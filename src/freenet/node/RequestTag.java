@@ -250,7 +250,7 @@ public class RequestTag extends UIDTag {
 			assert(this.sender != null && this.sender.get() == requestSender);
 			this.key = k;
 		}
-		tracker.addTransferringSender(key, requestSender);
+		tracker.addTransferringSender(k, requestSender);
 	}
 
 	public void senderTransferEnds(NodeCHK key, RequestSender requestSender) {
@@ -260,6 +260,7 @@ public class RequestTag extends UIDTag {
 				return;
 			senderTransferring = false;
 			assert(this.sender != null && this.sender.get() == requestSender);
+			assert(this.key != null && this.key.equals(key));
 			this.key = null;
 		}
 		tracker.removeTransferringSender(key, requestSender);
