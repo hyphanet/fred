@@ -1,6 +1,7 @@
 package freenet.clients.http;
 
 import java.io.IOException;
+import java.net.SocketException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -443,6 +444,8 @@ public class PproxyToadlet extends Toadlet {
 			ctx.writeData(e.data);
 		} catch(PluginHTTPException e) {
 			sendErrorPage(ctx, PluginHTTPException.code, e.message, e.location);
+		} catch (SocketException e) {
+			ctx.forceDisconnect();
 		} catch (Throwable t) {
 			ctx.forceDisconnect();
 			Logger.error(this, "Caught: "+t, t);
