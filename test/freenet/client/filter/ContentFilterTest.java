@@ -516,4 +516,16 @@ public class ContentFilterTest extends TestCase {
 			assertNull("Input tag with an invalid type", verifier.sanitize(HTMLTag, pc));
 		}
 	}
+	
+	public void testLowerCaseExtensions() {
+		for(MIMEType type : ContentFilter.mimeTypesByName.values()) {
+			String ext = type.primaryExtension;
+			if(ext != null)
+				assertEquals(ext, ext.toLowerCase());
+			String[] exts = type.alternateExtensions;
+			if(ext != null)
+				for(String s : exts)
+					assertEquals(s, s.toLowerCase());
+		}
+	}
 }

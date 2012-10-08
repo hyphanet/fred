@@ -65,12 +65,8 @@ public class MIMEType {
 			String defaultCharset, CharsetExtractor charsetExtractor, boolean useMaybeCharset) {
 		this.primaryMimeType = type;
 		this.primaryExtension = ext;
-		assert(primaryExtension.equals(primaryExtension.toLowerCase()));
 		this.alternateMimeTypes = extraTypes;
 		this.alternateExtensions = extraExts;
-		if(alternateExtensions != null)
-			for(int i=0;i<alternateExtensions.length;i++)
-				assert(alternateExtensions[i].equals(alternateExtensions[i].toLowerCase()));
 		this.safeToRead = safeToRead;
 		this.safeToWrite = safeToWrite;
 		this.readFilter = readFilter;
