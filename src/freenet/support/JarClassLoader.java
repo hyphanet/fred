@@ -44,6 +44,10 @@ import freenet.support.io.FileUtil;
  * @version $Id$
  */
 public class JarClassLoader extends ClassLoader implements Closeable {
+	private static volatile boolean logMINOR;
+	static {
+		Logger.registerClass(JarClassLoader.class);
+	}
 
 	/** The temporary jar file. */
 	private JarFile tempJarFile;
@@ -173,9 +177,11 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 	 */
 	@Override
 	public InputStream getResourceAsStream(String name) {
+		if(logMINOR) Logger.minor(this, "Requested resource: " + name, new Exception("debug"));
 		URL url = getResource(name);
 		if (url == null)
 			return null;
+		if(logMINOR) Logger.minor(this, "Found resource at URL: " + url);
 
 		// If the resource is not from our jar, return it as normal
 		if (!url.toString().equals(findResource(name).toString()))
