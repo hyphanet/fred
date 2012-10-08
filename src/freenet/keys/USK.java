@@ -5,6 +5,7 @@ package freenet.keys;
 
 import java.net.MalformedURLException;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.regex.Pattern;
 
 import com.db4o.ObjectContainer;
@@ -225,4 +226,15 @@ public class USK extends BaseClientKey implements Comparable<USK> {
 		if(suggestedEdition < o.suggestedEdition) return -1;
 		return 0;
 	}
+	
+	public static Comparator<USK> FAST_COMPARATOR = new Comparator<USK>() {
+
+		@Override
+		public int compare(USK o1, USK o2) {
+			if(o1.hashCode > o2.hashCode) return 1;
+			else if(o1.hashCode < o2.hashCode) return -1;
+			return o1.compareTo(o2);
+		}
+		
+	};
 }

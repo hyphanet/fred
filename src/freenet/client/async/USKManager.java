@@ -136,11 +136,13 @@ public class USKManager {
 		backgroundFetchContextIgnoreDBR = backgroundFetchContext.clone();
 		backgroundFetchContextIgnoreDBR.ignoreUSKDatehints = true;
 		realFetchContext = client.getFetchContext();
-		latestKnownGoodByClearUSK = new TreeMap<USK, Long>();
-		latestSlotByClearUSK = new TreeMap<USK, Long>();
-		subscribersByClearUSK = new TreeMap<USK, USKCallback[]>();
-		backgroundFetchersByClearUSK = new TreeMap<USK, USKFetcher>();
-		temporaryBackgroundFetchersLRU = LRUMap.createSafeMap();
+		// Performance: I'm pretty sure there is no spatial locality in the underlying data, so it's okay to use the FAST_COMPARATOR here.
+		// That is, even if two USKs are by the same author, they won't necessarily be updated or polled at the same time.
+		latestKnownGoodByClearUSK = new TreeMap<USK, Long>(USK.FAST_COMPARATOR);
+		latestSlotByClearUSK = new TreeMap<USK, Long>(USK.FAST_COMPARATOR);
+		subscribersByClearUSK = new TreeMap<USK, USKCallback[]>(USK.FAST_COMPARATOR);
+		backgroundFetchersByClearUSK = new TreeMap<USK, USKFetcher>(USK.FAST_COMPARATOR);
+		temporaryBackgroundFetchersLRU = LRUMap.createSafeMap(USK.FAST_COMPARATOR);
 		temporaryBackgroundFetchersPrefetch = new WeakHashMap<USK, Long>();
 		executor = core.getExecutor();
 	}
