@@ -161,26 +161,30 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 		}
 		try {
 			if(tempJarFile.getJarEntry(name)==null) {
-				return null;
+				return super.findResource(name);
 			}
 
 			return new URL("jar:" + new File(tempJarFile.getName()).toURI().toURL() + "!/" + name);
 		} catch (MalformedURLException e) {
 		}
-		return null;
+		return super.findResource(name);
 	}
+	
+	/* FIXME Uncommenting the below causes WoT to fail to load a Java system class during XML parsing.
+	 * I do not understand why! */
 
-	/**
-	 * Load a resource from this jar or from the parent ClassLoader.
-	 */
-	@Override
-	public InputStream getResourceAsStream(String name) {
-		InputStream is = getResourceAsStreamInner(name);
-		if(is != null)
-			return is;
-		else
-			return super.getResourceAsStream(name);
-	}
+//	/**
+//	 * Load a resource from this jar or from the parent ClassLoader.
+//	 */
+//	@Override
+//	public InputStream getResourceAsStream(String name) {
+//		InputStream is = getResourceAsStreamInner(name);
+//		if(is != null)
+//			return is;
+//		else
+//			is = super.getResourceAsStream(name);
+//		return is;
+//	}
 
 	/** Only checks the jar, but opens the stream using ZipEntry's, so when
 	 * tempJarFile is closed, so are all the streams, hence we can delete 
