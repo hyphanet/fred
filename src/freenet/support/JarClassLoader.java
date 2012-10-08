@@ -161,13 +161,13 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 		}
 		try {
 			if(tempJarFile.getJarEntry(name)==null) {
-				return super.findResource(name);
+				return null;
 			}
 
 			return new URL("jar:" + new File(tempJarFile.getName()).toURI().toURL() + "!/" + name);
 		} catch (MalformedURLException e) {
 		}
-		return super.findResource(name);
+		return null;
 	}
 	
 	/* FIXME Uncommenting the below causes WoT to fail to load a Java system class during XML parsing.
