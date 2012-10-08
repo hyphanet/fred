@@ -791,7 +791,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		if(type == null)
 			// Not our problem, will be picked up elsewhere.
 			return;
-		if(!type.isValidExtension(forceCompatibleExtension))
+		if(!DefaultMIMETypes.isValidExt(mimeType, forceCompatibleExtension))
 			throw new FetchException(FetchException.MIME_INCOMPATIBLE_WITH_EXTENSION);
 	}
 
