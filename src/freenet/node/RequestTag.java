@@ -247,7 +247,8 @@ public class RequestTag extends UIDTag {
 		synchronized(this) {
 			if(senderTransferring) return;
 			senderTransferring = true;
-			assert(this.sender != null && this.sender.get() == requestSender);
+			if(this.sender == null || this.sender.get() != requestSender)
+				throw new IllegalStateException("Set RequestSender first!");
 			this.key = k;
 		}
 		tracker.addTransferringSender(k, requestSender);
