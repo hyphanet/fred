@@ -39,6 +39,7 @@ public class RequestTag extends UIDTag {
 	boolean handlerDisconnected;
 	private WeakReference<PeerNode> waitingForOpennet;
 	private boolean handlerTransferring;
+	private boolean senderTransferring;
 
 	public RequestTag(boolean isSSK, START start, PeerNode source, boolean realTimeFlag, long uid, Node node) {
 		super(source, realTimeFlag, uid, node);
@@ -229,10 +230,20 @@ public class RequestTag extends UIDTag {
 	// FIXME sanity checks, track whether sending as a boolean, check in unlockHandler etc.
 	
 	public void senderTransferBegins(NodeCHK key, RequestSender sender) {
+		synchronized(this) {
+			if(senderTransferring) return;
+			senderTransferring = true;
+		}
 		tracker.addTransferringSender(key, sender);
 	}
 
 	public void senderTransferEnds(NodeCHK key, RequestSender requestSender) {
+		synchronized(this) {
+			if(!senderTransferring)
+				// Already unlocked. This is okay.
+				return;
+			senderTransferring = false;
+		}
 		tracker.removeTransferringSender(key, requestSender);
 	}
 	
