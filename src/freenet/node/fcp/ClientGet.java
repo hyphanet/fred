@@ -145,10 +145,20 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				else
 					ret = server.core.tempBucketFactory.makeBucket(maxOutputLength);
 		}
+		String extensionCheck = null;
+		if(filterData) {
+			String name = returnFilename.getName();
+			int idx = name.lastIndexOf('.');
+			if(idx != -1) {
+				idx++;
+				if(idx != name.length())
+					extensionCheck = name.substring(idx);
+			}
+		}
 		returnBucket = ret;
 			getter = new ClientGetter(this, uri, fctx, priorityClass,
 					lowLevelClient,
-					returnBucket, null, null);
+					returnBucket, null, false, null, extensionCheck);
 	}
 
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MessageInvalidException {
