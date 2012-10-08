@@ -786,7 +786,7 @@ public class DefaultMIMETypes {
 		return false;
 	}
 	
-	private static final String TOP_LEVEL = "(?>[a-zA-Z]+)";
+	private static final String TOP_LEVEL = "(?>[a-zA-Z-]+)";
 	private static final String CHARS = "(?>[a-zA-Z0-9+_\\-\\.]+)";
 	private static final String PARAM = "(?>;\\s*"+CHARS+"="+"(("+CHARS+")|(\".*\")))";
 	private static Pattern MIME_TYPE = Pattern.compile(TOP_LEVEL+"/"+CHARS+"\\s*"+PARAM+"*");
