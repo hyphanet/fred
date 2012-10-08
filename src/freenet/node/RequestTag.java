@@ -40,6 +40,8 @@ public class RequestTag extends UIDTag {
 	private WeakReference<PeerNode> waitingForOpennet;
 	private boolean handlerTransferring;
 	private boolean senderTransferring;
+	/** Set if transferring */
+	private NodeCHK key;
 
 	public RequestTag(boolean isSSK, START start, PeerNode source, boolean realTimeFlag, long uid, Node node) {
 		super(source, realTimeFlag, uid, node);
@@ -75,13 +77,27 @@ public class RequestTag extends UIDTag {
 	@Override
 	protected final void innerUnlock(boolean noRecordUnlock) {
 		boolean handlerFinished;
+		boolean senderFinished;
+		NodeCHK k = null;
+		RequestSender s = null;
 		synchronized(this) {
 			handlerFinished = this.handlerTransferring;
 			handlerTransferring = false;
+			senderFinished = this.senderTransferring;
+			if(senderFinished) {
+				Logger.error(this, "Nobody called senderTransferEnds() for "+this, new Exception("debug"));
+				k = key;
+				assert(k != null);
+				s = sender.get();
+				assert(s != null);
+			}
+			senderTransferring = false;
 		}
 		super.innerUnlock(noRecordUnlock);
 		if(handlerFinished)
 			tracker.removeTransferringRequestHandler(uid);
+		if(senderFinished)
+			tracker.removeTransferringSender(k, s);
 	}
 
 	public void handlerThrew(Throwable t) {
@@ -227,13 +243,12 @@ public class RequestTag extends UIDTag {
 		tracker.addTransferringRequestHandler(uid);
 	}
 
-	// FIXME sanity checks, track whether sending as a boolean, check in unlockHandler etc.
-	
-	public void senderTransferBegins(NodeCHK key, RequestSender requestSender) {
+	public void senderTransferBegins(NodeCHK k, RequestSender requestSender) {
 		synchronized(this) {
 			if(senderTransferring) return;
 			senderTransferring = true;
 			assert(this.sender != null && this.sender.get() == requestSender);
+			this.key = k;
 		}
 		tracker.addTransferringSender(key, requestSender);
 	}
@@ -245,6 +260,7 @@ public class RequestTag extends UIDTag {
 				return;
 			senderTransferring = false;
 			assert(this.sender != null && this.sender.get() == requestSender);
+			this.key = null;
 		}
 		tracker.removeTransferringSender(key, requestSender);
 	}
