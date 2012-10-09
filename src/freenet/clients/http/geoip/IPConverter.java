@@ -200,8 +200,13 @@ public class IPConverter {
 				// Ip
 				String ipcode = iprange.substring(2);
 				long ip = decodeBase85(ipcode.getBytes());
-				Country country = Country.valueOf(code);
-				codes[i] = (short) country.ordinal();
+				try {
+					Country country = Country.valueOf(code);
+					codes[i] = (short) country.ordinal();
+				} catch (IllegalArgumentException e) {
+					Logger.error(this, "Country not in list: "+code);
+					codes[i] = (short)-1;
+				}
 				ips[i] = ip;
 			}
 			raf.close();
@@ -274,6 +279,7 @@ public class IPConverter {
 			}
 		}
 		short countryOrdinal = codes[last];
+		if(countryOrdinal < 0) return null;
 		Country country = Country.values()[countryOrdinal];
 		cache.put(longip, country);
 		return country;
