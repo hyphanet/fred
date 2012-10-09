@@ -170,11 +170,14 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 		return null;
 	}
 	
-	/** Only checks the jar, but opens the stream using ZipEntry's, so when
-	 * tempJarFile is closed, so are all the streams, hence we can delete 
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * If the resource is found in this jar, opens the stream using ZipEntry's,
+	 * so when tempJarFile is closed, so are all the streams, hence we can delete
 	 * the jar on Windows.
-	 * @return An InputStream from the jar if the name refers to a resource
-	 * within this jar file. 
+	 * 
+	 * @see java.lang.ClassLoader#getResourceAsStream(java.lang.String)
 	 */
 	@Override
 	public InputStream getResourceAsStream(String name) {
