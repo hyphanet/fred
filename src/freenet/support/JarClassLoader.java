@@ -150,8 +150,9 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 
 	/**
 	 * {@inheritDoc}
-	 * 
-	 * @see java.lang.ClassLoader#findResource(java.lang.String)
+	 * <p>
+	 * Finds the resource within this jar only. If it isn't found within the jar, getResourceAsStream()
+	 * will look elsewhere.
 	 */
 	@Override
 	protected URL findResource(String name) {
