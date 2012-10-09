@@ -1158,6 +1158,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		DiffieHellmanLightContext ctx = findContextByExponential(_ourExponential);
 		if(ctx == null) {
 			Logger.error(this, "WTF? the HMAC verified but we don't know about that exponential! SHOULDN'T HAPPEN! - JFK3 - "+pn);
+			// Possible this is a replay or severely delayed? We don't keep every exponential we ever use.
 			return;
 		}
 		BigInteger computedExponential = ctx.getHMACKey(_hisExponential, Global.DHgroupA);
