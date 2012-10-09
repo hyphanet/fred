@@ -20,7 +20,6 @@ import freenet.crypt.DSAGroup;
 import freenet.crypt.DSASignature;
 import freenet.crypt.DiffieHellman;
 import freenet.crypt.DiffieHellmanLightContext;
-import freenet.crypt.EntropySource;
 import freenet.crypt.Global;
 import freenet.crypt.HMAC;
 import freenet.crypt.PCFBMode;
