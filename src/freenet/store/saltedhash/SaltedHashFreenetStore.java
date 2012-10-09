@@ -1860,7 +1860,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
 				                cleaner.entriesTotal + "" });
 			else
-				return NodeL10n.getBase().getString("SaltedHashFreenetStore.shortRebuildProgress", //
+				return NodeL10n.getBase().getString("SaltedHashFreenetStore.shortRebuildProgress" + (slotFilter.isNew() ? "New" : ""), 
 				        new String[] { "name", "processed", "total" },//
 				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
 				                cleaner.entriesTotal + "" });
@@ -1874,8 +1874,8 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
 				                cleaner.entriesTotal + "" });
 			else
-				return NodeL10n.getBase().getString("SaltedHashFreenetStore.longRebuildProgress", //
-				        new String[] { "name", "processed", "total" },//
+				return NodeL10n.getBase().getString("SaltedHashFreenetStore.longRebuildProgress" + (slotFilter.isNew() ? "New" : ""),
+				        new String[] { "name", "processed", "total" },
 				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
 				                cleaner.entriesTotal + "" });
 		}
