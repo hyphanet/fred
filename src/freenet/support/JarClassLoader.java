@@ -170,29 +170,17 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 		return null;
 	}
 	
-	/* FIXME Uncommenting the below causes WoT to fail to load a Java system class during XML parsing.
-	 * I do not understand why! */
-
-//	/**
-//	 * Load a resource from this jar or from the parent ClassLoader.
-//	 */
-//	@Override
-//	public InputStream getResourceAsStream(String name) {
-//		InputStream is = getResourceAsStreamInner(name);
-//		if(is != null)
-//			return is;
-//		else
-//			is = super.getResourceAsStream(name);
-//		return is;
-//	}
-
-	/** Only checks the jar, but opens the stream using ZipEntry's, so when
-	 * tempJarFile is closed, so are all the streams, hence we can delete 
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * If the resource is found in this jar, opens the stream using ZipEntry's,
+	 * so when tempJarFile is closed, so are all the streams, hence we can delete
 	 * the jar on Windows.
-	 * @return An InputStream from the jar if the name refers to a resource
-	 * within this jar file. 
+	 * 
+	 * @see java.lang.ClassLoader#getResourceAsStream(java.lang.String)
 	 */
-	public InputStream getResourceAsStreamInner(String name) {
+	@Override
+	public InputStream getResourceAsStream(String name) {
 		if(logMINOR) Logger.minor(this, "Requested resource: " + name, new Exception("debug"));
 		URL url = getResource(name);
 		if (url == null)
@@ -200,7 +188,8 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 		if(logMINOR) Logger.minor(this, "Found resource at URL: " + url);
 
 		// If the resource is not from our jar, return it as normal
-		if (!url.toString().equals(findResource(name).toString()))
+		URL localUrl = findResource(name);
+		if (localUrl == null || !url.toString().equals(localUrl.toString()))
 			try {
 				return url.openStream();
 			} catch (IOException e) {
