@@ -136,4 +136,26 @@ public class StaticToadlet extends Toadlet {
 		return ROOT_URL;
 	}
 
+	/** Do we have a specific static file? Note that override files are not 
+	 * supported here as it is a static method. */
+	public static boolean haveFile(String path) {
+		if (!path.startsWith(ROOT_URL)) {
+			return false;
+		}
+		try {
+			path = path.substring(ROOT_URL.length());
+		} catch (IndexOutOfBoundsException ioobe) {
+			return false;
+		}
+		if (!path.matches("^[A-Za-z0-9\\._\\/\\-]*$") || (path.indexOf("..") != -1)) {
+			return false;
+		}
+		if(path.startsWith(OVERRIDE)) {
+			return false; // Not supported in haveFile();
+		}
+		
+		URL url = StaticToadlet.class.getResource(ROOT_PATH+path);
+		return url != null;
+	}
+
 }
