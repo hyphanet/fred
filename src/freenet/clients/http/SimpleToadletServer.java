@@ -1213,6 +1213,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		return sb.toString();
 	}
 
+	@Override
+	public boolean isSSL() {
+		return ssl;
+	}
+
 	//
 	// LINKFILTEREXCEPTIONPROVIDER METHODS
 	//

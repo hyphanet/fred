@@ -129,4 +129,6 @@ public interface ToadletContainer {
 
 	public String getURL(String host);
 
+	public boolean isSSL();
+
 }
