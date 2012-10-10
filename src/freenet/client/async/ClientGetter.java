@@ -774,11 +774,11 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			mime = clientMetadata.getMIMEType();
 		if(ctx.overrideMIME != null)
 			mime = ctx.overrideMIME;
-		if(mime == null) return;
+		if(mime == null || mime.equals("")) return;
 		if(ctx.filterData) {
-			UnsafeContentTypeException e = ContentFilter.checkMIMEType(expectedMIME);
+			UnsafeContentTypeException e = ContentFilter.checkMIMEType(mime);
 			if(e != null) {
-				throw new FetchException(e.getFetchErrorCode(), expectedSize, e, expectedMIME);
+				throw new FetchException(e.getFetchErrorCode(), expectedSize, e, mime);
 			}
 			if(forceCompatibleExtension != null)
 				checkCompatibleExtension(mime);
