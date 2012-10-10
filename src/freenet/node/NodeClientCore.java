@@ -1084,7 +1084,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		try {
 			Object o = node.makeRequestSender(key, htl, uid, tag, null, localOnly, ignoreStore, offersOnly, canReadClientCache, canWriteClientCache, realTimeFlag);
 			if(o instanceof KeyBlock) {
-				tag.servedFromDatastore = true;
+				tag.setServedFromDatastore();
 				listener.onDataFoundLocally();
 				return; // Already have it.
 			}

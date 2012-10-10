@@ -2,9 +2,12 @@ package freenet.node;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Vector;
 
+import freenet.keys.Key;
+import freenet.keys.NodeCHK;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Ticker;
@@ -48,6 +51,12 @@ public class RequestTracker {
 	private final PeerManager peers;
 	private final Ticker ticker;
 
+	/** RequestSender's currently transferring, by key */
+	private final HashMap<NodeCHK, RequestSender> transferringRequestSendersRT;
+	private final HashMap<NodeCHK, RequestSender> transferringRequestSendersBulk;
+	/** UIDs of RequestHandler's currently transferring */
+	private final HashSet<Long> transferringRequestHandlers;
+	
 	RequestTracker(PeerManager peers, Ticker ticker) {
 		this.peers = peers;
 		this.ticker = ticker;
@@ -72,6 +81,10 @@ public class RequestTracker {
 		runningLocalSSKPutUIDsBulk = new HashMap<Long,InsertTag>();
 		runningCHKOfferReplyUIDsBulk = new HashMap<Long,OfferReplyTag>();
 		runningSSKOfferReplyUIDsBulk = new HashMap<Long,OfferReplyTag>();
+		
+		transferringRequestSendersRT = new HashMap<NodeCHK, RequestSender>();
+		transferringRequestSendersBulk = new HashMap<NodeCHK, RequestSender>();
+		transferringRequestHandlers = new HashSet<Long>();
 	}
 
 	public boolean lockUID(UIDTag tag) {
@@ -747,5 +760,76 @@ public class RequestTracker {
 			pn.removeUIDsFromMessageQueues(list);
 		}
 	}
+
+	public RequestSender getTransferringRequestSenderByKey(NodeCHK key, boolean realTimeFlag) {
+		HashMap<NodeCHK, RequestSender> transferringRequestSenders =
+			realTimeFlag ? transferringRequestSendersRT : transferringRequestSendersBulk;
+		synchronized(transferringRequestSenders) {
+			return transferringRequestSenders.get(key);
+		}
+	}
+	
+	/**
+	 * Add a transferring RequestSender to our HashMap.
+	 * Should only be called by UIDTag.
+	 */
+	public void addTransferringSender(NodeCHK key, RequestSender sender) {
+		HashMap<NodeCHK, RequestSender> transferringRequestSenders =
+			sender.realTimeFlag ? transferringRequestSendersRT : transferringRequestSendersBulk;
+		synchronized(transferringRequestSenders) {
+			transferringRequestSenders.put(key, sender);
+		}
+	}
+
+	/** Should only be called by RequestTag. */
+	void addTransferringRequestHandler(long id) {
+		synchronized(transferringRequestHandlers) {
+			transferringRequestHandlers.add(id);
+		}
+	}
+
+	/** Should only be called by RequestTag. */
+	void removeTransferringRequestHandler(long id) {
+		synchronized(transferringRequestHandlers) {
+			transferringRequestHandlers.remove(id);
+		}
+	}
+
+	/**
+	 * Remove a sender from the set of currently transferring senders.
+	 */
+	public void removeTransferringSender(NodeCHK key, RequestSender sender) {
+		HashMap<NodeCHK, RequestSender> transferringRequestSenders =
+			sender.realTimeFlag ? transferringRequestSendersRT : transferringRequestSendersBulk;
+		synchronized(transferringRequestSenders) {
+//			RequestSender rs = (RequestSender) transferringRequestSenders.remove(key);
+//			if(rs != sender) {
+//				Logger.error(this, "Removed "+rs+" should be "+sender+" for "+key+" in removeTransferringSender");
+//			}
+
+			// Since there is no request coalescing, we only remove it if it matches,
+			// and don't complain if it doesn't.
+			if(transferringRequestSenders.get(key) == sender)
+				transferringRequestSenders.remove(key);
+		}
+	}
+
+	public int getNumTransferringRequestSenders() {
+		int total = 0;
+		synchronized(transferringRequestSendersRT) {
+			total += transferringRequestSendersRT.size();
+		}
+		synchronized(transferringRequestSendersBulk) {
+			total += transferringRequestSendersBulk.size();
+		}
+		return total;
+	}
+
+	public int getNumTransferringRequestHandlers() {
+		synchronized(transferringRequestHandlers) {
+			return transferringRequestHandlers.size();
+		}
+	}
+
 
 }

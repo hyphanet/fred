@@ -627,11 +627,6 @@ public class Node implements TimeSkewDetectorCallback {
 
 	final GetPubkey getPubKey;
 
-	/** RequestSender's currently transferring, by key */
-	private final HashMap<NodeCHK, RequestSender> transferringRequestSendersRT;
-	private final HashMap<NodeCHK, RequestSender> transferringRequestSendersBulk;
-	/** UIDs of RequestHandler's currently transferring */
-	private final HashSet<Long> transferringRequestHandlers;
 	/** FetchContext for ARKs */
 	public final FetchContext arkFetcherContext;
 
@@ -1117,9 +1112,6 @@ public class Node implements TimeSkewDetectorCallback {
 			throw new Error(e3);
 		}
 		fLocalhostAddress = new FreenetInetAddress(localhostAddress);
-		transferringRequestSendersRT = new HashMap<NodeCHK, RequestSender>();
-		transferringRequestSendersBulk = new HashMap<NodeCHK, RequestSender>();
-		transferringRequestHandlers = new HashSet<Long>();
 
 		this.securityLevels = new SecurityLevels(this, config);
 
@@ -3899,12 +3891,8 @@ public class Node implements TimeSkewDetectorCallback {
 		if(logMINOR) Logger.minor(this, "Not in store locally");
 
 		// Transfer coalescing - match key only as HTL irrelevant
-		RequestSender sender = null;
-		HashMap<NodeCHK, RequestSender> transferringRequestSenders =
-			realTimeFlag ? transferringRequestSendersRT : transferringRequestSendersBulk;
-		synchronized(transferringRequestSenders) {
-			sender = transferringRequestSenders.get(key);
-		}
+		RequestSender sender = key instanceof NodeCHK ? 
+			tracker.getTransferringRequestSenderByKey((NodeCHK)key, realTimeFlag) : null;
 		if(sender != null) {
 			if(logMINOR) Logger.minor(this, "Data already being transferred: "+sender);
 			sender.setTransferCoalesced();
@@ -3945,29 +3933,6 @@ public class Node implements TimeSkewDetectorCallback {
 	 * inserts that don't get cached. */
 	boolean canWriteDatastoreInsert(short htl) {
 		return htl <= (maxHTL - 3);
-	}
-
-	/**
-	 * Add a transferring RequestSender to our HashMap.
-	 */
-	public void addTransferringSender(NodeCHK key, RequestSender sender) {
-		HashMap<NodeCHK, RequestSender> transferringRequestSenders =
-			sender.realTimeFlag ? transferringRequestSendersRT : transferringRequestSendersBulk;
-		synchronized(transferringRequestSenders) {
-			transferringRequestSenders.put(key, sender);
-		}
-	}
-
-	void addTransferringRequestHandler(long id) {
-		synchronized(transferringRequestHandlers) {
-			transferringRequestHandlers.add(id);
-		}
-	}
-
-	void removeTransferringRequestHandler(long id) {
-		synchronized(transferringRequestHandlers) {
-			transferringRequestHandlers.remove(id);
-		}
 	}
 
 	/**
@@ -4293,25 +4258,6 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-	/**
-	 * Remove a sender from the set of currently transferring senders.
-	 */
-	public void removeTransferringSender(NodeCHK key, RequestSender sender) {
-		HashMap<NodeCHK, RequestSender> transferringRequestSenders =
-			sender.realTimeFlag ? transferringRequestSendersRT : transferringRequestSendersBulk;
-		synchronized(transferringRequestSenders) {
-//			RequestSender rs = (RequestSender) transferringRequestSenders.remove(key);
-//			if(rs != sender) {
-//				Logger.error(this, "Removed "+rs+" should be "+sender+" for "+key+" in removeTransferringSender");
-//			}
-
-			// Since there is no request coalescing, we only remove it if it matches,
-			// and don't complain if it doesn't.
-			if(transferringRequestSenders.get(key) == sender)
-				transferringRequestSenders.remove(key);
-		}
-	}
-
 	final boolean decrementAtMax;
 	final boolean decrementAtMin;
 
@@ -4400,7 +4346,7 @@ public class Node implements TimeSkewDetectorCallback {
 			sb.append(peers.getStatus());
 		else
 			sb.append("No peers yet");
-		sb.append(getNumTransferringRequestSenders());
+		sb.append(tracker.getNumTransferringRequestSenders());
 		sb.append('\n');
 		return sb.toString();
 	}
@@ -4417,23 +4363,6 @@ public class Node implements TimeSkewDetectorCallback {
 		return sb.toString();
 	}
 
-	public int getNumTransferringRequestSenders() {
-		int total = 0;
-		synchronized(transferringRequestSendersRT) {
-			total += transferringRequestSendersRT.size();
-		}
-		synchronized(transferringRequestSendersBulk) {
-			total += transferringRequestSendersBulk.size();
-		}
-		return total;
-	}
-
-	public int getNumTransferringRequestHandlers() {
-		synchronized(transferringRequestHandlers) {
-			return transferringRequestHandlers.size();
-		}
-	}
-
 	/**
 	 * @return Data String for freeviz.
 	 */
@@ -4441,7 +4370,7 @@ public class Node implements TimeSkewDetectorCallback {
 		StringBuilder sb = new StringBuilder();
 
 		sb.append("\ntransferring_requests=");
-		sb.append(getNumTransferringRequestSenders());
+		sb.append(tracker.getNumTransferringRequestSenders());
 
 		sb.append('\n');
 

@@ -181,8 +181,8 @@ public class DiagnosticToadlet extends Toadlet {
 		int numRemoteCHKRequests = tracker.getNumRemoteCHKRequests();
 		int numLocalSSKRequests = tracker.getNumLocalSSKRequests();
 		int numRemoteSSKRequests = tracker.getNumRemoteSSKRequests();
-		int numTransferringRequests = node.getNumTransferringRequestSenders();
-		int numTransferringRequestHandlers = node.getNumTransferringRequestHandlers();
+		int numTransferringRequests = tracker.getNumTransferringRequestSenders();
+		int numTransferringRequestHandlers = tracker.getNumTransferringRequestHandlers();
 		int numCHKOfferReplys = tracker.getNumCHKOfferReplies();
 		int numSSKOfferReplys = tracker.getNumSSKOfferReplies();
 		int numCHKRequests = numLocalCHKRequests + numRemoteCHKRequests;

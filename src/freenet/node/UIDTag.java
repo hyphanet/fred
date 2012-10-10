@@ -30,7 +30,7 @@ public abstract class UIDTag {
 	final boolean wasLocal;
 	private final WeakReference<PeerNode> sourceRef;
 	final boolean realTimeFlag;
-	private final RequestTracker tracker;
+	protected final RequestTracker tracker;
 	protected boolean accepted;
 	protected boolean sourceRestarted;
 	
@@ -173,7 +173,7 @@ public abstract class UIDTag {
 		innerUnlock(noRecordUnlock);
 	}
 	
-	protected final void innerUnlock(boolean noRecordUnlock) {
+	protected void innerUnlock(boolean noRecordUnlock) {
 		tracker.unlockUID(this, false, noRecordUnlock);
 	}
 

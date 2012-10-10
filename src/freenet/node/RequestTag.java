@@ -2,6 +2,7 @@ package freenet.node;
 
 import java.lang.ref.WeakReference;
 
+import freenet.keys.NodeCHK;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
 
@@ -26,17 +27,21 @@ public class RequestTag extends UIDTag {
 	
 	final START start;
 	final boolean isSSK;
-	boolean servedFromDatastore;
+	private boolean servedFromDatastore;
 	private WeakReference<RequestSender> sender;
 	private boolean sent;
 	private int requestSenderFinishedCode = RequestSender.NOT_FINISHED;
-	Throwable handlerThrew;
-	boolean rejected;
-	boolean abortedDownstreamTransfer;
-	int abortedDownstreamReason;
-	String abortedDownstreamDesc;
-	boolean handlerDisconnected;
+	private Throwable handlerThrew;
+	private boolean rejected;
+	private boolean abortedDownstreamTransfer;
+	private int abortedDownstreamReason;
+	private String abortedDownstreamDesc;
+	private boolean handlerDisconnected;
 	private WeakReference<PeerNode> waitingForOpennet;
+	private boolean handlerTransferring;
+	private boolean senderTransferring;
+	/** Set if transferring */
+	private NodeCHK key;
 
 	public RequestTag(boolean isSSK, START start, PeerNode source, boolean realTimeFlag, long uid, Node node) {
 		super(source, realTimeFlag, uid, node);
@@ -69,15 +74,48 @@ public class RequestTag extends UIDTag {
 		return super.mustUnlock();
 	}
 
+	@Override
+	protected final void innerUnlock(boolean noRecordUnlock) {
+		boolean handlerFinished;
+		boolean senderFinished;
+		NodeCHK k = null;
+		RequestSender s = null;
+		synchronized(this) {
+			handlerFinished = this.handlerTransferring;
+			handlerTransferring = false;
+			senderFinished = this.senderTransferring;
+			if(senderFinished) {
+				Logger.error(this, "Nobody called senderTransferEnds() for "+this, new Exception("debug"));
+				k = key;
+				s = sender.get();
+			}
+			senderTransferring = false;
+		}
+		super.innerUnlock(noRecordUnlock);
+		if(handlerFinished)
+			tracker.removeTransferringRequestHandler(uid);
+		if(senderFinished) {
+			assert(k != null);
+			assert(s != null);
+			tracker.removeTransferringSender(k, s);
+		}
+	}
+
+	/** The handler threw a Throwable, i.e. failed due to a serious bug.
+	 * Unlock the handler, and record the throwable in case of future problems.
+	 * @param t The Throwable thrown by the RequestHandler. */
 	public void handlerThrew(Throwable t) {
-		this.handlerThrew = t;
+		synchronized(this) {
+			this.handlerThrew = t;
+		}
+		unlockHandler(); // FIXME optimise synchronization in a clean way.
 	}
 
 	public synchronized void setServedFromDatastore() {
 		servedFromDatastore = true;
 	}
 
-	public void setRejected() {
+	public synchronized void setRejected() {
 		rejected = true;
 	}
 
@@ -126,13 +164,13 @@ public class RequestTag extends UIDTag {
 			Logger.error(this, sb.toString());
 	}
 
-	public void onAbortDownstreamTransfers(int reason, String desc) {
+	public synchronized void onAbortDownstreamTransfers(int reason, String desc) {
 		abortedDownstreamTransfer = true;
 		abortedDownstreamReason = reason;
 		abortedDownstreamDesc = desc;
 	}
 
-	public void handlerDisconnected() {
+	public synchronized void handlerDisconnected() {
 		handlerDisconnected = true;
 	}
 
@@ -202,6 +240,38 @@ public class RequestTag extends UIDTag {
 		if(waitingForOpennet != null && waitingForOpennet == peer.myRef)
 			return true;
 		return super.currentlyRoutingTo(peer);
+	}
+
+	public void handlerTransferBegins() {
+		synchronized(this) {
+			if(handlerTransferring) return;
+			handlerTransferring = true;
+		}
+		tracker.addTransferringRequestHandler(uid);
+	}
+
+	public void senderTransferBegins(NodeCHK k, RequestSender requestSender) {
+		synchronized(this) {
+			if(senderTransferring) return;
+			senderTransferring = true;
+			if(this.sender == null || this.sender.get() != requestSender)
+				throw new IllegalStateException("Set RequestSender first!");
+			this.key = k;
+		}
+		tracker.addTransferringSender(k, requestSender);
+	}
+
+	public void senderTransferEnds(NodeCHK key, RequestSender requestSender) {
+		synchronized(this) {
+			if(!senderTransferring)
+				// Already unlocked. This is okay.
+				return;
+			senderTransferring = false;
+			assert(this.sender != null && this.sender.get() == requestSender);
+			assert(this.key != null && this.key.equals(key));
+			this.key = null;
+		}
+		tracker.removeTransferringSender(key, requestSender);
 	}
 	
 }

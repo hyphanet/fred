@@ -107,14 +107,10 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 		//The last thing that realRun() does is register as a request-sender listener, so any exception here is the end.
 		} catch(NotConnectedException e) {
 			Logger.normal(this, "requestor gone, could not start request handler wait");
-			node.removeTransferringRequestHandler(uid);
 			tag.handlerThrew(e);
-			tag.unlockHandler();
 		} catch(Throwable t) {
 			Logger.error(this, "Caught " + t, t);
-			node.removeTransferringRequestHandler(uid);
 			tag.handlerThrew(t);
-			tag.unlockHandler();
 		}
 	}
 	
@@ -301,7 +297,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 					}
 					
 				}, realTimeFlag, node.nodeStats);
-			node.addTransferringRequestHandler(uid);
+			tag.handlerTransferBegins();
 			bt.sendAsync();
 		} catch(NotConnectedException e) {
 			synchronized(this) {
@@ -615,9 +611,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 								finishOpennetNoRelay();
 							} catch (NotConnectedException e) {
 								Logger.normal(this, "requestor gone, could not start request handler wait");
-								node.removeTransferringRequestHandler(uid);
 								tag.handlerThrew(e);
-								tag.unlockHandler();
 							}
 						} else {
 							//also for byte logging, since the block is the 'terminal' message.
@@ -628,7 +622,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 					}
 					
 				}, realTimeFlag, node.nodeStats);
-			node.addTransferringRequestHandler(uid);
+			tag.handlerTransferBegins();
 			source.sendAsync(df, null, this);
 			bt.sendAsync();
 		} else
@@ -636,7 +630,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 	}
 
 	private void unregisterRequestHandlerWithNode() {
-		node.removeTransferringRequestHandler(uid);
 		RequestSender r;
 		synchronized(this) {
 			r = rs;
@@ -959,8 +952,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 					tag.unlockHandler();
 					applyByteCounts();
 				}
-				
-				node.removeTransferringRequestHandler(uid);
 			}
 
 			@Override
@@ -973,15 +964,13 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 				}
 				rs.ackOpennet(rs.successFrom());
 				applyByteCounts();
-				node.removeTransferringRequestHandler(uid);
 			}
 
 			@Override
 			public void acked(boolean timedOutMessage) {
-				tag.unlockHandler();
+				tag.unlockHandler(); // will remove transfer
 				rs.ackOpennet(dataSource);
 				applyByteCounts();
-				node.removeTransferringRequestHandler(uid);
 			}
 			
 		}, node);
