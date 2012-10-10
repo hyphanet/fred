@@ -901,9 +901,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			if(addr != null && !addr.contains(":")) {
 				Country country = ipc.locateIP(addr);
 				if(country != null) {
-					String flagPath = "/static/icon/flags/"+country.toString().toLowerCase()+".png";
-					if(StaticToadlet.haveFile(flagPath))
-						locationChild.addChild("img", new String[] { "src", "title" }, new String[] { flagPath, country.getName()});
+					country.renderFlagIcon(locationChild);
 				}
 			}
 			locationChild.addChild("#", ((peerNodeStatus.getPeerAddress() != null) ? (peerNodeStatus.getPeerAddress() + ':' + peerNodeStatus.getPeerPort()) : (l10n("unknownAddress"))) + pingTime);

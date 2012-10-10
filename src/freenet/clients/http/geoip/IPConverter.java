@@ -9,7 +9,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import freenet.clients.http.StaticToadlet;
 import freenet.node.Node;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 
 public class IPConverter {
@@ -124,6 +126,8 @@ public class IPConverter {
 				"WALLIS AND FUTUNA "), EH("WESTERN SAHARA "), YE("YEMEN "), ZM(
 				"ZAMBIA "), ZW("ZIMBABWE "), ZZ("NA"), EU("European Union");
 		private String name;
+		private boolean hasFlag;
+		private boolean checkedHasFlag;
 
 		Country(String name) {
 			this.name = name;
@@ -131,6 +135,33 @@ public class IPConverter {
 
 		public String getName() {
 			return name;
+		}
+
+		public void renderFlagIcon(HTMLNode parent) {
+			String flagPath = getFlagIconPath();
+			if(flagPath != null)
+				parent.addChild("img", new String[] { "src", "title" }, new String[] { StaticToadlet.ROOT_URL + flagPath, getName()});
+		}
+		
+		public boolean hasFlagIcon() {
+			return getFlagIconPath() != null;
+		}
+		
+		/** Doesn't check whether it exists. Relative to the top of staticfiles. */
+		private String flagIconPath() {
+			return "icon/flags/"+toString().toLowerCase()+".png";
+		}
+		
+		/** Relative to top of static files */
+		public String getFlagIconPath() {
+			String flagPath = flagIconPath();
+			synchronized(this) {
+				if(!checkedHasFlag) {
+					hasFlag = StaticToadlet.haveFile(flagPath);
+					checkedHasFlag = true;
+				}
+				return hasFlag ? flagPath : null;
+			}
 		}
 	}
 
