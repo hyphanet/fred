@@ -84,10 +84,10 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 	}
 
 	@Override
-	public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) throws FetchException {
+	public void onExpectedMIME(ClientMetadata metadata, ObjectContainer container, ClientContext context) throws FetchException {
 		if(container != null && persistent)
 			container.activate(cb, 1);
-		cb.onExpectedMIME(mime, container, context);
+		cb.onExpectedMIME(metadata, container, context);
 	}
 
 	@Override

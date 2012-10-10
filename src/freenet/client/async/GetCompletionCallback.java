@@ -55,7 +55,7 @@ public interface GetCompletionCallback {
 	 * @throws FetchException The callee can throw a FetchException to terminate the download e.g.
 	 * if they can't handle the MIME type.
 	 */
-	public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) throws FetchException;
+	public void onExpectedMIME(ClientMetadata metadata, ObjectContainer container, ClientContext context) throws FetchException;
 
 	public void onFinalizedMetadata(ObjectContainer container);
 

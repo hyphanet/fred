@@ -658,7 +658,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata());
 				if(persistent) container.store(clientMetadata);
 				String mime = clientMetadata.getMIMEType();
-				if(mime != null) rcb.onExpectedMIME(mime, container, context);
+				if(mime != null) rcb.onExpectedMIME(clientMetadata, container, context);
 				if(metaStrings.isEmpty() && isFinal && clientMetadata.getMIMETypeNoParams() != null && ctx.allowedMIMETypes != null &&
 						!ctx.allowedMIMETypes.contains(clientMetadata.getMIMETypeNoParams())) {
 					throw new FetchException(FetchException.WRONG_MIME_TYPE, -1, false, clientMetadata.getMIMEType());
@@ -773,8 +773,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(logMINOR) Logger.minor(this, "Is single-file redirect");
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
 				if(persistent) container.store(clientMetadata);
-				String mime = clientMetadata.getMIMEType();
-				if(mime != null) rcb.onExpectedMIME(mime, container, context);
+				if(clientMetadata != null && !clientMetadata.isTrivial()) 
+					rcb.onExpectedMIME(clientMetadata, container, context);
 
 				String mimeType = clientMetadata.getMIMETypeNoParams();
 				if(mimeType != null && ArchiveManager.ARCHIVE_TYPE.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
@@ -873,8 +873,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					if(logMINOR) Logger.minor(this, "Handling implicit container... (splitfile)");
 					continue;
 				} else {
-					String mime = clientMetadata.getMIMEType();
-					if(mime != null) rcb.onExpectedMIME(mime, container, context);
+					if(clientMetadata != null && !clientMetadata.isTrivial()) 
+						rcb.onExpectedMIME(clientMetadata, container, context);
 				}
 				
 				if(metaStrings.isEmpty() && isFinal && mimeType != null && ctx.allowedMIMETypes != null &&
@@ -1219,7 +1219,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 
 		@Override
-		public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) {
+		public void onExpectedMIME(ClientMetadata metadata, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
 
@@ -1404,7 +1404,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 
 		@Override
-		public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) {
+		public void onExpectedMIME(ClientMetadata mime, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
 

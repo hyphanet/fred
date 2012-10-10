@@ -182,7 +182,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		cb.onExpectedSize(eventualLength, container, context);
 		String mimeType = metadata.getMIMEType();
 		if(mimeType != null)
-			cb.onExpectedMIME(mimeType, container, context);
+			cb.onExpectedMIME(metadata.getClientMetadata(), container, context);
 		if(metadata.uncompressedDataLength() > 0)
 			cb.onFinalizedMetadata(container);
 		if(!wasActive)

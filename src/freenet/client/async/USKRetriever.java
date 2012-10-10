@@ -229,7 +229,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	}
 
 	@Override
-	public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) {
+	public void onExpectedMIME(ClientMetadata meta, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 

@@ -69,7 +69,7 @@ public class USKFetcherWrapper extends BaseClientGetter {
 	}
 
 	@Override
-	public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) {
+	public void onExpectedMIME(ClientMetadata meta, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 

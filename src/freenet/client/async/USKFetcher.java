@@ -331,7 +331,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			// Ignore
 		}
 		@Override
-		public void onExpectedMIME(String mime, ObjectContainer container,
+		public void onExpectedMIME(ClientMetadata meta, ObjectContainer container,
 				ClientContext context) throws FetchException {
 			// Ignore
 		}
