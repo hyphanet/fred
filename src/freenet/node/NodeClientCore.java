@@ -546,14 +546,14 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		if(!killedDatabase) {
 			try {
 				InsertCompressor.load(container, clientContext);
+				// FIXME get rid of this.
+				if(container != null) {
+					container.commit();
+					ClientRequester.checkAll(container, clientContext);
+				}
 			} catch (Db4oException e) {
 				killedDatabase = true;
 			}
-		}
-		// FIXME get rid of this.
-		if(container != null) {
-			container.commit();
-			ClientRequester.checkAll(container, clientContext);
 		}
 	}
 
