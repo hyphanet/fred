@@ -418,7 +418,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		
 		pushDataManager=new PushDataManager(getTicker());
 		intervalPushManager=new IntervalPusherManager(getTicker(), pushDataManager);
-		bookmarkManager = new BookmarkManager(core);
+		bookmarkManager = new BookmarkManager(core, publicGatewayMode());
 		try {
 			FProxyToadlet.maybeCreateFProxyEtc(core, core.node, core.node.config, this, bookmarkManager);
 		} catch (IOException e) {
