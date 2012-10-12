@@ -567,7 +567,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
 				if(publicGatewayMode == val) return;
 				publicGatewayMode = val;
-				if(val) throw new NodeNeedRestartException(l10n("publicGatewayModeNeedsRestart"));
+				throw new NodeNeedRestartException(l10n("publicGatewayModeNeedsRestart"));
 			}
 			
 		});
