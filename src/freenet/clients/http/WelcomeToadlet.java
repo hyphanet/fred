@@ -435,7 +435,7 @@ public class WelcomeToadlet extends Toadlet {
         
         
         HTMLNode bookmarksList = bookmarkBoxContent.addChild("ul", "id", "bookmarks");
-		if (ctx.isAllowedFullAccess()) {
+		if (ctx.isAllowedFullAccess() || !ctx.getContainer().publicGatewayMode()) {
 			addCategoryToList(BookmarkManager.MAIN_CATEGORY, bookmarksList, (!container.enableActivelinks()) || (useragent != null && useragent.contains("khtml") && !useragent.contains("chrome")), ctx);
 		}
 		else {
