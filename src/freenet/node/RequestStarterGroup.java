@@ -250,9 +250,9 @@ public class RequestStarterGroup {
 		private final String[] possibleValues = new String[]{
 			ClientRequestScheduler.PRIORITY_STRINGS.get(ClientRequestScheduler.PRIORITY_HARD),
 			ClientRequestScheduler.PRIORITY_STRINGS.get(ClientRequestScheduler.PRIORITY_SOFT),
-			ClientRequestScheduler.PRIORITY_STRINGS.get(ClientRequestScheduler.PRIORITY_SOFTER)
+			ClientRequestScheduler.PRIORITY_STRINGS.get(ClientRequestScheduler.PRIORITY_FIRM)
 		};
-		
+
 		public void init(ClientRequestScheduler csRT, ClientRequestScheduler csBulk, String config) throws InvalidConfigValueException{
 			this.csRT = csRT;
 			this.csBulk = csBulk;
@@ -275,8 +275,8 @@ public class RequestStarterGroup {
 				value = ClientRequestScheduler.PRIORITY_STRINGS.get(ClientRequestScheduler.PRIORITY_HARD);
 			}else if(val.equalsIgnoreCase(ClientRequestScheduler.PRIORITY_STRINGS.get(ClientRequestScheduler.PRIORITY_SOFT))){
 				value = ClientRequestScheduler.PRIORITY_STRINGS.get(ClientRequestScheduler.PRIORITY_SOFT);
-			}else if(val.equalsIgnoreCase(ClientRequestScheduler.PRIORITY_STRINGS.get(ClientRequestScheduler.PRIORITY_SOFTER))){
-				value = ClientRequestScheduler.PRIORITY_STRINGS.get(ClientRequestScheduler.PRIORITY_SOFTER);
+			}else if(val.equalsIgnoreCase(ClientRequestScheduler.PRIORITY_STRINGS.get(ClientRequestScheduler.PRIORITY_FIRM))){
+				value = ClientRequestScheduler.PRIORITY_STRINGS.get(ClientRequestScheduler.PRIORITY_FIRM);
 			}else{
 				throw new InvalidConfigValueException("Invalid priority scheme");
 			}

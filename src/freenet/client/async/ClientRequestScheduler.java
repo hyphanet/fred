@@ -73,13 +73,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public static final short PRIORITY_NONE = 0;
 	public static final short PRIORITY_SOFT = 1;
 	public static final short PRIORITY_HARD = 2;
-	public static final short PRIORITY_SOFTER = 3;
+	public static final short PRIORITY_FIRM = 3;
 	
 	public static final ArrayList<String> PRIORITY_STRINGS = new ArrayList<String>() {{
-			add("NONE"); add("SOFT"); add("HARD"); add("SOFTER");
+			add("NONE"); add("SOFT"); add("HARD"); add("FIRM");
 	}};
 	private short choosenPriorityScheduler;
-	
+
 	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, boolean forRT, RandomSource random, RequestStarter starter, Node node, NodeClientCore core, String name, ClientContext context) {
 		this.isInsertScheduler = forInserts;
 		this.isSSKScheduler = forSSKs;

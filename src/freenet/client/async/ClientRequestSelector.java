@@ -118,20 +118,26 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		//
 		// scheduler=1 (SOFT) will try weightedRand, then start over as HARD if it fails.
 		// scheduler=2 (HARD) will do 0,1,2,3,4,5
-		// scheduler-3 (SOFTER) will try weightedRand, walk up the prio chain to max,
+		// scheduler-3 (FIRM) will try weightedRand, then walk up the prio chain to max,
 		//             then start down the list until all prios are tried
 		// min prio is 'paused', so we skip it
 		switch (scheduler) {
 			case ClientRequestScheduler.PRIORITY_HARD:
 				priority = prioritySelector[iteration];
 				break;			
+			case ClientRequestScheduler.PRIORITY_FIRM:
+				//make sure the first prio we try is at least minPrio priority
+				//remember that the highest priority is 0;
+				do {					
+					priority = firmPrioritySelector[random.nextInt(firmPrioritySelector.length)];
+				} while (priority > minPrio);
+				break;
 			case ClientRequestScheduler.PRIORITY_SOFT:
-			case ClientRequestScheduler.PRIORITY_SOFTER:
 			default:
 				//make sure the first prio we try is at least minPrio priority
 				//remember that the highest priority is 0;
 				do {					
-					priority = tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)];
+					priority = softPrioritySelector[random.nextInt(softPrioritySelector.length)];
 				} while (priority > minPrio);
 				break;
 		}
@@ -186,11 +192,13 @@ class ClientRequestSelector implements KeysFetchingLocally {
 					Logger.minor(this, "Priority "+priority+" result is empty (scheduler = "+curSched+ ", iteration = " + iteration + ",persistence = " + Boolean.toString(persistent) + ")");
 			}
 
+			//We didn't find a block at the chosen priority, what should we do?
 			switch (scheduler) {
 				case ClientRequestScheduler.PRIORITY_HARD:
+					//try the next lower priority.
 					priority = prioritySelector[iteration];
 					break;
-				case ClientRequestScheduler.PRIORITY_SOFTER:
+				case ClientRequestScheduler.PRIORITY_FIRM:
 					//check ever-higher priorities first
 					priority--;
 					//once we've walked backwards to maximum priority looking for a
@@ -584,37 +592,80 @@ outer:	for(;choosenPriorityClass <= minPrio;choosenPriorityClass++) {
 		if(logMINOR) Logger.minor(this, "No requests to run");
 		return null;
 	}
-	
-	//minimum prio class is paused, never try these keys!
-	private static final short[] tweakedPrioritySelector = { 
+
+	//FIRM: rand from 32 max, 16 interactive, 8 immediate, 4 updage, 2 bulk, 1 prefetch
+	private static final short[] firmPrioritySelector = { 
+		RequestStarter.MAXIMUM_PRIORITY_CLASS, RequestStarter.MAXIMUM_PRIORITY_CLASS,
+		RequestStarter.MAXIMUM_PRIORITY_CLASS, RequestStarter.MAXIMUM_PRIORITY_CLASS,
+		RequestStarter.MAXIMUM_PRIORITY_CLASS, RequestStarter.MAXIMUM_PRIORITY_CLASS,
+		RequestStarter.MAXIMUM_PRIORITY_CLASS, RequestStarter.MAXIMUM_PRIORITY_CLASS,
+		RequestStarter.MAXIMUM_PRIORITY_CLASS, RequestStarter.MAXIMUM_PRIORITY_CLASS,
+		RequestStarter.MAXIMUM_PRIORITY_CLASS, RequestStarter.MAXIMUM_PRIORITY_CLASS,
+		RequestStarter.MAXIMUM_PRIORITY_CLASS, RequestStarter.MAXIMUM_PRIORITY_CLASS,
+		RequestStarter.MAXIMUM_PRIORITY_CLASS, RequestStarter.MAXIMUM_PRIORITY_CLASS,
+		RequestStarter.MAXIMUM_PRIORITY_CLASS, RequestStarter.MAXIMUM_PRIORITY_CLASS,
+		RequestStarter.MAXIMUM_PRIORITY_CLASS, RequestStarter.MAXIMUM_PRIORITY_CLASS,
+		RequestStarter.MAXIMUM_PRIORITY_CLASS, RequestStarter.MAXIMUM_PRIORITY_CLASS,
+		RequestStarter.MAXIMUM_PRIORITY_CLASS, RequestStarter.MAXIMUM_PRIORITY_CLASS,
+		RequestStarter.MAXIMUM_PRIORITY_CLASS, RequestStarter.MAXIMUM_PRIORITY_CLASS,
+		RequestStarter.MAXIMUM_PRIORITY_CLASS, RequestStarter.MAXIMUM_PRIORITY_CLASS,
+		RequestStarter.MAXIMUM_PRIORITY_CLASS, RequestStarter.MAXIMUM_PRIORITY_CLASS,
+		RequestStarter.MAXIMUM_PRIORITY_CLASS, RequestStarter.MAXIMUM_PRIORITY_CLASS,
+
+		RequestStarter.INTERACTIVE_PRIORITY_CLASS, RequestStarter.INTERACTIVE_PRIORITY_CLASS,
+		RequestStarter.INTERACTIVE_PRIORITY_CLASS, RequestStarter.INTERACTIVE_PRIORITY_CLASS,
+		RequestStarter.INTERACTIVE_PRIORITY_CLASS, RequestStarter.INTERACTIVE_PRIORITY_CLASS,
+		RequestStarter.INTERACTIVE_PRIORITY_CLASS, RequestStarter.INTERACTIVE_PRIORITY_CLASS,
+		RequestStarter.INTERACTIVE_PRIORITY_CLASS, RequestStarter.INTERACTIVE_PRIORITY_CLASS,
+		RequestStarter.INTERACTIVE_PRIORITY_CLASS, RequestStarter.INTERACTIVE_PRIORITY_CLASS,
+		RequestStarter.INTERACTIVE_PRIORITY_CLASS, RequestStarter.INTERACTIVE_PRIORITY_CLASS,
+		RequestStarter.INTERACTIVE_PRIORITY_CLASS, RequestStarter.INTERACTIVE_PRIORITY_CLASS,
+
+		RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
+		RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
+		RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
+		RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
+
+		RequestStarter.UPDATE_PRIORITY_CLASS, RequestStarter.UPDATE_PRIORITY_CLASS, 
+		RequestStarter.UPDATE_PRIORITY_CLASS, RequestStarter.UPDATE_PRIORITY_CLASS, 
+
+		RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, 
+
+		RequestStarter.PREFETCH_PRIORITY_CLASS, 
+
+	};
+
+	//SOFT: rand from 6 max, 5 interactive, 4 immediate, 3 updage, 2 bulk, 1 prefetch
+	private static final short[] softPrioritySelector = { 
 		RequestStarter.MAXIMUM_PRIORITY_CLASS,
 		RequestStarter.MAXIMUM_PRIORITY_CLASS,
 		RequestStarter.MAXIMUM_PRIORITY_CLASS,
 		RequestStarter.MAXIMUM_PRIORITY_CLASS,
 		RequestStarter.MAXIMUM_PRIORITY_CLASS,
 		RequestStarter.MAXIMUM_PRIORITY_CLASS,
-		
+
 		RequestStarter.INTERACTIVE_PRIORITY_CLASS,
 		RequestStarter.INTERACTIVE_PRIORITY_CLASS,
 		RequestStarter.INTERACTIVE_PRIORITY_CLASS,
 		RequestStarter.INTERACTIVE_PRIORITY_CLASS,
 		RequestStarter.INTERACTIVE_PRIORITY_CLASS,
-		
+
 		RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
 		RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
 		RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
 		RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
-		
+
 		RequestStarter.UPDATE_PRIORITY_CLASS,
 		RequestStarter.UPDATE_PRIORITY_CLASS, 
 		RequestStarter.UPDATE_PRIORITY_CLASS, 
-		
+
 		RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, 
 		RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, 
-		
+
 		RequestStarter.PREFETCH_PRIORITY_CLASS, 
-		
 	};
+
+	//HARD scheduler
 	private static final short[] prioritySelector = {
 		RequestStarter.MAXIMUM_PRIORITY_CLASS,
 		RequestStarter.INTERACTIVE_PRIORITY_CLASS,
