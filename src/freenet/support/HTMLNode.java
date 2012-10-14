@@ -43,7 +43,20 @@ public class HTMLNode implements XMLCharacterClasses {
 	 * @return True if the element is allowed to be empty
 	 */
 	private Boolean isEmptyElement(String name) {
-		return (name.equals("area") || name.equals("base") || name.equals("br") || name.equals("col") || name.equals("hr") || name.equals("img") || name.equals("input") || name.equals("link") || name.equals("meta") || name.equals("param"));
+		ArrayList EmptyTag = new ArrayList();
+
+		EmptyTag.add("area");
+		EmptyTag.add("base");
+		EmptyTag.add("br");
+		EmptyTag.add("col");
+		EmptyTag.add("hr");
+		EmptyTag.add("img");
+		EmptyTag.add("input");
+		EmptyTag.add("link");
+		EmptyTag.add("meta");
+		EmptyTag.add("param");
+
+		return EmptyTag.contains(name);
 	}
 
 	/** Tests an HTML element to determine if we should add a newline after the opening tag
@@ -52,7 +65,21 @@ public class HTMLNode implements XMLCharacterClasses {
 	 * @return True if we should add a newline after the opening tag
 	 */
 	private Boolean newlineOpen(String name) {
-		return (name.equals("body") || name.equals("div") || name.equals("form") || name.equals("head") || name.equals("input") || name.equals("ol") || name.equals("script") || name.equals("table") || name.equals("td") || name.equals("tr") || name.equals("ul"));
+		ArrayList OpenTags = new ArrayList();
+
+		OpenTags.add("body");
+		OpenTags.add("div");
+		OpenTags.add("form");
+		OpenTags.add("head");
+		OpenTags.add("input");
+		OpenTags.add("ol");
+		OpenTags.add("script");
+		OpenTags.add("table");
+		OpenTags.add("td");
+		OpenTags.add("tr");
+		OpenTags.add("ul");
+
+		return OpenTags.contains(name);
 	}
 
 	/** Tests an HTML element to determine if we should add a newline after the closing tag
@@ -61,7 +88,16 @@ public class HTMLNode implements XMLCharacterClasses {
 	* @return True if we should add a newline after the opening tag
 	*/
 	private Boolean newlineClose(String name) {
-		return (newlineOpen(name) || name.equals("link") || name.equals("li") || name.equals("meta") || name.equals("noscript") || name.equals("option") || name.equals("title"));
+		ArrayList CloseTags = new ArrayList();
+
+		CloseTags.add("link");
+		CloseTags.add("li");
+		CloseTags.add("meta");
+		CloseTags.add("noscript");
+		CloseTags.add("option");
+		CloseTags.add("title");
+
+		return (newlineOpen(name) || CloseTags.contains(name));
 	}
 
 	public HTMLNode(String name, String content) {
