@@ -1,7 +1,6 @@
 package freenet.clients.http.wizardsteps;
 
 import java.text.DecimalFormat;
-import java.util.regex.Pattern;
 
 import freenet.clients.http.FirstTimeWizardToadlet;
 import freenet.config.Config;
@@ -133,16 +132,7 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 		String up = request.getPartAsStringFailsafe("customUp", 20);
 
 		// Try to parse custom limit first.
-		
-		//Remove per second indicator so that it can be parsed.
-		down = cleanCustomLimit(down);
-		up = cleanCustomLimit(up);
-		
 		if(!down.equals("") && !up.equals("")) {
-			//Custom limit given
-			down = cleanCustomLimit(down);
-			up = cleanCustomLimit(up);
-
 			String failedLimits = attemptSet(up, down);
 
 			if (!failedLimits.isEmpty()) {
@@ -178,25 +168,6 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 		
 		setWizardComplete();
 		return FirstTimeWizardToadlet.WIZARD_STEP.COMPLETE.name();
-	}
-
-	/**
-	 * Removes "(bits) per second" qualifiers at the end of the string which prevent parsing as a size.
-	 * @see freenet.support.Fields#parseInt(String)
-	 */
-	static String cleanCustomLimit(String limit) {
-		limit = limit.trim();
-		if(limit.isEmpty()) return "";
-		for(String ending :
-			new String[] {
-				"/s", "/sec", "/second", "bps", WizardL10n.l10n("bandwidthPerSecond")
-		}) {
-			/*
-			 * Remove an occurrence of the literal String "ending" if it is at the end.
-			 */
-			limit = Pattern.compile(Pattern.quote(ending)+'$', Pattern.CASE_INSENSITIVE).split(limit)[0];
-		}
-		return limit;
 	}
 
 	/**

@@ -23,7 +23,7 @@ public class SecondParseTest extends TestCase {
 
 		int parsed;
 		for (int i = 0; i < input.length; i++) {
-			parsed = Fields.parseInt(BANDWIDTH_RATE.cleanCustomLimit(input[i]));
+			parsed = Fields.parseInt(Fields.trimPerSecond(input[i]));
 			System.out.format("Input: %s\tParsed: %d\tIntended: %d\n", input[i], parsed, output[i]);
 			assertEquals(parsed, output[i]);
 		}
