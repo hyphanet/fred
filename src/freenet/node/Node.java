@@ -1593,6 +1593,9 @@ public class Node implements TimeSkewDetectorCallback {
 		int obwLimit = nodeConfig.getInt("outputBandwidthLimit");
 		if(obwLimit <= 0)
 			throw new NodeInitException(NodeInitException.EXIT_BAD_BWLIMIT, "Invalid outputBandwidthLimit");
+		if (obwLimit < minimumBandwidth) {
+			throw new NodeInitException(NodeInitException.EXIT_BAD_BWLIMIT, lowBandwidthLimit(obwLimit).getMessage());
+		}
 		outputBandwidthLimit = obwLimit;
 		// Bucket size of 0.5 seconds' worth of bytes.
 		// Add them at a rate determined by the obwLimit.
@@ -1633,6 +1636,9 @@ public class Node implements TimeSkewDetectorCallback {
 			ibwLimit = obwLimit * 4;
 		} else if(ibwLimit <= 0)
 			throw new NodeInitException(NodeInitException.EXIT_BAD_BWLIMIT, "Invalid inputBandwidthLimit");
+		if (ibwLimit < minimumBandwidth) {
+			throw new NodeInitException(NodeInitException.EXIT_BAD_BWLIMIT, lowBandwidthLimit(ibwLimit).getMessage());
+		}
 		inputBandwidthLimit = ibwLimit;
 
 		nodeConfig.register("throttleLocalTraffic", false, sortOrder++, true, false, "Node.throttleLocalTraffic", "Node.throttleLocalTrafficLong", new BooleanCallback() {
