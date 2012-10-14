@@ -37,7 +37,35 @@ public class HTMLNode implements XMLCharacterClasses {
 		this(name, null);
 	}
 
-	public HTMLNode(String name, String content) {
+    /** Tests an HTML element name to determine if it is one of the elements permitted
+     * to be empty in the XHTML spec ( http://www.w3.org/TR/xhtml1/ )
+     * @param name The name of the html element
+     * @return True if the element is allowed to be empty
+     */
+	private Boolean isEmptyElement(String name) {
+        return (name.equals("area") || name.equals("base") || name.equals("br") || name.equals("col") || name.equals("hr") || name.equals("img") || name.equals("input") || name.equals("link") || name.equals("meta") || name.equals("param"));
+    }
+
+    /** Tests an HTML element to determine if we should add a newline after the opening tag
+     * for readability
+     * @param name The name of the html elemen
+     * @return True if we should add a newline after the opening tag
+     */
+    private Boolean newlineOpen(String name) {
+        return (name.equals("div") || name.equals("form") || name.equals("input") || name.equals("script") || name.equals("table") || name.equals("td") || name.equals("tr"));
+    }
+
+    /** Tests an HTML element to determine if we should add a newline after the closing tag
+     * for readability. All tags with newlines after the opening tag also get newlines after
+     * the closing tag.
+     * @param name The name of the html elemen
+     * @return True if we should add a newline after the opening tag
+     */
+    private Boolean newlineClose(String name) {
+        return ( newlineOpen(name) || name.equals("li") || name.equals("option"));
+    }
+
+    public HTMLNode(String name, String content) {
 		this(name, (String[]) null, (String[]) null, content);
 	}
 
@@ -243,15 +271,15 @@ public class HTMLNode implements XMLCharacterClasses {
 			tagBuffer.append('"');
 		}
 		if (children.size() == 0) {
-			if(content==null){
-				if ("textarea".equals(name) || ("div").equals(name) || ("a").equals(name) || ("script").equals(name)) {
-					tagBuffer.append("></");
-					tagBuffer.append(name);
-					tagBuffer.append('>');
+			if(content==null) {
+                if (isEmptyElement(name)) {
+                    tagBuffer.append(" />");
 				} else {
-					tagBuffer.append(" />");
-				}
-			}else{
+                    tagBuffer.append("></");
+                    tagBuffer.append(name);
+                    tagBuffer.append('>');
+                }
+			} else {
 				tagBuffer.append(">");
 				HTMLEncoder.encodeToBuffer(content, tagBuffer);
 				tagBuffer.append("</");
@@ -260,20 +288,20 @@ public class HTMLNode implements XMLCharacterClasses {
 			}
 			
 		} else {
-			if(("div").equals(name) || ("form").equals(name) || ("input").equals(name) || ("script").equals(name) || ("table").equals(name) || ("tr").equals(name) || ("td").equals(name)) {
+            tagBuffer.append('>');
+            if (newlineOpen(name)) {
 				tagBuffer.append('\n');
 			}
-			tagBuffer.append('>');
 			for (int childIndex = 0, childCount = children.size(); childIndex < childCount; childIndex++) {
 				HTMLNode childNode = children.get(childIndex);
 				childNode.generate(tagBuffer);
 			}
 			tagBuffer.append("</");
 			tagBuffer.append(name);
-			if(("div").equals(name)|| ("form").equals(name)|| ("input").equals(name)|| ("li").equals(name)|| ("option").equals(name)|| ("script").equals(name)|| ("table").equals(name)|| ("tr").equals(name)|| ("td").equals(name)) {
+            tagBuffer.append('>');
+            if (newlineClose(name)) {
 				tagBuffer.append('\n');
 			}
-			tagBuffer.append('>');
 		}
 		return tagBuffer;
 	}
