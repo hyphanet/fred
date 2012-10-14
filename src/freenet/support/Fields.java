@@ -712,7 +712,7 @@ public abstract class Fields {
 		 * changes.
 		 */
 		return Pattern.compile(
-		        Pattern.quote(NodeL10n.getBase().getString("FirstTimeWizardToadlet.bandwidthPerSecond")),
+		        Pattern.quote(NodeL10n.getBase().getString("FirstTimeWizardToadlet.bandwidthPerSecond")) + '$',
 		        Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE
 		       ).split(limit)[0];
 	}
