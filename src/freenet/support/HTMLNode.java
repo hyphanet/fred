@@ -38,9 +38,8 @@ public class HTMLNode implements XMLCharacterClasses {
 	}
 
 	private static final ArrayList<String> EmptyTag = new ArrayList<String>(10);
-	private static final ArrayList<String> OpenTags = new ArrayList<String>(11);
-	private static final ArrayList<String> CloseTags = new ArrayList<String>(6);
-	private static final ArrayList<String> IndentTags = new ArrayList<String>(1);
+	private static final ArrayList<String> OpenTags = new ArrayList<String>(12);
+	private static final ArrayList<String> CloseTags = new ArrayList<String>(12);
 
 	static {
 		/* HTML elements which are allowed to be empty */
@@ -80,9 +79,6 @@ public class HTMLNode implements XMLCharacterClasses {
 		CloseTags.add("noscript");
 		CloseTags.add("option");
 		CloseTags.add("title");
-		/* HTML elements for which we should indent the children. Should be a subset of
-		 * OpenTags */
-		IndentTags.add("div");
 	}
 
 	/** Tests an HTML element name to determine if it is one of the elements permitted
@@ -113,13 +109,38 @@ public class HTMLNode implements XMLCharacterClasses {
 		return (newlineOpen(name) || CloseTags.contains(name));
 	}
 
-	/** Tests an HTML element to determine if we should add indent the children for
-	 * readability.
-	 * @param name The name of the html element
-	 * @return True if we should intent child elements
+	/** Returns a properly formatted closing angle bracket to complete an open tag of a
+	 * named html element
+	 * @param name the name of the element
+	 * @return the proper string of characters to complete the open tag
 	 */
-	private Boolean indentChildren(String name) {
-		return (IndentTags.contains(name));
+	private String OpenSuffix(String name) {
+		if (isEmptyElement(name)) {
+			return " />";
+		} else {
+			return ">";
+		}
+	}
+
+	/** Returns a closing tag for a named html elemen
+	 * @param name the name of the element
+	 * @return the complete closing tag for the element
+	 */
+	private String CloseTag(String name) {
+		if (isEmptyElement(name)) {
+			return "";
+		} else {
+			return "</" + name + ">";
+		}
+	}
+
+	private String indentString(int indentDepth) {
+		StringBuffer indentLine = new StringBuffer();
+
+		for (int indentIndex = 0, indentCount = indentDepth+1; indentIndex < indentCount; indentIndex++) {
+			indentLine.append('\t');
+		}
+		return indentLine.toString();
 	}
 
 	public HTMLNode(String name, String content) {
@@ -320,7 +341,10 @@ public class HTMLNode implements XMLCharacterClasses {
 			tagBuffer.append(content);
 			return tagBuffer;
 		}
+		/* start the open tag */
 		tagBuffer.append('<').append(name);
+
+		/* add attributes*/
 		Set<Map.Entry<String, String>> attributeSet = attributes.entrySet();
 		for (Map.Entry<String, String> attributeEntry : attributeSet) {
 			String attributeName = attributeEntry.getKey();
@@ -331,47 +355,35 @@ public class HTMLNode implements XMLCharacterClasses {
 			HTMLEncoder.encodeToBuffer(attributeValue, tagBuffer);
 			tagBuffer.append('"');
 		}
+
+		/* complete the open tag*/
+		tagBuffer.append(OpenSuffix(name));
+
+		/*insert the contents*/
 		if (children.size() == 0) {
 			if(content==null) {
-				if (isEmptyElement(name)) {
-					tagBuffer.append(" />");
-				} else {
-					tagBuffer.append("></");
-					tagBuffer.append(name);
-					tagBuffer.append('>');
-				}
 			} else {
-				tagBuffer.append(">");
 				HTMLEncoder.encodeToBuffer(content, tagBuffer);
-				tagBuffer.append("</");
-				tagBuffer.append(name);
-				tagBuffer.append(">");
 			}
 		} else {
-			tagBuffer.append('>');
 			if (newlineOpen(name)) {
 				tagBuffer.append('\n');
+				tagBuffer.append(indentString(indentDepth+1));
 			}
 			for (int childIndex = 0, childCount = children.size(); childIndex < childCount; childIndex++) {
 				HTMLNode childNode = children.get(childIndex);
-				if (newlineOpen(name)) {
-					for (int indentIndex = 0, indentCount = indentDepth+1; indentIndex < indentCount; indentIndex++) {
-						tagBuffer.append('\t');
-					}
-				}
 				childNode.generate(tagBuffer,indentDepth+1);
 			}
-			if (newlineOpen(name)) {
-				for (int indentIndex = 0, indentCount = indentDepth; indentIndex < indentCount; indentIndex++) {
-					tagBuffer.append('\t');
-				}
-			}
-			tagBuffer.append("</");
-			tagBuffer.append(name);
-			tagBuffer.append('>');
 		}
+		/* add a closing tag */
+		if (newlineOpen(name)) {
+			tagBuffer.append('\n');
+			tagBuffer.append(indentString(indentDepth));
+		}
+		tagBuffer.append(CloseTag(name));
 		if (newlineClose(name)) {
 			tagBuffer.append('\n');
+			tagBuffer.append(indentString(indentDepth));
 		}
 		return tagBuffer;
 	}
@@ -455,5 +467,4 @@ public class HTMLNode implements XMLCharacterClasses {
 	public static HTMLNode text(short count) {
 		return new HTMLNode("#", Short.toString(count));
 	}
-
 }
