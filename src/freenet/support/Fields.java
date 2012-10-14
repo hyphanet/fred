@@ -699,6 +699,10 @@ public abstract class Fields {
 		/*
 		 * The patterns match at the end of the string, so taking the first element of the split gives that
 		 * before the match, if any.
+		 *
+		 * Regular expressions are an odd choice here, but because IEC units are case-sensitive, a method
+		 * that achieves case insensitivity of the per second qualifiers by modifying the case of the input
+		 * string will prevent using IEC units properly.
 		 */
 		for (Pattern pattern : perSecondPatterns) {
 			limit = pattern.split(limit)[0];
