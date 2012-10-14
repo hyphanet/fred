@@ -43,7 +43,7 @@ public class HTMLNode implements XMLCharacterClasses {
 	 * @return True if the element is allowed to be empty
 	 */
 	private Boolean isEmptyElement(String name) {
-		ArrayList EmptyTag = new ArrayList();
+		ArrayList<String> EmptyTag = new ArrayList<String>();
 
 		EmptyTag.add("area");
 		EmptyTag.add("base");
@@ -65,7 +65,7 @@ public class HTMLNode implements XMLCharacterClasses {
 	 * @return True if we should add a newline after the opening tag
 	 */
 	private Boolean newlineOpen(String name) {
-		ArrayList OpenTags = new ArrayList();
+		ArrayList<String> OpenTags = new ArrayList<String>();
 
 		OpenTags.add("body");
 		OpenTags.add("div");
@@ -88,7 +88,7 @@ public class HTMLNode implements XMLCharacterClasses {
 	* @return True if we should add a newline after the opening tag
 	*/
 	private Boolean newlineClose(String name) {
-		ArrayList CloseTags = new ArrayList();
+		ArrayList<String> CloseTags = new ArrayList<String>();
 
 		CloseTags.add("link");
 		CloseTags.add("li");
