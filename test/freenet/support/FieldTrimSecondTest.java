@@ -1,12 +1,11 @@
-package freenet.clients.http.wizardsteps;
+package freenet.support;
 
-import freenet.support.Fields;
 import junit.framework.TestCase;
 
 /**
  * Tests parsing of bandwidth limits optionally specified with some indicator of "(bits) per second."
  */
-public class SecondParseTest extends TestCase {
+public class FieldTrimSecondTest extends TestCase {
 
 	/**
 	 * Bandwidth limit input with and without various "per second" specifiers and SI / IEC units.
