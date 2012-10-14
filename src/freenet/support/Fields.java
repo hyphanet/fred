@@ -8,7 +8,9 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
+import java.util.regex.Pattern;
 
+import freenet.l10n.NodeL10n;
 import freenet.support.Logger.LogLevel;
 
 /**
@@ -21,6 +23,9 @@ import freenet.support.Logger.LogLevel;
 public abstract class Fields {
 
         private static volatile boolean logMINOR;
+	private static final String[] perSecondQualifiers = { "/s", "/sec", "/second", "bps" };
+	private static final Pattern perSecondPatterns[];
+
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
@@ -28,6 +33,12 @@ public abstract class Fields {
 				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
+
+		perSecondPatterns = new Pattern[perSecondQualifiers.length];
+		int i = 0;
+		for (String qualifier : perSecondQualifiers) {
+			perSecondPatterns[i++] = Pattern.compile(Pattern.quote(qualifier) + '$', Pattern.CASE_INSENSITIVE);
+		}
 	}
 
 	/**
@@ -676,6 +687,34 @@ public abstract class Fields {
 			throw new NumberFormatException(e.getMessage());
 		}
 		return res;
+	}
+
+	/**
+	 * Removes "(bits) per second" qualifiers at the end of the string which prevent parsing as a size.
+	 * @see #parseInt(String)
+	 */
+	public static String trimPerSecond(String limit) {
+		limit = limit.trim();
+		if (limit.isEmpty()) return "";
+		/*
+		 * The patterns match at the end of the string, so taking the first element of the split gives that
+		 * before the match, if any.
+		 *
+		 * Regular expressions are an odd choice here, but because IEC units are case-sensitive, a method
+		 * that achieves case insensitivity of the per second qualifiers by modifying the case of the input
+		 * string will prevent using IEC units properly.
+		 */
+		for (Pattern pattern : perSecondPatterns) {
+			limit = pattern.split(limit)[0];
+		}
+		/*
+		 * The localized string cannot be statically compiled without an event to update it when the language
+		 * changes.
+		 */
+		return Pattern.compile(
+		        Pattern.quote(NodeL10n.getBase().getString("FirstTimeWizardToadlet.bandwidthPerSecond")) + '$',
+		        Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE
+		       ).split(limit)[0];
 	}
 
 	/**
