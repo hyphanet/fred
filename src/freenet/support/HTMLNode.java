@@ -37,11 +37,13 @@ public class HTMLNode implements XMLCharacterClasses {
 		this(name, null);
 	}
 
-	private static final ArrayList<String> EmptyTag = new ArrayList<String>();
-	private static final ArrayList<String> OpenTags = new ArrayList<String>();
-	private static final ArrayList<String> CloseTags = new ArrayList<String>();
+	private static final ArrayList<String> EmptyTag = new ArrayList<String>(10);
+	private static final ArrayList<String> OpenTags = new ArrayList<String>(11);
+	private static final ArrayList<String> CloseTags = new ArrayList<String>(6);
+	private static final ArrayList<String> IndentTags = new ArrayList<String>(1);
 
 	static {
+		/* HTML elements which are allowed to be empty */
 		EmptyTag.add("area");
 		EmptyTag.add("base");
 		EmptyTag.add("br");
@@ -52,11 +54,12 @@ public class HTMLNode implements XMLCharacterClasses {
 		EmptyTag.add("link");
 		EmptyTag.add("meta");
 		EmptyTag.add("param");
-
+		/* HTML elements for which we should add a newline following the open tag. */
 		OpenTags.add("body");
 		OpenTags.add("div");
 		OpenTags.add("form");
 		OpenTags.add("head");
+		OpenTags.add("html");
 		OpenTags.add("input");
 		OpenTags.add("ol");
 		OpenTags.add("script");
@@ -64,13 +67,22 @@ public class HTMLNode implements XMLCharacterClasses {
 		OpenTags.add("td");
 		OpenTags.add("tr");
 		OpenTags.add("ul");
-
-		CloseTags.add("link");
+		/* HTML elements for which we should add a newline following the close tag. */
+		CloseTags.add("h1");
+		CloseTags.add("h2");
+		CloseTags.add("h3");
+		CloseTags.add("h4");
+		CloseTags.add("h5");
+		CloseTags.add("h6");
 		CloseTags.add("li");
+		CloseTags.add("link");
 		CloseTags.add("meta");
 		CloseTags.add("noscript");
 		CloseTags.add("option");
 		CloseTags.add("title");
+		/* HTML elements for which we should indent the children. Should be a subset of
+		 * OpenTags */
+		IndentTags.add("div");
 	}
 
 	/** Tests an HTML element name to determine if it is one of the elements permitted
@@ -84,7 +96,7 @@ public class HTMLNode implements XMLCharacterClasses {
 
 	/** Tests an HTML element to determine if we should add a newline after the opening tag
 	 * for readability
-	 * @param name The name of the html elemen
+	 * @param name The name of the html element
 	 * @return True if we should add a newline after the opening tag
 	 */
 	private Boolean newlineOpen(String name) {
@@ -94,10 +106,20 @@ public class HTMLNode implements XMLCharacterClasses {
 	/** Tests an HTML element to determine if we should add a newline after the closing tag
 	* for readability. All tags with newlines after the opening tag also get newlines after
 	* the closing tag.
+	* @param name The name of the html element
 	* @return True if we should add a newline after the opening tag
 	*/
 	private Boolean newlineClose(String name) {
 		return (newlineOpen(name) || CloseTags.contains(name));
+	}
+
+	/** Tests an HTML element to determine if we should add indent the children for
+	 * readability.
+	 * @param name The name of the html element
+	 * @return True if we should intent child elements
+	 */
+	private Boolean indentChildren(String name) {
+		return (IndentTags.contains(name));
 	}
 
 	public HTMLNode(String name, String content) {
@@ -276,6 +298,10 @@ public class HTMLNode implements XMLCharacterClasses {
 	}
 
 	public StringBuilder generate(StringBuilder tagBuffer) {
+		return generate(tagBuffer,0);
+	}
+
+	public StringBuilder generate(StringBuilder tagBuffer, int indentDepth ) {
 		if("#".equals(name)) {
 			if(content != null) {
 				HTMLEncoder.encodeToBuffer(content, tagBuffer);
@@ -328,7 +354,17 @@ public class HTMLNode implements XMLCharacterClasses {
 			}
 			for (int childIndex = 0, childCount = children.size(); childIndex < childCount; childIndex++) {
 				HTMLNode childNode = children.get(childIndex);
-				childNode.generate(tagBuffer);
+				if (newlineOpen(name)) {
+					for (int indentIndex = 0, indentCount = indentDepth+1; indentIndex < indentCount; indentIndex++) {
+						tagBuffer.append('\t');
+					}
+				}
+				childNode.generate(tagBuffer,indentDepth+1);
+			}
+			if (newlineOpen(name)) {
+				for (int indentIndex = 0, indentCount = indentDepth; indentIndex < indentCount; indentIndex++) {
+					tagBuffer.append('\t');
+				}
 			}
 			tagBuffer.append("</");
 			tagBuffer.append(name);
