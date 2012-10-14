@@ -52,7 +52,7 @@ public class HTMLNode implements XMLCharacterClasses {
 	 * @return True if we should add a newline after the opening tag
 	 */
 	private Boolean newlineOpen(String name) {
-		return (name.equals("div") || name.equals("form") || name.equals("input") || name.equals("script") || name.equals("table") || name.equals("td") || name.equals("tr"));
+		return (name.equals("body") || name.equals("div") || name.equals("form") || name.equals("head") || name.equals("input") || name.equals("ol") || name.equals("script") || name.equals("table") || name.equals("td") || name.equals("tr") || name.equals("ul"));
 	}
 
 	/** Tests an HTML element to determine if we should add a newline after the closing tag
@@ -61,7 +61,7 @@ public class HTMLNode implements XMLCharacterClasses {
 	* @return True if we should add a newline after the opening tag
 	*/
 	private Boolean newlineClose(String name) {
-		return ( newlineOpen(name) || name.equals("li") || name.equals("option"));
+		return (newlineOpen(name) || name.equals("link") || name.equals("li") || name.equals("meta") || name.equals("noscript") || name.equals("option") || name.equals("title"));
 	}
 
 	public HTMLNode(String name, String content) {
@@ -297,9 +297,9 @@ public class HTMLNode implements XMLCharacterClasses {
 			tagBuffer.append("</");
 			tagBuffer.append(name);
 			tagBuffer.append('>');
-			if (newlineClose(name)) {
-				tagBuffer.append('\n');
-			}
+		}
+		if (newlineClose(name)) {
+			tagBuffer.append('\n');
 		}
 		return tagBuffer;
 	}
