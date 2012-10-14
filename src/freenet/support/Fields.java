@@ -23,8 +23,7 @@ import freenet.support.Logger.LogLevel;
 public abstract class Fields {
 
         private static volatile boolean logMINOR;
-	private static final String[] perSecondQualifiers = { "/s", "/sec", "/second", "bps",
-	                                    NodeL10n.getBase().getString("FirstTimeWizardToadlet.bandwidthPerSecond") };
+	private static final String[] perSecondQualifiers = { "/s", "/sec", "/second", "bps" };
 	private static final Pattern perSecondPatterns[];
 
 	static {
@@ -704,7 +703,14 @@ public abstract class Fields {
 		for (Pattern pattern : perSecondPatterns) {
 			limit = pattern.split(limit)[0];
 		}
-		return limit;
+		/*
+		 * The localized string cannot be statically compiled without an event to update it when the language
+		 * changes.
+		 */
+		return Pattern.compile(
+		        Pattern.quote(NodeL10n.getBase().getString("FirstTimeWizardToadlet.bandwidthPerSecond")),
+		        Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE
+		       ).split(limit)[0];
 	}
 
 	/**
