@@ -37,14 +37,11 @@ public class HTMLNode implements XMLCharacterClasses {
 		this(name, null);
 	}
 
-	/** Tests an HTML element name to determine if it is one of the elements permitted
-	 * to be empty in the XHTML spec ( http://www.w3.org/TR/xhtml1/ )
-	 * @param name The name of the html element
-	 * @return True if the element is allowed to be empty
-	 */
-	private Boolean isEmptyElement(String name) {
-		ArrayList<String> EmptyTag = new ArrayList<String>();
+	private static final ArrayList<String> EmptyTag = new ArrayList<String>();
+	private static final ArrayList<String> OpenTags = new ArrayList<String>();
+	private static final ArrayList<String> CloseTags = new ArrayList<String>();
 
+	static {
 		EmptyTag.add("area");
 		EmptyTag.add("base");
 		EmptyTag.add("br");
@@ -55,17 +52,6 @@ public class HTMLNode implements XMLCharacterClasses {
 		EmptyTag.add("link");
 		EmptyTag.add("meta");
 		EmptyTag.add("param");
-
-		return EmptyTag.contains(name);
-	}
-
-	/** Tests an HTML element to determine if we should add a newline after the opening tag
-	 * for readability
-	 * @param name The name of the html elemen
-	 * @return True if we should add a newline after the opening tag
-	 */
-	private Boolean newlineOpen(String name) {
-		ArrayList<String> OpenTags = new ArrayList<String>();
 
 		OpenTags.add("body");
 		OpenTags.add("div");
@@ -79,6 +65,29 @@ public class HTMLNode implements XMLCharacterClasses {
 		OpenTags.add("tr");
 		OpenTags.add("ul");
 
+		CloseTags.add("link");
+		CloseTags.add("li");
+		CloseTags.add("meta");
+		CloseTags.add("noscript");
+		CloseTags.add("option");
+		CloseTags.add("title");
+	}
+
+	/** Tests an HTML element name to determine if it is one of the elements permitted
+	 * to be empty in the XHTML spec ( http://www.w3.org/TR/xhtml1/ )
+	 * @param name The name of the html element
+	 * @return True if the element is allowed to be empty
+	 */
+	private Boolean isEmptyElement(String name) {
+		return EmptyTag.contains(name);
+	}
+
+	/** Tests an HTML element to determine if we should add a newline after the opening tag
+	 * for readability
+	 * @param name The name of the html elemen
+	 * @return True if we should add a newline after the opening tag
+	 */
+	private Boolean newlineOpen(String name) {
 		return OpenTags.contains(name);
 	}
 
@@ -88,15 +97,6 @@ public class HTMLNode implements XMLCharacterClasses {
 	* @return True if we should add a newline after the opening tag
 	*/
 	private Boolean newlineClose(String name) {
-		ArrayList<String> CloseTags = new ArrayList<String>();
-
-		CloseTags.add("link");
-		CloseTags.add("li");
-		CloseTags.add("meta");
-		CloseTags.add("noscript");
-		CloseTags.add("option");
-		CloseTags.add("title");
-
 		return (newlineOpen(name) || CloseTags.contains(name));
 	}
 
