@@ -18,9 +18,12 @@ maintainers may prefer to use this instead of build.xml.
 	<!-- user overrides (properties are immutable, so set overrides first) -->
 	<property file="override.properties"/>
 	<property file="build.properties"/>
+	<property file="dependencies.properties"/>
 
 	<property name="version.src" value="freenet/node/Version.java" />
 	<property name="version.make" value="freenet/node/Version.class" />
+	<property name="dependencies.src" value="freenet/node/NodeStarter.java" />
+	<property name="dependencies.make" value="freenet/node/NodeStarter.class" />
 
 	<path id="lib.path">
 		<fileset dir="${lib.contrib.dir}" includes="${lib.contrib.jars}"/>
@@ -32,9 +35,6 @@ maintainers may prefer to use this instead of build.xml.
 		<pathelement path="${main.make}"/>
 		<pathelement path="${test.make}"/>
 	</path>
-
-	<property name="contrib.version.min" value="-1"/>
-	<property name="contrib.version.rec" value="-1"/>
 
 	<property name="gjs.dst" value="${main.src}/freenet/clients/http/staticfiles/freenetjs"/>
 	<property name="gjs.dir" value="generator/js"/>
@@ -148,6 +148,12 @@ maintainers may prefer to use this instead of build.xml.
 		  srcfile="${main.src}/${version.src}"/>
 	</target>
 
+	<target name="check-dependencies-file">
+		<uptodate property="dependencies.uptodate"
+		  targetfile="${main.make}/${dependencies.src}"
+		  srcfile="${main.src}/${dependencies.src}"/>
+	</target>
+
 	<target name="build-version-file" depends="check-version-file" unless="version.uptodate">
 		<!-- Create the Version file with patched revision number in ${main.make} -->
 		<copy file="${main.src}/${version.src}" tofile="${main.make}/${version.src}" overwrite="true" />
@@ -158,7 +164,19 @@ maintainers may prefer to use this instead of build.xml.
 		<echo message="Updated build version to ${git.revision} in ${main.make}/${version.src}"/>
 	</target>
 
-	<target name="build" depends="init, dep, build-version-file">
+	<target name="build-dependencies-file" depends="check-dependencies-file" unless="dependencies.uptodate">
+		<!-- Create the Dependency file with patched revision number in ${main.make} -->
+		<copy file="${main.src}/${dependencies.src}" tofile="${main.make}/${dependencies.src}" overwrite="true" />
+		<delete file="${main.make}/${dependencies.make}" quiet="true" />
+		<replace file="${main.make}/${dependencies.src}">
+			<replacefilter token="-1;//@min.ext.version@" value="${contrib.version.min}"/>
+			<replacefilter token="-1;//@max.ext.version@" value="${contrib.version.rec}"/>
+		</replace>
+		<echo message="Updated build Dependencies EXT in [${contrib.version.min}-${contrib.version.rec}] in ${main.make}/${dependencies.src}"/>
+	</target>
+
+
+	<target name="build" depends="init, dep, build-version-file, build-dependencies-file">
 		<!-- Create the time stamp -->
 		<tstamp/>
 		<!-- Create the build directory structure used by compile -->
@@ -171,6 +189,7 @@ maintainers may prefer to use this instead of build.xml.
 			<include name="**/*.java"/>
 			<exclude name="**/package-info.java"/>
 			<exclude name="${version.src}"/>
+			<exclude name="${dependencies.src}"/>
 		</javac>
 
 		<!-- Force compile of Version.java in case compile of ${main.src} didn't trigger it -->
