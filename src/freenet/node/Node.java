@@ -791,6 +791,25 @@ public class Node implements TimeSkewDetectorCallback {
 	private boolean enableRoutedPing;
 
 	/**
+	 * Minimum bandwidth limit in bytes considered usable: 5 KiB. If there is an attempt to set a limit below this -
+	 * excluding the reserved -1 for input bandwidth - the callback will throw. See the callbacks for
+	 * outputBandwidthLimit and inputBandwidthLimit.
+	 */
+	private static final int minimumBandwidth = 5 * 1024;
+
+	/**
+	 * Returns an exception with an explanation that the given bandwidth limit is too low.
+	 *
+	 * See the Node.bandwidthMinimum localization string.
+	 * @param limit Bandwidth limit in bytes.
+	 */
+	private InvalidConfigValueException lowBandwidthLimit(int limit) {
+		return new InvalidConfigValueException(l10n("bandwidthMinimum",
+		    new String[] { "limit", "minimum" },
+		    new String[] { Integer.toString(limit), Integer.toString(minimumBandwidth) }));
+	}
+
+	/**
 	 * Dispatches a probe request with the specified settings
 	 * @see freenet.node.probe.Probe#start(byte, long, Type, Listener)
 	 */
@@ -1562,17 +1581,21 @@ public class Node implements TimeSkewDetectorCallback {
 					@Override
 					public void set(Integer obwLimit) throws InvalidConfigValueException {
 						if(obwLimit <= 0) throw new InvalidConfigValueException(l10n("bwlimitMustBePositive"));
+						if (obwLimit < minimumBandwidth) throw lowBandwidthLimit(obwLimit);
 						synchronized(Node.this) {
 							outputBandwidthLimit = obwLimit;
 						}
 						outputThrottle.changeNanosAndBucketSize((1000L * 1000L * 1000L) / obwLimit, obwLimit/2);
 						nodeStats.setOutputLimit(obwLimit);
 					}
-		}, true);
+		});
 
 		int obwLimit = nodeConfig.getInt("outputBandwidthLimit");
 		if(obwLimit <= 0)
 			throw new NodeInitException(NodeInitException.EXIT_BAD_BWLIMIT, "Invalid outputBandwidthLimit");
+		if (obwLimit < minimumBandwidth) {
+			throw new NodeInitException(NodeInitException.EXIT_BAD_BWLIMIT, lowBandwidthLimit(obwLimit).getMessage());
+		}
 		outputBandwidthLimit = obwLimit;
 		// Bucket size of 0.5 seconds' worth of bytes.
 		// Add them at a rate determined by the obwLimit.
@@ -1598,13 +1621,14 @@ public class Node implements TimeSkewDetectorCallback {
 								ibwLimit = outputBandwidthLimit * 4;
 							} else {
 								if(ibwLimit <= 1) throw new InvalidConfigValueException(l10n("bandwidthLimitMustBePositiveOrMinusOne"));
+								if (ibwLimit < minimumBandwidth) throw lowBandwidthLimit(ibwLimit);
 								inputLimitDefault = false;
 							}
 							inputBandwidthLimit = ibwLimit;
 						}
 						nodeStats.setInputLimit(ibwLimit);
 					}
-		}, true);
+		});
 
 		int ibwLimit = nodeConfig.getInt("inputBandwidthLimit");
 		if(ibwLimit == -1) {
@@ -1612,6 +1636,9 @@ public class Node implements TimeSkewDetectorCallback {
 			ibwLimit = obwLimit * 4;
 		} else if(ibwLimit <= 0)
 			throw new NodeInitException(NodeInitException.EXIT_BAD_BWLIMIT, "Invalid inputBandwidthLimit");
+		if (ibwLimit < minimumBandwidth) {
+			throw new NodeInitException(NodeInitException.EXIT_BAD_BWLIMIT, lowBandwidthLimit(ibwLimit).getMessage());
+		}
 		inputBandwidthLimit = ibwLimit;
 
 		nodeConfig.register("throttleLocalTraffic", false, sortOrder++, true, false, "Node.throttleLocalTraffic", "Node.throttleLocalTrafficLong", new BooleanCallback() {
