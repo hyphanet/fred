@@ -174,7 +174,7 @@ maintainers may prefer to use this instead of build.xml.
 		<copy file="${main.src}/${dependencies.src}" tofile="${main.make}/${dependencies.src}" overwrite="true" />
 		<delete file="${main.make}/${dependencies.make}" quiet="true" />
 		<replace file="${main.make}/${dependencies.src}">
-			<replacefilter token="-1;//@min.ext.version@" value="${contrib.min,version}"/>
+			<replacefilter token="-1;//@min.ext.version@" value="${contrib.min.version}"/>
 			<replacefilter token="-1;//@max.ext.version@" value="${contrib.max.version}"/>
 		</replace>
 		<echo message="Updated build Dependencies EXT in [${contrib.min.version}-${contrib.max.version}] in ${main.make}/${dependencies.src}"/>
