@@ -27,7 +27,8 @@ public abstract class BandwidthManipulator {
 	 * Sets the selected limit type to the given limit.
 	 * @param limit To parse limit from. Can include SI or IEC units, but not /s.
 	 * @param setOutputLimit If true, output limit is set. If false, input limit is set.
-	 * @throws freenet.config.InvalidConfigValueException If the value is negative or a number cannot be parsed from it.
+	 * @throws freenet.config.InvalidConfigValueException If the value is negative, a number cannot be parsed from it, or the value is too low to be usable.
+	 * @see freenet.node.Node#minimumBandwidth
 	 */
 	protected void setBandwidthLimit (String limit, boolean setOutputLimit) throws InvalidConfigValueException {
 		String limitType = setOutputLimit ? "outputBandwidthLimit" : "inputBandwidthLimit";
@@ -44,11 +45,10 @@ public abstract class BandwidthManipulator {
 	}
 
 	protected void parseErrorBox(HTMLNode parent, PageHelper helper, String parsingFailedOn) {
-		HTMLNode infoBox = helper.getInfobox("infobox-warning", WizardL10n.l10n("bandwidthCouldNotParseTitle"),
+		HTMLNode infoBox = helper.getInfobox("infobox-warning", WizardL10n.l10n("bandwidthErrorSettingTitle"),
 		        parent, null, false);
 
-		NodeL10n.getBase().addL10nSubstitution(infoBox, "FirstTimeWizardToadlet.bandwidthCouldNotParse",
-		        new String[] { "limit" }, new HTMLNode[] { new HTMLNode("#", parsingFailedOn) });
+		infoBox.addChild("#", parsingFailedOn);
 	}
 
 	protected BandwidthLimit getCurrentBandwidthLimitsOrNull() {
