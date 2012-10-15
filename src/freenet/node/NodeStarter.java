@@ -90,7 +90,7 @@ public class NodeStarter implements WrapperListener {
 			return Integer.valueOf(-1);
 		}
 
-		String builtWithMessage = "freenet.jar built with freenet-ext.jar Build #" + ExtVersion.buildNumber + " r" + ExtVersion.cvsRevision+" running with ext build "+extBuildNumber+" r" + extRevisionNumber;
+		String builtWithMessage = "freenet.jar built with freenet-ext.jar Build #" + ExtVersion.buildNumber + " r" + ExtVersion.cvsRevision+" running with ext build "+extBuildNumber+" r" + extRevisionNumber+" (require ext "+REQUIRED_EXT_BUILD_NUMBER+"-"+RECOMMENDED_EXT_BUILD_NUMBER+")";
 		Logger.normal(this, builtWithMessage);
 		System.out.println(builtWithMessage);
 
