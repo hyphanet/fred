@@ -85,6 +85,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	// ACL
 	private final AllowedHosts allowedFullAccess;
 	private boolean publicGatewayMode;
+	private final boolean wasPublicGatewayMode;
 	
 	// Theme 
 	private THEME cssTheme;
@@ -564,11 +565,13 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 
 			@Override
 			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+				if(publicGatewayMode == val) return;
 				publicGatewayMode = val;
+				throw new NodeNeedRestartException(l10n("publicGatewayModeNeedsRestart"));
 			}
 			
 		});
-		publicGatewayMode = fproxyConfig.getBoolean("publicGatewayMode");
+		wasPublicGatewayMode = publicGatewayMode = fproxyConfig.getBoolean("publicGatewayMode");
 		
 		// This is OFF BY DEFAULT because for example firefox has a limit of 2 persistent 
 		// connections per server, but 8 non-persistent connections per server. We need 8 conns
@@ -809,7 +812,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	
 	@Override
 	public boolean publicGatewayMode() {
-		return publicGatewayMode;
+		return wasPublicGatewayMode;
 	}
 	
 	public void start() {
