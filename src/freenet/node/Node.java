@@ -1588,7 +1588,7 @@ public class Node implements TimeSkewDetectorCallback {
 						outputThrottle.changeNanosAndBucketSize((1000L * 1000L * 1000L) / obwLimit, obwLimit/2);
 						nodeStats.setOutputLimit(obwLimit);
 					}
-		}, true);
+		});
 
 		int obwLimit = nodeConfig.getInt("outputBandwidthLimit");
 		if(obwLimit <= 0)
@@ -1625,7 +1625,7 @@ public class Node implements TimeSkewDetectorCallback {
 						}
 						nodeStats.setInputLimit(ibwLimit);
 					}
-		}, true);
+		});
 
 		int ibwLimit = nodeConfig.getInt("inputBandwidthLimit");
 		if(ibwLimit == -1) {

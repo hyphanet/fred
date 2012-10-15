@@ -84,6 +84,16 @@ public class SubConfig implements Comparable<SubConfig> {
 		register(new LongOption(this, optionName, defaultValue, sortOrder, expert, forceWrite, shortDesc, longDesc, cb, isSize));
 	}
 
+	/**
+	 * Registers a bandwidth option.
+	 * @see BandwidthOption
+	 */
+	public void register(String optionName, int defaultValue, int sortOrder,
+	                     boolean expert, boolean forceWrite, String shortDesc, String longDesc, IntCallback cb) {
+		if(cb == null) cb = new NullIntCallback();
+		register(new BandwidthOption(this, optionName, defaultValue, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
+	}
+
 	public void register(String optionName, String defaultValueString, int sortOrder,
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, IntCallback cb, boolean isSize) {
 		if(cb == null) cb = new NullIntCallback();
@@ -94,6 +104,16 @@ public class SubConfig implements Comparable<SubConfig> {
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, LongCallback cb, boolean isSize) {
 		if(cb == null) cb = new NullLongCallback();
 		register(new LongOption(this, optionName, defaultValueString, sortOrder, expert, forceWrite, shortDesc, longDesc, cb, isSize));
+	}
+
+	/**
+	 * Registers a bandwidth option.
+	 * @see BandwidthOption
+	 */
+	public void register(String optionName, String defaultValueString, int sortOrder,
+	                     boolean expert, boolean forceWrite, String shortDesc, String longDesc, IntCallback cb) {
+		if(cb == null) cb = new NullIntCallback();
+		register(new BandwidthOption(this, optionName, defaultValueString, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
 	}
 
 	public void register(String optionName, boolean defaultValue, int sortOrder,

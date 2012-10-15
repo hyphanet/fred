@@ -132,16 +132,7 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 		String up = request.getPartAsStringFailsafe("customUp", 20);
 
 		// Try to parse custom limit first.
-		
-		//Remove per second indicator so that it can be parsed.
-		down = cleanCustomLimit(down);
-		up = cleanCustomLimit(up);
-		
 		if(!down.equals("") && !up.equals("")) {
-			//Custom limit given
-			down = cleanCustomLimit(down);
-			up = cleanCustomLimit(up);
-
 			String failedLimits = attemptSet(up, down);
 
 			if (!failedLimits.isEmpty()) {
@@ -177,30 +168,6 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 		
 		setWizardComplete();
 		return FirstTimeWizardToadlet.WIZARD_STEP.COMPLETE.name();
-	}
-
-	/**
-	 * Removes up to one "(bits) per second" qualifier at the end of the string. If present such a qualifier will
-	 * prevent parsing as a size.
-	 * @see freenet.support.Fields#parseInt(String)
-	 */
-	static String cleanCustomLimit(String limit) {
-		limit = limit.trim();
-		if(limit.isEmpty()) return "";
-		/*
-		 * IEC endings are case sensitive, so the input string's case should not be modified. However, the
-		 * qualifiers should not be case sensitive.
-		 */
-		final String lower = limit.toLowerCase();
-		for(String ending :
-			new String[] {
-				"/s", "/sec", "/second", "bps", WizardL10n.l10n("bandwidthPerSecond").toLowerCase()
-		}) {
-			if(lower.endsWith(ending)) {
-				return limit.substring(0, limit.length() - ending.length());
-			}
-		}
-		return limit;
 	}
 
 	/**
