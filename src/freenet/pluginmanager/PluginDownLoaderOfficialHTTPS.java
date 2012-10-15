@@ -131,8 +131,7 @@ public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
 				os = bucket.getOutputStream();
 				writeCerts(os);
 			} finally {
-				if(os != null)
-					Closer.close(os);
+				Closer.close(os);
 			}
 			return bucket.getInputStream();
 		} catch (IOException e) {

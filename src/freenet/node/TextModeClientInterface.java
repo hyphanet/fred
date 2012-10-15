@@ -439,13 +439,14 @@ public class TextModeClientInterface implements Runnable {
     		outputStream = output.getOutputStream();
     		ContentFilter.filter(inputStream, outputStream, "text/html", new URI("http://127.0.0.1:8888/"), null, null, null, core.getLinkFilterExceptionProvider());
     		inputStream.close();
+			inputStream = null;
     		outputStream.close();
+			outputStream = null;
 
     		bis = new BufferedInputStream(output.getInputStream());
     		while(bis.available() > 0){
     			outsb.append((char)bis.read());
     		}
-    		bis.close();
     	} catch (IOException e) {
     		outsb.append("Bucket error?: " + e.getMessage());
     		Logger.error(this, "Bucket error?: " + e, e);
@@ -453,9 +454,9 @@ public class TextModeClientInterface implements Runnable {
     		outsb.append("Internal error: " + e.getMessage());
     		Logger.error(this, "Internal error: " + e, e);
     	} finally {
-    		Closer.close(inputStream);
-    		Closer.close(outputStream);
-    		Closer.close(bis);
+			Closer.close(inputStream);
+			Closer.close(outputStream);
+			Closer.close(bis);
     		input.free();
     		output.free();
     	}

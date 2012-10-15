@@ -236,10 +236,13 @@ public abstract class FECCodec {
 							dis = new DataInputStream(buckets[x].getInputStream());
 						else
 							dis = readers[x];
+						try {
 						dis.readFully(realBuffer, i * stripeSize,
 							stripeSize);
+						} finally {
 						if(stripeSize == blockLength)
 							dis.close();
+						}
 					}
 					// Do the decode
 					// Not shuffled
@@ -256,10 +259,13 @@ public abstract class FECCodec {
 								os = buckets[i].getOutputStream();
 							else
 								os = writers[i];
+							try {
 							os.write(realBuffer, i * stripeSize,
 								stripeSize);
+							} finally {
 							if(stripeSize == blockLength)
 								os.close();
+							}
 						}
 					}
 				}
@@ -399,10 +405,13 @@ public abstract class FECCodec {
 							dis = new DataInputStream(buckets[i].getInputStream());
 						else
 							dis = readers[i];
+						try {
 						dis.readFully(realBuffer, i * stripeSize,
 							stripeSize);
+						} finally {
 						if(stripeSize == blockLength)
 							dis.close();
+						}
 					}
 					// Do the encode
 					// Not shuffled
@@ -433,9 +442,12 @@ public abstract class FECCodec {
 							os = buckets[toEncode[i]].getOutputStream();
 						else
 							os = writers[i];
+						try {
 						os.write(realBuffer, (i + k) * stripeSize, stripeSize);
+						} finally {
 						if(stripeSize == blockLength)
 							os.close();
+						}
 					}
 				}
 

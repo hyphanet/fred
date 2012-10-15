@@ -1077,9 +1077,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					worker.waitFinished();
 				} else streamGenerator.writeTo(output, container, context);
 
-				output.close();
-				pipeOut.close();
-				pipeIn.close();
 			} catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 				System.err.println("Failing above attempted fetch...");
@@ -1315,9 +1312,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					worker.waitFinished();
 				} else streamGenerator.writeTo(output, container, context);
 
-				pipeOut.close();
-				pipeIn.close();
-				output.close();
 			} catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 				System.err.println("Failing above attempted fetch...");

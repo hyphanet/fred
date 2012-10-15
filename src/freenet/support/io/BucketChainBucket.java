@@ -250,9 +250,12 @@ public class BucketChainBucket implements Bucket {
 					if(baos != null) {
 						OutputStream os = makeBucketOutputStream(bucketNo);
 						bucketNo++;
+						try {
 						os.write(baos.toByteArray());
 						baos.reset();
+						} finally {
 						os.close();
+						}
 					} else {
 						curBucketStream.close();
 						curBucketStream = makeBucketOutputStream(++bucketNo);
@@ -298,9 +301,12 @@ public class BucketChainBucket implements Bucket {
 					if(baos != null) {
 						OutputStream os = makeBucketOutputStream(bucketNo);
 						bucketNo++;
+						try {
 						os.write(baos.toByteArray());
 						baos.reset();
+						} finally {
 						os.close();
+						}
 					} else {
 						curBucketStream.close();
 						curBucketStream = makeBucketOutputStream(++bucketNo);
@@ -329,9 +335,12 @@ public class BucketChainBucket implements Bucket {
 				if(baos != null && baos.size() > 0) {
 					OutputStream os = makeBucketOutputStream(bucketNo);
 					bucketNo++;
+					try {
 					os.write(baos.toByteArray());
 					baos.reset();
+					} finally {
 					os.close();
+					}
 				} else if(curBucketStream != null) {
 					curBucketStream.close();
 				}

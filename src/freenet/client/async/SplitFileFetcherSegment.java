@@ -292,9 +292,12 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				if(copy < (CHKBlock.DATA_LENGTH))
 					buf = new byte[(int)copy];
 				InputStream is = data.getInputStream();
+				try {
 				DataInputStream dis = new DataInputStream(is);
 				dis.readFully(buf);
+				} finally {
 				is.close();
+				}
 				os.write(buf);
 				totalCopied += buf.length;
 				if(!blockActive) container.deactivate(status, 1);

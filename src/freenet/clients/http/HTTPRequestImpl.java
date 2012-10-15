@@ -613,8 +613,8 @@ public class HTTPRequestImpl implements HTTPRequest {
 						bbos.write(b);
 				}
 
-				bbos.flush();
 				bbos.close();
+				bbos = null; bucketos = null;
 			
 				parts.put(name, filedata);
 				if(logMINOR)

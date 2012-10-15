@@ -144,7 +144,7 @@ public class TempBucketFactory implements BucketFactory {
 				size = currentSize;
 				if(os != null) {
 					os.flush();
-					Closer.close(os);
+					os.close();
 					// DO NOT INCREMENT THE osIndex HERE!
 					os = tempFB.getOutputStream();
 					if(size > 0)
@@ -152,8 +152,11 @@ public class TempBucketFactory implements BucketFactory {
 				} else {
 					if(size > 0) {
 						OutputStream temp = tempFB.getOutputStream();
+						try {
 						BucketTools.copyTo(toMigrate, temp, size);
+						} finally {
 						temp.close();
+						}
 					}
 				}
 				if(toMigrate.isReadOnly())

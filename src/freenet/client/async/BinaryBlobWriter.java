@@ -123,8 +123,11 @@ public final class BinaryBlobWriter {
 			_buckets.add(0, out);
 		} else if (mark){
 			DataOutputStream out = new DataOutputStream(getOutputStream());
+			try {
 			BinaryBlob.writeEndBlob(out);
+			} finally {
 			out.close();
+			}
 		}
 		if (mark) {
 			_finalized = true;
@@ -146,14 +149,16 @@ public final class BinaryBlobWriter {
 			throw new BinaryBlobAlreadyClosedException("Already closed (getting final data snapshot)");
 		}
 		OutputStream out = bucket.getOutputStream();
+		try {
 		for (int i=0,n=_buckets.size(); i<n;i++) {
 			BucketTools.copyTo(_buckets.get(i), out, -1);
 		}
 		if (addEndmarker) {
 			DataOutputStream dout = new DataOutputStream(out);
 			BinaryBlob.writeEndBlob(dout);
-			dout.close();
-		} else {
+			dout.flush();
+		}
+		} finally {
 			out.close();
 		}
 	}

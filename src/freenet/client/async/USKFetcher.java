@@ -233,6 +233,9 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				output.close();
 				pipeOut.close();
 				pipeIn.close();
+				output = null;
+				pipeOut = null;
+				pipeIn = null;
 				
 				// Run directly - we are running on some thread somewhere, don't worry about it.
 				innerSuccess(data, container, context);

@@ -195,10 +195,11 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
             	decompressor.decompress(inputStream, outputStream, maxLength, -1);
 			}  catch (CompressionOutputSizeException e) {
 				throw new TooBigException("Too big");
-			}
+			} finally {
             inputStream.close();
             outputStream.close();
             inputBucket.free();
+			}
             return outputBucket;
         } else {
         	return BucketTools.makeImmutableBucket(bf, output, outputLength);

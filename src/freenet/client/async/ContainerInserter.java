@@ -182,7 +182,7 @@ public class ContainerInserter implements ClientPutState {
 			String mimeType = (archiveType == ARCHIVE_TYPE.TAR ?
 				createTarBucket(os, container) :
 				createZipBucket(os, container));
-			os = null;
+			os = null; // create*Bucket closes os
 			if(logMINOR)
 				Logger.minor(this, "Archive size is "+outputBucket.size());
 			
@@ -336,8 +336,7 @@ public class ContainerInserter implements ClientPutState {
 			zos.closeEntry();
 		}
 		
-		// Both finish() and close() are necessary.
-		zos.finish();
+		zos.close();
 		
 		return ARCHIVE_TYPE.ZIP.mimeTypes[0];
 	}

@@ -190,10 +190,13 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 		
 		Bucket bucket = bf.makeBucket(fullKeySize + dataSize + headerSize);
 		OutputStream os = bucket.getOutputStream();
+		try {
 		os.write(fullKey);
 		os.write(header);
 		os.write(data);
+		} finally {
 		os.close();
+		}
 		
 		DiskBlock stored = new DiskBlock();
 		stored.data = bucket;
