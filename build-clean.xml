@@ -197,6 +197,7 @@ maintainers may prefer to use this instead of build.xml.
 			<compilerarg line="${javac.args}"/>
 			<classpath refid="lib.path"/>
 			<include name="${version.src}"/>
+			<include name="${dependencies.src}"/>
 		</javac>
 
 		<!-- Copy web interface static files to the build dir -->
@@ -235,6 +236,7 @@ maintainers may prefer to use this instead of build.xml.
 				</section>
 			</manifest>
 			<exclude name="${version.src}"/>
+			<exclude name="${dependencies.src}"/>
 		</jar>
 	</target>
 
