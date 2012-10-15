@@ -927,7 +927,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				return;
 			}
 			if(heal) {
-				// 100% chance if we had to retry since startup, 5% chance otherwise.
+				// 10% chance if we had to retry since startup, 5% chance otherwise.
 				if(dataRetries[i] == 0) {
 					int odds = createdBeforeRestart ? 10 : 20;
 					if(context.fastWeakRandom.nextInt(odds) != 0)
