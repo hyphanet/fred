@@ -66,7 +66,7 @@ public class NativeThread extends Thread {
 	static {
 		Logger.minor(NativeThread.class, "Running init()");
 		// Loading the NativeThread library isn't useful on macos
-		boolean maybeLoadNative = ("Linux".equalsIgnoreCase(System.getProperty("os.name"))) && (NodeStarter.extBuildNumber > 18);
+		boolean maybeLoadNative = ("Linux".equalsIgnoreCase(System.getProperty("os.name")));
 		Logger.debug(NativeThread.class, "Run init(): should loadNative="+maybeLoadNative);
 		if(maybeLoadNative && LibraryLoader.loadNative("/freenet/support/io/", "NativeThread")) {
 			NATIVE_PRIORITY_BASE = getLinuxPriority();
