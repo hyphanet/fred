@@ -170,9 +170,9 @@ maintainers may prefer to use this instead of build.xml.
 		<delete file="${main.make}/${dependencies.make}" quiet="true" />
 		<replace file="${main.make}/${dependencies.src}">
 			<replacefilter token="-1;//@min.ext.version@" value="${contrib.version.min}"/>
-			<replacefilter token="-1;//@max.ext.version@" value="${contrib.version.rec}"/>
+			<replacefilter token="-1;//@max.ext.version@" value="${contrib.version.max}"/>
 		</replace>
-		<echo message="Updated build Dependencies EXT in [${contrib.version.min}-${contrib.version.rec}] in ${main.make}/${dependencies.src}"/>
+		<echo message="Updated build Dependencies EXT in [${contrib.version.min}-${contrib.version.max}] in ${main.make}/${dependencies.src}"/>
 	</target>
 
 
@@ -224,7 +224,7 @@ maintainers may prefer to use this instead of build.xml.
 			<manifest>
 				<attribute name="Main-Class" value="freenet.node.Node"/>
 				<attribute name="Required-Ext-Version" value="${contrib.version.min}"/>
-				<attribute name="Recommended-Ext-Version" value="${contrib.version.rec}"/>
+				<attribute name="Recommended-Ext-Version" value="${contrib.version.max}"/>
 				<attribute name="Class-Path" value="${lib.jars.package}" />
 				<section name="common">
 					<attribute name="Specification-Title" value="Freenet"/>
