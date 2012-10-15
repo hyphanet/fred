@@ -216,6 +216,8 @@ maintainers may prefer to use this instead of build.xml.
 				<include name="iso-*.tab"/>
 			</fileset>
 		</copy>
+		<!-- Copy the dependencies.properties file -->
+		<copy todir="${main.make}" file="dependencies.properties"/>
 	</target>
 
 	<target name="package-only" depends="build">
