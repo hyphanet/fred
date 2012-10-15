@@ -102,6 +102,7 @@ maintainers may prefer to use this instead of build.xml.
 
 	<target name="env">
 		<available property="lib.contrib.present" classname="freenet.node.ExtVersion" classpathref="lib.path"/>
+		<available property="lib.bouncycastle.present" classname="org.bouncycastle.jce.provider.BouncyCastleProvider" classpathref="lib.path"/>
 		<available property="lib.junit.present" classname="junit.framework.Test" classpathref="libtest.path"/>
 		<available property="gjs.lib.gwt-user.present" classname="com.google.gwt.user.client.Window" classpathref="gjs.lib.path"/>
 		<available property="gjs.lib.gwt-dev.present" classname="com.google.gwt.dev.About" classpathref="gjs.lib.path"/>
@@ -115,6 +116,10 @@ maintainers may prefer to use this instead of build.xml.
 
 	<target name="libdep-ext" depends="env" unless="lib.contrib.present">
 		<fail message="freenet-ext not available"/>
+	</target>
+
+	<target name="libdep-bc" depends="env" unless="lib.bouncycastle.present">
+		<fail message="Bouncycastle not available"/>
 	</target>
 
 	<target name="libdep-junit" depends="env" unless="lib.junit.present">
@@ -140,7 +145,7 @@ maintainers may prefer to use this instead of build.xml.
 		<mkdir dir="${test.dst}"/>
 	</target>
 
-	<target name="dep" depends="ensure-ext, ensure-gjs"/>
+	<target name="dep" depends="ensure-ext, ensure-bc, ensure-gjs"/>
 
 	<target name="check-version-file">
 		<uptodate property="version.uptodate"
@@ -286,6 +291,10 @@ maintainers may prefer to use this instead of build.xml.
 	<!-- =================================================================== -->
 
 	<target name="ensure-ext" depends="libdep-ext">
+		<!-- clean build does nothing, since this is external library. -->
+	</target>
+
+	<target name="ensure-bc" depends="libdep-bc">
 		<!-- clean build does nothing, since this is external library. -->
 	</target>
 
