@@ -4,7 +4,6 @@
 
 package freenet.support.io;
 
-import freenet.node.NodeStarter;
 import freenet.support.LibraryLoader;
 import freenet.support.Logger;
 
