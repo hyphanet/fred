@@ -24,7 +24,7 @@ public class ECDHTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         Security.addProvider(new BouncyCastleProvider());
-        curveToTest = Curves.P384;
+        curveToTest = Curves.P256;
         alice = new ECDH(curveToTest);
         bob = new ECDH(curveToTest);
     }
@@ -35,8 +35,8 @@ public class ECDHTest extends TestCase {
         assertNotNull(aliceS);
         assertNotNull(bobS);
         assertEquals(aliceS, bobS);
-        assertTrue(aliceS.getEncoded().length == 48);
-        assertTrue(bobS.getEncoded().length == 48);
+        assertTrue(aliceS.getEncoded().length == 32);
+        assertTrue(bobS.getEncoded().length == 32);
     }
 
     public void testGetPublicKey() {
@@ -53,8 +53,8 @@ public class ECDHTest extends TestCase {
     public static void main(String[] args) throws InvalidKeyException, IllegalStateException, NoSuchAlgorithmException {
         Security.addProvider(new BouncyCastleProvider());
         
-        ECDH alice = new ECDH(Curves.P384);
-        ECDH bob = new ECDH(Curves.P384);
+        ECDH alice = new ECDH(Curves.P256);
+        ECDH bob = new ECDH(Curves.P256);
         PublicKey bobP = bob.getPublicKey();
         PublicKey aliceP = alice.getPublicKey();
         
