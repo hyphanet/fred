@@ -30,8 +30,11 @@ public class ECDH {
         
         public final ECGenParameterSpec spec;
         private final KeyPairGenerator keygen;
+        /* The modulus size in bytes associated with the current curve */
         public final int modulusSize;
+        /* The symmetric algorithm associated with the curve */
         public final String defaultKeyAlgorithm;
+        /* The Freenet-specific index identifying the curve */
         public final byte index;
         
         private Curves(String name, int modulusSize, String defaultKeyAlg, int index) {
@@ -41,10 +44,10 @@ public class ECDH {
                 kg = KeyPairGenerator.getInstance("ECDH");
                 kg.initialize(spec);
             } catch (NoSuchAlgorithmException e) {
-                Logger.error(ECDH.class, "NoSuchAlgorithmException : "+e.getMessage());
+                Logger.error(ECDH.class, "NoSuchAlgorithmException : "+e.getMessage(),e);
                 e.printStackTrace();
             } catch (InvalidAlgorithmParameterException e) {
-                Logger.error(ECDH.class, "InvalidAlgorithmParameterException : "+e.getMessage());
+                Logger.error(ECDH.class, "InvalidAlgorithmParameterException : "+e.getMessage(),e);
                 e.printStackTrace();
             }
             this.keygen = kg;
