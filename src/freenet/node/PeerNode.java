@@ -493,10 +493,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		/* Read the DSA key material for the peer */
 		try {
 			SimpleFieldSet sfs = fs.subset("dsaGroup");
-			if(sfs == null)
-				throw new FSParseException("No dsaGroup - very old reference?");
-			else
-				this.peerCryptoGroup = DSAGroup.create(sfs);
+			if(sfs == null) {
+			    this.peerCryptoGroup = Global.DSAgroupBigA;
+				fs.put("dsaGroup", this.peerCryptoGroup.asFieldSet());
+			} else
+			    this.peerCryptoGroup = DSAGroup.create(sfs);
 
 			sfs = fs.subset("dsaPubKey");
 			if(sfs == null || peerCryptoGroup == null)
@@ -2683,9 +2684,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		
 		SimpleFieldSet sfs = fs.subset("dsaGroup");
-		if(sfs == null && forFullNodeRef)
-			throw new FSParseException("No dsaGroup - very old reference?");
-		else if(sfs != null) {
+		if(sfs != null) {
 			DSAGroup cmp;
 			try {
 				cmp = DSAGroup.create(sfs);
@@ -2697,9 +2696,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 
 		sfs = fs.subset("dsaPubKey");
-		if(sfs == null && forFullNodeRef)
-			throw new FSParseException("No dsaPubKey - very old reference?");
-		else if(sfs != null) {
+		if(sfs != null) {
 			DSAPublicKey key;
 			key = DSAPublicKey.create(sfs, peerCryptoGroup);
 			if(!key.equals(this.peerPubKey))
