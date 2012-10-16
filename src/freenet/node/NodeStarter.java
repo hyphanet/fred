@@ -5,7 +5,9 @@ package freenet.node;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.Security;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.tanukisoftware.wrapper.WrapperListener;
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -55,6 +57,7 @@ public class NodeStarter implements WrapperListener {
 	 * Constructors
 	 *-------------------------------------------------------------*/
 	private NodeStarter() {
+        Security.addProvider(new BouncyCastleProvider());
 	}
 
 	public NodeStarter get() {
