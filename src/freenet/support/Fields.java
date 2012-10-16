@@ -820,4 +820,62 @@ public abstract class Fields {
 		}
 		return r.toString();
 	}
+
+	/** Compare two versions. */
+	public static int compareVersion(String x, String y) {
+		// Used by the updater code so I don't want to risk excessive recursion with regexes.
+		int i = 0;
+		int j = 0;
+		boolean wantDigits = false;
+		while(true) {
+			String xDigits = null, yDigits = null;
+			int digits = getDigits(x, i, wantDigits);
+			if(digits > 0) {
+				xDigits = x.substring(i, i+digits);
+				i += digits;
+			}
+			digits = getDigits(y, j, wantDigits);
+			if(digits > 0) {
+				yDigits = y.substring(j, j+digits);
+				j += digits;
+			}
+			if(xDigits != null && yDigits == null)
+				return 1; // numbers > not numbers.
+			if(yDigits != null && xDigits == null)
+				return -1; // numbers > not numbers.
+			if(xDigits != null && yDigits != null) {
+				if(!xDigits.equals(yDigits)) {
+					if(wantDigits) {
+						try {
+							long a = Integer.parseInt(xDigits);
+							long b = Integer.parseInt(yDigits);
+							if(a > b) return 1;
+							if(a < b) return -1;
+							if(xDigits.length() > yDigits.length())
+								return -1; // Extra 0's at beginning.
+							if(yDigits.length() > xDigits.length())
+								return 1; // Extra 0's at beginning.
+						} catch (NumberFormatException e) {
+							// Too many digits!
+							return xDigits.compareTo(yDigits);
+						}
+					} else {
+						return xDigits.compareTo(yDigits);
+					}
+				}
+			}
+			if(i >= x.length() && j >= y.length()) return 0;
+			wantDigits = !wantDigits;
+		}
+		
+	}
+
+	static int getDigits(String x, int i, boolean wantDigits) {
+		int origI = i;
+		for(;i<x.length();i++) {
+			if(Character.isDigit(x.charAt(i)) != wantDigits)
+				break;
+		}
+		return i - origI;
+	}
 }
