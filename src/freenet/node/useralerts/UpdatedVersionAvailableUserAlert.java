@@ -90,6 +90,8 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 			alertNode.addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" }).addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "update", ut.formText });
 		}
 		
+		updater.renderProgress(alertNode);
+		
 		return alertNode;
 	}
 	

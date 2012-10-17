@@ -16,6 +16,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.DatabaseDisabledException;
+import freenet.clients.http.QueueToadlet;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
@@ -43,6 +44,7 @@ import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.PluginInfoWrapper;
 import freenet.pluginmanager.PluginManager;
 import freenet.pluginmanager.PluginManager.OfficialPluginDescription;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.Bucket;
@@ -1479,6 +1481,13 @@ public class NodeUpdateManager {
 		
 		public File getTransitionMainBlob() {
 			return transitionMainJarFetcher.getBlobFile();
+		}
+
+		/** Show the progress of individual dependencies if possible */
+		public void renderProgress(HTMLNode alertNode) {
+			synchronized(this) {
+				((MainJarUpdater)mainUpdater).renderProperties(alertNode);
+			}
 		}
 
 }
