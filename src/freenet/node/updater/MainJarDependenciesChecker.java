@@ -191,6 +191,20 @@ public class MainJarDependenciesChecker {
 	 * @return The set of filenames needed if we can deploy immediately, in 
 	 * which case the caller MUST deploy. */
 	public synchronized MainJarDependencies handle(Properties props, int build) {
+		try {
+			return innerHandle(props, build);
+		} catch (RuntimeException e) {
+			broken = true;
+			Logger.error(this, "MainJarDependencies parsing update dependencies.properties file broke: "+e, e);
+			throw e;
+		} catch (Error e) {
+			broken = true;
+			Logger.error(this, "MainJarDependencies parsing update dependencies.properties file broke: "+e, e);
+			throw e;
+		}
+	}
+	
+	private synchronized MainJarDependencies innerHandle(Properties props, int build) {
 		// FIXME support deletion placeholders.
 		// I.e. when we remove a library we put a placeholder in to tell this code to delete it.
 		// It's not acceptable to just delete stuff we don't know about.
