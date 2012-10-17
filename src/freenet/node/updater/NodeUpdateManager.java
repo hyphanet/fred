@@ -193,10 +193,8 @@ public class NodeUpdateManager {
 
         try {
 			updateURI = new FreenetURI(updaterConfig.getString("URI"));
-			long ver = updateURI.getSuggestedEdition();
-			if(ver < Version.buildNumber())
-				ver = Version.buildNumber();
-			updateURI = updateURI.setSuggestedEdition(ver);
+			updateURI = updateURI.setSuggestedEdition(Version.buildNumber());
+			
 		} catch (MalformedURLException e) {
 			throw new InvalidConfigValueException(l10n("invalidUpdateURI", "error", e.getLocalizedMessage()));
 		}
