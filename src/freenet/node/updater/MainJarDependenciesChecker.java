@@ -217,7 +217,7 @@ public class MainJarDependenciesChecker {
 		});
 outer:	for(String propName : props.stringPropertyNames()) {
 			if(!propName.contains(".")) continue;
-			String baseName = propName.split(".")[0];
+			String baseName = propName.split("\\.")[0];
 			if(baseName.equals("contrib"))
 				// FIXME don't use parseManifest etc for freenet-ext.jar!
 				continue;
