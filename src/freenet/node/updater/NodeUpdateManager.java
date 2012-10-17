@@ -16,7 +16,6 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.DatabaseDisabledException;
-import freenet.clients.http.QueueToadlet;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
