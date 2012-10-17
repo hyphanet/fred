@@ -23,9 +23,15 @@ import freenet.node.updater.MainJarDependenciesChecker.Deployer;
 import freenet.node.updater.MainJarDependenciesChecker.JarFetcher;
 import freenet.node.updater.MainJarDependenciesChecker.JarFetcherCallback;
 import freenet.node.updater.MainJarDependenciesChecker.MainJarDependencies;
+import freenet.support.Logger;
 import freenet.support.io.FileBucket;
 
 public class MainJarUpdater extends NodeUpdater implements Deployer {
+	
+	static private boolean logMINOR;
+	static {
+		Logger.registerClass(MainJarUpdater.class);
+	}
 	
 	private final FetchContext dependencyCtx;
 	private final ClientContext clientContext;
