@@ -3,7 +3,6 @@ package freenet.node.updater;
 import java.io.File;
 import java.util.HashSet;
 import java.util.Properties;
-import java.util.Set;
 
 import com.db4o.ObjectContainer;
 
@@ -15,16 +14,13 @@ import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
-import freenet.client.events.FinishedCompressionEvent;
 import freenet.client.events.SplitfileProgressEvent;
-import freenet.client.events.StartedCompressionEvent;
 import freenet.clients.http.QueueToadlet;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.node.fcp.ClientPut.COMPRESS_STATE;
-import freenet.node.updater.MainJarDependenciesChecker.Dependency;
 import freenet.node.updater.MainJarDependenciesChecker.Deployer;
 import freenet.node.updater.MainJarDependenciesChecker.JarFetcher;
 import freenet.node.updater.MainJarDependenciesChecker.JarFetcherCallback;
