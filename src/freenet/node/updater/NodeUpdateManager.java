@@ -218,6 +218,7 @@ public class NodeUpdateManager {
 									+ TRANSITION_VERSION + ".");
 					// Pre-1421.
 					updateURI = updateURI.setDocName("jar");
+					config.store();
 				}
 			}
 
