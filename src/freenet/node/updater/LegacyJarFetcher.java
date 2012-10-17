@@ -106,10 +106,18 @@ class LegacyJarFetcher implements ClientGetCallback {
 
 	public long getBlobSize() {
 		if(failed || !fetched) {
-			Logger.error(this, "Asking for blob but failed="+failed+" fetched="+fetched);
+			Logger.error(this, "Asking for blob size but failed="+failed+" fetched="+fetched);
 			return -1;
 		}
 		return blobBucket.size();
+	}
+	
+	public File getBlobFile() {
+		if(failed || !fetched) {
+			Logger.error(this, "Asking for blob but failed="+failed+" fetched="+fetched);
+			return null;
+		}
+		return saveTo;
 	}
 
 	/** Have we fetched the key?
