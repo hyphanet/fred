@@ -437,5 +437,9 @@ outer:	for(String propName : props.stringPropertyNames()) {
 		deploying = true;
 		return true;
 	}
+	
+	public synchronized boolean isBroken() {
+		return broken;
+	}
 
 }

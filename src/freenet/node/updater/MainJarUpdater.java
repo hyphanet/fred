@@ -210,4 +210,8 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		return NodeL10n.getBase().getString("MainJarUpdater."+key);
 	}
 
+	public boolean brokenDependencies() {
+		return dependencies.isBroken();
+	}
+
 }

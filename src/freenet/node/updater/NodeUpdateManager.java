@@ -1770,4 +1770,14 @@ public class NodeUpdateManager {
 		}
 		m.renderProperties(alertNode);
 	}
+	
+	public boolean brokenDependencies() {
+		MainJarUpdater m;
+		synchronized (this) {
+			m = (MainJarUpdater)mainUpdater;
+			if(m == null) return false;
+		}
+		return m.brokenDependencies();
+	}
+
 }

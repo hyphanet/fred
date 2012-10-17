@@ -142,6 +142,11 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 				sb.append(l10n("updateIsUrgent"));
 			}
 			
+			if(updater.brokenDependencies()) {
+				sb.append(" ");
+				sb.append(l10n("brokenDependencies", "version", Integer.toString(updater.newMainJarVersion())));
+			}
+			
 			return new UpdateThingy(sb.toString(), formText);
 		}
 		
