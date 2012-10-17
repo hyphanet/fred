@@ -1763,9 +1763,11 @@ public class NodeUpdateManager {
 
 	/** Show the progress of individual dependencies if possible */
 	public void renderProgress(HTMLNode alertNode) {
+		MainJarUpdater m;
 		synchronized (this) {
-			((MainJarUpdater) mainUpdater).renderProperties(alertNode);
+			m = (MainJarUpdater)mainUpdater;
+			if(m == null) return;
 		}
+		m.renderProperties(alertNode);
 	}
-
 }
