@@ -31,7 +31,7 @@ import freenet.support.io.FileBucket;
 
 public class MainJarUpdater extends NodeUpdater implements Deployer {
 	
-	static private boolean logMINOR;
+	static private volatile boolean logMINOR;
 	static {
 		Logger.registerClass(MainJarUpdater.class);
 	}
