@@ -157,7 +157,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 	
 	@Override
 	public JarFetcher fetch(FreenetURI uri, File downloadTo,
-			JarFetcherCallback cb) throws FetchException {
+			JarFetcherCallback cb, int build) throws FetchException {
 		DependencyJarFetcher fetcher = new DependencyJarFetcher(downloadTo, uri, cb);
 		fetcher.start();
 		return fetcher;

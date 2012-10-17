@@ -82,7 +82,7 @@ public class MainJarDependenciesChecker {
 	
 	interface Deployer {
 		public void deploy(MainJarDependencies deps);
-		public JarFetcher fetch(FreenetURI uri, File downloadTo, JarFetcherCallback cb) throws FetchException;
+		public JarFetcher fetch(FreenetURI uri, File downloadTo, JarFetcherCallback cb, int build) throws FetchException;
 	}
 	
 	interface JarFetcher {
@@ -144,7 +144,7 @@ public class MainJarDependenciesChecker {
 
 		/** Construct with a Dependency, so we can add it when we're done. */
 		Downloader(Dependency dep, FreenetURI uri) throws FetchException {
-			fetcher = deployer.fetch(uri, dep.newFilename, this);
+			fetcher = deployer.fetch(uri, dep.newFilename, this, build);
 			this.dep = dep;
 			this.essential = true;
 		}
@@ -288,7 +288,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			// Check the version currently in use.
 			String myVersion = null;
 			if(validFile(currentFile, expectedHash)) {
-				System.out.println("Existing version of "+baseName+" ("+myVersion+") is OK for update.");
+				System.out.println("Existing version of "+currentFile+" is OK for update.");
 				// Use it.
 				dependencies.add(new Dependency(currentFile, currentFile, p));
 				continue;
