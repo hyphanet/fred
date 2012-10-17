@@ -174,9 +174,9 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 			div.addChild("p", filename.toString());
 			
 			if(lastProgress == null)
-				div.addChild(QueueToadlet.createProgressCell(true, true, COMPRESS_STATE.WORKING, 0, 0, 0, 0, 0, false, false));
+				div.addChild(QueueToadlet.createProgressCell(false, true, COMPRESS_STATE.WORKING, 0, 0, 0, 0, 0, false, false));
 			else
-				div.addChild(QueueToadlet.createProgressCell(true, 
+				div.addChild(QueueToadlet.createProgressCell(false, 
 						true, COMPRESS_STATE.WORKING, lastProgress.succeedBlocks, lastProgress.failedBlocks, lastProgress.fatallyFailedBlocks, lastProgress.minSuccessfulBlocks, lastProgress.totalBlocks, lastProgress.finalizedTotal, false));
 			return div;
 		}
