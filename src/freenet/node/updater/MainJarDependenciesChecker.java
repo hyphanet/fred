@@ -3,13 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.updater;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.util.Arrays;
@@ -18,13 +16,10 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import freenet.client.FetchException;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
-import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.io.Closer;
@@ -37,7 +32,7 @@ import freenet.support.io.Closer;
  * 
  * Each dependency has a single required version for a particular build.
  * We don't deploy the build until we have fetched that version. Each
- * version has a unique filename.
+ * version has a unique filename. Note that the 
  * 
  * We used to support a range of freenet-ext.jar versions. However, 
  * supporting ranges creates a lot of complexity, especially with Update 
@@ -154,13 +149,6 @@ public class MainJarDependenciesChecker {
 			this.essential = true;
 		}
 
-		/** Download to a plain file. We won't use it this time. */
-		Downloader(File filename, FreenetURI uri) throws FetchException {
-			fetcher = deployer.fetch(uri, filename, this);
-			this.dep = null;
-			this.essential = false;
-		}
-
 		@Override
 		public void onSuccess() {
 			if(!essential) {
@@ -234,6 +222,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				// FIXME don't use parseManifest etc for freenet-ext.jar!
 				continue;
 			if(!processed.add(baseName)) continue;
+			// Version is useful to have, but we actually check the hash.
 			String version = props.getProperty(baseName+".version");
 			if(version == null) {
 				Logger.error(this, "dependencies.properties broken? missing version");
@@ -279,10 +268,17 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				p = null;
 			}
 			
+			byte[] expectedHash = parseExpectedHash(props.getProperty(baseName+".sha256"), baseName);
+			if(expectedHash == null) {
+				System.err.println("Unable to update to build "+build+": dependencies.properties broken: No hash for "+baseName);
+				broken = true;
+				continue;
+			}
+			
 			// We need to determine whether it is in use at the moment.
 			File currentFile = getDependencyInUse(baseName, p);
 			
-			if(validFile(baseName, filename, props.getProperty(baseName+".max.sha256"))) {
+			if(validFile(filename, expectedHash)) {
 				// Nothing to do. Yay!
 				System.out.println("Found file required by the new Freenet version: "+filename);
 				// Use it.
@@ -291,9 +287,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			}
 			// Check the version currently in use.
 			String myVersion = null;
-			if(currentFile != null)
-				myVersion = getDependencyVersion(currentFile);
-			if(myVersion != null && myVersion.equals(version)) {
+			if(validFile(currentFile, expectedHash)) {
 				System.out.println("Existing version of "+baseName+" ("+myVersion+") is OK for update.");
 				// Use it.
 				dependencies.add(new Dependency(currentFile, currentFile, p));
@@ -321,19 +315,12 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			for(File f : list) {
 				String name = f.getName();
 				if(!p.matcher(name).matches()) continue;
-				// Might be an old version.
-				// We know it's not min or max.
-				String tmpVersion = getDependencyVersion(f);
-				if(tmpVersion == null)
-					continue;
-				if(tmpVersion.equals(version)) {
+				if(validFile(f, expectedHash)) {
 					// Use it.
 					System.out.println("Found "+name+" - meets requirement for "+baseName+" for next update.");
 					dependencies.add(new Dependency(currentFile, f, p));
 					continue outer;
 				}
-				if(Fields.compareVersion(tmpVersion, version) > 0)
-					continue; // Ignore newer.
 			}
 			if(maxCHK == null) {
 				System.err.println("Cannot fetch "+baseName+" for update because no CHK and no old file");
@@ -366,57 +353,24 @@ outer:	for(String propName : props.stringPropertyNames()) {
 		return null;
 	}
 
-	public static String getDependencyVersion(File currentFile) {
-		// We can't use parseProperties because there are multiple sections.
-		InputStream is = null;
-		try {
-			is = new FileInputStream(currentFile);
-			ZipInputStream zis = new ZipInputStream(is);
-			ZipEntry ze;
-			while(true) {
-				ze = zis.getNextEntry();
-				if(ze == null) break;
-				if(ze.isDirectory()) continue;
-				String name = ze.getName();
-				
-				if(name.equals("META-INF/MANIFEST.MF")) {
-					BufferedInputStream bis = new BufferedInputStream(zis);
-					while(true) {
-						Properties props = new Properties();
-						props.load(bis);
-						String version = props.getProperty("Implementation-Version");
-						if(version != null) return version;
-					}
-				}
-			}
-			Logger.error(MainJarDependenciesChecker.class, "Unable to get dependency version from "+currentFile);
-			return null;
-		} catch (FileNotFoundException e) {
-			return null;
-		} catch (IOException e) {
-			return null;
-		} finally {
-			Closer.close(is);
-		}
-	}
-
-	private boolean validFile(String baseName, File filename, String sha256) {
+	private byte[] parseExpectedHash(String sha256, String baseName) {
 		if(sha256 == null) {
 			Logger.error(this, "No SHA256 for "+baseName+" in dependencies.properties");
-			return false;
+			return null;
 		}
-		byte[] expectedHash;
 		try {
-			expectedHash = HexUtil.hexToBytes(sha256);
+			return HexUtil.hexToBytes(sha256);
 			// FIXME change these exceptions to something caught?
 		} catch (NumberFormatException e) {
 			Logger.error(this, "Bogus expected hash: \""+sha256+"\" : "+e, e);
-			return false;
+			return null;
 		} catch (IndexOutOfBoundsException e) {
 			Logger.error(this, "Bogus expected hash: \""+sha256+"\" : "+e, e);
-			return false;
+			return null;
 		}
-		
+	}
+
+	private boolean validFile(File filename, byte[] expectedHash) {
 		FileInputStream fis = null;
 		try {
 			fis = new FileInputStream(filename);
