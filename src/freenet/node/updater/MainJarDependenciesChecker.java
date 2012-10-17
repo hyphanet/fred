@@ -169,7 +169,7 @@ public class MainJarDependenciesChecker {
 			if(!essential) {
 				Logger.error(this, "Failed to pre-load "+dep.newFilename+" : "+e, e);
 			} else {
-				System.err.println("Failed to fetch "+dep.newFilename+" needed for next update. Will try again if we find a new freenet.jar.");
+				System.err.println("Failed to fetch "+dep.newFilename+" needed for next update ("+e.getShortMessage()+"). Will try again if we find a new freenet.jar.");
 				synchronized(MainJarDependenciesChecker.this) {
 					downloaders.remove(this);
 					broken = false;
