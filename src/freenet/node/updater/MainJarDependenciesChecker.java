@@ -29,6 +29,22 @@ import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.io.Closer;
 
+/**
+ * Parses the dependencies.properties file and ensures we have all the 
+ * libraries required to use the next version. Calls the Deployer to do the
+ * actual fetches, and to deploy the new version when we have everything 
+ * ready.
+ * 
+ * Each dependency has a single required version for a particular build.
+ * We don't deploy the build until we have fetched that version. Each
+ * version has a unique filename.
+ * 
+ * We used to support a range of freenet-ext.jar versions. However, 
+ * supporting ranges creates a lot of complexity, especially with Update 
+ * Over Mandatory support.
+ * @author toad
+ *
+ */
 public class MainJarDependenciesChecker {
 	
 	// Slightly over-engineered? No.
@@ -211,32 +227,29 @@ public class MainJarDependenciesChecker {
 			}
 			
 		});
-		for(String propName : props.stringPropertyNames()) {
+outer:	for(String propName : props.stringPropertyNames()) {
 			if(!propName.contains(".")) continue;
 			String baseName = propName.split(".")[0];
 			if(baseName.equals("contrib"))
 				// FIXME don't use parseManifest etc for freenet-ext.jar!
 				continue;
 			if(!processed.add(baseName)) continue;
-			String minVersion = props.getProperty(baseName+".min.version");
-			String maxVersion = props.getProperty(baseName+".max.version");
-			if(minVersion == null || maxVersion == null) {
-				Logger.error(this, "dependencies.properties broken? missing "+baseName+".min.version"+" or "+baseName+".max.version");
+			String version = props.getProperty(baseName+".version");
+			if(version == null) {
+				Logger.error(this, "dependencies.properties broken? missing version");
 				broken = true;
 				continue;
 			}
-			File minFilename = null, maxFilename = null;
-			String s = props.getProperty(baseName+".min.filename");
-			if(s != null) minFilename = new File(s);
-			s = props.getProperty(baseName+".max.filename");
-			if(s != null) maxFilename = new File(s);
-			if(minFilename == null || maxFilename == null) {
-				Logger.error(this, "dependencies.properties broken? missing "+baseName+".min.filename"+" or "+baseName+".max.filename");
+			File filename = null;
+			String s = props.getProperty(baseName+".filename");
+			if(s != null) filename = new File(s);
+			if(filename == null) {
+				Logger.error(this, "dependencies.properties broken? missing filename");
 				broken = true;
 				continue;
 			}
 			FreenetURI maxCHK = null;
-			s = props.getProperty(baseName+".max.key");
+			s = props.getProperty(baseName+".key");
 			if(s == null) {
 				Logger.error(this, "dependencies.properties broken? missing "+baseName+".min.key");
 				// Can't fetch it. :(
@@ -269,48 +282,29 @@ public class MainJarDependenciesChecker {
 			// We need to determine whether it is in use at the moment.
 			File currentFile = getDependencyInUse(baseName, p);
 			
-			if(validFile(baseName, maxFilename, props.getProperty(baseName+".max.sha256"))) {
+			if(validFile(baseName, filename, props.getProperty(baseName+".max.sha256"))) {
 				// Nothing to do. Yay!
-				System.out.println("Found file required by the new Freenet version: "+maxFilename);
+				System.out.println("Found file required by the new Freenet version: "+filename);
 				// Use it.
-				dependencies.add(new Dependency(currentFile, maxFilename, p));
+				dependencies.add(new Dependency(currentFile, filename, p));
 				continue;
 			}
-			if(validFile(baseName, minFilename, props.getProperty(baseName+".min.sha256"))) {
-				System.out.println("Found file required by the new Freenet version: "+minFilename+" (downloading a more recent version for the next update).");
-				if(maxCHK != null) {
-					// Fetch it in the background.
-					try {
-						fetchDependencyBackground(currentFile, maxCHK);
-					} catch (FetchException e) {
-						Logger.error(this, "Failed to start fetch (but not needed yet): "+e, e);
-					}
-				}
-				// Use the old version.
-				dependencies.add(new Dependency(minFilename, minFilename, p));
-				continue;
-			}
-			
 			// Check the version currently in use.
 			String myVersion = null;
 			if(currentFile != null)
 				myVersion = getDependencyVersion(currentFile);
-			if(myVersion != null) {
-				// If the current version is okay, then use it.
-				if(Fields.compareVersion(myVersion, minVersion) >= 0 &&
-						Fields.compareVersion(myVersion, maxVersion) <= 0) {
-					System.out.println("Existing version of "+baseName+" ("+myVersion+") is OK for update.");
-					// Use it.
-					dependencies.add(new Dependency(currentFile, currentFile, p));
-					continue;
-				}
+			if(myVersion != null && myVersion.equals(version)) {
+				System.out.println("Existing version of "+baseName+" ("+myVersion+") is OK for update.");
+				// Use it.
+				dependencies.add(new Dependency(currentFile, currentFile, p));
+				continue;
 			}
 			// We might be somewhere in between.
 			if(p == null) {
 				// No way to check existing files.
 				if(maxCHK != null) {
 					try {
-						fetchDependencyEssential(maxCHK, new Dependency(currentFile, maxFilename, p));
+						fetchDependencyEssential(maxCHK, new Dependency(currentFile, filename, p));
 					} catch (FetchException fe) {
 						broken = true;
 						Logger.error(this, "Failed to start fetch: "+fe, fe);
@@ -324,41 +318,22 @@ public class MainJarDependenciesChecker {
 				} 
 				continue;
 			}
-			HashSet<File> toDelete = new HashSet<File>();
-			String bestVersion = null;
-			File bestFile = null;
 			for(File f : list) {
 				String name = f.getName();
 				if(!p.matcher(name).matches()) continue;
 				// Might be an old version.
 				// We know it's not min or max.
 				String tmpVersion = getDependencyVersion(f);
-				boolean delete = false;
 				if(tmpVersion == null)
-					delete = true;
-				else if(Fields.compareVersion(tmpVersion, minVersion) < 0)
-					delete = true;
-				else if(bestVersion == null || Fields.compareVersion(tmpVersion, bestVersion) > 0)
-					delete = true;
-				else if(Fields.compareVersion(tmpVersion, minVersion) > 0)
-					continue; // Ignore newer.
-				if(delete) {
-					if(myVersion.equals(tmpVersion)) continue;
-					if(bestFile != null)
-						toDelete.add(bestFile);
-					bestFile = f;
-					bestVersion = tmpVersion;
-				}
-			}
-			// We need to check whether it's in the range given above.
-			if(bestVersion != null) {
-				if(Fields.compareVersion(myVersion, minVersion) >= 0 &&
-						Fields.compareVersion(myVersion, maxVersion) <= 0) {
-					// Use it.
-					System.out.println("Found "+bestFile+" - meets requirement for "+baseName+" for next update.");
-					dependencies.add(new Dependency(currentFile, bestFile, p));
 					continue;
+				if(tmpVersion.equals(version)) {
+					// Use it.
+					System.out.println("Found "+name+" - meets requirement for "+baseName+" for next update.");
+					dependencies.add(new Dependency(currentFile, f, p));
+					continue outer;
 				}
+				if(Fields.compareVersion(tmpVersion, version) > 0)
+					continue; // Ignore newer.
 			}
 			if(maxCHK == null) {
 				System.err.println("Cannot fetch "+baseName+" for update because no CHK and no old file");
@@ -367,7 +342,7 @@ public class MainJarDependenciesChecker {
 			}
 			// Otherwise we need to fetch it.
 			try {
-				fetchDependencyEssential(maxCHK, new Dependency(currentFile, maxFilename, p));
+				fetchDependencyEssential(maxCHK, new Dependency(currentFile, filename, p));
 			} catch (FetchException e) {
 				broken = true;
 				Logger.error(this, "Failed to start fetch: "+e, e);
@@ -489,11 +464,6 @@ public class MainJarDependenciesChecker {
 
 	private synchronized void fetchDependencyEssential(FreenetURI chk, Dependency dep) throws FetchException {
 		Downloader d = new Downloader(dep, chk);
-		downloaders.add(d);
-	}
-
-	private synchronized void fetchDependencyBackground(File filename, FreenetURI chk) throws FetchException {
-		Downloader d = new Downloader(filename, chk);
 		downloaders.add(d);
 	}
 
