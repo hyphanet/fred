@@ -164,6 +164,7 @@ public class UpdateDeployContext {
 						// Ignore the numbers.
 						String rhs = line.substring(idx+1);
 						System.out.println("RHS is: "+rhs);
+						dontWrite = true;
 						if(rhs.equals("freenet.jar") || rhs.equals("freenet.jar.new") || 
 								rhs.equals("freenet-stable-latest.jar") || rhs.equals("freenet-stable-latest.jar.new") ||
 								rhs.equals("freenet-testing-latest.jar") || rhs.equals("freenet-testing-latest.jar.new")) {
@@ -171,7 +172,6 @@ public class UpdateDeployContext {
 								mainRHS = newMain;
 							else
 								mainRHS = rhs;
-							dontWrite = true;
 						} else {
 							// Is it on the list of dependencies?
 							Dependency dep = findDependencyByRHSFilename(new File(rhs));
@@ -180,7 +180,6 @@ public class UpdateDeployContext {
 							} else { // dep == null
 								// If not, it's something the user has added, we just keep it.
 								classpath.add(rhs);
-								dontWrite = true;
 							}
 						}
 					} catch (NumberFormatException e) {
