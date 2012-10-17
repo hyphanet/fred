@@ -1486,6 +1486,43 @@ public class DMT {
 	// long-term.
 	
 	// Sent on connect
+	public static final MessageType UOMAnnouncement = new MessageType("UOMAnnouncement", PRIORITY_LOW) {{
+		addField(MAIN_JAR_KEY, String.class);
+		addField(REVOCATION_KEY, String.class);
+		addField(HAVE_REVOCATION_KEY, Boolean.class);
+		addField(MAIN_JAR_VERSION, Long.class);
+		// Last time (ms ago) we had 3 DNFs in a row on the revocation checker.
+		addField(REVOCATION_KEY_TIME_LAST_TRIED, Long.class);
+		// Number of DNFs so far this time.
+		addField(REVOCATION_KEY_DNF_COUNT, Integer.class);
+		// For convenience, may change
+		addField(REVOCATION_KEY_FILE_LENGTH, Long.class);
+		addField(MAIN_JAR_FILE_LENGTH, Long.class);
+		addField(PING_TIME, Integer.class);
+		addField(BWLIMIT_DELAY_TIME, Integer.class);
+	}};
+	
+	public static Message createUOMAnnouncement(String mainKey, String revocationKey,
+			boolean haveRevocation, long mainJarVersion, long timeLastTriedRevocationFetch,
+			int revocationDNFCount, long revocationKeyLength, long mainJarLength, int pingTime, int bwlimitDelayTime) {
+		Message msg = new Message(UOMAnnounce);
+		
+		msg.set(MAIN_JAR_KEY, mainKey);
+		msg.set(REVOCATION_KEY, revocationKey);
+		msg.set(HAVE_REVOCATION_KEY, haveRevocation);
+		msg.set(MAIN_JAR_VERSION, mainJarVersion);
+		msg.set(REVOCATION_KEY_TIME_LAST_TRIED, timeLastTriedRevocationFetch);
+		msg.set(REVOCATION_KEY_DNF_COUNT, revocationDNFCount);
+		msg.set(REVOCATION_KEY_FILE_LENGTH, revocationKeyLength);
+		msg.set(MAIN_JAR_FILE_LENGTH, mainJarLength);
+		msg.set(PING_TIME, pingTime);
+		msg.set(BWLIMIT_DELAY_TIME, bwlimitDelayTime);
+		
+		return msg;
+	}
+	
+	// Legacy UOM message. Kept to enable old nodes to UOM to 1421.
+	// After that they can use the modern UOM system. FIXME remove eventually.
 	public static final MessageType UOMAnnounce = new MessageType("UOMAnnounce", PRIORITY_LOW) {{
 		addField(MAIN_JAR_KEY, String.class);
 		addField(EXTRA_JAR_KEY, String.class);
@@ -1505,6 +1542,7 @@ public class DMT {
 		addField(BWLIMIT_DELAY_TIME, Integer.class);
 	}};
 
+	// We need to be able to create these to announce to old nodes.
 	public static Message createUOMAnnounce(String mainKey, String extraKey, String revocationKey,
 			boolean haveRevocation, long mainJarVersion, long extraJarVersion, long timeLastTriedRevocationFetch,
 			int revocationDNFCount, long revocationKeyLength, long mainJarLength, long extraJarLength, int pingTime, int bwlimitDelayTime) {
@@ -1527,6 +1565,7 @@ public class DMT {
 		return msg;
 	}
 	
+	// Same for old and new, handled by new UOM.
 	public static final MessageType UOMRequestRevocation = new MessageType("UOMRequestRevocation", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
 	}};
@@ -1537,16 +1576,31 @@ public class DMT {
 		return msg;
 	}
 	
+	// Used by old UOM. We need to be able to distinguish it easily for dispatcher.
+	// FIXME remove eventually.
 	public static final MessageType UOMRequestMain = new MessageType("UOMRequestMain", PRIORITY_LOW) {{
 		addField(UID, Long.class);
 	}};
 	
+	// FIXME remove
 	public static Message createUOMRequestMain(long uid) {
 		Message msg = new Message(UOMRequestMain);
 		msg.set(UID, uid);
 		return msg;
 	}
 	
+	// Used by new UOM.
+	public static final MessageType UOMRequestMainJar = new MessageType("UOMRequestMainJar", PRIORITY_LOW) {{
+		addField(UID, Long.class);
+	}};
+	
+	public static Message createUOMRequestMainJar(long uid) {
+		Message msg = new Message(UOMRequestMainJar);
+		msg.set(UID, uid);
+		return msg;
+	}
+
+	// Used only by legacy UOM. FIXME remove eventually.
 	public static final MessageType UOMRequestExtra = new MessageType("UOMRequestExtra", PRIORITY_LOW) {{
 		addField(UID, Long.class);
 	}};
@@ -1557,6 +1611,7 @@ public class DMT {
 		return msg;
 	}
 	
+	// Used by both old and new UOM.
 	public static final MessageType UOMSendingRevocation = new MessageType("UOMSendingRevocation", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
 		// Probably excessive, but lengths are always long's, and wasting a few bytes here
@@ -1572,7 +1627,8 @@ public class DMT {
 		msg.set(REVOCATION_KEY, key);
 		return msg;
 	}
-	
+
+	// Used by old UOM. We need to distinguish them in NodeDispatcher. FIXME remove eventually.
 	public static final MessageType UOMSendingMain = new MessageType("UOMSendingMain", PRIORITY_LOW) {{
 		addField(UID, Long.class);
 		addField(FILE_LENGTH, Long.class);
@@ -1589,6 +1645,24 @@ public class DMT {
 		return msg;
 	}
 	
+	// Used by new UOM. We need to distinguish them in NodeDispatcher.
+	public static final MessageType UOMSendingMainJar = new MessageType("UOMSendingMainJar", PRIORITY_LOW) {{
+		addField(UID, Long.class);
+		addField(FILE_LENGTH, Long.class);
+		addField(MAIN_JAR_KEY, String.class);
+		addField(MAIN_JAR_VERSION, Integer.class);
+	}};
+	
+	public static Message createUOMSendingMainJar(long uid, long length, String key, int version) {
+		Message msg = new Message(UOMSendingMainJar);
+		msg.set(UID, uid);
+		msg.set(FILE_LENGTH, length);
+		msg.set(MAIN_JAR_KEY, key);
+		msg.set(MAIN_JAR_VERSION, version);
+		return msg;
+	}
+	
+	// Used only by legacy UOM. FIXME remove eventually.
 	public static final MessageType UOMSendingExtra = new MessageType("UOMSendingExtra", PRIORITY_LOW) {{
 		addField(UID, Long.class);
 		addField(FILE_LENGTH, Long.class);
