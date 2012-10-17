@@ -9,11 +9,9 @@ import java.net.InetAddress;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 
 import net.i2p.util.NativeBigInteger;
-import freenet.clients.http.ExternalLinkToadlet;
 import freenet.crypt.BlockCipher;
 import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
@@ -39,11 +37,8 @@ import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.SocketHandler;
 import freenet.l10n.NodeL10n;
 import freenet.node.OpennetManager.ConnectionType;
-import freenet.node.useralerts.AbstractUserAlert;
-import freenet.node.useralerts.UserAlert;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.Fields;
-import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.LRUMap;
 import freenet.support.LogThresholdCallback;
@@ -2017,115 +2012,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 		return newBuf;
 	}
-
-	private HashSet<Peer> peersWithProblems = new HashSet<Peer>();
-
-	@SuppressWarnings("unused")
-	private UserAlert disconnectedStillNotAckedAlert = new AbstractUserAlert() {
-
-		@Override
-		public String anchor() {
-			return "disconnectedStillNotAcked";
-		}
-
-		@Override
-		public String dismissButtonText() {
-			return NodeL10n.getBase().getString("UserAlert.hide");
-		}
-
-		@Override
-		public short getPriorityClass() {
-			return UserAlert.ERROR;
-		}
-
-		@Override
-		public String getShortText() {
-			int sz;
-			synchronized(peersWithProblems) {
-				sz = peersWithProblems.size();
-			}
-			return l10n("somePeersDisconnectedStillNotAcked", "count", Integer.toString(sz));
-		}
-
-		@Override
-		public HTMLNode getHTMLText() {
-			HTMLNode div = new HTMLNode("div");
-			Peer[] peers;
-			synchronized(peersWithProblems) {
-				peers = peersWithProblems.toArray(new Peer[peersWithProblems.size()]);
-			}
-			NodeL10n.getBase().addL10nSubstitution(div,
-			        "FNPPacketMangler.somePeersDisconnectedStillNotAckedDetail",
-			        new String[] { "count", "link" },
-			        new HTMLNode[] { HTMLNode.text(peers.length),
-			                HTMLNode.link(ExternalLinkToadlet.escape("https://bugs.freenetproject.org/view.php?id=2692")) });
-			HTMLNode list = div.addChild("ul");
-			for(Peer peer : peers) {
-				list.addChild("li", peer.toString());
-			}
-			return div;
-		}
-
-		@Override
-		public String getText() {
-			StringBuffer sb = new StringBuffer();
-			Peer[] peers;
-			synchronized(peersWithProblems) {
-				peers = peersWithProblems.toArray(new Peer[peersWithProblems.size()]);
-			}
-			sb.append(l10n("somePeersDisconnectedStillNotAckedDetail",
-					new String[] { "count", "link", "/link" },
-					new String[] { Integer.toString(peers.length), "", "" } ));
-			sb.append('\n');
-			for(Peer peer : peers) {
-				sb.append('\t');
-				sb.append(peer.toString());
-				sb.append('\n');
-			}
-			return sb.toString();
-		}
-
-		@Override
-		public String getTitle() {
-			return getShortText();
-		}
-
-		@Override
-		public Object getUserIdentifier() {
-			return FNPPacketMangler.this;
-		}
-
-		@Override
-		public boolean isEventNotification() {
-			return false;
-		}
-
-		@Override
-		public boolean isValid() {
-			return true;
-		}
-
-		@Override
-		public void isValid(boolean validity) {
-			// Ignore
-		}
-
-		@Override
-		public void onDismiss() {
-			// Ignore
-		}
-
-		@Override
-		public boolean shouldUnregisterOnDismiss() {
-			return true;
-		}
-
-		@Override
-		public boolean userCanDismiss() {
-			return true;
-		}
-
-	};
 
 	protected String l10n(String key, String[] patterns, String[] values) {
 		return NodeL10n.getBase().getString("FNPPacketMangler."+key, patterns, values);
