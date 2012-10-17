@@ -1485,7 +1485,6 @@ public class DMT {
 	// level, and will be sent, and parsed, even if the node is out of date. Should be stable 
 	// long-term.
 	
-	// Sent on connect
 	public static final MessageType UOMAnnouncement = new MessageType("UOMAnnouncement", PRIORITY_LOW) {{
 		addField(MAIN_JAR_KEY, String.class);
 		addField(REVOCATION_KEY, String.class);
@@ -1575,19 +1574,12 @@ public class DMT {
 		msg.set(UID, uid);
 		return msg;
 	}
-	
+
 	// Used by old UOM. We need to be able to distinguish it easily for dispatcher.
 	// FIXME remove eventually.
 	public static final MessageType UOMRequestMain = new MessageType("UOMRequestMain", PRIORITY_LOW) {{
 		addField(UID, Long.class);
 	}};
-	
-	// FIXME remove
-	public static Message createUOMRequestMain(long uid) {
-		Message msg = new Message(UOMRequestMain);
-		msg.set(UID, uid);
-		return msg;
-	}
 	
 	// Used by new UOM.
 	public static final MessageType UOMRequestMainJar = new MessageType("UOMRequestMainJar", PRIORITY_LOW) {{
@@ -1604,12 +1596,6 @@ public class DMT {
 	public static final MessageType UOMRequestExtra = new MessageType("UOMRequestExtra", PRIORITY_LOW) {{
 		addField(UID, Long.class);
 	}};
-	
-	public static Message createUOMRequestExtra(long uid) {
-		Message msg = new Message(UOMRequestExtra);
-		msg.set(UID, uid);
-		return msg;
-	}
 	
 	// Used by both old and new UOM.
 	public static final MessageType UOMSendingRevocation = new MessageType("UOMSendingRevocation", PRIORITY_HIGH) {{

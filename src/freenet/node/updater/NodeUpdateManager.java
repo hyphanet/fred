@@ -34,6 +34,7 @@ import freenet.node.OpennetManager;
 import freenet.node.PeerNode;
 import freenet.node.RequestStarter;
 import freenet.node.Version;
+import freenet.node.updater.MainJarDependenciesChecker.MainJarDependencies;
 import freenet.node.updater.UpdateDeployContext.UpdateCatastropheException;
 import freenet.node.useralerts.RevocationKeyFoundUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
@@ -44,6 +45,7 @@ import freenet.pluginmanager.PluginManager;
 import freenet.pluginmanager.PluginManager.OfficialPluginDescription;
 import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
+import freenet.support.api.Bucket;
 import freenet.support.api.StringCallback;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
@@ -56,22 +58,52 @@ import freenet.support.io.FileUtil;
  */
 public class NodeUpdateManager {
 
-	public final static String UPDATE_URI = "freenet:USK@BFa1voWr5PunINSZ5BGMqFwhkJTiDBBUrOZ0MYBXseg,BOrxeLzUMb6R9tEZzexymY0zyKAmBNvrU4A9Q0tAqu0,AQACAAE/update/"+Version.buildNumber();
-	public final static String REVOCATION_URI = "SSK@tHlY8BK2KFB7JiO2bgeAw~e4sWU43YdJ6kmn73gjrIw,DnQzl0BYed15V8WQn~eRJxxIA-yADuI8XW7mnzEbut8,AQACAAE/revoked";
-	public final static String EXT_URI = "freenet:USK@BFa1voWr5PunINSZ5BGMqFwhkJTiDBBUrOZ0MYBXseg,BOrxeLzUMb6R9tEZzexymY0zyKAmBNvrU4A9Q0tAqu0,AQACAAE/ext/"+NodeStarter.extBuildNumber;
+	/** The last build on the old key (/update/), which includes the multi-jar
+	 * updating code, but doesn't require it to work, i.e. it still uses the old
+	 * freenet-ext.jar and doesn't require any other jars. Older nodes can 
+	 * update to this point via old UOM. */
+	public final static int TRANSITION_VERSION = 1421;
+	/** The freenet-ext.jar build number corresponding to the old key */
+	public final static int TRANSITION_VERSION_EXT = 29;
+	
+	/** The URI for post-TRANSITION_VERSION builds' freenet.jar. */
+	public final static String UPDATE_URI = "freenet:USK@BFa1voWr5PunINSZ5BGMqFwhkJTiDBBUrOZ0MYBXseg,BOrxeLzUMb6R9tEZzexymY0zyKAmBNvrU4A9Q0tAqu0,AQACAAE/jar/"+Version.buildNumber();
+	
+	/** Might as well be the SSK */
+	public final static String LEGACY_UPDATE_URI = "freenet:SSK@BFa1voWr5PunINSZ5BGMqFwhkJTiDBBUrOZ0MYBXseg,BOrxeLzUMb6R9tEZzexymY0zyKAmBNvrU4A9Q0tAqu0,AQACAAE/update-"+TRANSITION_VERSION;
+	/** Pre-TRANSITION_VERSION builds needed to fetch freenet-ext.jar via an 
+	 * updater of its own. */
+	public final static String LEGACY_EXT_URI = "freenet:SSK@BFa1voWr5PunINSZ5BGMqFwhkJTiDBBUrOZ0MYBXseg,BOrxeLzUMb6R9tEZzexymY0zyKAmBNvrU4A9Q0tAqu0,AQACAAE/ext-"+TRANSITION_VERSION_EXT;
 
+	public final static String REVOCATION_URI = "SSK@tHlY8BK2KFB7JiO2bgeAw~e4sWU43YdJ6kmn73gjrIw,DnQzl0BYed15V8WQn~eRJxxIA-yADuI8XW7mnzEbut8,AQACAAE/revoked";
 	public static final long MAX_REVOCATION_KEY_LENGTH = 4*1024;
 	public static final long MAX_REVOCATION_KEY_TEMP_LENGTH = 4*1024;
 	public static final long MAX_REVOCATION_KEY_BLOB_LENGTH = 8*1024;
 
 	public static final long MAX_MAIN_JAR_LENGTH = 16*1024*1024; // 16MB
+	
+	public static final FreenetURI transitionMainJarURI;
+	public static final FreenetURI transitionExtJarURI;
+	
+	public static final String transitionMainJarFilename = "legacy-freenet-jar-"+TRANSITION_VERSION+".fblob";
+	public static final String transitionExtJarFilename = "legacy-freenet-ext-jar-"+TRANSITION_VERSION_EXT+".fblob";
+	
+	static {
+		try {
+			transitionMainJarURI = new FreenetURI(LEGACY_UPDATE_URI);
+			transitionExtJarURI = new FreenetURI(LEGACY_EXT_URI);
+		} catch (MalformedURLException e) {
+			throw new Error(e);
+		}
+	}
 
 	FreenetURI updateURI;
-	FreenetURI extURI;
 	FreenetURI revocationURI;
+	
+	LegacyJarFetcher transitionMainJarFetcher;
+	LegacyJarFetcher transitionExtJarFetcher;
 
 	NodeUpdater mainUpdater;
-	NodeUpdater extUpdater;
 
 	Map<String, PluginJarUpdater> pluginUpdaters;
 
@@ -87,7 +119,8 @@ public class NodeUpdateManager {
 	/** Currently deploying an update? */
 	boolean isDeployingUpdate;
 	final Object broadcastUOMAnnouncesSync = new Object();
-	boolean broadcastUOMAnnounces = false;
+	boolean broadcastUOMAnnouncesOld = false;
+	boolean broadcastUOMAnnouncesNew = false;
 
 	public final Node node;
 
@@ -102,27 +135,35 @@ public class NodeUpdateManager {
 
 	/** Is there a new main jar ready to deploy? */
 	private volatile boolean hasNewMainJar;
-	/** Is there a new ext jar ready to deploy? */
-	private volatile boolean hasNewExtJar;
 	/** If another main jar is being fetched, when did the fetch start? */
 	private long startedFetchingNextMainJar;
-	/** If another ext jar is being fetched, when did the fetch start? */
-	private long startedFetchingNextExtJar;
 	private long gotJarTime;
-
-	private int minExtVersion;
-	private int maxExtVersion;
 
 	// Revocation alert
 	private RevocationKeyFoundUserAlert revocationAlert;
 	// Update alert
 	private final UpdatedVersionAvailableUserAlert alert;
 
+	public final LegacyUpdateOverMandatoryManager legacyUOM;
 	public final UpdateOverMandatoryManager uom;
 
 	private static volatile boolean logMINOR;
 	private boolean disabledThisSession;
-
+	
+	private MainJarDependencies latestMainJarDependencies;
+	private int dependenciesValidForBuild;
+	
+	/** The version we have fetched and will deploy. */
+	private int fetchedMainJarVersion;
+	/** The version we have fetched and will deploy. */
+	private Bucket fetchedMainJarData;
+	
+	/** The version we have fetched and aren't using because we are already deploying. */
+	private int maybeNextMainJarVersion;
+	/** The version we have fetched and aren't using because we are already deploying. */
+	private Bucket maybeNextMainJarData;
+	
+	
         static {
             Logger.registerClass(NodeUpdateManager.class);
         }
@@ -133,7 +174,7 @@ public class NodeUpdateManager {
 		shouldUpdateExt = NodeStarter.extBuildNumber < NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER;
 		this.alert= new UpdatedVersionAvailableUserAlert(this);
 		alert.isValid(false);
-
+		
         SubConfig updaterConfig = new SubConfig("node.updater", config);
 
         updaterConfig.register("enabled", true, 1, false, false, "NodeUpdateManager.enabled",
@@ -172,18 +213,26 @@ public class NodeUpdateManager {
 		} catch (MalformedURLException e) {
 			throw new InvalidConfigValueException(l10n("invalidRevocationURI", "error", e.getLocalizedMessage()));
 		}
+		
+		LegacyJarFetcher.LegacyFetchCallback legacyFetcherCallback = new LegacyJarFetcher.LegacyFetchCallback() {
 
-        updaterConfig.register("extURI", EXT_URI, 5, true, false, "NodeUpdateManager.extURI", "NodeUpdateManager.extURILong", new UpdateURICallback(true));
+			@Override
+			public void onSuccess(LegacyJarFetcher fetcher) {
+				if(transitionMainJarFetcher.fetched() && transitionExtJarFetcher.fetched()) {
+					broadcastUOMAnnouncesOld();
+				}
+			}
 
-        try {
-			extURI = new FreenetURI(updaterConfig.getString("extURI"));
-			long ver = extURI.getSuggestedEdition();
-			if(ver < NodeStarter.extBuildNumber)
-				ver = NodeStarter.extBuildNumber;
-			extURI = extURI.setSuggestedEdition(ver);
-		} catch (MalformedURLException e) {
-			throw new InvalidConfigValueException(l10n("invalidExtURI", "error", e.getLocalizedMessage()));
-		}
+			@Override
+			public void onFailure(FetchException e, LegacyJarFetcher fetcher) {
+				Logger.error(this, "Failed to fetch "+fetcher.saveTo+" : UPDATE OVER MANDATORY WILL NOT WORK WITH OLDER NODES THAN "+TRANSITION_VERSION+" : "+e, e);
+				System.err.println("Failed to fetch "+fetcher.saveTo+" : UPDATE OVER MANDATORY WILL NOT WORK WITH OLDER NODES THAN "+TRANSITION_VERSION+" : "+e);
+			}
+			
+		};
+		
+		transitionMainJarFetcher = new LegacyJarFetcher(transitionMainJarURI, new File(transitionMainJarFilename), node.clientCore, legacyFetcherCallback);
+		transitionExtJarFetcher = new LegacyJarFetcher(transitionExtJarURI, new File(transitionExtJarFilename), node.clientCore, legacyFetcherCallback);
 
 		updaterConfig.register("updateSeednodes", wasEnabledOnStartup, 6, true, true, "NodeUpdateManager.updateSeednodes", "NodeUpdateManager.updateSeednodesLong",
 				new BooleanCallback() {
@@ -235,12 +284,9 @@ public class NodeUpdateManager {
 
         this.revocationChecker = new RevocationChecker(this, new File(node.clientCore.getPersistentTempDir(), "revocation-key.fblob"));
 
+        this.legacyUOM = new LegacyUpdateOverMandatoryManager(this);
         this.uom = new UpdateOverMandatoryManager(this);
         this.uom.removeOldTempFiles();
-
-        maxExtVersion = NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER;
-        minExtVersion = NodeStarter.REQUIRED_EXT_BUILD_NUMBER;
-
 	}
 
 	class SimplePuller implements ClientGetCallback {
@@ -381,34 +427,58 @@ public class NodeUpdateManager {
         		new SimplePuller(getIPv4ToCountryURI(), IPV4_TO_COUNTRY_FILENAME);
         	ip4Getter.start(RequestStarter.UPDATE_PRIORITY_CLASS, 8*1024*1024);
         }
+        
 	}
-
-	void broadcastUOMAnnounces() {
+	
+	void broadcastUOMAnnouncesOld() {
 		Message msg;
 		synchronized(broadcastUOMAnnouncesSync) {
-			msg = getUOMAnnouncement();
-			broadcastUOMAnnounces = true;
+			msg = getOldUOMAnnouncement();
+			broadcastUOMAnnouncesOld = true;
 		}
 		node.peers.localBroadcast(msg, true, true, ctr);
 	}
 
-	private Message getUOMAnnouncement() {
-		return DMT.createUOMAnnounce(updateURI.toString(), extURI.toString(), revocationURI.toString(), revocationChecker.hasBlown(),
+	void broadcastUOMAnnouncesNew() {
+		Message msg;
+		synchronized(broadcastUOMAnnouncesSync) {
+			msg = getNewUOMAnnouncement();
+			broadcastUOMAnnouncesNew = true;
+		}
+		node.peers.localBroadcast(msg, true, true, ctr);
+	}
+
+	private Message getOldUOMAnnouncement() {
+		boolean mainJarAvailable = transitionMainJarFetcher == null ? false : transitionMainJarFetcher.fetched();
+		boolean extJarAvailable = transitionMainJarFetcher == null ? false : transitionExtJarFetcher.fetched();
+		return DMT.createUOMAnnounce(LEGACY_UPDATE_URI.toString(), LEGACY_EXT_URI.toString(), revocationURI.toString(), revocationChecker.hasBlown(),
+				mainJarAvailable ? -1 : TRANSITION_VERSION,
+				extJarAvailable ? -1 : TRANSITION_VERSION_EXT,
+				revocationChecker.lastSucceededDelta(), revocationChecker.getRevocationDNFCounter(),
+				revocationChecker.getBlobSize(),
+				mainJarAvailable ? -1 : transitionMainJarFetcher.getBlobSize(),
+				extJarAvailable ? -1 : transitionExtJarFetcher.getBlobSize(),
+				(int)node.nodeStats.getNodeAveragePingTime(), (int)node.nodeStats.getBwlimitDelayTime());
+	}
+
+	private Message getNewUOMAnnouncement() {
+		return DMT.createUOMAnnouncement(updateURI.toString(), revocationURI.toString(), revocationChecker.hasBlown(),
 				mainUpdater == null ? -1 : mainUpdater.getFetchedVersion(),
-				extUpdater == null ? -1 : extUpdater.getFetchedVersion(),
 				revocationChecker.lastSucceededDelta(), revocationChecker.getRevocationDNFCounter(),
 				revocationChecker.getBlobSize(),
 				mainUpdater == null ? -1 : mainUpdater.getBlobSize(),
-				extUpdater == null ? -1 : extUpdater.getBlobSize(),
 				(int)node.nodeStats.getNodeAveragePingTime(), (int)node.nodeStats.getBwlimitDelayTime());
 	}
 
 	public void maybeSendUOMAnnounce(PeerNode peer) {
+		boolean sendOld, sendNew;
 		synchronized(broadcastUOMAnnouncesSync) {
-			if(!broadcastUOMAnnounces) {
+			if(!(broadcastUOMAnnouncesOld || broadcastUOMAnnouncesNew)) {
 				if(logMINOR) Logger.minor(this, "Not sending UOM on connect: Nothing worth announcing yet");
 				return; // nothing worth announcing yet
 			}
+			sendOld = broadcastUOMAnnouncesOld;
+			sendNew = broadcastUOMAnnouncesNew;
 		}
 		boolean dontHaveUpdate;
 		synchronized(this) {
@@ -424,7 +494,10 @@ public class NodeUpdateManager {
 			return;
 		}
 		try {
-			peer.sendAsync(getUOMAnnouncement(), null, ctr);
+			if(sendOld)
+				peer.sendAsync(getOldUOMAnnouncement(), null, ctr);
+			if(sendNew)
+				peer.sendAsync(getNewUOMAnnouncement(), null, ctr);
 		} catch (NotConnectedException e) {
 			// Sad, but ignore it
 		}
@@ -447,7 +520,7 @@ public class NodeUpdateManager {
 //			Logger.normal(this, "Don't try to start the updater as we are not running under the wrapper.");
 //			return;
 //		}
-		NodeUpdater main = null, ext = null;
+		NodeUpdater main = null;
 		Map<String, PluginJarUpdater> oldPluginUpdaters = null;
 		// We need to run the revocation checker even if auto-update is disabled.
 		// Two reasons:
@@ -462,10 +535,6 @@ public class NodeUpdateManager {
 				mainUpdater.preKill();
 				main = mainUpdater;
 				mainUpdater = null;
-				if(extUpdater != null)
-					extUpdater.preKill();
-				ext = extUpdater;
-				extUpdater = null;
 				oldPluginUpdaters = pluginUpdaters;
 				pluginUpdaters = null;
 				disabledNotBlown = false;
@@ -476,19 +545,19 @@ public class NodeUpdateManager {
 //				}
 				// Start it
 				mainUpdater = new MainJarUpdater(this, updateURI, Version.buildNumber(), -1, Integer.MAX_VALUE, "main-jar-");
-				extUpdater = new ExtJarUpdater(this, extURI, NodeStarter.extBuildNumber, NodeStarter.REQUIRED_EXT_BUILD_NUMBER, NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER, "ext-jar-");
 				pluginUpdaters = new HashMap<String, PluginJarUpdater>();
 			}
 		}
 		if(!enable) {
 			if(main != null) main.kill();
-			if(ext != null) ext.kill();
 			stopPluginUpdaters(oldPluginUpdaters);
+	        transitionMainJarFetcher.stop();
+	        transitionExtJarFetcher.stop();
 		} else {
 			mainUpdater.start();
-			if(extUpdater != null)
-				extUpdater.start();
 			startPluginUpdaters();
+	        transitionMainJarFetcher.start();
+	        transitionExtJarFetcher.start();
 		}
 	}
 
@@ -578,8 +647,8 @@ public class NodeUpdateManager {
 	 * @param isExt If true, return the freenet-ext.jar update URI; if false, return the freenet.jar URI.
 	 * @return See above.
 	 */
-	public synchronized FreenetURI getURI(boolean isExt) {
-		return isExt ? extURI : updateURI;
+	public synchronized FreenetURI getURI() {
+		return updateURI;
 	}
 
 	/**
@@ -587,22 +656,16 @@ public class NodeUpdateManager {
 	 * @param isExt If true, set the freenet-ext.jar update URI; if false, set the freenet.jar update URI.
 	 * @param uri The URI to set.
 	 */
-	public void setURI(boolean isExt, FreenetURI uri) {
+	public void setURI(FreenetURI uri) {
 		// FIXME plugins!!
 		NodeUpdater updater;
 		Map<String, PluginJarUpdater> oldPluginUpdaters = null;
 		synchronized(this) {
-			if(isExt) {
-				if(extURI.equals(uri)) return;
-				extURI = uri;
-				updater = extUpdater;
-			} else {
-				if(updateURI.equals(uri)) return;
-				updateURI = uri;
-				updater = mainUpdater;
-				oldPluginUpdaters = pluginUpdaters;
-				pluginUpdaters = new HashMap<String, PluginJarUpdater>();
-			}
+			if(updateURI.equals(uri)) return;
+			updateURI = uri;
+			updater = mainUpdater;
+			oldPluginUpdaters = pluginUpdaters;
+			pluginUpdaters = new HashMap<String, PluginJarUpdater>();
 			if(updater == null) return;
 		}
 		updater.onChangeURI(uri);
@@ -660,31 +723,42 @@ public class NodeUpdateManager {
 	/** Does the updater have an update ready to deploy? May be called synchronized(this) */
 	private boolean isReadyToDeployUpdate(boolean ignoreRevocation) {
 		long now = System.currentTimeMillis();
-		long startedMillisAgo;
+		int waitForNextJar = -1;
 		synchronized(this) {
 			if(mainUpdater == null) return false;
-			if(!(hasNewMainJar || hasNewExtJar)) {
-				if(logMINOR) Logger.minor(this, "hasNewMainJar="+hasNewMainJar+" hasNewExtJar="+hasNewExtJar);
+			if(!(hasNewMainJar)) {
+				if(logMINOR) Logger.minor(this, "hasNewMainJar="+hasNewMainJar);
 				return false; // no jar
 			}
 			if(hasBeenBlown) return false; // Duh
 			if(peersSayBlown) return false;
 			// Don't immediately deploy if still fetching
-			startedMillisAgo = now - Math.max(startedFetchingNextMainJar, startedFetchingNextExtJar);
-			if(startedMillisAgo < WAIT_FOR_SECOND_FETCH_TO_COMPLETE) {
-				if(logMINOR) Logger.minor(this, "Not ready: Still fetching");
-				return false; // Wait for running fetch to complete
+			if(startedFetchingNextMainJar > 0) {
+				waitForNextJar = (int)(startedFetchingNextMainJar + WAIT_FOR_SECOND_FETCH_TO_COMPLETE - now);
+				if(waitForNextJar > 0) {
+					if(logMINOR) Logger.minor(this, "Not ready: Still fetching");
+					// Wait for running fetch to complete
+				}
 			}
-			int extVer = getReadyExt();
-			if(extVer < minExtVersion || extVer > maxExtVersion) {
-				System.err.println("Invalid ext: current "+extVer+" must be between "+minExtVersion+" and "+maxExtVersion);
+			
+			// Check dependencies.
+			if(this.latestMainJarDependencies == null) {
+				if(logMINOR) Logger.minor(this, "Dependencies not available");
 				return false;
 			}
-			if(!ignoreRevocation) {
-				if(now - revocationChecker.lastSucceeded() < RECENT_REVOCATION_INTERVAL)
-					return true;
-				if(gotJarTime > 0 && now - gotJarTime >= REVOCATION_FETCH_TIMEOUT)
-					return true;
+			if(this.fetchedMainJarVersion != this.dependenciesValidForBuild) {
+				if(logMINOR) Logger.minor(this, "Not deploying because dependencies are older version "+dependenciesValidForBuild+" - new version "+fetchedMainJarVersion+" may not start");
+				return false;
+			}
+
+			// Check revocation.
+			if(waitForNextJar <= 0) {
+				if(!ignoreRevocation) {
+					if(now - revocationChecker.lastSucceeded() < RECENT_REVOCATION_INTERVAL)
+						return true;
+					if(gotJarTime > 0 && now - gotJarTime >= REVOCATION_FETCH_TIMEOUT)
+						return true;
+				}
 			}
 		}
 		if(logMINOR) Logger.minor(this, "Still here in isReadyToDeployUpdate");
@@ -694,13 +768,15 @@ public class NodeUpdateManager {
 			if(logMINOR) Logger.minor(this, "Returning true because of ignoreRevocation");
 			return true;
 		}
-		deployOffThread(WAIT_FOR_SECOND_FETCH_TO_COMPLETE - startedMillisAgo);
+		int waitTime = Math.max(REVOCATION_FETCH_TIMEOUT, waitForNextJar);
+		deployOffThread(waitTime);
 		return false;
 	}
 
 	/** Check whether there is an update to deploy. If there is, do it. */
 	private void deployUpdate() {
 		try {
+			MainJarDependencies deps;
 			synchronized(this) {
 				if(disabledThisSession) {
 					String msg = "Not deploying update because disabled for this session (bad java version??)";
@@ -733,42 +809,48 @@ public class NodeUpdateManager {
 					if(logMINOR) Logger.minor(this, "Not ready to deploy update");
 					return;
 				}
-				int extVer = getReadyExt();
-				if(extVer < minExtVersion || extVer > maxExtVersion) {
-					if(logMINOR) Logger.minor(this, "Invalid ext: current "+extVer+" must be between "+minExtVersion+" and "+maxExtVersion);
-					return;
-				}
 				if(isDeployingUpdate) {
 					if(logMINOR) Logger.minor(this, "Already deploying update");
 					return;
 				}
 				isDeployingUpdate = true;
+				deps = latestMainJarDependencies;
 			}
 
-			innerDeployUpdate();
+			innerDeployUpdate(deps);
 		} catch (Throwable t) {
+			Bucket toFree = null;
 			synchronized(this) {
 				isDeployingUpdate = false;
+				if(maybeNextMainJarVersion > fetchedMainJarVersion) {
+					// A newer version has been fetched in the meantime.
+					toFree = fetchedMainJarData;
+					fetchedMainJarVersion = maybeNextMainJarVersion;
+					fetchedMainJarData = maybeNextMainJarData;
+					maybeNextMainJarVersion = -1;
+					maybeNextMainJarData = null;
+				}
 			}
+			if(toFree != null) toFree.free();
 		}
 	}
 
 	/**
 	 * Deploy the update. Inner method. Doesn't check anything, just does it.
 	 */
-	private void innerDeployUpdate() {
+	private void innerDeployUpdate(MainJarDependencies deps) {
 		// Write the jars, config etc.
 		// Then restart
 
 		UpdateDeployContext ctx;
 		try {
-			ctx = new UpdateDeployContext();
+			ctx = new UpdateDeployContext(deps);
 		} catch (UpdaterParserException e) {
 			failUpdate("Could not determine which jars are in use: "+e.getMessage());
 			return;
 		}
 
-		if(writeJars(ctx))
+		if(writeJars(ctx, deps))
 			restart(ctx);
 		else {
 			if(logMINOR) Logger.minor(this, "Did not write jars");
@@ -779,23 +861,18 @@ public class NodeUpdateManager {
 	 * Write the updated jars, if necessary rewrite the wrapper.conf.
 	 * @return True if this part of the update succeeded.
 	 */
-	private boolean writeJars(UpdateDeployContext ctx) {
+	private boolean writeJars(UpdateDeployContext ctx, MainJarDependencies deps) {
 		/**
 		 * What do we want to do here?
 		 * 1. If we have a new main jar:
 		 * - If on Windows, write it to a new jar file, update the wrapper.conf to point to it.
 		 * - Otherwise, write to a new jar file, then move the new jar file over the old jar file.
-		 * 2. If we have a new ext jar:
-		 * - Write it to a new jar file, update the wrapper.conf to point to it.
+		 * 2. If the dependencies have changed, we need to update wrapper.conf.
 		 */
 
 		boolean writtenNewJar = false;
-		boolean writtenNewExt = false;
-
-		// If wrapper.conf currently contains freenet-ext.jar.new, we need to update wrapper.conf even
-		// on unix. Reason: freenet-ext.jar.new won't be read if it's not the first item on the classpath,
-		// because freenet.jar includes freenet-ext.jar implicitly via its manifest.
-		boolean tryEasyWay = File.pathSeparatorChar == ':' && !ctx.currentExtJarHasNewExtension();
+		
+		boolean tryEasyWay = File.pathSeparatorChar == ':' && (!deps.mustRewriteWrapperConf);
 
 		if(hasNewMainJar) {
 			File mainJar = ctx.getMainJar();
@@ -808,22 +885,13 @@ public class NodeUpdateManager {
 				return false;
 			}
 		}
+		
+		// Dependencies have been written for us already.
+		// But we may need to modify wrapper.conf.
 
-		if(hasNewExtJar) {
-			File extJar = ctx.getExtJar();
-			File newExtJar = ctx.getNewExtJar();
-			try {
-				if(writeJar(extJar, newExtJar, extUpdater, "ext", tryEasyWay))
-					writtenNewExt = true;
-			} catch (UpdateFailedException e) {
-				failUpdate(e.getMessage());
-				return false;
-			}
-		}
-
-		if(!(writtenNewJar || writtenNewExt)) return true;
+		if(!(writtenNewJar || deps.mustRewriteWrapperConf)) return true;
 		try {
-			ctx.rewriteWrapperConf(writtenNewJar, writtenNewExt);
+			ctx.rewriteWrapperConf(writtenNewJar);
 		} catch (IOException e) {
 			failUpdate("Cannot rewrite wrapper.conf: "+e);
 			return false;
@@ -851,7 +919,7 @@ public class NodeUpdateManager {
 	 * worked).
 	 * @throws UpdateFailedException If something breaks.
 	 */
-	private static boolean writeJar(File mainJar, File newMainJar, NodeUpdater mainUpdater,
+	private boolean writeJar(File mainJar, File newMainJar, NodeUpdater mainUpdater,
 			String name, boolean tryEasyWay) throws UpdateFailedException {
 		boolean writtenToTempFile = false;
 		try {
@@ -867,7 +935,7 @@ public class NodeUpdateManager {
 							}
 							// Try writing to it
 							try {
-								mainUpdater.writeJarTo(newMainJar);
+								writeJarTo(newMainJar);
 								writtenToTempFile = true;
 							} catch (IOException e) {
 								newMainJar.delete();
@@ -875,17 +943,17 @@ public class NodeUpdateManager {
 							}
 						} else {
 							// Try writing it to the new one even though we can't delete it.
-							mainUpdater.writeJarTo(newMainJar);
+							writeJarTo(newMainJar);
 						}
 					} else {
-						mainUpdater.writeJarTo(newMainJar);
+						writeJarTo(newMainJar);
 					}
 				} else {
 					if(logMINOR) Logger.minor(NodeUpdateManager.class, "Deleted old jar "+newMainJar);
-					mainUpdater.writeJarTo(newMainJar);
+					writeJarTo(newMainJar);
 				}
 			} else {
-				mainUpdater.writeJarTo(newMainJar);
+				writeJarTo(newMainJar);
 			}
 		} catch (IOException e) {
 			throw new UpdateFailedException("Cannot update: Cannot write to " + (tryEasyWay ? " temp file " : "new jar ")+newMainJar);
@@ -902,13 +970,30 @@ public class NodeUpdateManager {
 				}
 				// Try the hard way
 			} else {
-				System.err.println("Written new Freenet jar: "+mainUpdater.getWrittenVersion());
+				System.err.println("Written new Freenet jar.");
 				return false;
 			}
 		}
 		return true;
 	}
 	
+	public void writeJarTo(File fNew) throws IOException {
+		if (!fNew.delete() && fNew.exists()) {
+			System.err.println("Can't delete " + fNew + "!");
+		}
+		
+		FileOutputStream fos = null;
+		try {
+			fos = new FileOutputStream(fNew);
+			
+			BucketTools.copyTo(this.fetchedMainJarData, fos, -1);
+			
+			fos.flush();
+		} finally {
+			Closer.close(fos);
+		}
+	}
+
 	@SuppressWarnings("serial")
 	private static class UpdateFailedException extends Exception {
 
@@ -948,67 +1033,51 @@ public class NodeUpdateManager {
 	}
 
 	/**
-	 * Called when a new jar has been downloaded.
+	 * Called when a new jar has been downloaded. The caller should process
+	 * the dependencies *AFTER* this method has completed, and then call
+	 * onDependenciesReady().
 	 * @param isExt If true, the new jar is the ext jar; if false, it is the main jar.
 	 * @param recommendedExt If isExt is false, the recommended ext version (upper bound)
 	 * for the new jar, or -1 if it was not specified or the parse failed.
 	 * @param requiredExt If isExt is false, the required ext version (lower bound) for the
 	 * new jar, or -1 if it was not specified or the parse failed.
+	 * @param fetched The build number we have fetched.
+	 * @param result The actual data.
 	 */
-	void onDownloadedNewJar(boolean isExt, int requiredExt, int recommendedExt) {
+	void onDownloadedNewJar(Bucket result, int fetched) {
+		Bucket delete1 = null;
+		Bucket delete2 = null;
 		synchronized(this) {
-			if(isExt) {
-				if(extUpdater.getFetchedVersion() > NodeStarter.extBuildNumber) {
-					hasNewExtJar = true;
-					startedFetchingNextExtJar = -1;
-					gotJarTime = System.currentTimeMillis();
-					if(logMINOR)
-						Logger.minor(this, "Got ext jar: "+extUpdater.getFetchedVersion());
-				}
+			if(fetched > Version.buildNumber()) {
+				hasNewMainJar = true;
+				startedFetchingNextMainJar = -1;
+				gotJarTime = System.currentTimeMillis();
+				if(logMINOR)
+					Logger.minor(this, "Got main jar: "+fetched);
+			}
+			if(!isDeployingUpdate) {
+				delete1 = fetchedMainJarData;
+				fetchedMainJarVersion = fetched;
+				fetchedMainJarData = result;
 			} else {
-				if(mainUpdater.getFetchedVersion() > Version.buildNumber()) {
-					hasNewMainJar = true;
-					startedFetchingNextMainJar = -1;
-					gotJarTime = System.currentTimeMillis();
-					if(logMINOR)
-						Logger.minor(this, "Got main jar: "+mainUpdater.getFetchedVersion());
-					if(requiredExt > -1)
-						minExtVersion = requiredExt;
-					if(recommendedExt > -1)
-						maxExtVersion = recommendedExt;
-				}
+				delete2 = maybeNextMainJarData;
+				maybeNextMainJarVersion = fetched;
+				maybeNextMainJarData = result;
+				System.out.println("Already deploying update, not using new main jar #"+fetched);
 			}
 		}
-		if(!isExt && (requiredExt > -1 || recommendedExt > -1)) {
-			extUpdater.setMinMax(requiredExt, recommendedExt);
-		}
-		revocationChecker.start(true);
-		deployOffThread(REVOCATION_FETCH_TIMEOUT);
-		if(!isAutoUpdateAllowed)
-			broadcastUOMAnnounces();
-	}
-
-	private int getReadyExt() {
-		int ver = NodeStarter.extBuildNumber;
-		if(extUpdater != null) {
-			int fetched = extUpdater.getFetchedVersion();
-			if(fetched > 0) ver = fetched;
-		}
-		return ver;
+		if(delete1 != null) delete1.free();
+		if(delete2 != null) delete2.free();
+		// We cannot deploy yet, we must wait for the dependencies check.
 	}
 
 	/**
 	 * Called when the NodeUpdater starts to fetch a new version of the jar.
-	 * @param isExt If true, the new jar is the ext jar; if false, it is the main jar.
 	 */
-	void onStartFetching(boolean isExt) {
+	void onStartFetching() {
 		long now = System.currentTimeMillis();
 		synchronized(this) {
-			if(isExt) {
-				startedFetchingNextExtJar = now;
-			} else {
-				startedFetchingNextMainJar = now;
-			}
+			startedFetchingNextMainJar = now;
 		}
 	}
 
@@ -1047,14 +1116,10 @@ public class NodeUpdateManager {
 				}
 			}
 			main = mainUpdater;
-			ext = extUpdater;
 			if(main != null) main.preKill();
-			if(ext != null) ext.preKill();
 			mainUpdater = null;
-			extUpdater = null;
 		}
 		if(main != null) main.kill();
-		if(ext != null) ext.kill();
 		if(revocationAlert==null){
 			revocationAlert = new RevocationKeyFoundUserAlert(msg, disabledNotBlown);
 			node.clientCore.alerts.register(revocationAlert);
@@ -1062,7 +1127,8 @@ public class NodeUpdateManager {
 			killUpdateAlerts();
 		}
 		uom.killAlert();
-		broadcastUOMAnnounces();
+		broadcastUOMAnnouncesOld();
+		broadcastUOMAnnouncesNew();
 	}
 
 	/**
@@ -1077,7 +1143,7 @@ public class NodeUpdateManager {
 		deployUpdate(); // May have been waiting for the revocation.
 		deployPluginUpdates();
 		// If we're still here, we didn't update.
-		broadcastUOMAnnounces();
+		broadcastUOMAnnouncesNew();
 		node.ticker.queueTimedJob(new Runnable() {
 			@Override
 			public void run() {
@@ -1145,10 +1211,6 @@ public class NodeUpdateManager {
 		return hasNewMainJar;
 	}
 
-	public boolean hasNewExtJar() {
-		return hasNewExtJar;
-	}
-
 	/**
 	 * What version has been fetched?
 	 *
@@ -1160,27 +1222,13 @@ public class NodeUpdateManager {
 		return mainUpdater.getFetchedVersion();
 	}
 
-	public int newExtJarVersion() {
-		if(extUpdater == null) return -1;
-		return extUpdater.getFetchedVersion();
-	}
-
 	public boolean fetchingNewMainJar() {
 		return (mainUpdater != null && mainUpdater.isFetching());
-	}
-
-	public boolean fetchingNewExtJar() {
-		return (extUpdater != null && extUpdater.isFetching());
 	}
 
 	public int fetchingNewMainJarVersion() {
 		if(mainUpdater == null) return -1;
 		return mainUpdater.fetchingVersion();
-	}
-
-	public int fetchingNewExtJarVersion() {
-		if(extUpdater == null) return -1;
-		return extUpdater.fetchingVersion();
 	}
 
 	public boolean inFinalCheck() {
@@ -1259,7 +1307,7 @@ public class NodeUpdateManager {
 
 		@Override
 		public String get() {
-			return getURI(isExt).toString(false, false);
+			return getURI().toString(false, false);
 		}
 
 		@Override
@@ -1270,7 +1318,7 @@ public class NodeUpdateManager {
 			} catch (MalformedURLException e) {
 				throw new InvalidConfigValueException(l10n(isExt ? "invalidExtURI" : "invalidUpdateURI", "error", e.getLocalizedMessage()));
 			}
-			setURI(isExt, uri);
+			setURI(uri);
 		}
 	}
 
@@ -1331,16 +1379,6 @@ public class NodeUpdateManager {
 		return updater.getBlobFile(version);
 	}
 
-	public File getExtBlob(int version) {
-		NodeUpdater updater;
-		synchronized(this) {
-			if(hasBeenBlown) return null;
-			updater = extUpdater;
-			if(updater == null) return null;
-		}
-		return updater.getBlobFile(version);
-	}
-
 	public synchronized long timeRemainingOnCheck() {
 		long now = System.currentTimeMillis();
 		return Math.max(0, REVOCATION_FETCH_TIMEOUT - (now - gotJarTime));
@@ -1371,10 +1409,6 @@ public class NodeUpdateManager {
 
 	protected long getStartedFetchingNextMainJarTimestamp() {
 		return startedFetchingNextMainJar;
-	}
-
-	protected long getStartedFetchingNextExtJarTimestamp() {
-		return startedFetchingNextExtJar;
 	}
 
 	public boolean objectCanNew(ObjectContainer container) {
@@ -1424,6 +1458,31 @@ public class NodeUpdateManager {
         }
 
 		public boolean fetchingFromUOM() {
-			return uom.isFetchingExt() || uom.isFetchingMain();
+			return uom.isFetchingMain();
 		}
+
+		/**
+		 * Called when the dependencies have been verified and/or downloaded, and
+		 * we can upgrade to the new build without dependency issues.
+		 * @param deps The dependencies object. Used to rewrite wrapper.conf if 
+		 * necessary. Also contains the build number.
+		 * @param binaryBlob The binary blob for this build, including the dependencies.
+		 */
+		public void onDependenciesReady(MainJarDependencies deps) {
+			synchronized(this) {
+				this.latestMainJarDependencies = deps;
+				this.dependenciesValidForBuild = deps.build;
+			}
+			revocationChecker.start(true);
+			deployOffThread(REVOCATION_FETCH_TIMEOUT);
+		}
+
+		public File getTransitionExtBlob() {
+			return transitionExtJarFetcher.getBlobFile();
+		}
+		
+		public File getTransitionMainBlob() {
+			return transitionMainJarFetcher.getBlobFile();
+		}
+
 }

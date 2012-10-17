@@ -4665,16 +4665,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return offeredMainJarVersion;
 	}
 
-	private volatile long offeredExtJarVersion;
-
-	public void setExtJarOfferedVersion(long extJarVersion) {
-		offeredExtJarVersion = extJarVersion;
-	}
-
-	public long getExtJarOfferedVersion() {
-		return offeredExtJarVersion;
-	}
-
 	/**
 	 * Maybe send something. A SINGLE PACKET.
 	 * Don't send everything at once, for two reasons:

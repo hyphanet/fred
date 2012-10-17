@@ -67,7 +67,7 @@ import freenet.support.io.RandomAccessThing;
 /**
  * Co-ordinates update over mandatory. Update over mandatory = updating from your peers, even
  * though they may be so much newer than you that you can't route requests through them.
- * NodeDispatcher feeds UOMAnnounce's received from peers to this class, and it decides what to
+ * NodeDispatcher feeds UOMAnnouncement's received from peers to this class, and it decides what to
  * do about them.
  * @author toad
  */
@@ -96,15 +96,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	/** PeerNode's which have offered the main jar which we are not fetching it from right now */
 	private final HashSet<PeerNode> nodesOfferedMainJar;
 	/** PeerNode's which have offered the ext jar which we are not fetching it from right now */
-	private final HashSet<PeerNode> nodesOfferedExtJar;
-	/** PeerNode's we've asked to send the main jar */
 	private final HashSet<PeerNode> nodesAskedSendMainJar;
-	/** PeerNode's we've asked to send the ext jar */
-	private final HashSet<PeerNode> nodesAskedSendExtJar;
 	/** PeerNode's sending us the main jar */
 	private final HashSet<PeerNode> nodesSendingMainJar;
-	/** PeerNode's sending us the ext jar */
-	private final HashSet<PeerNode> nodesSendingExtJar;
 	// 2 for reliability, no more as gets very slow/wasteful
 	static final int MAX_NODES_SENDING_JAR = 2;
 	/** Maximum time between asking for the main jar and it starting to transfer */
@@ -112,9 +106,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	//** Grace time before we use UoM to update */
 	public static final int GRACE_TIME = 3 * 60 * 60 * 1000; // 3h
 	private UserAlert alert;
-	private static final Pattern extBuildNumberPattern = Pattern.compile("^ext(?:-jar)?-(\\d+)\\.fblob$");
 	private static final Pattern mainBuildNumberPattern = Pattern.compile("^main(?:-jar)?-(\\d+)\\.fblob$");
-	private static final Pattern extTempBuildNumberPattern = Pattern.compile("^ext(?:-jar)?-(\\d+-)?(\\d+)\\.fblob\\.tmp*$");
 	private static final Pattern mainTempBuildNumberPattern = Pattern.compile("^main(?:-jar)?-(\\d+-)?(\\d+)\\.fblob\\.tmp*$");
 	private static final Pattern revocationTempBuildNumberPattern = Pattern.compile("^revocation(?:-jar)?-(\\d+-)?(\\d+)\\.fblob\\.tmp*$");
 
@@ -124,32 +116,30 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		nodesSayKeyRevokedFailedTransfer = new HashSet<PeerNode>();
 		nodesSayKeyRevokedTransferring = new HashSet<PeerNode>();
 		nodesOfferedMainJar = new HashSet<PeerNode>();
-		nodesOfferedExtJar = new HashSet<PeerNode>();
 		nodesAskedSendMainJar = new HashSet<PeerNode>();
-		nodesAskedSendExtJar = new HashSet<PeerNode>();
 		nodesSendingMainJar = new HashSet<PeerNode>();
-		nodesSendingExtJar = new HashSet<PeerNode>();
 	}
 
 	/** 
-	 * Handle a UOMAnnounce message. A node has sent us a message offering us use of its update
+	 * Handle a UOMAnnouncement message. A node has sent us a message offering us use of its update
 	 * over mandatory facilities in some way.
-	 * @param m The message to handle.
+	 * @param m The message to handle. Either a UOMAnnounce or a UOMAnnouncement.
 	 * @param source The PeerNode which sent the message.
 	 * @return True unless we don't want the message (in this case, always true).
 	 */
 	public boolean handleAnnounce(Message m, final PeerNode source) {
+		
+		/** If it's a UOMAnnounce, we only care about revocations. */
+		boolean fromOldNode = m.getSpec() == DMT.UOMAnnounce;
+		
 		String mainJarKey = m.getString(DMT.MAIN_JAR_KEY);
-		String extraJarKey = m.getString(DMT.EXTRA_JAR_KEY);
 		String revocationKey = m.getString(DMT.REVOCATION_KEY);
 		boolean haveRevocationKey = m.getBoolean(DMT.HAVE_REVOCATION_KEY);
 		long mainJarVersion = m.getLong(DMT.MAIN_JAR_VERSION);
-		long extraJarVersion = m.getLong(DMT.EXTRA_JAR_VERSION);
 		long revocationKeyLastTried = m.getLong(DMT.REVOCATION_KEY_TIME_LAST_TRIED);
 		int revocationKeyDNFs = m.getInt(DMT.REVOCATION_KEY_DNF_COUNT);
 		long revocationKeyFileLength = m.getLong(DMT.REVOCATION_KEY_FILE_LENGTH);
 		long mainJarFileLength = m.getLong(DMT.MAIN_JAR_FILE_LENGTH);
-		long extraJarFileLength = m.getLong(DMT.EXTRA_JAR_FILE_LENGTH);
 		int pingTime = m.getInt(DMT.PING_TIME);
 		int delayTime = m.getInt(DMT.BWLIMIT_DELAY_TIME);
 
@@ -158,7 +148,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		if(logMINOR) {
 			Logger.minor(this, "Update Over Mandatory offer from node " + source.getPeer() + " : " + source.userToString() + ":");
 			Logger.minor(this, "Main jar key: " + mainJarKey + " version=" + mainJarVersion + " length=" + mainJarFileLength);
-			Logger.minor(this, "Extra jar key: " + extraJarKey + " version=" + extraJarVersion + " length=" + extraJarFileLength);
 			Logger.minor(this, "Revocation key: " + revocationKey + " found=" + haveRevocationKey + " length=" + revocationKeyFileLength + " last had 3 DNFs " + revocationKeyLastTried + " ms ago, " + revocationKeyDNFs + " DNFs so far");
 			Logger.minor(this, "Load stats: " + pingTime + "ms ping, " + delayTime + "ms bwlimit delay time");
 		}
@@ -208,8 +197,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				}
 			} catch(MalformedURLException e) {
 				// Should maybe be a useralert?
-				Logger.error(this, "Node " + source + " sent us a UOMAnnounce claiming that the auto-update key was blown, but it had an invalid revocation URI: " + revocationKey + " : " + e, e);
-				System.err.println("Node " + source.userToString() + " sent us a UOMAnnounce claiming that the revocation key was blown, but it had an invalid revocation URI: " + revocationKey + " : " + e);
+				Logger.error(this, "Node " + source + " sent us a UOMAnnouncement claiming that the auto-update key was blown, but it had an invalid revocation URI: " + revocationKey + " : " + e, e);
+				System.err.println("Node " + source.userToString() + " sent us a UOMAnnouncement claiming that the revocation key was blown, but it had an invalid revocation URI: " + revocationKey + " : " + e);
 			} catch(NotConnectedException e) {
 				System.err.println("Node " + source + " says that the auto-update key was blown, but has now gone offline! Something bad may be happening!");
 				Logger.error(this, "Node " + source + " says that the auto-update key was blown, but has now gone offline! Something bad may be happening!");
@@ -222,6 +211,10 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			}
 
 		}
+		
+		if(fromOldNode)
+			// We only care about revocations from old nodes.
+			return true;
 
 		if(updateManager.isBlown())
 			return true; // We already know
@@ -232,8 +225,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		long now = System.currentTimeMillis();
 		
 		handleMainJarOffer(now, mainJarFileLength, mainJarVersion, source, mainJarKey);
-		
-		handleExtJarOffer(now, extraJarFileLength, extraJarVersion, source, extraJarKey);
 		
 		return true;
 	}
@@ -303,7 +294,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			whenToTakeOverTheNormalUpdater = System.currentTimeMillis() + GRACE_TIME;
 		boolean isOutdated = updateManager.node.isOudated();
 		// if the new build is self-mandatory or if the "normal" updater has been trying to update for more than one hour
-		Logger.normal(this, "We received a valid UOMAnnounce (main) : (isOutdated=" + isOutdated + " version=" + mainJarVersion + " whenToTakeOverTheNormalUpdater=" + TimeUtil.formatTime(whenToTakeOverTheNormalUpdater - now) + ") file length " + mainJarFileLength + " updateManager version " + updateManager.newMainJarVersion());
+		Logger.normal(this, "We received a valid UOMAnnouncement (main) : (isOutdated=" + isOutdated + " version=" + mainJarVersion + " whenToTakeOverTheNormalUpdater=" + TimeUtil.formatTime(whenToTakeOverTheNormalUpdater - now) + ") file length " + mainJarFileLength + " updateManager version " + updateManager.newMainJarVersion());
 		if(mainJarVersion > Version.buildNumber() && mainJarFileLength > 0 &&
 			mainJarVersion > updateManager.newMainJarVersion()) {
 			source.setMainJarOfferedVersion(mainJarVersion);
@@ -312,7 +303,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				Logger.minor(this, "Offer is valid");
 			if((isOutdated) || whenToTakeOverTheNormalUpdater < now) {
 				// Take up the offer, subject to limits on number of simultaneous downloads.
-				// If we have fetches running already, then sendUOMRequestMain() will add the offer to nodesOfferedMainJar,
+				// If we have fetches running already, then sendUOMRequestMainJar() will add the offer to nodesOfferedMainJar,
 				// so that if all our fetches fail, we can fetch from this node.
 				if(!isOutdated) {
 					String howLong = TimeUtil.formatTime(now - started);
@@ -324,14 +315,14 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				try {
 					FreenetURI mainJarURI = new FreenetURI(jarKey).setSuggestedEdition(mainJarVersion);
 					if(mainJarURI.equals(updateManager.updateURI.setSuggestedEdition(mainJarVersion)))
-						sendUOMRequest(source, true, false);
+						sendUOMRequest(source, true);
 					else
 						System.err.println("Node " + source.userToString() + " offered us a new main jar (version " + mainJarVersion + ") but his key was different to ours:\n" +
 							"our key: " + updateManager.updateURI + "\nhis key:" + mainJarURI);
 				} catch(MalformedURLException e) {
 					// Should maybe be a useralert?
-					Logger.error(this, "Node " + source + " sent us a UOMAnnounce claiming to have a new ext jar, but it had an invalid URI: " + jarKey + " : " + e, e);
-					System.err.println("Node " + source.userToString() + " sent us a UOMAnnounce claiming to have a new ext jar, but it had an invalid URI: " + jarKey + " : " + e);
+					Logger.error(this, "Node " + source + " sent us a UOMAnnouncement claiming to have a new ext jar, but it had an invalid URI: " + jarKey + " : " + e, e);
+					System.err.println("Node " + source.userToString() + " sent us a UOMAnnouncement claiming to have a new ext jar, but it had an invalid URI: " + jarKey + " : " + e);
 				}
 			} else {
 				// Don't take up the offer. Add to nodesOfferedMainJar, so that we know where to fetch it from when we need it.
@@ -360,87 +351,20 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		
 	}
 
-	private void handleExtJarOffer(long now, long extJarFileLength, long extJarVersion, PeerNode source, String jarKey) {
-		
-		long started = updateManager.getStartedFetchingNextExtJarTimestamp();
-		long whenToTakeOverTheNormalUpdater;
-		if(started > 0)
-			whenToTakeOverTheNormalUpdater = started + GRACE_TIME;
-		else
-			whenToTakeOverTheNormalUpdater = System.currentTimeMillis() + GRACE_TIME;
-		boolean isOutdated = updateManager.node.isOudated();
-		// if the new build is self-mandatory or if the "normal" updater has been trying to update for more than one hour
-		Logger.normal(this, "We received a valid UOMAnnounce (ext) : (isOutdated=" + isOutdated + " version=" + extJarVersion + " whenToTakeOverTheNormalUpdater=" + TimeUtil.formatTime(whenToTakeOverTheNormalUpdater - now) + ") file length " + extJarFileLength + " updateManager version " + updateManager.newExtJarVersion());
-		if(extJarVersion > NodeStarter.extBuildNumber && extJarFileLength > 0 &&
-			extJarVersion > updateManager.newExtJarVersion()) {
-			source.setExtJarOfferedVersion(extJarVersion);
-			// Offer is valid.
-			if(logMINOR)
-				Logger.minor(this, "Offer is valid");
-			if((isOutdated) || whenToTakeOverTheNormalUpdater < now) {
-				// Take up the offer, subject to limits on number of simultaneous downloads.
-				// If we have fetches running already, then sendUOMRequestMain() will add the offer to nodesOfferedMainJar,
-				// so that if all our fetches fail, we can fetch from this node.
-				if(!isOutdated) {
-					String howLong = TimeUtil.formatTime(now - started);
-					Logger.error(this, "The update process seems to have been stuck for " + howLong + "; let's switch to UoM! SHOULD NOT HAPPEN! (1) (ext)");
-					System.out.println("The update process seems to have been stuck for " + howLong + "; let's switch to UoM! SHOULD NOT HAPPEN! (1) (ext)");
-				} else if(logMINOR)
-					Logger.minor(this, "Fetching via UOM as our build is deprecated");
-				// Fetch it
-				try {
-					FreenetURI extJarURI = new FreenetURI(jarKey).setSuggestedEdition(extJarVersion);
-					if(extJarURI.equals(updateManager.extURI.setSuggestedEdition(extJarVersion)))
-						sendUOMRequest(source, true, true);
-					else
-						System.err.println("Node " + source.userToString() + " offered us a new ext jar (version " + extJarVersion + ") but his key was different to ours:\n" +
-							"our key: " + updateManager.extURI + "\nhis key:" + extJarURI);
-				} catch(MalformedURLException e) {
-					// Should maybe be a useralert?
-					Logger.error(this, "Node " + source + " sent us a UOMAnnounce claiming to have a new ext jar, but it had an invalid URI: " + jarKey + " : " + e, e);
-					System.err.println("Node " + source.userToString() + " sent us a UOMAnnounce claiming to have a new jar, but it had an invalid URI: " + jarKey + " : " + e);
-				}
-			} else {
-				// Don't take up the offer. Add to nodesOfferedMainJar, so that we know where to fetch it from when we need it.
-				synchronized(this) {
-					nodesOfferedExtJar.add(source);
-				}
-				updateManager.node.getTicker().queueTimedJob(new Runnable() {
-
-					@Override
-					public void run() {
-						if(updateManager.isBlown())
-							return;
-						if(!updateManager.isEnabled())
-							return;
-						if(updateManager.hasNewExtJar())
-							return;
-						if(!updateManager.node.isOudated()) {
-							Logger.error(this, "The update process seems to have been stuck for too long; let's switch to UoM! SHOULD NOT HAPPEN! (2)");
-							System.out.println("The update process seems to have been stuck for too long; let's switch to UoM! SHOULD NOT HAPPEN! (2)");
-						}
-						maybeRequestExtJar();
-					}
-				}, whenToTakeOverTheNormalUpdater - now);
-			}
-		}
-		
-	}
-
-	private void sendUOMRequest(final PeerNode source, boolean addOnFail, final boolean isExt) {
-		final String name = isExt ? "Extra" : "Main";
-		String lname = isExt ? "ext" : "main";
+	private void sendUOMRequest(final PeerNode source, boolean addOnFail) {
+		final String name = "Main";
+		String lname = "main";
 		if(logMINOR)
 			Logger.minor(this, "sendUOMRequest"+name+"(" + source + "," + addOnFail + ")");
 		if(!source.isConnected() || source.isSeed()) {
                     if(logMINOR) Logger.minor(this, "Not sending UOM "+lname+" request to "+source+" (disconnected or seednode)");
                     return;
                 }
-		final HashSet<PeerNode> sendingJar = isExt ? nodesSendingExtJar : nodesSendingMainJar;
-		final HashSet<PeerNode> askedSendJar = isExt ? nodesAskedSendExtJar : nodesAskedSendMainJar;
+		final HashSet<PeerNode> sendingJar = nodesSendingMainJar;
+		final HashSet<PeerNode> askedSendJar = nodesAskedSendMainJar;
 		synchronized(this) {
-			long offeredVersion = isExt ? source.getExtJarOfferedVersion() : source.getMainJarOfferedVersion();
-			long updateVersion = isExt ? updateManager.newExtJarVersion() : updateManager.newMainJarVersion();
+			long offeredVersion = source.getMainJarOfferedVersion();
+			long updateVersion = updateManager.newMainJarVersion();
 			if(offeredVersion < updateVersion) {
 				if(offeredVersion <= 0)
 					Logger.error(this, "Not sending UOM "+lname+" request to " + source + " because it hasn't offered anything!");
@@ -449,7 +373,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 						Logger.minor(this, "Not sending UOM "+lname+" request to " + source + " because we already have its offered version " + offeredVersion);
 				return;
 			}
-			int curVersion = isExt ? updateManager.getExtVersion() : updateManager.getMainVersion();
+			int curVersion = updateManager.getMainVersion();
 			if(curVersion >= offeredVersion) {
 				if(logMINOR)
 					Logger.minor(this, "Not fetching from " + source + " because current "+lname+" jar version " + curVersion + " is more recent than " + offeredVersion);
@@ -461,7 +385,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				return;
 			}
 			if(addOnFail && askedSendJar.size() + sendingJar.size() >= MAX_NODES_SENDING_JAR) {
-				HashSet<PeerNode> offeredJar = isExt ? nodesOfferedExtJar : nodesOfferedMainJar;
+				HashSet<PeerNode> offeredJar = nodesOfferedMainJar;
 				if(offeredJar.add(source))
 					System.err.println("Offered "+lname+" jar by " + source.userToString() + " (already fetching from " + sendingJar.size() + "), but will use this offer if our current fetches fail).");
 				return;
@@ -475,8 +399,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			}
 		}
 
-		Message msg = isExt ? DMT.createUOMRequestExtra(updateManager.node.random.nextLong()) :
-			DMT.createUOMRequestMain(updateManager.node.random.nextLong());
+		Message msg = 
+			DMT.createUOMRequestMainJar(updateManager.node.random.nextLong());
 
 		try {
 			System.err.println("Fetching "+lname+" jar from " + source.userToString());
@@ -489,26 +413,20 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 				@Override
 				public void disconnected() {
-					Logger.normal(this, "Disconnected from " + source.userToString() + " after sending UOMRequest"+name);
+					Logger.normal(this, "Disconnected from " + source.userToString() + " after sending UOMRequestMainJar");
 					synchronized(UpdateOverMandatoryManager.this) {
 						sendingJar.remove(source);
 					}
-					if(isExt)
-						maybeRequestExtJar();
-					else
-						maybeRequestMainJar();
+					maybeRequestMainJar();
 				}
 
 				@Override
 				public void fatalError() {
-					Logger.normal(this, "Fatal error from " + source.userToString() + " after sending UOMRequest"+name);
+					Logger.normal(this, "Fatal error from " + source.userToString() + " after sending UOMRequestMainJar");
 					synchronized(UpdateOverMandatoryManager.this) {
 						askedSendJar.remove(source);
 					}
-					if(isExt)
-						maybeRequestExtJar();
-					else
-						maybeRequestMainJar();
+					maybeRequestMainJar();
 				}
 
 				@Override
@@ -523,10 +441,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 									return;
 								askedSendJar.remove(source); // free up a slot
 							}
-							if(isExt)
-								maybeRequestExtJar();
-							else
-								maybeRequestMainJar();
+							maybeRequestMainJar();
 						}
 					}, REQUEST_MAIN_JAR_TIMEOUT);
 				}
@@ -535,10 +450,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			synchronized(this) {
 				askedSendJar.remove(source);
 			}
-			if(isExt)
-				maybeRequestExtJar();
-			else
-				maybeRequestMainJar();
+			maybeRequestMainJar();
 		}
 	}
 
@@ -562,31 +474,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				if(nodesAskedSendMainJar.contains(offers[i]))
 					continue;
 			}
-			sendUOMRequest(offers[i], false, false);
-		}
-	}
-
-	protected void maybeRequestExtJar() {
-		PeerNode[] offers;
-		synchronized(this) {
-			if(nodesAskedSendExtJar.size() + nodesSendingExtJar.size() >= MAX_NODES_SENDING_JAR)
-				return;
-			if(nodesOfferedExtJar.isEmpty())
-				return;
-			offers = nodesOfferedExtJar.toArray(new PeerNode[nodesOfferedExtJar.size()]);
-		}
-		for(int i = 0; i < offers.length; i++) {
-			if(!offers[i].isConnected())
-				continue;
-			synchronized(this) {
-				if(nodesAskedSendExtJar.size() + nodesSendingExtJar.size() >= MAX_NODES_SENDING_JAR)
-					return;
-				if(nodesSendingExtJar.contains(offers[i]))
-					continue;
-				if(nodesAskedSendExtJar.contains(offers[i]))
-					continue;
-			}
-			sendUOMRequest(offers[i], false, true);
+			sendUOMRequest(offers[i], false);
 		}
 	}
 
@@ -1223,8 +1111,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		updateManager.node.clientCore.alerts.unregister(alert);
 	}
 
-	public void handleRequestJar(Message m, final PeerNode source, final boolean isExt) {
-		final String name = isExt ? "ext" : "main";
+	public void handleRequestJar(Message m, final PeerNode source) {
+		final String name = "main";
 		
 		Message msg;
 		final BulkTransmitter bt;
@@ -1238,8 +1126,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		}
 		// Do we have the data?
 
-		int version = isExt ? updateManager.newExtJarVersion() : updateManager.newMainJarVersion();
-		File data = isExt ? updateManager.getExtBlob(version) : updateManager.getMainBlob(version);
+		int version = updateManager.newMainJarVersion();
+		File data = updateManager.getMainBlob(version);
 
 		if(data == null) {
 			Logger.normal(this, "Peer " + source + " asked us for the blob file for the "+name+" jar but we don't have it!");
@@ -1249,8 +1137,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		final long uid = m.getLong(DMT.UID);
 
-		if(!source.sendingUOMJar(isExt)) {
-			Logger.error(this, "Peer "+source+" asked for UOM "+(isExt?"ext":"main")+" jar twice");
+		if(!source.sendingUOMJar(false)) {
+			Logger.error(this, "Peer "+source+" asked for UOM main jar twice");
 			return;
 		}
 		
@@ -1284,14 +1172,13 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			}
 			
 			msg =
-				isExt ? DMT.createUOMSendingExtra(uid, length, updateManager.extURI.toString(), version) :
-					DMT.createUOMSendingMain(uid, length, updateManager.updateURI.toString(), version);
+				DMT.createUOMSendingMainJar(uid, length, updateManager.updateURI.toString(), version);
 			
 		} catch (RuntimeException e) {
-			source.finishedSendingUOMJar(isExt);
+			source.finishedSendingUOMJar(false);
 			throw e;
 		} catch (Error e) {
-			source.finishedSendingUOMJar(isExt);
+			source.finishedSendingUOMJar(false);
 			throw e;
 		}
 		
@@ -1308,7 +1195,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				} catch (DisconnectedException e) {
 					// Not much we can do.
 				} finally {
-					source.finishedSendingUOMJar(isExt);
+					source.finishedSendingUOMJar(false);
 					raf.close();
 				}
 			}
@@ -1329,15 +1216,15 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				@Override
 				public void disconnected() {
 					// Argh
-					Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, then disconnected when we tried to send the UOMSendingMain");
-					source.finishedSendingUOMJar(isExt);
+					Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, then disconnected when we tried to send the UOMSendingMainJar");
+					source.finishedSendingUOMJar(false);
 				}
 
 				@Override
 				public void fatalError() {
 					// Argh
-					Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, then got a fatal error when we tried to send the UOMSendingMain");
-					source.finishedSendingUOMJar(isExt);
+					Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, then got a fatal error when we tried to send the UOMSendingMainJar");
+					source.finishedSendingUOMJar(false);
 				}
 
 				@Override
@@ -1352,13 +1239,13 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				}
 			}, updateManager.ctr);
 		} catch(NotConnectedException e) {
-			Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, then disconnected when we tried to send the UOMSendingExt: " + e, e);
+			Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, then disconnected when we tried to send the UOMSendingMainJar: " + e, e);
 			return;
 		} catch (RuntimeException e) {
-			source.finishedSendingUOMJar(isExt);
+			source.finishedSendingUOMJar(false);
 			throw e;
 		} catch (Error e) {
-			source.finishedSendingUOMJar(isExt);
+			source.finishedSendingUOMJar(false);
 			throw e;
 		}
 
@@ -1477,119 +1364,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		return true;
 	}
 
-	public boolean handleSendingExt(Message m, final PeerNode source) {
-		final long uid = m.getLong(DMT.UID);
-		final long length = m.getLong(DMT.FILE_LENGTH);
-		String key = m.getString(DMT.EXTRA_JAR_KEY);
-		final int version = m.getInt(DMT.EXTRA_JAR_VERSION);
-		final FreenetURI jarURI;
-		try {
-			jarURI = new FreenetURI(key).setSuggestedEdition(version);
-		} catch(MalformedURLException e) {
-			Logger.error(this, "Failed receiving ext jar " + version + " because URI not parsable: " + e + " for " + key, e);
-			System.err.println("Failed receiving ext jar " + version + " because URI not parsable: " + e + " for " + key);
-			e.printStackTrace();
-			cancelSend(source, uid);
-			synchronized(this) {
-				this.nodesAskedSendExtJar.remove(source);
-			}
-			return true;
-		}
-
-		if(!jarURI.equals(updateManager.extURI.setSuggestedEdition(version))) {
-			System.err.println("Node sending us a ext jar update (" + version + ") from the wrong URI:\n" +
-				"Node: " + source.userToString() + "\n" +
-				"Our   URI: " + updateManager.extURI + "\n" +
-				"Their URI: " + jarURI);
-			cancelSend(source, uid);
-			synchronized(this) {
-				this.nodesAskedSendExtJar.remove(source);
-			}
-			return true;
-		}
-
-		if(updateManager.isBlown()) {
-			if(logMINOR)
-				Logger.minor(this, "Key blown, so not receiving main jar from " + source + "(" + uid + ")");
-			cancelSend(source, uid);
-			synchronized(this) {
-				this.nodesAskedSendExtJar.remove(source);
-			}
-			return true;
-		}
-
-		if(length > NodeUpdateManager.MAX_MAIN_JAR_LENGTH) {
-			System.err.println("Node " + source.userToString() + " offered us a ext jar (" + version + ") " + SizeUtil.formatSize(length) + " long. This is unacceptably long so we have refused the transfer.");
-			Logger.error(this, "Node " + source.userToString() + " offered us a ext jar (" + version + ") " + SizeUtil.formatSize(length) + " long. This is unacceptably long so we have refused the transfer.");
-			// If the transfer fails, we don't try again.
-			cancelSend(source, uid);
-			synchronized(this) {
-				this.nodesAskedSendExtJar.remove(source);
-			}
-			return true;
-		}
-
-		// Okay, we can receive it
-		System.out.println("Receiving extra jar "+version+" from "+source.userToString());
-
-		final File temp;
-
-		try {
-			temp = File.createTempFile("ext-", ".fblob.tmp", updateManager.node.clientCore.getPersistentTempDir());
-			temp.deleteOnExit();
-		} catch(IOException e) {
-			System.err.println("Cannot save new ext jar to disk and therefore cannot fetch it from our peer!: " + e);
-			e.printStackTrace();
-			cancelSend(source, uid);
-			synchronized(this) {
-				this.nodesAskedSendExtJar.remove(source);
-			}
-			return true;
-		}
-
-		RandomAccessFileWrapper raf;
-		try {
-			raf = new RandomAccessFileWrapper(temp, "rw");
-		} catch(FileNotFoundException e) {
-			Logger.error(this, "Peer " + source + " sending us a ext jar binary blob, but we lost the temp file " + temp + " : " + e, e);
-			synchronized(this) {
-				this.nodesAskedSendExtJar.remove(source);
-			}
-			return true;
-		}
-
-		PartiallyReceivedBulk prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), length,
-			Node.PACKET_SIZE, raf, false);
-
-		final BulkReceiver br = new BulkReceiver(prb, source, uid, updateManager.ctr);
-
-		updateManager.node.executor.execute(new Runnable() {
-
-			@Override
-			public void run() {
-				try {
-					synchronized(UpdateOverMandatoryManager.class) {
-						nodesAskedSendExtJar.remove(source);
-						nodesSendingExtJar.add(source);
-					}
-					if(br.receive())
-						// Success!
-						processExtJarBlob(temp, source, version, jarURI);
-					else {
-						Logger.error(this, "Failed to transfer ext jar " + version + " from " + source);
-						System.err.println("Failed to transfer ext jar " + version + " from " + source);
-					}
-				} finally {
-					synchronized(UpdateOverMandatoryManager.class) {
-						nodesSendingExtJar.remove(source);
-					}
-				}
-			}
-		}, "Ext jar (" + version + ") receive for " + uid + " from " + source.userToString());
-
-		return true;
-	}
-
 	protected void processMainJarBlob(final File temp, final PeerNode source, final int version, FreenetURI uri) {
 		SimpleBlockSet blocks = new SimpleBlockSet();
 
@@ -1700,116 +1474,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 	}
 
-	protected void processExtJarBlob(final File temp, final PeerNode source, final int version, FreenetURI uri) {
-		SimpleBlockSet blocks = new SimpleBlockSet();
-
-		DataInputStream dis = null;
-		try {
-			dis = new DataInputStream(new BufferedInputStream(new FileInputStream(temp)));
-			BinaryBlob.readBinaryBlob(dis, blocks, true);
-		} catch(FileNotFoundException e) {
-			Logger.error(this, "Somebody deleted " + temp + " ? We lost the ext jar (" + version + ") from " + source.userToString() + "!");
-			System.err.println("Somebody deleted " + temp + " ? We lost the ext jar (" + version + ") from " + source.userToString() + "!");
-			return;
-		} catch(IOException e) {
-			Logger.error(this, "Could not read ext jar (" + version + ") from temp file " + temp + " from node " + source.userToString() + " !");
-			System.err.println("Could not read ext jar (" + version + ") from temp file " + temp + " from node " + source.userToString() + " !");
-			// FIXME will be kept until exit for debugging purposes
-			return;
-		} catch(BinaryBlobFormatException e) {
-			Logger.error(this, "Peer " + source.userToString() + " sent us an invalid ext jar (" + version + ")!: " + e, e);
-			System.err.println("Peer " + source.userToString() + " sent us an invalid ext jar (" + version + ")!: " + e);
-			e.printStackTrace();
-			// FIXME will be kept until exit for debugging purposes
-			return;
-		} finally {
-			if(dis != null)
-				try {
-					dis.close();
-				} catch(IOException e) {
-					// Ignore
-				}
-		}
-
-		// Fetch the jar from the datastore plus the binary blob
-
-		FetchContext seedContext = updateManager.node.clientCore.makeClient((short) 0, true, false).getFetchContext();
-		FetchContext tempContext = new FetchContext(seedContext, FetchContext.IDENTICAL_MASK, true, blocks);
-		tempContext.localRequestOnly = true;
-
-		File f;
-		FileBucket b = null;
-		try {
-			f = File.createTempFile("ext-", ".fblob.tmp", updateManager.node.clientCore.getPersistentTempDir());
-			f.deleteOnExit();
-			b = new FileBucket(f, false, false, true, true, true);
-		} catch(IOException e) {
-			Logger.error(this, "Cannot share ext jar from " + source.userToString() + " with our peers because cannot write the cleaned version to disk: " + e, e);
-			System.err.println("Cannot share ext jar from " + source.userToString() + " with our peers because cannot write the cleaned version to disk: " + e);
-			e.printStackTrace();
-			b = null;
-			f = null;
-		}
-		final FileBucket cleanedBlob = b;
-		final File cleanedBlobFile = f;
-
-		ClientGetCallback myCallback = new ClientGetCallback() {
-
-			@Override
-			public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
-				if(e.mode == FetchException.CANCELLED) {
-					// Eh?
-					Logger.error(this, "Cancelled fetch from store/blob of ext jar (" + version + ") from " + source.userToString());
-					System.err.println("Cancelled fetch from store/blob of ext jar (" + version + ") from " + source.userToString() + " to " + temp + " - please report to developers");
-				// Probably best to keep files around for now.
-				} else if(e.isFatal()) {
-					// Bogus as inserted. Ignore.
-					temp.delete();
-					Logger.error(this, "Failed to fetch ext jar " + version + " from " + source.userToString() + " : fatal error (update was probably inserted badly): " + e, e);
-					System.err.println("Failed to fetch ext jar " + version + " from " + source.userToString() + " : fatal error (update was probably inserted badly): " + e);
-				} else {
-					Logger.error(this, "Failed to fetch ext jar " + version + " from blob from " + source.userToString());
-					System.err.println("Failed to fetch ext jar " + version + " from blob from " + source.userToString());
-				}
-			}
-
-			@Override
-			public void onMajorProgress(ObjectContainer container) {
-				// Ignore
-			}
-
-			@Override
-			public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
-				System.err.println("Got ext jar version " + version + " from " + source.userToString());
-				if(result.size() == 0) {
-					System.err.println("Ignoring because 0 bytes long");
-					return;
-				}
-
-				NodeUpdater extUpdater = updateManager.extUpdater;
-				if(extUpdater == null) {
-					System.err.println("Not updating because ext updater is disabled!");
-					return;
-				}
-				extUpdater.onSuccess(result, state, cleanedBlobFile, version);
-				temp.delete();
-				insertBlob(extUpdater.getBlobBucket(version), "ext jar");
-			}
-		};
-
-		ClientGetter cg = new ClientGetter(myCallback,
-				uri, tempContext, (short) 0, this, null, new BinaryBlobWriter(cleanedBlob), null);
-
-			try {
-				updateManager.node.clientCore.clientContext.start(cg);
-			} catch(FetchException e1) {
-				myCallback.onFailure(e1, cg, null);
-			} catch (DatabaseDisabledException e) {
-				// Impossible
-			}
-
-	}
-
 	protected boolean removeOldTempFiles() {
 		File oldTempFilesPeerDir = updateManager.node.clientCore.getPersistentTempDir();
 		if(!oldTempFilesPeerDir.exists())
@@ -1823,7 +1487,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		File[] oldTempFiles = oldTempFilesPeerDir.listFiles(new FileFilter() {
 
 			private final int lastGoodMainBuildNumber = Version.lastGoodBuild();
-			private final int recommendedExtBuildNumber = NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER;
 
 			@Override
 			public boolean accept(File file) {
@@ -1834,9 +1497,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 				String buildNumberStr;
 				int buildNumber;
-				Matcher extBuildNumberMatcher = extBuildNumberPattern.matcher(fileName);
 				Matcher mainBuildNumberMatcher = mainBuildNumberPattern.matcher(fileName);
-				Matcher extTempBuildNumberMatcher = extTempBuildNumberPattern.matcher(fileName);
 				Matcher mainTempBuildNumberMatcher = mainTempBuildNumberPattern.matcher(fileName);
 				Matcher revocationTempBuildNumberMatcher = revocationTempBuildNumberPattern.matcher(fileName);
 
@@ -1850,17 +1511,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 						Logger.error(this, "Wierd file in persistent temp: "+fileName);
 						return false;
 					}
-				} else if(extBuildNumberMatcher.matches()) {
-					try {
-					buildNumberStr = extBuildNumberMatcher.group(1);
-					buildNumber = Integer.parseInt(buildNumberStr);
-					if(buildNumber < recommendedExtBuildNumber)
-						return true;
-					} catch (NumberFormatException e) {
-						Logger.error(this, "Wierd file in persistent temp: "+fileName);
-						return false;
-					}
-				} else if(mainTempBuildNumberMatcher.matches() || extTempBuildNumberMatcher.matches() || revocationTempBuildNumberMatcher.matches()) {
+				} else if(mainTempBuildNumberMatcher.matches() || revocationTempBuildNumberMatcher.matches()) {
 					// Temporary file, can be deleted
 					return true;
 				}
@@ -1899,18 +1550,15 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			nodesSayKeyRevokedFailedTransfer.remove(pn);
 			nodesSayKeyRevokedTransferring.remove(pn);
 			nodesOfferedMainJar.remove(pn);
-			nodesOfferedExtJar.remove(pn);
 			nodesAskedSendMainJar.remove(pn);
-			nodesAskedSendExtJar.remove(pn);
 			nodesSendingMainJar.remove(pn);
-			nodesSendingExtJar.remove(pn);
 		}
 		maybeNotRevoked();
 	}
 
 	public boolean fetchingFromTwo() {
 		synchronized(this) {
-			return (this.nodesSendingMainJar.size() + this.nodesSendingExtJar.size()) >= 2;
+			return (this.nodesSendingMainJar.size()) >= 2;
 		}
 	}
 
@@ -1925,9 +1573,4 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		}
 	}
 
-	public boolean isFetchingExt() {
-		synchronized(this) {
-			return nodesSendingExtJar.size() > 0;
-		}
-	}
 }

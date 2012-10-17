@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -42,7 +43,6 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 
 	static private boolean logMINOR;
 	private FetchContext ctx;
-	private FetchResult result;
 	private ClientGetter cg;
 	private FreenetURI URI;
 	private final Ticker ticker;
@@ -54,7 +54,6 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	private int availableVersion;
 	private int fetchingVersion;
 	protected int fetchedVersion;
-	private int writtenVersion;
 	private int maxDeployVersion;
 	private int minDeployVersion;
 	private boolean isRunning;
@@ -223,32 +222,6 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		if(f == null) return null;
 		return new FileBucket(f, true, false, false, false, false);
 	}
-	private final Object writeJarSync = new Object();
-
-	public void writeJarTo(File fNew) throws IOException {
-		int fetched;
-		synchronized(this) {
-			fetched = fetchedVersion;
-		}
-		synchronized(writeJarSync) {
-			if (!fNew.delete() && fNew.exists()) {
-				System.err.println("Can't delete " + fNew + "!");
-			}
-
-			FileOutputStream fos;
-			fos = new FileOutputStream(fNew);
-
-			BucketTools.copyTo(result.asBucket(), fos, -1);
-
-			fos.flush();
-			fos.close();
-		}
-		synchronized(this) {
-			writtenVersion = fetched;
-		}
-		System.err.println("Written " + jarName() + " to " + fNew);
-	}
-
 	@Override
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		onSuccess(result, state, tempBlobFile, fetchingVersion);
@@ -295,21 +268,18 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 			System.out.println("Found " + jarName() + " version " + fetchedVersion);
 			if(fetchedVersion > currentVersion)
 				Logger.normal(this, "Found version " + fetchedVersion + ", setting up a new UpdatedVersionAvailableUserAlert");
-			maybeParseManifest(result);
+			maybeParseManifest(result, fetchedVersion);
 			this.cg = null;
-			if(this.result != null)
-				this.result.asBucket().free();
-			this.result = result;
 		}
-		processSuccess();
+		processSuccess(fetchedVersion, result);
 	}
 	
 	/** We have fetched the jar! Do something after onSuccess(). Called unlocked. */
-	protected abstract void processSuccess();
+	protected abstract void processSuccess(int fetched, FetchResult result);
 
 	/** Called with locks held 
 	 * @param result */
-	protected abstract void maybeParseManifest(FetchResult result);
+	protected abstract void maybeParseManifest(FetchResult result, int build);
 
 	protected void parseManifest(FetchResult result) {
 		InputStream is = null;
@@ -356,6 +326,61 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		} finally {
 			Closer.close(is);
 		}
+	}
+	
+	static final String DEPENDENCIES_FILE = "dependencies.properties";
+	
+	static Properties parseProperties(InputStream is, String filename) throws IOException {
+		Properties props = new Properties();
+		ZipInputStream zis = new ZipInputStream(is);
+		try {
+			ZipEntry ze;
+			while(true) {
+				ze = zis.getNextEntry();
+				if(ze == null) break;
+				if(ze.isDirectory()) continue;
+				String name = ze.getName();
+				
+				if(name.equals(filename)) {
+					if(logMINOR) Logger.minor(NodeUpdater.class, "Found manifest");
+					long size = ze.getSize();
+					if(logMINOR) Logger.minor(NodeUpdater.class, "Manifest size: "+size);
+					if(size > MAX_MANIFEST_SIZE) {
+						Logger.error(NodeUpdater.class, "Manifest is too big: "+size+" bytes, limit is "+MAX_MANIFEST_SIZE);
+						break;
+					}
+					byte[] buf = new byte[(int) size];
+					DataInputStream dis = new DataInputStream(zis);
+					dis.readFully(buf);
+					ByteArrayInputStream bais = new ByteArrayInputStream(buf);
+					props.load(bais);
+				} else {
+					zis.closeEntry();
+				}
+			}
+		} finally {
+			Closer.close(zis);
+		}
+		return props;
+	}
+
+	protected void parseDependencies(FetchResult result, int build) {
+		InputStream is = null;
+		try {
+			is = result.asBucket().getInputStream();
+			parseDependencies(parseProperties(is, DEPENDENCIES_FILE), build);
+		} catch (IOException e) {
+			Logger.error(this, "IOException trying to read manifest on update");
+		} catch (Throwable t) {
+			Logger.error(this, "Failed to parse update manifest: "+t, t);
+		} finally {
+			Closer.close(is);
+		}
+	}
+
+	/** Override if you want to deal with the file dependencies.properties */
+	protected void parseDependencies(Properties props, int build) {
+		// Do nothing
 	}
 
 	protected void parseManifestLine(String line) {
@@ -444,10 +469,6 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		kill();
 		this.URI = uri;
 		maybeUpdate();
-	}
-
-	public int getWrittenVersion() {
-		return writtenVersion;
 	}
 
 	public int getFetchedVersion() {
