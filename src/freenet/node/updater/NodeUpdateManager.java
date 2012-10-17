@@ -194,6 +194,13 @@ public class NodeUpdateManager {
         try {
 			updateURI = new FreenetURI(updaterConfig.getString("URI"));
 			updateURI = updateURI.setSuggestedEdition(Version.buildNumber());
+			if(updateURI.getDocName().equals("update")) {
+				if(updateURI.equals(new FreenetURI(UPDATE_URI).setDocName("update"))) {
+					System.out.println("Auto-update URI changed from \"update\" to \"jar\" in build "+TRANSITION_VERSION+".");
+					// Pre-1421.
+					updateURI = updateURI.setDocName("jar");
+				}
+			}
 			
 		} catch (MalformedURLException e) {
 			throw new InvalidConfigValueException(l10n("invalidUpdateURI", "error", e.getLocalizedMessage()));
