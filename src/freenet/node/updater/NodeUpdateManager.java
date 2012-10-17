@@ -113,9 +113,6 @@ public class NodeUpdateManager {
 	volatile boolean isAutoUpdateAllowed;
 	/** Has the user given the go-ahead? */
 	volatile boolean armed;
-	/** Should we check for freenet-ext.jar updates?
-	 * Normally set only when our freenet-ext.jar is known to be out of date. */
-	final boolean shouldUpdateExt;
 	/** Currently deploying an update? */
 	boolean isDeployingUpdate;
 	final Object broadcastUOMAnnouncesSync = new Object();
@@ -171,7 +168,6 @@ public class NodeUpdateManager {
 	public NodeUpdateManager(Node node, Config config) throws InvalidConfigValueException {
 		this.node = node;
 		this.hasBeenBlown = false;
-		shouldUpdateExt = NodeStarter.extBuildNumber < NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER;
 		this.alert= new UpdatedVersionAvailableUserAlert(this);
 		alert.isValid(false);
 		

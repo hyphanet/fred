@@ -34,13 +34,6 @@ public class NodeStarter implements WrapperListener {
 
 	private Node node;
 	private static LoggingConfigHandler logConfigHandler;
-	/** Freenet will not function at all without at least this build of freenet-ext.jar.
-	 * This will be included in the jar manifest file so we can check it when we download new builds. */
-	public final static int REQUIRED_EXT_BUILD_NUMBER = -1;//@min.ext.version@;
-	/** Freenet will function best with this build of freenet-ext.jar.
-	 * It may be required in the near future. The node will try to download it.
-	 * The node will not update to a later ext version than this, because that might be incompatible. */
-	public final static int RECOMMENDED_EXT_BUILD_NUMBER = -1;//@max.ext.version@;
 	/*
 	(File.separatorChar == '\\') &&
 	(System.getProperty("os.arch").toLowerCase().matches("(i?[x0-9]86_64|amd64)")) ? 6 : 2;
@@ -90,7 +83,7 @@ public class NodeStarter implements WrapperListener {
 			return Integer.valueOf(-1);
 		}
 
-		String builtWithMessage = "freenet.jar built with freenet-ext.jar Build #" + ExtVersion.buildNumber + " r" + ExtVersion.cvsRevision+" running with ext build "+extBuildNumber+" r" + extRevisionNumber+" (require ext "+REQUIRED_EXT_BUILD_NUMBER+"-"+RECOMMENDED_EXT_BUILD_NUMBER+")";
+		String builtWithMessage = "freenet.jar built with freenet-ext.jar Build #" + ExtVersion.buildNumber + " r" + ExtVersion.cvsRevision+" running with ext build "+extBuildNumber+" r" + extRevisionNumber;
 		Logger.normal(this, builtWithMessage);
 		System.out.println(builtWithMessage);
 

@@ -22,8 +22,6 @@ maintainers may prefer to use this instead of build.xml.
 
 	<property name="version.src" value="freenet/node/Version.java" />
 	<property name="version.make" value="freenet/node/Version.class" />
-	<property name="dependencies.src" value="freenet/node/NodeStarter.java" />
-	<property name="dependencies.make" value="freenet/node/NodeStarter.class" />
 
 	<path id="lib.path">
 		<fileset dir="${lib.contrib.dir}" includes="${lib.contrib.jars}"/>
@@ -153,12 +151,6 @@ maintainers may prefer to use this instead of build.xml.
 		  srcfile="${main.src}/${version.src}"/>
 	</target>
 
-	<target name="check-dependencies-file">
-		<uptodate property="dependencies.uptodate"
-		  targetfile="${main.make}/${dependencies.src}"
-		  srcfile="${main.src}/${dependencies.src}"/>
-	</target>
-
 	<target name="build-version-file" depends="check-version-file" unless="version.uptodate">
 		<!-- Create the Version file with patched revision number in ${main.make} -->
 		<copy file="${main.src}/${version.src}" tofile="${main.make}/${version.src}" overwrite="true" />
@@ -169,19 +161,7 @@ maintainers may prefer to use this instead of build.xml.
 		<echo message="Updated build version to ${git.revision} in ${main.make}/${version.src}"/>
 	</target>
 
-	<target name="build-dependencies-file" depends="check-dependencies-file" unless="dependencies.uptodate">
-		<!-- Create the Dependency file with patched revision number in ${main.make} -->
-		<copy file="${main.src}/${dependencies.src}" tofile="${main.make}/${dependencies.src}" overwrite="true" />
-		<delete file="${main.make}/${dependencies.make}" quiet="true" />
-		<replace file="${main.make}/${dependencies.src}">
-			<replacefilter token="-1;//@min.ext.version@" value="${contrib.min.version}"/>
-			<replacefilter token="-1;//@max.ext.version@" value="${contrib.max.version}"/>
-		</replace>
-		<echo message="Updated build Dependencies EXT in [${contrib.min.version}-${contrib.max.version}] in ${main.make}/${dependencies.src}"/>
-	</target>
-
-
-	<target name="build" depends="init, dep, build-version-file, build-dependencies-file">
+	<target name="build" depends="init, dep, build-version-file">
 		<!-- Create the time stamp -->
 		<tstamp/>
 		<!-- Create the build directory structure used by compile -->
@@ -194,7 +174,6 @@ maintainers may prefer to use this instead of build.xml.
 			<include name="**/*.java"/>
 			<exclude name="**/package-info.java"/>
 			<exclude name="${version.src}"/>
-			<exclude name="${dependencies.src}"/>
 		</javac>
 
 		<!-- Force compile of Version.java in case compile of ${main.src} didn't trigger it -->
@@ -202,7 +181,6 @@ maintainers may prefer to use this instead of build.xml.
 			<compilerarg line="${javac.args}"/>
 			<classpath refid="lib.path"/>
 			<include name="${version.src}"/>
-			<include name="${dependencies.src}"/>
 		</javac>
 
 		<!-- Copy web interface static files to the build dir -->
@@ -230,8 +208,8 @@ maintainers may prefer to use this instead of build.xml.
 		<jar jarfile="${main.dst}/freenet.jar" basedir="${main.make}">
 			<manifest>
 				<attribute name="Main-Class" value="freenet.node.Node"/>
-				<attribute name="Required-Ext-Version" value="${contrib.min.version}"/>
-				<attribute name="Recommended-Ext-Version" value="${contrib.max.version}"/>
+				<attribute name="Required-Ext-Version" value="29"/>
+				<attribute name="Recommended-Ext-Version" value="29"/>
 				<attribute name="Class-Path" value="${lib.jars.package}" />
 				<section name="common">
 					<attribute name="Specification-Title" value="Freenet"/>
@@ -243,7 +221,6 @@ maintainers may prefer to use this instead of build.xml.
 				</section>
 			</manifest>
 			<exclude name="${version.src}"/>
-			<exclude name="${dependencies.src}"/>
 		</jar>
 	</target>
 
