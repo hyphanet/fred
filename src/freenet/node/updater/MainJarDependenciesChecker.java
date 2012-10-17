@@ -286,8 +286,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				continue;
 			}
 			// Check the version currently in use.
-			String myVersion = null;
-			if(validFile(currentFile, expectedHash)) {
+			if(currentFile != null && validFile(currentFile, expectedHash)) {
 				System.out.println("Existing version of "+currentFile+" is OK for update.");
 				// Use it.
 				dependencies.add(new Dependency(currentFile, currentFile, p));
