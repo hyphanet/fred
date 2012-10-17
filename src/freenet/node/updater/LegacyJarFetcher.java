@@ -66,6 +66,8 @@ class LegacyJarFetcher implements ClientGetCallback {
 		ctx = core.makeClient((short) 1, true, false).getFetchContext();
 		ctx.allowSplitfiles = true;
 		ctx.dontEnterImplicitArchives = false;
+		ctx.maxNonSplitfileRetries = -1;
+		ctx.maxSplitfileBlockRetries = -1;
 		blobBucket = new FileBucket(saveTo, false, false, false, false, false);
 		if(blobBucket.size() > 0) {
 			fetched = true;
