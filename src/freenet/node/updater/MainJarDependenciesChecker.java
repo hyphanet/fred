@@ -470,7 +470,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			File currentFile = getDependencyInUse(baseName, p);
 			
 			// Serve the file if it meets the hash in the dependencies.properties.
-			if(currentFile != null) {
+			if(currentFile != null && currentFile.exists()) {
 				if(validFile(currentFile, expectedHash, size)) {
 					System.out.println("Will serve "+filename+" for UOM");
 					deployer.addDependency(expectedHash, filename);
