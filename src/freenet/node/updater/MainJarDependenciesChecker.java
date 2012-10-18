@@ -589,6 +589,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 
 	public static boolean validFile(File filename, byte[] expectedHash, long size) {
 		if(filename == null) return false;
+		if(!filename.exists()) return false;
 		if(filename.length() != size) {
 			System.out.println("File exists while updating but length is wrong ("+filename.length()+" should be "+size+") for "+filename);
 			return false;
