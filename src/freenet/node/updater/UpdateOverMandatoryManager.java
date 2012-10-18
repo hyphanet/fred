@@ -1638,7 +1638,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		synchronized(dependencies) {
 			data = dependencies.get(buf);
 		}
-		boolean fail = incrementDependencies(source);
+		boolean fail = !incrementDependencies(source);
 		final RandomAccessFileWrapper raf;
 		final BulkTransmitter bt;
 		
