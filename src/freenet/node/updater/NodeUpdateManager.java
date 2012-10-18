@@ -1810,6 +1810,7 @@ public class NodeUpdateManager {
 	public void renderProgress(HTMLNode alertNode) {
 		MainJarUpdater m;
 		synchronized (this) {
+			if(this.fetchedMainJarData == null) return;
 			m = (MainJarUpdater)mainUpdater;
 			if(m == null) return;
 		}
