@@ -249,6 +249,7 @@ public class NodeUpdateManager {
 			public void onSuccess(LegacyJarFetcher fetcher) {
 				if (transitionMainJarFetcher.fetched()
 						&& transitionExtJarFetcher.fetched()) {
+					System.out.println("Got legacy jars, announcing...");
 					broadcastUOMAnnouncesOld();
 				}
 			}
@@ -583,7 +584,7 @@ public class NodeUpdateManager {
 				if (logMINOR)
 					Logger.minor(this,
 							"Not sending UOM on connect: Don't have the update");
-				return;
+				sendNew = false;
 			}
 		}
 		if ((!dontHaveUpdate) && hasBeenBlown && !revocationChecker.hasBlown()) {
