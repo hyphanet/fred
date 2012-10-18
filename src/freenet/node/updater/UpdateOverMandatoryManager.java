@@ -1869,12 +1869,17 @@ public class UpdateOverMandatoryManager implements RequestClient {
 								// Wrong length -> transfer would have failed.
 							}
 						} else {
+							System.out.println("Download failed: "+saveTo+" from "+fetchFrom);
 							failed = true;
 						}
 					} catch (NotConnectedException e) {
 						// Not counting this as a failure.
+						System.out.println("Disconnected while downloading "+saveTo+" from "+fetchFrom);
 					} catch (IOException e) {
 						// This isn't their fault either.
+						// User might be able to understand and fix this.
+						System.out.println("IOException while downloading "+saveTo+" from "+fetchFrom+" : "+e);
+						Logger.error(this, "IOException while downloading "+saveTo+" from "+fetchFrom+" : "+e, e);
 					} finally {
 						synchronized(UOMDependencyFetcher.this) {
 							if(failed)
