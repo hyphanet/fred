@@ -1505,7 +1505,7 @@ public class DMT {
 	public static Message createUOMAnnouncement(String mainKey, String revocationKey,
 			boolean haveRevocation, long mainJarVersion, long timeLastTriedRevocationFetch,
 			int revocationDNFCount, long revocationKeyLength, long mainJarLength, int pingTime, int bwlimitDelayTime) {
-		Message msg = new Message(UOMAnnounce);
+		Message msg = new Message(UOMAnnouncement);
 		
 		msg.set(MAIN_JAR_KEY, mainKey);
 		msg.set(REVOCATION_KEY, revocationKey);
