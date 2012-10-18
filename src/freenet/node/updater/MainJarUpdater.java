@@ -166,7 +166,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		@Override
 		public void onSuccess(FetchResult result, ClientGetter state,
 				ObjectContainer container) {
-			cb.onSuccess();
+			if(cb != null) cb.onSuccess();
 			if(!FileUtil.renameTo(tempBlobFile, blobFile)) {
 				Logger.error(this, "Failed to save blob file for "+filename+" : UOM may not work");
 			}
@@ -178,7 +178,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		@Override
 		public void onFailure(FetchException e, ClientGetter state,
 				ObjectContainer container) {
-			cb.onFailure(e);
+			if(cb != null) cb.onFailure(e);
 			tempBlobFile.delete();
 		}
 		
@@ -223,7 +223,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 								if(fetched) return;
 								fetched = true;
 							}
-							cb.onSuccess();
+							if(cb != null) cb.onSuccess();
 						}
 						
 			});
