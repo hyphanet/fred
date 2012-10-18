@@ -526,8 +526,9 @@ public class NodeUpdateManager {
 	void broadcastUOMAnnouncesOld() {
 		Message msg;
 		synchronized (broadcastUOMAnnouncesSync) {
-			msg = getOldUOMAnnouncement();
+			if(broadcastUOMAnnouncesOld) return;
 			broadcastUOMAnnouncesOld = true;
+			msg = getOldUOMAnnouncement();
 		}
 		node.peers.localBroadcast(msg, true, true, ctr);
 	}
@@ -535,8 +536,9 @@ public class NodeUpdateManager {
 	void broadcastUOMAnnouncesNew() {
 		Message msg;
 		synchronized (broadcastUOMAnnouncesSync) {
-			msg = getNewUOMAnnouncement();
+			if(broadcastUOMAnnouncesNew) return;
 			broadcastUOMAnnouncesNew = true;
+			msg = getNewUOMAnnouncement();
 		}
 		node.peers.localBroadcast(msg, true, true, ctr);
 	}
