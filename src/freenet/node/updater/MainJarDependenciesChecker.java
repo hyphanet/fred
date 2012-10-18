@@ -514,6 +514,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				// Comparing File's by equals() is dodgy, e.g. ./blah != blah. So use getName().
 				// Even on *nix some filesystems are case insensitive.
 				if(name.equalsIgnoreCase(currentFile.getName())) continue;
+				if(inClasspath(name)) continue; // Paranoia!
 				String fileVersion = getDependencyVersion(f);
 				if(fileVersion == null) {
 					f.delete();
@@ -529,7 +530,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 		return true;
 	}
 	
-    public static String getDependencyVersion(File currentFile) {
+	public static String getDependencyVersion(File currentFile) {
         // We can't use parseProperties because there are multiple sections.
     	InputStream is = null;
         try {
@@ -582,6 +583,17 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				return f;
 		}
 		return null;
+	}
+	
+    private static boolean inClasspath(String name) {
+		String classpath = System.getProperty("java.class.path");
+		String[] split = classpath.split(File.pathSeparator);
+		for(String s : split) {
+			File f = new File(s);
+			if(name.equalsIgnoreCase(f.getName()))
+				return true;
+		}
+		return false;
 	}
 
 	private static byte[] parseExpectedHash(String sha256, String baseName) {
