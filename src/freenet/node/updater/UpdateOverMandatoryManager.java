@@ -1779,6 +1779,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		public void peerMaybeFreeSlots(PeerNode fetchFrom) {
 			synchronized(this) {
 				if(!peersFailed.remove(fetchFrom)) return;
+				if(completed) return;
 			}
 			start();
 		}
@@ -1789,6 +1790,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					if(logMINOR) Logger.minor(this, "Already fetching jar from 2 peers "+peersFetching);
 					return false;
 				}
+				if(completed) return false;
 			}
 			HashSet<PeerNode> uomPeers;
 			synchronized(UpdateOverMandatoryManager.this) {
@@ -1890,6 +1892,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		}
 		
 		private synchronized PeerNode chooseRandomPeer(HashSet<PeerNode> uomPeers) {
+			if(completed) return null;
 			if(peersFetching.size() >= MAX_NODES_SENDING_JAR) {
 				if(logMINOR) Logger.minor(this, "Already fetching jar from 2 peers "+peersFetching);
 				return null;
