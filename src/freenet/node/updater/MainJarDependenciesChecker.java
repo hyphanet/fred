@@ -418,17 +418,17 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				Logger.error(MainJarDependencies.class, "dependencies.properties broken? missing filename");
 				return false;
 			}
-			FreenetURI maxCHK;
+			
+			// Check key even though we don't use it.
 			s = props.getProperty(baseName+".key");
 			if(s == null) {
 				Logger.error(MainJarDependencies.class, "dependencies.properties broken? missing "+baseName+".key");
 				return false;
 			}
 			try {
-				maxCHK = new FreenetURI(s);
+				new FreenetURI(s);
 			} catch (MalformedURLException e) {
 				Logger.error(MainJarDependencies.class, "Unable to parse CHK for "+baseName+": \""+s+"\": "+e, e);
-				maxCHK = null;
 				return false;
 			}
 			
