@@ -508,7 +508,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				if(!p.matcher(name).matches()) continue;
 				if(f.equals(currentFile)) continue;
 				String fileVersion = getDependencyVersion(f);
-				if(version == null) {
+				if(fileVersion == null) {
 					f.delete();
 					System.out.println("Deleting old dependency file (no version): "+f);
 				}
