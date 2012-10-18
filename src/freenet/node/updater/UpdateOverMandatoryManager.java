@@ -12,6 +12,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Vector;
@@ -60,9 +61,12 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.ShortBuffer;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
+import freenet.support.WeakHashSet;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
+import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
+import freenet.support.io.FileUtil;
 import freenet.support.io.RandomAccessFileWrapper;
 import freenet.support.io.RandomAccessThing;
 
@@ -111,8 +115,11 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	private static final Pattern mainBuildNumberPattern = Pattern.compile("^main(?:-jar)?-(\\d+)\\.fblob$");
 	private static final Pattern mainTempBuildNumberPattern = Pattern.compile("^main(?:-jar)?-(\\d+-)?(\\d+)\\.fblob\\.tmp*$");
 	private static final Pattern revocationTempBuildNumberPattern = Pattern.compile("^revocation(?:-jar)?-(\\d+-)?(\\d+)\\.fblob\\.tmp*$");
+	private boolean fetchingUOM;
 	
 	private final HashMap<ShortBuffer, File> dependencies;
+	
+	private final HashMap<ShortBuffer, UOMDependencyFetcher> dependencyFetchers;
 
 	public UpdateOverMandatoryManager(NodeUpdateManager manager) {
 		this.updateManager = manager;
@@ -123,6 +130,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		nodesAskedSendMainJar = new HashSet<PeerNode>();
 		nodesSendingMainJar = new HashSet<PeerNode>();
 		dependencies = new HashMap<ShortBuffer, File>();
+		dependencyFetchers = new HashMap<ShortBuffer, UOMDependencyFetcher>();
 	}
 
 	/** 
@@ -217,6 +225,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		}
 		
+		tellFetchers(source);
+		
 		if(fromOldNode)
 			// We only care about revocations from old nodes.
 			return true;
@@ -232,6 +242,15 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		handleMainJarOffer(now, mainJarFileLength, mainJarVersion, source, mainJarKey);
 		
 		return true;
+	}
+
+	private void tellFetchers(PeerNode source) {
+		HashSet<UOMDependencyFetcher> fetchList;
+		synchronized(dependencyFetchers) {
+			fetchList = new HashSet<UOMDependencyFetcher>(dependencyFetchers.values());
+		}
+		for(UOMDependencyFetcher f : fetchList)
+			f.start();
 	}
 
 	private void tryFetchRevocation(final PeerNode source) throws NotConnectedException {
@@ -367,6 +386,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
                 }
 		final HashSet<PeerNode> sendingJar = nodesSendingMainJar;
 		final HashSet<PeerNode> askedSendJar = nodesAskedSendMainJar;
+		boolean wasFetchingUOM = false;
 		synchronized(this) {
 			long offeredVersion = source.getMainJarOfferedVersion();
 			long updateVersion = updateManager.newMainJarVersion();
@@ -402,7 +422,11 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				}
 				sendingJar.add(source);
 			}
+			wasFetchingUOM = fetchingUOM;
+			fetchingUOM = true;
 		}
+		if(!wasFetchingUOM)
+			this.updateManager.onStartFetchingUOM();
 
 		Message msg = 
 			DMT.createUOMRequestMainJar(updateManager.node.random.nextLong());
@@ -1642,6 +1666,153 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				
 			});
 		}
+	}
+	
+	boolean fetchingUOM() {
+		return fetchingUOM;
+	}
+	
+	public interface UOMDependencyFetcherCallback {
+		void onSuccess();
+	}
+
+	/** Try to fetch a dependency by hash.
+	 * @param expectedHash The hash of the expected file. Will be checked.
+	 * @param size The length of the expected file.
+	 * @param saveTo The file will be overwritten only if the download is
+	 * successful and the hash is correct.
+	 * @param uomDependencyFetchCallback Callback to call when done.
+	 */
+	public void fetchDependency(byte[] expectedHash, long size, File saveTo,
+			UOMDependencyFetcherCallback cb) {
+		UOMDependencyFetcher f = new UOMDependencyFetcher(expectedHash, size, saveTo, cb);
+		synchronized(this) {
+			dependencyFetchers.put(f.expectedHashBuffer, f);
+		}
+		f.start();
+	}
+	
+	class UOMDependencyFetcher {
+		
+		final byte[] expectedHash;
+		final ShortBuffer expectedHashBuffer;
+		final long size;
+		final File saveTo;
+		private boolean completed;
+		private final UOMDependencyFetcherCallback cb;
+		private final WeakHashSet<PeerNode> peersFailed;
+		private final HashSet<PeerNode> peersFetching;
+		
+		UOMDependencyFetcher(byte[] expectedHash, long size, File saveTo, UOMDependencyFetcherCallback callback) {
+			this.expectedHash = expectedHash;
+			expectedHashBuffer = new ShortBuffer(expectedHash);
+			this.size = size;
+			this.saveTo = saveTo;
+			cb = callback;
+			peersFailed = new WeakHashSet<PeerNode>();
+			peersFetching = new HashSet<PeerNode>();
+		}
+		
+		boolean maybeFetch() {
+			synchronized(this) {
+				if(peersFetching.size() >= MAX_NODES_SENDING_JAR) {
+					if(logMINOR) Logger.minor(this, "Already fetching jar from 2 peers "+peersFetching);
+					return false;
+				}
+			}
+			HashSet<PeerNode> uomPeers;
+			synchronized(UpdateOverMandatoryManager.this) {
+				uomPeers = new HashSet<PeerNode>(nodesOfferedMainJar);
+			}
+			final PeerNode fetchFrom;
+			synchronized(this) {
+				if(peersFetching.size() >= MAX_NODES_SENDING_JAR) {
+					if(logMINOR) Logger.minor(this, "Already fetching jar from 2 peers "+peersFetching);
+					return false;
+				}
+				ArrayList<PeerNode> notTried = null;
+				for(PeerNode pn : uomPeers) {
+					if(peersFailed.contains(pn)) continue;
+					if(!pn.isConnected()) continue;
+					if(notTried == null) notTried = new ArrayList<PeerNode>();
+					notTried.add(pn);
+				}
+				if(notTried == null) return false;
+				fetchFrom = notTried.get(updateManager.node.fastWeakRandom.nextInt(notTried.size()));
+				peersFetching.add(fetchFrom);
+			}
+			updateManager.node.executor.execute(new Runnable() {
+
+				@Override
+				public void run() {
+					boolean failed = false;
+					File tmp = null;
+					RandomAccessFileWrapper raf = null;
+					try {
+						long uid = updateManager.node.fastWeakRandom.nextLong();
+						fetchFrom.sendAsync(DMT.createUOMFetchDependency(uid, expectedHash, size), null, updateManager.ctr);
+						tmp = File.createTempFile(saveTo.getName(), NodeUpdateManager.TEMP_SUFFIX, saveTo.getParentFile());
+						raf = new RandomAccessFileWrapper(tmp, "w");
+						PartiallyReceivedBulk prb = 
+							new PartiallyReceivedBulk(updateManager.node.getUSM(), size,
+								Node.PACKET_SIZE, raf, false);
+						BulkReceiver br = new BulkReceiver(prb, fetchFrom, uid, updateManager.ctr);
+						raf.close();
+						raf = null;
+						if(br.receive()) {
+							// Check the hash.
+							if(MainJarDependenciesChecker.validFile(tmp, expectedHash, size)) {
+								if(FileUtil.renameTo(tmp, saveTo)) {
+									synchronized(UOMDependencyFetcher.this) {
+										if(completed) return;
+										completed = true;
+									}
+									synchronized(UpdateOverMandatoryManager.this) {
+										dependencyFetchers.remove(expectedHashBuffer);
+									}
+									cb.onSuccess();
+								} else {
+									synchronized(UOMDependencyFetcher.this) {
+										if(completed) return;
+									}
+									failed = true;
+									System.err.println("Update failing: Saved dependency to "+tmp+" for "+saveTo+" but cannot rename it! Permissions problems?");
+								}
+							} else {
+								synchronized(UOMDependencyFetcher.this) {
+									if(completed) return;
+								}
+								failed = true;
+								System.err.println("Update failing: Downloaded file "+saveTo+" from "+fetchFrom+" but file does not match expected hash.");
+								// Wrong length -> transfer would have failed.
+							}
+						} else {
+							failed = true;
+						}
+					} catch (NotConnectedException e) {
+						// Not counting this as a failure.
+					} catch (IOException e) {
+						// This isn't their fault either.
+					} finally {
+						synchronized(UOMDependencyFetcher.this) {
+							if(failed)
+								peersFailed.add(fetchFrom);
+							peersFetching.remove(fetchFrom);
+						}
+						Closer.close(raf);
+						if(tmp != null) 
+							tmp.delete();
+					}
+				}
+				
+			});
+			return true;
+		}
+		
+		void start() {
+			while(maybeFetch());
+		}
+		
 	}
 
 }

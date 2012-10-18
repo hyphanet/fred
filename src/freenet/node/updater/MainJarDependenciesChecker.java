@@ -87,7 +87,7 @@ public class MainJarDependenciesChecker {
 	
 	interface Deployer {
 		public void deploy(MainJarDependencies deps);
-		public JarFetcher fetch(FreenetURI uri, File downloadTo, JarFetcherCallback cb, int build) throws FetchException;
+		public JarFetcher fetch(FreenetURI uri, File downloadTo, long expectedLength, byte[] expectedHash, JarFetcherCallback cb, int build) throws FetchException;
 		/** Called by cleanup with the dependencies we can serve for the current version. 
 		 * @param expectedHash The hash of the file's contents, which is also
 		 * listed in the dependencies file.
@@ -153,8 +153,8 @@ public class MainJarDependenciesChecker {
 		final boolean essential;
 
 		/** Construct with a Dependency, so we can add it when we're done. */
-		Downloader(Dependency dep, FreenetURI uri) throws FetchException {
-			fetcher = deployer.fetch(uri, dep.newFilename, this, build);
+		Downloader(Dependency dep, FreenetURI uri, byte[] expectedHash, long expectedSize) throws FetchException {
+			fetcher = deployer.fetch(uri, dep.newFilename, expectedSize, expectedHash, this, build);
 			this.dep = dep;
 			this.essential = true;
 		}
@@ -333,7 +333,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				// No way to check existing files.
 				if(maxCHK != null) {
 					try {
-						fetchDependencyEssential(maxCHK, new Dependency(currentFile, filename, p));
+						fetchDependencyEssential(maxCHK, new Dependency(currentFile, filename, p), expectedHash, size);
 					} catch (FetchException fe) {
 						broken = true;
 						Logger.error(this, "Failed to start fetch: "+fe, fe);
@@ -364,7 +364,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			}
 			// Otherwise we need to fetch it.
 			try {
-				fetchDependencyEssential(maxCHK, new Dependency(currentFile, filename, p));
+				fetchDependencyEssential(maxCHK, new Dependency(currentFile, filename, p), expectedHash, size);
 			} catch (FetchException e) {
 				broken = true;
 				Logger.error(this, "Failed to start fetch: "+e, e);
@@ -557,7 +557,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 		}
 	}
 
-	private static boolean validFile(File filename, byte[] expectedHash, long size) {
+	public static boolean validFile(File filename, byte[] expectedHash, long size) {
 		if(filename.length() != size) {
 			System.out.println("File exists while updating but length is wrong ("+filename.length()+" should be "+size+") for "+filename);
 			return false;
@@ -607,8 +607,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
 		deployer.deploy(new MainJarDependencies(f, build));
 	}
 
-	private synchronized void fetchDependencyEssential(FreenetURI chk, Dependency dep) throws FetchException {
-		Downloader d = new Downloader(dep, chk);
+	private synchronized void fetchDependencyEssential(FreenetURI chk, Dependency dep, byte[] expectedHash, long expectedSize) throws FetchException {
+		Downloader d = new Downloader(dep, chk, expectedHash, expectedSize);
 		downloaders.add(d);
 	}
 

@@ -29,6 +29,7 @@ import freenet.node.updater.MainJarDependenciesChecker.Deployer;
 import freenet.node.updater.MainJarDependenciesChecker.JarFetcher;
 import freenet.node.updater.MainJarDependenciesChecker.JarFetcherCallback;
 import freenet.node.updater.MainJarDependenciesChecker.MainJarDependencies;
+import freenet.node.updater.UpdateOverMandatoryManager.UOMDependencyFetcherCallback;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -110,8 +111,10 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		private boolean fetched;
 		private final File blobFile;
 		private final File tempBlobFile;
+		private final byte[] expectedHash;
+		private final long expectedLength;
 		
-		DependencyJarFetcher(File filename, FreenetURI chk, JarFetcherCallback cb) {
+		DependencyJarFetcher(File filename, FreenetURI chk, long expectedLength, byte[] expectedHash, JarFetcherCallback cb) {
 			blobFile = blobFile(filename.getName());
 			File tmp;
 			try {
@@ -131,6 +134,8 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 			myCtx.eventProducer.addEventListener(this);
 			this.cb = cb;
 			this.filename = filename;
+			this.expectedHash = expectedHash;
+			this.expectedLength = expectedLength;
 		}
 		
 		@Override
@@ -204,22 +209,53 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 						true, COMPRESS_STATE.WORKING, lastProgress.succeedBlocks, lastProgress.failedBlocks, lastProgress.fatallyFailedBlocks, lastProgress.minSuccessfulBlocks, lastProgress.totalBlocks, lastProgress.finalizedTotal, false));
 			return div;
 		}
-		
+
+		public void fetchFromUOM() {
+			synchronized(this) {
+				if(fetched) return;
+			}
+			manager.uom.fetchDependency(expectedHash, expectedLength, filename,
+					new UOMDependencyFetcherCallback() {
+
+						@Override
+						public void onSuccess() {
+							synchronized(DependencyJarFetcher.this) {
+								if(fetched) return;
+								fetched = true;
+							}
+							cb.onSuccess();
+						}
+						
+			});
+		}
+
 	}
 	
 	@Override
 	public JarFetcher fetch(FreenetURI uri, File downloadTo,
-			JarFetcherCallback cb, int build) throws FetchException {
+			long expectedLength, byte[] expectedHash, JarFetcherCallback cb, int build) throws FetchException {
 		System.out.println("Fetching "+downloadTo+" needed for new Freenet update "+build);
 		if(logMINOR) Logger.minor(this, "Fetching "+uri+" to "+downloadTo+" for next update");
-		DependencyJarFetcher fetcher = new DependencyJarFetcher(downloadTo, uri, cb);
+		DependencyJarFetcher fetcher = new DependencyJarFetcher(downloadTo, uri, expectedLength, expectedHash, cb);
 		synchronized(fetchers) {
 			fetchers.add(fetcher);
 		}
 		fetcher.start();
+		if(manager.uom.fetchingUOM()) {
+			fetcher.fetchFromUOM();
+		}
 		return fetcher;
 	}
-
+	
+	public void onStartFetchingUOM() {
+		DependencyJarFetcher[] f;
+		synchronized(fetchers) {
+			f = fetchers.toArray(new DependencyJarFetcher[fetchers.size()]);
+		}
+		for(DependencyJarFetcher fetcher : f)
+			fetcher.fetchFromUOM();
+	}
+	
 	public void renderProperties(HTMLNode alertNode) {
 		synchronized(fetchers) {
 			if(!fetchers.isEmpty())
@@ -267,5 +303,5 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 	public void addDependency(byte[] expectedHash, File filename) {
 		manager.uom.addDependency(expectedHash, filename);
 	}
-	
+
 }

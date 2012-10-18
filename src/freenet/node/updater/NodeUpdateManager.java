@@ -1797,4 +1797,13 @@ public class NodeUpdateManager {
 		return m.brokenDependencies();
 	}
 
+	public void onStartFetchingUOM() {
+		MainJarUpdater m;
+		synchronized (this) {
+			m = (MainJarUpdater)mainUpdater;
+			if(m == null) return;
+		}
+		m.onStartFetchingUOM();
+	}
+
 }
