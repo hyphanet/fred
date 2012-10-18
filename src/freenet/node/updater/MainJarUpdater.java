@@ -282,7 +282,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 	}
 	
 	public void cleanupDependencies() {
-		InputStream is = getClass().getResourceAsStream(DEPENDENCIES_FILE);
+		InputStream is = getClass().getResourceAsStream("/"+DEPENDENCIES_FILE);
 		if(is == null) {
 			System.err.println("Can't find dependencies file. Other nodes will not be able to use Update Over Mandatory through this one.");
 			return;
