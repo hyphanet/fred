@@ -511,6 +511,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				if(fileVersion == null) {
 					f.delete();
 					System.out.println("Deleting old dependency file (no version): "+f);
+					continue;
 				}
 				if(Fields.compareVersion(fileVersion, version) <= 0) {
 					f.delete();
