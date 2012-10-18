@@ -1572,4 +1572,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		}
 	}
 
+	public void addDependency(byte[] expectedHash, File filename) {
+		// FIXME do something		
+	}
+
 }

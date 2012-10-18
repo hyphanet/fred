@@ -183,6 +183,8 @@ public class NodeUpdateManager {
 	 * deploying.
 	 */
 	private Bucket maybeNextMainJarData;
+	
+	static final String TEMP_SUFFIX = ".updater.fblob.tmp";
 
 	static {
 		Logger.registerClass(NodeUpdateManager.class);
@@ -485,7 +487,7 @@ public class NodeUpdateManager {
 	public void start() throws InvalidConfigValueException {
 
 		node.clientCore.alerts.register(alert);
-
+		
 		enable(wasEnabledOnStartup);
 
 		// Fetch 3 files, each to a file in the runDir.
@@ -518,7 +520,7 @@ public class NodeUpdateManager {
 			ip4Getter.start(RequestStarter.UPDATE_PRIORITY_CLASS,
 					8 * 1024 * 1024);
 		}
-
+		
 	}
 
 	void broadcastUOMAnnouncesOld() {
@@ -674,6 +676,8 @@ public class NodeUpdateManager {
 			transitionMainJarFetcher.stop();
 			transitionExtJarFetcher.stop();
 		} else {
+			// FIXME copy it, dodgy locking.
+			((MainJarUpdater)mainUpdater).cleanupDependencies();
 			mainUpdater.start();
 			startPluginUpdaters();
 			transitionMainJarFetcher.start();

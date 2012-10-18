@@ -1,6 +1,8 @@
 package freenet.node.updater;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Properties;
 
@@ -9,6 +11,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
+import freenet.client.async.BinaryBlobWriter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
@@ -20,6 +23,7 @@ import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
+import freenet.node.Version;
 import freenet.node.fcp.ClientPut.COMPRESS_STATE;
 import freenet.node.updater.MainJarDependenciesChecker.Deployer;
 import freenet.node.updater.MainJarDependenciesChecker.JarFetcher;
@@ -27,7 +31,10 @@ import freenet.node.updater.MainJarDependenciesChecker.JarFetcherCallback;
 import freenet.node.updater.MainJarDependenciesChecker.MainJarDependencies;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
+import freenet.support.api.Bucket;
+import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
+import freenet.support.io.FileUtil;
 
 public class MainJarUpdater extends NodeUpdater implements Deployer {
 	
@@ -92,7 +99,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 	public void deploy(MainJarDependencies deps) {
 		manager.onDependenciesReady(deps);
 	}
-
+	
 	/** Glue code. */
 	private class DependencyJarFetcher implements JarFetcher, ClientGetCallback, RequestClient, ClientEventListener {
 
@@ -101,13 +108,26 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		private SplitfileProgressEvent lastProgress;
 		private final JarFetcherCallback cb;
 		private boolean fetched;
+		private final File blobFile;
+		private final File tempBlobFile;
 		
 		DependencyJarFetcher(File filename, FreenetURI chk, JarFetcherCallback cb) {
+			blobFile = blobFile(filename.getName());
+			File tmp;
+			try {
+				tmp = File.createTempFile(filename.getName(), NodeUpdateManager.TEMP_SUFFIX, blobFile.getParentFile());
+				tmp.deleteOnExit();
+			} catch (IOException e) {
+				tmp = null;
+			}
+			tempBlobFile = tmp;
+			Bucket tempBlobBucket = tempBlobFile == null ? null :
+				new FileBucket(tempBlobFile, false, false, false, false, false);
 			FetchContext myCtx = new FetchContext(dependencyCtx, FetchContext.IDENTICAL_MASK, false, null);
 			// FIXME single global binary blob writer for MainJarDependenciesChecker AND MainJarUpdater.
 			getter = new ClientGetter(this,  
 					chk, myCtx, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
-					this, new FileBucket(filename, false, false, false, false, false), null /* FIXME binary blob writer */, null);
+					this, new FileBucket(filename, false, false, false, false, false), new BinaryBlobWriter(tempBlobBucket), null);
 			myCtx.eventProducer.addEventListener(this);
 			this.cb = cb;
 			this.filename = filename;
@@ -142,6 +162,9 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		public void onSuccess(FetchResult result, ClientGetter state,
 				ObjectContainer container) {
 			cb.onSuccess();
+			if(!FileUtil.renameTo(tempBlobFile, blobFile)) {
+				Logger.error(this, "Failed to save blob file for "+filename+" : UOM may not work");
+			}
 			synchronized(this) {
 				fetched = true;
 			}
@@ -151,6 +174,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		public void onFailure(FetchException e, ClientGetter state,
 				ObjectContainer container) {
 			cb.onFailure(e);
+			tempBlobFile.delete();
 		}
 		
 		@Override
@@ -214,4 +238,34 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		return dependencies.isBroken();
 	}
 
+	static final String BLOB_SUFFIX = ".fblob";
+	
+	private File blobFile(String filename) {
+		File tempDir = node.clientCore.getPersistentTempDir();
+		return new File(tempDir, filename+BLOB_SUFFIX);
+	}
+	
+	public void cleanupDependencies() {
+		InputStream is = getClass().getResourceAsStream(DEPENDENCIES_FILE);
+		if(is == null) {
+			System.err.println("Can't find dependencies file. Other nodes will not be able to use Update Over Mandatory through this one.");
+			return;
+		}
+		Properties props = new Properties();
+		try {
+			props.load(is);
+		} catch (IOException e) {
+			System.err.println("Can't read dependencies file. Other nodes will not be able to use Update Over Mandatory through this one.");
+			return;
+		} finally {
+			Closer.close(is);
+		}
+		MainJarDependenciesChecker.cleanup(props, this, Version.buildNumber());
+	}
+
+	@Override
+	public void addDependency(byte[] expectedHash, File filename) {
+		manager.uom.addDependency(expectedHash, filename);
+	}
+	
 }
