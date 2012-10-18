@@ -526,7 +526,7 @@ public class NodeUpdateManager {
 	void broadcastUOMAnnouncesOld() {
 		Message msg;
 		synchronized (broadcastUOMAnnouncesSync) {
-			if(broadcastUOMAnnouncesOld) return;
+			if(broadcastUOMAnnouncesOld && !hasBeenBlown) return;
 			broadcastUOMAnnouncesOld = true;
 			msg = getOldUOMAnnouncement();
 		}
@@ -536,7 +536,7 @@ public class NodeUpdateManager {
 	void broadcastUOMAnnouncesNew() {
 		Message msg;
 		synchronized (broadcastUOMAnnouncesSync) {
-			if(broadcastUOMAnnouncesNew) return;
+			if(broadcastUOMAnnouncesNew && !hasBeenBlown) return;
 			broadcastUOMAnnouncesNew = true;
 			msg = getNewUOMAnnouncement();
 		}
