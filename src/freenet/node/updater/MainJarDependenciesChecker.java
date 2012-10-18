@@ -502,6 +502,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				}
 			}
 			
+			if(currentFile == null) 
+				continue; // Ignore any old versions we might have missed that were actually on the classpath.
 			// Now delete bogus dependencies.
 			for(File f : listMain) {
 				String name = f.getName();
