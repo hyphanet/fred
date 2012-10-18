@@ -11,7 +11,6 @@ import com.db4o.ObjectContainer;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.async.BinaryBlobWriter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
@@ -32,10 +31,8 @@ import freenet.node.updater.MainJarDependenciesChecker.MainJarDependencies;
 import freenet.node.updater.UpdateOverMandatoryManager.UOMDependencyFetcherCallback;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
-import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
-import freenet.support.io.FileUtil;
 
 public class MainJarUpdater extends NodeUpdater implements Deployer {
 	
@@ -259,11 +256,6 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 	}
 
 	static final String BLOB_SUFFIX = ".fblob";
-	
-	private File blobFile(String filename) {
-		File tempDir = node.clientCore.getPersistentTempDir();
-		return new File(tempDir, filename+BLOB_SUFFIX);
-	}
 	
 	public void cleanupDependencies() {
 		InputStream is = getClass().getResourceAsStream("/"+DEPENDENCIES_FILE);
