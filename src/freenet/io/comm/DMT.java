@@ -141,6 +141,7 @@ public class DMT {
 	public static final String STORE_SIZE = "storeSize";
 	public static final String LINK_LENGTHS = "linkLengths";
 	public static final String UPTIME_PERCENT = "uptimePercent";
+	public static final String EXPECTED_HASH = "expectedHash";
 	
 	/** Very urgent */
 	public static final short PRIORITY_NOW=0;
@@ -1662,6 +1663,24 @@ public class DMT {
 		msg.set(FILE_LENGTH, length);
 		msg.set(EXTRA_JAR_KEY, key);
 		msg.set(EXTRA_JAR_VERSION, version);
+		return msg;
+	}
+	
+	/** Used to fetch a file required for deploying an update. The client
+	 * knows both the size and hash of the file. If we don't want to send
+	 * the data we should send an FNPBulkReceiveAborted, otherwise we just
+	 * send the data as a BulkTransmitter transfer. */
+	public static final MessageType UOMFetchDependency = new MessageType("UOMFetchDependency", PRIORITY_LOW) {{
+		addField(UID, Long.class); // This will be used for the transfer.
+		addField(EXPECTED_HASH, ShortBuffer.class); // Fetch by hash
+		addField(FILE_LENGTH, Long.class); // Length is known by both sides.
+	}};
+	
+	public static Message createUOMFetchDependency(long uid, byte[] hash, long length) {
+		Message msg = new Message(UOMFetchDependency);
+		msg.set(UID, uid);
+		msg.set(EXPECTED_HASH, new ShortBuffer(hash));
+		msg.set(FILE_LENGTH, length);
 		return msg;
 	}
 	
