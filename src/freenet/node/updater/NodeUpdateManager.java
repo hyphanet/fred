@@ -677,7 +677,14 @@ public class NodeUpdateManager {
 			transitionExtJarFetcher.stop();
 		} else {
 			// FIXME copy it, dodgy locking.
-			((MainJarUpdater)mainUpdater).cleanupDependencies();
+			try {
+				((MainJarUpdater)mainUpdater).cleanupDependencies();
+			} catch (Throwable t) {
+				// Don't let it block startup, but be very loud!
+				Logger.error(this, "Caught "+t+" setting up Update Over Mandatory", t);
+				System.err.println("Updater error: "+t);
+				t.printStackTrace();
+			}
 			mainUpdater.start();
 			startPluginUpdaters();
 			transitionMainJarFetcher.start();
