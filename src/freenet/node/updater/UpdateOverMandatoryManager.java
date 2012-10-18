@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Vector;
+import java.util.WeakHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -123,6 +124,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	
 	private final HashMap<ShortBuffer, File> dependencies;
 	
+	private final WeakHashMap<PeerNode, Integer> peersFetchingDependencies;
+	
 	private final HashMap<ShortBuffer, UOMDependencyFetcher> dependencyFetchers;
 
 	public UpdateOverMandatoryManager(NodeUpdateManager manager) {
@@ -136,6 +139,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		nodesSendingMainJar = new HashSet<PeerNode>();
 		allNodesOfferedMainJar = new HashSet<PeerNode>();
 		dependencies = new HashMap<ShortBuffer, File>();
+		peersFetchingDependencies = new WeakHashMap<PeerNode, Integer>();
 		dependencyFetchers = new HashMap<ShortBuffer, UOMDependencyFetcher>();
 	}
 
@@ -1623,6 +1627,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			dependencies.put(new ShortBuffer(expectedHash), filename);
 		}
 	}
+	
+	static final int MAX_TRANSFERS_PER_PEER = 2;
 
 	public void handleFetchDependency(Message m, final PeerNode source) {
 		File data;
@@ -1632,14 +1638,15 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		synchronized(dependencies) {
 			data = dependencies.get(buf);
 		}
+		boolean fail = incrementDependencies(source);
 		final RandomAccessFileWrapper raf;
 		final BulkTransmitter bt;
-		boolean fail = false;
 		
 		try {
 			raf = new RandomAccessFileWrapper(data, "r");
 		} catch(FileNotFoundException e) {
 			Logger.error(this, "Peer " + source + " asked us for the dependency with hash "+HexUtil.bytesToHex(buf.getData())+" jar, we have downloaded it but don't have the file even though we did have it when we checked!: " + e, e);
+			decrementDependencies(source);
 			return;
 		}
 		
@@ -1654,6 +1661,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		} catch(IOException e) {
 			Logger.error(this, "Peer " + source + " asked us for the dependency with hash "+HexUtil.bytesToHex(buf.getData())+" jar, we have downloaded it but we can't determine the file size: " + e, e);
 			raf.close();
+			decrementDependencies(source);
 			return;
 		}
 		
@@ -1662,11 +1670,13 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		} catch(DisconnectedException e) {
 			Logger.error(this, "Peer " + source + " asked us for the dependency with hash "+HexUtil.bytesToHex(buf.getData())+" jar then disconnected", e);
 			raf.close();
+			decrementDependencies(source);
 			return;
 		}
 		
 		if(fail) {
 			cancelSend(source, uid);
+			decrementDependencies(source);
 		} else {
 			updateManager.node.executor.execute(new Runnable() {
 				
@@ -1678,12 +1688,39 @@ public class UpdateOverMandatoryManager implements RequestClient {
 						Logger.normal(this, "Disconnected while sending dependency with hash "+HexUtil.bytesToHex(buf.getData())+" to "+source);
 					}
 					raf.close();
+					decrementDependencies(source);
 				}
 				
 			});
 		}
 	}
 	
+	private void decrementDependencies(PeerNode source) {
+		synchronized(peersFetchingDependencies) {
+			Integer x = peersFetchingDependencies.get(source);
+			if(x != null && x > 0) {
+				peersFetchingDependencies.put(source, x-1);
+			} else if(x == 0) {
+				peersFetchingDependencies.remove(source);
+			} else {
+				Logger.error(this, "Inconsistent dependency counting?");
+			}
+		}
+	}
+
+	/** @return False if we cannot accept any more transfers from this node. 
+	 * True to accept the transfer. */
+	private boolean incrementDependencies(PeerNode source) {
+		synchronized(peersFetchingDependencies) {
+			Integer x = peersFetchingDependencies.get(source);
+			if(x == null) x = 0;
+			x++;
+			if(x > MAX_TRANSFERS_PER_PEER) return false;
+			else peersFetchingDependencies.put(source, x);
+			return true;
+		}
+	}
+
 	boolean fetchingUOM() {
 		return fetchingUOM;
 	}
@@ -1841,6 +1878,10 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			}
 			ArrayList<PeerNode> notTried = null;
 			for(PeerNode pn : uomPeers) {
+				if(peersFetching.contains(pn)) {
+					if(logMINOR) Logger.minor(this, "Already fetching from "+pn);
+					continue;
+				}
 				if(peersFailed.contains(pn)) {
 					if(logMINOR) Logger.minor(this, "Peer already failed for "+saveTo+" : "+pn);
 					continue;
