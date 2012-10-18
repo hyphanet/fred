@@ -420,13 +420,14 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			}
 			
 			// Check key even though we don't use it.
+			final FreenetURI key;
 			s = props.getProperty(baseName+".key");
 			if(s == null) {
 				Logger.error(MainJarDependencies.class, "dependencies.properties broken? missing "+baseName+".key");
 				return false;
 			}
 			try {
-				new FreenetURI(s);
+				key = new FreenetURI(s);
 			} catch (MalformedURLException e) {
 				Logger.error(MainJarDependencies.class, "Unable to parse CHK for "+baseName+": \""+s+"\": "+e, e);
 				return false;
@@ -469,11 +470,35 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			File currentFile = getDependencyInUse(baseName, p);
 			
 			// Serve the file if it meets the hash in the dependencies.properties.
-			if(validFile(currentFile, expectedHash, size)) {
-				System.out.println("Will serve "+filename+" for UOM");
-				deployer.addDependency(expectedHash, filename);
+			if(currentFile != null) {
+				if(validFile(currentFile, expectedHash, size)) {
+					System.out.println("Will serve "+filename+" for UOM");
+					deployer.addDependency(expectedHash, filename);
+				} else {
+					System.out.println("Component "+baseName+" is using a non-standard file, we cannot serve the file "+filename+" via UOM to other nodes. Hence they may not be able to download the update from us.");
+				}
 			} else {
-				System.out.println("Component "+baseName+" is using a non-standard file, we cannot serve the file "+filename+" via UOM to other nodes. Hence they may not be able to download the update from us.");
+				// Not present even though it's required.
+				// This means we want to preload it before the next release.
+				final File file = filename;
+				try {
+					System.out.println("Preloading "+filename+" for the next update...");
+					deployer.fetch(key, filename, size, expectedHash, new JarFetcherCallback() {
+
+						@Override
+						public void onSuccess() {
+							System.out.println("Preloaded "+file+" which will be needed when we upgrade.");
+						}
+
+						@Override
+						public void onFailure(FetchException e) {
+							Logger.error(this, "Failed to preload "+file+" from "+key+" : "+e, e);
+						}
+						
+					}, build);
+				} catch (FetchException e) {
+					Logger.error(MainJarDependencies.class, "Failed to preload "+file+" from "+key+" : "+e, e);
+				}
 			}
 			
 			// Now delete bogus dependencies.
