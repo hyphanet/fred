@@ -473,8 +473,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			// Serve the file if it meets the hash in the dependencies.properties.
 			if(currentFile != null && currentFile.exists()) {
 				if(validFile(currentFile, expectedHash, size)) {
-					System.out.println("Will serve "+filename+" for UOM");
-					deployer.addDependency(expectedHash, filename);
+					System.out.println("Will serve "+currentFile+" for UOM");
+					deployer.addDependency(expectedHash, currentFile);
 				} else {
 					System.out.println("Component "+baseName+" is using a non-standard file, we cannot serve the file "+filename+" via UOM to other nodes. Hence they may not be able to download the update from us.");
 				}
