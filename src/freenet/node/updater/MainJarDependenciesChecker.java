@@ -509,7 +509,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				String name = f.getName();
 				if(!p.matcher(name).matches()) continue;
 				// Comparing File's by equals() is dodgy, e.g. ./blah != blah. So use getName().
-				if(name.equals(currentFile.getName())) continue;
+				// Even on *nix some filesystems are case insensitive.
+				if(name.equalsIgnoreCase(currentFile.getName())) continue;
 				String fileVersion = getDependencyVersion(f);
 				if(fileVersion == null) {
 					f.delete();
