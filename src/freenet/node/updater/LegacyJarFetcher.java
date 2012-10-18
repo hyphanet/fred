@@ -158,13 +158,13 @@ class LegacyJarFetcher implements ClientGetCallback {
 	@Override
 	public void onSuccess(FetchResult result, ClientGetter state,
 			ObjectContainer container) {
-		synchronized(this) {
-			fetched = true;
-		}
 		result.asBucket().free();
 		if(!FileUtil.renameTo(tempFile, saveTo)) {
 			Logger.error(this, "Fetched file but unable to rename temp file "+tempFile+" to "+saveTo+" : UOM FROM OLD NODES WILL NOT WORK!");
 		} else {
+			synchronized(this) {
+				fetched = true;
+			}
 			cb.onSuccess(this);
 		}
 	}
