@@ -578,7 +578,7 @@ public class NodeUpdateManager {
 			if (!(broadcastUOMAnnouncesOld || broadcastUOMAnnouncesNew)) {
 				if (logMINOR)
 					Logger.minor(this,
-							"Not sending UOM on connect: Nothing worth announcing yet");
+							"Not sending UOM (any) on connect: Nothing worth announcing yet");
 				return; // nothing worth announcing yet
 			}
 			sendOld = broadcastUOMAnnouncesOld;
@@ -591,14 +591,14 @@ public class NodeUpdateManager {
 			if ((!hasBeenBlown) && dontHaveUpdate) {
 				if (logMINOR)
 					Logger.minor(this,
-							"Not sending UOM on connect: Don't have the update");
+							"Not sending UOM (new) on connect: Don't have the update");
 				sendNew = false;
 			}
 		}
 		if ((!dontHaveUpdate) && hasBeenBlown && !revocationChecker.hasBlown()) {
 			if (logMINOR)
 				Logger.minor(this,
-						"Not sending UOM on connect: Local problem causing blown key");
+						"Not sending UOM (any) on connect: Local problem causing blown key");
 			// Local problem, don't broadcast.
 			return;
 		}
