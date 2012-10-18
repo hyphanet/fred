@@ -710,4 +710,12 @@ final public class FileUtil {
 		return a.equals(b);
 	}
 
+	/** Create a temp file in a specific directory. Null = ".". 
+	 * @throws IOException */
+	public static File createTempFile(String prefix, String suffix,
+			File directory) throws IOException {
+		if(directory == null) directory = new File(".");
+		return File.createTempFile(prefix, suffix, directory);
+	}
+
 }
