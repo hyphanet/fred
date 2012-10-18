@@ -105,6 +105,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	private final HashSet<PeerNode> nodesAskedSendMainJar;
 	/** PeerNode's sending us the main jar */
 	private final HashSet<PeerNode> nodesSendingMainJar;
+	/** PeerNode's that we've successfully fetched a jar from */
+	private final HashSet<PeerNode> nodesSentMainJar;
 	// 2 for reliability, no more as gets very slow/wasteful
 	static final int MAX_NODES_SENDING_JAR = 2;
 	/** Maximum time between asking for the main jar and it starting to transfer */
@@ -127,6 +129,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		nodesSayKeyRevokedFailedTransfer = new HashSet<PeerNode>();
 		nodesSayKeyRevokedTransferring = new HashSet<PeerNode>();
 		nodesOfferedMainJar = new HashSet<PeerNode>();
+		nodesSentMainJar = new HashSet<PeerNode>();
 		nodesAskedSendMainJar = new HashSet<PeerNode>();
 		nodesSendingMainJar = new HashSet<PeerNode>();
 		dependencies = new HashMap<ShortBuffer, File>();
@@ -1370,12 +1373,14 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 			@Override
 			public void run() {
+				boolean success = false;
 				try {
 					synchronized(UpdateOverMandatoryManager.class) {
 						nodesAskedSendMainJar.remove(source);
 						nodesSendingMainJar.add(source);
 					}
-					if(br.receive())
+					success = br.receive();
+					if(success)
 						// Success!
 						processMainJarBlob(temp, source, version, jarURI);
 					else {
@@ -1385,6 +1390,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				} finally {
 					synchronized(UpdateOverMandatoryManager.class) {
 						nodesSendingMainJar.remove(source);
+						if(success)
+							nodesSentMainJar.add(source);
 					}
 				}
 			}
@@ -1579,6 +1586,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			nodesSayKeyRevokedFailedTransfer.remove(pn);
 			nodesSayKeyRevokedTransferring.remove(pn);
 			nodesOfferedMainJar.remove(pn);
+			nodesSentMainJar.remove(pn);
 			nodesAskedSendMainJar.remove(pn);
 			nodesSendingMainJar.remove(pn);
 		}
@@ -1722,34 +1730,21 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			}
 			HashSet<PeerNode> uomPeers;
 			synchronized(UpdateOverMandatoryManager.this) {
-				uomPeers = new HashSet<PeerNode>(nodesOfferedMainJar);
+				uomPeers = new HashSet<PeerNode>(nodesSentMainJar);
 			}
-			final PeerNode fetchFrom;
-			synchronized(this) {
-				if(peersFetching.size() >= MAX_NODES_SENDING_JAR) {
-					if(logMINOR) Logger.minor(this, "Already fetching jar from 2 peers "+peersFetching);
-					return false;
+			PeerNode chosen = chooseRandomPeer(uomPeers);
+			if(chosen == null) {
+				synchronized(UpdateOverMandatoryManager.this) {
+					uomPeers = new HashSet<PeerNode>(nodesSentMainJar);
 				}
-				ArrayList<PeerNode> notTried = null;
-				for(PeerNode pn : uomPeers) {
-					if(peersFailed.contains(pn)) {
-						if(logMINOR) Logger.minor(this, "Peer already failed for "+saveTo+" : "+pn);
-						continue;
-					}
-					if(!pn.isConnected()) {
-						if(logMINOR) Logger.minor(this, "Peer not connected: "+pn);
-						continue;
-					}
-					if(notTried == null) notTried = new ArrayList<PeerNode>();
-					notTried.add(pn);
-				}
-				if(notTried == null) {
-					if(logMINOR) Logger.minor(this, "No peers to ask for "+saveTo);
-					return false;
-				}
-				fetchFrom = notTried.get(updateManager.node.fastWeakRandom.nextInt(notTried.size()));
-				peersFetching.add(fetchFrom);
+				chosen = chooseRandomPeer(uomPeers);
 			}
+			if(chosen == null) {
+				Logger.minor(this, "Could not find a peer to send request to for "+saveTo);
+				return false;
+			}
+			
+			final PeerNode fetchFrom = chosen;
 			updateManager.node.executor.execute(new Runnable() {
 
 				@Override
@@ -1819,6 +1814,33 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			return true;
 		}
 		
+		private synchronized PeerNode chooseRandomPeer(HashSet<PeerNode> uomPeers) {
+			if(peersFetching.size() >= MAX_NODES_SENDING_JAR) {
+				if(logMINOR) Logger.minor(this, "Already fetching jar from 2 peers "+peersFetching);
+				return null;
+			}
+			ArrayList<PeerNode> notTried = null;
+			for(PeerNode pn : uomPeers) {
+				if(peersFailed.contains(pn)) {
+					if(logMINOR) Logger.minor(this, "Peer already failed for "+saveTo+" : "+pn);
+					continue;
+				}
+				if(!pn.isConnected()) {
+					if(logMINOR) Logger.minor(this, "Peer not connected: "+pn);
+					continue;
+				}
+				if(notTried == null) notTried = new ArrayList<PeerNode>();
+				notTried.add(pn);
+			}
+			if(notTried == null) {
+				if(logMINOR) Logger.minor(this, "No peers to ask for "+saveTo);
+				return null;
+			}
+			PeerNode fetchFrom = notTried.get(updateManager.node.fastWeakRandom.nextInt(notTried.size()));
+			peersFetching.add(fetchFrom);
+			return fetchFrom;
+		}
+
 		void start() {
 			while(maybeFetch());
 		}
