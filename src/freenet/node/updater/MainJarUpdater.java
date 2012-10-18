@@ -109,28 +109,15 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		private SplitfileProgressEvent lastProgress;
 		private final JarFetcherCallback cb;
 		private boolean fetched;
-		private final File blobFile;
-		private final File tempBlobFile;
 		private final byte[] expectedHash;
 		private final long expectedLength;
 		
 		DependencyJarFetcher(File filename, FreenetURI chk, long expectedLength, byte[] expectedHash, JarFetcherCallback cb) {
-			blobFile = blobFile(filename.getName());
-			File tmp;
-			try {
-				tmp = File.createTempFile(filename.getName(), NodeUpdateManager.TEMP_SUFFIX, blobFile.getParentFile());
-				tmp.deleteOnExit();
-			} catch (IOException e) {
-				tmp = null;
-			}
-			tempBlobFile = tmp;
-			Bucket tempBlobBucket = tempBlobFile == null ? null :
-				new FileBucket(tempBlobFile, false, false, false, false, false);
 			FetchContext myCtx = new FetchContext(dependencyCtx, FetchContext.IDENTICAL_MASK, false, null);
 			// FIXME single global binary blob writer for MainJarDependenciesChecker AND MainJarUpdater.
 			getter = new ClientGetter(this,  
 					chk, myCtx, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
-					this, new FileBucket(filename, false, false, false, false, false), new BinaryBlobWriter(tempBlobBucket), null);
+					this, new FileBucket(filename, false, false, false, false, false), null, null);
 			myCtx.eventProducer.addEventListener(this);
 			this.cb = cb;
 			this.filename = filename;
@@ -167,9 +154,6 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		public void onSuccess(FetchResult result, ClientGetter state,
 				ObjectContainer container) {
 			if(cb != null) cb.onSuccess();
-			if(!FileUtil.renameTo(tempBlobFile, blobFile)) {
-				Logger.error(this, "Failed to save blob file for "+filename+" : UOM may not work");
-			}
 			synchronized(this) {
 				fetched = true;
 			}
