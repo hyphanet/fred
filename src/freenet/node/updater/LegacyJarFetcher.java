@@ -1,6 +1,7 @@
 package freenet.node.updater;
 
 import java.io.File;
+import java.io.IOException;
 
 import com.db4o.ObjectContainer;
 
@@ -17,6 +18,7 @@ import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.io.FileBucket;
+import freenet.support.io.FileUtil;
 
 /** Fetches the old freenet-ext.jar and freenet-stable-latest.jar. In other
  * words it fetches the transitional versions.
@@ -25,6 +27,7 @@ import freenet.support.io.FileBucket;
 class LegacyJarFetcher implements ClientGetCallback {
 	
 	final FreenetURI uri;
+	final File tempFile;
 	final File saveTo;
 	final FileBucket blobBucket;
 	final FetchContext ctx;
@@ -72,10 +75,25 @@ class LegacyJarFetcher implements ClientGetCallback {
 		if(blobBucket.size() > 0) {
 			fetched = true;
 			cg = null;
+			tempFile = null;
 		} else {
+			// Write to temp file then rename.
+			// We do not want to rename unless we are sure we've finished the fetch.
+			File tmp;
+			try {
+				tmp = File.createTempFile(saveTo.getName(), ".fblob.tmp", saveTo.getParentFile());
+				tmp.deleteOnExit(); // To be used sparingly, as it leaks, but safe enough here as it should only happen twice during a normal run.
+			} catch (IOException e) {
+				Logger.error(this, "Cannot create temp file so cannot fetch legacy jar "+uri+" : UOM from old versions will not work!");
+				cg = null;
+				fetched = false;
+				tempFile = null;
+				return;
+			}
+			tempFile = tmp;
 			cg = new ClientGetter(this,  
 					uri, ctx, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
-					client, null, new BinaryBlobWriter(blobBucket));
+					client, null, new BinaryBlobWriter(new FileBucket(tempFile, false, false, false, false, false)));
 			fetched = false;
 		}
 	}
@@ -144,7 +162,11 @@ class LegacyJarFetcher implements ClientGetCallback {
 			fetched = true;
 		}
 		result.asBucket().free();
-		cb.onSuccess(this);
+		if(!FileUtil.renameTo(tempFile, saveTo)) {
+			Logger.error(this, "Fetched file but unable to rename temp file "+tempFile+" to "+saveTo+" : UOM FROM OLD NODES WILL NOT WORK!");
+		} else {
+			cb.onSuccess(this);
+		}
 	}
 
 	@Override
@@ -153,6 +175,7 @@ class LegacyJarFetcher implements ClientGetCallback {
 		synchronized(this) {
 			failed = true;
 		}
+		tempFile.delete();
 		cb.onFailure(e, this);
 	}
 
