@@ -1838,8 +1838,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 							new PartiallyReceivedBulk(updateManager.node.getUSM(), size,
 								Node.PACKET_SIZE, raf, false);
 						BulkReceiver br = new BulkReceiver(prb, fetchFrom, uid, updateManager.ctr);
-						raf.close();
-						raf = null;
 						if(br.receive()) {
 							// Check the hash.
 							if(MainJarDependenciesChecker.validFile(tmp, expectedHash, size)) {
@@ -1872,6 +1870,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 							System.out.println("Download failed: "+saveTo+" from "+fetchFrom);
 							failed = true;
 						}
+						raf.close();
+						raf = null;
 					} catch (NotConnectedException e) {
 						// Not counting this as a failure.
 						System.out.println("Disconnected while downloading "+saveTo+" from "+fetchFrom);
