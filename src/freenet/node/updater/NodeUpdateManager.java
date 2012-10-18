@@ -96,6 +96,9 @@ public class NodeUpdateManager {
 			+ TRANSITION_VERSION + ".fblob";
 	public static final String transitionExtJarFilename = "legacy-freenet-ext-jar-"
 			+ TRANSITION_VERSION_EXT + ".fblob";
+	
+	public final File transitionMainJarFile;
+	public final File transitionExtJarFile;
 
 	static {
 		try {
@@ -267,11 +270,13 @@ public class NodeUpdateManager {
 
 		};
 
+		transitionMainJarFile = new File(node.clientCore.getPersistentTempDir(), transitionMainJarFilename);
+		transitionExtJarFile = new File(node.clientCore.getPersistentTempDir(), transitionExtJarFilename);
 		transitionMainJarFetcher = new LegacyJarFetcher(transitionMainJarURI,
-				new File(transitionMainJarFilename), node.clientCore,
+				transitionMainJarFile, node.clientCore,
 				legacyFetcherCallback);
 		transitionExtJarFetcher = new LegacyJarFetcher(transitionExtJarURI,
-				new File(transitionExtJarFilename), node.clientCore,
+				transitionExtJarFile, node.clientCore,
 				legacyFetcherCallback);
 
 		updaterConfig.register("updateSeednodes", wasEnabledOnStartup, 6, true,
