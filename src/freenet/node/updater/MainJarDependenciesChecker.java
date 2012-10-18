@@ -142,8 +142,6 @@ public class MainJarDependenciesChecker {
 	 * broken. We should wait for an update with a valid file. 
 	 */
 	private boolean broken = false;
-	/** Set when we are ready to deploy. We won't look at new jars after that. */
-	private boolean deploying = false;
 	/** The build we are about to deploy */
 	private int build;
 	
@@ -219,10 +217,6 @@ public class MainJarDependenciesChecker {
 		// FIXME support deletion placeholders.
 		// I.e. when we remove a library we put a placeholder in to tell this code to delete it.
 		// It's not acceptable to just delete stuff we don't know about.
-		if(deploying) {
-			Logger.error(this, "Already deploying?");
-			return null;
-		}
 		clear(build);
 		HashSet<String> processed = new HashSet<String>();
 		File[] list = new File(".").listFiles(new FileFilter() {
@@ -673,7 +667,6 @@ outer:	for(String propName : props.stringPropertyNames()) {
 	private synchronized boolean ready() {
 		if(broken) return false;
 		if(!downloaders.isEmpty()) return false;
-		deploying = true;
 		return true;
 	}
 	
