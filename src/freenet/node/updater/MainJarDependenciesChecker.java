@@ -16,6 +16,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.zip.ZipEntry;
@@ -538,17 +540,20 @@ outer:	for(String propName : props.stringPropertyNames()) {
         		String name = ze.getName();
         		
         		if(name.equals("META-INF/MANIFEST.MF")) {
+        			final String key = "Implementation-Version";
         			BufferedInputStream bis = new BufferedInputStream(zis);
-        			// Java 1.6 Properties never, ever throws EOFException.
-        			// Let's make sure...
-        			EOFInputStream eof = new EOFInputStream(bis);
-        			while(true) {
-        				// And check available() too, although who knows whether it's reliable.
-        				if(eof.available() == 0) break;
-        				Properties props = new Properties();
-        				props.load(eof);
-        				String version = props.getProperty("Implementation-Version");
-        				if(version != null) return version;
+        			Manifest m = new Manifest(bis);
+        			bis.close();
+        			bis = null;
+        			Attributes a = m.getMainAttributes();
+        			if(a != null) {
+        				String ver = a.getValue(key);
+        				if(ver != null) return ver;
+        			}
+        			a = m.getAttributes("common");
+        			if(a != null) {
+        				String ver = a.getValue(key);
+        				if(ver != null) return ver;
         			}
         		}
         	}
