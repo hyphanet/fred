@@ -508,7 +508,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			for(File f : listMain) {
 				String name = f.getName();
 				if(!p.matcher(name).matches()) continue;
-				if(f.equals(currentFile)) continue;
+				// Comparing File's by equals() is dodgy, e.g. ./blah != blah. So use getName().
+				if(name.equals(currentFile.getName())) continue;
 				String fileVersion = getDependencyVersion(f);
 				if(fileVersion == null) {
 					f.delete();
