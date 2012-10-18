@@ -6,7 +6,6 @@ package freenet.node.updater;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import com.db4o.ObjectContainer;
 
@@ -46,12 +45,7 @@ public class LegacyUpdateOverMandatoryManager implements RequestClient {
 	}
 
 	final NodeUpdateManager updateManager;
-	private static final Pattern extBuildNumberPattern = Pattern.compile("^ext(?:-jar)?-(\\d+)\\.fblob$");
-	private static final Pattern mainBuildNumberPattern = Pattern.compile("^main(?:-jar)?-(\\d+)\\.fblob$");
-	private static final Pattern extTempBuildNumberPattern = Pattern.compile("^ext(?:-jar)?-(\\d+-)?(\\d+)\\.fblob\\.tmp*$");
-	private static final Pattern mainTempBuildNumberPattern = Pattern.compile("^main(?:-jar)?-(\\d+-)?(\\d+)\\.fblob\\.tmp*$");
-	private static final Pattern revocationTempBuildNumberPattern = Pattern.compile("^revocation(?:-jar)?-(\\d+-)?(\\d+)\\.fblob\\.tmp*$");
-
+	
 	public LegacyUpdateOverMandatoryManager(NodeUpdateManager manager) {
 		this.updateManager = manager;
 	}
