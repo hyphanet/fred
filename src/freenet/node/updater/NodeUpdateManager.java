@@ -882,7 +882,7 @@ public class NodeUpdateManager {
 			} else
 				return;
 		}
-		deployOffThread(0);
+		deployOffThread(0, false);
 	}
 
 	private static final int WAIT_FOR_SECOND_FETCH_TO_COMPLETE = 240 * 1000;
@@ -964,7 +964,7 @@ public class NodeUpdateManager {
 			return true;
 		}
 		int waitTime = Math.max(REVOCATION_FETCH_TIMEOUT, waitForNextJar);
-		deployOffThread(waitTime);
+		deployOffThread(waitTime, false);
 		return false;
 	}
 
@@ -1451,13 +1451,15 @@ public class NodeUpdateManager {
 				om.reannounce();
 			}
 		}
-		deployOffThread(0);
+		deployOffThread(0, false);
 	}
 
-	void deployOffThread(long delay) {
+	void deployOffThread(long delay, final boolean announce) {
 		node.ticker.queueTimedJob(new Runnable() {
 			@Override
 			public void run() {
+				if(announce)
+					maybeBroadcastUOMAnnouncesNew();
 				if (logMINOR)
 					Logger.minor(this, "Running deployOffThread");
 				try {
@@ -1470,6 +1472,15 @@ public class NodeUpdateManager {
 					Logger.minor(this, "Run deployOffThread");
 			}
 		}, delay);
+	}
+	
+	protected void maybeBroadcastUOMAnnouncesNew() {
+		synchronized(NodeUpdateManager.this) {
+			if(hasBeenBlown) return;
+			if(peersSayBlown) return;
+		}
+		// If the node has no peers, noRevocationFound will never be called.
+		broadcastUOMAnnouncesNew();
 	}
 
 	/**
@@ -1654,6 +1665,14 @@ public class NodeUpdateManager {
 			}
 
 		}, "Check for updates");
+		node.getTicker().queueTimedJob(new Runnable() {
+
+			@Override
+			public void run() {
+				maybeBroadcastUOMAnnouncesNew();
+			}
+			
+		}, REVOCATION_FETCH_TIMEOUT);
 	}
 
 	boolean peersSayBlown() {
@@ -1774,7 +1793,7 @@ public class NodeUpdateManager {
 			this.dependenciesValidForBuild = deps.build;
 		}
 		revocationChecker.start(true);
-		deployOffThread(REVOCATION_FETCH_TIMEOUT);
+		deployOffThread(REVOCATION_FETCH_TIMEOUT, true);
 	}
 
 	public File getTransitionExtBlob() {
