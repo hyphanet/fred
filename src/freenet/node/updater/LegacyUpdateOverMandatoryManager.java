@@ -4,10 +4,8 @@
 package freenet.node.updater;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.db4o.ObjectContainer;
@@ -20,10 +18,8 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.node.Node;
-import freenet.node.NodeStarter;
 import freenet.node.PeerNode;
 import freenet.node.RequestClient;
-import freenet.node.Version;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
