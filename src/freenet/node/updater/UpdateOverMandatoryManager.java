@@ -107,6 +107,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	private final HashSet<PeerNode> nodesSendingMainJar;
 	/** PeerNode's that we've successfully fetched a jar from */
 	private final HashSet<PeerNode> nodesSentMainJar;
+	/** All PeerNode's that offered the main jar, regardless of what happened after that. */
+	private final HashSet<PeerNode> allNodesOfferedMainJar;
 	// 2 for reliability, no more as gets very slow/wasteful
 	static final int MAX_NODES_SENDING_JAR = 2;
 	/** Maximum time between asking for the main jar and it starting to transfer */
@@ -132,6 +134,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		nodesSentMainJar = new HashSet<PeerNode>();
 		nodesAskedSendMainJar = new HashSet<PeerNode>();
 		nodesSendingMainJar = new HashSet<PeerNode>();
+		allNodesOfferedMainJar = new HashSet<PeerNode>();
 		dependencies = new HashMap<ShortBuffer, File>();
 		dependencyFetchers = new HashMap<ShortBuffer, UOMDependencyFetcher>();
 	}
@@ -351,10 +354,14 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					Logger.error(this, "Node " + source + " sent us a UOMAnnouncement claiming to have a new ext jar, but it had an invalid URI: " + jarKey + " : " + e, e);
 					System.err.println("Node " + source.userToString() + " sent us a UOMAnnouncement claiming to have a new ext jar, but it had an invalid URI: " + jarKey + " : " + e);
 				}
+				synchronized(this) {
+					allNodesOfferedMainJar.add(source);
+				}
 			} else {
 				// Don't take up the offer. Add to nodesOfferedMainJar, so that we know where to fetch it from when we need it.
 				synchronized(this) {
 					nodesOfferedMainJar.add(source);
+					allNodesOfferedMainJar.add(source);
 				}
 				updateManager.node.getTicker().queueTimedJob(new Runnable() {
 
@@ -1586,6 +1593,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			nodesSayKeyRevokedFailedTransfer.remove(pn);
 			nodesSayKeyRevokedTransferring.remove(pn);
 			nodesOfferedMainJar.remove(pn);
+			allNodesOfferedMainJar.remove(pn);
 			nodesSentMainJar.remove(pn);
 			nodesAskedSendMainJar.remove(pn);
 			nodesSendingMainJar.remove(pn);
@@ -1736,6 +1744,18 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			if(chosen == null) {
 				synchronized(UpdateOverMandatoryManager.this) {
 					uomPeers = new HashSet<PeerNode>(nodesSentMainJar);
+				}
+				chosen = chooseRandomPeer(uomPeers);
+			}
+			if(chosen == null) {
+				synchronized(UpdateOverMandatoryManager.this) {
+					uomPeers = new HashSet<PeerNode>(nodesSendingMainJar);
+				}
+				chosen = chooseRandomPeer(uomPeers);
+			}
+			if(chosen == null) {
+				synchronized(UpdateOverMandatoryManager.this) {
+					uomPeers = new HashSet<PeerNode>(allNodesOfferedMainJar);
 				}
 				chosen = chooseRandomPeer(uomPeers);
 			}
