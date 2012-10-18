@@ -1880,6 +1880,12 @@ public class UpdateOverMandatoryManager implements RequestClient {
 						// User might be able to understand and fix this.
 						System.out.println("IOException while downloading "+saveTo+" from "+fetchFrom+" : "+e);
 						Logger.error(this, "IOException while downloading "+saveTo+" from "+fetchFrom+" : "+e, e);
+					} catch (RuntimeException e) {
+						Logger.error(this, "Caught fetching "+saveTo+" from "+fetchFrom +" : "+e, e);
+						System.err.println("Fetch failed due to internal error (bug or severe local problem?): "+e);
+					} catch (Error e) {
+						Logger.error(this, "Caught fetching "+saveTo+" from "+fetchFrom +" : "+e, e);
+						System.err.println("Fetch failed due to internal error (bug or severe local problem?): "+e);
 					} finally {
 						synchronized(UOMDependencyFetcher.this) {
 							if(failed)
