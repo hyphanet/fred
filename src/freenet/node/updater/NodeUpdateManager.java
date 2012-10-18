@@ -91,6 +91,10 @@ public class NodeUpdateManager {
 
 	public static final FreenetURI transitionMainJarURI;
 	public static final FreenetURI transitionExtJarURI;
+	
+	public static final FreenetURI transitionMainJarURIAsUSK;
+	public static final FreenetURI transitionExtJarURIAsUSK;
+	
 
 	public static final String transitionMainJarFilename = "legacy-freenet-jar-"
 			+ TRANSITION_VERSION + ".fblob";
@@ -104,6 +108,8 @@ public class NodeUpdateManager {
 		try {
 			transitionMainJarURI = new FreenetURI(LEGACY_UPDATE_URI);
 			transitionExtJarURI = new FreenetURI(LEGACY_EXT_URI);
+			transitionMainJarURIAsUSK = transitionMainJarURI.uskForSSK();
+			transitionExtJarURIAsUSK = transitionExtJarURI.uskForSSK();
 		} catch (MalformedURLException e) {
 			throw new Error(e);
 		}
@@ -536,18 +542,18 @@ public class NodeUpdateManager {
 	private Message getOldUOMAnnouncement() {
 		boolean mainJarAvailable = transitionMainJarFetcher == null ? false
 				: transitionMainJarFetcher.fetched();
-		boolean extJarAvailable = transitionMainJarFetcher == null ? false
+		boolean extJarAvailable = transitionExtJarFetcher == null ? false
 				: transitionExtJarFetcher.fetched();
-		return DMT.createUOMAnnounce(LEGACY_UPDATE_URI.toString(),
-				LEGACY_EXT_URI.toString(), revocationURI.toString(),
-				revocationChecker.hasBlown(), mainJarAvailable ? -1
-						: TRANSITION_VERSION, extJarAvailable ? -1
-						: TRANSITION_VERSION_EXT, revocationChecker
-						.lastSucceededDelta(), revocationChecker
+		return DMT.createUOMAnnounce(transitionMainJarURIAsUSK.toString(),
+				transitionExtJarURIAsUSK.toString(),
+				revocationURI.toString(), revocationChecker.hasBlown(),
+				mainJarAvailable ? TRANSITION_VERSION : -1,
+				extJarAvailable ? TRANSITION_VERSION_EXT : -1,
+				revocationChecker.lastSucceededDelta(), revocationChecker
 						.getRevocationDNFCounter(), revocationChecker
-						.getBlobSize(), mainJarAvailable ? -1
-						: transitionMainJarFetcher.getBlobSize(),
-				extJarAvailable ? -1 : transitionExtJarFetcher.getBlobSize(),
+						.getBlobSize(),
+				mainJarAvailable ? transitionMainJarFetcher.getBlobSize() : -1,
+				extJarAvailable ? transitionExtJarFetcher.getBlobSize() : -1,
 				(int) node.nodeStats.getNodeAveragePingTime(),
 				(int) node.nodeStats.getBwlimitDelayTime());
 	}

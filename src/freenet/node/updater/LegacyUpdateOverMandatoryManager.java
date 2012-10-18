@@ -111,8 +111,8 @@ public class LegacyUpdateOverMandatoryManager implements RequestClient {
 			}
 			
 			msg =
-				isExt ? DMT.createUOMSendingExtra(uid, length, NodeUpdateManager.LEGACY_EXT_URI.toString(), version) :
-					DMT.createUOMSendingMain(uid, length, NodeUpdateManager.LEGACY_UPDATE_URI.toString(), version);
+				isExt ? DMT.createUOMSendingExtra(uid, length, NodeUpdateManager.transitionExtJarURIAsUSK.toString(), version) :
+					DMT.createUOMSendingMain(uid, length, NodeUpdateManager.transitionMainJarURIAsUSK.toString(), version);
 			
 		} catch (RuntimeException e) {
 			source.finishedSendingUOMJar(isExt);
