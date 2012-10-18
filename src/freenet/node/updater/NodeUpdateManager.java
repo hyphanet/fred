@@ -909,8 +909,6 @@ public class NodeUpdateManager {
 			if (mainUpdater == null)
 				return false;
 			if (!(hasNewMainJar)) {
-				if (logMINOR)
-					Logger.minor(this, "hasNewMainJar=" + hasNewMainJar);
 				return false; // no jar
 			}
 			if (hasBeenBlown)
