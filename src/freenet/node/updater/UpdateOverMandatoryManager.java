@@ -1833,7 +1833,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 						long uid = updateManager.node.fastWeakRandom.nextLong();
 						fetchFrom.sendAsync(DMT.createUOMFetchDependency(uid, expectedHash, size), null, updateManager.ctr);
 						tmp = File.createTempFile(saveTo.getName(), NodeUpdateManager.TEMP_SUFFIX, saveTo.getParentFile());
-						raf = new RandomAccessFileWrapper(tmp, "w");
+						raf = new RandomAccessFileWrapper(tmp, "rw");
 						PartiallyReceivedBulk prb = 
 							new PartiallyReceivedBulk(updateManager.node.getUSM(), size,
 								Node.PACKET_SIZE, raf, false);
