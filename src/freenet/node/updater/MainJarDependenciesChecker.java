@@ -296,10 +296,25 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				continue;
 			}
 			
+			s = props.getProperty(baseName+".size");
+			long size = -1;
+			if(s != null) {
+				try {
+					size = Long.parseLong(s);
+				} catch (NumberFormatException e) {
+					size = -1;
+				}
+			}
+			if(size < 0) {
+				System.err.println("Unable to update to build "+build+": dependencies.properties broken: Broken length for "+baseName+" : \""+s+"\"");
+				broken = true;
+				continue;
+			}
+			
 			// We need to determine whether it is in use at the moment.
 			File currentFile = getDependencyInUse(baseName, p);
 			
-			if(validFile(filename, expectedHash)) {
+			if(validFile(filename, expectedHash, size)) {
 				// Nothing to do. Yay!
 				System.out.println("Found file required by the new Freenet version: "+filename);
 				// Use it.
@@ -307,7 +322,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				continue;
 			}
 			// Check the version currently in use.
-			if(currentFile != null && validFile(currentFile, expectedHash)) {
+			if(currentFile != null && validFile(currentFile, expectedHash, size)) {
 				System.out.println("Existing version of "+currentFile+" is OK for update.");
 				// Use it.
 				dependencies.add(new Dependency(currentFile, currentFile, p));
@@ -335,7 +350,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			for(File f : list) {
 				String name = f.getName();
 				if(!p.matcher(name).matches()) continue;
-				if(validFile(f, expectedHash)) {
+				if(validFile(f, expectedHash, size)) {
 					// Use it.
 					System.out.println("Found "+name+" - meets requirement for "+baseName+" for next update.");
 					dependencies.add(new Dependency(currentFile, f, p));
@@ -437,10 +452,24 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				return false;
 			}
 			
+			s = props.getProperty(baseName+".size");
+			long size = -1;
+			if(s != null) {
+				try {
+					size = Long.parseLong(s);
+				} catch (NumberFormatException e) {
+					size = -1;
+				}
+			}
+			if(size < 0) {
+				System.err.println("Unable to update to build "+build+": dependencies.properties broken: Broken length for "+baseName+" : \""+s+"\"");
+				return false;
+			}
+			
 			File currentFile = getDependencyInUse(baseName, p);
 			
 			// Serve the file if it meets the hash in the dependencies.properties.
-			if(validFile(currentFile, expectedHash)) {
+			if(validFile(currentFile, expectedHash, size)) {
 				System.out.println("Will serve "+filename+" for UOM");
 				deployer.addDependency(expectedHash, filename);
 			} else {
@@ -528,7 +557,11 @@ outer:	for(String propName : props.stringPropertyNames()) {
 		}
 	}
 
-	private static boolean validFile(File filename, byte[] expectedHash) {
+	private static boolean validFile(File filename, byte[] expectedHash, long size) {
+		if(filename.length() != size) {
+			System.out.println("File exists while updating but length is wrong ("+filename.length()+" should be "+size+") for "+filename);
+			return false;
+		}
 		FileInputStream fis = null;
 		try {
 			fis = new FileInputStream(filename);
