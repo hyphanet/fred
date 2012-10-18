@@ -9,7 +9,7 @@ import java.io.InputStream;
  * with end of file. */
 public class EOFInputStream extends FilterInputStream {
 
-	protected EOFInputStream(InputStream in) {
+	public EOFInputStream(InputStream in) {
 		super(in);
 	}
 	

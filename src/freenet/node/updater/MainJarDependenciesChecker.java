@@ -28,6 +28,7 @@ import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.io.Closer;
+import freenet.support.io.EOFInputStream;
 
 /**
  * Parses the dependencies.properties file and ensures we have all the 
@@ -535,9 +536,14 @@ outer:	for(String propName : props.stringPropertyNames()) {
         		
         		if(name.equals("META-INF/MANIFEST.MF")) {
         			BufferedInputStream bis = new BufferedInputStream(zis);
+        			// Java 1.6 Properties never, ever throws EOFException.
+        			// Let's make sure...
+        			EOFInputStream eof = new EOFInputStream(bis);
         			while(true) {
+        				// And check available() too, although who knows whether it's reliable.
+        				if(eof.available() == 0) break;
         				Properties props = new Properties();
-        				props.load(bis);
+        				props.load(eof);
         				String version = props.getProperty("Implementation-Version");
         				if(version != null) return version;
         			}
