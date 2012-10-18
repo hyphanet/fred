@@ -554,6 +554,11 @@ outer:	for(String propName : props.stringPropertyNames()) {
         }
 	}
 
+    /** Find the current filename, on the classpath, of the dependency given.
+     * Note that this may not actually exist, and the caller should check!
+     * However, even a non-existent filename may be useful when updating 
+     * wrapper.conf.
+     */
 	private static File getDependencyInUse(String baseName, Pattern p) {
 		String classpath = System.getProperty("java.class.path");
 		String[] split = classpath.split(File.pathSeparator);
@@ -583,6 +588,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 	}
 
 	public static boolean validFile(File filename, byte[] expectedHash, long size) {
+		if(filename == null) return false;
 		if(filename.length() != size) {
 			System.out.println("File exists while updating but length is wrong ("+filename.length()+" should be "+size+") for "+filename);
 			return false;
