@@ -1732,12 +1732,21 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				}
 				ArrayList<PeerNode> notTried = null;
 				for(PeerNode pn : uomPeers) {
-					if(peersFailed.contains(pn)) continue;
-					if(!pn.isConnected()) continue;
+					if(peersFailed.contains(pn)) {
+						if(logMINOR) Logger.minor(this, "Peer already failed for "+saveTo+" : "+pn);
+						continue;
+					}
+					if(!pn.isConnected()) {
+						if(logMINOR) Logger.minor(this, "Peer not connected: "+pn);
+						continue;
+					}
 					if(notTried == null) notTried = new ArrayList<PeerNode>();
 					notTried.add(pn);
 				}
-				if(notTried == null) return false;
+				if(notTried == null) {
+					if(logMINOR) Logger.minor(this, "No peers to ask for "+saveTo);
+					return false;
+				}
 				fetchFrom = notTried.get(updateManager.node.fastWeakRandom.nextInt(notTried.size()));
 				peersFetching.add(fetchFrom);
 			}
