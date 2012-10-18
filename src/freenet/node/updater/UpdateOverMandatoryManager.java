@@ -1745,6 +1745,16 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		f.start();
 	}
 	
+	protected void peerMaybeFreeSlots(PeerNode fetchFrom) {
+		UOMDependencyFetcher[] fetchers;
+		synchronized(this) {
+			fetchers = dependencyFetchers.values().toArray(new UOMDependencyFetcher[dependencyFetchers.size()]);
+		}
+		for(UOMDependencyFetcher f : fetchers) {
+			f.peerMaybeFreeSlots(fetchFrom);
+		}
+	}
+
 	class UOMDependencyFetcher {
 		
 		final byte[] expectedHash;
@@ -1766,6 +1776,13 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			peersFetching = new HashSet<PeerNode>();
 		}
 		
+		public void peerMaybeFreeSlots(PeerNode fetchFrom) {
+			synchronized(this) {
+				if(!peersFailed.remove(fetchFrom)) return;
+			}
+			start();
+		}
+
 		boolean maybeFetch() {
 			synchronized(this) {
 				if(peersFetching.size() >= MAX_NODES_SENDING_JAR) {
@@ -1840,6 +1857,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 									failed = true;
 									System.err.println("Update failing: Saved dependency to "+tmp+" for "+saveTo+" but cannot rename it! Permissions problems?");
 								}
+								peerMaybeFreeSlots(fetchFrom);
 							} else {
 								synchronized(UOMDependencyFetcher.this) {
 									if(completed) return;
