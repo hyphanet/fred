@@ -12,6 +12,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Vector;
 import java.util.regex.Matcher;
@@ -52,9 +53,11 @@ import freenet.node.Version;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
+import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.ShortBuffer;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
 import freenet.support.api.Bucket;
@@ -108,6 +111,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	private static final Pattern mainBuildNumberPattern = Pattern.compile("^main(?:-jar)?-(\\d+)\\.fblob$");
 	private static final Pattern mainTempBuildNumberPattern = Pattern.compile("^main(?:-jar)?-(\\d+-)?(\\d+)\\.fblob\\.tmp*$");
 	private static final Pattern revocationTempBuildNumberPattern = Pattern.compile("^revocation(?:-jar)?-(\\d+-)?(\\d+)\\.fblob\\.tmp*$");
+	
+	private final HashMap<ShortBuffer, File> dependencies;
 
 	public UpdateOverMandatoryManager(NodeUpdateManager manager) {
 		this.updateManager = manager;
@@ -117,6 +122,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		nodesOfferedMainJar = new HashSet<PeerNode>();
 		nodesAskedSendMainJar = new HashSet<PeerNode>();
 		nodesSendingMainJar = new HashSet<PeerNode>();
+		dependencies = new HashMap<ShortBuffer, File>();
 	}
 
 	/** 
@@ -1573,7 +1579,69 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	}
 
 	public void addDependency(byte[] expectedHash, File filename) {
-		// FIXME do something		
+		synchronized(dependencies) {
+			dependencies.put(new ShortBuffer(expectedHash), filename);
+		}
+	}
+
+	public void handleFetchDependency(Message m, final PeerNode source) {
+		File data;
+		final ShortBuffer buf = (ShortBuffer)m.getObject(DMT.EXPECTED_HASH);
+		long length = m.getLong(DMT.FILE_LENGTH);
+		long uid = m.getLong(DMT.UID);
+		synchronized(dependencies) {
+			data = dependencies.get(buf);
+		}
+		final RandomAccessFileWrapper raf;
+		final BulkTransmitter bt;
+		boolean fail = false;
+		
+		try {
+			raf = new RandomAccessFileWrapper(data, "r");
+		} catch(FileNotFoundException e) {
+			Logger.error(this, "Peer " + source + " asked us for the dependency with hash "+HexUtil.bytesToHex(buf.getData())+" jar, we have downloaded it but don't have the file even though we did have it when we checked!: " + e, e);
+			return;
+		}
+		
+		final PartiallyReceivedBulk prb;
+		try {
+			long thisLength = raf.size();
+			prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), thisLength,
+					Node.PACKET_SIZE, raf, true);
+			if(length != thisLength) {
+				fail = true;
+			}
+		} catch(IOException e) {
+			Logger.error(this, "Peer " + source + " asked us for the dependency with hash "+HexUtil.bytesToHex(buf.getData())+" jar, we have downloaded it but we can't determine the file size: " + e, e);
+			raf.close();
+			return;
+		}
+		
+		try {
+			bt = new BulkTransmitter(prb, source, uid, false, updateManager.ctr, true);
+		} catch(DisconnectedException e) {
+			Logger.error(this, "Peer " + source + " asked us for the dependency with hash "+HexUtil.bytesToHex(buf.getData())+" jar then disconnected", e);
+			raf.close();
+			return;
+		}
+		
+		if(fail) {
+			cancelSend(source, uid);
+		} else {
+			updateManager.node.executor.execute(new Runnable() {
+				
+				@Override
+				public void run() {
+					try {
+						bt.send();
+					} catch (DisconnectedException e) {
+						Logger.normal(this, "Disconnected while sending dependency with hash "+HexUtil.bytesToHex(buf.getData())+" to "+source);
+					}
+					raf.close();
+				}
+				
+			});
+		}
 	}
 
 }
