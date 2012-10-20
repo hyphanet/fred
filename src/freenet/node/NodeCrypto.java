@@ -9,6 +9,7 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
+import java.security.interfaces.ECPublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.zip.DeflaterOutputStream;
@@ -203,7 +204,6 @@ public class NodeCrypto {
 		identityHashHash = SHA256.digest(identityHash);
 
 		SimpleFieldSet ecdsaSFS = null;
-		SimpleFieldSet ecdsaP256SFS = null;
 		try {
 			cryptoGroup = DSAGroup.create(fs.subset("dsaGroup"));
 			privKey = DSAPrivateKey.create(fs.subset("dsaPrivKey"), cryptoGroup);
@@ -499,6 +499,14 @@ public class NodeCrypto {
 	/** Sign a hash */
 	DSASignature sign(byte[] hash) {
 		return DSA.sign(cryptoGroup, privKey, new NativeBigInteger(1, hash), random);
+	}
+	
+	byte[] ecdsaSign(byte[] hash) {
+	    return ecdsaP256.sign(hash);
+	}
+	
+	public ECPublicKey getECDSAP256Pubkey() {
+	    return ecdsaP256.getPublicKey();
 	}
 
 	public void onSetDropProbability(int val) {

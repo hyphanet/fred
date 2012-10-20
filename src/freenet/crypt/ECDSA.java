@@ -60,6 +60,14 @@ public class ECDSA {
             return keygen.generateKeyPair();
         }
         
+        public SimpleFieldSet getSFS(ECPublicKey pub) {
+            SimpleFieldSet ecdsaSFS = new SimpleFieldSet(true);
+            SimpleFieldSet curveSFS = new SimpleFieldSet(true);
+            curveSFS.putSingle("pub", Base64.encode(pub.getEncoded()));
+            ecdsaSFS.put(name(), curveSFS);
+            return ecdsaSFS;
+        }
+        
         public String toString() {
             return spec.getName();
         }
@@ -140,6 +148,8 @@ public class ECDSA {
     }
     
     public static boolean verify(Curves curve, ECPublicKey key, byte[] signature, int sigoffset, int siglen, byte[] data, int offset, int len) {
+        if(key == null || curve == null || signature == null || data == null)
+            return false;
         boolean result = false;
         try {
             Signature sig = Signature.getInstance(curve.defaultHashAlgorithm);
