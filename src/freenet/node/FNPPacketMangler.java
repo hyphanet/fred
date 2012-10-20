@@ -49,9 +49,7 @@ import freenet.support.ByteArrayWrapper;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.LRUMap;
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SerialExecutor;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
@@ -69,18 +67,9 @@ import freenet.support.io.NativeThread;
  * changes in IncomingPacketFilter).
  */
 public class FNPPacketMangler implements OutgoingPacketMangler {
+    static { Logger.registerClass(FNPPacketMangler.class); }
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
-
-	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
-			@Override
-			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
-			}
-		});
-	}
 
 	private final Node node;
 	private final NodeCrypto crypto;

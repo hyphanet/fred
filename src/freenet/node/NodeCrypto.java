@@ -49,6 +49,8 @@ import freenet.support.io.Closer;
  * @author toad
  */
 public class NodeCrypto {
+    static { Logger.registerClass(NodeCrypto.class); }
+    private static volatile boolean logMINOR;
 
 	/** Length of a node identity */
 	public static final int IDENTITY_LENGTH = 32;
@@ -91,10 +93,6 @@ public class NodeCrypto {
 	/** A synchronization object used while signing the reference fieldset */
 	private volatile Object referenceSync = new Object();
 
-	private static volatile boolean logMINOR;
-	static {
-		Logger.registerClass(NodeCrypto.class);
-	}
 	/**
 	 * Get port number from a config, create socket and packet mangler
 	 * @throws NodeInitException
