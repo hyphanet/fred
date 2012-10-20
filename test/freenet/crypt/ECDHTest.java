@@ -35,8 +35,8 @@ public class ECDHTest extends TestCase {
         assertNotNull(aliceS);
         assertNotNull(bobS);
         assertEquals(aliceS, bobS);
-        assertTrue(aliceS.getEncoded().length == 32);
-        assertTrue(bobS.getEncoded().length == 32);
+        assertTrue(aliceS.getEncoded().length == curveToTest.derivedSecretSize);
+        assertTrue(bobS.getEncoded().length == curveToTest.derivedSecretSize);
     }
 
     public void testGetPublicKey() {
