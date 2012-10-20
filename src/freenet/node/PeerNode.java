@@ -11,6 +11,7 @@ import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
+import java.security.interfaces.ECPublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -36,6 +37,7 @@ import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DSASignature;
+import freenet.crypt.ECDSA;
 import freenet.crypt.Global;
 import freenet.crypt.HMAC;
 import freenet.crypt.KeyAgreementSchemeContext;
@@ -272,6 +274,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	/** Peer node public key; changing this means new noderef */
 	final DSAPublicKey peerPubKey;
+	final ECPublicKey peerECDSAPubKey;
 	final byte[] pubKeyHash;
 	final byte[] pubKeyHashHash;
 	private boolean isSignatureVerificationSuccessfull;
@@ -506,6 +509,19 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				this.peerPubKey = DSAPublicKey.create(sfs, peerCryptoGroup);
 				pubKeyHash = SHA256.digest(peerPubKey.asBytes());
 				pubKeyHashHash = SHA256.digest(pubKeyHash);
+			}
+			
+			sfs = fs.subset("ecdsa.P256");
+			if(sfs == null) {
+			    // Old peer, no negtype > 8
+			    this.peerECDSAPubKey = null;
+			} else {
+	            byte[] pub = Base64.decode(sfs.get("pub"));
+	            if (pub.length != ECDSA.Curves.P256.modulusSize)
+	                throw new FSParseException("ecdsa.P256.pub is not the right size!");
+	            this.peerECDSAPubKey = ECDSA.getPublicKey(pub);
+	            if(peerECDSAPubKey == null)
+	                throw new FSParseException("ecdsa.P256.pub is invalid!");
 			}
 
 			String signature = fs.get("sig");
@@ -2983,6 +2999,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			fs.put("dsaGroup", peerCryptoGroup.asFieldSet());
 		if(peerPubKey != null)
 			fs.put("dsaPubKey", peerPubKey.asFieldSet());
+		if(peerECDSAPubKey != null) {
+		    fs.put("ecdsa", ECDSA.Curves.P256.getSFS(peerECDSAPubKey));
+		}
 		if(myARK != null) {
 			// Decrement it because we keep the number we would like to fetch, not the last one fetched.
 			fs.put("ark.number", myARK.suggestedEdition - 1);
@@ -4713,7 +4732,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return cur.trackerID;
 	}
 
-	private long lastFailedRevocationTransfer;
 	/** Reset on disconnection */
 	private int countFailedRevocationTransfers;
 
@@ -4778,7 +4796,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		private int lastSentMaxOutputTransfers = Integer.MAX_VALUE;
 		private int lastSentMaxOutputTransfersPeerLimit = Integer.MAX_VALUE;
 		private long timeLastSentAllocationNotice;
-		private long countAllocationNotices;
 		private PeerLoadStats lastFullStats;
 		private final boolean realTimeFlag;
 		private boolean sendASAP;
@@ -4841,7 +4858,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					lastFullStats = stats;
 				}
 				timeLastSentAllocationNotice = now;
-				countAllocationNotices++;
 				if(logMINOR) Logger.minor(this, "Sending allocation notice to "+this+" allocation is "+lastSentAllocationInput+" input "+lastSentAllocationOutput+" output.");
 			}
 			Message msg = DMT.createFNPPeerLoadStatus(stats);
@@ -5538,7 +5554,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(!isRoutable()) return;
 			boolean ignoreLocalVsRemote = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
 			if(logMINOR) Logger.minor(this, "Maybe waking up slot waiters for "+this+" realtime="+realTime+" for "+PeerNode.this.shortToString());
-			boolean foundNever = true;
 			while(true) {
 				boolean foundNone = true;
 				RequestType type;
@@ -5580,7 +5595,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						}
 						if(logMINOR) Logger.minor(this, "Checking slot waiters for "+type);
 						foundNone = false;
-						foundNever = false;
 						// Requests already running to this node
 						RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, loadStats.averageTransfersOutPerInsert, realTime);
 						runningRequests.log(PeerNode.this);
