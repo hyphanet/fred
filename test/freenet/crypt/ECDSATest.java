@@ -8,6 +8,8 @@ import java.security.Security;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import freenet.crypt.ECDSA.Curves;
+import freenet.node.FSParseException;
+import freenet.support.SimpleFieldSet;
 import junit.framework.TestCase;
 
 public class ECDSATest extends TestCase {
@@ -41,6 +43,25 @@ public class ECDSATest extends TestCase {
         assertFalse(ecdsa.verify(sig, "".getBytes()));
     }
     
+    public void testAsFieldSet() throws FSParseException {
+        SimpleFieldSet privSFS = ecdsa.asFieldSet(true);
+        assertNotNull(privSFS.getSubset(curveToTest.name()));
+        assertNotNull(privSFS.get(curveToTest.name()+".pub"));
+        assertNotNull(privSFS.get(curveToTest.name()+".pri"));
+
+        // Ensure we don't leak the privkey when we don't intend to
+        SimpleFieldSet pubSFS = ecdsa.asFieldSet(false);
+        assertNotNull(pubSFS.getSubset(curveToTest.name()));
+        assertNotNull(pubSFS.get(curveToTest.name()+".pub"));
+        assertNull(pubSFS.get(curveToTest.name()+".pri"));
+    }
+    
+    public void testSerializeUnserialize() throws FSParseException {
+        SimpleFieldSet sfs = ecdsa.asFieldSet(true);
+        ECDSA ecdsa2 = new ECDSA(sfs.getSubset(curveToTest.name()), curveToTest);
+        assertEquals(ecdsa.getPublicKey(), ecdsa2.getPublicKey());
+    }
+    
     /**
      * @param args
      */
@@ -56,6 +77,14 @@ public class ECDSATest extends TestCase {
         System.out.println("ToSign   : "+toSign + " ("+toHex(signedBytes)+")");
         System.out.println("Signature: "+ toHex(sig));
         System.out.println("Verify?  : "+ecdsa.verify(sig, signedBytes));
+        
+        SimpleFieldSet sfs = ecdsa.asFieldSet(true);
+        System.out.println("\nSerialized to: ");
+        System.out.println(sfs.toString());
+        System.out.println("Restored to: ");
+        ECDSA ecdsa2 = new ECDSA(sfs.getSubset(curve.name()), curve);
+        System.out.println(ecdsa2.getPublicKey());
+        System.out.println("Verify?  : "+ecdsa2.verify(sig, signedBytes));
     }
     
     public static String toHex(byte[] arg) {
