@@ -24,20 +24,21 @@ public class ECDH {
     
     public enum Curves {
         // rfc5903 or rfc6460: it's NIST's random/prime curves : suite B
-        P256("secp256r1", 91, "AES128", 1),
-        P384("secp384r1",120, "AES192", 2),
-        P521("secp521r1",158, "AES256", 3);
+        // Order matters. Append to the list, do not re-order.
+        P256("secp256r1", "AES128", 91, 32),
+        P384("secp384r1", "AES192", 120, 48),
+        P521("secp521r1", "AES256", 158, 66);
         
         public final ECGenParameterSpec spec;
         private final KeyPairGenerator keygen;
-        /* The modulus size in bytes associated with the current curve */
-        public final int modulusSize;
-        /* The symmetric algorithm associated with the curve */
+        /** The symmetric algorithm associated with the curve (use that, nothing else!) */
         public final String defaultKeyAlgorithm;
-        /* The Freenet-specific index identifying the curve */
-        public final byte index;
+        /** Expected size of a pubkey */
+        public final int modulusSize;
+        /** Expected size of the derived secret (in bytes) */
+        public final int derivedSecretSize;
         
-        private Curves(String name, int modulusSize, String defaultKeyAlg, int index) {
+        private Curves(String name, String defaultKeyAlg, int modulusSize, int derivedSecretSize) {
             this.spec = new ECGenParameterSpec(name);
             KeyPairGenerator kg = null;
             try {
@@ -51,9 +52,9 @@ public class ECDH {
                 e.printStackTrace();
             }
             this.keygen = kg;
-            this.modulusSize = modulusSize;
             this.defaultKeyAlgorithm = defaultKeyAlg;
-            this.index = (byte) index;
+            this.modulusSize = modulusSize;
+            this.derivedSecretSize = derivedSecretSize;
         }
         
         public synchronized KeyPair generateKeyPair() {
