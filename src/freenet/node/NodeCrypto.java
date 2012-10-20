@@ -24,6 +24,8 @@ import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPrivateKey;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DSASignature;
+import freenet.crypt.ECDSA;
+import freenet.crypt.ECDSA.Curves;
 import freenet.crypt.Global;
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
@@ -76,6 +78,8 @@ public class NodeCrypto {
 	private DSAPublicKey pubKey;
 	byte[] pubKeyHash;
 	byte[] pubKeyHashHash;
+	/** My ECDSA/P256 keypair and context */
+	private ECDSA ecdsaP256;
 	/** My ARK SSK private key */
 	InsertableClientSSK myARK;
 	/** My ARK sequence number */
@@ -197,12 +201,19 @@ public class NodeCrypto {
 		anonSetupCipher.initialize(identityHash);
 		identityHashHash = SHA256.digest(identityHash);
 
+		SimpleFieldSet ecdsaSFS = null;
+		SimpleFieldSet ecdsaP256SFS = null;
 		try {
 			cryptoGroup = DSAGroup.create(fs.subset("dsaGroup"));
 			privKey = DSAPrivateKey.create(fs.subset("dsaPrivKey"), cryptoGroup);
 			pubKey = DSAPublicKey.create(fs.subset("dsaPubKey"), cryptoGroup);
 			pubKeyHash = SHA256.digest(pubKey.asBytes());
 			pubKeyHashHash = SHA256.digest(pubKeyHash);
+			
+			ecdsaSFS = fs.subset("ecdsa");
+			if(ecdsaSFS != null) {
+			    ecdsaP256 = new ECDSA(ecdsaSFS.subset(ECDSA.Curves.P256.name()), Curves.P256);
+		    }
 		} catch (IllegalBase64Exception e) {
 			Logger.error(this, "Caught "+e, e);
 			throw new IOException(e.toString());
@@ -210,6 +221,14 @@ public class NodeCrypto {
 			Logger.error(this, "Caught "+e, e);
 			throw new IOException(e.toString());
 		}
+		
+		if(ecdsaP256 == null) {
+		    // We don't have a keypair, generate one.
+		    Logger.normal(this, "No ecdsa.P256 field found in noderef: let's generate a new key");
+		    ecdsaP256 = new ECDSA(Curves.P256);
+		}
+		
+		
 		InsertableClientSSK ark = null;
 
 		// ARK
@@ -277,6 +296,7 @@ public class NodeCrypto {
 		node.random.nextBytes(clientNonce);
 		pubKeyHash = SHA256.digest(pubKey.asBytes());
 		pubKeyHashHash = SHA256.digest(pubKeyHash);
+		ecdsaP256 = new ECDSA(ECDSA.Curves.P256);
 	}
 
 	public void start() {
@@ -362,6 +382,7 @@ public class NodeCrypto {
 			// These are invariant. They cannot change on connection setup. They can safely be excluded.
 			fs.put("dsaGroup", cryptoGroup.asFieldSet());
 			fs.put("dsaPubKey", pubKey.asFieldSet());
+			fs.put("ecdsa", ecdsaP256.asFieldSet(false));
 		}
 		if(!forAnonInitiator) {
 			// Short-lived connections don't need ARK and don't need negTypes either.
@@ -457,6 +478,10 @@ public class NodeCrypto {
 	}
 
 	void addPrivateFields(SimpleFieldSet fs) {
+	    // Let's not add it twice
+	    fs.removeSubset("ecdsa");
+	    fs.put("ecdsa", ecdsaP256.asFieldSet(true));
+	    
 		fs.put("dsaPrivKey", privKey.asFieldSet());
 		fs.putSingle("ark.privURI", myARK.getInsertURI().toString(false, false));
 		// FIXME remove the conditional after we've removed it from exportPublic...
