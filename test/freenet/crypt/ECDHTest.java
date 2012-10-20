@@ -35,8 +35,8 @@ public class ECDHTest extends TestCase {
         assertNotNull(aliceS);
         assertNotNull(bobS);
         assertEquals(aliceS, bobS);
-        assertTrue(aliceS.getEncoded().length == curveToTest.derivedSecretSize);
-        assertTrue(bobS.getEncoded().length == curveToTest.derivedSecretSize);
+        assertEquals(aliceS.getEncoded().length, curveToTest.derivedSecretSize);
+        assertEquals(bobS.getEncoded().length, curveToTest.derivedSecretSize);
     }
 
     public void testGetPublicKey() {
@@ -45,8 +45,8 @@ public class ECDHTest extends TestCase {
         
         assertNotNull(aliceP);
         assertNotSame(aliceP, bobP);
-        assertTrue(aliceP.getEncoded().length == curveToTest.modulusSize);
-        assertTrue(bobP.getEncoded().length == curveToTest.modulusSize);
+        assertEquals(aliceP.getEncoded().length, curveToTest.modulusSize);
+        assertEquals(bobP.getEncoded().length, curveToTest.modulusSize);
     }
 
 
