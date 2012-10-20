@@ -39,10 +39,8 @@ import freenet.keys.InsertableClientSSK;
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.IllegalBase64Exception;
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
-import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 
 /**
@@ -50,6 +48,8 @@ import freenet.support.io.Closer;
  * @author toad
  */
 public class NodeCrypto {
+    static { Logger.registerClass(NodeCrypto.class); }
+    private static volatile boolean logMINOR;
 
 	/** Length of a node identity */
 	public static final int IDENTITY_LENGTH = 32;
@@ -92,15 +92,6 @@ public class NodeCrypto {
 	/** A synchronization object used while signing the reference fieldset */
 	private volatile Object referenceSync = new Object();
 
-        private static volatile boolean logMINOR;
-	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
-			@Override
-			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-			}
-		});
-	}
 	/**
 	 * Get port number from a config, create socket and packet mangler
 	 * @throws NodeInitException
@@ -333,7 +324,7 @@ public class NodeCrypto {
 		fs.putSingle("version", Version.getVersionString()); // Keep, vital that peer know our version. For example, some types may be sent in different formats to different node versions (e.g. Peer).
 		if(!forAnonInitiator)
 			fs.putSingle("lastGoodVersion", Version.getLastGoodVersionString()); // Also vital
-		if(node.isTestnetEnabled()) {
+		if(Node.isTestnetEnabled()) {
 			fs.put("testnet", true);
 			//fs.put("testnetPort", node.testnetHandler.getPort()); // Useful, saves a lot of complexity
 		}
