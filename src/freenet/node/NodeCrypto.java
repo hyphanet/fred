@@ -94,6 +94,8 @@ public class NodeCrypto {
 	private String mySignedReference = null;
 	/** The signature of the above fieldset */
 	private DSASignature myReferenceSignature = null;
+	/** The ECDSA/P256 signature of the above fieldset */
+	private String myReferenceECDSASignature = null;
 	/** A synchronization object used while signing the reference fieldset */
 	private volatile Object referenceSync = new Object();
 
@@ -364,10 +366,15 @@ public class NodeCrypto {
 			// Anonymous initiator setup type specifies whether the node is opennet or not.
 			fs.put("opennet", isOpennet);
 			synchronized (referenceSync) {
-				if(myReferenceSignature == null || mySignedReference == null || !mySignedReference.equals(fs.toOrderedString())){
+				if(myReferenceSignature == null || myReferenceECDSASignature == null || mySignedReference == null || !mySignedReference.equals(fs.toOrderedString())){
 					mySignedReference = fs.toOrderedString();
 					try {
-						myReferenceSignature = signRef(mySignedReference);
+					    myReferenceECDSASignature = ecdsaSignRef(mySignedReference);
+
+					    // Old nodes will verify the signature including sigP256
+					    fs.putSingle("sigP256", myReferenceECDSASignature);
+					    mySignedReference = fs.toOrderedString();
+					    myReferenceSignature = signRef(mySignedReference);
 					} catch (NodeInitException e) {
 						node.exit(e.exitCode);
 					}
@@ -404,7 +411,7 @@ public class NodeCrypto {
 		return fs;
 	}
 
-	DSASignature signRef(String mySignedReference) throws NodeInitException {
+	private DSASignature signRef(String mySignedReference) throws NodeInitException {
 		if(logMINOR) Logger.minor(this, "Signing reference:\n"+mySignedReference);
 
 		try{
@@ -422,6 +429,24 @@ public class NodeCrypto {
 			e.printStackTrace();
 			throw new NodeInitException(NodeInitException.EXIT_CRAPPY_JVM, "Impossible: JVM doesn't support UTF-8");
 		}
+	}
+	
+	private String ecdsaSignRef(String mySignedReference) throws NodeInitException {
+	    if(logMINOR) Logger.minor(this, "Signing reference:\n"+mySignedReference);
+
+	    try{
+	        byte[] ref = mySignedReference.getBytes("UTF-8");
+	        byte[] sig = ecdsaSign(ref);
+	        if(logMINOR && !ECDSA.verify(Curves.P256, getECDSAP256Pubkey(), sig, ref))
+	            throw new NodeInitException(NodeInitException.EXIT_EXCEPTION_TO_DEBUG, mySignedReference);
+	        return Base64.encode(sig);
+	    } catch(UnsupportedEncodingException e){
+	        //duh ?
+	        Logger.error(this, "Error while signing the node identity!" + e, e);
+	        System.err.println("Error while signing the node identity!"+e);
+	        e.printStackTrace();
+	        throw new NodeInitException(NodeInitException.EXIT_CRAPPY_JVM, "Impossible: JVM doesn't support UTF-8");
+	    }
 	}
 
 	private byte[] myCompressedRef(boolean setup, boolean heavySetup, boolean forARK) {
