@@ -95,7 +95,7 @@ public class MainJarDependenciesChecker {
 	
 	interface Deployer {
 		public void deploy(MainJarDependencies deps);
-		public JarFetcher fetch(FreenetURI uri, File downloadTo, long expectedLength, byte[] expectedHash, JarFetcherCallback cb, int build) throws FetchException;
+		public JarFetcher fetch(FreenetURI uri, File downloadTo, long expectedLength, byte[] expectedHash, JarFetcherCallback cb, int build, boolean essential) throws FetchException;
 		/** Called by cleanup with the dependencies we can serve for the current version. 
 		 * @param expectedHash The hash of the file's contents, which is also
 		 * listed in the dependencies file.
@@ -159,10 +159,10 @@ public class MainJarDependenciesChecker {
 		final boolean essential;
 
 		/** Construct with a Dependency, so we can add it when we're done. */
-		Downloader(Dependency dep, FreenetURI uri, byte[] expectedHash, long expectedSize) throws FetchException {
-			fetcher = deployer.fetch(uri, dep.newFilename, expectedSize, expectedHash, this, build);
+		Downloader(Dependency dep, FreenetURI uri, byte[] expectedHash, long expectedSize, boolean essential) throws FetchException {
+			fetcher = deployer.fetch(uri, dep.newFilename, expectedSize, expectedHash, this, build, essential);
 			this.dep = dep;
-			this.essential = true;
+			this.essential = essential;
 		}
 
 		@Override
@@ -222,7 +222,8 @@ public class MainJarDependenciesChecker {
 	
 	enum DEPENDENCY_TYPE {
 		/** A jar we want to put on the classpath */
-		CLASSPATH;
+		CLASSPATH,
+		OPTIONAL_PRELOAD;
 	}
 	
 	private synchronized MainJarDependencies innerHandle(Properties props, int build) {
@@ -344,14 +345,16 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				// Nothing to do. Yay!
 				System.out.println("Found file required by the new Freenet version: "+filename);
 				// Use it.
-				dependencies.add(new Dependency(currentFile, filename, p));
+				if(type == DEPENDENCY_TYPE.CLASSPATH)
+					dependencies.add(new Dependency(currentFile, filename, p));
 				continue;
 			}
 			// Check the version currently in use.
 			if(currentFile != null && validFile(currentFile, expectedHash, size)) {
 				System.out.println("Existing version of "+currentFile+" is OK for update.");
 				// Use it.
-				dependencies.add(new Dependency(currentFile, currentFile, p));
+				if(type == DEPENDENCY_TYPE.CLASSPATH)
+					dependencies.add(new Dependency(currentFile, currentFile, p));
 				continue;
 			}
 			// We might be somewhere in between.
@@ -359,7 +362,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				// No way to check existing files.
 				if(maxCHK != null) {
 					try {
-						fetchDependencyEssential(maxCHK, new Dependency(currentFile, filename, p), expectedHash, size);
+						fetchDependency(maxCHK, new Dependency(currentFile, filename, p), expectedHash, size, type != DEPENDENCY_TYPE.OPTIONAL_PRELOAD);
 					} catch (FetchException fe) {
 						broken = true;
 						Logger.error(this, "Failed to start fetch: "+fe, fe);
@@ -379,7 +382,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				if(validFile(f, expectedHash, size)) {
 					// Use it.
 					System.out.println("Found "+name+" - meets requirement for "+baseName+" for next update.");
-					dependencies.add(new Dependency(currentFile, f, p));
+					if(type == DEPENDENCY_TYPE.CLASSPATH)
+						dependencies.add(new Dependency(currentFile, f, p));
 					continue outer;
 				}
 			}
@@ -390,7 +394,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			}
 			// Otherwise we need to fetch it.
 			try {
-				fetchDependencyEssential(maxCHK, new Dependency(currentFile, filename, p), expectedHash, size);
+				fetchDependency(maxCHK, new Dependency(currentFile, filename, p), expectedHash, size, type != DEPENDENCY_TYPE.OPTIONAL_PRELOAD);
 			} catch (FetchException e) {
 				broken = true;
 				Logger.error(this, "Failed to start fetch: "+e, e);
@@ -537,7 +541,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 							Logger.error(this, "Failed to preload "+file+" from "+key+" : "+e, e);
 						}
 						
-					}, build);
+					}, build, false);
 				} catch (FetchException e) {
 					Logger.error(MainJarDependencies.class, "Failed to preload "+file+" from "+key+" : "+e, e);
 				}
@@ -709,9 +713,10 @@ outer:	for(String propName : props.stringPropertyNames()) {
 		deployer.deploy(new MainJarDependencies(f, build));
 	}
 
-	private synchronized void fetchDependencyEssential(FreenetURI chk, Dependency dep, byte[] expectedHash, long expectedSize) throws FetchException {
-		Downloader d = new Downloader(dep, chk, expectedHash, expectedSize);
-		downloaders.add(d);
+	private synchronized void fetchDependency(FreenetURI chk, Dependency dep, byte[] expectedHash, long expectedSize, boolean essential) throws FetchException {
+		Downloader d = new Downloader(dep, chk, expectedHash, expectedSize, essential);
+		if(essential)
+			downloaders.add(d);
 	}
 
 	private synchronized boolean ready() {

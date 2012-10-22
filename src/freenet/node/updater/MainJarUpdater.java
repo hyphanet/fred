@@ -82,6 +82,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 	// Dependency handling.
 	
 	private HashSet<DependencyJarFetcher> fetchers = new HashSet<DependencyJarFetcher>();
+	private HashSet<DependencyJarFetcher> essentialFetchers = new HashSet<DependencyJarFetcher>();
 
 	protected void parseDependencies(Properties props, int build) {
 		synchronized(fetchers) {
@@ -108,8 +109,9 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		private boolean fetched;
 		private final byte[] expectedHash;
 		private final long expectedLength;
+		private final boolean essential;
 		
-		DependencyJarFetcher(File filename, FreenetURI chk, long expectedLength, byte[] expectedHash, JarFetcherCallback cb) {
+		DependencyJarFetcher(File filename, FreenetURI chk, long expectedLength, byte[] expectedHash, JarFetcherCallback cb, boolean essential) {
 			FetchContext myCtx = new FetchContext(dependencyCtx, FetchContext.IDENTICAL_MASK, false, null);
 			// FIXME single global binary blob writer for MainJarDependenciesChecker AND MainJarUpdater.
 			getter = new ClientGetter(this,  
@@ -120,6 +122,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 			this.filename = filename;
 			this.expectedHash = expectedHash;
 			this.expectedLength = expectedLength;
+			this.essential = essential;
 		}
 		
 		@Override
@@ -194,6 +197,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		public void fetchFromUOM() {
 			synchronized(this) {
 				if(fetched) return;
+				if(!essential) return;
 			}
 			manager.uom.fetchDependency(expectedHash, expectedLength, filename,
 					new UOMDependencyFetcherCallback() {
@@ -214,12 +218,14 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 	
 	@Override
 	public JarFetcher fetch(FreenetURI uri, File downloadTo,
-			long expectedLength, byte[] expectedHash, JarFetcherCallback cb, int build) throws FetchException {
+			long expectedLength, byte[] expectedHash, JarFetcherCallback cb, int build, boolean essential) throws FetchException {
 		System.out.println("Fetching "+downloadTo+" needed for new Freenet update "+build);
 		if(logMINOR) Logger.minor(this, "Fetching "+uri+" to "+downloadTo+" for next update");
-		DependencyJarFetcher fetcher = new DependencyJarFetcher(downloadTo, uri, expectedLength, expectedHash, cb);
+		DependencyJarFetcher fetcher = new DependencyJarFetcher(downloadTo, uri, expectedLength, expectedHash, cb, essential);
 		synchronized(fetchers) {
 			fetchers.add(fetcher);
+			if(essential)
+				essentialFetchers.add(fetcher);
 		}
 		fetcher.start();
 		if(manager.uom.fetchingUOM()) {
