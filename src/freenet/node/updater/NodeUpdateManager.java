@@ -539,6 +539,12 @@ public class NodeUpdateManager {
 	}
 
 	void broadcastUOMAnnouncesNew() {
+		synchronized(this) {
+			if(hasNewMainJar && armed) {
+				if(logMINOR) Logger.minor(this, "Will update soon, not offering UOM.");
+				return;
+			}
+		}
 		Message msg;
 		synchronized (broadcastUOMAnnouncesSync) {
 			if(broadcastUOMAnnouncesNew && !hasBeenBlown) return;
