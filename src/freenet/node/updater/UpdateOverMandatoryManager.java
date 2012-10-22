@@ -65,6 +65,7 @@ import freenet.support.TimeUtil;
 import freenet.support.WeakHashSet;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
+import freenet.support.io.ByteArrayRandomAccessThing;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
@@ -1644,7 +1645,13 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		final BulkTransmitter bt;
 		
 		try {
-			raf = new RandomAccessFileWrapper(data, "r");
+			if(data != null)
+				raf = new RandomAccessFileWrapper(data, "r");
+			else {
+				Logger.error(this, "Dependency with hash "+HexUtil.bytesToHex(buf.getData())+" not found!");
+				fail = true;
+				raf = null;
+			}
 		} catch(FileNotFoundException e) {
 			Logger.error(this, "Peer " + source + " asked us for the dependency with hash "+HexUtil.bytesToHex(buf.getData())+" jar, we have downloaded it but don't have the file even though we did have it when we checked!: " + e, e);
 			decrementDependencies(source);
@@ -1653,10 +1660,16 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		
 		final PartiallyReceivedBulk prb;
 		try {
-			long thisLength = raf.size();
-			prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), thisLength,
-					Node.PACKET_SIZE, raf, true);
-			if(length != thisLength) {
+			if(raf != null) {
+				long thisLength = raf.size();
+				prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), thisLength,
+						Node.PACKET_SIZE, raf, true);
+				if(length != thisLength) {
+					fail = true;
+				}
+			} else {
+				prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), 0,
+						Node.PACKET_SIZE, new ByteArrayRandomAccessThing(new byte[0]), true);
 				fail = true;
 			}
 		} catch(IOException e) {
