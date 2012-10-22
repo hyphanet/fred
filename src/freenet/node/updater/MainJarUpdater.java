@@ -182,16 +182,17 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 			getter.start(null, clientContext);
 		}
 
-		public synchronized HTMLNode render() {
-			HTMLNode div = new HTMLNode("div");
-			div.addChild("p", filename.toString());
+		public synchronized HTMLNode renderRow() {
+			HTMLNode row = new HTMLNode("tr");
+			row.addChild("td").addChild("p", filename.toString());
+			HTMLNode cell = row.addChild("td");
 			
 			if(lastProgress == null)
-				div.addChild(QueueToadlet.createProgressCell(false, true, COMPRESS_STATE.WORKING, 0, 0, 0, 0, 0, false, false));
+				cell.addChild(QueueToadlet.createProgressCell(false, true, COMPRESS_STATE.WORKING, 0, 0, 0, 0, 0, false, false));
 			else
-				div.addChild(QueueToadlet.createProgressCell(false, 
+				cell.addChild(QueueToadlet.createProgressCell(false, 
 						true, COMPRESS_STATE.WORKING, lastProgress.succeedBlocks, lastProgress.failedBlocks, lastProgress.fatallyFailedBlocks, lastProgress.minSuccessfulBlocks, lastProgress.totalBlocks, lastProgress.finalizedTotal, false));
-			return div;
+			return row;
 		}
 
 		public void fetchFromUOM() {
@@ -245,10 +246,12 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 	
 	public void renderProperties(HTMLNode alertNode) {
 		synchronized(fetchers) {
-			if(!fetchers.isEmpty())
+			if(!fetchers.isEmpty()) {
 				alertNode.addChild("p", l10n("fetchingDependencies")+":");
-			for(DependencyJarFetcher f : fetchers) {
-				alertNode.addChild(f.render());
+				HTMLNode table = alertNode.addChild("table");
+				for(DependencyJarFetcher f : fetchers) {
+					alertNode.addChild(f.renderRow());
+				}
 			}
 		}
 	}
