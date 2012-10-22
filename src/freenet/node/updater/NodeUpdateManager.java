@@ -539,6 +539,7 @@ public class NodeUpdateManager {
 	}
 
 	void broadcastUOMAnnouncesNew() {
+		if(logMINOR) Logger.minor(this, "Broadcast UOM announcements (new)");
 		long size = canAnnounceUOMNew();
 		Message msg;
 		if(size <= 0 && !hasBeenBlown) return;
@@ -547,6 +548,7 @@ public class NodeUpdateManager {
 			broadcastUOMAnnouncesNew = true;
 			msg = getNewUOMAnnouncement(size);
 		}
+		if(logMINOR) Logger.minor(this, "Broadcasting UOM announcements (new)");
 		node.peers.localBroadcast(msg, true, true, ctr);
 	}
 
@@ -1514,7 +1516,7 @@ public class NodeUpdateManager {
 			if(hasBeenBlown) return;
 			if(peersSayBlown) return;
 		}
-		if(logMINOR) Logger.minor(this, "Maybe broadcast UOM announces new");
+		if(logMINOR) Logger.minor(this, "Maybe broadcast UOM announces new (2)");
 		// If the node has no peers, noRevocationFound will never be called.
 		broadcastUOMAnnouncesNew();
 	}
