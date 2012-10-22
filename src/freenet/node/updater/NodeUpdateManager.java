@@ -545,6 +545,7 @@ public class NodeUpdateManager {
 				return;
 			}
 			// Don't announce if we don't have the jar.
+			// (If we remove the below then we must at least do if(fetchedMainJarVersion <= 0) return;)
 			if(fetchedMainJarVersion != Version.buildNumber()) {
 				// Don't announce unless we've successfully started the jar.
 				if(logMINOR) Logger.minor(this, "Downloaded a different version than the one we are running, not offering UOM.");
