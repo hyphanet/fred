@@ -50,6 +50,11 @@ import freenet.support.io.EOFInputStream;
  */
 public class MainJarDependenciesChecker {
 	
+	private static volatile boolean logMINOR;
+	static {
+		Logger.registerClass(MainJarDependenciesChecker.class);
+	}
+	
 	// Slightly over-engineered? No.
 	// This is critical code. It is essential that we are able to unit test it.
 	// Hence the lightweight interfaces, with the mundane glue code implemented by the caller.
@@ -215,6 +220,11 @@ public class MainJarDependenciesChecker {
 		}
 	}
 	
+	enum DEPENDENCY_TYPE {
+		/** A jar we want to put on the classpath */
+		CLASSPATH;
+	}
+	
 	private synchronized MainJarDependencies innerHandle(Properties props, int build) {
 		// FIXME support deletion placeholders.
 		// I.e. when we remove a library we put a placeholder in to tell this code to delete it.
@@ -240,6 +250,25 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			if(!propName.contains(".")) continue;
 			String baseName = propName.split("\\.")[0];
 			if(!processed.add(baseName)) continue;
+			String s = props.getProperty(baseName+".type");
+			if(s == null) {
+				Logger.error(this, "dependencies.properties broken? missing type for \""+baseName+"\"");
+				broken = true;
+				continue;
+			}
+			DEPENDENCY_TYPE type;
+			try {
+				type = DEPENDENCY_TYPE.valueOf(s);
+			} catch (IllegalArgumentException e) {
+				if(s.startsWith("OPTIONAL_")) {
+					if(logMINOR) Logger.minor(this, "Ignoring non-essential dependency type \""+s+"\" for \""+baseName+"\"");
+					continue;
+				}
+				Logger.error(this, "dependencies.properties broken? unrecognised type for \""+baseName+"\"");
+				broken = true;
+				continue;
+			}
+			
 			// Version is useful to have, but we actually check the hash.
 			String version = props.getProperty(baseName+".version");
 			if(version == null) {
@@ -248,7 +277,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				continue;
 			}
 			File filename = null;
-			String s = props.getProperty(baseName+".filename");
+			s = props.getProperty(baseName+".filename");
 			if(s != null) filename = new File(s);
 			if(filename == null) {
 				Logger.error(this, "dependencies.properties broken? missing filename");
@@ -402,6 +431,22 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			if(!propName.contains(".")) continue;
 			String baseName = propName.split("\\.")[0];
 			if(!processed.add(baseName)) continue;
+			String s = props.getProperty(baseName+".type");
+			if(s == null) {
+				Logger.error(MainJarDependencies.class, "dependencies.properties broken? missing type for \""+baseName+"\"");
+				continue;
+			}
+			DEPENDENCY_TYPE type;
+			try {
+				type = DEPENDENCY_TYPE.valueOf(s);
+			} catch (IllegalArgumentException e) {
+				if(s.startsWith("OPTIONAL_")) {
+					if(logMINOR) Logger.minor(MainJarDependencies.class, "Ignoring non-essential dependency type \""+s+"\" for \""+baseName+"\"");
+					continue;
+				}
+				Logger.error(MainJarDependencies.class, "dependencies.properties broken? unrecognised type for \""+baseName+"\"");
+				continue;
+			}
 			// Version is useful for checking for obsolete versions of files.
 			String version = props.getProperty(baseName+".version");
 			if(version == null) {
@@ -409,7 +454,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				return false;
 			}
 			File filename = null;
-			String s = props.getProperty(baseName+".filename");
+			s = props.getProperty(baseName+".filename");
 			if(s != null) filename = new File(s);
 			if(filename == null) {
 				Logger.error(MainJarDependencies.class, "dependencies.properties broken? missing filename");
