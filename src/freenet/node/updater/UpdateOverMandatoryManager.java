@@ -1893,8 +1893,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 						Logger.error(this, "Caught fetching "+saveTo+" from "+fetchFrom +" : "+e, e);
 						System.err.println("Fetch failed due to internal error (bug or severe local problem?): "+e);
 					} finally {
+						boolean connected = fetchFrom.isConnected();
 						synchronized(UOMDependencyFetcher.this) {
-							if(failed)
+							if(failed && connected)
 								peersFailed.add(fetchFrom);
 							peersFetching.remove(fetchFrom);
 						}
