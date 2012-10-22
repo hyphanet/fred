@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.regex.Pattern;
@@ -71,7 +72,7 @@ public class MainJarDependenciesChecker {
 		 * in handle() about deletion placeholders! */
 		final boolean mustRewriteWrapperConf;
 		
-		MainJarDependencies(Set<Dependency> dependencies, int build) {
+		MainJarDependencies(TreeSet<Dependency> dependencies, int build) {
 			this.dependencies = dependencies;
 			this.build = build;
 			boolean mustRewrite = false;
@@ -112,7 +113,7 @@ public class MainJarDependenciesChecker {
 		public void onFailure(FetchException e);
 	}
 
-	final class Dependency {
+	final class Dependency implements Comparable<Dependency> {
 		private File oldFilename;
 		private File newFilename;
 		/** For last resort matching */
@@ -135,6 +136,15 @@ public class MainJarDependenciesChecker {
 		public Pattern regex() {
 			return regex;
 		}
+
+		@Override
+		public int compareTo(Dependency arg0) {
+			if(this == arg0) return 0;
+			int ret = this.newFilename.getName().compareTo(arg0.newFilename.getName());
+			if(ret != 0) return 0;
+			return newFilename.compareTo(arg0.newFilename);
+		}
+		
 	}
 	
 	MainJarDependenciesChecker(Deployer deployer) {
@@ -144,7 +154,7 @@ public class MainJarDependenciesChecker {
 	private final Deployer deployer;
 	/** The final filenames we will use in the update, which we have 
 	 * already downloaded. */
-	private final HashSet<Dependency> dependencies = new HashSet<Dependency>();
+	private final TreeSet<Dependency> dependencies = new TreeSet<Dependency>();
 	/** Set if the update can't be deployed because the dependencies file is 
 	 * broken. We should wait for an update with a valid file. 
 	 */
@@ -402,7 +412,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			}
 		}
 		if(ready())
-			return new MainJarDependencies(new HashSet<Dependency>(dependencies), build);
+			return new MainJarDependencies(new TreeSet<Dependency>(dependencies), build);
 		else
 			return null;
 	}
@@ -706,9 +716,9 @@ outer:	for(String propName : props.stringPropertyNames()) {
 
 	/** Unlike other methods here, this should be called outside the lock. */
 	public void deploy() {
-		HashSet<Dependency> f;
+		TreeSet<Dependency> f;
 		synchronized(this) {
-			f = new HashSet<Dependency>(dependencies);
+			f = new TreeSet<Dependency>(dependencies);
 		}
 		deployer.deploy(new MainJarDependencies(f, build));
 	}
