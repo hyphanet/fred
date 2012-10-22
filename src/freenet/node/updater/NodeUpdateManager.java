@@ -541,7 +541,7 @@ public class NodeUpdateManager {
 	void broadcastUOMAnnouncesNew() {
 		long size = canAnnounceUOMNew();
 		Message msg;
-		if(size <= 0) return;
+		if(size <= 0 && !hasBeenBlown) return;
 		synchronized (broadcastUOMAnnouncesSync) {
 			if(broadcastUOMAnnouncesNew && !hasBeenBlown) return;
 			broadcastUOMAnnouncesNew = true;
@@ -568,7 +568,7 @@ public class NodeUpdateManager {
 			}
 			data = fetchedMainJarData;
 		}
-		if(logMINOR) Logger.minor(this, "Got data: "+data+" size "+data.size());
+		if(logMINOR) Logger.minor(this, "Got data for UOM: "+data+" size "+data.size());
 		return data.size();
 	}
 
