@@ -524,7 +524,12 @@ public class NodeUpdateManager {
 	}
 
 	void broadcastUOMAnnouncesOld() {
+		boolean mainJarAvailable = transitionMainJarFetcher == null ? false
+				: transitionMainJarFetcher.fetched();
+		boolean extJarAvailable = transitionExtJarFetcher == null ? false
+				: transitionExtJarFetcher.fetched();
 		Message msg;
+		if(!(mainJarAvailable && extJarAvailable)) return;
 		synchronized (broadcastUOMAnnouncesSync) {
 			if(broadcastUOMAnnouncesOld && !hasBeenBlown) return;
 			broadcastUOMAnnouncesOld = true;
