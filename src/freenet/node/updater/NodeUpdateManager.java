@@ -541,6 +541,7 @@ public class NodeUpdateManager {
 	void broadcastUOMAnnouncesNew() {
 		long size = canAnnounceUOMNew();
 		Message msg;
+		if(size <= 0) return;
 		synchronized (broadcastUOMAnnouncesSync) {
 			if(broadcastUOMAnnouncesNew && !hasBeenBlown) return;
 			broadcastUOMAnnouncesNew = true;
