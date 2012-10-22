@@ -118,11 +118,13 @@ public class MainJarDependenciesChecker {
 		private File newFilename;
 		/** For last resort matching */
 		private Pattern regex;
+		private int order;
 		
-		private Dependency(File oldFilename, File newFilename, Pattern regex) {
+		private Dependency(File oldFilename, File newFilename, Pattern regex, int order) {
 			this.oldFilename = oldFilename;
 			this.newFilename = newFilename;
 			this.regex = regex;
+			this.order = order;
 		}
 		
 		public File oldFilename() {
@@ -140,6 +142,8 @@ public class MainJarDependenciesChecker {
 		@Override
 		public int compareTo(Dependency arg0) {
 			if(this == arg0) return 0;
+			if(this.order > arg0.order) return 1;
+			else if(this.order < arg0.order) return -1;
 			int ret = this.newFilename.getName().compareTo(arg0.newFilename.getName());
 			if(ret != 0) return 0;
 			return newFilename.compareTo(arg0.newFilename);
@@ -348,6 +352,22 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				continue;
 			}
 			
+			int order = 0;
+			
+			s = props.getProperty("order");
+			if(s != null) {
+				try {
+					// Order is an optional field.
+					// For most stuff we don't care.
+					// But if it's present it must be correct!
+					order = Integer.parseInt(s);
+				} catch (NumberFormatException e) {
+					System.err.println("Unable to update to build "+build+": dependencies.properties broken: Broken order for "+baseName+" : \""+s+"\"");
+					broken = true;
+					continue;
+				}
+			}
+			
 			// We need to determine whether it is in use at the moment.
 			File currentFile = getDependencyInUse(baseName, p);
 			
@@ -356,7 +376,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				System.out.println("Found file required by the new Freenet version: "+filename);
 				// Use it.
 				if(type == DEPENDENCY_TYPE.CLASSPATH)
-					dependencies.add(new Dependency(currentFile, filename, p));
+					dependencies.add(new Dependency(currentFile, filename, p, order));
 				continue;
 			}
 			// Check the version currently in use.
@@ -364,7 +384,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				System.out.println("Existing version of "+currentFile+" is OK for update.");
 				// Use it.
 				if(type == DEPENDENCY_TYPE.CLASSPATH)
-					dependencies.add(new Dependency(currentFile, currentFile, p));
+					dependencies.add(new Dependency(currentFile, currentFile, p, order));
 				continue;
 			}
 			// We might be somewhere in between.
@@ -372,7 +392,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				// No way to check existing files.
 				if(maxCHK != null) {
 					try {
-						fetchDependency(maxCHK, new Dependency(currentFile, filename, p), expectedHash, size, type != DEPENDENCY_TYPE.OPTIONAL_PRELOAD);
+						fetchDependency(maxCHK, new Dependency(currentFile, filename, p, order), expectedHash, size, type != DEPENDENCY_TYPE.OPTIONAL_PRELOAD);
 					} catch (FetchException fe) {
 						broken = true;
 						Logger.error(this, "Failed to start fetch: "+fe, fe);
@@ -393,7 +413,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 					// Use it.
 					System.out.println("Found "+name+" - meets requirement for "+baseName+" for next update.");
 					if(type == DEPENDENCY_TYPE.CLASSPATH)
-						dependencies.add(new Dependency(currentFile, f, p));
+						dependencies.add(new Dependency(currentFile, f, p, order));
 					continue outer;
 				}
 			}
@@ -404,7 +424,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			}
 			// Otherwise we need to fetch it.
 			try {
-				fetchDependency(maxCHK, new Dependency(currentFile, filename, p), expectedHash, size, type != DEPENDENCY_TYPE.OPTIONAL_PRELOAD);
+				fetchDependency(maxCHK, new Dependency(currentFile, filename, p, order), expectedHash, size, type != DEPENDENCY_TYPE.OPTIONAL_PRELOAD);
 			} catch (FetchException e) {
 				broken = true;
 				Logger.error(this, "Failed to start fetch: "+e, e);
@@ -521,6 +541,21 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			if(size < 0) {
 				System.err.println("Unable to update to build "+build+": dependencies.properties broken: Broken length for "+baseName+" : \""+s+"\"");
 				return false;
+			}
+			
+			int order = 0;
+			
+			s = props.getProperty("order");
+			if(s != null) {
+				try {
+					// Order is an optional field.
+					// For most stuff we don't care.
+					// But if it's present it must be correct!
+					order = Integer.parseInt(s);
+				} catch (NumberFormatException e) {
+					System.err.println("Unable to update to build "+build+": dependencies.properties broken: Broken order for "+baseName+" : \""+s+"\"");
+					continue;
+				}
 			}
 			
 			File currentFile = getDependencyInUse(baseName, p);
