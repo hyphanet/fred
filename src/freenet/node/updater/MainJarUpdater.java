@@ -235,7 +235,8 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		}
 		fetcher.start();
 		if(manager.uom.fetchingUOM()) {
-			fetcher.fetchFromUOM();
+			if(essential)
+				fetcher.fetchFromUOM();
 		}
 		return fetcher;
 	}
