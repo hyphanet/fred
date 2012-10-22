@@ -568,6 +568,7 @@ public class NodeUpdateManager {
 			}
 			data = fetchedMainJarData;
 		}
+		if(logMINOR) Logger.minor(this, "Got data: "+data+" size "+data.size());
 		return data.size();
 	}
 
@@ -1508,10 +1509,12 @@ public class NodeUpdateManager {
 	}
 	
 	protected void maybeBroadcastUOMAnnouncesNew() {
+		if(logMINOR) Logger.minor(this, "Maybe broadcast UOM announces new");
 		synchronized(NodeUpdateManager.this) {
 			if(hasBeenBlown) return;
 			if(peersSayBlown) return;
 		}
+		if(logMINOR) Logger.minor(this, "Maybe broadcast UOM announces new");
 		// If the node has no peers, noRevocationFound will never be called.
 		broadcastUOMAnnouncesNew();
 	}
