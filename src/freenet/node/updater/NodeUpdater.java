@@ -95,6 +95,33 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		}
 	}
 	
+	protected void maybeProcessOldBlob() {
+		File oldBlob = getBlobFile(currentVersion);
+		if(oldBlob != null) {
+			File temp;
+			try {
+				temp = File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
+			} catch (IOException e) {
+				Logger.error(this, "Unable to process old blob: "+e, e);
+				return;
+			}
+			if(oldBlob.renameTo(temp)) {
+				FreenetURI uri = URI.setSuggestedEdition(currentVersion);
+				uri = uri.sskForUSK();
+				try {
+					manager.uom.processMainJarBlob(temp, null, currentVersion, uri);
+				} catch (Throwable t) {
+					// Don't disrupt startup.
+					Logger.error(this, "Unable to process old blob, caught "+t, t);
+				}
+				temp.delete();
+			} else {
+				Logger.error(this, "Unable to rename old blob file "+oldBlob+" to "+temp+" so can't process it.");
+			}
+		}
+
+	}
+
 	protected RequestClient getRequestClient() {
 		return this;
 	}

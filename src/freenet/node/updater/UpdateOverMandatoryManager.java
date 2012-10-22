@@ -1413,23 +1413,24 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 	protected void processMainJarBlob(final File temp, final PeerNode source, final int version, FreenetURI uri) {
 		SimpleBlockSet blocks = new SimpleBlockSet();
+		final String toString = source == null ? "(local)" : source.userToString();
 
 		DataInputStream dis = null;
 		try {
 			dis = new DataInputStream(new BufferedInputStream(new FileInputStream(temp)));
 			BinaryBlob.readBinaryBlob(dis, blocks, true);
 		} catch(FileNotFoundException e) {
-			Logger.error(this, "Somebody deleted " + temp + " ? We lost the main jar (" + version + ") from " + source.userToString() + "!");
-			System.err.println("Somebody deleted " + temp + " ? We lost the main jar (" + version + ") from " + source.userToString() + "!");
+			Logger.error(this, "Somebody deleted " + temp + " ? We lost the main jar (" + version + ") from " + toString + "!");
+			System.err.println("Somebody deleted " + temp + " ? We lost the main jar (" + version + ") from " + toString + "!");
 			return;
 		} catch(IOException e) {
-			Logger.error(this, "Could not read main jar (" + version + ") from temp file " + temp + " from node " + source.userToString() + " !");
-			System.err.println("Could not read main jar (" + version + ") from temp file " + temp + " from node " + source.userToString() + " !");
+			Logger.error(this, "Could not read main jar (" + version + ") from temp file " + temp + " from node " + toString + " !");
+			System.err.println("Could not read main jar (" + version + ") from temp file " + temp + " from node " + toString + " !");
 			// FIXME will be kept until exit for debugging purposes
 			return;
 		} catch(BinaryBlobFormatException e) {
-			Logger.error(this, "Peer " + source.userToString() + " sent us an invalid main jar (" + version + ")!: " + e, e);
-			System.err.println("Peer " + source.userToString() + " sent us an invalid main jar (" + version + ")!: " + e);
+			Logger.error(this, "Peer " + toString + " sent us an invalid main jar (" + version + ")!: " + e, e);
+			System.err.println("Peer " + toString + " sent us an invalid main jar (" + version + ")!: " + e);
 			e.printStackTrace();
 			// FIXME will be kept until exit for debugging purposes
 			return;
@@ -1455,8 +1456,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			f.deleteOnExit();
 			b = new FileBucket(f, false, false, true, true, true);
 		} catch(IOException e) {
-			Logger.error(this, "Cannot share main jar from " + source.userToString() + " with our peers because cannot write the cleaned version to disk: " + e, e);
-			System.err.println("Cannot share main jar from " + source.userToString() + " with our peers because cannot write the cleaned version to disk: " + e);
+			Logger.error(this, "Cannot share main jar from " + toString + " with our peers because cannot write the cleaned version to disk: " + e, e);
+			System.err.println("Cannot share main jar from " + toString + " with our peers because cannot write the cleaned version to disk: " + e);
 			e.printStackTrace();
 			b = null;
 			f = null;
@@ -1470,17 +1471,17 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 				if(e.mode == FetchException.CANCELLED) {
 					// Eh?
-					Logger.error(this, "Cancelled fetch from store/blob of main jar (" + version + ") from " + source.userToString());
-					System.err.println("Cancelled fetch from store/blob of main jar (" + version + ") from " + source.userToString() + " to " + temp + " - please report to developers");
+					Logger.error(this, "Cancelled fetch from store/blob of main jar (" + version + ") from " + toString);
+					System.err.println("Cancelled fetch from store/blob of main jar (" + version + ") from " + toString + " to " + temp + " - please report to developers");
 				// Probably best to keep files around for now.
 				} else if(e.isFatal()) {
 					// Bogus as inserted. Ignore.
 					temp.delete();
-					Logger.error(this, "Failed to fetch main jar " + version + " from " + source.userToString() + " : fatal error (update was probably inserted badly): " + e, e);
-					System.err.println("Failed to fetch main jar " + version + " from " + source.userToString() + " : fatal error (update was probably inserted badly): " + e);
+					Logger.error(this, "Failed to fetch main jar " + version + " from " + toString + " : fatal error (update was probably inserted badly): " + e, e);
+					System.err.println("Failed to fetch main jar " + version + " from " + toString + " : fatal error (update was probably inserted badly): " + e);
 				} else {
-					Logger.error(this, "Failed to fetch main jar " + version + " from blob from " + source.userToString());
-					System.err.println("Failed to fetch main jar " + version + " from blob from " + source.userToString());
+					Logger.error(this, "Failed to fetch main jar " + version + " from blob from " + toString);
+					System.err.println("Failed to fetch main jar " + version + " from blob from " + toString);
 				}
 			}
 
@@ -1491,7 +1492,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 			@Override
 			public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
-				System.err.println("Got main jar version " + version + " from " + source.userToString());
+				System.err.println("Got main jar version " + version + " from " + toString);
 				if(result.size() == 0) {
 					System.err.println("Ignoring because 0 bytes long");
 					return;

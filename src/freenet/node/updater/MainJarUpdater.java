@@ -62,6 +62,11 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		return "freenet.jar";
 	}
 	
+	public void start() {
+		maybeProcessOldBlob();
+		super.start();
+	}
+	
 	@Override
 	protected void maybeParseManifest(FetchResult result, int build) {
 		// Do nothing.
