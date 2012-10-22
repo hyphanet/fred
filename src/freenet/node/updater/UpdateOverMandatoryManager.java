@@ -1641,7 +1641,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			data = dependencies.get(buf);
 		}
 		boolean fail = !incrementDependencies(source);
-		final RandomAccessFileWrapper raf;
+		RandomAccessFileWrapper raf;
 		final BulkTransmitter bt;
 		
 		try {
@@ -1654,11 +1654,11 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			}
 		} catch(FileNotFoundException e) {
 			Logger.error(this, "Peer " + source + " asked us for the dependency with hash "+HexUtil.bytesToHex(buf.getData())+" jar, we have downloaded it but don't have the file even though we did have it when we checked!: " + e, e);
-			decrementDependencies(source);
-			return;
+			raf = null;
+			fail = true;
 		}
 		
-		final PartiallyReceivedBulk prb;
+		PartiallyReceivedBulk prb;
 		try {
 			if(raf != null) {
 				long thisLength = raf.size();
@@ -1675,8 +1675,10 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		} catch(IOException e) {
 			Logger.error(this, "Peer " + source + " asked us for the dependency with hash "+HexUtil.bytesToHex(buf.getData())+" jar, we have downloaded it but we can't determine the file size: " + e, e);
 			raf.close();
-			decrementDependencies(source);
-			return;
+			fail = true;
+			prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), 0,
+					Node.PACKET_SIZE, new ByteArrayRandomAccessThing(new byte[0]), true);
+			fail = true;
 		}
 		
 		try {
@@ -1692,6 +1694,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			cancelSend(source, uid);
 			decrementDependencies(source);
 		} else {
+			final RandomAccessFileWrapper r = raf;
 			updateManager.node.executor.execute(new Runnable() {
 				
 				@Override
@@ -1701,7 +1704,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					} catch (DisconnectedException e) {
 						Logger.normal(this, "Disconnected while sending dependency with hash "+HexUtil.bytesToHex(buf.getData())+" to "+source);
 					}
-					raf.close();
+					r.close();
 					decrementDependencies(source);
 				}
 				
