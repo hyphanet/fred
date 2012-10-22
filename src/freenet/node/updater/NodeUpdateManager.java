@@ -539,26 +539,35 @@ public class NodeUpdateManager {
 	}
 
 	void broadcastUOMAnnouncesNew() {
-		synchronized(this) {
-			if(hasNewMainJar && armed) {
-				if(logMINOR) Logger.minor(this, "Will update soon, not offering UOM.");
-				return;
-			}
-			// Don't announce if we don't have the jar.
-			// (If we remove the below then we must at least do if(fetchedMainJarVersion <= 0) return;)
-			if(fetchedMainJarVersion != Version.buildNumber()) {
-				// Don't announce unless we've successfully started the jar.
-				if(logMINOR) Logger.minor(this, "Downloaded a different version than the one we are running, not offering UOM.");
-				return;
-			}
-		}
+		long size = canAnnounceUOMNew();
 		Message msg;
 		synchronized (broadcastUOMAnnouncesSync) {
 			if(broadcastUOMAnnouncesNew && !hasBeenBlown) return;
 			broadcastUOMAnnouncesNew = true;
-			msg = getNewUOMAnnouncement();
+			msg = getNewUOMAnnouncement(size);
 		}
 		node.peers.localBroadcast(msg, true, true, ctr);
+	}
+
+	/** Return the length of the data fetched for the current version, or -1. */
+	private long canAnnounceUOMNew() {
+		Bucket data;
+		synchronized(this) {
+			if(hasNewMainJar && armed) {
+				if(logMINOR) Logger.minor(this, "Will update soon, not offering UOM.");
+				return -1;
+			}
+			if(fetchedMainJarVersion <= 0) {
+				if(logMINOR) Logger.minor(this, "Not fetched yet");
+				return -1;
+			} else if(fetchedMainJarVersion != Version.buildNumber()) {
+				// Don't announce UOM unless we've successfully started the jar.
+				if(logMINOR) Logger.minor(this, "Downloaded a different version than the one we are running, not offering UOM.");
+				return -1;
+			}
+			data = fetchedMainJarData;
+		}
+		return data.size();
 	}
 
 	private Message getOldUOMAnnouncement() {
@@ -580,20 +589,22 @@ public class NodeUpdateManager {
 				(int) node.nodeStats.getBwlimitDelayTime());
 	}
 
-	private Message getNewUOMAnnouncement() {
+	private Message getNewUOMAnnouncement(long blobSize) {
+		int fetchedVersion = blobSize <= 0 ? -1 : Version.buildNumber();
+		if(blobSize <= 0) fetchedVersion = -1;
 		return DMT.createUOMAnnouncement(updateURI.toString(), revocationURI
-				.toString(), revocationChecker.hasBlown(),
-				mainUpdater == null ? -1 : mainUpdater.getFetchedVersion(),
+				.toString(), revocationChecker.hasBlown(), fetchedVersion,
 				revocationChecker.lastSucceededDelta(), revocationChecker
 						.getRevocationDNFCounter(), revocationChecker
 						.getBlobSize(),
-				mainUpdater == null ? -1 : mainUpdater.getBlobSize(),
+				blobSize,
 				(int) node.nodeStats.getNodeAveragePingTime(),
 				(int) node.nodeStats.getBwlimitDelayTime());
 	}
 
 	public void maybeSendUOMAnnounce(PeerNode peer) {
 		boolean sendOld, sendNew;
+		boolean blown = false;
 		synchronized (broadcastUOMAnnouncesSync) {
 			if (!(broadcastUOMAnnouncesOld || broadcastUOMAnnouncesNew)) {
 				if (logMINOR)
@@ -608,6 +619,8 @@ public class NodeUpdateManager {
 		synchronized (this) {
 			dontHaveUpdate = (mainUpdater == null || mainUpdater
 					.getFetchedVersion() <= 0);
+			if(hasBeenBlown)
+				blown = true;
 			if ((!hasBeenBlown) && dontHaveUpdate) {
 				if (logMINOR)
 					Logger.minor(this,
@@ -622,11 +635,12 @@ public class NodeUpdateManager {
 			// Local problem, don't broadcast.
 			return;
 		}
+		long size = canAnnounceUOMNew();
 		try {
-			if (sendOld)
+			if (sendOld || blown)
 				peer.sendAsync(getOldUOMAnnouncement(), null, ctr);
-			if (sendNew)
-				peer.sendAsync(getNewUOMAnnouncement(), null, ctr);
+			if (sendNew || blown)
+				peer.sendAsync(getNewUOMAnnouncement(size), null, ctr);
 		} catch (NotConnectedException e) {
 			// Sad, but ignore it
 		}
