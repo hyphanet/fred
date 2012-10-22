@@ -544,8 +544,9 @@ public class NodeUpdateManager {
 				if(logMINOR) Logger.minor(this, "Will update soon, not offering UOM.");
 				return;
 			}
+			// Don't announce if we don't have the jar.
 			if(fetchedMainJarVersion != Version.buildNumber()) {
-				// If we managed to start it we know it works! Be cautious!
+				// Don't announce unless we've successfully started the jar.
 				if(logMINOR) Logger.minor(this, "Downloaded a different version than the one we are running, not offering UOM.");
 				return;
 			}
