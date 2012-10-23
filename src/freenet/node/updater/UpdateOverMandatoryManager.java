@@ -387,7 +387,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				}, whenToTakeOverTheNormalUpdater - now);
 			}
 		}
-		
+		startSomeDependencyFetchers();
 	}
 
 	private void sendUOMRequest(final PeerNode source, boolean addOnFail) {
@@ -1760,6 +1760,16 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			dependencyFetchers.put(f.expectedHashBuffer, f);
 		}
 		f.start();
+	}
+	
+	protected void startSomeDependencyFetchers() {
+		UOMDependencyFetcher[] fetchers;
+		synchronized(this) {
+			fetchers = dependencyFetchers.values().toArray(new UOMDependencyFetcher[dependencyFetchers.size()]);
+		}
+		for(UOMDependencyFetcher f : fetchers) {
+			f.start();
+		}
 	}
 	
 	/** A download succeeded from a peer. Reconsider all the other downloads
