@@ -172,6 +172,8 @@ public class NodeUpdateManager {
 	private int fetchedMainJarVersion;
 	/** The version we have fetched and will deploy. */
 	private Bucket fetchedMainJarData;
+	
+	private File currentVersionBlobFile;
 
 	/**
 	 * The version we have fetched and aren't using because we are already
@@ -1332,7 +1334,7 @@ public class NodeUpdateManager {
 	 * @param result
 	 *            The actual data.
 	 */
-	void onDownloadedNewJar(Bucket result, int fetched) {
+	void onDownloadedNewJar(Bucket result, int fetched, File savedBlob) {
 		Bucket delete1 = null;
 		Bucket delete2 = null;
 		synchronized (this) {
@@ -1347,6 +1349,12 @@ public class NodeUpdateManager {
 				delete1 = fetchedMainJarData;
 				fetchedMainJarVersion = fetched;
 				fetchedMainJarData = result;
+				if(fetched == Version.buildNumber()) {
+					if(savedBlob != null)
+						currentVersionBlobFile = savedBlob;
+					else
+						Logger.error(this, "No blob file for latest version?!", new Exception("error"));
+				}
 			} else {
 				delete2 = maybeNextMainJarData;
 				maybeNextMainJarVersion = fetched;
@@ -1871,6 +1879,13 @@ public class NodeUpdateManager {
 			if(m == null) return;
 		}
 		m.onStartFetchingUOM();
+	}
+
+	public synchronized File getCurrentVersionBlobFile() {
+		if(hasNewMainJar) return null;
+		if(isDeployingUpdate) return null;
+		if(fetchedMainJarVersion != Version.buildNumber()) return null;
+		return currentVersionBlobFile;
 	}
 
 }

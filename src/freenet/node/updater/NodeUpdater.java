@@ -254,6 +254,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 
 	void onSuccess(FetchResult result, ClientGetter state, File tempBlobFile, int fetchedVersion) {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+		File blobFile = null;
 		synchronized(this) {
 			if(fetchedVersion <= this.fetchedVersion) {
 				tempBlobFile.delete();
@@ -279,15 +280,17 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 					}, 0);
 				return;
 			}
-			File blobFile = getBlobFile(fetchedVersion);
+			blobFile = getBlobFile(fetchedVersion);
 			if(!tempBlobFile.renameTo(blobFile)) {
 				blobFile.delete();
 				if(!tempBlobFile.renameTo(blobFile))
 					if(blobFile.exists() && tempBlobFile.exists() &&
 						blobFile.length() == tempBlobFile.length())
 						Logger.minor(this, "Can't rename " + tempBlobFile + " over " + blobFile + " for " + fetchedVersion + " - probably not a big deal though as the files are the same size");
-					else
+					else {
 						Logger.error(this, "Not able to rename binary blob for node updater: " + tempBlobFile + " -> " + blobFile + " - may not be able to tell other peers about this build");
+						blobFile = null;
+					}
 			}
 			this.fetchedVersion = fetchedVersion;
 			System.out.println("Found " + jarName() + " version " + fetchedVersion);
@@ -296,11 +299,11 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 			maybeParseManifest(result, fetchedVersion);
 			this.cg = null;
 		}
-		processSuccess(fetchedVersion, result);
+		processSuccess(fetchedVersion, result, blobFile);
 	}
 	
 	/** We have fetched the jar! Do something after onSuccess(). Called unlocked. */
-	protected abstract void processSuccess(int fetched, FetchResult result);
+	protected abstract void processSuccess(int fetched, FetchResult result, File blobFile);
 
 	/** Called with locks held 
 	 * @param result */

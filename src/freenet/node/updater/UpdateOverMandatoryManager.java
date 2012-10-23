@@ -1169,8 +1169,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		}
 		// Do we have the data?
 
-		int version = updateManager.newMainJarVersion();
-		File data = updateManager.getMainBlob(version);
+		File data = updateManager.getCurrentVersionBlobFile();
+		int version = Version.buildNumber();
 		
 		if(version != Version.buildNumber()) {
 			Logger.normal(this, "Peer " + source + " asked us for the blob file for the main jar but we are about to update...");

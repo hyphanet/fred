@@ -114,7 +114,7 @@ public class PluginJarUpdater extends NodeUpdater {
 	}
 
 	@Override
-	protected void processSuccess(int build, FetchResult result) {
+	protected void processSuccess(int build, FetchResult result, File blob) {
 		Bucket oldResult = null;
 		synchronized(this) {
 			if(requiredNodeVersion > Version.buildNumber()) {

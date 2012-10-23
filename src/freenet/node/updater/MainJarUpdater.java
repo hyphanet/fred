@@ -75,8 +75,8 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 	}
 
 	@Override
-	protected void processSuccess(int fetched, FetchResult result) {
-		manager.onDownloadedNewJar(result.asBucket(), fetched);
+	protected void processSuccess(int fetched, FetchResult result, File blob) {
+		manager.onDownloadedNewJar(result.asBucket(), fetched, blob);
 		// NodeUpdateManager expects us to dependencies *AFTER* we tell it about the new jar.
 		parseDependencies(result, fetched);
 	}
