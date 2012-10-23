@@ -406,15 +406,16 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				} 
 				continue;
 			}
-			for(File f : list) {
-				String name = f.getName();
-				if(!p.matcher(name).matches()) continue;
-				if(validFile(f, expectedHash, size)) {
-					// Use it.
-					System.out.println("Found "+name+" - meets requirement for "+baseName+" for next update.");
-					if(type == DEPENDENCY_TYPE.CLASSPATH)
+			if(type == DEPENDENCY_TYPE.CLASSPATH) {
+				for(File f : list) {
+					String name = f.getName();
+					if(!p.matcher(name).matches()) continue;
+					if(validFile(f, expectedHash, size)) {
+						// Use it.
+						System.out.println("Found "+name+" - meets requirement for "+baseName+" for next update.");
 						dependencies.add(new Dependency(currentFile, f, p, order));
-					continue outer;
+						continue outer;
+					}
 				}
 			}
 			if(maxCHK == null) {
