@@ -32,7 +32,7 @@ final public class FileUtil {
 	private static final int BUFFER_SIZE = 32*1024;
 
 	public static enum OperatingSystem {
-		All,
+		Unknown,
 		MacOS,
 		Linux,
 		FreeBSD,
@@ -65,7 +65,7 @@ final public class FileUtil {
 	}
 
 	/**
-	 * Detects the operating system in which the JVM is running. Returns OperatingSystem.All if the OS is unknown or an error occured.
+	 * Detects the operating system in which the JVM is running. Returns OperatingSystem.Unknown if the OS is unknown or an error occured.
 	 * Therefore this function should never throw.
 	 */
 	private static OperatingSystem detectOperatingSystem() { // TODO: Move to the proper class
@@ -100,7 +100,7 @@ final public class FileUtil {
 			Logger.error(FileUtil.class, "Operating system detection failed", t);
 		}
 
-		return OperatingSystem.All;
+		return OperatingSystem.Unknown;
 	}
 
 	/**
@@ -338,7 +338,7 @@ final public class FileUtil {
 
     /**
      * Sanitizes the given filename to be valid on the given operating system.
-     * If OperatingSystem.All is specified this function will generate a filename which fullfils the restrictions of all known OS, currently
+     * If OperatingSystem.Unknown is specified this function will generate a filename which fullfils the restrictions of all known OS, currently
      * this is MacOS, Unix and Windows.
      */
 	public static String sanitizeFileName(final String fileName, OperatingSystem targetOS, String extraChars) {
@@ -348,7 +348,7 @@ final public class FileUtil {
 		final StringBuilder sb = new StringBuilder(fileName.length() + 1);
 
 		switch(targetOS) {
-			case All: break;
+			case Unknown: break;
 			case MacOS: break;
 			case Linux: break;
 			case FreeBSD: break;
@@ -356,7 +356,7 @@ final public class FileUtil {
 			case Windows: break;
 			default:
 				Logger.error(FileUtil.class, "Unsupported operating system: " + targetOS);
-				targetOS = OperatingSystem.All;
+				targetOS = OperatingSystem.Unknown;
 				break;
 		}
 		
@@ -385,21 +385,21 @@ final public class FileUtil {
 			}
 
 
-			if(targetOS == OperatingSystem.All || targetOS == OperatingSystem.Windows) {
+			if(targetOS == OperatingSystem.Unknown || targetOS == OperatingSystem.Windows) {
 				if(StringValidityChecker.isWindowsReservedPrintableFilenameCharacter(c)) {
 					sb.append(def);
 					continue;
 				}
 			}
 
-			if(targetOS == OperatingSystem.All || targetOS == OperatingSystem.MacOS) {
+			if(targetOS == OperatingSystem.Unknown || targetOS == OperatingSystem.MacOS) {
 				if(StringValidityChecker.isMacOSReservedPrintableFilenameCharacter(c)) {
 					sb.append(def);
 					continue;
 				}
 			}
 			
-			if(targetOS == OperatingSystem.All || targetOS == OperatingSystem.GenericUnix || targetOS == OperatingSystem.Linux || targetOS == OperatingSystem.FreeBSD) {
+			if(targetOS == OperatingSystem.Unknown || targetOS == OperatingSystem.GenericUnix || targetOS == OperatingSystem.Linux || targetOS == OperatingSystem.FreeBSD) {
 				if(StringValidityChecker.isUnixReservedPrintableFilenameCharacter(c)) {
 					sb.append(def);
 					continue;
@@ -411,7 +411,7 @@ final public class FileUtil {
 		}
 
 		// In windows, the last character of a filename may not be space or dot. We cut them off
-		if(targetOS == OperatingSystem.All || targetOS == OperatingSystem.Windows) {
+		if(targetOS == OperatingSystem.Unknown || targetOS == OperatingSystem.Windows) {
 			int lastCharIndex = sb.length() - 1;
 			while(lastCharIndex >= 0) {
 				char lastChar = sb.charAt(lastCharIndex);
@@ -423,7 +423,7 @@ final public class FileUtil {
 		}
 
 		// Now the filename might be one of the reserved filenames in Windows (CON etc.) and we must replace it if it is...
-		if(targetOS == OperatingSystem.All || targetOS == OperatingSystem.Windows) {
+		if(targetOS == OperatingSystem.Unknown || targetOS == OperatingSystem.Windows) {
 			if(StringValidityChecker.isWindowsReservedFilename(sb.toString()))
 				sb.insert(0, '_');
 		}
