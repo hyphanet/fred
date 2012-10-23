@@ -31,6 +31,8 @@ import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.io.Closer;
+import freenet.support.io.FileUtil;
+import freenet.support.io.FileUtil.OperatingSystem;
 
 /**
  * Parses the dependencies.properties file and ensures we have all the 
@@ -322,6 +324,15 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				continue;
 			}
 			
+			// Check operating system restrictions.
+			s = props.getProperty(baseName+".os");
+			if(s != null) {
+				if(!matchesCurrentOS(s)) {
+					Logger.normal(this, "Ignoring "+baseName+" as not relevant to this operating system");
+					continue;
+				}
+			}
+			
 			// Version is useful to have, but we actually check the hash.
 			String version = props.getProperty(baseName+".version");
 			if(version == null) {
@@ -480,6 +491,30 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			return null;
 	}
 	
+	private boolean matchesCurrentOS(String s) {
+		OperatingSystem myOS = FileUtil.detectedOS;
+		String[] osList = s.split(",");
+		for(String os : osList) {
+			os = os.trim();
+			if(myOS.toString().equalsIgnoreCase(os)) {
+				return true;
+			}
+			if(os.equalsIgnoreCase("ALL_WINDOWS") &&
+					myOS.isWindows) {
+				return true;
+			}
+			if(os.equalsIgnoreCase("ALL_UNIX") &&
+					myOS.isUnix) {
+				return true;
+			}
+			if(os.equalsIgnoreCase("ALL_MAC") &&
+					myOS.isMac) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	/** Should be called on startup, before any fetches have started. Will 
 	 * remove unnecessary files and start blob fetches for files we don't 
 	 * have blobs for.
