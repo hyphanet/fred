@@ -184,6 +184,10 @@ public class OpennetPeerNode extends PeerNode {
 		if(updater == null) return true; // Not going to UOM.
 		UpdateOverMandatoryManager uom = updater.uom;
 		if(uom == null) return true; // Not going to UOM
+		if(uptime > 2*60*60*1000) {
+			// UOM transfers can take ages, but there has to be some limit...
+			return true;
+		}
 		synchronized(this) {
 			if(timeSinceSentUOM() < 60*1000) {
 				// Let it finish.
