@@ -443,7 +443,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 	 * @param props The dependencies.properties from the running version.
 	 * @return True unless something went wrong.
 	 */
-	public static boolean cleanup(Properties props, Deployer deployer, int build) {
+	public static boolean cleanup(Properties props, final Deployer deployer, int build) {
 		// This method should not change anything, but can call the callbacks.
 		HashSet<String> processed = new HashSet<String>();
 		File[] listMain = new File(".").listFiles(new FileFilter() {
@@ -523,7 +523,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				return false;
 			}
 			
-			byte[] expectedHash = parseExpectedHash(props.getProperty(baseName+".sha256"), baseName);
+			final byte[] expectedHash = parseExpectedHash(props.getProperty(baseName+".sha256"), baseName);
 			if(expectedHash == null) {
 				System.err.println("Unable to update to build "+build+": dependencies.properties broken: No hash for "+baseName);
 				return false;
@@ -579,6 +579,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
 						@Override
 						public void onSuccess() {
 							System.out.println("Preloaded "+file+" which will be needed when we upgrade.");
+							System.out.println("Will serve "+file+" for UOM");
+							deployer.addDependency(expectedHash, file);
 						}
 
 						@Override
