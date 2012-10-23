@@ -46,6 +46,39 @@ import freenet.support.io.EOFInputStream;
  * We used to support a range of freenet-ext.jar versions. However, 
  * supporting ranges creates a lot of complexity, especially with Update 
  * Over Mandatory support.
+ * 
+ * File format of dependencies.properties:
+ * [module].type=[module type]
+ * CLASSPATH means the file must be downloaded, and then added to the 
+ * classpath in wrapper.conf, before the update can be loaded. 
+ * OPTIONAL_PRELOAD means we just want to download the file. 
+ * 
+ * [module].version=[version number]
+ * Can often be parsed from MANIFEST.MF in Jar's, but that is NOT mandatory.
+ * 
+ * [module].filename=[preferred filename]
+ * For CLASSPATH, this should be unique, i.e. include the version in the 
+ * filename, e.g. freenet-ext-29.jar. For OPTIONAL_PRELOAD, we will often 
+ * overwrite existing files.
+ * 
+ * [module].sha256=[hash in hex]
+ * SHA256 hash of the file.
+ * 
+ * [module].filename-regex=[regular expression]
+ * Matches filenames for this module. Especially useful for CLASSPATH.
+ * 
+ * [module].key=[CHK URI]
+ * Where to fetch the file from if we don't have it.
+ * 
+ * [module].size=[decimal size in bytes]
+ * Size of the file.
+ *
+ * Optional:
+ * 
+ * [module].order=[decimal integer order, default is 0]
+ * Ordering of CLASSPATH files within the wrapper.conf. E.g. freenet-ext.jar
+ * is usually the last element because we want the earlier files to override
+ * classes in it.
  * @author toad
  *
  */
