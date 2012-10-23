@@ -143,13 +143,20 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		
 		@Override
 		public void cancel() {
-			UOMDependencyFetcher f;
+			final UOMDependencyFetcher f;
 			synchronized(this) {
 				fetched = true;
 				f = uomFetcher;
 			}
-			getter.cancel(null, clientContext);
-			if(f != null) f.cancel();
+			MainJarUpdater.this.node.executor.execute(new Runnable() {
+
+				@Override
+				public void run() {
+					getter.cancel(null, clientContext);
+					if(f != null) f.cancel();
+				}
+				
+			});
 		}
 		
 		@Override
