@@ -369,7 +369,10 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			}
 			
 			// We need to determine whether it is in use at the moment.
-			File currentFile = getDependencyInUse(baseName, p);
+			File currentFile = null;
+			if(type == DEPENDENCY_TYPE.CLASSPATH)
+				// Only works for classpath.
+				currentFile = getDependencyInUse(baseName, p);
 			
 			if(validFile(filename, expectedHash, size)) {
 				// Nothing to do. Yay!
