@@ -143,11 +143,12 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		
 		@Override
 		public void cancel() {
-			getter.cancel(null, clientContext);
 			UOMDependencyFetcher f;
 			synchronized(this) {
+				fetched = true;
 				f = uomFetcher;
 			}
+			getter.cancel(null, clientContext);
 			if(f != null) f.cancel();
 		}
 		
@@ -174,6 +175,13 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		@Override
 		public void onSuccess(FetchResult result, ClientGetter state,
 				ObjectContainer container) {
+			synchronized(this) {
+				if(fetched) {
+					tempFile.delete();
+					return;
+				}
+				fetched = true;
+			}
 			if(!FileUtil.renameTo(tempFile, filename)) {
 				Logger.error(this, "Unable to rename temp file "+tempFile+" to "+filename);
 				System.err.println("Download of "+filename+" for update failed because cannot rename from "+tempFile);
@@ -181,14 +189,15 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 				return;
 			}
 			if(cb != null) cb.onSuccess();
-			synchronized(this) {
-				fetched = true;
-			}
 		}
 		
 		@Override
 		public void onFailure(FetchException e, ClientGetter state,
 				ObjectContainer container) {
+			if(fetched) {
+				tempFile.delete();
+				return;
+			}
 			if(cb != null) cb.onFailure(e);
 		}
 		
