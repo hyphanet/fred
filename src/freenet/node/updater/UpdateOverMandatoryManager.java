@@ -386,6 +386,12 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					}
 				}, whenToTakeOverTheNormalUpdater - now);
 			}
+		} else {
+			// We may want the dependencies.
+			// These may be similar even if his url is different, so add unconditionally.
+			synchronized(this) {
+				allNodesOfferedMainJar.add(source);
+			}
 		}
 		startSomeDependencyFetchers();
 	}
