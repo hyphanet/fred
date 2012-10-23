@@ -1733,7 +1733,10 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			Integer x = peersFetchingDependencies.get(source);
 			if(x == null) x = 0;
 			x++;
-			if(x > MAX_TRANSFERS_PER_PEER) return false;
+			if(x > MAX_TRANSFERS_PER_PEER) {
+				Logger.normal(this, "Too many dependency transfers for peer "+source+" - rejecting");
+				return false;
+			}
 			else peersFetchingDependencies.put(source, x);
 			return true;
 		}
@@ -1957,6 +1960,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				if(logMINOR) Logger.minor(this, "Already fetching jar from 2 peers "+peersFetching);
 				return null;
 			}
+			if(logMINOR) Logger.minor(this, "Trying to choose peer from "+uomPeers.size());
 			ArrayList<PeerNode> notTried = null;
 			for(PeerNode pn : uomPeers) {
 				if(peersFetching.contains(pn)) {
