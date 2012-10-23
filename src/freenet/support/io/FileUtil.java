@@ -32,12 +32,21 @@ final public class FileUtil {
 	private static final int BUFFER_SIZE = 32*1024;
 
 	public static enum OperatingSystem {
-		Unknown,
-		MacOS,
-		Linux,
-		FreeBSD,
-		GenericUnix,
-		Windows
+		Unknown(false, false, false), // Special-cased in filename sanitising code.
+		MacOS(false, true, true), // OS/X in that it can run scripts.
+		Linux(false, false, true),
+		FreeBSD(false, false, true),
+		GenericUnix(false, false, true),
+		Windows(true, false, false);
+		
+		public final boolean isWindows;
+		public final boolean isMac;
+		public final boolean isUnix;
+		OperatingSystem(boolean win, boolean mac, boolean unix) {
+			this.isWindows = win;
+			this.isMac = mac;
+			this.isUnix = unix;
+		};
 	};
 
 	public static final OperatingSystem detectedOS;
@@ -385,21 +394,21 @@ final public class FileUtil {
 			}
 
 
-			if(targetOS == OperatingSystem.Unknown || targetOS == OperatingSystem.Windows) {
+			if(targetOS == OperatingSystem.Unknown || targetOS.isWindows) {
 				if(StringValidityChecker.isWindowsReservedPrintableFilenameCharacter(c)) {
 					sb.append(def);
 					continue;
 				}
 			}
 
-			if(targetOS == OperatingSystem.Unknown || targetOS == OperatingSystem.MacOS) {
+			if(targetOS == OperatingSystem.Unknown || targetOS.isMac) {
 				if(StringValidityChecker.isMacOSReservedPrintableFilenameCharacter(c)) {
 					sb.append(def);
 					continue;
 				}
 			}
 			
-			if(targetOS == OperatingSystem.Unknown || targetOS == OperatingSystem.GenericUnix || targetOS == OperatingSystem.Linux || targetOS == OperatingSystem.FreeBSD) {
+			if(targetOS == OperatingSystem.Unknown || targetOS.isUnix) {
 				if(StringValidityChecker.isUnixReservedPrintableFilenameCharacter(c)) {
 					sb.append(def);
 					continue;
@@ -411,7 +420,7 @@ final public class FileUtil {
 		}
 
 		// In windows, the last character of a filename may not be space or dot. We cut them off
-		if(targetOS == OperatingSystem.Unknown || targetOS == OperatingSystem.Windows) {
+		if(targetOS == OperatingSystem.Unknown || targetOS.isWindows) {
 			int lastCharIndex = sb.length() - 1;
 			while(lastCharIndex >= 0) {
 				char lastChar = sb.charAt(lastCharIndex);
@@ -423,7 +432,7 @@ final public class FileUtil {
 		}
 
 		// Now the filename might be one of the reserved filenames in Windows (CON etc.) and we must replace it if it is...
-		if(targetOS == OperatingSystem.Unknown || targetOS == OperatingSystem.Windows) {
+		if(targetOS == OperatingSystem.Unknown || targetOS.isWindows) {
 			if(StringValidityChecker.isWindowsReservedFilename(sb.toString()))
 				sb.insert(0, '_');
 		}
