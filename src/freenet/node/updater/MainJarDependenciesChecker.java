@@ -78,6 +78,12 @@ import freenet.support.io.Closer;
  * Ordering of CLASSPATH files within the wrapper.conf. E.g. freenet-ext.jar
  * is usually the last element because we want the earlier files to override
  * classes in it.
+ * 
+ * [module].os=[comma delimited list of OS's and pseudo-OS's]
+ * OS's: See FileUtil.OperatingSystem: MacOS Linux FreeBSD GenericUnix Windows
+ * Pseudo-Os's: ALL_WINDOWS ALL_UNIX ALL_MAC (these correspond to the is* 
+ * getters on FileUtil.OperatingSystem).
+ * 
  * @author toad
  *
  */

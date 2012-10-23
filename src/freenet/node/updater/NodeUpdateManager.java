@@ -69,7 +69,7 @@ public class NodeUpdateManager {
 	public final static int TRANSITION_VERSION_EXT = 29;
 
 	/** The URI for post-TRANSITION_VERSION builds' freenet.jar. */
-	public final static String UPDATE_URI = "SSK@sabn9HY9MKLbFPp851AO98uKtsCtYHM9rqB~A5cCGW4,3yps2z06rLnwf50QU4HvsILakRBYd4vBlPtLv0elUts,AQACAAE/jar/"
+	public final static String UPDATE_URI = "USK@sabn9HY9MKLbFPp851AO98uKtsCtYHM9rqB~A5cCGW4,3yps2z06rLnwf50QU4HvsILakRBYd4vBlPtLv0elUts,AQACAAE/jar/"
 			+ Version.buildNumber();
 
 	/** Might as well be the SSK */
