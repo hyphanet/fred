@@ -491,7 +491,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			return null;
 	}
 	
-	private boolean matchesCurrentOS(String s) {
+	private static boolean matchesCurrentOS(String s) {
 		OperatingSystem myOS = FileUtil.detectedOS;
 		String[] osList = s.split(",");
 		for(String os : osList) {
@@ -573,7 +573,15 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				return false;
 			}
 			
-			// Check key even though we don't use it.
+			// Check operating system restrictions.
+			s = props.getProperty(baseName+".os");
+			if(s != null) {
+				if(!matchesCurrentOS(s)) {
+					Logger.normal(MainJarDependenciesChecker.class, "Ignoring "+baseName+" as not relevant to this operating system");
+					continue;
+				}
+			}
+			
 			final FreenetURI key;
 			s = props.getProperty(baseName+".key");
 			if(s == null) {
