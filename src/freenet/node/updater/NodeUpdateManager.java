@@ -213,7 +213,7 @@ public class NodeUpdateManager {
 		isAutoUpdateAllowed = updaterConfig.getBoolean("autoupdate");
 
 		updaterConfig
-				.register("URI", UPDATE_URI, 3, true, false,
+				.register("URI", UPDATE_URI, 3, true, true,
 						"NodeUpdateManager.updateURI",
 						"NodeUpdateManager.updateURILong",
 						new UpdateURICallback(false));
