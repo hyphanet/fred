@@ -1625,6 +1625,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	}
 
 	public void addDependency(byte[] expectedHash, File filename) {
+		if(logMINOR) Logger.minor(this, "Add dependency: "+filename+" for "+HexUtil.bytesToHex(expectedHash));
 		synchronized(dependencies) {
 			dependencies.put(new ShortBuffer(expectedHash), filename);
 		}
