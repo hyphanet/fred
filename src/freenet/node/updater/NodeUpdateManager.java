@@ -220,22 +220,22 @@ public class NodeUpdateManager {
 
 		try {
 			updateURI = new FreenetURI(updaterConfig.getString("URI"));
-			updateURI = updateURI.setSuggestedEdition(Version.buildNumber());
-			if (updateURI.getDocName().equals("update")) {
-				if (updateURI.equals(new FreenetURI(UPDATE_URI)
-						.setDocName("update"))) {
-					System.out
-							.println("Auto-update URI changed from \"update\" to \"jar\" in build "
-									+ TRANSITION_VERSION + ".");
-					// Pre-1421.
-					updateURI = updateURI.setDocName("jar");
-					config.store();
-				}
-			}
-
 		} catch (MalformedURLException e) {
 			throw new InvalidConfigValueException(l10n("invalidUpdateURI",
 					"error", e.getLocalizedMessage()));
+		}
+		updateURI = updateURI.setSuggestedEdition(Version.buildNumber());
+		// FIXME remove, or at least disable, pre-1421 backward compatibility code in 6 months or so.
+		// It might be worth keeping it around in case we have to do another transition?
+		if(updateURI.setSuggestedEdition(TRANSITION_VERSION).equals(transitionMainJarURI)) {
+			System.out.println("Updating config to new update key.");
+			try {
+				updateURI = new FreenetURI(UPDATE_URI);
+			} catch (MalformedURLException e1) {
+				RuntimeException e = new RuntimeException("Impossible: Cannot parse default update URI!");
+				e.initCause(e1);
+			}
+			config.store();
 		}
 
 		updaterConfig.register("revocationURI", REVOCATION_URI, 4, true, false,
