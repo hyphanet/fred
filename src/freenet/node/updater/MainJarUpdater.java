@@ -28,6 +28,7 @@ import freenet.node.updater.MainJarDependenciesChecker.Deployer;
 import freenet.node.updater.MainJarDependenciesChecker.JarFetcher;
 import freenet.node.updater.MainJarDependenciesChecker.JarFetcherCallback;
 import freenet.node.updater.MainJarDependenciesChecker.MainJarDependencies;
+import freenet.node.updater.UpdateOverMandatoryManager.UOMDependencyFetcher;
 import freenet.node.updater.UpdateOverMandatoryManager.UOMDependencyFetcherCallback;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -117,6 +118,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		private final long expectedLength;
 		private final boolean essential;
 		private final File tempFile;
+		private UOMDependencyFetcher uomFetcher;
 		
 		DependencyJarFetcher(File filename, FreenetURI chk, long expectedLength, byte[] expectedHash, JarFetcherCallback cb, boolean essential) throws FetchException {
 			FetchContext myCtx = new FetchContext(dependencyCtx, FetchContext.IDENTICAL_MASK, false, null);
@@ -142,6 +144,11 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		@Override
 		public void cancel() {
 			getter.cancel(null, clientContext);
+			UOMDependencyFetcher f;
+			synchronized(this) {
+				f = uomFetcher;
+			}
+			if(f != null) f.cancel();
 		}
 		
 		@Override

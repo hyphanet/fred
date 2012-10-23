@@ -1756,13 +1756,14 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	 * successful and the hash is correct.
 	 * @param uomDependencyFetchCallback Callback to call when done.
 	 */
-	public void fetchDependency(byte[] expectedHash, long size, File saveTo,
+	public UOMDependencyFetcher fetchDependency(byte[] expectedHash, long size, File saveTo,
 			UOMDependencyFetcherCallback cb) {
 		UOMDependencyFetcher f = new UOMDependencyFetcher(expectedHash, size, saveTo, cb);
 		synchronized(this) {
 			dependencyFetchers.put(f.expectedHashBuffer, f);
 		}
 		f.start();
+		return f;
 	}
 	
 	protected void startSomeDependencyFetchers() {
@@ -1799,7 +1800,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		private final WeakHashSet<PeerNode> peersFailed;
 		private final HashSet<PeerNode> peersFetching;
 		
-		UOMDependencyFetcher(byte[] expectedHash, long size, File saveTo, UOMDependencyFetcherCallback callback) {
+		private UOMDependencyFetcher(byte[] expectedHash, long size, File saveTo, UOMDependencyFetcherCallback callback) {
 			this.expectedHash = expectedHash;
 			expectedHashBuffer = new ShortBuffer(expectedHash);
 			this.size = size;
@@ -1810,7 +1811,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		}
 		
 		/** If a transfer has failed from this peer, retry it. */
-		void peerMaybeFreeSlots(PeerNode fetchFrom) {
+		private void peerMaybeFreeSlots(PeerNode fetchFrom) {
 			synchronized(this) {
 				if(!peersFailed.remove(fetchFrom)) return;
 				if(completed) return;
@@ -1818,7 +1819,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			start();
 		}
 
-		boolean maybeFetch() {
+		private boolean maybeFetch() {
 			boolean tryEverything = false;
 			PeerNode chosen = null;
 			while(true) {
@@ -1990,6 +1991,15 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		void start() {
 			while(maybeFetch());
+		}
+
+		public void cancel() {
+			synchronized(this) {
+				completed = true;
+			}
+			synchronized(UpdateOverMandatoryManager.this) {
+				dependencyFetchers.remove(expectedHashBuffer);
+			}
 		}
 		
 	}
