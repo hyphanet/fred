@@ -31,7 +31,6 @@ import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.io.Closer;
-import freenet.support.io.EOFInputStream;
 
 /**
  * Parses the dependencies.properties file and ensures we have all the 
