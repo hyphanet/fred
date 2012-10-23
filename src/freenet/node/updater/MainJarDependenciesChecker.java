@@ -646,7 +646,9 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				}
 			}
 			
-			File currentFile = getDependencyInUse(baseName, p);
+			File currentFile = null;
+			if(type == DEPENDENCY_TYPE.CLASSPATH)
+				currentFile = getDependencyInUse(baseName, p);
 			
 			// Serve the file if it meets the hash in the dependencies.properties.
 			if(currentFile != null && currentFile.exists()) {
@@ -758,6 +760,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
      * wrapper.conf.
      */
 	private static File getDependencyInUse(String baseName, Pattern p) {
+		if(p == null) return null; // Optional in some cases.
 		String classpath = System.getProperty("java.class.path");
 		String[] split = classpath.split(File.pathSeparator);
 		for(String s : split) {
