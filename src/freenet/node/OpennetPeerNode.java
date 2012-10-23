@@ -188,12 +188,10 @@ public class OpennetPeerNode extends PeerNode {
 			// UOM transfers can take ages, but there has to be some limit...
 			return true;
 		}
-		synchronized(this) {
-			if(timeSinceSentUOM() < 60*1000) {
-				// Let it finish.
-				// 60 seconds extra to ensure it has time to parse the jar and start fetching dependencies.
-				return false;
-			}
+		if(timeSinceSentUOM() < 60*1000) {
+			// Let it finish.
+			// 60 seconds extra to ensure it has time to parse the jar and start fetching dependencies.
+			return false;
 		}
 		return true;
 	}
