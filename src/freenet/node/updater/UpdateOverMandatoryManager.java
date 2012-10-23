@@ -1817,40 +1817,54 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		}
 
 		boolean maybeFetch() {
-			synchronized(this) {
-				if(peersFetching.size() >= MAX_NODES_SENDING_JAR) {
-					if(logMINOR) Logger.minor(this, "Already fetching jar from 2 peers "+peersFetching);
-					return false;
+			boolean tryEverything = false;
+			PeerNode chosen = null;
+			while(true) {
+				synchronized(this) {
+					if(peersFetching.size() >= MAX_NODES_SENDING_JAR) {
+						if(logMINOR) Logger.minor(this, "Already fetching jar from 2 peers "+peersFetching);
+						return false;
+					}
+					if(completed) return false;
 				}
-				if(completed) return false;
-			}
-			HashSet<PeerNode> uomPeers;
-			synchronized(UpdateOverMandatoryManager.this) {
-				uomPeers = new HashSet<PeerNode>(nodesSentMainJar);
-			}
-			PeerNode chosen = chooseRandomPeer(uomPeers);
-			if(chosen == null) {
+				HashSet<PeerNode> uomPeers;
 				synchronized(UpdateOverMandatoryManager.this) {
 					uomPeers = new HashSet<PeerNode>(nodesSentMainJar);
 				}
 				chosen = chooseRandomPeer(uomPeers);
-			}
-			if(chosen == null) {
+				if(chosen != null) break;
+				synchronized(UpdateOverMandatoryManager.this) {
+					uomPeers = new HashSet<PeerNode>(nodesSentMainJar);
+				}
+				chosen = chooseRandomPeer(uomPeers);
+				if(chosen != null) break;
 				synchronized(UpdateOverMandatoryManager.this) {
 					uomPeers = new HashSet<PeerNode>(nodesSendingMainJar);
 				}
 				chosen = chooseRandomPeer(uomPeers);
-			}
-			if(chosen == null) {
+				if(chosen != null) break;
 				synchronized(UpdateOverMandatoryManager.this) {
 					uomPeers = new HashSet<PeerNode>(allNodesOfferedMainJar);
 				}
 				chosen = chooseRandomPeer(uomPeers);
+				if(chosen != null) break;
+				if(tryEverything) {
+					Logger.minor(this, "Could not find a peer to send request to for "+saveTo);
+					return false;
+				}
+				synchronized(this) {
+					if(peersFailed.size() != 0) {
+						System.out.println("UOM trying peers which have failed downloads for "+saveTo.getName()+" because nowhere else to go ...");
+						peersFailed.clear();
+						tryEverything = true;
+					}
+				}
+				if(!tryEverything) {
+					Logger.minor(this, "Could not find a peer to send request to for "+saveTo);
+					return false;
+				}
 			}
-			if(chosen == null) {
-				Logger.minor(this, "Could not find a peer to send request to for "+saveTo);
-				return false;
-			}
+			if(chosen == null) return false;
 			
 			final PeerNode fetchFrom = chosen;
 			updateManager.node.executor.execute(new Runnable() {
@@ -1921,8 +1935,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 						System.err.println("Fetch failed due to internal error (bug or severe local problem?): "+e);
 					} finally {
 						boolean connected = fetchFrom.isConnected();
+						boolean addFailed = failed && connected;
 						synchronized(UOMDependencyFetcher.this) {
-							if(failed && connected)
+							if(addFailed)
 								peersFailed.add(fetchFrom);
 							peersFetching.remove(fetchFrom);
 						}
