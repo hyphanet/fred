@@ -237,6 +237,8 @@ public class NodeUpdateManager {
 			}
 			config.store();
 		}
+		if(!updateURI.isUSK())
+			throw new InvalidConfigValueException(l10n("updateURIMustBeAUSK"));
 
 		updaterConfig.register("revocationURI", REVOCATION_URI, 4, true, false,
 				"NodeUpdateManager.revocationURI",
