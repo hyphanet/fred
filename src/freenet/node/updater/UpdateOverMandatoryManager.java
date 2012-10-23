@@ -1710,11 +1710,13 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				
 				@Override
 				public void run() {
+					source.incrementUOMSends();
 					try {
 						bt.send();
 					} catch (DisconnectedException e) {
 						Logger.normal(this, "Disconnected while sending dependency with hash "+HexUtil.bytesToHex(buf.getData())+" to "+source);
 					}
+					source.decrementUOMSends();
 					r.close();
 					decrementDependencies(source);
 				}
