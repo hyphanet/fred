@@ -387,6 +387,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			}
 			
 			int order = 0;
+			File currentFile = null;
 
 			if(type == DEPENDENCY_TYPE.CLASSPATH) {
 				s = props.getProperty("order");
@@ -402,13 +403,9 @@ outer:	for(String propName : props.stringPropertyNames()) {
 						continue;
 					}
 				}
-			}
-			
-			// We need to determine whether it is in use at the moment.
-			File currentFile = null;
-			if(type == DEPENDENCY_TYPE.CLASSPATH)
-				// Only works for classpath.
+				
 				currentFile = getDependencyInUse(baseName, p);
+			}
 			
 			if(validFile(filename, expectedHash, size)) {
 				// Nothing to do. Yay!
