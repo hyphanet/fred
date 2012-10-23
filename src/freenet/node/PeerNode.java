@@ -6034,11 +6034,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 	}
 	
-	protected synchronized long timeSinceSentUOM(long now) {
+	protected synchronized long timeSinceSentUOM() {
 		if(sendingUOMMainJar || sendingUOMLegacyExtJar) return 0;
 		if(uomCount > 0) return 0;
 		if(lastSentUOM <= 0) return Long.MAX_VALUE;
-		return now - lastSentUOM;
+		return System.currentTimeMillis() - lastSentUOM;
 	}
 	
 	public synchronized void incrementUOMSends() {

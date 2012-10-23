@@ -185,8 +185,9 @@ public class OpennetPeerNode extends PeerNode {
 		UpdateOverMandatoryManager uom = updater.uom;
 		if(uom == null) return true; // Not going to UOM
 		synchronized(this) {
-			if(sendingUOMMainJar || sendingUOMExtJar) {
+			if(timeSinceSentUOM() < 60*1000) {
 				// Let it finish.
+				// 60 seconds extra to ensure it has time to parse the jar and start fetching dependencies.
 				return false;
 			}
 		}
