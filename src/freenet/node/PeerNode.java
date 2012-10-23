@@ -6047,7 +6047,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	
 	public synchronized void decrementUOMSends() {
 		uomCount--;
-		if(uomCount == 0) 
+		if(uomCount == 0 && (!sendingUOMMainJar) && (!sendingUOMLegacyExtJar))
 			lastSentUOM = System.currentTimeMillis();
 	}
 
