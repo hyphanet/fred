@@ -387,26 +387,26 @@ outer:	for(String propName : props.stringPropertyNames()) {
 					dependencies.add(new Dependency(currentFile, currentFile, p, order));
 				continue;
 			}
-			// We might be somewhere in between.
-			if(p == null) {
-				// No way to check existing files.
-				if(maxCHK != null) {
-					try {
-						fetchDependency(maxCHK, new Dependency(currentFile, filename, p, order), expectedHash, size, type != DEPENDENCY_TYPE.OPTIONAL_PRELOAD);
-					} catch (FetchException fe) {
-						broken = true;
-						Logger.error(this, "Failed to start fetch: "+fe, fe);
-						System.err.println("Failed to start fetch of essential component for next release: "+fe);
-					}
-				} else {
-					// Critical error.
-					System.err.println("Unable to fetch "+baseName+" because no URI and no regex to match old versions.");
-					broken = true;
-					continue;
-				} 
-				continue;
-			}
 			if(type == DEPENDENCY_TYPE.CLASSPATH) {
+				// We might be somewhere in between.
+				if(p == null) {
+					// No way to check existing files.
+					if(maxCHK != null) {
+						try {
+							fetchDependency(maxCHK, new Dependency(currentFile, filename, p, order), expectedHash, size, true);
+						} catch (FetchException fe) {
+							broken = true;
+							Logger.error(this, "Failed to start fetch: "+fe, fe);
+							System.err.println("Failed to start fetch of essential component for next release: "+fe);
+						}
+					} else {
+						// Critical error.
+						System.err.println("Unable to fetch "+baseName+" because no URI and no regex to match old versions.");
+						broken = true;
+						continue;
+					} 
+					continue;
+				}
 				for(File f : list) {
 					String name = f.getName();
 					if(!p.matcher(name).matches()) continue;
