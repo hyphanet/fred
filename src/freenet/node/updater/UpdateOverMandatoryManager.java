@@ -56,9 +56,7 @@ import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.ShortBuffer;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
@@ -84,12 +82,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	private static volatile boolean logMINOR;
 
 	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
-			@Override
-			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-			}
-		});
+		Logger.registerClass(UpdateOverMandatoryManager.class);
 	}
 
 	final NodeUpdateManager updateManager;
