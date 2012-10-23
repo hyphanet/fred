@@ -1474,6 +1474,10 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					Logger.error(this, "Cancelled fetch from store/blob of main jar (" + version + ") from " + toString);
 					System.err.println("Cancelled fetch from store/blob of main jar (" + version + ") from " + toString + " to " + temp + " - please report to developers");
 				// Probably best to keep files around for now.
+				} else if(e.newURI != null) {
+					temp.delete();
+					Logger.error(this, "URI changed fetching main jar "+version+" from "+toString);
+					System.out.println("URI changed fetching main jar "+version+" from "+toString);
 				} else if(e.isFatal()) {
 					// Bogus as inserted. Ignore.
 					temp.delete();
