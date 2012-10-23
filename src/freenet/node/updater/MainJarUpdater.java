@@ -190,7 +190,6 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		public void onFailure(FetchException e, ClientGetter state,
 				ObjectContainer container) {
 			if(cb != null) cb.onFailure(e);
-			tempBlobFile.delete();
 		}
 		
 		@Override
