@@ -1947,6 +1947,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 						Closer.close(raf);
 						if(tmp != null) 
 							tmp.delete();
+						if(failed)
+							start();
 					}
 				}
 				
