@@ -387,18 +387,20 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			}
 			
 			int order = 0;
-			
-			s = props.getProperty("order");
-			if(s != null) {
-				try {
-					// Order is an optional field.
-					// For most stuff we don't care.
-					// But if it's present it must be correct!
-					order = Integer.parseInt(s);
-				} catch (NumberFormatException e) {
-					System.err.println("Unable to update to build "+build+": dependencies.properties broken: Broken order for "+baseName+" : \""+s+"\"");
-					broken = true;
-					continue;
+
+			if(type == DEPENDENCY_TYPE.CLASSPATH) {
+				s = props.getProperty("order");
+				if(s != null) {
+					try {
+						// Order is an optional field.
+						// For most stuff we don't care.
+						// But if it's present it must be correct!
+						order = Integer.parseInt(s);
+					} catch (NumberFormatException e) {
+						System.err.println("Unable to update to build "+build+": dependencies.properties broken: Broken order for "+baseName+" : \""+s+"\"");
+						broken = true;
+						continue;
+					}
 				}
 			}
 			
