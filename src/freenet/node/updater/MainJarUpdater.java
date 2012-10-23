@@ -33,6 +33,7 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
+import freenet.support.io.FileUtil;
 
 public class MainJarUpdater extends NodeUpdater implements Deployer {
 	
@@ -115,13 +116,21 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		private final byte[] expectedHash;
 		private final long expectedLength;
 		private final boolean essential;
+		private final File tempFile;
 		
-		DependencyJarFetcher(File filename, FreenetURI chk, long expectedLength, byte[] expectedHash, JarFetcherCallback cb, boolean essential) {
+		DependencyJarFetcher(File filename, FreenetURI chk, long expectedLength, byte[] expectedHash, JarFetcherCallback cb, boolean essential) throws FetchException {
 			FetchContext myCtx = new FetchContext(dependencyCtx, FetchContext.IDENTICAL_MASK, false, null);
 			// FIXME single global binary blob writer for MainJarDependenciesChecker AND MainJarUpdater.
+			File parent = filename.getParentFile();
+			if(parent == null) parent = new File(".");
+			try {
+				tempFile = File.createTempFile(filename.getName(), BLOB_SUFFIX, parent);
+			} catch (IOException e) {
+				throw new FetchException(FetchException.BUCKET_ERROR, "Cannot create temp file for "+filename+" in "+parent+" - disk full? permissions problem?");
+			}
 			getter = new ClientGetter(this,  
 					chk, myCtx, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
-					this, new FileBucket(filename, false, false, false, false, false), null, null);
+					this, new FileBucket(tempFile, false, false, false, false, false), null, null);
 			myCtx.eventProducer.addEventListener(this);
 			this.cb = cb;
 			this.filename = filename;
@@ -158,6 +167,12 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		@Override
 		public void onSuccess(FetchResult result, ClientGetter state,
 				ObjectContainer container) {
+			if(!FileUtil.renameTo(tempFile, filename)) {
+				Logger.error(this, "Unable to rename temp file "+tempFile+" to "+filename);
+				System.err.println("Download of "+filename+" for update failed because cannot rename from "+tempFile);
+				onFailure(new FetchException(FetchException.BUCKET_ERROR, "Unable to rename temp file "+tempFile+" to "+filename), state, null);
+				return;
+			}
 			if(cb != null) cb.onSuccess();
 			synchronized(this) {
 				fetched = true;
