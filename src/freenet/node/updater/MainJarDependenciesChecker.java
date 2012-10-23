@@ -64,7 +64,7 @@ import freenet.support.io.Closer;
  * SHA256 hash of the file.
  * 
  * [module].filename-regex=[regular expression]
- * Matches filenames for this module. Especially useful for CLASSPATH.
+ * Matches filenames for this module. Only required for CLASSPATH.
  * 
  * [module].key=[CHK URI]
  * Where to fetch the file from if we don't have it.
@@ -346,20 +346,22 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			}
 			// FIXME where to get the proper folder from? That seems to be an issue in UpdateDeployContext as well...
 			
-			// Regex used for matching filenames.
-			String regex = props.getProperty(baseName+".filename-regex");
-			if(regex == null) {
-				// Not a critical error. Just means we can't clean it up, and can't identify whether we already have a compatible jar.
-				Logger.error(this, "No "+baseName+".filename-regex in dependencies.properties - we will not be able to clean up old versions of files, and may have to download the latest version unnecessarily");
-				// May be fatal later on depending on what else we have.
-			}
 			Pattern p = null;
-			try {
-				if(regex != null)
-					p = Pattern.compile(regex);
-			} catch (PatternSyntaxException e) {
-				Logger.error(this, "Bogus Pattern \""+regex+"\" in dependencies.properties");
-				p = null;
+			if(type == DEPENDENCY_TYPE.CLASSPATH) {
+				// Regex used for matching filenames.
+				String regex = props.getProperty(baseName+".filename-regex");
+				if(regex == null && type == DEPENDENCY_TYPE.CLASSPATH) {
+					// Not a critical error. Just means we can't clean it up, and can't identify whether we already have a compatible jar.
+					Logger.error(this, "No "+baseName+".filename-regex in dependencies.properties - we will not be able to clean up old versions of files, and may have to download the latest version unnecessarily");
+					// May be fatal later on depending on what else we have.
+				}
+				try {
+					if(regex != null)
+						p = Pattern.compile(regex);
+				} catch (PatternSyntaxException e) {
+					Logger.error(this, "Bogus Pattern \""+regex+"\" in dependencies.properties");
+					p = null;
+				}
 			}
 			
 			byte[] expectedHash = parseExpectedHash(props.getProperty(baseName+".sha256"), baseName);
@@ -545,18 +547,20 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				return false;
 			}
 			
+			Pattern p = null;
 			// Regex used for matching filenames.
-			String regex = props.getProperty(baseName+".filename-regex");
-			if(regex == null) {
-				Logger.error(MainJarDependencies.class, "No "+baseName+".filename-regex in dependencies.properties");
-				return false;
-			}
-			Pattern p;
-			try {
-				p = Pattern.compile(regex);
-			} catch (PatternSyntaxException e) {
-				Logger.error(MainJarDependencies.class, "Bogus Pattern \""+regex+"\" in dependencies.properties");
-				return false;
+			if(type == DEPENDENCY_TYPE.CLASSPATH) {
+				String regex = props.getProperty(baseName+".filename-regex");
+				if(regex == null) {
+					Logger.error(MainJarDependencies.class, "No "+baseName+".filename-regex in dependencies.properties");
+					return false;
+				}
+				try {
+					p = Pattern.compile(regex);
+				} catch (PatternSyntaxException e) {
+					Logger.error(MainJarDependencies.class, "Bogus Pattern \""+regex+"\" in dependencies.properties");
+					return false;
+				}
 			}
 			
 			final byte[] expectedHash = parseExpectedHash(props.getProperty(baseName+".sha256"), baseName);
