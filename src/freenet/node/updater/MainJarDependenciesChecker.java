@@ -27,6 +27,7 @@ import java.util.zip.ZipInputStream;
 import freenet.client.FetchException;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
+import freenet.support.Executor;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
@@ -189,8 +190,9 @@ public class MainJarDependenciesChecker {
 		
 	}
 	
-	MainJarDependenciesChecker(Deployer deployer) {
+	MainJarDependenciesChecker(Deployer deployer, Executor executor) {
 		this.deployer = deployer;
+		this.executor = executor;
 	}
 
 	private final Deployer deployer;
@@ -256,6 +258,7 @@ public class MainJarDependenciesChecker {
 	}
 	
 	private final HashSet<Downloader> downloaders = new HashSet<Downloader>();
+	private final Executor executor;
 	
 	/** Parse the Properties file. Check whether we have the jars it refers to.
 	 * If not, start fetching them.
@@ -834,8 +837,16 @@ outer:	for(String propName : props.stringPropertyNames()) {
 		dependencies.clear();
 		broken = false;
 		this.build = build;
-		for(Downloader d : downloaders)
-			d.cancel();
+		final Downloader[] toCancel = downloaders.toArray(new Downloader[downloaders.size()]);
+		executor.execute(new Runnable() {
+
+			@Override
+			public void run() {
+				for(Downloader d : toCancel)
+					d.cancel();
+			}
+			
+		});
 		downloaders.clear();
 	}
 
