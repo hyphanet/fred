@@ -40,10 +40,6 @@ import freenet.support.io.FileUtil.OperatingSystem;
  * actual fetches, and to deploy the new version when we have everything 
  * ready.
  * 
- * Each dependency has a single required version for a particular build.
- * We don't deploy the build until we have fetched that version. Each
- * version has a unique filename. Note that the 
- * 
  * We used to support a range of freenet-ext.jar versions. However, 
  * supporting ranges creates a lot of complexity, especially with Update 
  * Over Mandatory support.
@@ -51,8 +47,9 @@ import freenet.support.io.FileUtil.OperatingSystem;
  * File format of dependencies.properties:
  * [module].type=[module type]
  * CLASSPATH means the file must be downloaded, and then added to the 
- * classpath in wrapper.conf, before the update can be loaded. 
- * OPTIONAL_PRELOAD means we just want to download the file. 
+ * classpath in wrapper.conf, before the update can be loaded.
+ * 
+ * OPTIONAL_PRELOAD means we just want to download the file.
  * 
  * [module].version=[version number]
  * Can often be parsed from MANIFEST.MF in Jar's, but that is NOT mandatory.
@@ -84,8 +81,8 @@ import freenet.support.io.FileUtil.OperatingSystem;
  * 
  * [module].os=[comma delimited list of OS's and pseudo-OS's]
  * OS's: See FileUtil.OperatingSystem: MacOS Linux FreeBSD GenericUnix Windows
- * Pseudo-Os's: ALL_WINDOWS ALL_UNIX ALL_MAC (these correspond to the is* 
- * getters on FileUtil.OperatingSystem).
+ * Pseudo-Os's: ALL_WINDOWS ALL_UNIX ALL_MAC (these correspond to the booleans 
+ * on FileUtil.OperatingSystem).
  * 
  * @author toad
  *
@@ -97,9 +94,8 @@ public class MainJarDependenciesChecker {
 		Logger.registerClass(MainJarDependenciesChecker.class);
 	}
 	
-	// Slightly over-engineered? No.
-	// This is critical code. It is essential that we are able to unit test it.
-	// Hence the lightweight interfaces, with the mundane glue code implemented by the caller.
+	// Lightweight interfaces, mundane glue code implemented by the caller.
+	// FIXME unit testing should be straightforward, AND WOULD BE A GOOD IDEA!
 	
 	class MainJarDependencies {
 		/** The freenet.jar build to be deployed. It might be possible to
@@ -185,6 +181,7 @@ public class MainJarDependenciesChecker {
 			if(this == arg0) return 0;
 			if(this.order > arg0.order) return 1;
 			else if(this.order < arg0.order) return -1;
+			// Filename comparisons aren't very reliable (e.g. "./test" versus "test" are not equals()!), go by getName() first.
 			int ret = this.newFilename.getName().compareTo(arg0.newFilename.getName());
 			if(ret != 0) return 0;
 			return newFilename.compareTo(arg0.newFilename);
