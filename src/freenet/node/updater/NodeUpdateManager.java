@@ -1294,17 +1294,6 @@ public class NodeUpdateManager {
 	 * dependencies *AFTER* this method has completed, and then call
 	 * onDependenciesReady().
 	 * 
-	 * @param isExt
-	 *            If true, the new jar is the ext jar; if false, it is the main
-	 *            jar.
-	 * @param recommendedExt
-	 *            If isExt is false, the recommended ext version (upper bound)
-	 *            for the new jar, or -1 if it was not specified or the parse
-	 *            failed.
-	 * @param requiredExt
-	 *            If isExt is false, the required ext version (lower bound) for
-	 *            the new jar, or -1 if it was not specified or the parse
-	 *            failed.
 	 * @param fetched
 	 *            The build number we have fetched.
 	 * @param result
