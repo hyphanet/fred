@@ -318,8 +318,6 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		return dependencies.isBroken();
 	}
 
-	static final String BLOB_SUFFIX = ".fblob";
-	
 	public void cleanupDependencies() {
 		InputStream is = getClass().getResourceAsStream("/"+DEPENDENCIES_FILE);
 		if(is == null) {
