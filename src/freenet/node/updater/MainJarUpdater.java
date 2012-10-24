@@ -241,7 +241,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 				if(fetched) return;
 				if(!essential) return;
 			}
-			manager.uom.fetchDependency(expectedHash, expectedLength, filename,
+			UOMDependencyFetcher f = manager.uom.fetchDependency(expectedHash, expectedLength, filename,
 					new UOMDependencyFetcherCallback() {
 
 						@Override
@@ -254,6 +254,13 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 						}
 						
 			});
+			synchronized(this) {
+				if(uomFetcher != null) {
+					Logger.error(this, "Started UOMFetcher twice for "+filename, new Exception("error"));
+					return;
+				}
+				uomFetcher = f;
+			}
 		}
 
 	}
