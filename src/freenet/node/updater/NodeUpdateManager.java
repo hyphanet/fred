@@ -241,6 +241,8 @@ public class NodeUpdateManager {
 			}
 			config.store();
 		}
+		if(updateURI.hasMetaStrings())
+			throw new InvalidConfigValueException(l10n("updateURIMustHaveNoMetaStrings"));
 		if(!updateURI.isUSK())
 			throw new InvalidConfigValueException(l10n("updateURIMustBeAUSK"));
 
