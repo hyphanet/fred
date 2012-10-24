@@ -209,12 +209,14 @@ public class MainJarDependenciesChecker {
 		final JarFetcher fetcher;
 		final Dependency dep;
 		final boolean essential;
+		final int forBuild;
 
 		/** Construct with a Dependency, so we can add it when we're done. */
-		Downloader(Dependency dep, FreenetURI uri, byte[] expectedHash, long expectedSize, boolean essential) throws FetchException {
+		Downloader(Dependency dep, FreenetURI uri, byte[] expectedHash, long expectedSize, boolean essential, int forBuild) throws FetchException {
 			fetcher = deployer.fetch(uri, dep.newFilename, expectedSize, expectedHash, this, build, essential);
 			this.dep = dep;
 			this.essential = essential;
+			this.forBuild = forBuild;
 		}
 
 		@Override
@@ -226,6 +228,7 @@ public class MainJarDependenciesChecker {
 			System.out.println("Downloaded "+dep.newFilename+" needed for update...");
 			synchronized(MainJarDependenciesChecker.this) {
 				downloaders.remove(this);
+				if(forBuild != build) return;
 				dependencies.add(dep);
 				if(!ready()) return;
 			}
@@ -240,6 +243,7 @@ public class MainJarDependenciesChecker {
 				System.err.println("Failed to fetch "+dep.newFilename+" needed for next update ("+e.getShortMessage()+"). Will try again if we find a new freenet.jar.");
 				synchronized(MainJarDependenciesChecker.this) {
 					downloaders.remove(this);
+					if(forBuild != build) return;
 					broken = true;
 				}
 			}
@@ -845,7 +849,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 	}
 
 	private synchronized void fetchDependency(FreenetURI chk, Dependency dep, byte[] expectedHash, long expectedSize, boolean essential) throws FetchException {
-		Downloader d = new Downloader(dep, chk, expectedHash, expectedSize, essential);
+		Downloader d = new Downloader(dep, chk, expectedHash, expectedSize, essential, build);
 		if(essential)
 			downloaders.add(d);
 	}
