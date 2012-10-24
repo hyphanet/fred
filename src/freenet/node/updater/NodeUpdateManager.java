@@ -627,8 +627,7 @@ public class NodeUpdateManager {
 		}
 		boolean dontHaveUpdate;
 		synchronized (this) {
-			dontHaveUpdate = (mainUpdater == null || mainUpdater
-					.getFetchedVersion() <= 0);
+			dontHaveUpdate = fetchedMainJarVersion != Version.buildNumber();
 			if(hasBeenBlown)
 				blown = true;
 			if ((!hasBeenBlown) && dontHaveUpdate) {
