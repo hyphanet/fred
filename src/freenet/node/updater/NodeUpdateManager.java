@@ -724,9 +724,8 @@ public class NodeUpdateManager {
 	}
 
 	private void startPluginUpdaters() {
-		Map<String, OfficialPluginDescription> officialPlugins = PluginManager.officialPlugins;
-		for (OfficialPluginDescription plugin : officialPlugins.values()) {
-			startPluginUpdater(plugin);
+		for(OfficialPluginDescription plugin : PluginManager.getOfficialPlugins()) {
+			startPluginUpdater(plugin.name);
 		}
 	}
 
@@ -738,8 +737,7 @@ public class NodeUpdateManager {
 	public void startPluginUpdater(String plugName) {
 		if (logMINOR)
 			Logger.minor(this, "Starting plugin updater for " + plugName);
-		OfficialPluginDescription plugin = PluginManager.officialPlugins
-				.get(plugName);
+		OfficialPluginDescription plugin = PluginManager.getOfficialPlugin(plugName);
 		if (plugin != null)
 			startPluginUpdater(plugin);
 		else
@@ -785,8 +783,7 @@ public class NodeUpdateManager {
 	}
 
 	public void stopPluginUpdater(String plugName) {
-		OfficialPluginDescription plugin = PluginManager.officialPlugins
-				.get(plugName);
+		OfficialPluginDescription plugin = PluginManager.getOfficialPlugin(plugName);
 		if (plugin == null)
 			return; // Not an official plugin
 		PluginJarUpdater updater = null;
