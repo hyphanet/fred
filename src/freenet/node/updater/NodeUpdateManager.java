@@ -824,25 +824,15 @@ public class NodeUpdateManager {
 	}
 
 	/**
-	 * Get the URI for either the freenet.jar updater or the freenet-ext.jar
-	 * updater.
-	 * 
-	 * @param isExt
-	 *            If true, return the freenet-ext.jar update URI; if false,
-	 *            return the freenet.jar URI.
-	 * @return See above.
+	 * Get the URI for freenet.jar.
 	 */
 	public synchronized FreenetURI getURI() {
 		return updateURI;
 	}
 
 	/**
-	 * Set the URI for either the freenet.jar updater or the freenet-ext.jar
-	 * updater.
+	 * Set the URI freenet.jar should be updated from.
 	 * 
-	 * @param isExt
-	 *            If true, set the freenet-ext.jar update URI; if false, set the
-	 *            freenet.jar update URI.
 	 * @param uri
 	 *            The URI to set.
 	 */
