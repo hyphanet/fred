@@ -334,7 +334,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				}
 			}
 			
-			// Version is useful to have, but we actually check the hash.
+			// Version is used in cleanup().
 			String version = props.getProperty(baseName+".version");
 			if(version == null) {
 				Logger.error(this, "dependencies.properties broken? missing version");
@@ -442,7 +442,6 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				continue;
 			}
 			if(type == DEPENDENCY_TYPE.CLASSPATH) {
-				// We might be somewhere in between.
 				if(p == null) {
 					// No way to check existing files.
 					if(maxCHK != null) {
