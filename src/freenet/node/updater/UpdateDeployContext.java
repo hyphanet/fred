@@ -160,30 +160,25 @@ public class UpdateDeployContext {
 				line = line.substring("wrapper.java.classpath.".length());
 				int idx = line.indexOf('=');
 				if(idx != -1) {
-					try {
-						// Ignore the numbers.
-						String rhs = line.substring(idx+1);
-						dontWrite = true;
-						if(rhs.equals("freenet.jar") || rhs.equals("freenet.jar.new") || 
-								rhs.equals("freenet-stable-latest.jar") || rhs.equals("freenet-stable-latest.jar.new") ||
-								rhs.equals("freenet-testing-latest.jar") || rhs.equals("freenet-testing-latest.jar.new")) {
-							if(writtenNewJar)
-								mainRHS = newMain;
-							else
-								mainRHS = rhs;
-						} else {
-							// Is it on the list of dependencies?
-							Dependency dep = findDependencyByRHSFilename(new File(rhs));
-							if(dep != null) {
-								System.out.println("Found dependency "+dep.oldFilename());
-							} else { // dep == null
-								// If not, it's something the user has added, we just keep it.
-								classpath.add(rhs);
-							}
+					// Ignore the numbers.
+					String rhs = line.substring(idx+1);
+					dontWrite = true;
+					if(rhs.equals("freenet.jar") || rhs.equals("freenet.jar.new") || 
+							rhs.equals("freenet-stable-latest.jar") || rhs.equals("freenet-stable-latest.jar.new") ||
+							rhs.equals("freenet-testing-latest.jar") || rhs.equals("freenet-testing-latest.jar.new")) {
+						if(writtenNewJar)
+							mainRHS = newMain;
+						else
+							mainRHS = rhs;
+					} else {
+						// Is it on the list of dependencies?
+						Dependency dep = findDependencyByRHSFilename(new File(rhs));
+						if(dep != null) {
+							System.out.println("Found dependency "+dep.oldFilename());
+						} else { // dep == null
+							// If not, it's something the user has added, we just keep it.
+							classpath.add(rhs);
 						}
-					} catch (NumberFormatException e) {
-						// Argh!
-						System.out.println("Don't understand line in wrapper.conf - should be numeric?:\n"+line);
 					}
 				}
 			} else if(line.equalsIgnoreCase("wrapper.restart.reload_configuration=TRUE")) {
