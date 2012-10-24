@@ -14,6 +14,7 @@ import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -112,7 +113,7 @@ public class MainJarDependenciesChecker {
 		final boolean mustRewriteWrapperConf;
 		
 		MainJarDependencies(TreeSet<Dependency> dependencies, int build) {
-			this.dependencies = dependencies;
+			this.dependencies = Collections.unmodifiableSortedSet(dependencies);
 			this.build = build;
 			boolean mustRewrite = false;
 			for(Dependency d : dependencies) {
