@@ -868,6 +868,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 		synchronized(this) {
 			f = new TreeSet<Dependency>(dependencies);
 		}
+		if(logMINOR) Logger.minor(this, "Deploying build "+build+" with "+f.size()+" dependencies");
 		deployer.deploy(new MainJarDependencies(f, build));
 	}
 

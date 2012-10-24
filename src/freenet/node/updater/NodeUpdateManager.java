@@ -984,6 +984,7 @@ public class NodeUpdateManager {
 			return true;
 		}
 		int waitTime = Math.max(REVOCATION_FETCH_TIMEOUT, waitForNextJar);
+		if(logMINOR) Logger.minor(this, "Will deploy in "+waitTime+"ms");
 		deployOffThread(waitTime, false);
 		return false;
 	}
