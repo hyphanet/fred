@@ -933,8 +933,10 @@ public class NodeUpdateManager {
 			}
 			if (hasBeenBlown)
 				return false; // Duh
-			if (peersSayBlown)
+			if (peersSayBlown) {
+				if(logMINOR) Logger.minor(this, "Not deploying, peers say blown");
 				return false;
+			}
 			// Don't immediately deploy if still fetching
 			if (startedFetchingNextMainJar > 0) {
 				waitForNextJar = (int) (startedFetchingNextMainJar
@@ -995,6 +997,8 @@ public class NodeUpdateManager {
 
 	/** Check whether there is an update to deploy. If there is, do it. */
 	private void deployUpdate() {
+		boolean started = false;
+		boolean success = false;
 		try {
 			MainJarDependencies deps;
 			synchronized (this) {
@@ -1038,26 +1042,30 @@ public class NodeUpdateManager {
 						Logger.minor(this, "Already deploying update");
 					return;
 				}
+				started = true;
 				isDeployingUpdate = true;
 				deps = latestMainJarDependencies;
 			}
 
 			innerDeployUpdate(deps);
-		} catch (Throwable t) {
-			Bucket toFree = null;
-			synchronized (this) {
-				isDeployingUpdate = false;
-				if (maybeNextMainJarVersion > fetchedMainJarVersion) {
-					// A newer version has been fetched in the meantime.
-					toFree = fetchedMainJarData;
-					fetchedMainJarVersion = maybeNextMainJarVersion;
-					fetchedMainJarData = maybeNextMainJarData;
-					maybeNextMainJarVersion = -1;
-					maybeNextMainJarData = null;
+			success = true;
+		} finally {
+			if(started && !success) {
+				Bucket toFree = null;
+				synchronized (this) {
+					isDeployingUpdate = false;
+					if (maybeNextMainJarVersion > fetchedMainJarVersion) {
+						// A newer version has been fetched in the meantime.
+						toFree = fetchedMainJarData;
+						fetchedMainJarVersion = maybeNextMainJarVersion;
+						fetchedMainJarData = maybeNextMainJarData;
+						maybeNextMainJarVersion = -1;
+						maybeNextMainJarData = null;
+					}
 				}
+				if (toFree != null)
+					toFree.free();
 			}
-			if (toFree != null)
-				toFree.free();
 		}
 	}
 
@@ -1065,6 +1073,7 @@ public class NodeUpdateManager {
 	 * Deploy the update. Inner method. Doesn't check anything, just does it.
 	 */
 	private void innerDeployUpdate(MainJarDependencies deps) {
+		System.err.println("Deploying update "+deps.build+" with "+deps.dependencies.size()+" dependencies...");
 		// Write the jars, config etc.
 		// Then restart
 
