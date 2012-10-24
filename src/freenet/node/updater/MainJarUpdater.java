@@ -226,14 +226,13 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		public synchronized HTMLNode renderRow() {
 			HTMLNode row = new HTMLNode("tr");
 			row.addChild("td").addChild("p", filename.toString());
-			HTMLNode cell = row.addChild("td");
 			
 			if(uomFetcher != null)
-				cell.addChild(l10n("fetchingFromUOM"));
+				row.addChild("td").addChild("#", l10n("fetchingFromUOM"));
 			else if(lastProgress == null)
-				cell.addChild(QueueToadlet.createProgressCell(false, true, COMPRESS_STATE.WORKING, 0, 0, 0, 0, 0, false, false));
+				row.addChild(QueueToadlet.createProgressCell(false, true, COMPRESS_STATE.WORKING, 0, 0, 0, 0, 0, false, false));
 			else
-				cell.addChild(QueueToadlet.createProgressCell(false, 
+				row.addChild(QueueToadlet.createProgressCell(false, 
 						true, COMPRESS_STATE.WORKING, lastProgress.succeedBlocks, lastProgress.failedBlocks, lastProgress.fatallyFailedBlocks, lastProgress.minSuccessfulBlocks, lastProgress.totalBlocks, lastProgress.finalizedTotal, false));
 			return row;
 		}
