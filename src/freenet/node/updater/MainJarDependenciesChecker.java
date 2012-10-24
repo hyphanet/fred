@@ -240,7 +240,7 @@ public class MainJarDependenciesChecker {
 				System.err.println("Failed to fetch "+dep.newFilename+" needed for next update ("+e.getShortMessage()+"). Will try again if we find a new freenet.jar.");
 				synchronized(MainJarDependenciesChecker.this) {
 					downloaders.remove(this);
-					broken = false;
+					broken = true;
 				}
 			}
 		}
