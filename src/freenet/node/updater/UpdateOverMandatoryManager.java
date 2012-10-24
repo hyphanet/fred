@@ -1953,9 +1953,11 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					} catch (RuntimeException e) {
 						Logger.error(this, "Caught fetching "+saveTo+" from "+fetchFrom +" : "+e, e);
 						System.err.println("Fetch failed due to internal error (bug or severe local problem?): "+e);
+						e.printStackTrace();
 					} catch (Error e) {
 						Logger.error(this, "Caught fetching "+saveTo+" from "+fetchFrom +" : "+e, e);
 						System.err.println("Fetch failed due to internal error (bug or severe local problem?): "+e);
+						e.printStackTrace();
 					} finally {
 						boolean connected = fetchFrom.isConnected();
 						boolean addFailed = failed && connected;
