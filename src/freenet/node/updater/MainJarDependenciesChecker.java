@@ -691,8 +691,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				continue; // If no version in the current version, no version in any other either, can't reliably detect outdated jars. E.g. freenet-ext.jar up to v29!
 			// Now delete bogus dependencies.
 			for(File f : listMain) {
-				String name = f.getName();
-				if(!p.matcher(name.toLowerCase()).matches()) continue;
+				String name = f.getName().toLowerCase();
+				if(!p.matcher(name).matches()) continue;
 				// Comparing File's by equals() is dodgy, e.g. ./blah != blah. So use getName().
 				// Even on *nix some filesystems are case insensitive.
 				if(name.equalsIgnoreCase(currentFile.getName())) continue;
