@@ -1861,11 +1861,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				chosen = chooseRandomPeer(uomPeers);
 				if(chosen != null) break;
 				synchronized(UpdateOverMandatoryManager.this) {
-					uomPeers = new HashSet<PeerNode>(nodesSentMainJar);
-				}
-				chosen = chooseRandomPeer(uomPeers);
-				if(chosen != null) break;
-				synchronized(UpdateOverMandatoryManager.this) {
 					uomPeers = new HashSet<PeerNode>(nodesSendingMainJar);
 				}
 				chosen = chooseRandomPeer(uomPeers);
