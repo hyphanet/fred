@@ -220,7 +220,7 @@ public class NodeUpdateManager {
 				.register("URI", UPDATE_URI, 3, true, true,
 						"NodeUpdateManager.updateURI",
 						"NodeUpdateManager.updateURILong",
-						new UpdateURICallback(false));
+						new UpdateURICallback());
 
 		try {
 			updateURI = new FreenetURI(updaterConfig.getString("URI"));
@@ -1605,12 +1605,6 @@ public class NodeUpdateManager {
 
 	class UpdateURICallback extends StringCallback {
 
-		boolean isExt;
-
-		UpdateURICallback(boolean isExt) {
-			this.isExt = isExt;
-		}
-
 		@Override
 		public String get() {
 			return getURI().toString(false, false);
@@ -1623,7 +1617,7 @@ public class NodeUpdateManager {
 				uri = new FreenetURI(val);
 			} catch (MalformedURLException e) {
 				throw new InvalidConfigValueException(l10n(
-						isExt ? "invalidExtURI" : "invalidUpdateURI", "error",
+						"invalidUpdateURI", "error",
 						e.getLocalizedMessage()));
 			}
 			setURI(uri);
