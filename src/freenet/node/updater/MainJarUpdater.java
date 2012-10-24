@@ -200,10 +200,8 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		@Override
 		public void onFailure(FetchException e, ClientGetter state,
 				ObjectContainer container) {
-			if(fetched) {
-				tempFile.delete();
-				return;
-			}
+			tempFile.delete();
+			if(fetched) return;
 			if(cb != null) cb.onFailure(e);
 		}
 		
