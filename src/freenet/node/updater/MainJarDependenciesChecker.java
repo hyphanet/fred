@@ -182,10 +182,10 @@ public class MainJarDependenciesChecker {
 		@Override
 		public int compareTo(Dependency arg0) {
 			if(this == arg0) return 0;
-			if(this.order > arg0.order) return 1;
-			else if(this.order < arg0.order) return -1;
+			if(order > arg0.order) return 1;
+			else if(order < arg0.order) return -1;
 			// Filename comparisons aren't very reliable (e.g. "./test" versus "test" are not equals()!), go by getName() first.
-			int ret = this.newFilename.getName().compareTo(arg0.newFilename.getName());
+			int ret = newFilename.getName().compareTo(arg0.newFilename.getName());
 			if(ret != 0) return ret;
 			return newFilename.compareTo(arg0.newFilename);
 		}
