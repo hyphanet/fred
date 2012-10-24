@@ -148,8 +148,8 @@ public class ProtocolErrorMessage extends FCPMessage {
 		ident = fs.get("Identifier");
 		code = Integer.parseInt(fs.get("Code"));
 		extra = fs.get("ExtraDescription");
-		fatal = Fields.stringToBool(fs.get("Fatal"), false);
-		global = Fields.stringToBool(fs.get("Global"), false);
+		fatal = fs.getBoolean("Fatal", false);
+		global = fs.getBoolean("Global", false);
 	}
 
 	@Override

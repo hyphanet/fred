@@ -92,7 +92,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 		String fnam = null;
 		identifier = fs.get("Identifier");
 		binaryBlob = fs.getBoolean("BinaryBlob", false);
-		global = Fields.stringToBool(fs.get("Global"), false);
+		global = fs.getBoolean("Global", false);
 		localRequestOnly = fs.getBoolean("LocalRequestOnly", false);
 		String s = fs.get("CompatibilityMode");
 		InsertContext.CompatibilityMode cmode = null;
@@ -165,7 +165,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier, global);
 			}
 		}
-		getCHKOnly = Fields.stringToBool(fs.get("GetCHKOnly"), false);
+		getCHKOnly = fs.getBoolean("GetCHKOnly", false);
 		String priorityString = fs.get("PriorityClass");
 		if(priorityString == null) {
 			// defaults to the one just below FProxy
@@ -224,7 +224,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 			bucket = null;
 		} else
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "UploadFrom invalid or unrecognized: "+uploadFrom, identifier, global);
-		dontCompress = Fields.stringToBool(fs.get("DontCompress"), false);
+		dontCompress = fs.getBoolean("DontCompress", false);
 		String persistenceString = fs.get("Persistence");
 		if((persistenceString == null) || persistenceString.equalsIgnoreCase("connection")) {
 			// Default: persists until connection loss.
@@ -254,7 +254,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 			targetFilename = fnam;
 		else
 			targetFilename = null;
-		earlyEncode = Fields.stringToBool(fs.get("EarlyEncode"), false);
+		earlyEncode = fs.getBoolean("EarlyEncode", false);
 		String codecs = fs.get("Codecs");
 		if (codecs != null) {
 			COMPRESSOR_TYPE[] ca;

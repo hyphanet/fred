@@ -157,12 +157,12 @@ public class DarknetPeerNode extends PeerNode {
 		if(fromLocal) {
 			SimpleFieldSet metadata = fs.subset("metadata");
 
-			isDisabled = Fields.stringToBool(metadata.get("isDisabled"), false);
-			isListenOnly = Fields.stringToBool(metadata.get("isListenOnly"), false);
-			isBurstOnly = Fields.stringToBool(metadata.get("isBurstOnly"), false);
-			disableRouting = disableRoutingHasBeenSetLocally = Fields.stringToBool(metadata.get("disableRoutingHasBeenSetLocally"), false);
-			ignoreSourcePort = Fields.stringToBool(metadata.get("ignoreSourcePort"), false);
-			allowLocalAddresses = Fields.stringToBool(metadata.get("allowLocalAddresses"), false);
+			isDisabled = metadata.getBoolean("isDisabled", false);
+			isListenOnly = metadata.getBoolean("isListenOnly", false);
+			isBurstOnly = metadata.getBoolean("isBurstOnly", false);
+			disableRouting = disableRoutingHasBeenSetLocally = metadata.getBoolean("disableRoutingHasBeenSetLocally", false);
+			ignoreSourcePort = metadata.getBoolean("ignoreSourcePort", false);
+			allowLocalAddresses = metadata.getBoolean("allowLocalAddresses", false);
 			String s = metadata.get("trustLevel");
 			if(s != null) {
 				trustLevel = FRIEND_TRUST.valueOf(s);

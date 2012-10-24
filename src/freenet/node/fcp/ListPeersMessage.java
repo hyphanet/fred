@@ -18,8 +18,8 @@ public class ListPeersMessage extends FCPMessage {
 	static final String NAME = "ListPeers";
 	
 	public ListPeersMessage(SimpleFieldSet fs) {
-		withMetadata = Fields.stringToBool(fs.get("WithMetadata"), false);
-		withVolatile = Fields.stringToBool(fs.get("WithVolatile"), false);
+		withMetadata = fs.getBoolean("WithMetadata", false);
+		withVolatile = fs.getBoolean("WithVolatile", false);
 		this.identifier = fs.get("Identifier");
 		fs.removeValue("Identifier");
 	}

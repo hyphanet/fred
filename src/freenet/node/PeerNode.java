@@ -751,7 +751,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					peerAddedTime = tempPeerAddedTime;
 				} else
 					peerAddedTime = 0; // This is normal: Not only do exported refs not include it, opennet peers don't either.
-				neverConnected = Fields.stringToBool(metadata.get("neverConnected"), false);
+				neverConnected = metadata.getBoolean("neverConnected", false);
 				maybeClearPeerAddedTimeOnRestart(now);
 				String tempHadRoutableConnectionCountString = metadata.get("hadRoutableConnectionCount");
 				if(tempHadRoutableConnectionCountString != null) {
@@ -2649,7 +2649,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		
 		// Anything may be omitted for a differential node reference
 		boolean changedAnything = false;
-		if(!forDiffNodeRef && (false != Fields.stringToBool(fs.get("testnet"), false))) {
+		if(!forDiffNodeRef && (false != fs.getBoolean("testnet", false))) {
 			String err = "Preventing connection to node " + detectedPeer +" - testnet is enabled!";
 			Logger.error(this, err);
 			throw new FSParseException(err);

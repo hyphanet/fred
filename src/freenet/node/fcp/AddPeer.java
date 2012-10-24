@@ -139,7 +139,7 @@ public class AddPeer extends FCPMessage {
 		}
 		fs.setEndMarker( "End" );
 		PeerNode pn;
-		boolean isOpennetRef = Fields.stringToBool(fs.get("opennet"), false);
+		boolean isOpennetRef = fs.getBoolean("opennet", false);
 		if(isOpennetRef) {
 			try {
 				pn = node.createNewOpennetNode(fs);
