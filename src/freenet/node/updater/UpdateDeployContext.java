@@ -11,6 +11,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Properties;
+import java.util.regex.Pattern;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -236,13 +237,21 @@ public class UpdateDeployContext {
 	}
 
 	private Dependency findDependencyByRHSFilename(File rhs) {
+		String rhsName = rhs.getName().toLowerCase();
 		for(Dependency dep : deps.dependencies) {
 			File f = dep.oldFilename();
-			if(f != null && rhs.equals(f)) return dep;
-			if(f.getName().toLowerCase().equals(rhs.getName().toLowerCase())) return dep;
+			if(f == null) {
+				// Not in use.
+				continue;
+			}
+			if(rhs.equals(f)) return dep;
+			if(rhsName.equals(f.getName())) return dep;
 		}
 		for(Dependency dep : deps.dependencies) {
-			if(dep.regex().matcher(rhs.getName().toLowerCase()).matches()) return dep;
+			Pattern p = dep.regex();
+			if(p != null) {
+				if(p.matcher(rhs.getName().toLowerCase()).matches()) return dep;
+			}
 		}
 		return null;
 	}
