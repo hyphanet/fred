@@ -1579,8 +1579,9 @@ public class DarknetPeerNode extends PeerNode {
 		long sentTime = fs.getLong("sentTime", -1);
 		long receivedTime = fs.getLong("receivedTime", -1);
 		try {
-			if(fs.get("Description") != null)
-				description = Base64.decodeUTF8(fs.get("Description"));
+			String s = fs.get("Description");
+			if(s != null)
+				description = Base64.decodeUTF8(s);
 			uri = new FreenetURI(fs.get("URI"));
 		} catch (MalformedURLException e) {
 			Logger.error(this, "Malformed URI in N2NTM Bookmark Feed message");
@@ -1600,8 +1601,9 @@ public class DarknetPeerNode extends PeerNode {
 		long sentTime = fs.getLong("sentTime", -1);
 		long receivedTime = fs.getLong("receivedTime", -1);
 		try {
-			if(fs.get("Description") != null)
-				description = Base64.decodeUTF8(fs.get("Description"));
+			String s = fs.get("Description");
+			if(s != null)
+				description = Base64.decodeUTF8(s);
 			uri = new FreenetURI(fs.get("URI"));
 		} catch (MalformedURLException e) {
 			Logger.error(this, "Malformed URI in N2NTM File Feed message");

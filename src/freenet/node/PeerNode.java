@@ -4474,14 +4474,17 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		SimpleFieldSet nfs = getLocalNoderef();
 		if(null == nfs) return;
-		if(null != nfs.get("ark.pubURI")) {
-			fs.putOverwrite("ark.pubURI", nfs.get("ark.pubURI"));
+		String s;
+		s = nfs.get("ark.pubURI");
+		if(null != s) {
+			fs.putOverwrite("ark.pubURI", s);
 		}
-		if(null != nfs.get("ark.number")) {
-			fs.putOverwrite("ark.number", nfs.get("ark.number"));
+		s = nfs.get("ark.number");
+		if(null != s) {
+			fs.putOverwrite("ark.number", s);
 		}
-		if(isDarknet() && null != nfs.get("myName")) {
-			fs.putOverwrite("myName", nfs.get("myName"));
+		if(isDarknet() && null != (s = nfs.get("myName"))) {
+			fs.putOverwrite("myName", s);
 		}
 		String[] physicalUDPEntries = nfs.getAll("physical.udp");
 		if(physicalUDPEntries != null) {

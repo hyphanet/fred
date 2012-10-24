@@ -102,7 +102,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 			String u = fs.get("URI");
 			if(u == null)
 				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No URI", identifier, global);
-			FreenetURI uu = new FreenetURI(fs.get("URI"));
+			FreenetURI uu = new FreenetURI(u);
 			// Client is allowed to put a slash at the end if it wants to, but this is discouraged.
 			String[] meta = uu.getAllMetaStrings();
 			if(meta != null && meta.length == 1 && meta[0].length() == 0)

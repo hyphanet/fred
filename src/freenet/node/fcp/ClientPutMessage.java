@@ -132,7 +132,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 				String u = fs.get("URI");
 				if(u == null)
 					throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No URI", identifier, global);
-				FreenetURI uu = new FreenetURI(fs.get("URI"));
+				FreenetURI uu = new FreenetURI(u);
 				String[] metas = uu.getAllMetaStrings();
 				if(metas != null && metas.length == 1) {
 					fnam = metas[0];
