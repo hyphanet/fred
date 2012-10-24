@@ -229,7 +229,7 @@ public class MainJarDependenciesChecker {
 				System.out.println("Downloaded "+dep.newFilename+" - may be used by next update");
 				return;
 			}
-			System.out.println("Downloaded "+dep.newFilename+" needed for update...");
+			System.out.println("Downloaded "+dep.newFilename+" needed for update "+forBuild+"...");
 			synchronized(MainJarDependenciesChecker.this) {
 				downloaders.remove(this);
 				if(forBuild != build) return;
