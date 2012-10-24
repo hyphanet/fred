@@ -201,7 +201,9 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		public void onFailure(FetchException e, ClientGetter state,
 				ObjectContainer container) {
 			tempFile.delete();
-			if(fetched) return;
+			synchronized(this) {
+				if(fetched) return;
+			}
 			if(cb != null) cb.onFailure(e);
 		}
 		
