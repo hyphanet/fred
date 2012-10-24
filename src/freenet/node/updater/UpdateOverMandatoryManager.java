@@ -1729,14 +1729,15 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	private void decrementDependencies(PeerNode source) {
 		synchronized(peersFetchingDependencies) {
 			Integer x = peersFetchingDependencies.get(source);
-			if(x != null && x > 0) {
-				peersFetchingDependencies.put(source, x-1);
-			} else if(x == null) {
+			if(x == null) {
 				Logger.error(this, "Inconsistent dependency counting? Should not be null for "+source);
 			} else if(x == 1) {
 				peersFetchingDependencies.remove(source);
+			} else if(x <= 0) {
+				Logger.error(this, "Inconsistent dependency counting? Counter is "+x+" for "+source);
+				peersFetchingDependencies.remove(source);
 			} else {
-				Logger.error(this, "Inconsistent dependency counting?");
+				peersFetchingDependencies.put(source, x-1);
 			}
 		}
 	}
