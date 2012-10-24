@@ -244,6 +244,7 @@ public class UpdateDeployContext {
 		for(Dependency dep : deps.dependencies) {
 			File f = dep.oldFilename();
 			if(f != null && rhs.equals(f)) return dep;
+			if(f.getName().toLowerCase().equals(rhs.getName().toLowerCase())) return dep;
 		}
 		for(Dependency dep : deps.dependencies) {
 			if(dep.regex().matcher(rhs.getName().toLowerCase()).matches()) return dep;
