@@ -81,7 +81,7 @@ class LegacyJarFetcher implements ClientGetCallback {
 			// We do not want to rename unless we are sure we've finished the fetch.
 			File tmp;
 			try {
-				tmp = File.createTempFile(saveTo.getName(), ".fblob.tmp", saveTo.getParentFile());
+				tmp = File.createTempFile(saveTo.getName(), NodeUpdateManager.TEMP_BLOB_SUFFIX, saveTo.getParentFile());
 				tmp.deleteOnExit(); // To be used sparingly, as it leaks, but safe enough here as it should only happen twice during a normal run.
 			} catch (IOException e) {
 				Logger.error(this, "Cannot create temp file so cannot fetch legacy jar "+uri+" : UOM from old versions will not work!");
