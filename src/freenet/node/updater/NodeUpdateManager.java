@@ -1622,6 +1622,10 @@ public class NodeUpdateManager {
 						"invalidUpdateURI", "error",
 						e.getLocalizedMessage()));
 			}
+			if(updateURI.hasMetaStrings())
+				throw new InvalidConfigValueException(l10n("updateURIMustHaveNoMetaStrings"));
+			if(!updateURI.isUSK())
+				throw new InvalidConfigValueException(l10n("updateURIMustBeAUSK"));
 			setURI(uri);
 		}
 	}
