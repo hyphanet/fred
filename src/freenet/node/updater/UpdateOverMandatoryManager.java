@@ -232,7 +232,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		tellFetchers(source);
 		
 		if(fromOldNode)
-			// We only care about revocations from old nodes.
+			// If it's an old node, we ignore everything except revocations.
 			return true;
 
 		if(updateManager.isBlown())
