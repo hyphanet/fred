@@ -1305,7 +1305,7 @@ public class NodeUpdateManager {
 		node.clientCore.alerts.register(new SimpleUserAlert(true,
 				l10n("updateFailedTitle"), l10n("updateFailed", "reason",
 						reason), l10n("updateFailedShort", "reason", reason),
-				UserAlert.ERROR));
+				UserAlert.CRITICAL_ERROR));
 	}
 
 	private String l10n(String key) {
