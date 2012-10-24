@@ -614,7 +614,6 @@ public class NodeUpdateManager {
 
 	public void maybeSendUOMAnnounce(PeerNode peer) {
 		boolean sendOld, sendNew;
-		boolean blown = false;
 		synchronized (broadcastUOMAnnouncesSync) {
 			if (!(broadcastUOMAnnouncesOld || broadcastUOMAnnouncesNew)) {
 				if (logMINOR)
@@ -625,19 +624,7 @@ public class NodeUpdateManager {
 			sendOld = broadcastUOMAnnouncesOld;
 			sendNew = broadcastUOMAnnouncesNew;
 		}
-		boolean dontHaveUpdate;
-		synchronized (this) {
-			dontHaveUpdate = fetchedMainJarVersion != Version.buildNumber();
-			if(hasBeenBlown)
-				blown = true;
-			if ((!hasBeenBlown) && dontHaveUpdate) {
-				if (logMINOR)
-					Logger.minor(this,
-							"Not sending UOM (new) on connect: Don't have the update");
-				sendNew = false;
-			}
-		}
-		if ((!dontHaveUpdate) && hasBeenBlown && !revocationChecker.hasBlown()) {
+		if (hasBeenBlown && !revocationChecker.hasBlown()) {
 			if (logMINOR)
 				Logger.minor(this,
 						"Not sending UOM (any) on connect: Local problem causing blown key");
@@ -646,9 +633,9 @@ public class NodeUpdateManager {
 		}
 		long size = canAnnounceUOMNew();
 		try {
-			if (sendOld || blown)
+			if (sendOld || hasBeenBlown)
 				peer.sendAsync(getOldUOMAnnouncement(), null, ctr);
-			if (sendNew || blown)
+			if (sendNew || hasBeenBlown)
 				peer.sendAsync(getNewUOMAnnouncement(size), null, ctr);
 		} catch (NotConnectedException e) {
 			// Sad, but ignore it
