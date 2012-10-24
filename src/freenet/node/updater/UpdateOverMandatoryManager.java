@@ -183,7 +183,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			// First, is the key the same as ours?
 			try {
 				FreenetURI revocationURI = new FreenetURI(revocationKey);
-				if(revocationURI.equals(updateManager.revocationURI)) {
+				if(revocationURI.equals(updateManager.getRevocationURI())) {
 
 					// Uh oh...
 
@@ -210,7 +210,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					
 				} else {
 					// Should probably also be a useralert?
-					Logger.normal(this, "Node " + source + " sent us a UOM claiming that the auto-update key was blown, but it used a different key to us: \nour key=" + updateManager.revocationURI + "\nhis key=" + revocationURI);
+					Logger.normal(this, "Node " + source + " sent us a UOM claiming that the auto-update key was blown, but it used a different key to us: \nour key=" + updateManager.getRevocationURI() + "\nhis key=" + revocationURI);
 				}
 			} catch(MalformedURLException e) {
 				// Should maybe be a useralert?
@@ -342,11 +342,11 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				// Fetch it
 				try {
 					FreenetURI mainJarURI = new FreenetURI(jarKey).setSuggestedEdition(mainJarVersion);
-					if(mainJarURI.equals(updateManager.updateURI.setSuggestedEdition(mainJarVersion)))
+					if(mainJarURI.equals(updateManager.getURI().setSuggestedEdition(mainJarVersion)))
 						sendUOMRequest(source, true);
 					else
 						System.err.println("Node " + source.userToString() + " offered us a new main jar (version " + mainJarVersion + ") but his key was different to ours:\n" +
-							"our key: " + updateManager.updateURI + "\nhis key:" + mainJarURI);
+							"our key: " + updateManager.getURI() + "\nhis key:" + mainJarURI);
 				} catch(MalformedURLException e) {
 					// Should maybe be a useralert?
 					Logger.error(this, "Node " + source + " sent us a UOMAnnouncement claiming to have a new ext jar, but it had an invalid URI: " + jarKey + " : " + e, e);
@@ -740,7 +740,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			}
 		};
 
-		Message msg = DMT.createUOMSendingRevocation(uid, length, updateManager.revocationURI.toString());
+		Message msg = DMT.createUOMSendingRevocation(uid, length, updateManager.getRevocationURI().toString());
 
 		try {
 			source.sendAsync(msg, new AsyncMessageCallback() {
@@ -807,10 +807,10 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			return true;
 		}
 
-		if(!revocationURI.equals(updateManager.revocationURI)) {
+		if(!revocationURI.equals(updateManager.getRevocationURI())) {
 			System.err.println("Node sending us a revocation certificate from the wrong URI:\n" +
 				"Node: " + source.userToString() + "\n" +
-				"Our   URI: " + updateManager.revocationURI + "\n" +
+				"Our   URI: " + updateManager.getRevocationURI() + "\n" +
 				"Their URI: " + revocationURI);
 			synchronized(this) {
 				// Wierd case of a failed transfer
@@ -1077,7 +1077,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		};
 
 		ClientGetter cg = new ClientGetter(myCallback,
-			updateManager.revocationURI, tempContext, (short) 0, this, null, new BinaryBlobWriter(cleanedBlob), null);
+			updateManager.getRevocationURI(), tempContext, (short) 0, this, null, new BinaryBlobWriter(cleanedBlob), null);
 
 		try {
 			updateManager.node.clientCore.clientContext.start(cg);
@@ -1222,7 +1222,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			}
 			
 			msg =
-				DMT.createUOMSendingMainJar(uid, length, updateManager.updateURI.toString(), version);
+				DMT.createUOMSendingMainJar(uid, length, updateManager.getURI().toString(), version);
 			
 		} catch (RuntimeException e) {
 			source.finishedSendingUOMJar(false);
@@ -1320,10 +1320,10 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			return true;
 		}
 
-		if(!jarURI.equals(updateManager.updateURI.setSuggestedEdition(version))) {
+		if(!jarURI.equals(updateManager.getURI().setSuggestedEdition(version))) {
 			System.err.println("Node sending us a main jar update (" + version + ") from the wrong URI:\n" +
 				"Node: " + source.userToString() + "\n" +
-				"Our   URI: " + updateManager.updateURI + "\n" +
+				"Our   URI: " + updateManager.getURI() + "\n" +
 				"Their URI: " + jarURI);
 			cancelSend(source, uid);
 			synchronized(this) {
@@ -1509,7 +1509,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					return;
 				}
 
-				NodeUpdater mainUpdater = updateManager.mainUpdater;
+				NodeUpdater mainUpdater = updateManager.getMainUpdater();
 				if(mainUpdater == null) {
 					System.err.println("Not updating because updater is disabled!");
 					return;

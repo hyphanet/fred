@@ -115,27 +115,27 @@ public class NodeUpdateManager {
 		}
 	}
 
-	FreenetURI updateURI;
-	FreenetURI revocationURI;
+	private FreenetURI updateURI;
+	private FreenetURI revocationURI;
 
-	LegacyJarFetcher transitionMainJarFetcher;
-	LegacyJarFetcher transitionExtJarFetcher;
+	private final LegacyJarFetcher transitionMainJarFetcher;
+	private final LegacyJarFetcher transitionExtJarFetcher;
 
-	NodeUpdater mainUpdater;
+	private NodeUpdater mainUpdater;
 
-	Map<String, PluginJarUpdater> pluginUpdaters;
+	private Map<String, PluginJarUpdater> pluginUpdaters;
 
 	private boolean autoDeployPluginsOnRestart;
-	boolean wasEnabledOnStartup;
+	private final boolean wasEnabledOnStartup;
 	/** Is auto-update enabled? */
-	volatile boolean isAutoUpdateAllowed;
+	private volatile boolean isAutoUpdateAllowed;
 	/** Has the user given the go-ahead? */
-	volatile boolean armed;
+	private volatile boolean armed;
 	/** Currently deploying an update? */
-	boolean isDeployingUpdate;
-	final Object broadcastUOMAnnouncesSync = new Object();
-	boolean broadcastUOMAnnouncesOld = false;
-	boolean broadcastUOMAnnouncesNew = false;
+	private boolean isDeployingUpdate;
+	private final Object broadcastUOMAnnouncesSync = new Object();
+	private boolean broadcastUOMAnnouncesOld = false;
+	private boolean broadcastUOMAnnouncesNew = false;
 
 	public final Node node;
 
@@ -1887,6 +1887,10 @@ public class NodeUpdateManager {
 		if(isDeployingUpdate) return null;
 		if(fetchedMainJarVersion != Version.buildNumber()) return null;
 		return currentVersionBlobFile;
+	}
+
+	NodeUpdater getMainUpdater() {
+		return mainUpdater;
 	}
 
 }
