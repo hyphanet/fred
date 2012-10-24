@@ -186,7 +186,8 @@ public class NodeUpdateManager {
 	 */
 	private Bucket maybeNextMainJarData;
 	
-	static final String TEMP_SUFFIX = ".updater.fblob.tmp";
+	static final String TEMP_BLOB_SUFFIX = ".updater.fblob.tmp";
+	static final String TEMP_FILE_SUFFIX = ".updater.tmp";
 
 	static {
 		Logger.registerClass(NodeUpdateManager.class);

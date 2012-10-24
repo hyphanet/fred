@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Properties;
@@ -531,13 +532,19 @@ outer:	for(String propName : props.stringPropertyNames()) {
 	public static boolean cleanup(Properties props, final Deployer deployer, int build) {
 		// This method should not change anything, but can call the callbacks.
 		HashSet<String> processed = new HashSet<String>();
+		final ArrayList<File> toDelete = new ArrayList<File>();
 		File[] listMain = new File(".").listFiles(new FileFilter() {
 
 			@Override
 			public boolean accept(File arg0) {
 				if(!arg0.isFile()) return false;
-				// Ignore non-jars regardless of what the regex says.
 				String name = arg0.getName().toLowerCase();
+				// Cleanup old updater tempfiles.
+				if(name.endsWith(NodeUpdateManager.TEMP_FILE_SUFFIX) || name.endsWith(NodeUpdateManager.TEMP_BLOB_SUFFIX)) {
+					toDelete.add(arg0);
+					return false;
+				}
+				// Ignore non-jars regardless of what the regex says.
 				if(!name.endsWith(".jar")) return false;
 				// FIXME similar checks elsewhere, factor out?
 				if(name.equals("freenet.jar") || name.equals("freenet.jar.new") || name.equals("freenet-stable-latest.jar") || name.equals("freenet-stable-latest.jar.new"))
@@ -546,6 +553,10 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			}
 			
 		});
+		for(File f : toDelete) {
+			System.out.println("Deleting old temp file \""+f+"\"");
+			f.delete();
+		}
 		for(String propName : props.stringPropertyNames()) {
 			if(!propName.contains(".")) continue;
 			String baseName = propName.split("\\.")[0];

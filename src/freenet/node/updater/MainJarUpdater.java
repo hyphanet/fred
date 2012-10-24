@@ -126,7 +126,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 			File parent = filename.getParentFile();
 			if(parent == null) parent = new File(".");
 			try {
-				tempFile = File.createTempFile(filename.getName(), BLOB_SUFFIX, parent);
+				tempFile = File.createTempFile(filename.getName(), NodeUpdateManager.TEMP_FILE_SUFFIX, parent);
 			} catch (IOException e) {
 				throw new FetchException(FetchException.BUCKET_ERROR, "Cannot create temp file for "+filename+" in "+parent+" - disk full? permissions problem?");
 			}
