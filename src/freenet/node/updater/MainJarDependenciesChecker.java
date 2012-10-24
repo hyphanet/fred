@@ -292,7 +292,7 @@ public class MainJarDependenciesChecker {
 				if(!arg0.isFile()) return false;
 				// Ignore non-jars regardless of what the regex says.
 				String name = arg0.getName().toLowerCase();
-				if(!name.endsWith(".jar")) return false;
+				if(!(name.endsWith(".jar") || name.endsWith(".jar.new"))) return false;
 				// FIXME similar checks elsewhere, factor out?
 				if(name.equals("freenet.jar") || name.equals("freenet.jar.new") || name.equals("freenet-stable-latest.jar") || name.equals("freenet-stable-latest.jar.new"))
 					return false;
