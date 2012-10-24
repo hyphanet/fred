@@ -121,7 +121,7 @@ public class NodeUpdateManager {
 	private final LegacyJarFetcher transitionMainJarFetcher;
 	private final LegacyJarFetcher transitionExtJarFetcher;
 
-	private NodeUpdater mainUpdater;
+	private MainJarUpdater mainUpdater;
 
 	private Map<String, PluginJarUpdater> pluginUpdaters;
 
@@ -658,6 +658,7 @@ public class NodeUpdateManager {
 	 *             If enable=true and we are not running under the wrapper.
 	 */
 	void enable(boolean enable) throws InvalidConfigValueException {
+		// FIXME 194eb7bb6f295e52d18378d805bd315c95030b24 is doubtful and incomplete.
 		// if(!node.isUsingWrapper()){
 		// Logger.normal(this,
 		// "Don't try to start the updater as we are not running under the wrapper.");
@@ -708,7 +709,7 @@ public class NodeUpdateManager {
 		} else {
 			// FIXME copy it, dodgy locking.
 			try {
-				((MainJarUpdater)mainUpdater).cleanupDependencies();
+				mainUpdater.cleanupDependencies();
 			} catch (Throwable t) {
 				// Don't let it block startup, but be very loud!
 				Logger.error(this, "Caught "+t+" setting up Update Over Mandatory", t);
@@ -1845,7 +1846,7 @@ public class NodeUpdateManager {
 		MainJarUpdater m;
 		synchronized (this) {
 			if(this.fetchedMainJarData == null) return;
-			m = (MainJarUpdater)mainUpdater;
+			m = mainUpdater;
 			if(m == null) return;
 		}
 		m.renderProperties(alertNode);
@@ -1854,7 +1855,7 @@ public class NodeUpdateManager {
 	public boolean brokenDependencies() {
 		MainJarUpdater m;
 		synchronized (this) {
-			m = (MainJarUpdater)mainUpdater;
+			m = mainUpdater;
 			if(m == null) return false;
 		}
 		return m.brokenDependencies();
@@ -1863,7 +1864,7 @@ public class NodeUpdateManager {
 	public void onStartFetchingUOM() {
 		MainJarUpdater m;
 		synchronized (this) {
-			m = (MainJarUpdater)mainUpdater;
+			m = mainUpdater;
 			if(m == null) return;
 		}
 		m.onStartFetchingUOM();
@@ -1876,7 +1877,7 @@ public class NodeUpdateManager {
 		return currentVersionBlobFile;
 	}
 
-	NodeUpdater getMainUpdater() {
+	MainJarUpdater getMainUpdater() {
 		return mainUpdater;
 	}
 
