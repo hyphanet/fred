@@ -1772,10 +1772,18 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	 */
 	public UOMDependencyFetcher fetchDependency(byte[] expectedHash, long size, File saveTo,
 			UOMDependencyFetcherCallback cb) {
-		UOMDependencyFetcher f = new UOMDependencyFetcher(expectedHash, size, saveTo, cb);
+		final UOMDependencyFetcher f = new UOMDependencyFetcher(expectedHash, size, saveTo, cb);
 		synchronized(this) {
 			dependencyFetchers.put(f.expectedHashBuffer, f);
 		}
+		this.updateManager.node.executor.execute(new Runnable() {
+
+			@Override
+			public void run() {
+				f.start();
+			}
+			
+		});
 		f.start();
 		return f;
 	}
