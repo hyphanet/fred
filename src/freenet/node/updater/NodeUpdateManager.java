@@ -965,11 +965,15 @@ public class NodeUpdateManager {
 			// Check revocation.
 			if (waitForNextJar <= 0) {
 				if (!ignoreRevocation) {
-					if (now - revocationChecker.lastSucceeded() < RECENT_REVOCATION_INTERVAL)
+					if (now - revocationChecker.lastSucceeded() < RECENT_REVOCATION_INTERVAL) {
+						if(logMINOR) Logger.minor(this, "Ready to deploy (revocation checker succeeded recently)");
 						return true;
+					}
 					if (gotJarTime > 0
-							&& now - gotJarTime >= REVOCATION_FETCH_TIMEOUT)
+							&& now - gotJarTime >= REVOCATION_FETCH_TIMEOUT) {
+						if(logMINOR) Logger.minor(this, "Ready to deploy (got jar before timeout)");
 						return true;
+					}
 				}
 			}
 		}
