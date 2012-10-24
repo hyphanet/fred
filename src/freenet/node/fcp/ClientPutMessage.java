@@ -172,9 +172,9 @@ public class ClientPutMessage extends DataCarryingMessage {
 			priorityClass = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
 		} else {
 			try {
-				priorityClass = Short.parseShort(priorityString, 10);
-				if((priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS) || (priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS))
-					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Valid priorities are from "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" to "+RequestStarter.MINIMUM_PRIORITY_CLASS, identifier, global);
+				priorityClass = Short.parseShort(priorityString);
+				if(!RequestStarter.isValidPriorityClass(priorityClass))
+					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid priority class "+priorityClass+" - range is "+RequestStarter.MINIMUM_PRIORITY_CLASS+" to "+RequestStarter.MAXIMUM_PRIORITY_CLASS, identifier, global);
 			} catch (NumberFormatException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: "+e.getMessage(), identifier, global);
 			}
