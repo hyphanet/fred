@@ -1049,6 +1049,16 @@ public class NodeUpdateManager {
 
 			innerDeployUpdate(deps);
 			success = true;
+		} catch (Throwable t) {
+			Logger.error(this, "DEPLOYING UPDATE FAILED: "+t, t);
+			System.err.println("UPDATE FAILED: CAUGHT "+t);
+			System.err.println("YOUR NODE DID NOT UPDATE. THIS IS PROBABLY A BUG OR SERIOUS PROBLEM SUCH AS OUT OF MEMORY.");
+			System.err.println("Cause of the problem: "+t);
+			t.printStackTrace();
+			failUpdate(t.getMessage());
+			node.clientCore.alerts.register(new SimpleUserAlert(false,
+					l10n("updateCatastropheTitle"), t.getMessage(),
+					l10n("updateCatastropheTitle"), UserAlert.CRITICAL_ERROR));
 		} finally {
 			if(started && !success) {
 				Bucket toFree = null;
@@ -1491,12 +1501,7 @@ public class NodeUpdateManager {
 					maybeBroadcastUOMAnnouncesNew();
 				if (logMINOR)
 					Logger.minor(this, "Running deployOffThread");
-				try {
-					deployUpdate();
-				} catch (Throwable t) {
-					Logger.error(this, "Caught " + t
-							+ " trying to deployOffThread", t);
-				}
+				deployUpdate();
 				if (logMINOR)
 					Logger.minor(this, "Run deployOffThread");
 			}
