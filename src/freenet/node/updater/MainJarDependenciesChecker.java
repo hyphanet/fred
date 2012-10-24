@@ -789,7 +789,6 @@ outer:	for(String propName : props.stringPropertyNames()) {
 		}
 		try {
 			return HexUtil.hexToBytes(sha256);
-			// FIXME change these exceptions to something caught?
 		} catch (NumberFormatException e) {
 			Logger.error(MainJarDependencies.class, "Bogus expected hash: \""+sha256+"\" : "+e, e);
 			return null;
@@ -815,13 +814,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			SHA256.returnMessageDigest(md);
 			fis.close();
 			fis = null;
-			if(Arrays.equals(hash, expectedHash))
-				return true;
-			else {
-				System.out.println("File exists in update but bad hash: "+filename+" - deleting");
-				filename.delete();
-				return false;
-			}
+			return Arrays.equals(hash, expectedHash);
 		} catch (FileNotFoundException e) {
 			Logger.error(MainJarDependencies.class, "File not found: "+filename);
 			return false;
