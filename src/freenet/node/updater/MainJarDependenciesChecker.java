@@ -66,7 +66,8 @@ import freenet.support.io.FileUtil.OperatingSystem;
  * SHA256 hash of the file.
  * 
  * [module].filename-regex=[regular expression]
- * Matches filenames for this module. Only required for CLASSPATH.
+ * Matches filenames for this module. Only required for CLASSPATH. Note that
+ * filenames will be toLowerCase()'ed first (but the regex isn't).
  * 
  * [module].key=[CHK URI]
  * Where to fetch the file from if we don't have it.
@@ -462,7 +463,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				}
 				for(File f : list) {
 					String name = f.getName();
-					if(!p.matcher(name).matches()) continue;
+					if(!p.matcher(name.toLowerCase()).matches()) continue;
 					if(validFile(f, expectedHash, size)) {
 						// Use it.
 						System.out.println("Found "+name+" - meets requirement for "+baseName+" for next update.");
@@ -692,7 +693,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			// Now delete bogus dependencies.
 			for(File f : listMain) {
 				String name = f.getName();
-				if(!p.matcher(name).matches()) continue;
+				if(!p.matcher(name.toLowerCase()).matches()) continue;
 				// Comparing File's by equals() is dodgy, e.g. ./blah != blah. So use getName().
 				// Even on *nix some filesystems are case insensitive.
 				if(name.equalsIgnoreCase(currentFile.getName())) continue;
@@ -765,7 +766,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 		String[] split = classpath.split(File.pathSeparator);
 		for(String s : split) {
 			File f = new File(s);
-			if(p.matcher(f.getName()).matches())
+			if(p.matcher(f.getName().toLowerCase()).matches())
 				return f;
 		}
 		return null;
