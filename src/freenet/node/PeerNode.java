@@ -726,45 +726,20 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(p != null)
 					detectedPeer = p;
 				updateShortToString();
-				String tempTimeLastReceivedPacketString = metadata.get("timeLastReceivedPacket");
-				if(tempTimeLastReceivedPacketString != null) {
-					long tempTimeLastReceivedPacket = Fields.parseLong(tempTimeLastReceivedPacketString, -1);
-					timeLastReceivedPacket = tempTimeLastReceivedPacket;
-				}
-				String tempTimeLastConnectedString = metadata.get("timeLastConnected");
-				if(tempTimeLastConnectedString != null) {
-					long tempTimeLastConnected = Fields.parseLong(tempTimeLastConnectedString, -1);
-					timeLastConnected = tempTimeLastConnected;
-				}
-				String tempTimeLastRoutableString = metadata.get("timeLastRoutable");
-				if(tempTimeLastRoutableString != null) {
-					long tempTimeLastRoutable = Fields.parseLong(tempTimeLastRoutableString, -1);
-					timeLastRoutable = tempTimeLastRoutable;
-				}
+				timeLastReceivedPacket = metadata.getLong("timeLastReceivedPacket", -1);
+				timeLastConnected = metadata.getLong("timeLastConnected", -1);
+				timeLastRoutable = metadata.getLong("timeLastRoutable", -1);
 				if(timeLastConnected < 1 && timeLastReceivedPacket > 1)
 					timeLastConnected = timeLastReceivedPacket;
 				if(timeLastRoutable < 1 && timeLastReceivedPacket > 1)
 					timeLastRoutable = timeLastReceivedPacket;
-				String tempPeerAddedTimeString = metadata.get("peerAddedTime");
-				if(tempPeerAddedTimeString != null) {
-					long tempPeerAddedTime = Fields.parseLong(tempPeerAddedTimeString, 0);
-					peerAddedTime = tempPeerAddedTime;
-				} else
-					peerAddedTime = 0; // This is normal: Not only do exported refs not include it, opennet peers don't either.
+				peerAddedTime = metadata.getLong("peerAddedTime",
+						0 // missing peerAddedTime is normal: Not only do exported refs not include it, opennet peers don't either.
+						);
 				neverConnected = metadata.getBoolean("neverConnected", false);
 				maybeClearPeerAddedTimeOnRestart(now);
-				String tempHadRoutableConnectionCountString = metadata.get("hadRoutableConnectionCount");
-				if(tempHadRoutableConnectionCountString != null) {
-					long tempHadRoutableConnectionCount = Fields.parseLong(tempHadRoutableConnectionCountString, 0);
-					hadRoutableConnectionCount = tempHadRoutableConnectionCount;
-				} else
-					hadRoutableConnectionCount = 0;
-				String tempRoutableConnectionCheckCountString = metadata.get("routableConnectionCheckCount");
-				if(tempRoutableConnectionCheckCountString != null) {
-					long tempRoutableConnectionCheckCount = Fields.parseLong(tempRoutableConnectionCheckCountString, 0);
-					routableConnectionCheckCount = tempRoutableConnectionCheckCount;
-				} else
-					routableConnectionCheckCount = 0;
+				hadRoutableConnectionCount = metadata.getLong("hadRoutableConnectionCount", 0);
+				routableConnectionCheckCount = metadata.getLong("routableConnectionCheckCount", 0);
 			}
 		} else {
 			neverConnected = true;
