@@ -228,7 +228,9 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 			row.addChild("td").addChild("p", filename.toString());
 			HTMLNode cell = row.addChild("td");
 			
-			if(lastProgress == null)
+			if(uomFetcher != null)
+				cell.addChild(l10n("fetchingFromUOM"));
+			else if(lastProgress == null)
 				cell.addChild(QueueToadlet.createProgressCell(false, true, COMPRESS_STATE.WORKING, 0, 0, 0, 0, 0, false, false));
 			else
 				cell.addChild(QueueToadlet.createProgressCell(false, 
