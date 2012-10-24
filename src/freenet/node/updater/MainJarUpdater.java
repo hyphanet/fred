@@ -122,7 +122,6 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		
 		DependencyJarFetcher(File filename, FreenetURI chk, long expectedLength, byte[] expectedHash, JarFetcherCallback cb, boolean essential) throws FetchException {
 			FetchContext myCtx = new FetchContext(dependencyCtx, FetchContext.IDENTICAL_MASK, false, null);
-			// FIXME single global binary blob writer for MainJarDependenciesChecker AND MainJarUpdater.
 			File parent = filename.getParentFile();
 			if(parent == null) parent = new File(".");
 			try {
