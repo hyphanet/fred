@@ -846,6 +846,7 @@ public class NodeUpdateManager {
 			if (updateURI.equals(uri))
 				return;
 			updateURI = uri;
+			updateURI = updateURI.setSuggestedEdition(Version.buildNumber());
 			updater = mainUpdater;
 			oldPluginUpdaters = pluginUpdaters;
 			pluginUpdaters = new HashMap<String, PluginJarUpdater>();
