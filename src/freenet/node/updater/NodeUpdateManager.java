@@ -711,6 +711,7 @@ public class NodeUpdateManager {
 		} else {
 			// FIXME copy it, dodgy locking.
 			try {
+				// Must be run before starting everything else as it cleans up tempfiles too.
 				mainUpdater.cleanupDependencies();
 			} catch (Throwable t) {
 				// Don't let it block startup, but be very loud!
