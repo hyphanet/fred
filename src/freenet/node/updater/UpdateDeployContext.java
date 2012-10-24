@@ -163,7 +163,6 @@ public class UpdateDeployContext {
 					try {
 						// Ignore the numbers.
 						String rhs = line.substring(idx+1);
-						System.out.println("RHS is: "+rhs);
 						dontWrite = true;
 						if(rhs.equals("freenet.jar") || rhs.equals("freenet.jar.new") || 
 								rhs.equals("freenet-stable-latest.jar") || rhs.equals("freenet-stable-latest.jar.new") ||
