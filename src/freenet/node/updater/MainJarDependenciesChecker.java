@@ -275,6 +275,7 @@ public class MainJarDependenciesChecker {
 	enum DEPENDENCY_TYPE {
 		/** A jar we want to put on the classpath */
 		CLASSPATH,
+		/** A file to download, which does not block the update. */
 		OPTIONAL_PRELOAD;
 	}
 	
@@ -314,9 +315,11 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				type = DEPENDENCY_TYPE.valueOf(s);
 			} catch (IllegalArgumentException e) {
 				if(s.startsWith("OPTIONAL_")) {
+					// We don't understand it, but that's OK as it's optional.
 					if(logMINOR) Logger.minor(this, "Ignoring non-essential dependency type \""+s+"\" for \""+baseName+"\"");
 					continue;
 				}
+				// We don't understand it, and it's not optional, so we can't deploy the update.
 				Logger.error(this, "dependencies.properties broken? unrecognised type for \""+baseName+"\"");
 				broken = true;
 				continue;
