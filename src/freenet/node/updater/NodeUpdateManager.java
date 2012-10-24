@@ -170,9 +170,10 @@ public class NodeUpdateManager {
 
 	/** The version we have fetched and will deploy. */
 	private int fetchedMainJarVersion;
-	/** The version we have fetched and will deploy. */
+	/** The jar of the version we have fetched and will deploy. */
 	private Bucket fetchedMainJarData;
 	
+	/** The blob file for the current version, for UOM */
 	private File currentVersionBlobFile;
 
 	/**
