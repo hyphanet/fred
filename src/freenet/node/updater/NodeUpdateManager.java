@@ -1056,9 +1056,9 @@ public class NodeUpdateManager {
 			System.err.println("Cause of the problem: "+t);
 			t.printStackTrace();
 			failUpdate(t.getMessage());
+			String error = l10n("updateFailedInternalError", "reason", t.getMessage());
 			node.clientCore.alerts.register(new SimpleUserAlert(false,
-					l10n("updateCatastropheTitle"), t.getMessage(),
-					l10n("updateCatastropheTitle"), UserAlert.CRITICAL_ERROR));
+					error, error, error, UserAlert.CRITICAL_ERROR));
 		} finally {
 			if(started && !success) {
 				Bucket toFree = null;
