@@ -18,6 +18,7 @@ maintainers may prefer to use this instead of build.xml.
 	<!-- user overrides (properties are immutable, so set overrides first) -->
 	<property file="override.properties"/>
 	<property file="build.properties"/>
+	<property file="dependencies.properties"/>
 
 	<property name="version.src" value="freenet/node/Version.java" />
 	<property name="version.make" value="freenet/node/Version.class" />
@@ -32,9 +33,6 @@ maintainers may prefer to use this instead of build.xml.
 		<pathelement path="${main.make}"/>
 		<pathelement path="${test.make}"/>
 	</path>
-
-	<property name="contrib.version.min" value="-1"/>
-	<property name="contrib.version.rec" value="-1"/>
 
 	<property name="gjs.dst" value="${main.src}/freenet/clients/http/staticfiles/freenetjs"/>
 	<property name="gjs.dir" value="generator/js"/>
@@ -102,6 +100,7 @@ maintainers may prefer to use this instead of build.xml.
 
 	<target name="env">
 		<available property="lib.contrib.present" classname="freenet.node.ExtVersion" classpathref="lib.path"/>
+		<available property="lib.bouncycastle.present" classname="org.bouncycastle.jce.provider.BouncyCastleProvider" classpathref="lib.path"/>
 		<available property="lib.junit.present" classname="junit.framework.Test" classpathref="libtest.path"/>
 		<available property="gjs.lib.gwt-user.present" classname="com.google.gwt.user.client.Window" classpathref="gjs.lib.path"/>
 		<available property="gjs.lib.gwt-dev.present" classname="com.google.gwt.dev.About" classpathref="gjs.lib.path"/>
@@ -115,6 +114,10 @@ maintainers may prefer to use this instead of build.xml.
 
 	<target name="libdep-ext" depends="env" unless="lib.contrib.present">
 		<fail message="freenet-ext not available"/>
+	</target>
+
+	<target name="libdep-bc" depends="env" unless="lib.bouncycastle.present">
+		<fail message="Please download the Bouncycastle crypto library from www.bouncycastle.org and put it in lib/bcprov.jar"/>
 	</target>
 
 	<target name="libdep-junit" depends="env" unless="lib.junit.present">
@@ -140,7 +143,7 @@ maintainers may prefer to use this instead of build.xml.
 		<mkdir dir="${test.dst}"/>
 	</target>
 
-	<target name="dep" depends="ensure-ext, ensure-gjs"/>
+	<target name="dep" depends="ensure-ext, ensure-bc, ensure-gjs"/>
 
 	<target name="check-version-file">
 		<uptodate property="version.uptodate"
@@ -191,6 +194,8 @@ maintainers may prefer to use this instead of build.xml.
 				<include name="iso-*.tab"/>
 			</fileset>
 		</copy>
+		<!-- Copy the dependencies.properties file -->
+		<copy todir="${main.make}" file="dependencies.properties"/>
 	</target>
 
 	<target name="package-only" depends="build">
@@ -203,15 +208,15 @@ maintainers may prefer to use this instead of build.xml.
 		<jar jarfile="${main.dst}/freenet.jar" basedir="${main.make}">
 			<manifest>
 				<attribute name="Main-Class" value="freenet.node.Node"/>
-				<attribute name="Required-Ext-Version" value="${contrib.version.min}"/>
-				<attribute name="Recommended-Ext-Version" value="${contrib.version.rec}"/>
+				<attribute name="Required-Ext-Version" value="29"/>
+				<attribute name="Recommended-Ext-Version" value="29"/>
 				<attribute name="Class-Path" value="${lib.jars.package}" />
 				<section name="common">
 					<attribute name="Specification-Title" value="Freenet"/>
 					<attribute name="Specification-Version" value="0.7.5"/>
 					<attribute name="Specification-Vendor" value="freenetproject.org"/>
 					<attribute name="Implementation-Title" value="Freenet"/>
-					<attribute name="Implementation-Version" value="0.7.5 ${TODAY} ${git.revision}"/>
+					<attribute name="Implementation-Version" value="0.7.5 ${git.revision}"/>
 					<attribute name="Implementation-Vendor" value="freenetproject.org"/>
 				</section>
 			</manifest>
@@ -265,6 +270,10 @@ maintainers may prefer to use this instead of build.xml.
 	<!-- =================================================================== -->
 
 	<target name="ensure-ext" depends="libdep-ext">
+		<!-- clean build does nothing, since this is external library. -->
+	</target>
+
+	<target name="ensure-bc" depends="libdep-bc">
 		<!-- clean build does nothing, since this is external library. -->
 	</target>
 

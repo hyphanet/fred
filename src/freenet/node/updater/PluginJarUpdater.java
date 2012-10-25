@@ -1,5 +1,7 @@
 package freenet.node.updater;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 import freenet.client.FetchResult;
@@ -14,6 +16,8 @@ import freenet.pluginmanager.PluginInfoWrapper;
 import freenet.pluginmanager.PluginManager;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
+import freenet.support.api.Bucket;
+import freenet.support.io.BucketTools;
 
 public class PluginJarUpdater extends NodeUpdater {
 
@@ -23,6 +27,10 @@ public class PluginJarUpdater extends NodeUpdater {
 	private boolean deployOnNoRevocation;
 	private boolean deployOnNextNoRevocation;
 	private boolean readyToDeploy;
+	private FetchResult result;
+	
+	private final Object writeJarSync = new Object();
+	private int writtenVersion;
 
 	/**
 	 * @return True if the caller should restart the revocation checker.
@@ -84,7 +92,7 @@ public class PluginJarUpdater extends NodeUpdater {
 	private static final String REQUIRED_NODE_VERSION_PREFIX = "Required-Node-Version: ";
 	
 	@Override
-	protected void maybeParseManifest(FetchResult result) {
+	protected void maybeParseManifest(FetchResult result, int build) {
 		requiredNodeVersion = -1;
 		parseManifest(result);
 		if(requiredNodeVersion != -1) {
@@ -106,7 +114,8 @@ public class PluginJarUpdater extends NodeUpdater {
 	}
 
 	@Override
-	protected void processSuccess() {
+	protected void processSuccess(int build, FetchResult result, File blob) {
+		Bucket oldResult = null;
 		synchronized(this) {
 			if(requiredNodeVersion > Version.buildNumber()) {
 				System.err.println("Found version "+fetchedVersion+" of "+pluginName+" but needs node version "+requiredNodeVersion);
@@ -114,7 +123,11 @@ public class PluginJarUpdater extends NodeUpdater {
 				tempBlobFile.delete();
 				return;
 			}
+			if(this.result != null)
+				oldResult = this.result.asBucket();
+			this.result = result;
 		}
+		if(oldResult != null) oldResult.free();
 		
 		PluginInfoWrapper loaded = pluginManager.getPluginInfo(pluginName);
 		
@@ -186,9 +199,33 @@ public class PluginJarUpdater extends NodeUpdater {
 	private String l10n(String key, String[] names, String[] values) {
 		return NodeL10n.getBase().getString("PluginJarUpdater."+key, names, values);
 	}
+	
+	public void writeJarTo(FetchResult result, File fNew) throws IOException {
+		int fetched;
+		synchronized(this) {
+			fetched = fetchedVersion;
+		}
+		synchronized(writeJarSync) {
+			if (!fNew.delete() && fNew.exists()) {
+				System.err.println("Can't delete " + fNew + "!");
+			}
+
+			FileOutputStream fos;
+			fos = new FileOutputStream(fNew);
+
+			BucketTools.copyTo(result.asBucket(), fos, -1);
+
+			fos.flush();
+			fos.close();
+		}
+		synchronized(this) {
+			writtenVersion = fetched;
+		}
+		System.err.println("Written " + jarName() + " to " + fNew);
+	}
 
 	void writeJar() throws IOException {
-		writeJarTo(pluginManager.getPluginFilename(pluginName));
+		writeJarTo(result, pluginManager.getPluginFilename(pluginName));
 		UserAlert a;
 		synchronized(this) {
 			a = alert;

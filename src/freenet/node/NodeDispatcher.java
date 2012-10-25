@@ -163,21 +163,28 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			node.receivedNodeToNodeMessage(m, source);
 			return true;
 		} else if(spec == DMT.UOMAnnounce && source.isRealConnection()) {
+			// Treat as a UOMAnnouncement, as it's a strict subset, and new UOM handles revocations.
+			return node.nodeUpdater.uom.handleAnnounce(m, source);
+		} else if(spec == DMT.UOMAnnouncement && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleAnnounce(m, source);
 		} else if(spec == DMT.UOMRequestRevocation && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleRequestRevocation(m, source);
 		} else if(spec == DMT.UOMSendingRevocation && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleSendingRevocation(m, source);
 		} else if(spec == DMT.UOMRequestMain && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
-			node.nodeUpdater.uom.handleRequestJar(m, source, false);
+			node.nodeUpdater.legacyUOM.handleRequestJar(m, source, false);
+			return true;
+		} else if(spec == DMT.UOMRequestMainJar && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
+			node.nodeUpdater.uom.handleRequestJar(m, source);
 			return true;
 		} else if(spec == DMT.UOMRequestExtra && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
-			node.nodeUpdater.uom.handleRequestJar(m, source, true);
+			node.nodeUpdater.legacyUOM.handleRequestJar(m, source, true);
 			return true;
-		} else if(spec == DMT.UOMSendingMain && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
+		} else if(spec == DMT.UOMSendingMainJar && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleSendingMain(m, source);
-		} else if(spec == DMT.UOMSendingExtra && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
-			return node.nodeUpdater.uom.handleSendingExt(m, source);
+		} else if(spec == DMT.UOMFetchDependency && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
+			node.nodeUpdater.uom.handleFetchDependency(m, source);
+			return true;
 		} else if(spec == DMT.FNPOpennetAnnounceRequest) {
 			return handleAnnounceRequest(m, source);
 		} else if(spec == DMT.FNPRoutingStatus) {

@@ -699,8 +699,10 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 			fs.setEndMarker("End"); // It's always End ; the regex above doesn't always grok this
 		} catch (IOException e) {
+            Logger.error(this, "IOException adding reference :" + e.getMessage(), e);
 			return PeerAdditionReturnCodes.CANT_PARSE;
 		} catch (Throwable t) {
+		    Logger.error(this, "Internal error adding reference :" + t.getMessage(), t);
 			return PeerAdditionReturnCodes.INTERNAL_ERROR;
 		}
 		PeerNode pn;
@@ -718,6 +720,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		} catch (ReferenceSignatureVerificationException e1){
 			return PeerAdditionReturnCodes.INVALID_SIGNATURE;
 		} catch (Throwable t) {
+            Logger.error(this, "Internal error adding reference :" + t.getMessage(), t);
 			return PeerAdditionReturnCodes.INTERNAL_ERROR;
 		}
 		if(Arrays.equals(pn.getIdentity(), node.getDarknetIdentity())) {

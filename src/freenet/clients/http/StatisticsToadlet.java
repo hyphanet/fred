@@ -580,13 +580,8 @@ public class StatisticsToadlet extends Toadlet {
 		HTMLNode versionInfoboxList = versionInfoboxContent.addChild("ul");
 		versionInfoboxList.addChild("li", NodeL10n.getBase().getString("WelcomeToadlet.version", new String[] { "fullVersion", "build", "rev" },
 				new String[] { Version.publicVersion(), Integer.toString(Version.buildNumber()), Version.cvsRevision() }));
-		if(NodeStarter.extBuildNumber < NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER)
-			versionInfoboxList.addChild("li", NodeL10n.getBase().getString("WelcomeToadlet.extVersionWithRecommended", 
-					new String[] { "build", "recbuild", "rev" }, 
-					new String[] { Integer.toString(NodeStarter.extBuildNumber), Integer.toString(NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER), NodeStarter.extRevisionNumber }));
-		else
-			versionInfoboxList.addChild("li", NodeL10n.getBase().getString("WelcomeToadlet.extVersion", new String[] { "build", "rev" },
-					new String[] { Integer.toString(NodeStarter.extBuildNumber), NodeStarter.extRevisionNumber }));
+		versionInfoboxList.addChild("li", NodeL10n.getBase().getString("WelcomeToadlet.extVersion", new String[] { "build", "rev" },
+				new String[] { Integer.toString(NodeStarter.extBuildNumber), NodeStarter.extRevisionNumber }));
 		
 	}
 

@@ -493,10 +493,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		/* Read the DSA key material for the peer */
 		try {
 			SimpleFieldSet sfs = fs.subset("dsaGroup");
-			if(sfs == null)
-				throw new FSParseException("No dsaGroup - very old reference?");
-			else
-				this.peerCryptoGroup = DSAGroup.create(sfs);
+			if(sfs == null) {
+			    this.peerCryptoGroup = Global.DSAgroupBigA;
+				fs.put("dsaGroup", this.peerCryptoGroup.asFieldSet());
+			} else
+			    this.peerCryptoGroup = DSAGroup.create(sfs);
 
 			sfs = fs.subset("dsaPubKey");
 			if(sfs == null || peerCryptoGroup == null)
@@ -2683,9 +2684,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		
 		SimpleFieldSet sfs = fs.subset("dsaGroup");
-		if(sfs == null && forFullNodeRef)
-			throw new FSParseException("No dsaGroup - very old reference?");
-		else if(sfs != null) {
+		if(sfs != null) {
 			DSAGroup cmp;
 			try {
 				cmp = DSAGroup.create(sfs);
@@ -2697,9 +2696,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 
 		sfs = fs.subset("dsaPubKey");
-		if(sfs == null && forFullNodeRef)
-			throw new FSParseException("No dsaPubKey - very old reference?");
-		else if(sfs != null) {
+		if(sfs != null) {
 			DSAPublicKey key;
 			key = DSAPublicKey.create(sfs, peerCryptoGroup);
 			if(!key.equals(this.peerPubKey))
@@ -3789,8 +3786,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 */
 	protected void onConnect() {
 		synchronized(this) {
+			uomCount = 0;
+			lastSentUOM = -1;
 			sendingUOMMainJar = false;
-			sendingUOMExtJar = false;
+			sendingUOMLegacyExtJar = false;
 		}
 		OpennetManager om = node.getOpennet();
 		if(om != null)
@@ -4666,16 +4665,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	public long getMainJarOfferedVersion() {
 		return offeredMainJarVersion;
-	}
-
-	private volatile long offeredExtJarVersion;
-
-	public void setExtJarOfferedVersion(long extJarVersion) {
-		offeredExtJarVersion = extJarVersion;
-	}
-
-	public long getExtJarOfferedVersion() {
-		return offeredExtJarVersion;
 	}
 
 	/**
@@ -6005,14 +5994,27 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		else
 			return stats.maxPeerPingTime();
 	}
-
-	protected boolean sendingUOMMainJar;
-	protected boolean sendingUOMExtJar;
 	
+	/** Whether we are sending the main jar to this peer */
+	protected boolean sendingUOMMainJar;
+	/** Whether we are sending the ext jar (legacy) to this peer */
+	protected boolean sendingUOMLegacyExtJar;
+	/** The number of UOM transfers in progress to this peer.
+	 * Note that there are mechanisms in UOM to limit this. */
+	private int uomCount;
+	/** The time when we last had UOM transfers in progress to this peer,
+	 * if uomCount == 0. */
+	private long lastSentUOM;
+	// FIXME consider limiting the individual dependencies. 
+	// Not clear whether that would actually improve protection against DoS, given that transfer failures happen naturally anyway.
+	
+	/** Start sending a UOM jar to this peer.
+	 * @return True unless it was already sending, in which case the caller
+	 * should reject it. */
 	public synchronized boolean sendingUOMJar(boolean isExt) {
 		if(isExt) {
-			if(sendingUOMExtJar) return false;
-			sendingUOMExtJar = true;
+			if(sendingUOMLegacyExtJar) return false;
+			sendingUOMLegacyExtJar = true;
 		} else {
 			if(sendingUOMMainJar) return false;
 			sendingUOMMainJar = true;
@@ -6021,10 +6023,32 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 	
 	public synchronized void finishedSendingUOMJar(boolean isExt) {
-		if(isExt)
-			sendingUOMExtJar = false;
-		else
+		if(isExt) {
+			sendingUOMLegacyExtJar = false;
+			if(!(sendingUOMMainJar || uomCount > 0))
+				lastSentUOM = System.currentTimeMillis();
+		} else {
 			sendingUOMMainJar = false;
+			if(!(sendingUOMLegacyExtJar || uomCount > 0))
+				lastSentUOM = System.currentTimeMillis();
+		}
+	}
+	
+	protected synchronized long timeSinceSentUOM() {
+		if(sendingUOMMainJar || sendingUOMLegacyExtJar) return 0;
+		if(uomCount > 0) return 0;
+		if(lastSentUOM <= 0) return Long.MAX_VALUE;
+		return System.currentTimeMillis() - lastSentUOM;
+	}
+	
+	public synchronized void incrementUOMSends() {
+		uomCount++;
+	}
+	
+	public synchronized void decrementUOMSends() {
+		uomCount--;
+		if(uomCount == 0 && (!sendingUOMMainJar) && (!sendingUOMLegacyExtJar))
+			lastSentUOM = System.currentTimeMillis();
 	}
 
 	/** Get the boot ID for purposes of the other node. This is set to a random number on
