@@ -1050,8 +1050,7 @@ public class NodeUpdateManager {
 				deps = latestMainJarDependencies;
 			}
 
-			innerDeployUpdate(deps);
-			success = true;
+			success = innerDeployUpdate(deps);
 			// isDeployingUpdate remains true as we are about to restart.
 		} catch (Throwable t) {
 			Logger.error(this, "DEPLOYING UPDATE FAILED: "+t, t);
