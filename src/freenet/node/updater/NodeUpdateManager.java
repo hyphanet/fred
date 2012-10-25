@@ -1052,6 +1052,7 @@ public class NodeUpdateManager {
 
 			innerDeployUpdate(deps);
 			success = true;
+			// isDeployingUpdate remains true as we are about to restart.
 		} catch (Throwable t) {
 			Logger.error(this, "DEPLOYING UPDATE FAILED: "+t, t);
 			System.err.println("UPDATE FAILED: CAUGHT "+t);
@@ -1085,7 +1086,7 @@ public class NodeUpdateManager {
 	/**
 	 * Deploy the update. Inner method. Doesn't check anything, just does it.
 	 */
-	private void innerDeployUpdate(MainJarDependencies deps) {
+	private boolean innerDeployUpdate(MainJarDependencies deps) {
 		System.err.println("Deploying update "+deps.build+" with "+deps.dependencies.size()+" dependencies...");
 		// Write the jars, config etc.
 		// Then restart
@@ -1096,14 +1097,16 @@ public class NodeUpdateManager {
 		} catch (UpdaterParserException e) {
 			failUpdate("Could not determine which jars are in use: "
 					+ e.getMessage());
-			return;
+			return false;
 		}
 
-		if (writeJars(ctx, deps))
+		if (writeJars(ctx, deps)) {
 			restart(ctx);
-		else {
+			return true;
+		} else {
 			if (logMINOR)
 				Logger.minor(this, "Did not write jars");
+			return false;
 		}
 	}
 
