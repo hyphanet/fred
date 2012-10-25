@@ -131,7 +131,10 @@ public class NodeUpdateManager {
 	private volatile boolean isAutoUpdateAllowed;
 	/** Has the user given the go-ahead? */
 	private volatile boolean armed;
-	/** Currently deploying an update? */
+	/** Currently deploying an update? Set when we start to deploy an update.
+	 * Which means it should not be un-set, except in the case of a severe
+	 * error causing a valid update to fail. However, it is un-set in this
+	 * case, so that we can try again with another build. */
 	private boolean isDeployingUpdate;
 	private final Object broadcastUOMAnnouncesSync = new Object();
 	private boolean broadcastUOMAnnouncesOld = false;
