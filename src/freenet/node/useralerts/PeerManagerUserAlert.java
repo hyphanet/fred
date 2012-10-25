@@ -242,6 +242,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 	private boolean calculateIsOutdated() {
 		// Do not show the message if updater is enabled.
 		if(nodeUpdater.isEnabled()) return false;
+		if(nodeUpdater.isBlown()) return false;
 		synchronized(this) {
 			if(tooNewPeersDarknet >= PeerManager.OUTDATED_MIN_TOO_NEW_DARKNET)
 				return true;
