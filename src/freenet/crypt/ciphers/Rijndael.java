@@ -2,12 +2,14 @@ package freenet.crypt.ciphers;
 
 import java.security.InvalidKeyException;
 import java.security.GeneralSecurityException;
+import java.security.Provider;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import freenet.crypt.BlockCipher;
+import freenet.crypt.JceLoader;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.support.Logger;
 
@@ -25,16 +27,17 @@ public class Rijndael implements BlockCipher {
 	private Object sessionKey;
 	private final int keysize, blocksize;
 
-	public static final boolean isJCACrippled = isJCACrippled();
-	private static String provider;
+	public static final Provider AesCtrProvider = getAesCtrProvider();
 	
 	public static String getProviderName() {
-		return provider;
+		return AesCtrProvider != null ? AesCtrProvider.getName() : null;
 	}
 	
-	/** @return True if JCA is crippled (restricted to 128-bit) so we need 
+	/** @return null if JCA is crippled (restricted to 128-bit) so we need 
 	 * to use this class. */
-	private static boolean isJCACrippled() {
+	private static Provider getAesCtrProvider() {
+		// Ensure all providers loaded.
+		JceLoader.BouncyCastle.toString();
 		try {
 			byte[] key = new byte[32]; // Test for whether 256-bit works.
 			byte[] iv = new byte[16];
@@ -42,13 +45,17 @@ public class Rijndael implements BlockCipher {
 			SecretKeySpec k = new SecretKeySpec(key, "AES");
 			Cipher c = Cipher.getInstance("AES/CTR/NOPADDING");
 			c.init(Cipher.ENCRYPT_MODE, k, new IvParameterSpec(iv));
+			// ^^^ resolve provider
+			Provider provider = c.getProvider();
+			c = Cipher.getInstance("AES/CTR/NOPADDING", provider);
+			c.init(Cipher.ENCRYPT_MODE, k, new IvParameterSpec(iv));
 			c.doFinal(plaintext);
-			provider = c.getProvider().getName();
 			Logger.normal(Rijndael.class, "Using JCA: provider "+provider);
-			return false;
+			System.out.println("Using JCA cipher provider: "+provider);
+			return provider;
 		} catch (GeneralSecurityException e) {
 			Logger.warning(Rijndael.class, "Not using JCA as it is crippled (can't use 256-bit keys). Will use built-in encryption. ", e);
-			return true;
+			return null;
 		}
 	}
 	

@@ -452,8 +452,8 @@ public class Yarrow extends RandomSource {
 	private Map<EntropySource, int[]> entropySeen;
 
 	private void accumulator_init(String digest) throws NoSuchAlgorithmException {
-		fast_pool = MessageDigest.getInstance(digest);
-		slow_pool = MessageDigest.getInstance(digest);
+		fast_pool = MessageDigest.getInstance(digest, Util.mdProviders.get(digest));
+		slow_pool = MessageDigest.getInstance(digest, Util.mdProviders.get(digest));
 		entropySeen = new HashMap<EntropySource, int[]>();
 	}
 
@@ -634,7 +634,7 @@ public class Yarrow extends RandomSource {
 	private MessageDigest reseed_ctx;
 
 	private void reseed_init(String digest) throws NoSuchAlgorithmException {
-		reseed_ctx = MessageDigest.getInstance(digest);
+		reseed_ctx = MessageDigest.getInstance(digest, Util.mdProviders.get(digest));
 	}
 
 	private void fast_pool_reseed() {

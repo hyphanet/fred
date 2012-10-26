@@ -13,6 +13,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.util.Arrays;
+import java.util.HashMap;
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.support.HexUtil;
@@ -138,9 +139,18 @@ public class Util {
 	private static final MessageDigest ctx;
 	private static final int ctx_length;
 
+	public static final HashMap<String, Provider> mdProviders;
 	static {
 		try {
-			ctx = MessageDigest.getInstance("SHA1");
+			mdProviders = new HashMap<String, Provider>();
+
+			for (String algo: new String[] {
+				"SHA1", "MD5", "SHA-256", "SHA-384", "SHA-512"
+			}) {
+				mdProviders.put(algo, MessageDigest.getInstance(algo).getProvider());
+			}
+
+			ctx = MessageDigest.getInstance("SHA1", mdProviders.get("SHA1"));
 			ctx_length = ctx.getDigestLength();
 		} catch(NoSuchAlgorithmException e) {
 			// impossible

@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
 import java.util.ArrayList;
 
 import org.tanukisoftware.wrapper.WrapperManager;
@@ -92,6 +93,8 @@ public class SHA256 {
 		}
 	}
 
+	private static final Provider mdProvider = Util.mdProviders.get("SHA-256");
+
 	/**
 	 * Create a new SHA-256 MessageDigest
 	 * Either succeed or stop the node.
@@ -105,7 +108,7 @@ public class SHA256 {
 				else md = digests.remove(x-1);
 			}
 			if(md == null)
-				md = MessageDigest.getInstance("SHA-256");
+				md = MessageDigest.getInstance("SHA-256", mdProvider);
 			return md;
 		} catch(NoSuchAlgorithmException e2) {
 			//TODO: maybe we should point to a HOWTO for freejvms

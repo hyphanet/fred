@@ -3792,7 +3792,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// Which presumably are exploitable.
 		// So we can't recommend people switch just yet. :(
 		
-//		if(isOracle && Rijndael.isJCACrippled) {
+//		if(isOracle && Rijndael.AesCtrProvider == null) {
 //			if(!(FileUtil.detectedOS == FileUtil.OperatingSystem.Windows || FileUtil.detectedOS == FileUtil.OperatingSystem.MacOS))
 //				clientCore.alerts.register(new SimpleUserAlert(true, l10n("usingOracleTitle"), l10n("usingOracle"), l10n("usingOracleTitle"), UserAlert.WARNING));
 //		}

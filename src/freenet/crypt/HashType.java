@@ -9,6 +9,7 @@ import java.security.NoSuchAlgorithmException;
 import org.bitpedia.util.TigerTree;
 
 public enum HashType {
+	// warning: keep in sync with Util.mdProviders!
 	SHA1(1, 20),
 	MD5(2, 16),
 	SHA256(4, "SHA-256", 32),
@@ -46,7 +47,7 @@ public enum HashType {
 			// User the pool
 			return freenet.crypt.SHA256.getMessageDigest();
 		} else {
-			return MessageDigest.getInstance(javaName);
+			return MessageDigest.getInstance(javaName, Util.mdProviders.get(javaName));
 		}
 	}
 

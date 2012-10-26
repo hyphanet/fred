@@ -6,6 +6,7 @@ package freenet.keys;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
+import java.security.Provider;
 import java.util.Arrays;
 
 import javax.crypto.Cipher;
@@ -111,7 +112,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
     		return decodeOld(bf, maxLength, dontCompress);
     	else if(key.cryptoAlgorithm == Key.ALGO_AES_CTR_256_SHA256)
 		{
-				if(Rijndael.isJCACrippled || forceNoJCA)
+				if(Rijndael.AesCtrProvider == null || forceNoJCA)
 					return decodeNewNoJCA(bf, maxLength, dontCompress);
 				else
 					return decodeNew(bf, maxLength, dontCompress);
@@ -174,6 +175,19 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         		Math.min(maxLength, MAX_LENGTH_BEFORE_COMPRESSION), key.compressionAlgorithm, false);
     }
     
+	private static final Provider hmacProvider;
+	static {
+		try {
+			Mac hmac = Mac.getInstance("HmacSHA256");
+			hmac.init(new SecretKeySpec(new byte[Node.SYMMETRIC_KEY_LENGTH], "HmacSHA256"));
+			// ^^^ resolve provider
+			hmacProvider = hmac.getProvider();
+		} catch(GeneralSecurityException e) {
+			// impossible 
+			throw new Error(e);
+		}
+	}
+
     /**
      * Decode the CHK and recover the original data
      * @return the original data
@@ -188,7 +202,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         if(cryptoKey.length < Node.SYMMETRIC_KEY_LENGTH)
             throw new CHKDecodeException("Crypto key too short");
 		try {
-        Cipher cipher = Cipher.getInstance("AES/CTR/NOPADDING");
+        Cipher cipher = Cipher.getInstance("AES/CTR/NOPADDING", Rijndael.AesCtrProvider);
         cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(cryptoKey, "AES"), new IvParameterSpec(hash, 0, 16));
         byte[] plaintext = cipher.update(data);
         byte[] lengthBytes = cipher.doFinal(headers, hash.length+2, 2);
@@ -197,7 +211,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
             throw new CHKDecodeException("Invalid size: "+size);
         }
         // Check the hash.
-        Mac hmac = Mac.getInstance("HmacSHA256");
+        Mac hmac = Mac.getInstance("HmacSHA256", hmacProvider);
         hmac.init(new SecretKeySpec(cryptoKey, "HmacSHA256"));
         hmac.update(plaintext);
         hmac.update(lengthBytes);
@@ -247,7 +261,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         }
 		try {
         // Check the hash.
-        Mac hmac = Mac.getInstance("HmacSHA256");
+        Mac hmac = Mac.getInstance("HmacSHA256", hmacProvider);
         hmac.init(new SecretKeySpec(cryptoKey, "HmacSHA256"));
         hmac.update(plaintext);
         hmac.update(lengthBytes);
@@ -280,7 +294,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         		return innerEncode(data, CHKBlock.DATA_LENGTH, md256, cryptoKey, false, (short)-1, cryptoAlgorithm);
         	else if(cryptoAlgorithm != Key.ALGO_AES_CTR_256_SHA256)
         		throw new IllegalArgumentException("Unknown crypto algorithm: "+cryptoAlgorithm);
-        	if(Rijndael.isJCACrippled) {
+        	if(Rijndael.AesCtrProvider == null) {
         		return encodeNewNoJCA(data, CHKBlock.DATA_LENGTH, md256, cryptoKey, false, (short)-1, cryptoAlgorithm, KeyBlock.HASH_SHA256);
         	} else {
         		return encodeNew(data, CHKBlock.DATA_LENGTH, md256, cryptoKey, false, (short)-1, cryptoAlgorithm, KeyBlock.HASH_SHA256);
@@ -352,7 +366,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         if(cryptoAlgorithm == Key.ALGO_AES_PCFB_256_SHA256)
         	return innerEncode(data, dataLength, md256, encKey, asMetadata, compressionAlgorithm, cryptoAlgorithm);
 		else {
-				if(Rijndael.isJCACrippled || forceNoJCA)
+				if(Rijndael.AesCtrProvider == null || forceNoJCA)
 					return encodeNewNoJCA(data, dataLength, md256, encKey, asMetadata, compressionAlgorithm, cryptoAlgorithm, KeyBlock.HASH_SHA256);
 				else
 					return encodeNew(data, dataLength, md256, encKey, asMetadata, compressionAlgorithm, cryptoAlgorithm, KeyBlock.HASH_SHA256);
@@ -386,7 +400,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         // It's okay that this is the same for 2 blocks with the same key and the same content.
         // In fact that's the point; this is still a Content Hash Key.
         // FIXME And yes we should check on insert for multiple identical keys.
-        Mac hmac = Mac.getInstance("HmacSHA256");
+        Mac hmac = Mac.getInstance("HmacSHA256", hmacProvider);
         hmac.init(new SecretKeySpec(encKey, "HmacSHA256"));
         byte[] tmpLen = new byte[] { 
             	(byte)(dataLength >> 8), (byte)(dataLength & 0xff)
@@ -404,7 +418,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         SecretKey ckey = new SecretKeySpec(encKey, "AES");
         // CTR mode IV is only 16 bytes.
         // That's still plenty though. It will still be unique.
-        Cipher cipher = Cipher.getInstance("AES/CTR/NOPADDING");
+        Cipher cipher = Cipher.getInstance("AES/CTR/NOPADDING", Rijndael.AesCtrProvider);
         cipher.init(Cipher.ENCRYPT_MODE, ckey, new IvParameterSpec(hash, 0, 16));
         byte[] cdata = cipher.update(data);
         assert(cdata.length == data.length); // Multiple of block size so shouldn't be buffered.
@@ -453,7 +467,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         // It's okay that this is the same for 2 blocks with the same key and the same content.
         // In fact that's the point; this is still a Content Hash Key.
         // FIXME And yes we should check on insert for multiple identical keys.
-        Mac hmac = Mac.getInstance("HmacSHA256");
+        Mac hmac = Mac.getInstance("HmacSHA256", hmacProvider);
         hmac.init(new SecretKeySpec(encKey, "HmacSHA256"));
         byte[] tmpLen = new byte[] { 
             	(byte)(dataLength >> 8), (byte)(dataLength & 0xff)

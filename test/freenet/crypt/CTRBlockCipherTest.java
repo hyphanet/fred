@@ -22,7 +22,7 @@ import freenet.support.math.MersenneTwister;
 public class CTRBlockCipherTest extends TestCase {
 
 	/** Whether to assume JCA is available, and non-crippled. */
-	public static final boolean TEST_JCA = !Rijndael.isJCACrippled;
+	public static final boolean TEST_JCA = Rijndael.AesCtrProvider != null;
 	
 	static {
 		if(!TEST_JCA)
@@ -176,7 +176,7 @@ public class CTRBlockCipherTest extends TestCase {
 		// First test it with JCA.
 		if (TEST_JCA) {
 			SecretKeySpec k = new SecretKeySpec(key, "AES");
-			Cipher c = Cipher.getInstance("AES/CTR/NOPADDING");
+			Cipher c = Cipher.getInstance("AES/CTR/NOPADDING", Rijndael.AesCtrProvider);
 			c.init(Cipher.ENCRYPT_MODE, k, new IvParameterSpec(iv));
 			byte[] output = c.doFinal(plaintext);
 			assertTrue(Arrays.equals(output, ciphertext));
@@ -202,7 +202,7 @@ public class CTRBlockCipherTest extends TestCase {
 			long seed = mt.nextLong();
 			if (TEST_JCA) {
 				SecretKeySpec k = new SecretKeySpec(key, "AES");
-				Cipher c = Cipher.getInstance("AES/CTR/NOPADDING");
+				Cipher c = Cipher.getInstance("AES/CTR/NOPADDING", Rijndael.AesCtrProvider);
 				c.init(Cipher.ENCRYPT_MODE, k, new IvParameterSpec(iv));
 				MersenneTwister random = new MersenneTwister(seed);
 				byte[] output = new byte[plaintext.length];
@@ -250,10 +250,10 @@ public class CTRBlockCipherTest extends TestCase {
 			mt.nextBytes(key);
 			mt.nextBytes(iv);
 			SecretKeySpec k = new SecretKeySpec(key, "AES");
-			Cipher c = Cipher.getInstance("AES/CTR/NOPADDING");
+			Cipher c = Cipher.getInstance("AES/CTR/NOPADDING", Rijndael.AesCtrProvider);
 			c.init(Cipher.ENCRYPT_MODE, k, new IvParameterSpec(iv));
 			byte[] output = c.doFinal(plaintext);
-			c = Cipher.getInstance("AES/CTR/NOPADDING");
+			c = Cipher.getInstance("AES/CTR/NOPADDING", Rijndael.AesCtrProvider);
 			c.init(Cipher.DECRYPT_MODE, k, new IvParameterSpec(iv));
 			byte[] decrypted = c.doFinal(output);
 			assertTrue(Arrays.equals(decrypted, plaintext));
@@ -283,11 +283,11 @@ public class CTRBlockCipherTest extends TestCase {
 			assertTrue(Arrays.equals(finalPlaintext, plaintext));
 			if(TEST_JCA) {
 				SecretKeySpec k = new SecretKeySpec(key, "AES");
-				Cipher c = Cipher.getInstance("AES/CTR/NOPADDING");
+				Cipher c = Cipher.getInstance("AES/CTR/NOPADDING", Rijndael.AesCtrProvider);
 				c.init(Cipher.ENCRYPT_MODE, k, new IvParameterSpec(iv));
 				byte[] output = c.doFinal(plaintext);
 				assertTrue(Arrays.equals(output, ciphertext));
-				c = Cipher.getInstance("AES/CTR/NOPADDING");
+				c = Cipher.getInstance("AES/CTR/NOPADDING", Rijndael.AesCtrProvider);
 				c.init(Cipher.DECRYPT_MODE, k, new IvParameterSpec(iv));
 				byte[] decrypted = c.doFinal(output);
 				assertTrue(Arrays.equals(decrypted, plaintext));
