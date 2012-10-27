@@ -1424,19 +1424,121 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray,
 				emptyStringArray));
 		allowedTagsVerifiers.put("script", new ScriptTagVerifier());
+		/* MathML 3.0 support, deprecated attributes not included so don't try using them
+		   xref attrib is also not supported as unsure of security implications of it
+		   it appears to be for in document linking but may accept external URIs */
+		allowedTagsVerifiers.put(
+			"math",
+			new CoreTagVerifier(
+				"math",
+				new String[] {
+					"accent",
+					"accentunder",
+					"align",
+					"alignmentscope",
+					"altimg-height",
+					"altimg-valign",
+					"altimg-width",
+					"alttext",
+					"bevelled",
+					"cdgroup",
+					"charalign",
+					"charspacing",
+					"close",
+					"columnalign",
+					"columnlines",
+					"columnspacing",
+					"columnspan",
+					"columnwidth",
+					"crossout",
+					"decimalpoint",
+					"depth",
+					"denomalign",
+					"dir",
+					"display",
+					"displaystyle",
+					"edge",
+					"equalcolumns",
+					"equalrows",
+					"fence",
+					"form",
+					"frame",
+					"framespacing",
+					"groupalign",
+					"height",
+					"indentalign",
+					"indentalignfirst",
+					"indentalignlast",
+					"indentshift",
+					"indentshiftfirst",
+					"indentshiftlast",
+					"indenttarget",
+					"infixlinebreakstyle",
+					"largeop",
+					"leftoverhang",
+					"length",
+					"linebreak",
+					"linebreakmultichar",
+					"linebreakstyle",
+					"lineleading",
+					"location",
+					"lquote",
+					"lspace",
+					"linethickness",
+					"longdivstyle",
+					"mathbackground",
+					"mathcolor",
+					"mathsize",
+					"mathvariant",
+					"maxsize",
+					"maxwidth",
+					"minlabelspacing",
+					"minsize",
+					"moveablelimits",
+					"mslinethickness",
+					"notation",
+					"numalign",
+					"open",
+					"overflow",
+					"position",
+					"rightoverhang",
+					"rowalign",
+					"rowlines",
+					"rowspacing",
+					"rowspan",
+					"rquote",
+					"rspace",
+					"scriptlevel",
+					"scriptminsize",
+					"scriptsizemultiplier",
+					"separator",
+					"separators",
+					"shift",
+					"side",
+					"stackalign",
+					"stretchy",
+					"subscriptshift",
+					"superscriptshift",
+					"symmetric",
+					"voffset",
+					"width", },
+				new String[] { "href" },
+				new String[] { "altimg" },
+				emptyStringArray));
+		//MathML Presentation tags follow
 		String[] mathmlempty =
 			{
 				"mprescripts",
 				"none"};
 		for (int x = 0; x < mathmlempty.length; x++)
 			allowedTagsVerifiers.put(
-				 mathmlempty[x],
-				 new CoreTagVerifier(
-					 mathmlempty[x],
-					 emptyStringArray,
-					 emptyStringArray,
-					 emptyStringArray,
-					 emptyStringArray));
+				mathmlempty[x],
+				new CoreTagVerifier(
+					mathmlempty[x],
+					emptyStringArray,
+					emptyStringArray,
+					emptyStringArray,
+					emptyStringArray));
 		String[] mathmlpresent =
 			{
 				"merror",
@@ -1445,26 +1547,26 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				"msqrt"};
 		for (int x = 0; x < mathmlpresent.length; x++)
 			allowedTagsVerifiers.put(
-				 mathmlpresent[x],
-				 new CoreTagVerifier(
-					 mathmlpresent[x],
-					 new String[] { "class", "id", "mathbackground", "mathcolor", "style", "ref" },
-					 new String[] { "href" },
-					 emptyStringArray,
-					 emptyStringArray));
-		allowedTagVerifiers.put(
+				mathmlpresent[x],
+				new CoreTagVerifier(
+					mathmlpresent[x],
+					new String[] { "mathbackground", "mathcolor" },
+					new String[] { "href" },
+					emptyStringArray,
+					emptyStringArray));
+		allowedTagsVerifiers.put(
 			"msub",
 			new CoreTagVerifier(
 				"msub",
-				new String[] { "class", "id", "mathbackground", "mathcolor", "style", "subscriptshift", "xref" },
+				new String[] { "mathbackground", "mathcolor", "subscriptshift" },
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray));
-		allowedTagVerifiers.put(
+		allowedTagsVerifiers.put(
 			"msup",
 			new CoreTagVerifier(
 				"msup",
-				new String[] { "class", "id", "mathbackground", "mathcolor", "style", "superscriptshift", "xref" },
+				new String[] { "mathbackground", "mathcolor", "superscriptshift" },
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray));
@@ -1474,66 +1576,66 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				"mmultiscripts"};
 		for (int x = 0; x < mathmlscripts.length; x++)
 			allowedTagsVerifiers.put(
-				 mathmlscripts[x],
-				 new CoreTagVerifier(
-					 mathmlscripts[x],
-					 new String[] { "class", "id", "mathbackground", "mathcolor", "style", "subscriptshift", "superscriptshift", "xref" },
-					 new String[] { "href" },
-					 emptyStringArray,
-					 emptyStringArray));
-		allowedTagVerifiers.put(
-			"msrow",
+				mathmlscripts[x],
+				new CoreTagVerifier(
+					mathmlscripts[x],
+					new String[] { "mathbackground", "mathcolor", "subscriptshift", "superscriptshift" },
+					new String[] { "href" },
+					emptyStringArray,
+					emptyStringArray));
+		allowedTagsVerifiers.put(
+		    "msrow",
 			new CoreTagVerifier(
 				"msrow",
-				new String[] { "class", "id", "mathbackground", "mathcolor", "position", "style", "xref" },
+				new String[] { "mathbackground", "mathcolor", "position" },
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray));
-		allowedTagVerifiers.put(
+		allowedTagsVerifiers.put(
 			"msgroup",
 			new CoreTagVerifier(
 				"msgroup",
-				new String[] { "class", "id", "mathbackground", "mathcolor", "position", "shift", "style", "xref" },
+				new String[] { "mathbackground", "mathcolor", "position", "shift" },
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray));
-		allowedTagVerifiers.put(
+		allowedTagsVerifiers.put(
 			"menclose",
 			new CoreTagVerifier(
 				"menclose",
-				new String[] { "class", "id", "mathbackground", "mathcolor", "notation", "style", "xref" },
+				new String[] { "mathbackground", "mathcolor", "notation" },
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray));
-		allowedTagVerifiers.put(
+		allowedTagsVerifiers.put(
 			"msline",
 			new CoreTagVerifier(
 				"msline",
-				new String[] { "class", "id", "leftoverhang", "length", "mathbackground", "mathcolor", "mslinethickness", "position", "rightoverhang", "style", "xref" },
+				new String[] { "leftoverhang", "length", "mathbackground", "mathcolor", "mslinethickness", "position", "rightoverhang" },
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray));
-		allowedTagVerifiers.put(
+		allowedTagsVerifiers.put(
 			"maligngroup",
 			new CoreTagVerifier(
 				"maligngroup",
-				new String[] { "class", "groupalign", "id", "mathbackground", "mathcolor", "style", "xref" },
+				new String[] { "groupalign", "mathbackground", "mathcolor" },
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray));
-		allowedTagVerifiers.put(
+		allowedTagsVerifiers.put(
 			"malignmark",
 			new CoreTagVerifier(
 				"malignmark",
-				new String[] { "class", "edge", "id", "mathbackground", "mathcolor", "style", "xref" },
+				new String[] { "edge", "mathbackground", "mathcolor" },
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray));
-		allowedTagVerifiers.put(
+		allowedTagsVerifiers.put(
 			"mrow",
 			new CoreTagVerifier(
 				"mrow",
-				new String[] { "class", "dir", "id", "mathbackground", "mathcolor", "style", "xref" },
+				new String[] { "dir", "mathbackground", "mathcolor" },
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray));
@@ -1543,40 +1645,38 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				"mn",
 				"mtext"};
 		for (int x = 0; x < mathmlitem.length; x++)
-			allowedTagVerifiers.put(
+			allowedTagsVerifiers.put(
 				mathmlitem[x],
 				new CoreTagVerifier(
-					mathmlitem[i],
-					new String[] { "class", "dir", "id", "mathbackground", "mathcolor", "mathsize", "mathvariant", "style", "xref" },
+					mathmlitem[x],
+					new String[] { "dir", "mathbackground", "mathcolor", "mathsize", "mathvariant" },
 					new String[] { "href" },
 					emptyStringArray,
 					emptyStringArray));
-	    allowedTagVerifiers.put(
+	    allowedTagsVerifiers.put(
 			"ms",
 			new CoreTagVerifier(
 				"ms",
-				new String[] { "class", "dir", "id", "lquote", "mathbackground", "mathcolor", "mathsize", "mathvariant", "rquote", "style", "xref" },
+				new String[] { "dir", "lquote", "mathbackground", "mathcolor", "mathsize", "mathvariant", "rquote" },
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray));
-		allowedTagVerifiers.put(
+		allowedTagsVerifiers.put(
 			"mpadded",
 			new CoreTagVerifier(
 				"mpadded",
-				new String[] { "class", "depth", "height", "id", "lspace", "mathbackground", "mathcolor", "style", "voffset", "width", "xref" },
+				new String[] { "depth", "height", "lspace", "mathbackground", "mathcolor", "voffset", "width" },
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray));
-		allowedTagVerifiers.put(
+		allowedTagsVerifiers.put(
 			"mspace",
 			new CoreTagVerifier(
 				"mspace",
 				new String[] {
-					"class",
 					"depth",
 					"dir",
 					"height",
-					"id",
 					"indentalign",
 					"indentalignfirst",
 					"indentalignlast",
@@ -1589,12 +1689,267 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"mathcolor",
 					"mathsize",
 					"mathvariant",
-					"style",
-					"width",
-					"xref" },
+					"width" },
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray));
+		allowedTagsVerifiers.put(
+			"mscarry",
+			new CoreTagVerifier(
+				"mscarry",
+				new String[] { "crossout", "location", "mathbackground", "mathcolor" },
+				new String[] { "href" },
+				emptyStringArray,
+				emptyStringArray));
+		allowedTagsVerifiers.put(
+			"mscarries",
+			new CoreTagVerifier(
+				"mscarries",
+				new String[] { "crossout", "location", "mathbackground", "mathcolor", "position", "scriptsizemultiplier" },
+				new String[] { "href" },
+				emptyStringArray,
+				emptyStringArray));
+		String[] mathmltr =
+			{
+				"mtr",
+				"mlabeledtr"};
+		for (int x = 0; x < mathmltr.length; x++)
+			allowedTagsVerifiers.put(
+				mathmltr[x],
+				new CoreTagVerifier(
+					mathmltr[x],
+					new String[] { "columnalign", "groupalign", "mathbackground", "mathcolor", "rowalign" },
+					new String[] { "href" },
+					emptyStringArray,
+					emptyStringArray));
+		allowedTagsVerifiers.put(
+			"mtd",
+			new CoreTagVerifier(
+				"mtd",
+				new String[] { "columnalign", "columnspan", "groundalign", "mathbackground", "mathcolor", "rowalign", "rowspan" },
+				new String[] { "href" },
+				emptyStringArray,
+				emptyStringArray));
+		allowedTagsVerifiers.put(
+			"mfenced",
+			new CoreTagVerifier(
+				"mfenced",
+				new String[] { "close", "mathbackground", "mathcolor", "open", "separators" },
+				new String[] { "href" },
+				emptyStringArray,
+				emptyStringArray));
+		allowedTagsVerifiers.put(
+			"mfrac",
+			new CoreTagVerifier(
+				"mfrac",
+				new String[] { "bevelled", "denomalign", "linethickness", "mathbackground", "mathcolor", "numalign" },
+				new String[] { "href" },
+				emptyStringArray,
+				emptyStringArray));
+		allowedTagsVerifiers.put(
+			"mglyph",
+			new CoreTagVerifier(
+				"mglyph",
+				new String[] { "alt", "height", "mathbackground", "mathcolor", "valign", "width" },
+				new String[] { "href" },
+				new String[] { "src" },
+				emptyStringArray));
+		allowedTagsVerifiers.put(
+			"mstack",
+			new CoreTagVerifier(
+				"mstack",
+				new String[] { "align", "charalign", "charspacing", "mathbackground", "mathcolor", "stackalign" },
+				new String[] { "href" },
+				emptyStringArray,
+				emptyStringArray));
+		allowedTagsVerifiers.put(
+			"mlongdiv",
+			new CoreTagVerifier(
+				"mlongdiv",
+				new String[] { "align", "charalign", "charspacing", "longdivstyle", "mathbackground", "mathcolor", "stackalign" },
+				new String[] { "href" },
+				emptyStringArray,
+				emptyStringArray));
+		allowedTagsVerifiers.put(
+		    "mtable",
+			new CoreTagVerifier(
+				"mtable",
+				new String[] {
+					"align",
+					"alignmentscope",
+					"columnalign",
+					"columnlines",
+					"columnspacing",
+					"columnwidth",
+					"displaystyle",
+					"equalcolumns",
+					"equalrows",
+					"frame",
+					"framespacing",
+					"groupalign",
+					"mathbackground",
+					"mathcolor",
+					"minlabelspacing",
+					"rowalign",
+					"rowlines",
+					"rowspacing",
+					"side",
+					"width" },
+				new String[] { "href" },
+				emptyStringArray,
+				emptyStringArray));
+		allowedTagsVerifiers.put(
+			"munder",
+			new CoreTagVerifier(
+				"munder",
+				new String[] { "accentunder", "align", "mathbackground", "mathcolor" },
+				new String[] { "href" },
+				emptyStringArray,
+				emptyStringArray));
+		allowedTagsVerifiers.put(
+			"mo",
+			new CoreTagVerifier(
+				"mo",
+				new String[] {
+					"accent",
+					"dir",
+					"fence",
+					"form",
+					"indentalign",
+					"indentalignfirst",
+					"indentalignlast",
+					"indentshift",
+					"indentshiftfirst",
+					"indentshiftlast",
+					"indenttarget",
+					"largeop",
+					"linebreak",
+					"linebreakmultichar",
+					"linebreakstyle",
+					"lineleading",
+					"lspace",
+					"mathbackground",
+					"mathcolor",
+					"mathsize",
+					"mathvariant",
+					"maxsize",
+					"minsize",
+					"moveablelimits",
+					"rspace",
+					"separator",
+					"stretchy",
+					"symmetric" },
+				new String[] { "href" },
+				emptyStringArray,
+				emptyStringArray));
+		allowedTagsVerifiers.put(
+			"mover",
+			new CoreTagVerifier(
+				"mover",
+				new String[] { "accent", "align", "mathbackground", "mathcolor" },
+				new String[] { "href" },
+				emptyStringArray,
+				emptyStringArray));
+		allowedTagsVerifiers.put(
+			"munderover",
+			new CoreTagVerifier(
+				"munderover",
+				new String[] { "accent", "accentunder", "align", "mathbackground", "mathcolor" },
+				new String[] { "href" },
+				emptyStringArray,
+				emptyStringArray));
+		allowedTagsVerifiers.put(
+			"mstyle",
+			new CoreTagVerifier(
+				"mstyle",
+				new String[] {
+					"accent",
+					"accentunder",
+					"align",
+					"alignmentscope",
+					"bevelled",
+					"charalign",
+					"charspacing",
+					"close",
+					"columnalign",
+					"columnlines",
+					"columnspacing",
+					"columnspan",
+					"columnwidth",
+					"crossout",
+					"decimalpoint",
+					"depth",
+					"denomalign",
+					"dir",
+					"displaystyle",
+					"edge",
+					"equalcolumns",
+					"equalrows",
+					"fence",
+					"form",
+					"frame",
+					"framespacing",
+					"groupalign",
+					"height",
+					"indentalign",
+					"indentalignfirst",
+					"indentalignlast",
+					"indentshift",
+					"indentshiftfirst",
+					"indentshiftlast",
+					"indenttarget",
+					"infixlinebreakstyle",
+					"largeop",
+					"leftoverhang",
+					"length",
+					"linebreak",
+					"linebreakmultichar",
+					"linebreakstyle",
+					"lineleading",
+					"location",
+					"lquote",
+					"lspace",
+					"linethickness",
+					"longdivstyle",
+					"mathbackground",
+					"mathcolor",
+					"mathsize",
+					"mathvariant",
+					"maxsize",
+					"minlabelspacing",
+					"minsize",
+					"moveablelimits",
+					"mslinethickness",
+					"notation",
+					"numalign",
+					"open",
+					"position",
+					"rightoverhang",
+					"rowalign",
+					"rowlines",
+					"rowspacing",
+					"rowspan",
+					"rquote",
+					"rspace",
+					"scriptlevel",
+					"scriptminsize",
+					"scriptsizemultipier",
+					"separator",
+					"separators",
+					"shift",
+					"side",
+					"stackalign",
+					"stretchy",
+					"subscriptshift",
+					"superscriptshift",
+					"symmetric",
+					"voffset",
+					"width" },
+				new String[] { "href" },
+				emptyStringArray,
+				emptyStringArray));
+		// <maction> would go here though it seems a bit pointless and may require extra filtering
+		// MathML content tags would go here if anyone used them
 	}
 
 	static class TagVerifier {
