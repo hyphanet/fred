@@ -36,6 +36,13 @@ public class ECDSATest extends TestCase {
         assertTrue(sig.length > 0);
     }
     
+    public void testSignToNetworkFormat() {
+        byte[] toSign = "test".getBytes();
+        byte[] sig= ecdsa.signToNetworkFormat(toSign, 0, toSign.length);
+        assertNotNull(sig);
+        assertEquals(sig.length, curveToTest.maxSigSize);
+    }
+    
     public void testVerify() {
         String toSign = "test";
         byte[] sig= ecdsa.sign(toSign.getBytes());
@@ -71,7 +78,8 @@ public class ECDSATest extends TestCase {
         ECDSA ecdsa = new ECDSA(curve);
         String toSign = "test";
         byte[] signedBytes = toSign.getBytes("utf-8");
-        byte[] sig = ecdsa.sign(signedBytes);
+        //byte[] sig = ecdsa.sign(signedBytes);
+        byte[] sig = ecdsa.signToNetworkFormat(signedBytes, 0, signedBytes.length);
         System.out.println("Curve in use : " + curve.toString());
         System.out.println(ecdsa.getPublicKey().toString());
         System.out.println("ToSign   : "+toSign + " ("+toHex(signedBytes)+")");
@@ -85,6 +93,13 @@ public class ECDSATest extends TestCase {
         ECDSA ecdsa2 = new ECDSA(sfs.getSubset(curve.name()), curve);
         System.out.println(ecdsa2.getPublicKey());
         System.out.println("Verify?  : "+ecdsa2.verify(sig, signedBytes));
+        
+        System.out.println("Let's ensure that the signature always fits into "+ecdsa.curve.maxSigSize+" bytes.");
+        int max = 0;
+        for(int i=0; i<10000; i++) {
+            max = Math.max(max, ecdsa.sign(signedBytes).length);
+        }
+        System.out.println(max);
     }
     
     public static String toHex(byte[] arg) {

@@ -27,9 +27,9 @@ public class ECDSA {
     public enum Curves {
         // rfc5903 or rfc6460: it's NIST's random/prime curves : suite B
         // Order matters. Append to the list, do not re-order.
-        P256("secp256r1", "SHA256withECDSA", 91),
-        P384("secp384r1", "SHA384withECDSA", 120),
-        P521("secp521r1", "SHA512withECDSA", 158);
+        P256("secp256r1", "SHA256withECDSA", 91, 72),
+        P384("secp384r1", "SHA384withECDSA", 120, 104),
+        P521("secp521r1", "SHA512withECDSA", 158, 139);
         
         public final ECGenParameterSpec spec;
         private final KeyPairGenerator keygen;
@@ -37,8 +37,10 @@ public class ECDSA {
         public final String defaultHashAlgorithm;
         /** Expected size of a DER encoded pubkey in bytes */
         public final int modulusSize;
+        /** Maximum (padded) size of a DER-encoded signature (network-format) */
+        public final int maxSigSize;
         
-        private Curves(String name, String defaultHashAlgorithm, int modulusSize) {
+        private Curves(String name, String defaultHashAlgorithm, int modulusSize, int maxSigSize) {
             this.spec = new ECGenParameterSpec(name);
             KeyPairGenerator kg = null;
             try {
@@ -54,6 +56,7 @@ public class ECDSA {
             this.keygen = kg;
             this.defaultHashAlgorithm = defaultHashAlgorithm;
             this.modulusSize = modulusSize;
+            this.maxSigSize = maxSigSize;
         }
         
         public synchronized KeyPair generateKeyPair() {
@@ -133,6 +136,26 @@ public class ECDSA {
         }
         
         return result;
+    }
+    
+    /**
+     * Returns a zero padded DER signature (maxSigSize)
+     * Space Inefficient but constant-size
+     */
+    public byte[] signToNetworkFormat(byte[] data, int offset, int len) {
+        byte[] plainsig = sign(data, offset, len);
+        int targetLength = curve.maxSigSize;
+
+        if(plainsig.length != targetLength) {
+            byte[] newData = new byte[targetLength];
+            if(plainsig.length < targetLength) {
+                System.arraycopy(plainsig, 0, newData, 0, plainsig.length);
+            } else {
+                throw new IllegalStateException("Too long!");
+            }
+            plainsig = newData;
+        }
+        return plainsig;
     }
     
     public boolean verify(byte[] signature, byte[] data) {

@@ -427,7 +427,8 @@ public class NodeCrypto {
 
 	    try{
 	        byte[] ref = mySignedReference.getBytes("UTF-8");
-	        byte[] sig = ecdsaSign(ref);
+	        // We don't need a padded signature here
+	        byte[] sig = ecdsaP256.sign(ref);
 	        if(logMINOR && !ECDSA.verify(Curves.P256, getECDSAP256Pubkey(), sig, ref))
 	            throw new NodeInitException(NodeInitException.EXIT_EXCEPTION_TO_DEBUG, mySignedReference);
 	        return Base64.encode(sig);
@@ -522,14 +523,18 @@ public class NodeCrypto {
 	}
 
 	/** Sign a hash */
-	DSASignature sign(byte[] hash) {
-		return DSA.sign(cryptoGroup, privKey, new NativeBigInteger(1, hash), random);
+	byte[] sign(byte[] hash) {
+        byte[] sig = new byte[Node.SIGNATURE_PARAMETER_LENGTH*2];
+        DSASignature s = DSA.sign(cryptoGroup, privKey, new NativeBigInteger(1, hash), random);
+        System.arraycopy(s.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH), 0, sig, 0, Node.SIGNATURE_PARAMETER_LENGTH);
+        System.arraycopy(s.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH), 0, sig, Node.SIGNATURE_PARAMETER_LENGTH, Node.SIGNATURE_PARAMETER_LENGTH);
+		return sig;
 	}
-	
-	byte[] ecdsaSign(byte[] hash) {
-	    return ecdsaP256.sign(hash);
+
+	byte[] ecdsaSign(byte[] stuff) {
+	    return ecdsaP256.signToNetworkFormat(stuff, 0, stuff.length);
 	}
-	
+
 	public ECPublicKey getECDSAP256Pubkey() {
 	    return ecdsaP256.getPublicKey();
 	}
