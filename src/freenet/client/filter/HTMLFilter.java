@@ -1441,7 +1441,6 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"altimg-width",
 					"alttext",
 					"bevelled",
-					"cdgroup",
 					"charalign",
 					"charspacing",
 					"close",
