@@ -523,8 +523,12 @@ public class NodeCrypto {
 	}
 
 	/** Sign a hash */
-	DSASignature sign(byte[] hash) {
-		return DSA.sign(cryptoGroup, privKey, new NativeBigInteger(1, hash), random);
+	byte[] sign(byte[] hash) {
+        byte[] sig = new byte[Node.SIGNATURE_PARAMETER_LENGTH*2];
+        DSASignature s = DSA.sign(cryptoGroup, privKey, new NativeBigInteger(1, hash), random);
+        System.arraycopy(s.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH), 0, sig, 0, Node.SIGNATURE_PARAMETER_LENGTH);
+        System.arraycopy(s.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH), 0, sig, Node.SIGNATURE_PARAMETER_LENGTH, Node.SIGNATURE_PARAMETER_LENGTH);
+		return sig;
 	}
 
 	byte[] ecdsaSign(byte[] stuff) {

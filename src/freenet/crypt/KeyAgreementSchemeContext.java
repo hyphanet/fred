@@ -6,8 +6,7 @@ package freenet.crypt;
 public abstract class KeyAgreementSchemeContext {
 
 	protected long lastUsedTime;
-	/** The signature of (g^r, grpR) */
-    public DSASignature signature = null;
+    public byte[] dsaSig;
     public byte[] ecdsaSig;
     /** A timestamp: when was the context created ? */
     public final long lifetime = System.currentTimeMillis();
@@ -18,12 +17,7 @@ public abstract class KeyAgreementSchemeContext {
 	public synchronized long lastUsedTime() {
 		return lastUsedTime;
 	}
-	
-	   
-    public void setSignature(DSASignature sig) {
-        this.signature = sig;
-    }
-    
+	  
     public void setSignature(byte[] sig) {
         this.ecdsaSig = sig;
     }
