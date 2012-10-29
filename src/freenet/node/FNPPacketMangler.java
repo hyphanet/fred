@@ -194,8 +194,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		// Fill the DH FIFO on-thread
 		for(int i=0;i<DH_CONTEXT_BUFFER_SIZE;i++) {
 			_fillJFKDHFIFO();
-			if(!NodeStarter.bcProvLoadFailed())
+		}
+		if(!NodeStarter.bcProvLoadFailed()) {
+			for(int i=0;i<DH_CONTEXT_BUFFER_SIZE;i++) {
 				_fillJFKECDHFIFO();
+			}
 		}
 	}
 
