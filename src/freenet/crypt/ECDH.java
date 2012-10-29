@@ -30,7 +30,7 @@ public class ECDH {
         P521("secp521r1", "AES256", 158, 66);
         
         public final ECGenParameterSpec spec;
-        private final KeyPairGenerator keygen;
+        private KeyPairGenerator keygenCached;
         /** The symmetric algorithm associated with the curve (use that, nothing else!) */
         public final String defaultKeyAlgorithm;
         /** Expected size of a pubkey */
@@ -40,6 +40,13 @@ public class ECDH {
         
         private Curves(String name, String defaultKeyAlg, int modulusSize, int derivedSecretSize) {
             this.spec = new ECGenParameterSpec(name);
+            this.defaultKeyAlgorithm = defaultKeyAlg;
+            this.modulusSize = modulusSize;
+            this.derivedSecretSize = derivedSecretSize;
+        }
+        
+        private synchronized KeyPairGenerator getKeyPairGenerator() {
+        	if(keygenCached != null) return keygenCached;
             KeyPairGenerator kg = null;
             try {
                 kg = KeyPairGenerator.getInstance("ECDH");
@@ -51,14 +58,12 @@ public class ECDH {
                 Logger.error(ECDH.class, "InvalidAlgorithmParameterException : "+e.getMessage(),e);
                 e.printStackTrace();
             }
-            this.keygen = kg;
-            this.defaultKeyAlgorithm = defaultKeyAlg;
-            this.modulusSize = modulusSize;
-            this.derivedSecretSize = derivedSecretSize;
+            keygenCached = kg;
+            return kg;
         }
         
         public synchronized KeyPair generateKeyPair() {
-            return keygen.generateKeyPair();
+            return getKeyPairGenerator().generateKeyPair();
         }
         
         public String toString() {
