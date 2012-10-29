@@ -120,10 +120,14 @@ public class ECDSA {
             return null;
         byte[] result = null;
         try {
-            Signature sig = Signature.getInstance(curve.defaultHashAlgorithm);
-            sig.initSign(key.getPrivate());
-            sig.update(data, offset, len);
-            result = sig.sign();
+            do {
+                Signature sig = Signature.getInstance(curve.defaultHashAlgorithm);
+                sig.initSign(key.getPrivate());
+                sig.update(data, offset, len);
+                result = sig.sign();
+                // It's a DER encoded signature, most sigs will fit in N bytes
+                // If it doesn't let's re-sign.
+            } while(result.length > curve.maxSigSize);
         } catch (NoSuchAlgorithmException e) {
             Logger.error(this, "NoSuchAlgorithmException : "+e.getMessage(),e);
             e.printStackTrace();
