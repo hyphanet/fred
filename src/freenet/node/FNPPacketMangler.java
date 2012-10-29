@@ -2303,10 +2303,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
     }
     
 	private void _fillJFKDHFIFO() {
-		synchronized (dhContextFIFO) {
-			if(dhContextFIFO.size() + 1 > DH_CONTEXT_BUFFER_SIZE) {
-				DiffieHellmanLightContext result = null;
-				long oldestSeen = Long.MAX_VALUE;
+	    synchronized (dhContextFIFO) {
+	        int size = dhContextFIFO.size();
+	        if((size > 0) && (size + 1 > DH_CONTEXT_BUFFER_SIZE)) {
+	            DiffieHellmanLightContext result = null;
+	            long oldestSeen = Long.MAX_VALUE;
 
 				for (DiffieHellmanLightContext tmp: dhContextFIFO) {
 					if(tmp.lifetime < oldestSeen) {
@@ -2323,7 +2324,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
     
 	private void _fillJFKECDHFIFO() {
         synchronized (ecdhContextFIFO) {
-            if(ecdhContextFIFO.size() + 1 > DH_CONTEXT_BUFFER_SIZE) {
+            int size = ecdhContextFIFO.size();
+            if((size > 0) && (size + 1 > DH_CONTEXT_BUFFER_SIZE)) {
                 ECDHLightContext result = null;
                 long oldestSeen = Long.MAX_VALUE;
 
@@ -2350,7 +2352,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		DiffieHellmanLightContext result = null;
 
 		synchronized (dhContextFIFO) {
-			result = dhContextFIFO.removeFirst();
+			result = dhContextFIFO.pollFirst();
 
 			// Shall we replace one element of the queue ?
 			if((jfkDHLastGenerationTimestamp + DH_GENERATION_INTERVAL) < now) {
@@ -2358,6 +2360,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				_fillJFKDHFIFOOffThread();
 			}
 
+            // If we didn't get any, generate on-thread
+            if(result == null)
+                result = _genLightDiffieHellmanContext();
+            
 			dhContextFIFO.addLast(result);
 		}
 
@@ -2375,13 +2381,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
         ECDHLightContext result = null;
 
         synchronized (ecdhContextFIFO) {
-            result = ecdhContextFIFO.removeFirst();
-
+            result = ecdhContextFIFO.pollFirst();
+            
             // Shall we replace one element of the queue ?
             if((jfkECDHLastGenerationTimestamp + DH_GENERATION_INTERVAL) < now) {
                 jfkECDHLastGenerationTimestamp = now;
                 _fillJFKECDHFIFOOffThread();
             }
+            
+            // If we didn't get any, generate on-thread
+            if(result == null)
+                result = _genECDHLightContext();
 
             ecdhContextFIFO.addLast(result);
         }
