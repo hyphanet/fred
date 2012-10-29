@@ -667,7 +667,8 @@ public class Node implements TimeSkewDetectorCallback {
 	final File extraPeerDataDir;
 	/** Strong RNG */
 	public final RandomSource random;
-	/** JCA-compliant strong RNG */
+	/** JCA-compliant strong RNG. Hopefully this won't block once it's been
+	 * created. However, if it does, it will cause chaos. */
 	public final SecureRandom secureRandom;
 	/** Weak but fast RNG */
 	public final Random fastWeakRandom;
