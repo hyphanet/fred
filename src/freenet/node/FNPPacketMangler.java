@@ -703,7 +703,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			Logger.warning(this, "Old neg type "+negType+" not supported");
 			return;
 		} else if (negType == 6 || negType == 7 || negType == 8) {
-		    // negType == 8 => use ECDH with P384 instead of DH
+		    // negType == 8 => use ECDH with secp256r1 instead of DH
 			// negType == 7 => same as 6, but determine the initial sequence number by hashing the identity
 			// instead of negotiating it
 			/*
