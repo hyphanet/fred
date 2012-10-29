@@ -14,13 +14,6 @@ public class ECDHLightContext extends KeyAgreementSchemeContext {
     
     public final ECDH ecdh;
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(super.toString());
-        return sb.toString();
-    }
-
     public ECDHLightContext(ECDH.Curves curve, SecureRandom random) {
         this.ecdh = new ECDH(curve, random);
         this.lastUsedTime = System.currentTimeMillis();
