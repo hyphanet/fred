@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.InetAddress;
@@ -58,6 +59,7 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
+import freenet.support.io.FileUtil;
 import freenet.support.io.InetAddressComparator;
 import freenet.support.io.NativeThread;
 
@@ -854,7 +856,22 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				return;
 			lastLoggedNoContexts = now;
 		}
-		System.err.println("FREENET APPEARS TO BE RUNNING OUT OF ENTROPY OR CPU TIME? CONNECTIONS MAY NOT WORK...");
+		logLoudErrorNoContexts();
+	}
+
+	private void logLoudErrorNoContexts() {
+		// If this is happening regularly post-startup then it's unlikely that reading the disk will help.
+		// FIXME localise this, give a useralert etc.
+		// RNG exhaustion shouldn't happen for Windows users at all, and may not happen on Linux depending on the JVM version, so lets leave it for now.
+		System.err.println("FREENET IS HAVING PROBLEMS CONNECTING: Either your CPU is overloaded or it is having trouble reading from the random number generator");
+		System.err.println("If the problem is CPU usage, please shut down whatever applications are hogging the CPU.");
+		if(FileUtil.detectedOS.isUnix) {
+			File f = new File("/dev/hwrng");
+			if(f.exists())
+				System.err.println("Installing \"rngd\" might help (e.g. apt-get install rng-tools).");
+			System.err.println("The best solution is to install a hardware random number generator, or use turbid or similar software to take random data from an unconnected sound card.");
+			System.err.println("The quick workaround is to add \"wrapper.java.additional.4=-Djava.security.egd=file:///dev/urandom\" to your wrapper.conf.");
+		}
 	}
 
 	private final LRUMap<InetAddress, Long> throttleRekeysByIP = LRUMap.createSafeMap(InetAddressComparator.COMPARATOR);
