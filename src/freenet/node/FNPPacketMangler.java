@@ -820,7 +820,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
 		if(negType < 8 || DiffieHellman.checkDHExponentialValidity(this.getClass(), _hisExponential)) {
-		    sendJFKMessage2(nonceInitiator, hisExponential, pn, replyTo, unknownInitiator, setupType, negType);
+		    try {
+		    	sendJFKMessage2(nonceInitiator, hisExponential, pn, replyTo, unknownInitiator, setupType, negType);
+		    } catch (NoContextsException e) {
+		    	handleNoContextsException(e, NoContextsException.CONTEXT.REPLYING);
+		    	return;
+		    }
 		} else {
 		    Logger.error(this, "We can't accept the exponential "+pn+" sent us!! REDFLAG: IT CAN'T HAPPEN UNLESS AGAINST AN ACTIVE ATTACKER!!");
 		}
@@ -831,6 +836,27 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 	}
 	
+	private long lastLoggedNoContexts = -1;
+	private static int LOG_NO_CONTEXTS_INTERVAL = 60*1000;
+	
+	private void handleNoContextsException(NoContextsException e,
+			freenet.node.FNPPacketMangler.NoContextsException.CONTEXT context) {
+		if(node.getUptime() < 30*1000) {
+			if(logMINOR) Logger.minor(this, "No contexts available, unable to handle or send packet ("+context+") on "+this);
+			return;
+		}
+		// Log it immediately.
+		Logger.warning(this, "No contexts available "+context+" - running out of entropy or severe CPU usage problems?");
+		// More loudly periodically.
+		long now = System.currentTimeMillis();
+		synchronized(this) {
+			if(now < lastLoggedNoContexts + LOG_NO_CONTEXTS_INTERVAL)
+				return;
+			lastLoggedNoContexts = now;
+		}
+		System.err.println("FREENET APPEARS TO BE RUNNING OUT OF ENTROPY OR CPU TIME? CONNECTIONS MAY NOT WORK...");
+	}
+
 	private final LRUMap<InetAddress, Long> throttleRekeysByIP = LRUMap.createSafeMap(InetAddressComparator.COMPARATOR);
 
 	private static final int REKEY_BY_IP_TABLE_SIZE = 1024;
@@ -866,7 +892,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 * know the responder in all cases.
 	 * @param replyTo The peer to send the actual packet to.
 	 */
-	private void sendJFKMessage1(PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType, int negType) {
+	private void sendJFKMessage1(PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType, int negType) throws NoContextsException {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(1) message to "+replyTo+" for "+pn.getPeer());
 		final long now = System.currentTimeMillis();
 		int modulusLength = getModulusLength(negType);
@@ -926,7 +952,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 * @param pn The node to encrypt the message for. CAN BE NULL if anonymous-initiator.
 	 * @param replyTo The peer to send the packet to.
 	 */
-	private void sendJFKMessage2(byte[] nonceInitator, byte[] hisExponential, PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType, int negType) {
+	private void sendJFKMessage2(byte[] nonceInitator, byte[] hisExponential, PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType, int negType) throws NoContextsException {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(2) message to "+pn);
 		int modulusLength = getModulusLength(negType);
 
@@ -2231,7 +2257,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			pn.couldNotSendHandshake(notRegistered);
 			return;
 		}
-		sendJFKMessage1(pn, peer, pn.handshakeUnknownInitiator(), pn.handshakeSetupType(), negType);
+		try {
+			sendJFKMessage1(pn, peer, pn.handshakeUnknownInitiator(), pn.handshakeSetupType(), negType);
+		} catch (NoContextsException e) {
+			handleNoContextsException(e, NoContextsException.CONTEXT.SENDING);
+			return;
+		}
 		if(logMINOR)
 			Logger.minor(this, "Sending handshake to "+peer+" for "+pn);
 		pn.sentHandshake(notRegistered);
@@ -2413,8 +2444,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
      * Change the ECDH key on a regular basis but at most once every 30sec
      *
      * @return {@link DiffieHellmanLightContext}
+     * @throws NoContextsException 
      */
-    private ECDHLightContext getECDHLightContext() {
+    private ECDHLightContext getECDHLightContext() throws NoContextsException {
         final long now = System.currentTimeMillis();
         ECDHLightContext result = null;
 
@@ -2427,16 +2459,24 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
                 _fillJFKECDHFIFOOffThread();
             }
             
-            // If we didn't get any, generate on-thread
+            // Don't generate on-thread as it might block.
             if(result == null)
-                result = _genECDHLightContext();
+                throw new NoContextsException();
 
             ecdhContextFIFO.addLast(result);
         }
 
         if(logMINOR) Logger.minor(this, "getECDHLightContext() is serving "+result.hashCode());
         return result;
-    }	
+    }
+    
+    private static class NoContextsException extends Exception {
+    	
+    	private enum CONTEXT {
+    		SENDING,
+    		REPLYING
+    	};
+    }
 	
 
 	/**
