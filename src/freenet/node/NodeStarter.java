@@ -53,11 +53,36 @@ public class NodeStarter implements WrapperListener {
 	// experimental osgi support
 	private static NodeStarter nodestarter_osgi = null;
 
+	public static final String NO_BCPROV_WARNING =
+		"FAILED TO LOAD BOUNCY CASTLE CRYPTO LIBRARY! \n" +
+		"This means the file \"bcprov-jdk15on-147.jar\" is not found or not on the classpath. \n" +
+		"Freenet will not be able to use the newer link setup code or newer format keys. \n" +
+		"Unless you installed it yourself, THIS IS A SEVERE BUG!";
+	
+	private volatile static boolean BCPROV_LOAD_FAILED = true;
+	
+	public static boolean bcProvLoadFailed() {
+		return BCPROV_LOAD_FAILED;
+	}
+	
 	/*---------------------------------------------------------------
 	 * Constructors
 	 *-------------------------------------------------------------*/
 	private NodeStarter() {
-        Security.addProvider(new BouncyCastleProvider());
+		try {
+			new BouncyLoader().load();
+			BCPROV_LOAD_FAILED = false;
+		} catch (RuntimeException e) {
+			System.err.println(NO_BCPROV_WARNING);
+		} catch (Error e) {
+			System.err.println(NO_BCPROV_WARNING);
+		}
+	}
+	
+	private class BouncyLoader {
+		public void load() {
+			Security.addProvider(new BouncyCastleProvider());
+		}
 	}
 
 	public NodeStarter get() {
