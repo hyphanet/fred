@@ -63,6 +63,7 @@ public class DiffieHellmanLightContext extends KeyAgreementSchemeContext {
     private byte[] stripBigIntegerToNetworkFormat(BigInteger exponential) {
         byte[] data = exponential.toByteArray();
         int targetLength = DiffieHellman.modulusLengthInBytes();
+        assert(exponential.signum() == 1);
 
         if(data.length != targetLength) {
             byte[] newData = new byte[targetLength];
