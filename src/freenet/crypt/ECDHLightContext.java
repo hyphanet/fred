@@ -1,5 +1,6 @@
 package freenet.crypt;
 
+import java.security.SecureRandom;
 import java.security.interfaces.ECPublicKey;
 
 import javax.crypto.SecretKey;
@@ -20,8 +21,8 @@ public class ECDHLightContext extends KeyAgreementSchemeContext {
         return sb.toString();
     }
 
-    public ECDHLightContext(ECDH.Curves curve) {
-        this.ecdh = new ECDH(curve);
+    public ECDHLightContext(ECDH.Curves curve, SecureRandom random) {
+        this.ecdh = new ECDH(curve, random);
         this.lastUsedTime = System.currentTimeMillis();
     }
     

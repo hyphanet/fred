@@ -7,6 +7,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.InvalidKeySpecException;
@@ -45,12 +46,12 @@ public class ECDH {
             this.derivedSecretSize = derivedSecretSize;
         }
         
-        private synchronized KeyPairGenerator getKeyPairGenerator() {
+        private synchronized KeyPairGenerator getKeyPairGenerator(SecureRandom random) {
         	if(keygenCached != null) return keygenCached;
             KeyPairGenerator kg = null;
             try {
                 kg = KeyPairGenerator.getInstance("ECDH");
-                kg.initialize(spec);
+                kg.initialize(spec, random);
             } catch (NoSuchAlgorithmException e) {
                 Logger.error(ECDH.class, "NoSuchAlgorithmException : "+e.getMessage(),e);
                 e.printStackTrace();
@@ -62,8 +63,8 @@ public class ECDH {
             return kg;
         }
         
-        public synchronized KeyPair generateKeyPair() {
-            return getKeyPairGenerator().generateKeyPair();
+        public synchronized KeyPair generateKeyPair(SecureRandom random) {
+            return getKeyPairGenerator(random).generateKeyPair();
         }
         
         public String toString() {
@@ -73,11 +74,13 @@ public class ECDH {
     
     /**
      * Initialize the ECDH Exchange: this will draw some entropy
-     * @param curve
+     * @param curve The ECC curve to use. Equivalent to a group for DH.
+     * @param random The random number generator to use. Not used if we've
+     * already been called.
      */
-    public ECDH(Curves curve) {
+    public ECDH(Curves curve, SecureRandom random) {
         this.curve = curve;
-        this.key = curve.generateKeyPair();
+        this.key = curve.generateKeyPair(random);
     }
     
     /**

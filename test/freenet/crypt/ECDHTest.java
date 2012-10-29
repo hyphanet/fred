@@ -6,6 +6,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.Security;
 
 import javax.crypto.SecretKey;
@@ -25,8 +26,8 @@ public class ECDHTest extends TestCase {
         super.setUp();
         Security.addProvider(new BouncyCastleProvider());
         curveToTest = Curves.P256;
-        alice = new ECDH(curveToTest);
-        bob = new ECDH(curveToTest);
+        alice = new ECDH(curveToTest, new SecureRandom());
+        bob = new ECDH(curveToTest, new SecureRandom());
     }
 
     public void testGetAgreedSecret() throws InvalidKeyException, IllegalStateException, NoSuchAlgorithmException, InvalidAlgorithmParameterException {
@@ -53,8 +54,8 @@ public class ECDHTest extends TestCase {
     public static void main(String[] args) throws InvalidKeyException, IllegalStateException, NoSuchAlgorithmException {
         Security.addProvider(new BouncyCastleProvider());
         
-        ECDH alice = new ECDH(Curves.P256);
-        ECDH bob = new ECDH(Curves.P256);
+        ECDH alice = new ECDH(Curves.P256, new SecureRandom());
+        ECDH bob = new ECDH(Curves.P256, new SecureRandom());
         PublicKey bobP = bob.getPublicKey();
         PublicKey aliceP = alice.getPublicKey();
         
