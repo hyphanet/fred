@@ -1665,9 +1665,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		KeyAgreementSchemeContext ctx = pn.getKeyAgreementSchemeContext();
 		if(ctx == null) return;
 		byte[] ourExponential = ctx.getPublicKeyNetworkFormat();
-		// From negType 8 onwards, we assume the DSA group; we don't need heavy refs anymore
-		// TODO: remove when we do negType8 everywhere
-		pn.jfkMyRef = (unknownInitiator && negType < 8) ? crypto.myCompressedHeavySetupRef() : crypto.myCompressedSetupRef();
+		pn.jfkMyRef = unknownInitiator ? crypto.myCompressedHeavySetupRef() : crypto.myCompressedSetupRef();
 		byte[] data = new byte[8 + 8 + pn.jfkMyRef.length];
 		int ptr = 0;
 		long trackerID;
