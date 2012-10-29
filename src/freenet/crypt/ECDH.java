@@ -72,7 +72,7 @@ public class ECDH {
      */
     public ECDH(Curves curve) {
         this.curve = curve;
-        this.key = curve.keygen.generateKeyPair();
+        this.key = curve.generateKeyPair();
     }
     
     /**
