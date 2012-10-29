@@ -11,6 +11,7 @@ import freenet.support.Logger;
 public class ECDHLightContext extends KeyAgreementSchemeContext {
     static { Logger.registerClass(ECDHLightContext.class); }
     private static volatile boolean logMINOR;
+    private static volatile boolean logDEBUG;
     
     public final ECDH ecdh;
 
@@ -32,14 +33,16 @@ public class ECDHLightContext extends KeyAgreementSchemeContext {
 
         if (logMINOR) {
             Logger.minor(this, "Curve in use: " + ecdh.curve.toString());
-            Logger.minor(this,
-                    "My exponential: " + HexUtil.bytesToHex(ecdh.getPublicKey().getEncoded()));
-            Logger.minor(
-                    this,
-                    "Peer's exponential: "
-                            + HexUtil.bytesToHex(peerExponential.getEncoded()));
-            Logger.minor(this,
-                    "SharedSecret = " + HexUtil.bytesToHex(sharedKey.getEncoded()));
+            if(logDEBUG) {
+            	Logger.debug(this,
+            			"My exponential: " + HexUtil.bytesToHex(ecdh.getPublicKey().getEncoded()));
+            	Logger.debug(
+            			this,
+            			"Peer's exponential: "
+            			+ HexUtil.bytesToHex(peerExponential.getEncoded()));
+            	Logger.debug(this,
+            			"SharedSecret = " + HexUtil.bytesToHex(sharedKey.getEncoded()));
+            }
         }
 
         return sharedKey;
