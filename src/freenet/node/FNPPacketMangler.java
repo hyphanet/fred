@@ -822,6 +822,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
 		if(negType < 8 || DiffieHellman.checkDHExponentialValidity(this.getClass(), _hisExponential)) {
+			// JFK protects us from weak key attacks on ECDH, so we don't need to check.
 		    try {
 		    	sendJFKMessage2(nonceInitiator, hisExponential, pn, replyTo, unknownInitiator, setupType, negType);
 		    } catch (NoContextsException e) {
@@ -1120,6 +1121,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		        Logger.error(this, "We can't accept the exponential "+pn.getPeer()+" sent us!! REDFLAG: IT CAN'T HAPPEN UNLESS AGAINST AN ACTIVE ATTACKER!!");
 		        return;
 		    }
+			// JFK protects us from weak key attacks on ECDH, so we don't need to check.
 		}
 
 		// Verify the DSA signature
