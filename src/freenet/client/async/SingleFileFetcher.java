@@ -1076,7 +1076,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					decompressorManager.waitFinished();
 					worker.waitFinished();
 				} else streamGenerator.writeTo(output, container, context);
-
+				// We want to see anything thrown when these are closed.
+				output.close(); output = null;
+				pipeOut.close(); pipeOut = null;
+				pipeIn.close(); pipeIn = null;
 			} catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 				System.err.println("Failing above attempted fetch...");

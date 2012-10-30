@@ -137,8 +137,12 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 				worker.start();
 				streamGenerator.writeTo(pipeOut, container, context);
 				worker.waitFinished();
+				// If this throws, we want the whole request to fail.
+				pipeOut.close(); pipeOut = null;
 			} else {
 					streamGenerator.writeTo(output, container, context);
+					// If this throws, we want the whole request to fail.
+					output.close(); output = null;
 			}
 		} catch (OutOfMemoryError e) {
 			OOMHandler.handleOOM(e);
