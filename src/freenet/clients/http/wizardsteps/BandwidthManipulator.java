@@ -48,7 +48,8 @@ public abstract class BandwidthManipulator {
 		HTMLNode infoBox = helper.getInfobox("infobox-warning", WizardL10n.l10n("bandwidthErrorSettingTitle"),
 		        parent, null, false);
 
-		infoBox.addChild("#", parsingFailedOn);
+		infoBox.addChild("p", WizardL10n.l10n("bandwidthErrorSettingExplanation"));
+		infoBox.addChild("p", parsingFailedOn);
 	}
 
 	protected BandwidthLimit getCurrentBandwidthLimitsOrNull() {
