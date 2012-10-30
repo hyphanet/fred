@@ -18,6 +18,8 @@ public class NoCloseProxyOutputStream extends FilterOutputStream {
 	@Override
 	public void close() throws IOException {
 		// Don't close the underlying stream.
+		// It probably makes debugging easier to flush it.
+		flush();
 	}
 	
 }
