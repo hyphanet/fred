@@ -1117,6 +1117,9 @@ public class Node implements TimeSkewDetectorCallback {
 
 		// Setup RNG if needed : DO NOT USE IT BEFORE THAT POINT!
 		if (r == null) {
+			// Preload freenet.crypt.Util class (selftest can delay Yarrow startup)
+			freenet.crypt.Util.mdProviders.size();
+
 			File seed = userDir.file("prng.seed");
 			FileUtil.setOwnerRW(seed);
 			entropyGatheringThread.start();

@@ -6,6 +6,7 @@ package freenet.keys;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.util.Arrays;
 
@@ -21,6 +22,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.CTRBlockCipher;
+import freenet.crypt.JceLoader;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
@@ -176,12 +178,73 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
     }
     
 	private static final Provider hmacProvider;
+	static private long benchmark(Mac hmac) throws GeneralSecurityException
+	{
+		long times = Long.MAX_VALUE;
+		byte[] input = new byte[1024];
+		byte[] output = new byte[hmac.getMacLength()];
+		byte[] key = new byte[Node.SYMMETRIC_KEY_LENGTH];
+		final String algo = hmac.getAlgorithm();
+		hmac.init(new SecretKeySpec(key, algo));
+		// warm-up
+		for (int i = 0; i < 32; i++) {
+			hmac.update(input, 0, input.length);
+			hmac.doFinal(output, 0);
+			System.arraycopy(output, 0, input, (i*output.length)%(input.length-output.length), output.length);
+		}
+		System.arraycopy(output, 0, key, 0, Math.min(key.length, output.length));
+		for (int i = 0; i < 1024; i++) {
+			long startTime = System.nanoTime();
+			hmac.init(new SecretKeySpec(key, algo));
+			for (int j = 0; j < 8; j++) {
+				for (int k = 0; k < 32; k ++) {
+					hmac.update(input, 0, input.length);
+				}
+				hmac.doFinal(output, 0);
+			}
+			long endTime = System.nanoTime();
+			times = Math.min(endTime - startTime, times);
+			System.arraycopy(output, 0, input, 0, output.length);
+			System.arraycopy(output, 0, key, 0, Math.min(key.length, output.length));
+		}
+		return times;
+	}
 	static {
 		try {
-			Mac hmac = Mac.getInstance("HmacSHA256");
-			hmac.init(new SecretKeySpec(new byte[Node.SYMMETRIC_KEY_LENGTH], "HmacSHA256"));
-			// ^^^ resolve provider
+			final Class clazz = ClientCHKBlock.class;
+			final String algo = "HmacSHA256";
+			final Provider sun = JceLoader.SunJCE;
+			SecretKeySpec dummyKey = new SecretKeySpec(new byte[Node.SYMMETRIC_KEY_LENGTH], algo);
+			Mac hmac = Mac.getInstance(algo);
+			hmac.init(dummyKey); // resolve provider
+			if (sun != null) {
+				// SunJCE provider is faster (in some configurations)
+				try {
+					Mac sun_hmac = Mac.getInstance(algo, "HmacSHA256");
+					sun_hmac.init(dummyKey); // resolve provider
+					if (hmac.getProvider() != sun_hmac.getProvider()) {
+						long time_def = benchmark(hmac);
+						long time_sun = benchmark(sun_hmac);
+						System.out.println(algo + " (" + hmac.getProvider() + "): " + time_def + "ns");
+						System.out.println(algo + " (" + sun_hmac.getProvider() + "): " + time_sun + "ns");
+						Logger.minor(clazz, algo + "/" + hmac.getProvider() + ": " + time_def + "ns");
+						Logger.minor(clazz, algo + "/" + sun_hmac.getProvider() + ": " + time_sun + "ns");
+						if (time_sun < time_def) {
+							hmac = sun_hmac;
+						}
+					}
+				} catch(GeneralSecurityException e) {
+					Logger.warning(clazz, algo + "@" + sun + " benchmark failed", e);
+					// ignore
+
+				} catch(Throwable e) {
+					Logger.error(clazz, algo + "@" + sun + " benchmark failed", e);
+					// ignore
+				}
+			}
 			hmacProvider = hmac.getProvider();
+			System.out.println(algo + ": using " + hmacProvider);
+			Logger.normal(clazz, algo + ": using " + hmacProvider);
 		} catch(GeneralSecurityException e) {
 			// impossible 
 			throw new Error(e);
