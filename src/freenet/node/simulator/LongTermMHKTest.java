@@ -441,6 +441,7 @@ public class LongTermMHKTest {
 	private static Bucket randomData(Node node) throws IOException {
 		Bucket data = node.clientCore.tempBucketFactory.makeBucket(TEST_SIZE);
 		OutputStream os = data.getOutputStream();
+		try {
 		byte[] buf = new byte[4096];
 		for (long written = 0; written < TEST_SIZE;) {
 			node.fastWeakRandom.nextBytes(buf);
@@ -448,7 +449,9 @@ public class LongTermMHKTest {
 			os.write(buf, 0, toWrite);
 			written += toWrite;
 		}
+		} finally {
 		os.close();
+		}
 		return data;
 	}
 

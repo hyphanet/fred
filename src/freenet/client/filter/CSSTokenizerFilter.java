@@ -4483,9 +4483,6 @@ outer:		for(int i=0;i<value.length;i++) {
 
             ContentFilter.filter(inputStream, outputStream, "text/css",
                     new URI("http://127.0.0.1:8888/freenet:USK@ZupQjDFZSc3I4orBpl1iTEAPZKo2733RxCUbZ2Q7iH0,EO8Tuf8SP3lnDjQdAPdCM2ve2RaUEN8m-hod3tQ5oQE,AQACAAE/jFreesite/19/Style/"), null, null, null);
-            inputStream.close();
-            outputStream.flush();
-            outputStream.close();
         } finally {
             Closer.close(inputStream);
             Closer.close(outputStream);

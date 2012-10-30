@@ -596,8 +596,11 @@ outerZIP:		while(true) {
 				continue;
 			}
 			OutputStream os = bucket.getOutputStream();
+			try {
 			os.write(buf);
+			} finally {
 			os.close();
+			}
 			addStoreElement(ctx, key, ".metadata-"+(x++), bucket, gotElement, element2, callback, container, context);
 		}
 		return x;

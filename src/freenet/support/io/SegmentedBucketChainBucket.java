@@ -352,9 +352,12 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 						if(baos != null) {
 							OutputStream os = seg.makeBucketStream(bucketNo, SegmentedBucketChainBucket.this);
 							bucketNo++;
+							try {
 							os.write(baos.toByteArray());
 							baos.reset();
+							} finally {
 							os.close();
+							}
 						} else {
 							cur.close();
 							cur = seg.makeBucketStream(++bucketNo, SegmentedBucketChainBucket.this);
@@ -389,9 +392,12 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 					}
 					OutputStream os = seg.makeBucketStream(bucketNo, SegmentedBucketChainBucket.this);
 					bucketNo++;
+					try {
 					os.write(baos.toByteArray());
 					baos.reset();
+					} finally {
 					os.close();
+					}
 				} else {
 					cur.close();
 				}
