@@ -841,7 +841,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	private void handleNoContextsException(NoContextsException e,
 			freenet.node.FNPPacketMangler.NoContextsException.CONTEXT context) {
 		if(node.getUptime() < 30*1000) {
-			if(logMINOR) Logger.minor(this, "No contexts available, unable to handle or send packet ("+context+") on "+this);
+			Logger.warning(this, "No contexts available, unable to handle or send packet ("+context+") on "+this);
 			return;
 		}
 		// Log it immediately.
