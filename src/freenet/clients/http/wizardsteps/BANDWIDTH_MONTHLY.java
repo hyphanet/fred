@@ -99,13 +99,19 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 		try {
 			setBandwidthLimit(downloadLimit, false);
 		} catch (InvalidConfigValueException e) {
-			freenet.support.Logger.error(this, "Failed to set download limit "+downloadLimit+": "+e);
+			StringBuilder target = new StringBuilder(FirstTimeWizardToadlet.TOADLET_URL);
+			target.append("?step=BANDWIDTH_MONTHLY&parseError=true&parseTarget=");
+			target.append(URLEncoder.encode(capTo, true));
+			return target.toString();
 		}
 
 		try {
 			setBandwidthLimit(uploadLimit, true);
 		} catch (InvalidConfigValueException e) {
-			freenet.support.Logger.error(this, "Failed to set upload limit "+uploadLimit+": "+e);
+			StringBuilder target = new StringBuilder(FirstTimeWizardToadlet.TOADLET_URL);
+			target.append("?step=BANDWIDTH_MONTHLY&parseError=true&parseTarget=");
+			target.append(URLEncoder.encode(capTo, true));
+			return target.toString();
 		}
 
 		setWizardComplete();
