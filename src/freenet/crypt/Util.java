@@ -8,7 +8,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.security.DigestException;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
 import java.util.Arrays;
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.ciphers.Rijndael;
@@ -18,10 +21,8 @@ import freenet.support.Loader;
 public class Util {
 
 	// bah, i'm tired of chasing down dynamically loaded classes..
-	// this is for getCipherByName() and getDigestByName()
+	// this is for getCipherByName()
 	static {
-		SHA1.class.toString();
-		JavaSHA1.class.toString();
 		Rijndael.class.toString();
 	}
 
@@ -101,7 +102,7 @@ public class Util {
 	/**
 	 * Hashes a string in a consistent manner
 	 */
-	public static byte[] hashString(Digest d, String s) {
+	public static byte[] hashString(MessageDigest d, String s) {
 		try {
 			byte[] sbytes = s.getBytes("UTF-8");
 			d.update(sbytes, 0, sbytes.length);
@@ -134,13 +135,25 @@ public class Util {
 		return true;
 	}
 
-	private static Digest ctx = SHA1.getInstance();
+	private static final MessageDigest ctx;
+	private static final int ctx_length;
+
+	static {
+		try {
+			ctx = MessageDigest.getInstance("SHA1");
+			ctx_length = ctx.getDigestLength();
+		} catch(NoSuchAlgorithmException e) {
+			// impossible
+			throw new Error(e);
+		}
+	}
 
 	public static void makeKey(
 		byte[] entropy,
 		byte[] key,
 		int offset,
 		int len) {
+		try {
 		synchronized (ctx) {
 			ctx.digest(); // reinitialize
 
@@ -151,9 +164,9 @@ public class Util {
 					ctx.update((byte) 0);
 				ctx.update(entropy, 0, entropy.length);
 				int bc;
-				if (len > 20) {
-					ctx.digest(true, key, offset);
-					bc = 20;
+				if (len >= ctx_length) {
+					ctx.digest(key, offset, ctx_length);
+					bc = ctx_length;
 				} else {
 					byte[] hash = ctx.digest();
 					bc = Math.min(len, hash.length);
@@ -164,6 +177,10 @@ public class Util {
 			}
 		}
 		Arrays.fill(entropy, (byte) 0);
+		} catch(DigestException e) {
+			// impossible
+			throw new Error(e);
+		}
 	}
 
 	public static BlockCipher getCipherByName(String name) {
@@ -187,17 +204,6 @@ public class Util {
 				new Object[] { Integer.valueOf(keySize)});
 		} catch (Exception e) {
 			//throw new UnsupportedCipherException(""+e);
-			e.printStackTrace();
-			return null;
-		}
-	}
-
-	public static Digest getDigestByName(String name) {
-		//throws UnsupportedDigestException {
-		try {
-			return (Digest) Loader.getInstance("freenet.crypt." + name);
-		} catch (Exception e) {
-			//throw new UnsupportedDigestException(""+e);
 			e.printStackTrace();
 			return null;
 		}
