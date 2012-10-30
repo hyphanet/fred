@@ -24,6 +24,7 @@ import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.SecureRandom;
 import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -661,6 +662,10 @@ public class Node implements TimeSkewDetectorCallback {
 	final File extraPeerDataDir;
 	/** Strong RNG */
 	public final RandomSource random;
+	/** JCA-compliant strong RNG. WARNING: DO NOT CALL THIS ON THE MAIN NETWORK
+	 * HANDLING THREADS! In some configurations it can block, potentially 
+	 * forever, on nextBytes()! */
+	public final SecureRandom secureRandom;
 	/** Weak but fast RNG */
 	public final Random fastWeakRandom;
 	/** The object which handles incoming messages and allows us to wait for them */
@@ -1040,76 +1045,80 @@ public class Node implements TimeSkewDetectorCallback {
 			e4.printStackTrace();
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e4);
 		}
+		
+		final NativeThread entropyGatheringThread = new NativeThread(new Runnable() {
+			
+			long tLastAdded = -1;
+
+			private void recurse(File f) {
+				if(isPRNGReady)
+					return;
+				extendTimeouts();
+				File[] subDirs = f.listFiles(new FileFilter() {
+
+					@Override
+					public boolean accept(File pathname) {
+						return pathname.exists() && pathname.canRead() && pathname.isDirectory();
+					}
+				});
+
+
+				// @see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=5086412
+				if(subDirs != null)
+					for(File currentDir : subDirs)
+						recurse(currentDir);
+			}
+
+			@Override
+			public void run() {
+				try {
+					// Delay entropy generation helper hack if enough entropy available
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+				}
+				if(isPRNGReady)
+					return;
+				System.out.println("Not enough entropy available.");
+				System.out.println("Trying to gather entropy (randomness) by reading the disk...");
+				extendTimeouts();
+				for(File root : File.listRoots()) {
+					if(isPRNGReady)
+						return;
+					recurse(root);
+				}
+			}
+			
+			static final int EXTEND_BY = 10*60*1000;
+			
+			private void extendTimeouts() {
+				long now = System.currentTimeMillis();
+				if(now - tLastAdded < EXTEND_BY/2) return;
+				long target = tLastAdded + EXTEND_BY;
+				while(target < now)
+					target += EXTEND_BY;
+				long extend = target - now;
+				assert(extend < Integer.MAX_VALUE);
+				assert(extend > 0);
+				WrapperManager.signalStarting((int)extend);
+				tLastAdded = now;
+			}
+
+		}, "Entropy Gathering Thread", NativeThread.MIN_PRIORITY, true);
 
 		// Setup RNG if needed : DO NOT USE IT BEFORE THAT POINT!
 		if (r == null) {
-			final NativeThread entropyGatheringThread = new NativeThread(new Runnable() {
-				
-				long tLastAdded = -1;
-
-				private void recurse(File f) {
-					if(isPRNGReady)
-						return;
-					extendTimeouts();
-					File[] subDirs = f.listFiles(new FileFilter() {
-
-						@Override
-						public boolean accept(File pathname) {
-							return pathname.exists() && pathname.canRead() && pathname.isDirectory();
-						}
-					});
-
-
-					// @see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=5086412
-					if(subDirs != null)
-						for(File currentDir : subDirs)
-							recurse(currentDir);
-				}
-
-				@Override
-				public void run() {
-					try {
-						// Delay entropy generation helper hack if enough entropy available
-						Thread.sleep(100);
-					} catch (InterruptedException e) {
-					}
-					if(isPRNGReady)
-						return;
-					System.out.println("Not enough entropy available.");
-					System.out.println("Trying to gather entropy (randomness) by reading the disk...");
-					extendTimeouts();
-					for(File root : File.listRoots()) {
-						if(isPRNGReady)
-							return;
-						recurse(root);
-					}
-				}
-				
-				static final int EXTEND_BY = 10*60*1000;
-				
-				private void extendTimeouts() {
-					long now = System.currentTimeMillis();
-					if(now - tLastAdded < EXTEND_BY/2) return;
-					long target = tLastAdded + EXTEND_BY;
-					while(target < now)
-						target += EXTEND_BY;
-					long extend = target - now;
-					assert(extend < Integer.MAX_VALUE);
-					assert(extend > 0);
-					WrapperManager.signalStarting((int)extend);
-					tLastAdded = now;
-				}
-
-			}, "Entropy Gathering Thread", NativeThread.MIN_PRIORITY, true);
-
 			File seed = userDir.file("prng.seed");
 			FileUtil.setOwnerRW(seed);
 			entropyGatheringThread.start();
+			// Can block.
 			this.random = new Yarrow(seed);
 			DiffieHellman.init(random);
-
-		} else // if it's not null it's because we are running in the simulator
+		} else {
 			this.random = r;
+			// if it's not null it's because we are running in the simulator
+		}
+		// This can block too.
+		this.secureRandom = new SecureRandom();
 		isPRNGReady = true;
 		toadlets.getStartupToadlet().setIsPRNGReady();
 		if(weakRandom == null) {
