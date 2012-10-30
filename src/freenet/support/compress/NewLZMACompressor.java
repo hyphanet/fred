@@ -53,6 +53,9 @@ public class NewLZMACompressor implements Compressor {
 			if(logMINOR)
 				Logger.minor(this, "Compressing "+data+" size "+data.size()+" to new bucket "+output);
 			compress(is, os, maxReadLength, maxWriteLength);
+			// It is essential that the close()'s throw if there is any problem.
+			is.close(); is = null;
+			os.close(); os = null;
 		} finally {
 			Closer.close(is);
 			Closer.close(os);
@@ -103,6 +106,9 @@ public class NewLZMACompressor implements Compressor {
 			decompress(is, os, maxLength, maxCheckSizeLength);
 			if(logMINOR)
 				Logger.minor(this, "Output: "+output+" size "+output.size()+" read "+is.count());
+			// It is essential that the close()'s throw if there is any problem.
+			is.close(); is = null;
+			os.close(); os = null;
 		} finally {
 			Closer.close(os);
 			Closer.close(is);

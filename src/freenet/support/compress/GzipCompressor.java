@@ -28,6 +28,9 @@ public class GzipCompressor implements Compressor {
 			is = data.getInputStream();
 			os = output.getOutputStream();
 			compress(is, os, maxReadLength, maxWriteLength);
+			// It is essential that the close()'s throw if there is any problem.
+			is.close(); is = null;
+			os.close(); os = null;
 		} finally {
 			Closer.close(is);
 			Closer.close(os);
