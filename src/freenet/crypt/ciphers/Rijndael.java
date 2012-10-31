@@ -33,22 +33,83 @@ public class Rijndael implements BlockCipher {
 		return AesCtrProvider != null ? AesCtrProvider.getName() : null;
 	}
 	
+	static private long benchmark(Cipher cipher, SecretKeySpec key, IvParameterSpec IV) throws GeneralSecurityException
+	{
+		long times = Long.MAX_VALUE;
+		byte[] input = new byte[1024];
+		byte[] output = new byte[input.length*32];
+		cipher.init(Cipher.ENCRYPT_MODE, key, IV);
+		// warm-up
+		for (int i = 0; i < 32; i++) {
+			cipher.doFinal(input, 0, input.length, output, 0);
+			System.arraycopy(output, 0, input, 0, input.length);
+		}
+		for (int i = 0; i < 128; i++) {
+			long startTime = System.nanoTime();
+			cipher.init(Cipher.ENCRYPT_MODE, key, IV);
+			for (int j = 0; j < 4; j++) {
+				int ofs = 0;
+				for (int k = 0; k < 32; k ++) {
+					ofs += cipher.update(input, 0, input.length, output, ofs);
+				}
+				cipher.doFinal(output, ofs);
+			}
+			long endTime = System.nanoTime();
+			times = Math.min(endTime - startTime, times);
+			System.arraycopy(output, 0, input, 0, input.length);
+		}
+		return times;
+	}
+
 	/** @return null if JCA is crippled (restricted to 128-bit) so we need 
 	 * to use this class. */
 	private static Provider getAesCtrProvider() {
 		// Ensure all providers loaded.
 		JceLoader.BouncyCastle.toString();
 		try {
+			final String algo = "AES/CTR/NOPADDING";
+			final Provider bcastle = JceLoader.BouncyCastle;
+			final Class clazz = Rijndael.class;
+
 			byte[] key = new byte[32]; // Test for whether 256-bit works.
 			byte[] iv = new byte[16];
 			byte[] plaintext = new byte[16];
 			SecretKeySpec k = new SecretKeySpec(key, "AES");
-			Cipher c = Cipher.getInstance("AES/CTR/NOPADDING");
-			c.init(Cipher.ENCRYPT_MODE, k, new IvParameterSpec(iv));
+			IvParameterSpec IV = new IvParameterSpec(iv);
+
+			Cipher c = Cipher.getInstance(algo);
+			c.init(Cipher.ENCRYPT_MODE, k, IV);
 			// ^^^ resolve provider
 			Provider provider = c.getProvider();
-			c = Cipher.getInstance("AES/CTR/NOPADDING", provider);
-			c.init(Cipher.ENCRYPT_MODE, k, new IvParameterSpec(iv));
+			if (bcastle != null) {
+				// BouncyCastle provider is faster (in some configurations)
+				try {
+					Cipher bcastle_cipher = Cipher.getInstance(algo, bcastle);
+					bcastle_cipher.init(Cipher.ENCRYPT_MODE, k, IV);
+					Provider bcastle_provider = bcastle_cipher.getProvider();
+					if (provider != bcastle_provider) {
+						long time_def = benchmark(c, k, IV);
+						long time_bcastle = benchmark(bcastle_cipher, k, IV);
+						System.out.println(algo + " (" + provider + "): " + time_def + "ns");
+						System.out.println(algo + " (" + bcastle_provider + "): " + time_bcastle + "ns");
+						Logger.minor(clazz, algo + "/" + provider + ": " + time_def + "ns");
+						Logger.minor(clazz, algo + "/" + bcastle_provider + ": " + time_bcastle + "ns");
+						if (time_bcastle < time_def) {
+							provider = bcastle_provider;
+							c = bcastle_cipher;
+						}
+					}
+				} catch(GeneralSecurityException e) {
+					// ignore
+					Logger.warning(clazz, algo + "@" + bcastle + " benchmark failed", e);
+
+				} catch(Throwable e) {
+					// ignore
+					Logger.error(clazz, algo + "@" + bcastle + " benchmark failed", e);
+				}
+			}
+			c = Cipher.getInstance(algo, provider);
+			c.init(Cipher.ENCRYPT_MODE, k, IV);
 			c.doFinal(plaintext);
 			Logger.normal(Rijndael.class, "Using JCA: provider "+provider);
 			System.out.println("Using JCA cipher provider: "+provider);

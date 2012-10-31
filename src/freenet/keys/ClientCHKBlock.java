@@ -267,17 +267,17 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
 		try {
         Cipher cipher = Cipher.getInstance("AES/CTR/NOPADDING", Rijndael.AesCtrProvider);
         cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(cryptoKey, "AES"), new IvParameterSpec(hash, 0, 16));
-        byte[] plaintext = cipher.update(data);
-        byte[] lengthBytes = cipher.doFinal(headers, hash.length+2, 2);
-        int size = ((lengthBytes[0] & 0xff) << 8) + (lengthBytes[1] & 0xff);
+        byte[] plaintext = new byte[data.length + 2];
+		int moved = cipher.update(data, 0, data.length, plaintext);
+		cipher.doFinal(headers, hash.length+2, 2, plaintext, moved);
+        int size = ((plaintext[data.length] & 0xff) << 8) + (plaintext[data.length + 1] & 0xff);
         if((size > 32768) || (size < 0)) {
             throw new CHKDecodeException("Invalid size: "+size);
         }
         // Check the hash.
         Mac hmac = Mac.getInstance("HmacSHA256", hmacProvider);
         hmac.init(new SecretKeySpec(cryptoKey, "HmacSHA256"));
-        hmac.update(plaintext);
-        hmac.update(lengthBytes);
+        hmac.update(plaintext); // plaintext includes lengthBytes
         byte[] hashCheck = hmac.doFinal();
         if(!Arrays.equals(hash, hashCheck)) {
         	throw new CHKDecodeException("HMAC is wrong, wrong decryption key?");
@@ -483,9 +483,16 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         // That's still plenty though. It will still be unique.
         Cipher cipher = Cipher.getInstance("AES/CTR/NOPADDING", Rijndael.AesCtrProvider);
         cipher.init(Cipher.ENCRYPT_MODE, ckey, new IvParameterSpec(hash, 0, 16));
-        byte[] cdata = cipher.update(data);
-        assert(cdata.length == data.length); // Multiple of block size so shouldn't be buffered.
-        cipher.doFinal(tmpLen, 0, 2, header, hash.length+2);
+        byte[] cdata = new byte[data.length];
+		int moved = cipher.update(data, 0, data.length, cdata);
+		if (moved == data.length) {
+			cipher.doFinal(tmpLen, 0, 2, header, hash.length+2);
+		} else {
+			// FIXME inefficient
+			byte[] tmp = cipher.doFinal(tmpLen, 0, 2);
+			System.arraycopy(tmp, 0, cdata, moved, tmp.length-2);
+			System.arraycopy(tmp, tmp.length-2,	header, hash.length+2, 2);
+		}
         
         // Now calculate the final hash
         md256.update(header);

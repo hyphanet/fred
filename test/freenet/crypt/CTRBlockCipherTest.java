@@ -210,15 +210,17 @@ public class CTRBlockCipherTest extends TestCase {
 				int outputPtr = 0;
 				// Odd API designed for block ciphers etc.
 				// For CTR it should be able to return immediately each time.
+				// ... Actually, no. BouncyCastle's CTR breaks this assumption.
+				// You must handle when update() produce less than was in input.
 				while (inputPtr < plaintext.length) {
 					int max = plaintext.length - inputPtr;
 					int count = (max == 1) ? 1 : (random.nextInt(max - 1) + 1);
 					int moved = c.update(plaintext, inputPtr, count, output,
 							outputPtr);
 					outputPtr += moved;
-					inputPtr += moved;
+					inputPtr += count;
 				}
-				c.doFinal(plaintext, 0, plaintext.length - outputPtr, output,
+				c.doFinal(plaintext, 0, plaintext.length - inputPtr, output,
 						outputPtr);
 				assertTrue(Arrays.equals(output, ciphertext));
 			}
