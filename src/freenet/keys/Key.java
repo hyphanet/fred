@@ -165,21 +165,21 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
     	return Arrays.equals(routingKey, ((Key)o).routingKey);
     }
 
-    static Bucket decompress(boolean isCompressed, byte[] output, int outputLength, BucketFactory bf, long maxLength, short compressionAlgorithm, boolean shortLength) throws CHKDecodeException, IOException {
+    static Bucket decompress(boolean isCompressed, byte[] input, int inputLength, BucketFactory bf, long maxLength, short compressionAlgorithm, boolean shortLength) throws CHKDecodeException, IOException {
 	    if(maxLength < 0)
 		    throw new IllegalArgumentException("maxlength="+maxLength);
         if(isCompressed) {
         	if(logMINOR)
-        		Logger.minor(Key.class, "Decompressing "+output.length+" bytes in decode with codec "+compressionAlgorithm);
-            if(output.length < (shortLength ? 3 : 5)) throw new CHKDecodeException("No bytes to decompress");
+        		Logger.minor(Key.class, "Decompressing "+input.length+" bytes in decode with codec "+compressionAlgorithm);
+            if(input.length < (shortLength ? 3 : 5)) throw new CHKDecodeException("No bytes to decompress");
             // Decompress
             // First get the length
             int len;
             if(shortLength)
-            	len = ((output[0] & 0xff) << 8) + (output[1] & 0xff);
+            	len = ((input[0] & 0xff) << 8) + (input[1] & 0xff);
             else
-            	len = ((((((output[0] & 0xff) << 8) + (output[1] & 0xff)) << 8) + (output[2] & 0xff)) << 8) +
-            		(output[3] & 0xff);
+            	len = ((((((input[0] & 0xff) << 8) + (input[1] & 0xff)) << 8) + (input[2] & 0xff)) << 8) +
+            		(input[3] & 0xff);
             if(len > maxLength)
                 throw new TooBigException("Invalid precompressed size: "+len + " maxlength="+maxLength);
             COMPRESSOR_TYPE decompressor = COMPRESSOR_TYPE.getCompressorByMetadataID(compressionAlgorithm);
@@ -187,7 +187,7 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
             	throw new CHKDecodeException("Unknown compression algorithm: "+compressionAlgorithm);
             InputStream inputStream = null;
             OutputStream outputStream = null;
-            Bucket inputBucket = new SimpleReadOnlyArrayBucket(output, shortLength?2:4, outputLength-(shortLength?2:4));
+            Bucket inputBucket = new SimpleReadOnlyArrayBucket(input, shortLength?2:4, inputLength-(shortLength?2:4));
             Bucket outputBucket = bf.makeBucket(maxLength);
             outputStream = outputBucket.getOutputStream();
             inputStream = inputBucket.getInputStream();
@@ -202,7 +202,7 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
 			}
             return outputBucket;
         } else {
-        	return BucketTools.makeImmutableBucket(bf, output, outputLength);
+        	return BucketTools.makeImmutableBucket(bf, input, inputLength);
         }
 	}
 
