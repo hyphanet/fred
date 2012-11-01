@@ -2073,7 +2073,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		System.arraycopy(iv, 0, data, 0, iv.length);
 		pcfb.blockEncipher(hash, 0, hash.length);
 		System.arraycopy(hash, 0, data, iv.length, hash.length);
-		if(logMINOR) Logger.minor(this, "Payload length: "+length);
+		if(logMINOR) Logger.minor(this, "Payload length: "+length+" padded length "+data.length);
 		data[hash.length+iv.length] = (byte) pcfb.encipher((byte)(length>>8));
 		data[hash.length+iv.length+1] = (byte) pcfb.encipher((byte)length);
 		pcfb.blockEncipher(output, 0, output.length);
