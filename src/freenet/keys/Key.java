@@ -168,10 +168,13 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
     static Bucket decompress(boolean isCompressed, byte[] input, int inputLength, BucketFactory bf, long maxLength, short compressionAlgorithm, boolean shortLength) throws CHKDecodeException, IOException {
 	    if(maxLength < 0)
 		    throw new IllegalArgumentException("maxlength="+maxLength);
+		if(input.length < inputLength)
+			throw new IndexOutOfBoundsException(""+input.length+"<"+inputLength);
         if(isCompressed) {
         	if(logMINOR)
-        		Logger.minor(Key.class, "Decompressing "+input.length+" bytes in decode with codec "+compressionAlgorithm);
-            if(input.length < (shortLength ? 3 : 5)) throw new CHKDecodeException("No bytes to decompress");
+        		Logger.minor(Key.class, "Decompressing "+inputLength+" bytes in decode with codec "+compressionAlgorithm);
+			final int inputOffset = (shortLength ? 2 : 4);
+            if(inputLength < inputOffset + 1) throw new CHKDecodeException("No bytes to decompress");
             // Decompress
             // First get the length
             int len;
@@ -187,7 +190,7 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
             	throw new CHKDecodeException("Unknown compression algorithm: "+compressionAlgorithm);
             InputStream inputStream = null;
             OutputStream outputStream = null;
-            Bucket inputBucket = new SimpleReadOnlyArrayBucket(input, shortLength?2:4, inputLength-(shortLength?2:4));
+            Bucket inputBucket = new SimpleReadOnlyArrayBucket(input, inputOffset, inputLength-inputOffset);
             Bucket outputBucket = bf.makeBucket(maxLength);
             outputStream = outputBucket.getOutputStream();
             inputStream = inputBucket.getInputStream();
