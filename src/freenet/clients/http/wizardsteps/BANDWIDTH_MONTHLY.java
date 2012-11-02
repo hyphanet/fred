@@ -82,8 +82,7 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 		try {
 			bytesMonth = Fields.parseLong(capTo);
 		} catch (NumberFormatException e) {
-			StringBuilder target = new StringBuilder(FirstTimeWizardToadlet.TOADLET_URL);
-			target.append("?step=BANDWIDTH_MONTHLY&parseError=true&parseTarget=");
+			StringBuilder target = new StringBuilder("BANDWIDTH_MONTHLY&parseError=true&parseTarget=");
 			target.append(URLEncoder.encode(capTo, true));
 			return target.toString();
 		}
@@ -99,8 +98,7 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 		try {
 			setBandwidthLimit(downloadLimit, false);
 		} catch (InvalidConfigValueException e) {
-			StringBuilder target = new StringBuilder(FirstTimeWizardToadlet.TOADLET_URL);
-			target.append("?step=BANDWIDTH_MONTHLY&parseError=true&parseTarget=");
+			StringBuilder target = new StringBuilder("BANDWIDTH_MONTHLY&parseError=true&parseTarget=");
 			target.append(URLEncoder.encode(capTo, true));
 			return target.toString();
 		}
@@ -108,8 +106,7 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 		try {
 			setBandwidthLimit(uploadLimit, true);
 		} catch (InvalidConfigValueException e) {
-			StringBuilder target = new StringBuilder(FirstTimeWizardToadlet.TOADLET_URL);
-			target.append("?step=BANDWIDTH_MONTHLY&parseError=true&parseTarget=");
+			StringBuilder target = new StringBuilder("BANDWIDTH_MONTHLY&parseError=true&parseTarget=");
 			target.append(URLEncoder.encode(capTo, true));
 			return target.toString();
 		}
