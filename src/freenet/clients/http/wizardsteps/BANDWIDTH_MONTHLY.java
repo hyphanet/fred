@@ -13,12 +13,11 @@ import freenet.support.api.HTTPRequest;
  */
 public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 
-	private long[] caps;
-	private final long GB = 1000000000;
+	private static long[] caps = { 25, 50, 100, 150 };
+	private static final long GB = 1000000000;
 
 	public BANDWIDTH_MONTHLY(NodeClientCore core, Config config) {
 		super(core, config);
-		caps = new long[] { 25*GB, 50*GB, 100*GB, 150*GB };
 	}
 
 	@Override
@@ -50,7 +49,7 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 		for (long cap : caps) {
 			HTMLNode row = table.addChild("tr");
 			//ISPs are likely to list limits in GB instead of GiB, so display GB here.
-			row.addChild("td", String.valueOf(cap/GB)+" GB");
+			row.addChild("td", String.valueOf(cap) +" GB");
 			HTMLNode selectForm = helper.addFormChild(row.addChild("td"), ".", "limit");
 			selectForm.addChild("input",
 			        new String[] { "type", "name", "value" },
@@ -62,9 +61,11 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 
 		//Row for custom entry
 		HTMLNode customForm = helper.addFormChild(table.addChild("tr"), ".", "custom-form");
-		customForm.addChild("td").addChild("input",
+		HTMLNode capInput = customForm.addChild("td");
+		capInput.addChild("input",
 			new String[]{"type", "name"},
 			new String[]{"text", "capTo"});
+		capInput.addChild("#", " GB");
 		customForm.addChild("td").addChild("input",
 			new String[]{"type", "value"},
 			new String[]{"submit", WizardL10n.l10n("bandwidthSelect")});
@@ -77,10 +78,11 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 
 	@Override
 	public String postStep(HTTPRequest request)  {
-		long bytesMonth;
+		double bytesMonth;
+		// capTo is specified as floating point GB.
 		String capTo = request.getPartAsStringFailsafe("capTo", 4096);
 		try {
-			bytesMonth = Fields.parseLong(capTo);
+			bytesMonth = Double.valueOf(capTo) * GB;
 		} catch (NumberFormatException e) {
 			StringBuilder target = new StringBuilder("BANDWIDTH_MONTHLY&parseError=true&parseTarget=");
 			target.append(URLEncoder.encode(capTo, true));
