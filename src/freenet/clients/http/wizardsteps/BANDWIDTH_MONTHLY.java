@@ -4,6 +4,7 @@ import freenet.clients.http.FirstTimeWizardToadlet;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.l10n.NodeL10n;
+import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.support.*;
 import freenet.support.api.HTTPRequest;
@@ -13,8 +14,13 @@ import freenet.support.api.HTTPRequest;
  */
 public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 
-	private static long[] caps = { 25, 50, 100, 150 };
 	private static final long GB = 1000000000;
+	/*
+	 * Bandwidth used if both the upload and download limit are at the minimum. In GB. Assumes 24/7 uptime.
+	 */
+	private static final Double minCap = 2*Node.getMinimumBandwidth()*secondsPerMonth/GB;
+
+	private static final long[] caps = { (long)Math.ceil(minCap), 50, 100, 150 };
 
 	public BANDWIDTH_MONTHLY(NodeClientCore core, Config config) {
 		super(core, config);
