@@ -44,12 +44,22 @@ public abstract class BandwidthManipulator {
 		}
 	}
 
-	protected void parseErrorBox(HTMLNode parent, PageHelper helper, String parsingFailedOn) {
+	/**
+	 * Creates a titled infobox for a bandwidth setting error.
+	 *
+	 * @param parent Node to attach warning to.
+	 * @param helper Helper to create infobox.
+	 * @param message Message to display in the infobox body.
+	 *
+	 * @return infobox node with the message added.
+	 */
+	protected HTMLNode parseErrorBox(HTMLNode parent, PageHelper helper, String message) {
 		HTMLNode infoBox = helper.getInfobox("infobox-warning", WizardL10n.l10n("bandwidthErrorSettingTitle"),
 		        parent, null, false);
 
-		infoBox.addChild("p", WizardL10n.l10n("bandwidthErrorSettingExplanation"));
-		infoBox.addChild("p", parsingFailedOn);
+		infoBox.addChild("p", message);
+
+		return infoBox;
 	}
 
 	protected BandwidthLimit getCurrentBandwidthLimitsOrNull() {
