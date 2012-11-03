@@ -34,8 +34,22 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 	public void getStep(HTTPRequest request, PageHelper helper) {
 		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("bandwidthLimit"));
 
+		// Check for and display any errors.
+		final String parseTarget = request.getParam("parseTarget");
 		if (request.isParameterSet("parseError")) {
-			parseErrorBox(contentNode, helper, request.getParam("parseTarget"));
+			parseErrorBox(contentNode, helper, WizardL10n.l10n("bandwidthCouldNotParse", "limit", parseTarget));
+		} else if (request.isParameterSet("tooLow")) {
+			HTMLNode errorBox = parseErrorBox(contentNode, helper, WizardL10n.l10n("bandwidthMonthlyLow",
+			                                  new String[] { "requested", "minimum", "useMinimum" },
+			                                  new String[] { parseTarget, String.valueOf(Math.round(minCap)), WizardL10n.l10n("bandwidthMonthlyUseMinimum")}));
+
+			HTMLNode minimumForm = helper.addFormChild(errorBox, ".", "use-minimum");
+			minimumForm.addChild("input",
+				new String[]{"type", "name", "value"},
+				new String[]{"hidden", "capTo", String.valueOf(minCap)});
+			minimumForm.addChild("input",
+				new String[]{"type", "value"},
+				new String[]{"submit", WizardL10n.l10n("bandwidthMonthlyUseMinimum")});
 		}
 
 		//Box for prettiness and explanation of function.
@@ -92,12 +106,14 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 		long bytesPerMonth;
 		// capTo is specified as floating point GB.
 		String capTo = request.getPartAsStringFailsafe("capTo", 4096);
+		// Target for an error page.
+		StringBuilder target = new StringBuilder(FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH_MONTHLY.name()).append("&parseTarget=");
 		try {
 			GBPerMonth = Double.valueOf(capTo);
 			bytesPerMonth = Math.round(GBPerMonth * GB);
 		} catch (NumberFormatException e) {
-			StringBuilder target = new StringBuilder("BANDWIDTH_MONTHLY&parseError=true&parseTarget=");
 			target.append(URLEncoder.encode(capTo, true));
+			target.append("&parseError=true");
 			return target.toString();
 		}
 		/*
@@ -122,17 +138,10 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 
 		try {
 			setBandwidthLimit(downloadLimit, false);
-		} catch (InvalidConfigValueException e) {
-			StringBuilder target = new StringBuilder("BANDWIDTH_MONTHLY&parseError=true&parseTarget=");
-			target.append(URLEncoder.encode(capTo, true));
-			return target.toString();
-		}
-
-		try {
 			setBandwidthLimit(uploadLimit, true);
 		} catch (InvalidConfigValueException e) {
-			StringBuilder target = new StringBuilder("BANDWIDTH_MONTHLY&parseError=true&parseTarget=");
-			target.append(URLEncoder.encode(capTo, true));
+			target.append(URLEncoder.encode(String.valueOf(GBPerMonth), true));
+			target.append("&tooLow=true");
 			return target.toString();
 		}
 
