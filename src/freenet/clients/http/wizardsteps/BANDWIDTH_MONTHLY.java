@@ -14,6 +14,9 @@ import freenet.support.api.HTTPRequest;
  */
 public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 
+	/**
+	 * 1 gigabyte in bytes.
+	 */
 	private static final long GB = 1000000000;
 	/**
 	 * Seconds in 30 days. Used for limit calculations.
@@ -52,7 +55,7 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 				new String[]{"submit", WizardL10n.l10n("bandwidthMonthlyUseMinimum")});
 		}
 
-		//Box for prettiness and explanation of function.
+		// Explain this step's operation.
 		HTMLNode infoBox = helper.getInfobox("infobox-normal", WizardL10n.l10n("bandwidthLimitMonthlyTitle"),
 		        contentNode, null, false);
 		NodeL10n.getBase().addL10nSubstitution(infoBox, "FirstTimeWizardToadlet.bandwidthLimitMonthly",
@@ -63,13 +66,13 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 		//TODO: The user can always set a custom limit. At least one limit should be displayed in order to
 		//TODO: demonstrate how to specify the limit, though.
 
-		//Table header
+		// Table header
 		HTMLNode table = infoBox.addChild("table");
 		HTMLNode headerRow = table.addChild("tr");
 		headerRow.addChild("th", WizardL10n.l10n("bandwidthLimitMonthlyTitle"));
 		headerRow.addChild("th", WizardL10n.l10n("bandwidthSelect"));
 
-		//Row for each cap
+		// Row for each cap
 		for (long cap : caps) {
 			HTMLNode row = table.addChild("tr");
 			//ISPs are likely to list limits in GB instead of GiB, so display GB here.
@@ -83,7 +86,7 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 			        new String[] { "submit", WizardL10n.l10n("bandwidthSelect")});
 		}
 
-		//Row for custom entry
+		// Row for custom entry
 		HTMLNode customForm = helper.addFormChild(table.addChild("tr"), ".", "custom-form");
 		HTMLNode capInput = customForm.addChild("td");
 		capInput.addChild("input",
@@ -94,6 +97,7 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 			new String[]{"type", "value"},
 			new String[]{"submit", WizardL10n.l10n("bandwidthSelect")});
 
+		// Back / next buttons
 		HTMLNode backForm = helper.addFormChild(infoBox, ".", "backForm");
 		backForm.addChild("input",
 		        new String[] { "type", "name", "value" },
