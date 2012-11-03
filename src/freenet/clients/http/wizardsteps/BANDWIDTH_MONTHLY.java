@@ -15,6 +15,10 @@ import freenet.support.api.HTTPRequest;
 public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 
 	private static final long GB = 1000000000;
+	/**
+	 * Seconds in 30 days. Used for limit calculations.
+	 */
+	private static final double secondsPerMonth = 2592000d;
 	/*
 	 * Bandwidth used if both the upload and download limit are at the minimum. In GB. Assumes 24/7 uptime.
 	 */
@@ -84,24 +88,37 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 
 	@Override
 	public String postStep(HTTPRequest request)  {
-		double bytesMonth;
+		double GBPerMonth;
+		long bytesPerMonth;
 		// capTo is specified as floating point GB.
 		String capTo = request.getPartAsStringFailsafe("capTo", 4096);
 		try {
-			bytesMonth = Double.valueOf(capTo) * GB;
+			GBPerMonth = Double.valueOf(capTo);
+			bytesPerMonth = Math.round(GBPerMonth * GB);
 		} catch (NumberFormatException e) {
 			StringBuilder target = new StringBuilder("BANDWIDTH_MONTHLY&parseError=true&parseTarget=");
 			target.append(URLEncoder.encode(capTo, true));
 			return target.toString();
 		}
-		//Linear from 0.5 at 25 GB to 0.8 at 100 GB. bytesMonth is divided by the number of bytes in a GiB.
-		double downloadFraction = 0.004*(bytesMonth/GB) + 0.4;
-		if (downloadFraction < 0.4) downloadFraction = 0.4;
-		if (downloadFraction > 0.8) downloadFraction = 0.8;
-		//Seconds in 30 days
-		double bytesSecondTotal = bytesMonth/2592000d;
-		String downloadLimit = String.valueOf(bytesSecondTotal*downloadFraction);
-		String uploadLimit = String.valueOf(bytesSecondTotal*(1-downloadFraction));
+		/*
+		 * Fraction of total limit used for download. Linear from 0.5 at the minimum cap to 0.8 at 100 GB.
+		 *
+		 * This is a line between (minCap, minFraction) and (maxScaleCap, maxFraction) which has been shifted
+		 * to the left by minCap.
+		 *
+		 * This 50/50 split is consistent with the assumption in the definition of minCap that the upload and
+		 * download limits are equal.
+		 */
+		final double minFraction = 0.5;
+		final double maxFraction = 0.8;
+		final double maxScaleCap = 100;
+		assert minCap < maxScaleCap;
+		double downloadFraction = ((maxFraction-minFraction)/(maxScaleCap - 2*minCap))*(GBPerMonth - minCap) + minFraction;
+		// No minimum fraction clamp: caps less than the minimum get redirected to a warning instead.
+		if (downloadFraction > maxFraction) downloadFraction = maxFraction;
+		double bytesPerSecondTotal = bytesPerMonth/secondsPerMonth;
+		String downloadLimit = String.valueOf(Math.ceil(bytesPerSecondTotal*downloadFraction));
+		String uploadLimit = String.valueOf(Math.ceil(bytesPerSecondTotal*(1-downloadFraction)));
 
 		try {
 			setBandwidthLimit(downloadLimit, false);
