@@ -1249,8 +1249,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			}
 			computedExponential = ctx.getHMACKey(_hisExponential);
         } else {
-            ECPublicKey initiatorKey = ECDH.getPublicKey(initiatorExponential);
-            ECPublicKey responderKey = ECDH.getPublicKey(responderExponential);
+            ECPublicKey initiatorKey = ECDH.getPublicKey(initiatorExponential, ecdhCurveToUse);
+            ECPublicKey responderKey = ECDH.getPublicKey(responderExponential, ecdhCurveToUse);
             ECDHLightContext ctx = findECDHContextByPubKey(responderKey);
             if (ctx == null) {
                 Logger.error(this, "WTF? the HMAC verified but we don't know about that exponential! SHOULDN'T HAPPEN! - JFK3 - "+pn);
@@ -1779,7 +1779,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		    NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
 		    computedExponential= ((DiffieHellmanLightContext)ctx).getHMACKey(_hisExponential);
 		}else {
-		    computedExponential = ((ECDHLightContext)ctx).getHMACKey(ECDH.getPublicKey(hisExponential));
+		    computedExponential = ((ECDHLightContext)ctx).getHMACKey(ECDH.getPublicKey(hisExponential, ecdhCurveToUse));
 		}
 		if(logDEBUG) Logger.debug(this, "The shared Master secret is : "+HexUtil.bytesToHex(computedExponential)+ " for " + pn);
 		/* 0 is the outgoing key for the initiator, 7 for the responder */

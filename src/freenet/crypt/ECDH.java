@@ -6,6 +6,7 @@ import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
 import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
@@ -15,6 +16,7 @@ import java.security.spec.X509EncodedKeySpec;
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
 
+import freenet.crypt.JceLoader;
 import freenet.support.Logger;
 
 public class ECDH {
@@ -31,6 +33,10 @@ public class ECDH {
         
         public final ECGenParameterSpec spec;
         private KeyPairGenerator keygenCached;
+        protected final Provider kgProvider = JceLoader.BouncyCastle;
+        protected final Provider kfProvider = JceLoader.BouncyCastle;;
+        protected final Provider kaProvider = JceLoader.BouncyCastle;;
+
         /** Expected size of a pubkey */
         public final int modulusSize;
         /** Expected size of the derived secret (in bytes) */
@@ -46,7 +52,7 @@ public class ECDH {
         	if(keygenCached != null) return keygenCached;
             KeyPairGenerator kg = null;
             try {
-                kg = KeyPairGenerator.getInstance("ECDH");
+                kg = KeyPairGenerator.getInstance("EC", kgProvider);
                 kg.initialize(spec);
             } catch (NoSuchAlgorithmException e) {
                 Logger.error(ECDH.class, "NoSuchAlgorithmException : "+e.getMessage(),e);
@@ -87,8 +93,8 @@ public class ECDH {
     public byte[] getAgreedSecret(ECPublicKey pubkey) {
         try {
             KeyAgreement ka = null;
-            ka = KeyAgreement.getInstance("ECDH");
-            ka.init(key.getPrivate(), curve.spec);
+            ka = KeyAgreement.getInstance("ECDH", curve.kaProvider);
+            ka.init(key.getPrivate());
             ka.doPhase(pubkey, true);
 
             return ka.generateSecret();
@@ -97,9 +103,6 @@ public class ECDH {
             e.printStackTrace();
         } catch (NoSuchAlgorithmException e) {
             Logger.error(this, "NoSuchAlgorithmException : "+e.getMessage(),e);
-            e.printStackTrace();
-        } catch (InvalidAlgorithmParameterException e) {
-            Logger.error(this, "InvalidAlgorithmParameterException : "+e.getMessage(),e);
             e.printStackTrace();
         }
         return null;
@@ -114,11 +117,11 @@ public class ECDH {
      * @param data
      * @return ECPublicKey or null if it fails
      */
-    public static ECPublicKey getPublicKey(byte[] data) {
+    public static ECPublicKey getPublicKey(byte[] data, Curves curve) {
         ECPublicKey remotePublicKey = null;
         try {
             X509EncodedKeySpec ks = new X509EncodedKeySpec(data);
-            KeyFactory kf = KeyFactory.getInstance("ECDH");
+            KeyFactory kf = KeyFactory.getInstance("EC", curve.kfProvider);
             remotePublicKey = (ECPublicKey)kf.generatePublic(ks);
             
         } catch (NoSuchAlgorithmException e) {
