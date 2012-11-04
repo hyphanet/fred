@@ -33,9 +33,9 @@ public class ECDHLightContext extends KeyAgreementSchemeContext {
     /*
      * Calling the following is costy; avoid
      */
-    public SecretKey getHMACKey(ECPublicKey peerExponential) {
+    public byte[] getHMACKey(ECPublicKey peerExponential) {
         lastUsedTime = System.currentTimeMillis();
-        SecretKey sharedKey = ecdh.getAgreedSecret(peerExponential);
+        byte[] sharedKey = ecdh.getAgreedSecret(peerExponential);
 
         if (logMINOR) {
             Logger.minor(this, "Curve in use: " + ecdh.curve.toString());
@@ -47,7 +47,7 @@ public class ECDHLightContext extends KeyAgreementSchemeContext {
             			"Peer's exponential: "
             			+ HexUtil.bytesToHex(peerExponential.getEncoded()));
             	Logger.debug(this,
-            			"SharedSecret = " + HexUtil.bytesToHex(sharedKey.getEncoded()));
+            			"SharedSecret = " + HexUtil.bytesToHex(sharedKey));
             }
         }
 
