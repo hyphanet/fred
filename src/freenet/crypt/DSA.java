@@ -132,7 +132,7 @@ public class DSA {
 
 	public static void main(String[] args) throws Exception {
 		//DSAGroup g=DSAGroup.readFromField(args[0]);
-		freenet.support.SimpleFieldSet fs = args.length >= 1 && args[1].length() != 0 ? freenet.support.SimpleFieldSet.readFrom(new java.io.File(args[0]), false, false) : null;
+		freenet.support.SimpleFieldSet fs = args.length >= 1 && args[0].length() != 0 ? freenet.support.SimpleFieldSet.readFrom(new java.io.File(args[0]), false, false) : null;
 		DSAGroup g = Global.DSAgroupBigA;
 		if (fs != null)
 			g = DSAGroup.create(fs.subset("dsaGroup"));
