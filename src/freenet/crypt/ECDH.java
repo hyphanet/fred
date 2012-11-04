@@ -28,9 +28,9 @@ public class ECDH {
     public enum Curves {
         // rfc5903 or rfc6460: it's NIST's random/prime curves : suite B
         // Order matters. Append to the list, do not re-order.
-        P256("secp256r1", "AES128", 91, 32),
-        P384("secp384r1", "AES192", 120, 48),
-        P521("secp521r1", "AES256", 158, 66);
+        P256("secp256r1", 91, 32),
+        P384("secp384r1", 120, 48),
+        P521("secp521r1", 158, 66);
         
         public final ECGenParameterSpec spec;
         private KeyPairGenerator keygenCached;
@@ -38,15 +38,13 @@ public class ECDH {
         protected final Provider kfProvider = JceLoader.BouncyCastle;;
         protected final Provider kaProvider = JceLoader.BouncyCastle;;
         /** The symmetric algorithm associated with the curve (use that, nothing else!) */
-        public final String defaultKeyAlgorithm;
         /** Expected size of a pubkey */
         public final int modulusSize;
         /** Expected size of the derived secret (in bytes) */
         public final int derivedSecretSize;
         
-        private Curves(String name, String defaultKeyAlg, int modulusSize, int derivedSecretSize) {
+        private Curves(String name, int modulusSize, int derivedSecretSize) {
             this.spec = new ECGenParameterSpec(name);
-            this.defaultKeyAlgorithm = defaultKeyAlg;
             this.modulusSize = modulusSize;
             this.derivedSecretSize = derivedSecretSize;
         }
@@ -99,10 +97,14 @@ public class ECDH {
      * 
      * **THE OUTPUT SHOULD ALWAYS GO THROUGH A KDF**
      */
-    public SecretKey getAgreedSecret(ECPublicKey pubkey) {
-        SecretKey key = null;
+    public byte[] getAgreedSecret(ECPublicKey pubkey) {
         try {
-            key = getAgreedSecret(pubkey, curve.defaultKeyAlgorithm);
+            KeyAgreement ka = null;
+            ka = KeyAgreement.getInstance("ECDH", curve.kaProvider);
+            ka.init(key.getPrivate());
+            ka.doPhase(pubkey, true);
+
+            return ka.generateSecret();
         } catch (InvalidKeyException e) {
             Logger.error(this, "InvalidKeyException : "+e.getMessage(),e);
             e.printStackTrace();
@@ -110,18 +112,7 @@ public class ECDH {
             Logger.error(this, "NoSuchAlgorithmException : "+e.getMessage(),e);
             e.printStackTrace();
         }
-        return key;
-    }
-    
-    protected SecretKey getAgreedSecret(PublicKey pubkey, String algorithm) throws InvalidKeyException, NoSuchAlgorithmException {
-        KeyAgreement ka = null;
-        ka = KeyAgreement.getInstance("ECDH", curve.kaProvider);
-        ka.init(key.getPrivate());
-        ka.doPhase(pubkey, true);
-        
-        // Note that the returned key is twice the length suggested by the algorithm.
-        // It will be fed into a KDF, which will then generate a normal-sized key.
-        return new SecretKeySpec(ka.generateSecret(), algorithm);
+        return null;
     }
     
     public ECPublicKey getPublicKey() {
