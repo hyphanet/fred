@@ -1239,8 +1239,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						completedDownloadToDisk.add(download);
 				} else if(download.hasFinished()) {
 					int failureCode = download.getFailureCode();
+					String mimeType = download.getMIMEType();
 					if(failureCode == FetchException.CONTENT_VALIDATION_UNKNOWN_MIME) {
-						String mimeType = download.getMIMEType();
 						mimeType = ContentFilter.stripMIMEType(mimeType);
 						LinkedList<DownloadRequestStatus> list = failedUnknownMIMEType.get(mimeType);
 						if(list == null) {
@@ -1249,7 +1249,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						}
 						list.add(download);
 					} else if(failureCode == FetchException.CONTENT_VALIDATION_BAD_MIME) {
-						String mimeType = download.getMIMEType();
 						mimeType = ContentFilter.stripMIMEType(mimeType);
 						MIMEType type = ContentFilter.getMIMEType(mimeType);
 						LinkedList<DownloadRequestStatus> list;
