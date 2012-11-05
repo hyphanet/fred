@@ -180,6 +180,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			// But we DEFINITELY do not want to synchronize while calling currentState.schedule(),
 			// which can call onSuccess and thereby almost anything.
 			HashResult[] oldHashes = null;
+			String overrideMIME = ctx.overrideMIME;
 			synchronized(this) {
 				if(restart)
 					clearCountersOnRestart();
@@ -191,6 +192,8 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 					finished = false;
 				}
 				expectedMIME = null;
+				if(overrideMIME != null)
+					expectedMIME = overrideMIME;
 				expectedSize = 0;
 				oldHashes = hashes;
 				hashes = null;
