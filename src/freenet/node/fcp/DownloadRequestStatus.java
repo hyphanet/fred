@@ -1,9 +1,12 @@
 package freenet.node.fcp;
 
 import java.io.File;
+
+import freenet.client.FetchException;
 import freenet.client.InsertContext;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.keys.FreenetURI;
+import freenet.support.Logger;
 import freenet.support.api.Bucket;
 
 /** Cached status of a download of a file i.e. a ClientGet */
@@ -28,6 +31,9 @@ public class DownloadRequestStatus extends RequestStatus {
 	synchronized void setFinished(boolean success, long dataSize, String mimeType, 
 			int failureCode, String failureReasonLong, String failureReasonShort, Bucket dataShadow, boolean filtered) {
 		setFinished(success);
+		if(mimeType == null && (failureCode == FetchException.CONTENT_VALIDATION_UNKNOWN_MIME || failureCode == FetchException.CONTENT_VALIDATION_BAD_MIME)) {
+			Logger.error(this, "MIME type is null but failure code is "+FetchException.getMessage(failureCode)+" for "+getIdentifier()+" : "+uri, new Exception("error"));
+		}
 		this.dataSize = dataSize;
 		this.mimeType = mimeType;
 		this.failureCode = failureCode;
@@ -44,6 +50,9 @@ public class DownloadRequestStatus extends RequestStatus {
 			byte[] splitfileKey, FreenetURI uri, String failureReasonShort, String failureReasonLong, boolean overriddenDataType, Bucket dataShadow, boolean filterData, boolean dontCompress) {
 		super(identifier, persistence, started, finished, success, total, min, fetched, 
 				fatal, failed, totalFinalized, last, prio);
+		if(mimeType == null && (failureCode == FetchException.CONTENT_VALIDATION_UNKNOWN_MIME || failureCode == FetchException.CONTENT_VALIDATION_BAD_MIME)) {
+			Logger.error(this, "MIME type is null but failure code is "+FetchException.getMessage(failureCode)+" for "+identifier+" : "+uri, new Exception("error"));
+		}
 		this.overriddenDataType = overriddenDataType;
 		this.failureCode = failureCode;
 		this.mimeType = mime;

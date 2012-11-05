@@ -1240,6 +1240,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				} else if(download.hasFinished()) {
 					int failureCode = download.getFailureCode();
 					String mimeType = download.getMIMEType();
+					if(mimeType == null && (failureCode == FetchException.CONTENT_VALIDATION_UNKNOWN_MIME || failureCode == FetchException.CONTENT_VALIDATION_BAD_MIME)) {
+						Logger.error(this, "MIME type is null but failure code is "+FetchException.getMessage(failureCode)+" for "+download.getIdentifier()+" : "+download.getURI());
+						mimeType = DefaultMIMETypes.DEFAULT_MIME_TYPE;
+					}
 					if(failureCode == FetchException.CONTENT_VALIDATION_UNKNOWN_MIME) {
 						mimeType = ContentFilter.stripMIMEType(mimeType);
 						LinkedList<DownloadRequestStatus> list = failedUnknownMIMEType.get(mimeType);
