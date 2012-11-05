@@ -145,6 +145,7 @@ public class ContentFilter {
 	}
 
 	public static String stripMIMEType(String mimeType) {
+		if(mimeType == null) return null;
 		int x; 
 		if((x=mimeType.indexOf(';')) != -1) {
 			mimeType = mimeType.substring(0, x).trim();
@@ -153,6 +154,7 @@ public class ContentFilter {
 	}
 	
 	public static MIMEType getMIMEType(String mimeType) {
+		if(mimeType == null) return null;
 		return mimeTypesByName.get(stripMIMEType(mimeType));
 	}
 
