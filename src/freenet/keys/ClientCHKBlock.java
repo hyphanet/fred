@@ -340,9 +340,10 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         }
         // Now make the header
         byte[] encKey;
-        if(cryptoKey != null)
+        if(cryptoKey != null) {
+        	md256.reset();
         	encKey = cryptoKey;
-        else
+        } else
         	encKey = md256.digest(data);
     	if(cryptoAlgorithm == 0) {
     		// TODO find all such cases and fix them.
