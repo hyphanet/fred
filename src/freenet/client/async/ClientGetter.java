@@ -780,6 +780,9 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			if(forceCompatibleExtension != null)
 				checkCompatibleExtension(mime);
 		}
+		synchronized(this) {
+			expectedMIME = mime;
+		}
 		if(persistent()) {
 			container.store(this);
 			container.activate(ctx.eventProducer, 1);
