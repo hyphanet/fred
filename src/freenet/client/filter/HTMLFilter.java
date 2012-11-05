@@ -2534,8 +2534,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		static final String[] locallyVerifiedAttrs = new String[] {
 			"href"};
 
-		BaseHrefTagVerifier(String string, String[] strings, String[] strings2) {
-			super(string, strings, strings2, null);
+		BaseHrefTagVerifier(String tag, String[] allowedAttrs, String[] uriAttrs) {
+			super(tag, allowedAttrs, uriAttrs, null);
 			for(String attr : locallyVerifiedAttrs) {
 				this.parsedAttrs.add(attr);
 			}
