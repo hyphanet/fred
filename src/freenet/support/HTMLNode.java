@@ -95,7 +95,7 @@ public class HTMLNode implements XMLCharacterClasses {
 	 * @param name The name of the html element
 	 * @return True if we should add a newline after the opening tag
 	 */
-	private Boolean newlineOpen(String name) {
+	Boolean newlineOpen(String name) {
 		return OpenTags.contains(name);
 	}
 
