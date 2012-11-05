@@ -801,6 +801,15 @@ public class Node implements TimeSkewDetectorCallback {
 	 */
 	private static final int minimumBandwidth = 5 * 1024;
 
+	/*
+	 * Gets minimum bandwidth in bytes considered usable.
+	 *
+	 * @see #minimumBandwidth
+	 */
+	public static int getMinimumBandwidth() {
+		return minimumBandwidth;
+	}
+
 	/**
 	 * Returns an exception with an explanation that the given bandwidth limit is too low.
 	 *
