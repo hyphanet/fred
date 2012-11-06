@@ -1424,9 +1424,16 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray,
 				emptyStringArray));
 		allowedTagsVerifiers.put("script", new ScriptTagVerifier());
-		/* MathML 3.0 support, deprecated attributes not included so don't try using them
-		   xref attrib is also not supported as unsure of security implications of it
-		   it appears to be for in document linking but may accept external URIs */
+		/* MathML 3.0 support for presentation markup, deprecated attributes 
+		 * not included so don't try using them. xref not supported as it is 
+		 * mainly used to link presentation and content in parallel markup.
+		 *  
+		 * Content markup not supported as it is larger and presumably not 
+		 * used that much, and **HAS SECURITY ISSUES**: Content markup uses 
+		 * Content Dictionaries, which by default are loaded from a default 
+		 * URL on the web. 
+		 * See attributes: cdgroup, definitionURL, cd.
+		 * Elements: csymbol, annotation, annotation-xml. */
 		allowedTagsVerifiers.put(
 			"math",
 			new CoreTagVerifier(
