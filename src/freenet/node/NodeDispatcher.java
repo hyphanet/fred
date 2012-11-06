@@ -412,15 +412,13 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	}
 
 	private void handleDisconnect(final Message m, final PeerNode source) {
-		// Must run ON the packet sender thread as it sends a packet directly
-		node.getTicker().queueTimedJob(new FastRunnable() {
+		// Wait for 1 second to ensure that the ack gets sent first.
+		node.getTicker().queueTimedJob(new Runnable() {
 			@Override
 			public void run() {
-				// Send the ack
-					source.sendAnyUrgentNotifications(true);
 				finishDisconnect(m, source);
 			}
-		}, 0);
+		}, 1000);
 	}
 	
 	private void finishDisconnect(final Message m, final PeerNode source) {

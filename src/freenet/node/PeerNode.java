@@ -2839,15 +2839,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 
 	/**
-	* Send a payload-less packet on either key if necessary.
-	* @throws PacketSequenceException If there is an error sending the packet
-	* caused by a sequence inconsistency.
-	*/
-	public boolean sendAnyUrgentNotifications(boolean forceSendPrimary) {
-		return false;
-	}
-
-	/**
 	 * Get a PeerNodeStatus for this node.
 	 * @param noHeavy If true, avoid any expensive operations e.g. the message count hashtables.
 	 */
