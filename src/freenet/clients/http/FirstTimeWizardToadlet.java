@@ -123,8 +123,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 
 		//Skip the browser warning page if using Chrome in incognito mode
 		if (currentStep == WIZARD_STEP.BROWSER_WARNING &&
-		        request.getHeader("user-agent").contains("Chrome") && request.isParameterSet("incognito") &&
-		        Boolean.valueOf(request.getParam("incognito"))) {
+				request.isChrome() && request.isIncognito()) {
 			super.writeTemporaryRedirect(ctx, "Skipping unneeded warning",
 			        persistFields.appendTo(TOADLET_URL+"?step=MISC"));
 			return;

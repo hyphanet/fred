@@ -891,4 +891,20 @@ public class HTTPRequestImpl implements HTTPRequest {
 		return parts.keySet().toArray(new String[parts.size()]);
 	}
 
+	@Override
+	public boolean isIncognito() {
+		if(isParameterSet("incognito"))
+			return Boolean.valueOf(getParam("incognito"));
+		return false;
+	}
+
+	@Override
+	public boolean isChrome() {
+		String ua = getHeader("user-agent");
+		if(ua != null) {
+			if(ua.contains("Chrome")) return true;
+		}
+		return false;
+	}
+
 }
