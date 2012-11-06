@@ -52,7 +52,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 			}
 		});
 	}
-	final Message req;
 	final Node node;
 	final long uid;
 	private final short htl;
@@ -86,22 +85,18 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 	 * @param key
 	 * @param tag
 	 * @param passedInKeyBlock We ALWAYS look up in the datastore before starting a request.
+	 * SECURITY: Do not pass messages into handler constructors. See note at top of NodeDispatcher.
 	 */
-	public RequestHandler(Message m, PeerNode source, long id, Node n, short htl, Key key, RequestTag tag, KeyBlock passedInKeyBlock, boolean realTimeFlag) {
-		req = m;
+	public RequestHandler(PeerNode source, long id, Node n, short htl, Key key, RequestTag tag, KeyBlock passedInKeyBlock, boolean realTimeFlag, boolean needsPubKey) {
 		node = n;
 		uid = id;
 		this.realTimeFlag = realTimeFlag;
 		this.source = source;
 		this.htl = htl;
 		this.tag = tag;
-		if(htl <= 0)
-			htl = 1;
 		this.key = key;
 		this.passedInKeyBlock = passedInKeyBlock;
-		if(key instanceof NodeSSK)
-			needsPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
-		receivedBytes(m.receivedByteCount());
+		this.needsPubKey = needsPubKey;
 	}
 
 	@Override
@@ -112,14 +107,10 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 		//The last thing that realRun() does is register as a request-sender listener, so any exception here is the end.
 		} catch(NotConnectedException e) {
 			Logger.normal(this, "requestor gone, could not start request handler wait");
-			node.removeTransferringRequestHandler(uid);
 			tag.handlerThrew(e);
-			tag.unlockHandler();
 		} catch(Throwable t) {
 			Logger.error(this, "Caught " + t, t);
-			node.removeTransferringRequestHandler(uid);
 			tag.handlerThrew(t);
-			tag.unlockHandler();
 		}
 	}
 	
@@ -249,13 +240,13 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 						if(rs != null && rs.isTransferCoalesced()) {
 							if(logMINOR) Logger.minor(this, "Not cancelling transfer because others want the data on "+RequestHandler.this);
 							// We do need to reassign the tag because the RS has the same UID.
-							node.reassignTagToSelf(tag);
+							node.tracker.reassignTagToSelf(tag);
 							return false;
 						}
 						if(node.failureTable.peersWantKey(key, source)) {
 							// This may indicate downstream is having trouble communicating with us.
 							Logger.error(this, "Downstream transfer successful but upstream transfer to "+source.shortToString()+" failed. Reassigning tag to self because want the data for peers on "+RequestHandler.this);
-							node.reassignTagToSelf(tag);
+							node.tracker.reassignTagToSelf(tag);
 							return false; // Want it
 						}
 						if(node.clientCore != null && node.clientCore.wantKey(key)) {
@@ -282,7 +273,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 							 * discussion in BlockReceiver's top comments.
 							 */
 							Logger.error(this, "Downstream transfer successful but upstream transfer to "+source.shortToString()+" failed. Reassigning tag to self because want the data for ourselves on "+RequestHandler.this);
-							node.reassignTagToSelf(tag);
+							node.tracker.reassignTagToSelf(tag);
 							return false; // Want it
 						}
 						return true;
@@ -306,7 +297,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 					}
 					
 				}, realTimeFlag, node.nodeStats);
-			node.addTransferringRequestHandler(uid);
+			tag.handlerTransferBegins();
 			bt.sendAsync();
 		} catch(NotConnectedException e) {
 			synchronized(this) {
@@ -620,9 +611,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 								finishOpennetNoRelay();
 							} catch (NotConnectedException e) {
 								Logger.normal(this, "requestor gone, could not start request handler wait");
-								node.removeTransferringRequestHandler(uid);
 								tag.handlerThrew(e);
-								tag.unlockHandler();
 							}
 						} else {
 							//also for byte logging, since the block is the 'terminal' message.
@@ -633,7 +622,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 					}
 					
 				}, realTimeFlag, node.nodeStats);
-			node.addTransferringRequestHandler(uid);
+			tag.handlerTransferBegins();
 			source.sendAsync(df, null, this);
 			bt.sendAsync();
 		} else
@@ -641,7 +630,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 	}
 
 	private void unregisterRequestHandlerWithNode() {
-		node.removeTransferringRequestHandler(uid);
 		RequestSender r;
 		synchronized(this) {
 			r = rs;
@@ -964,8 +952,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 					tag.unlockHandler();
 					applyByteCounts();
 				}
-				
-				node.removeTransferringRequestHandler(uid);
 			}
 
 			@Override
@@ -978,15 +964,13 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 				}
 				rs.ackOpennet(rs.successFrom());
 				applyByteCounts();
-				node.removeTransferringRequestHandler(uid);
 			}
 
 			@Override
 			public void acked(boolean timedOutMessage) {
-				tag.unlockHandler();
+				tag.unlockHandler(); // will remove transfer
 				rs.ackOpennet(dataSource);
 				applyByteCounts();
-				node.removeTransferringRequestHandler(uid);
 			}
 			
 		}, node);

@@ -20,10 +20,10 @@ package freenet.io.comm;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.Vector;
 
 import freenet.io.comm.MessageFilter.MATCHED;
 import freenet.node.PeerNode;
@@ -68,7 +68,6 @@ public class MessageCore {
 	}
 
 	public MessageCore(Executor executor) {
-		_timedOutFilters = new Vector<MessageFilter>(32);
 		_executor = executor;
 	}
 
@@ -89,10 +88,6 @@ public class MessageCore {
         }
     }
 
-    /** Only used by removeTimedOutFilters() - if future code uses this elsewhere, we need to
-     * reconsider its locking. */
-    private final Vector<MessageFilter> _timedOutFilters;
-    
     public void start(final Ticker ticker) {
     	synchronized(this) {
     		startedTime = System.currentTimeMillis();
@@ -124,6 +119,7 @@ public class MessageCore {
 		// Avoids exhaustive and unsuccessful search in waitFor() removal of a timed out filter.
 		if(logMINOR)
 			Logger.minor(this, "Removing timed out filters");
+		HashSet<MessageFilter> timedOutFilters = null;
 		synchronized (_filters) {
 			for (ListIterator<MessageFilter> i = _filters.listIterator(); i.hasNext();) {
 				MessageFilter f = i.next();
@@ -131,9 +127,9 @@ public class MessageCore {
 					if(logMINOR)
 						Logger.minor(this, "Removing "+f);
 					i.remove();
-					if(!_timedOutFilters.contains(f))
-						_timedOutFilters.add(f);
-					else
+					if(timedOutFilters == null) 
+						timedOutFilters = new HashSet<MessageFilter>();
+					if(!timedOutFilters.add(f))
 						Logger.error(this, "Filter "+f+" is in filter list twice!");
 					if(logMINOR) {
 						for (ListIterator<Message> it = _unclaimed.listIterator(); it.hasNext();) {
@@ -158,11 +154,12 @@ public class MessageCore {
 			}
 		}
 		
-		for(MessageFilter f : _timedOutFilters) {
-			f.setMessage(null);
-			f.onTimedOut(_executor);
+		if(timedOutFilters != null) {
+			for(MessageFilter f : timedOutFilters) {
+				f.setMessage(null);
+				f.onTimedOut(_executor);
+			}
 		}
-		_timedOutFilters.clear();
 		
 		long tEnd = System.currentTimeMillis();
 		if(tEnd - tStart > 50) {

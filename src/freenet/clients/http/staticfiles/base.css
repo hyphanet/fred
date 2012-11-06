@@ -1,10 +1,660 @@
-/* Basic css functions every theme should provide */
+/* default color scheme */
+@import url(/static/color.css);
+
+/* FIXME these includes should be incorporated into this file */
+
+/* Bookmarks & bookmark editor */
+@import url(/static/bookmark.css);
+
+/* Status bar style & colors */
+@import url(/static/statusbar.css);
+
+/* 
+ * Overall Settings
+ */
+
+/* Notes */
+
+/* <a> tags should usually fill their entire container. This
+ * means no margins on a tags nor padding on their parents. 
+ * Doing this avoids problems with the menus where some area
+ * that looks like it should be clickable isn't, or something
+ * that should cause a hover effect doesn't. */ 
+
+/* TODO theme the Search page */
+
+/* TODO the table of peers is excessively wide in advanced
+ * mode Something(tm) should be done about this. */
+
+/* TODO the Statistics page is also excessively wide. There's
+ * also something strange going on in the Success rates by HTL
+ * tables regarding entries at 0.000% */
+
+/* TODO the Connectivity section on the connectivity page
+ * could also use some theming. Also - what's up with all those
+ extra columns in the tables on this page? */
+
+/* TODO play with the various Configuration pages to find
+ * a better layout */
+
+/* TODO the table inside the "Plugins currently loaded" 
+ * infobox looks out of place. */
+
+/* TODO In progress downloads has the same problem 
+ * Basically every time as put a table inside an infobox
+ * it doesn't look right. */
+
+/* TODO add theming to the translation page */
+
+/* TODO make sure all the plugins which are in common use
+ * work with the themes */
+
+/* TODO theme the bookmark editor */
+
+/* TODO theme the local file browser */
 
 /* Toggleable areas: hovering over them shows the hidden part */
+
 .toggleable .hidden {
     display: none;
 }
 
 .toggleable:hover .hidden {
     display: block;
+}
+
+/* FIXME The fproxy configuration page uses this. Need to
+ * determine if it is actually necessary since none of the
+ * other pages have it */
+
+.invisible {
+	display: none;
+}
+
+/* base font settings for entire page */
+
+div,
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+li,
+p,
+span,
+td,
+th {
+	font-family: Arial;
+	font-size: 11pt;
+	font-weight: normal;
+}
+
+div,
+form,
+li,
+pre,
+span,
+table,
+tr,
+td,
+ul {
+	margin: 0px;
+	padding: 0px;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+th {
+	font-weight: bold;
+}
+
+td,
+th {
+	padding: 0.333em;
+}
+
+table,
+td,
+th,
+thead {
+	border-style: solid;
+	border-width: 1px;
+}
+
+pre,
+textarea {
+	font-family: Courier;
+	font-weight: normal;
+	font-size: 0.8em; /* 0.8em ~ 9pt based on an 11pt reference */
+}
+
+form,
+pre,
+table {
+	margin-bottom: 0.333em;
+}
+
+/* The web interface doesn't use bullet lists anywhere */
+
+ul {
+    list-style-type: none;
+}
+
+/*
+ * Body and Page Header
+ */
+
+body {
+	margin: 0;
+	padding: 0;
+}
+
+/*
+ * Top Title Area
+ */
+
+#topbar {
+	background-image: url(logo.png);
+	background-position: 30px 3px;
+	background-repeat: no-repeat;
+	border-bottom-style: solid;
+	border-bottom-width: 1px;
+	min-height: 50px;
+	padding: 0.333em;
+}
+
+#topbar h1 {
+	font-size: 1.818em; /* 1.818em = 20pt based on an 11pt reference */
+	/* FIXME the following line looks redundant but things break if you remove it. */
+	margin: 0px;
+	padding-top: 0.35em; /* 7px based on an 20pt reference */
+	text-align: center;
+}
+
+/* 
+ * Navigation
+ */
+
+#navbar {
+	float: left;
+	position: relative;
+	left: 0.667em;
+	top: 0.667em;
+	width: 11.081em;
+}
+
+/* need to account for behavior-top too */
+#navbar, #selected-subnavbar {
+	border-width: 1px;
+	border-style: solid;
+}
+
+/*matches both top-level and submenu links */
+#navlist a,
+#selected-subnavbar a {
+	text-decoration: none;
+	display: block;
+	padding: 0.333em;
+}
+
+/*matches both top-level and submenu links */
+#navlist li {
+	font-weight: normal;
+}
+
+/*matches only submenu links */
+#navlist li ul li,
+#selected-subnavbar-list li {
+	font-weight: normal;
+}
+
+/* FIXME another rule that shouldn't be needed but is */
+#navlist,
+ul.subnavlist-selected,
+ul.subnavlist {
+	margin: 0;
+	padding: 0;
+}
+
+/* FIXME "selected" should be its own class so that it's
+ possible to match all submenus with a single selector
+ the html spec allows elements to have more than one class */
+ul.subnavlist-selected,
+ul.subnavlist {
+	margin-left: 1.5em;
+}
+
+li.submenuitem-selected,
+li.submenuitem-not-selected {
+	font-size: 0.81em;
+}
+
+/* this border is only displayed in dropdown mode */
+
+ul.subnavlist-selected,
+ul.subnavlist {
+	border-width: 1px;
+	border-style: solid;
+}
+
+/* the subnavbar won't look right if the top border is shown */
+#selected-subnavbar {
+	border-top-width: 0px; 
+}
+
+/* this is how the items in the subnavbar are made to display
+ * horizontally */
+#selected-subnavbar-list {
+	margin: 0;
+	padding: 0;
+	width: 100%;
+	display: table;
+}
+
+#selected-subnavbar li {
+	display: table-cell;
+	text-align: center;
+}
+
+/* 
+ * Infoboxes
+ */
+
+div.infobox {
+	border-style: solid;
+	border-width: 1px;
+	margin-bottom: 0.667em;
+}
+
+div.infobox-header {
+	background-position: right center;
+	background-repeat: no-repeat;
+	border-bottom-style: dotted;
+	border-bottom-width: 1px;
+	padding: 0.667em;
+	padding-right: 35px;
+}
+
+div.infobox-content {
+	padding: 0.667em;
+}
+
+/* FIXME I'm not sure why span.search-title-label exists at all. It would be better
+ * to put the text directly into the parent div and add a "search-title-label"
+ * class to that. This rule is necessary because the span isn't going to
+ * inherit font information from its parent because of a rule we set up a 
+ * long time ago that can't be changed without breaking other things. */
+
+div.infobox-header, span.search-title-label {
+	font-weight: bold;
+}
+
+ul.alert-summary {
+	text-indent: 20px;
+}
+
+/* these two input boxes go crazy if you don't bring their width
+ * under control */
+#searchform input[type=text],
+#keyfetchbox input[type=text] {
+	width: 100%;
+}
+
+li.alert-summary-text-error,
+li.alert-summary-text-alert,
+li.alert-summary-text-warning,
+li.alert-summary-text-minor {
+	background-position: left center;
+	background-repeat: no-repeat;
+}
+
+div.infobox-information div.infobox-header {
+	background-image: url(information.png);
+}
+
+div.infobox-warning div.infobox-header {
+	background-image: url(warning.png);
+}
+
+div.infobox-alert div.infobox-header {
+	background-image: url(alert.png);
+}
+
+div.infobox-error div.infobox-header {
+	background-image: url(error.png);
+}
+
+div.infobox-query div.infobox-header {
+	background-image: url(query.png);
+}
+
+div.infobox-success div.infobox-header {
+	background-image: url(success.png);
+}
+
+li.alert-summary-text-error {
+	background-image: url(error-16.png);
+}
+
+li.alert-summary-text-alert {
+	background-image: url(alert-16.png);
+}
+
+li.alert-summary-text-warning {
+	background-image: url(warning-16.png);
+}
+
+li.alert-summary-text-minor {
+	background-image: url(information-16.png);
+}
+
+/*
+ * Content
+ */
+
+#content {
+	margin-top: 0.667em;
+	padding-bottom: 2em;
+	position: absolute;
+	left: 12.614em;
+	right: 0.667em;
+}
+
+.interfacelink {
+	text-decoration: underline;
+}
+
+/*
+ * Plugins Page
+ */
+
+table.plugins {
+	width: 100%;
+}
+
+table.plugins td,
+table.plugins th {
+	font-size: 0.75em;
+}
+
+table.plugins span {
+	font-weight: bold;
+	font-size: 0.75em;
+}
+
+table.plugins form {
+	display: inline;
+}
+
+div.plugin-group {
+        margin-bottom: 0.5em;
+}
+
+div.plugin-group-title {
+        margin-bottom: 0.5em;
+        font-weight: bold;
+}
+
+/* 
+ * Configuration Page
+ */
+
+/* FIXME infobox-header divs on the configuration pages need
+ * a way to distinguish them from front page infobox-headers */
+
+/* FIXME get rid of the ul.config and use <div> instead */
+
+div.configprefix {
+	font-size: 1.4em;
+	font-variant: small-caps;
+	font-weight: bold;
+	padding: 0.667em;
+}
+
+ul.config {
+	border-width: 1px;
+	border-style: solid;
+	border-bottom-style: dotted;
+	/* FIXME more magic that shouldn't need to be here */
+	padding: 0px;
+}
+
+ul.config li {
+	border-bottom-style: solid;
+	border-bottom-width: 1px;
+	padding: 0.667em;
+}
+
+ul.config input[type=text] {
+	width: 100%;
+}
+
+span.configshortdesc {
+	font-weight: bold;
+}
+
+/* this span should be constrained in width if it has an adjacent
+ * input widget and unconstrained if it the widget is below */
+li.boolean span.configshortdesc,
+li.dropdown span.configshortdesc,
+div.infobox-warning span.configshortdesc {
+        display: inline-block;
+        width: 15em;
+}
+
+/* dropdown option boxes are aligned in a column to the right of the
+ * description*/
+ul.config span.config select {
+        vertical-align: top;
+        margin-left: 0.333em;
+}
+
+span.configlongdesc {
+        display: block;
+        margin-top: 0.333em;
+}
+
+div.infobox-warning span.configlongdesc {
+        display: inline-block;
+        padding-bottom: 0.333em;
+        margin-left: 1em;
+        margin-top: 0px;
+        vertical-align: bottom;
+}
+
+/* 
+ * Darknet Page
+ */
+
+/* FIXME The node connections page needs an intervention.
+ * <a> tags with a <span> inside them??? Reciting the
+ * code that produces this probably summons Cthulhu. */
+
+table.darknet_connections td,
+table.darknet_connections th,
+table.darknet_connections span {
+	/* FIXME why is this a pt value instead of em?
+	 * see comment above. */
+	font-size: 8pt;
+}
+
+table.column td {
+	vertical-align: top;
+}
+
+table.darknet_connections span.peer_connected,
+table.darknet_connections span.peer_disconnected {
+	font-weight: bold;
+}
+
+table.darknet_connections span.peer_connected,
+table.darknet_connections span.peer_disconnected {
+	text-transform: uppercase;
+}
+
+/*FIXME magic keystone - remove these rules and the entire
+ * page collapses */
+div.infobox-content ul {
+	margin: 0;
+	padding: 0;
+}
+
+/* node reference */
+
+pre#reference {
+	overflow: auto;
+}
+
+/* 
+ * Statistics Page
+ */
+
+div.peercircle {
+  margin: 0 auto;
+}
+
+div.peercircle span.me {
+  font-weight: bold;
+}
+
+div.peercircle span.connected {
+  font-weight: bold;
+}
+
+div.peercircle span.backed_off {
+  font-weight: bold;
+}
+
+div.peercircle span.disconnected {
+  font-weight: bold;
+}
+
+div.histogramLabel {
+  margin-left: 3px;
+  margin-right: 3px;
+  font-size: 60%;
+}
+
+/* 
+ * Queue Page
+ */
+
+table.queue td,
+table.queue th {
+	/*FIXME  use em here*/
+	font-size: 8pt;
+}
+
+table.queue span {
+	/*FIXME  use em here*/
+	font-size: 8pt;
+}
+
+div.progressbar {
+	border-style: solid;
+	border-width: 1px;
+	position: relative;
+	width: 8.864em;
+}
+
+div.progressbar,
+div.progressbar-done,
+div.progressbar-min,
+div.progressbar-failed,
+div.progressbar-failed2 {
+	float: left;
+	height: 1.227em;
+}
+
+div.progress_fraction_finalized,
+div.progress_fraction_not_finalized {
+	position: absolute;
+	left: 0.333em;
+}
+
+div.progress_fraction_finalized {
+	font-weight: bold;
+}
+
+div.progress_fraction_not_finalized {
+	font-style: italic;
+}
+
+/* 
+ * N2NTM page
+ */
+
+#n2ntmtext {
+	width: 100%;
+}
+
+div.n2ntm-message-text {
+	margin: 0.667em;
+	padding: 0.667em;
+}
+
+#n2nbox li {
+	font-weight: bold;
+}
+
+/* 
+ * Translation
+ */
+
+/* 
+ * Statusbar
+ */
+
+/* FIXME div#statusbar is the same thing as div#statusbarcontainer
+ * do we really need both? */
+
+#statusbar-container {
+	border-bottom-style: solid;
+	border-bottom-width: 1px;
+	border-top-style: solid;
+	border-top-width: 1px;
+	position: fixed;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	z-index: 18;
+}
+
+#statusbar {
+	text-align: center;
+}
+
+#statusbar > div {
+	display: inline-block;
+	font-size: 0.9em;
+	vertical-align: bottom;
+}
+
+/* override any padding that the infobox divs might have */
+#statusbar div {
+	 padding: 0px;
+}
+
+/* this is needed for inheritance reasons */
+#statusbar div.progressbar div {
+	font-size: 1em;
+}
+
+#statusbar div.progressbar {
+	float: none;
+	margin-bottom: 0;
+}
+
+#statusbar div.separator {
+	height: 1.5em;
+	margin-left: 0.666em;
+	margin-right: 0.667em;
+	width: 1px;
+}
+
+#statusbar div.infobox-header {
+	display: none;
 }

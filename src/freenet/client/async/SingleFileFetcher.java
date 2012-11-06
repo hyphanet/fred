@@ -658,7 +658,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata());
 				if(persistent) container.store(clientMetadata);
 				String mime = clientMetadata.getMIMEType();
-				if(mime != null) rcb.onExpectedMIME(mime, container, context);
+				if(mime != null) rcb.onExpectedMIME(clientMetadata, container, context);
 				if(metaStrings.isEmpty() && isFinal && clientMetadata.getMIMETypeNoParams() != null && ctx.allowedMIMETypes != null &&
 						!ctx.allowedMIMETypes.contains(clientMetadata.getMIMETypeNoParams())) {
 					throw new FetchException(FetchException.WRONG_MIME_TYPE, -1, false, clientMetadata.getMIMEType());
@@ -773,8 +773,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(logMINOR) Logger.minor(this, "Is single-file redirect");
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
 				if(persistent) container.store(clientMetadata);
-				String mime = clientMetadata.getMIMEType();
-				if(mime != null) rcb.onExpectedMIME(mime, container, context);
+				if(clientMetadata != null && !clientMetadata.isTrivial()) 
+					rcb.onExpectedMIME(clientMetadata, container, context);
 
 				String mimeType = clientMetadata.getMIMETypeNoParams();
 				if(mimeType != null && ArchiveManager.ARCHIVE_TYPE.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
@@ -831,30 +831,13 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							redirectedCryptoKey))
 						redirectedCryptoKey = null;
 					// not splitfile, synthesize CompatibilityMode event
-					if (metadata.getParsedVersion() == 0)
-						rcb.onSplitfileCompatibilityMode(
-								CompatibilityMode.COMPAT_1250_EXACT,
-								CompatibilityMode.COMPAT_1251,
-								null,
-								!((ClientCHK)redirectedKey).isCompressed(),
-								true, true,
-								container, context);
-					else if (metadata.getParsedVersion() == 1)
-						rcb.onSplitfileCompatibilityMode(
-								CompatibilityMode.COMPAT_1255,
-								CompatibilityMode.COMPAT_1255,
-								redirectedCryptoKey,
-								!((ClientCHK)redirectedKey).isCompressed(),
-								true, true,
-								container, context);
-					else
-						rcb.onSplitfileCompatibilityMode(
-								CompatibilityMode.COMPAT_UNKNOWN,
-								CompatibilityMode.COMPAT_UNKNOWN,
-								redirectedCryptoKey,
-								!((ClientCHK)redirectedKey).isCompressed(),
-								true, true,
-								container, context);
+					rcb.onSplitfileCompatibilityMode(
+							metadata.getMinCompatMode(),
+							metadata.getMaxCompatMode(),
+							redirectedCryptoKey,
+							!((ClientCHK)redirectedKey).isCompressed(),
+							true, true,
+							container, context);
 				}
 				if(metadata.isCompressed()) {
 					COMPRESSOR_TYPE codec = metadata.getCompressionCodec();
@@ -890,8 +873,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					if(logMINOR) Logger.minor(this, "Handling implicit container... (splitfile)");
 					continue;
 				} else {
-					String mime = clientMetadata.getMIMEType();
-					if(mime != null) rcb.onExpectedMIME(mime, container, context);
+					if(clientMetadata != null && !clientMetadata.isTrivial()) 
+						rcb.onExpectedMIME(clientMetadata, container, context);
 				}
 				
 				if(metaStrings.isEmpty() && isFinal && mimeType != null && ctx.allowedMIMETypes != null &&
@@ -1094,9 +1077,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					worker.waitFinished();
 				} else streamGenerator.writeTo(output, container, context);
 
-				output.close();
-				pipeOut.close();
-				pipeIn.close();
 			} catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 				System.err.println("Failing above attempted fetch...");
@@ -1236,7 +1216,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 
 		@Override
-		public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) {
+		public void onExpectedMIME(ClientMetadata metadata, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
 
@@ -1275,6 +1255,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				cbWasActive = container.ext().isActive(rcb);
 				container.activate(rcb, 1);
 			}
+			// This is fetching an archive, which may or may not contain the file we are looking for (it includes metadata).
+			// So we are definitely not the bottom layer nor definitive.
 			rcb.onSplitfileCompatibilityMode(min, max, splitfileKey, dontCompress, false, false, container, context);
 			if(!wasActive)
 				container.deactivate(SingleFileFetcher.this, 1);
@@ -1330,9 +1312,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					worker.waitFinished();
 				} else streamGenerator.writeTo(output, container, context);
 
-				pipeOut.close();
-				pipeIn.close();
-				output.close();
 			} catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 				System.err.println("Failing above attempted fetch...");
@@ -1419,7 +1398,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 
 		@Override
-		public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) {
+		public void onExpectedMIME(ClientMetadata mime, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
 
@@ -1460,6 +1439,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				cbWasActive = container.ext().isActive(rcb);
 				container.activate(rcb, 1);
 			}
+			// Pass through definitiveAnyway as the top block may include the details.
+			// Hence we can get them straight away rather than waiting for the bottom layer.
 			rcb.onSplitfileCompatibilityMode(min, max, splitfileKey, dontCompress, false, definitiveAnyway, container, context);
 			if(!wasActive)
 				container.deactivate(SingleFileFetcher.this, 1);

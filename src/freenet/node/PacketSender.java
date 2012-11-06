@@ -5,7 +5,7 @@ package freenet.node;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Vector;
+import java.util.HashSet;
 
 import freenet.clients.http.ExternalLinkToadlet;
 import freenet.l10n.NodeL10n;
@@ -143,9 +143,7 @@ public class PacketSender implements Runnable {
 		PeerNode[] nodes;
 
         pm = node.peers;
-        synchronized(pm) {
-        	nodes = pm.myPeers;
-        }
+        nodes = pm.myPeers();
 
 		long nextActionTime = Long.MAX_VALUE;
 		long oldTempNow = now;
@@ -438,8 +436,8 @@ public class PacketSender implements Runnable {
 		/* Attempt to connect to old-opennet-peers.
 		 * Constantly send handshake packets, in order to get through a NAT.
 		 * Most JFK(1)'s are less than 300 bytes. 25*300/15 = avg 500B/sec bandwidth cost.
-		 * Well worth it to allow us to reconnect more quickly.
-		 */
+		 * Well worth it to allow us to reconnect more quickly. */
+
 		OpennetManager om = node.getOpennet();
 		if(om != null && node.getUptime() > 30*1000) {
 			PeerNode[] peers = om.getOldPeers();
@@ -514,7 +512,7 @@ public class PacketSender implements Runnable {
 		}
 	}
 
-	private final HashMap<String, Vector<PluginAddress>> peersDumpedBlockedTooLong = new HashMap<String, Vector<PluginAddress>>();
+	private final HashMap<String, HashSet<PluginAddress>> peersDumpedBlockedTooLong = new HashMap<String, HashSet<PluginAddress>>();
 
 	private void onForceDisconnectBlockTooLong(PeerTransport peerTransport, BlockedTooLongException e) {
 		PluginAddress addr = peerTransport.detectedTransportAddress;
@@ -524,7 +522,7 @@ public class PacketSender implements Runnable {
 				peersDumpedBlockedTooLong.get(transportName).add(addr);
 			}
 			else {
-				Vector<PluginAddress> addresses = new Vector<PluginAddress> ();
+				HashSet<PluginAddress> addresses = new HashSet<PluginAddress> ();
 				addresses.add(addr);
 				peersDumpedBlockedTooLong.put(transportName, addresses);
 			}
@@ -568,13 +566,13 @@ public class PacketSender implements Runnable {
         @Override
 		public HTMLNode getHTMLText() {
 			HTMLNode div = new HTMLNode("div");
-			Vector<String> addressWithTransport = new Vector<String> ();
-			HashMap<String, Vector<PluginAddress>> peersBlocked;
+			ArrayList<String> addressWithTransport = new ArrayList<String> ();
+			HashMap<String, HashSet<PluginAddress>> peersBlocked;
 			synchronized(peersDumpedBlockedTooLong) {
 				peersBlocked = peersDumpedBlockedTooLong;
 			}
 			for(String transportName : peersBlocked.keySet()) {
-				Vector<PluginAddress> addresses = peersBlocked.get(transportName);
+				HashSet<PluginAddress> addresses = peersBlocked.get(transportName);
 				for(PluginAddress addr : addresses)
 					addressWithTransport.add(transportName + ":" + addr);
 			}
@@ -593,13 +591,13 @@ public class PacketSender implements Runnable {
         @Override
 		public String getText() {
 			StringBuilder sb = new StringBuilder();
-			Vector<String> addressWithTransport = new Vector<String> ();
-			HashMap<String, Vector<PluginAddress>> peersBlocked;
+			ArrayList<String> addressWithTransport = new ArrayList<String> ();
+			HashMap<String, HashSet<PluginAddress>> peersBlocked;
 			synchronized(peersDumpedBlockedTooLong) {
 				peersBlocked = peersDumpedBlockedTooLong;
 			}
 			for(String transportName : peersBlocked.keySet()) {
-				Vector<PluginAddress> addresses = peersBlocked.get(transportName);
+				HashSet<PluginAddress> addresses = peersBlocked.get(transportName);
 				for(PluginAddress addr : addresses)
 					addressWithTransport.add(transportName + ":" + addr);
 			}

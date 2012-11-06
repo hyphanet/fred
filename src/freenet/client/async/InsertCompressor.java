@@ -344,6 +344,7 @@ public class InsertCompressor implements CompressJob {
 		return compressor;
 	}
 
+	@SuppressWarnings("unchecked")
 	public static void load(ObjectContainer container, ClientContext context) {
 		final long handle = context.nodeDBHandle;
 		Query query = container.query();

@@ -13,9 +13,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 import com.db4o.ObjectContainer;
 
@@ -78,7 +80,7 @@ import freenet.support.io.FileUtil;
  * in through name/value pairs. Do we want this?
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-public class FreenetURI implements Cloneable {
+public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
 	static {
@@ -1132,18 +1134,24 @@ public class FreenetURI implements Cloneable {
 		return new FreenetURI("SSK", docName+"-"+suggestedEdition, metaStr, routingKey, cryptoKey, extra, 0);
 	}
 
+	private static final Pattern docNameWithEditionPattern;
+	static {
+		docNameWithEditionPattern = Pattern.compile(".*\\-([0-9]+)");
+	}
+
 	/** Could this SSK be the result of sskForUSK()? */
 	public boolean isSSKForUSK() {
-		return keyType.equalsIgnoreCase("SSK") && docName.matches(".*\\-[0-9]+");
+		return keyType.equalsIgnoreCase("SSK") && docNameWithEditionPattern.matcher(docName).matches();
 	}
 
 	/** Convert an SSK into a USK, if possible. */
 	public FreenetURI uskForSSK() {
 		if(!keyType.equalsIgnoreCase("SSK")) throw new IllegalStateException();
-		if (!docName.matches(".*\\-[0-9]+"))
+		Matcher matcher = docNameWithEditionPattern.matcher(docName);
+		if (!matcher.matches())
 			throw new IllegalStateException();
 
-		int offset = docName.lastIndexOf('-');
+		int offset = matcher.start(1) - 1;
 		String siteName = docName.substring(0, offset);
 		long edition = Long.valueOf(docName.substring(offset + 1, docName.length()));
 
@@ -1158,13 +1166,75 @@ public class FreenetURI implements Cloneable {
 		if(keyType.equalsIgnoreCase("USK"))
 			return suggestedEdition;
 		else if(keyType.equalsIgnoreCase("SSK")) {
-			if (!docName.matches(".*\\-[0-9]+")) /* Taken from uskForSSK, also modify there if necessary; TODO just use isSSKForUSK() here?! */
+			Matcher matcher = docNameWithEditionPattern.matcher(docName);
+			if (!matcher.matches()) /* Taken from uskForSSK, also modify there if necessary; TODO just use isSSKForUSK() here?! */
 				throw new IllegalStateException();
 
-			return Long.valueOf(docName.substring(docName.lastIndexOf('-') + 1, docName.length()));
+			return Long.valueOf(docName.substring(matcher.start(1), docName.length()));
 		} else
 			throw new IllegalStateException();
 	}
+
+	@Override
+	/** This looks expensive, but 99% of the time it will quit out pretty 
+	 * early on: Either a different key type or a different routing key. The 
+	 * worst case cost is relatively bad though. Unfortunately we can't use
+	 * a HashMap if an attacker might be able to influence the keys and 
+	 * create a hash collision DoS, so we *do* need this. */
+	public int compareTo(FreenetURI o) {
+		if(this == o) return 0;
+		int cmp = keyType.compareTo(o.keyType);
+		if(cmp != 0) return cmp;
+		if(routingKey != null) {
+			// Same type will have same routingKey != null
+			cmp = Fields.compareBytes(routingKey, o.routingKey);
+			if(cmp != 0) return cmp;
+		}
+		if(cryptoKey != null) {
+			// Same type will have same cryptoKey != null
+			cmp = Fields.compareBytes(cryptoKey, o.cryptoKey);
+			if(cmp != 0) return cmp;
+		}
+		if(docName == null && o.docName != null) return -1;
+		if(docName != null && o.docName == null) return 1;
+		if(docName != null && o.docName != null) {
+			cmp = docName.compareTo(o.docName);
+			if(cmp != 0) return cmp;
+		}
+		if(extra != null) {
+			// Same type will have same cryptoKey != null
+			cmp = Fields.compareBytes(extra, o.extra);
+			if(cmp != 0) return cmp;
+		}
+		if(metaStr != null && o.metaStr == null) return 1;
+		if(metaStr == null && o.metaStr != null) return -1;
+		if(metaStr != null && o.metaStr != null) {
+			if(metaStr.length > o.metaStr.length) return 1;
+			if(metaStr.length < o.metaStr.length) return -1;
+			for(int i=0;i<metaStr.length;i++) {
+				cmp = metaStr[i].compareTo(o.metaStr[i]);
+				if(cmp != 0) return cmp;
+			}
+		}
+		if(suggestedEdition > o.suggestedEdition) return 1;
+		if(suggestedEdition < o.suggestedEdition) return -1;
+		return 0;
+	}
+	
+	public static final Comparator<FreenetURI> FAST_COMPARATOR = new Comparator<FreenetURI>() {
+
+		@Override
+		public int compare(FreenetURI uri0, FreenetURI uri1) {
+			// Unfortunately the hashCode's may not have been computed yet.
+			// But it's still cheaper to recompute them in the long run.
+			int hash0 = uri0.hashCode();
+			int hash1 = uri1.hashCode();
+			if(hash0 > hash1) return 1;
+			else if(hash1 > hash0) return -1;
+			return uri0.compareTo(uri1);
+		}
+		
+	};
 
 	// TODO add something like the following?
 	// public boolean isUpdatable() { return isUSK() || isSSKForUSK() }

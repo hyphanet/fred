@@ -27,6 +27,7 @@ import freenet.client.async.SplitFileSegmentKeys;
 import freenet.keys.BaseClientKey;
 import freenet.keys.ClientCHK;
 import freenet.keys.FreenetURI;
+import freenet.keys.Key;
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.crypt.HashResult;
@@ -355,6 +356,9 @@ public class Metadata implements Cloneable {
 					else
 						splitfileSingleCryptoKey = getCryptoKey(hashes);
 				}
+			} else {
+				// Pre-1010 isn't supported, so there is only one possibility.
+				splitfileSingleCryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
 			}
 			
 			if(logMINOR) Logger.minor(this, "Splitfile");
@@ -401,6 +405,8 @@ public class Metadata implements Cloneable {
 				// Use UTF-8 for everything, for simplicity
 				mimeType = new String(toRead, "UTF-8");
 				if(logMINOR) Logger.minor(this, "Raw MIME");
+				if(!DefaultMIMETypes.isPlausibleMIMEType(mimeType))
+					throw new MetadataParseException("Does not look like a MIME type: \""+mimeType+"\"");
 			}
 			if(logMINOR) Logger.minor(this, "MIME = "+mimeType);
 		}
@@ -425,6 +431,20 @@ public class Metadata implements Cloneable {
 
 		if((!splitfile) && ((documentType == SIMPLE_REDIRECT) || (documentType == ARCHIVE_MANIFEST))) {
 			simpleRedirectKey = readKey(dis);
+			if(simpleRedirectKey.isCHK()) {
+				byte algo = ClientCHK.getCryptoAlgorithmFromExtra(simpleRedirectKey.getExtra());
+				if(algo == Key.ALGO_AES_CTR_256_SHA256) {
+					minCompatMode = CompatibilityMode.COMPAT_1416;
+					maxCompatMode = CompatibilityMode.latest();
+				} else {
+					// Older.
+					if (getParsedVersion() == 0) {
+						minCompatMode = CompatibilityMode.COMPAT_1250_EXACT;
+						maxCompatMode = CompatibilityMode.COMPAT_1251;
+					} else
+						minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1255;
+				}
+			}
 		} else if(splitfile) {
 			splitfileAlgorithm = dis.readShort();
 			if(!((splitfileAlgorithm == SPLITFILE_NONREDUNDANT) ||
@@ -508,7 +528,13 @@ public class Metadata implements Cloneable {
 						}
 					}
 				} else {
-					minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1255;
+					// Version 1 i.e. modern.
+					if(splitfileSingleCryptoAlgorithm == Key.ALGO_AES_PCFB_256_SHA256)
+						minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1255;
+					else if(splitfileSingleCryptoAlgorithm == Key.ALGO_AES_CTR_256_SHA256) {
+						minCompatMode = CompatibilityMode.COMPAT_1416;
+						maxCompatMode = CompatibilityMode.latest();
+					}
 					if(params.length < 10)
 						throw new MetadataParseException("Splitfile parameters too short for version 1");
 					short paramsType = Fields.bytesToShort(params, 0);
@@ -1756,7 +1782,7 @@ public class Metadata implements Cloneable {
 	** compiler warnings. Use only when you are sure the object matches this type!
 	*/
 	@SuppressWarnings("unchecked")
-	final public static HashMap<String, Object> forceMap(Object o) {
+	public static HashMap<String, Object> forceMap(Object o) {
 		return (HashMap<String, Object>)o;
 	}
 	
@@ -1842,6 +1868,25 @@ public class Metadata implements Cloneable {
 
 	public int getDeductBlocksFromSegments() {
 		return deductBlocksFromSegments;
+	}
+
+	/** Return a best-guess compatibility mode, guaranteed not to be 
+	 * COMPAT_UNKNOWN or COMPAT_CURRENT. */
+	public CompatibilityMode guessCompatibilityMode() {
+		CompatibilityMode mode = getTopCompatibilityMode();
+		if(mode != CompatibilityMode.COMPAT_UNKNOWN) return mode;
+		CompatibilityMode min = minCompatMode;
+		CompatibilityMode max = maxCompatMode;
+		if(max == CompatibilityMode.COMPAT_CURRENT)
+			max = CompatibilityMode.latest();
+		if(min == max) return min;
+		if(min == CompatibilityMode.COMPAT_UNKNOWN &&
+				max != CompatibilityMode.COMPAT_UNKNOWN)
+			return max;
+		if(max == CompatibilityMode.COMPAT_UNKNOWN &&
+				min != CompatibilityMode.COMPAT_UNKNOWN)
+			return min;
+		return max;
 	}
 
 }

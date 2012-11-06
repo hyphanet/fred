@@ -393,7 +393,11 @@ public class FCPClient {
 			while(i.hasNext()) {
 				ClientRequest req = i.next();
 				if(container != null) container.activate(req, 1);
-				if(req.isPersistentForever() || !onlyForever)
+				if(req == null) {
+					Logger.error(this, "Request is null on runningPersistentRequests for "+this+" - database corruption??");
+					continue;
+				}
+				if((req.isPersistentForever()) || !onlyForever)
 					v.add(req);
 			}
 			if(container != null) {
@@ -635,6 +639,7 @@ public class FCPClient {
 		return null;
 	}
 
+	@SuppressWarnings("unchecked")
 	public void init(ObjectContainer container) {
 		if(!container.ext().isActive(this))
 			throw new IllegalStateException("Initialising but not activated");

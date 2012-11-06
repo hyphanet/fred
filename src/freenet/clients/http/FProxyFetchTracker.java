@@ -37,7 +37,7 @@ public class FProxyFetchTracker implements Runnable {
 	private boolean queuedJob;
 	private boolean requeue;
 
-	FProxyFetchTracker(ClientContext context, FetchContext fctx, RequestClient rc) {
+	public FProxyFetchTracker(ClientContext context, FetchContext fctx, RequestClient rc) {
 		fetchers = new MultiValueTable<FreenetURI, FProxyFetchInProgress>();
 		this.context = context;
 		this.fctx = fctx;

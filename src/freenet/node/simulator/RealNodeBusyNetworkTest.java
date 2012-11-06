@@ -107,7 +107,7 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
 
         HighLevelSimpleClient[] clients = new HighLevelSimpleClient[nodes.length];
         for(int i=0;i<clients.length;i++) {
-        	clients[i] = nodes[i].clientCore.makeClient(RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
+        	clients[i] = nodes[i].clientCore.makeClient(RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, false, false);
         }
 
         // Insert 100 keys into random nodes

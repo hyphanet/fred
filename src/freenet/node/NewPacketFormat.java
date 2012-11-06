@@ -82,7 +82,7 @@ public class NewPacketFormat implements PacketFormat {
 			}
 		}
 		if(packet == null) {
-			Logger.warning(this, "Could not decrypt received packet");
+			if(logMINOR) Logger.minor(this, "Could not decrypt received packet");
 			return false;
 		}
 
@@ -102,7 +102,7 @@ public class NewPacketFormat implements PacketFormat {
 
 		return true;
 	}
-	
+
 	LinkedList<byte[]> handleDecryptedPacket(NPFPacket packet, SessionKey sessionKey) {
 		LinkedList<byte[]> fullyReceived = new LinkedList<byte[]>();
 
@@ -169,7 +169,6 @@ public class NewPacketFormat implements PacketFormat {
 		return fullyReceived;
 	}
 
-
 	private NPFPacket tryDecipherPacket(byte[] buf, int offset, int length, SessionKey sessionKey) {
 		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
 		// Create the watchlist if the key has changed
@@ -180,7 +179,7 @@ public class NewPacketFormat implements PacketFormat {
 
 			int seqNum = keyContext.watchListOffset;
 			for(int i = 0; i < keyContext.seqNumWatchList.length; i++) {
-				keyContext.seqNumWatchList[i] = encryptSequenceNumber(seqNum++, sessionKey);
+				keyContext.seqNumWatchList[i] = NewPacketFormat.encryptSequenceNumber(seqNum++, sessionKey);
 				if((seqNum == NUM_SEQNUMS) || (seqNum < 0)) seqNum = 0;
 			}
 		}
@@ -287,7 +286,7 @@ public class NewPacketFormat implements PacketFormat {
 		return (((i1 < i2) && ((i2 - i1) > halfValue)) || ((i1 > i2) && (i1 - i2 < halfValue)));
 	}
 
-	private byte[] encryptSequenceNumber(int seqNum, SessionKey sessionKey) {
+	static byte[] encryptSequenceNumber(int seqNum, SessionKey sessionKey) {
 		byte[] seqNumBytes = new byte[4];
 		seqNumBytes[0] = (byte) (seqNum >>> 24);
 		seqNumBytes[1] = (byte) (seqNum >>> 16);
@@ -648,7 +647,10 @@ public class NewPacketFormat implements PacketFormat {
 		return packet;
 	}
 	
-	static final int MAX_MESSAGE_SIZE = 2048;
+	/**
+	 * Maximum message size in bytes.
+	 */
+	public static final int MAX_MESSAGE_SIZE = 4096;
 	
 	/** For unit tests */
 	int countSentPackets(SessionKey key) {

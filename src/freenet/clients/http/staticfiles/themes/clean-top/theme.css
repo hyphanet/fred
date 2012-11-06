@@ -1,0 +1,10 @@
+/* clean-top theme */
+
+/* navigation behavior */
+@import url(/static/behavior-top.css);
+
+/* layout */
+@import url(/static/themes/clean/layout.css);
+
+/* color scheme */
+@import url(/static/themes/clean/color.css);

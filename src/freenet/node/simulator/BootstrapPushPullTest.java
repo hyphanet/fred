@@ -74,6 +74,7 @@ public class BootstrapPushPullTest {
         System.err.println("Creating test data: "+TEST_SIZE+" bytes.");
         Bucket data = node.clientCore.tempBucketFactory.makeBucket(TEST_SIZE);
         OutputStream os = data.getOutputStream();
+		try {
         byte[] buf = new byte[4096];
         for(long written = 0; written < TEST_SIZE;) {
         	node.fastWeakRandom.nextBytes(buf);
@@ -81,9 +82,11 @@ public class BootstrapPushPullTest {
         	os.write(buf, 0, toWrite);
         	written += toWrite;
         }
+		} finally {
         os.close();
+		}
         System.err.println("Inserting test data.");
-        HighLevelSimpleClient client = node.clientCore.makeClient((short)0);
+        HighLevelSimpleClient client = node.clientCore.makeClient((short)0, false, false);
         InsertBlock block = new InsertBlock(data, new ClientMetadata(), FreenetURI.EMPTY_CHK_URI);
         long startInsertTime = System.currentTimeMillis();
         FreenetURI uri;
@@ -115,7 +118,7 @@ public class BootstrapPushPullTest {
         
         // Fetch the data
         long startFetchTime = System.currentTimeMillis();
-        client = secondNode.clientCore.makeClient((short)0);
+        client = secondNode.clientCore.makeClient((short)0, false, false);
         try {
 			client.fetch(uri);
 		} catch (FetchException e) {

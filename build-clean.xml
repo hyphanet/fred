@@ -162,7 +162,7 @@ maintainers may prefer to use this instead of build.xml.
 		<!-- Create the time stamp -->
 		<tstamp/>
 		<!-- Create the build directory structure used by compile -->
-		<javac srcdir="${main.src}" destdir="${main.make}" debug="on" optimize="on" source="1.6" target="1.6" encoding="UTF-8">
+		<javac srcdir="${main.src}" destdir="${main.make}" debug="on" source="1.6" target="1.6" includeAntRuntime="false" encoding="UTF-8">
 			<compilerarg line="${javac.args}"/>
 			<classpath refid="lib.path"/>
 			<!-- tell javac to find Version.java in ${main.make}, not ${main.src} -->
@@ -174,7 +174,7 @@ maintainers may prefer to use this instead of build.xml.
 		</javac>
 
 		<!-- Force compile of Version.java in case compile of ${main.src} didn't trigger it -->
-		<javac srcdir="${main.make}" destdir="${main.make}" debug="on" optimize="on" source="1.6" target="1.6" encoding="UTF-8">
+		<javac srcdir="${main.make}" destdir="${main.make}" debug="on" source="1.6" target="1.6" includeAntRuntime="false" encoding="UTF-8">
 			<compilerarg line="${javac.args}"/>
 			<classpath refid="lib.path"/>
 			<include name="${version.src}"/>
@@ -203,7 +203,6 @@ maintainers may prefer to use this instead of build.xml.
 		<jar jarfile="${main.dst}/freenet.jar" basedir="${main.make}">
 			<manifest>
 				<attribute name="Main-Class" value="freenet.node.Node"/>
-				<attribute name="Built-By" value="${user.name}"/>
 				<attribute name="Required-Ext-Version" value="${contrib.version.min}"/>
 				<attribute name="Recommended-Ext-Version" value="${contrib.version.rec}"/>
 				<attribute name="Class-Path" value="${lib.jars.package}" />
@@ -224,7 +223,7 @@ maintainers may prefer to use this instead of build.xml.
 
 	<target name="unit-build" depends="build" unless="${test.skip}">
 		<antcall target="libdep-junit"/>
-		<javac srcdir="${test.src}" destdir="${test.make}" debug="on" optimize="on" source="1.6" target="1.6" encoding="UTF-8">
+		<javac srcdir="${test.src}" destdir="${test.make}" debug="on" source="1.6" target="1.6" encoding="UTF-8">
 			<compilerarg line="${javac.args}"/>
 			<classpath refid="libtest.path"/>
 			<include name="**/*.java"/>

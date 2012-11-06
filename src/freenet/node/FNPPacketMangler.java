@@ -11,8 +11,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 
-import freenet.clients.http.ExternalLinkToadlet;
 import net.i2p.util.NativeBigInteger;
+import freenet.clients.http.ExternalLinkToadlet;
 import freenet.crypt.BlockCipher;
 import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
@@ -30,11 +30,11 @@ import freenet.io.AddressTracker.Status;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.IncomingPacketFilter.DECODED;
 import freenet.io.comm.Peer;
+import freenet.io.comm.Peer.LocalAddressException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.SocketHandler;
-import freenet.io.comm.Peer.LocalAddressException;
 import freenet.l10n.NodeL10n;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.useralerts.AbstractUserAlert;
@@ -47,12 +47,13 @@ import freenet.support.ByteArrayWrapper;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
-import freenet.support.LRUHashtable;
+import freenet.support.LRUMap;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
-import freenet.support.Logger.LogLevel;
+import freenet.transports.PluginAddressComparator;
 import freenet.support.io.NativeThread;
 
 /**
@@ -246,7 +247,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			}
 		}
 		PeerNode[] peers = crypto.getPeerNodes();
-		// Existing connection, changed IP address?
 		if(node.isStopping()) return DECODED.SHUTTING_DOWN;
 		// Disconnected node connecting on a new IP address?
 		if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2) {
@@ -566,7 +566,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return;
 		}
 		if(!(negType == 6 || negType == 7)) {
-			Logger.error(this, "Unknown neg type: "+negType);
+			if(negType > 7)
+				Logger.error(this, "Unknown neg type: "+negType);
+			else
+				Logger.warning(this, "Received a setup packet with unsupported obsolete neg type: "+negType);
 			return;
 		}
 
@@ -613,7 +616,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return;
 		}
 		if(!(negType == 6 || negType == 7)) {
-			Logger.error(this, "Unknown neg type: "+negType);
+			if(negType > 7)
+				Logger.error(this, "Unknown neg type: "+negType);
+			else
+				Logger.warning(this, "Received a setup packet with unsupported obsolete neg type: "+negType);
 			return;
 		}
 
@@ -673,10 +679,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return;
 		}
 
-		if(negType > 0 && negType < 6) {
+		if(negType >= 0 && negType < 6) {
+			// negType 0 through 5 no longer supported, used old FNP.
 			Logger.warning(this, "Old neg type "+negType+" not supported");
 			return;
 		} else if (negType == 6 || negType == 7) {
+			// negType == 7 => same as 6, but determine the initial sequence number by hashing the identity
+			// instead of negotiating it
 			/*
 			 * We implement Just Fast Keying key management protocol with active identity protection
 			 * for the initiator and no identity protection for the responder
@@ -802,9 +811,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 	}
 	
-	private final LRUHashtable<PluginAddress, Long> throttleRekeysByAddress = new LRUHashtable<PluginAddress, Long>();
-	
-	private final int REKEY_BY_IP_TABLE_SIZE = 1024;
+	private final LRUMap<PluginAddress, Long> throttleRekeysByAddress = LRUMap.createSafeMap(PluginAddressComparator.COMPARATOR);
+
+	private static final int REKEY_BY_IP_TABLE_SIZE = 1024;
 
 	private boolean throttleRekey(PeerPacketTransport peerTransport, PluginAddress replyTo) {
 		PluginAddress addr = replyTo;
@@ -828,8 +837,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		return false;
 	}
 
-	private final int MAX_NONCES_PER_PEER = 10;
-	
+	private static final int MAX_NONCES_PER_PEER = 10;
+
 	/*
 	 * format:
 	 * Ni,g^i
@@ -2265,7 +2274,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		return ctx;
 	}
 
-	private final void _fillJFKDHFIFOOffThread() {
+	private void _fillJFKDHFIFOOffThread() {
 		// do it off-thread
 		node.executor.execute(new PrioRunnable() {
 			@Override

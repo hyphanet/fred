@@ -26,6 +26,7 @@ import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
+import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
@@ -649,14 +650,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 	public SimpleManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target,
 			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode, boolean persistent, ObjectContainer container, ClientContext context) {
-		this(cb, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, persistent, Key.ALGO_AES_PCFB_256_SHA256, null, container, context);
-
-	}
-		
-	public SimpleManifestPutter(ClientPutCallback cb,
-			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target,
-			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode, boolean persistent, byte[] forceCryptoKey, ObjectContainer container, ClientContext context) {
-		this(cb, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, persistent, Key.ALGO_AES_PCFB_256_SHA256, forceCryptoKey, container, context);
+		this(cb, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, persistent, null, container, context);
 
 	}
 		
@@ -674,7 +668,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 
 	public SimpleManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target,
-			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode, boolean persistent, byte cryptoAlgorithm, byte[] forceCryptoKey, ObjectContainer container, ClientContext context) {
+			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode, boolean persistent, byte[] forceCryptoKey, ObjectContainer container, ClientContext context) {
 		super(prioClass, clientContext);
 		this.defaultName = defaultName;
 		
@@ -683,8 +677,14 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 				container.activate(manifestElements, Integer.MAX_VALUE);
 			checkDefaultName(manifestElements, defaultName);
 		}
-		
-		this.cryptoAlgorithm = cryptoAlgorithm;
+
+		if(client.persistent())
+			container.activate(ctx, 1);
+		CompatibilityMode mode = ctx.getCompatibilityMode();
+		if(!(mode == CompatibilityMode.COMPAT_CURRENT || mode.ordinal() >= CompatibilityMode.COMPAT_1416.ordinal()))
+			this.cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
+		else
+			this.cryptoAlgorithm = Key.ALGO_AES_CTR_256_SHA256;
 
 		if(persistent)
 			this.targetURI = target.clone();
@@ -707,6 +707,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		checkZips();
 	}
 
+	@SuppressWarnings("unchecked")
 	static private void checkDefaultName(HashMap<String, Object> manifestElements,
 			String defaultName) {
 		int idx;
@@ -721,7 +722,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			Object o = manifestElements.get(defaultName);
 			if(o == null) throw new IllegalArgumentException("Default name dir \""+dir+"\" does not exist");
 			if(o instanceof HashMap)
-				checkDefaultName((HashMap)o, subname);
+				checkDefaultName((HashMap<String, Object>)o, subname);
 			else
 				throw new IllegalArgumentException("Default name dir \""+dir+"\" is not a directory in \""+defaultName+"\"");
 		}

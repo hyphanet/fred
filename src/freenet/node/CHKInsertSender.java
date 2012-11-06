@@ -151,7 +151,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			synchronized(backgroundTransfers) {
 				if(finishedWaiting) {
 					if(!(killed || kill))
-						Logger.error(this, "Finished waiting already yet receivedNotice("+success+","+timeout+")", new Exception("error"));
+						Logger.error(this, "Finished waiting already yet receivedNotice("+success+","+timeout+","+kill+")", new Exception("error"));
 					return false;
 				}
 				if(killed) {
@@ -491,7 +491,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				forkedRequestTag.setAccepted();
             	Logger.normal(this, "FORKING CHK INSERT "+origUID+" to "+uid);
             	nodesRoutedTo.clear();
-            	node.lockUID(forkedRequestTag);
+            	node.tracker.lockUID(forkedRequestTag);
             }
             
             // Route it
@@ -643,8 +643,8 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
         mfRejectedOverload.clearOr();
         return mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
 	}
-	
-	private final int TIMEOUT_AFTER_ACCEPTEDREJECTED_TIMEOUT = 60*1000;
+
+	private static final int TIMEOUT_AFTER_ACCEPTEDREJECTED_TIMEOUT = 60*1000;
 
 	@Override
 	protected void handleAcceptedRejectedTimeout(final PeerNode next, final UIDTag tag) {

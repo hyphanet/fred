@@ -19,7 +19,7 @@ import freenet.keys.FreenetURI;
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class ArchiveContext {
 
-	private HashSet soFar;
+	private HashSet<FreenetURI> soFar;
 	final int maxArchiveLevels;
 	final long maxArchiveSize;
 	
@@ -37,7 +37,7 @@ public class ArchiveContext {
 		if(container != null)
 			container.activate(soFar, Integer.MAX_VALUE);
 		if(soFar == null) {
-			soFar = new HashSet();
+			soFar = new HashSet<FreenetURI>();
 			if(container != null)
 				container.store(soFar);
 		}
@@ -55,8 +55,8 @@ public class ArchiveContext {
 
 	public void removeFrom(ObjectContainer container) {
 		if(soFar != null) {
-			for(Object uri : soFar) {
-				((FreenetURI)uri).removeFrom(container);
+			for(FreenetURI uri : soFar) {
+				uri.removeFrom(container);
 			}
 			container.delete(soFar);
 		}

@@ -6,6 +6,7 @@ import freenet.client.events.ExpectedHashesEvent;
 import freenet.crypt.HashResult;
 import freenet.node.Node;
 import freenet.support.HexUtil;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
 public class ExpectedHashes extends FCPMessage {
@@ -22,10 +23,19 @@ public class ExpectedHashes extends FCPMessage {
 
 	@Override
 	public SimpleFieldSet getFieldSet() {
+		if(hashes == null) {
+			Logger.error(this, "Hashes == null, possibly persistence issue caused prior to build 1411 on "+this);
+			return null;
+		}
 		SimpleFieldSet fs = new SimpleFieldSet(false);
 		SimpleFieldSet values = new SimpleFieldSet(false);
-		for(HashResult hash : hashes)
+		for(HashResult hash : hashes) {
+			if(hashes == null) {
+				Logger.error(this, "Hash == null, possibly persistence issue caused prior to build 1411 on "+this);
+				return null;
+			}
 			values.putOverwrite(hash.type.name(), HexUtil.bytesToHex(hash.result));
+		}
 		fs.put("Hashes", values);
 		fs.putOverwrite("Identifier", identifier);
 		fs.put("Global", global);
@@ -39,9 +49,12 @@ public class ExpectedHashes extends FCPMessage {
 
 	@Override
 	public void removeFrom(ObjectContainer container) {
-		for(HashResult res : hashes) {
-			container.activate(res, Integer.MAX_VALUE);
-			res.removeFrom(container);
+		if(hashes != null) {
+			for(HashResult res : hashes) {
+				if(res == null) continue; // Pre-1411 persistence issue
+				container.activate(res, Integer.MAX_VALUE);
+				res.removeFrom(container);
+			}
 		}
 		container.delete(this);
 	}

@@ -83,7 +83,7 @@ public abstract class BaseSender implements ByteCounter {
 	
 	private short hopsForTime(long time) {
 		double timeout = realTimeFlag ? SEARCH_TIMEOUT_REALTIME : SEARCH_TIMEOUT_BULK;
-		double timePerHop = timeout / ((double)EXTRA_HOPS_AT_BOTTOM + (double) node.maxHTL());
+		double timePerHop = timeout / (EXTRA_HOPS_AT_BOTTOM + node.maxHTL());
 		return (short) Math.min(node.maxHTL(), time / timePerHop);
 	}
 
@@ -221,7 +221,7 @@ loadWaiterLoop:
      * us to stop routing, only to stop adding more nodes to wait for while
      * waiting. This is particularly an issue if we have a fast network connected
      * to a slow network. */
-    private static int MAX_REJECTED_LOOPS = 3;
+    private static final int MAX_REJECTED_LOOPS = 3;
 
     private boolean addedExtraNode = false;
     

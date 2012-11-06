@@ -88,12 +88,9 @@ public class PersistentBlobTempBucketFactory {
 	private transient Random weakRandomSource;
 	
 	private transient Ticker ticker;
-	
-	private final long nodeDBHandle;
-	
+
 	public PersistentBlobTempBucketFactory(long blockSize2, long nodeDBHandle2, File storageFile2) {
 		blockSize = blockSize2;
-		nodeDBHandle = nodeDBHandle2;
 		storageFile = storageFile2;
 	}
 
@@ -138,6 +135,7 @@ public class PersistentBlobTempBucketFactory {
 			initRangeDump(container);
 	}
 	
+	@SuppressWarnings("unchecked")
 	private BitArray createFreeBlocksCache(ObjectContainer container) throws IOException {
 		System.err.println("Creating free blocks cache...");
 		long size;
@@ -221,6 +219,7 @@ public class PersistentBlobTempBucketFactory {
 		return freeBlocksCache;
 	}
 
+	@SuppressWarnings("unchecked")
 	private void initRangeDump(ObjectContainer container) {
 		
 		long size;
@@ -290,6 +289,7 @@ public class PersistentBlobTempBucketFactory {
 	private void initSlotFinder() {
 		slotFinder = new DBJob() {
 		
+		@SuppressWarnings("unchecked")
 		@Override
 		public boolean run(ObjectContainer container, ClientContext context) {
 			int added = 0;
@@ -611,6 +611,7 @@ outer:		while(true) {
 
 	private long lastCheckedEnd = -1;
 	
+	@SuppressWarnings("unchecked")
 	public synchronized void remove(PersistentBlobTempBucket bucket, ObjectContainer container) {
 		if(logMINOR)
 			Logger.minor(this, "Removing bucket "+bucket+" for slot "+bucket.getIndex()+" from database", new Exception("debug"));
@@ -676,6 +677,7 @@ outer:		while(true) {
 	
 	static boolean DISABLE_SANITY_CHECKS_DEFRAG = false;
 	
+	@SuppressWarnings("unchecked")
 	boolean maybeShrink(ObjectContainer container) {
 		
 		if(logMINOR) Logger.minor(this, "maybeShrink()");

@@ -46,6 +46,7 @@ public class PCFBMode {
      * @param c The underlying block cipher
      * @deprecated
      */
+    @Deprecated
     public static PCFBMode create(BlockCipher c) {
     	if(c instanceof Rijndael)
     		return new RijndaelPCFBMode((Rijndael)c);

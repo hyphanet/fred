@@ -10,7 +10,7 @@ import freenet.store.BlockMetadata;
 import freenet.store.PubkeyStore;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.HexUtil;
-import freenet.support.LRUHashtable;
+import freenet.support.LRUMap;
 import freenet.support.Logger;
 
 public class GetPubkey {
@@ -24,7 +24,7 @@ public class GetPubkey {
 	private static final boolean USE_RAM_PUBKEYS_CACHE = true;
 	private static final int MAX_MEMORY_CACHED_PUBKEYS = 1000;
 	
-	private final LRUHashtable<ByteArrayWrapper, DSAPublicKey> cachedPubKeys;
+	private final LRUMap<ByteArrayWrapper, DSAPublicKey> cachedPubKeys;
 
 	private PubkeyStore pubKeyDatastore;
 	private PubkeyStore pubKeyDatacache;
@@ -34,7 +34,7 @@ public class GetPubkey {
 	private final Node node;
 	
 	GetPubkey(Node node) {
-		cachedPubKeys = new LRUHashtable<ByteArrayWrapper, DSAPublicKey>();
+		cachedPubKeys = LRUMap.createSafeMap(ByteArrayWrapper.FAST_COMPARATOR);
 		this.node = node;
 	}
 

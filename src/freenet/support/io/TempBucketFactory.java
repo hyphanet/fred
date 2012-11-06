@@ -59,9 +59,9 @@ public class TempBucketFactory implements BucketFactory {
 	private long maxRAMBucketSize;
 	/** How much memory do we dedicate to the RAMBucketPool? (in bytes) */
 	private long maxRamUsed;
-	
+
 	/** How old is a long-lived RAMBucket? */
-	private final int RAMBUCKET_MAX_AGE = 5*60*1000; // 5mins
+	private final static int RAMBUCKET_MAX_AGE = 5*60*1000; // 5mins
 	/** How many times the maxRAMBucketSize can a RAMBucket be before it gets migrated? */
 	final static int RAMBUCKET_CONVERSION_FACTOR = 4;
 	
@@ -144,7 +144,7 @@ public class TempBucketFactory implements BucketFactory {
 				size = currentSize;
 				if(os != null) {
 					os.flush();
-					Closer.close(os);
+					os.close();
 					// DO NOT INCREMENT THE osIndex HERE!
 					os = tempFB.getOutputStream();
 					if(size > 0)
@@ -152,8 +152,11 @@ public class TempBucketFactory implements BucketFactory {
 				} else {
 					if(size > 0) {
 						OutputStream temp = tempFB.getOutputStream();
+						try {
 						BucketTools.copyTo(toMigrate, temp, size);
+						} finally {
 						temp.close();
+						}
 					}
 				}
 				if(toMigrate.isReadOnly())

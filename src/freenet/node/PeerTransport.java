@@ -478,6 +478,7 @@ public abstract class PeerTransport {
 			PluginAddress oldAddress = detectedTransportAddress;
 			if((newAddress != null) && ((oldAddress == null) || !oldAddress.equals(newAddress))) {
 				detectedTransportAddress = newAddress;
+				// IP has changed, it is worth looking up the DNS address again.
 				lastAttemptedHandshakeTransportAddressUpdateTime = 0;
 				if(!isTransportConnected)
 					return;

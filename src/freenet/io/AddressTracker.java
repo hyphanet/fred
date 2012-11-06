@@ -81,7 +81,7 @@ public class AddressTracker {
 		} catch (IOException e) {
 			// Fall through
 		} catch (FSParseException e) {
-			Logger.error(AddressTracker.class, "Failed to load from disk for port "+port+": "+e, e);
+			Logger.warning(AddressTracker.class, "Failed to load from disk for port "+port+": "+e, e);
 			// Fall through
 		} finally {
 			if(fis != null)
@@ -108,7 +108,8 @@ public class AddressTracker {
 		if(version != 2)
 			throw new FSParseException("Unknown Version "+version);
 		long savedBootID = fs.getLong("BootID");
-		if(savedBootID != lastBootID) throw new FSParseException("Wrong boot ID - maybe unclean shutdown? Last was "+lastBootID+" stored "+savedBootID);
+		if(savedBootID != lastBootID) throw new FSParseException("Unable to load address tracker table, assuming an unclean shutdown: Last ID was " +
+				lastBootID+" but stored "+savedBootID);
 		// Sadly we don't know whether there were packets arriving during the gap,
 		// and some insecure firewalls will use incoming packets to keep tunnels open
 		//timeDefinitelyNoPacketsReceived = fs.getLong("TimeDefinitelyNoPacketsReceived");

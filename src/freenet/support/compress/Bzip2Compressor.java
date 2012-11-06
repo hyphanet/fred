@@ -17,6 +17,7 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.io.Closer;
 import freenet.support.io.CountedOutputStream;
 import freenet.support.io.NoCloseProxyOutputStream;
 import freenet.support.io.HeaderStreams;
@@ -42,13 +43,9 @@ public class Bzip2Compressor implements Compressor {
 			is = data.getInputStream();
 			os = output.getOutputStream();
 			compress(is, os, maxReadLength, maxWriteLength);
-			is.close();
-			is = null;
-			os.close();
-			os = null;
 		} finally {
-			if(is != null) is.close();
-			if(os != null) os.close();
+			Closer.close(is);
+			Closer.close(os);
 		}
 		return output;
 	}

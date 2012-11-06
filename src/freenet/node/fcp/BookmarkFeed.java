@@ -13,7 +13,6 @@ public class BookmarkFeed extends N2NFeedMessage {
 	public static final String NAME = "BookmarkFeed";
 	private final String name;
 	private final FreenetURI URI;
-	private final Bucket descriptionBucket;
 	private final boolean hasAnActivelink;
 
 	public BookmarkFeed(String header, String shortText, String text, short priorityClass, long updatedTime,
@@ -23,6 +22,7 @@ public class BookmarkFeed extends N2NFeedMessage {
 		this.name = name;
 		this.URI = URI;
 		this.hasAnActivelink = hasAnActivelink;
+		final Bucket descriptionBucket;
 		try {
 			if(description != null)
 				descriptionBucket = new ArrayBucket(description.getBytes("UTF-8"));

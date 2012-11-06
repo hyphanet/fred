@@ -102,11 +102,11 @@ public class RealNodeTest {
 			a.connect (b, trust, visibility);
 			b.connect (a, trust, visibility);
 		} catch (FSParseException e) {
-			Logger.error(RealNodeSecretPingTest.class, "cannot connect!!!!", e);
+			Logger.error(RealNodeTest.class, "cannot connect!!!!", e);
 		} catch (PeerParseException e) {
-			Logger.error(RealNodeSecretPingTest.class, "cannot connect #2!!!!", e);
+			Logger.error(RealNodeTest.class, "cannot connect #2!!!!", e);
 		} catch (freenet.io.comm.ReferenceSignatureVerificationException e) {
-			Logger.error(RealNodeSecretPingTest.class, "cannot connect #3!!!!", e);
+			Logger.error(RealNodeTest.class, "cannot connect #3!!!!", e);
 		}
 	}
 	

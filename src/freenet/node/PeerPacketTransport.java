@@ -315,7 +315,7 @@ public class PeerPacketTransport extends PeerTransport {
 				if(bootIDChangedInst) {
 					pn.node.lm.lostOrRestartedNode(pn);
 					pn.node.usm.onRestart(pn);
-					pn.node.onRestartOrDisconnect(pn);
+					pn.node.tracker.onRestartOrDisconnect(pn);
 					// We need to disconnect all the other transports since the bootID has changed.
 					// We keep only this transport and reconnect the others
 					pn.disconnectAllExceptOne(PeerPacketTransport.this);
@@ -412,15 +412,6 @@ public class PeerPacketTransport extends PeerTransport {
 		} else if(shouldRekey) {
 			startRekeying();
 		}
-	}
-	
-	/**
-	* Send a payload-less packet on either key if necessary.
-	* @throws PacketSequenceException If there is an error sending the packet
-	* caused by a sequence inconsistency.
-	*/
-	public boolean sendAnyUrgentNotifications(boolean forceSendPrimary) {
-		return false;
 	}
 	
 	public Message createSentPacketsMessage() {

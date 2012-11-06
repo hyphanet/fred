@@ -17,6 +17,7 @@ import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
+import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
@@ -1030,7 +1031,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 	public BaseManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName,
-			InsertContext ctx, boolean getCHKOnly2, RequestClient clientContext, boolean earlyEncode, boolean randomiseCryptoKeys, ClientContext context) {
+			InsertContext ctx, boolean getCHKOnly2, RequestClient clientContext, boolean earlyEncode, boolean randomiseCryptoKeys, byte [] forceCryptoKey, ObjectContainer container, ClientContext context) {
 		super(prioClass, clientContext);
 		if(client.persistent())
 			this.targetURI = target.clone();
@@ -1040,13 +1041,19 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		this.ctx = ctx;
 		this.getCHKOnly = getCHKOnly2;
 		this.earlyEncode = earlyEncode;
-		if(randomiseCryptoKeys) {
+		if(randomiseCryptoKeys && forceCryptoKey == null) {
 			forceCryptoKey = new byte[32];
 			context.random.nextBytes(forceCryptoKey);
-		} else {
-			forceCryptoKey = null;
 		}
-		this.cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
+		this.forceCryptoKey = forceCryptoKey;
+		
+		if(client.persistent())
+			container.activate(ctx, 1);
+		CompatibilityMode mode = ctx.getCompatibilityMode();
+		if(!(mode == CompatibilityMode.COMPAT_CURRENT || mode.ordinal() >= CompatibilityMode.COMPAT_1416.ordinal()))
+			this.cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
+		else
+			this.cryptoAlgorithm = Key.ALGO_AES_CTR_256_SHA256;
 		runningPutHandlers = new HashSet<PutHandler>();
 		putHandlersWaitingForMetadata = new HashSet<PutHandler>();
 		putHandlersWaitingForFetchable = new HashSet<PutHandler>();
@@ -1214,6 +1221,11 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	@Override
 	public synchronized boolean isFinished() {
 		return finished || cancelled;
+	}
+	
+	@Override
+	public byte[] getSplitfileCryptoKey() {
+		return forceCryptoKey;
 	}
 
 	private final DBJob runGotAllMetadata = new DBJob() {

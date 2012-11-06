@@ -31,6 +31,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.jar.Attributes.Name;
+import java.util.zip.ZipEntry;
 
 import freenet.support.io.FileUtil;
 
@@ -43,6 +44,10 @@ import freenet.support.io.FileUtil;
  * @version $Id$
  */
 public class JarClassLoader extends ClassLoader implements Closeable {
+	private static volatile boolean logMINOR;
+	static {
+		Logger.registerClass(JarClassLoader.class);
+	}
 
 	/** The temporary jar file. */
 	private JarFile tempJarFile;
@@ -145,20 +150,68 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 
 	/**
 	 * {@inheritDoc}
-	 * 
-	 * @see java.lang.ClassLoader#findResource(java.lang.String)
+	 * <p>
+	 * Finds the resource within this jar only. If it isn't found within the jar, getResourceAsStream()
+	 * will look elsewhere.
 	 */
 	@Override
 	protected URL findResource(String name) {
-		/* compatibility code. remove when all plugins are fixed. */
+		/* FIXME compatibility code. remove when all plugins are fixed. */
 		if (name.startsWith("/")) {
 			name = name.substring(1);
 		}
 		try {
+			if(tempJarFile.getJarEntry(name)==null) {
+				return null;
+			}
+
 			return new URL("jar:" + new File(tempJarFile.getName()).toURI().toURL() + "!/" + name);
 		} catch (MalformedURLException e) {
 		}
 		return null;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * If the resource is found in this jar, opens the stream using ZipEntry's,
+	 * so when tempJarFile is closed, so are all the streams, hence we can delete
+	 * the jar on Windows.
+	 * 
+	 * @see java.lang.ClassLoader#getResourceAsStream(java.lang.String)
+	 */
+	@Override
+	public InputStream getResourceAsStream(String name) {
+		if(logMINOR) Logger.minor(this, "Requested resource: " + name, new Exception("debug"));
+		URL url = getResource(name);
+		if (url == null)
+			return null;
+		if(logMINOR) Logger.minor(this, "Found resource at URL: " + url);
+
+		// If the resource is not from our jar, return it as normal
+		URL localUrl = findResource(name);
+		if (localUrl == null || !url.toString().equals(localUrl.toString()))
+			try {
+				return url.openStream();
+			} catch (IOException e) {
+				return null;
+			}
+
+		// If the resource is from our jar, open InputStream explicitly from the jar
+		// so that we can close() all opened streams later and let the jar file
+		// to be deleted on Windows
+
+		/* FIXME compatibility code. remove when all plugins are fixed. */
+		if (name.startsWith("/")) {
+			name = name.substring(1);
+		}
+
+		ZipEntry entry = tempJarFile.getEntry(name);
+		try {
+			return entry != null ? tempJarFile.getInputStream(entry) : null;
+		} catch (IOException e) {
+			return null;
+		}
 	}
 
 	/**

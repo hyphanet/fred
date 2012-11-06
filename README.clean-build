@@ -12,8 +12,9 @@ effort than the default build path; help in easing this would be appreciated.
 
 (Properties can be set in override.properties, similar to build.properties)
 
-A. The build scripts need to know where the contrib repo is. By default, they
-look in ../contrib; you can override this by setting `contrib.dir`.
+A. The build scripts need to know where the contrib jars are. By default, they
+look in lib/freenet; you can override this by setting `lib.contrib.dir` - see
+build.properties for more details.
 
 B. You may need to install extra Java libraries. These are listed in build.xml,
 in the <path> elements. If you already have these installed, but ANT can't find

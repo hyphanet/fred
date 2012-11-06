@@ -149,7 +149,7 @@ public class SeedClientPeerNode extends PeerNode {
 	@Override
 	public void fatalTimeout() {
 		// Disconnect.
-		forceDisconnect(true);
+		forceDisconnect();
 	}
 	
 	@Override

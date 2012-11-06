@@ -26,7 +26,7 @@ public class NullBasePeerNode implements BasePeerNode {
 	}
 
 	@Override
-	public void forceDisconnect(boolean dump) {
+	public void forceDisconnect() {
 		throw new UnsupportedOperationException();
 	}
 
@@ -209,6 +209,12 @@ public class NullBasePeerNode implements BasePeerNode {
 	@Override
 	public PeerMessageTracker getPeerMessageTracker() {
 		return null;
+	}
+
+	@Override
+	public int getThrottleWindowSize() {
+		// Arbitrary.
+		return 10;
 	}
 
 }

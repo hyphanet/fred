@@ -165,7 +165,7 @@ public class SeedServerPeerNode extends PeerNode {
 	@Override
 	public void fatalTimeout() {
 		// Disconnect.
-		forceDisconnect(true);
+		forceDisconnect();
 	}
 	
 	@Override

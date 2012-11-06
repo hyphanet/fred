@@ -189,7 +189,7 @@ public class ClientPutDir extends ClientPutBase {
 			putter = new DefaultManifestPutter(this,
 					manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly,
 					lowLevelClient,
-					earlyEncode, persistenceType == PERSIST_FOREVER, container, context);
+					earlyEncode, persistenceType == PERSIST_FOREVER, overrideSplitfileCryptoKey, container, context);
 			break;
 		default:
 			putter = new SimpleManifestPutter(this, 

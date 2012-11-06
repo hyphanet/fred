@@ -119,7 +119,7 @@ public final class ContainerSizeEstimator {
 		throw new UnsupportedOperationException("TODO, only TAR supportet atm.");
 	}
 
-	public static final long tarItemSize(long size) {
+	public static long tarItemSize(long size) {
 		return 512 + (((size + 511) / 512) * 512);
 	}
 }

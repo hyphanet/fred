@@ -89,7 +89,7 @@ public class NodeUpdateManager {
 	final Object broadcastUOMAnnouncesSync = new Object();
 	boolean broadcastUOMAnnounces = false;
 
-	Node node;
+	public final Node node;
 
 	final RevocationChecker revocationChecker;
 	private String revocationMessage;
@@ -254,7 +254,7 @@ public class NodeUpdateManager {
 		}
 
 		public void start(short priority, long maxSize) {
-			HighLevelSimpleClient hlsc = node.clientCore.makeClient(priority);
+			HighLevelSimpleClient hlsc = node.clientCore.makeClient(priority, false, false);
 			FetchContext context = hlsc.getFetchContext();
 			context.maxNonSplitfileRetries = -1;
 			context.maxSplitfileBlockRetries = -1;
@@ -522,7 +522,8 @@ public class NodeUpdateManager {
 				return;
 			}
 		}
-		minVer = Math.max(minVer, info.getPluginLongVersion());
+		if(info != null)
+			minVer = Math.max(minVer, info.getPluginLongVersion());
 		FreenetURI uri = updateURI.setDocName(name).setSuggestedEdition(minVer);
 		PluginJarUpdater updater = new PluginJarUpdater(this, uri, (int) minVer, -1, Integer.MAX_VALUE, name+"-", name, node.pluginManager, autoDeployPluginsOnRestart);
 		synchronized(this) {

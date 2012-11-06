@@ -158,17 +158,31 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		}
 	}
 	
-	private static class FProxyPassthruMaxSize extends LongCallback {
+	private static class FProxyPassthruMaxSizeNoProgress extends LongCallback {
 		@Override
 		public Long get() {
-			return FProxyToadlet.MAX_LENGTH;
+			return FProxyToadlet.MAX_LENGTH_NO_PROGRESS;
 		}
 		
 		@Override
 		public void set(Long val) throws InvalidConfigValueException {
 			if (get().equals(val))
 				return;
-			FProxyToadlet.MAX_LENGTH = val;
+			FProxyToadlet.MAX_LENGTH_NO_PROGRESS = val;
+		}
+	}
+
+	private static class FProxyPassthruMaxSizeProgress extends LongCallback {
+		@Override
+		public Long get() {
+			return FProxyToadlet.MAX_LENGTH_WITH_PROGRESS;
+		}
+		
+		@Override
+		public void set(Long val) throws InvalidConfigValueException {
+			if (get().equals(val))
+				return;
+			FProxyToadlet.MAX_LENGTH_WITH_PROGRESS = val;
 		}
 	}
 
@@ -395,9 +409,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		}
 		
 	};
-	
-	private final ReFilterCallback refilterPolicyCallback = new ReFilterCallback();
-	
+
 	public void createFproxy() {
 		synchronized(this) {
 			if(haveCalledFProxy) return;
@@ -406,7 +418,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		
 		pushDataManager=new PushDataManager(getTicker());
 		intervalPushManager=new IntervalPusherManager(getTicker(), pushDataManager);
-		bookmarkManager = new BookmarkManager(core);
+		bookmarkManager = new BookmarkManager(core, publicGatewayMode());
 		try {
 			FProxyToadlet.maybeCreateFProxyEtc(core, core.node, core.node.config, this, bookmarkManager);
 		} catch (IOException e) {
@@ -622,8 +634,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		});
 		enableActivelinks = fproxyConfig.getBoolean("enableActivelinks");
 		
-		fproxyConfig.register("passthroughMaxSize", (2L*1024*1024*11)/10, configItemOrder++, true, false, "SimpleToadletServer.passthroughMaxSize", "SimpleToadletServer.passthroughMaxSizeLong", new FProxyPassthruMaxSize(), true);
-		FProxyToadlet.MAX_LENGTH = fproxyConfig.getLong("passthroughMaxSize");
+		fproxyConfig.register("passthroughMaxSize", FProxyToadlet.MAX_LENGTH_NO_PROGRESS, configItemOrder++, true, false, "SimpleToadletServer.passthroughMaxSize", "SimpleToadletServer.passthroughMaxSizeLong", new FProxyPassthruMaxSizeNoProgress(), true);
+		FProxyToadlet.MAX_LENGTH_NO_PROGRESS = fproxyConfig.getLong("passthroughMaxSize");
+		fproxyConfig.register("passthroughMaxSizeProgress", FProxyToadlet.MAX_LENGTH_WITH_PROGRESS, configItemOrder++, true, false, "SimpleToadletServer.passthroughMaxSizeProgress", "SimpleToadletServer.passthroughMaxSizeProgressLong", new FProxyPassthruMaxSizeProgress(), true);
+		FProxyToadlet.MAX_LENGTH_WITH_PROGRESS = fproxyConfig.getLong("passthroughMaxSizeProgress");
+		System.out.println("Set fproxy max length to "+FProxyToadlet.MAX_LENGTH_NO_PROGRESS+" and max length with progress to "+FProxyToadlet.MAX_LENGTH_WITH_PROGRESS+" = "+fproxyConfig.getLong("passthroughMaxSizeProgress"));
 		
 		fproxyConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", configItemOrder++, true, true, "SimpleToadletServer.allowedHosts", "SimpleToadletServer.allowedHostsLong",
 				new FProxyAllowedHostsCallback());
@@ -713,9 +728,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 					}
 		}, false);
 		HTMLFilter.metaRefreshRedirectMinInterval = Math.max(-1, fproxyConfig.getInt("metaRefreshRedirectInterval"));
-		
-		fproxyConfig.register("refilterPolicy", "RE_FILTER", 
-				configItemOrder++, true, false, "SimpleToadletServer.refilterPolicy", "SimpleToadletServer.refilterPolicyLong", refilterPolicyCallback);
+
+		fproxyConfig.register("refilterPolicy", "RE_FILTER",
+				configItemOrder++, true, false, "SimpleToadletServer.refilterPolicy", "SimpleToadletServer.refilterPolicyLong", new ReFilterCallback());
 		
 		this.refilterPolicy = REFILTER_POLICY.valueOf(fproxyConfig.getString("refilterPolicy"));
 		
@@ -1196,6 +1211,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		sb.append(this.port);
 		sb.append("/");
 		return sb.toString();
+	}
+
+	@Override
+	public boolean isSSL() {
+		return ssl;
 	}
 
 	//

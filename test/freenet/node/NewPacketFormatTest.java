@@ -3,8 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 
+import freenet.crypt.BlockCipher;
+import freenet.crypt.ciphers.Rijndael;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.support.MutableBoolean;
@@ -21,7 +24,7 @@ public class NewPacketFormatTest extends TestCase {
 	
 	public void testEmptyCreation() throws BlockedTooLongException {
 		NewPacketFormat npf = new NewPacketFormat(null, null);
-		PeerMessageQueue pmq = new PeerMessageQueue(new NullBasePeerNode());
+		PeerMessageQueue pmq = new PeerMessageQueue();
 		SessionKey s = new SessionKey(null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0), 1, null);
 
 		NPFPacket p = npf.createPacket(1400, pmq, s, false);
@@ -31,7 +34,7 @@ public class NewPacketFormatTest extends TestCase {
 	public void testAckOnlyCreation() throws BlockedTooLongException, InterruptedException {
 		BasePeerNode pn = new NullBasePeerNode();
 		NewPacketFormat npf = new NewPacketFormat(pn, null);
-		PeerMessageQueue pmq = new PeerMessageQueue(pn);
+		PeerMessageQueue pmq = new PeerMessageQueue();
 		SessionKey s = new SessionKey(null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0), 1, null);
 
 		NPFPacket p = null;
@@ -51,10 +54,10 @@ public class NewPacketFormatTest extends TestCase {
 	public void testLostLastAck() throws BlockedTooLongException, InterruptedException {
 		NullBasePeerNode senderNode = new NullBasePeerNode();
 		NewPacketFormat sender = new NewPacketFormat(senderNode, null);
-		PeerMessageQueue senderQueue = new PeerMessageQueue(senderNode);
+		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NullBasePeerNode receiverNode = new NullBasePeerNode();
 		NewPacketFormat receiver = new NewPacketFormat(receiverNode, null);
-		PeerMessageQueue receiverQueue = new PeerMessageQueue(receiverNode);
+		PeerMessageQueue receiverQueue = new PeerMessageQueue();
 		SessionKey senderKey = new SessionKey(null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0), 1, null);
 		senderNode.currentKey = senderKey;
 		SessionKey receiverKey = new SessionKey(null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0), 1, null);
@@ -101,7 +104,7 @@ public class NewPacketFormatTest extends TestCase {
 	public void testOutOfOrderDelivery() throws BlockedTooLongException {
 		NullBasePeerNode senderNode = new NullBasePeerNode();
 		NewPacketFormat sender = new NewPacketFormat(senderNode, null);
-		PeerMessageQueue senderQueue = new PeerMessageQueue(senderNode);
+		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NullBasePeerNode receiverNode = new NullBasePeerNode();
 		NewPacketFormat receiver = new NewPacketFormat(receiverNode, null);
 		SessionKey senderKey = new SessionKey(null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0), 1, null);
@@ -126,7 +129,7 @@ public class NewPacketFormatTest extends TestCase {
 	public void testReceiveUnknownMessageLength() throws BlockedTooLongException {
 		NullBasePeerNode senderNode = new NullBasePeerNode();
 		NewPacketFormat sender = new NewPacketFormat(senderNode, null);
-		PeerMessageQueue senderQueue = new PeerMessageQueue(senderNode);
+		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NullBasePeerNode receiverNode = new NullBasePeerNode();
 		NewPacketFormat receiver = new NewPacketFormat(receiverNode, null);
 		SessionKey senderKey = new SessionKey(null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0), 1, null);
@@ -149,7 +152,7 @@ public class NewPacketFormatTest extends TestCase {
 	public void testResendAlreadyCompleted() throws BlockedTooLongException, InterruptedException {
 		NullBasePeerNode senderNode = new NullBasePeerNode();
 		NewPacketFormat sender = new NewPacketFormat(senderNode, null);
-		PeerMessageQueue senderQueue = new PeerMessageQueue(senderNode);
+		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NullBasePeerNode receiverNode = new NullBasePeerNode();
 		NewPacketFormat receiver = new NewPacketFormat(receiverNode, null);
 		SessionKey senderKey = new SessionKey(null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0), 1, null);
@@ -196,7 +199,7 @@ public class NewPacketFormatTest extends TestCase {
 
 		};
 		NewPacketFormat sender = new NewPacketFormat(senderNode, null);
-		PeerMessageQueue senderQueue = new PeerMessageQueue(senderNode);
+		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NullBasePeerNode receiverNode = new NullBasePeerNode() {
 			
 			@Override
@@ -255,7 +258,7 @@ public class NewPacketFormatTest extends TestCase {
 
 		};
 		NewPacketFormat sender = new NewPacketFormat(senderNode, null);
-		PeerMessageQueue senderQueue = new PeerMessageQueue(senderNode);
+		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NullBasePeerNode receiverNode = new NullBasePeerNode();
 		NewPacketFormat receiver = new NewPacketFormat(receiverNode, null);
 		SessionKey receiverKey = new SessionKey(null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0), 1, null);
@@ -292,7 +295,7 @@ public class NewPacketFormatTest extends TestCase {
 
 		};
 		NewPacketFormat sender = new NewPacketFormat(senderNode, null);
-		PeerMessageQueue senderQueue = new PeerMessageQueue(senderNode);
+		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NullBasePeerNode receiverNode = new NullBasePeerNode() {
 			
 			@Override
@@ -323,4 +326,36 @@ public class NewPacketFormatTest extends TestCase {
 		}
 	}
 	
+	/* This checks the output of the sequence number encryption function to
+	 * make sure it doesn't change accidentally. */
+	public void testSequenceNumberEncryption() {
+		BlockCipher ivCipher = new Rijndael();
+		ivCipher.initialize(new byte[] {
+				0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00
+		});
+
+		byte[] ivNonce = new byte[16];
+
+		BlockCipher incommingCipher = new Rijndael();
+		incommingCipher.initialize(new byte[] {
+				0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00
+		});
+
+		SessionKey sessionKey = new SessionKey(null, null, null, incommingCipher, null, ivCipher, ivNonce, null, null, -1, null);
+
+		byte[] encrypted = NewPacketFormat.encryptSequenceNumber(0, sessionKey);
+
+		/* This result has not been checked, but it was the output when
+		 * this test was added and we are (in this test) only
+		 * interested in making sure the output doesn't change. */
+		byte[] correct = new byte[] {(byte) 0xF7, (byte) 0x95, (byte) 0xBD, (byte) 0x4A};
+
+		assertTrue(Arrays.equals(correct, encrypted));
+	}
 }

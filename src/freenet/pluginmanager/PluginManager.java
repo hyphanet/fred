@@ -120,7 +120,7 @@ public class PluginManager {
 		if(logDEBUG)
 			Logger.debug(this, "Initialize Plugin Manager config");
 
-		client = core.makeClient(PRIO, true);
+		client = core.makeClient(PRIO, true, false);
 
 		// callback executor
 		executor = new SerialExecutor(NativeThread.NORM_PRIORITY);
@@ -781,16 +781,20 @@ public class PluginManager {
 			/* Windows, maybe? */
 			lastSlash = pluginSpecification.lastIndexOf('\\');
 		File pluginDirectory = node.getPluginDir();
-		if(lastSlash == -1)
-			/* it's an official plugin! */
-			pluginFilename = pluginSpecification + ".jar";
-		else
+		if(lastSlash == -1) {
+			/* it's an official plugin or filename without path */
+			if (pluginSpecification.toLowerCase().endsWith(".jar"))
+				pluginFilename = pluginSpecification;
+			else
+				pluginFilename = pluginSpecification + ".jar";
+		} else
 			pluginFilename = pluginSpecification.substring(lastSlash + 1);
 		if(logDEBUG)
-			Logger.minor(this, "Delete plugin - plugname: " + pluginSpecification + "filename: " + pluginFilename, new Exception("debug"));
+			Logger.minor(this, "Delete plugin - plugname: " + pluginSpecification + " filename: " + pluginFilename, new Exception("debug"));
 		File[] cachedFiles = getPreviousInstances(pluginDirectory, pluginFilename);
 		for (File cachedFile : cachedFiles) {
-			cachedFile.delete();
+			if (!cachedFile.delete())
+				if(logMINOR) Logger.minor(this, "Can't delete file " + cachedFile);
 		}
 	}
 
@@ -1087,11 +1091,11 @@ public class PluginManager {
 
 	static {
 		try {
-		addOfficialPlugin("Freemail", "communication", false, 14, true, new FreenetURI("CHK@SdFaDNxXJ1-SuZJcAxq1vxVo3DEV38oJlv~dG2CO4sQ,f0wSpgekodQaiOitR03fvwjfuKjHFcYQ-J7GWj-t1~U,AAIC--8/Freemail.jar"));
+		addOfficialPlugin("Freemail", "communication", false, 15, true, new FreenetURI("CHK@6dfMgGf7YEfJhF0W~K0HUv0fnbuRwYH6iMqrLIbTI7k,huYBf8oBevwW6lRQnz-0jDP1dl5ej7FKeyVZ3CnH0Ec,AAMC--8/Freemail.jar"));
 		addOfficialPlugin("HelloWorld", "example", false, new FreenetURI("CHK@ZdTXnWV-ikkt25-y8jmhlHjCY-nikDMQwcYlWHww5eg,Usq3uRHpHuIRmMRRlNQE7BNveO1NwNI7oNKdb7cowFM,AAIC--8/HelloWorld.jar"), false, false, true);
 		addOfficialPlugin("HelloFCP", "example", false, new FreenetURI("CHK@0gtXJpw1QUJCmFOhoPRNqhsNbMtVw1CGVe46FUv7-e0,X8QqhtPkHoaFCUd89bgNaKxX1AV0WNBVf3sRgSF51-g,AAIC--8/HelloFCP.jar"), false, false, true);
 		addOfficialPlugin("JSTUN", "connectivity", true, 2, false, new FreenetURI("CHK@STQEzqyYLPtd4mCMIXO2HV38J6jG492hyPcEjTdc1oI,ojl4TCcJpJbo1OcO8nwPjycNCt1mn6zJq3lxCNExIHI,AAIC--8/JSTUN.jar"));
-		addOfficialPlugin("KeyUtils", "technical", false, 5009, false, new FreenetURI("CHK@WI1aBemzqrlOP62cvbVO0A7Ckb0hKSQ0OB1dmEbF9BM,bcnZg1CdaFciYOfmf6CK0-sLJD-I~13CFx4qI831mqY,AAIC--8/KeyUtils.jar"), false, false, true);
+		addOfficialPlugin("KeyUtils", "technical", false, 5017, false, new FreenetURI("CHK@d-nxDvw-jfRQfCTlEj~SjgxrS0ySUAC29pY1HMSSPKk,hcG5IljHb9Zr5PA-NeNQinRvRF1b9sFTL8eaiUJiFP4,AAMC--8/KeyUtils.jar"), false, false, true);
 		addOfficialPlugin("MDNSDiscovery", "connectivity", false, 2, false, new FreenetURI("CHK@wPyhY61bsDM3OW6arFlxYX8~mBKjo~XtOTIAbT0dk88,Vr3MTAzkW5J28SJs2dTxkj6D4GVNm3u8GFsxJgzTL1M,AAIC--8/MDNSDiscovery.jar"));
 		addOfficialPlugin("SNMP", "connectivity", false, new FreenetURI("CHK@EykJIv83UE291zONVzfXqyJYX5t66uCQJHkzQrB61MI,-npuolPZj1fcAWane2~qzRNEjKDERx52aQ5bC6NBQgw,AAIC--8/SNMP.jar"), false, false, true);
 		addOfficialPlugin("TestGallery", "example", false, 1, false, new FreenetURI("CHK@LfJVh1EkCr4ry0yDW74vwxkX-3nkr~ztW2z0SUZHfC0,-mz7l39dC6n0RTUiSokjC~pUDO7PWZ89miYesKH0-WA,AAIC--8/TestGallery.jar"), false, true, false);
@@ -1100,10 +1104,10 @@ public class PluginManager {
 		addOfficialPlugin("XMLLibrarian", "index", false, 26, true, new FreenetURI("CHK@TvjyCaG1dx0xIBSJkXSKA1ZT4I~NkRKeQqwC0a0bhFM,JiQe4CRjF1RwhQRFFQzP-ih9t2i0peV0tBCfJAeFCdk,AAIC--8/XMLLibrarian.jar"), true, false, false);
 		addOfficialPlugin("XMLSpider", "index", false, 47, true, new FreenetURI("CHK@IQU400XKMx~nMEfdXV2YokCzJxx6BeCBmIObzZuq1zo,cY6UJ~KWGESJvaFajXHfr9UZUKJzt7gkmqUKUIZF5SE,AAIC--8/XMLSpider.jar"), true, false, false);
 		addOfficialPlugin("Freereader", "index", false, 4, true, new FreenetURI("CHK@4PuSjXk4Z0Hdu04JLhdPHLyOVLljj8qVbjRn3rHVzvg,bDGYnuYj67Q4uzroPBEWAYWRk26bPzf-iQ4~Uo3S7mg,AAIC--8/Freereader.jar"));
-		addOfficialPlugin("Library", "index", false, 24, true, new FreenetURI("CHK@WtWIvOZXLVZkmDrY5929RxOZ-woRpRoMgE8rdZaQ0VU,rxH~D9VvOOuA7bCnVuzq~eux77i9RR3lsdwVHUgXoOY,AAIC--8/Library.jar"));
+		addOfficialPlugin("Library", "index", false, 26, true, new FreenetURI("CHK@q~V5riY6S4hNm11BSPWgU8C5DA7Bem91upsKkzsV0Ms,qx2WP1hrDiB3iPqquosKln9jm~RRL5lKEEhRsGLThVY,AAIC--8/Library.jar"));
 		addOfficialPlugin("Spider", "index", false, 49, false, new FreenetURI("CHK@7a33HqOQZqqyxBwGhtx-JEPzEMTOaPql4sB-EIuMhjk,2ecFy5ttpAC2sDx5yvS19MDEdowMQpzagpdOg2I~Mh8,AAIC--8/Spider.jar"), false, false, true);
-		addOfficialPlugin("Freetalk", "communication", false, 11, true, new FreenetURI("CHK@XLkj7ou05wE08UMMkYwV0-OoVWeYi--LWurWi1sAazI,WS2jtWMcjx1g7VKO9sGCd4cbaXwLgP1MltBqPc5zVak,AAIC--8/Freetalk.jar"), false, false, false);
-		addOfficialPlugin("WebOfTrust", "communication", false, 11, true, new FreenetURI("CHK@KRaAbMbG9CBjDONo52KcYcOnVIrkTlCWjlxW6ZtN9TM,bryljPiD9bU2HSgG4Ky93s-xQG25d7Z8uvcw07fohlE,AAIC--8/WebOfTrust.jar"), false, false, false);
+		addOfficialPlugin("Freetalk", "communication", false, 13, true, new FreenetURI("CHK@zZDy-KwoZHYy4ZRpK9ZNNQb1vyespIIi9b-RPIyRM0k,EDHJbQpLtGSW4WHA23UHt6MpcoAp--dR7zmX-SGzzis,AAMC--8/Freetalk.jar"), false, false, false);
+		addOfficialPlugin("WebOfTrust", "communication", false, 12, true, new FreenetURI("CHK@Z6jitqIR4tJc9gOXih5cbTJxwnThweDvE5e-pTzetGM,vJfK3hmt06b-dF0yIbovPZlCUqTdgZ5-xsRzcslq1KU,AAIC--8/WebOfTrust.jar"), false, false, false); // from 35617f66afba287d98320843a521a9b395a5fbb3 (WoT build fix for headless)
 		addOfficialPlugin("FlogHelper", "communication", false, 26, true, new FreenetURI("CHK@DBzb9y3RozpB3kKcOallQsye1v83HI1O9wtNJweEzj4,3AXYzfyZI87nKy8uNAflktuOoBQo8Du~gDrRdbOW1z8,AAIC--8/FlogHelper.jar"), false, false, false);
 		} catch (MalformedURLException e) {
 			throw new Error("Malformed hardcoded URL: "+e, e);

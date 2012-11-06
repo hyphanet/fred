@@ -11,6 +11,7 @@ import java.net.URISyntaxException;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.wizardsteps.PageHelper;
+import freenet.clients.http.wizardsteps.WizardL10n;
 import freenet.l10n.NodeL10n;
 import freenet.node.MasterKeysFileSizeException;
 import freenet.node.MasterKeysWrongPasswordException;
@@ -26,6 +27,8 @@ import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.HTTPRequest;
+import freenet.support.io.FileUtil;
+import freenet.support.io.FileUtil.OperatingSystem;
 
 /**
  * The security levels page.
@@ -541,6 +544,19 @@ public class SecurityLevelsToadlet extends Toadlet {
 		ul = formNode.addChild("ul", "class", "config");
 		seclevelGroup = ul.addChild("li");
 		seclevelGroup.addChild("#", l10nSec("physicalThreatLevel"));
+		
+		NodeL10n.getBase().addL10nSubstitution(seclevelGroup.addChild("p").addChild("i"), "SecurityLevels.physicalThreatLevelTruecrypt",
+		        new String[]{"bold", "truecrypt"},
+		        new HTMLNode[]{HTMLNode.STRONG,
+		                HTMLNode.linkInNewWindow(ExternalLinkToadlet.escape("http://www.truecrypt.org/"))});
+		HTMLNode swapWarning = seclevelGroup.addChild("p").addChild("i");
+		OperatingSystem os = FileUtil.detectedOS;
+		swapWarning.addChild("#", NodeL10n.getBase().getString("SecurityLevels.physicalThreatLevelSwapfile",
+		        "operatingSystem",
+		        NodeL10n.getBase().getString("OperatingSystemName."+os.name())));
+		if(os == FileUtil.OperatingSystem.Windows) {
+			swapWarning.addChild("#", " " + WizardL10n.l10nSec("physicalThreatLevelSwapfileWindows"));
+		}
 
 		PHYSICAL_THREAT_LEVEL physicalLevel = node.securityLevels.getPhysicalThreatLevel();
 
@@ -569,9 +585,6 @@ public class SecurityLevelsToadlet extends Toadlet {
 					inner.addChild("b", " "+l10nSec("warningWillDecrypt"));
 				else
 					inner.addChild("b", " "+l10nSec("warningWontDecrypt"));
-			}
-			if(level == PHYSICAL_THREAT_LEVEL.LOW) {
-				NodeL10n.getBase().addL10nSubstitution(input.addChild("p").addChild("i"), "SecurityLevels.physicalThreatLevelSwapfile", new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
 			}
 			if(level == PHYSICAL_THREAT_LEVEL.MAXIMUM && node.hasDatabase()) {
 				inner.addChild("b", " "+l10nSec("warningMaximumWillDeleteQueue"));
@@ -618,7 +631,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		return PATH;
 	}
 
-	private static final String l10n(String string) {
+	private static String l10n(String string) {
 		return NodeL10n.getBase().getString("ConfigToadlet." + string);
 	}
 

@@ -88,7 +88,6 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	 * bit 0...23 - The first 3 bytes of the salted key.
 	 */
 	private final ResizablePersistentIntBuffer slotFilter;
-	private final File slotFilterFile;
 	/** If true, don't create a slot filter, don't keep it up to date, don't
 	 * do anything with it. */
 	private boolean slotFilterDisabled;
@@ -125,7 +124,6 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 	private boolean preallocate = true;
 	public static boolean NO_CLEANER_SLEEP = false;
-	static final int SLOT_FILTER_INTERVAL = -1; // Write immediately.
 
 	/** If we have no space in this store, try writing it to the alternate store,
 	 * with the wrong store flag set. Note that we do not *read from* it, the caller
@@ -194,12 +192,12 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			System.err.println("Deleted old bloom filter for "+name+" - obsoleted by slot filter");
 			System.err.println("We will need to rebuild the slot filters, it will take a while and there will be a lot of disk access, but once it's done there should be a lot less disk access.");
 		}
-		
-		slotFilterFile = new File(this.baseDir, name + ".slotfilter");
+
+		File slotFilterFile = new File(this.baseDir, name + ".slotfilter");
 		int size = (int)Math.max(storeSize, prevStoreSize);
 		slotFilterDisabled = !enableSlotFilters;
 		if(!slotFilterDisabled) {
-			slotFilter = new ResizablePersistentIntBuffer(slotFilterFile, size, SLOT_FILTER_INTERVAL);
+			slotFilter = new ResizablePersistentIntBuffer(slotFilterFile, size);
 			System.err.println("Slot filter (" + slotFilterFile + ") for " + name + " is loaded (new="+slotFilter.isNew()+").");
 		} else
 			slotFilter = null;
@@ -1011,7 +1009,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		entry.curOffset = offset;
 	}
 
-	private void flushAndClose() {
+	private void flushAndClose(boolean abort) {
 		Logger.normal(this, "Flush and closing this store: " + name);
 		try {
 			metaFC.force(true);
@@ -1025,10 +1023,14 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		} catch (Exception e) {
 			Logger.error(this, "error flusing store", e);
 		}
-		if(!slotFilterDisabled)
-			slotFilter.shutdown();
+		if(!slotFilterDisabled) {
+			if(!abort)
+				slotFilter.shutdown();
+			else
+				slotFilter.abort();
+		}
 	}
-
+	
 	/**
 	 * Set preallocate storage space
 	 * @param preallocate
@@ -1201,7 +1203,10 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					generation = raf.readInt();
 					flags = raf.readInt();
 
-					if (((flags & FLAG_DIRTY) != 0) && SLOT_FILTER_INTERVAL != -1)
+					if (((flags & FLAG_DIRTY) != 0) && 
+							// FIXME figure out a way to do this consistently!
+							// Not critical as a few blocks wrong is something we can handle.
+							ResizablePersistentIntBuffer.getPersistenceTime() != -1)
 						flags |= FLAG_REBUILD_BLOOM;
 
 					try {
@@ -1493,8 +1498,12 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 						if (_prevStoreSize != prevStoreSize)
 							return;
 						prevStoreSize = 0;
-						if(!slotFilterDisabled)
-							slotFilter.resize((int)storeSize);
+						if(!slotFilterDisabled) {
+							if(slotFilter.size() != (int)storeSize)
+								slotFilter.resize((int)storeSize);
+							else
+								slotFilter.forceWrite();
+						}
 
 						flags &= ~FLAG_REBUILD_BLOOM;
 						resizeCompleteCondition.signalAll();
@@ -1646,6 +1655,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				}
 				processor.finish();
 			} catch (Exception e) {
+				Logger.error(this, "Caught: "+e+" while shrinking", e);
 				processor.abort();
 			}
 		}
@@ -1850,7 +1860,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
 				                cleaner.entriesTotal + "" });
 			else
-				return NodeL10n.getBase().getString("SaltedHashFreenetStore.shortRebuildProgress", //
+				return NodeL10n.getBase().getString("SaltedHashFreenetStore.shortRebuildProgress" + (slotFilter.isNew() ? "New" : ""), 
 				        new String[] { "name", "processed", "total" },//
 				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
 				                cleaner.entriesTotal + "" });
@@ -1864,8 +1874,8 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
 				                cleaner.entriesTotal + "" });
 			else
-				return NodeL10n.getBase().getString("SaltedHashFreenetStore.longRebuildProgress", //
-				        new String[] { "name", "processed", "total" },//
+				return NodeL10n.getBase().getString("SaltedHashFreenetStore.longRebuildProgress" + (slotFilter.isNew() ? "New" : ""),
+				        new String[] { "name", "processed", "total" },
 				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
 				                cleaner.entriesTotal + "" });
 		}
@@ -2049,6 +2059,10 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	}
 
 	public void close() {
+		close(false);
+	}
+	
+	public void close(boolean abort) {
 		shutdown = true;
 		lockManager.shutdown();
 
@@ -2062,7 +2076,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 		configLock.writeLock().lock();
 		try {
-			flushAndClose();
+			flushAndClose(abort);
 			flags &= ~FLAG_DIRTY; // clean shutdown
 			writeConfigFile();
 		} finally {
@@ -2312,6 +2326,12 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			}
 			
 		};
+	}
+
+	/** Testing only! Force all entries that say empty/unknown on the slot
+	 * filter to empty/certain. */
+	public void forceValidEmpty() {
+		slotFilter.replaceAllEntries(0, SLOT_CHECKED);
 	}
 
 

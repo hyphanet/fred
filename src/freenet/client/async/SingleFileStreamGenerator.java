@@ -44,8 +44,11 @@ public class SingleFileStreamGenerator implements StreamGenerator {
 		try{
 			if(logMINOR) Logger.minor(this, "Generating Stream", new Exception("debug"));
 			InputStream data = bucket.getInputStream();
+			try {
 			FileUtil.copy(data, os, -1);
+			} finally {
 			data.close();
+			}
 			os.close();
 			bucket.free();
 			if(persistent) bucket.removeFrom(container);

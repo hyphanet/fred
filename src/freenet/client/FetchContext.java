@@ -15,7 +15,9 @@ import freenet.client.filter.TagReplacerCallback;
 import freenet.node.RequestScheduler;
 import freenet.support.api.BucketFactory;
 
-/** Context for a Fetcher. Contains all the settings a Fetcher needs to know about. */
+/** Context for a Fetcher. Contains all the settings a Fetcher needs to know 
+ * about. FIXME these should be final or private, with getters/setters and 
+ * checking for valid values e.g. maxRecursionLevel >= 1. */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class FetchContext implements Cloneable {
 
@@ -27,6 +29,9 @@ public class FetchContext implements Cloneable {
 	public long maxOutputLength;
 	/** Maximum length of data fetched in order to obtain the final data - metadata, containers, etc. */
 	public long maxTempLength;
+	/** 1 = only fetch a single block. 2 = allow one redirect, e.g. metadata
+	 * block pointing to actual data block. Etc. 0 may work sometimes but 
+	 * is not recommended. */
 	public int maxRecursionLevel;
 	public int maxArchiveRestarts;
 	/** Maximum number of containers to fetch during a request */

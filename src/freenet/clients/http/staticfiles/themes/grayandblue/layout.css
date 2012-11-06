@@ -1,0 +1,185 @@
+﻿/* layout-grayandblue */
+
+/* 
+ * Overall Settings
+ */
+
+/* base font settings for entire page */
+
+div,
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+li,
+p,
+span,
+td,
+th {
+	font-family: Verdana;
+	font-size: 10pt;
+}
+
+table,
+td,
+th,
+thead {
+	border-style: dotted;
+}
+
+form {
+	margin: 0;
+}
+
+/*
+ * Body and Page Header
+ */
+
+/*
+ * Top Title Area
+ */
+
+#topbar {
+	background-image: url(/static/themes/grayandblue/logo.png);
+	background-position: 200px 8px;
+	border-bottom-width: 0px;
+}
+
+#topbar h1 {
+	font-size: 2.1em;
+	font-weight: 900;
+	padding-top: 20px;
+}
+
+/* 
+ * Navigation
+ */
+
+#navbar {
+	width: 10.125em;
+}
+
+#navbar, #selected-subnavbar {
+	border-style: dotted;
+}
+
+/*matches both top-level and submenu links */
+#navlist li {
+	font-weight: bold;
+}
+
+/*matches only submenu links */
+#navlist li ul li,
+#selected-subnavbar-list li {
+	font-weight: bold;
+}
+
+ul.subnavlist-selected,
+ul.subnavlist {
+	margin-left: .75em;
+}
+
+/* this border is only displayed in dropdown mode */
+
+ul.subnavlist-selected,
+ul.subnavlist {
+	border-style: dotted;
+}
+
+/*
+ * Alerts
+ */
+
+/* 
+ * Infoboxes
+ */
+
+div.infobox {
+	border-style: dotted;
+}
+
+div.infobox-information div.infobox-header {
+	background-image: url(/static/themes/grayandblue/information.png);
+}
+
+div.infobox-warning div.infobox-header {
+	background-image: url(/static/themes/grayandblue/warning.png);
+}
+
+div.infobox-alert div.infobox-header {
+	background-image: url(/static/themes/grayandblue/alert.png);
+}
+
+div.infobox-error div.infobox-header {
+	background-image: url(/static/themes/grayandblue/error.png);
+}
+
+div.infobox-query div.infobox-header {
+	background-image: url(/static/themes/grayandblue/query.png);
+}
+
+div.infobox-success div.infobox-header {
+	background-image: url(/static/themes/grayandblue/success.png);
+}
+
+li.alert-summary-text-error {
+	background-image: url(/static/themes/grayandblue/error-16.png);
+}
+
+li.alert-summary-text-alert {
+	background-image: url(/static/themes/grayandblue/alert-16.png);
+}
+
+li.alert-summary-text-warning {
+	background-image: url(/static/themes/grayandblue/warning-16.png);
+}
+
+li.alert-summary-text-minor {
+	background-image: url(/static/themes/grayandblue/information-16.png);
+}
+
+/*
+ * Content
+ */
+
+#content {
+	left: 11.626em;
+}
+
+/*
+ * Plugins Page
+ */
+
+/* 
+ * Configuration Page
+ */
+
+/* 
+ * Darknet Page
+ */
+
+/* 
+ * Statistics Page
+ */
+
+/* 
+ * Queue Page
+ */
+
+div.progress_fraction_finalized {
+	font-weight: normal;
+}
+
+/* 
+ * N2NTM page
+ */
+
+/* 
+ * Translation
+ */
+
+/* 
+ * Statusbar
+ */

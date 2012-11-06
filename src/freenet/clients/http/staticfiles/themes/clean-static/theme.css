@@ -1,19 +1,10 @@
-/* clean-static */
+﻿/* clean-static theme */
 
-/* Basic CSS functions */
-@import url(/static/base.css);
+/* navigation behavior */
+@import url(/static/behavior-static.css);
 
-/* Bookmarks & bookmark editor */
-@import url(/static/bookmark.css);
+/* layout */
+@import url(/static/themes/clean/layout.css);
 
-/* Base theme */
-@import url(/static/themes/clean/theme.css);
-
-/* We want the submenus to be always visible */
-div#navbar ul li ul.subnavlist {
-	display: block;
-}
-
-#content {
-	padding-bottom:2em;
-}
+/* color scheme */
+@import url(/static/themes/clean/color.css);

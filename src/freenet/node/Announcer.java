@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Vector;
 
+import freenet.clients.http.ConfigToadlet;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.l10n.NodeL10n;
@@ -281,6 +282,44 @@ public class Announcer {
 		return target;
 	}
 
+	private SimpleUserAlert announcementDisabledAlert = 
+		new SimpleUserAlert(false, l10n("announceDisabledTooOldTitle"), l10n("announceDisabledTooOld"), l10n("announceDisabledTooOldShort"), UserAlert.CRITICAL_ERROR) {
+		
+		@Override
+		public HTMLNode getHTMLText() {
+			HTMLNode div = new HTMLNode("div");
+			div.addChild("#", l10n("announceDisabledTooOld"));
+			if(!node.nodeUpdater.isEnabled()) {
+				div.addChild("#", " ");
+				NodeL10n.getBase().addL10nSubstitution(div, "Announcer.announceDisabledTooOldUpdateDisabled", new String[] { "config" }, new HTMLNode[] { HTMLNode.link("/config/node.updater") });
+			}
+			// No point with !armed() or blown() because they have their own messages.
+			return div;
+		}
+		
+		@Override
+		public String getText() {
+			StringBuilder sb = new StringBuilder();
+			sb.append(l10n("announceDisabledTooOld"));
+			sb.append(" ");
+			if(!node.nodeUpdater.isEnabled()) {
+				sb.append(l10n("announceDisabledTooOldUpdateDisabled", new String[] { "config", "/config" }, new String[] { "", "" }));
+			}
+			return sb.toString();
+		}
+		
+		@Override
+		public boolean isValid() {
+			if(node.nodeUpdater.isEnabled()) return false;
+			// If it is enabled but not armed there will be a message from the updater.
+			synchronized(Announcer.this) {
+				return killedAnnouncementTooOld;
+			}
+		}
+		
+	};
+
+	
 	/** @return True if we have enough peers that we don't need to announce. */
 	boolean enoughPeers() {
 		if(om.stopping()) return true;
@@ -315,7 +354,7 @@ public class Announcer {
 				Logger.error(this, "Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
 				System.err.println("Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
 				if(node.clientCore != null)
-					node.clientCore.alerts.register(new SimpleUserAlert(false, l10n("announceDisabledTooOldTitle"), l10n("announceDisabledTooOld"), l10n("announceDisabledTooOldShort"), UserAlert.CRITICAL_ERROR));
+					node.clientCore.alerts.register(announcementDisabledAlert);
 			}
 
 		}
@@ -336,6 +375,11 @@ public class Announcer {
 			});
 			return true;
 		} else {
+			synchronized(this) {
+				killedAnnouncementTooOld = false;
+			}
+			if(node.clientCore != null)
+				node.clientCore.alerts.unregister(announcementDisabledAlert);
 			if(node.nodeUpdater.isEnabled() && node.nodeUpdater.isArmed() &&
 					node.nodeUpdater.uom.fetchingFromTwo() &&
 					node.peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, false) > 5) {

@@ -214,7 +214,9 @@ class SingleFileInserter implements ClientPutState {
 				container.activate(ctx, 1);
 				container.activate(ctx.eventProducer, 1);
 			}
-			ctx.eventProducer.produceEvent(new ExpectedHashesEvent(hashes), container, context);
+			HashResult[] clientHashes = hashes;
+			if(persistent) clientHashes = HashResult.copy(hashes);
+			ctx.eventProducer.produceEvent(new ExpectedHashesEvent(clientHashes), container, context);
 			
 			// So it is passed on.
 			origHashes = hashes;

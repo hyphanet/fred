@@ -23,8 +23,7 @@ public class PluginJarUpdater extends NodeUpdater {
 	private boolean deployOnNoRevocation;
 	private boolean deployOnNextNoRevocation;
 	private boolean readyToDeploy;
-	private boolean deploying;
-	
+
 	/**
 	 * @return True if the caller should restart the revocation checker.
 	 */
@@ -40,7 +39,6 @@ public class PluginJarUpdater extends NodeUpdater {
 				return true;
 			} else
 				return false;
-			deploying = true;
 		}
 		// Deploy it!
 		if (!pluginManager.isPluginLoaded(pluginName)) {

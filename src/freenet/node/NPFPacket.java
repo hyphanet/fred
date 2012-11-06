@@ -438,7 +438,7 @@ class NPFPacket {
 	public int countAcks() {
 		return acks.size();
 	}
-	
+
 	/**
 	 * @return True if there are no MessageFragment's to send.
 	 */

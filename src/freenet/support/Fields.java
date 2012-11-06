@@ -9,6 +9,7 @@ import java.util.GregorianCalendar;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 
+import freenet.l10n.NodeL10n;
 import freenet.support.Logger.LogLevel;
 
 /**
@@ -100,7 +101,7 @@ public abstract class Fields {
 	 *             if the string is more than 16 characters long, or if any
 	 *             character is not in the set [0-9a-fA-f]
 	 */
-	public static final long hexToLong(String hex)
+	public static long hexToLong(String hex)
 		throws NumberFormatException {
 		int len = hex.length();
 		if(len > 16)
@@ -133,7 +134,7 @@ public abstract class Fields {
 	 *             if the string is more than 16 characters long, or if any
 	 *             character is not in the set [0-9a-fA-f]
 	 */
-	public static final int hexToInt(String hex) throws NumberFormatException {
+	public static int hexToInt(String hex) throws NumberFormatException {
 		int len = hex.length();
 		if(len > 16)
 			throw new NumberFormatException();
@@ -163,7 +164,7 @@ public abstract class Fields {
 	 *         couldn't be parsed.
 	 */
 	/* wooo, rocket science! (this is purely abstraction people) */
-	public static final boolean stringToBool(String s, boolean def) {
+	public static boolean stringToBool(String s, boolean def) {
 		if(s == null)
 			return def;
 		return (def ? !s.equalsIgnoreCase("false") : s.equalsIgnoreCase("true"));
@@ -191,11 +192,11 @@ public abstract class Fields {
 	 *            the boolean value to convert.
 	 * @return A "true" or "false" String.
 	 */
-	public static final String boolToString(boolean b) {
+	public static String boolToString(boolean b) {
 		return b ? "true" : "false";
 	}
 
-	public static final String[] commaList(String ls) {
+	public static String[] commaList(String ls) {
 		if(ls == null)
 			return null;
 		StringTokenizer st = new StringTokenizer(ls, ",");
@@ -206,11 +207,11 @@ public abstract class Fields {
 		return r;
 	}
 
-	public static final String commaList(String[] ls) {
+	public static String commaList(String[] ls) {
 		return textList(ls, ',');
 	}
 
-	public static final String textList(String[] ls, char ch) {
+	public static String textList(String[] ls, char ch) {
 		StringBuilder sb = new StringBuilder();
 		for(int i = 0; i < ls.length; i++) {
 			sb.append(ls[i]);
@@ -220,7 +221,7 @@ public abstract class Fields {
 		return sb.toString();
 	}
 
-	public static final long[] numberList(String ls)
+	public static long[] numberList(String ls)
 		throws NumberFormatException {
 		StringTokenizer st = new StringTokenizer(ls, ",");
 		long[] r = new long[st.countTokens()];
@@ -230,7 +231,7 @@ public abstract class Fields {
 		return r;
 	}
 
-	public static final String numberList(long[] ls) {
+	public static String numberList(long[] ls) {
 		char[] numberBuf = new char[64];
 		StringBuilder listBuf = new StringBuilder(ls.length * 18);
 		for(int i = 0; i < ls.length; i++) {
@@ -258,7 +259,7 @@ public abstract class Fields {
 	 *
 	 * @return millis of the epoch of at the time described.
 	 */
-	public static final long dateTime(String date)
+	public static long dateTime(String date)
 		throws NumberFormatException {
 
 		if(date.length() == 0)
@@ -334,7 +335,7 @@ public abstract class Fields {
 
 	}
 
-	public static final String secToDateTime(long time) {
+	public static String secToDateTime(long time) {
 		//Calendar c = Calendar.getInstance();
 		//c.setTime(new Date(time));
 		//gc.setTimeInMillis(time*1000);
@@ -350,7 +351,7 @@ public abstract class Fields {
 		return dateString;
 	}
 
-	public static final int compareBytes(byte[] b1, byte[] b2) {
+	public static int compareBytes(byte[] b1, byte[] b2) {
 		int len = Math.max(b1.length, b2.length);
 		for(int i = 0; i < len; ++i) {
 			if(i == b1.length)
@@ -365,7 +366,7 @@ public abstract class Fields {
 		return 0;
 	}
 
-	public static final int compareBytes(
+	public static int compareBytes(
 		byte[] a,
 		byte[] b,
 		int aoff,
@@ -384,7 +385,7 @@ public abstract class Fields {
 		return 0;
 	}
 
-	public static final boolean byteArrayEqual(byte[] a, byte[] b) {
+	public static boolean byteArrayEqual(byte[] a, byte[] b) {
 		if(a.length != b.length)
 			return false;
 		for(int i = 0; i < a.length; ++i)
@@ -393,7 +394,7 @@ public abstract class Fields {
 		return true;
 	}
 
-	public static final boolean byteArrayEqual(
+	public static boolean byteArrayEqual(
 		byte[] a,
 		byte[] b,
 		int aoff,
@@ -419,14 +420,14 @@ public abstract class Fields {
 
 	// could add stuff like IntegerComparator, LongComparator etc.
 	// if we need it
-	public static final int hashCode(byte[] b) {
+	public static int hashCode(byte[] b) {
 		return hashCode(b, 0, b.length);
 	}
 
 	/**
 	 * A generic hashcode suited for byte arrays that are more or less random.
 	 */
-	public static final int hashCode(byte[] b, int ptr, int length) {
+	public static int hashCode(byte[] b, int ptr, int length) {
 		int h = 0;
 		for(int i = length - 1; i >= 0; --i) {
 			int x = b[ptr + i] & 0xff;
@@ -438,14 +439,14 @@ public abstract class Fields {
 	/**
 	 * Long version of above Not believed to be secure in any sense of the word :)
 	 */
-	public static final long longHashCode(byte[] b) {
+	public static long longHashCode(byte[] b) {
 		return longHashCode(b, 0, b.length);
 	}
 
 	/**
 	 * Long version of above Not believed to be secure in any sense of the word :)
 	 */
-	public static final long longHashCode(byte[] b, int offset, int length) {
+	public static long longHashCode(byte[] b, int offset, int length) {
 		long h = 0;
 		for(int i = length - 1; i >= 0; --i) {
 			int x = b[i + offset] & 0xff;
@@ -678,6 +679,29 @@ public abstract class Fields {
 		return res;
 	}
 
+	/* Removes up to one "(bits) per second" qualifier at the end of the string. If present such a qualifier will
+	 * prevent parsing as a size.
+	 * @see freenet.support.Fields#parseInt(String)
+	 */
+	public static String trimPerSecond(String limit) {
+		limit = limit.trim();
+		if(limit.isEmpty()) return "";
+		/*
+		 * IEC endings are case sensitive, so the input string's case should not be modified. However, the
+		 * qualifiers should not be case sensitive.
+		 */
+		final String lower = limit.toLowerCase();
+		for(String ending :
+			new String[] {
+				"/s", "/sec", "/second", "bps", NodeL10n.getBase().getString("FirstTimeWizardToadlet.bandwidthPerSecond").toLowerCase()
+			}) {
+			if(lower.endsWith(ending)) {
+				return limit.substring(0, limit.length() - ending.length());
+			}
+		}
+		return limit;
+	}
+
 	/**
 	 * Parse a human-readable string possibly including SI and ICE units into an integer.
 	 * @throws NumberFormatException
@@ -801,112 +825,6 @@ public abstract class Fields {
 
 	public static double[] bytesToDoubles(byte[] data) {
 		return bytesToDoubles(data, 0, data.length);
-	}
-
-	/**
-	 * Assumes the array is sorted in ascending order, [begin] is lowest and [end] is highest.
-	 */
-	public static int binarySearch(long[] values, long key, int origBegin, int origEnd) {
-		int begin = origBegin;
-		int end = origEnd;
-		while(true) {
-			if(end < begin)	// so we can use origEnd=length-1 without worrying length=0
-				return -begin - 1;
-
-			int middle = (begin + end) >>> 1;
-			if(values[middle] == key)
-				return middle;
-
-			if(values[middle] > key)
-				end = middle - 1;
-			else if(values[middle] < key)
-				begin = middle + 1;
-		}
-	}
-
-	/**
-	 * Assumes the array is sorted in ascending order, [begin] is lowest and [end] is highest.
-	 */
-	public static int binarySearch(int[] values, int key, int origBegin, int origEnd) {
-		int begin = origBegin;
-		int end = origEnd;
-		while(true) {
-			if(end < begin)	// so we can use origEnd=length-1 without worrying length=0
-				return -begin - 1;
-
-			int middle = (begin + end) >>> 1;
-			if(values[middle] == key)
-				return middle;
-
-			if(values[middle] > key)
-				end = middle - 1;
-			else if(values[middle] < key)
-				begin = middle + 1;
-		}
-	}
-
-	/**
-	** Search a range of the given array using binary search. We use this
-	** because the corresponding method in java.util.Arrays is only available
-	** in JDK6 or later.
-	**
-	** Note that this implementation behaves exactly the same way as the one
-	** from Arrays, as opposed to {@link binarySearch(long[], long, int, int)}.
-	** In particular, the right endpoint here is <b>exclusive</b>.
-	**
-	** TODO JDK6: make this @deprecated when we move to JDK6.
-	**
-	** @throws ClassCastException if the comparator is {@code null} and the
-	**         array contains elements that are not {@link Comparable}, or the
-	**         comparator cannot handle any elements of the array.
-	** @throws IllegalArgumentException if {@code li} > {@code ri}
-	** @throws ArrayIndexOutOfBoundsException if {@code li} < 0 or {@code ri} >
-	**         {@code arr.length}.
-	*/
-	public static <T> int binarySearch(T[] arr, int li, int ri, T key, Comparator<? super T> cmp) {
-		int l = li, r = ri, m = 0;
-
-		if (li > ri) {
-			throw new IllegalArgumentException("L-index must not be greater than R-index");
-		}
-		if (li < 0 || ri > arr.length) {
-			throw new ArrayIndexOutOfBoundsException();
-		}
-
-		if (cmp == null) {
-			// natural ordering
-			while (l<=r) {
-				m = (l+r)>>>1;
-				@SuppressWarnings("unchecked") int c = ((Comparable<T>)arr[m]).compareTo(key);
-
-				if (c == 0) {
-					return m;
-				} else if (c > 0) {
-					r = m-1;
-				} else {
-					l = ++m; // gets the insertion point right on the last loop
-				}
-			}
-			return ~m;
-
-		} else {
-			// comparator
-			while (l<=r) {
-				m = (l+r)>>>1;
-				int c = cmp.compare(arr[m], key);
-
-				if (c == 0) {
-					return m;
-				} else if (c > 0) {
-					r = m-1;
-				} else {
-					l = ++m; // gets the insertion point right on the last loop
-				}
-			}
-			return ~m;
-
-		}
-
 	}
 
 	/**

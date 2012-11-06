@@ -6,7 +6,7 @@ package freenet.client;
 import com.onionnetworks.fec.FECCode;
 import com.onionnetworks.fec.PureCode;
 
-import freenet.support.LRUHashtable;
+import freenet.support.LRUMap;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -16,11 +16,11 @@ import freenet.support.Logger.LogLevel;
  */
 public class StandardOnionFECCodec extends FECCodec {
 	// REDFLAG: How big is one of these?
-	private static int MAX_CACHED_CODECS = 8;
+	private static final int MAX_CACHED_CODECS = 8;
 
 	static boolean noNative;
 
-	private static final LRUHashtable<MyKey, StandardOnionFECCodec> recentlyUsedCodecs = new LRUHashtable<MyKey, StandardOnionFECCodec>();
+	private static final LRUMap<MyKey, StandardOnionFECCodec> recentlyUsedCodecs = LRUMap.createSafeMap();
 
         private static volatile boolean logMINOR;
 	static {
@@ -32,7 +32,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		});
 	}
 
-	private static class MyKey {
+	private static class MyKey implements Comparable<MyKey> {
 		/** Number of input blocks */
 		int k;
 		/** Number of output blocks, including input blocks */
@@ -54,6 +54,15 @@ public class StandardOnionFECCodec extends FECCodec {
 		@Override
 		public int hashCode() {
 			return (n << 16) + k;
+		}
+
+		@Override
+		public int compareTo(MyKey o) {
+			if(n > o.n) return 1;
+			if(n < o.n) return -1;
+			if(k > o.k) return 1;
+			if(k < o.k) return -1;
+			return 0;
 		}
 	}
 

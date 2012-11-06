@@ -3,7 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
+import java.io.File;
+
 import freenet.l10n.NodeL10n;
+import freenet.node.Node;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.updater.RevocationChecker;
 import freenet.support.HTMLNode;
@@ -124,7 +127,7 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 				}
 			} else {
 				if(updater.fetchingFromUOM())
-					sb.append(l10n("fetchingUOM"));
+					sb.append(l10n("fetchingUOM", "updateScript", getUpdateScriptName()));
 				else {
 					boolean fetchingNew = updater.fetchingNewMainJar();
 					boolean fetchingNewExt = updater.fetchingNewExtJar();
@@ -144,14 +147,36 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 				formText = l10n("updateASAPButton");
 			}
 			
+			if(updater.node.updateIsUrgent()) {
+				sb.append(" ");
+				sb.append(l10n("updateIsUrgent"));
+			}
+			
 			return new UpdateThingy(sb.toString(), formText);
 		}
 		
 		return new UpdateThingy(sb.toString(), null);
 	}
 
+	private String getUpdateScriptName() {
+		String name;
+		if(File.separatorChar == '\\') {
+			name = "update.cmd";
+		} else {
+			name = "update.sh";
+		}
+		File f = new File(updater.node.getNodeDir(), name);
+		if(f.exists()) return f.toString();
+		f = new File(new File(updater.node.getNodeDir(), "bin"), name);
+		if(f.exists()) return f.toString();
+		return name;
+	}
+
 	@Override
 	public short getPriorityClass() {
+		Node node = updater.node;
+		if(node.updateIsUrgent())
+			return UserAlert.CRITICAL_ERROR;
 		if(updater.inFinalCheck() || updater.canUpdateNow() || !updater.isArmed())
 			return UserAlert.ERROR;
 		else

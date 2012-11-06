@@ -65,7 +65,7 @@ public class TranslationToadlet extends Toadlet {
 			return;
 		} else if (request.isParameterSet("translation_updated")) {
 			String key = request.getParam("translation_updated");
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("translationUpdatedTitle"), true, ctx);
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("translationUpdatedTitle"), ctx);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 
@@ -100,7 +100,7 @@ public class TranslationToadlet extends Toadlet {
 		} else if (request.isParameterSet("translate")) {
 			boolean gotoNext = request.isParameterSet("gotoNext");
 			String key = request.getParam("translate");
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("translationUpdateTitle"), true, ctx);
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("translationUpdateTitle"), ctx);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 
@@ -145,7 +145,7 @@ public class TranslationToadlet extends Toadlet {
 			return;
 		} else if (request.isParameterSet("remove")) {
 			String key = request.getParam("remove");
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("removeOverrideTitle"), true, ctx);
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("removeOverrideTitle"), ctx);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 
@@ -164,7 +164,7 @@ public class TranslationToadlet extends Toadlet {
 			return;
 		}
 
-		PageNode page = ctx.getPageMaker().getPageNode(l10n("translationUpdateTitle"), true, ctx);
+		PageNode page = ctx.getPageMaker().getPageNode(l10n("translationUpdateTitle"), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 
@@ -232,7 +232,7 @@ public class TranslationToadlet extends Toadlet {
 		}
 		
 		final boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-		final String passwd = request.getPartAsString("formPassword", 32);
+		final String passwd = request.getPartAsStringFailsafe("formPassword", 32);
 		boolean noPassword = (passwd == null) || !passwd.equals(core.formPassword);
 		if(noPassword) {
 			if(logMINOR) Logger.minor(this, "No password ("+passwd+" should be "+core.formPassword+ ')');
@@ -241,7 +241,7 @@ public class TranslationToadlet extends Toadlet {
 		}
 
 		if(request.isPartSet("translating_for")) {
-			final String translateFor = request.getPartAsString("translating_for", 255);
+			final String translateFor = request.getPartAsStringFailsafe("translating_for", 255);
 
 			for(PluginInfoWrapper pluginInfo : this.core.node.pluginManager.getPlugins()) {
 				if(translateFor.equals(pluginInfo.getPluginClassName()) && pluginInfo.isBaseL10nPlugin()) {
@@ -262,17 +262,16 @@ public class TranslationToadlet extends Toadlet {
 		
 		boolean toTranslateOnly = request.isPartSet("toTranslateOnly");
 		
-		if(request.getPartAsString("translation_update", 32).length() > 0){
-			String key = request.getPartAsString("key", 256);
+		if(request.getPartAsStringFailsafe("translation_update", 32).length() > 0){
+			String key = request.getPartAsStringFailsafe("key", 256);
 			this.base.setOverride(key, new String(BucketTools.toByteArray(request.getPart("trans")), "UTF-8").trim());
 			
-			if("on".equalsIgnoreCase(request.getPartAsString("gotoNext", 7))) {
+			if("on".equalsIgnoreCase(request.getPartAsStringFailsafe("gotoNext", 7))) {
 				KeyIterator it = base.getDefaultLanguageTranslation().keyIterator("");
 				
 				while(it.hasNext()) {
 					String newKey = it.nextKey();
 					boolean isOverriden = this.base.isOverridden(newKey);
-					System.out.println("newkey:"+newKey);
 					if(isOverriden || (this.base.getString(newKey, true) != null))
 						continue;
 					redirectTo(ctx, TOADLET_URL+"?gotoNext&translate="+newKey+ (toTranslateOnly ? "&toTranslateOnly" : ""));
@@ -282,8 +281,8 @@ public class TranslationToadlet extends Toadlet {
 			
 			redirectTo(ctx, TOADLET_URL+"?translation_updated="+key+ (toTranslateOnly ? "&toTranslateOnly" : ""));
 			return;
-		} else if(request.getPartAsString("remove_confirmed", 32).length() > 0) {
-			String key = request.getPartAsString("remove_confirm", 256).trim();
+		} else if(request.getPartAsStringFailsafe("remove_confirmed", 32).length() > 0) {
+			String key = request.getPartAsStringFailsafe("remove_confirm", 256).trim();
 			this.base.setOverride(key, "");
 			
 			redirectTo(ctx, TOADLET_URL+"?translation_updated="+key+ (toTranslateOnly ? "&toTranslateOnly" : ""));

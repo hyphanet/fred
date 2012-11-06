@@ -74,6 +74,13 @@ public class MessageWrapper {
 		return false;
 	}
 
+	/**
+	 * Marks the given range of bytes as lost and returns the number of bytes
+	 * that were lost. The input range is inclusive.
+	 * @param start The first byte that is lost
+	 * @param end The last byte that is lost
+	 * @return The number of bytes lost
+	 */
 	public int lost(int start, int end) {
 		if(logDEBUG) Logger.debug(this, "Lost from "+start+" to "+end+" on "+this.messageID);
 		int size = end - start + 1;
@@ -143,6 +150,14 @@ public class MessageWrapper {
 		}
 	}
 
+	/**
+	 * Returns a {@code MessageFragment} with a length of {@code maxLength} or
+	 * less, or {@code null} if there is nothing to send. Ranges that have been
+	 * returned by this function, and not marked as lost, and data that has been
+	 * acked is never returned.
+	 * @param maxLength The maximum length of the returned fragment
+	 * @return a {@code MessageFragment} with a length of {@code maxLength} or less
+	 */
 	public MessageFragment getMessageFragment(int maxLength) {
 		int start = 0;
 		int end = item.buf.length - 1;
@@ -193,12 +208,22 @@ public class MessageWrapper {
 		return item;
 	}
 
+	/**
+	 * Returns {@code true} if all the data of this {@code MessageWrapper} has been sent, and {@code false} otherwise.
+	 * @return {@code true} if all the data of this {@code MessageWrapper} has been sent
+	 */
 	public boolean allSent() {
 		synchronized(sent) {
 			return sent.contains(0, item.buf.length-1);
 		}
 	}
 
+	/**
+	 * Called when data from this {@code MessageWrapper} is sent to another node.
+	 * @param start The first byte that is sent
+	 * @param end The last byte that is sent
+	 * @param overhead The number of extra bytes used to send this message
+	 */
 	public void onSent(int start, int end, int overhead, BasePeerNode pn) {
 		int report = 0;
 		int resent = 0;
@@ -236,5 +261,13 @@ public class MessageWrapper {
 			pn.resentBytes(resent);
 		if(completed)
 			item.onSentAll();
+	}
+
+	SparseBitmap getSent() {
+		return new SparseBitmap(sent);
+	}
+
+	SparseBitmap getAcks() {
+		return new SparseBitmap(acks);
 	}
 }

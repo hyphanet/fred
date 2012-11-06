@@ -34,11 +34,13 @@ final public class FileUtil {
 	public static enum OperatingSystem {
 		All,
 		MacOS,
-		Unix,
+		Linux,
+		FreeBSD,
+		GenericUnix,
 		Windows
 	};
 
-	private static final OperatingSystem detectedOS;
+	public static final OperatingSystem detectedOS;
 
 	private static final Charset fileNameCharset;
 
@@ -66,7 +68,7 @@ final public class FileUtil {
 	 * Detects the operating system in which the JVM is running. Returns OperatingSystem.All if the OS is unknown or an error occured.
 	 * Therefore this function should never throw.
 	 */
-	private static final OperatingSystem detectOperatingSystem() { // TODO: Move to the proper class
+	private static OperatingSystem detectOperatingSystem() { // TODO: Move to the proper class
 		try {
 			final String name =  System.getProperty("os.name").toLowerCase();
 
@@ -80,8 +82,18 @@ final public class FileUtil {
 			if(name.indexOf("mac") >= 0)
 				return OperatingSystem.MacOS;
 
-			if(name.indexOf("unix") >= 0 || name.indexOf("linux") >= 0 || name.indexOf("freebsd") >= 0)
-				return OperatingSystem.Unix;
+			if(name.indexOf("linux") >= 0)
+				return OperatingSystem.Linux;
+			
+			if(name.indexOf("freebsd") >= 0)
+				return OperatingSystem.FreeBSD;
+			
+			if(name.indexOf("unix") >= 0)
+				return OperatingSystem.GenericUnix;
+			else if(File.separatorChar == '/')
+				return OperatingSystem.GenericUnix;
+			else if(File.separatorChar == '\\')
+				return OperatingSystem.Windows;
 
 			Logger.error(FileUtil.class, "Unknown operating system:" + name);
 		} catch(Throwable t) {
@@ -97,7 +109,7 @@ final public class FileUtil {
 	 *
 	 * If any error occurs, the default Charset is returned. Therefore this function should never throw.
 	 */
-	public static final Charset getFileEncodingCharset() {
+	public static Charset getFileEncodingCharset() {
 		try {
 			return Charset.forName(System.getProperty("file.encoding"));
 		} catch(Throwable t) {
@@ -107,7 +119,7 @@ final public class FileUtil {
 
 
 	/** Round up a value to the next multiple of a power of 2 */
-	private static final long roundup_2n (long val, int blocksize) {
+	private static long roundup_2n (long val, int blocksize) {
 		int mask=blocksize-1;
 		return (val+mask)&~mask;
 	}
@@ -338,7 +350,9 @@ final public class FileUtil {
 		switch(targetOS) {
 			case All: break;
 			case MacOS: break;
-			case Unix: break;
+			case Linux: break;
+			case FreeBSD: break;
+			case GenericUnix: break;
 			case Windows: break;
 			default:
 				Logger.error(FileUtil.class, "Unsupported operating system: " + targetOS);
@@ -385,7 +399,7 @@ final public class FileUtil {
 				}
 			}
 			
-			if(targetOS == OperatingSystem.All || targetOS == OperatingSystem.Unix) {
+			if(targetOS == OperatingSystem.All || targetOS == OperatingSystem.GenericUnix || targetOS == OperatingSystem.Linux || targetOS == OperatingSystem.FreeBSD) {
 				if(StringValidityChecker.isUnixReservedPrintableFilenameCharacter(c)) {
 					sb.append(def);
 					continue;
@@ -542,8 +556,12 @@ final public class FileUtil {
 		}
 		return true;
 	}
-
+	
 	public static void secureDelete(File file, Random random) throws IOException {
+		secureDelete(file, random, false);
+	}
+
+	public static void secureDelete(File file, Random random, boolean quick) throws IOException {
 		// FIXME somebody who understands these things should have a look at this...
 		if(!file.exists()) return;
 		long size = file.length();
@@ -563,38 +581,40 @@ final public class FileUtil {
 					count += written;
 				}
 				raf.getFD().sync();
-				// Then ffffff it out
-				for(int i=0;i<buf.length;i++)
-					buf[i] = (byte)0xFF;
-				raf.seek(0);
-				count = 0;
-				while(count < size) {
-					int written = (int) Math.min(buf.length, size - count);
-					raf.write(buf, 0, written);
-					count += written;
+				if(!quick) {
+					// Then ffffff it out
+					for(int i=0;i<buf.length;i++)
+						buf[i] = (byte)0xFF;
+					raf.seek(0);
+					count = 0;
+					while(count < size) {
+						int written = (int) Math.min(buf.length, size - count);
+						raf.write(buf, 0, written);
+						count += written;
+					}
+					raf.getFD().sync();
+					// Then random data
+					random.nextBytes(buf);
+					raf.seek(0);
+					count = 0;
+					while(count < size) {
+						int written = (int) Math.min(buf.length, size - count);
+						raf.write(buf, 0, written);
+						count += written;
+					}
+					raf.getFD().sync();
+					raf.seek(0);
+					// Then 0's again
+					for(int i=0;i<buf.length;i++)
+						buf[i] = 0;
+					count = 0;
+					while(count < size) {
+						int written = (int) Math.min(buf.length, size - count);
+						raf.write(buf, 0, written);
+						count += written;
+					}
+					raf.getFD().sync();
 				}
-				raf.getFD().sync();
-				// Then random data
-				random.nextBytes(buf);
-				raf.seek(0);
-				count = 0;
-				while(count < size) {
-					int written = (int) Math.min(buf.length, size - count);
-					raf.write(buf, 0, written);
-					count += written;
-				}
-				raf.getFD().sync();
-				raf.seek(0);
-				// Then 0's again
-				for(int i=0;i<buf.length;i++)
-					buf[i] = 0;
-				count = 0;
-				while(count < size) {
-					int written = (int) Math.min(buf.length, size - count);
-					raf.write(buf, 0, written);
-					count += written;
-				}
-				raf.getFD().sync();
 				raf.close();
 				raf = null;
 			} finally {
@@ -605,7 +625,7 @@ final public class FileUtil {
 			throw new IOException("Unable to delete file "+file);
 	}
 
-	public static final long getFreeSpace(File dir) {
+	public static long getFreeSpace(File dir) {
 		// Use JNI to find out the free space on this partition.
 		long freeSpace = -1;
 		try {

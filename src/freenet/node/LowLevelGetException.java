@@ -47,7 +47,7 @@ public class LowLevelGetException extends Exception {
 	/** Ran into a failure table */
 	public static final int RECENTLY_FAILED = 10;
 	
-	public static final String getMessage(int reason) {
+	public static String getMessage(int reason) {
 		switch(reason) {
 		case DECODE_FAILED:
 			return "Decode of data failed, probably was bogus at source";

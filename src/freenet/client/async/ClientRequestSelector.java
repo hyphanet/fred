@@ -608,6 +608,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 	}
 	
 	@Override
+	@SuppressWarnings("unchecked")
 	public boolean hasKey(Key key, BaseSendableGet getterWaiting, boolean persistent, ObjectContainer container) {
 		if(keysFetching == null) {
 			throw new NullPointerException();

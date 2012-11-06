@@ -90,7 +90,7 @@ public class TextModeClientInterface implements Runnable {
     	this.n = server.n;
     	this.core = server.n.clientCore;
     	this.r = server.r;
-        client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, true);
+        client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, true, false);
     	this.downloadsDir = server.downloadsDir;
     	this.in = in;
     	this.out = out;
@@ -439,13 +439,14 @@ public class TextModeClientInterface implements Runnable {
     		outputStream = output.getOutputStream();
     		ContentFilter.filter(inputStream, outputStream, "text/html", new URI("http://127.0.0.1:8888/"), null, null, null, core.getLinkFilterExceptionProvider());
     		inputStream.close();
+			inputStream = null;
     		outputStream.close();
+			outputStream = null;
 
     		bis = new BufferedInputStream(output.getInputStream());
     		while(bis.available() > 0){
     			outsb.append((char)bis.read());
     		}
-    		bis.close();
     	} catch (IOException e) {
     		outsb.append("Bucket error?: " + e.getMessage());
     		Logger.error(this, "Bucket error?: " + e, e);
@@ -453,9 +454,9 @@ public class TextModeClientInterface implements Runnable {
     		outsb.append("Internal error: " + e.getMessage());
     		Logger.error(this, "Internal error: " + e, e);
     	} finally {
-    		Closer.close(inputStream);
-    		Closer.close(outputStream);
-    		Closer.close(bis);
+			Closer.close(inputStream);
+			Closer.close(outputStream);
+			Closer.close(bis);
     		input.free();
     		output.free();
     	}
@@ -924,65 +925,6 @@ public class TextModeClientInterface implements Runnable {
         } else if(uline.startsWith("PEERS")) {
         	outsb.append(n.getTMCIPeerList());
         	outsb.append("PEERS done.\r\n");
-        } else if(uline.startsWith("PROBE:")) {
-        	String s = uline.substring("PROBE:".length()).trim();
-        	double d = Double.parseDouble(s);
-        	if(d > 1.0 || d < 0.0) {
-        		System.err.println("Unacceptable target location: "+d);
-        		return false;
-        	}
-        	ProbeCallback cb = new ProbeCallback() {
-				@Override
-				public void onCompleted(String reason, double target, double best, double nearest, long id, short counter, short uniqueCounter, short linearCounter) {
-					String msg = "Completed probe request: "+target+" -> "+best+"\r\nNearest actually hit "+nearest+", "+counter+" nodes ("+uniqueCounter+" unique, "+linearCounter+" hops), id "+id+"\r\n";
-					try {
-						out.write(msg.getBytes());
-						out.flush();
-					} catch (IOException e) {
-						// Already closed. :(
-					}
-					synchronized(TextModeClientInterface.this) {
-						doneSomething = true;
-						TextModeClientInterface.this.notifyAll();
-					}
-				}
-
-				@Override
-				public void onTrace(long uid, double target, double nearest, double best, short htl, short counter, double location, long nodeUID, double[] peerLocs, long[] peerUIDs, double[] locsNotVisited, short forkCount, short linearCounter, String reason, long prevUID) {
-					String msg = "Probe trace: UID="+uid+" target="+target+" nearest="+nearest+" best="+best+" htl="+htl+" counter="+counter+" linear="+linearCounter+" location="+location+"node UID="+nodeUID+" prev UID="+prevUID+" peer locs="+Arrays.toString(peerLocs)+" peer UIDs="+Arrays.toString(peerUIDs)+" locs not visited = "+Arrays.toString(locsNotVisited)+" forks: "+forkCount+" reason="+reason+'\n';
-					try {
-						out.write(msg.getBytes());
-						out.flush();
-					} catch (IOException e) {
-						// Ignore
-					}
-				}
-
-				@Override
-				public void onRejectOverload() {
-					String msg = "Probe trace received RejectOverload\n";
-					try {
-						out.write(msg.getBytes());
-						out.flush();
-					} catch (IOException e) {
-						// Ignore
-					}
-				}
-        	};
-        	outsb.append("Probing keyspace around "+d+" ...");
-        	n.dispatcher.startProbe(d, cb);
-        	synchronized(this) {
-        		while(!doneSomething) {
-        			try {
-        				wait(5000);
-        			} catch (InterruptedException e) {
-        				// Ignore
-        			}
-        		}
-        		doneSomething = false;
-        	}
-        } else if(uline.startsWith("PROBEALL")) {
-        	probeAll();
         } else if(uline.startsWith("PLUGLOAD")) {
         	if(uline.startsWith("PLUGLOAD:O:")) {
         		String name = line.substring("PLUGLOAD:O:".length()).trim();
@@ -1076,11 +1018,6 @@ public class TextModeClientInterface implements Runnable {
         out.flush();
         return false;
     }
-
-    private void probeAll() {
-    	GlobalProbe p = new GlobalProbe(n);
-    	n.executor.execute(p, "GlobalProbe");
-	}
 
 	/**
      * Create a map of String -> Bucket for every file in a directory

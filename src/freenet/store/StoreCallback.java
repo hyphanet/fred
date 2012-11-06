@@ -59,7 +59,7 @@ public abstract class StoreCallback<T extends StorableBlock> {
 	public abstract T construct(byte[] data, byte[] headers, byte[] routingKey, byte[] fullKey, boolean canReadClientCache, boolean canReadSlashdotCache, BlockMetadata meta, DSAPublicKey knownPubKey)
 	        throws KeyVerifyException;
 	
-	public void setMaxKeys(long maxStoreKeys, boolean shrinkNow) throws DatabaseException, IOException {
+	public void setMaxKeys(long maxStoreKeys, boolean shrinkNow) throws IOException {
 		store.setMaxKeys(maxStoreKeys, shrinkNow);
 	}
     

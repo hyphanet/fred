@@ -132,16 +132,7 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 		String up = request.getPartAsStringFailsafe("customUp", 20);
 
 		// Try to parse custom limit first.
-		
-		//Remove per second indicator so that it can be parsed.
-		down = cleanCustomLimit(down);
-		up = cleanCustomLimit(up);
-		
 		if(!down.equals("") && !up.equals("")) {
-			//Custom limit given
-			down = cleanCustomLimit(down);
-			up = cleanCustomLimit(up);
-
 			String failedLimits = attemptSet(up, down);
 
 			if (!failedLimits.isEmpty()) {
@@ -179,41 +170,24 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 		return FirstTimeWizardToadlet.WIZARD_STEP.COMPLETE.name();
 	}
 
-	private String cleanCustomLimit(String limit) {
-		limit = limit.trim().toLowerCase();
-		if(limit.isEmpty()) return "";
-		for(String ending :
-			new String[] {
-				"/s", "/sec", "/second", "ps", WizardL10n.l10n("bandwidthPerSecond")
-		}) {
-			if(limit.endsWith(ending))
-				limit = limit.substring(0, limit.length() - ending.length());
-		}
-		limit = limit.trim();
-		if(limit.endsWith("b"))
-			limit = limit.substring(0, limit.length()-1);
-		limit = limit.trim();
-		return limit;
-	}
-
 	/**
 	 * Attempts to set bandwidth limits.
 	 * @param up output limit
 	 * @param down input limit
-	 * @return a comma-separated string of any failing limits. If both are successful, an empty string.
+	 * @return a space-separated string of the messages from any exceptions thrown when setting limits. If both are successful, an empty string.
 	 */
 	private String attemptSet(String up, String down) {
 		String failedLimits = "";
 		try {
 			setBandwidthLimit(down, false);
 		} catch (InvalidConfigValueException e) {
-			failedLimits = down;
+			failedLimits = e.getMessage();
 		}
 		try {
 			setBandwidthLimit(up, true);
 		} catch (InvalidConfigValueException e) {
-			//Comma separated if both limits failed.
-			failedLimits += failedLimits.isEmpty() ? up : ", "+up;
+			if (!failedLimits.isEmpty()) failedLimits += ' ';
+			failedLimits += e.getMessage();
 		}
 		return failedLimits;
 	}

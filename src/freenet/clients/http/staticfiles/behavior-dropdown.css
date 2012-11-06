@@ -1,0 +1,104 @@
+/*
+ * behavior-dropdown: Show the navigation menu as a horizontal bar across the
+ * top of the screen with dropdown submenus.
+*/
+
+/* Basic CSS functions */
+@import url(/static/base.css);
+
+/* code */
+
+/* The subnavbar is not used in dropdown mode */
+
+div#selected-subnavbar {
+	display: none;
+}
+
+/* only display submenus on hover */
+
+ul.subnavlist,
+ul.subnavlist-selected {
+	display: none;
+}
+
+ul.subnavlist:hover,
+li.navlist-not-selected:hover ul.subnavlist,
+li.navlist-selected:hover ul.subnavlist-selected {
+	display: block;
+}
+
+/* Top level menu background colors should behave differently in dropdown mode than
+ * they do with a side navigation bar */
+
+/* li.navlist-selected a {
+	background-color: inherit !important;
+} */
+
+/* move the content window to the left side of the screen */
+
+div#content {
+	position: relative !important;
+	top: 5px !important;
+	left: 0px !important;
+}
+
+/* move the navbar to the top of the screen */
+
+div#navbar {
+	float: none !important;
+	text-align: center !important;
+	padding: 0px !important;
+	position: relative !important;
+	top: 5px !important;
+	left: 0px !important;
+}
+
+div#navbar a {
+	 padding-left: 5px !important;
+	 padding-right: 5px !important;
+}
+
+#navlist li a {
+	 padding-bottom: 5px !important;
+}
+
+div#navbar,
+li.navlist-selected,
+li.navlist-not-selected {
+	width: auto !important;
+}
+
+/* make the top level menu items display horizontally instead of vertically */
+
+li.navlist-selected,
+li.navlist-not-selected {
+	display: inline-block !important;
+	margin: 0 1em 0 1em !important;
+	padding: 0 0 0 0 !important;
+	position: relative !important;
+}
+
+/* Underline top level menu items */
+
+div#navbar ul li ul li a {
+	text-decoration: none !important;
+}
+
+div#navbar ul li a {
+	text-decoration: underline !important;
+}
+
+/* adjust positioning of submenus */
+
+ul.subnavlist-selected,
+ul.subnavlist {
+	margin: 0 !important;
+	position: absolute !important;
+	top: 1.5em !important;
+	left: -1.5em !important;
+	padding: 0 0 0 0 !important;
+	text-align: left !important;
+	width: 12em !important;
+	z-index: 20 !important;
+}
+

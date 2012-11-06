@@ -15,8 +15,6 @@ import freenet.support.api.HTTPRequest;
 
 public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabledCallback {
 
-	private final String _pluginURL;
-	private final String _pageName;
 	protected final PluginContext pluginContext;
 
 	private final String _path;
@@ -24,9 +22,7 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 	protected WebInterfaceToadlet(PluginContext pluginContext2, String pluginURL, String pageName) {
 		super(pluginContext2.hlsc);
 		pluginContext = pluginContext2;
-		_pageName = pageName;
-		_pluginURL = pluginURL;
-		_path = _pluginURL + "/" + _pageName;
+		_path = pluginURL + "/" + pageName;
 	}
 
 	@Override
@@ -64,7 +60,7 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 	protected boolean isFormPassword(HTTPRequest req) {
 		String passwd = req.getParam("formPassword", null);
 		if (passwd == null)
-			passwd = req.getPartAsString("formPassword", 32);
+			passwd = req.getPartAsStringFailsafe("formPassword", 32);
 		return (passwd != null) && passwd.equals(pluginContext.clientCore.formPassword);
 	}
 

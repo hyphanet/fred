@@ -83,7 +83,6 @@ public class BlockTransmitter {
 	private LinkedList<Integer> _unsent;
 	private BlockSenderJob _senderThread = new BlockSenderJob();
 	private BitArray _sentPackets;
-	final PacketThrottle throttle;
 	private long timeAllSent = -1;
 	final ByteCounter _ctr;
 	private final ReceiverAbortHandler abortHandler;
@@ -160,7 +159,9 @@ public class BlockTransmitter {
 			try {
 				Message msg = DMT.createPacketTransmit(_uid, packetNo, copied, _prb.getPacket(packetNo), realTime);
 				MyAsyncMessageCallback cb = new MyAsyncMessageCallback();
-				MessageItem item = _destination.sendAsync(msg, cb, _ctr);
+				MessageItem item;
+				// Everything is throttled.
+				item = _destination.sendAsync(msg, cb, _ctr);
 				synchronized(itemsPending) {
 					itemsPending.add(item);
 				}
@@ -220,9 +221,8 @@ public class BlockTransmitter {
 			Logger.error(this, "Aborted during setup");
 			// Will throw on running
 		}
-		throttle = _destination.getThrottle();
 		this.blockTimeCallback = blockTimes;
-		if(logMINOR) Logger.minor(this, "Starting block transmit for "+uid+" to "+destination.shortToString()+" realtime="+realTime+" throttle="+throttle);
+		if(logMINOR) Logger.minor(this, "Starting block transmit for "+uid+" to "+destination.shortToString()+" realtime="+realTime);
 	}
 
 	private Runnable timeoutJob;
@@ -470,10 +470,7 @@ public class BlockTransmitter {
 	}
 	
 	private PartiallyReceivedBlock.PacketReceivedListener myListener = null;
-	
-	private MessageFilter mfAllReceived;
-	private MessageFilter mfSendAborted;
-	
+
 	private AsyncMessageFilterCallback cbAllReceived = new SlowAsyncMessageFilterCallback() {
 
 		@Override
@@ -579,7 +576,6 @@ public class BlockTransmitter {
 	};
 	
 	private void onDisconnect() {
-		throttle.maybeDisconnected();
 		Logger.normal(this, "Terminating send "+_uid+" to "+_destination+" because node disconnected while waiting");
 		//They disconnected, can't send an abort to them then can we?
 		Future fail;
@@ -645,9 +641,9 @@ public class BlockTransmitter {
 				});
 			}
 			_senderThread.schedule();
-			
-			mfAllReceived = MessageFilter.create().setType(DMT.allReceived).setField(DMT.UID, _uid).setSource(_destination).setNoTimeout();
-			mfSendAborted = MessageFilter.create().setType(DMT.sendAborted).setField(DMT.UID, _uid).setSource(_destination).setNoTimeout();
+
+			MessageFilter mfAllReceived = MessageFilter.create().setType(DMT.allReceived).setField(DMT.UID, _uid).setSource(_destination).setNoTimeout();
+			MessageFilter mfSendAborted = MessageFilter.create().setType(DMT.sendAborted).setField(DMT.UID, _uid).setSource(_destination).setNoTimeout();
 			
 			try {
 				_usm.addAsyncFilter(mfAllReceived, cbAllReceived, _ctr);

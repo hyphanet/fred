@@ -18,9 +18,8 @@ public interface PeerContext {
 	// Largely opaque interface for now
 	Peer getPeer();
 
-	/** Force the peer to disconnect.
-	 * @param dump If true, the message queue and trackers will be dumped. */
-	void forceDisconnect(boolean dump);
+	/** Force the peer to disconnect. */
+	void forceDisconnect();
 
 	/** Is the peer connected? Have we established the session link? */
 	boolean isConnected();
@@ -56,4 +55,5 @@ public interface PeerContext {
 
 	void reportThrottledPacketSendTime(long time, boolean realTime);
 
+	int getThrottleWindowSize();
 }

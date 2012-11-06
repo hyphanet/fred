@@ -5,6 +5,8 @@ package freenet.keys;
 
 import java.net.MalformedURLException;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.regex.Pattern;
 
 import com.db4o.ObjectContainer;
 
@@ -21,7 +23,7 @@ import freenet.support.Logger;
  * - Site edition number.
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-public class USK extends BaseClientKey {
+public class USK extends BaseClientKey implements Comparable<USK> {
 
 	/* The character to separate the site name from the edition number in its SSK form.
 	 * I chose "-", because it makes it ludicrously easy to go from the USK form to the
@@ -78,6 +80,11 @@ public class USK extends BaseClientKey {
 			siteName.hashCode() ^ (int)suggestedEdition ^ (int)(suggestedEdition >> 32);
 	}
 
+	private static final Pattern badDocNamePattern;
+	static {
+		badDocNamePattern = Pattern.compile(".*\\-[0-9]+(\\/.*)?$");
+	}
+
 	// FIXME: Be careful with this constructor! There must not be an edition in the ClientSSK!
 	public USK(ClientSSK ssk, long myARKNumber) {
 		this.pubKeyHash = ssk.pubKeyHash;
@@ -86,7 +93,7 @@ public class USK extends BaseClientKey {
 		this.suggestedEdition = myARKNumber;
 		this.cryptoAlgorithm = ssk.cryptoAlgorithm;
 
-		if (siteName.matches(".*\\-[0-9]+(\\/.*)?$"))	// not error -- just "possible" bug
+		if (badDocNamePattern.matcher(siteName).matches())	// not error -- just "possible" bug
 			Logger.normal(this, "POSSIBLE BUG: edition in ClientSSK " + ssk, new Exception("debug"));
 
 		hashCode = Fields.hashCode(pubKeyHash) ^ Fields.hashCode(cryptoKey) ^
@@ -203,4 +210,31 @@ public class USK extends BaseClientKey {
 	public void removeFrom(ObjectContainer container) {
 		container.delete(this);
 	}
+
+	@Override
+	public int compareTo(USK o) {
+		if(this == o) return 0;
+		if(cryptoAlgorithm < o.cryptoAlgorithm) return -1;
+		if(cryptoAlgorithm > o.cryptoAlgorithm) return 1;
+		int cmp = Fields.compareBytes(pubKeyHash, o.pubKeyHash);
+		if(cmp != 0) return cmp;
+		cmp = Fields.compareBytes(cryptoKey, o.cryptoKey);
+		if(cmp != 0) return cmp;
+		cmp = siteName.compareTo(o.siteName);
+		if(cmp != 0) return cmp;
+		if(suggestedEdition > o.suggestedEdition) return 1;
+		if(suggestedEdition < o.suggestedEdition) return -1;
+		return 0;
+	}
+	
+	public static Comparator<USK> FAST_COMPARATOR = new Comparator<USK>() {
+
+		@Override
+		public int compare(USK o1, USK o2) {
+			if(o1.hashCode > o2.hashCode) return 1;
+			else if(o1.hashCode < o2.hashCode) return -1;
+			return o1.compareTo(o2);
+		}
+		
+	};
 }

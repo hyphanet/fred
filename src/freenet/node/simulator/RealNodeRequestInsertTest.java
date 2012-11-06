@@ -209,26 +209,19 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                     }
                 }
                 StringBuilder load = new StringBuilder("Running UIDs for nodes: ");
-                int totalRunningUIDs = 0;
                 int totalRunningUIDsAlt = 0;
                 Vector<Long> runningUIDsList = new Vector<Long>();
                 for(int i=0;i<nodes.length;i++) {
                 	load.append(i);
                 	load.append(':');
-                	nodes[i].addRunningUIDs(runningUIDsList);
-                	int runningUIDs = nodes[i].getTotalRunningUIDs();
-                	int runningUIDsAlt = nodes[i].getTotalRunningUIDsAlt();
-                	totalRunningUIDs += runningUIDs;
+                	nodes[i].tracker.addRunningUIDs(runningUIDsList);
+                	int runningUIDsAlt = nodes[i].tracker.getTotalRunningUIDsAlt();
                 	totalRunningUIDsAlt += runningUIDsAlt;
-                	load.append(totalRunningUIDs);
-                	load.append(':');
                 	load.append(totalRunningUIDsAlt);
                 	if(i != nodes.length-1)
                 		load.append(' ');
                 }
                 System.err.println(load.toString());
-                if(totalRunningUIDs != 0)
-                	System.err.println("Still running UIDs: "+totalRunningUIDs);
                 if(totalRunningUIDsAlt != 0)
                 	System.err.println("Still running UIDs (alt): "+totalRunningUIDsAlt);
                 if(!runningUIDsList.isEmpty()) {
