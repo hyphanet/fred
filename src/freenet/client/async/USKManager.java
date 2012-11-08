@@ -355,13 +355,27 @@ public class USKManager {
 				}
 			}
 		}
-		if(toCancel != null) {
-			for(int i=0;i<toCancel.size();i++) {
-				USKFetcher fetcher = toCancel.get(i);
-				fetcher.cancel(null, context);
-			}
+		final ArrayList<USKFetcher> cancelled = toCancel;
+		final USKFetcher scheduleMe = sched;
+		// This is just a prefetching method. so it should not unnecessarily delay the parent, nor should it take important locks.
+		// So we should do the actual schedule/cancels off-thread.
+		// However, the above is done on-thread because a lot of the time it will already be running.
+		if(cancelled != null || sched != null) {
+			executor.execute(new Runnable() {
+				
+				@Override
+				public void run() {
+					if(cancelled != null) {
+						for(int i=0;i<cancelled.size();i++) {
+							USKFetcher fetcher = cancelled.get(i);
+							fetcher.cancel(null, USKManager.this.context);
+						}
+					}
+					if(scheduleMe != null) scheduleMe.schedule(null, USKManager.this.context);
+				}
+				
+			});
 		}
-		if(sched != null) sched.schedule(null, context);
 	}
 	
 	static final int PREFETCH_DELAY = 60*1000;
