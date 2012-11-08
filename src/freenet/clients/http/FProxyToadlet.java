@@ -108,6 +108,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			}
 		});
 	}
+	
+	// FIXME make this configurable (or get rid of prefetch support)
+	static final int MAX_PREFETCH = 50;
 
 	public FProxyToadlet(final HighLevelSimpleClient client, NodeClientCore core, FProxyFetchTracker tracker) {
 		super(client);
@@ -629,7 +632,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					if(!inline) return;
 					if(logMINOR) Logger.minor(this, "Prefetching "+uri);
 					synchronized(this) {
-						uris.add(uri);
+						if(uris.size() < MAX_PREFETCH)
+							// FIXME Maybe we should do this randomly, but since it's a DoS protection (in an obscure feature), if so we should do it in constant space!
+							uris.add(uri);
 					}
 				}
 
