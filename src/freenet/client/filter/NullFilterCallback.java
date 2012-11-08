@@ -37,4 +37,9 @@ public class NullFilterCallback implements FilterCallback {
 		return null;
 	}
 
+	@Override
+	public void onFinished() {
+		// Ignore.
+	}
+
 }

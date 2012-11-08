@@ -9,8 +9,10 @@ import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import com.db4o.ObjectContainer;
@@ -73,7 +75,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	final ClientContext context;
 	final FProxyFetchTracker fetchTracker;
 
-	private static FoundURICallback prefetchHook;
 	static final Set<String> prefetchAllowedTypes = new HashSet<String>();
 	static {
 		// Only valid inlines
@@ -114,26 +115,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		client.setMaxIntermediateLength(MAX_LENGTH_NO_PROGRESS);
 		this.core = core;
 		this.context = core.clientContext;
-		prefetchHook = new FoundURICallback() {
-
-				@Override
-				public void foundURI(FreenetURI uri) {
-					// Ignore
-				}
-
-				@Override
-				public void foundURI(FreenetURI uri, boolean inline) {
-					if(!inline) return;
-					if(logMINOR) Logger.minor(this, "Prefetching "+uri);
-					client.prefetch(uri, 60*1000, 512*1024, prefetchAllowedTypes);
-				}
-
-				@Override
-				public void onText(String text, String type, URI baseURI) {
-					// Ignore
-				}
-
-			};
 		fetchTracker = tracker;
 	}
 
@@ -633,7 +614,47 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		if (!force && !httprequest.isParameterSet("forcedownload")) fctx.filterData = true;
 		else if(logMINOR) Logger.minor(this, "Content filter disabled via request parameter");
 		//Load the fetch context with the callbacks needed for web-pushing, if enabled
-		if(container.enableInlinePrefetch()) fctx.prefetchHook = prefetchHook;
+		if(container.enableInlinePrefetch()) {
+			fctx.prefetchHook = new FoundURICallback() {
+
+				List<FreenetURI> uris = new ArrayList<FreenetURI>();
+				
+				@Override
+				public void foundURI(FreenetURI uri) {
+					// Ignore
+				}
+
+				@Override
+				public void foundURI(FreenetURI uri, boolean inline) {
+					if(!inline) return;
+					if(logMINOR) Logger.minor(this, "Prefetching "+uri);
+					synchronized(this) {
+						uris.add(uri);
+					}
+				}
+
+				@Override
+				public void onText(String text, String type, URI baseURI) {
+					// Ignore
+				}
+
+				@Override
+				public void onFinishedPage() {
+					core.node.executor.execute(new Runnable() {
+
+						@Override
+						public void run() {
+							for(FreenetURI uri : uris) {
+								client.prefetch(uri, 60*1000, 512*1024, prefetchAllowedTypes);
+							}
+						}
+						
+					});
+				}
+
+			};
+
+		}
 		if(container.isFProxyWebPushingEnabled()) fctx.tagReplacer = new PushingTagReplacerCallback(core.getFProxy().fetchTracker, defaultMaxSize, ctx);
 
 		String requestedMimeType = httprequest.getParam("type", null);
