@@ -1496,7 +1496,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// Return the latest known version but at least suggestedEdition.
 			long edition = context.uskManager.lookupKnownGood(usk);
 			if(edition <= usk.suggestedEdition) {
-				// Background fetch - start background fetch first so can pick up updates in the datastore during registration.
 				context.uskManager.startTemporaryBackgroundFetcher(usk, context, ctx, true, realTimeFlag);
 				edition = context.uskManager.lookupKnownGood(usk);
 				if(edition > usk.suggestedEdition) {
