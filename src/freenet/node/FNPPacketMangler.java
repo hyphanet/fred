@@ -789,10 +789,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 		
 		if(throttleRekey(pn, replyTo)) return;
-		   
 
 		NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
-		if(negType < 8 || DiffieHellman.checkDHExponentialValidity(this.getClass(), _hisExponential)) {
+		if(negType > 7 || DiffieHellman.checkDHExponentialValidity(this.getClass(), _hisExponential)) {
+		    // JFK protects us from weak key attacks on ECDH, so we don't need to check.
 		    sendJFKMessage2(nonceInitiator, hisExponential, pn, replyTo, unknownInitiator, setupType, negType);
 		} else {
 		    Logger.error(this, "We can't accept the exponential "+pn+" sent us!! REDFLAG: IT CAN'T HAPPEN UNLESS AGAINST AN ACTIVE ATTACKER!!");
