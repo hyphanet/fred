@@ -275,7 +275,6 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         // No need to pad
         if(cryptoKey == null) {
         	cryptoKey = md256.digest(data);
-        	md256.reset();
         }
         	if(cryptoAlgorithm == Key.ALGO_AES_PCFB_256_SHA256)
         		return innerEncode(data, CHKBlock.DATA_LENGTH, md256, cryptoKey, false, (short)-1, cryptoAlgorithm);
@@ -345,7 +344,6 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         	encKey = cryptoKey;
         else
         	encKey = md256.digest(data);
-        md256.reset();
     	if(cryptoAlgorithm == 0) {
     		// TODO find all such cases and fix them.
     		Logger.error(ClientCHKBlock.class, "Passed in 0 crypto algorithm", new Exception("warning"));

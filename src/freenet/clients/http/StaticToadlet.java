@@ -100,9 +100,9 @@ public class StaticToadlet extends Toadlet {
 			if(r == -1) break;
 			os.write(cbuf, 0, r);
 		}
-		strm.close();
 		} finally {
-		os.close();
+			strm.close();
+			os.close();
 		}
 		
 		URL url = getClass().getResource(ROOT_PATH+path);

@@ -93,13 +93,8 @@ public class DiagnosticToadlet extends Toadlet {
 		text += "Freenet Version:\n";
 		text += baseL10n.getString("WelcomeToadlet.version", new String[] { "fullVersion", "build", "rev" },
 				new String[] { Version.publicVersion(), Integer.toString(Version.buildNumber()), Version.cvsRevision() }) + "\n";
-		if(NodeStarter.extBuildNumber < NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER)
-			text += baseL10n.getString("WelcomeToadlet.extVersionWithRecommended",
-					new String[] { "build", "recbuild", "rev" },
-					new String[] { Integer.toString(NodeStarter.extBuildNumber), Integer.toString(NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER), NodeStarter.extRevisionNumber });
-		else
-			text += baseL10n.getString("WelcomeToadlet.extVersion", new String[] { "build", "rev" },
-					new String[] { Integer.toString(NodeStarter.extBuildNumber), NodeStarter.extRevisionNumber });
+		text += baseL10n.getString("WelcomeToadlet.extVersion", new String[] { "build", "rev" },
+				new String[] { Integer.toString(NodeStarter.extBuildNumber), NodeStarter.extRevisionNumber });
 		text += "\n";
 
 		// drawNodeVersionBox

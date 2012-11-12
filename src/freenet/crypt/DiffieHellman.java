@@ -100,14 +100,14 @@ public class DiffieHellman {
 	/**
 	 * Create a DiffieHellmanLightContext.
 	 */
-	public static DiffieHellmanLightContext generateLightContext() {
+	public static DiffieHellmanLightContext generateLightContext(DHGroup group) {
 		long time1 = System.currentTimeMillis();
 		NativeBigInteger[] params = getParams();
 		long time2 = System.currentTimeMillis();
 		if((time2 - time1) > 300) {
 			Logger.error(null, "DiffieHellman.generateLightContext(): time2 is more than 300ms after time1 ("+(time2 - time1)+ ')');
 		}
-		return new DiffieHellmanLightContext(params[0], params[1]);
+		return new DiffieHellmanLightContext(group, params[0], params[1]);
 	}
 
 	public static NativeBigInteger[] getParams() {
@@ -182,7 +182,10 @@ public class DiffieHellman {
 	 * this length.
 	 */
 	public static int modulusLengthInBytes() {
-		int bitLength = getGroup().getP().bitLength();
+	    DHGroup g = getGroup();
+	    if(g == Global.DHgroupA)
+	        return 128;
+		int bitLength = g.getP().bitLength();
 		return (bitLength/8) + ((bitLength % 8) > 0 ? 1 : 0);
 	}
 }

@@ -5,18 +5,20 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Properties;
+import java.util.regex.Pattern;
+
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeInitException;
-import freenet.node.updater.UpdateDeployContext.CHANGED;
+import freenet.node.updater.MainJarDependenciesChecker.Dependency;
+import freenet.node.updater.MainJarDependenciesChecker.MainJarDependencies;
 import freenet.support.io.Closer;
 
 /**
@@ -40,21 +42,15 @@ public class UpdateDeployContext {
 	}
 
 	File mainJar;
-	File extJar;
 	int mainClasspathNo;
 	int extClasspathNo;
 	File newMainJar;
-	File newExtJar;
 	boolean mainJarAbsolute;
-	boolean extJarAbsolute;
-	boolean currentExtJarHasNewExtension;
+	final MainJarDependencies deps;
 	
-	boolean currentExtJarHasNewExtension() {
-		return currentExtJarHasNewExtension;
-	}
-	
-	UpdateDeployContext() throws UpdaterParserException {
+	UpdateDeployContext(MainJarDependencies deps) throws UpdaterParserException {
 		Properties p = WrapperManager.getProperties();
+		this.deps = deps;
 		
 		for(int propNo=1;true;propNo++) {
 			String prop = p.getProperty("wrapper.java.classpath."+propNo);
@@ -62,22 +58,10 @@ public class UpdateDeployContext {
 			File f = new File(prop);
 			boolean isAbsolute = f.isAbsolute();
 			String name = f.getName().toLowerCase();
-			if(extJar == null) {
-				if(name.equals("freenet-ext.jar.new")) {
-					extJar = f;
-					newExtJar = new File(extJar.getParent(), "freenet-ext.jar");
-					extJarAbsolute = isAbsolute;
-					extClasspathNo = propNo;
-					currentExtJarHasNewExtension = true;
-					continue;
-				} else if(name.equals("freenet-ext.jar")) {
-					extJar = f;
-					newExtJar = new File(extJar.getParent(), "freenet-ext.jar.new");
-					extClasspathNo = propNo;
-					continue;
-				}
-			}
 			if(mainJar == null) {
+				if(name.equals("freenet-ext.jar") || name.equals("freenet-ext.jar.new") || (name.startsWith("freenet-ext") && name.endsWith(".jar")))
+					// Don't match freenet-ext.jar!
+					continue;
 				// Try to match it
 				if((name.startsWith("freenet") && (name.endsWith(".jar")))) {
 					mainJar = f;
@@ -93,14 +77,12 @@ public class UpdateDeployContext {
 					continue;
 				}
 			}
+			// Else try to match from dependencies.
+			
 		}
 		
-		if(mainJar == null && extJar == null)
-			throw new UpdaterParserException(l10n("cannotUpdateNoJars"));
 		if(mainJar == null)
-			throw new UpdaterParserException(l10n("cannotUpdateNoMainJar", "extFilename", extJar.toString()));
-		if(extJar == null)
-			throw new UpdaterParserException(l10n("cannotUpdateNoExtJar", "mainFilename", mainJar.toString()));
+			throw new UpdaterParserException(l10n("cannotUpdateNoMainJar"));
 	}
 
 	private String l10n(String key) {
@@ -123,15 +105,7 @@ public class UpdateDeployContext {
 		return newMainJar;
 	}
 
-	File getExtJar() {
-		return extJar;
-	}
-	
-	File getNewExtJar() {
-		return newExtJar;
-	}
-
-	void rewriteWrapperConf(boolean writtenNewJar, boolean writtenNewExt) throws IOException, UpdateCatastropheException, UpdaterParserException {
+	void rewriteWrapperConf(boolean writtenNewJar) throws IOException, UpdateCatastropheException, UpdaterParserException {
 		
 		// Rewrite wrapper.conf
 		// Don't just write it out from properties; we want to keep it as close to what it was as possible.
@@ -164,15 +138,14 @@ public class UpdateDeployContext {
 		boolean writtenReload = false;
 		
 		String newMain = mainJarAbsolute ? newMainJar.getAbsolutePath() : newMainJar.getPath();
-		String newExt = extJarAbsolute ? newExtJar.getAbsolutePath() : newExtJar.getPath();
 		
-		String extRHS = null;
 		String mainRHS = null;
 		
 		ArrayList<String> otherLines = new ArrayList<String>();
 		ArrayList<String> classpath = new ArrayList<String>();
 		
-		// We MUST put the ext before the main jar, or auto-update of freenet-ext.jar on Windows won't work.
+		// We MUST put the ext (and all other dependencies) before the main jar, 
+		// or auto-update of freenet-ext.jar on Windows won't work.
 		// The main jar refers to freenet-ext.jar so that java -jar freenet.jar works.
 		// Therefore, on Windows, if we update freenet-ext.jar, it will use freenet.jar and freenet-ext.jar
 		// and freenet-ext.jar.new as well. The old freenet-ext.jar will take precedence, and we won't be
@@ -188,32 +161,25 @@ public class UpdateDeployContext {
 				line = line.substring("wrapper.java.classpath.".length());
 				int idx = line.indexOf('=');
 				if(idx != -1) {
-					try {
-						int number = Integer.parseInt(line.substring(0, idx));
-						// Don't go by the numbers.
-						String rhs = line.substring(idx+1);
-						System.out.println("RHS is: "+rhs);
-						if(rhs.equals("freenet-ext.jar") || rhs.equals("freenet-ext.jar.new")) {
-							if(writtenNewExt)
-								extRHS = newExt;
-							else
-								extRHS = rhs;
-							dontWrite = true;
-						} else if(rhs.equals("freenet.jar") || rhs.equals("freenet.jar.new") || 
-								rhs.equals("freenet-stable-latest.jar") || rhs.equals("freenet-stable-latest.jar.new") ||
-								rhs.equals("freenet-testing-latest.jar") || rhs.equals("freenet-testing-latest.jar.new")) {
-							if(writtenNewJar)
-								mainRHS = newMain;
-							else
-								mainRHS = rhs;
-							dontWrite = true;
-						} else {
+					// Ignore the numbers.
+					String rhs = line.substring(idx+1);
+					dontWrite = true;
+					if(rhs.equals("freenet.jar") || rhs.equals("freenet.jar.new") || 
+							rhs.equals("freenet-stable-latest.jar") || rhs.equals("freenet-stable-latest.jar.new") ||
+							rhs.equals("freenet-testing-latest.jar") || rhs.equals("freenet-testing-latest.jar.new")) {
+						if(writtenNewJar)
+							mainRHS = newMain;
+						else
+							mainRHS = rhs;
+					} else {
+						// Is it on the list of dependencies?
+						Dependency dep = findDependencyByRHSFilename(new File(rhs));
+						if(dep != null) {
+							System.out.println("Found dependency "+dep.oldFilename());
+						} else { // dep == null
+							// If not, it's something the user has added, we just keep it.
 							classpath.add(rhs);
-							dontWrite = true;
 						}
-					} catch (NumberFormatException e) {
-						// Argh!
-						System.out.println("Don't understand line in wrapper.conf - should be numeric?:\n"+line);
 					}
 				}
 			} else if(line.equalsIgnoreCase("wrapper.restart.reload_configuration=TRUE")) {
@@ -226,15 +192,21 @@ public class UpdateDeployContext {
 		
 		// Write classpath first
 		
-		if(mainRHS == null || extRHS == null) {
+		if(mainRHS == null) {
 			throw new UpdaterParserException(l10n("updateFailedNonStandardConfig", 
-					new String[] { "main", "ext" }, new String[] { Boolean.toString(mainRHS != null), Boolean.toString(extRHS != null) } ));
+					new String[] { "main" }, new String[] { Boolean.toString(mainRHS != null) } ));
 		}
 		
-		// Write ext first
-		bw.write("wrapper.java.classpath.1="+extRHS+'\n');
-		bw.write("wrapper.java.classpath.2="+mainRHS+'\n');
-		int count = 3;
+		// As above, we need to write ALL the dependencies BEFORE we write the main jar.
+		int count = 1; // Classpath is 1-based.
+		for(Dependency d : deps.dependencies) {
+			bw.write("wrapper.java.classpath."+count+"="+d.newFilename()+'\n');
+			count++;
+		}
+		
+		// Write the main jar.
+		bw.write("wrapper.java.classpath."+count+"="+mainRHS+'\n');
+		count++;
 		for(String s : classpath) {
 			bw.write("wrapper.java.classpath."+count+"="+s+'\n');
 			count++;
@@ -261,8 +233,27 @@ public class UpdateDeployContext {
 		
 		// New config installed.
 		
-		System.err.println("Rewritten wrapper.conf for"+(writtenNewJar ? (" new main jar: "+newMainJar) : "")+(writtenNewExt ? (" new ext jar: "+newExtJar): ""));
-		
+		System.err.println("Rewritten wrapper.conf for build "+deps.build+" and "+deps.dependencies.size()+" dependencies.");
+	}
+
+	private Dependency findDependencyByRHSFilename(File rhs) {
+		String rhsName = rhs.getName().toLowerCase();
+		for(Dependency dep : deps.dependencies) {
+			File f = dep.oldFilename();
+			if(f == null) {
+				// Not in use.
+				continue;
+			}
+			if(rhs.equals(f)) return dep;
+			if(rhsName.equals(f.getName())) return dep;
+		}
+		for(Dependency dep : deps.dependencies) {
+			Pattern p = dep.regex();
+			if(p != null) {
+				if(p.matcher(rhs.getName().toLowerCase()).matches()) return dep;
+			}
+		}
+		return null;
 	}
 
 	public enum CHANGED {

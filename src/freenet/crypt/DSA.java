@@ -132,11 +132,18 @@ public class DSA {
 
 	public static void main(String[] args) throws Exception {
 		//DSAGroup g=DSAGroup.readFromField(args[0]);
+		freenet.support.SimpleFieldSet fs = args.length >= 1 && args[1].length() != 0 ? freenet.support.SimpleFieldSet.readFrom(new java.io.File(args[0]), false, false) : null;
 		DSAGroup g = Global.DSAgroupBigA;
-		//Yarrow y=new Yarrow();
-		DummyRandomSource y = new DummyRandomSource();
+		if (fs != null)
+			g = DSAGroup.create(fs.subset("dsaGroup"));
+		RandomSource y = new DummyRandomSource();
+		if (args.length >= 2 && args[1].equals("yarrow")) y = new Yarrow();
 		DSAPrivateKey pk=new DSAPrivateKey(g, y);
 		DSAPublicKey pub=new DSAPublicKey(g, pk);
+		if (fs != null) {
+			pub = DSAPublicKey.create(fs.subset("dsaPubKey"), g);
+			pk = DSAPrivateKey.create(fs.subset("dsaPrivKey"), g);
+		}
 		DSASignature sig=sign(g, pk, BigInteger.ZERO, y);
 		System.err.println(verify(pub, sig, BigInteger.ZERO, false));
 		while(true) {
@@ -154,7 +161,9 @@ public class DSA {
 			int maxRUnsignedBitSize = 0;
 			Random r = new Random(y.nextLong());
 			byte[] msg = new byte[32];
-			for(int i=0;i<1000;i++) {
+			long[] timeSigning = new long[1000];
+			long[] timeVerifying = new long[timeSigning.length];
+			for(int i=0;i<timeSigning.length;i++) {
 				r.nextBytes(msg);
 				BigInteger m = new BigInteger(1, msg);
 				pk = new DSAPrivateKey(g, r);
@@ -165,15 +174,17 @@ public class DSA {
 				int pubKeySize = pub.asBytes().length;
 				totalPubKeySize += pubKeySize;
 				if(pubKeySize > maxPubKeySize) maxPubKeySize = pubKeySize;
-				long t1 = System.currentTimeMillis();
+				long t1 = System.nanoTime();
 				sig = sign(g, pk, m, y);
-				long t2 = System.currentTimeMillis();
+				long t2 = System.nanoTime();
 				if(!verify(pub, sig, m, false)) {
 					System.err.println("Failed to verify!");
 				}
-				long t3 = System.currentTimeMillis();
+				long t3 = System.nanoTime();
 				totalTimeSigning += (t2 - t1);
+				timeSigning[i] = t2-t1;
 				totalTimeVerifying += (t3 - t2);
+				timeVerifying[i] = t3-t2;
 				int rSize = sig.getR().bitLength();
 				rSize = (rSize / 8) + (rSize % 8 == 0 ? 0 : 1);
 				totalRSize += rSize;
@@ -187,7 +198,11 @@ public class DSA {
 				if(sSize > maxSSize) maxSSize = sSize;
 			}
 			System.out.println("Total time signing: "+totalTimeSigning);
+			java.util.Arrays.sort(timeSigning);
+			System.out.println("\tavg="+((double)totalTimeSigning/timeSigning.length)+"\tmed="+timeSigning[timeSigning.length/2]+"\tmin="+timeSigning[0]+"\tmax="+timeSigning[timeSigning.length-1]);
 			System.out.println("Total time verifying: "+totalTimeVerifying);
+			java.util.Arrays.sort(timeVerifying);
+			System.out.println("\tavg="+((double)totalTimeVerifying/timeVerifying.length)+"\tmed="+timeVerifying[timeVerifying.length/2]+"\tmin="+timeVerifying[0]+"\tmax="+timeVerifying[timeVerifying.length-1]);
 			System.out.println("Total R size: "+totalRSize+" (max "+maxRSize+ ')');
 			System.out.println("Total S size: "+totalSSize+" (max "+maxSSize+ ')');
 			System.out.println("Total R unsigned bitsize: "+totalRUnsignedBitSize);

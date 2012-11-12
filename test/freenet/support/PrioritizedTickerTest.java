@@ -35,7 +35,7 @@ public class PrioritizedTickerTest extends TestCase {
 		}
 		assert(ticker.queuedJobs() == 0);
 		ticker.queueTimedJob(simpleRunnable, 0);
-		Thread.sleep(10);
+		Thread.sleep(50);
 		synchronized(PrioritizedTickerTest.this) {
 			assert(runCount == 1);
 		}

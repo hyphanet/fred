@@ -29,9 +29,7 @@ import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileCompatibilityModeEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.client.filter.ContentFilter;
-import freenet.client.filter.KnownUnsafeContentTypeException;
 import freenet.client.filter.MIMEType;
-import freenet.client.filter.UnknownContentTypeException;
 import freenet.client.filter.UnsafeContentTypeException;
 import freenet.crypt.HashResult;
 import freenet.keys.ClientKeyBlock;
@@ -172,7 +170,6 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			container.activate(uri, 5);
 			container.activate(ctx, 1);
 		}
-		boolean filtering = ctx.filterData;
 		if(logMINOR)
 			Logger.minor(this, "Starting "+this+" persistent="+persistent()+" for "+uri);
 		try {
@@ -180,6 +177,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			// But we DEFINITELY do not want to synchronize while calling currentState.schedule(),
 			// which can call onSuccess and thereby almost anything.
 			HashResult[] oldHashes = null;
+			String overrideMIME = ctx.overrideMIME;
 			synchronized(this) {
 				if(restart)
 					clearCountersOnRestart();
@@ -191,6 +189,8 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 					finished = false;
 				}
 				expectedMIME = null;
+				if(overrideMIME != null)
+					expectedMIME = overrideMIME;
 				expectedSize = 0;
 				oldHashes = hashes;
 				hashes = null;
@@ -779,6 +779,9 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			}
 			if(forceCompatibleExtension != null)
 				checkCompatibleExtension(mime);
+		}
+		synchronized(this) {
+			expectedMIME = mime;
 		}
 		if(persistent()) {
 			container.store(this);

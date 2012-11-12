@@ -130,7 +130,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 					// Client startup may not have completed yet.
 					manager.node.clientCore.getPersistentTempDir().mkdirs();
 					cg = revocationGetter = new ClientGetter(this, 
-							manager.revocationURI, ctxRevocation, 
+							manager.getRevocationURI(), ctxRevocation, 
 							aggressive ? RequestStarter.MAXIMUM_PRIORITY_CLASS : RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
 							this, null, new BinaryBlobWriter(new ArrayBucket()), null);
 					if(logMINOR) Logger.minor(this, "Queued another revocation fetcher (count="+revocationDNFCounter+")");

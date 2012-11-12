@@ -4,6 +4,8 @@
 
 package freenet.support;
 
+import java.util.Random;
+
 import junit.framework.TestCase;
 
 /**
@@ -385,4 +387,71 @@ public class FieldsTest extends TestCase {
 		assertEquals("a\n", Fields.trimLines("\na\n"));
 		assertEquals("a\nb\n", Fields.trimLines("a\nb"));
 	}
+	
+	public void testGetDigits() {
+		assertEquals(1, Fields.getDigits("1.0", 0, true));
+		assertEquals(0, Fields.getDigits("1.0", 0, false));
+		assertEquals(1, Fields.getDigits("1.0", 1, false));
+		assertEquals(0, Fields.getDigits("1.0", 1, true));
+		assertEquals(1, Fields.getDigits("1.0", 2, true));
+		assertEquals(0, Fields.getDigits("1.0", 2, false));
+		Random r = new Random(88888);
+		for(int i=0;i<1024;i++) {
+			int digits = r.nextInt(20)+1;
+			int nonDigits = r.nextInt(20)+1;
+			int digits2 = r.nextInt(20)+1;
+			String s = generateDigits(r, digits) + generateNonDigits(r, nonDigits) + generateDigits(r, digits2);
+			assertEquals(0, Fields.getDigits(s, 0, false));
+			assertEquals(digits, Fields.getDigits(s, 0, true));
+			assertEquals(nonDigits, Fields.getDigits(s, digits, false));
+			assertEquals(0, Fields.getDigits(s, digits, true));
+			assertEquals(digits2, Fields.getDigits(s, digits+nonDigits, true));
+			assertEquals(0, Fields.getDigits(s, digits+nonDigits, false));
+		}
+	}
+
+	private String generateDigits(Random r, int count) {
+		StringBuffer sb = new StringBuffer(count);
+		for(int i=0;i<count;i++) {
+			char c = '0';
+			c += r.nextInt(10);
+			sb.append(c);
+		}
+		return sb.toString();
+	}
+	
+	private String generateNonDigits(Random r, int count) {
+		final String ALPHABET = "abcdefghijklmnopqrstuvwxyz";
+		final String NONDIGITS = "./\\_=+:"+ALPHABET+ALPHABET.toUpperCase();
+		StringBuffer sb = new StringBuffer(count);
+		for(int i=0;i<count;i++)
+			sb.append(NONDIGITS.charAt(r.nextInt(NONDIGITS.length())));
+		return sb.toString();
+	}
+	
+	public void testCompareVersion() {
+		checkCompareVersionLessThan("1.0", "1.1");
+		checkCompareVersionLessThan("1.0", "1.01");
+		checkCompareVersionLessThan("1.0", "2.0");
+		checkCompareVersionLessThan("1.0", "11.0");
+		checkCompareVersionLessThan("1.0", "1.0.1");
+		checkCompareVersionLessThan("1", "1.1");
+		checkCompareVersionLessThan("1", "2");
+		checkCompareVersionLessThan("test 1.0", "test 1.1");
+		checkCompareVersionLessThan("best 1.0", "test 1.0");
+		checkCompareVersionLessThan("test 1.0", "testing 1.0");
+		checkCompareVersionLessThan("1.0", "test 1.0");
+	}
+
+	private void checkCompareVersionLessThan(String a, String b) {
+		checkCompareVersionEquals(a, a);
+		checkCompareVersionEquals(b, b);
+		assert(Fields.compareVersion(a, b) < 0);
+		assert(Fields.compareVersion(b, a) > 0);
+	}
+
+	private void checkCompareVersionEquals(String a, String b) {
+		assertEquals(0, Fields.compareVersion(a, b));
+	}
+
 }

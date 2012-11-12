@@ -90,6 +90,8 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 			alertNode.addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" }).addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "update", ut.formText });
 		}
 		
+		updater.renderProgress(alertNode);
+		
 		return alertNode;
 	}
 	
@@ -114,10 +116,6 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 					sb.append(' ');
 					b = true;
 				}
-				if(updater.hasNewExtJar()) {
-					sb.append(l10n(b ? "alsoDownloadedNewExtJar" : "downloadedNewExtJar", "version", Integer.toString(updater.newExtJarVersion())));
-					sb.append(' ');
-				}
 				if(updater.canUpdateImmediately()) {
 					sb.append(l10n("clickToUpdateNow"));
 					formText = l10n("updateNowButton");
@@ -130,16 +128,8 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 					sb.append(l10n("fetchingUOM", "updateScript", getUpdateScriptName()));
 				else {
 					boolean fetchingNew = updater.fetchingNewMainJar();
-					boolean fetchingNewExt = updater.fetchingNewExtJar();
 					if(fetchingNew) {
-						if(fetchingNewExt)
-							sb.append(l10n("fetchingNewBoth", new String[] { "nodeVersion", "extVersion" },
-									new String[] { Integer.toString(updater.fetchingNewMainJarVersion()), Integer.toString(updater.fetchingNewExtJarVersion()) }));
-						else
-							sb.append(l10n("fetchingNewNode", "nodeVersion", Integer.toString(updater.fetchingNewMainJarVersion())));
-					} else {
-						if(fetchingNewExt)
-							sb.append(l10n("fetchingNewExt", "extVersion", Integer.toString(updater.fetchingNewExtJarVersion())));
+						sb.append(l10n("fetchingNewNode", "nodeVersion", Integer.toString(updater.fetchingNewMainJarVersion())));
 					}
 				}
 				sb.append(" ");
@@ -150,6 +140,11 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 			if(updater.node.updateIsUrgent()) {
 				sb.append(" ");
 				sb.append(l10n("updateIsUrgent"));
+			}
+			
+			if(updater.brokenDependencies()) {
+				sb.append(" ");
+				sb.append(l10n("brokenDependencies", "version", Integer.toString(updater.newMainJarVersion())));
 			}
 			
 			return new UpdateThingy(sb.toString(), formText);
@@ -186,7 +181,7 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 	@Override
 	public boolean isValid() {
 		return updater.isEnabled() && (!updater.isBlown()) && 
-			(updater.fetchingNewExtJar() || updater.fetchingNewMainJar() || updater.hasNewExtJar() || updater.hasNewMainJar() || updater.fetchingFromUOM());
+			(updater.fetchingNewMainJar() || updater.hasNewMainJar() || updater.fetchingFromUOM());
 	}
 	
 	@Override

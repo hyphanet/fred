@@ -435,7 +435,7 @@ public class WelcomeToadlet extends Toadlet {
         
         
         HTMLNode bookmarksList = bookmarkBoxContent.addChild("ul", "id", "bookmarks");
-		if (ctx.isAllowedFullAccess()) {
+		if (ctx.isAllowedFullAccess() || !ctx.getContainer().publicGatewayMode()) {
 			addCategoryToList(BookmarkManager.MAIN_CATEGORY, bookmarksList, (!container.enableActivelinks()) || (useragent != null && useragent.contains("khtml") && !useragent.contains("chrome")), ctx);
 		}
 		else {
@@ -479,15 +479,9 @@ public class WelcomeToadlet extends Toadlet {
                 NodeL10n.getBase().getString("WelcomeToadlet.version", new String[]{"fullVersion", "build", "rev"},
                 new String[]{Version.publicVersion(), Integer.toString(Version.buildNumber()), Version.cvsRevision()}));
         versionContent.addChild("br");
-        if (NodeStarter.extBuildNumber < NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER) {
-            versionContent.addChild("span", "class", "freenet-ext-version",
-                    NodeL10n.getBase().getString("WelcomeToadlet.extVersionWithRecommended", new String[]{"build", "recbuild", "rev"},
-                    new String[]{Integer.toString(NodeStarter.extBuildNumber), Integer.toString(NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER), NodeStarter.extRevisionNumber}));
-        } else {
-            versionContent.addChild("span", "class", "freenet-ext-version",
-                    NodeL10n.getBase().getString("WelcomeToadlet.extVersion", new String[]{"build", "rev"},
-                    new String[]{Integer.toString(NodeStarter.extBuildNumber), NodeStarter.extRevisionNumber}));
-        }
+        versionContent.addChild("span", "class", "freenet-ext-version",
+        		NodeL10n.getBase().getString("WelcomeToadlet.extVersion", new String[]{"build", "rev"},
+        				new String[]{Integer.toString(NodeStarter.extBuildNumber), NodeStarter.extRevisionNumber}));
         versionContent.addChild("br");
         if (ctx.isAllowedFullAccess()) {
         	HTMLNode shutdownForm = ctx.addFormChild(versionContent, ".", "shutdownForm");
