@@ -152,14 +152,8 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         // Decipher header first - functions as IV
         pcfb.blockDecipher(hbuf, 0, hbuf.length);
         pcfb.blockDecipher(dbuf, 0, dbuf.length);
-        // Check: Decryption key == hash of data (not including header)
         MessageDigest md256 = SHA256.getMessageDigest();
         byte[] dkey = key.cryptoKey;
-        // If the block is encoded normally, dkey == key.cryptoKey
-        if(!java.util.Arrays.equals(md256.digest(dbuf), key.cryptoKey)) {
-        	// This happens when handling post-1254 splitfiles.
-        	if(logMINOR) Logger.minor(this, "Found non-convergent block encoding");
-        }
         // Check: IV == hash of decryption key
         byte[] predIV = md256.digest(dkey);
         SHA256.returnMessageDigest(md256); md256 = null;
