@@ -217,7 +217,7 @@ public abstract class FECCodec {
 				for(int i = 0; i < packetIndexes.length; i++)
 					Logger.minor(this, "[" + i + "] = " + packetIndexes[i]);
 
-			if(numberToDecode > 0)
+			if(numberToDecode > 0) {
 				// Do the (striped) decode
 				
 				if(fec instanceof Native8Code) {
@@ -269,6 +269,7 @@ public abstract class FECCodec {
 						}
 					}
 				}
+			}
 
 		}
 		finally {
