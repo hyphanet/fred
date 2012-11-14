@@ -3,7 +3,6 @@ package freenet.node.fcp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -389,9 +388,7 @@ public class FCPClient {
 			container.activate(clientRequestsByIdentifier, 2);
 		}
 		synchronized(this) {
-			Iterator<ClientRequest> i = runningPersistentRequests.iterator();
-			while(i.hasNext()) {
-				ClientRequest req = i.next();
+			for(ClientRequest req: runningPersistentRequests) {
 				if(container != null) container.activate(req, 1);
 				if(req == null) {
 					Logger.error(this, "Request is null on runningPersistentRequests for "+this+" - database corruption??");
@@ -595,9 +592,7 @@ public class FCPClient {
 		if(statusCache != null)
 			statusCache.clear();
 		synchronized(this) {
-			Iterator<ClientRequest> i = runningPersistentRequests.iterator();
-			while(i.hasNext()) {
-				ClientRequest req = i.next();
+			for(ClientRequest req: runningPersistentRequests) {
 				toKill.add(req);
 			}
 			runningPersistentRequests.clear();
