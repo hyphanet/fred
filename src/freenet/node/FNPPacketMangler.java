@@ -189,28 +189,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	public void start() {
 		// Run it directly so that the transient key is set.
 		maybeResetTransientKey();
-		// Run it off-thread, since it might block.
-		node.executor.execute(new PrioRunnable() {
-
-			@Override
-			public void run() {
-				// Fill the DH FIFO on-thread
-				for(int i=0;i<DH_CONTEXT_BUFFER_SIZE;i++) {
-					_fillJFKDHFIFO();
-				}
-				if(!NodeStarter.bcProvLoadFailed()) {
-					for(int i=0;i<DH_CONTEXT_BUFFER_SIZE;i++) {
-						_fillJFKECDHFIFO();
-					}
-				}
+		// Fill the DH FIFO on-thread
+		for(int i=0;i<DH_CONTEXT_BUFFER_SIZE;i++) {
+			_fillJFKDHFIFO();
+		}
+		if(!NodeStarter.bcProvLoadFailed()) {
+			for(int i=0;i<DH_CONTEXT_BUFFER_SIZE;i++) {
+				_fillJFKECDHFIFO();
 			}
-
-			@Override
-			public int getPriority() {
-				return NativeThread.HIGH_PRIORITY-1;
-			}
-			
-		});
+		}
 	}
 
 	/**
