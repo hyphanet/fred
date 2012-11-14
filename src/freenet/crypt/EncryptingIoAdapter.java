@@ -2,6 +2,7 @@ package freenet.crypt;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 
 import freenet.support.math.MersenneTwister;
 
@@ -40,8 +41,7 @@ public class EncryptingIoAdapter extends IoAdapter {
 	 */
 	public EncryptingIoAdapter(IoAdapter baseAdapter2, byte[] databaseKey, RandomSource random) {
 		this.baseAdapter = baseAdapter2;
-		this.key = new byte[databaseKey.length];
-		System.arraycopy(databaseKey, 0, key, 0, databaseKey.length);
+		this.key = databaseKey.clone();
 		this.random = random;
 		position = 0;
 		blockPosition = -1;
@@ -125,8 +125,7 @@ public class EncryptingIoAdapter extends IoAdapter {
 			long thisBlockPosition = position - blockOffset;
 			if(blockPosition != thisBlockPosition) {
 				// Encrypt key + position
-				byte[] input = new byte[key.length];
-				System.arraycopy(key, 0, input, 0, key.length);
+				byte[] input = key.clone();
 				byte[] counter = Fields.longToBytes(thisBlockPosition);
 				for(int i=0;i<counter.length;i++)
 					input[key.length - 8 + i] ^= counter[i];
@@ -159,8 +158,7 @@ public class EncryptingIoAdapter extends IoAdapter {
 	@Override
 	public synchronized void write(byte[] inputBuffer, int length) throws Db4oIOException {
 		// Do not clobber the buffer!
-		byte[] buffer = new byte[length];
-		System.arraycopy(inputBuffer, 0, buffer, 0, length);
+		byte[] buffer = Arrays.copyOf(inputBuffer, length);
 		// CTR mode encryption
 		int totalDecrypted = 0;
 		int blockOffset = (int) (position % BLOCK_SIZE_BYTES);
@@ -171,8 +169,7 @@ public class EncryptingIoAdapter extends IoAdapter {
 			long thisBlockPosition = position - blockOffset;
 			if(blockPosition != thisBlockPosition) {
 				// Encrypt key + position
-				byte[] input = new byte[key.length];
-				System.arraycopy(key, 0, input, 0, key.length);
+				byte[] input = key.clone();
 				byte[] counter = Fields.longToBytes(thisBlockPosition);
 				for(int i=0;i<counter.length;i++)
 					input[key.length - 8 + i] ^= counter[i];

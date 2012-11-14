@@ -770,11 +770,9 @@ public class PeerManager {
 		}
 		// Wipe out any information contained in the order
 		java.util.Arrays.sort(locs, 0, x);
-		if(x != locs.length) {
-			double[] newLocs = new double[x];
-			System.arraycopy(locs, 0, newLocs, 0, x);
-			return newLocs;
-		} else
+		if(x != locs.length)
+			return Arrays.copyOf(locs, x);
+		else
 			return locs;
 	}
 
@@ -794,11 +792,9 @@ public class PeerManager {
 		}
 		// Sort it
 		Arrays.sort(locPairs, 0, x);
-		if(x != locPairs.length) {
-			LocationUIDPair[] newLocs = new LocationUIDPair[x];
-			System.arraycopy(locPairs, 0, newLocs, 0, x);
-			return newLocs;
-		} else
+		if(x != locPairs.length)
+			return Arrays.copyOf(locPairs, x);
+		else
 			return locPairs;
 	}
 

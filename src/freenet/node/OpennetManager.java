@@ -1107,8 +1107,7 @@ public class OpennetManager {
 			}
 			return null;
 		}
-		byte[] noderef = new byte[realLength];
-		System.arraycopy(buf, 0, noderef, 0, realLength);
+		byte[] noderef = Arrays.copyOf(buf, realLength);
 		return noderef;
 	}
 

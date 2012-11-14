@@ -89,8 +89,8 @@ public class ResizablePersistentIntBuffer {
 			int toRead = Math.min(buf.length, (size - read) * 4);
 			raf.readFully(buf, 0, toRead);
 			int[] data = Fields.bytesToInts(buf, 0, toRead);
-			for(int i=0;i<data.length;i++)
-				buffer[read++] = data[i];
+			System.arraycopy(data, 0, buffer, read, data.length);
+			read += data.length;
 		}
 	}
 	

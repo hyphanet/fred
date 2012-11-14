@@ -145,10 +145,8 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
             throw new CHKDecodeException("Crypto key too short");
         cipher.initialize(key.cryptoKey);
         PCFBMode pcfb = PCFBMode.create(cipher);
-	byte[] hbuf = new byte[headers.length-2];
-	System.arraycopy(headers, 2, hbuf, 0, headers.length-2);
-        byte[] dbuf = new byte[data.length];
-        System.arraycopy(data, 0, dbuf, 0, data.length);
+		byte[] hbuf = Arrays.copyOfRange(headers, 2, headers.length);
+        byte[] dbuf = Arrays.copyOf(data, data.length);
         // Decipher header first - functions as IV
         pcfb.blockDecipher(hbuf, 0, hbuf.length);
         pcfb.blockDecipher(dbuf, 0, dbuf.length);
@@ -158,8 +156,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         byte[] predIV = md256.digest(dkey);
         SHA256.returnMessageDigest(md256); md256 = null;
         // Extract the IV
-        byte[] iv = new byte[32];
-        System.arraycopy(hbuf, 0, iv, 0, 32);
+        byte[] iv = Arrays.copyOf(hbuf, 32);
         if(!Arrays.equals(iv, predIV))
             throw new CHKDecodeException("Check failed: Decrypted IV == H(decryption key)");
         // Checks complete
@@ -253,8 +250,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
     public Bucket decodeNew(BucketFactory bf, int maxLength, boolean dontCompress) throws CHKDecodeException, IOException {
 		if(key.cryptoAlgorithm != Key.ALGO_AES_CTR_256_SHA256)
 			throw new UnsupportedOperationException();
-    	byte[] hash = new byte[32];
-    	System.arraycopy(headers, 2, hash, 0, 32);
+    	byte[] hash = Arrays.copyOfRange(headers, 2, 2+32);
         byte[] cryptoKey = key.cryptoKey;
         if(cryptoKey.length < Node.SYMMETRIC_KEY_LENGTH)
             throw new CHKDecodeException("Crypto key too short");
@@ -293,8 +289,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
     public Bucket decodeNewNoJCA(BucketFactory bf, int maxLength, boolean dontCompress) throws CHKDecodeException, IOException {
 		if(key.cryptoAlgorithm != Key.ALGO_AES_CTR_256_SHA256)
 			throw new UnsupportedOperationException();
-    	byte[] hash = new byte[32];
-    	System.arraycopy(headers, 2, hash, 0, 32);
+    	byte[] hash = Arrays.copyOfRange(headers, 2, 2+32);
         byte[] cryptoKey = key.cryptoKey;
         if(cryptoKey.length < Node.SYMMETRIC_KEY_LENGTH)
             throw new CHKDecodeException("Crypto key too short");
@@ -401,8 +396,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
             	md256.update(finalData);
             byte[] digest = md256.digest();
             MersenneTwister mt = new MersenneTwister(digest);
-            data = new byte[32768];
-            System.arraycopy(finalData, 0, data, 0, finalData.length);
+			data = Arrays.copyOf(finalData, 32768);
             byte[] randomBytes = new byte[32768-finalData.length];
             mt.nextBytes(randomBytes);
             System.arraycopy(randomBytes, 0, data, finalData.length, 32768-finalData.length);

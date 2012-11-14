@@ -6,6 +6,7 @@ package freenet.keys;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
+import java.util.Arrays;
 
 import net.i2p.util.NativeBigInteger;
 
@@ -98,12 +99,11 @@ public class InsertableClientSSK extends ClientSSK {
 					md256.update(compressedData);
 				byte[] digest = md256.digest();
 				MersenneTwister mt = new MersenneTwister(digest);
-				data = new byte[SSKBlock.DATA_LENGTH];
+				data = Arrays.copyOf(compressedData, SSKBlock.DATA_LENGTH);
 				if (compressedData.length > data.length) {
 					throw new RuntimeException("compressedData.length = " + compressedData.length + " but data.length="
 							+ data.length);
 				}
-				System.arraycopy(compressedData, 0, data, 0, compressedData.length);
 				byte[] randomBytes = new byte[SSKBlock.DATA_LENGTH - compressedData.length];
 				mt.nextBytes(randomBytes);
 				System.arraycopy(randomBytes, 0, data, compressedData.length, SSKBlock.DATA_LENGTH
@@ -146,8 +146,7 @@ public class InsertableClientSSK extends ClientSSK {
 			System.arraycopy(ehDocname, 0, headers, x, ehDocname.length);
 			x += ehDocname.length;
 			// Now the encrypted headers
-			byte[] encryptedHeaders = new byte[SSKBlock.ENCRYPTED_HEADERS_LENGTH];
-			System.arraycopy(origDataHash, 0, encryptedHeaders, 0, origDataHash.length);
+			byte[] encryptedHeaders = Arrays.copyOf(origDataHash, SSKBlock.ENCRYPTED_HEADERS_LENGTH);
 			int y = origDataHash.length;
 			short len = (short) compressedData.length;
 			if (asMetadata)

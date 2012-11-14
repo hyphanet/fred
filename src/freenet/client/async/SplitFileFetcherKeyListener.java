@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import com.db4o.ObjectContainer;
 
@@ -88,8 +89,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		this.realTime = realTime;
 		assert(localSalt.length == 32);
 		if(persistent) {
-			this.localSalt = new byte[32];
-			System.arraycopy(localSalt, 0, this.localSalt, 0, 32);
+			this.localSalt = Arrays.copyOf(localSalt, 32);
 		} else {
 			this.localSalt = localSalt;
 		}
@@ -119,8 +119,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 				
 				if(persistent) {
 					// byte[] arrays get stored separately in each object, so we need to copy it.
-					byte[] buf = new byte[segmentFilterSizeBytes];
-					System.arraycopy(segmentsFilterBuffer, start, buf, 0, segmentFilterSizeBytes);
+					byte[] buf = Arrays.copyOfRange(segmentsFilterBuffer, start, start + segmentFilterSizeBytes);
 					slice = ByteBuffer.wrap(buf);
 				} else {
 					slice = baseBuffer.slice();

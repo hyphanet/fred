@@ -1373,9 +1373,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					}
 				}
 				if(keys.length != ptr) {
-					Key[] newKeys = new Key[ptr];
-					System.arraycopy(keys, 0, newKeys, 0, ptr);
-					keys = newKeys;
+					keys = Arrays.copyOf(keys, ptr);
 				}
 				return keys;
 			}

@@ -6,6 +6,7 @@ package freenet.support.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.Random;
 
 import com.db4o.ObjectContainer;
@@ -78,15 +79,13 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 
 	public PaddedEphemerallyEncryptedBucket(PaddedEphemerallyEncryptedBucket orig, Bucket newBucket) {
 		this.dataLength = orig.dataLength;
-		this.key = new byte[orig.key.length];
-		System.arraycopy(orig.key, 0, key, 0, orig.key.length);
+		this.key = orig.key.clone();
 		this.randomSeed = null; // Will be read-only
 		setReadOnly();
 		this.bucket = newBucket;
 		this.minPaddedSize = orig.minPaddedSize;
 		if(orig.iv != null) {
-			iv = new byte[32];
-			System.arraycopy(orig.iv, 0, iv, 0, 32);
+			iv = Arrays.copyOf(orig.iv, 32);
 		} else {
 			iv = null;
 		}
@@ -146,8 +145,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 			if(streamNumber != lastOutputStream)
 				throw new IllegalStateException("Writing to old stream in "+getName());
 			if(length == 0) return;
-			byte[] enc = new byte[length];
-			System.arraycopy(buf, offset, enc, 0, length);
+			byte[] enc = Arrays.copyOfRange(buf, offset, offset + length);
 			pcfb.blockEncipher(enc, 0, enc.length);
 			synchronized(PaddedEphemerallyEncryptedBucket.this) {
 				out.write(enc, 0, enc.length);
