@@ -67,6 +67,7 @@ public class DefaultMIMETypes {
 		Short t = Short.valueOf(number);
 		if(extensions != null) {
 			for(String ext : extensions) {
+				ext = ext.toLowerCase();
 				Short s = mimeTypesByExtension.get(ext);
 				if(s != null) {
 					// No big deal
