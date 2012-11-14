@@ -68,6 +68,7 @@ import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DiffieHellman;
+import freenet.crypt.ECDH;
 import freenet.crypt.EncryptingIoAdapter;
 import freenet.crypt.RandomSource;
 import freenet.crypt.Yarrow;
@@ -1122,6 +1123,7 @@ public class Node implements TimeSkewDetectorCallback {
 			// Can block.
 			this.random = new Yarrow(seed);
 			DiffieHellman.init(random);
+			ECDH.blockingInit();
 		} else {
 			this.random = r;
 			// if it's not null it's because we are running in the simulator

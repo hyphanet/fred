@@ -139,4 +139,22 @@ public class ECDH {
         
         return remotePublicKey;
     }
+
+    /** Initialize the key pair generators, which in turn will create the
+     * global SecureRandom, which may block waiting for entropy from
+     * /dev/random on unix-like systems. So this should be called on startup
+     * during the "may block for entropy" stage. Note that because this can
+     * block, we still have to do lazy initialisation: We do NOT want to
+     * have it blocking *at time of loading the classes*, as this will
+     * likely appear as the node completely failing to load. Running this
+     * after fproxy has started, with a warning timer, allows us to tell
+     * the user what is going on if it takes a while. */
+    public static void blockingInit() {
+    	Curves.P256.getKeyPairGenerator();
+    	// Not used at present.
+    	// Anyway Bouncycastle uses a single PRNG.
+    	// If these use separate PRNGs, we need to init them explicitly.
+    	//Curves.P384.getKeyPairGenerator();
+    	//Curves.P521.getKeyPairGenerator();
+    }
 }
