@@ -19,6 +19,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.CTRBlockCipher;
+import freenet.crypt.HMAC;
 import freenet.crypt.JceLoader;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.SHA256;
@@ -154,83 +155,6 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         		Math.min(maxLength, MAX_LENGTH_BEFORE_COMPRESSION), key.compressionAlgorithm, false);
     }
     
-	private static final Provider hmacProvider;
-	static private long benchmark(Mac hmac) throws GeneralSecurityException
-	{
-		long times = Long.MAX_VALUE;
-		byte[] input = new byte[1024];
-		byte[] output = new byte[hmac.getMacLength()];
-		byte[] key = new byte[Node.SYMMETRIC_KEY_LENGTH];
-		final String algo = hmac.getAlgorithm();
-		hmac.init(new SecretKeySpec(key, algo));
-		// warm-up
-		for (int i = 0; i < 32; i++) {
-			hmac.update(input, 0, input.length);
-			hmac.doFinal(output, 0);
-			System.arraycopy(output, 0, input, (i*output.length)%(input.length-output.length), output.length);
-		}
-		System.arraycopy(output, 0, key, 0, Math.min(key.length, output.length));
-		for (int i = 0; i < 1024; i++) {
-			long startTime = System.nanoTime();
-			hmac.init(new SecretKeySpec(key, algo));
-			for (int j = 0; j < 8; j++) {
-				for (int k = 0; k < 32; k ++) {
-					hmac.update(input, 0, input.length);
-				}
-				hmac.doFinal(output, 0);
-			}
-			long endTime = System.nanoTime();
-			times = Math.min(endTime - startTime, times);
-			System.arraycopy(output, 0, input, 0, output.length);
-			System.arraycopy(output, 0, key, 0, Math.min(key.length, output.length));
-		}
-		return times;
-	}
-	static {
-		try {
-			final Class<ClientCHKBlock> clazz = ClientCHKBlock.class;
-			final String algo = "HmacSHA256";
-			final Provider sun = JceLoader.SunJCE;
-			SecretKeySpec dummyKey = new SecretKeySpec(new byte[Node.SYMMETRIC_KEY_LENGTH], algo);
-			Mac hmac = Mac.getInstance(algo);
-			hmac.init(dummyKey); // resolve provider
-			boolean logMINOR = Logger.shouldLog(Logger.LogLevel.MINOR, clazz);
-			if (sun != null) {
-				// SunJCE provider is faster (in some configurations)
-				try {
-					Mac sun_hmac = Mac.getInstance(algo, "HmacSHA256");
-					sun_hmac.init(dummyKey); // resolve provider
-					if (hmac.getProvider() != sun_hmac.getProvider()) {
-						long time_def = benchmark(hmac);
-						long time_sun = benchmark(sun_hmac);
-						System.out.println(algo + " (" + hmac.getProvider() + "): " + time_def + "ns");
-						System.out.println(algo + " (" + sun_hmac.getProvider() + "): " + time_sun + "ns");
-						if(logMINOR) {
-							Logger.minor(clazz, algo + "/" + hmac.getProvider() + ": " + time_def + "ns");
-							Logger.minor(clazz, algo + "/" + sun_hmac.getProvider() + ": " + time_sun + "ns");
-						}
-						if (time_sun < time_def) {
-							hmac = sun_hmac;
-						}
-					}
-				} catch(GeneralSecurityException e) {
-					Logger.warning(clazz, algo + "@" + sun + " benchmark failed", e);
-					// ignore
-
-				} catch(Throwable e) {
-					Logger.error(clazz, algo + "@" + sun + " benchmark failed", e);
-					// ignore
-				}
-			}
-			hmacProvider = hmac.getProvider();
-			System.out.println(algo + ": using " + hmacProvider);
-			Logger.normal(clazz, algo + ": using " + hmacProvider);
-		} catch(GeneralSecurityException e) {
-			// impossible 
-			throw new Error(e);
-		}
-	}
-
     /**
      * Decode the CHK and recover the original data
      * @return the original data
@@ -254,10 +178,12 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
             throw new CHKDecodeException("Invalid size: "+size);
         }
         // Check the hash.
-        Mac hmac = Mac.getInstance("HmacSHA256", hmacProvider);
-        hmac.init(new SecretKeySpec(cryptoKey, "HmacSHA256"));
+		MessageDigest md256 = SHA256.getMessageDigest();
+        HMAC hmac = new HMAC(md256);
+        hmac.init(cryptoKey);
         hmac.update(plaintext); // plaintext includes lengthBytes
         byte[] hashCheck = hmac.doFinal();
+		SHA256.returnMessageDigest(md256); md256 = null; hmac = null;
         if(!Arrays.equals(hash, hashCheck)) {
         	throw new CHKDecodeException("HMAC is wrong, wrong decryption key?");
         }
@@ -300,19 +226,17 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         if((size > 32768) || (size < 0)) {
             throw new CHKDecodeException("Invalid size: "+size);
         }
-		try {
         // Check the hash.
-        Mac hmac = Mac.getInstance("HmacSHA256", hmacProvider);
-        hmac.init(new SecretKeySpec(cryptoKey, "HmacSHA256"));
+		MessageDigest md256 = SHA256.getMessageDigest();
+        HMAC hmac = new HMAC(md256);
+        hmac.init(cryptoKey);
         hmac.update(plaintext);
         hmac.update(lengthBytes);
         byte[] hashCheck = hmac.doFinal();
+		SHA256.returnMessageDigest(md256); md256 = null; hmac = null;
         if(!Arrays.equals(hash, hashCheck)) {
         	throw new CHKDecodeException("HMAC is wrong, wrong decryption key?");
         }
-		} catch(GeneralSecurityException e) {
-			throw new CHKDecodeException("Problem with JCA, should be impossible!", e);
-		}
         return Key.decompress(dontCompress ? false : key.isCompressed(), plaintext, size, bf, 
         		Math.min(maxLength, MAX_LENGTH_BEFORE_COMPRESSION), key.compressionAlgorithm, false);
     }
@@ -438,14 +362,15 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         // It's okay that this is the same for 2 blocks with the same key and the same content.
         // In fact that's the point; this is still a Content Hash Key.
         // FIXME And yes we should check on insert for multiple identical keys.
-        Mac hmac = Mac.getInstance("HmacSHA256", hmacProvider);
-        hmac.init(new SecretKeySpec(encKey, "HmacSHA256"));
+        HMAC hmac = new HMAC(md256);
+        hmac.init(encKey);
         byte[] tmpLen = new byte[] { 
             	(byte)(dataLength >> 8), (byte)(dataLength & 0xff)
             };
         hmac.update(data);
         hmac.update(tmpLen);
         byte[] hash = hmac.doFinal();
+		hmac = null;
         byte[] header = new byte[hash.length+2+2];
     	if(blockHashAlgorithm == 0) cryptoAlgorithm = KeyBlock.HASH_SHA256;
     	if(blockHashAlgorithm != KeyBlock.HASH_SHA256)
@@ -507,19 +432,19 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
     public static ClientCHKBlock encodeNewNoJCA(byte[] data, int dataLength, MessageDigest md256, byte[] encKey, boolean asMetadata, short compressionAlgorithm, byte cryptoAlgorithm, int blockHashAlgorithm) throws CHKEncodeException {
     	if(cryptoAlgorithm != Key.ALGO_AES_CTR_256_SHA256)
     		throw new IllegalArgumentException("Unsupported crypto algorithm "+cryptoAlgorithm);
-		try {
     	// IV = HMAC<cryptokey>(plaintext).
         // It's okay that this is the same for 2 blocks with the same key and the same content.
         // In fact that's the point; this is still a Content Hash Key.
         // FIXME And yes we should check on insert for multiple identical keys.
-        Mac hmac = Mac.getInstance("HmacSHA256", hmacProvider);
-        hmac.init(new SecretKeySpec(encKey, "HmacSHA256"));
+        HMAC hmac = new HMAC(md256);
+        hmac.init(encKey);
         byte[] tmpLen = new byte[] { 
             	(byte)(dataLength >> 8), (byte)(dataLength & 0xff)
             };
         hmac.update(data);
         hmac.update(tmpLen);
         byte[] hash = hmac.doFinal();
+		hmac = null;
         byte[] header = new byte[hash.length+2+2];
     	if(blockHashAlgorithm == 0) cryptoAlgorithm = KeyBlock.HASH_SHA256;
     	if(blockHashAlgorithm != KeyBlock.HASH_SHA256)
@@ -558,9 +483,6 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
             //WTF?
             throw new Error(e3);
         }
-		} catch (GeneralSecurityException e) {
-			throw new CHKEncodeException("Problem with JCA, should be impossible!", e);
-		}
     }
     
     public static ClientCHKBlock innerEncode(byte[] data, int dataLength, MessageDigest md256, byte[] encKey, boolean asMetadata, short compressionAlgorithm, byte cryptoAlgorithm) {
