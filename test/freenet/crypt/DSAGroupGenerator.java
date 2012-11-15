@@ -45,6 +45,8 @@ public class DSAGroupGenerator {
 		if(keyLength % hashLength != 0)
 			throw new IllegalArgumentException("Key length must be divisible by hash length (short cut taken here)");
 		while(!generate(r, keyLength, hashLength, md));
+		if(hashLength == 256)
+			SHA256.returnMessageDigest(md);
 	}
 
 	private static boolean generate(RandomSource r, int keyLength, int hashLength, MessageDigest md) {

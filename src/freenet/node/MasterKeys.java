@@ -160,6 +160,7 @@ public class MasterKeys {
 		md.update(pwd);
 		md.update(salt);
 		byte[] outerKey = md.digest();
+		SHA256.returnMessageDigest(md); md = null;
 //		System.err.println("Outer key: "+HexUtil.bytesToHex(outerKey));
 		BlockCipher cipher;
 		try {
@@ -230,6 +231,7 @@ public class MasterKeys {
 		md.update(pwd);
 		md.update(salt);
 		byte[] outerKey = md.digest();
+		SHA256.returnMessageDigest(md); md = null;
 
 		BlockCipher cipher;
 		try {
