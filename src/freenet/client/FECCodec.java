@@ -163,8 +163,7 @@ public abstract class FECCodec {
 			
 			boolean needDecode = false;
 			for(int i = 0; i < dataBlockStatus.length;i++) {
-				if(dataBlockStatus[i].getData() == null)
-					needDecode = true;
+				if(dataBlockStatus[i].getData() == null) needDecode = true;
 			}
 			
 			if(!needDecode) return;
@@ -173,8 +172,9 @@ public abstract class FECCodec {
 				buckets[i] = dataBlockStatus[i].getData();
 				if(buckets[i] == null) {
 					buckets[i] = bf.makeBucket(blockLength);
-					if(stripeSize != blockLength)
+					if(stripeSize != blockLength) {
 						writers[i] = buckets[i].getOutputStream();
+					}
 					toWrite[i] = true;
 					if(logMINOR)
 						Logger.minor(this, "writers[" + i + "] != null");
@@ -196,13 +196,15 @@ public abstract class FECCodec {
 			}
 			for(int i = 0; i < checkBlockStatus.length; i++) {
 				buckets[i + k] = checkBlockStatus[i].getData();
-				if(buckets[i + k] == null)
+				if(buckets[i + k] == null) {
 					readers[i + k] = null;
-				else {
-					if(stripeSize != blockLength)
+				} else {
+					if(stripeSize != blockLength) {
 						readers[i + k] = new DataInputStream(buckets[i + k].getInputStream());
-					if(idx < k)
+					}
+					if(idx < k) {
 						packetIndexes[idx++] = i + k;
+					}
 				}
 			}
 
@@ -219,8 +221,9 @@ public abstract class FECCodec {
 			}
 				
 			for(int offset = 0; offset < blockLength; offset += stripeSize) {
-				if(offset + stripeSize > blockLength)
+				if(offset + stripeSize > blockLength) {
 					stripeSize = blockLength - offset;
+				}
 				// Read the data in first
 				for(int i = 0; i < k; i++) {
 					int x = packetIndexes[i];
@@ -233,8 +236,9 @@ public abstract class FECCodec {
 						dis.readFully(realBuffer, i * stripeSize,
 								stripeSize);
 					} finally {
-						if(stripeSize == blockLength)
+						if(stripeSize == blockLength) {
 							dis.close();
+						}
 					}
 				}
 				// Do the decode
@@ -248,16 +252,18 @@ public abstract class FECCodec {
 				for(int i = 0; i < k; i++) {
 					if(toWrite[i]) {
 						OutputStream os;
-						if(stripeSize == blockLength)
+						if(stripeSize == blockLength) {
 							os = buckets[i].getOutputStream();
-						else
+						} else {
 							os = writers[i];
+						}
 						try {
 							os.write(realBuffer, i * stripeSize,
 									stripeSize);
 						} finally {
-							if(stripeSize == blockLength)
+							if(stripeSize == blockLength) {
 								os.close();
+							}
 						}
 					}
 				}
