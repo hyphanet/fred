@@ -402,7 +402,7 @@ public abstract class PeerTransport {
 	 * @param purgeAddresses If true it will get rid of all previous addresses.
 	 * Use it only if a new noderef has been obtained
 	 */
-	public void setTransportAddress(ArrayList<String> physical, boolean setDetected, boolean purgeAddresses) {
+	public void setTransportAddress(HashSet<String> physical, boolean setDetected, boolean purgeAddresses) {
 		if(purgeAddresses) {
 			nominalTransportAddress.clear();
 			detectedTransportAddress = null;

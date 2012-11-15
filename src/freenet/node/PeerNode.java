@@ -133,7 +133,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * If a noderef contains a transport but we don't have it, store the addresses in the string format.
 	 * Also we can in the future notify the user of this plugin.
 	 */
-	private HashMap<String, ArrayList<String>> peerEnabledTransports = new HashMap<String, ArrayList<String>> ();
+	private HashMap<String, HashSet<String>> peerEnabledTransports = new HashMap<String, HashSet<String>> ();
 	
 	private Object packetTransportMapLock = new Object();
 	private Object streamTransportMapLock = new Object();
@@ -5301,7 +5301,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * Checks if we have any address i.e if our peer has loaded the same transport, and then decides to use it.
 	 */
 	public synchronized void handleNewPeerTransport(PacketTransportBundle packetTransportBundle) {
-		ArrayList<String> physical = peerEnabledTransports.get(packetTransportBundle.transportName);
+		HashSet<String> physical = peerEnabledTransports.get(packetTransportBundle.transportName);
 		if(physical == null)
 			return;	//Don't load the transport if the peer does not use it.
 		if(physical.size() == 0)
@@ -5319,7 +5319,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * Checks if we have any address i.e if our peer has loaded the same transport, and then decides to use it.
 	 */
 	public synchronized void handleNewPeerTransport(StreamTransportBundle streamTransportBundle) {
-		ArrayList<String> physical = peerEnabledTransports.get(streamTransportBundle.transportName);
+		HashSet<String> physical = peerEnabledTransports.get(streamTransportBundle.transportName);
 		if(physical == null)
 			return;	//Don't load the transport if the peer does not use it.
 		if(physical.size() == 0)
@@ -5380,7 +5380,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			StreamTransportBundle streamBundle;
 			String transportName = it.next();
 			String[] addresses = fs.getAll(transportName);
-			ArrayList<String> arrayAddress = recordAddress(transportName, addresses);
+			HashSet<String> arrayAddress = recordAddress(transportName, addresses);
 			
 			// Condition 1: Inform already loaded transports of the new addresses.
 			if(peerPacketTransportMap.containsKey(transportName))
@@ -5513,10 +5513,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * @param address
 	 * @return The address that exists after the operation for that particular transport 
 	 */
-	private ArrayList<String> recordAddress(String transportName, ArrayList<String> address) {
-		ArrayList<String> temp = peerEnabledTransports.get(transportName);
+	private HashSet<String> recordAddress(String transportName, HashSet<String> address) {
+		HashSet<String> temp = peerEnabledTransports.get(transportName);
 		if(temp == null)
-			temp = new ArrayList<String> ();
+			temp = new HashSet<String> ();
 		temp.addAll(address);
 		peerEnabledTransports.put(transportName, temp);
 		return temp;
@@ -5528,8 +5528,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * @param address
 	 * @return The address that exists after the operation for that particular transport
 	 */
-	private ArrayList<String> recordAddress(String transportName, String[] address) {
-		ArrayList<String> temp = new ArrayList<String> ();
+	private HashSet<String> recordAddress(String transportName, String[] address) {
+		HashSet<String> temp = new HashSet<String> ();
 		for(String addr : address)
 			temp.add(addr);
 		return recordAddress(transportName, temp);
