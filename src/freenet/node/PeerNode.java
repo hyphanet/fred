@@ -576,7 +576,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		identityHash = SHA256.digest(identity);
 		identityHashHash = SHA256.digest(identityHash);
 		swapIdentifier = Fields.bytesToLong(identityHashHash);
-		hashCode = Fields.hashCode(identityHash);
+		hashCode = Fields.hashCode(pubKeyHash);
 
 		// Setup incoming and outgoing setup ciphers
 		byte[] nodeKey = crypto.identityHash;
