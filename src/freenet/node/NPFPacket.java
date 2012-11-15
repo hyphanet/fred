@@ -13,6 +13,7 @@ import java.util.Random;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import freenet.crypt.Util;
 import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger.LogLevel;
@@ -293,9 +294,7 @@ class NPFPacket {
 
 		if(offset < buf.length) {
 			//More room, so add padding
-			byte[] padding = new byte[buf.length - offset];
-			paddingGen.nextBytes(padding);
-			System.arraycopy(padding, 0, buf, offset, padding.length);
+			Util.randomBytes(paddingGen, buf, offset, buf.length - offset);
 
 			byte b = (byte) (buf[offset] & 0x9F); //Make sure firstFragment and isFragmented isn't set
 			if(b == 0x1F)

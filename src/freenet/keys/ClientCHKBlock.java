@@ -26,6 +26,7 @@ import freenet.crypt.JceLoader;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
+import freenet.crypt.Util;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.Key.Compressed;
 import freenet.node.Node;
@@ -397,9 +398,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
             byte[] digest = md256.digest();
             MersenneTwister mt = new MersenneTwister(digest);
 			data = Arrays.copyOf(finalData, 32768);
-            byte[] randomBytes = new byte[32768-finalData.length];
-            mt.nextBytes(randomBytes);
-            System.arraycopy(randomBytes, 0, data, finalData.length, 32768-finalData.length);
+			Util.randomBytes(mt, data, finalData.length, 32768-finalData.length);
         } else {
         	data = finalData;
         }

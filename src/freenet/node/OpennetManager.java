@@ -19,6 +19,7 @@ import java.util.EnumMap;
 import java.util.Enumeration;
 import java.util.Map;
 
+import freenet.crypt.Util;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
@@ -865,8 +866,8 @@ public class OpennetManager {
 			Logger.error(this, "Noderef too big: "+noderef.length+" bytes");
 			return false;
 		}
-		node.fastWeakRandom.nextBytes(padded); // FIXME implement nextBytes(buf,offset, length)
 		System.arraycopy(noderef, 0, padded, 0, noderef.length);
+		Util.randomBytes(node.fastWeakRandom, padded, noderef.length, padded.length-noderef.length);
 		long xferUID = node.random.nextLong();
 		Message msg2 = isReply ? DMT.createFNPOpennetConnectReplyNew(uid, xferUID, noderef.length, padded.length) :
 			DMT.createFNPOpennetConnectDestinationNew(uid, xferUID, noderef.length, padded.length);
@@ -909,8 +910,8 @@ public class OpennetManager {
 	public void finishSentAnnouncementRequest(PeerNode peer, byte[] noderef, ByteCounter ctr,
 			long xferUID) throws NotConnectedException {
 		byte[] padded = new byte[paddedSize(noderef.length)];
-		node.fastWeakRandom.nextBytes(padded); // FIXME implement nextBytes(buf,offset, length)
 		System.arraycopy(noderef, 0, padded, 0, noderef.length);
+		Util.randomBytes(node.fastWeakRandom, padded, noderef.length, padded.length-noderef.length);
 		innerSendOpennetRef(xferUID, padded, peer, ctr, null);
 	}
 

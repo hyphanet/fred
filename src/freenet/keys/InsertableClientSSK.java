@@ -24,6 +24,7 @@ import freenet.crypt.PCFBMode;
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
+import freenet.crypt.Util;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.Key.Compressed;
 import freenet.support.api.Bucket;
@@ -104,10 +105,7 @@ public class InsertableClientSSK extends ClientSSK {
 					throw new RuntimeException("compressedData.length = " + compressedData.length + " but data.length="
 							+ data.length);
 				}
-				byte[] randomBytes = new byte[SSKBlock.DATA_LENGTH - compressedData.length];
-				mt.nextBytes(randomBytes);
-				System.arraycopy(randomBytes, 0, data, compressedData.length, SSKBlock.DATA_LENGTH
-						- compressedData.length);
+				Util.randomBytes(mt, data, compressedData.length, SSKBlock.DATA_LENGTH - compressedData.length);
 			} else {
 				data = compressedData;
 			}

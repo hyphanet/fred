@@ -13,7 +13,9 @@ import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
+import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.Random;
 import java.util.HashMap;
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.JceLoader;
@@ -125,6 +127,62 @@ public class Util {
 		for (int i = 0; i < minl; i++)
 			rv[i] = (byte) (b1[i] ^ b2[i]);
 		return rv;
+	}
+
+	static public void randomBytes(SecureRandom r, byte[] buf) {
+		r.nextBytes(buf);
+	}
+
+	static public void randomBytes(SecureRandom r, byte[] buf, int from, int len) {
+		randomBytesSlowNextInt(r, buf, from, len);
+	}
+
+	/** Fill specified range of byte array with random data. */
+	static private void randomBytesSlowNextInt(Random r, byte[] buf, int from, int len) {
+	   if (from == 0 && len == buf.length) {
+		   r.nextBytes(buf);
+		   return;
+	   }
+	   byte [] tmp = new byte[len];
+	   r.nextBytes(tmp);
+	   System.arraycopy(tmp, 0, buf, from, len);
+	}
+
+	/** Fill byte array with random data.
+	 * randomBytes(random, buf) is same as random.nextBytes(buf)
+	 */
+	static public void randomBytes(Random r, byte[] buf) {
+		randomBytes(r, buf, 0, buf.length);
+	}
+
+	/** Fill specified range of byte array with random data.
+	 * Optimised version for Random with fast nextInt().
+	 * Must be same as randomBytesSlowNextInt(buf, from, len).
+	 * WARNING: full compatibility with randomBytesSlowNextInt() is *critical*!
+	 */
+	/*
+	 * Why, why, why? Why Random have no nextBytes(buf, from, len) method?
+	 */
+	static public void randomBytes(Random r, byte[] buf, int from, int len) {
+		if (r instanceof SecureRandom) {
+			/* SecureRandom's nextInt() have *abysmal* performance */
+			randomBytesSlowNextInt(r, buf, from, len);
+			return;
+		}
+		assert(Integer.SIZE/Byte.SIZE == 4);
+		final int to = from + len;
+		while(from + 4 <= to) {
+			int rnd = r.nextInt();
+			buf[from++] = (byte)rnd; rnd >>= 8;
+			buf[from++] = (byte)rnd; rnd >>= 8;
+			buf[from++] = (byte)rnd; rnd >>= 8;
+			buf[from++] = (byte)rnd; rnd >>= 8;
+		}
+		if(to > from) {
+			assert(to - from < Integer.SIZE/Byte.SIZE);
+			for (int rnd = r.nextInt(); from < to; rnd >>= 8)
+				buf[from++] = (byte)rnd;
+		}
 	}
 	
 	//Compares two byte arrays. Consider using Arrays.equals(a,b) instead of this

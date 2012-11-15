@@ -29,6 +29,7 @@ import freenet.crypt.KeyAgreementSchemeContext;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
+import freenet.crypt.Util;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.io.AddressTracker;
 import freenet.io.AddressTracker.Status;
@@ -2056,9 +2057,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		data[hash.length+iv.length+1] = (byte) pcfb.encipher((byte)length);
 		pcfb.blockEncipher(output, 0, output.length);
 		System.arraycopy(output, 0, data, hash.length+iv.length+2, output.length);
-		byte[] random = new byte[paddingLength];
-		node.fastWeakRandom.nextBytes(random);
-		System.arraycopy(random, 0, data, hash.length+iv.length+2+output.length, random.length);
+
+		Util.randomBytes(node.fastWeakRandom, data, hash.length+iv.length+2+output.length, paddingLength);
 		node.nodeStats.reportAuthBytes(data.length + sock.getHeadersLength());
 		try {
 			sendPacket(data, replyTo, pn);
