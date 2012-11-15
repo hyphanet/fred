@@ -280,7 +280,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	}
 	
 	@Override
-	protected void onSuccess(FetchResult result, ObjectContainer container, ClientContext context) {
+	protected void onSuccess(final FetchResult result, ObjectContainer container, final ClientContext context) {
 		if(persistent) {
 			container.activate(decompressors, 1);
 			container.activate(parent, 1);
@@ -327,7 +327,19 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			result.asBucket().free();
 			if(persistent) result.asBucket().removeFrom(container);
 		} else {
-			rcb.onSuccess(new SingleFileStreamGenerator(result.asBucket(), persistent), result.getMetadata(), decompressors, this, container, context);
+			if(persistent()) {
+				rcb.onSuccess(new SingleFileStreamGenerator(result.asBucket(), persistent), result.getMetadata(), decompressors, this, container, context);
+			} else {
+				// Break locks, don't run filtering on FEC thread etc etc.
+				context.mainExecutor.execute(new Runnable() {
+					
+					@Override
+					public void run() {
+						rcb.onSuccess(new SingleFileStreamGenerator(result.asBucket(), persistent), result.getMetadata(), decompressors, SingleFileFetcher.this, null, context);
+					}
+				
+				});
+			}
 		}
 	}
 
@@ -1484,7 +1496,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// Return the latest known version but at least suggestedEdition.
 			long edition = context.uskManager.lookupKnownGood(usk);
 			if(edition <= usk.suggestedEdition) {
-				// Background fetch - start background fetch first so can pick up updates in the datastore during registration.
 				context.uskManager.startTemporaryBackgroundFetcher(usk, context, ctx, true, realTimeFlag);
 				edition = context.uskManager.lookupKnownGood(usk);
 				if(edition > usk.suggestedEdition) {

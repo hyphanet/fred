@@ -62,7 +62,7 @@ public abstract class Toadlet {
 		this.client = client;
 	}
 
-	private final HighLevelSimpleClient client;
+	final HighLevelSimpleClient client;
 	ToadletContainer container;
 
 	private String supportedMethodsCache;

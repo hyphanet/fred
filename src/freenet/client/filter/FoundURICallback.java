@@ -37,4 +37,6 @@ public interface FoundURICallback {
 	 * by base href in html, for example.	 */
 	public void onText(String text, String type, URI baseURI);
 
+	public void onFinishedPage();
+	
 }

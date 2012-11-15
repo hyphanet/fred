@@ -462,4 +462,10 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 			return null;
 		}
 	}
+
+	@Override
+	public void onFinished() {
+		if(cb != null)
+			cb.onFinishedPage();
+	}
 }

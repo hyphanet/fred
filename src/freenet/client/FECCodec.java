@@ -136,7 +136,6 @@ public abstract class FECCodec {
 		DataInputStream[] readers = new DataInputStream[n];
 		OutputStream[] writers = new OutputStream[k];
 		boolean[] toWrite = new boolean[k];
-		int numberToDecode = 0; // can be less than n-k
 		
 		int stripeSize = MAX_MEMORY_BUFFER / k;
 		if(stripeSize > blockLength)
@@ -160,14 +159,11 @@ public abstract class FECCodec {
 				packets[i] = new Buffer(realBuffer, i * stripeSize,
 					stripeSize);
 
-			// Shortcut.
-			// Due to the not-fetching-last-block code, we need to check here,
-			// rather than relying on numberToDecode (since the last data block won't be part of numberToDecode).
+			// Due to the not-fetching-last-block code, we need to check here.
 			
 			boolean needDecode = false;
 			for(int i = 0; i < dataBlockStatus.length;i++) {
-				if(dataBlockStatus[i].getData() == null)
-					needDecode = true;
+				if(dataBlockStatus[i].getData() == null) needDecode = true;
 			}
 			
 			if(!needDecode) return;
@@ -176,13 +172,13 @@ public abstract class FECCodec {
 				buckets[i] = dataBlockStatus[i].getData();
 				if(buckets[i] == null) {
 					buckets[i] = bf.makeBucket(blockLength);
-					if(stripeSize != blockLength)
+					if(stripeSize != blockLength) {
 						writers[i] = buckets[i].getOutputStream();
+					}
 					toWrite[i] = true;
 					if(logMINOR)
 						Logger.minor(this, "writers[" + i + "] != null");
 					readers[i] = null;
-					numberToDecode++;
 				}
 				else {
 					long sz = buckets[i].size();
@@ -200,13 +196,15 @@ public abstract class FECCodec {
 			}
 			for(int i = 0; i < checkBlockStatus.length; i++) {
 				buckets[i + k] = checkBlockStatus[i].getData();
-				if(buckets[i + k] == null)
+				if(buckets[i + k] == null) {
 					readers[i + k] = null;
-				else {
-					if(stripeSize != blockLength)
+				} else {
+					if(stripeSize != blockLength) {
 						readers[i + k] = new DataInputStream(buckets[i + k].getInputStream());
-					if(idx < k)
+					}
+					if(idx < k) {
 						packetIndexes[idx++] = i + k;
+					}
 				}
 			}
 
@@ -217,59 +215,59 @@ public abstract class FECCodec {
 				for(int i = 0; i < packetIndexes.length; i++)
 					Logger.minor(this, "[" + i + "] = " + packetIndexes[i]);
 
-			if(numberToDecode > 0)
-				// Do the (striped) decode
+			if(fec instanceof Native8Code) {
+				System.out.println("Decoding with native code, n = "+n+" k = "+k);
+				System.out.flush();
+			}
 				
-				if(fec instanceof Native8Code) {
-					System.out.println("Decoding with native code, n = "+n+" k = "+k);
-					System.out.flush();
+			for(int offset = 0; offset < blockLength; offset += stripeSize) {
+				if(offset + stripeSize > blockLength) {
+					stripeSize = blockLength - offset;
 				}
-				
-				for(int offset = 0; offset < blockLength; offset += stripeSize) {
-					if(offset + stripeSize > blockLength)
-						stripeSize = blockLength - offset;
-					// Read the data in first
-					for(int i = 0; i < k; i++) {
-						int x = packetIndexes[i];
-						DataInputStream dis;
-						if(stripeSize == blockLength)
-							dis = new DataInputStream(buckets[x].getInputStream());
-						else
-							dis = readers[x];
-						try {
+				// Read the data in first
+				for(int i = 0; i < k; i++) {
+					int x = packetIndexes[i];
+					DataInputStream dis;
+					if(stripeSize == blockLength)
+						dis = new DataInputStream(buckets[x].getInputStream());
+					else
+						dis = readers[x];
+					try {
 						dis.readFully(realBuffer, i * stripeSize,
-							stripeSize);
-						} finally {
-						if(stripeSize == blockLength)
+								stripeSize);
+					} finally {
+						if(stripeSize == blockLength) {
 							dis.close();
 						}
 					}
-					// Do the decode
-					// Not shuffled
-					int[] disposableIndexes = new int[packetIndexes.length];
-					System.arraycopy(packetIndexes, 0, disposableIndexes, 0,
+				}
+				// Do the decode
+				// Not shuffled
+				int[] disposableIndexes = new int[packetIndexes.length];
+				System.arraycopy(packetIndexes, 0, disposableIndexes, 0,
 						packetIndexes.length);
-					fec.decode(packets, disposableIndexes);
-					// packets now contains an array of decoded blocks, in order
-					// Write the data out
-					for(int i = 0; i < k; i++) {
-						if(toWrite[i]) {
-							OutputStream os;
-							if(stripeSize == blockLength)
-								os = buckets[i].getOutputStream();
-							else
-								os = writers[i];
-							try {
+				fec.decode(packets, disposableIndexes);
+				// packets now contains an array of decoded blocks, in order
+				// Write the data out
+				for(int i = 0; i < k; i++) {
+					if(toWrite[i]) {
+						OutputStream os;
+						if(stripeSize == blockLength) {
+							os = buckets[i].getOutputStream();
+						} else {
+							os = writers[i];
+						}
+						try {
 							os.write(realBuffer, i * stripeSize,
-								stripeSize);
-							} finally {
-							if(stripeSize == blockLength)
+									stripeSize);
+						} finally {
+							if(stripeSize == blockLength) {
 								os.close();
 							}
 						}
 					}
 				}
-
+			}
 		}
 		finally {
 			for(int i = 0; i < k; i++)

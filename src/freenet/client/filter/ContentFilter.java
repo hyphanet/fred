@@ -292,6 +292,9 @@ public class ContentFilter {
 				}
 				catch(IOException e) {
 					throw e;
+				} finally {
+					if(filterCallback != null)
+						filterCallback.onFinished();
 				}
 				if(charset != null) type = type + "; charset="+charset;
 				output.flush();

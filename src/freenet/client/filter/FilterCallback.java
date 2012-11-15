@@ -58,4 +58,6 @@ public interface FilterCallback {
 	 * */
 	public String processTag(ParsedTag pt);
 	
+	public void onFinished();
+	
 }

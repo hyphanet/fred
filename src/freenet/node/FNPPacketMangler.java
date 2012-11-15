@@ -193,28 +193,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	public void startMangler() {
 		// Run it directly so that the transient key is set.
 		maybeResetTransientKey();
-		// Run it off-thread, since it might block.
-		node.executor.execute(new PrioRunnable() {
-
-			@Override
-			public void run() {
-				// Fill the DH FIFO on-thread
-				for(int i=0;i<DH_CONTEXT_BUFFER_SIZE;i++) {
-					_fillJFKDHFIFO();
-				}
-				if(!NodeStarter.bcProvLoadFailed()) {
-					for(int i=0;i<DH_CONTEXT_BUFFER_SIZE;i++) {
-						_fillJFKECDHFIFO();
-					}
-				}
+		// Fill the DH FIFO on-thread
+		for(int i=0;i<DH_CONTEXT_BUFFER_SIZE;i++) {
+			_fillJFKDHFIFO();
+		}
+		if(!NodeStarter.bcProvLoadFailed()) {
+			for(int i=0;i<DH_CONTEXT_BUFFER_SIZE;i++) {
+				_fillJFKECDHFIFO();
 			}
-
-			@Override
-			public int getPriority() {
-				return NativeThread.HIGH_PRIORITY-1;
-			}
-			
-		});
+		}
 	}
 
 	/**
@@ -828,8 +815,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		
 		if(throttleRekey(peerTransport, replyTo)) return;
 
-		NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
-		if(negType < 8 || DiffieHellman.checkDHExponentialValidity(this.getClass(), _hisExponential)) {
+		if(negType >= 8 || DiffieHellman.checkDHExponentialValidity(this.getClass(), new NativeBigInteger(1,hisExponential))) {
 			// JFK protects us from weak key attacks on ECDH, so we don't need to check.
 		    try {
 		    	sendJFKMessage2(nonceInitiator, hisExponential, peerTransport, replyTo, unknownInitiator, setupType, negType);
@@ -2284,7 +2270,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	}
     
 	private ECDHLightContext _genECDHLightContext() {
-        final ECDHLightContext ctx = new ECDHLightContext(ecdhCurveToUse, node.secureRandom);
+        final ECDHLightContext ctx = new ECDHLightContext(ecdhCurveToUse);
         ctx.setSignature(crypto.sign(SHA256.digest(assembleDHParams(ctx.getPublicKeyNetworkFormat(), crypto.getCryptoGroup()))));
 
         return ctx;
