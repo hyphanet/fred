@@ -164,7 +164,7 @@ public class Util {
 					ctx.update((byte) 0);
 				ctx.update(entropy, 0, entropy.length);
 				int bc;
-				if (len >= ctx_length) {
+				if (len > ctx_length) {
 					ctx.digest(key, offset, ctx_length);
 					bc = ctx_length;
 				} else {
