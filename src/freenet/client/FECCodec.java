@@ -136,7 +136,6 @@ public abstract class FECCodec {
 		DataInputStream[] readers = new DataInputStream[n];
 		OutputStream[] writers = new OutputStream[k];
 		boolean[] toWrite = new boolean[k];
-		int numberToDecode = 0; // can be less than n-k
 		
 		int stripeSize = MAX_MEMORY_BUFFER / k;
 		if(stripeSize > blockLength)
@@ -160,9 +159,7 @@ public abstract class FECCodec {
 				packets[i] = new Buffer(realBuffer, i * stripeSize,
 					stripeSize);
 
-			// Shortcut.
-			// Due to the not-fetching-last-block code, we need to check here,
-			// rather than relying on numberToDecode (since the last data block won't be part of numberToDecode).
+			// Due to the not-fetching-last-block code, we need to check here.
 			
 			boolean needDecode = false;
 			for(int i = 0; i < dataBlockStatus.length;i++) {
@@ -182,7 +179,6 @@ public abstract class FECCodec {
 					if(logMINOR)
 						Logger.minor(this, "writers[" + i + "] != null");
 					readers[i] = null;
-					numberToDecode++;
 				}
 				else {
 					long sz = buckets[i].size();
@@ -217,9 +213,6 @@ public abstract class FECCodec {
 				for(int i = 0; i < packetIndexes.length; i++)
 					Logger.minor(this, "[" + i + "] = " + packetIndexes[i]);
 
-			if(numberToDecode > 0) {
-				// Do the (striped) decode
-				
 				if(fec instanceof Native8Code) {
 					System.out.println("Decoding with native code, n = "+n+" k = "+k);
 					System.out.flush();
@@ -269,7 +262,6 @@ public abstract class FECCodec {
 						}
 					}
 				}
-			}
 
 		}
 		finally {
