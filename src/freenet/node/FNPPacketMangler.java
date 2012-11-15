@@ -1129,7 +1129,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(negType < 8) { // legacy DH
 		    NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
 		    if(!DiffieHellman.checkDHExponentialValidity(this.getClass(), _hisExponential)) {
-		        Logger.error(this, "We can't accept the exponential "+peerTransport.getPeer()+" sent us!! REDFLAG: IT CAN'T HAPPEN UNLESS AGAINST AN ACTIVE ATTACKER!!");
+		        Logger.error(this, "We can't accept the exponential "+peerTransport.getAddress()+" sent us!! REDFLAG: IT CAN'T HAPPEN UNLESS AGAINST AN ACTIVE ATTACKER!!");
 		        return;
 		    }
 			// JFK protects us from weak key attacks on ECDH, so we don't need to check.
@@ -2233,29 +2233,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		return !context.isConnected();
 	}
 	
-	static UserAlert BCPROV_LOAD_FAILED = null;
-
 	/**
 	 * List of supported negotiation types in preference order (best last)
+	 * Assumes bcProv loaded successfully.
+	 * This method must eventually be moved out 
+	 * as it is common to both streams and packets
 	 */
 	public static int[] supportedNegTypes(boolean forPublic) {
-		if(NodeStarter.bcProvLoadFailed()) {
-			NodeClientCore core = node.clientCore;
-			if(core != null) {
-				UserAlertManager uam = node.clientCore.alerts;
-				synchronized(FNPPacketMangler.class) {
-					if(BCPROV_LOAD_FAILED == null) {
-						BCPROV_LOAD_FAILED = new SimpleUserAlert(false, NodeStarter.NO_BCPROV_WARNING, NodeStarter.NO_BCPROV_WARNING, NodeStarter.NO_BCPROV_WARNING, UserAlert.CRITICAL_ERROR);
-						uam.register(BCPROV_LOAD_FAILED);
-					}
-				}
-			}
-			// FIXME REMOVE!
-			if(forPublic)
-				return new int[] { 6, 7 };
-			else
-				return new int[] { 7 };
-		}
 		if(forPublic)
 			return new int[] { 6, 7, 8 };
 		else
