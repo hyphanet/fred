@@ -17,13 +17,17 @@ public class JceLoader {
 	static public final Provider SunJCE; // optional, may be null
 	static private boolean checkUse(String prop)
 	{
-		return "true".equalsIgnoreCase(System.getProperty("freenet.jce."+prop, "true"));
+		return checkUse(prop, "true");
+	}
+	static private boolean checkUse(String prop, String def)
+	{
+		return "true".equalsIgnoreCase(System.getProperty("freenet.jce."+prop, def));
 	}
 	static {
 		Provider p;
 		// NSS is preferred over BC, add it first
 		p = null;
-		if (checkUse("use.NSS")) {
+		if (checkUse("use.NSS","false")) {
 			try {
 				p = (new NSSLoader()).load(checkUse("prefer.NSS"));
 			} catch(Throwable e) {
