@@ -3899,6 +3899,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			if(runningAnnounceUIDs.length > 0)
 				System.arraycopy(runningAnnounceUIDs, 0, newList, 0, runningAnnounceUIDs.length);
 			newList[runningAnnounceUIDs.length] = uid;
+			runningAnnounceUIDs = newList;
 			timeLastAcceptedAnnouncement = now;
 			return true;
 		} else {
