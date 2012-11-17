@@ -20,6 +20,7 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.io.xfer.PacketThrottle;
 import freenet.node.NewPacketFormatKeyContext.AddedAcks;
+import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -359,12 +360,13 @@ public class NewPacketFormat implements PacketFormat {
 			keyContext.watchListOffset = (int) ((0l + keyContext.watchListOffset + moveBy) % NUM_SEQNUMS);
 		}
 
-outer:
 		for(int i = 0; i < keyContext.seqNumWatchList.length; i++) {
 			int index = (keyContext.watchListPointer + i) % keyContext.seqNumWatchList.length;
-			for(int j = 0; j < keyContext.seqNumWatchList[index].length; j++) {
-				if(keyContext.seqNumWatchList[index][j] != buf[offset + hmacLength + j]) continue outer;
-			}
+			if (!Fields.byteArrayEqual(
+						buf, keyContext.seqNumWatchList[index],
+						offset + hmacLength, 0,
+						keyContext.seqNumWatchList[index].length))
+				continue;
 			
 			int sequenceNumber = (int) ((0l + keyContext.watchListOffset + i) % NUM_SEQNUMS);
 			if(logDEBUG) Logger.debug(this, "Received packet matches sequence number " + sequenceNumber);

@@ -89,7 +89,7 @@ public class MasterKeys {
 				clear(dataAndHash);
 				byte[] checkHash = md.digest(data);
 //				System.err.println("Check hash: "+HexUtil.bytesToHex(checkHash));
-				if(!arraysEqualTruncated(checkHash, hash, HASH_LENGTH)) {
+				if(!Fields.byteArrayEqual(checkHash, hash, 0, 0, HASH_LENGTH)) {
 					clear(data);
 					clear(hash);
 					throw new MasterKeysWrongPasswordException();
@@ -187,17 +187,9 @@ public class MasterKeys {
 		return new MasterKeys(clientCacheKey, databaseKey, flags);
 	}
 
-	private static boolean arraysEqualTruncated(byte[] checkHash, byte[] hash, int length) {
-		for(int i=0;i<length;i++) {
-			if(checkHash[i] != hash[i]) return false;
-		}
-		return true;
-	}
-
 	public static void clear(byte[] buf) {
 		if(buf == null) return; // Valid no-op, simplifies code
-		for(int i=0;i<buf.length;i++)
-			buf[i] = 0;
+		Arrays.fill(buf, (byte)0x00);
 	}
 
 	public void changePassword(File masterKeysFile, String newPassword, RandomSource hardRandom) throws IOException {
