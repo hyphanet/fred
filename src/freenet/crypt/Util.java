@@ -187,16 +187,9 @@ public class Util {
 		}
 	}
 	
-	//Compares two byte arrays. Consider using Arrays.equals(a,b) instead of this
-	//if you have two method if you have two equally sized arrays
+	@Deprecated // use freenet.support.Fields instead
 	public static boolean byteArrayEqual(byte[] a, byte[] b, int offset, int length) {
-		int lim = offset + length;
-		if ((a.length < lim) || (b.length < lim))
-			return false;
-		for (int i = offset; i < lim; ++i)
-			if (a[i] != b[i])
-				return false;
-		return true;
+		return freenet.support.Fields.byteArrayEqual(a, b, offset, offset, length);
 	}
 
 	private static final MessageDigest ctx;
