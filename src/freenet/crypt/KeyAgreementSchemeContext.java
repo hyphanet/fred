@@ -7,7 +7,7 @@ public abstract class KeyAgreementSchemeContext {
 
 	protected long lastUsedTime;
 	/** The signature of (g^r, grpR) */
-    public DSASignature signature = null;
+    public byte[] signature = null;
     /** A timestamp: when was the context created ? */
     public final long lifetime = System.currentTimeMillis();
 
@@ -19,7 +19,7 @@ public abstract class KeyAgreementSchemeContext {
 	}
 	
 	   
-    public void setSignature(DSASignature sig) {
+    public void setSignature(byte [] sig) {
         this.signature = sig;
     }
 	

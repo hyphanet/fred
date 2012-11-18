@@ -18,6 +18,7 @@ import freenet.crypt.BlockCipher;
 import freenet.crypt.DHGroup;
 import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
+import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DSASignature;
 import freenet.crypt.DiffieHellman;
 import freenet.crypt.DiffieHellmanLightContext;
@@ -59,6 +60,7 @@ import freenet.support.TimeUtil;
 import freenet.support.io.FileUtil;
 import freenet.support.io.InetAddressComparator;
 import freenet.support.io.NativeThread;
+import freenet.support.DerUtils;
 
 /**
  * @author amphibian
@@ -756,11 +758,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	private void processJFKMessage1(byte[] payload,int offset,PeerNode pn,Peer replyTo, boolean unknownInitiator, int setupType, int negType)
 	{
 		long t1=System.currentTimeMillis();
-        int modulusLength = getModulusLength(negType);
+        int minPubkeyLength = minPubkeyLength(negType);
 		if(logMINOR) Logger.minor(this, "Got a JFK(1) message, processing it - "+pn);
 		// FIXME: follow the spec and send IDr' ?
-		if(payload.length < NONCE_SIZE + modulusLength + 3 + (unknownInitiator ? NodeCrypto.IDENTITY_LENGTH : 0)) {
-			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(1), should be "+(NONCE_SIZE + modulusLength));
+		int expectedLength = offset + NONCE_SIZE + minPubkeyLength + (unknownInitiator ? NodeCrypto.IDENTITY_LENGTH : 0);
+		if(payload.length < expectedLength) {
+			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(1), should be "+expectedLength);
 			return;
 		}
 		// get Ni
@@ -768,10 +771,21 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		offset += NONCE_SIZE;
 
 		// get g^i
-		byte[] hisExponential = Arrays.copyOfRange(payload, offset, offset + modulusLength);
+		byte[] hisExponential = extractPublicKey(negType, payload, offset);
+		if (hisExponential == null) {
+			Logger.error(this, "Cannot read public key from "+pn+": packet too short or invalid DER format");
+			return;
+		}
+		if (hisExponential.length != minPubkeyLength) {
+			expectedLength += hisExponential.length - minPubkeyLength;
+			if(payload.length < expectedLength) {
+				Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(1), should be "+expectedLength);
+				return;
+			}
+		}
 		if(unknownInitiator) {
 			// Check IDr'
-			offset += modulusLength;
+			offset += hisExponential.length;
 			byte[] expectedIdentityHash = Arrays.copyOfRange(payload, offset, offset + NodeCrypto.IDENTITY_LENGTH);
 			if(!Arrays.equals(expectedIdentityHash, crypto.identityHash)) {
 				Logger.error(this, "Invalid unknown-initiator JFK(1), IDr' is "+HexUtil.bytesToHex(expectedIdentityHash)+" should be "+HexUtil.bytesToHex(crypto.identityHash));
@@ -874,8 +888,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	private void sendJFKMessage1(PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType, int negType) throws NoContextsException {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(1) message to "+replyTo+" for "+pn.getPeer());
 		final long now = System.currentTimeMillis();
-		int modulusLength = getModulusLength(negType);
-		
 		
 		KeyAgreementSchemeContext ctx = pn.getKeyAgreementSchemeContext();
 		if(negType < 8) { // Legacy DH
@@ -901,14 +913,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				pn.jfkNoncesSent.removeFirst();
 		}
 
-		byte[] message1 = new byte[NONCE_SIZE+modulusLength+(unknownInitiator ? NodeCrypto.IDENTITY_LENGTH : 0)];
+		byte[] message1 = new byte[NONCE_SIZE+myExponential.length+(unknownInitiator ? NodeCrypto.IDENTITY_LENGTH : 0)];
 
 		System.arraycopy(nonce, 0, message1, offset, NONCE_SIZE);
 		offset += NONCE_SIZE;
-		System.arraycopy(myExponential, 0, message1, offset, modulusLength);
+		System.arraycopy(myExponential, 0, message1, offset, myExponential.length);
 
 		if(unknownInitiator) {
-			offset += modulusLength;
+			offset += myExponential.length;
 			System.arraycopy(pn.identityHash, 0, message1, offset, pn.identityHash.length);
 			sendAnonAuthPacket(1,negType,0,setupType,message1,pn,replyTo,pn.anonymousInitiatorSetupCipher);
 		} else {
@@ -933,23 +945,20 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 */
 	private void sendJFKMessage2(byte[] nonceInitator, byte[] hisExponential, PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType, int negType) throws NoContextsException {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(2) message to "+pn);
-		int modulusLength = getModulusLength(negType);
 
 		// g^r
 		KeyAgreementSchemeContext ctx = (negType < 8 ? getLightDiffieHellmanContext() : getECDHLightContext());
-	    DSASignature sig = ctx.signature;
+	    byte[] sig = ctx.signature;
 		    
 		// Nr
 		byte[] myNonce = new byte[NONCE_SIZE];
 		node.random.nextBytes(myNonce);
 	    byte[] myExponential = ctx.getPublicKeyNetworkFormat();
-		byte[] r = sig.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
-		byte[] s = sig.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] authenticator = macJFKAuthenticator(getTransientKey(),myExponential, hisExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress());
 		if(logMINOR) Logger.minor(this, "We are using the following HMAC : " + HexUtil.bytesToHex(authenticator));
 
-		byte[] message2 = new byte[NONCE_SIZE*2+modulusLength+
-		                           Node.SIGNATURE_PARAMETER_LENGTH*2+
+		byte[] message2 = new byte[NONCE_SIZE*2+myExponential.length+
+								   sig.length+
 		                           HASH_LENGTH];
 
 		int offset = 0;
@@ -957,13 +966,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		offset += NONCE_SIZE;
 		System.arraycopy(myNonce, 0, message2, offset, NONCE_SIZE);
 		offset += NONCE_SIZE;
-		System.arraycopy(myExponential, 0, message2, offset, modulusLength);
-		offset += modulusLength;
+		System.arraycopy(myExponential, 0, message2, offset, myExponential.length);
+		offset += myExponential.length;
 
-		System.arraycopy(r, 0, message2, offset, Node.SIGNATURE_PARAMETER_LENGTH);
-		offset += Node.SIGNATURE_PARAMETER_LENGTH;
-		System.arraycopy(s, 0, message2, offset, Node.SIGNATURE_PARAMETER_LENGTH);
-		offset += Node.SIGNATURE_PARAMETER_LENGTH;
+		System.arraycopy(sig, 0, message2, offset, sig.length);
+		offset += sig.length;
 
 		System.arraycopy(authenticator, 0, message2, offset, HASH_LENGTH);
 
@@ -1004,16 +1011,16 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 * @param replyTo The peer to which we need to send the packet
 	 * @param pn The peerNode we are talking to. Cannot be null as we are the initiator.
 	 */
-
 	private void processJFKMessage2(byte[] payload,int inputOffset,PeerNode pn,Peer replyTo, boolean unknownInitiator, int setupType, int negType)
 	{
 		long t1=System.currentTimeMillis();
-		int modulusLength = getModulusLength(negType);
+        int minPubkeyLength = minPubkeyLength(negType);
+		int minSignatureLength = minSignatureLength(negType);
 		if(logMINOR) Logger.minor(this, "Got a JFK(2) message, processing it - "+pn.getPeer());
 		// FIXME: follow the spec and send IDr' ?
-		int expectedLength = NONCE_SIZE*2 + modulusLength + HASH_LENGTH*2;
-		if(payload.length < expectedLength + 3) {
-			Logger.error(this, "Packet too short from "+pn.getPeer()+": "+payload.length+" after decryption in JFK(2), should be "+(expectedLength + 3));
+		int expectedLength = inputOffset + NONCE_SIZE*2 + minPubkeyLength + minSignatureLength + HASH_LENGTH;
+		if(payload.length < expectedLength) {
+			Logger.error(this, "Packet too short from "+pn.getPeer()+": "+payload.length+" after decryption in JFK(2), should be "+expectedLength);
 			return;
 		}
 
@@ -1022,13 +1029,27 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		byte[] nonceResponder = Arrays.copyOfRange(payload, inputOffset, inputOffset+NONCE_SIZE);
 		inputOffset += NONCE_SIZE;
 
-		byte[] hisExponential = Arrays.copyOfRange(payload, inputOffset, inputOffset+modulusLength);
-		inputOffset += modulusLength;
+		byte[] hisExponential = extractPublicKey(negType, payload, inputOffset);
+		if (hisExponential == null) {
+			Logger.error(this, "Cannot read public key from "+pn+": packet too short or invalid DER format");
+			return;
+		}
+		// signatureLength can deal with overflow, delay payload size recheck
+		inputOffset += hisExponential.length;
 
-		byte[] r = Arrays.copyOfRange(payload, inputOffset, inputOffset+Node.SIGNATURE_PARAMETER_LENGTH);
-		inputOffset += Node.SIGNATURE_PARAMETER_LENGTH;
-		byte[] s = Arrays.copyOfRange(payload, inputOffset, inputOffset+Node.SIGNATURE_PARAMETER_LENGTH);
-		inputOffset += Node.SIGNATURE_PARAMETER_LENGTH;
+		int signatureOffset = inputOffset;
+		int signatureLength = signatureLength(negType);
+		if ((hisExponential.length+signatureLength) != (minPubkeyLength + minSignatureLength)) {
+			// minimal packet size refined, recheck
+			expectedLength +=
+				+ hisExponential.length - minPubkeyLength
+				+ signatureLength - minSignatureLength;
+			if(payload.length < expectedLength) {
+				Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(2), should be "+expectedLength);
+				return;
+			}
+		}
+		inputOffset += signatureLength;
 
 		byte[] authenticator = Arrays.copyOfRange(payload, inputOffset, inputOffset + HASH_LENGTH);
 		inputOffset += HASH_LENGTH;
@@ -1077,11 +1098,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 
 		// Verify the DSA signature
-		DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s));
 		// At that point we don't know if it's "him"; let's check it out
-		byte[] locallyExpectedExponentials =  assembleDHParams(hisExponential, pn.peerCryptoGroup);
 
-		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, SHA256.digest(locallyExpectedExponentials)), false)) {
+		if(!VerifyPeerSignature(negType, pn,
+					payload, signatureOffset, signatureLength,
+					hisExponential, pn.peerCryptoGroup.getP().toByteArray())) {
 			Logger.error(this, "The signature verification has failed in JFK(2)!! "+pn.getPeer());
 			return;
 		}
@@ -1124,25 +1145,27 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	private void processJFKMessage3(byte[] payload, int inputOffset, PeerNode pn,Peer replyTo, boolean oldOpennetPeer, boolean unknownInitiator, int setupType, int negType)
 	{
 		final long t1 = System.currentTimeMillis();
-		int modulusLength = getModulusLength(negType);
+		int minPubkeyLength = minPubkeyLength(negType);
+		int minSignatureLength = minSignatureLength(negType);
 		if(logMINOR) Logger.minor(this, "Got a JFK(3) message, processing it - "+pn);
 
 		BlockCipher c = null;
 		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) { throw new RuntimeException(e); }
 
-		final int expectedLength =
+		int expectedLength =
+			inputOffset +
 			NONCE_SIZE*2 + // Ni, Nr
-			modulusLength*2 + // g^i, g^r
+			minPubkeyLength*2 + // g^i, g^r
 			HASH_LENGTH + // authenticator
 			HASH_LENGTH + // HMAC of the cyphertext
 			(c.getBlockSize() >> 3) + // IV
-			HASH_LENGTH + // it's at least a signature
+			minSignatureLength + // it's at least a signature
 			8 +	      // a bootid
 			8 + // packet tracker ID
 			1;	      // znoderefI* is at least 1 byte long
 
-		if(payload.length < expectedLength + 3) {
-			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(3), should be "+(expectedLength + 3));
+		if(payload.length < expectedLength) {
+			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(3), should be "+expectedLength);
 			return;
 		}
 
@@ -1153,11 +1176,29 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		byte[] nonceResponder = Arrays.copyOfRange(payload, inputOffset, inputOffset+NONCE_SIZE);
 		inputOffset += NONCE_SIZE;
 		// g^i
-		byte[] initiatorExponential = Arrays.copyOfRange(payload, inputOffset, inputOffset+modulusLength);
-		inputOffset += modulusLength;
+		byte[] initiatorExponential = extractPublicKey(negType, payload, inputOffset);
+		if(initiatorExponential == null) {
+			Logger.error(this, "Cannot read initiator public key from "+pn+": packet too short or invalid DER format");
+			return;
+		}
+		// extractPublicKey can deal with overflow, delay payload size recheck
+		inputOffset += initiatorExponential.length;
 		// g^r
-		byte[] responderExponential = Arrays.copyOfRange(payload, inputOffset, inputOffset+modulusLength);
-		inputOffset += modulusLength;
+		byte[] responderExponential = extractPublicKey(negType, payload, inputOffset);
+		if(responderExponential == null) {
+			Logger.error(this, "Cannot read responder public key from "+pn+": packet too short or invalid DER format");
+			return;
+		}
+		if(initiatorExponential.length + responderExponential.length != minPubkeyLength*2) {
+			expectedLength +=
+				+ initiatorExponential.length - minPubkeyLength
+				+ responderExponential.length - minPubkeyLength;
+			if(payload.length < expectedLength) {
+				Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(3), should be "+expectedLength);
+				return;
+			}
+		}
+		inputOffset += responderExponential.length;
 
 		byte[] authenticator = Arrays.copyOfRange(payload, inputOffset, inputOffset+HASH_LENGTH);
 		inputOffset += HASH_LENGTH;
@@ -1288,10 +1329,18 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		 * Signature-r,s
 		 * Node Data (starting with BootID)
 		 */
-		byte[] r = Arrays.copyOfRange(decypheredPayload, decypheredPayloadOffset, decypheredPayloadOffset+Node.SIGNATURE_PARAMETER_LENGTH);
-		decypheredPayloadOffset += Node.SIGNATURE_PARAMETER_LENGTH;
-		byte[] s = Arrays.copyOfRange(decypheredPayload, decypheredPayloadOffset, decypheredPayloadOffset+Node.SIGNATURE_PARAMETER_LENGTH);
-		decypheredPayloadOffset += Node.SIGNATURE_PARAMETER_LENGTH;
+		int signatureOffset = decypheredPayloadOffset;
+		int signatureLength = signatureLength(negType);
+		if (signatureLength != minSignatureLength) {
+			// minimal packet size refined, recheck
+			expectedLength += signatureLength-minSignatureLength;
+			if(payload.length < expectedLength) {
+				Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(3), should be "+expectedLength);
+				return;
+			}
+		}
+		decypheredPayloadOffset += signatureLength;
+
 		byte[] data = Arrays.copyOfRange(decypheredPayload, decypheredPayloadOffset, decypheredPayload.length);
 		int ptr = 0;
 		long trackerID;
@@ -1317,8 +1366,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 
 		// verify the signature
-		DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s));
-		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, SHA256.digest(assembleDHParams(nonceInitiator, nonceResponder, initiatorExponential, responderExponential, crypto.myIdentity, data))), false)) {
+		if(!VerifyPeerSignature(negType, pn,
+					decypheredPayload, signatureOffset, signatureLength,
+					nonceInitiator, nonceResponder,
+					initiatorExponential, responderExponential,
+					crypto.myIdentity, data)) {
 			Logger.error(this, "The signature verification has failed!! JFK(3) - "+pn.getPeer());
 			return;
 		}
@@ -1450,7 +1502,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	private boolean processJFKMessage4(byte[] payload, int inputOffset, PeerNode pn, Peer replyTo, boolean oldOpennetPeer, boolean unknownInitiator, int setupType, int negType)
 	{
 		final long t1 = System.currentTimeMillis();
-		int modulusLength = getModulusLength(negType);
 		if(logMINOR) Logger.minor(this, "Got a JFK(4) message, processing it - "+pn.getPeer());
 		if(pn.jfkMyRef == null) {
 			String error = "Got a JFK(4) message but no pn.jfkMyRef for "+pn;
@@ -1463,16 +1514,18 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		BlockCipher c = null;
 		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) { throw new RuntimeException(e); }
 
-		final int expectedLength =
+		int minSignatureLength = minSignatureLength(negType);
+		int expectedLength =
+			inputOffset +
 			HASH_LENGTH + // HMAC of the cyphertext
 			(c.getBlockSize() >> 3) + // IV
-			Node.SIGNATURE_PARAMETER_LENGTH * 2 + // the signature
+			minSignatureLength + // the signature
 			9 + // ID of packet tracker, plus boolean byte
 			8+ // bootID
 			1; // znoderefR
 
-		if(payload.length - inputOffset < expectedLength + 3) {
-			Logger.error(this, "Packet too short from "+pn.getPeer()+": "+payload.length+" after decryption in JFK(4), should be "+(expectedLength + 3));
+		if(payload.length < expectedLength) {
+			Logger.error(this, "Packet too short from "+pn.getPeer()+": "+payload.length+" after decryption in JFK(4), should be "+expectedLength);
 			return false;
 		}
 		byte[] jfkBuffer = pn.getJFKBuffer();
@@ -1522,10 +1575,18 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		 * Signature-r,s
 		 * bootID, znoderef
 		 */
-		byte[] r = Arrays.copyOfRange(decypheredPayload, decypheredPayloadOffset, decypheredPayloadOffset+Node.SIGNATURE_PARAMETER_LENGTH);
-		decypheredPayloadOffset += Node.SIGNATURE_PARAMETER_LENGTH;
-		byte[] s = Arrays.copyOfRange(decypheredPayload, decypheredPayloadOffset, decypheredPayloadOffset+Node.SIGNATURE_PARAMETER_LENGTH);
-		decypheredPayloadOffset += Node.SIGNATURE_PARAMETER_LENGTH;
+		int signatureLength = signatureLength(negType);
+		int signatureOffset = decypheredPayloadOffset;
+		if (signatureLength != minSignatureLength) {
+			// minimal packet size refined, recheck
+			expectedLength += signatureLength-minSignatureLength;
+			if(payload.length < expectedLength) {
+				Logger.error(this, "Packet too short from "+pn.getPeer()+": "+payload.length+" after decryption in JFK(4), should be "+expectedLength);
+				return false;
+			}
+		}
+		decypheredPayloadOffset += signatureLength;
+
 		byte[] data = Arrays.copyOfRange(decypheredPayload, decypheredPayloadOffset, decypheredPayload.length);
 		int ptr = 0;
 		long trackerID;
@@ -1538,21 +1599,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		byte[] hisRef = Arrays.copyOfRange(data, ptr, data.length);
 
 		// verify the signature
-		DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s));
-		int dataLen = hisRef.length + 8 + 9;
-		byte[] locallyGeneratedText = new byte[NONCE_SIZE * 2 + modulusLength * 2 + crypto.myIdentity.length + dataLen + pn.jfkMyRef.length];
-		int bufferOffset = NONCE_SIZE * 2 + modulusLength*2;
-		System.arraycopy(jfkBuffer, 0, locallyGeneratedText, 0, bufferOffset);
-		byte[] identity = crypto.getIdentity(unknownInitiator);
-		System.arraycopy(identity, 0, locallyGeneratedText, bufferOffset, identity.length);
-		bufferOffset += identity.length;
-		// bootID
-		System.arraycopy(data, 0, locallyGeneratedText, bufferOffset, dataLen);
-		bufferOffset += dataLen;
-		System.arraycopy(pn.jfkMyRef, 0, locallyGeneratedText, bufferOffset, pn.jfkMyRef.length);
-		byte[] messageHash = SHA256.digest(locallyGeneratedText);
-		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, messageHash), false)) {
-			String error = "The signature verification has failed!! JFK(4) -"+pn.getPeer()+" message hash "+HexUtil.bytesToHex(messageHash)+" length "+locallyGeneratedText.length+" hisRef "+hisRef.length+" hash "+Fields.hashCode(hisRef)+" myRef "+pn.jfkMyRef.length+" hash "+Fields.hashCode(pn.jfkMyRef)+" boot ID "+bootID;
+		if(!VerifyPeerSignature(negType, pn,
+					decypheredPayload, signatureOffset, signatureLength,
+					jfkBuffer, //< nonceInitiator, nonceResponder, initiatorExponential, responderExponential
+					crypto.getIdentity(unknownInitiator), data, pn.jfkMyRef)) {
+			String error = "The signature verification has failed!! JFK(4) -"+pn.getPeer()+" hisRef "+hisRef.length+" hash "+Fields.hashCode(hisRef)+" myRef "+pn.jfkMyRef.length+" hash "+Fields.hashCode(pn.jfkMyRef)+" boot ID "+bootID;
 			Logger.error(this, error);
 			return true;
 		}
@@ -1658,7 +1709,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	private void sendJFKMessage3(int version,final int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] hisExponential, byte[] authenticator, final PeerNode pn, final Peer replyTo, final boolean unknownInitiator, final int setupType)
 	{
 		if(logMINOR) Logger.minor(this, "Sending a JFK(3) message to "+pn.getPeer());
-		int modulusLength = getModulusLength(negType);
 		long t1=System.currentTimeMillis();
 		BlockCipher c = null;
 		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) { throw new RuntimeException(e); }
@@ -1676,12 +1726,35 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		System.arraycopy(Fields.longToBytes(pn.getOutgoingBootID()), 0, data, ptr, 8);
 		ptr += 8;
 		System.arraycopy(pn.jfkMyRef, 0, data, ptr, pn.jfkMyRef.length);
+
+		/*
+		 * Digital Signature of the message with the private key belonging to the initiator/responder
+		 * It is assumed to be non-message recovering
+		 */
+		// save parameters so that we can verify message4
+		byte[] toSign = new byte [nonceInitiator.length + nonceResponder.length + ourExponential.length + hisExponential.length];
+		int x = 0;
+		System.arraycopy(nonceInitiator, 0, toSign, x, nonceInitiator.length);
+		x += nonceInitiator.length;
+		System.arraycopy(nonceResponder, 0, toSign, x, nonceResponder.length);
+		x += nonceResponder.length;
+		System.arraycopy(ourExponential, 0, toSign, x, ourExponential.length);
+		x += ourExponential.length;
+		System.arraycopy(hisExponential, 0, toSign, x, hisExponential.length);
+		x += hisExponential.length;
+		// assert(x == toSign.length);
+		pn.setJFKBuffer(toSign);
+		byte[] localSignature = Sign(negType,
+				toSign, //< nonceInitiator, nonceResponder, ourExponential, hisExponential
+				pn.identity, data);
+
 		final byte[] message3 = new byte[NONCE_SIZE*2 + // nI, nR
-		                           modulusLength*2 + // g^i, g^r
+		                           ourExponential.length +
+								   hisExponential.length + // g^i, g^r
 		                           HASH_LENGTH + // authenticator
 		                           HASH_LENGTH + // HMAC(cyphertext)
 		                           (c.getBlockSize() >> 3) + // IV
-		                           Node.SIGNATURE_PARAMETER_LENGTH * 2 + // Signature (R,S)
+		                           localSignature.length + // Signature (R,S)
 		                           data.length]; // The bootid+noderef
 		int offset = 0;
 		// Ni
@@ -1700,16 +1773,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		// Authenticator
 		System.arraycopy(authenticator, 0, message3, offset, HASH_LENGTH);
 		offset += HASH_LENGTH;
-		/*
-		 * Digital Signature of the message with the private key belonging to the initiator/responder
-		 * It is assumed to be non-message recovering
-		 */
-		// save parameters so that we can verify message4
-		byte[] toSign = assembleDHParams(nonceInitiator, nonceResponder, ourExponential, hisExponential, pn.identity, data);
-		pn.setJFKBuffer(toSign);
-		DSASignature localSignature = crypto.sign(SHA256.digest(toSign));
-		byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
-		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 
 		byte[] computedExponential;
 		if (negType < 8 ) { // Legacy DH
@@ -1771,15 +1834,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		node.random.nextBytes(iv);
 		PCFBMode pcfb = PCFBMode.create(c, iv);
 		int cleartextOffset = 0;
-		byte[] cleartext = new byte[JFK_PREFIX_INITIATOR.length + ivLength + Node.SIGNATURE_PARAMETER_LENGTH * 2 + data.length];
+		byte[] cleartext = new byte[JFK_PREFIX_INITIATOR.length + ivLength + localSignature.length + data.length];
 		System.arraycopy(JFK_PREFIX_INITIATOR, 0, cleartext, cleartextOffset, JFK_PREFIX_INITIATOR.length);
 		cleartextOffset += JFK_PREFIX_INITIATOR.length;
 		System.arraycopy(iv, 0, cleartext, cleartextOffset, ivLength);
 		cleartextOffset += ivLength;
-		System.arraycopy(r, 0, cleartext, cleartextOffset, Node.SIGNATURE_PARAMETER_LENGTH);
-		cleartextOffset += Node.SIGNATURE_PARAMETER_LENGTH;
-		System.arraycopy(s, 0, cleartext, cleartextOffset, Node.SIGNATURE_PARAMETER_LENGTH);
-		cleartextOffset += Node.SIGNATURE_PARAMETER_LENGTH;
+		System.arraycopy(localSignature, 0, cleartext, cleartextOffset, localSignature.length);
+		cleartextOffset += localSignature.length;
 		System.arraycopy(data, 0, cleartext, cleartextOffset, data.length);
 		cleartextOffset += data.length;
 
@@ -1884,13 +1945,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		ptr += myRef.length;
 		System.arraycopy(hisRef, 0, data, ptr, hisRef.length);
 
-		byte[] params = assembleDHParams(nonceInitiator, nonceResponder, initiatorExponential, responderExponential, pn.identity, data);
-		byte[] messageHash = SHA256.digest(params);
+		/*
+		int params_length = nonceInitiator.length + nonceResponder.length + initiatorExponential.length + responderExponential.length + pn.identity.length + data.length;
 		if(logMINOR)
-			Logger.minor(this, "Message hash: "+HexUtil.bytesToHex(messageHash)+" length "+params.length+" myRef: "+myRef.length+" hash "+Fields.hashCode(myRef)+" hisRef: "+hisRef.length+" hash "+Fields.hashCode(hisRef)+" boot ID "+node.bootID);
-		DSASignature localSignature = crypto.sign(messageHash);
-		byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
-		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
+			Logger.minor(this, "Message hash: "+HexUtil.bytesToHex(messageHash)+" length "+params_length+" myRef: "+myRef.length+" hash "+Fields.hashCode(myRef)+" hisRef: "+hisRef.length+" hash "+Fields.hashCode(hisRef)+" boot ID "+node.bootID);
+		*/
+		byte[] localSignature = Sign(negType,
+				nonceInitiator, nonceResponder,
+				initiatorExponential, responderExponential,
+				pn.identity, data);
 
 		int ivLength = PCFBMode.lengthIV(c);
 		byte[] iv=new byte[ivLength];
@@ -1898,17 +1961,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		PCFBMode pk=PCFBMode.create(c, iv);
 		// Don't include the last bit
 		int dataLength = data.length - hisRef.length;
-		byte[] cyphertext = new byte[JFK_PREFIX_RESPONDER.length + ivLength + Node.SIGNATURE_PARAMETER_LENGTH * 2 +
+		byte[] cyphertext = new byte[JFK_PREFIX_RESPONDER.length + ivLength + localSignature.length +
 		                             dataLength];
 		int cleartextOffset = 0;
 		System.arraycopy(JFK_PREFIX_RESPONDER, 0, cyphertext, cleartextOffset, JFK_PREFIX_RESPONDER.length);
 		cleartextOffset += JFK_PREFIX_RESPONDER.length;
 		System.arraycopy(iv, 0, cyphertext, cleartextOffset, ivLength);
 		cleartextOffset += ivLength;
-		System.arraycopy(r, 0, cyphertext, cleartextOffset, Node.SIGNATURE_PARAMETER_LENGTH);
-		cleartextOffset += Node.SIGNATURE_PARAMETER_LENGTH;
-		System.arraycopy(s, 0, cyphertext, cleartextOffset, Node.SIGNATURE_PARAMETER_LENGTH);
-		cleartextOffset += Node.SIGNATURE_PARAMETER_LENGTH;
+		System.arraycopy(localSignature, 0, cyphertext, cleartextOffset, localSignature.length);
+		cleartextOffset += localSignature.length;
 		System.arraycopy(data, 0, cyphertext, cleartextOffset, dataLength);
 		cleartextOffset += dataLength;
 		// Now encrypt the cleartext[Signature]
@@ -2176,14 +2237,18 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 	private DiffieHellmanLightContext _genLightDiffieHellmanContext() {
 		final DiffieHellmanLightContext ctx = DiffieHellman.generateLightContext(dhGroupToUse);
-		ctx.setSignature(crypto.sign(SHA256.digest(assembleDHParams(ctx.getPublicKeyNetworkFormat(), crypto.getCryptoGroup()))));
+		ctx.setSignature(SHA256withDSAsign(
+					ctx.getPublicKeyNetworkFormat(),
+					crypto.getCryptoGroup().getP().toByteArray()));
 
 		return ctx;
 	}
     
 	private ECDHLightContext _genECDHLightContext() {
         final ECDHLightContext ctx = new ECDHLightContext(ecdhCurveToUse);
-        ctx.setSignature(crypto.sign(SHA256.digest(assembleDHParams(ctx.getPublicKeyNetworkFormat(), crypto.getCryptoGroup()))));
+		ctx.setSignature(SHA256withDSAsign(
+					ctx.getPublicKeyNetworkFormat(),
+					crypto.getCryptoGroup().getP().toByteArray()));
 
         return ctx;
     }
@@ -2368,36 +2433,102 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
         return null;
     }
 
-	/*
-	 * Prepare DH parameters of message2 for them to be signed (useful in message3 to check the sig)
+	/** Sign data using SHA256withDSA with node private DSA key.
+	 * @param data byte arrays to sign
+	 * @return signature bytes
 	 */
-	private byte[] assembleDHParams(byte[] exponential, DSAGroup group) {
-		byte[] _myGroup = group.getP().toByteArray();
-		byte[] toSign = new byte[exponential.length + _myGroup.length];
-
-		System.arraycopy(exponential, 0, toSign, 0, exponential.length);
-		System.arraycopy(_myGroup, 0, toSign, exponential.length, _myGroup.length);
-
-		return toSign;
+	private byte[] SHA256withDSAsign(byte[]... data)
+	{
+		MessageDigest md256 = SHA256.getMessageDigest();
+		for(byte [] d: data)
+			md256.update(d);
+		byte[] hash = md256.digest();
+		SHA256.returnMessageDigest(md256); md256 = null;
+		DSASignature signature = crypto.sign(hash);
+		byte[] r = signature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
+		byte[] s = signature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
+		byte[] raw = new byte[Node.SIGNATURE_PARAMETER_LENGTH*2];
+		System.arraycopy(r, 0, raw, 0, Node.SIGNATURE_PARAMETER_LENGTH);
+		System.arraycopy(s, 0, raw, Node.SIGNATURE_PARAMETER_LENGTH, Node.SIGNATURE_PARAMETER_LENGTH);
+		return raw;
 	}
 
-	private byte[] assembleDHParams(byte[] nonceInitiator,byte[] nonceResponder,byte[] initiatorExponential, byte[] responderExponential, byte[] id, byte[] sa) {
-		byte[] result = new byte[nonceInitiator.length + nonceResponder.length + initiatorExponential.length + responderExponential.length + id.length + sa.length];
-		int offset = 0;
+	private byte[] Sign(int negType, byte[]... data)
+	{
+		return SHA256withDSAsign(data);
+	}
 
-		System.arraycopy(nonceInitiator, 0,result,offset,nonceInitiator.length);
-		offset += nonceInitiator.length;
-		System.arraycopy(nonceResponder,0 ,result,offset,nonceResponder.length);
-		offset += nonceResponder.length;
-		System.arraycopy(initiatorExponential, 0, result,offset, initiatorExponential.length);
-		offset += initiatorExponential.length;
-		System.arraycopy(responderExponential, 0, result, offset, responderExponential.length);
-		offset += responderExponential.length;
-		System.arraycopy(id, 0, result , offset,id.length);
-		offset += id.length;
-		System.arraycopy(sa, 0, result , offset,sa.length);
+	/** Verify data matches SHA256withDSA signature.
+	 * @param pubkey DSA public key
+	 * @param signature DSA signature
+	 * @param data byte arrays to verify
+	 * @return true if data passes verification.
+	 */
+	private static boolean SHA256withDSAverify(DSAPublicKey pubkey, DSASignature signature, byte[]... data)
+	{
+		MessageDigest md256 = SHA256.getMessageDigest();
+		for(byte [] d: data)
+			md256.update(d);
+		byte[] hash = md256.digest();
+		SHA256.returnMessageDigest(md256); md256 = null;
+		return DSA.verify(pubkey, signature, new NativeBigInteger(1, hash), false);
+	}
 
-		return result;
+	private static DSASignature extractDSASignature(byte [] buf, int offset)
+	{
+		byte[] r = Arrays.copyOfRange(buf, offset, offset + Node.SIGNATURE_PARAMETER_LENGTH);
+		offset += Node.SIGNATURE_PARAMETER_LENGTH;
+		byte[] s = Arrays.copyOfRange(buf, offset, offset + Node.SIGNATURE_PARAMETER_LENGTH);
+		return new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s));
+	}
+
+	private static boolean VerifyPeerSignature(int negType, PeerNode pn,
+			byte[] signature, int sigOffset, int sigLength,
+			byte[]... data)
+	{
+		return SHA256withDSAverify(pn.peerPubKey,
+				extractDSASignature(signature, sigOffset),
+				data);
+	}
+
+	private static int signatureLength(int negType)
+	{
+		return Node.SIGNATURE_PARAMETER_LENGTH*2;
+	}
+
+	private static int minSignatureLength(int negType)
+	{
+		return Node.SIGNATURE_PARAMETER_LENGTH*2;
+	}
+
+	/** Extracts raw public key from byte buffer.
+	 * @return raw public key (DH for negType &lt; 8, ECDH for negType &gt;= 8),
+	 * or null on invalid format
+	 */
+	private static byte[] extractPublicKey(int negType, byte[] data, int offset)
+	{
+		try {
+			int endOffset = (negType < 8)
+				? offset + DiffieHellman.modulusLengthInBytes()
+				: DerUtils.DerLength(data, offset);
+			if(negType == 8 && endOffset != offset + ecdhCurveToUse.modulusSize)
+				throw new IllegalArgumentException("negType8 hardcodes ECDH public key length to "+ecdhCurveToUse.modulusSize + " we got " + (endOffset - offset));
+			return Arrays.copyOfRange(data, offset, endOffset);
+		} catch(IllegalArgumentException e) {
+			return null;
+		} catch(ArrayIndexOutOfBoundsException e) {
+			return null;
+		}
+	}
+
+	/** The minimum pubkey/modulus length in bytes for a given negType.
+	 * Final length refined from packet contents
+	 */
+	private static int minPubkeyLength(int negType) {
+	    if(negType < 8)
+	        return DiffieHellman.modulusLengthInBytes();
+	    else
+	        return 2; // XXX 2 is absolute minimum for DER
 	}
 
 	private byte[] getTransientKey() {
@@ -2498,14 +2629,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	@Override
 	public void setPortForwardingBroken() {
 		crypto.setPortForwardingBroken();
-	}
-	
-	/** @returns the modulus length in bytes for a given negType */
-	private int getModulusLength(int negType) {
-	    if(negType < 8)
-	        return DiffieHellman.modulusLengthInBytes();
-	    else
-	        return ecdhCurveToUse.modulusSize;
 	}
 
 }
