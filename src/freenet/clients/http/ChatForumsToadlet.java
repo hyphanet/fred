@@ -56,57 +56,6 @@ public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
-	
-	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		
-		// FIXME we should really refactor this boilerplate stuff out somehow...
-		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, "Unauthorized", NodeL10n.getBase().getString("Toadlet.unauthorized"));
-			return;
-		}
-		
-		String pass = request.getPartAsStringFailsafe("formPassword", 32);
-		if((pass == null) || !pass.equals(node.clientCore.formPassword)) {
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", path());
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-			return;
-		}
-		
-		if(request.isPartSet("loadFreetalk")) {
-			node.executor.execute(new Runnable() {
-
-				@Override
-				public void run() {
-					if(!node.pluginManager.isPluginLoaded("plugins.WebOfTrust.WebOfTrust")) {
-						node.pluginManager.startPluginOfficial("WebOfTrust", true, false, false);
-					}
-				}
-			});
-			node.executor.execute(new Runnable() {
-
-				@Override
-				public void run() {
-					if(!node.pluginManager.isPluginLoaded("plugins.Freetalk.Freetalk")) {
-						node.pluginManager.startPluginOfficial("Freetalk", true, false, false);
-					}
-				}
-			});
-			try {
-				// Wait a little to ensure we have at least started loading them.
-				Thread.sleep(100);
-			} catch (InterruptedException e) {
-				// Ignore
-			}
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", PproxyToadlet.PATH);
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-		} else {
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", path());
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-		}
-	}
 
 	private static String l10n(String string) {
 		return NodeL10n.getBase().getString("ChatForumsToadlet." + string);
