@@ -38,7 +38,7 @@ public class ECDSATest extends TestCase {
     
     public void testSignToNetworkFormat() {
         byte[] toSign = "test".getBytes();
-        byte[] sig= ecdsa.signToNetworkFormat(toSign, 0, toSign.length);
+        byte[] sig= ecdsa.signToNetworkFormat(toSign);
         assertNotNull(sig);
         assertEquals(sig.length, curveToTest.maxSigSize);
     }
@@ -79,7 +79,7 @@ public class ECDSATest extends TestCase {
         String toSign = "test";
         byte[] signedBytes = toSign.getBytes("utf-8");
         //byte[] sig = ecdsa.sign(signedBytes);
-        byte[] sig = ecdsa.signToNetworkFormat(signedBytes, 0, signedBytes.length);
+        byte[] sig = ecdsa.signToNetworkFormat(signedBytes);
         System.out.println("Curve in use : " + curve.toString());
         System.out.println(ecdsa.getPublicKey().toString());
         System.out.println("ToSign   : "+toSign + " ("+toHex(signedBytes)+")");

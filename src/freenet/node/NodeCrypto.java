@@ -528,11 +528,11 @@ public class NodeCrypto {
         System.arraycopy(s.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH), 0, sig, Node.SIGNATURE_PARAMETER_LENGTH, Node.SIGNATURE_PARAMETER_LENGTH);
 		return sig;
 	}
-
+	
 	/** Sign data with the node's ECDSA key. The data does not need to be hashed, the signing code
 	 * will handle that for us, using an algorithm appropriate for the keysize. */
-	byte[] ecdsaSign(byte[] stuff) {
-	    return ecdsaP256.signToNetworkFormat(stuff, 0, stuff.length);
+	byte[] ecdsaSign(byte[]... data) {
+	    return ecdsaP256.sign(data);
 	}
 
 	public ECPublicKey getECDSAP256Pubkey() {

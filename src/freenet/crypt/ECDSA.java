@@ -111,19 +111,14 @@ public class ECDSA {
         this.curve = curve;
     }
     
-    public byte[] sign(byte[] data) {
-        return sign(data, 0, data.length);
-    }
-
-    public byte[] sign(byte[] data, int offset, int len) {
-        if(data.length == 0 || data.length < len)
-            return null;
+    public byte[] sign(byte[]... data) {
         byte[] result = null;
         try {
             while(true) {
                 Signature sig = Signature.getInstance(curve.defaultHashAlgorithm);
                 sig.initSign(key.getPrivate());
-                sig.update(data, offset, len);
+    			for(byte[] d: data)
+    				sig.update(d);
                 result = sig.sign();
                 // It's a DER encoded signature, most sigs will fit in N bytes
                 // If it doesn't let's re-sign.
@@ -151,8 +146,8 @@ public class ECDSA {
      * signing code will handle that for us, using an algorithm appropriate for the keysize.
      * @return A zero padded DER signature (maxSigSize). Space Inefficient but constant-size.
      */
-    public byte[] signToNetworkFormat(byte[] data, int offset, int len) {
-        byte[] plainsig = sign(data, offset, len);
+    public byte[] signToNetworkFormat(byte[]... data) {
+        byte[] plainsig = sign(data);
         int targetLength = curve.maxSigSize;
 
         if(plainsig.length != targetLength) {
@@ -167,26 +162,27 @@ public class ECDSA {
         return plainsig;
     }
     
-    public boolean verify(byte[] signature, byte[] data) {
-        return verify(curve, getPublicKey(), signature, 0, signature.length, data, 0, data.length);
+    public boolean verify(byte[] signature, byte[]... data) {
+        return verify(curve, getPublicKey(), signature, data);
     }
     
-    public boolean verify(byte[] signature, int sigoffset, int siglen, byte[] data, int offset, int len) {
-        return verify(curve, getPublicKey(), signature, sigoffset, siglen, data, offset, len);
+    public boolean verify(byte[] signature, int sigoffset, int siglen, byte[]... data) {
+        return verify(curve, getPublicKey(), signature, sigoffset, siglen, data);
     }
     
-    public static boolean verify(Curves curve, ECPublicKey key, byte[] signature, byte[] data) {
-        return verify(curve, key, signature, 0, signature.length, data, 0, data.length);
-    }
-    
-    public static boolean verify(Curves curve, ECPublicKey key, byte[] signature, int sigoffset, int siglen, byte[] data, int offset, int len) {
+    public static boolean verify(Curves curve, ECPublicKey key, byte[] signature, byte[]... data) {
+		return verify(curve, key, signature, 0, signature.length, data);
+	}
+
+    public static boolean verify(Curves curve, ECPublicKey key, byte[] signature, int sigoffset, int siglen,  byte[]... data) {
         if(key == null || curve == null || signature == null || data == null)
             return false;
         boolean result = false;
         try {
             Signature sig = Signature.getInstance(curve.defaultHashAlgorithm);
             sig.initVerify(key);
-            sig.update(data, offset, len);
+			for(byte[] d: data)
+				sig.update(d);
             result = sig.verify(signature, sigoffset, siglen);
         } catch (NoSuchAlgorithmException e) {
             Logger.error(ECDSA.class, "NoSuchAlgorithmException : "+e.getMessage(),e);
