@@ -531,8 +531,8 @@ public class NodeCrypto {
 		return DSA.sign(cryptoGroup, privKey, new NativeBigInteger(1, hash), random);
 	}
 	
-	byte[] ecdsaSign(byte[] hash) {
-	    return ecdsaP256.sign(hash);
+	byte[] ecdsaSign(byte[]... data) {
+	    return ecdsaP256.sign(data);
 	}
 	
 	public ECPublicKey getECDSAP256Pubkey() {
