@@ -11,6 +11,7 @@ import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
+import java.security.interfaces.ECPublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -35,6 +36,7 @@ import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DSASignature;
+import freenet.crypt.ECDSA;
 import freenet.crypt.Global;
 import freenet.crypt.HMAC;
 import freenet.crypt.KeyAgreementSchemeContext;
@@ -271,6 +273,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	/** Peer node public key; changing this means new noderef */
 	final DSAPublicKey peerPubKey;
+	final ECPublicKey peerECDSAPubKey;
 	final byte[] pubKeyHash;
 	final byte[] pubKeyHashHash;
 	private boolean isSignatureVerificationSuccessfull;
@@ -505,6 +508,19 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				this.peerPubKey = DSAPublicKey.create(sfs, peerCryptoGroup);
 				pubKeyHash = SHA256.digest(peerPubKey.asBytes());
 				pubKeyHashHash = SHA256.digest(pubKeyHash);
+			}
+			
+			sfs = fs.subset("ecdsa.P256");
+			if(sfs == null) {
+			    // Old peer, no negtype > 8
+			    this.peerECDSAPubKey = null;
+			} else {
+	            byte[] pub = Base64.decode(sfs.get("pub"));
+	            if (pub.length != ECDSA.Curves.P256.modulusSize)
+	                throw new FSParseException("ecdsa.P256.pub is not the right size!");
+	            this.peerECDSAPubKey = ECDSA.getPublicKey(pub);
+	            if(peerECDSAPubKey == null)
+	                throw new FSParseException("ecdsa.P256.pub is invalid!");
 			}
 
 			String signature = fs.get("sig");
@@ -2925,6 +2941,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			fs.put("dsaGroup", peerCryptoGroup.asFieldSet());
 		if(peerPubKey != null)
 			fs.put("dsaPubKey", peerPubKey.asFieldSet());
+		if(peerECDSAPubKey != null) {
+		    fs.put("ecdsa", ECDSA.Curves.P256.getSFS(peerECDSAPubKey));
+		}
 		if(myARK != null) {
 			// Decrement it because we keep the number we would like to fetch, not the last one fetched.
 			fs.put("ark.number", myARK.suggestedEdition - 1);
