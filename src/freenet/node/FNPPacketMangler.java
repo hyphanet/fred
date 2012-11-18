@@ -386,14 +386,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return false;
 		}
 		// Decrypt the data
-		MessageDigest md = SHA256.getMessageDigest();
 		byte[] payload = new byte[dataLength];
 		System.arraycopy(buf, dataStart, payload, 0, dataLength);
 		pcfb.blockDecipher(payload, 0, payload.length);
 
-		md.update(payload);
-		byte[] realHash = md.digest();
-		SHA256.returnMessageDigest(md); md = null;
+		byte[] realHash = SHA256.digest(payload);
 
 		if(Arrays.equals(realHash, hash)) {
 			// Got one
@@ -422,11 +419,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		BlockCipher authKey = crypto.getAnonSetupCipher();
 		// Does the packet match IV E( H(data) data ) ?
 		int ivLength = PCFBMode.lengthIV(authKey);
-		MessageDigest md = SHA256.getMessageDigest();
 		int digestLength = HASH_LENGTH;
 		if(length < digestLength + ivLength + 5) {
 			if(logMINOR) Logger.minor(this, "Too short: "+length+" should be at least "+(digestLength + ivLength + 5));
-			SHA256.returnMessageDigest(md);
 			return false;
 		}
 		// IV at the beginning
@@ -446,7 +441,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(logMINOR) Logger.minor(this, "Data length: "+dataLength+" (1 = "+byte1+" 2 = "+byte2+ ')');
 		if(dataLength > length - (ivLength+hash.length+2)) {
 			if(logMINOR) Logger.minor(this, "Invalid data length "+dataLength+" ("+(length - (ivLength+hash.length+2))+") in tryProcessAuthAnon");
-			SHA256.returnMessageDigest(md);
 			return false;
 		}
 		// Decrypt the data
@@ -454,9 +448,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		System.arraycopy(buf, dataStart, payload, 0, dataLength);
 		pcfb.blockDecipher(payload, 0, payload.length);
 
-		md.update(payload);
-		byte[] realHash = md.digest();
-		SHA256.returnMessageDigest(md); md = null;
+		byte[] realHash = SHA256.digest(payload);
 
 		if(Arrays.equals(realHash, hash)) {
 			// Got one
