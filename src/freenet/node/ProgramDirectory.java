@@ -54,7 +54,7 @@ public class ProgramDirectory {
 			throw new IOException("Could not find or make a directory called: " + l10n(file));
 		}
 
-		this.dir = dir.getCanonicalFile();
+		this.dir = dir;
 	}
 
 	public StringCallback getStringCallback() {
