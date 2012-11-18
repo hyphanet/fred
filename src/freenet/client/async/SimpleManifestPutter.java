@@ -708,21 +708,20 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 	static private void checkDefaultName(HashMap<String, Object> manifestElements,
 			String defaultName) {
 		int idx;
-		if((idx = defaultName.indexOf('/')) == -1) {
-			Object o = manifestElements.get(defaultName);
-			if(o == null) throw new IllegalArgumentException("Default name \""+defaultName+"\" does not exist");
-			if(o instanceof HashMap) throw new IllegalArgumentException("Default filename \""+defaultName+"\" is a directory?!");
-			// instanceof Bucket is checked in bucketsByNameToManifestEntries
-		} else {
+		while((idx = defaultName.indexOf('/')) != -1) {
 			String dir = defaultName.substring(0, idx);
 			String subname = defaultName.substring(idx+1);
 			Object o = manifestElements.get(defaultName);
 			if(o == null) throw new IllegalArgumentException("Default name dir \""+dir+"\" does not exist");
-			if(o instanceof HashMap)
-				checkDefaultName((HashMap<String, Object>)o, subname);
-			else
+			if(!(o instanceof HashMap))
 				throw new IllegalArgumentException("Default name dir \""+dir+"\" is not a directory in \""+defaultName+"\"");
+			manifestElements = (HashMap<String, Object>)o;
+			defaultName = subname;
 		}
+		Object o = manifestElements.get(defaultName);
+		if(o == null) throw new IllegalArgumentException("Default name \""+defaultName+"\" does not exist");
+		if(o instanceof HashMap) throw new IllegalArgumentException("Default filename \""+defaultName+"\" is a directory?!");
+		// instanceof Bucket is checked in bucketsByNameToManifestEntries
 	}
 
 	private void checkZips() {
