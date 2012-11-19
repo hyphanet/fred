@@ -6,6 +6,7 @@ import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.interfaces.ECPrivateKey;
@@ -15,6 +16,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
+import freenet.crypt.JceLoader;
 import freenet.node.FSParseException;
 import freenet.support.Base64;
 import freenet.support.Logger;
@@ -40,12 +42,16 @@ public class ECDSA {
         public final int modulusSize;
 		/** Expected size of CVC-encoded signature */
 		public final int signatureSize;
+
+		protected final Provider kgProvider = JceLoader.BouncyCastle;
+		protected final Provider kfProvider = JceLoader.BouncyCastle;
+		protected final Provider sigProvider = JceLoader.BouncyCastle;
         
         private Curves(String name, String defaultHashAlgorithm, int modulusSize, int signatureSize) {
             this.spec = new ECGenParameterSpec(name);
             KeyPairGenerator kg = null;
             try {
-                kg = KeyPairGenerator.getInstance("ECDSA");
+                kg = KeyPairGenerator.getInstance("EC", kgProvider);
                 kg.initialize(spec);
             } catch (NoSuchAlgorithmException e) {
                 Logger.error(ECDSA.class, "NoSuchAlgorithmException : "+e.getMessage(),e);
@@ -98,11 +104,11 @@ public class ECDSA {
             pub = Base64.decode(sfs.get("pub"));
             if (pub.length != curve.modulusSize)
                 throw new InvalidKeyException();
-            ECPublicKey pubK = getPublicKey(pub);
+            ECPublicKey pubK = getPublicKey(pub, curve);
 
             pri = Base64.decode(sfs.get("pri"));
             PKCS8EncodedKeySpec ks = new PKCS8EncodedKeySpec(pri);
-            KeyFactory kf = KeyFactory.getInstance("ECDSA");
+            KeyFactory kf = KeyFactory.getInstance("EC", curve.kfProvider);
             ECPrivateKey privK = (ECPrivateKey) kf.generatePrivate(ks);
 
             this.key = new KeyPair(pubK, privK);
@@ -115,7 +121,7 @@ public class ECDSA {
     public byte[] sign(byte[]... data) {
         byte[] result = null;
         try {
-            Signature sig = Signature.getInstance(curve.defaultHashAlgorithm);
+            Signature sig = Signature.getInstance(curve.defaultHashAlgorithm, curve.sigProvider);
             sig.initSign(key.getPrivate());
 			for(byte[] d: data)
 				sig.update(d);
@@ -165,7 +171,7 @@ public class ECDSA {
 				sigoffset = 0;
 				siglen = signature.length;
 			}
-            Signature sig = Signature.getInstance(curve.defaultHashAlgorithm);
+            Signature sig = Signature.getInstance(curve.defaultHashAlgorithm, curve.sigProvider);
             sig.initVerify(key);
 			for(byte[] d: data)
 				sig.update(d);
@@ -192,11 +198,11 @@ public class ECDSA {
      * @param data
      * @return ECPublicKey or null if it fails
      */
-    public static ECPublicKey getPublicKey(byte[] data) {
+    public static ECPublicKey getPublicKey(byte[] data, Curves curve) {
         ECPublicKey remotePublicKey = null;
         try {
             X509EncodedKeySpec ks = new X509EncodedKeySpec(data);
-            KeyFactory kf = KeyFactory.getInstance("ECDSA");
+            KeyFactory kf = KeyFactory.getInstance("EC", curve.kfProvider);
             remotePublicKey = (ECPublicKey)kf.generatePublic(ks);
             
         } catch (NoSuchAlgorithmException e) {
