@@ -165,13 +165,12 @@ class NPFPacket {
 			} else {
 				messageLength = fragmentLength;
 			}
-			byte[] fragmentData = new byte[fragmentLength];
 			if((offset + fragmentLength) > plaintext.length) {
 				Logger.error(NPFPacket.class, "Fragment doesn't fit in the received packet: offset is "+offset+" fragment length is "+fragmentLength+" plaintext length is "+plaintext.length+" message length "+messageLength+" message ID "+messageID+(pn == null ? "" : (" from "+pn.shortToString())));
 				packet.error = true;
 				break;
 			}
-			System.arraycopy(plaintext, offset, fragmentData, 0, fragmentLength);
+			byte[] fragmentData = Arrays.copyOfRange(plaintext, offset, offset + fragmentLength);
 			offset += fragmentLength;
 
 			packet.fragments.add(new MessageFragment(shortMessage, isFragmented, firstFragment,
@@ -201,8 +200,7 @@ class NPFPacket {
 				packet.lossyMessages.clear();
 				return origOffset;
 			}
-			byte[] fragment = new byte[len];
-			System.arraycopy(plaintext, offset, fragment, 0, len);
+			byte[] fragment = Arrays.copyOfRange(plaintext, offset, offset + len);
 			packet.lossyMessages.add(fragment);
 			offset += len;
 			if(offset == plaintext.length) return offset;

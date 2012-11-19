@@ -100,10 +100,8 @@ public class NodeIPDetector {
 	}
 
 	public synchronized void addPortDetector(NodeIPPortDetector detector) {
-		NodeIPPortDetector[] newDetectors = new NodeIPPortDetector[portDetectors.length+1];
-		System.arraycopy(portDetectors, 0, newDetectors, 0, portDetectors.length);
-		newDetectors[portDetectors.length] = detector;
-		portDetectors = newDetectors;
+		portDetectors = Arrays.copyOf(portDetectors, portDetectors.length+1);
+		portDetectors[portDetectors.length - 1] = detector;
 	}
 	
 	/**

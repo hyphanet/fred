@@ -4069,9 +4069,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		runningAnnounceUIDs = newList;
 		if(x < runningAnnounceUIDs.length) {
-			newList = new long[x];
-			System.arraycopy(runningAnnounceUIDs, 0, newList, 0, x);
-			runningAnnounceUIDs = newList;
+			runningAnnounceUIDs = Arrays.copyOf(runningAnnounceUIDs, x);
 		}
 		return true;
 	}

@@ -675,10 +675,8 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 			// header/data will be overwritten in encrypt()/decrypt(),
 			// let's make a copy here
-			this.header = new byte[headerBlockLength];
-			System.arraycopy(header, 0, this.header, 0, headerBlockLength);
-			this.data = new byte[dataBlockLength];
-			System.arraycopy(data, 0, this.data, 0, dataBlockLength);
+			this.header = Arrays.copyOf(header, headerBlockLength);
+			this.data = Arrays.copyOf(data, dataBlockLength);
 
 			if (OPTION_SAVE_PLAINKEY) {
 				flag |= ENTRY_FLAG_PLAINKEY;

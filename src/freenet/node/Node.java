@@ -5179,9 +5179,7 @@ public class Node implements TimeSkewDetectorCallback {
 			enteredPassword = true;
 			if(!clientCacheAwaitingPassword) {
 				if(inFirstTimeWizard) {
-					byte[] copied = new byte[keys.clientCacheMasterKey.length];
-					System.arraycopy(keys.clientCacheMasterKey, 0, copied, 0, copied.length);
-					cachedClientCacheKey = copied;
+					cachedClientCacheKey = keys.clientCacheMasterKey.clone();
 					// Wipe it if haven't specified datastore size in 10 minutes.
 					ticker.queueTimedJob(new Runnable() {
 						@Override

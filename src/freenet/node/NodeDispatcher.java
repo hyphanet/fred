@@ -6,6 +6,7 @@ package freenet.node;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import freenet.crypt.HMAC;
@@ -211,9 +212,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				} else {
 					// A few extra can happen by accident. Just use the first 20.
 					Logger.normal(this, "Too many locations from "+source.toString()+" : "+locs.length+" could be an accident, using the first "+OpennetManager.MAX_PEERS_FOR_SCALING);
-					double[] firstLocs = new double[OpennetManager.MAX_PEERS_FOR_SCALING];
-					System.arraycopy(locs, 0, firstLocs, 0, OpennetManager.MAX_PEERS_FOR_SCALING);
-					locs = firstLocs;
+					locs = Arrays.copyOf(locs, OpennetManager.MAX_PEERS_FOR_SCALING);
 				}
 			}
 			// We are on darknet and we trust our peers OR we are on opennet

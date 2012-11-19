@@ -2,6 +2,7 @@ package freenet.client.async;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -630,8 +631,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 						for(long l : waiting) {
 							if(l == pid) return true;
 						}
-						Long[] newWaiting = new Long[waiting.length+1];
-						System.arraycopy(waiting, 0, newWaiting, 0, waiting.length);
+						Long[] newWaiting = Arrays.copyOf(waiting, waiting.length+1);
 						newWaiting[waiting.length] = pid;
 						persistentRequestsWaitingForKeysFetching.put(key, newWaiting);
 					}
@@ -643,8 +643,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 						for(WeakReference<BaseSendableGet> ref : waiting) {
 							if(ref.get() == getterWaiting) return true;
 						}
-						WeakReference<BaseSendableGet>[] newWaiting = new WeakReference[waiting.length+1];
-						System.arraycopy(waiting, 0, newWaiting, 0, waiting.length);
+						WeakReference<BaseSendableGet>[] newWaiting = Arrays.copyOf(waiting, waiting.length+1);
 						newWaiting[waiting.length] = new WeakReference<BaseSendableGet>(getterWaiting);
 						transientRequestsWaitingForKeysFetching.put(key, newWaiting);
 					}

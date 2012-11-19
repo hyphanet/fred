@@ -324,10 +324,8 @@ public class PeerManager {
 					return false;
 				}
 			}
-			PeerNode[] newMyPeers = new PeerNode[myPeers.length + 1];
-			System.arraycopy(myPeers, 0, newMyPeers, 0, myPeers.length);
-			newMyPeers[myPeers.length] = pn;
-			myPeers = newMyPeers;
+			myPeers = Arrays.copyOf(myPeers, myPeers.length + 1);
+			myPeers[myPeers.length - 1] = pn;
 			Logger.normal(this, "Added " + pn);
 		}
 		if(pn.recordStatus())
@@ -502,10 +500,8 @@ public class PeerManager {
 			}
 			if(logMINOR)
 				Logger.minor(this, "Connecting: " + pn);
-			PeerNode[] newConnectedPeers = new PeerNode[connectedPeers.length + 1];
-			System.arraycopy(connectedPeers, 0, newConnectedPeers, 0, connectedPeers.length);
-			newConnectedPeers[connectedPeers.length] = pn;
-			connectedPeers = newConnectedPeers;
+			connectedPeers = Arrays.copyOf(connectedPeers, connectedPeers.length + 1);
+			connectedPeers[connectedPeers.length - 1] = pn;
 			if(logMINOR)
 				Logger.minor(this, "Connected peers: " + connectedPeers.length);
 		}

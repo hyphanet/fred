@@ -579,10 +579,8 @@ public class USKManager {
 					}
 				}
 				if(mustAdd) {
-					USKCallback[] newCallbacks = new USKCallback[callbacks.length+1];
-					System.arraycopy(callbacks, 0, newCallbacks, 0, callbacks.length);
-					newCallbacks[callbacks.length] = cb;
-					callbacks = newCallbacks;
+					callbacks = Arrays.copyOf(callbacks, callbacks.length+1);
+					callbacks[callbacks.length-1] = cb;
 				}
 			}
 			subscribersByClearUSK.put(clear, callbacks);

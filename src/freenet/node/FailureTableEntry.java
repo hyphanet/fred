@@ -1,6 +1,7 @@
 package freenet.node;
 
 import java.lang.ref.WeakReference;
+import java.util.Arrays;
 import java.util.HashSet;
 
 import freenet.keys.Key;
@@ -204,19 +205,10 @@ class FailureTableEntry implements TimedOutNodesList {
 		
 		for(int i=toIndex;i<newRequestorNodes.length;i++) newRequestorNodes[i] = null;
 		if(toIndex > newRequestorNodes.length + 2) {
-			@SuppressWarnings("unchecked")
-			WeakReference<PeerNode>[] newNewRequestorNodes = new WeakReference[toIndex];
-			long[] newNewRequestorTimes = new long[toIndex];
-			long[] newNewRequestorBootIDs = new long[toIndex];
-			short[] newNewRequestorHTLs = new short[toIndex];
-			System.arraycopy(newRequestorNodes, 0, newNewRequestorNodes, 0, toIndex);
-			System.arraycopy(newRequestorTimes, 0, newNewRequestorTimes, 0, toIndex);
-			System.arraycopy(newRequestorBootIDs, 0, newNewRequestorBootIDs, 0, toIndex);
-			System.arraycopy(newRequestorHTLs, 0, newNewRequestorHTLs, 0, toIndex);
-			newRequestorNodes = newNewRequestorNodes;
-			newRequestorTimes = newNewRequestorTimes;
-			newRequestorBootIDs = newNewRequestorBootIDs;
-			newRequestorHTLs = newNewRequestorHTLs;
+			newRequestorNodes = Arrays.copyOf(newRequestorNodes, toIndex);
+			newRequestorTimes = Arrays.copyOf(newRequestorTimes, toIndex);
+			newRequestorBootIDs = Arrays.copyOf(newRequestorBootIDs, toIndex);
+			newRequestorHTLs = Arrays.copyOf(newRequestorHTLs, toIndex);
 		}
 		requestorNodes = newRequestorNodes;
 		requestorTimes = newRequestorTimes;
@@ -313,28 +305,13 @@ class FailureTableEntry implements TimedOutNodesList {
 		
 		for(int i=toIndex;i<newRequestedNodes.length;i++) newRequestedNodes[i] = null;
 		if(toIndex > newRequestedNodes.length + 2) {
-	        @SuppressWarnings("unchecked")
-			WeakReference<PeerNode>[] newNewRequestedNodes = new WeakReference[toIndex];
-			double[] newNewRequestedLocs = new double[toIndex];
-			long[] newNewRequestedBootIDs = new long[toIndex];
-			long[] newNewRequestedTimes = new long[toIndex];
-			long[] newNewRequestedTimeoutsFT = new long[toIndex];
-			long[] newNewRequestedTimeoutsRF = new long[toIndex];
-			short[] newNewRequestedTimeoutHTLs = new short[toIndex];
-			System.arraycopy(newRequestedNodes, 0, newNewRequestedNodes, 0, toIndex);
-			System.arraycopy(newRequestedLocs, 0, newNewRequestedLocs, 0, toIndex);
-			System.arraycopy(newRequestedBootIDs, 0, newNewRequestedBootIDs, 0, toIndex);
-			System.arraycopy(newRequestedTimes, 0, newNewRequestedTimes, 0, toIndex);
-			System.arraycopy(newRequestedTimeoutsRF, 0, newNewRequestedTimeoutsRF, 0, toIndex);
-			System.arraycopy(newRequestedTimeoutsFT, 0, newNewRequestedTimeoutsFT, 0, toIndex);
-			System.arraycopy(newRequestedTimeoutHTLs, 0, newNewRequestedTimeoutHTLs, 0, toIndex);
-			newRequestedNodes = newNewRequestedNodes;
-			newRequestedLocs = newNewRequestedLocs;
-			newRequestedBootIDs = newNewRequestedBootIDs;
-			newRequestedTimes = newNewRequestedTimes;
-			newRequestedTimeoutsRF = newNewRequestedTimeoutsRF;
-			newRequestedTimeoutsFT = newNewRequestedTimeoutsFT;
-			newRequestedTimeoutHTLs = newNewRequestedTimeoutHTLs;
+			newRequestedNodes = Arrays.copyOf(newRequestedNodes, toIndex);;
+			newRequestedLocs = Arrays.copyOf(newRequestedLocs, toIndex);;
+			newRequestedBootIDs = Arrays.copyOf(newRequestedBootIDs, toIndex);;
+			newRequestedTimes = Arrays.copyOf(newRequestedTimes, toIndex);;
+			newRequestedTimeoutsRF = Arrays.copyOf(newRequestedTimeoutsRF, toIndex);;
+			newRequestedTimeoutsFT = Arrays.copyOf(newRequestedTimeoutsFT, toIndex);;
+			newRequestedTimeoutHTLs = Arrays.copyOf(newRequestedTimeoutHTLs, toIndex);;
 		}
 		requestedNodes = newRequestedNodes;
 		requestedLocs = newRequestedLocs;
@@ -523,19 +500,10 @@ class FailureTableEntry implements TimedOutNodesList {
 			x++;
 		}
 		if(x < requestorNodes.length) {
-			@SuppressWarnings("unchecked")
-			WeakReference<PeerNode>[] newRequestorNodes = new WeakReference[x];
-			long[] newRequestorTimes = new long[x];
-			long[] newRequestorBootIDs = new long[x];
-			short[] newRequestorHTLs = new short[x];
-			System.arraycopy(requestorNodes, 0, newRequestorNodes, 0, x);
-			System.arraycopy(requestorTimes, 0, newRequestorTimes, 0, x);
-			System.arraycopy(requestorBootIDs, 0, newRequestorBootIDs, 0, x);
-			System.arraycopy(requestorHTLs, 0, newRequestorHTLs, 0, x);
-			requestorNodes = newRequestorNodes;
-			requestorTimes = newRequestorTimes;
-			requestorBootIDs = newRequestorBootIDs;
-			requestorHTLs = newRequestorHTLs;
+			requestorNodes = Arrays.copyOf(requestorNodes, x);;
+			requestorTimes = Arrays.copyOf(requestorTimes, x);;
+			requestorBootIDs = Arrays.copyOf(requestorBootIDs, x);;
+			requestorHTLs = Arrays.copyOf(requestorHTLs, x);;
 		}
 		
 		return empty;
@@ -570,28 +538,13 @@ class FailureTableEntry implements TimedOutNodesList {
 			x++;
 		}
 		if(x < requestedNodes.length) {
-			@SuppressWarnings("unchecked")
-			WeakReference<PeerNode>[] newRequestedNodes = new WeakReference[x];
-			long[] newRequestedTimes = new long[x];
-			long[] newRequestedBootIDs = new long[x];
-			double[] newRequestedLocs = new double[x];
-			long[] newRequestedTimeoutsRF = new long[x];
-			long[] newRequestedTimeoutsFT = new long[x];
-			short[] newRequestedTimeoutHTLs = new short[x];
-			System.arraycopy(requestedNodes, 0, newRequestedNodes, 0, x);
-			System.arraycopy(requestedTimes, 0, newRequestedTimes, 0, x);
-			System.arraycopy(requestedBootIDs, 0, newRequestedBootIDs, 0, x);
-			System.arraycopy(requestedLocs, 0, newRequestedLocs, 0, x);
-			System.arraycopy(requestedTimeoutsRF, 0, newRequestedTimeoutsRF, 0, x);
-			System.arraycopy(requestedTimeoutsFT, 0, newRequestedTimeoutsFT, 0, x);
-			System.arraycopy(requestedTimeoutHTLs, 0, newRequestedTimeoutHTLs, 0, x);
-			requestedNodes = newRequestedNodes;
-			requestedTimes = newRequestedTimes;
-			requestedBootIDs = newRequestedBootIDs;
-			requestedLocs = newRequestedLocs;
-			requestedTimeoutsRF = newRequestedTimeoutsRF;
-			requestedTimeoutsFT = newRequestedTimeoutsFT;
-			requestedTimeoutHTLs = newRequestedTimeoutHTLs;
+			requestedNodes = Arrays.copyOf(requestedNodes, x);;
+			requestedTimes = Arrays.copyOf(requestedTimes, x);;
+			requestedBootIDs = Arrays.copyOf(requestedBootIDs, x);;
+			requestedLocs = Arrays.copyOf(requestedLocs, x);;
+			requestedTimeoutsRF = Arrays.copyOf(requestedTimeoutsRF, x);;
+			requestedTimeoutsFT = Arrays.copyOf(requestedTimeoutsFT, x);;
+			requestedTimeoutHTLs = Arrays.copyOf(requestedTimeoutHTLs, x);;
 		}
 		return empty;
 	}

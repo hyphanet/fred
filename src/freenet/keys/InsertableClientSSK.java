@@ -199,9 +199,7 @@ public class InsertableClientSSK extends ClientSSK {
 				if(bs[i] != 0)
 					throw new IllegalStateException("Cannot truncate");
 			}
-			byte[] buf = new byte[len];
-			System.arraycopy(bs, (bs.length-len), buf, 0, len);
-			return buf;
+			return Arrays.copyOfRange(bs, bs.length-len, bs.length);
 		}
 	}
 

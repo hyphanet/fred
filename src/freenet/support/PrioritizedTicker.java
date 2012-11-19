@@ -242,8 +242,7 @@ public class PrioritizedTicker implements Ticker, Runnable {
 				timedJobsByTime.put(l, new Job[]{(Job) o, job});
 			else if(o instanceof Job[]) {
 				Job[] r = (Job[]) o;
-				Job[] jobs = new Job[r.length + 1];
-				System.arraycopy(r, 0, jobs, 0, r.length);
+				Job[] jobs = Arrays.copyOf(r, r.length+1);
 				jobs[jobs.length - 1] = job;
 				timedJobsByTime.put(l, jobs);
 			}

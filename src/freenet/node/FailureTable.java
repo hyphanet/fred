@@ -5,6 +5,7 @@ package freenet.node;
 
 import java.lang.ref.WeakReference;
 import java.util.Vector;
+import java.util.Arrays;
 
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
@@ -232,10 +233,8 @@ public class FailureTable implements OOMHook {
 		}
 
 		public synchronized void addOffer(BlockOffer offer) {
-			BlockOffer[] newOffers = new BlockOffer[offers.length+1];
-			System.arraycopy(offers, 0, newOffers, 0, offers.length);
-			newOffers[offers.length] = offer;
-			offers = newOffers;
+			offers = Arrays.copyOf(offers, offers.length+1);
+			offers[offers.length-1] = offer;
 		}
 		
 		@Override

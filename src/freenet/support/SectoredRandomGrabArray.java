@@ -1,5 +1,7 @@
 package freenet.support;
 
+import java.util.Arrays;
+
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
@@ -84,16 +86,13 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 	}
 
 	private synchronized void addElement(Object client, RemoveRandomWithObject rga) {
-		int len = grabArrays.length;
-		RemoveRandomWithObject[] newArrays = new RemoveRandomWithObject[len+1];
-		System.arraycopy(grabArrays, 0, newArrays, 0, len);
-		newArrays[len] = rga;
-		grabArrays = newArrays;
+		final int len = grabArrays.length;
+
+		grabArrays = Arrays.copyOf(grabArrays, len+1);
+		grabArrays[len] = rga;
 		
-		Object[] newClients = new Object[len+1];
-		System.arraycopy(grabClients, 0, newClients, 0, len);
-		newClients[len] = client;
-		grabClients = newClients;
+		grabClients = Arrays.copyOf(grabClients, len+1);
+		grabClients[len] = client;
 	}
 
 	private synchronized int haveClient(Object client) {

@@ -4,6 +4,7 @@
 package freenet.io.xfer;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 import freenet.io.comm.MessageCore;
 import freenet.io.comm.RetrievalException;
@@ -92,10 +93,8 @@ public class PartiallyReceivedBulk {
 		if(transmitters == null)
 			transmitters = new BulkTransmitter[] { bt };
 		else {
-			BulkTransmitter[] t = new BulkTransmitter[transmitters.length+1];
-			System.arraycopy(transmitters, 0, t, 0, transmitters.length);
-			t[transmitters.length] = bt;
-			transmitters = t;
+			transmitters = Arrays.copyOf(transmitters, transmitters.length+1);
+			transmitters[transmitters.length-1] = bt;
 		}
 	}
 	

@@ -181,10 +181,8 @@ public class PluginManager {
 		toStart = pmconfig.getStringArr("loadplugin");
 
 		if(lastVersion < 1237 && contains(toStart, "XMLLibrarian") && !contains(toStart, "Library")) {
-			String[] newToStart = new String[toStart.length+1];
-			System.arraycopy(toStart, 0, newToStart, 0, toStart.length);
-			newToStart[toStart.length] = "Library";
-			toStart = newToStart;
+			toStart = Arrays.copyOf(toStart, toStart.length+1);
+			toStart[toStart.length-1] = "Library";
 			System.err.println("Loading Library plugin, replaces XMLLibrarian, when upgrading from pre-1237");
 		}
 

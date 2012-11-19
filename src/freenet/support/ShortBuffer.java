@@ -93,9 +93,7 @@ public class ShortBuffer implements WritableToDataOutputStream {
 		if ((_start == 0) && (_length == _data.length)) {
 			return _data;
 		} else {
-			byte[] r = new byte[_length];
-			System.arraycopy(_data, _start, r, 0, _length);
-			return r;
+			return Arrays.copyOfRange(_data, _start, _start+_length);
 		}
 	}
 

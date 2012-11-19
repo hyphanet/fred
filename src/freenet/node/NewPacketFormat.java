@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Vector;
+import java.util.Arrays;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.HMAC;
@@ -368,8 +369,7 @@ outer:
 			int sequenceNumber = (int) ((0l + keyContext.watchListOffset + i) % NUM_SEQNUMS);
 			if(logDEBUG) Logger.debug(this, "Received packet matches sequence number " + sequenceNumber);
 			// Copy it to avoid side-effects.
-			byte[] copy = new byte[length];
-			System.arraycopy(buf, offset, copy, 0, length);
+			byte[] copy = Arrays.copyOfRange(buf, offset, offset + length);
 			NPFPacket p = decipherFromSeqnum(copy, 0, length, sessionKey, sequenceNumber);
 			if(p != null) {
 				if(logMINOR) Logger.minor(this, "Received packet " + p.getSequenceNumber()+" on "+sessionKey);
@@ -393,18 +393,15 @@ outer:
 
 		ivCipher.encipher(IV, IV);
 
-		byte[] text = new byte[length - hmacLength];
-		System.arraycopy(buf, offset + hmacLength, text, 0, text.length);
-		byte[] hash = new byte[hmacLength];
-		System.arraycopy(buf, offset, hash, 0, hash.length);
+		byte[] text = Arrays.copyOfRange(buf, offset + hmacLength, offset + length);
+		byte[] hash = Arrays.copyOfRange(buf, offset, offset + hmacLength);
 
 		if(!HMAC.verifyWithSHA256(sessionKey.hmacKey, text, hash)) return null;
 
 		PCFBMode payloadCipher = PCFBMode.create(sessionKey.incommingCipher, IV);
 		payloadCipher.blockDecipher(buf, offset + hmacLength, length - hmacLength);
 
-		byte[] payload = new byte[length - hmacLength];
-		System.arraycopy(buf, offset + hmacLength, payload, 0, length - hmacLength);
+		byte[] payload = Arrays.copyOfRange(buf, offset + hmacLength, offset + length);
 
 		NPFPacket p = NPFPacket.create(payload, pn);
 
@@ -1278,9 +1275,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 				if(logDEBUG) Logger.debug(this, "Added " + (length - buffer.length) + " to buffer. Total is now " + npf.receiveBufferUsed);
 			}
 
-			byte[] newBuffer = new byte[length];
-			System.arraycopy(buffer, 0, newBuffer, 0, Math.min(length, buffer.length));
-			buffer = newBuffer;
+			buffer = Arrays.copyOf(buffer, length);
 
 			return true;
 		}
