@@ -4041,6 +4041,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	private long timeLastAcceptedAnnouncement;
 	private long[] runningAnnounceUIDs = new long[0];
 
+	/** Protection against too many simultaneous announcements over a single
+	 * connection.
+	 * @param uid The announcement UID.
+	 * @return True if we should accept the announcement. False to reject it.
+	 */
 	public synchronized boolean shouldAcceptAnnounce(long uid) {
 		long now = System.currentTimeMillis();
 		if(runningAnnounceUIDs.length < MAX_SIMULTANEOUS_ANNOUNCEMENTS &&
@@ -4057,6 +4062,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 	}
 
+	/** Report that an announcement finished. */
 	public synchronized boolean completedAnnounce(long uid) {
 		final int runningAnnounceUIDsLength = runningAnnounceUIDs.length;
 		if(runningAnnounceUIDsLength < 1) return false;
