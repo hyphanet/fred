@@ -24,6 +24,7 @@ import freenet.crypt.DiffieHellman;
 import freenet.crypt.DiffieHellmanLightContext;
 import freenet.crypt.ECDH;
 import freenet.crypt.ECDHLightContext;
+import freenet.crypt.ECDSA;
 import freenet.crypt.Global;
 import freenet.crypt.HMAC;
 import freenet.crypt.KeyAgreementSchemeContext;
@@ -552,8 +553,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
 			return;
 		}
-		if(!(negType == 6 || negType == 7 || negType == 8)) {
-			if(negType > 8)
+		if(!(negType == 6 || negType == 7 || negType == 8 || negType == 9)) {
+			if(negType > 9)
 				Logger.error(this, "Unknown neg type: "+negType);
 			else
 				Logger.warning(this, "Received a setup packet with unsupported obsolete neg type: "+negType);
@@ -602,8 +603,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
 			return;
 		}
-		if(!(negType == 6 || negType == 7 || negType == 8)) {
-			if(negType > 8)
+		if(!(negType == 6 || negType == 7 || negType == 8 || negType == 9)) {
+			if(negType > 9)
 				Logger.error(this, "Unknown neg type: "+negType);
 			else
 				Logger.warning(this, "Received a setup packet with unsupported obsolete neg type: "+negType);
@@ -669,8 +670,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			// negType 0 through 5 no longer supported, used old FNP.
 			Logger.warning(this, "Old neg type "+negType+" not supported");
 			return;
-		} else if (negType == 6 || negType == 7 || negType == 8) {
-		    // negType == 8 => use ECDH with secp256r1 instead of DH
+		} else if (negType == 6 || negType == 7 || negType == 8 || negType == 9) {
+		    // negType == 9 => use ECDSA with secp256r1 instead of DSA2048
+		    // negType == 8 => use ECDH with secp256r1 instead of DH1024
 			// negType == 7 => same as 6, but determine the initial sequence number by hashing the identity
 			// instead of negotiating it
 			/*
@@ -948,12 +950,31 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		// g^r
 		KeyAgreementSchemeContext ctx = (negType < 8 ? getLightDiffieHellmanContext() : getECDHLightContext());
-	    byte[] sig = ctx.signature;
-		    
+
 		// Nr
 		byte[] myNonce = new byte[NONCE_SIZE];
 		node.random.nextBytes(myNonce);
 	    byte[] myExponential = ctx.getPublicKeyNetworkFormat();
+
+		byte[] sig;
+		if (negType < 8) {
+			sig = ctx.signature;
+		} else {
+			if (negType < 9) {
+				// generate DSA signature on demand
+				synchronized(ctx) {
+					if (ctx.signature == null) {
+						ctx.setSignature(SHA256withDSAsign(
+									myExponential,
+									crypto.getCryptoGroup().getP().toByteArray()));
+					}
+				}
+				sig = ctx.signature;
+			} else {
+				sig = ctx.ecdsaSig;
+			}
+		}
+
 		byte[] authenticator = macJFKAuthenticator(getTransientKey(),myExponential, hisExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress());
 		if(logMINOR) Logger.minor(this, "We are using the following HMAC : " + HexUtil.bytesToHex(authenticator));
 
@@ -1102,7 +1123,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		if(!VerifyPeerSignature(negType, pn,
 					payload, signatureOffset, signatureLength,
-					hisExponential, pn.peerCryptoGroup.getP().toByteArray())) {
+					hisExponential,
+					(negType >= 9 ? null :
+					 pn.peerCryptoGroup.getP().toByteArray())))
+		{
 			Logger.error(this, "The signature verification has failed in JFK(2)!! "+pn.getPeer());
 			return;
 		}
@@ -2218,9 +2242,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				return new int[] { 7 };
 		}
 		if(forPublic)
-			return new int[] { 6, 7, 8 };
+			return new int[] { 6, 7, 8, 9 };
 		else
-			return new int[] { 7, 8 };
+			return new int[] { 7, 8, 9 };
 	}
 
 	@Override
@@ -2259,10 +2283,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
     
 	private ECDHLightContext _genECDHLightContext() {
         final ECDHLightContext ctx = new ECDHLightContext(ecdhCurveToUse);
-		ctx.setSignature(SHA256withDSAsign(
-					ctx.getPublicKeyNetworkFormat(),
-					crypto.getCryptoGroup().getP().toByteArray()));
-
+		// optimize for negType9+, always generate ECDSA, generate DSA on demand
+		ctx.setECDSASignature(crypto.ecdsaSign(ctx.getPublicKeyNetworkFormat()));
         return ctx;
     }
 	
@@ -2468,6 +2490,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 	private byte[] Sign(int negType, byte[]... data)
 	{
+		if (negType >= 9)
+			return crypto.ecdsaSign(data);
 		return SHA256withDSAsign(data);
 	}
 
@@ -2499,6 +2523,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			byte[] signature, int sigOffset, int sigLength,
 			byte[]... data)
 	{
+		if (negType >= 9)
+			return ECDSA.verify(ECDSA.Curves.P256, pn.peerECDSAPubKey,
+					signature, sigOffset, sigLength,
+					data);
 		return SHA256withDSAverify(pn.peerPubKey,
 				extractDSASignature(signature, sigOffset),
 				data);
@@ -2506,11 +2534,16 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 	private static int signatureLength(int negType)
 	{
+		if (negType >= 9)
+			return ECDSA.Curves.P256.signatureSize;
 		return Node.SIGNATURE_PARAMETER_LENGTH*2;
+
 	}
 
 	private static int minSignatureLength(int negType)
 	{
+		if (negType >= 9)
+			return ECDSA.Curves.P256.signatureSize;
 		return Node.SIGNATURE_PARAMETER_LENGTH*2;
 	}
 
@@ -2541,7 +2574,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	    if(negType < 8)
 	        return DiffieHellman.modulusLengthInBytes();
 	    else
-	        return 2; // XXX 2 is absolute minimum for DER
+	        return 2;
+			// 2 is very low bound for any DER object
+			// 36 bytes is normal size for compressed P256 public key
+			// 91 bytes is normal size for uncompressed P256 public key
+			// (with full DER wrapper)
 	}
 
 	private byte[] getTransientKey() {
@@ -2644,5 +2681,4 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	public void setPortForwardingBroken() {
 		crypto.setPortForwardingBroken();
 	}
-
 }

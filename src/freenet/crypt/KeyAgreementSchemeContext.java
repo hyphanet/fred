@@ -8,6 +8,8 @@ public abstract class KeyAgreementSchemeContext {
 	protected long lastUsedTime;
 	/** The signature of (g^r, grpR) */
     public byte[] signature = null;
+	/** The ECDSA signature of ECDH public key */
+	public byte[] ecdsaSig = null;
     /** A timestamp: when was the context created ? */
     public final long lifetime = System.currentTimeMillis();
 
@@ -21,6 +23,10 @@ public abstract class KeyAgreementSchemeContext {
 	   
     public void setSignature(byte [] sig) {
         this.signature = sig;
+    }
+	   
+    public void setECDSASignature(byte [] sig) {
+        this.ecdsaSig = sig;
     }
 	
 	public abstract byte[] getPublicKeyNetworkFormat();
