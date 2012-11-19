@@ -109,18 +109,18 @@ public abstract class Toadlet {
 	public final String findSupportedMethods() {
 		if (supportedMethodsCache == null) {
 			Method methlist[] = this.getClass().getMethods();
-			boolean isFirst = true;
 			StringBuilder sb = new StringBuilder();
-			for (int i = 0; i < methlist.length;i++) {  
-				Method m = methlist[i];
+			for (Method m: methlist) {
 				String name = m.getName();
 				if (name.startsWith(HANDLE_METHOD_PREFIX)) {
-					if (isFirst)
-						isFirst = false;
-					else
-						sb.append(", ");
 					sb.append(name.substring(HANDLE_METHOD_PREFIX.length()));
+					sb.append(", ");
 				}
+			}
+			if (sb.length() >= 2) {
+				// remove last ", "
+				sb.deleteCharAt(sb.length()-1);
+				sb.deleteCharAt(sb.length()-1);
 			}
 			supportedMethodsCache = sb.toString();
 		}
