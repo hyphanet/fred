@@ -33,6 +33,11 @@ public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 		contentNode.addChild(alerts.createSummary());
 		
 		HTMLNode contentBox = ctx.getPageMaker().getInfobox("infobox-information", l10n("title"), contentNode, "chat-list", true);
+
+		NodeL10n.getBase().addL10nSubstitution(contentBox.addChild("p"), "ChatForumsToadlet.fsng",
+				new String[] { "fsng" },
+				new HTMLNode[] { HTMLNode.link("/USK@t5zaONbYd5DvGNNSokVnDCdrIEytn9U5SSD~pYF0RTE,guWyS9aCMcywU5PFBrKsMiXs7LzwKfQlGSRi17fpffc,AQACAAE/fsng/37/") });
+
 		
 		HTMLNode ul = contentBox.addChild("ul");
 		HTMLNode li = ul.addChild("li");
