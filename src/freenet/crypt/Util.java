@@ -23,6 +23,7 @@ import freenet.crypt.ciphers.Rijndael;
 import freenet.support.HexUtil;
 import freenet.support.Loader;
 import freenet.support.Logger;
+import freenet.support.math.MersenneTwister;
 
 public class Util {
 
@@ -164,8 +165,9 @@ public class Util {
 	 * Why, why, why? Why Random have no nextBytes(buf, from, len) method?
 	 */
 	static public void randomBytes(Random r, byte[] buf, int from, int len) {
-		if (r instanceof SecureRandom) {
+		if (!(r instanceof MersenneTwister)) {
 			/* SecureRandom's nextInt() have *abysmal* performance */
+			/* But more generally we can't guarantee this will work except for MT. */
 			randomBytesSlowNextInt(r, buf, from, len);
 			return;
 		}
