@@ -26,22 +26,25 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.DerUtils;
 
+import org.bouncycastle.jce.interfaces.ECPointEncoder;
+
 public class ECDSA {
     public final Curves curve;
     private final KeyPair key;
+	private final byte[] compressedPubkey;
 
     public enum Curves {
         // rfc5903 or rfc6460: it's NIST's random/prime curves : suite B
         // Order matters. Append to the list, do not re-order.
-        P256("secp256r1", "SHA256withECDSA", 91, 64),
-        P384("secp384r1", "SHA384withECDSA", 120, 96),
-        P521("secp521r1", "SHA512withECDSA", 158, 132);
-        
+        P256("secp256r1", "SHA256withECDSA", 59, 64),
+        P384("secp384r1", "SHA384withECDSA", 72, 96),
+        P521("secp521r1", "SHA512withECDSA", 90, 132);
+
         public final ECGenParameterSpec spec;
         private final KeyPairGenerator keygen;
         /** The hash algorithm used to generate the signature */
         public final String defaultHashAlgorithm;
-        /** Expected size of a DER encoded pubkey in bytes */
+        /** Expected size of a DER encoded compressed pubkey in bytes */
         public final int modulusSize;
 		/** Expected size of CVC-encoded signature */
 		public final int signatureSize;
@@ -49,9 +52,10 @@ public class ECDSA {
 		protected final Provider kgProvider;
 		protected final Provider kfProvider;
 		protected final Provider sigProvider;
+		protected final boolean sigAcceptConvertedKeys;
 
         /** Verify KeyPairGenerator and KeyFactory work correctly */
-        static private KeyPair selftest(KeyPairGenerator kg, KeyFactory kf, int modulusSize)
+        static private KeyPair selftest(KeyPairGenerator kg, KeyFactory kf)
             throws InvalidKeySpecException
         {
             KeyPair key = kg.generateKeyPair();
@@ -59,8 +63,6 @@ public class ECDSA {
             PrivateKey pk = key.getPrivate();
             byte [] pubkey = pub.getEncoded();
             byte [] pkey = pk.getEncoded();
-			if(pubkey.length != modulusSize)
-				throw new Error("Unexpected pubkey length: "+pubkey.length+"!="+modulusSize);
             PublicKey pub2 = kf.generatePublic(
                     new X509EncodedKeySpec(pubkey)
                     );
@@ -76,12 +78,33 @@ public class ECDSA {
             return key;
         }
 
-		static private void selftest_sign(KeyPair key, Signature sig)
+		static private PublicKey selftest_compressed(KeyFactory kf, KeyPair key, int modulusSize)
+            throws InvalidKeySpecException, NoSuchAlgorithmException
+		{
+			PublicKey pub = key.getPublic();
+			KeyFactory kfBC = KeyFactory.getInstance("EC", JceLoader.BouncyCastle);
+			if (!(pub instanceof ECPointEncoder)) {
+				pub = kfBC.generatePublic(new X509EncodedKeySpec(pub.getEncoded()));
+			}
+			if (!(pub instanceof ECPointEncoder))
+				throw new Error("Converted pubkey still incompatible with "+ECPointEncoder.class);
+			((ECPointEncoder)pub).setPointFormat("COMPRESSED");
+            byte [] cpubkey = pub.getEncoded();
+			if(cpubkey.length != modulusSize)
+				throw new Error("Unexpected pubkey length: "+cpubkey.length+"!="+modulusSize);
+			PublicKey cpub = kfBC.generatePublic(new X509EncodedKeySpec(cpubkey));
+			((ECPointEncoder)cpub).setPointFormat("UNCOMPRESSED");
+			if(kf.getProvider() != JceLoader.BouncyCastle)
+				kf.generatePublic(new X509EncodedKeySpec(cpub.getEncoded())).getEncoded();
+			return cpub;
+		}
+
+		static private void selftest_sign(KeyPair key, PublicKey pub, Signature sig)
 			throws SignatureException, InvalidKeyException
 		{
 			sig.initSign(key.getPrivate());
 			byte[] sign = sig.sign();
-			sig.initVerify(key.getPublic());
+			sig.initVerify(pub);
 			boolean verified = sig.verify(sign);
 			if (!verified)
 				throw new Error("Verification failed");
@@ -94,26 +117,40 @@ public class ECDSA {
             KeyPairGenerator kg = null;
 			// Ensure providers loaded
 			JceLoader.BouncyCastle.toString();
+			boolean sigAcceptConvertedKeys = false;
 			try {
 				KeyPair key = null;
+				PublicKey cpub = null;
 				try {
 					/* check if default EC keys work correctly */
 					kg = KeyPairGenerator.getInstance("EC");
 					kf = KeyFactory.getInstance("EC");
 					kg.initialize(this.spec);
-					key = selftest(kg, kf, modulusSize);
+					key = selftest(kg, kf);
+					cpub = selftest_compressed(kf, key, modulusSize);
 				} catch(Throwable e) {
 					/* we don't care why we fail, just fallback */
 					Logger.warning(this, "default KeyPairGenerator provider ("+(kg != null ? kg.getProvider() : null)+") is broken, falling back to BouncyCastle", e);
 					kg = KeyPairGenerator.getInstance("EC", JceLoader.BouncyCastle);
 					kf = KeyFactory.getInstance("EC", JceLoader.BouncyCastle);
 					kg.initialize(this.spec);
-					key = selftest(kg, kf, modulusSize);
+					key = selftest(kg, kf);
+					cpub = selftest_compressed(kf, key, modulusSize);
 				}
 				try {
 					/* check default Signature compatible with kf/kg */
 					sig = Signature.getInstance(defaultHashAlgorithm);
-					selftest_sign(key, sig);
+					selftest_sign(key, key.getPublic(), sig);
+					try {
+						/*
+						 * check if sigProvider works with converted keys,
+						 * generated by BouncyCastle KeyFactory
+						 */
+						selftest_sign(key, cpub, sig);
+						sigAcceptConvertedKeys = true;
+					} catch(Throwable e) {
+						/* sigAcceptConvertedKeys = false */
+					}
 				} catch(Throwable e) {
 					/* we don't care why we fail, just fallback */
 					Logger.warning(this, "default Signature provider ("+(sig != null ? sig.getProvider() : null)+") is broken or incompatible with KeyPairGenerator, falling back to BouncyCastle", e);
@@ -122,7 +159,8 @@ public class ECDSA {
 					kg.initialize(this.spec);
 					key = kg.generateKeyPair();
 					sig = Signature.getInstance(defaultHashAlgorithm, JceLoader.BouncyCastle);
-					selftest_sign(key, sig);
+					selftest_sign(key, key.getPublic(), sig);
+					sigAcceptConvertedKeys = true;
 				}
             } catch (NoSuchAlgorithmException e) {
                 Logger.error(ECDSA.class, "NoSuchAlgorithmException : "+e.getMessage(),e);
@@ -137,6 +175,10 @@ public class ECDSA {
             } catch (SignatureException e) {
 				throw new Error(e);
             }
+			if (!sigAcceptConvertedKeys) {
+				Logger.warning(this, "Signature does not accept converted keys, use 2-stage conversion");
+			}
+			this.sigAcceptConvertedKeys = sigAcceptConvertedKeys;
 			this.kgProvider = kg.getProvider();
 			this.kfProvider = kf.getProvider();
 			this.sigProvider = sig.getProvider();
@@ -154,14 +196,33 @@ public class ECDSA {
             return keygen.generateKeyPair();
         }
         
+		public byte[] getPublicKeyNetworkFormat(PublicKey pub) {
+			if (!(pub instanceof ECPointEncoder)) {
+				try {
+					pub = KeyFactory.getInstance("EC", JceLoader.BouncyCastle).
+						generatePublic(new X509EncodedKeySpec(pub.getEncoded()));
+				} catch(NoSuchAlgorithmException e) {
+					new Error(e); // impossible
+				} catch(InvalidKeySpecException e) {
+					new Error(e); // impossible
+				}
+				if (!(pub instanceof ECPointEncoder))
+					throw new Error("BouncyCastle generated pubkey that is not instance of "+ECPointEncoder.class);
+			}
+			synchronized(pub) {
+				((ECPointEncoder)pub).setPointFormat("COMPRESSED");
+				return pub.getEncoded();
+			}
+		}
+
         public SimpleFieldSet getSFS(ECPublicKey pub) {
             SimpleFieldSet ecdsaSFS = new SimpleFieldSet(true);
             SimpleFieldSet curveSFS = new SimpleFieldSet(true);
-            curveSFS.putSingle("pub", Base64.encode(pub.getEncoded()));
+            curveSFS.putSingle("pub", Base64.encode(getPublicKeyNetworkFormat(pub)));
             ecdsaSFS.put(name(), curveSFS);
             return ecdsaSFS;
         }
-        
+
         public String toString() {
             return spec.getName();
         }
@@ -173,7 +234,8 @@ public class ECDSA {
      */
     public ECDSA(Curves curve) {
         this.curve = curve;
-        this.key = curve.keygen.generateKeyPair();
+		this.key = curve.keygen.generateKeyPair();
+		this.compressedPubkey = curve.getPublicKeyNetworkFormat(key.getPublic());
     }
     
     /**
@@ -182,20 +244,16 @@ public class ECDSA {
      * @throws FSParseException 
      */
     public ECDSA(SimpleFieldSet sfs, Curves curve) throws FSParseException {
-        byte[] pub = null;
         byte[] pri = null;
         try {
-            pub = Base64.decode(sfs.get("pub"));
-            if (pub.length != curve.modulusSize)
-                throw new InvalidKeyException();
-            ECPublicKey pubK = getPublicKey(pub, curve);
-
+            ECPublicKey pubK = getPublicKey(sfs, curve);
             pri = Base64.decode(sfs.get("pri"));
             PKCS8EncodedKeySpec ks = new PKCS8EncodedKeySpec(pri);
             KeyFactory kf = KeyFactory.getInstance("EC", curve.kfProvider);
             ECPrivateKey privK = (ECPrivateKey) kf.generatePrivate(ks);
 
             this.key = new KeyPair(pubK, privK);
+			this.compressedPubkey = curve.getPublicKeyNetworkFormat(pubK);
         } catch (Exception e) {
             throw new FSParseException(e);
         }
@@ -277,6 +335,10 @@ public class ECDSA {
         return (ECPublicKey) key.getPublic();
     }
     
+    public byte[] getPublicKeyNetworkFormat() {
+        return compressedPubkey;
+    }
+    
     /**
      * Returns an ECPublicKey from bytes obtained using ECPublicKey.getEncoded()
      * @param data
@@ -286,9 +348,14 @@ public class ECDSA {
         ECPublicKey remotePublicKey = null;
         try {
             X509EncodedKeySpec ks = new X509EncodedKeySpec(data);
-            KeyFactory kf = KeyFactory.getInstance("EC", curve.kfProvider);
+            KeyFactory kf = KeyFactory.getInstance("EC", JceLoader.BouncyCastle);
             remotePublicKey = (ECPublicKey)kf.generatePublic(ks);
-            
+			if (!curve.sigAcceptConvertedKeys) {
+				((ECPointEncoder)remotePublicKey).setPointFormat("UNCOMPRESSED");
+				ks = new X509EncodedKeySpec(remotePublicKey.getEncoded());
+				kf = KeyFactory.getInstance("EC", curve.kfProvider);
+				remotePublicKey = (ECPublicKey)kf.generatePublic(ks);
+			}
         } catch (NoSuchAlgorithmException e) {
             Logger.error(ECDSA.class, "NoSuchAlgorithmException : "+e.getMessage(),e);
             e.printStackTrace();
@@ -300,6 +367,19 @@ public class ECDSA {
         return remotePublicKey;
     }
     
+    public static ECPublicKey getPublicKey(SimpleFieldSet sfs, Curves curve) throws FSParseException {
+        try {
+			byte[] pub = Base64.decode(sfs.get("pub"));
+			/*
+            if (pub.length != curve.modulusSize)
+                throw new InvalidKeyException();
+			*/
+			return getPublicKey(pub, curve);
+        } catch (Exception e) {
+            throw new FSParseException(e);
+		}
+	}
+
     /**
      * Returns an SFS containing:
      *  - the private key
@@ -310,10 +390,10 @@ public class ECDSA {
      * @param includePrivate - include the (secret) private key
      * @return SimpleFieldSet
      */
-    public SimpleFieldSet asFieldSet(boolean includePrivate) {
+    public synchronized SimpleFieldSet asFieldSet(boolean includePrivate) {
         SimpleFieldSet fs = new SimpleFieldSet(true);
         SimpleFieldSet fsCurve = new SimpleFieldSet(true);
-        fsCurve.putSingle("pub", Base64.encode(key.getPublic().getEncoded()));
+        fsCurve.putSingle("pub", Base64.encode(compressedPubkey));
         if(includePrivate)
             fsCurve.putSingle("pri", Base64.encode(key.getPrivate().getEncoded()));
         fs.put(curve.name(), fsCurve);

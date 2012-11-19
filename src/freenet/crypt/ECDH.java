@@ -14,6 +14,7 @@ import java.security.spec.ECGenParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+
 import java.util.Arrays;
 
 import javax.crypto.KeyAgreement;
@@ -22,17 +23,20 @@ import javax.crypto.SecretKey;
 import freenet.crypt.JceLoader;
 import freenet.support.Logger;
 
+import org.bouncycastle.jce.interfaces.ECPointEncoder;
+
 public class ECDH {
 
     public final Curves curve;
     private final KeyPair key;
+	private final byte[] compressedPubkey;
     
     public enum Curves {
         // rfc5903 or rfc6460: it's NIST's random/prime curves : suite B
         // Order matters. Append to the list, do not re-order.
-        P256("secp256r1", 91, 32),
-        P384("secp384r1", 120, 48),
-        P521("secp521r1", 158, 66);
+        P256("secp256r1", 91, 59, 32),
+        P384("secp384r1", 120, 72, 48),
+        P521("secp521r1", 158, 90, 66);
         
         public final ECGenParameterSpec spec;
         private KeyPairGenerator keygenCached;
@@ -40,9 +44,12 @@ public class ECDH {
         protected final Provider kgProvider;
         protected final Provider kfProvider;
         protected final Provider kaProvider;
+		protected final boolean kaAcceptConvertedKeys;
         
         /** Expected size of a pubkey */
         public final int modulusSize;
+        /** Expected size of a compressed pubkey */
+        public final int compressedModulusSize;
         /** Expected size of the derived secret (in bytes) */
         public final int derivedSecretSize;
         
@@ -53,6 +60,8 @@ public class ECDH {
             KeyPair key = kg.generateKeyPair();
             PublicKey pub = key.getPublic();
             PrivateKey pk = key.getPrivate();
+			if (pub instanceof ECPointEncoder)
+				((ECPointEncoder)pub).setPointFormat("UNCOMPRESSED");
             byte [] pubkey = pub.getEncoded();
             byte [] pkey = pk.getEncoded();
 			if(pubkey.length != modulusSize)
@@ -70,51 +79,88 @@ public class ECDH {
                 throw new Error("Pubkey encoding mismatch");
 			*/
             return key;
+		}
+
+		static private PublicKey selftest_compressed(KeyFactory kf, KeyPair key, int modulusSize)
+            throws InvalidKeySpecException, NoSuchAlgorithmException
+		{
+			PublicKey pub = key.getPublic();
+			KeyFactory kfBC = KeyFactory.getInstance("EC", JceLoader.BouncyCastle);
+			if (!(pub instanceof ECPointEncoder)) {
+				pub = kfBC.generatePublic(new X509EncodedKeySpec(pub.getEncoded()));
+			}
+			if (!(pub instanceof ECPointEncoder))
+				throw new Error("Converted pubkey still incompatible with "+ECPointEncoder.class);
+			((ECPointEncoder)pub).setPointFormat("COMPRESSED");
+            byte [] cpubkey = pub.getEncoded();
+			if(cpubkey.length != modulusSize)
+				throw new Error("Unexpected pubkey length: "+cpubkey.length+"!="+modulusSize);
+			PublicKey cpub = kfBC.generatePublic(new X509EncodedKeySpec(cpubkey));
+			((ECPointEncoder)cpub).setPointFormat("UNCOMPRESSED");
+			if(kf.getProvider() != JceLoader.BouncyCastle)
+				kf.generatePublic(new X509EncodedKeySpec(cpub.getEncoded())).getEncoded();
+			return cpub;
         }
 
-		static private void selftest_genSecret(KeyPair key, KeyAgreement ka)
+		static private void selftest_genSecret(KeyPair key, PublicKey pub, KeyAgreement ka)
 			throws InvalidKeyException
 		{
 			ka.init(key.getPrivate());
-            ka.doPhase(key.getPublic(), true);
-            ka.generateSecret();
+			ka.doPhase(pub, true);
+			ka.generateSecret();
 		}
 
-        private Curves(String name, int modulusSize, int derivedSecretSize) {
+        private Curves(String name, int modulusSize, int compressedModulusSize, int derivedSecretSize) {
             this.spec = new ECGenParameterSpec(name);
             KeyAgreement ka = null;
 			KeyFactory kf = null;
             KeyPairGenerator kg = null;
 			// Ensure providers loaded
 			JceLoader.BouncyCastle.toString();
+			boolean kaAcceptConvertedKeys = false;
 			try {
 				KeyPair key = null;
+				PublicKey cpub = null;
 				try {
 					/* check if default EC keys work correctly */
 					kg = KeyPairGenerator.getInstance("EC");
 					kf = KeyFactory.getInstance("EC");
 					kg.initialize(this.spec);
 					key = selftest(kg, kf, modulusSize);
+					cpub = selftest_compressed(kf, key, compressedModulusSize);
 				} catch(Throwable e) {
-					/* we don't care why we fail, just fallback */
+					// we don't care *why* we fail
 					Logger.warning(this, "default KeyPairGenerator provider ("+(kg != null ? kg.getProvider() : null)+") is broken, falling back to BouncyCastle", e);
 					kg = KeyPairGenerator.getInstance("EC", JceLoader.BouncyCastle);
 					kf = KeyFactory.getInstance("EC", JceLoader.BouncyCastle);
 					kg.initialize(this.spec);
 					key = selftest(kg, kf, modulusSize);
+					cpub = selftest_compressed(kf, key, compressedModulusSize);
 				}
 				try {
 					/* check default KeyAgreement compatible with kf/kg */
 					ka = KeyAgreement.getInstance("ECDH");
-					selftest_genSecret(key, ka);
+					selftest_genSecret(key, key.getPublic(), ka);
+					try {
+						/*
+						 * check if kaProvider works with converted keys,
+						 * generated by BouncyCastle KeyFactory
+						 */
+						selftest_genSecret(key, cpub, ka);
+						kaAcceptConvertedKeys = true;
+					} catch(Throwable e) {
+						/* kaAcceptConvertedKeys = false */
+					}
 				} catch(Throwable e) {
-					/* we don't care why we fail, just fallback */
+					// we don't care *why* we fail
 					Logger.warning(this, "default KeyAgreement provider ("+(ka != null ? ka.getProvider() : null)+") is broken or incompatible with KeyPairGenerator, falling back to BouncyCastle", e);
 					kg = KeyPairGenerator.getInstance("EC", JceLoader.BouncyCastle);
 					kf = KeyFactory.getInstance("EC", JceLoader.BouncyCastle);
 					kg.initialize(this.spec);
+					key = kg.generateKeyPair();
 					ka = KeyAgreement.getInstance("ECDH", JceLoader.BouncyCastle);
-					selftest_genSecret(key, ka);
+					selftest_genSecret(key, key.getPublic(), ka);
+					kaAcceptConvertedKeys = true;
 				}
 			} catch(NoSuchAlgorithmException e) {
 				System.out.println(e);
@@ -129,9 +175,13 @@ public class ECDH {
 				System.out.println(e);
 				e.printStackTrace(System.out);
 			}
+			if (!kaAcceptConvertedKeys) {
+				Logger.warning(this, "KeyAgreement does not accept converted keys, use 2-stage conversion");
+			}
 			this.modulusSize = modulusSize;
 			this.derivedSecretSize = derivedSecretSize;
-
+			this.compressedModulusSize = compressedModulusSize;
+			this.kaAcceptConvertedKeys = kaAcceptConvertedKeys;
 			this.kgProvider = kg.getProvider();
 			this.kfProvider = kf.getProvider();
 			this.kaProvider = ka.getProvider();
@@ -161,6 +211,28 @@ public class ECDH {
             return getKeyPairGenerator().generateKeyPair();
         }
         
+        
+		public byte[] getPublicKeyNetworkFormat(PublicKey pub) {
+			if (!(pub instanceof ECPointEncoder)) {
+				try {
+					pub = KeyFactory.getInstance("EC", JceLoader.BouncyCastle).
+						generatePublic(new X509EncodedKeySpec(pub.getEncoded()));
+				} catch(NoSuchAlgorithmException e) {
+					new Error(e); // impossible
+				} catch(InvalidKeySpecException e) {
+					new Error(e); // impossible
+				}
+				if (!(pub instanceof ECPointEncoder))
+					throw new Error("BouncyCastle generated pubkey that is not instance of "+ECPointEncoder.class);
+			}
+			byte[] raw;
+			synchronized(pub) {
+				((ECPointEncoder)pub).setPointFormat("COMPRESSED");
+				raw = pub.getEncoded();
+				((ECPointEncoder)pub).setPointFormat("UNCOMPRESSED");
+			}
+			return raw;
+		}
         public String toString() {
             return spec.getName();
         }
@@ -173,6 +245,7 @@ public class ECDH {
     public ECDH(Curves curve) {
         this.curve = curve;
         this.key = curve.generateKeyPair();
+		this.compressedPubkey = curve.getPublicKeyNetworkFormat(key.getPublic());
     }
     
     /**
@@ -203,7 +276,16 @@ public class ECDH {
     public ECPublicKey getPublicKey() {
         return (ECPublicKey) key.getPublic();
     }
-    
+
+    public byte[] getPublicKeyNetworkFormat(boolean compressed) {
+        if (compressed)
+			return compressedPubkey;
+		PublicKey pubkey = key.getPublic();
+		synchronized(pubkey) {
+			return pubkey.getEncoded();
+		}
+    }
+
     /**
      * Returns an ECPublicKey from bytes obtained using ECPublicKey.getEncoded()
      * @param data
@@ -213,9 +295,14 @@ public class ECDH {
         ECPublicKey remotePublicKey = null;
         try {
             X509EncodedKeySpec ks = new X509EncodedKeySpec(data);
-            KeyFactory kf = KeyFactory.getInstance("EC", curve.kfProvider);
+            KeyFactory kf = KeyFactory.getInstance("EC", JceLoader.BouncyCastle);
             remotePublicKey = (ECPublicKey)kf.generatePublic(ks);
-            
+			if (!curve.kaAcceptConvertedKeys) {
+				((ECPointEncoder)remotePublicKey).setPointFormat("UNCOMPRESSED");
+				ks = new X509EncodedKeySpec(remotePublicKey.getEncoded());
+				kf = KeyFactory.getInstance("EC", curve.kfProvider);
+				remotePublicKey = (ECPublicKey)kf.generatePublic(ks);
+			}
         } catch (NoSuchAlgorithmException e) {
             Logger.error(ECDH.class, "NoSuchAlgorithmException : "+e.getMessage(),e);
             e.printStackTrace();

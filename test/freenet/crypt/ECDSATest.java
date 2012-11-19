@@ -4,6 +4,7 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.PublicKey;
 import java.security.Security;
+import java.util.Arrays;
 
 import freenet.crypt.ECDSA.Curves;
 import freenet.node.FSParseException;
@@ -25,7 +26,13 @@ public class ECDSATest extends TestCase {
     public void testGetPublicKey() {
         PublicKey pub = ecdsa.getPublicKey();
         assertNotNull(pub);
-        assertEquals(pub.getEncoded().length, curveToTest.modulusSize);
+        //assertEquals(pub.getEncoded().length, curveToTest.modulusSize);
+    }
+
+    public void testGetPublicKeyNetworkFormat() {
+        byte[] pubkey = ecdsa.getPublicKeyNetworkFormat();
+        assertNotNull(pubkey);
+        assertTrue(pubkey.length, curveToTest.modulusSize);
     }
     
     public void testSign() {
@@ -57,7 +64,8 @@ public class ECDSATest extends TestCase {
     public void testSerializeUnserialize() throws FSParseException {
         SimpleFieldSet sfs = ecdsa.asFieldSet(true);
         ECDSA ecdsa2 = new ECDSA(sfs.getSubset(curveToTest.name()), curveToTest);
-        assertEquals(ecdsa.getPublicKey(), ecdsa2.getPublicKey());
+        //assertEquals(ecdsa.getPublicKey(), ecdsa2.getPublicKey());
+        assertTrue(Arrays.equals(ecdsa.getPublicKeyNetworkFormat(), ecdsa2.getPublicKeyNetworkFormat()));
     }
     
     /**

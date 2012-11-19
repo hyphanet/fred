@@ -906,7 +906,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		
 		int offset = 0;
 		byte[] nonce = new byte[NONCE_SIZE];
-		byte[] myExponential = ctx.getPublicKeyNetworkFormat();
+		byte[] myExponential = ctx.getPublicKeyNetworkFormat(negType >= 9);
 		node.random.nextBytes(nonce);
 
 		synchronized (pn) {
@@ -954,7 +954,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		// Nr
 		byte[] myNonce = new byte[NONCE_SIZE];
 		node.random.nextBytes(myNonce);
-	    byte[] myExponential = ctx.getPublicKeyNetworkFormat();
+	    byte[] myExponential = ctx.getPublicKeyNetworkFormat(negType >= 9);
 
 		byte[] sig;
 		if (negType < 8) {
@@ -1273,15 +1273,19 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			}
 			computedExponential = ctx.getHMACKey(_hisExponential);
         } else {
-            ECPublicKey initiatorKey = ECDH.getPublicKey(initiatorExponential, ecdhCurveToUse);
-            ECPublicKey responderKey = ECDH.getPublicKey(responderExponential, ecdhCurveToUse);
-            ECDHLightContext ctx = findECDHContextByPubKey(responderKey);
+			/*
+			 * search by PublicKeyNetworkFormat:
+			 * 1) due to compression conversion reconstructed public key objects can be of different classes/providers (and incomparable);
+			 * 2) key decompression is *slow* (and we have precomputed network format for all keys);
+			 */
+            ECDHLightContext ctx = findECDHContextByPubKey(negType, responderExponential);
             if (ctx == null) {
                 Logger.error(this, "WTF? the HMAC verified but we don't know about that exponential! SHOULDN'T HAPPEN! - JFK3 - "+pn);
                 // Possible this is a replay or severely delayed? We don't keep
                 // every exponential we ever use.
                 return;
             }
+            ECPublicKey initiatorKey = ECDH.getPublicKey(initiatorExponential, ecdhCurveToUse);
             computedExponential = ctx.getHMACKey(initiatorKey);
         }
 		if(logDEBUG) Logger.debug(this, "The shared Master secret is : "+HexUtil.bytesToHex(computedExponential) +" for " + pn);
@@ -1745,7 +1749,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) { throw new RuntimeException(e); }
 		KeyAgreementSchemeContext ctx = pn.getKeyAgreementSchemeContext();
 		if(ctx == null) return;
-		byte[] ourExponential = ctx.getPublicKeyNetworkFormat();
+		byte[] ourExponential = ctx.getPublicKeyNetworkFormat(negType >= 9);
 		pn.jfkMyRef = unknownInitiator ? crypto.myCompressedHeavySetupRef() : crypto.myCompressedSetupRef();
 		byte[] data = new byte[8 + 8 + pn.jfkMyRef.length];
 		int ptr = 0;
@@ -2284,7 +2288,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	private ECDHLightContext _genECDHLightContext() {
         final ECDHLightContext ctx = new ECDHLightContext(ecdhCurveToUse);
 		// optimize for negType9+, always generate ECDSA, generate DSA on demand
-		ctx.setECDSASignature(crypto.ecdsaSign(ctx.getPublicKeyNetworkFormat()));
+		ctx.setECDSASignature(crypto.ecdsaSign(ctx.getPublicKeyNetworkFormat(true)));
         return ctx;
     }
 	
@@ -2454,15 +2458,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
      * @param exponential
      * @return the corresponding ECDHLightContext with the right exponent
      */
-    private ECDHLightContext findECDHContextByPubKey(ECPublicKey exponential) {
+    private ECDHLightContext findECDHContextByPubKey(int negType, byte[] exponential) {
         synchronized (ecdhContextFIFO) {
             for (ECDHLightContext result : ecdhContextFIFO) {
-                if(exponential.equals(result.getPublicKey())) {
+                if(Arrays.equals(exponential, result.getPublicKeyNetworkFormat(negType >= 9))) {
                     return result;
                 }
             }
 
-            if((ecdhContextToBePrunned != null) && ((ecdhContextToBePrunned.getPublicKey()).equals(exponential)))
+            if((ecdhContextToBePrunned != null) && Arrays.equals(ecdhContextToBePrunned.getPublicKeyNetworkFormat(negType >= 9), exponential))
                 return ecdhContextToBePrunned;
         }
         return null;

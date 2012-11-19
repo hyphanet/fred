@@ -55,7 +55,7 @@ public class ECDHLightContext extends KeyAgreementSchemeContext {
     }
 
     @Override
-    public byte[] getPublicKeyNetworkFormat() {
-        return ecdh.getPublicKey().getEncoded();
+    public byte[] getPublicKeyNetworkFormat(boolean compressed) {
+        return ecdh.getPublicKeyNetworkFormat(compressed);
     }
 }

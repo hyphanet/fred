@@ -515,10 +515,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			    // Old peer, no negtype > 8
 			    this.peerECDSAPubKey = null;
 			} else {
-	            byte[] pub = Base64.decode(sfs.get("pub"));
-	            if (pub.length != ECDSA.Curves.P256.modulusSize)
-	                throw new FSParseException("ecdsa.P256.pub is not the right size!");
-	            this.peerECDSAPubKey = ECDSA.getPublicKey(pub, ECDSA.Curves.P256);
+	            this.peerECDSAPubKey = ECDSA.getPublicKey(sfs, ECDSA.Curves.P256);
 	            if(peerECDSAPubKey == null)
 	                throw new FSParseException("ecdsa.P256.pub is invalid!");
 			}

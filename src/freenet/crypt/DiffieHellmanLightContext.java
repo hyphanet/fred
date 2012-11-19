@@ -56,7 +56,7 @@ public class DiffieHellmanLightContext extends KeyAgreementSchemeContext {
 	}
 
     @Override
-    public byte[] getPublicKeyNetworkFormat() {
+    public byte[] getPublicKeyNetworkFormat(boolean compressed) {
         return stripBigIntegerToNetworkFormat(myExponential);
     }
     

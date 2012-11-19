@@ -29,5 +29,8 @@ public abstract class KeyAgreementSchemeContext {
         this.ecdsaSig = sig;
     }
 	
-	public abstract byte[] getPublicKeyNetworkFormat();
+	public byte[] getPublicKeyNetworkFormat() {
+		return getPublicKeyNetworkFormat(false);
+	}
+	public abstract byte[] getPublicKeyNetworkFormat(boolean compressed);
 }
