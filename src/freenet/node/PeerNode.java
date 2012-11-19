@@ -852,21 +852,23 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		if(localHandshakeIPs == null)
 			return "null";
 		StringBuilder toOutputString = new StringBuilder(1024);
-		boolean needSep = false;
 		toOutputString.append("[ ");
-		for(int i = 0; i < localHandshakeIPs.length; i++) {
-			if(needSep)
+		if (localHandshakeIPs.length != 0) {
+			for(Peer localHandshakeIP: localHandshakeIPs) {
+				if(localHandshakeIP == null) {
+					toOutputString.append("null, ");
+					continue;
+				}
+				toOutputString.append('\'');
+				// Actually do the DNS request for the member Peer of localHandshakeIPs
+				toOutputString.append(localHandshakeIP.getAddress(false));
+				toOutputString.append('\'');
 				toOutputString.append(", ");
-			if(localHandshakeIPs[i] == null) {
-				toOutputString.append("null");
-				needSep = true;
-				continue;
 			}
-			toOutputString.append('\'');
-			// Actually do the DNS request for the member Peer of localHandshakeIPs
-			toOutputString.append(localHandshakeIPs[i].getAddress(false));
-			toOutputString.append('\'');
-			needSep = true;
+			// assert(toOutputString.length() >= 2) -- always true as localHandshakeIPs.length != 0
+			// remove last ", "
+			toOutputString.deleteCharAt(toOutputString.length()-1);
+			toOutputString.deleteCharAt(toOutputString.length()-1);
 		}
 		toOutputString.append(" ]");
 		return toOutputString.toString();

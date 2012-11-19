@@ -65,14 +65,18 @@ public class StringCounter {
 	
 	public String toLongString() {
 		Item[] items = sortedItems(false);
+		if (items.length == 0)
+			return "";
 		StringBuilder sb = new StringBuilder();
-		for(int i=0;i<items.length;i++) {
-			if(i!=0) sb.append('\n');
-			Item it = items[i];
+		for(Item it: items) {
 			sb.append(it.string);
 			sb.append('\t');
 			sb.append(it.counter);
+			sb.append('\n');
 		}
+		// assert(sb.length() > 0); -- always true as (items.length != 0)
+		// remove last '\n'
+		sb.deleteCharAt(sb.length()-1);
 		return sb.toString();
 	}
 	
