@@ -290,6 +290,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 				if(msg.getSpec() == DMT.FNPOpennetAnnounceCompleted) {
 					// Send the completion on immediately. We don't want to accumulate 30 seconds per hop!
 					complete();
+					//"complete" should always be the last message, but we might grab it out-of-order from our queue.
 					mfAnnounceReply.setTimeout(END_TIMEOUT).setTimeoutRelativeToCreation(true);
 					mfNotWanted.setTimeout(END_TIMEOUT).setTimeoutRelativeToCreation(true);
 					mfAnnounceReply.clearOr();
@@ -492,6 +493,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 	}
 
 	private void complete() {
+		addRefIfWanted();
 		synchronized(this) {
 			while(waitingForTransfers > 0) {
 				try {
@@ -519,12 +521,19 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		if(noderefBuf == null) {
 			return false;
 		}
-		SimpleFieldSet fs = OpennetManager.validateNoderef(noderefBuf, 0, noderefLength, source, false);
+		fs = OpennetManager.validateNoderef(noderefBuf, 0, noderefLength, source, false);
 		if(fs == null) {
 			OpennetManager.rejectRef(uid, source, DMT.NODEREF_REJECTED_INVALID, this);
 			return false;
 		}
+		return true;
+	}
+	
+	private SimpleFieldSet fs;
+	
+	private void addRefIfWanted() {
 		// If we want it, add it and send it.
+		if (fs==null ) return;
 		try {
 			// Allow reconnection - sometimes one side has the ref and the other side doesn't.
 			if(om.addNewOpennetNode(fs, ConnectionType.ANNOUNCE, true) != null) {
@@ -538,20 +547,20 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		} catch (FSParseException e) {
 			Logger.warning(this, "Rejecting noderef: "+e, e);
 			OpennetManager.rejectRef(uid, source, DMT.NODEREF_REJECTED_INVALID, this);
-			return false;
+			return;
 		} catch (PeerParseException e) {
 			Logger.warning(this, "Rejecting noderef: "+e, e);
 			OpennetManager.rejectRef(uid, source, DMT.NODEREF_REJECTED_INVALID, this);
-			return false;
+			return;
 		} catch (ReferenceSignatureVerificationException e) {
 			Logger.warning(this, "Rejecting noderef: "+e, e);
 			OpennetManager.rejectRef(uid, source, DMT.NODEREF_REJECTED_INVALID, this);
-			return false;
+			return;
 		} catch (NotConnectedException e) {
 			Logger.normal(this, "Could not receive noderef, disconnected");
-			return false;
+			return;
 		}
-		return true;
+		return;
 	}
 
 	private void sendNotWanted() throws NotConnectedException {
