@@ -6,7 +6,9 @@ import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.Provider;
+import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.interfaces.ECPrivateKey;
@@ -15,6 +17,7 @@ import java.security.spec.ECGenParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
 
 import freenet.crypt.JceLoader;
 import freenet.node.FSParseException;
@@ -43,27 +46,108 @@ public class ECDSA {
 		/** Expected size of CVC-encoded signature */
 		public final int signatureSize;
 
-		protected final Provider kgProvider = JceLoader.BouncyCastle;
-		protected final Provider kfProvider = JceLoader.BouncyCastle;
-		protected final Provider sigProvider = JceLoader.BouncyCastle;
-        
+		protected final Provider kgProvider;
+		protected final Provider kfProvider;
+		protected final Provider sigProvider;
+
+        /** Verify KeyPairGenerator and KeyFactory work correctly */
+        static private KeyPair selftest(KeyPairGenerator kg, KeyFactory kf, int modulusSize)
+            throws InvalidKeySpecException
+        {
+            KeyPair key = kg.generateKeyPair();
+            PublicKey pub = key.getPublic();
+            PrivateKey pk = key.getPrivate();
+            byte [] pubkey = pub.getEncoded();
+            byte [] pkey = pk.getEncoded();
+			if(pubkey.length != modulusSize)
+				throw new Error("Unexpected pubkey length: "+pubkey.length+"!="+modulusSize);
+            PublicKey pub2 = kf.generatePublic(
+                    new X509EncodedKeySpec(pubkey)
+                    );
+            if(!Arrays.equals(pub2.getEncoded(), pubkey))
+                throw new Error("Pubkey encoding mismatch");
+            PrivateKey pk2 = kf.generatePrivate(
+                    new PKCS8EncodedKeySpec(pkey)
+                    );
+			/*
+            if(!Arrays.equals(pk2.getEncoded(), pkey))
+                throw new Error("Pubkey encoding mismatch");
+			*/
+            return key;
+        }
+
+		static private void selftest_sign(KeyPair key, Signature sig)
+			throws SignatureException, InvalidKeyException
+		{
+			sig.initSign(key.getPrivate());
+			byte[] sign = sig.sign();
+			sig.initVerify(key.getPublic());
+			boolean verified = sig.verify(sign);
+			if (!verified)
+				throw new Error("Verification failed");
+		}
+
         private Curves(String name, String defaultHashAlgorithm, int modulusSize, int signatureSize) {
             this.spec = new ECGenParameterSpec(name);
+			Signature sig = null;
+			KeyFactory kf = null;
             KeyPairGenerator kg = null;
-            try {
-                kg = KeyPairGenerator.getInstance("EC", kgProvider);
-                kg.initialize(spec);
+			// Ensure providers loaded
+			JceLoader.BouncyCastle.toString();
+			try {
+				KeyPair key = null;
+				try {
+					/* check if default EC keys work correctly */
+					kg = KeyPairGenerator.getInstance("EC");
+					kf = KeyFactory.getInstance("EC");
+					kg.initialize(this.spec);
+					key = selftest(kg, kf, modulusSize);
+				} catch(Throwable e) {
+					/* we don't care why we fail, just fallback */
+					Logger.warning(this, "default KeyPairGenerator provider ("+(kg != null ? kg.getProvider() : null)+") is broken, falling back to BouncyCastle", e);
+					kg = KeyPairGenerator.getInstance("EC", JceLoader.BouncyCastle);
+					kf = KeyFactory.getInstance("EC", JceLoader.BouncyCastle);
+					kg.initialize(this.spec);
+					key = selftest(kg, kf, modulusSize);
+				}
+				try {
+					/* check default Signature compatible with kf/kg */
+					sig = Signature.getInstance(defaultHashAlgorithm);
+					selftest_sign(key, sig);
+				} catch(Throwable e) {
+					/* we don't care why we fail, just fallback */
+					Logger.warning(this, "default Signature provider ("+(sig != null ? sig.getProvider() : null)+") is broken or incompatible with KeyPairGenerator, falling back to BouncyCastle", e);
+					kg = KeyPairGenerator.getInstance("EC", JceLoader.BouncyCastle);
+					kf = KeyFactory.getInstance("EC", JceLoader.BouncyCastle);
+					kg.initialize(this.spec);
+					key = kg.generateKeyPair();
+					sig = Signature.getInstance(defaultHashAlgorithm, JceLoader.BouncyCastle);
+					selftest_sign(key, sig);
+				}
             } catch (NoSuchAlgorithmException e) {
                 Logger.error(ECDSA.class, "NoSuchAlgorithmException : "+e.getMessage(),e);
                 e.printStackTrace();
             } catch (InvalidAlgorithmParameterException e) {
                 Logger.error(ECDSA.class, "InvalidAlgorithmParameterException : "+e.getMessage(),e);
                 e.printStackTrace();
+            } catch (InvalidKeyException e) {
+				throw new Error(e);
+            } catch (InvalidKeySpecException e) {
+				throw new Error(e);
+            } catch (SignatureException e) {
+				throw new Error(e);
             }
+			this.kgProvider = kg.getProvider();
+			this.kfProvider = kf.getProvider();
+			this.sigProvider = sig.getProvider();
             this.keygen = kg;
             this.defaultHashAlgorithm = defaultHashAlgorithm;
             this.modulusSize = modulusSize;
 			this.signatureSize = signatureSize;
+            Logger.normal(this, name +": using "+kgProvider+" for KeyPairGenerator(EC)");
+            Logger.normal(this, name +": using "+kfProvider+" for KeyFactory(EC)");
+            Logger.normal(this, name +": using "+sigProvider+" for Signature("+defaultHashAlgorithm+")");
+
         }
         
         public synchronized KeyPair generateKeyPair() {
