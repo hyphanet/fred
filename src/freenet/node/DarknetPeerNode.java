@@ -1953,4 +1953,10 @@ public class DarknetPeerNode extends PeerNode {
 			}
 		}
 	}
+
+	@Override
+	public int getMaxSimultaneousAnnouncements() {
+		// Darknet!
+		return 0;
+	}
 }

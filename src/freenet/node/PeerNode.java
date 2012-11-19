@@ -4036,7 +4036,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return byteLen;
 	}
 
-	static final int MAX_SIMULTANEOUS_ANNOUNCEMENTS = 1;
 	static final int MAX_ANNOUNCE_DELAY = 1000;
 	private long timeLastAcceptedAnnouncement;
 	private long[] runningAnnounceUIDs = new long[0];
@@ -4048,7 +4047,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 */
 	public synchronized boolean shouldAcceptAnnounce(long uid) {
 		long now = System.currentTimeMillis();
-		if(runningAnnounceUIDs.length < MAX_SIMULTANEOUS_ANNOUNCEMENTS &&
+		if(runningAnnounceUIDs.length < getMaxSimultaneousAnnouncements() &&
 				now - timeLastAcceptedAnnouncement > MAX_ANNOUNCE_DELAY) {
 			long[] newList = new long[runningAnnounceUIDs.length + 1];
 			if(runningAnnounceUIDs.length > 0)
@@ -4082,6 +4081,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		return true;
 	}
+	
+	public abstract int getMaxSimultaneousAnnouncements();
 
 	public synchronized long timeLastDisconnect() {
 		return timeLastDisconnect;

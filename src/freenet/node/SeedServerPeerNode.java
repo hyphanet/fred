@@ -176,4 +176,10 @@ public class SeedServerPeerNode extends PeerNode {
 		return false;
 	}
 
+	@Override
+	public int getMaxSimultaneousAnnouncements() {
+		// Announcements are not sent to seed clients.
+		return 0;
+	}
+
 }

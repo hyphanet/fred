@@ -169,5 +169,11 @@ public class SeedClientPeerNode extends PeerNode {
 		return true;
 	}
 
+	@Override
+	public int getMaxSimultaneousAnnouncements() {
+		// Seed clients should only be able to do one announcement at a time.
+		return 1;
+	}
+
 
 }

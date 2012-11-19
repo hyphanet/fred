@@ -273,4 +273,13 @@ public class OpennetPeerNode extends PeerNode {
 		return true;
 	}
 
+	/** FIXME there clearly should be some limit, but if it's too low it'll
+	 * be a problem for seednodes and their direct peers? */
+	static final int MAX_SIMULTANEOUS_ANNOUNCEMENTS_PER_PEER = 10;
+
+	@Override
+	public int getMaxSimultaneousAnnouncements() {
+		return MAX_SIMULTANEOUS_ANNOUNCEMENTS_PER_PEER;
+	}
+
 }
