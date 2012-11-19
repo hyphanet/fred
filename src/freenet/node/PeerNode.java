@@ -375,12 +375,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public static final int BLACK_MAGIC_BACKOFF_PRUNING_TIME = 5 * 60 * 1000;
 	public static final double BLACK_MAGIC_BACKOFF_PRUNING_PERCENTAGE = 0.9;
 
-	/**
-	 * For FNP link setup:
-	 *  The initiator has to ensure that nonces send back by the
-	 *  responder in message2 match what was chosen in message 1
-	 */
-	protected final LinkedList<byte[]> jfkNoncesSent = new LinkedList<byte[]>();
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
 
@@ -3445,7 +3439,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		synchronized(this) {
 			if(disconnecting) return true;
 			disconnecting = true;
-			jfkNoncesSent.clear();
 			if(dumpMessageQueue) {
 				// Reset the boot ID so that we get different trackers next time.
 				myBootID = node.fastWeakRandom.nextLong();
