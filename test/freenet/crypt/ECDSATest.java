@@ -5,12 +5,11 @@ import java.math.BigInteger;
 import java.security.PublicKey;
 import java.security.Security;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
 import freenet.crypt.ECDSA.Curves;
 import freenet.node.FSParseException;
 import freenet.support.SimpleFieldSet;
 import junit.framework.TestCase;
+
 
 public class ECDSATest extends TestCase {
     
@@ -19,7 +18,6 @@ public class ECDSATest extends TestCase {
 
     protected void setUp() throws Exception {
         super.setUp();
-        Security.addProvider(new BouncyCastleProvider());
         curveToTest = Curves.P256;
         ecdsa = new ECDSA(curveToTest);
     }
@@ -73,7 +71,6 @@ public class ECDSATest extends TestCase {
      * @param args
      */
     public static void main(String[] args) throws Exception {
-        Security.addProvider(new BouncyCastleProvider());
         Curves curve = ECDSA.Curves.P256;
         ECDSA ecdsa = new ECDSA(curve);
         String toSign = "test";
