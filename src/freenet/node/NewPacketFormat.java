@@ -370,9 +370,7 @@ public class NewPacketFormat implements PacketFormat {
 			
 			int sequenceNumber = (int) ((0l + keyContext.watchListOffset + i) % NUM_SEQNUMS);
 			if(logDEBUG) Logger.debug(this, "Received packet matches sequence number " + sequenceNumber);
-			// Copy it to avoid side-effects.
-			byte[] copy = Arrays.copyOfRange(buf, offset, offset + length);
-			NPFPacket p = decipherFromSeqnum(copy, 0, length, sessionKey, sequenceNumber);
+			NPFPacket p = decipherFromSeqnum(buf, offset, length, sessionKey, sequenceNumber);
 			if(p != null) {
 				if(logMINOR) Logger.minor(this, "Received packet " + p.getSequenceNumber()+" on "+sessionKey);
 				return p;
@@ -382,7 +380,7 @@ public class NewPacketFormat implements PacketFormat {
 		return null;
 	}
 
-	/** NOTE: THIS WILL DECRYPT THE DATA IN THE BUFFER !!! */
+	/** Must NOT modify buf contents. */
 	private NPFPacket decipherFromSeqnum(byte[] buf, int offset, int length, SessionKey sessionKey, int sequenceNumber) {
 		BlockCipher ivCipher = sessionKey.ivCipher;
 
@@ -395,15 +393,13 @@ public class NewPacketFormat implements PacketFormat {
 
 		ivCipher.encipher(IV, IV);
 
-		byte[] text = Arrays.copyOfRange(buf, offset + hmacLength, offset + length);
+		byte[] payload = Arrays.copyOfRange(buf, offset + hmacLength, offset + length);
 		byte[] hash = Arrays.copyOfRange(buf, offset, offset + hmacLength);
 
-		if(!HMAC.verifyWithSHA256(sessionKey.hmacKey, text, hash)) return null;
+		if(!HMAC.verifyWithSHA256(sessionKey.hmacKey, payload, hash)) return null;
 
 		PCFBMode payloadCipher = PCFBMode.create(sessionKey.incommingCipher, IV);
-		payloadCipher.blockDecipher(buf, offset + hmacLength, length - hmacLength);
-
-		byte[] payload = Arrays.copyOfRange(buf, offset + hmacLength, offset + length);
+		payloadCipher.blockDecipher(payload, 0, payload.length);
 
 		NPFPacket p = NPFPacket.create(payload, pn);
 
