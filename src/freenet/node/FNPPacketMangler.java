@@ -398,7 +398,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(Arrays.equals(realHash, hash)) {
 			// Got one
 			processDecryptedAuth(payload, pn, peer, oldOpennetPeer);
-			pn.reportIncomingPacket(buf, offset, length, now);
+			pn.reportIncomingBytes(length);
 			return true;
 		} else {
 			if(logDEBUG) Logger.debug(this, "Incorrect hash in tryProcessAuth for "+peer+" (length="+dataLength+"): \nreal hash="+HexUtil.bytesToHex(realHash)+"\n bad hash="+HexUtil.bytesToHex(hash));
@@ -2084,7 +2084,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 		sock.sendPacket(data, replyTo, pn == null ? crypto.config.alwaysAllowLocalAddresses() : pn.allowLocalAddresses());
 		if(pn != null)
-			pn.reportOutgoingPacket(data, 0, data.length, System.currentTimeMillis());
+			pn.reportOutgoingBytes(data.length);
 		if(PeerNode.shouldThrottle(replyTo, node)) {
 			node.outputThrottle.forceGrab(data.length);
 		}

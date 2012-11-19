@@ -127,14 +127,12 @@ public class NullBasePeerNode implements BasePeerNode {
 	}
 
 	@Override
-	public void reportIncomingPacket(byte[] buf, int offset, int length,
-			long now) {
+	public void reportIncomingBytes(int length) {
 		// Ignore
 	}
 
 	@Override
-	public void reportOutgoingPacket(byte[] data, int offset, int length,
-			long now) {
+	public void reportOutgoingBytes(int length) {
 		// Ignore
 	}
 

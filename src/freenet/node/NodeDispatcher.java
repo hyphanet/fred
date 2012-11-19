@@ -148,9 +148,6 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			return handleTime(m, source);
 		} else if(spec == DMT.FNPUptime) {
 			return handleUptime(m, source);
-		} else if(spec == DMT.FNPSentPackets) {
-			source.handleSentPackets(m);
-			return true;
 		} else if(spec == DMT.FNPVisibility && source instanceof DarknetPeerNode) {
 			((DarknetPeerNode)source).handleVisibility(m);
 			return true;
