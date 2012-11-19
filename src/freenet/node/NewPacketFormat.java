@@ -500,10 +500,11 @@ public class NewPacketFormat implements PacketFormat {
 		payloadCipher.blockEncipher(data, hmacLength, paddedLen - hmacLength);
 
 		//Add hash
-		byte[] text = new byte[paddedLen - hmacLength];
-		System.arraycopy(data, hmacLength, text, 0, text.length);
-
-		byte[] hash = HMAC.macWithSHA256(sessionKey.hmacKey, text, hmacLength);
+		HMAC mac = HMAC.getMacWithSHA256();
+		mac.init(sessionKey.hmacKey);
+		mac.update(data, hmacLength, paddedLen - hmacLength);
+		byte[] hash = mac.doFinal();
+		HMAC.returnMacWithSHA256(mac);
 
 		System.arraycopy(hash, 0, data, 0, hmacLength);
 

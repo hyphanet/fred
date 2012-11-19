@@ -945,7 +945,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	    byte[] myExponential = ctx.getPublicKeyNetworkFormat();
 		byte[] r = sig.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] s = sig.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
-		byte[] authenticator = HMAC.macWithSHA256(getTransientKey(),assembleJFKAuthenticator(myExponential, hisExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress()), HASH_LENGTH);
+		byte[] authenticator = macJFKAuthenticator(getTransientKey(),myExponential, hisExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress());
 		if(logMINOR) Logger.minor(this, "We are using the following HMAC : " + HexUtil.bytesToHex(authenticator));
 
 		byte[] message2 = new byte[NONCE_SIZE*2+modulusLength+
@@ -975,26 +975,23 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	}
 
 	/*
-	 * Assemble what will be the jfk-Authenticator :
-	 * computed over the Responder exponentials and the Nonces and
+	 * Compute jfk-Authentificator: HmacSHA256 computed
+	 * over the Responder exponentials and the Nonces and
 	 * used by the responder to verify that the round-trip has been done
 	 *
 	 */
-	private byte[] assembleJFKAuthenticator(byte[] gR, byte[] gI, byte[] nR, byte[] nI, byte[] address) {
-		byte[] authData=new byte[gR.length + gI.length + nR.length + nI.length + address.length];
-		int offset = 0;
+	private byte[] macJFKAuthenticator(byte[] key, byte[] gR, byte[] gI, byte[] nR, byte[] nI, byte[] address) {
+		HMAC mac = HMAC.getMacWithSHA256();
+		mac.init(key);
+		mac.update(gR);
+		mac.update(gI);
+		mac.update(nR);
+		mac.update(nI);
+		mac.update(address);
+		byte [] result = mac.doFinal();
+		HMAC.returnMacWithSHA256(mac);
 
-		System.arraycopy(gR, 0, authData, offset ,gR.length);
-		offset += gR.length;
-		System.arraycopy(gI, 0, authData, offset, gI.length);
-		offset += gI.length;
-		System.arraycopy(nR, 0,authData, offset, nR.length);
-		offset += nR.length;
-		System.arraycopy(nI, 0,authData, offset, nI.length);
-		offset += nI.length;
-		System.arraycopy(address, 0, authData, offset, address.length);
-
-		return authData;
+		return result;
 	}
 
 	/*
@@ -1167,7 +1164,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		// We *WANT* to check the hmac before we do the lookup on the hashmap
 		// @see https://bugs.freenetproject.org/view.php?id=1604
-		if(!HMAC.verifyWithSHA256(getTransientKey(), assembleJFKAuthenticator(responderExponential, initiatorExponential, nonceResponder, nonceInitiator, replyTo.getAddress().getAddress()) , authenticator)) {
+
+		if(!Arrays.equals(macJFKAuthenticator(getTransientKey(), responderExponential, initiatorExponential, nonceResponder, nonceInitiator, replyTo.getAddress().getAddress()), authenticator)) {
 			if(shouldLogErrorInHandshake(t1)) {
 				Logger.normal(this, "The HMAC doesn't match; let's discard the packet (either we rekeyed or we are victim of forgery) - JFK3 - "+pn);
 			}

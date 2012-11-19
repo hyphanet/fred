@@ -183,27 +183,26 @@ public class HMAC {
 
 	}
 
+	public static HMAC getMacWithSHA256() {
+		MessageDigest sha256 = SHA256.getMessageDigest();
+		return new HMAC(sha256);
+	}
+	public static void returnMacWithSHA256(HMAC mac) {
+		SHA256.returnMessageDigest(mac.d);
+		mac.d = null;
+	}
+
 	public static byte[] macWithSHA256(byte[] K, byte[] text, int macbytes) {
-		MessageDigest sha256 = null;
-		try {
-			sha256 = SHA256.getMessageDigest();
-			HMAC hash = new HMAC(sha256);
-			return hash.mac(K, text, macbytes);
-		} finally {
-			if(sha256 != null)
-				SHA256.returnMessageDigest(sha256);
-		}
+		HMAC hash = getMacWithSHA256();
+		byte[] res = hash.mac(K, text, macbytes);
+		returnMacWithSHA256(hash);
+		return res;
 	}
 
 	public static boolean verifyWithSHA256(byte[] K, byte[] text, byte[] mac) {
-		MessageDigest sha256 = null;
-		try {
-			sha256 = SHA256.getMessageDigest();
-			HMAC hash = new HMAC(sha256);
-			return hash.verify(K, text, mac);
-		} finally {
-			if(sha256 != null)
-				SHA256.returnMessageDigest(sha256);
-		}
+		HMAC hash = getMacWithSHA256();
+		boolean res = hash.verify(K, text, mac);
+		returnMacWithSHA256(hash);
+		return res;
 	}
 }	

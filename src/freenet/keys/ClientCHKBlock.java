@@ -137,11 +137,9 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         // Decipher header first - functions as IV
         pcfb.blockDecipher(hbuf, 0, hbuf.length);
         pcfb.blockDecipher(dbuf, 0, dbuf.length);
-        MessageDigest md256 = SHA256.getMessageDigest();
         byte[] dkey = key.cryptoKey;
         // Check: IV == hash of decryption key
-        byte[] predIV = md256.digest(dkey);
-        SHA256.returnMessageDigest(md256); md256 = null;
+        byte[] predIV = SHA256.digest(dkey);
         // Extract the IV
         byte[] iv = Arrays.copyOf(hbuf, 32);
         if(!Arrays.equals(iv, predIV))
@@ -178,12 +176,11 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
             throw new CHKDecodeException("Invalid size: "+size);
         }
         // Check the hash.
-		MessageDigest md256 = SHA256.getMessageDigest();
-        HMAC hmac = new HMAC(md256);
+        HMAC hmac = HMAC.getMacWithSHA256();
         hmac.init(cryptoKey);
         hmac.update(plaintext); // plaintext includes lengthBytes
         byte[] hashCheck = hmac.doFinal();
-		SHA256.returnMessageDigest(md256); md256 = null; hmac = null;
+		HMAC.returnMacWithSHA256(hmac); hmac = null;
         if(!Arrays.equals(hash, hashCheck)) {
         	throw new CHKDecodeException("HMAC is wrong, wrong decryption key?");
         }
@@ -227,13 +224,12 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
             throw new CHKDecodeException("Invalid size: "+size);
         }
         // Check the hash.
-		MessageDigest md256 = SHA256.getMessageDigest();
-        HMAC hmac = new HMAC(md256);
+        HMAC hmac = HMAC.getMacWithSHA256();
         hmac.init(cryptoKey);
         hmac.update(plaintext);
         hmac.update(lengthBytes);
         byte[] hashCheck = hmac.doFinal();
-		SHA256.returnMessageDigest(md256); md256 = null; hmac = null;
+		HMAC.returnMacWithSHA256(hmac); hmac = null;
         if(!Arrays.equals(hash, hashCheck)) {
         	throw new CHKDecodeException("HMAC is wrong, wrong decryption key?");
         }
