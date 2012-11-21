@@ -396,9 +396,11 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 				if(persistent()) finalResult.removeFrom(container);
 			} else if(returnBucket != null && persistent())
 				returnBucket.storeTo(container); // Need to store the counter on FileBucket's so it can overwrite next time.
+			if(result != null) {
 			Bucket data = result.asBucket();
 			data.free();
 			if(persistent()) data.removeFrom(container);
+			}
 			return;
 		}
 		if(persistent()) {
