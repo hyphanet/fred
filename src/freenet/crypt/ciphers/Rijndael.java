@@ -64,8 +64,6 @@ public class Rijndael implements BlockCipher {
 	/** @return null if JCA is crippled (restricted to 128-bit) so we need 
 	 * to use this class. */
 	private static Provider getAesCtrProvider() {
-		// Ensure all providers loaded.
-		JceLoader.BouncyCastle.toString();
 		try {
 			final String algo = "AES/CTR/NOPADDING";
 			final Provider bcastle = JceLoader.BouncyCastle;
