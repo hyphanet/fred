@@ -36,18 +36,59 @@ public class ECDSA {
     public enum Curves {
         // rfc5903 or rfc6460: it's NIST's random/prime curves : suite B
         // Order matters. Append to the list, do not re-order.
-        P256("secp256r1", "SHA256withECDSA", 59, 64),
-        P384("secp384r1", "SHA384withECDSA", 72, 96),
-        P521("secp521r1", "SHA512withECDSA", 90, 132);
-
+        P256("secp256r1", "SHA256withECDSA", 59, 36, 64,
+		// 301306072a8648ce3d020106082a8648ce3d030107
+		new byte [] {
+		    (byte)0x30,// 2:d=1  hl=2 l=19 cons: SEQUENCE
+		    (byte)0x13,
+		    (byte)0x06,// 4:d=2  hl=2 l= 7 prim: OBJECT :id-ecPublicKey
+		    (byte)0x07,
+		    (byte)0x2a, (byte)0x86, (byte)0x48, (byte)0xce,
+		    (byte)0x3d, (byte)0x02, (byte)0x01,
+		    (byte)0x06,//13:d=2  hl=2 l= 8 prim: OBJECT :prime256v1
+		    (byte)0x08,
+		    (byte)0x2a, (byte)0x86, (byte)0x48, (byte)0xce,
+		    (byte)0x3d, (byte)0x03, (byte)0x01, (byte)0x07,
+		}),
+        P384("secp384r1", "SHA384withECDSA", 72, 52, 96,
+		// 301006072a8648ce3d020106052b81040022
+		new byte [] {
+		    (byte)0x30,// 2:d=1  hl=2 l=16 cons: SEQUENCE
+		    (byte)0x10,
+		    (byte)0x06,// 4:d=2  hl=2 l= 7 prim: OBJECT :id-ecPublicKey
+		    (byte)0x07,
+		    (byte)0x2a, (byte)0x86, (byte)0x48, (byte)0xce,
+		    (byte)0x3d, (byte)0x02, (byte)0x01,
+		    (byte)0x06,//13:d=2  hl=2 l= 5 prim: OBJECT :prime384v1
+		    (byte)0x05,
+		    (byte)0x2b, (byte)0x81, (byte)0x04, (byte)0x00, (byte)0x22,
+		}),
+        P521("secp521r1", "SHA512withECDSA", 90, 70, 132,
+		// 301006072a8648ce3d020106052b81040023
+		new byte [] {
+		    (byte)0x30,// 2:d=1  hl=2 l=16 cons: SEQUENCE
+		    (byte)0x10,
+		    (byte)0x06,// 4:d=2  hl=2 l= 7 prim: OBJECT :id-ecPublicKey
+		    (byte)0x07,
+		    (byte)0x2a, (byte)0x86, (byte)0x48, (byte)0xce,
+		    (byte)0x3d, (byte)0x02, (byte)0x01,
+		    (byte)0x06,//13:d=2  hl=2 l= 5 prim: OBJECT :prime521v1
+		    (byte)0x05,
+		    (byte)0x2b, (byte)0x81, (byte)0x04, (byte)0x00, (byte)0x23,
+		});
+        
         public final ECGenParameterSpec spec;
         private final KeyPairGenerator keygen;
         /** The hash algorithm used to generate the signature */
         public final String defaultHashAlgorithm;
         /** Expected size of a DER encoded compressed pubkey in bytes */
         public final int modulusSize;
+        /** Expected size of a raw compressed pubkey */
+        public final int modulusRawSize;
 		/** Expected size of CVC-encoded signature */
 		public final int signatureSize;
+		/** Fixed header of DER-encoded pubkey */
+		public final byte [] derPubkeyHeader;
 
 		protected final Provider kgProvider;
 		protected final Provider kfProvider;
@@ -110,7 +151,7 @@ public class ECDSA {
 				throw new Error("Verification failed");
 		}
 
-        private Curves(String name, String defaultHashAlgorithm, int modulusSize, int signatureSize) {
+        private Curves(String name, String defaultHashAlgorithm, int modulusSize, int modulusRawSize, int signatureSize, byte [] derPubkeyHeader) {
             this.spec = new ECGenParameterSpec(name);
 			Signature sig = null;
 			KeyFactory kf = null;
@@ -185,7 +226,9 @@ public class ECDSA {
             this.keygen = kg;
             this.defaultHashAlgorithm = defaultHashAlgorithm;
             this.modulusSize = modulusSize;
+            this.modulusRawSize = modulusRawSize;
 			this.signatureSize = signatureSize;
+			this.derPubkeyHeader = derPubkeyHeader;
             Logger.normal(this, name +": using "+kgProvider+" for KeyPairGenerator(EC)");
             Logger.normal(this, name +": using "+kfProvider+" for KeyFactory(EC)");
             Logger.normal(this, name +": using "+sigProvider+" for Signature("+defaultHashAlgorithm+")");
@@ -209,10 +252,24 @@ public class ECDSA {
 				if (!(pub instanceof ECPointEncoder))
 					throw new Error("BouncyCastle generated pubkey that is not instance of "+ECPointEncoder.class);
 			}
+			byte raw[];
 			synchronized(pub) {
 				((ECPointEncoder)pub).setPointFormat("COMPRESSED");
-				return pub.getEncoded();
+				raw = pub.getEncoded();
 			}
+			try {
+				raw = DerUtils.DerECPubkeyToRAW(derPubkeyHeader, raw, true);
+			} catch(IllegalArgumentException e) {
+				// other side can accept both format variation
+				Logger.warning(ECDSA.class, "Cannot unwrap pubkey: "+e, e);
+				System.err.println("unwrap: "+e);
+				e.printStackTrace();
+			} catch(ArrayIndexOutOfBoundsException e) {
+				Logger.warning(ECDSA.class, "Cannot unwrap pubkey: "+e, e);
+				System.err.println("unwrap: "+e);
+				e.printStackTrace();
+			}
+			return raw;
 		}
 
         public SimpleFieldSet getSFS(ECPublicKey pub) {
@@ -346,6 +403,26 @@ public class ECDSA {
      */
     public static ECPublicKey getPublicKey(byte[] data, Curves curve) {
         ECPublicKey remotePublicKey = null;
+		if (data[0] == (byte)0x30) { // SEQUENCE: full pubkey
+			/* Do nothing */
+		} else if (data[0] == (byte)0x03) { // BITSTRING: stripped pubkey
+			try {
+				data = DerUtils.DerECPubkeyFromRAW(curve.derPubkeyHeader, data, true);
+			} catch(IllegalArgumentException e) {
+				Logger.warning(ECDSA.class, "Cannot rewrap pubkey: "+e, e);
+				System.err.println("unwrap: "+e);
+				e.printStackTrace();
+				return null;
+			} catch(ArrayIndexOutOfBoundsException e) {
+				Logger.warning(ECDSA.class, "Cannot rewrap pubkey: "+e, e);
+				System.err.println("unwrap: "+e);
+				e.printStackTrace();
+				return null;
+			}
+		} else {
+			System.err.println("unexpected: "+data[0]);
+			return null;
+		}
         try {
             X509EncodedKeySpec ks = new X509EncodedKeySpec(data);
             KeyFactory kf = KeyFactory.getInstance("EC", JceLoader.BouncyCastle);
@@ -393,7 +470,8 @@ public class ECDSA {
     public synchronized SimpleFieldSet asFieldSet(boolean includePrivate) {
         SimpleFieldSet fs = new SimpleFieldSet(true);
         SimpleFieldSet fsCurve = new SimpleFieldSet(true);
-        fsCurve.putSingle("pub", Base64.encode(compressedPubkey));
+		byte[] raw = compressedPubkey;
+        fsCurve.putSingle("pub", Base64.encode(raw));
         if(includePrivate)
             fsCurve.putSingle("pri", Base64.encode(key.getPrivate().getEncoded()));
         fs.put(curve.name(), fsCurve);

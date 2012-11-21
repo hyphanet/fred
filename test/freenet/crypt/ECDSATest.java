@@ -26,15 +26,25 @@ public class ECDSATest extends TestCase {
     public void testGetPublicKey() {
         PublicKey pub = ecdsa.getPublicKey();
         assertNotNull(pub);
-        //assertEquals(pub.getEncoded().length, curveToTest.modulusSize);
+        //assertEquals(pubkey.length, curveToTest.modulusSize);
+	}
+
+	public void testGetPublicKeyNetworkFormat() {
+		byte [] pubkey = ecdsa.getPublicKeyNetworkFormat();
+        assertNotNull(pubkey);
+        assertEquals(pubkey.length, curveToTest.modulusRawSize);
     }
 
-    public void testGetPublicKeyNetworkFormat() {
-        byte[] pubkey = ecdsa.getPublicKeyNetworkFormat();
-        assertNotNull(pubkey);
-        assertTrue(pubkey.length, curveToTest.modulusSize);
-    }
-    
+	public void testSerializePublicKey() {
+		byte [] pubkey = ecdsa.getPublicKeyNetworkFormat();
+		assertNotNull(pubkey);
+		PublicKey pub = ECDSA.getPublicKey(pubkey, curveToTest);
+		assertEquals(ecdsa.getPublicKey(), pub);
+		assertTrue(Arrays.equals(
+					curveToTest.getPublicKeyNetworkFormat(pub),
+					pubkey));
+	}
+
     public void testSign() {
         byte[] sig= ecdsa.sign("test".getBytes());
         assertNotNull(sig);

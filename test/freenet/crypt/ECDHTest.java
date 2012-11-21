@@ -47,6 +47,18 @@ public class ECDHTest extends TestCase {
         assertEquals(bobP.getEncoded().length, curveToTest.modulusSize);
     }
 
+    public void testGetPublicKeySerialize() {
+		byte[] raw = alice.getPublicKeyNetworkFormat(false);
+		PublicKey alice2 = ECDH.getPublicKey(raw, curveToTest);
+		assertEquals(alice.getPublicKey(), alice2);
+    }
+
+    public void testGetPublicKeySerializeCompressed() {
+		byte[] raw = alice.getPublicKeyNetworkFormat(true);
+		PublicKey alice2 = ECDH.getPublicKey(raw, curveToTest);
+		assertEquals(alice.getPublicKey(), alice2);
+    }
+
 
     public static void main(String[] args) throws InvalidKeyException, IllegalStateException, NoSuchAlgorithmException {
         Security.addProvider(new BouncyCastleProvider());

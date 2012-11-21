@@ -22,6 +22,7 @@ import javax.crypto.SecretKey;
 
 import freenet.crypt.JceLoader;
 import freenet.support.Logger;
+import freenet.support.DerUtils;
 
 import org.bouncycastle.jce.interfaces.ECPointEncoder;
 
@@ -34,9 +35,46 @@ public class ECDH {
     public enum Curves {
         // rfc5903 or rfc6460: it's NIST's random/prime curves : suite B
         // Order matters. Append to the list, do not re-order.
-        P256("secp256r1", 91, 59, 32),
-        P384("secp384r1", 120, 72, 48),
-        P521("secp521r1", 158, 90, 66);
+        P256("secp256r1", 91, 59, 36, 32,
+		// 301306072a8648ce3d020106082a8648ce3d030107
+		new byte [] {
+		    (byte)0x30,// 2:d=1  hl=2 l=19 cons: SEQUENCE
+		    (byte)0x13,
+		    (byte)0x06,// 4:d=2  hl=2 l= 7 prim: OBJECT :id-ecPublicKey
+		    (byte)0x07,
+		    (byte)0x2a, (byte)0x86, (byte)0x48, (byte)0xce,
+		    (byte)0x3d, (byte)0x02, (byte)0x01,
+		    (byte)0x06,//13:d=2  hl=2 l= 8 prim: OBJECT :prime256v1
+		    (byte)0x08,
+		    (byte)0x2a, (byte)0x86, (byte)0x48, (byte)0xce,
+		    (byte)0x3d, (byte)0x03, (byte)0x01, (byte)0x07,
+		}),
+        P384("secp384r1", 120, 72, 52, 48,
+		// 301006072a8648ce3d020106052b81040022
+		new byte [] {
+		    (byte)0x30,// 2:d=1  hl=2 l=16 cons: SEQUENCE
+		    (byte)0x10,
+		    (byte)0x06,// 4:d=2  hl=2 l= 7 prim: OBJECT :id-ecPublicKey
+		    (byte)0x07,
+		    (byte)0x2a, (byte)0x86, (byte)0x48, (byte)0xce,
+		    (byte)0x3d, (byte)0x02, (byte)0x01,
+		    (byte)0x06,//13:d=2  hl=2 l= 5 prim: OBJECT :prime384v1
+		    (byte)0x05,
+		    (byte)0x2b, (byte)0x81, (byte)0x04, (byte)0x00, (byte)0x22,
+		}),
+        P521("secp521r1", 158, 90, 70, 66,
+		// 301006072a8648ce3d020106052b81040023
+		new byte [] {
+		    (byte)0x30,// 2:d=1  hl=2 l=16 cons: SEQUENCE
+		    (byte)0x10,
+		    (byte)0x06,// 4:d=2  hl=2 l= 7 prim: OBJECT :id-ecPublicKey
+		    (byte)0x07,
+		    (byte)0x2a, (byte)0x86, (byte)0x48, (byte)0xce,
+		    (byte)0x3d, (byte)0x02, (byte)0x01,
+		    (byte)0x06,//13:d=2  hl=2 l= 5 prim: OBJECT :prime521v1
+		    (byte)0x05,
+		    (byte)0x2b, (byte)0x81, (byte)0x04, (byte)0x00, (byte)0x23,
+		});
         
         public final ECGenParameterSpec spec;
         private KeyPairGenerator keygenCached;
@@ -50,8 +88,12 @@ public class ECDH {
         public final int modulusSize;
         /** Expected size of a compressed pubkey */
         public final int compressedModulusSize;
+        /** Expected size of a raw compressed pubkey */
+        public final int modulusRawSize;
         /** Expected size of the derived secret (in bytes) */
         public final int derivedSecretSize;
+		/** Fixed header of DER-encoded pubkey */
+		public final byte [] derPubkeyHeader;
         
         /** Verify KeyPairGenerator and KeyFactory work correctly */
         static private KeyPair selftest(KeyPairGenerator kg, KeyFactory kf, int modulusSize)
@@ -110,7 +152,7 @@ public class ECDH {
 			ka.generateSecret();
 		}
 
-        private Curves(String name, int modulusSize, int compressedModulusSize, int derivedSecretSize) {
+        private Curves(String name, int modulusSize, int compressedModulusSize, int modulusRawSize, int derivedSecretSize, byte [] derPubkeyHeader) {
             this.spec = new ECGenParameterSpec(name);
             KeyAgreement ka = null;
 			KeyFactory kf = null;
@@ -180,8 +222,10 @@ public class ECDH {
 			}
 			this.modulusSize = modulusSize;
 			this.derivedSecretSize = derivedSecretSize;
+			this.modulusRawSize = modulusRawSize;
 			this.compressedModulusSize = compressedModulusSize;
 			this.kaAcceptConvertedKeys = kaAcceptConvertedKeys;
+			this.derPubkeyHeader = derPubkeyHeader;
 			this.kgProvider = kg.getProvider();
 			this.kfProvider = kf.getProvider();
 			this.kaProvider = ka.getProvider();
@@ -230,6 +274,14 @@ public class ECDH {
 				((ECPointEncoder)pub).setPointFormat("COMPRESSED");
 				raw = pub.getEncoded();
 				((ECPointEncoder)pub).setPointFormat("UNCOMPRESSED");
+			}
+			try {
+				raw = DerUtils.DerECPubkeyToRAW(derPubkeyHeader, raw, true);
+			} catch(IllegalArgumentException e) {
+				// other side can accept both format variation
+				Logger.warning(ECDH.class, "Cannot unwrap pubkey: "+e, e);
+			} catch(ArrayIndexOutOfBoundsException e) {
+				Logger.warning(ECDH.class, "Cannot unwrap pubkey: "+e, e);
 			}
 			return raw;
 		}
@@ -284,7 +336,7 @@ public class ECDH {
 		synchronized(pubkey) {
 			return pubkey.getEncoded();
 		}
-    }
+	}
 
     /**
      * Returns an ECPublicKey from bytes obtained using ECPublicKey.getEncoded()
@@ -293,6 +345,21 @@ public class ECDH {
      */
     public static ECPublicKey getPublicKey(byte[] data, Curves curve) {
         ECPublicKey remotePublicKey = null;
+		if (data[0] == (byte)0x30) { // SEQUENCE: full pubkey
+			/* Do nothing */
+		} else if (data[0] == (byte)0x03) { // BITSTRING: stripped pubkey
+			try {
+				data = DerUtils.DerECPubkeyFromRAW(curve.derPubkeyHeader, data, true);
+			} catch(IllegalArgumentException e) {
+				Logger.warning(ECDH.class, "Cannot rewrap pubkey: "+e, e);
+				return null;
+			} catch(ArrayIndexOutOfBoundsException e) {
+				Logger.warning(ECDH.class, "Cannot rewrap pubkey: "+e, e);
+				return null;
+			}
+		} else {
+			return null;
+		}
         try {
             X509EncodedKeySpec ks = new X509EncodedKeySpec(data);
             KeyFactory kf = KeyFactory.getInstance("EC", JceLoader.BouncyCastle);
