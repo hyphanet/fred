@@ -51,13 +51,17 @@ public abstract class UploadRequestStatus extends RequestStatus {
 	@Override
 	public abstract long getDataSize();
 
+	public int getFailureCode() {
+		return failureCode;
+	}
+
 	@Override
 	public String getFailureReason(boolean longDescription) {
 		return longDescription ? failureReasonLong : failureReasonShort;
 	}
 
-	public synchronized void setFinalURI(FreenetURI finalURI2) {
-		this.finalURI = finalURI2;
+	public synchronized void setFinalURI(FreenetURI finalURI) {
+		this.finalURI = finalURI;
 	}
 
 }

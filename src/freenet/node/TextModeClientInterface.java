@@ -20,7 +20,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.text.NumberFormat;
-import java.util.Arrays;
 import java.util.HashMap;
 
 import freenet.client.ClientMetadata;
@@ -47,10 +46,10 @@ import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
@@ -73,7 +72,6 @@ public class TextModeClientInterface implements Runnable {
     final File downloadsDir;
     final InputStream in;
     final OutputStream out;
-    private boolean doneSomething;
 
     private static volatile boolean logMINOR;
     static {
@@ -208,7 +206,7 @@ public class TextModeClientInterface implements Runnable {
         if(core != null && core.directTMCI != this) {
           sb.append("QUIT - close the socket\r\n");
         }
-        if(n.isTestnetEnabled()) {
+        if(Node.isTestnetEnabled()) {
         	sb.append("WARNING: TESTNET MODE ENABLED. YOU HAVE NO ANONYMITY.\r\n");
         }
         s.write(sb.toString().getBytes());

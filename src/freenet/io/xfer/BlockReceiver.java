@@ -29,7 +29,6 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.RetrievalException;
 import freenet.io.comm.SlowAsyncMessageFilterCallback;
-import freenet.node.BasePeerNode;
 import freenet.node.PeerNode;
 import freenet.node.SyncSendWaitedTooLongException;
 import freenet.support.BitArray;

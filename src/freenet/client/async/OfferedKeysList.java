@@ -18,12 +18,8 @@ import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestCompletionListener;
 import freenet.node.RequestScheduler;
-import freenet.node.RequestSender;
-import freenet.node.RequestSenderListener;
-import freenet.node.SendableInsert;
 import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
-import freenet.node.NodeClientCore.SimpleRequestSenderCompletionListener;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -47,14 +43,14 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	private final HashSet<Key> keys;
 	private final Vector<Key> keysList; // O(1) remove random element the way we use it, see chooseKey().
 	private static volatile boolean logMINOR;
-	private static volatile boolean logDEBUG;
+	//private static volatile boolean logDEBUG;
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
 				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
+				//logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
 	}

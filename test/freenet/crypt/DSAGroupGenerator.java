@@ -91,7 +91,7 @@ public class DSAGroupGenerator {
 		// 6: Let counter = 0 and offset = 2
 		
 		int counter = 0;
-		int offset = 2;
+		//int offset = 2;
 		
 		byte[] curSeed = seedPlus1;
 		
@@ -128,7 +128,7 @@ public class DSAGroupGenerator {
 			}
 			
 			counter++;
-			offset += n;
+			//offset += n;
 			if(counter >= 4096) return false;
 		}		
 	}

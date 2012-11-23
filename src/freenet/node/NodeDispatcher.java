@@ -27,9 +27,8 @@ import freenet.store.BlockMetadata;
 import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.ShortBuffer;
-import freenet.support.SizeUtil;
 import freenet.support.Logger.LogLevel;
+import freenet.support.ShortBuffer;
 import freenet.support.io.NativeThread;
 
 /**

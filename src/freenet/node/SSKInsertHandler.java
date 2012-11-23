@@ -223,7 +223,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
         
         boolean receivedRejectedOverload = false;
         
-        long startTime = System.currentTimeMillis();
+        //long startTime = System.currentTimeMillis();
         while(true) {
             synchronized(sender) {
                 try {

@@ -33,6 +33,7 @@ public class LineReadingInputStreamTest extends TestCase {
 		assertEquals("", instance.readLineWithoutMarking(MAX_LENGTH, BUFFER_SIZE, true));
 		assertEquals("\u0114", instance.readLineWithoutMarking(MAX_LENGTH, BUFFER_SIZE, true));
 		assertNull(instance.readLineWithoutMarking(MAX_LENGTH, BUFFER_SIZE, true));
+		instance.close();
 		
 		// try ISO-8859-1
 		is = new ByteArrayInputStream(BLOCK.getBytes("ISO-8859-1"));
@@ -41,12 +42,14 @@ public class LineReadingInputStreamTest extends TestCase {
 			assertEquals(expectedLine, instance.readLineWithoutMarking(MAX_LENGTH, BUFFER_SIZE, false));
 		}
 		assertNull(instance.readLineWithoutMarking(MAX_LENGTH, BUFFER_SIZE, false));
+		instance.close();
 		
 		// is it returning null?
 		is = new MockInputStream();
 		instance = new LineReadingInputStream(is);
 		assertNull(instance.readLineWithoutMarking(0, BUFFER_SIZE, false));
 		assertNull(instance.readLineWithoutMarking(0, 0, false));
+		instance.close();
 		
 		// is it throwing?
 		is = new ByteArrayInputStream(LENGTH_CHECKING_LINE.getBytes());
@@ -55,16 +58,19 @@ public class LineReadingInputStreamTest extends TestCase {
 			instance.readLineWithoutMarking(LENGTH_CHECKING_LINE_LF - 1, BUFFER_SIZE, true);
 			fail();
 		} catch (TooLongException e) {}
+		instance.close();
 		
 		// Same test shouldn't throw
 		is = new ByteArrayInputStream(LENGTH_CHECKING_LINE.getBytes());
 		instance = new LineReadingInputStream(is);
 		assertEquals(LENGTH_CHECKING_LINE.substring(0, LENGTH_CHECKING_LINE_LF), instance.readLineWithoutMarking(LENGTH_CHECKING_LINE_LF, BUFFER_SIZE, true));
+		instance.close();
 		
 		// is it handling nulls properly? @see #2501
 		is = new ByteArrayInputStream(NULL_LINE.getBytes());
 		instance = new LineReadingInputStream(is);
 		assertEquals(NULL_LINE.substring(0, 5), instance.readLineWithoutMarking(BUFFER_SIZE, 1, true));
+		instance.close();
 	}
 	
 	public void testReadLine() throws Exception {
@@ -74,6 +80,7 @@ public class LineReadingInputStreamTest extends TestCase {
 		assertEquals("", instance.readLine(MAX_LENGTH, BUFFER_SIZE, true));
 		assertEquals("\u0114", instance.readLine(MAX_LENGTH, BUFFER_SIZE, true));
 		assertNull(instance.readLine(MAX_LENGTH, BUFFER_SIZE, true));
+		instance.close();
 		
 		// try ISO-8859-1
 		is = new ByteArrayInputStream(BLOCK.getBytes("ISO-8859-1"));
@@ -82,12 +89,14 @@ public class LineReadingInputStreamTest extends TestCase {
 			assertEquals(expectedLine, instance.readLine(MAX_LENGTH, BUFFER_SIZE, false));
 		}
 		assertNull(instance.readLine(MAX_LENGTH, BUFFER_SIZE, false));
+		instance.close();
 		
 		// is it returning null? and blocking when it should be?
 		is = new MockInputStream();
 		instance = new LineReadingInputStream(is);
 		assertNull(instance.readLine(0, BUFFER_SIZE, false));
 		assertNull(instance.readLine(0, 0, false));
+		instance.close();
 		
 		// is it throwing?
 		is = new ByteArrayInputStream(LENGTH_CHECKING_LINE.getBytes());
@@ -95,17 +104,22 @@ public class LineReadingInputStreamTest extends TestCase {
 		try {
 			instance.readLine(LENGTH_CHECKING_LINE_LF - 1, BUFFER_SIZE, true);
 			fail();
-		} catch (TooLongException e) {}
+		} catch (TooLongException e) {
+			
+		}
+		instance.close();
 		
 		// Same test shouldn't throw
 		is = new ByteArrayInputStream(LENGTH_CHECKING_LINE.getBytes());
 		instance = new LineReadingInputStream(is);
 		assertEquals(LENGTH_CHECKING_LINE.substring(0, LENGTH_CHECKING_LINE_LF), instance.readLine(LENGTH_CHECKING_LINE_LF, BUFFER_SIZE, true));
+		instance.close();
 		
 		// is it handling nulls properly? @see #2501
 		is = new ByteArrayInputStream(NULL_LINE.getBytes());
 		instance = new LineReadingInputStream(is);
 		assertEquals(NULL_LINE.substring(0, 5), instance.readLine(BUFFER_SIZE, 1, true));
+		instance.close();
 	}
 
 	public void testBothImplementation() throws Exception {
@@ -121,5 +135,8 @@ public class LineReadingInputStreamTest extends TestCase {
 		}
 		assertNull(lris1.readLine(MAX_LENGTH, BUFFER_SIZE, true));
 		assertNull(lris2.readLineWithoutMarking(MAX_LENGTH, BUFFER_SIZE, true));
+		
+		lris1.close();
+		lris2.close();
 	}
 }

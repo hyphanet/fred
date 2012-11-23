@@ -1742,7 +1742,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	}
 
 	public boolean isTestnetEnabled() {
-		return node.isTestnetEnabled();
+		return Node.isTestnetEnabled();
 	}
 
 	public boolean isAdvancedModeEnabled() {

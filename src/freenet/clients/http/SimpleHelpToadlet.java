@@ -45,7 +45,7 @@ public class SimpleHelpToadlet extends Toadlet {
 		HTMLNode table = helpScreenContent2.addChild("table", new String[]{"border", "style"}, new String[]{"0", "border: none"});
        
                 HTMLNode row = table.addChild("tr");
-                HTMLNode cell = row.addChild("td", "style", "border: none");
+                //HTMLNode cell = row.addChild("td", "style", "border: none");
               
 		        // cell.addChild("#", " ");
                 // }

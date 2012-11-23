@@ -298,7 +298,7 @@ public class ContainerInserter implements ClientPutState {
 	/**
 	** OutputStream os will be close()d if this method returns successfully.
 	*/
-	private String createTarBucket(OutputStream os, @SuppressWarnings("unused") ObjectContainer container) throws IOException {
+	private String createTarBucket(OutputStream os, ObjectContainer container) throws IOException {
 		if(logMINOR) Logger.minor(this, "Create a TAR Bucket");
 		
 		TarArchiveOutputStream tarOS = new TarArchiveOutputStream(os);
@@ -322,7 +322,7 @@ public class ContainerInserter implements ClientPutState {
 		return ARCHIVE_TYPE.TAR.mimeTypes[0];
 	}
 	
-	private String createZipBucket(OutputStream os, @SuppressWarnings("unused") ObjectContainer container) throws IOException {
+	private String createZipBucket(OutputStream os, ObjectContainer container) throws IOException {
 		if(logMINOR) Logger.minor(this, "Create a ZIP Bucket");
 		
 		ZipOutputStream zos = new ZipOutputStream(os);

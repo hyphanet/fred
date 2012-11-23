@@ -5,8 +5,6 @@ package freenet.store;
 
 import java.io.IOException;
 
-import com.sleepycat.je.DatabaseException;
-
 import freenet.crypt.DSAPublicKey;
 import freenet.keys.KeyVerifyException;
 import freenet.node.stats.StoreAccessStats;

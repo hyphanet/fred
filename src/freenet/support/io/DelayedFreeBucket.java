@@ -121,7 +121,7 @@ public class DelayedFreeBucket implements Bucket {
 		return super.toString()+":"+bucket;
 	}
 	
-	private transient int _activationCount = 0;
+	//private transient int _activationCount = 0;
 	
 	public void objectOnActivate(ObjectContainer container) {
 //		StackTraceElement[] elements = Thread.currentThread().getStackTrace();

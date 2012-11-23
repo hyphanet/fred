@@ -41,7 +41,7 @@ class CSSTokenizerFilter {
 	Writer w = null;
 	FilterCallback cb;
 	// FIXME use this
-	private static volatile boolean logMINOR;
+	//private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
 	private final String passedCharset;
 	private String detectedCharset;
@@ -1806,7 +1806,7 @@ class CSSTokenizerFilter {
 		String defaultMedia="screen";
 		String[] currentMedia=new String[] {defaultMedia};
 		String propertyName="",propertyValue="";
-		boolean ignoreElementsS1=false,ignoreElementsS2=false,ignoreElementsS3=false,closeIgnoredS1=false,closeIgnoredS2=false;
+		boolean ignoreElementsS1=false, ignoreElementsS2=false, ignoreElementsS3=false, closeIgnoredS2=false;
 		int x;
 		char c=0,prevc=0;
 		boolean s2Comma=false;
@@ -2126,7 +2126,6 @@ class CSSTokenizerFilter {
 					}
 					isState1Present=false;
 					ignoreElementsS1 = false;
-					closeIgnoredS1 = false;
 					buffer.setLength(0);
 					charsetPossible=false;
 					break;
@@ -2178,7 +2177,6 @@ class CSSTokenizerFilter {
 				case '\r':
 					if(prevc != '\\') {
 						ignoreElementsS1 = true;
-						closeIgnoredS1 = true;
 						currentState = STATE1;
 						break;
 					} else {
@@ -3031,7 +3029,6 @@ class CSSTokenizerFilter {
 		if(logDEBUG) Logger.debug(CSSTokenizerFilter.class, "Splitting \""+input+"\" allowCommaDelimiters="+allowCommaDelimiters);
 		ArrayList<ParsedWord> words = new ArrayList<ParsedWord>();
 		ParsedWord lastWord = null;
-		char prevc = 0;
 		char c = 0;
 		// ", ' or 0 (not in string)
 		char stringchar = 0;
@@ -3051,7 +3048,6 @@ class CSSTokenizerFilter {
 		// Brackets prevent tokenisation, see e.g. rgb().
 		int bracketCount = 0;
 		for(int i=0;i<input.length();i++) {
-			prevc = c;
 			c = input.charAt(i);
 			if(stringchar == 0) {
 				if(eatLF && c == '\n') {
@@ -4190,7 +4186,7 @@ class CSSTokenizerFilter {
 			}
 
 			if(value[0] instanceof ParsedAttr) {
-				ParsedAttr attr = (ParsedAttr) value[0];
+				//ParsedAttr attr = (ParsedAttr) value[0];
 				return true;
 			}
 

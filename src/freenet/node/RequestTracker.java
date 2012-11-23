@@ -5,10 +5,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Ticker;
-import freenet.support.Logger.LogLevel;
 
 public class RequestTracker {
 	
@@ -198,11 +196,11 @@ public class RequestTracker {
 		int total;
 		int expectedTransfersOut;
 		int expectedTransfersIn;
-		private CountedRequests(int count, int out, int in) {
+		/*private CountedRequests(int count, int out, int in) {
 			total = count;
 			expectedTransfersOut = out;
 			expectedTransfersIn = in;
-		}
+		}*/
 		public CountedRequests() {
 			// Initially empty.
 		}

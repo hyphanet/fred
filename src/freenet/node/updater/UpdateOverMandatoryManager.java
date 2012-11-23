@@ -1026,8 +1026,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		tempContext.maxTempLength = NodeUpdateManager.MAX_REVOCATION_KEY_TEMP_LENGTH;
 		tempContext.localRequestOnly = true;
 
-		File f;
-		FileBucket b = null;
 		final ArrayBucket cleanedBlob = new ArrayBucket();
 
 		ClientGetCallback myCallback = new ClientGetCallback() {

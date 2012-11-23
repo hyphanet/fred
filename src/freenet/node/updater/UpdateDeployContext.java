@@ -193,6 +193,7 @@ public class UpdateDeployContext {
 		// Write classpath first
 		
 		if(mainRHS == null) {
+			bw.close();
 			throw new UpdaterParserException(l10n("updateFailedNonStandardConfig", 
 					new String[] { "main" }, new String[] { Boolean.toString(mainRHS != null) } ));
 		}

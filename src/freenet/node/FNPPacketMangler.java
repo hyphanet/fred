@@ -2490,7 +2490,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
     
     private static class NoContextsException extends Exception {
     	
-    	private enum CONTEXT {
+    	private static final long serialVersionUID = 1L;
+
+		private enum CONTEXT {
     		SENDING,
     		REPLYING
     	};

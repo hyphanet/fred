@@ -7,8 +7,6 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.sleepycat.je.DatabaseException;
-
 import freenet.keys.KeyVerifyException;
 import freenet.node.stats.StoreAccessStats;
 import freenet.support.ByteArrayWrapper;
@@ -31,14 +29,14 @@ import freenet.support.io.TempBucketFactory;
  */
 public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 
-	private static volatile boolean logMINOR;
+	//private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+				//logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});

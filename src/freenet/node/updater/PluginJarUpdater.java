@@ -221,7 +221,7 @@ public class PluginJarUpdater extends NodeUpdater {
 		synchronized(this) {
 			writtenVersion = fetched;
 		}
-		System.err.println("Written " + jarName() + " to " + fNew);
+		System.err.println("Written "+jarName()+"."+writtenVersion+" to " + fNew);
 	}
 
 	void writeJar() throws IOException {

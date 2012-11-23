@@ -14,7 +14,7 @@ import freenet.support.api.Bucket;
  *
  */
 public class NullClientCallback implements ClientGetCallback, ClientPutCallback {
-    private static volatile boolean logMINOR;
+    //private static volatile boolean logMINOR;
     private static volatile boolean logDEBUG;
 
     static {
