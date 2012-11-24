@@ -44,7 +44,7 @@ public class ECDSA {
             this.spec = new ECGenParameterSpec(name);
             KeyPairGenerator kg = null;
             try {
-                kg = KeyPairGenerator.getInstance("ECDSA");
+                kg = KeyPairGenerator.getInstance("EC");
                 kg.initialize(spec);
             } catch (NoSuchAlgorithmException e) {
                 Logger.error(ECDSA.class, "NoSuchAlgorithmException : "+e.getMessage(),e);

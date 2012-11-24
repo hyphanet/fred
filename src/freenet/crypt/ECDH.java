@@ -25,23 +25,22 @@ public class ECDH {
     public enum Curves {
         // rfc5903 or rfc6460: it's NIST's random/prime curves : suite B
         // Order matters. Append to the list, do not re-order.
-        P256("secp256r1", "AES128", 91, 32),
-        P384("secp384r1", "AES192", 120, 48),
-        P521("secp521r1", "AES256", 158, 66);
+        P256("secp256r1", 91, 32),  // AES-128
+        P384("secp384r1", 120, 48), // AES-192
+        P521("secp521r1", 158, 66); // AES-256
         
         public final ECGenParameterSpec spec;
         private final KeyPairGenerator keygen;
-        /** The symmetric algorithm associated with the curve (use that, nothing else!) */
-        public final String defaultKeyAlgorithm;
         /** Expected size of a pubkey */
         public final int modulusSize;
         /** Expected size of the derived secret (in bytes) */
         public final int derivedSecretSize;
         
-        private Curves(String name, String defaultKeyAlg, int modulusSize, int derivedSecretSize) {
+        private Curves(String name, int modulusSize, int derivedSecretSize) {
             this.spec = new ECGenParameterSpec(name);
             KeyPairGenerator kg = null;
             try {
+                // By using ECDH we force the usage of BC
                 kg = KeyPairGenerator.getInstance("ECDH");
                 kg.initialize(spec);
             } catch (NoSuchAlgorithmException e) {
@@ -52,7 +51,6 @@ public class ECDH {
                 e.printStackTrace();
             }
             this.keygen = kg;
-            this.defaultKeyAlgorithm = defaultKeyAlg;
             this.modulusSize = modulusSize;
             this.derivedSecretSize = derivedSecretSize;
         }
@@ -85,7 +83,7 @@ public class ECDH {
     public SecretKey getAgreedSecret(ECPublicKey pubkey) {
         SecretKey key = null;
         try {
-            key = getAgreedSecret(pubkey, curve.defaultKeyAlgorithm);
+            key = getAgreedSecret(pubkey, "AES");
         } catch (InvalidKeyException e) {
             Logger.error(this, "InvalidKeyException : "+e.getMessage(),e);
             e.printStackTrace();
