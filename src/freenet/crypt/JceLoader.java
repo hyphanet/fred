@@ -2,6 +2,7 @@ package freenet.crypt;
 
 import java.io.File;
 import java.io.PrintStream;
+import java.lang.reflect.Constructor;
 import java.security.Provider;
 import java.security.Security;
 import java.security.Signature;
@@ -59,7 +60,8 @@ public class JceLoader {
 			Provider p = Security.getProvider("BC");
 			if (p == null) {
 				try {
-					p = new org.bouncycastle.jce.provider.BouncyCastleProvider();
+					Class<?> c = Class.forName("org.bouncycastle.jce.provider.BouncyCastleProvider");
+					p = (Provider)c.newInstance();
 					Security.addProvider(p);
 				} catch(Throwable e) {
 					throw e;
@@ -99,7 +101,9 @@ public class JceLoader {
 				} finally {
 					nss.close();
 				}
-				nssProvider = new sun.security.pkcs11.SunPKCS11(nssFile.getPath());
+				Class<?> c = Class.forName("sun.security.pkcs11.SunPKCS11");
+				Constructor<?> constructor = c.getConstructor(String.class);
+				nssProvider = (Provider)constructor.newInstance(nssFile.getPath());
 				if (atfirst)
 					Security.insertProviderAt(nssProvider, 1);
 				else
