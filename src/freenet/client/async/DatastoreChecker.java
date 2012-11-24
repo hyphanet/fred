@@ -220,6 +220,7 @@ public class DatastoreChecker implements PrioRunnable {
 						item.chosenBy = 0;
 						container.store(item);
 					}
+					persistentCheckerItems[i].clear();
 					persistentSchedulers[i].clear();
 					persistentGetters[i].clear();
 					persistentKeys[i].clear();
