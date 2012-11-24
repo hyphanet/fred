@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 
+import sun.security.krb5.internal.crypto.Nonce;
+
 import net.i2p.util.NativeBigInteger;
 import freenet.clients.http.ExternalLinkToadlet;
 import freenet.crypt.BlockCipher;
@@ -116,7 +118,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
     private static final ECDH.Curves ecdhCurveToUse = ECDH.Curves.P256;
 	private long jfkECDHLastGenerationTimestamp = 0;
 
-	protected static final int NONCE_SIZE = 8;
 	private static final int RANDOM_BYTES_LENGTH = 12;
 	private static final int HASH_LENGTH = SHA256.getDigestLength();
 	/** The size of the key used to authenticate the hmac */
@@ -764,14 +765,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		long t1=System.currentTimeMillis();
 		int modulusLength = getModulusLength(negType);
 		// Pre negtype 9 we were sending Ni as opposed to Ni'
-		int nonceSize = (negType > 8 ? SHA256.getDigestLength() : NONCE_SIZE);
+		int nonceSize = (negType < 9 ? getNonceSize(negType) : HASH_LENGTH);
 		if(logMINOR) Logger.minor(this, "Got a JFK(1) message, processing it - "+pn);
 		// FIXME: follow the spec and send IDr' ?
 		if(payload.length < nonceSize + modulusLength + 3 + (unknownInitiator ? NodeCrypto.IDENTITY_LENGTH : 0)) {
-			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(1), should be "+(NONCE_SIZE + modulusLength));
+			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(1), should be "+(nonceSize + modulusLength));
 			return;
 		}
-		// get Ni
+		// get Ni'
 		byte[] nonceInitiator = new byte[nonceSize]; 
 		System.arraycopy(payload, offset, nonceInitiator, 0, nonceSize);
 		offset += nonceSize;
@@ -846,7 +847,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		final long now = System.currentTimeMillis();
 		int modulusLength = getModulusLength(negType);
         // Pre negtype 9 we were sending Ni as opposed to Ni'
-        int nonceSize = (negType > 8 ? SHA256.getDigestLength() : NONCE_SIZE);
+        int nonceSize = getNonceSize(negType);
 		
 		KeyAgreementSchemeContext ctx = pn.getKeyAgreementSchemeContext();
 		if(negType < 8) { // Legacy DH
@@ -862,7 +863,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 		
 		int offset = 0;
-		byte[] nonce = new byte[NONCE_SIZE];
+		byte[] nonce = new byte[nonceSize];
 		byte[] myExponential = ctx.getPublicKeyNetworkFormat();
 		node.random.nextBytes(nonce);
 
@@ -872,10 +873,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				pn.jfkNoncesSent.removeFirst();
 		}
 
-		byte[] message1 = new byte[nonceSize+modulusLength+(unknownInitiator ? NodeCrypto.IDENTITY_LENGTH : 0)];
+		int nonceSizeHashed = (negType > 8 ? HASH_LENGTH : nonceSize);
+		byte[] message1 = new byte[nonceSizeHashed+modulusLength+(unknownInitiator ? NodeCrypto.IDENTITY_LENGTH : 0)];
 
-		System.arraycopy((negType > 8 ? SHA256.digest(nonce) : nonce), 0, message1, offset, nonceSize);
-		offset += nonceSize;
+		System.arraycopy((negType > 8 ? SHA256.digest(nonce) : nonce), 0, message1, offset, nonceSizeHashed);
+		offset += nonceSizeHashed;
 		System.arraycopy(myExponential, 0, message1, offset, modulusLength);
 
 		if(unknownInitiator) {
@@ -905,13 +907,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	private void sendJFKMessage2(byte[] nonceInitator, byte[] hisExponential, PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType, int negType) {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(2) message to "+pn);
 		int modulusLength = getModulusLength(negType);
-
+		int nonceSize = getNonceSize(negType);
 		// g^r
 	    DiffieHellmanLightContext dhLctx = getLightDiffieHellmanContext();
 	    ECDHLightContext ecdhLctx = getECDHLightContext();
 		    
 		// Nr
-		byte[] myNonce = new byte[NONCE_SIZE];
+		byte[] myNonce = new byte[nonceSize];
 		node.random.nextBytes(myNonce);
 	    byte[] myExponential = (negType < 8 ? dhLctx : ecdhLctx).getPublicKeyNetworkFormat();
 	    byte[] sig = (negType < 9 ? dhLctx.dsaSig : ecdhLctx.ecdsaSig);
@@ -920,15 +922,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	    byte[] authenticator = HMAC.macWithSHA256(getTransientKey(),assembleJFKAuthenticator(myExponential, hisExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress()), HASH_LENGTH);
 		if(logMINOR) Logger.minor(this, "We are using the following HMAC : " + HexUtil.bytesToHex(authenticator));
         if(logMINOR) Logger.minor(this, "We have Ni' : " + HexUtil.bytesToHex(nonceInitator));
-		byte[] message2 = new byte[nonceInitator.length + NONCE_SIZE+modulusLength+
+		byte[] message2 = new byte[nonceInitator.length + nonceSize+modulusLength+
 		                           sig.length+
 		                           HASH_LENGTH];
 
 		int offset = 0;
 		System.arraycopy(nonceInitator, 0, message2, offset, nonceInitator.length);
 		offset += nonceInitator.length;
-		System.arraycopy(myNonce, 0, message2, offset, NONCE_SIZE);
-		offset += NONCE_SIZE;
+		System.arraycopy(myNonce, 0, message2, offset, myNonce.length);
+		offset += myNonce.length;
 		System.arraycopy(myExponential, 0, message2, offset, modulusLength);
 		offset += modulusLength;
 
@@ -982,22 +984,23 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		long t1=System.currentTimeMillis();
 		int modulusLength = getModulusLength(negType);
 		// Pre negtype 9 we were sending Ni as opposed to Ni'
-		int nonceSize = (negType > 8 ? SHA256.getDigestLength() : NONCE_SIZE);
+		int nonceSize = getNonceSize(negType);
+		int nonceSizeHashed = (negType > 8 ? HASH_LENGTH : nonceSize);
 		
 		if(logMINOR) Logger.minor(this, "Got a JFK(2) message, processing it - "+pn.getPeer());
 		// FIXME: follow the spec and send IDr' ?
-		int expectedLength = nonceSize + NONCE_SIZE + modulusLength + HASH_LENGTH*2;
+		int expectedLength = nonceSizeHashed + nonceSize + modulusLength + HASH_LENGTH*2;
 		if(payload.length < expectedLength + 3) {
 			Logger.error(this, "Packet too short from "+pn.getPeer()+": "+payload.length+" after decryption in JFK(2), should be "+(expectedLength + 3));
 			return;
 		}
 
-		byte[] nonceInitiator = new byte[nonceSize];
-		System.arraycopy(payload, inputOffset, nonceInitiator, 0, nonceSize);
+		byte[] nonceInitiator = new byte[nonceSizeHashed];
+		System.arraycopy(payload, inputOffset, nonceInitiator, 0, nonceSizeHashed);
+		inputOffset += nonceSizeHashed;
+		byte[] nonceResponder = new byte[nonceSize];
+		System.arraycopy(payload, inputOffset, nonceResponder, 0, nonceSize);
 		inputOffset += nonceSize;
-		byte[] nonceResponder = new byte[NONCE_SIZE];
-		System.arraycopy(payload, inputOffset, nonceResponder, 0, NONCE_SIZE);
-		inputOffset += NONCE_SIZE;
 
 		byte[] hisExponential = new byte[modulusLength];
 		System.arraycopy(payload, inputOffset, hisExponential, 0, modulusLength);
@@ -1110,13 +1113,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	{
 		final long t1 = System.currentTimeMillis();
 		int modulusLength = getModulusLength(negType);
+		int nonceSize = getNonceSize(negType);
 		if(logMINOR) Logger.minor(this, "Got a JFK(3) message, processing it - "+pn);
 
 		BlockCipher c = null;
 		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) { throw new RuntimeException(e); }
 
 		final int expectedLength =
-			NONCE_SIZE*2 + // Ni, Nr
+			nonceSize*2 + // Ni, Nr
 			modulusLength*2 + // g^i, g^r
 			HASH_LENGTH + // authenticator
 			HASH_LENGTH + // HMAC of the cyphertext
@@ -1132,17 +1136,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 
 		// Ni
-		byte[] nonceInitiator = new byte[NONCE_SIZE];
-		System.arraycopy(payload, inputOffset, nonceInitiator, 0, NONCE_SIZE);
-		inputOffset += NONCE_SIZE;
+		byte[] nonceInitiator = new byte[nonceSize];
+		System.arraycopy(payload, inputOffset, nonceInitiator, 0, nonceSize);
+		inputOffset += nonceSize;
 		if(logMINOR) Logger.minor(this, "We are receiving Ni : " + HexUtil.bytesToHex(nonceInitiator));
 		// Before negtype 9 we didn't hash it!
 		byte[] nonceInitiatorHashed = (negType > 8 ? SHA256.digest(nonceInitiator) : nonceInitiator);
 		    
 		// Nr
-		byte[] nonceResponder = new byte[NONCE_SIZE];
-		System.arraycopy(payload, inputOffset, nonceResponder, 0, NONCE_SIZE);
-		inputOffset += NONCE_SIZE;
+		byte[] nonceResponder = new byte[nonceSize];
+		System.arraycopy(payload, inputOffset, nonceResponder, 0, nonceSize);
+		inputOffset += nonceSize;
 		// g^i
 		byte[] initiatorExponential = new byte[modulusLength];
 		System.arraycopy(payload, inputOffset, initiatorExponential, 0, modulusLength);
@@ -1554,9 +1558,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		// verify the signature
 		int dataLen = hisRef.length + 8 + 9;
-		int nonceSize = (negType > 8 ? SHA256.getDigestLength() : NONCE_SIZE);
-		byte[] locallyGeneratedText = new byte[nonceSize + NONCE_SIZE + modulusLength * 2 + crypto.myIdentity.length + dataLen + pn.jfkMyRef.length];
-		int bufferOffset = nonceSize + NONCE_SIZE + modulusLength*2;
+		int nonceSize = getNonceSize(negType);
+		int nonceSizeHashed = (negType > 8 ? HASH_LENGTH : nonceSize);
+		byte[] locallyGeneratedText = new byte[nonceSizeHashed + nonceSize + modulusLength * 2 + crypto.myIdentity.length + dataLen + pn.jfkMyRef.length];
+		int bufferOffset = nonceSizeHashed + nonceSize + modulusLength*2;
 		System.arraycopy(jfkBuffer, 0, locallyGeneratedText, 0, bufferOffset);
 		byte[] identity = crypto.getIdentity(unknownInitiator);
 		System.arraycopy(identity, 0, locallyGeneratedText, bufferOffset, identity.length);
@@ -1687,6 +1692,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(3) message to "+pn.getPeer());
 		int modulusLength = getModulusLength(negType);
 		int signLength = getSignatureLength(negType);
+		int nonceSize = getNonceSize(negType);
         // Pre negtype 9 we were sending Ni as opposed to Ni'
         byte[] nonceInitiatorHashed = (negType > 8 ? SHA256.digest(nonceInitiator) : nonceInitiator);
         
@@ -1707,7 +1713,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		System.arraycopy(Fields.longToBytes(pn.getOutgoingBootID()), 0, data, ptr, 8);
 		ptr += 8;
 		System.arraycopy(pn.jfkMyRef, 0, data, ptr, pn.jfkMyRef.length);
-		final byte[] message3 = new byte[NONCE_SIZE*2 + // nI, nR
+		final byte[] message3 = new byte[nonceSize*2 + // nI, nR
 		                           modulusLength*2 + // g^i, g^r
 		                           HASH_LENGTH + // authenticator
 		                           HASH_LENGTH + // HMAC(cyphertext)
@@ -1716,12 +1722,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		                           data.length]; // The bootid+noderef
 		int offset = 0;
 		// Ni
-		System.arraycopy(nonceInitiator, 0, message3, offset, NONCE_SIZE);
-		offset += NONCE_SIZE;
+		System.arraycopy(nonceInitiator, 0, message3, offset, nonceSize);
+		offset += nonceSize;
 		if(logMINOR) Logger.minor(this, "We are sending Ni : " + HexUtil.bytesToHex(nonceInitiator));
 		// Nr
-		System.arraycopy(nonceResponder, 0, message3, offset, NONCE_SIZE);
-		offset += NONCE_SIZE;
+		System.arraycopy(nonceResponder, 0, message3, offset, nonceSize);
+		offset += nonceSize;
 		// g^i
 		System.arraycopy(ourExponential, 0,message3, offset, ourExponential.length);
 		offset += ourExponential.length;
@@ -2515,12 +2521,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 		}
 
-		byte[] toHash = new byte[NONCE_SIZE * 2 + number.length];
+		byte[] toHash = new byte[nI.length + nR.length + number.length];
 		int offset = 0;
-		System.arraycopy(nI, 0, toHash, offset, NONCE_SIZE);
-		offset += NONCE_SIZE;
-		System.arraycopy(nR, 0, toHash, offset, NONCE_SIZE);
-		offset += NONCE_SIZE;
+		System.arraycopy(nI, 0, toHash, offset, nI.length);
+		offset += nI.length;
+		System.arraycopy(nR, 0, toHash, offset, nR.length);
+		offset += nR.length;
 		System.arraycopy(number, 0, toHash, offset, number.length);
 
 		return HMAC.macWithSHA256(exponential, toHash, HASH_LENGTH);
@@ -2613,5 +2619,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	    else
 	       return ECDSA.Curves.P256.maxSigSize;
 	}
-
+	
+	private int getNonceSize(int negType) {
+	    if(negType < 9)
+	        return 8;
+	    else
+	        return 16;
+	}
 }
