@@ -82,6 +82,7 @@ public class NodeCrypto {
 	byte[] pubKeyHashHash;
 	/** My ECDSA/P256 keypair and context */
 	private ECDSA ecdsaP256;
+	byte[] ecdsaPubKeyHash;
 	/** My ARK SSK private key */
 	InsertableClientSSK myARK;
 	/** My ARK sequence number */
@@ -230,7 +231,7 @@ public class NodeCrypto {
 		    Logger.normal(this, "No ecdsa.P256 field found in noderef: let's generate a new key");
 		    ecdsaP256 = new ECDSA(Curves.P256);
 		}
-		
+        ecdsaPubKeyHash = SHA256.digest(ecdsaP256.getPublicKey().getEncoded());
 		
 		InsertableClientSSK ark = null;
 
@@ -633,8 +634,10 @@ public class NodeCrypto {
 	 * @param unknownInitiator Unknown-initiator connections use the hash of the pubkey as the identity to save space
 	 * in packets 3 and 4.
 	 */
-	public byte[] getIdentity(boolean unknownInitiator) {
-		if(unknownInitiator)
+	public byte[] getIdentity(int negType, boolean unknownInitiator) {
+	    if(negType > 8)
+	        return ecdsaPubKeyHash;
+	    else if(unknownInitiator)
 			return this.pubKey.asBytesHash();
 		else
 			return myIdentity;
