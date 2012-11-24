@@ -275,6 +275,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/** Peer node public key; changing this means new noderef */
 	final DSAPublicKey peerPubKey;
 	final ECPublicKey peerECDSAPubKey;
+	final byte[] peerECDSAPubKeyHash;
 	final byte[] pubKeyHash;
 	final byte[] pubKeyHashHash;
 	private boolean isSignatureVerificationSuccessfull;
@@ -515,11 +516,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(sfs == null) {
 			    // Old peer, no negtype > 8
 			    this.peerECDSAPubKey = null;
+			    this.peerECDSAPubKeyHash = null;
 			} else {
 	            byte[] pub = Base64.decode(sfs.get("pub"));
 	            if (pub.length != ECDSA.Curves.P256.modulusSize)
 	                throw new FSParseException("ecdsa.P256.pub is not the right size!");
 	            this.peerECDSAPubKey = ECDSA.getPublicKey(pub);
+	            this.peerECDSAPubKeyHash = SHA256.digest(peerECDSAPubKey.getEncoded());
 	            if(peerECDSAPubKey == null)
 	                throw new FSParseException("ecdsa.P256.pub is invalid!");
 			}
@@ -3956,10 +3959,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		else
 			return new DarknetPeerNode(fs, node2, crypto, manager, true, mangler, null, null);
 	}
-
-	public byte[] getIdentity() {
-		return identity;
-	}
 	
 	public byte[] getPubKeyHash() {
 		return pubKeyHash;
@@ -6185,4 +6184,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
         return !failed;
 	}
 	
+	protected byte[] getIdentity() {
+	    return identity;
+	}
+	
+	protected byte[] getIdentity(int negType) {
+	    if(negType > 8)
+	        return peerECDSAPubKeyHash;
+	    else
+	        return identity;
+	}
 }
