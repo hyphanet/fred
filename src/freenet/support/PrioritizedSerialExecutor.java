@@ -1,6 +1,6 @@
 package freenet.support;
 
-import java.util.LinkedList;
+import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
 
@@ -21,7 +21,7 @@ public class PrioritizedSerialExecutor implements Executor {
 		});
 	}
 
-	private final LinkedList<Runnable>[] jobs;
+	private final ArrayDeque<Runnable>[] jobs;
 	private final int priority;
 	private final int defaultPriority;
 	private boolean waiting;
@@ -151,9 +151,9 @@ public class PrioritizedSerialExecutor implements Executor {
 	 * @param invertOrder Set if the priorities are thread priorities. Unset if they are request priorities. D'oh!
 	 */
 	public PrioritizedSerialExecutor(int priority, int internalPriorityCount, int defaultPriority, boolean invertOrder, int jobTimeout, ExecutorIdleCallback callback, NodeStats statistics) {
-		@SuppressWarnings("unchecked") LinkedList<Runnable>[] jobs = new LinkedList[internalPriorityCount];
+		@SuppressWarnings("unchecked") ArrayDeque<Runnable>[] jobs = new ArrayDeque[internalPriorityCount];
 		for (int i=0;i<jobs.length;i++) {
-			jobs[i] = new LinkedList<Runnable>();
+			jobs[i] = new ArrayDeque<Runnable>();
 		}
 		this.jobs = jobs;
 		this.priority = priority;

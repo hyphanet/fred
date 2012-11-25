@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import java.util.LinkedList;
+import java.util.ArrayDeque;
 import java.util.Deque;
 
 import com.db4o.ObjectContainer;
@@ -27,7 +27,7 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 		super(forInserts, forSSKs, forRT, random);
 		this.sched = sched;
 		if(!forInserts)
-			recentSuccesses = new LinkedList<BaseSendableGet>();
+			recentSuccesses = new ArrayDeque<BaseSendableGet>();
 		else
 			recentSuccesses = null;
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
