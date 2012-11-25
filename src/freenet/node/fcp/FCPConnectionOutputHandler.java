@@ -6,7 +6,7 @@ package freenet.node.fcp;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.LinkedList;
+import java.util.ArrayDeque;
 import java.util.Deque;
 
 import com.db4o.ObjectContainer;
@@ -37,7 +37,7 @@ public class FCPConnectionOutputHandler implements Runnable {
 	
 	public FCPConnectionOutputHandler(FCPConnectionHandler handler) {
 		this.handler = handler;
-		this.outQueue = new LinkedList<FCPMessage>();
+		this.outQueue = new ArrayDeque<FCPMessage>();
 	}
 
 	void start() {

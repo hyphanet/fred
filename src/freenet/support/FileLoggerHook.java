@@ -14,12 +14,12 @@ import java.net.InetAddress;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Deque;
 import java.util.GregorianCalendar;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Locale;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
@@ -124,7 +124,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	protected long listBytes = 0;
 
 	long maxOldLogfilesDiskUsage;
-	protected final Deque<OldLogFile> logFiles = new LinkedList<OldLogFile>();
+	protected final Deque<OldLogFile> logFiles = new ArrayDeque<OldLogFile>();
 	private long oldLogFilesDiskSpaceUsage = 0;
 
 	private static class OldLogFile {

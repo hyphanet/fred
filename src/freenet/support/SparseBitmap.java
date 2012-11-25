@@ -1,9 +1,9 @@
 package freenet.support;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-import java.util.LinkedList;
 import java.util.TreeSet;
 
 public class SparseBitmap implements Iterable<int[]> {
@@ -70,7 +70,7 @@ public class SparseBitmap implements Iterable<int[]> {
 			throw new IllegalArgumentException("Removing bad range. Start: " + start + ", end: " + end);
 		}
 
-		List<Range> toAdd = new LinkedList<Range>();
+		List<Range> toAdd = new ArrayList<Range>();
 
 		Iterator<Range> it = ranges.iterator();
 		while(it.hasNext()) {

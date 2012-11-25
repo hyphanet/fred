@@ -4,6 +4,7 @@
 package freenet.node;
 
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Collections;
 import java.util.Iterator;
@@ -33,7 +34,7 @@ class NPFPacket {
 
 	private int sequenceNumber;
 	private final SortedSet<Integer> acks = new TreeSet<Integer>();
-	private final List<MessageFragment> fragments = new LinkedList<MessageFragment>();
+	private final List<MessageFragment> fragments = new ArrayList<MessageFragment>();
 	/** Messages that are specific to a single packet and can be happily lost if it is lost. 
 	 * They must be processed before the rest of the messages.
 	 * With early versions, these might be bogus, so be careful parsing them. */

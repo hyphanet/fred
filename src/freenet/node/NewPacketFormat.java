@@ -1129,8 +1129,8 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 	static class SentPacket {
 		final SessionKey sessionKey;
 		NewPacketFormat npf;
-		List<MessageWrapper> messages = new LinkedList<MessageWrapper>();
-		List<int[]> ranges = new LinkedList<int[]>();
+		List<MessageWrapper> messages = new ArrayList<MessageWrapper>();
+		List<int[]> ranges = new ArrayList<int[]>();
 		long sentTime;
 		int packetLength;
 
