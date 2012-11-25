@@ -170,11 +170,12 @@ public class NewPacketFormat implements PacketFormat {
 			if(logMINOR) Logger.minor(this, "Not acking because " + (packet.getError() ? "error" : "no fragments"));
 			dontAck = true;
 		}
-		ArrayList<Message> lossyMessages = null;
 		List<byte[]> l = packet.getLossyMessages();
 		if(l != null && !l.isEmpty())
-			lossyMessages = new ArrayList<Message>(l.size());
-		for(byte[] buf : packet.getLossyMessages()) {
+		{
+		    ArrayList<Message> lossyMessages = new ArrayList<Message>(l.size());
+		// FIXME reindent
+		for(byte[] buf : l) {
 			// FIXME factor out parsing once we are sure these are not bogus.
 			// For now we have to be careful.
 			Message msg = Message.decodeMessageLax(buf, pn, 0);
@@ -188,7 +189,6 @@ public class NewPacketFormat implements PacketFormat {
 			}
 			lossyMessages.add(msg);
 		}
-		if(lossyMessages != null) {
 			// Handle them *before* the rest.
 			if(logMINOR && lossyMessages.size() > 0) Logger.minor(this, "Successfully parsed "+lossyMessages.size()+" lossy packet messages");
 			for(Message msg : lossyMessages)
