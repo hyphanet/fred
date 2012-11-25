@@ -7,6 +7,7 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.LinkedList;
+import java.util.Deque;
 
 import com.db4o.ObjectContainer;
 import freenet.support.LogThresholdCallback;
@@ -18,7 +19,7 @@ import freenet.support.Logger.LogLevel;
 public class FCPConnectionOutputHandler implements Runnable {
 
 	final FCPConnectionHandler handler;
-	final LinkedList<FCPMessage> outQueue;
+	final Deque<FCPMessage> outQueue;
 	// Synced on outQueue
 	private boolean closedOutputQueue;
 

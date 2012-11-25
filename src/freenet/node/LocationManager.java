@@ -10,6 +10,7 @@ import java.security.MessageDigest;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Deque;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
@@ -857,7 +858,7 @@ public class LocationManager implements ByteCounter {
     }
 
     /** Queue of swap requests to handle after this one. */
-    private final LinkedList<Message> incomingMessageQueue = new LinkedList<Message>();
+    private final Deque<Message> incomingMessageQueue = new LinkedList<Message>();
 
     static final int MAX_INCOMING_QUEUE_LENGTH = 10;
 

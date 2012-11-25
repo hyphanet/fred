@@ -12,6 +12,7 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -26,7 +27,7 @@ import freenet.support.io.Closer;
 */
 public class DecompressorThreadManager {
 
-	final LinkedList<DecompressorThread> threads;
+	final Queue<DecompressorThread> threads;
 	PipedInputStream input;
 	PipedOutputStream output = new PipedOutputStream();
 	final long maxLen;

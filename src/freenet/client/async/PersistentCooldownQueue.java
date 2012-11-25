@@ -4,8 +4,8 @@
 package freenet.client.async;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.ListIterator;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -137,7 +137,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 			if(v == null)
 				v = new ArrayList<Key>(Math.min(maxCount, itemsFromLastTime.size()));
 			Logger.normal(this, "Overflow handling in cooldown queue: reusing items from last time, now "+itemsFromLastTime.size());
-			for(ListIterator<PersistentCooldownQueueItem> it = itemsFromLastTime.listIterator();it.hasNext() && v.size() < maxCount;) {
+			for(Iterator<PersistentCooldownQueueItem> it = itemsFromLastTime.iterator();it.hasNext() && v.size() < maxCount;) {
 				PersistentCooldownQueueItem i = it.next();
 				container.activate(i, 1);
 				if(i.parent != this && i.parent != altQueue) {

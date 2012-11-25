@@ -124,7 +124,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	private final USK origUSK;
 	
 	/** Callbacks */
-	private final LinkedList<USKFetcherCallback> callbacks;
+	private final List<USKFetcherCallback> callbacks;
 
 	/** Fetcher context */
 	final FetchContext ctx;
