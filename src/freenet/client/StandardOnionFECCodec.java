@@ -7,9 +7,7 @@ import com.onionnetworks.fec.FECCode;
 import com.onionnetworks.fec.PureCode;
 
 import freenet.support.LRUMap;
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 
 /**
  * FECCodec implementation using the onion code.
@@ -22,7 +20,7 @@ public class StandardOnionFECCodec extends FECCodec {
 
 	private static final LRUMap<MyKey, StandardOnionFECCodec> recentlyUsedCodecs = LRUMap.createSafeMap();
 
-        private static volatile boolean logMINOR;
+    /*private static volatile boolean logMINOR;
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
@@ -30,7 +28,7 @@ public class StandardOnionFECCodec extends FECCodec {
 				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
-	}
+	}*/
 
 	private static class MyKey implements Comparable<MyKey> {
 		/** Number of input blocks */

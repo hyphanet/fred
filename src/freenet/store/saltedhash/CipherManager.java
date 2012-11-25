@@ -97,7 +97,7 @@ public class CipherManager {
 	/**
 	 * Encrypt this entry
 	 */
-	void encrypt(SaltedHashFreenetStore.Entry entry, Random random) {
+	void encrypt(SaltedHashFreenetStore<?>.Entry entry, Random random) {
 		if (entry.isEncrypted)
 			return;
 
@@ -118,7 +118,7 @@ public class CipherManager {
 	 * @param routingKey
 	 * @return <code>true</code> if the <code>routeKey</code> match and the entry is decrypted.
 	 */
-	boolean decrypt(SaltedHashFreenetStore.Entry entry, byte[] routingKey) {
+	boolean decrypt(SaltedHashFreenetStore<?>.Entry entry, byte[] routingKey) {
 		assert entry.header != null;
 		assert entry.data != null;
 

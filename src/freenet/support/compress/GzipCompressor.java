@@ -52,15 +52,21 @@ public class GzipCompressor implements Compressor {
 				int l = (int) Math.min(buffer.length, maxReadLength - read);
 				int x = l == 0 ? -1 : is.read(buffer, 0, l);
 				if(x <= -1) break;
-				if(x == 0) throw new IOException("Returned zero from read()");
+				if(x == 0) {
+					gos.close();
+					throw new IOException("Returned zero from read()");
+				}
 				gos.write(buffer, 0, x);
 				read += x;
-				if(cos.written() > maxWriteLength)
+				if(cos.written() > maxWriteLength) {
+					gos.close();
 					throw new CompressionOutputSizeException();
+				}
 			}
 			gos.flush();
 			gos.finish();
 			cos.flush();
+			gos.close();
 			gos = null;
 			if(cos.written() > maxWriteLength)
 				throw new CompressionOutputSizeException();

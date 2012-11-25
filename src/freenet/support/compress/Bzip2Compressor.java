@@ -18,7 +18,6 @@ import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.CountedOutputStream;
-import freenet.support.io.NoCloseProxyOutputStream;
 import freenet.support.io.HeaderStreams;
 
 /**
@@ -113,15 +112,28 @@ public class Bzip2Compressor implements Compressor {
 					while(true) {
 						expectedBytesRead = (int) Math.min(buffer.length, maxLength + maxCheckSizeBytes - written);
 						bytesRead = bz2is.read(buffer, 0, expectedBytesRead);
-						if(bytesRead <= -1) throw new CompressionOutputSizeException(written);
-						if(bytesRead == 0) throw new IOException("Returned zero from read()");
+						if(bytesRead <= -1) {
+							bz2is.close();
+							throw new CompressionOutputSizeException(written);
+						}
+						if(bytesRead == 0) {
+							bz2is.close();
+							throw new IOException("Returned zero from read()");
+						}
 						written += bytesRead;
 					}
 				}
+				bz2is.close();
 				throw new CompressionOutputSizeException();
 			}
-			if(bytesRead <= -1) return written;
-			if(bytesRead == 0) throw new IOException("Returned zero from read()");
+			if(bytesRead <= -1) {
+				bz2is.close();
+				return written;
+			}
+			if(bytesRead == 0) {
+				bz2is.close();
+				throw new IOException("Returned zero from read()");
+			}
 			os.write(buffer, 0, bytesRead);
 			written += bytesRead;
 		}

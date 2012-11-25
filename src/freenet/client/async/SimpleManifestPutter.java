@@ -66,7 +66,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		private PutHandler() {
 			persistent = false;
 			data = null;
-			containerHandle = null;
+			//containerHandle = null;
 		}
 
 		protected PutHandler(final SimpleManifestPutter smp, String name, Bucket data, ClientMetadata cm, boolean getCHKOnly, boolean persistent) {
@@ -79,7 +79,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			this.origSFI =
 				new SingleFileInserter(this, this, block, false, ctx, realTimeFlag, false, getCHKOnly, true, null, null, false, null, earlyEncode, false, persistent, 0, 0, null, cryptoAlgorithm, forceCryptoKey, -1);
 			metadata = null;
-			containerHandle = null;
+			//containerHandle = null;
 		}
 
 		protected PutHandler(final SimpleManifestPutter smp, String name, FreenetURI target, ClientMetadata cm, boolean persistent) {
@@ -91,7 +91,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			metadata = m;
 			if(logMINOR) Logger.minor(this, "Simple redirect metadata: "+m);
 			origSFI = null;
-			containerHandle = null;
+			//containerHandle = null;
 		}
 
 		protected PutHandler(final SimpleManifestPutter smp, String name, String targetInArchive, ClientMetadata cm, Bucket data, boolean persistent) {
@@ -104,7 +104,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			metadata = m;
 			if(logMINOR) Logger.minor(this, "Internal redirect: "+m);
 			origSFI = null;
-			containerHandle = null;
+			//containerHandle = null;
 		}
 
 		private ClientPutState origSFI;
@@ -114,7 +114,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		private String targetInArchive;
 		private final Bucket data;
 		private final boolean persistent;
-		private final PutHandler containerHandle;
+		//private final PutHandler containerHandle;
 
 		public void start(ObjectContainer container, ClientContext context) throws InsertException {
 			if (origSFI == null) {
@@ -794,7 +794,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 				putHandlersByName.put(name, subMap);
 				makePutHandlers(Metadata.forceMap(o), subMap, ZipPrefix+name+ '/', persistent);
 				if(logDEBUG)
-					Logger.debug(this, "Sub map for "+name+" : "+subMap.size()+" elements from "+((HashMap)o).size());
+					Logger.debug(this, "Sub map for "+name+" : "+subMap.size()+" elements from "+Metadata.forceMap(o).size());
 			} else {
 				ManifestElement element = (ManifestElement) o;
 				String mimeType = element.mimeOverride;
@@ -1009,7 +1009,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		}
 		InsertBlock block;
 		boolean isMetadata = true;
-		boolean insertAsArchiveManifest = false;
+		//boolean insertAsArchiveManifest = false;
 		ARCHIVE_TYPE archiveType = null;
 		byte[] ckey = null;
 		if(!(elementsToPutInArchive.isEmpty())) {
@@ -1043,7 +1043,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 				if(persistent()) container.activate(targetURI, 5);
 				block = new InsertBlock(outputBucket, new ClientMetadata(mimeType), persistent() ? targetURI.clone() : targetURI);
 				isMetadata = false;
-				insertAsArchiveManifest = true;
+				//insertAsArchiveManifest = true;
 			} catch (IOException e) {
 				fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
 				if(persistent())
@@ -1246,7 +1246,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 				}
 				namesToByteArrays.put(name, subMap);
 				if(logMINOR) {
-					Logger.minor(this, "Putting hashmap into base metadata: "+name+" size "+((HashMap)o).size()+" active = "+(container == null ? "null" : Boolean.toString(container.ext().isActive(o))));
+					Logger.minor(this, "Putting hashmap into base metadata: "+name+" size "+Metadata.forceMap(o).size()+" active = "+(container == null ? "null" : Boolean.toString(container.ext().isActive(o))));
 					Logger.minor(this, "Putting directory: "+name);
 				}
 				namesToByteArrays(Metadata.forceMap(o), subMap, container);

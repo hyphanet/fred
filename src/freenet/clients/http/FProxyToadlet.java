@@ -150,7 +150,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	}
 
 	public static void handleDownload(ToadletContext context, Bucket data, BucketFactory bucketFactory, String mimeType, String requestedMimeType, String forceString, boolean forceDownload, String basePath, FreenetURI key, String extras, String referrer, boolean downloadLink, ToadletContext ctx, NodeClientCore core, boolean dontFreeData, String maybeCharset) throws ToadletContextClosedException, IOException {
-		ToadletContainer container = context.getContainer();
 		if(logMINOR)
 			Logger.minor(FProxyToadlet.class, "handleDownload(data.size="+data.size()+", mimeType="+mimeType+", requestedMimeType="+requestedMimeType+", forceDownload="+forceDownload+", basePath="+basePath+", key="+key);
 		String extrasNoMime = extras; // extras will not include MIME type to start with - REDFLAG maybe it should be an array
@@ -160,8 +159,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				extras = extras + "&type=" + requestedMimeType;
 			}
 		}
-		long size = data.size();
-
 		long now = System.currentTimeMillis();
 		boolean force = false;
 		if(forceString != null) {
@@ -661,101 +658,101 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 		FProxyFetchResult fr = null;
 
-			FProxyFetchWaiter fetch = null;
-			try {
-				fetch = fetchTracker.makeFetcher(key, maxSize, fctx, ctx.getReFilterPolicy());
-			} catch (FetchException e) {
-				fe = fr.failed;
-			}
-			if(fetch != null)
-			while(true) {
-			fr = fetch.getResult(!canSendProgress);
-			if(fr.hasData()) {
+		FProxyFetchWaiter fetch = null;
+		try {
+			fetch = fetchTracker.makeFetcher(key, maxSize, fctx, ctx.getReFilterPolicy());
+		} catch (FetchException e) {
+			fe = fr.failed;
+		}
+		if(fetch != null)
+		while(true) {
+		fr = fetch.getResult(!canSendProgress);
+		if(fr.hasData()) {
 
-				if(fr.getFetchCount() > 1 && !fr.hasWaited() && fr.getFetchCount() > 1 && key.isUSK() && context.uskManager.lookupKnownGood(USK.create(key)) > key.getSuggestedEdition()) {
-					Logger.normal(this, "Loading later edition...");
-					fetch.progress.requestImmediateCancel();
-					fr = null;
-					fetch = null;
-					try {
-						fetch = fetchTracker.makeFetcher(key, maxSize, fctx, ctx.getReFilterPolicy());
-					} catch (FetchException e) {
-						fe = fr.failed;
+			if(fr.getFetchCount() > 1 && !fr.hasWaited() && fr.getFetchCount() > 1 && key.isUSK() && context.uskManager.lookupKnownGood(USK.create(key)) > key.getSuggestedEdition()) {
+				Logger.normal(this, "Loading later edition...");
+				fetch.progress.requestImmediateCancel();
+				fr = null;
+				fetch = null;
+				try {
+					fetch = fetchTracker.makeFetcher(key, maxSize, fctx, ctx.getReFilterPolicy());
+				} catch (FetchException e) {
+					fe = fr.failed;
+				}
+				if(fetch == null) break;
+				continue;
+			}
+
+			if(logMINOR) Logger.minor(this, "Found data");
+			data = new NoFreeBucket(fr.data);
+			mimeType = fr.mimeType;
+			fetch.close(); // Not waiting any more, but still locked the results until sent
+			break;
+		} else if(fr.failed != null) {
+			if(logMINOR) Logger.minor(this, "Request failed");
+			fe = fr.failed;
+			fetch.close(); // Not waiting any more, but still locked the results until sent
+			break;
+		} else if(canSendProgress) {
+			if(logMINOR) Logger.minor(this, "Still in progress");
+			// Still in progress
+			boolean isJsEnabled=ctx.getContainer().isFProxyJavascriptEnabled() && ua != null && !ua.contains("AppleWebKit/");
+			boolean isWebPushingEnabled = false;
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("fetchingPageTitle"), ctx);
+			HTMLNode pageNode = page.outer;
+			String location = getLink(key, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), maxRetries, overrideSize);
+			HTMLNode headNode=page.headNode;
+			if(isJsEnabled){
+				//If the user has enabled javascript, we add a <noscript> http refresh(if he has disabled it in the browser)
+				headNode.addChild("noscript").addChild("meta", "http-equiv", "Refresh").addAttribute("content", "2;URL=" + location);
+					// If pushing is disabled, but js is enabled, then we add the original progresspage.js
+					if ((isWebPushingEnabled = ctx.getContainer().isFProxyWebPushingEnabled()) == false) {
+						HTMLNode scriptNode = headNode.addChild("script", "//abc");
+						scriptNode.addAttribute("type", "text/javascript");
+						scriptNode.addAttribute("src", "/static/js/progresspage.js");
 					}
-					if(fetch == null) break;
-					continue;
-				}
-
-				if(logMINOR) Logger.minor(this, "Found data");
-				data = new NoFreeBucket(fr.data);
-				mimeType = fr.mimeType;
-				fetch.close(); // Not waiting any more, but still locked the results until sent
-				break;
-			} else if(fr.failed != null) {
-				if(logMINOR) Logger.minor(this, "Request failed");
-				fe = fr.failed;
-				fetch.close(); // Not waiting any more, but still locked the results until sent
-				break;
-			} else if(canSendProgress) {
-				if(logMINOR) Logger.minor(this, "Still in progress");
-				// Still in progress
-				boolean isJsEnabled=ctx.getContainer().isFProxyJavascriptEnabled() && ua != null && !ua.contains("AppleWebKit/");
-				boolean isWebPushingEnabled = false;
-				PageNode page = ctx.getPageMaker().getPageNode(l10n("fetchingPageTitle"), ctx);
-				HTMLNode pageNode = page.outer;
-				String location = getLink(key, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), maxRetries, overrideSize);
-				HTMLNode headNode=page.headNode;
-				if(isJsEnabled){
-					//If the user has enabled javascript, we add a <noscript> http refresh(if he has disabled it in the browser)
-					headNode.addChild("noscript").addChild("meta", "http-equiv", "Refresh").addAttribute("content", "2;URL=" + location);
-						// If pushing is disabled, but js is enabled, then we add the original progresspage.js
-						if ((isWebPushingEnabled = ctx.getContainer().isFProxyWebPushingEnabled()) == false) {
-							HTMLNode scriptNode = headNode.addChild("script", "//abc");
-							scriptNode.addAttribute("type", "text/javascript");
-							scriptNode.addAttribute("src", "/static/js/progresspage.js");
-						}
-				}else{
-					//If he disabled it, we just put the http refresh meta, without the noscript
-					headNode.addChild("meta", "http-equiv", "Refresh").addAttribute("content", "2;URL=" + location);
-				}
-				HTMLNode contentNode = page.content;
-				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-information");
-				infobox.addChild("div", "class", "infobox-header", l10n("fetchingPageBox"));
-				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-				infoboxContent.addAttribute("id", "infoContent");
-				infoboxContent.addChild(new ProgressInfoElement(fetchTracker, key, fctx, maxSize, core.isAdvancedModeEnabled(), ctx, isWebPushingEnabled));
-
-
-				HTMLNode table = infoboxContent.addChild("table", "border", "0");
-				HTMLNode progressCell = table.addChild("tr").addChild("td", "class", "request-progress");
-				if(fr.totalBlocks <= 0)
-					progressCell.addChild("#", NodeL10n.getBase().getString("QueueToadlet.unknown"));
-				else {
-					progressCell.addChild(new ProgressBarElement(fetchTracker,key,fctx,maxSize,ctx, isWebPushingEnabled));
-				}
-
-				infobox = contentNode.addChild("div", "class", "infobox infobox-information");
-				infobox.addChild("div", "class", "infobox-header", l10n("fetchingPageOptions"));
-				infoboxContent = infobox.addChild("div", "class", "infobox-content");
-
-				HTMLNode optionList = infoboxContent.addChild("ul");
-				optionList.addChild("li").addChild("p", l10n("progressOptionZero"));
-
-				addDownloadOptions(ctx, optionList, key, mimeType, false, false, core);
-
-				optionList.addChild("li").addChild(ctx.getPageMaker().createBackLink(ctx, l10n("goBackToPrev")));
-				optionList.addChild("li").addChild("a", new String[] { "href", "title" },
-						new String[] { "/", NodeL10n.getBase().getString("Toadlet.homepage") }, l10n("abortToHomepage"));
-
-				MultiValueTable<String, String> retHeaders = new MultiValueTable<String, String>();
-				//retHeaders.put("Refresh", "2; url="+location);
-				writeHTMLReply(ctx, 200, "OK", retHeaders, pageNode.generate());
-				fr.close();
-				fetch.close();
-				return;
-			} else if(fr != null)
-				fr.close();
+			}else{
+				//If he disabled it, we just put the http refresh meta, without the noscript
+				headNode.addChild("meta", "http-equiv", "Refresh").addAttribute("content", "2;URL=" + location);
 			}
+			HTMLNode contentNode = page.content;
+			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-information");
+			infobox.addChild("div", "class", "infobox-header", l10n("fetchingPageBox"));
+			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
+			infoboxContent.addAttribute("id", "infoContent");
+			infoboxContent.addChild(new ProgressInfoElement(fetchTracker, key, fctx, maxSize, core.isAdvancedModeEnabled(), ctx, isWebPushingEnabled));
+
+
+			HTMLNode table = infoboxContent.addChild("table", "border", "0");
+			HTMLNode progressCell = table.addChild("tr").addChild("td", "class", "request-progress");
+			if(fr.totalBlocks <= 0)
+				progressCell.addChild("#", NodeL10n.getBase().getString("QueueToadlet.unknown"));
+			else {
+				progressCell.addChild(new ProgressBarElement(fetchTracker,key,fctx,maxSize,ctx, isWebPushingEnabled));
+			}
+
+			infobox = contentNode.addChild("div", "class", "infobox infobox-information");
+			infobox.addChild("div", "class", "infobox-header", l10n("fetchingPageOptions"));
+			infoboxContent = infobox.addChild("div", "class", "infobox-content");
+
+			HTMLNode optionList = infoboxContent.addChild("ul");
+			optionList.addChild("li").addChild("p", l10n("progressOptionZero"));
+
+			addDownloadOptions(ctx, optionList, key, mimeType, false, false, core);
+
+			optionList.addChild("li").addChild(ctx.getPageMaker().createBackLink(ctx, l10n("goBackToPrev")));
+			optionList.addChild("li").addChild("a", new String[] { "href", "title" },
+					new String[] { "/", NodeL10n.getBase().getString("Toadlet.homepage") }, l10n("abortToHomepage"));
+
+			MultiValueTable<String, String> retHeaders = new MultiValueTable<String, String>();
+			//retHeaders.put("Refresh", "2; url="+location);
+			writeHTMLReply(ctx, 200, "OK", retHeaders, pageNode.generate());
+			fr.close();
+			fetch.close();
+			return;
+		} else if(fr != null)
+			fr.close();
+		}
 
 		try {
 			if(logMINOR)
@@ -985,13 +982,13 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		}
 	}
 
-	private static String getDownloadReturnType(Node node) {
+	/*private static String getDownloadReturnType(Node node) {
 		if(node.securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW)
 			// Default to save to temp space
 			return "direct";
 		else
 			return "disk";
-	}
+	}*/
 
 	private boolean isBrowser(String ua) {
 		if(ua == null) return false;

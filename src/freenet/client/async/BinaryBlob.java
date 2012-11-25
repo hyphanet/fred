@@ -59,7 +59,6 @@ public abstract class BinaryBlob {
 		if(version != BinaryBlob.BINARY_BLOB_OVERALL_VERSION)
 			throw new BinaryBlobFormatException("Unknown overall version");
 		
-		int i=0;
 		while(true) {
 			long blobLength;
 			try {
@@ -113,7 +112,6 @@ public abstract class BinaryBlob {
 					throw new BinaryBlobFormatException("Unknown blob type: "+blobType);
 				}
 			}
-			i++;
 		}
 
 	}

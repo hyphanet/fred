@@ -13,6 +13,7 @@ import java.util.Map;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.Metadata;
 import freenet.client.async.ManifestElement;
 import freenet.node.Node;
 import freenet.support.Logger;
@@ -192,12 +193,12 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 		container.delete(this);
 	}
 
-	private void removeFrom(ObjectContainer container, HashMap filesByName) {
-		Iterator i = filesByName.values().iterator();
+	private void removeFrom(ObjectContainer container, HashMap<String, Object> filesByName) {
+		Iterator<Object> i = filesByName.values().iterator();
 		while(i.hasNext()) {
 			Object val = i.next();
 			if(val instanceof HashMap) {
-				removeFrom(container, (HashMap) val);
+				removeFrom(container, Metadata.forceMap(val));
 			} else {
 				((DirPutFile)val).removeFrom(container);
 			}

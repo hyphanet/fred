@@ -1,16 +1,8 @@
 package freenet.clients.http.wizardsteps;
 
 import freenet.clients.http.FirstTimeWizardToadlet;
-import freenet.clients.http.WelcomeToadlet;
-import freenet.config.Config;
-import freenet.config.ConfigException;
-import freenet.config.InvalidConfigValueException;
 import freenet.l10n.NodeL10n;
-import freenet.node.NodeClientCore;
-import freenet.pluginmanager.FredPluginBandwidthIndicator;
 import freenet.support.HTMLNode;
-import freenet.support.Logger;
-import freenet.support.SizeUtil;
 import freenet.support.api.HTTPRequest;
 
 /**

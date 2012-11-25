@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Vector;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.HMAC;
@@ -1209,7 +1208,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 		}
 
 		public void lost() {
-			int bytesToResend = 0;
+			//int bytesToResend = 0;
 			Iterator<MessageWrapper> msgIt = messages.iterator();
 			Iterator<int[]> rangeIt = ranges.iterator();
 
@@ -1217,7 +1216,8 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 				MessageWrapper wrapper = msgIt.next();
 				int[] range = rangeIt.next();
 
-				bytesToResend += wrapper.lost(range[0], range[1]);
+				//bytesToResend += wrapper.lost(range[0], range[1]);
+				wrapper.lost(range[0], range[1]);
 			}
 		}
 

@@ -71,7 +71,6 @@ import freenet.crypt.DiffieHellman;
 import freenet.crypt.EncryptingIoAdapter;
 import freenet.crypt.RandomSource;
 import freenet.crypt.Yarrow;
-import freenet.crypt.ciphers.Rijndael;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.FreenetInetAddress;
@@ -257,7 +256,7 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 			ramstore.clear();
 		} else if(store instanceof SaltedHashFreenetStore) {
-			SaltedHashFreenetStore<T> saltstore = (SaltedHashFreenetStore<T>) store;
+			//SaltedHashFreenetStore<T> saltstore = (SaltedHashFreenetStore<T>) store;
 			// FIXME
 			Logger.error(this, "Migrating from from a saltedhashstore not fully supported yet: will not keep old keys");
 		}
@@ -2807,7 +2806,10 @@ public class Node implements TimeSkewDetectorCallback {
 				while(read < length) {
 					int bytes = (int) Math.min(buf.length, length - read);
 					bytes = readAdapter.read(buf, bytes);
-					if(bytes < 0) throw new EOFException();
+					if(bytes < 0) {
+						fos.close();
+						throw new EOFException();
+					}
 					read += bytes;
 					fos.write(buf, 0, bytes);
 				}
@@ -2861,7 +2863,10 @@ public class Node implements TimeSkewDetectorCallback {
 				while(read < length) {
 					int bytes = (int) Math.min(buf.length, length - read);
 					bytes = fis.read(buf, 0, bytes);
-					if(bytes < 0) throw new EOFException();
+					if(bytes < 0) {
+						fis.close();
+						throw new EOFException();
+					}
 					read += bytes;
 					readAdapter.write(buf, bytes);
 				}
@@ -3695,7 +3700,7 @@ public class Node implements TimeSkewDetectorCallback {
 		String osVersion = System.getProperty("os.version");
 
 		boolean isOpenJDK = false;
-		boolean isOracle = false;
+		//boolean isOracle = false;
 
 		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM name: "+jvmName+", JVM version: "+javaVersion+", OS name: "+osName+", OS version: "+osVersion);
 
@@ -3707,7 +3712,7 @@ public class Node implements TimeSkewDetectorCallback {
 		//Should have no effect because if a user has downloaded a new enough file for Oracle to have changed the name these bugs shouldn't apply.
 		//Still, one never knows and this code might be extended to cover future bugs.
 		if((!isOpenJDK) && (jvmVendor.startsWith("Sun ") || jvmVendor.startsWith("Oracle ")) || (jvmVendor.startsWith("The FreeBSD Foundation") && (jvmSpecVendor.startsWith("Sun ") || jvmSpecVendor.startsWith("Oracle "))) || (jvmVendor.startsWith("Apple "))) {
-			isOracle = true;
+			//isOracle = true;
 			// Sun/Oracle bugs
 
 			// Spurious OOMs

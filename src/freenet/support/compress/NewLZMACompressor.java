@@ -118,10 +118,19 @@ public class NewLZMACompressor implements Compressor {
 		for (int i = 0; i < 4; i++)
 			dictionarySize += ((props[1 + i]) & 0xFF) << (i * 8);
 		
-		if(dictionarySize < 0) throw new InvalidCompressedDataException("Invalid dictionary size");
-		if(dictionarySize > MAX_DICTIONARY_SIZE) throw new TooBigDictionaryException();
+		if(dictionarySize < 0) {
+			cos.close();
+			throw new InvalidCompressedDataException("Invalid dictionary size");
+		}
+		if(dictionarySize > MAX_DICTIONARY_SIZE) {
+			cos.close();
+			throw new TooBigDictionaryException();
+		}
 		Decoder decoder = new Decoder();
-		if(!decoder.SetDecoderProperties(props)) throw new InvalidCompressedDataException("Invalid properties");
+		if(!decoder.SetDecoderProperties(props)) {
+			cos.close();
+			throw new InvalidCompressedDataException("Invalid properties");
+		}
 		decoder.Code(is, cos, maxLength);
 		//cos.flush();
 		return cos.written();

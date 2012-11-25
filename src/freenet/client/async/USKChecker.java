@@ -22,7 +22,7 @@ class USKChecker extends BaseSingleFileFetcher {
 	final USKCheckerCallback cb;
 	private int dnfs;
 	
-	private long cooldownWakeupTime;
+	//private long cooldownWakeupTime;
 
         private static volatile boolean logMINOR;
 	static {

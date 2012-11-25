@@ -1389,7 +1389,7 @@ public class NodeUpdateManager {
 	 *            space and a node sends us a revocation certificate.
 	 */
 	public void blow(String msg, boolean disabledNotBlown) {
-		NodeUpdater main, ext;
+		NodeUpdater main;
 		synchronized (this) {
 			if (hasBeenBlown) {
 				if (this.disabledNotBlown && !disabledNotBlown)

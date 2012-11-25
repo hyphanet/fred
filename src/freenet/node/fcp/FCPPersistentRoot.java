@@ -86,7 +86,7 @@ public class FCPPersistentRoot {
 		// I think that was the cause of the OOMs here...
 		Constraint con = query.descend("name").constrain(name);
 		con.and(query.descend("root").constrain(this).identity());
-		ObjectSet set = query.execute();
+		ObjectSet<FCPClient> set = query.execute();
 		while(set.hasNext()) {
 			FCPClient client = (FCPClient) set.next();
 			container.activate(client, 1);

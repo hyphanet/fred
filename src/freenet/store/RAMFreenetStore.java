@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Enumeration;
 
-import com.sleepycat.je.DatabaseException;
-
 import freenet.keys.KeyVerifyException;
 import freenet.node.stats.StoreAccessStats;
 import freenet.support.ByteArrayWrapper;

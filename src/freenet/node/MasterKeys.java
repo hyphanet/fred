@@ -151,27 +151,21 @@ public class MasterKeys {
 		byte[] hash = md.digest();
 		System.arraycopy(hash, 0, data, flagBytes.length + clientCacheKey.length + databaseKey.length, HASH_LENGTH);
 
-//		System.err.println("Flag bytes: "+HexUtil.bytesToHex(flagBytes));
-//		System.err.println("Client cache key: "+HexUtil.bytesToHex(clientCacheKey));
-//		System.err.println("Hash: "+HexUtil.bytesToHex(clientCacheKey));
-//		System.err.println("Data: "+HexUtil.bytesToHex(data));
-
 		byte[] pwd = password.getBytes("UTF-8");
 		md.update(pwd);
 		md.update(salt);
 		byte[] outerKey = md.digest();
-//		System.err.println("Outer key: "+HexUtil.bytesToHex(outerKey));
 		BlockCipher cipher;
 		try {
 			cipher = new Rijndael(256, 256);
 		} catch (UnsupportedCipherException e) {
 			// Impossible
+			fos.close();
 			throw new Error(e);
 		}
 		cipher.initialize(outerKey);
 		PCFBMode pcfb = PCFBMode.create(cipher, iv);
 		pcfb.blockEncipher(data, 0, data.length);
-//		System.err.println("Encrypted data: "+HexUtil.bytesToHex(data));
 		fos.write(salt);
 		fos.write(iv);
 		fos.write(data);

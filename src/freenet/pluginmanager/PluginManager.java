@@ -408,7 +408,7 @@ public class PluginManager {
 			Logger.normal(this, "Plugin loaded: " + filename);
 		} catch (PluginNotFoundException e) {
 			Logger.normal(this, "Loading plugin failed (" + filename + ')', e);
-			String message = e.getMessage();
+			//String message = e.getMessage();
 			boolean stillTrying = false;
 			if(pdl instanceof PluginDownLoaderOfficialFreenet) {
 				PluginDownLoaderOfficialFreenet downloader = (PluginDownLoaderOfficialFreenet) pdl;
@@ -1387,7 +1387,9 @@ public class PluginManager {
 				if(!(object instanceof FredPlugin)) {
 					Logger.error(this, "plugin main class is not a plugin");
 					pluginFile.delete();
-					if(!downloaded) continue;
+					if(!downloaded) 
+						continue;
+					jarClassLoader.close();
 					throw new PluginNotFoundException("plugin main class is not a plugin");
 				}
 
@@ -1445,6 +1447,8 @@ public class PluginManager {
 				if(object instanceof FredPluginThemed) {
 					((FredPluginThemed)object).setTheme(fproxyTheme);
 				}
+				
+				jarClassLoader.close();
 
 				return (FredPlugin) object;
 			} catch(IOException ioe1) {
