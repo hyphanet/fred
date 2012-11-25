@@ -32,11 +32,11 @@ class NPFPacket {
 
 	private int sequenceNumber;
 	private final SortedSet<Integer> acks = new TreeSet<Integer>();
-	private final LinkedList<MessageFragment> fragments = new LinkedList<MessageFragment>();
+	private final List<MessageFragment> fragments = new LinkedList<MessageFragment>();
 	/** Messages that are specific to a single packet and can be happily lost if it is lost. 
 	 * They must be processed before the rest of the messages.
 	 * With early versions, these might be bogus, so be careful parsing them. */
-	private final LinkedList<byte[]> lossyMessages = new LinkedList<byte[]>();
+	private final List<byte[]> lossyMessages = new LinkedList<byte[]>();
 	private boolean error;
 	private int length = 5; //Sequence number (4), numAcks(1)
 
@@ -376,7 +376,7 @@ class NPFPacket {
 		return error;
         }
 
-	public LinkedList<MessageFragment> getFragments() {
+	public List<MessageFragment> getFragments() {
 		return fragments;
         }
 

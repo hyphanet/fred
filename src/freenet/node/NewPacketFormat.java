@@ -142,7 +142,7 @@ public class NewPacketFormat implements PacketFormat {
 		pn.maybeRekey();
 		pn.reportIncomingBytes(length);
 
-		LinkedList<byte[]> finished = handleDecryptedPacket(packet, s);
+		List<byte[]> finished = handleDecryptedPacket(packet, s);
 		if(logMINOR && !finished.isEmpty()) 
 			Logger.minor(this, "Decoded messages: "+finished.size());
 		DecodingMessageGroup group = pn.startProcessingDecryptedMessages(finished.size());
@@ -154,8 +154,8 @@ public class NewPacketFormat implements PacketFormat {
 		return true;
 	}
 
-	LinkedList<byte[]> handleDecryptedPacket(NPFPacket packet, SessionKey sessionKey) {
-		LinkedList<byte[]> fullyReceived = new LinkedList<byte[]>();
+	List<byte[]> handleDecryptedPacket(NPFPacket packet, SessionKey sessionKey) {
+		List<byte[]> fullyReceived = new LinkedList<byte[]>();
 
 		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
 		for(int ack : packet.getAcks()) {
@@ -1134,8 +1134,8 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 	static class SentPacket {
 		final SessionKey sessionKey;
 		NewPacketFormat npf;
-		LinkedList<MessageWrapper> messages = new LinkedList<MessageWrapper>();
-		LinkedList<int[]> ranges = new LinkedList<int[]>();
+		List<MessageWrapper> messages = new LinkedList<MessageWrapper>();
+		List<int[]> ranges = new LinkedList<int[]>();
 		long sentTime;
 		int packetLength;
 

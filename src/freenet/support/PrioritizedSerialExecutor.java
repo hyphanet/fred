@@ -1,6 +1,8 @@
 package freenet.support;
 
 import java.util.LinkedList;
+import java.util.Deque;
+import java.util.List;
 
 import freenet.node.NodeStats;
 import freenet.node.PrioRunnable;
@@ -279,12 +281,12 @@ public class PrioritizedSerialExecutor implements Executor {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public LinkedList<Runnable>[] getQueuedJobsByPriority() {
-		final LinkedList<Runnable>[] jobsClone = new LinkedList[jobs.length];
+	public List<Runnable>[] getQueuedJobsByPriority() {
+		final List<Runnable>[] jobsClone = new List[jobs.length];
 		
 		synchronized(jobs) {
 			for(int i=0; i < jobs.length; ++i) {
-				jobsClone[i] = (LinkedList<Runnable>) jobs[i].clone();
+				jobsClone[i] = (List<Runnable>) jobs[i].clone();
 			}
 		}
 		
