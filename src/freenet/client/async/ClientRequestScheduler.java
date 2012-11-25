@@ -745,7 +745,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		synchronized(starterQueue) {
 			boolean betterThanSome = false;
 			int size = 0;
-			PersistentChosenRequest prev = null;
 			for(PersistentChosenRequest old : starterQueue) {
 				if(old.request == req) {
 					// Wait for a reselect. Otherwise we can starve other
@@ -755,10 +754,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 					if(logMINOR) Logger.minor(this, "Already on starter queue: "+old+" for "+req);
 					return;
 				}
-				if(prev == old)
-					Logger.error(this, "ON STARTER QUEUE TWICE: "+prev+" for "+prev.request);
-				if(prev != null && prev.request == old.request)
-					Logger.error(this, "REQUEST ON STARTER QUEUE TWICE: "+prev+" for "+prev.request+" vs "+old+" for "+old.request);
 				boolean ignoreActive = false;
 				if(mightBeActive != null) {
 					for(SendableRequest tmp : mightBeActive)
@@ -775,7 +770,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(old.prio > prio)
 					betterThanSome = true;
 				if(old.request == req) return;
-				prev = old;
 			}
 			if(size >= MAX_STARTER_QUEUE_SIZE && !betterThanSome) {
 				if(logMINOR)
