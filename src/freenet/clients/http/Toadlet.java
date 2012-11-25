@@ -8,7 +8,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
-import java.net.URI;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
@@ -69,7 +68,7 @@ public abstract class Toadlet {
 
 	/**
 	 * TODO: not used?!
-	 */
+	 
 	private void handleUnhandledRequest(URI uri, Bucket data, ToadletContext toadletContext) throws ToadletContextClosedException, IOException, RedirectException {
 		PageNode page = toadletContext.getPageMaker().getPageNode(l10n("notSupportedTitle"), toadletContext);
 		HTMLNode pageNode = page.outer;
@@ -86,7 +85,7 @@ public abstract class Toadlet {
 		pageNode.generate(pageBuffer);
 		toadletContext.sendReplyHeaders(405, "Operation not Supported", hdrtbl, "text/html; charset=utf-8", pageBuffer.length());
 		toadletContext.writeData(pageBuffer.toString().getBytes("UTF-8"));
-	}
+	}*/
 	
 	private static String l10n(String key, String pattern, String value) {
 		return NodeL10n.getBase().getString("Toadlet."+key, new String[] { pattern }, new String[] { value });

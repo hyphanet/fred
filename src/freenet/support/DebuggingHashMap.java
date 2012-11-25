@@ -44,7 +44,7 @@ public class DebuggingHashMap<K extends Object, V extends Object> extends HashMa
 			Logger.minor(this, "objectOnNew() on DebuggingHashMap "+this+" stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this)+" size="+size(), new Exception("debug"));
 	}
 	
-	private transient boolean activating = false;
+	//private transient boolean activating = false;
 	
 	public boolean objectCanActivate(ObjectContainer container) {
 		if(logMINOR)

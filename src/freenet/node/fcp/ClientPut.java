@@ -20,7 +20,6 @@ import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
-import freenet.client.async.BaseClientPutter;
 import freenet.client.async.BinaryBlob;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientPutter;

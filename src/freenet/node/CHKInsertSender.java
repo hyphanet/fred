@@ -6,7 +6,6 @@ package freenet.node;
 import java.util.Vector;
 
 import freenet.io.comm.AsyncMessageCallback;
-import freenet.io.comm.AsyncMessageFilterCallback;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
@@ -47,7 +46,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		/** Have we completed the immediate transfer? */
 		boolean completedTransfer;
 		/** Did it succeed? */
-		boolean transferSucceeded;
+		//boolean transferSucceeded;
 		
 		/** Do we have the InsertReply, RNF or similar completion? If not,
 		 * there is no point starting to wait for a timeout. */
@@ -133,7 +132,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		
 		private void completedTransfer(boolean success) {
 			synchronized(backgroundTransfers) {
-				transferSucceeded = success;
+				//transferSucceeded = success;
 				completedTransfer = true;
 				backgroundTransfers.notifyAll();
 			}

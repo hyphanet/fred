@@ -733,8 +733,8 @@ public class CSSParserTest extends TestCase {
 	public void testCSS1Selector() throws IOException, URISyntaxException {
 
 
-		Collection c = CSS1_SELECTOR.keySet();
-		Iterator itr = c.iterator();
+		Collection<String> c = CSS1_SELECTOR.keySet();
+		Iterator<String> itr = c.iterator();
 		while(itr.hasNext())
 		{
 
@@ -748,8 +748,8 @@ public class CSSParserTest extends TestCase {
 	}
 
 	public void testCSS2Selector() throws IOException, URISyntaxException {
-		Collection c = CSS2_SELECTOR.keySet();
-		Iterator itr = c.iterator();
+		Collection<String> c = CSS2_SELECTOR.keySet();
+		Iterator<String> itr = c.iterator();
 		int i=0;
 		while(itr.hasNext())
 		{

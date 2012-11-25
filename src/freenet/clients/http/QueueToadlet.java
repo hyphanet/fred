@@ -2253,7 +2253,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				completedRequestIdentifiers.clear();
 				while(true) {
 					String identifier = br.readLine();
-					if(identifier == null) return true;
+					if(identifier == null) {
+						br.close();
+						return true;
+					}
 					completedRequestIdentifiers.add(identifier);
 				}
 			}

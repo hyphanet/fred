@@ -22,7 +22,6 @@ import freenet.client.events.SimpleEventProducer;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
-import freenet.keys.Key;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;

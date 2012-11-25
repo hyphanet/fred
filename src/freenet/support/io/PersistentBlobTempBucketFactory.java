@@ -359,7 +359,6 @@ outer:		while(true) {
 			query.constrain(PersistentBlobTempBucketTag.class);
 			query.descend("isFree").constrain(true).and(query.descend("index").constrain(l).smaller());
 			ObjectSet<PersistentBlobTempBucketTag> tags = query.execute();
-			Long[] notCommitted;
 			synchronized(PersistentBlobTempBucketFactory.this) {
 				while(tags.hasNext()) {
 					PersistentBlobTempBucketTag tag = tags.next();

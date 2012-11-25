@@ -19,13 +19,13 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger.LogLevel;
 
 class NPFPacket {
-	private static volatile boolean logMINOR;
+	//private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+				//logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});

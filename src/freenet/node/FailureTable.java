@@ -47,14 +47,14 @@ import freenet.support.io.NativeThread;
 public class FailureTable implements OOMHook {
 	
 	private static volatile boolean logMINOR;
-	private static volatile boolean logDEBUG;
+	//private static volatile boolean logDEBUG;
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
 				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
+				//logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
 	}

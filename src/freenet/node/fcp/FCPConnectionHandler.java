@@ -71,7 +71,7 @@ public class FCPConnectionHandler implements Closeable {
 	private String clientName;
 	private FCPClient rebootClient;
 	private FCPClient foreverClient;
-	private boolean failedGetForever;
+	//private boolean failedGetForever;
 	final BucketFactory bf;
 	final HashMap<String, ClientRequest> requestsByIdentifier;
 	protected final String connectionIdentifier;

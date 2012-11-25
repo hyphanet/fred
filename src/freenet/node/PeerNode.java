@@ -4437,7 +4437,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return cur.trackerID;
 	}
 
-	private long lastFailedRevocationTransfer;
 	/** Reset on disconnection */
 	private int countFailedRevocationTransfers;
 
@@ -4502,7 +4501,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		private int lastSentMaxOutputTransfers = Integer.MAX_VALUE;
 		private int lastSentMaxOutputTransfersPeerLimit = Integer.MAX_VALUE;
 		private long timeLastSentAllocationNotice;
-		private long countAllocationNotices;
 		private PeerLoadStats lastFullStats;
 		private final boolean realTimeFlag;
 		private boolean sendASAP;
@@ -4565,7 +4563,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					lastFullStats = stats;
 				}
 				timeLastSentAllocationNotice = now;
-				countAllocationNotices++;
 				if(logMINOR) Logger.minor(this, "Sending allocation notice to "+this+" allocation is "+lastSentAllocationInput+" input "+lastSentAllocationOutput+" output.");
 			}
 			Message msg = DMT.createFNPPeerLoadStatus(stats);
@@ -5262,7 +5259,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(!isRoutable()) return;
 			boolean ignoreLocalVsRemote = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
 			if(logMINOR) Logger.minor(this, "Maybe waking up slot waiters for "+this+" realtime="+realTime+" for "+PeerNode.this.shortToString());
-			boolean foundNever = true;
 			while(true) {
 				boolean foundNone = true;
 				RequestType type;
@@ -5304,7 +5300,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						}
 						if(logMINOR) Logger.minor(this, "Checking slot waiters for "+type);
 						foundNone = false;
-						foundNever = false;
 						// Requests already running to this node
 						RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, loadStats.averageTransfersOutPerInsert, realTime);
 						runningRequests.log(PeerNode.this);
