@@ -174,21 +174,20 @@ public class NewPacketFormat implements PacketFormat {
 		if(l != null && !l.isEmpty())
 		{
 		    ArrayList<Message> lossyMessages = new ArrayList<Message>(l.size());
-		// FIXME reindent
-		for(byte[] buf : l) {
-			// FIXME factor out parsing once we are sure these are not bogus.
-			// For now we have to be careful.
-			Message msg = Message.decodeMessageLax(buf, pn, 0);
-			if(msg == null) {
-				lossyMessages.clear();
-				break;
+			for(byte[] buf : l) {
+				// FIXME factor out parsing once we are sure these are not bogus.
+				// For now we have to be careful.
+				Message msg = Message.decodeMessageLax(buf, pn, 0);
+				if(msg == null) {
+					lossyMessages.clear();
+					break;
+				}
+				if(!msg.getSpec().isLossyPacketMessage()) {
+					lossyMessages.clear();
+					break;
+				}
+				lossyMessages.add(msg);
 			}
-			if(!msg.getSpec().isLossyPacketMessage()) {
-				lossyMessages.clear();
-				break;
-			}
-			lossyMessages.add(msg);
-		}
 			// Handle them *before* the rest.
 			if(logMINOR && lossyMessages.size() > 0) Logger.minor(this, "Successfully parsed "+lossyMessages.size()+" lossy packet messages");
 			for(Message msg : lossyMessages)
