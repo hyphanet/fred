@@ -377,6 +377,7 @@ public class DatastoreChecker implements PrioRunnable {
 						keys = trans.keys;
 						getter = trans.getter;
 						persistent = false;
+						// sched assigned out of loop
 						item = null;
 						blocks = trans.blockSet;
 						if(logMINOR)
@@ -394,21 +395,20 @@ public class DatastoreChecker implements PrioRunnable {
 						break;
 					}
 				}
-				if(keys == null) {
-					try {
-						context.jobRunner.queue(loader, NativeThread.HIGH_PRIORITY, true);
-					} catch (DatabaseDisabledException e1) {
-						// Ignore
-					}
-					if(logMINOR) Logger.minor(this, "Waiting for more persistent requests");
-					try {
-						wait(100*1000);
-					} catch (InterruptedException e) {
-						// Ok
-					}
-					continue;
+				if(keys != null)
+					break;
+
+				try {
+					context.jobRunner.queue(loader, NativeThread.HIGH_PRIORITY, true);
+				} catch (DatabaseDisabledException e1) {
+					// Ignore
 				}
-				break;
+				if(logMINOR) Logger.minor(this, "Waiting for more persistent requests");
+				try {
+					wait(100*1000);
+				} catch (InterruptedException e) {
+					// Ok
+				}
 			}
 		}
 		if(!persistent) {
@@ -422,10 +422,10 @@ public class DatastoreChecker implements PrioRunnable {
 					continue;
 				}
 			}
-			KeyBlock block = null;
+			KeyBlock block;
 			if(blocks != null)
 				block = blocks.get(key);
-			if(blocks == null)
+			else
 				block = node.fetch(key, true, true, false, false, null);
 			if(block != null) {
 				if(logMINOR) Logger.minor(this, "Found key");
