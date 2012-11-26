@@ -152,7 +152,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		}
 	}
 
-	private RemoveRandomReturn removeRandomExhaustive(
+	private synchronized RemoveRandomReturn removeRandomExhaustive(
 			RandomGrabArrayItemExclusionList excluding,
 			ObjectContainer container, ClientContext context, long now) {
 		long wakeupTime = Long.MAX_VALUE;
@@ -204,7 +204,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		return new RemoveRandomReturn(wakeupTime);
 	}
 
-	private RandomGrabArrayItem removeRandomLimited(
+	private synchronized RandomGrabArrayItem removeRandomLimited(
 			RandomGrabArrayItemExclusionList excluding,
 			ObjectContainer container, ClientContext context, long now) {
 		/** Count of arrays that have items but didn't return anything because of exclusions */
@@ -275,7 +275,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		}
 	}
 
-	private RemoveRandomReturn removeRandomTwoOnly(
+	private synchronized RemoveRandomReturn removeRandomTwoOnly(
 			RandomGrabArrayItemExclusionList excluding,
 			ObjectContainer container, ClientContext context, long now) {
 		long wakeupTime = Long.MAX_VALUE;
@@ -384,7 +384,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		}
 	}
 
-	private RemoveRandomReturn removeRandomOneOnly(
+	private synchronized RemoveRandomReturn removeRandomOneOnly(
 			RandomGrabArrayItemExclusionList excluding,
 			ObjectContainer container, ClientContext context, long now) {
 		long wakeupTime = Long.MAX_VALUE;
