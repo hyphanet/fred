@@ -2704,11 +2704,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(physical != null) {
 				Vector<Peer> oldNominalPeer = nominalPeer;
 
-				if(nominalPeer == null)
-					nominalPeer = new Vector<Peer>();
-				nominalPeer.removeAllElements();
+				nominalPeer = new Vector<Peer>(physical.length);
 
-				Peer[] oldPeers = nominalPeer.toArray(new Peer[nominalPeer.size()]);
+				Peer[] oldPeers = oldNominalPeer.toArray(new Peer[oldNominalPeer.size()]);
 
 				for(String phys: physical) {
 					Peer p;
@@ -2734,6 +2732,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						nominalPeer.addElement(p);
 					}
 				}
+				// XXX should we trigger changedAnything on *any* change, or on just *addition* of new addresses
 				if(!Arrays.equals(oldPeers, nominalPeer.toArray(new Peer[nominalPeer.size()]))) {
 					changedAnything = true;
 					if(logMINOR) Logger.minor(this, "Got new physical.udp for "+this+" : "+Arrays.toString(nominalPeer.toArray()));
