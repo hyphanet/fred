@@ -19,6 +19,7 @@ import freenet.node.FSParseException;
 import freenet.support.Base64;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.DerUtils;
 
 public class ECDSA {
     public final Curves curve;
@@ -27,9 +28,9 @@ public class ECDSA {
     public enum Curves {
         // rfc5903 or rfc6460: it's NIST's random/prime curves : suite B
         // Order matters. Append to the list, do not re-order.
-        P256("secp256r1", "SHA256withECDSA", 91),
-        P384("secp384r1", "SHA384withECDSA", 120),
-        P521("secp521r1", "SHA512withECDSA", 158);
+        P256("secp256r1", "SHA256withECDSA", 91, 64),
+        P384("secp384r1", "SHA384withECDSA", 120, 96),
+        P521("secp521r1", "SHA512withECDSA", 158, 132);
         
         public final ECGenParameterSpec spec;
         private final KeyPairGenerator keygen;
@@ -37,8 +38,10 @@ public class ECDSA {
         public final String defaultHashAlgorithm;
         /** Expected size of a DER encoded pubkey in bytes */
         public final int modulusSize;
+		/** Expected size of CVC-encoded signature */
+		public final int signatureSize;
         
-        private Curves(String name, String defaultHashAlgorithm, int modulusSize) {
+        private Curves(String name, String defaultHashAlgorithm, int modulusSize, int signatureSize) {
             this.spec = new ECGenParameterSpec(name);
             KeyPairGenerator kg = null;
             try {
@@ -54,6 +57,7 @@ public class ECDSA {
             this.keygen = kg;
             this.defaultHashAlgorithm = defaultHashAlgorithm;
             this.modulusSize = modulusSize;
+			this.signatureSize = signatureSize;
         }
         
         public synchronized KeyPair generateKeyPair() {
@@ -116,6 +120,15 @@ public class ECDSA {
 			for(byte[] d: data)
 				sig.update(d);
             result = sig.sign();
+			try {
+				result = DerUtils.DerECSignatureToCVC(result, curve.signatureSize);
+			} catch(IllegalArgumentException e) {
+				Logger.error(this, "Cannot convert EC signature to fixed-size CVC format "+e, e);
+				result = null;
+			} catch(ArrayIndexOutOfBoundsException e) {
+				Logger.error(this, "Cannot convert EC signature to fixed-size CVC format "+e, e);
+				result = null;
+			}
         } catch (NoSuchAlgorithmException e) {
             Logger.error(this, "NoSuchAlgorithmException : "+e.getMessage(),e);
             e.printStackTrace();
@@ -147,6 +160,11 @@ public class ECDSA {
             return false;
         boolean result = false;
         try {
+			if (siglen == curve.signatureSize) {
+				signature = DerUtils.DerECSignatureFromCVC(signature, sigoffset, siglen);
+				sigoffset = 0;
+				siglen = signature.length;
+			}
             Signature sig = Signature.getInstance(curve.defaultHashAlgorithm);
             sig.initVerify(key);
 			for(byte[] d: data)
