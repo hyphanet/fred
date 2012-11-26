@@ -129,7 +129,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
     private static final ECDH.Curves ecdhCurveToUse = ECDH.Curves.P256;
 	private long jfkECDHLastGenerationTimestamp = 0;
 
-	protected static final int NONCE_SIZE = 8;
 	private static final int RANDOM_BYTES_LENGTH = 12;
 	private static final int HASH_LENGTH = SHA256.getDigestLength();
 	/** The size of the key used to authenticate the hmac */
@@ -762,7 +761,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		long t1=System.currentTimeMillis();
         int minPubkeyLength = minPubkeyLength(negType);
 		// Pre negtype 9 we were sending Ni as opposed to Ni'
-		int nonceSizeHashed = negType >= 9 ? SHA256.getDigestLength() : NONCE_SIZE;
+		int nonceSizeHashed = negType >= 9 ? HASH_LENGTH : getNonceSize(negType);
 		if(logMINOR) Logger.minor(this, "Got a JFK(1) message, processing it - "+pn);
 		// FIXME: follow the spec and send IDr' ?
 		int expectedLength = offset + nonceSizeHashed + minPubkeyLength + (unknownInitiator ? NodeCrypto.IDENTITY_LENGTH : 0);
@@ -907,7 +906,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 	
 		int offset = 0;
-		byte[] nonce = new byte[NONCE_SIZE];
+		final int nonceSize = getNonceSize(negType);
+		final int nonceSizeHashed = negType >= 9 ? HASH_LENGTH : nonceSize;
+		byte[] nonce = new byte[nonceSize];
 		byte[] myExponential = ctx.getPublicKeyNetworkFormat(negType >= 9);
 		node.random.nextBytes(nonce);
 
@@ -918,7 +919,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 
 		// Pre negtype 9 we were sending Ni as opposed to Ni'
-		byte[] nonceHash = negType >= 9 : SHA256.digest(nonce) : nonce;
+		byte[] nonceHash = negType >= 9 ? SHA256.digest(nonce) : nonce;
 
 		byte[] message1 = new byte[nonceSizeHashed+myExponential.length+(unknownInitiator ? NodeCrypto.IDENTITY_LENGTH : 0)];
 
@@ -957,7 +958,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		KeyAgreementSchemeContext ctx = (negType < 8 ? getLightDiffieHellmanContext() : getECDHLightContext());
 
 		// Nr
-		byte[] myNonce = new byte[NONCE_SIZE];
+		final int nonceSize = getNonceSize(negType);
+		byte[] myNonce = new byte[nonceSize];
 		node.random.nextBytes(myNonce);
 	    byte[] myExponential = ctx.getPublicKeyNetworkFormat(negType >= 9);
 
@@ -983,7 +985,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		byte[] authenticator = macJFKAuthenticator(getTransientKey(),myExponential, hisExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress());
 		if(logMINOR) Logger.minor(this, "We are using the following HMAC : " + HexUtil.bytesToHex(authenticator));
 
-		byte[] message2 = new byte[nonceInitator.length+NONCE_SIZE+
+		byte[] message2 = new byte[nonceInitator.length+nonceSize+
 								   myExponential.length+
 								   sig.length+
 		                           HASH_LENGTH];
@@ -991,8 +993,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		int offset = 0;
 		System.arraycopy(nonceInitator, 0, message2, offset, nonceInitator.length);
 		offset += nonceInitator.length;
-		System.arraycopy(myNonce, 0, message2, offset, NONCE_SIZE);
-		offset += NONCE_SIZE;
+		System.arraycopy(myNonce, 0, message2, offset, nonceSize);
+		offset += nonceSize;
 		System.arraycopy(myExponential, 0, message2, offset, myExponential.length);
 		offset += myExponential.length;
 
@@ -1043,12 +1045,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		long t1=System.currentTimeMillis();
         int minPubkeyLength = minPubkeyLength(negType);
 		int minSignatureLength = minSignatureLength(negType);
+		final int nonceSize = getNonceSize(negType);
 		// Pre negtype 9 we were sending Ni as opposed to Ni'
-		int nonceSizeHashed = (negType > 8 ? SHA256.getDigestLength() : NONCE_SIZE);
+		int nonceSizeHashed = negType > 8 ? HASH_LENGTH : nonceSize;
 
 		if(logMINOR) Logger.minor(this, "Got a JFK(2) message, processing it - "+pn.getPeer());
 		// FIXME: follow the spec and send IDr' ?
-		int expectedLength = inputOffset + nonceSizeHashed + NONCE_SIZE + minPubkeyLength + minSignatureLength + HASH_LENGTH;
+		int expectedLength = inputOffset + nonceSizeHashed + nonceSize + minPubkeyLength + minSignatureLength + HASH_LENGTH;
 		if(payload.length < expectedLength) {
 			Logger.error(this, "Packet too short from "+pn.getPeer()+": "+payload.length+" after decryption in JFK(2), should be "+expectedLength);
 			return;
@@ -1056,8 +1059,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		byte[] nonceInitiator = Arrays.copyOfRange(payload, inputOffset, inputOffset+nonceSizeHashed);
 		inputOffset += nonceSizeHashed;
-		byte[] nonceResponder = Arrays.copyOfRange(payload, inputOffset, inputOffset+NONCE_SIZE);
-		inputOffset += NONCE_SIZE;
+		byte[] nonceResponder = Arrays.copyOfRange(payload, inputOffset, inputOffset+nonceSize);
+		inputOffset += nonceSize;
 
 		byte[] hisExponential = extractPublicKey(negType, payload, inputOffset);
 		if (hisExponential == null) {
@@ -1180,6 +1183,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		final long t1 = System.currentTimeMillis();
 		int minPubkeyLength = minPubkeyLength(negType);
 		int minSignatureLength = minSignatureLength(negType);
+		final int nonceSize = getNonceSize(negType);
 		if(logMINOR) Logger.minor(this, "Got a JFK(3) message, processing it - "+pn);
 
 		BlockCipher c = null;
@@ -1187,7 +1191,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		int expectedLength =
 			inputOffset +
-			NONCE_SIZE*2 + // Ni, Nr
+			nonceSize*2 + // Ni, Nr
 			minPubkeyLength*2 + // g^i, g^r
 			HASH_LENGTH + // authenticator
 			HASH_LENGTH + // HMAC of the cyphertext
@@ -1203,13 +1207,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 
 		// Ni
-		byte[] nonceInitiator = Arrays.copyOfRange(payload, inputOffset, inputOffset+NONCE_SIZE);
-		inputOffset += NONCE_SIZE;
+		byte[] nonceInitiator = Arrays.copyOfRange(payload, inputOffset, inputOffset+nonceSize);
+		inputOffset += nonceSize;
 		// Compute Ni'
 		if (negType >= 9) nonceInitiator = SHA256.digest(nonceInitiator);
 		// Nr
-		byte[] nonceResponder = Arrays.copyOfRange(payload, inputOffset, inputOffset+NONCE_SIZE);
-		inputOffset += NONCE_SIZE;
+		byte[] nonceResponder = Arrays.copyOfRange(payload, inputOffset, inputOffset+nonceSize);
+		inputOffset += nonceSize;
 		// g^i
 		byte[] initiatorExponential = extractPublicKey(negType, payload, inputOffset);
 		if(initiatorExponential == null) {
@@ -1799,7 +1803,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				toSign, //< nonceInitiator', nonceResponder, ourExponential, hisExponential
 				pn.identity, data);
 
-		final byte[] message3 = new byte[NONCE_SIZE*2 + // nI, nR
+		final int nonceSize = getNonceSize(negType);
+		final byte[] message3 = new byte[nonceSize*2 + // nI, nR
 		                           ourExponential.length +
 								   hisExponential.length + // g^i, g^r
 		                           HASH_LENGTH + // authenticator
@@ -1809,11 +1814,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		                           data.length]; // The bootid+noderef
 		int offset = 0;
 		// Ni
-		System.arraycopy(nonceInitiatorToSend, 0, message3, offset, NONCE_SIZE);
-		offset += NONCE_SIZE;
+		System.arraycopy(nonceInitiatorToSend, 0, message3, offset, nonceSize);
+		offset += nonceSize;
 		// Nr
-		System.arraycopy(nonceResponder, 0, message3, offset, NONCE_SIZE);
-		offset += NONCE_SIZE;
+		System.arraycopy(nonceResponder, 0, message3, offset, nonceSize);
+		offset += nonceSize;
 		// g^i
 		System.arraycopy(ourExponential, 0,message3, offset, ourExponential.length);
 		offset += ourExponential.length;
@@ -2600,6 +2605,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			// 36 bytes is normal size for compressed P256 public key
 			// 91 bytes is normal size for uncompressed P256 public key
 			// (with full DER wrapper)
+	}
+
+	static private int getNonceSize(int negType) {
+		if(negType < 9)
+			return 8;
+		else
+			return 16;
 	}
 
 	private byte[] getTransientKey() {
