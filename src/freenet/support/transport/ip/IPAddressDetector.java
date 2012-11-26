@@ -8,6 +8,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
 
 import freenet.io.AddressIdentifier;
@@ -15,6 +16,7 @@ import freenet.node.NodeIPDetector;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.io.InetAddressComparator;
 
 /**
  * A class to autodetect our IP address(es)
@@ -148,16 +150,22 @@ public class IPAddressDetector implements Runnable {
 		InetAddress[] oldAddressList = lastAddressList;
 		onGetAddresses(addrs);
 		lastDetectedTime = System.currentTimeMillis();
-		if(oldAddressList != lastAddressList && (oldAddressList == null && lastAddressList != null ||
-				oldAddressList != null && lastAddressList != null && !Arrays.equals(oldAddressList, lastAddressList))) {
-			// Something changed.
-			// Yes I know it could just have changed the order, but this is unlikely hopefully. FIXME.
-			return true;
-		}
-		return false;
+		return addressListChanged(oldAddressList, lastAddressList);
 	}
 
-        /**
+	private boolean addressListChanged(InetAddress[] oldList,
+			InetAddress[] newList) {
+		if(oldList == null) return newList != null;
+		if(oldList == newList) return false;
+		if(oldList.length != newList.length) return true;
+		InetAddress[] a = Arrays.copyOf(oldList, oldList.length);
+		InetAddress[] b = Arrays.copyOf(newList, newList.length);
+		Arrays.sort(a, InetAddressComparator.COMPARATOR);
+		Arrays.sort(b, InetAddressComparator.COMPARATOR);
+		return !Arrays.deepEquals(a, b);
+	}
+
+		/**
          *
          * @return
          */
