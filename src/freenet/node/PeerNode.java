@@ -3921,6 +3921,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		for(int i=0;i<runningAnnounceUIDs.length;i++) {
 			long l = runningAnnounceUIDs[i];
 			if(l == uid) continue;
+			if(x == newList.length)
+				// uid was not found in runningAnnounceUIDs
+				return false;
 			newList[x++] = l;
 		}
 		if(x < runningAnnounceUIDs.length) {
