@@ -26,7 +26,9 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.List;
+import java.util.Queue;
 import java.util.StringTokenizer;
 
 import org.tanukisoftware.wrapper.WrapperManager;
@@ -65,7 +67,7 @@ public class NetworkInterface implements Closeable {
 	private final List<Acceptor>  acceptors = new ArrayList<Acceptor>();
 
 	/** Queue of accepted client connections. */
-	protected final List<Socket> acceptedSockets = new ArrayList<Socket>();
+	protected final Queue<Socket> acceptedSockets = new ArrayDeque<Socket>();
 	
 	/** AllowedHosts structure */
 	protected final AllowedHosts allowedHosts;
@@ -209,7 +211,8 @@ public class NetworkInterface implements Closeable {
 	 */
 	public Socket accept() {
 		synchronized (syncObject) {
-			while (acceptedSockets.size() == 0 ) {
+			Socket socket;
+			while ((socket = acceptedSockets.poll()) == null ) {
 				if (shutdown)
 					return null;
 				if (WrapperManager.hasShutdownHookBeenTriggered())
@@ -221,11 +224,12 @@ public class NetworkInterface implements Closeable {
 					syncObject.wait(timeout);
 				} catch (InterruptedException ie1) {
 				}
-				if ((timeout > 0) && (acceptedSockets.size() == 0)) {
-					return null;
+				if (timeout > 0) {
+					socket = acceptedSockets.poll();
+					break;
 				}
 			}
-			return acceptedSockets.remove(0);
+			return socket;
 		}
 	}
 
