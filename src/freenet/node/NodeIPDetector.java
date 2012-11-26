@@ -191,7 +191,7 @@ public class NodeIPDetector {
 	 */
 	private boolean innerDetect(List<FreenetInetAddress> addresses) {
 		boolean addedValidIP = false;
-		InetAddress[] detectedAddrs = ipDetector.getAddress();
+		InetAddress[] detectedAddrs = ipDetector.getAddressNoCallback();
 		assert(detectedAddrs != null);
 		synchronized(this) {
 			hasDetectedIAD = true;
@@ -338,7 +338,7 @@ public class NodeIPDetector {
 	}
 	
 	public boolean hasDirectlyDetectedIP() {
-		InetAddress[] addrs = ipDetector.getAddress();
+		InetAddress[] addrs = ipDetector.getAddress(node.executor);
 		if(addrs == null || addrs.length == 0) return false;
 		for(int i=0;i<addrs.length;i++) {
 			if(IPUtil.isValidAddress(addrs[i], false)) {
