@@ -1077,8 +1077,10 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		return receiveFailed;
 	}
 
-	public synchronized boolean startedSendingData() {
-		return !backgroundTransfers.isEmpty();
+	public boolean startedSendingData() {
+		synchronized(backgroundTransfers) {
+			return !backgroundTransfers.isEmpty();
+		}
 	}
 
 	@Override
