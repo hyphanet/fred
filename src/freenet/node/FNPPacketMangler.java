@@ -670,7 +670,18 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			Logger.warning(this, "Old neg type "+negType+" not supported");
 			return;
 		} else if (negType == 6 || negType == 7 || negType == 8 || negType == 9) {
-		    // negType == 9 => use ECDSA with secp256r1 instead of DSA2048
+		    // negType == 9 => Lots of changes:
+			//	Security fixes:
+			//	- send Ni' (a hash of Ni) in JFK1 to prevent a potential CPU DoS
+			//	Improvements:
+			//	- use ECDSA with P256 instead of DSA2048
+			//		- compressed public keys for ECDSA and ECDH (Eleriseth)
+			//		- compact signature format (Eleriseth)
+			//	- use a 128bit nonce instead of a 64bit one
+			//	- use the hash of the pubkey as an identity instead of just random (forgeable) data
+			//	TODO:
+			//	- use AES128-CBC instead of Rijndael256(256)-CFB
+			// use ECDSA with secp256r1 instead of DSA2048
 		    // negType == 8 => use ECDH with secp256r1 instead of DH1024
 			// negType == 7 => same as 6, but determine the initial sequence number by hashing the identity
 			// instead of negotiating it
@@ -1420,7 +1431,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 					decypheredPayload, signatureOffset, signatureLength,
 					nonceInitiator, nonceResponder,
 					initiatorExponential, responderExponential,
-					crypto.myIdentity, data)) {
+					negType >= 9 ? crypto.ecdsaPubKeyHash : crypto.myIdentity, data)) {
 			Logger.error(this, "The signature verification has failed!! JFK(3) - "+pn.getPeer());
 			return;
 		}
@@ -1652,7 +1663,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(!VerifyPeerSignature(negType, pn,
 					decypheredPayload, signatureOffset, signatureLength,
 					jfkBuffer, //< nonceInitiator', nonceResponder, initiatorExponential, responderExponential
-					crypto.getIdentity(unknownInitiator), data, pn.jfkMyRef)) {
+					negType >= 9 ? crypto.ecdsaPubKeyHash : crypto.getIdentity(unknownInitiator), data, pn.jfkMyRef)) {
 			String error = "The signature verification has failed!! JFK(4) -"+pn.getPeer()+" hisRef "+hisRef.length+" hash "+Fields.hashCode(hisRef)+" myRef "+pn.jfkMyRef.length+" hash "+Fields.hashCode(pn.jfkMyRef)+" boot ID "+bootID;
 			Logger.error(this, error);
 			return true;
@@ -1801,7 +1812,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		pn.setJFKBuffer(toSign);
 		byte[] localSignature = Sign(negType,
 				toSign, //< nonceInitiator', nonceResponder, ourExponential, hisExponential
-				pn.identity, data);
+				negType >= 9 ? pn.peerECDSAPubKeyHash : pn.identity, data);
 
 		final int nonceSize = getNonceSize(negType);
 		final byte[] message3 = new byte[nonceSize*2 + // nI, nR
@@ -2016,7 +2027,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		byte[] localSignature = Sign(negType,
 				nonceInitiator, nonceResponder,
 				initiatorExponential, responderExponential,
-				pn.identity, data);
+				negType >= 9 ? pn.peerECDSAPubKeyHash : pn.identity, data);
 
 		int ivLength = PCFBMode.lengthIV(c);
 		byte[] iv=new byte[ivLength];

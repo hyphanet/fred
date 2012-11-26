@@ -274,6 +274,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/** Peer node public key; changing this means new noderef */
 	final DSAPublicKey peerPubKey;
 	final ECPublicKey peerECDSAPubKey;
+	final byte[] peerECDSAPubKeyHash;
 	final byte[] pubKeyHash;
 	final byte[] pubKeyHashHash;
 	private boolean isSignatureVerificationSuccessfull;
@@ -514,8 +515,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(sfs == null) {
 			    // Old peer, no negtype > 8
 			    this.peerECDSAPubKey = null;
+				this.peerECDSAPubKeyHash = null;
 			} else {
 	            this.peerECDSAPubKey = ECDSA.getPublicKey(sfs, ECDSA.Curves.P256);
+				this.peerECDSAPubKeyHash = SHA256.digest(ECDSA.Curves.P256.getPublicKeyNetworkFormat(peerECDSAPubKey));
 	            if(peerECDSAPubKey == null)
 	                throw new FSParseException("ecdsa.P256.pub is invalid!");
 			}

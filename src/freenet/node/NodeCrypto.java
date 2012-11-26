@@ -81,6 +81,8 @@ public class NodeCrypto {
 	byte[] pubKeyHashHash;
 	/** My ECDSA/P256 keypair and context */
 	private ECDSA ecdsaP256;
+	/** SHA256 digest of public key */
+	byte[] ecdsaPubKeyHash;
 	/** My ARK SSK private key */
 	InsertableClientSSK myARK;
 	/** My ARK sequence number */
@@ -239,6 +241,7 @@ public class NodeCrypto {
 		    ecdsaP256 = new ECDSA(Curves.P256);
 		}
 		
+		ecdsaPubKeyHash = SHA256.digest(ecdsaP256.getPublicKeyNetworkFormat());
 		
 		InsertableClientSSK ark = null;
 
