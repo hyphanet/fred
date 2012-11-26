@@ -3919,17 +3919,19 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		long[] newList = new long[runningAnnounceUIDsLength - 1];
 		int x = 0;
 		for(int i=0;i<runningAnnounceUIDs.length;i++) {
-			if(i == runningAnnounceUIDs.length) return false;
 			long l = runningAnnounceUIDs[i];
 			if(l == uid) continue;
 			newList[x++] = l;
 		}
-		runningAnnounceUIDs = newList;
 		if(x < runningAnnounceUIDs.length) {
 			assert(false); // Callers prevent duplicated UIDs.
-			runningAnnounceUIDs = Arrays.copyOf(runningAnnounceUIDs, x);
+			System.arraycopy(runningAnnounceUIDs, 0, newList, 0, x);
+			runningAnnounceUIDs = newList;
+			return true;
+		} else {
+			// not found
+			return false;
 		}
-		return true;
 	}
 
 	public synchronized long timeLastDisconnect() {
