@@ -1732,13 +1732,14 @@ public class PeerManager {
 	 * Update oldestNeverConnectedPeerAge if the timer has expired
 	 */
 	public void maybeUpdateOldestNeverConnectedDarknetPeerAge(long now) {
+		PeerNode[] peerList;
 		synchronized(this) {
 			if(now <= nextOldestNeverConnectedDarknetPeerAgeUpdateTime)
 				return;
 			nextOldestNeverConnectedDarknetPeerAgeUpdateTime = now + oldestNeverConnectedPeerAgeUpdateInterval;
+			peerList = myPeers;
 		}
 		oldestNeverConnectedDarknetPeerAge = 0;
-		PeerNode[] peerList = myPeers;
 		for(int i = 0; i < peerList.length; i++) {
 			PeerNode pn = peerList[i];
 			if(!pn.isDarknet()) continue;
@@ -1968,13 +1969,14 @@ public class PeerManager {
 	 * Update hadRoutableConnectionCount/routableConnectionCheckCount on peers if the timer has expired
 	 */
 	public void maybeUpdatePeerNodeRoutableConnectionStats(long now) {
+		PeerNode[] peerList;
 		synchronized(this) {
 			if(now <= nextRoutableConnectionStatsUpdateTime)
 				return;
 			nextRoutableConnectionStatsUpdateTime = now + routableConnectionStatsUpdateInterval;
+			peerList = myPeers;
 		}
 		if(-1 != nextRoutableConnectionStatsUpdateTime) {
-			PeerNode[] peerList = myPeers;
 			for(int i = 0; i < peerList.length; i++) {
 				PeerNode pn = peerList[i];
 				pn.checkRoutableConnectionStatus();
@@ -1992,7 +1994,7 @@ public class PeerManager {
 			peers = myPeers;
 		}
 		// FIXME optimise! Maybe maintain as a separate list?
-		Vector<PeerNode> v = new Vector<PeerNode>(myPeers.length);
+		Vector<PeerNode> v = new Vector<PeerNode>(peers.length);
 		for(int i = 0; i < peers.length; i++) {
 			if(peers[i] instanceof DarknetPeerNode)
 				v.add(peers[i]);
