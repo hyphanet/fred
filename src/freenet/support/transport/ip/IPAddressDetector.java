@@ -21,6 +21,12 @@ import freenet.support.Logger.LogLevel;
 
 public class IPAddressDetector implements Runnable {
 	
+	private static volatile boolean logDEBUG;
+
+	static {
+		Logger.registerClass(IPAddressDetector.class);
+	}
+	
 	//private String preferedAddressString = null;
 	private final int interval;
 	private final NodeIPDetector detector;
@@ -76,7 +82,6 @@ public class IPAddressDetector implements Runnable {
 	 * Execute a checkpoint - detect our internet IP address and log it
 	 */
 	protected synchronized void checkpoint() {
-		boolean logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 		List<InetAddress> addrs = new ArrayList<InetAddress>();
 
 		Enumeration<java.net.NetworkInterface> interfaces = null;
@@ -177,7 +182,6 @@ public class IPAddressDetector implements Runnable {
 	 */
 	protected void onGetAddresses(List<InetAddress> addrs) {
 		List<InetAddress> output = new ArrayList<InetAddress>();
-		boolean logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 		if (logDEBUG)
 			Logger.debug(
 				this,
