@@ -4,7 +4,7 @@
 package freenet.client.async;
 
 import java.util.LinkedList;
-import java.util.List;
+import java.util.Deque;
 
 import com.db4o.ObjectContainer;
 
@@ -21,7 +21,7 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 	
 	private boolean logMINOR;
 	
-	protected final List<BaseSendableGet>recentSuccesses;
+	protected final Deque<BaseSendableGet>recentSuccesses;
 	
 	ClientRequestSchedulerNonPersistent(ClientRequestScheduler sched, boolean forInserts, boolean forSSKs, boolean forRT, RandomSource random) {
 		super(forInserts, forSSKs, forRT, random);
@@ -55,9 +55,9 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 			if(logMINOR)
 				Logger.minor(this, "Recording successful fetch from "+succeeded);
 		synchronized(recentSuccesses) {
+			while(recentSuccesses.size() >= 8)
+				recentSuccesses.pollFirst();
 			recentSuccesses.add(succeeded);
-			while(recentSuccesses.size() > 8)
-				recentSuccesses.remove(0);
 		}
 	}
 

@@ -1,11 +1,11 @@
 package freenet.client.async;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 
 import com.db4o.ObjectContainer;
 
@@ -45,7 +45,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 			persistentRequestsWaitingForKeysFetching = new HashMap<Key, Long[]>();
 			transientRequestsWaitingForKeysFetching = new HashMap<Key, WeakReference<BaseSendableGet>[]>();
 			runningTransientInserts = null;
-			this.recentSuccesses = new ArrayList<RandomGrabArray>();
+			this.recentSuccesses = new ArrayDeque<RandomGrabArray>();
 		} else {
 			keysFetching = null;
 			runningTransientInserts = new HashSet<RunningTransientInsert>();
@@ -105,7 +105,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 	
 	private transient final HashSet<RunningTransientInsert> runningTransientInserts;
 	
-	private transient final List<RandomGrabArray> recentSuccesses;
+	private transient final Deque<RandomGrabArray> recentSuccesses;
 	
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
 	
@@ -447,12 +447,12 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 				 * Probably this is acceptable.
 				 */
 				if(!req.persistent() && !isInsertScheduler) {
-					List<BaseSendableGet> recent = schedTransient.recentSuccesses;
+					Deque<BaseSendableGet> recent = schedTransient.recentSuccesses;
 					BaseSendableGet altReq = null;
 					synchronized(recent) {
 						if(!recent.isEmpty()) {
 							if(random.nextBoolean()) {
-								altReq = recent.remove(recent.size()-1);
+								altReq = recent.poll();
 							}
 						}
 					}
@@ -488,7 +488,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					RandomGrabArray altRGA = null;
 					synchronized(recentSuccesses) {
 						if(!(recentSuccesses.isEmpty() || random.nextBoolean())) {
-							altRGA = recentSuccesses.remove(recentSuccesses.size()-1);
+							altRGA = recentSuccesses.removeLast();
 						}
 					}
 					if(altRGA != null) {
@@ -721,9 +721,10 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 		if(array == null) return; // Unregistered already?
 		synchronized(recentSuccesses) {
 			if(recentSuccesses.contains(array)) return;
+			// ArrayDeque loves pow-of-2 sizes, trim before add
+			while(recentSuccesses.size() >= 8)
+				recentSuccesses.pollFirst();
 			recentSuccesses.add(array);
-			while(recentSuccesses.size() > 8)
-				recentSuccesses.remove(0);
 		}
 	}
 
