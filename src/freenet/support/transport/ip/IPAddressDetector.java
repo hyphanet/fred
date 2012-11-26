@@ -146,7 +146,6 @@ public class IPAddressDetector implements Runnable {
 					"Finished scanning interfaces");
 		}
 
-		// FIXME: what are we doing here? lastInetAddress is always null.
 		InetAddress[] oldAddressList = lastAddressList;
 		onGetAddresses(addrs);
 		lastDetectedTime = System.currentTimeMillis();
