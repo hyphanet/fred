@@ -879,7 +879,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	
 	private SimpleUserAlert noConnectivityAlert;
 
-	public boolean isEmpty() {
+	public synchronized boolean isEmpty() {
 		return plugins.length == 0;
 	}
 
