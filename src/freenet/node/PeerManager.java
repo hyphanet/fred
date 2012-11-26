@@ -750,10 +750,7 @@ public class PeerManager {
 		double[] locs;
 		if(!node.shallWePublishOurPeersLocation())
 			return new double[0];
-		PeerNode[] conns;
-		synchronized(this) {
-			conns = connectedPeers;
-		}
+		PeerNode[] conns = connectedPeers();
 		locs = new double[conns.length];
 		int x = 0;
 		for(PeerNode conn: conns) {
@@ -839,12 +836,9 @@ public class PeerManager {
 	 * Asynchronously send this message to every connected peer.
 	 */
 	public void localBroadcast(Message msg, boolean ignoreRoutability, boolean onlyRealConnections, ByteCounter ctr) {
-		PeerNode[] peers;
-		synchronized(this) {
-			// myPeers not connectedPeers as connectedPeers only contains
-			// ROUTABLE peers, and we may want to send to non-routable peers
-			peers = myPeers;
-		}
+		// myPeers not connectedPeers as connectedPeers only contains
+		// ROUTABLE peers, and we may want to send to non-routable peers
+		PeerNode[] peers = myPeers();
 		for(PeerNode peer: peers) {
 			if(ignoreRoutability) {
 				if(!peer.isConnected())
@@ -866,12 +860,9 @@ public class PeerManager {
 	 * Asynchronously send a differential node reference to every isConnected() peer.
 	 */
 	public void locallyBroadcastDiffNodeRef(SimpleFieldSet fs, boolean toDarknetOnly, boolean toOpennetOnly) {
-		PeerNode[] peers;
-		synchronized(this) {
-			// myPeers not connectedPeers as connectedPeers only contains
-			// ROUTABLE peers and we want to also send to non-routable peers
-			peers = myPeers;
-		}
+		// myPeers not connectedPeers as connectedPeers only contains
+		// ROUTABLE peers and we want to also send to non-routable peers
+		PeerNode[] peers = myPeers();
 		for(PeerNode peer: peers) {
 			if(!peer.isConnected())
 				continue;
@@ -920,10 +911,7 @@ public class PeerManager {
 		int countWaiting = 0;
 		long soonestTimeoutWakeup = Long.MAX_VALUE;
 		
-		PeerNode[] peers;
-		synchronized(this) {
-			peers = connectedPeers;
-		}
+		PeerNode[] peers = connectedPeers();
 		if(!node.enablePerNodeFailureTables)
 			key = null;
 		if(logMINOR)
@@ -1339,10 +1327,7 @@ public class PeerManager {
 	 */
 	public String getStatus() {
 		StringBuilder sb = new StringBuilder();
-		PeerNode[] peers;
-		synchronized(this) {
-			peers = myPeers;
-		}
+		PeerNode[] peers = myPeers();
 		String[] status = new String[peers.length];
 		for(int i = 0; i < peers.length; i++) {
 			PeerNode pn = peers[i];
@@ -1361,10 +1346,7 @@ public class PeerManager {
 	 */
 	public String getTMCIPeerList() {
 		StringBuilder sb = new StringBuilder();
-		PeerNode[] peers;
-		synchronized(this) {
-			peers = myPeers;
-		}
+		PeerNode[] peers = myPeers();
 		String[] peerList = new String[peers.length];
 		for(int i = 0; i < peers.length; i++) {
 			PeerNode pn = peers[i];
@@ -1380,10 +1362,7 @@ public class PeerManager {
 
 	public String getFreevizOutput() {
 		StringBuilder sb = new StringBuilder();
-		PeerNode[] peers;
-		synchronized(this) {
-			peers = myPeers;
-		}
+		PeerNode[] peers = myPeers();
 		String[] identity = new String[peers.length];
 		for(int i = 0; i < peers.length; i++) {
 			PeerNode pn = peers[i];
@@ -1455,10 +1434,7 @@ public class PeerManager {
 	
 	protected String getDarknetPeersString() {
 		StringBuilder sb = new StringBuilder();
-		PeerNode[] peers;
-		synchronized(this) {
-			peers = myPeers;
-		}
+		PeerNode[] peers = myPeers();
 		for(PeerNode pn : peers) {
 			if(pn instanceof DarknetPeerNode)
 				sb.append(pn.exportDiskFieldSet().toOrderedString());
@@ -1469,10 +1445,7 @@ public class PeerManager {
 	
 	protected String getOpennetPeersString() {
 		StringBuilder sb = new StringBuilder();
-		PeerNode[] peers;
-		synchronized(this) {
-			peers = myPeers;
-		}
+		PeerNode[] peers = myPeers();
 		for(PeerNode pn : peers) {
 			if(pn instanceof OpennetPeerNode)
 				sb.append(pn.exportDiskFieldSet().toOrderedString());
@@ -1662,10 +1635,7 @@ public class PeerManager {
 	}
 
 	public boolean anyConnectedPeers() {
-		PeerNode[] conns;
-		synchronized(this) {
-			conns = connectedPeers;
-		}
+		PeerNode[] conns = connectedPeers();
 		for(PeerNode conn: conns) {
 			if(conn.isRoutable())
 				return true;
@@ -1674,10 +1644,7 @@ public class PeerManager {
 	}
 	
 	public boolean anyDarknetPeers() {
-		PeerNode[] conns;
-		synchronized(this) {
-			conns = connectedPeers;
-		}
+		PeerNode[] conns = connectedPeers();
 		for(PeerNode p : conns)
 			if(p.isDarknet())
 				return true;
@@ -1709,10 +1676,8 @@ public class PeerManager {
 	}
 
 	public int countNonBackedOffPeers(boolean realTime) {
-		PeerNode[] peers;
-		synchronized(this) {
-			peers = connectedPeers; // even if myPeers peers are connected they won't be routed to
-		}
+		PeerNode[] peers = connectedPeers();
+		// even if myPeers peers are connected they won't be routed to
 		int countNoBackoff = 0;
 		for(PeerNode peer: peers) {
 			if(peer.isRoutable())
@@ -1929,10 +1894,7 @@ public class PeerManager {
 	}
 
 	public PeerNodeStatus[] getPeerNodeStatuses(boolean noHeavy) {
-		PeerNode[] peers;
-		synchronized(this) {
-			peers = myPeers;
-		}
+		PeerNode[] peers = myPeers();
 		PeerNodeStatus[] _peerNodeStatuses = new PeerNodeStatus[peers.length];
 		for(int peerIndex = 0, peerCount = peers.length; peerIndex < peerCount; peerIndex++) {
 			_peerNodeStatuses[peerIndex] = peers[peerIndex].getStatus(noHeavy);
@@ -1981,10 +1943,7 @@ public class PeerManager {
 	 * FIXME: optimise
 	 */
 	public DarknetPeerNode[] getDarknetPeers() {
-		PeerNode[] peers;
-		synchronized(this) {
-			peers = myPeers;
-		}
+		PeerNode[] peers = myPeers();
 		// FIXME optimise! Maybe maintain as a separate list?
 		Vector<PeerNode> v = new Vector<PeerNode>(peers.length);
 		for(PeerNode peer: peers) {
@@ -1995,10 +1954,7 @@ public class PeerManager {
 	}
 
 	public Vector<SeedServerPeerNode> getConnectedSeedServerPeersVector(HashSet<ByteArrayWrapper> exclude) {
-		PeerNode[] peers;
-		synchronized(this) {
-			peers = myPeers;
-		}
+		PeerNode[] peers = myPeers();
 		// FIXME optimise! Maybe maintain as a separate list?
 		Vector<SeedServerPeerNode> v = new Vector<SeedServerPeerNode>(peers.length);
 		for(PeerNode p : peers) {
@@ -2021,10 +1977,7 @@ public class PeerManager {
 	}
 
 	public List<SeedServerPeerNode> getSeedServerPeersVector() {
-		PeerNode[] peers;
-		synchronized(this) {
-			peers = myPeers;
-		}
+		PeerNode[] peers = myPeers();
 		// FIXME optimise! Maybe maintain as a separate list?
 		List<SeedServerPeerNode> v = new ArrayList<SeedServerPeerNode>(peers.length);
 		for(PeerNode peer : peers) {
@@ -2038,10 +1991,7 @@ public class PeerManager {
 	 * Get the opennet peers list.
 	 */
 	public OpennetPeerNode[] getOpennetPeers() {
-		PeerNode[] peers;
-		synchronized(this) {
-			peers = myPeers;
-		}
+		PeerNode[] peers = myPeers();
 		// FIXME optimise! Maybe maintain as a separate list?
 		Vector<PeerNode> v = new Vector<PeerNode>(peers.length);
 		for(PeerNode peer: peers) {
@@ -2052,10 +2002,7 @@ public class PeerManager {
 	}
 	
 	public PeerNode[] getOpennetAndSeedServerPeers() {
-		PeerNode[] peers;
-		synchronized(this) {
-			peers = myPeers;
-		}
+		PeerNode[] peers = myPeers();
 		// FIXME optimise! Maybe maintain as a separate list?
 		Vector<PeerNode> v = new Vector<PeerNode>(peers.length);
 		for(PeerNode peer: peers) {
@@ -2068,10 +2015,7 @@ public class PeerManager {
 	}
 
 	public boolean anyConnectedPeerHasAddress(FreenetInetAddress addr, PeerNode pn) {
-		PeerNode[] peers;
-		synchronized(this) {
-			peers = myPeers;
-		}
+		PeerNode[] peers = myPeers();
 		for(PeerNode p : peers) {
 			if(p == pn)
 				continue;
