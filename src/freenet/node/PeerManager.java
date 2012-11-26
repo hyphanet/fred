@@ -2000,7 +2000,7 @@ public class PeerManager {
 			peers = myPeers;
 		}
 		// FIXME optimise! Maybe maintain as a separate list?
-		Vector<SeedServerPeerNode> v = new Vector<SeedServerPeerNode>(myPeers.length);
+		Vector<SeedServerPeerNode> v = new Vector<SeedServerPeerNode>(peers.length);
 		for(PeerNode p : peers) {
 			if(p instanceof SeedServerPeerNode) {
 				SeedServerPeerNode sspn = (SeedServerPeerNode) p;
