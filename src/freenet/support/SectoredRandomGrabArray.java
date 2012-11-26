@@ -474,7 +474,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		return persistent;
 	}
 
-	public int size() {
+	public synchronized int size() {
 		return grabArrays.length;
 	}
 	
