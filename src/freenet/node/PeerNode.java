@@ -4063,12 +4063,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	/** Report that an announcement finished. */
 	public synchronized boolean completedAnnounce(long uid) {
-		final int runningAnnounceUIDsLength = runningAnnounceUIDs.length;
-		if(runningAnnounceUIDsLength < 1) return false;
-		long[] newList = new long[runningAnnounceUIDsLength - 1];
+		if(runningAnnounceUIDs.length < 1) return false;
+		long[] newList = new long[runningAnnounceUIDs.length - 1];
 		int x = 0;
-		for(int i=0;i<runningAnnounceUIDs.length;i++) {
-			long l = runningAnnounceUIDs[i];
+		for(long l : runningAnnounceUIDs) {
 			if(l == uid) continue;
 			if(x == newList.length)
 				// uid was not found in runningAnnounceUIDs
@@ -4076,8 +4074,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			newList[x++] = l;
 		}
 		if(x < runningAnnounceUIDs.length) {
-			newList = new long[x];
-			System.arraycopy(runningAnnounceUIDs, 0, newList, 0, x);
+			newList = Arrays.copyOf(newList, x);
 			runningAnnounceUIDs = newList;
 			return true;
 		} else {
