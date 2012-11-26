@@ -603,7 +603,7 @@ public class PeerManager {
 	 */
 	public void connect(SimpleFieldSet noderef, OutgoingPacketMangler mangler, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		PeerNode pn = node.createNewDarknetNode(noderef, trust, visibility);
-		PeerNode[] peerList = myPeers;
+		PeerNode[] peerList = myPeers();
 		for(int i = 0; i < peerList.length; i++) {
 			if(Arrays.equals(peerList[i].pubKeyHash, pn.pubKeyHash))
 				return;
@@ -1788,7 +1788,7 @@ public class PeerManager {
 			int numberOfRoutingDisabled = 0;
 			int numberOfNoLoadStats = 0;
 
-			PeerNode[] peers = this.myPeers;
+			PeerNode[] peers = this.myPeers();
 			
 			for(int i = 0; i < peers.length; i++) {
 				if(peers[i] == null) {
@@ -2187,7 +2187,7 @@ public class PeerManager {
 
 	public int countCompatibleDarknetPeers() {
 		int count = 0;
-		PeerNode[] peers = myPeers;
+		PeerNode[] peers = myPeers();
 		for(int i = 0; i < peers.length; i++) {
 			if(peers[i] == null)
 				continue;
@@ -2223,7 +2223,7 @@ public class PeerManager {
 
 	public int countConnectedOpennetPeers() {
 		int count = 0;
-		PeerNode[] peers = connectedPeers;
+		PeerNode[] peers = connectedPeers();
 		for(int i = 0; i < peers.length; i++) {
 			if(peers[i] == null)
 				continue;
@@ -2272,7 +2272,7 @@ public class PeerManager {
 	
 	public int countSeednodes() {
 		int count = 0;
-		for(PeerNode peer : myPeers) {
+		for(PeerNode peer : myPeers()) {
 			if(peer instanceof SeedServerPeerNode || 
 					peer instanceof SeedClientPeerNode)
 				count++;
@@ -2281,7 +2281,7 @@ public class PeerManager {
 	}
 	
 	public int countBackedOffPeers(boolean realTime) {
-		PeerNode[] peers = myPeers;
+		PeerNode[] peers = myPeers();
 		int count = 0;
 		for(int i = 0; i < peers.length; i++) {
 			if(!peers[i].isRealConnection())
@@ -2295,7 +2295,7 @@ public class PeerManager {
 	}
 
 	public PeerNode getByIdentity(byte[] identity) {
-		PeerNode[] peers = myPeers;
+		PeerNode[] peers = myPeers();
 		for(int i = 0; i < peers.length; i++) {
 			if(Arrays.equals(peers[i].getIdentity(), identity))
 				return peers[i];
@@ -2322,7 +2322,7 @@ public class PeerManager {
 	 * @param listener - the listener to be registered*/
 	public void addPeerStatusChangeListener(PeerStatusChangeListener listener){
 		listeners.add(listener);
-		for(PeerNode pn:myPeers){
+		for(PeerNode pn:myPeers()){
 			pn.registerPeerNodeStatusChangeListener(listener);
 		}
 	}
