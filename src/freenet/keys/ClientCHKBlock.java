@@ -53,17 +53,6 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
 	public String toString() {
         return super.toString()+",key="+key;
     }
-    
-	private static volatile boolean logMINOR;
-
-	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
-			@Override
-			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-			}
-		});
-	}
 
     /**
      * Construct from data retrieved, and a key.

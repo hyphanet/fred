@@ -22,16 +22,6 @@ public class StandardOnionFECCodec extends FECCodec {
 
 	private static final LRUMap<MyKey, StandardOnionFECCodec> recentlyUsedCodecs = LRUMap.createSafeMap();
 
-        private static volatile boolean logMINOR;
-	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
-			@Override
-			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-			}
-		});
-	}
-
 	private static class MyKey implements Comparable<MyKey> {
 		/** Number of input blocks */
 		int k;

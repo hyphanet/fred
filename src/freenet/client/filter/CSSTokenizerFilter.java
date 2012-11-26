@@ -40,8 +40,6 @@ class CSSTokenizerFilter {
 	private Reader r;
 	Writer w = null;
 	FilterCallback cb;
-	// FIXME use this
-	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
 	private final String passedCharset;
 	private String detectedCharset;

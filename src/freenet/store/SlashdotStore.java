@@ -31,14 +31,12 @@ import freenet.support.io.TempBucketFactory;
  */
 public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 
-	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
