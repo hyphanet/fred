@@ -581,7 +581,7 @@ public class PeerManager {
 	public ArrayList<PeerNode> getAllConnectedByAddress(FreenetInetAddress a, boolean strict) {
 		ArrayList<PeerNode> found = null;
 		
-		PeerNode[] peerList = myPeers;
+		PeerNode[] peerList = myPeers();
 		// Try a match by IP address if we can't match exactly by IP:port.
 		for(PeerNode pn : peerList) {
 			if(!pn.isConnected()) continue;
@@ -2131,7 +2131,7 @@ public class PeerManager {
 
 	public int countConnectedDarknetPeers() {
 		int count = 0;
-		PeerNode[] peers = myPeers;
+		PeerNode[] peers = myPeers();
 		for(int i = 0; i < peers.length; i++) {
 			if(peers[i] == null)
 				continue;
@@ -2149,7 +2149,7 @@ public class PeerManager {
 
 	public int countConnectedPeers() {
 		int count = 0;
-		PeerNode[] peers = myPeers;
+		PeerNode[] peers = myPeers();
 		for(int i = 0; i < peers.length; i++) {
 			if(peers[i] == null)
 				continue;
@@ -2162,7 +2162,7 @@ public class PeerManager {
 
 	public int countAlmostConnectedDarknetPeers() {
 		int count = 0;
-		PeerNode[] peers = myPeers;
+		PeerNode[] peers = myPeers();
 		for(int i = 0; i < peers.length; i++) {
 			if(peers[i] == null)
 				continue;
@@ -2198,7 +2198,7 @@ public class PeerManager {
 
 	public int countCompatibleRealPeers() {
 		int count = 0;
-		PeerNode[] peers = myPeers;
+		PeerNode[] peers = myPeers();
 		for(int i = 0; i < peers.length; i++) {
 			if(peers[i] == null)
 				continue;
@@ -2232,7 +2232,7 @@ public class PeerManager {
 	 * How many peers do we have that actually may connect? Don't include seednodes, disabled nodes, etc.
 	 */
 	public int countValidPeers() {
-		PeerNode[] peers = myPeers;
+		PeerNode[] peers = myPeers();
 		int count = 0;
 		for(int i = 0; i < peers.length; i++) {
 			if(!peers[i].isRealConnection())
@@ -2248,7 +2248,7 @@ public class PeerManager {
 	 * How many peers do we have that actually may connect? Don't include seednodes, disabled nodes, etc.
 	 */
 	public int countConnectiblePeers() {
-		PeerNode[] peers = myPeers;
+		PeerNode[] peers = myPeers();
 		int count = 0;
 		for(int i = 0; i < peers.length; i++) {
 			if(peers[i].isDisabled())
@@ -2304,7 +2304,7 @@ public class PeerManager {
 	private void notifyPeerStatusChangeListeners(){
 		for(PeerStatusChangeListener l:listeners){
 			l.onPeerStatusChange();
-			for(PeerNode pn:myPeers){
+			for(PeerNode pn:myPeers()){
 				pn.registerPeerNodeStatusChangeListener(l);
 			}
 		}
