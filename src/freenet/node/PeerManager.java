@@ -2034,7 +2034,7 @@ public class PeerManager {
 			peers = myPeers;
 		}
 		// FIXME optimise! Maybe maintain as a separate list?
-		List<SeedServerPeerNode> v = new ArrayList<SeedServerPeerNode>(myPeers.length);
+		List<SeedServerPeerNode> v = new ArrayList<SeedServerPeerNode>(peers.length);
 		for(PeerNode peer : peers) {
 			if(peer instanceof SeedServerPeerNode)
 				v.add((SeedServerPeerNode)peer);
@@ -2051,7 +2051,7 @@ public class PeerManager {
 			peers = myPeers;
 		}
 		// FIXME optimise! Maybe maintain as a separate list?
-		Vector<PeerNode> v = new Vector<PeerNode>(myPeers.length);
+		Vector<PeerNode> v = new Vector<PeerNode>(peers.length);
 		for(int i = 0; i < peers.length; i++) {
 			if(peers[i] instanceof OpennetPeerNode)
 				v.add(peers[i]);
@@ -2065,7 +2065,7 @@ public class PeerManager {
 			peers = myPeers;
 		}
 		// FIXME optimise! Maybe maintain as a separate list?
-		Vector<PeerNode> v = new Vector<PeerNode>(myPeers.length);
+		Vector<PeerNode> v = new Vector<PeerNode>(peers.length);
 		for(int i = 0; i < peers.length; i++) {
 			if(peers[i] instanceof OpennetPeerNode)
 				v.add(peers[i]);
