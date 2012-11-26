@@ -2127,13 +2127,6 @@ public class PeerManager {
 		return null;
 	}
 
-	public int quickCountConnectedPeers() {
-		PeerNode[] conns = connectedPeers;
-		if(conns == null)
-			return 0;
-		return conns.length;
-	}
-
 	public int countConnectedDarknetPeers() {
 		int count = 0;
 		PeerNode[] peers = myPeers;
@@ -2277,20 +2270,6 @@ public class PeerManager {
 		return count;
 	}
 	
-	public int countBackedOffPeersEither() {
-		PeerNode[] peers = myPeers;
-		int count = 0;
-		for(int i = 0; i < peers.length; i++) {
-			if(!peers[i].isRealConnection())
-				continue;
-			if(peers[i].isDisabled())
-				continue;
-			if(peers[i].isRoutingBackedOffEither())
-				count++;
-		}
-		return count;
-	}
-
 	public int countBackedOffPeers(boolean realTime) {
 		PeerNode[] peers = myPeers;
 		int count = 0;
