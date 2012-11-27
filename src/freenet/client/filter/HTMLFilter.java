@@ -2427,8 +2427,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			HTMLParseContext pc) throws DataFilterException {
 			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
 			// events (default and added)
-			for (Iterator<String> e = eventAttrs.iterator(); e.hasNext();) {
-				String name = e.next();
+			for (String name: eventAttrs) {
 				String arg = getHashString(h, name);
 				if (arg != null) {
 					arg = sanitizeScripting(arg);

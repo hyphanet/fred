@@ -763,8 +763,7 @@ public class Metadata implements Cloneable {
 		//mimeType = null;
 		//clientMetadata = new ClientMetadata(null);
 		manifestEntries = new HashMap<String, Metadata>();
-		for (Iterator<Entry<String, Object>> i = dir.entrySet().iterator(); i.hasNext();) {
-			Map.Entry<String, Object> entry = i.next();
+		for (Map.Entry<String, Object> entry: dir.entrySet()) {
 			String key = entry.getKey().intern();
 			Object o = entry.getValue();
 			Metadata target;

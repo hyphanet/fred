@@ -307,9 +307,7 @@ public class PproxyToadlet extends Toadlet {
 	 *         no plugin was found
 	 */
 	private String getPluginSpecification(PluginManager pluginManager, String pluginThreadName) {
-		Iterator<PluginInfoWrapper> it = pluginManager.getPlugins().iterator();
-		while (it.hasNext()) {
-			PluginInfoWrapper pi = it.next();
+		for(PluginInfoWrapper pi: pluginManager.getPlugins()) {
 			if (pi.getThreadName().equals(pluginThreadName)) {
 				return pi.getFilename();
 			}
@@ -361,9 +359,7 @@ public class PproxyToadlet extends Toadlet {
 
 				/* find which plugins have already been loaded. */
 				List<OfficialPluginDescription> availablePlugins = pm.findAvailablePlugins();
-				Iterator<PluginInfoWrapper> loadedPlugins = pm.getPlugins().iterator();
-				while (loadedPlugins.hasNext()) {
-					PluginInfoWrapper pluginInfoWrapper = loadedPlugins.next();
+				for(PluginInfoWrapper pluginInfoWrapper: pm.getPlugins()) {
 					String pluginName = pluginInfoWrapper.getPluginClassName();
 					String shortPluginName = pluginName.substring(pluginName.lastIndexOf('.') + 1);
 

@@ -138,10 +138,8 @@ public class ReceivedPacketNumbers {
             return true;
         if(highestSeqNumber - seqNumber > horizon)
             return true; // Assume we have since out of window
-        Iterator<Range> i = ranges.iterator();
         Range last = null;
-        for(;i.hasNext();) {
-            Range r = i.next();
+        for(Range r: ranges) {
             if(r.start > r.end) {
                 Logger.error(this, "Bad Range: "+r);
             }

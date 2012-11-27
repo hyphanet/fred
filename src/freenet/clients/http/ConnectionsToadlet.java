@@ -14,7 +14,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -1089,8 +1088,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				return first.compareToIgnoreCase(second);
 			}
 		});
-		for (Iterator<String> messageNamesIterator = messageNames.iterator(); messageNamesIterator.hasNext(); ) {
-			String messageName = messageNamesIterator.next();
+		for (String messageName: messageNames) {
 			Long[] messageCount = messageCounts.get(messageName);
 			HTMLNode messageRow = messageCountTable.addChild("tr");
 			messageRow.addChild("td", messageName);

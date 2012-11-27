@@ -25,7 +25,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -470,15 +469,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				HTMLNode alertContent = ctx.getPageMaker().getInfobox(
 				        (displayFailureBox ? "infobox-warning" : "infobox-info"),
 				        l10n("downloadFiles"), contentNode, "grouped-downloads", true);
-				Iterator<String> it;
 				if(displaySuccessBox) {
 					HTMLNode successDiv = alertContent.addChild("ul");
 					successDiv.addChild("#", l10n("enqueuedSuccessfully", "number",
 					        String.valueOf(success.size())));
-					it = success.iterator();
-					while(it.hasNext()) {
+					for(String s: success) {
 						HTMLNode line = successDiv.addChild("li");
-						line.addChild("#", it.next());
+						line.addChild("#", s);
 					}
 					successDiv.addChild("br");
 				}
@@ -487,10 +484,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					if(displayFailureBox) {
 						failureDiv.addChild("#", l10n("enqueuedFailure", "number",
 						        String.valueOf(failure.size())));
-						it = failure.iterator();
-						while(it.hasNext()) {
+						for(String f: failure) {
 							HTMLNode line = failureDiv.addChild("li");
-							line.addChild("#", it.next());
+							line.addChild("#", f);
 						}
 					}
 					failureDiv.addChild("br");

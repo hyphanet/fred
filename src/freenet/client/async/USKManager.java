@@ -318,10 +318,9 @@ public class USKManager {
 		USKFetcher sched = null;
 		ArrayList<USKFetcher> toCancel = null;
 		synchronized(this) {
-//			java.util.Iterator i = backgroundFetchersByClearUSK.keySet().iterator();
 //			int x = 0;
-//			while(i.hasNext()) {
-//				System.err.println("Fetcher "+x+": "+i.next());
+//			for(USK key: backgroundFetchersByClearUSK.keySet()) {
+//				System.err.println("Fetcher "+x+": "+key);
 //				x++;
 //			}
 			USKFetcher f = temporaryBackgroundFetchersLRU.get(clear);

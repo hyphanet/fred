@@ -8,7 +8,6 @@ import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 
@@ -379,9 +378,7 @@ public class DiagnosticToadlet extends Toadlet {
 		PluginManager pm = node.pluginManager;
 		if (!pm.getPlugins().isEmpty()) {
 			text += baseL10n.getString("PluginToadlet.pluginListTitle") + "\n";
-			Iterator<PluginInfoWrapper> it = pm.getPlugins().iterator();
-			while (it.hasNext()) {
-				PluginInfoWrapper pi = it.next();
+			for(PluginInfoWrapper pi: pm.getPlugins()) {
 				long ver = pi.getPluginLongVersion();
 				if (ver != -1)
 					text += pi.getFilename() + " (" + pi.getPluginClassName() + ") - "  + pi.getPluginVersion()+ " ("+ver+")" + " " + pi.getThreadName() + "\n";

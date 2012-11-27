@@ -1129,8 +1129,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		ZipOutputStream zos = new ZipOutputStream(os);
 		ZipEntry ze;
 
-		for(Iterator<PutHandler> i = elementsToPutInArchive.iterator(); i.hasNext();) {
-			PutHandler ph = i.next();
+		for(PutHandler ph : elementsToPutInArchive) {
 			if(persistent()) {
 				container.activate(ph, 1);
 				container.activate(ph.data, 1);

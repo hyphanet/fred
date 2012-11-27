@@ -19,7 +19,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Deque;
 import java.util.GregorianCalendar;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
@@ -1094,9 +1093,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	public void sendLogByContainedDate(long time, OutputStream os) throws IOException {
 		OldLogFile toReturn = null;
 		synchronized(logFiles) {
-			Iterator<OldLogFile> i = logFiles.iterator();
-			while(i.hasNext()) {
-				OldLogFile olf = i.next();
+			for(OldLogFile olf : logFiles) {
 		    	if(logMINOR)
 		    		Logger.minor(this, "Checking "+time+" against "+olf.filename+" : start="+olf.start+", end="+olf.end);
 				if((time >= olf.start) && (time < olf.end)) {

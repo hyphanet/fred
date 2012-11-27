@@ -405,8 +405,7 @@ public class SimpleFieldSet {
      */
     synchronized void writeTo(Writer w, String prefix, boolean noEndMarker) throws IOException {
 		writeHeader(w);
-    	for (Iterator<Map.Entry<String, String>> i = values.entrySet().iterator(); i.hasNext();) {
-            Map.Entry<String, String> entry = i.next();
+    	for (Map.Entry<String, String> entry: values.entrySet()) {
 			String key = entry.getKey();
 			String value = entry.getValue();
             w.write(prefix);
@@ -416,8 +415,7 @@ public class SimpleFieldSet {
             w.write('\n');
     	}
     	if(subsets != null) {
-    		for (Iterator<Map.Entry<String, SimpleFieldSet>> i = subsets.entrySet().iterator(); i.hasNext();) {
-				Map.Entry<String, SimpleFieldSet> entry = i.next();
+    		for (Map.Entry<String, SimpleFieldSet> entry: subsets.entrySet()) {
 				String key = entry.getKey();
 				SimpleFieldSet subset = entry.getValue();
     			if(subset == null) throw new NullPointerException();
