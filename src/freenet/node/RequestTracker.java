@@ -3,8 +3,8 @@ package freenet.node;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
 import freenet.keys.NodeCHK;
 import freenet.support.Logger;
@@ -709,7 +709,7 @@ public class RequestTracker {
 		return realTimeFlag ? runningCHKOfferReplyUIDsRT.size() : runningCHKOfferReplyUIDsBulk.size();
 	}
 
-	public void addRunningUIDs(Vector<Long> list) {
+	public void addRunningUIDs(List<Long> list) {
 		addRunningUIDs(runningSSKGetUIDsRT, list);
 		addRunningUIDs(runningCHKGetUIDsRT, list);
 		addRunningUIDs(runningSSKPutUIDsRT, list);
@@ -724,7 +724,7 @@ public class RequestTracker {
 		addRunningUIDs(runningCHKOfferReplyUIDsBulk, list);
 	}
 	
-	private void addRunningUIDs(HashMap<Long, ? extends UIDTag> runningUIDs, Vector<Long> list) {
+	private void addRunningUIDs(HashMap<Long, ? extends UIDTag> runningUIDs, List<Long> list) {
 		synchronized(runningUIDs) {
 			list.addAll(runningUIDs.keySet());
 		}

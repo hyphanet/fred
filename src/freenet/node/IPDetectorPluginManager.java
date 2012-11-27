@@ -2,11 +2,12 @@ package freenet.node;
 
 import java.net.InetAddress;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Vector;
 
 import freenet.clients.http.ConnectivityToadlet;
 import freenet.clients.http.ExternalLinkToadlet;
@@ -726,7 +727,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		public void realRun() {
 			if(logMINOR) Logger.minor(this, "Running plugin detection");
 			try {
-				Vector<DetectedIP> v = new Vector<DetectedIP>();
+				List<DetectedIP> v = new ArrayList<DetectedIP>();
 				DetectedIP[] detected = null;
 				try {
 					detected = plugin.getAddress();

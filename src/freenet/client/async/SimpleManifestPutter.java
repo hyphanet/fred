@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -1777,12 +1776,12 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 	 * ManifestElement's, each of which has a full path.
 	 */
 	public static ManifestElement[] flatten(HashMap<String,Object> manifestElements) {
-		Vector<ManifestElement> v = new Vector<ManifestElement>();
+		List<ManifestElement> v = new ArrayList<ManifestElement>();
 		flatten(manifestElements, v, "");
 		return v.toArray(new ManifestElement[v.size()]);
 	}
 
-	public static void flatten(HashMap<String,Object> manifestElements, Vector<ManifestElement> v, String prefix) {
+	public static void flatten(HashMap<String,Object> manifestElements, List<ManifestElement> v, String prefix) {
 		for(Map.Entry<String,Object> entry: manifestElements.entrySet()) {
 			String name = entry.getKey();
 			String fullName = prefix.length() == 0 ? name : prefix+ '/' +name;

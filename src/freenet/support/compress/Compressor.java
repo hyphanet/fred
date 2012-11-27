@@ -6,7 +6,7 @@ package freenet.support.compress;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import com.db4o.ObjectContainer;
 
@@ -115,7 +115,7 @@ public interface Compressor {
 			if (compressordescriptor.trim().length() == 0)
 				return null;
 			String[] codecs = compressordescriptor.split(",");
-			Vector<COMPRESSOR_TYPE> result = new Vector<COMPRESSOR_TYPE>();
+			ArrayList<COMPRESSOR_TYPE> result = new ArrayList<COMPRESSOR_TYPE>(codecs.length);
 			for (String codec : codecs) {
 				codec = codec.trim();
 				COMPRESSOR_TYPE ct = getCompressorByName(codec);

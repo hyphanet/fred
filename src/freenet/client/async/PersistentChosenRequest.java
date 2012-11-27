@@ -8,7 +8,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
-import java.util.Vector;
 
 import com.db4o.ObjectContainer;
 
@@ -198,13 +197,13 @@ public class PersistentChosenRequest {
 		}
 		if(request instanceof SendableGet) {
 			boolean supportsBulk = request instanceof SupportsBulkCallFailure;
-			Vector<BulkCallFailureItem> bulkFailItems = null;
+			List<BulkCallFailureItem> bulkFailItems = null;
 			for(PersistentChosenBlock block : finishedBlocks) {
 				if(!block.fetchSucceeded()) {
 					LowLevelGetException e = block.failedGet();
 					if(supportsBulk) {
 						if(bulkFailItems == null)
-							bulkFailItems = new Vector<BulkCallFailureItem>();
+							bulkFailItems = new ArrayList<BulkCallFailureItem>();
 						bulkFailItems.add(new BulkCallFailureItem(e, block.token));
 					} else {
 						((SendableGet)request).onFailure(e, block.token, container, context);

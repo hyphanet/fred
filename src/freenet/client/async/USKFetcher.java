@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.Vector;
 import java.util.Map.Entry;
 
 import com.db4o.ObjectContainer;
@@ -585,7 +584,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		try {
 			updatePriorities();
 			short prio;
-			ArrayList<DBRAttempt> toCancel = null;
+			List<DBRAttempt> toCancel = null;
 			synchronized(this) {
 				if(cancelled || completed) return;
 				dbrHintsFound++;
@@ -777,7 +776,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		final long lastEd = uskManager.lookupLatestSlot(origUSK);
 		if(logMINOR) Logger.minor(this, "Found edition "+curLatest+" for "+origUSK+" official is "+lastEd+" on "+this);
 		boolean decode = false;
-		Vector<USKAttempt> killAttempts = null;
+		List<USKAttempt> killAttempts = null;
 		boolean registerNow;
 		// FIXME call uskManager.updateSlot BEFORE getEditionsToFetch, avoids a possible conflict, but creates another (with onFoundEdition) - we'd probably have to handle this there???
 		synchronized(this) {
@@ -877,14 +876,14 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		onDNF(attempt, context);
 	}
 
-	private Vector<USKAttempt> cancelBefore(long curLatest, ClientContext context) {
-		Vector<USKAttempt> v = null;
+	private List<USKAttempt> cancelBefore(long curLatest, ClientContext context) {
+		List<USKAttempt> v = null;
 		int count = 0;
 		synchronized(this) {
 			for(Iterator<USKAttempt> i=runningAttempts.values().iterator();i.hasNext();) {
 				USKAttempt att = i.next();
 				if(att.number < curLatest) {
-					if(v == null) v = new Vector<USKAttempt>(runningAttempts.size()-count);
+					if(v == null) v = new ArrayList<USKAttempt>(runningAttempts.size()-count);
 					v.add(att);
 					i.remove();
 				}
@@ -893,7 +892,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			for(Iterator<Map.Entry<Long, USKAttempt>> i = pollingAttempts.entrySet().iterator();i.hasNext();) {
 				Map.Entry<Long, USKAttempt> entry = i.next();
 				if(entry.getKey() < curLatest) {
-					if(v == null) v = new Vector<USKAttempt>(Math.max(1, pollingAttempts.size()-count));
+					if(v == null) v = new ArrayList<USKAttempt>(Math.max(1, pollingAttempts.size()-count));
 					v.add(entry.getValue());
 					i.remove();
 				} else break; // TreeMap is ordered.
@@ -902,7 +901,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		return v;
 	}
 	
-	private void finishCancelBefore(Vector<USKAttempt> v, ClientContext context) {
+	private void finishCancelBefore(List<USKAttempt> v, ClientContext context) {
 		if(v != null) {
 			for(int i=0;i<v.size();i++) {
 				USKAttempt att = v.get(i);
@@ -1246,7 +1245,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		// Because this is frequently run off-thread, it is actually possible that the looked up edition is not the same as the edition we are being notified of.
 		final long lastEd = uskManager.lookupLatestSlot(origUSK);
 		boolean decode = false;
-		Vector<USKAttempt> killAttempts = null;
+		List<USKAttempt> killAttempts = null;
 		boolean registerNow = false;
 		synchronized(this) {
 			if(completed || cancelled) return;
@@ -1295,8 +1294,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 	}
 
-	private synchronized ArrayList<Lookup> getRunningFetchEditions() {
-		ArrayList<Lookup> ret = new ArrayList<Lookup>();
+	private synchronized List<Lookup> getRunningFetchEditions() {
+		List<Lookup> ret = new ArrayList<Lookup>();
 		for(USKAttempt a : runningAttempts.values()) {
 			if(!ret.contains(a.lookup)) ret.add(a.lookup);
 		}
@@ -1340,7 +1339,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		
 		final USKWatchingKeys.KeyList.StoreSubChecker[] checkers;
 
-		public USKStoreChecker(ArrayList<USKWatchingKeys.KeyList.StoreSubChecker> c) {
+		public USKStoreChecker(List<USKWatchingKeys.KeyList.StoreSubChecker> c) {
 			checkers = c.toArray(new USKWatchingKeys.KeyList.StoreSubChecker[c.size()]);
 		}
 
@@ -1723,7 +1722,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		
 		class ToFetch {
 
-			public ToFetch(ArrayList<Lookup> toFetch2, ArrayList<Lookup> toPoll2) {
+			public ToFetch(List<Lookup> toFetch2, List<Lookup> toPoll2) {
 				toFetch = toFetch2.toArray(new Lookup[toFetch2.size()]);
 				toPoll = toPoll2.toArray(new Lookup[toPoll2.size()]);
 			}
@@ -1739,12 +1738,12 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		 * @param alreadyRunning This will be modified: We will remove anything that should still be running from it.
 		 * @return Editions to fetch and editions to poll for.
 		 */
-		public synchronized ToFetch getEditionsToFetch(long lookedUp, Random random, ArrayList<Lookup> alreadyRunning, boolean doRandom) {
+		public synchronized ToFetch getEditionsToFetch(long lookedUp, Random random, List<Lookup> alreadyRunning, boolean doRandom) {
 			
 			if(logMINOR) Logger.minor(this, "Get editions to fetch, latest slot is "+lookedUp+" running is "+alreadyRunning);
 			
-			ArrayList<Lookup> toFetch = new ArrayList<Lookup>();
-			ArrayList<Lookup> toPoll = new ArrayList<Lookup>();
+			List<Lookup> toFetch = new ArrayList<Lookup>();
+			List<Lookup> toPoll = new ArrayList<Lookup>();
 			
 			boolean probeFromLastKnownGood = 
 				lookedUp > -1 || (backgroundPoll && !firstLoop) || fromSubscribers.isEmpty();
@@ -1791,7 +1790,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 
 		public synchronized void updateSubscriberHints(Long[] hints, long lookedUp) {
-			ArrayList<Long> surviving = new ArrayList<Long>();
+			List<Long> surviving = new ArrayList<Long>();
 			Arrays.sort(hints);
 			long prev = -1;
 			for(Long hint : hints) {
@@ -1861,7 +1860,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			 * @param alreadyRunning
 			 * @param random
 			 */
-			public synchronized void getNextEditions(ArrayList<Lookup> toFetch, ArrayList<Lookup> toPoll, long lookedUp, ArrayList<Lookup> alreadyRunning, Random random) {
+			public synchronized void getNextEditions(List<Lookup> toFetch, List<Lookup> toPoll, long lookedUp, List<Lookup> alreadyRunning, Random random) {
 				if(logMINOR) Logger.minor(this, "Getting next editions from "+lookedUp);
 				if(lookedUp < 0) lookedUp = 0;
 				for(int i=1;i<=origMinFailures;i++) {
@@ -1899,7 +1898,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				}
 			}
 			
-			public synchronized void getRandomEditions(ArrayList<Lookup> toFetch, long lookedUp, ArrayList<Lookup> alreadyRunning, Random random, int allowed) {
+			public synchronized void getRandomEditions(List<Lookup> toFetch, long lookedUp, List<Lookup> alreadyRunning, Random random, int allowed) {
 				// Then add a couple of random editions for catch-up.
 				long baseEdition = lookedUp + origMinFailures;
 				for(int i=0;i<allowed;i++) {
@@ -2084,7 +2083,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			// Check WATCH_KEYS from last known good slot.
 			// FIXME: Take into account origUSK, subscribers, etc.
 			if(logMINOR) Logger.minor(this, "Getting datastore checker from "+lastSlot+" for "+origUSK+" on "+USKFetcher.this, new Exception("debug"));
-			ArrayList<KeyList.StoreSubChecker> checkers = new ArrayList<KeyList.StoreSubChecker>();
+			List<KeyList.StoreSubChecker> checkers = new ArrayList<KeyList.StoreSubChecker>();
 			KeyList.StoreSubChecker c = fromLastKnownSlot.checkStore(lastSlot+1);
 			if(c != null) checkers.add(c);
 			// If we have moved past the origUSK, then clear the KeyList for it.

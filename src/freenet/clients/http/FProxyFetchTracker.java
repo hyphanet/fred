@@ -2,7 +2,6 @@ package freenet.clients.http;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.Vector;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
@@ -140,8 +139,7 @@ public class FProxyFetchTracker implements Runnable {
 			while(e.hasMoreElements()) {
 				FreenetURI uri = (FreenetURI) e.nextElement();
 				// Really horrible hack, FIXME
-				Vector<FProxyFetchInProgress> list = (Vector<FProxyFetchInProgress>) fetchers.iterateAll(uri);
-				for(FProxyFetchInProgress f : list){
+				for(FProxyFetchInProgress f : fetchers.iterateAll(uri)) {
 					// FIXME remove on the fly, although cancel must wait
 					if(f.canCancel()) {
 						if(toRemove == null) toRemove = new ArrayList<FProxyFetchInProgress>();

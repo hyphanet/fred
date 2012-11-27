@@ -15,7 +15,7 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Vector;
+import java.util.List;
 import java.util.WeakHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -653,9 +653,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	}
 
 	public PeerNode[][] getNodesSayBlown() {
-		Vector<PeerNode> nodesConnectedSayRevoked = new Vector<PeerNode>();
-		Vector<PeerNode> nodesDisconnectedSayRevoked = new Vector<PeerNode>();
-		Vector<PeerNode> nodesFailedSayRevoked = new Vector<PeerNode>();
+		List<PeerNode> nodesConnectedSayRevoked = new ArrayList<PeerNode>();
+		List<PeerNode> nodesDisconnectedSayRevoked = new ArrayList<PeerNode>();
+		List<PeerNode> nodesFailedSayRevoked = new ArrayList<PeerNode>();
 		synchronized(this) {
 			PeerNode[] nodesSayRevoked = nodesSayKeyRevoked.toArray(new PeerNode[nodesSayKeyRevoked.size()]);
 			for(PeerNode pn: nodesSayRevoked) {

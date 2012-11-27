@@ -18,7 +18,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.Vector;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import freenet.io.comm.AsyncMessageCallback;
@@ -1945,7 +1944,7 @@ public class PeerManager {
 	public DarknetPeerNode[] getDarknetPeers() {
 		PeerNode[] peers = myPeers();
 		// FIXME optimise! Maybe maintain as a separate list?
-		Vector<PeerNode> v = new Vector<PeerNode>(peers.length);
+		ArrayList<PeerNode> v = new ArrayList<PeerNode>(peers.length);
 		for(PeerNode peer: peers) {
 			if(peer instanceof DarknetPeerNode)
 				v.add(peer);
@@ -1953,10 +1952,10 @@ public class PeerManager {
 		return v.toArray(new DarknetPeerNode[v.size()]);
 	}
 
-	public Vector<SeedServerPeerNode> getConnectedSeedServerPeersVector(HashSet<ByteArrayWrapper> exclude) {
+	public List<SeedServerPeerNode> getConnectedSeedServerPeersVector(HashSet<ByteArrayWrapper> exclude) {
 		PeerNode[] peers = myPeers();
 		// FIXME optimise! Maybe maintain as a separate list?
-		Vector<SeedServerPeerNode> v = new Vector<SeedServerPeerNode>(peers.length);
+		ArrayList<SeedServerPeerNode> v = new ArrayList<SeedServerPeerNode>(peers.length);
 		for(PeerNode p : peers) {
 			if(p instanceof SeedServerPeerNode) {
 				SeedServerPeerNode sspn = (SeedServerPeerNode) p;
@@ -1993,7 +1992,7 @@ public class PeerManager {
 	public OpennetPeerNode[] getOpennetPeers() {
 		PeerNode[] peers = myPeers();
 		// FIXME optimise! Maybe maintain as a separate list?
-		Vector<PeerNode> v = new Vector<PeerNode>(peers.length);
+		ArrayList<PeerNode> v = new ArrayList<PeerNode>(peers.length);
 		for(PeerNode peer: peers) {
 			if(peer instanceof OpennetPeerNode)
 				v.add(peer);
@@ -2004,7 +2003,7 @@ public class PeerManager {
 	public PeerNode[] getOpennetAndSeedServerPeers() {
 		PeerNode[] peers = myPeers();
 		// FIXME optimise! Maybe maintain as a separate list?
-		Vector<PeerNode> v = new Vector<PeerNode>(peers.length);
+		ArrayList<PeerNode> v = new ArrayList<PeerNode>(peers.length);
 		for(PeerNode peer: peers) {
 			if(peer instanceof OpennetPeerNode)
 				v.add(peer);

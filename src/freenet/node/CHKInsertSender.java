@@ -3,7 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.ByteCounter;
@@ -314,7 +315,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
         this.prb = prb;
         this.fromStore = fromStore;
         this.startTime = System.currentTimeMillis();
-        this.backgroundTransfers = new Vector<BackgroundTransfer>();
+        this.backgroundTransfers = new ArrayList<BackgroundTransfer>();
         this.forkOnCacheable = forkOnCacheable;
         this.preferInsert = preferInsert;
         this.ignoreLowBackoff = ignoreLowBackoff;
@@ -359,7 +360,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
     
     /** List of nodes we are waiting for either a transfer completion
      * notice or a transfer completion from. Also used as a sync object for waiting for transfer completion. */
-    private Vector<BackgroundTransfer> backgroundTransfers;
+    private List<BackgroundTransfer> backgroundTransfers;
     
     /** Have all transfers completed and all nodes reported completion status? */
     private boolean allTransfersCompleted;

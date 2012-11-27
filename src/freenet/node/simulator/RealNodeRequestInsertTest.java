@@ -5,7 +5,8 @@ package freenet.node.simulator;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 
 import freenet.crypt.DummyRandomSource;
 import freenet.io.comm.PeerParseException;
@@ -208,7 +209,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 }
                 StringBuilder load = new StringBuilder("Running UIDs for nodes: ");
                 int totalRunningUIDsAlt = 0;
-                Vector<Long> runningUIDsList = new Vector<Long>();
+                List<Long> runningUIDsList = new ArrayList<Long>();
                 for(int i=0;i<nodes.length;i++) {
                 	load.append(i);
                 	load.append(':');

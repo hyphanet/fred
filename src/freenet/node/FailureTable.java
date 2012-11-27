@@ -4,8 +4,9 @@
 package freenet.node;
 
 import java.lang.ref.WeakReference;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
@@ -591,8 +592,8 @@ public class FailureTable implements OOMHook {
 
 		OfferList(BlockOfferList offerList) {
 			this.offerList = offerList;
-			recentOffers = new Vector<BlockOffer>();
-			expiredOffers = new Vector<BlockOffer>();
+			recentOffers = new ArrayList<BlockOffer>();
+			expiredOffers = new ArrayList<BlockOffer>();
 			long now = System.currentTimeMillis();
 			for(BlockOffer offer: offerList.offers) {
 				if(!offer.isExpired(now))
@@ -606,8 +607,8 @@ public class FailureTable implements OOMHook {
 		
 		private final BlockOfferList offerList;
 		
-		private final Vector<BlockOffer> recentOffers;
-		private final Vector<BlockOffer> expiredOffers;
+		private final List<BlockOffer> recentOffers;
+		private final List<BlockOffer> expiredOffers;
 		
 		/** The last offer we returned */
 		private BlockOffer lastOffer;

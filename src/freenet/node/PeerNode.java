@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.Vector;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
@@ -138,7 +137,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/** My OutgoingPacketMangler i.e. the object which encrypts packets sent to this node */
 	private final OutgoingPacketMangler outgoingMangler;
 	/** Advertised addresses */
-	protected Vector<Peer> nominalPeer;
+	protected List<Peer> nominalPeer;
 	/** The PeerNode's report of our IP address */
 	private Peer remoteDetectedPeer;
 	/** Is this a testnet node? */
@@ -610,7 +609,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			throw new Error(e1);
 		}
 
-		nominalPeer = new Vector<Peer>();
+		nominalPeer = new ArrayList<Peer>();
 		try {
 			String physical[] = fs.getAll("physical.udp");
 			if(physical == null) {
@@ -637,7 +636,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						continue;
 					}
 					if(!nominalPeer.contains(p))
-						nominalPeer.addElement(p);
+						nominalPeer.add(p);
 				}
 			}
 		} catch(Exception e1) {
@@ -647,7 +646,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			Logger.normal(this, "No IP addresses found for identity '" + identityAsBase64String + "', possibly at location '" + Double.toString(currentLocation) + ": " + userToString());
 			detectedPeer = null;
 		} else {
-			detectedPeer = nominalPeer.firstElement();
+			detectedPeer = nominalPeer.get(0);
 		}
 		updateShortToString();
 
@@ -951,9 +950,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		FreenetInetAddress localhost = node.fLocalhostAddress;
 		Peer[] nodePeers = outgoingMangler.getPrimaryIPAddress();
 
-		Vector<Peer> localPeers = null;
+		List<Peer> localPeers = null;
 		synchronized(this) {
-			localPeers = new Vector<Peer>(nominalPeer);
+			localPeers = new ArrayList<Peer>(nominalPeer);
 		}
 
 		boolean addedLocalhost = false;
@@ -2702,9 +2701,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		try {
 			String physical[] = fs.getAll("physical.udp");
 			if(physical != null) {
-				Vector<Peer> oldNominalPeer = nominalPeer;
+				List<Peer> oldNominalPeer = nominalPeer;
 
-				nominalPeer = new Vector<Peer>(physical.length);
+				nominalPeer = new ArrayList<Peer>(physical.length);
 
 				Peer[] oldPeers = oldNominalPeer.toArray(new Peer[oldNominalPeer.size()]);
 
@@ -2729,7 +2728,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 							// .contains() will .equals() on each, and equals() will propagate the looked-up IP if necessary.
 							// This is obviously O(n^2), but it doesn't matter, there will be very few peers.
 						}
-						nominalPeer.addElement(p);
+						nominalPeer.add(p);
 					}
 				}
 				// XXX should we trigger changedAnything on *any* change, or on just *addition* of new addresses
@@ -4128,7 +4127,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			return null;
 		}
 		long loopTime1 = System.currentTimeMillis();
-		Vector<Peer> validIPs = new Vector<Peer>();
+		List<Peer> validIPs = new ArrayList<Peer>(localHandshakeIPs.length);
 		for(Peer peer: localHandshakeIPs) {
 			FreenetInetAddress addr = peer.getFreenetAddress();
 			if(!outgoingMangler.allowConnection(this, addr)) {

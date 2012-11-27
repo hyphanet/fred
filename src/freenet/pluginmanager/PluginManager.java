@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.Vector;
 import java.util.jar.Attributes;
 import java.util.jar.JarException;
 import java.util.jar.JarFile;
@@ -86,7 +85,7 @@ public class PluginManager {
 
 	/* All currently starting plugins. */
 	private final Set<PluginProgress> startingPlugins = new HashSet<PluginProgress>();
-	private final Vector<PluginInfoWrapper> pluginWrappers;
+	private final ArrayList<PluginInfoWrapper> pluginWrappers;
 	private final HashMap<String, PluginLoadFailedUserAlert> pluginsFailedLoad;
 	final Node node;
 	private final NodeClientCore core;
@@ -111,7 +110,7 @@ public class PluginManager {
 		// config
 
 		toadletList = new HashMap<String, FredPlugin>();
-		pluginWrappers = new Vector<PluginInfoWrapper>();
+		pluginWrappers = new ArrayList<PluginInfoWrapper>();
 		pluginsFailedLoad = new HashMap<String, PluginLoadFailedUserAlert>();
 		this.node = node;
 		this.core = node.clientCore;
@@ -308,7 +307,7 @@ public class PluginManager {
 	}
 
 	private String[] getConfigLoadString() {
-		Vector<String> v = new Vector<String>();
+		ArrayList<String> v = new ArrayList<String>();
 
 		synchronized(pluginWrappers) {
 			if(!started) return toStart;

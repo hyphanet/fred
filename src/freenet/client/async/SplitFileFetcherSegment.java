@@ -1775,7 +1775,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	}
 
 	public synchronized Integer[] getKeyNumbersAtRetryLevel(int retryCount, ObjectContainer container, ClientContext context) {
-		Vector<Integer> v = new Vector<Integer>();
+		ArrayList<Integer> v = new ArrayList<Integer>();
 		if(keys == null) 
 			migrateToKeys(container);
 		else {
