@@ -137,24 +137,6 @@ public class PooledExecutor implements Executor {
 		}
 	}
 
-	/**
-	 * Removes element from List by swapping with last element.
-	 * O(n) comparison, O(1) moves.
-	 * @return {@code true} if element was removed.
-	 */
-	// XXX move it to better place
-	private static <E> boolean removeFromUnorderedList(List<E> a, Object o) {
-		int idx = a.indexOf(o);
-		if (idx == -1)
-			return false;
-		int size = a.size();
-		assert(size > 0); // always true
-		E moved = a.remove(size-1);
-		if (idx != size-1)
-			a.set(idx, moved);
-		return true;
-	}
-
 	@Override
 	public synchronized int[] runningThreads() {
 		int[] result = new int[runningThreads.length];
@@ -227,7 +209,7 @@ public class PooledExecutor implements Executor {
 						}
 					}
 					synchronized(PooledExecutor.this) {
-						if (removeFromUnorderedList(waitingThreads[nativePriority - 1], this))
+						if (ListUtils.removeBySwapLast(waitingThreads[nativePriority - 1], this))
 							waitingThreadsCount--;
 
 						synchronized(this) {
@@ -239,7 +221,7 @@ public class PooledExecutor implements Executor {
 						}
 
 						if(!alive) {
-							removeFromUnorderedList(runningThreads[nativePriority - 1], this);
+							ListUtils.removeBySwapLast(runningThreads[nativePriority - 1], this);
 							if(logMINOR)
 								Logger.minor(this, "Exiting having executed " + ranJobs + " jobs : " + this);
 							return;
