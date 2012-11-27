@@ -1146,6 +1146,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		server.register(fproxy, "FProxyToadlet.categoryBrowsing", "/", false, "FProxyToadlet.welcomeTitle",
 		        "FProxyToadlet.welcome", false, null);
 
+		DecodeToadlet decodeKeywordURL = new DecodeToadlet(client, core);
+		server.register(decodeKeywordURL, null, "/decode/", true, false);
+
 		InsertFreesiteToadlet siteinsert = new InsertFreesiteToadlet(client, core.alerts);
 		server.register(siteinsert, "FProxyToadlet.categoryBrowsing", "/insertsite/", true,
 		        "FProxyToadlet.insertFreesiteTitle", "FProxyToadlet.insertFreesite", false, null);
