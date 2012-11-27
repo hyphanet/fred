@@ -6,7 +6,6 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
@@ -781,10 +780,9 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 	}
 
 	private void makePutHandlers(HashMap<String, Object> manifestElements, HashMap<String,Object> putHandlersByName, String ZipPrefix, boolean persistent) {
-		Iterator<String> it = manifestElements.keySet().iterator();
-		while(it.hasNext()) {
-			String name = it.next();
-			Object o = manifestElements.get(name);
+		for(Map.Entry<String, Object> entry: manifestElements.entrySet()) {
+			String name = entry.getKey();
+			Object o = entry.getValue();
 			if (o instanceof HashMap) {
 				HashMap<String,Object> subMap = new HashMap<String,Object>();
 				HashMap<String,Object> elements = Metadata.forceMap(o);
@@ -1210,10 +1208,9 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 	}
 
 	private void namesToByteArrays(HashMap<String, Object> putHandlersByName, HashMap<String,Object> namesToByteArrays, ObjectContainer container) {
-		Iterator<String> i = putHandlersByName.keySet().iterator();
-		while(i.hasNext()) {
-			String name = i.next();
-			Object o = putHandlersByName.get(name);
+		for(Map.Entry<String, Object> entry : putHandlersByName.entrySet()) {
+			String name = entry.getKey();
+			Object o = entry.getValue();
 			if(o instanceof PutHandler) {
 				PutHandler ph = (PutHandler) o;
 				if(persistent())
@@ -1759,14 +1756,13 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 	 */
 	public static HashMap<String, Object> bucketsByNameToManifestEntries(HashMap<String,Object> bucketsByName) {
 		HashMap<String,Object> manifestEntries = new HashMap<String,Object>();
-		Iterator<String> i = bucketsByName.keySet().iterator();
-		while(i.hasNext()) {
-			String name = i.next();
-			Object o = bucketsByName.get(name);
+		for(Map.Entry<String,Object> entry: bucketsByName.entrySet()) {
+			String name = entry.getKey();
+			Object o = entry.getValue();
 			if(o instanceof ManifestElement) {
 				manifestEntries.put(name, o);
 			} else if(o instanceof Bucket) {
-				Bucket data = (Bucket) bucketsByName.get(name);
+				Bucket data = (Bucket) o;
 				manifestEntries.put(name, new ManifestElement(name, data, null,data.size()));
 			} else if(o instanceof HashMap) {
 				manifestEntries.put(name, bucketsByNameToManifestEntries(Metadata.forceMap(o)));
@@ -1787,11 +1783,10 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 	}
 
 	public static void flatten(HashMap<String,Object> manifestElements, Vector<ManifestElement> v, String prefix) {
-		Iterator<String> i = manifestElements.keySet().iterator();
-		while(i.hasNext()) {
-			String name = i.next();
+		for(Map.Entry<String,Object> entry: manifestElements.entrySet()) {
+			String name = entry.getKey();
 			String fullName = prefix.length() == 0 ? name : prefix+ '/' +name;
-			Object o = manifestElements.get(name);
+			Object o = entry.getValue();
 			if(o instanceof HashMap) {
 				flatten(Metadata.forceMap(o), v, fullName);
 			} else if(o instanceof ManifestElement) {

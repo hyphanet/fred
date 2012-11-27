@@ -14,7 +14,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
@@ -811,13 +810,13 @@ public class Metadata implements Cloneable {
 		//mimeType = null;
 		//clientMetadata = new ClientMetadata(null);
 		manifestEntries = new HashMap<String, Metadata>();
-		for(Iterator<String> i = dir.keySet().iterator();i.hasNext();) {
-			String key = i.next().intern();
+		for (Map.Entry<String, Object> entry: dir.entrySet()) {
+			String key = entry.getKey().intern();
 			if(key.indexOf('/') != -1)
 				throw new IllegalArgumentException("Slashes in simple redirect manifest filenames! (slashes denote sub-manifests): "+key);
-			Object o = dir.get(key);
+			Object o = entry.getValue();
 			if(o instanceof Metadata) {
-				Metadata data = (Metadata) dir.get(key);
+				Metadata data = (Metadata) o;
 				if(data == null)
 					throw new NullPointerException();
 				if(logDEBUG)
@@ -854,9 +853,9 @@ public class Metadata implements Cloneable {
 		mimeType = null;
 		clientMetadata = new ClientMetadata();
 		manifestEntries = new HashMap<String, Metadata>();
-		for(Iterator<String> i = dir.keySet().iterator();i.hasNext();) {
-			String key = i.next().intern();
-			Object o = dir.get(key);
+		for (Map.Entry<String, Object> entry: dir.entrySet()) {
+			String key = entry.getKey().intern();
+			Object o = entry.getValue();
 			Metadata target;
 			if(o instanceof String) {
 				// Archive internal redirect
@@ -1245,12 +1244,10 @@ public class Metadata implements Cloneable {
      */
     public HashMap<String, Metadata> getDocuments() {
     	HashMap<String, Metadata> docs = new HashMap<String, Metadata>();
-        Set<String> s = manifestEntries.keySet();
-        Iterator<String> i = s.iterator();
-        while (i.hasNext()) {
-        	String st = i.next();
+		for (Map.Entry<String, Metadata> entry: manifestEntries.entrySet()) {
+        	String st = entry.getKey();
         	if (st.length()>0)
-        		docs.put(st, manifestEntries.get(st));
+        		docs.put(st, entry.getValue());
         }
         return docs;
     }
@@ -1496,13 +1493,13 @@ public class Metadata implements Cloneable {
 			dos.writeInt(manifestEntries.size());
 			boolean kill = false;
 			LinkedList<Metadata> unresolvedMetadata = null;
-			for(Iterator<String> i=manifestEntries.keySet().iterator();i.hasNext();) {
-				String name = i.next();
+			for(Map.Entry<String, Metadata> entry: manifestEntries.entrySet()) {
+				String name = entry.getKey();
 				byte[] nameData = name.getBytes("UTF-8");
 				if(nameData.length > Short.MAX_VALUE) throw new IllegalArgumentException("Manifest name too long");
 				dos.writeShort(nameData.length);
 				dos.write(nameData);
-				Metadata meta = manifestEntries.get(name);
+				Metadata meta = entry.getValue();
 				try {
 					byte[] data = meta.writeToByteArray();
 					if(data.length > MAX_SIZE_IN_MANIFEST) {

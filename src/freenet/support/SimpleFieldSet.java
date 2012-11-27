@@ -251,18 +251,14 @@ public class SimpleFieldSet {
      * Put contents of a fieldset, overwrite old values.
      */
     public void putAllOverwrite(SimpleFieldSet fs) {
-    	Iterator<String> i = fs.values.keySet().iterator();
-    	while(i.hasNext()) {
-    		String key = i.next();
-    		String hisVal = fs.values.get(key);
-    		values.put(key, hisVal); // overwrite old
+    	for(Map.Entry<String, String> entry: fs.values.entrySet()) {
+    		values.put(entry.getKey(), entry.getValue()); // overwrite old
     	}
     	if(fs.subsets == null) return;
 	if(subsets == null) subsets = new HashMap<String, SimpleFieldSet>();
-    	i = fs.subsets.keySet().iterator();
-    	while(i.hasNext()) {
-    		String key = i.next();
-    		SimpleFieldSet hisFS = fs.subsets.get(key);
+    	for(Map.Entry<String, SimpleFieldSet> entry: fs.subsets.entrySet()) {
+    		String key = entry.getKey();
+    		SimpleFieldSet hisFS = entry.getValue();
     		SimpleFieldSet myFS = subsets.get(key);
     		if(myFS != null) {
     			myFS.putAllOverwrite(hisFS);

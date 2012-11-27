@@ -6,6 +6,7 @@ package freenet.client.async;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.Map;
 
 import com.db4o.ObjectContainer;
 
@@ -322,10 +323,11 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 			long archiveLimit = DEFAULT_CONTAINERSIZE_SPARE;
 			ContainerBuilder archive = makeArchive();
 			
-			Iterator<String> iter = itemsLeft.keySet().iterator();
+			Iterator<Map.Entry<String, Object> > iter = itemsLeft.entrySet().iterator();
 			while (iter.hasNext()) {
-				String lname = iter.next();
-				ManifestElement me = (ManifestElement)itemsLeft.get(lname);
+				Map.Entry<String, Object> entry = iter.next();
+				String lname = entry.getKey();
+				ManifestElement me = (ManifestElement)entry.getValue();
 				if ((me.getSize() > -1) && (me.getSize() <= DEFAULT_MAX_CONTAINERITEMSIZE) && (me.getSize() < (DEFAULT_MAX_CONTAINERSIZE-archiveLimit))) {
 					containerBuilder.addArchiveItem(archive, lname, me, lname.equals(defaultName));
 					tmpSize += 512;

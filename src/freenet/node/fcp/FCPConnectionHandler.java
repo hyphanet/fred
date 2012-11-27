@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.Socket;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 
@@ -746,9 +745,7 @@ public class FCPConnectionHandler implements Closeable {
 	 */
 	protected void freeDDAJobs(){
 		synchronized (inTestDirectories) {
-			Iterator<File> it = inTestDirectories.keySet().iterator();
-			while(it.hasNext()) {
-				DDACheckJob job = inTestDirectories.get(it.next());
+			for(DDACheckJob job: inTestDirectories.values()) {
 				if (job.readFilename != null)
 					job.readFilename.delete();
 			}
