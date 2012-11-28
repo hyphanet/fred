@@ -3500,9 +3500,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public StringCounter getDatabaseJobQueueStatistics() {
 		final StringCounter result = new StringCounter();
 
-		final List<Runnable>[] dbJobs = node.clientCore.clientDatabaseExecutor.getQueuedJobsByPriority();
+		final Runnable[][] dbJobs = node.clientCore.clientDatabaseExecutor.getQueuedJobsByPriority();
 
-		for(List<Runnable> list : dbJobs) {
+		for(Runnable[] list : dbJobs) {
 			for(Runnable job : list) {
 				result.inc(sanitizeDBJobType(job.toString()));
 			}
