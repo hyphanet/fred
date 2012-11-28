@@ -2680,6 +2680,30 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private boolean databaseEncrypted;
 
+	private static class DB4ODiagnositcListener implements DiagnosticListener {
+		private static volatile boolean logDEBUG;
+
+		static {
+			Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+				@Override
+				public void shouldUpdate(){
+					logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
+				}
+			});
+		}
+			@Override
+			public void onDiagnostic(Diagnostic arg0) {
+				if(!logDEBUG)
+					return;
+				if(arg0 instanceof ClassHasNoFields)
+					return; // Ignore
+				if(arg0 instanceof DiagnosticBase) {
+					DiagnosticBase d = (DiagnosticBase) arg0;
+					Logger.debug(this, "Diagnostic: "+d.getClass()+" : "+d.problem()+" : "+d.solution()+" : "+d.reason(), new Exception("debug"));
+				} else
+					Logger.debug(this, "Diagnostic: "+arg0+" : "+arg0.getClass(), new Exception("debug"));
+			}
+	}
 	/**
 	 * @param databaseKey The encryption key to the database. Null if the database is not encrypted
 	 * @return A new Db4o Configuration object which is fully configured to Fred's desired database settings.
@@ -2733,19 +2757,7 @@ public class Node implements TimeSkewDetectorCallback {
 		 * long, and allows databases of up to 16GB.
 		 * FIXME make configurable by user. */
 		dbConfig.blockSize(8);
-		dbConfig.diagnostic().addListener(new DiagnosticListener() {
-
-			@Override
-			public void onDiagnostic(Diagnostic arg0) {
-				if(arg0 instanceof ClassHasNoFields)
-					return; // Ignore
-				if(arg0 instanceof DiagnosticBase) {
-					DiagnosticBase d = (DiagnosticBase) arg0;
-					Logger.debug(this, "Diagnostic: "+d.getClass()+" : "+d.problem()+" : "+d.solution()+" : "+d.reason(), new Exception("debug"));
-				} else
-					Logger.debug(this, "Diagnostic: "+arg0+" : "+arg0.getClass(), new Exception("debug"));
-			}
-		});
+		dbConfig.diagnostic().addListener(new DB4ODiagnositcListener());
 
 		// Make db4o throw an exception if we call store for something for which we do not have to call it, String or Date for example.
 		// This prevents us from writing code which is based on misunderstanding of db4o internals...
