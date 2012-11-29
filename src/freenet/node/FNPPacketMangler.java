@@ -1262,22 +1262,29 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
         }
 		if(logDEBUG) Logger.debug(this, "The shared Master secret is : "+HexUtil.bytesToHex(computedExponential) +" for " + pn);
 		
+		HMAC mac = HMAC.getMacWithSHA256();
+		mac.init(computedExponential);
+		computedExponential = null;
+		byte[] toHash = prepareJFKtoHash(nonceInitiator, nonceResponder);
 		/* 0 is the outgoing key for the initiator, 7 for the responder */
-		byte[] outgoingKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "7");
-		byte[] incommingKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "0");
-		byte[] Ke = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
-		byte[] Ka = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "2");
+		byte[] outgoingKey = computeJFKSharedKey(mac, toHash, 7);
+		byte[] incommingKey = computeJFKSharedKey(mac, toHash, 0);
+		byte[] Ke = computeJFKSharedKey(mac, toHash, 1);
+		byte[] Ka = computeJFKSharedKey(mac, toHash, 2);
 
-		byte[] hmacKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "3");
-		byte[] ivKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "4");
-		byte[] ivNonce = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "5");
+		byte[] hmacKey = computeJFKSharedKey(mac, toHash, 3);
+		byte[] ivKey = computeJFKSharedKey(mac, toHash, 4);
+		byte[] ivNonce = computeJFKSharedKey(mac, toHash, 5);
 
 		/* Bytes  1-4:  Initial sequence number for the initiator
 		 * Bytes  5-8:  Initial sequence number for the responder
 		 * Bytes  9-12: Initial message id for the initiator
 		 * Bytes 13-16: Initial message id for the responder
 		 * Note that we are the responder */
-		byte[] sharedData = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "6");
+		byte[] sharedData = computeJFKSharedKey(mac, toHash, 6);
+		HMAC.returnMacWithSHA256(mac); mac = null;
+		toHash = null;
+
 		int theirInitialSeqNum = ((sharedData[0] & 0xFF) << 24)
 				| ((sharedData[1] & 0xFF) << 16)
 				| ((sharedData[2] & 0xFF) << 8)
@@ -1782,22 +1789,28 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		    computedExponential = ((ECDHLightContext)ctx).getHMACKey(ECDH.getPublicKey(hisExponential, ecdhCurveToUse));
 		}
 		if(logDEBUG) Logger.debug(this, "The shared Master secret is : "+HexUtil.bytesToHex(computedExponential)+ " for " + pn);
+		HMAC mac = HMAC.getMacWithSHA256();
+		mac.init(computedExponential);
+		computedExponential = null;
+		byte[] toHash = prepareJFKtoHash(nonceInitiator, nonceResponder);
 		/* 0 is the outgoing key for the initiator, 7 for the responder */
-		pn.outgoingKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "0");
-		pn.incommingKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "7");
-		pn.jfkKe = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
-		pn.jfkKa = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "2");
+		pn.outgoingKey = computeJFKSharedKey(mac, toHash, 0);
+		pn.incommingKey = computeJFKSharedKey(mac, toHash, 7);
+		pn.jfkKe = computeJFKSharedKey(mac, toHash, 1);
+		pn.jfkKa = computeJFKSharedKey(mac, toHash, 2);
 
-		pn.hmacKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "3");
-		pn.ivKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "4");
-		pn.ivNonce = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "5");
+		pn.hmacKey = computeJFKSharedKey(mac, toHash, 3);
+		pn.ivKey = computeJFKSharedKey(mac, toHash, 4);
+		pn.ivNonce = computeJFKSharedKey(mac, toHash, 5);
 
 		/* Bytes  1-4:  Initial sequence number for the initiator
 		 * Bytes  5-8:  Initial sequence number for the responder
 		 * Bytes  9-12: Initial message id for the initiator
 		 * Bytes 13-16: Initial message id for the responder
 		 * Note that we are the initiator */
-		byte[] sharedData = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "6");
+		byte[] sharedData = computeJFKSharedKey(mac, toHash, 6);
+		HMAC.returnMacWithSHA256(mac); mac = null;
+		toHash = null;
 		pn.ourInitialSeqNum = ((sharedData[0] & 0xFF) << 24)
 				| ((sharedData[1] & 0xFF) << 16)
 				| ((sharedData[2] & 0xFF) << 8)
@@ -2537,25 +2550,26 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 	}
 
-	private byte[] computeJFKSharedKey(byte[] exponential, byte[] nI, byte[] nR, String what) {
-		assert("0".equals(what) || "1".equals(what) || "2".equals(what) || "3".equals(what)
-				|| "4".equals(what) || "5".equals(what) || "6".equals(what) || "7".equals(what));
-		byte[] number = null;
-		try {
-			number = what.getBytes("UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-		}
-
-		byte[] toHash = new byte[NONCE_SIZE * 2 + number.length];
+	private static byte[] prepareJFKtoHash(byte[] nI, byte[] nR) {
+		byte toHash[] = new byte[nI.length + nR.length + 1];
 		int offset = 0;
-		System.arraycopy(nI, 0, toHash, offset, NONCE_SIZE);
-		offset += NONCE_SIZE;
-		System.arraycopy(nR, 0, toHash, offset, NONCE_SIZE);
-		offset += NONCE_SIZE;
+		System.arraycopy(nI, 0, toHash, offset, nI.length);
+		offset += nI.length;
+		System.arraycopy(nR, 0, toHash, offset, nR.length);
+		offset += nR.length;
 		System.arraycopy(number, 0, toHash, offset, number.length);
+		System.arraycopy(nI, 0, toHash, offset, nI.length);
+		offset += nI.length;
+		System.arraycopy(nR, 0, toHash, offset, nR.length);
+		offset += nR.length;
+		return toHash;
+	}
 
-		return HMAC.macWithSHA256(exponential, toHash, HASH_LENGTH);
+	private static byte[] computeJFKSharedKey(HMAC mac, byte[] toHash, int what) {
+		assert(what >= 0 && what <= 7);
+		toHash[toHash.length - 1] = (byte)(0x30+what); // 0x30 is ascii '0'
+		mac.update(toHash);
+		return mac.doFinal();
 	}
 
 	private long timeLastReset = -1;
