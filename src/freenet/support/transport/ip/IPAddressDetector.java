@@ -100,6 +100,7 @@ public class IPAddressDetector implements Runnable {
 	 * Execute a checkpoint - detect our internet IP address and log it
 	 */
 	protected synchronized boolean checkpoint() {
+		final boolean logDEBUG = this.logDEBUG;
 		List<InetAddress> addrs = new ArrayList<InetAddress>();
 
 		Enumeration<java.net.NetworkInterface> interfaces = null;
@@ -205,6 +206,7 @@ public class IPAddressDetector implements Runnable {
 	 *            Vector of InetAddresses
 	 */
 	protected void onGetAddresses(List<InetAddress> addrs) {
+		final boolean logDEBUG = this.logDEBUG;
 		List<InetAddress> output = new ArrayList<InetAddress>();
 		if (logDEBUG)
 			Logger.debug(

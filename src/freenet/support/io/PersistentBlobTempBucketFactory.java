@@ -292,6 +292,7 @@ public class PersistentBlobTempBucketFactory {
 		@SuppressWarnings("unchecked")
 		@Override
 		public boolean run(ObjectContainer container, ClientContext context) {
+			final boolean logMINOR = PersistentBlobTempBucketFactory.logMINOR;
 			int added = 0;
 			
 			while(true) {
@@ -678,6 +679,7 @@ outer:		while(true) {
 	
 	@SuppressWarnings("unchecked")
 	boolean maybeShrink(ObjectContainer container) {
+		final boolean logMINOR = this.logMINOR;
 		
 		if(logMINOR) Logger.minor(this, "maybeShrink()");
 		
