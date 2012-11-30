@@ -262,7 +262,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 					}
 					return true;
 				}
-				long startNext = System.currentTimeMillis();
 				RegisterMe reg = (RegisterMe) registerMeSet.next();
 				container.activate(reg, 1);
 				if(reg.bootID == context.bootID) {

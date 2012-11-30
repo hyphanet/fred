@@ -304,12 +304,10 @@ public class LongTermManySingleBlocksTest {
 			
 			// PARSE FILE AND FETCH OLD STUFF IF APPROPRIATE
 			
-			FreenetURI singleURI = null;
 			FreenetURI[] mhkURIs = new FreenetURI[3];
 			fis = new FileInputStream(file);
 			BufferedReader br = new BufferedReader(new InputStreamReader(fis));
 			String line = null;
-			int total = 0, singleKeysSucceeded = 0, mhkSucceeded = 0;
 			GregorianCalendar target = (GregorianCalendar) today.clone();
 			target.set(Calendar.HOUR_OF_DAY, 0);
 			target.set(Calendar.MINUTE, 0);
@@ -328,7 +326,6 @@ public class LongTermManySingleBlocksTest {
 loopOverLines:
 			while((line = br.readLine()) != null) {
 				
-				singleURI = null;
 				for(int i=0;i<mhkURIs.length;i++) mhkURIs[i] = null;
 				//System.out.println("LINE: "+line);
 				String[] split = line.split("!");
@@ -432,7 +429,6 @@ loopOverLines:
 						}
 						token++;
 					}
-					total++;
 					totalFetchesByDelta[delta] += totalFetches;
 					totalSuccessfulFetchesByDelta[delta] += totalSuccesses;
 					totalFetchTimeByDelta[delta] += totalFetchTime;

@@ -83,8 +83,6 @@ public class DiagnosticToadlet extends Toadlet {
 
 		final SubConfig nodeConfig = node.config.get("node");
 
-		final String requestPath = request.getPath().substring(path().length());
-
 		String text = "";
 
 		// Synchronize to avoid problems with DecimalFormat.
@@ -131,13 +129,8 @@ public class DiagnosticToadlet extends Toadlet {
 			DataStoreStats stats = entry.getValue();
 			StoreAccessStats sessionAccess = stats.getSessionAccessStats();
 			StoreAccessStats totalAccess;
-			long totalUptimeSeconds = 0;
 			try {
 				totalAccess = stats.getTotalAccessStats();
-				// FIXME this is not necessarily the same as the datastore's uptime if we've switched.
-				// Ideally we'd track uptime there too.
-				totalUptimeSeconds = 
-					node.clientCore.bandwidthStatsPutter.getLatestUptimeData().totalUptime;
 			} catch (StatsNotAvailableException e) {
 				totalAccess = null;
 			}
@@ -297,7 +290,6 @@ public class DiagnosticToadlet extends Toadlet {
 			text += "bandwidth error\n";
 		else  {
 			final long now = System.currentTimeMillis();
-			double myLocation = node.getLocation();
 			final long nodeUptimeSeconds = (now - node.startupTime) / 1000;
 			long total_output_rate = (total[0]) / nodeUptimeSeconds;
 			long total_input_rate = (total[1]) / nodeUptimeSeconds;
@@ -406,30 +398,16 @@ public class DiagnosticToadlet extends Toadlet {
 			if(reqs.length < 1)
 				text += baseL10n.getString("QueueToadlet.globalQueueIsEmpty") + "\n";
 			else {
-				long totalQueuedDownloadSize = 0;
 				long totalQueuedDownload = 0;
-				long totalQueuedUploadSize = 0;
 				long totalQueuedUpload = 0;
 				for(int i=0;i<reqs.length;i++) {
 					RequestStatus req = reqs[i];
 					if(req instanceof DownloadRequestStatus) {
 						totalQueuedDownload++;
-						DownloadRequestStatus download = (DownloadRequestStatus)req;
-						long size = download.getDataSize();
-						if(size > 0)
-							totalQueuedDownloadSize += size;
 					} else if(req instanceof UploadFileRequestStatus) {
 						totalQueuedUpload++;
-						UploadFileRequestStatus upload = (UploadFileRequestStatus)req;
-						long size = upload.getDataSize();
-						if(size > 0)
-							totalQueuedUploadSize += size;
 					} else if(req instanceof UploadDirRequestStatus) {
 						totalQueuedUpload++;
-						UploadDirRequestStatus upload = (UploadDirRequestStatus)req;
-						long size = upload.getTotalDataSize();
-						if(size > 0)
-							totalQueuedUploadSize += size;
 					}
 				}
 				text += "Downloads Queued: " + totalQueuedDownload + " (" + totalQueuedDownload + ")\n";

@@ -406,7 +406,6 @@ public class PluginManager {
 			Logger.normal(this, "Plugin loaded: " + filename);
 		} catch (PluginNotFoundException e) {
 			Logger.normal(this, "Loading plugin failed (" + filename + ')', e);
-			String message = e.getMessage();
 			boolean stillTrying = false;
 			if(pdl instanceof PluginDownLoaderOfficialFreenet) {
 				PluginDownLoaderOfficialFreenet downloader = (PluginDownLoaderOfficialFreenet) pdl;

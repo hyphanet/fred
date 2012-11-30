@@ -1208,12 +1208,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 						flags |= FLAG_REBUILD_BLOOM;
 
 					try {
-						int bloomFilterK = raf.readInt();
-						// Ignore
-					} catch (IOException e) {
-						// Ignore
-					}
-					try {
+						raf.readInt(); // bloomFilterK
 						raf.readInt(); // reserved
 						raf.readLong(); // reserved
 						long w = raf.readLong();
@@ -1345,10 +1340,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			if (shutdown)
 				return;
 
-			int loop = 0;
 			while (!shutdown) {
-				loop++;
-
 				cleanerLock.lock();
 				try {
 					long _prevStoreSize;

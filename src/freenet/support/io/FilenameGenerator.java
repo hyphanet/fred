@@ -171,7 +171,6 @@ public class FilenameGenerator {
 					System.err.println("Unable to read and write new temporary directory: "+dir);
 					throw new IOException("Unable to read and write new temporary directory: "+dir);
 				}
-				int moved = 0;
 				int failed = 0;
 				// Move each file
 				File[] list = tmpDir.listFiles();
@@ -179,9 +178,7 @@ public class FilenameGenerator {
 					File f = list[i];
 					String name = f.getName();
 					if(!name.startsWith(prefix)) continue;
-					if(FileUtil.moveTo(f, new File(dir, name), true))
-						moved++;
-					else
+					if(!FileUtil.moveTo(f, new File(dir, name), true))
 						failed++;
 				}
 				if(failed > 0) {
@@ -203,7 +200,6 @@ public class FilenameGenerator {
 				System.err.println("Unable to read and write new temporary directory: "+dir);
 				throw new IOException("Unable to read and write new temporary directory: "+dir);
 			}
-			int moved = 0;
 			int failed = 0;
 			// Move each file
 			File[] list = tmpDir.listFiles();
@@ -212,8 +208,8 @@ public class FilenameGenerator {
 				String name = f.getName();
 				if(!name.startsWith(this.prefix)) continue;
 				String newName = prefix + name.substring(this.prefix.length());
-				if(FileUtil.moveTo(f, new File(dir, newName), true)) {
-					moved++;
+				if(!FileUtil.moveTo(f, new File(dir, newName), true)) {
+					failed++;
 				}
 			}
 			if(failed > 0) {

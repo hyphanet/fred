@@ -1009,7 +1009,6 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		}
 		InsertBlock block;
 		boolean isMetadata = true;
-		boolean insertAsArchiveManifest = false;
 		ARCHIVE_TYPE archiveType = null;
 		byte[] ckey = null;
 		if(!(elementsToPutInArchive.isEmpty())) {
@@ -1043,7 +1042,6 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 				if(persistent()) container.activate(targetURI, 5);
 				block = new InsertBlock(outputBucket, new ClientMetadata(mimeType), persistent() ? targetURI.clone() : targetURI);
 				isMetadata = false;
-				insertAsArchiveManifest = true;
 			} catch (IOException e) {
 				fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
 				if(persistent())
