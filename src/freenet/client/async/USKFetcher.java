@@ -1646,6 +1646,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	}
 
 	@Override
+	public byte[] getWantedKey() {
+		return origUSK.pubKeyHash;
+	}
+
+	@Override
 	public void onRemove() {
 		// Ignore
 	}

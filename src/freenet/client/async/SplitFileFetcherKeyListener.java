@@ -454,6 +454,11 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 	public boolean isSSK() {
 		return false;
 	}
+
+	@Override
+	public byte[] getWantedKey() {
+		return null;
+	}
 	
 	public void objectOnDeactivate(ObjectContainer container) {
 		Logger.error(this, "Deactivating a SplitFileFetcherKeyListener: "+this, new Exception("error"));

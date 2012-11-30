@@ -5,7 +5,10 @@ package freenet.client.async;
 
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import com.db4o.ObjectContainer;
 
@@ -21,6 +24,7 @@ import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
+import freenet.support.ByteArrayWrapper;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.RandomGrabArray;
@@ -82,6 +86,8 @@ abstract class ClientRequestSchedulerBase {
 	protected transient ClientRequestScheduler sched;
 	/** Transient even for persistent scheduler. */
 	protected transient ArrayList<KeyListener> keyListeners;
+	private transient Map<ByteArrayWrapper,ArrayList<KeyListener>> singleKeyListeners;
+	private transient IdentityHashMap<HasKeyListener,ArrayList<ByteArrayWrapper>> singleKeyHasListeners;
 
 	abstract boolean persistent();
 	
@@ -90,6 +96,8 @@ abstract class ClientRequestSchedulerBase {
 		this.isSSKScheduler = forSSKs;
 		this.isRTScheduler = forRT;
 		keyListeners = new ArrayList<KeyListener>();
+		singleKeyListeners = new HashMap<ByteArrayWrapper,ArrayList<KeyListener>>();
+		singleKeyHasListeners = new IdentityHashMap<HasKeyListener,ArrayList<ByteArrayWrapper>>();
 		priorities = null;
 		newPriorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 		globalSalt = new byte[32];
@@ -248,11 +256,29 @@ abstract class ClientRequestSchedulerBase {
 
 	public void addPendingKeys(KeyListener listener) {
 		if(listener == null) throw new NullPointerException();
+		byte[] wantedKey = listener.getWantedKey();
+		ByteArrayWrapper wrapper = wantedKey != null ? new ByteArrayWrapper(saltKey(wantedKey)) : null;
+		ArrayList<KeyListener> keyListeners = this.keyListeners;
 		synchronized (this) {
 			// We have to register before checking the disk, so it may well get registered twice.
+			if(wantedKey != null) {
+				keyListeners = singleKeyListeners.get(wrapper);
+				if(keyListeners == null) {
+					singleKeyListeners.put(wrapper,
+							(keyListeners = new ArrayList<KeyListener>(1)));
+				}
+			}
 			if(keyListeners.contains(listener))
 				return;
 			keyListeners.add(listener);
+			if(wantedKey != null) {
+				HasKeyListener hasKeyListener = listener.getHasKeyListener();
+				ArrayList<ByteArrayWrapper> wrappers = singleKeyHasListeners.get(hasKeyListener);
+				if(wrappers == null)
+					singleKeyHasListeners.put(hasKeyListener,
+							(wrappers = new ArrayList<ByteArrayWrapper>(1)));
+				wrappers.add(wrapper);
+			}
 		}
 		if (logMINOR)
 			Logger.minor(this, "Added pending keys to "+this+" : size now "+keyListeners.size()+" : "+listener);
@@ -260,11 +286,30 @@ abstract class ClientRequestSchedulerBase {
 	
 	public boolean removePendingKeys(KeyListener listener) {
 		boolean ret;
+		byte[] wantedKey = listener.getWantedKey();
+		ByteArrayWrapper wrapper = wantedKey != null ? new ByteArrayWrapper(saltKey(wantedKey)) : null;
+		ArrayList<KeyListener> keyListeners = this.keyListeners;
 		synchronized (this) {
+			if(wantedKey != null)
+				keyListeners = singleKeyListeners.get(wrapper);
+			if(keyListeners == null)
+				ret = false;
+			else {
 			ret = keyListeners.remove(listener);
 			while(logMINOR && keyListeners.remove(listener))
 				Logger.error(this, "Still in pending keys after removal, must be in twice or more: "+listener, new Exception("error"));
+			}
 			listener.onRemove();
+			if (ret && wantedKey != null) {
+				if (keyListeners.isEmpty())
+					singleKeyHasListeners.remove(wrapper);
+				HasKeyListener hasKeylistener = listener.getHasKeyListener();
+				ArrayList<ByteArrayWrapper> wrappers = singleKeyHasListeners.get(hasKeylistener);
+				if (wrappers != null) {
+					if(wrappers.remove(wrapper) && wrappers.isEmpty())
+						singleKeyHasListeners.remove(hasKeylistener);
+				}
+			}
 		}
 		if (logMINOR)
 			Logger.minor(this, "Removed pending keys from "+this+" : size now "+keyListeners.size()+" : "+listener, new Exception("debug"));
@@ -287,20 +332,61 @@ abstract class ClientRequestSchedulerBase {
 				Logger.normal(this, "Removed pending keys from "+this+" : size now "+keyListeners.size()+" : "+listener);
 			}
 		}
+		ArrayList<ByteArrayWrapper> wrappers = singleKeyHasListeners.remove(hasListener);
+		if (wrappers != null) {
+			for (ByteArrayWrapper wrapper: wrappers) {
+				ArrayList<KeyListener> listeners = singleKeyListeners.get(wrapper);
+				if (listeners == null) continue;
+				for (Iterator<KeyListener> i = listeners.iterator(); i.hasNext();) {
+					KeyListener listener = i.next();
+					if(listener.getHasKeyListener() == hasListener) {
+						found = true;
+						i.remove();
+						listener.onRemove();
+						//Logger.normal(this, "Removed pending singleKeys from "+this+" : size now "+singleKeyListeners.size()+" : "+listener);
+					}
+				}
+				if(found && listeners.isEmpty())
+					singleKeyListeners.remove(wrapper);
+			}
+		}
 		return found;
 	}
 	
-	public short getKeyPrio(Key key, short priority, ObjectContainer container, ClientContext context) {
-		assert(key instanceof NodeSSK == isSSKScheduler);
-		byte[] saltedKey = saltKey(key);
+	private synchronized ArrayList<KeyListener> probablyMatches(Key key, byte[] saltedKey) {
 		ArrayList<KeyListener> matches = null;
-		synchronized(this) {
-			for(KeyListener listener : keyListeners) {
+		final ByteArrayWrapper wrapper = new ByteArrayWrapper(saltedKey);
+		ArrayList<KeyListener> listeners = singleKeyListeners.get(wrapper);
+		if (listeners != null) {
+			for(KeyListener listener : listeners) {
 				if(!listener.probablyWantKey(key, saltedKey)) continue;
 				if(matches == null) matches = new ArrayList<KeyListener> ();
+				/*
+				if(matches.contains(listener)) {
+					Logger.error(this, "In matches twice, presumably in keyListeners twice?: "+listener);
+					continue;
+				}
+				*/
 				matches.add(listener);
 			}
 		}
+		for(KeyListener listener : keyListeners) {
+			if(!listener.probablyWantKey(key, saltedKey)) continue;
+			if(matches == null) matches = new ArrayList<KeyListener> ();
+			/*
+			if(matches.contains(listener)) {
+				Logger.error(this, "In matches twice, presumably in keyListeners twice?: "+listener);
+				continue;
+			}
+			*/
+			matches.add(listener);
+		}
+		return matches;
+	}
+	public short getKeyPrio(Key key, short priority, ObjectContainer container, ClientContext context) {
+		assert(key instanceof NodeSSK == isSSKScheduler);
+		byte[] saltedKey = saltKey(key);
+		ArrayList<KeyListener> matches = probablyMatches(key, saltedKey);
 		if(matches == null) return priority;
 		for(KeyListener listener : matches) {
 			short prio = listener.definitelyWantKey(key, saltedKey, container, sched.clientContext);
@@ -312,6 +398,10 @@ abstract class ClientRequestSchedulerBase {
 	
 	public synchronized long countWaitingKeys(ObjectContainer container) {
 		long count = 0;
+		for(ArrayList<KeyListener> listeners: singleKeyListeners.values()) {
+			for(KeyListener listener : listeners)
+				count += listener.countKeys();
+		}
 		for(KeyListener listener : keyListeners)
 			count += listener.countKeys();
 		return count;
@@ -320,14 +410,7 @@ abstract class ClientRequestSchedulerBase {
 	public boolean anyWantKey(Key key, ObjectContainer container, ClientContext context) {
 		assert(key instanceof NodeSSK == isSSKScheduler);
 		byte[] saltedKey = saltKey(key);
-		ArrayList<KeyListener> matches = null;
-		synchronized(this) {
-			for(KeyListener listener : keyListeners) {
-				if(!listener.probablyWantKey(key, saltedKey)) continue;
-				if(matches == null) matches = new ArrayList<KeyListener> ();
-				matches.add(listener);
-			}
-		}
+		ArrayList<KeyListener> matches = probablyMatches(key, saltedKey);
 		if(matches != null) {
 			for(KeyListener listener : matches) {
 				if(listener.definitelyWantKey(key, saltedKey, container, sched.clientContext) >= 0)
@@ -340,6 +423,14 @@ abstract class ClientRequestSchedulerBase {
 	public synchronized boolean anyProbablyWantKey(Key key, ClientContext context) {
 		assert(key instanceof NodeSSK == isSSKScheduler);
 		byte[] saltedKey = saltKey(key);
+		final ByteArrayWrapper wrapper = new ByteArrayWrapper(saltedKey);
+		final ArrayList<KeyListener> listeners = singleKeyListeners.get(wrapper);
+		if (listeners != null) {
+			for(KeyListener listener : listeners) {
+				if(listener.probablyWantKey(key, saltedKey))
+					return true;
+			}
+		}
 		for(KeyListener listener : keyListeners) {
 			if(listener.probablyWantKey(key, saltedKey))
 				return true;
@@ -358,18 +449,7 @@ abstract class ClientRequestSchedulerBase {
 		}
 		assert(key instanceof NodeSSK == isSSKScheduler);
 		byte[] saltedKey = saltKey(key);
-		ArrayList<KeyListener> matches = null;
-		synchronized(this) {
-			for(KeyListener listener : keyListeners) {
-				if(!listener.probablyWantKey(key, saltedKey)) continue;
-				if(matches == null) matches = new ArrayList<KeyListener> ();
-				if(matches.contains(listener)) {
-					Logger.error(this, "In matches twice, presumably in keyListeners twice?: "+listener);
-					continue;
-				}
-				matches.add(listener);
-			}
-		}
+		ArrayList<KeyListener> matches = probablyMatches(key, saltedKey);
 		boolean ret = false;
 		if(matches != null) {
 			for(KeyListener listener : matches) {
@@ -448,18 +528,26 @@ abstract class ClientRequestSchedulerBase {
 			Logger.minor(this, buf.toString());
 	}
 
-	public SendableGet[] requestsForKey(Key key, ObjectContainer container, ClientContext context) {
-		ArrayList<SendableGet> list = null;
-		assert(key instanceof NodeSSK == isSSKScheduler);
-		byte[] saltedKey = saltKey(key);
-		synchronized(this) {
-		for(KeyListener listener : keyListeners) {
+	private ArrayList<SendableGet> requestsForKey(Key key, byte[] saltedKey, ArrayList<SendableGet> list, ArrayList<KeyListener> listeners, ObjectContainer container, ClientContext context) {
+		for(KeyListener listener : listeners) {
 			if(!listener.probablyWantKey(key, saltedKey)) continue;
 			SendableGet[] reqs = listener.getRequestsForKey(key, saltedKey, container, context);
 			if(reqs == null) continue;
 			if(list == null) list = new ArrayList<SendableGet>();
 			for(SendableGet req: reqs) list.add(req);
 		}
+		return list;
+	}
+	public SendableGet[] requestsForKey(Key key, ObjectContainer container, ClientContext context) {
+		ArrayList<SendableGet> list = null;
+		assert(key instanceof NodeSSK == isSSKScheduler);
+		byte[] saltedKey = saltKey(key);
+		final ByteArrayWrapper wrapper = new ByteArrayWrapper(saltedKey);
+		synchronized(this) {
+			final ArrayList<KeyListener> listeners = singleKeyListeners.get(wrapper);
+			if (listeners != null)
+				list = requestsForKey(key, saltedKey, list, listeners, container, context);
+			list = requestsForKey(key, saltedKey, list, keyListeners, container, context);
 		}
 		if(list == null) return null;
 		else return list.toArray(new SendableGet[list.size()]);
@@ -467,6 +555,8 @@ abstract class ClientRequestSchedulerBase {
 	
 	public void onStarted(ObjectContainer container, ClientContext context) {
 		keyListeners = new ArrayList<KeyListener>();
+		singleKeyListeners = new HashMap<ByteArrayWrapper,ArrayList<KeyListener> >();
+		singleKeyHasListeners = new IdentityHashMap<HasKeyListener,ArrayList<ByteArrayWrapper> >();
 		if(newPriorities == null) {
 			newPriorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 			if(persistent()) container.store(this);
@@ -594,8 +684,13 @@ abstract class ClientRequestSchedulerBase {
 	public byte[] globalSalt;
 	
 	public byte[] saltKey(Key key) {
+		return  saltKey(key instanceof NodeSSK ? ((NodeSSK)key).getPubKeyHash() : key.getRoutingKey());
+	}
+
+	private byte[] saltKey(byte[] key) {
+		if (key == null) return null;
 		MessageDigest md = SHA256.getMessageDigest();
-		md.update(key.getRoutingKey());
+		md.update(key);
 		md.update(globalSalt);
 		byte[] ret = md.digest();
 		SHA256.returnMessageDigest(md);
