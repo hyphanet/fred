@@ -763,11 +763,9 @@ public class Metadata implements Cloneable {
 		//mimeType = null;
 		//clientMetadata = new ClientMetadata(null);
 		manifestEntries = new HashMap<String, Metadata>();
-		int count = 0;
 		for (Iterator<Entry<String, Object>> i = dir.entrySet().iterator(); i.hasNext();) {
 			Map.Entry<String, Object> entry = i.next();
 			String key = entry.getKey().intern();
-			count++;
 			Object o = entry.getValue();
 			Metadata target;
 			if(o instanceof String) {
@@ -814,12 +812,10 @@ public class Metadata implements Cloneable {
 		//mimeType = null;
 		//clientMetadata = new ClientMetadata(null);
 		manifestEntries = new HashMap<String, Metadata>();
-		int count = 0;
 		for(Iterator<String> i = dir.keySet().iterator();i.hasNext();) {
 			String key = i.next().intern();
 			if(key.indexOf('/') != -1)
 				throw new IllegalArgumentException("Slashes in simple redirect manifest filenames! (slashes denote sub-manifests): "+key);
-			count++;
 			Object o = dir.get(key);
 			if(o instanceof Metadata) {
 				Metadata data = (Metadata) dir.get(key);
@@ -859,10 +855,8 @@ public class Metadata implements Cloneable {
 		mimeType = null;
 		clientMetadata = new ClientMetadata();
 		manifestEntries = new HashMap<String, Metadata>();
-		int count = 0;
 		for(Iterator<String> i = dir.keySet().iterator();i.hasNext();) {
 			String key = i.next().intern();
-			count++;
 			Object o = dir.get(key);
 			Metadata target;
 			if(o instanceof String) {

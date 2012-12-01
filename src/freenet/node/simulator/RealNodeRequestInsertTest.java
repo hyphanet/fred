@@ -117,7 +117,6 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         RunningAverage requestsAvg = new SimpleRunningAverage(100, 0.0);
         String baseString = System.currentTimeMillis() + " ";
 		int insertAttempts = 0;
-		int insertSuccesses = 0;
 		int fetchSuccesses = 0;
         while(true) {
             try {
@@ -168,7 +167,6 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 					insertAttempts++;
 					randomNode.clientCore.realPut(block, false, FORK_ON_CACHEABLE, false, false, REAL_TIME_FLAG);
 					Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
-					insertSuccesses++;
 				} catch (freenet.node.LowLevelPutException putEx) {
 					Logger.error(RealNodeRequestInsertTest.class, "Insert failed: "+ putEx);
 					System.err.println("Insert failed: "+ putEx);

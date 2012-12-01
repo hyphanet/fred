@@ -947,7 +947,6 @@ public class PeerManager {
 		 * - Timed out, backed-off peers, least recently timed out first.
 		 * - 
 		 */
-		PeerNode closest = null;
 		double closestDistance = Double.MAX_VALUE;
 		// If closestDistance is FOAF, this is the real distance.
 		// Reset every time closestDistance is.
@@ -973,8 +972,6 @@ public class PeerManager {
 
 		if(key != null)
 			entry = node.failureTable.getTimedOutNodesList(key);
-
-		int count = 0;
 		
 		double[] selectionRates = new double[peers.length];
 		double totalSelectionRate = 0.0;
@@ -1081,13 +1078,11 @@ public class PeerManager {
 					Logger.minor(this, "Ignoring, further than self >maxDiff=" + maxDiff);
 				continue;
 			}
-			count++;
 			if(logMINOR)
 				Logger.minor(this, "p.loc=" + loc + ", target=" + target + ", d=" + Location.distance(loc, target) + " usedD=" + diff + " timedOut=" + timedOut + " for " + p.getPeer());
 			boolean chosen = false;
 			if(diff < closestDistance || (Math.abs(diff - closestDistance) < Double.MIN_VALUE*2 && (direct || realDiff < closestRealDistance))) {
 				closestDistance = diff;
-				closest = p;
 				chosen = true;
 				closestRealDistance = realDiff;
 				if(logMINOR)

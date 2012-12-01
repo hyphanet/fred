@@ -1751,7 +1751,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		// This is passed in. We should not remove it, because the caller (ClientPutDir) should remove it.
 		container.activate(ctx, 1);
 		ctx.removeFrom(container);
-		ArrayList<Metadata> metas = null;
 		if(baseMetadata != null) {
 			container.activate(baseMetadata, 1);
 			baseMetadata.removeFrom(container);

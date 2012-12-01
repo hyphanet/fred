@@ -306,7 +306,6 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 			CacheFetchResult result) {
 		// FIXME allow the charset if it's the same
 		if(fctx.charset != null) return false;
-		boolean okay = false;
 		if(fctx.overrideMIME == null) {
 			return true;
 		} else {

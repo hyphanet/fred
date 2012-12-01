@@ -112,7 +112,6 @@ public class PersistentBlobTempBucket implements Bucket {
 				if (closed) throw new IOException("closed");
 				
 				long max;
-				long idx;
 				synchronized(PersistentBlobTempBucket.this) {
 					if(freed) throw new IOException("Bucket freed during read");
 					max = Math.min(blockSize, size);

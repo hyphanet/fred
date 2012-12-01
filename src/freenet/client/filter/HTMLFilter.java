@@ -2553,13 +2553,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				rev = rev.toLowerCase();
 				
 				StringTokenizer tok = new StringTokenizer(rev, " ");
-				int i=0;
 				sb = new StringBuffer(rev.length());
 				
 				while (tok.hasMoreTokens()) {
 					String token = tok.nextToken();
 					if(!isStandardLinkType(token)) continue;
-					i++;
 					if(sb.length() == 0)
 						sb.append(token);
 					else {
@@ -2792,7 +2790,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				} else if ((http_equiv != null) && (name == null)) {
 					if (http_equiv.equalsIgnoreCase("Expires")) {
 						try {
-							Date d = ToadletContextImpl.parseHTTPDate(content);
+							ToadletContextImpl.parseHTTPDate(content);
 							hn.put("http-equiv", http_equiv);
 							hn.put("content", content);
 						} catch (ParseException e) {
