@@ -1365,7 +1365,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				// FIXME more intelligent (cheaper) merging algorithm, e.g. considering the ranges in each.
 				HashSet<Key> check = new HashSet<Key>();
 				for(USKWatchingKeys.KeyList.StoreSubChecker checker : checkers) {
-					if(checker == null) continue;
 					for(Key k : checker.keysToCheck) {
 						if(!check.add(k)) continue;
 						keys[ptr++] = k;
