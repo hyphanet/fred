@@ -377,6 +377,7 @@ public class ToadletContextImpl implements ToadletContext {
 				String firstLine = lis.readLine(32768, 128, false); // ISO-8859-1 or US-ASCII, _not_ UTF-8
 				if (firstLine == null) {
 					sock.close();
+					lis.close();
 					return;
 				} else if (firstLine.equals("")) {
 					continue;
@@ -387,11 +388,15 @@ public class ToadletContextImpl implements ToadletContext {
 				
 				String[] split = firstLine.split(" ");
 				
-				if(split.length != 3)
+				if(split.length != 3) {
+					lis.close();
 					throw new ParseException("Could not parse request line (split.length="+split.length+"): "+firstLine, -1);
+				}
 				
-				if(!split[2].startsWith("HTTP/1."))
+				if(!split[2].startsWith("HTTP/1.")) {
+					lis.close();
 					throw new ParseException("Unrecognized protocol "+split[2], -1);
+				}
 				
 				URI uri;
 				try {
@@ -399,6 +404,7 @@ public class ToadletContextImpl implements ToadletContext {
 					if(logMINOR) Logger.minor(ToadletContextImpl.class, "URI: "+uri+" path "+uri.getPath()+" host "+uri.getHost()+" frag "+uri.getFragment()+" port "+uri.getPort()+" query "+uri.getQuery()+" scheme "+uri.getScheme());
 				} catch (URISyntaxException e) {
 					sendURIParseError(sock.getOutputStream(), true, e);
+					lis.close();
 					return;
 				}
 				String method = split[0];
@@ -409,12 +415,14 @@ public class ToadletContextImpl implements ToadletContext {
 					String line = lis.readLine(32768, 128, false); // ISO-8859 or US-ASCII, not UTF-8
 					if (line == null) {
 						sock.close();
+						lis.close();
 						return;
 					}
 					//System.out.println("Length="+line.length()+": "+line);
 					if(line.length() == 0) break;
 					int index = line.indexOf(':');
 					if (index < 0) {
+						lis.close();
 						throw new ParseException("Missing ':' in request header field", -1);
 					}
 					String before = line.substring(0, index).toLowerCase();
@@ -448,6 +456,7 @@ public class ToadletContextImpl implements ToadletContext {
 					if (slen == null) {
 						ctx.shouldDisconnect = true;
 						ctx.sendReplyHeaders(400, "Bad Request", null, null, -1);
+						lis.close();
 						return;
 					}
 				} else if (METHODS_CANNOT_HAVE_DATA.contains(method)) {
@@ -456,6 +465,7 @@ public class ToadletContextImpl implements ToadletContext {
 					if (slen != null) {
 						ctx.shouldDisconnect = true;
 						ctx.sendReplyHeaders(400, "Bad Request", null, null, -1);
+						lis.close();
 						return;
 					}
 				}
@@ -468,6 +478,7 @@ public class ToadletContextImpl implements ToadletContext {
 					} catch (NumberFormatException e) {
 						ctx.shouldDisconnect = true;
 						ctx.sendReplyHeaders(400, "Bad Request", null, null, -1);
+						lis.close();
 						return;
 					}
 					if(allowPost && ((!container.publicGatewayMode()) || ctx.isAllowedFullAccess())) {
@@ -481,6 +492,7 @@ public class ToadletContextImpl implements ToadletContext {
 							sendError(sock.getOutputStream(), 403, "Forbidden", "Content not allowed in this configuration", true, null);
 						}
 						ctx.close();
+						lis.close();
 						return;
 					}
 				} else {
@@ -492,6 +504,7 @@ public class ToadletContextImpl implements ToadletContext {
 				if (!container.enableExtendedMethodHandling()) {
 					if (!METHODS_RESTRICTED_MODE.contains(method)) {
 						sendError(sock.getOutputStream(), 403, "Forbidden", "Method not allowed in this configuration", true, null);
+						lis.close();
 						return;
 					}
 				}

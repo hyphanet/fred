@@ -243,6 +243,7 @@ public class LongTermPushPullCHKTest {
 				if(!dateString.equals(split[0])) continue;
 				int fieldnum = 3 + i * 2;
 				if(line.length() >= fieldnum) continue; // Possible ran twice???
+				br.close();
 				return new FreenetURI(split[fieldnum]);
 			}
 			return null;

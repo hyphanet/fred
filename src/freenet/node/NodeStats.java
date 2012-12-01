@@ -2125,7 +2125,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public boolean isTestnetEnabled() {
-		return node.isTestnetEnabled();
+		return Node.isTestnetEnabled();
 	}
 
 	public boolean getRejectReasonsTable(HTMLNode table) {
@@ -2215,11 +2215,27 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private long sskInsertSentBytes;
 	private long sskInsertRcvdBytes;
 
+	public long getSskInsertRcvdBytes() {
+		return sskInsertRcvdBytes;
+	}
+
 	public synchronized void requestSentBytes(boolean ssk, int x) {
 		if(ssk)
 			sskRequestSentBytes += x;
 		else
 			chkRequestSentBytes += x;
+	}
+
+	public long getChkInsertRcvdBytes() {
+		return chkInsertRcvdBytes;
+	}
+
+	public long getChkRequestRcvdBytes() {
+		return chkRequestRcvdBytes;
+	}
+
+	public long getSskRequestRcvdBytes() {
+		return sskRequestRcvdBytes;
 	}
 
 	public synchronized void requestReceivedBytes(boolean ssk, int x) {
@@ -2311,6 +2327,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	public synchronized long getOffersSentBytesSent() {
 		return offerKeysSentBytes;
+	}
+
+	public long getOfferKeysRcvdBytes() {
+		return offerKeysRcvdBytes;
 	}
 
 	private long swappingRcvdBytes;
@@ -2451,6 +2471,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		networkColoringReceivedBytesCounter += x;
 	}
 
+	public long getNetworkColoringReceivedBytesCounter() {
+		return networkColoringReceivedBytesCounter;
+	}
+
 	public synchronized void networkColoringSentBytes(int x) {
 		networkColoringSentBytesCounter += x;
 	}
@@ -2461,6 +2485,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	private long pingBytesReceived;
 	private long pingBytesSent;
+	
+	public long getPingBytesReceived() {
+		return pingBytesReceived;
+	}
 
 	public synchronized void pingCounterReceived(int x) {
 		pingBytesReceived += x;
@@ -2596,6 +2624,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return probeRequestSentBytes;
 	}
 
+	public long getProbeRequestRcvdBytes() {
+		return probeRequestRcvdBytes;
+	}
+
 	private long routedMessageBytesRcvd;
 	private long routedMessageBytesSent;
 
@@ -2626,8 +2658,16 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return routedMessageBytesSent;
 	}
 
+	public long getRoutedMessageBytesRcvd() {
+		return routedMessageBytesRcvd;
+	}
+
 	private long disconnBytesReceived;
 	private long disconnBytesSent;
+	
+	public long getDisconnBytesReceived() {
+		return disconnBytesReceived;
+	}
 
 	void disconnBytesReceived(int x) {
 		this.disconnBytesReceived += x;
@@ -2671,6 +2711,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return initialMessagesBytesSent;
 	}
 
+	public long getInitialMessagesBytesReceived() {
+		return initialMessagesBytesReceived;
+	}
+
 	private long changedIPBytesReceived;
 	private long changedIPBytesSent;
 
@@ -2699,6 +2743,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	public long getChangedIPBytesSent() {
 		return changedIPBytesSent;
+	}
+
+	public long getChangedIPBytesReceived() {
+		return changedIPBytesReceived;
 	}
 
 	private long nodeToNodeRcvdBytes;
@@ -2731,6 +2779,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return nodeToNodeSentBytes;
 	}
 	
+	public long getNodeToNodeRcvdBytes() {
+		return nodeToNodeRcvdBytes;
+	}
+
 	private long allocationNoticesCounterBytesReceived;
 	private long allocationNoticesCounterBytesSent;
 	
@@ -2754,8 +2806,11 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		public void sentPayload(int x) {
 			// Ignore
 		}
-		
 	};
+	
+	public long getAllocationNoticesCounterBytesReceived() {
+		return allocationNoticesCounterBytesReceived;
+	}
 	
 	public long getAllocationNoticesBytesSent() {
 		return allocationNoticesCounterBytesSent;
@@ -2791,8 +2846,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return foafCounterBytesSent;
 	}
 
-	
-	
+	public long getFoafCounterBytesReceived() {
+		return foafCounterBytesReceived;
+	}
 
 	private long notificationOnlySentBytes;
 

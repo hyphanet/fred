@@ -269,9 +269,9 @@ public class NewPacketFormatTest extends TestCase {
 		};
 		NewPacketFormat sender = new NewPacketFormat(senderNode, 0, 0);
 		PeerMessageQueue senderQueue = new PeerMessageQueue();
-		NullBasePeerNode receiverNode = new NullBasePeerNode();
-		NewPacketFormat receiver = new NewPacketFormat(receiverNode, 0, 0);
-		SessionKey receiverKey = new SessionKey(null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0), 1);
+		//NullBasePeerNode receiverNode = new NullBasePeerNode();
+		//NewPacketFormat receiver = new NewPacketFormat(receiverNode, 0, 0);
+		//SessionKey receiverKey = new SessionKey(null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0), 1);
 
 		senderQueue.queueAndEstimateSize(new MessageItem(new byte[128], null, false, null, (short) 0, false, true), 1024);
 

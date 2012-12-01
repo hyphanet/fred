@@ -2,8 +2,6 @@ package freenet.store;
 
 import java.io.IOException;
 
-import com.sleepycat.je.DatabaseException;
-
 import freenet.node.stats.StoreAccessStats;
 
 public class NullFreenetStore<T extends StorableBlock> implements FreenetStore<T> {

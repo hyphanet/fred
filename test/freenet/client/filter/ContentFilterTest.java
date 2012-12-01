@@ -5,26 +5,22 @@ package freenet.client.filter;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.LinkedHashMap;
 
 import junit.framework.TestCase;
-import freenet.client.filter.ContentFilter;
-import freenet.client.filter.DataFilterException;
-import freenet.client.filter.GenericReadFilterCallback;
-import freenet.client.filter.HTMLFilter;
 import freenet.client.filter.ContentFilter.FilterStatus;
-import freenet.client.filter.HTMLFilter.*;
+import freenet.client.filter.HTMLFilter.ParsedTag;
+import freenet.client.filter.HTMLFilter.TagVerifier;
 import freenet.clients.http.ExternalLinkToadlet;
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.io.ArrayBucket;
-
 import freenet.support.TestProperty;
+import freenet.support.io.ArrayBucket;
 
 /**
  * A simple meta-test to track regressions of the content-filter

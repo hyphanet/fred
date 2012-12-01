@@ -911,10 +911,10 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			// Ignore
 		}
 
-		public void clearMetadata(ObjectContainer container) {
+		/*public void clearMetadata(ObjectContainer container) {
 			metadata = null;
 			if(persistent) container.store(this);
-		}
+		}*/
 
 		@Override
 		public void removeFrom(ObjectContainer container, ClientContext context) {
@@ -1181,7 +1181,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		return phToStart.toArray(new PutHandler[phToStart.size()]);
 	}
 
-	private synchronized void debugDecompose(String title) {
+	/*private synchronized void debugDecompose(String title) {
 		System.out.println("=== BEGIN: "+title);
 		System.out.println("Running PutHandlers: "+ runningPutHandlers.size());
 		for (PutHandler ph: runningPutHandlers) {
@@ -1204,7 +1204,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			System.out.println("\t"+ph);
 		}
 		System.out.println("===   END: "+title);
-	}
+	}*/
 
 	/**
 	 * Implement the pack logic
@@ -1296,7 +1296,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			if (item instanceof HashMap) {
 				if(persistent())
 					container.activate(item, 2);
-				m = makeMetadata((HashMap)item, container);
+				m = makeMetadata((HashMap<String, Object>) item, container);
 				if (m == null) throw new NullPointerException("HERE!!");
 			} else {
 				if (persistent()) {
@@ -1751,7 +1751,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		// This is passed in. We should not remove it, because the caller (ClientPutDir) should remove it.
 		container.activate(ctx, 1);
 		ctx.removeFrom(container);
-		ArrayList<Metadata> metas = null;
 		if(baseMetadata != null) {
 			container.activate(baseMetadata, 1);
 			baseMetadata.removeFrom(container);

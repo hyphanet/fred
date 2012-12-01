@@ -1120,6 +1120,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			try {
 				dis.readFully(buf, 0, toRead);
 			} catch (IOException e) {
+				dis.close();
 				Logger.error(this, "Could not read bytes "+written+" to "+(written + toRead)+" from file "+toReturn.filename+" which is supposed to be "+size+" bytes ("+toReturn.filename.length()+ ')');
 				return;
 			}

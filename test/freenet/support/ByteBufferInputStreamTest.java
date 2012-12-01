@@ -21,6 +21,8 @@ public class ByteBufferInputStreamTest extends TestCase {
 			fail();
 		} catch (EOFException e) {
 			// expected
+		} finally {
+			bis.close();
 		}
 	}
 }

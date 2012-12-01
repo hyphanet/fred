@@ -21,25 +21,24 @@ import java.nio.charset.Charset;
 import java.nio.charset.MalformedInputException;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Stack;
 import java.util.StringTokenizer;
-import java.util.Map.Entry;
 
 import freenet.clients.http.ToadletContextImpl;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLDecoder;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
-import freenet.support.Logger.LogLevel;
 import freenet.support.io.NullWriter;
 
 public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
@@ -108,6 +107,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			r = new BufferedReader(new InputStreamReader(strm, parseCharset), 4096);
 		} catch (UnsupportedEncodingException e) {
 			strm.close();
+			w.close();
 			throw e;
 		}
 		HTMLParseContext pc = new HTMLParseContext(r, w, null, new NullFilterCallback(), true);
@@ -2553,13 +2553,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				rev = rev.toLowerCase();
 				
 				StringTokenizer tok = new StringTokenizer(rev, " ");
-				int i=0;
 				sb = new StringBuffer(rev.length());
 				
 				while (tok.hasMoreTokens()) {
 					String token = tok.nextToken();
 					if(!isStandardLinkType(token)) continue;
-					i++;
 					if(sb.length() == 0)
 						sb.append(token);
 					else {
@@ -2567,10 +2565,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						sb.append(token);
 					}
 				}
-				
-				
 				parsedRev = sb.toString();
-				
 			}
 
 			// Allow no rel or rev, even on <link>, as per HTML spec.
@@ -2792,7 +2787,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				} else if ((http_equiv != null) && (name == null)) {
 					if (http_equiv.equalsIgnoreCase("Expires")) {
 						try {
-							Date d = ToadletContextImpl.parseHTTPDate(content);
+							ToadletContextImpl.parseHTTPDate(content);
 							hn.put("http-equiv", http_equiv);
 							hn.put("content", content);
 						} catch (ParseException e) {

@@ -65,7 +65,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 	 * The filter is only ever subtracted from, so if we crash we just have a
 	 * few more false positives. On a fast node with slow disk, writing on every 
 	 * completed block could become a major bottleneck. */
-	private static final int WRITE_DELAY = 60*1000;
+	//private static final int WRITE_DELAY = 60*1000;
 	private short prio;
 	/** Used only if we reach the per-segment bloom filters. The overall bloom
 	 * filters use the global salt. */
