@@ -47,7 +47,7 @@ public class BitArray implements WritableToDataOutputStream {
 	 */
 	public BitArray(DataInput dis) throws IOException {
 		_size = dis.readInt();
-		_bits = new byte[(_size / 8) + (_size % 8 == 0 ? 0 : 1)];
+		_bits = new byte[(_size + 7) / 8];
 		dis.readFully(_bits);
 	}
 	
@@ -55,13 +55,13 @@ public class BitArray implements WritableToDataOutputStream {
 		_size = dis.readInt();
 		if (_size<=0 || _size>maxSize)
 			throw new IOException("Unacceptable bitarray size: "+_size);
-		_bits = new byte[(_size / 8) + (_size % 8 == 0 ? 0 : 1)];
+		_bits = new byte[(_size + 7) / 8];
 		dis.readFully(_bits);
 	}
 
 	public BitArray(int size) {
 		_size = size;
-		_bits = new byte[(size / 8) + (size % 8 == 0 ? 0 : 1)];
+		_bits = new byte[(size + 7) / 8];
 	}
 
 	public BitArray(BitArray src) {
@@ -111,7 +111,7 @@ public class BitArray implements WritableToDataOutputStream {
 	}
 
 	public static int serializedLength(int size) {
-		return ((size / 8) + (size % 8 == 0 ? 0 : 1)) + 4;
+		return ((size + 7) / 8) + 4;
 	}
 
 	public int getSize() {
@@ -191,7 +191,7 @@ public class BitArray implements WritableToDataOutputStream {
 		if(_size == size) return;
 		int oldSize = _size;
 		_size = size;
-		int bytes = (size / 8) + (size % 8 == 0 ? 0 : 1);
+		int bytes = (size + 7) / 8;
 		if(_bits.length != bytes) {
 			_bits = Arrays.copyOf(_bits, bytes);
 		}

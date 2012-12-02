@@ -159,8 +159,9 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		fullKeyLength = callback.fullKeyLength();
 		dataBlockLength = callback.dataLength();
 
-		hdPadding = ((headerBlockLength + dataBlockLength) % 512 == 0 ? 0
-		        : 512 - (headerBlockLength + dataBlockLength) % 512);
+		hdPadding =
+			((headerBlockLength + dataBlockLength + 512 - 1) & ~(512-1)) -
+			(headerBlockLength + dataBlockLength);
 
 		this.random = random;
 		storeSize = maxKeys;
@@ -1065,10 +1066,8 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				ByteBuffer bf = ByteBuffer.wrap(b);
 
 				// start from next 4KB boundary => align to x86 page size
-				if (oldMetaLen % 4096 != 0)
-					oldMetaLen += 4096 - (oldMetaLen % 4096);
-				if (currentHdLen % 4096 != 0)
-					currentHdLen += 4096 - (currentHdLen % 4096);
+				oldMetaLen = (oldMetaLen + 4096 - 1) & ~(4096 - 1);
+				currentHdLen = (currentHdLen + 4096 - 1) & ~(4096 - 1);
 
 				storeFileOffsetReady = -1;
 

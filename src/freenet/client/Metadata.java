@@ -505,8 +505,8 @@ public class Metadata implements Cloneable {
 						// No extra check blocks, so before 1251.
 						if(blocksPerSegment == 128) {
 							// Is the last segment small enough that we can't have used even splitting?
-							int segs = (int)Math.ceil(((double)countDataBlocks) / 128);
-							int segSize = (int)Math.ceil(((double)countDataBlocks) / ((double)segs));
+							int segs = (countDataBlocks + 127) / 128;
+							int segSize = (countDataBlocks + segs - 1) / segs;
 							if(segSize == 128) {
 								// Could be either
 								minCompatMode = CompatibilityMode.COMPAT_1250_EXACT;
@@ -571,8 +571,7 @@ public class Metadata implements Cloneable {
 				}
 				checkBlocksPerSegment = checkBlocks;
 
-				segmentCount = (splitfileBlocks / (blocksPerSegment + crossCheckBlocks)) +
-					(splitfileBlocks % (blocksPerSegment + crossCheckBlocks) == 0 ? 0 : 1);
+				segmentCount = (splitfileBlocks + blocksPerSegment + crossCheckBlocks - 1) / (blocksPerSegment + crossCheckBlocks);
 					
 				// Onion, 128/192.
 				// Will be segmented.

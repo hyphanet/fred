@@ -4035,7 +4035,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	public int getSigParamsByteLength() {
 		int bitLen = this.peerCryptoGroup.getQ().bitLength();
-		int byteLen = bitLen / 8 + (bitLen % 8 != 0 ? 1 : 0);
+		int byteLen = (bitLen + 7) / 8;
 		return byteLen;
 	}
 

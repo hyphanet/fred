@@ -158,8 +158,7 @@ public class HexUtil {
 	 * bitset
 	 */
 	public static int countBytesForBits(int size) {
-		// Brackets matter here! == takes precedence over the rest
-		return (size/8) + ((size % 8) == 0 ? 0:1);
+		return (size + 7)/8;
 	}
 
 

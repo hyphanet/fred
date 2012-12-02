@@ -64,7 +64,7 @@ public class PartiallyReceivedBulk {
 		this.blockSize = blockSize;
 		this.raf = raf;
 		this.usm = usm;
-		long blocks = size / blockSize + (size % blockSize > 0 ? 1 : 0);
+		long blocks = (size + blockSize - 1) / blockSize;
 		if(blocks > Integer.MAX_VALUE)
 			throw new IllegalArgumentException("Too big");
 		this.blocks = (int)blocks;
