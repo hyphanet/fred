@@ -1748,6 +1748,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 		private boolean done = false;
 		private boolean disconnected = false;
+		private boolean sent = false;
 
 		public synchronized void waitForSend(long maxWaitInterval) throws NotConnectedException {
 			long now = System.currentTimeMillis();
@@ -1771,8 +1772,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		public void acknowledged() {
 			synchronized(this) {
 				if(!done)
+				{
+					if (!sent) {
 					// Can happen due to lag.
 					Logger.normal(this, "Acknowledged but not sent?! on " + this + " for " + PeerNode.this+" - lag ???");
+					}
+				}
 				else
 					return;
 				done = true;
@@ -1799,8 +1804,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 		@Override
 		public void sent() {
-			// Ignore.
 			// It might have been lost, we wait until it is acked.
+			synchronized(this) {
+				sent = true;
+			}
 		}
 	}
 
