@@ -303,12 +303,16 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				case SECURITY_PHYSICAL:
 					//Go back to the beginning from the warning or the physical security page.
 					return WIZARD_STEP.WELCOME;
+				default:
+					//do nothing
 			}
 		} else  if (preset == WIZARD_PRESET.LOW) {
 			switch (currentStep) {
 				case DATASTORE_SIZE:
 					//Go back to the beginning from the datastore page.
 					return WIZARD_STEP.WELCOME;
+				default:
+					//do nothing
 			}
 		}
 
@@ -332,6 +336,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			case BANDWIDTH_MONTHLY:
 			case BANDWIDTH_RATE:
 				return WIZARD_STEP.BANDWIDTH;
+			default:
+				//do nothing
 		}
 
 		//Should be matched by this point, unknown step.
