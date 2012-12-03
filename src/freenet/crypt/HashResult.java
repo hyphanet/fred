@@ -9,7 +9,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.support.Logger;
 
-public class HashResult implements Comparable {
+public class HashResult implements Comparable<HashResult> {
 
 	public final HashType type;
 	public final byte[] result;
@@ -72,8 +72,7 @@ public class HashResult implements Comparable {
 	}
 
 	@Override
-	public int compareTo(Object arg0) {
-		HashResult h = (HashResult)arg0;
+	public int compareTo(HashResult h) {
 		if(type.bitmask == h.type.bitmask) return 0;
 		if(type.bitmask > h.type.bitmask) return 1;
 		/* else if(type.bitmask < h.type.bitmask) */ return -1;
