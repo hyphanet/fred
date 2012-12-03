@@ -11,7 +11,6 @@ import freenet.client.FailureCodeTracker;
 import freenet.client.InsertException;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
-import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
 
 public class PutFailedMessage extends FCPMessage {

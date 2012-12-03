@@ -24,7 +24,6 @@ import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.OpennetDisabledException;
 import freenet.node.PeerNode;
-import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
 
 public class AddPeer extends FCPMessage {

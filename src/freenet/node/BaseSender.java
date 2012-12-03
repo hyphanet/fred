@@ -9,8 +9,6 @@ import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
-import freenet.io.comm.PeerContext;
-import freenet.io.comm.SlowAsyncMessageFilterCallback;
 import freenet.keys.Key;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
@@ -19,9 +17,8 @@ import freenet.node.PeerNode.SlotWaiter;
 import freenet.node.PeerNode.SlotWaiterFailedException;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
-import freenet.support.io.NativeThread;
+import freenet.support.TimeUtil;
 
 /** Base class for request and insert senders.
  * Mostly concerned with what happens *before and up to* we get the Accepted.

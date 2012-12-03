@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
-import java.io.UnsupportedEncodingException;
-
 import com.db4o.ObjectContainer;
 
 import freenet.node.Node;

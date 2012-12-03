@@ -5,17 +5,16 @@ package freenet.node.fcp;
 
 import java.net.MalformedURLException;
 
-import freenet.client.async.ManifestPutter;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
+import freenet.client.async.ManifestPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.HexUtil;
-import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
-import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
+import freenet.support.compress.InvalidCompressionCodecException;
 
 /**
  * Put a directory, rather than a file.

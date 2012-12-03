@@ -16,7 +16,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Vector;
 
-import freenet.clients.http.ConfigToadlet;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.l10n.NodeL10n;

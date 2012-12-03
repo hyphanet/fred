@@ -10,7 +10,6 @@ import java.util.Vector;
 
 import com.db4o.ObjectContainer;
 
-import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 

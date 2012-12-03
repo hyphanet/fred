@@ -19,7 +19,6 @@ import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.Closer;
 import freenet.support.io.CountedOutputStream;
-import freenet.support.io.NoCloseProxyOutputStream;
 import freenet.support.io.HeaderStreams;
 
 /**

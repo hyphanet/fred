@@ -6,12 +6,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Vector;
 
-import freenet.keys.Key;
 import freenet.keys.NodeCHK;
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Ticker;
-import freenet.support.Logger.LogLevel;
 
 public class RequestTracker {
 	
