@@ -1296,7 +1296,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			if (item instanceof HashMap) {
 				if(persistent())
 					container.activate(item, 2);
-				m = makeMetadata((HashMap)item, container);
+				m = makeMetadata((HashMap<String, Object>) item, container);
 				if (m == null) throw new NullPointerException("HERE!!");
 			} else {
 				if (persistent()) {

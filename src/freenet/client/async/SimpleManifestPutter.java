@@ -791,10 +791,11 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			Object o = manifestElements.get(name);
 			if (o instanceof HashMap) {
 				HashMap<String,Object> subMap = new HashMap<String,Object>();
+				HashMap<String,Object> elements = Metadata.forceMap(o);
 				putHandlersByName.put(name, subMap);
-				makePutHandlers(Metadata.forceMap(o), subMap, ZipPrefix+name+ '/', persistent);
+				makePutHandlers(elements, subMap, ZipPrefix+name+ '/', persistent);
 				if(logDEBUG)
-					Logger.debug(this, "Sub map for "+name+" : "+subMap.size()+" elements from "+((HashMap)o).size());
+					Logger.debug(this, "Sub map for "+name+" : "+subMap.size()+" elements from "+elements.size());
 			} else {
 				ManifestElement element = (ManifestElement) o;
 				String mimeType = element.mimeOverride;
@@ -1239,15 +1240,16 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 				}
 			} else if (o instanceof HashMap) {
 				HashMap<String,Object> subMap = new HashMap<String,Object>();
+				HashMap<String,Object> elements = Metadata.forceMap(o);
 				if (persistent()) {
 					container.activate(o, 2); // Depth 1 doesn't load the elements...
 				}
 				namesToByteArrays.put(name, subMap);
 				if(logMINOR) {
-					Logger.minor(this, "Putting hashmap into base metadata: "+name+" size "+((HashMap)o).size()+" active = "+(container == null ? "null" : Boolean.toString(container.ext().isActive(o))));
+					Logger.minor(this, "Putting hashmap into base metadata: "+name+" size "+elements.size()+" active = "+(container == null ? "null" : Boolean.toString(container.ext().isActive(o))));
 					Logger.minor(this, "Putting directory: "+name);
 				}
-				namesToByteArrays(Metadata.forceMap(o), subMap, container);
+				namesToByteArrays(elements, subMap, container);
 			} else
 				throw new IllegalStateException();
 		}
