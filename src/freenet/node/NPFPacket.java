@@ -4,6 +4,7 @@
 package freenet.node;
 
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Collections;
 import java.util.Iterator;
@@ -13,6 +14,7 @@ import java.util.Random;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import freenet.crypt.Util;
 import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger.LogLevel;
@@ -32,11 +34,11 @@ class NPFPacket {
 
 	private int sequenceNumber;
 	private final SortedSet<Integer> acks = new TreeSet<Integer>();
-	private final LinkedList<MessageFragment> fragments = new LinkedList<MessageFragment>();
+	private final List<MessageFragment> fragments = new ArrayList<MessageFragment>();
 	/** Messages that are specific to a single packet and can be happily lost if it is lost. 
 	 * They must be processed before the rest of the messages.
 	 * With early versions, these might be bogus, so be careful parsing them. */
-	private final LinkedList<byte[]> lossyMessages = new LinkedList<byte[]>();
+	private final List<byte[]> lossyMessages = new LinkedList<byte[]>();
 	private boolean error;
 	private int length = 5; //Sequence number (4), numAcks(1)
 
@@ -164,13 +166,12 @@ class NPFPacket {
 			} else {
 				messageLength = fragmentLength;
 			}
-			byte[] fragmentData = new byte[fragmentLength];
 			if((offset + fragmentLength) > plaintext.length) {
 				Logger.error(NPFPacket.class, "Fragment doesn't fit in the received packet: offset is "+offset+" fragment length is "+fragmentLength+" plaintext length is "+plaintext.length+" message length "+messageLength+" message ID "+messageID+(pn == null ? "" : (" from "+pn.shortToString())));
 				packet.error = true;
 				break;
 			}
-			System.arraycopy(plaintext, offset, fragmentData, 0, fragmentLength);
+			byte[] fragmentData = Arrays.copyOfRange(plaintext, offset, offset + fragmentLength);
 			offset += fragmentLength;
 
 			packet.fragments.add(new MessageFragment(shortMessage, isFragmented, firstFragment,
@@ -200,8 +201,7 @@ class NPFPacket {
 				packet.lossyMessages.clear();
 				return origOffset;
 			}
-			byte[] fragment = new byte[len];
-			System.arraycopy(plaintext, offset, fragment, 0, len);
+			byte[] fragment = Arrays.copyOfRange(plaintext, offset, offset + len);
 			packet.lossyMessages.add(fragment);
 			offset += len;
 			if(offset == plaintext.length) return offset;
@@ -293,9 +293,7 @@ class NPFPacket {
 
 		if(offset < buf.length) {
 			//More room, so add padding
-			byte[] padding = new byte[buf.length - offset];
-			paddingGen.nextBytes(padding);
-			System.arraycopy(padding, 0, buf, offset, padding.length);
+			Util.randomBytes(paddingGen, buf, offset, buf.length - offset);
 
 			byte b = (byte) (buf[offset] & 0x9F); //Make sure firstFragment and isFragmented isn't set
 			if(b == 0x1F)
@@ -376,7 +374,7 @@ class NPFPacket {
 		return error;
         }
 
-	public LinkedList<MessageFragment> getFragments() {
+	public List<MessageFragment> getFragments() {
 		return fragments;
         }
 

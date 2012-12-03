@@ -173,8 +173,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		this.splitfileAlgo = splitfileAlgo;
 		if(crossCheckBlocks != 0) {
 			// Cross check blocks count as data blocks for most purposes.
-			this.dataBlocks = new Bucket[origDataBlocks.length + crossCheckBlocks];
-			System.arraycopy(origDataBlocks, 0, dataBlocks, 0, origDataBlocks.length);
+			this.dataBlocks = Arrays.copyOf(origDataBlocks, origDataBlocks.length + crossCheckBlocks);
 			origDataBlocks = dataBlocks;
 		} else {
 			this.dataBlocks = origDataBlocks;

@@ -1,5 +1,7 @@
 package freenet.support;
 
+import java.util.Arrays;
+
 
 /**
  * A class that takes logging messages and distributes them to LoggerHooks.
@@ -51,8 +53,7 @@ public class LoggerHookChain extends LoggerHook {
      * Add a hook which will be called every time a message is logged
      */
     public synchronized void addHook(LoggerHook lh) {
-        LoggerHook[] newHooks = new LoggerHook[hooks.length+1];
-        System.arraycopy(hooks, 0, newHooks, 0, hooks.length);
+        LoggerHook[] newHooks = Arrays.copyOf(hooks, hooks.length+1);
         newHooks[hooks.length] = lh;
         hooks = newHooks;
     }
@@ -76,9 +77,7 @@ public class LoggerHookChain extends LoggerHook {
         if(x == newHooks.length) {
             hooks = newHooks;
         } else {
-            LoggerHook[] finalHooks = new LoggerHook[x];
-            System.arraycopy(newHooks, 0, finalHooks, 0, x);
-            hooks = finalHooks;
+            hooks = Arrays.copyOf(newHooks, x);
         }
     }
 

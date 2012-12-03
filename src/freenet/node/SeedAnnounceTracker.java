@@ -186,9 +186,8 @@ public class SeedAnnounceTracker {
 			}
 			
 		});
-		TrackerItem[] top = new TrackerItem[Math.min(count, items.length)];
-		System.arraycopy(items, items.length - top.length, top, 0, top.length);
-		return top;
+		int topLength = Math.min(count, items.length);
+		return Arrays.copyOfRange(items, items.length - topLength, items.length);
 	}
 
 	private String l10nStats(String key) {

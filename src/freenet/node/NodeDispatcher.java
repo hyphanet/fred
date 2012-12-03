@@ -161,9 +161,6 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			return handleTime(m, source);
 		} else if(spec == DMT.FNPUptime) {
 			return handleUptime(m, source);
-		} else if(spec == DMT.FNPSentPackets) {
-			source.handleSentPackets(m);
-			return true;
 		}else if(spec == DMT.FNPSentPacketsTransport) {
 			String transportName = (String) m.getObject(DMT.TRANSPORT_NAME);
 			source.handleSentPackets(m, transportName);
@@ -231,9 +228,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				} else {
 					// A few extra can happen by accident. Just use the first 20.
 					Logger.normal(this, "Too many locations from "+source.toString()+" : "+locs.length+" could be an accident, using the first "+OpennetManager.MAX_PEERS_FOR_SCALING);
-					double[] firstLocs = new double[OpennetManager.MAX_PEERS_FOR_SCALING];
-					System.arraycopy(locs, 0, firstLocs, 0, OpennetManager.MAX_PEERS_FOR_SCALING);
-					locs = firstLocs;
+					locs = Arrays.copyOf(locs, OpennetManager.MAX_PEERS_FOR_SCALING);
 				}
 			}
 			// We are on darknet and we trust our peers OR we are on opennet

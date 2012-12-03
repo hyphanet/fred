@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 
 import com.db4o.ObjectContainer;
 
@@ -78,9 +79,7 @@ public class SimpleReadOnlyArrayBucket implements Bucket {
 	@Override
 	public Bucket createShadow() {
 		if(buf.length < 256*1024) {
-			byte[] newBuf = new byte[length];
-			System.arraycopy(buf, offset, newBuf, 0, length);
-			return new SimpleReadOnlyArrayBucket(newBuf);
+			return new SimpleReadOnlyArrayBucket(Arrays.copyOfRange(buf, offset, offset+length));
 		}
 		return null;
 	}

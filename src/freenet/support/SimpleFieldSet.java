@@ -235,11 +235,15 @@ public class SimpleFieldSet {
 	}
 
     private static String unsplit(String[] strings) {
+		if (strings.length == 0) return "";
     	StringBuilder sb = new StringBuilder();
-    	for(int i=0;i<strings.length;i++) {
-    		if(i != 0) sb.append(MULTI_VALUE_CHAR);
-    		sb.append(strings[i]);
+    	for(String s: strings) {
+    		sb.append(s);
+			sb.append(MULTI_VALUE_CHAR);
     	}
+		// assert(sb.length() > 0) -- always true as strings.length != 0
+		// remove last MULTI_VALUE_CHAR
+		sb.deleteCharAt(sb.length()-1);
     	return sb.toString();
     }
 

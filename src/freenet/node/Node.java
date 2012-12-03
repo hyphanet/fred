@@ -1138,6 +1138,9 @@ public class Node implements TimeSkewDetectorCallback {
 
 		// Setup RNG if needed : DO NOT USE IT BEFORE THAT POINT!
 		if (r == null) {
+			// Preload freenet.crypt.Util class (selftest can delay Yarrow startup)
+			freenet.crypt.Util.mdProviders.size();
+
 			File seed = userDir.file("prng.seed");
 			FileUtil.setOwnerRW(seed);
 			entropyGatheringThread.start();
@@ -3829,7 +3832,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// Which presumably are exploitable.
 		// So we can't recommend people switch just yet. :(
 		
-//		if(isOracle && Rijndael.isJCACrippled) {
+//		if(isOracle && Rijndael.AesCtrProvider == null) {
 //			if(!(FileUtil.detectedOS == FileUtil.OperatingSystem.Windows || FileUtil.detectedOS == FileUtil.OperatingSystem.MacOS))
 //				clientCore.alerts.register(new SimpleUserAlert(true, l10n("usingOracleTitle"), l10n("usingOracle"), l10n("usingOracleTitle"), UserAlert.WARNING));
 //		}
@@ -5185,23 +5188,6 @@ public class Node implements TimeSkewDetectorCallback {
 		return false;
 	}
 
-	public void drawClientCacheBox(HTMLNode storeSizeInfobox) {
-		HTMLNode div = storeSizeInfobox.addChild("div");
-		div.addChild("p", "Client cache max size: "+this.maxClientCacheKeys+" keys");
-		div.addChild("p", "Client cache size: CHK "+this.chkClientcache.keyCount()+" pubkey "+this.pubKeyClientcache.keyCount()+" SSK "+this.sskClientcache.keyCount());
-		div.addChild("p", "Client cache misses: CHK "+this.chkClientcache.misses()+" pubkey "+this.pubKeyClientcache.misses()+" SSK "+this.sskClientcache.misses());
-		div.addChild("p", "Client cache hits: CHK "+this.chkClientcache.hits()+" pubkey "+this.pubKeyClientcache.hits()+" SSK "+this.sskClientcache.hits());
-	}
-
-	public void drawSlashdotCacheBox(HTMLNode storeSizeInfobox) {
-		HTMLNode div = storeSizeInfobox.addChild("div");
-		div.addChild("p", "Slashdot/ULPR cache max size: "+maxSlashdotCacheKeys+" keys");
-		div.addChild("p", "Slashdot/ULPR cache size: CHK "+this.chkSlashdotcache.keyCount()+" pubkey "+this.pubKeySlashdotcache.keyCount()+" SSK "+this.sskSlashdotcache.keyCount());
-		div.addChild("p", "Slashdot/ULPR cache misses: CHK "+this.chkSlashdotcache.misses()+" pubkey "+this.pubKeySlashdotcache.misses()+" SSK "+this.sskSlashdotcache.misses());
-		div.addChild("p", "Slashdot/ULPR cache hits: CHK "+this.chkSlashdotcache.hits()+" pubkey "+this.pubKeySlashdotcache.hits()+" SSK "+this.sskSlashdotcache.hits());
-		div.addChild("p", "Slashdot/ULPR cache writes: CHK "+this.chkSlashdotcache.writes()+" pubkey "+this.pubKeySlashdotcache.writes()+" SSK "+this.sskSlashdotcache.writes());
-	}
-
 	private boolean enteredPassword;
 
 	public void setMasterPassword(String password, boolean inFirstTimeWizard) throws AlreadySetPasswordException, MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
@@ -5226,9 +5212,7 @@ public class Node implements TimeSkewDetectorCallback {
 			enteredPassword = true;
 			if(!clientCacheAwaitingPassword) {
 				if(inFirstTimeWizard) {
-					byte[] copied = new byte[keys.clientCacheMasterKey.length];
-					System.arraycopy(keys.clientCacheMasterKey, 0, copied, 0, copied.length);
-					cachedClientCacheKey = copied;
+					cachedClientCacheKey = keys.clientCacheMasterKey.clone();
 					// Wipe it if haven't specified datastore size in 10 minutes.
 					ticker.queueTimedJob(new Runnable() {
 						@Override
@@ -5349,11 +5333,6 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 
-	private long completeInsertsStored;
-	private long completeInsertsOldStore;
-	private long completeInsertsTotal;
-	private long completeInsertsNotStoredWouldHaveStored;	// DEBUGGING: should be 0 but can be nonzero if e.g. a request originates from a backed off node; should be very low in any case; FIXME remove eventually
-
 	/** Should we commit the block to the store rather than the cache?
 	 *
 	 * <p>We used to check whether we are a sink by checking whether any peer has
@@ -5381,60 +5360,26 @@ public class Node implements TimeSkewDetectorCallback {
     	double target = key.toNormalizedDouble();
     	double myDist = Location.distance(myLoc, target);
 
-    	boolean wouldHaveStored = !peers.isCloserLocation(target, MIN_UPTIME_STORE_KEY);
-
     	// First, calculate whether we would have stored it using the old formula.
-		if(wouldHaveStored)
-			completeInsertsOldStore++;
-
     	if(logMINOR) Logger.minor(this, "Should store for "+key+" ?");
     	// Don't sink store if any of the nodes we routed to, or our predecessor, is both high-uptime and closer to the target than we are.
     	if(source != null && !source.isLowUptime()) {
     		if(Location.distance(source, target) < myDist) {
     	    	if(logMINOR) Logger.minor(this, "Not storing because source is closer to target for "+key+" : "+source);
-    	    	synchronized(this) {
-    	    		completeInsertsTotal++;
-    	    		if(wouldHaveStored) {
-    	    			if(logMINOR) Logger.minor(this, "Would have stored but haven't stored");
-    	    			completeInsertsNotStoredWouldHaveStored++;
-    	    		}
-    	    	}
-    			return false;
     		}
     	}
     	for(PeerNode pn : routedTo) {
     		if(Location.distance(pn, target) < myDist && !pn.isLowUptime()) {
     	    	if(logMINOR) Logger.minor(this, "Not storing because peer "+pn+" is closer to target for "+key+" his loc "+pn.getLocation()+" my loc "+myLoc+" target is "+target);
-    	    	synchronized(this) {
-    	    		completeInsertsTotal++;
-    	    		if(wouldHaveStored) {
-    	    			if(logMINOR) Logger.minor(this, "Would have stored but haven't stored");
-    	    			completeInsertsNotStoredWouldHaveStored++;
-    	    		}
-    	    	}
     			return false;
     		} else {
     			if(logMINOR) Logger.minor(this, "Should store maybe, peer "+pn+" loc = "+pn.getLocation()+" my loc is "+myLoc+" target is "+target+" low uptime is "+pn.isLowUptime());
     		}
     	}
-    	synchronized(this) {
-    		completeInsertsStored++;
-    		completeInsertsTotal++;
-    	}
     	if(logMINOR) Logger.minor(this, "Should store returning true for "+key+" target="+target+" myLoc="+myLoc+" peers: "+routedTo.length);
     	return true;
 	}
 
-
-	private final DecimalFormat fix3p3pct = new DecimalFormat("##0.000%");
-
-	public synchronized void drawStoreStats(HTMLNode infobox) {
-		if (completeInsertsTotal != 0) {
-			infobox.addChild("p", "Stored inserts: "+completeInsertsStored+" of "+completeInsertsTotal+" ("+fix3p3pct.format((completeInsertsStored*1.0)/completeInsertsTotal)+")");
-			infobox.addChild("p", "Would have stored: "+completeInsertsOldStore+" of "+completeInsertsTotal+" ("+fix3p3pct.format((completeInsertsOldStore*1.0)/completeInsertsTotal)+")");
-			infobox.addChild("p", "Would have stored but wasn't stored: "+completeInsertsNotStoredWouldHaveStored+" of "+completeInsertsTotal+" ("+fix3p3pct.format((completeInsertsNotStoredWouldHaveStored*1.0)/completeInsertsTotal)+")");
-		}
-	}
 
 	public boolean getWriteLocalToDatastore() {
 		return writeLocalToDatastore;

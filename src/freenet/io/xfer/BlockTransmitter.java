@@ -19,7 +19,7 @@
 package freenet.io.xfer;
 
 import java.util.HashSet;
-import java.util.LinkedList;
+import java.util.Deque;
 
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.AsyncMessageFilterCallback;
@@ -80,7 +80,7 @@ public class BlockTransmitter {
 	final long _uid;
 	private final boolean realTime;
 	final PartiallyReceivedBlock _prb;
-	private LinkedList<Integer> _unsent;
+	private Deque<Integer> _unsent;
 	private BlockSenderJob _senderThread = new BlockSenderJob();
 	private BitArray _sentPackets;
 	private long timeAllSent = -1;

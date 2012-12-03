@@ -13,6 +13,11 @@ import freenet.pluginmanager.TransportPlugin;
  */
 public interface BasePeerNode extends PeerContext {
 
+
+	void reportIncomingBytes(int length);
+
+	void reportOutgoingBytes(int length);
+
 	DecodingMessageGroup startProcessingDecryptedMessages(int count);
 	
 	void reportPing(long rt);

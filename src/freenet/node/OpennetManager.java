@@ -18,6 +18,7 @@ import java.util.EnumMap;
 import java.util.Enumeration;
 import java.util.Map;
 
+import freenet.crypt.Util;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
@@ -429,6 +430,7 @@ public class OpennetManager {
 			if(!nodeToAddNow.checkPeerNodeUnique())
 				return false;
 		}
+		int maxPeers = getNumberOfConnectedPeersToAim();
 		synchronized(this) {
 			if(nodeToAddNow != null &&
 					peersLRU.contains(nodeToAddNow)) {
@@ -438,7 +440,7 @@ public class OpennetManager {
 			}
 			if(nodeToAddNow != null)
 				connectionAttempts.put(connectionType, connectionAttempts.get(connectionType)+1);
-			if(getSize() < getNumberOfConnectedPeersToAim() || outdated) {
+			if(getSize() < maxPeers || outdated) {
 				if(nodeToAddNow != null) {
 					if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" as opennet peers list not full");
 					if(addAtLRU)
@@ -470,14 +472,14 @@ public class OpennetManager {
 		}
 		boolean canAdd = true;
 		ArrayList<OpennetPeerNode> dropList = new ArrayList<OpennetPeerNode>();
+		maxPeers = getNumberOfConnectedPeersToAim();
 		synchronized(this) {
-			int maxPeers = getNumberOfConnectedPeersToAim();
 			int size = getSize();
 			if(size == maxPeers && nodeToAddNow == null) {
 				// Allow an offer to be predicated on throwing out a connected node,
 				// provided that we meet the other criteria e.g. time since last added,
 				// node isn't too new.
-				PeerNode toDrop = peerToDrop(noDisconnect, false, nodeToAddNow != null, connectionType);
+				PeerNode toDrop = peerToDrop(noDisconnect, false, nodeToAddNow != null, connectionType, maxPeers);
 				if(toDrop == null) {
 					if(logMINOR)
 						Logger.minor(this, "No more peers to drop (in first bit), still "+peersLRU.size()+" peers, cannot accept peer"+(nodeToAddNow == null ? "" : nodeToAddNow.toString()));
@@ -496,7 +498,7 @@ public class OpennetManager {
 			} else while(canAdd && (size = getSize()) > maxPeers - ((nodeToAddNow == null || outdated) ? 0 : 1)) {
 				OpennetPeerNode toDrop;
 				// can drop peers which are over the limit
-				toDrop = peerToDrop(noDisconnect, false, nodeToAddNow != null, connectionType);
+				toDrop = peerToDrop(noDisconnect, false, nodeToAddNow != null, connectionType, maxPeers);
 				if(toDrop == null) {
 					if(logMINOR)
 						Logger.minor(this, "No more peers to drop, still "+peersLRU.size()+" peers, cannot accept peer"+(nodeToAddNow == null ? "" : nodeToAddNow.toString()));
@@ -619,12 +621,13 @@ public class OpennetManager {
 	}
 
 	void dropExcessPeers() {
-		while(getSize() > getNumberOfConnectedPeersToAim()) {
+		int maxPeers = getNumberOfConnectedPeersToAim();
+		while(getSize() > maxPeers) {
 			if(logMINOR)
 				Logger.minor(this, "Dropping opennet peers: currently "+peersLRU.size());
 			PeerNode toDrop;
-			toDrop = peerToDrop(false, false, false, null);
-			if(toDrop == null) toDrop = peerToDrop(false, true, false, null);
+			toDrop = peerToDrop(false, false, false, null, maxPeers);
+			if(toDrop == null) toDrop = peerToDrop(false, true, false, null, maxPeers);
 			if(toDrop == null) return;
 			synchronized(this) {
 				peersLRU.remove(toDrop);
@@ -654,12 +657,13 @@ public class OpennetManager {
 		return x;
 	}
 
-	synchronized OpennetPeerNode peerToDrop(boolean noDisconnect, boolean force, boolean addingNode, ConnectionType connectionType) {
-		if(getSize() < getNumberOfConnectedPeersToAim()) {
+	private OpennetPeerNode peerToDrop(boolean noDisconnect, boolean force, boolean addingNode, ConnectionType connectionType, int maxPeers) {
+		if(getSize() < maxPeers) {
 			// Don't drop any peers
 			if(logMINOR) Logger.minor(this, "peerToDrop(): Not dropping any peer (force="+force+" addingNode="+addingNode+") because don't need to");
 			return null;
-		} else {
+		}
+		synchronized(this) {
 			EnumMap<NOT_DROP_REASON, Integer> map = null;
 			if(addingNode) map = new EnumMap<NOT_DROP_REASON, Integer>(NOT_DROP_REASON.class);
 			// Do we want it?
@@ -819,7 +823,7 @@ public class OpennetManager {
 		return max;
 	}
 
-	/** Get the target number of opennet peers */
+	/** Get the target number of opennet peers. Do not call while holding locks. */
 	public int getNumberOfConnectedPeersToAim() {
 		int max = getNumberOfConnectedPeersToAimIncludingDarknet();
 		return max - node.peers.countConnectedDarknetPeers();
@@ -843,8 +847,8 @@ public class OpennetManager {
 			Logger.error(this, "Noderef too big: "+noderef.length+" bytes");
 			return false;
 		}
-		node.fastWeakRandom.nextBytes(padded); // FIXME implement nextBytes(buf,offset, length)
 		System.arraycopy(noderef, 0, padded, 0, noderef.length);
+		Util.randomBytes(node.fastWeakRandom, padded, noderef.length, padded.length-noderef.length);
 		long xferUID = node.random.nextLong();
 		Message msg2 = isReply ? DMT.createFNPOpennetConnectReplyNew(uid, xferUID, noderef.length, padded.length) :
 			DMT.createFNPOpennetConnectDestinationNew(uid, xferUID, noderef.length, padded.length);
@@ -887,8 +891,8 @@ public class OpennetManager {
 	public void finishSentAnnouncementRequest(PeerNode peer, byte[] noderef, ByteCounter ctr,
 			long xferUID) throws NotConnectedException {
 		byte[] padded = new byte[paddedSize(noderef.length)];
-		node.fastWeakRandom.nextBytes(padded); // FIXME implement nextBytes(buf,offset, length)
 		System.arraycopy(noderef, 0, padded, 0, noderef.length);
+		Util.randomBytes(node.fastWeakRandom, padded, noderef.length, padded.length-noderef.length);
 		innerSendOpennetRef(xferUID, padded, peer, ctr, null);
 	}
 
@@ -1085,8 +1089,7 @@ public class OpennetManager {
 			}
 			return null;
 		}
-		byte[] noderef = new byte[realLength];
-		System.arraycopy(buf, 0, noderef, 0, realLength);
+		byte[] noderef = Arrays.copyOf(buf, realLength);
 		return noderef;
 	}
 

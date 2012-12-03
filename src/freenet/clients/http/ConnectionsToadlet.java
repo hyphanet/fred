@@ -480,7 +480,9 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				}
 
 				double totalSelectionRate = 0.0;
-				for(PeerNodeStatus status : peerNodeStatuses) {
+				//calculate the total selection rate using all peers, not just the peers for the current mode,
+				PeerNodeStatus[] allPeerNodeStatuses = node.peers.getPeerNodeStatuses(true);
+				for(PeerNodeStatus status : allPeerNodeStatuses) {
 					totalSelectionRate += status.getSelectionRate();
 				}
 				for (int peerIndex = 0, peerCount = peerNodeStatuses.length; peerIndex < peerCount; peerIndex++) {					

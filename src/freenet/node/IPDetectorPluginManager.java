@@ -1,6 +1,7 @@
 package freenet.node;
 
 import java.net.InetAddress;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -377,10 +378,8 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		if(d == null) throw new NullPointerException();
 		synchronized(this) {
 			lastDetectAttemptEndedTime = -1;
-			FredPluginIPDetector[] newPlugins = new FredPluginIPDetector[plugins.length+1];
-			System.arraycopy(plugins, 0, newPlugins, 0, plugins.length);
-			newPlugins[plugins.length] = d;
-			plugins = newPlugins;
+			plugins = Arrays.copyOf(plugins, plugins.length+1);
+			plugins[plugins.length-1] = d;
 		}
 		if(logMINOR) Logger.minor(this, "Registering a new plugin : " + d);
 		maybeRun();
@@ -880,17 +879,15 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	
 	private SimpleUserAlert noConnectivityAlert;
 
-	public boolean isEmpty() {
+	public synchronized boolean isEmpty() {
 		return plugins.length == 0;
 	}
 
 	public void registerPortForwardPlugin(FredPluginPortForward forward) {
 		if(forward == null) throw new NullPointerException();
 		synchronized(this) {
-			FredPluginPortForward[] newForwardPlugins = new FredPluginPortForward[portForwardPlugins.length+1];
-			System.arraycopy(portForwardPlugins, 0, newForwardPlugins, 0, portForwardPlugins.length);
-			newForwardPlugins[portForwardPlugins.length] = forward;
-			portForwardPlugins = newForwardPlugins;
+			portForwardPlugins = Arrays.copyOf(portForwardPlugins, portForwardPlugins.length+1);
+			portForwardPlugins[portForwardPlugins.length-1] = forward;
 		}
 		if(logMINOR) Logger.minor(this, "Registering a new port forward plugin : " + forward);
 		forward.onChangePublicPorts(node.getPublicInterfacePorts(), this);

@@ -181,10 +181,8 @@ public class PluginManager {
 		toStart = pmconfig.getStringArr("loadplugin");
 
 		if(lastVersion < 1237 && contains(toStart, "XMLLibrarian") && !contains(toStart, "Library")) {
-			String[] newToStart = new String[toStart.length+1];
-			System.arraycopy(toStart, 0, newToStart, 0, toStart.length);
-			newToStart[toStart.length] = "Library";
-			toStart = newToStart;
+			toStart = Arrays.copyOf(toStart, toStart.length+1);
+			toStart[toStart.length-1] = "Library";
 			System.err.println("Loading Library plugin, replaces XMLLibrarian, when upgrading from pre-1237");
 		}
 
@@ -1116,7 +1114,7 @@ public class PluginManager {
 		addOfficialPlugin("Freereader", "index", false, 4, true, new FreenetURI("CHK@4PuSjXk4Z0Hdu04JLhdPHLyOVLljj8qVbjRn3rHVzvg,bDGYnuYj67Q4uzroPBEWAYWRk26bPzf-iQ4~Uo3S7mg,AAIC--8/Freereader.jar"));
 		addOfficialPlugin("Library", "index", false, 26, true, new FreenetURI("CHK@q~V5riY6S4hNm11BSPWgU8C5DA7Bem91upsKkzsV0Ms,qx2WP1hrDiB3iPqquosKln9jm~RRL5lKEEhRsGLThVY,AAIC--8/Library.jar"));
 		addOfficialPlugin("Spider", "index", false, 49, false, new FreenetURI("CHK@7a33HqOQZqqyxBwGhtx-JEPzEMTOaPql4sB-EIuMhjk,2ecFy5ttpAC2sDx5yvS19MDEdowMQpzagpdOg2I~Mh8,AAIC--8/Spider.jar"), false, false, true);
-		addOfficialPlugin("Freetalk", "communication", false, 13, true, new FreenetURI("CHK@zZDy-KwoZHYy4ZRpK9ZNNQb1vyespIIi9b-RPIyRM0k,EDHJbQpLtGSW4WHA23UHt6MpcoAp--dR7zmX-SGzzis,AAMC--8/Freetalk.jar"), false, false, false);
+		addOfficialPlugin("Freetalk", "communication", false, 13, true, new FreenetURI("CHK@zZDy-KwoZHYy4ZRpK9ZNNQb1vyespIIi9b-RPIyRM0k,EDHJbQpLtGSW4WHA23UHt6MpcoAp--dR7zmX-SGzzis,AAMC--8/Freetalk.jar"), false, false, true);
 		addOfficialPlugin("WebOfTrust", "communication", false, 12, true, new FreenetURI("CHK@Z6jitqIR4tJc9gOXih5cbTJxwnThweDvE5e-pTzetGM,vJfK3hmt06b-dF0yIbovPZlCUqTdgZ5-xsRzcslq1KU,AAIC--8/WebOfTrust.jar"), false, false, false); // from 35617f66afba287d98320843a521a9b395a5fbb3 (WoT build fix for headless)
 		addOfficialPlugin("FlogHelper", "communication", false, 26, true, new FreenetURI("CHK@DBzb9y3RozpB3kKcOallQsye1v83HI1O9wtNJweEzj4,3AXYzfyZI87nKy8uNAflktuOoBQo8Du~gDrRdbOW1z8,AAIC--8/FlogHelper.jar"), false, false, false);
 		} catch (MalformedURLException e) {

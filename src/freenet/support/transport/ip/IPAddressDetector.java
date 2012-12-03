@@ -8,18 +8,27 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
 
 import freenet.io.AddressIdentifier;
 import freenet.node.NodeIPDetector;
+import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.io.InetAddressComparator;
 
 /**
  * A class to autodetect our IP address(es)
  */
 
 public class IPAddressDetector implements Runnable {
+	
+	private static volatile boolean logDEBUG;
+
+	static {
+		Logger.registerClass(IPAddressDetector.class);
+	}
 	
 	//private String preferedAddressString = null;
 	private final int interval;
@@ -50,33 +59,48 @@ public class IPAddressDetector implements Runnable {
 
 	InetAddress[] lastAddressList = null;
 	long lastDetectedTime = -1;
-
-	/** 
-	 * Fetches the currently detected IP address. If not detected yet a detection is forced
-	 * @return Detected ip address
+	
+	/** Fetch the currently detected IP address. If not detected yet, run the
+	 * detection. DO NOT callback to detector.redetectAddresses().
+	 * @return
 	 */
-	public InetAddress[] getAddress() {
-		return getAddress(interval);
-	}
-
-	/**
-	 * Get the IP address
-         * @param recheckTime
-         * @return Detected ip address
-	 */
-	public InetAddress[] getAddress(long recheckTime) {
-		if(System.currentTimeMillis() > (lastDetectedTime + recheckTime))
+	public InetAddress[] getAddressNoCallback() {
+		if(System.currentTimeMillis() > (lastDetectedTime + interval)) {
 			checkpoint();
+		}
 		return lastAddressList == null ? new InetAddress[0] : lastAddressList;
 	}
 
+	/** 
+	 * Fetches the currently detected IP address. If not detected yet a detection is forced.
+	 * If the IP address list changes, call the callback on the detector, off-thread, using the
+	 * given Executor. This method is intended to be called by code other than the detector 
+	 * itself.
+	 * @return Detected ip addresses
+	 */
+	public InetAddress[] getAddress(Executor executor) {
+		assert(executor != null);
+		if(System.currentTimeMillis() > (lastDetectedTime + interval)) {
+			if(checkpoint()) {
+				executor.execute(new Runnable() {
+
+					@Override
+					public void run() {
+						detector.redetectAddress();
+					}
+					
+				});
+			}
+		}
+		return lastAddressList == null ? new InetAddress[0] : lastAddressList;
+	}
+	
 	boolean old = false;
 
 	/**
 	 * Execute a checkpoint - detect our internet IP address and log it
 	 */
-	protected synchronized void checkpoint() {
-		boolean logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
+	protected synchronized boolean checkpoint() {
 		List<InetAddress> addrs = new ArrayList<InetAddress>();
 
 		Enumeration<java.net.NetworkInterface> interfaces = null;
@@ -122,19 +146,25 @@ public class IPAddressDetector implements Runnable {
 					"Finished scanning interfaces");
 		}
 
-		// FIXME: what are we doing here? lastInetAddress is always null.
 		InetAddress[] oldAddressList = lastAddressList;
 		onGetAddresses(addrs);
 		lastDetectedTime = System.currentTimeMillis();
-		if(oldAddressList != lastAddressList && (oldAddressList == null && lastAddressList != null ||
-				oldAddressList != null && lastAddressList != null && !Arrays.equals(oldAddressList, lastAddressList))) {
-			// Something changed.
-			// Yes I know it could just have changed the order, but this is unlikely hopefully. FIXME.
-			detector.redetectAddress();
-		}
+		return addressListChanged(oldAddressList, lastAddressList);
 	}
 
-        /**
+	private boolean addressListChanged(InetAddress[] oldList,
+			InetAddress[] newList) {
+		if(oldList == null) return newList != null;
+		if(oldList == newList) return false;
+		if(oldList.length != newList.length) return true;
+		InetAddress[] a = Arrays.copyOf(oldList, oldList.length);
+		InetAddress[] b = Arrays.copyOf(newList, newList.length);
+		Arrays.sort(a, InetAddressComparator.COMPARATOR);
+		Arrays.sort(b, InetAddressComparator.COMPARATOR);
+		return !Arrays.deepEquals(a, b);
+	}
+
+		/**
          *
          * @return
          */
@@ -177,7 +207,6 @@ public class IPAddressDetector implements Runnable {
 	 */
 	protected void onGetAddresses(List<InetAddress> addrs) {
 		List<InetAddress> output = new ArrayList<InetAddress>();
-		boolean logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 		if (logDEBUG)
 			Logger.debug(
 				this,
@@ -225,7 +254,9 @@ public class IPAddressDetector implements Runnable {
 				// Ignore
 			}
 			try {
-				checkpoint();
+				if(checkpoint()) {
+					detector.redetectAddress();
+				}
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
 			}

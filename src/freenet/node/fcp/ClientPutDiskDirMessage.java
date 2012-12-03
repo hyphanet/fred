@@ -50,7 +50,7 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 
 	public ClientPutDiskDirMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		super(fs);
-		allowUnreadableFiles = Fields.stringToBool(fs.get("AllowUnreadableFiles"), false);
+		allowUnreadableFiles = fs.getBoolean("AllowUnreadableFiles", false);
 		String fnam = fs.get("Filename");
 		if(fnam == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Filename missing", identifier, global);

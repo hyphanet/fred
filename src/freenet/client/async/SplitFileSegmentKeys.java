@@ -12,6 +12,7 @@ import com.db4o.ObjectContainer;
 import freenet.keys.ClientCHK;
 import freenet.keys.NodeCHK;
 import freenet.support.Logger;
+import freenet.support.Fields;
 
 /** Contains the keys for a splitfile segment, in an efficient compressed form. These are 
  * not changed, so the object never needs to be stored once created; this is good as it is
@@ -61,37 +62,30 @@ public class SplitFileSegmentKeys implements Cloneable {
 		byte[] rkey = key.getRoutingKey();
 		byte[] ckey = null;
 		byte[] extra = null;
-		// Arrays.equals() doesn't do offsets, so implement ourselves
 		int x = 0;
-outer:	for(int i=0;i<(dataBlocks + checkBlocks);i++) {
+		for(int i=0;i<(dataBlocks + checkBlocks);i++) {
 			int oldX = x;
 			x += NodeCHK.KEY_LENGTH;
 			if(ignoreSlots != null && ignoreSlots[i]) {
 				continue;
 			}
-			for(int j=0;j<NodeCHK.KEY_LENGTH;j++) {
-				if(routingKeys[j + oldX] != rkey[j])
-					continue outer;
-			}
+			if(!Fields.byteArrayEqual(routingKeys, rkey, oldX, 0, NodeCHK.KEY_LENGTH))
+				continue;
 			if(ckey == null) ckey = key.getCryptoKey();
 			assert(ClientCHK.CRYPTO_KEY_LENGTH == NodeCHK.KEY_LENGTH);
 			// FIXME USE THE RIGHT CONSTANT, DONT ASSUME THE TWO LENGTHS ARE THE SAME
 			if(commonDecryptKey != null) {
 				if(!Arrays.equals(commonDecryptKey, ckey)) continue;
 			} else {
-				for(int j=0;j<NodeCHK.KEY_LENGTH;j++) {
-					if(decryptKeys[j + oldX] != ckey[j])
-						continue outer;
-				}
+				if(!Fields.byteArrayEqual(decryptKeys,ckey,oldX,0,NodeCHK.KEY_LENGTH))
+					continue;
 			}
 			if(extra == null) extra = key.getExtra();
 			if(commonExtraBytes != null) {
 				if(!Arrays.equals(commonExtraBytes, extra)) continue;
 			} else {
-				int offset = i * EXTRA_BYTES_LENGTH;
-				for(int j=0;j<EXTRA_BYTES_LENGTH;j++) {
-					if(extraBytesForKeys[j + offset] != extra[j]) continue outer;
-				}
+				if(!Fields.byteArrayEqual(extraBytesForKeys, extra, i * EXTRA_BYTES_LENGTH, 0, EXTRA_BYTES_LENGTH))
+					continue;
 			}
 			return i;
 		}
@@ -100,18 +94,15 @@ outer:	for(int i=0;i<(dataBlocks + checkBlocks);i++) {
 	
 	public int getBlockNumber(NodeCHK key, boolean[] ignoreSlots) {
 		byte[] rkey = key.getRoutingKey();
-		// Arrays.equals() doesn't do offsets, so implement ourselves
 		int x = 0;
-outer:	for(int i=0;i<(dataBlocks + checkBlocks);i++) {
+		for(int i=0;i<(dataBlocks + checkBlocks);i++) {
 			int oldX = x;
 			x += NodeCHK.KEY_LENGTH;
 			if(ignoreSlots != null && ignoreSlots[i]) {
 				continue;
 			}
-			for(int j=0;j<NodeCHK.KEY_LENGTH;j++) {
-				if(routingKeys[j + oldX] != rkey[j])
-					continue outer;
-			}
+			if(!Fields.byteArrayEqual(routingKeys, rkey, oldX, 0, NodeCHK.KEY_LENGTH))
+				continue;
 			return i;
 		}
 		return -1;
@@ -120,18 +111,15 @@ outer:	for(int i=0;i<(dataBlocks + checkBlocks);i++) {
 	public int[] getBlockNumbers(NodeCHK key, boolean[] ignoreSlots) {
 		ArrayList<Integer> results = null;
 		byte[] rkey = key.getRoutingKey();
-		// Arrays.equals() doesn't do offsets, so implement ourselves
 		int x = 0;
-outer:	for(int i=0;i<(dataBlocks + checkBlocks);i++) {
+		for(int i=0;i<(dataBlocks + checkBlocks);i++) {
 			int oldX = x;
 			x += NodeCHK.KEY_LENGTH;
 			if(ignoreSlots != null && ignoreSlots[i]) {
 				continue;
 			}
-			for(int j=0;j<NodeCHK.KEY_LENGTH;j++) {
-				if(routingKeys[j + oldX] != rkey[j])
-					continue outer;
-			}
+			if(!Fields.byteArrayEqual(routingKeys, rkey, oldX, 0, NodeCHK.KEY_LENGTH))
+				continue;
 			if(results == null) results = new ArrayList<Integer>();
 			results.add(i);
 		}
@@ -161,26 +149,24 @@ outer:	for(int i=0;i<(dataBlocks + checkBlocks);i++) {
 		byte[] decryptKey;
 		if(commonDecryptKey != null) {
 			if(copy) {
-				decryptKey = new byte[ClientCHK.CRYPTO_KEY_LENGTH];
-				System.arraycopy(commonDecryptKey, 0, decryptKey, 0, ClientCHK.CRYPTO_KEY_LENGTH);
+				decryptKey = commonDecryptKey.clone();
 			} else {
 				decryptKey = commonDecryptKey;
 			}
 		} else {
-			decryptKey = new byte[ClientCHK.CRYPTO_KEY_LENGTH];
-			System.arraycopy(decryptKeys, x * ClientCHK.CRYPTO_KEY_LENGTH, decryptKey, 0, ClientCHK.CRYPTO_KEY_LENGTH);
+			int offset = x * ClientCHK.CRYPTO_KEY_LENGTH;
+			decryptKey = Arrays.copyOfRange(decryptKeys, offset, offset + ClientCHK.CRYPTO_KEY_LENGTH);
 		}
 		byte[] extra;
 		if(commonExtraBytes != null) {
 			if(copy) {
-				extra = new byte[EXTRA_BYTES_LENGTH];
-				System.arraycopy(commonExtraBytes, 0, extra, 0, EXTRA_BYTES_LENGTH);
+				extra = commonExtraBytes.clone();
 			} else {
 				extra = commonExtraBytes;
 			}
 		} else {
-			extra = new byte[EXTRA_BYTES_LENGTH];
-			System.arraycopy(extraBytesForKeys, x * EXTRA_BYTES_LENGTH, extra, 0, EXTRA_BYTES_LENGTH);
+			int offset = x * EXTRA_BYTES_LENGTH;
+			extra = Arrays.copyOfRange(extraBytesForKeys, offset, offset + EXTRA_BYTES_LENGTH);
 		}
 		try {
 			return new ClientCHK(routingKey, decryptKey, extra);
@@ -191,14 +177,14 @@ outer:	for(int i=0;i<(dataBlocks + checkBlocks);i++) {
 	}
 
 	private NodeCHK getNodeKey(int x, boolean copy) {
-		byte[] routingKey = new byte[32];
-		System.arraycopy(routingKeys, x * NodeCHK.KEY_LENGTH, routingKey, 0, NodeCHK.KEY_LENGTH);
+		int xr = x * NodeCHK.KEY_LENGTH;
+		byte[] routingKey = Arrays.copyOfRange(routingKeys, xr, xr + NodeCHK.KEY_LENGTH);
 		byte[] extra;
 		if(commonExtraBytes != null) {
 			extra = commonExtraBytes;
 		} else {
-			extra = new byte[EXTRA_BYTES_LENGTH];
-			System.arraycopy(extraBytesForKeys, x * EXTRA_BYTES_LENGTH, extra, 0, EXTRA_BYTES_LENGTH);
+			int xe = x * EXTRA_BYTES_LENGTH;
+			extra = Arrays.copyOfRange(extraBytesForKeys, xe, xe + EXTRA_BYTES_LENGTH);
 		}
 		
 		byte cryptoAlgorithm = ClientCHK.getCryptoAlgorithmFromExtra(extra);

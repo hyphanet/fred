@@ -9,6 +9,8 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 import freenet.support.HexUtil;
 import freenet.support.Logger;
@@ -16,7 +18,15 @@ import freenet.support.Logger;
 @SuppressWarnings("serial")
 public abstract class CryptoKey implements CryptoElement, Serializable {
 
-	protected static final Digest shactx = SHA1.getInstance();
+	protected static final MessageDigest shactx;
+	static {
+		try {
+			shactx = MessageDigest.getInstance("SHA1", Util.mdProviders.get("SHA1"));
+		} catch(NoSuchAlgorithmException e) {
+			// impossible
+			throw new Error(e);
+		}
+	}
 
 	CryptoKey() {
 	}

@@ -12,7 +12,7 @@ public class WatchFeedsMessage extends FCPMessage {
 	public final boolean enabled;
 
 	public WatchFeedsMessage(SimpleFieldSet fs) {
-		enabled = Fields.stringToBool(fs.get("Enabled"), true);
+		enabled = fs.getBoolean("Enabled", true);
 	}
 
 	@Override

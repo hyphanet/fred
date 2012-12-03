@@ -80,6 +80,16 @@ public class NullBasePeerNode implements BasePeerNode {
 	public boolean unqueueMessage(MessageItem item) {
 		throw new UnsupportedOperationException();
 	}
+
+	@Override
+	public void reportIncomingBytes(int length) {
+		// Ignore
+	}
+
+	@Override
+	public void reportOutgoingBytes(int length) {
+		// Ignore
+	}
 	
 	protected void processDecryptedMessage(byte[] data, int offset, int length,
 			int overhead) {

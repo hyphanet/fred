@@ -10,8 +10,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.ArrayDeque;
+import java.util.Queue;
 
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -26,7 +27,7 @@ import freenet.support.io.Closer;
 */
 public class DecompressorThreadManager {
 
-	final LinkedList<DecompressorThread> threads;
+	final Queue<DecompressorThread> threads;
 	PipedInputStream input;
 	PipedOutputStream output = new PipedOutputStream();
 	final long maxLen;
@@ -48,7 +49,7 @@ public class DecompressorThreadManager {
 	 * @param maxLen The maximum number of bytes to extract
 	 */
 	public DecompressorThreadManager(PipedInputStream inputStream, List<? extends Compressor> decompressors, long maxLen) throws IOException {
-		threads = new LinkedList<DecompressorThread>();
+		threads = new ArrayDeque<DecompressorThread>(decompressors.size());
 		this.maxLen = maxLen;
 		if(inputStream == null) {
 			IOException e = new IOException("Input stream may not be null");

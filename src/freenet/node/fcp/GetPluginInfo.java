@@ -29,7 +29,7 @@ public class GetPluginInfo extends FCPMessage {
 		plugname = fs.get("PluginName");
 		if(plugname == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "GetPluginInfo must contain a PluginName field", identifier, false);
-		detailed = Fields.stringToBool(fs.get("Detailed"), false);
+		detailed = fs.getBoolean("Detailed", false);
 	}
 
 	@Override

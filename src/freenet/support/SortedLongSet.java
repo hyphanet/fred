@@ -138,8 +138,7 @@ public class SortedLongSet {
 		// Move the data
 		if(length == data.length) {
 			if(logMINOR) Logger.minor(this, "Expanding from "+length+" to "+length*2);
-			long[] newData = new long[length*2];
-			System.arraycopy(data, 0, newData, 0, data.length);
+			long[] newData = Arrays.copyOf(data, length*2);
 			for(int i=length;i<newData.length;i++)
 				newData[i] = Long.MAX_VALUE;
 			data = newData;
@@ -179,9 +178,7 @@ public class SortedLongSet {
 	 * @return sorted array of all items
 	 */
 	public synchronized long[] toArray() {
-		long[] output = new long[length];
-		System.arraycopy(data, 0, output, 0, length);
-		return output;
+		return Arrays.copyOf(data, length);
 	}
 
 	private int binarySearch(long key) {

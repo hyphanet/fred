@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 
 import com.db4o.ObjectContainer;
 
@@ -98,9 +99,7 @@ public class ArrayBucket implements Bucket {
 	public byte[] toByteArray() {
 		long sz = size();
 		int size = (int)sz;
-		byte[] buf = new byte[size];
-		System.arraycopy(data, 0, buf, 0, size);
-		return buf;
+		return Arrays.copyOf(data, size);
 	}
 
 	@Override

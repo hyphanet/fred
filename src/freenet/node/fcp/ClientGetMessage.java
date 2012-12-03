@@ -93,12 +93,12 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 	public ClientGetMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		short defaultPriority;
 		clientToken = fs.get("ClientToken");
-		global = Fields.stringToBool(fs.get("Global"), false);
-		ignoreDS = Fields.stringToBool(fs.get("IgnoreDS"), false);
-		dsOnly = Fields.stringToBool(fs.get("DSOnly"), false);
+		global = fs.getBoolean("Global", false);
+		ignoreDS = fs.getBoolean("IgnoreDS", false);
+		dsOnly = fs.getBoolean("DSOnly", false);
 		identifier = fs.get("Identifier");
 		allowedMIMETypes = fs.getAll("AllowedMIMETypes");
-		filterData = Fields.stringToBool(fs.get("FilterData"), false);
+		filterData = fs.getBoolean("FilterData", false);
 		charset = fs.get("Charset");
 		if(identifier == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier", null, global);
@@ -197,9 +197,9 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 			priorityClass = defaultPriority;
 		} else {
 			try {
-				priorityClass = Short.parseShort(priorityString, 10);
-				if((priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS) || (priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS))
-					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Valid priorities are from "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" to "+RequestStarter.MINIMUM_PRIORITY_CLASS, identifier, global);
+				priorityClass = Short.parseShort(priorityString);
+				if(!RequestStarter.isValidPriorityClass(priorityClass))
+					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid priority class "+priorityClass+" - range is "+RequestStarter.MINIMUM_PRIORITY_CLASS+" to "+RequestStarter.MAXIMUM_PRIORITY_CLASS, identifier, global);
 			} catch (NumberFormatException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: "+e.getMessage(), identifier, global);
 			}
@@ -222,7 +222,7 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.NOT_SUPPORTED, "Global requests must be persistent", identifier, global);
 		}
 		writeToClientCache = fs.getBoolean("WriteToClientCache", persistenceType == ClientRequest.PERSIST_CONNECTION);
-		binaryBlob = Fields.stringToBool(fs.get("BinaryBlob"), false);
+		binaryBlob = fs.getBoolean("BinaryBlob", false);
 		realTimeFlag = fs.getBoolean("RealTimeFlag", false);
 		initialMetadataLength = fs.getLong("InitialMetadata.DataLength", 0);
 		ignoreUSKDatehints = fs.getBoolean("IgnoreUSKDatehints", false);

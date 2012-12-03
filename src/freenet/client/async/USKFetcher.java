@@ -15,7 +15,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -124,7 +123,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	private final USK origUSK;
 	
 	/** Callbacks */
-	private final LinkedList<USKFetcherCallback> callbacks;
+	private final List<USKFetcherCallback> callbacks;
 
 	/** Fetcher context */
 	final FetchContext ctx;
@@ -529,7 +528,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		if(origMinFailures > WATCH_KEYS)
 			throw new IllegalArgumentException();
 		firstLoop = true;
-		callbacks = new LinkedList<USKFetcherCallback>();
+		callbacks = new ArrayList<USKFetcherCallback>();
 		subscribers = new HashSet<USKCallback>();
 		lastFetchedEdition = -1;
 		this.realTimeFlag = parent.realTimeFlag();
@@ -1373,9 +1372,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					}
 				}
 				if(keys.length != ptr) {
-					Key[] newKeys = new Key[ptr];
-					System.arraycopy(keys, 0, newKeys, 0, ptr);
-					keys = newKeys;
+					keys = Arrays.copyOf(keys, ptr);
 				}
 				return keys;
 			}

@@ -5,6 +5,7 @@ package freenet.client.async;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
@@ -578,10 +579,8 @@ public class USKManager {
 					}
 				}
 				if(mustAdd) {
-					USKCallback[] newCallbacks = new USKCallback[callbacks.length+1];
-					System.arraycopy(callbacks, 0, newCallbacks, 0, callbacks.length);
-					newCallbacks[callbacks.length] = cb;
-					callbacks = newCallbacks;
+					callbacks = Arrays.copyOf(callbacks, callbacks.length+1);
+					callbacks[callbacks.length-1] = cb;
 				}
 			}
 			subscribersByClearUSK.put(clear, callbacks);
@@ -631,8 +630,7 @@ public class USKManager {
 					callbacks[j++] = c;
 				}
 			}
-			USKCallback[] newCallbacks = new USKCallback[j];
-			System.arraycopy(callbacks, 0, newCallbacks, 0, j);
+			USKCallback[] newCallbacks = Arrays.copyOf(callbacks, j);
 			if(newCallbacks.length > 0)
 				subscribersByClearUSK.put(clear, newCallbacks);
 			else{

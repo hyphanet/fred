@@ -5,6 +5,7 @@ package freenet.node;
 
 import java.lang.ref.WeakReference;
 import java.util.Vector;
+import java.util.Arrays;
 
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
@@ -183,6 +184,7 @@ public class FailureTable implements OOMHook {
 		}
 	}
 
+	// LOCKING: Synchronized on FailureTable because we need to remove self in deleteOffer(). 
 	private final class BlockOfferList {
 		private BlockOffer[] offers;
 		final FailureTableEntry entry;
@@ -192,24 +194,28 @@ public class FailureTable implements OOMHook {
 			this.offers = new BlockOffer[] { offer };
 		}
 
-		public synchronized long expires() {
-			long last = 0;
-			for(int i=0;i<offers.length;i++) {
-				if(offers[i].offeredTime > last) last = offers[i].offeredTime;
+		public long expires() {
+			synchronized(FailureTable.this) {
+				long last = 0;
+				for(int i=0;i<offers.length;i++) {
+					if(offers[i].offeredTime > last) last = offers[i].offeredTime;
+				}
+				return last + OFFER_EXPIRY_TIME;
 			}
-			return last + OFFER_EXPIRY_TIME;
 		}
 
-		public synchronized boolean isEmpty(long now) {
-			for(int i=0;i<offers.length;i++) {
-				if(!offers[i].isExpired(now)) return false;
+		public boolean isEmpty(long now) {
+			synchronized(FailureTable.this) {
+				for(int i=0;i<offers.length;i++) {
+					if(!offers[i].isExpired(now)) return false;
+				}
+				return true;
 			}
-			return true;
 		}
 
 		public void deleteOffer(BlockOffer offer) {
 			if(logMINOR) Logger.minor(this, "Deleting "+offer+" from "+this);
-			synchronized(this) {
+			synchronized(FailureTable.this) {
 				int idx = -1;
 				final int offerLength = offers.length;
 				for(int i=0;i<offerLength;i++) {
@@ -222,20 +228,17 @@ public class FailureTable implements OOMHook {
 				if(idx < newOffers.length)
 					System.arraycopy(offers, idx + 1, newOffers, idx, offers.length - idx - 1);
 				offers = newOffers;
+				if(offers.length > 1) return;
+				blockOfferListByKey.removeKey(entry.key);
 			}
-			if(offers.length < 1) {
-				synchronized(FailureTable.this) {
-					blockOfferListByKey.removeKey(entry.key);
-				}
-				node.clientCore.dequeueOfferedKey(entry.key);
-			}
+			node.clientCore.dequeueOfferedKey(entry.key);
 		}
 
-		public synchronized void addOffer(BlockOffer offer) {
-			BlockOffer[] newOffers = new BlockOffer[offers.length+1];
-			System.arraycopy(offers, 0, newOffers, 0, offers.length);
-			newOffers[offers.length] = offer;
-			offers = newOffers;
+		public void addOffer(BlockOffer offer) {
+			synchronized(FailureTable.this) {
+				offers = Arrays.copyOf(offers, offers.length+1);
+				offers[offers.length-1] = offer;
+			}
 		}
 		
 		@Override

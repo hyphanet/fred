@@ -196,22 +196,18 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 		keyType = uri.keyType;
 		docName = uri.docName;
 		if(uri.metaStr != null) {
-			metaStr = new String[uri.metaStr.length];
-			System.arraycopy(uri.metaStr, 0, metaStr, 0, metaStr.length);
+			metaStr = uri.metaStr.clone();
 		} else metaStr = null;
 		if(uri.routingKey != null) {
-			routingKey = new byte[uri.routingKey.length];
-			System.arraycopy(uri.routingKey, 0, routingKey, 0, routingKey.length);
+			routingKey = uri.routingKey.clone();
 		} else
 			routingKey = null;
 		if(uri.cryptoKey != null) {
-			cryptoKey = new byte[uri.cryptoKey.length];
-			System.arraycopy(uri.cryptoKey, 0, cryptoKey, 0, cryptoKey.length);
+			cryptoKey = uri.cryptoKey.clone();
 		} else
 			cryptoKey = null;
 		if(uri.extra != null) {
-			extra = new byte[uri.extra.length];
-			System.arraycopy(uri.extra, 0, extra, 0, extra.length);
+			extra = uri.extra.clone();
 		} else
 			extra = null;
 		this.suggestedEdition = uri.suggestedEdition;
@@ -612,8 +608,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 		if (metaStr != null) {
 			final int metaStrLength = metaStr.length;
 			if (metaStrLength > 1) {
-				newMetaStr = new String[metaStrLength - 1];
-				System.arraycopy(metaStr, 1, newMetaStr, 0, newMetaStr.length);
+				newMetaStr = Arrays.copyOf(metaStr, metaStr.length-1);
 			}
 		}
 		return setMetaString(newMetaStr);
@@ -626,11 +621,8 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 	 */
 	public FreenetURI dropLastMetaStrings(int i) {
 		String[] newMetaStr = null;
-		if((metaStr != null) && (metaStr.length > 1)) {
-			if(i > metaStr.length)
-				i = metaStr.length;
-			newMetaStr = new String[metaStr.length - i];
-			System.arraycopy(metaStr, 0, newMetaStr, 0, newMetaStr.length);
+		if((metaStr != null) && (metaStr.length > i)) {
+			newMetaStr = Arrays.copyOf(metaStr, metaStr.length - i);
 		}
 		return setMetaString(newMetaStr);
 	}
@@ -646,8 +638,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 		if(metaStr == null)
 			newMetaStr = new String[]{name};
 		else {
-			newMetaStr = new String[metaStr.length + 1];
-			System.arraycopy(metaStr, 0, newMetaStr, 0, metaStr.length);
+			newMetaStr = Arrays.copyOf(metaStr, metaStr.length + 1);
 			newMetaStr[metaStr.length] = name.intern();
 		}
 		return setMetaString(newMetaStr);
@@ -666,9 +657,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 		if(metaStr == null)
 			return setMetaString(strs);
 		else {
-			newMetaStr = new String[metaStr.length + strs.length];
-			if(metaStr != null)
-				System.arraycopy(metaStr, 0, newMetaStr, 0, metaStr.length);
+			newMetaStr = Arrays.copyOf(metaStr, metaStr.length + strs.length);
 			System.arraycopy(strs, 0, newMetaStr, metaStr.length, strs.length);
 			return setMetaString(newMetaStr);
 		}

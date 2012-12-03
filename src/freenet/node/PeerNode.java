@@ -661,45 +661,20 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				updateShortToString();
 				
 				//FIXME this data is hard to be used for multiple transports
-				String tempTimeLastReceivedPacketString = metadata.get("timeLastReceivedPacket");
-				if(tempTimeLastReceivedPacketString != null) {
-					long tempTimeLastReceivedPacket = Fields.parseLong(tempTimeLastReceivedPacketString, -1);
-					timeLastReceivedPacket = tempTimeLastReceivedPacket;
-				}
-				String tempTimeLastConnectedString = metadata.get("timeLastConnected");
-				if(tempTimeLastConnectedString != null) {
-					long tempTimeLastConnected = Fields.parseLong(tempTimeLastConnectedString, -1);
-					timeLastConnected = tempTimeLastConnected;
-				}
-				String tempTimeLastRoutableString = metadata.get("timeLastRoutable");
-				if(tempTimeLastRoutableString != null) {
-					long tempTimeLastRoutable = Fields.parseLong(tempTimeLastRoutableString, -1);
-					timeLastRoutable = tempTimeLastRoutable;
-				}
+				timeLastReceivedPacket = metadata.getLong("timeLastReceivedPacket", -1);
+				timeLastConnected = metadata.getLong("timeLastConnected", -1);
+				timeLastRoutable = metadata.getLong("timeLastRoutable", -1);
 				if(timeLastConnected < 1 && timeLastReceivedPacket > 1)
 					timeLastConnected = timeLastReceivedPacket;
 				if(timeLastRoutable < 1 && timeLastReceivedPacket > 1)
 					timeLastRoutable = timeLastReceivedPacket;
-				String tempPeerAddedTimeString = metadata.get("peerAddedTime");
-				if(tempPeerAddedTimeString != null) {
-					long tempPeerAddedTime = Fields.parseLong(tempPeerAddedTimeString, 0);
-					peerAddedTime = tempPeerAddedTime;
-				} else
-					peerAddedTime = 0; // This is normal: Not only do exported refs not include it, opennet peers don't either.
-				neverConnected = Fields.stringToBool(metadata.get("neverConnected"), false);
+				peerAddedTime = metadata.getLong("peerAddedTime",
+						0 // missing peerAddedTime is normal: Not only do exported refs not include it, opennet peers don't either.
+						);
+				neverConnected = metadata.getBoolean("neverConnected", false);
 				maybeClearPeerAddedTimeOnRestart(now);
-				String tempHadRoutableConnectionCountString = metadata.get("hadRoutableConnectionCount");
-				if(tempHadRoutableConnectionCountString != null) {
-					long tempHadRoutableConnectionCount = Fields.parseLong(tempHadRoutableConnectionCountString, 0);
-					hadRoutableConnectionCount = tempHadRoutableConnectionCount;
-				} else
-					hadRoutableConnectionCount = 0;
-				String tempRoutableConnectionCheckCountString = metadata.get("routableConnectionCheckCount");
-				if(tempRoutableConnectionCheckCountString != null) {
-					long tempRoutableConnectionCheckCount = Fields.parseLong(tempRoutableConnectionCheckCountString, 0);
-					routableConnectionCheckCount = tempRoutableConnectionCheckCount;
-				} else
-					routableConnectionCheckCount = 0;
+				hadRoutableConnectionCount = metadata.getLong("hadRoutableConnectionCount", 0);
+				routableConnectionCheckCount = metadata.getLong("routableConnectionCheckCount", 0);
 			}
 		} else {
 			neverConnected = true;
@@ -2067,7 +2042,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		
 		// Anything may be omitted for a differential node reference
 		boolean changedAnything = false;
-		if(!forDiffNodeRef && (false != Fields.stringToBool(fs.get("testnet"), false))) {
+		if(!forDiffNodeRef && (false != fs.getBoolean("testnet", false))) {
 			String err = "Preventing connection to node " + detectedPeer +" - testnet is enabled!";
 			Logger.error(this, err);
 			throw new FSParseException(err);
@@ -3249,11 +3224,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	}
 
-	synchronized void reportIncomingBytes(int length) {
+	public synchronized void reportIncomingBytes(int length) {
 		totalBytesIn += length;
 	}
 
-	synchronized void reportOutgoingBytes(int length) {
+	public synchronized void reportOutgoingBytes(int length) {
 		totalBytesOut += length;
 	}
 
@@ -3497,28 +3472,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return byteLen;
 	}
 
-	static final int SENT_PACKETS_MAX_TIME_AFTER_CONNECT = 5 * 60 * 1000;
-
-	/**
-	 * Handle an FNPSentPackets message
-	 */
-	public void handleSentPackets(Message m) {
-		//Commented code moved to PeerPacketTransport
-	}
-	
-	/**
-	 * Handle an FNPSentPacketsTransport message
-	 */
-	public void handleSentPackets(Message m, String transportName) {
-		if(peerPacketTransportMap.containsKey(transportName))
-			peerPacketTransportMap.get(transportName).handleSentPackets(m);
-	}
-	private boolean manyPacketsClaimedSentNotReceived = false;
-
-	synchronized boolean manyPacketsClaimedSentNotReceived() {
-		return manyPacketsClaimedSentNotReceived;
-	}
-
 	static final int MAX_SIMULTANEOUS_ANNOUNCEMENTS = 1;
 	static final int MAX_ANNOUNCE_DELAY = 1000;
 	private long timeLastAcceptedAnnouncement;
@@ -3552,9 +3505,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		runningAnnounceUIDs = newList;
 		if(x < runningAnnounceUIDs.length) {
-			newList = new long[x];
-			System.arraycopy(runningAnnounceUIDs, 0, newList, 0, x);
-			runningAnnounceUIDs = newList;
+			runningAnnounceUIDs = Arrays.copyOf(runningAnnounceUIDs, x);
 		}
 		return true;
 	}
@@ -3649,14 +3600,17 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		SimpleFieldSet nfs = getLocalNoderef();
 		if(null == nfs) return;
-		if(null != nfs.get("ark.pubURI")) {
-			fs.putOverwrite("ark.pubURI", nfs.get("ark.pubURI"));
+		String s;
+		s = nfs.get("ark.pubURI");
+		if(null != s) {
+			fs.putOverwrite("ark.pubURI", s);
 		}
-		if(null != nfs.get("ark.number")) {
-			fs.putOverwrite("ark.number", nfs.get("ark.number"));
+		s = nfs.get("ark.number");
+		if(null != s) {
+			fs.putOverwrite("ark.number", s);
 		}
-		if(isDarknet() && null != nfs.get("myName")) {
-			fs.putOverwrite("myName", nfs.get("myName"));
+		if(isDarknet() && null != (s = nfs.get("myName"))) {
+			fs.putOverwrite("myName", s);
 		}
 		String[] physicalUDPEntries = nfs.getAll("physical.udp");
 		if(physicalUDPEntries != null) {
