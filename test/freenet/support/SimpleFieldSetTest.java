@@ -270,7 +270,7 @@ public class SimpleFieldSetTest extends TestCase {
 	 */
 	private boolean checkSimpleFieldSetSize(SimpleFieldSet aSimpleFieldSet, int expectedSize) {
 		int actualSize = 0;
-		Iterator methodKeyIterator = aSimpleFieldSet.keyIterator();
+		Iterator<String> methodKeyIterator = aSimpleFieldSet.keyIterator();
 		while (methodKeyIterator.hasNext()) {
 			methodKeyIterator.next();
 			actualSize++; }
@@ -535,7 +535,7 @@ public class SimpleFieldSetTest extends TestCase {
 	public void testDirectSubsetNameIterator() {
 		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
 		String expectedSubset = SAMPLE_STRING_PAIRS[0][0];	//"foo"
-		Iterator methodIter = methodSFS.directSubsetNameIterator();
+		Iterator<String> methodIter = methodSFS.directSubsetNameIterator();
 		while (methodIter.hasNext())
 			assertEquals(methodIter.next(), expectedSubset);
 		methodSFS = new SimpleFieldSet(true);
@@ -687,12 +687,12 @@ public class SimpleFieldSetTest extends TestCase {
 	 * @param aIterator
 	 * @return true if they have the same key set
 	 */
-	private boolean areAllContainedKeys(String[][] aStringPairsArray, String aPrefix, Iterator aIterator) {
+	private boolean areAllContainedKeys(String[][] aStringPairsArray, String aPrefix, Iterator<String> aIterator) {
 		boolean retValue = true;
 		int actualLength = 0;
 		while (aIterator.hasNext()) {
 			actualLength++;
-			retValue &= isAKey(aStringPairsArray,aPrefix,(String)aIterator.next());
+			retValue &= isAKey(aStringPairsArray,aPrefix,aIterator.next());
 		}
 		retValue &= (actualLength==aStringPairsArray.length);
 		return retValue;
@@ -705,7 +705,7 @@ public class SimpleFieldSetTest extends TestCase {
 	 */
 	public void testKeyIterator() {
 		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
-		Iterator itr = methodSFS.keyIterator();
+		Iterator<String> itr = methodSFS.keyIterator();
 		assertTrue(areAllContainedKeys(SAMPLE_STRING_PAIRS,"",itr));
 	}
 	
@@ -716,7 +716,7 @@ public class SimpleFieldSetTest extends TestCase {
 	public void testKeyIterator_String() {
 		String methodPrefix = "bob";
 		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
-		Iterator itr = methodSFS.keyIterator(methodPrefix);
+		Iterator<String> itr = methodSFS.keyIterator(methodPrefix);
 		assertTrue(areAllContainedKeys(SAMPLE_STRING_PAIRS,methodPrefix,itr));	
 	}
         
@@ -729,13 +729,13 @@ public class SimpleFieldSetTest extends TestCase {
 	 */
 	public void testToplevelKeyIterator() {
 		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
-		Iterator itr = methodSFS.toplevelKeyIterator();
+		Iterator<String> itr = methodSFS.toplevelKeyIterator();
 		
-                for(int i=0; i<3; i++) {
-                    assertTrue(itr.hasNext());
-                    assertTrue(isAKey(SAMPLE_STRING_PAIRS, "", (String)itr.next()));
-                }
-                assertFalse(itr.hasNext());
+        for(int i=0; i<3; i++) {
+            assertTrue(itr.hasNext());
+            assertTrue(isAKey(SAMPLE_STRING_PAIRS, "", (String)itr.next()));
+        }
+        assertFalse(itr.hasNext());
 	}
 
 	public void testKeyIterationPastEnd() {
