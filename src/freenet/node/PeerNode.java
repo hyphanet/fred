@@ -19,7 +19,6 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -1865,7 +1864,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			/** Send IP message for each transport separately */
 			for(String transportName : peerPacketTransportMap.keySet()) {
 				sendAsync(peerPacketTransportMap.get(transportName).getIPAddressMessage(), null, node.nodeStats.initialMessagesCtr);
-				sendAsync(peerPacketTransportMap.get(transportName).createSentPacketsMessage(), null, node.nodeStats.initialMessagesCtr);
 			}
 			for(String transportName : peerStreamTransportMap.keySet()) {
 				sendAsync(peerStreamTransportMap.get(transportName).getIPAddressMessage(), null, node.nodeStats.initialMessagesCtr);
@@ -3224,10 +3222,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	}
 
+	@Override
 	public synchronized void reportIncomingBytes(int length) {
 		totalBytesIn += length;
 	}
 
+	@Override
 	public synchronized void reportOutgoingBytes(int length) {
 		totalBytesOut += length;
 	}

@@ -196,6 +196,14 @@ public abstract class PeerTransport {
 			timeLastReceivedTransportAck = now;
 	}
 	
+	public synchronized void reportIncomingBytes(int length) {
+		pn.reportIncomingBytes(length);
+	}
+
+	public synchronized void reportOutgoingBytes(int length) {
+		pn.reportIncomingBytes(length);
+	}
+	
 	protected void sendTransportAddressMessage() {
 		try {
 			pn.sendAsync(getIPAddressMessage(), null, pn.node.nodeStats.changedIPCtr);
@@ -625,6 +633,7 @@ public abstract class PeerTransport {
 	
 	//FIXME Find the place where it needs to be used.
 	private String handshakeAddressesToString() {
+
 		PluginAddress[] localHandshakeAddresses;
 		synchronized(this) {
 			localHandshakeAddresses = handshakeTransportAddresses;
@@ -632,25 +641,20 @@ public abstract class PeerTransport {
 		if(localHandshakeAddresses == null)
 			return "null";
 		StringBuilder toOutputString = new StringBuilder(1024);
-		boolean needSep = false;
 		toOutputString.append("[ ");
-		for(PluginAddress localAddress : localHandshakeAddresses) {
-			if(needSep)
+		if (localHandshakeAddresses.length != 0) {
+			for(PluginAddress localAddress: localHandshakeAddresses) {
+				if(localAddress == null) {
+					toOutputString.append("null, ");
+					continue;
+				}
+				toOutputString.append('\'');
+				toOutputString.append(localAddress);
+				toOutputString.append('\'');
 				toOutputString.append(", ");
-			if(localAddress == null) {
-				toOutputString.append("null");
-				needSep = true;
-				continue;
 			}
-			toOutputString.append('\'');
-			try {
-				localAddress = localAddress.dropHostName();
-			}catch(UnsupportedIPAddressOperationException e) {
-				// Ignore if non IP based
-			}
-			toOutputString.append(localAddress);
-			toOutputString.append('\'');
-			needSep = true;
+			toOutputString.deleteCharAt(toOutputString.length() - 1);
+			toOutputString.deleteCharAt(toOutputString.length() - 1);
 		}
 		toOutputString.append(" ]");
 		return toOutputString.toString();
@@ -840,5 +844,5 @@ public abstract class PeerTransport {
 		}
 		
 	}
-	
+		
 }

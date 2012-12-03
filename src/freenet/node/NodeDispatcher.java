@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -161,10 +162,6 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			return handleTime(m, source);
 		} else if(spec == DMT.FNPUptime) {
 			return handleUptime(m, source);
-		}else if(spec == DMT.FNPSentPacketsTransport) {
-			String transportName = (String) m.getObject(DMT.TRANSPORT_NAME);
-			source.handleSentPackets(m, transportName);
-			return true;
 		} else if(spec == DMT.FNPVisibility && source instanceof DarknetPeerNode) {
 			((DarknetPeerNode)source).handleVisibility(m);
 			return true;

@@ -1,6 +1,7 @@
 package freenet.node;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -360,9 +361,7 @@ public class PeerMessageTracker {
 				if(logDEBUG) Logger.debug(this, "Added " + (length - buffer.length) + " to buffer. Total is now " + pmt.receiveBufferUsed);
 			}
 
-			byte[] newBuffer = new byte[length];
-			System.arraycopy(buffer, 0, newBuffer, 0, Math.min(length, buffer.length));
-			buffer = newBuffer;
+			buffer = Arrays.copyOf(buffer, length);
 
 			return true;
 		}
