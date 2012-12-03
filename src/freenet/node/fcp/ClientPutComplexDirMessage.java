@@ -193,7 +193,7 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 	}
 
 	private void removeFrom(ObjectContainer container, HashMap<String, Object> filesByName) {
-		Iterator i = filesByName.values().iterator();
+		Iterator<Object> i = filesByName.values().iterator();
 		while(i.hasNext()) {
 			Object val = i.next();
 			if(val instanceof HashMap) {

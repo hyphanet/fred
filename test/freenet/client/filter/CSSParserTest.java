@@ -734,7 +734,7 @@ public class CSSParserTest extends TestCase {
 
 
 		Collection<String> c = CSS1_SELECTOR.keySet();
-		Iterator itr = c.iterator();
+		Iterator<String> itr = c.iterator();
 		while(itr.hasNext())
 		{
 
@@ -749,7 +749,7 @@ public class CSSParserTest extends TestCase {
 
 	public void testCSS2Selector() throws IOException, URISyntaxException {
 		Collection<String> c = CSS2_SELECTOR.keySet();
-		Iterator itr = c.iterator();
+		Iterator<String> itr = c.iterator();
 		int i=0;
 		while(itr.hasNext())
 		{
