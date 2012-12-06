@@ -220,7 +220,7 @@ public class RequestTracker {
 		}
 	}
 
-	public synchronized void countRequests(boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, CountedRequests counter, CountedRequests counterSourceRestarted) {
+	public void countRequests(boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, CountedRequests counter, CountedRequests counterSourceRestarted) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
 		// Map is locked by the non-local version, although we're counting from the local version.
 		HashMap<Long, ? extends UIDTag> mapLock = map;
@@ -377,7 +377,7 @@ public class RequestTracker {
 		tag.reassignToSelf();
 	}
 
-	private synchronized HashMap<Long, ? extends UIDTag> getTracker(boolean local, boolean ssk,
+	private HashMap<Long, ? extends UIDTag> getTracker(boolean local, boolean ssk,
 			boolean insert, boolean offer, boolean realTimeFlag) {
 		if(offer)
 			return getOfferTracker(ssk, realTimeFlag);
