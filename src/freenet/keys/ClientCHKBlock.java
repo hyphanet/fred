@@ -53,7 +53,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
 	public String toString() {
         return super.toString()+",key="+key;
     }
-
+    
     /**
      * Construct from data retrieved, and a key.
      * Do not do full decode. Verify what can be verified without doing
@@ -192,12 +192,13 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
 	}
 	static {
 		try {
-			final Class clazz = ClientCHKBlock.class;
+			final Class<ClientCHKBlock> clazz = ClientCHKBlock.class;
 			final String algo = "HmacSHA256";
 			final Provider sun = JceLoader.SunJCE;
 			SecretKeySpec dummyKey = new SecretKeySpec(new byte[Node.SYMMETRIC_KEY_LENGTH], algo);
 			Mac hmac = Mac.getInstance(algo);
 			hmac.init(dummyKey); // resolve provider
+			boolean logMINOR = Logger.shouldLog(Logger.LogLevel.MINOR, clazz);
 			if (sun != null) {
 				// SunJCE provider is faster (in some configurations)
 				try {
@@ -208,8 +209,10 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
 						long time_sun = benchmark(sun_hmac);
 						System.out.println(algo + " (" + hmac.getProvider() + "): " + time_def + "ns");
 						System.out.println(algo + " (" + sun_hmac.getProvider() + "): " + time_sun + "ns");
-						Logger.minor(clazz, algo + "/" + hmac.getProvider() + ": " + time_def + "ns");
-						Logger.minor(clazz, algo + "/" + sun_hmac.getProvider() + ": " + time_sun + "ns");
+						if(logMINOR) {
+							Logger.minor(clazz, algo + "/" + hmac.getProvider() + ": " + time_def + "ns");
+							Logger.minor(clazz, algo + "/" + sun_hmac.getProvider() + ": " + time_sun + "ns");
+						}
 						if (time_sun < time_def) {
 							hmac = sun_hmac;
 						}
