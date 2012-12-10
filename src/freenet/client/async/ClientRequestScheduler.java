@@ -806,7 +806,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 					if(prio > worstPrio) {
 						worstPrio = prio;
 						worst = req;
-						// XXX is there way to save iterator state and avoid O(n) List.remove(index) here?
+						// FIXME is there way to save iterator state and avoid O(n) List.remove(index) here?
+						// We could use a LinkedHashSet but I'm not sure there's any point, worst case is 512 elements, average case is more like 2.
 						worstIndex = nextIndex;
 						worstLength = size;
 						continue;
