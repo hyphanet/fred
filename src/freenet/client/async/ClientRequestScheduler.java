@@ -500,7 +500,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				} else {
 					// Prevent this request being selected, even though we may remove the PCR from the starter queue
 					// in the very near future. When the PCR finishes, the requests will be un-blocked.
-					if(!runningPersistentRequests.contains(reqGroup.request))
+					if(runningPersistentRequestsContains(reqGroup.request))
 						runningPersistentRequests.add(reqGroup.request);
 				}
 			}
@@ -512,6 +512,15 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 	
+	/** Call while holding starterQueue lock. runningPersistentRequests is
+	 * by identity, i.e. == only. */
+	private boolean runningPersistentRequestsContains(SendableRequest request) {
+		for(SendableRequest req : runningPersistentRequests) {
+			if(req == request) return true;
+		}
+		return false;
+	}
+
 	@Override
 	public void queueFillRequestStarterQueue() {
 		queueFillRequestStarterQueue(false);
