@@ -31,6 +31,7 @@ import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
+import freenet.support.IdentityHashSet;
 import freenet.support.Logger;
 import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.TimeUtil;
@@ -388,27 +389,20 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	/**
 	 * All the persistent SendableRequest's currently running (either actually in flight, just chosen,
-	 * awaiting the callbacks being executed etc). Note that this is an ArrayList because we *must*
-	 * compare by pointer: these objects may well implement hashCode() etc for use by other code, but 
-	 * if they are deactivated, they will be unreliable. Fortunately, this will be fairly small most
-	 * of the time, since a single SendableRequest might include 256 actual requests.
+	 * awaiting the callbacks being executed etc). We MUST compare by pointer, as this is accessed on
+	 * threads other than the database thread, so we don't know whether they are active (and in fact 
+	 * that may change under us!). So it can't be a HashSet.
 	 * 
 	 * SYNCHRONIZATION: Synched on starterQueue.
 	 */
-	// XXX replace with LinkedList or IdentityHashMap [remove in the middle, contains()]?
-	private final transient ArrayList<SendableRequest> runningPersistentRequests = new ArrayList<SendableRequest> ();
+	private final transient IdentityHashSet<SendableRequest> runningPersistentRequests = new IdentityHashSet<SendableRequest> ();
 	
 	@Override
 	public void removeRunningRequest(SendableRequest request, ObjectContainer container) {
 		synchronized(starterQueue) {
-			// XXX: runningPersistentRequests.remove(request); ?
-			for(int i=0;i<runningPersistentRequests.size();i++) {
-				if(runningPersistentRequests.get(i) == request) {
-					runningPersistentRequests.remove(i);
-					i--;
-					if(logMINOR)
-						Logger.minor(this, "Removed running request "+request+" size now "+runningPersistentRequests.size());
-				}
+			if(runningPersistentRequests.remove(request)) {
+				if(logMINOR)
+					Logger.minor(this, "Removed running request "+request+" size now "+runningPersistentRequests.size());
 			}
 		}
 		// We *DO* need to call clearCooldown here because it only becomes runnable for persistent requests after it has been removed from starterQueue.
@@ -421,12 +415,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	@Override
 	public boolean isRunningOrQueuedPersistentRequest(SendableRequest request) {
 		synchronized(starterQueue) {
-			// XXX runningPersistentRequests.contains(request) ?
-			// [grabRequest uses rPR.contains()]
-			for(int i=0;i<runningPersistentRequests.size();i++) {
-				if(runningPersistentRequests.get(i) == request)
-					return true;
-			}
+			if(runningPersistentRequests.contains(request)) return true;
 			for(PersistentChosenRequest req : starterQueue) {
 				if(req.request == request) return true;
 			}
