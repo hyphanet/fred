@@ -4,7 +4,9 @@
 package freenet.client.async;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.ListIterator;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -393,11 +395,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * 
 	 * SYNCHRONIZATION: Synched on starterQueue.
 	 */
+	// XXX replace with LinkedList or IdentityHashMap [remove in the middle, contains()]?
 	private final transient ArrayList<SendableRequest> runningPersistentRequests = new ArrayList<SendableRequest> ();
 	
 	@Override
 	public void removeRunningRequest(SendableRequest request, ObjectContainer container) {
 		synchronized(starterQueue) {
+			// XXX: runningPersistentRequests.remove(request); ?
 			for(int i=0;i<runningPersistentRequests.size();i++) {
 				if(runningPersistentRequests.get(i) == request) {
 					runningPersistentRequests.remove(i);
@@ -417,6 +421,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	@Override
 	public boolean isRunningOrQueuedPersistentRequest(SendableRequest request) {
 		synchronized(starterQueue) {
+			// XXX runningPersistentRequests.contains(request) ?
+			// [grabRequest uses rPR.contains()]
 			for(int i=0;i<runningPersistentRequests.size();i++) {
 				if(runningPersistentRequests.get(i) == request)
 					return true;
@@ -485,14 +491,15 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(block == null) {
 					if(logMINOR) Logger.minor(this, "No block found on "+reqGroup);
 					int finalLength = 0;
-					for(int i=0;i<starterQueue.size();i++) {
-						if(starterQueue.get(i) == reqGroup) {
-							starterQueue.remove(i);
+					Iterator<PersistentChosenRequest> it = starterQueue.iterator();
+					while(it.hasNext()) {
+						PersistentChosenRequest req = it.next();
+						if(req == reqGroup) {
+							it.remove();
 							if(logMINOR)
 								Logger.minor(this, "Removed "+reqGroup+" from starter queue because is empty");
-							i--;
 						} else {
-							finalLength += starterQueue.get(i).sizeNotStarted();
+							finalLength += req.sizeNotStarted();
 						}
 					}
 					needsRefill = finalLength < MAX_STARTER_QUEUE_SIZE;
@@ -565,16 +572,18 @@ public class ClientRequestScheduler implements RequestScheduler {
 		container.deactivate(request, 1);
 		boolean dumpNew = false;
 		synchronized(starterQueue) {
+			int length = 0;
 			for(PersistentChosenRequest req : starterQueue) {
 				if(req.request == request) {
 					Logger.error(this, "Already on starter queue: "+req+" for "+request, new Exception("debug"));
 					dumpNew = true;
 					break;
 				}
+				length += req.sizeNotStarted();
 			}
 			if(!dumpNew) {
+				// assert(length == starterQueueLength());
 				starterQueue.add(chosen);
-				int length = starterQueueLength();
 				length += chosen.sizeNotStarted();
 				runningPersistentRequests.add(request);
 				if(logMINOR)
@@ -590,10 +599,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 	void removeFromStarterQueue(SendableRequest req, ObjectContainer container, boolean reqAlreadyActive) {
 		PersistentChosenRequest dumped = null;
 		synchronized(starterQueue) {
-			for(int i=0;i<starterQueue.size();i++) {
-				PersistentChosenRequest pcr = starterQueue.get(i);
+			Iterator<PersistentChosenRequest> it = starterQueue.iterator();
+			while(it.hasNext()) {
+				PersistentChosenRequest pcr = it.next();
 				if(pcr.request == req) {
-					starterQueue.remove(i);
+					it.remove();
 					dumped = pcr;
 					break;
 				}
@@ -797,15 +807,18 @@ public class ClientRequestScheduler implements RequestScheduler {
 					break;
 				}
 				length = 0;
-				for(int i=0;i<starterQueue.size();i++) {
-					PersistentChosenRequest req = starterQueue.get(i);
+				ListIterator<PersistentChosenRequest> it = starterQueue.listIterator();
+				while(it.hasNext()) {
+					int nextIndex = it.nextIndex();
+					PersistentChosenRequest req = it.next();
 					short prio = req.prio;
 					int size = req.sizeNotStarted();
 					length += size;
 					if(prio > worstPrio) {
 						worstPrio = prio;
 						worst = req;
-						worstIndex = i;
+						// XXX is there way to save iterator state and avoid O(n) List.remove(index) here?
+						worstIndex = nextIndex;
 						worstLength = size;
 						continue;
 					}
