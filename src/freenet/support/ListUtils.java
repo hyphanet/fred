@@ -4,6 +4,7 @@
 
 package freenet.support;
 import java.util.List;
+import java.util.Random;
 
 public class ListUtils {
 	/**
@@ -44,6 +45,60 @@ public class ListUtils {
 		if (idx != size-1)
 			a.set(idx, moved);
 		return moved;
+	}
+
+	public static class RandomRemoveResult<E> {
+		public final E removed;
+		public final E moved;
+		RandomRemoveResult(E removed, E moved) {
+			this.removed = removed;
+			this.moved = moved;
+		}
+	}
+
+	/**
+	 * Removes random element from List by swapping with last element.
+	 * O(1) moves.
+	 * This method is useful with ArrayList-alike containers
+	 * with O(1) get(index) and O(n) remove(index)
+	 * when keeping array order is not important.
+	 * Not synchronized (even with synchronized containers!).
+	 * WARNING: amount of fetched random data is implementation-defined
+	 * @return null if list is empty, otherwise RandomRemoveResult(removed_element, moved_element)
+	 */
+	public static <E> RandomRemoveResult<E> removeRandomBySwapLast(Random random, List<E> a) {
+		int size = a.size();
+		if (size == 0) return null;
+		if (size == 1) {
+			// short-circuit, avoid expensive random call
+			E removed = a.remove(0);
+			return new RandomRemoveResult<E>(removed, removed);
+		}
+		int idx = random.nextInt(size);
+		E removed = a.get(idx);
+		return new RandomRemoveResult<E>(removed, removeBySwapLast(a, idx));
+	}
+	/**
+	 * Removes random element from List by swapping with last element.
+	 * O(1) moves.
+	 * This method is useful with ArrayList-alike containers
+	 * with O(1) get(index) and O(n) remove(index)
+	 * when keeping array order is not important.
+	 * Not synchronized (even with synchronized containers!).
+	 * WARNING: amount of fetched random data is implementation-defined
+	 * @return null if list is empty, removed element otherwise
+	 */
+	public static <E> E removeRandomBySwapLastSimple(Random random, List<E> a) {
+		int size = a.size();
+		if (size == 0) return null;
+		if (size == 1) {
+			// short-circuit, avoid expensive random call
+			return a.remove(0);
+		}
+		int idx = random.nextInt(size);
+		E removed = a.get(idx);
+		removeBySwapLast(a, idx);
+		return removed;
 	}
 }
 

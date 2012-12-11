@@ -25,6 +25,7 @@ import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserEvent;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.HTMLNode;
+import freenet.support.ListUtils;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
@@ -204,7 +205,7 @@ public class Announcer {
 		int count = 0;
 		while(count < CONNECT_AT_ONCE) {
 			if(seeds.isEmpty()) break;
-			SimpleFieldSet fs = seeds.remove(node.random.nextInt(seeds.size()));
+			SimpleFieldSet fs = ListUtils.removeRandomBySwapLastSimple(node.random, seeds);
 			try {
 				SeedServerPeerNode seed =
 					new SeedServerPeerNode(fs, node, om.crypto, node.peers, false, om.crypto.packetMangler);
@@ -500,7 +501,7 @@ public class Announcer {
 						Logger.minor(this, "No more seednodes, announcedTo = "+announcedToIdentities.size());
 					break;
 				}
-				final SeedServerPeerNode seed = seeds.remove(node.random.nextInt(seeds.size()));
+				final SeedServerPeerNode seed = ListUtils.removeRandomBySwapLastSimple(node.random, seeds);
 				InetAddress[] addrs = seed.getInetAddresses();
 				if(!newAnnouncedIPs(addrs)) {
 					if(logMINOR)

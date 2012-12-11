@@ -21,6 +21,7 @@ import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.support.LRUMap;
+import freenet.support.ListUtils;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -617,12 +618,10 @@ public class FailureTable implements OOMHook {
 				throw new IllegalStateException("Last offer not dealt with");
 			}
 			if(!recentOffers.isEmpty()) {
-				int x = node.random.nextInt(recentOffers.size());
-				return lastOffer = recentOffers.remove(x);
+				return lastOffer = ListUtils.removeRandomBySwapLastSimple(node.random, recentOffers);
 			}
 			if(!expiredOffers.isEmpty()) {
-				int x = node.random.nextInt(expiredOffers.size());
-				return lastOffer = expiredOffers.remove(x);
+				return lastOffer = ListUtils.removeRandomBySwapLastSimple(node.random, expiredOffers);
 			}
 			// No more offers.
 			return null;

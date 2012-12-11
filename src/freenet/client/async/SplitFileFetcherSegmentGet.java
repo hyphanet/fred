@@ -17,6 +17,7 @@ import freenet.node.RequestScheduler;
 import freenet.node.SendableGet;
 import freenet.node.SendableRequestItem;
 import freenet.node.SupportsBulkCallFailure;
+import freenet.support.ListUtils;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -264,7 +265,7 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 		ArrayList<Integer> possibles = segment.validBlockNumbers(keys, true, container, context);
 		while(true) {
 			if(possibles == null || possibles.isEmpty()) return null;
-			Integer x = possibles.remove(context.random.nextInt(possibles.size()));
+			Integer x = ListUtils.removeRandomBySwapLastSimple(context.random, possibles);
 			if(segment.checkRecentlyFailed(x, container, context, keys, System.currentTimeMillis())) continue;
 			return new SplitFileFetcherSegmentSendableRequestItem(x);
 		}

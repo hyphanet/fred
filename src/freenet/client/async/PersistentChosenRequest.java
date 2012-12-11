@@ -24,6 +24,7 @@ import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
 import freenet.node.SendableRequestSender;
 import freenet.node.SupportsBulkCallFailure;
+import freenet.support.ListUtils;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
@@ -247,11 +248,8 @@ public class PersistentChosenRequest {
 		try {
 			synchronized(this) {
 				while(true) {
-					int size = blocksNotStarted.size();
-					if(size == 0) return null;
-					PersistentChosenBlock ret;
-					if(size == 1) ret = blocksNotStarted.remove(0);
-					else ret = blocksNotStarted.remove(random.nextInt(size));
+					if (blocksNotStarted.isEmpty()) return null;
+					PersistentChosenBlock ret = ListUtils.removeRandomBySwapLastSimple(random, blocksNotStarted);
 					Key key = ret.key;
 					if(key != null && sched.hasFetchingKey(key, null, false, null)) {
 						// Already fetching; remove from list.
