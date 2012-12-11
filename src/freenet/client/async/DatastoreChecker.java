@@ -52,20 +52,21 @@ public class DatastoreChecker implements PrioRunnable {
 	private static class QueueItem {
 		/** Request which we will call finishRegister() for when we have
 		 *  checked the keys lists. Deactivated (if persistent). */
-		SendableGet getter;
+		final SendableGet getter;
 		QueueItem(SendableGet getter) {
 			this.getter = getter;
 		}
 		public boolean equals(Object o) {
+			if(!(o instanceof QueueItem)) return false; // equals() should not throw ClassCastException
 			return this.getter == ((QueueItem)o).getter;
 		}
 	}
 	private static final class PersistentItem extends QueueItem {
 		/** Arrays of keys to check. */
 		Key[] keys;
-		ClientRequestScheduler scheduler;
-		DatastoreCheckerItem checkerItem;
-		BlockSet blockSet;
+		final ClientRequestScheduler scheduler;
+		final DatastoreCheckerItem checkerItem;
+		final BlockSet blockSet;
 		PersistentItem(Key[] keys, SendableGet getter, ClientRequestScheduler scheduler, DatastoreCheckerItem checkerItem, BlockSet blockSet) {
 			super(getter);
 			this.keys = keys;
@@ -81,7 +82,7 @@ public class DatastoreChecker implements PrioRunnable {
 	private static final class TransientItem extends QueueItem {
 		/** Arrays of keys to check. */
 		Key[] keys;
-		BlockSet blockSet;
+		final BlockSet blockSet;
 		TransientItem(Key[] keys, SendableGet getter, BlockSet blockSet) {
 			super(getter);
 			this.keys = keys;
@@ -166,12 +167,6 @@ public class DatastoreChecker implements PrioRunnable {
 					ClientRequestScheduler sched = getter.getScheduler(container, context);
 					PersistentItem persist = new PersistentItem(
 									null, getter, sched, item, blocks);
-					// Avoid costly listKeys early if already queued
-					// XXX Does it really worth it?
-					// XXX Is not double-queueing unusual/breakage?
-					synchronized(this) {
-						if(persistentQueue[prio].contains(persist)) continue;
-					}
 					Key[] keys = getter.listKeys(container);
 					// FIXME check the store bloom filter using store.probablyInStore().
 					item.chosenBy = context.bootID;
@@ -276,7 +271,6 @@ public class DatastoreChecker implements PrioRunnable {
 			TransientItem queueItem = new TransientItem(
 					finalKeysToCheck.toArray(new Key[finalKeysToCheck.size()]),
 					getter, blocks);
-			// XXX inconsistent: check for already queued *only* on logMINOR (and no similar check in queuePersistentRequest) ???
 			if(logMINOR && transientQueue[prio].contains(queueItem)) {
 				Logger.error(this, "Transient request "+getter+" is already queued!");
 				return;
@@ -317,7 +311,7 @@ public class DatastoreChecker implements PrioRunnable {
 					queueSize += persist.keys.length;
 				}
 			}
-			// FIXME item leak?
+			// Item is stored, we will get to it eventually.
 			if(queueSize > MAX_PERSISTENT_KEYS) return;
 			item.chosenBy = context.bootID;
 			container.store(item);
@@ -326,9 +320,15 @@ public class DatastoreChecker implements PrioRunnable {
 			for(Key key : checkKeys) {
 				finalKeysToCheck.add(key);
 			}
-			persistentQueue[prio].add(new PersistentItem(
-						finalKeysToCheck.toArray(new Key[finalKeysToCheck.size()]),
-						getter,	sched, item, blocks));
+			PersistentItem queueItem = new PersistentItem(
+					finalKeysToCheck.toArray(new Key[finalKeysToCheck.size()]),
+					getter,	sched, item, blocks);
+			// Paranoid check on heavy logging.
+			if(logMINOR && persistentQueue[prio].contains(queueItem)) {
+				Logger.error(this, "Persistent request "+getter+" is already queued!");
+				return;
+			}
+			persistentQueue[prio].add(queueItem);
 			trimPersistentQueue(prio, container);
 			notifyAll();
 		}
@@ -533,7 +533,7 @@ public class DatastoreChecker implements PrioRunnable {
 			synchronized(this) {
 				persistentQueue[prio].remove(requestMatcher);
 			}
-			// XXX this looks kind of overcomplicated
+			// Find and delete the old item.
 			Query query =
 				container.query();
 			query.constrain(DatastoreCheckerItem.class);
