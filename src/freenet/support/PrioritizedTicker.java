@@ -226,8 +226,9 @@ public class PrioritizedTicker implements Ticker, Runnable {
 								}
 								if(x == 0) {
 									timedJobsByTime.remove(t);
-								} else if(x != newJobs.length) {
-									newJobs = Arrays.copyOf(newJobs, x);
+								} else {
+									if(x != newJobs.length) // XXX impossible
+										newJobs = Arrays.copyOf(newJobs, x);
 									timedJobsByTime.put(t, newJobs);
 								}
 							}
@@ -301,8 +302,9 @@ public class PrioritizedTicker implements Ticker, Runnable {
 						}
 						if(x == 0) {
 							timedJobsByTime.remove(t);
-						} else if(x != newJobs.length) {
-							newJobs = Arrays.copyOf(newJobs, x);
+						} else {
+							if(x != newJobs.length) // XXX impossible
+								newJobs = Arrays.copyOf(newJobs, x);
 							timedJobsByTime.put(t, newJobs);
 						}
 					}
