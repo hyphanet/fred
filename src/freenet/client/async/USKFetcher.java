@@ -927,12 +927,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				return null;
 			}
 		} else {
-			if(!runningAttempts.isEmpty()) {
 				if(runningAttempts.containsKey(i)) {
 					if(logMINOR) Logger.minor(this, "Returning because already running for "+origUSK.getURI());
 					return null;
 				}
-			}
 		}
 		USKAttempt a = new USKAttempt(l, forever);
 		if(forever)
@@ -1877,9 +1875,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 						if(logDEBUG) Logger.debug(this, "Ignoring "+l);
 						continue;
 					}
-					if(alreadyRunning.contains(l)) {
+					if(alreadyRunning.remove(l)) {
 						if(logDEBUG) Logger.debug(this, "Ignoring (2): "+l);
-						alreadyRunning.remove(l);
 						continue;
 					}
 					ClientSSK key;

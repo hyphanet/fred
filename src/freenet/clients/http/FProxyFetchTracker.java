@@ -94,8 +94,8 @@ public class FProxyFetchTracker implements Runnable {
 	public FProxyFetchInProgress getFetchInProgress(FreenetURI key, long maxSize, FetchContext fctx){
 		FProxyFetchInProgress progress;
 		synchronized (fetchers) {
-			if(fetchers.containsKey(key)) {
-				Object[] check = fetchers.getArray(key);
+			Object[] check = fetchers.getArray(key);
+			if(check != null) {
 				for(int i=0;i<check.length;i++) {
 					progress = (FProxyFetchInProgress) check[i];
 					if((progress.maxSize == maxSize && progress.notFinishedOrFatallyFinished())

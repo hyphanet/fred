@@ -68,9 +68,9 @@ public class DefaultMIMETypes {
 		if(extensions != null) {
 			for(int i=0;i<extensions.length;i++) {
 				String ext = extensions[i].toLowerCase();
-				if(mimeTypesByExtension.containsKey(ext)) {
+				Short s = mimeTypesByExtension.get(ext);
+				if(s != null) {
 					// No big deal
-					Short s = mimeTypesByExtension.get(ext);
 					Logger.normal(DefaultMIMETypes.class, "Extension "+ext+" assigned to "+byNumber(s.shortValue())+" in preference to "+number+ ':' +type);
 				} else {
 					// If only one, make it primary

@@ -192,8 +192,8 @@ public class PrioritizedTicker implements Ticker, Runnable {
 		Long l = Long.valueOf(offset + now);
 		synchronized(timedJobsByTime) {
 			if(noDupes) {
-				if(timedJobsQueued.containsKey(job)) {
-					Long t = timedJobsQueued.get(job);
+				Long t = timedJobsQueued.get(job);
+				if(t != null) {
 					if(t <= l) {
 						Logger.normal(this, "Not re-running as already queued: "+runner+" for "+name);
 						return;
@@ -227,6 +227,8 @@ public class PrioritizedTicker implements Ticker, Runnable {
 								if(x == 0) {
 									assert(false);
 									timedJobsByTime.remove(t);
+								} else if (x == 1) {
+									timedJobsByTime.put(t, newJobs[0]);
 								} else {
 									if(x != newJobs.length)
 										newJobs = Arrays.copyOf(newJobs, x);
@@ -279,18 +281,15 @@ public class PrioritizedTicker implements Ticker, Runnable {
 	public void removeQueuedJob(Runnable runnable) {
 		Job job = new Job(null, runnable);
 		synchronized(timedJobsByTime) {
-			if(timedJobsQueued.containsKey(job)) {
-				Long t = timedJobsQueued.get(job);
-				if(t == null) return;
+			Long t = timedJobsQueued.remove(job);
+			if(t != null) {
 				Object o = timedJobsByTime.get(t);
 				if(o == null) return; // XXX impossible -> assert
 				if(o instanceof Job) {
-					timedJobsQueued.remove(job);
 					timedJobsByTime.remove(t);
 				} else {
 					Job[] jobs = (Job[]) o;
 					if(jobs.length == 1) {
-						timedJobsQueued.remove(job);
 						assert(o.equals(job));
 						timedJobsByTime.remove(t);
 					} else {
@@ -298,7 +297,6 @@ public class PrioritizedTicker implements Ticker, Runnable {
 						int x = 0;
 						for(int i=0;i<jobs.length;i++) {
 							if(jobs[i].equals(job)) {
-								timedJobsQueued.remove(jobs[i]);
 								continue;
 							}
 							newJobs[x++] = jobs[i];
@@ -310,6 +308,8 @@ public class PrioritizedTicker implements Ticker, Runnable {
 						if(x == 0) {
 							assert(false);
 							timedJobsByTime.remove(t);
+						} else if (x == 1) {
+							timedJobsByTime.put(t, newJobs[0]);
 						} else {
 							if(x != newJobs.length)
 								newJobs = Arrays.copyOf(newJobs, x);

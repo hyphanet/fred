@@ -151,8 +151,8 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			if(persistent) {
 				container.activate(BaseManifestPutter.this, 1);
 			}
-			if (!containerPutHandlers.contains(this)) throw new IllegalStateException("was not in containerPutHandlers");
-			containerPutHandlers.remove(this);
+			if (!containerPutHandlers.remove(this)) throw new IllegalStateException("was not in containerPutHandlers");
+			;
 			super.onSuccess(state, container, context);
 			if(persistent) {
 				container.deactivate(BaseManifestPutter.this, 1);
@@ -232,8 +232,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				if (containerPutHandlers.contains(this)) throw new IllegalStateException("was in containerPutHandlers");
 				rootContainerPutHandler = null;
 			} else {
-				if (!containerPutHandlers.contains(this)) throw new IllegalStateException("was not in containerPutHandlers");
-				containerPutHandlers.remove(this);
+				if (!containerPutHandlers.remove(this)) throw new IllegalStateException("was not in containerPutHandlers");
 			}
 			super.onSuccess(state, container, context);
 
@@ -638,8 +637,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 					container.ext().store(runningPutHandlers, 2);
 					container.activate(putHandlersWaitingForMetadata, 2);
 				}
-				if(putHandlersWaitingForMetadata.contains(this)) {
-					putHandlersWaitingForMetadata.remove(this);
+				if(putHandlersWaitingForMetadata.remove(this)) {
 					if (persistent) {
 						container.ext().store(putHandlersWaitingForMetadata, 2);
 					}
@@ -650,8 +648,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 					container.deactivate(putHandlersWaitingForMetadata, 1);
 					container.activate(putHandlerWaitingForBlockSets, 2);
 				}
-				if(putHandlerWaitingForBlockSets.contains(this)) {
-					putHandlerWaitingForBlockSets.remove(this);
+				if(putHandlerWaitingForBlockSets.remove(this)) {
 					if(persistent) {
 						container.ext().store(putHandlerWaitingForBlockSets, 2);
 					}
@@ -662,8 +659,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 					container.deactivate(putHandlersWaitingForFetchable, 1);
 					container.activate(putHandlersWaitingForFetchable, 2);
 				}
-				if(putHandlersWaitingForFetchable.contains(this)) {
-					putHandlersWaitingForFetchable.remove(this);
+				if(putHandlersWaitingForFetchable.remove(this)) {
 					if (persistent) {
 						container.ext().store(putHandlersWaitingForFetchable, 2);
 					}
@@ -1714,10 +1710,9 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 	private synchronized boolean checkFetchable(PutHandler handler) {
 		//new Error("RefactorME").printStackTrace();
-		if (!putHandlersWaitingForFetchable.contains(handler)) {
+		if (!putHandlersWaitingForFetchable.remove(handler)) {
 			throw new IllegalStateException("was not in putHandlersWaitingForFetchable! : "+handler);
 		}
-		putHandlersWaitingForFetchable.remove(handler);
 		if(fetchable) return false;
 		if(!putHandlersWaitingForFetchable.isEmpty()) return false;
 		fetchable = true;
@@ -1865,8 +1860,9 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		 * @param name name of the subdir
 		 */
 		public void makeSubDirCD(String name) {
-			if (currentDir.containsKey(name)) {
-				currentDir = Metadata.forceMap(currentDir.get(name));
+			Object dir = currentDir.get(name);
+			if (dir != null) {
+				currentDir = Metadata.forceMap(dir);
 			} else {
 				currentDir = makeSubDir(currentDir, name);
 			}

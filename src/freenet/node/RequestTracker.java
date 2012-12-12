@@ -108,8 +108,9 @@ public class RequestTracker {
 	private<T extends UIDTag> boolean innerLock(HashMap<Long, T> overallMap, HashMap<Long, T> localMap, T tag, Long uid, boolean ssk, boolean insert, boolean offerReply, boolean local) {
 		synchronized(overallMap) {
 			if(logMINOR) Logger.minor(this, "Locking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+overallMap.size(), new Exception("debug"));
-			if(overallMap.containsKey(uid)) {
-				if(overallMap.get(uid) == tag) {
+			T oldTag = overallMap.get(uid);
+			if(oldTag != null) {
+				if(oldTag == tag) {
 					Logger.error(this, "Tag already registered: "+tag, new Exception("debug"));
 				} else {
 					return false;
@@ -119,8 +120,9 @@ public class RequestTracker {
 			if(logMINOR) Logger.minor(this, "Locked "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+overallMap.size());
 			if(local) {
 				if(logMINOR) Logger.minor(this, "Locking (local) "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+localMap.size(), new Exception("debug"));
-				if(localMap.containsKey(uid)) {
-					if(localMap.get(uid) == tag) {
+				oldTag = localMap.get(uid);
+				if(oldTag != null) {
+					if(oldTag == tag) {
 						Logger.error(this, "Tag already registered (local): "+tag, new Exception("debug"));
 					} else {
 						// Violates the invariant that local requests are always registered on the main (non-local) map too.

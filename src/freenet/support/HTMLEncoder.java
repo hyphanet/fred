@@ -37,11 +37,12 @@ public class HTMLEncoder {
 	private static void encodeToBuffer(int n, String s, StringBuilder sb) {
 		for (int i = 0; i < n; i++) {
 			char c = s.charAt(i);
+			String entity;
 			if(Character.isLetterOrDigit(c)){ //only special characters need checking
 				sb.append(c);
-			} else if(charTable.containsKey(c)){
+			} else if((entity = charTable.get(c))!=null){
                 sb.append('&');
-                sb.append(charTable.get(c));
+                sb.append(entity);
                 sb.append(';');
 			} else{
 				sb.append(c);

@@ -480,9 +480,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 						@Override
 						public void run() {
 							synchronized(UpdateOverMandatoryManager.this) {
-								if(!askedSendJar.contains(source))
+								// free up a slot
+								if(!askedSendJar.remove(source))
 									return;
-								askedSendJar.remove(source); // free up a slot
 							}
 							maybeRequestMainJar();
 						}

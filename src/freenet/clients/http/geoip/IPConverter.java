@@ -291,8 +291,9 @@ public class IPConverter {
 			return null; // Not an IP address.
 		}
 		// Check cache first
-		if (cache.containsKey(longip)) {
-			return cache.get(longip);
+		Country cached = cache.get(longip);
+		if (cached != null) {
+			return cached;
 		}
 		if(memCache == null) return null;
 		long[] ips = memCache.getIps();

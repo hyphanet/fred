@@ -191,8 +191,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 					container.ext().store(runningPutHandlers, 2);
 					container.activate(putHandlersWaitingForMetadata, 2);
 				}
-				if(putHandlersWaitingForMetadata.contains(this)) {
-					putHandlersWaitingForMetadata.remove(this);
+				if(putHandlersWaitingForMetadata.remove(this)) {
 					if(persistent) container.ext().store(putHandlersWaitingForMetadata, 2);
 					Logger.error(this, "PutHandler was in waitingForMetadata in onSuccess() on "+this+" for "+SimpleManifestPutter.this);
 				}
@@ -201,8 +200,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 					container.deactivate(putHandlersWaitingForMetadata, 1);
 					container.activate(waitingForBlockSets, 2);
 				}
-				if(waitingForBlockSets.contains(this)) {
-					waitingForBlockSets.remove(this);
+				if(waitingForBlockSets.remove(this)) {
 					if(persistent) container.store(waitingForBlockSets);
 					Logger.error(this, "PutHandler was in waitingForBlockSets in onSuccess() on "+this+" for "+SimpleManifestPutter.this);
 				}
@@ -211,8 +209,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 					container.deactivate(putHandlersWaitingForFetchable, 1);
 					container.activate(putHandlersWaitingForFetchable, 2);
 				}
-				if(putHandlersWaitingForFetchable.contains(this)) {
-					putHandlersWaitingForFetchable.remove(this);
+				if(putHandlersWaitingForFetchable.remove(this)) {
 					if(persistent) container.ext().store(putHandlersWaitingForFetchable, 2);
 					// Not getting an onFetchable is not unusual, just ignore it.
 					if(logMINOR) Logger.minor(this, "PutHandler was in waitingForFetchable in onSuccess() on "+this+" for "+SimpleManifestPutter.this);
@@ -1495,13 +1492,11 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		boolean fin = false;
 		ClientPutState oldState = null;
 		synchronized(this) {
-			boolean present = metadataPuttersByMetadata.containsKey(token);
-			if(present) {
-				oldState = metadataPuttersByMetadata.remove(token);
+			oldState = metadataPuttersByMetadata.remove(token);
+			if(oldState != null) {
 				if(persistent())
 					container.activate(metadataPuttersUnfetchable, 2);
-				if(metadataPuttersUnfetchable.containsKey(token)) {
-					metadataPuttersUnfetchable.remove(token);
+				if(metadataPuttersUnfetchable.remove(token) != null) {
 					if(persistent())
 						container.ext().store(metadataPuttersUnfetchable, 2);
 				}
@@ -1576,14 +1571,11 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		Metadata token = (Metadata) state.getToken();
 		synchronized(this) {
 			if(persistent()) container.activate(token, 1);
-			boolean present = metadataPuttersByMetadata.containsKey(token);
-			if(present) {
-				oldState = metadataPuttersByMetadata.remove(token);
+			oldState = metadataPuttersByMetadata.remove(token);
+			if(oldState != null) {
 				if(persistent())
 					container.activate(metadataPuttersUnfetchable, 2);
-				if(metadataPuttersUnfetchable.containsKey(token)) {
-					metadataPuttersUnfetchable.remove(token);
-
+				if(metadataPuttersUnfetchable.remove(token) != null) {
 					if(persistent())
 						container.ext().store(metadataPuttersUnfetchable, 2);
 				}
@@ -1637,8 +1629,8 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			container.activate(metadataPuttersByMetadata, 2);
 		}
 		synchronized(this) {
-			if(metadataPuttersByMetadata.containsKey(m)) {
-				ClientPutState prevState = metadataPuttersByMetadata.get(m);
+			ClientPutState prevState = metadataPuttersByMetadata.get(m);
+			if(prevState != null) {
 				if(prevState != oldState) {
 					if(logMINOR) Logger.minor(this, "Ignoring transition in "+this+" for metadata putter: "+oldState+" -> "+newState+" because current for "+m+" is "+prevState);
 					if(persistent()) {

@@ -797,12 +797,9 @@ outer:				while(true) {
 							if(newTag == null)
 								throw new NullPointerException();
 							
-							PersistentBlobTempBucket shadow = null;
-							if(shadows.containsKey(lastCommitted)) {
-								shadow = shadows.get(lastCommitted);
-								shadows.remove(lastCommitted);
+							PersistentBlobTempBucket shadow = shadows.remove(lastCommitted);
+							if(shadow != null)
 								shadows.put(newTag.index, shadow);
-							}
 							
 							// Synchronize on the target.
 							// We must ensure that the shadow is moved also before we relinquish the lock on either bucket.

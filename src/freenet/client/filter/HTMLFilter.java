@@ -2081,7 +2081,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				boolean inline = inlineURIAttrs.contains(x);
 
 				//URI attributes require additional processing
-				if (uriAttrs.contains(x) || inline) {
+				if (inline || uriAttrs.contains(x)) {
 					if(!inline) {
 						if(logMINOR) Logger.minor(this, "Non-inline URI attribute: "+x);
 					} else {

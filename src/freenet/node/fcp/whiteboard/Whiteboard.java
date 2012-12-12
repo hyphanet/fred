@@ -25,10 +25,12 @@ public class Whiteboard {
 	 *            - The listener to be added
 	 */
 	public void addListener(String key, WhiteboardListener listener) {
-		if (listeners.containsKey(key) == false) {
-			listeners.put(key, new ArrayList<WhiteboardListener>());
+		List<WhiteboardListener> list = listeners.get(key);
+		if (list == null) {
+			list = new ArrayList<WhiteboardListener>();
+			listeners.put(key, list);
 		}
-		listeners.get(key).add(listener);
+		list.add(listener);
 	}
 
 	/**
@@ -52,7 +54,9 @@ public class Whiteboard {
 	 *            - A message object that will be passed to the listeners
 	 */
 	public void event(String key, Object msg) {
-		if (listeners.containsKey(key)) for (WhiteboardListener l : listeners.get(key)) {
+		List<WhiteboardListener> list = listeners.get(key);
+		if (list == null) return;
+		for (WhiteboardListener l : list) {
 			l.onEvent(key, msg);
 		}
 	}

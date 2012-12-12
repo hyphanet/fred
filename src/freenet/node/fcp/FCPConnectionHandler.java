@@ -814,14 +814,14 @@ public class FCPConnectionHandler implements Closeable {
 
 	public synchronized void addUSKSubscription(String identifier, SubscribeUSK subscribeUSK) throws IdentifierCollisionException {
 		if(uskSubscriptions.containsKey(identifier)) throw new IdentifierCollisionException();
-			uskSubscriptions.put(identifier, subscribeUSK);
+		uskSubscriptions.put(identifier, subscribeUSK);
 	}
 
 	public void unsubscribeUSK(String identifier) throws MessageInvalidException {
 		SubscribeUSK sub;
 		synchronized(this) {
-			if(!uskSubscriptions.containsKey(identifier)) throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, "No such identifier unsubscribing", identifier, false);
 			sub = uskSubscriptions.remove(identifier);
+			if(sub == null) throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, "No such identifier unsubscribing", identifier, false);
 		}
 		sub.unsubscribe();
 	}

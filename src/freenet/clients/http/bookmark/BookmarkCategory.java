@@ -48,8 +48,7 @@ public class BookmarkCategory extends Bookmark {
             return;
         }
 
-        Bookmark bk = get(index);
-        bookmarks.remove(index);
+        Bookmark bk = bookmarks.remove(index);
         bookmarks.add((--index < 0) ? 0 : index, bk);
     }
 
@@ -59,8 +58,7 @@ public class BookmarkCategory extends Bookmark {
             return;
         }
 
-        Bookmark bk = get(index);
-        bookmarks.remove(index);
+        Bookmark bk = bookmarks.remove(index);
         bookmarks.add((++index > size()) ? size() : index, bk);
     }
 
