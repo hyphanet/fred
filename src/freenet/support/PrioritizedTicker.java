@@ -219,6 +219,10 @@ public class PrioritizedTicker implements Ticker, Runnable {
 										continue;
 									}
 									newJobs[x++] = jobs[i];
+									if(x == jobs.length) {
+										assert(false);
+										newJobs = jobs;
+									}
 								}
 								if(x == 0) {
 									assert(false);
@@ -298,6 +302,10 @@ public class PrioritizedTicker implements Ticker, Runnable {
 								continue;
 							}
 							newJobs[x++] = jobs[i];
+							if(x == jobs.length) {
+								assert(false);
+								newJobs = jobs;
+							}
 						}
 						if(x == 0) {
 							assert(false);
