@@ -791,8 +791,12 @@ public class DefaultMIMETypes {
 	private static final String PARAM = "(?>;\\s*"+CHARS+"="+"(("+CHARS+")|(\".*\")))";
 	private static Pattern MIME_TYPE = Pattern.compile(TOP_LEVEL+"/"+CHARS+"\\s*"+PARAM+"*");
 
+	private static Pattern INFOCALYPSE_DIRTY_HACK = Pattern.compile("application/mercurial-bundle;[0-9]{1,6}");
+	
 	public static boolean isPlausibleMIMEType(String mimeType) {
-		return MIME_TYPE.matcher(mimeType).matches();
+		if(MIME_TYPE.matcher(mimeType).matches()) return true;
+		// FIXME dirty hack for backwards compatibility with old Infocalypse repo's
+		return INFOCALYPSE_DIRTY_HACK.matcher(mimeType).matches();
 	}
 	
 	static String[] getMIMETypes() {
