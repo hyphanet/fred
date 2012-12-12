@@ -207,7 +207,7 @@ public class PrioritizedTicker implements Ticker, Runnable {
 						} else {
 							Job[] jobs = (Job[]) o;
 							if(jobs.length == 1) {
-								timedJobsQueued.remove(jobs[0]);
+								timedJobsQueued.remove(job);
 								assert(jobs[0].equals(job));
 								timedJobsByTime.remove(t);
 							} else {
