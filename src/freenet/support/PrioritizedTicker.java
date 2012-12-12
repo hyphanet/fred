@@ -221,12 +221,13 @@ public class PrioritizedTicker implements Ticker, Runnable {
 									newJobs[x++] = jobs[i];
 								}
 								if(x == 0) {
-									// XXX impossible -> assert
+									assert(false);
 									timedJobsByTime.remove(t);
 								} else {
-									if(x != newJobs.length)	// XXX impossible
+									if(x != newJobs.length)
 										newJobs = Arrays.copyOf(newJobs, x);
 									timedJobsByTime.put(t, newJobs);
+									assert(x == jobs.length-1);
 								}
 							}
 						}
@@ -285,7 +286,8 @@ public class PrioritizedTicker implements Ticker, Runnable {
 				} else {
 					Job[] jobs = (Job[]) o;
 					if(jobs.length == 1) {
-						timedJobsQueued.remove(jobs[0]);
+						timedJobsQueued.remove(job);
+						assert(o.equals(job));
 						timedJobsByTime.remove(t);
 					} else {
 						Job[] newJobs = new Job[jobs.length-1];
@@ -298,12 +300,13 @@ public class PrioritizedTicker implements Ticker, Runnable {
 							newJobs[x++] = jobs[i];
 						}
 						if(x == 0) {
-							// XXX impossible -> assert
+							assert(false);
 							timedJobsByTime.remove(t);
 						} else {
-							if(x != newJobs.length) // XXX impossible
+							if(x != newJobs.length)
 								newJobs = Arrays.copyOf(newJobs, x);
 							timedJobsByTime.put(t, newJobs);
+							assert(x == jobs.length-1);
 						}
 					}
 				}
