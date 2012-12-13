@@ -230,7 +230,7 @@ public class Util {
 			for (String algo: new String[] {
 				"SHA1", "MD5", "SHA-256", "SHA-384", "SHA-512"
 			}) {
-				final Class clazz = Util.class;
+				final Class<?> clazz = Util.class;
 				final Provider sun = JceLoader.SUN;
 				MessageDigest md = MessageDigest.getInstance(algo);
 				md.digest();

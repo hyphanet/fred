@@ -67,7 +67,7 @@ public class Rijndael implements BlockCipher {
 		try {
 			final String algo = "AES/CTR/NOPADDING";
 			final Provider bcastle = JceLoader.BouncyCastle;
-			final Class clazz = Rijndael.class;
+			final Class<?> clazz = Rijndael.class;
 
 			byte[] key = new byte[32]; // Test for whether 256-bit works.
 			byte[] iv = new byte[16];
