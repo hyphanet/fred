@@ -1771,14 +1771,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		@Override
 		public void acknowledged() {
 			synchronized(this) {
-				if(!done)
-				{
+				if(!done) {
 					if (!sent) {
-					// Can happen due to lag.
-					Logger.normal(this, "Acknowledged but not sent?! on " + this + " for " + PeerNode.this+" - lag ???");
+						// Can happen due to lag.
+						Logger.normal(this, "Acknowledged but not sent?! on " + this + " for " + PeerNode.this+" - lag ???");
 					}
-				}
-				else
+				} else
 					return;
 				done = true;
 				notifyAll();
