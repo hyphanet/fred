@@ -1,7 +1,6 @@
 package freenet.support;
 
 import java.util.ArrayDeque;
-import java.util.List;
 
 import freenet.node.NodeStats;
 import freenet.node.PrioRunnable;

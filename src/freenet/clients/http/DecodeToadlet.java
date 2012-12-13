@@ -2,7 +2,6 @@ package freenet.clients.http;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.node.NodeClientCore;
