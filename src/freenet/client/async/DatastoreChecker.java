@@ -368,6 +368,7 @@ public class DatastoreChecker implements PrioRunnable {
 		// especially given that sometimes SendableGet methods get called within it, and sometimes those call back here.
 		// Maybe we can separate the lock for the Bloom filters from that for everything else?
 		// Checking whether keys are wanted by persistent requests outside the lock would likely result in busy-looping.
+		boolean waited = false;
 		synchronized(this) {
 			while(true) {
 				for(short prio = 0;prio<transientQueue.length;prio++) {
@@ -407,6 +408,8 @@ public class DatastoreChecker implements PrioRunnable {
 				} else {
 					if(logMINOR) Logger.minor(this, "Waiting for more transient requests");
 				}
+				if(waited && notPersistent) return; // Re-check queueSize after a failed wait.
+				waited = true;
 				try {
 					// Wait for anything.
 					wait(100*1000);
