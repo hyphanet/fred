@@ -137,7 +137,7 @@ public class FProxyFetchTracker implements Runnable {
 				queuedJob = false;
 			}
 			// Horrible hack, FIXME
-			Enumeration e = fetchers.keys();
+			Enumeration<FreenetURI> e = fetchers.keys();
 			while(e.hasMoreElements()) {
 				FreenetURI uri = (FreenetURI) e.nextElement();
 				// Really horrible hack, FIXME
