@@ -397,14 +397,18 @@ public class DatastoreChecker implements PrioRunnable {
 				}
 				if(keys != null)
 					break;
-
-				try {
-					context.jobRunner.queue(loader, NativeThread.HIGH_PRIORITY, true);
-				} catch (DatabaseDisabledException e1) {
-					// Ignore
+				if(!notPersistent) {
+					try {
+						context.jobRunner.queue(loader, NativeThread.HIGH_PRIORITY, true);
+					} catch (DatabaseDisabledException e1) {
+						// Ignore
+					}
+					if(logMINOR) Logger.minor(this, "Waiting for more persistent or transient requests");
+				} else {
+					if(logMINOR) Logger.minor(this, "Waiting for more transient requests");
 				}
-				if(logMINOR) Logger.minor(this, "Waiting for more persistent requests");
 				try {
+					// Wait for anything.
 					wait(100*1000);
 				} catch (InterruptedException e) {
 					// Ok
