@@ -220,7 +220,7 @@ public class PooledExecutor implements Executor {
 						}
 					}
 					synchronized(PooledExecutor.this) {
-						if (ListUtils.removeBySwapLast(waitingThreads[nativePriority - 1], this))
+						if (waitingThreads[nativePriority - 1].remove(this))
 							waitingThreadsCount--;
 
 						synchronized(this) {
