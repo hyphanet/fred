@@ -172,6 +172,7 @@ public class PooledExecutor implements Executor {
 		volatile boolean alive = true;
 		Job nextJob;
 		final long threadNo;
+		private boolean removed = false;
 
 		public MyThread(String defaultName, Job firstJob, long threadCounter, int prio, boolean dontCheckRenice) {
 			super(defaultName, prio, dontCheckRenice);
@@ -179,11 +180,23 @@ public class PooledExecutor implements Executor {
 			threadNo = threadCounter;
 			nextJob = firstJob;
 		}
-
+		
 		@Override
 		public void realRun() {
-			long ranJobs = 0;
 			int nativePriority = getNativePriority();
+			try {
+				innerRun(nativePriority);
+			} finally {
+				if(!removed) {
+					synchronized(PooledExecutor.this) {
+						runningThreads[nativePriority - 1]--;
+					}
+				}
+			}
+		}
+		
+		private void innerRun(int nativePriority) {
+			long ranJobs = 0;
 			while(true) {
 				Job job;
 
@@ -223,6 +236,7 @@ public class PooledExecutor implements Executor {
 							runningThreads[nativePriority - 1]--;
 							if(logMINOR)
 								Logger.minor(this, "Exiting having executed " + ranJobs + " jobs : " + this);
+							removed = true;
 							return;
 						}
 					}
