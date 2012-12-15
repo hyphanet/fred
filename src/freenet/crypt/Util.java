@@ -17,6 +17,8 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.HashMap;
+import java.util.Collections;
+import java.util.Map;
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.JceLoader;
 import freenet.crypt.ciphers.Rijndael;
@@ -195,7 +197,7 @@ public class Util {
 	private static final MessageDigest ctx;
 	private static final int ctx_length;
 
-	public static final HashMap<String, Provider> mdProviders;
+	public static final Map<String, Provider> mdProviders;
 
 	static private long benchmark(MessageDigest md) throws GeneralSecurityException
 	{
@@ -225,7 +227,7 @@ public class Util {
 
 	static {
 		try {
-			mdProviders = new HashMap<String, Provider>();
+			HashMap<String,Provider> mdProviders_internal = new HashMap<String, Provider>();
 
 			for (String algo: new String[] {
 				"SHA1", "MD5", "SHA-256", "SHA-384", "SHA-512"
@@ -261,8 +263,9 @@ public class Util {
 				Provider mdProvider = md.getProvider();
 				System.out.println(algo + ": using " + mdProvider);
 				Logger.normal(clazz, algo + ": using " + mdProvider);
-				mdProviders.put(algo, mdProvider);
+				mdProviders_internal.put(algo, mdProvider);
 			}
+			mdProviders = Collections.unmodifiableMap(mdProviders_internal);
 
 			ctx = MessageDigest.getInstance("SHA1", mdProviders.get("SHA1"));
 			ctx_length = ctx.getDigestLength();
