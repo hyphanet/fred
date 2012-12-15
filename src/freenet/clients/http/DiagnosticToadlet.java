@@ -400,8 +400,7 @@ public class DiagnosticToadlet extends Toadlet {
 			else {
 				long totalQueuedDownload = 0;
 				long totalQueuedUpload = 0;
-				for(int i=0;i<reqs.length;i++) {
-					RequestStatus req = reqs[i];
+				for(RequestStatus req: reqs) {
 					if(req instanceof DownloadRequestStatus) {
 						totalQueuedDownload++;
 					} else if(req instanceof UploadFileRequestStatus) {
@@ -442,10 +441,10 @@ public class DiagnosticToadlet extends Toadlet {
 
 	private int getPeerStatusCount(PeerNodeStatus[] peerNodeStatuses, int status) {
 		int count = 0;
-		for (int peerIndex = 0, peerCount = peerNodeStatuses.length; peerIndex < peerCount; peerIndex++) {
-			if(!peerNodeStatuses[peerIndex].recordStatus())
+		for (PeerNodeStatus peerNodeStatus: peerNodeStatuses) {
+			if(!peerNodeStatus.recordStatus())
 				continue;
-			if (peerNodeStatuses[peerIndex].getStatusValue() == status) {
+			if (peerNodeStatus.getStatusValue() == status) {
 				count++;
 			}
 		}
@@ -454,16 +453,16 @@ public class DiagnosticToadlet extends Toadlet {
 	
 	private int getCountSeedServers(PeerNodeStatus[] peerNodeStatuses) {
 		int count = 0;
-		for(int peerIndex = 0; peerIndex < peerNodeStatuses.length; peerIndex++) {
-			if(peerNodeStatuses[peerIndex].isSeedServer()) count++;
+		for (PeerNodeStatus peerNodeStatus: peerNodeStatuses) {
+			if(peerNodeStatus.isSeedServer()) count++;
 		}
 		return count;
 	}
 
 	private int getCountSeedClients(PeerNodeStatus[] peerNodeStatuses) {
 		int count = 0;
-		for(int peerIndex = 0; peerIndex < peerNodeStatuses.length; peerIndex++) {
-			if(peerNodeStatuses[peerIndex].isSeedClient()) count++;
+		for (PeerNodeStatus peerNodeStatus: peerNodeStatuses) {
+			if(peerNodeStatus.isSeedClient()) count++;
 		}
 		return count;
 	}

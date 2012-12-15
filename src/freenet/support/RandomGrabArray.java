@@ -694,8 +694,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 	public void moveElementsTo(RandomGrabArray existingGrabber,
 			ObjectContainer container, boolean canCommit) {
 		WrapperManager.signalStarting(5*60*1000);
-		for(int i=0;i<blocks.length;i++) {
-			Block block = blocks[i];
+		for(Block block: blocks) {
 			if(persistent) container.activate(block, 1);
 			for(int j=0;j<block.reqs.length;j++) {
 				RandomGrabArrayItem item = block.reqs[j];

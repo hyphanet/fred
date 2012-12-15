@@ -263,8 +263,8 @@ public class HTMLNode implements XMLCharacterClasses {
 	public void addChildren(HTMLNode[] childNodes) {
 		if(readOnly)
 			throw new IllegalArgumentException("Read only");
-		for (int i = 0, c = childNodes.length; i < c; i++) {
-			addChild(childNodes[i]);
+		for (HTMLNode childNode: childNodes) {
+			addChild(childNode);
 		}
 	}
 

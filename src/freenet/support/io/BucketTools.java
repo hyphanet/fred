@@ -168,7 +168,7 @@ public class BucketTools {
 		}
 
 		int[] ret = new int[list.size()];
-		for (int i = 0; i < list.size(); i++) {
+		for (int i = 0; i < ret.length; i++) {
 			ret[i] = list.get(i);
 		}
 		return ret;
@@ -183,7 +183,7 @@ public class BucketTools {
 		}
 
 		int[] ret = new int[list.size()];
-		for (int i = 0; i < list.size(); i++) {
+		for (int i = 0; i < ret.length; i++) {
 			ret[i] = list.get(i);
 		}
 		return ret;

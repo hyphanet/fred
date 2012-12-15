@@ -3715,9 +3715,7 @@ public class Node implements TimeSkewDetectorCallback {
 				@Override
 				public void run() {
 					freenet.support.Logger.OSThread.logPID(this);
-					PeerNode[] nodes = peers.myPeers();
-					for(int i = 0; i < nodes.length; i++) {
-						PeerNode pn = nodes[i];
+					for(PeerNode pn: peers.myPeers()) {
 						pn.updateVersionRoutablity();
 					}
 				}
@@ -4739,24 +4737,22 @@ public class Node implements TimeSkewDetectorCallback {
 	 * Return a peer of the node given its ip and port, name or identity, as a String
 	 */
 	public PeerNode getPeerNode(String nodeIdentifier) {
-		PeerNode[] pn = peers.myPeers();
-		for(int i=0;i<pn.length;i++)
-		{
-			Peer peer = pn[i].getPeer();
+		for(PeerNode pn: peers.myPeers()) {
+			Peer peer = pn.getPeer();
 			String nodeIpAndPort = "";
 			if(peer != null) {
 				nodeIpAndPort = peer.toString();
 			}
-			String identity = pn[i].getIdentityString();
-			if(pn[i] instanceof DarknetPeerNode) {
-				DarknetPeerNode dpn = (DarknetPeerNode) pn[i];
+			String identity = pn.getIdentityString();
+			if(pn instanceof DarknetPeerNode) {
+				DarknetPeerNode dpn = (DarknetPeerNode) pn;
 				String name = dpn.myName;
 				if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier)) {
-					return pn[i];
+					return pn;
 				}
 			} else {
 				if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier)) {
-					return pn[i];
+					return pn;
 				}
 			}
 		}
@@ -4812,10 +4808,9 @@ public class Node implements TimeSkewDetectorCallback {
 	// using the PacketSender/Ticker. Would save a few threads.
 
 	public int getNumARKFetchers() {
-		PeerNode[] p = peers.myPeers();
 		int x = 0;
-		for(int i=0;i<p.length;i++) {
-			if(p[i].isFetchingARK()) x++;
+		for(PeerNode p: peers.myPeers()) {
+			if(p.isFetchingARK()) x++;
 		}
 		return x;
 	}

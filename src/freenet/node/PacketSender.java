@@ -181,13 +181,11 @@ public class PacketSender implements Runnable {
 		/** The peer(s) which lowestHandshakeTime is referring to */
 		ArrayList<PeerNode> handshakePeers = null;
 
-		for(int i = 0; i < nodes.length; i++) {
+		for(PeerNode pn: nodes) {
 			now = System.currentTimeMillis();
-			int idx = i;
 			
 			// Basic peer maintenance.
 			
-			PeerNode pn = nodes[idx];
 			// For purposes of detecting not having received anything, which indicates a 
 			// serious connectivity problem, we want to look for *any* packets received, 
 			// including auth packets.

@@ -239,7 +239,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			Logger.error(this, "Apparently contacted by "+opn+") on "+this, new Exception("error"));
 			opn = null;
 		}
-		PeerNode pn;
 		boolean wantAnonAuth = crypto.wantAnonAuth();
 
 		if(opn != null) {
@@ -260,8 +259,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(node.isStopping()) return DECODED.SHUTTING_DOWN;
 		// Disconnected node connecting on a new IP address?
 		if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2) {
-			for(int i=0;i<peers.length;i++) {
-				pn = peers[i];
+			for(PeerNode pn: peers) {
 				if(pn == opn) continue;
 				if(logDEBUG)
 					Logger.debug(this, "Trying auth with "+pn);
@@ -291,9 +289,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			if(opennet.wantPeer(null, false, true, true, ConnectionType.RECONNECT)) {
 				// We want a peer.
 				// Try old connections.
-				PeerNode[] oldPeers = opennet.getOldPeers();
-				for(int i=0;i<oldPeers.length;i++) {
-					if(tryProcessAuth(buf, offset, length, oldPeers[i], peer, true, now)) return DECODED.DECODED;
+				for(PeerNode oldPeer: opennet.getOldPeers()) {
+					if(tryProcessAuth(buf, offset, length, oldPeer, peer, true, now)) return DECODED.DECODED;
 				}
 				didntTryOldOpennetPeers = false;
 			} else
@@ -328,10 +325,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	
 	private boolean checkAnonAuthChangeIP(PeerNode opn, byte[] buf, int offset, int length, Peer peer, long now) {
 		PeerNode[] anonPeers = crypto.getAnonSetupPeerNodes();
-		PeerNode pn;
 		if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 3) {
-			for(int i=0;i<anonPeers.length;i++) {
-				pn = anonPeers[i];
+			for(PeerNode pn: anonPeers) {
 				if(pn == opn) continue;
 				if(tryProcessAuthAnonReply(buf, offset, length, pn, peer, now)) {
 					return true;

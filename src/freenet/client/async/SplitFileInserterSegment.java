@@ -1340,8 +1340,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		Arrays.sort(blockNumbers);
 		int prevBlockNumber = -1;
 		byte cryptoAlgorithm = getCryptoAlgorithm(container);
-		for(int i=0;i<blockNumbers.length;i++) {
-			int blockNumber = blockNumbers[i];
+		for(int blockNumber: blockNumbers) {
 			if(blockNumber == prevBlockNumber) {
 				Logger.error(this, "Duplicate block number in makeBlocks() in "+this+": two copies of "+blockNumber);
 				continue;

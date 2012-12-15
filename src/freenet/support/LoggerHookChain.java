@@ -43,9 +43,8 @@ public class LoggerHookChain extends LoggerHook {
      */
     @Override
 	public synchronized void log(Object o, Class<?> c, String msg, Throwable e, LogLevel priority) {
-        LoggerHook[] myHooks = hooks;
-        for(int i=0;i<myHooks.length;i++) {
-            myHooks[i].log(o,c,msg,e,priority);
+        for(LoggerHook hook: hooks) {
+            hook.log(o,c,msg,e,priority);
         }
     }
 
@@ -89,16 +88,15 @@ public class LoggerHookChain extends LoggerHook {
 	public void setDetailedThresholds(String details) throws InvalidThresholdException {
 		super.setDetailedThresholds(details);
 		// No need to tell subordinates, we will do the filtering.
-//		LoggerHook[] h = getHooks();
-//		for (int i = 0; i < h.length; i++)
-//			h[i].setDetailedThresholds(details);
+//		LoggerHook[] h = ;
+//		for (LoggerHook h: getHooks())
+//			h.setDetailedThresholds(details);
 	}
 	@Override
 	public void setThreshold(LogLevel thresh) {
 		super.setThreshold(thresh);
-		LoggerHook[] h = getHooks();
-		for (int i = 0; i < h.length; i++)
-			h[i].setThreshold(thresh);
+		for (LoggerHook h: getHooks())
+			h.setThreshold(thresh);
 	}
 }
 

@@ -58,8 +58,8 @@ public class BucketChainBucket implements Bucket {
 			freed = true;
 			buckets.clear();
 		}
-		for(int i=0;i<list.length;i++) {
-			list[i].free();
+		for(Bucket l: list) {
+			l.free();
 		}
 	}
 	
@@ -212,8 +212,8 @@ public class BucketChainBucket implements Bucket {
 			list = getBuckets();
 			buckets.clear();
 		}
-		for(int i=0;i<list.length;i++) {
-			list[i].free();
+		for(Bucket l: list) {
+			l.free();
 		}
 		return new OutputStream() {
 

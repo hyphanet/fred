@@ -556,11 +556,11 @@ public class Announcer {
 	 */
 	private synchronized boolean newAnnouncedIPs(InetAddress[] addrs) {
 		boolean hasNonLocalAddresses = false;
-		for(int i=0;i<addrs.length;i++) {
-			if(!IPUtil.isValidAddress(addrs[i], false))
+		for(InetAddress addr: addrs) {
+			if(!IPUtil.isValidAddress(addr, false))
 				continue;
 			hasNonLocalAddresses = true;
-			if(!announcedToIPs.contains(addrs[i]))
+			if(!announcedToIPs.contains(addr))
 				return true;
 		}
 		return !hasNonLocalAddresses;

@@ -258,8 +258,7 @@ public class SubConfig implements Comparable<SubConfig> {
 		}
 		if(logMINOR)
 			Logger.minor(this, "Prefix="+prefix);
-		for(int i=0;i<entries.length;i++) {
-			Map.Entry<String, Option<?>> entry = entries[i];
+		for(Map.Entry<String, Option<?>> entry: entries) {
 			String key = entry.getKey();
 			Option<?> o = entry.getValue();
 			if(logMINOR)

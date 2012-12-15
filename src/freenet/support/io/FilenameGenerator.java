@@ -173,9 +173,7 @@ public class FilenameGenerator {
 				}
 				int failed = 0;
 				// Move each file
-				File[] list = tmpDir.listFiles();
-				for(int i=0;i<list.length;i++) {
-					File f = list[i];
+				for(File f: tmpDir.listFiles()) {
 					String name = f.getName();
 					if(!name.startsWith(prefix)) continue;
 					if(!FileUtil.moveTo(f, new File(dir, name), true))
@@ -202,9 +200,7 @@ public class FilenameGenerator {
 			}
 			int failed = 0;
 			// Move each file
-			File[] list = tmpDir.listFiles();
-			for(int i=0;i<list.length;i++) {
-				File f = list[i];
+			for(File f: tmpDir.listFiles()) {
 				String name = f.getName();
 				if(!name.startsWith(this.prefix)) continue;
 				String newName = prefix + name.substring(this.prefix.length());

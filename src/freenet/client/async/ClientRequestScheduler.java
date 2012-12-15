@@ -258,8 +258,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 					datastoreChecker.queueTransientRequest(getter, blocks);
 			} else {
 				boolean anyValid = false;
-				for(int i=0;i<getters.length;i++) {
-					if(!(getters[i].isCancelled(null) || getters[i].getCooldownTime(container, clientContext, System.currentTimeMillis()) != 0))
+				for(SendableGet getter : getters) {
+					if(!(getter.isCancelled(null) || getter.getCooldownTime(container, clientContext, System.currentTimeMillis()) != 0))
 						anyValid = true;
 				}
 				finishRegister(getters, false, container, anyValid, null);
@@ -309,12 +309,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(logMINOR) Logger.minor(this, "finishRegister for "+getters+" anyValid="+anyValid+" reg="+reg+" persistent="+persistent);
 		if(isInsertScheduler) {
 			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
-			for(int i=0;i<getters.length;i++) {
+			for(SendableGet getter : getters) {
 				if(persistent)
-					container.activate(getters[i], 1);
-				getters[i].internalError(e, this, container, clientContext, persistent);
+					container.activate(getter, 1);
+				getter.internalError(e, this, container, clientContext, persistent);
 				if(persistent)
-					container.deactivate(getters[i], 1);
+					container.deactivate(getter, 1);
 			}
 			throw e;
 		}
@@ -329,8 +329,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					Logger.minor(this, "finishRegister() for "+getters);
 				if(anyValid) {
 					boolean wereAnyValid = false;
-					for(int i=0;i<getters.length;i++) {
-						SendableGet getter = getters[i];
+					for(SendableGet getter : getters) {
 						container.activate(getter, 1);
 						// Just check isCancelled, we have already checked the cooldown.
 						if(!(getter.isCancelled(container))) {
@@ -353,16 +352,16 @@ public class ClientRequestScheduler implements RequestScheduler {
 				queueFillRequestStarterQueue(true);
 		} else {
 			// Register immediately.
-			for(int i=0;i<getters.length;i++) {
+			for(SendableGet getter : getters) {
 				
-				if((!anyValid) || getters[i].isCancelled(null)) {
-					getters[i].preRegister(container, clientContext, false);
+				if((!anyValid) || getter.isCancelled(null)) {
+					getter.preRegister(container, clientContext, false);
 					continue;
 				} else {
-					if(getters[i].preRegister(container, clientContext, true)) continue;
+					if(getter.preRegister(container, clientContext, true)) continue;
 				}
-				if(!getters[i].isCancelled(null))
-					schedTransient.innerRegister(getters[i], random, null, clientContext, getters);
+				if(!getter.isCancelled(null))
+					schedTransient.innerRegister(getter, random, null, clientContext, getters);
 			}
 			starter.wakeUp();
 		}
@@ -1013,8 +1012,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			return (Long) ret;
 		}
 		Key[] keys = (Key[]) ret;
-		for(int j=0;j<keys.length;j++) {
-			Key key = keys[j];
+		for(Key key: keys) {
 			if(persistent)
 				container.activate(key, 5);
 			if(logMINOR) Logger.minor(this, "Restoring key: "+key);
@@ -1036,17 +1034,17 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(logMINOR) Logger.minor(this, "Restoring key but no keys queued?? for "+key);
 		}
 		if(reqs != null) {
-			for(int i=0;i<reqs.length;i++) {
+			for(SendableGet req: reqs) {
 				// Requests may or may not be returned activated from requestsForKey(), so don't check
 				// But do deactivate them once we're done with them.
-				container.activate(reqs[i], 1);
-				reqs[i].requeueAfterCooldown(key, now, container, clientContext);
-				container.deactivate(reqs[i], 1);
+				container.activate(req, 1);
+				req.requeueAfterCooldown(key, now, container, clientContext);
+				container.deactivate(req, 1);
 			}
 		}
 		if(transientReqs != null) {
-			for(int i=0;i<transientReqs.length;i++)
-				transientReqs[i].requeueAfterCooldown(key, now, container, clientContext);
+			for(SendableGet req: transientReqs)
+				req.requeueAfterCooldown(key, now, container, clientContext);
 		}
 	}
 

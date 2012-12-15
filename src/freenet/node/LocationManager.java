@@ -197,9 +197,7 @@ public class LocationManager implements ByteCounter {
                             try {
                                 boolean myFlag = false;
                                 double myLoc = getLocation();
-                                PeerNode[] peers = node.peers.connectedPeers();
-                                for(int i=0;i<peers.length;i++) {
-                                    PeerNode pn = peers[i];
+                                for(PeerNode pn: node.peers.connectedPeers()) {
                                     if(pn.isRoutable()) {
                                     	synchronized(pn) {
                                     		double ploc = pn.getLocation();
@@ -782,39 +780,39 @@ public class LocationManager implements ByteCounter {
         sb.append("my: ").append(myLoc).append(", his: ").append(hisLoc).append(", myFriends: ");
         sb.append(friendLocs.length).append(", hisFriends: ").append(hisFriendLocs.length).append(" mine:\n");
 
-        for(int i=0;i<friendLocs.length;i++) {
-            sb.append(friendLocs[i]);
+        for(double loc: friendLocs) {
+            sb.append(loc);
             sb.append(' ');
         }
 
         sb.append("\nhis:\n");
 
-        for(int i=0;i<hisFriendLocs.length;i++) {
-            sb.append(hisFriendLocs[i]);
+        for(double loc: hisFriendLocs) {
+            sb.append(loc);
             sb.append(' ');
         }
 
         if(logMINOR) Logger.minor(this, sb.toString());
 
         double A = 1.0;
-        for(int i=0;i<friendLocs.length;i++) {
-            if(Math.abs(friendLocs[i] - myLoc) <= Double.MIN_VALUE*2) continue;
-            A *= Location.distance(friendLocs[i], myLoc);
+        for(double loc: friendLocs) {
+            if(Math.abs(loc - myLoc) <= Double.MIN_VALUE*2) continue;
+            A *= Location.distance(loc, myLoc);
         }
-        for(int i=0;i<hisFriendLocs.length;i++) {
-            if(Math.abs(hisFriendLocs[i] - hisLoc) <= Double.MIN_VALUE*2) continue;
-            A *= Location.distance(hisFriendLocs[i], hisLoc);
+        for(double loc: hisFriendLocs) {
+            if(Math.abs(loc - hisLoc) <= Double.MIN_VALUE*2) continue;
+            A *= Location.distance(loc, hisLoc);
         }
 
         // B = the same, with our two values swapped
         double B = 1.0;
-        for(int i=0;i<friendLocs.length;i++) {
-            if(Math.abs(friendLocs[i] - hisLoc) <= Double.MIN_VALUE*2) continue;
-            B *= Location.distance(friendLocs[i], hisLoc);
+        for(double loc: friendLocs) {
+            if(Math.abs(loc - hisLoc) <= Double.MIN_VALUE*2) continue;
+            B *= Location.distance(loc, hisLoc);
         }
-        for(int i=0;i<hisFriendLocs.length;i++) {
-            if(Math.abs(hisFriendLocs[i] - myLoc) <= Double.MIN_VALUE*2) continue;
-            B *= Location.distance(hisFriendLocs[i], myLoc);
+        for(double loc: hisFriendLocs) {
+            if(Math.abs(loc - myLoc) <= Double.MIN_VALUE*2) continue;
+            B *= Location.distance(loc, myLoc);
         }
 
         //Logger.normal(this, "A="+A+" B="+B);
@@ -1256,9 +1254,9 @@ public class LocationManager implements ByteCounter {
             if(items.length < 1)
             	return;
             items = recentlyForwardedIDs.values().toArray(items);
-            for(int i=0;i<items.length;i++) {
-                if(now - items[i].lastMessageTime > (TIMEOUT*2)) {
-                    removeRecentlyForwardedItem(items[i]);
+            for(RecentlyForwardedItem item: items) {
+                if(now - item.lastMessageTime > (TIMEOUT*2)) {
+                    removeRecentlyForwardedItem(item);
                 }
             }
         }

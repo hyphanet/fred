@@ -930,8 +930,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			}
 			namesToByteArrays.put("", meta);
 		} else {
-			for(int j=0;j<defaultDefaultNames.length;j++) {
-				String name = defaultDefaultNames[j];
+			for(String name: defaultDefaultNames) {
 				Metadata meta = (Metadata) namesToByteArrays.get(name);
 				if(meta != null) {
 					namesToByteArrays.put("", meta);
@@ -1170,8 +1169,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		Metadata[] metas = e.mustResolve;
 		if(persistent())
 			container.activate(metadataPuttersByMetadata, 2);
-		for(int i=0;i<metas.length;i++) {
-			Metadata m = metas[i];
+		for(Metadata m: metas) {
 			if(persistent()) container.activate(m, Integer.MAX_VALUE);
 			if(logMINOR) Logger.minor(this, "Resolving "+m+" for "+this);
 			synchronized(this) {

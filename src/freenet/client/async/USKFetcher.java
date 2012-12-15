@@ -756,14 +756,14 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					data = null;
 				}
 			}
-			for(int i=0;i<cb.length;i++) {
+			for(USKFetcherCallback c: cb) {
 				try {
 					if(ed == -1)
-						cb[i].onFailure(null, context);
+						c.onFailure(null, context);
 					else
-						cb[i].onFoundEdition(ed, origUSK.copy(ed), null, context, lastWasMetadata, lastCompressionCodec, data, false, false);
+						c.onFoundEdition(ed, origUSK.copy(ed), null, context, lastWasMetadata, lastCompressionCodec, data, false, false);
 				} catch (Exception e) {
-					Logger.error(this, "An exception occured while dealing with a callback:"+cb[i].toString()+"\n"+e.getMessage(),e);
+					Logger.error(this, "An exception occured while dealing with a callback:"+c.toString()+"\n"+e.getMessage(),e);
 				}
 			}
 		}
@@ -865,8 +865,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			completed = true;
 			cb = callbacks.toArray(new USKFetcherCallback[callbacks.size()]);
 		}
-		for(int i=0;i<cb.length;i++)
-			cb[i].onCancelled(null, context);
+		for(USKFetcherCallback c: cb)
+			c.onCancelled(null, context);
 	}
 
 	public void onFail(USKAttempt attempt, ClientContext context) {
@@ -1083,10 +1083,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			storeChecker = runningStoreChecker;
 			runningStoreChecker = null;
 		}
-		for(int i=0;i<attempts.length;i++)
-			attempts[i].cancel(container, context);
-		for(int i=0;i<polling.length;i++)
-			polling[i].cancel(container, context);
+		for(USKAttempt attempt: attempts)
+			attempt.cancel(container, context);
+		for(USKAttempt p: polling)
+			p.cancel(container, context);
 		for(DBRAttempt a : atts)
 			a.cancel(container, context);
 		if(storeChecker != null)
@@ -1141,8 +1141,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			return;
 		}
 		
-		for(int i=0;i<localCallbacks.length;i++) {
-			USKCallback cb = localCallbacks[i];
+		for(USKCallback cb: localCallbacks) {
 			short prio = cb.getPollingPriorityNormal();
 			if(logDEBUG) Logger.debug(this, "Normal priority for "+cb+" : "+prio);
 			if(prio < normalPrio) normalPrio = prio;
@@ -1150,8 +1149,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			prio = cb.getPollingPriorityProgress();
 			if(prio < progressPrio) progressPrio = prio;
 		}
-		for(int i=0;i<fetcherCallbacks.length;i++) {
-			USKFetcherCallback cb = fetcherCallbacks[i];
+		for(USKFetcherCallback cb: fetcherCallbacks) {
 			short prio = cb.getPollingPriorityNormal();
 			if(logDEBUG) Logger.debug(this, "Normal priority for "+cb+" : "+prio);
 			if(prio < normalPrio) normalPrio = prio;
@@ -1320,17 +1318,17 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			parent.toNetwork(null, context);
 		if(logMINOR)
 			Logger.minor(this, "Registering "+attempts.length+" USKChecker's for "+this+" running="+runningAttempts.size()+" polling="+pollingAttempts.size());
-		for(int i=0;i<attempts.length;i++) {
+		for(USKAttempt attempt: attempts) {
 			long lastEd = uskManager.lookupLatestSlot(origUSK);
 			// FIXME not sure this condition works, test it!
 			if(keepLastData && lastRequestData == null && lastEd == origUSK.suggestedEdition)
 				lastEd--; // If we want the data, then get it for the known edition, so we always get the data, so USKInserter can compare it and return the old edition if it is identical.
-			if(attempts[i] == null) continue;
-			if(attempts[i].number > lastEd)
-				attempts[i].schedule(null, context);
+			if(attempt == null) continue;
+			if(attempt.number > lastEd)
+				attempt.schedule(null, context);
 			else {
 				synchronized(USKFetcher.this) {
-					runningAttempts.remove(attempts[i].number);
+					runningAttempts.remove(attempt.number);
 				}
 			}
 		}
@@ -1484,18 +1482,18 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				parent.toNetwork(container, context);
 				notifySendingToNetwork(context);
 			}
-			for(int i=0;i<attempts.length;i++) {
+			for(USKAttempt attempt: attempts) {
 				long lastEd = uskManager.lookupLatestSlot(origUSK);
 				// FIXME not sure this condition works, test it!
 				if(keepLastData && lastRequestData == null && lastEd == origUSK.suggestedEdition)
 					lastEd--; // If we want the data, then get it for the known edition, so we always get the data, so USKInserter can compare it and return the old edition if it is identical.
-				if(attempts[i] == null) continue;
-				if(attempts[i].number > lastEd)
-					attempts[i].schedule(container, context);
+				if(attempt == null) continue;
+				if(attempt.number > lastEd)
+					attempt.schedule(container, context);
 				else {
 					synchronized(USKFetcher.this) {
-						runningAttempts.remove(attempts[i].number);
-						pollingAttempts.remove(attempts[i].number);
+						runningAttempts.remove(attempt.number);
+						pollingAttempts.remove(attempt.number);
 					}
 				}
 			}

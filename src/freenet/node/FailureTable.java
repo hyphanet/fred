@@ -198,8 +198,8 @@ public class FailureTable implements OOMHook {
 		public long expires() {
 			synchronized(FailureTable.this) {
 				long last = 0;
-				for(int i=0;i<offers.length;i++) {
-					if(offers[i].offeredTime > last) last = offers[i].offeredTime;
+				for(BlockOffer offer: offers) {
+					if(offer.offeredTime > last) last = offer.offeredTime;
 				}
 				return last + OFFER_EXPIRY_TIME;
 			}
@@ -207,8 +207,8 @@ public class FailureTable implements OOMHook {
 
 		public boolean isEmpty(long now) {
 			synchronized(FailureTable.this) {
-				for(int i=0;i<offers.length;i++) {
-					if(!offers[i].isExpired(now)) return false;
+				for(BlockOffer offer: offers) {
+					if(!offer.isExpired(now)) return false;
 				}
 				return true;
 			}
@@ -594,12 +594,11 @@ public class FailureTable implements OOMHook {
 			recentOffers = new Vector<BlockOffer>();
 			expiredOffers = new Vector<BlockOffer>();
 			long now = System.currentTimeMillis();
-			BlockOffer[] offers = offerList.offers;
-			for(int i=0;i<offers.length;i++) {
-				if(!offers[i].isExpired(now))
-					recentOffers.add(offers[i]);
+			for(BlockOffer offer: offerList.offers) {
+				if(!offer.isExpired(now))
+					recentOffers.add(offer);
 				else
-					expiredOffers.add(offers[i]);
+					expiredOffers.add(offer);
 			}
 			if(logMINOR)
 				Logger.minor(this, "Offers: "+recentOffers.size()+" recent "+expiredOffers.size()+" expired");
@@ -689,13 +688,13 @@ public class FailureTable implements OOMHook {
 				entries = new FailureTableEntry[entriesByKey.size()];
 				entriesByKey.valuesToArray(entries);
 			}
-			for(int i=0;i<entries.length;i++) {
-				if(entries[i].cleanup()) {
+			for(FailureTableEntry entry: entries) {
+				if(entry.cleanup()) {
 					synchronized(FailureTable.this) {
-						synchronized(entries[i]) {
-						if(entries[i].isEmpty()) {
-							if(logMINOR) Logger.minor(this, "Removing entry for "+entries[i].key);
-							entriesByKey.removeKey(entries[i].key);
+						synchronized(entry) {
+						if(entry.isEmpty()) {
+							if(logMINOR) Logger.minor(this, "Removing entry for "+entry.key);
+							entriesByKey.removeKey(entry.key);
 						}
 						}
 					}

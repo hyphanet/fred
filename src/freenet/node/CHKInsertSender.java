@@ -964,28 +964,28 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 					boolean completedTransfers = true;
 					boolean completedNotifications = true;
 					boolean someFailed = false;
-					for(int i=0;i<transfers.length;i++) {
-						if(!transfers[i].pn.isRoutable()) {
+					for(BackgroundTransfer transfer: transfers) {
+						if(!transfer.pn.isRoutable()) {
 							if(logMINOR)
-								Logger.minor(this, "Ignoring transfer to "+transfers[i].pn+" for "+this+" as not routable");
+								Logger.minor(this, "Ignoring transfer to "+transfer.pn+" for "+this+" as not routable");
 							continue;
 						}
 						noneRouteable = false;
-						if(!transfers[i].completedTransfer) {
+						if(!transfer.completedTransfer) {
 							if(logMINOR)
-								Logger.minor(this, "Waiting for transfer completion to "+transfers[i].pn+" : "+transfers[i]);
+								Logger.minor(this, "Waiting for transfer completion to "+transfer.pn+" : "+transfer);
 							//must wait
 							completedTransfers = false;
 							break;
 						}
-						if (!transfers[i].receivedCompletionNotice) {
+						if (!transfer.receivedCompletionNotice) {
 							if(logMINOR)
-								Logger.minor(this, "Waiting for completion notice from "+transfers[i].pn+" : "+transfers[i]);
+								Logger.minor(this, "Waiting for completion notice from "+transfer.pn+" : "+transfer);
 							//must wait
 							completedNotifications = false;
 							break;
 						}
-						if (!transfers[i].completionSucceeded)
+						if (!transfer.completionSucceeded)
 							someFailed = true;
 					}
 					if(noneRouteable) return false;

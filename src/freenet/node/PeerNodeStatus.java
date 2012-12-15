@@ -233,8 +233,8 @@ public class PeerNodeStatus {
 	 */
 	public static int getPeerStatusCount(PeerNodeStatus[] peerNodeStatuses, int status) {
 		int count = 0;
-		for (int peerIndex = 0, peerCount = peerNodeStatuses.length; peerIndex < peerCount; peerIndex++) {
-			if (peerNodeStatuses[peerIndex].getStatusValue() == status) {
+		for (PeerNodeStatus peerNodeStatus: peerNodeStatuses) {
+			if (peerNodeStatus.getStatusValue() == status) {
 				count++;
 			}
 		}

@@ -45,8 +45,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 	
 	public void queue(SingleBlockInserter[] sbis, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
-			for(int i=0;i<sbis.length;i++) {
-				SingleBlockInserter inserter = sbis[i];
+			for(SingleBlockInserter inserter: sbis) {
 				if(inserter == null) continue;
 				if(inserter.isCancelled(container)) continue;
 				if(inserter.resultingURI != null) continue;
@@ -58,8 +57,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 			notifyAll();
 		}
 		boolean anyPersistent = false;
-		for(int i=0;i<sbis.length;i++) {
-			SingleBlockInserter inserter = sbis[i];
+		for(SingleBlockInserter inserter: sbis) {
 			if(inserter == null) continue;
 			if(inserter.isCancelled(container)) continue;
 			if(inserter.resultingURI != null) continue;

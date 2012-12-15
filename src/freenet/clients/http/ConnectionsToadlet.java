@@ -329,11 +329,11 @@ public abstract class ConnectionsToadlet extends Toadlet {
 						backoffReasonContent.addChild("#", NodeL10n.getBase().getString("StatisticsToadlet.notBackedOff"));
 					} else {
 						HTMLNode reasonList = backoffReasonContent.addChild("ul");
-						for(int i=0;i<routingBackoffReasons.length;i++) {
-							int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i], true);
+						for(String routingBackoffReason: routingBackoffReasons) {
+							int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReason, true);
 							if(reasonCount > 0) {
 								total += reasonCount;
-								reasonList.addChild("li", routingBackoffReasons[i] + '\u00a0' + reasonCount);
+								reasonList.addChild("li", routingBackoffReason + '\u00a0' + reasonCount);
 							}
 						}
 					}
@@ -348,11 +348,11 @@ public abstract class ConnectionsToadlet extends Toadlet {
 						backoffReasonContent.addChild("#", NodeL10n.getBase().getString("StatisticsToadlet.notBackedOff"));
 					} else {
 						HTMLNode reasonList = backoffReasonContent.addChild("ul");
-						for(int i=0;i<routingBackoffReasons.length;i++) {
-							int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i], false);
+						for(String routingBackoffReason: routingBackoffReasons) {
+							int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReason, false);
 							if(reasonCount > 0) {
 								total += reasonCount;
-								reasonList.addChild("li", routingBackoffReasons[i] + '\u00a0' + reasonCount);
+								reasonList.addChild("li", routingBackoffReason + '\u00a0' + reasonCount);
 							}
 						}
 					}
@@ -469,8 +469,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				
 				SimpleColumn[] endCols = endColumnHeaders(advancedMode);
 				if(endCols != null) {
-					for(int i=0;i<endCols.length;i++) {
-						SimpleColumn col = endCols[i];
+					for(SimpleColumn col: endCols) {
 						HTMLNode header = peerTableHeaderRow.addChild("th");
 						String sortString = col.getSortString();
 						if(sortString != null)
@@ -485,8 +484,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				for(PeerNodeStatus status : allPeerNodeStatuses) {
 					totalSelectionRate += status.getSelectionRate();
 				}
-				for (int peerIndex = 0, peerCount = peerNodeStatuses.length; peerIndex < peerCount; peerIndex++) {					
-					PeerNodeStatus peerNodeStatus = peerNodeStatuses[peerIndex];
+				for (PeerNodeStatus peerNodeStatus: peerNodeStatuses) {
 					drawRow(peerTable, peerNodeStatus, advancedMode, fProxyJavascriptEnabled, now, path, enablePeerActions, endCols, drawMessageTypes, totalSelectionRate, fix1);
 					
 				}
@@ -1011,8 +1009,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		}
 		
 		if(endCols != null) {
-			for(int i=0;i<endCols.length;i++) {
-				endCols[i].drawColumn(peerRow, peerNodeStatus);
+			for(SimpleColumn col: endCols) {
+				col.drawColumn(peerRow, peerNodeStatus);
 			}
 		}
 		

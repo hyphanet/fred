@@ -98,10 +98,9 @@ public class PrioritizedTicker implements Ticker, Runnable {
 						jobsToRun = new ArrayList<Job>();
 					Object o = timedJobsByTime.remove(tRun);
 					if(o instanceof Job[]) {
-						Job[] r = (Job[]) o;
-						for(int i = 0; i < r.length; i++) {
-							jobsToRun.add(r[i]);
-							timedJobsQueued.remove(r[i]);
+						for(Job r: (Job[]) o) {
+							jobsToRun.add(r);
+							timedJobsQueued.remove(r);
 						}
 					} else {
 						Job r = (Job) o;
@@ -213,12 +212,12 @@ public class PrioritizedTicker implements Ticker, Runnable {
 							} else {
 								Job[] newJobs = new Job[jobs.length-1];
 								int x = 0;
-								for(int i=0;i<jobs.length;i++) {
-									if(jobs[i].equals(job)) {
-										timedJobsQueued.remove(jobs[i]);
+								for(Job oldjob: jobs) {
+									if(oldjob.equals(job)) {
+										timedJobsQueued.remove(oldjob);
 										continue;
 									}
-									newJobs[x++] = jobs[i];
+									newJobs[x++] = oldjob;
 									if(x == jobs.length) {
 										assert(false);
 										newJobs = jobs;
@@ -296,11 +295,11 @@ public class PrioritizedTicker implements Ticker, Runnable {
 					} else {
 						Job[] newJobs = new Job[jobs.length-1];
 						int x = 0;
-						for(int i=0;i<jobs.length;i++) {
-							if(jobs[i].equals(job)) {
+						for(Job oldjob : jobs) {
+							if(oldjob.equals(job)) {
 								continue;
 							}
-							newJobs[x++] = jobs[i];
+							newJobs[x++] = oldjob;
 							if(x == jobs.length) {
 								assert(false);
 								newJobs = jobs;

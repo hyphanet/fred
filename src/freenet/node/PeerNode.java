@@ -616,24 +616,24 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(physical == null) {
 				// Leave it empty
 			} else {
-				for(int i = 0; i < physical.length; i++) {
+				for(String phys: physical) {
 					Peer p;
 					try {
-						p = new Peer(physical[i], true, true);
+						p = new Peer(phys, true, true);
 					} catch(HostnameSyntaxException e) {
 						if(fromLocal)
-							Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference in local peers list: " + physical[i]);
-						System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: " + physical[i]);
+							Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference in local peers list: " + phys);
+						System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: " + phys);
 						continue;
 					} catch (PeerParseException e) {
 						if(fromLocal)
-							Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference in local peers list: " + physical[i]);
-						System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: " + physical[i]);
+							Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference in local peers list: " + phys);
+						System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: " + phys);
 						continue;
 					} catch (UnknownHostException e) {
 						if(fromLocal)
-							Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference in local peers list: " + physical[i]);
-						System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: " + physical[i]);
+							Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference in local peers list: " + phys);
+						System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: " + phys);
 						continue;
 					}
 					if(!nominalPeer.contains(p))
@@ -880,24 +880,24 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	* Also removes dupes post-lookup.
 	*/
 	private Peer[] updateHandshakeIPs(Peer[] localHandshakeIPs, boolean ignoreHostnames) {
-		for(int i = 0; i < localHandshakeIPs.length; i++) {
+		for(Peer localHandshakeIP: localHandshakeIPs) {
 			if(ignoreHostnames) {
 				// Don't do a DNS request on the first cycle through PeerNodes by DNSRequest
 				// upon startup (I suspect the following won't do anything, but just in case)
 				if(logMINOR)
-					Logger.debug(this, "updateHandshakeIPs: calling getAddress(false) on Peer '" + localHandshakeIPs[i] + "' for " + shortToString() + " (" + ignoreHostnames + ')');
-				localHandshakeIPs[i].getAddress(false);
+					Logger.debug(this, "updateHandshakeIPs: calling getAddress(false) on Peer '" + localHandshakeIP + "' for " + shortToString() + " (" + ignoreHostnames + ')');
+				localHandshakeIP.getAddress(false);
 			} else {
 				// Actually do the DNS request for the member Peer of localHandshakeIPs
 				if(logMINOR)
-					Logger.debug(this, "updateHandshakeIPs: calling getHandshakeAddress() on Peer '" + localHandshakeIPs[i] + "' for " + shortToString() + " (" + ignoreHostnames + ')');
-				localHandshakeIPs[i].getHandshakeAddress();
+					Logger.debug(this, "updateHandshakeIPs: calling getHandshakeAddress() on Peer '" + localHandshakeIP + "' for " + shortToString() + " (" + ignoreHostnames + ')');
+				localHandshakeIP.getHandshakeAddress();
 			}
 		}
 		// De-dupe
 		HashSet<Peer> ret = new HashSet<Peer>();
-		for(int i = 0; i < localHandshakeIPs.length; i++)
-			ret.add(localHandshakeIPs[i]);
+		for(Peer localHandshakeIP: localHandshakeIPs)
+			ret.add(localHandshakeIP);
 		return ret.toArray(new Peer[ret.size()]);
 	}
 
@@ -958,8 +958,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 		boolean addedLocalhost = false;
 		Peer detectedDuplicate = null;
-		for(int i = 0; i < myNominalPeer.length; i++) {
-			Peer p = myNominalPeer[i];
+		for(Peer p: myNominalPeer) {
 			if(p == null)
 				continue;
 			if(localDetectedPeer != null) {
@@ -974,9 +973,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					continue;
 				addedLocalhost = true;
 			}
-			for(int j = 0; j < nodePeers.length; j++) {
+			for(Peer nodePeer: nodePeers) {
 				// REDFLAG - Two lines so we can see which variable is null when it NPEs
-				FreenetInetAddress myAddr = nodePeers[j].getFreenetAddress();
+				FreenetInetAddress myAddr = nodePeer.getFreenetAddress();
 				if(myAddr.equals(addr)) {
 					if(!addedLocalhost)
 						localPeers.add(new Peer(localhost, p.getPort()));
@@ -2256,8 +2255,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			timeLastReceivedAck = now;
 		}
 		if(messagesTellDisconnected != null) {
-			for(int i=0;i<messagesTellDisconnected.length;i++) {
-				messagesTellDisconnected[i].onDisconnect();
+			for(MessageItem item: messagesTellDisconnected) {
+				item.onDisconnect();
 			}
 		}
 
@@ -2711,19 +2710,19 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 				Peer[] oldPeers = nominalPeer.toArray(new Peer[nominalPeer.size()]);
 
-				for(int i = 0; i < physical.length; i++) {
+				for(String phys: physical) {
 					Peer p;
 					try {
-						p = new Peer(physical[i], true, true);
+						p = new Peer(phys, true, true);
 					} catch(HostnameSyntaxException e) {
-						Logger.error(this, "Invalid hostname or IP Address syntax error while parsing new peer reference: " + physical[i]);
+						Logger.error(this, "Invalid hostname or IP Address syntax error while parsing new peer reference: " + phys);
 						continue;
 					} catch (PeerParseException e) {
-						Logger.error(this, "Invalid hostname or IP Address syntax error while parsing new peer reference: " + physical[i]);
+						Logger.error(this, "Invalid hostname or IP Address syntax error while parsing new peer reference: " + phys);
 						continue;
 					} catch (UnknownHostException e) {
 						// Should be impossible???
-						Logger.error(this, "Invalid hostname or IP Address syntax error while parsing new peer reference: " + physical[i]);
+						Logger.error(this, "Invalid hostname or IP Address syntax error while parsing new peer reference: " + phys);
 						continue;
 					}
 					if(!nominalPeer.contains(p)) {
@@ -3861,10 +3860,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			hisNegTypes = negTypes;
 		}
 		int bestNegType = -1;
-		for(int i = 0; i < myNegTypes.length; i++) {
-			int negType = myNegTypes[i];
-			for(int j = 0; j < hisNegTypes.length; j++) {
-				if(hisNegTypes[j] == negType) {
+		for(int negType: myNegTypes) {
+			for(int hisNegType: hisNegTypes) {
+				if(hisNegType == negType) {
 					bestNegType = negType;
 					break;
 				}
@@ -4132,19 +4130,18 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		long loopTime1 = System.currentTimeMillis();
 		Vector<Peer> validIPs = new Vector<Peer>();
-		for(int i=0;i<localHandshakeIPs.length;i++){
-			Peer peer = localHandshakeIPs[i];
+		for(Peer peer: localHandshakeIPs) {
 			FreenetInetAddress addr = peer.getFreenetAddress();
 			if(!outgoingMangler.allowConnection(this, addr)) {
 				if(logMINOR)
 					Logger.minor(this, "Not sending handshake packet to "+peer+" for "+this);
 			}
 			if(peer.getAddress(false) == null) {
-				if(logMINOR) Logger.minor(this, "Not sending handshake to "+localHandshakeIPs[i]+" for "+getPeer()+" because the DNS lookup failed or it's a currently unsupported IPv6 address");
+				if(logMINOR) Logger.minor(this, "Not sending handshake to "+peer+" for "+getPeer()+" because the DNS lookup failed or it's a currently unsupported IPv6 address");
 				continue;
 			}
 			if(!peer.isRealInternetAddress(false, false, allowLocalAddresses())) {
-				if(logMINOR) Logger.minor(this, "Not sending handshake to "+localHandshakeIPs[i]+" for "+getPeer()+" because it's not a real Internet address and metadata.allowLocalAddresses is not true");
+				if(logMINOR) Logger.minor(this, "Not sending handshake to "+peer+" for "+getPeer()+" because it's not a real Internet address and metadata.allowLocalAddresses is not true");
 				continue;
 			}
 			validIPs.add(peer);

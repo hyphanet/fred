@@ -171,8 +171,8 @@ public class PrioritizedSerialExecutor implements Executor {
 		this.name=name;
 		synchronized (jobs) {
 			boolean empty = true;
-			for(int i=0;i<jobs.length;i++) {
-				if(!jobs[i].isEmpty()) {
+			for(ArrayDeque<Runnable> l: jobs) {
+				if(!l.isEmpty()) {
 					empty = false;
 					break;
 				}

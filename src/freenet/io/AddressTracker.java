@@ -250,8 +250,7 @@ public class AddressTracker {
 		long longestGap = -1;
 		long now = System.currentTimeMillis();
 		PeerAddressTrackerItem[] items = getPeerAddressTrackerItems();
-		for(int i=0;i<items.length;i++) {
-			PeerAddressTrackerItem item = items[i];
+		for(PeerAddressTrackerItem item: items) {
 			if(item.packetsReceived() <= 0) continue;
 			if(!item.peer.isRealInternetAddress(false, false, false)) continue;
 			longestGap = Math.max(longestGap, item.longestGap(horizon, now));

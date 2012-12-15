@@ -506,18 +506,18 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				return;
 			offers = nodesOfferedMainJar.toArray(new PeerNode[nodesOfferedMainJar.size()]);
 		}
-		for(int i = 0; i < offers.length; i++) {
-			if(!offers[i].isConnected())
+		for(PeerNode offer: offers) {
+			if(!offer.isConnected())
 				continue;
 			synchronized(this) {
 				if(nodesAskedSendMainJar.size() + nodesSendingMainJar.size() >= MAX_NODES_SENDING_JAR)
 					return;
-				if(nodesSendingMainJar.contains(offers[i]))
+				if(nodesSendingMainJar.contains(offer))
 					continue;
-				if(nodesAskedSendMainJar.contains(offers[i]))
+				if(nodesAskedSendMainJar.contains(offer))
 					continue;
 			}
-			sendUOMRequest(offers[i], false);
+			sendUOMRequest(offer, false);
 		}
 	}
 
@@ -555,24 +555,24 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			if(nodesSayBlownConnected.length > 0) {
 				div.addChild("p").addChild("#", l10n("connectedSayBlownLabel"));
 				HTMLNode list = div.addChild("ul");
-				for(int i = 0; i < nodesSayBlownConnected.length; i++) {
-					list.addChild("li", nodesSayBlownConnected[i].userToString() + " (" + nodesSayBlownConnected[i].getPeer() + ")");
+				for(PeerNode pn: nodesSayBlownConnected) {
+					list.addChild("li", pn.userToString() + " (" + pn.getPeer() + ")");
 				}
 			}
 
 			if(nodesSayBlownDisconnected.length > 0) {
 				div.addChild("p").addChild("#", l10n("disconnectedSayBlownLabel"));
 				HTMLNode list = div.addChild("ul");
-				for(int i = 0; i < nodesSayBlownDisconnected.length; i++) {
-					list.addChild("li", nodesSayBlownDisconnected[i].userToString() + " (" + nodesSayBlownDisconnected[i].getPeer() + ")");
+				for(PeerNode pn: nodesSayBlownDisconnected) {
+					list.addChild("li", pn.userToString() + " (" + pn.getPeer() + ")");
 				}
 			}
 
 			if(nodesSayBlownFailedTransfer.length > 0) {
 				div.addChild("p").addChild("#", l10n("failedTransferSayBlownLabel"));
 				HTMLNode list = div.addChild("ul");
-				for(int i = 0; i < nodesSayBlownFailedTransfer.length; i++) {
-					list.addChild("li", nodesSayBlownFailedTransfer[i].userToString() + " (" + nodesSayBlownFailedTransfer[i].getPeer() + ")");
+				for(PeerNode pn: nodesSayBlownFailedTransfer) {
+					list.addChild("li", pn.userToString() + " (" + pn.getPeer() + ")");
 				}
 			}
 
@@ -603,8 +603,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 			if(nodesSayBlownConnected.length > 0) {
 				sb.append(l10n("connectedSayBlownLabel")).append("\n\n");
-				for(int i = 0; i < nodesSayBlownConnected.length; i++) {
-					sb.append(nodesSayBlownConnected[i].userToString() + " (" + nodesSayBlownConnected[i].getPeer() + ")").append("\n");
+				for(PeerNode pn: nodesSayBlownConnected) {
+					sb.append(pn.userToString() + " (" + pn.getPeer() + ")").append("\n");
 				}
 				sb.append("\n");
 			}
@@ -612,8 +612,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			if(nodesSayBlownDisconnected.length > 0) {
 				sb.append(l10n("disconnectedSayBlownLabel"));
 
-				for(int i = 0; i < nodesSayBlownDisconnected.length; i++) {
-					sb.append(nodesSayBlownDisconnected[i].userToString() + " (" + nodesSayBlownDisconnected[i].getPeer() + ")").append("\n");
+				for(PeerNode pn: nodesSayBlownDisconnected) {
+					sb.append(pn.userToString() + " (" + pn.getPeer() + ")").append("\n");
 				}
 				sb.append("\n");
 			}
@@ -621,8 +621,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			if(nodesSayBlownFailedTransfer.length > 0) {
 				sb.append(l10n("failedTransferSayBlownLabel"));
 
-				for(int i = 0; i < nodesSayBlownFailedTransfer.length; i++) {
-					sb.append(nodesSayBlownFailedTransfer[i].userToString() + " (" + nodesSayBlownFailedTransfer[i].getPeer() + ")").append('\n');
+				for(PeerNode pn: nodesSayBlownFailedTransfer) {
+					sb.append(pn.userToString() + " (" + pn.getPeer() + ")").append('\n');
 				}
 				sb.append("\n");
 			}
@@ -658,8 +658,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		Vector<PeerNode> nodesFailedSayRevoked = new Vector<PeerNode>();
 		synchronized(this) {
 			PeerNode[] nodesSayRevoked = nodesSayKeyRevoked.toArray(new PeerNode[nodesSayKeyRevoked.size()]);
-			for(int i = 0; i < nodesSayRevoked.length; i++) {
-				PeerNode pn = nodesSayRevoked[i];
+			for(PeerNode pn: nodesSayRevoked) {
 				if(nodesSayKeyRevokedFailedTransfer.contains(pn))
 					nodesFailedSayRevoked.add(pn);
 				else

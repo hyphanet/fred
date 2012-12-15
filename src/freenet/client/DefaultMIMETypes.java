@@ -66,8 +66,7 @@ public class DefaultMIMETypes {
 		addMIMEType(number, type);
 		Short t = Short.valueOf(number);
 		if(extensions != null) {
-			for(int i=0;i<extensions.length;i++) {
-				String ext = extensions[i].toLowerCase();
+			for(String ext : extensions) {
 				Short s = mimeTypesByExtension.get(ext);
 				if(s != null) {
 					// No big deal
@@ -781,8 +780,8 @@ public class DefaultMIMETypes {
 		
 		String[] extensions = allExtensionsByMimeNumber.get(typeNumber);
 		if(extensions == null) return false;
-		for(int i=0;i<extensions.length;i++)
-			if(oldExt.equals(extensions[i])) return true;
+		for(String extension: extensions)
+			if(oldExt.equals(extension)) return true;
 		return false;
 	}
 	

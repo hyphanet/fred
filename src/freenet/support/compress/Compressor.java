@@ -99,10 +99,10 @@ public interface Compressor {
 				COMPRESSOR_TYPE[] val = COMPRESSOR_TYPE.values();
 				COMPRESSOR_TYPE[] ret = new COMPRESSOR_TYPE[val.length-1];
 				int x = 0;
-				for(int i=0;i<val.length;i++) {
-					if((val[i] == LZMA) && !pre1254) continue;
-					if((val[i] == LZMA_NEW) && pre1254) continue;
-					ret[x++] = val[i];
+				for(COMPRESSOR_TYPE v: val) {
+					if((v == LZMA) && !pre1254) continue;
+					if((v == LZMA_NEW) && pre1254) continue;
+					ret[x++] = v;
 				}
 				result = ret;
 			}

@@ -1117,8 +1117,8 @@ public class Metadata implements Cloneable {
 	}
 
 	private boolean keysValid(ClientCHK[] keys) {
-		for(int i=0;i<keys.length;i++)
-			if(keys[i].getNodeCHK().getRoutingKey() == null) return false;
+		for(ClientCHK key: keys)
+			if(key.getNodeCHK().getRoutingKey() == null) return false;
 		return true;
 	}
 
@@ -1525,11 +1525,11 @@ public class Metadata implements Cloneable {
 					dos.writeShort(data.length);
 					dos.write(data);
 				} catch (MetadataUnresolvedException e) {
-					Metadata[] m = e.mustResolve;
+					Metadata[] metas = e.mustResolve;
 					if(unresolvedMetadata == null)
 						unresolvedMetadata = new LinkedList<Metadata>();
-					for(int j=0;j<m.length;j++)
-						unresolvedMetadata.addFirst(m[j]);
+					for(Metadata m: metas)
+						unresolvedMetadata.addFirst(m);
 					kill = true;
 				}
 			}

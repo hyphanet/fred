@@ -39,25 +39,25 @@ public class Util {
 
 	public static void fillByteArrayFromInts(int[] ints, byte[] bytes) {
 		int ic = 0;
-		for (int i = 0; i < ints.length; i++) {
-			bytes[ic++] = (byte) (ints[i] >> 24);
-			bytes[ic++] = (byte) (ints[i] >> 16);
-			bytes[ic++] = (byte) (ints[i] >> 8);
-			bytes[ic++] = (byte) ints[i];
+		for (int i: ints) {
+			bytes[ic++] = (byte) (i >> 24);
+			bytes[ic++] = (byte) (i >> 16);
+			bytes[ic++] = (byte) (i >> 8);
+			bytes[ic++] = (byte)  i;
 		}
 	}
 
 	public static void fillByteArrayFromLongs(long[] ints, byte[] bytes) {
 		int ic = 0;
-		for (int i = 0; i < ints.length; i++) {
-			bytes[ic++] = (byte) (ints[i] >> 56);
-			bytes[ic++] = (byte) (ints[i] >> 48);
-			bytes[ic++] = (byte) (ints[i] >> 40);
-			bytes[ic++] = (byte) (ints[i] >> 32);
-			bytes[ic++] = (byte) (ints[i] >> 24);
-			bytes[ic++] = (byte) (ints[i] >> 16);
-			bytes[ic++] = (byte) (ints[i] >> 8);
-			bytes[ic++] = (byte) ints[i];
+		for (long l: ints) {
+			bytes[ic++] = (byte) (l >> 56);
+			bytes[ic++] = (byte) (l >> 48);
+			bytes[ic++] = (byte) (l >> 40);
+			bytes[ic++] = (byte) (l >> 32);
+			bytes[ic++] = (byte) (l >> 24);
+			bytes[ic++] = (byte) (l >> 16);
+			bytes[ic++] = (byte) (l >> 8);
+			bytes[ic++] = (byte)  l;
 		}
 	}
 

@@ -122,11 +122,11 @@ public class MessageItem {
 
 	public void onDisconnect() {
 		if(cb != null) {
-			for(int i=0;i<cb.length;i++) {
+			for(AsyncMessageCallback cbi: cb) {
 				try {
-					cb[i].disconnected();
+					cbi.disconnected();
 				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t+" calling sent() on "+cb[i]+" for "+this, t);
+					Logger.error(this, "Caught "+t+" calling sent() on "+cbi+" for "+this, t);
 				}
 			}
 		}
@@ -134,11 +134,11 @@ public class MessageItem {
 
 	public void onFailed() {
 		if(cb != null) {
-			for(int i=0;i<cb.length;i++) {
+			for(AsyncMessageCallback cbi: cb) {
 				try {
-					cb[i].fatalError();
+					cbi.fatalError();
 				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t+" calling sent() on "+cb[i]+" for "+this, t);
+					Logger.error(this, "Caught "+t+" calling sent() on "+cbi+" for "+this, t);
 				}
 			}
 		}
@@ -164,11 +164,11 @@ public class MessageItem {
 	/** Called the first time we have sent all of the message. */
 	public void onSentAll() {
 		if(cb != null) {
-			for(int i=0;i<cb.length;i++) {
+			for(AsyncMessageCallback cbi: cb) {
 				try {
-					cb[i].sent();
+					cbi.sent();
 				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t+" calling sent() on "+cb[i]+" for "+this, t);
+					Logger.error(this, "Caught "+t+" calling sent() on "+cbi+" for "+this, t);
 				}
 			}
 		}

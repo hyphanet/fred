@@ -247,13 +247,13 @@ public class ContainerInserter implements ClientPutState {
 	}
 
 	private int resolve(MetadataUnresolvedException e, int x, FreenetURI key, String element2, ObjectContainer container, ClientContext context) throws IOException {
-		Metadata[] m = e.mustResolve;
-		for(int i=0;i<m.length;i++) {
+		Metadata[] metas = e.mustResolve;
+		for(Metadata m: metas) {
 			try {
-				Bucket bucket = BucketTools.makeImmutableBucket(context.tempBucketFactory, m[i].writeToByteArray());
+				Bucket bucket = BucketTools.makeImmutableBucket(context.tempBucketFactory, m.writeToByteArray());
 				String nameInArchive = ".metadata-"+(x++);
 				containerItems.add(new ContainerElement(bucket, nameInArchive));
-				m[i].resolve(nameInArchive);
+				m.resolve(nameInArchive);
 			} catch (MetadataUnresolvedException e1) {
 				x = resolve(e, x, key, element2, container, context);
 			}

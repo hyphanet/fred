@@ -570,8 +570,8 @@ public class USKManager {
 				callbacks = new USKCallback[] { cb };
 			} else {
 				boolean mustAdd = true;
-				for(int i=0;i<callbacks.length;i++) {
-					if(callbacks[i] == cb) {
+				for(USKCallback callback: callbacks) {
+					if(callback == cb) {
 						// Already subscribed.
 						// But it may still be waiting for the callback.
 						if(!(curEd > ed || goodEd > ed)) return;
@@ -624,8 +624,7 @@ public class USKManager {
 				return;
 			}
 			int j=0;
-			for(int i=0;i<callbacks.length;i++) {
-				USKCallback c = callbacks[i];
+			for(USKCallback c: callbacks) {
 				if((c != null) && (c != cb)) {
 					callbacks[j++] = c;
 				}

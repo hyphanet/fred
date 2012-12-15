@@ -225,8 +225,8 @@ public class OpennetManager {
 				return pn1.hashCode - pn2.hashCode;
 			}
 		});
-		for(int i=0;i<nodes.length;i++)
-			peersLRU.push(nodes[i]);
+		for(OpennetPeerNode opn: nodes)
+			peersLRU.push(opn);
 		announcer = (enableAnnouncement ? new Announcer(this) : null);
 		if(logMINOR) {
 			Logger.minor(this, "My full compressed ref: "+crypto.myCompressedFullRef().length);
@@ -274,14 +274,14 @@ public class OpennetManager {
 		// Read contents
 		String[] udp = fs.getAll("physical.udp");
 		if((udp != null) && (udp.length > 0)) {
-			for(int i=0;i<udp.length;i++) {
+			for(String u: udp) {
 				// Just keep the first one with the correct port number.
 				Peer p;
 				try {
-					p = new Peer(udp[i], false, true);
+					p = new Peer(u, false, true);
 				} catch (HostnameSyntaxException e) {
-					Logger.error(this, "Invalid hostname or IP Address syntax error while loading opennet peer node reference: "+udp[i]);
-					System.err.println("Invalid hostname or IP Address syntax error while loading opennet peer node reference: "+udp[i]);
+					Logger.error(this, "Invalid hostname or IP Address syntax error while loading opennet peer node reference: "+u);
+					System.err.println("Invalid hostname or IP Address syntax error while loading opennet peer node reference: "+u);
 					continue;
 				} catch (PeerParseException e) {
 					throw (IOException)new IOException().initCause(e);
@@ -689,8 +689,7 @@ public class OpennetManager {
 			if(addingNode) map = new EnumMap<NOT_DROP_REASON, Integer>(NOT_DROP_REASON.class);
 			// Do we want it?
 			OpennetPeerNode[] peers = peersLRU.toArrayOrdered(new OpennetPeerNode[peersLRU.size()]);
-			for(int i=0;i<peers.length;i++) {
-				OpennetPeerNode pn = peers[i];
+			for(OpennetPeerNode pn: peers) {
 				if(pn == null) continue;
 				boolean tooOld = pn.isUnroutableOlderVersion();
 				if(pn.isConnected() && tooOld) {
@@ -728,8 +727,7 @@ public class OpennetManager {
 				return null;
 			}
 			if(map != null) map.clear();
-			for(int i=0;i<peers.length;i++) {
-				OpennetPeerNode pn = peers[i];
+			for(OpennetPeerNode pn: peers) {
 				if(pn == null) continue;
 				boolean tooOld = pn.isUnroutableOlderVersion();
 				if(pn.isConnected() && tooOld) {

@@ -816,9 +816,9 @@ public class PluginManager {
 				if(targets == null)
 					return;
 
-				for(int i = 0; i < targets.length; i++) {
-					toadletList.remove(targets[i]);
-					Logger.normal(this, "Removed HTTP symlink: " + targets[i] +
+				for(String target: targets) {
+					toadletList.remove(target);
+					Logger.normal(this, "Removed HTTP symlink: " + target +
 						" => /plugins/" + pi.getPluginClassName() + '/');
 				}
 			} catch(Throwable ex) {
@@ -835,11 +835,11 @@ public class PluginManager {
 				if(targets == null)
 					return;
 
-				for(int i = 0; i < targets.length; i++) {
-					rm = targets[i];
-					toadletList.remove(targets[i]);
-					pi.removePluginToadletSymlink(targets[i]);
-					Logger.normal(this, "Removed HTTP symlink: " + targets[i] +
+				for(String target: targets) {
+					rm = target;
+					toadletList.remove(target);
+					pi.removePluginToadletSymlink(target);
+					Logger.normal(this, "Removed HTTP symlink: " + target +
 						" => /plugins/" + pi.getPluginClassName() + '/');
 				}
 			} catch(Throwable ex) {

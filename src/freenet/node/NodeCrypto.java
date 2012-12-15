@@ -325,8 +325,8 @@ public class NodeCrypto {
 			// IP addresses
 			Peer[] ips = detector.detectPrimaryPeers();
 			if(ips != null) {
-				for(int i=0;i<ips.length;i++)
-					fs.putAppend("physical.udp", ips[i].toString()); // Keep; important that node know all our IPs
+				for(Peer ip: ips)
+					fs.putAppend("physical.udp", ip.toString()); // Keep; important that node know all our IPs
 			}
 		} // Don't include IPs for anonymous initiator.
 		// Negotiation types
@@ -561,9 +561,7 @@ public class NodeCrypto {
 
 	public PeerNode[] getAnonSetupPeerNodes() {
 		ArrayList<PeerNode> v = new ArrayList<PeerNode>();
-		PeerNode[] peers = node.peers.myPeers();
-		for(int i=0;i<peers.length;i++) {
-			PeerNode pn = peers[i];
+		for(PeerNode pn: node.peers.myPeers()) {
 			if(pn.handshakeUnknownInitiator() && pn.getOutgoingMangler() == packetMangler)
 				v.add(pn);
 		}

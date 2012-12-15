@@ -92,12 +92,11 @@ public class FProxyFetchTracker implements Runnable {
 	 * @param fctx TODO
 	 * @return The FetchInProgress if found, null otherwise*/
 	public FProxyFetchInProgress getFetchInProgress(FreenetURI key, long maxSize, FetchContext fctx){
-		FProxyFetchInProgress progress;
 		synchronized (fetchers) {
 			Object[] check = fetchers.getArray(key);
 			if(check != null) {
 				for(int i=0;i<check.length;i++) {
-					progress = (FProxyFetchInProgress) check[i];
+					FProxyFetchInProgress progress = (FProxyFetchInProgress) check[i];
 					if((progress.maxSize == maxSize && progress.notFinishedOrFatallyFinished())
 							|| progress.hasData()){
 						if(logMINOR) Logger.minor(this, "Found "+progress);

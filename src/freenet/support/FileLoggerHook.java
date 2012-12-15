@@ -612,8 +612,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
         if(latestFile.exists())
         	FileUtil.renameTo(latestFile, previousFile);
 
-		for(int i=0;i<files.length;i++) {
-			File f = files[i];
+		for(File f: files) {
 			String name = f.getName();
 			if(name.toLowerCase().startsWith(prefix)) {
 				if(name.equals(previousFile.getName()) || name.equals(latestFile.getName())) {
@@ -851,8 +850,8 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		StringBuilder sb = new StringBuilder();
 
 		boolean comment = false;
-		for (int i = 0; i < f.length; ++i) {
-			int type = numberOf(f[i]);
+		for (char fi: f) {
+			int type = numberOf(fi);
 			if(type == UNAME)
 				getUName();
 			if (!comment && (type != 0)) {
@@ -862,11 +861,11 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					sb = new StringBuilder();
 				}
 				fmtVec.add(type);
-			} else if (f[i] == '\\') {
+			} else if (fi == '\\') {
 				comment = true;
 			} else {
 				comment = false;
-				sb.append(f[i]);
+				sb.append(fi);
 			}
 		}
 		if (sb.length() > 0) {
@@ -907,8 +906,8 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		StringBuilder sb = new StringBuilder( e == null ? 512 : 1024 );
 		int sctr = 0;
 
-		for (int i = 0; i < fmt.length; ++i) {
-			switch (fmt[i]) {
+		for (int f: fmt) {
+			switch (f) {
 				case 0 :
 					sb.append(str[sctr++]);
 					break;
@@ -956,9 +955,9 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				sb.append("(no stack trace)\n");
 			else {
 				sb.append('\n');
-				for(int i=0;i<trace.length;i++) {
+				for(StackTraceElement elt: trace) {
 					sb.append("\tat ");
-					sb.append(trace[i].toString());
+					sb.append(elt.toString());
 					sb.append('\n');
 				}
 			}
@@ -1087,8 +1086,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		}
 		DateFormat tempDF = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.ENGLISH);
 		tempDF.setTimeZone(TimeZone.getTimeZone("GMT"));
-		for(int i=0;i<oldLogFiles.length;i++) {
-			OldLogFile olf = oldLogFiles[i];
+		for(OldLogFile olf: oldLogFiles) {
 			writer.write(olf.filename.getName()+" : "+tempDF.format(new Date(olf.start))+" to "+tempDF.format(new Date(olf.end))+ " - "+olf.size+" bytes\n");
 		}
 	}

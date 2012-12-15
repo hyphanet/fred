@@ -1175,8 +1175,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 		StringBuffer sb = new StringBuffer();
 
-		for(int i=0;i<reqs.length;i++) {
-			RequestStatus req = reqs[i];
+		for(RequestStatus req: reqs) {
 			if(req instanceof DownloadRequestStatus) {
 				DownloadRequestStatus get = (DownloadRequestStatus)req;
 				FreenetURI uri = get.getURI();
@@ -1228,8 +1227,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		long totalQueuedDownloadSize = 0;
 		long totalQueuedUploadSize = 0;
 
-		for(int i=0;i<reqs.length;i++) {
-			RequestStatus req = reqs[i];
+		for(RequestStatus req: reqs) {
 			if(req instanceof DownloadRequestStatus && !uploads) {
 				DownloadRequestStatus download = (DownloadRequestStatus)req;
 				if(download.hasSucceeded()) {
@@ -2232,11 +2230,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				synchronized(completedRequestIdentifiers) {
 					identifiers = completedRequestIdentifiers.toArray(new String[completedRequestIdentifiers.size()]);
 				}
-				for(int i=0;i<identifiers.length;i++) {
-					ClientRequest req = fcp.getGlobalRequest(identifiers[i], container);
+				for(String identifier: identifiers) {
+					ClientRequest req = fcp.getGlobalRequest(identifier, container);
 					if(req == null || req instanceof ClientGet == uploads) {
 						synchronized(completedRequestIdentifiers) {
-							completedRequestIdentifiers.remove(identifiers[i]);
+							completedRequestIdentifiers.remove(identifier);
 						}
 						changed = true;
 						continue;
@@ -2298,8 +2296,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			synchronized(completedRequestIdentifiers) {
 				identifiers = completedRequestIdentifiers.toArray(new String[completedRequestIdentifiers.size()]);
 			}
-			for(int i=0;i<identifiers.length;i++)
-				bw.write(identifiers[i]+'\n');
+			for(String identifier: identifiers)
+				bw.write(identifier+'\n');
 		} catch (FileNotFoundException e) {
 			Logger.error(this, "Unable to save completed requests list (can't find node directory?!!?): "+e, e);
 			return;

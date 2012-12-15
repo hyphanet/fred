@@ -171,11 +171,11 @@ public class HexUtil {
 	public static void bytesToBits(byte[] b, BitSet ba, int maxSize) {
 		if(logDEBUG) Logger.debug(HexUtil.class, "bytesToBits("+bytesToHex(b)+",ba,"+maxSize);
 		int x = 0;
-		for(int i=0;i<b.length;i++) {
+		for(byte bi: b) {
 			for(int j=0;j<8;j++) {
 				if(x > maxSize) break;
 				int mask = 1 << j;
-				boolean value = (mask & b[i]) != 0;
+				boolean value = (mask & bi) != 0;
 				ba.set(x, value);
 				x++;
 			}

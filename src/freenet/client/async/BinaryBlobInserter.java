@@ -79,9 +79,9 @@ public class BinaryBlobInserter implements ClientPutState {
 
 	@Override
 	public void cancel(ObjectContainer container, ClientContext context) {
-		for(int i=0;i<inserters.length;i++) {
-			if(inserters[i] != null)
-				inserters[i].cancel(container, context);
+		for(MySendableInsert inserter: inserters) {
+			if(inserter != null)
+				inserter.cancel(container, context);
 		}
 		parent.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
 	}
@@ -98,8 +98,8 @@ public class BinaryBlobInserter implements ClientPutState {
 
 	@Override
 	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
-		for(int i=0;i<inserters.length;i++) {
-			inserters[i].schedule();
+		for(MySendableInsert inserter: inserters) {
+			inserter.schedule();
 		}
 	}
 

@@ -533,9 +533,8 @@ final public class FileUtil {
 				return false;
 			}
 		} else {
-			File[] subfiles = wd.listFiles();
-			for(int i=0;i<subfiles.length;i++) {
-				if(!removeAll(subfiles[i])) return false;
+			for(File subfile: wd.listFiles()) {
+				if(!removeAll(subfile)) return false;
 			}
 			if(!wd.delete()) {
 				Logger.error(FileUtil.class, "Could not delete directory: "+wd);
@@ -555,9 +554,8 @@ final public class FileUtil {
 				return false;
 			}
 		} else {
-			File[] subfiles = wd.listFiles();
-			for(int i=0;i<subfiles.length;i++) {
-				if(!removeAll(subfiles[i])) return false;
+			for(File subfile: wd.listFiles()) {
+				if(!removeAll(subfile)) return false;
 			}
 			if(!wd.delete()) {
 				Logger.error(FileUtil.class, "Could not delete directory: "+wd);
