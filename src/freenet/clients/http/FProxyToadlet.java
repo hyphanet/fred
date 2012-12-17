@@ -511,6 +511,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				 */
 				Logger.error(FProxyToadlet.class, "Unexpected syntax error in URI: " + e);
 				writeTemporaryRedirect(ctx, "Internal error. Please check logs and report.", WelcomeToadlet.PATH);
+				return;
 			}
 		}else if(ks.equals("/favicon.ico")){
 			byte[] buf = new byte[1024];
