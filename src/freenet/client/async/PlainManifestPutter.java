@@ -4,6 +4,7 @@
 package freenet.client.async;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import com.db4o.ObjectContainer;
 
@@ -41,8 +42,9 @@ public class PlainManifestPutter extends BaseManifestPutter {
 	
 	@SuppressWarnings("unchecked")
 	private void makePutHandlers(FreeFormBuilder builder, HashMap<String, Object> manifestElements, Object defaultName) {
-		for(String name: manifestElements.keySet()) {
-			Object o = manifestElements.get(name);
+		for(Map.Entry<String, Object> entry:manifestElements.entrySet()) {
+			String name = entry.getKey();
+			Object o = entry.getValue();
 			if(o instanceof HashMap) {
 				HashMap<String,Object> subMap = (HashMap<String,Object>)o;
 				builder.pushCurrentDir();

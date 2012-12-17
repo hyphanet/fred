@@ -1078,6 +1078,9 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		for(String name : defaultDefaultNames) {
 			boolean found = false;
 			for(Map.Entry<String, Object> entry : manifestElements.entrySet()) {
+				Object o = entry.getValue();
+				if(o == null) continue;
+				if(o instanceof HashMap) continue;
 				if(entry.getKey().equalsIgnoreCase(name)) {
 					found = true;
 					name = entry.getKey();
@@ -1085,9 +1088,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				}
 			}
 			if(!found) continue;
-			Object o = manifestElements.get(name);
-			if(o == null) continue;
-			if(o instanceof HashMap) continue;
 			return name;
 		}
 		return "";
@@ -1285,8 +1285,9 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	@SuppressWarnings("unchecked")
 	private Metadata makeMetadata(HashMap<String, Object> dir, ObjectContainer container) {
 		SimpleManifestComposer smc = new SimpleManifestComposer();
-		for (String name: dir.keySet()) {
-			Object item = dir.get(name);
+		for(Map.Entry<String, Object> entry:dir.entrySet()) {
+			String name = entry.getKey();
+			Object item = entry.getValue();
 			if (item == null) throw new NullPointerException();
 			Metadata m;
 			if (item instanceof HashMap) {

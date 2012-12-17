@@ -4,6 +4,7 @@
 package freenet.support;
 
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Encodes any character mentioned with a substitute in the HTML spec. This
@@ -109,10 +110,11 @@ public class HTMLEncoder {
 			
 			chars = new char[modulo];
 			strings = new String[modulo];
-			for (Character character : map.keySet()) {
+			for (Map.Entry<Character,String> entry : map.entrySet()) {
+				Character character = entry.getKey();
 				keyIndex = character.charValue()%modulo;
 				chars[keyIndex] = character.charValue();
-				strings[keyIndex] = map.get(character);
+				strings[keyIndex] = entry.getValue();
 			}
 			if (chars[0] == 0 && strings[0] != null) chars[0] = 1;
 		}

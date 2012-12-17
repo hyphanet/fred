@@ -5,7 +5,6 @@ package freenet.client.async;
 
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Set;
 import java.util.Map;
 
 import com.db4o.ObjectContainer;
@@ -99,9 +98,9 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 	 * need further checking in the pack algorithm
 	 */
 	private void verifyManifest(HashMap<String, Object> metadata) {
-		Set<String> set = metadata.keySet();
-		for(String name:set) {
-			Object o = metadata.get(name);
+		for(Map.Entry<String, Object> entry:metadata.entrySet()) {
+			String name = entry.getKey();
+			Object o = entry.getValue();
 			if (o instanceof HashMap) {
 				@SuppressWarnings("unchecked")
 				HashMap<String, Object> hm = (HashMap<String, Object>) o;
@@ -153,7 +152,6 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 			return wholeSize.getSizeTotal();
 		}
 
-		Set<String> keyset = manifestElements.keySet();
 		long tmpSize = 0;
 		// step two
 		//  here to ensure to have specific files
@@ -165,8 +163,9 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 			if(logMINOR)
 				Logger.minor(this, "PackStat2: the files in dir fits into container with spare, so it need to grab stuff from sub's to fill container up");
 			if (wholeSize.getSizeFilesNoLimit() < maxSize) {
-				for(String name:keyset) {
-					Object o = manifestElements.get(name);
+				for(Map.Entry<String, Object> entry:manifestElements.entrySet()) {
+					String name = entry.getKey();
+					Object o = entry.getValue();
 					if (o instanceof ManifestElement) {
 						ManifestElement me = (ManifestElement)o;
 						containerBuilder.addItem(name, prefix+name, me, name.equals(defaultName));
@@ -174,8 +173,9 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 				}
 				tmpSize = wholeSize.getSizeFilesNoLimit();
 			} else {
-				for(String name:keyset) {
-					Object o = manifestElements.get(name);
+				for(Map.Entry<String, Object> entry:manifestElements.entrySet()) {
+					String name = entry.getKey();
+					Object o = entry.getValue();
 					if (o instanceof ManifestElement) {
 						ManifestElement me = (ManifestElement)o;
 						if (me.getSize() > DEFAULT_MAX_CONTAINERITEMSIZE)
@@ -187,8 +187,9 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 				tmpSize = wholeSize.getSizeFiles();
 			}
 			// now fill up with stuff from sub's
-			for(String name:keyset) {
-				Object o = manifestElements.get(name);
+			for(Map.Entry<String, Object> entry:manifestElements.entrySet()) {
+				String name = entry.getKey();
+				Object o = entry.getValue();
 				if (o instanceof HashMap) {
 					@SuppressWarnings("unchecked")
 					HashMap<String, Object> hm = (HashMap<String, Object>)o;
@@ -216,8 +217,9 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 				Logger.minor(this, "PackStat2: the sub dirs fit into container with spare, so it need to grab files to fill container up");
 			if (wholeSize.getSizeSubTreesNoLimit() < maxSize) {
 				if(logMINOR) Logger.minor(this, " (unlimited)");
-				for(String name:keyset) {
-					Object o = manifestElements.get(name);
+				for(Map.Entry<String, Object> entry:manifestElements.entrySet()) {
+					String name = entry.getKey();
+					Object o = entry.getValue();
 					if (o instanceof HashMap) {
 						@SuppressWarnings("unchecked")
 						HashMap<String, Object> hm = (HashMap<String, Object>)o;
@@ -230,8 +232,9 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 				tmpSize = wholeSize.getSizeSubTreesNoLimit();
 			} else {
 				if(logMINOR) Logger.minor(this, " (limited)");
-				for(String name:keyset) {
-					Object o = manifestElements.get(name);
+				for(Map.Entry<String, Object> entry:manifestElements.entrySet()) {
+					String name = entry.getKey();
+					Object o = entry.getValue();
 					if (o instanceof HashMap) {
 						@SuppressWarnings("unchecked")
 						HashMap<String, Object> hm = (HashMap<String, Object>)o;
@@ -247,8 +250,9 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 			// sub dirs does not fit into container, make each its own
 			if(logMINOR)
 				Logger.minor(this, "PackStat2: sub dirs does not fit into container, make each its own");
-			for(String name:keyset) {
-				Object o = manifestElements.get(name);
+			for(Map.Entry<String, Object> entry:manifestElements.entrySet()) {
+				String name = entry.getKey();
+				Object o = entry.getValue();
 				if (o instanceof HashMap) {
 					@SuppressWarnings("unchecked")
 					HashMap<String, Object> hm = (HashMap<String, Object>)o;
@@ -261,8 +265,9 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 		// fill up container with files
 		HashMap<String, Object> itemsLeft = new HashMap<String, Object>();
 
-		for(String name:keyset) {
-			Object o = manifestElements.get(name);
+		for(Map.Entry<String, Object> entry:manifestElements.entrySet()) {
+			String name = entry.getKey();
+			Object o = entry.getValue();
 			if (o instanceof ManifestElement) {
 				ManifestElement me = (ManifestElement)o;
 				if ((me.getSize() > -1) && (me.getSize() <= DEFAULT_MAX_CONTAINERITEMSIZE) && (me.getSize() < (maxSize-tmpSize))) {
@@ -282,9 +287,9 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 
 			if (itemsLeft.size() == 1) {
 				// one item left, make it external
-				Set<String> lKeySetset = itemsLeft.keySet();
-				for (String lname:lKeySetset) {
-					ManifestElement me = (ManifestElement)itemsLeft.get(lname);
+				for(Map.Entry<String, Object> entry:itemsLeft.entrySet()) {
+					String lname = entry.getKey();
+					ManifestElement me = (ManifestElement)entry.getValue();
 					containerBuilder.addExternal(lname, me.getData(), me.getMimeTypeOverride(), lname.equals(defaultName));
 				}
 				itemsLeft.clear();
@@ -298,9 +303,9 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 				// possible container items are left, and everything fits into single archive
 				// do it.
 				ContainerBuilder archive = makeArchive();
-				Set<String> lKeySetset = itemsLeft.keySet();
-				for (String lname:lKeySetset) {
-					ManifestElement me = (ManifestElement)itemsLeft.get(lname);
+				for(Map.Entry<String, Object> entry:itemsLeft.entrySet()) {
+					String lname = entry.getKey();
+					ManifestElement me = (ManifestElement)entry.getValue();
 					containerBuilder.addArchiveItem(archive, lname, me, lname.equals(defaultName));
 				}
 				itemsLeft.clear();
@@ -310,9 +315,9 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 			// getSizeFiles() includes 512 bytes for each file over the size limit
 			if (((leftSize.getSizeFiles() - (512*itemsLeft.size())) == 0) && (leftSize.getSizeFilesNoLimit() > 0)) {
 				// all items left are to big, make all external
-				Set<String> lKeySetset = itemsLeft.keySet();
-				for (String lname:lKeySetset) {
-					ManifestElement me = (ManifestElement)itemsLeft.get(lname);
+				for(Map.Entry<String, Object> entry:itemsLeft.entrySet()) {
+					String lname = entry.getKey();
+					ManifestElement me = (ManifestElement)entry.getValue();
 					containerBuilder.addExternal(lname, me.getData(), me.getMimeTypeOverride(), lname.equals(defaultName));
 				}
 				itemsLeft.clear();
@@ -340,8 +345,9 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 	}
 
 	private void makeEveryThingUnlimitedPutHandlers(ContainerBuilder containerBuilder, HashMap<String,Object> manifestElements, String defaultName, String prefix) {
-		for (String name: manifestElements.keySet()) {
-			Object o = manifestElements.get(name);
+		for(Map.Entry<String, Object> entry:manifestElements.entrySet()) {
+			String name = entry.getKey();
+			Object o = entry.getValue();
 			if(o instanceof ManifestElement) {
 				ManifestElement element = (ManifestElement) o;
 				containerBuilder.addItem(name, prefix+name, element, name.equals(defaultName));
@@ -357,8 +363,9 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 	}
 
 	private void makeEveryThingPutHandlers(ContainerBuilder containerBuilder, HashMap<String,Object> manifestElements, String defaultName, String prefix) {
-		for (String name: manifestElements.keySet()) {
-			Object o = manifestElements.get(name);
+		for(Map.Entry<String, Object> entry:manifestElements.entrySet()) {
+			String name = entry.getKey();
+			Object o = entry.getValue();
 			if(o instanceof ManifestElement) {
 				ManifestElement element = (ManifestElement) o;
 				if (element.getSize() > DEFAULT_MAX_CONTAINERITEMSIZE)

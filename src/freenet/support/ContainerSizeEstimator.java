@@ -4,7 +4,7 @@
 package freenet.support;
 
 import java.util.HashMap;
-import java.util.Set;
+import java.util.Map;
 
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.async.ManifestElement;
@@ -66,10 +66,10 @@ public final class ContainerSizeEstimator {
 	}
 
 	private static void getSubTreeSize(HashMap<String, Object> metadata, ContainerSize result, long maxItemSize, long maxContainerSize,int maxDeep) {
-		Set<String> set = metadata.keySet();
 		// files
-		for(String name:set) {
-			Object o = metadata.get(name);
+		for(Map.Entry<String,Object> entry:metadata.entrySet()) {
+			String name = entry.getKey();
+			Object o = entry.getValue();
 			if (o instanceof ManifestElement) {
 				ManifestElement me = (ManifestElement)o;
 				long itemsize = me.getSize();
@@ -93,8 +93,9 @@ public final class ContainerSizeEstimator {
 		}
 		// sub dirs
 		if (maxDeep > 0) {
-			for(String name:set) {
-				Object o = metadata.get(name);
+			for(Map.Entry<String,Object> entry:metadata.entrySet()) {
+				String name = entry.getKey();
+				Object o = entry.getValue();
 				if (o instanceof HashMap) {
 					result._sizeSubTrees += 512;
 					@SuppressWarnings("unchecked")

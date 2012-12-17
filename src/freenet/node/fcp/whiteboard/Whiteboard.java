@@ -40,8 +40,8 @@ public class Whiteboard {
 	 *            - The listener to be removed
 	 */
 	public void removeListener(WhiteboardListener listener) {
-		for (String key : listeners.keySet()) {
-			listeners.get(key).remove(listener);
+		for (List<WhiteboardListener> listenerList: listeners.values()) {
+			listenerList.remove(listener);
 		}
 	}
 
