@@ -503,7 +503,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			 * Redirect to the welcome page because no key was specified.
 			 */
 			try {
-				throw new RedirectException(new URI(uri.getScheme(), uri.getUserInfo(), uri.getHost(), uri.getPort(), welcome.getPath(), uri.getQuery(), uri.getFragment()));
+				throw new RedirectException(new URI(null, null, null, -1, welcome.getPath(), uri.getQuery(), uri.getFragment()));
 			} catch (URISyntaxException e) {
 				/*
 				 * This shouldn't happen because all the inputs to the URI constructor come from getters
