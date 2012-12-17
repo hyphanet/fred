@@ -960,7 +960,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 				Logger.minor(this, "Adding docName: " + docName);
 			if(docName == null)
 				// Really this shouldn't be possible...
-				throw new NullPointerException();
+				throw new IllegalStateException("No docName for key of type "+keyType);
 			names.add(docName);
 			if(keyType.equals("USK"))
 				names.add(Long.toString(suggestedEdition));
