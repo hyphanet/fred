@@ -1,5 +1,6 @@
 package freenet.support;
 
+import java.lang.reflect.Array;
 import java.util.Enumeration;
 import java.util.Iterator;
 
@@ -205,14 +206,13 @@ public class UpdatableSortedLinkedList<T extends UpdatableSortedLinkedListItem<T
      * @return an array, in order, of the elements in the list
      * @throws UpdatableSortedLinkedListKilledException 
      */
-    public synchronized UpdatableSortedLinkedListItem[] toArray() throws UpdatableSortedLinkedListKilledException {
+    public synchronized UpdatableSortedLinkedListItem<T>[] toArray() throws UpdatableSortedLinkedListKilledException {
     	if(killed) throw new UpdatableSortedLinkedListKilledException();
         int size = list.size();
         if(size < 0)
         	throw new IllegalStateException("list.size() = "+size+" for "+this);
-        	
-        UpdatableSortedLinkedListItem[] output = 
-            new UpdatableSortedLinkedListItem[size];
+        
+        UpdatableSortedLinkedListItem<T>[] output = new UpdatableSortedLinkedListItem[size];
         int i=0;
         for(Enumeration<T> e = list.elements();e.hasMoreElements();) {
             output[i++] = e.nextElement();

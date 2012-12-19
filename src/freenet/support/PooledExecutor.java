@@ -18,7 +18,6 @@ import freenet.support.io.NativeThread;
 public class PooledExecutor implements Executor {
 
 	/** All threads running or waiting */
-	@SuppressWarnings("unchecked")
 	private final int[] runningThreads = new int[NativeThread.JAVA_PRIORITY_RANGE + 1];
 	/** Threads waiting for a job */
 	@SuppressWarnings("unchecked")

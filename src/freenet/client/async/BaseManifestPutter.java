@@ -907,11 +907,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			// Ignore
 		}
 
-		public void clearMetadata(ObjectContainer container) {
-			metadata = null;
-			if(persistent) container.store(this);
-		}
-
 		@Override
 		public void removeFrom(ObjectContainer container, ClientContext context) {
 			if(logMINOR) Logger.minor(this, "Removing "+this);
@@ -1175,31 +1170,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			phToStart.add(rootContainerPutHandler);
 		}
 		return phToStart.toArray(new PutHandler[phToStart.size()]);
-	}
-
-	private synchronized void debugDecompose(String title) {
-		System.out.println("=== BEGIN: "+title);
-		System.out.println("Running PutHandlers: "+ runningPutHandlers.size());
-		for (PutHandler ph: runningPutHandlers) {
-			System.out.println("\t"+ph);
-		}
-		System.out.println("Running ContainerHandlers: "+ containerPutHandlers.size());
-		for (PutHandler ph: containerPutHandlers) {
-			System.out.println("\t"+ph);
-		}
-		System.out.println("Waiting for Metadata: "+ putHandlersWaitingForMetadata.size());
-		for (PutHandler ph: putHandlersWaitingForMetadata) {
-			System.out.println("\t"+ph);
-		}
-		System.out.println("Waiting for Fetchable: "+ putHandlersWaitingForFetchable.size());
-		for (PutHandler ph: putHandlersWaitingForFetchable) {
-			System.out.println("\t"+ph);
-		}
-		System.out.println("Waiting for BlockSet: "+ putHandlerWaitingForBlockSets.size());
-		for (PutHandler ph: putHandlerWaitingForBlockSets) {
-			System.out.println("\t"+ph);
-		}
-		System.out.println("===   END: "+title);
 	}
 
 	/**

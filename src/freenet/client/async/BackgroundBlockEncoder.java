@@ -122,9 +122,9 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 			query.descend("nodeDBHandle").constrain(Long.valueOf(context.nodeDBHandle));
 			query.descend("priority").orderAscending();
 			query.descend("addedTime").orderAscending();
-			ObjectSet results = query.execute();
+			ObjectSet<BackgroundBlockEncoderTag> results = query.execute();
 			for(int x = 0; x < JOBS_PER_SLOT && results.hasNext(); x++) {
-				BackgroundBlockEncoderTag tag = (BackgroundBlockEncoderTag) results.next();
+				BackgroundBlockEncoderTag tag = results.next();
 				try {
 					Encodeable sbi = tag.inserter;
 					if(sbi == null) continue;

@@ -99,7 +99,6 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 	 */
 	private void verifyManifest(HashMap<String, Object> metadata) {
 		for(Map.Entry<String, Object> entry:metadata.entrySet()) {
-			String name = entry.getKey();
 			Object o = entry.getValue();
 			if (o instanceof HashMap) {
 				@SuppressWarnings("unchecked")

@@ -178,36 +178,6 @@ public class NewLzmaCompressorTest extends TestCase {
 		//fail("did not throw expected CompressionOutputSizeException");
 	}
 
-	private byte[] doBucketDecompress(byte[] compressedData) throws IOException {
-
-		Bucket inBucket = new ArrayBucket(compressedData);
-		Bucket outBucket = new ArrayBucket();
-		InputStream decompressorInput = null;
-		OutputStream decompressorOutput = null;
-
-		try {
-			decompressorInput = inBucket.getInputStream();
-			decompressorOutput = outBucket.getOutputStream();
-			Compressor.COMPRESSOR_TYPE.LZMA_NEW.decompress(decompressorInput, decompressorOutput, 32768, 32768 * 2);
-			decompressorInput.close();
-			decompressorOutput.close();
-		} finally {
-			Closer.close(decompressorInput);
-			Closer.close(decompressorOutput);
-			inBucket.free();
-		}
-
-		InputStream in = null;
-
-		in = outBucket.getInputStream();
-		long size = outBucket.size();
-		byte[] outBuf = new byte[(int) size];
-
-		in.read(outBuf);
-
-		return outBuf;
-	}
-
 	private byte[] doCompress(byte[] uncompressedData) throws IOException {
 		Bucket inBucket = new ArrayBucket(uncompressedData);
 		BucketFactory factory = new ArrayBucketFactory();
