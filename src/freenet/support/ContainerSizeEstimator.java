@@ -68,7 +68,6 @@ public final class ContainerSizeEstimator {
 	private static void getSubTreeSize(HashMap<String, Object> metadata, ContainerSize result, long maxItemSize, long maxContainerSize,int maxDeep) {
 		// files
 		for(Map.Entry<String,Object> entry:metadata.entrySet()) {
-			String name = entry.getKey();
 			Object o = entry.getValue();
 			if (o instanceof ManifestElement) {
 				ManifestElement me = (ManifestElement)o;
@@ -94,7 +93,6 @@ public final class ContainerSizeEstimator {
 		// sub dirs
 		if (maxDeep > 0) {
 			for(Map.Entry<String,Object> entry:metadata.entrySet()) {
-				String name = entry.getKey();
 				Object o = entry.getValue();
 				if (o instanceof HashMap) {
 					result._sizeSubTrees += 512;
