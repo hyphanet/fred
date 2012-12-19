@@ -617,7 +617,7 @@ public class NodeCrypto {
 				HandlePortTuple tuple = new HandlePortTuple();
 				tuple.handle = handle;
 				// Double-check with QBE, just in case the RNG is broken (similar things have happened before!)
-				ObjectSet os = setupContainer.get(tuple);
+				ObjectSet<?> os = setupContainer.get(tuple);
 				if(os.hasNext()) {
 					System.err.println("Generating database handle for node: already taken: "+handle);
 					continue;
