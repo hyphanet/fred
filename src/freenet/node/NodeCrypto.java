@@ -508,6 +508,8 @@ public class NodeCrypto {
 	public boolean allowConnection(PeerNode pn, FreenetInetAddress addr) {
     	if(config.oneConnectionPerAddress()) {
     		// Disallow multiple connections to the same address
+			// TODO: this is inadequate for IPv6, should be replaced by
+			// check for "same /64 subnet" [configurable] instead of exact match
     		if(node.peers.anyConnectedPeerHasAddress(addr, pn) && !detector.includes(addr)
     				&& addr.isRealInternetAddress(false, false, false)) {
     			Logger.normal(this, "Not sending handshake packets to "+addr+" for "+pn+" : Same IP address as another node");
