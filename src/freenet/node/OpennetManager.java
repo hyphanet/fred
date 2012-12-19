@@ -439,7 +439,7 @@ public class OpennetManager {
 					if(addr == null) continue;
 					InetAddress a = addr.getAddress(false);
 					if(a == null) continue;
-					if(a.isAnyLocalAddress() || IPUtil.isSiteLocalAddress(a)) continue;
+					if(a.isAnyLocalAddress() || a.isLinkLocalAddress() || IPUtil.isSiteLocalAddress(a)) continue;
 					any = true;
 					if(crypto.allowConnection(nodeToAddNow, addr))
 						okay = true;
