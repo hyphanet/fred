@@ -50,6 +50,7 @@ import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.transport.ip.HostnameSyntaxException;
+import freenet.support.transport.ip.IPUtil;
 
 /**
  * Central location for all things opennet.
@@ -438,7 +439,7 @@ public class OpennetManager {
 					if(addr == null) continue;
 					InetAddress a = addr.getAddress(false);
 					if(a == null) continue;
-					if(a.isAnyLocalAddress() || a.isSiteLocalAddress()) continue;
+					if(a.isAnyLocalAddress() || IPUtil.isSiteLocalAddress(a)) continue;
 					any = true;
 					if(crypto.allowConnection(nodeToAddNow, addr))
 						okay = true;
