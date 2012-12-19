@@ -1009,14 +1009,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		}
 	}
 
-	private static String getDownloadReturnType(Node node) {
-		if(node.securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW)
-			// Default to save to temp space
-			return "direct";
-		else
-			return "disk";
-	}
-
 	private boolean isBrowser(String ua) {
 		if(ua == null) return false;
 		return (ua.contains("Mozilla/") || ua.contains("Opera/"));

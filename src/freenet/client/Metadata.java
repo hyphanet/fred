@@ -1149,13 +1149,6 @@ public class Metadata implements Cloneable {
 		return baos.toByteArray();
 	}
 
-	private ClientCHK readCHK(DataInputStream dis) throws IOException, MetadataParseException {
-		if(fullKeys) {
-			throw new MetadataParseException("fullKeys not supported on a splitfile");
-		}
-		return ClientCHK.readRawBinaryKey(dis);
-	}
-
 	/**
 	 * Read a key using the current settings.
 	 * @throws IOException

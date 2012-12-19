@@ -119,10 +119,6 @@ public class HTMLEncoder {
 			if (chars[0] == 0 && strings[0] != null) chars[0] = 1;
 		}
 		
-		public boolean containsKey(char key){
-			return chars[key%modulo] == key;
-		}
-		
 		public String get(char key){
 			return chars[key%modulo] == key? strings[key%modulo]:null;
 		}
