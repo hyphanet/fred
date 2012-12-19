@@ -87,7 +87,6 @@ class FailureTableEntry implements TimedOutNodesList {
         
 	FailureTableEntry(Key key) {
 		this.key = key.archivalCopy();
-		if(key == null) throw new NullPointerException();
 		long now = System.currentTimeMillis();
 		creationTime = now;
 		receivedTime = -1;
