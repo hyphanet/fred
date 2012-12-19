@@ -111,6 +111,8 @@ public class ECDH {
         ka.init(key.getPrivate(), curve.spec);
         ka.doPhase(pubkey, true);
         
+        // Note that the returned key is twice the length suggested by the algorithm.
+        // It will be fed into a KDF, which will then generate a normal-sized key.
         return new SecretKeySpec(ka.generateSecret(), algorithm);
     }
     
