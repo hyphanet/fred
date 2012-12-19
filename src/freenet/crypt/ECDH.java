@@ -14,6 +14,7 @@ import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 import freenet.support.Logger;
 
@@ -110,7 +111,7 @@ public class ECDH {
         ka.init(key.getPrivate(), curve.spec);
         ka.doPhase(pubkey, true);
         
-        return ka.generateSecret(algorithm);        
+        return new SecretKeySpec(ka.generateSecret(), algorithm);
     }
     
     public ECPublicKey getPublicKey() {
