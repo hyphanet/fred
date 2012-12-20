@@ -969,12 +969,14 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 		if(keyType != null && (keyType.equals("KSK") || keyType.equals("SSK") || keyType.equals("USK"))) {
 			if(logMINOR)
 				Logger.minor(this, "Adding docName: " + docName);
-			if(docName == null)
-				// Really this shouldn't be possible...
-				throw new NullPointerException();
-			names.add(docName);
-			if(keyType.equals("USK"))
-				names.add(Long.toString(suggestedEdition));
+			if(docName != null) {
+				names.add(docName);
+				if(keyType.equals("USK"))
+					names.add(Long.toString(suggestedEdition));
+			} else if(!keyType.equals("SSK")) {
+				// "SSK@" is legal for an upload.
+				throw new IllegalStateException("No docName for key of type "+keyType);
+			}
 		}
 		if(metaStr != null)
 			for(int i = 0; i < metaStr.length; i++) {
