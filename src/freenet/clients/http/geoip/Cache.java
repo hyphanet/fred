@@ -2,9 +2,9 @@ package freenet.clients.http.geoip;
 
 public class Cache {
 	short[] codes;
-	long[] ips;
+	int[] ips;
 	
-	public Cache(short[] codes,long[] ips) {
+	public Cache(short[] codes,int[] ips) {
 		this.codes=codes;
 		this.ips=ips;
 	}
@@ -13,7 +13,7 @@ public class Cache {
 		return codes;
 	}
 	
-	public long[] getIps() {
+	public int[] getIps() {
 		return ips;
 	}
 }
