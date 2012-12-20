@@ -301,7 +301,7 @@ public class IPConverter {
 		int start = 0;
 		int last = ips.length - 1;
 		int mid;
-		while ((mid = Math.round((last - start) / 2)) > 0) {
+		while ((mid = (last - start) / 2) > 0) {
 			int midpos = mid + start;
 			if (longip >= ips[midpos]) {
 				last = midpos;
