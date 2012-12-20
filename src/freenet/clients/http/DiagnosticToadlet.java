@@ -49,14 +49,14 @@ public class DiagnosticToadlet extends Toadlet {
 	private final PeerManager peers;
 	private final NumberFormat thousandPoint = NumberFormat.getInstance();
 	private final FCPServer fcp;
-	private final DecimalFormat fix1p1 = new DecimalFormat("0.0");
-	private final DecimalFormat fix1p2 = new DecimalFormat("0.00");
+	//private final DecimalFormat fix1p1 = new DecimalFormat("0.0");
+	//private final DecimalFormat fix1p2 = new DecimalFormat("0.00");
 	private final DecimalFormat fix1p4 = new DecimalFormat("0.0000");
-	private final DecimalFormat fix1p6sci = new DecimalFormat("0.######E0");
+	//private final DecimalFormat fix1p6sci = new DecimalFormat("0.######E0");
 	private final DecimalFormat fix3p1pct = new DecimalFormat("##0.0%");
-	private final DecimalFormat fix3p1US = new DecimalFormat("##0.0", new DecimalFormatSymbols(Locale.US));
-	private final DecimalFormat fix3pctUS = new DecimalFormat("##0%", new DecimalFormatSymbols(Locale.US));
-	private final DecimalFormat fix6p6 = new DecimalFormat("#####0.0#####");
+	//private final DecimalFormat fix3p1US = new DecimalFormat("##0.0", new DecimalFormatSymbols(Locale.US));
+	//private final DecimalFormat fix3pctUS = new DecimalFormat("##0%", new DecimalFormatSymbols(Locale.US));
+	//private final DecimalFormat fix6p6 = new DecimalFormat("#####0.0#####");
 	public static final String TOADLET_URL = "/diagnostic/";
 	private final BaseL10n baseL10n;
 
