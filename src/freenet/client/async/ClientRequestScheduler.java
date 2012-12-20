@@ -978,7 +978,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * to be restarted in the near future.
 	 */
 	private long moveKeysFromCooldownQueue(CooldownQueue queue, boolean persistent, ObjectContainer container) {
-		final boolean logMINOR = this.logMINOR;
+		final boolean logMINOR = ClientRequestScheduler.logMINOR;
 		if(queue == null) return Long.MAX_VALUE;
 		long now = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Moving keys from cooldown queue persistent="+persistent);

@@ -679,7 +679,7 @@ outer:		while(true) {
 	
 	@SuppressWarnings("unchecked")
 	boolean maybeShrink(ObjectContainer container) {
-		final boolean logMINOR = this.logMINOR;
+		final boolean logMINOR = PersistentBlobTempBucketFactory.logMINOR;
 		
 		if(logMINOR) Logger.minor(this, "maybeShrink()");
 		
