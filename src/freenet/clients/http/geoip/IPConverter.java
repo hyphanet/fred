@@ -20,9 +20,9 @@ public class IPConverter {
 	final int MAX_ENTRIES = 100;
 	// Local cache
 	@SuppressWarnings("serial")
-	private final HashMap<Long, Country> cache = new LinkedHashMap<Long, Country>() {
+	private final HashMap<Integer, Country> cache = new LinkedHashMap<Integer, Country>() {
 		@Override
-		protected boolean removeEldestEntry(Map.Entry<Long, Country> eldest) {
+		protected boolean removeEldestEntry(Map.Entry<Integer, Country> eldest) {
 			return size() > MAX_ENTRIES;
 		}
 	};
@@ -221,7 +221,7 @@ public class IPConverter {
 			int size = line.length() / 7;
 			// Arrays to form a Cache
 			short[] codes = new short[size];
-			long[] ips = new long[size];
+			int[] ips = new int[size];
 			// Read ips and add it to ip table
 			for (int i = 0; i < size; i++) {
 				int offset = i * 7;
@@ -238,7 +238,7 @@ public class IPConverter {
 					Logger.error(this, "Country not in list: "+code);
 					codes[i] = (short)-1;
 				}
-				ips[i] = ip;
+				ips[i] = (int)ip;
 			}
 			raf.close();
 			return new Cache(codes, ips);
@@ -291,11 +291,12 @@ public class IPConverter {
 			return null; // Not an IP address.
 		}
 		// Check cache first
-		if (cache.containsKey(longip)) {
-			return cache.get(longip);
+		Country cached = cache.get((int)longip);
+		if (cached != null) {
+			return cached;
 		}
 		if(memCache == null) return null;
-		long[] ips = memCache.getIps();
+		int[] ips = memCache.getIps();
 		short[] codes = memCache.getCodes();
 		// Binary search
 		int start = 0;
@@ -303,7 +304,8 @@ public class IPConverter {
 		int mid;
 		while ((mid = (last - start) / 2) > 0) {
 			int midpos = mid + start;
-			if (longip >= ips[midpos]) {
+			long midip = ips[midpos] & 0xffffffffl;
+			if (longip >= midip) {
 				last = midpos;
 			} else {
 				start = midpos;
@@ -312,7 +314,7 @@ public class IPConverter {
 		short countryOrdinal = codes[last];
 		if(countryOrdinal < 0) return null;
 		Country country = Country.values()[countryOrdinal];
-		cache.put(longip, country);
+		cache.put((int)longip, country);
 		return country;
 	}
 
