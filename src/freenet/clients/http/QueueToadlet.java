@@ -2137,8 +2137,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		if(uri != null) {
 			cell.addChild("input", new String[] { "type", "name", "value" },
 					new String[] { "hidden", "key-"+counter, uri.toASCIIString() });
-			filename = uri.getPreferredFilename();
 		}
+		filename = clientRequest.getPreferredFilenameSafe();
 		if(size != -1)
 			cell.addChild("input", new String[] { "type", "name", "value" },
 					new String[] { "hidden", "size-"+counter, Long.toString(size) });

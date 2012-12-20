@@ -1000,6 +1000,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 					Logger.minor(this, "Returning base64 encoded routing key");
 				return Base64.encode(routingKey);
 			}
+			// FIXME return null in this case, localise in a wrapper.
 			return "unknown";
 		}
 		return out.toString();

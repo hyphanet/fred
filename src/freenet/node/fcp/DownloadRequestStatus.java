@@ -140,4 +140,14 @@ public class DownloadRequestStatus extends RequestStatus {
 		return detectedDontCompress;
 	}
 
+	@Override
+	public String getPreferredFilename() {
+		if(destFilename != null)
+			return destFilename.getName();
+		if(uri != null && 
+				(uri.hasMetaStrings() || uri.getDocName() != null))
+			return uri.getPreferredFilename();
+		return null;
+	}
+
 }

@@ -59,5 +59,18 @@ public abstract class UploadRequestStatus extends RequestStatus {
 	public synchronized void setFinalURI(FreenetURI finalURI2) {
 		this.finalURI = finalURI2;
 	}
+	
+	@Override
+	public String getPreferredFilename() {
+		FreenetURI uri = getFinalURI();
+		if(uri != null && 
+				(uri.hasMetaStrings() || uri.getDocName() != null))
+			return uri.getPreferredFilename();
+		uri = getTargetURI();
+		if(uri != null && 
+				(uri.hasMetaStrings() || uri.getDocName() != null))
+			return uri.getPreferredFilename();
+		return null;
+	}
 
 }
