@@ -2408,6 +2408,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 	}
 
+	// FIXME this is our Key Derivation Function for JFK.
+	// FIXME we should move it to freenet/crypt/
 	private byte[] computeJFKSharedKey(byte[] exponential, byte[] nI, byte[] nR, String what) {
 		assert("0".equals(what) || "1".equals(what) || "2".equals(what) || "3".equals(what)
 				|| "4".equals(what) || "5".equals(what) || "6".equals(what) || "7".equals(what));
