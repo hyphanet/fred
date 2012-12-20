@@ -178,7 +178,7 @@ public class MessageCore {
 	 */
 	public void checkFilters(Message m, PacketSocketHandler from) {
 		final boolean logMINOR = MessageCore.logMINOR;
-		final boolean logDEBUG = this.logDEBUG;
+		final boolean logDEBUG = MessageCore.logDEBUG;
 		long tStart = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "checkFilters: "+m+" from "+m.getSource());
 		if ((m.getSource()) instanceof PeerNode)
