@@ -73,7 +73,7 @@ public class NodeIPPortDetector {
 	 * differently for each connection, we're stuffed, and we tell the user).
 	 */
 	Peer[] detectPrimaryPeers() {
-		final boolean logMINOR = this.logMINOR;
+		final boolean logMINOR = NodeIPPortDetector.logMINOR;
 		ArrayList<Peer> addresses = new ArrayList<Peer>();
 		FreenetInetAddress[] addrs = detectPrimaryIPAddress();
 		for(FreenetInetAddress addr: addrs) {

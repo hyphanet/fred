@@ -55,8 +55,6 @@ public class LongTermMHKTest {
 
 	private static final int DARKNET_PORT1 = 5010;
 	private static final int OPENNET_PORT1 = 5011;
-	private static final int DARKNET_PORT2 = 5012;
-	private static final int OPENNET_PORT2 = 5013;
 	
 	/** Delta - the number of days we wait before fetching. */
 	private static final int DELTA = 7;
