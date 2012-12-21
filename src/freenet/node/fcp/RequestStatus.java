@@ -6,6 +6,12 @@ import freenet.l10n.NodeL10n;
 
 /** The status of a request. Cached copy i.e. can be accessed outside the database thread
  * even for a persistent request.
+ * 
+ * Methods that change the status should be package-local, and called either
+ * within freenet.node.fcp, or via RequestStatusCache. Hence we should be 
+ * able to lock the RequestStatusCache and be confident that nothing is going
+ * to change under us.
+ * 
  * @author toad 
  */
 public abstract class RequestStatus {

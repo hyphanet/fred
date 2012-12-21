@@ -56,7 +56,7 @@ public abstract class UploadRequestStatus extends RequestStatus {
 		return longDescription ? failureReasonLong : failureReasonShort;
 	}
 
-	public synchronized void setFinalURI(FreenetURI finalURI2) {
+	synchronized void setFinalURI(FreenetURI finalURI2) {
 		this.finalURI = finalURI2;
 	}
 	

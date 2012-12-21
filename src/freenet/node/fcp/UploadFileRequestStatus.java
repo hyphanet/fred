@@ -47,7 +47,7 @@ public class UploadFileRequestStatus extends UploadRequestStatus {
 		return compressing;
 	}
 
-	public synchronized void updateCompressionStatus(COMPRESS_STATE status) {
+	synchronized void updateCompressionStatus(COMPRESS_STATE status) {
 		compressing = status;
 	}
 	
