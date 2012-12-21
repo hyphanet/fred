@@ -1103,19 +1103,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							infoboxContent.addChild("p", "Total awaiting CHKs: "+queued);
 							infoboxContent.addChild("p", "Total queued CHK requests: "+reallyQueued);
 							return false;
-						} else if(keys) {
+						} else /*if(keys)*/ {
 							try {
 								plainText = makeFetchKeysList(context);
 							} catch (DatabaseDisabledException e) {
 								plainText = null;
-							}
-							return false;
-						} else {
-							try {
-								RequestStatus[] reqs = fcp.getGlobalRequests();
-								pageNode = handleGetInner(pageMaker, reqs, context, request, ctx);
-							} catch (DatabaseDisabledException e) {
-								pageNode = null;
 							}
 							return false;
 						}
