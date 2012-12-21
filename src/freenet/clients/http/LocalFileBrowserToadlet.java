@@ -364,6 +364,12 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 				}
 			}
 			for (File currentFile : files) {
+				if(currentFile.isHidden()) {
+					// It won't be inserted if we insert the whole folder.
+					// So lets just ignore it, less confusing.
+					// FIXME in advanced mode, show them, and have a different style, and a toggle for whether to include them in a folder insert.
+					continue;
+				}
 				HTMLNode fileRow = listingTable.addChild("tr");
 				if (currentFile.isDirectory()) {
 					if (currentFile.canRead()) {
