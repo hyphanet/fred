@@ -1518,8 +1518,6 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			Logger.normal(this, "Start rebuilding slot filter (" + name + ")");
 			
 			BatchProcessor<T> rebuildBloomProcessor = new BatchProcessor<T>() {
-				int optimialK;
-				
 				@Override
 				public void init() {
 					configLock.writeLock().lock();

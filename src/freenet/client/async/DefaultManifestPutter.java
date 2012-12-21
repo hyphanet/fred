@@ -51,7 +51,6 @@ import freenet.support.ContainerSizeEstimator.ContainerSize;
 public class DefaultManifestPutter extends BaseManifestPutter {
 
 	private static volatile boolean logMINOR;
-	private static volatile boolean logDEBUG;
 
 	static {
 		Logger.registerClass(DefaultManifestPutter.class);

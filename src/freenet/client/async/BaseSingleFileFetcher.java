@@ -46,7 +46,6 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	private long cachedCooldownTime;
 	
 	private static volatile boolean logMINOR;
-	private static volatile boolean logDEBUG;
 	
 	static {
 		Logger.registerClass(BaseSingleFileFetcher.class);

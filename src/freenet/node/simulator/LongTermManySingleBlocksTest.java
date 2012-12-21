@@ -71,8 +71,8 @@ public class LongTermManySingleBlocksTest {
 		class BatchInsert implements Runnable {
 
 			private final InsertBlock block;
-			private boolean finished = false;
-			private boolean started = false;
+			//private boolean finished = false;
+			//private boolean started = false;
 			private long insertTime;
 			private InsertException failed;
 			private FreenetURI uri;
@@ -91,7 +91,7 @@ public class LongTermManySingleBlocksTest {
 			public void run() {
 				synchronized(InsertBatch.this) {
 					runningInserts++;
-					started = true;
+					//started = true;
 					System.out.println("Starting insert: running "+runningInserts);
 				}
 				long t1 = 0, t2 = 0;
@@ -107,7 +107,7 @@ public class LongTermManySingleBlocksTest {
 					synchronized(InsertBatch.this) {
 						runningInserts--;
 						System.out.println("Stopping insert: running "+runningInserts);
-						finished = true;
+						//finished = true;
 						if(thisURI != null) {
 							uri = thisURI;
 							insertTime = t2 - t1;
