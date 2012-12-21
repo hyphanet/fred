@@ -29,6 +29,9 @@ import freenet.support.io.FileBucket;
  * Filename=<filename>
  * AllowUnreadableFiles=<unless true, any unreadable files cause the whole request to fail>
  * End
+ * 
+ * FIXME this should use the same code as makeDiskDirManifest does for internal
+ * directory inserts.
  */
 public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 
@@ -36,6 +39,7 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 	
 	final File dirname;
 	final boolean allowUnreadableFiles;
+	final boolean includeHiddenFiles;
 
         private static volatile boolean logMINOR;
 	static {
@@ -50,6 +54,7 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 	public ClientPutDiskDirMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		super(fs);
 		allowUnreadableFiles = fs.getBoolean("AllowUnreadableFiles", false);
+		includeHiddenFiles = fs.getBoolean("includeHiddenFiles", false);
 		String fnam = fs.get("Filename");
 		if(fnam == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Filename missing", identifier, global);
@@ -88,6 +93,7 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
     	if(filelist == null)
     		throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "No such directory!", identifier, global);
     	for(int i = 0 ; i < filelist.length ; i++) {
+    		if(filelist[i].isHidden() && !includeHiddenFiles) continue;
                 //   Skip unreadable files and dirs
 		//   Skip files nonexistant (dangling symlinks) - check last 
 	        if (filelist[i].canRead() && filelist[i].exists()) {

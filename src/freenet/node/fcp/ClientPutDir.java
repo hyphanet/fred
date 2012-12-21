@@ -100,12 +100,12 @@ public class ClientPutDir extends ClientPutBase {
 	*	Puts a disk dir
 	 * @throws InsertException 
 	*/
-	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, File dir, String defaultName, boolean allowUnreadableFiles, boolean global, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, boolean realTimeFlag, byte[] overrideSplitfileCryptoKey, FCPServer server, ObjectContainer container) throws FileNotFoundException, IdentifierCollisionException, MalformedURLException {
+	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, File dir, String defaultName, boolean allowUnreadableFiles, boolean includeHiddenFiles, boolean global, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, boolean realTimeFlag, byte[] overrideSplitfileCryptoKey, FCPServer server, ObjectContainer container) throws FileNotFoundException, IdentifierCollisionException, MalformedURLException {
 		super(checkEmptySSK(uri, "site", server.core.clientContext), identifier, verbosity , null, null, client, priorityClass, persistenceType, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, realTimeFlag, null, InsertContext.CompatibilityMode.COMPAT_CURRENT, server, container);
 		wasDiskPut = true;
 		this.overrideSplitfileCryptoKey = overrideSplitfileCryptoKey;
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-		this.manifestElements = makeDiskDirManifest(dir, "", allowUnreadableFiles);
+		this.manifestElements = makeDiskDirManifest(dir, "", allowUnreadableFiles, includeHiddenFiles);
 		this.defaultName = defaultName;
 		this.manifestPutterType = ManifestPutter.MANIFEST_SIMPLEPUTTER;
 		makePutter(container, server.core.clientContext);
@@ -148,7 +148,7 @@ public class ClientPutDir extends ClientPutBase {
 		}
 	}
 	
-	private HashMap<String, Object> makeDiskDirManifest(File dir, String prefix, boolean allowUnreadableFiles) throws FileNotFoundException {
+	private HashMap<String, Object> makeDiskDirManifest(File dir, String prefix, boolean allowUnreadableFiles, boolean includeHiddenFiles) throws FileNotFoundException {
 
 		HashMap<String, Object> map = new HashMap<String, Object>();
 		File[] files = dir.listFiles();
@@ -157,6 +157,8 @@ public class ClientPutDir extends ClientPutBase {
 			throw new IllegalArgumentException("No such directory");
 
 		for (File f : files) {
+			
+    		if(f.isHidden() && !includeHiddenFiles) continue;
 
 			if (f.exists() && f.canRead()) {
 				if(f.isFile()) {
@@ -169,7 +171,7 @@ public class ClientPutDir extends ClientPutBase {
 					if(logMINOR)
 						Logger.minor(this, "Add dir : " + f.getAbsolutePath());
 					
-					map.put(f.getName(), makeDiskDirManifest(f, prefix + f.getName() + "/", allowUnreadableFiles));
+					map.put(f.getName(), makeDiskDirManifest(f, prefix + f.getName() + "/", allowUnreadableFiles, includeHiddenFiles));
 				} else {
 					if(!allowUnreadableFiles)
 						throw new FileNotFoundException("Not a file and not a directory : " + f);
