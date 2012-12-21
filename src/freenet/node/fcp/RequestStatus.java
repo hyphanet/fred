@@ -14,7 +14,7 @@ import freenet.l10n.NodeL10n;
  * 
  * @author toad 
  */
-public abstract class RequestStatus {
+public abstract class RequestStatus implements Cloneable {
 	
 	private final String identifier;
 	private boolean hasStarted;
@@ -168,6 +168,14 @@ public abstract class RequestStatus {
 			return NodeL10n.getBase().getString("RequestStatus.unknownFilename");
 		else
 			return ret;
+	}
+
+	public RequestStatus clone() {
+		try {
+			return (RequestStatus) super.clone();
+		} catch (CloneNotSupportedException e) {
+			throw new Error(e);
+		}
 	}
 
 }
