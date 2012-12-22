@@ -896,14 +896,13 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			HTMLNode addressRow = peerRow.addChild("td", "class", "peer-address");
 			// Ip to country + Flags
 			IPConverter ipc = IPConverter.getInstance(node.runDir().file(NodeUpdateManager.IPV4_TO_COUNTRY_FILENAME));
-			// Only IPv4 at the time
-			String addr = peerNodeStatus.getPeerAddressNumerical();
-			if(addr != null && !addr.contains(":")) {
+			byte[] addr = peerNodeStatus.getPeerAddressBytes();
+
 				Country country = ipc.locateIP(addr);
 				if(country != null) {
 					country.renderFlagIcon(addressRow);
 				}
-			}
+
 			addressRow.addChild("#", ((peerNodeStatus.getPeerAddress() != null) ? (peerNodeStatus.getPeerAddress() + ':' + peerNodeStatus.getPeerPort()) : (l10n("unknownAddress"))) + pingTime);
 		}
 
