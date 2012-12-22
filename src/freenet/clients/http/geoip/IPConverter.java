@@ -309,7 +309,7 @@ public class IPConverter {
 				// ::/96, deprecated IPv4-compatible IPv6
 				ip = Arrays.copyOfRange(ip, 12,16);
 			} else if(( ip[0] == (byte)0x20 && ip[1] == (byte)0x01 &&
-						ip[2] == (byte)0x00 && ip[2] == (byte)0x00)) {
+						ip[2] == (byte)0x00 && ip[3] == (byte)0x00)) {
 				// 2001:0::/32, Teredo tunnels
 				//  4..8  = server adderss
 				//  9..10 = flags
