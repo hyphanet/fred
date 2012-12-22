@@ -1318,6 +1318,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		if(logMINOR)
 			Logger.minor(this, "Registering "+attempts.length+" USKChecker's for "+this+" running="+runningAttempts.size()+" polling="+pollingAttempts.size());
 		for(USKAttempt attempt: attempts) {
+			// Look up on each iteration since scheduling can cause new editions to be found sometimes.
 			long lastEd = uskManager.lookupLatestSlot(origUSK);
 			// FIXME not sure this condition works, test it!
 			if(keepLastData && lastRequestData == null && lastEd == origUSK.suggestedEdition)
