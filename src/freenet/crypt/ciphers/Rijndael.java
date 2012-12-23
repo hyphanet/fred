@@ -171,24 +171,6 @@ public class Rijndael implements BlockCipher {
 		Rijndael_Algorithm.blockEncrypt(block, result, 0, sessionKey, blocksize/8);
 	}
 
-	/**
-	 * @return Size of temporary int[] a, t. If these are passed in, this can speed
-	 * things up by avoiding unnecessary allocations between rounds.
-	 */
-	// only consumer is RijndaelPCFBMode
-	public synchronized final int getTempArraySize() {
-		return blocksize/(8*4);
-	}
-
-	// only consumer is RijndaelPCFBMode
-	public synchronized final void encipher(byte[] block, byte[] result, int[] a, int[] t) {
-		if(block.length != blocksize/8)
-			throw new IllegalArgumentException();
-		if(a.length != t.length || t.length != blocksize/(8*4))
-			throw new IllegalArgumentException();
-		Rijndael_Algorithm.blockEncrypt(block, result, 0, sessionKey, blocksize/8, a, t);
-	}
-
 	@Override
 	public synchronized final void decipher(byte[] block, byte[] result) {
 		if(block.length != blocksize/8)

@@ -914,35 +914,6 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 			blockEncrypt(in, result, inOffset, sessionKey);
 			return;
 		}
-
-		if (blockSize == 256/8) {
-			blockEncrypt256(in, result, inOffset, sessionKey);
-			return;
-		}
-
-		int BC = blockSize / 4;
-
-		int[] a = new int[BC];
-		int[] t = new int[BC]; // temporary work array
-
-		blockEncrypt(in, result, inOffset, sessionKey, blockSize, a, t);
-	}
-
-	/**
-	 * Encrypt exactly one block of plaintext.
-	 *
-	 * @param  in         The plaintext.
-	 * @param  result     The buffer into which to write the resulting ciphertext.
-	 * @param  inOffset   Index of in from which to start considering data.
-	 * @param  sessionKey The session key to use for encryption.
-	 * @param  blockSize  The block size in bytes of this Rijndael.
-	 */
-	static void
-	blockEncrypt (byte[] in, byte[] result, int inOffset, Object sessionKey, int blockSize, int[] a, int[] t) {
-		if (blockSize == BLOCK_SIZE) {
-			blockEncrypt(in, result, inOffset, sessionKey);
-			return;
-		}
 		if (blockSize == 256/8) {
 			blockEncrypt256(in, result, inOffset, sessionKey);
 			return;
@@ -957,6 +928,8 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		int s1 = shifts[SC][1][0];
 		int s2 = shifts[SC][2][0];
 		int s3 = shifts[SC][3][0];
+		int[] a = new int[BC];
+		int[] t = new int[BC]; // temporary work array
 		int i;
 		int j = 0, tt;
 
