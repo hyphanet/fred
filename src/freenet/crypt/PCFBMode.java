@@ -7,8 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import freenet.crypt.ciphers.Rijndael;
-
 /**
  * Control mechanism for the Periodic Cipher Feed Back mode.  This is
  * a CFB variant used apparently by a number of programs, including PGP. 
@@ -50,8 +48,6 @@ public class PCFBMode {
      */
     @Deprecated
     public static PCFBMode create(BlockCipher c) {
-    	if(c instanceof Rijndael)
-    		return new RijndaelPCFBMode((Rijndael)c);
     	return new PCFBMode(c);
     }
     
@@ -65,8 +61,6 @@ public class PCFBMode {
      * BE REMOVED EVENTUALLY. 
      * @param offset */
     public static PCFBMode create(BlockCipher c, byte[] iv, int offset) {
-    	if(c instanceof Rijndael)
-    		return new RijndaelPCFBMode((Rijndael)c, iv, offset);
     	return new PCFBMode(c, iv, offset);
     }
     
