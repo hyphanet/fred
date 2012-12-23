@@ -101,18 +101,31 @@ public class CTRBlockCipher
     public void processBytes(byte[] input, int offsetIn, int length, byte[] output, int offsetOut) {
     	// XOR the plaintext with counterOut until we run out of blockOffset,
     	// then processBlock() to get a new counterOut.
-    	int ptr = 0;
-    	while(true) {
-    		while(blockOffset != counterOut.length && ptr < length) {
+		final int counterLength = counterOut.length;
+
+		if (blockOffset != 0) {
+			/* handle first partially consumed block */
+    		while(blockOffset != counterLength && length > 0) {
     			output[offsetOut++] = (byte) (input[offsetIn++] ^ counterOut[blockOffset++]);
-    			ptr++;
+    			length--;
     		}
-    		assert(ptr <= length);
-    		if(ptr == length) return;
-    		assert(blockOffset == counterOut.length);
+    		if(length == 0) return;
     		processBlock();
     		blockOffset = 0;
-    	}
+		}
+		while(length >= counterLength) {
+			/* consume full blocks */
+			length -= counterLength;
+			while (blockOffset < counterLength)
+				output[offsetOut++] = (byte) (input[offsetIn++] ^ counterOut[blockOffset++]);
+			processBlock();
+			blockOffset = 0;
+		}
+		if (length == 0) return;
+		while (length-- > 0) {
+			/* handle final partial block */
+			output[offsetOut++] = (byte) (input[offsetIn++] ^ counterOut[blockOffset++]);
+		}
     }
 
     /** Encrypt counter to counterOut, and then increment counter. */
