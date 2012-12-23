@@ -125,23 +125,9 @@ public class CTRBlockCipher
     	cipher.encipher(counterOut, counterOut);
     	
     	// Now increment counter.
-        int    carry = 1;
-        
-        for (int i = counter.length - 1; i >= 0; i--)
-        {
-            int    x = (counter[i] & 0xff) + carry;
-            
-            if (x > 0xff)
-            {
-                carry = 1;
-            }
-            else
-            {
-                carry = 0;
-            }
-            
-            counter[i] = (byte)x;
-        }
+        for (int i = counter.length; i-- > 0 && (++counter[i]) == (byte)0;) {
+			/* nothing here */
+		}
     }
 
 }
