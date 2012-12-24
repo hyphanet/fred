@@ -27,7 +27,7 @@ public class CTRBlockCipher
     private byte[]          counterOut;
 
     /** Offset within the current block. */
-    private int blockOffset = 0;
+    private int blockOffset;
     
     /**
      * Basic constructor.
@@ -41,6 +41,7 @@ public class CTRBlockCipher
         this.IV = new byte[blockSize];
         this.counter = new byte[blockSize];
         this.counterOut = new byte[blockSize];
+		this.blockOffset = IV.length;
     }
 
 
