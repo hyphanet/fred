@@ -2,8 +2,8 @@ function freenetjs(){
   var $wnd_0 = window, $doc_0 = document, $stats = $wnd_0.__gwtStatsEvent?function(a){
     return $wnd_0.__gwtStatsEvent(a);
   }
-  :null, scriptsDone, loadDone, bodyDone, base = '', metaProps = {}, values = [], providers = [], answers = [], onLoadErrorFunc, propertyErrorFunc;
-  $stats && $stats({moduleName:'freenetjs', subSystem:'startup', evtGroup:'bootstrap', millis:(new Date()).getTime(), type:'begin'});
+  :null, $sessionId_0 = $wnd_0.__gwtStatsSessionId?$wnd_0.__gwtStatsSessionId:null, scriptsDone, loadDone, bodyDone, base = '', metaProps = {}, values = [], providers = [], answers = [], softPermutationId = 0, onLoadErrorFunc, propertyErrorFunc;
+  $stats && $stats({moduleName:'freenetjs', sessionId:$sessionId_0, subSystem:'startup', evtGroup:'bootstrap', millis:(new Date).getTime(), type:'begin'});
   if (!$wnd_0.__gwt_stylesLoaded) {
     $wnd_0.__gwt_stylesLoaded = {};
   }
@@ -13,7 +13,8 @@ function freenetjs(){
   function isHostedMode(){
     var result = false;
     try {
-      result = $wnd_0.external && ($wnd_0.external.gwtOnLoad && $wnd_0.location.search.indexOf('gwt.hybrid') == -1);
+      var query = $wnd_0.location.search;
+      return (query.indexOf('gwt.codesvr=') != -1 || (query.indexOf('gwt.hosted=') != -1 || $wnd_0.external && $wnd_0.external.gwtOnLoad)) && query.indexOf('gwt.hybrid') == -1;
     }
      catch (e) {
     }
@@ -35,19 +36,12 @@ function freenetjs(){
         ;
       }
       freenetjs = null;
-      frameWnd.gwtOnLoad(onLoadErrorFunc, 'freenetjs', base);
-      $stats && $stats({moduleName:'freenetjs', subSystem:'startup', evtGroup:'moduleStartup', millis:(new Date()).getTime(), type:'end'});
+      frameWnd.gwtOnLoad(onLoadErrorFunc, 'freenetjs', base, softPermutationId);
+      $stats && $stats({moduleName:'freenetjs', sessionId:$sessionId_0, subSystem:'startup', evtGroup:'moduleStartup', millis:(new Date).getTime(), type:'end'});
     }
   }
 
   function computeScriptBase(){
-    var thisScript, markerId = '__gwt_marker_freenetjs', markerScript;
-    $doc_0.write('<script id="' + markerId + '"><\/script>');
-    markerScript = $doc_0.getElementById(markerId);
-    thisScript = markerScript && markerScript.previousSibling;
-    while (thisScript && thisScript.tagName != 'SCRIPT') {
-      thisScript = thisScript.previousSibling;
-    }
     function getDirectoryOfFile(path){
       var hashIndex = path.lastIndexOf('#');
       if (hashIndex == -1) {
@@ -61,75 +55,135 @@ function freenetjs(){
       return slashIndex >= 0?path.substring(0, slashIndex + 1):'';
     }
 
-    ;
-    if (thisScript && thisScript.src) {
-      base = getDirectoryOfFile(thisScript.src);
-    }
-    if (base == '') {
-      var baseElements = $doc_0.getElementsByTagName('base');
-      if (baseElements.length > 0) {
-        base = baseElements[baseElements.length - 1].href;
+    function ensureAbsoluteUrl(url){
+      if (url.match(/^\w+:\/\//)) {
       }
        else {
-        base = getDirectoryOfFile($doc_0.location.href);
+        var img = $doc_0.createElement('img');
+        img.src = url + 'clear.cache.gif';
+        url = getDirectoryOfFile(img.src);
       }
+      return url;
     }
-     else if (base.match(/^\w+:\/\//)) {
+
+    function tryMetaTag(){
+      var metaVal = __gwt_getMetaProperty('baseUrl');
+      if (metaVal != null) {
+        return metaVal;
+      }
+      return '';
     }
-     else {
-      var img = $doc_0.createElement('img');
-      img.src = base + 'clear.cache.gif';
-      base = getDirectoryOfFile(img.src);
+
+    function tryNocacheJsTag(){
+      var scriptTags = $doc_0.getElementsByTagName('script');
+      for (var i = 0; i < scriptTags.length; ++i) {
+        if (scriptTags[i].src.indexOf('freenetjs.nocache.js') != -1) {
+          return getDirectoryOfFile(scriptTags[i].src);
+        }
+      }
+      return '';
     }
-    if (markerScript) {
-      markerScript.parentNode.removeChild(markerScript);
+
+    function tryMarkerScript(){
+      var thisScript;
+      if (typeof isBodyLoaded == 'undefined' || !isBodyLoaded()) {
+        var markerId = '__gwt_marker_freenetjs';
+        var markerScript;
+        $doc_0.write('<script id="' + markerId + '"><\/script>');
+        markerScript = $doc_0.getElementById(markerId);
+        thisScript = markerScript && markerScript.previousSibling;
+        while (thisScript && thisScript.tagName != 'SCRIPT') {
+          thisScript = thisScript.previousSibling;
+        }
+        if (markerScript) {
+          markerScript.parentNode.removeChild(markerScript);
+        }
+        if (thisScript && thisScript.src) {
+          return getDirectoryOfFile(thisScript.src);
+        }
+      }
+      return '';
     }
+
+    function tryBaseTag(){
+      var baseElements = $doc_0.getElementsByTagName('base');
+      if (baseElements.length > 0) {
+        return baseElements[baseElements.length - 1].href;
+      }
+      return '';
+    }
+
+    var tempBase = tryMetaTag();
+    if (tempBase == '') {
+      tempBase = tryNocacheJsTag();
+    }
+    if (tempBase == '') {
+      tempBase = tryMarkerScript();
+    }
+    if (tempBase == '') {
+      tempBase = tryBaseTag();
+    }
+    if (tempBase == '') {
+      tempBase = getDirectoryOfFile($doc_0.location.href);
+    }
+    tempBase = ensureAbsoluteUrl(tempBase);
+    base = tempBase;
+    return tempBase;
   }
 
   function processMetas(){
     var metas = document.getElementsByTagName('meta');
     for (var i = 0, n = metas.length; i < n; ++i) {
-      var meta = metas[i], name_0 = meta.getAttribute('name'), content;
+      var meta = metas[i], name_0 = meta.getAttribute('name'), content_0;
       if (name_0) {
+        name_0 = name_0.replace('freenetjs::', '');
+        if (name_0.indexOf('::') >= 0) {
+          continue;
+        }
         if (name_0 == 'gwt:property') {
-          content = meta.getAttribute('content');
-          if (content) {
-            var value, eq = content.indexOf('=');
+          content_0 = meta.getAttribute('content');
+          if (content_0) {
+            var value, eq = content_0.indexOf('=');
             if (eq >= 0) {
-              name_0 = content.substring(0, eq);
-              value = content.substring(eq + 1);
+              name_0 = content_0.substring(0, eq);
+              value = content_0.substring(eq + 1);
             }
              else {
-              name_0 = content;
+              name_0 = content_0;
               value = '';
             }
             metaProps[name_0] = value;
           }
         }
          else if (name_0 == 'gwt:onPropertyErrorFn') {
-          content = meta.getAttribute('content');
-          if (content) {
+          content_0 = meta.getAttribute('content');
+          if (content_0) {
             try {
-              propertyErrorFunc = eval(content);
+              propertyErrorFunc = eval(content_0);
             }
              catch (e) {
-              alert('Bad handler "' + content + '" for "gwt:onPropertyErrorFn"');
+              alert('Bad handler "' + content_0 + '" for "gwt:onPropertyErrorFn"');
             }
           }
         }
          else if (name_0 == 'gwt:onLoadErrorFn') {
-          content = meta.getAttribute('content');
-          if (content) {
+          content_0 = meta.getAttribute('content');
+          if (content_0) {
             try {
-              onLoadErrorFunc = eval(content);
+              onLoadErrorFunc = eval(content_0);
             }
              catch (e) {
-              alert('Bad handler "' + content + '" for "gwt:onLoadErrorFn"');
+              alert('Bad handler "' + content_0 + '" for "gwt:onLoadErrorFn"');
             }
           }
         }
       }
     }
+  }
+
+  function __gwt_getMetaProperty(name_0){
+    var value = metaProps[name_0];
+    return value == null?null:value;
   }
 
   function unflattenKeylistIntoAnswers(propValArray, value){
@@ -165,8 +219,8 @@ function freenetjs(){
       iframe.style.cssText = 'position:absolute;width:0;height:0;border:none';
       iframe.tabIndex = -1;
       $doc_0.body.appendChild(iframe);
-      $stats && $stats({moduleName:'freenetjs', subSystem:'startup', evtGroup:'moduleStartup', millis:(new Date()).getTime(), type:'moduleRequested'});
-      iframe.contentWindow.location.replace(base + strongName);
+      $stats && $stats({moduleName:'freenetjs', sessionId:$sessionId_0, subSystem:'startup', evtGroup:'moduleStartup', millis:(new Date).getTime(), type:'moduleRequested'});
+      iframe.contentWindow.location.replace(base + initialHtml);
     }
   }
 
@@ -176,38 +230,59 @@ function freenetjs(){
       return parseInt(result[1]) * 1000 + parseInt(result[2]);
     }
     ;
-    if (ua.indexOf('opera') != -1) {
+    if (function(){
+      return ua.indexOf('opera') != -1;
+    }
+    ())
       return 'opera';
-    }
-     else if (ua.indexOf('webkit') != -1) {
-      return 'safari';
-    }
-     else if (ua.indexOf('msie') != -1) {
-      if (document.documentMode >= 8) {
-        return 'ie8';
-      }
-       else {
-        var result_0 = /msie ([0-9]+)\.([0-9]+)/.exec(ua);
-        if (result_0 && result_0.length == 3) {
-          var v = makeVersion(result_0);
-          if (v >= 6000) {
-            return 'ie6';
+    if (function(){
+      return ua.indexOf('webkit') != -1 || function(){
+        if (ua.indexOf('chromeframe') != -1) {
+          return true;
+        }
+        if (typeof window['ActiveXObject'] != 'undefined') {
+          try {
+            var obj = new ActiveXObject('ChromeTab.ChromeFrame');
+            if (obj) {
+              obj.registerBhoIfNeeded();
+              return true;
+            }
+          }
+           catch (e) {
           }
         }
+        return false;
       }
+      ();
     }
-     else if (ua.indexOf('gecko') != -1) {
-      var result_0 = /rv:([0-9]+)\.([0-9]+)/.exec(ua);
-      if (result_0 && result_0.length == 3) {
-        if (makeVersion(result_0) >= 1008)
-          return 'gecko1_8';
-      }
-      return 'gecko';
+    ())
+      return 'safari';
+    if (function(){
+      return ua.indexOf('msie') != -1 && $doc_0.documentMode >= 9;
     }
+    ())
+      return 'ie9';
+    if (function(){
+      return ua.indexOf('msie') != -1 && $doc_0.documentMode >= 8;
+    }
+    ())
+      return 'ie8';
+    if (function(){
+      var result = /msie ([0-9]+)\.([0-9]+)/.exec(ua);
+      if (result && result.length == 3)
+        return makeVersion(result) >= 6000;
+    }
+    ())
+      return 'ie6';
+    if (function(){
+      return ua.indexOf('gecko') != -1;
+    }
+    ())
+      return 'gecko1_8';
     return 'unknown';
   }
   ;
-  values['user.agent'] = {gecko:0, gecko1_8:1, ie6:2, ie8:3, opera:4, safari:5};
+  values['user.agent'] = {gecko1_8:0, ie6:1, ie8:2, ie9:3, opera:4, safari:5};
   freenetjs.onScriptLoad = function(){
     if (frameInjected) {
       loadDone = true;
@@ -217,30 +292,38 @@ function freenetjs(){
   ;
   freenetjs.onInjectionDone = function(){
     scriptsDone = true;
-    $stats && $stats({moduleName:'freenetjs', subSystem:'startup', evtGroup:'loadExternalRefs', millis:(new Date()).getTime(), type:'end'});
+    $stats && $stats({moduleName:'freenetjs', sessionId:$sessionId_0, subSystem:'startup', evtGroup:'loadExternalRefs', millis:(new Date).getTime(), type:'end'});
     maybeStartModule();
   }
   ;
+  processMetas();
   computeScriptBase();
   var strongName;
+  var initialHtml;
   if (isHostedMode()) {
-    if ($wnd_0.external.initModule && $wnd_0.external.initModule('freenetjs')) {
+    if ($wnd_0.external && ($wnd_0.external.initModule && $wnd_0.external.initModule('freenetjs'))) {
       $wnd_0.location.reload();
       return;
     }
-    strongName = 'hosted.html?freenetjs';
+    initialHtml = 'hosted.html?freenetjs';
+    strongName = '';
   }
-  processMetas();
-  $stats && $stats({moduleName:'freenetjs', subSystem:'startup', evtGroup:'bootstrap', millis:(new Date()).getTime(), type:'selectingPermutation'});
-  if (!strongName) {
+  $stats && $stats({moduleName:'freenetjs', sessionId:$sessionId_0, subSystem:'startup', evtGroup:'bootstrap', millis:(new Date).getTime(), type:'selectingPermutation'});
+  if (!isHostedMode()) {
     try {
-      unflattenKeylistIntoAnswers(['ie6'], '8F6365D0A0F69FD69DA8B476E6E7BE4E.cache.html');
-      unflattenKeylistIntoAnswers(['ie8'], '10BEEB54E22194344293528215DF25E8.cache.html');
-      unflattenKeylistIntoAnswers(['gecko1_8'], '967F9AF5F9B327511CB57548CE45E624.cache.html');
-      unflattenKeylistIntoAnswers(['opera'], '66409E7C7FBDF425876AB1F6DD52A37C.cache.html');
-      unflattenKeylistIntoAnswers(['safari'], 'FFC2605EA6D83D26CE76BC5390E84C1A.cache.html');
-      unflattenKeylistIntoAnswers(['gecko'], '03CB426990AC5D1EC2F580C202C91B17.cache.html');
+      unflattenKeylistIntoAnswers(['gecko1_8'], '09C03EC0A7C8FD2C5CCC8B25BAAD917D');
+      unflattenKeylistIntoAnswers(['ie8'], '0F0D889F3DEA9843AAC465E5DA4B1822');
+      unflattenKeylistIntoAnswers(['ie6'], '12E01AADC330C3D36A2BAB8EDCA5F6D5');
+      unflattenKeylistIntoAnswers(['ie9'], '3209B9B6B9AF25346A0BF60EFE976E8B');
+      unflattenKeylistIntoAnswers(['safari'], '541331A4D7C77BCF829356832D604D49');
+      unflattenKeylistIntoAnswers(['opera'], 'B6348A0E11D1B4AC88B51CC220E0B45D');
       strongName = answers[computePropValue('user.agent')];
+      var idx = strongName.indexOf(':');
+      if (idx != -1) {
+        softPermutationId = Number(strongName.substring(idx + 1));
+        strongName = strongName.substring(0, idx);
+      }
+      initialHtml = strongName + '.cache.html';
     }
      catch (e) {
       return;
@@ -274,8 +357,8 @@ function freenetjs(){
     }
   }
   , 50);
-  $stats && $stats({moduleName:'freenetjs', subSystem:'startup', evtGroup:'bootstrap', millis:(new Date()).getTime(), type:'end'});
-  $stats && $stats({moduleName:'freenetjs', subSystem:'startup', evtGroup:'loadExternalRefs', millis:(new Date()).getTime(), type:'begin'});
+  $stats && $stats({moduleName:'freenetjs', sessionId:$sessionId_0, subSystem:'startup', evtGroup:'bootstrap', millis:(new Date).getTime(), type:'end'});
+  $stats && $stats({moduleName:'freenetjs', sessionId:$sessionId_0, subSystem:'startup', evtGroup:'loadExternalRefs', millis:(new Date).getTime(), type:'begin'});
   $doc_0.write('<script defer="defer">freenetjs.onInjectionDone(\'freenetjs\')<\/script>');
 }
 

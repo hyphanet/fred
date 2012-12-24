@@ -193,4 +193,11 @@ public interface HTTPRequest {
 	 */
 	public Collection<String> getParameterNames();
 
+	/** Is the incognito=true boolean set? Sadly this does not prove that
+	 * it is actually running incognito mode... */
+	public boolean isIncognito();
+
+	/** Is the browser Chrome according to User-Agent? */
+	public boolean isChrome();
+
 }

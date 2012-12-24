@@ -10,18 +10,16 @@ import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
-import freenet.io.comm.PeerRestartedException;
 import freenet.io.xfer.BlockTransmitter;
 import freenet.io.xfer.BlockTransmitter.BlockTransmitterCompletion;
 import freenet.io.xfer.PartiallyReceivedBlock;
-import freenet.io.xfer.WaitedTooLongException;
 import freenet.keys.CHKBlock;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
-import freenet.support.LRUHashtable;
+import freenet.support.LRUMap;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -61,9 +59,9 @@ public class FailureTable implements OOMHook {
 	}
 
 	/** FailureTableEntry's by key. Note that we push an entry only when sentTime changes. */
-	private final LRUHashtable<Key,FailureTableEntry> entriesByKey;
+	private final LRUMap<Key,FailureTableEntry> entriesByKey;
 	/** BlockOfferList by key */
-	private final LRUHashtable<Key,BlockOfferList> blockOfferListByKey;
+	private final LRUMap<Key,BlockOfferList> blockOfferListByKey;
 	private final Node node;
 	
 	/** Maximum number of keys to track */
@@ -89,8 +87,8 @@ public class FailureTable implements OOMHook {
 	static final int CLEANUP_PERIOD = 10*60*1000;
 	
 	FailureTable(Node node) {
-		entriesByKey = new LRUHashtable<Key,FailureTableEntry>();
-		blockOfferListByKey = new LRUHashtable<Key,BlockOfferList>();
+		entriesByKey = LRUMap.createSafeMap();
+		blockOfferListByKey = LRUMap.createSafeMap();
 		this.node = node;
 		offerAuthenticatorKey = new byte[32];
 		node.random.nextBytes(offerAuthenticatorKey);
@@ -508,21 +506,12 @@ public class FailureTable implements OOMHook {
 				@Override
 				public void run() {
 					try {
-						if(source.isOldFNP()) {
-							source.sendThrottledMessage(data, dataLength, senderCounter, 60*1000, false, null);
-						} else {
-							source.sendSync(data, senderCounter, realTimeFlag);
-							senderCounter.sentPayload(dataLength);
-						}
+						source.sendSync(data, senderCounter, realTimeFlag);
+						senderCounter.sentPayload(dataLength);
 					} catch (NotConnectedException e) {
 						// :(
-					} catch (WaitedTooLongException e) {
-						// :<
-						Logger.error(this, "Waited too long sending SSK data");
 					} catch (SyncSendWaitedTooLongException e) {
 						// Impossible
-					} catch (PeerRestartedException e) {
-						// :(
 					} finally {
 						tag.unlockHandler();
 					}

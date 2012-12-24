@@ -31,15 +31,17 @@ public class CompatibilityMode extends FCPMessage {
 	}
 	
 	void merge(long min, long max, byte[] cryptoKey, boolean dontCompress, boolean definitive) {
-		if(definitive) definitive = true;
-		if(!dontCompress) this.dontCompress = true;
-		if(min > this.min && !definitive) this.min = min;
-		if((!definitive) && max < this.max || this.max == InsertContext.CompatibilityMode.COMPAT_UNKNOWN.ordinal()) this.max = max;
-		if(this.cryptoKey == null && !definitive) {
+		if(this.definitive) {
+			Logger.warning(this, "merge() after definitive", new Exception("debug"));
+			return;
+		}
+		if(definitive) this.definitive = true;
+		if(!dontCompress) this.dontCompress = false;
+		if(min > this.min) this.min = min;
+		if(max < this.max || this.max == InsertContext.CompatibilityMode.COMPAT_UNKNOWN.ordinal()) this.max = max;
+		if(this.cryptoKey == null) {
 			this.cryptoKey = cryptoKey;
-		} else if(this.cryptoKey == null && cryptoKey != null && definitive) {
-			Logger.error(this, "Setting crypto key after bottom/definitive layer!");
-		} else if(!Arrays.equals(this.cryptoKey, cryptoKey)) {
+		} else if(cryptoKey != null && !Arrays.equals(this.cryptoKey, cryptoKey)) {
 			Logger.error(this, "Two different crypto keys!");
 			this.cryptoKey = null;
 		}

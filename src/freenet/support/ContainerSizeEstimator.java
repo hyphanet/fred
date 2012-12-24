@@ -75,10 +75,18 @@ public final class ContainerSizeEstimator {
 				long itemsize = me.getSize();
 				if (itemsize > -1) {
 					result._sizeFilesNoLimit += getContainerItemSize(me.getSize());
+					// Add some bytes for .metadata element.
+					// FIXME 128 picked out of the air! Look up the format.
+					result._sizeFilesNoLimit += 128 + me.getName().length();
 					if (itemsize > maxItemSize)
 						result._sizeFiles += 512;  // spare for redirect
-					else
+					else {
 						result._sizeFiles += getContainerItemSize(me.getSize());
+						// Add some bytes for .metadata element.
+						// FIXME 128 picked out of the air! Look up the format.
+						result._sizeFilesNoLimit += 128 + me.getName().length();
+						// FIXME The tar file will need the full name????
+					}
 					if (result._sizeFiles > maxContainerSize) break;
 				}
 			}
@@ -111,7 +119,7 @@ public final class ContainerSizeEstimator {
 		throw new UnsupportedOperationException("TODO, only TAR supportet atm.");
 	}
 
-	public static final long tarItemSize(long size) {
+	public static long tarItemSize(long size) {
 		return 512 + (((size + 511) / 512) * 512);
 	}
 }

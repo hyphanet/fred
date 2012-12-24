@@ -71,9 +71,9 @@ public class RequestStatusCache {
 	synchronized void gotFinalURI(String identifier, FreenetURI finalURI) {
 		UploadRequestStatus status = (UploadRequestStatus) requestsByIdentifier.get(identifier);
 		if(status == null) return; // Can happen during cancel etc.
-		if(status.getFinalURI() == null) {
+		if(status.getFinalURI() == null)
+			// No final URI set yet, put into the index.
 			uploadsByFinalURI.put(finalURI, status);
-		}
 		status.setFinalURI(finalURI);
 	}
 	
@@ -82,9 +82,9 @@ public class RequestStatusCache {
 			String failureReasonLong) {
 		UploadRequestStatus status = (UploadRequestStatus) requestsByIdentifier.get(identifier);
 		if(status == null) return; // Can happen during cancel etc.
-		if(status.getFinalURI() == null) {
+		if(status.getFinalURI() == null && finalURI != null)
+			// No final URI set yet, put into the index.
 			uploadsByFinalURI.put(finalURI, status);
-		}
 		status.setFinished(success, finalURI, failureCode, failureReasonShort, failureReasonLong);
 	}
 	

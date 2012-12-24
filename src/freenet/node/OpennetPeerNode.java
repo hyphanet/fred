@@ -184,11 +184,14 @@ public class OpennetPeerNode extends PeerNode {
 		if(updater == null) return true; // Not going to UOM.
 		UpdateOverMandatoryManager uom = updater.uom;
 		if(uom == null) return true; // Not going to UOM
-		synchronized(this) {
-			if(sendingUOMMainJar || sendingUOMExtJar) {
-				// Let it finish.
-				return false;
-			}
+		if(uptime > 2*60*60*1000) {
+			// UOM transfers can take ages, but there has to be some limit...
+			return true;
+		}
+		if(timeSinceSentUOM() < 60*1000) {
+			// Let it finish.
+			// 60 seconds extra to ensure it has time to parse the jar and start fetching dependencies.
+			return false;
 		}
 		return true;
 	}
@@ -257,7 +260,7 @@ public class OpennetPeerNode extends PeerNode {
 		if(node.isStopping()) return;
 		Logger.error(this, "Disconnecting "+this+" because of fatal timeout");
 		// Disconnect.
-		forceDisconnect(true);
+		forceDisconnect();
 	}
 	
 	@Override

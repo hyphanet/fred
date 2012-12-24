@@ -11,13 +11,6 @@ import freenet.crypt.BlockCipher;
  */
 public class SessionKey {
 	
-	/** A PacketTracker may have more than one SessionKey, but a SessionKey 
-	 * may only have one PacketTracker. In other words, in some cases it is
-	 * possible to change the session key without invalidating the packet
-	 * sequence, but it is never possible to invalidate the packet sequence
-	 * without changing the session key. */
-	final PacketTracker packets;
-	
 	/** Parent PeerNode */
 	public final PeerNode pn;
 	/** Cipher to encrypt outgoing packets with */
@@ -34,13 +27,14 @@ public class SessionKey {
 	public final byte[] ivNonce;
 	public final byte[] hmacKey;
 	
+	final long trackerID;
+	
 	public final NewPacketFormatKeyContext packetContext;
 
-	SessionKey(PeerNode parent, PacketTracker tracker, BlockCipher outgoingCipher, byte[] outgoingKey,
+	SessionKey(PeerNode parent, BlockCipher outgoingCipher, byte[] outgoingKey,
 	                BlockCipher incommingCipher, byte[] incommingKey, BlockCipher ivCipher,
-			byte[] ivNonce, byte[] hmacKey, NewPacketFormatKeyContext context) {
+			byte[] ivNonce, byte[] hmacKey, NewPacketFormatKeyContext context, long trackerID) {
 		this.pn = parent;
-		this.packets = tracker;
 		this.outgoingCipher = outgoingCipher;
 		this.outgoingKey = outgoingKey;
 		this.incommingCipher = incommingCipher;
@@ -49,16 +43,10 @@ public class SessionKey {
 		this.ivNonce = ivNonce;
 		this.hmacKey = hmacKey;
 		this.packetContext = context;
+		this.trackerID = trackerID;
 	}
 	
-	@Override
-	public String toString() {
-		return super.toString()+":"+packets;
-	}
-
-	public void disconnected(boolean notPackets) {
-		if(!notPackets)
-			packets.disconnected();
+	public void disconnected() {
 		packetContext.disconnected();
 	}
 }

@@ -94,7 +94,6 @@ public class NewPacketFormat implements PacketFormat {
 	
 	private long timeLastSentPacket;
 	private long timeLastSentPayload;
-	private long timeLastSentPing;
 
 	public NewPacketFormat(BasePeerNode pn, int ourInitialMsgID, int theirInitialMsgID) {
 		this.pn = pn;
@@ -134,7 +133,7 @@ public class NewPacketFormat implements PacketFormat {
 			}
 		}
 		if(packet == null) {
-			Logger.warning(this, "Could not decrypt received packet");
+			if(logMINOR) Logger.minor(this, "Could not decrypt received packet");
 			return false;
 		}
 
@@ -320,7 +319,7 @@ public class NewPacketFormat implements PacketFormat {
 
 			int seqNum = keyContext.watchListOffset;
 			for(int i = 0; i < keyContext.seqNumWatchList.length; i++) {
-				keyContext.seqNumWatchList[i] = encryptSequenceNumber(seqNum++, sessionKey);
+				keyContext.seqNumWatchList[i] = NewPacketFormat.encryptSequenceNumber(seqNum++, sessionKey);
 				if((seqNum == NUM_SEQNUMS) || (seqNum < 0)) seqNum = 0;
 			}
 		}
@@ -427,7 +426,7 @@ outer:
 		return (((i1 < i2) && ((i2 - i1) > halfValue)) || ((i1 > i2) && (i1 - i2 < halfValue)));
 	}
 
-	private byte[] encryptSequenceNumber(int seqNum, SessionKey sessionKey) {
+	static byte[] encryptSequenceNumber(int seqNum, SessionKey sessionKey) {
 		byte[] seqNumBytes = new byte[4];
 		seqNumBytes[0] = (byte) (seqNum >>> 24);
 		seqNumBytes[1] = (byte) (seqNum >>> 16);
@@ -448,27 +447,27 @@ outer:
 	}
 
 	@Override
-	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly)
+	public boolean maybeSendPacket(long now, boolean ackOnly)
 	throws BlockedTooLongException {
 		SessionKey sessionKey = pn.getPreviousKeyTracker();
 		if(sessionKey != null) {
 			// Try to sent an ack-only packet.
-			if(maybeSendPacket(now, rpiTemp, rpiIntTemp, true, sessionKey)) return true;
+			if(maybeSendPacket(now, true, sessionKey)) return true;
 		}
 		sessionKey = pn.getUnverifiedKeyTracker();
 		if(sessionKey != null) {
 			// Try to sent an ack-only packet.
-			if(maybeSendPacket(now, rpiTemp, rpiIntTemp, true, sessionKey)) return true;
+			if(maybeSendPacket(now, true, sessionKey)) return true;
 		}
 		sessionKey = pn.getCurrentKeyTracker();
 		if(sessionKey == null) {
 			Logger.warning(this, "No key for encrypting hash");
 			return false;
 		}
-		return maybeSendPacket(now, rpiTemp, rpiIntTemp, ackOnly, sessionKey);
+		return maybeSendPacket(now, ackOnly, sessionKey);
 	}
 	
-	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly, SessionKey sessionKey)
+	public boolean maybeSendPacket(long now, boolean ackOnly, SessionKey sessionKey)
 	throws BlockedTooLongException {
 		int maxPacketSize = pn.getMaxPacketSize();
 		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
@@ -603,7 +602,7 @@ outer:
 				synchronized(sendBufferLock) {
 					// Always finish what we have started before considering sending more packets.
 					// Anything beyond this is beyond the scope of NPF and is PeerMessageQueue's job.
-					for(int i = 0; i < startedByPrio.size(); i++) {
+addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 						HashMap<Integer, MessageWrapper> started = startedByPrio.get(i);
 						
 						//Try to finish messages that have been started
@@ -620,11 +619,13 @@ outer:
 								if(wrapper.allSent()) {
 									if((haveAddedStatsBulk == null) && wrapper.getItem().sendLoadBulk) {
 										addStatsBulk = true;
-										break;
+										// Add the lossy message outside the lock.
+										break addOldLoop;
 									}
 									if((haveAddedStatsRT == null) && wrapper.getItem().sendLoadRT) {
 										addStatsRT = true;
-										break;
+										// Add the lossy message outside the lock.
+										break addOldLoop;
 									}
 								}
 							}
@@ -689,12 +690,8 @@ outer:
 		boolean cantSend = false;
 		
 		boolean mustSendKeepalive = false;
-		boolean mustSendPing = false;
 		
 		if(DO_KEEPALIVES) {
-			// FIXME remove back compatibility kludge.
-			// This periodically pings 1356 nodes in order to ensure their UOM's don't timeout.
-			boolean needsPing = pn.getVersionNumber() == 1356;
 			synchronized(this) {
 				if(!mustSend) {
 					if(now - timeLastSentPacket > Node.KEEPALIVE_INTERVAL)
@@ -703,13 +700,10 @@ outer:
 				if((!ackOnly) && now - timeLastSentPayload > Node.KEEPALIVE_INTERVAL && 
 						packet.getFragments().isEmpty())
 					mustSendKeepalive = true;
-				if((!ackOnly) && needsPing && now - timeLastSentPing > Node.KEEPALIVE_INTERVAL) {
-					mustSendPing = true;
-				}
 			}
 		}
 		
-		if(mustSendKeepalive || mustSendPing) {
+		if(mustSendKeepalive) {
 			if(!checkedCanSend)
 				cantSend = !canSend(sessionKey);
 			checkedCanSend = true;
@@ -791,35 +785,23 @@ outer:
 							}
 							checkedCanSend = false;
 							if(cantSend) break;
+							boolean wasGeneratedPing = false;
 							
 							MessageItem item = null;
-							if(mustSendPing) {
-								// Create a ping for keepalive purposes.
-								// It will be acked, this ensures both sides don't timeout.
-								Message msg;
-								synchronized(this) {
-									msg = DMT.createFNPPing(pingCounter++);
-									timeLastSentPing = now;
-								}
-								item = new MessageItem(msg, null, null);
-								mustSendPing = false;
-								item.setDeadline(now + PacketSender.MAX_COALESCING_DELAY);
-							} else {
-								item = messageQueue.grabQueuedMessageItem(i);
-								if(item == null) {
-									if(mustSendKeepalive && packet.getFragments().isEmpty()) {
-										// Create a ping for keepalive purposes.
-										// It will be acked, this ensures both sides don't timeout.
-										Message msg;
-										synchronized(this) {
-											msg = DMT.createFNPPing(pingCounter++);
-											timeLastSentPing = now;
-										}
-										item = new MessageItem(msg, null, null);
-										item.setDeadline(now + PacketSender.MAX_COALESCING_DELAY);
-									} else {
-										break prio;
+							item = messageQueue.grabQueuedMessageItem(i);
+							if(item == null) {
+								if(mustSendKeepalive && packet.noFragments()) {
+									// Create a ping for keepalive purposes.
+									// It will be acked, this ensures both sides don't timeout.
+									Message msg;
+									synchronized(this) {
+										msg = DMT.createFNPPing(pingCounter++);
 									}
+									item = new MessageItem(msg, null, null);
+									item.setDeadline(now + PacketSender.MAX_COALESCING_DELAY);
+									wasGeneratedPing = true;
+								} else {
+									break prio;
 								}
 							}
 							
@@ -829,7 +811,12 @@ outer:
 								// This doesn't happen at the moment because we use a single PacketSender for all ports and all peers.
 								// We might in future split it across multiple threads but it'd be best to keep the same peer on the same thread.
 								Logger.error(this, "No availiable message ID, requeuing and sending packet (we already checked didn't we???)");
-								messageQueue.pushfrontPrioritizedMessageItem(item);
+								if(!wasGeneratedPing) {
+									messageQueue.pushfrontPrioritizedMessageItem(item);
+									// No point adding to queue if it's just a ping:
+									//  We will try again next time.
+									//  But odds are the connection is broken and the other side isn't responding...
+								}
 								break fragments;
 							}
 							
@@ -914,8 +901,11 @@ outer:
 	}
 	
 	private int pingCounter;
-	
-	static final int MAX_MESSAGE_SIZE = 2048;
+
+	/**
+	 * Maximum message size in bytes.
+	 */
+	public static final int MAX_MESSAGE_SIZE = 4096;
 	
 	private int maxSendBufferSize() {
 		return MAX_RECEIVE_BUFFER_SIZE;
@@ -1123,7 +1113,7 @@ outer:
 				if(blockedSince == -1) {
 					blockedSince = System.currentTimeMillis();
 				} else if(System.currentTimeMillis() - blockedSince > MAX_MSGID_BLOCK_TIME) {
-					throw new BlockedTooLongException(null, System.currentTimeMillis() - blockedSince);
+					throw new BlockedTooLongException(System.currentTimeMillis() - blockedSince);
 				}
 				return -1;
 			}

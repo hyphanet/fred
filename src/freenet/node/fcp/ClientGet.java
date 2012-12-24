@@ -123,15 +123,26 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		fctx.maxOutputLength = maxOutputLength;
 		fctx.maxTempLength = maxOutputLength;
 		fctx.canWriteClientCache = writeToClientCache;
+		// FIXME fctx.ignoreUSKDatehints = ignoreUSKDatehints;
 		Bucket ret = null;
 		this.returnType = returnType;
 		binaryBlob = false;
+		String extensionCheck = null;
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			this.targetFile = returnFilename;
 			this.tempFile = returnTempFilename;
 			if(!(server.core.allowDownloadTo(returnTempFilename) && server.core.allowDownloadTo(returnFilename)))
 				throw new NotAllowedException();
 			ret = new FileBucket(returnTempFilename, false, true, false, false, false);
+			if(filterData) {
+				String name = returnFilename.getName();
+				int idx = name.lastIndexOf('.');
+				if(idx != -1) {
+					idx++;
+					if(idx != name.length())
+						extensionCheck = name.substring(idx);
+				}
+			}
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
 			targetFile = null;
 			tempFile = null;
@@ -147,7 +158,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		returnBucket = ret;
 			getter = new ClientGetter(this, uri, fctx, priorityClass,
 					lowLevelClient,
-					returnBucket, null, null);
+					returnBucket, null, false, null, extensionCheck);
 	}
 
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MessageInvalidException {
@@ -168,6 +179,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		fctx.maxTempLength = message.maxTempSize;
 		fctx.canWriteClientCache = message.writeToClientCache;
 		fctx.filterData = message.filterData;
+		fctx.ignoreUSKDatehints = message.ignoreUSKDatehints;
 
 		if(message.allowedMIMETypes != null) {
 			fctx.allowedMIMETypes = new HashSet<String>();
@@ -178,6 +190,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		this.returnType = message.returnType;
 		this.binaryBlob = message.binaryBlob;
 		Bucket ret = null;
+		String extensionCheck = null;
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			this.targetFile = message.diskFile;
 			this.tempFile = message.tempFile;
@@ -186,6 +199,15 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			else if(!(handler.allowDDAFrom(tempFile, true) && handler.allowDDAFrom(targetFile, true)))
 				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "Not allowed to download to "+tempFile+" or "+targetFile + ". You might need to do a " + TestDDARequestMessage.NAME + " first.", identifier, global);
 			ret = new FileBucket(message.tempFile, false, true, false, false, false);
+			if(fctx.filterData) {
+				String name = targetFile.getName();
+				int idx = name.lastIndexOf('.');
+				if(idx != -1) {
+					idx++;
+					if(idx != name.length())
+						extensionCheck = name.substring(idx);
+				}
+			}
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
 			targetFile = null;
 			tempFile = null;
@@ -212,7 +234,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			getter = new ClientGetter(this,
 					uri, fctx, priorityClass,
 					lowLevelClient,
-					binaryBlob ? new NullBucket() : returnBucket, binaryBlob ? new BinaryBlobWriter(returnBucket) : null, message.getInitialMetadata());
+					binaryBlob ? new NullBucket() : returnBucket, binaryBlob ? new BinaryBlobWriter(returnBucket) : null, false, message.getInitialMetadata(), extensionCheck);
 	}
 
 	/**
@@ -297,6 +319,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(targetFile != null)
 				container.activate(targetFile, 5);
 		}
+		// FIXME: Fortify thinks this is double-checked locking. Technically it is, but 
+		// since returnBucket is only set to non-null in this method and the constructor is it safe.
 		boolean bucketChanged = (returnBucket != data && !binaryBlob);
 		if(bucketChanged) {
 			// FIXME A succession of increasingly wierd failure modes. Most of which have been observed in practice. :<
@@ -381,6 +405,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				try {
 					BucketTools.copy(data, returnBucket);
 				} catch (IOException e) {
+					Logger.error(this, "Data != returnBucket and then failed to copy to "+returnBucket);
 					data.free();
 					returnBucket.free();
 					if(persistenceType == PERSIST_FOREVER) {
@@ -653,7 +678,19 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			container.activate(targetFile, 5);
 			container.activate(tempFile, 5);
 		}
-		return new PersistentGet(identifier, uri, verbosity, priorityClass, returnType, persistenceType, targetFile, tempFile, clientToken, client.isGlobalQueue, started, fctx.maxNonSplitfileRetries, binaryBlob, fctx.maxOutputLength);
+		return new PersistentGet(identifier, uri, verbosity, priorityClass, returnType, persistenceType, targetFile, tempFile, clientToken, client.isGlobalQueue, started, fctx.maxNonSplitfileRetries, binaryBlob, fctx.maxOutputLength, isRealTime());
+	}
+	
+	// FIXME code duplication: ClientGet ClientPut ClientPutDir
+	// FIXME maybe move to ClientRequest as final protected?
+	private boolean isRealTime() {
+		// FIXME: remove debug code
+		if (lowLevelClient == null) {
+			// This can happen but only due to data corruption - old databases on which various bugs have resulted in it getting deleted, and also possibly failed deletions.
+			Logger.error(this, "lowLevelClient == null", new Exception("error"));
+			return false;
+		}
+		return lowLevelClient.realTimeFlag();
 	}
 
 	@Override

@@ -12,6 +12,12 @@ import freenet.support.TimeUtil;
  */
 public class RequestTag extends UIDTag {
 	
+    private static volatile boolean logMINOR;
+    
+    static {
+    	Logger.registerClass(RequestTag.class);
+    }
+	
 	enum START {
 		ASYNC_GET,
 		LOCAL,
@@ -97,7 +103,8 @@ public class RequestTag extends UIDTag {
 			sb.append(" sent");
 		sb.append(" finishedCode=").append(requestSenderFinishedCode);
 		sb.append(" rejected=").append(rejected);
-		sb.append(" thrown=").append(handlerThrew);
+		if(handlerThrew != null)
+			sb.append(" thrown=").append(handlerThrew);
 		if(abortedDownstreamTransfer) {
 			sb.append(" abortedDownstreamTransfer reason=");
 			sb.append(abortedDownstreamReason);
@@ -108,7 +115,8 @@ public class RequestTag extends UIDTag {
 			sb.append(" handlerDisconnected=true");
 		if(waitingForOpennet != null) {
 			PeerNode pn = waitingForOpennet.get();
-			sb.append(" waitingForOpennet="+pn == null ? "(null)" : pn.shortToString());
+			sb.append(" waitingForOpennet=");
+			sb.append(pn == null ? "(null)" : pn.shortToString());
 		}
 		sb.append(" : ");
 		sb.append(super.toString());
@@ -130,14 +138,17 @@ public class RequestTag extends UIDTag {
 
 	@Override
 	public synchronized int expectedTransfersIn(boolean ignoreLocalVsRemote,
-			int outwardTransfersPerInsert) {
+			int outwardTransfersPerInsert, boolean forAccept) {
+		if(!accepted) return 0;
 		return notRoutedOnwards ? 0 : 1;
 	}
 
 	@Override
 	public synchronized int expectedTransfersOut(boolean ignoreLocalVsRemote,
-			int outwardTransfersPerInsert) {
+			int outwardTransfersPerInsert, boolean forAccept) {
+		if(!accepted) return 0;
 		if(completedDownstreamTransfers) return 0;
+		if(forAccept && (sourceRestarted || unlockedHandler)) return 0;
 		return ((!isLocal()) || ignoreLocalVsRemote) ? 1 : 0;
 	}
 	
@@ -172,7 +183,7 @@ public class RequestTag extends UIDTag {
 		boolean noRecordUnlock;
 		synchronized(this) {
 			if(waitingForOpennet == null) {
-				Logger.error(this, "Not waiting for opennet!");
+				if(logMINOR) Logger.minor(this, "Not waiting for opennet!");
 				return;
 			}
 			PeerNode got = waitingForOpennet.get();

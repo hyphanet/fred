@@ -62,9 +62,7 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		}
 		
 		final PageMaker pageMaker = ctx.getPageMaker();
-		
-		final int mode = pageMaker.parseMode(request, this.container);
-		
+
 		PageNode page = pageMaker.getPageNode(l10n("pageTitle"), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
@@ -72,7 +70,7 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		/* add alert summary box */
 		if (ctx.isAllowedFullAccess()) contentNode.addChild(core.alerts.createSummary());
 
-		contentNode.addChild(createInsertBox(pageMaker, ctx, mode >= PageMaker.MODE_ADVANCED));
+		contentNode.addChild(createInsertBox(pageMaker, ctx, ctx.getContainer().isAdvancedModeEnabled()));
 		
 		writeHTMLReply(ctx, 200, "OK", null, pageNode.generate());
 	}
@@ -125,8 +123,8 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 			        NodeL10n.getBase().getString("QueueToadlet.insertFileCompressLabel"));
 		} else {
 			insertForm.addChild("input",
-			        new String[] { "type", "value" },
-			        new String[] { "hidden", "true" });
+			        new String[] { "type", "name", "value" },
+			        new String[] { "hidden", "compress", "true" });
 		}
 		if(isAdvancedModeEnabled) {
 			insertForm.addChild("br");

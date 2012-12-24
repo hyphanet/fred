@@ -230,6 +230,7 @@ public class PersistentBlobTempBucket implements Bucket {
 	// temporary map, unless we have been freed.
 	
 	@Override
+	@SuppressWarnings("unchecked")
 	public void storeTo(ObjectContainer container) {
 		if(shadow) {
 			throw new UnsupportedOperationException("Can't store a shadow");

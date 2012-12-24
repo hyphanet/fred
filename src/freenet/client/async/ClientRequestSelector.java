@@ -48,6 +48,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		} else {
 			keysFetching = null;
 			runningTransientInserts = new HashSet<RunningTransientInsert>();
+			this.recentSuccesses = null;
 		}
 	}
 	
@@ -101,9 +102,9 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		
 	}
 	
-	private transient HashSet<RunningTransientInsert> runningTransientInserts;
+	private transient final HashSet<RunningTransientInsert> runningTransientInserts;
 	
-	private transient List<RandomGrabArray> recentSuccesses;
+	private transient final List<RandomGrabArray> recentSuccesses;
 	
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
 	
@@ -128,7 +129,12 @@ class ClientRequestSelector implements KeysFetchingLocally {
 					long cooldownTime = context.cooldownTracker.getCachedWakeup(result, true, container, now);
 					if(cooldownTime > 0) {
 						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
-						Logger.normal(this, "Priority "+priority+" (persistent) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+						if(logMINOR) {
+							if(cooldownTime == Long.MAX_VALUE)
+								Logger.minor(this, "Priority "+priority+" (persistent) is waiting until a request finishes or is empty");
+							else
+								Logger.minor(this, "Priority "+priority+" (persistent) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+						}
 						result = null;
 					} else {
 						container.activate(result, 1);
@@ -142,7 +148,12 @@ class ClientRequestSelector implements KeysFetchingLocally {
 					long cooldownTime = context.cooldownTracker.getCachedWakeup(result, false, container, now);
 					if(cooldownTime > 0) {
 						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
-						Logger.normal(this, "Priority "+priority+" (transient) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now)+" : "+result);
+						if(logMINOR) {
+							if(cooldownTime == Long.MAX_VALUE)
+								Logger.minor(this, "Priority "+priority+" (transient) is waiting until a request finishes or is empty");
+							else
+								Logger.minor(this, "Priority "+priority+" (transient) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+						}
 						result = null;
 					}
 				}
@@ -597,6 +608,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 	}
 	
 	@Override
+	@SuppressWarnings("unchecked")
 	public boolean hasKey(Key key, BaseSendableGet getterWaiting, boolean persistent, ObjectContainer container) {
 		if(keysFetching == null) {
 			throw new NullPointerException();

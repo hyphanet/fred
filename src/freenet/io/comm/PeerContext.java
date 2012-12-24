@@ -21,9 +21,8 @@ public interface PeerContext {
 	// Largely opaque interface for now
 	Peer getPeer();
 
-	/** Force the peer to disconnect.
-	 * @param dump If true, the message queue and trackers will be dumped. */
-	void forceDisconnect(boolean dump);
+	/** Force the peer to disconnect. */
+	void forceDisconnect();
 
 	/** Is the peer connected? Have we established the session link? */
 	boolean isConnected();
@@ -37,18 +36,6 @@ public interface PeerContext {
 	/** Send a message to the node 
 	 * @return */
 	public MessageItem sendAsync(Message msg, AsyncMessageCallback cb, ByteCounter ctr) throws NotConnectedException;
-
-	/** Send a throttled message to the node (may block for a long time).
-	 * @deprecated New packet format throttled everything anyway, so we should get rid of this.
-	 * You should call sendAsync or sendSync, and make sure you call sentPayload if appropriate.
-	 * Sending asynchronously saves threads and allows unqueueing of messages, preventing
-	 * a build up of queued messages, as well as allowing us to get rid of sendThrottledMessage().
-	 * @return 
-	 * @throws SyncSendWaitedTooLongException
-	 * @throws NotConnectedException If the peer is disconnected at the time of sending or becomes so later.
-	 * @throws PeerRestartedException If the peer is restarted.
-	 * */
-	public MessageItem sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr, int timeout, boolean waitForSent, AsyncMessageCallback callback) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException;
 
 	/** Get the current boot ID. This is a random number that changes every time the node starts up. */
 	public long getBootID();
@@ -77,6 +64,5 @@ public interface PeerContext {
 
 	void reportThrottledPacketSendTime(long time, boolean realTime);
 
-	/** Using old FNP format??? */
-	boolean isOldFNP();
+	int getThrottleWindowSize();
 }

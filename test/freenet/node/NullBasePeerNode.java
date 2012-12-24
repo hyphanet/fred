@@ -9,11 +9,9 @@ import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
-import freenet.io.comm.PeerRestartedException;
 import freenet.io.comm.SocketHandler;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.io.xfer.PacketThrottle;
-import freenet.io.xfer.WaitedTooLongException;
 
 /** Tests can override this to record specific events e.g. rekey */
 public class NullBasePeerNode implements BasePeerNode {
@@ -24,7 +22,7 @@ public class NullBasePeerNode implements BasePeerNode {
 	}
 
 	@Override
-	public void forceDisconnect(boolean dump) {
+	public void forceDisconnect() {
 		throw new UnsupportedOperationException();
 	}
 
@@ -46,15 +44,6 @@ public class NullBasePeerNode implements BasePeerNode {
 	@Override
 	public MessageItem sendAsync(Message msg, AsyncMessageCallback cb,
 			ByteCounter ctr) throws NotConnectedException {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public MessageItem sendThrottledMessage(Message msg, int packetSize,
-			ByteCounter ctr, int timeout, boolean waitForSent,
-			AsyncMessageCallback callback) throws NotConnectedException,
-			WaitedTooLongException, SyncSendWaitedTooLongException,
-			PeerRestartedException {
 		throw new UnsupportedOperationException();
 	}
 
@@ -264,11 +253,6 @@ public class NullBasePeerNode implements BasePeerNode {
 	}
 
 	@Override
-	public boolean isOldFNP() {
-		return false;
-	}
-
-	@Override
 	public double averagePingTimeCorrected() {
 		// TODO Auto-generated method stub
 		return 0;
@@ -282,6 +266,12 @@ public class NullBasePeerNode implements BasePeerNode {
 	@Override
 	public void receivedAck(long currentTimeMillis) {
 		// Ignore
+	}
+
+	@Override
+	public int getThrottleWindowSize() {
+		// Arbitrary.
+		return 10;
 	}
 
 }

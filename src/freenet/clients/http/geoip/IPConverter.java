@@ -9,7 +9,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import freenet.clients.http.StaticToadlet;
 import freenet.node.Node;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 
 public class IPConverter {
@@ -106,8 +108,8 @@ public class IPConverter {
 				"SEYCHELLES "), SL("SIERRA LEONE "), SG("SINGAPORE "), SX(
 				"SINT MAARTEN (DUTCH PART) "), SK("SLOVAKIA "), SI("SLOVENIA "), SB(
 				"SOLOMON ISLANDS "), SO("SOMALIA "), ZA("SOUTH AFRICA "), GS(
-				"SOUTH GEORGIA AND THE SOUTH SANDWICH ISLANDS "), ES("SPAIN "), LK(
-				"SRI LANKA "), SD("SUDAN "), SR("SURINAME "), SJ(
+				"SOUTH GEORGIA AND THE SOUTH SANDWICH ISLANDS "), SS("SOUTH SUDAN"), ES(
+				"SPAIN "), LK("SRI LANKA "), SD("SUDAN "), SR("SURINAME "), SJ(
 				"SVALBARD AND JAN MAYEN "), SZ("SWAZILAND "), SE("SWEDEN "), CH(
 				"SWITZERLAND "), SY("SYRIAN ARAB REPUBLIC "), TW(
 				"TAIWAN, PROVINCE OF CHINA "), TJ("TAJIKISTAN "), TZ(
@@ -124,6 +126,8 @@ public class IPConverter {
 				"WALLIS AND FUTUNA "), EH("WESTERN SAHARA "), YE("YEMEN "), ZM(
 				"ZAMBIA "), ZW("ZIMBABWE "), ZZ("NA"), EU("European Union");
 		private String name;
+		private boolean hasFlag;
+		private boolean checkedHasFlag;
 
 		Country(String name) {
 			this.name = name;
@@ -131,6 +135,33 @@ public class IPConverter {
 
 		public String getName() {
 			return name;
+		}
+
+		public void renderFlagIcon(HTMLNode parent) {
+			String flagPath = getFlagIconPath();
+			if(flagPath != null)
+				parent.addChild("img", new String[] { "src", "title" }, new String[] { StaticToadlet.ROOT_URL + flagPath, getName()});
+		}
+		
+		public boolean hasFlagIcon() {
+			return getFlagIconPath() != null;
+		}
+		
+		/** Doesn't check whether it exists. Relative to the top of staticfiles. */
+		private String flagIconPath() {
+			return "icon/flags/"+toString().toLowerCase()+".png";
+		}
+		
+		/** Relative to top of static files */
+		public String getFlagIconPath() {
+			String flagPath = flagIconPath();
+			synchronized(this) {
+				if(!checkedHasFlag) {
+					hasFlag = StaticToadlet.haveFile(flagPath);
+					checkedHasFlag = true;
+				}
+				return hasFlag ? flagPath : null;
+			}
 		}
 	}
 
@@ -200,8 +231,13 @@ public class IPConverter {
 				// Ip
 				String ipcode = iprange.substring(2);
 				long ip = decodeBase85(ipcode.getBytes());
-				Country country = Country.valueOf(code);
-				codes[i] = (short) country.ordinal();
+				try {
+					Country country = Country.valueOf(code);
+					codes[i] = (short) country.ordinal();
+				} catch (IllegalArgumentException e) {
+					Logger.error(this, "Country not in list: "+code);
+					codes[i] = (short)-1;
+				}
 				ips[i] = ip;
 			}
 			raf.close();
@@ -274,6 +310,7 @@ public class IPConverter {
 			}
 		}
 		short countryOrdinal = codes[last];
+		if(countryOrdinal < 0) return null;
 		Country country = Country.values()[countryOrdinal];
 		cache.put(longip, country);
 		return country;

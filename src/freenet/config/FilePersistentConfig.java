@@ -34,6 +34,7 @@ public class FilePersistentConfig extends PersistentConfig {
 	final File tempFilename;
 	final protected String header;
 	protected final Object storeSync = new Object();
+	private boolean writeOnFinished;
 
         private static volatile boolean logMINOR;
 	static {
@@ -136,7 +137,7 @@ public class FilePersistentConfig extends PersistentConfig {
 	@Override
 	public void store() {
 		if(!finishedInit) {
-			Logger.minor(this, "Initialization not finished, refusing to write config", new Exception("error"));
+			writeOnFinished = true;
 			return;
 		}
 		try {
@@ -172,6 +173,14 @@ public class FilePersistentConfig extends PersistentConfig {
 		}
 		finally {
 			Closer.close(fos);
+		}
+	}
+	
+	public void finishedInit() {
+		super.finishedInit();
+		if(writeOnFinished) {
+			writeOnFinished = false;
+			store();
 		}
 	}
 }

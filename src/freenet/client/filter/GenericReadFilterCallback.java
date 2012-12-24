@@ -10,13 +10,14 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.util.HashSet;
+import java.util.regex.Pattern;
 
 import freenet.client.filter.HTMLFilter.ParsedTag;
+import freenet.clients.http.ExternalLinkToadlet;
 import freenet.clients.http.HTTPRequestImpl;
 import freenet.clients.http.StaticToadlet;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
-import freenet.support.HTMLEncoder;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.URIPreEncoder;
@@ -26,7 +27,6 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.HTTPRequest;
 
 public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
-	public static final String magicHTTPEscapeString = "_CHECKED_HTTP_";
 	public static final HashSet<String> allowedProtocols;
 	
 	static {
@@ -48,6 +48,9 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 	private final FoundURICallback cb;
 	private final TagReplacerCallback trc;
 
+	/** Provider for link filter exceptions. */
+	private final LinkFilterExceptionProvider linkFilterExceptionProvider;
+
         private static volatile boolean logMINOR;
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
@@ -58,19 +61,21 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		});
 	}
 
-	public GenericReadFilterCallback(URI uri, FoundURICallback cb,TagReplacerCallback trc) {
+	public GenericReadFilterCallback(URI uri, FoundURICallback cb,TagReplacerCallback trc, LinkFilterExceptionProvider linkFilterExceptionProvider) {
 		this.baseURI = uri;
 		this.cb = cb;
 		this.trc=trc;
+		this.linkFilterExceptionProvider = linkFilterExceptionProvider;
 		setStrippedURI(uri.toString());
 	}
 	
-	public GenericReadFilterCallback(FreenetURI uri, FoundURICallback cb,TagReplacerCallback trc) {
+	public GenericReadFilterCallback(FreenetURI uri, FoundURICallback cb,TagReplacerCallback trc, LinkFilterExceptionProvider linkFilterExceptionProvider) {
 		try {
 			this.baseURI = uri.toRelativeURI();
 			setStrippedURI(baseURI.toString());
 			this.cb = cb;
 			this.trc=trc;
+			this.linkFilterExceptionProvider = linkFilterExceptionProvider;
 		} catch (URISyntaxException e) {
 			throw new Error(e);
 		}
@@ -99,18 +104,23 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 	//  unreserved    = ALPHA / DIGIT / "-" / "." / "_" / "~"
 	protected static final String UNRESERVED = "[a-zA-Z0-9\\-\\._~]";
 	//  pct-encoded   = "%" HEXDIG HEXDIG
-	protected static final String PCT_ENCODED = "%[0-9A-Fa-f][0-9A-Fa-f]";
+	protected static final String PCT_ENCODED = "(?:%[0-9A-Fa-f][0-9A-Fa-f])";
 	//  sub-delims    = "!" / "$" / "&" / "'" / "(" / ")"
 	//                / "*" / "+" / "," / ";" / "="
 	protected static final String SUB_DELIMS  = "[\\!\\$&'\\(\\)\\*\\+,;=]";
 	//  pchar         = unreserved / pct-encoded / sub-delims / ":" / "@"
-	protected static final String PCHAR      = "(" + UNRESERVED + "|" + PCT_ENCODED + "|" + SUB_DELIMS + "|[:@])";
+	protected static final String PCHAR      = "(?>" + UNRESERVED + "|" + PCT_ENCODED + "|" + SUB_DELIMS + "|[:@])";
 	//  fragment      = *( pchar / "/" / "?" )
-	protected static final String FRAGMENT   = "(" + PCHAR + "|\\/|\\?)*";
+	protected static final String FRAGMENT   = "(?>" + PCHAR + "|\\/|\\?)*";
+
+	private static final Pattern anchorRegex;
+	static {
+	    anchorRegex = Pattern.compile("^#" + FRAGMENT + "$");
+	}
 
 	@Override
 	public String processURI(String u, String overrideType, boolean forBaseHref, boolean inline) throws CommentException {
-		if(u.matches("^#" + FRAGMENT + "$")) {
+		if(anchorRegex.matcher(u).matches()) {
 			// Hack for anchors, see #710
 			return u;
 		}
@@ -141,25 +151,35 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		String path = uri.getPath();
 		
 		HTTPRequest req = new HTTPRequestImpl(uri, "GET");
-		if (path != null){
-			if(path.equals("/") && req.isParameterSet("newbookmark") && !forBaseHref){
+		if (path != null) {
+			if (path.equals("/") && req.isParameterSet("newbookmark") && !forBaseHref) {
 				// allow links to the root to add bookmarks
 				String bookmark_key = req.getParam("newbookmark");
 				String bookmark_desc = req.getParam("desc");
 				String bookmark_activelink = req.getParam("hasAnActivelink", "");
 
-				bookmark_key = HTMLEncoder.encode(bookmark_key);
-				bookmark_desc = HTMLEncoder.encode(bookmark_desc);
+				try {
+					FreenetURI furi = new FreenetURI(bookmark_key);
+					bookmark_key = furi.toString();
+					bookmark_desc = URLEncoder.encode(bookmark_desc, "UTF-8");
+				} catch (UnsupportedEncodingException e) {
+					// impossible, UTF-8 is always supported
+				} catch (MalformedURLException e) {
+					throw new CommentException("Invalid Freenet URI: " + e);
+				}
 
 				String url = "/?newbookmark="+bookmark_key+"&desc="+bookmark_desc;
-				if (!bookmark_activelink.equals("")) {
-					bookmark_activelink = HTMLEncoder.encode(bookmark_activelink);
-					url = url+"&hasAnActivelink=true";
+				if (bookmark_activelink.equals("true")) {
+					url = url + "&hasAnActivelink=true";
 				}
 				return url;
 			} else if(path.startsWith(StaticToadlet.ROOT_URL)) {
 				// @see bug #2297
 				return path;
+			} else if (linkFilterExceptionProvider != null) {
+				if (linkFilterExceptionProvider.isLinkExcepted(uri)) {
+					return path + ((uri.getQuery() != null) ? ("?" + uri.getQuery()) : "");
+				}
 			}
 		}
 		
@@ -246,7 +266,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		if(forBaseHref)
 			throw new CommentException(l10n("bogusBaseHref"));
 		if(GenericReadFilterCallback.allowedProtocols.contains(uri.getScheme()))
-			return "/?"+GenericReadFilterCallback.magicHTTPEscapeString+ '=' +uri;
+			return ExternalLinkToadlet.escape(uri.toString());
 		else {
 			if(uri.getScheme() == null) {
 				throw new CommentException(reason);
@@ -442,9 +462,4 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 			return null;
 		}
 	}
-
-	public static String escapeURL(String uri) {
-		return "/?" + magicHTTPEscapeString + '=' + uri;
-	}
-	
 }

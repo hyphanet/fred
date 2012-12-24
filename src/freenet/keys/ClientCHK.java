@@ -87,7 +87,7 @@ public class ClientCHK extends ClientKey {
             throw new MalformedURLException("No extra bytes in CHK - maybe a 0.5 key?");
         // byte 0 is reserved, for now
         cryptoAlgorithm = extra[1];
-		if(cryptoAlgorithm != Key.ALGO_AES_PCFB_256_SHA256)
+		if(!(cryptoAlgorithm == Key.ALGO_AES_PCFB_256_SHA256 || cryptoAlgorithm == Key.ALGO_AES_CTR_256_SHA256))
 			throw new MalformedURLException("Invalid crypto algorithm");
         controlDocument = (extra[2] & 0x02) != 0;
         compressionAlgorithm = (short)(((extra[3] & 0xff) << 8) + (extra[4] & 0xff));
@@ -107,7 +107,7 @@ public class ClientCHK extends ClientKey {
             throw new MalformedURLException("No extra bytes in CHK - maybe a 0.5 key?");
         // byte 0 is reserved, for now
         cryptoAlgorithm = extra[1];
-		if(cryptoAlgorithm != Key.ALGO_AES_PCFB_256_SHA256)
+		if(!(cryptoAlgorithm == Key.ALGO_AES_PCFB_256_SHA256 || cryptoAlgorithm == Key.ALGO_AES_CTR_256_SHA256))
 			throw new MalformedURLException("Invalid crypto algorithm");
         controlDocument = (extra[2] & 0x02) != 0;
         compressionAlgorithm = (short)(((extra[3] & 0xff) << 8) + (extra[4] & 0xff));
@@ -124,7 +124,7 @@ public class ClientCHK extends ClientKey {
 		dis.readFully(extra);
 		// byte 0 is reserved, for now
         cryptoAlgorithm = extra[1];
-		if(cryptoAlgorithm != Key.ALGO_AES_PCFB_256_SHA256)
+		if(!(cryptoAlgorithm == Key.ALGO_AES_PCFB_256_SHA256 || cryptoAlgorithm == Key.ALGO_AES_CTR_256_SHA256))
 			throw new MalformedURLException("Invalid crypto algorithm");
         compressionAlgorithm = (short)(((extra[3] & 0xff) << 8) + (extra[4] & 0xff));
         controlDocument = (extra[2] & 0x02) != 0;
@@ -171,10 +171,11 @@ public class ClientCHK extends ClientKey {
 	
 	static HashSet<ByteArrayWrapper> standardExtras = new HashSet<ByteArrayWrapper>();
 	static {
-		for(short compressionAlgorithm = -1; compressionAlgorithm <= (short)(COMPRESSOR_TYPE.countCompressors()); compressionAlgorithm++) {
-			byte cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
-			standardExtras.add(new ByteArrayWrapper(getExtra(cryptoAlgorithm, compressionAlgorithm, true)));
-			standardExtras.add(new ByteArrayWrapper(getExtra(cryptoAlgorithm, compressionAlgorithm, false)));
+		for(byte cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256; cryptoAlgorithm <= Key.ALGO_AES_CTR_256_SHA256; cryptoAlgorithm++) {
+			for(short compressionAlgorithm = -1; compressionAlgorithm <= (short)(COMPRESSOR_TYPE.countCompressors()); compressionAlgorithm++) {
+				standardExtras.add(new ByteArrayWrapper(getExtra(cryptoAlgorithm, compressionAlgorithm, true)));
+				standardExtras.add(new ByteArrayWrapper(getExtra(cryptoAlgorithm, compressionAlgorithm, false)));
+			}
 		}
 	}
 	

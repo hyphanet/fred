@@ -320,6 +320,11 @@ public class PushDataManager {
 			}
 			return false;
 		}
+		
+		@Override
+		public int hashCode() {
+			return requestId.hashCode() + elementId.hashCode();
+		}
 
 		@Override
 		public String toString() {

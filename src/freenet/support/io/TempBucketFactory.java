@@ -59,9 +59,9 @@ public class TempBucketFactory implements BucketFactory {
 	private long maxRAMBucketSize;
 	/** How much memory do we dedicate to the RAMBucketPool? (in bytes) */
 	private long maxRamUsed;
-	
+
 	/** How old is a long-lived RAMBucket? */
-	private final int RAMBUCKET_MAX_AGE = 5*60*1000; // 5mins
+	private final static int RAMBUCKET_MAX_AGE = 5*60*1000; // 5mins
 	/** How many times the maxRAMBucketSize can a RAMBucket be before it gets migrated? */
 	final static int RAMBUCKET_CONVERSION_FACTOR = 4;
 	

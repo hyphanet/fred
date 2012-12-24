@@ -42,24 +42,26 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 	private final long uid;
 	private final OpennetManager om;
 	private final Node node;
-	private Message msg;
+	private final long xferUID;
+	private final int noderefLength;
+	private final int paddedLength;
 	private byte[] noderefBuf;
-	private int noderefLength;
 	private short htl;
 	private double target;
 	private final AnnouncementCallback cb;
 	private final PeerNode onlyNode;
 	private int forwardedRefs;
 
-	public AnnounceSender(Message m, long uid, PeerNode source, OpennetManager om, Node node) {
+	public AnnounceSender(double target, short htl, long uid, PeerNode source, OpennetManager om, Node node, long xferUID, int noderefLength, int paddedLength) {
 		this.source = source;
 		this.uid = uid;
-		this.msg = m;
 		this.om = om;
 		this.node = node;
 		this.onlyNode = null;
-		htl = (short) Math.min(m.getShort(DMT.HTL), node.maxHTL());
-		target = m.getDouble(DMT.TARGET_LOCATION); // FIXME validate
+		this.htl = htl;
+		this.xferUID = xferUID;
+		this.paddedLength = paddedLength;
+		this.noderefLength = noderefLength;
 		cb = null;
 	}
 
@@ -67,8 +69,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		source = null;
 		this.uid = node.random.nextLong();
 		// Prevent it being routed back to us.
-		node.completed(uid);
-		msg = null;
+		node.tracker.completed(uid);
 		this.om = om;
 		this.node = node;
 		this.htl = node.maxHTL();
@@ -76,6 +77,9 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		this.cb = cb;
 		this.onlyNode = onlyNode;
 		noderefBuf = om.crypto.myCompressedFullRef();
+		this.xferUID = 0;
+		this.paddedLength = 0;
+		this.noderefLength = 0;
 	}
 
 	@Override
@@ -89,7 +93,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 			if(source != null) {
 				source.completedAnnounce(uid);
 			}
-			node.completed(uid);
+			node.tracker.completed(uid);
 			if(cb != null)
 				cb.completed();
 			node.nodeStats.endAnnouncement(uid);
@@ -154,7 +158,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 			}
 			if(logMINOR) Logger.minor(this, "Routing request to "+next);
 			if(onlyNode == null)
-				next.reportRoutedTo(target, source == null, false);
+				next.reportRoutedTo(target, source == null, false, source, nodesRoutedTo);
 			nodesRoutedTo.add(next);
 
 			long xferUID = sendTo(next);
@@ -321,6 +325,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 				if(msg.getSpec() == DMT.FNPRouteNotFound) {
 					// Backtrack within available hops
 					short newHtl = msg.getShort(DMT.HTL);
+					if(newHtl < 0) newHtl = 0;
 					if(newHtl < htl) htl = newHtl;
 					break;
 				}
@@ -510,9 +515,6 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 	 * @return True unless the noderef is bogus.
 	 */
 	private boolean transferNoderef() {
-		long xferUID = msg.getLong(DMT.TRANSFER_UID);
-		noderefLength = msg.getInt(DMT.NODEREF_LENGTH);
-		int paddedLength = msg.getInt(DMT.PADDED_LENGTH);
 		noderefBuf = OpennetManager.innerWaitForOpennetNoderef(xferUID, paddedLength, noderefLength, source, false, uid, true, this, node);
 		if(noderefBuf == null) {
 			return false;

@@ -28,6 +28,7 @@ public class PersistentPutDir extends FCPMessage {
 	
 	final String identifier;
 	final FreenetURI uri;
+	final FreenetURI privateURI;
 	final int verbosity; 
 	final short priorityClass;
 	final short persistenceType; 
@@ -44,11 +45,12 @@ public class PersistentPutDir extends FCPMessage {
 	final boolean realTime;
 	final byte[] splitfileCryptoKey;
 	
-	public PersistentPutDir(String identifier, FreenetURI uri, int verbosity, short priorityClass,
+	public PersistentPutDir(String identifier, FreenetURI publicURI, FreenetURI privateURI, int verbosity, short priorityClass,
 	        short persistenceType, boolean global, String defaultName, HashMap<String, Object> manifestElements,
 	        String token, boolean started, int maxRetries, boolean dontCompress, String compressorDescriptor, boolean wasDiskPut, boolean realTime, byte[] splitfileCryptoKey, ObjectContainer container) {
 		this.identifier = identifier;
-		this.uri = uri;
+		this.uri = publicURI;
+		this.privateURI = privateURI;
 		this.verbosity = verbosity;
 		this.priorityClass = priorityClass;
 		this.persistenceType = persistenceType;
@@ -70,6 +72,8 @@ public class PersistentPutDir extends FCPMessage {
 		SimpleFieldSet fs = new SimpleFieldSet(false); // false because this can get HUGE
 		fs.putSingle("Identifier", identifier);
 		fs.putSingle("URI", uri.toString(false, false));
+		if(privateURI != null)
+			fs.putSingle("PrivateURI", privateURI.toString(false, false));
 		fs.put("Verbosity", verbosity);
 		fs.putSingle("Persistence", ClientRequest.persistenceTypeString(persistenceType));
 		fs.put("PriorityClass", priorityClass);

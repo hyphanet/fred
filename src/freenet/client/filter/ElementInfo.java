@@ -218,7 +218,7 @@ public class ElementInfo {
 		PSEUDOCLASS.add("first-letter");
 		PSEUDOCLASS.add("before");
 		PSEUDOCLASS.add("after");
-		
+		PSEUDOCLASS.add("target");
 	}
 
 	// FIXME use HashSet<String> or even enum.

@@ -7,13 +7,14 @@ import java.util.Random;
 
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
-import freenet.support.LRUHashtable;
+import freenet.support.LRUMap;
+import freenet.support.io.InetAddressComparator;
 
 /** Tracks announcements by IP address to identify nodes that announce repeatedly. */
 public class SeedAnnounceTracker {
 	
-	private final LRUHashtable<InetAddress, TrackerItem> itemsByIP = 
-		new LRUHashtable<InetAddress, TrackerItem>();
+	private final LRUMap<InetAddress, TrackerItem> itemsByIP = 
+		LRUMap.createSafeMap(InetAddressComparator.COMPARATOR);
 	
 	// This should be plenty for now and limits memory usage to something reasonable.
 	final int MAX_SIZE = 100*1000;

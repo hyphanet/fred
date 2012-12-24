@@ -5,7 +5,9 @@ package freenet.node;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.Security;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.tanukisoftware.wrapper.WrapperListener;
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -34,13 +36,6 @@ public class NodeStarter implements WrapperListener {
 
 	private Node node;
 	private static LoggingConfigHandler logConfigHandler;
-	/** Freenet will not function at all without at least this build of freenet-ext.jar.
-	 * This will be included in the jar manifest file so we can check it when we download new builds. */
-	public final static int REQUIRED_EXT_BUILD_NUMBER = 29;
-	/** Freenet will function best with this build of freenet-ext.jar.
-	 * It may be required in the near future. The node will try to download it.
-	 * The node will not update to a later ext version than this, because that might be incompatible. */
-	public final static int RECOMMENDED_EXT_BUILD_NUMBER = 29;
 	/*
 	(File.separatorChar == '\\') &&
 	(System.getProperty("os.arch").toLowerCase().matches("(i?[x0-9]86_64|amd64)")) ? 6 : 2;
@@ -58,10 +53,36 @@ public class NodeStarter implements WrapperListener {
 	// experimental osgi support
 	private static NodeStarter nodestarter_osgi = null;
 
+	public static final String NO_BCPROV_WARNING =
+		"FAILED TO LOAD BOUNCY CASTLE CRYPTO LIBRARY! \n" +
+		"This means the file \"bcprov-jdk15on-147.jar\" is not found or not on the classpath. \n" +
+		"Freenet will not be able to use the newer link setup code or newer format keys. \n" +
+		"Unless you installed it yourself, THIS IS A SEVERE BUG!";
+	
+	private volatile static boolean BCPROV_LOAD_FAILED = true;
+	
+	public static boolean bcProvLoadFailed() {
+		return BCPROV_LOAD_FAILED;
+	}
+	
 	/*---------------------------------------------------------------
 	 * Constructors
 	 *-------------------------------------------------------------*/
 	private NodeStarter() {
+		try {
+			new BouncyLoader().load();
+			BCPROV_LOAD_FAILED = false;
+		} catch (RuntimeException e) {
+			System.err.println(NO_BCPROV_WARNING);
+		} catch (Error e) {
+			System.err.println(NO_BCPROV_WARNING);
+		}
+	}
+	
+	private class BouncyLoader {
+		public void load() {
+			Security.addProvider(new BouncyCastleProvider());
+		}
 	}
 
 	public NodeStarter get() {
@@ -314,6 +335,19 @@ public class NodeStarter implements WrapperListener {
 		return random;
 	}
 
+	public static Node createTestNode(int port, int opennetPort, String testName, boolean disableProbabilisticHTLs,
+	                                  short maxHTL, int dropProb, RandomSource random,
+	                                  Executor executor, int threadLimit, long storeSize, boolean ramStore,
+	                                  boolean enableSwapping, boolean enableARKs, boolean enableULPRs, boolean enablePerNodeFailureTables,
+	                                  boolean enableSwapQueueing, boolean enablePacketCoalescing,
+	                                  int outputBandwidthLimit, boolean enableFOAF,
+	                                  boolean connectToSeednodes, boolean longPingTimes, boolean useSlashdotCache, String ipAddressOverride) throws NodeInitException {
+		return createTestNode(port, opennetPort, testName, disableProbabilisticHTLs, maxHTL, dropProb, random, executor,
+		    threadLimit, storeSize, ramStore, enableSwapping, enableARKs, enableULPRs, enablePerNodeFailureTables,
+		    enableSwapQueueing, enablePacketCoalescing, outputBandwidthLimit, enableFOAF, connectToSeednodes,
+		    longPingTimes, useSlashdotCache, ipAddressOverride, false);
+	}
+
 	/**
 	 * Create a test node.
 	 * @param port The node port number. Each test node must have a different port
@@ -328,7 +362,7 @@ public class NodeStarter implements WrapperListener {
 		boolean enableSwapping, boolean enableARKs, boolean enableULPRs, boolean enablePerNodeFailureTables,
 		boolean enableSwapQueueing, boolean enablePacketCoalescing,
 		int outputBandwidthLimit, boolean enableFOAF,
-		boolean connectToSeednodes, boolean longPingTimes, boolean useSlashdotCache, String ipAddressOverride) throws NodeInitException {
+		boolean connectToSeednodes, boolean longPingTimes, boolean useSlashdotCache, String ipAddressOverride, boolean enableFCP) throws NodeInitException {
 
 		File baseDir = new File(testName);
 		File portDir = new File(baseDir, Integer.toString(port));
@@ -352,7 +386,9 @@ public class NodeStarter implements WrapperListener {
 		configFS.put("node.listenPort", port);
 		configFS.put("node.disableProbabilisticHTLs", disableProbabilisticHTLs);
 		configFS.put("fproxy.enabled", false);
-		configFS.put("fcp.enabled", false);
+		configFS.put("fcp.enabled", enableFCP);
+		configFS.put("fcp.port", 9481);
+		configFS.put("fcp.ssl", false);
 		configFS.put("console.enabled", false);
 		configFS.putSingle("pluginmanager.loadplugin", "");
 		configFS.put("node.updater.enabled", false);
@@ -390,12 +426,20 @@ public class NodeStarter implements WrapperListener {
 		configFS.put("node.opennet.connectToSeednodes", connectToSeednodes);
 		configFS.put("node.encryptTempBuckets", false);
 		configFS.put("node.encryptPersistentTempBuckets", false);
+		configFS.put("node.enableRoutedPing", true);
 		if(ipAddressOverride != null)
 			configFS.putSingle("node.ipAddressOverride", ipAddressOverride);
 		if(longPingTimes) {
 			configFS.put("node.maxPingTime", 100000);
 			configFS.put("node.subMaxPingTime", 50000);
 		}
+		configFS.put("node.respondBandwidth", true);
+		configFS.put("node.respondBuild", true);
+		configFS.put("node.respondIdentifier", true);
+		configFS.put("node.respondLinkLengths", true);
+		configFS.put("node.respondLocation", true);
+		configFS.put("node.respondStoreSize", true);
+		configFS.put("node.respondUptime", true);
 
 		PersistentConfig config = new PersistentConfig(configFS);
 

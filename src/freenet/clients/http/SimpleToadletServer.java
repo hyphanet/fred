@@ -16,6 +16,7 @@ import java.util.LinkedList;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.filter.HTMLFilter;
+import freenet.client.filter.LinkFilterExceptionProvider;
 import freenet.clients.http.FProxyFetchInProgress.REFILTER_POLICY;
 import freenet.clients.http.PageMaker.THEME;
 import freenet.clients.http.bookmark.BookmarkManager;
@@ -57,7 +58,7 @@ import freenet.support.io.NativeThread;
  * 
  * Provide a HTTP server for FProxy
  */
-public final class SimpleToadletServer implements ToadletContainer, Runnable {
+public final class SimpleToadletServer implements ToadletContainer, Runnable, LinkFilterExceptionProvider {
 	/** List of urlPrefix / Toadlet */ 
 	private final LinkedList<ToadletElement> toadlets;
 	private static class ToadletElement {
@@ -84,6 +85,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	// ACL
 	private final AllowedHosts allowedFullAccess;
 	private boolean publicGatewayMode;
+	private final boolean wasPublicGatewayMode;
 	
 	// Theme 
 	private THEME cssTheme;
@@ -157,17 +159,31 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
-	private static class FProxyPassthruMaxSize extends LongCallback {
+	private static class FProxyPassthruMaxSizeNoProgress extends LongCallback {
 		@Override
 		public Long get() {
-			return FProxyToadlet.MAX_LENGTH;
+			return FProxyToadlet.MAX_LENGTH_NO_PROGRESS;
 		}
 		
 		@Override
 		public void set(Long val) throws InvalidConfigValueException {
 			if (get().equals(val))
 				return;
-			FProxyToadlet.MAX_LENGTH = val;
+			FProxyToadlet.MAX_LENGTH_NO_PROGRESS = val;
+		}
+	}
+
+	private static class FProxyPassthruMaxSizeProgress extends LongCallback {
+		@Override
+		public Long get() {
+			return FProxyToadlet.MAX_LENGTH_WITH_PROGRESS;
+		}
+		
+		@Override
+		public void set(Long val) throws InvalidConfigValueException {
+			if (get().equals(val))
+				return;
+			FProxyToadlet.MAX_LENGTH_WITH_PROGRESS = val;
 		}
 	}
 
@@ -394,9 +410,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 		
 	};
-	
-	private final ReFilterCallback refilterPolicyCallback = new ReFilterCallback();
-	
+
 	public void createFproxy() {
 		synchronized(this) {
 			if(haveCalledFProxy) return;
@@ -405,7 +419,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		pushDataManager=new PushDataManager(getTicker());
 		intervalPushManager=new IntervalPusherManager(getTicker(), pushDataManager);
-		bookmarkManager = new BookmarkManager(core);
+		bookmarkManager = new BookmarkManager(core, publicGatewayMode());
 		try {
 			FProxyToadlet.maybeCreateFProxyEtc(core, core.node, core.node.config, this, bookmarkManager);
 		} catch (IOException e) {
@@ -551,11 +565,13 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 
 			@Override
 			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+				if(publicGatewayMode == val) return;
 				publicGatewayMode = val;
+				throw new NodeNeedRestartException(l10n("publicGatewayModeNeedsRestart"));
 			}
 			
 		});
-		publicGatewayMode = fproxyConfig.getBoolean("publicGatewayMode");
+		wasPublicGatewayMode = publicGatewayMode = fproxyConfig.getBoolean("publicGatewayMode");
 		
 		// This is OFF BY DEFAULT because for example firefox has a limit of 2 persistent 
 		// connections per server, but 8 non-persistent connections per server. We need 8 conns
@@ -621,8 +637,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		});
 		enableActivelinks = fproxyConfig.getBoolean("enableActivelinks");
 		
-		fproxyConfig.register("passthroughMaxSize", (2L*1024*1024*11)/10, configItemOrder++, true, false, "SimpleToadletServer.passthroughMaxSize", "SimpleToadletServer.passthroughMaxSizeLong", new FProxyPassthruMaxSize(), true);
-		FProxyToadlet.MAX_LENGTH = fproxyConfig.getLong("passthroughMaxSize");
+		fproxyConfig.register("passthroughMaxSize", FProxyToadlet.MAX_LENGTH_NO_PROGRESS, configItemOrder++, true, false, "SimpleToadletServer.passthroughMaxSize", "SimpleToadletServer.passthroughMaxSizeLong", new FProxyPassthruMaxSizeNoProgress(), true);
+		FProxyToadlet.MAX_LENGTH_NO_PROGRESS = fproxyConfig.getLong("passthroughMaxSize");
+		fproxyConfig.register("passthroughMaxSizeProgress", FProxyToadlet.MAX_LENGTH_WITH_PROGRESS, configItemOrder++, true, false, "SimpleToadletServer.passthroughMaxSizeProgress", "SimpleToadletServer.passthroughMaxSizeProgressLong", new FProxyPassthruMaxSizeProgress(), true);
+		FProxyToadlet.MAX_LENGTH_WITH_PROGRESS = fproxyConfig.getLong("passthroughMaxSizeProgress");
+		System.out.println("Set fproxy max length to "+FProxyToadlet.MAX_LENGTH_NO_PROGRESS+" and max length with progress to "+FProxyToadlet.MAX_LENGTH_WITH_PROGRESS+" = "+fproxyConfig.getLong("passthroughMaxSizeProgress"));
 		
 		fproxyConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", configItemOrder++, true, true, "SimpleToadletServer.allowedHosts", "SimpleToadletServer.allowedHostsLong",
 				new FProxyAllowedHostsCallback());
@@ -712,9 +731,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 					}
 		}, false);
 		HTMLFilter.metaRefreshRedirectMinInterval = Math.max(-1, fproxyConfig.getInt("metaRefreshRedirectInterval"));
-		
-		fproxyConfig.register("refilterPolicy", "RE_FILTER", 
-				configItemOrder++, true, false, "SimpleToadletServer.refilterPolicy", "SimpleToadletServer.refilterPolicyLong", refilterPolicyCallback);
+
+		fproxyConfig.register("refilterPolicy", "RE_FILTER",
+				configItemOrder++, true, false, "SimpleToadletServer.refilterPolicy", "SimpleToadletServer.refilterPolicyLong", new ReFilterCallback());
 		
 		this.refilterPolicy = REFILTER_POLICY.valueOf(fproxyConfig.getString("refilterPolicy"));
 		
@@ -793,7 +812,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	@Override
 	public boolean publicGatewayMode() {
-		return publicGatewayMode;
+		return wasPublicGatewayMode;
 	}
 	
 	public void start() {
@@ -895,18 +914,15 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 
 		// Show the wizard until dismissed by the user (See bug #2624)
 		if(core != null && core.node != null && !fproxyHasCompletedWizard) {
-			if(!(core.node.isOpennetEnabled() || core.node.getPeerNodes().length > 0)) {
-				
-				if(!(path.startsWith(FirstTimeWizardToadlet.TOADLET_URL) ||
-						path.startsWith(StaticToadlet.ROOT_URL))) {
-					try {
-						throw new PermanentRedirectException(new URI(null, null, null, -1, FirstTimeWizardToadlet.TOADLET_URL, uri.getQuery(), null));
-					} catch(URISyntaxException e) { throw new Error(e); }
-				}
-				
-			} else {
-				// Assume it's okay.
-				fproxyHasCompletedWizard = true;
+			//If the user has not completed the wizard, only allow access to the wizard and static
+			//resources. Anything else redirects to the first page of the wizard.
+			if (!(path.startsWith(FirstTimeWizardToadlet.TOADLET_URL) ||
+				path.startsWith(StaticToadlet.ROOT_URL) ||
+				path.startsWith(ExternalLinkToadlet.PATH) ||
+				path.equals("/favicon.ico"))) {
+				try {
+					throw new PermanentRedirectException(new URI(null, null, null, -1, FirstTimeWizardToadlet.TOADLET_URL, uri.getQuery(), null));
+				} catch(URISyntaxException e) { throw new Error(e); }
 			}
 		}
 
@@ -1176,6 +1192,49 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	@Override
 	public File getOverrideFile() {
 		return cssOverride;
+	}
+
+	@Override
+	public String getURL() {
+		return getURL(null);
+	}
+
+	@Override
+	public String getURL(String host) {
+		StringBuffer sb = new StringBuffer();
+		if(ssl)
+			sb.append("https");
+		else
+			sb.append("http");
+		sb.append("://");
+		if(host == null)
+			host = "127.0.0.1";
+		sb.append(host);
+		sb.append(":");
+		sb.append(this.port);
+		sb.append("/");
+		return sb.toString();
+	}
+
+	//
+	// LINKFILTEREXCEPTIONPROVIDER METHODS
+	//
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public boolean isLinkExcepted(URI link) {
+		Toadlet toadlet = null;
+		try {
+			toadlet = findToadlet(link);
+		} catch (PermanentRedirectException pre1) {
+			/* ignore. */
+		}
+		if (toadlet instanceof LinkFilterExceptedToadlet) {
+			return ((LinkFilterExceptedToadlet) toadlet).isLinkExcepted(link);
+		}
+		return false;
 	}
 
 }

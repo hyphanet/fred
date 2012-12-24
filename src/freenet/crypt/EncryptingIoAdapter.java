@@ -18,6 +18,8 @@ import freenet.support.io.FileUtil;
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  * 
  * FIXME: URGENT CRYPTO CODE REVIEW!!!
+ * 
+ * FIXME CRYPTO first problem with this is key = IV. We should pass a separate IV in.
  */
 public class EncryptingIoAdapter extends IoAdapter {
 	
@@ -25,7 +27,6 @@ public class EncryptingIoAdapter extends IoAdapter {
 	private final RandomSource random;
 	private final byte[] key;
 	private final BlockCipher cipher;
-	private boolean closed;
 	private long position;
 	private byte[] blockOutput;
 	private long blockPosition;
@@ -57,7 +58,6 @@ public class EncryptingIoAdapter extends IoAdapter {
 	public void close() throws Db4oIOException {
 		baseAdapter.close();
 		synchronized(this) {
-			closed = true;
 			MasterKeys.clear(key);
 		}
 	}
@@ -97,16 +97,32 @@ public class EncryptingIoAdapter extends IoAdapter {
 
 	@Override
 	public synchronized int read(byte[] buffer, int length) throws Db4oIOException {
-		int readBytes = baseAdapter.read(buffer, length);
+		int readBytes;
+		try {
+			readBytes = baseAdapter.read(buffer, length);
+		} catch (Db4oIOException e) {
+			System.err.println("Unable to read: "+e);
+			e.printStackTrace();
+			try {
+				// Position may have changed.
+				baseAdapter.seek(position);
+			} catch (Db4oIOException e1) {
+				System.err.println("Unable to seek, closing database file: "+e1);
+				e1.printStackTrace();
+				// Must close because don't know position accurately now.
+				close();
+			}
+			throw e;
+		}
 		if(readBytes <= 0) return readBytes;
 		// CTR mode decryption
-		int decrypted = 0;
-		int offset = (int) (position % BLOCK_SIZE_BYTES);
-		int remaining = BLOCK_SIZE_BYTES - offset;
+		int totalDecrypted = 0;
+		int blockOffset = (int) (position % BLOCK_SIZE_BYTES);
+		int blockRemaining = BLOCK_SIZE_BYTES - blockOffset;
 		int toDecrypt = readBytes;
 		while(toDecrypt > 0) {
-			int decrypt = Math.min(toDecrypt, remaining);
-			long thisBlockPosition = position - offset;
+			int decrypt = Math.min(toDecrypt, blockRemaining);
+			long thisBlockPosition = position - blockOffset;
 			if(blockPosition != thisBlockPosition) {
 				// Encrypt key + position
 				byte[] input = new byte[key.length];
@@ -118,18 +134,19 @@ public class EncryptingIoAdapter extends IoAdapter {
 				blockPosition = thisBlockPosition;
 			}
 			for(int i=0;i<decrypt;i++)
-				buffer[i+decrypted] ^= blockOutput[i + offset];
+				buffer[i+totalDecrypted] ^= blockOutput[i + blockOffset];
 			position += decrypt;
-			decrypted += decrypt;
+			totalDecrypted += decrypt;
 			toDecrypt -= decrypt;
-			offset = 0;
-			remaining = BLOCK_SIZE_BYTES;
+			blockOffset = 0;
+			blockRemaining = BLOCK_SIZE_BYTES;
 		}
 		return readBytes;
 	}
 
 	@Override
 	public synchronized void seek(long arg0) throws Db4oIOException {
+		if(arg0 < 0) throw new IllegalArgumentException();
 		baseAdapter.seek(arg0);
 		position = arg0;
 	}
@@ -140,15 +157,18 @@ public class EncryptingIoAdapter extends IoAdapter {
 	}
 
 	@Override
-	public synchronized void write(byte[] buffer, int length) throws Db4oIOException {
+	public synchronized void write(byte[] inputBuffer, int length) throws Db4oIOException {
+		// Do not clobber the buffer!
+		byte[] buffer = new byte[length];
+		System.arraycopy(inputBuffer, 0, buffer, 0, length);
 		// CTR mode encryption
-		int decrypted = 0;
-		int offset = (int) (position % BLOCK_SIZE_BYTES);
-		int remaining = BLOCK_SIZE_BYTES - offset;
+		int totalDecrypted = 0;
+		int blockOffset = (int) (position % BLOCK_SIZE_BYTES);
+		int blockRemaining = BLOCK_SIZE_BYTES - blockOffset;
 		int toDecrypt = length;
 		while(toDecrypt > 0) {
-			int decrypt = Math.min(toDecrypt, remaining);
-			long thisBlockPosition = position - offset;
+			int decrypt = Math.min(toDecrypt, blockRemaining);
+			long thisBlockPosition = position - blockOffset;
 			if(blockPosition != thisBlockPosition) {
 				// Encrypt key + position
 				byte[] input = new byte[key.length];
@@ -160,14 +180,28 @@ public class EncryptingIoAdapter extends IoAdapter {
 				blockPosition = thisBlockPosition;
 			}
 			for(int i=0;i<decrypt;i++)
-				buffer[i+decrypted] ^= blockOutput[i + offset];
+				buffer[i+totalDecrypted] ^= blockOutput[i + blockOffset];
 			position += decrypt;
-			decrypted += decrypt;
+			totalDecrypted += decrypt;
 			toDecrypt -= decrypt;
-			offset = 0;
-			remaining = BLOCK_SIZE_BYTES;
+			blockOffset = 0;
+			blockRemaining = BLOCK_SIZE_BYTES;
 		}
-		baseAdapter.write(buffer, length);
+		try {
+			baseAdapter.write(buffer, length);
+		} catch (Db4oIOException e) {
+			System.err.println("Unable to write: "+e);
+			e.printStackTrace();
+			try {
+				baseAdapter.seek(position);
+			} catch (Db4oIOException e1) {
+				System.err.println("Unable to seek, closing database file: "+e1);
+				e1.printStackTrace();
+				// Must close because don't know position accurately now.
+				close();
+			}
+			throw e;
+		}
 	}
 
 }

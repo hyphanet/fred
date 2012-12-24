@@ -1,0 +1,351 @@
+﻿/* layout-boxed */
+
+/* TODO the search page is ugly */
+
+/* TODO this layout has problems with narrow windows
+ * on the Statistics page. */
+
+/* 
+ * Overall Settings
+ */
+
+/* base font settings for entire page */
+
+div,
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+li,
+p,
+span,
+td,
+th {
+	font-family: tahoma;
+	font-size: 11px;
+}
+
+td,
+th {
+	padding: 0.182em;
+}
+
+table {
+	border-collapse: separate;
+}
+
+table,
+td,
+th,
+thead {
+	border-style: none;
+}
+
+/*
+ * Body and Page Header
+ */
+
+body {
+	background-image: url(/static/themes/boxed/background.png);
+}
+
+#page {
+	padding: 1.364em;
+}
+/*
+ * Top Title Area
+ */
+
+#topbar {
+	background-image: url(/static/themes/boxed/logo.png);
+	background-position: 10px 4px;
+	border-style: solid;
+	border-width: 1px;
+	min-height: 3.727em;
+	padding: 0.909em;
+}
+
+#topbar h1 {
+	font-size: 2em;
+	font-weight: bold;
+	padding-top: 0px;
+}
+
+/* 
+ * Navigation
+ */
+
+#navbar, #selected-subnavbar {
+	top: 3em;
+	left: 0em;
+}
+
+#navlist li {
+	font-weight: bold;
+}
+
+/*
+ * Alerts
+ */
+
+/* 
+ * Infoboxes
+ */
+
+div.infobox {
+	border: none;
+	display: block;
+	margin-top: 1.818em;
+	margin-bottom: 0.909;
+}
+
+div.infobox-header {
+	display: inline;
+	margin-left: 1.818em;
+	border-style: solid;
+	border-bottom-style: none;
+	border-width: 1px;
+	padding: 2px;
+	padding-left: 0.727em;
+	position: relative;
+	top: -2px;
+	font-family: verdana;
+	font-weight: bold;
+	white-space: nowrap;
+	z-index: 5;
+}
+
+div.infobox-content {
+	border-style: solid;
+	border-width: 1px;
+	padding: 0.909em 1.182em;
+	overflow: auto;
+}
+
+div.infobox-content :first-child {
+	margin-top: 0;
+}
+
+div.infobox-content :last-child {
+	margin-bottom: 0;
+}
+
+div.infobox-content ul {
+	display: inline;
+	margin: 0px;
+	padding: 0px;
+}
+
+div.infobox-content ul#bookmarks li li {
+	margin-left: 2em;
+}
+
+ul.alert-summary {
+	text-indent: 1.182em;
+}
+
+li.alert-summary-text-error {
+	background: url(/static/themes/boxed/error-16.png);
+}
+
+li.alert-summary-text-alert {
+	background: url(/static/themes/boxed/alert-16.png);
+}
+
+li.alert-summary-text-warning {
+	background: url(/static/themes/boxed/warning-16.png);
+}
+
+li.alert-summary-text-minor {
+	background: url(/static/themes/boxed/information-16.png);
+}
+
+/*
+ * Content
+ */
+
+#content {
+	margin: 0px;
+	padding-bottom: 5em;
+	position: absolute;
+	left: 13.909em;
+	right: 1.364em;
+}
+
+a {
+	text-decoration: none;
+}
+
+/*
+ * Plugins Page
+ */
+
+/* 
+ * Configuration Page
+ */
+
+div.configprefix {
+	font-variant: normal;
+	font-weight: normal;
+	text-transform: capitalize;
+}
+
+div.configprefix:before {
+	content: "Section: ";
+	font-weight: bold;
+}
+
+div.infobox-content ul.config  {
+	display: block;
+	padding: 0.333em;
+}
+
+ul.config > li {
+	border-bottom: none;
+	display: table-row;
+	height: 2.5em;
+	padding: 2px;
+	width: 100%;
+}
+
+ul.config li input[type=text] {
+	width: 14em;
+}
+
+ul.config li.boolean span.configshortdesc,
+ul.config li.dropdown span.configshortdesc {
+	width: auto;
+}
+
+ul.config li span.configlongdesc {
+	display: none;
+}
+
+ul.config span.config {
+	float: right;
+	text-align: right;
+}
+
+span.configshortdesc {
+	font-weight: normal;
+}
+
+/* 
+ * Darknet Page
+ */
+
+/* ConnectionsToadlet, LocalFileBrowserToadlet */
+td.right-align {
+	text-align: right;
+}
+
+th {
+	text-align: center;
+	border-top-style: solid;
+	border-top-width: 1px;
+	border-left-style: solid;
+	border-left-width: 1px;
+	border-bottom-style: solid;
+	border-bottom-width: 1px;
+	border-right-style: solid;
+	border-right-width: 1px;
+	padding: 1px 3px;
+}
+
+table.column {
+	table-layout: fixed;
+	width: 100%;
+	border-spacing: 0px;
+}
+
+table.column tr {
+	vertical-align: top;
+}
+
+table.column tr td {
+	padding-left: 10px;
+	padding-right: 10px;
+}
+
+table.column tr td.first {
+	padding-left: 0px;
+}
+
+table.column tr td.last {
+	padding-right: 0px;
+}
+
+table.requests {
+	white-space: nowrap;
+}
+
+.request-progress {
+	width: 100px;
+	vertical-align: middle;
+}
+
+/* 
+ * Statistics Page
+ */
+
+/* 
+ * Queue Page
+ */
+
+div.progressbar {
+	height: 1.5em;
+	width: 100px;
+}
+
+div.progressbar,
+div.progressbar-done,
+div.progressbar-min,
+div.progressbar-failed,
+div.progressbar-failed2 {
+	height: 1.5em;
+}
+
+div.progress_fraction_finalized,
+div.progress_fraction_not_finalized {
+	top: 0.1em;
+	left: 0.455em;
+}
+
+div.warning {
+	font-weight: bold;
+}
+
+/* 
+ * N2NTM page
+ */
+
+div.n2ntm-message-text {
+	margin: 10px;
+	padding: 10px;
+}
+
+/* 
+ * Translation
+ */
+
+/* 
+ * Statusbar
+ */
+
+div#statusbar-container {
+	border-style: solid;
+	border-width: 1px;
+	margin-top: 0.455em;
+	margin-bottom: 0.455em;
+	padding: 0.455em;
+}
+
+div#statusbar > div {
+	font-size: 1.2em;
+}
+
+div#statusbar div.infobox-content {
+	border: none;
+}

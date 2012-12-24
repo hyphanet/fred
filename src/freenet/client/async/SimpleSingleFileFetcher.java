@@ -211,4 +211,10 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		this.onFailure(new FetchException(FetchException.DATA_NOT_FOUND), true, container, context);
 	}
 
+	@Override
+	protected void onBlockDecodeError(Object token, ObjectContainer container,
+			ClientContext context) {
+		onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, "Could not decode block with the URI given, probably invalid as inserted, possible the URI is wrong"), true, container, context);
+	}
+
 }

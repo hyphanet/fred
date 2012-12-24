@@ -36,11 +36,14 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	private ClientPutState generator;
 	private final BaseClientPutter parent;
 	private InsertException e;
+	private boolean cancelling;
 	private boolean finished;
 	private boolean started;
+	private boolean calledFetchable;
 	public final Object token;
 	private final boolean persistent;
 	private final boolean collisionIsOK;
+	private final boolean finishOnFailure;
 	
 	public void objectOnActivate(ObjectContainer container) {
 		// Only activate the arrays
@@ -54,13 +57,19 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	}
 	
 	public MultiPutCompletionCallback(PutCompletionCallback cb, BaseClientPutter parent, Object token, boolean persistent, boolean collisionIsOK) {
+		this(cb, parent, token, persistent, collisionIsOK, false);
+	}
+	
+	public MultiPutCompletionCallback(PutCompletionCallback cb, BaseClientPutter parent, Object token, boolean persistent, boolean collisionIsOK, boolean finishOnFailure) {
 		this.cb = cb;
 		this.collisionIsOK = collisionIsOK;
+		this.finishOnFailure = finishOnFailure;
 		waitingFor = new Vector<ClientPutState>();
 		waitingForBlockSet = new Vector<ClientPutState>();
 		waitingForFetchable = new Vector<ClientPutState>();
 		this.parent = parent;
 		this.token = token;
+		cancelling = false;
 		finished = false;
 		this.persistent = persistent;
 	}
@@ -109,7 +118,13 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			onSuccess(state, container, context);
 			return;
 		}
+		if(persistent) {
+			container.activate(waitingFor, 2);
+			container.activate(waitingForBlockSet, 2);
+			container.activate(waitingForFetchable, 2);
+		}
 		boolean complete = true;
+		boolean doCancel = false;
 		synchronized(this) {
 			if(finished) {
 				Logger.error(this, "Already finished but got onFailure() for "+state+" on "+this);
@@ -135,6 +150,15 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 				generator = null;
 				if(persistent) container.store(this);
 			}
+			if(finishOnFailure) {
+				if(started)
+					doCancel = true;
+				else {
+					cancelling = true;
+					if(persistent)
+						container.store(this);
+				}
+			}
 		}
 		if(persistent) {
 			container.ext().store(waitingFor, 2);
@@ -144,6 +168,8 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		}
 		if(complete)
 			complete(e, container, context);
+		else if(doCancel)
+			cancel(container, context);
 	}
 
 	private void complete(InsertException e, ObjectContainer container, ClientContext context) {
@@ -209,10 +235,12 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		if(logMINOR) Logger.minor(this, "Arming "+this);
 		boolean allDone;
 		boolean allGotBlocks;
+		boolean doCancel;
 		synchronized(this) {
 			started = true;
 			allDone = waitingFor.isEmpty();
 			allGotBlocks = waitingForBlockSet.isEmpty();
+			doCancel = cancelling;
 		}
 		if(persistent) {
 			container.store(this);
@@ -224,6 +252,8 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		if(allDone) {
 			if(persistent && e != null) container.activate(e, 5);
 			complete(e, container, context);
+		} else if(doCancel) {
+			cancel(container, context);
 		}
 	}
 
@@ -271,13 +301,13 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		for(int i=0;i<waitingForBlockSet.size();i++) {
 			if(waitingForBlockSet.get(i) == oldState) {
 				waitingForBlockSet.set(i, newState);
-				if(persistent) container.ext().store(waitingFor, 2);
+				if(persistent) container.ext().store(waitingForBlockSet, 2);
 			}
 		}
 		for(int i=0;i<waitingForFetchable.size();i++) {
 			if(waitingForFetchable.get(i) == oldState) {
 				waitingForFetchable.set(i, newState);
-				if(persistent) container.ext().store(waitingFor, 2);
+				if(persistent) container.ext().store(waitingForFetchable, 2);
 			}
 		}
 		if(persistent) container.store(this);
@@ -341,9 +371,16 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 				container.ext().store(waitingForFetchable, 2);
 			if(!started) return;
 			if(!waitingForFetchable.isEmpty()) return;
+			if(calledFetchable) {
+				if(logMINOR) Logger.minor(this, "Trying to call onFetchable() twice");
+				return;
+			}
+			calledFetchable = true;
 		}
-		if(persistent)
+		if(persistent) {
+			container.ext().store(this, 1);
 			container.activate(cb, 1);
+		}
 		cb.onFetchable(this, container);
 	}
 

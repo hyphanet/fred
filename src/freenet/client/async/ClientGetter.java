@@ -3,15 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import java.io.BufferedOutputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
-import java.util.HashSet;
 import java.util.List;
 
 import com.db4o.ObjectContainer;
@@ -23,6 +20,7 @@ import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.InsertContext.CompatibilityMode;
+import freenet.client.async.BinaryBlobWriter.BinaryBlobAlreadyClosedException;
 import freenet.client.events.EnterFiniteCooldownEvent;
 import freenet.client.events.ExpectedFileSizeEvent;
 import freenet.client.events.ExpectedHashesEvent;
@@ -38,7 +36,6 @@ import freenet.client.filter.UnsafeContentTypeException;
 import freenet.crypt.HashResult;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
-import freenet.keys.Key;
 import freenet.node.RequestClient;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -81,6 +78,8 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	final Bucket returnBucket;
 	/** If not null, BucketWrapper to return a binary blob in */
 	private final BinaryBlobWriter binaryBlobWriter;
+	/** If true, someone else is responsible for this BlobWriter, usually its a shared one */
+	private final boolean dontFinalizeBlobWriter;
 	/** The expected MIME type, if we know it. Should not change. */
 	private String expectedMIME;
 	/** The expected size of the file, if we know it. */
@@ -93,22 +92,35 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	private SnoopBucket snoopBucket;
 	private HashResult[] hashes;
 	private final Bucket initialMetadata;
+	/** If set, and filtering is enabled, the MIME type we filter with must 
+	 * be compatible with this extension. */
+	final String forceCompatibleExtension;
 
 	// Shorter constructors for convenience and backwards compatibility.
-	
+
 	public ClientGetter(ClientGetCallback client,
 		    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext) {
 		this(client, uri, ctx, priorityClass, clientContext, null, null, null);
 	}
-	
+
 	public ClientGetter(ClientGetCallback client,
 		    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket) {
 		this(client, uri, ctx, priorityClass, clientContext, returnBucket, null, null);
 	}
-	
+
 	public ClientGetter(ClientGetCallback client,
 		    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, BinaryBlobWriter binaryBlobWriter) {
 		this(client, uri, ctx, priorityClass, clientContext, returnBucket, binaryBlobWriter, null);
+	}
+
+	public ClientGetter(ClientGetCallback client,
+		    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, BinaryBlobWriter binaryBlobWriter, Bucket initialMetadata) {
+		this(client, uri, ctx, priorityClass, clientContext, returnBucket, binaryBlobWriter, false, initialMetadata);
+	}
+
+	public ClientGetter(ClientGetCallback client,
+			FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, BinaryBlobWriter binaryBlobWriter, boolean dontFinalizeBlobWriter, Bucket initialMetadata) {
+		this(client, uri, ctx, priorityClass, clientContext, returnBucket, binaryBlobWriter, dontFinalizeBlobWriter, initialMetadata, null);
 	}
 	
 	/**
@@ -122,11 +134,12 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	 * @param returnBucket The bucket to return the data in. Can be null. If not null, the ClientGetter must either
 	 * write the data directly to the bucket, or copy it and free the original temporary bucket. Preferably the
 	 * former, obviously!
-	 * @param binaryBlobBucket If non-null, we will write all the keys accessed (or that could have been
-	 * accessed in the case of redundant structures such as splitfiles) in the binary blob format to this bucket.
+	 * @param binaryBlobWriter If non-null, we will write all the keys accessed (or that could have been
+	 * accessed in the case of redundant structures such as splitfiles) to this binary blob writer.
+	 * @param dontFinalizeBlobWriter If true, the caller is responsible for BlobWriter finalization
 	 */
 	public ClientGetter(ClientGetCallback client,
-			    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, BinaryBlobWriter binaryBlobWriter, Bucket initialMetadata) {
+			FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, BinaryBlobWriter binaryBlobWriter, boolean dontFinalizeBlobWriter, Bucket initialMetadata, String forceCompatibleExtension) {
 		super(priorityClass, clientContext);
 		this.clientCallback = client;
 		this.returnBucket = returnBucket;
@@ -135,8 +148,10 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		this.finished = false;
 		this.actx = new ArchiveContext(ctx.maxTempLength, ctx.maxArchiveLevels);
 		this.binaryBlobWriter = binaryBlobWriter;
+		this.dontFinalizeBlobWriter = dontFinalizeBlobWriter;
 		this.initialMetadata = initialMetadata;
 		archiveRestarts = 0;
+		this.forceCompatibleExtension = forceCompatibleExtension;
 	}
 
 	public void start(ObjectContainer container, ClientContext context) throws FetchException {
@@ -245,16 +260,32 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			container.activate(clientMetadata, Integer.MAX_VALUE);
 		}
 		try {
-			if (binaryBlobWriter != null) binaryBlobWriter.finalizeBucket();
+			if (binaryBlobWriter != null && !dontFinalizeBlobWriter) binaryBlobWriter.finalizeBucket();
 		} catch (IOException ioe) {
 			onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream: "+ioe), null, container, context);
 			return;
+		} catch (BinaryBlobAlreadyClosedException e) {
+			onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream, already closed: "+e, e), null, container, context);
+			return;
 		}
-		String mimeType;
+		String mimeType = clientMetadata == null ? null : clientMetadata.getMIMEType();
+		
+		if(persistent())
+			container.activate(ctx, 1);
+		
+		if(forceCompatibleExtension != null && ctx.filterData) {
+			try {
+				checkCompatibleExtension(mimeType);
+			} catch (FetchException e) {
+				onFailure(e, null, container, context);
+			}
+		}
+
 		synchronized(this) {
 			finished = true;
 			currentState = null;
-			mimeType = expectedMIME = clientMetadata.getMIMEType();
+			expectedMIME = mimeType;
+				
 		}
 		if(persistent()) {
 			container.store(this);
@@ -280,7 +311,6 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 
 		if(persistent()) {
 			container.activate(returnBucket, 5);
-			container.activate(ctx, 1);
 			container.activate(state, 1);
 			container.activate(clientCallback, 1);
 			if(hashes != null) container.activate(hashes, Integer.MAX_VALUE);
@@ -303,7 +333,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 
 			output = finalResult.getOutputStream();
 			if(ctx.overrideMIME != null) mimeType = ctx.overrideMIME;
-			worker = new ClientGetWorkerThread(dataInput, output, uri, mimeType, hashes, ctx.filterData, ctx.charset, ctx.prefetchHook, ctx.tagReplacer);
+			worker = new ClientGetWorkerThread(dataInput, output, uri, mimeType, hashes, ctx.filterData, ctx.charset, ctx.prefetchHook, ctx.tagReplacer, context.linkFilterExceptionProvider);
 			worker.start();
 			try {
 				streamGenerator.writeTo(dataOutput, container, context);
@@ -334,7 +364,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		} catch (OutOfMemoryError e) {
 			OOMHandler.handleOOM(e);
 			System.err.println("Failing above attempted fetch...");
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
+			onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context, true);
 			if(finalResult != null && finalResult != returnBucket) {
 				finalResult.free();
 				if(persistent()) finalResult.removeFrom(container);
@@ -346,7 +376,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			return;
 		} catch(UnsafeContentTypeException e) {
 			Logger.normal(this, "Error filtering content: will not validate", e);
-			onFailure(new FetchException(e.getFetchErrorCode(), expectedSize, e, ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME), state/*Not really the state's fault*/, container, context);
+			onFailure(new FetchException(e.getFetchErrorCode(), expectedSize, e, ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME), state/*Not really the state's fault*/, container, context, true);
 			if(finalResult != null && finalResult != returnBucket) {
 				finalResult.free();
 				if(persistent()) finalResult.removeFrom(container);
@@ -359,7 +389,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		} catch(URISyntaxException e) {
 			//Impossible
 			Logger.error(this, "URISyntaxException converting a FreenetURI to a URI!: "+e, e);
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state/*Not really the state's fault*/, container, context);
+			onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state/*Not really the state's fault*/, container, context, true);
 			if(finalResult != null && finalResult != returnBucket) {
 				finalResult.free();
 				if(persistent()) finalResult.removeFrom(container);
@@ -371,7 +401,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			return;
 		} catch(CompressionOutputSizeException e) {
 			Logger.error(this, "Caught "+e, e);
-			onFailure(new FetchException(FetchException.TOO_BIG, e), state, container, context);
+			onFailure(new FetchException(FetchException.TOO_BIG, e), state, container, context, true);
 			if(finalResult != null && finalResult != returnBucket) {
 				finalResult.free();
 				if(persistent()) finalResult.removeFrom(container);
@@ -383,7 +413,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			return;
 		} catch(IOException e) {
 			Logger.error(this, "Caught "+e, e);
-			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);
+			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context, true);
 			if(finalResult != null && finalResult != returnBucket) {
 				finalResult.free();
 				if(persistent()) finalResult.removeFrom(container);
@@ -395,7 +425,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			return;
 		} catch(FetchException e) {
 			Logger.error(this, "Caught "+e, e);
-			onFailure(e, state, container, context);
+			onFailure(e, state, container, context, true);
 			if(finalResult != null && finalResult != returnBucket) {
 				finalResult.free();
 				if(persistent()) finalResult.removeFrom(container);
@@ -407,7 +437,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			return;
 		} catch(Throwable t) {
 			Logger.error(this, "Caught "+t, t);
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
+			onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context, true);
 			if(finalResult != null && finalResult != returnBucket) {
 				finalResult.free();
 				if(persistent()) finalResult.removeFrom(container);
@@ -437,20 +467,41 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	 */
 	@Override
 	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
+		onFailure(e, state, container, context, false);
+	}
+
+	/**
+	 * Internal version. Adds one parameter.
+	 * @param force If true, finished may already have been set. This is usually
+	 * set when called from onSuccess after it has set finished = true.
+	 */
+	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context, boolean force) {
 		if(logMINOR)
 			Logger.minor(this, "Failed from "+state+" : "+e+" on "+this, e);
-		try {
-			if (binaryBlobWriter != null) binaryBlobWriter.finalizeBucket();
-		} catch (IOException ioe) {
-			// the request is already failed but fblob creation failed too
-			// the invalid fblob must be told, more important then an valid but incomplete fblob (ADNF for example)
-			e = new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream: "+ioe);
-		}
-		if(persistent())
+		if(persistent()) {
 			container.activate(uri, 5);
+			container.activate(ctx, 1);
+		}
 		ClientGetState oldState = null;
 		if(expectedSize > 0 && (e.expectedSize <= 0 || finalBlocksTotal != 0))
 			e.expectedSize = expectedSize;
+		
+		if(e.mode == FetchException.TOO_BIG && ctx.filterData) {
+			// Check for MIME type issues first. Because of the filtering behaviour the user needs to see these first.
+			if(e.finalizedSize()) {
+				// Since the size is finalized, so must the MIME type be.
+				String mime = e.getExpectedMimeType();
+				if(ctx.overrideMIME != null)
+					mime = ctx.overrideMIME;
+				if(mime != null && !"".equals(mime)) {
+					// Even if it's the default, it is set because we have the final size.
+					UnsafeContentTypeException unsafe = ContentFilter.checkMIMEType(mime);
+					if(unsafe != null)
+						e = new FetchException(unsafe.getFetchErrorCode(), e.expectedSize, unsafe, mime);
+				}
+			}
+		}
+		
 		while(true) {
 			if(e.mode == FetchException.ARCHIVE_RESTART) {
 				int ar;
@@ -472,10 +523,29 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 					return;
 				}
 			}
+			boolean alreadyFinished = false;
 			synchronized(this) {
+				if(finished && !force) {
+					if(!cancelled)
+						Logger.error(this, "Already finished - not calling callbacks on "+this, new Exception("error"));
+					alreadyFinished = true;
+				}
 				finished = true;
 				oldState = currentState;
 				currentState = null;
+			}
+			if(!alreadyFinished) {
+				try {
+					if (binaryBlobWriter != null && !dontFinalizeBlobWriter) binaryBlobWriter.finalizeBucket();
+				} catch (IOException ioe) {
+					// the request is already failed but fblob creation failed too
+					// the invalid fblob must be told, more important then an valid but incomplete fblob (ADNF for example)
+					if(e.mode != FetchException.CANCELLED && !force)
+						e = new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream: "+ioe);
+				} catch (BinaryBlobAlreadyClosedException ee) {
+					if(e.mode != FetchException.BUCKET_ERROR && e.mode != FetchException.CANCELLED && !force)
+						e = new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream, already closed: "+ee, ee);
+				}
 			}
 			if(e.errorCodes != null && e.errorCodes.isOneCodeOnly())
 				e = new FetchException(e.errorCodes.getFirstCode());
@@ -498,7 +568,8 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 					oldState.removeFrom(container, context);
 				}
 			}
-			clientCallback.onFailure(e1, ClientGetter.this, container);
+			if(!alreadyFinished)
+				clientCallback.onFailure(e1, ClientGetter.this, container);
 			return;
 		}
 	}
@@ -679,6 +750,9 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		} catch (IOException e) {
 			Logger.error(this, "Failed to write key to binary blob stream: "+e, e);
 			onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to write key to binary blob stream: "+e), null, container, context);
+		} catch (BinaryBlobAlreadyClosedException e) {
+			Logger.error(this, "Failed to write key to binary blob stream (already closed??): "+e, e);
+			onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to write key to binary blob stream (already closed??): "+e), null, container, context);
 		}
 	}
 
@@ -696,20 +770,13 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			container.activate(ctx, 1);
 		}
 		expectedMIME = ctx.overrideMIME == null ? mime : ctx.overrideMIME;
-		if(!(expectedMIME == null || expectedMIME.equals("") || expectedMIME.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE))) {
-			MIMEType handler = ContentFilter.getMIMEType(expectedMIME);
-			if((handler == null || (handler.readFilter == null && !handler.safeToRead)) && ctx.filterData) {
-				UnsafeContentTypeException e;
-				if(handler == null) {
-					if(logMINOR) Logger.minor(this, "Unable to get filter handler for MIME type "+expectedMIME);
-					e = new UnknownContentTypeException(expectedMIME);
-				}
-				else {
-					if(logMINOR) Logger.minor(this, "Unable to filter unsafe MIME type "+expectedMIME);
-					e = new KnownUnsafeContentTypeException(handler);
-				}
+		if(ctx.filterData && !(expectedMIME == null || expectedMIME.equals("") || expectedMIME.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE))) {
+			UnsafeContentTypeException e = ContentFilter.checkMIMEType(expectedMIME);
+			if(e != null) {
 				throw new FetchException(e.getFetchErrorCode(), expectedSize, e, expectedMIME);
 			}
+			if(forceCompatibleExtension != null)
+				checkCompatibleExtension(mime);
 		}
 		if(persistent()) {
 			container.store(this);
@@ -717,6 +784,15 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		}
 		ctx.eventProducer.produceEvent(new ExpectedMIMEEvent(mime), container, context);
 
+	}
+
+	private void checkCompatibleExtension(String mimeType) throws FetchException {
+		MIMEType type = ContentFilter.getMIMEType(mimeType);
+		if(type == null)
+			// Not our problem, will be picked up elsewhere.
+			return;
+		if(!DefaultMIMETypes.isValidExt(mimeType, forceCompatibleExtension))
+			throw new FetchException(FetchException.MIME_INCOMPATIBLE_WITH_EXTENSION);
 	}
 
 	/** Called when we have some idea of the length of the final data */
@@ -835,7 +911,9 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			this.hashes = hashes;
 		}
 		if(persistent()) container.store(this);
-		ctx.eventProducer.produceEvent(new ExpectedHashesEvent(hashes), container, context);
+		HashResult[] clientHashes = hashes;
+		if(persistent()) clientHashes = HashResult.copy(hashes);
+		ctx.eventProducer.produceEvent(new ExpectedHashesEvent(clientHashes), container, context);
 	}
 
 	@Override

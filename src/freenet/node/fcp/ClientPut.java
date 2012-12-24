@@ -239,25 +239,22 @@ public class ClientPut extends ClientPutBase {
 			MessageDigest md = SHA256.getMessageDigest();
 			byte[] foundHash;
 			try {
-				try {
-					md.update(salt.getBytes("UTF-8"));
-				} catch (UnsupportedEncodingException e) {
-					throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-				}
-				try {
-					InputStream is = data.getInputStream();
-					SHA256.hash(is, md);
-					is.close();
-				} catch (IOException e) {
-					SHA256.returnMessageDigest(md);
-					Logger.error(this, "Got IOE: " + e.getMessage(), e);
-					throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_READ_FILE,
-					        "Unable to access file: " + e, identifier, global);
-				}
-				foundHash = md.digest();
-			} finally {
-				SHA256.returnMessageDigest(md);
+				md.update(salt.getBytes("UTF-8"));
+			} catch (UnsupportedEncodingException e) {
+				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 			}
+			try {
+				InputStream is = data.getInputStream();
+				SHA256.hash(is, md);
+				is.close();
+			} catch (IOException e) {
+				SHA256.returnMessageDigest(md);
+				Logger.error(this, "Got IOE: " + e.getMessage(), e);
+				throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_READ_FILE,
+						"Unable to access file: " + e, identifier, global);
+			}
+			foundHash = md.digest();
+			SHA256.returnMessageDigest(md);
 
 			if(logMINOR) Logger.minor(this, "FileHash result : we found " + Base64.encode(foundHash) + " and were given " + Base64.encode(saltedHash) + '.');
 
@@ -347,6 +344,7 @@ public class ClientPut extends ClientPutBase {
 	protected FCPMessage persistentTagMessage(ObjectContainer container) {
 		if(persistenceType == PERSIST_FOREVER) {
 			container.activate(publicURI, 5);
+			container.activate(uri, 5);
 			container.activate(clientMetadata, 5);
 			container.activate(origFilename, 5);
 			container.activate(ctx, 1);
@@ -356,7 +354,7 @@ public class ClientPut extends ClientPutBase {
 		if (putter == null)
 			Logger.error(this, "putter == null", new Exception("error"));
 		// FIXME end
-		return new PersistentPut(identifier, publicURI, verbosity, priorityClass, uploadFrom, targetURI, 
+		return new PersistentPut(identifier, publicURI, uri, verbosity, priorityClass, uploadFrom, targetURI, 
 				persistenceType, origFilename, clientMetadata.getMIMEType(), client.isGlobalQueue,
 				getDataSize(container), clientToken, started, ctx.maxInsertRetries, targetFilename, binaryBlob, this.ctx.getCompatibilityMode(), this.ctx.dontCompress, this.ctx.compressorDescriptor, isRealTime(), putter != null ? putter.getSplitfileCryptoKey() : null);
 	}
@@ -495,8 +493,11 @@ public class ClientPut extends ClientPutBase {
 	}
 	
 	public enum COMPRESS_STATE {
+		/** Waiting for a slot on the compression scheduler */
 		WAITING,
+		/** Compressing the data */
 		COMPRESSING,
+		/** Inserting the data */
 		WORKING
 	}
 	

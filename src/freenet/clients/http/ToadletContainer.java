@@ -95,7 +95,8 @@ public interface ToadletContainer {
 	/** Can we deal with POSTs yet? */
 	public boolean allowPosts();
 	
-	/** Is public-gateway mode enabled? 
+	/** Was public-gateway mode enabled on startup? (Changing it won't take
+	 * effect until restart because of bookmark-related issues). 
 	 * If so, users with full access will still be able to configure the 
 	 * node etc, but everyone else will not have access to the download 
 	 * queue or anything else that might conceivably result in a DoS. */
@@ -124,5 +125,9 @@ public interface ToadletContainer {
 	public REFILTER_POLICY getReFilterPolicy();
 
 	public File getOverrideFile();
+
+	public String getURL();
+
+	public String getURL(String host);
 
 }

@@ -210,7 +210,13 @@ class SingleFileInserter implements ClientPutState {
 					Logger.debug(this, res.type.name()+" : "+HexUtil.bytesToHex(res.result));
 				}
 			}
-			ctx.eventProducer.produceEvent(new ExpectedHashesEvent(hashes), container, context);
+			if(persistent) {
+				container.activate(ctx, 1);
+				container.activate(ctx.eventProducer, 1);
+			}
+			HashResult[] clientHashes = hashes;
+			if(persistent) clientHashes = HashResult.copy(hashes);
+			ctx.eventProducer.produceEvent(new ExpectedHashesEvent(clientHashes), container, context);
 			
 			// So it is passed on.
 			origHashes = hashes;
@@ -332,7 +338,7 @@ class SingleFileInserter implements ClientPutState {
 				}
 			} else {
 				MultiPutCompletionCallback mcb = 
-					new MultiPutCompletionCallback(cb, parent, token, persistent);
+					new MultiPutCompletionCallback(cb, parent, token, persistent, false, earlyEncode);
 				if(persistent) container.activate(ctx, 1);
 				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, persistent ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI, ctx, realTimeFlag, mcb, metadata, (int)origSize, -1, getCHKOnly, true, false, token, container, context, persistent, shouldFreeData, forSplitfile ? ctx.extraInsertsSplitfileHeaderBlock : ctx.extraInsertsSingleBlock, cryptoAlgorithm, forceCryptoKey);
 				if(logMINOR)
@@ -999,6 +1005,8 @@ class SingleFileInserter implements ClientPutState {
 					splitInsertSetBlocks = true;
 				else if (state == metadataPutter)
 					metaInsertSetBlocks = true;
+				else
+					if(logMINOR) Logger.minor(this, "Unrecognised: "+state+" in onBlockSetFinished()");
 				if(persistent)
 					container.store(this);
 				if(!(splitInsertSetBlocks && metaInsertSetBlocks)) 

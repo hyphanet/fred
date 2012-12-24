@@ -14,12 +14,12 @@ public class PluginDownLoaderOfficialFreenet extends PluginDownLoaderFreenet {
 	@Override
 	public FreenetURI checkSource(String source) throws PluginNotFoundException {
 		OfficialPluginDescription desc = 
-			PluginManager.officialPlugins.get(source);
+			PluginManager.getOfficialPlugin(source);
 		if(desc == null) throw new PluginNotFoundException("Not in the official plugins list: "+source);
 		if(desc.uri != null)
 			return desc.uri;
 		else {
-			return node.nodeUpdater.getURI(false).setDocName(source).setSuggestedEdition(desc.minimumVersion).sskForUSK();
+			return node.nodeUpdater.getURI().setDocName(source).setSuggestedEdition(desc.minimumVersion).sskForUSK();
 		}
 	}
 	

@@ -80,7 +80,7 @@ public final class MessageFilter {
         	if(waitFor && _callback != null)
         		throw new IllegalStateException("Cannot wait on a MessageFilter with a callback!");
     		if(!_setTimeout)
-    			Logger.error(this, "No timeout set on filter "+this, new Exception("error"));
+			throw new IllegalStateException("No timeout set on filter " + this + "; cannot wait.");
     		if(_initialTimeout > 0 && _timeoutFromWait)
     			_timeout = System.currentTimeMillis() + _initialTimeout;
     	}
@@ -170,10 +170,15 @@ public final class MessageFilter {
 		return this;
 	}
 
+	/**
+	 * Modifies the filter so that it returns true if either it or the filter in the argument returns true.
+	 * Multiple combinations must be nested: such as filter1.or(filter2.or(filter3))).
+	 * @return reference to this, the modified filter.
+	 */
 	public MessageFilter or(MessageFilter or) {
 		if((or != null) && (_or != null) && or != _or) {
-			// FIXME maybe throw? this is almost certainly a bug, and a nasty one too!
-			Logger.error(this, "or() replacement: "+_or+" -> "+or, new Exception("error"));
+			throw new IllegalStateException("Setting a second .or() on the same filter will replace the " +
+			    "existing one, not add another. " + _or + " would be replaced by " + or + ".");
 		}
 		_or = or;
 		return this;
@@ -452,7 +457,7 @@ public final class MessageFilter {
 					
 				});
 			} else
-				_callback.onTimeout();
+				cb.onTimeout();
 		}
 	}
 

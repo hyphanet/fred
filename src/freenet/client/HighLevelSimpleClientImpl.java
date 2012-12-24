@@ -244,11 +244,14 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	}
 	
 	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, short priority, InsertContext ctx) throws InsertException {
-		InsertContext context = getInsertContext(true);
+		return insert(insert, getCHKOnly, filenameHint, isMetadata, priority, ctx, null);
+	}
+	
+	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, short priority, InsertContext ctx, byte[] forceCryptoKey) throws InsertException {
 		PutWaiter pw = new PutWaiter();
 		ClientPutter put = new ClientPutter(pw, insert.getData(), insert.desiredURI, insert.clientMetadata,
-				context, priority,
-				getCHKOnly, isMetadata, this, filenameHint, false, core.clientContext, null, -1);
+				ctx, priority,
+				getCHKOnly, isMetadata, this, filenameHint, false, core.clientContext, forceCryptoKey, -1);
 		try {
 			core.clientContext.start(put, false);
 		} catch (DatabaseDisabledException e) {
@@ -307,7 +310,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	public FreenetURI insertManifest(FreenetURI insertURI, HashMap<String, Object> bucketsByName, String defaultName, short priorityClass, byte[] forceCryptoKey) throws InsertException {
 		PutWaiter pw = new PutWaiter();
 		SimpleManifestPutter putter =
-			new SimpleManifestPutter(pw, SimpleManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInsertContext(true), false, this, false, false, Key.ALGO_AES_PCFB_256_SHA256, forceCryptoKey, null, core.clientContext);
+			new SimpleManifestPutter(pw, SimpleManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInsertContext(true), false, this, false, false, forceCryptoKey, null, core.clientContext);
 		try {
 			core.clientContext.start(putter);
 		} catch (DatabaseDisabledException e) {

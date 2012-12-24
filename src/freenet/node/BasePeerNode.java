@@ -10,7 +10,7 @@ import freenet.io.comm.PeerContext;
  * for unit tests to simplify testing. 
  * @author toad
  */
-interface BasePeerNode extends PeerContext {
+public interface BasePeerNode extends PeerContext {
 
 	SessionKey getCurrentKeyTracker();
 

@@ -1,0 +1,124 @@
+﻿/* layout-clean */
+
+/* 
+ * Overall Settings
+ */
+
+/*
+ * Body and Page Header
+ */
+
+/*
+ * Top Title Area
+ */
+
+#topbar {
+	background-image: url(/static/themes/clean/logo.png);
+}
+
+/* 
+ * Navigation
+ */
+
+#navbar {
+	left: 0.333em;
+	top: 0.333em;
+}
+
+/*
+ * Alerts
+ */
+
+/* 
+ * Infoboxes
+ */
+
+div.infobox {
+	margin-bottom: 0.333em;
+}
+
+div.infobox-information div.infobox-header {
+	background-image: url(/static/themes/clean/information.png);
+}
+
+div.infobox-warning div.infobox-header {
+	background-image: url(/static/themes/clean/warning.png);
+}
+
+div.infobox-alert div.infobox-header {
+	background-image: url(/static/themes/clean/alert.png);
+}
+
+div.infobox-error div.infobox-header {
+	background-image: url(/static/themes/clean/error.png);
+}
+
+div.infobox-query div.infobox-header {
+	background-image: url(/static/themes/clean/query.png);
+}
+
+div.infobox-success div.infobox-header {
+	background-image: url(/static/themes/clean/success.png);
+}
+
+li.alert-summary-text-error {
+	background-image: url(/static/themes/clean/error-16.png);
+}
+
+li.alert-summary-text-alert {
+	background-image: url(/static/themes/clean/alert-16.png);
+}
+
+li.alert-summary-text-warning {
+	background-image: url(/static/themes/clean/warning-16.png);
+}
+
+li.alert-summary-text-minor {
+	background-image: url(/static/themes/clean/information-16.png);
+}
+
+/*
+ * Content
+ */
+
+#content {
+	margin-top: 0.333em;
+	left: 11.932em;
+	right: 0.333em;
+}
+
+/*
+ * Plugins Page
+ */
+
+/* 
+ * Configuration Page
+ */
+
+/* 
+ * Darknet Page
+ */
+
+/* 
+ * Statistics Page
+ */
+
+/* 
+ * Queue Page
+ */
+
+/* 
+ * N2NTM page
+ */
+
+/* 
+ * Translation
+ */
+
+/* 
+ * Statusbar
+ */
+
+#statusbar > div {
+	font-size: 1em;
+}

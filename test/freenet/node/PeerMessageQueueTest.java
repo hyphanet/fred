@@ -7,12 +7,12 @@ import junit.framework.TestCase;
 
 public class PeerMessageQueueTest extends TestCase {
 	public void testUrgentTimeEmpty() {
-		PeerMessageQueue pmq = new PeerMessageQueue(null);
+		PeerMessageQueue pmq = new PeerMessageQueue();
 		assertEquals(Long.MAX_VALUE, pmq.getNextUrgentTime(Long.MAX_VALUE, System.currentTimeMillis()));
 	}
 
 	public void testUrgentTime() {
-		PeerMessageQueue pmq = new PeerMessageQueue(null);
+		PeerMessageQueue pmq = new PeerMessageQueue();
 
 		//Constructor might take some time, so grab a range
 		long start = System.currentTimeMillis();
@@ -32,7 +32,7 @@ public class PeerMessageQueueTest extends TestCase {
 	 * aren't ordered by their timeout value, eg. when an item was readded because we couldn't send
 	 * it. */
 	public void testUrgentTimeQueuedWrong() {
-		PeerMessageQueue pmq = new PeerMessageQueue(null);
+		PeerMessageQueue pmq = new PeerMessageQueue();
 
 		//Constructor might take some time, so grab a range
 		long start = System.currentTimeMillis();
@@ -61,7 +61,7 @@ public class PeerMessageQueueTest extends TestCase {
 	}
 
 	public void testGrabQueuedMessageItem() {
-		PeerMessageQueue pmq = new PeerMessageQueue(null);
+		PeerMessageQueue pmq = new PeerMessageQueue();
 
 		MessageItem itemUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
 

@@ -133,4 +133,10 @@ class USKChecker extends BaseSingleFileFetcher {
 		cb.onDNF(context);
 	}
 
+	@Override
+	protected void onBlockDecodeError(Object token, ObjectContainer container,
+			ClientContext context) {
+		onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), token, container, context);
+	}
+
 }

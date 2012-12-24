@@ -513,6 +513,7 @@ public class DatastoreChecker implements PrioRunnable {
 		return false;
 	}
 
+	@SuppressWarnings("unchecked")
 	public void removeRequest(SendableGet request, boolean persistent, ObjectContainer container, ClientContext context, short prio) {
 		if(logMINOR) Logger.minor(this, "Removing request prio="+prio+" persistent="+persistent);
 		if(!persistent) {

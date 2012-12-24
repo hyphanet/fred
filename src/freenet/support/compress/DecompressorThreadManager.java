@@ -4,6 +4,8 @@
 package freenet.support.compress;
 
 import freenet.support.LogThresholdCallback;
+import freenet.support.TimeUtil;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PipedInputStream;
@@ -80,7 +82,9 @@ public class DecompressorThreadManager {
 				if(getError() != null) throw getError();
 				DecompressorThread threadRunnable = threads.remove();
 				if(threads.isEmpty()) threadRunnable.setLast();
-				new Thread(threadRunnable, "DecompressorThread"+count).start();
+				Thread t = new Thread(threadRunnable, "DecompressorThread"+count);
+				t.start();
+				if(logMINOR) Logger.minor(this, "Started decompressor thread "+t);
 				count++;
 			}
 			output.close();
@@ -112,9 +116,16 @@ public class DecompressorThreadManager {
 
 	/** Blocks until all threads have finished executing and cleaning up.*/
 	public synchronized void waitFinished() throws Throwable {
+		long start = System.currentTimeMillis();
 		while(!finished) {
 			try {
-				wait();
+				// FIXME remove the timeout here.
+				// Something wierd is happening...
+				//wait(0)
+				wait(20*60*1000);
+				long time = System.currentTimeMillis()-start;
+				if(time > 20*60*1000)
+					Logger.error(this, "Still waiting for decompressor chain after "+TimeUtil.formatTime(time));
 			} catch(InterruptedException e) {
 				//Do nothing
 			}
@@ -160,6 +171,7 @@ public class DecompressorThreadManager {
 		/**Begins the decompression */
 		@Override
 		public void run() {
+			if(logMINOR) Logger.minor(this, "Decompressing...");
 			try {
 				if(manager.getError() == null) {
 					compressor.decompress(input, output, maxLen, maxLen * 4);
@@ -170,6 +182,7 @@ public class DecompressorThreadManager {
 					output = null;
 					if(isLast) manager.onFinish();
 				}
+				if(logMINOR) Logger.minor(this, "Finished decompressing...");
 			} catch (Exception e) {
 				manager.onFailure(e);
 			} finally {

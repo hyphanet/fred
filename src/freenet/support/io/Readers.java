@@ -17,11 +17,28 @@ final public class Readers {
 	** A {@link LineReader} <a href="http://en.wikipedia.org/wiki/Adapter_pattern">Adapter</a>
 	** for {@link BufferedReader}.
 	*/
-	public static LineReader LineReaderFrom(final BufferedReader br) {
+	public static LineReader fromBufferedReader(final BufferedReader br) {
 		return new LineReader() {
 			@Override
 			public String readLine(int maxLength, int bufferSize, boolean utf) throws IOException {
 				return br.readLine();
+			}
+		};
+	}
+	
+	/**
+	 *  A {@link LineReader} <a href="http://en.wikipedia.org/wiki/Adapter_pattern">Adapter</a>
+	 * for {@link String} array.
+	 */
+	public static LineReader fromStringArray(final String[] lines) {
+		return new LineReader() {
+			private int currentLine = -1;
+			@Override
+			public String readLine(int maxLength, int bufferSize, boolean utf) throws IOException {
+				if(++currentLine<lines.length) {
+					return lines[currentLine];
+				} 
+				return null;
 			}
 		};
 	}

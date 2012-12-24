@@ -107,6 +107,11 @@ public class SimpleSendableInsert extends SendableInsert {
 				onSuccess(req.token, null, context);
 				return true;
 			}
+
+			@Override
+			public boolean sendIsBlocking() {
+				return true;
+			}
 		};
 	}
 

@@ -225,6 +225,8 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				} else
 					throw new FetchException(FetchException.INVALID_METADATA, "Top compatibility mode is incompatible with detected compatibility mode");
 			}
+			// We assume we are the bottom layer. 
+			// If the top-block stats are passed in then we can safely say the report is definitive.
 			cb.onSplitfileCompatibilityMode(minCompatMode, maxCompatMode, metadata.getCustomSplitfileKey(), dontCompress, true, topCompatibilityMode != 0, container, context);
 
 			if((blocksPerSegment > fetchContext.maxDataBlocksPerSegment)
@@ -290,6 +292,9 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		boolean pre1250 = (minCompatMode == CompatibilityMode.COMPAT_UNKNOWN || minCompatMode == CompatibilityMode.COMPAT_1250_EXACT);
 		
 		int maxRetries = blockFetchContext.maxSplitfileBlockRetries;
+		byte cryptoAlgorithm = metadata.getSplitfileCryptoAlgorithm();
+		byte[] splitfileCryptoKey = metadata.getSplitfileCryptoKey();
+		
 		for(int i=0;i<segments.length;i++) {
 			// splitfile* will be overwritten, this is bad
 			// so copy them
@@ -300,7 +305,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 					|| (checkBlocks > fetchContext.maxCheckBlocksPerSegment))
 				throw new FetchException(FetchException.TOO_MANY_BLOCKS_PER_SEGMENT, "Too many blocks per segment: "+blocksPerSegment+" data, "+checkBlocksPerSegment+" check");
 			segments[i] = new SplitFileFetcherSegment(splitfileType, keys,
-					this, archiveContext, blockFetchContext, maxTempLength, recursionLevel, parent, i, pre1250, pre1254, crossCheckBlocks, metadata.getSplitfileCryptoAlgorithm(), metadata.getSplitfileCryptoKey(), maxRetries, realTimeFlag);
+					this, archiveContext, blockFetchContext, maxTempLength, recursionLevel, parent, i, pre1250, pre1254, crossCheckBlocks, cryptoAlgorithm, splitfileCryptoKey, maxRetries, realTimeFlag);
 			int data = keys.getDataBlocks();
 			int check = keys.getCheckBlocks();
 			for(int j=0;j<(data+check);j++) {

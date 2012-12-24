@@ -59,8 +59,9 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 	}
 
 	@Override
-	protected String getPageTitle(String titleCountString, String myName) {
-		return NodeL10n.getBase().getString("OpennetConnectionsToadlet.fullTitle", new String[] { "counts", "name" }, new String[] { titleCountString, node.getMyName() } );
+	protected String getPageTitle(String titleCountString) {
+		return NodeL10n.getBase().getString("OpennetConnectionsToadlet.fullTitle",
+				new String[] {"counts"}, new String[] {titleCountString} );
 	}
 
 	@Override

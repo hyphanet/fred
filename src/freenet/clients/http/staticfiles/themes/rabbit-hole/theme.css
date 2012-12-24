@@ -1,7 +1,7 @@
-/* rabbit-hole */
+﻿/* rabbit-hole */
 
 /* Basic CSS functions */
-@import url(/static/base.css);
+@import url(/static/base-old.css);
 
 /* Bookmarks & bookmark editor */
 @import url(/static/bookmark.css);
@@ -9,6 +9,14 @@
 /* Base theme; commented out, since it is not really compatible. TODO: Get everything therein to here and integrate it. */
 /* First: Progress bars */
 /* @import url(/static/themes/clean/theme.css); */
+
+/* rabbit-hole overall settings */
+
+/* basic colors */
+body {
+    color: black;
+    background-color: white;
+}
 
 /* alerts */
 
@@ -37,12 +45,12 @@ div.infobox div.infobox-header {
 
 div.infobox-information div.infobox-header {
 	color: silver;
-	background-image: url(information.gif);
+	background-image: url(information.png);
 }
 
 div.infobox-warning div.infobox-header {
 	color: silver;
-	background-image: url(warning.gif);
+	background-image: url(warning.png);
 }
 
 div.infobox-alert {
@@ -50,7 +58,7 @@ div.infobox-alert {
 
 div.infobox-alert div.infobox-header {
 	color: red;
-	background-image: url(alert.gif);
+	background-image: url(alert.png);
 }
 
 div.infobox-error {
@@ -58,16 +66,16 @@ div.infobox-error {
 
 div.infobox-error div.infobox-header {
 	color: red;
-	background-image: url(error.gif);
+	background-image: url(error.png);
 }
 
 div.infobox-query div.infobox-header {
-	background-image: url(query.gif);
+	background-image: url(query.png);
 }
 
 div.infobox-success div.infobox-header {
     color: green;
-    background-image: url(success.gif);
+    background-image: url(success.png);
 }
 
 ul.alert-summary {
@@ -76,19 +84,19 @@ ul.alert-summary {
 }
 
 li.alert-summary-text-error {
-	background: url(error-16.gif) left center no-repeat;
+	background: url(error-16.png) left center no-repeat;
 }
 
 li.alert-summary-text-alert {
-	background: url(alert-16.gif) left center no-repeat;
+	background: url(alert-16.png) left center no-repeat;
 }
 
 li.alert-summary-text-warning {
-	background: url(warning-16.gif) left center no-repeat;
+	background: url(warning-16.png) left center no-repeat;
 }
 
 li.alert-summary-text-minor {
-	background: url(information-16.gif) left center no-repeat;
+	background: url(information-16.png) left center no-repeat;
 }
 
 
@@ -558,8 +566,6 @@ div#content {
     margin-right: 83px;
 }
 
-}
-
 /* rabbit hole */
 /* HTML5 tags for HTML 4.01 */
 header, section, footer, aside, nav, article, figure {
@@ -617,7 +623,7 @@ section {
 }
 
 #topbar {
-    max-width: 34%;
+    max-width: 21%;
     margin: 0px;
     min-height: 41px; /* as big as the rabbit */
 }
@@ -674,7 +680,7 @@ div #navbar {
     z-index:19; /* above status */
     right: 0px;
     top: 0.35em;
-    width: 65%;
+    width: 78%;
     white-space: nowrap;
     text-align: right;
     color: gray;
@@ -757,7 +763,7 @@ div #navbar {
 }
 
 
-#navlist-selected{
+.navlist-selected{
 	z-index: 0;
 	width: 100%; /* note change in width*/
 	height: 2em;
@@ -766,7 +772,7 @@ div #navbar {
 	background-repeat: no-repeat;
 }
 
-#navlist-selected ul{
+.navlist-selected ul{
 	z-index: 0;
 	display: block;
 	position: absolute;
@@ -778,7 +784,7 @@ div #navbar {
 	width: 100%; /* note change in width*/
 }
 
-#navlist-selected ul li{
+.navlist-selected ul li{
     z-index: 0;
     display: inline;
     list-style: none;
@@ -787,11 +793,11 @@ div #navbar {
     margin-top: 0.1em;
 }
 
-#navlist-selected ul li:after {
+.navlist-selected ul li:after {
     content: " ";
 }
 
-#navlist-selected ul li a span{
+.navlist-selected ul li a span{
     z-index: 0;
     display: inline;
     visibility: hidden; /* BUG: In Mozilla, if this is display: none a render bug happens. */

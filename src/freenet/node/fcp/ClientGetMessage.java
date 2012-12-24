@@ -43,6 +43,7 @@ import freenet.support.io.BucketTools;
  *    connected, including if it reconnects after losing connection
  * ClientToken=hello // returned in PersistentGet, a hint to the client, so the client 
  *    doesn't need to maintain its own state
+ * IgnoreUSKDatehints=false // true = don't use USK datehints
  * EndMessage
  */
 public class ClientGetMessage extends BaseDataCarryingMessage {
@@ -69,6 +70,7 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 	final String charset;
 	final boolean filterData;
 	final boolean realTimeFlag;
+	final boolean ignoreUSKDatehints;
 	private Bucket initialMetadata;
 	private final long initialMetadataLength;
 	
@@ -223,6 +225,7 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 		binaryBlob = Fields.stringToBool(fs.get("BinaryBlob"), false);
 		realTimeFlag = fs.getBoolean("RealTimeFlag", false);
 		initialMetadataLength = fs.getLong("InitialMetadata.DataLength", 0);
+		ignoreUSKDatehints = fs.getBoolean("IgnoreUSKDatehints", false);
 	}
 
 	@Override

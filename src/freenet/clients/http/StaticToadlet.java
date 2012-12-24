@@ -136,4 +136,13 @@ public class StaticToadlet extends Toadlet {
 		return ROOT_URL;
 	}
 
+	/** Do we have a specific static file? Note that override files are not 
+	 * supported here as it is a static method.
+	 * @param The path to the file, relative to the staticfiles directory.
+	 */
+	public static boolean haveFile(String path) {
+		URL url = StaticToadlet.class.getResource(ROOT_PATH+path);
+		return url != null;
+	}
+
 }

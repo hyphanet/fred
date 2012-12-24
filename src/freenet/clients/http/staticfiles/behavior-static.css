@@ -1,0 +1,27 @@
+﻿/*
+ * behavior-static: Always show all submenu items.
+ */
+
+/* Basic CSS functions */
+@import url(/static/base.css);
+
+/* code */
+
+/* We don't need to set any submenu parameters to get this behavior - we just
+ * need to let the elements use their default display: block behavior. */
+
+/* The subnavbar is not used when the navigation menu is on the
+ * left side of the screen */
+
+div#selected-subnavbar {
+	display: none;
+}
+
+/* Submenus should only have borders in dropdown mode. They are disabled here
+ * because otherwise the color scheme would not be able to configure them without
+ * showing them in all modes. */
+
+ul.subnavlist-selected,
+ul.subnavlist {
+	border: none !important;
+}

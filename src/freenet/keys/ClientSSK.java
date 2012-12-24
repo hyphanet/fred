@@ -39,7 +39,7 @@ public class ClientSSK extends ClientKey {
 	public final byte[] ehDocname;
 	private final int hashCode;
 	
-	static final int CRYPTO_KEY_LENGTH = 32;
+	public static final int CRYPTO_KEY_LENGTH = 32;
 	public static final int EXTRA_LENGTH = 5;
 	
 	private ClientSSK(ClientSSK key) {

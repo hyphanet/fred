@@ -59,7 +59,7 @@ public class NullFreenetStore<T extends StorableBlock> implements FreenetStore<T
 
 	@Override
 	public void setMaxKeys(long maxStoreKeys, boolean shrinkNow)
-			throws DatabaseException, IOException {
+			throws IOException {
 		// Do nothing
 	}
 

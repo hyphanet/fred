@@ -196,7 +196,7 @@ public class LocationManager implements ByteCounter {
                             try {
                                 boolean myFlag = false;
                                 double myLoc = getLocation();
-                                PeerNode[] peers = node.peers.connectedPeers;
+                                PeerNode[] peers = node.peers.connectedPeers();
                                 for(int i=0;i<peers.length;i++) {
                                     PeerNode pn = peers[i];
                                     if(pn.isRoutable()) {
@@ -976,7 +976,7 @@ public class LocationManager implements ByteCounter {
                     // Forward the request.
                     // Note that we MUST NOT send this blocking as we are on the
                     // receiver thread.
-                    randomPeer.sendAsync(m, new MyCallback(DMT.createFNPSwapRejected(oldID), pn, item), LocationManager.this);
+                    randomPeer.sendAsync(m.cloneAndDropSubMessages(), new MyCallback(DMT.createFNPSwapRejected(oldID), pn, item), LocationManager.this);
                 } catch (NotConnectedException e) {
                 	if(logMINOR) Logger.minor(this, "Not connected");
                     // Try a different node
@@ -1116,6 +1116,7 @@ public class LocationManager implements ByteCounter {
         removeRecentlyForwardedItem(item);
         item.lastMessageTime = System.currentTimeMillis();
         if(logMINOR) Logger.minor(this, "Forwarding SwapRejected "+uid+" from "+source+" to "+item.requestSender);
+        m = m.cloneAndDropSubMessages();
         // Returning to source - use incomingID
         m.set(DMT.UID, item.incomingID);
         try {
@@ -1142,6 +1143,7 @@ public class LocationManager implements ByteCounter {
         }
         item.lastMessageTime = System.currentTimeMillis();
         if(logMINOR) Logger.minor(this, "Forwarding SwapCommit "+uid+ ',' +item.outgoingID+" from "+source+" to "+item.routedTo);
+        m = m.cloneAndDropSubMessages();
         // Sending onwards - use outgoing ID
         m.set(DMT.UID, item.outgoingID);
         try {
@@ -1179,6 +1181,7 @@ public class LocationManager implements ByteCounter {
             return true;
         }
         if(logMINOR) Logger.minor(this, "Forwarding SwapComplete "+uid+" from "+source+" to "+item.requestSender);
+        m = m.cloneAndDropSubMessages();
         // Returning to source - use incomingID
         m.set(DMT.UID, item.incomingID);
         try {

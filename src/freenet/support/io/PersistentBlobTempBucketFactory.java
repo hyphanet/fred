@@ -88,12 +88,9 @@ public class PersistentBlobTempBucketFactory {
 	private transient Random weakRandomSource;
 	
 	private transient Ticker ticker;
-	
-	private final long nodeDBHandle;
-	
+
 	public PersistentBlobTempBucketFactory(long blockSize2, long nodeDBHandle2, File storageFile2) {
 		blockSize = blockSize2;
-		nodeDBHandle = nodeDBHandle2;
 		storageFile = storageFile2;
 	}
 
@@ -138,6 +135,7 @@ public class PersistentBlobTempBucketFactory {
 			initRangeDump(container);
 	}
 	
+	@SuppressWarnings("unchecked")
 	private BitArray createFreeBlocksCache(ObjectContainer container) throws IOException {
 		System.err.println("Creating free blocks cache...");
 		long size;
@@ -190,8 +188,30 @@ public class PersistentBlobTempBucketFactory {
 				continue;
 			}
 			if(tag.index >= freeBlocksCache.getSize()) {
-				Logger.error(this, "Block is occupied yet beyond the length of the file: "+tag.index);
-				freeBlocksCache.setSize((int)tag.index+1);
+				if(tag.isFree) {
+					if(tag.bucket != null) {
+						Logger.error(this, "Block is marked free, is beyond the end of the file, yet has a bucket!! Freeing anyway...");
+						container.activate(tag.bucket, 1);
+						tag.bucket.onFree();
+						container.delete(tag.bucket);
+					}
+					container.delete(tag);
+					continue;
+				}
+				if(tag.bucket == null) {
+					Logger.error(this, "Block beyond the end of the file marked as in use but has no bucket!");
+					container.delete(tag);
+					continue;
+				}
+				Logger.error(this, "Block is occupied *AND IN USE* yet beyond the length of the file: "+tag.index);
+				Logger.error(this, "Freeing the block, expect internal errors and similar problems!");
+				System.err.println("Your downloads database is corrupt. A persistent temp bucket is in use yet is beyond the length of the persistent-blob.tmp file.");
+				System.err.println("We will free the bucket, but this may cause internal errors and similar problems later on. This was probably caused by a bug at some point but that bug may have already been fixed. Sorry...");
+				container.activate(tag.bucket, 1);
+				tag.bucket.onFree();
+				container.delete(tag.bucket);
+				container.delete(tag);
+				continue;
 			}
 			freeBlocksCache.setBit((int)tag.index, true);
 		}
@@ -199,6 +219,7 @@ public class PersistentBlobTempBucketFactory {
 		return freeBlocksCache;
 	}
 
+	@SuppressWarnings("unchecked")
 	private void initRangeDump(ObjectContainer container) {
 		
 		long size;
@@ -268,6 +289,7 @@ public class PersistentBlobTempBucketFactory {
 	private void initSlotFinder() {
 		slotFinder = new DBJob() {
 		
+		@SuppressWarnings("unchecked")
 		@Override
 		public boolean run(ObjectContainer container, ClientContext context) {
 			int added = 0;
@@ -589,6 +611,7 @@ outer:		while(true) {
 
 	private long lastCheckedEnd = -1;
 	
+	@SuppressWarnings("unchecked")
 	public synchronized void remove(PersistentBlobTempBucket bucket, ObjectContainer container) {
 		if(logMINOR)
 			Logger.minor(this, "Removing bucket "+bucket+" for slot "+bucket.getIndex()+" from database", new Exception("debug"));
@@ -654,6 +677,7 @@ outer:		while(true) {
 	
 	static boolean DISABLE_SANITY_CHECKS_DEFRAG = false;
 	
+	@SuppressWarnings("unchecked")
 	boolean maybeShrink(ObjectContainer container) {
 		
 		if(logMINOR) Logger.minor(this, "maybeShrink()");

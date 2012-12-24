@@ -65,12 +65,22 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 	public static final long DEFAULT_CONTAINERSIZE_SPARE = 196*1024;
 
 	public DefaultManifestPutter(ClientPutCallback clientCallback, HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName, InsertContext ctx, boolean getCHKOnly,
-			RequestClient clientContext, boolean earlyEncode, boolean persistent, ObjectContainer container, ClientContext context) {
+			RequestClient clientContext, boolean earlyEncode, boolean persistent, byte[] forceCryptoKey, ObjectContainer container, ClientContext context) {
 		// If the top level key is an SSK, all CHK blocks and particularly splitfiles below it should have
 		// randomised keys. This substantially improves security by making it impossible to identify blocks
 		// even if you know the content. In the user interface, we will offer the option of inserting as a
 		// random SSK to take advantage of this.
-		super(clientCallback, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, ClientPutter.randomiseSplitfileKeys(target, ctx, persistent, container), context);
+		super(clientCallback, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, ClientPutter.randomiseSplitfileKeys(target, ctx, persistent, container), forceCryptoKey, container, context);
+	}
+	
+	/*
+	 * Backward compatibility, remove upon updating plugins;
+	 * all internal users already converted
+	 */
+	@Deprecated
+	public DefaultManifestPutter(ClientPutCallback clientCallback, HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName, InsertContext ctx, boolean getCHKOnly,
+			RequestClient clientContext, boolean earlyEncode, boolean persistent, ObjectContainer container, ClientContext context) {
+		this(clientCallback, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, persistent, null, container, context);
 	}
 
 	/**
@@ -114,7 +124,8 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 	 */
 	private long makePutHandlers(ContainerBuilder containerBuilder, HashMap<String,Object> manifestElements, String defaultName, String prefix, long maxSize, String parentName) {
 	//(HashMap<String, Object> md, PluginReplySender replysender, String identifier, long maxSize, boolean doInsert, String parentName) throws InsertException {
-		System.out.println("STAT: handling "+((parentName==null)?"<root>?": parentName));
+		if(logMINOR)
+			Logger.minor(this, "STAT: handling "+((parentName==null)?"<root>?": parentName));
 		//if (doInsert && (parentName == null)) throw new IllegalStateException("Parent name cant be null for insert!");
 		//if (doInsert) containercounter += 1;
 		if (maxSize == DEFAULT_MAX_CONTAINERSIZE)
@@ -127,14 +138,16 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 		// have a look at all
 		if (wholeSize.getSizeTotalNoLimit() <= maxSize) {
 			// that was easy. the whole tree fits into current container (without externals!)
-			System.out.println("PackStat2: the whole tree (unlimited) fits into container (no externals)");
+			if(logMINOR)
+				Logger.minor(this, "PackStat2: the whole tree (unlimited) fits into container (no externals)");
 			makeEveryThingUnlimitedPutHandlers(containerBuilder, manifestElements, defaultName, prefix);
 			return wholeSize.getSizeTotalNoLimit();
 		}
 
 		if (wholeSize.getSizeTotal() <= maxSize) {
 			// that was easy. the whole tree fits into current container (with externals)
-			System.out.println("PackStat2: the whole tree fits into container (with externals)");
+			if(logMINOR)
+				Logger.minor(this, "PackStat2: the whole tree fits into container (with externals)");
 			makeEveryThingPutHandlers(containerBuilder, manifestElements, defaultName, prefix);
 			return wholeSize.getSizeTotal();
 		}
@@ -148,7 +161,8 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 		// the files in dir fits into container?
 		if ((wholeSize.getSizeFiles() < maxSize) || (wholeSize.getSizeFilesNoLimit() < maxSize)) {
 			// the files in dir fits into container
-			System.out.println("PackStat2: the files in dir fits into container with spare, so it need to grab stuff from sub's to fill container up");
+			if(logMINOR)
+				Logger.minor(this, "PackStat2: the files in dir fits into container with spare, so it need to grab stuff from sub's to fill container up");
 			if (wholeSize.getSizeFilesNoLimit() < maxSize) {
 				for(String name:keyset) {
 					Object o = manifestElements.get(name);
@@ -197,9 +211,10 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 		if ((wholeSize.getSizeSubTrees() < maxSize) || (wholeSize.getSizeSubTreesNoLimit() < maxSize)) {
 			//all subdirs fit into current container, do it
 			// and add files up to limit
-			System.out.print("PackStat2: the sub dirs fit into container with spare, so it need to grab files to fill container up");
+			if(logMINOR)
+				Logger.minor(this, "PackStat2: the sub dirs fit into container with spare, so it need to grab files to fill container up");
 			if (wholeSize.getSizeSubTreesNoLimit() < maxSize) {
-				System.out.println(" (unlimited)");
+				if(logMINOR) Logger.minor(this, " (unlimited)");
 				for(String name:keyset) {
 					Object o = manifestElements.get(name);
 					if (o instanceof HashMap) {
@@ -213,7 +228,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 				}
 				tmpSize = wholeSize.getSizeSubTreesNoLimit();
 			} else {
-				System.out.println(" (limited)");
+				if(logMINOR) Logger.minor(this, " (limited)");
 				for(String name:keyset) {
 					Object o = manifestElements.get(name);
 					if (o instanceof HashMap) {
@@ -229,7 +244,8 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 			}
 		} else {
 			// sub dirs does not fit into container, make each its own
-			System.out.print("PackStat2: sub dirs does not fit into container, make each its own");
+			if(logMINOR)
+				Logger.minor(this, "PackStat2: sub dirs does not fit into container, make each its own");
 			for(String name:keyset) {
 				Object o = manifestElements.get(name);
 				if (o instanceof HashMap) {
@@ -260,7 +276,8 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 
 		// group files left into external archives ('CHK@.../name' redirects)
 		while (!itemsLeft.isEmpty()) {
-			System.out.println("ItemsLeft checker: "+itemsLeft.size());
+			if(logMINOR)
+				Logger.minor(this, "ItemsLeft checker: "+itemsLeft.size());
 
 			if (itemsLeft.size() == 1) {
 				// one item left, make it external
@@ -289,7 +306,8 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 				continue;
 			}
 
-			if ((leftSize.getSizeFiles() == 0) && (leftSize.getSizeFilesNoLimit() > 0)) {
+			// getSizeFiles() includes 512 bytes for each file over the size limit
+			if (((leftSize.getSizeFiles() - (512*itemsLeft.size())) == 0) && (leftSize.getSizeFilesNoLimit() > 0)) {
 				// all items left are to big, make all external
 				Set<String> lKeySetset = itemsLeft.keySet();
 				for (String lname:lKeySetset) {

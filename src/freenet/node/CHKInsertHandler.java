@@ -49,7 +49,6 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 
     static final int DATA_INSERT_TIMEOUT = 10000;
     
-    final Message req;
     final Node node;
     final long uid;
     final PeerNode source;
@@ -68,18 +67,15 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 	private final boolean ignoreLowBackoff;
 	private final boolean realTimeFlag;
 
-    CHKInsertHandler(Message req, PeerNode source, long id, Node node, long startTime, InsertTag tag, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
-        this.req = req;
+    CHKInsertHandler(NodeCHK key, short htl, PeerNode source, long id, Node node, long startTime, InsertTag tag, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
         this.node = node;
         this.uid = id;
         this.source = source;
         this.startTime = startTime;
         this.tag = tag;
-        key = (NodeCHK) req.getObject(DMT.FREENET_ROUTING_KEY);
-        htl = req.getShort(DMT.HTL);
-        if(htl <= 0) htl = 1;
+        this.key = key;
+        this.htl = htl;
         canWriteDatastore = node.canWriteDatastoreInsert(htl);
-        receivedBytes(req.receivedByteCount());
         this.forkOnCacheable = forkOnCacheable;
         this.preferInsert = preferInsert;
         this.ignoreLowBackoff = ignoreLowBackoff;
@@ -146,7 +142,11 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         }
         
         if(msg.getSpec() == DMT.FNPDataInsertRejected) {
-        	// Not caused by the immediately upstream node.
+        	try {
+				source.sendAsync(DMT.createFNPDataInsertRejected(uid, msg.getShort(DMT.DATA_INSERT_REJECTED_REASON)), null, this);
+			} catch (NotConnectedException e) {
+				// Ignore.
+			}
         	return;
         }
         
@@ -162,7 +162,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
         if(htl > 0)
             sender = node.makeInsertSender(key, htl, uid, tag, source, headers, prb, false, false, forkOnCacheable, preferInsert, ignoreLowBackoff, realTimeFlag);
-        br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false, realTimeFlag, myTimeoutHandler);
+        br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false, realTimeFlag, myTimeoutHandler, false);
         
         // Receive the data, off thread
         Runnable dataReceiver = new DataReceiver();
@@ -315,7 +315,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
     		Message m = DMT.createFNPInsertTransfersCompleted(uid, true);
     		source.sendAsync(m, null, this);
     		prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
-    		br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false, realTimeFlag, null);
+    		br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false, realTimeFlag, null, false);
     		prb.abort(RetrievalException.NO_DATAINSERT, "No DataInsert", true);
     		source.localRejectedOverload("TimedOutAwaitingDataInsert", realTimeFlag);
     		
@@ -330,6 +330,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
     				// Okay, great.
     				// Either we got a DataInsert, in which case the transfer was aborted above, or we got a DataInsertRejected, which means it never started.
     				// FIXME arguably we should wait until we have the message before sending the transfer cancel in case the message gets lost? Or maybe not?
+    				// FIXME unlock here rather than in finally block in realRun??? Unlocking in the finally block is safe (won't cause rejects), unlocking here might be more accurate ...
     			}
 
     			@Override
@@ -381,6 +382,9 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
      */
     private void finish(int code) {
     	if(logMINOR) Logger.minor(this, "Waiting for receive");
+    	int transferTimeout = realTimeFlag ?
+    			CHKInsertSender.TRANSFER_COMPLETION_ACK_TIMEOUT_REALTIME :
+    				CHKInsertSender.TRANSFER_COMPLETION_ACK_TIMEOUT_BULK;
 		synchronized(this) {
 			while(receiveStarted && !receiveCompleted) {
 				try {
@@ -403,8 +407,10 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         
 		Message m=null;
 		
+		boolean routingTookTooLong = false;
         if((sender != null) && (!sentCompletionWasSet)) {
             if(logMINOR) Logger.minor(this, "Waiting for completion");
+            long startedTime = System.currentTimeMillis();
 			//If there are downstream senders, our final success report depends on there being no timeouts in the chain.
         	while(true) {
         		synchronized(sender) {
@@ -412,14 +418,46 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         				break;
         			}
         			try {
-        				sender.wait(10*1000);
+        				int t = (int)Math.min(Integer.MAX_VALUE, startedTime + transferTimeout - System.currentTimeMillis());
+        				if(t > 0) sender.wait(t);
+        				else {
+        					routingTookTooLong = true;
+        					break;
+        				}
         			} catch (InterruptedException e) {
         				// Loop
         			}
         		}
         	}
+        	if(routingTookTooLong) {
+        		tag.timedOutToHandlerButContinued();
+        		sentCompletionWasSet = true;
+        		try {
+        			source.sendAsync(DMT.createFNPInsertTransfersCompleted(uid, true), null, this);
+        		} catch (NotConnectedException e) {
+        			// Ignore.
+        		}
+        		
+        		Logger.error(this, "Insert took too long, telling downstream that it's finished and reassigning to self on "+this);
+        		
+        		// Still waiting.
+        		while(true) {
+        			synchronized(sender) {
+        				if(sender.completed()) {
+        					break;
+        				}
+        				try {
+        					sender.wait(10*1000);
+        				} catch (InterruptedException e) {
+        					// Loop
+        				}
+        			}
+        		}
+        		if(logMINOR) Logger.minor(this, "Completed after telling downstream on "+this);
+        	}
         	boolean failed = sender.anyTransfersFailed();
-        	m = DMT.createFNPInsertTransfersCompleted(uid, failed);
+        	if(!sentCompletionWasSet)
+        		m = DMT.createFNPInsertTransfersCompleted(uid, failed);
 		}
 		
 		if((sender == null) && (!sentCompletionWasSet) && (canCommit)) {
@@ -434,8 +472,17 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 			commit(block);
 			block = null;
 		}
+		
+		// Be generous with unlocking incoming requests, and cautious with
+		// unlocking outgoing requests, hence avoid problems. If we wait until
+		// the completion has been acknowledged, then there will be a period
+		// during which the originator thinks we have unlocked but we haven't, 
+		// which will cause unnecessary rejects and thus mandatory backoff.
+    	tag.unlockHandler();
         
+    	if(m != null) {
         	try {
+        		// We do need to sendSync here so we have accurate byte counter totals.
         		source.sendSync(m, this, realTimeFlag);
         		if(logMINOR) Logger.minor(this, "Sent completion: "+m+" for "+this);
         	} catch (NotConnectedException e1) {
@@ -445,6 +492,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         		Logger.error(this, "Took too long to send "+m+" to "+source);
         		// May need to commit anyway...
 			}
+    	}
 		        
         if(code != CHKInsertSender.TIMED_OUT && code != CHKInsertSender.GENERATED_REJECTED_OVERLOAD && 
         		code != CHKInsertSender.INTERNAL_ERROR && code != CHKInsertSender.ROUTE_REALLY_NOT_FOUND &&
@@ -545,7 +593,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         			if(sender != null)
         				sender.onReceiveFailed(); // tell it to stop if it hasn't already failed... unless it's sending from store
         			runThread.interrupt();
-        			tag.reassignToSelf(); // sender is finished, or will be very soon; we may however be waiting for the sendAborted downstream.
+        			tag.timedOutToHandlerButContinued(); // sender is finished, or will be very soon; we may however be waiting for the sendAborted downstream.
         			Message msg = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED);
         			try {
         				source.sendSync(msg, CHKInsertHandler.this, realTimeFlag);

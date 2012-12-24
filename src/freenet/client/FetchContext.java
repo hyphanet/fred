@@ -15,7 +15,9 @@ import freenet.client.filter.TagReplacerCallback;
 import freenet.node.RequestScheduler;
 import freenet.support.api.BucketFactory;
 
-/** Context for a Fetcher. Contains all the settings a Fetcher needs to know about. */
+/** Context for a Fetcher. Contains all the settings a Fetcher needs to know 
+ * about. FIXME these should be final or private, with getters/setters and 
+ * checking for valid values e.g. maxRecursionLevel >= 1. */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class FetchContext implements Cloneable {
 
@@ -27,6 +29,9 @@ public class FetchContext implements Cloneable {
 	public long maxOutputLength;
 	/** Maximum length of data fetched in order to obtain the final data - metadata, containers, etc. */
 	public long maxTempLength;
+	/** 1 = only fetch a single block. 2 = allow one redirect, e.g. metadata
+	 * block pointing to actual data block. Etc. 0 may work sometimes but 
+	 * is not recommended. */
 	public int maxRecursionLevel;
 	public int maxArchiveRestarts;
 	/** Maximum number of containers to fetch during a request */
@@ -102,6 +107,9 @@ public class FetchContext implements Cloneable {
 	 * with that interval or less. */
 	private long cooldownTime;
 
+	/** Ignore USK DATEHINTs */
+	public boolean ignoreUSKDatehints;
+
 	public FetchContext(long curMaxLength,
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
 			boolean dontEnterImplicitArchives,
@@ -135,6 +143,7 @@ public class FetchContext implements Cloneable {
 		this.overrideMIME = overrideMIME;
 		this.cooldownRetries = RequestScheduler.COOLDOWN_RETRIES;
 		this.cooldownTime = RequestScheduler.COOLDOWN_PERIOD;
+		this.ignoreUSKDatehints = false; // FIXME
 		hasOwnEventProducer = true;
 	}
 
@@ -180,6 +189,7 @@ public class FetchContext implements Cloneable {
 		this.overrideMIME = ctx.overrideMIME;
 		this.cooldownRetries = ctx.cooldownRetries;
 		this.cooldownTime = ctx.cooldownTime;
+		this.ignoreUSKDatehints = ctx.ignoreUSKDatehints;
 
 		if(maskID == IDENTICAL_MASK || maskID == SPLITFILE_DEFAULT_MASK) {
 			// DEFAULT

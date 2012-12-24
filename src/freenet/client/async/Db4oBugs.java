@@ -8,6 +8,7 @@ import com.db4o.query.Query;
 /** A collection of bug workarounds for everyone's favourite object database! */
 public class Db4oBugs {
 
+	@SuppressWarnings("unchecked")
 	public static<T extends Object> ObjectSet<T> query(ObjectContainer container, Class<T> clazz) {
 		// db4o 7.4.84.12673 throws a RuntimeException: Not supported
 		// when we use this documented API to query all elements of a class. Isn't that great? :(

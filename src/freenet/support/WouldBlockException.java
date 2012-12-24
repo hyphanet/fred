@@ -30,7 +30,7 @@ public class WouldBlockException extends IncomingPacketFilterException {
     }
 
     // Optimization :
-    // http://blogs.sun.com/jrose/entry/longjumps_considered_inexpensive?resubmit=damnit
+    // https://blogs.oracle.com/jrose/entry/longjumps_considered_inexpensive
     @Override
     public final synchronized Throwable fillInStackTrace() {
         if(logDEBUG)

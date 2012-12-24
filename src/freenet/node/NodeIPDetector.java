@@ -79,7 +79,9 @@ public class NodeIPDetector {
 	FreenetInetAddress[] lastIP;
 	/** Set when we have grounds to believe that we may be behind a symmetric NAT. */
 	boolean maybeSymmetric;
+	/** Have the detector plugins been queried (or found to be non-existent)? */
 	private boolean hasDetectedPM;
+	/** Have we checked peers and local interfaces for our IP address? */
 	private boolean hasDetectedIAD;
 	/** Subsidiary detectors: NodeIPPortDetector's which rely on this object */
 	private NodeIPPortDetector[] portDetectors;
@@ -226,7 +228,7 @@ public class NodeIPDetector {
 		
 		// Try to pick it up from our connections
 		if(node.peers != null) {
-			PeerNode[] peerList = node.peers.myPeers;
+			PeerNode[] peerList = node.peers.myPeers();
 			HashMap<FreenetInetAddress,Integer> countsByPeer = new HashMap<FreenetInetAddress,Integer>();
 			// FIXME use a standard mutable int object, we have one somewhere
 			for(int i=0;i<peerList.length;i++) {
@@ -617,5 +619,9 @@ public class NodeIPDetector {
 
 	public boolean noDetectPlugins() {
 		return !ipDetectorManager.hasDetectors();
+	}
+
+	public boolean hasJSTUN() {
+		return ipDetectorManager.hasJSTUN();
 	}
 }

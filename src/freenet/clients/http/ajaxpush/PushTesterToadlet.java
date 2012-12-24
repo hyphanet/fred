@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.PageMaker.RenderParameters;
 import freenet.clients.http.PageNode;
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.Toadlet;
@@ -20,7 +21,7 @@ public class PushTesterToadlet extends Toadlet {
 	}
 
 	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		PageNode pageNode = ctx.getPageMaker().getPageNode("Push tester", false, ctx);
+		PageNode pageNode = ctx.getPageMaker().getPageNode("Push tester", ctx, new RenderParameters().renderNavigationLinks(false));
 		for (int i = 0; i < 600; i++) {
 			pageNode.content.addChild(new TesterElement(ctx, String.valueOf(i), 100));
 		}

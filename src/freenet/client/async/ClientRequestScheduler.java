@@ -8,6 +8,7 @@ import java.util.LinkedList;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
+import com.db4o.ext.Db4oException;
 
 import freenet.client.FECQueue;
 import freenet.client.FetchException;
@@ -22,6 +23,7 @@ import freenet.node.LowLevelGetException;
 import freenet.node.LowLevelPutException;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.PrioRunnable;
 import freenet.node.RequestScheduler;
 import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
@@ -110,7 +112,16 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public static void loadKeyListeners(final ObjectContainer container, ClientContext context) {
 		ObjectSet<HasKeyListener> results =
 			Db4oBugs.query(container, HasKeyListener.class);
-		for(HasKeyListener l : results) {
+		while(true) {
+			HasKeyListener l;
+			try {
+				if(!results.hasNext()) break;
+				l = results.next();
+			} catch (IllegalArgumentException e) {
+				throw new Db4oException("Something is broken: "+e, e);
+				// Allow caller to terminate database.
+				// IllegalArgumentException isn't caught, but here it is exclusively caused by corrupt database and/or database bugs. :(
+			}
 			container.activate(l, 1);
 			try {
 				if(l.isCancelled(container)) continue;
@@ -899,7 +910,21 @@ public class ClientRequestScheduler implements RequestScheduler {
 			offeredKeys.remove(block.getKey());
 		}
 		final Key key = block.getKey();
-		schedTransient.tripPendingKey(key, block, null, clientContext);
+		if(schedTransient.anyProbablyWantKey(key, clientContext)) {
+			this.clientContext.mainExecutor.execute(new PrioRunnable() {
+
+				@Override
+				public void run() {
+					schedTransient.tripPendingKey(key, block, null, clientContext);
+				}
+
+				@Override
+				public int getPriority() {
+					return TRIP_PENDING_PRIORITY;
+				}
+				
+			}, "Trip pending key (transient)");
+		}
 		if(schedCore == null) return;
 		if(schedCore.anyProbablyWantKey(key, clientContext)) {
 			try {
@@ -1185,8 +1210,4 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return node;
 	}
 
-	public void setUseAIMDs(boolean val) {
-		starter.setUseAIMDs(val);
-	}
-	
 }

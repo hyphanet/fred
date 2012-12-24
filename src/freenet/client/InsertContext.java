@@ -54,8 +54,11 @@ public class InsertContext implements Cloneable {
 	public static enum CompatibilityMode {
 		/** We do not know. */
 		COMPAT_UNKNOWN,
-		/** No compatibility issues, use the most efficient metadata possible. */
+		/** No compatibility issues, use the most efficient metadata possible. 
+		 * Used only for configuring an insert, *NOT* in Metadata compatibility mode detection. */
 		COMPAT_CURRENT,
+		// The below *are* used in Metadata compatibility mode detection. And they are comparable by ordinal().
+		// This means we have to check for COMPAT_CURRENT as a special case.
 		/** Exactly as before 1250: Segments of exactly 128 data, 128 check, check = data */
 		COMPAT_1250_EXACT,
 		/** 1250 or previous: Segments up to 128 data 128 check, check <= data. */
@@ -63,7 +66,9 @@ public class InsertContext implements Cloneable {
 		/** 1251/2/3: Basic even splitting, 1 extra check block if data blocks < 128, max 131 data blocks. */
 		COMPAT_1251,
 		/** 1255: Second stage of even splitting, a whole bunch of segments lose one block rather than the last segment losing lots of blocks. And hashes too! */
-		COMPAT_1255;
+		COMPAT_1255,
+		/** 1416: New CHK encryption */
+		COMPAT_1416;
 		
 		// Inserts should be converted to a specific compatibility mode as soon as possible, to avoid
 		// problems when an insert is restarted on a newer build with a newer default compat mode.

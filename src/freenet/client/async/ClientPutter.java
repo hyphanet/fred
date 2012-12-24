@@ -150,10 +150,18 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * @throws InsertException If the insert cannot be started for some reason.
 	 */
 	public boolean start(boolean earlyEncode, boolean restart, ObjectContainer container, ClientContext context) throws InsertException {
-		if(persistent())
+		if(persistent()) {
+			container.activate(ctx, 1);
 			container.activate(client, 1);
+		}
 		if(logMINOR)
 			Logger.minor(this, "Starting "+this+" for "+targetURI);
+		byte cryptoAlgorithm;
+		CompatibilityMode mode = ctx.getCompatibilityMode();
+		if(!(mode == CompatibilityMode.COMPAT_CURRENT || mode.ordinal() >= CompatibilityMode.COMPAT_1416.ordinal()))
+			cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
+		else
+			cryptoAlgorithm = Key.ALGO_AES_CTR_256_SHA256;
 		try {
 			this.targetURI.checkInsertURI();
 			// If the top level key is an SSK, all CHK blocks and particularly splitfiles below it should have
@@ -188,6 +196,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				cryptoKey = null;
 				if(overrideSplitfileCrypto != null) {
 					cryptoKey = overrideSplitfileCrypto;
+					if (cryptoKey.length != 32)
+						throw new InsertException(InsertException.INVALID_URI, "overrideSplitfileCryptoKey must be of length 32", null);
 				} else if(randomiseSplitfileKeys) {
 					cryptoKey = new byte[32];
 					context.random.nextBytes(cryptoKey);
@@ -198,7 +208,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 						if(meta != null) meta = persistent() ? meta.clone() : meta;
 						currentState =
 							new SingleFileInserter(this, this, new InsertBlock(data, meta, persistent() ? targetURI.clone() : targetURI), isMetadata, ctx, realTimeFlag, 
-									false, getCHKOnly, false, null, null, false, targetFilename, earlyEncode, false, persistent(), 0, 0, null, Key.ALGO_AES_PCFB_256_SHA256, cryptoKey, metadataThreshold);
+									false, getCHKOnly, false, null, null, false, targetFilename, earlyEncode, false, persistent(), 0, 0, null, cryptoAlgorithm, cryptoKey, metadataThreshold);
 					} else
 						currentState =
 							new BinaryBlobInserter(data, this, getClient(), false, priorityClass, ctx, context, container);

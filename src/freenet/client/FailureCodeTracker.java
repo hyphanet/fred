@@ -113,6 +113,16 @@ public class FailureCodeTracker {
 			sb.append(code);
 			sb.append('=');
 			sb.append((map.get(code)).x);
+		} else if(map.size() < 10) {
+			boolean needComma = false;
+			for(Map.Entry<Integer, Item> entry : map.entrySet()) {
+				if(needComma)
+					sb.append(',');
+				sb.append(entry.getKey()); // code
+				sb.append('=');
+				sb.append(entry.getValue().x);
+				needComma = true;
+			}
 		} else {
 			sb.append(map.size());
 		}

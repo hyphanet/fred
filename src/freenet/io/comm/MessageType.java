@@ -83,6 +83,10 @@ public class MessageType {
 			return false;
 		}
 		Class<?> defClass = _fields.get(fieldName);
+		if (defClass == null) {
+			throw new IllegalStateException("Cannot set field \"" + fieldName + "\" which is not defined" +
+			                                " in the message type \"" + getName() + "\".");
+		}
 		Class<?> valueClass = fieldValue.getClass();
 		if(defClass == valueClass) return true;
 		if(defClass.isAssignableFrom(valueClass)) return true;

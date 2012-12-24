@@ -34,10 +34,11 @@ public class PersistentGet extends FCPMessage {
 	final int maxRetries;
 	final boolean binaryBlob;
 	final long maxSize;
+	final boolean realTime;
 	
 	public PersistentGet(String identifier, FreenetURI uri, int verbosity, 
 			short priorityClass, short returnType, short persistenceType, 
-			File targetFile, File tempFile, String clientToken, boolean global, boolean started, int maxRetries, boolean binaryBlob, long maxSize) {
+			File targetFile, File tempFile, String clientToken, boolean global, boolean started, int maxRetries, boolean binaryBlob, long maxSize, boolean realTime) {
 		this.identifier = identifier;
 		this.uri = uri;
 		// This has been seen in practice (bug #3606), lets try to get an earlier stack trace...
@@ -54,6 +55,7 @@ public class PersistentGet extends FCPMessage {
 		this.maxRetries = maxRetries;
 		this.binaryBlob = binaryBlob;
 		this.maxSize = maxSize;
+		this.realTime = realTime;
 	}
 
 	@Override
@@ -78,6 +80,7 @@ public class PersistentGet extends FCPMessage {
 		fs.put("MaxRetries", maxRetries);
 		fs.put("BinaryBlob", binaryBlob);
 		fs.put("MaxSize", maxSize);
+		fs.put("RealTime", realTime);
 		return fs;
 	}
 

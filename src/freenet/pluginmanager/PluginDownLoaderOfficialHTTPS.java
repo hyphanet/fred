@@ -9,6 +9,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -19,17 +20,23 @@ import java.util.Collection;
 import java.util.Iterator;
 
 import freenet.pluginmanager.PluginManager.PluginProgress;
+import freenet.support.api.Bucket;
+import freenet.support.io.ArrayBucket;
 import freenet.support.io.Closer;
+import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 
 public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
 	
-	private static final String certurl = "freenet/clients/http/staticfiles/startssl.pem";
-	private static final String certfile = "startssl.pem";
+	private static final String certurlOld = "freenet/clients/http/staticfiles/startssl.pem";
+	private static final String certurlNew = "freenet/clients/http/staticfiles/globalsign-intermediate-2012.pem";
+	private static final String[] certURLs = new String[] { certurlOld, certurlNew };
+	public static final String certfileOld = "startssl.pem";
+	private static final String certfile = "sslcerts.pem";
 
 	@Override
 	public URL checkSource(String source) throws PluginNotFoundException {
-		return super.checkSource("https://checksums.freenetproject.org/latest/" +
+		return super.checkSource("https://downloads.freenetproject.org/latest/" +
 		source + ".jar");
 	}
 
@@ -115,22 +122,49 @@ public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
 			return new FileInputStream(certFile);
 		}
 		
+		Bucket bucket;
+		OutputStream os = null;
+		
+		try {
+			try {
+				bucket = new FileBucket(certFile, false, false, false, false, false);
+				os = bucket.getOutputStream();
+				writeCerts(os);
+			} finally {
+				if(os != null)
+					Closer.close(os);
+			}
+			return bucket.getInputStream();
+		} catch (IOException e) {
+			// We don't have access to TempBucketFactory here.
+			// But the certs should be small, so just keep them in memory.
+			bucket = new ArrayBucket();
+			os = bucket.getOutputStream();
+			writeCerts(os);
+			os.close();
+			return bucket.getInputStream();
+		}
+	}
+
+	private static void writeCerts(OutputStream os) throws IOException {
 		// try to create pem file
 		ClassLoader loader = ClassLoader.getSystemClassLoader();
-		InputStream in = loader.getResourceAsStream(certurl);
-		if(in != null) {
-			FileUtil.writeTo(in, certFile);
-			if (certFile.exists()) {
-				System.err.println("Nodes certfile created, use it");
-				return new FileInputStream(certFile);
+		for(String certurl : certURLs) {
+			InputStream in = loader.getResourceAsStream(certurl);
+			if(in != null) {
+				FileUtil.copy(in, os, -1);
+			} else {
+				throw new IOException("Could not find certificates in fred source nor find certificates file");
 			}
-			System.err.println("Nodes certfile couldnt created, try direct");
-			// couldnt write the file, maybe paranoid selinux or hardware node ;)
-			return in;
-		}	
-		
-		System.err.println("Certficate file '"+certfile+"' not found on disk nor buildin.");
-		throw new IOException("Certficate file '"+certfile+"' not found on disk nor buildin.");
+		}
+	}
+	
+	/** For the benefit mainly of the Windows updater script.
+	 * It uses startssl.pem */
+	public static void writeCertsTo(File file) throws IOException {
+		FileOutputStream fos = new FileOutputStream(file);
+		writeCerts(fos);
+		fos.close();
 	}
 
 }

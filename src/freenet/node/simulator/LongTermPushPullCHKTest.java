@@ -117,7 +117,7 @@ public class LongTermPushPullCHKTest {
 			// PUSH N+1 BLOCKS
 			for (int i = 0; i <= MAX_N; i++) {
 				Bucket data = randomData(node);
-				HighLevelSimpleClient client = node.clientCore.makeClient((short) 0);
+				HighLevelSimpleClient client = node.clientCore.makeClient((short) 0, false, false);
 				System.out.println("PUSHING " + i);
 
 				try {
@@ -163,7 +163,7 @@ public class LongTermPushPullCHKTest {
 
 			// PULL N+1 BLOCKS
 			for (int i = 0; i <= MAX_N; i++) {
-				HighLevelSimpleClient client = node2.clientCore.makeClient((short) 0);
+				HighLevelSimpleClient client = node2.clientCore.makeClient((short) 0, false, false);
 				Calendar targetDate = (Calendar) today.clone();
 				targetDate.add(Calendar.DAY_OF_MONTH, -((1 << i) - 1));
 

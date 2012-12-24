@@ -55,7 +55,14 @@ public interface ToadletContext {
 	void writeData(byte[] data) throws ToadletContextClosedException, IOException;
 
 	/**
-	 * Write data from a bucket. You must send reply headers first. We will free the bucket.
+	 * Write data from a bucket. You must send reply headers first.
+	 *
+	 * @param data The Bucket which contains the data. This function
+	 *        assumes ownership of the Bucket, calling free() on it
+	 *        when done. If this behavior is undesired, callers can
+	 *        wrap their Bucket in a NoFreeBucket.
+	 *
+	 * @see freenet.support.io.NoFreeBucket
 	 */
 	void writeData(Bucket data) throws ToadletContextClosedException, IOException;
 	

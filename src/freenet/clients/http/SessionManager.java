@@ -15,7 +15,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import freenet.support.CurrentTimeUTC;
-import freenet.support.LRUHashtable;
+import freenet.support.LRUMap;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
 
@@ -127,8 +127,9 @@ public final class SessionManager {
 		
 		@Override
 		public boolean equals(Object obj) {
+			if(obj == null) return false;
+			if(!(obj instanceof Session)) return false;
 			Session other = ((Session)obj);
-			
 			return other.getID().equals(mID);
 		}
 		
@@ -216,7 +217,7 @@ public final class SessionManager {
 
 	}
 
-	private final LRUHashtable<UUID, Session> mSessionsByID = new LRUHashtable<UUID, Session>();
+	private final LRUMap<UUID, Session> mSessionsByID = new LRUMap<UUID, Session>();
 	private final Hashtable<String, Session> mSessionsByUserID = new Hashtable<String, Session>();
 	
 	
@@ -248,7 +249,7 @@ public final class SessionManager {
 	 */
 	public synchronized Session createSession(String userID, ToadletContext context) {
 		// We must synchronize around the fetching of the time and mSessionsByID.push() because mSessionsByID is no sorting data structure: It's a plain
-		// LRUHashtable so to ensure that it stays sorted the operation "getTime(); push();" must be atomic.
+		// LRUMap so to ensure that it stays sorted the operation "getTime(); push();" must be atomic.
 		long time = CurrentTimeUTC.getInMillis();
 		
 		removeExpiredSessions(time);
@@ -295,7 +296,7 @@ public final class SessionManager {
 			return null;
 		
 		// We must synchronize around the fetching of the time and mSessionsByID.push() because mSessionsByID is no sorting data structure: It's a plain
-		// LRUHashtable so to ensure that it stays sorted the operation "getTime(); push();" must be atomic.
+		// LRUMap so to ensure that it stays sorted the operation "getTime(); push();" must be atomic.
 		long time = CurrentTimeUTC.getInMillis();
 		
 		removeExpiredSessions(time);

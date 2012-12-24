@@ -188,25 +188,11 @@ public interface Compressor {
 		}
 
 		public boolean objectCanDeactivate(ObjectContainer container) {
-			// Do not deactivate the official COMPRESSOR_TYPE's.
-			if(isOfficial()) return false;
-			return true;
+			return false;
 		}
 
 		public boolean objectCanActivate(ObjectContainer container) {
-			// Do not activate the official COMPRESSOR_TYPE's.
-			if(isOfficial()) return false;
-			return true;
-		}
-
-		public boolean isOfficial() {
-			if(!(this == GZIP || this == BZIP2 || this == LZMA || this == LZMA_NEW)) {
-				Logger.error(this, "Unofficial COMPESSOR_TYPE, isn't this impossible?");
-				// Initially I had thought db4o was copying the enum values, but testing shows this doesn't happen.
-				// So this is definitely an error.
-				return false;
-			}
-			return true;
+			return false;
 		}
 
 		public static int countCompressors() {

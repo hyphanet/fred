@@ -18,16 +18,16 @@ import java.util.zip.ZipInputStream;
 
 import net.contrapunctus.lzma.LzmaInputStream;
 
-import org.apache.tools.bzip2.CBZip2InputStream;
-import org.apache.tools.tar.TarEntry;
-import org.apache.tools.tar.TarInputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
 import freenet.keys.FreenetURI;
 import freenet.support.ExceptionWrapper;
-import freenet.support.LRUHashtable;
+import freenet.support.LRUMap;
 import freenet.support.Logger;
 import freenet.support.MutableBoolean;
 import freenet.support.Logger.LogLevel;
@@ -102,7 +102,7 @@ public class ArchiveManager {
 			return null;
 		}
 
-		public final static ARCHIVE_TYPE getDefault() {
+		public static ARCHIVE_TYPE getDefault() {
 			return TAR;
 		}
 	}
@@ -111,7 +111,7 @@ public class ArchiveManager {
 
 	// ArchiveHandler's
 	final int maxArchiveHandlers;
-	private final LRUHashtable<FreenetURI, ArchiveStoreContext> archiveHandlers;
+	private final LRUMap<FreenetURI, ArchiveStoreContext> archiveHandlers;
 
 	// Data cache
 	/** Maximum number of cached ArchiveStoreItems */
@@ -121,7 +121,7 @@ public class ArchiveManager {
 	/** Currently cached data in bytes */
 	private long cachedData;
 	/** Map from ArchiveKey to ArchiveStoreElement */
-	private final LRUHashtable<ArchiveKey, ArchiveStoreItem> storedData;
+	private final LRUMap<ArchiveKey, ArchiveStoreItem> storedData;
 	/** Bucket Factory */
 	private final BucketFactory tempBucketFactory;
 
@@ -142,10 +142,12 @@ public class ArchiveManager {
 	 */
 	public ArchiveManager(int maxHandlers, long maxCachedData, long maxArchivedFileSize, int maxCachedElements, BucketFactory tempBucketFactory) {
 		maxArchiveHandlers = maxHandlers;
-		archiveHandlers = new LRUHashtable<FreenetURI, ArchiveStoreContext>();
+		// FIXME PERFORMANCE I'm assuming there isn't much locality here, so it's faster to use the FAST_COMPARATOR.
+		// This may not be true if there are a lot of sites with many containers all inserted as individual SSKs?
+		archiveHandlers = LRUMap.createSafeMap(FreenetURI.FAST_COMPARATOR);
 		this.maxCachedElements = maxCachedElements;
 		this.maxCachedData = maxCachedData;
-		storedData = new LRUHashtable<ArchiveKey, ArchiveStoreItem>();
+		storedData = new LRUMap<ArchiveKey, ArchiveStoreItem>();
 		this.maxArchivedFileSize = maxArchivedFileSize;
 		this.tempBucketFactory = tempBucketFactory;
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
@@ -302,7 +304,7 @@ public class ArchiveManager {
 				wrapper = null;
 			} else if(ctype == COMPRESSOR_TYPE.BZIP2) {
 				if(logMINOR) Logger.minor(this, "dealing with BZIP2");
-				is = new CBZip2InputStream(data.getInputStream());
+				is = new BZip2CompressorInputStream(data.getInputStream());
 				wrapper = null;
 			} else if(ctype == COMPRESSOR_TYPE.GZIP) {
 				if(logMINOR) Logger.minor(this, "dealing with GZIP");
@@ -369,12 +371,12 @@ public class ArchiveManager {
 
 	private void handleTARArchive(ArchiveStoreContext ctx, FreenetURI key, InputStream data, String element, ArchiveExtractCallback callback, MutableBoolean gotElement, boolean throwAtExit, ObjectContainer container, ClientContext context) throws ArchiveFailureException, ArchiveRestartException {
 		if(logMINOR) Logger.minor(this, "Handling a TAR Archive");
-		TarInputStream tarIS = null;
+		TarArchiveInputStream tarIS = null;
 		try {
-			tarIS = new TarInputStream(data);
+			tarIS = new TarArchiveInputStream(data);
 
 			// MINOR: Assumes the first entry in the tarball is a directory.
-			TarEntry entry;
+			ArchiveEntry entry;
 
 			byte[] buf = new byte[32768];
 			HashSet<String> names = new HashSet<String>();
@@ -384,7 +386,7 @@ outerTAR:		while(true) {
 				entry = tarIS.getNextEntry();
 				if(entry == null) break;
 				if(entry.isDirectory()) continue;
-				String name = entry.getName();
+				String name = stripLeadingSlashes(entry.getName());
 				if(names.contains(name)) {
 					Logger.error(this, "Duplicate key "+name+" in archive "+key);
 					continue;
@@ -464,7 +466,7 @@ outerZIP:		while(true) {
 				entry = zis.getNextEntry();
 				if(entry == null) break;
 				if(entry.isDirectory()) continue;
-				String name = entry.getName();
+				String name = stripLeadingSlashes(entry.getName());
 				if(names.contains(name)) {
 					Logger.error(this, "Duplicate key "+name+" in archive "+key);
 					continue;
@@ -531,6 +533,12 @@ outerZIP:		while(true) {
 				}
 			}
 		}
+	}
+
+	private String stripLeadingSlashes(String name) {
+		while(name.length() > 1 && name.charAt(0) == '/')
+			name = name.substring(1);
+		return name;
 	}
 
 	/**

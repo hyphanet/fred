@@ -582,9 +582,11 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 				if(index == 0) empty = true;
 			}
 		}
-		if(it.getParentGrabArray() == this)
+		// Caller will typically clear it before calling for synchronization reasons.
+		RandomGrabArray oldArray = it.getParentGrabArray();
+		if(oldArray == this)
 			it.setParentGrabArray(null, container);
-		else
+		else if(oldArray != null)
 			Logger.error(this, "Removing item "+it+" from "+this+" but RGA is "+it.getParentGrabArray(), new Exception("debug"));
 		if(!matched) {
 			if(logMINOR) Logger.minor(this, "Not found: "+it+" on "+this);

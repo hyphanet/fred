@@ -4,15 +4,27 @@
 package freenet.support;
 
 import java.util.Arrays;
+import java.util.Comparator;
 
 /**
  * byte[], but can be put into HashSet etc *by content*.
  * @author toad
  */
-public class ByteArrayWrapper {
+public class ByteArrayWrapper implements Comparable<ByteArrayWrapper> {
 	
 	private final byte[] buf;
 	private int hashCode;
+	
+	public static Comparator<ByteArrayWrapper> FAST_COMPARATOR = new Comparator<ByteArrayWrapper>() {
+
+		@Override
+		public int compare(ByteArrayWrapper o1, ByteArrayWrapper o2) {
+			if(o1.hashCode > o2.hashCode) return 1;
+			if(o1.hashCode < o2.hashCode) return -1;
+			return o1.compareTo(o2);
+		}
+		
+	};
 	
 	public ByteArrayWrapper(byte[] data) {
 		buf = data;
@@ -37,5 +49,11 @@ public class ByteArrayWrapper {
 	/** DO NOT MODIFY THE RETURNED DATA! */
 	public byte[] get() {
 		return buf;
+	}
+
+	@Override
+	public int compareTo(ByteArrayWrapper arg) {
+		if(this == arg) return 0;
+		return Fields.compareBytes(buf, arg.buf);
 	}
 }

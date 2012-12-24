@@ -30,7 +30,9 @@ public abstract class UIDTag {
 	final boolean wasLocal;
 	private final WeakReference<PeerNode> sourceRef;
 	final boolean realTimeFlag;
-	private final Node node;
+	private final RequestTracker tracker;
+	protected boolean accepted;
+	protected boolean sourceRestarted;
 	
 	/** Nodes we have routed to at some point */
 	private HashSet<PeerNode> routedTo = null;
@@ -46,19 +48,22 @@ public abstract class UIDTag {
 	protected boolean notRoutedOnwards;
 	final long uid;
 	
-	private boolean unlockedHandler;
+	protected boolean unlockedHandler;
 	protected boolean noRecordUnlock;
 	private boolean hasUnlocked;
+	
+	private boolean waitingForSlot;
 	
 	UIDTag(PeerNode source, boolean realTimeFlag, long uid, Node node) {
 		createdTime = System.currentTimeMillis();
 		this.sourceRef = source == null ? null : source.myRef;
 		wasLocal = source == null;
 		this.realTimeFlag = realTimeFlag;
-		this.node = node;
+		this.tracker = node.tracker;
 		this.uid = uid;
 		if(logMINOR)
 			Logger.minor(this, "Created "+this);
+		if(wasLocal) accepted = true; // FIXME remove, but it's always true at the moment.
 	}
 
 	public abstract void logStillPresent(Long uid);
@@ -67,6 +72,17 @@ public abstract class UIDTag {
 		return System.currentTimeMillis() - createdTime;
 	}
 	
+	/** Notify that we are routing to, or fetching an offered key from, a 
+	 * specific node. This should be called before we send the actual request
+	 * message, to avoid us thinking we have more outgoing capacity than we
+	 * actually have on a specific peer.
+	 * @param peer The peer we are routing to.
+	 * @param offeredKey If true, we are fetching an offered key, if false we
+	 * are routing a normal request. Fetching an offered key is quite distinct,
+	 * notably it has much shorter timeouts.
+	 * @return True if we were already routing to (or fetching an offered key 
+	 * from, depending on offeredKey) the peer.
+	 */
 	public synchronized boolean addRoutedTo(PeerNode peer, boolean offeredKey) {
 		if(logMINOR)
 			Logger.minor(this, "Routing to "+peer+" on "+this+(offeredKey ? " (offered)" : ""), new Exception("debug"));
@@ -101,7 +117,14 @@ public abstract class UIDTag {
 		if(fetchingOfferedKeyFrom == null) return false;
 		return fetchingOfferedKeyFrom.contains(peer);
 	}
-	
+
+	/** Notify that we are no longer fetching an offered key from a specific 
+	 * node. Must be called only when we are sure the next node doesn't think
+	 * we are routing to it any more. See removeRoutingTo() explanation for more
+	 * detail. When we are not routing to any nodes, and not fetching from, and
+	 * the handler has also been unlocked, the UID is unlocked.
+	 * @param next The node we are no longer fetching an offered key from.
+	 */
 	public void removeFetchingOfferedKeyFrom(PeerNode next) {
 		boolean noRecordUnlock;
 		synchronized(this) {
@@ -117,6 +140,20 @@ public abstract class UIDTag {
 		innerUnlock(noRecordUnlock);
 	}
 	
+	/** Notify that we are no longer routing to a specific node. When we are
+	 * not routing to (or fetching offered keys from) any nodes, and the handler
+	 * side has also been unlocked, the whole tag is unlocked (note that this 
+	 * is only relevant to incoming requests; outgoing requests only care about
+	 * what we are routing to). We should not call this method until we are 
+	 * reasonably sure that the node in question no longer thinks we are 
+	 * routing to it. Whereas we unlock the handler as soon as possible, 
+	 * without waiting for acknowledgement of our completion notice. Be 
+	 * cautious (late) in what you send, and generous (early) in what 
+	 * you accept! This avoids problems with the previous node thinking we've
+	 * finished when we haven't, or us thinking the next node has finished when
+	 * it hasn't.
+	 * @param next The node we are no longer routing to.
+	 */
 	public void removeRoutingTo(PeerNode next) {
 		if(logMINOR)
 			Logger.minor(this, "No longer routing to "+next+" on "+this, new Exception("debug"));
@@ -137,7 +174,7 @@ public abstract class UIDTag {
 	}
 	
 	protected final void innerUnlock(boolean noRecordUnlock) {
-		node.unlockUID(this, false, noRecordUnlock);
+		tracker.unlockUID(this, false, noRecordUnlock);
 	}
 
 	public void postUnlock() {
@@ -152,10 +189,26 @@ public abstract class UIDTag {
 			for(PeerNode p : peers)
 				p.postUnlock(this);
 	}
+
+	/** Add up the expected transfers in.
+	 * @param ignoreLocalVsRemote If true, pretend that the request is remote even if it's local.
+	 * @param outwardTransfersPerInsert Expected number of outward transfers for an insert.
+	 * @param forAccept If true, we are deciding whether to accept a request.
+	 * If false, we are deciding whether to SEND a request. We need to be more
+	 * careful for the latter than the former, to avoid unnecessary rejections 
+	 * and mandatory backoffs.
+	 */
+	public abstract int expectedTransfersIn(boolean ignoreLocalVsRemote, int outwardTransfersPerInsert, boolean forAccept);
 	
-	public abstract int expectedTransfersIn(boolean ignoreLocalVsRemote, int outwardTransfersPerInsert);
-	
-	public abstract int expectedTransfersOut(boolean ignoreLocalVsRemote, int outwardTransfersPerInsert);
+	/** Add up the expected transfers out.
+	 * @param ignoreLocalVsRemote If true, pretend that the request is remote even if it's local.
+	 * @param outwardTransfersPerInsert Expected number of outward transfers for an insert.
+	 * @param forAccept If true, we are deciding whether to accept a request.
+	 * If false, we are deciding whether to SEND a request. We need to be more
+	 * careful for the latter than the former, to avoid unnecessary rejections 
+	 * and mandatory backoffs.
+	 */
+	public abstract int expectedTransfersOut(boolean ignoreLocalVsRemote, int outwardTransfersPerInsert, boolean forAccept);
 	
 	public synchronized void setNotRoutedOnwards() {
 		this.notRoutedOnwards = true;
@@ -205,7 +258,7 @@ public abstract class UIDTag {
 		if(hasUnlocked) return false;
 		if(!unlockedHandler) return false;
 		if(currentlyRoutingTo != null && !currentlyRoutingTo.isEmpty()) {
-			if(!(reassigned || wasLocal)) {
+			if(!(reassigned || wasLocal || sourceRestarted || timedOutButContinued)) {
 				boolean expected = false;
 				if(handlingTimeouts != null) {
 					expected = true;
@@ -253,6 +306,15 @@ public abstract class UIDTag {
 		return true;
 	}
 	
+	/** Unlock the handler. That is, the incoming request has finished. This 
+	 * method should be called before the acknowledgement that the request has
+	 * finished is sent downstream. Therefore, we will never be waiting for an
+	 * acknowledgement from downstream in order to release the slot it is using,
+	 * during which time it might think we are rejecting wrongly.
+	 * 
+	 * Once both the incoming and outgoing requests are unlocked, the whole tag
+	 * is unlocked.
+	 */
 	public void unlockHandler(boolean noRecord) {
 		boolean canUnlock;
 		synchronized(this) {
@@ -298,6 +360,10 @@ public abstract class UIDTag {
 		}
 		if(fetchingOfferedKeyFrom != null)
 			sb.append(" (fetch offered keys from ").append(fetchingOfferedKeyFrom.size()).append(")");
+		if(sourceRestarted)
+			sb.append(" (source restarted)");
+		if(timedOutButContinued)
+			sb.append(" (timed out but continued)");
 		return sb.toString();
 	}
 
@@ -313,16 +379,86 @@ public abstract class UIDTag {
 	}
 
 	private long loggedStillPresent;
-	private int LOGGED_STILL_PRESENT_INTERVAL = 60*1000;
-	
+	private static final int LOGGED_STILL_PRESENT_INTERVAL = 60*1000;
+
 	public void maybeLogStillPresent(long now, Long uid) {
-		if(now - createdTime > Node.TIMEOUT) {
+		if(now - createdTime > RequestTracker.TIMEOUT) {
 			synchronized(this) {
 				if(now - loggedStillPresent < LOGGED_STILL_PRESENT_INTERVAL) return;
 				loggedStillPresent = now;
 			}
 			logStillPresent(uid);
 		}
+	}
+
+	public synchronized void setAccepted() {
+		accepted = true;
+	}
+	
+	private boolean timedOutButContinued;
+
+	/** Set when we are going to tell downstream that the request has timed out,
+	 * but can't terminate it yet. We will terminate the request if we have to
+	 * reroute it, and we count it towards the peer's limit, but we don't stop
+	 * messages to the request source. */
+	public synchronized void timedOutToHandlerButContinued() {
+		timedOutButContinued = true;
+	}
+	
+	/** The handler disconnected or restarted. */
+	public synchronized void onRestartOrDisconnectSource() {
+		sourceRestarted = true;
+	}
+	
+	// The third option is reassignToSelf(). We only use that when we actually
+	// want the data, and mean to continue. In that case, none of the next three
+	// are appropriate.
+	
+	/** Should we deduct this request from the source's limit, instead of 
+	 * counting it towards it? A normal request is counted towards it. A hidden
+	 * request is deducted from it. This is used when the source has restarted
+	 * but also in some other cases. */
+	public synchronized boolean countAsSourceRestarted() {
+		return sourceRestarted || timedOutButContinued;
+	}
+	
+	/** Should we send messages to the source? */
+	public synchronized boolean hasSourceReallyRestarted() {
+		return sourceRestarted;
+	}
+	
+	/** Should we stop the request as soon as is convenient? Normally this 
+	 * happens when the source is restarted or disconnected. */
+	public synchronized boolean shouldStop() {
+		return sourceRestarted || timedOutButContinued;
+	}
+
+	public synchronized boolean isSource(PeerNode pn) {
+		if(reassigned) return false;
+		if(wasLocal) return false;
+		if(sourceRef == null) return false;
+		return sourceRef == pn.myRef;
+	}
+	
+	public synchronized void setWaitingForSlot() {
+		// FIXME use a counter on Node.
+		// We'd need to ensure it ALWAYS gets unset when some wierd
+		// error happens.
+		if(waitingForSlot) return;
+		waitingForSlot = true;
+	}
+	
+	public synchronized void clearWaitingForSlot() {
+		// FIXME use a counter on Node.
+		// We'd need to ensure it ALWAYS gets unset when some wierd
+		// error happens.
+		// Probably we can do this just by calling clearWaitingForSlot() when unlocking???
+		if(!waitingForSlot) return;
+		waitingForSlot = false;
+	}
+	
+	public synchronized boolean isWaitingForSlot() {
+		return waitingForSlot;
 	}
 
 }

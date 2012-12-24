@@ -15,7 +15,7 @@
  */
 package freenet.support;
 
-import freenet.utils.UTFUtil;
+import freenet.test.UTFUtil;
 import junit.framework.TestCase;
 
 /**

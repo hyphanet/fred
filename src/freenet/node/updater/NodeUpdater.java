@@ -4,11 +4,11 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -31,10 +31,9 @@ import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.node.Version;
 import freenet.support.Logger;
-import freenet.support.Ticker;
 import freenet.support.Logger.LogLevel;
+import freenet.support.Ticker;
 import freenet.support.api.Bucket;
-import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 
@@ -42,7 +41,6 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 
 	static private boolean logMINOR;
 	private FetchContext ctx;
-	private FetchResult result;
 	private ClientGetter cg;
 	private FreenetURI URI;
 	private final Ticker ticker;
@@ -54,7 +52,6 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	private int availableVersion;
 	private int fetchingVersion;
 	protected int fetchedVersion;
-	private int writtenVersion;
 	private int maxDeployVersion;
 	private int minDeployVersion;
 	private boolean isRunning;
@@ -80,7 +77,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		this.maxDeployVersion = max;
 		this.minDeployVersion = min;
 
-		FetchContext tempContext = core.makeClient((short) 0, true).getFetchContext();
+		FetchContext tempContext = core.makeClient((short) 0, true, false).getFetchContext();
 		tempContext.allowSplitfiles = true;
 		tempContext.dontEnterImplicitArchives = false;
 		this.ctx = tempContext;
@@ -98,6 +95,33 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		}
 	}
 	
+	protected void maybeProcessOldBlob() {
+		File oldBlob = getBlobFile(currentVersion);
+		if(oldBlob != null) {
+			File temp;
+			try {
+				temp = File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
+			} catch (IOException e) {
+				Logger.error(this, "Unable to process old blob: "+e, e);
+				return;
+			}
+			if(oldBlob.renameTo(temp)) {
+				FreenetURI uri = URI.setSuggestedEdition(currentVersion);
+				uri = uri.sskForUSK();
+				try {
+					manager.uom.processMainJarBlob(temp, null, currentVersion, uri);
+				} catch (Throwable t) {
+					// Don't disrupt startup.
+					Logger.error(this, "Unable to process old blob, caught "+t, t);
+				}
+				temp.delete();
+			} else {
+				Logger.error(this, "Unable to rename old blob file "+oldBlob+" to "+temp+" so can't process it.");
+			}
+		}
+
+	}
+
 	protected RequestClient getRequestClient() {
 		return this;
 	}
@@ -223,32 +247,6 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		if(f == null) return null;
 		return new FileBucket(f, true, false, false, false, false);
 	}
-	private final Object writeJarSync = new Object();
-
-	public void writeJarTo(File fNew) throws IOException {
-		int fetched;
-		synchronized(this) {
-			fetched = fetchedVersion;
-		}
-		synchronized(writeJarSync) {
-			if (!fNew.delete() && fNew.exists()) {
-				System.err.println("Can't delete " + fNew + "!");
-			}
-
-			FileOutputStream fos;
-			fos = new FileOutputStream(fNew);
-
-			BucketTools.copyTo(result.asBucket(), fos, -1);
-
-			fos.flush();
-			fos.close();
-		}
-		synchronized(this) {
-			writtenVersion = fetched;
-		}
-		System.err.println("Written " + jarName() + " to " + fNew);
-	}
-
 	@Override
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		onSuccess(result, state, tempBlobFile, fetchingVersion);
@@ -256,6 +254,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 
 	void onSuccess(FetchResult result, ClientGetter state, File tempBlobFile, int fetchedVersion) {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+		File blobFile = null;
 		synchronized(this) {
 			if(fetchedVersion <= this.fetchedVersion) {
 				tempBlobFile.delete();
@@ -281,35 +280,34 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 					}, 0);
 				return;
 			}
-			File blobFile = getBlobFile(fetchedVersion);
+			blobFile = getBlobFile(fetchedVersion);
 			if(!tempBlobFile.renameTo(blobFile)) {
 				blobFile.delete();
 				if(!tempBlobFile.renameTo(blobFile))
 					if(blobFile.exists() && tempBlobFile.exists() &&
 						blobFile.length() == tempBlobFile.length())
 						Logger.minor(this, "Can't rename " + tempBlobFile + " over " + blobFile + " for " + fetchedVersion + " - probably not a big deal though as the files are the same size");
-					else
+					else {
 						Logger.error(this, "Not able to rename binary blob for node updater: " + tempBlobFile + " -> " + blobFile + " - may not be able to tell other peers about this build");
+						blobFile = null;
+					}
 			}
 			this.fetchedVersion = fetchedVersion;
 			System.out.println("Found " + jarName() + " version " + fetchedVersion);
 			if(fetchedVersion > currentVersion)
 				Logger.normal(this, "Found version " + fetchedVersion + ", setting up a new UpdatedVersionAvailableUserAlert");
-			maybeParseManifest(result);
+			maybeParseManifest(result, fetchedVersion);
 			this.cg = null;
-			if(this.result != null)
-				this.result.asBucket().free();
-			this.result = result;
 		}
-		processSuccess();
+		processSuccess(fetchedVersion, result, blobFile);
 	}
 	
 	/** We have fetched the jar! Do something after onSuccess(). Called unlocked. */
-	protected abstract void processSuccess();
+	protected abstract void processSuccess(int fetched, FetchResult result, File blobFile);
 
 	/** Called with locks held 
 	 * @param result */
-	protected abstract void maybeParseManifest(FetchResult result);
+	protected abstract void maybeParseManifest(FetchResult result, int build);
 
 	protected void parseManifest(FetchResult result) {
 		InputStream is = null;
@@ -356,6 +354,61 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		} finally {
 			Closer.close(is);
 		}
+	}
+	
+	static final String DEPENDENCIES_FILE = "dependencies.properties";
+	
+	static Properties parseProperties(InputStream is, String filename) throws IOException {
+		Properties props = new Properties();
+		ZipInputStream zis = new ZipInputStream(is);
+		try {
+			ZipEntry ze;
+			while(true) {
+				ze = zis.getNextEntry();
+				if(ze == null) break;
+				if(ze.isDirectory()) continue;
+				String name = ze.getName();
+				
+				if(name.equals(filename)) {
+					if(logMINOR) Logger.minor(NodeUpdater.class, "Found manifest");
+					long size = ze.getSize();
+					if(logMINOR) Logger.minor(NodeUpdater.class, "Manifest size: "+size);
+					if(size > MAX_MANIFEST_SIZE) {
+						Logger.error(NodeUpdater.class, "Manifest is too big: "+size+" bytes, limit is "+MAX_MANIFEST_SIZE);
+						break;
+					}
+					byte[] buf = new byte[(int) size];
+					DataInputStream dis = new DataInputStream(zis);
+					dis.readFully(buf);
+					ByteArrayInputStream bais = new ByteArrayInputStream(buf);
+					props.load(bais);
+				} else {
+					zis.closeEntry();
+				}
+			}
+		} finally {
+			Closer.close(zis);
+		}
+		return props;
+	}
+
+	protected void parseDependencies(FetchResult result, int build) {
+		InputStream is = null;
+		try {
+			is = result.asBucket().getInputStream();
+			parseDependencies(parseProperties(is, DEPENDENCIES_FILE), build);
+		} catch (IOException e) {
+			Logger.error(this, "IOException trying to read manifest on update");
+		} catch (Throwable t) {
+			Logger.error(this, "Failed to parse update manifest: "+t, t);
+		} finally {
+			Closer.close(is);
+		}
+	}
+
+	/** Override if you want to deal with the file dependencies.properties */
+	protected void parseDependencies(Properties props, int build) {
+		// Do nothing
 	}
 
 	protected void parseManifestLine(String line) {
@@ -444,10 +497,6 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		kill();
 		this.URI = uri;
 		maybeUpdate();
-	}
-
-	public int getWrittenVersion() {
-		return writtenVersion;
 	}
 
 	public int getFetchedVersion() {

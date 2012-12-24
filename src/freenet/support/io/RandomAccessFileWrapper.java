@@ -11,6 +11,7 @@ public class RandomAccessFileWrapper implements RandomAccessThing {
 
 	// FIXME maybe we should avoid opening these until we are ready to use them
 	final RandomAccessFile raf;
+	private boolean closed = false;
 	
 	public RandomAccessFileWrapper(RandomAccessFile raf) {
 		this.raf = raf;
@@ -45,6 +46,10 @@ public class RandomAccessFileWrapper implements RandomAccessThing {
 
 	@Override
 	public void close() {
+		synchronized(this) {
+			if(closed) return;
+			closed = true;
+		}
 		try {
 			raf.close();
 		} catch (IOException e) {

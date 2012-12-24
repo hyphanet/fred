@@ -23,7 +23,7 @@ public class SimpleRunningAverage implements RunningAverage {
     private boolean logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 
     @Override
-	public final Object clone() {
+	public final SimpleRunningAverage clone() {
         return new SimpleRunningAverage(this);
     }
     

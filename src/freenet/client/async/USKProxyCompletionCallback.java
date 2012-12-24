@@ -15,6 +15,12 @@ import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.support.compress.Compressor;
 
+/**
+ * Passes everything through, except that is updates the lastKnownGood on the USKManager,
+ * and has some code to handle new URIs.
+ * @author toad
+ *
+ */
 public class USKProxyCompletionCallback implements GetCompletionCallback {
 
 	final USK usk;
@@ -57,6 +63,7 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 		}
 		FreenetURI uri = e.newURI;
 		if(uri != null) {
+			// FIXME what are we doing here anyway? Document!
 			uri = usk.turnMySSKIntoUSK(uri);
 			e = new FetchException(e, uri);
 		}

@@ -1,37 +1,37 @@
 package freenet.support;
 
 /**
- * Size formatting utility.
+ * Size formatting utility. Uses IEC units.
  */
 public class SizeUtil {
 	public final static String[] suffixes = { "B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB" };
 
-	public static String formatSize(long sz) {
-		return formatSize(sz, false);
+	public static String formatSize(long bytes) {
+		return formatSize(bytes, false);
 	}
 
-	public static String formatSizeWithoutSpace(long sz) {
-		String[] result = _formatSize(sz);
+	public static String formatSizeWithoutSpace(long bytes) {
+		String[] result = _formatSize(bytes);
 		return result[0].concat(result[1]);
 	}
 	
-	public static String formatSize(long sz, boolean useNonBreakingSpace) {
-		String[] result = _formatSize(sz);
+	public static String formatSize(long bytes, boolean useNonBreakingSpace) {
+		String[] result = _formatSize(bytes);
 		return result[0].concat((useNonBreakingSpace ? "\u00a0" : " ")).concat(result[1]);
 	}
 	
-	public static String[] _formatSize(long sz) {
+	public static String[] _formatSize(long bytes) {
 		long s = 1;
 		int i;
-		boolean negative = (sz < 0);
-		if (negative) sz *= -1;
+		boolean negative = (bytes < 0);
+		if (negative) bytes *= -1;
 
 		for(i=0;i<SizeUtil.suffixes.length;i++) {
 			if (s > Long.MAX_VALUE / 1024) {
 				// Largest supported size
 				break;
 			}
-			if(s * 1024 > sz) {
+			if(s * 1024 > bytes) {
 				// Smaller than multiplier [i] - use the previous one
 				break;
 			}
@@ -40,11 +40,11 @@ public class SizeUtil {
 		
 		if (s == 1)  // Bytes? Then we don't need real numbers with a comma
 		{
-			return new String[] { (negative ? "-" : "") + String.valueOf(sz), SizeUtil.suffixes[0] };
+			return new String[] { (negative ? "-" : "") + String.valueOf(bytes), SizeUtil.suffixes[0] };
 		}
 		else
 		{
-			double mantissa = (double)sz / (double)s;
+			double mantissa = (double)bytes / (double)s;
 			String o = String.valueOf(mantissa);
 			if(o.indexOf('.') == 3)
 				o = o.substring(0, 3);

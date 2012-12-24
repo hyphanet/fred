@@ -16,7 +16,8 @@
 package freenet.support;
 
 import java.io.UnsupportedEncodingException;
-import freenet.utils.*;
+
+import freenet.test.*;
 import junit.framework.TestCase;
 
 /**

@@ -33,9 +33,11 @@ public class SubscribeUSK implements USKProgressCallback {
 		prioProgress = message.prioProgress;
 		handler.addUSKSubscription(identifier, this);
 		if((!message.dontPoll) && message.sparsePoll)
-			toUnsub = core.uskManager.subscribeSparse(message.key, this, handler.getRebootClient().lowLevelClient(message.realTimeFlag));
+			toUnsub = core.uskManager.subscribeSparse(message.key, this, message.ignoreUSKDatehints,
+					handler.getRebootClient().lowLevelClient(message.realTimeFlag));
 		else {
-			core.uskManager.subscribe(message.key, this, !message.dontPoll, handler.getRebootClient().lowLevelClient(message.realTimeFlag));
+			core.uskManager.subscribe(message.key, this, !message.dontPoll, message.ignoreUSKDatehints,
+					handler.getRebootClient().lowLevelClient(message.realTimeFlag));
 			toUnsub = this;
 		}
 	}
@@ -43,7 +45,7 @@ public class SubscribeUSK implements USKProgressCallback {
 	@Override
 	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 		if(handler.isClosed()) {
-			core.uskManager.unsubscribe(key, this);
+			core.uskManager.unsubscribe(key, toUnsub);
 			return;
 		}
 		//if(newKnownGood && !newSlotToo) return;
@@ -62,7 +64,7 @@ public class SubscribeUSK implements USKProgressCallback {
 	}
 
 	public void unsubscribe() {
-		core.uskManager.unsubscribe(usk, this);
+		core.uskManager.unsubscribe(usk, toUnsub);
 	}
 
 	@Override

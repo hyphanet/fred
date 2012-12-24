@@ -1573,21 +1573,23 @@ class CSSTokenizerFilter {
 
 		}
 
-		if("*".equals(HTMLelement) || (ElementInfo.isValidHTMLTag(HTMLelement.toLowerCase())) || ("".equals(HTMLelement.trim()) && (className!="" || id!="" || attSelections!=null || pseudoClass!="")))
+		if("*".equals(HTMLelement) || (ElementInfo.isValidHTMLTag(HTMLelement.toLowerCase())) || 
+				("".equals(HTMLelement.trim()) && 
+						((!className.equals("")) || (!id.equals("")) || attSelections!=null || !pseudoClass.equals(""))))
 		{
-			if(className!="")
+			if(!className.equals(""))
 			{
 				// Note that the definition of isValidName() allows chained classes because it allows . in class names.
 				if(!ElementInfo.isValidName(className))
 					isValid=false;
 			}
-			else if(id!="")
+			else if(!id.equals(""))
 			{
 				if(!ElementInfo.isValidName(id))
 					isValid=false;
 			}
 
-			if(isValid && pseudoClass!="")
+			if(isValid && !pseudoClass.equals(""))
 			{
 				if(!ElementInfo.isValidPseudoClass(pseudoClass))
 					isValid=false;
@@ -1646,23 +1648,23 @@ class CSSTokenizerFilter {
 			if(isValid)
 			{
 				fBuffer.append(HTMLelement);
-				if(className!="") {
+				if(!className.equals("")) {
 					fBuffer.append('.');
-                                        fBuffer.append(className);
-                                } else if(id!="") {
+					fBuffer.append(className);
+				} else if(!id.equals("")) {
 					fBuffer.append('#');
-                                        fBuffer.append(id);
-                                }
-				if(pseudoClass!="") {
+					fBuffer.append(id);
+				}
+				if(!pseudoClass.equals("")) {
 					fBuffer.append(':');
-                                        fBuffer.append(pseudoClass);
-                                }
+					fBuffer.append(pseudoClass);
+				}
 				if(attSelections!=null) {
 					for(String attSelection:attSelections) {
 						fBuffer.append('[');
-                                                fBuffer.append(attSelection);
-                                                fBuffer.append(']');
-                                        }
+						fBuffer.append(attSelection);
+						fBuffer.append(']');
+					}
 				}
 				return fBuffer.toString();
 			}
@@ -2234,7 +2236,7 @@ class CSSTokenizerFilter {
 					}
 
 					openBraces++;
-					if(buffer.toString().trim()!="")
+					if(!buffer.toString().trim().equals(""))
 					{
 						String filtered=recursiveSelectorVerifier(buffer.toString());
 						if(filtered!=null)
@@ -3843,12 +3845,12 @@ class CSSTokenizerFilter {
 						if(logDEBUG) Logger.debug(this, "2Making recursiveDoubleBarVerifier to consume "+j+" words");
 						ParsedWord[] partToPassToDB = new ParsedWord[j];
 						System.arraycopy(words, 0, partToPassToDB, 0, j);
-						if(logDEBUG) Logger.debug(this, "3Calling recursiveDoubleBarVerifier with "+firstPart+" "+partToPassToDB.toString());
+						if(logDEBUG) Logger.debug(this, "3Calling recursiveDoubleBarVerifier with "+firstPart+" "+CSSPropertyVerifier.toString(partToPassToDB));
 						if(recursiveDoubleBarVerifier(firstPart,partToPassToDB,cb)) //This function is written to verify || operator.
 						{
 							ParsedWord[] partToPass = new ParsedWord[words.length-j];
 							System.arraycopy(words, j, partToPass, 0, words.length-j);
-							if(logDEBUG) Logger.debug(this, "4recursiveDoubleBarVerifier true calling itself with "+secondPart+partToPass.toString());
+							if(logDEBUG) Logger.debug(this, "4recursiveDoubleBarVerifier true calling itself with "+secondPart+CSSPropertyVerifier.toString(partToPass));
 							if(recursiveParserExpressionVerifier(secondPart,partToPass,cb))
 								return true;
 						}
@@ -3868,7 +3870,7 @@ class CSSTokenizerFilter {
 						{
 							ParsedWord[] partToPass = new ParsedWord[words.length-1];
 							System.arraycopy(words, 1, partToPass, 0, words.length-1);
-							if(logDEBUG) Logger.debug(this, "8First part is true. partToPass="+partToPass.toString());
+							if(logDEBUG) Logger.debug(this, "8First part is true. partToPass="+CSSPropertyVerifier.toString(partToPass));
 							if(recursiveParserExpressionVerifier(secondPart,partToPass, cb))
 								return true;
 						}

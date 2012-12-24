@@ -38,6 +38,7 @@ public class BookmarkManager implements RequestClient {
 	private final NodeClientCore node;
 	private final USKUpdatedCallback uskCB = new USKUpdatedCallback();
 	public static final BookmarkCategory MAIN_CATEGORY = new BookmarkCategory("/");
+	public static final BookmarkCategory DEFAULT_CATEGORY = new BookmarkCategory("\\");
 	private final HashMap<String, Bookmark> bookmarks = new HashMap<String, Bookmark>();
 	private final File bookmarksFile;
 	private final File backupBookmarksFile;
@@ -71,7 +72,7 @@ public class BookmarkManager implements RequestClient {
 		});
 	}
 
-	public BookmarkManager(NodeClientCore n) {
+	public BookmarkManager(NodeClientCore n, boolean publicGateway) {
 		putPaths("/", MAIN_CATEGORY);
 		this.node = n;
 		this.bookmarksFile = n.node.userDir().file("bookmarks.dat");
@@ -102,6 +103,11 @@ public class BookmarkManager implements RequestClient {
 				Logger.error(this, "Error reading the backup bookmark file !" + e.getMessage(), e);
 			}
 		}
+		//populate defaults for hosts without full access permissions if we're in gateway mode.
+		if (publicGateway) {
+			putPaths("\\", DEFAULT_CATEGORY);
+			readBookmarks(DEFAULT_CATEGORY, DEFAULT_BOOKMARKS);
+		}
 	}
 
 	public void reAddDefaultBookmarks() {
@@ -116,7 +122,7 @@ public class BookmarkManager implements RequestClient {
 		public void onFoundEdition(long edition, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 			if(!newKnownGood) {
 				FreenetURI uri = key.copy(edition).getURI();
-				node.makeClient(PRIORITY_PROGRESS, false, false).prefetch(uri, 60*60*1000, FProxyToadlet.MAX_LENGTH, null, PRIORITY_PROGRESS);
+				node.makeClient(PRIORITY_PROGRESS, false, false).prefetch(uri, 60*60*1000, FProxyToadlet.MAX_LENGTH_WITH_PROGRESS, null, PRIORITY_PROGRESS);
 				return;
 			}
 			List<BookmarkItem> items = MAIN_CATEGORY.getAllItems();

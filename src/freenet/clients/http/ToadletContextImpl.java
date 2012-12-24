@@ -645,9 +645,12 @@ public class ToadletContextImpl implements ToadletContext {
 	}
 	
 	/**
-	 * @param data The Bucket which contains the reply data. This function does not free() the Bucket!
-	 * 
-	 * FIXME: For all references to this function, check whether they free() the Bucket.
+	 * @param data The Bucket which contains the reply data. This
+	 *        function assumes ownership of the Bucket, calling free()
+	 *        on it when done. If this behavior is undesired, callers
+	 *        can wrap their Bucket in a NoFreeBucket.
+	 *
+	 * @see freenet.support.io.NoFreeBucket
 	 */
 	@Override
 	public void writeData(Bucket data) throws ToadletContextClosedException, IOException {

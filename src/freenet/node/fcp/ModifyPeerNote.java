@@ -17,10 +17,10 @@ import freenet.support.SimpleFieldSet;
 public class ModifyPeerNote extends FCPMessage {
 
 	static final String NAME = "ModifyPeerNote";
-	
+
 	final SimpleFieldSet fs;
 	final String identifier;
-	
+
 	public ModifyPeerNote(SimpleFieldSet fs) {
 		this.fs = fs;
 		identifier = fs.get("Identifier");
@@ -69,7 +69,7 @@ public class ModifyPeerNote extends FCPMessage {
 		String noteText;
 		// **FIXME** this should be generalized for multiple peer notes per peer, after PeerNode is similarly generalized
 		try {
-			noteText = new String(Base64.decode(encodedNoteText));
+			noteText = Base64.decodeUTF8(encodedNoteText);
 		} catch (IllegalBase64Exception e) {
 			Logger.error(this, "Bad Base64 encoding when decoding a FCP-received private darknet comment SimpleFieldSet", e);
 			return;

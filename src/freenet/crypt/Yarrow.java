@@ -169,7 +169,7 @@ public class Yarrow extends RandomSource {
 				Closer.close(dis);
 				Closer.close(fis);
 			}
-			if(canBlock && isSystemEntropyAvailable)
+			if(canBlock)
 				// Read some bits from /dev/random
 				try {
 					fis = new FileInputStream("/dev/random");
@@ -249,12 +249,11 @@ public class Yarrow extends RandomSource {
 			dis = new DataInputStream(bis);
 
 			EntropySource seedFile = new EntropySource();
-			try {
 				for(int i = 0; i < 32; i++)
 					acceptEntropy(seedFile, dis.readLong(), 64);
-			} catch(EOFException f) {
-			}
 			dis.close();
+		} catch(EOFException f) {
+			// Okay.
 		} catch(IOException e) {
 			Logger.error(this, "IOE trying to read the seedfile from disk : " + e.getMessage());
 		} finally {
@@ -318,13 +317,13 @@ public class Yarrow extends RandomSource {
 		fetch_counter = output_buffer.length;
 	}
 
-	private final void counterInc() {
+	private void counterInc() {
 		for(int i = counter.length - 1; i >= 0; i--)
 			if(++counter[i] != 0)
 				break;
 	}
 
-	private final void generateOutput() {
+	private void generateOutput() {
 		counterInc();
 
 		output_buffer = new byte[counter.length];

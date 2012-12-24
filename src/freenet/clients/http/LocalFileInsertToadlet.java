@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
+import java.io.File;
 import java.net.MalformedURLException;
 import java.util.Hashtable;
 
@@ -27,6 +28,16 @@ public class LocalFileInsertToadlet extends LocalFileBrowserToadlet {
 	@Override
 	protected String postTo() {
 		return POST_TO;
+	}
+
+	@Override
+	protected boolean allowedDir(File path) {
+		return core.allowUploadFrom(path);
+	}
+
+	@Override
+	protected String startingDir() {
+		return defaultUploadDir();
 	}
 
     @Override

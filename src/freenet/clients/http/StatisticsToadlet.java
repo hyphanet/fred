@@ -14,6 +14,7 @@ import java.util.Map;
 import freenet.client.async.ClientRequester;
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.SubConfig;
+import freenet.crypt.ciphers.Rijndael;
 import freenet.io.comm.IncomingPacketFilterImpl;
 import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.BlockTransmitter;
@@ -29,6 +30,7 @@ import freenet.node.PeerManager;
 import freenet.node.PeerNodeStatus;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarterGroup;
+import freenet.node.RequestTracker;
 import freenet.node.Version;
 import freenet.node.stats.DataStoreInstanceType;
 import freenet.node.stats.DataStoreStats;
@@ -166,8 +168,8 @@ public class StatisticsToadlet extends Toadlet {
 		int numberOfDisconnecting = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_DISCONNECTING);
 		int numberOfNoLoadStats = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_NO_LOAD_STATS);
 
-		final int mode = ctx.getPageMaker().parseMode(request, container);
-		PageNode page = ctx.getPageMaker().getPageNode(l10n("fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
+		PageNode page = ctx.getPageMaker().getPageNode(l10n("fullTitle"), ctx);
+		boolean advancedMode = ctx.getContainer().isAdvancedModeEnabled();
 		pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 
@@ -195,7 +197,7 @@ public class StatisticsToadlet extends Toadlet {
 		// jvm stats box
 		HTMLNode jvmStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
 		
-		drawJVMStatsBox(jvmStatsInfobox);
+		drawJVMStatsBox(jvmStatsInfobox, advancedMode);
 		
 		// Statistic gathering box
 		HTMLNode statGatheringContent = ctx.getPageMaker().getInfobox("#", l10n("statisticGatheringTitle"), nextTableCell, "statistics-generating", true);
@@ -209,8 +211,9 @@ public class StatisticsToadlet extends Toadlet {
 		if(nodeConfig.config.get("logger").getBoolean("enabled"))
 			logsList.addChild("li").addChild("a", new String[]{ "href", "target"}, new String[]{ "/?latestlog", "_blank"}, l10n("getLogs"));
 		logsList.addChild("li").addChild("a", "href", TranslationToadlet.TOADLET_URL+"?getOverrideTranlationFile").addChild("#", NodeL10n.getBase().getString("TranslationToadlet.downloadTranslationsFile"));
+		logsList.addChild("li").addChild("a", "href", DiagnosticToadlet.TOADLET_URL).addChild("#", NodeL10n.getBase().getString("FProxyToadlet.diagnostic"));
 		
-		if(mode >= PageMaker.MODE_ADVANCED) {
+		if(advancedMode) {
 			// store size box
 			//HTMLNode storeSizeInfobox = nextTableCell.addChild("div", "class", "infobox");
              HTMLNode storeSizeInfobox = contentNode.addChild("div","class", "infobox");
@@ -254,16 +257,16 @@ public class StatisticsToadlet extends Toadlet {
 			}
 		}
 
-		if(mode >= PageMaker.MODE_ADVANCED || numberOfConnected + numberOfRoutingBackedOff > 0) {			
+		if(advancedMode || numberOfConnected + numberOfRoutingBackedOff > 0) {
 
 			// Activity box
 			nextTableCell = overviewTableRow.addChild("td", "class", "last");
 			HTMLNode activityInfobox = nextTableCell.addChild("div", "class", "infobox");
 			
-			drawActivityBox(activityInfobox, mode >= PageMaker.MODE_ADVANCED);
+			drawActivityBox(activityInfobox, advancedMode);
 
 			/* node status overview box */
-			if(mode >= PageMaker.MODE_ADVANCED) {
+			if(advancedMode) {
 				HTMLNode overviewInfobox = nextTableCell.addChild("div", "class", "infobox");
 				drawOverviewBox(overviewInfobox, nodeUptimeSeconds, node.clientCore.bandwidthStatsPutter.getLatestUptimeData().totalUptime, now, swaps, noSwaps);
 			}
@@ -271,7 +274,7 @@ public class StatisticsToadlet extends Toadlet {
 			// Peer statistics box
 			HTMLNode peerStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
 			
-			drawPeerStatsBox(peerStatsInfobox, mode >= PageMaker.MODE_ADVANCED, numberOfConnected, numberOfRoutingBackedOff, 
+			drawPeerStatsBox(peerStatsInfobox, advancedMode, numberOfConnected, numberOfRoutingBackedOff,
 					numberOfTooNew, numberOfTooOld, numberOfDisconnected, numberOfNeverConnected, numberOfDisabled, 
 					numberOfBursting, numberOfListening, numberOfListenOnly, numberOfSeedServers, numberOfSeedClients,
 					numberOfRoutingDisabled, numberOfClockProblem, numberOfConnError, numberOfDisconnecting, numberOfNoLoadStats, node);
@@ -279,10 +282,10 @@ public class StatisticsToadlet extends Toadlet {
 			// Bandwidth box
 			HTMLNode bandwidthInfobox = nextTableCell.addChild("div", "class", "infobox");
 			
-			drawBandwidthBox(bandwidthInfobox, nodeUptimeSeconds, mode >= PageMaker.MODE_ADVANCED);
+			drawBandwidthBox(bandwidthInfobox, nodeUptimeSeconds, advancedMode);
 		}
 
-		if(mode >= PageMaker.MODE_ADVANCED) {
+		if(advancedMode) {
 
 			// Peer routing backoff reason box
 			HTMLNode backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
@@ -524,7 +527,7 @@ public class StatisticsToadlet extends Toadlet {
 	}
 
 	private void showRequesters(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		PageNode page = ctx.getPageMaker().getPageNode(l10n("fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
+		PageNode page = ctx.getPageMaker().getPageNode(l10n("fullTitle"), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 
@@ -577,17 +580,12 @@ public class StatisticsToadlet extends Toadlet {
 		HTMLNode versionInfoboxList = versionInfoboxContent.addChild("ul");
 		versionInfoboxList.addChild("li", NodeL10n.getBase().getString("WelcomeToadlet.version", new String[] { "fullVersion", "build", "rev" },
 				new String[] { Version.publicVersion(), Integer.toString(Version.buildNumber()), Version.cvsRevision() }));
-		if(NodeStarter.extBuildNumber < NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER)
-			versionInfoboxList.addChild("li", NodeL10n.getBase().getString("WelcomeToadlet.extVersionWithRecommended", 
-					new String[] { "build", "recbuild", "rev" }, 
-					new String[] { Integer.toString(NodeStarter.extBuildNumber), Integer.toString(NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER), NodeStarter.extRevisionNumber }));
-		else
-			versionInfoboxList.addChild("li", NodeL10n.getBase().getString("WelcomeToadlet.extVersion", new String[] { "build", "rev" },
-					new String[] { Integer.toString(NodeStarter.extBuildNumber), NodeStarter.extRevisionNumber }));
+		versionInfoboxList.addChild("li", NodeL10n.getBase().getString("WelcomeToadlet.extVersion", new String[] { "build", "rev" },
+				new String[] { Integer.toString(NodeStarter.extBuildNumber), NodeStarter.extRevisionNumber }));
 		
 	}
 
-	private void drawJVMStatsBox(HTMLNode jvmStatsInfobox) {
+	private void drawJVMStatsBox(HTMLNode jvmStatsInfobox, boolean advancedModeEnabled) {
 		
 		jvmStatsInfobox.addChild("div", "class", "infobox-header", l10n("jvmInfoTitle"));
 		HTMLNode jvmStatsInfoboxContent = jvmStatsInfobox.addChild("div", "class", "infobox-content");
@@ -618,7 +616,12 @@ public class StatisticsToadlet extends Toadlet {
 		jvmStatsList.addChild("li", l10n("osName", "name", System.getProperty("os.name")));
 		jvmStatsList.addChild("li", l10n("osVersion", "version", System.getProperty("os.version")));
 		jvmStatsList.addChild("li", l10n("osArch", "arch", System.getProperty("os.arch")));
-		
+		if(advancedModeEnabled) {
+			if(Rijndael.isJCACrippled)
+				jvmStatsList.addChild("li", l10n("cryptoUsingBuiltin"));
+			else
+				jvmStatsList.addChild("li", l10n("cryptoUsingJCA", "provider", Rijndael.getProviderName()));
+		}
 	}
 	
 	private void drawThreadPriorityStatsBox(HTMLNode node) {
@@ -1190,18 +1193,19 @@ public class StatisticsToadlet extends Toadlet {
 	}
 
 	static HTMLNode drawActivity(HTMLNode activityInfoboxContent, Node node) {
-		int numLocalCHKInserts = node.getNumLocalCHKInserts();
-		int numRemoteCHKInserts = node.getNumRemoteCHKInserts();
-		int numLocalSSKInserts = node.getNumLocalSSKInserts();
-		int numRemoteSSKInserts = node.getNumRemoteSSKInserts();
-		int numLocalCHKRequests = node.getNumLocalCHKRequests();
-		int numRemoteCHKRequests = node.getNumRemoteCHKRequests();
-		int numLocalSSKRequests = node.getNumLocalSSKRequests();
-		int numRemoteSSKRequests = node.getNumRemoteSSKRequests();
+		RequestTracker tracker = node.tracker;
+		int numLocalCHKInserts = tracker.getNumLocalCHKInserts();
+		int numRemoteCHKInserts = tracker.getNumRemoteCHKInserts();
+		int numLocalSSKInserts = tracker.getNumLocalSSKInserts();
+		int numRemoteSSKInserts = tracker.getNumRemoteSSKInserts();
+		int numLocalCHKRequests = tracker.getNumLocalCHKRequests();
+		int numRemoteCHKRequests = tracker.getNumRemoteCHKRequests();
+		int numLocalSSKRequests = tracker.getNumLocalSSKRequests();
+		int numRemoteSSKRequests = tracker.getNumRemoteSSKRequests();
 		int numTransferringRequests = node.getNumTransferringRequestSenders();
 		int numTransferringRequestHandlers = node.getNumTransferringRequestHandlers();
-		int numCHKOfferReplys = node.getNumCHKOfferReplies();
-		int numSSKOfferReplys = node.getNumSSKOfferReplies();
+		int numCHKOfferReplys = tracker.getNumCHKOfferReplies();
+		int numSSKOfferReplys = tracker.getNumSSKOfferReplies();
 		int numCHKRequests = numLocalCHKRequests + numRemoteCHKRequests;
 		int numSSKRequests = numLocalSSKRequests + numRemoteSSKRequests;
 		int numCHKInserts = numLocalCHKInserts + numRemoteCHKInserts;

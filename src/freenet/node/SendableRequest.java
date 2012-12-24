@@ -114,6 +114,15 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 		return parentGrabArray;
 	}
 	
+	/** Grab it to avoid race condition when unregistering twice in parallel. */
+	private synchronized RandomGrabArray grabParentGrabArray(ObjectContainer container) {
+		RandomGrabArray ret = parentGrabArray;
+		parentGrabArray = null;
+		if(persistent())
+			container.store(this);
+		return ret;
+	}
+	
 	@Override
 	public boolean knowsParentGrabArray() {
 		return true;
@@ -134,7 +143,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	 * (short)-1 means not specified (look it up).
 	 */
 	public void unregister(ObjectContainer container, ClientContext context, short oldPrio) {
-		RandomGrabArray arr = getParentGrabArray();
+		RandomGrabArray arr = grabParentGrabArray(container);
 		if(arr != null) {
 			if(persistent)
 				container.activate(arr, 1);

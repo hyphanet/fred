@@ -19,6 +19,7 @@ public class PersistentPut extends FCPMessage {
 	
 	final String identifier;
 	final FreenetURI uri;
+	final FreenetURI privateURI;
 	final int verbosity; 
 	final short priorityClass;
 	final short uploadFrom;
@@ -39,13 +40,14 @@ public class PersistentPut extends FCPMessage {
 	final byte[] splitfileCryptoKey;
 	final String compressorDescriptor;
 	
-	public PersistentPut(String identifier, FreenetURI uri, int verbosity, 
+	public PersistentPut(String identifier, FreenetURI publicURI, FreenetURI privateURI, int verbosity, 
 			short priorityClass, short uploadFrom, FreenetURI targetURI, 
 			short persistenceType, File origFilename, String mimeType, 
 			boolean global, long size, String clientToken, boolean started, 
 			int maxRetries, String targetFilename, boolean binaryBlob, InsertContext.CompatibilityMode compatMode, boolean dontCompress, String compressorDescriptor, boolean realTime, byte[] splitfileCryptoKey) {
 		this.identifier = identifier;
-		this.uri = uri;
+		this.uri = publicURI;
+		this.privateURI = privateURI;
 		this.verbosity = verbosity;
 		this.priorityClass = priorityClass;
 		this.uploadFrom = uploadFrom;
@@ -72,6 +74,8 @@ public class PersistentPut extends FCPMessage {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.putSingle("Identifier", identifier);
 		fs.putSingle("URI", uri.toString(false, false));
+		if(privateURI != null)
+			fs.putSingle("PrivateURI", privateURI.toString(false, false));
 		fs.put("Verbosity", verbosity);
 		fs.put("PriorityClass", priorityClass);
 		fs.putSingle("UploadFrom", ClientPutMessage.uploadFromString(uploadFrom));

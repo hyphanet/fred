@@ -5,6 +5,7 @@ import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
 
+import java.io.File;
 import java.util.Hashtable;
 
 public class LocalDownloadDirectoryToadlet extends LocalDirectoryToadlet {
@@ -14,17 +15,30 @@ public class LocalDownloadDirectoryToadlet extends LocalDirectoryToadlet {
 	}
 
 	@Override
+	protected String startingDir() {
+		return defaultDownloadDir();
+	}
+
+	@Override
+	protected boolean allowedDir(File path) {
+		return core.allowDownloadTo(path);
+	}
+
+	@Override
+	protected String filenameField() {
+		return "path";
+	}
+
+	@Override
 	protected void createSelectDirectoryButton (HTMLNode formNode, String path, HTMLNode persist) {
-		if (core.allowDownloadTo(new java.io.File(path))) {
-			formNode.addChild("input",
-			        new String[] { "type", "name", "value" },
-			        new String[] { "submit", "select-dir",
-			                NodeL10n.getBase().getString("QueueToadlet.download")});
-			formNode.addChild("input",
-			        new String[] { "type", "name", "value" },
-			        new String[] { "hidden", "path", path});
-			formNode.addChild(persist);
-		}
+		formNode.addChild("input",
+			new String[] { "type", "name", "value" },
+			new String[] { "submit", selectDir,
+				NodeL10n.getBase().getString("QueueToadlet.download")});
+		formNode.addChild("input",
+			new String[] { "type", "name", "value" },
+			new String[] { "hidden", filenameField(), path});
+		formNode.addChild(persist);
 	}
 
 	@Override

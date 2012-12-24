@@ -18,7 +18,7 @@ public class URLEncoder {
 		return safeURLCharacters;
 	}
 	
-	public final static String encode(String URL, String force, boolean ascii) {
+	public static String encode(String URL, String force, boolean ascii) {
 		return encode(URL, force, ascii, "");
 	}
 	
@@ -31,7 +31,7 @@ public class URLEncoder {
 	 * passing to something that needs ASCII (e.g. HTTP headers), set to false if you are using in an HTML page.
 	 * @return      Encoded version of string
 	 */
-	public final static String encode(String URL, String force, boolean ascii, String extraSafeChars) {
+	public static String encode(String URL, String force, boolean ascii, String extraSafeChars) {
 		StringBuilder enc = new StringBuilder(URL.length());
 		for (int i = 0; i < URL.length(); ++i) {
 			char c = URL.charAt(i);

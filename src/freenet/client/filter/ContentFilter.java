@@ -71,7 +71,7 @@ public class ContentFilter {
 				l10n("imageJpegWriteAdvice"), false, null, null, false));
 		
 		// PNG - has a filter
-		register(new MIMEType("image/png", "png", new String[0], new String[0],
+		register(new MIMEType("image/png", "png", new String[] { "image/x-png" }, new String[0],
 				true, false, new PNGFilter(true, true, true), null, false, false, false, false, true, false,
 				l10n("imagePngReadAdvice"),
 				l10n("imagePngWriteAdvice"), false, null, null, false));
@@ -177,7 +177,31 @@ public class ContentFilter {
 	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
 	 */
 	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, URI baseURI, FoundURICallback cb, TagReplacerCallback trc , String maybeCharset) throws UnsafeContentTypeException, IOException {
-		return filter(input, output, typeName, maybeCharset, new GenericReadFilterCallback(baseURI, cb,trc));
+		return filter(input, output, typeName, baseURI, cb, trc, maybeCharset, null);
+	}
+
+	/**
+	 * Filter some data.
+	 *
+	 * @param input
+	 *            Source stream to read data from
+	 * @param output
+	 *            Stream to write filtered data to
+	 * @param typeName
+	 *            MIME type for input data
+	 * @param maybeCharset
+	 * 			  MIME type of the referring document, as a hint, some types,
+	 * 			  such as CSS, will inherit it if no other data is available.
+	 * @return
+	 * @throws IOException
+	 *             If an internal error involving s occurred.
+	 * @throws UnsafeContentTypeException
+	 *             If the MIME type is declared unsafe (e.g. pdf files)
+	 * @throws IllegalStateException
+	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
+	 */
+	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, URI baseURI, FoundURICallback cb, TagReplacerCallback trc , String maybeCharset, LinkFilterExceptionProvider linkFilterExceptionProvider) throws UnsafeContentTypeException, IOException {
+		return filter(input, output, typeName, maybeCharset, new GenericReadFilterCallback(baseURI, cb,trc, linkFilterExceptionProvider));
 	}
 
 	/**
@@ -438,5 +462,24 @@ public class ContentFilter {
 			this.charset = charset;
 			this.mimeType = mimeType;
 		}
+	}
+
+	/** Check whether we can safely handle a specific MIME type. Usually
+	 * called when we haven't downloaded the data yet so can't filter it,
+	 * so we can know whether there will be problems later.
+	 * @return An UnsafeContentTypeException if there is a problem. */
+	public static UnsafeContentTypeException checkMIMEType(String expectedMIME) {
+		MIMEType handler = getMIMEType(expectedMIME);
+		if(handler == null || (handler.readFilter == null && !handler.safeToRead)) {
+			if(handler == null) {
+				if(logMINOR) Logger.minor(ContentFilter.class, "Unable to get filter handler for MIME type "+expectedMIME);
+				return new UnknownContentTypeException(expectedMIME);
+			}
+			else {
+				if(logMINOR) Logger.minor(ContentFilter.class, "Unable to filter unsafe MIME type "+expectedMIME);
+				return new KnownUnsafeContentTypeException(handler);
+			}
+		}
+		return null;
 	}
 }

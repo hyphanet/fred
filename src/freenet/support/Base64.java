@@ -1,5 +1,8 @@
 package freenet.support;
 
+import java.nio.charset.Charset;
+
+
 /**
  * This class provides encoding of byte arrays into Base64-encoded strings,
  * and decoding the other way.
@@ -17,25 +20,11 @@ package freenet.support;
  */
 public class Base64
 {
-  private static char[] base64Alphabet = {
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
-    'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-    'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
-    'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
-    'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-    'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
-    'w', 'x', 'y', 'z', '0', '1', '2', '3',
-    '4', '5', '6', '7', '8', '9', '~', '-'};
-  
-  private static char[] base64StandardAlphabet = {
-	    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
-	    'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-	    'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
-	    'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
-	    'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-	    'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
-	    'w', 'x', 'y', 'z', '0', '1', '2', '3',
-	    '4', '5', '6', '7', '8', '9', '+', '/'};
+  static final Charset UTF8 = Charset.forName("UTF-8");
+
+  private static char[] base64Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~-".toCharArray();
+
+  private static char[] base64StandardAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".toCharArray();
 
   /**
    * A reverse lookup table to convert base64 letters back into the
@@ -43,12 +32,12 @@ public class Base64
    */
   private static byte[] base64Reverse;
   private static byte[] base64StandardReverse;
-  
+
    // Populate the base64Reverse lookup table from the base64Alphabet table.
   static {
     base64Reverse = new byte[128];
     base64StandardReverse = new byte[base64Reverse.length];
-    
+
       // Set all entries to 0xFF, which means that that particular letter
       // is not a legal base64 letter.
     for (int i = 0; i < base64Reverse.length; i++) {
@@ -72,22 +61,42 @@ public class Base64
   /* FIXME: Figure out where this function is used and maybe remove it if its not
    * used. Its old javadoc which has been here for a while fools the user into believing
    * that the format is standard compliant */
-  
+
   /**
    * Caller should specify equalsPad=true if they want a standards compliant padding,
    * but not standard compliant encoding.
    */
   public static String encode(byte[] in, boolean equalsPad) {
-	  return encode(in, equalsPad, base64Alphabet);
+    return encode(in, equalsPad, base64Alphabet);
   }
-  
+
+  /**
+   * Convenience method to encode a string, in our shortened format.
+   *
+   * Please use this to encode a string, rather than trying to encode the string
+   * yourself using the 0-arg String.getBytes() which is not deterministic.
+   */
+  public static String encodeUTF8(String in) {
+    return encodeUTF8(in, false);
+  }
+
+  /**
+   * Convenience method to encode a string.
+   *
+   * Please use this to encode a string, rather than trying to encode the string
+   * yourself using the 0-arg String.getBytes() which is not deterministic.
+   */
+  public static String encodeUTF8(String in, boolean equalsPad) {
+    return encode(in.getBytes(UTF8), equalsPad, base64Alphabet);
+  }
+
   /**
    * Standard compliant encoding.
    */
   public static String encodeStandard(byte[] in) {
-	  return encode(in, true, base64StandardAlphabet);
+    return encode(in, true, base64StandardAlphabet);
   }
-  
+
   /**
    * Caller should specify equalsPad=true if they want a standards compliant encoding.
    */
@@ -122,17 +131,27 @@ public class Base64
   /**
    * Handles the standards-compliant padding (padded with '=' signs) as well as our
    * shortened form.
- * @throws IllegalBase64Exception 
+   * @throws IllegalBase64Exception
    */
   public static byte[] decode(String inStr) throws IllegalBase64Exception {
-	  return decode(inStr, base64Reverse);
+    return decode(inStr, base64Reverse);
   }
-  
+
+  /**
+   * Convenience method to decode into a string, in our shortened format.
+   *
+   * Please use this to decode into a string, rather than trying to decode the
+   * string yourself using new String(bytes[]) which is not deterministic.
+   */
+  public static String decodeUTF8(String inStr) throws IllegalBase64Exception {
+    return new String(decode(inStr), UTF8);
+  }
+
   /**
    * Handles the standards-compliant base64 encoding.
    */
   public static byte[] decodeStandard(String inStr) throws IllegalBase64Exception {
-	  return decode(inStr, base64StandardReverse);
+    return decode(inStr, base64StandardReverse);
   }
 
   /**
@@ -177,7 +196,7 @@ public class Base64
         int outVal = (in1 << 18) | (in2 << 12) | (in3 << 6) | in4;
         out[o] = (byte) (outVal>>16);
         out[o+1] = (byte) (outVal>>8);
-        out[o+2] = (byte) outVal; 
+        out[o+2] = (byte) outVal;
         i += 4;
         o += 3;
       }

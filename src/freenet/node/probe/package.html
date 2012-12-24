@@ -1,0 +1,23 @@
+<html><body>
+Provides network probes which query a node selected - ideally - uniformly at random from the network for a result
+type requested by the probe originator. The Metropolis-Hastings algorithm is used for node selection. After selecting
+a random peer, the node has a localDegree / remoteDegree probability of accepting a forward to that peer. This is in
+contrast to a uniform walk, where a randomly selected peer is forwarded to with no further consideration.
+<p>
+Because nodes with high degree by definition have more connections, there are more chances to forward to them, and
+a random walk will over-represent them. Metropolis-Hastings correction corrects for this bias. To give an intuition
+for why this works, an example:
+</p>
+A network has four nodes. One central node is connected to the three others. The others are connected only to the
+central node. With uniform routing, from the central node it can go to any of the three others, and from a leaf it
+always returns to the center. Half of the time the probe is on the center node, and the other half of the time is
+split between the three leaf nodes. It spends 1/2 of the time on the center and 1/6 on each leaf.
+<p>
+With Metropolis-Hastings routing, the central node always (3/1) forwards to the leaf nodes, but the leaf nodes only
+forward to the central node 1/3 of the time. The rest of the time the probe remains on the leaf and HTL decrements.
+The probe will spend 1 hop on the central node and, on average, 3 on a leaf. Even though the central node only spends 1
+hop at a time, it still connects the others, so its single hops add up to equal those spent on each leaf node. Provided
+sufficient initial HTL to both allow travel across the network and for the probability distributions to run enough times
+to even out, an endpoint reached with Metropolis-Hastings correction is chosen uniformly at random from the entire
+network.
+</body></html>

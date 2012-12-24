@@ -3,7 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
+import java.io.File;
+
 import freenet.l10n.NodeL10n;
+import freenet.node.Node;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.updater.RevocationChecker;
 import freenet.support.HTMLNode;
@@ -87,6 +90,8 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 			alertNode.addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" }).addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "update", ut.formText });
 		}
 		
+		updater.renderProgress(alertNode);
+		
 		return alertNode;
 	}
 	
@@ -111,10 +116,6 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 					sb.append(' ');
 					b = true;
 				}
-				if(updater.hasNewExtJar()) {
-					sb.append(l10n(b ? "alsoDownloadedNewExtJar" : "downloadedNewExtJar", "version", Integer.toString(updater.newExtJarVersion())));
-					sb.append(' ');
-				}
 				if(updater.canUpdateImmediately()) {
 					sb.append(l10n("clickToUpdateNow"));
 					formText = l10n("updateNowButton");
@@ -124,24 +125,26 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 				}
 			} else {
 				if(updater.fetchingFromUOM())
-					sb.append(l10n("fetchingUOM"));
+					sb.append(l10n("fetchingUOM", "updateScript", getUpdateScriptName()));
 				else {
 					boolean fetchingNew = updater.fetchingNewMainJar();
-					boolean fetchingNewExt = updater.fetchingNewExtJar();
 					if(fetchingNew) {
-						if(fetchingNewExt)
-							sb.append(l10n("fetchingNewBoth", new String[] { "nodeVersion", "extVersion" },
-									new String[] { Integer.toString(updater.fetchingNewMainJarVersion()), Integer.toString(updater.fetchingNewExtJarVersion()) }));
-						else
-							sb.append(l10n("fetchingNewNode", "nodeVersion", Integer.toString(updater.fetchingNewMainJarVersion())));
-					} else {
-						if(fetchingNewExt)
-							sb.append(l10n("fetchingNewExt", "extVersion", Integer.toString(updater.fetchingNewExtJarVersion())));
+						sb.append(l10n("fetchingNewNode", "nodeVersion", Integer.toString(updater.fetchingNewMainJarVersion())));
 					}
 				}
 				sb.append(" ");
 				sb.append(l10n("updateASAPQuestion"));
 				formText = l10n("updateASAPButton");
+			}
+			
+			if(updater.node.updateIsUrgent()) {
+				sb.append(" ");
+				sb.append(l10n("updateIsUrgent"));
+			}
+			
+			if(updater.brokenDependencies()) {
+				sb.append(" ");
+				sb.append(l10n("brokenDependencies", "version", Integer.toString(updater.newMainJarVersion())));
 			}
 			
 			return new UpdateThingy(sb.toString(), formText);
@@ -150,8 +153,25 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 		return new UpdateThingy(sb.toString(), null);
 	}
 
+	private String getUpdateScriptName() {
+		String name;
+		if(File.separatorChar == '\\') {
+			name = "update.cmd";
+		} else {
+			name = "update.sh";
+		}
+		File f = new File(updater.node.getNodeDir(), name);
+		if(f.exists()) return f.toString();
+		f = new File(new File(updater.node.getNodeDir(), "bin"), name);
+		if(f.exists()) return f.toString();
+		return name;
+	}
+
 	@Override
 	public short getPriorityClass() {
+		Node node = updater.node;
+		if(node.updateIsUrgent())
+			return UserAlert.CRITICAL_ERROR;
 		if(updater.inFinalCheck() || updater.canUpdateNow() || !updater.isArmed())
 			return UserAlert.ERROR;
 		else
@@ -161,7 +181,7 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 	@Override
 	public boolean isValid() {
 		return updater.isEnabled() && (!updater.isBlown()) && 
-			(updater.fetchingNewExtJar() || updater.fetchingNewMainJar() || updater.hasNewExtJar() || updater.hasNewMainJar() || updater.fetchingFromUOM());
+			(updater.fetchingNewMainJar() || updater.hasNewMainJar() || updater.fetchingFromUOM());
 	}
 	
 	@Override

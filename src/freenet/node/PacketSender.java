@@ -5,8 +5,8 @@ package freenet.node;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Vector;
 
+import freenet.clients.http.ExternalLinkToadlet;
 import freenet.io.comm.Peer;
 import freenet.l10n.NodeL10n;
 import freenet.node.useralerts.AbstractUserAlert;
@@ -66,16 +66,12 @@ public class PacketSender implements Runnable {
 	NodeStats stats;
 	long lastReportedNoPackets;
 	long lastReceivedPacketFromAnyNode;
-	private Vector<ResendPacketItem> rpiTemp;
-	private int[] rpiIntTemp;
 	private MersenneTwister localRandom;
 
 	PacketSender(Node node) {
 		this.node = node;
 		myThread = new NativeThread(this, "PacketSender thread for " + node.getDarknetPortNumber(), NativeThread.MAX_PRIORITY, false);
 		myThread.setDaemon(true);
-		rpiTemp = new Vector<ResendPacketItem>();
-		rpiIntTemp = new int[64];
 		localRandom = node.createRandom();
 	}
 
@@ -125,7 +121,6 @@ public class PacketSender implements Runnable {
 		 * Index of the point in the nodes list at which we sent a packet and then
 		 * ran out of bandwidth. We start the loop from here next time.
 		 */
-		int brokeAt = 0;
 		while(true) {
 			lastReceivedPacketFromAnyNode = lastReportedNoPackets;
 			try {
@@ -147,9 +142,7 @@ public class PacketSender implements Runnable {
 		PeerNode[] nodes;
 
         pm = node.peers;
-        synchronized(pm) {
-        	nodes = pm.myPeers;
-        }
+        nodes = pm.myPeers();
 
 		long nextActionTime = Long.MAX_VALUE;
 		long oldTempNow = now;
@@ -203,7 +196,7 @@ public class PacketSender implements Runnable {
 			pn.maybeOnConnect();
 			if(pn.shouldDisconnectAndRemoveNow() && !pn.isDisconnecting()) {
 				// Might as well do it properly.
-				node.peers.disconnect(pn, true, true, false);
+				node.peers.disconnectAndRemove(pn, true, true, false);
 			}
 
 			if(pn.isConnected()) {
@@ -348,7 +341,7 @@ public class PacketSender implements Runnable {
 		
 		if(toSendPacket != null) {
 			try {
-				if(toSendPacket.maybeSendPacket(now, rpiTemp, rpiIntTemp, false)) {
+				if(toSendPacket.maybeSendPacket(now, false)) {
 					count = node.outputThrottle.getCount();
 					if(count > MAX_PACKET_SIZE)
 						canSendThrottled = true;
@@ -362,8 +355,8 @@ public class PacketSender implements Runnable {
 					}
 				}
 			} catch (BlockedTooLongException e) {
-				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendPacket+" on "+e.tracker+" : "+(toSendPacket.isOldFNP() ? "(old packet format)" : "(new packet format)")+" (version "+toSendPacket.getVersionNumber()+") - DISCONNECTING!");
-				toSendPacket.forceDisconnect(true);
+				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendPacket+" : "+("(new packet format)")+" (version "+toSendPacket.getVersionNumber()+") - DISCONNECTING!");
+				toSendPacket.forceDisconnect();
 				onForceDisconnectBlockTooLong(toSendPacket, e);
 			}
 
@@ -379,7 +372,7 @@ public class PacketSender implements Runnable {
 
 		} else if(toSendAckOnly != null) {
 			try {
-				if(toSendAckOnly.maybeSendPacket(now, rpiTemp, rpiIntTemp, true)) {
+				if(toSendAckOnly.maybeSendPacket(now, true)) {
 					count = node.outputThrottle.getCount();
 					if(count > MAX_PACKET_SIZE)
 						canSendThrottled = true;
@@ -393,8 +386,8 @@ public class PacketSender implements Runnable {
 					}
 				}
 			} catch (BlockedTooLongException e) {
-				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendAckOnly+" on "+e.tracker+" : "+(toSendAckOnly.isOldFNP() ? "(old packet format)" : "(new packet format)")+" (version "+toSendAckOnly.getVersionNumber()+") - DISCONNECTING!");
-				toSendAckOnly.forceDisconnect(true);
+				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendAckOnly+" : "+("(new packet format)")+" (version "+toSendAckOnly.getVersionNumber()+") - DISCONNECTING!");
+				toSendAckOnly.forceDisconnect();
 				onForceDisconnectBlockTooLong(toSendAckOnly, e);
 			}
 
@@ -550,9 +543,11 @@ public class PacketSender implements Runnable {
 			synchronized(peersDumpedBlockedTooLong) {
 				peers = peersDumpedBlockedTooLong.toArray(new Peer[peersDumpedBlockedTooLong.size()]);
 			}
-			NodeL10n.getBase().addL10nSubstitution(div, "PacketSender.somePeersDisconnectedBlockedTooLongDetail",
-					new String[] { "count", "link" }
-					, new HTMLNode[] { HTMLNode.text(peers.length), HTMLNode.link("/?_CHECKED_HTTP_=https://bugs.freenetproject.org/")});
+			NodeL10n.getBase().addL10nSubstitution(div,
+			        "PacketSender.somePeersDisconnectedBlockedTooLongDetail",
+			        new String[] { "count", "link" },
+			        new HTMLNode[] { HTMLNode.text(peers.length),
+			                HTMLNode.link(ExternalLinkToadlet.escape("https://bugs.freenetproject.org/"))});
 			HTMLNode list = div.addChild("ul");
 			for(Peer peer : peers) {
 				list.addChild("li", peer.toString());
