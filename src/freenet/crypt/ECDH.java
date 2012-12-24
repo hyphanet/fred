@@ -6,6 +6,7 @@ import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
 import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
@@ -16,6 +17,7 @@ import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
+import freenet.crypt.JceLoader;
 import freenet.support.Logger;
 
 public class ECDH {
@@ -32,6 +34,9 @@ public class ECDH {
         
         public final ECGenParameterSpec spec;
         private KeyPairGenerator keygenCached;
+        protected final Provider kgProvider = JceLoader.BouncyCastle;
+        protected final Provider kfProvider = JceLoader.BouncyCastle;;
+        protected final Provider kaProvider = JceLoader.BouncyCastle;;
         /** The symmetric algorithm associated with the curve (use that, nothing else!) */
         public final String defaultKeyAlgorithm;
         /** Expected size of a pubkey */
@@ -50,7 +55,13 @@ public class ECDH {
         	if(keygenCached != null) return keygenCached;
             KeyPairGenerator kg = null;
             try {
-                kg = KeyPairGenerator.getInstance("ECDH");
+            	// FIXME: The correct algorithm name is "EC".
+            	// "ECDH" is an alias supported only by Bouncycastle.
+            	// Thus it forces the use of Bouncycastle.
+            	// Nextgens is worried about inadequate testing with JCA's other than Bouncycastle.
+            	// IMHO this is excessively paranoid - isn't JCA supposed to just work?
+            	// FIXME Test this with Sun and NSS and then change it to "EC".
+                kg = KeyPairGenerator.getInstance("EC", kgProvider);
                 kg.initialize(spec);
             } catch (NoSuchAlgorithmException e) {
                 Logger.error(ECDH.class, "NoSuchAlgorithmException : "+e.getMessage(),e);
@@ -98,17 +109,14 @@ public class ECDH {
         } catch (NoSuchAlgorithmException e) {
             Logger.error(this, "NoSuchAlgorithmException : "+e.getMessage(),e);
             e.printStackTrace();
-        } catch (InvalidAlgorithmParameterException e) {
-            Logger.error(this, "InvalidAlgorithmParameterException : "+e.getMessage(),e);
-            e.printStackTrace();
         }
         return key;
     }
     
-    protected SecretKey getAgreedSecret(PublicKey pubkey, String algorithm) throws InvalidKeyException, NoSuchAlgorithmException, InvalidAlgorithmParameterException {
+    protected SecretKey getAgreedSecret(PublicKey pubkey, String algorithm) throws InvalidKeyException, NoSuchAlgorithmException {
         KeyAgreement ka = null;
-        ka = KeyAgreement.getInstance("ECDH");
-        ka.init(key.getPrivate(), curve.spec);
+        ka = KeyAgreement.getInstance("ECDH", curve.kaProvider);
+        ka.init(key.getPrivate());
         ka.doPhase(pubkey, true);
         
         // Note that the returned key is twice the length suggested by the algorithm.
@@ -125,11 +133,11 @@ public class ECDH {
      * @param data
      * @return ECPublicKey or null if it fails
      */
-    public static ECPublicKey getPublicKey(byte[] data) {
+    public static ECPublicKey getPublicKey(byte[] data, Curves curve) {
         ECPublicKey remotePublicKey = null;
         try {
             X509EncodedKeySpec ks = new X509EncodedKeySpec(data);
-            KeyFactory kf = KeyFactory.getInstance("ECDH");
+            KeyFactory kf = KeyFactory.getInstance("EC", curve.kfProvider);
             remotePublicKey = (ECPublicKey)kf.generatePublic(ks);
             
         } catch (NoSuchAlgorithmException e) {
