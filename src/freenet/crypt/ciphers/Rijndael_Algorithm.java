@@ -813,9 +813,17 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 			throw new InvalidKeyException("Incorrect key length");
 		int ROUNDS = getRounds(k.length, blockSize);
 		int BC = blockSize / 4;
+		final int BCshift;
+		if (BC == 4)
+			BCshift = 2;
+		else if (BC == 8)
+			BCshift = 3;
+		else
+			/* Note: original code supported block size 192 bits */
+			throw new InvalidKeyException("Unsupported block size: "+blockSize);
 		int[][] Ke = new int[ROUNDS + 1][BC]; // encryption round keys
 		int[][] Kd = new int[ROUNDS + 1][BC]; // decryption round keys
-		int ROUND_KEY_COUNT = (ROUNDS + 1) * BC;
+		int ROUND_KEY_COUNT = (ROUNDS + 1) << BCshift;
 		int KC = k.length / 4;
 		int[] tk = new int[KC];
 		int i, j;
@@ -829,8 +837,8 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		// copy values into round key arrays
 		int t = 0;
 		for (j = 0; (j < KC) && (t < ROUND_KEY_COUNT); j++, t++) {
-			Ke[t / BC][t % BC] = tk[j];
-			Kd[ROUNDS - (t / BC)][t % BC] = tk[j];
+			Ke[t >>> BCshift][t & (BC-1)] = tk[j];
+			Kd[ROUNDS - (t >>> BCshift)][t & (BC-1)] = tk[j];
 		}
 		int tt, rconpointer = 0;
 		while (t < ROUND_KEY_COUNT) {
@@ -872,8 +880,8 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 			}
 			// copy values into round key arrays
 			for (j = 0; (j < KC) && (t < ROUND_KEY_COUNT); j++, t++) {
-				Ke[t / BC][t % BC] = tk[j];
-				Kd[ROUNDS - (t / BC)][t % BC] = tk[j];
+				Ke[t >>> BCshift][t & (BC-1)] = tk[j];
+				Kd[ROUNDS - (t >>> BCshift)][t & (BC-1)] = tk[j];
 			}
 		}
 		for (int r = 1; r < ROUNDS; r++)    // inverse MixColumn where needed

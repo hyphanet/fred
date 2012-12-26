@@ -55,6 +55,8 @@ public class RijndaelTest extends TestCase {
 		aes128.decipher(res128, des128);
 		assertTrue("(128,128) DECIPHER", Arrays.equals(des128, PLAINTXT128_1));
 
+		if (false) {
+		/* 192 block size support is dropped for now */
 		Rijndael aes192 = new Rijndael(192, 192);
 		byte[] res192 = new byte[192 / 8];
 		aes192.initialize(KEY192_1);
@@ -63,6 +65,7 @@ public class RijndaelTest extends TestCase {
 		byte[] des192 = new byte[192 / 8];
 		aes192.decipher(res192, des192);
 		assertTrue("(192,192) DECIPHER", Arrays.equals(des192, PLAINTXT192_1));
+		}
 
 		Rijndael aes256 = new Rijndael(256, 256);
 		byte[] res256 = new byte[256 / 8];
@@ -1091,7 +1094,7 @@ public class RijndaelTest extends TestCase {
 	}
 
 	public void testRandom() throws UnsupportedCipherException {
-		final int[] SIZE = new int[] { 128, 192, 256 };
+		final int[] SIZE = new int[] { 128, /*192,*/ 256 };
 
 		for (int k = 0; k < SIZE.length; k++) {
 			int size = SIZE[k];
