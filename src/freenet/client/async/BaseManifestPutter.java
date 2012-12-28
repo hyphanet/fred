@@ -2018,6 +2018,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		}
 
 		public void addArchiveItem(ContainerBuilder archive, String name, ManifestElement element, boolean isDefaultDoc) {
+			assert(element.getData() != null);
 			archive.addItem(name, element, false);
 			PutHandler ph = new JokerPutHandler(BaseManifestPutter.this, selfHandle, name, guessMime(name, element.mimeOverride));
 			putHandlersTransformMap.put(ph, currentDir);

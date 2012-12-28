@@ -66,6 +66,7 @@ public class ManifestElement {
 	public ManifestElement(ManifestElement me, String newName, String newFullName) {
 		this.name = newName;
 		this.fullName = newFullName;
+		assert(fullName != null);
 		this.data = me.data;
 		this.mimeOverride = me.mimeOverride;
 		this.dataSize = me.dataSize;
