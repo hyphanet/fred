@@ -288,7 +288,8 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 				for(Map.Entry<String, Object> entry:itemsLeft.entrySet()) {
 					String lname = entry.getKey();
 					ManifestElement me = (ManifestElement)entry.getValue();
-					containerBuilder.addExternal(lname, me.getData(), me.getMimeTypeOverride(), lname.equals(defaultName));
+					// It could still be a redirect, use addElement().
+					containerBuilder.addElement(lname, me, lname.equals(defaultName));
 				}
 				itemsLeft.clear();
 				continue;
