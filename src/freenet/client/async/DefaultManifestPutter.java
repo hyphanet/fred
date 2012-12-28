@@ -255,7 +255,22 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 		}
 		// fill up container with files
 		HashMap<String, Object> itemsLeft = new HashMap<String, Object>();
-
+		
+		// Add redirects first. 
+		{
+			Iterator<Object> iter = itemsLeft.values().iterator();
+			while(iter.hasNext()) {
+				Object o = iter.next();
+				if(o instanceof ManifestElement) {
+					ManifestElement me = (ManifestElement) o;
+					if(me.getTargetURI() != null) {
+						tmpSize += 512;
+						iter.remove();
+					}
+				}
+			}
+		}
+		
 		for(Map.Entry<String, Object> entry:manifestElements.entrySet()) {
 			String name = entry.getKey();
 			Object o = entry.getValue();
