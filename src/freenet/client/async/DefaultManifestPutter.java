@@ -268,7 +268,8 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 			Object o = entry.getValue();
 			if (o instanceof ManifestElement) {
 				ManifestElement me = (ManifestElement)o;
-				if ((me.getSize() > -1) && (me.getSize() <= DEFAULT_MAX_CONTAINERITEMSIZE) && (me.getSize() < (maxSize-tmpSize))) {
+				// Redirects go straight in, as there's no point redirecting to a redirect. :)
+				if ((me.getSize() <= DEFAULT_MAX_CONTAINERITEMSIZE) && (me.getSize() < (maxSize-tmpSize))) {
 					containerBuilder.addItem(name, prefix+name, me, name.equals(defaultName));
 					tmpSize += ContainerSizeEstimator.tarItemSize(me.getSize());
 				} else {
@@ -337,7 +338,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 					tmpSize += 512;
 					archiveLimit += ContainerSizeEstimator.tarItemSize(me.getSize());
 					iter.remove();
-				} 
+				}
 			}
 		}
 		return tmpSize;
