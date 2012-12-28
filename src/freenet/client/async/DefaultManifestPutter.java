@@ -313,11 +313,11 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 
 			// getSizeFiles() includes 512 bytes for each file over the size limit
 			if (((leftSize.getSizeFiles() - (512*itemsLeft.size())) == 0) && (leftSize.getSizeFilesNoLimit() > 0)) {
-				// all items left are to big, make all external
+				// all items left are to big (or redirect), make all external
 				for(Map.Entry<String, Object> entry:itemsLeft.entrySet()) {
 					String lname = entry.getKey();
 					ManifestElement me = (ManifestElement)entry.getValue();
-					containerBuilder.addExternal(lname, me.getData(), me.getMimeTypeOverride(), lname.equals(defaultName));
+					containerBuilder.addElement(lname, me, lname.equals(defaultName));
 				}
 				itemsLeft.clear();
 				continue;
