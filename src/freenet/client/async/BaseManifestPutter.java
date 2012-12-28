@@ -2017,6 +2017,8 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			}
 		}
 
+		/** FIXME what is going on here? Why do we need to add a JokerPutHandler, when a lot of code just
+		 * calls addItem()? */
 		public void addArchiveItem(ContainerBuilder archive, String name, ManifestElement element, boolean isDefaultDoc) {
 			assert(element.getData() != null);
 			archive.addItem(name, element, false);
