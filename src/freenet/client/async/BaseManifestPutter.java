@@ -1980,7 +1980,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			addItem(name, me, isDefaultDoc);
 		}
 
-		public void addItem(String name, ManifestElement element, boolean isDefaultDoc) {
+		private void addItem(String name, ManifestElement element, boolean isDefaultDoc) {
 			currentDir.put(name, element);
 			if (isDefaultDoc) {
 				Metadata m = new Metadata(Metadata.SYMBOLIC_SHORTLINK, null, null, name, null);
