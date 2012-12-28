@@ -1055,16 +1055,14 @@ public class RijndaelTest extends TestCase {
 			assertTrue("ECB_VK KEYSIZE=128 I=" + (i + 1), Arrays.equals(cipher, TEST_VK128[i][1]));
 		}
 
-		/*- KEYSIZE=192 This case would fail
 		Rijndael aes192 = new Rijndael(192, 128);
 		for (int i = 0; i < TEST_VK192.length; i++) {
 			aes192.initialize(TEST_VK192[i][0]);
 
-			byte[] cipher = new byte[192 / 8];
+			byte[] cipher = new byte[128 / 8];
 			aes192.encipher(TEST_VK_PT, cipher);
 			assertTrue("ECB_VK KEYSIZE=192 I=" + (i + 1), Arrays.equals(cipher, TEST_VK192[i][1]));
 		}
-		*/
 	}
 
 	public void testStandardTestVKJCA() throws UnsupportedCipherException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
@@ -1080,16 +1078,16 @@ public class RijndaelTest extends TestCase {
 			assertTrue(Arrays.equals(output, TEST_VK128[i][1]));
 		}
 
-		/*- KEYSIZE=192 This case would fail
-		Rijndael aes192 = new Rijndael(192, 128);
+		// KEYSIZE=192
 		for (int i = 0; i < TEST_VK192.length; i++) {
-			aes192.initialize(TEST_VK192[i][0]);
-
-			byte[] cipher = new byte[192 / 8];
-			aes192.encipher(TEST_VK_PT, cipher);
-			assertTrue("ECB_VK KEYSIZE=192 I=" + (i + 1), Arrays.equals(cipher, TEST_VK192[i][1]));
+			SecretKeySpec k = 
+				new SecretKeySpec(TEST_VK192[i][0], "AES");
+			Cipher c = Cipher.getInstance("AES/ECB/NOPADDING");
+			c.init(Cipher.ENCRYPT_MODE, k);
+			
+			byte[] output = c.doFinal(TEST_VK_PT);
+			assertTrue("ECB_VK KEYSIZE=192 I=" + (i + 1), Arrays.equals(output, TEST_VK192[i][1]));
 		}
-		*/
 	}
 
 	public void testRandom() throws UnsupportedCipherException {
