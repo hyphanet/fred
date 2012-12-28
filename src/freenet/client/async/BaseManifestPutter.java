@@ -1872,7 +1872,15 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			throw new IllegalStateException("ME is neither a redirect nor dircet data. "+element);
 		}
 
+		/** Add a file as an external. It will be inserted separately and we will add a redirect to the
+		 * metadata.
+		 * @param name The name of the file (short name within the original folder, it's not in a container).
+		 * @param data The data to be inserted.
+		 * @param mimeOverride Optional MIME type override.
+		 * @param isDefaultDoc If true, make this the default document.
+		 */
 		public final void addExternal(String name, Bucket data, String mimeOverride, boolean isDefaultDoc) {
+			assert(data != null);
 			ClientMetadata cm = makeClientMetadata(mimeOverride);
 			addExternal(name, data, cm, isDefaultDoc);
 		}
