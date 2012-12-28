@@ -72,16 +72,6 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 		super(clientCallback, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, ClientPutter.randomiseSplitfileKeys(target, ctx, persistent, container), forceCryptoKey, container, context);
 	}
 	
-	/*
-	 * Backward compatibility, remove upon updating plugins;
-	 * all internal users already converted
-	 */
-	@Deprecated
-	public DefaultManifestPutter(ClientPutCallback clientCallback, HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName, InsertContext ctx, boolean getCHKOnly,
-			RequestClient clientContext, boolean earlyEncode, boolean persistent, ObjectContainer container, ClientContext context) throws TooManyFilesInsertException {
-		this(clientCallback, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, persistent, null, container, context);
-	}
-
 	/**
 	 * Implements the pack logic.
 	 * @throws TooManyFilesInsertException 
