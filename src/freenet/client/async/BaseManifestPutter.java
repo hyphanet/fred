@@ -1965,6 +1965,16 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			return subCon;
 		}
 
+		/**
+		 * Add a ManifestElement, which can be a file in an archive, or a redirect.
+		 * @param name The original name of the file (e.g. index.html).
+		 * @param nameInArchive The fully qualified name of the file in the archive (e.g. testing/index.html).
+		 * @param element The ManifestElement specifying the data, redirect, etc. Note that redirects are
+		 * still included in containers, both for structural reasons and because the metadata can be large
+		 * enough that we need to split it.
+		 * @param isDefaultDoc If true, add a link from "" to this element, making it the default document
+		 * in this container.
+		 */
 		public void addItem(String name, String nameInArchive, ManifestElement element, boolean isDefaultDoc) {
 			ManifestElement me = new ManifestElement(element, name, nameInArchive);
 			addItem(name, me, isDefaultDoc);
