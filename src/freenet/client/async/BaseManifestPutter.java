@@ -1801,6 +1801,9 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	protected abstract class ManifestBuilder {
 
 		private final Stack<HashMap<String, Object>> dirStack;
+		/** Map from name to either a Metadata (to be included as-is), a ManifestElement (either a redirect
+		 * or a file), or another HashMap. Eventually processed by e.g. ContainerInserter.makeManifest()
+		 * (for a ContainerBuilder). */
 		protected HashMap<String, Object> currentDir;
 
 		private ClientMetadata makeClientMetadata(String mime) {
