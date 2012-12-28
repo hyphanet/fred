@@ -64,7 +64,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 	public static final long DEFAULT_CONTAINERSIZE_SPARE = 196*1024;
 
 	public DefaultManifestPutter(ClientPutCallback clientCallback, HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName, InsertContext ctx, boolean getCHKOnly,
-			RequestClient clientContext, boolean earlyEncode, boolean persistent, byte[] forceCryptoKey, ObjectContainer container, ClientContext context) {
+			RequestClient clientContext, boolean earlyEncode, boolean persistent, byte[] forceCryptoKey, ObjectContainer container, ClientContext context) throws TooManyFilesInsertException {
 		// If the top level key is an SSK, all CHK blocks and particularly splitfiles below it should have
 		// randomised keys. This substantially improves security by making it impossible to identify blocks
 		// even if you know the content. In the user interface, we will offer the option of inserting as a
@@ -78,16 +78,17 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 	 */
 	@Deprecated
 	public DefaultManifestPutter(ClientPutCallback clientCallback, HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName, InsertContext ctx, boolean getCHKOnly,
-			RequestClient clientContext, boolean earlyEncode, boolean persistent, ObjectContainer container, ClientContext context) {
+			RequestClient clientContext, boolean earlyEncode, boolean persistent, ObjectContainer container, ClientContext context) throws TooManyFilesInsertException {
 		this(clientCallback, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, persistent, null, container, context);
 	}
 
 	/**
 	 * Implements the pack logic.
+	 * @throws TooManyFilesInsertException 
 	 * @see freenet.client.async.BaseManifestPutter#makePutHandlers(java.util.HashMap, java.util.HashMap)
 	 */
 	@Override
-	protected void makePutHandlers(HashMap<String,Object> manifestElements, String defaultName) {
+	protected void makePutHandlers(HashMap<String,Object> manifestElements, String defaultName) throws TooManyFilesInsertException {
 		verifyManifest(manifestElements);
 		makePutHandlers(getRootContainer(), manifestElements, defaultName, "", DEFAULT_MAX_CONTAINERSIZE, null);
 	}
@@ -119,8 +120,10 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 	 * @param maxSize
 	 * @param parentName
 	 * @return the size of items in container
+	 * @throws TooManyFilesInsertException If there are a ridiculous number of files in a single directory
+	 * so we cannot complete the insert.
 	 */
-	private long makePutHandlers(ContainerBuilder containerBuilder, HashMap<String,Object> manifestElements, String defaultName, String prefix, long maxSize, String parentName) {
+	private long makePutHandlers(ContainerBuilder containerBuilder, HashMap<String,Object> manifestElements, String defaultName, String prefix, long maxSize, String parentName) throws TooManyFilesInsertException {
 	//(HashMap<String, Object> md, PluginReplySender replysender, String identifier, long maxSize, boolean doInsert, String parentName) throws InsertException {
 		if(logMINOR)
 			Logger.minor(this, "STAT: handling "+((parentName==null)?"<root>?": parentName));
@@ -278,6 +281,9 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 				}
 			}
 		}
+		
+		if(tmpSize > maxSize)
+			throw new TooManyFilesInsertException();
 
 		// group files left into external archives ('CHK@.../name' redirects)
 		while (!itemsLeft.isEmpty()) {

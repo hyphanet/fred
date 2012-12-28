@@ -1022,7 +1022,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 	public BaseManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName,
-			InsertContext ctx, boolean getCHKOnly2, RequestClient clientContext, boolean earlyEncode, boolean randomiseCryptoKeys, byte [] forceCryptoKey, ObjectContainer container, ClientContext context) {
+			InsertContext ctx, boolean getCHKOnly2, RequestClient clientContext, boolean earlyEncode, boolean randomiseCryptoKeys, byte [] forceCryptoKey, ObjectContainer container, ClientContext context) throws TooManyFilesInsertException {
 		super(prioClass, clientContext);
 		if(client.persistent())
 			this.targetURI = target.clone();
@@ -1177,8 +1177,9 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	 *
 	 * @param manifestElements A map from String to either ManifestElement or another String. This is the
 	 * site structure, which will be split into containers and/or external inserts by the method.
+	 * @throws TooManyFilesInsertException 
 	 */
-	protected abstract void makePutHandlers(HashMap<String, Object> manifestElements, String defaultName);
+	protected abstract void makePutHandlers(HashMap<String, Object> manifestElements, String defaultName) throws TooManyFilesInsertException;
 
 	@Override
 	public FreenetURI getURI() {

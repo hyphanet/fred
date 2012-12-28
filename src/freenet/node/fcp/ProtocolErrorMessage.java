@@ -56,6 +56,7 @@ public class ProtocolErrorMessage extends FCPMessage {
 	static final int DARKNET_ONLY = 31;
 	static final int NO_SUCH_PLUGIN = 32;
 	static final int PERSISTENCE_DISABLED = 33;
+	static final int TOO_MANY_FILES_IN_INSERT = 34;
 	
 	final int code;
 	final String extra;
@@ -64,6 +65,7 @@ public class ProtocolErrorMessage extends FCPMessage {
 	final boolean global;
 	
 	private String codeDescription() {
+		// FIXME l10n?
 		switch(code) {
 		case CLIENT_HELLO_MUST_BE_FIRST_MESSAGE:
 			return "ClientHello must be first message";
@@ -129,6 +131,8 @@ public class ProtocolErrorMessage extends FCPMessage {
 			return "Operation only available on a darknet peer";
 		case NO_SUCH_PLUGIN:
 			return "No such plugin";
+		case TOO_MANY_FILES_IN_INSERT:
+			return "Too many files in a single folder on a freesite insert";
 		default:
 			Logger.error(this, "Unknown error code: "+code, new Exception("debug"));
 		return "(Unknown)";

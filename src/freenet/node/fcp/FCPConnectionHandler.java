@@ -16,6 +16,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.TooManyFilesInsertException;
 import freenet.node.RequestClient;
 import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
@@ -517,6 +518,8 @@ public class FCPConnectionHandler implements Closeable {
 					success = false;
 				} catch (MalformedURLException e) {
 					failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, null, id, message.global);
+				} catch (TooManyFilesInsertException e) {
+					failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.TOO_MANY_FILES_IN_INSERT, true, null, id, message.global);
 				}
 				// FIXME register non-persistent requests in the constructors also, we already register persistent ones...
 			} else if(message.persistenceType == ClientRequest.PERSIST_FOREVER) {
@@ -535,6 +538,9 @@ public class FCPConnectionHandler implements Closeable {
 								return false;
 							} catch (MalformedURLException e) {
 								outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, null, id, message.global));
+								return false;
+							} catch (TooManyFilesInsertException e) {
+								outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.TOO_MANY_FILES_IN_INSERT, true, null, id, message.global));
 								return false;
 							}
 							try {
@@ -564,6 +570,8 @@ public class FCPConnectionHandler implements Closeable {
 					success = false;
 				} catch (MalformedURLException e) {
 					failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, null, id, message.global);
+				} catch (TooManyFilesInsertException e) {
+					failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.TOO_MANY_FILES_IN_INSERT, true, null, id, message.global);
 				}
 			}
 			if(!success) {
