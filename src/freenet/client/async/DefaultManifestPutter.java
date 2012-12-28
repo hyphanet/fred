@@ -342,6 +342,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 		return tmpSize;
 	}
 
+	/** Pack everything into a single container. */
 	private void makeEveryThingUnlimitedPutHandlers(ContainerBuilder containerBuilder, HashMap<String,Object> manifestElements, String defaultName, String prefix) {
 		for(Map.Entry<String, Object> entry:manifestElements.entrySet()) {
 			String name = entry.getKey();

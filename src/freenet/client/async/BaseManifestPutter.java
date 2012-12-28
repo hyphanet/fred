@@ -1173,9 +1173,10 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	}
 
 	/**
-	 * Implement the pack logic
+	 * Implement the pack logic.
 	 *
-	 * @param manifestElements
+	 * @param manifestElements A map from String to either ManifestElement or another String. This is the
+	 * site structure, which will be split into containers and/or external inserts by the method.
 	 */
 	protected abstract void makePutHandlers(HashMap<String, Object> manifestElements, String defaultName);
 
