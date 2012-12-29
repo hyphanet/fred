@@ -258,13 +258,16 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 		
 		// Add redirects first. 
 		{
-			Iterator<Object> iter = itemsLeft.values().iterator();
+			Iterator<Map.Entry<String, Object>> iter = itemsLeft.entrySet().iterator();
 			while(iter.hasNext()) {
-				Object o = iter.next();
+				Map.Entry<String, Object> entry = iter.next();
+				String name = entry.getKey();
+				Object o = entry.getValue();
 				if(o instanceof ManifestElement) {
 					ManifestElement me = (ManifestElement) o;
 					if(me.getTargetURI() != null) {
 						tmpSize += 512;
+						containerBuilder.addItem(name, prefix+name, me, name.equals(defaultName));
 						iter.remove();
 					}
 				}
@@ -276,7 +279,6 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 			Object o = entry.getValue();
 			if (o instanceof ManifestElement) {
 				ManifestElement me = (ManifestElement)o;
-				// Redirects go straight in, as there's no point redirecting to a redirect. :)
 				if ((me.getSize() <= DEFAULT_MAX_CONTAINERITEMSIZE) && (me.getSize() < (maxSize-tmpSize))) {
 					containerBuilder.addItem(name, prefix+name, me, name.equals(defaultName));
 					tmpSize += ContainerSizeEstimator.tarItemSize(me.getSize());
