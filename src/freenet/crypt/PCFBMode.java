@@ -17,7 +17,9 @@ import freenet.crypt.ciphers.Rijndael;
  * http://www.streamsec.com/pcfb1.pdf
  * 
  * NOTE: This is identical to CFB if block size = key size. As of Freenet 0.7, 
- * we use it with block size = key size.
+ * we use it with block size = key size. Which is not recommended, but is as 
+ * safe as CFB. We will get rid of this eventually, and move to 128-bit block
+ * size (i.e. standard AES) with a more standard mode (e.g. CTR or CBC).
  *
  * @author Scott
  */
