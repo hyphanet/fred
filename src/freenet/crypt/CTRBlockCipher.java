@@ -17,14 +17,14 @@ public class CTRBlockCipher
     
     /** Initialization vector, equal to the initial value of the plaintext 
      * counter. */
-    private byte[]          IV;
+    private final byte[]          IV;
     /** The plaintext block counter. This is incremented (from [31] 
      * backwards) after each block encryption. */
-    private byte[]          counter;
+    private final byte[]          counter;
     /** The ciphertext block counter. This is the result of encrypting the
      * plaintext block counter. It is XOR'ed with the plaintext to get the
      * ciphertext. */
-    private byte[]          counterOut;
+    private final byte[]          counterOut;
 
     /** Offset within the current block. */
     private int blockOffset;
@@ -105,23 +105,26 @@ public class CTRBlockCipher
 
 		if (blockOffset != 0) {
 			/* handle first partially consumed block */
-    		while(blockOffset != counterLength && length > 0) {
-    			output[offsetOut++] = (byte) (input[offsetIn++] ^ counterOut[blockOffset++]);
-    			length--;
-    		}
+			int len = Math.min(blockSize - blockOffset, length);
+			length -= len;
+			while(len-- > 0)
+				output[offsetOut++] = (byte) (input[offsetIn++] ^ counterOut[blockOffset++]);
     		if(length == 0) return;
     		processBlock();
 		}
-		while(length >= counterLength) {
+		// assert(blockOffset == 0);
+		while(length > blockSize) {
 			/* consume full blocks */
-			length -= counterLength;
-			while (blockOffset < counterLength)
+			// note: we skip *last* full block to avoid extra processBlock()
+			length -= blockSize;
+			while (blockOffset < blockSize)
 				output[offsetOut++] = (byte) (input[offsetIn++] ^ counterOut[blockOffset++]);
 			processBlock();
 		}
+		// assert(blockOffset == 0 && length <= counterLength);
 		if (length == 0) return;
 		while (length-- > 0) {
-			/* handle final partial block */
+			/* handle final block */
 			output[offsetOut++] = (byte) (input[offsetIn++] ^ counterOut[blockOffset++]);
 		}
     }
