@@ -1920,7 +1920,7 @@ public class RijndaelTest extends TestCase {
 	 */
 	
 	/** Apply to both ecbnt (variable text) and ecbnk (variable key) tests */
-	final int[] GLADMAN_TEST_NUMBERS = new int[] { 44, 46, 48, 64, 66, 68, 84, 86, 88 };
+	final int[] GLADMAN_TEST_NUMBERS = new int[] { 44, 46, 48, 84, 86, 88 };
 
 	public void testGladmanTestVectors() throws UnsupportedCipherException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
 		checkGladmanTestVectors("t");

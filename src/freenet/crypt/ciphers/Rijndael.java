@@ -130,7 +130,6 @@ public class Rijndael implements BlockCipher {
 				(keysize == 256)))
 			throw new UnsupportedCipherException("Invalid keysize");
 		if (! ((blocksize == 128) ||
-				(blocksize == 192) ||
 				(blocksize == 256)))
 			throw new UnsupportedCipherException("Invalid blocksize");
 		this.keysize=keysize;
