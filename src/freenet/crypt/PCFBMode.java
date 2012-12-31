@@ -26,12 +26,12 @@ import freenet.crypt.ciphers.Rijndael;
 public class PCFBMode {
     
 	/** The underlying block cipher. */
-    private final BlockCipher c;
+    protected final BlockCipher c;
     /** The register, with which data is XOR'ed */
-    private final byte[] feedback_register;
+    protected final byte[] feedback_register;
     /** When this reaches the end of the register, we refillBuffer() i.e. re-encrypt the
      * register. */
-    private int registerPointer;
+    protected int registerPointer;
     
     /** Create the PCFB with no IV. The caller must either:
      * a) Call reset() with a proper IV, or 
@@ -70,13 +70,13 @@ public class PCFBMode {
     	return new PCFBMode(c, iv, offset);
     }
     
-    private PCFBMode(BlockCipher c) {
+    protected PCFBMode(BlockCipher c) {
         this.c = c;
         feedback_register = new byte[c.getBlockSize() >> 3];
         registerPointer = feedback_register.length;
     }
 
-    private PCFBMode(BlockCipher c, byte[] iv, int offset) {
+    protected PCFBMode(BlockCipher c, byte[] iv, int offset) {
         this(c);
         System.arraycopy(iv, offset, feedback_register, 0, feedback_register.length);
         // registerPointer is already set to the end by this(c), so we will refillBuffer() immediately.
@@ -238,7 +238,7 @@ public class PCFBMode {
         
     // Refills the encrypted buffer with data.
     //private synchronized void refillBuffer() {
-    private void refillBuffer() {
+    protected void refillBuffer() {
         // Encrypt feedback into result
         c.encipher(feedback_register, feedback_register);
 
