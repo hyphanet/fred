@@ -3,6 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt.ciphers;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -19,6 +23,7 @@ import junit.framework.TestCase;
 import freenet.crypt.CTRBlockCipherTest;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.support.HexUtil;
+import freenet.support.io.Closer;
 
 /**
  * @author sdiz
@@ -1903,6 +1908,107 @@ public class RijndaelTest extends TestCase {
 //			System.out.println("\t\t\t{ HexUtil.hexToBytes(\""+HexUtil.bytesToHex(TEST_VK256x256[i][0])+"\"),");
 //			System.out.println("\t\t\t\t\tHexUtil.hexToBytes(\""+HexUtil.bytesToHex(cipher)+"\") }, //");
 			assertTrue("ECB_VK KEYSIZE=256 I=" + (i + 1), Arrays.equals(cipher, TEST_VK256x256[i][1]));
+		}
+	}
+
+	/* Thanks to Dr Brian Gladman, http://gladman.plushost.co.uk/oldsite/cryptography_technology/rijndael/
+	 * Files:
+	 * http://gladman.plushost.co.uk/oldsite/cryptography_technology/rijndael/rijn.tv.ecbnt.zip
+	 * SHA256: 7149c55ee0cce53a27d048b8bccd5de1399405ff72114da23909dc2954e8a1b5
+	 * http://gladman.plushost.co.uk/oldsite/cryptography_technology/rijndael/rijn.tv.ecbnk.zip
+	 * SHA256: 0b8a5555371ba2ec4cfdd8572e647242bf4927434fbc026996547fa33a10c5bd
+	 */
+	
+	/** Apply to both ecbnt (variable text) and ecbnk (variable key) tests */
+	final int[] GLADMAN_TEST_NUMBERS = new int[] { 44, 46, 48, 64, 66, 68, 84, 86, 88 };
+
+	public void testGladmanTestVectors() throws UnsupportedCipherException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
+		checkGladmanTestVectors("t");
+		checkGladmanTestVectors("k");
+	}
+	
+	private void checkGladmanTestVectors(String type) throws UnsupportedCipherException, IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+		for(int testNumber : GLADMAN_TEST_NUMBERS) {
+			InputStream is = null;
+			try {
+				is = getClass().getResourceAsStream("/freenet/crypt/ciphers/rijndael-gladman-test-data/ecbn"+type+testNumber+".txt");
+				InputStreamReader isr = new InputStreamReader(is, "ISO-8859-1");
+				BufferedReader br = new BufferedReader(isr);
+				for(int i=0;i<7;i++) br.readLine(); // Skip header
+				String line = br.readLine();
+				int blockSize = Integer.parseInt(line.substring("BLOCKSIZE=".length()));
+				line = br.readLine();
+				int keySize = Integer.parseInt(line.substring("KEYSIZE=  ".length()));
+				assert(blockSize == 128 || blockSize == 192 || blockSize == 256);
+				assert(keySize == 128 || keySize == 192 || keySize == 256);
+				br.readLine();
+				byte[] plaintext = null;
+				byte[] key = null;
+				byte[] ciphertext = null;
+				int test; // Ignored.
+				while(true) {
+					line = br.readLine();
+					if(line == null) break; // End of file.
+					String prefix = line.substring(0, 6);
+					if(prefix.equals("TEST= ")) {
+						test = Integer.parseInt(line.substring(6));
+					} else {
+						byte[] data = HexUtil.hexToBytes(line.substring(6));
+						if(prefix.equals("PT=   ")) {
+							assertTrue(plaintext == null);
+							plaintext = data;
+							assertEquals(plaintext.length, blockSize/8);
+						} else if(prefix.equals("KEY=  ")) {
+							assertTrue(key == null);
+							key = data;
+							assertEquals(key.length, keySize/8);
+						} else if(prefix.equals("CT=   ")) {
+							assertTrue(ciphertext == null);
+							ciphertext = data;
+							assertEquals(ciphertext.length, blockSize/8);
+						}
+						if(plaintext != null && ciphertext != null && key != null) {
+							Rijndael cipher = new Rijndael(keySize, blockSize);
+							cipher.initialize(key);
+							// Encrypt
+							byte[] copyOfPlaintext = Arrays.copyOf(plaintext, plaintext.length);
+							byte[] output = new byte[blockSize/8];
+							cipher.encipher(copyOfPlaintext, output);
+							assertTrue(Arrays.equals(output, ciphertext));
+							// Decrypt
+							byte[] copyOfCiphertext = Arrays.copyOf(ciphertext, ciphertext.length);
+							Arrays.fill(output, (byte)0);
+							cipher.decipher(copyOfCiphertext, output);
+							assertTrue(Arrays.equals(output, plaintext));
+							if(blockSize == 128) {
+								if(keySize == 128 || CTRBlockCipherTest.TEST_JCA) {
+									// We can test with JCA too.
+									// Encrypt.
+									SecretKeySpec k = 
+										new SecretKeySpec(key, "AES");
+									Cipher c = Cipher.getInstance("AES/ECB/NOPADDING");
+									c.init(Cipher.ENCRYPT_MODE, k);
+									output = c.doFinal(plaintext);
+									assertTrue(Arrays.equals(output, ciphertext));
+									
+									// Decrypt.
+									c.init(Cipher.DECRYPT_MODE, k);
+									output = c.doFinal(ciphertext);
+									assertTrue(Arrays.equals(output, plaintext));
+								}
+							}
+							// Clear
+							if(type.equals("t"))
+								plaintext = null;
+							ciphertext = null;
+							if(type.equals("k"))
+								key = null;
+						}
+					}
+				}
+			} finally {
+				Closer.close(is);
+			}
 		}
 	}
 }
