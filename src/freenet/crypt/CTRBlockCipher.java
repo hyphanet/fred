@@ -85,7 +85,6 @@ public class CTRBlockCipher
     public byte processByte(byte in) {
     	if(blockOffset == counterOut.length) {
     		processBlock();
-    		blockOffset = 0;
     	}
     	return (byte) (in ^ counterOut[blockOffset++]);
     }
@@ -141,6 +140,7 @@ public class CTRBlockCipher
         for (int i = counter.length; i-- > 0 && (++counter[i]) == (byte)0;) {
 			/* nothing here */
 		}
+		blockOffset = 0;
     }
 
 }
