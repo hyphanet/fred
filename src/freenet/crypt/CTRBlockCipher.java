@@ -111,7 +111,6 @@ public class CTRBlockCipher
     		}
     		if(length == 0) return;
     		processBlock();
-    		blockOffset = 0;
 		}
 		while(length >= counterLength) {
 			/* consume full blocks */
@@ -119,7 +118,6 @@ public class CTRBlockCipher
 			while (blockOffset < counterLength)
 				output[offsetOut++] = (byte) (input[offsetIn++] ^ counterOut[blockOffset++]);
 			processBlock();
-			blockOffset = 0;
 		}
 		if (length == 0) return;
 		while (length-- > 0) {
