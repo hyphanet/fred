@@ -4068,18 +4068,21 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		int x = 0;
 		for(long l : runningAnnounceUIDs) {
 			if(l == uid) continue;
-			if(x == newList.length)
+			if(x == newList.length) {
+				Logger.warning(this, "UID not found in completedAnnounce, should not happen", new Exception("debug"));
 				// uid was not found in runningAnnounceUIDs
 				return false;
+			}
 			newList[x++] = l;
 		}
-		if(x < runningAnnounceUIDs.length) {
+		if(x < newList.length) {
+			Logger.error(this, "Duplicated UID, should not happen", new Exception("debug"));
 			newList = Arrays.copyOf(newList, x);
 			runningAnnounceUIDs = newList;
 			return true;
 		} else {
-			// Not found.
-			return false;
+			runningAnnounceUIDs = newList;
+			return true;
 		}
 	}
 	
