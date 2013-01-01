@@ -46,7 +46,7 @@ public abstract class PeerTransport {
 	/**
 	 * This deals with a PeerConnection object that can handle all the keys for a transport.
 	 */
-	protected PeerConnection peerConn;
+	protected PeerConnection peerConn = new PeerConnection();
 	
 	private Object peerConnLock = new Object();
 	
@@ -171,6 +171,13 @@ public abstract class PeerTransport {
 		
 		// Initialised as per PeerNode constructor.
 		lastAttemptedHandshakeTransportAddressUpdateTime = 0;
+	}
+	
+	public PeerTransport() {
+		this.transportPlugin = null;
+		this.outgoingMangler = null;
+		this.transportName = "";
+		this.pn = null;
 	}
 	
 	public abstract void verified(SessionKey tracker);
@@ -771,7 +778,7 @@ public abstract class PeerTransport {
 	*/
 	public SessionKey getPreviousKeyTracker() {
 		synchronized(peerConnLock) {
-			return peerConn.currentTracker;
+			return peerConn.previousTracker;
 		}			
 	}
 	
@@ -782,7 +789,7 @@ public abstract class PeerTransport {
 	*/
 	public SessionKey getUnverifiedKeyTracker() {
 		synchronized(peerConnLock) {
-			return peerConn.currentTracker;
+			return peerConn.unverifiedTracker;
 		}
 	}
 	
@@ -816,16 +823,6 @@ public abstract class PeerTransport {
 	 */
 	static class PeerConnection {
 		
-		protected final String transportName;
-		
-		protected final TransportPlugin transportPlugin;
-		
-		/** Every connection can belong to only one peernode. */
-		protected final PeerNode pn;
-		
-		/** The peer it connects to */
-		protected PluginAddress detectedTransportAddress;
-		
 		/** How much data did we send with the current tracker ? */
 		public long totalBytesExchangedWithCurrentTracker = 0;
 		
@@ -835,13 +832,6 @@ public abstract class PeerTransport {
 		
 		static final byte[] TEST_AS_BYTES = PeerNode.TEST_AS_BYTES;
 		static final int CHECK_FOR_SWAPPED_TRACKERS_INTERVAL = PeerNode.CHECK_FOR_SWAPPED_TRACKERS_INTERVAL;
-		
-		public PeerConnection(TransportPlugin transportPlugin, PeerNode pn, PluginAddress detectedTransportAddress){
-			this.transportPlugin = transportPlugin;
-			this.transportName = transportPlugin.transportName;
-			this.pn = pn;
-			this.detectedTransportAddress = detectedTransportAddress;
-		}
 		
 	}
 		
