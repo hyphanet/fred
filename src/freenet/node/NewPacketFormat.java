@@ -4,7 +4,6 @@
 package freenet.node;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -53,6 +52,8 @@ public class NewPacketFormat implements PacketFormat {
 	
 	public final PeerMessageTracker pmt;
 	
+	public final PeerMessageQueue messageQueue;
+	
 	private long timeLastSentPacket;
 	private long timeLastSentPayload;
 
@@ -60,7 +61,7 @@ public class NewPacketFormat implements PacketFormat {
 		this.pn = pn;
 		this.peerTransport = peerTransport;
 		this.pmt = pn.getPeerMessageTracker();
-		
+		this.messageQueue = pn.getMessageQueue();
 		hmacLength = HMAC_LENGTH;
 	}
 
@@ -326,7 +327,7 @@ public class NewPacketFormat implements PacketFormat {
 		int maxPacketSize = peerTransport.transportPlugin.getMaxPacketSize();
 		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
 
-		NPFPacket packet = createPacket(maxPacketSize - hmacLength, pn.getMessageQueue(), sessionKey, ackOnly);
+		NPFPacket packet = createPacket(maxPacketSize - hmacLength, sessionKey, ackOnly);
 		if(packet == null) return false;
 
 		int paddedLen = packet.getLength() + hmacLength;
@@ -413,7 +414,7 @@ public class NewPacketFormat implements PacketFormat {
 		return true;
 	}
 
-	NPFPacket createPacket(int maxPacketSize, PeerMessageQueue messageQueue, SessionKey sessionKey, boolean ackOnly) throws BlockedTooLongException {
+	NPFPacket createPacket(int maxPacketSize, SessionKey sessionKey, boolean ackOnly) throws BlockedTooLongException {
 		
 		checkForLostPackets();
 		
@@ -590,8 +591,9 @@ public class NewPacketFormat implements PacketFormat {
 			if(mustSendKeepalive && packet.noFragments()) {
 				needsPingMessage.value = true;
 			}
-			
-			while(packet.getLength() < maxPacketSize) {
+			//Fragment header is max 9 bytes, allow min 1 byte data
+			// FIXME Check above where the 10 is not used and avoid usage of a number 10 without defining it.
+			while((packet.getLength() + 10)< maxPacketSize) {
 				MessageFragment frag = pmt.loadMessageFragments(now, maxPacketSize - packet.getLength(), needsPingMessage, addStatsBulk, addStatsRT);
 				if(frag == null) break;
 				mustSend = true;
@@ -684,7 +686,7 @@ public class NewPacketFormat implements PacketFormat {
 
 	@Override
 	public void checkForLostPackets() {
-		if(pn == null) return;
+		if(pn == null || peerTransport == null) return;
 		double averageRTT = averageRTT();
 		long curTime = System.currentTimeMillis();
 		SessionKey key = peerTransport.getCurrentKeyTracker();
