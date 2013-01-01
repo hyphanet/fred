@@ -87,6 +87,10 @@ public final class ContainerSizeEstimator {
 						// FIXME The tar file will need the full name????
 					}
 					if (result._sizeFiles > maxContainerSize) break;
+				} else {
+					// Redirect.
+					result._sizeFiles += 512;
+					result._sizeFilesNoLimit += 512;
 				}
 			}
 		}
