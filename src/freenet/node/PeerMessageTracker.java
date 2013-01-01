@@ -45,9 +45,7 @@ public class PeerMessageTracker {
 	 */
 	private final ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
 	
-	private final PeerNode pn;
-	
-	private PeerMessageQueue messageQueue;
+	private final BasePeerNode pn;
 	
 	/** The next message ID for outgoing messages.
 	 * LOCKING: Protected by (this). */
@@ -77,10 +75,9 @@ public class PeerMessageTracker {
 	
 	private int pingCounter;
 	
-	public PeerMessageTracker(PeerNode pn, int ourInitialMsgID, int theirInitialMsgID) {
+	public PeerMessageTracker(BasePeerNode pn, int ourInitialMsgID, int theirInitialMsgID) {
 		
 		this.pn = pn;
-		messageQueue = pn.getMessageQueue();
 		startedByPrio = new ArrayList<HashMap<Integer, MessageWrapper>>(DMT.NUM_PRIORITIES);
 		for(int i = 0; i < DMT.NUM_PRIORITIES; i++) {
 			startedByPrio.add(new HashMap<Integer, MessageWrapper>());
@@ -113,11 +110,9 @@ public class PeerMessageTracker {
 				if(wrapper.allSent()) {
 					if(wrapper.getItem().sendLoadBulk) {
 						addStatsBulk.value = true;
-						break;
 					}
 					if(wrapper.getItem().sendLoadRT) {
 						addStatsRT.value = true;
-						break;
 					}
 				}
 				return frag;
@@ -127,15 +122,22 @@ public class PeerMessageTracker {
 	}
 	
 	public synchronized MessageFragment loadMessageFragments(long now, int messageLength, MutableBoolean needPingMessage, MutableBoolean addStatsBulk, MutableBoolean addStatsRT) throws BlockedTooLongException {
-		
+
 		MessageFragment frag = getMessageFragment(messageLength, addStatsBulk, addStatsRT);
 		if(frag != null)
 			return frag;
-		
-		for(int i = 0; i < startedByPrio.size(); i++) {
-			prio:
+		final PeerMessageQueue messageQueue = pn.getMessageQueue();
+		/**
+		 * 1. We break out of the inner loop when we run out of messages
+		 * in the MessageQueue for a particular priority.
+		 * 2. We break out of the main loop when we have used up the buffer (canSend method)
+		 * and when we can't allocate any more message IDs.
+		 * 
+		 */
+		outerloop:
+			for(int i = 0; i < startedByPrio.size(); i++) {
 				while(true) {
-					if(!canSend()) break;
+					if(!canSend()) break outerloop;
 					boolean wasGeneratedPing = false;
 					MessageItem item = null;
 					item = messageQueue.grabQueuedMessageItem(i);
@@ -151,7 +153,8 @@ public class PeerMessageTracker {
 							item = new MessageItem(msg, null, null);
 							item.setDeadline(now + PacketSender.MAX_COALESCING_DELAY);
 						} else {
-							break prio;
+							// We break out of the inner loop
+							break;
 						}
 					}
 					
@@ -161,16 +164,17 @@ public class PeerMessageTracker {
 						if(!wasGeneratedPing) {
 							messageQueue.pushfrontPrioritizedMessageItem(item);
 							// No point adding to queue if it's just a ping:
-							//  We will try again next time.
-							//  But odds are the connection is broken and the other side isn't responding...
+							// We will try again next time.
+							// But odds are the connection is broken and the other side isn't responding...
 						}
-						return null;
+						break outerloop;
 					}
 					
 					if(logDEBUG) Logger.debug(this, "Allocated "+messageID+" for "+item+" for "+this);
 					
 					MessageWrapper wrapper = new MessageWrapper(item, messageID);
 					if(wasGeneratedPing) {
+						// Get a fragment only if it is a ping message, otherwise we do it at the end.
 						frag = wrapper.getMessageFragment(messageLength);
 						//After we have one ping message, don't create more
 						needPingMessage.value = false;
@@ -182,7 +186,7 @@ public class PeerMessageTracker {
 					if(logDEBUG) Logger.debug(this, "Added " + item.buf.length + " to remote buffer. Total is now " + sendBufferUsed + " for "+pn.shortToString());
 					queue.put(messageID, wrapper);
 				}						
-		}
+			}
 		if(frag == null)
 			frag = getMessageFragment(messageLength, addStatsBulk, addStatsRT);
 		return frag;
