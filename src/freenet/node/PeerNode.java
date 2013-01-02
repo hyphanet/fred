@@ -4147,9 +4147,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(logMINOR) Logger.minor(this, "Not sending handshake to "+peer+" for "+getPeer()+" because it's not a real Internet address and metadata.allowLocalAddresses is not true");
 				continue;
 			}
-			if(!outgoingMangler.allowConnection(this, addr)) {
-				if(logMINOR)
-					Logger.minor(this, "Not sending handshake packet to "+peer+" for "+this);
+			if(!isConnected()) {
+				// If we are connected, we are rekeying.
+				// We have separate code to boot out connections.
+				if(!outgoingMangler.allowConnection(this, addr)) {
+					if(logMINOR)
+						Logger.minor(this, "Not sending handshake packet to "+peer+" for "+this);
+				}
 			}
 			validIPs.add(peer);
 		}
