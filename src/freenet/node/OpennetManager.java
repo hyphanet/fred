@@ -443,8 +443,11 @@ public class OpennetManager {
 					any = true;
 					if(crypto.allowConnection(nodeToAddNow, addr))
 						okay = true;
-					else // if NodeCrypto reject *any* address, reject peer
+					else {
+						// if NodeCrypto reject *any* address, reject peer
+						okay = false;
 						break;
+					}
 				}
 			} else {
 				Logger.error(this, "Peer does not have any IP addresses???");
