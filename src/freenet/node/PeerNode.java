@@ -4153,6 +4153,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(!outgoingMangler.allowConnection(this, addr)) {
 					if(logMINOR)
 						Logger.minor(this, "Not sending handshake packet to "+peer+" for "+this);
+					continue;
 				}
 			}
 			validIPs.add(peer);
