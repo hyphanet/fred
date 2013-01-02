@@ -4135,20 +4135,20 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			return null;
 		}
 		long loopTime1 = System.currentTimeMillis();
-		Vector<Peer> validIPs = new Vector<Peer>();
-		for(int i=0;i<localHandshakeIPs.length;i++){
-			Peer peer = localHandshakeIPs[i];
+		List<Peer> validIPs = new ArrayList<Peer>(localHandshakeIPs.length);
+		boolean allowLocalAddresses = allowLocalAddresses();
+		for(Peer peer: localHandshakeIPs) {
 			FreenetInetAddress addr = peer.getFreenetAddress();
 			if(!outgoingMangler.allowConnection(this, addr)) {
 				if(logMINOR)
 					Logger.minor(this, "Not sending handshake packet to "+peer+" for "+this);
 			}
 			if(peer.getAddress(false) == null) {
-				if(logMINOR) Logger.minor(this, "Not sending handshake to "+localHandshakeIPs[i]+" for "+getPeer()+" because the DNS lookup failed or it's a currently unsupported IPv6 address");
+				if(logMINOR) Logger.minor(this, "Not sending handshake to "+peer+" for "+getPeer()+" because the DNS lookup failed or it's a currently unsupported IPv6 address");
 				continue;
 			}
-			if(!peer.isRealInternetAddress(false, false, allowLocalAddresses())) {
-				if(logMINOR) Logger.minor(this, "Not sending handshake to "+localHandshakeIPs[i]+" for "+getPeer()+" because it's not a real Internet address and metadata.allowLocalAddresses is not true");
+			if(!peer.isRealInternetAddress(false, false, allowLocalAddresses)) {
+				if(logMINOR) Logger.minor(this, "Not sending handshake to "+peer+" for "+getPeer()+" because it's not a real Internet address and metadata.allowLocalAddresses is not true");
 				continue;
 			}
 			validIPs.add(peer);
