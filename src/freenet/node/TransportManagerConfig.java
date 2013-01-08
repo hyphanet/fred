@@ -17,7 +17,7 @@ public class TransportManagerConfig {
 	
 	public final TransportMode transportMode;
 	
-	public HashMap<String, SimpleFieldSet> transportConfigMap = new HashMap<String, SimpleFieldSet> ();
+	private HashMap<String, SimpleFieldSet> transportConfigMap = new HashMap<String, SimpleFieldSet> ();
 	
 	public HashMap<String, Boolean> enabledTransports = new HashMap<String, Boolean> ();
 	
@@ -30,6 +30,8 @@ public class TransportManagerConfig {
 	}
 	
 	public synchronized SimpleFieldSet getTransportConfig(String transportName) throws TransportPluginConfigurationException {
+		if(!transportConfigMap.containsKey(transportName))
+			throw new TransportPluginConfigurationException(transportName + " not configured.");
 		return transportConfigMap.get(transportName);
 	}
 	
