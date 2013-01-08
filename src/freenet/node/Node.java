@@ -5335,6 +5335,7 @@ public class Node implements TimeSkewDetectorCallback {
     		if(Location.distance(source, target) < myDist) {
     	    	if(logMINOR) Logger.minor(this, "Not storing because source is closer to target for "+key+" : "+source);
     		}
+			return false;
     	}
     	for(PeerNode pn : routedTo) {
     		if(Location.distance(pn, target) < myDist && !pn.isLowUptime()) {
