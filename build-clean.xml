@@ -65,7 +65,7 @@ maintainers may prefer to use this instead of build.xml.
 
 	<target name="dist" depends="clean-all, all" description="clean-build everything"/>
 
-	<target name="all" depends="package, doc" description="build everything, incl. docs, GWT js"/>
+	<target name="all" depends="package, doc, findbugs" description="build everything, incl. docs, GWT js"/>
 
 	<target name="clean-all" depends="clean, clean-doc, clean-gjs" description="clean all build products, incl. docs, GWT js"/>
 
@@ -81,6 +81,19 @@ maintainers may prefer to use this instead of build.xml.
 		<echo message="Misc parameters (-DPARAM=VALUE)"/>
 		<echo message="  javac.args  Command line arguments to pass to javac"/>
 		<echo message=""/>
+	</target>
+
+	<target name="findbugs" depends="package" unless="${findbugs.skip}">
+		<antcall target="libdep-findbugs"/>
+		<taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${findbugs.path}"/>
+
+		<findbugs home="${findbugs.dir}"
+		output="xml"
+		outputFile="${test.dst}/findbugs.xml" >
+		<auxClasspath refid="lib.path" />
+		<sourcePath path="${main.src}" />
+		<class location="${main.dst}/freenet.jar" />
+		</findbugs>
 	</target>
 
 	<target name="debug">
@@ -102,6 +115,7 @@ maintainers may prefer to use this instead of build.xml.
 		<available property="lib.contrib.present" classname="freenet.node.ExtVersion" classpathref="lib.path"/>
 		<available property="lib.bouncycastle.present" classname="org.bouncycastle.jce.provider.BouncyCastleProvider" classpathref="lib.path"/>
 		<available property="lib.junit.present" classname="junit.framework.Test" classpathref="libtest.path"/>
+		<available property="lib.findbugs.present" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${findbugs.path}"/>
 		<available property="gjs.lib.gwt-user.present" classname="com.google.gwt.user.client.Window" classpathref="gjs.lib.path"/>
 		<available property="gjs.lib.gwt-dev.present" classname="com.google.gwt.dev.About" classpathref="gjs.lib.path"/>
 		<condition property="gjs.lib.gwt.present">
@@ -122,6 +136,10 @@ maintainers may prefer to use this instead of build.xml.
 
 	<target name="libdep-junit" depends="env" unless="lib.junit.present">
 		<fail message="JUnit not available"/>
+	</target>
+
+	<target name="libdep-findbugs" depends="env" unless="lib.findbugs.present">
+		<fail message="findbugs not available"/>
 	</target>
 
 	<target name="libdep-gwt-user" depends="env" unless="gjs.lib.gwt-user.present">
