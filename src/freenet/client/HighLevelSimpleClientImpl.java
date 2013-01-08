@@ -52,7 +52,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	private final boolean realTimeFlag;
 	static final int MAX_RECURSION = 10;
 	static final int MAX_ARCHIVE_RESTARTS = 2;
-	static final int MAX_ARCHIVE_LEVELS = 4;
+	static final int MAX_ARCHIVE_LEVELS = 10;
 	static final boolean DONT_ENTER_IMPLICIT_ARCHIVES = true;
 	// COOLDOWN_RETRIES-1 so we don't have to wait on the cooldown queue; HLSC is designed
 	// for interactive requests mostly.
