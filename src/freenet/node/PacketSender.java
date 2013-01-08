@@ -184,11 +184,9 @@ public class PacketSender implements Runnable {
 
 		for(int i = 0; i < nodes.length; i++) {
 			now = System.currentTimeMillis();
-			int idx = i;
-			
 			// Basic peer maintenance.
 			
-			PeerNode pn = nodes[idx];
+			PeerNode pn = nodes[i];
 
 			pn.maybeOnConnect();
 			if(pn.shouldDisconnectAndRemoveNow() && !pn.isDisconnecting()) {
@@ -211,115 +209,118 @@ public class PacketSender implements Runnable {
 					Logger.normal(this, "shouldDisconnectNow has returned true : marking the peer as incompatible: "+pn);
 					continue;
 				}
+			} else {
+				// Disconnected, but we check again for each transport anyway.
+			}
 				
-				HashMap<String, PeerPacketTransport> peerMap = pn.getPeerPacketTransportMap();
-				for(String transportName : peerMap.keySet()) {
+			HashMap<String, PeerPacketTransport> peerMap = pn.getPeerPacketTransportMap();
+			for(String transportName : peerMap.keySet()) {
+				
+				PeerPacketTransport peerTransport = peerMap.get(transportName);
+				// For purposes of detecting not having received anything, which indicates a 
+				// serious connectivity problem, we want to look for *any* packets received, 
+				// including auth packets.
+				lastReceivedPacketFromAnyNode =
+					Math.max(peerTransport.lastReceivedTransportPacketTime(), lastReceivedPacketFromAnyNode);
+				if(peerTransport.isTransportConnected()) {
 					
-					PeerPacketTransport peerTransport = peerMap.get(transportName);
-					// For purposes of detecting not having received anything, which indicates a 
-					// serious connectivity problem, we want to look for *any* packets received, 
-					// including auth packets.
-					lastReceivedPacketFromAnyNode =
-						Math.max(peerTransport.lastReceivedTransportPacketTime(), lastReceivedPacketFromAnyNode);
-					if(peerTransport.isTransportConnected()) {
-						
-						boolean shouldThrottle = peerTransport.shouldThrottle();
-						
-						peerTransport.checkForLostPackets();
-	
-						// Is the transport dead?
-						// It might be disconnected in terms of FNP but trying to reconnect via JFK's, so we need to use the time when we last got a *data* packet.
-						if(now - peerTransport.lastReceivedTransportDataPacketTime() > peerTransport.pn.maxTimeBetweenReceivedPackets()) {
-							Logger.normal(this, "Disconnecting from " + peerTransport + " - haven't received packets recently");
-							peerTransport.disconnectTransport(false);
-							continue;
-						} else if(now - peerTransport.lastReceivedTransportAckTime() > peerTransport.pn.maxTimeBetweenReceivedAcks()) {
-							Logger.normal(this, "Disconnecting from " + peerTransport + " - haven't received acks recently");
-							peerTransport.disconnectTransport(true);
-							continue;
-						}
-						// The peer is connected.
-						
-						if(canSendThrottled || !shouldThrottle) {
-							// We can send to this peer.
-							long sendTime = peerTransport.getNextUrgentTime(now);
-							if(sendTime != Long.MAX_VALUE) {
-								if(sendTime <= now) {
-									// Message is urgent.
-									if(sendTime < lowestUrgentSendTime) {
-										lowestUrgentSendTime = sendTime;
-										if(urgentSendPeerTransports != null)
-											urgentSendPeerTransports.clear();
-										else
-											urgentSendPeerTransports = new ArrayList<PeerPacketTransport>();
-									}
-									if(sendTime <= lowestUrgentSendTime)
-										urgentSendPeerTransports.add(peerTransport);
-								} else if(peerTransport.fullPacketQueued()) {
-									if(sendTime < lowestFullPacketSendTime) {
-										lowestFullPacketSendTime = sendTime;
-										if(urgentFullPacketPeerTransports != null)
-											urgentFullPacketPeerTransports.clear();
-										else
-											urgentFullPacketPeerTransports = new ArrayList<PeerPacketTransport>();
-									}
-									if(sendTime <= lowestFullPacketSendTime)
-										urgentFullPacketPeerTransports.add(peerTransport);
+					boolean shouldThrottle = peerTransport.shouldThrottle();
+					
+					peerTransport.checkForLostPackets();
+
+					// Is the transport dead?
+					// It might be disconnected in terms of FNP but trying to reconnect via JFK's, so we need to use the time when we last got a *data* packet.
+					if(now - peerTransport.lastReceivedTransportDataPacketTime() > peerTransport.pn.maxTimeBetweenReceivedPackets()) {
+						Logger.normal(this, "Disconnecting from " + peerTransport + " - haven't received packets recently");
+						peerTransport.disconnectTransport(false);
+						continue;
+					} else if(now - peerTransport.lastReceivedTransportAckTime() > peerTransport.pn.maxTimeBetweenReceivedAcks()) {
+						Logger.normal(this, "Disconnecting from " + peerTransport + " - haven't received acks recently");
+						peerTransport.disconnectTransport(true);
+						continue;
+					}
+					// The transport is connected.
+					
+					if(canSendThrottled || !shouldThrottle) {
+						// We can send to this peer.
+						long sendTime = peerTransport.getNextUrgentTime(now);
+						if(sendTime != Long.MAX_VALUE) {
+							if(sendTime <= now) {
+								// Message is urgent.
+								if(sendTime < lowestUrgentSendTime) {
+									lowestUrgentSendTime = sendTime;
+									if(urgentSendPeerTransports != null)
+										urgentSendPeerTransports.clear();
+									else
+										urgentSendPeerTransports = new ArrayList<PeerPacketTransport>();
 								}
-							}
-						} else if(shouldThrottle && !canSendThrottled) {
-							long ackTime = peerTransport.timeSendAcks();
-							if(ackTime != Long.MAX_VALUE) {
-								if(ackTime <= now) {
-									if(ackTime < lowestAckTime) {
-										lowestAckTime = ackTime;
-										if(ackPeerTransports != null)
-											ackPeerTransports.clear();
-										else
-											ackPeerTransports = new ArrayList<PeerPacketTransport>();
-									}
-									if(ackTime <= lowestAckTime)
-										ackPeerTransports.add(peerTransport);
+								if(sendTime <= lowestUrgentSendTime)
+									urgentSendPeerTransports.add(peerTransport);
+							} else if(peerTransport.fullPacketQueued()) {
+								if(sendTime < lowestFullPacketSendTime) {
+									lowestFullPacketSendTime = sendTime;
+									if(urgentFullPacketPeerTransports != null)
+										urgentFullPacketPeerTransports.clear();
+									else
+										urgentFullPacketPeerTransports = new ArrayList<PeerPacketTransport>();
 								}
+								if(sendTime <= lowestFullPacketSendTime)
+									urgentFullPacketPeerTransports.add(peerTransport);
 							}
 						}
-						
-						if(canSendThrottled || !shouldThrottle) {
-							long urgentTime = peerTransport.getNextUrgentTime(now);
-							// Should spam the logs, unless there is a deadlock
-							if(urgentTime < Long.MAX_VALUE && logMINOR)
-								Logger.minor(this, "Next urgent time: " + urgentTime + "(in "+(urgentTime - now)+") for " + pn);
-							nextActionTime = Math.min(nextActionTime, urgentTime);
-						} else {
-							nextActionTime = Math.min(nextActionTime, peerTransport.timeCheckForLostPackets());
+					} else if(shouldThrottle && !canSendThrottled) {
+						long ackTime = peerTransport.timeSendAcks();
+						if(ackTime != Long.MAX_VALUE) {
+							if(ackTime <= now) {
+								if(ackTime < lowestAckTime) {
+									lowestAckTime = ackTime;
+									if(ackPeerTransports != null)
+										ackPeerTransports.clear();
+									else
+										ackPeerTransports = new ArrayList<PeerPacketTransport>();
+								}
+								if(ackTime <= lowestAckTime)
+									ackPeerTransports.add(peerTransport);
+							}
 						}
 					}
 					
-					if(!peerTransport.noContactDetails()) {
-						noContacts = false;
+					if(canSendThrottled || !shouldThrottle) {
+						long urgentTime = peerTransport.getNextUrgentTime(now);
+						// Should spam the logs, unless there is a deadlock
+						if(urgentTime < Long.MAX_VALUE && logMINOR)
+							Logger.minor(this, "Next urgent time: " + urgentTime + "(in "+(urgentTime - now)+") for " + pn);
+						nextActionTime = Math.min(nextActionTime, urgentTime);
+					} else {
+						nextActionTime = Math.min(nextActionTime, peerTransport.timeCheckForLostPackets());
 					}
-					
-					long handshakeTime = peerTransport.timeSendHandshake(now);
-					if(handshakeTime != Long.MAX_VALUE) {
-						if(handshakeTime < lowestHandshakeTime) {
-							lowestHandshakeTime = handshakeTime;
-							if(handshakePeerTransports != null)
-								handshakePeerTransports.clear();
-							else
-								handshakePeerTransports = new ArrayList<PeerPacketTransport>();
-						}
-						if(handshakeTime <= lowestHandshakeTime)
-							handshakePeerTransports.add(peerTransport);
-					}
-					
-					long tempNow = System.currentTimeMillis();
-					if((tempNow - oldTempNow) > (5 * 1000))
-						Logger.error(this, "tempNow is more than 5 seconds past oldTempNow (" + (tempNow - oldTempNow) + ") in PacketSender working with " + pn.userToString());
-					oldTempNow = tempNow;
 				}
-			} else
-				// Not connected
 				
+				if(!peerTransport.noContactDetails()) {
+					// If any one transport has a contact then we don't need to start the ARK fetcher.
+					noContacts = false;
+				}
+				
+				long handshakeTime = peerTransport.timeSendHandshake(now);
+				if(handshakeTime != Long.MAX_VALUE) {
+					if(handshakeTime < lowestHandshakeTime) {
+						lowestHandshakeTime = handshakeTime;
+						if(handshakePeerTransports != null)
+							handshakePeerTransports.clear();
+						else
+							handshakePeerTransports = new ArrayList<PeerPacketTransport>();
+					}
+					if(handshakeTime <= lowestHandshakeTime)
+						handshakePeerTransports.add(peerTransport);
+				}
+				
+				long tempNow = System.currentTimeMillis();
+				if((tempNow - oldTempNow) > (5 * 1000))
+					Logger.error(this, "tempNow is more than 5 seconds past oldTempNow (" + (tempNow - oldTempNow) + ") in PacketSender working with " + pn.userToString());
+				oldTempNow = tempNow;
+			}
+			
+			// If we have no contacts from any transport then we start the ARK fetcher.
 			if(noContacts)
 				pn.startARKFetcher();
 		}
@@ -459,6 +460,7 @@ public class PacketSender implements Runnable {
 					PeerPacketTransport peerTransport = peerMap.get(transportName);
 					if(peerTransport.noContactDetails())
 						continue;
+					// If any one transport has a contact then we don't need to start the ARK fetcher.
 					noContacts = false;
 					if(peerTransport.shouldSendHandshake()) {
 						// Send handshake if necessary
