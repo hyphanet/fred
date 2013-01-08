@@ -16,9 +16,12 @@ import freenet.pluginmanager.TransportPlugin;
 /** Tests can override this to record specific events e.g. rekey */
 public class NullBasePeerNode implements BasePeerNode {
 	
-	SessionKey currentKey;
-	SessionKey previousKey;
-	SessionKey unverifiedKey;
+	private final PeerMessageQueue messageQueue;
+	private PeerMessageTracker pmt;
+	
+	public NullBasePeerNode() {
+		this.messageQueue = new PeerMessageQueue();
+	}
 
 	@Override
 	public Peer getPeer() {
@@ -118,7 +121,7 @@ public class NullBasePeerNode implements BasePeerNode {
 
 	@Override
 	public PeerMessageQueue getMessageQueue() {
-		return null;
+		return messageQueue;
 	}
 
 	@Override
@@ -218,7 +221,10 @@ public class NullBasePeerNode implements BasePeerNode {
 
 	@Override
 	public PeerMessageTracker getPeerMessageTracker() {
-		return null;
+		if(pmt == null) {
+			pmt = new PeerMessageTracker(this, 0, 0);
+		}
+		return pmt;
 	}
 
 	@Override
