@@ -9,12 +9,12 @@ import freenet.pluginmanager.PacketTransportPlugin;
 import freenet.pluginmanager.PacketTransportPluginFactory;
 import freenet.pluginmanager.StreamTransportPlugin;
 import freenet.pluginmanager.StreamTransportPluginFactory;
-import freenet.pluginmanager.TransportConfig;
 import freenet.pluginmanager.TransportInitException;
 import freenet.pluginmanager.TransportPlugin;
 import freenet.pluginmanager.TransportPluginConfigurationException;
 import freenet.pluginmanager.TransportPluginException;
 import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
 /**
  * This class maintains a record of packet transports and stream transports available. 
  * For every mode(opennet, darknet, etc.) a separate manager is created at the node
@@ -156,7 +156,7 @@ public class TransportManager {
 	private synchronized PacketTransportPlugin createTransportPlugin(PacketTransportPluginFactory transportPluginFactory) throws FaultyTransportPluginException, MalformedPluginAddressException, TransportInitException, TransportPluginConfigurationException {
 		
 		String factoryTransportName = transportPluginFactory.getTransportName();
-		TransportConfig config = transportPluginFactory.toTransportConfig(transportManagerConfig.getTransportConfig(factoryTransportName));
+		SimpleFieldSet config = transportManagerConfig.getTransportConfig(factoryTransportName);
 		PacketTransportPlugin transportPlugin = transportPluginFactory.makeTransportPlugin(transportMode, config, node.collector, node.startupTime);
 		
 		if(transportPlugin == null)
@@ -189,7 +189,7 @@ public class TransportManager {
 	private synchronized StreamTransportPlugin createTransportPlugin(StreamTransportPluginFactory transportPluginFactory) throws FaultyTransportPluginException, MalformedPluginAddressException, TransportInitException, TransportPluginConfigurationException {
 
 		String factoryTransportName = transportPluginFactory.getTransportName();
-		TransportConfig config = transportPluginFactory.toTransportConfig(transportManagerConfig.getTransportConfig(factoryTransportName));
+		SimpleFieldSet config = transportManagerConfig.getTransportConfig(factoryTransportName);
 		StreamTransportPlugin transportPlugin = transportPluginFactory.makeTransportPlugin(transportMode, config, node.collector, node.startupTime);;
 		
 		if(transportPlugin == null)

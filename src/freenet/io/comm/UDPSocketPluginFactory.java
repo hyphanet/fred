@@ -1,6 +1,5 @@
 package freenet.io.comm;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -12,7 +11,6 @@ import freenet.node.TransportManager.TransportMode;
 import freenet.pluginmanager.FaultyTransportPluginException;
 import freenet.pluginmanager.PacketTransportPlugin;
 import freenet.pluginmanager.PacketTransportPluginFactory;
-import freenet.pluginmanager.TransportConfig;
 import freenet.pluginmanager.TransportInitException;
 import freenet.pluginmanager.TransportPluginConfigurationException;
 import freenet.support.Logger;
@@ -36,8 +34,8 @@ public class UDPSocketPluginFactory implements PacketTransportPluginFactory {
 	}
 
 	@Override
-	public PacketTransportPlugin makeTransportPlugin(TransportMode transportMode, TransportConfig config, IOStatisticCollector collector, long startupTime) throws TransportInitException {
-		TransportConfigImpl address = (TransportConfigImpl) config;
+	public PacketTransportPlugin makeTransportPlugin(TransportMode transportMode, SimpleFieldSet config, IOStatisticCollector collector, long startupTime) throws TransportInitException, TransportPluginConfigurationException {
+		TransportConfig address = toTransportConfig(config);
 		String title = "UDP " + (transportMode == TransportMode.opennet ? "Opennet " : "Darknet ") + "port " + address.portNumber;
 		try {
 			return new UdpSocketHandler(transportMode, address.portNumber, address.inetAddress, node, startupTime, title, node.collector);
@@ -60,12 +58,9 @@ public class UDPSocketPluginFactory implements PacketTransportPluginFactory {
 		return h;
 	}
 
-
-
-	@Override
-	public TransportConfig toTransportConfig(SimpleFieldSet config)	throws TransportPluginConfigurationException {
+	private TransportConfig toTransportConfig(SimpleFieldSet config) throws TransportPluginConfigurationException {
 		try {
-			return new TransportConfigImpl(config);
+			return new TransportConfig(config);
 		} catch (UnknownHostException e) {
 			throw new TransportPluginConfigurationException("Unknown host. Exception: " + e);
 		}
@@ -73,31 +68,14 @@ public class UDPSocketPluginFactory implements PacketTransportPluginFactory {
 
 }
 
-class TransportConfigImpl implements TransportConfig {
+class TransportConfig {
 	
 	public InetAddress inetAddress;
 	public int portNumber;
-	private SimpleFieldSet config;
 	
-	public TransportConfigImpl(SimpleFieldSet config) throws UnknownHostException {
-		initialize(config);
-	}
-	
-	private void initialize(SimpleFieldSet config) throws UnknownHostException {
-		this.config = config;
+	public TransportConfig(SimpleFieldSet config) throws UnknownHostException {
 		this.inetAddress = InetAddress.getByName(config.get("address"));
 		this.portNumber = Integer.parseInt(config.get("port"));
 	}
-
-	@Override
-	public SimpleFieldSet getConfig() {
-		return config;
-	}
-
-	@Override
-	public void writeConfig(SimpleFieldSet config) throws IOException {
-		initialize(config);
-	}
-	
 }
 
