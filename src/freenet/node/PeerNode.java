@@ -1576,6 +1576,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		PeerTransport peerTransport = getPeerTransport(transportPlugin);
 		if(peerTransport != null)
 			peerTransport.setDetectedAddress(newAddress);
+		
+		// Backwards compatibility. Since old nodes don't understand PluginAddress (Peer is the old address), 
+		// we need to update that as well.
+		if(peerTransport.transportName == "udp" && (newAddress instanceof PeerPluginAddress))
+			detectedPeer = ((PeerPluginAddress)newAddress).peer;
 	}
 
 	private String shortToString;
@@ -2771,7 +2776,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		if(logMINOR)
 			Logger.minor(this, "Reporting throttled packet send time: " + timeDiff + " to " + getPeer()+" ("+(realTime?"realtime":"bulk")+")");
 	}
-
+	
 	public void setRemoteDetectedPeer(Peer p) {
 		this.remoteDetectedPeer = p;
 	}
