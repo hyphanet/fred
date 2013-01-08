@@ -496,24 +496,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				        NodeL10n.getBase().getString("Toadlet.returnToQueuepage"));
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
-			} else if (request.isPartSet("change_priority")) {
-				short newPriority = Short.parseShort(request.getPartAsStringFailsafe("priority", 32));
-				String identifier = "";
-				for(String part : request.getParts()) {
-					if(!part.startsWith("identifier-")) continue;
-					identifier = part.substring("identifier-".length());
-					if(identifier.length() > 50) continue;
-					identifier = request.getPartAsStringFailsafe(part, MAX_IDENTIFIER_LENGTH);
-					try {
-						fcp.modifyGlobalRequestBlocking(identifier, null, newPriority);
-					} catch (DatabaseDisabledException e) {
-						sendPersistenceDisabledError(ctx);
-						return;
-					}
-				}
-				writePermanentRedirect(ctx, "Done", path());
+			} else if (request.isPartSet("change_priority_top")) {
+				handleChangePriority(request, ctx, "_top");
 				return;
-
+			} else if (request.isPartSet("change_priority_bottom")) {
+				handleChangePriority(request, ctx, "_bottom");
+				return;
 				// FIXME factor out the next 3 items, they are very messy!
 			} else if (request.getPartAsStringFailsafe("insert", 128).length() > 0) {
 				final FreenetURI insertURI;
@@ -919,6 +907,24 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			request.freeParts();
 		}
 		this.handleMethodGET(uri, new HTTPRequestImpl(uri, "GET"), ctx);
+	}
+
+	private void handleChangePriority(HTTPRequest request, ToadletContext ctx, String suffix) throws ToadletContextClosedException, IOException {
+		short newPriority = Short.parseShort(request.getPartAsStringFailsafe("priority"+suffix, 32));
+		String identifier = "";
+		for(String part : request.getParts()) {
+			if(!part.startsWith("identifier-")) continue;
+			identifier = part.substring("identifier-".length());
+			if(identifier.length() > 50) continue;
+			identifier = request.getPartAsStringFailsafe(part, MAX_IDENTIFIER_LENGTH);
+			try {
+				fcp.modifyGlobalRequestBlocking(identifier, null, newPriority);
+			} catch (DatabaseDisabledException e) {
+				sendPersistenceDisabledError(ctx);
+				return;
+			}
+		}
+		writePermanentRedirect(ctx, "Done", path());
 	}
 
 	private void downloadDisallowedPage (NotAllowedException e, String downloadPath, ToadletContext ctx)
@@ -1756,10 +1762,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		return priorityCell;
 	}
 
-	private HTMLNode createPriorityControl(PageMaker pageMaker, ToadletContext ctx, short priorityClass, String[] priorityClasses, boolean advancedModeEnabled, boolean isUpload) {
+	private HTMLNode createPriorityControl(PageMaker pageMaker, ToadletContext ctx, short priorityClass, String[] priorityClasses, boolean advancedModeEnabled, boolean isUpload, String controlSuffix) {
 		HTMLNode priorityDiv = new HTMLNode("div", "class", "request-priority nowrap");
-		priorityDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "change_priority", NodeL10n.getBase().getString(isUpload ? "QueueToadlet.changeUploadPriorities" : "QueueToadlet.changeDownloadPriorities") });
-		HTMLNode prioritySelect = priorityDiv.addChild("select", "name", "priority");
+		priorityDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "change_priority" + controlSuffix, NodeL10n.getBase().getString(isUpload ? "QueueToadlet.changeUploadPriorities" : "QueueToadlet.changeDownloadPriorities") });
+		HTMLNode prioritySelect = priorityDiv.addChild("select", "name", "priority"+controlSuffix);
 		for (int p = 0; p < RequestStarter.NUMBER_OF_PRIORITY_CLASSES; p++) {
 			if(p <= RequestStarter.INTERACTIVE_PRIORITY_CLASS && !advancedModeEnabled) continue;
 			if (p == priorityClass) {
@@ -1968,7 +1974,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		HTMLNode formDiv = new HTMLNode("div", "class", "request-table-form");
 		HTMLNode form = ctx.addFormChild(formDiv, path(), "request-table-form-"+id+(advancedModeEnabled?"-advanced":"-simple"));
 		
-		createRequestTableButtons(form, pageMaker, ctx, isDownloadToTemp, isFailed, isDisableFilterChecked, isUpload, mimeType, hasFriends, isFinishedDiskDownloads, advancedModeEnabled, isCompleted, priorityClasses);
+		createRequestTableButtons(form, pageMaker, ctx, isDownloadToTemp, isFailed, isDisableFilterChecked, isUpload, mimeType, hasFriends, isFinishedDiskDownloads, advancedModeEnabled, isCompleted, priorityClasses, true);
 
 		HTMLNode table = form.addChild("table", "class", "requests");
 		HTMLNode headerRow = table.addChild("tr", "class", "table-header");
@@ -2094,14 +2100,14 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 			}
 		}
-		createRequestTableButtons(form, pageMaker, ctx, isDownloadToTemp, isFailed, isDisableFilterChecked, isUpload, mimeType, hasFriends, isFinishedDiskDownloads, advancedModeEnabled, isCompleted, priorityClasses);
+		createRequestTableButtons(form, pageMaker, ctx, isDownloadToTemp, isFailed, isDisableFilterChecked, isUpload, mimeType, hasFriends, isFinishedDiskDownloads, advancedModeEnabled, isCompleted, priorityClasses, false);
 		return formDiv;
 	}
 
 	private void createRequestTableButtons(HTMLNode form, PageMaker pageMaker,
 			ToadletContext ctx, boolean isDownloadToTemp, boolean isFailed,
 			boolean isDisableFilterChecked, boolean isUpload, String mimeType, boolean hasFriends, boolean isFinishedDiskDownloads,
-			boolean advancedModeEnabled, boolean isCompleted, String[] priorityClasses) {
+			boolean advancedModeEnabled, boolean isCompleted, String[] priorityClasses, boolean top) {
 		if( isFinishedDiskDownloads ) {
 			form.addChild(createRemoveFinishedDownloadsControl(pageMaker, ctx));
 		} else {
@@ -2110,7 +2116,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		if(hasFriends && !(isUpload && isFailed))
 			form.addChild(createRecommendControl(pageMaker, ctx));
 		if(advancedModeEnabled && !(isFailed || isCompleted))
-			form.addChild(createPriorityControl(pageMaker, ctx, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, priorityClasses, advancedModeEnabled, isUpload));
+			form.addChild(createPriorityControl(pageMaker, ctx, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, priorityClasses, advancedModeEnabled, isUpload, top ? "_top" : "_bottom"));
 	}
 
 	private HTMLNode createCheckboxCell(RequestStatus clientRequest, int counter) {
