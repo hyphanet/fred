@@ -453,28 +453,22 @@ public abstract class PeerTransport {
 	public synchronized PluginAddress getAddress() {
 		try {
 			if(pn.isIgnoreSource()) {
-				FreenetInetAddress addr = detectedTransportAddress == null ? null : detectedTransportAddress.getFreenetAddress();
-				int port = detectedTransportAddress == null ? -1 : detectedTransportAddress.getPortNumber();
-				if(nominalTransportAddress == null) return detectedTransportAddress;
+				if(detectedTransportAddress == null)
+					return null;
+				FreenetInetAddress addr = detectedTransportAddress.getFreenetAddress();
+				int port = detectedTransportAddress.getPortNumber();
 				for(PluginAddress address : nominalTransportAddress) {
-					try {
-						if(address.getPortNumber() != port && address.getFreenetAddress().equals(addr)) {
-							return address;
-						}
-					} catch(NullPointerException e) {
-						// What if address is null or address.getFreenetAddress() is null
+					if(address == null)
 						continue;
-					}
+					FreenetInetAddress newAddr = address.getFreenetAddress();
+					if(address.getPortNumber() != port && newAddr != null && newAddr.equals(addr))
+							return address;
 				}
 			}
 		}catch(UnsupportedIPAddressOperationException e){
 			//Do nothing
 		}
 		return detectedTransportAddress;
-	}
-	
-	public void changedAddress(PluginAddress newAddress) {
-		setDetectedAddress(newAddress);
 	}
 	
 	/**
@@ -586,7 +580,8 @@ public abstract class PeerTransport {
 		
 		FreenetInetAddress localhost = pn.node.fLocalhostAddress;
 		//Peer[] nodePeers = outgoingMangler.getPrimaryIPAddress();
-		Peer[] nodePeers = null; //FIXME finish this part
+		// This is a temporary fix. We need PortManager to handle this
+		Peer[] nodePeers = pn.crypto.detector.getPrimaryPeers(); //FIXME finish this part
 
 		ArrayList<PluginAddress> localAddresses = null;
 		synchronized(this) {
