@@ -76,6 +76,12 @@ public class PeerPacketTransport extends PeerTransport {
 		this(packetTransportBundle.transportPlugin, packetTransportBundle.packetMangler, pn);
 	}
 	
+	public PeerPacketTransport() {
+		super();
+		this.transportPlugin = null;
+		this.outgoingMangler = null;
+	}
+	
 	/*
 	 * 
 	 * Time related methods
