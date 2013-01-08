@@ -27,11 +27,6 @@ public interface PacketTransportPluginFactory {
 	public Set<TransportMode> getOperationalModes();
 	
 	/**
-	 * Get the config object from a SimpleFieldSet that was stored locally.
-	 */
-	public TransportConfig toTransportConfig(SimpleFieldSet config) throws TransportPluginConfigurationException;
-	
-	/**
 	 * Method to make the plugin.
      * FredPlugin should help with that.
      * @param transportMode Mode of operation (opennet,darknet,etc)
@@ -39,7 +34,7 @@ public interface PacketTransportPluginFactory {
 	 * @param collector If plugin wants to support sharing statistics, then the object can be used
 	 * @return The plugin that can be be used.
 	 */
-	public PacketTransportPlugin makeTransportPlugin(TransportMode transportMode, TransportConfig config, IOStatisticCollector collector, long startupTime) throws TransportInitException;
+	public PacketTransportPlugin makeTransportPlugin(TransportMode transportMode, SimpleFieldSet config, IOStatisticCollector collector, long startupTime) throws TransportInitException, TransportPluginConfigurationException;
 	
 	/**
 	 * The plugin instance was faulty. We leave it to the plugin to fix the issue and register again if it wants to.
