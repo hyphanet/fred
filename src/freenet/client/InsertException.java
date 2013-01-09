@@ -16,7 +16,7 @@ import freenet.support.Logger.LogLevel;
  * Thrown when a high-level insert fails. For most failures, there will not be a stack trace, or it 
  * will be inaccurate.
  */
-public class InsertException extends Exception {
+public class InsertException extends Exception implements Cloneable {
 	private static final long serialVersionUID = -1106716067841151962L;
 	
 	/** Failure mode, see the constants below. */
@@ -250,6 +250,7 @@ public class InsertException extends Exception {
 	
 	@Override
 	public InsertException clone() {
+		// Cloneable shuts up findbugs, but we need to deep copy errorCodes.
 		return new InsertException(this);
 	}
 

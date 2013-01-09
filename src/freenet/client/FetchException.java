@@ -15,7 +15,7 @@ import freenet.support.Logger;
  * For most failure modes, except INTERNAL_ERROR there will be no stack trace, or it will be unhelpful or 
  * inaccurate. 
  */
-public class FetchException extends Exception {
+public class FetchException extends Exception implements Cloneable {
 	private static volatile boolean logMINOR;
 	
 	static {
@@ -613,6 +613,7 @@ public class FetchException extends Exception {
 	
 	@Override
 	public FetchException clone() {
+		// Cloneable shuts up findbugs but we need a deep copy.
 		return new FetchException(this);
 	}
 
