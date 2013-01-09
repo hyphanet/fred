@@ -7,12 +7,13 @@ import java.util.Arrays;
 
 import com.db4o.ObjectContainer;
 
+import freenet.support.HexUtil;
 import freenet.support.Logger;
 
 public class HashResult implements Comparable<HashResult> {
 
 	public final HashType type;
-	public final byte[] result;
+	private final byte[] result;
 	
 	public HashResult(HashType hashType, byte[] bs) {
 		this.type = hashType;
@@ -138,6 +139,10 @@ public class HashResult implements Comparable<HashResult> {
 	@Override
 	public HashResult clone() {
 		return new HashResult(this);
+	}
+
+	public String hashAsHex() {
+		return HexUtil.bytesToHex(result);
 	}
 
 }
