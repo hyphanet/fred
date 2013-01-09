@@ -45,7 +45,7 @@ public class ImageElement extends BaseUpdateableElement {
 	private ParsedTag				originalImg;
 
 	// FIXME get this from global weakFastRandom ???
-	private final int				randomNumber	= new Random().nextInt();
+	private final int				randomNumber;
 
 	private boolean					wasError		= false;
 
@@ -71,6 +71,7 @@ public class ImageElement extends BaseUpdateableElement {
 	
 	public ImageElement(FProxyFetchTracker tracker, FreenetURI key, long maxSize, ToadletContext ctx, ParsedTag originalImg, boolean pushed) {
 		super("span", ctx);
+		randomNumber = tracker.makeRandomElementID();
 		long now = System.currentTimeMillis();
 		if (logMINOR) {
 			Logger.minor(this, "ImageElement creating for uri:" + key);
