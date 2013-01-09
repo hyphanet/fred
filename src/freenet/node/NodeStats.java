@@ -724,6 +724,11 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		}
 		
 		@Override
+		public int hashCode() {
+			return peer.hashCode();
+		}
+		
+		@Override
 		public String toString() {
 			return peer.toString()+":output:{lower="+outputBandwidthLowerLimit+",upper="+outputBandwidthUpperLimit+",this="+outputBandwidthPeerLimit+"},input:lower="+inputBandwidthLowerLimit+",upper="+inputBandwidthUpperLimit+",peer="+inputBandwidthPeerLimit+"},requests:"+
 				"in:"+expectedTransfersInCHK+"chk/"+expectedTransfersInSSK+"ssk:out:"+
