@@ -2259,7 +2259,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	}
 	
 	public boolean checkRecentlyFailed(int blockNum, ObjectContainer container, ClientContext context, KeysFetchingLocally keys, long now) {
-		if(keys == null) 
+		if(this.keys == null)
 			migrateToKeys(container);
 		else {
 			if(persistent) container.activate(keys, 1);
