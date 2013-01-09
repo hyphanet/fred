@@ -1,6 +1,6 @@
 package freenet.support.math;
 
-public class TrivialRunningAverage implements RunningAverage {
+public class TrivialRunningAverage implements RunningAverage, Cloneable {
 
 	private static final long serialVersionUID = 1L;
 	private long reports;
@@ -68,6 +68,8 @@ public class TrivialRunningAverage implements RunningAverage {
 
 	@Override
 	public TrivialRunningAverage clone() {
+		// Override clone() for synchronization.
+		// Implement Cloneable to shut up findbugs.
 		synchronized (this) {
 			return new TrivialRunningAverage(this);
 		}
