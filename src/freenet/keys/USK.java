@@ -238,6 +238,10 @@ public class USK extends BaseClientKey implements Comparable<USK> {
 	};
 
 	public byte[] getPubKeyHash() {
-		return pubKeyHash;
+		return Arrays.copyOf(pubKeyHash, pubKeyHash.length);
+	}
+
+	public boolean samePubKeyHash(NodeSSK k) {
+		return Arrays.equals(k.getPubKeyHash(), pubKeyHash);
 	}
 }

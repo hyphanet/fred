@@ -1593,7 +1593,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	public short definitelyWantKey(Key key, byte[] saltedKey, ObjectContainer container, ClientContext context) {
 		if(!(key instanceof NodeSSK)) return -1;
 		NodeSSK k = (NodeSSK) key;
-		if(!Arrays.equals(k.getPubKeyHash(), origUSK.getPubKeyHash()))
+		if(!origUSK.samePubKeyHash(k))
 			return -1;
 		long lastSlot = uskManager.lookupLatestSlot(origUSK) + 1;
 		synchronized(this) {
@@ -1659,7 +1659,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	public boolean probablyWantKey(Key key, byte[] saltedKey) {
 		if(!(key instanceof NodeSSK)) return false;
 		NodeSSK k = (NodeSSK) key;
-		if(!Arrays.equals(k.getPubKeyHash(), origUSK.getPubKeyHash()))
+		if(!origUSK.samePubKeyHash(k))
 			return false;
 		long lastSlot = uskManager.lookupLatestSlot(origUSK) + 1;
 		synchronized(this) {
