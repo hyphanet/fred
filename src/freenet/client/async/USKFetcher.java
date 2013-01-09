@@ -1593,7 +1593,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	public short definitelyWantKey(Key key, byte[] saltedKey, ObjectContainer container, ClientContext context) {
 		if(!(key instanceof NodeSSK)) return -1;
 		NodeSSK k = (NodeSSK) key;
-		if(!Arrays.equals(k.getPubKeyHash(), origUSK.pubKeyHash))
+		if(!Arrays.equals(k.getPubKeyHash(), origUSK.getPubKeyHash()))
 			return -1;
 		long lastSlot = uskManager.lookupLatestSlot(origUSK) + 1;
 		synchronized(this) {
@@ -1659,7 +1659,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	public boolean probablyWantKey(Key key, byte[] saltedKey) {
 		if(!(key instanceof NodeSSK)) return false;
 		NodeSSK k = (NodeSSK) key;
-		if(!Arrays.equals(k.getPubKeyHash(), origUSK.pubKeyHash))
+		if(!Arrays.equals(k.getPubKeyHash(), origUSK.getPubKeyHash()))
 			return false;
 		long lastSlot = uskManager.lookupLatestSlot(origUSK) + 1;
 		synchronized(this) {
@@ -1711,7 +1711,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		// FIXME add more WeakReference<KeyList>'s: one for the origUSK, one for each subscriber who gave an edition number. All of which should disappear on the subscriber going or on the last known superceding.
 		
 		public USKWatchingKeys(USK origUSK, long lookedUp) {
-			this.pubKeyHash = origUSK.pubKeyHash;
+			this.pubKeyHash = origUSK.getPubKeyHash();
 			this.cryptoAlgorithm = origUSK.cryptoAlgorithm;
 			if(logMINOR) Logger.minor(this, "Creating KeyList from last known good: "+lookedUp);
 			fromLastKnownSlot = new KeyList(lookedUp);

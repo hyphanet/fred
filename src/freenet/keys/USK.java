@@ -33,9 +33,9 @@ public class USK extends BaseClientKey implements Comparable<USK> {
 	/** Encryption type */
 	public final byte cryptoAlgorithm;
 	/** Public key hash */
-	public final byte[] pubKeyHash;
+	protected final byte[] pubKeyHash;
 	/** Encryption key */
-	public final byte[] cryptoKey;
+	protected final byte[] cryptoKey;
 	// Extra must be verified on creation, and is fixed for now. FIXME if it becomes changeable, need to keep values here.
 	
 	public final String siteName;
@@ -236,4 +236,8 @@ public class USK extends BaseClientKey implements Comparable<USK> {
 		}
 		
 	};
+
+	public byte[] getPubKeyHash() {
+		return pubKeyHash;
+	}
 }
