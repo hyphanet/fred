@@ -5,6 +5,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.EOFException;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -47,6 +48,7 @@ import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
+import freenet.node.fcp.AddPeer;
 import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -294,7 +296,7 @@ public class TextModeClientInterface implements Runnable {
 					return false;
 				}
 				outsb.append("Data:\r\n");
-				outsb.append(new String(dataBytes));
+				outsb.append(new String(dataBytes, ENCODING));
 			} catch (FetchException e) {
                 outsb.append("Error: ").append(e.getMessage()).append("\r\n");
             	if((e.getMode() == FetchException.SPLITFILE_ERROR) && (e.errorCodes != null)) {
@@ -784,17 +786,14 @@ public class TextModeClientInterface implements Runnable {
                 File f = new File(key);
                 if (f.isFile()) {
                 	outsb.append("Given string seems to be a file, loading...\r\n");
-                	in = new BufferedReader(new FileReader(f));
+                	in = new BufferedReader(new InputStreamReader(new FileInputStream(f), ENCODING));
+                    content = readLines(in, true);
+                    in.close();
                 } else {
                 	outsb.append("Given string seems to be an URL, loading...\r\n");
                     URL url = new URL(key);
-                    URLConnection uc = url.openConnection();
-                	in = new BufferedReader(
-                			// FIXME get charset from uc.getContentType()
-                			new InputStreamReader(uc.getInputStream()));
+                    content = AddPeer.getReferenceFromURL(url).toString();
                 }
-                content = readLines(in, true);
-                in.close();
             } else {
                 content = readLines(reader, true);
             }
