@@ -166,7 +166,8 @@ public class Cookie {
 		if("".equals(name))
 			throw new IllegalArgumentException("Name is empty.");
 		
-		checkUSASCII(name);
+		if(!isUSASCII(name))
+			throw new IllegalArgumentException("Invalid name, contains non-US-ASCII characters: " + name);
 		
 		name = name.trim().toLowerCase(); // RFC2965: Name is case insensitive
 		
@@ -215,16 +216,14 @@ public class Cookie {
 		return name;
 	}
 	
-	private static void checkUSASCII(String name) {
-		String newName;
-		try {
-			newName = new String(usasciiCharset.encode(name).array(), "ISO-8859-1");
-		} catch (UnsupportedEncodingException e) {
-			throw new Error(e); // Impossible!
+	private static boolean isUSASCII(String name) {
+		for(int i=0;i<name.length();i++) {
+			char c = name.charAt(i);
+			// Java chars are unicode. Unicode is a superset of US-ASCII.
+			if(c < 32 || c > 126)
+				return false;
 		}
-		
-		if(newName.equals(name) == false)
-			throw new IllegalArgumentException("Invalid name, contains non-US-ASCII characters: " + name);
+		return true;
 	}
 
 	/**
@@ -235,7 +234,8 @@ public class Cookie {
 	 * TODO: Read the RFCs in depth and make this function fully compatible.
 	 */
 	public static String validateValue(String value) {
-		checkUSASCII(value);
+		if(!isUSASCII(value))
+			throw new IllegalArgumentException("Invalid value, contains non-US-ASCII characters: " + value);
 		
 		value = value.trim();
 
