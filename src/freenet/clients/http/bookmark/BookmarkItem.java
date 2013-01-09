@@ -257,15 +257,17 @@ public class BookmarkItem extends Bookmark {
     }
     
     public String getDescription() {
+    	if(desc == null) return "";
 		if(desc.startsWith("L10N:"))
 			return NodeL10n.getBase().getString("Bookmarks.Defaults.Description."+desc.substring("L10N:".length()));
-        return (desc == null ? "" : desc);
+        return desc;
     }
     
     public String getShortDescription() {
+    	if(shortDescription == null) return "";
 		if(shortDescription.startsWith("L10N:"))
 			return NodeL10n.getBase().getString("Bookmarks.Defaults.ShortDescription."+shortDescription.substring("L10N:".length()));
-        return (shortDescription == null ? "" : shortDescription);
+        return shortDescription;
     }
     
     @Override
