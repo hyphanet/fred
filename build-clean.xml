@@ -71,7 +71,7 @@ maintainers may prefer to use this instead of build.xml.
 
 	<target name="dist" depends="clean-all, all" description="clean-build everything"/>
 
-	<target name="all" depends="package, doc, findbugs, pmd" description="build everything, incl. docs, GWT js"/>
+	<target name="all" depends="package, doc, findbugs, pmd, cpd" description="build everything, incl. docs, GWT js"/>
 
 	<target name="clean-all" depends="clean, clean-doc, clean-gjs" description="clean all build products, incl. docs, GWT js"/>
 
@@ -115,6 +115,17 @@ maintainers may prefer to use this instead of build.xml.
 		</pmd>
 	</target>
 
+	<target name="cpd" depends="package" unless="${cpd.skip}">
+		<antcall target="libdep-cpd"/>
+		<echo message="Running CPD"/>
+		<taskdef name="cpd" classname="net.sourceforge.pmd.cpd.CPDTask" classpathref="pmd.classpath"/>
+		<cpd minimumTokenCount="100" format="xml" outputFile="${test.dst}/cpd.xml">
+			<fileset dir="${main.src}">
+				<include name="**/*.java"/>
+			</fileset>
+		</cpd>	
+	</target>
+
 	<target name="debug">
 		<echoproperties/>
 	</target>
@@ -136,6 +147,7 @@ maintainers may prefer to use this instead of build.xml.
 		<available property="lib.junit.present" classname="junit.framework.Test" classpathref="libtest.path"/>
 		<available property="lib.findbugs.present" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${findbugs.path}"/>
 		<available property="lib.pmd.present" classname="net.sourceforge.pmd.ant.PMDTask" classpathref="pmd.classpath"/>
+		<available property="lib.cpd.present" classname="net.sourceforge.pmd.cpd.CPDTask" classpathref="pmd.classpath"/>
 		<available property="gjs.lib.gwt-user.present" classname="com.google.gwt.user.client.Window" classpathref="gjs.lib.path"/>
 		<available property="gjs.lib.gwt-dev.present" classname="com.google.gwt.dev.About" classpathref="gjs.lib.path"/>
 		<condition property="gjs.lib.gwt.present">
@@ -164,6 +176,10 @@ maintainers may prefer to use this instead of build.xml.
 
 	<target name="libdep-pmd" depends="env" unless="lib.pmd.present">
 		<fail message="PMD not available"/>
+	</target>
+
+	<target name="libdep-cpd" depends="env" unless="lib.cpd.present">
+		<fail message="CPD not available"/>
 	</target>
 
 	<target name="libdep-gwt-user" depends="env" unless="gjs.lib.gwt-user.present">
