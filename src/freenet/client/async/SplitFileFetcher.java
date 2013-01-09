@@ -536,8 +536,10 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		for(int i=0;i<segments.length;i++) {
 			if(logMINOR)
 				Logger.minor(this, "Cancelling segment "+i);
+			/** FIXME this should not happen, but it is possible if the cancel() below deactivates the
+			 * SplitFileFetcher. findbugs thinks it's impossible, of course... See the javadocs on
+			 * the freenet.client package. */
 			if(segments == null && persist && !container.ext().isActive(this)) {
-				// FIXME is this normal? If so just reactivate.
 				Logger.error(this, "Deactivated mid-cancel on "+this, new Exception("error"));
 				container.activate(this, 1);
 			}
