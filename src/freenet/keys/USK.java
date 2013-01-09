@@ -23,7 +23,7 @@ import freenet.support.Logger;
  * - Site edition number.
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-public class USK extends BaseClientKey implements Comparable<USK>, Cloneable {
+public class USK extends BaseClientKey implements Comparable<USK> {
 
 	/* The character to separate the site name from the edition number in its SSK form.
 	 * I chose "-", because it makes it ludicrously easy to go from the USK form to the
@@ -149,10 +149,10 @@ public class USK extends BaseClientKey implements Comparable<USK>, Cloneable {
 		return copy(0);
 	}
 	
-	@Override
-	public USK clone() {
-		// Implement Cloneable to shut up findbugs.
-		// Own constructor to make sure we copy pubKeyHash.
+	public final USK copy() {
+		// We need our own constructor to make sure we copy pubKeyHash.
+		// So clone() doesn't work for this.
+		// FIXME when we are sure we don't need to copy the byte[]'s we might be able to switch back to clone().
 		return new USK(this);
 	}
 	
