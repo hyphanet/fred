@@ -87,7 +87,7 @@ public class SECURITY_NETWORK implements Step {
 
 			form = helper.addFormChild(infoboxContent, ".", "networkSecurityForm");
 			HTMLNode div = form.addChild("div", "class", "opennetDiv");
-			for(SecurityLevels.NETWORK_THREAT_LEVEL level : SecurityLevels.NETWORK_THREAT_LEVEL.OPENNET_VALUES) {
+			for(SecurityLevels.NETWORK_THREAT_LEVEL level : SecurityLevels.NETWORK_THREAT_LEVEL.getOpennetValues()) {
 				securityLevelChoice(div, level);
 			}
 		} else {
@@ -97,7 +97,7 @@ public class SECURITY_NETWORK implements Step {
 
 			form = helper.addFormChild(infoboxContent, ".", "networkSecurityForm");
 			HTMLNode div = form.addChild("div", "class", "darknetDiv");
-			for(SecurityLevels.NETWORK_THREAT_LEVEL level : SecurityLevels.NETWORK_THREAT_LEVEL.DARKNET_VALUES) {
+			for(SecurityLevels.NETWORK_THREAT_LEVEL level : SecurityLevels.NETWORK_THREAT_LEVEL.getDarknetValues()) {
 				securityLevelChoice(div, level);
 			}
 			form.addChild("p").addChild("b", WizardL10n.l10nSec("networkThreatLevel.opennetFriendsWarning"));
