@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
+import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
@@ -3621,7 +3622,7 @@ class CSSTokenizerFilter {
 							break;
 						}
 					if(!allowed) {
-						if(logDEBUG) Logger.debug(this, "checkValidity Media of the element is not allowed.Media="+media+" allowed Media="+allowedMedia.toString());
+						if(logDEBUG) Logger.debug(this, "checkValidity Media of the element is not allowed.Media="+Fields.commaList(media)+" allowed Media="+allowedMedia.toString());
 
 						return false;
 					}
@@ -4110,7 +4111,7 @@ class CSSTokenizerFilter {
 			if(lastA != -1) return false;
 			//Single token
 			int index=Integer.parseInt(expression);
-			if(logDEBUG) Logger.debug(this, "16Single token:"+expression+" with value=*"+words+"* validity="+CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(words,cb));
+			if(logDEBUG) Logger.debug(this, "16Single token:"+expression+" with value=*"+Fields.commaList(words)+"* validity="+CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(words,cb));
 			return CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(words,cb);
 
 
@@ -4268,7 +4269,7 @@ class CSSTokenizerFilter {
 						break;
 					}
 				if(!allowed) {
-					if(logDEBUG) Logger.debug(this, "checkValidity Media of the element is not allowed.Media="+media+" allowed Media="+allowedMedia.toString());
+					if(logDEBUG) Logger.debug(this, "checkValidity Media of the element is not allowed.Media="+Fields.commaList(media)+" allowed Media="+allowedMedia.toString());
 
 					return false;
 				}
@@ -4342,7 +4343,7 @@ outer:		for(int i=0;i<value.length;i++) {
 								i = j;
 								continue outer;
 							} else {
-								if(logDEBUG) Logger.debug(this, "comma but can't parse font words: "+fontWords.toArray(new String[fontWords.size()]));
+								if(logDEBUG) Logger.debug(this, "comma but can't parse font words: "+Fields.commaList(fontWords.toArray(new String[fontWords.size()])));
 								return false;
 							}
 						}
