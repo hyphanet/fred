@@ -93,7 +93,7 @@ public class JceLoader {
 			if(nssProvider == null) {
 				File nssFile = File.createTempFile("nss",".cfg");
 				nssFile.deleteOnExit();
-				PrintStream nss = new PrintStream(nssFile);
+				PrintStream nss = new PrintStream(nssFile,"ISO-8859-1");
 				try {
 					nss.println("name=NSScrypto");
 					nss.println("nssDbMode=noDb");
