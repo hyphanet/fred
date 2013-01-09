@@ -2962,7 +2962,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 
 	@Override
-	public int hashCode() {
+	public final int hashCode() {
 		return hashCode;
 	}
 
