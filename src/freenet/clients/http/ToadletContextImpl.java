@@ -91,7 +91,7 @@ public class ToadletContextImpl implements ToadletContext {
 	private boolean closed;
 	private boolean shouldDisconnect;
 	
-	public ToadletContextImpl(Socket sock, MultiValueTable<String,String> headers, BucketFactory bf, PageMaker pageMaker, ToadletContainer container,URI uri) throws IOException {
+	public ToadletContextImpl(Socket sock, MultiValueTable<String,String> headers, BucketFactory bf, PageMaker pageMaker, ToadletContainer container,URI uri, long uniqueID) throws IOException {
 		this.headers = headers;
 		this.cookies = null;
 		this.replyCookies = null;
@@ -428,7 +428,7 @@ public class ToadletContextImpl implements ToadletContext {
 				boolean allowPost = container.allowPosts();
 				BucketFactory bf = container.getBucketFactory();
 				
-				ToadletContextImpl ctx = new ToadletContextImpl(sock, headers, bf, pageMaker, container,uri);
+				ToadletContextImpl ctx = new ToadletContextImpl(sock, headers, bf, pageMaker, container,uri, container.generateUniqueID());
 				ctx.shouldDisconnect = disconnect;
 				
 				/*

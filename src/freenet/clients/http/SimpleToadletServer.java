@@ -12,6 +12,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Random;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -97,6 +98,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	// Control
 	private Thread myThread;
 	private final Executor executor;
+	private final Random random;
 	private BucketFactory bf;
 	private NodeClientCore core;
 	
@@ -438,6 +440,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 
 		this.executor = executor;
 		this.core = node.clientCore;
+		this.random = new Random();
 		
 		int configItemOrder = 0;
 		
@@ -1232,6 +1235,14 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			return ((LinkFilterExceptedToadlet) toadlet).isLinkExcepted(link);
 		}
 		return false;
+	}
+
+
+
+	@Override
+	public long generateUniqueID() {
+		// FIXME increment a counter?
+		return random.nextLong();
 	}
 
 }
