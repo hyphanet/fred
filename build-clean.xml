@@ -42,6 +42,12 @@ maintainers may prefer to use this instead of build.xml.
 		<fileset dir="${lib.dir}" includes="${gjs.lib.jars}"/>
 	</path>
 
+	<path id="pmd.classpath">
+		<fileset dir="${pmd.dir}/lib">
+			<include name="*.jar"/>
+		</fileset>
+	</path>
+
 	<assertions><enable/></assertions>
 
 	<!-- set version string based on git-describe -->
@@ -65,7 +71,7 @@ maintainers may prefer to use this instead of build.xml.
 
 	<target name="dist" depends="clean-all, all" description="clean-build everything"/>
 
-	<target name="all" depends="package, doc, findbugs" description="build everything, incl. docs, GWT js"/>
+	<target name="all" depends="package, doc, findbugs, pmd" description="build everything, incl. docs, GWT js"/>
 
 	<target name="clean-all" depends="clean, clean-doc, clean-gjs" description="clean all build products, incl. docs, GWT js"/>
 
@@ -85,6 +91,7 @@ maintainers may prefer to use this instead of build.xml.
 
 	<target name="findbugs" depends="package" unless="${findbugs.skip}">
 		<antcall target="libdep-findbugs"/>
+		<echo message="Running Findbugs"/>
 		<taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${findbugs.path}"/>
 
 		<findbugs home="${findbugs.dir}"
@@ -94,6 +101,18 @@ maintainers may prefer to use this instead of build.xml.
 		<sourcePath path="${main.src}" />
 		<class location="${main.dst}/freenet.jar" />
 		</findbugs>
+	</target>
+
+	<target name="pmd" depends="package" unless="${pmd.skip}">
+		<antcall target="libdep-pmd"/>
+		<echo message="Running PMD"/>
+		<taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask" classpathref="pmd.classpath"/>
+		<pmd rulesetfiles="rulesets/java/design.xml" encoding="utf-8">
+			<formatter type="xml" toFile="${test.dst}/pmd.xml"/>
+			<fileset dir="${main.src}">
+				<include name="**/*.java"/>
+			</fileset>
+		</pmd>
 	</target>
 
 	<target name="debug">
@@ -116,6 +135,7 @@ maintainers may prefer to use this instead of build.xml.
 		<available property="lib.bouncycastle.present" classname="org.bouncycastle.jce.provider.BouncyCastleProvider" classpathref="lib.path"/>
 		<available property="lib.junit.present" classname="junit.framework.Test" classpathref="libtest.path"/>
 		<available property="lib.findbugs.present" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${findbugs.path}"/>
+		<available property="lib.pmd.present" classname="net.sourceforge.pmd.ant.PMDTask" classpathref="pmd.classpath"/>
 		<available property="gjs.lib.gwt-user.present" classname="com.google.gwt.user.client.Window" classpathref="gjs.lib.path"/>
 		<available property="gjs.lib.gwt-dev.present" classname="com.google.gwt.dev.About" classpathref="gjs.lib.path"/>
 		<condition property="gjs.lib.gwt.present">
@@ -140,6 +160,10 @@ maintainers may prefer to use this instead of build.xml.
 
 	<target name="libdep-findbugs" depends="env" unless="lib.findbugs.present">
 		<fail message="findbugs not available"/>
+	</target>
+
+	<target name="libdep-pmd" depends="env" unless="lib.pmd.present">
+		<fail message="PMD not available"/>
 	</target>
 
 	<target name="libdep-gwt-user" depends="env" unless="gjs.lib.gwt-user.present">
