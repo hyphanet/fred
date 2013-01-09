@@ -523,8 +523,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						String errCause = "";
 						if(signature == null)
 							errCause += " (No signature)";
-						if(peerCryptoGroup == null)
-							errCause += " (No peer crypto group)";
 						if(peerPubKey == null)
 							errCause += " (No peer public key)";
 						if(failed)
