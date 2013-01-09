@@ -252,5 +252,11 @@ public class MediaType {
 			return null;
 		}
 	}
+	
+	public static String getCharsetRobustOrUTF(String expectedMimeType) {
+		String charset = getCharsetRobust(expectedMimeType);
+		if(charset == null) return "UTF-8";
+		return charset;
+	}
 
 }

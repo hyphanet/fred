@@ -41,6 +41,7 @@ import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.MediaType;
 import freenet.support.MultiValueTable;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
@@ -583,7 +584,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					URL url = new URL(urltext);
 					URLConnection uc = url.openConnection();
 					// FIXME get charset encoding from uc.getContentType()
-					in = new BufferedReader(new InputStreamReader(uc.getInputStream()));
+					in = new BufferedReader(new InputStreamReader(uc.getInputStream(), MediaType.getCharsetRobustOrUTF(uc.getContentType())));
 					String line;
 					while ((line = in.readLine()) != null) {
 						ref.append( line ).append('\n');
