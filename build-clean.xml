@@ -119,7 +119,7 @@ maintainers may prefer to use this instead of build.xml.
 		<antcall target="libdep-cpd"/>
 		<echo message="Running CPD"/>
 		<taskdef name="cpd" classname="net.sourceforge.pmd.cpd.CPDTask" classpathref="pmd.classpath"/>
-		<cpd minimumTokenCount="100" format="xml" outputFile="${test.dst}/cpd.xml">
+		<cpd minimumTokenCount="20" format="xml" outputFile="${test.dst}/cpd.xml">
 			<fileset dir="${main.src}">
 				<include name="**/*.java"/>
 			</fileset>
