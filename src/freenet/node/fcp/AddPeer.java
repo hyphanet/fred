@@ -5,6 +5,7 @@ package freenet.node.fcp;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -118,7 +119,7 @@ public class AddPeer extends FCPMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.NOT_A_FILE_ERROR, "The given ref file path <"+fileString+"> is not a file", identifier, false);
 			}
 			try {
-				in = new BufferedReader(new FileReader(f));
+				in = new BufferedReader(new InputStreamReader(new FileInputStream(f), "UTF-8"));
 				ref = new StringBuilder(1024);
 				String line;
 				while((line = in.readLine()) != null) {
