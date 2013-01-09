@@ -188,18 +188,14 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	}
 
 	private class FProxyPortCallback extends IntCallback  {
-		private Integer savedPort;
 		@Override
 		public Integer get() {
-			if (savedPort == null)
-				savedPort = port;
-			return savedPort;
+			return port;
 		}
 		
 		@Override
 		public void set(Integer newPort) throws NodeNeedRestartException {
-			if(savedPort != newPort) {
-				savedPort = port;
+			if(port != newPort) {
 				throw new NodeNeedRestartException("Port cannot change on the fly");
 			}
 		}
