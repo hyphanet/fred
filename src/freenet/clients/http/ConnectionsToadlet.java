@@ -36,6 +36,7 @@ import freenet.node.PeerNode;
 import freenet.node.PeerNode.IncomingLoadSummaryStats;
 import freenet.node.PeerNodeStatus;
 import freenet.node.Version;
+import freenet.node.fcp.AddPeer;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
@@ -576,19 +577,13 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				return;
 			}
 			
-			StringBuilder ref = new StringBuilder(1024);
+			StringBuilder ref = null;
 			if (urltext.length() > 0) {
 				// fetch reference from a URL
 				BufferedReader in = null;
 				try {
 					URL url = new URL(urltext);
-					URLConnection uc = url.openConnection();
-					// FIXME get charset encoding from uc.getContentType()
-					in = new BufferedReader(new InputStreamReader(uc.getInputStream(), MediaType.getCharsetRobustOrUTF(uc.getContentType())));
-					String line;
-					while ((line = in.readLine()) != null) {
-						ref.append( line ).append('\n');
-					}
+					ref = AddPeer.getReferenceFromURL(url);
 				} catch (IOException e) {
 					this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), NodeL10n.getBase().getString("DarknetConnectionsToadlet.cantFetchNoderefURL", new String[] { "url" }, new String[] { urltext }), !isOpennet());
 					return;
