@@ -231,7 +231,7 @@ public class IPConverter {
 				String code = iprange.substring(0, 2);
 				// Ip
 				String ipcode = iprange.substring(2);
-				long ip = decodeBase85(ipcode.getBytes());
+				long ip = decodeBase85(ipcode.getBytes("ISO-8859-1"));
 				try {
 					Country country = Country.valueOf(code);
 					codes[i] = (short) country.ordinal();
