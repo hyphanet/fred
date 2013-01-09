@@ -232,7 +232,7 @@ public class USK extends BaseClientKey implements Comparable<USK> {
 		return 0;
 	}
 	
-	public static Comparator<USK> FAST_COMPARATOR = new Comparator<USK>() {
+	public static final Comparator<USK> FAST_COMPARATOR = new Comparator<USK>() {
 
 		@Override
 		public int compare(USK o1, USK o2) {

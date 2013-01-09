@@ -15,7 +15,7 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper> {
 	private final byte[] buf;
 	private int hashCode;
 	
-	public static Comparator<ByteArrayWrapper> FAST_COMPARATOR = new Comparator<ByteArrayWrapper>() {
+	public static final Comparator<ByteArrayWrapper> FAST_COMPARATOR = new Comparator<ByteArrayWrapper>() {
 
 		@Override
 		public int compare(ByteArrayWrapper o1, ByteArrayWrapper o2) {
