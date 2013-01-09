@@ -10,22 +10,17 @@ import com.db4o.ObjectContainer;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 
-public class HashResult implements Comparable<HashResult> {
+public class HashResult implements Comparable<HashResult>, Cloneable {
 
+	/** The type of hash. */
 	public final HashType type;
+	/** The result of the hash. Immutable. */
 	private final byte[] result;
 	
 	public HashResult(HashType hashType, byte[] bs) {
 		this.type = hashType;
 		this.result = bs;
 		assert(bs.length == type.hashLength);
-	}
-
-	public HashResult(HashResult res) {
-		this.type = res.type;
-		// FIXME should we copy the byte[] ???
-		// Not necessary for copying for db4o anyway.
-		this.result = res.result;
 	}
 
 	public static HashResult[] readHashes(DataInputStream dis) throws IOException {
@@ -138,7 +133,11 @@ public class HashResult implements Comparable<HashResult> {
 	
 	@Override
 	public HashResult clone() {
-		return new HashResult(this);
+		try {
+			return (HashResult) super.clone();
+		} catch (CloneNotSupportedException e) {
+			throw new Error(e);
+		}
 	}
 
 	public String hashAsHex() {
