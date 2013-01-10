@@ -208,7 +208,7 @@ public class LongTermPushPullCHKTest extends LongTermTest {
 		File file = new File(uid + ".csv");
 		FileInputStream fis = new FileInputStream(file);
 		try {
-			InputStreamReader isr = new InputStreamReader(fis);
+			InputStreamReader isr = new InputStreamReader(fis, ENCODING);
 			BufferedReader br = new BufferedReader(isr);
 			String line = null;
 			String dateString = dateFormat.format(targetDate.getTime());

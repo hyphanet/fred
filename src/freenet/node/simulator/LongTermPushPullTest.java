@@ -240,7 +240,7 @@ public class LongTermPushPullTest extends LongTermTest {
 	private static void dumpStats(String uid) throws IOException, ParseException {
 		File file = new File(uid + ".csv");
 		FileInputStream fis = new FileInputStream(file);
-		BufferedReader br = new BufferedReader(new InputStreamReader(fis));
+		BufferedReader br = new BufferedReader(new InputStreamReader(fis, ENCODING));
 		String line = null;
 		Calendar prevDate = null;
 		TreeMap<GregorianCalendar,DumpElement> map = new TreeMap<GregorianCalendar,DumpElement>();

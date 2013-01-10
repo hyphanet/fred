@@ -204,7 +204,7 @@ public class LongTermMHKTest extends LongTermTest {
 			FreenetURI singleURI = null;
 			FreenetURI[] mhkURIs = new FreenetURI[3];
 			fis = new FileInputStream(file);
-			BufferedReader br = new BufferedReader(new InputStreamReader(fis));
+			BufferedReader br = new BufferedReader(new InputStreamReader(fis, ENCODING));
 			String line = null;
 			int linesTooShort = 0, linesBroken = 0, linesNoNumber = 0, linesNoURL = 0, linesNoFetch = 0;
 			int total = 0, singleKeysSucceeded = 0, mhkSucceeded = 0;

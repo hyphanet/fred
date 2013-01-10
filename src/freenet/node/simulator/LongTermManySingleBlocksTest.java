@@ -290,7 +290,7 @@ public class LongTermManySingleBlocksTest extends LongTermTest {
 			
 			FreenetURI[] mhkURIs = new FreenetURI[3];
 			fis = new FileInputStream(file);
-			BufferedReader br = new BufferedReader(new InputStreamReader(fis));
+			BufferedReader br = new BufferedReader(new InputStreamReader(fis, ENCODING));
 			String line = null;
 			GregorianCalendar target = (GregorianCalendar) today.clone();
 			target.set(Calendar.HOUR_OF_DAY, 0);
