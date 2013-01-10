@@ -180,7 +180,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				assert(req.realTimeFlag == realTime);
 				if(LOCAL_REQUESTS_COMPETE_FAIRLY && !req.localRequestOnly) {
 					reason = stats.shouldRejectRequest(true, isInsert, isSSK, true, false, null, false, 
-							isInsert && Node.PREFER_INSERT_DEFAULT, req.realTimeFlag, null);
+							Node.PREFER_INSERT_DEFAULT && isInsert, req.realTimeFlag, null);
 					if(reason != null) {
 						if(logMINOR)
 							Logger.minor(this, "Not sending local request: "+reason);
