@@ -783,9 +783,9 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	public void start() {
 		if(redirectStdOut) {
 			try {
-				System.setOut(new PrintStream(new OutputStreamLogger(LogLevel.NORMAL, "Stdout: "), false, ENCODING));
+				System.setOut(new PrintStream(new OutputStreamLogger(LogLevel.NORMAL, "Stdout: ", ENCODING), false, ENCODING));
 				if(redirectStdErr)
-					System.setErr(new PrintStream(new OutputStreamLogger(LogLevel.ERROR, "Stderr: "), false, ENCODING));
+					System.setErr(new PrintStream(new OutputStreamLogger(LogLevel.ERROR, "Stderr: ", ENCODING), false, ENCODING));
 			} catch (UnsupportedEncodingException e) {
 				throw new Error(e);
 			}
