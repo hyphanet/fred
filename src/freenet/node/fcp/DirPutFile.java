@@ -41,7 +41,7 @@ abstract class DirPutFile {
 
 	protected static String guessMIME(String name) {
 		// Guess it just from the name
-		return DefaultMIMETypes.guessMIMEType(name, false /* FIXME? */);
+		return DefaultMIMETypes.guessMIMEType(name, true);
 	}
 
 	/**
