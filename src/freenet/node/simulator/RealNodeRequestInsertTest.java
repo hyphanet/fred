@@ -161,7 +161,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 System.err.println();
                 
                 byte[] data = dataString.getBytes("UTF-8");
-                Logger.minor(RealNodeRequestInsertTest.class, "Decoded: "+new String(block.memoryDecode()));
+                Logger.minor(RealNodeRequestInsertTest.class, "Decoded: "+new String(block.memoryDecode(), "UTF-8"));
                 Logger.normal(RealNodeRequestInsertTest.class,"Insert Key: "+insertKey.getURI());
                 Logger.normal(RealNodeRequestInsertTest.class,"Fetch Key: "+fetchKey.getURI());
 				try {
