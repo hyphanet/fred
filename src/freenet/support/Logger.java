@@ -98,9 +98,9 @@ public abstract class Logger {
 							error(o, "Caught PatternSyntaxException in readLine.trim().split(\" \") of OSThread.getFieldFromProcSelfStat() while parsing '"+readLine+"'", e);
 						}
 					}
+				} else {
+					Closer.close(is);
 				}
-				Closer.close(br);
-				Closer.close(is);
 			}
 			return null;
 		}
