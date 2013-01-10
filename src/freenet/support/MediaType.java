@@ -246,9 +246,13 @@ public class MediaType {
 
 	public static String getCharsetRobust(String expectedMimeType) {
 		try {
+			if(expectedMimeType == null) return null;
 			MediaType type = new MediaType(expectedMimeType);
 			return type.getParameter("charset");
 		} catch (MalformedURLException e) {
+			return null;
+		} catch (Throwable t) {
+			// Could be malicious, hence "Robust".
 			return null;
 		}
 	}
