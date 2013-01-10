@@ -23,6 +23,7 @@ public class FProxyFetchWaiter {
 		boolean waited;
 		synchronized(this) {
 			if(waitForever) {
+				// FIXME findbugs thinks this will never exit. It should given wakeUp().
 				while(!finished) {
 					try {
 						wait();
