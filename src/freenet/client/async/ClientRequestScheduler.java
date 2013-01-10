@@ -327,7 +327,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(persistent)
 					container.activate(getters, 1);
 				if(logMINOR)
-					Logger.minor(this, "finishRegister() for "+getters);
+					Logger.minor(this, "finishRegister() for "+Fields.commaList(getters));
 				if(anyValid) {
 					boolean wereAnyValid = false;
 					for(SendableGet getter : getters) {
