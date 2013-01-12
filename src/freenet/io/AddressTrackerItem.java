@@ -133,7 +133,7 @@ public class AddressTrackerItem {
 	}
 	
 	public long longestGap(long horizon, long now) {
-		long longestGap = 0;
+		long longestGap = -1;
 		for(int i=0;i<TRACK_GAPS;i++) {
 			if(gapLengthRecvTimes[i] < now - horizon) break;
 			longestGap = Math.max(longestGap, gapLengths[i]);
