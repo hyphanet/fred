@@ -135,7 +135,7 @@ public class AddressTrackerItem {
 	public long longestGap(long horizon, long now) {
 		long longestGap = 0;
 		for(int i=0;i<TRACK_GAPS;i++) {
-			if(gapLengthRecvTimes[0] < now - horizon) continue;
+			if(gapLengthRecvTimes[i] < now - horizon) break;
 			longestGap = Math.max(longestGap, gapLengths[i]);
 		}
 		return longestGap;
