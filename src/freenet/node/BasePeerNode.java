@@ -26,9 +26,9 @@ public interface BasePeerNode extends PeerContext {
 
 	void maybeRekey();
 
-	void reportIncomingPacket(byte[] buf, int offset, int length, long now);
+	void reportIncomingBytes(int length);
 
-	void reportOutgoingPacket(byte[] data, int offset, int length, long now);
+	void reportOutgoingBytes(int length);
 	
 	DecodingMessageGroup startProcessingDecryptedMessages(int count);
 	

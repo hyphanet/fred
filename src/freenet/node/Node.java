@@ -1117,6 +1117,9 @@ public class Node implements TimeSkewDetectorCallback {
 
 		// Setup RNG if needed : DO NOT USE IT BEFORE THAT POINT!
 		if (r == null) {
+			// Preload freenet.crypt.Util class (selftest can delay Yarrow startup)
+			freenet.crypt.Util.mdProviders.size();
+
 			File seed = userDir.file("prng.seed");
 			FileUtil.setOwnerRW(seed);
 			entropyGatheringThread.start();
@@ -3792,7 +3795,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// Which presumably are exploitable.
 		// So we can't recommend people switch just yet. :(
 		
-//		if(isOracle && Rijndael.isJCACrippled) {
+//		if(isOracle && Rijndael.AesCtrProvider == null) {
 //			if(!(FileUtil.detectedOS == FileUtil.OperatingSystem.Windows || FileUtil.detectedOS == FileUtil.OperatingSystem.MacOS))
 //				clientCore.alerts.register(new SimpleUserAlert(true, l10n("usingOracleTitle"), l10n("usingOracle"), l10n("usingOracleTitle"), UserAlert.WARNING));
 //		}

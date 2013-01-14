@@ -140,7 +140,7 @@ public class NewPacketFormat implements PacketFormat {
 		pn.receivedPacket(false, true);
 		pn.verified(s);
 		pn.maybeRekey();
-		pn.reportIncomingPacket(buf, offset, length, now);
+		pn.reportIncomingBytes(length);
 
 		LinkedList<byte[]> finished = handleDecryptedPacket(packet, s);
 		if(logMINOR && !finished.isEmpty()) 
@@ -541,7 +541,7 @@ outer:
 
 		now = System.currentTimeMillis();
 		pn.sentPacket();
-		pn.reportOutgoingPacket(data, 0, data.length, now);
+		pn.reportOutgoingBytes(data.length);
 		if(pn.shouldThrottle()) {
 			pn.sentThrottledBytes(data.length);
 		}

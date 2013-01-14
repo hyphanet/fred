@@ -21,7 +21,7 @@ public abstract class CryptoKey implements CryptoElement, Serializable {
 	protected static final MessageDigest shactx;
 	static {
 		try {
-			shactx = MessageDigest.getInstance("SHA1");
+			shactx = MessageDigest.getInstance("SHA1", Util.mdProviders.get("SHA1"));
 		} catch(NoSuchAlgorithmException e) {
 			// impossible
 			throw new Error(e);

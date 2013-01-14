@@ -16,6 +16,7 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
 import freenet.crypt.DiffieHellman;
+import freenet.crypt.JceLoader;
 import freenet.crypt.RandomSource;
 import freenet.crypt.SSL;
 import freenet.crypt.Yarrow;
@@ -69,20 +70,7 @@ public class NodeStarter implements WrapperListener {
 	 * Constructors
 	 *-------------------------------------------------------------*/
 	private NodeStarter() {
-		try {
-			new BouncyLoader().load();
-			BCPROV_LOAD_FAILED = false;
-		} catch (RuntimeException e) {
-			System.err.println(NO_BCPROV_WARNING);
-		} catch (Error e) {
-			System.err.println(NO_BCPROV_WARNING);
-		}
-	}
-	
-	private class BouncyLoader {
-		public void load() {
-			Security.addProvider(new BouncyCastleProvider());
-		}
+		BCPROV_LOAD_FAILED = JceLoader.BouncyCastle == null;
 	}
 
 	public NodeStarter get() {
