@@ -2,6 +2,7 @@
 package freenet.support.transport.ip;
 
 import java.net.DatagramSocket;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -107,6 +108,14 @@ public class IPAddressDetector implements Runnable {
 				while (ee.hasMoreElements()) {
 
 					InetAddress addr = ee.nextElement();
+					if ((addr instanceof Inet6Address) && !(addr.isLinkLocalAddress() || IPUtil.isSiteLocalAddress(addr))) {
+						try {
+							// strip scope_id from global addresses
+							addr = InetAddress.getByAddress(addr.getAddress());
+						} catch(UnknownHostException e) {
+							// ignore/impossible
+						}
+					}
 					addrs.add(addr);
 					if (logDEBUG)
 						Logger.debug(
