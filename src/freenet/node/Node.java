@@ -2676,7 +2676,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private boolean databaseEncrypted;
 
-	private static class DB4ODiagnositcListener implements DiagnosticListener {
+	private static class DB4ODiagnosticListener implements DiagnosticListener {
 		private static volatile boolean logDEBUG;
 
 		static {
@@ -2753,7 +2753,7 @@ public class Node implements TimeSkewDetectorCallback {
 		 * long, and allows databases of up to 16GB.
 		 * FIXME make configurable by user. */
 		dbConfig.blockSize(8);
-		dbConfig.diagnostic().addListener(new DB4ODiagnositcListener());
+		dbConfig.diagnostic().addListener(new DB4ODiagnosticListener());
 
 		// Make db4o throw an exception if we call store for something for which we do not have to call it, String or Date for example.
 		// This prevents us from writing code which is based on misunderstanding of db4o internals...
