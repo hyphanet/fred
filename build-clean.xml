@@ -302,7 +302,7 @@ maintainers may prefer to use this instead of build.xml.
 	</target>
 
 	<target name="unit" depends="unit-build" unless="${test.skip}">
-		<junit printsummary="yes" fork="yes" haltonfailure="yes" dir="${test.dst}">
+		<junit printsummary="yes" fork="yes" haltonfailure="${test.haltonfailure}" dir="${test.dst}">
 			<classpath refid="libtest.path"/>
 			<formatter type="plain" usefile="false"/>
 			<formatter type="xml" if="${test.xml_output}"/>
