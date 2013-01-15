@@ -42,8 +42,8 @@ maintainers may prefer to use this instead of build.xml.
 		<fileset dir="${lib.dir}" includes="${gjs.lib.jars}"/>
 	</path>
 
+	<mkdir dir="${pmd.dir}"/>
 	<path id="pmd.classpath">
-		<path refid="libtest.path"/>
 		<fileset dir="${pmd.dir}" erroronmissingdir="false" includes="lib/*.jar"/>
 	</path>
 
