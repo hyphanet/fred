@@ -1,6 +1,5 @@
 package freenet.support;
 
-import java.lang.reflect.Array;
 import java.util.Enumeration;
 import java.util.Iterator;
 

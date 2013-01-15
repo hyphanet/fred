@@ -24,7 +24,6 @@ import freenet.keys.BaseClientKey;
 import freenet.keys.CHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.SSKBlock;
-import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;

@@ -31,7 +31,6 @@ import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
-import freenet.support.Logger.LogLevel;
 import freenet.support.transport.ip.IPUtil;
 
 /**
