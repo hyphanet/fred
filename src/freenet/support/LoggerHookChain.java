@@ -95,8 +95,8 @@ public class LoggerHookChain extends LoggerHook {
 	@Override
 	public void setThreshold(LogLevel thresh) {
 		super.setThreshold(thresh);
-		for (LoggerHook h: getHooks())
-			h.setThreshold(thresh);
+//		for (LoggerHook h: getHooks())
+//			h.setThreshold(thresh);
 	}
 }
 
