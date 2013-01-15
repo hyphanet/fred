@@ -16,8 +16,6 @@ import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Set;
-import java.util.Map.Entry;
 
 import com.db4o.ObjectContainer;
 
