@@ -46,6 +46,7 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 		FProxyFetchResult fr = waiter == null ? null : waiter.getResult();
 		if (fr == null) {
 			addChild("div", "No fetcher found");
+			return;
 		}
 		
 		addChild("#", FProxyToadlet.l10n("filenameLabel")+ " ");

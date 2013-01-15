@@ -5,7 +5,6 @@ package freenet.config;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
 
 import freenet.l10n.NodeL10n;
