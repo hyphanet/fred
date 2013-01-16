@@ -306,8 +306,8 @@ maintainers may prefer to use this instead of build.xml.
 			<classpath refid="libtest.path"/>
 			<formatter type="plain" usefile="false"/>
 			<formatter type="xml" if="${test.xml_output}"/>
-			<test if="test.class" name="${test.class}"/>
-			<batchtest unless="test.class" fork="yes">
+			<test if="test.class" name="${test.class}" todir="${test.dst}"/>
+			<batchtest unless="test.class" fork="yes" todir="${test.dst}">
 				<fileset dir="${test.make}" includes="**/*Test.class"/>
 			</batchtest>
 			<sysproperty key="test.verbose" value="${test.verbose}"/>
