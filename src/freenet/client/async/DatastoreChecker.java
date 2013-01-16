@@ -1,5 +1,6 @@
 package freenet.client.async;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -48,23 +49,48 @@ public class DatastoreChecker implements PrioRunnable {
 
 	static final int MAX_PERSISTENT_KEYS = 1024;
 
-	/** List of arrays of keys to check for persistent requests. PARTIAL:
+	private static class QueueItem {
+		/** Request which we will call finishRegister() for when we have
+		 *  checked the keys lists. Deactivated (if persistent). */
+		final SendableGet getter;
+		QueueItem(SendableGet getter) {
+			this.getter = getter;
+		}
+		public boolean equals(Object o) {
+			if(!(o instanceof QueueItem)) return false; // equals() should not throw ClassCastException
+			return this.getter == ((QueueItem)o).getter;
+		}
+	}
+	private static final class PersistentItem extends QueueItem {
+		/** Arrays of keys to check. */
+		Key[] keys;
+		final ClientRequestScheduler scheduler;
+		final DatastoreCheckerItem checkerItem;
+		final BlockSet blockSet;
+		PersistentItem(Key[] keys, SendableGet getter, ClientRequestScheduler scheduler, DatastoreCheckerItem checkerItem, BlockSet blockSet) {
+			super(getter);
+			this.keys = keys;
+			this.scheduler = scheduler;
+			this.checkerItem = checkerItem;
+			this.blockSet = blockSet;
+		}
+	}
+	/** List of persistent requests information. PARTIAL:
 	 * When we run out we will look up some more DatastoreCheckerItem's. */
-	private final ArrayList<Key[]>[] persistentKeys;
-	/** List of persistent requests which we will call finishRegister() for
-	 * when we have checked the keys lists. PARTIAL: When we run out we
-	 * will look up some more DatastoreCheckerItem's. Deactivated. */
-	private final ArrayList<SendableGet>[] persistentGetters;
-	private final ArrayList<ClientRequestScheduler>[] persistentSchedulers;
-	private final ArrayList<DatastoreCheckerItem>[] persistentCheckerItems;
-	private final ArrayList<BlockSet>[] persistentBlockSets;
+	private final ArrayDeque<PersistentItem>[] persistentQueue;
 
-	/** List of arrays of keys to check for transient requests. */
-	private final ArrayList<Key[]>[] transientKeys;
-	/** List of transient requests which we will call finishRegister() for
-	 * when we have checked the keys lists. */
-	private final ArrayList<SendableGet>[] transientGetters;
-	private final ArrayList<BlockSet>[] transientBlockSets;
+	private static final class TransientItem extends QueueItem {
+		/** Arrays of keys to check. */
+		Key[] keys;
+		final BlockSet blockSet;
+		TransientItem(Key[] keys, SendableGet getter, BlockSet blockSet) {
+			super(getter);
+			this.keys = keys;
+			this.blockSet = blockSet;
+		}
+	}
+	/** List of transient requests information. */
+	private final ArrayDeque<TransientItem>[] transientQueue;
 
 	private ClientContext context;
 	private final Node node;
@@ -77,30 +103,12 @@ public class DatastoreChecker implements PrioRunnable {
     public DatastoreChecker(Node node) {
 		this.node = node;
 		int priorities = RequestStarter.NUMBER_OF_PRIORITY_CLASSES;
-		persistentKeys = new ArrayList[priorities];
+		persistentQueue = new ArrayDeque[priorities];
 		for(int i=0;i<priorities;i++)
-			persistentKeys[i] = new ArrayList<Key[]>();
-		persistentGetters = new ArrayList[priorities];
+			persistentQueue[i] = new ArrayDeque<PersistentItem>();
+		transientQueue = new ArrayDeque[priorities];
 		for(int i=0;i<priorities;i++)
-			persistentGetters[i] = new ArrayList<SendableGet>();
-		persistentSchedulers = new ArrayList[priorities];
-		for(int i=0;i<priorities;i++)
-			persistentSchedulers[i] = new ArrayList<ClientRequestScheduler>();
-		persistentCheckerItems = new ArrayList[priorities];
-		for(int i=0;i<priorities;i++)
-			persistentCheckerItems[i] = new ArrayList<DatastoreCheckerItem>();
-		persistentBlockSets = new ArrayList[priorities];
-		for(int i=0;i<priorities;i++)
-			persistentBlockSets[i] = new ArrayList<BlockSet>();
-		transientKeys = new ArrayList[priorities];
-		for(int i=0;i<priorities;i++)
-			transientKeys[i] = new ArrayList<Key[]>();
-		transientGetters = new ArrayList[priorities];
-		for(int i=0;i<priorities;i++)
-			transientGetters[i] = new ArrayList<SendableGet>();
-		transientBlockSets = new ArrayList[priorities];
-		for(int i=0;i<priorities;i++)
-			transientBlockSets[i] = new ArrayList<BlockSet>();
+			transientQueue[i] = new ArrayDeque<TransientItem>();
 	}
 
 	private final DBJob loader =  new DBJob() {
@@ -121,9 +129,10 @@ public class DatastoreChecker implements PrioRunnable {
     public void loadPersistentRequests(ObjectContainer container, final ClientContext context) {
 		int totalSize = 0;
 		synchronized(this) {
-			for(int i=0;i<persistentKeys.length;i++) {
-				for(int j=0;j<persistentKeys[i].size();j++)
-					totalSize += persistentKeys[i].get(j).length;
+			for(ArrayDeque<PersistentItem> queue: persistentQueue) {
+				for(PersistentItem item: queue) {
+					totalSize += item.keys.length;
+				}
 			}
 			if(totalSize > MAX_PERSISTENT_KEYS) {
 				if(logMINOR) Logger.minor(this, "Persistent datastore checker queue already full");
@@ -156,27 +165,22 @@ public class DatastoreChecker implements PrioRunnable {
 						continue;
 					}
 					ClientRequestScheduler sched = getter.getScheduler(container, context);
-					synchronized(this) {
-						if(persistentGetters[prio].contains(getter)) continue;
-					}
+					PersistentItem persist = new PersistentItem(
+									null, getter, sched, item, blocks);
 					Key[] keys = getter.listKeys(container);
 					// FIXME check the store bloom filter using store.probablyInStore().
 					item.chosenBy = context.bootID;
 					container.store(item);
+					ArrayList<Key> finalKeysToCheck = new ArrayList<Key>(keys.length);
+					for(Key key : keys) {
+						key = key.cloneKey();
+						finalKeysToCheck.add(key);
+					}
+					Key[] finalKeys = finalKeysToCheck.toArray(new Key[finalKeysToCheck.size()]);
+					persist.keys = finalKeys;
 					synchronized(this) {
-						if(persistentGetters[prio].contains(getter)) continue;
-						ArrayList<Key> finalKeysToCheck = new ArrayList<Key>();
-						for(Key key : keys) {
-							key = key.cloneKey();
-							finalKeysToCheck.add(key);
-						}
-						Key[] finalKeys =
-							finalKeysToCheck.toArray(new Key[finalKeysToCheck.size()]);
-						persistentKeys[prio].add(finalKeys);
-						persistentGetters[prio].add(getter);
-						persistentSchedulers[prio].add(sched);
-						persistentCheckerItems[prio].add(item);
-						persistentBlockSets[prio].add(blocks);
+						if(persistentQueue[prio].contains(persist)) continue;
+						persistentQueue[prio].add(persist);
 						if(totalSize == 0)
 							notifyAll();
 						totalSize += finalKeys.length;
@@ -210,45 +214,39 @@ public class DatastoreChecker implements PrioRunnable {
 		synchronized(this) {
 			int preQueueSize = 0;
 			for(int i=0;i<prio;i++) {
-				for(int x=0;x<persistentKeys[i].size();x++)
-					preQueueSize += persistentKeys[i].get(x).length;
+				for(PersistentItem item: persistentQueue[i]) {
+					preQueueSize += item.keys.length;
+				}
 			}
 			if(preQueueSize > MAX_PERSISTENT_KEYS) {
 				// Dump everything
-				for(int i=prio+1;i<persistentKeys.length;i++) {
-					for(DatastoreCheckerItem item : persistentCheckerItems[i]) {
-						item.chosenBy = 0;
-						container.store(item);
+				for(int i=prio+1;i<persistentQueue.length;i++) {
+					for(PersistentItem item : persistentQueue[i]) {
+						item.checkerItem.chosenBy = 0;
+						container.store(item.checkerItem);
 					}
-					persistentCheckerItems[i].clear();
-					persistentSchedulers[i].clear();
-					persistentGetters[i].clear();
-					persistentKeys[i].clear();
-					persistentBlockSets[i].clear();
+					persistentQueue[i].clear();
 				}
 				return true;
 			} else {
 				int postQueueSize = 0;
-				for(int i=prio+1;i<persistentKeys.length;i++) {
-					for(int x=0;x<persistentKeys[i].size();x++)
-						postQueueSize += persistentKeys[i].get(x).length;
+				for(int i=prio+1;i<persistentQueue.length;i++) {
+					for(PersistentItem item: persistentQueue[i]) {
+						postQueueSize += item.keys.length;
+					}
 				}
 				if(postQueueSize + preQueueSize < MAX_PERSISTENT_KEYS)
 					return false;
 				// Need to dump some stuff.
-				for(int i=persistentKeys.length-1;i>prio;i--) {
-					while(!persistentKeys[i].isEmpty()) {
-						int idx = persistentKeys[i].size() - 1;
-						DatastoreCheckerItem item = persistentCheckerItems[i].remove(idx);
-						persistentSchedulers[i].remove(idx);
-						persistentGetters[i].remove(idx);
-						Key[] keys = persistentKeys[i].remove(idx);
-						persistentBlockSets[i].remove(idx);
-						item.chosenBy = 0;
-						container.store(item);
-						if(postQueueSize + preQueueSize - keys.length < MAX_PERSISTENT_KEYS) {
+				for(int i=persistentQueue.length-1;i>prio;i--) {
+					PersistentItem item;
+					while((item = persistentQueue[i].pollLast()) != null) {
+						item.checkerItem.chosenBy = 0;
+						container.store(item.checkerItem);
+						postQueueSize -= item.keys.length;
+						if(postQueueSize + preQueueSize < MAX_PERSISTENT_KEYS) {
 							return false;
-						} else postQueueSize -= keys.length;
+						}
 					}
 				}
 				// Still over the limit.
@@ -262,7 +260,7 @@ public class DatastoreChecker implements PrioRunnable {
 		short prio = getter.getPriorityClass(null);
 		if(logMINOR) Logger.minor(this, "Queueing transient request "+getter+" priority "+prio+" keys "+checkKeys.length);
 		// FIXME check using store.probablyInStore
-		ArrayList<Key> finalKeysToCheck = new ArrayList<Key>();
+		ArrayList<Key> finalKeysToCheck = new ArrayList<Key>(checkKeys.length);
 		// Add it to the list of requests running here, so that priority changes while the data is on the store checker queue will work.
 		ClientRequester requestor = getter.getClientRequest();
 		requestor.addToRequests(getter, null);
@@ -270,13 +268,14 @@ public class DatastoreChecker implements PrioRunnable {
 			for(Key key : checkKeys) {
 				finalKeysToCheck.add(key);
 			}
-			if(logMINOR && transientGetters[prio].indexOf(getter) != -1) {
+			TransientItem queueItem = new TransientItem(
+					finalKeysToCheck.toArray(new Key[finalKeysToCheck.size()]),
+					getter, blocks);
+			if(logMINOR && transientQueue[prio].contains(queueItem)) {
 				Logger.error(this, "Transient request "+getter+" is already queued!");
 				return;
 			}
-			transientGetters[prio].add(getter);
-			transientKeys[prio].add(finalKeysToCheck.toArray(new Key[finalKeysToCheck.size()]));
-			transientBlockSets[prio].add(blocks);
+			transientQueue[prio].add(queueItem);
 			notifyAll();
 		}
 	}
@@ -308,23 +307,28 @@ public class DatastoreChecker implements PrioRunnable {
 			int queueSize = 0;
 			// Only count queued keys at no higher priority than this request.
 			for(short p = 0;p<=prio;p++) {
-				for(int x = 0;x<persistentKeys[p].size();x++) {
-					queueSize += persistentKeys[p].get(x).length;
+				for(PersistentItem persist: persistentQueue[p]) {
+					queueSize += persist.keys.length;
 				}
 			}
+			// Item is stored, we will get to it eventually.
 			if(queueSize > MAX_PERSISTENT_KEYS) return;
 			item.chosenBy = context.bootID;
 			container.store(item);
 			// FIXME check using store.probablyInStore
-			ArrayList<Key> finalKeysToCheck = new ArrayList<Key>();
+			ArrayList<Key> finalKeysToCheck = new ArrayList<Key>(checkKeys.length);
 			for(Key key : checkKeys) {
 				finalKeysToCheck.add(key);
 			}
-			persistentGetters[prio].add(getter);
-			persistentKeys[prio].add(finalKeysToCheck.toArray(new Key[finalKeysToCheck.size()]));
-			persistentSchedulers[prio].add(sched);
-			persistentCheckerItems[prio].add(item);
-			persistentBlockSets[prio].add(blocks);
+			PersistentItem queueItem = new PersistentItem(
+					finalKeysToCheck.toArray(new Key[finalKeysToCheck.size()]),
+					getter,	sched, item, blocks);
+			// Paranoid check on heavy logging.
+			if(logMINOR && persistentQueue[prio].contains(queueItem)) {
+				Logger.error(this, "Persistent request "+getter+" is already queued!");
+				return;
+			}
+			persistentQueue[prio].add(queueItem);
 			trimPersistentQueue(prio, container);
 			notifyAll();
 		}
@@ -364,45 +368,54 @@ public class DatastoreChecker implements PrioRunnable {
 		// especially given that sometimes SendableGet methods get called within it, and sometimes those call back here.
 		// Maybe we can separate the lock for the Bloom filters from that for everything else?
 		// Checking whether keys are wanted by persistent requests outside the lock would likely result in busy-looping.
+		boolean waited = false;
 		synchronized(this) {
 			while(true) {
-				for(short prio = 0;prio<transientKeys.length;prio++) {
-					if(!transientKeys[prio].isEmpty()) {
-						keys = transientKeys[prio].remove(0);
-						getter = transientGetters[prio].remove(0);
+				for(short prio = 0;prio<transientQueue.length;prio++) {
+					TransientItem trans;
+					PersistentItem persist;
+					if((trans = transientQueue[prio].pollFirst()) != null) {
+						keys = trans.keys;
+						getter = trans.getter;
 						persistent = false;
+						// sched assigned out of loop
 						item = null;
-						blocks = transientBlockSets[prio].remove(0);
+						blocks = trans.blockSet;
 						if(logMINOR)
-							Logger.minor(this, "Checking transient request "+getter+" prio "+prio+" of "+transientKeys[prio].size());
+							Logger.minor(this, "Checking transient request "+getter+" prio "+prio+" of "+transientQueue[prio].size());
 						break;
-					} else if((!notPersistent) && (!persistentGetters[prio].isEmpty())) {
-						keys = persistentKeys[prio].remove(0);
-						getter = persistentGetters[prio].remove(0);
+					} else if((!notPersistent) && (persist = persistentQueue[prio].pollFirst()) != null) {
+						keys = persist.keys;
+						getter = persist.getter;
 						persistent = true;
-						sched = persistentSchedulers[prio].remove(0);
-						item = persistentCheckerItems[prio].remove(0);
-						blocks = persistentBlockSets[prio].remove(0);
+						sched = persist.scheduler;
+						item = persist.checkerItem;
+						blocks = persist.blockSet;
 						if(logMINOR)
 							Logger.minor(this, "Checking persistent request at prio "+prio);
 						break;
 					}
 				}
-				if(keys == null) {
+				if(keys != null)
+					break;
+				if(!notPersistent) {
 					try {
 						context.jobRunner.queue(loader, NativeThread.HIGH_PRIORITY, true);
 					} catch (DatabaseDisabledException e1) {
 						// Ignore
 					}
-					if(logMINOR) Logger.minor(this, "Waiting for more persistent requests");
-					try {
-						wait(100*1000);
-					} catch (InterruptedException e) {
-						// Ok
-					}
-					continue;
+					if(logMINOR) Logger.minor(this, "Waiting for more persistent or transient requests");
+				} else {
+					if(logMINOR) Logger.minor(this, "Waiting for more transient requests");
 				}
-				break;
+				if(waited && notPersistent) return; // Re-check queueSize after a failed wait.
+				waited = true;
+				try {
+					// Wait for anything.
+					wait(100*1000);
+				} catch (InterruptedException e) {
+					// Ok
+				}
 			}
 		}
 		if(!persistent) {
@@ -416,10 +429,10 @@ public class DatastoreChecker implements PrioRunnable {
 					continue;
 				}
 			}
-			KeyBlock block = null;
+			KeyBlock block;
 			if(blocks != null)
 				block = blocks.get(key);
-			if(blocks == null)
+			else
 				block = node.fetch(key, true, true, false, false, null);
 			if(block != null) {
 				if(logMINOR) Logger.minor(this, "Found key");
@@ -517,26 +530,17 @@ public class DatastoreChecker implements PrioRunnable {
 	@SuppressWarnings("unchecked")
 	public void removeRequest(SendableGet request, boolean persistent, ObjectContainer container, ClientContext context, short prio) {
 		if(logMINOR) Logger.minor(this, "Removing request prio="+prio+" persistent="+persistent);
+		QueueItem requestMatcher = new QueueItem(request);
 		if(!persistent) {
 			synchronized(this) {
-				int index = transientGetters[prio].indexOf(request);
-				if(index == -1) return;
-				transientGetters[prio].remove(index);
-				transientKeys[prio].remove(index);
-				transientBlockSets[prio].remove(index);
-				if(logMINOR) Logger.minor(this, "Removed transient request");
+				if(!transientQueue[prio].remove(requestMatcher)) return;
 			}
+			if(logMINOR) Logger.minor(this, "Removed transient request");
 		} else {
 			synchronized(this) {
-				int index = persistentGetters[prio].indexOf(request);
-				if(index != -1) {
-					persistentKeys[prio].remove(index);
-					persistentGetters[prio].remove(index);
-					persistentSchedulers[prio].remove(index);
-					persistentCheckerItems[prio].remove(index);
-					persistentBlockSets[prio].remove(index);
-				}
+				persistentQueue[prio].remove(requestMatcher);
 			}
+			// Find and delete the old item.
 			Query query =
 				container.query();
 			query.constrain(DatastoreCheckerItem.class);

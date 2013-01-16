@@ -58,9 +58,7 @@ public class SortedVectorByNumber {
 			data[--length] = null;
 		}
 		if((length*4 < data.length) && (length > MIN_SIZE)) {
-			IntNumberedItem[] newData = new IntNumberedItem[Math.max(length*2, MIN_SIZE)];
-			System.arraycopy(data, 0, newData, 0, length);
-			data = newData;
+			data = Arrays.copyOf(data, Math.max(length*2, MIN_SIZE));
 		}
 		if(persistent) container.store(this);
 		
@@ -129,9 +127,7 @@ public class SortedVectorByNumber {
 		// Move the data
 		if(length == data.length) {
 			if(logMINOR) Logger.minor(this, "Expanding from "+length+" to "+length*2);
-			IntNumberedItem[] newData = new IntNumberedItem[length*2];
-			System.arraycopy(data, 0, newData, 0, data.length);
-			data = newData;
+			data = Arrays.copyOf(data, length*2);
 		}
 		if(x < length)
 			System.arraycopy(data, x, data, x+1, length-x);

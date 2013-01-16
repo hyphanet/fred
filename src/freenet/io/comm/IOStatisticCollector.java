@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.io.comm;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -210,15 +211,11 @@ public class IOStatisticCollector {
 		}
 		
 		public int[] getRecieved() {
-			int retint[] = new int[IOStatisticCollector.STATISTICS_ENTRIES];
-			System.arraycopy(recieved, 1, retint, 0, IOStatisticCollector.STATISTICS_ENTRIES);
-			return retint;
+			return Arrays.copyOfRange(recieved, 1, 1 + IOStatisticCollector.STATISTICS_ENTRIES);
 		}
 		
 		public int[] getSent() {
-			int retint[] = new int[IOStatisticCollector.STATISTICS_ENTRIES];
-			System.arraycopy(sent, 1, retint, 0, IOStatisticCollector.STATISTICS_ENTRIES);
-			return retint;
+			return Arrays.copyOfRange(sent, 1, 1 + IOStatisticCollector.STATISTICS_ENTRIES);
 		}
 		
 	}

@@ -25,7 +25,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -43,6 +42,7 @@ import freenet.client.MetadataUnresolvedException;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.TooManyFilesInsertException;
 import freenet.client.filter.ContentFilter;
 import freenet.client.filter.KnownUnsafeContentTypeException;
 import freenet.client.filter.MIMEType;
@@ -470,15 +470,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				HTMLNode alertContent = ctx.getPageMaker().getInfobox(
 				        (displayFailureBox ? "infobox-warning" : "infobox-info"),
 				        l10n("downloadFiles"), contentNode, "grouped-downloads", true);
-				Iterator<String> it;
 				if(displaySuccessBox) {
 					HTMLNode successDiv = alertContent.addChild("ul");
 					successDiv.addChild("#", l10n("enqueuedSuccessfully", "number",
 					        String.valueOf(success.size())));
-					it = success.iterator();
-					while(it.hasNext()) {
+					for(String s: success) {
 						HTMLNode line = successDiv.addChild("li");
-						line.addChild("#", it.next());
+						line.addChild("#", s);
 					}
 					successDiv.addChild("br");
 				}
@@ -487,10 +485,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					if(displayFailureBox) {
 						failureDiv.addChild("#", l10n("enqueuedFailure", "number",
 						        String.valueOf(failure.size())));
-						it = failure.iterator();
-						while(it.hasNext()) {
+						for(String f: failure) {
 							HTMLNode line = failureDiv.addChild("li");
-							line.addChild("#", it.next());
+							line.addChild("#", f);
 						}
 					}
 					failureDiv.addChild("br");
@@ -808,6 +805,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							} catch (FileNotFoundException e) {
 								writeError(l10n("errorNoFileOrCannotRead"), l10n("QueueToadlet.errorAccessDeniedFile", "file", file.toString()), ctx);
 								return false;
+							} catch (TooManyFilesInsertException e) {
+								writeError(l10n("tooManyFilesInOneFolder"), l10n("tooManyFilesInOneFolder"), ctx);
+								return false;
 							} finally {
 								synchronized(done) {
 									done.value = true;
@@ -1113,19 +1113,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							infoboxContent.addChild("p", "Total awaiting CHKs: "+queued);
 							infoboxContent.addChild("p", "Total queued CHK requests: "+reallyQueued);
 							return false;
-						} else if(keys) {
+						} else /*if(keys)*/ {
 							try {
 								plainText = makeFetchKeysList(context);
 							} catch (DatabaseDisabledException e) {
 								plainText = null;
-							}
-							return false;
-						} else {
-							try {
-								RequestStatus[] reqs = fcp.getGlobalRequests();
-								pageNode = handleGetInner(pageMaker, reqs, context, request, ctx);
-							} catch (DatabaseDisabledException e) {
-								pageNode = null;
 							}
 							return false;
 						}
@@ -1181,8 +1173,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 		StringBuffer sb = new StringBuffer();
 
-		for(int i=0;i<reqs.length;i++) {
-			RequestStatus req = reqs[i];
+		for(RequestStatus req: reqs) {
 			if(req instanceof DownloadRequestStatus) {
 				DownloadRequestStatus get = (DownloadRequestStatus)req;
 				FreenetURI uri = get.getURI();
@@ -1234,8 +1225,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		long totalQueuedDownloadSize = 0;
 		long totalQueuedUploadSize = 0;
 
-		for(int i=0;i<reqs.length;i++) {
-			RequestStatus req = reqs[i];
+		for(RequestStatus req: reqs) {
 			if(req instanceof DownloadRequestStatus && !uploads) {
 				DownloadRequestStatus download = (DownloadRequestStatus)req;
 				if(download.hasSucceeded()) {
@@ -2149,8 +2139,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		if(uri != null) {
 			cell.addChild("input", new String[] { "type", "name", "value" },
 					new String[] { "hidden", "key-"+counter, uri.toASCIIString() });
-			filename = uri.getPreferredFilename();
 		}
+		filename = clientRequest.getPreferredFilenameSafe();
 		if(size != -1)
 			cell.addChild("input", new String[] { "type", "name", "value" },
 					new String[] { "hidden", "size-"+counter, Long.toString(size) });
@@ -2238,11 +2228,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				synchronized(completedRequestIdentifiers) {
 					identifiers = completedRequestIdentifiers.toArray(new String[completedRequestIdentifiers.size()]);
 				}
-				for(int i=0;i<identifiers.length;i++) {
-					ClientRequest req = fcp.getGlobalRequest(identifiers[i], container);
+				for(String identifier: identifiers) {
+					ClientRequest req = fcp.getGlobalRequest(identifier, container);
 					if(req == null || req instanceof ClientGet == uploads) {
 						synchronized(completedRequestIdentifiers) {
-							completedRequestIdentifiers.remove(identifiers[i]);
+							completedRequestIdentifiers.remove(identifier);
 						}
 						changed = true;
 						continue;
@@ -2304,8 +2294,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			synchronized(completedRequestIdentifiers) {
 				identifiers = completedRequestIdentifiers.toArray(new String[completedRequestIdentifiers.size()]);
 			}
-			for(int i=0;i<identifiers.length;i++)
-				bw.write(identifiers[i]+'\n');
+			for(String identifier: identifiers)
+				bw.write(identifier+'\n');
 		} catch (FileNotFoundException e) {
 			Logger.error(this, "Unable to save completed requests list (can't find node directory?!!?): "+e, e);
 			return;

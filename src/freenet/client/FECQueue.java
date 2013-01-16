@@ -141,6 +141,7 @@ public class FECQueue implements OOMHook {
 				return;
 			}
 		}
+		final boolean logMINOR = FECQueue.logMINOR;
 		if(logMINOR)
 			Logger.minor(StandardOnionFECCodec.class, "Adding a new job to the queue: "+job+".");
 		int maxThreads = getMaxRunningFECThreads();

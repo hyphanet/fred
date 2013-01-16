@@ -1,7 +1,6 @@
 package freenet.node;
 
 import java.util.List;
-import java.util.Vector;
 
 import freenet.io.comm.Peer;
 

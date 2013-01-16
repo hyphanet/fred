@@ -49,12 +49,9 @@ public class ClientSSK extends ClientKey {
 			this.pubKey = key.pubKey.cloneKey();
 		else
 			this.pubKey = null;
-		pubKeyHash = new byte[key.pubKeyHash.length];
-		System.arraycopy(key.pubKeyHash, 0, pubKeyHash, 0, pubKeyHash.length);
-		cryptoKey = new byte[key.cryptoKey.length];
-		System.arraycopy(key.cryptoKey, 0, cryptoKey, 0, key.cryptoKey.length);
-		ehDocname = new byte[key.ehDocname.length];
-		System.arraycopy(key.ehDocname, 0, ehDocname, 0, key.ehDocname.length);
+		pubKeyHash = key.pubKeyHash.clone();
+		cryptoKey = key.cryptoKey.clone();
+		ehDocname = key.ehDocname.clone();
 		hashCode = Fields.hashCode(pubKeyHash) ^ Fields.hashCode(cryptoKey) ^ Fields.hashCode(ehDocname) ^ docName.hashCode();
 	}
 	

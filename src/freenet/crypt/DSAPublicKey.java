@@ -5,6 +5,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.util.Arrays;
 
 import net.i2p.util.NativeBigInteger;
 
@@ -157,9 +158,7 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 			return asBytes;
 		if(asBytes.length > PADDED_SIZE)
 			throw new Error("Cannot fit key in " + PADDED_SIZE + " - real size is " + asBytes.length);
-		byte[] padded = new byte[PADDED_SIZE];
-		System.arraycopy(asBytes, 0, padded, 0, asBytes.length);
-		return padded;
+		return Arrays.copyOf(asBytes, PADDED_SIZE);
 	}
 
 	@Override

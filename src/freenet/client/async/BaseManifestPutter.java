@@ -151,8 +151,8 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			if(persistent) {
 				container.activate(BaseManifestPutter.this, 1);
 			}
-			if (!containerPutHandlers.contains(this)) throw new IllegalStateException("was not in containerPutHandlers");
-			containerPutHandlers.remove(this);
+			if (!containerPutHandlers.remove(this)) throw new IllegalStateException("was not in containerPutHandlers");
+			;
 			super.onSuccess(state, container, context);
 			if(persistent) {
 				container.deactivate(BaseManifestPutter.this, 1);
@@ -232,8 +232,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				if (containerPutHandlers.contains(this)) throw new IllegalStateException("was in containerPutHandlers");
 				rootContainerPutHandler = null;
 			} else {
-				if (!containerPutHandlers.contains(this)) throw new IllegalStateException("was not in containerPutHandlers");
-				containerPutHandlers.remove(this);
+				if (!containerPutHandlers.remove(this)) throw new IllegalStateException("was not in containerPutHandlers");
 			}
 			super.onSuccess(state, container, context);
 
@@ -638,8 +637,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 					container.ext().store(runningPutHandlers, 2);
 					container.activate(putHandlersWaitingForMetadata, 2);
 				}
-				if(putHandlersWaitingForMetadata.contains(this)) {
-					putHandlersWaitingForMetadata.remove(this);
+				if(putHandlersWaitingForMetadata.remove(this)) {
 					if (persistent) {
 						container.ext().store(putHandlersWaitingForMetadata, 2);
 					}
@@ -650,8 +648,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 					container.deactivate(putHandlersWaitingForMetadata, 1);
 					container.activate(putHandlerWaitingForBlockSets, 2);
 				}
-				if(putHandlerWaitingForBlockSets.contains(this)) {
-					putHandlerWaitingForBlockSets.remove(this);
+				if(putHandlerWaitingForBlockSets.remove(this)) {
 					if(persistent) {
 						container.ext().store(putHandlerWaitingForBlockSets, 2);
 					}
@@ -662,8 +659,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 					container.deactivate(putHandlersWaitingForFetchable, 1);
 					container.activate(putHandlersWaitingForFetchable, 2);
 				}
-				if(putHandlersWaitingForFetchable.contains(this)) {
-					putHandlersWaitingForFetchable.remove(this);
+				if(putHandlersWaitingForFetchable.remove(this)) {
 					if (persistent) {
 						container.ext().store(putHandlersWaitingForFetchable, 2);
 					}
@@ -911,11 +907,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			// Ignore
 		}
 
-		public void clearMetadata(ObjectContainer container) {
-			metadata = null;
-			if(persistent) container.store(this);
-		}
-
 		@Override
 		public void removeFrom(ObjectContainer container, ClientContext context) {
 			if(logMINOR) Logger.minor(this, "Removing "+this);
@@ -1031,7 +1022,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 	public BaseManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName,
-			InsertContext ctx, boolean getCHKOnly2, RequestClient clientContext, boolean earlyEncode, boolean randomiseCryptoKeys, byte [] forceCryptoKey, ObjectContainer container, ClientContext context) {
+			InsertContext ctx, boolean getCHKOnly2, RequestClient clientContext, boolean earlyEncode, boolean randomiseCryptoKeys, byte [] forceCryptoKey, ObjectContainer container, ClientContext context) throws TooManyFilesInsertException {
 		super(prioClass, clientContext);
 		if(client.persistent())
 			this.targetURI = target.clone();
@@ -1082,6 +1073,9 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		for(String name : defaultDefaultNames) {
 			boolean found = false;
 			for(Map.Entry<String, Object> entry : manifestElements.entrySet()) {
+				Object o = entry.getValue();
+				if(o == null) continue;
+				if(o instanceof HashMap) continue;
 				if(entry.getKey().equalsIgnoreCase(name)) {
 					found = true;
 					name = entry.getKey();
@@ -1089,9 +1083,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				}
 			}
 			if(!found) continue;
-			Object o = manifestElements.get(name);
-			if(o == null) continue;
-			if(o instanceof HashMap) continue;
 			return name;
 		}
 		return "";
@@ -1181,37 +1172,14 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		return phToStart.toArray(new PutHandler[phToStart.size()]);
 	}
 
-	private synchronized void debugDecompose(String title) {
-		System.out.println("=== BEGIN: "+title);
-		System.out.println("Running PutHandlers: "+ runningPutHandlers.size());
-		for (PutHandler ph: runningPutHandlers) {
-			System.out.println("\t"+ph);
-		}
-		System.out.println("Running ContainerHandlers: "+ containerPutHandlers.size());
-		for (PutHandler ph: containerPutHandlers) {
-			System.out.println("\t"+ph);
-		}
-		System.out.println("Waiting for Metadata: "+ putHandlersWaitingForMetadata.size());
-		for (PutHandler ph: putHandlersWaitingForMetadata) {
-			System.out.println("\t"+ph);
-		}
-		System.out.println("Waiting for Fetchable: "+ putHandlersWaitingForFetchable.size());
-		for (PutHandler ph: putHandlersWaitingForFetchable) {
-			System.out.println("\t"+ph);
-		}
-		System.out.println("Waiting for BlockSet: "+ putHandlerWaitingForBlockSets.size());
-		for (PutHandler ph: putHandlerWaitingForBlockSets) {
-			System.out.println("\t"+ph);
-		}
-		System.out.println("===   END: "+title);
-	}
-
 	/**
-	 * Implement the pack logic
+	 * Implement the pack logic.
 	 *
-	 * @param manifestElements
+	 * @param manifestElements A map from String to either ManifestElement or another String. This is the
+	 * site structure, which will be split into containers and/or external inserts by the method.
+	 * @throws TooManyFilesInsertException 
 	 */
-	protected abstract void makePutHandlers(HashMap<String, Object> manifestElements, String defaultName);
+	protected abstract void makePutHandlers(HashMap<String, Object> manifestElements, String defaultName) throws TooManyFilesInsertException;
 
 	@Override
 	public FreenetURI getURI() {
@@ -1289,14 +1257,15 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	@SuppressWarnings("unchecked")
 	private Metadata makeMetadata(HashMap<String, Object> dir, ObjectContainer container) {
 		SimpleManifestComposer smc = new SimpleManifestComposer();
-		for (String name: dir.keySet()) {
-			Object item = dir.get(name);
+		for(Map.Entry<String, Object> entry:dir.entrySet()) {
+			String name = entry.getKey();
+			Object item = entry.getValue();
 			if (item == null) throw new NullPointerException();
 			Metadata m;
 			if (item instanceof HashMap) {
 				if(persistent())
 					container.activate(item, 2);
-				m = makeMetadata((HashMap)item, container);
+				m = makeMetadata((HashMap<String, Object>) item, container);
 				if (m == null) throw new NullPointerException("HERE!!");
 			} else {
 				if (persistent()) {
@@ -1714,10 +1683,9 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 	private synchronized boolean checkFetchable(PutHandler handler) {
 		//new Error("RefactorME").printStackTrace();
-		if (!putHandlersWaitingForFetchable.contains(handler)) {
+		if (!putHandlersWaitingForFetchable.remove(handler)) {
 			throw new IllegalStateException("was not in putHandlersWaitingForFetchable! : "+handler);
 		}
-		putHandlersWaitingForFetchable.remove(handler);
 		if(fetchable) return false;
 		if(!putHandlersWaitingForFetchable.isEmpty()) return false;
 		fetchable = true;
@@ -1751,7 +1719,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		// This is passed in. We should not remove it, because the caller (ClientPutDir) should remove it.
 		container.activate(ctx, 1);
 		ctx.removeFrom(container);
-		ArrayList<Metadata> metas = null;
 		if(baseMetadata != null) {
 			container.activate(baseMetadata, 1);
 			baseMetadata.removeFrom(container);
@@ -1836,6 +1803,9 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	protected abstract class ManifestBuilder {
 
 		private final Stack<HashMap<String, Object>> dirStack;
+		/** Map from name to either a Metadata (to be included as-is), a ManifestElement (either a redirect
+		 * or a file), or another HashMap. Eventually processed by e.g. ContainerInserter.makeManifest()
+		 * (for a ContainerBuilder). */
 		protected HashMap<String, Object> currentDir;
 
 		private ClientMetadata makeClientMetadata(String mime) {
@@ -1866,8 +1836,9 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		 * @param name name of the subdir
 		 */
 		public void makeSubDirCD(String name) {
-			if (currentDir.containsKey(name)) {
-				currentDir = Metadata.forceMap(currentDir.get(name));
+			Object dir = currentDir.get(name);
+			if (dir != null) {
+				currentDir = Metadata.forceMap(dir);
 			} else {
 				currentDir = makeSubDir(currentDir, name);
 			}
@@ -1902,7 +1873,15 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			throw new IllegalStateException("ME is neither a redirect nor dircet data. "+element);
 		}
 
+		/** Add a file as an external. It will be inserted separately and we will add a redirect to the
+		 * metadata.
+		 * @param name The name of the file (short name within the original folder, it's not in a container).
+		 * @param data The data to be inserted.
+		 * @param mimeOverride Optional MIME type override.
+		 * @param isDefaultDoc If true, make this the default document.
+		 */
 		public final void addExternal(String name, Bucket data, String mimeOverride, boolean isDefaultDoc) {
+			assert(data != null);
 			ClientMetadata cm = makeClientMetadata(mimeOverride);
 			addExternal(name, data, cm, isDefaultDoc);
 		}
@@ -1996,12 +1975,22 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			return subCon;
 		}
 
+		/**
+		 * Add a ManifestElement, which can be a file in an archive, or a redirect.
+		 * @param name The original name of the file (e.g. index.html).
+		 * @param nameInArchive The fully qualified name of the file in the archive (e.g. testing/index.html).
+		 * @param element The ManifestElement specifying the data, redirect, etc. Note that redirects are
+		 * still included in containers, both for structural reasons and because the metadata can be large
+		 * enough that we need to split it.
+		 * @param isDefaultDoc If true, add a link from "" to this element, making it the default document
+		 * in this container.
+		 */
 		public void addItem(String name, String nameInArchive, ManifestElement element, boolean isDefaultDoc) {
 			ManifestElement me = new ManifestElement(element, name, nameInArchive);
 			addItem(name, me, isDefaultDoc);
 		}
 
-		public void addItem(String name, ManifestElement element, boolean isDefaultDoc) {
+		private void addItem(String name, ManifestElement element, boolean isDefaultDoc) {
 			currentDir.put(name, element);
 			if (isDefaultDoc) {
 				Metadata m = new Metadata(Metadata.SYMBOLIC_SHORTLINK, null, null, name, null);
@@ -2029,7 +2018,10 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			}
 		}
 
+		/** FIXME what is going on here? Why do we need to add a JokerPutHandler, when a lot of code just
+		 * calls addItem()? */
 		public void addArchiveItem(ContainerBuilder archive, String name, ManifestElement element, boolean isDefaultDoc) {
+			assert(element.getData() != null);
 			archive.addItem(name, element, false);
 			PutHandler ph = new JokerPutHandler(BaseManifestPutter.this, selfHandle, name, guessMime(name, element.mimeOverride));
 			putHandlersTransformMap.put(ph, currentDir);

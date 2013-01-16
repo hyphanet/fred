@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.Socket;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 
@@ -17,6 +16,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.TooManyFilesInsertException;
 import freenet.node.RequestClient;
 import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
@@ -71,7 +71,6 @@ public class FCPConnectionHandler implements Closeable {
 	private String clientName;
 	private FCPClient rebootClient;
 	private FCPClient foreverClient;
-	private boolean failedGetForever;
 	final BucketFactory bf;
 	final HashMap<String, ClientRequest> requestsByIdentifier;
 	protected final String connectionIdentifier;
@@ -519,6 +518,8 @@ public class FCPConnectionHandler implements Closeable {
 					success = false;
 				} catch (MalformedURLException e) {
 					failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, null, id, message.global);
+				} catch (TooManyFilesInsertException e) {
+					failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.TOO_MANY_FILES_IN_INSERT, true, null, id, message.global);
 				}
 				// FIXME register non-persistent requests in the constructors also, we already register persistent ones...
 			} else if(message.persistenceType == ClientRequest.PERSIST_FOREVER) {
@@ -537,6 +538,9 @@ public class FCPConnectionHandler implements Closeable {
 								return false;
 							} catch (MalformedURLException e) {
 								outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, null, id, message.global));
+								return false;
+							} catch (TooManyFilesInsertException e) {
+								outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.TOO_MANY_FILES_IN_INSERT, true, null, id, message.global));
 								return false;
 							}
 							try {
@@ -566,6 +570,8 @@ public class FCPConnectionHandler implements Closeable {
 					success = false;
 				} catch (MalformedURLException e) {
 					failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, null, id, message.global);
+				} catch (TooManyFilesInsertException e) {
+					failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.TOO_MANY_FILES_IN_INSERT, true, null, id, message.global);
 				}
 			}
 			if(!success) {
@@ -746,9 +752,7 @@ public class FCPConnectionHandler implements Closeable {
 	 */
 	protected void freeDDAJobs(){
 		synchronized (inTestDirectories) {
-			Iterator<File> it = inTestDirectories.keySet().iterator();
-			while(it.hasNext()) {
-				DDACheckJob job = inTestDirectories.get(it.next());
+			for(DDACheckJob job: inTestDirectories.values()) {
 				if (job.readFilename != null)
 					job.readFilename.delete();
 			}
@@ -814,14 +818,14 @@ public class FCPConnectionHandler implements Closeable {
 
 	public synchronized void addUSKSubscription(String identifier, SubscribeUSK subscribeUSK) throws IdentifierCollisionException {
 		if(uskSubscriptions.containsKey(identifier)) throw new IdentifierCollisionException();
-			uskSubscriptions.put(identifier, subscribeUSK);
+		uskSubscriptions.put(identifier, subscribeUSK);
 	}
 
 	public void unsubscribeUSK(String identifier) throws MessageInvalidException {
 		SubscribeUSK sub;
 		synchronized(this) {
-			if(!uskSubscriptions.containsKey(identifier)) throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, "No such identifier unsubscribing", identifier, false);
 			sub = uskSubscriptions.remove(identifier);
+			if(sub == null) throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, "No such identifier unsubscribing", identifier, false);
 		}
 		sub.unsubscribe();
 	}

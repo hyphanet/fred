@@ -168,9 +168,8 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 		if(logMINOR) Logger.minor(this, "Insertion point: "+x+" length "+length+" data.length "+data.length);
 		// Move the data
 		if(length == data.length) {
-			int[] newData = new int[Math.max(length*2, 4)];
+			int[] newData = Arrays.copyOf(data, Math.max(length*2, 4));
 			if(logMINOR) Logger.minor(this, "Expanding from "+length+" to "+newData.length);
-			System.arraycopy(data, 0, newData, 0, data.length);
 			for(int i=length;i<newData.length;i++)
 				newData[i] = Integer.MAX_VALUE;
 			data = newData;
@@ -211,9 +210,7 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 	 * @return sorted array of all items
 	 */
 	public synchronized int[] toIntArray() {
-		int[] output = new int[length];
-		System.arraycopy(data, 0, output, 0, length);
-		return output;
+		return Arrays.copyOf(data, length);
 	}
 
 	/**

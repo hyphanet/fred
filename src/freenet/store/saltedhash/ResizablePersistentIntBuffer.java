@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.Arrays;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -89,8 +90,8 @@ public class ResizablePersistentIntBuffer {
 			int toRead = Math.min(buf.length, (size - read) * 4);
 			raf.readFully(buf, 0, toRead);
 			int[] data = Fields.bytesToInts(buf, 0, toRead);
-			for(int i=0;i<data.length;i++)
-				buffer[read++] = data[i];
+			System.arraycopy(data, 0, buffer, read, data.length);
+			read += data.length;
 		}
 	}
 	
@@ -257,9 +258,7 @@ public class ResizablePersistentIntBuffer {
 			if(this.size == size) return;
 			Logger.normal(this, "Resizing cache from "+this.size+" slots to "+size);
 			this.size = size;
-			int[] newBuf = new int[size];
-			System.arraycopy(buffer, 0, newBuf, 0, Math.min(buffer.length, newBuf.length));
-			buffer = newBuf;
+			buffer = Arrays.copyOf(buffer, size);
 			try {
 				raf.setLength(size * 4);
 				writeBuffer();

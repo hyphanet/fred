@@ -47,9 +47,7 @@ public class PersistentConfig extends Config {
 			// FIXME maybe keep a cache of this?
 			configs = configsByPrefix.values().toArray(new SubConfig[configsByPrefix.size()]);
 		}
-		SubConfig current;
-		for(int i=0;i<configs.length;i++) {
-			current = configs[i];
+		for(SubConfig current: configs) {
 			SimpleFieldSet scfs = current.exportFieldSet(configRequestType, withDefaults);
 			fs.tput(current.prefix, scfs);
 		}

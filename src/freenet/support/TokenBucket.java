@@ -139,7 +139,7 @@ public class TokenBucket {
 		}
 		
 		long minDelayNS = nanosPerTick * (-current);
-		long minDelayMS = minDelayNS / (1000*1000) + (minDelayNS % (1000*1000) == 0 ? 0 : 1);
+		long minDelayMS = (minDelayNS + 1000*1000 - 1) / (1000*1000);
 		long now = System.currentTimeMillis();
 		long wakeAt = now + minDelayMS;
 		

@@ -77,8 +77,6 @@ public final class ReceivedCookie extends Cookie {
 		// 2. Its very fast :)
 		
 		// Set to true if a broken browser (Konqueror) specifies a cookie where the name is NOT the first attribute.
-		boolean singleCookie = false;
-
 		try {
 		for(int i = 0; i < header.length;) {
 			// Skip leading whitespace of key, we must do a header.length check because there might be no more key, so we continue;
@@ -173,7 +171,6 @@ public final class ReceivedCookie extends Cookie {
 					// We cannot throw because Konqueror (4.2.2) is broken and specifies $version as the first attribute.
 					//throw new IllegalArgumentException("Invalid cookie: Name is not the first attribute: " + httpHeader);
 					
-					singleCookie = true;
 					currentCookieContent.put(key, value);
 				} else {
 					currentCookieName = key;

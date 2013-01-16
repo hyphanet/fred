@@ -4,6 +4,7 @@
 package freenet.support;
 
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Encodes any character mentioned with a substitute in the HTML spec. This
@@ -37,11 +38,12 @@ public class HTMLEncoder {
 	private static void encodeToBuffer(int n, String s, StringBuilder sb) {
 		for (int i = 0; i < n; i++) {
 			char c = s.charAt(i);
+			String entity;
 			if(Character.isLetterOrDigit(c)){ //only special characters need checking
 				sb.append(c);
-			} else if(charTable.containsKey(c)){
+			} else if((entity = charTable.get(c))!=null){
                 sb.append('&');
-                sb.append(charTable.get(c));
+                sb.append(entity);
                 sb.append(';');
 			} else{
 				sb.append(c);
@@ -108,16 +110,13 @@ public class HTMLEncoder {
 			
 			chars = new char[modulo];
 			strings = new String[modulo];
-			for (Character character : map.keySet()) {
+			for (Map.Entry<Character,String> entry : map.entrySet()) {
+				Character character = entry.getKey();
 				keyIndex = character.charValue()%modulo;
 				chars[keyIndex] = character.charValue();
-				strings[keyIndex] = map.get(character);
+				strings[keyIndex] = entry.getValue();
 			}
 			if (chars[0] == 0 && strings[0] != null) chars[0] = 1;
-		}
-		
-		public boolean containsKey(char key){
-			return chars[key%modulo] == key;
 		}
 		
 		public String get(char key){

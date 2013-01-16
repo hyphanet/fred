@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -27,9 +28,8 @@ import freenet.store.BlockMetadata;
 import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.ShortBuffer;
-import freenet.support.SizeUtil;
 import freenet.support.Logger.LogLevel;
+import freenet.support.ShortBuffer;
 import freenet.support.io.NativeThread;
 
 /**
@@ -211,9 +211,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				} else {
 					// A few extra can happen by accident. Just use the first 20.
 					Logger.normal(this, "Too many locations from "+source.toString()+" : "+locs.length+" could be an accident, using the first "+OpennetManager.MAX_PEERS_FOR_SCALING);
-					double[] firstLocs = new double[OpennetManager.MAX_PEERS_FOR_SCALING];
-					System.arraycopy(locs, 0, firstLocs, 0, OpennetManager.MAX_PEERS_FOR_SCALING);
-					locs = firstLocs;
+					locs = Arrays.copyOf(locs, OpennetManager.MAX_PEERS_FOR_SCALING);
 				}
 			}
 			// We are on darknet and we trust our peers OR we are on opennet

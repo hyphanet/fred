@@ -121,13 +121,14 @@ public class MP3Filter implements ContentDataFilter {
 				byte samplerateIndex = (byte) ((frameHeader & 0x0000c0000) >>> 10); //2 bits
 				if(samplerateIndex == 3) continue; // Not valid
 				boolean paddingBit = ((frameHeader & 0x00000300) >>> 9) == 1 ? true : false;
-				boolean privateBit = ((frameHeader & 0x00000100) >>> 8) == 1 ? true : false;
-				byte channelMode = (byte) ((frameHeader & 0x000000c0) >>> 6); //2 bits
-				byte modeExtension = (byte) ((frameHeader & 0x00000030) >>> 4); //2 bits
-				/*A small boost in security might be gained by flipping the next
+				// FIXME can we do anything with these?
+//				boolean privateBit = ((frameHeader & 0x00000100) >>> 8) == 1 ? true : false;
+//				byte channelMode = (byte) ((frameHeader & 0x000000c0) >>> 6); //2 bits
+//				byte modeExtension = (byte) ((frameHeader & 0x00000030) >>> 4); //2 bits
+				/* FIXME A small boost in security might be gained by flipping the next
 				 * two bits to false. */
-				boolean copyright = ((frameHeader & 0x00000008) >>> 3) == 1 ? true : false;
-				boolean original = ((frameHeader & 0x00000004) >>> 2) == 1 ? true : false;
+//				boolean copyright = ((frameHeader & 0x00000008) >>> 3) == 1 ? true : false;
+//				boolean original = ((frameHeader & 0x00000004) >>> 2) == 1 ? true : false;
 				byte emphasis = (byte) ((frameHeader & 0x00000002));
 				if(emphasis == 2) {
 					foundStream = false;

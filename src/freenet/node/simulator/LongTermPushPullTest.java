@@ -285,7 +285,6 @@ public class LongTermPushPullTest {
 			prevDate = calendar;
 			int version = Integer.parseInt(split[1]);
 			if(split.length > 2) {
-				long seedTime = Long.parseLong(split[2]);
 				int[] pushTimes = new int[MAX_N+1];
 				String[] pushFailures = new String[MAX_N+1];
 				for(int i=0;i<=MAX_N;i++) {

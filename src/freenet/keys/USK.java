@@ -101,8 +101,7 @@ public class USK extends BaseClientKey implements Comparable<USK> {
 	}
 
 	public USK(USK usk) {
-		this.pubKeyHash = new byte[usk.pubKeyHash.length];
-		System.arraycopy(usk.pubKeyHash, 0, pubKeyHash, 0, usk.pubKeyHash.length);
+		this.pubKeyHash = usk.pubKeyHash.clone();
 		this.cryptoAlgorithm = usk.cryptoAlgorithm;
 		this.cryptoKey = usk.cryptoKey;
 		this.siteName = usk.siteName;

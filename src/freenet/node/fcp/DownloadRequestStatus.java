@@ -110,21 +110,21 @@ public class DownloadRequestStatus extends RequestStatus {
 			return failureReasonShort;
 	}
 
-	public synchronized void updateDetectedCompatModes(
+	synchronized void updateDetectedCompatModes(
 			InsertContext.CompatibilityMode[] compatModes, boolean dontCompress) {
 		this.detectedCompatModes = compatModes;
 		this.detectedDontCompress = dontCompress;
 	}
 
-	public synchronized void updateDetectedSplitfileKey(byte[] splitfileKey) {
+	synchronized void updateDetectedSplitfileKey(byte[] splitfileKey) {
 		this.detectedSplitfileKey = splitfileKey;
 	}
 
-	public synchronized void updateExpectedMIME(String foundDataMimeType) {
+	synchronized void updateExpectedMIME(String foundDataMimeType) {
 		this.mimeType = foundDataMimeType;
 	}
 
-	public synchronized void updateExpectedDataLength(long dataLength) {
+	synchronized void updateExpectedDataLength(long dataLength) {
 		this.dataSize = dataLength;
 	}
 
@@ -132,12 +132,22 @@ public class DownloadRequestStatus extends RequestStatus {
 		return dataShadow;
 	}
 
-	public synchronized void redirect(FreenetURI redirect) {
+	synchronized void redirect(FreenetURI redirect) {
 		this.uri = redirect;
 	}
 	
 	public synchronized boolean detectedDontCompress() {
 		return detectedDontCompress;
+	}
+
+	@Override
+	public String getPreferredFilename() {
+		if(destFilename != null)
+			return destFilename.getName();
+		if(uri != null && 
+				(uri.hasMetaStrings() || uri.getDocName() != null))
+			return uri.getPreferredFilename();
+		return null;
 	}
 
 }

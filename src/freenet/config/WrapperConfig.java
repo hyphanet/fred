@@ -28,8 +28,9 @@ public class WrapperConfig {
 	
 	public static String getWrapperProperty(String name) {
 		synchronized(WrapperConfig.class) {
-			if(overrides.containsKey(name))
-				return overrides.get(name);
+			String override = overrides.get(name);
+			if(override != null)
+				return override;
 		}
 		return WrapperManager.getProperties().getProperty(name, null);
 	}

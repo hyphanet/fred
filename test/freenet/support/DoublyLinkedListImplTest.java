@@ -34,14 +34,6 @@ public class DoublyLinkedListImplTest extends TestCase {
 			assertEquals(v, value);
 		}
 
-		public void assertIsClone() {
-			assertTrue("isClone", isClone);
-		}
-
-		public void assertIsNotClone() {
-			assertFalse("isClone", isClone);
-		}
-
 		@Override
 		public boolean equals(Object o) {
 			if (o == null)

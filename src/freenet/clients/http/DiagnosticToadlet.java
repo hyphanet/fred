@@ -8,7 +8,6 @@ import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 
@@ -50,14 +49,14 @@ public class DiagnosticToadlet extends Toadlet {
 	private final PeerManager peers;
 	private final NumberFormat thousandPoint = NumberFormat.getInstance();
 	private final FCPServer fcp;
-	private final DecimalFormat fix1p1 = new DecimalFormat("0.0");
-	private final DecimalFormat fix1p2 = new DecimalFormat("0.00");
+	//private final DecimalFormat fix1p1 = new DecimalFormat("0.0");
+	//private final DecimalFormat fix1p2 = new DecimalFormat("0.00");
 	private final DecimalFormat fix1p4 = new DecimalFormat("0.0000");
-	private final DecimalFormat fix1p6sci = new DecimalFormat("0.######E0");
+	//private final DecimalFormat fix1p6sci = new DecimalFormat("0.######E0");
 	private final DecimalFormat fix3p1pct = new DecimalFormat("##0.0%");
-	private final DecimalFormat fix3p1US = new DecimalFormat("##0.0", new DecimalFormatSymbols(Locale.US));
-	private final DecimalFormat fix3pctUS = new DecimalFormat("##0%", new DecimalFormatSymbols(Locale.US));
-	private final DecimalFormat fix6p6 = new DecimalFormat("#####0.0#####");
+	//private final DecimalFormat fix3p1US = new DecimalFormat("##0.0", new DecimalFormatSymbols(Locale.US));
+	//private final DecimalFormat fix3pctUS = new DecimalFormat("##0%", new DecimalFormatSymbols(Locale.US));
+	//private final DecimalFormat fix6p6 = new DecimalFormat("#####0.0#####");
 	public static final String TOADLET_URL = "/diagnostic/";
 	private final BaseL10n baseL10n;
 
@@ -82,8 +81,6 @@ public class DiagnosticToadlet extends Toadlet {
 		node.clientCore.bandwidthStatsPutter.updateData();
 
 		final SubConfig nodeConfig = node.config.get("node");
-
-		final String requestPath = request.getPath().substring(path().length());
 
 		String text = "";
 
@@ -131,13 +128,8 @@ public class DiagnosticToadlet extends Toadlet {
 			DataStoreStats stats = entry.getValue();
 			StoreAccessStats sessionAccess = stats.getSessionAccessStats();
 			StoreAccessStats totalAccess;
-			long totalUptimeSeconds = 0;
 			try {
 				totalAccess = stats.getTotalAccessStats();
-				// FIXME this is not necessarily the same as the datastore's uptime if we've switched.
-				// Ideally we'd track uptime there too.
-				totalUptimeSeconds = 
-					node.clientCore.bandwidthStatsPutter.getLatestUptimeData().totalUptime;
 			} catch (StatsNotAvailableException e) {
 				totalAccess = null;
 			}
@@ -297,7 +289,6 @@ public class DiagnosticToadlet extends Toadlet {
 			text += "bandwidth error\n";
 		else  {
 			final long now = System.currentTimeMillis();
-			double myLocation = node.getLocation();
 			final long nodeUptimeSeconds = (now - node.startupTime) / 1000;
 			long total_output_rate = (total[0]) / nodeUptimeSeconds;
 			long total_input_rate = (total[1]) / nodeUptimeSeconds;
@@ -387,9 +378,7 @@ public class DiagnosticToadlet extends Toadlet {
 		PluginManager pm = node.pluginManager;
 		if (!pm.getPlugins().isEmpty()) {
 			text += baseL10n.getString("PluginToadlet.pluginListTitle") + "\n";
-			Iterator<PluginInfoWrapper> it = pm.getPlugins().iterator();
-			while (it.hasNext()) {
-				PluginInfoWrapper pi = it.next();
+			for(PluginInfoWrapper pi: pm.getPlugins()) {
 				long ver = pi.getPluginLongVersion();
 				if (ver != -1)
 					text += pi.getFilename() + " (" + pi.getPluginClassName() + ") - "  + pi.getPluginVersion()+ " ("+ver+")" + " " + pi.getThreadName() + "\n";
@@ -406,30 +395,15 @@ public class DiagnosticToadlet extends Toadlet {
 			if(reqs.length < 1)
 				text += baseL10n.getString("QueueToadlet.globalQueueIsEmpty") + "\n";
 			else {
-				long totalQueuedDownloadSize = 0;
 				long totalQueuedDownload = 0;
-				long totalQueuedUploadSize = 0;
 				long totalQueuedUpload = 0;
-				for(int i=0;i<reqs.length;i++) {
-					RequestStatus req = reqs[i];
+				for(RequestStatus req: reqs) {
 					if(req instanceof DownloadRequestStatus) {
 						totalQueuedDownload++;
-						DownloadRequestStatus download = (DownloadRequestStatus)req;
-						long size = download.getDataSize();
-						if(size > 0)
-							totalQueuedDownloadSize += size;
 					} else if(req instanceof UploadFileRequestStatus) {
 						totalQueuedUpload++;
-						UploadFileRequestStatus upload = (UploadFileRequestStatus)req;
-						long size = upload.getDataSize();
-						if(size > 0)
-							totalQueuedUploadSize += size;
 					} else if(req instanceof UploadDirRequestStatus) {
 						totalQueuedUpload++;
-						UploadDirRequestStatus upload = (UploadDirRequestStatus)req;
-						long size = upload.getTotalDataSize();
-						if(size > 0)
-							totalQueuedUploadSize += size;
 					}
 				}
 				text += "Downloads Queued: " + totalQueuedDownload + " (" + totalQueuedDownload + ")\n";
@@ -464,10 +438,10 @@ public class DiagnosticToadlet extends Toadlet {
 
 	private int getPeerStatusCount(PeerNodeStatus[] peerNodeStatuses, int status) {
 		int count = 0;
-		for (int peerIndex = 0, peerCount = peerNodeStatuses.length; peerIndex < peerCount; peerIndex++) {
-			if(!peerNodeStatuses[peerIndex].recordStatus())
+		for (PeerNodeStatus peerNodeStatus: peerNodeStatuses) {
+			if(!peerNodeStatus.recordStatus())
 				continue;
-			if (peerNodeStatuses[peerIndex].getStatusValue() == status) {
+			if (peerNodeStatus.getStatusValue() == status) {
 				count++;
 			}
 		}
@@ -476,16 +450,16 @@ public class DiagnosticToadlet extends Toadlet {
 	
 	private int getCountSeedServers(PeerNodeStatus[] peerNodeStatuses) {
 		int count = 0;
-		for(int peerIndex = 0; peerIndex < peerNodeStatuses.length; peerIndex++) {
-			if(peerNodeStatuses[peerIndex].isSeedServer()) count++;
+		for (PeerNodeStatus peerNodeStatus: peerNodeStatuses) {
+			if(peerNodeStatus.isSeedServer()) count++;
 		}
 		return count;
 	}
 
 	private int getCountSeedClients(PeerNodeStatus[] peerNodeStatuses) {
 		int count = 0;
-		for(int peerIndex = 0; peerIndex < peerNodeStatuses.length; peerIndex++) {
-			if(peerNodeStatuses[peerIndex].isSeedClient()) count++;
+		for (PeerNodeStatus peerNodeStatus: peerNodeStatuses) {
+			if(peerNodeStatus.isSeedClient()) count++;
 		}
 		return count;
 	}

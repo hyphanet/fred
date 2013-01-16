@@ -20,7 +20,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.text.NumberFormat;
-import java.util.Arrays;
 import java.util.HashMap;
 
 import freenet.client.ClientMetadata;
@@ -47,10 +46,10 @@ import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
@@ -208,7 +207,7 @@ public class TextModeClientInterface implements Runnable {
         if(core != null && core.directTMCI != this) {
           sb.append("QUIT - close the socket\r\n");
         }
-        if(n.isTestnetEnabled()) {
+        if(Node.isTestnetEnabled()) {
         	sb.append("WARNING: TESTNET MODE ENABLED. YOU HAVE NO ANONYMITY.\r\n");
         }
         s.write(sb.toString().getBytes());
@@ -264,11 +263,11 @@ public class TextModeClientInterface implements Runnable {
 				}
 				byte[] dataBytes = BucketTools.toByteArray(data);
 				boolean evil = false;
-				for(int i=0;i<dataBytes.length;i++) {
+				for(byte b: dataBytes) {
 					// Look for escape codes
-					if(dataBytes[i] == '\n') continue;
-					if(dataBytes[i] == '\r') continue;
-					if(dataBytes[i] < 32) evil = true;
+					if(b == '\n') continue;
+					if(b == '\r') continue;
+					if(b < 32) evil = true;
 				}
 				if(evil) {
 					System.err.println("Data may contain escape codes which could cause the terminal to run arbitrary commands! Save it to a file if you must with GETFILE:");
@@ -324,11 +323,11 @@ public class TextModeClientInterface implements Runnable {
 					}
 					byte[] dataBytes = BucketTools.toByteArray(data);
 					boolean evil = false;
-					for(int i=0;i<dataBytes.length;i++) {
+					for(byte b: dataBytes) {
 						// Look for escape codes
-						if(dataBytes[i] == '\n') continue;
-						if(dataBytes[i] == '\r') continue;
-						if(dataBytes[i] < 32) evil = true;
+						if(b == '\n') continue;
+						if(b == '\r') continue;
+						if(b < 32) evil = true;
 					}
 					if(evil) {
 						System.err.println("Data may contain escape codes which could cause the terminal to run arbitrary commands! Save it to a file if you must with GETFILE:");
@@ -614,9 +613,9 @@ public class TextModeClientInterface implements Runnable {
         	if(defaultFile == null) {
         		String[] defaultFiles = 
         			new String[] { "index.html", "index.htm", "default.html", "default.htm" };
-        		for(int i=0;i<defaultFiles.length;i++) {
-        			if(bucketsByName.containsKey(defaultFiles[i])) {
-        				defaultFile = defaultFiles[i];
+        		for(String file: defaultFiles) {
+        			if(bucketsByName.containsKey(file)) {
+        				defaultFile = file;
         				break;
         			}        				
         		}
@@ -1164,18 +1163,17 @@ public class TextModeClientInterface implements Runnable {
 	 * Report peer success as boolean
 	 */
 	private boolean disablePeer(String nodeIdentifier) {
-		DarknetPeerNode[] pn = n.peers.getDarknetPeers();
-		for(int i=0;i<pn.length;i++)
+		for(DarknetPeerNode pn: n.peers.getDarknetPeers())
 		{
-			Peer peer = pn[i].getPeer();
+			Peer peer = pn.getPeer();
 			String nodeIpAndPort = "";
 			if(peer != null) {
 				nodeIpAndPort = peer.toString();
 			}
-			String name = pn[i].myName;
-			String identity = pn[i].getIdentityString();
+			String name = pn.myName;
+			String identity = pn.getIdentityString();
 			if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier)) {
-				pn[i].disablePeer();
+				pn.disablePeer();
 				return true;
 			}
 		}
@@ -1187,18 +1185,17 @@ public class TextModeClientInterface implements Runnable {
 	 * Report peer success as boolean
 	 */
 	private boolean enablePeer(String nodeIdentifier) {
-		DarknetPeerNode[] pn = n.peers.getDarknetPeers();
-		for(int i=0;i<pn.length;i++)
+		for(DarknetPeerNode pn: n.peers.getDarknetPeers())
 		{
-			Peer peer = pn[i].getPeer();
+			Peer peer = pn.getPeer();
 			String nodeIpAndPort = "";
 			if(peer != null) {
 				nodeIpAndPort = peer.toString();
 			}
-			String name = pn[i].myName;
-			String identity = pn[i].getIdentityString();
+			String name = pn.myName;
+			String identity = pn.getIdentityString();
 			if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier)) {
-				pn[i].enablePeer();
+				pn.enablePeer();
 				return true;
 			}
 		}
@@ -1210,16 +1207,15 @@ public class TextModeClientInterface implements Runnable {
      * Report peer existence as boolean
      */
     private boolean havePeer(String nodeIdentifier) {
-    	DarknetPeerNode[] pn = n.peers.getDarknetPeers();
-    	for(int i=0;i<pn.length;i++)
+    	for(DarknetPeerNode pn: n.peers.getDarknetPeers())
     	{
-    		Peer peer = pn[i].getPeer();
+    		Peer peer = pn.getPeer();
     		String nodeIpAndPort = "";
     		if(peer != null) {
     			nodeIpAndPort = peer.toString();
     		}
-    		String name = pn[i].myName;
-    		String identity = pn[i].getIdentityString();
+    		String name = pn.myName;
+    		String identity = pn.getIdentityString();
     		if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier))
     		{
     			return true;
@@ -1234,19 +1230,18 @@ public class TextModeClientInterface implements Runnable {
      */
     private boolean removePeer(String nodeIdentifier) {
     	System.out.println("Removing peer from node for: "+nodeIdentifier);
-    	DarknetPeerNode[] pn = n.peers.getDarknetPeers();
-    	for(int i=0;i<pn.length;i++)
+    	for(DarknetPeerNode pn: n.peers.getDarknetPeers())
     	{
-    		Peer peer = pn[i].getPeer();
+    		Peer peer = pn.getPeer();
     		String nodeIpAndPort = "";
     		if(peer != null) {
         		nodeIpAndPort = peer.toString();
     		}
-    		String name = pn[i].myName;
-    		String identity = pn[i].getIdentityString();
+    		String name = pn.myName;
+    		String identity = pn.getIdentityString();
     		if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier))
     		{
-    			n.removePeerConnection(pn[i]);
+    			n.removePeerConnection(pn);
     			return true;
     		}
     	}

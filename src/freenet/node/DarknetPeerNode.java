@@ -41,7 +41,6 @@ import freenet.node.useralerts.DownloadFeedUserAlert;
 import freenet.node.useralerts.N2NTMUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.Base64;
-import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;

@@ -1,11 +1,13 @@
 package freenet.node;
 
 import java.net.InetAddress;
+import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Vector;
 
 import freenet.clients.http.ConnectivityToadlet;
 import freenet.clients.http.ExternalLinkToadlet;
@@ -62,8 +64,8 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			HTMLNode div = new HTMLNode("div");
 			String url = ExternalLinkToadlet.escape(HTMLEncoder.encode(l10n("portForwardHelpURL")));
 			boolean maybeForwarded = true;
-			for(int i=0;i<portsNotForwarded.length;i++) {
-				if(portsNotForwarded[i] < 0) maybeForwarded = false;
+			for(int portNotForwarded: portsNotForwarded) {
+				if(portNotForwarded < 0) maybeForwarded = false;
 			}
 			String keySuffix = maybeForwarded ? "MaybeForwarded" : "NotForwarded";
 			if(portsNotForwarded.length == 1) {
@@ -96,8 +98,8 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				// Only able to connect to directly connected / full cone nodes.
 				return UserAlert.ERROR;
 			if(portsNotForwarded != null) {
-				for(int i=0;i<portsNotForwarded.length;i++)
-					if(portsNotForwarded[i] < 0) return UserAlert.ERROR;
+				for(int portNotForwarded: portsNotForwarded)
+					if(portNotForwarded < 0) return UserAlert.ERROR;
 			}
 			return UserAlert.MINOR;
 		}
@@ -108,8 +110,8 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 					l10n("seriousConnectionProblems") : l10n("connectionProblems");
 			prefix += " ";
 			boolean maybeForwarded = true;
-			for(int i=0;i<portsNotForwarded.length;i++) {
-				if(portsNotForwarded[i] < 0) maybeForwarded = false;
+			for(int portNotForwarded: portsNotForwarded) {
+				if(portNotForwarded < 0) maybeForwarded = false;
 			}
 			String keySuffix = maybeForwarded ? "MaybeForwarded" : "NotForwarded";
 			if(portsNotForwarded.length == 1) {
@@ -127,8 +129,8 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		public String getText() {
 			String url = l10n("portForwardHelpURL");
 			boolean maybeForwarded = true;
-			for(int i=0;i<portsNotForwarded.length;i++) {
-				if(portsNotForwarded[i] < 0) maybeForwarded = false;
+			for(int portNotForwarded: portsNotForwarded) {
+				if(portNotForwarded < 0) maybeForwarded = false;
 			}
 			String keySuffix = maybeForwarded ? "MaybeForwarded" : "NotForwarded";
 			if(portsNotForwarded.length == 1) {
@@ -377,10 +379,8 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		if(d == null) throw new NullPointerException();
 		synchronized(this) {
 			lastDetectAttemptEndedTime = -1;
-			FredPluginIPDetector[] newPlugins = new FredPluginIPDetector[plugins.length+1];
-			System.arraycopy(plugins, 0, newPlugins, 0, plugins.length);
-			newPlugins[plugins.length] = d;
-			plugins = newPlugins;
+			plugins = Arrays.copyOf(plugins, plugins.length+1);
+			plugins[plugins.length-1] = d;
 		}
 		if(logMINOR) Logger.minor(this, "Registering a new plugin : " + d);
 		maybeRun();
@@ -393,14 +393,14 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		DetectorRunner runningDetector;
 		synchronized(this) {
 			int count = 0;
-			for(int i=0;i<plugins.length;i++) {
-				if(plugins[i] == d) count++;
+			for(FredPluginIPDetector plugin: plugins) {
+				if(plugin == d) count++;
 			}
 			if(count == 0) return;
 			FredPluginIPDetector[] newPlugins = new FredPluginIPDetector[plugins.length - count];
 			int x = 0;
-			for(int i=0;i<plugins.length;i++) {
-				if(plugins[i] != d) newPlugins[x++] = plugins[i];
+			for(FredPluginIPDetector plugin: plugins) {
+				if(plugin != d) newPlugins[x++] = plugin;
 			}
 			plugins = newPlugins;
 			// Will be removed when returns in the DetectorRunner
@@ -539,8 +539,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		int recentlyConnected = 0;
 		
 		if(logMINOR) Logger.minor(this, "Checking whether should detect with "+peers.length+" peers and "+conns.length+" conns, counting peers...");
-		for(int i=0;i<peers.length;i++) {
-			PeerNode p = peers[i];
+		for(PeerNode p: peers) {
 			if(p.isDisabled()) continue;
 			// Don't count localhost, LAN addresses.
 			Peer peer = p.getPeer();
@@ -552,8 +551,8 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				if(!IPUtil.isValidAddress(addr, false)) continue;
 			}
 			boolean skip = false;
-			for(int j=0;j<nodeAddrs.length;j++) {
-				if(a.equals(nodeAddrs[j])) {
+			for(FreenetInetAddress nodeAddr: nodeAddrs) {
+				if(a.equals(nodeAddr)) {
 					skip = true;
 					break;
 				}
@@ -654,8 +653,8 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 						// Connected node, on a real internet IP address.
 						// Is it internal?
 						boolean internal = false;
-						for(int j=0;j<nodeAddrs.length;j++) {
-							if(addr.equals(nodeAddrs[j].getAddress(false))) {
+						for(FreenetInetAddress nodeAddr: nodeAddrs) {
+							if(addr.equals(nodeAddr.getAddress(false))) {
 								// Internal
 								internal = true;
 								break;
@@ -692,12 +691,11 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		if(logMINOR) Logger.minor(this, "Detecting...");
 		synchronized(this) {
 			failedRunners.clear();
-			for(int i=0;i<plugins.length;i++) {
-				FredPluginIPDetector plugin = plugins[i];
+			for(FredPluginIPDetector plugin: plugins) {
 				if(runners.containsKey(plugin)) continue;
-				DetectorRunner d = new DetectorRunner(plugins[i]);
+				DetectorRunner d = new DetectorRunner(plugin);
 				runners.put(plugin, d);
-				node.executor.execute(d, "Plugin detector runner for "+plugins[i].getClass());
+				node.executor.execute(d, "Plugin detector runner for "+plugin.getClass());
 			}
 		}
 	}
@@ -729,7 +727,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		public void realRun() {
 			if(logMINOR) Logger.minor(this, "Running plugin detection");
 			try {
-				Vector<DetectedIP> v = new Vector<DetectedIP>();
+				List<DetectedIP> v = new ArrayList<DetectedIP>();
 				DetectedIP[] detected = null;
 				try {
 					detected = plugin.getAddress();
@@ -737,8 +735,8 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 					Logger.error(this, "Caught "+t, t);
 				}
 				if(detected != null) {
-					for(int j=0;j<detected.length;j++)
-						v.add(detected[j]);
+					for(DetectedIP d: detected)
+						v.add(d);
 				}
 				synchronized(IPDetectorPluginManager.this) {
 					lastDetectAttemptEndedTime = System.currentTimeMillis();
@@ -795,10 +793,10 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				int countPortRestricted = 0;
 				int countSymmetric = 0;
 				int countClosed = 0;
-				for(int i=0;i<list.length;i++) {
-					Logger.normal(this, "Detected IP: "+list[i].publicAddress+ " : type "+list[i].natType);
-					System.out.println("Detected IP: "+list[i].publicAddress+ " : type "+list[i].natType);
-					switch(list[i].natType) {
+				for(DetectedIP d: list) {
+					Logger.normal(this, "Detected IP: "+d.publicAddress+ " : type "+d.natType);
+					System.out.println("Detected IP: "+d.publicAddress+ " : type "+d.natType);
+					switch(d.natType) {
 					case DetectedIP.FULL_CONE_NAT:
 						countFullCone++;
 						break;
@@ -880,17 +878,15 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	
 	private SimpleUserAlert noConnectivityAlert;
 
-	public boolean isEmpty() {
+	public synchronized boolean isEmpty() {
 		return plugins.length == 0;
 	}
 
 	public void registerPortForwardPlugin(FredPluginPortForward forward) {
 		if(forward == null) throw new NullPointerException();
 		synchronized(this) {
-			FredPluginPortForward[] newForwardPlugins = new FredPluginPortForward[portForwardPlugins.length+1];
-			System.arraycopy(portForwardPlugins, 0, newForwardPlugins, 0, portForwardPlugins.length);
-			newForwardPlugins[portForwardPlugins.length] = forward;
-			portForwardPlugins = newForwardPlugins;
+			portForwardPlugins = Arrays.copyOf(portForwardPlugins, portForwardPlugins.length+1);
+			portForwardPlugins[portForwardPlugins.length-1] = forward;
 		}
 		if(logMINOR) Logger.minor(this, "Registering a new port forward plugin : " + forward);
 		forward.onChangePublicPorts(node.getPublicInterfacePorts(), this);
@@ -902,14 +898,14 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	public void unregisterPortForwardPlugin(FredPluginPortForward forward) {
 		synchronized(this) {
 			int count = 0;
-			for(int i=0;i<portForwardPlugins.length;i++) {
-				if(portForwardPlugins[i] == forward) count++;
+			for(FredPluginPortForward portForwardPlugin: portForwardPlugins) {
+				if(portForwardPlugin == forward) count++;
 			}
 			if(count == 0) return;
 			FredPluginPortForward[] newPlugins = new FredPluginPortForward[portForwardPlugins.length - count];
 			int x = 0;
-			for(int i=0;i<portForwardPlugins.length;i++) {
-				if(portForwardPlugins[i] != forward) newPlugins[x++] = portForwardPlugins[i];
+			for(FredPluginPortForward portForwardPlugin: portForwardPlugins) {
+				if(portForwardPlugin != forward) newPlugins[x++] = portForwardPlugin;
 			}
 			portForwardPlugins = newPlugins;
 		}
@@ -920,8 +916,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		synchronized(this) {
 			plugins = portForwardPlugins;
 		}
-		for(int i=0;i<plugins.length;i++) {
-			final FredPluginPortForward plugin = plugins[i];
+		for(final FredPluginPortForward plugin: plugins) {
 			node.executor.execute(new Runnable() {
 
 				@Override
@@ -933,7 +928,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 					}
 				}
 				
-			}, "Notify "+plugins[i]+" of ports list change");
+			}, "Notify "+plugin+" of ports list change");
 		}
 	}
 

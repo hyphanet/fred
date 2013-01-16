@@ -46,7 +46,6 @@ import freenet.store.FreenetStore;
 import freenet.store.KeyCollisionException;
 import freenet.store.StorableBlock;
 import freenet.store.StoreCallback;
-import freenet.support.BloomFilter;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
@@ -160,8 +159,9 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		fullKeyLength = callback.fullKeyLength();
 		dataBlockLength = callback.dataLength();
 
-		hdPadding = ((headerBlockLength + dataBlockLength) % 512 == 0 ? 0
-		        : 512 - (headerBlockLength + dataBlockLength) % 512);
+		hdPadding =
+			((headerBlockLength + dataBlockLength + 512 - 1) & ~(512-1)) -
+			(headerBlockLength + dataBlockLength);
 
 		this.random = random;
 		storeSize = maxKeys;
@@ -675,10 +675,8 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 			// header/data will be overwritten in encrypt()/decrypt(),
 			// let's make a copy here
-			this.header = new byte[headerBlockLength];
-			System.arraycopy(header, 0, this.header, 0, headerBlockLength);
-			this.data = new byte[dataBlockLength];
-			System.arraycopy(data, 0, this.data, 0, dataBlockLength);
+			this.header = Arrays.copyOf(header, headerBlockLength);
+			this.data = Arrays.copyOf(data, dataBlockLength);
 
 			if (OPTION_SAVE_PLAINKEY) {
 				flag |= ENTRY_FLAG_PLAINKEY;
@@ -1068,10 +1066,8 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				ByteBuffer bf = ByteBuffer.wrap(b);
 
 				// start from next 4KB boundary => align to x86 page size
-				if (oldMetaLen % 4096 != 0)
-					oldMetaLen += 4096 - (oldMetaLen % 4096);
-				if (currentHdLen % 4096 != 0)
-					currentHdLen += 4096 - (currentHdLen % 4096);
+				oldMetaLen = (oldMetaLen + 4096 - 1) & ~(4096 - 1);
+				currentHdLen = (currentHdLen + 4096 - 1) & ~(4096 - 1);
 
 				storeFileOffsetReady = -1;
 
@@ -1210,12 +1206,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 						flags |= FLAG_REBUILD_BLOOM;
 
 					try {
-						int bloomFilterK = raf.readInt();
-						// Ignore
-					} catch (IOException e) {
-						// Ignore
-					}
-					try {
+						raf.readInt(); // bloomFilterK
 						raf.readInt(); // reserved
 						raf.readLong(); // reserved
 						long w = raf.readLong();
@@ -1347,10 +1338,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			if (shutdown)
 				return;
 
-			int loop = 0;
 			while (!shutdown) {
-				loop++;
-
 				cleanerLock.lock();
 				try {
 					long _prevStoreSize;
@@ -1530,8 +1518,6 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			Logger.normal(this, "Start rebuilding slot filter (" + name + ")");
 			
 			BatchProcessor<T> rebuildBloomProcessor = new BatchProcessor<T>() {
-				int optimialK;
-				
 				@Override
 				public void init() {
 					configLock.writeLock().lock();

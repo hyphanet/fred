@@ -40,8 +40,6 @@ class CSSTokenizerFilter {
 	private Reader r;
 	Writer w = null;
 	FilterCallback cb;
-	// FIXME use this
-	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
 	private final String passedCharset;
 	private String detectedCharset;
@@ -1492,9 +1490,7 @@ class CSSTokenizerFilter {
 		int important = checkImportant(words);
 		if(important > 0) {
 			if(words.length == important) return true; // Eh? !important on its own!
-			ParsedWord[] newWords = new ParsedWord[words.length-important];
-			System.arraycopy(words, 0, newWords, 0, newWords.length);
-			words = newWords;
+			words = Arrays.copyOf(words, words.length-important);
 		}
 		return obj.checkValidity(media, elements, words, cb);
 
@@ -1806,7 +1802,7 @@ class CSSTokenizerFilter {
 		String defaultMedia="screen";
 		String[] currentMedia=new String[] {defaultMedia};
 		String propertyName="",propertyValue="";
-		boolean ignoreElementsS1=false,ignoreElementsS2=false,ignoreElementsS3=false,closeIgnoredS1=false,closeIgnoredS2=false;
+		boolean ignoreElementsS1=false,ignoreElementsS2=false,ignoreElementsS3=false, closeIgnoredS2=false;
 		int x;
 		char c=0,prevc=0;
 		boolean s2Comma=false;
@@ -2126,7 +2122,6 @@ class CSSTokenizerFilter {
 					}
 					isState1Present=false;
 					ignoreElementsS1 = false;
-					closeIgnoredS1 = false;
 					buffer.setLength(0);
 					charsetPossible=false;
 					break;
@@ -2178,7 +2173,6 @@ class CSSTokenizerFilter {
 				case '\r':
 					if(prevc != '\\') {
 						ignoreElementsS1 = true;
-						closeIgnoredS1 = true;
 						currentState = STATE1;
 						break;
 					} else {
@@ -3031,7 +3025,6 @@ class CSSTokenizerFilter {
 		if(logDEBUG) Logger.debug(CSSTokenizerFilter.class, "Splitting \""+input+"\" allowCommaDelimiters="+allowCommaDelimiters);
 		ArrayList<ParsedWord> words = new ArrayList<ParsedWord>();
 		ParsedWord lastWord = null;
-		char prevc = 0;
 		char c = 0;
 		// ", ' or 0 (not in string)
 		char stringchar = 0;
@@ -3051,7 +3044,6 @@ class CSSTokenizerFilter {
 		// Brackets prevent tokenisation, see e.g. rgb().
 		int bracketCount = 0;
 		for(int i=0;i<input.length();i++) {
-			prevc = c;
 			c = input.charAt(i);
 			if(stringchar == 0) {
 				if(eatLF && c == '\n') {
@@ -3592,7 +3584,7 @@ class CSSTokenizerFilter {
 				String s = cb.processURI(w, null);
 				if(s == null || s.equals("")) return false;
 				if(s.equals(w)) return true;
-				if(logDEBUG) Logger.minor(CSSTokenizerFilter.class, "New url: \""+s+"\" from \""+w+"\"");
+				if(logDEBUG) Logger.debug(CSSTokenizerFilter.class, "New url: \""+s+"\" from \""+w+"\"");
 				word.setNewURL(s);
 				return true;
 			}
@@ -3843,13 +3835,11 @@ class CSSTokenizerFilter {
 					for(;j<=words.length;j++)
 					{
 						if(logDEBUG) Logger.debug(this, "2Making recursiveDoubleBarVerifier to consume "+j+" words");
-						ParsedWord[] partToPassToDB = new ParsedWord[j];
-						System.arraycopy(words, 0, partToPassToDB, 0, j);
+						ParsedWord[] partToPassToDB = Arrays.copyOf(words, j);
 						if(logDEBUG) Logger.debug(this, "3Calling recursiveDoubleBarVerifier with "+firstPart+" "+CSSPropertyVerifier.toString(partToPassToDB));
 						if(recursiveDoubleBarVerifier(firstPart,partToPassToDB,cb)) //This function is written to verify || operator.
 						{
-							ParsedWord[] partToPass = new ParsedWord[words.length-j];
-							System.arraycopy(words, j, partToPass, 0, words.length-j);
+							ParsedWord[] partToPass = Arrays.copyOfRange(words, j, words.length);
 							if(logDEBUG) Logger.debug(this, "4recursiveDoubleBarVerifier true calling itself with "+secondPart+CSSPropertyVerifier.toString(partToPass));
 							if(recursiveParserExpressionVerifier(secondPart,partToPass,cb))
 								return true;
@@ -3868,8 +3858,7 @@ class CSSTokenizerFilter {
 						boolean result=CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(words[0], cb);
 						if(result)
 						{
-							ParsedWord[] partToPass = new ParsedWord[words.length-1];
-							System.arraycopy(words, 1, partToPass, 0, words.length-1);
+							ParsedWord[] partToPass = Arrays.copyOfRange(words, 1, words.length);
 							if(logDEBUG) Logger.debug(this, "8First part is true. partToPass="+CSSPropertyVerifier.toString(partToPass));
 							if(recursiveParserExpressionVerifier(secondPart,partToPass, cb))
 								return true;
@@ -3887,8 +3876,7 @@ class CSSTokenizerFilter {
 						boolean result= CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(words[0], cb);
 						if(result)
 						{
-							ParsedWord[] partToPass = new ParsedWord[words.length-1];
-							System.arraycopy(words, 1, partToPass, 0, words.length-1);
+							ParsedWord[] partToPass = Arrays.copyOfRange(words, 1, words.length);
 							if(recursiveParserExpressionVerifier(secondPart,partToPass, cb))
 								return true;
 						}
@@ -4009,8 +3997,7 @@ class CSSTokenizerFilter {
 			}
 
 			for(int i=tokensCanBeGivenLowerLimit; i<=tokensCanBeGivenUpperLimit && i <= valueParts.length;i++) {
-				ParsedWord[] before = new ParsedWord[i];
-				System.arraycopy(valueParts, 0, before, 0, i);
+				ParsedWord[] before = Arrays.copyOf(valueParts, i);
 				if(CSSTokenizerFilter.auxilaryVerifiers[verifierIndex].checkValidity(before, cb)) {
 					if(logDEBUG) Logger.debug(this, "first "+i+" tokens using "+verifierIndex+" match "+toString(before));
 					if(i == valueParts.length && lowerLimit <= 1) {
@@ -4023,8 +4010,7 @@ class CSSTokenizerFilter {
 						}
 					} else if(i == valueParts.length && lowerLimit > 1)
 						return false;
-					ParsedWord[] after = new ParsedWord[valueParts.length-i];
-					System.arraycopy(valueParts, i, after, 0, valueParts.length-i);
+					ParsedWord[] after = Arrays.copyOfRange(valueParts, i, valueParts.length);
 					if(logDEBUG) Logger.debug(this, "rest of tokens: "+toString(after));
 					if(recursiveVariableOccuranceVerifier(verifierIndex, after, lowerLimit-1, upperLimit-1, tokensCanBeGivenLowerLimit, tokensCanBeGivenUpperLimit, secondPart, cb))
 						return true;
@@ -4099,8 +4085,7 @@ class CSSTokenizerFilter {
 						if(result)
 						{
 							// Check the remaining words...
-							ParsedWord[] valueToPass = new ParsedWord[words.length-j-1];
-							System.arraycopy(words, j+1, valueToPass, 0, words.length-j-1);
+							ParsedWord[] valueToPass = Arrays.copyOfRange(words, j+1, words.length);
 							if(valueToPass.length == 0) {
 								// We have matched everything against the subset we have considered so far.
 								if(logDEBUG) Logger.debug(this, "14opt No more words to pass, have matched everything");
@@ -4190,7 +4175,6 @@ class CSSTokenizerFilter {
 			}
 
 			if(value[0] instanceof ParsedAttr) {
-				ParsedAttr attr = (ParsedAttr) value[0];
 				return true;
 			}
 

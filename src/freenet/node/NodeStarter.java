@@ -5,9 +5,7 @@ package freenet.node;
 
 import java.io.File;
 import java.io.IOException;
-import java.security.Security;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.tanukisoftware.wrapper.WrapperListener;
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -22,10 +20,10 @@ import freenet.crypt.SSL;
 import freenet.crypt.Yarrow;
 import freenet.support.Executor;
 import freenet.support.Logger;
-import freenet.support.PooledExecutor;
-import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
+import freenet.support.PooledExecutor;
+import freenet.support.SimpleFieldSet;
 import freenet.support.io.NativeThread;
 
 /**

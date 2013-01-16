@@ -3,8 +3,6 @@ package freenet.clients.http.wizardsteps;
 import freenet.config.Config;
 import freenet.config.ConfigException;
 import freenet.config.InvalidConfigValueException;
-import freenet.config.SubConfig;
-import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
 import freenet.pluginmanager.FredPluginBandwidthIndicator;
 import freenet.support.HTMLNode;

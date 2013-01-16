@@ -278,7 +278,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 				else if(!tmp.canRead() || !tmp.isFile())
 					throw new InvalidConfigValueException(l10n("cssOverrideCantRead", "filename", tmp.toString()));
 				File parent = tmp.getParentFile();
-				String s = parent.toString();
 				// Basic sanity check.
 				// Prevents user from specifying root dir.
 				// They can still shoot themselves in the foot, but only when developing themes/using custom themes.
@@ -926,10 +925,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			}
 		}
 
-		Iterator<ToadletElement> i = toadlets.iterator();
-		while(i.hasNext()) {
-			ToadletElement te = i.next();
-						
+		for(ToadletElement te: toadlets) {
 			if(path.startsWith(te.prefix))
 					return te.t;
 			if(te.prefix.length() > 0 && te.prefix.charAt(te.prefix.length()-1) == '/') {

@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
 import java.util.HashMap;
-import java.util.Iterator;
 
 import com.db4o.ObjectContainer;
 
@@ -24,6 +23,7 @@ import freenet.client.async.ManifestElement;
 import freenet.client.async.ManifestPutter;
 import freenet.client.async.SimpleManifestPutter;
 import freenet.client.async.DefaultManifestPutter;
+import freenet.client.async.TooManyFilesInsertException;
 import freenet.keys.FreenetURI;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -66,7 +66,7 @@ public class ClientPutDir extends ClientPutBase {
 	}
 
 	public ClientPutDir(FCPConnectionHandler handler, ClientPutDirMessage message, 
-			HashMap<String, Object> manifestElements, boolean wasDiskPut, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MalformedURLException {
+			HashMap<String, Object> manifestElements, boolean wasDiskPut, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MalformedURLException, TooManyFilesInsertException {
 		super(checkEmptySSK(message.uri, message.targetFilename != null ? message.targetFilename : "site", server.core.clientContext), message.identifier, message.verbosity, null,
 				handler, message.priorityClass, message.persistenceType, message.clientToken,
 				message.global, message.getCHKOnly, message.dontCompress, message.localRequestOnly, message.maxRetries, message.earlyEncode, message.canWriteClientCache, message.forkOnCacheable, message.compressorDescriptor, message.extraInsertsSingleBlock, message.extraInsertsSplitfileHeaderBlock, message.realTimeFlag, message.compatibilityMode, server, container);
@@ -99,9 +99,10 @@ public class ClientPutDir extends ClientPutBase {
 	/**
 	 * Fproxy
 	*	Puts a disk dir
+	 * @throws TooManyFilesInsertException 
 	 * @throws InsertException 
 	*/
-	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, File dir, String defaultName, boolean allowUnreadableFiles, boolean includeHiddenFiles, boolean global, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, boolean realTimeFlag, byte[] overrideSplitfileCryptoKey, FCPServer server, ObjectContainer container) throws FileNotFoundException, IdentifierCollisionException, MalformedURLException {
+	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, File dir, String defaultName, boolean allowUnreadableFiles, boolean includeHiddenFiles, boolean global, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, boolean realTimeFlag, byte[] overrideSplitfileCryptoKey, FCPServer server, ObjectContainer container) throws FileNotFoundException, IdentifierCollisionException, MalformedURLException, TooManyFilesInsertException {
 		super(checkEmptySSK(uri, "site", server.core.clientContext), identifier, verbosity , null, null, client, priorityClass, persistenceType, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, realTimeFlag, null, InsertContext.CompatibilityMode.COMPAT_CURRENT, server, container);
 		wasDiskPut = true;
 		this.overrideSplitfileCryptoKey = overrideSplitfileCryptoKey;
@@ -120,7 +121,7 @@ public class ClientPutDir extends ClientPutBase {
 		if(logMINOR) Logger.minor(this, "Putting dir "+identifier+" : "+priorityClass);
 	}
 
-	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, HashMap<String, Object> elements, String defaultName, boolean global, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, boolean realTimeFlag, byte[] overrideSplitfileCryptoKey, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MalformedURLException {
+	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, HashMap<String, Object> elements, String defaultName, boolean global, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, boolean realTimeFlag, byte[] overrideSplitfileCryptoKey, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MalformedURLException, TooManyFilesInsertException {
 		super(checkEmptySSK(uri, "site", server.core.clientContext), identifier, verbosity , null, null, client, priorityClass, persistenceType, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, realTimeFlag, null, InsertContext.CompatibilityMode.COMPAT_CURRENT, server, container);
 		wasDiskPut = false;
 		this.overrideSplitfileCryptoKey = overrideSplitfileCryptoKey;
@@ -185,7 +186,7 @@ public class ClientPutDir extends ClientPutBase {
 		return map;
 	}
 	
-	private void makePutter(ObjectContainer container, ClientContext context) {
+	private void makePutter(ObjectContainer container, ClientContext context) throws TooManyFilesInsertException {
 		switch(manifestPutterType) {
 		case ManifestPutter.MANIFEST_DEFAULTPUTTER:
 			putter = new DefaultManifestPutter(this,
@@ -263,9 +264,7 @@ public class ClientPutDir extends ClientPutBase {
 	@SuppressWarnings("unchecked")
 	private void freeData(HashMap<String, Object> manifestElements, ObjectContainer container) {
 		if(logMINOR) Logger.minor(this, "freeData() inner on "+this+" persistence type = "+persistenceType+" size = "+manifestElements.size());
-		Iterator<Object> i = manifestElements.values().iterator();
-		while(i.hasNext()) {
-			Object o = i.next();
+		for(Object o: manifestElements.values()) {
 			if(o instanceof HashMap) {
 				freeData((HashMap<String, Object>) o, container);
 			} else {
@@ -357,7 +356,11 @@ public class ClientPutDir extends ClientPutBase {
 				cache.updateStarted(identifier, false);
 			}
 		}
-		makePutter(container, context);
+		try {
+			makePutter(container, context);
+		} catch (TooManyFilesInsertException e) {
+			this.onFailure(new InsertException(e), null, container);
+		}
 		start(container, context);
 		return true;
 	}

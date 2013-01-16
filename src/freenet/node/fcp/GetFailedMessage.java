@@ -11,11 +11,10 @@ import freenet.client.FailureCodeTracker;
 import freenet.client.FetchException;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
-import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
+import freenet.support.SimpleFieldSet;
 
 public class GetFailedMessage extends FCPMessage {
 

@@ -1,13 +1,13 @@
 package freenet.crypt;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.Constructor;
 import java.security.Provider;
 import java.security.Security;
-import javax.crypto.KeyAgreement;
 import java.security.Signature;
+
+import javax.crypto.KeyAgreement;
 
 import freenet.support.Logger;
 

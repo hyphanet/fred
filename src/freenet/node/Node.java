@@ -25,10 +25,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.SecureRandom;
-import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -72,7 +70,6 @@ import freenet.crypt.ECDH;
 import freenet.crypt.EncryptingIoAdapter;
 import freenet.crypt.RandomSource;
 import freenet.crypt.Yarrow;
-import freenet.crypt.ciphers.Rijndael;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.FreenetInetAddress;
@@ -258,8 +255,6 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 			ramstore.clear();
 		} else if(store instanceof SaltedHashFreenetStore) {
-			SaltedHashFreenetStore<T> saltstore = (SaltedHashFreenetStore<T>) store;
-			// FIXME
 			Logger.error(this, "Migrating from from a saltedhashstore not fully supported yet: will not keep old keys");
 		}
 	}
@@ -2966,9 +2961,7 @@ public class Node implements TimeSkewDetectorCallback {
 		System.err.println("DUMPING DATABASE CONTENTS:");
 		ObjectSet<Object> contents = database.queryByExample(new Object());
 		Map<String,Integer> map = new HashMap<String, Integer>();
-		Iterator<Object> i = contents.iterator();
-		while(i.hasNext()) {
-			Object o = i.next();
+		for(Object o: contents) {
 			String name = o.getClass().getName();
 			if((map.get(name)) != null) {
 				map.put(name, map.get(name)+1);
@@ -3719,9 +3712,7 @@ public class Node implements TimeSkewDetectorCallback {
 				@Override
 				public void run() {
 					freenet.support.Logger.OSThread.logPID(this);
-					PeerNode[] nodes = peers.myPeers();
-					for(int i = 0; i < nodes.length; i++) {
-						PeerNode pn = nodes[i];
+					for(PeerNode pn: peers.myPeers()) {
 						pn.updateVersionRoutablity();
 					}
 				}
@@ -3743,7 +3734,7 @@ public class Node implements TimeSkewDetectorCallback {
 		String osVersion = System.getProperty("os.version");
 
 		boolean isOpenJDK = false;
-		boolean isOracle = false;
+		//boolean isOracle = false;
 
 		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM name: "+jvmName+", JVM version: "+javaVersion+", OS name: "+osName+", OS version: "+osVersion);
 
@@ -3755,7 +3746,7 @@ public class Node implements TimeSkewDetectorCallback {
 		//Should have no effect because if a user has downloaded a new enough file for Oracle to have changed the name these bugs shouldn't apply.
 		//Still, one never knows and this code might be extended to cover future bugs.
 		if((!isOpenJDK) && (jvmVendor.startsWith("Sun ") || jvmVendor.startsWith("Oracle ")) || (jvmVendor.startsWith("The FreeBSD Foundation") && (jvmSpecVendor.startsWith("Sun ") || jvmSpecVendor.startsWith("Oracle "))) || (jvmVendor.startsWith("Apple "))) {
-			isOracle = true;
+			//isOracle = true;
 			// Sun/Oracle bugs
 
 			// Spurious OOMs
@@ -4743,24 +4734,22 @@ public class Node implements TimeSkewDetectorCallback {
 	 * Return a peer of the node given its ip and port, name or identity, as a String
 	 */
 	public PeerNode getPeerNode(String nodeIdentifier) {
-		PeerNode[] pn = peers.myPeers();
-		for(int i=0;i<pn.length;i++)
-		{
-			Peer peer = pn[i].getPeer();
+		for(PeerNode pn: peers.myPeers()) {
+			Peer peer = pn.getPeer();
 			String nodeIpAndPort = "";
 			if(peer != null) {
 				nodeIpAndPort = peer.toString();
 			}
-			String identity = pn[i].getIdentityString();
-			if(pn[i] instanceof DarknetPeerNode) {
-				DarknetPeerNode dpn = (DarknetPeerNode) pn[i];
+			String identity = pn.getIdentityString();
+			if(pn instanceof DarknetPeerNode) {
+				DarknetPeerNode dpn = (DarknetPeerNode) pn;
 				String name = dpn.myName;
 				if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier)) {
-					return pn[i];
+					return pn;
 				}
 			} else {
 				if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier)) {
-					return pn[i];
+					return pn;
 				}
 			}
 		}
@@ -4816,10 +4805,9 @@ public class Node implements TimeSkewDetectorCallback {
 	// using the PacketSender/Ticker. Would save a few threads.
 
 	public int getNumARKFetchers() {
-		PeerNode[] p = peers.myPeers();
 		int x = 0;
-		for(int i=0;i<p.length;i++) {
-			if(p[i].isFetchingARK()) x++;
+		for(PeerNode p: peers.myPeers()) {
+			if(p.isFetchingARK()) x++;
 		}
 		return x;
 	}
@@ -5192,9 +5180,7 @@ public class Node implements TimeSkewDetectorCallback {
 			enteredPassword = true;
 			if(!clientCacheAwaitingPassword) {
 				if(inFirstTimeWizard) {
-					byte[] copied = new byte[keys.clientCacheMasterKey.length];
-					System.arraycopy(keys.clientCacheMasterKey, 0, copied, 0, copied.length);
-					cachedClientCacheKey = copied;
+					cachedClientCacheKey = keys.clientCacheMasterKey.clone();
 					// Wipe it if haven't specified datastore size in 10 minutes.
 					ticker.queueTimedJob(new Runnable() {
 						@Override

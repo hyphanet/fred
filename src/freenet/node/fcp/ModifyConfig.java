@@ -42,26 +42,22 @@ public class ModifyConfig extends FCPMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "ModifyConfig requires full access", identifier, false);
 		}
 		Config config = node.config;
-		SubConfig[] sc = config.getConfigs();
 		
 		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		
-		for(int i=0; i<sc.length ; i++){
-			Option<?>[] o = sc[i].getOptions();
-			String prefix = sc[i].getPrefix();
-			String configName;
-			
-			for(int j=0; j<o.length; j++){
-				configName=o[j].getName();
+		for(SubConfig sc: config.getConfigs()) {
+			String prefix = sc.getPrefix();
+			for(Option<?> o: sc.getOptions()) {
+				String configName=o.getName();
 				if(logMINOR) Logger.minor(this, "Setting "+prefix+ '.' +configName);
 				
 				// we ignore unreconized parameters 
 				String s = fs.get(prefix+ '.' +configName);
 				if(s != null) {
-					if(!(o[j].getValueString().equals(s))){
+					if(!(o.getValueString().equals(s))){
 						if(logMINOR) Logger.minor(this, "Setting "+prefix+ '.' +configName+" to "+s);
 						try{
-							o[j].setValue(s);
+							o.setValue(s);
 						}catch(Exception e){
 							// Bad values silently fail from an FCP perspective, but the FCP client can tell if a change took by comparing ConfigData messages before and after
 							Logger.error(this, "Caught "+e, e);

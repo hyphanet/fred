@@ -387,12 +387,12 @@ public abstract class BaseFileBucket implements Bucket {
 				}
 
 				if (candidates != null) {
-					for (int i = 0; i < candidates.length; i++) {
-						File path = new File(candidates[i]);
+					for (String candidate: candidates) {
+						File path = new File(candidate);
 						if (path.exists()
 							&& path.isDirectory()
 							&& path.canWrite()) {
-							tempDir = candidates[i];
+							tempDir = candidate;
 							break;
 						}
 					}
@@ -443,12 +443,12 @@ public abstract class BaseFileBucket implements Bucket {
 		
 		if(toClose != null) {
 			Logger.error(this, "Streams open free()ing "+this+" : "+Arrays.toString(toClose), new Exception("debug"));
-			for(int i=0;i<toClose.length;i++) {
+			for(Object strm: toClose) {
 				try {
-					if(toClose[i] instanceof FileBucketOutputStream) {
-						((FileBucketOutputStream) toClose[i]).close();
+					if(strm instanceof FileBucketOutputStream) {
+						((FileBucketOutputStream) strm).close();
 					} else {
-						((FileBucketInputStream) toClose[i]).close();
+						((FileBucketInputStream) strm).close();
 					}
 				} catch (IOException e) {
 					Logger.error(this, "Caught closing stream in free(): "+e, e);

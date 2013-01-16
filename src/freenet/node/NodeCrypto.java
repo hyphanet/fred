@@ -325,15 +325,15 @@ public class NodeCrypto {
 			// IP addresses
 			Peer[] ips = detector.detectPrimaryPeers();
 			if(ips != null) {
-				for(int i=0;i<ips.length;i++)
-					fs.putAppend("physical.udp", ips[i].toString()); // Keep; important that node know all our IPs
+				for(Peer ip: ips)
+					fs.putAppend("physical.udp", ip.toString()); // Keep; important that node know all our IPs
 			}
 		} // Don't include IPs for anonymous initiator.
 		// Negotiation types
 		fs.putSingle("version", Version.getVersionString()); // Keep, vital that peer know our version. For example, some types may be sent in different formats to different node versions (e.g. Peer).
 		if(!forAnonInitiator)
 			fs.putSingle("lastGoodVersion", Version.getLastGoodVersionString()); // Also vital
-		if(node.isTestnetEnabled()) {
+		if(Node.isTestnetEnabled()) {
 			fs.put("testnet", true);
 			//fs.put("testnetPort", node.testnetHandler.getPort()); // Useful, saves a lot of complexity
 		}
@@ -508,6 +508,8 @@ public class NodeCrypto {
 	public boolean allowConnection(PeerNode pn, FreenetInetAddress addr) {
     	if(config.oneConnectionPerAddress()) {
     		// Disallow multiple connections to the same address
+			// TODO: this is inadequate for IPv6, should be replaced by
+			// check for "same /64 subnet" [configurable] instead of exact match
     		if(node.peers.anyConnectedPeerHasAddress(addr, pn) && !detector.includes(addr)
     				&& addr.isRealInternetAddress(false, false, false)) {
     			Logger.normal(this, "Not sending handshake packets to "+addr+" for "+pn+" : Same IP address as another node");
@@ -561,9 +563,7 @@ public class NodeCrypto {
 
 	public PeerNode[] getAnonSetupPeerNodes() {
 		ArrayList<PeerNode> v = new ArrayList<PeerNode>();
-		PeerNode[] peers = node.peers.myPeers();
-		for(int i=0;i<peers.length;i++) {
-			PeerNode pn = peers[i];
+		for(PeerNode pn: node.peers.myPeers()) {
 			if(pn.handshakeUnknownInitiator() && pn.getOutgoingMangler() == packetMangler)
 				v.add(pn);
 		}

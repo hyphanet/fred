@@ -1,15 +1,12 @@
 package freenet.clients.http.wizardsteps;
 
-import freenet.clients.http.*;
+import freenet.clients.http.FirstTimeWizardToadlet;
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
 import freenet.node.SecurityLevels;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
-import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
-
-import java.net.URI;
 
 /**
  * This step allows the user to choose between security levels. If opennet is disabled, only high and maximum are shown.

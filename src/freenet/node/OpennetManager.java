@@ -19,6 +19,7 @@ import java.util.EnumMap;
 import java.util.Enumeration;
 import java.util.Map;
 
+import freenet.crypt.Util;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
@@ -41,10 +42,9 @@ import freenet.support.HTMLNode;
 import freenet.support.LRUQueue;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
-import freenet.support.SizeUtil;
-import freenet.support.TimeSortedHashtable;
 import freenet.support.Logger.LogLevel;
+import freenet.support.SimpleFieldSet;
+import freenet.support.TimeSortedHashtable;
 import freenet.support.io.ByteArrayRandomAccessThing;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
@@ -226,8 +226,8 @@ public class OpennetManager {
 				return pn1.hashCode - pn2.hashCode;
 			}
 		});
-		for(int i=0;i<nodes.length;i++)
-			peersLRU.push(nodes[i]);
+		for(OpennetPeerNode opn: nodes)
+			peersLRU.push(opn);
 		announcer = (enableAnnouncement ? new Announcer(this) : null);
 		if(logMINOR) {
 			Logger.minor(this, "My full compressed ref: "+crypto.myCompressedFullRef().length);
@@ -275,14 +275,14 @@ public class OpennetManager {
 		// Read contents
 		String[] udp = fs.getAll("physical.udp");
 		if((udp != null) && (udp.length > 0)) {
-			for(int i=0;i<udp.length;i++) {
+			for(String u: udp) {
 				// Just keep the first one with the correct port number.
 				Peer p;
 				try {
-					p = new Peer(udp[i], false, true);
+					p = new Peer(u, false, true);
 				} catch (HostnameSyntaxException e) {
-					Logger.error(this, "Invalid hostname or IP Address syntax error while loading opennet peer node reference: "+udp[i]);
-					System.err.println("Invalid hostname or IP Address syntax error while loading opennet peer node reference: "+udp[i]);
+					Logger.error(this, "Invalid hostname or IP Address syntax error while loading opennet peer node reference: "+u);
+					System.err.println("Invalid hostname or IP Address syntax error while loading opennet peer node reference: "+u);
 					continue;
 				} catch (PeerParseException e) {
 					throw (IOException)new IOException().initCause(e);
@@ -443,6 +443,11 @@ public class OpennetManager {
 					any = true;
 					if(crypto.allowConnection(nodeToAddNow, addr))
 						okay = true;
+					else {
+						// if NodeCrypto reject *any* address, reject peer
+						okay = false;
+						break;
+					}
 				}
 			} else {
 				Logger.error(this, "Peer does not have any IP addresses???");
@@ -690,8 +695,7 @@ public class OpennetManager {
 			if(addingNode) map = new EnumMap<NOT_DROP_REASON, Integer>(NOT_DROP_REASON.class);
 			// Do we want it?
 			OpennetPeerNode[] peers = peersLRU.toArrayOrdered(new OpennetPeerNode[peersLRU.size()]);
-			for(int i=0;i<peers.length;i++) {
-				OpennetPeerNode pn = peers[i];
+			for(OpennetPeerNode pn: peers) {
 				if(pn == null) continue;
 				boolean tooOld = pn.isUnroutableOlderVersion();
 				if(pn.isConnected() && tooOld) {
@@ -729,8 +733,7 @@ public class OpennetManager {
 				return null;
 			}
 			if(map != null) map.clear();
-			for(int i=0;i<peers.length;i++) {
-				OpennetPeerNode pn = peers[i];
+			for(OpennetPeerNode pn: peers) {
 				if(pn == null) continue;
 				boolean tooOld = pn.isUnroutableOlderVersion();
 				if(pn.isConnected() && tooOld) {
@@ -869,8 +872,8 @@ public class OpennetManager {
 			Logger.error(this, "Noderef too big: "+noderef.length+" bytes");
 			return false;
 		}
-		node.fastWeakRandom.nextBytes(padded); // FIXME implement nextBytes(buf,offset, length)
 		System.arraycopy(noderef, 0, padded, 0, noderef.length);
+		Util.randomBytes(node.fastWeakRandom, padded, noderef.length, padded.length-noderef.length);
 		long xferUID = node.random.nextLong();
 		Message msg2 = isReply ? DMT.createFNPOpennetConnectReplyNew(uid, xferUID, noderef.length, padded.length) :
 			DMT.createFNPOpennetConnectDestinationNew(uid, xferUID, noderef.length, padded.length);
@@ -913,8 +916,8 @@ public class OpennetManager {
 	public void finishSentAnnouncementRequest(PeerNode peer, byte[] noderef, ByteCounter ctr,
 			long xferUID) throws NotConnectedException {
 		byte[] padded = new byte[paddedSize(noderef.length)];
-		node.fastWeakRandom.nextBytes(padded); // FIXME implement nextBytes(buf,offset, length)
 		System.arraycopy(noderef, 0, padded, 0, noderef.length);
+		Util.randomBytes(node.fastWeakRandom, padded, noderef.length, padded.length-noderef.length);
 		innerSendOpennetRef(xferUID, padded, peer, ctr, null);
 	}
 
@@ -1111,8 +1114,7 @@ public class OpennetManager {
 			}
 			return null;
 		}
-		byte[] noderef = new byte[realLength];
-		System.arraycopy(buf, 0, noderef, 0, realLength);
+		byte[] noderef = Arrays.copyOf(buf, realLength);
 		return noderef;
 	}
 

@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
-import java.util.Iterator;
 import java.util.Set;
 
 import org.tanukisoftware.wrapper.WrapperManager;
@@ -39,9 +38,7 @@ public class OOMHandler {
 		System.runFinalization();
 
 		// iterate all oom hooks
-		Iterator<OOMHook> it = oomHooks.iterator();
-		while (it.hasNext()) {
-			OOMHook hook = it.next();
+		for (OOMHook hook: oomHooks) {
 			if (hook != null) {
 				try {
 					hook.handleLowMemory();
@@ -75,9 +72,7 @@ public class OOMHandler {
 			System.runFinalization();
 
 			// iterate all oom hooks
-			Iterator<OOMHook> it = oomHooks.iterator();
-			while (it.hasNext()) {
-				OOMHook hook = it.next();
+			for (OOMHook hook: oomHooks) {
 				if (hook != null) {
 					try {
 						hook.handleOutOfMemory();
