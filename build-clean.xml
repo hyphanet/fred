@@ -43,9 +43,7 @@ maintainers may prefer to use this instead of build.xml.
 	</path>
 
 	<path id="pmd.classpath">
-		<fileset dir="${pmd.dir}/lib" erroronmissingdir="false">
-			<include name="*.jar"/>
-		</fileset>
+		<fileset dir="${pmd.dir}" erroronmissingdir="false" includes="lib/*.jar"/>
 	</path>
 
 	<assertions><enable/></assertions>
@@ -304,11 +302,12 @@ maintainers may prefer to use this instead of build.xml.
 	</target>
 
 	<target name="unit" depends="unit-build" unless="${test.skip}">
-		<junit printsummary="yes" fork="yes" haltonfailure="yes" dir="${test.dst}">
+		<junit printsummary="yes" fork="yes" haltonfailure="${test.haltonfailure}" dir="${test.dst}">
 			<classpath refid="libtest.path"/>
 			<formatter type="plain" usefile="false"/>
-			<test if="test.class" name="${test.class}"/>
-			<batchtest unless="test.class" fork="yes">
+			<formatter type="xml" if="${test.xml_output}"/>
+			<test if="test.class" name="${test.class}" todir="${test.dst}"/>
+			<batchtest unless="test.class" fork="yes" todir="${test.dst}">
 				<fileset dir="${test.make}" includes="**/*Test.class"/>
 			</batchtest>
 			<sysproperty key="test.verbose" value="${test.verbose}"/>
