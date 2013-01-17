@@ -270,8 +270,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			if(maxMemory <= 0) // Still bogus
 				defaultRamBucketPoolSize = 10;
 			else {
-				// 10% of memory above 64MB, with a minimum of 1MB.
-				defaultRamBucketPoolSize = Math.min(Integer.MAX_VALUE, (int)((maxMemory - 64) / 10));
+				// 5% of memory above 64MB, with a minimum of 1MB.
+				defaultRamBucketPoolSize = Math.min(Integer.MAX_VALUE, (int)((maxMemory - 64) / 20));
 				if(defaultRamBucketPoolSize <= 0) defaultRamBucketPoolSize = 1;
 			}
 		}
