@@ -86,5 +86,5 @@ public interface FreenetStore<T extends StorableBlock> {
 	
 	public void setUserAlertManager(UserAlertManager userAlertManager);
 	
-	public void setAltStore(FreenetStore<T> store);
+	public FreenetStore<T> getUnderlyingStore();
 }

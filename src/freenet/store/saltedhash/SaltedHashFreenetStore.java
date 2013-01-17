@@ -133,10 +133,9 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	 * grows so slowly it will hardly ever need more space from the cache. */
 	private SaltedHashFreenetStore<T> altStore;
 
-	public void setAltStore(FreenetStore<T> store) {
-		SaltedHashFreenetStore<T> localStore = (SaltedHashFreenetStore<T>) store;
-		if(localStore.altStore != null) throw new IllegalStateException("Target must not have an altStore - deadlock can result");
-		altStore = localStore;
+	public void setAltStore(SaltedHashFreenetStore<T> store) {
+		if(store.altStore != null) throw new IllegalStateException("Target must not have an altStore - deadlock can result");
+		altStore = store;
 	}
 
 	public static <T extends StorableBlock> SaltedHashFreenetStore<T> construct(File baseDir, String name, StoreCallback<T> callback, Random random,
@@ -2321,5 +2320,8 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		slotFilter.replaceAllEntries(0, SLOT_CHECKED);
 	}
 
-
+	@Override
+	public FreenetStore<T> getUnderlyingStore() {
+		return this;
+	}
 }

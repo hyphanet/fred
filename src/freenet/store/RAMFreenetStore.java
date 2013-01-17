@@ -234,7 +234,7 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 	}
 	
 	@Override
-	public void setAltStore(FreenetStore<T> store) {
-		// Do nothing
+	public FreenetStore<T> getUnderlyingStore() {
+		return this;
 	}
 }
