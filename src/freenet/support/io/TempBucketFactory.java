@@ -198,15 +198,18 @@ public class TempBucketFactory implements BucketFactory {
 		}
 
 		@Override
-		public synchronized OutputStream getOutputStream() throws IOException {
-			if(osIndex > 0)
-				throw new IOException("Only one OutputStream per bucket on "+this+" !");
-			// Hence we don't need to reset currentSize / _hasTaken() if a bucket is reused.
-			// FIXME we should migrate to disk rather than throwing.
-			hasWritten = true;
-			OutputStream tos = new TempBucketOutputStream(++osIndex);
-			if(logMINOR)
-				Logger.minor(this, "Got "+tos+" for "+this, new Exception());
+		public OutputStream getOutputStream() throws IOException {
+			OutputStream tos;
+			synchronized(this) {
+				if(osIndex > 0)
+					throw new IOException("Only one OutputStream per bucket on "+this+" !");
+				// Hence we don't need to reset currentSize / _hasTaken() if a bucket is reused.
+				// FIXME we should migrate to disk rather than throwing.
+				hasWritten = true;
+				tos = new TempBucketOutputStream(++osIndex);
+				if(logMINOR)
+					Logger.minor(this, "Got "+tos+" for "+this, new Exception());
+			}
 			promote();
 			return tos;
 		}
@@ -290,13 +293,16 @@ public class TempBucketFactory implements BucketFactory {
 		}
 
 		@Override
-		public synchronized InputStream getInputStream() throws IOException {
-			if(!hasWritten)
-				throw new IOException("No OutputStream has been openned! Why would you want an InputStream then?");
-			TempBucketInputStream is = new TempBucketInputStream(osIndex);
-			tbis.add(is);
-			if(logMINOR)
-				Logger.minor(this, "Got "+is+" for "+this, new Exception());
+		public InputStream getInputStream() throws IOException {
+			TempBucketInputStream is;
+			synchronized(this) {
+				if(!hasWritten)
+					throw new IOException("No OutputStream has been openned! Why would you want an InputStream then?");
+				is = new TempBucketInputStream(osIndex);
+				tbis.add(is);
+				if(logMINOR)
+					Logger.minor(this, "Got "+is+" for "+this, new Exception());
+			}
 			promote();
 			return is;
 		}
