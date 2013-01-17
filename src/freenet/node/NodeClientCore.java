@@ -323,6 +323,24 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				tempBucketFactory.setEncryption(val);
 			}
 		});
+		
+		nodeConfig.register("migrateOldTempBucketsWhenNotFull", maxMemory < 256, sortOrder++, true, false, "NodeClientCore.migrateOldTempBucketsWhenNotFull", "NodeClientCore.migrateOldTempBucketsWhenNotFullLong", new BooleanCallback() {
+
+			@Override
+			public Boolean get() {
+				return (tempBucketFactory == null ? true : tempBucketFactory.getMigrateWhenNotFull());
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException,
+					NodeNeedRestartException {
+				if (get().equals(val) || (tempBucketFactory == null))
+			        return;
+				tempBucketFactory.setMigrateWhenNotFull(val);
+			}
+			
+		});
+		
 		tempBucketFactory = new TempBucketFactory(node.executor, node.ticker, tempFilenameGenerator, nodeConfig.getLong("maxRAMBucketSize"), nodeConfig.getLong("RAMBucketPoolSize"), random, node.fastWeakRandom, nodeConfig.getBoolean("encryptTempBuckets"));
 
 		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, tempBucketFactory);

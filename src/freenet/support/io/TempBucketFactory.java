@@ -61,6 +61,7 @@ public class TempBucketFactory implements BucketFactory {
 	private long maxRAMBucketSize;
 	/** How much memory do we dedicate to the RAMBucketPool? (in bytes) */
 	private long maxRamUsed;
+	private boolean migrateWhenNotFull;
 
 	/** How old is a long-lived RAMBucket? */
 	private final static int RAMBUCKET_MAX_AGE = 5*60*1000; // 5mins
@@ -507,6 +508,14 @@ public class TempBucketFactory implements BucketFactory {
 		return maxRAMBucketSize;
 	}
 	
+	public synchronized boolean getMigrateWhenNotFull() {
+		return migrateWhenNotFull;
+	}
+	
+	public synchronized void setMigrateWhenNotFull(boolean migrate) {
+		migrateWhenNotFull = migrate;
+	}
+	
 	public void setEncryption(boolean value) {
 		reallyEncrypt = value;
 	}
@@ -640,6 +649,7 @@ public class TempBucketFactory implements BucketFactory {
 	}
 	
 	private synchronized void scheduleCleaner() {
+		if(!migrateWhenNotFull) return;
 		if(!(runningCleaner || scheduledCleaner)) {
 			scheduledCleaner = true;
 			ticker.queueTimedJob(cleaner, RAMBUCKET_MAX_AGE+1000);
