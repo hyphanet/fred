@@ -7,25 +7,25 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Queue;
 import java.util.Random;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import com.db4o.ObjectContainer;
 
 import freenet.crypt.RandomSource;
 import freenet.support.Executor;
+import freenet.support.LRUQueue;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SizeUtil;
 import freenet.support.Ticker;
 import freenet.support.TimeUtil;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
-import java.util.ArrayList;
 
 /**
  * Temporary Bucket Factory
@@ -95,6 +95,7 @@ public class TempBucketFactory implements BucketFactory {
 		private short osIndex;
 		/** A timestamp used to evaluate the age of the bucket and maybe consider it for a migration */
 		private final long creationTime;
+		private volatile long updateTime;
 		private boolean hasBeenFreed = false;
 		
 		private final Throwable tracer;
@@ -108,9 +109,18 @@ public class TempBucketFactory implements BucketFactory {
 				tracer = null;
 			this.currentBucket = cur;
 			this.creationTime = now;
+			this.updateTime = now;
 			this.osIndex = 0;
 			this.tbis = new ArrayList<TempBucketInputStream>(1);
 			if(logMINOR) Logger.minor(TempBucket.class, "Created "+this, new Exception("debug"));
+		}
+		
+		private void promote() {
+			long now = System.currentTimeMillis();
+			updateTime = now;
+			synchronized(ramBucketQueue) {
+				ramBucketQueue.push(getReference());
+			}
 		}
 		
 		private synchronized void closeInputStreams(boolean forFree) {
@@ -197,6 +207,7 @@ public class TempBucketFactory implements BucketFactory {
 			OutputStream tos = new TempBucketOutputStream(++osIndex);
 			if(logMINOR)
 				Logger.minor(this, "Got "+tos+" for "+this, new Exception());
+			promote();
 			return tos;
 		}
 
@@ -274,6 +285,7 @@ public class TempBucketFactory implements BucketFactory {
 					os = null;
 					closed = true;
 				}
+				promote();
 			}
 		}
 
@@ -285,6 +297,7 @@ public class TempBucketFactory implements BucketFactory {
 			tbis.add(is);
 			if(logMINOR)
 				Logger.minor(this, "Got "+is+" for "+this, new Exception());
+			promote();
 			return is;
 		}
 		
@@ -368,6 +381,7 @@ public class TempBucketFactory implements BucketFactory {
 					Closer.close(currentIS);
 					tbis.remove(this);
 				}
+				promote();
 			}
 		}
 
@@ -560,7 +574,7 @@ public class TempBucketFactory implements BucketFactory {
 		TempBucket toReturn = new TempBucket(now, realBucket);
 		if(useRAMBucket) { // No need to consider them for migration if they can't be migrated
 			synchronized(ramBucketQueue) {
-				ramBucketQueue.add(toReturn.getReference());
+				ramBucketQueue.push(toReturn.getReference());
 			}
 		}
 		return toReturn;
@@ -617,7 +631,7 @@ public class TempBucketFactory implements BucketFactory {
 					}
 
 					// Don't access the buckets inside the lock, will deadlock.
-					if (tmpBucket.creationTime + RAMBUCKET_MAX_AGE > now && !force)
+					if (tmpBucket.updateTime + RAMBUCKET_MAX_AGE > now && !force)
 						shouldContinue = false;
 					else {
 						if (logMINOR)
@@ -656,7 +670,8 @@ public class TempBucketFactory implements BucketFactory {
 		}
 	}
 
-	private final Queue<WeakReference<TempBucket>> ramBucketQueue = new LinkedBlockingQueue<WeakReference<TempBucket>>();
+	/** LRU queue of buckets still in RAM. LOCKING: Always take this last. */
+	private final LRUQueue<WeakReference<TempBucket>> ramBucketQueue = new LRUQueue<WeakReference<TempBucket>>();
 	
 	private Bucket _makeFileBucket() {
 		Bucket fileBucket = new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator, true);
