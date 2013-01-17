@@ -15,6 +15,7 @@ import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
 import freenet.support.PooledExecutor;
 import freenet.support.SimpleReadOnlyArrayBucket;
+import freenet.support.Ticker;
 import freenet.support.TrivialTicker;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
@@ -31,6 +32,7 @@ public class SlashdotStoreTest extends TestCase {
 	private PooledExecutor exec = new PooledExecutor();
 	private FilenameGenerator fg;
 	private TempBucketFactory tbf;
+	private Ticker ticker = new TrivialTicker(exec); 
 	private File tempDir;
 
 	@Override
@@ -38,7 +40,7 @@ public class SlashdotStoreTest extends TestCase {
 		tempDir = new File("tmp-slashdotstoretest");
 		tempDir.mkdir();
 		fg = new FilenameGenerator(weakPRNG, true, tempDir, "temp-");
-		tbf = new TempBucketFactory(exec, fg, 4096, 65536, strongPRNG, weakPRNG, false);
+		tbf = new TempBucketFactory(exec, ticker, fg, 4096, 65536, strongPRNG, weakPRNG, false);
 		exec.start();
 	}
 	

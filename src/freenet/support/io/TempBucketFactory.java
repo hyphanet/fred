@@ -20,6 +20,7 @@ import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SizeUtil;
+import freenet.support.Ticker;
 import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
@@ -53,6 +54,7 @@ public class TempBucketFactory implements BucketFactory {
 	private final RandomSource strongPRNG;
 	private final Random weakPRNG;
 	private final Executor executor;
+	private final Ticker ticker;
 	private volatile boolean reallyEncrypt;
 	
 	/** How big can the defaultSize be for us to consider using RAMBuckets? */
@@ -457,7 +459,7 @@ public class TempBucketFactory implements BucketFactory {
 	}
 	
 	// Storage accounting disabled by default.
-	public TempBucketFactory(Executor executor, FilenameGenerator filenameGenerator, long maxBucketSizeKeptInRam, long maxRamUsed, RandomSource strongPRNG, Random weakPRNG, boolean reallyEncrypt) {
+	public TempBucketFactory(Executor executor, Ticker ticker, FilenameGenerator filenameGenerator, long maxBucketSizeKeptInRam, long maxRamUsed, RandomSource strongPRNG, Random weakPRNG, boolean reallyEncrypt) {
 		this.filenameGenerator = filenameGenerator;
 		this.maxRamUsed = maxRamUsed;
 		this.maxRAMBucketSize = maxBucketSizeKeptInRam;
@@ -465,6 +467,7 @@ public class TempBucketFactory implements BucketFactory {
 		this.weakPRNG = weakPRNG;
 		this.reallyEncrypt = reallyEncrypt;
 		this.executor = executor;
+		this.ticker = ticker;
 	}
 
 	@Override
@@ -537,6 +540,8 @@ public class TempBucketFactory implements BucketFactory {
 			} else if(bytesInUse >= maxRamUsed * MAX_USAGE && !runningCleaner) {
 				runningCleaner = true;
 				executor.execute(cleaner);
+			} else {
+				scheduleCleaner();
 			}
 		}
 		
@@ -553,6 +558,7 @@ public class TempBucketFactory implements BucketFactory {
 }
 	
 	boolean runningCleaner = false;
+	boolean scheduledCleaner = false;
 	
 	private final Runnable cleaner = new Runnable() {
 
@@ -574,6 +580,8 @@ public class TempBucketFactory implements BucketFactory {
 			} finally {
 				synchronized(TempBucketFactory.this) {
 					runningCleaner = false;
+					scheduledCleaner = false;
+					scheduleCleaner();
 				}
 			}
 		}
@@ -631,6 +639,13 @@ public class TempBucketFactory implements BucketFactory {
 		return false;
 	}
 	
+	private synchronized void scheduleCleaner() {
+		if(!(runningCleaner || scheduledCleaner)) {
+			scheduledCleaner = true;
+			ticker.queueTimedJob(cleaner, RAMBUCKET_MAX_AGE+1000);
+		}
+	}
+
 	private final Queue<WeakReference<TempBucket>> ramBucketQueue = new LinkedBlockingQueue<WeakReference<TempBucket>>();
 	
 	private Bucket _makeFileBucket() {
