@@ -232,4 +232,9 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 	public void setUserAlertManager(UserAlertManager userAlertManager) {
 		// Do nothing
 	}
+	
+	@Override
+	public void setAltStore(FreenetStore<T> store) {
+		// Do nothing
+	}
 }
