@@ -3,6 +3,8 @@ package freenet.store;
 import java.io.IOException;
 
 import freenet.node.stats.StoreAccessStats;
+import freenet.node.useralerts.UserAlertManager;
+import freenet.support.Ticker;
 
 public class NullFreenetStore<T extends StorableBlock> implements FreenetStore<T> {
 
@@ -96,6 +98,16 @@ public class NullFreenetStore<T extends StorableBlock> implements FreenetStore<T
 	@Override
 	public StoreAccessStats getTotalAccessStats() {
 		return null;
+	}
+
+	@Override
+	public boolean start(Ticker ticker, boolean longStart) throws IOException {
+		return false;
+	}
+
+	@Override
+	public void setUserAlertManager(UserAlertManager userAlertManager) {
+		// Do nothing
 	}
 
 }

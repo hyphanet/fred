@@ -6,9 +6,11 @@ import java.util.Enumeration;
 
 import freenet.keys.KeyVerifyException;
 import freenet.node.stats.StoreAccessStats;
+import freenet.node.useralerts.UserAlertManager;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.LRUMap;
 import freenet.support.Logger;
+import freenet.support.Ticker;
 
 /**
  * LRU in memory store.
@@ -221,4 +223,13 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 		return null;
 	}
 
+	@Override
+	public boolean start(Ticker ticker, boolean longStart) throws IOException {
+		return false;
+	}
+
+	@Override
+	public void setUserAlertManager(UserAlertManager userAlertManager) {
+		// Do nothing
+	}
 }
