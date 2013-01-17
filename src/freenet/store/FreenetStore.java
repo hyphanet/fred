@@ -5,6 +5,8 @@ import java.io.IOException;
 import com.sleepycat.je.DatabaseException;
 
 import freenet.node.stats.StoreAccessStats;
+import freenet.node.useralerts.UserAlertManager;
+import freenet.support.Ticker;
 
 /**
  * Datastore interface
@@ -78,4 +80,8 @@ public interface FreenetStore<T extends StorableBlock> {
 	public abstract StoreAccessStats getSessionAccessStats();
 
 	public abstract StoreAccessStats getTotalAccessStats();
+	
+	public boolean start(Ticker ticker, boolean longStart) throws IOException;
+	
+	public void setUserAlertManager(UserAlertManager userAlertManager);
 }
