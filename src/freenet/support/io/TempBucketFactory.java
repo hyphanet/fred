@@ -94,7 +94,7 @@ public class TempBucketFactory implements BucketFactory {
 		/** An identifier used to know when to deprecate the InputStreams */
 		private short osIndex;
 		/** A timestamp used to evaluate the age of the bucket and maybe consider it for a migration */
-		public final long creationTime;
+		private final long creationTime;
 		private boolean hasBeenFreed = false;
 		
 		private final Throwable tracer;
