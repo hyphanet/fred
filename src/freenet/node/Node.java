@@ -2527,10 +2527,11 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 
 				@Override
-				public void set(Long val) throws InvalidConfigValueException {
+				public void set(Long val) throws InvalidConfigValueException, NodeNeedRestartException {
 					synchronized(Node.this) {
 						cachingFreenetStoreMaxSize = val;
 					}
+					throw new NodeNeedRestartException("Caching Maximum Size cannot be changed on the fly");
 				}
 		}, true);
 		
