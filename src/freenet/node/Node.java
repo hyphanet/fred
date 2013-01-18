@@ -2516,6 +2516,25 @@ public class Node implements TimeSkewDetectorCallback {
 		enableRoutedPing = nodeConfig.getBoolean("enableRoutedPing");
 		
 		updateMTU();
+		
+		nodeConfig.register("cachingFreenetStoreMaxSizeLong", "1M", sortOrder++, true, false, "Node.cachingFreenetStoreMaxSizeLong", "Node.cachingFreenetStoreMaxSizeLong",
+			new LongCallback() {
+				@Override
+				public Long get() {
+					synchronized(Node.this) {
+						return cachingFreenetStoreMaxSize;
+					}
+				}
+
+				@Override
+				public void set(Long val) throws InvalidConfigValueException {
+					synchronized(Node.this) {
+						cachingFreenetStoreMaxSize = val;
+					}
+				}
+		}, true);
+		
+		cachingFreenetStoreMaxSize = nodeConfig.getLong("cachingFreenetStoreMaxSizeLong");
 
 		/* Take care that no configuration options are registered after this point; they will not persist
 		 * between restarts.
@@ -3423,12 +3442,10 @@ public class Node implements TimeSkewDetectorCallback {
 		return false;
     }
 	
-	private long cacheMaxSize;
+	private long cachingFreenetStoreMaxSize;
 
 	private void initSaltHashFS(final String suffix, boolean dontResizeOnStart, byte[] masterKey) throws NodeInitException {
 		try {
-			cacheMaxSize = Fields.parseLong("1M");
-			
 			final CHKStore chkDatastore = new CHKStore();
 			final FreenetStore<CHKBlock> chkDataFS = makeStore("CHK", true, chkDatastore, dontResizeOnStart, masterKey);
 			final CHKStore chkDatacache = new CHKStore();
@@ -3610,7 +3627,7 @@ public class Node implements TimeSkewDetectorCallback {
 		SaltedHashFreenetStore<T> fs = SaltedHashFreenetStore.<T>construct(getStoreDir(), type+"-"+store, cb,
 		        random, maxKeys, storeUseSlotFilters, shutdownHook, storePreallocate, storeSaltHashResizeOnStart && !lateStart, lateStart ? ticker : null, clientCacheMasterKey);
 		cb.setStore(fs);
-		CachingFreenetStore<T> cachingStore = new CachingFreenetStore<T>(cb, cacheMaxSize, PURGE_INTERVAL, fs, ticker);
+		CachingFreenetStore<T> cachingStore = new CachingFreenetStore<T>(cb, cachingFreenetStoreMaxSize, PURGE_INTERVAL, fs, ticker);
 		return cachingStore;
 	}
 
