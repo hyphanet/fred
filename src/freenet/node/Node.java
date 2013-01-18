@@ -127,6 +127,7 @@ import freenet.pluginmanager.PluginManager;
 import freenet.pluginmanager.PluginStore;
 import freenet.store.BlockMetadata;
 import freenet.store.CHKStore;
+import freenet.store.CachingFreenetStore;
 import freenet.store.FreenetStore;
 import freenet.store.KeyCollisionException;
 import freenet.store.NullFreenetStore;
@@ -3421,9 +3422,13 @@ public class Node implements TimeSkewDetectorCallback {
 		if(storeDir.file("database" + suffix).exists()) return true;
 		return false;
     }
+	
+	private int cacheMaxSize;
 
 	private void initSaltHashFS(final String suffix, boolean dontResizeOnStart, byte[] masterKey) throws NodeInitException {
 		try {
+			cacheMaxSize = Fields.parseInt("1M");
+			
 			final CHKStore chkDatastore = new CHKStore();
 			final FreenetStore<CHKBlock> chkDataFS = makeStore("CHK", true, chkDatastore, dontResizeOnStart, masterKey);
 			final CHKStore chkDatacache = new CHKStore();
@@ -3605,7 +3610,8 @@ public class Node implements TimeSkewDetectorCallback {
 		SaltedHashFreenetStore<T> fs = SaltedHashFreenetStore.<T>construct(getStoreDir(), type+"-"+store, cb,
 		        random, maxKeys, storeUseSlotFilters, shutdownHook, storePreallocate, storeSaltHashResizeOnStart && !lateStart, lateStart ? ticker : null, clientCacheMasterKey);
 		cb.setStore(fs);
-		return fs;
+		CachingFreenetStore<T> cachingStore = new CachingFreenetStore<T>(cb, cacheMaxSize, PURGE_INTERVAL, fs, ticker);
+		return cachingStore;
 	}
 
 	public void start(boolean noSwaps) throws NodeInitException {
