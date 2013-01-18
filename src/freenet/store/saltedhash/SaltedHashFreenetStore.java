@@ -2320,5 +2320,8 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		slotFilter.replaceAllEntries(0, SLOT_CHECKED);
 	}
 
-
+	@Override
+	public FreenetStore<T> getUnderlyingStore() {
+		return this;
+	}
 }

@@ -9,6 +9,7 @@ import java.util.List;
 
 import freenet.keys.KeyVerifyException;
 import freenet.node.stats.StoreAccessStats;
+import freenet.node.useralerts.UserAlertManager;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.LRUMap;
 import freenet.support.LogThresholdCallback;
@@ -291,4 +292,18 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 		return null;
 	}
 
+	@Override
+	public boolean start(Ticker ticker, boolean longStart) throws IOException {
+		return false;
+	}
+
+	@Override
+	public void setUserAlertManager(UserAlertManager userAlertManager) {
+		// Do nothing
+	}
+
+	@Override
+	public FreenetStore<T> getUnderlyingStore() {
+		return this;
+	}
 }
