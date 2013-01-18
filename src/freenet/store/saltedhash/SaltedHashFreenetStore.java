@@ -2148,53 +2148,6 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		return bloomFalsePos.get();
 	}
 
-	// ------------- Migration
-	public void migrationFrom(File storeFile, File keyFile) {
-		try {
-			System.out.println("Migrating from " + storeFile);
-
-			RandomAccessFile storeRAF = new RandomAccessFile(storeFile, "r");
-			RandomAccessFile keyRAF = keyFile.exists() ? new RandomAccessFile(keyFile, "r") : null;
-
-			byte[] header = new byte[headerBlockLength];
-			byte[] data = new byte[dataBlockLength];
-			byte[] key = new byte[fullKeyLength];
-
-			long maxKey = storeRAF.length() / (headerBlockLength + dataBlockLength);
-
-			for (int l = 0; l < maxKey; l++) {
-				if (l % 1024 == 0) {
-					System.out.println(" migrating key " + l + "/" + maxKey);
-					WrapperManager.signalStarting(10 * 60 * 1000); // max 10 minutes for every 1024 keys
-				}
-
-				boolean keyRead = false;
-				storeRAF.readFully(header);
-				storeRAF.readFully(data);
-				try {
-					if (keyRAF != null) {
-						keyRAF.readFully(key);
-						keyRead = true;
-					}
-				} catch (IOException e) {
-				}
-
-				try {
-					T b = callback.construct(data, header, null, keyRead ? key : null, false, false, null, null);
-					put(b, data, header, true, true);
-				} catch (KeyVerifyException e) {
-					System.out.println("kve at block " + l);
-				} catch (KeyCollisionException e) {
-					System.out.println("kce at block " + l);
-				}
-			}
-		} catch (EOFException eof) {
-			// done
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
 	@Override
 	public boolean probablyInStore(byte[] routingKey) {
 		configLock.readLock().lock();

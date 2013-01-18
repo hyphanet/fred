@@ -3519,16 +3519,6 @@ public class Node implements TimeSkewDetectorCallback {
 				}, "Start store", 0, true, false);
 			}
 
-			File migrationFile = storeDir.file("migrated");
-			if (!migrationFile.exists()) {
-				tryMigrate(chkDataFS, "chk", true, suffix);
-				tryMigrate(chkCacheFS, "chk", false, suffix);
-				tryMigrate(pubkeyDataFS, "pubkey", true, suffix);
-				tryMigrate(pubkeyCacheFS, "pubkey", false, suffix);
-				tryMigrate(sskDataFS, "ssk", true, suffix);
-				tryMigrate(sskCacheFS, "ssk", false, suffix);
-				migrationFile.createNewFile();
-			}
 		} catch (IOException e) {
 			System.err.println("Could not open store: " + e);
 			e.printStackTrace();
@@ -3596,13 +3586,6 @@ public class Node implements TimeSkewDetectorCallback {
 			throw new NodeInitException(NodeInitException.EXIT_STORE_OTHER, e.getMessage());
 		}
     }
-
-	private <T extends StorableBlock> void tryMigrate(FreenetStore<T> chkDataFS, String type, boolean isStore, String suffix) {
-		String store = isStore ? "store" : "cache";
-		((SaltedHashFreenetStore<T>) chkDataFS).migrationFrom(
-		        storeDir.file(type + suffix + "."+store),
-		        storeDir.file(type + suffix + "."+store+".keys"));
-	}
 
 	private <T extends StorableBlock> FreenetStore<T> makeClientcache(String type, boolean isStore, StoreCallback<T> cb, boolean dontResizeOnStart, byte[] clientCacheMasterKey) throws IOException {
 		FreenetStore<T> store = makeStore(type, "clientcache", maxClientCacheKeys, cb, dontResizeOnStart, clientCacheMasterKey);
