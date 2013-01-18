@@ -3423,11 +3423,11 @@ public class Node implements TimeSkewDetectorCallback {
 		return false;
     }
 	
-	private int cacheMaxSize;
+	private long cacheMaxSize;
 
 	private void initSaltHashFS(final String suffix, boolean dontResizeOnStart, byte[] masterKey) throws NodeInitException {
 		try {
-			cacheMaxSize = Fields.parseInt("1M");
+			cacheMaxSize = Fields.parseLong("1M");
 			
 			final CHKStore chkDatastore = new CHKStore();
 			final FreenetStore<CHKBlock> chkDataFS = makeStore("CHK", true, chkDatastore, dontResizeOnStart, masterKey);

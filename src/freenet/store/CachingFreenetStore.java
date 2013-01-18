@@ -29,8 +29,8 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		boolean isOldBlock;
 	}
 	
-	private int maxSize;
-	private int size;
+	private long maxSize;
+	private long size;
 	private long period;
 	private boolean startJob;
 	private boolean shuttingDown; /* If this flag is true, we don't accept puts anymore */
@@ -44,7 +44,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 	
 	private ReadWriteLock configLock = new ReentrantReadWriteLock();
 
-	public CachingFreenetStore(StoreCallback<T> callback, int maxSize, long period, FreenetStore<T> backDatastore, Ticker ticker) {
+	public CachingFreenetStore(StoreCallback<T> callback, long maxSize, long period, FreenetStore<T> backDatastore, Ticker ticker) {
 		this.callback = callback;
 		this.maxSize = maxSize;
 		this.period = period;
@@ -71,14 +71,6 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 				}
 			}
 		});
-	}
-
-	public int getMaxSize() {
-		return maxSize;
-	}
-
-	public void setMaxSize(int maxSize) {
-		this.maxSize = maxSize;
 	}
 
 	@Override
