@@ -2517,7 +2517,7 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		updateMTU();
 		
-		nodeConfig.register("cachingFreenetStoreMaxSizeLong", "1M", sortOrder++, true, false, "Node.cachingFreenetStoreMaxSizeLong", "Node.cachingFreenetStoreMaxSizeLong",
+		nodeConfig.register("cachingFreenetStoreMaxSize", "1M", sortOrder++, true, false, "Node.cachingFreenetStoreMaxSize", "Node.cachingFreenetStoreMaxSize",
 			new LongCallback() {
 				@Override
 				public Long get() {
@@ -2535,7 +2535,7 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 		}, true);
 		
-		cachingFreenetStoreMaxSize = nodeConfig.getLong("cachingFreenetStoreMaxSizeLong");
+		cachingFreenetStoreMaxSize = nodeConfig.getLong("cachingFreenetStoreMaxSize");
 
 		/* Take care that no configuration options are registered after this point; they will not persist
 		 * between restarts.
