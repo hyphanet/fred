@@ -180,10 +180,12 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 					if(backDatastore.probablyInStore(routingKey)) {
 						blocksByRoutingKey.remove(key);
 						dontCacheIt = true;
+						size -= data.length+header.length+block.getFullKey().length+routingKey.length;
 					}
 					
 					if(!dontCacheIt) {
 						blocksByRoutingKey.put(key, storeBlock);
+						size += data.length+header.length+block.getFullKey().length+routingKey.length;
 					}
 				}
 				
