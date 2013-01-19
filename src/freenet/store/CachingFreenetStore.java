@@ -41,8 +41,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 	private final SemiOrderedShutdownHook shutdownHook;
 	private final Ticker ticker;
 	private final boolean collisionPossible;
-	
-	private ReadWriteLock configLock = new ReentrantReadWriteLock();
+	private final ReadWriteLock configLock = new ReentrantReadWriteLock();
 
 	public CachingFreenetStore(StoreCallback<T> callback, long maxSize, long period, FreenetStore<T> backDatastore, Ticker ticker) {
 		this.callback = callback;
