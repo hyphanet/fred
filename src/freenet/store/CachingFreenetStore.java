@@ -154,7 +154,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		storeBlock.overwrite = overwrite;
 		storeBlock.isOldBlock = isOldBlock;
 		
-		boolean dontCacheIt = false;
+		boolean cacheIt = true;
 		
 		//Case cache it
 		configLock.writeLock().lock();
@@ -177,7 +177,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 					
 					//Is probablyInStore()? If so, remove it from blocksByRoutingKey, and set a flag so we don't call put()
 					if(backDatastore.probablyInStore(routingKey)) {
-						dontCacheIt = true;
+						cacheIt = false;
 					} else {
 						blocksByRoutingKey.put(key, storeBlock);
 						size += data.length+header.length+block.getFullKey().length+routingKey.length;
@@ -206,14 +206,14 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 					}
 				}
 			} else {
-				dontCacheIt = true;
+				cacheIt = false;
 			}
 		} finally {
 			configLock.writeLock().unlock();
 		}
 		
 		//Case don't cache it
-		if(dontCacheIt) {
+		if(!cacheIt) {
 			backDatastore.put(block, data, header, overwrite, isOldBlock);
 			return;
 		}
