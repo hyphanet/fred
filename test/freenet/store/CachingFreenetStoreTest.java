@@ -54,15 +54,61 @@ public class CachingFreenetStoreTest extends TestCase {
 		FileUtil.removeAll(tempDir);
 	}
 	
-	public void testCachingFreenetStore() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
+	public void testSimple() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		File f = new File(tempDir, "saltstore");
 		FileUtil.removeAll(f);
 
+		/* Normal tests for CachingFreenetStore */
 		CHKStore store = new CHKStore();
 		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStore", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		CachingFreenetStore<CHKBlock> cachingStore = new CachingFreenetStore<CHKBlock>(store, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, saltStore, ticker);
 		cachingStore.start(null, true);
 
+		for(int i=0;i<5;i++) {
+			// Encode a block
+			String test = "test" + i;
+			ClientCHKBlock block = encodeBlock(test);
+			store.put(block, false);
+			
+			ClientCHK key = block.getClientKey();
+			
+			CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
+			String data = decodeBlock(verify, key);
+			assertEquals(test, data);
+		}
+		
+		cachingStore.close();
+		
+		/* Test to re-open after close */
+		cachingStore = new CachingFreenetStore<CHKBlock>(store, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, saltStore, ticker);
+		cachingStore.start(null, true);
+
+		for(int i=0;i<5;i++) {
+			// Encode a block
+			String test = "test" + i;
+			ClientCHKBlock block = encodeBlock(test);
+			store.put(block, false);
+			
+			ClientCHK key = block.getClientKey();
+			
+			CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
+			String data = decodeBlock(verify, key);
+			assertEquals(test, data);
+		}
+		
+		cachingStore.close();
+	}
+	
+	/* Test whether stuff gets written to disk after the caching period expires */
+	public void testTimeExpire() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
+		File f = new File(tempDir, "saltstore");
+		FileUtil.removeAll(f);
+		
+		CHKStore store = new CHKStore();
+		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStore", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		CachingFreenetStore<CHKBlock> cachingStore = new CachingFreenetStore<CHKBlock>(store, cachingFreenetStoreMaxSize, 1, saltStore, ticker);
+		cachingStore.start(null, true);
+		
 		for(int i=0;i<5;i++) {
 			// Encode a block
 			String test = "test" + i;
