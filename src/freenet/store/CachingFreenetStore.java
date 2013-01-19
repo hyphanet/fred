@@ -154,6 +154,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		storeBlock.overwrite = overwrite;
 		storeBlock.isOldBlock = isOldBlock;
 		
+		long sizeBlock = data.length+header.length+block.getFullKey().length+routingKey.length;	
 		boolean cacheIt = true;
 		
 		//Case cache it
@@ -167,7 +168,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 					blocksByRoutingKey.put(key, storeBlock);
 					
 					if(previousBlock == null) {
-						size += data.length+header.length+block.getFullKey().length+routingKey.length;
+						size += sizeBlock;
 					}
 				} else {
 					//Case cache it but is it in blocksByRoutingKey? If so, throw a KCE
@@ -180,7 +181,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 						cacheIt = false;
 					} else {
 						blocksByRoutingKey.put(key, storeBlock);
-						size += data.length+header.length+block.getFullKey().length+routingKey.length;
+						size += sizeBlock;
 					}
 				}
 				
