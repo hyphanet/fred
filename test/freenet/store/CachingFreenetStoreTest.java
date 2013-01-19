@@ -76,7 +76,7 @@ public class CachingFreenetStoreTest extends TestCase {
 			assertEquals(test, data);
 		}
 		
-		((SaltedHashFreenetStore<CHKBlock>) cachingStore.getUnderlyingStore()).close();
+		cachingStore.close();
 	}
 
 	private String decodeBlock(CHKBlock verify, ClientCHK key) throws CHKVerifyException, CHKDecodeException, IOException {
