@@ -178,7 +178,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 					
 					//Is probablyInStore()? If so, remove it from blocksByRoutingKey, and set a flag so we don't call put()
 					if(backDatastore.probablyInStore(routingKey)) {
-						blocksByRoutingKey.remove(key);
+						blocksByRoutingKey.remove(key); 
 						dontCacheIt = true;
 						size -= data.length+header.length+block.getFullKey().length+routingKey.length;
 					}
