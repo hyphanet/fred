@@ -3649,8 +3649,7 @@ public class Node implements TimeSkewDetectorCallback {
 		SaltedHashFreenetStore<T> fs = SaltedHashFreenetStore.<T>construct(getStoreDir(), type+"-"+store, cb,
 		        random, maxKeys, storeUseSlotFilters, shutdownHook, storePreallocate, storeSaltHashResizeOnStart && !lateStart, lateStart ? ticker : null, clientCacheMasterKey);
 		cb.setStore(fs);
-		CachingFreenetStore<T> cachingStore = new CachingFreenetStore<T>(cb, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, fs, ticker);
-		return cachingStore;
+		return new CachingFreenetStore<T>(cb, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, fs, ticker);
 	}
 
 	public void start(boolean noSwaps) throws NodeInitException {
