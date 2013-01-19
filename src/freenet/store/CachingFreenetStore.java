@@ -300,4 +300,17 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 	public FreenetStore<T> getUnderlyingStore() {
 		return this.backDatastore;
 	}
+
+	@Override
+	public void close() {
+		configLock.writeLock().lock();
+		try {
+			shuttingDown = true;
+			pushAll();
+		} finally {
+			configLock.writeLock().unlock();
+		}
+		
+		backDatastore.close();
+	}
 }
