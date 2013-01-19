@@ -21,14 +21,6 @@ import freenet.support.io.NativeThread;
  * 
  */
 public class CachingFreenetStore<T extends StorableBlock> implements FreenetStore<T> {
-	private final static class Block<T> {
-		T block;
-		byte[] data;
-		byte[] header;
-		boolean overwrite;
-		boolean isOldBlock;
-	}
-	
 	private long size;
 	private boolean startJob;
 	private boolean shuttingDown; /* If this flag is true, we don't accept puts anymore */
@@ -42,6 +34,14 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 	private final Ticker ticker;
 	private final boolean collisionPossible;
 	private final ReadWriteLock configLock = new ReentrantReadWriteLock();
+	
+	private final static class Block<T> {
+		T block;
+		byte[] data;
+		byte[] header;
+		boolean overwrite;
+		boolean isOldBlock;
+	}
 
 	public CachingFreenetStore(StoreCallback<T> callback, long maxSize, long period, FreenetStore<T> backDatastore, Ticker ticker) {
 		this.callback = callback;
