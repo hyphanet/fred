@@ -2537,7 +2537,7 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		cachingFreenetStoreMaxSize = nodeConfig.getLong("cachingFreenetStoreMaxSize");
 		
-		nodeConfig.register("cachingFreenetStorePeriod", "60k", sortOrder++, true, false, "Node.cachingFreenetStorePeriod", "Node.cachingFreenetStorePeriod",
+		nodeConfig.register("cachingFreenetStorePeriod", "300k", sortOrder++, true, false, "Node.cachingFreenetStorePeriod", "Node.cachingFreenetStorePeriod",
 			new LongCallback() {
 				@Override
 				public Long get() {

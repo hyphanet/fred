@@ -39,7 +39,7 @@ public class CachingFreenetStoreTest extends TestCase {
 	private Ticker ticker = new TrivialTicker(exec);
 	private File tempDir;
 	private long cachingFreenetStoreMaxSize = Fields.parseLong("1M");
-	private long cachingFreenetStorePeriod = Fields.parseLong("60k");
+	private long cachingFreenetStorePeriod = Fields.parseLong("300k");
 
 	@Override
 	protected void setUp() throws java.lang.Exception {
