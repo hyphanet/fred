@@ -193,7 +193,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 					pushAll();
 				} else {
 					//Check period
-					if(blocksByRoutingKey.size() > 0 && !startJob) {
+					if(!blocksByRoutingKey.isEmpty() && !startJob) {
 						startJob = true;
 						this.ticker.queueTimedJob(new Runnable() {
 							@Override
