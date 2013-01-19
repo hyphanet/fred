@@ -29,12 +29,12 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		boolean isOldBlock;
 	}
 	
-	private long maxSize;
 	private long size;
-	private long period;
 	private boolean startJob;
 	private boolean shuttingDown; /* If this flag is true, we don't accept puts anymore */
 	
+	private final long maxSize;
+	private final long period;
 	private final TreeMap<ByteArrayWrapper, Block<T>> blocksByRoutingKey;
 	private final StoreCallback<T> callback;
 	private final FreenetStore<T> backDatastore;
