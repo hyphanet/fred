@@ -223,7 +223,10 @@ public class OpennetManager {
 					return -1;
 				if((!neverConnected1) && neverConnected2)
 					return 1;
-				return pn1.hashCode - pn2.hashCode;
+				// a-b not opposite sign to b-a possible in a corner case (a=0 b=Integer.MIN_VALUE).
+				if(pn1.hashCode > pn2.hashCode) return 1;
+				else if(pn1.hashCode < pn2.hashCode) return -1;
+				else return 0;
 			}
 		});
 		for(OpennetPeerNode opn: nodes)
