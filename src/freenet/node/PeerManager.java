@@ -2221,10 +2221,10 @@ public class PeerManager {
 		return count;
 	}
 
-	public PeerNode getByIdentity(byte[] identity) {
+	public PeerNode getByPubKeyHash(byte[] pkHash) {
 		PeerNode[] peers = myPeers();
 		for(PeerNode peer : peers) {
-			if(Arrays.equals(peer.getIdentity(), identity))
+			if(Arrays.equals(peer.getPubKeyHash(), pkHash))
 				return peer;
 		}
 		return null;
