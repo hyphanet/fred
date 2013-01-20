@@ -226,7 +226,11 @@ public class OpennetManager {
 				// a-b not opposite sign to b-a possible in a corner case (a=0 b=Integer.MIN_VALUE).
 				if(pn1.hashCode > pn2.hashCode) return 1;
 				else if(pn1.hashCode < pn2.hashCode) return -1;
-				else return 0;
+				int o1 = System.identityHashCode(pn1);
+				int o2 = System.identityHashCode(pn2);
+				if(o1 > o2) return 1;
+				if(o2 > o1) return -1;
+				return 0;
 			}
 		});
 		for(OpennetPeerNode opn: nodes)
