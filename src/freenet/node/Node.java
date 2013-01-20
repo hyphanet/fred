@@ -127,6 +127,7 @@ import freenet.pluginmanager.PluginManager;
 import freenet.pluginmanager.PluginStore;
 import freenet.store.BlockMetadata;
 import freenet.store.CHKStore;
+import freenet.store.CachingFreenetStore;
 import freenet.store.FreenetStore;
 import freenet.store.KeyCollisionException;
 import freenet.store.NullFreenetStore;
@@ -2515,6 +2516,46 @@ public class Node implements TimeSkewDetectorCallback {
 		enableRoutedPing = nodeConfig.getBoolean("enableRoutedPing");
 		
 		updateMTU();
+		
+		nodeConfig.register("cachingFreenetStoreMaxSize", "1M", sortOrder++, true, false, "Node.cachingFreenetStoreMaxSize", "Node.cachingFreenetStoreMaxSize",
+			new LongCallback() {
+				@Override
+				public Long get() {
+					synchronized(Node.this) {
+						return cachingFreenetStoreMaxSize;
+					}
+				}
+
+				@Override
+				public void set(Long val) throws InvalidConfigValueException, NodeNeedRestartException {
+					synchronized(Node.this) {
+						cachingFreenetStoreMaxSize = val;
+					}
+					throw new NodeNeedRestartException("Caching Maximum Size cannot be changed on the fly");
+				}
+		}, true);
+		
+		cachingFreenetStoreMaxSize = nodeConfig.getLong("cachingFreenetStoreMaxSize");
+		
+		nodeConfig.register("cachingFreenetStorePeriod", "300k", sortOrder++, true, false, "Node.cachingFreenetStorePeriod", "Node.cachingFreenetStorePeriod",
+			new LongCallback() {
+				@Override
+				public Long get() {
+					synchronized(Node.this) {
+						return cachingFreenetStorePeriod;
+					}
+				}
+
+				@Override
+				public void set(Long val) throws InvalidConfigValueException, NodeNeedRestartException {
+					synchronized(Node.this) {
+						cachingFreenetStorePeriod = val;
+					}
+					throw new NodeNeedRestartException("Caching Period cannot be changed on the fly");
+				}
+		}, true);
+		
+		cachingFreenetStorePeriod = nodeConfig.getLong("cachingFreenetStorePeriod");
 
 		/* Take care that no configuration options are registered after this point; they will not persist
 		 * between restarts.
@@ -3421,6 +3462,9 @@ public class Node implements TimeSkewDetectorCallback {
 		if(storeDir.file("database" + suffix).exists()) return true;
 		return false;
     }
+	
+	private long cachingFreenetStoreMaxSize;
+	private long cachingFreenetStorePeriod;
 
 	private void initSaltHashFS(final String suffix, boolean dontResizeOnStart, byte[] masterKey) throws NodeInitException {
 		try {
@@ -3605,7 +3649,7 @@ public class Node implements TimeSkewDetectorCallback {
 		SaltedHashFreenetStore<T> fs = SaltedHashFreenetStore.<T>construct(getStoreDir(), type+"-"+store, cb,
 		        random, maxKeys, storeUseSlotFilters, shutdownHook, storePreallocate, storeSaltHashResizeOnStart && !lateStart, lateStart ? ticker : null, clientCacheMasterKey);
 		cb.setStore(fs);
-		return fs;
+		return new CachingFreenetStore<T>(cb, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, fs, ticker);
 	}
 
 	public void start(boolean noSwaps) throws NodeInitException {
