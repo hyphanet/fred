@@ -212,6 +212,7 @@ public class OpennetManager {
 		Arrays.sort(nodes, new Comparator<OpennetPeerNode>() {
 			@Override
 			public int compare(OpennetPeerNode pn1, OpennetPeerNode pn2) {
+				if(pn1 == pn2) return 0;
 				long lastSuccess1 = pn1.timeLastSuccess();
 				long lastSuccess2 = pn2.timeLastSuccess();
 
