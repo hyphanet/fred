@@ -228,6 +228,7 @@ public class OpennetManager {
 				// a-b not opposite sign to b-a possible in a corner case (a=0 b=Integer.MIN_VALUE).
 				if(pn1.hashCode > pn2.hashCode) return 1;
 				else if(pn1.hashCode < pn2.hashCode) return -1;
+				Logger.error(this, "Two OpennerPeerNode's with the same hashcode: "+pn1+" vs "+pn2);
 				return Fields.compareObjectID(pn1, pn2);
 			}
 		});
