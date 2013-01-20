@@ -909,4 +909,12 @@ public abstract class Fields {
 		}
 		return i - origI;
 	}
+
+	public static int compareObjectID(Object o1, Object o2) {
+		int id1 = System.identityHashCode(o1);
+		int id2 = System.identityHashCode(o2);
+		if(id1 > id2) return 1;
+		if(id2 > id1) return -1;
+		return 0;
+	}
 }

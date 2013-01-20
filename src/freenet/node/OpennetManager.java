@@ -38,6 +38,7 @@ import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.BulkTransmitter.AllSentCallback;
 import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.node.OpennetPeerNode.NOT_DROP_REASON;
+import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.LRUQueue;
 import freenet.support.LogThresholdCallback;
@@ -226,11 +227,7 @@ public class OpennetManager {
 				// a-b not opposite sign to b-a possible in a corner case (a=0 b=Integer.MIN_VALUE).
 				if(pn1.hashCode > pn2.hashCode) return 1;
 				else if(pn1.hashCode < pn2.hashCode) return -1;
-				int o1 = System.identityHashCode(pn1);
-				int o2 = System.identityHashCode(pn2);
-				if(o1 > o2) return 1;
-				if(o2 > o1) return -1;
-				return 0;
+				return Fields.compareObjectID(pn1, pn2);
 			}
 		});
 		for(OpennetPeerNode opn: nodes)
