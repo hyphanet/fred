@@ -4910,16 +4910,8 @@ public class Node implements TimeSkewDetectorCallback {
 		return opennet.addNewOpennetNode(fs, connectionType, false);
 	}
 
-	public byte[] getOpennetIdentity() {
-		return opennet.crypto.myIdentity;
-	}
-
 	public byte[] getOpennetPubKeyHash() {
 		return opennet.crypto.pubKeyHash;
-	}
-
-	public byte[] getDarknetIdentity() {
-		return darknetCrypto.myIdentity;
 	}
 
 	public byte[] getDarknetPubKeyHash() {
