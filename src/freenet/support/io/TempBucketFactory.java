@@ -582,7 +582,13 @@ public class TempBucketFactory implements BucketFactory {
 		
 	};
 	
-	/** Migrate all long-lived buckets from the queue */
+	/** Migrate all long-lived buckets from the queue.
+	 * @param now The current time (System.currentTimeMillis()).
+	 * @param force If true, migrate one bucket which isn't necessarily long lived, 
+	 * just to free up space. Otherwise we will migrate all long-lived buckets but
+	 * not any others. 
+	 * @return True if we migrated any buckets.
+	 */
 	private boolean cleanBucketQueue(long now, boolean force) {
 		boolean shouldContinue = true;
 		// create a new list to avoid race-conditions
