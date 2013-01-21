@@ -616,16 +616,23 @@ public class NodeCrypto {
 		} else {
 			while(true) {
 				handle = random.nextLong();
-				HandlePortTuple tuple = new HandlePortTuple();
-				tuple.handle = handle;
-				// Double-check with QBE, just in case the RNG is broken (similar things have happened before!)
-				ObjectSet os = setupContainer.get(tuple);
+				final HandlePortTuple newTuple = new HandlePortTuple();
+				newTuple.handle = handle;
+				// Double-check just in case the RNG is broken (similar things have happened before!)
+				ObjectSet<HandlePortTuple> os = setupContainer.query(new Predicate<HandlePortTuple>() {
+					private static final long serialVersionUID = 7850460146922879499L;
+
+					@Override
+					public boolean match(HandlePortTuple tuple) {
+						return tuple.handle == newTuple.handle;
+					}
+				});
 				if(os.hasNext()) {
 					System.err.println("Generating database handle for node: already taken: "+handle);
 					continue;
 				}
-				tuple.portNumber = portNumber;
-				setupContainer.store(tuple);
+				newTuple.portNumber = portNumber;
+				setupContainer.store(newTuple);
 				setupContainer.commit();
 				if(logMINOR) Logger.minor(this, "COMMITTED");
 				System.err.println("Generated and stored database handle for node on port "+portNumber+": "+handle);
