@@ -533,7 +533,7 @@ public class TempBucketFactory implements BucketFactory {
 		long now = System.currentTimeMillis();
 		
 		synchronized(this) {
-			if((size > 0) && (size <= maxRAMBucketSize) && (bytesInUse <= maxRamUsed) && (bytesInUse + size <= maxRamUsed)) {
+			if((size > 0) && (size <= maxRAMBucketSize) && (bytesInUse < maxRamUsed) && (bytesInUse + size <= maxRamUsed)) {
 				useRAMBucket = true;
 			}
 			if(bytesInUse >= maxRamUsed * MAX_USAGE_HIGH && !runningCleaner) {
@@ -567,7 +567,7 @@ public class TempBucketFactory implements BucketFactory {
 				while(true) {
 					// Now migrate buckets until usage is below the lower threshold.
 					synchronized(TempBucketFactory.this) {
-						if(bytesInUse < maxRamUsed * MAX_USAGE_LOW) return;
+						if(bytesInUse <= maxRamUsed * MAX_USAGE_LOW) return;
 					}
 					if(!cleanBucketQueue(System.currentTimeMillis(), true)) return;
 				}
