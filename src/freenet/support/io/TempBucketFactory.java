@@ -512,7 +512,8 @@ public class TempBucketFactory implements BucketFactory {
 		return reallyEncrypt;
 	}
 
-	static final double MAX_USAGE = 0.9;
+	static final double MAX_USAGE_LOW = 0.8;
+	static final double MAX_USAGE_HIGH = 0.9;
 	
 	/**
 	 * Create a temp bucket
@@ -534,7 +535,7 @@ public class TempBucketFactory implements BucketFactory {
 		synchronized(this) {
 			if((size > 0) && (size <= maxRAMBucketSize) && (bytesInUse <= maxRamUsed)) {
 				useRAMBucket = true;
-			} else if(bytesInUse >= maxRamUsed * MAX_USAGE && !runningCleaner) {
+			} else if(bytesInUse >= maxRamUsed * MAX_USAGE_HIGH && !runningCleaner) {
 				runningCleaner = true;
 				executor.execute(cleaner);
 			}
@@ -562,12 +563,12 @@ public class TempBucketFactory implements BucketFactory {
 				boolean force;
 				synchronized(TempBucketFactory.this) {
 					if(!runningCleaner) return;
-					force = (bytesInUse >= maxRamUsed * MAX_USAGE);
+					force = (bytesInUse >= maxRamUsed * MAX_USAGE_LOW);
 				}
 				while(true) {
 					if(!cleanBucketQueue(System.currentTimeMillis(), force)) return;
 					synchronized(TempBucketFactory.this) {
-						force = (bytesInUse >= maxRamUsed * MAX_USAGE);
+						force = (bytesInUse >= maxRamUsed * MAX_USAGE_LOW);
 						if(!force) return;
 					}
 				}
