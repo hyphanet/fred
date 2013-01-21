@@ -535,7 +535,8 @@ public class TempBucketFactory implements BucketFactory {
 		synchronized(this) {
 			if((size > 0) && (size <= maxRAMBucketSize) && (bytesInUse <= maxRamUsed)) {
 				useRAMBucket = true;
-			} else if(bytesInUse >= maxRamUsed * MAX_USAGE_HIGH && !runningCleaner) {
+			}
+			if(bytesInUse >= maxRamUsed * MAX_USAGE_HIGH && !runningCleaner) {
 				runningCleaner = true;
 				executor.execute(cleaner);
 			}
