@@ -533,7 +533,7 @@ public class TempBucketFactory implements BucketFactory {
 		long now = System.currentTimeMillis();
 		
 		synchronized(this) {
-			if((size > 0) && (size <= maxRAMBucketSize) && (bytesInUse <= maxRamUsed)) {
+			if((size > 0) && (size <= maxRAMBucketSize) && (bytesInUse <= maxRamUsed) && (bytesInUse + size <= maxRamUsed)) {
 				useRAMBucket = true;
 			}
 			if(bytesInUse >= maxRamUsed * MAX_USAGE_HIGH && !runningCleaner) {
