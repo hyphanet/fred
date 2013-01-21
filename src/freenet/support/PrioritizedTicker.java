@@ -1,6 +1,7 @@
 package freenet.support;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.TreeMap;
@@ -225,10 +226,9 @@ public class PrioritizedTicker implements Ticker, Runnable {
 								}
 								if(x == 0) {
 									timedJobsByTime.remove(t);
-								} else if(x != newJobs.length) {
-									jobs = newJobs;
-									newJobs = new Job[x];
-									System.arraycopy(jobs, 0, newJobs, 0, x);
+								} else {
+									if(x != newJobs.length) // XXX impossible
+										newJobs = Arrays.copyOf(newJobs, x);
 									timedJobsByTime.put(t, newJobs);
 								}
 							}
@@ -303,10 +303,9 @@ public class PrioritizedTicker implements Ticker, Runnable {
 						}
 						if(x == 0) {
 							timedJobsByTime.remove(t);
-						} else if(x != newJobs.length) {
-							jobs = newJobs;
-							newJobs = new Job[x];
-							System.arraycopy(jobs, 0, newJobs, 0, x);
+						} else {
+							if(x != newJobs.length) // XXX impossible
+								newJobs = Arrays.copyOf(newJobs, x);
 							timedJobsByTime.put(t, newJobs);
 						}
 					}

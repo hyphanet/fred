@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.ref.WeakReference;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -20,9 +21,9 @@ public class IPConverter {
 	final int MAX_ENTRIES = 100;
 	// Local cache
 	@SuppressWarnings("serial")
-	private final HashMap<Long, Country> cache = new LinkedHashMap<Long, Country>() {
+	private final HashMap<Integer, Country> cache = new LinkedHashMap<Integer, Country>() {
 		@Override
-		protected boolean removeEldestEntry(Map.Entry<Long, Country> eldest) {
+		protected boolean removeEldestEntry(Map.Entry<Integer, Country> eldest) {
 			return size() > MAX_ENTRIES;
 		}
 	};
@@ -221,7 +222,7 @@ public class IPConverter {
 			int size = line.length() / 7;
 			// Arrays to form a Cache
 			short[] codes = new short[size];
-			long[] ips = new long[size];
+			int[] ips = new int[size];
 			// Read ips and add it to ip table
 			for (int i = 0; i < size; i++) {
 				int offset = i * 7;
@@ -238,7 +239,7 @@ public class IPConverter {
 					Logger.error(this, "Country not in list: "+code);
 					codes[i] = (short)-1;
 				}
-				ips[i] = ip;
+				ips[i] = (int)ip;
 			}
 			raf.close();
 			return new Cache(codes, ips);
@@ -283,27 +284,72 @@ public class IPConverter {
 	 */
 	public Country locateIP(String ip) {
 		if(ip == null) return null;
-		Cache memCache = getCache();
 		long longip;
 		try {
 			longip = ip2num(ip);
 		} catch (NumberFormatException e) {
 			return null; // Not an IP address.
 		}
+		return locateIP(longip);
+	}
+
+	public Country locateIP(byte[] ip) {
+		if(ip == null) return null;
+		if(ip.length == 16) {
+			/* Convert some special IPv6 addresses to IPv4 */
+			if(ip[0] == (byte)0x20 && ip[1] == (byte)0x02) {
+				// 2002::/16, 6to4 tunnels
+				ip = Arrays.copyOfRange(ip, 2,6);
+			} else if((	ip[ 0] == (byte)0 && ip[ 1] == (byte)0 &&
+						ip[ 2] == (byte)0 && ip[ 3] == (byte)0 &&
+						ip[ 4] == (byte)0 && ip[ 5] == (byte)0 &&
+						ip[ 6] == (byte)0 && ip[ 7] == (byte)0 &&
+						ip[ 8] == (byte)0 && ip[ 9] == (byte)0 &&
+						ip[10] == (byte)0 && ip[11] == (byte)0)) {
+				// ::/96, deprecated IPv4-compatible IPv6
+				ip = Arrays.copyOfRange(ip, 12,16);
+			} else if(( ip[0] == (byte)0x20 && ip[1] == (byte)0x01 &&
+						ip[2] == (byte)0x00 && ip[3] == (byte)0x00)) {
+				// 2001:0::/32, Teredo tunnels
+				//  4..8  = server adderss
+				//  9..10 = flags
+				// 10..11 = client port (inverted)
+				// 12..16 = client address (inverted)
+				ip = Arrays.copyOfRange(ip, 12, 16);
+				ip[0] ^= (byte)0xff; // deinvert
+				ip[1] ^= (byte)0xff;
+				ip[2] ^= (byte)0xff;
+				ip[3] ^= (byte)0xff;
+			}
+			/* we cannot handle other IPv6 addresses (yet) */
+		}
+		if(ip.length != 4) return null;
+		long longip = (
+				((ip[0] << 24) & 0xff000000l) |
+				((ip[1] << 16) & 0x00ff0000l) |
+				((ip[2] <<  8) & 0x0000ff00l) |
+				( ip[3]        & 0x000000ffl));
+		return locateIP(longip);
+	}
+
+	private Country locateIP(long longip) {
+		Cache memCache = getCache();
 		// Check cache first
-		if (cache.containsKey(longip)) {
-			return cache.get(longip);
+		Country cached = cache.get((int)longip);
+		if (cached != null) {
+			return cached;
 		}
 		if(memCache == null) return null;
-		long[] ips = memCache.getIps();
+		int[] ips = memCache.getIps();
 		short[] codes = memCache.getCodes();
 		// Binary search
 		int start = 0;
 		int last = ips.length - 1;
 		int mid;
-		while ((mid = Math.round((last - start) / 2)) > 0) {
+		while ((mid = (last - start) / 2) > 0) {
 			int midpos = mid + start;
-			if (longip >= ips[midpos]) {
+			long midip = ips[midpos] & 0xffffffffl;
+			if (longip >= midip) {
 				last = midpos;
 			} else {
 				start = midpos;
@@ -312,7 +358,7 @@ public class IPConverter {
 		short countryOrdinal = codes[last];
 		if(countryOrdinal < 0) return null;
 		Country country = Country.values()[countryOrdinal];
-		cache.put(longip, country);
+		cache.put((int)longip, country);
 		return country;
 	}
 

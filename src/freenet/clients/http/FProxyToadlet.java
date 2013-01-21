@@ -500,18 +500,19 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				return;
 			}
 
+			/*
+			 * Redirect to the welcome page because no key was specified.
+			 */
 			try {
-				String querystring = uri.getQuery();
-
-				if (querystring == null) {
-					throw new RedirectException(welcome);
-				} else {
-					// TODP possibly a proper URLEncode method
-					querystring = querystring.replace(' ', '+');
-					throw new RedirectException("/welcome/?" + querystring);
-				}
+				throw new RedirectException(new URI(null, null, null, -1, welcome.getPath(), uri.getQuery(), uri.getFragment()));
 			} catch (URISyntaxException e) {
-				// HUH!?!
+				/*
+				 * This shouldn't happen because all the inputs to the URI constructor come from getters
+				 * of existing URIs.
+				 */
+				Logger.error(FProxyToadlet.class, "Unexpected syntax error in URI: " + e);
+				writeTemporaryRedirect(ctx, "Internal error. Please check logs and report.", WelcomeToadlet.PATH);
+				return;
 			}
 		}else if(ks.equals("/favicon.ico")){
 			byte[] buf = new byte[1024];
@@ -1169,6 +1170,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 		server.register(fproxy, "FProxyToadlet.categoryBrowsing", "/", false, "FProxyToadlet.welcomeTitle",
 		        "FProxyToadlet.welcome", false, null);
+
+		DecodeToadlet decodeKeywordURL = new DecodeToadlet(client, core);
+		server.register(decodeKeywordURL, null, "/decode/", true, false);
 
 		InsertFreesiteToadlet siteinsert = new InsertFreesiteToadlet(client, core.alerts);
 		server.register(siteinsert, "FProxyToadlet.categoryBrowsing", "/insertsite/", true,

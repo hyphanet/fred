@@ -258,14 +258,14 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 	}
 
 	@Override
-	public SendableRequestItem chooseKey(KeysFetchingLocally keys,
+	public SendableRequestItem chooseKey(KeysFetchingLocally fetching,
 			ObjectContainer container, ClientContext context) {
 		if(persistent) container.activate(segment, 1);
-		ArrayList<Integer> possibles = segment.validBlockNumbers(keys, true, container, context);
+		ArrayList<Integer> possibles = segment.validBlockNumbers(fetching, true, container, context);
 		while(true) {
 			if(possibles == null || possibles.isEmpty()) return null;
 			Integer x = possibles.remove(context.random.nextInt(possibles.size()));
-			if(segment.checkRecentlyFailed(x, container, context, keys, System.currentTimeMillis())) continue;
+			if(segment.checkRecentlyFailed(x, container, context, fetching, System.currentTimeMillis())) continue;
 			return new SplitFileFetcherSegmentSendableRequestItem(x);
 		}
 	}

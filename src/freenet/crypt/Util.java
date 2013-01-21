@@ -8,20 +8,27 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.security.DigestException;
+import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Collections;
+import java.util.Map;
 import net.i2p.util.NativeBigInteger;
+import freenet.crypt.JceLoader;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.support.HexUtil;
 import freenet.support.Loader;
+import freenet.support.Logger;
 
 public class Util {
 
 	// bah, i'm tired of chasing down dynamically loaded classes..
-	// this is for getCipherByName() and getDigestByName()
+	// this is for getCipherByName()
 	static {
-		SHA1.class.toString();
-		JavaSHA1.class.toString();
 		Rijndael.class.toString();
 	}
 
@@ -101,7 +108,7 @@ public class Util {
 	/**
 	 * Hashes a string in a consistent manner
 	 */
-	public static byte[] hashString(Digest d, String s) {
+	public static byte[] hashString(MessageDigest d, String s) {
 		try {
 			byte[] sbytes = s.getBytes("UTF-8");
 			d.update(sbytes, 0, sbytes.length);
@@ -134,13 +141,93 @@ public class Util {
 		return true;
 	}
 
-	private static Digest ctx = SHA1.getInstance();
+	private static final MessageDigest ctx;
+	private static final int ctx_length;
+
+	public static final Map<String, Provider> mdProviders;
+
+	static private long benchmark(MessageDigest md) throws GeneralSecurityException
+	{
+		long times = Long.MAX_VALUE;
+		byte[] input = new byte[1024];
+		byte[] output = new byte[md.getDigestLength()];
+		// warm-up
+		for (int i = 0; i < 32; i++) {
+			md.update(input, 0, input.length);
+			md.digest(output, 0, output.length);
+			System.arraycopy(output, 0, input, (i*output.length)%(input.length-output.length), output.length);
+		}
+		for (int i = 0; i < 128; i++) {
+			long startTime = System.nanoTime();
+			for (int j = 0; j < 4; j++) {
+				for (int k = 0; k < 32; k ++) {
+					md.update(input, 0, input.length);
+				}
+				md.digest(output, 0, output.length);
+			}
+			long endTime = System.nanoTime();
+			times = Math.min(endTime - startTime, times);
+			System.arraycopy(output, 0, input, 0, output.length);
+		}
+		return times;
+	}
+
+	static {
+		try {
+			HashMap<String,Provider> mdProviders_internal = new HashMap<String, Provider>();
+
+			for (String algo: new String[] {
+				"SHA1", "MD5", "SHA-256", "SHA-384", "SHA-512"
+			}) {
+				final Class clazz = Util.class;
+				final Provider sun = JceLoader.SUN;
+				MessageDigest md = MessageDigest.getInstance(algo);
+				md.digest();
+				if (sun != null) {
+					// SUN provider is faster (in some configurations)
+					try {
+						MessageDigest sun_md = MessageDigest.getInstance(algo, sun);
+						sun_md.digest();
+						if (md.getProvider() != sun_md.getProvider()) {
+							long time_def = benchmark(md);
+							long time_sun = benchmark(sun_md);
+							System.out.println(algo + " (" + md.getProvider() + "): " + time_def + "ns");
+							System.out.println(algo + " (" + sun_md.getProvider() + "): " + time_sun + "ns");
+							Logger.minor(clazz, algo + " (" + md.getProvider() + "): " + time_def + "ns");
+							Logger.minor(clazz, algo + " (" + sun_md.getProvider() + "): " + time_sun + "ns");
+							if (time_sun < time_def) {
+								md = sun_md;
+							}
+						}
+					} catch(GeneralSecurityException e) {
+						// ignore
+						Logger.warning(clazz, algo + "@" + sun + " benchmark failed", e);
+					} catch(Throwable e) {
+						// ignore
+						Logger.error(clazz, algo + "@" + sun + " benchmark failed", e);
+					}
+				}
+				Provider mdProvider = md.getProvider();
+				System.out.println(algo + ": using " + mdProvider);
+				Logger.normal(clazz, algo + ": using " + mdProvider);
+				mdProviders_internal.put(algo, mdProvider);
+			}
+			mdProviders = Collections.unmodifiableMap(mdProviders_internal);
+
+			ctx = MessageDigest.getInstance("SHA1", mdProviders.get("SHA1"));
+			ctx_length = ctx.getDigestLength();
+		} catch(NoSuchAlgorithmException e) {
+			// impossible
+			throw new Error(e);
+		}
+	}
 
 	public static void makeKey(
 		byte[] entropy,
 		byte[] key,
 		int offset,
 		int len) {
+		try {
 		synchronized (ctx) {
 			ctx.digest(); // reinitialize
 
@@ -151,9 +238,9 @@ public class Util {
 					ctx.update((byte) 0);
 				ctx.update(entropy, 0, entropy.length);
 				int bc;
-				if (len > 20) {
-					ctx.digest(true, key, offset);
-					bc = 20;
+				if (len > ctx_length) {
+					ctx.digest(key, offset, ctx_length);
+					bc = ctx_length;
 				} else {
 					byte[] hash = ctx.digest();
 					bc = Math.min(len, hash.length);
@@ -164,6 +251,10 @@ public class Util {
 			}
 		}
 		Arrays.fill(entropy, (byte) 0);
+		} catch(DigestException e) {
+			// impossible
+			throw new Error(e);
+		}
 	}
 
 	public static BlockCipher getCipherByName(String name) {
@@ -187,17 +278,6 @@ public class Util {
 				new Object[] { Integer.valueOf(keySize)});
 		} catch (Exception e) {
 			//throw new UnsupportedCipherException(""+e);
-			e.printStackTrace();
-			return null;
-		}
-	}
-
-	public static Digest getDigestByName(String name) {
-		//throws UnsupportedDigestException {
-		try {
-			return (Digest) Loader.getInstance("freenet.crypt." + name);
-		} catch (Exception e) {
-			//throw new UnsupportedDigestException(""+e);
 			e.printStackTrace();
 			return null;
 		}

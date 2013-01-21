@@ -23,14 +23,14 @@ public class GetConfig extends FCPMessage {
 	final String identifier;
 	
 	public GetConfig(SimpleFieldSet fs) {
-		withCurrent = Fields.stringToBool(fs.get("WithCurrent"), false);
-		withDefaults = Fields.stringToBool(fs.get("WithDefaults"), false);
-		withSortOrder = Fields.stringToBool(fs.get("WithSortOrder"), false);
-		withExpertFlag = Fields.stringToBool(fs.get("WithExpertFlag"), false);
-		withForceWriteFlag = Fields.stringToBool(fs.get("WithForceWriteFlag"), false);
-		withShortDescription = Fields.stringToBool(fs.get("WithShortDescription"), false);
-		withLongDescription = Fields.stringToBool(fs.get("WithLongDescription"), false);
-		withDataTypes = Fields.stringToBool(fs.get("WithDataTypes"), false);
+		withCurrent = fs.getBoolean("WithCurrent", false);
+		withDefaults = fs.getBoolean("WithDefaults", false);
+		withSortOrder = fs.getBoolean("WithSortOrder", false);
+		withExpertFlag = fs.getBoolean("WithExpertFlag", false);
+		withForceWriteFlag = fs.getBoolean("WithForceWriteFlag", false);
+		withShortDescription = fs.getBoolean("WithShortDescription", false);
+		withLongDescription = fs.getBoolean("WithLongDescription", false);
+		withDataTypes = fs.getBoolean("WithDataTypes", false);
 		this.identifier = fs.get("Identifier");
 		fs.removeValue("Identifier");
 	}

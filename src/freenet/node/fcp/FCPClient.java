@@ -3,7 +3,6 @@ package freenet.node.fcp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +16,6 @@ import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.node.fcp.ListPersistentRequestsMessage.PersistentListJob;
 import freenet.node.fcp.ListPersistentRequestsMessage.TransientListJob;
-import freenet.node.fcp.whiteboard.Whiteboard;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.NullObject;
@@ -35,7 +33,7 @@ import freenet.support.api.Bucket;
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class FCPClient {
 	
-	public FCPClient(String name2, FCPConnectionHandler handler, boolean isGlobalQueue, RequestCompletionCallback cb, short persistenceType, FCPPersistentRoot root, Whiteboard whiteboard,ObjectContainer container) {
+	public FCPClient(String name2, FCPConnectionHandler handler, boolean isGlobalQueue, RequestCompletionCallback cb, short persistenceType, FCPPersistentRoot root, ObjectContainer container) {
 		this.name = name2;
 		if(name == null) throw new NullPointerException();
 		this.currentConnection = handler;
@@ -51,7 +49,6 @@ public class FCPClient {
 		lowLevelClientRT = new FCPClientRequestClient(this, forever, true);
 		completionCallbacks = new ArrayList<RequestCompletionCallback>();
 		if(cb != null) completionCallbacks.add(cb);
-		this.whiteboard=whiteboard;
 		if(persistenceType == ClientRequest.PERSIST_FOREVER) {
 			assert(root != null);
 			this.root = root;
@@ -82,8 +79,6 @@ public class FCPClient {
 	private RequestClient lowLevelClient;
 	private RequestClient lowLevelClientRT;
 	private transient List<RequestCompletionCallback> completionCallbacks;
-	/** The whiteboard where ClientRequests report their progress*/
-	private transient Whiteboard whiteboard;
 	/** The cache where ClientRequests report their progress */
 	private transient RequestStatusCache statusCache;
 	/** Connection mode */
@@ -389,9 +384,7 @@ public class FCPClient {
 			container.activate(clientRequestsByIdentifier, 2);
 		}
 		synchronized(this) {
-			Iterator<ClientRequest> i = runningPersistentRequests.iterator();
-			while(i.hasNext()) {
-				ClientRequest req = i.next();
+			for(ClientRequest req: runningPersistentRequests) {
 				if(container != null) container.activate(req, 1);
 				if(req == null) {
 					Logger.error(this, "Request is null on runningPersistentRequests for "+this+" - database corruption??");
@@ -595,9 +588,7 @@ public class FCPClient {
 		if(statusCache != null)
 			statusCache.clear();
 		synchronized(this) {
-			Iterator<ClientRequest> i = runningPersistentRequests.iterator();
-			while(i.hasNext()) {
-				ClientRequest req = i.next();
+			for(ClientRequest req: runningPersistentRequests) {
 				toKill.add(req);
 			}
 			runningPersistentRequests.clear();
@@ -691,14 +682,6 @@ public class FCPClient {
 			throw new NullPointerException(); // Better it happens here ...
 	}
 
-	public Whiteboard getWhiteboard(){
-		return whiteboard;
-	}
-	
-	public void setWhiteboard(Whiteboard whiteboard){
-		this.whiteboard=whiteboard;
-	}
-	
 	public RequestStatusCache getRequestStatusCache() {
 		return statusCache;
 	}

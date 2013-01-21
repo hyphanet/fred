@@ -10,9 +10,9 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
+import java.util.Deque;
+import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Random;
 import java.util.SortedSet;
@@ -1411,7 +1411,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			System.out.println("Resizing datastore "+name);
 
 			BatchProcessor<T> resizeProcesser = new BatchProcessor<T>() {
-				List<Entry> oldEntryList = new LinkedList<Entry>();
+				Deque<Entry> oldEntryList = new LinkedList<Entry>();
 
 				@Override
 				public void init() {
@@ -1458,7 +1458,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 						entry.setHD(readHD(entry.curOffset));
 						oldEntryList.add(entry);
 						if (oldEntryList.size() > RESIZE_MEMORY_ENTRIES)
-							oldEntryList.remove(0);
+							oldEntryList.poll();
 					} catch (IOException e) {
 						Logger.error(this, "error reading entry (offset=" + entry.curOffset + ")", e);
 					}
@@ -1478,7 +1478,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 						setStoreFileSize(Math.max(storeSize, entriesLeft), false);
 
 					// try to resolve the list
-					ListIterator<Entry> it = oldEntryList.listIterator();
+					Iterator<Entry> it = oldEntryList.iterator();
 					while (it.hasNext())
 						if (resolveOldEntry(it.next()))
 							it.remove();

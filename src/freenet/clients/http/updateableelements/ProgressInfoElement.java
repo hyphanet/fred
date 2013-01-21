@@ -43,7 +43,7 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 		children.clear();
 
 		FProxyFetchWaiter waiter = tracker.makeWaiterForFetchInProgress(key, maxSize, fctx);
-		FProxyFetchResult fr = waiter.getResult();
+		FProxyFetchResult fr = waiter == null ? null : waiter.getResult();
 		if (fr == null) {
 			addChild("div", "No fetcher found");
 		}

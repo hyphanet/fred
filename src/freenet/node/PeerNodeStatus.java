@@ -26,6 +26,8 @@ public class PeerNodeStatus {
 	private final String peerAddress;
 	/** This one is always an IP address or null. */
 	private final String peerAddressNumerical;
+	/** This one is always an IP address or null. */
+	private final byte[] peerAddressBytes;
 
 	private final int peerPort;
 
@@ -127,6 +129,7 @@ public class PeerNodeStatus {
 		if(p == null) {
 			peerAddress = null;
 			peerAddressNumerical = null;
+			peerAddressBytes = null;
 			peerPort = -1;
 		} else {
 			FreenetInetAddress a = p.getFreenetAddress();
@@ -134,8 +137,10 @@ public class PeerNodeStatus {
 			InetAddress i = a.getAddress(false);
 			if(i != null) {
 				peerAddressNumerical = i.getHostAddress();
+				peerAddressBytes = i.getAddress();
 			} else {
 				peerAddressNumerical = null;
+				peerAddressBytes = null;
 			}
 			peerPort = p.getPort();
 		}
@@ -327,6 +332,13 @@ public class PeerNodeStatus {
 	 */
 	public String getPeerAddressNumerical() {
 		return peerAddressNumerical;
+	}
+
+	/**
+	 * @return the peer address, as raw bytes, or null if not known.
+	 */
+	public byte[] getPeerAddressBytes() {
+		return peerAddressBytes;
 	}
 
 	/**

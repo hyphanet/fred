@@ -20,7 +20,7 @@ public class WatchGlobal extends FCPMessage {
 	static final String NAME = "WatchGlobal";
 
 	public WatchGlobal(SimpleFieldSet fs) throws MessageInvalidException {
-		enabled = Fields.stringToBool(fs.get("Enabled"), true);
+		enabled = fs.getBoolean("Enabled", true);
 		String s = fs.get("VerbosityMask");
 		if(s != null)
 			try {

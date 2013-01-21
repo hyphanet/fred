@@ -221,7 +221,7 @@ public class RequestTracker {
 		}
 	}
 
-	public synchronized void countRequests(boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, CountedRequests counter, CountedRequests counterSourceRestarted) {
+	public void countRequests(boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, CountedRequests counter, CountedRequests counterSourceRestarted) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
 		// Map is locked by the non-local version, although we're counting from the local version.
 		HashMap<Long, ? extends UIDTag> mapLock = map;
@@ -378,7 +378,7 @@ public class RequestTracker {
 		tag.reassignToSelf();
 	}
 
-	private synchronized HashMap<Long, ? extends UIDTag> getTracker(boolean local, boolean ssk,
+	private HashMap<Long, ? extends UIDTag> getTracker(boolean local, boolean ssk,
 			boolean insert, boolean offer, boolean realTimeFlag) {
 		if(offer)
 			return getOfferTracker(ssk, realTimeFlag);
@@ -590,18 +590,6 @@ public class RequestTracker {
 		return total;
 	}
 
-	public int getNumRemoteSSKRequests(boolean realTimeFlag) {
-		if(realTimeFlag) {
-			synchronized(runningSSKGetUIDsRT) {
-				return runningSSKGetUIDsRT.size() - runningLocalSSKGetUIDsRT.size();
-			}
-		} else {
-			synchronized(runningSSKGetUIDsBulk) {
-				return runningSSKGetUIDsBulk.size() - runningLocalSSKGetUIDsBulk.size();
-			}
-		}
-	}
-
 	public int getNumLocalCHKInserts() {
 		int total = 0;
 		synchronized(runningCHKPutUIDsBulk) {
@@ -644,40 +632,6 @@ public class RequestTracker {
 			total += runningSSKPutUIDsBulk.size() - runningLocalSSKPutUIDsBulk.size();
 		}
 		return total;
-	}
-
-	public int getNumRemoteCHKRequests(boolean realTimeFlag) {
-		return realTimeFlag ? 
-				(runningCHKGetUIDsRT.size() - runningLocalCHKGetUIDsRT.size()) : 
-					(runningCHKGetUIDsBulk.size() - runningLocalCHKGetUIDsBulk.size());
-	}
-
-	public int getNumLocalSSKInserts(boolean realTimeFlag) {
-		return realTimeFlag ? runningLocalSSKPutUIDsRT.size() : runningLocalSSKPutUIDsBulk.size();
-	}
-
-	public int getNumLocalCHKInserts(boolean realTimeFlag) {
-		return realTimeFlag ? runningLocalCHKPutUIDsRT.size() : runningLocalCHKPutUIDsBulk.size();
-	}
-
-	public int getNumLocalCHKRequests(boolean realTimeFlag) {
-		return realTimeFlag ? runningLocalCHKGetUIDsRT.size() : runningLocalCHKGetUIDsBulk.size();
-	}
-
-	public int getNumLocalSSKRequests(boolean realTimeFlag) {
-		return realTimeFlag ? runningLocalSSKGetUIDsRT.size() : runningLocalSSKGetUIDsBulk.size();
-	}
-
-	public int getNumRemoteSSKInserts(boolean realTimeFlag) {
-		return realTimeFlag ? 
-				(runningSSKPutUIDsRT.size() - runningLocalSSKPutUIDsRT.size()) : 
-					(runningSSKPutUIDsBulk.size() - runningLocalSSKPutUIDsBulk.size());
-	}
-
-	public int getNumRemoteCHKInserts(boolean realTimeFlag) {
-		return realTimeFlag ? 
-				(runningCHKPutUIDsRT.size() - runningLocalCHKPutUIDsRT.size()) : 
-					(runningCHKPutUIDsBulk.size() - runningLocalCHKPutUIDsBulk.size());
 	}
 
 	public int getNumSSKOfferReplies() {

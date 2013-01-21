@@ -386,19 +386,16 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return false;
 		}
 		// Decrypt the data
-		MessageDigest md = SHA256.getMessageDigest();
 		byte[] payload = new byte[dataLength];
 		System.arraycopy(buf, dataStart, payload, 0, dataLength);
 		pcfb.blockDecipher(payload, 0, payload.length);
 
-		md.update(payload);
-		byte[] realHash = md.digest();
-		SHA256.returnMessageDigest(md); md = null;
+		byte[] realHash = SHA256.digest(payload);
 
 		if(Arrays.equals(realHash, hash)) {
 			// Got one
 			processDecryptedAuth(payload, pn, peer, oldOpennetPeer);
-			pn.reportIncomingPacket(buf, offset, length, now);
+			pn.reportIncomingBytes(length);
 			return true;
 		} else {
 			if(logDEBUG) Logger.debug(this, "Incorrect hash in tryProcessAuth for "+peer+" (length="+dataLength+"): \nreal hash="+HexUtil.bytesToHex(realHash)+"\n bad hash="+HexUtil.bytesToHex(hash));
@@ -422,11 +419,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		BlockCipher authKey = crypto.getAnonSetupCipher();
 		// Does the packet match IV E( H(data) data ) ?
 		int ivLength = PCFBMode.lengthIV(authKey);
-		MessageDigest md = SHA256.getMessageDigest();
 		int digestLength = HASH_LENGTH;
 		if(length < digestLength + ivLength + 5) {
 			if(logMINOR) Logger.minor(this, "Too short: "+length+" should be at least "+(digestLength + ivLength + 5));
-			SHA256.returnMessageDigest(md);
 			return false;
 		}
 		// IV at the beginning
@@ -446,7 +441,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(logMINOR) Logger.minor(this, "Data length: "+dataLength+" (1 = "+byte1+" 2 = "+byte2+ ')');
 		if(dataLength > length - (ivLength+hash.length+2)) {
 			if(logMINOR) Logger.minor(this, "Invalid data length "+dataLength+" ("+(length - (ivLength+hash.length+2))+") in tryProcessAuthAnon");
-			SHA256.returnMessageDigest(md);
 			return false;
 		}
 		// Decrypt the data
@@ -454,9 +448,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		System.arraycopy(buf, dataStart, payload, 0, dataLength);
 		pcfb.blockDecipher(payload, 0, payload.length);
 
-		md.update(payload);
-		byte[] realHash = md.digest();
-		SHA256.returnMessageDigest(md); md = null;
+		byte[] realHash = SHA256.digest(payload);
 
 		if(Arrays.equals(realHash, hash)) {
 			// Got one
@@ -1243,8 +1235,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			}
 			computedExponential = ctx.getHMACKey(_hisExponential);
         } else {
-            ECPublicKey initiatorKey = ECDH.getPublicKey(initiatorExponential);
-            ECPublicKey responderKey = ECDH.getPublicKey(responderExponential);
+            ECPublicKey initiatorKey = ECDH.getPublicKey(initiatorExponential, ecdhCurveToUse);
+            ECPublicKey responderKey = ECDH.getPublicKey(responderExponential, ecdhCurveToUse);
             ECDHLightContext ctx = findECDHContextByPubKey(responderKey);
             if (ctx == null) {
                 Logger.error(this, "WTF? the HMAC verified but we don't know about that exponential! SHOULDN'T HAPPEN! - JFK3 - "+pn);
@@ -1762,7 +1754,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		    NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
 		    computedExponential= ((DiffieHellmanLightContext)ctx).getHMACKey(_hisExponential);
 		}else {
-		    computedExponential = ((ECDHLightContext)ctx).getHMACKey(ECDH.getPublicKey(hisExponential)).getEncoded();
+		    computedExponential = ((ECDHLightContext)ctx).getHMACKey(ECDH.getPublicKey(hisExponential, ecdhCurveToUse)).getEncoded();
 		}
 		if(logDEBUG) Logger.debug(this, "The shared Master secret is : "+HexUtil.bytesToHex(computedExponential)+ " for " + pn);
 		/* 0 is the outgoing key for the initiator, 7 for the responder */
@@ -2084,7 +2076,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 		sock.sendPacket(data, replyTo, pn == null ? crypto.config.alwaysAllowLocalAddresses() : pn.allowLocalAddresses());
 		if(pn != null)
-			pn.reportOutgoingPacket(data, 0, data.length, System.currentTimeMillis());
+			pn.reportOutgoingBytes(data.length);
 		if(PeerNode.shouldThrottle(replyTo, node)) {
 			node.outputThrottle.forceGrab(data.length);
 		}

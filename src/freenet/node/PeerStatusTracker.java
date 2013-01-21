@@ -58,7 +58,7 @@ class PeerStatusTracker<K extends Object> {
 					Logger.error(this, "removePeerNodeStatus(): identity '" + peerNode.getIdentityString() + " for " + peerNode.shortToString() + "' not in peerNodeStatuses with status '" + peerNodeStatus + "'", new Exception("debug"));
 				return;
 			}
-			if(statuses.isEmpty())
+			if(statusSet.isEmpty())
 				statuses.remove(peerNodeStatus);
 		} else
 			statusSet = new WeakHashSet<PeerNode>();

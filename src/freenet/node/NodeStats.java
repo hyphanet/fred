@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import freenet.config.InvalidConfigValueException;
@@ -3499,9 +3500,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public StringCounter getDatabaseJobQueueStatistics() {
 		final StringCounter result = new StringCounter();
 
-		final LinkedList<Runnable>[] dbJobs = node.clientCore.clientDatabaseExecutor.getQueuedJobsByPriority();
+		final Runnable[][] dbJobs = node.clientCore.clientDatabaseExecutor.getQueuedJobsByPriority();
 
-		for(LinkedList<Runnable> list : dbJobs) {
+		for(Runnable[] list : dbJobs) {
 			for(Runnable job : list) {
 				result.inc(sanitizeDBJobType(job.toString()));
 			}

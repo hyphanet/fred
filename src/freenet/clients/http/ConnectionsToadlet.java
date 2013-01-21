@@ -480,7 +480,9 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				}
 
 				double totalSelectionRate = 0.0;
-				for(PeerNodeStatus status : peerNodeStatuses) {
+				//calculate the total selection rate using all peers, not just the peers for the current mode,
+				PeerNodeStatus[] allPeerNodeStatuses = node.peers.getPeerNodeStatuses(true);
+				for(PeerNodeStatus status : allPeerNodeStatuses) {
 					totalSelectionRate += status.getSelectionRate();
 				}
 				for (int peerIndex = 0, peerCount = peerNodeStatuses.length; peerIndex < peerCount; peerIndex++) {					
@@ -898,14 +900,13 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			HTMLNode addressRow = peerRow.addChild("td", "class", "peer-address");
 			// Ip to country + Flags
 			IPConverter ipc = IPConverter.getInstance(node.runDir().file(NodeUpdateManager.IPV4_TO_COUNTRY_FILENAME));
-			// Only IPv4 at the time
-			String addr = peerNodeStatus.getPeerAddressNumerical();
-			if(addr != null && !addr.contains(":")) {
+			byte[] addr = peerNodeStatus.getPeerAddressBytes();
+
 				Country country = ipc.locateIP(addr);
 				if(country != null) {
 					country.renderFlagIcon(addressRow);
 				}
-			}
+
 			addressRow.addChild("#", ((peerNodeStatus.getPeerAddress() != null) ? (peerNodeStatus.getPeerAddress() + ':' + peerNodeStatus.getPeerPort()) : (l10n("unknownAddress"))) + pingTime);
 		}
 
