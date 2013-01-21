@@ -561,17 +561,15 @@ public class TempBucketFactory implements BucketFactory {
 		@Override
 		public void run() {
 			try {
-				boolean force;
-				synchronized(TempBucketFactory.this) {
-					if(!runningCleaner) return;
-					force = (bytesInUse >= maxRamUsed * MAX_USAGE_LOW);
-				}
+				long now = System.currentTimeMillis();
+				// First migrate all the old buckets.
+				cleanBucketQueue(now, false);
 				while(true) {
-					if(!cleanBucketQueue(System.currentTimeMillis(), force)) return;
+					// Now migrate buckets until usage is below the lower threshold.
 					synchronized(TempBucketFactory.this) {
-						force = (bytesInUse >= maxRamUsed * MAX_USAGE_LOW);
-						if(!force) return;
+						if(bytesInUse < maxRamUsed * MAX_USAGE_LOW) return;
 					}
+					if(!cleanBucketQueue(System.currentTimeMillis(), true)) return;
 				}
 			} finally {
 				synchronized(TempBucketFactory.this) {
