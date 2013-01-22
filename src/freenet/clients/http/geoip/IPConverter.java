@@ -334,12 +334,12 @@ public class IPConverter {
 	}
 
 	private Country locateIP(long longip) {
-		Cache memCache = getCache();
 		// Check cache first
 		Country cached = cache.get((int)longip);
 		if (cached != null) {
 			return cached;
 		}
+		Cache memCache = getCache();
 		if(memCache == null) return null;
 		int[] ips = memCache.getIps();
 		short[] codes = memCache.getCodes();
