@@ -176,6 +176,16 @@ public class IPConverter {
 			'x', 'y', 'z', '.', ',', ';', '\'', '"', '`', '<', '>', '{', '}',
 			'[', ']', '=', '+', '-', '~', '*', '@', '#', '%', '$', '&', '!',
 			'?' };
+	private final static int base = base85.length;
+	// XXX this is actually base86, not base85!
+	private final static byte[] base85inv = new byte [128-32];
+	static {
+		Arrays.fill(base85inv, (byte)-1);
+		for(int i = 0; i < base85.length; i++) {
+			assert(base85[i] >= (char)32 && base85[i] < (char)128);
+			base85inv[(int)base85[i]-32] = (byte)i;
+		}
+	}
 
 	/**
 	 * Constructs a new {@link IPConverter}
@@ -389,32 +399,13 @@ public class IPConverter {
 	 */
 	private long decodeBase85(byte[] code) {
 		long result = 0;
-		int base = base85.length;
-		if (code.length != 5)
-			return result;
-		long coef = 1;
-		for (int i = 4; i >= 0; i--) {
-			Integer value = getBaseIndex(code[i]);
-			result += value * coef;
-			coef *= base;
+		for (int i = 0; i < code.length; i++) {
+			if (code[i] < (byte)32 || base85inv[code[i] - 32] < (byte)0)
+				continue; // XXX throw new IllegalArgumentException();
+			// assert (result < Long.MAX_VALUE/base);
+			result = (result * base) + base85inv[code[i] - 32];
 		}
 		return result;
-	}
-
-	/**
-	 * Returns index of given character in base85 table, used for decoding.
-	 * 
-	 * @param c
-	 *            Character to find index
-	 * @return index of given char
-	 * @see #decodeBase85(byte[])
-	 */
-	private int getBaseIndex(byte c) {
-		for (int i = 0; i < base85.length; i++) {
-			if (c == base85[i])
-				return i;
-		}
-		return -1;
 	}
 	
 	/**
