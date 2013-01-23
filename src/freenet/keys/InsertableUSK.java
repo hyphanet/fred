@@ -10,6 +10,7 @@ import com.db4o.ObjectContainer;
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPrivateKey;
 import freenet.crypt.DSAPublicKey;
+import freenet.crypt.Global;
 import freenet.support.Logger;
 
 /**
@@ -24,22 +25,20 @@ import freenet.support.Logger;
 public class InsertableUSK extends USK {
 	
 	public final DSAPrivateKey privKey;
-	public final DSAGroup group;
 	
 	public static InsertableUSK createInsertable(FreenetURI uri, boolean persistent) throws MalformedURLException {
 		if(!uri.getKeyType().equalsIgnoreCase("USK"))
 			throw new MalformedURLException();
 		InsertableClientSSK ssk =
 			InsertableClientSSK.create(uri.setKeyType("SSK"));
-		return new InsertableUSK(ssk.docName, ssk.pubKeyHash, ssk.cryptoKey, ssk.privKey, persistent ? ssk.getCryptoGroup().cloneKey() : ssk.getCryptoGroup(), uri.getSuggestedEdition(), ssk.cryptoAlgorithm);
+		return new InsertableUSK(ssk.docName, ssk.pubKeyHash, ssk.cryptoKey, ssk.privKey, uri.getSuggestedEdition(), ssk.cryptoAlgorithm);
 	}
 	
-	InsertableUSK(String docName, byte[] pubKeyHash, byte[] cryptoKey, DSAPrivateKey key, DSAGroup group, long suggestedEdition, byte cryptoAlgorithm) throws MalformedURLException {
+	InsertableUSK(String docName, byte[] pubKeyHash, byte[] cryptoKey, DSAPrivateKey key, long suggestedEdition, byte cryptoAlgorithm) throws MalformedURLException {
 		super(pubKeyHash, cryptoKey, docName, suggestedEdition, cryptoAlgorithm);
 		if(cryptoKey.length != ClientSSK.CRYPTO_KEY_LENGTH)
 			throw new MalformedURLException("Decryption key wrong length: "+cryptoKey.length+" should be "+ClientSSK.CRYPTO_KEY_LENGTH);
 		this.privKey = key;
-		this.group = group;
 	}
 
 	public USK getUSK() {
@@ -53,7 +52,7 @@ public class InsertableUSK extends USK {
 	public InsertableClientSSK getInsertableSSK(String string) {
 		try {
 			return new InsertableClientSSK(string, pubKeyHash, 
-					new DSAPublicKey(group, privKey), privKey, cryptoKey, cryptoAlgorithm);
+					new DSAPublicKey(getCryptoGroup(), privKey), privKey, cryptoKey, cryptoAlgorithm);
 		} catch (MalformedURLException e) {
 			Logger.error(this, "Caught "+e+" should not be possible in USK.getSSK", e);
 			throw new Error(e);
@@ -63,7 +62,7 @@ public class InsertableUSK extends USK {
 	public InsertableUSK privCopy(long edition) {
 		if(edition == suggestedEdition) return this;
 		try {
-			return new InsertableUSK(siteName, pubKeyHash, cryptoKey, privKey, group, edition, cryptoAlgorithm);
+			return new InsertableUSK(siteName, pubKeyHash, cryptoKey, privKey, edition, cryptoAlgorithm);
 		} catch (MalformedURLException e) {
 			throw new Error(e);
 		}
@@ -71,10 +70,13 @@ public class InsertableUSK extends USK {
 
 	@Override
 	public void removeFrom(ObjectContainer container) {
+		Logger.minor(this, "Removing "+this, new Exception("debug"));
 		container.activate(privKey, 5);
 		privKey.removeFrom(container);
-		container.activate(group, 5);
-		group.removeFrom(container);
 		super.removeFrom(container);
+	}
+	
+	public final DSAGroup getCryptoGroup() {
+		return Global.DSAgroupBigA;
 	}
 }
