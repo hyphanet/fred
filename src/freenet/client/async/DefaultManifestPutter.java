@@ -279,9 +279,10 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 			Object o = entry.getValue();
 			if (o instanceof ManifestElement) {
 				ManifestElement me = (ManifestElement)o;
-				if ((me.getSize() <= DEFAULT_MAX_CONTAINERITEMSIZE) && (me.getSize() < (maxSize-tmpSize))) {
+				long size = ContainerSizeEstimator.tarItemSize(me.getSize());
+				if ((me.getSize() <= DEFAULT_MAX_CONTAINERITEMSIZE) && (size < (maxSize-tmpSize))) {
 					containerBuilder.addItem(name, prefix+name, me, name.equals(defaultName));
-					tmpSize += ContainerSizeEstimator.tarItemSize(me.getSize());
+					tmpSize += size;
 				} else {
 					tmpSize += 512;
 					itemsLeft.put(name, me);
