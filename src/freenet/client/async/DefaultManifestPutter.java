@@ -199,6 +199,26 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 			return tmpSize;
 		}
 
+		HashMap<String, Object> itemsLeft = new HashMap<String, Object>();
+		
+		// Redirects have to go first since we can't move them. 
+		{
+			Iterator<Map.Entry<String, Object>> iter = itemsLeft.entrySet().iterator();
+			while(iter.hasNext()) {
+				Map.Entry<String, Object> entry = iter.next();
+				String name = entry.getKey();
+				Object o = entry.getValue();
+				if(o instanceof ManifestElement) {
+					ManifestElement me = (ManifestElement) o;
+					if(me.getTargetURI() != null) {
+						tmpSize += 512;
+						containerBuilder.addItem(name, prefix+name, me, name.equals(defaultName));
+						iter.remove();
+					}
+				}
+			}
+		}
+		
 		// (last) step three
 		// all subdirs fit into current container?
 		if ((wholeSize.getSizeSubTrees() < maxSize) || (wholeSize.getSizeSubTreesNoLimit() < maxSize)) {
@@ -254,26 +274,6 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 			}
 		}
 		// fill up container with files
-		HashMap<String, Object> itemsLeft = new HashMap<String, Object>();
-		
-		// Add redirects first. 
-		{
-			Iterator<Map.Entry<String, Object>> iter = itemsLeft.entrySet().iterator();
-			while(iter.hasNext()) {
-				Map.Entry<String, Object> entry = iter.next();
-				String name = entry.getKey();
-				Object o = entry.getValue();
-				if(o instanceof ManifestElement) {
-					ManifestElement me = (ManifestElement) o;
-					if(me.getTargetURI() != null) {
-						tmpSize += 512;
-						containerBuilder.addItem(name, prefix+name, me, name.equals(defaultName));
-						iter.remove();
-					}
-				}
-			}
-		}
-		
 		for(Map.Entry<String, Object> entry:manifestElements.entrySet()) {
 			String name = entry.getKey();
 			Object o = entry.getValue();
