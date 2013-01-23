@@ -171,4 +171,9 @@ public class DSAGroup extends CryptoKey {
 		container.delete(g);
 		container.delete(this);
 	}
+	
+	public boolean objectCanDeactivate(ObjectContainer container) {
+		if(this == Global.DSAgroupBigA) return false;
+		return true;
+	}
 }
