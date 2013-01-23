@@ -383,7 +383,12 @@ public class ArchiveManager {
 			boolean gotMetadata = false;
 
 outerTAR:		while(true) {
+				try {
 				entry = tarIS.getNextEntry();
+				} catch (IllegalArgumentException e) {
+					// Annoyingly, it can throw this on some corruptions...
+					throw new ArchiveFailureException("Error reading archive: "+e.getMessage(), e);
+				}
 				if(entry == null) break;
 				if(entry.isDirectory()) continue;
 				String name = stripLeadingSlashes(entry.getName());
