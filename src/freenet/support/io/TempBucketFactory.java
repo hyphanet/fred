@@ -512,7 +512,8 @@ public class TempBucketFactory implements BucketFactory {
 		return reallyEncrypt;
 	}
 
-	static final double MAX_USAGE = 0.9;
+	static final double MAX_USAGE_LOW = 0.8;
+	static final double MAX_USAGE_HIGH = 0.9;
 	
 	/**
 	 * Create a temp bucket
@@ -532,9 +533,10 @@ public class TempBucketFactory implements BucketFactory {
 		long now = System.currentTimeMillis();
 		
 		synchronized(this) {
-			if((size > 0) && (size <= maxRAMBucketSize) && (bytesInUse <= maxRamUsed)) {
+			if((size > 0) && (size <= maxRAMBucketSize) && (bytesInUse < maxRamUsed) && (bytesInUse + size <= maxRamUsed)) {
 				useRAMBucket = true;
-			} else if(bytesInUse >= maxRamUsed * MAX_USAGE && !runningCleaner) {
+			}
+			if(bytesInUse >= maxRamUsed * MAX_USAGE_HIGH && !runningCleaner) {
 				runningCleaner = true;
 				executor.execute(cleaner);
 			}
@@ -559,17 +561,15 @@ public class TempBucketFactory implements BucketFactory {
 		@Override
 		public void run() {
 			try {
-				boolean force;
-				synchronized(TempBucketFactory.this) {
-					if(!runningCleaner) return;
-					force = (bytesInUse >= maxRamUsed * MAX_USAGE);
-				}
+				long now = System.currentTimeMillis();
+				// First migrate all the old buckets.
+				cleanBucketQueue(now, false);
 				while(true) {
-					if(!cleanBucketQueue(System.currentTimeMillis(), force)) return;
+					// Now migrate buckets until usage is below the lower threshold.
 					synchronized(TempBucketFactory.this) {
-						force = (bytesInUse >= maxRamUsed * MAX_USAGE);
-						if(!force) return;
+						if(bytesInUse <= maxRamUsed * MAX_USAGE_LOW) return;
 					}
+					if(!cleanBucketQueue(System.currentTimeMillis(), true)) return;
 				}
 			} finally {
 				synchronized(TempBucketFactory.this) {
@@ -580,7 +580,13 @@ public class TempBucketFactory implements BucketFactory {
 		
 	};
 	
-	/** Migrate all long-lived buckets from the queue */
+	/** Migrate all long-lived buckets from the queue.
+	 * @param now The current time (System.currentTimeMillis()).
+	 * @param force If true, migrate one bucket which isn't necessarily long lived, 
+	 * just to free up space. Otherwise we will migrate all long-lived buckets but
+	 * not any others. 
+	 * @return True if we migrated any buckets.
+	 */
 	private boolean cleanBucketQueue(long now, boolean force) {
 		boolean shouldContinue = true;
 		// create a new list to avoid race-conditions
