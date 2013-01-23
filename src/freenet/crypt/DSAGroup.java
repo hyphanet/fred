@@ -165,6 +165,7 @@ public class DSAGroup extends CryptoKey {
 	}
 
 	public void removeFrom(ObjectContainer container) {
+		if(this == Global.DSAgroupBigA) return; // It will only be stored once, so it's okay.
 		container.delete(p);
 		container.delete(q);
 		container.delete(g);
