@@ -221,12 +221,12 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 		
 		// (last) step three
 		// all subdirs fit into current container?
-		if ((wholeSize.getSizeSubTrees() < maxSize) || (wholeSize.getSizeSubTreesNoLimit() < maxSize)) {
+		if ((wholeSize.getSizeSubTrees() + tmpSize < maxSize) || (wholeSize.getSizeSubTreesNoLimit() + tmpSize < maxSize)) {
 			//all subdirs fit into current container, do it
 			// and add files up to limit
 			if(logMINOR)
 				Logger.minor(this, "PackStat2: the sub dirs fit into container with spare, so it need to grab files to fill container up");
-			if (wholeSize.getSizeSubTreesNoLimit() < maxSize) {
+			if (wholeSize.getSizeSubTreesNoLimit() + tmpSize < maxSize) {
 				if(logMINOR) Logger.minor(this, " (unlimited)");
 				for(Map.Entry<String, Object> entry:manifestElements.entrySet()) {
 					String name = entry.getKey();
