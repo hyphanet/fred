@@ -206,7 +206,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 		
 		// Redirects have to go first since we can't move them. 
 		{
-			Iterator<Map.Entry<String, Object>> iter = itemsLeft.entrySet().iterator();
+			Iterator<Map.Entry<String, Object>> iter = manifestElements.entrySet().iterator();
 			while(iter.hasNext()) {
 				Map.Entry<String, Object> entry = iter.next();
 				String name = entry.getKey();
