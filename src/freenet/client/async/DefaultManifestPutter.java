@@ -199,14 +199,39 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 			return tmpSize;
 		}
 
+		HashMap<String, Object> itemsLeft = new HashMap<String, Object>();
+
+		// Space used by regular files if they are all put in as redirects.
+		int minUsageForFiles = 0;
+		
+		// Redirects have to go first since we can't move them. 
+		{
+			Iterator<Map.Entry<String, Object>> iter = manifestElements.entrySet().iterator();
+			while(iter.hasNext()) {
+				Map.Entry<String, Object> entry = iter.next();
+				String name = entry.getKey();
+				Object o = entry.getValue();
+				if(o instanceof ManifestElement) {
+					ManifestElement me = (ManifestElement) o;
+					if(me.getTargetURI() != null) {
+						tmpSize += 512;
+						containerBuilder.addItem(name, prefix+name, me, name.equals(defaultName));
+						iter.remove();
+					} else {
+						minUsageForFiles += 512;
+					}
+				}
+			}
+		}
+		
 		// (last) step three
 		// all subdirs fit into current container?
-		if ((wholeSize.getSizeSubTrees() < maxSize) || (wholeSize.getSizeSubTreesNoLimit() < maxSize)) {
+		if ((wholeSize.getSizeSubTrees() + tmpSize + minUsageForFiles < maxSize) || (wholeSize.getSizeSubTreesNoLimit() + tmpSize + minUsageForFiles < maxSize)) {
 			//all subdirs fit into current container, do it
 			// and add files up to limit
 			if(logMINOR)
 				Logger.minor(this, "PackStat2: the sub dirs fit into container with spare, so it need to grab files to fill container up");
-			if (wholeSize.getSizeSubTreesNoLimit() < maxSize) {
+			if (wholeSize.getSizeSubTreesNoLimit() + tmpSize + minUsageForFiles < maxSize) {
 				if(logMINOR) Logger.minor(this, " (unlimited)");
 				for(Map.Entry<String, Object> entry:manifestElements.entrySet()) {
 					String name = entry.getKey();
@@ -254,40 +279,25 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 			}
 		}
 		// fill up container with files
-		HashMap<String, Object> itemsLeft = new HashMap<String, Object>();
-		
-		// Add redirects first. 
-		{
-			Iterator<Map.Entry<String, Object>> iter = itemsLeft.entrySet().iterator();
-			while(iter.hasNext()) {
-				Map.Entry<String, Object> entry = iter.next();
-				String name = entry.getKey();
-				Object o = entry.getValue();
-				if(o instanceof ManifestElement) {
-					ManifestElement me = (ManifestElement) o;
-					if(me.getTargetURI() != null) {
-						tmpSize += 512;
-						containerBuilder.addItem(name, prefix+name, me, name.equals(defaultName));
-						iter.remove();
-					}
-				}
-			}
-		}
-		
 		for(Map.Entry<String, Object> entry:manifestElements.entrySet()) {
 			String name = entry.getKey();
 			Object o = entry.getValue();
 			if (o instanceof ManifestElement) {
 				ManifestElement me = (ManifestElement)o;
-				if ((me.getSize() <= DEFAULT_MAX_CONTAINERITEMSIZE) && (me.getSize() < (maxSize-tmpSize))) {
+				long size = ContainerSizeEstimator.tarItemSize(me.getSize());
+				if ((me.getSize() <= DEFAULT_MAX_CONTAINERITEMSIZE) && 
+						(size < (maxSize-(tmpSize+minUsageForFiles-512 /* this one */)))) {
 					containerBuilder.addItem(name, prefix+name, me, name.equals(defaultName));
-					tmpSize += ContainerSizeEstimator.tarItemSize(me.getSize());
+					tmpSize += size;
+					minUsageForFiles -= 512;
 				} else {
 					tmpSize += 512;
+					minUsageForFiles -= 512;
 					itemsLeft.put(name, me);
 				}
 			}
 		}
+		assert(minUsageForFiles == 0);
 		
 		if(tmpSize > maxSize)
 			throw new TooManyFilesInsertException();
