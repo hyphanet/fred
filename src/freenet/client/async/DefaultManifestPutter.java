@@ -289,12 +289,15 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 						(size < (maxSize-(tmpSize+minUsageForFiles-512 /* this one */)))) {
 					containerBuilder.addItem(name, prefix+name, me, name.equals(defaultName));
 					tmpSize += size;
+					minUsageForFiles -= 512;
 				} else {
 					tmpSize += 512;
+					minUsageForFiles -= 512;
 					itemsLeft.put(name, me);
 				}
 			}
 		}
+		assert(minUsageForFiles == 0);
 		
 		if(tmpSize > maxSize)
 			throw new TooManyFilesInsertException();
