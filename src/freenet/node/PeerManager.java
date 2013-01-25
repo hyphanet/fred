@@ -887,7 +887,8 @@ public class PeerManager {
 	 * If ignoreSelf==false, and we are closer to the target than any peers, this function returns null.
 	 * This function returns two values, the closest such peer which is backed off, and the same which is not backed off.
 	 * It is possible for either to be null independent of the other, 'closest' is the closer of the two in either case, and
-	 * will not be null if any of the other two return values is not null.
+	 * will not be null if any of the other two return values is not null. LOCKING: This will briefly take
+	 * various locks, try to avoid calling it with lots of locks held.
 	 * @param addUnpickedLocsTo Add all locations we didn't choose which we could have routed to to 
 	 * this array. Remove the location of the peer we pick from it.
 	 * @param maxDistance If a node is further away from the target than this distance, ignore it.
@@ -1203,8 +1204,12 @@ public class PeerManager {
 									Logger.error(this, "Wakeup time is too long: "+TimeUtil.formatTime(until-now));
 									until = now + FailureTable.RECENTLY_FAILED_TIME;
 								}
-								recentlyFailed.fail(countWaiting, until);
-								return null;
+								if(!node.failureTable.hadAnyOffers(key)) {
+									recentlyFailed.fail(countWaiting, until);
+									return null;
+								} else {
+									if(logMINOR) Logger.minor(this, "Have an offer for the key so not sending RecentlyFailed");
+								}
 							} else {
 								// Waking up too soon. Don't RecentlyFailed.
 								if(logMINOR) Logger.minor(this, "Not sending RecentlyFailed because will wake up in "+(check-now)+"ms");
