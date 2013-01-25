@@ -621,7 +621,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * sharing purposes. */
 	private boolean writeLocalToDatastore;
 
-	final GetPubkey getPubKey;
+	final NodeGetPubkey getPubKey;
 
 	/** FetchContext for ARKs */
 	public final FetchContext arkFetcherContext;
@@ -997,7 +997,7 @@ public class Node implements TimeSkewDetectorCallback {
 		nodeStarter=ns;
 		if(logConfigHandler != lc)
 			logConfigHandler=lc;
-		getPubKey = new GetPubkey(this);
+		getPubKey = new NodeGetPubkey(this);
 		startupTime = System.currentTimeMillis();
 		SimpleFieldSet oldConfig = config.getSimpleFieldSet();
 		// Setup node-specific configuration
