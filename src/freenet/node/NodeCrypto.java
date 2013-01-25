@@ -278,7 +278,6 @@ public class NodeCrypto {
 		myARK = InsertableClientSSK.createRandom(random, "ark");
 		myARKNumber = 0;
 		SHA256.returnMessageDigest(md);
-		anonSetupCipher.initialize(identityHash);
 		clientNonce = new byte[32];
 		node.random.nextBytes(clientNonce);
 		pubKeyHash = SHA256.digest(pubKey.asBytes());
@@ -286,6 +285,7 @@ public class NodeCrypto {
 		myIdentity = Arrays.copyOf(pubKeyHash, IDENTITY_LENGTH);
 		identityHash = md.digest(myIdentity);
 		identityHashHash = md.digest(identityHash);
+		anonSetupCipher.initialize(identityHash);
 	}
 
 	public void start() {
