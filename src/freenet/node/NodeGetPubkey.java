@@ -7,6 +7,7 @@ import java.io.IOException;
 
 import freenet.crypt.DSAPublicKey;
 import freenet.store.BlockMetadata;
+import freenet.store.GetPubkey;
 import freenet.store.PubkeyStore;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.HexUtil;

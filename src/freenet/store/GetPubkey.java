@@ -1,7 +1,6 @@
-package freenet.node;
+package freenet.store;
 
 import freenet.crypt.DSAPublicKey;
-import freenet.store.BlockMetadata;
 
 public interface GetPubkey {
 

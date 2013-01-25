@@ -14,8 +14,8 @@ import com.db4o.ObjectContainer;
 
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
-import freenet.node.GetPubkey;
 import freenet.store.BlockMetadata;
+import freenet.store.GetPubkey;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
