@@ -565,7 +565,7 @@ public class Announcer {
 		return !hasNonLocalAddresses;
 	}
 
-	protected boolean sendAnnouncement(final SeedServerPeerNode seed) {
+	protected boolean sendAnnouncement(final PeerNode seed) {
 		if(!node.isOpennetEnabled()) {
 			if(logMINOR)
 				Logger.minor(this, "Not announcing to "+seed+" because opennet is disabled");
@@ -623,7 +623,10 @@ public class Announcer {
 				// If it takes more than COOLING_OFF_PERIOD to disconnect, we might not be able to reannounce to this
 				// node. However, we can't reannounce to it anyway until announcedTo is cleared, which probably will
 				// be more than that period in the future.
-				node.peers.disconnectAndRemove(seed, true, false, false);
+				if(seed instanceof SeedServerPeerNode) {
+					node.peers.disconnectAndRemove(seed, true, false, false);
+					if(logMINOR) Logger.minor(this, "Disconnected from seed server "+seed);
+				}
 				int shallow=node.maxHTL()-(totalAdded+totalNotWanted);
 				if(acceptedSomewhere)
 					System.out.println("Announcement to "+seed.userToString()+" completed ("+totalAdded+" added, "+totalNotWanted+" not wanted, "+shallow+" shallow)");
