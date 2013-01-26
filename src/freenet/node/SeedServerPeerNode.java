@@ -96,21 +96,6 @@ public class SeedServerPeerNode extends PeerNode {
 		}
 	}
 
-	public InetAddress[] getInetAddresses() {
-		ArrayList<InetAddress> v = new ArrayList<InetAddress>();
-		for(Peer peer: getHandshakeIPs()) {
-			FreenetInetAddress fa = peer.getFreenetAddress().dropHostname();
-			if(fa == null) continue;
-			InetAddress ia = fa.getAddress();
-			if(v.contains(ia)) continue;
-			v.add(ia);
-		}
-		if(v.isEmpty()) {
-			Logger.error(this, "No valid addresses for seed node "+this);
-		}
-		return v.toArray(new InetAddress[v.size()]);
-	}
-	
 	@Override
 	public boolean handshakeUnknownInitiator() {
 		return true;

@@ -5933,4 +5933,20 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		else return Integer.MAX_VALUE;
 	}
 	
+	/** Get all valid IP addresses for the node */
+	public InetAddress[] getInetAddresses() {
+		ArrayList<InetAddress> v = new ArrayList<InetAddress>();
+		for(Peer peer: getHandshakeIPs()) {
+			FreenetInetAddress fa = peer.getFreenetAddress().dropHostname();
+			if(fa == null) continue;
+			InetAddress ia = fa.getAddress();
+			if(v.contains(ia)) continue;
+			v.add(ia);
+		}
+		if(v.isEmpty()) {
+			Logger.error(this, "No valid addresses for node "+this);
+		}
+		return v.toArray(new InetAddress[v.size()]);
+	}
+	
 }
