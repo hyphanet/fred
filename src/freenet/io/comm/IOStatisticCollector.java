@@ -32,19 +32,20 @@ public class IOStatisticCollector {
 		logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 	}
 	
-	public void addInfo(String key, int inbytes, int outbytes, boolean isLocal) {
+	public void addInfo(Object addr, int port, int inbytes, int outbytes, boolean isLocal) {
 		try {
 			synchronized (this) {
-				_addInfo(key, inbytes, outbytes, isLocal);
+				_addInfo(addr, port, inbytes, outbytes, isLocal);
 			}
 		} catch (Throwable t) {
 			t.printStackTrace();
 		}
 	}
 	
-	private void _addInfo(String key, int inbytes, int outbytes, boolean isLocal) {
+	private void _addInfo(Object addr, int port, int inbytes, int outbytes, boolean isLocal) {
 		rotate();
 		if(ENABLE_PER_ADDRESS_TRACKING) {
+			String key = addr + ":" + port;
 			StatisticEntry entry = targets.get(key);
 			if (entry == null) {
 				entry = new StatisticEntry();
@@ -57,7 +58,7 @@ public class IOStatisticCollector {
 				totalbytesout += (outbytes>0)?outbytes:0;
 				totalbytesin += (inbytes>0)?inbytes:0;
 				if(logDEBUG)
-					Logger.debug(IOStatisticCollector.class, "Add("+key+ ',' +inbytes+ ',' +outbytes+" -> "+totalbytesin+" : "+totalbytesout);
+					Logger.debug(IOStatisticCollector.class, "Add("+addr+":"+port+ ',' +inbytes+ ',' +outbytes+" -> "+totalbytesin+" : "+totalbytesout);
 			}
 		}
 	}
