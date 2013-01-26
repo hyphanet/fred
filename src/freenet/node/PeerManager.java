@@ -1965,7 +1965,7 @@ public class PeerManager {
 		for(PeerNode p : peers) {
 			if(p instanceof SeedServerPeerNode) {
 				SeedServerPeerNode sspn = (SeedServerPeerNode) p;
-				if(exclude != null && exclude.contains(new ByteArrayWrapper(sspn.getIdentity()))) {
+				if(exclude != null && exclude.contains(new ByteArrayWrapper(sspn.getPubKeyHash()))) {
 					if(logMINOR)
 						Logger.minor(this, "Not including in getConnectedSeedServerPeersVector() as in exclude set: " + sspn.userToString());
 					continue;
@@ -1995,7 +1995,7 @@ public class PeerManager {
 				continue;
 			}
 			if(!p.isConnected()) continue;
-			if(exclude != null && exclude.contains(new ByteArrayWrapper(p.getIdentity()))) {
+			if(exclude != null && exclude.contains(new ByteArrayWrapper(p.getPubKeyHash()))) {
 				if(logMINOR)
 					Logger.minor(this, "Not including in getConnectedAnnounceablePeersVector() as in exclude set: " + p.userToString());
 				continue;
