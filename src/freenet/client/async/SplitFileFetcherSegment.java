@@ -1775,7 +1775,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	}
 
 	public synchronized Integer[] getKeyNumbersAtRetryLevel(int retryCount, ObjectContainer container, ClientContext context) {
-		Vector<Integer> v = new Vector<Integer>();
+		ArrayList<Integer> v = new ArrayList<Integer>();
 		if(keys == null) 
 			migrateToKeys(container);
 		else {
@@ -2258,14 +2258,14 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		}
 	}
 	
-	public boolean checkRecentlyFailed(int blockNum, ObjectContainer container, ClientContext context, KeysFetchingLocally keys, long now) {
-		if(keys == null) 
+	public boolean checkRecentlyFailed(int blockNum, ObjectContainer container, ClientContext context, KeysFetchingLocally fetching, long now) {
+		if(this.keys == null)
 			migrateToKeys(container);
 		else {
 			if(persistent) container.activate(keys, 1);
 		}
 		Key key = this.keys.getNodeKey(blockNum, null, true);
-		long timeout = keys.checkRecentlyFailed(key, realTimeFlag);
+		long timeout = fetching.checkRecentlyFailed(key, realTimeFlag);
 		if(timeout <= now) return false;
 		int maxRetries = getMaxRetries(container);
 		if(maxRetries == -1 || (maxRetries >= RequestScheduler.COOLDOWN_RETRIES)) {

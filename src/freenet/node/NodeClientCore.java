@@ -3,6 +3,7 @@ package freenet.node;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.HashSet;
 
 import org.tanukisoftware.wrapper.WrapperManager;
@@ -729,9 +730,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			else downloadAllowedDirs[x++] = new File(val[i]);
 		}
 		if(x != i) {
-			File[] newDirs = new File[x];
-			System.arraycopy(downloadAllowedDirs, 0, newDirs, 0, x);
-			downloadAllowedDirs = newDirs;
+			downloadAllowedDirs = Arrays.copyOf(downloadAllowedDirs, x);
 		}
 		if(i == 0) {
 			downloadDisabled = true;
@@ -751,9 +750,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				uploadAllowedDirs[x++] = new File(val[i]);
 		}
 		if(x != i) {
-			File[] newDirs = new File[x];
-			System.arraycopy(uploadAllowedDirs, 0, newDirs, 0, x);
-			uploadAllowedDirs = newDirs;
+			uploadAllowedDirs = Arrays.copyOf(uploadAllowedDirs, x);
 		}
 	}
 
@@ -1742,7 +1739,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	}
 
 	public boolean isTestnetEnabled() {
-		return node.isTestnetEnabled();
+		return Node.isTestnetEnabled();
 	}
 
 	public boolean isAdvancedModeEnabled() {

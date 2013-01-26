@@ -3,10 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.config;
 
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
 
 import freenet.l10n.NodeL10n;
@@ -216,10 +214,7 @@ public class SubConfig implements Comparable<SubConfig> {
 	 * Set options from a SimpleFieldSet. Once we process an option, we must remove it.
 	 */
 	public void setOptions(SimpleFieldSet sfs) {
-		Set<Map.Entry<String, Option<?>>> entrySet = map.entrySet();
-		Iterator<Entry<String, Option<?>>> i = entrySet.iterator();
-		while(i.hasNext()) {
-			Entry<String, Option<?>> entry = i.next();
+		for(Entry<String, Option<?>> entry: map.entrySet()) {
 			String key = entry.getKey();
 			Option<?> o = entry.getValue();
 			String val = sfs.get(key);
@@ -258,8 +253,7 @@ public class SubConfig implements Comparable<SubConfig> {
 		}
 		if(logMINOR)
 			Logger.minor(this, "Prefix="+prefix);
-		for(int i=0;i<entries.length;i++) {
-			Map.Entry<String, Option<?>> entry = entries[i];
+		for(Map.Entry<String, Option<?>> entry: entries) {
 			String key = entry.getKey();
 			Option<?> o = entry.getValue();
 			if(logMINOR)

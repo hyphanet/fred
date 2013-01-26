@@ -33,9 +33,9 @@ public class USK extends BaseClientKey implements Comparable<USK> {
 	/** Encryption type */
 	public final byte cryptoAlgorithm;
 	/** Public key hash */
-	public final byte[] pubKeyHash;
+	protected final byte[] pubKeyHash;
 	/** Encryption key */
-	public final byte[] cryptoKey;
+	protected final byte[] cryptoKey;
 	// Extra must be verified on creation, and is fixed for now. FIXME if it becomes changeable, need to keep values here.
 	
 	public final String siteName;
@@ -101,9 +101,12 @@ public class USK extends BaseClientKey implements Comparable<USK> {
 	}
 
 	public USK(USK usk) {
-		this.pubKeyHash = new byte[usk.pubKeyHash.length];
-		System.arraycopy(usk.pubKeyHash, 0, pubKeyHash, 0, usk.pubKeyHash.length);
+		// FIXME can we not copy pubKeyHash?
+		// If we can guarantee that neither USK nor anything getting it without copying will change it?
+		// db4o treats byte[] as individual byte members, so there are no issues with deactivation.
+		this.pubKeyHash = usk.pubKeyHash.clone();
 		this.cryptoAlgorithm = usk.cryptoAlgorithm;
+		// FIXME should we copy cryptoKey?
 		this.cryptoKey = usk.cryptoKey;
 		this.siteName = usk.siteName;
 		this.suggestedEdition = usk.suggestedEdition;
@@ -146,8 +149,10 @@ public class USK extends BaseClientKey implements Comparable<USK> {
 		return copy(0);
 	}
 	
-	@Override
-	public USK clone() {
+	public final USK copy() {
+		// We need our own constructor to make sure we copy pubKeyHash.
+		// So clone() doesn't work for this.
+		// FIXME when we are sure we don't need to copy the byte[]'s we might be able to switch back to clone().
 		return new USK(this);
 	}
 	
@@ -227,7 +232,7 @@ public class USK extends BaseClientKey implements Comparable<USK> {
 		return 0;
 	}
 	
-	public static Comparator<USK> FAST_COMPARATOR = new Comparator<USK>() {
+	public static final Comparator<USK> FAST_COMPARATOR = new Comparator<USK>() {
 
 		@Override
 		public int compare(USK o1, USK o2) {
@@ -237,4 +242,12 @@ public class USK extends BaseClientKey implements Comparable<USK> {
 		}
 		
 	};
+
+	public byte[] getPubKeyHash() {
+		return Arrays.copyOf(pubKeyHash, pubKeyHash.length);
+	}
+
+	public boolean samePubKeyHash(NodeSSK k) {
+		return Arrays.equals(k.getPubKeyHash(), pubKeyHash);
+	}
 }

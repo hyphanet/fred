@@ -22,7 +22,6 @@ import freenet.client.events.SimpleEventProducer;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
-import freenet.keys.Key;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
@@ -37,7 +36,7 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.NullBucket;
 import freenet.support.io.PersistentFileTracker;
 
-public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, RequestClient {
+public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, RequestClient, Cloneable {
 
 	private final short priorityClass;
 	private final BucketFactory bucketFactory;
@@ -53,7 +52,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	private final boolean realTimeFlag;
 	static final int MAX_RECURSION = 10;
 	static final int MAX_ARCHIVE_RESTARTS = 2;
-	static final int MAX_ARCHIVE_LEVELS = 4;
+	static final int MAX_ARCHIVE_LEVELS = 10;
 	static final boolean DONT_ENTER_IMPLICIT_ARCHIVES = true;
 	// COOLDOWN_RETRIES-1 so we don't have to wait on the cooldown queue; HLSC is designed
 	// for interactive requests mostly.
@@ -123,6 +122,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 
 	@Override
 	public HighLevelSimpleClientImpl clone() {
+		// Cloneable shuts up findbugs, but we need a new SimpleEventProducer().
 		return new HighLevelSimpleClientImpl(this);
 	}
 

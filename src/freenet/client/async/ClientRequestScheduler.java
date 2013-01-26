@@ -4,7 +4,9 @@
 package freenet.client.async;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.ListIterator;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -29,6 +31,8 @@ import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
+import freenet.support.Fields;
+import freenet.support.IdentityHashSet;
 import freenet.support.Logger;
 import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.TimeUtil;
@@ -233,7 +237,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 */
 	public void register(final HasKeyListener hasListener, final SendableGet[] getters, final boolean persistent, ObjectContainer container, final BlockSet blocks, final boolean noCheckStore) throws KeyListenerConstructionException {
 		if(logMINOR)
-			Logger.minor(this, "register("+persistent+","+hasListener+","+getters);
+			Logger.minor(this, "register("+persistent+","+hasListener+","+Fields.commaList(getters));
 		if(isInsertScheduler) {
 			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
 			throw e;
@@ -255,8 +259,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 					datastoreChecker.queueTransientRequest(getter, blocks);
 			} else {
 				boolean anyValid = false;
-				for(int i=0;i<getters.length;i++) {
-					if(!(getters[i].isCancelled(null) || getters[i].getCooldownTime(container, clientContext, System.currentTimeMillis()) != 0))
+				for(SendableGet getter : getters) {
+					if(!(getter.isCancelled(null) || getter.getCooldownTime(container, clientContext, System.currentTimeMillis()) != 0))
 						anyValid = true;
 				}
 				finishRegister(getters, false, container, anyValid, null);
@@ -303,15 +307,15 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	void finishRegister(final SendableGet[] getters, boolean persistent, ObjectContainer container, final boolean anyValid, final DatastoreCheckerItem reg) {
-		if(logMINOR) Logger.minor(this, "finishRegister for "+getters+" anyValid="+anyValid+" reg="+reg+" persistent="+persistent);
+		if(logMINOR) Logger.minor(this, "finishRegister for "+Fields.commaList(getters)+" anyValid="+anyValid+" reg="+reg+" persistent="+persistent);
 		if(isInsertScheduler) {
 			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
-			for(int i=0;i<getters.length;i++) {
+			for(SendableGet getter : getters) {
 				if(persistent)
-					container.activate(getters[i], 1);
-				getters[i].internalError(e, this, container, clientContext, persistent);
+					container.activate(getter, 1);
+				getter.internalError(e, this, container, clientContext, persistent);
 				if(persistent)
-					container.deactivate(getters[i], 1);
+					container.deactivate(getter, 1);
 			}
 			throw e;
 		}
@@ -323,11 +327,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(persistent)
 					container.activate(getters, 1);
 				if(logMINOR)
-					Logger.minor(this, "finishRegister() for "+getters);
+					Logger.minor(this, "finishRegister() for "+Fields.commaList(getters));
 				if(anyValid) {
 					boolean wereAnyValid = false;
-					for(int i=0;i<getters.length;i++) {
-						SendableGet getter = getters[i];
+					for(SendableGet getter : getters) {
 						container.activate(getter, 1);
 						// Just check isCancelled, we have already checked the cooldown.
 						if(!(getter.isCancelled(container))) {
@@ -350,16 +353,16 @@ public class ClientRequestScheduler implements RequestScheduler {
 				queueFillRequestStarterQueue(true);
 		} else {
 			// Register immediately.
-			for(int i=0;i<getters.length;i++) {
+			for(SendableGet getter : getters) {
 				
-				if((!anyValid) || getters[i].isCancelled(null)) {
-					getters[i].preRegister(container, clientContext, false);
+				if((!anyValid) || getter.isCancelled(null)) {
+					getter.preRegister(container, clientContext, false);
 					continue;
 				} else {
-					if(getters[i].preRegister(container, clientContext, true)) continue;
+					if(getter.preRegister(container, clientContext, true)) continue;
 				}
-				if(!getters[i].isCancelled(null))
-					schedTransient.innerRegister(getters[i], random, null, clientContext, getters);
+				if(!getter.isCancelled(null))
+					schedTransient.innerRegister(getter, random, null, clientContext, getters);
 			}
 			starter.wakeUp();
 		}
@@ -386,25 +389,20 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	/**
 	 * All the persistent SendableRequest's currently running (either actually in flight, just chosen,
-	 * awaiting the callbacks being executed etc). Note that this is an ArrayList because we *must*
-	 * compare by pointer: these objects may well implement hashCode() etc for use by other code, but 
-	 * if they are deactivated, they will be unreliable. Fortunately, this will be fairly small most
-	 * of the time, since a single SendableRequest might include 256 actual requests.
+	 * awaiting the callbacks being executed etc). We MUST compare by pointer, as this is accessed on
+	 * threads other than the database thread, so we don't know whether they are active (and in fact 
+	 * that may change under us!). So it can't be a HashSet.
 	 * 
 	 * SYNCHRONIZATION: Synched on starterQueue.
 	 */
-	private final transient ArrayList<SendableRequest> runningPersistentRequests = new ArrayList<SendableRequest> ();
+	private final transient IdentityHashSet<SendableRequest> runningPersistentRequests = new IdentityHashSet<SendableRequest> ();
 	
 	@Override
 	public void removeRunningRequest(SendableRequest request, ObjectContainer container) {
 		synchronized(starterQueue) {
-			for(int i=0;i<runningPersistentRequests.size();i++) {
-				if(runningPersistentRequests.get(i) == request) {
-					runningPersistentRequests.remove(i);
-					i--;
-					if(logMINOR)
-						Logger.minor(this, "Removed running request "+request+" size now "+runningPersistentRequests.size());
-				}
+			if(runningPersistentRequests.remove(request)) {
+				if(logMINOR)
+					Logger.minor(this, "Removed running request "+request+" size now "+runningPersistentRequests.size());
 			}
 		}
 		// We *DO* need to call clearCooldown here because it only becomes runnable for persistent requests after it has been removed from starterQueue.
@@ -417,10 +415,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	@Override
 	public boolean isRunningOrQueuedPersistentRequest(SendableRequest request) {
 		synchronized(starterQueue) {
-			for(int i=0;i<runningPersistentRequests.size();i++) {
-				if(runningPersistentRequests.get(i) == request)
-					return true;
-			}
+			if(runningPersistentRequests.contains(request)) return true;
 			for(PersistentChosenRequest req : starterQueue) {
 				if(req.request == request) return true;
 			}
@@ -485,14 +480,15 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(block == null) {
 					if(logMINOR) Logger.minor(this, "No block found on "+reqGroup);
 					int finalLength = 0;
-					for(int i=0;i<starterQueue.size();i++) {
-						if(starterQueue.get(i) == reqGroup) {
-							starterQueue.remove(i);
+					Iterator<PersistentChosenRequest> it = starterQueue.iterator();
+					while(it.hasNext()) {
+						PersistentChosenRequest req = it.next();
+						if(req == reqGroup) {
+							it.remove();
 							if(logMINOR)
 								Logger.minor(this, "Removed "+reqGroup+" from starter queue because is empty");
-							i--;
 						} else {
-							finalLength += starterQueue.get(i).sizeNotStarted();
+							finalLength += req.sizeNotStarted();
 						}
 					}
 					needsRefill = finalLength < MAX_STARTER_QUEUE_SIZE;
@@ -565,16 +561,18 @@ public class ClientRequestScheduler implements RequestScheduler {
 		container.deactivate(request, 1);
 		boolean dumpNew = false;
 		synchronized(starterQueue) {
+			int length = 0;
 			for(PersistentChosenRequest req : starterQueue) {
 				if(req.request == request) {
 					Logger.error(this, "Already on starter queue: "+req+" for "+request, new Exception("debug"));
 					dumpNew = true;
 					break;
 				}
+				length += req.sizeNotStarted();
 			}
 			if(!dumpNew) {
+				// assert(length == starterQueueLength());
 				starterQueue.add(chosen);
-				int length = starterQueueLength();
 				length += chosen.sizeNotStarted();
 				runningPersistentRequests.add(request);
 				if(logMINOR)
@@ -590,10 +588,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 	void removeFromStarterQueue(SendableRequest req, ObjectContainer container, boolean reqAlreadyActive) {
 		PersistentChosenRequest dumped = null;
 		synchronized(starterQueue) {
-			for(int i=0;i<starterQueue.size();i++) {
-				PersistentChosenRequest pcr = starterQueue.get(i);
+			Iterator<PersistentChosenRequest> it = starterQueue.iterator();
+			while(it.hasNext()) {
+				PersistentChosenRequest pcr = it.next();
 				if(pcr.request == req) {
-					starterQueue.remove(i);
+					it.remove();
 					dumped = pcr;
 					break;
 				}
@@ -745,7 +744,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		synchronized(starterQueue) {
 			boolean betterThanSome = false;
 			int size = 0;
-			PersistentChosenRequest prev = null;
 			for(PersistentChosenRequest old : starterQueue) {
 				if(old.request == req) {
 					// Wait for a reselect. Otherwise we can starve other
@@ -755,10 +753,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 					if(logMINOR) Logger.minor(this, "Already on starter queue: "+old+" for "+req);
 					return;
 				}
-				if(prev == old)
-					Logger.error(this, "ON STARTER QUEUE TWICE: "+prev+" for "+prev.request);
-				if(prev != null && prev.request == old.request)
-					Logger.error(this, "REQUEST ON STARTER QUEUE TWICE: "+prev+" for "+prev.request+" vs "+old+" for "+old.request);
 				boolean ignoreActive = false;
 				if(mightBeActive != null) {
 					for(SendableRequest tmp : mightBeActive)
@@ -775,7 +769,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(old.prio > prio)
 					betterThanSome = true;
 				if(old.request == req) return;
-				prev = old;
 			}
 			if(size >= MAX_STARTER_QUEUE_SIZE && !betterThanSome) {
 				if(logMINOR)
@@ -803,15 +796,19 @@ public class ClientRequestScheduler implements RequestScheduler {
 					break;
 				}
 				length = 0;
-				for(int i=0;i<starterQueue.size();i++) {
-					PersistentChosenRequest req = starterQueue.get(i);
+				ListIterator<PersistentChosenRequest> it = starterQueue.listIterator();
+				while(it.hasNext()) {
+					int nextIndex = it.nextIndex();
+					PersistentChosenRequest req = it.next();
 					short prio = req.prio;
 					int size = req.sizeNotStarted();
 					length += size;
 					if(prio > worstPrio) {
 						worstPrio = prio;
 						worst = req;
-						worstIndex = i;
+						// FIXME is there way to save iterator state and avoid O(n) List.remove(index) here?
+						// We could use a LinkedHashSet but I'm not sure there's any point, worst case is 512 elements, average case is more like 2.
+						worstIndex = nextIndex;
 						worstLength = size;
 						continue;
 					}
@@ -982,6 +979,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * to be restarted in the near future.
 	 */
 	private long moveKeysFromCooldownQueue(CooldownQueue queue, boolean persistent, ObjectContainer container) {
+		final boolean logMINOR = ClientRequestScheduler.logMINOR;
 		if(queue == null) return Long.MAX_VALUE;
 		long now = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Moving keys from cooldown queue persistent="+persistent);
@@ -1015,8 +1013,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			return (Long) ret;
 		}
 		Key[] keys = (Key[]) ret;
-		for(int j=0;j<keys.length;j++) {
-			Key key = keys[j];
+		for(Key key: keys) {
 			if(persistent)
 				container.activate(key, 5);
 			if(logMINOR) Logger.minor(this, "Restoring key: "+key);
@@ -1038,17 +1035,17 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(logMINOR) Logger.minor(this, "Restoring key but no keys queued?? for "+key);
 		}
 		if(reqs != null) {
-			for(int i=0;i<reqs.length;i++) {
+			for(SendableGet req: reqs) {
 				// Requests may or may not be returned activated from requestsForKey(), so don't check
 				// But do deactivate them once we're done with them.
-				container.activate(reqs[i], 1);
-				reqs[i].requeueAfterCooldown(key, now, container, clientContext);
-				container.deactivate(reqs[i], 1);
+				container.activate(req, 1);
+				req.requeueAfterCooldown(key, now, container, clientContext);
+				container.deactivate(req, 1);
 			}
 		}
 		if(transientReqs != null) {
-			for(int i=0;i<transientReqs.length;i++)
-				transientReqs[i].requeueAfterCooldown(key, now, container, clientContext);
+			for(SendableGet req: transientReqs)
+				req.requeueAfterCooldown(key, now, container, clientContext);
 		}
 	}
 

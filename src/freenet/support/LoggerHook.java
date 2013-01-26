@@ -163,14 +163,18 @@ public abstract class LoggerHook extends Logger {
 		synchronized(this) {
 			thresh = detailedThresholds;
 		}
+		if (thresh.length == 0)
+			return "";
 		StringBuilder sb = new StringBuilder();
-		for(int i=0;i<thresh.length;i++) {
-			if(i != 0)
-				sb.append(',');
-			sb.append(thresh[i].section);
+		for(DetailedThreshold t: thresh) {
+			sb.append(t.section);
 			sb.append(':');
-			sb.append(thresh[i].dThreshold);
+			sb.append(t.dThreshold);
+			sb.append(',');
 		}
+		// assert(sb.length() > 0); -- always true as thresh.length != 0
+		// remove last ','
+		sb.deleteCharAt(sb.length() - 1);
 		return sb.toString();
 	}
 

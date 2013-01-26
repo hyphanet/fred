@@ -7,10 +7,9 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.sleepycat.je.DatabaseException;
-
 import freenet.keys.KeyVerifyException;
 import freenet.node.stats.StoreAccessStats;
+import freenet.node.useralerts.UserAlertManager;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.LRUMap;
 import freenet.support.LogThresholdCallback;
@@ -31,14 +30,12 @@ import freenet.support.io.TempBucketFactory;
  */
 public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 
-	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
@@ -295,4 +292,18 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 		return null;
 	}
 
+	@Override
+	public boolean start(Ticker ticker, boolean longStart) throws IOException {
+		return false;
+	}
+
+	@Override
+	public void setUserAlertManager(UserAlertManager userAlertManager) {
+		// Do nothing
+	}
+
+	@Override
+	public FreenetStore<T> getUnderlyingStore() {
+		return this;
+	}
 }

@@ -4,8 +4,8 @@
 package freenet.client.async;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.ListIterator;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -103,7 +103,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 
 		};
 		query.constrain(eval);
-		ObjectSet results = query.execute();
+		ObjectSet<PersistentCooldownQueueItem> results = query.execute();
 
 		while(results.hasNext()) {
 			found = true;
@@ -137,7 +137,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 			if(v == null)
 				v = new ArrayList<Key>(Math.min(maxCount, itemsFromLastTime.size()));
 			Logger.normal(this, "Overflow handling in cooldown queue: reusing items from last time, now "+itemsFromLastTime.size());
-			for(ListIterator<PersistentCooldownQueueItem> it = itemsFromLastTime.listIterator();it.hasNext() && v.size() < maxCount;) {
+			for(Iterator<PersistentCooldownQueueItem> it = itemsFromLastTime.iterator();it.hasNext() && v.size() < maxCount;) {
 				PersistentCooldownQueueItem i = it.next();
 				container.activate(i, 1);
 				if(i.parent != this && i.parent != altQueue) {
@@ -175,7 +175,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		// parent index is humongous, so we get a huge memory spike, queries take ages.
 		// Just check manually.
 		query.descend("time").orderAscending().constrain(Long.valueOf(now + dontCareAfterMillis)).smaller();
-		ObjectSet results = query.execute();
+		ObjectSet<PersistentCooldownQueueItem> results = query.execute();
 		if(results.hasNext()) {
 			long tEnd = System.currentTimeMillis();
 			if(tEnd - tStart > 1000)
@@ -231,7 +231,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		Query query = container.query();
 		query.constrain(PersistentCooldownQueueItem.class);
 		query.descend("parent").constrain(this).identity();
-		ObjectSet results = query.execute();
+		ObjectSet<PersistentCooldownQueueItem> results = query.execute();
 		return results.size();
 	}
 

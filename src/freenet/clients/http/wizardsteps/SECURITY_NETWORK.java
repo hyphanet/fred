@@ -1,15 +1,12 @@
 package freenet.clients.http.wizardsteps;
 
-import freenet.clients.http.*;
+import freenet.clients.http.FirstTimeWizardToadlet;
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
 import freenet.node.SecurityLevels;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
-import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
-
-import java.net.URI;
 
 /**
  * This step allows the user to choose between security levels. If opennet is disabled, only high and maximum are shown.
@@ -90,7 +87,7 @@ public class SECURITY_NETWORK implements Step {
 
 			form = helper.addFormChild(infoboxContent, ".", "networkSecurityForm");
 			HTMLNode div = form.addChild("div", "class", "opennetDiv");
-			for(SecurityLevels.NETWORK_THREAT_LEVEL level : SecurityLevels.NETWORK_THREAT_LEVEL.OPENNET_VALUES) {
+			for(SecurityLevels.NETWORK_THREAT_LEVEL level : SecurityLevels.NETWORK_THREAT_LEVEL.getOpennetValues()) {
 				securityLevelChoice(div, level);
 			}
 		} else {
@@ -100,7 +97,7 @@ public class SECURITY_NETWORK implements Step {
 
 			form = helper.addFormChild(infoboxContent, ".", "networkSecurityForm");
 			HTMLNode div = form.addChild("div", "class", "darknetDiv");
-			for(SecurityLevels.NETWORK_THREAT_LEVEL level : SecurityLevels.NETWORK_THREAT_LEVEL.DARKNET_VALUES) {
+			for(SecurityLevels.NETWORK_THREAT_LEVEL level : SecurityLevels.NETWORK_THREAT_LEVEL.getDarknetValues()) {
 				securityLevelChoice(div, level);
 			}
 			form.addChild("p").addChild("b", WizardL10n.l10nSec("networkThreatLevel.opennetFriendsWarning"));

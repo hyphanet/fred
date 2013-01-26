@@ -66,7 +66,7 @@ public class NPFPacketTest extends TestCase {
 		assertEquals(0, r.getAcks().size());
 		assertEquals(1, r.getFragments().size());
 
-		MessageFragment frag = r.getFragments().getFirst();
+		MessageFragment frag = r.getFragments().get(0);
 		assertTrue(frag.shortMessage);
 		assertFalse(frag.isFragmented);
 		assertTrue(frag.firstFragment);

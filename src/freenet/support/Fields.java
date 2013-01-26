@@ -212,12 +212,15 @@ public abstract class Fields {
 	}
 
 	public static String textList(String[] ls, char ch) {
+		if (ls.length == 0) return "";
 		StringBuilder sb = new StringBuilder();
-		for(int i = 0; i < ls.length; i++) {
-			sb.append(ls[i]);
-			if(i != ls.length - 1)
-				sb.append(ch);
+		for(String s: ls) {
+			sb.append(s);
+			sb.append(ch);
 		}
+		// assert(sb.length() > 0); -- always true as ls.length != 0
+		// remove last ch
+		sb.deleteCharAt(sb.length()-1);
 		return sb.toString();
 	}
 
@@ -232,12 +235,11 @@ public abstract class Fields {
 	}
 
 	public static String numberList(long[] ls) {
+		if (ls.length == 0) return "";
 		char[] numberBuf = new char[64];
 		StringBuilder listBuf = new StringBuilder(ls.length * 18);
-		for(int i = 0; i < ls.length; i++) {
-
+		for(long l: ls) {
 			// Convert the number into a string in a fixed size buffer.
-			long l = ls[i];
 			int charPos = 64;
 			do {
 				numberBuf[--charPos] = digits[(int) (l & 0x0F)];
@@ -245,9 +247,11 @@ public abstract class Fields {
 			} while(l != 0);
 
 			listBuf.append(numberBuf, charPos, (64 - charPos));
-			if(i != ls.length - 1)
-				listBuf.append(',');
+			listBuf.append(',');
 		}
+		// assert(listBuf.length() > 0); -- always true as ls.length != 0
+		// remove last comma
+		listBuf.deleteCharAt(listBuf.length()-1);
 		return listBuf.toString();
 	}
 
@@ -464,12 +468,15 @@ public abstract class Fields {
 	 * @return
 	 */
 	public static String commaList(Object[] addr, char comma) {
+		if (addr.length == 0) return "";
 		StringBuilder sb = new StringBuilder();
-		for(int i = 0; i < addr.length; i++) {
-			sb.append(addr[i]);
-			if(i != addr.length - 1)
-				sb.append(comma);
+		for(Object a: addr) {
+			sb.append(a);
+			sb.append(comma);
 		}
+		// assert(sb.length() > 0); -- always true as addr.length != 0
+		// remove last comma
+		sb.deleteCharAt(sb.length()-1);
 		return sb.toString();
 	}
 
@@ -539,6 +546,10 @@ public abstract class Fields {
 		return x;
 	}
 
+	public static int bytesToInt(byte[] buf) {
+		return bytesToInt(buf, 0);
+	}
+	
 	/**
 	 * Convert an array of bytes to a single int.
 	 */
@@ -901,5 +912,13 @@ public abstract class Fields {
 				break;
 		}
 		return i - origI;
+	}
+
+	public static int compareObjectID(Object o1, Object o2) {
+		int id1 = System.identityHashCode(o1);
+		int id2 = System.identityHashCode(o2);
+		if(id1 > id2) return 1;
+		if(id2 > id1) return -1;
+		return 0;
 	}
 }

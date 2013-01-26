@@ -2,7 +2,6 @@ package freenet.clients.http;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.Vector;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
@@ -92,12 +91,11 @@ public class FProxyFetchTracker implements Runnable {
 	 * @param fctx TODO
 	 * @return The FetchInProgress if found, null otherwise*/
 	public FProxyFetchInProgress getFetchInProgress(FreenetURI key, long maxSize, FetchContext fctx){
-		FProxyFetchInProgress progress;
 		synchronized (fetchers) {
-			if(fetchers.containsKey(key)) {
-				Object[] check = fetchers.getArray(key);
+			Object[] check = fetchers.getArray(key);
+			if(check != null) {
 				for(int i=0;i<check.length;i++) {
-					progress = (FProxyFetchInProgress) check[i];
+					FProxyFetchInProgress progress = (FProxyFetchInProgress) check[i];
 					if((progress.maxSize == maxSize && progress.notFinishedOrFatallyFinished())
 							|| progress.hasData()){
 						if(logMINOR) Logger.minor(this, "Found "+progress);
@@ -137,12 +135,11 @@ public class FProxyFetchTracker implements Runnable {
 				queuedJob = false;
 			}
 			// Horrible hack, FIXME
-			Enumeration e = fetchers.keys();
+			Enumeration<FreenetURI> e = fetchers.keys();
 			while(e.hasMoreElements()) {
 				FreenetURI uri = (FreenetURI) e.nextElement();
 				// Really horrible hack, FIXME
-				Vector<FProxyFetchInProgress> list = (Vector<FProxyFetchInProgress>) fetchers.iterateAll(uri);
-				for(FProxyFetchInProgress f : list){
+				for(FProxyFetchInProgress f : fetchers.iterateAll(uri)) {
 					// FIXME remove on the fly, although cancel must wait
 					if(f.canCancel()) {
 						if(toRemove == null) toRemove = new ArrayList<FProxyFetchInProgress>();
@@ -166,6 +163,10 @@ public class FProxyFetchTracker implements Runnable {
 		}
 		if(needRequeue)
 			context.ticker.queueTimedJob(this, FProxyFetchInProgress.LIFETIME);
+	}
+
+	public int makeRandomElementID() {
+		return context.fastWeakRandom.nextInt();
 	}
 
 }

@@ -22,6 +22,7 @@ package freenet.support;
 import java.io.DataInput;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 
 import freenet.io.WritableToDataOutputStream;
 
@@ -46,7 +47,7 @@ public class BitArray implements WritableToDataOutputStream {
 	 */
 	public BitArray(DataInput dis) throws IOException {
 		_size = dis.readInt();
-		_bits = new byte[(_size / 8) + (_size % 8 == 0 ? 0 : 1)];
+		_bits = new byte[(_size + 7) / 8];
 		dis.readFully(_bits);
 	}
 	
@@ -54,19 +55,18 @@ public class BitArray implements WritableToDataOutputStream {
 		_size = dis.readInt();
 		if (_size<=0 || _size>maxSize)
 			throw new IOException("Unacceptable bitarray size: "+_size);
-		_bits = new byte[(_size / 8) + (_size % 8 == 0 ? 0 : 1)];
+		_bits = new byte[(_size + 7) / 8];
 		dis.readFully(_bits);
 	}
 
 	public BitArray(int size) {
 		_size = size;
-		_bits = new byte[(size / 8) + (size % 8 == 0 ? 0 : 1)];
+		_bits = new byte[(size + 7) / 8];
 	}
 
 	public BitArray(BitArray src) {
 		this._size = src._size;
-		this._bits = new byte[src._bits.length];
-		System.arraycopy(src._bits, 0, _bits, 0, src._bits.length);
+		this._bits = src._bits.clone();
 	}
 	
 	public void setBit(int pos, boolean f) {
@@ -111,7 +111,7 @@ public class BitArray implements WritableToDataOutputStream {
 	}
 
 	public static int serializedLength(int size) {
-		return ((size / 8) + (size % 8 == 0 ? 0 : 1)) + 4;
+		return ((size + 7) / 8) + 4;
 	}
 
 	public int getSize() {
@@ -191,11 +191,9 @@ public class BitArray implements WritableToDataOutputStream {
 		if(_size == size) return;
 		int oldSize = _size;
 		_size = size;
-		int bytes = (size / 8) + (size % 8 == 0 ? 0 : 1);
+		int bytes = (size + 7) / 8;
 		if(_bits.length != bytes) {
-			byte[] newBuff = new byte[bytes];
-			System.arraycopy(_bits, 0, newBuff, 0, Math.min(_bits.length, newBuff.length));
-			_bits = newBuff;
+			_bits = Arrays.copyOf(_bits, bytes);
 		}
 		if(oldSize < _size && oldSize % 8 != 0) {
 			for(int i=oldSize;i<Math.min(_size, oldSize - oldSize % 8 + 8);i++) {

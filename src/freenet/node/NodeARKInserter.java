@@ -57,10 +57,23 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 	void start() {
 		if(!enabled) return;
 		canStart = true;
-		update();
+		innerUpdate();
 	}
 	
 	public void update() {
+		// Called by detector code, which is critical and convoluted.
+		// Run off-thread, break locks, avoid stalling caller.
+		node.executor.execute(new Runnable() {
+
+			@Override
+			public void run() {
+				innerUpdate();
+			}
+			
+		});
+	}
+	
+	private void innerUpdate() {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR) Logger.minor(this, "update()");
 		if(!checkIPUpdated()) return;

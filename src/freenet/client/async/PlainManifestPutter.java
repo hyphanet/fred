@@ -4,6 +4,7 @@
 package freenet.client.async;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import com.db4o.ObjectContainer;
 
@@ -29,7 +30,7 @@ public class PlainManifestPutter extends BaseManifestPutter {
 	}
 
 	public PlainManifestPutter(ClientPutCallback clientCallback, HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName, InsertContext ctx, boolean getCHKOnly,
-			RequestClient clientContext, boolean earlyEncode, boolean persistent, byte [] forceCryptoKey, ObjectContainer container, ClientContext context) {
+			RequestClient clientContext, boolean earlyEncode, boolean persistent, byte [] forceCryptoKey, ObjectContainer container, ClientContext context) throws TooManyFilesInsertException {
 		super(clientCallback, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, ClientPutter.randomiseSplitfileKeys(target, ctx, persistent, container), forceCryptoKey, container, context);
 	}
 
@@ -41,8 +42,9 @@ public class PlainManifestPutter extends BaseManifestPutter {
 	
 	@SuppressWarnings("unchecked")
 	private void makePutHandlers(FreeFormBuilder builder, HashMap<String, Object> manifestElements, Object defaultName) {
-		for(String name: manifestElements.keySet()) {
-			Object o = manifestElements.get(name);
+		for(Map.Entry<String, Object> entry:manifestElements.entrySet()) {
+			String name = entry.getKey();
+			Object o = entry.getValue();
 			if(o instanceof HashMap) {
 				HashMap<String,Object> subMap = (HashMap<String,Object>)o;
 				builder.pushCurrentDir();

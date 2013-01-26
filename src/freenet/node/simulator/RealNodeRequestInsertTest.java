@@ -5,7 +5,8 @@ package freenet.node.simulator;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 
 import freenet.crypt.DummyRandomSource;
 import freenet.io.comm.PeerParseException;
@@ -117,7 +118,6 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         RunningAverage requestsAvg = new SimpleRunningAverage(100, 0.0);
         String baseString = System.currentTimeMillis() + " ";
 		int insertAttempts = 0;
-		int insertSuccesses = 0;
 		int fetchSuccesses = 0;
         while(true) {
             try {
@@ -161,14 +161,13 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 System.err.println();
                 
                 byte[] data = dataString.getBytes("UTF-8");
-                Logger.minor(RealNodeRequestInsertTest.class, "Decoded: "+new String(block.memoryDecode()));
+                Logger.minor(RealNodeRequestInsertTest.class, "Decoded: "+new String(block.memoryDecode(), "UTF-8"));
                 Logger.normal(RealNodeRequestInsertTest.class,"Insert Key: "+insertKey.getURI());
                 Logger.normal(RealNodeRequestInsertTest.class,"Fetch Key: "+fetchKey.getURI());
 				try {
 					insertAttempts++;
 					randomNode.clientCore.realPut(block, false, FORK_ON_CACHEABLE, false, false, REAL_TIME_FLAG);
 					Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
-					insertSuccesses++;
 				} catch (freenet.node.LowLevelPutException putEx) {
 					Logger.error(RealNodeRequestInsertTest.class, "Insert failed: "+ putEx);
 					System.err.println("Insert failed: "+ putEx);
@@ -210,7 +209,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 }
                 StringBuilder load = new StringBuilder("Running UIDs for nodes: ");
                 int totalRunningUIDsAlt = 0;
-                Vector<Long> runningUIDsList = new Vector<Long>();
+                List<Long> runningUIDsList = new ArrayList<Long>();
                 for(int i=0;i<nodes.length;i++) {
                 	load.append(i);
                 	load.append(':');

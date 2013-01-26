@@ -132,4 +132,7 @@ public interface ToadletContainer {
 
 	public boolean isSSL();
 
+	/** Create a unique ID for a ToadletContext */
+	public long generateUniqueID();
+
 }

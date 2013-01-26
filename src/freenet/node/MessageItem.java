@@ -40,8 +40,8 @@ public class MessageItem {
 			priority = overridePriority;
 		else
 			priority = msg2.getPriority();
-		this.sendLoadRT = msg2 == null ? false : msg2.needsLoadRT();
-		this.sendLoadBulk = msg2 == null ? false : msg2.needsLoadBulk();
+		this.sendLoadRT = msg2.needsLoadRT();
+		this.sendLoadBulk = msg2.needsLoadBulk();
 		buf = msg.encodeToPacket();
 		if(buf.length > NewPacketFormat.MAX_MESSAGE_SIZE) {
 			// This is bad because fairness between UID's happens at the level of message queueing,
@@ -53,22 +53,7 @@ public class MessageItem {
 	}
 
 	public MessageItem(Message msg2, AsyncMessageCallback[] cb2, ByteCounter ctr) {
-		this.msg = msg2;
-		this.cb = cb2;
-		formatted = false;
-		this.ctrCallback = ctr;
-		this.submitted = System.currentTimeMillis();
-		priority = msg2.getPriority();
-		this.sendLoadRT = msg2.needsLoadRT();
-		this.sendLoadBulk = msg2.needsLoadBulk();
-		buf = msg.encodeToPacket();
-		if(buf.length > NewPacketFormat.MAX_MESSAGE_SIZE) {
-			// This is bad because fairness between UID's happens at the level of message queueing,
-			// and the window size is frequently very small, so if we have really big messages they
-			// could cause big problems e.g. starvation of other messages, resulting in timeouts 
-			// (especially if there are retransmits).
-			Logger.error(this, "WARNING: Message too big: "+buf.length+" for "+msg2, new Exception("error"));
-		}
+		this(msg2, cb2, ctr, (short)-1);
 	}
 
 	public MessageItem(byte[] data, AsyncMessageCallback[] cb2, boolean formatted, ByteCounter ctr, short priority, boolean sendLoadRT, boolean sendLoadBulk) {
@@ -122,11 +107,11 @@ public class MessageItem {
 
 	public void onDisconnect() {
 		if(cb != null) {
-			for(int i=0;i<cb.length;i++) {
+			for(AsyncMessageCallback cbi: cb) {
 				try {
-					cb[i].disconnected();
+					cbi.disconnected();
 				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t+" calling sent() on "+cb[i]+" for "+this, t);
+					Logger.error(this, "Caught "+t+" calling sent() on "+cbi+" for "+this, t);
 				}
 			}
 		}
@@ -134,11 +119,11 @@ public class MessageItem {
 
 	public void onFailed() {
 		if(cb != null) {
-			for(int i=0;i<cb.length;i++) {
+			for(AsyncMessageCallback cbi: cb) {
 				try {
-					cb[i].fatalError();
+					cbi.fatalError();
 				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t+" calling sent() on "+cb[i]+" for "+this, t);
+					Logger.error(this, "Caught "+t+" calling sent() on "+cbi+" for "+this, t);
 				}
 			}
 		}
@@ -164,11 +149,11 @@ public class MessageItem {
 	/** Called the first time we have sent all of the message. */
 	public void onSentAll() {
 		if(cb != null) {
-			for(int i=0;i<cb.length;i++) {
+			for(AsyncMessageCallback cbi: cb) {
 				try {
-					cb[i].sent();
+					cbi.sent();
 				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t+" calling sent() on "+cb[i]+" for "+this, t);
+					Logger.error(this, "Caught "+t+" calling sent() on "+cbi+" for "+this, t);
 				}
 			}
 		}

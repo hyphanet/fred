@@ -366,8 +366,7 @@ public class LoggingConfigHandler {
 		private boolean delete(File dir) {
 			boolean failed = false;
 			File[] files = dir.listFiles();
-			for(int i=0;i<files.length;i++) {
-				File f = files[i];
+			for(File f: files) {
 				String s = f.getName();
 				if(s.startsWith("freenet-") && (s.indexOf(".log") != -1)) {
 					if(f.isFile()) {

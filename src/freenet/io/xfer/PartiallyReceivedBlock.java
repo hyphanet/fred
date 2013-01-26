@@ -19,6 +19,7 @@
 package freenet.io.xfer;
 
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.LinkedList;
 
 import freenet.support.Buffer;
@@ -78,12 +79,12 @@ public class PartiallyReceivedBlock {
 		_packetSize = packetSize;
 	}
 
-	public synchronized LinkedList<Integer> addListener(PacketReceivedListener listener) throws AbortedException {
+	public synchronized Deque<Integer> addListener(PacketReceivedListener listener) throws AbortedException {
 		if (_aborted) {
 			throw new AbortedException("Adding listener to aborted PRB");
 		}
 		_packetReceivedListeners.add(listener);
-		LinkedList<Integer> ret = new LinkedList<Integer>();
+		Deque<Integer> ret = new LinkedList<Integer>();
 		for (int x = 0; x < _packets; x++) {
 			if (_received[x]) {
 				ret.addLast(x);
@@ -136,8 +137,7 @@ public class PartiallyReceivedBlock {
 		}
 		
 		
-		for (int i=0;i<prls.length;i++) {
-			PacketReceivedListener prl = prls[i];
+		for (PacketReceivedListener prl: prls) {
 			prl.packetReceived(position);
 		}
 	}

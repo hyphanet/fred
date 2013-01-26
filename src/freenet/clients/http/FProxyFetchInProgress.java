@@ -213,7 +213,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		} else if(result.alreadyFiltered) {
 			if(refilterPolicy == REFILTER_POLICY.RE_FETCH || !fctx.filterData) {
 				// Can't use it.
-				result = null;
+				return false;
 			} else if(fctx.filterData) {
 				if(shouldAcceptCachedFilteredData(fctx, result)) {
 					if(refilterPolicy == REFILTER_POLICY.ACCEPT_OLD) {
@@ -306,7 +306,6 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 			CacheFetchResult result) {
 		// FIXME allow the charset if it's the same
 		if(fctx.charset != null) return false;
-		boolean okay = false;
 		if(fctx.overrideMIME == null) {
 			return true;
 		} else {

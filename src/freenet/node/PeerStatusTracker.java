@@ -22,9 +22,8 @@ class PeerStatusTracker<K extends Object> {
 	}
 
 	public synchronized void addStatus(K peerNodeStatus, PeerNode peerNode, boolean noLog) {
-		WeakHashSet<PeerNode> statusSet = null;
-		if(statuses.containsKey(peerNodeStatus)) {
-			statusSet = statuses.get(peerNodeStatus);
+		WeakHashSet<PeerNode> statusSet = statuses.get(peerNodeStatus);
+		if(statusSet != null) {
 			if(statusSet.contains(peerNode)) {
 				if(!noLog)
 					Logger.error(this, "addPeerNodeStatus(): node already in peerNodeStatuses: " + peerNode + " status " + peerNodeStatus, new Exception("debug"));
@@ -40,32 +39,27 @@ class PeerStatusTracker<K extends Object> {
 	}
 
 	public synchronized int statusSize(K pnStatus) {
-		WeakHashSet<PeerNode> statusSet = null;
-		if(statuses.containsKey(pnStatus)) {
-			statusSet = statuses.get(pnStatus);
+		WeakHashSet<PeerNode> statusSet = statuses.get(pnStatus);
+		if(statusSet != null)
 			return statusSet.size();
-		} else
+		else
 			return 0;
 	}
 
 	public synchronized void removeStatus(K peerNodeStatus, PeerNode peerNode,
 			boolean noLog) {
-		WeakHashSet<PeerNode> statusSet = null;
-		if(statuses.containsKey(peerNodeStatus)) {
-			statusSet = statuses.get(peerNodeStatus);
-			if(!statusSet.contains(peerNode)) {
+		WeakHashSet<PeerNode> statusSet = statuses.get(peerNodeStatus);
+		if(statusSet != null) {
+			if(!statusSet.remove(peerNode)) {
 				if(!noLog)
 					Logger.error(this, "removePeerNodeStatus(): identity '" + peerNode.getIdentityString() + " for " + peerNode.shortToString() + "' not in peerNodeStatuses with status '" + peerNodeStatus + "'", new Exception("debug"));
 				return;
 			}
-			if(statuses.isEmpty())
+			if(statusSet.isEmpty())
 				statuses.remove(peerNodeStatus);
-		} else
-			statusSet = new WeakHashSet<PeerNode>();
+		}
 		if(logMINOR)
 			Logger.minor(this, "removePeerNodeStatus(): removing PeerNode for '" + peerNode.getIdentityString() + "' with status '" + peerNodeStatus + "'");
-		if(statusSet.contains(peerNode))
-			statusSet.remove(peerNode);
 	}
 	
 	public synchronized void changePeerNodeStatus(PeerNode peerNode, K oldPeerNodeStatus,

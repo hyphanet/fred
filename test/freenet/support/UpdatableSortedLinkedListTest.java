@@ -73,7 +73,7 @@ public class UpdatableSortedLinkedListTest extends TestCase {
 		l.add(new T(-4));
 		assertEquals("size()", 11, l.size());
 
-		UpdatableSortedLinkedListItem[] a = l.toArray();
+		UpdatableSortedLinkedListItem<T>[] a = l.toArray();
 		assertEquals(((T)a[0]).value , -5);
 		assertEquals(((T)a[1]).value , -4);
 		assertEquals(((T)a[2]).value , -3);
@@ -158,7 +158,7 @@ public class UpdatableSortedLinkedListTest extends TestCase {
 		l.add(new T(4));
 		assertEquals(l.size(), 6);
 
-		UpdatableSortedLinkedListItem[] a = l.toArray();
+		UpdatableSortedLinkedListItem<T>[] a = l.toArray();
 		assertEquals(((T)a[0]).value , -3);
 		assertEquals(((T)a[1]).value , -2);
 		assertEquals(((T)a[2]).value , 0);

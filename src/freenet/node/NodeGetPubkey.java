@@ -7,17 +7,18 @@ import java.io.IOException;
 
 import freenet.crypt.DSAPublicKey;
 import freenet.store.BlockMetadata;
+import freenet.store.GetPubkey;
 import freenet.store.PubkeyStore;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.HexUtil;
 import freenet.support.LRUMap;
 import freenet.support.Logger;
 
-public class GetPubkey {
+public class NodeGetPubkey implements GetPubkey {
 	private static volatile boolean logMINOR;
 
 	static {
-		Logger.registerClass(GetPubkey.class);
+		Logger.registerClass(NodeGetPubkey.class);
 	}
 	
 	// Debugging stuff
@@ -33,7 +34,7 @@ public class GetPubkey {
 	
 	private final Node node;
 	
-	GetPubkey(Node node) {
+	NodeGetPubkey(Node node) {
 		cachedPubKeys = LRUMap.createSafeMap(ByteArrayWrapper.FAST_COMPARATOR);
 		this.node = node;
 	}
@@ -43,13 +44,10 @@ public class GetPubkey {
 		this.pubKeyDatacache = pubKeyDatacache;
 	}
 
-	/**
-	 * Get a public key by hash.
-	 * @param hash The hash of the public key. Normally from an SSK.
-	 * @param canReadClientCache If this is a local request, we can read the client-cache.
-	 * @param canWriteDatastore If this is a request with high HTL, we can't promote it.
-	 * @return A public key, or null.
+	/* (non-Javadoc)
+	 * @see freenet.node.GetPubkey#getKey(byte[], boolean, boolean, freenet.store.BlockMetadata)
 	 */
+	@Override
 	public DSAPublicKey getKey(byte[] hash, boolean canReadClientCache, boolean forULPR, BlockMetadata meta) {
 		boolean ignoreOldBlocks = !node.getWriteLocalToDatastore();
 		if(canReadClientCache) ignoreOldBlocks = false;
@@ -118,18 +116,10 @@ public class GetPubkey {
 		}
 	}
 
-	/**
-	 * Cache a public key.
-	 * @param hash The hash of the public key.
-	 * @param key The key to store.
-	 * @param deep If true, we can store to the datastore rather than the cache.
-	 * @param canWriteClientCache If true, we can write to the client-cache. Only set if the 
-	 * request originated locally, and the client-cache option hasn't been turned off.
-	 * @param canWriteDatastore If false, we cannot *write to* the store or the cache. This 
-	 * happens for high initial HTL on both local requests and requests started relatively 
-	 * nearby.
-	 * @param forULPR 
+	/* (non-Javadoc)
+	 * @see freenet.node.GetPubkey#cacheKey(byte[], freenet.crypt.DSAPublicKey, boolean, boolean, boolean, boolean, boolean)
 	 */
+	@Override
 	public void cacheKey(byte[] hash, DSAPublicKey key, boolean deep, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR, boolean writeLocalToDatastore) {
 		if (logMINOR)
 			Logger.minor(this, "Cache key: " + HexUtil.bytesToHex(hash) + " : " + key);

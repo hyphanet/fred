@@ -16,6 +16,7 @@ import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Hashtable;
+import java.util.Map;
 
 /**
  * @author David 'Bombe' Roden &lt;bombe@freenetproject.org&gt;
@@ -201,10 +202,10 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 	 */
 	private HTMLNode renderPersistenceFields (Hashtable<String, String> fieldPairs) {
 		HTMLNode result = new HTMLNode("div", "id", "persistenceFields");
-		for (String key : fieldPairs.keySet()) {
+		for (Map.Entry<String,String> entry : fieldPairs.entrySet()) {
 			result.addChild("input", 
 			        new String[] { "type", "name", "value" },
-			        new String[] { "hidden", key, fieldPairs.get(key)});
+			        new String[] { "hidden", entry.getKey(), entry.getValue() });
 		}
 		return result;
 	}
@@ -363,6 +364,12 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 				}
 			}
 			for (File currentFile : files) {
+				if(currentFile.isHidden()) {
+					// It won't be inserted if we insert the whole folder.
+					// So lets just ignore it, less confusing.
+					// FIXME in advanced mode, show them, and have a different style, and a toggle for whether to include them in a folder insert.
+					continue;
+				}
 				HTMLNode fileRow = listingTable.addChild("tr");
 				if (currentFile.isDirectory()) {
 					if (currentFile.canRead()) {

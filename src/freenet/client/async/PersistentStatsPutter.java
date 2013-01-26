@@ -101,6 +101,6 @@ public class PersistentStatsPutter implements DBJob {
 		container.store(this.latestBW);
 		container.store(this.latestUptime);
 
-		return true;
+		return false;
 	}
 }

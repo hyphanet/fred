@@ -64,12 +64,10 @@ public class Rijndael implements BlockCipher {
 	/** @return null if JCA is crippled (restricted to 128-bit) so we need 
 	 * to use this class. */
 	private static Provider getAesCtrProvider() {
-		// Ensure all providers loaded.
-		JceLoader.BouncyCastle.toString();
 		try {
 			final String algo = "AES/CTR/NOPADDING";
 			final Provider bcastle = JceLoader.BouncyCastle;
-			final Class clazz = Rijndael.class;
+			final Class<?> clazz = Rijndael.class;
 
 			byte[] key = new byte[32]; // Test for whether 256-bit works.
 			byte[] iv = new byte[16];
@@ -132,7 +130,6 @@ public class Rijndael implements BlockCipher {
 				(keysize == 256)))
 			throw new UnsupportedCipherException("Invalid keysize");
 		if (! ((blocksize == 128) ||
-				(blocksize == 192) ||
 				(blocksize == 256)))
 			throw new UnsupportedCipherException("Invalid blocksize");
 		this.keysize=keysize;
@@ -172,24 +169,6 @@ public class Rijndael implements BlockCipher {
 		if(block.length != blocksize/8)
 			throw new IllegalArgumentException();
 		Rijndael_Algorithm.blockEncrypt(block, result, 0, sessionKey, blocksize/8);
-	}
-
-	/**
-	 * @return Size of temporary int[] a, t. If these are passed in, this can speed
-	 * things up by avoiding unnecessary allocations between rounds.
-	 */
-	// only consumer is RijndaelPCFBMode
-	public synchronized final int getTempArraySize() {
-		return blocksize/(8*4);
-	}
-
-	// only consumer is RijndaelPCFBMode
-	public synchronized final void encipher(byte[] block, byte[] result, int[] a, int[] t) {
-		if(block.length != blocksize/8)
-			throw new IllegalArgumentException();
-		if(a.length != t.length || t.length != blocksize/(8*4))
-			throw new IllegalArgumentException();
-		Rijndael_Algorithm.blockEncrypt(block, result, 0, sessionKey, blocksize/8, a, t);
 	}
 
 	@Override

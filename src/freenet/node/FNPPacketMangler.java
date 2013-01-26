@@ -29,6 +29,7 @@ import freenet.crypt.KeyAgreementSchemeContext;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
+import freenet.crypt.Util;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.io.AddressTracker;
 import freenet.io.AddressTracker.Status;
@@ -238,7 +239,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			Logger.error(this, "Apparently contacted by "+opn+") on "+this, new Exception("error"));
 			opn = null;
 		}
-		PeerNode pn;
 		boolean wantAnonAuth = crypto.wantAnonAuth();
 
 		if(opn != null) {
@@ -259,8 +259,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(node.isStopping()) return DECODED.SHUTTING_DOWN;
 		// Disconnected node connecting on a new IP address?
 		if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2) {
-			for(int i=0;i<peers.length;i++) {
-				pn = peers[i];
+			for(PeerNode pn: peers) {
 				if(pn == opn) continue;
 				if(logDEBUG)
 					Logger.debug(this, "Trying auth with "+pn);
@@ -290,9 +289,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			if(opennet.wantPeer(null, false, true, true, ConnectionType.RECONNECT)) {
 				// We want a peer.
 				// Try old connections.
-				PeerNode[] oldPeers = opennet.getOldPeers();
-				for(int i=0;i<oldPeers.length;i++) {
-					if(tryProcessAuth(buf, offset, length, oldPeers[i], peer, true, now)) return DECODED.DECODED;
+				for(PeerNode oldPeer: opennet.getOldPeers()) {
+					if(tryProcessAuth(buf, offset, length, oldPeer, peer, true, now)) return DECODED.DECODED;
 				}
 				didntTryOldOpennetPeers = false;
 			} else
@@ -327,10 +325,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	
 	private boolean checkAnonAuthChangeIP(PeerNode opn, byte[] buf, int offset, int length, Peer peer, long now) {
 		PeerNode[] anonPeers = crypto.getAnonSetupPeerNodes();
-		PeerNode pn;
 		if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 3) {
-			for(int i=0;i<anonPeers.length;i++) {
-				pn = anonPeers[i];
+			for(PeerNode pn: anonPeers) {
 				if(pn == opn) continue;
 				if(tryProcessAuthAnonReply(buf, offset, length, pn, peer, now)) {
 					return true;
@@ -371,8 +367,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		// Then the hash, then the data
 		// => Data starts at ivLength + digestLength
 		// Decrypt the hash
-		byte[] hash = new byte[digestLength];
-		System.arraycopy(buf, offset+ivLength, hash, 0, digestLength);
+		byte[] hash = Arrays.copyOfRange(buf, offset+ivLength, offset+ivLength+digestLength);
 		pcfb.blockDecipher(hash, 0, hash.length);
 
 		int dataStart = ivLength + digestLength + offset+2;
@@ -386,14 +381,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return false;
 		}
 		// Decrypt the data
-		MessageDigest md = SHA256.getMessageDigest();
-		byte[] payload = new byte[dataLength];
-		System.arraycopy(buf, dataStart, payload, 0, dataLength);
+		byte[] payload = Arrays.copyOfRange(buf, dataStart, dataStart+dataLength);
 		pcfb.blockDecipher(payload, 0, payload.length);
 
-		md.update(payload);
-		byte[] realHash = md.digest();
-		SHA256.returnMessageDigest(md); md = null;
+		byte[] realHash = SHA256.digest(payload);
 
 		if(Arrays.equals(realHash, hash)) {
 			// Got one
@@ -422,11 +413,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		BlockCipher authKey = crypto.getAnonSetupCipher();
 		// Does the packet match IV E( H(data) data ) ?
 		int ivLength = PCFBMode.lengthIV(authKey);
-		MessageDigest md = SHA256.getMessageDigest();
 		int digestLength = HASH_LENGTH;
 		if(length < digestLength + ivLength + 5) {
 			if(logMINOR) Logger.minor(this, "Too short: "+length+" should be at least "+(digestLength + ivLength + 5));
-			SHA256.returnMessageDigest(md);
 			return false;
 		}
 		// IV at the beginning
@@ -434,8 +423,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		// Then the hash, then the data
 		// => Data starts at ivLength + digestLength
 		// Decrypt the hash
-		byte[] hash = new byte[digestLength];
-		System.arraycopy(buf, offset+ivLength, hash, 0, digestLength);
+		byte[] hash = Arrays.copyOfRange(buf, offset+ivLength, offset+ivLength+digestLength);
 		pcfb.blockDecipher(hash, 0, hash.length);
 
 		int dataStart = ivLength + digestLength + offset+2;
@@ -446,17 +434,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(logMINOR) Logger.minor(this, "Data length: "+dataLength+" (1 = "+byte1+" 2 = "+byte2+ ')');
 		if(dataLength > length - (ivLength+hash.length+2)) {
 			if(logMINOR) Logger.minor(this, "Invalid data length "+dataLength+" ("+(length - (ivLength+hash.length+2))+") in tryProcessAuthAnon");
-			SHA256.returnMessageDigest(md);
 			return false;
 		}
 		// Decrypt the data
-		byte[] payload = new byte[dataLength];
-		System.arraycopy(buf, dataStart, payload, 0, dataLength);
+		byte[] payload = Arrays.copyOfRange(buf, dataStart, dataStart+dataLength);
 		pcfb.blockDecipher(payload, 0, payload.length);
 
-		md.update(payload);
-		byte[] realHash = md.digest();
-		SHA256.returnMessageDigest(md); md = null;
+		byte[] realHash = SHA256.digest(payload);
 
 		if(Arrays.equals(realHash, hash)) {
 			// Got one
@@ -496,8 +480,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		// Then the hash, then the data
 		// => Data starts at ivLength + digestLength
 		// Decrypt the hash
-		byte[] hash = new byte[digestLength];
-		System.arraycopy(buf, offset+ivLength, hash, 0, digestLength);
+		byte[] hash = Arrays.copyOfRange(buf, offset+ivLength, offset+ivLength+digestLength);
 		pcfb.blockDecipher(hash, 0, hash.length);
 
 		int dataStart = ivLength + digestLength + offset+2;
@@ -511,8 +494,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return false;
 		}
 		// Decrypt the data
-		byte[] payload = new byte[dataLength];
-		System.arraycopy(buf, dataStart, payload, 0, dataLength);
+		byte[] payload = Arrays.copyOfRange(buf, dataStart, dataStart+dataLength);
 		pcfb.blockDecipher(payload, 0, payload.length);
 
 		byte[] realHash = SHA256.digest(payload);
@@ -782,18 +764,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return;
 		}
 		// get Ni
-		byte[] nonceInitiator = new byte[NONCE_SIZE]; 
-		System.arraycopy(payload, offset, nonceInitiator, 0, NONCE_SIZE);
+		byte[] nonceInitiator = Arrays.copyOfRange(payload, offset, offset + NONCE_SIZE);
 		offset += NONCE_SIZE;
 
 		// get g^i
-		byte[] hisExponential = new byte[modulusLength];
-		System.arraycopy(payload, offset, hisExponential, 0, modulusLength);
+		byte[] hisExponential = Arrays.copyOfRange(payload, offset, offset + modulusLength);
 		if(unknownInitiator) {
 			// Check IDr'
 			offset += modulusLength;
-			byte[] expectedIdentityHash = new byte[NodeCrypto.IDENTITY_LENGTH];
-			System.arraycopy(payload, offset, expectedIdentityHash, 0, expectedIdentityHash.length);
+			byte[] expectedIdentityHash = Arrays.copyOfRange(payload, offset, offset + NodeCrypto.IDENTITY_LENGTH);
 			if(!Arrays.equals(expectedIdentityHash, crypto.identityHash)) {
 				Logger.error(this, "Invalid unknown-initiator JFK(1), IDr' is "+HexUtil.bytesToHex(expectedIdentityHash)+" should be "+HexUtil.bytesToHex(crypto.identityHash));
 				return;
@@ -1041,26 +1020,20 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return;
 		}
 
-		byte[] nonceInitiator = new byte[NONCE_SIZE];
-		System.arraycopy(payload, inputOffset, nonceInitiator, 0, NONCE_SIZE);
+		byte[] nonceInitiator = Arrays.copyOfRange(payload, inputOffset, inputOffset+NONCE_SIZE);
 		inputOffset += NONCE_SIZE;
-		byte[] nonceResponder = new byte[NONCE_SIZE];
-		System.arraycopy(payload, inputOffset, nonceResponder, 0, NONCE_SIZE);
+		byte[] nonceResponder = Arrays.copyOfRange(payload, inputOffset, inputOffset+NONCE_SIZE);
 		inputOffset += NONCE_SIZE;
 
-		byte[] hisExponential = new byte[modulusLength];
-		System.arraycopy(payload, inputOffset, hisExponential, 0, modulusLength);
+		byte[] hisExponential = Arrays.copyOfRange(payload, inputOffset, inputOffset+modulusLength);
 		inputOffset += modulusLength;
 
-		byte[] r = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
-		System.arraycopy(payload, inputOffset, r, 0, Node.SIGNATURE_PARAMETER_LENGTH);
+		byte[] r = Arrays.copyOfRange(payload, inputOffset, inputOffset+Node.SIGNATURE_PARAMETER_LENGTH);
 		inputOffset += Node.SIGNATURE_PARAMETER_LENGTH;
-		byte[] s = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
-		System.arraycopy(payload, inputOffset, s, 0, Node.SIGNATURE_PARAMETER_LENGTH);
+		byte[] s = Arrays.copyOfRange(payload, inputOffset, inputOffset+Node.SIGNATURE_PARAMETER_LENGTH);
 		inputOffset += Node.SIGNATURE_PARAMETER_LENGTH;
 
-		byte[] authenticator = new byte[HASH_LENGTH];
-		System.arraycopy(payload, inputOffset, authenticator, 0, HASH_LENGTH);
+		byte[] authenticator = Arrays.copyOfRange(payload, inputOffset, inputOffset + HASH_LENGTH);
 		inputOffset += HASH_LENGTH;
 
 		// Check try to find the authenticator in the cache.
@@ -1177,24 +1150,19 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 
 		// Ni
-		byte[] nonceInitiator = new byte[NONCE_SIZE];
-		System.arraycopy(payload, inputOffset, nonceInitiator, 0, NONCE_SIZE);
+		byte[] nonceInitiator = Arrays.copyOfRange(payload, inputOffset, inputOffset+NONCE_SIZE);
 		inputOffset += NONCE_SIZE;
 		// Nr
-		byte[] nonceResponder = new byte[NONCE_SIZE];
-		System.arraycopy(payload, inputOffset, nonceResponder, 0, NONCE_SIZE);
+		byte[] nonceResponder = Arrays.copyOfRange(payload, inputOffset, inputOffset+NONCE_SIZE);
 		inputOffset += NONCE_SIZE;
 		// g^i
-		byte[] initiatorExponential = new byte[modulusLength];
-		System.arraycopy(payload, inputOffset, initiatorExponential, 0, modulusLength);
+		byte[] initiatorExponential = Arrays.copyOfRange(payload, inputOffset, inputOffset+modulusLength);
 		inputOffset += modulusLength;
 		// g^r
-		byte[] responderExponential = new byte[modulusLength];
-		System.arraycopy(payload, inputOffset, responderExponential, 0, modulusLength);
+		byte[] responderExponential = Arrays.copyOfRange(payload, inputOffset, inputOffset+modulusLength);
 		inputOffset += modulusLength;
 
-		byte[] authenticator = new byte[HASH_LENGTH];
-		System.arraycopy(payload, inputOffset, authenticator, 0, HASH_LENGTH);
+		byte[] authenticator = Arrays.copyOfRange(payload, inputOffset, inputOffset+HASH_LENGTH);
 		inputOffset += HASH_LENGTH;
 
 		// We *WANT* to check the hmac before we do the lookup on the hashmap
@@ -1226,8 +1194,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			if(logDEBUG) Logger.debug(this, "No message4 found for "+HexUtil.bytesToHex(authenticator)+" responderExponential "+Fields.hashCode(responderExponential)+" initiatorExponential "+Fields.hashCode(initiatorExponential)+" nonceResponder "+Fields.hashCode(nonceResponder)+" nonceInitiator "+Fields.hashCode(nonceInitiator)+" address "+HexUtil.bytesToHex(replyTo.getAddress().getAddress()));
 		}
 
-		byte[] hmac = new byte[HASH_LENGTH];
-		System.arraycopy(payload, inputOffset, hmac, 0, HASH_LENGTH);
+		byte[] hmac = Arrays.copyOfRange(payload, inputOffset, inputOffset+HASH_LENGTH);
 		inputOffset += HASH_LENGTH;
 
 		byte[] computedExponential;
@@ -1243,8 +1210,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			}
 			computedExponential = ctx.getHMACKey(_hisExponential);
         } else {
-            ECPublicKey initiatorKey = ECDH.getPublicKey(initiatorExponential);
-            ECPublicKey responderKey = ECDH.getPublicKey(responderExponential);
+            ECPublicKey initiatorKey = ECDH.getPublicKey(initiatorExponential, ecdhCurveToUse);
+            ECPublicKey responderKey = ECDH.getPublicKey(responderExponential, ecdhCurveToUse);
             ECDHLightContext ctx = findECDHContextByPubKey(responderKey);
             if (ctx == null) {
                 Logger.error(this, "WTF? the HMAC verified but we don't know about that exponential! SHOULDN'T HAPPEN! - JFK3 - "+pn);
@@ -1305,8 +1272,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		int ivLength = PCFBMode.lengthIV(c);
 		int decypheredPayloadOffset = 0;
 		// We compute the HMAC of ("I"+cyphertext) : the cyphertext includes the IV!
-		byte[] decypheredPayload = new byte[JFK_PREFIX_INITIATOR.length + payload.length - inputOffset];
-		System.arraycopy(JFK_PREFIX_INITIATOR, 0, decypheredPayload, decypheredPayloadOffset, JFK_PREFIX_INITIATOR.length);
+		byte[] decypheredPayload = Arrays.copyOf(JFK_PREFIX_INITIATOR, JFK_PREFIX_INITIATOR.length + payload.length - inputOffset);
 		decypheredPayloadOffset += JFK_PREFIX_INITIATOR.length;
 		System.arraycopy(payload, inputOffset, decypheredPayload, decypheredPayloadOffset, decypheredPayload.length-decypheredPayloadOffset);
 		if(!HMAC.verifyWithSHA256(Ka, decypheredPayload, hmac)) {
@@ -1324,14 +1290,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		 * Signature-r,s
 		 * Node Data (starting with BootID)
 		 */
-		byte[] r = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
-		System.arraycopy(decypheredPayload, decypheredPayloadOffset, r, 0, Node.SIGNATURE_PARAMETER_LENGTH);
+		byte[] r = Arrays.copyOfRange(decypheredPayload, decypheredPayloadOffset, decypheredPayloadOffset+Node.SIGNATURE_PARAMETER_LENGTH);
 		decypheredPayloadOffset += Node.SIGNATURE_PARAMETER_LENGTH;
-		byte[] s = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
-		System.arraycopy(decypheredPayload, decypheredPayloadOffset, s, 0, Node.SIGNATURE_PARAMETER_LENGTH);
+		byte[] s = Arrays.copyOfRange(decypheredPayload, decypheredPayloadOffset, decypheredPayloadOffset+Node.SIGNATURE_PARAMETER_LENGTH);
 		decypheredPayloadOffset += Node.SIGNATURE_PARAMETER_LENGTH;
-		byte[] data = new byte[decypheredPayload.length - decypheredPayloadOffset];
-		System.arraycopy(decypheredPayload, decypheredPayloadOffset, data, 0, decypheredPayload.length - decypheredPayloadOffset);
+		byte[] data = Arrays.copyOfRange(decypheredPayload, decypheredPayloadOffset, decypheredPayload.length);
 		int ptr = 0;
 		long trackerID;
 		trackerID = Fields.bytesToLong(data, ptr);
@@ -1339,8 +1302,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		ptr += 8;
 		long bootID = Fields.bytesToLong(data, ptr);
 		ptr += 8;
-		byte[] hisRef = new byte[data.length - ptr];
-		System.arraycopy(data, ptr, hisRef, 0, hisRef.length);
+		byte[] hisRef = Arrays.copyOfRange(data, ptr, data.length);
 
 		// construct the peernode
 		if(unknownInitiator) {
@@ -1521,16 +1483,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return false;
 		}
 
-		byte[] hmac = new byte[HASH_LENGTH];
-		System.arraycopy(payload, inputOffset, hmac, 0, HASH_LENGTH);
+		byte[] hmac = Arrays.copyOfRange(payload, inputOffset, inputOffset+HASH_LENGTH);
 		inputOffset += HASH_LENGTH;
 
 		c.initialize(pn.jfkKe);
 		int ivLength = PCFBMode.lengthIV(c);
 		int decypheredPayloadOffset = 0;
 		// We compute the HMAC of ("R"+cyphertext) : the cyphertext includes the IV!
-		byte[] decypheredPayload = new byte[JFK_PREFIX_RESPONDER.length + (payload.length-inputOffset)];
-		System.arraycopy(JFK_PREFIX_RESPONDER, 0, decypheredPayload, decypheredPayloadOffset, JFK_PREFIX_RESPONDER.length);
+		byte[] decypheredPayload = Arrays.copyOf(JFK_PREFIX_RESPONDER, JFK_PREFIX_RESPONDER.length + payload.length - inputOffset);
 		decypheredPayloadOffset += JFK_PREFIX_RESPONDER.length;
 		System.arraycopy(payload, inputOffset, decypheredPayload, decypheredPayloadOffset, payload.length-inputOffset);
 		if(!HMAC.verifyWithSHA256(pn.jfkKa, decypheredPayload, hmac)) {
@@ -1564,14 +1524,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		 * Signature-r,s
 		 * bootID, znoderef
 		 */
-		byte[] r = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
-		System.arraycopy(decypheredPayload, decypheredPayloadOffset, r, 0, Node.SIGNATURE_PARAMETER_LENGTH);
+		byte[] r = Arrays.copyOfRange(decypheredPayload, decypheredPayloadOffset, decypheredPayloadOffset+Node.SIGNATURE_PARAMETER_LENGTH);
 		decypheredPayloadOffset += Node.SIGNATURE_PARAMETER_LENGTH;
-		byte[] s = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
-		System.arraycopy(decypheredPayload, decypheredPayloadOffset, s, 0, Node.SIGNATURE_PARAMETER_LENGTH);
+		byte[] s = Arrays.copyOfRange(decypheredPayload, decypheredPayloadOffset, decypheredPayloadOffset+Node.SIGNATURE_PARAMETER_LENGTH);
 		decypheredPayloadOffset += Node.SIGNATURE_PARAMETER_LENGTH;
-		byte[] data = new byte[decypheredPayload.length - decypheredPayloadOffset];
-		System.arraycopy(decypheredPayload, decypheredPayloadOffset, data, 0, decypheredPayload.length - decypheredPayloadOffset);
+		byte[] data = Arrays.copyOfRange(decypheredPayload, decypheredPayloadOffset, decypheredPayload.length);
 		int ptr = 0;
 		long trackerID;
 		boolean reusedTracker;
@@ -1580,8 +1537,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		reusedTracker = data[ptr++] != 0;
 		long bootID = Fields.bytesToLong(data, ptr);
 		ptr += 8;
-		byte[] hisRef = new byte[data.length - ptr];
-		System.arraycopy(data, ptr, hisRef, 0, hisRef.length);
+		byte[] hisRef = Arrays.copyOfRange(data, ptr, data.length);
 
 		// verify the signature
 		DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s));
@@ -1762,7 +1718,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		    NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
 		    computedExponential= ((DiffieHellmanLightContext)ctx).getHMACKey(_hisExponential);
 		}else {
-		    computedExponential = ((ECDHLightContext)ctx).getHMACKey(ECDH.getPublicKey(hisExponential)).getEncoded();
+		    computedExponential = ((ECDHLightContext)ctx).getHMACKey(ECDH.getPublicKey(hisExponential, ecdhCurveToUse)).getEncoded();
 		}
 		if(logDEBUG) Logger.debug(this, "The shared Master secret is : "+HexUtil.bytesToHex(computedExponential)+ " for " + pn);
 		/* 0 is the outgoing key for the initiator, 7 for the responder */
@@ -2044,7 +2000,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		byte[] hash = SHA256.digest(output);
 		if(logMINOR) Logger.minor(this, "Data hash: "+HexUtil.bytesToHex(hash));
 		int prePaddingLength = iv.length + hash.length + 2 /* length */ + output.length;
-		int maxPacketSize = sock.getMaxPacketSize() - sock.getHeadersLength();
+		int maxPacketSize = sock.getMaxPacketSize();
 		int paddingLength;
 		if(prePaddingLength < maxPacketSize) {
 			paddingLength = node.fastWeakRandom.nextInt(Math.min(100, maxPacketSize - prePaddingLength));
@@ -2064,9 +2020,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		data[hash.length+iv.length+1] = (byte) pcfb.encipher((byte)length);
 		pcfb.blockEncipher(output, 0, output.length);
 		System.arraycopy(output, 0, data, hash.length+iv.length+2, output.length);
-		byte[] random = new byte[paddingLength];
-		node.fastWeakRandom.nextBytes(random);
-		System.arraycopy(random, 0, data, hash.length+iv.length+2+output.length, random.length);
+
+		Util.randomBytes(node.fastWeakRandom, data, hash.length+iv.length+2+output.length, paddingLength);
 		node.nodeStats.reportAuthBytes(data.length + sock.getHeadersLength());
 		try {
 			sendPacket(data, replyTo, pn);
@@ -2453,6 +2408,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 	}
 
+	// FIXME this is our Key Derivation Function for JFK.
+	// FIXME we should move it to freenet/crypt/
 	private byte[] computeJFKSharedKey(byte[] exponential, byte[] nI, byte[] nR, String what) {
 		assert("0".equals(what) || "1".equals(what) || "2".equals(what) || "3".equals(what)
 				|| "4".equals(what) || "5".equals(what) || "6".equals(what) || "7".equals(what));

@@ -1,6 +1,6 @@
 package freenet.support;
 
-import java.util.LinkedList;
+import java.util.ArrayDeque;
 
 import freenet.node.NodeStats;
 import freenet.node.PrioRunnable;
@@ -19,7 +19,7 @@ public class PrioritizedSerialExecutor implements Executor {
 		});
 	}
 
-	private final LinkedList<Runnable>[] jobs;
+	private final ArrayDeque<Runnable>[] jobs;
 	private final int priority;
 	private final int defaultPriority;
 	private boolean waiting;
@@ -149,9 +149,9 @@ public class PrioritizedSerialExecutor implements Executor {
 	 * @param invertOrder Set if the priorities are thread priorities. Unset if they are request priorities. D'oh!
 	 */
 	public PrioritizedSerialExecutor(int priority, int internalPriorityCount, int defaultPriority, boolean invertOrder, int jobTimeout, ExecutorIdleCallback callback, NodeStats statistics) {
-		@SuppressWarnings("unchecked") LinkedList<Runnable>[] jobs = new LinkedList[internalPriorityCount];
+		@SuppressWarnings("unchecked") ArrayDeque<Runnable>[] jobs = new ArrayDeque[internalPriorityCount];
 		for (int i=0;i<jobs.length;i++) {
-			jobs[i] = new LinkedList<Runnable>();
+			jobs[i] = new ArrayDeque<Runnable>();
 		}
 		this.jobs = jobs;
 		this.priority = priority;
@@ -171,8 +171,8 @@ public class PrioritizedSerialExecutor implements Executor {
 		this.name=name;
 		synchronized (jobs) {
 			boolean empty = true;
-			for(int i=0;i<jobs.length;i++) {
-				if(!jobs[i].isEmpty()) {
+			for(ArrayDeque<Runnable> l: jobs) {
+				if(!l.isEmpty()) {
 					empty = false;
 					break;
 				}
@@ -278,17 +278,16 @@ public class PrioritizedSerialExecutor implements Executor {
 		return retval;
 	}
 	
-	@SuppressWarnings("unchecked")
-	public LinkedList<Runnable>[] getQueuedJobsByPriority() {
-		final LinkedList<Runnable>[] jobsClone = new LinkedList[jobs.length];
+	public Runnable[][] getQueuedJobsByPriority() {
+		final Runnable[][] ret = new Runnable[jobs.length][];
 		
 		synchronized(jobs) {
 			for(int i=0; i < jobs.length; ++i) {
-				jobsClone[i] = (LinkedList<Runnable>) jobs[i].clone();
+				ret[i] = jobs[i].toArray(new Runnable[jobs[i].size()]);
 			}
 		}
 		
-		return jobsClone;
+		return ret;
 	}
 
 	public int getQueueSize(int priority) {

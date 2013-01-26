@@ -1,6 +1,7 @@
 package freenet.support;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.TreeMap;
@@ -97,10 +98,9 @@ public class PrioritizedTicker implements Ticker, Runnable {
 						jobsToRun = new ArrayList<Job>();
 					Object o = timedJobsByTime.remove(tRun);
 					if(o instanceof Job[]) {
-						Job[] r = (Job[]) o;
-						for(int i = 0; i < r.length; i++) {
-							jobsToRun.add(r[i]);
-							timedJobsQueued.remove(r[i]);
+						for(Job r: (Job[]) o) {
+							jobsToRun.add(r);
+							timedJobsQueued.remove(r);
 						}
 					} else {
 						Job r = (Job) o;
@@ -191,8 +191,8 @@ public class PrioritizedTicker implements Ticker, Runnable {
 		Long l = Long.valueOf(offset + now);
 		synchronized(timedJobsByTime) {
 			if(noDupes) {
-				if(timedJobsQueued.containsKey(job)) {
-					Long t = timedJobsQueued.get(job);
+				Long t = timedJobsQueued.get(job);
+				if(t != null) {
 					if(t <= l) {
 						Logger.normal(this, "Not re-running as already queued: "+runner+" for "+name);
 						return;
@@ -200,36 +200,39 @@ public class PrioritizedTicker implements Ticker, Runnable {
 						// Delete the existing job because the new job will run first.
 						Object o = timedJobsByTime.get(t);
 						if(o instanceof Job) {
-							if(o.equals(job)) {
-								timedJobsQueued.remove(job);
-								timedJobsByTime.remove(t);
-							} else
-								timedJobsByTime.remove(t);
+							timedJobsQueued.remove(job);
+							assert(o.equals(job));
+							timedJobsByTime.remove(t);
 						} else {
 							Job[] jobs = (Job[]) o;
 							if(jobs.length == 1) {
-								if(jobs[0].equals(job)) {
-									timedJobsQueued.remove(jobs[0]);
-									timedJobsByTime.remove(t);
-								} else
-									timedJobsByTime.remove(t);
+								timedJobsQueued.remove(job);
+								assert(jobs[0].equals(job));
+								timedJobsByTime.remove(t);
 							} else {
 								Job[] newJobs = new Job[jobs.length-1];
 								int x = 0;
-								for(int i=0;i<jobs.length;i++) {
-									if(jobs[i].equals(job)) {
-										timedJobsQueued.remove(jobs[i]);
+								for(Job oldjob: jobs) {
+									if(oldjob.equals(job)) {
+										timedJobsQueued.remove(oldjob);
 										continue;
 									}
-									newJobs[x++] = jobs[i];
+									newJobs[x++] = oldjob;
+									if(x == jobs.length) {
+										assert(false);
+										newJobs = jobs;
+									}
 								}
 								if(x == 0) {
+									assert(false);
 									timedJobsByTime.remove(t);
-								} else if(x != newJobs.length) {
-									jobs = newJobs;
-									newJobs = new Job[x];
-									System.arraycopy(jobs, 0, newJobs, 0, x);
+								} else if (x == 1) {
+									timedJobsByTime.put(t, newJobs[0]);
+								} else {
+									if(x != newJobs.length)
+										newJobs = Arrays.copyOf(newJobs, x);
 									timedJobsByTime.put(t, newJobs);
+									assert(x == jobs.length-1);
 								}
 							}
 						}
@@ -243,8 +246,7 @@ public class PrioritizedTicker implements Ticker, Runnable {
 				timedJobsByTime.put(l, new Job[]{(Job) o, job});
 			else if(o instanceof Job[]) {
 				Job[] r = (Job[]) o;
-				Job[] jobs = new Job[r.length + 1];
-				System.arraycopy(r, 0, jobs, 0, r.length);
+				Job[] jobs = Arrays.copyOf(r, r.length+1);
 				jobs[jobs.length - 1] = job;
 				timedJobsByTime.put(l, jobs);
 			}
@@ -278,36 +280,41 @@ public class PrioritizedTicker implements Ticker, Runnable {
 	public void removeQueuedJob(Runnable runnable) {
 		Job job = new Job(null, runnable);
 		synchronized(timedJobsByTime) {
-			if(timedJobsQueued.containsKey(job)) {
-				Long t = timedJobsQueued.get(job);
-				if(t == null) return;
+			Long t = timedJobsQueued.remove(job);
+			if(t != null) {
 				Object o = timedJobsByTime.get(t);
-				if(o == null) return;
+				if(o == null) return; // XXX impossible -> assert
 				if(o instanceof Job) {
-					timedJobsQueued.remove(job);
+					assert(o.equals(job));
 					timedJobsByTime.remove(t);
 				} else {
 					Job[] jobs = (Job[]) o;
 					if(jobs.length == 1) {
-						timedJobsQueued.remove(jobs[0]);
+						assert(jobs[0].equals(job));
 						timedJobsByTime.remove(t);
 					} else {
 						Job[] newJobs = new Job[jobs.length-1];
 						int x = 0;
-						for(int i=0;i<jobs.length;i++) {
-							if(jobs[i].equals(job)) {
-								timedJobsQueued.remove(jobs[i]);
+						for(Job oldjob : jobs) {
+							if(oldjob.equals(job)) {
 								continue;
 							}
-							newJobs[x++] = jobs[i];
+							newJobs[x++] = oldjob;
+							if(x == jobs.length) {
+								assert(false);
+								newJobs = jobs;
+							}
 						}
 						if(x == 0) {
+							assert(false);
 							timedJobsByTime.remove(t);
-						} else if(x != newJobs.length) {
-							jobs = newJobs;
-							newJobs = new Job[x];
-							System.arraycopy(jobs, 0, newJobs, 0, x);
+						} else if (x == 1) {
+							timedJobsByTime.put(t, newJobs[0]);
+						} else {
+							if(x != newJobs.length)
+								newJobs = Arrays.copyOf(newJobs, x);
 							timedJobsByTime.put(t, newJobs);
+							assert(x == jobs.length-1);
 						}
 					}
 				}

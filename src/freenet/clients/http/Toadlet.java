@@ -8,7 +8,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
-import java.net.URI;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
@@ -67,27 +66,6 @@ public abstract class Toadlet {
 
 	private String supportedMethodsCache;
 
-	/**
-	 * TODO: not used?!
-	 */
-	private void handleUnhandledRequest(URI uri, Bucket data, ToadletContext toadletContext) throws ToadletContextClosedException, IOException, RedirectException {
-		PageNode page = toadletContext.getPageMaker().getPageNode(l10n("notSupportedTitle"), toadletContext);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
-
-		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-error");
-		infobox.addChild("div", "class", "infobox-header", l10n("notSupportedTitle"));
-		infobox.addChild("div", "class", "infobox-content", l10n("notSupportedWithClass", "class", getClass().getName()));
-
-		MultiValueTable<String, String> hdrtbl = new MultiValueTable<String, String>();
-		hdrtbl.put("Allow", findSupportedMethods());
-
-		StringBuilder pageBuffer = new StringBuilder();
-		pageNode.generate(pageBuffer);
-		toadletContext.sendReplyHeaders(405, "Operation not Supported", hdrtbl, "text/html; charset=utf-8", pageBuffer.length());
-		toadletContext.writeData(pageBuffer.toString().getBytes("UTF-8"));
-	}
-	
 	private static String l10n(String key, String pattern, String value) {
 		return NodeL10n.getBase().getString("Toadlet."+key, new String[] { pattern }, new String[] { value });
 	}
@@ -109,18 +87,18 @@ public abstract class Toadlet {
 	public final String findSupportedMethods() {
 		if (supportedMethodsCache == null) {
 			Method methlist[] = this.getClass().getMethods();
-			boolean isFirst = true;
 			StringBuilder sb = new StringBuilder();
-			for (int i = 0; i < methlist.length;i++) {  
-				Method m = methlist[i];
+			for (Method m: methlist) {
 				String name = m.getName();
 				if (name.startsWith(HANDLE_METHOD_PREFIX)) {
-					if (isFirst)
-						isFirst = false;
-					else
-						sb.append(", ");
 					sb.append(name.substring(HANDLE_METHOD_PREFIX.length()));
+					sb.append(", ");
 				}
+			}
+			if (sb.length() >= 2) {
+				// remove last ", "
+				sb.deleteCharAt(sb.length()-1);
+				sb.deleteCharAt(sb.length()-1);
 			}
 			supportedMethodsCache = sb.toString();
 		}

@@ -97,8 +97,8 @@ public class SimpleEventProducer implements ClientEventProducer {
 		ClientEventListener[] list = listeners.toArray(new ClientEventListener[listeners.size()]);
 		listeners.clear();
 		container.delete(listeners);
-		for(int i=0;i<list.length;i++)
-			list[i].onRemoveEventProducer(container);
+		for(ClientEventListener l: list)
+			l.onRemoveEventProducer(container);
 		container.delete(this);
 	}
 }

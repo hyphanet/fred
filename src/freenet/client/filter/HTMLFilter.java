@@ -21,25 +21,24 @@ import java.nio.charset.Charset;
 import java.nio.charset.MalformedInputException;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Stack;
 import java.util.StringTokenizer;
-import java.util.Map.Entry;
 
 import freenet.clients.http.ToadletContextImpl;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLDecoder;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
-import freenet.support.Logger.LogLevel;
 import freenet.support.io.NullWriter;
 
 public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
@@ -818,8 +817,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		
 		public Map<String,String> getAttributesAsMap(){
 			Map<String,String> map=new HashMap<String, String>();
-			for(int i=0;i<unparsedAttrs.length;i++){
-				String attr=unparsedAttrs[i];
+			for(String attr: unparsedAttrs) {
 				String name=attr.substring(0,attr.indexOf("="));
 				String value=attr.substring(attr.indexOf("=")+2,attr.length()-1);
 				map.put(name, value);
@@ -896,11 +894,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { "onload", "onunload" }));
 		String[] group =
 			{ "div", "h1", "h2", "h3", "h4", "h5", "h6", "p", "caption" };
-		for (int x = 0; x < group.length; x++)
+		for (String x: group)
 			allowedTagsVerifiers.put(
-				group[x],
+				x,
 				new CoreTagVerifier(
-					group[x],
+					x,
 					new String[] { "align" },
 					emptyStringArray,
 					emptyStringArray,
@@ -947,11 +945,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				"article",
 				"section",
 				"hgroup"};
-		for (int x = 0; x < group2.length; x++)
+		for (String x: group2)
 			allowedTagsVerifiers.put(
-				group2[x],
+				x,
 				new CoreTagVerifier(
-					group2[x],
+					x,
 					emptyStringArray,
 					emptyStringArray,
 					emptyStringArray,
@@ -1536,11 +1534,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			{
 				"mprescripts",
 				"none"};
-		for (int x = 0; x < mathmlempty.length; x++)
+		for (String x: mathmlempty)
 			allowedTagsVerifiers.put(
-				mathmlempty[x],
+				x,
 				new CoreTagVerifier(
-					mathmlempty[x],
+					x,
 					emptyStringArray,
 					emptyStringArray,
 					emptyStringArray,
@@ -1551,11 +1549,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				"mphantom",
 				"mroot",
 				"msqrt"};
-		for (int x = 0; x < mathmlpresent.length; x++)
+		for (String x: mathmlpresent)
 			allowedTagsVerifiers.put(
-				mathmlpresent[x],
+				x,
 				new CoreTagVerifier(
-					mathmlpresent[x],
+					x,
 					new String[] { "mathbackground", "mathcolor" },
 					new String[] { "href" },
 					emptyStringArray,
@@ -1580,11 +1578,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			{
 				"msubsup",
 				"mmultiscripts"};
-		for (int x = 0; x < mathmlscripts.length; x++)
+		for (String x: mathmlscripts)
 			allowedTagsVerifiers.put(
-				mathmlscripts[x],
+				x,
 				new CoreTagVerifier(
-					mathmlscripts[x],
+					x,
 					new String[] { "mathbackground", "mathcolor", "subscriptshift", "superscriptshift" },
 					new String[] { "href" },
 					emptyStringArray,
@@ -1650,11 +1648,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				"mi",
 				"mn",
 				"mtext"};
-		for (int x = 0; x < mathmlitem.length; x++)
+		for (String x: mathmlitem)
 			allowedTagsVerifiers.put(
-				mathmlitem[x],
+				x,
 				new CoreTagVerifier(
-					mathmlitem[x],
+					x,
 					new String[] { "dir", "mathbackground", "mathcolor", "mathsize", "mathvariant" },
 					new String[] { "href" },
 					emptyStringArray,
@@ -1719,11 +1717,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			{
 				"mtr",
 				"mlabeledtr"};
-		for (int x = 0; x < mathmltr.length; x++)
+		for (String x: mathmltr)
 			allowedTagsVerifiers.put(
-				mathmltr[x],
+				x,
 				new CoreTagVerifier(
-					mathmltr[x],
+					x,
 					new String[] { "columnalign", "groupalign", "mathbackground", "mathcolor", "rowalign" },
 					new String[] { "href" },
 					emptyStringArray,
@@ -1976,18 +1974,18 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			this.allowedAttrs = new HashSet<String>();
 			this.parsedAttrs = new HashSet<String>();
 			if (allowedAttrs != null) {
-				for (int x = 0; x < allowedAttrs.length; x++)
-					this.allowedAttrs.add(allowedAttrs[x]);
+				for (String allowedAttr: allowedAttrs)
+					this.allowedAttrs.add(allowedAttr);
 			}
 			this.uriAttrs = new HashSet<String>();
 			if (uriAttrs != null) {
-				for (int x = 0; x < uriAttrs.length; x++)
-					this.uriAttrs.add(uriAttrs[x]);
+				for (String uriAttr: uriAttrs)
+					this.uriAttrs.add(uriAttr);
 			}
 			this.inlineURIAttrs = new HashSet<String>();
 			if (inlineURIAttrs != null) {
-				for (int x = 0; x < inlineURIAttrs.length; x++)
-					this.inlineURIAttrs.add(inlineURIAttrs[x]);
+				for (String inlineURIAttr: inlineURIAttrs)
+					this.inlineURIAttrs.add(inlineURIAttr);
 			}
 		}
 
@@ -2000,8 +1998,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			boolean equals = false;
 			String prevX = "";
 			if (t.unparsedAttrs != null)
-				for (int i = 0; i < t.unparsedAttrs.length; i++) {
-					String s = t.unparsedAttrs[i];
+				for (String s: t.unparsedAttrs) {
 					if (equals) {
 						equals = false;
 						s = stripQuotes(s);
@@ -2082,7 +2079,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				boolean inline = inlineURIAttrs.contains(x);
 
 				//URI attributes require additional processing
-				if (uriAttrs.contains(x) || inline) {
+				if (inline || uriAttrs.contains(x)) {
 					if(!inline) {
 						if(logMINOR) Logger.minor(this, "Non-inline URI attribute: "+x);
 					} else {
@@ -2411,15 +2408,15 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs);
 			this.eventAttrs = new HashSet<String>();
 			if (eventAttrs != null) {
-				for (int x = 0; x < eventAttrs.length; x++) {
-					this.eventAttrs.add(eventAttrs[x]);
-					this.parsedAttrs.add(eventAttrs[x]);
+				for (String eventAttr: eventAttrs) {
+					this.eventAttrs.add(eventAttr);
+					this.parsedAttrs.add(eventAttr);
 				}
 			}
 			if (addStdEvents) {
-				for (int x = 0; x < stdEvents.length; x++) {
-					this.eventAttrs.add(stdEvents[x]);
-					this.parsedAttrs.add(stdEvents[x]);
+				for (String stdEvent: stdEvents) {
+					this.eventAttrs.add(stdEvent);
+					this.parsedAttrs.add(stdEvent);
 				}
 			}
 		}
@@ -2430,8 +2427,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			HTMLParseContext pc) throws DataFilterException {
 			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
 			// events (default and added)
-			for (Iterator<String> e = eventAttrs.iterator(); e.hasNext();) {
-				String name = e.next();
+			for (String name: eventAttrs) {
 				String arg = getHashString(h, name);
 				if (arg != null) {
 					arg = sanitizeScripting(arg);
@@ -2553,13 +2549,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				rev = rev.toLowerCase();
 				
 				StringTokenizer tok = new StringTokenizer(rev, " ");
-				int i=0;
 				sb = new StringBuffer(rev.length());
 				
 				while (tok.hasMoreTokens()) {
 					String token = tok.nextToken();
 					if(!isStandardLinkType(token)) continue;
-					i++;
 					if(sb.length() == 0)
 						sb.append(token);
 					else {
@@ -2727,8 +2721,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs, eventAttrs);
 			this.allowedTypes = new HashSet<String>();
 			if (types != null) {
-				for (int x = 0; x < types.length; x++) {
-					this.allowedTypes.add(types[x]);
+				for (String type: types) {
+					this.allowedTypes.add(type);
 				}
 			}
 		}
@@ -2792,7 +2786,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				} else if ((http_equiv != null) && (name == null)) {
 					if (http_equiv.equalsIgnoreCase("Expires")) {
 						try {
-							Date d = ToadletContextImpl.parseHTTPDate(content);
+							ToadletContextImpl.parseHTTPDate(content);
 							hn.put("http-equiv", http_equiv);
 							hn.put("content", content);
 						} catch (ParseException e) {
@@ -2825,8 +2819,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								Logger.debug(this, "["+i+"] = "+typesplit[i]);
 						}
 						boolean detected = false;
-						for (int i = 0; i < allowedContentTypes.length; i++) {
-							if (typesplit[0].equalsIgnoreCase(allowedContentTypes[i])) {
+						for (String allowedContentType: allowedContentTypes) {
+							if (typesplit[0].equalsIgnoreCase(allowedContentType)) {
 								if((typesplit[1] == null) || (pc.charset != null && typesplit[1]
 								        .equalsIgnoreCase(pc.charset))) {
 									hn.put("http-equiv", http_equiv);

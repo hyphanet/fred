@@ -24,7 +24,6 @@ import freenet.keys.BaseClientKey;
 import freenet.keys.CHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.SSKBlock;
-import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -207,7 +206,7 @@ class SingleFileInserter implements ClientPutState {
 			if(logDEBUG) {
 				Logger.debug(this, "Computed hashes for "+this+" for "+block.desiredURI+" size "+origSize);
 				for(HashResult res : hashes) {
-					Logger.debug(this, res.type.name()+" : "+HexUtil.bytesToHex(res.result));
+					Logger.debug(this, res.type.name()+" : "+res.hashAsHex());
 				}
 			}
 			if(persistent) {

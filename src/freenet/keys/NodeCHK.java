@@ -7,6 +7,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 
 import com.db4o.ObjectContainer;
 
@@ -124,13 +125,9 @@ public class NodeCHK extends Key {
 				// It might be a routing-key or it might be random data
 				Logger.error(NodeCHK.class, "Maybe recovering routing-key stored wrong as full-key");
 			}
-			byte[] out = new byte[KEY_LENGTH];
-			System.arraycopy(keyBuf, 0, out, 0, KEY_LENGTH);
-			return out;
+			return Arrays.copyOf(keyBuf, KEY_LENGTH);
 		}
-		byte[] out = new byte[KEY_LENGTH];
-		System.arraycopy(keyBuf, 2, out, 0, KEY_LENGTH);
-		return out;
+		return Arrays.copyOfRange(keyBuf, 2, 2 + KEY_LENGTH);
 	}
 
 	@Override

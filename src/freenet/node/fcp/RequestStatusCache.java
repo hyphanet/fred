@@ -15,7 +15,7 @@ import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
 import freenet.support.io.NoFreeBucket;
 
-/** Per-FCPClient cache of status of requests */
+/** Per-FCPClient cache of status of requests. */
 public class RequestStatusCache {
 	
     private static volatile boolean logMINOR;
@@ -133,7 +133,10 @@ public class RequestStatusCache {
 	}
 
 	public synchronized void addTo(List<RequestStatus> status) {
-		status.addAll(requestsByIdentifier.values());
+		// FIXME is it better to just synchronize on the RequestStatusCache when
+		// rendering the downloads page, and when updating? Ugly though ...
+		for(RequestStatus req : requestsByIdentifier.values())
+			status.add(req.clone());
 	}
 
 	public synchronized void updateExpectedMIME(String identifier, String foundDataMimeType) {

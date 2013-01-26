@@ -235,11 +235,15 @@ public class SimpleFieldSet {
 	}
 
     private static String unsplit(String[] strings) {
+		if (strings.length == 0) return "";
     	StringBuilder sb = new StringBuilder();
-    	for(int i=0;i<strings.length;i++) {
-    		if(i != 0) sb.append(MULTI_VALUE_CHAR);
-    		sb.append(strings[i]);
+    	for(String s: strings) {
+    		sb.append(s);
+			sb.append(MULTI_VALUE_CHAR);
     	}
+		// assert(sb.length() > 0) -- always true as strings.length != 0
+		// remove last MULTI_VALUE_CHAR
+		sb.deleteCharAt(sb.length()-1);
     	return sb.toString();
     }
 
@@ -247,18 +251,14 @@ public class SimpleFieldSet {
      * Put contents of a fieldset, overwrite old values.
      */
     public void putAllOverwrite(SimpleFieldSet fs) {
-    	Iterator<String> i = fs.values.keySet().iterator();
-    	while(i.hasNext()) {
-    		String key = i.next();
-    		String hisVal = fs.values.get(key);
-    		values.put(key, hisVal); // overwrite old
+    	for(Map.Entry<String, String> entry: fs.values.entrySet()) {
+    		values.put(entry.getKey(), entry.getValue()); // overwrite old
     	}
     	if(fs.subsets == null) return;
 	if(subsets == null) subsets = new HashMap<String, SimpleFieldSet>();
-    	i = fs.subsets.keySet().iterator();
-    	while(i.hasNext()) {
-    		String key = i.next();
-    		SimpleFieldSet hisFS = fs.subsets.get(key);
+    	for(Map.Entry<String, SimpleFieldSet> entry: fs.subsets.entrySet()) {
+    		String key = entry.getKey();
+    		SimpleFieldSet hisFS = entry.getValue();
     		SimpleFieldSet myFS = subsets.get(key);
     		if(myFS != null) {
     			myFS.putAllOverwrite(hisFS);
@@ -401,8 +401,7 @@ public class SimpleFieldSet {
      */
     synchronized void writeTo(Writer w, String prefix, boolean noEndMarker) throws IOException {
 		writeHeader(w);
-    	for (Iterator<Map.Entry<String, String>> i = values.entrySet().iterator(); i.hasNext();) {
-            Map.Entry<String, String> entry = i.next();
+    	for (Map.Entry<String, String> entry: values.entrySet()) {
 			String key = entry.getKey();
 			String value = entry.getValue();
             w.write(prefix);
@@ -412,8 +411,7 @@ public class SimpleFieldSet {
             w.write('\n');
     	}
     	if(subsets != null) {
-    		for (Iterator<Map.Entry<String, SimpleFieldSet>> i = subsets.entrySet().iterator(); i.hasNext();) {
-				Map.Entry<String, SimpleFieldSet> entry = i.next();
+    		for (Map.Entry<String, SimpleFieldSet> entry: subsets.entrySet()) {
 				String key = entry.getKey();
 				SimpleFieldSet subset = entry.getValue();
     			if(subset == null) throw new NullPointerException();

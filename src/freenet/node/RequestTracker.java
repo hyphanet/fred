@@ -3,15 +3,12 @@ package freenet.node;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
-import freenet.keys.Key;
 import freenet.keys.NodeCHK;
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Ticker;
-import freenet.support.Logger.LogLevel;
 
 public class RequestTracker {
 	
@@ -111,8 +108,9 @@ public class RequestTracker {
 	private<T extends UIDTag> boolean innerLock(HashMap<Long, T> overallMap, HashMap<Long, T> localMap, T tag, Long uid, boolean ssk, boolean insert, boolean offerReply, boolean local) {
 		synchronized(overallMap) {
 			if(logMINOR) Logger.minor(this, "Locking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+overallMap.size(), new Exception("debug"));
-			if(overallMap.containsKey(uid)) {
-				if(overallMap.get(uid) == tag) {
+			T oldTag = overallMap.get(uid);
+			if(oldTag != null) {
+				if(oldTag == tag) {
 					Logger.error(this, "Tag already registered: "+tag, new Exception("debug"));
 				} else {
 					return false;
@@ -122,8 +120,9 @@ public class RequestTracker {
 			if(logMINOR) Logger.minor(this, "Locked "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+overallMap.size());
 			if(local) {
 				if(logMINOR) Logger.minor(this, "Locking (local) "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+localMap.size(), new Exception("debug"));
-				if(localMap.containsKey(uid)) {
-					if(localMap.get(uid) == tag) {
+				oldTag = localMap.get(uid);
+				if(oldTag != null) {
+					if(oldTag == tag) {
 						Logger.error(this, "Tag already registered (local): "+tag, new Exception("debug"));
 					} else {
 						// Violates the invariant that local requests are always registered on the main (non-local) map too.
@@ -221,7 +220,7 @@ public class RequestTracker {
 		}
 	}
 
-	public synchronized void countRequests(boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, CountedRequests counter, CountedRequests counterSourceRestarted) {
+	public void countRequests(boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, CountedRequests counter, CountedRequests counterSourceRestarted) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
 		// Map is locked by the non-local version, although we're counting from the local version.
 		HashMap<Long, ? extends UIDTag> mapLock = map;
@@ -378,7 +377,7 @@ public class RequestTracker {
 		tag.reassignToSelf();
 	}
 
-	private synchronized HashMap<Long, ? extends UIDTag> getTracker(boolean local, boolean ssk,
+	private HashMap<Long, ? extends UIDTag> getTracker(boolean local, boolean ssk,
 			boolean insert, boolean offer, boolean realTimeFlag) {
 		if(offer)
 			return getOfferTracker(ssk, realTimeFlag);
@@ -590,18 +589,6 @@ public class RequestTracker {
 		return total;
 	}
 
-	public int getNumRemoteSSKRequests(boolean realTimeFlag) {
-		if(realTimeFlag) {
-			synchronized(runningSSKGetUIDsRT) {
-				return runningSSKGetUIDsRT.size() - runningLocalSSKGetUIDsRT.size();
-			}
-		} else {
-			synchronized(runningSSKGetUIDsBulk) {
-				return runningSSKGetUIDsBulk.size() - runningLocalSSKGetUIDsBulk.size();
-			}
-		}
-	}
-
 	public int getNumLocalCHKInserts() {
 		int total = 0;
 		synchronized(runningCHKPutUIDsBulk) {
@@ -646,40 +633,6 @@ public class RequestTracker {
 		return total;
 	}
 
-	public int getNumRemoteCHKRequests(boolean realTimeFlag) {
-		return realTimeFlag ? 
-				(runningCHKGetUIDsRT.size() - runningLocalCHKGetUIDsRT.size()) : 
-					(runningCHKGetUIDsBulk.size() - runningLocalCHKGetUIDsBulk.size());
-	}
-
-	public int getNumLocalSSKInserts(boolean realTimeFlag) {
-		return realTimeFlag ? runningLocalSSKPutUIDsRT.size() : runningLocalSSKPutUIDsBulk.size();
-	}
-
-	public int getNumLocalCHKInserts(boolean realTimeFlag) {
-		return realTimeFlag ? runningLocalCHKPutUIDsRT.size() : runningLocalCHKPutUIDsBulk.size();
-	}
-
-	public int getNumLocalCHKRequests(boolean realTimeFlag) {
-		return realTimeFlag ? runningLocalCHKGetUIDsRT.size() : runningLocalCHKGetUIDsBulk.size();
-	}
-
-	public int getNumLocalSSKRequests(boolean realTimeFlag) {
-		return realTimeFlag ? runningLocalSSKGetUIDsRT.size() : runningLocalSSKGetUIDsBulk.size();
-	}
-
-	public int getNumRemoteSSKInserts(boolean realTimeFlag) {
-		return realTimeFlag ? 
-				(runningSSKPutUIDsRT.size() - runningLocalSSKPutUIDsRT.size()) : 
-					(runningSSKPutUIDsBulk.size() - runningLocalSSKPutUIDsBulk.size());
-	}
-
-	public int getNumRemoteCHKInserts(boolean realTimeFlag) {
-		return realTimeFlag ? 
-				(runningCHKPutUIDsRT.size() - runningLocalCHKPutUIDsRT.size()) : 
-					(runningCHKPutUIDsBulk.size() - runningLocalCHKPutUIDsBulk.size());
-	}
-
 	public int getNumSSKOfferReplies() {
 		int total = 0;
 		synchronized(runningSSKOfferReplyUIDsRT) {
@@ -710,7 +663,7 @@ public class RequestTracker {
 		return realTimeFlag ? runningCHKOfferReplyUIDsRT.size() : runningCHKOfferReplyUIDsBulk.size();
 	}
 
-	public void addRunningUIDs(Vector<Long> list) {
+	public void addRunningUIDs(List<Long> list) {
 		addRunningUIDs(runningSSKGetUIDsRT, list);
 		addRunningUIDs(runningCHKGetUIDsRT, list);
 		addRunningUIDs(runningSSKPutUIDsRT, list);
@@ -725,7 +678,7 @@ public class RequestTracker {
 		addRunningUIDs(runningCHKOfferReplyUIDsBulk, list);
 	}
 	
-	private void addRunningUIDs(HashMap<Long, ? extends UIDTag> runningUIDs, Vector<Long> list) {
+	private void addRunningUIDs(HashMap<Long, ? extends UIDTag> runningUIDs, List<Long> list) {
 		synchronized(runningUIDs) {
 			list.addAll(runningUIDs.keySet());
 		}

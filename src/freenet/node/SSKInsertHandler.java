@@ -129,7 +129,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 				return;
 			}
 			if(msg == null) {
-				Logger.normal(this, "Failed to receive all parts (data="+data+" headers="+headers+" pk="+pubKey+") for "+uid);
+				Logger.normal(this, "Failed to receive all parts (data="+(data==null?"null":"ok")+" headers="+(headers==null?"null":"ok")+" pk="+pubKey+") for "+uid);
 				Message failed = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED);
 				try {
 					source.sendSync(failed, this, realTimeFlag);
@@ -223,7 +223,6 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
         
         boolean receivedRejectedOverload = false;
         
-        long startTime = System.currentTimeMillis();
         while(true) {
             synchronized(sender) {
                 try {

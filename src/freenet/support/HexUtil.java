@@ -17,6 +17,7 @@ import freenet.support.Logger.LogLevel;
  * @author syoung
  */
 public class HexUtil {
+	final
 	private static boolean logDEBUG =Logger.shouldLog(LogLevel.DEBUG,HexUtil.class);
 	private HexUtil() {		
 	}	
@@ -157,8 +158,7 @@ public class HexUtil {
 	 * bitset
 	 */
 	public static int countBytesForBits(int size) {
-		// Brackets matter here! == takes precedence over the rest
-		return (size/8) + ((size % 8) == 0 ? 0:1);
+		return (size + 7)/8;
 	}
 
 
@@ -170,11 +170,11 @@ public class HexUtil {
 	public static void bytesToBits(byte[] b, BitSet ba, int maxSize) {
 		if(logDEBUG) Logger.debug(HexUtil.class, "bytesToBits("+bytesToHex(b)+",ba,"+maxSize);
 		int x = 0;
-		for(int i=0;i<b.length;i++) {
+		for(byte bi: b) {
 			for(int j=0;j<8;j++) {
 				if(x > maxSize) break;
 				int mask = 1 << j;
-				boolean value = (mask & b[i]) != 0;
+				boolean value = (mask & bi) != 0;
 				ba.set(x, value);
 				x++;
 			}

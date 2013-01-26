@@ -9,7 +9,6 @@ import java.util.List;
 import com.db4o.ObjectContainer;
 
 import freenet.client.FetchContext;
-import freenet.client.FetchException;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.ClientSSK;
@@ -47,7 +46,6 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	private long cachedCooldownTime;
 	
 	private static volatile boolean logMINOR;
-	private static volatile boolean logDEBUG;
 	
 	static {
 		Logger.registerClass(BaseSingleFileFetcher.class);

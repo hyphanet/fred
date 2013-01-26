@@ -97,10 +97,9 @@ public class SeedServerPeerNode extends PeerNode {
 	}
 
 	public InetAddress[] getInetAddresses() {
-		Peer[] peers = getHandshakeIPs();
 		ArrayList<InetAddress> v = new ArrayList<InetAddress>();
-		for(int i=0;i<peers.length;i++) {
-			FreenetInetAddress fa = peers[i].getFreenetAddress().dropHostname();
+		for(Peer peer: getHandshakeIPs()) {
+			FreenetInetAddress fa = peer.getFreenetAddress().dropHostname();
 			if(fa == null) continue;
 			InetAddress ia = fa.getAddress();
 			if(v.contains(ia)) continue;

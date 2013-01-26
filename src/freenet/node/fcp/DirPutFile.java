@@ -34,34 +34,31 @@ abstract class DirPutFile {
 		});
 	}
 	
-	public DirPutFile(SimpleFieldSet subset, String identifier, boolean global) throws MessageInvalidException {
-		this.name = subset.get("Name");
-		if(name == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing field Name", identifier, global);
-		String contentTypeOverride = subset.get("Metadata.ContentType");
-		if(contentTypeOverride != null) {
-			meta = new ClientMetadata(contentTypeOverride);
-		} else {
-			meta = new ClientMetadata(guessMIME());
-		}
+	protected DirPutFile(String name, String mimeType) {
+		this.name = name;
+		meta = new ClientMetadata(mimeType);
 	}
 
-	protected String guessMIME() {
+	protected static String guessMIME(String name) {
 		// Guess it just from the name
-		return DefaultMIMETypes.guessMIMEType(name, false /* FIXME? */);
+		return DefaultMIMETypes.guessMIMEType(name, true);
 	}
 
 	/**
 	 * Create a DirPutFile from a SimpleFieldSet.
 	 */
 	public static DirPutFile create(SimpleFieldSet subset, String identifier, boolean global, BucketFactory bf) throws MessageInvalidException {
+		String name = subset.get("Name");
+		if(name == null)
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing field Name", identifier, global);
+		String contentTypeOverride = subset.get("Metadata.ContentType");
 		String type = subset.get("UploadFrom");
 		if((type == null) || type.equalsIgnoreCase("direct")) {
-			return new DirectDirPutFile(subset, identifier, global, bf);
+			return DirectDirPutFile.create(name, contentTypeOverride, subset, identifier, global, bf);
 		} else if(type.equalsIgnoreCase("disk")) {
-			return new DiskDirPutFile(subset, identifier, global);
+			return DiskDirPutFile.create(name, contentTypeOverride, subset, identifier, global);
 		} else if(type.equalsIgnoreCase("redirect")) {
-			return new RedirectDirPutFile(subset, identifier, global);
+			return RedirectDirPutFile.create(name, contentTypeOverride, subset, identifier, global);
 		} else {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Unsupported or unknown UploadFrom: "+type, identifier, global);
 		}

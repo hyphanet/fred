@@ -25,10 +25,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.SecureRandom;
-import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -72,7 +70,6 @@ import freenet.crypt.ECDH;
 import freenet.crypt.EncryptingIoAdapter;
 import freenet.crypt.RandomSource;
 import freenet.crypt.Yarrow;
-import freenet.crypt.ciphers.Rijndael;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.FreenetInetAddress;
@@ -258,8 +255,6 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 			ramstore.clear();
 		} else if(store instanceof SaltedHashFreenetStore) {
-			SaltedHashFreenetStore<T> saltstore = (SaltedHashFreenetStore<T>) store;
-			// FIXME
 			Logger.error(this, "Migrating from from a saltedhashstore not fully supported yet: will not keep old keys");
 		}
 	}
@@ -626,7 +621,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * sharing purposes. */
 	private boolean writeLocalToDatastore;
 
-	final GetPubkey getPubKey;
+	final NodeGetPubkey getPubKey;
 
 	/** FetchContext for ARKs */
 	public final FetchContext arkFetcherContext;
@@ -713,13 +708,13 @@ public class Node implements TimeSkewDetectorCallback {
 	private boolean skipWrapperWarning;
 	private int maxPacketSize;
 	/** Should inserts ignore low backoff times by default? */
-	public static boolean IGNORE_LOW_BACKOFF_DEFAULT = false;
+	public static final boolean IGNORE_LOW_BACKOFF_DEFAULT = false;
 	/** Definition of "low backoff times" for above. */
 	public static final int LOW_BACKOFF = 30*1000;
 	/** Should inserts be fairly blatently prioritised on accept by default? */
-	public static boolean PREFER_INSERT_DEFAULT = false;
+	public static final boolean PREFER_INSERT_DEFAULT = false;
 	/** Should inserts fork when the HTL reaches cacheability? */
-	public static boolean FORK_ON_CACHEABLE_DEFAULT = true;
+	public static final boolean FORK_ON_CACHEABLE_DEFAULT = true;
 	public final IOStatisticCollector collector;
 	/** Type identifier for fproxy node to node messages, as sent on DMT.nodeToNodeMessage's */
 	public static final int N2N_MESSAGE_TYPE_FPROXY = 1;
@@ -1002,7 +997,7 @@ public class Node implements TimeSkewDetectorCallback {
 		nodeStarter=ns;
 		if(logConfigHandler != lc)
 			logConfigHandler=lc;
-		getPubKey = new GetPubkey(this);
+		getPubKey = new NodeGetPubkey(this);
 		startupTime = System.currentTimeMillis();
 		SimpleFieldSet oldConfig = config.getSimpleFieldSet();
 		// Setup node-specific configuration
@@ -1117,8 +1112,9 @@ public class Node implements TimeSkewDetectorCallback {
 
 		// Setup RNG if needed : DO NOT USE IT BEFORE THAT POINT!
 		if (r == null) {
-			// Preload freenet.crypt.Util class (selftest can delay Yarrow startup)
+			// Preload required freenet.crypt.Util and freenet.crypt.Rijndael classes (selftest can delay Yarrow startup and trigger false lack-of-enthropy message)
 			freenet.crypt.Util.mdProviders.size();
+			freenet.crypt.ciphers.Rijndael.getProviderName();
 
 			File seed = userDir.file("prng.seed");
 			FileUtil.setOwnerRW(seed);
@@ -2680,6 +2676,30 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private boolean databaseEncrypted;
 
+	private static class DB4ODiagnosticListener implements DiagnosticListener {
+		private static volatile boolean logDEBUG;
+
+		static {
+			Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+				@Override
+				public void shouldUpdate(){
+					logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
+				}
+			});
+		}
+			@Override
+			public void onDiagnostic(Diagnostic arg0) {
+				if(!logDEBUG)
+					return;
+				if(arg0 instanceof ClassHasNoFields)
+					return; // Ignore
+				if(arg0 instanceof DiagnosticBase) {
+					DiagnosticBase d = (DiagnosticBase) arg0;
+					Logger.debug(this, "Diagnostic: "+d.getClass()+" : "+d.problem()+" : "+d.solution()+" : "+d.reason(), new Exception("debug"));
+				} else
+					Logger.debug(this, "Diagnostic: "+arg0+" : "+arg0.getClass(), new Exception("debug"));
+			}
+	}
 	/**
 	 * @param databaseKey The encryption key to the database. Null if the database is not encrypted
 	 * @return A new Db4o Configuration object which is fully configured to Fred's desired database settings.
@@ -2733,19 +2753,7 @@ public class Node implements TimeSkewDetectorCallback {
 		 * long, and allows databases of up to 16GB.
 		 * FIXME make configurable by user. */
 		dbConfig.blockSize(8);
-		dbConfig.diagnostic().addListener(new DiagnosticListener() {
-
-			@Override
-			public void onDiagnostic(Diagnostic arg0) {
-				if(arg0 instanceof ClassHasNoFields)
-					return; // Ignore
-				if(arg0 instanceof DiagnosticBase) {
-					DiagnosticBase d = (DiagnosticBase) arg0;
-					Logger.debug(this, "Diagnostic: "+d.getClass()+" : "+d.problem()+" : "+d.solution()+" : "+d.reason(), new Exception("debug"));
-				} else
-					Logger.debug(this, "Diagnostic: "+arg0+" : "+arg0.getClass(), new Exception("debug"));
-			}
-		});
+		dbConfig.diagnostic().addListener(new DB4ODiagnosticListener());
 
 		// Make db4o throw an exception if we call store for something for which we do not have to call it, String or Date for example.
 		// This prevents us from writing code which is based on misunderstanding of db4o internals...
@@ -2953,9 +2961,7 @@ public class Node implements TimeSkewDetectorCallback {
 		System.err.println("DUMPING DATABASE CONTENTS:");
 		ObjectSet<Object> contents = database.queryByExample(new Object());
 		Map<String,Integer> map = new HashMap<String, Integer>();
-		Iterator<Object> i = contents.iterator();
-		while(i.hasNext()) {
-			Object o = i.next();
+		for(Object o: contents) {
 			String name = o.getClass().getName();
 			if((map.get(name)) != null) {
 				map.put(name, map.get(name)+1);
@@ -3419,21 +3425,21 @@ public class Node implements TimeSkewDetectorCallback {
 	private void initSaltHashFS(final String suffix, boolean dontResizeOnStart, byte[] masterKey) throws NodeInitException {
 		try {
 			final CHKStore chkDatastore = new CHKStore();
-			final SaltedHashFreenetStore<CHKBlock> chkDataFS = makeStore("CHK", true, chkDatastore, dontResizeOnStart, masterKey);
+			final FreenetStore<CHKBlock> chkDataFS = makeStore("CHK", true, chkDatastore, dontResizeOnStart, masterKey);
 			final CHKStore chkDatacache = new CHKStore();
-			final SaltedHashFreenetStore<CHKBlock> chkCacheFS = makeStore("CHK", false, chkDatacache, dontResizeOnStart, masterKey);
-			chkCacheFS.setAltStore(chkDataFS);
+			final FreenetStore<CHKBlock> chkCacheFS = makeStore("CHK", false, chkDatacache, dontResizeOnStart, masterKey);
+			((SaltedHashFreenetStore<CHKBlock>) chkCacheFS.getUnderlyingStore()).setAltStore(((SaltedHashFreenetStore<CHKBlock>) chkDataFS.getUnderlyingStore()));
 			final PubkeyStore pubKeyDatastore = new PubkeyStore();
-			final SaltedHashFreenetStore<DSAPublicKey> pubkeyDataFS = makeStore("PUBKEY", true, pubKeyDatastore, dontResizeOnStart, masterKey);
+			final FreenetStore<DSAPublicKey> pubkeyDataFS = makeStore("PUBKEY", true, pubKeyDatastore, dontResizeOnStart, masterKey);
 			final PubkeyStore pubKeyDatacache = new PubkeyStore();
-			final SaltedHashFreenetStore<DSAPublicKey> pubkeyCacheFS = makeStore("PUBKEY", false, pubKeyDatacache, dontResizeOnStart, masterKey);
-			pubkeyCacheFS.setAltStore(pubkeyDataFS);
+			final FreenetStore<DSAPublicKey> pubkeyCacheFS = makeStore("PUBKEY", false, pubKeyDatacache, dontResizeOnStart, masterKey);
+			((SaltedHashFreenetStore<DSAPublicKey>) pubkeyCacheFS.getUnderlyingStore()).setAltStore(((SaltedHashFreenetStore<DSAPublicKey>) pubkeyDataFS.getUnderlyingStore()));
 			final SSKStore sskDatastore = new SSKStore(getPubKey);
-			final SaltedHashFreenetStore<SSKBlock> sskDataFS = makeStore("SSK", true, sskDatastore, dontResizeOnStart, masterKey);
+			final FreenetStore<SSKBlock> sskDataFS = makeStore("SSK", true, sskDatastore, dontResizeOnStart, masterKey);
 			final SSKStore sskDatacache = new SSKStore(getPubKey);
-			final SaltedHashFreenetStore<SSKBlock> sskCacheFS = makeStore("SSK", false, sskDatacache, dontResizeOnStart, masterKey);
-			sskCacheFS.setAltStore(sskDataFS);
-
+			final FreenetStore<SSKBlock> sskCacheFS = makeStore("SSK", false, sskDatacache, dontResizeOnStart, masterKey);
+			((SaltedHashFreenetStore<SSKBlock>) sskCacheFS.getUnderlyingStore()).setAltStore(((SaltedHashFreenetStore<SSKBlock>) sskDataFS.getUnderlyingStore()));
+			
 			boolean delay =
 				chkDataFS.start(ticker, false) |
 				chkCacheFS.start(ticker, false) |
@@ -3513,16 +3519,6 @@ public class Node implements TimeSkewDetectorCallback {
 				}, "Start store", 0, true, false);
 			}
 
-			File migrationFile = storeDir.file("migrated");
-			if (!migrationFile.exists()) {
-				tryMigrate(chkDataFS, "chk", true, suffix);
-				tryMigrate(chkCacheFS, "chk", false, suffix);
-				tryMigrate(pubkeyDataFS, "pubkey", true, suffix);
-				tryMigrate(pubkeyCacheFS, "pubkey", false, suffix);
-				tryMigrate(sskDataFS, "ssk", true, suffix);
-				tryMigrate(sskCacheFS, "ssk", false, suffix);
-				migrationFile.createNewFile();
-			}
 		} catch (IOException e) {
 			System.err.println("Could not open store: " + e);
 			e.printStackTrace();
@@ -3534,11 +3530,11 @@ public class Node implements TimeSkewDetectorCallback {
 
 		try {
 			final CHKStore chkClientcache = new CHKStore();
-			final SaltedHashFreenetStore<CHKBlock> chkDataFS = makeClientcache("CHK", true, chkClientcache, dontResizeOnStart, clientCacheMasterKey);
+			final FreenetStore<CHKBlock> chkDataFS = makeClientcache("CHK", true, chkClientcache, dontResizeOnStart, clientCacheMasterKey);
 			final PubkeyStore pubKeyClientcache = new PubkeyStore();
-			final SaltedHashFreenetStore<DSAPublicKey> pubkeyDataFS = makeClientcache("PUBKEY", true, pubKeyClientcache, dontResizeOnStart, clientCacheMasterKey);
+			final FreenetStore<DSAPublicKey> pubkeyDataFS = makeClientcache("PUBKEY", true, pubKeyClientcache, dontResizeOnStart, clientCacheMasterKey);
 			final SSKStore sskClientcache = new SSKStore(getPubKey);
-			final SaltedHashFreenetStore<SSKBlock> sskDataFS = makeClientcache("SSK", true, sskClientcache, dontResizeOnStart, clientCacheMasterKey);
+			final FreenetStore<SSKBlock> sskDataFS = makeClientcache("SSK", true, sskClientcache, dontResizeOnStart, clientCacheMasterKey);
 
 			boolean delay =
 				chkDataFS.start(ticker, false) |
@@ -3591,25 +3587,18 @@ public class Node implements TimeSkewDetectorCallback {
 		}
     }
 
-	private <T extends StorableBlock> void tryMigrate(SaltedHashFreenetStore<T> chkDataFS, String type, boolean isStore, String suffix) {
-		String store = isStore ? "store" : "cache";
-		chkDataFS.migrationFrom(//
-		        storeDir.file(type + suffix + "."+store), //
-		        storeDir.file(type + suffix + "."+store+".keys"));
-	}
-
-	private <T extends StorableBlock> SaltedHashFreenetStore<T> makeClientcache(String type, boolean isStore, StoreCallback<T> cb, boolean dontResizeOnStart, byte[] clientCacheMasterKey) throws IOException {
-		SaltedHashFreenetStore<T> store = makeStore(type, "clientcache", maxClientCacheKeys, cb, dontResizeOnStart, clientCacheMasterKey);
+	private <T extends StorableBlock> FreenetStore<T> makeClientcache(String type, boolean isStore, StoreCallback<T> cb, boolean dontResizeOnStart, byte[] clientCacheMasterKey) throws IOException {
+		FreenetStore<T> store = makeStore(type, "clientcache", maxClientCacheKeys, cb, dontResizeOnStart, clientCacheMasterKey);
 		return store;
 	}
 
-	private <T extends StorableBlock> SaltedHashFreenetStore<T> makeStore(String type, boolean isStore, StoreCallback<T> cb, boolean dontResizeOnStart, byte[] clientCacheMasterKey) throws IOException {
+	private <T extends StorableBlock> FreenetStore<T> makeStore(String type, boolean isStore, StoreCallback<T> cb, boolean dontResizeOnStart, byte[] clientCacheMasterKey) throws IOException {
 		String store = isStore ? "store" : "cache";
 		long maxKeys = isStore ? maxStoreKeys : maxCacheKeys;
 		return makeStore(type, store, maxKeys, cb, dontResizeOnStart, clientCacheMasterKey);
 	}
 
-	private <T extends StorableBlock> SaltedHashFreenetStore<T> makeStore(String type, String store, long maxKeys, StoreCallback<T> cb, boolean lateStart, byte[] clientCacheMasterKey) throws IOException {
+	private <T extends StorableBlock> FreenetStore<T> makeStore(String type, String store, long maxKeys, StoreCallback<T> cb, boolean lateStart, byte[] clientCacheMasterKey) throws IOException {
 		Logger.normal(this, "Initializing "+type+" Data"+store);
 		System.out.println("Initializing "+type+" Data"+store+" (" + maxStoreKeys + " keys)");
 
@@ -3706,9 +3695,7 @@ public class Node implements TimeSkewDetectorCallback {
 				@Override
 				public void run() {
 					freenet.support.Logger.OSThread.logPID(this);
-					PeerNode[] nodes = peers.myPeers();
-					for(int i = 0; i < nodes.length; i++) {
-						PeerNode pn = nodes[i];
+					for(PeerNode pn: peers.myPeers()) {
 						pn.updateVersionRoutablity();
 					}
 				}
@@ -3730,7 +3717,7 @@ public class Node implements TimeSkewDetectorCallback {
 		String osVersion = System.getProperty("os.version");
 
 		boolean isOpenJDK = false;
-		boolean isOracle = false;
+		//boolean isOracle = false;
 
 		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM name: "+jvmName+", JVM version: "+javaVersion+", OS name: "+osName+", OS version: "+osVersion);
 
@@ -3742,7 +3729,7 @@ public class Node implements TimeSkewDetectorCallback {
 		//Should have no effect because if a user has downloaded a new enough file for Oracle to have changed the name these bugs shouldn't apply.
 		//Still, one never knows and this code might be extended to cover future bugs.
 		if((!isOpenJDK) && (jvmVendor.startsWith("Sun ") || jvmVendor.startsWith("Oracle ")) || (jvmVendor.startsWith("The FreeBSD Foundation") && (jvmSpecVendor.startsWith("Sun ") || jvmSpecVendor.startsWith("Oracle "))) || (jvmVendor.startsWith("Apple "))) {
-			isOracle = true;
+			//isOracle = true;
 			// Sun/Oracle bugs
 
 			// Spurious OOMs
@@ -3828,13 +3815,15 @@ public class Node implements TimeSkewDetectorCallback {
 	 * Do a routed ping of another node on the network by its location.
 	 * @param loc2 The location of the other node to ping. It must match
 	 * exactly.
+	 * @param pubKeyHash The hash of the pubkey of the target node. We match
+	 * by location; this is just a shortcut if we get close.
 	 * @return The number of hops it took to find the node, if it was found.
 	 * Otherwise -1.
 	 */
-	public int routedPing(double loc2, byte[] nodeIdentity) {
+	public int routedPing(double loc2, byte[] pubKeyHash) {
 		long uid = random.nextLong();
 		int initialX = random.nextInt();
-		Message m = DMT.createFNPRoutedPing(uid, loc2, maxHTL, initialX, nodeIdentity);
+		Message m = DMT.createFNPRoutedPing(uid, loc2, maxHTL, initialX, pubKeyHash);
 		Logger.normal(this, "Message: "+m);
 
 		dispatcher.handleRouted(m, null);
@@ -4730,24 +4719,22 @@ public class Node implements TimeSkewDetectorCallback {
 	 * Return a peer of the node given its ip and port, name or identity, as a String
 	 */
 	public PeerNode getPeerNode(String nodeIdentifier) {
-		PeerNode[] pn = peers.myPeers();
-		for(int i=0;i<pn.length;i++)
-		{
-			Peer peer = pn[i].getPeer();
+		for(PeerNode pn: peers.myPeers()) {
+			Peer peer = pn.getPeer();
 			String nodeIpAndPort = "";
 			if(peer != null) {
 				nodeIpAndPort = peer.toString();
 			}
-			String identity = pn[i].getIdentityString();
-			if(pn[i] instanceof DarknetPeerNode) {
-				DarknetPeerNode dpn = (DarknetPeerNode) pn[i];
+			String identity = pn.getIdentityString();
+			if(pn instanceof DarknetPeerNode) {
+				DarknetPeerNode dpn = (DarknetPeerNode) pn;
 				String name = dpn.myName;
 				if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier)) {
-					return pn[i];
+					return pn;
 				}
 			} else {
 				if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier)) {
-					return pn[i];
+					return pn;
 				}
 			}
 		}
@@ -4803,10 +4790,9 @@ public class Node implements TimeSkewDetectorCallback {
 	// using the PacketSender/Ticker. Would save a few threads.
 
 	public int getNumARKFetchers() {
-		PeerNode[] p = peers.myPeers();
 		int x = 0;
-		for(int i=0;i<p.length;i++) {
-			if(p[i].isFetchingARK()) x++;
+		for(PeerNode p: peers.myPeers()) {
+			if(p.isFetchingARK()) x++;
 		}
 		return x;
 	}
@@ -4924,16 +4910,8 @@ public class Node implements TimeSkewDetectorCallback {
 		return opennet.addNewOpennetNode(fs, connectionType, false);
 	}
 
-	public byte[] getOpennetIdentity() {
-		return opennet.crypto.myIdentity;
-	}
-
 	public byte[] getOpennetPubKeyHash() {
 		return opennet.crypto.pubKeyHash;
-	}
-
-	public byte[] getDarknetIdentity() {
-		return darknetCrypto.myIdentity;
 	}
 
 	public byte[] getDarknetPubKeyHash() {
@@ -5179,9 +5157,7 @@ public class Node implements TimeSkewDetectorCallback {
 			enteredPassword = true;
 			if(!clientCacheAwaitingPassword) {
 				if(inFirstTimeWizard) {
-					byte[] copied = new byte[keys.clientCacheMasterKey.length];
-					System.arraycopy(keys.clientCacheMasterKey, 0, copied, 0, copied.length);
-					cachedClientCacheKey = copied;
+					cachedClientCacheKey = keys.clientCacheMasterKey.clone();
 					// Wipe it if haven't specified datastore size in 10 minutes.
 					ticker.queueTimedJob(new Runnable() {
 						@Override
@@ -5335,6 +5311,7 @@ public class Node implements TimeSkewDetectorCallback {
     	if(source != null && !source.isLowUptime()) {
     		if(Location.distance(source, target) < myDist) {
     	    	if(logMINOR) Logger.minor(this, "Not storing because source is closer to target for "+key+" : "+source);
+    			return false;
     		}
     	}
     	for(PeerNode pn : routedTo) {

@@ -262,8 +262,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		if(elementsLong > Integer.MAX_VALUE)
 			throw new FetchException(FetchException.TOO_BIG, "Cannot fetch splitfiles with more than "+(Integer.MAX_VALUE/mainElementsPerKey)+" keys! (approx 3.3TB)");
 		int mainSizeBits = (int)elementsLong; // counting filter
-		if((mainSizeBits & 7) != 0)
-			mainSizeBits += (8 - (mainSizeBits & 7));
+		mainSizeBits = (mainSizeBits + 7) & ~7; // round up to bytes
 		mainBloomFilterSizeBytes = mainSizeBits / 8 * 2; // counting filter
 		double acceptableFalsePositives = ACCEPTABLE_BLOOM_FALSE_POSITIVES_ALL_SEGMENTS / segments.length;
 		int perSegmentBitsPerKey = (int) Math.ceil(Math.log(acceptableFalsePositives) / Math.log(0.6185));
@@ -271,8 +270,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		if(segBlocks > origSize)
 			segBlocks = origSize;
 		int perSegmentSize = perSegmentBitsPerKey * segBlocks;
-		if((perSegmentSize & 7) != 0)
-			perSegmentSize += (8 - (perSegmentSize & 7));
+		perSegmentSize = (perSegmentSize + 7) & ~7;
 		perSegmentBloomFilterSizeBytes = perSegmentSize / 8;
 		perSegmentK = BloomFilter.optimialK(perSegmentSize, segBlocks);
 		keyCount = origSize;
@@ -538,8 +536,10 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		for(int i=0;i<segments.length;i++) {
 			if(logMINOR)
 				Logger.minor(this, "Cancelling segment "+i);
+			/** FIXME this should not happen, but it is possible if the cancel() below deactivates the
+			 * SplitFileFetcher. findbugs thinks it's impossible, of course... See the javadocs on
+			 * the freenet.client package. */
 			if(segments == null && persist && !container.ext().isActive(this)) {
-				// FIXME is this normal? If so just reactivate.
 				Logger.error(this, "Deactivated mid-cancel on "+this, new Exception("error"));
 				container.activate(this, 1);
 			}

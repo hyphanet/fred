@@ -66,11 +66,11 @@ public class DefaultMIMETypes {
 		addMIMEType(number, type);
 		Short t = Short.valueOf(number);
 		if(extensions != null) {
-			for(int i=0;i<extensions.length;i++) {
-				String ext = extensions[i].toLowerCase();
-				if(mimeTypesByExtension.containsKey(ext)) {
+			for(String ext : extensions) {
+				ext = ext.toLowerCase();
+				Short s = mimeTypesByExtension.get(ext);
+				if(s != null) {
 					// No big deal
-					Short s = mimeTypesByExtension.get(ext);
 					Logger.normal(DefaultMIMETypes.class, "Extension "+ext+" assigned to "+byNumber(s.shortValue())+" in preference to "+number+ ':' +type);
 				} else {
 					// If only one, make it primary
@@ -781,8 +781,8 @@ public class DefaultMIMETypes {
 		
 		String[] extensions = allExtensionsByMimeNumber.get(typeNumber);
 		if(extensions == null) return false;
-		for(int i=0;i<extensions.length;i++)
-			if(oldExt.equals(extensions[i])) return true;
+		for(String extension: extensions)
+			if(oldExt.equals(extension)) return true;
 		return false;
 	}
 	
@@ -791,8 +791,12 @@ public class DefaultMIMETypes {
 	private static final String PARAM = "(?>;\\s*"+CHARS+"="+"(("+CHARS+")|(\".*\")))";
 	private static Pattern MIME_TYPE = Pattern.compile(TOP_LEVEL+"/"+CHARS+"\\s*"+PARAM+"*");
 
+	private static Pattern INFOCALYPSE_DIRTY_HACK = Pattern.compile("application/mercurial-bundle;[0-9]{1,6}");
+	
 	public static boolean isPlausibleMIMEType(String mimeType) {
-		return MIME_TYPE.matcher(mimeType).matches();
+		if(MIME_TYPE.matcher(mimeType).matches()) return true;
+		// FIXME dirty hack for backwards compatibility with old Infocalypse repo's
+		return INFOCALYPSE_DIRTY_HACK.matcher(mimeType).matches();
 	}
 	
 	static String[] getMIMETypes() {

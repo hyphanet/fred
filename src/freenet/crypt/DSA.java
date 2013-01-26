@@ -132,7 +132,7 @@ public class DSA {
 
 	public static void main(String[] args) throws Exception {
 		//DSAGroup g=DSAGroup.readFromField(args[0]);
-		freenet.support.SimpleFieldSet fs = args.length >= 1 && args[1].length() != 0 ? freenet.support.SimpleFieldSet.readFrom(new java.io.File(args[0]), false, false) : null;
+		freenet.support.SimpleFieldSet fs = args.length >= 1 && args[0].length() != 0 ? freenet.support.SimpleFieldSet.readFrom(new java.io.File(args[0]), false, false) : null;
 		DSAGroup g = Global.DSAgroupBigA;
 		if (fs != null)
 			g = DSAGroup.create(fs.subset("dsaGroup"));
@@ -186,14 +186,14 @@ public class DSA {
 				totalTimeVerifying += (t3 - t2);
 				timeVerifying[i] = t3-t2;
 				int rSize = sig.getR().bitLength();
-				rSize = (rSize / 8) + (rSize % 8 == 0 ? 0 : 1);
+				rSize = (rSize + 7) / 8;
 				totalRSize += rSize;
 				if(rSize > maxRSize) maxRSize = rSize;
 				int rUnsignedBitSize = sig.getR().bitLength();
 				totalRUnsignedBitSize += rUnsignedBitSize;
 				maxRUnsignedBitSize = Math.max(maxRUnsignedBitSize, rUnsignedBitSize);
 				int sSize = sig.getS().bitLength();
-				sSize = sSize / 8 +  (sSize % 8 == 0 ? 0 : 1);
+				sSize = (sSize + 7) / 8;
 				totalSSize += sSize;
 				if(sSize > maxSSize) maxSSize = sSize;
 			}

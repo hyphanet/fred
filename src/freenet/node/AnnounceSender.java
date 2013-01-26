@@ -52,7 +52,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 	private final PeerNode onlyNode;
 	private int forwardedRefs;
 
-	public AnnounceSender(double target, short htl, long uid, PeerNode source, OpennetManager om, Node node, long xferUID, int noderefLength, int paddedLength) {
+	public AnnounceSender(double target, short htl, long uid, PeerNode source, OpennetManager om, Node node, long xferUID, int noderefLength, int paddedLength, AnnouncementCallback cb) {
 		this.source = source;
 		this.uid = uid;
 		this.om = om;
@@ -62,7 +62,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		this.xferUID = xferUID;
 		this.paddedLength = paddedLength;
 		this.noderefLength = noderefLength;
-		cb = null;
+		this.cb = cb;
 	}
 
 	public AnnounceSender(double target, OpennetManager om, Node node, AnnouncementCallback cb, PeerNode onlyNode) {
@@ -407,10 +407,12 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 						// Add it
 						try {
 							OpennetPeerNode pn = node.addNewOpennetNode(fs, ConnectionType.ANNOUNCE);
-							if(pn != null)
-								cb.addedNode(pn);
-							else
-								cb.nodeNotAdded();
+							if(cb != null) {
+								if(pn != null)
+									cb.addedNode(pn);
+								else
+									cb.nodeNotAdded();
+							}
 						} catch (FSParseException e) {
 							Logger.normal(this, "Failed to parse reply: "+e, e);
 							if(cb != null) cb.bogusNoderef("parse failed: "+e);

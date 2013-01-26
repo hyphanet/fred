@@ -4,7 +4,7 @@
 package freenet.node;
 
 import java.util.Arrays;
-import java.util.LinkedList;
+import java.util.List;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.ciphers.Rijndael;
@@ -236,7 +236,7 @@ public class NewPacketFormatTest extends TestCase {
 		synchronized(gotMessage) {
 			assert(!gotMessage.value);
 		}
-		LinkedList<byte[]> finished = receiver.handleDecryptedPacket(packet1, receiverKey);
+		List<byte[]> finished = receiver.handleDecryptedPacket(packet1, receiverKey);
 		assertEquals(2, finished.size());
 		DecodingMessageGroup decoder = receiverNode.startProcessingDecryptedMessages(finished.size());
 		for(byte[] buffer : finished) {
@@ -269,10 +269,7 @@ public class NewPacketFormatTest extends TestCase {
 		};
 		NewPacketFormat sender = new NewPacketFormat(senderNode, 0, 0);
 		PeerMessageQueue senderQueue = new PeerMessageQueue();
-		NullBasePeerNode receiverNode = new NullBasePeerNode();
-		NewPacketFormat receiver = new NewPacketFormat(receiverNode, 0, 0);
-		SessionKey receiverKey = new SessionKey(null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0), 1);
-
+		
 		senderQueue.queueAndEstimateSize(new MessageItem(new byte[128], null, false, null, (short) 0, false, true), 1024);
 
 		Thread.sleep(PacketSender.MAX_COALESCING_DELAY*2);

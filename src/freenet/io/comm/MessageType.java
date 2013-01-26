@@ -50,6 +50,7 @@ public class MessageType {
 		this.priority = priority;
 		this.isLossyPacketMessage = isLossyPacketMessage;
 		internalOnly = internal;
+		// XXX hashCode() is NOT required to be unique!
 		Integer id = Integer.valueOf(name.hashCode());
 		if (_specs.containsKey(id)) {
 			throw new RuntimeException("A message type by the name of " + name + " already exists!");
@@ -113,12 +114,12 @@ public class MessageType {
 	}
 	
 	public static MessageType getSpec(Integer specID, boolean dontLog) {
-		if (!_specs.containsKey(specID)) {
+		MessageType id = _specs.get(specID);
+		if (id == null) {
 			if(!dontLog)
 				Logger.error(MessageType.class, "Unrecognised message type received (" + specID + ')');
-			return null;
 		}
-		return _specs.get(specID);
+		return id;
 	}
 
 	public String getName() {

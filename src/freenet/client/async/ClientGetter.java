@@ -316,6 +316,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			if(hashes != null) container.activate(hashes, Integer.MAX_VALUE);
 		}
 
+		FetchException ex = null; // set on failure
 		try {
 			if(returnBucket == null) finalResult = context.getBucketFactory(persistent()).makeBucket(maxLen);
 			else finalResult = returnBucket;
@@ -361,93 +362,46 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		} catch (OutOfMemoryError e) {
 			OOMHandler.handleOOM(e);
 			System.err.println("Failing above attempted fetch...");
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context, true);
-			if(finalResult != null && finalResult != returnBucket) {
-				finalResult.free();
-				if(persistent()) finalResult.removeFrom(container);
-			} else if(returnBucket != null && persistent())
-				returnBucket.storeTo(container); // Need to store the counter on FileBucket's so it can overwrite next time.
-			Bucket data = result.asBucket();
-			data.free();
-			if(persistent()) data.removeFrom(container);
-			return;
+			ex = new FetchException(FetchException.INTERNAL_ERROR, e);
 		} catch(UnsafeContentTypeException e) {
 			Logger.normal(this, "Error filtering content: will not validate", e);
-			onFailure(new FetchException(e.getFetchErrorCode(), expectedSize, e, ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME), state/*Not really the state's fault*/, container, context, true);
-			if(finalResult != null && finalResult != returnBucket) {
-				finalResult.free();
-				if(persistent()) finalResult.removeFrom(container);
-			} else if(returnBucket != null && persistent())
-				returnBucket.storeTo(container); // Need to store the counter on FileBucket's so it can overwrite next time.
-			Bucket data = result.asBucket();
-			data.free();
-			if(persistent()) data.removeFrom(container);
-			return;
+			ex = new FetchException(e.getFetchErrorCode(), expectedSize, e, ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME);
+			/*Not really the state's fault*/
 		} catch(URISyntaxException e) {
 			//Impossible
 			Logger.error(this, "URISyntaxException converting a FreenetURI to a URI!: "+e, e);
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state/*Not really the state's fault*/, container, context, true);
-			if(finalResult != null && finalResult != returnBucket) {
-				finalResult.free();
-				if(persistent()) finalResult.removeFrom(container);
-			} else if(returnBucket != null && persistent())
-				returnBucket.storeTo(container); // Need to store the counter on FileBucket's so it can overwrite next time.
-			Bucket data = result.asBucket();
-			data.free();
-			if(persistent()) data.removeFrom(container);
-			return;
+			ex = new FetchException(FetchException.INTERNAL_ERROR, e);
+			/*Not really the state's fault*/
 		} catch(CompressionOutputSizeException e) {
 			Logger.error(this, "Caught "+e, e);
-			onFailure(new FetchException(FetchException.TOO_BIG, e), state, container, context, true);
-			if(finalResult != null && finalResult != returnBucket) {
-				finalResult.free();
-				if(persistent()) finalResult.removeFrom(container);
-			} else if(returnBucket != null && persistent())
-				returnBucket.storeTo(container); // Need to store the counter on FileBucket's so it can overwrite next time.
-			Bucket data = result.asBucket();
-			data.free();
-			if(persistent()) data.removeFrom(container);
-			return;
+			ex = new FetchException(FetchException.TOO_BIG, e);
 		} catch(IOException e) {
 			Logger.error(this, "Caught "+e, e);
-			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context, true);
-			if(finalResult != null && finalResult != returnBucket) {
-				finalResult.free();
-				if(persistent()) finalResult.removeFrom(container);
-			} else if(returnBucket != null && persistent())
-				returnBucket.storeTo(container); // Need to store the counter on FileBucket's so it can overwrite next time.
-			Bucket data = result.asBucket();
-			data.free();
-			if(persistent()) data.removeFrom(container);
-			return;
+			ex = new FetchException(FetchException.BUCKET_ERROR, e);
 		} catch(FetchException e) {
 			Logger.error(this, "Caught "+e, e);
-			onFailure(e, state, container, context, true);
-			if(finalResult != null && finalResult != returnBucket) {
-				finalResult.free();
-				if(persistent()) finalResult.removeFrom(container);
-			} else if(returnBucket != null && persistent())
-				returnBucket.storeTo(container); // Need to store the counter on FileBucket's so it can overwrite next time.
-			Bucket data = result.asBucket();
-			data.free();
-			if(persistent()) data.removeFrom(container);
-			return;
+			ex = e;
 		} catch(Throwable t) {
 			Logger.error(this, "Caught "+t, t);
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context, true);
-			if(finalResult != null && finalResult != returnBucket) {
-				finalResult.free();
-				if(persistent()) finalResult.removeFrom(container);
-			} else if(returnBucket != null && persistent())
-				returnBucket.storeTo(container); // Need to store the counter on FileBucket's so it can overwrite next time.
-			Bucket data = result.asBucket();
-			data.free();
-			if(persistent()) data.removeFrom(container);
-			return;
+			ex = new FetchException(FetchException.INTERNAL_ERROR, t);
 		} finally {
 			Closer.close(dataInput);
 			Closer.close(dataOutput);
 			Closer.close(output);
+		}
+		if(ex != null) {
+			onFailure(ex, state, container, context, true);
+			if(finalResult != null && finalResult != returnBucket) {
+				finalResult.free();
+				if(persistent()) finalResult.removeFrom(container);
+			} else if(returnBucket != null && persistent())
+				returnBucket.storeTo(container); // Need to store the counter on FileBucket's so it can overwrite next time.
+			if(result != null) {
+			Bucket data = result.asBucket();
+			data.free();
+			if(persistent()) data.removeFrom(container);
+			}
+			return;
 		}
 		if(persistent()) {
 			state.removeFrom(container, context);

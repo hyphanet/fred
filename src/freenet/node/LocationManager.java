@@ -3,13 +3,16 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.security.MessageDigest;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Deque;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
@@ -196,9 +199,7 @@ public class LocationManager implements ByteCounter {
                             try {
                                 boolean myFlag = false;
                                 double myLoc = getLocation();
-                                PeerNode[] peers = node.peers.connectedPeers();
-                                for(int i=0;i<peers.length;i++) {
-                                    PeerNode pn = peers[i];
+                                for(PeerNode pn: node.peers.connectedPeers()) {
                                     if(pn.isRoutable()) {
                                     	synchronized(pn) {
                                     		double ploc = pn.getLocation();
@@ -662,17 +663,19 @@ public class LocationManager implements ByteCounter {
 				File locationLog = node.nodeDir().file("location.log.txt");
 				if(locationLog.exists() && locationLog.length() > 1024*1024*10)
 					locationLog.delete();
-				FileWriter fw = null;
+				FileOutputStream os = null;
 				try {
-					fw = new FileWriter(locationLog, true);
+					os = new FileOutputStream(locationLog, true);
+					BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(os, "ISO-8859-1"));
 					DateFormat df = DateFormat.getDateTimeInstance();
 					df.setTimeZone(TimeZone.getTimeZone("GMT"));
-					fw.write(""+df.format(new Date())+" : "+getLocation()+(randomReset ? " (random reset"+(fromDupLocation?" from duplicated location" : "")+")" : "")+'\n');
-					fw.close();
+					bw.write(""+df.format(new Date())+" : "+getLocation()+(randomReset ? " (random reset"+(fromDupLocation?" from duplicated location" : "")+")" : "")+'\n');
+					bw.close();
+					os = null;
 				} catch (IOException e) {
 					Logger.error(this, "Unable to write changed location to "+locationLog+" : "+e, e);
 				} finally {
-					if(fw != null) Closer.close(fw);
+					Closer.close(os);
 				}
 			}
 
@@ -781,39 +784,39 @@ public class LocationManager implements ByteCounter {
         sb.append("my: ").append(myLoc).append(", his: ").append(hisLoc).append(", myFriends: ");
         sb.append(friendLocs.length).append(", hisFriends: ").append(hisFriendLocs.length).append(" mine:\n");
 
-        for(int i=0;i<friendLocs.length;i++) {
-            sb.append(friendLocs[i]);
+        for(double loc: friendLocs) {
+            sb.append(loc);
             sb.append(' ');
         }
 
         sb.append("\nhis:\n");
 
-        for(int i=0;i<hisFriendLocs.length;i++) {
-            sb.append(hisFriendLocs[i]);
+        for(double loc: hisFriendLocs) {
+            sb.append(loc);
             sb.append(' ');
         }
 
         if(logMINOR) Logger.minor(this, sb.toString());
 
         double A = 1.0;
-        for(int i=0;i<friendLocs.length;i++) {
-            if(Math.abs(friendLocs[i] - myLoc) <= Double.MIN_VALUE*2) continue;
-            A *= Location.distance(friendLocs[i], myLoc);
+        for(double loc: friendLocs) {
+            if(Math.abs(loc - myLoc) <= Double.MIN_VALUE*2) continue;
+            A *= Location.distance(loc, myLoc);
         }
-        for(int i=0;i<hisFriendLocs.length;i++) {
-            if(Math.abs(hisFriendLocs[i] - hisLoc) <= Double.MIN_VALUE*2) continue;
-            A *= Location.distance(hisFriendLocs[i], hisLoc);
+        for(double loc: hisFriendLocs) {
+            if(Math.abs(loc - hisLoc) <= Double.MIN_VALUE*2) continue;
+            A *= Location.distance(loc, hisLoc);
         }
 
         // B = the same, with our two values swapped
         double B = 1.0;
-        for(int i=0;i<friendLocs.length;i++) {
-            if(Math.abs(friendLocs[i] - hisLoc) <= Double.MIN_VALUE*2) continue;
-            B *= Location.distance(friendLocs[i], hisLoc);
+        for(double loc: friendLocs) {
+            if(Math.abs(loc - hisLoc) <= Double.MIN_VALUE*2) continue;
+            B *= Location.distance(loc, hisLoc);
         }
-        for(int i=0;i<hisFriendLocs.length;i++) {
-            if(Math.abs(hisFriendLocs[i] - myLoc) <= Double.MIN_VALUE*2) continue;
-            B *= Location.distance(hisFriendLocs[i], myLoc);
+        for(double loc: hisFriendLocs) {
+            if(Math.abs(loc - myLoc) <= Double.MIN_VALUE*2) continue;
+            B *= Location.distance(loc, myLoc);
         }
 
         //Logger.normal(this, "A="+A+" B="+B);
@@ -857,7 +860,7 @@ public class LocationManager implements ByteCounter {
     }
 
     /** Queue of swap requests to handle after this one. */
-    private final LinkedList<Message> incomingMessageQueue = new LinkedList<Message>();
+    private final Deque<Message> incomingMessageQueue = new LinkedList<Message>();
 
     static final int MAX_INCOMING_QUEUE_LENGTH = 10;
 
@@ -1255,9 +1258,9 @@ public class LocationManager implements ByteCounter {
             if(items.length < 1)
             	return;
             items = recentlyForwardedIDs.values().toArray(items);
-            for(int i=0;i<items.length;i++) {
-                if(now - items[i].lastMessageTime > (TIMEOUT*2)) {
-                    removeRecentlyForwardedItem(items[i]);
+            for(RecentlyForwardedItem item: items) {
+                if(now - item.lastMessageTime > (TIMEOUT*2)) {
+                    removeRecentlyForwardedItem(item);
                 }
             }
         }

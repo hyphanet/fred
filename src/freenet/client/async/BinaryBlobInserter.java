@@ -3,7 +3,6 @@ package freenet.client.async;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import com.db4o.ObjectContainer;
 
@@ -57,11 +56,8 @@ public class BinaryBlobInserter implements ClientPutState {
 		}
 
 		ArrayList<MySendableInsert> myInserters = new ArrayList<MySendableInsert>();
-		Iterator<Key> i = blocks.keys().iterator();
-
 		int x=0;
-		while(i.hasNext()) {
-			Key key = i.next();
+		for(Key key: blocks.keys()) {
 			KeyBlock block = blocks.get(key);
 			MySendableInsert inserter =
 				new MySendableInsert(x++, block, prioClass, getScheduler(block, container, context), clientContext);
@@ -83,9 +79,9 @@ public class BinaryBlobInserter implements ClientPutState {
 
 	@Override
 	public void cancel(ObjectContainer container, ClientContext context) {
-		for(int i=0;i<inserters.length;i++) {
-			if(inserters[i] != null)
-				inserters[i].cancel(container, context);
+		for(MySendableInsert inserter: inserters) {
+			if(inserter != null)
+				inserter.cancel(container, context);
 		}
 		parent.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
 	}
@@ -102,8 +98,8 @@ public class BinaryBlobInserter implements ClientPutState {
 
 	@Override
 	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
-		for(int i=0;i<inserters.length;i++) {
-			inserters[i].schedule();
+		for(MySendableInsert inserter: inserters) {
+			inserter.schedule();
 		}
 	}
 

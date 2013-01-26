@@ -155,7 +155,7 @@ public class PacketSender implements Runnable {
 			canSendThrottled = true;
 		else {
 			long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
-			canSendAt = (canSendAt / (1000*1000)) + (canSendAt % (1000*1000) == 0 ? 0 : 1);
+			canSendAt = (canSendAt + 1000*1000 - 1) / (1000*1000);
 			if(logMINOR)
 				Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
 			nextActionTime = Math.min(nextActionTime, now + canSendAt);
@@ -181,13 +181,11 @@ public class PacketSender implements Runnable {
 		/** The peer(s) which lowestHandshakeTime is referring to */
 		ArrayList<PeerNode> handshakePeers = null;
 
-		for(int i = 0; i < nodes.length; i++) {
+		for(PeerNode pn: nodes) {
 			now = System.currentTimeMillis();
-			int idx = i;
 			
 			// Basic peer maintenance.
 			
-			PeerNode pn = nodes[idx];
 			// For purposes of detecting not having received anything, which indicates a 
 			// serious connectivity problem, we want to look for *any* packets received, 
 			// including auth packets.
@@ -212,7 +210,7 @@ public class PacketSender implements Runnable {
 					// Hopefully this is a transient network glitch, but stuff will have already started to timeout, so lets dump the pending messages.
 					pn.disconnected(true, false);
 					continue;
-				} else if(now - pn.lastReceivedAckTime() > pn.maxTimeBetweenReceivedAcks()) {
+				} else if(now - pn.lastReceivedAckTime() > pn.maxTimeBetweenReceivedAcks() && !pn.isDisconnecting()) {
 					// FIXME better to disconnect immediately??? Or check canSend()???
 					Logger.normal(this, "Disconnecting from " + pn + " - haven't received acks recently");
 					// Do it properly.
@@ -348,7 +346,7 @@ public class PacketSender implements Runnable {
 					else {
 						canSendThrottled = false;
 						long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
-						canSendAt = (canSendAt / (1000*1000)) + (canSendAt % (1000*1000) == 0 ? 0 : 1);
+						canSendAt = (canSendAt + 1000*1000 - 1) / (1000*1000);
 						if(logMINOR)
 							Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
 						nextActionTime = Math.min(nextActionTime, now + canSendAt);
@@ -379,7 +377,7 @@ public class PacketSender implements Runnable {
 					else {
 						canSendThrottled = false;
 						long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
-						canSendAt = (canSendAt / (1000*1000)) + (canSendAt % (1000*1000) == 0 ? 0 : 1);
+						canSendAt = (canSendAt + 1000*1000 - 1) / (1000*1000);
 						if(logMINOR)
 							Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
 						nextActionTime = Math.min(nextActionTime, now + canSendAt);

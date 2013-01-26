@@ -493,9 +493,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// Then parse it. Then we may need to fetch something from inside the archive.
 				// It's more efficient to keep the existing ah if we can, and it is vital in
 				// the case of binary blobs.
-				if(ah == null || !ah.getKey().equals(thisKey))
+				if(ah == null || !ah.getKey().equals(thisKey)) {
+					// Do loop detection on the archive that we are about to fetch.
+					actx.doLoopDetection(thisKey, container);
 					ah = context.archiveManager.makeHandler(thisKey, metadata.getArchiveType(), metadata.getCompressionCodec(),
 							(parent instanceof ClientGetter ? ((ClientGetter)parent).collectingBinaryBlob() : false), persistent);
+				}
 				archiveMetadata = metadata;
 				metadata = null; // Copied to archiveMetadata, so do not need to clear it
 				// ah is set. This means we are currently handling an archive.

@@ -243,9 +243,7 @@ public abstract class FECCodec {
 				}
 				// Do the decode
 				// Not shuffled
-				int[] disposableIndexes = new int[packetIndexes.length];
-				System.arraycopy(packetIndexes, 0, disposableIndexes, 0,
-						packetIndexes.length);
+				int[] disposableIndexes = packetIndexes.clone();
 				fec.decode(packets, disposableIndexes);
 				// packets now contains an array of decoded blocks, in order
 				// Write the data out

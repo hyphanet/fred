@@ -45,9 +45,6 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 			throws ArchiveFailureException, ArchiveRestartException,
 			MetadataParseException, FetchException {
 
-		// Do loop detection on the archive that we are about to fetch.
-		archiveContext.doLoopDetection(key, container);
-
 		if(forceRefetchArchive) return null;
 
 		Bucket data;

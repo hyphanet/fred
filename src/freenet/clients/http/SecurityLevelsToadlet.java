@@ -500,7 +500,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		HTMLNode div = seclevelGroup.addChild("div", "class", "opennetDiv");
 		
 		String controlName = "security-levels.networkThreatLevel";
-		for(NETWORK_THREAT_LEVEL level : NETWORK_THREAT_LEVEL.OPENNET_VALUES) {
+		for(NETWORK_THREAT_LEVEL level : NETWORK_THREAT_LEVEL.getOpennetValues()) {
 			HTMLNode input;
 			if(level == networkLevel) {
 				input = div.addChild("p").addChild("input", new String[] { "type", "checked", "name", "value" }, new String[] { "radio", "on", controlName, level.name() });
@@ -522,7 +522,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		p.addChild("#", ": "+l10nSec("networkThreatLevel.darknetExplain"));
 		div = seclevelGroup.addChild("div", "class", "darknetDiv");
 		
-		for(NETWORK_THREAT_LEVEL level : NETWORK_THREAT_LEVEL.DARKNET_VALUES) {
+		for(NETWORK_THREAT_LEVEL level : NETWORK_THREAT_LEVEL.getDarknetValues()) {
 			HTMLNode input;
 			if(level == networkLevel) {
 				input = div.addChild("p").addChild("input", new String[] { "type", "checked", "name", "value" }, new String[] { "radio", "on", controlName, level.name() });

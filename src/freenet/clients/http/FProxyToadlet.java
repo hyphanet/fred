@@ -134,7 +134,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	}
 
 	public static void handleDownload(ToadletContext context, Bucket data, BucketFactory bucketFactory, String mimeType, String requestedMimeType, String forceString, boolean forceDownload, String basePath, FreenetURI key, String extras, String referrer, boolean downloadLink, ToadletContext ctx, NodeClientCore core, boolean dontFreeData, String maybeCharset) throws ToadletContextClosedException, IOException {
-		ToadletContainer container = context.getContainer();
 		if(logMINOR)
 			Logger.minor(FProxyToadlet.class, "handleDownload(data.size="+data.size()+", mimeType="+mimeType+", requestedMimeType="+requestedMimeType+", forceDownload="+forceDownload+", basePath="+basePath+", key="+key);
 		String extrasNoMime = extras; // extras will not include MIME type to start with - REDFLAG maybe it should be an array
@@ -224,7 +223,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			// see http://onjava.com/pub/a/onjava/excerpt/jebp_3/index3.html
 			// Testing on FF3.5.1 shows that application/x-force-download wants to run it in wine,
 			// whereas application/force-download wants to save it.
-			context.sendReplyHeaders(200, "OK", headers, "application/force-download", data.size());
+			context.sendReplyHeaders(200, "OK", headers, "application/force-download", size);
 			context.writeData(data);
 		} else {
 			// Send the data, intact
@@ -240,8 +239,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					ctx.sendReplyHeaders(416, "Requested Range Not Satisfiable", null, null, 0);
 					return;
 				}
-				if (range[1] == -1 || range[1] >= data.size()) {
-					range[1] = data.size() - 1;
+				if (range[1] == -1 || range[1] >= size) {
+					range[1] = size - 1;
 				}
 				InputStream is = null;
 				OutputStream os = null;
@@ -260,11 +259,11 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					Closer.close(os);
 				}
 				MultiValueTable<String, String> retHdr = new MultiValueTable<String, String>();
-				retHdr.put("Content-Range", "bytes " + range[0] + "-" + range[1] + "/" + data.size());
+				retHdr.put("Content-Range", "bytes " + range[0] + "-" + range[1] + "/" + size);
 				context.sendReplyHeaders(206, "Partial content", retHdr, mimeType, tmpRange.size());
 				context.writeData(tmpRange);
 			} else {
-				context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), mimeType, data.size());
+				context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), mimeType, size);
 				context.writeData(data);
 			}
 		}
@@ -500,18 +499,19 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				return;
 			}
 
+			/*
+			 * Redirect to the welcome page because no key was specified.
+			 */
 			try {
-				String querystring = uri.getQuery();
-
-				if (querystring == null) {
-					throw new RedirectException(welcome);
-				} else {
-					// TODP possibly a proper URLEncode method
-					querystring = querystring.replace(' ', '+');
-					throw new RedirectException("/welcome/?" + querystring);
-				}
+				throw new RedirectException(new URI(null, null, null, -1, welcome.getPath(), uri.getQuery(), uri.getFragment()));
 			} catch (URISyntaxException e) {
-				// HUH!?!
+				/*
+				 * This shouldn't happen because all the inputs to the URI constructor come from getters
+				 * of existing URIs.
+				 */
+				Logger.error(FProxyToadlet.class, "Unexpected syntax error in URI: " + e);
+				writeTemporaryRedirect(ctx, "Internal error. Please check logs and report.", WelcomeToadlet.PATH);
+				return;
 			}
 		}else if(ks.equals("/favicon.ico")){
 			byte[] buf = new byte[1024];
@@ -966,11 +966,12 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					}
 					option = optionList.addChild("li");
 					// FIXME: is this safe? See bug #131
-					MediaType textMediaType = new MediaType("text/plain").setParameter("charset", (e.getExpectedMimeType() != null) ? new MediaType(e.getExpectedMimeType()).getParameter("charset") : null);
+					MediaType textMediaType = new MediaType("text/plain");
+					textMediaType.setParameter("charset", (e.getExpectedMimeType() != null) ? MediaType.getCharsetRobust(e.getExpectedMimeType()) : null);
 					NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openAsText", new String[] { "link" }, new HTMLNode[] { HTMLNode.link(getLink(key, textMediaType.toString(), maxSize, null, false, maxRetries, overrideSize)) });
 					option = optionList.addChild("li");
 					NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openForceDisk", new String[] { "link" }, new HTMLNode[] { HTMLNode.link(getLink(key, mime, maxSize, null, true, maxRetries, overrideSize)) });
-					if(!(mime.equals("application/octet-stream") || mime.equals("application/x-msdownload"))) {
+					if(!(mime.equals("application/octet-stream") || mime.equals("application/x-msdownload") || !DefaultMIMETypes.isPlausibleMIMEType(mime))) {
 						option = optionList.addChild("li");
 						NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openForce", new String[] { "link", "mime" }, new HTMLNode[] { HTMLNode.link(getLink(key, mime, maxSize, getForceValue(key, now), false, maxRetries, overrideSize)), HTMLNode.text(HTMLEncoder.encode(mime))});
 					}
@@ -1006,14 +1007,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			if(fr == null && data != null) data.free();
 			if(fr != null) fr.close();
 		}
-	}
-
-	private static String getDownloadReturnType(Node node) {
-		if(node.securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW)
-			// Default to save to temp space
-			return "direct";
-		else
-			return "disk";
 	}
 
 	private boolean isBrowser(String ua) {
@@ -1168,6 +1161,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 		server.register(fproxy, "FProxyToadlet.categoryBrowsing", "/", false, "FProxyToadlet.welcomeTitle",
 		        "FProxyToadlet.welcome", false, null);
+
+		DecodeToadlet decodeKeywordURL = new DecodeToadlet(client, core);
+		server.register(decodeKeywordURL, null, "/decode/", true, false);
 
 		InsertFreesiteToadlet siteinsert = new InsertFreesiteToadlet(client, core.alerts);
 		server.register(siteinsert, "FProxyToadlet.categoryBrowsing", "/insertsite/", true,

@@ -10,6 +10,7 @@ import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.zip.DeflaterOutputStream;
 
 import net.i2p.util.NativeBigInteger;
@@ -270,22 +271,21 @@ public class NodeCrypto {
 	 * Create the cryptographic keys etc from scratch
 	 */
 	public void initCrypto() {
-		myIdentity = new byte[32];
-		random.nextBytes(myIdentity);
 		MessageDigest md = SHA256.getMessageDigest();
-		identityHash = md.digest(myIdentity);
-		identityHashHash = md.digest(identityHash);
 		cryptoGroup = Global.DSAgroupBigA;
 		privKey = new DSAPrivateKey(cryptoGroup, random);
 		pubKey = new DSAPublicKey(cryptoGroup, privKey);
 		myARK = InsertableClientSSK.createRandom(random, "ark");
 		myARKNumber = 0;
 		SHA256.returnMessageDigest(md);
-		anonSetupCipher.initialize(identityHash);
 		clientNonce = new byte[32];
 		node.random.nextBytes(clientNonce);
 		pubKeyHash = SHA256.digest(pubKey.asBytes());
 		pubKeyHashHash = SHA256.digest(pubKeyHash);
+		myIdentity = Arrays.copyOf(pubKeyHash, IDENTITY_LENGTH);
+		identityHash = md.digest(myIdentity);
+		identityHashHash = md.digest(identityHash);
+		anonSetupCipher.initialize(identityHash);
 	}
 
 	public void start() {
@@ -325,15 +325,15 @@ public class NodeCrypto {
 			// IP addresses
 			Peer[] ips = detector.detectPrimaryPeers();
 			if(ips != null) {
-				for(int i=0;i<ips.length;i++)
-					fs.putAppend("physical.udp", ips[i].toString()); // Keep; important that node know all our IPs
+				for(Peer ip: ips)
+					fs.putAppend("physical.udp", ip.toString()); // Keep; important that node know all our IPs
 			}
 		} // Don't include IPs for anonymous initiator.
 		// Negotiation types
 		fs.putSingle("version", Version.getVersionString()); // Keep, vital that peer know our version. For example, some types may be sent in different formats to different node versions (e.g. Peer).
 		if(!forAnonInitiator)
 			fs.putSingle("lastGoodVersion", Version.getLastGoodVersionString()); // Also vital
-		if(node.isTestnetEnabled()) {
+		if(Node.isTestnetEnabled()) {
 			fs.put("testnet", true);
 			//fs.put("testnetPort", node.testnetHandler.getPort()); // Useful, saves a lot of complexity
 		}
@@ -508,6 +508,8 @@ public class NodeCrypto {
 	public boolean allowConnection(PeerNode pn, FreenetInetAddress addr) {
     	if(config.oneConnectionPerAddress()) {
     		// Disallow multiple connections to the same address
+			// TODO: this is inadequate for IPv6, should be replaced by
+			// check for "same /64 subnet" [configurable] instead of exact match
     		if(node.peers.anyConnectedPeerHasAddress(addr, pn) && !detector.includes(addr)
     				&& addr.isRealInternetAddress(false, false, false)) {
     			Logger.normal(this, "Not sending handshake packets to "+addr+" for "+pn+" : Same IP address as another node");
@@ -561,9 +563,7 @@ public class NodeCrypto {
 
 	public PeerNode[] getAnonSetupPeerNodes() {
 		ArrayList<PeerNode> v = new ArrayList<PeerNode>();
-		PeerNode[] peers = node.peers.myPeers();
-		for(int i=0;i<peers.length;i++) {
-			PeerNode pn = peers[i];
+		for(PeerNode pn: node.peers.myPeers()) {
 			if(pn.handshakeUnknownInitiator() && pn.getOutgoingMangler() == packetMangler)
 				v.add(pn);
 		}
@@ -616,16 +616,23 @@ public class NodeCrypto {
 		} else {
 			while(true) {
 				handle = random.nextLong();
-				HandlePortTuple tuple = new HandlePortTuple();
-				tuple.handle = handle;
-				// Double-check with QBE, just in case the RNG is broken (similar things have happened before!)
-				ObjectSet os = setupContainer.get(tuple);
+				final HandlePortTuple newTuple = new HandlePortTuple();
+				newTuple.handle = handle;
+				// Double-check just in case the RNG is broken (similar things have happened before!)
+				ObjectSet<HandlePortTuple> os = setupContainer.query(new Predicate<HandlePortTuple>() {
+					private static final long serialVersionUID = 7850460146922879499L;
+
+					@Override
+					public boolean match(HandlePortTuple tuple) {
+						return tuple.handle == newTuple.handle;
+					}
+				});
 				if(os.hasNext()) {
 					System.err.println("Generating database handle for node: already taken: "+handle);
 					continue;
 				}
-				tuple.portNumber = portNumber;
-				setupContainer.store(tuple);
+				newTuple.portNumber = portNumber;
+				setupContainer.store(newTuple);
 				setupContainer.commit();
 				if(logMINOR) Logger.minor(this, "COMMITTED");
 				System.err.println("Generated and stored database handle for node on port "+portNumber+": "+handle);

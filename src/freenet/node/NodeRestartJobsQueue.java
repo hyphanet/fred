@@ -97,10 +97,14 @@ public class NodeRestartJobsQueue {
 		container.activate(dbJobs[priority], 1);
 		container.activate(dbJobsEarly[priority], 1);
 		if(!(dbJobs[priority].remove(job) || dbJobsEarly[priority].remove(job))) {
+			container.deactivate(dbJobs[priority], 1);
+			container.deactivate(dbJobsEarly[priority], 1);
 			int found = 0;
 			for(int i=0;i<dbJobs.length;i++) {
-				container.activate(dbJobs[priority], 1);
-				if(dbJobs[priority].remove(job)) {
+				if(i==priority) continue;
+				container.activate(dbJobs[i], 1);
+				container.activate(dbJobsEarly[i], 1);
+				if(dbJobs[i].remove(job)) {
 					/*
 					 * Store to 1 hop only.
 					 * Otherwise db4o will update ALL the jobs on the queue to a depth of 3,
@@ -109,10 +113,10 @@ public class NodeRestartJobsQueue {
 					 * take ages and is in any case not what we want.
 					 * See http://tracker.db4o.com/browse/COR-1436
 					 */
-					container.ext().store(dbJobs[priority], 1);
+					container.ext().store(dbJobs[i], 1);
 					found++;
 				}
-				if(dbJobsEarly[priority].remove(job)) {
+				if(dbJobsEarly[i].remove(job)) {
 					/*
 					 * Store to 1 hop only.
 					 * Otherwise db4o will update ALL the jobs on the queue to a depth of 3,
@@ -121,11 +125,11 @@ public class NodeRestartJobsQueue {
 					 * take ages and is in any case not what we want.
 					 * See http://tracker.db4o.com/browse/COR-1436
 					 */
-					container.ext().store(dbJobsEarly[priority], 1);
+					container.ext().store(dbJobsEarly[i], 1);
 					found++;
 				}
-				container.deactivate(dbJobs[priority], 1);
-				container.deactivate(dbJobsEarly[priority], 1);
+				container.deactivate(dbJobs[i], 1);
+				container.deactivate(dbJobsEarly[i], 1);
 			}
 			if(found > 0)
 				Logger.error(this, "Job "+job+" not in specified priority "+priority+" found in "+found+" other priorities when removing");

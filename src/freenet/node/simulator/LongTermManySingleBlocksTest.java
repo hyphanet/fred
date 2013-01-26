@@ -3,20 +3,15 @@ package freenet.node.simulator;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.PrintStream;
 import java.net.MalformedURLException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.Locale;
 import java.util.TimeZone;
 
 import com.db4o.ObjectContainer;
@@ -34,10 +29,9 @@ import freenet.node.Node;
 import freenet.node.NodeStarter;
 import freenet.node.RequestClient;
 import freenet.node.Version;
-import freenet.support.Fields;
 import freenet.support.Logger;
-import freenet.support.PooledExecutor;
 import freenet.support.Logger.LogLevel;
+import freenet.support.PooledExecutor;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
@@ -47,7 +41,7 @@ import freenet.support.io.FileUtil;
  * days, for n in 0...8.
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  */
-public class LongTermManySingleBlocksTest {
+public class LongTermManySingleBlocksTest extends LongTermTest {
 	
 	public static class InsertBatch {
 
@@ -71,8 +65,8 @@ public class LongTermManySingleBlocksTest {
 		class BatchInsert implements Runnable {
 
 			private final InsertBlock block;
-			private boolean finished = false;
-			private boolean started = false;
+			//private boolean finished = false;
+			//private boolean started = false;
 			private long insertTime;
 			private InsertException failed;
 			private FreenetURI uri;
@@ -91,7 +85,7 @@ public class LongTermManySingleBlocksTest {
 			public void run() {
 				synchronized(InsertBatch.this) {
 					runningInserts++;
-					started = true;
+					//started = true;
 					System.out.println("Starting insert: running "+runningInserts);
 				}
 				long t1 = 0, t2 = 0;
@@ -107,7 +101,7 @@ public class LongTermManySingleBlocksTest {
 					synchronized(InsertBatch.this) {
 						runningInserts--;
 						System.out.println("Stopping insert: running "+runningInserts);
-						finished = true;
+						//finished = true;
 						if(thisURI != null) {
 							uri = thisURI;
 							insertTime = t2 - t1;
@@ -161,22 +155,12 @@ public class LongTermManySingleBlocksTest {
 
 	private static final int TEST_SIZE = 32 * 1024;
 
-	private static final int EXIT_NO_SEEDNODES = 257;
-	private static final int EXIT_FAILED_TARGET = 258;
-	private static final int EXIT_THREW_SOMETHING = 261;
-
 	private static final int DARKNET_PORT1 = 9010;
 	private static final int OPENNET_PORT1 = 9011;
 	
 	private static final int MAX_N = 8;
 	
 	private static final int INSERTED_BLOCKS = 32;
-
-	private static final DateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd", Locale.US);
-	static {
-		dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-	}
-	private static final GregorianCalendar today = (GregorianCalendar) Calendar.getInstance(TimeZone.getTimeZone("GMT"));
 
 	public static void main(String[] args) {
 		if (args.length < 1 || args.length > 2) {
@@ -304,12 +288,10 @@ public class LongTermManySingleBlocksTest {
 			
 			// PARSE FILE AND FETCH OLD STUFF IF APPROPRIATE
 			
-			FreenetURI singleURI = null;
 			FreenetURI[] mhkURIs = new FreenetURI[3];
 			fis = new FileInputStream(file);
-			BufferedReader br = new BufferedReader(new InputStreamReader(fis));
+			BufferedReader br = new BufferedReader(new InputStreamReader(fis, ENCODING));
 			String line = null;
-			int total = 0, singleKeysSucceeded = 0, mhkSucceeded = 0;
 			GregorianCalendar target = (GregorianCalendar) today.clone();
 			target.set(Calendar.HOUR_OF_DAY, 0);
 			target.set(Calendar.MINUTE, 0);
@@ -328,7 +310,6 @@ public class LongTermManySingleBlocksTest {
 loopOverLines:
 			while((line = br.readLine()) != null) {
 				
-				singleURI = null;
 				for(int i=0;i<mhkURIs.length;i++) mhkURIs[i] = null;
 				//System.out.println("LINE: "+line);
 				String[] split = line.split("!");
@@ -432,7 +413,6 @@ loopOverLines:
 						}
 						token++;
 					}
-					total++;
 					totalFetchesByDelta[delta] += totalFetches;
 					totalSuccessfulFetchesByDelta[delta] += totalSuccesses;
 					totalFetchTimeByDelta[delta] += totalFetchTime;
@@ -465,20 +445,8 @@ loopOverLines:
 			} catch (Throwable tt) {
 			}
 			Closer.close(fis);
+			writeToStatusLog(file, csvLine);
 
-			try {
-				FileOutputStream fos = new FileOutputStream(file, true);
-				PrintStream ps = new PrintStream(fos);
-
-				ps.println(Fields.commaList(csvLine.toArray(), '!'));
-
-				ps.close();
-				fos.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-				exitCode = EXIT_THREW_SOMETHING;
-			}
-			
 			System.out.println("Exiting with status "+exitCode);
 			System.exit(exitCode);
 		}

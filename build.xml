@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="freenet-autodep" default="all" basedir=".">
+<project name="freenet-autodep" default="package" basedir=".">
 	<description>
 Freenet is free software that lets you publish and retrieve information without
 fear of censorship. To achieve this, the network is entirely decentralized, and

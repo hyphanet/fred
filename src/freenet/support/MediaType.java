@@ -17,6 +17,7 @@
 
 package freenet.support;
 
+import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -54,18 +55,18 @@ public class MediaType {
 	 *            The media type to parse
 	 * @throws NullPointerException
 	 *             if {@code mediaType} is {@code null}
-	 * @throws IllegalArgumentException
+	 * @throws MalformedURLException
 	 *             if {@code mediaType} is incorrectly formatted, i.e. does not
 	 *             contain a slash, or a parameter does not contain an equals
 	 *             sign
 	 */
-	public MediaType(String mediaType) throws NullPointerException, IllegalArgumentException {
+	public MediaType(String mediaType) throws NullPointerException, MalformedURLException {
 		if (mediaType == null) {
 			throw new NullPointerException("contentType must not be null");
 		}
 		int slash = mediaType.indexOf('/');
 		if (slash == -1) {
-			throw new IllegalArgumentException("mediaType does not contain ‘/’!");
+			throw new MalformedURLException("mediaType does not contain ‘/’!");
 		}
 		type = mediaType.substring(0, slash);
 		int semicolon = mediaType.indexOf(';');
@@ -78,7 +79,7 @@ public class MediaType {
 		for (String parameter : parameters) {
 			int equals = parameter.indexOf('=');
 			if (equals == -1) {
-				throw new IllegalArgumentException(String.format("Illegal parameter: “%s”", parameter));
+				throw new MalformedURLException(String.format("Illegal parameter: “%s”", parameter));
 			}
 			String name = parameter.substring(0, equals).trim().toLowerCase();
 			String value = parameter.substring(equals + 1).trim();
@@ -193,12 +194,15 @@ public class MediaType {
 	 * @param name
 	 *            The name of the parameter to change
 	 * @param value
-	 *            The new value of the parameter
+	 *            The new value of the parameter. Null = delete parameter.
 	 * @return The new media type
 	 */
 	public MediaType setParameter(String name, String value) {
 		MediaType newMediaType = new MediaType(type, subtype, parameters);
-		newMediaType.parameters.put(name.toLowerCase(), value);
+		if(value == null)
+			newMediaType.parameters.remove(name.toLowerCase());
+		else
+			newMediaType.parameters.put(name.toLowerCase(), value);
 		return newMediaType;
 	}
 
@@ -238,6 +242,25 @@ public class MediaType {
 			mediaType.append("; ").append(parameter.getKey()).append('=').append(parameter.getValue());
 		}
 		return mediaType.toString();
+	}
+
+	public static String getCharsetRobust(String expectedMimeType) {
+		try {
+			if(expectedMimeType == null) return null;
+			MediaType type = new MediaType(expectedMimeType);
+			return type.getParameter("charset");
+		} catch (MalformedURLException e) {
+			return null;
+		} catch (Throwable t) {
+			// Could be malicious, hence "Robust".
+			return null;
+		}
+	}
+	
+	public static String getCharsetRobustOrUTF(String expectedMimeType) {
+		String charset = getCharsetRobust(expectedMimeType);
+		if(charset == null) return "UTF-8";
+		return charset;
 	}
 
 }

@@ -22,10 +22,12 @@ import freenet.support.Logger.LogLevel;
  * <li>We don't get big problems with influence of the initial value, which is usually not very reliable.</li>
  * </ul>
  */
-public final class BootstrappingDecayingRunningAverage implements RunningAverage {
+public final class BootstrappingDecayingRunningAverage implements RunningAverage, Cloneable {
 	private static final long serialVersionUID = -1;
 	@Override
 	public final BootstrappingDecayingRunningAverage clone() {
+		// Override clone() for locking; BDRAs are self-synchronized.
+		// Implement Cloneable to shut up findbugs.
 		return new BootstrappingDecayingRunningAverage(this);
 	}
     

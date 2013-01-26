@@ -23,19 +23,6 @@ public class NewLzmaCompressorTest extends TestCase {
 
 	private static final String UNCOMPRESSED_DATA_1 = GzipCompressorTest.UNCOMPRESSED_DATA_1;
 
-	private static final byte[] COMPRESSED_DATA_1 = {
-		104,57,49,65,89,38,83,89,-18,-87,-99,-74,0,0,33,-39,-128,0,8,16,
-		0,58,64,52,-7,-86,0,48,0,-69,65,76,38,-102,3,76,65,-92,-12,-43,
-		61,71,-88,-51,35,76,37,52,32,19,-44,67,74,-46,-9,17,14,-35,55,
-		100,-10,73,-75,121,-34,83,56,-125,15,32,-118,35,66,124,-120,-39,
-		119,-104,-108,66,101,-56,94,-71,-41,-43,68,51,65,19,-44,-118,4,
-		-36,-117,33,-101,-120,-49,-10,17,-51,-19,28,76,-57,-112,-68,-50,
-		-66,-60,-43,-81,127,-51,-10,58,-92,38,18,45,102,117,-31,-116,
-		-114,-6,-87,-59,-43,-106,41,-30,-63,-34,-39,-117,-104,-114,100,
-		-115,36,-112,23,104,-110,71,-45,-116,-23,-85,-36,-24,-61,14,32,
-		105,55,-105,-31,-4,93,-55,20,-31,66,67,-70,-90,118,-40
-	};
-
 	/**
 	 * test BZIP2 compressor's identity and functionality
 	 */
@@ -176,36 +163,6 @@ public class NewLzmaCompressorTest extends TestCase {
 		}
 		// TODO LOW codec doesn't actually enforce size limit
 		//fail("did not throw expected CompressionOutputSizeException");
-	}
-
-	private byte[] doBucketDecompress(byte[] compressedData) throws IOException {
-
-		Bucket inBucket = new ArrayBucket(compressedData);
-		Bucket outBucket = new ArrayBucket();
-		InputStream decompressorInput = null;
-		OutputStream decompressorOutput = null;
-
-		try {
-			decompressorInput = inBucket.getInputStream();
-			decompressorOutput = outBucket.getOutputStream();
-			Compressor.COMPRESSOR_TYPE.LZMA_NEW.decompress(decompressorInput, decompressorOutput, 32768, 32768 * 2);
-			decompressorInput.close();
-			decompressorOutput.close();
-		} finally {
-			Closer.close(decompressorInput);
-			Closer.close(decompressorOutput);
-			inBucket.free();
-		}
-
-		InputStream in = null;
-
-		in = outBucket.getInputStream();
-		long size = outBucket.size();
-		byte[] outBuf = new byte[(int) size];
-
-		in.read(outBuf);
-
-		return outBuf;
 	}
 
 	private byte[] doCompress(byte[] uncompressedData) throws IOException {

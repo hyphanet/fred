@@ -893,8 +893,8 @@ public class PeerMessageQueue {
 
 	public synchronized MessageItem[] grabQueuedMessageItems() {
 		int size = 0;
-		for(int i=0;i<queuesByPriority.length;i++)
-			size += queuesByPriority[i].size();
+		for(PrioQueue queue : queuesByPriority)
+			size += queue.size();
 		MessageItem[] output = new MessageItem[size];
 		int ptr = 0;
 		for(PrioQueue queue : queuesByPriority) {
@@ -916,8 +916,7 @@ public class PeerMessageQueue {
 	 * @return The next urgent time, but can be too high if it is less than now.
 	 */
 	public synchronized long getNextUrgentTime(long t, long returnIfBefore) {
-		for(int i=0;i<queuesByPriority.length;i++) {
-			PrioQueue queue = queuesByPriority[i];
+		for(PrioQueue queue: queuesByPriority) {
 			t = Math.min(t, queue.getNextUrgentTime(t, returnIfBefore));
 			if(t <= returnIfBefore) return t; // How much in the past doesn't matter, as long as it's in the past.
 		}

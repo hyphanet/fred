@@ -686,9 +686,9 @@ public class FilterUtils {
 	public static boolean isPointPair(String value)
 	{
 		String[] pointPairs=splitOnCharArray(value," \n\t");
-		for(int i=0;i<pointPairs.length;i++)
+		for(String pointPair: pointPairs)
 		{
-			String[] strParts=pointPairs[i].split(",");
+			String[] strParts=pointPair.split(",");
 			if(strParts.length!=2)
 				return false;
 			try

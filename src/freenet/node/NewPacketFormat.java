@@ -4,11 +4,11 @@
 package freenet.node;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Vector;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.HMAC;
@@ -19,6 +19,7 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.io.xfer.PacketThrottle;
 import freenet.node.NewPacketFormatKeyContext.AddedAcks;
+import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -142,7 +143,7 @@ public class NewPacketFormat implements PacketFormat {
 		pn.maybeRekey();
 		pn.reportIncomingBytes(length);
 
-		LinkedList<byte[]> finished = handleDecryptedPacket(packet, s);
+		List<byte[]> finished = handleDecryptedPacket(packet, s);
 		if(logMINOR && !finished.isEmpty()) 
 			Logger.minor(this, "Decoded messages: "+finished.size());
 		DecodingMessageGroup group = pn.startProcessingDecryptedMessages(finished.size());
@@ -154,8 +155,8 @@ public class NewPacketFormat implements PacketFormat {
 		return true;
 	}
 
-	LinkedList<byte[]> handleDecryptedPacket(NPFPacket packet, SessionKey sessionKey) {
-		LinkedList<byte[]> fullyReceived = new LinkedList<byte[]>();
+	List<byte[]> handleDecryptedPacket(NPFPacket packet, SessionKey sessionKey) {
+		List<byte[]> fullyReceived = new LinkedList<byte[]>();
 
 		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
 		for(int ack : packet.getAcks()) {
@@ -168,25 +169,24 @@ public class NewPacketFormat implements PacketFormat {
 			if(logMINOR) Logger.minor(this, "Not acking because " + (packet.getError() ? "error" : "no fragments"));
 			dontAck = true;
 		}
-		ArrayList<Message> lossyMessages = null;
 		List<byte[]> l = packet.getLossyMessages();
 		if(l != null && !l.isEmpty())
-			lossyMessages = new ArrayList<Message>(l.size());
-		for(byte[] buf : packet.getLossyMessages()) {
-			// FIXME factor out parsing once we are sure these are not bogus.
-			// For now we have to be careful.
-			Message msg = Message.decodeMessageLax(buf, pn, 0);
-			if(msg == null) {
-				lossyMessages.clear();
-				break;
+		{
+		    ArrayList<Message> lossyMessages = new ArrayList<Message>(l.size());
+			for(byte[] buf : l) {
+				// FIXME factor out parsing once we are sure these are not bogus.
+				// For now we have to be careful.
+				Message msg = Message.decodeMessageLax(buf, pn, 0);
+				if(msg == null) {
+					lossyMessages.clear();
+					break;
+				}
+				if(!msg.getSpec().isLossyPacketMessage()) {
+					lossyMessages.clear();
+					break;
+				}
+				lossyMessages.add(msg);
 			}
-			if(!msg.getSpec().isLossyPacketMessage()) {
-				lossyMessages.clear();
-				break;
-			}
-			lossyMessages.add(msg);
-		}
-		if(lossyMessages != null) {
 			// Handle them *before* the rest.
 			if(logMINOR && lossyMessages.size() > 0) Logger.minor(this, "Successfully parsed "+lossyMessages.size()+" lossy packet messages");
 			for(Message msg : lossyMessages)
@@ -320,7 +320,7 @@ public class NewPacketFormat implements PacketFormat {
 			int seqNum = keyContext.watchListOffset;
 			for(int i = 0; i < keyContext.seqNumWatchList.length; i++) {
 				keyContext.seqNumWatchList[i] = NewPacketFormat.encryptSequenceNumber(seqNum++, sessionKey);
-				if((seqNum == NUM_SEQNUMS) || (seqNum < 0)) seqNum = 0;
+				if(seqNum < 0) seqNum = 0;
 			}
 		}
 
@@ -351,26 +351,24 @@ public class NewPacketFormat implements PacketFormat {
 			int seqNum = (int) ((0l + keyContext.watchListOffset + keyContext.seqNumWatchList.length) % NUM_SEQNUMS);
 			for(int i = keyContext.watchListPointer; i < (keyContext.watchListPointer + moveBy); i++) {
 				keyContext.seqNumWatchList[i % keyContext.seqNumWatchList.length] = encryptSequenceNumber(seqNum++, sessionKey);
-				if(seqNum == NUM_SEQNUMS) seqNum = 0;
+				if(seqNum < 0) seqNum = 0;
 			}
 
 			keyContext.watchListPointer = (keyContext.watchListPointer + moveBy) % keyContext.seqNumWatchList.length;
 			keyContext.watchListOffset = (int) ((0l + keyContext.watchListOffset + moveBy) % NUM_SEQNUMS);
 		}
 
-outer:
 		for(int i = 0; i < keyContext.seqNumWatchList.length; i++) {
 			int index = (keyContext.watchListPointer + i) % keyContext.seqNumWatchList.length;
-			for(int j = 0; j < keyContext.seqNumWatchList[index].length; j++) {
-				if(keyContext.seqNumWatchList[index][j] != buf[offset + hmacLength + j]) continue outer;
-			}
+			if (!Fields.byteArrayEqual(
+						buf, keyContext.seqNumWatchList[index],
+						offset + hmacLength, 0,
+						keyContext.seqNumWatchList[index].length))
+				continue;
 			
 			int sequenceNumber = (int) ((0l + keyContext.watchListOffset + i) % NUM_SEQNUMS);
 			if(logDEBUG) Logger.debug(this, "Received packet matches sequence number " + sequenceNumber);
-			// Copy it to avoid side-effects.
-			byte[] copy = new byte[length];
-			System.arraycopy(buf, offset, copy, 0, length);
-			NPFPacket p = decipherFromSeqnum(copy, 0, length, sessionKey, sequenceNumber);
+			NPFPacket p = decipherFromSeqnum(buf, offset, length, sessionKey, sequenceNumber);
 			if(p != null) {
 				if(logMINOR) Logger.minor(this, "Received packet " + p.getSequenceNumber()+" on "+sessionKey);
 				return p;
@@ -380,7 +378,7 @@ outer:
 		return null;
 	}
 
-	/** NOTE: THIS WILL DECRYPT THE DATA IN THE BUFFER !!! */
+	/** Must NOT modify buf contents. */
 	private NPFPacket decipherFromSeqnum(byte[] buf, int offset, int length, SessionKey sessionKey, int sequenceNumber) {
 		BlockCipher ivCipher = sessionKey.ivCipher;
 
@@ -393,18 +391,13 @@ outer:
 
 		ivCipher.encipher(IV, IV);
 
-		byte[] text = new byte[length - hmacLength];
-		System.arraycopy(buf, offset + hmacLength, text, 0, text.length);
-		byte[] hash = new byte[hmacLength];
-		System.arraycopy(buf, offset, hash, 0, hash.length);
+		byte[] payload = Arrays.copyOfRange(buf, offset + hmacLength, offset + length);
+		byte[] hash = Arrays.copyOfRange(buf, offset, offset + hmacLength);
 
-		if(!HMAC.verifyWithSHA256(sessionKey.hmacKey, text, hash)) return null;
+		if(!HMAC.verifyWithSHA256(sessionKey.hmacKey, payload, hash)) return null;
 
 		PCFBMode payloadCipher = PCFBMode.create(sessionKey.incommingCipher, IV);
-		payloadCipher.blockDecipher(buf, offset + hmacLength, length - hmacLength);
-
-		byte[] payload = new byte[length - hmacLength];
-		System.arraycopy(buf, offset + hmacLength, payload, 0, length - hmacLength);
+		payloadCipher.blockDecipher(payload, 0, payload.length);
 
 		NPFPacket p = NPFPacket.create(payload, pn);
 
@@ -1134,8 +1127,8 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 	static class SentPacket {
 		final SessionKey sessionKey;
 		NewPacketFormat npf;
-		LinkedList<MessageWrapper> messages = new LinkedList<MessageWrapper>();
-		LinkedList<int[]> ranges = new LinkedList<int[]>();
+		List<MessageWrapper> messages = new ArrayList<MessageWrapper>();
+		List<int[]> ranges = new ArrayList<int[]>();
 		long sentTime;
 		int packetLength;
 
@@ -1209,7 +1202,6 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 		}
 
 		public void lost() {
-			int bytesToResend = 0;
 			Iterator<MessageWrapper> msgIt = messages.iterator();
 			Iterator<int[]> rangeIt = ranges.iterator();
 
@@ -1217,7 +1209,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 				MessageWrapper wrapper = msgIt.next();
 				int[] range = rangeIt.next();
 
-				bytesToResend += wrapper.lost(range[0], range[1]);
+				wrapper.lost(range[0], range[1]);
 			}
 		}
 
@@ -1278,9 +1270,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 				if(logDEBUG) Logger.debug(this, "Added " + (length - buffer.length) + " to buffer. Total is now " + npf.receiveBufferUsed);
 			}
 
-			byte[] newBuffer = new byte[length];
-			System.arraycopy(buffer, 0, newBuffer, 0, Math.min(length, buffer.length));
-			buffer = newBuffer;
+			buffer = Arrays.copyOf(buffer, length);
 
 			return true;
 		}
