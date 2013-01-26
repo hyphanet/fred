@@ -48,6 +48,11 @@ public class Announcer {
 	private int runningAnnouncements;
 	/** We want to announce to 5 different seednodes. */
 	private static final int WANT_ANNOUNCEMENTS = 5;
+	/** If true, announce through opennet peers as well as seednodes. If false, only announce through
+	 * seednodes. FIXME SECURITY Capture by a single seednode may be slightly easier if we announce 
+	 * through opennet peers as well as seednodes, but until we have proper countermeasures to seed 
+	 * capture don't worry about it. FIXME make this configurable. */
+	private static final boolean ANNOUNCE_THROUGH_OPENNET_PEERS = true;
 	private int sentAnnouncements;
 	private long startTime;
 	private long timeAddedSeeds;
@@ -493,7 +498,9 @@ public class Announcer {
 				return;
 			}
 			// Now find a node to announce to
-			List<PeerNode> seeds = node.peers.getAnnounceStartPeersVector(announcedToIdentities);
+			List<? extends PeerNode> seeds =
+				ANNOUNCE_THROUGH_OPENNET_PEERS ? node.peers.getAnnounceStartPeersVector(announcedToIdentities) :
+					node.peers.getConnectedSeedServerPeersVector(announcedToIdentities);
 			while(sentAnnouncements < WANT_ANNOUNCEMENTS) {
 				if(seeds.isEmpty()) {
 					if(logMINOR)
