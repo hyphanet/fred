@@ -879,7 +879,13 @@ public class PeerManager {
 
 	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, double loc, boolean ignoreSelf, boolean calculateMisrouting,
 	        int minVersion, List<Double> addUnpickedLocsTo, Key key, short outgoingHTL, int ignoreBackoffUnder, boolean isLocal, boolean realTime, boolean excludeMandatoryBackoff) {
-		return closerPeer(pn, routedTo, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, false, System.currentTimeMillis(), excludeMandatoryBackoff);
+		return closerPeer(pn, routedTo, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, false, System.currentTimeMillis(), excludeMandatoryBackoff, false);
+	}
+	
+	public PeerNode closerPeerAnnouncement(PeerNode source, Set<PeerNode> nodesRoutedTo, double target, short htl) {
+		return closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1,
+		        null, 2.0, null, htl, 0, source == null, false,
+		        null, false, System.currentTimeMillis(), false, true);
 	}
 
 	/**
@@ -903,10 +909,11 @@ public class PeerManager {
 	 * RecentlyFailed message to be returned to the originator, allowing them to retry in a little while. Note that the
 	 * scheduler is not clever enough to retry immediately when that timeout elapses, and even if it was, it probably
 	 * wouldn't be a good idea due to introducing a round-trip-to-request-originator; FIXME consider this.
+	 * @param opennetOnly If true, only route to opennet peers (not including seed clients etc).
 	 */
 	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, double target, boolean ignoreSelf,
 	        boolean calculateMisrouting, int minVersion, List<Double> addUnpickedLocsTo, double maxDistance, Key key, short outgoingHTL, int ignoreBackoffUnder, boolean isLocal, boolean realTime,
-	        RecentlyFailedReturn recentlyFailed, boolean ignoreTimeout, long now, boolean newLoadManagement) {
+	        RecentlyFailedReturn recentlyFailed, boolean ignoreTimeout, long now, boolean newLoadManagement, boolean opennetOnly) {
 		
 		int countWaiting = 0;
 		long soonestTimeoutWakeup = Long.MAX_VALUE;
@@ -997,6 +1004,11 @@ public class PeerManager {
 			if(minVersion > 0 && Version.getArbitraryBuildNumber(p.getVersion(), -1) < minVersion) {
 				if(logMINOR)
 					Logger.minor(this, "Skipping old version: " + p.getPeer());
+				continue;
+			}
+			if(opennetOnly && !(p instanceof OpennetPeerNode)) {
+				if(logMINOR)
+					Logger.minor(this, "Skipping non-opennet peer: "+p.getPeer());
 				continue;
 			}
 			if(enableFOAFMitigationHack) {
@@ -1165,7 +1177,7 @@ public class PeerManager {
 			// Recently failed is possible.
 			// Route twice, each time ignoring timeout.
 			// If both return a node which is in timeout, we should do RecentlyFailed.
-			PeerNode first = closerPeer(pn, routedTo, target, ignoreSelf, false, minVersion, null, maxDistance, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, true, now, newLoadManagement);
+			PeerNode first = closerPeer(pn, routedTo, target, ignoreSelf, false, minVersion, null, maxDistance, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, true, now, newLoadManagement, opennetOnly);
 			if(first != null) {
 				long firstTime;
 				long secondTime;
@@ -1173,7 +1185,7 @@ public class PeerManager {
 					if(logMINOR) Logger.minor(this, "First choice is past now");
 					HashSet<PeerNode> newRoutedTo = new HashSet<PeerNode>(routedTo);
 					newRoutedTo.add(first);
-					PeerNode second = closerPeer(pn, newRoutedTo, target, ignoreSelf, false, minVersion, null, maxDistance, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, true, now, newLoadManagement);
+					PeerNode second = closerPeer(pn, newRoutedTo, target, ignoreSelf, false, minVersion, null, maxDistance, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, true, now, newLoadManagement, opennetOnly);
 					if(second != null) {
 						if((secondTime = entry.getTimeoutTime(first, outgoingHTL, now, false)) > now) {
 							if(logMINOR) Logger.minor(this, "Second choice is past now");
