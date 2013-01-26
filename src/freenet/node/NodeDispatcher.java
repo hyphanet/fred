@@ -717,6 +717,13 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 					return true;
 				}
 			}
+			if(source instanceof SeedClientPeerNode) {
+				short maxHTL = node.maxHTL();
+				if(htl != maxHTL) {
+					Logger.error(this, "Announcement from seed client not at max HTL: "+htl+" for "+source);
+					htl = maxHTL;
+				}
+			}
 			AnnounceSender sender = new AnnounceSender(target, htl, uid, source, om, node, xferUID, noderefLength, paddedLength);
 			node.executor.execute(sender, "Announcement sender for "+uid);
 			success = true;
