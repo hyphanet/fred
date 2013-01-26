@@ -493,14 +493,14 @@ public class Announcer {
 				return;
 			}
 			// Now find a node to announce to
-			List<SeedServerPeerNode> seeds = node.peers.getConnectedSeedServerPeersVector(announcedToIdentities);
+			List<PeerNode> seeds = node.peers.getAnnounceStartPeersVector(announcedToIdentities);
 			while(sentAnnouncements < WANT_ANNOUNCEMENTS) {
 				if(seeds.isEmpty()) {
 					if(logMINOR)
 						Logger.minor(this, "No more seednodes, announcedTo = "+announcedToIdentities.size());
 					break;
 				}
-				final SeedServerPeerNode seed = ListUtils.removeRandomBySwapLastSimple(node.random, seeds);
+				final PeerNode seed = ListUtils.removeRandomBySwapLastSimple(node.random, seeds);
 				InetAddress[] addrs = seed.getInetAddresses();
 				if(!newAnnouncedIPs(addrs)) {
 					if(logMINOR)

@@ -1981,6 +1981,30 @@ public class PeerManager {
 		return v;
 	}
 
+	/** Get all peers suitable for starting an announcement. I.e. OpennetPeerNode's and 
+	 * SeedServerPeerNode's. 
+	 * @param exclude Identities of nodes we've already announced through. Don't include these. */
+	public List<PeerNode> getAnnounceStartPeersVector(HashSet<ByteArrayWrapper> exclude) {
+		PeerNode[] peers = myPeers();
+		// FIXME optimise! Maybe maintain as a separate list?
+		ArrayList<PeerNode> v = new ArrayList<PeerNode>(peers.length);
+		for(PeerNode p : peers) {
+			if(p.isDarknet()) continue;
+			if(!(p instanceof SeedServerPeerNode || p instanceof OpennetPeerNode)) {
+				// FIXME we can't announce through darknet peers. If we can, change this.
+				continue;
+			}
+			if(!p.isConnected()) continue;
+			if(exclude != null && exclude.contains(new ByteArrayWrapper(p.getIdentity()))) {
+				if(logMINOR)
+					Logger.minor(this, "Not including in getConnectedAnnounceablePeersVector() as in exclude set: " + p.userToString());
+				continue;
+			}
+			v.add(p);
+		}
+		return v;
+	}
+
 	public List<SeedServerPeerNode> getSeedServerPeersVector() {
 		PeerNode[] peers = myPeers();
 		// FIXME optimise! Maybe maintain as a separate list?
