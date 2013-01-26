@@ -406,10 +406,12 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 						// Add it
 						try {
 							OpennetPeerNode pn = node.addNewOpennetNode(fs, ConnectionType.ANNOUNCE);
-							if(pn != null)
-								cb.addedNode(pn);
-							else
-								cb.nodeNotAdded();
+							if(cb != null) {
+								if(pn != null)
+									cb.addedNode(pn);
+								else
+									cb.nodeNotAdded();
+							}
 						} catch (FSParseException e) {
 							Logger.normal(this, "Failed to parse reply: "+e, e);
 							if(cb != null) cb.bogusNoderef("parse failed: "+e);
