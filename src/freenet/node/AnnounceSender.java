@@ -35,7 +35,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 
 	// Constants
 	static final int ACCEPTED_TIMEOUT = 10000;
-	static final int ANNOUNCE_TIMEOUT = 240000; // longer than a regular request as have to transfer noderefs hop by hop etc
+	static final int ANNOUNCE_TIMEOUT = 120000; // longer than a regular request as have to transfer noderefs hop by hop etc
 	static final int END_TIMEOUT = 30000; // After received the completion message, wait 30 seconds for any late reordered replies
 
 	private final PeerNode source;
