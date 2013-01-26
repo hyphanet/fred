@@ -658,6 +658,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				// OK
 			}
+			if(logMINOR) Logger.minor(this, "Got bogus announcement message from "+source);
 			return true;
 		}
 		
@@ -671,6 +672,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				// OK
 			}
+			if(logMINOR) Logger.minor(this, "Rejected announcement (opennet or announcement disabled) from "+source);
 			return true;
 		}
 		boolean success = false;
@@ -686,6 +688,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				} catch (NotConnectedException e) {
 					// OK
 				}
+				if(logMINOR) Logger.minor(this, "Rejected announcement (overall overload) from "+source);
 				return true;
 			}
 			if(!source.shouldAcceptAnnounce(uid)) {
@@ -698,6 +701,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				} catch (NotConnectedException e) {
 					// OK
 				}
+				if(logMINOR) Logger.minor(this, "Rejected announcement (peer limit) from "+source);
 				return true;
 			}
 			if(om != null && source instanceof SeedClientPeerNode) {
@@ -709,12 +713,14 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 					} catch (NotConnectedException e) {
 						// OK
 					}
+					if(logMINOR) Logger.minor(this, "Rejected announcement (seednode limit) from "+source);
 					return true;
 				}
 			}
 			AnnounceSender sender = new AnnounceSender(target, htl, uid, source, om, node, xferUID, noderefLength, paddedLength);
 			node.executor.execute(sender, "Announcement sender for "+uid);
 			success = true;
+			if(logMINOR) Logger.minor(this, "Accepted announcement from "+source);
 			return true;
 		} finally {
 			if(!success)
