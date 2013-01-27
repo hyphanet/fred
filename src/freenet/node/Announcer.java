@@ -653,6 +653,10 @@ public class Announcer {
 			public void nodeNotAdded() {
 				Logger.normal(this, "Announcement to "+seed.userToString()+" : node not wanted (maybe already have it, opennet just turned off, etc)");
 			}
+			@Override
+			public void relayedNoderef() {
+				Logger.error(this, "Announcement to "+seed.userToString()+" : RELAYED ?!?!?!");
+			}
 		}, seed);
 		node.executor.execute(sender, "Announcer to "+seed);
 		return true;
