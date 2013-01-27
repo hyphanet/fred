@@ -198,7 +198,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 			InetAddress address = packet.getAddress();
 			boolean isLocal = !IPUtil.isValidAddress(address, false);
 			collector.addInfo(address, packet.getPort(),
-					packet.getLength(), 0, isLocal); // FIXME use (packet.getLength() + UDP_HEADERS_LENGTH)?
+					getHeadersLength(address) + packet.getLength(), 0, isLocal);
 		} catch (SocketTimeoutException e1) {
 			return false;
 		} catch (IOException e2) {
