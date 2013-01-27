@@ -22,7 +22,6 @@ import freenet.support.io.NativeThread;
  */
 public class CachingFreenetStore<T extends StorableBlock> implements FreenetStore<T> {
     private static volatile boolean logMINOR;
-    private static volatile boolean logDEBUG;
     
     static { Logger.registerClass(CachingFreenetStore.class); }
     
@@ -151,7 +150,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		byte[] routingKey = block.getRoutingKey();
 		final ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
 		
-		final Block<T> storeBlock = new Block<T>();
+		Block<T> storeBlock = new Block<T>();
 		storeBlock.block = block;
 		storeBlock.data = data;
 		storeBlock.header = header;
