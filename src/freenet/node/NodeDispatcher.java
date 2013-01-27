@@ -742,43 +742,43 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 						synchronized(this) {
 							totalAdded++;
 						}
-						Logger.normal(this, "Announcement from "+origin+" added node "+pn+" for a total of "+totalAdded+" from this announcement)");
+						Logger.minor(this, "Announcement from "+origin+" added node "+pn+" for a total of "+totalAdded+" from this announcement)");
 						return;
 					}
 					@Override
 					public void bogusNoderef(String reason) {
-						Logger.normal(this, "Announcement from "+origin+" got bogus noderef: "+reason, new Exception("debug"));
+						Logger.minor(this, "Announcement from "+origin+" got bogus noderef: "+reason, new Exception("debug"));
 					}
 					@Override
 					public void completed() {
 						synchronized(this) {
-							Logger.normal(this, "Announcement from "+origin+" completed");
+							Logger.minor(this, "Announcement from "+origin+" completed");
 						}
 						int shallow=node.maxHTL()-(totalAdded+totalNotWanted);
 						if(acceptedSomewhere)
 							Logger.minor(this, "Announcement from "+origin+" completed ("+totalAdded+" added, "+totalNotWanted+" not wanted, "+shallow+" shallow)");
 						else
-							System.out.println("Announcement from "+origin+" not accepted anywhere.");
+							Logger.minor(this, "Announcement from "+origin+" not accepted anywhere.");
 					}
 
 					@Override
 					public void nodeFailed(PeerNode pn, String reason) {
-						Logger.normal(this, "Announcement from "+origin+" failed: "+reason);
+						Logger.minor(this, "Announcement from "+origin+" failed: "+reason);
 					}
 					@Override
 					public void noMoreNodes() {
-						Logger.normal(this, "Announcement from "+origin+" ran out of nodes (route not found)");
+						Logger.minor(this, "Announcement from "+origin+" ran out of nodes (route not found)");
 					}
 					@Override
 					public void nodeNotWanted() {
 						synchronized(this) {
 							totalNotWanted++;
 						}
-						Logger.normal(this, "Announcement from "+origin+" returned node not wanted for a total of "+totalNotWanted+" from this announcement)");
+						Logger.minor(this, "Announcement from "+origin+" returned node not wanted for a total of "+totalNotWanted+" from this announcement)");
 					}
 					@Override
 					public void nodeNotAdded() {
-						Logger.normal(this, "Announcement from "+origin+" : node not wanted (maybe already have it, opennet just turned off, etc)");
+						Logger.minor(this, "Announcement from "+origin+" : node not wanted (maybe already have it, opennet just turned off, etc)");
 					}
 				};
 			}
