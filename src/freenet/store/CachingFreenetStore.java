@@ -21,6 +21,11 @@ import freenet.support.io.NativeThread;
  * 
  */
 public class CachingFreenetStore<T extends StorableBlock> implements FreenetStore<T> {
+    private static volatile boolean logMINOR;
+    private static volatile boolean logDEBUG;
+    
+    static { Logger.registerClass(CachingFreenetStore.class); }
+    
 	private long size;
 	private boolean startJob;
 	private boolean shuttingDown; /* If this flag is true, we don't accept puts anymore */
@@ -90,8 +95,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		
 		if(block != null) {
 			try {
-				T ret = this.callback.construct(block.data, block.header, routingKey, block.block.getFullKey(), canReadClientCache, canReadSlashdotCache, meta, null);
-				return ret;
+				return this.callback.construct(block.data, block.header, routingKey, block.block.getFullKey(), canReadClientCache, canReadSlashdotCache, meta, null);
 			} catch (KeyVerifyException e) {
 				Logger.error(this, "Error in fetching for CachingFreenetStore: "+e, e);
 			}
@@ -145,9 +149,9 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 			boolean overwrite, boolean isOldBlock) throws IOException,
 			KeyCollisionException {
 		byte[] routingKey = block.getRoutingKey();
-		ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
+		final ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
 		
-		Block<T> storeBlock = new Block<T>();
+		final Block<T> storeBlock = new Block<T>();
 		storeBlock.block = block;
 		storeBlock.data = data;
 		storeBlock.header = header;
@@ -225,17 +229,14 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		try
 		{
 			for(Block<T> block : blocksByRoutingKey.values()) {
-				if(block != null) {
 					try {
 						backDatastore.put(block.block, block.data, block.header, block.overwrite, block.isOldBlock);
 					} catch (IOException e) {
 						Logger.error(this, "Error in pushAll for CachingFreenetStore: "+e, e);
 					} catch (KeyCollisionException e) {
-						Logger.error(this, "Error in pushAll for CachingFreenetStore: "+e, e);
+						if(logMINOR) Logger.minor(this, "KeyCollisionException in pushAll for CachingFreenetStore: "+e, e);
 					}
 				}
-			}
-			
 			blocksByRoutingKey.clear();
 			size = 0;
 		} finally {
