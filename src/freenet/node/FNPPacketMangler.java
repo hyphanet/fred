@@ -2022,9 +2022,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		System.arraycopy(output, 0, data, hash.length+iv.length+2, output.length);
 
 		Util.randomBytes(node.fastWeakRandom, data, hash.length+iv.length+2+output.length, paddingLength);
-		node.nodeStats.reportAuthBytes(data.length + sock.getHeadersLength());
 		try {
 			sendPacket(data, replyTo, pn);
+			node.nodeStats.reportAuthBytes(data.length + sock.getHeadersLength(replyTo));
 		} catch (LocalAddressException e) {
 			Logger.warning(this, "Tried to send auth packet to local address: "+replyTo+" for "+pn+" - maybe you should set allowLocalAddresses for this peer??");
 		}
