@@ -35,7 +35,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 
 	// Constants
 	static final int ACCEPTED_TIMEOUT = 10000;
-	static final int ANNOUNCE_TIMEOUT = 240000; // longer than a regular request as have to transfer noderefs hop by hop etc
+	static final int ANNOUNCE_TIMEOUT = 120000; // longer than a regular request as have to transfer noderefs hop by hop etc
 	static final int END_TIMEOUT = 30000; // After received the completion message, wait 30 seconds for any late reordered replies
 
 	private final PeerNode source;
@@ -52,7 +52,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 	private final PeerNode onlyNode;
 	private int forwardedRefs;
 
-	public AnnounceSender(double target, short htl, long uid, PeerNode source, OpennetManager om, Node node, long xferUID, int noderefLength, int paddedLength) {
+	public AnnounceSender(double target, short htl, long uid, PeerNode source, OpennetManager om, Node node, long xferUID, int noderefLength, int paddedLength, AnnouncementCallback cb) {
 		this.source = source;
 		this.uid = uid;
 		this.om = om;
@@ -62,7 +62,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		this.xferUID = xferUID;
 		this.paddedLength = paddedLength;
 		this.noderefLength = noderefLength;
-		cb = null;
+		this.cb = cb;
 	}
 
 	public AnnounceSender(double target, OpennetManager om, Node node, AnnouncementCallback cb, PeerNode onlyNode) {
@@ -262,7 +262,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 				MessageFilter mfAnnounceReply = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ANNOUNCE_TIMEOUT).setType(DMT.FNPOpennetAnnounceReply);
 				MessageFilter mfOpennetDisabled = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ANNOUNCE_TIMEOUT).setType(DMT.FNPOpennetDisabled);
 				MessageFilter mfNotWanted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ANNOUNCE_TIMEOUT).setType(DMT.FNPOpennetAnnounceNodeNotWanted);
-				MessageFilter mfOpennetNoderefRejected = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPOpennetNoderefRejected);
+				MessageFilter mfOpennetNoderefRejected = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ANNOUNCE_TIMEOUT).setType(DMT.FNPOpennetNoderefRejected);
 				MessageFilter mf = mfAnnounceCompleted.or(mfRouteNotFound.or(mfRejectedOverload.or(mfAnnounceReply.or(mfOpennetDisabled.or(mfNotWanted.or(mfOpennetNoderefRejected))))));
 
 				try {
@@ -406,10 +406,12 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 						// Add it
 						try {
 							OpennetPeerNode pn = node.addNewOpennetNode(fs, ConnectionType.ANNOUNCE);
-							if(pn != null)
-								cb.addedNode(pn);
-							else
-								cb.nodeNotAdded();
+							if(cb != null) {
+								if(pn != null)
+									cb.addedNode(pn);
+								else
+									cb.nodeNotAdded();
+							}
 						} catch (FSParseException e) {
 							Logger.normal(this, "Failed to parse reply: "+e, e);
 							if(cb != null) cb.bogusNoderef("parse failed: "+e);

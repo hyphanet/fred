@@ -139,6 +139,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 
 	@Override
 	public boolean equals(Object o) {
+		if(o == this) return true;
 		if(!(o instanceof FreenetURI))
 			return false;
 		else {

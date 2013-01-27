@@ -658,6 +658,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				// OK
 			}
+			if(logMINOR) Logger.minor(this, "Got bogus announcement message from "+source);
 			return true;
 		}
 		
@@ -671,6 +672,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				// OK
 			}
+			if(logMINOR) Logger.minor(this, "Rejected announcement (opennet or announcement disabled) from "+source);
 			return true;
 		}
 		boolean success = false;
@@ -686,6 +688,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				} catch (NotConnectedException e) {
 					// OK
 				}
+				if(logMINOR) Logger.minor(this, "Rejected announcement (overall overload) from "+source);
 				return true;
 			}
 			if(!source.shouldAcceptAnnounce(uid)) {
@@ -698,6 +701,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				} catch (NotConnectedException e) {
 					// OK
 				}
+				if(logMINOR) Logger.minor(this, "Rejected announcement (peer limit) from "+source);
 				return true;
 			}
 			if(om != null && source instanceof SeedClientPeerNode) {
@@ -709,12 +713,79 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 					} catch (NotConnectedException e) {
 						// OK
 					}
+					if(logMINOR) Logger.minor(this, "Rejected announcement (seednode limit) from "+source);
 					return true;
 				}
 			}
-			AnnounceSender sender = new AnnounceSender(target, htl, uid, source, om, node, xferUID, noderefLength, paddedLength);
+			if(source instanceof SeedClientPeerNode) {
+				short maxHTL = node.maxHTL();
+				if(htl != maxHTL) {
+					Logger.error(this, "Announcement from seed client not at max HTL: "+htl+" for "+source);
+					htl = maxHTL;
+				}
+			}
+			AnnouncementCallback cb = null;
+			if(logMINOR) {
+				final String origin = source.toString()+" (htl "+htl+")";
+				// Log the progress of the announcement.
+				// This is similar to Announcer's logging.
+				cb = new AnnouncementCallback() {
+					private int totalAdded;
+					private int totalNotWanted;
+					private boolean acceptedSomewhere;
+					@Override
+					public synchronized void acceptedSomewhere() {
+						acceptedSomewhere = true;
+					}
+					@Override
+					public void addedNode(PeerNode pn) {
+						synchronized(this) {
+							totalAdded++;
+						}
+						Logger.normal(this, "Announcement from "+origin+" added node "+pn+" for a total of "+totalAdded+" from this announcement)");
+						return;
+					}
+					@Override
+					public void bogusNoderef(String reason) {
+						Logger.normal(this, "Announcement from "+origin+" got bogus noderef: "+reason, new Exception("debug"));
+					}
+					@Override
+					public void completed() {
+						synchronized(this) {
+							Logger.normal(this, "Announcement from "+origin+" completed");
+						}
+						int shallow=node.maxHTL()-(totalAdded+totalNotWanted);
+						if(acceptedSomewhere)
+							Logger.minor(this, "Announcement from "+origin+" completed ("+totalAdded+" added, "+totalNotWanted+" not wanted, "+shallow+" shallow)");
+						else
+							System.out.println("Announcement from "+origin+" not accepted anywhere.");
+					}
+
+					@Override
+					public void nodeFailed(PeerNode pn, String reason) {
+						Logger.normal(this, "Announcement from "+origin+" failed: "+reason);
+					}
+					@Override
+					public void noMoreNodes() {
+						Logger.normal(this, "Announcement from "+origin+" ran out of nodes (route not found)");
+					}
+					@Override
+					public void nodeNotWanted() {
+						synchronized(this) {
+							totalNotWanted++;
+						}
+						Logger.normal(this, "Announcement from "+origin+" returned node not wanted for a total of "+totalNotWanted+" from this announcement)");
+					}
+					@Override
+					public void nodeNotAdded() {
+						Logger.normal(this, "Announcement from "+origin+" : node not wanted (maybe already have it, opennet just turned off, etc)");
+					}
+				};
+			}
+			AnnounceSender sender = new AnnounceSender(target, htl, uid, source, om, node, xferUID, noderefLength, paddedLength, cb);
 			node.executor.execute(sender, "Announcement sender for "+uid);
 			success = true;
+			if(logMINOR) Logger.minor(this, "Accepted announcement from "+source);
 			return true;
 		} finally {
 			if(!success)
@@ -876,7 +947,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		// Forward
 		m = preForward(m, htl);
 		while(true) {
-			PeerNode next = node.peers.getByIdentity(targetIdentity);
+			PeerNode next = node.peers.getByPubKeyHash(targetIdentity);
 			if(next != null && !next.isConnected()) {
 				Logger.error(this, "Found target but disconnected!: "+next);
 				next = null;
