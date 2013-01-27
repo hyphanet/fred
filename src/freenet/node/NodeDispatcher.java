@@ -777,7 +777,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 					public void relayedNoderef() {
 						synchronized(this) {
 							totalAdded++;
-							Logger.normal(this, "Announcement from "+origin+" accepted by a downstream node, relaying noderef for a total of "+totalAdded+" from this announcement)");
+							Logger.minor(this, "Announcement from "+origin+" accepted by a downstream node, relaying noderef for a total of "+totalAdded+" from this announcement)");
 						}
 					}
 				};
