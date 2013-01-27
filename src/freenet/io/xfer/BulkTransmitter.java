@@ -52,7 +52,6 @@ public class BulkTransmitter {
 	final long peerBootID;
 	private boolean sentCancel;
 	private boolean finished;
-	final int packetSize;
 	/** Not expecting a response? */
 	final boolean noWait;
 	private long finishTime=-1;
@@ -167,8 +166,6 @@ public class BulkTransmitter {
 			cancel("Disconnected");
 			throw e;
 		}
-		packetSize = DMT.bulkPacketTransmitSize(prb.blockSize) +
-			peer.getOutgoingMangler().fullHeadersLengthOneMessage();
 	}
 
 	/**
