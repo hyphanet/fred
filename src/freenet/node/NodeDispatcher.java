@@ -742,7 +742,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 						synchronized(this) {
 							totalAdded++;
 						}
-						Logger.minor(this, "Announcement from "+origin+" added node "+pn+" for a total of "+totalAdded+" from this announcement)");
+						Logger.error(this, "Announcement from "+origin+" added node "+pn+" - THIS SHOULD NOT HAPPEN!");
 						return;
 					}
 					@Override
@@ -779,6 +779,13 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 					@Override
 					public void nodeNotAdded() {
 						Logger.minor(this, "Announcement from "+origin+" : node not wanted (maybe already have it, opennet just turned off, etc)");
+					}
+					@Override
+					public void relayedNoderef() {
+						synchronized(this) {
+							totalAdded++;
+							Logger.normal(this, "Announcement from "+origin+" accepted by a downstream node, relaying noderef for a total of "+totalAdded+" from this announcement)");
+						}
 					}
 				};
 			}
