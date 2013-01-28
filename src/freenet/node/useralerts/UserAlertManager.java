@@ -396,7 +396,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		sb.append("  <link href=\"").append(feedURI).append("\" rel=\"self\"/>\n");
 		sb.append("  <link href=\"").append(startURI).append("\"/>\n");
 		sb.append("  <updated>").append(formatTime(lastUpdated)).append("</updated>\n");
-		sb.append("  <id>urn:node:").append(Base64.encode(core.node.getDarknetIdentity())).append("</id>\n");
+		sb.append("  <id>urn:node:").append(Base64.encode(core.node.getDarknetPubKeyHash())).append("</id>\n");
 		sb.append("  <logo>").append("/favicon.ico").append("</logo>\n");
 		UserAlert[] alerts = getAlerts();
 		for(int i = alerts.length - 1; i >= 0; i--) {

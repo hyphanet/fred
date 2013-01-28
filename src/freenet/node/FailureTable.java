@@ -644,6 +644,18 @@ public class FailureTable implements OOMHook {
 		}
 		
 	}
+	
+	/** Have we had any offers for the key?
+	 * @param key The key to check.
+	 * @return True if there are any offers, false otherwise.
+	 */
+	public boolean hadAnyOffers(Key key) {
+		BlockOfferList bl;
+		synchronized(this) {
+			bl = blockOfferListByKey.get(key);
+			return bl != null;
+		}
+	}
 
 	public OfferList getOffers(Key key) {
 		if(!node.enableULPRDataPropagation) return null;

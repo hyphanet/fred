@@ -1437,6 +1437,13 @@ public class DMT {
 		return msg;
 	}
 	
+	// FIXME remove this message.
+	public static final MessageType FNPSentPackets = new MessageType("FNPSentPackets", PRIORITY_HIGH) {{
+		addField(TIME_DELTAS, ShortBuffer.class);
+		addField(HASHES, ShortBuffer.class);
+		addField(TIME, Long.class);
+	}};
+	
 	public static final MessageType FNPVoid = new MessageType("FNPVoid", PRIORITY_LOW, false, true) {{
 	}};
 	

@@ -1019,6 +1019,10 @@ public class TextModeClientInterface implements Runnable {
 				public void acceptedSomewhere() {
 					write("Announcement accepted by some node.");
 				}
+				@Override
+				public void relayedNoderef() {
+					write("Announcement returned a noderef that we relayed downstream. THIS SHOULD NOT HAPPEN!");
+				}
         		
         	});
         } else {

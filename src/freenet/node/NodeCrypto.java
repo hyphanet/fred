@@ -10,6 +10,7 @@ import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.zip.DeflaterOutputStream;
 
 import net.i2p.util.NativeBigInteger;
@@ -270,22 +271,21 @@ public class NodeCrypto {
 	 * Create the cryptographic keys etc from scratch
 	 */
 	public void initCrypto() {
-		myIdentity = new byte[32];
-		random.nextBytes(myIdentity);
 		MessageDigest md = SHA256.getMessageDigest();
-		identityHash = md.digest(myIdentity);
-		identityHashHash = md.digest(identityHash);
 		cryptoGroup = Global.DSAgroupBigA;
 		privKey = new DSAPrivateKey(cryptoGroup, random);
 		pubKey = new DSAPublicKey(cryptoGroup, privKey);
 		myARK = InsertableClientSSK.createRandom(random, "ark");
 		myARKNumber = 0;
 		SHA256.returnMessageDigest(md);
-		anonSetupCipher.initialize(identityHash);
 		clientNonce = new byte[32];
 		node.random.nextBytes(clientNonce);
 		pubKeyHash = SHA256.digest(pubKey.asBytes());
 		pubKeyHashHash = SHA256.digest(pubKeyHash);
+		myIdentity = Arrays.copyOf(pubKeyHash, IDENTITY_LENGTH);
+		identityHash = md.digest(myIdentity);
+		identityHashHash = md.digest(identityHash);
+		anonSetupCipher.initialize(identityHash);
 	}
 
 	public void start() {

@@ -622,7 +622,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * sharing purposes. */
 	private boolean writeLocalToDatastore;
 
-	final GetPubkey getPubKey;
+	final NodeGetPubkey getPubKey;
 
 	/** FetchContext for ARKs */
 	public final FetchContext arkFetcherContext;
@@ -998,7 +998,7 @@ public class Node implements TimeSkewDetectorCallback {
 		nodeStarter=ns;
 		if(logConfigHandler != lc)
 			logConfigHandler=lc;
-		getPubKey = new GetPubkey(this);
+		getPubKey = new NodeGetPubkey(this);
 		startupTime = System.currentTimeMillis();
 		SimpleFieldSet oldConfig = config.getSimpleFieldSet();
 		// Setup node-specific configuration
@@ -3859,13 +3859,15 @@ public class Node implements TimeSkewDetectorCallback {
 	 * Do a routed ping of another node on the network by its location.
 	 * @param loc2 The location of the other node to ping. It must match
 	 * exactly.
+	 * @param pubKeyHash The hash of the pubkey of the target node. We match
+	 * by location; this is just a shortcut if we get close.
 	 * @return The number of hops it took to find the node, if it was found.
 	 * Otherwise -1.
 	 */
-	public int routedPing(double loc2, byte[] nodeIdentity) {
+	public int routedPing(double loc2, byte[] pubKeyHash) {
 		long uid = random.nextLong();
 		int initialX = random.nextInt();
-		Message m = DMT.createFNPRoutedPing(uid, loc2, maxHTL, initialX, nodeIdentity);
+		Message m = DMT.createFNPRoutedPing(uid, loc2, maxHTL, initialX, pubKeyHash);
 		Logger.normal(this, "Message: "+m);
 
 		dispatcher.handleRouted(m, null);
@@ -4952,16 +4954,8 @@ public class Node implements TimeSkewDetectorCallback {
 		return opennet.addNewOpennetNode(fs, connectionType, false);
 	}
 
-	public byte[] getOpennetIdentity() {
-		return opennet.crypto.myIdentity;
-	}
-
 	public byte[] getOpennetPubKeyHash() {
 		return opennet.crypto.pubKeyHash;
-	}
-
-	public byte[] getDarknetIdentity() {
-		return darknetCrypto.myIdentity;
 	}
 
 	public byte[] getDarknetPubKeyHash() {
