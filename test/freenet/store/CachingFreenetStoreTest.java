@@ -7,12 +7,23 @@ import java.util.List;
 import java.util.Random;
 
 import junit.framework.TestCase;
+import freenet.crypt.DummyRandomSource;
+import freenet.crypt.RandomSource;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKDecodeException;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
+import freenet.keys.ClientSSK;
+import freenet.keys.ClientSSKBlock;
+import freenet.keys.FreenetURI;
+import freenet.keys.InsertableClientSSK;
+import freenet.keys.KeyDecodeException;
+import freenet.keys.NodeSSK;
+import freenet.keys.SSKBlock;
+import freenet.keys.SSKEncodeException;
+import freenet.keys.SSKVerifyException;
 import freenet.node.SemiOrderedShutdownHook;
 import freenet.store.saltedhash.ResizablePersistentIntBuffer;
 import freenet.store.saltedhash.SaltedHashFreenetStore;
@@ -23,6 +34,7 @@ import freenet.support.Ticker;
 import freenet.support.TrivialTicker;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
+import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileUtil;
@@ -57,7 +69,7 @@ public class CachingFreenetStoreTest extends TestCase {
 	}
 	
 	/* Normal test for CachingFreenetStore */
-	public void testSimple() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
+	public void testSimpleCHK() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		File f = new File(tempDir, "saltstore");
 		FileUtil.removeAll(f);
 
@@ -68,11 +80,35 @@ public class CachingFreenetStoreTest extends TestCase {
 
 		for(int i=0;i<5;i++) {
 			String test = "test" + i;
-			ClientCHKBlock block = encodeBlock(test);
+			ClientCHKBlock block = encodeBlockCHK(test);
 			store.put(block, false);
 			ClientCHK key = block.getClientKey();
 			CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
-			String data = decodeBlock(verify, key);
+			String data = decodeBlockCHK(verify, key);
+			assertEquals(test, data);
+		}
+		
+		cachingStore.close();
+	}
+	
+	public void testSimpleSSK() throws IOException, KeyCollisionException, SSKVerifyException, KeyDecodeException, SSKEncodeException, InvalidCompressionCodecException {
+		File f = new File(tempDir, "saltstore");
+		FileUtil.removeAll(f);
+
+		PubkeyStore pk = new PubkeyStore();
+		GetPubkey pubkeyCache = new SimpleGetPubkey(pk);
+		SSKStore store = new SSKStore(pubkeyCache);
+		SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStore", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		CachingFreenetStore<SSKBlock> cachingStore = new CachingFreenetStore<SSKBlock>(store, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, saltStore, ticker);
+		cachingStore.start(null, true);
+
+		for(int i=0;i<5;i++) {
+			String test = "test" + i;
+			ClientSSKBlock block = encodeBlockSSK(test);
+			store.put(block, false, false);
+			ClientSSK key = block.getClientKey();
+			SSKBlock verify = store.fetch((NodeSSK) key.getNodeKey(), false, false, false, false, null);
+			String data = decodeBlockSSK(verify, key);
 			assertEquals(test, data);
 		}
 		
@@ -94,7 +130,7 @@ public class CachingFreenetStoreTest extends TestCase {
 
 		for(int i=0;i<5;i++) {
 			String test = "test" + i;
-			ClientCHKBlock block = encodeBlock(test);
+			ClientCHKBlock block = encodeBlockCHK(test);
 			store.put(block, false);
 			tests.add(test);
 			chkBlocks.add(block);
@@ -111,7 +147,7 @@ public class CachingFreenetStoreTest extends TestCase {
 			ClientCHKBlock block = chkBlocks.remove(0); //get the first element
 			ClientCHK key = block.getClientKey();
 			CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
-			String data = decodeBlock(verify, key);
+			String data = decodeBlockCHK(verify, key);
 			assertEquals(test, data);
 		}
 		
@@ -135,7 +171,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		// Put five chk blocks 
 		for(int i=0;i<5;i++) {
 			String test = "test" + i;
-			ClientCHKBlock block = encodeBlock(test);
+			ClientCHKBlock block = encodeBlockCHK(test);
 			store.put(block, false);
 			tests.add(test);
 			chkBlocks.add(block);
@@ -152,26 +188,40 @@ public class CachingFreenetStoreTest extends TestCase {
 			String test = tests.remove(0); //get the first element
 			ClientCHKBlock block = chkBlocks.remove(0); //get the first element
 			ClientCHK key = block.getClientKey();
-			//System.out.println("key: "+key);
 			CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
-			//System.out.println("verify: "+verify);
-			String data = decodeBlock(verify, key);
+			String data = decodeBlockCHK(verify, key);
 			assertEquals(test, data);
 		}
 		
 		cachingStore.close();
 	}
 
-	private String decodeBlock(CHKBlock verify, ClientCHK key) throws CHKVerifyException, CHKDecodeException, IOException {
+	private String decodeBlockCHK(CHKBlock verify, ClientCHK key) throws CHKVerifyException, CHKDecodeException, IOException {
 		ClientCHKBlock cb = new ClientCHKBlock(verify, key);
 		Bucket output = cb.decode(new ArrayBucketFactory(), 32768, false);
 		byte[] buf = BucketTools.toByteArray(output);
 		return new String(buf, "UTF-8");
 	}
 
-	private ClientCHKBlock encodeBlock(String test) throws CHKEncodeException, IOException {
+	private ClientCHKBlock encodeBlockCHK(String test) throws CHKEncodeException, IOException {
 		byte[] data = test.getBytes("UTF-8");
 		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(data);
 		return ClientCHKBlock.encode(bucket, false, false, (short)-1, bucket.size(), Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false, null, (byte)0);
+	}
+	
+	private String decodeBlockSSK(SSKBlock verify, ClientSSK key) throws SSKVerifyException, KeyDecodeException, IOException {
+		ClientSSKBlock cb = ClientSSKBlock.construct(verify, key);
+		Bucket output = cb.decode(new ArrayBucketFactory(), 32768, false);
+		byte[] buf = BucketTools.toByteArray(output);
+		return new String(buf, "UTF-8");
+	}
+
+	private ClientSSKBlock encodeBlockSSK(String test) throws IOException, SSKEncodeException, InvalidCompressionCodecException {
+		byte[] data = test.getBytes("UTF-8");
+		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(data);
+		FreenetURI uri = new FreenetURI("SSK", "docName");
+		InsertableClientSSK ik = InsertableClientSSK.create(uri);
+		RandomSource random = new DummyRandomSource(12345);
+		return ik.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
 	}
 }
