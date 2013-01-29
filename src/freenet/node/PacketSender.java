@@ -426,9 +426,9 @@ public class PacketSender implements Runnable {
 
 		OpennetManager om = node.getOpennet();
 		if(om != null && node.getUptime() > 30*1000) {
-			PeerNode[] peers = om.getOldPeers();
+			OpennetPeerNode[] peers = om.getOldPeers();
 
-			for(PeerNode pn : peers) {
+			for(OpennetPeerNode pn : peers) {
 				if(pn.timeLastConnected() <= 0)
 					Logger.error(this, "Last connected is zero or negative for old-opennet-peer "+pn);
 				// Will be removed by next line.

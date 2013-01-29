@@ -266,7 +266,7 @@ public class PeerManager {
 					// FIXME tell the user???
 				}
 				if(oldOpennetPeers)
-					opennet.addOldOpennetNode(pn);
+					opennet.addOldOpennetNode((OpennetPeerNode)pn);
 				else
 					addPeer(pn, true, false);
 				gotSome = true;
@@ -333,7 +333,7 @@ public class PeerManager {
 		if((!ignoreOpennet) && pn instanceof OpennetPeerNode) {
 			OpennetManager opennet = node.getOpennet();
 			if(opennet != null)
-				opennet.forceAddPeer(pn, true);
+				opennet.forceAddPeer((OpennetPeerNode)pn, true);
 			else {
 				Logger.error(this, "Adding opennet peer when no opennet enabled!!!: " + pn + " - removing...");
 				removePeer(pn);

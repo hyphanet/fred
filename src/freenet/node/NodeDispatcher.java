@@ -432,10 +432,10 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		// around in secondary tables etc in order to more easily reconnect later. 
 		// (Mostly used on opennet)
 		boolean purge = m.getBoolean(DMT.PURGE);
-		if(purge) {
+		if(purge && source instanceof OpennetPeerNode) {
 			OpennetManager om = node.getOpennet();
 			if(om != null)
-				om.purgeOldOpennetPeer(source);
+				om.purgeOldOpennetPeer((OpennetPeerNode)source);
 		}
 		// Process parting message
 		int type = m.getInt(DMT.NODE_TO_NODE_MESSAGE_TYPE);
