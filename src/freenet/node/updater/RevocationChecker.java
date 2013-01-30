@@ -60,8 +60,13 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		this.blobFile = blobFile;
 		this.logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		ctxRevocation = core.makeClient((short)0, true, false).getFetchContext();
+		// Do not allow redirects etc.
+		// If we allow redirects then it will take too long to download the revocation.
+		// Anyone inserting it should be aware of this fact! 
+		// You must insert with no content type, and be less than the size limit, and less than the block size after compression!
 		ctxRevocation.allowSplitfiles = false;
-		ctxRevocation.maxArchiveLevels = 1;
+		ctxRevocation.maxArchiveLevels = 0;
+		ctxRevocation.followRedirects = false;
 		// big enough ?
 		ctxRevocation.maxOutputLength = NodeUpdateManager.MAX_REVOCATION_KEY_LENGTH;
 		ctxRevocation.maxTempLength = NodeUpdateManager.MAX_REVOCATION_KEY_TEMP_LENGTH;
