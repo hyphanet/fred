@@ -546,6 +546,10 @@ public abstract class Fields {
 		return x;
 	}
 
+	public static int bytesToInt(byte[] buf) {
+		return bytesToInt(buf, 0);
+	}
+	
 	/**
 	 * Convert an array of bytes to a single int.
 	 */

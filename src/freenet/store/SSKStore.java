@@ -6,7 +6,6 @@ import freenet.crypt.DSAPublicKey;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
-import freenet.node.GetPubkey;
 
 public class SSKStore extends StoreCallback<SSKBlock> {
 
