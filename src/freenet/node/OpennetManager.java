@@ -38,6 +38,7 @@ import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.BulkTransmitter.AllSentCallback;
 import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.node.OpennetPeerNode.NOT_DROP_REASON;
+import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.LRUQueue;
 import freenet.support.LogThresholdCallback;
@@ -211,6 +212,7 @@ public class OpennetManager {
 		Arrays.sort(nodes, new Comparator<OpennetPeerNode>() {
 			@Override
 			public int compare(OpennetPeerNode pn1, OpennetPeerNode pn2) {
+				if(pn1 == pn2) return 0;
 				long lastSuccess1 = pn1.timeLastSuccess();
 				long lastSuccess2 = pn2.timeLastSuccess();
 
@@ -223,7 +225,11 @@ public class OpennetManager {
 					return -1;
 				if((!neverConnected1) && neverConnected2)
 					return 1;
-				return pn1.hashCode - pn2.hashCode;
+				// a-b not opposite sign to b-a possible in a corner case (a=0 b=Integer.MIN_VALUE).
+				if(pn1.hashCode > pn2.hashCode) return 1;
+				else if(pn1.hashCode < pn2.hashCode) return -1;
+				Logger.error(this, "Two OpennerPeerNode's with the same hashcode: "+pn1+" vs "+pn2);
+				return Fields.compareObjectID(pn1, pn2);
 			}
 		});
 		for(OpennetPeerNode opn: nodes)
@@ -352,7 +358,7 @@ public class OpennetManager {
 	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs, ConnectionType connectionType, boolean allowExisting) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		try {
 		OpennetPeerNode pn = new OpennetPeerNode(fs, node, crypto, this, node.peers, false, crypto.packetMangler);
-		if(Arrays.equals(pn.getIdentity(), crypto.myIdentity)) {
+		if(Arrays.equals(pn.getPubKeyHash(), crypto.pubKeyHash)) {
 			if(logMINOR) Logger.minor(this, "Not adding self as opennet peer");
 			return null; // Equal to myself
 		}

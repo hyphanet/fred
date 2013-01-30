@@ -3519,16 +3519,6 @@ public class Node implements TimeSkewDetectorCallback {
 				}, "Start store", 0, true, false);
 			}
 
-			File migrationFile = storeDir.file("migrated");
-			if (!migrationFile.exists()) {
-				tryMigrate(chkDataFS, "chk", true, suffix);
-				tryMigrate(chkCacheFS, "chk", false, suffix);
-				tryMigrate(pubkeyDataFS, "pubkey", true, suffix);
-				tryMigrate(pubkeyCacheFS, "pubkey", false, suffix);
-				tryMigrate(sskDataFS, "ssk", true, suffix);
-				tryMigrate(sskCacheFS, "ssk", false, suffix);
-				migrationFile.createNewFile();
-			}
 		} catch (IOException e) {
 			System.err.println("Could not open store: " + e);
 			e.printStackTrace();
@@ -3596,13 +3586,6 @@ public class Node implements TimeSkewDetectorCallback {
 			throw new NodeInitException(NodeInitException.EXIT_STORE_OTHER, e.getMessage());
 		}
     }
-
-	private <T extends StorableBlock> void tryMigrate(FreenetStore<T> chkDataFS, String type, boolean isStore, String suffix) {
-		String store = isStore ? "store" : "cache";
-		((SaltedHashFreenetStore<T>) chkDataFS).migrationFrom(
-		        storeDir.file(type + suffix + "."+store),
-		        storeDir.file(type + suffix + "."+store+".keys"));
-	}
 
 	private <T extends StorableBlock> FreenetStore<T> makeClientcache(String type, boolean isStore, StoreCallback<T> cb, boolean dontResizeOnStart, byte[] clientCacheMasterKey) throws IOException {
 		FreenetStore<T> store = makeStore(type, "clientcache", maxClientCacheKeys, cb, dontResizeOnStart, clientCacheMasterKey);
@@ -3832,13 +3815,15 @@ public class Node implements TimeSkewDetectorCallback {
 	 * Do a routed ping of another node on the network by its location.
 	 * @param loc2 The location of the other node to ping. It must match
 	 * exactly.
+	 * @param pubKeyHash The hash of the pubkey of the target node. We match
+	 * by location; this is just a shortcut if we get close.
 	 * @return The number of hops it took to find the node, if it was found.
 	 * Otherwise -1.
 	 */
-	public int routedPing(double loc2, byte[] nodeIdentity) {
+	public int routedPing(double loc2, byte[] pubKeyHash) {
 		long uid = random.nextLong();
 		int initialX = random.nextInt();
-		Message m = DMT.createFNPRoutedPing(uid, loc2, maxHTL, initialX, nodeIdentity);
+		Message m = DMT.createFNPRoutedPing(uid, loc2, maxHTL, initialX, pubKeyHash);
 		Logger.normal(this, "Message: "+m);
 
 		dispatcher.handleRouted(m, null);
@@ -4925,16 +4910,8 @@ public class Node implements TimeSkewDetectorCallback {
 		return opennet.addNewOpennetNode(fs, connectionType, false);
 	}
 
-	public byte[] getOpennetIdentity() {
-		return opennet.crypto.myIdentity;
-	}
-
 	public byte[] getOpennetPubKeyHash() {
 		return opennet.crypto.pubKeyHash;
-	}
-
-	public byte[] getDarknetIdentity() {
-		return darknetCrypto.myIdentity;
 	}
 
 	public byte[] getDarknetPubKeyHash() {

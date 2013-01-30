@@ -94,7 +94,10 @@ maintainers may prefer to use this instead of build.xml.
 
 		<findbugs home="${findbugs.dir}"
 		output="xml"
-		outputFile="${test.dst}/findbugs.xml" >
+		outputFile="${test.dst}/findbugs.xml"
+		warningsProperty="findbugs.module.warnings"
+		failOnError="true"
+		jvmargs="-Xmx256m" >
 		<auxClasspath refid="lib.path" />
 		<sourcePath path="${main.src}" />
 		<class location="${main.dst}/freenet.jar" />
