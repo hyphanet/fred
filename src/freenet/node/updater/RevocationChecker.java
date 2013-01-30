@@ -18,6 +18,7 @@ import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.MediaType;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
@@ -190,7 +191,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		String msg = null;
 		try {
 			byte[] buf = result.asByteArray();
-			msg = new String(buf);
+			msg = new String(buf, MediaType.getCharsetRobustOrUTF(result.getMimeType()));
 		} catch (Throwable t) {
 			try {
 				msg = "Failed to extract result when key blown: "+t;

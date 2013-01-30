@@ -30,7 +30,7 @@ public class TestPlugin implements FredPlugin {
 			"This is from within the plugin. I've fetched some data for you.\n"+
 			"The key is: " + key + ", and the data inside:\n"+
 			"-----------------------------------------------------------\n"+
-			new String(fr.asByteArray()).trim() + '\n' +
+			new String(fr.asByteArray(), "UTF-8").trim() + '\n' +
 			"-----------------------------------------------------------\n"+
 			"Length: " + fr.size() + ", Mime-Type: " + fr.getMimeType();
 		} catch (Exception e) {

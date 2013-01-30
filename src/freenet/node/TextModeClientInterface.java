@@ -356,7 +356,7 @@ public class TextModeClientInterface implements Runnable {
 						return false;
 					}
 					outsb.append("Data:\r\n");
-					outsb.append(new String(dataBytes));
+					outsb.append(new String(dataBytes, ENCODING));
 				} catch (FetchException e) {
 	                outsb.append("Error: ").append(e.getMessage()).append("\r\n");
 	            	if((e.getMode() == FetchException.SPLITFILE_ERROR) && (e.errorCodes != null)) {

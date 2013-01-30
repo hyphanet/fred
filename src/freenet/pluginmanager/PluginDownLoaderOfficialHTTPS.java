@@ -63,7 +63,7 @@ public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
 				bos.write(buffer, 0, read);
 			}
 			
-			return new String(bos.toByteArray()).split(" ")[0];
+			return new String(bos.toByteArray(), "ISO-8859-1").split(" ")[0];
 	
 		} catch (MalformedURLException e) {
 			throw new PluginNotFoundException("impossible: "+e,e);
