@@ -16,18 +16,28 @@ public class DiskDirPutFile extends DirPutFile {
 
 	final File file;
 	
-	// FIXME implement FileHash support
-	public DiskDirPutFile(SimpleFieldSet subset, String identifier, boolean global) throws MessageInvalidException {
-		super(subset, identifier, global);
+	public static DiskDirPutFile create(String name, String contentTypeOverride, SimpleFieldSet subset, 
+			String identifier, boolean global) throws MessageInvalidException {
 		String s = subset.get("Filename");
 		if(s == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing field: Filename on "+name, identifier, global);
-		file = new File(s);
+		File file = new File(s);
+		String mimeType;
+		if(contentTypeOverride == null)
+			mimeType = guessMIME(name, file);
+		else
+			mimeType = contentTypeOverride;
+		return new DiskDirPutFile(name, mimeType, file);
+	}
+	
+	// FIXME implement FileHash support
+	public DiskDirPutFile(String name, String mimeType, File f) {
+		super(name, mimeType);
+ 		this.file = f;
 	}
 
-	@Override
-	protected String guessMIME() {
-		String mime = super.guessMIME();
+	protected static String guessMIME(String name, File file) {
+		String mime = DirPutFile.guessMIME(name);
 		if(mime == null) {
 			mime = DefaultMIMETypes.guessMIMEType(file.getName(), false /* fixme? */);
 		}
