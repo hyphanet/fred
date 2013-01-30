@@ -83,9 +83,10 @@ public class NodeUpdateManager {
 			+ TRANSITION_VERSION_EXT;
 
 	public final static String REVOCATION_URI = "SSK@tHlY8BK2KFB7JiO2bgeAw~e4sWU43YdJ6kmn73gjrIw,DnQzl0BYed15V8WQn~eRJxxIA-yADuI8XW7mnzEbut8,AQACAAE/revoked";
-	public static final long MAX_REVOCATION_KEY_LENGTH = 4 * 1024;
-	public static final long MAX_REVOCATION_KEY_TEMP_LENGTH = 4 * 1024;
-	public static final long MAX_REVOCATION_KEY_BLOB_LENGTH = 8 * 1024;
+	// These are necessary to prevent DoS.
+	public static final long MAX_REVOCATION_KEY_LENGTH = 32 * 1024;
+	public static final long MAX_REVOCATION_KEY_TEMP_LENGTH = 64 * 1024;
+	public static final long MAX_REVOCATION_KEY_BLOB_LENGTH = 128 * 1024;
 
 	public static final long MAX_MAIN_JAR_LENGTH = 16 * 1024 * 1024; // 16MB
 
