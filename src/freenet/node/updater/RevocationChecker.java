@@ -13,6 +13,7 @@ import freenet.client.async.BinaryBlobWriter;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.DatabaseDisabledException;
+import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
@@ -274,22 +275,20 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		if(e.isFatal()) {
 			if(!e.isDefinitelyFatal()) {
 				// INTERNAL_ERROR could be related to the key but isn't necessarily.
-				System.err.println("Auto-update is failing with an internal error:");
-				System.err.println(e);
+				// FIXME somebody should look at these two strings and de-uglify them!
+				// They should never be seen but they should be idiot-proof if they ever are.
+				// FIXME split into two parts? Fetch manually should be a second part?
+				String message = l10n("revocationFetchFailedMaybeInternalError", new String[] { "detail", "key" }, new String[] { e.toUserFriendlyString(), manager.getRevocationURI().toASCIIString() });
+				System.err.println(message);
 				e.printStackTrace();
-				System.err.println("Please fix this and restart Freenet!");
-				// Could be out of disk space???
-				manager.blow("Checking for revocation key is failing with an internal error. This could " +
-						"mean the key for the auto-update system is compromised, or it could mean there is " +
-						"a problem on your computer e.g. out of disk space. Details: "+e.toString(), true);
+				manager.blow(message, true);
 				return;
 			}
 			// Really fatal, i.e. something was inserted but can't be decoded.
-			// FIXME l10n
-			manager.blow("Permanent error fetching the revocation certificate. Something has gone seriously " +
-					"wrong: The auto-update key has been compromised, but the message explaining why was " +
-					"not inserted correctly. You might try fetching the key manually: "+manager.getRevocationURI()+
-					" Reason for failure: "+e.toString(), false);
+			// FIXME somebody should look at these two strings and de-uglify them!
+			// They should never be seen but they should be idiot-proof if they ever are.
+			String message = l10n("revocationFetchFailedFatally", new String[] { "detail", "key" }, new String[] { e.toUserFriendlyString(), manager.getRevocationURI().toASCIIString() });			
+			manager.blow(message, false);
 			moveBlob(blob);
 			return;
 		}
@@ -328,6 +327,11 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		}
 	}
 	
+	private String l10n(String key, String[] pattern, String[] value) {
+		return NodeL10n.getBase().getString("RevocationChecker." + key,
+				pattern, value);
+	}
+
 	@Override
 	public void onMajorProgress(ObjectContainer container) {
 		// TODO Auto-generated method stub

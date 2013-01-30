@@ -347,7 +347,7 @@ public class FetchException extends Exception implements Cloneable {
 	public String toString() {
 		StringBuilder sb = new StringBuilder(200);
 		sb.append("FetchException:");
-		sb.append(getShortMessage(mode));
+		sb.append(getMessage(mode));
 		sb.append(':');
 		sb.append(newURI);
 		sb.append(':');
@@ -363,6 +363,13 @@ public class FetchException extends Exception implements Cloneable {
 		return sb.toString();
 	}
 	
+	public String toUserFriendlyString() {
+		if(extraMessage == null)
+			return getShortMessage(mode);
+		else
+			return getShortMessage(mode) + " : " + extraMessage;
+	}
+
 	/** Get the (localised) long explanation for this failure mode. */
 	public static String getMessage(int mode) {
 		String ret = NodeL10n.getBase().getString("FetchException.longError."+mode);
