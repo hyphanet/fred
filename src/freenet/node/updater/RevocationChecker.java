@@ -64,6 +64,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		// If we allow redirects then it will take too long to download the revocation.
 		// Anyone inserting it should be aware of this fact! 
 		// You must insert with no content type, and be less than the size limit, and less than the block size after compression!
+		// If it doesn't fit, we'll still tell the user, but the message may not be easily readable.
 		ctxRevocation.allowSplitfiles = false;
 		ctxRevocation.maxArchiveLevels = 0;
 		ctxRevocation.followRedirects = false;
@@ -278,11 +279,17 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 				e.printStackTrace();
 				System.err.println("Please fix this and restart Freenet!");
 				// Could be out of disk space???
-				manager.blow("Checking for revocation key is failing with an internal error: "+e.toString(), true);
+				manager.blow("Checking for revocation key is failing with an internal error. This could " +
+						"mean the key for the auto-update system is compromised, or it could mean there is " +
+						"a problem on your computer e.g. out of disk space. Details: "+e.toString(), true);
 				return;
 			}
 			// Really fatal, i.e. something was inserted but can't be decoded.
-			manager.blow("Permanent error fetching revocation (error inserting the revocation key?): "+e.toString(), false);
+			// FIXME l10n
+			manager.blow("Permanent error fetching the revocation certificate. Something has gone seriously " +
+					"wrong: The auto-update key has been compromised, but the message explaining why was " +
+					"not inserted correctly. You might try fetching the key manually: "+manager.getRevocationURI()+
+					" Reason for failure: "+e.toString(), false);
 			moveBlob(blob);
 			return;
 		}
