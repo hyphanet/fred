@@ -30,7 +30,7 @@ public class ExpectedHashes extends FCPMessage {
 		SimpleFieldSet fs = new SimpleFieldSet(false);
 		SimpleFieldSet values = new SimpleFieldSet(false);
 		for(HashResult hash : hashes) {
-			if(hashes == null) {
+			if(hash == null) {
 				Logger.error(this, "Hash == null, possibly persistence issue caused prior to build 1411 on "+this);
 				return null;
 			}

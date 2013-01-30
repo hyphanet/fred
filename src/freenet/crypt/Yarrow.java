@@ -468,7 +468,7 @@ public class Yarrow extends RandomSource {
 			long thingy = 0;
 			int bytes = 0;
 			for(int j = 0; j < Math.min(length, i + 8); j++) {
-				thingy = (thingy << 8) + buf[j];
+				thingy = (thingy << 8) + (buf[j] & 0xFF);
 				bytes++;
 			}
 			totalRealEntropy += acceptEntropy(source, thingy, bytes * 8, bias);

@@ -39,7 +39,7 @@ public class PushDataToadlet extends Toadlet {
 		if (logMINOR) {
 			Logger.minor(this, "Data got element:" + node.generateChildren());
 		}
-		writeHTMLReply(ctx, 200, "OK", UpdaterConstants.SUCCESS + ":" + Base64.encodeStandard(node.getUpdaterType().getBytes()) + ":" + Base64.encodeStandard(node.generateChildren().getBytes()));
+		writeHTMLReply(ctx, 200, "OK", UpdaterConstants.SUCCESS + ":" + Base64.encodeStandard(node.getUpdaterType().getBytes("UTF-8")) + ":" + Base64.encodeStandard(node.generateChildren().getBytes("UTF-8")));
 	}
 
 	@Override

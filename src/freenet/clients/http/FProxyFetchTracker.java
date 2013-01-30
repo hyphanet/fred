@@ -165,4 +165,8 @@ public class FProxyFetchTracker implements Runnable {
 			context.ticker.queueTimedJob(this, FProxyFetchInProgress.LIFETIME);
 	}
 
+	public int makeRandomElementID() {
+		return context.fastWeakRandom.nextInt();
+	}
+
 }

@@ -3,7 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.events;
 
-import java.io.PrintWriter;
+import java.io.IOException;
+import java.io.Writer;
 
 import com.db4o.ObjectContainer;
 
@@ -11,17 +12,21 @@ import freenet.client.async.ClientContext;
 
 public class EventDumper implements ClientEventListener {
 
-	final PrintWriter pw;
+	final Writer w;
 	final boolean removeWithProducer;
 	
-	public EventDumper(PrintWriter writer, boolean removeWithProducer) {
-		this.pw = writer;
+	public EventDumper(Writer writer, boolean removeWithProducer) {
+		this.w = writer;
 		this.removeWithProducer = removeWithProducer;
 	}
 
 	@Override
 	public void receive(ClientEvent ce, ObjectContainer container, ClientContext context) {
-		pw.println(ce.getDescription());
+		try {
+			w.write(ce.getDescription()+"\n");
+		} catch (IOException e) {
+			// Ignore.
+		}
 	}
 
 	@Override

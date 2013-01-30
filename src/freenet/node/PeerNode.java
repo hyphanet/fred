@@ -523,8 +523,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						String errCause = "";
 						if(signature == null)
 							errCause += " (No signature)";
-						if(peerCryptoGroup == null)
-							errCause += " (No peer crypto group)";
 						if(peerPubKey == null)
 							errCause += " (No peer public key)";
 						if(failed)
@@ -1839,10 +1837,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(!Location.equals(currentLocation, newLoc))
 				anythingChanged = true;
 			currentLocation = newLoc;
-			if(newLocs != null && currentPeersLocation == null || 
-					newLocs == null && currentPeersLocation != null)
+			if(currentPeersLocation == null)
 				anythingChanged = true;
-			else if(currentPeersLocation != null && newLocs != null && !anythingChanged) {
+			else if(currentPeersLocation != null && !anythingChanged) {
 				if(currentPeersLocation.length != newLocs.length)
 					anythingChanged = true;
 				else {
@@ -2962,7 +2959,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 
 	@Override
-	public int hashCode() {
+	public final int hashCode() {
 		return hashCode;
 	}
 

@@ -274,8 +274,11 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 
 	}
 
-	static boolean logMINOR;
-	static boolean logDEBUG;
+	private static boolean logMINOR;
+	private static boolean logDEBUG;
+	static {
+		Logger.registerClass(IPDetectorPluginManager.class);
+	}
 	private final NodeIPDetector detector;
 	private final Node node;
 	FredPluginIPDetector[] plugins;
@@ -290,8 +293,6 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	private boolean started;
 	
 	IPDetectorPluginManager(Node node, NodeIPDetector detector) {
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, getClass());
-		logDEBUG = Logger.shouldLog(LogLevel.DEBUG, getClass());
 		plugins = new FredPluginIPDetector[0];
 		portForwardPlugins = new FredPluginPortForward[0];
 		this.node = node;
@@ -453,8 +454,6 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	 */
 	public void maybeRun() {
 		if(!started) return;
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, getClass());
-		logDEBUG = Logger.shouldLog(LogLevel.DEBUG, getClass());
 		if(logMINOR) Logger.minor(this, "Maybe running IP detection plugins", new Exception("debug"));
 		PeerNode[] peers = node.getPeerNodes();
 		PeerNode[] conns = node.getConnectedPeers();

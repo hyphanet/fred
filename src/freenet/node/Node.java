@@ -708,13 +708,13 @@ public class Node implements TimeSkewDetectorCallback {
 	private boolean skipWrapperWarning;
 	private int maxPacketSize;
 	/** Should inserts ignore low backoff times by default? */
-	public static boolean IGNORE_LOW_BACKOFF_DEFAULT = false;
+	public static final boolean IGNORE_LOW_BACKOFF_DEFAULT = false;
 	/** Definition of "low backoff times" for above. */
 	public static final int LOW_BACKOFF = 30*1000;
 	/** Should inserts be fairly blatently prioritised on accept by default? */
-	public static boolean PREFER_INSERT_DEFAULT = false;
+	public static final boolean PREFER_INSERT_DEFAULT = false;
 	/** Should inserts fork when the HTL reaches cacheability? */
-	public static boolean FORK_ON_CACHEABLE_DEFAULT = true;
+	public static final boolean FORK_ON_CACHEABLE_DEFAULT = true;
 	public final IOStatisticCollector collector;
 	/** Type identifier for fproxy node to node messages, as sent on DMT.nodeToNodeMessage's */
 	public static final int N2N_MESSAGE_TYPE_FPROXY = 1;

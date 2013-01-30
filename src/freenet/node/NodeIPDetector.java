@@ -71,10 +71,10 @@ public class NodeIPDetector {
 	/** Plugin manager for plugin IP address detectors e.g. STUN */
 	final IPDetectorPluginManager ipDetectorManager;
 	/** UserAlert shown when ipAddressOverride has a hostname/IP address syntax error */
-	private static InvalidAddressOverrideUserAlert invalidAddressOverrideAlert;
+	private InvalidAddressOverrideUserAlert invalidAddressOverrideAlert;
 	private boolean hasValidAddressOverride;
 	/** UserAlert shown when we can't detect an IP address */
-	private static IPUndetectedUserAlert primaryIPUndetectedAlert;
+	private IPUndetectedUserAlert primaryIPUndetectedAlert;
 	// FIXME redundant? see lastIPAddress
 	FreenetInetAddress[] lastIP;
 	/** Set when we have grounds to believe that we may be behind a symmetric NAT. */

@@ -31,6 +31,7 @@ import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
+import freenet.support.Fields;
 import freenet.support.IdentityHashSet;
 import freenet.support.Logger;
 import freenet.support.PrioritizedSerialExecutor;
@@ -236,7 +237,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 */
 	public void register(final HasKeyListener hasListener, final SendableGet[] getters, final boolean persistent, ObjectContainer container, final BlockSet blocks, final boolean noCheckStore) throws KeyListenerConstructionException {
 		if(logMINOR)
-			Logger.minor(this, "register("+persistent+","+hasListener+","+getters);
+			Logger.minor(this, "register("+persistent+","+hasListener+","+Fields.commaList(getters));
 		if(isInsertScheduler) {
 			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
 			throw e;
@@ -306,7 +307,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	void finishRegister(final SendableGet[] getters, boolean persistent, ObjectContainer container, final boolean anyValid, final DatastoreCheckerItem reg) {
-		if(logMINOR) Logger.minor(this, "finishRegister for "+getters+" anyValid="+anyValid+" reg="+reg+" persistent="+persistent);
+		if(logMINOR) Logger.minor(this, "finishRegister for "+Fields.commaList(getters)+" anyValid="+anyValid+" reg="+reg+" persistent="+persistent);
 		if(isInsertScheduler) {
 			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
 			for(SendableGet getter : getters) {

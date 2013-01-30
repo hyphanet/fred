@@ -192,7 +192,6 @@ public class FetchException extends Exception implements Cloneable {
 		errorCodes = null;
 		initCause(t);
 		newURI = null;
-		expectedSize = -1;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
 		else if(logMINOR) 
@@ -210,7 +209,6 @@ public class FetchException extends Exception implements Cloneable {
 		errorCodes = null;
 		initCause(t);
 		newURI = null;
-		expectedSize = -1;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
 		else if(logMINOR) 

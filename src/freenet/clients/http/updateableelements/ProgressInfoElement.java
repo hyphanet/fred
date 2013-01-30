@@ -92,7 +92,7 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 	}
 
 	public static String getId(FreenetURI uri) {
-		return Base64.encodeStandard(("progressinfo[URI:" + uri.toString() + "]").getBytes());
+		return Base64.encodeStandardUTF8(("progressinfo[URI:" + uri.toString() + "]"));
 	}
 
 	@Override

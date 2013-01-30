@@ -346,8 +346,6 @@ public class ArchiveManager {
 				if(logMINOR) Logger.minor(this, "dealing with LZMA");
 				is = new LzmaInputStream(data.getInputStream());
 				wrapper = null;
-			} else if(ctype != null) {
-				throw new ArchiveFailureException("Unknown or unsupported compression algorithm " + archiveType);
 			} else {
 				wrapper = null;
 			}
