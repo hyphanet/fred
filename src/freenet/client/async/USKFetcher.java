@@ -190,7 +190,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		
 		@Override
 		protected String transientToString() {
-			return super.toString()+" for "+USKFetcher.this+" for "+origUSK;
+			return super.objectToString()+" for "+USKFetcher.this+" for "+origUSK;
 		}
 	}
 	

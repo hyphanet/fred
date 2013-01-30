@@ -229,6 +229,10 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 			return transientToString();
 		return super.toString();
 	}
+	
+	protected final String objectToString() {
+		return super.toString();
+	}
 
 	/** Method to safely override toString(), will only be called if the object is transient. */
 	protected String transientToString() {
