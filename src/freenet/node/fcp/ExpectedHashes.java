@@ -5,7 +5,6 @@ import com.db4o.ObjectContainer;
 import freenet.client.events.ExpectedHashesEvent;
 import freenet.crypt.HashResult;
 import freenet.node.Node;
-import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 

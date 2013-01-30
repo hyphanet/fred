@@ -116,10 +116,8 @@ public class AddressTrackerItem {
 			// If no packets sent since last one, just replace it
 			if(timeLastSentPacket >= gapLengthRecvTimes[0]) {
 				// Rotate gaps array
-				for(int i=TRACK_GAPS-1;i>=1;i--) {
-					gapLengths[i] = gapLengths[i-1];
-					gapLengthRecvTimes[i] = gapLengthRecvTimes[i-1];
-				}
+				System.arraycopy(gapLengths, 0, gapLengths, 1, TRACK_GAPS-1);
+				System.arraycopy(gapLengthRecvTimes, 0, gapLengthRecvTimes, 1, TRACK_GAPS-1);
 			} else {
 				// else overwrite [0]
 			}
@@ -133,9 +131,9 @@ public class AddressTrackerItem {
 	}
 	
 	public long longestGap(long horizon, long now) {
-		long longestGap = 0;
+		long longestGap = -1;
 		for(int i=0;i<TRACK_GAPS;i++) {
-			if(gapLengthRecvTimes[0] < now - horizon) continue;
+			if(gapLengthRecvTimes[i] < now - horizon) break;
 			longestGap = Math.max(longestGap, gapLengths[i]);
 		}
 		return longestGap;

@@ -5,7 +5,6 @@ package freenet.support.transport.ip;
 
 import java.net.InetAddress;
 import java.net.Inet6Address;
-import java.util.Arrays;
 
 public class IPUtil {
 

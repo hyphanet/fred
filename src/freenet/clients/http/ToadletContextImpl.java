@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.Math;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
@@ -18,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Locale;
-import java.util.Random;
 import java.util.TimeZone;
 
 import freenet.clients.http.FProxyFetchInProgress.REFILTER_POLICY;
@@ -105,7 +105,7 @@ public class ToadletContextImpl implements ToadletContext {
 		this.pagemaker = pageMaker;
 		this.container = container;
 		//Generate an unique id
-		uniqueId=String.valueOf(new Random().nextLong());
+		uniqueId=String.valueOf(Math.random());
 	}
 	
 	private void close() {
