@@ -25,7 +25,8 @@ import freenet.support.Logger.LogLevel;
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public abstract class SendableRequest implements RandomGrabArrayItem {
 	
-	// Since we put these into Set's etc, hashCode must be persistent.
+	/** Since we put these into Set's etc, hashCode must be persistent.
+	 * Guaranteed not to be 0 unless this is a persistent object that is deactivated. */
 	private final int hashCode;
 	
 	protected final boolean realTimeFlag;
@@ -52,7 +53,9 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	SendableRequest(boolean persistent, boolean realTimeFlag) {
 		this.persistent = persistent;
 		this.realTimeFlag = realTimeFlag;
-		this.hashCode = super.hashCode();
+		int oid = super.hashCode();
+		if(oid == 0) oid = 1;
+		this.hashCode = oid;
 	}
 	
 	@Override
