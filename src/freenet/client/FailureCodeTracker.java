@@ -14,9 +14,10 @@ import freenet.support.SimpleFieldSet;
 
 /**
  * Essentially a map of integer to incrementible integer.
- * FIXME maybe move this to support, give it a better name?
+ * FIXME maybe move this to support, give it a better name? Be careful, it's a persistent object, use the
+ * db4o migration tools, or derive it from something in support?
  */
-public class FailureCodeTracker {
+public class FailureCodeTracker implements Cloneable {
 
 	public final boolean insert;
 	private int total;
@@ -232,6 +233,8 @@ public class FailureCodeTracker {
 		if(map != null) container.activate(map, 5);
 	}
 	
+	/** Copy the FailureCodeTracker. We implement Cloneable to shut up findbugs, but Object.clone() won't
+	 * work because it's a shallow copy, so we implement it with merge(). */
 	@Override
 	public FailureCodeTracker clone() {
 		FailureCodeTracker tracker = new FailureCodeTracker(insert);

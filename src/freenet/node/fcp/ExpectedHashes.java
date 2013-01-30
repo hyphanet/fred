@@ -34,7 +34,7 @@ public class ExpectedHashes extends FCPMessage {
 				Logger.error(this, "Hash == null, possibly persistence issue caused prior to build 1411 on "+this);
 				return null;
 			}
-			values.putOverwrite(hash.type.name(), HexUtil.bytesToHex(hash.result));
+			values.putOverwrite(hash.type.name(), hash.hashAsHex());
 		}
 		fs.put("Hashes", values);
 		fs.putOverwrite("Identifier", identifier);
