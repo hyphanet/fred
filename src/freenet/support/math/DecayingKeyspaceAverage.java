@@ -11,7 +11,7 @@ import freenet.support.SimpleFieldSet;
  *
  * A filter on BootstrappingDecayingRunningAverage which makes it aware of the circular keyspace.
  */
-public class DecayingKeyspaceAverage implements RunningAverage, Cloneable {
+public final class DecayingKeyspaceAverage implements RunningAverage, Cloneable {
 
 	private static final long serialVersionUID = 5129429614949179428L;
 	/**
