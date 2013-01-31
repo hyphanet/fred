@@ -61,7 +61,9 @@ public class DSAGroup extends CryptoKey {
         q = Util.readMPI(i);
         g = Util.readMPI(i);
         try {
-        	return new DSAGroup(p, q, g);
+        	DSAGroup group = new DSAGroup(p, q, g);
+        	if(group.equals(Global.DSAgroupBigA)) return Global.DSAgroupBigA;
+        	else return group;
         } catch (IllegalArgumentException e) {
         	throw (CryptFormatException)new CryptFormatException("Invalid group: "+e).initCause(e);
         }
