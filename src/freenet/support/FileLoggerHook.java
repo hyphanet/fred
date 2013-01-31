@@ -506,6 +506,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 						// buffer -> file
 						o = new BufferedOutputStream(o, 512*1024);
 					}
+					o.write(BOM);
 					return o;
 				} catch (IOException e) {
 					System.err.println(
@@ -519,6 +520,16 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					sleepTime += sleepTime;
 				}
 			}
+		}
+	}
+	
+	private static final byte[] BOM;
+	
+	static {
+		try {
+			BOM = (""+(char)0xFEFF).getBytes(ENCODING);
+		} catch (UnsupportedEncodingException e) {
+			throw new Error(e);
 		}
 	}
 
