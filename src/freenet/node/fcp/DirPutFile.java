@@ -52,6 +52,9 @@ abstract class DirPutFile {
 		if(name == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing field Name", identifier, global);
 		String contentTypeOverride = subset.get("Metadata.ContentType");
+		if(contentTypeOverride != null && !DefaultMIMETypes.isPlausibleMIMEType(contentTypeOverride)) {
+			throw new MessageInvalidException(ProtocolErrorMessage.BAD_MIME_TYPE, "Bad MIME type in Metadata.ContentType", identifier, global);
+		}
 		String type = subset.get("UploadFrom");
 		if((type == null) || type.equalsIgnoreCase("direct")) {
 			return DirectDirPutFile.create(name, contentTypeOverride, subset, identifier, global, bf);
