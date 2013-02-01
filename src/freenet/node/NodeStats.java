@@ -1201,17 +1201,26 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 		String ret = checkBandwidthLiability(getOutputBandwidthUpperLimit(totalSent, totalOverhead, uptime, limit, nonOverheadFraction), requestsSnapshot, peerRequestsSnapshot, false, limit,
 				source, isLocal, isSSK, isInsert, isOfferReply, hasInStore, transfersPerInsert, realTimeFlag, maxOutputTransfers, maxTransfersOutPeerLimit);  
-		if(ret != null) return new RejectReason(ret, true);
+		if(ret != null) {
+			pInstantRejectIncoming.report(1.0);
+			return new RejectReason(ret, true);
+		}
 		
 		ret = checkBandwidthLiability(getInputBandwidthUpperLimit(limit), requestsSnapshot, peerRequestsSnapshot, true, limit,
 				source, isLocal, isSSK, isInsert, isOfferReply, hasInStore, transfersPerInsert, realTimeFlag, maxOutputTransfers, maxTransfersOutPeerLimit);  
-		if(ret != null) return new RejectReason(ret, true);
+		if(ret != null) {
+			pInstantRejectIncoming.report(1.0);
+			return new RejectReason(ret, true);
+		}
 		
 		// Check transfer-based limits, with fair sharing.
 		
 		ret = checkMaxOutputTransfers(maxOutputTransfers, maxTransfersOutUpperLimit, maxTransfersOutLowerLimit, maxTransfersOutPeerLimit,
 				requestsSnapshot, peerRequestsSnapshot, isLocal, realTimeFlag);
-		if(ret != null) return new RejectReason(ret, true);
+		if(ret != null) {
+			pInstantRejectIncoming.report(1.0);
+			return new RejectReason(ret, true);
+		}
 		
 		// Do we have the bandwidth?
 		// The throttles should not be used much now, the timeout-based 
@@ -1241,10 +1250,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		// can transmit in a reasonable time, don't accept requests.
 		if(source != null) {
 			if(source.getMessageQueueLengthBytes() > MAX_PEER_QUEUE_BYTES) {
+				pInstantRejectIncoming.report(1.0);
 				rejected(">MAX_PEER_QUEUE_BYTES", isLocal, realTimeFlag);
 				return new RejectReason("Too many message bytes queued for peer", false);
 			}
 			if(source.getProbableSendQueueTime() > MAX_PEER_QUEUE_TIME) {
+				pInstantRejectIncoming.report(1.0);
 				rejected(">MAX_PEER_QUEUE_TIME", isLocal, realTimeFlag);
 				return new RejectReason("Peer's queue will take too long to transfer", false);
 			}
