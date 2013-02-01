@@ -226,6 +226,11 @@ public class Message {
 	public Object getObject(String key) {
 		return _payload.get(key);
 	}
+	
+	public byte[] getShortBufferBytes(String key) {
+		ShortBuffer buffer = (ShortBuffer) getObject(key);
+		return buffer.getData();
+	}
 
 	public void set(String key, boolean b) {
 		set(key, Boolean.valueOf(b));
