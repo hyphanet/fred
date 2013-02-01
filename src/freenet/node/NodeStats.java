@@ -1064,6 +1064,11 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	
 	private final Object serializeShouldRejectRequest = new Object();
 	
+	/** Proportion of the thread limit we can use without triggering slow-down messages */
+	private final double SOFT_REJECT_MAX_THREAD_USAGE = 0.9;
+	/** Proportion of the various bandwidth limits we can use without triggering slow-down messages */
+	private final double SOFT_REJECT_MAX_BANDWIDTH_USAGE = 0.8;
+	
 	/** Should a request be accepted by this node, based on its local capacity?
 	 * This includes thread limits and ping times, but more importantly, 
 	 * mechanisms based on predicting worst case bandwidth usage for all running
@@ -1117,6 +1122,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			rejected(">threadLimit", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
 			return new RejectReason(">threadLimit ("+threadCount+'/'+threadLimit+')', false);
 		}
+		if(threadLimit < threadCount * SOFT_REJECT_MAX_THREAD_USAGE)
+			slowDown(">softThreadLimit", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag, tag);
 
 		long[] total = node.collector.getTotalIO();
 		long totalSent = total[0];
@@ -1144,6 +1151,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 					rejected(">SUB_MAX_PING_TIME", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
 					return new RejectReason(">SUB_MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+ ')', false);
 				}
+				// FIXME use slowDown as well as or instead of random here?
 			}
 
 		}
@@ -1205,13 +1213,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		// Check bandwidth-based limits, with fair sharing.
 		
 		String ret = checkBandwidthLiability(getOutputBandwidthUpperLimit(totalSent, totalOverhead, uptime, limit, nonOverheadFraction), requestsSnapshot, peerRequestsSnapshot, false, limit,
-				source, isLocal, isSSK, isInsert, isOfferReply, hasInStore, transfersPerInsert, realTimeFlag, maxOutputTransfers, maxTransfersOutPeerLimit);  
+				source, isLocal, isSSK, isInsert, isOfferReply, hasInStore, transfersPerInsert, realTimeFlag, maxOutputTransfers, maxTransfersOutPeerLimit, tag);  
 		if(ret != null) {
 			return new RejectReason(ret, true);
 		}
 		
 		ret = checkBandwidthLiability(getInputBandwidthUpperLimit(limit), requestsSnapshot, peerRequestsSnapshot, true, limit,
-				source, isLocal, isSSK, isInsert, isOfferReply, hasInStore, transfersPerInsert, realTimeFlag, maxOutputTransfers, maxTransfersOutPeerLimit);  
+				source, isLocal, isSSK, isInsert, isOfferReply, hasInStore, transfersPerInsert, realTimeFlag, maxOutputTransfers, maxTransfersOutPeerLimit, tag);  
 		if(ret != null) {
 			return new RejectReason(ret, true);
 		}
@@ -1219,7 +1227,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		// Check transfer-based limits, with fair sharing.
 		
 		ret = checkMaxOutputTransfers(maxOutputTransfers, maxTransfersOutUpperLimit, maxTransfersOutLowerLimit, maxTransfersOutPeerLimit,
-				requestsSnapshot, peerRequestsSnapshot, isLocal, realTimeFlag, isInsert, isSSK, isOfferReply);
+				requestsSnapshot, peerRequestsSnapshot, isLocal, realTimeFlag, isInsert, isSSK, isOfferReply, tag);
 		if(ret != null) {
 			return new RejectReason(ret, true);
 		}
@@ -1235,6 +1243,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		if(!requestOutputThrottle.instantGrab(expectedSent)) {
 			rejected("Insufficient output bandwidth", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
 			return new RejectReason("Insufficient output bandwidth", false);
+			// FIXME slowDown?
 		}
 		expected = this.getThrottle(isLocal, isInsert, isSSK, false).currentValue();
 		int expectedReceived = (int)Math.max(expected, 0);
@@ -1244,6 +1253,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			requestOutputThrottle.recycle(expectedSent);
 			rejected("Insufficient input bandwidth", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
 			return new RejectReason("Insufficient input bandwidth", false);
+			// FIXME slowDown?
 		}
 
 		// Message queues - when the link level has far more queued than it
@@ -1252,10 +1262,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			if(source.getMessageQueueLengthBytes() > MAX_PEER_QUEUE_BYTES) {
 				rejected(">MAX_PEER_QUEUE_BYTES", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
 				return new RejectReason("Too many message bytes queued for peer", false);
+				// FIXME slowDown?
 			}
 			if(source.getProbableSendQueueTime() > MAX_PEER_QUEUE_TIME) {
 				rejected(">MAX_PEER_QUEUE_TIME", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
 				return new RejectReason("Peer's queue will take too long to transfer", false);
+				// FIXME slowDown?
 			}
 		}
 		
@@ -1273,6 +1285,14 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		}
 	}
 	
+	private void slowDown(String reason, boolean isLocal, boolean isInsert,
+			boolean isSSK, boolean isOfferReply, boolean realTimeFlag,
+			UIDTag tag) {
+		if(isLocal || isOfferReply) return;
+		if(logMINOR) Logger.minor(this, "Slow down: "+reason+" insert="+isInsert+" SSK="+isSSK+" realTimeFlag="+realTimeFlag);
+		tag.slowDown();
+	}
+
 	public int calculateMaxTransfersOut(PeerNode peer, boolean realTime,
 			double nonOverheadFraction, int maxTransfersOutUpperLimit) {
 		if(peer == null) return Integer.MAX_VALUE;
@@ -1384,7 +1404,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 */
 	private String checkBandwidthLiability(double bandwidthAvailableOutputUpperLimit,
 			RunningRequestsSnapshot requestsSnapshot, RunningRequestsSnapshot peerRequestsSnapshot, boolean input, long limit,
-			PeerNode source, boolean isLocal, boolean isSSK, boolean isInsert, boolean isOfferReply, boolean hasInStore, int transfersPerInsert, boolean realTimeFlag, int maxOutputTransfers, int maxOutputTransfersPeerLimit) {
+			PeerNode source, boolean isLocal, boolean isSSK, boolean isInsert, boolean isOfferReply, boolean hasInStore, int transfersPerInsert, boolean realTimeFlag, int maxOutputTransfers, int maxOutputTransfersPeerLimit, UIDTag tag) {
 		String name = input ? "Input" : "Output";
 		int peers = node.peers.countConnectedPeers();
 		
@@ -1428,6 +1448,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			}
 			
 		} else {
+			if(bandwidthLiabilityOutput > (bandwidthAvailableOutputLowerLimit * SOFT_REJECT_MAX_BANDWIDTH_USAGE))
+				slowDown(name+" bandwidth liability: fairness between peers", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag, tag);
 			if(logMINOR)
 				Logger.minor(this, "Total usage is "+bandwidthLiabilityOutput+" below lower limit "+bandwidthAvailableOutputLowerLimit+" for "+name);
 		}
@@ -1439,7 +1461,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			int maxTransfersOutPeerLimit,
 			RunningRequestsSnapshot requestsSnapshot,
 			RunningRequestsSnapshot peerRequestsSnapshot, boolean isLocal, boolean realTime,
-			boolean isInsert, boolean isSSK, boolean isOfferReply) {
+			boolean isInsert, boolean isSSK, boolean isOfferReply, UIDTag tag) {
 		if(logMINOR) Logger.minor(this, "Max transfers: congestion control limit "+maxOutputTransfers+
 				" upper "+maxTransfersOutUpperLimit+" lower "+maxTransfersOutLowerLimit+" peer "+maxTransfersOutPeerLimit+" "+(realTime ? "(rt)" : "(bulk)"));
 		int peerOutTransfers = peerRequestsSnapshot.totalOutTransfers();
@@ -1451,11 +1473,15 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		}
 		if(totalOutTransfers <= maxTransfersOutLowerLimit) {
 			// If the total is below the lower limit, then fine, go for it.
+			if(totalOutTransfers > maxTransfersOutLowerLimit * SOFT_REJECT_MAX_BANDWIDTH_USAGE)
+				slowDown("TooManyTransfers: Fair sharing between peers", isLocal, isInsert, isSSK, isOfferReply, realTime, tag);
 			return null;
 		}
 		if(peerOutTransfers <= maxTransfersOutPeerLimit) {
 			// The total is above the lower limit, but the per-peer is below the peer limit.
 			// It is within its guaranteed space, so we accept it.
+			if(peerOutTransfers > maxTransfersOutPeerLimit * SOFT_REJECT_MAX_BANDWIDTH_USAGE)
+				slowDown("TooManyTransfers: Fair sharing between peers", isLocal, isInsert, isSSK, isOfferReply, realTime, tag);
 			return null;
 		}
 		rejected("TooManyTransfers: Fair sharing between peers", isLocal, isInsert, isSSK, isOfferReply, realTime);
