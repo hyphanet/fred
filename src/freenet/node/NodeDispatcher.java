@@ -719,7 +719,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			}
 			if(source instanceof SeedClientPeerNode) {
 				short maxHTL = node.maxHTL();
-				if(htl != maxHTL) {
+				if(htl < maxHTL-1) {
 					Logger.error(this, "Announcement from seed client not at max HTL: "+htl+" for "+source);
 					htl = maxHTL;
 				}
