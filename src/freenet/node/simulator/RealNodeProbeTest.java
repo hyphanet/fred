@@ -35,6 +35,7 @@ public class RealNodeProbeTest extends RealNodeTest {
 	static final boolean ENABLE_SWAPPING = false;
 	static final boolean ENABLE_SWAP_QUEUEING = false;
 	static final boolean ENABLE_FOAF = true;
+	private static final boolean DO_INSERT_TEST = true;
 
 	public static int DARKNET_PORT_BASE = RealNodeRoutingTest.DARKNET_PORT_END;
 	public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
@@ -74,7 +75,27 @@ public class RealNodeProbeTest extends RealNodeTest {
 			nodes[i].start(false);
 		}
 
-		waitForAllConnected(nodes);
+        System.out.println();
+        System.out.println("Ping average > 95%, lets do some inserts/requests");
+        System.out.println();
+        
+        if(DO_INSERT_TEST) {
+            RealNodeRequestInsertTest tester = new RealNodeRequestInsertTest(nodes, random);
+            
+            waitForAllConnected(nodes);
+            
+            while(true) {
+            	try {
+            		waitForAllConnected(nodes);
+            		int status = tester.insertRequestTest();
+            		if(status == -1) continue;
+            		System.out.println("Insert test completed with status "+status);
+            		break;
+            	} catch (Throwable t) {
+            		Logger.error(RealNodeRequestInsertTest.class, "Caught "+t, t);
+            	}
+            }
+        }
 
 		final NumberFormat nf = NumberFormat.getInstance();
 		Listener print = new Listener() {
