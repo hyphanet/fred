@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import freenet.crypt.DummyRandomSource;
+import freenet.crypt.RandomSource;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.CHKEncodeException;
@@ -74,7 +75,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     public static final int DARKNET_PORT_BASE = 10000;
     public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
     
-    public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException {
+	public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException {
         String name = "realNodeRequestInsertTest";
         File wd = new File(name);
         if(!FileUtil.removeAll(wd)) {
@@ -120,24 +121,45 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         System.out.println();
         System.out.println("Ping average > 95%, lets do some inserts/requests");
         System.out.println();
+        
+        RealNodeRequestInsertTest tester = new RealNodeRequestInsertTest(nodes, random);
+        
         while(true) {
             try {
     			waitForAllConnected(nodes);
-    			
-    			insertRequestTest(nodes, random);
+    			int status = tester.insertRequestTest();
+    			if(status == -1) continue;
+    			System.exit(status);
             } catch (Throwable t) {
                 Logger.error(RealNodeRequestInsertTest.class, "Caught "+t, t);
             }
         }
     }
 
-	private static void insertRequestTest(Node[] nodes, DummyRandomSource random) throws CHKEncodeException, InvalidCompressionCodecException, SSKEncodeException, IOException, KeyDecodeException {
+    public RealNodeRequestInsertTest(Node[] nodes, DummyRandomSource random) {
+    	this.nodes = nodes;
+    	this.random = random;
+	}
 
-        int requestNumber = 0;
-        RunningAverage requestsAvg = new SimpleRunningAverage(100, 0.0);
-        String baseString = System.currentTimeMillis() + " ";
-		int insertAttempts = 0;
-		int fetchSuccesses = 0;
+    private final Node[] nodes;
+    private final RandomSource random;
+    private int requestNumber = 0;
+    private RunningAverage requestsAvg = new SimpleRunningAverage(100, 0.0);
+    private String baseString = System.currentTimeMillis() + " ";
+	private int insertAttempts = 0;
+	private int fetchSuccesses = 0;
+
+	/**
+	 * @param nodes
+	 * @param random
+	 * @return -1 to continue or an exit code (0 or positive for an error).
+	 * @throws CHKEncodeException
+	 * @throws InvalidCompressionCodecException
+	 * @throws SSKEncodeException
+	 * @throws IOException
+	 * @throws KeyDecodeException
+	 */
+	int insertRequestTest() throws CHKEncodeException, InvalidCompressionCodecException, SSKEncodeException, IOException, KeyDecodeException {
 		
         requestNumber++;
         try {
@@ -187,7 +209,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 		} catch (freenet.node.LowLevelPutException putEx) {
 			Logger.error(RealNodeRequestInsertTest.class, "Insert failed: "+ putEx);
 			System.err.println("Insert failed: "+ putEx);
-			System.exit(EXIT_INSERT_FAILED);
+			return EXIT_INSERT_FAILED;
 		}
         // Pick random node to request from
         int node2;
@@ -215,12 +237,12 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 System.err.println("Fetch #"+requestNumber+" succeeded ("+percentSuccess+"%): \""+new String(results)+'\"');
                 if(fetchSuccesses == TARGET_SUCCESSES) {
                 	System.err.println("Succeeded, "+TARGET_SUCCESSES+" successful fetches");
-                	System.exit(0);
+                	return 0;
                 }
             } else {
                 Logger.error(RealNodeRequestInsertTest.class, "Returned invalid data!: "+new String(results));
                 System.err.println("Returned invalid data!: "+new String(results));
-                System.exit(EXIT_BAD_DATA);
+                return EXIT_BAD_DATA;
             }
         }
         StringBuilder load = new StringBuilder("Running UIDs for nodes: ");
@@ -242,5 +264,6 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         if(!runningUIDsList.isEmpty()) {
         	System.err.println("List of running UIDs: "+Arrays.toString(runningUIDsList.toArray()));
         }
+        return -1;
 	}
 }
