@@ -3759,4 +3759,23 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return realTimeFlag ? enableNewLoadManagementRT : enableNewLoadManagementBulk;
 	}
 
+	/**
+	 * Applies multiplicative Gaussian noise of mean 1.0 and the specified sigma to the input value.
+	 * @param input Value to apply noise to.
+	 * @param sigma Percentage change at one standard deviation.
+	 * @return Value +/- Gaussian percentage.
+	 */
+	public final double randomNoise(final double input, final double sigma) {
+		double multiplier = (node.random.nextGaussian() * sigma) + 1.0;
+
+		/*
+		 * Cap noise to [0.5, 1.5]. Such amounts are very rare (5 sigma at 10%) and serve only to throw off the
+		 * statistics by including crazy things like negative values or impossibly huge limits.
+		 */
+		if (multiplier < 0.5) multiplier = 0.5;
+		else if (multiplier > 1.5) multiplier = 1.5;
+
+		return input * multiplier;
+	}
+
 }
