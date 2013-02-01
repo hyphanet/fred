@@ -1065,9 +1065,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private final Object serializeShouldRejectRequest = new Object();
 	
 	/** Proportion of the thread limit we can use without triggering slow-down messages */
-	private final double SOFT_REJECT_MAX_THREAD_USAGE = 0.9;
+	private static final double SOFT_REJECT_MAX_THREAD_USAGE = 0.9;
 	/** Proportion of the various bandwidth limits we can use without triggering slow-down messages */
-	private final double SOFT_REJECT_MAX_BANDWIDTH_USAGE = 0.8;
+	private static final double SOFT_REJECT_MAX_BANDWIDTH_USAGE = 0.8;
 	
 	/** Should a request be accepted by this node, based on its local capacity?
 	 * This includes thread limits and ping times, but more importantly, 
