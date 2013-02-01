@@ -199,6 +199,7 @@ public class ClientPut extends ClientPutBase {
 		this.origFilename = message.origFilename;
 		// Now go through the fields one at a time
 		String mimeType = message.contentType;
+		if(mimeType.equals("")) mimeType = null;
 		if(binaryBlob) {
 			if(mimeType != null && !mimeType.equals(BinaryBlob.MIME_TYPE)) {
 				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "No MIME type allowed when inserting a binary blob", identifier, global);
