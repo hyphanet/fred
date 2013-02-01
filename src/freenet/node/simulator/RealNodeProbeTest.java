@@ -80,7 +80,7 @@ public class RealNodeProbeTest extends RealNodeTest {
         System.out.println();
         
         if(DO_INSERT_TEST) {
-            RealNodeRequestInsertTest tester = new RealNodeRequestInsertTest(nodes, random);
+            RealNodeRequestInsertTest tester = new RealNodeRequestInsertTest(nodes, random, 10);
             
             waitForAllConnected(nodes);
             

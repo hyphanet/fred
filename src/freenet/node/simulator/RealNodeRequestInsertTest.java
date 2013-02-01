@@ -122,7 +122,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         System.out.println("Ping average > 95%, lets do some inserts/requests");
         System.out.println();
         
-        RealNodeRequestInsertTest tester = new RealNodeRequestInsertTest(nodes, random);
+        RealNodeRequestInsertTest tester = new RealNodeRequestInsertTest(nodes, random, TARGET_SUCCESSES);
         
         while(true) {
             try {
@@ -136,9 +136,10 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         }
     }
 
-    public RealNodeRequestInsertTest(Node[] nodes, DummyRandomSource random) {
+    public RealNodeRequestInsertTest(Node[] nodes, DummyRandomSource random, int targetSuccesses) {
     	this.nodes = nodes;
     	this.random = random;
+    	this.targetSuccesses = targetSuccesses;
 	}
 
     private final Node[] nodes;
@@ -148,6 +149,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     private String baseString = System.currentTimeMillis() + " ";
 	private int insertAttempts = 0;
 	private int fetchSuccesses = 0;
+	private final int targetSuccesses;
 
 	/**
 	 * @param nodes
@@ -235,8 +237,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 				int percentSuccess=100*fetchSuccesses/insertAttempts;
                 Logger.error(RealNodeRequestInsertTest.class, "Fetch #"+requestNumber+" from node "+node2+" succeeded ("+percentSuccess+"%): "+new String(results));
                 System.err.println("Fetch #"+requestNumber+" succeeded ("+percentSuccess+"%): \""+new String(results)+'\"');
-                if(fetchSuccesses == TARGET_SUCCESSES) {
-                	System.err.println("Succeeded, "+TARGET_SUCCESSES+" successful fetches");
+                if(fetchSuccesses == targetSuccesses) {
+                	System.err.println("Succeeded, "+targetSuccesses+" successful fetches");
                 	return 0;
                 }
             } else {
