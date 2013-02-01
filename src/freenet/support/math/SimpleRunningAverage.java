@@ -12,7 +12,7 @@ import freenet.support.Logger.LogLevel;
  * Simple running average: linear mean of the last N reports.
  * @author amphibian
  */
-public class SimpleRunningAverage implements RunningAverage, Cloneable {
+public final class SimpleRunningAverage implements RunningAverage, Cloneable {
 	private static final long serialVersionUID = -1;
     final double[] refs;
     int nextSlotPtr=0;

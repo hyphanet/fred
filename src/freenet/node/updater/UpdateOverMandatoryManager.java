@@ -1048,10 +1048,13 @@ public class UpdateOverMandatoryManager implements RequestClient {
 						temp.free();
 
 					insertBlob(updateManager.revocationChecker.getBlobBucket(), "revocation");
-
 				} else {
-					Logger.error(this, "Failed to fetch revocation certificate from blob from " + source + " : "+e+" : this is almost certainly bogus i.e. the auto-update is fine but the node is broken.");
-					System.err.println("Failed to fetch revocation certificate from blob from " + source + " : "+e+" : this is almost certainly bogus i.e. the auto-update is fine but the node is broken.");
+					String message = "Failed to fetch revocation certificate from blob from " +
+						source + " : "+e+
+						(fromDisk ? " : did you change the revocation key?" : 
+							" : this is almost certainly bogus i.e. the auto-update is fine but the node is broken.");
+					Logger.error(this, message);
+					System.err.println(message);
 					// This is almost certainly bogus.
 					// Delete it, even if it's fromDisk.
 					temp.free();
