@@ -1540,7 +1540,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	private void rejected(String reason, boolean isLocal, boolean isInsert, boolean isSSK, boolean isOfferReply, boolean isRealTime) {
 		reason += " "+(isRealTime?" (rt)":" (bulk)");
-		if(logMINOR) Logger.minor(this, "Rejecting (local="+isLocal+") : "+reason);
+		if(logMINOR) Logger.minor(this, "Rejecting (local="+isLocal+") isSSK="+isSSK+" isInsert="+isInsert+" : "+reason);
 		if(!isLocal) preemptiveRejectReasons.inc(reason);
 		else this.localPreemptiveRejectReasons.inc(reason);
 		if(!isLocal && !isOfferReply) {
