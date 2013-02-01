@@ -1017,10 +1017,12 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	private static String writeSizeAndMIME(HTMLNode fileInformationList, FetchException e) {
 		boolean finalized = e.finalizedSize();
 		long size = e.expectedSize;
-		return writeSizeAndMIME(fileInformationList, size, e.getExpectedMimeType(), finalized);
+		String mime = e.getExpectedMimeType();
+		writeSizeAndMIME(fileInformationList, size, mime, finalized);
+		return mime;
 	}
 
-	private static String writeSizeAndMIME(HTMLNode fileInformationList, long size, String mime, boolean finalized) {
+	private static void writeSizeAndMIME(HTMLNode fileInformationList, long size, String mime, boolean finalized) {
 		if(size > 0) {
 			if (finalized) {
 				fileInformationList.addChild("li", (l10n("sizeLabel") + ' ') + SizeUtil.formatSize(size));
@@ -1034,9 +1036,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			fileInformationList.addChild("li", NodeL10n.getBase().getString("FProxyToadlet."+(finalized ? "mimeType" : "expectedMimeType"), new String[] { "mime" }, new String[] { mime }));
 		} else {
 			fileInformationList.addChild("li", l10n("unknownMIMEType"));
-			mime = l10n("unknownMIMEType");
 		}
-		return mime;
 	}
 
 	private String l10n(String key, String pattern, String value) {
