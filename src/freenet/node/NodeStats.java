@@ -666,13 +666,18 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 * actually happens) - but this should be very rare. */
 	static final double MIN_NON_OVERHEAD = 0.5;
 	
+	/** Proportion of the thread limit we can use without triggering slow-down messages */
+	private static final double SOFT_REJECT_MAX_THREAD_USAGE = 0.9;
+	/** Proportion of the various bandwidth limits we can use without triggering slow-down messages */
+	private static final double SOFT_REJECT_MAX_BANDWIDTH_USAGE = 0.8;
+	
 	/** All requests must be able to complete in this many seconds given the bandwidth
 	 * available, even if they all succeed. Bulk requests. */
-	static final int BANDWIDTH_LIABILITY_LIMIT_SECONDS_BULK = 120;
+	static final int BANDWIDTH_LIABILITY_LIMIT_SECONDS_BULK = (int)(120 / SOFT_REJECT_MAX_BANDWIDTH_USAGE);
 	/** All requests must be able to complete in this many seconds given the bandwidth
 	 * available, even if they all succeed. Realtime requests - separate from bulk 
 	 * requests, given higher priority but expected to be bursty and lower capacity. */
-	static final int BANDWIDTH_LIABILITY_LIMIT_SECONDS_REALTIME = 60;
+	static final int BANDWIDTH_LIABILITY_LIMIT_SECONDS_REALTIME = (int)(60 / SOFT_REJECT_MAX_BANDWIDTH_USAGE);
 	
 	/** Stats to send to a single peer so it can determine whether we are likely to reject 
 	 * a request. Includes the various limits, but also, the expected transfers
@@ -1063,11 +1068,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 	
 	private final Object serializeShouldRejectRequest = new Object();
-	
-	/** Proportion of the thread limit we can use without triggering slow-down messages */
-	private static final double SOFT_REJECT_MAX_THREAD_USAGE = 0.9;
-	/** Proportion of the various bandwidth limits we can use without triggering slow-down messages */
-	private static final double SOFT_REJECT_MAX_BANDWIDTH_USAGE = 0.8;
 	
 	/** Should a request be accepted by this node, based on its local capacity?
 	 * This includes thread limits and ping times, but more importantly, 
