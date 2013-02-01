@@ -127,6 +127,15 @@ public class RealNodeProbeTest extends RealNodeTest {
 			public void onUptime(float uptimePercentage) {
 				System.out.print("Probe got uptime " + nf.format(uptimePercentage) + "%.");
 			}
+
+			@Override
+			public void onRejectStats(byte[] stats) {
+				System.out.println("Probe got reject stats:");
+				System.out.println("CHK request: "+stats[0]);
+				System.out.println("SSK request: "+stats[1]);
+				System.out.println("CHK insert: "+stats[2]);
+				System.out.println("SSK insert: "+stats[3]);
+			}
 		};
 
 		final Type types[] = {
@@ -137,7 +146,8 @@ public class RealNodeProbeTest extends RealNodeTest {
 			Type.LOCATION,
 			Type.STORE_SIZE,
 			Type.UPTIME_48H,
-			Type.UPTIME_7D
+			Type.UPTIME_7D,
+			Type.REJECT_STATS
 		};
 
 		int index = 0;
@@ -152,21 +162,23 @@ public class RealNodeProbeTest extends RealNodeTest {
 			System.out.println("5) STORE_SIZE");
 			System.out.println("6) UPTIME 48-hour");
 			System.out.println("7) UPTIME 7-day");
-			System.out.println("8) Pick another node");
-			System.out.println("9) Pick another HTL");
-			System.out.println("10) Pick current node's refusals");
+			System.out.println("8) REJECT_STATS");
+			System.out.println("9) Pick another node");
+			System.out.println("10) Pick another HTL");
+			System.out.println("11) Pick current node's refusals");
+			
 			System.out.println("Anything else to exit.");
 			System.out.println("Select: ");
 			try {
 				int selection = Integer.valueOf(System.console().readLine());
-				if (selection == 8) {
+				if (selection == 9) {
 					System.out.print("Enter new node index ([0-" + (NUMBER_OF_NODES - 1) + "]):");
 					index = Integer.valueOf(System.console().readLine());
 				}
-				else if (selection == 9) {
+				else if (selection == 10) {
 					System.out.print("Enter new HTL: ");
 					htl = Byte.valueOf(System.console().readLine());
-				} else if (selection == 10) {
+				} else if (selection == 11) {
 					SubConfig nodeConfig = nodes[index].config.get("node");
 					String[] options = { "probeBandwidth", "probeBuild", "probeIdentifier", "probeLinkLengths", "probeLinkLengths", "probeUptime" };
 					for (String option : options) {

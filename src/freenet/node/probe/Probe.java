@@ -19,6 +19,7 @@ import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.LongCallback;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -128,6 +129,7 @@ public class Probe implements ByteCounter {
 	private volatile boolean respondLocation;
 	private volatile boolean respondStoreSize;
 	private volatile boolean respondUptime;
+	private volatile boolean respondRejectStats;
 
 	private volatile long probeIdentifier;
 
@@ -265,6 +267,19 @@ public class Probe implements ByteCounter {
 			}
 		});
 		respondUptime = nodeConfig.getBoolean("probeUptime");
+		nodeConfig.register("probeRejectStats", true, sortOrder++, true, true, "Node.probeRejectStatsShort",
+				"Node.probeRejectStatsLong", new BooleanCallback() {
+				@Override
+				public Boolean get() {
+					return respondRejectStats;
+				}
+
+				@Override
+				public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+					respondRejectStats = val;
+				}
+			});
+			respondRejectStats = nodeConfig.getBoolean("probeRejectStats");
 
 		nodeConfig.register("identifier", -1, sortOrder++, true, true, "Node.probeIdentifierShort",
 			"Node.probeIdentifierLong", new LongCallback() {
@@ -530,6 +545,7 @@ public class Probe implements ByteCounter {
 			case STORE_SIZE: filter.setType(DMT.ProbeStoreSize); break;
 			case UPTIME_48H:
 			case UPTIME_7D: filter.setType(DMT.ProbeUptime); break;
+			case REJECT_STATS: filter.setType(DMT.ProbeRejectStats); break;
 			default: throw new UnsupportedOperationException("Missing filter for " + type.name());
 		}
 
@@ -637,6 +653,10 @@ public class Probe implements ByteCounter {
 			 */
 			listener.onUptime((float)randomNoise(100*node.uptime.getUptimeWeek(), 0.03));
 			break;
+		case REJECT_STATS:
+			byte[] stats = node.nodeStats.getNoisyRejectStats();
+			listener.onRejectStats(stats);
+			break;
 		default:
 			throw new UnsupportedOperationException("Missing response for " + type.name());
 		}
@@ -652,6 +672,7 @@ public class Probe implements ByteCounter {
 		case STORE_SIZE: return respondStoreSize;
 		case UPTIME_48H:
 		case UPTIME_7D: return respondUptime;
+		case REJECT_STATS: return respondRejectStats;
 		default: throw new UnsupportedOperationException("Missing permissions check for " + type.name());
 		}
 	}
@@ -819,6 +840,18 @@ public class Probe implements ByteCounter {
 		@Override
 		public void onUptime(float uptimePercentage) {
 			send(DMT.createProbeUptime(uid, uptimePercentage));
+		}
+
+		@Override
+		public void onRejectStats(byte[] stats) {
+			if(stats.length < 4) {
+				Logger.warning(this, "Unknown length for stats: "+stats.length);
+				onError(Error.UNKNOWN, Error.UNKNOWN.code, true);
+			} else {
+				if(stats.length > 4)
+					stats = Arrays.copyOf(stats, 4);
+				send(DMT.createProbeRejectStats(uid, stats));
+			}
 		}
 	}
 }

@@ -318,6 +318,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		pInstantRejectIncomingSSKRequestBulk = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
 		pInstantRejectIncomingCHKInsertBulk = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
 		pInstantRejectIncomingSSKInsertBulk = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
+		REJECT_STATS_AVERAGERS = new RunningAverage[] {
+					pInstantRejectIncomingCHKRequestBulk,
+					pInstantRejectIncomingSSKRequestBulk,
+					pInstantRejectIncomingCHKInsertBulk,
+					pInstantRejectIncomingSSKInsertBulk
+		};
+		noisyRejectStats = new byte[4];
 		ThreadGroup tg = Thread.currentThread().getThreadGroup();
 		while(tg.getParent() != null) tg = tg.getParent();
 		this.rootThreadGroup = tg;
@@ -631,6 +638,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			}
 		}, "Starting NodePinger");
 		persister.start();
+		noisyRejectStatsUpdater.run();
 	}
 
 	/** Every 60 seconds, check whether we need to adjust the bandwidth delay time because of idleness.
@@ -3757,6 +3765,47 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	
 	public boolean enableNewLoadManagement(boolean realTimeFlag) {
 		return realTimeFlag ? enableNewLoadManagementRT : enableNewLoadManagementBulk;
+	}
+	
+	final RunningAverage[] REJECT_STATS_AVERAGERS;
+	
+	private final Runnable noisyRejectStatsUpdater = new Runnable() {
+
+		@Override
+		public void run() {
+			try {
+				synchronized(noisyRejectStats) { // Only used for accessing the bytes.
+					for(int i=0;i<REJECT_STATS_AVERAGERS.length;i++) {
+						byte result;
+						RunningAverage r = REJECT_STATS_AVERAGERS[i];
+						if(r.countReports() < 200) {
+							// Do not return data until there are at least 200 results.
+							result = -1;
+						} else {
+							result = (byte)(r.currentValue() * 100.0);
+						}
+						noisyRejectStats[i] = result;
+					}
+				}
+			} finally {
+				node.ticker.queueTimedJob(this, 600*1000);
+			}
+		}
+		
+	};
+	
+	private final byte[] noisyRejectStats;
+
+	/**
+	 * @return Array of 4 bytes, with the percentage rejections for (bulk only): CHK request, 
+	 * SSK request, CHK insert, SSK insert. Negative value = insufficient data. Positive value = 
+	 * percentage rejected. PRECAUTIONS: We update this statistic every 10 minutes. We don't 
+	 * return a value unless we have at least 200 samples. We add Gaussian noise. 
+	 * FIXME SECURITY We should remove this eventually. */
+	public byte[] getNoisyRejectStats() {
+		synchronized(noisyRejectStats) {
+			return Arrays.copyOf(noisyRejectStats, noisyRejectStats.length);
+		}
 	}
 
 	/**
