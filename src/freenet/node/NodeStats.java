@@ -3782,7 +3782,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 							// Do not return data until there are at least 200 results.
 							result = -1;
 						} else {
-							result = (byte)(r.currentValue() * 100.0);
+							double noisy = randomNoise(r.currentValue() * 100.0, 10.0);
+							if(noisy < 0) result = 0;
+							if(noisy > 100) result = 100;
+							else result = (byte)noisy;
 						}
 						noisyRejectStats[i] = result;
 					}
