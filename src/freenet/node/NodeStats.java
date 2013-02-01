@@ -3778,7 +3778,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 					for(int i=0;i<REJECT_STATS_AVERAGERS.length;i++) {
 						byte result;
 						RunningAverage r = REJECT_STATS_AVERAGERS[i];
-						if(r.countReports() < 200) {
+						if(r.countReports() < MIN_REPORTS_NOISY_REJECT_STATS) {
 							// Do not return data until there are at least 200 results.
 							result = -1;
 						} else {
@@ -3796,6 +3796,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		}
 		
 	};
+	
+	private static final int MIN_REPORTS_NOISY_REJECT_STATS = 200;
 	
 	private final byte[] noisyRejectStats;
 
