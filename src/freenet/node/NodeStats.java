@@ -122,7 +122,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	/** nodeAveragePing PeerManagerUserAlert should happen if true */
 	public boolean nodeAveragePingAlertRelevant;
 	/** Average proportion of requests rejected immediately due to overload */
-	public final TimeDecayingRunningAverage pInstantRejectIncoming;
+	public final BootstrappingDecayingRunningAverage pInstantRejectIncoming;
 	private boolean ignoreLocalVsRemoteBandwidthLiability;
 
 	/** Average delay caused by throttling for sending a packet */
@@ -301,7 +301,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		preemptiveRejectReasons = new StringCounter();
 		localPreemptiveRejectReasons = new StringCounter();
-		pInstantRejectIncoming = new TimeDecayingRunningAverage(0, 60000, 0.0, 1.0, node);
+		pInstantRejectIncoming = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
 		ThreadGroup tg = Thread.currentThread().getThreadGroup();
 		while(tg.getParent() != null) tg = tg.getParent();
 		this.rootThreadGroup = tg;
