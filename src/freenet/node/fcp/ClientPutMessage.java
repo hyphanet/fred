@@ -154,9 +154,6 @@ public class ClientPutMessage extends DataCarryingMessage {
 			}
 		}
 		contentType = fs.get("Metadata.ContentType");
-		if(contentType != null && !DefaultMIMETypes.isPlausibleMIMEType(contentType)) {
-			throw new MessageInvalidException(ProtocolErrorMessage.BAD_MIME_TYPE, "Bad MIME type in Metadata.ContentType", identifier, global);
-		}
 		String maxRetriesString = fs.get("MaxRetries");
 		if(maxRetriesString == null)
 			// default to 0

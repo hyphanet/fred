@@ -123,10 +123,14 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public boolean nodeAveragePingAlertRelevant;
 	/** Average proportion of requests rejected immediately due to overload */
 	public final BootstrappingDecayingRunningAverage pInstantRejectIncomingOverall;
-	public final BootstrappingDecayingRunningAverage pInstantRejectIncomingCHKRequest;
-	public final BootstrappingDecayingRunningAverage pInstantRejectIncomingSSKRequest;
-	public final BootstrappingDecayingRunningAverage pInstantRejectIncomingCHKInsert;
-	public final BootstrappingDecayingRunningAverage pInstantRejectIncomingSSKInsert;
+	public final BootstrappingDecayingRunningAverage pInstantRejectIncomingCHKRequestRT;
+	public final BootstrappingDecayingRunningAverage pInstantRejectIncomingSSKRequestRT;
+	public final BootstrappingDecayingRunningAverage pInstantRejectIncomingCHKInsertRT;
+	public final BootstrappingDecayingRunningAverage pInstantRejectIncomingSSKInsertRT;
+	public final BootstrappingDecayingRunningAverage pInstantRejectIncomingCHKRequestBulk;
+	public final BootstrappingDecayingRunningAverage pInstantRejectIncomingSSKRequestBulk;
+	public final BootstrappingDecayingRunningAverage pInstantRejectIncomingCHKInsertBulk;
+	public final BootstrappingDecayingRunningAverage pInstantRejectIncomingSSKInsertBulk;
 	private boolean ignoreLocalVsRemoteBandwidthLiability;
 
 	/** Average delay caused by throttling for sending a packet */
@@ -306,10 +310,14 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		preemptiveRejectReasons = new StringCounter();
 		localPreemptiveRejectReasons = new StringCounter();
 		pInstantRejectIncomingOverall = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
-		pInstantRejectIncomingCHKRequest = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
-		pInstantRejectIncomingSSKRequest = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
-		pInstantRejectIncomingCHKInsert = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
-		pInstantRejectIncomingSSKInsert = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
+		pInstantRejectIncomingCHKRequestRT = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
+		pInstantRejectIncomingSSKRequestRT = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
+		pInstantRejectIncomingCHKInsertRT = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
+		pInstantRejectIncomingSSKInsertRT = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
+		pInstantRejectIncomingCHKRequestBulk = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
+		pInstantRejectIncomingSSKRequestBulk = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
+		pInstantRejectIncomingCHKInsertBulk = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
+		pInstantRejectIncomingSSKInsertBulk = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
 		ThreadGroup tg = Thread.currentThread().getThreadGroup();
 		while(tg.getParent() != null) tg = tg.getParent();
 		this.rootThreadGroup = tg;
@@ -1566,27 +1574,35 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	private void rejected(String reason, boolean isLocal, boolean isInsert, boolean isSSK, boolean isOfferReply, boolean isRealTime) {
 		reason += " "+(isRealTime?" (rt)":" (bulk)");
-		if(logMINOR) Logger.minor(this, "Rejecting (local="+isLocal+") : "+reason);
+		if(logMINOR) Logger.minor(this, "Rejecting (local="+isLocal+") isSSK="+isSSK+" isInsert="+isInsert+" : "+reason);
 		if(!isLocal) preemptiveRejectReasons.inc(reason);
 		else this.localPreemptiveRejectReasons.inc(reason);
 		if(!isLocal && !isOfferReply) {
 			this.pInstantRejectIncomingOverall.report(1.0);
-			getRejectedTracker(isSSK, isInsert).report(1.0);
+			getRejectedTracker(isRealTime, isSSK, isInsert).report(1.0);
 		}
 	}
 	
 	private void accepted(boolean isLocal, boolean isInsert, boolean isSSK,
 			boolean isOfferReply, boolean realTimeFlag) {
 		pInstantRejectIncomingOverall.report(0.0);
-		getRejectedTracker(isSSK, isInsert).report(0.0);
+		getRejectedTracker(realTimeFlag, isSSK, isInsert).report(0.0);
 	}
 
 	private BootstrappingDecayingRunningAverage getRejectedTracker(
-			boolean isSSK, boolean isInsert) {
-		if(isSSK) {
-			return isInsert ? pInstantRejectIncomingSSKInsert : pInstantRejectIncomingCHKInsert;
+			boolean isRealTime, boolean isSSK, boolean isInsert) {
+		if(isRealTime) {
+			if(isSSK) {
+				return isInsert ? pInstantRejectIncomingSSKInsertRT : pInstantRejectIncomingCHKInsertRT;
+			} else {
+				return isInsert ? pInstantRejectIncomingCHKInsertRT : pInstantRejectIncomingCHKRequestRT;
+			}
 		} else {
-			return isInsert ? pInstantRejectIncomingCHKInsert : pInstantRejectIncomingCHKRequest;
+			if(isSSK) {
+				return isInsert ? pInstantRejectIncomingSSKInsertBulk : pInstantRejectIncomingCHKInsertBulk;
+			} else {
+				return isInsert ? pInstantRejectIncomingCHKInsertBulk : pInstantRejectIncomingCHKRequestBulk;
+			}
 		}
 	}
 
@@ -1676,20 +1692,36 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return pInstantRejectIncomingOverall.currentValue();
 	}
 
-	public double pRejectIncomingInstantlyCHKRequest() {
-		return pInstantRejectIncomingCHKRequest.currentValue();
+	public double pRejectIncomingInstantlyCHKRequestRT() {
+		return pInstantRejectIncomingCHKRequestRT.currentValue();
 	}
 
-	public double pRejectIncomingInstantlyCHKInsert() {
-		return pInstantRejectIncomingCHKInsert.currentValue();
+	public double pRejectIncomingInstantlyCHKInsertRT() {
+		return pInstantRejectIncomingCHKInsertRT.currentValue();
 	}
 
-	public double pRejectIncomingInstantlySSKRequest() {
-		return pInstantRejectIncomingSSKRequest.currentValue();
+	public double pRejectIncomingInstantlySSKRequestRT() {
+		return pInstantRejectIncomingSSKRequestRT.currentValue();
 	}
 
-	public double pRejectIncomingInstantlySSKInsert() {
-		return pInstantRejectIncomingSSKInsert.currentValue();
+	public double pRejectIncomingInstantlySSKInsertRT() {
+		return pInstantRejectIncomingSSKInsertRT.currentValue();
+	}
+
+	public double pRejectIncomingInstantlyCHKRequestBulk() {
+		return pInstantRejectIncomingCHKRequestBulk.currentValue();
+	}
+
+	public double pRejectIncomingInstantlyCHKInsertBulk() {
+		return pInstantRejectIncomingCHKInsertBulk.currentValue();
+	}
+
+	public double pRejectIncomingInstantlySSKRequestBulk() {
+		return pInstantRejectIncomingSSKRequestBulk.currentValue();
+	}
+
+	public double pRejectIncomingInstantlySSKInsertBulk() {
+		return pInstantRejectIncomingSSKInsertBulk.currentValue();
 	}
 
 	/**
