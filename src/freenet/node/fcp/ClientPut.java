@@ -171,6 +171,10 @@ public class ClientPut extends ClientPutBase {
 		byte[] saltedHash = null;
 		binaryBlob = message.binaryBlob;
 		
+		if(message.contentType != null && !DefaultMIMETypes.isPlausibleMIMEType(message.contentType)) {
+			throw new MessageInvalidException(ProtocolErrorMessage.BAD_MIME_TYPE, "Bad MIME type in Metadata.ContentType", identifier, global);
+		}
+		
 		if(message.uploadFromType == ClientPutMessage.UPLOAD_FROM_DISK) {
 			if(!handler.server.core.allowUploadFrom(message.origFilename))
 				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to upload from "+message.origFilename, identifier, global);
