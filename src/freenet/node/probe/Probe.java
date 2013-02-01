@@ -733,6 +733,8 @@ public class Probe implements ByteCounter {
 				listener.onStoreSize(message.getFloat(DMT.STORE_SIZE));
 			} else if (message.getSpec().equals(DMT.ProbeUptime)) {
 				listener.onUptime(message.getFloat(DMT.UPTIME_PERCENT));
+			} else if (message.getSpec().equals(DMT.ProbeRejectStats)) {
+				listener.onRejectStats(message.getShortBufferBytes(DMT.REJECT_STATS));
 			} else if (message.getSpec().equals(DMT.ProbeError)) {
 				final byte rawError = message.getByte(DMT.TYPE);
 				if (Error.isValid(rawError)) {
