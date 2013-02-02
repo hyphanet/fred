@@ -25,7 +25,7 @@ import java.text.NumberFormat;
  *
  * Then present a user interface to run different types of probes from random nodes.
  */
-public class RealNodeProbeTest extends RealNodeTest {
+public class RealNodeProbeTest extends RealNodeRoutingTest {
 
 	static final int NUMBER_OF_NODES = 100;
 	static final int DEGREE = 5;
@@ -36,6 +36,7 @@ public class RealNodeProbeTest extends RealNodeTest {
 	static final boolean ENABLE_SWAP_QUEUEING = false;
 	static final boolean ENABLE_FOAF = true;
 	private static final boolean DO_INSERT_TEST = true;
+	static final int MAX_PINGS = 2000;
 
 	public static int DARKNET_PORT_BASE = RealNodeRoutingTest.DARKNET_PORT_END;
 	public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
@@ -80,6 +81,9 @@ public class RealNodeProbeTest extends RealNodeTest {
         System.out.println();
         
         if(DO_INSERT_TEST) {
+        	
+            waitForPingAverage(0.5, nodes, new DummyRandomSource(3143), MAX_PINGS, 1000);
+            
             RealNodeRequestInsertTest tester = new RealNodeRequestInsertTest(nodes, random, 10);
             
             waitForAllConnected(nodes);
