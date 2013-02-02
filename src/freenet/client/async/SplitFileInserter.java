@@ -176,17 +176,17 @@ public class SplitFileInserter implements ClientPutState {
 		int segs;
 		CompatibilityMode cmode = ctx.getCompatibilityMode();
 		if(cmode == CompatibilityMode.COMPAT_1250_EXACT) {
-			segs = countDataBlocks / 128 + (countDataBlocks % 128 == 0 ? 0 : 1);
+			segs = (countDataBlocks + 128 - 1) / 128;
 			segmentSize = 128;
 			deductBlocksFromSegments = 0;
 		} else {
 			if(cmode == CompatibilityMode.COMPAT_1251) {
 				// Max 131 blocks per segment.
-				segs = (int)Math.ceil(((double)countDataBlocks) / 131);
+				segs = (countDataBlocks + 131 - 1) / 131;
 			} else {
 				// Algorithm from evanbd, see bug #2931.
 				if(countDataBlocks > 520) {
-					segs = (int)Math.ceil(((double)countDataBlocks) / 128);
+					segs = (countDataBlocks + 128 - 1) / 128;
 				} else if(countDataBlocks > 393) {
 					//maxSegSize = 130;
 					segs = 4;
@@ -201,10 +201,10 @@ public class SplitFileInserter implements ClientPutState {
 					segs = 1;
 				}
 			}
-			int segSize = (int)Math.ceil(((double)countDataBlocks) / ((double)segs));
+			int segSize = (countDataBlocks + segs - 1) / segs;
 			if(ctx.splitfileSegmentDataBlocks < segSize) {
-				segs = (int)Math.ceil(((double)countDataBlocks) / ((double)ctx.splitfileSegmentDataBlocks));
-				segSize = (int)Math.ceil(((double)countDataBlocks) / ((double)segs));
+				segs = (countDataBlocks + ctx.splitfileSegmentDataBlocks - 1) / ctx.splitfileSegmentDataBlocks;
+				segSize = (countDataBlocks + segs - 1) / segs;
 			}
 			segmentSize = segSize;
 			if(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal()) {

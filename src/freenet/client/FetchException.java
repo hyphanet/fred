@@ -15,7 +15,7 @@ import freenet.support.Logger;
  * For most failure modes, except INTERNAL_ERROR there will be no stack trace, or it will be unhelpful or 
  * inaccurate. 
  */
-public class FetchException extends Exception {
+public class FetchException extends Exception implements Cloneable {
 	private static volatile boolean logMINOR;
 	
 	static {
@@ -192,7 +192,6 @@ public class FetchException extends Exception {
 		errorCodes = null;
 		initCause(t);
 		newURI = null;
-		expectedSize = -1;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
 		else if(logMINOR) 
@@ -210,7 +209,6 @@ public class FetchException extends Exception {
 		errorCodes = null;
 		initCause(t);
 		newURI = null;
-		expectedSize = -1;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
 		else if(logMINOR) 
@@ -349,7 +347,7 @@ public class FetchException extends Exception {
 	public String toString() {
 		StringBuilder sb = new StringBuilder(200);
 		sb.append("FetchException:");
-		sb.append(getShortMessage(mode));
+		sb.append(getMessage(mode));
 		sb.append(':');
 		sb.append(newURI);
 		sb.append(':');
@@ -365,6 +363,13 @@ public class FetchException extends Exception {
 		return sb.toString();
 	}
 	
+	public String toUserFriendlyString() {
+		if(extraMessage == null)
+			return getShortMessage(mode);
+		else
+			return getShortMessage(mode) + " : " + extraMessage;
+	}
+
 	/** Get the (localised) long explanation for this failure mode. */
 	public static String getMessage(int mode) {
 		String ret = NodeL10n.getBase().getString("FetchException.longError."+mode);
@@ -613,6 +618,7 @@ public class FetchException extends Exception {
 	
 	@Override
 	public FetchException clone() {
+		// Cloneable shuts up findbugs but we need a deep copy.
 		return new FetchException(this);
 	}
 

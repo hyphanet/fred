@@ -209,11 +209,6 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		return false;
 	}
 	
-	@Override
-	public String toString() {
-		return super.toString()+":"+retryCount+"/"+segment+'('+(blockNums == null ? "null" : String.valueOf(blockNums.size()))+"),tempid="+objectHash(); 
-	}
-
 	public void onGotKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {
 		throw new UnsupportedOperationException();
 	}

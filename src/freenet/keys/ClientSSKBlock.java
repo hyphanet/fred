@@ -4,6 +4,7 @@
 package freenet.keys;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 import freenet.crypt.PCFBMode;
 import freenet.crypt.UnsupportedCipherException;
@@ -65,11 +66,9 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 		PCFBMode pcfb = PCFBMode.create(aes, key.ehDocname);
 		pcfb.blockDecipher(decryptedHeaders, 0, decryptedHeaders.length);
 		// First 32 bytes are the key
-		byte[] dataDecryptKey = new byte[DATA_DECRYPT_KEY_LENGTH];
-		System.arraycopy(decryptedHeaders, 0, dataDecryptKey, 0, DATA_DECRYPT_KEY_LENGTH);
+		byte[] dataDecryptKey = Arrays.copyOf(decryptedHeaders, DATA_DECRYPT_KEY_LENGTH);
 		aes.initialize(dataDecryptKey);
-		byte[] dataOutput = new byte[data.length];
-		System.arraycopy(data, 0, dataOutput, 0, data.length);
+		byte[] dataOutput = data.clone();
 		// Data decrypt key should be unique, so use it as IV
 		pcfb.reset(dataDecryptKey);
 		pcfb.blockDecipher(dataOutput, 0, dataOutput.length);

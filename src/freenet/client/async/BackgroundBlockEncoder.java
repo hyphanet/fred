@@ -45,8 +45,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 	
 	public void queue(SingleBlockInserter[] sbis, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
-			for(int i=0;i<sbis.length;i++) {
-				SingleBlockInserter inserter = sbis[i];
+			for(SingleBlockInserter inserter: sbis) {
 				if(inserter == null) continue;
 				if(inserter.isCancelled(container)) continue;
 				if(inserter.resultingURI != null) continue;
@@ -58,8 +57,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 			notifyAll();
 		}
 		boolean anyPersistent = false;
-		for(int i=0;i<sbis.length;i++) {
-			SingleBlockInserter inserter = sbis[i];
+		for(SingleBlockInserter inserter: sbis) {
 			if(inserter == null) continue;
 			if(inserter.isCancelled(container)) continue;
 			if(inserter.resultingURI != null) continue;
@@ -124,9 +122,9 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 			query.descend("nodeDBHandle").constrain(Long.valueOf(context.nodeDBHandle));
 			query.descend("priority").orderAscending();
 			query.descend("addedTime").orderAscending();
-			ObjectSet results = query.execute();
+			ObjectSet<BackgroundBlockEncoderTag> results = query.execute();
 			for(int x = 0; x < JOBS_PER_SLOT && results.hasNext(); x++) {
-				BackgroundBlockEncoderTag tag = (BackgroundBlockEncoderTag) results.next();
+				BackgroundBlockEncoderTag tag = results.next();
 				try {
 					Encodeable sbi = tag.inserter;
 					if(sbi == null) continue;

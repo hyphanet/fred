@@ -13,7 +13,9 @@ import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
+import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.Random;
 import java.util.HashMap;
 import java.util.Collections;
 import java.util.Map;
@@ -23,6 +25,7 @@ import freenet.crypt.ciphers.Rijndael;
 import freenet.support.HexUtil;
 import freenet.support.Loader;
 import freenet.support.Logger;
+import freenet.support.math.MersenneTwister;
 
 public class Util {
 
@@ -36,25 +39,25 @@ public class Util {
 
 	public static void fillByteArrayFromInts(int[] ints, byte[] bytes) {
 		int ic = 0;
-		for (int i = 0; i < ints.length; i++) {
-			bytes[ic++] = (byte) (ints[i] >> 24);
-			bytes[ic++] = (byte) (ints[i] >> 16);
-			bytes[ic++] = (byte) (ints[i] >> 8);
-			bytes[ic++] = (byte) ints[i];
+		for (int i: ints) {
+			bytes[ic++] = (byte) (i >> 24);
+			bytes[ic++] = (byte) (i >> 16);
+			bytes[ic++] = (byte) (i >> 8);
+			bytes[ic++] = (byte)  i;
 		}
 	}
 
 	public static void fillByteArrayFromLongs(long[] ints, byte[] bytes) {
 		int ic = 0;
-		for (int i = 0; i < ints.length; i++) {
-			bytes[ic++] = (byte) (ints[i] >> 56);
-			bytes[ic++] = (byte) (ints[i] >> 48);
-			bytes[ic++] = (byte) (ints[i] >> 40);
-			bytes[ic++] = (byte) (ints[i] >> 32);
-			bytes[ic++] = (byte) (ints[i] >> 24);
-			bytes[ic++] = (byte) (ints[i] >> 16);
-			bytes[ic++] = (byte) (ints[i] >> 8);
-			bytes[ic++] = (byte) ints[i];
+		for (long l: ints) {
+			bytes[ic++] = (byte) (l >> 56);
+			bytes[ic++] = (byte) (l >> 48);
+			bytes[ic++] = (byte) (l >> 40);
+			bytes[ic++] = (byte) (l >> 32);
+			bytes[ic++] = (byte) (l >> 24);
+			bytes[ic++] = (byte) (l >> 16);
+			bytes[ic++] = (byte) (l >> 8);
+			bytes[ic++] = (byte)  l;
 		}
 	}
 
@@ -128,17 +131,67 @@ public class Util {
 			rv[i] = (byte) (b1[i] ^ b2[i]);
 		return rv;
 	}
+
+	static public void randomBytes(SecureRandom r, byte[] buf) {
+		r.nextBytes(buf);
+	}
+
+	static public void randomBytes(SecureRandom r, byte[] buf, int from, int len) {
+		randomBytesSlowNextInt(r, buf, from, len);
+	}
+
+	/** Fill specified range of byte array with random data. */
+	static private void randomBytesSlowNextInt(Random r, byte[] buf, int from, int len) {
+	   if (from == 0 && len == buf.length) {
+		   r.nextBytes(buf);
+		   return;
+	   }
+	   byte [] tmp = new byte[len];
+	   r.nextBytes(tmp);
+	   System.arraycopy(tmp, 0, buf, from, len);
+	}
+
+	/** Fill byte array with random data.
+	 * randomBytes(random, buf) is same as random.nextBytes(buf)
+	 */
+	static public void randomBytes(Random r, byte[] buf) {
+		randomBytes(r, buf, 0, buf.length);
+	}
+
+	/** Fill specified range of byte array with random data.
+	 * Optimised version for Random with fast nextInt().
+	 * Must be same as randomBytesSlowNextInt(buf, from, len).
+	 * WARNING: full compatibility with randomBytesSlowNextInt() is *critical*!
+	 */
+	/*
+	 * Why, why, why? Why Random have no nextBytes(buf, from, len) method?
+	 */
+	static public void randomBytes(Random r, byte[] buf, int from, int len) {
+		if (!(r instanceof MersenneTwister)) {
+			/* SecureRandom's nextInt() have *abysmal* performance */
+			/* But more generally we can't guarantee this will work except for MT. */
+			randomBytesSlowNextInt(r, buf, from, len);
+			return;
+		}
+		assert(Integer.SIZE/Byte.SIZE == 4);
+		final int to = from + len;
+		while(from + 4 <= to) {
+			int rnd = r.nextInt();
+			buf[from++] = (byte)rnd; rnd >>= 8;
+			buf[from++] = (byte)rnd; rnd >>= 8;
+			buf[from++] = (byte)rnd; rnd >>= 8;
+			buf[from++] = (byte)rnd; rnd >>= 8;
+		}
+		if(to > from) {
+			assert(to - from < Integer.SIZE/Byte.SIZE);
+			for (int rnd = r.nextInt(); from < to; rnd >>= 8)
+				buf[from++] = (byte)rnd;
+		}
+	}
 	
-	//Compares two byte arrays. Consider using Arrays.equals(a,b) instead of this
-	//if you have two method if you have two equally sized arrays
+	@Deprecated // use freenet.support.Fields instead
 	public static boolean byteArrayEqual(byte[] a, byte[] b, int offset, int length) {
-		int lim = offset + length;
-		if ((a.length < lim) || (b.length < lim))
-			return false;
-		for (int i = offset; i < lim; ++i)
-			if (a[i] != b[i])
-				return false;
-		return true;
+		return freenet.support.Fields.byteArrayEqual(a, b, offset, offset, length);
 	}
 
 	private static final MessageDigest ctx;
@@ -179,7 +232,7 @@ public class Util {
 			for (String algo: new String[] {
 				"SHA1", "MD5", "SHA-256", "SHA-384", "SHA-512"
 			}) {
-				final Class clazz = Util.class;
+				final Class<?> clazz = Util.class;
 				final Provider sun = JceLoader.SUN;
 				MessageDigest md = MessageDigest.getInstance(algo);
 				md.digest();

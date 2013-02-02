@@ -186,6 +186,6 @@ public class DiffieHellman {
 	    if(g == Global.DHgroupA)
 	        return 128;
 		int bitLength = g.getP().bitLength();
-		return (bitLength/8) + ((bitLength % 8) > 0 ? 1 : 0);
+		return (bitLength + 7) / 8;
 	}
 }

@@ -2,25 +2,27 @@ package freenet.node;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.EOFException;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.text.NumberFormat;
-import java.util.Arrays;
 import java.util.HashMap;
 
 import freenet.client.ClientMetadata;
@@ -44,13 +46,14 @@ import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
+import freenet.node.fcp.AddPeer;
 import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
@@ -73,7 +76,9 @@ public class TextModeClientInterface implements Runnable {
     final File downloadsDir;
     final InputStream in;
     final OutputStream out;
+    final Writer w;
     private boolean doneSomething;
+    private static final String ENCODING = "UTF-8";
 
     private static volatile boolean logMINOR;
     static {
@@ -94,7 +99,12 @@ public class TextModeClientInterface implements Runnable {
     	this.downloadsDir = server.downloadsDir;
     	this.in = in;
     	this.out = out;
-        client.addEventHook(new EventDumper(new PrintWriter(out, true), false));
+        try {
+        	w = new OutputStreamWriter(out, ENCODING);
+			client.addEventHook(new EventDumper(new BufferedWriter(new OutputStreamWriter(out, ENCODING)), false));
+		} catch (UnsupportedEncodingException e) {
+			throw new Error(e);
+		}
 	}
 
     public TextModeClientInterface(Node n, HighLevelSimpleClient c, File downloadDir, InputStream in, OutputStream out) {
@@ -105,7 +115,12 @@ public class TextModeClientInterface implements Runnable {
     	this.downloadsDir = downloadDir;
     	this.in = in;
     	this.out = out;
-        client.addEventHook(new EventDumper(new PrintWriter(out, true), false));
+        try {
+        	w = new OutputStreamWriter(out, ENCODING);
+			client.addEventHook(new EventDumper(new BufferedWriter(new OutputStreamWriter(out, ENCODING)), false));
+		} catch (UnsupportedEncodingException e) {
+			throw new Error(e);
+		}
     }
     
     @Override
@@ -123,12 +138,12 @@ public class TextModeClientInterface implements Runnable {
     }
 	
 	public void realRun() throws IOException {
-		printHeader(out);
+		printHeader(w);
 
-		BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+		BufferedReader reader = new BufferedReader(new InputStreamReader(in, ENCODING));
 		while(true) {
 			try {
-				out.write("TMCI> ".getBytes());
+				w.write("TMCI> ");
 				out.flush();
 				if(processLine(reader,out)) {
 					reader.close();
@@ -143,7 +158,7 @@ public class TextModeClientInterface implements Runnable {
 				StringWriter sw = new StringWriter();
 				t.printStackTrace(new PrintWriter(sw));
 				try {
-					out.write(sw.toString().getBytes());
+					w.write(sw.toString());
 				} catch (IOException e) {
 					Logger.error(this, "Socket error: "+e, e);
 					return;
@@ -152,7 +167,7 @@ public class TextModeClientInterface implements Runnable {
 		}
 	}
     
-	private void printHeader(OutputStream s) throws IOException {
+	private void printHeader(Writer sw) throws IOException {
     	StringBuilder sb = new StringBuilder();
     	
         sb.append("Trivial Text Mode Client Interface\r\n");
@@ -208,10 +223,10 @@ public class TextModeClientInterface implements Runnable {
         if(core != null && core.directTMCI != this) {
           sb.append("QUIT - close the socket\r\n");
         }
-        if(n.isTestnetEnabled()) {
+        if(Node.isTestnetEnabled()) {
         	sb.append("WARNING: TESTNET MODE ENABLED. YOU HAVE NO ANONYMITY.\r\n");
         }
-        s.write(sb.toString().getBytes());
+        sw.write(sb.toString());
     }
 
 	/**
@@ -244,7 +259,7 @@ public class TextModeClientInterface implements Runnable {
             } catch (MalformedURLException e2) {
                 outsb.append("Malformed URI: ").append(key).append(" : ").append(e2);
 		outsb.append("\r\n");
-		out.write(outsb.toString().getBytes());
+		w.write(outsb.toString());
 		out.flush();
                 return false;
             }
@@ -258,28 +273,28 @@ public class TextModeClientInterface implements Runnable {
 					System.err.println("Data is more than 32K: "+data.size());
 					outsb.append("Data is more than 32K: ").append(data.size());
 					outsb.append("\r\n");
-					out.write(outsb.toString().getBytes());
+					w.write(outsb.toString());
 					out.flush();
 					return false;
 				}
 				byte[] dataBytes = BucketTools.toByteArray(data);
 				boolean evil = false;
-				for(int i=0;i<dataBytes.length;i++) {
+				for(byte b: dataBytes) {
 					// Look for escape codes
-					if(dataBytes[i] == '\n') continue;
-					if(dataBytes[i] == '\r') continue;
-					if(dataBytes[i] < 32) evil = true;
+					if(b == '\n') continue;
+					if(b == '\r') continue;
+					if(b < 32) evil = true;
 				}
 				if(evil) {
 					System.err.println("Data may contain escape codes which could cause the terminal to run arbitrary commands! Save it to a file if you must with GETFILE:");
 					outsb.append("Data may contain escape codes which could cause the terminal to run arbitrary commands! Save it to a file if you must with GETFILE:");
 					outsb.append("\r\n");
-					out.write(outsb.toString().getBytes());
+					w.write(outsb.toString());
 					out.flush();
 					return false;
 				}
 				outsb.append("Data:\r\n");
-				outsb.append(new String(dataBytes));
+				outsb.append(new String(dataBytes, ENCODING));
 			} catch (FetchException e) {
                 outsb.append("Error: ").append(e.getMessage()).append("\r\n");
             	if((e.getMode() == FetchException.SPLITFILE_ERROR) && (e.errorCodes != null)) {
@@ -299,7 +314,7 @@ public class TextModeClientInterface implements Runnable {
 	            } catch (MalformedURLException e2) {
 	                outsb.append("Malformed URI: ").append(key).append(" : ").append(e2);
 			outsb.append("\r\n");
-			out.write(outsb.toString().getBytes());
+			w.write(outsb.toString());
 			out.flush();
 	                return false;
 	            }
@@ -318,28 +333,28 @@ public class TextModeClientInterface implements Runnable {
 						System.err.println("Data is more than 32K: "+data.size());
 						outsb.append("Data is more than 32K: ").append(data.size());
 						outsb.append("\r\n");
-						out.write(outsb.toString().getBytes());
+						w.write(outsb.toString());
 						out.flush();
 						return false;
 					}
 					byte[] dataBytes = BucketTools.toByteArray(data);
 					boolean evil = false;
-					for(int i=0;i<dataBytes.length;i++) {
+					for(byte b: dataBytes) {
 						// Look for escape codes
-						if(dataBytes[i] == '\n') continue;
-						if(dataBytes[i] == '\r') continue;
-						if(dataBytes[i] < 32) evil = true;
+						if(b == '\n') continue;
+						if(b == '\r') continue;
+						if(b < 32) evil = true;
 					}
 					if(evil) {
 						System.err.println("Data may contain escape codes which could cause the terminal to run arbitrary commands! Save it to a file if you must with GETFILE:");
 						outsb.append("Data may contain escape codes which could cause the terminal to run arbitrary commands! Save it to a file if you must with GETFILE:");
 						outsb.append("\r\n");
-						out.write(outsb.toString().getBytes());
+						w.write(outsb.toString());
 						out.flush();
 						return false;
 					}
 					outsb.append("Data:\r\n");
-					outsb.append(new String(dataBytes));
+					outsb.append(new String(dataBytes, ENCODING));
 				} catch (FetchException e) {
 	                outsb.append("Error: ").append(e.getMessage()).append("\r\n");
 	            	if((e.getMode() == FetchException.SPLITFILE_ERROR) && (e.errorCodes != null)) {
@@ -358,7 +373,7 @@ public class TextModeClientInterface implements Runnable {
             } catch (MalformedURLException e2) {
                 outsb.append("Malformed URI: ").append(key).append(" : ").append(e2);
 		outsb.append("\r\n");
-		out.write(outsb.toString().getBytes());
+		w.write(outsb.toString());
 		out.flush();
                 return false;
             }
@@ -421,7 +436,7 @@ public class TextModeClientInterface implements Runnable {
     		}
     	}, 0);
     	outsb.append("\r\n");
-    	out.write(outsb.toString().getBytes());
+    	w.write(outsb.toString());
     	out.flush();
     	return false;
     }else if(uline.startsWith("FILTER:")) {
@@ -464,31 +479,31 @@ public class TextModeClientInterface implements Runnable {
     }else if(uline.startsWith("BLOW")) {
     	n.getNodeUpdater().blow("caught an  IOException : (Incompetent Operator) :p", true);
     	outsb.append("\r\n");
-    	out.write(outsb.toString().getBytes());
+    	w.write(outsb.toString());
     	out.flush();
     	return false;
 	} else if(uline.startsWith("SHUTDOWN")) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Shutting node down.\r\n");
-		out.write(sb.toString().getBytes());
+		w.write(sb.toString());
 		out.flush();
 		n.exit("Shutdown from console");
 	} else if(uline.startsWith("RESTART")) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Restarting the node.\r\n");
-		out.write(sb.toString().getBytes());
+		w.write(sb.toString());
 		out.flush();
 		n.getNodeStarter().restart();
 	} else if(uline.startsWith("QUIT") && (core.directTMCI == this)) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("QUIT command not available in console mode.\r\n");
-		out.write(sb.toString().getBytes());
+		w.write(sb.toString());
 		out.flush();
 		return false;
         } else if(uline.startsWith("QUIT")) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Closing connection.\r\n");
-		out.write(sb.toString().getBytes());
+		w.write(sb.toString());
 		out.flush();
 		return true;
         } else if(uline.startsWith("MEMSTAT")) {
@@ -519,13 +534,13 @@ public class TextModeClientInterface implements Runnable {
 		sb.append("OS Name:\u00a0" + System.getProperty("os.name")+"\r\n");
 		sb.append("OS Version:\u00a0" + System.getProperty("os.version")+"\r\n");
 		sb.append("OS Architecture:\u00a0" + System.getProperty("os.arch")+"\r\n");
-		out.write(sb.toString().getBytes());
+		w.write(sb.toString());
 		out.flush();
 		return false;
 	} else if(uline.startsWith("HELP")) {
-		printHeader(out);
+		printHeader(w);
 		outsb.append("\r\n");
-		out.write(outsb.toString().getBytes());
+		w.write(outsb.toString());
 		out.flush();
 		return false;
         } else if(uline.startsWith("PUT:") || (getCHKOnly = uline.startsWith("GETCHK:"))) {
@@ -542,7 +557,7 @@ public class TextModeClientInterface implements Runnable {
                 content = readLines(reader, false);
             }
             // Insert
-            byte[] data = content.getBytes();
+            byte[] data = content.getBytes(ENCODING);
             
             InsertBlock block = new InsertBlock(new ArrayBucket(data), null, FreenetURI.EMPTY_CHK_URI);
 
@@ -558,7 +573,7 @@ public class TextModeClientInterface implements Runnable {
                     outsb.append("Splitfile-specific error:\n").append(e.errorCodes.toVerboseString());
             	}
 		outsb.append("\r\n");
-		out.write(outsb.toString().getBytes());
+		w.write(outsb.toString());
 		out.flush();
             	return false;
             }
@@ -583,9 +598,9 @@ public class TextModeClientInterface implements Runnable {
         	line = line.trim();
         	
         	if(line.length() < 1) {
-        		printHeader(out);
+        		printHeader(w);
 			outsb.append("\r\n");
-			out.write(outsb.toString().getBytes());
+			w.write(outsb.toString());
 			out.flush();
         		return false;
         	}
@@ -614,9 +629,9 @@ public class TextModeClientInterface implements Runnable {
         	if(defaultFile == null) {
         		String[] defaultFiles = 
         			new String[] { "index.html", "index.htm", "default.html", "default.htm" };
-        		for(int i=0;i<defaultFiles.length;i++) {
-        			if(bucketsByName.containsKey(defaultFiles[i])) {
-        				defaultFile = defaultFiles[i];
+        		for(String file: defaultFiles) {
+        			if(bucketsByName.containsKey(file)) {
+        				defaultFile = file;
         				break;
         			}        				
         		}
@@ -718,7 +733,7 @@ public class TextModeClientInterface implements Runnable {
         		outsb.append("No target URI provided.");
         		outsb.append("PUTSSK:<insert uri>;<url to redirect to>");
 			outsb.append("\r\n");
-			out.write(outsb.toString().getBytes());
+			w.write(outsb.toString());
 			out.flush();
         		return false;
         	}
@@ -769,17 +784,14 @@ public class TextModeClientInterface implements Runnable {
                 File f = new File(key);
                 if (f.isFile()) {
                 	outsb.append("Given string seems to be a file, loading...\r\n");
-                	in = new BufferedReader(new FileReader(f));
+                	in = new BufferedReader(new InputStreamReader(new FileInputStream(f), ENCODING));
+                    content = readLines(in, true);
+                    in.close();
                 } else {
                 	outsb.append("Given string seems to be an URL, loading...\r\n");
                     URL url = new URL(key);
-                    URLConnection uc = url.openConnection();
-                	in = new BufferedReader(
-                			// FIXME get charset from uc.getContentType()
-                			new InputStreamReader(uc.getInputStream()));
+                    content = AddPeer.getReferenceFromURL(url).toString();
                 }
-                content = readLines(in, true);
-                in.close();
             } else {
                 content = readLines(reader, true);
             }
@@ -803,7 +815,7 @@ public class TextModeClientInterface implements Runnable {
         } else if(uline.startsWith("DISABLEPEER:")) {
         	String nodeIdentifier = (line.substring("DISABLEPEER:".length())).trim();
         	if(!havePeer(nodeIdentifier)) {
-        		out.write(("no peer for "+nodeIdentifier+"\r\n").getBytes());
+        		w.write(("no peer for "+nodeIdentifier+"\r\n"));
         		out.flush();
         		return false;
         	}
@@ -816,7 +828,7 @@ public class TextModeClientInterface implements Runnable {
         } else if(uline.startsWith("ENABLEPEER:")) {
         	String nodeIdentifier = (line.substring("ENABLEPEER:".length())).trim();
         	if(!havePeer(nodeIdentifier)) {
-        		out.write(("no peer for "+nodeIdentifier+"\r\n").getBytes());
+        		w.write(("no peer for "+nodeIdentifier+"\r\n"));
         		out.flush();
         		return false;
         	}
@@ -829,18 +841,18 @@ public class TextModeClientInterface implements Runnable {
 		} else if(uline.startsWith("SETPEERLISTENONLY:")) {
 			String nodeIdentifier = (line.substring("SETPEERLISTENONLY:".length())).trim();
         	if(!havePeer(nodeIdentifier)) {
-        		out.write(("no peer for "+nodeIdentifier+"\r\n").getBytes());
+        		w.write(("no peer for "+nodeIdentifier+"\r\n"));
         		out.flush();
         		return false;
         	}
 			PeerNode pn = n.getPeerNode(nodeIdentifier);
         	if(pn == null) {
-        		out.write(("n.getPeerNode() failed to get peer details for "+nodeIdentifier+"\r\n\r\n").getBytes());
+        		w.write(("n.getPeerNode() failed to get peer details for "+nodeIdentifier+"\r\n\r\n"));
         		out.flush();
         		return false;
         	}
 			if(!(pn instanceof DarknetPeerNode)) {
-				out.write(("Error: "+nodeIdentifier+" identifies a non-darknet peer and this command is only available for darknet peers\r\n\r\n").getBytes());
+				w.write(("Error: "+nodeIdentifier+" identifies a non-darknet peer and this command is only available for darknet peers\r\n\r\n"));
 				out.flush();
 				return false;
 			}
@@ -850,18 +862,18 @@ public class TextModeClientInterface implements Runnable {
 		} else if(uline.startsWith("UNSETPEERLISTENONLY:")) {
 			String nodeIdentifier = (line.substring("UNSETPEERLISTENONLY:".length())).trim();
         	if(!havePeer(nodeIdentifier)) {
-        		out.write(("no peer for "+nodeIdentifier+"\r\n").getBytes());
+        		w.write(("no peer for "+nodeIdentifier+"\r\n"));
         		out.flush();
         		return false;
         	}
 			PeerNode pn = n.getPeerNode(nodeIdentifier);
         	if(pn == null) {
-        		out.write(("n.getPeerNode() failed to get peer details for "+nodeIdentifier+"\r\n\r\n").getBytes());
+        		w.write(("n.getPeerNode() failed to get peer details for "+nodeIdentifier+"\r\n\r\n"));
         		out.flush();
         		return false;
         	}
 			if(!(pn instanceof DarknetPeerNode)) {
-				out.write(("Error: "+nodeIdentifier+" identifies a non-darknet peer and this command is only available for darknet peers\r\n\r\n").getBytes());
+				w.write(("Error: "+nodeIdentifier+" identifies a non-darknet peer and this command is only available for darknet peers\r\n\r\n"));
 				out.flush();
 				return false;
 			}
@@ -892,13 +904,13 @@ public class TextModeClientInterface implements Runnable {
         } else if(uline.startsWith("PEER:")) {
         	String nodeIdentifier = (line.substring("PEER:".length())).trim();
         	if(!havePeer(nodeIdentifier)) {
-        		out.write(("no peer for "+nodeIdentifier+"\r\n").getBytes());
+        		w.write(("no peer for "+nodeIdentifier+"\r\n"));
         		out.flush();
         		return false;
         	}
         	PeerNode pn = n.getPeerNode(nodeIdentifier);
         	if(pn == null) {
-        		out.write(("n.getPeerNode() failed to get peer details for "+nodeIdentifier+"\r\n\r\n").getBytes());
+        		w.write(("n.getPeerNode() failed to get peer details for "+nodeIdentifier+"\r\n\r\n"));
         		out.flush();
         		return false;
         	}
@@ -907,13 +919,13 @@ public class TextModeClientInterface implements Runnable {
         } else if(uline.startsWith("PEERWMD:")) {
         	String nodeIdentifier = (line.substring("PEERWMD:".length())).trim();
         	if(!havePeer(nodeIdentifier)) {
-        		out.write(("no peer for "+nodeIdentifier+"\r\n").getBytes());
+        		w.write(("no peer for "+nodeIdentifier+"\r\n"));
         		out.flush();
         		return false;
         	}
         	PeerNode pn = n.getPeerNode(nodeIdentifier);
         	if(pn == null) {
-        		out.write(("n.getPeerNode() failed to get peer details for "+nodeIdentifier+"\r\n\r\n").getBytes());
+        		w.write(("n.getPeerNode() failed to get peer details for "+nodeIdentifier+"\r\n\r\n"));
         		out.flush();
         		return false;
         	}
@@ -964,7 +976,7 @@ public class TextModeClientInterface implements Runnable {
         	om.announce(target, new AnnouncementCallback() {
         		private void write(String msg) {
         			try {
-        				out.write(("ANNOUNCE:"+target+":"+msg+"\r\n").getBytes());
+        				w.write(("ANNOUNCE:"+target+":"+msg+"\r\n"));
         				out.flush();
         			} catch (IOException e) {
         				// Ignore
@@ -1007,14 +1019,18 @@ public class TextModeClientInterface implements Runnable {
 				public void acceptedSomewhere() {
 					write("Announcement accepted by some node.");
 				}
+				@Override
+				public void relayedNoderef() {
+					write("Announcement returned a noderef that we relayed downstream. THIS SHOULD NOT HAPPEN!");
+				}
         		
         	});
         } else {
         	if(uline.length() > 0)
-        		printHeader(out);
+        		printHeader(w);
         }
         outsb.append("\r\n");
-        out.write(outsb.toString().getBytes());
+        w.write(outsb.toString());
         out.flush();
         return false;
     }
@@ -1164,18 +1180,17 @@ public class TextModeClientInterface implements Runnable {
 	 * Report peer success as boolean
 	 */
 	private boolean disablePeer(String nodeIdentifier) {
-		DarknetPeerNode[] pn = n.peers.getDarknetPeers();
-		for(int i=0;i<pn.length;i++)
+		for(DarknetPeerNode pn: n.peers.getDarknetPeers())
 		{
-			Peer peer = pn[i].getPeer();
+			Peer peer = pn.getPeer();
 			String nodeIpAndPort = "";
 			if(peer != null) {
 				nodeIpAndPort = peer.toString();
 			}
-			String name = pn[i].myName;
-			String identity = pn[i].getIdentityString();
+			String name = pn.myName;
+			String identity = pn.getIdentityString();
 			if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier)) {
-				pn[i].disablePeer();
+				pn.disablePeer();
 				return true;
 			}
 		}
@@ -1187,18 +1202,17 @@ public class TextModeClientInterface implements Runnable {
 	 * Report peer success as boolean
 	 */
 	private boolean enablePeer(String nodeIdentifier) {
-		DarknetPeerNode[] pn = n.peers.getDarknetPeers();
-		for(int i=0;i<pn.length;i++)
+		for(DarknetPeerNode pn: n.peers.getDarknetPeers())
 		{
-			Peer peer = pn[i].getPeer();
+			Peer peer = pn.getPeer();
 			String nodeIpAndPort = "";
 			if(peer != null) {
 				nodeIpAndPort = peer.toString();
 			}
-			String name = pn[i].myName;
-			String identity = pn[i].getIdentityString();
+			String name = pn.myName;
+			String identity = pn.getIdentityString();
 			if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier)) {
-				pn[i].enablePeer();
+				pn.enablePeer();
 				return true;
 			}
 		}
@@ -1210,16 +1224,15 @@ public class TextModeClientInterface implements Runnable {
      * Report peer existence as boolean
      */
     private boolean havePeer(String nodeIdentifier) {
-    	DarknetPeerNode[] pn = n.peers.getDarknetPeers();
-    	for(int i=0;i<pn.length;i++)
+    	for(DarknetPeerNode pn: n.peers.getDarknetPeers())
     	{
-    		Peer peer = pn[i].getPeer();
+    		Peer peer = pn.getPeer();
     		String nodeIpAndPort = "";
     		if(peer != null) {
     			nodeIpAndPort = peer.toString();
     		}
-    		String name = pn[i].myName;
-    		String identity = pn[i].getIdentityString();
+    		String name = pn.myName;
+    		String identity = pn.getIdentityString();
     		if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier))
     		{
     			return true;
@@ -1234,19 +1247,18 @@ public class TextModeClientInterface implements Runnable {
      */
     private boolean removePeer(String nodeIdentifier) {
     	System.out.println("Removing peer from node for: "+nodeIdentifier);
-    	DarknetPeerNode[] pn = n.peers.getDarknetPeers();
-    	for(int i=0;i<pn.length;i++)
+    	for(DarknetPeerNode pn: n.peers.getDarknetPeers())
     	{
-    		Peer peer = pn[i].getPeer();
+    		Peer peer = pn.getPeer();
     		String nodeIpAndPort = "";
     		if(peer != null) {
         		nodeIpAndPort = peer.toString();
     		}
-    		String name = pn[i].myName;
-    		String identity = pn[i].getIdentityString();
+    		String name = pn.myName;
+    		String identity = pn.getIdentityString();
     		if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier))
     		{
-    			n.removePeerConnection(pn[i]);
+    			n.removePeerConnection(pn);
     			return true;
     		}
     	}

@@ -6,8 +6,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 import freenet.config.InvalidConfigValueException;
@@ -723,6 +721,11 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			if(s.maxTransfersOutLowerLimit != maxTransfersOutLowerLimit) return false;
 			if(s.maxTransfersOutUpperLimit != maxTransfersOutUpperLimit) return false;
 			return true;
+		}
+		
+		@Override
+		public int hashCode() {
+			return peer.hashCode();
 		}
 		
 		@Override
@@ -1964,15 +1967,15 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 		String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons(true);
 		if(routingBackoffReasons.length != 0) {
-			for(int i=0;i<routingBackoffReasons.length;i++) {
-				fs.put("numberWithRoutingBackoffReasonsRT." + routingBackoffReasons[i], peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i], true));
+			for(String routingBackoffReason: routingBackoffReasons) {
+				fs.put("numberWithRoutingBackoffReasonsRT." + routingBackoffReason, peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReason, true));
 			}
 		}
 
 		routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons(false);
 		if(routingBackoffReasons.length != 0) {
-			for(int i=0;i<routingBackoffReasons.length;i++) {
-				fs.put("numberWithRoutingBackoffReasonsBulk." + routingBackoffReasons[i], peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i], false));
+			for(String routingBackoffReason: routingBackoffReasons) {
+				fs.put("numberWithRoutingBackoffReasonsBulk." + routingBackoffReason, peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReason, false));
 			}
 		}
 
@@ -2125,7 +2128,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public boolean isTestnetEnabled() {
-		return node.isTestnetEnabled();
+		return Node.isTestnetEnabled();
 	}
 
 	public boolean getRejectReasonsTable(HTMLNode table) {

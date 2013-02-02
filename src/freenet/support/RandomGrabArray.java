@@ -1,5 +1,7 @@
 package freenet.support;
 
+import java.util.Arrays;
+
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import com.db4o.ObjectContainer;
@@ -74,10 +76,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 					}
 				}
 				if(index >= blocks[0].reqs.length) {
-					int newSize = Math.min(BLOCK_SIZE, blocks[0].reqs.length*2);
-					RandomGrabArrayItem[] newReqs = new RandomGrabArrayItem[newSize];
-					System.arraycopy(blocks[0].reqs, 0, newReqs, 0, blocks[0].reqs.length);
-					blocks[0].reqs = newReqs;
+					blocks[0].reqs = Arrays.copyOf(blocks[0].reqs, Math.min(BLOCK_SIZE, blocks[0].reqs.length*2));
 				}
 				blocks[0].reqs[index++] = req;
 				if(logMINOR) Logger.minor(this, "Added "+req+" before index "+index);
@@ -113,8 +112,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 			if(blocks.length <= targetBlock) {
 				if(logMINOR)
 					Logger.minor(this, "Adding blocks on "+this);
-				Block[] newBlocks = new Block[targetBlock + 1];
-				System.arraycopy(blocks, 0, newBlocks, 0, blocks.length);
+				Block[] newBlocks = Arrays.copyOf(blocks, targetBlock+1);
 				for(int i=blocks.length;i<newBlocks.length;i++) {
 					newBlocks[i] = new Block();
 					newBlocks[i].reqs = new RandomGrabArrayItem[BLOCK_SIZE];
@@ -259,10 +257,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 			if(blocks.length == 1 && index < blocks[0].reqs.length / 4 && blocks[0].reqs.length > MIN_SIZE) {
 				changedMe = true;
 				// Shrink array
-				int newSize = Math.max(index * 2, MIN_SIZE);
-				RandomGrabArrayItem[] r = new RandomGrabArrayItem[newSize];
-				System.arraycopy(blocks[0].reqs, 0, r, 0, r.length);
-				blocks[0].reqs = r;
+				blocks[0].reqs = Arrays.copyOf(blocks[0].reqs, Math.max(index * 2, MIN_SIZE));
 				if(persistent) {
 					container.store(this);
 					container.store(blocks[0]);
@@ -273,13 +268,11 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 					blocks.length) {
 				if(logMINOR)
 					Logger.minor(this, "Shrinking blocks on "+this);
-				Block[] newBlocks = new Block[newBlockCount];
-				System.arraycopy(blocks, 0, newBlocks, 0, newBlocks.length);
 				Block[] oldBlocks = blocks;
-				blocks = newBlocks;
+				blocks = Arrays.copyOf(blocks, newBlockCount);
 				if(persistent) {
 					container.store(this);
-					for(int x=newBlocks.length;x<oldBlocks.length;x++)
+					for(int x=blocks.length;x<oldBlocks.length;x++)
 						container.delete(oldBlocks[x]);
 					container.deactivate(oldBlocks[blockNo], 1);
 				}
@@ -311,7 +304,6 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 			int valid = 0;
 			int validIndex = -1;
 			int target = 0;
-			int chosenIndex = -1;
 			RandomGrabArrayItem chosenItem = null;
 			RandomGrabArrayItem validItem = null;
 			for(int i=0;i<index;i++) {
@@ -399,7 +391,6 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 					exclude++;
 				} else {
 					if(valid == random) { // Picked on previous round
-						chosenIndex = target-1;
 						chosenItem = item;
 					}
 					if(validIndex == -1) {
@@ -703,8 +694,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 	public void moveElementsTo(RandomGrabArray existingGrabber,
 			ObjectContainer container, boolean canCommit) {
 		WrapperManager.signalStarting(5*60*1000);
-		for(int i=0;i<blocks.length;i++) {
-			Block block = blocks[i];
+		for(Block block: blocks) {
 			if(persistent) container.activate(block, 1);
 			for(int j=0;j<block.reqs.length;j++) {
 				RandomGrabArrayItem item = block.reqs[j];

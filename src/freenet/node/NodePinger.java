@@ -111,9 +111,7 @@ public class NodePinger implements Runnable {
 				allPeers[x++] = stats.peerLimit(isInput);
 			}
 			if(x != peers.length) {
-				double[] newPeers = new double[x];
-				System.arraycopy(allPeers, 0, newPeers, 0, x);
-				allPeers = newPeers;
+				allPeers = Arrays.copyOf(allPeers, x);
 			}
 			Arrays.sort(allPeers);
 			if(x == 0) return;

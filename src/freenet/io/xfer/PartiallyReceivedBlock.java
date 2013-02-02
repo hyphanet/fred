@@ -137,8 +137,7 @@ public class PartiallyReceivedBlock {
 		}
 		
 		
-		for (int i=0;i<prls.length;i++) {
-			PacketReceivedListener prl = prls[i];
+		for (PacketReceivedListener prl: prls) {
 			prl.packetReceived(position);
 		}
 	}

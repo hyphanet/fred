@@ -4,7 +4,9 @@
 package freenet.node;
 
 import java.lang.ref.WeakReference;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
@@ -20,6 +22,7 @@ import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.support.LRUMap;
+import freenet.support.ListUtils;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -46,14 +49,14 @@ import freenet.support.io.NativeThread;
 public class FailureTable implements OOMHook {
 	
 	private static volatile boolean logMINOR;
-	private static volatile boolean logDEBUG;
+	//private static volatile boolean logDEBUG;
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
 				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
+				//logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
 	}
@@ -183,6 +186,7 @@ public class FailureTable implements OOMHook {
 		}
 	}
 
+	// LOCKING: Synchronized on FailureTable because we need to remove self in deleteOffer(). 
 	private final class BlockOfferList {
 		private BlockOffer[] offers;
 		final FailureTableEntry entry;
@@ -192,24 +196,28 @@ public class FailureTable implements OOMHook {
 			this.offers = new BlockOffer[] { offer };
 		}
 
-		public synchronized long expires() {
-			long last = 0;
-			for(int i=0;i<offers.length;i++) {
-				if(offers[i].offeredTime > last) last = offers[i].offeredTime;
+		public long expires() {
+			synchronized(FailureTable.this) {
+				long last = 0;
+				for(BlockOffer offer: offers) {
+					if(offer.offeredTime > last) last = offer.offeredTime;
+				}
+				return last + OFFER_EXPIRY_TIME;
 			}
-			return last + OFFER_EXPIRY_TIME;
 		}
 
-		public synchronized boolean isEmpty(long now) {
-			for(int i=0;i<offers.length;i++) {
-				if(!offers[i].isExpired(now)) return false;
+		public boolean isEmpty(long now) {
+			synchronized(FailureTable.this) {
+				for(BlockOffer offer: offers) {
+					if(!offer.isExpired(now)) return false;
+				}
+				return true;
 			}
-			return true;
 		}
 
 		public void deleteOffer(BlockOffer offer) {
 			if(logMINOR) Logger.minor(this, "Deleting "+offer+" from "+this);
-			synchronized(this) {
+			synchronized(FailureTable.this) {
 				int idx = -1;
 				final int offerLength = offers.length;
 				for(int i=0;i<offerLength;i++) {
@@ -222,20 +230,17 @@ public class FailureTable implements OOMHook {
 				if(idx < newOffers.length)
 					System.arraycopy(offers, idx + 1, newOffers, idx, offers.length - idx - 1);
 				offers = newOffers;
+				if(offers.length > 1) return;
+				blockOfferListByKey.removeKey(entry.key);
 			}
-			if(offers.length < 1) {
-				synchronized(FailureTable.this) {
-					blockOfferListByKey.removeKey(entry.key);
-				}
-				node.clientCore.dequeueOfferedKey(entry.key);
-			}
+			node.clientCore.dequeueOfferedKey(entry.key);
 		}
 
-		public synchronized void addOffer(BlockOffer offer) {
-			BlockOffer[] newOffers = new BlockOffer[offers.length+1];
-			System.arraycopy(offers, 0, newOffers, 0, offers.length);
-			newOffers[offers.length] = offer;
-			offers = newOffers;
+		public void addOffer(BlockOffer offer) {
+			synchronized(FailureTable.this) {
+				offers = Arrays.copyOf(offers, offers.length+1);
+				offers[offers.length-1] = offer;
+			}
 		}
 		
 		@Override
@@ -587,15 +592,14 @@ public class FailureTable implements OOMHook {
 
 		OfferList(BlockOfferList offerList) {
 			this.offerList = offerList;
-			recentOffers = new Vector<BlockOffer>();
-			expiredOffers = new Vector<BlockOffer>();
+			recentOffers = new ArrayList<BlockOffer>();
+			expiredOffers = new ArrayList<BlockOffer>();
 			long now = System.currentTimeMillis();
-			BlockOffer[] offers = offerList.offers;
-			for(int i=0;i<offers.length;i++) {
-				if(!offers[i].isExpired(now))
-					recentOffers.add(offers[i]);
+			for(BlockOffer offer: offerList.offers) {
+				if(!offer.isExpired(now))
+					recentOffers.add(offer);
 				else
-					expiredOffers.add(offers[i]);
+					expiredOffers.add(offer);
 			}
 			if(logMINOR)
 				Logger.minor(this, "Offers: "+recentOffers.size()+" recent "+expiredOffers.size()+" expired");
@@ -603,8 +607,8 @@ public class FailureTable implements OOMHook {
 		
 		private final BlockOfferList offerList;
 		
-		private final Vector<BlockOffer> recentOffers;
-		private final Vector<BlockOffer> expiredOffers;
+		private final List<BlockOffer> recentOffers;
+		private final List<BlockOffer> expiredOffers;
 		
 		/** The last offer we returned */
 		private BlockOffer lastOffer;
@@ -614,12 +618,10 @@ public class FailureTable implements OOMHook {
 				throw new IllegalStateException("Last offer not dealt with");
 			}
 			if(!recentOffers.isEmpty()) {
-				int x = node.random.nextInt(recentOffers.size());
-				return lastOffer = recentOffers.remove(x);
+				return lastOffer = ListUtils.removeRandomBySwapLastSimple(node.random, recentOffers);
 			}
 			if(!expiredOffers.isEmpty()) {
-				int x = node.random.nextInt(expiredOffers.size());
-				return lastOffer = expiredOffers.remove(x);
+				return lastOffer = ListUtils.removeRandomBySwapLastSimple(node.random, expiredOffers);
 			}
 			// No more offers.
 			return null;
@@ -687,13 +689,13 @@ public class FailureTable implements OOMHook {
 				entries = new FailureTableEntry[entriesByKey.size()];
 				entriesByKey.valuesToArray(entries);
 			}
-			for(int i=0;i<entries.length;i++) {
-				if(entries[i].cleanup()) {
+			for(FailureTableEntry entry: entries) {
+				if(entry.cleanup()) {
 					synchronized(FailureTable.this) {
-						synchronized(entries[i]) {
-						if(entries[i].isEmpty()) {
-							if(logMINOR) Logger.minor(this, "Removing entry for "+entries[i].key);
-							entriesByKey.removeKey(entries[i].key);
+						synchronized(entry) {
+						if(entry.isEmpty()) {
+							if(logMINOR) Logger.minor(this, "Removing entry for "+entry.key);
+							entriesByKey.removeKey(entry.key);
 						}
 						}
 					}

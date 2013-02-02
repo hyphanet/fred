@@ -346,8 +346,6 @@ public class ArchiveManager {
 				if(logMINOR) Logger.minor(this, "dealing with LZMA");
 				is = new LzmaInputStream(data.getInputStream());
 				wrapper = null;
-			} else if(ctype != null) {
-				throw new ArchiveFailureException("Unknown or unsupported compression algorithm " + archiveType);
 			} else {
 				wrapper = null;
 			}
@@ -383,7 +381,12 @@ public class ArchiveManager {
 			boolean gotMetadata = false;
 
 outerTAR:		while(true) {
+				try {
 				entry = tarIS.getNextEntry();
+				} catch (IllegalArgumentException e) {
+					// Annoyingly, it can throw this on some corruptions...
+					throw new ArchiveFailureException("Error reading archive: "+e.getMessage(), e);
+				}
 				if(entry == null) break;
 				if(entry.isDirectory()) continue;
 				String name = stripLeadingSlashes(entry.getName());
@@ -586,11 +589,10 @@ outerZIP:		while(true) {
 	}
 
 	private int resolve(MetadataUnresolvedException e, int x, Bucket bucket, ArchiveStoreContext ctx, FreenetURI key, MutableBoolean gotElement, String element2, ArchiveExtractCallback callback, ObjectContainer container, ClientContext context) throws IOException, ArchiveFailureException {
-		Metadata[] m = e.mustResolve;
-		for(int i=0;i<m.length;i++) {
+		for(Metadata m: e.mustResolve) {
 			byte[] buf;
 			try {
-				buf = m[i].writeToByteArray();
+				buf = m.writeToByteArray();
 			} catch (MetadataUnresolvedException e1) {
 				x = resolve(e, x, bucket, ctx, key, gotElement, element2, callback, container, context);
 				continue;

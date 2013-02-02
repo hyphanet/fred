@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import freenet.io.WritableToDataOutputStream;
-import freenet.node.NewPacketFormat;
 
 /**
  * Wrapper for a byte array which handles serialisation/deserialisation
@@ -93,9 +92,7 @@ public class Buffer implements WritableToDataOutputStream {
 		if ((_start == 0) && (_length == _data.length)) {
 			return _data;
 		} else {
-			byte[] r = new byte[_length];
-			System.arraycopy(_data, _start, r, 0, _length);
-			return r;
+			return Arrays.copyOfRange(_data, _start, _start + _length);
 		}
 	}
 

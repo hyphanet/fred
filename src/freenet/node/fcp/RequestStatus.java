@@ -2,12 +2,19 @@ package freenet.node.fcp;
 
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
+import freenet.l10n.NodeL10n;
 
 /** The status of a request. Cached copy i.e. can be accessed outside the database thread
  * even for a persistent request.
+ * 
+ * Methods that change the status should be package-local, and called either
+ * within freenet.node.fcp, or via RequestStatusCache. Hence we should be 
+ * able to lock the RequestStatusCache and be confident that nothing is going
+ * to change under us.
+ * 
  * @author toad 
  */
-public abstract class RequestStatus {
+public abstract class RequestStatus implements Cloneable {
 	
 	private final String identifier;
 	private boolean hasStarted;
@@ -145,6 +152,30 @@ public abstract class RequestStatus {
 
 	public synchronized void setStarted(boolean started) {
 		this.hasStarted = started;
+	}
+
+	/** Get the preferred filename, from the URI, the filename, etc. 
+	 * @return A filename or null if not enough information to give one. */
+	public abstract String getPreferredFilename();
+
+	/** Get the preferred filename, from the URI or the filename etc.
+	 * @return A filename, including the localised version of "unknown" if
+	 * we don't know enough.
+	 */
+	public String getPreferredFilenameSafe() {
+		String ret = getPreferredFilename();
+		if(ret == null)
+			return NodeL10n.getBase().getString("RequestStatus.unknownFilename");
+		else
+			return ret;
+	}
+
+	public RequestStatus clone() {
+		try {
+			return (RequestStatus) super.clone();
+		} catch (CloneNotSupportedException e) {
+			throw new Error(e);
+		}
 	}
 
 }

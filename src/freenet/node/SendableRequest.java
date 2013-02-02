@@ -25,7 +25,8 @@ import freenet.support.Logger.LogLevel;
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public abstract class SendableRequest implements RandomGrabArrayItem {
 	
-	// Since we put these into Set's etc, hashCode must be persistent.
+	/** Since we put these into Set's etc, hashCode must be persistent.
+	 * Guaranteed not to be 0 unless this is a persistent object that is deactivated. */
 	private final int hashCode;
 	
 	protected final boolean realTimeFlag;
@@ -52,7 +53,9 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	SendableRequest(boolean persistent, boolean realTimeFlag) {
 		this.persistent = persistent;
 		this.realTimeFlag = realTimeFlag;
-		this.hashCode = super.hashCode();
+		int oid = super.hashCode();
+		if(oid == 0) oid = 1;
+		this.hashCode = oid;
 	}
 	
 	@Override
@@ -216,4 +219,23 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 		return realTimeFlag;
 	}
 
+	/** This always uses the default implementation for persistent objects, which will return a more or 
+	 * less unique value for activated persistent objects, and class@0 for deactivated ones. Transient
+	 * only objects may override via overrideToString(). REDFLAG DB4O: This is not necessary if we get
+	 * rid of db4o or if we move away from manual activation.
+	 */
+	public final String toString() {
+		if(hashCode != 0 && !persistent)
+			return transientToString();
+		return super.toString();
+	}
+	
+	protected final String objectToString() {
+		return super.toString();
+	}
+
+	/** Method to safely override toString(), will only be called if the object is transient. */
+	protected String transientToString() {
+		return super.toString();
+	}
 }

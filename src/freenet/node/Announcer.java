@@ -14,9 +14,7 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Vector;
 
-import freenet.clients.http.ConfigToadlet;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.l10n.NodeL10n;
@@ -26,6 +24,7 @@ import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserEvent;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.HTMLNode;
+import freenet.support.ListUtils;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
@@ -205,7 +204,7 @@ public class Announcer {
 		int count = 0;
 		while(count < CONNECT_AT_ONCE) {
 			if(seeds.isEmpty()) break;
-			SimpleFieldSet fs = seeds.remove(node.random.nextInt(seeds.size()));
+			SimpleFieldSet fs = ListUtils.removeRandomBySwapLastSimple(node.random, seeds);
 			try {
 				SeedServerPeerNode seed =
 					new SeedServerPeerNode(fs, node, om.crypto, node.peers, false, om.crypto.packetMangler);
@@ -494,14 +493,14 @@ public class Announcer {
 				return;
 			}
 			// Now find a node to announce to
-			Vector<SeedServerPeerNode> seeds = node.peers.getConnectedSeedServerPeersVector(announcedToIdentities);
+			List<SeedServerPeerNode> seeds = node.peers.getConnectedSeedServerPeersVector(announcedToIdentities);
 			while(sentAnnouncements < WANT_ANNOUNCEMENTS) {
 				if(seeds.isEmpty()) {
 					if(logMINOR)
 						Logger.minor(this, "No more seednodes, announcedTo = "+announcedToIdentities.size());
 					break;
 				}
-				final SeedServerPeerNode seed = seeds.remove(node.random.nextInt(seeds.size()));
+				final SeedServerPeerNode seed = ListUtils.removeRandomBySwapLastSimple(node.random, seeds);
 				InetAddress[] addrs = seed.getInetAddresses();
 				if(!newAnnouncedIPs(addrs)) {
 					if(logMINOR)
@@ -556,11 +555,11 @@ public class Announcer {
 	 */
 	private synchronized boolean newAnnouncedIPs(InetAddress[] addrs) {
 		boolean hasNonLocalAddresses = false;
-		for(int i=0;i<addrs.length;i++) {
-			if(!IPUtil.isValidAddress(addrs[i], false))
+		for(InetAddress addr: addrs) {
+			if(!IPUtil.isValidAddress(addr, false))
 				continue;
 			hasNonLocalAddresses = true;
-			if(!announcedToIPs.contains(addrs[i]))
+			if(!announcedToIPs.contains(addr))
 				return true;
 		}
 		return !hasNonLocalAddresses;
@@ -653,6 +652,10 @@ public class Announcer {
 			@Override
 			public void nodeNotAdded() {
 				Logger.normal(this, "Announcement to "+seed.userToString()+" : node not wanted (maybe already have it, opennet just turned off, etc)");
+			}
+			@Override
+			public void relayedNoderef() {
+				Logger.error(this, "Announcement to "+seed.userToString()+" : RELAYED ?!?!?!");
 			}
 		}, seed);
 		node.executor.execute(sender, "Announcer to "+seed);

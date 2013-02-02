@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.util.Arrays;
+
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -188,8 +190,7 @@ public class MessageWrapper {
 			dataLength = Math.min(end - start + 1, dataLength);
 			if(dataLength <= 0) return null;
 
-			fragmentData = new byte[dataLength];
-			System.arraycopy(item.buf, start, fragmentData, 0, dataLength);
+			fragmentData = Arrays.copyOfRange(item.buf, start, start+dataLength);
 
 			sent.add(start, start + dataLength - 1);
 			if(logDEBUG) Logger.debug(this, "Using range "+start+" to "+(start+dataLength-1)+" gives "+sent+" on "+messageID);

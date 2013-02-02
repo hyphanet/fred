@@ -186,14 +186,14 @@ public class DSA {
 				totalTimeVerifying += (t3 - t2);
 				timeVerifying[i] = t3-t2;
 				int rSize = sig.getR().bitLength();
-				rSize = (rSize / 8) + (rSize % 8 == 0 ? 0 : 1);
+				rSize = (rSize + 7) / 8;
 				totalRSize += rSize;
 				if(rSize > maxRSize) maxRSize = rSize;
 				int rUnsignedBitSize = sig.getR().bitLength();
 				totalRUnsignedBitSize += rUnsignedBitSize;
 				maxRUnsignedBitSize = Math.max(maxRUnsignedBitSize, rUnsignedBitSize);
 				int sSize = sig.getS().bitLength();
-				sSize = sSize / 8 +  (sSize % 8 == 0 ? 0 : 1);
+				sSize = (sSize + 7) / 8;
 				totalSSize += sSize;
 				if(sSize > maxSSize) maxSSize = sSize;
 			}

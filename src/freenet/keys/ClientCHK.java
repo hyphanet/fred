@@ -45,11 +45,9 @@ public class ClientCHK extends ClientKey {
     public static final short CRYPTO_KEY_LENGTH = 32;
     
     private ClientCHK(ClientCHK key) {
-    	this.routingKey = new byte[key.routingKey.length];
-    	System.arraycopy(key.routingKey, 0, routingKey, 0, key.routingKey.length);
+    	this.routingKey = key.routingKey.clone();
     	this.nodeKey = null;
-    	this.cryptoKey = new byte[key.cryptoKey.length];
-    	System.arraycopy(key.cryptoKey, 0, cryptoKey, 0, key.cryptoKey.length);
+    	this.cryptoKey = key.cryptoKey.clone();
     	this.controlDocument = key.controlDocument;
     	this.cryptoAlgorithm = key.cryptoAlgorithm;
     	this.compressionAlgorithm = key.compressionAlgorithm;

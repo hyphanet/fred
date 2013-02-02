@@ -1,5 +1,7 @@
 package freenet.support;
 
+import java.util.Arrays;
+
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
@@ -84,16 +86,13 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 	}
 
 	private synchronized void addElement(Object client, RemoveRandomWithObject rga) {
-		int len = grabArrays.length;
-		RemoveRandomWithObject[] newArrays = new RemoveRandomWithObject[len+1];
-		System.arraycopy(grabArrays, 0, newArrays, 0, len);
-		newArrays[len] = rga;
-		grabArrays = newArrays;
+		final int len = grabArrays.length;
+
+		grabArrays = Arrays.copyOf(grabArrays, len+1);
+		grabArrays[len] = rga;
 		
-		Object[] newClients = new Object[len+1];
-		System.arraycopy(grabClients, 0, newClients, 0, len);
-		newClients[len] = client;
-		grabClients = newClients;
+		grabClients = Arrays.copyOf(grabClients, len+1);
+		grabClients[len] = client;
 	}
 
 	private synchronized int haveClient(Object client) {
@@ -153,7 +152,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		}
 	}
 
-	private RemoveRandomReturn removeRandomExhaustive(
+	private synchronized RemoveRandomReturn removeRandomExhaustive(
 			RandomGrabArrayItemExclusionList excluding,
 			ObjectContainer container, ClientContext context, long now) {
 		long wakeupTime = Long.MAX_VALUE;
@@ -205,7 +204,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		return new RemoveRandomReturn(wakeupTime);
 	}
 
-	private RandomGrabArrayItem removeRandomLimited(
+	private synchronized RandomGrabArrayItem removeRandomLimited(
 			RandomGrabArrayItemExclusionList excluding,
 			ObjectContainer container, ClientContext context, long now) {
 		/** Count of arrays that have items but didn't return anything because of exclusions */
@@ -276,7 +275,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		}
 	}
 
-	private RemoveRandomReturn removeRandomTwoOnly(
+	private synchronized RemoveRandomReturn removeRandomTwoOnly(
 			RandomGrabArrayItemExclusionList excluding,
 			ObjectContainer container, ClientContext context, long now) {
 		long wakeupTime = Long.MAX_VALUE;
@@ -302,6 +301,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		}
 		RandomGrabArrayItem item = null;
 		RemoveRandomReturn val = null;
+		if(logMINOR) Logger.minor(this, "Only 2, trying "+rga);
 		long excludeTime = excluding.excludeSummarily(rga, this, container, persistent, now);
 		if(excludeTime > 0) {
 			wakeupTime = excludeTime;
@@ -385,12 +385,13 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		}
 	}
 
-	private RemoveRandomReturn removeRandomOneOnly(
+	private synchronized RemoveRandomReturn removeRandomOneOnly(
 			RandomGrabArrayItemExclusionList excluding,
 			ObjectContainer container, ClientContext context, long now) {
 		long wakeupTime = Long.MAX_VALUE;
 		// Optimise the common case
 		RemoveRandomWithObject rga = grabArrays[0];
+		if(logMINOR) Logger.minor(this, "Only one RGA: "+rga);
 		long excludeTime = excluding.excludeSummarily(rga, this, container, persistent, now);
 		if(excludeTime > 0)
 			return new RemoveRandomReturn(excludeTime);
@@ -475,7 +476,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		return persistent;
 	}
 
-	public int size() {
+	public synchronized int size() {
 		return grabArrays.length;
 	}
 	

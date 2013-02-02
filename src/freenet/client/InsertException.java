@@ -5,6 +5,7 @@ package freenet.client;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.async.TooManyFilesInsertException;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.support.LogThresholdCallback;
@@ -15,7 +16,7 @@ import freenet.support.Logger.LogLevel;
  * Thrown when a high-level insert fails. For most failures, there will not be a stack trace, or it 
  * will be inaccurate.
  */
-public class InsertException extends Exception {
+public class InsertException extends Exception implements Cloneable {
 	private static final long serialVersionUID = -1106716067841151962L;
 	
 	/** Failure mode, see the constants below. */
@@ -154,6 +155,10 @@ public class InsertException extends Exception {
 			uri = e.uri.clone();
 	}
 
+	public InsertException(TooManyFilesInsertException e) {
+		this(TOO_MANY_FILES, (String)null, null);
+	}
+
 	/** Caller supplied a URI we cannot use */
 	public static final int INVALID_URI = 1;
 	/** Failed to read from or write to a bucket; a kind of internal error */
@@ -178,6 +183,8 @@ public class InsertException extends Exception {
 	public static final int META_STRINGS_NOT_SUPPORTED = 11;
 	/** Invalid binary blob data supplied so cannot insert it */
 	public static final int BINARY_BLOB_FORMAT_ERROR = 12;
+	/** Too many files in a directory in a site insert */
+	public static final int TOO_MANY_FILES = 13;
 	
 	/** Get the (localised) short name of this failure mode. */
 	public static String getMessage(int mode) {
@@ -243,6 +250,7 @@ public class InsertException extends Exception {
 	
 	@Override
 	public InsertException clone() {
+		// Cloneable shuts up findbugs, but we need to deep copy errorCodes.
 		return new InsertException(this);
 	}
 

@@ -82,8 +82,7 @@ public class StringCounter {
 	
 	public int toTableRows(HTMLNode table) {
 		Item[] items = sortedItems(false);
-		for(int i=0;i<items.length;i++) {
-			Item it = items[i];
+		for(Item it: items) {
 			HTMLNode row = table.addChild("tr");
 			row.addChild("td", Integer.toString(it.counter)+"\u00a0");
 			row.addChild("td", it.string);

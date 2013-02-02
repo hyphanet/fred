@@ -152,7 +152,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		if(data == null) return; // failed
 		context.uskManager.checkUSK(key.getURI(), fromStore, container, block.isMetadata());
 		if(!block.isMetadata()) {
-			onSuccess(new FetchResult((ClientMetadata)null, data), container, context);
+			onSuccess(new FetchResult(new ClientMetadata(null), data), container, context);
 		} else {
 			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), false, container, context);
 		}

@@ -15,7 +15,7 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Vector;
+import java.util.List;
 import java.util.WeakHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -480,9 +480,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 						@Override
 						public void run() {
 							synchronized(UpdateOverMandatoryManager.this) {
-								if(!askedSendJar.contains(source))
+								// free up a slot
+								if(!askedSendJar.remove(source))
 									return;
-								askedSendJar.remove(source); // free up a slot
 							}
 							maybeRequestMainJar();
 						}
@@ -506,18 +506,18 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				return;
 			offers = nodesOfferedMainJar.toArray(new PeerNode[nodesOfferedMainJar.size()]);
 		}
-		for(int i = 0; i < offers.length; i++) {
-			if(!offers[i].isConnected())
+		for(PeerNode offer: offers) {
+			if(!offer.isConnected())
 				continue;
 			synchronized(this) {
 				if(nodesAskedSendMainJar.size() + nodesSendingMainJar.size() >= MAX_NODES_SENDING_JAR)
 					return;
-				if(nodesSendingMainJar.contains(offers[i]))
+				if(nodesSendingMainJar.contains(offer))
 					continue;
-				if(nodesAskedSendMainJar.contains(offers[i]))
+				if(nodesAskedSendMainJar.contains(offer))
 					continue;
 			}
-			sendUOMRequest(offers[i], false);
+			sendUOMRequest(offer, false);
 		}
 	}
 
@@ -555,24 +555,24 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			if(nodesSayBlownConnected.length > 0) {
 				div.addChild("p").addChild("#", l10n("connectedSayBlownLabel"));
 				HTMLNode list = div.addChild("ul");
-				for(int i = 0; i < nodesSayBlownConnected.length; i++) {
-					list.addChild("li", nodesSayBlownConnected[i].userToString() + " (" + nodesSayBlownConnected[i].getPeer() + ")");
+				for(PeerNode pn: nodesSayBlownConnected) {
+					list.addChild("li", pn.userToString() + " (" + pn.getPeer() + ")");
 				}
 			}
 
 			if(nodesSayBlownDisconnected.length > 0) {
 				div.addChild("p").addChild("#", l10n("disconnectedSayBlownLabel"));
 				HTMLNode list = div.addChild("ul");
-				for(int i = 0; i < nodesSayBlownDisconnected.length; i++) {
-					list.addChild("li", nodesSayBlownDisconnected[i].userToString() + " (" + nodesSayBlownDisconnected[i].getPeer() + ")");
+				for(PeerNode pn: nodesSayBlownDisconnected) {
+					list.addChild("li", pn.userToString() + " (" + pn.getPeer() + ")");
 				}
 			}
 
 			if(nodesSayBlownFailedTransfer.length > 0) {
 				div.addChild("p").addChild("#", l10n("failedTransferSayBlownLabel"));
 				HTMLNode list = div.addChild("ul");
-				for(int i = 0; i < nodesSayBlownFailedTransfer.length; i++) {
-					list.addChild("li", nodesSayBlownFailedTransfer[i].userToString() + " (" + nodesSayBlownFailedTransfer[i].getPeer() + ")");
+				for(PeerNode pn: nodesSayBlownFailedTransfer) {
+					list.addChild("li", pn.userToString() + " (" + pn.getPeer() + ")");
 				}
 			}
 
@@ -603,8 +603,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 			if(nodesSayBlownConnected.length > 0) {
 				sb.append(l10n("connectedSayBlownLabel")).append("\n\n");
-				for(int i = 0; i < nodesSayBlownConnected.length; i++) {
-					sb.append(nodesSayBlownConnected[i].userToString() + " (" + nodesSayBlownConnected[i].getPeer() + ")").append("\n");
+				for(PeerNode pn: nodesSayBlownConnected) {
+					sb.append(pn.userToString() + " (" + pn.getPeer() + ")").append("\n");
 				}
 				sb.append("\n");
 			}
@@ -612,8 +612,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			if(nodesSayBlownDisconnected.length > 0) {
 				sb.append(l10n("disconnectedSayBlownLabel"));
 
-				for(int i = 0; i < nodesSayBlownDisconnected.length; i++) {
-					sb.append(nodesSayBlownDisconnected[i].userToString() + " (" + nodesSayBlownDisconnected[i].getPeer() + ")").append("\n");
+				for(PeerNode pn: nodesSayBlownDisconnected) {
+					sb.append(pn.userToString() + " (" + pn.getPeer() + ")").append("\n");
 				}
 				sb.append("\n");
 			}
@@ -621,8 +621,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			if(nodesSayBlownFailedTransfer.length > 0) {
 				sb.append(l10n("failedTransferSayBlownLabel"));
 
-				for(int i = 0; i < nodesSayBlownFailedTransfer.length; i++) {
-					sb.append(nodesSayBlownFailedTransfer[i].userToString() + " (" + nodesSayBlownFailedTransfer[i].getPeer() + ")").append('\n');
+				for(PeerNode pn: nodesSayBlownFailedTransfer) {
+					sb.append(pn.userToString() + " (" + pn.getPeer() + ")").append('\n');
 				}
 				sb.append("\n");
 			}
@@ -653,13 +653,12 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	}
 
 	public PeerNode[][] getNodesSayBlown() {
-		Vector<PeerNode> nodesConnectedSayRevoked = new Vector<PeerNode>();
-		Vector<PeerNode> nodesDisconnectedSayRevoked = new Vector<PeerNode>();
-		Vector<PeerNode> nodesFailedSayRevoked = new Vector<PeerNode>();
+		List<PeerNode> nodesConnectedSayRevoked = new ArrayList<PeerNode>();
+		List<PeerNode> nodesDisconnectedSayRevoked = new ArrayList<PeerNode>();
+		List<PeerNode> nodesFailedSayRevoked = new ArrayList<PeerNode>();
 		synchronized(this) {
 			PeerNode[] nodesSayRevoked = nodesSayKeyRevoked.toArray(new PeerNode[nodesSayKeyRevoked.size()]);
-			for(int i = 0; i < nodesSayRevoked.length; i++) {
-				PeerNode pn = nodesSayRevoked[i];
+			for(PeerNode pn: nodesSayRevoked) {
 				if(nodesSayKeyRevokedFailedTransfer.contains(pn))
 					nodesFailedSayRevoked.add(pn);
 				else
@@ -1026,8 +1025,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		tempContext.maxTempLength = NodeUpdateManager.MAX_REVOCATION_KEY_TEMP_LENGTH;
 		tempContext.localRequestOnly = true;
 
-		File f;
-		FileBucket b = null;
 		final ArrayBucket cleanedBlob = new ArrayBucket();
 
 		ClientGetCallback myCallback = new ClientGetCallback() {
@@ -1051,10 +1048,13 @@ public class UpdateOverMandatoryManager implements RequestClient {
 						temp.free();
 
 					insertBlob(updateManager.revocationChecker.getBlobBucket(), "revocation");
-
 				} else {
-					Logger.error(this, "Failed to fetch revocation certificate from blob from " + source + " : "+e+" : this is almost certainly bogus i.e. the auto-update is fine but the node is broken.");
-					System.err.println("Failed to fetch revocation certificate from blob from " + source + " : "+e+" : this is almost certainly bogus i.e. the auto-update is fine but the node is broken.");
+					String message = "Failed to fetch revocation certificate from blob from " +
+						source + " : "+e+
+						(fromDisk ? " : did you change the revocation key?" : 
+							" : this is almost certainly bogus i.e. the auto-update is fine but the node is broken.");
+					Logger.error(this, message);
+					System.err.println(message);
 					// This is almost certainly bogus.
 					// Delete it, even if it's fromDisk.
 					temp.free();

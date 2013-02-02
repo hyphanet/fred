@@ -247,13 +247,13 @@ public class ContainerInserter implements ClientPutState {
 	}
 
 	private int resolve(MetadataUnresolvedException e, int x, FreenetURI key, String element2, ObjectContainer container, ClientContext context) throws IOException {
-		Metadata[] m = e.mustResolve;
-		for(int i=0;i<m.length;i++) {
+		Metadata[] metas = e.mustResolve;
+		for(Metadata m: metas) {
 			try {
-				Bucket bucket = BucketTools.makeImmutableBucket(context.tempBucketFactory, m[i].writeToByteArray());
+				Bucket bucket = BucketTools.makeImmutableBucket(context.tempBucketFactory, m.writeToByteArray());
 				String nameInArchive = ".metadata-"+(x++);
 				containerItems.add(new ContainerElement(bucket, nameInArchive));
-				m[i].resolve(nameInArchive);
+				m.resolve(nameInArchive);
 			} catch (MetadataUnresolvedException e1) {
 				x = resolve(e, x, key, element2, container, context);
 			}
@@ -298,7 +298,7 @@ public class ContainerInserter implements ClientPutState {
 	/**
 	** OutputStream os will be close()d if this method returns successfully.
 	*/
-	private String createTarBucket(OutputStream os, @SuppressWarnings("unused") ObjectContainer container) throws IOException {
+	private String createTarBucket(OutputStream os, ObjectContainer container) throws IOException {
 		if(logMINOR) Logger.minor(this, "Create a TAR Bucket");
 		
 		TarArchiveOutputStream tarOS = new TarArchiveOutputStream(os);
@@ -322,7 +322,7 @@ public class ContainerInserter implements ClientPutState {
 		return ARCHIVE_TYPE.TAR.mimeTypes[0];
 	}
 	
-	private String createZipBucket(OutputStream os, @SuppressWarnings("unused") ObjectContainer container) throws IOException {
+	private String createZipBucket(OutputStream os, ObjectContainer container) throws IOException {
 		if(logMINOR) Logger.minor(this, "Create a ZIP Bucket");
 		
 		ZipOutputStream zos = new ZipOutputStream(os);

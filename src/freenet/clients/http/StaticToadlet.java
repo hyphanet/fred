@@ -60,7 +60,6 @@ public class StaticToadlet extends Toadlet {
 				return;
 			}
 			File parent = f.getParentFile();
-			String s = parent.toString();
 			// Basic sanity check.
 			// Prevents user from specifying root dir.
 			// They can still shoot themselves in the foot, but only when developing themes/using custom themes.

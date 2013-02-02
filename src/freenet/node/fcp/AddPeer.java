@@ -5,9 +5,10 @@ package freenet.node.fcp;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -24,8 +25,9 @@ import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.OpennetDisabledException;
 import freenet.node.PeerNode;
-import freenet.support.Fields;
+import freenet.support.MediaType;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.Closer;
 
 public class AddPeer extends FCPMessage {
 
@@ -65,6 +67,23 @@ public class AddPeer extends FCPMessage {
 	public String getName() {
 		return NAME;
 	}
+	
+	public static StringBuilder getReferenceFromURL(URL url) throws IOException {
+		StringBuilder ref = new StringBuilder(1024);
+		InputStream is = null;
+		try {
+			URLConnection uc = url.openConnection();
+			is = uc.getInputStream();
+			BufferedReader in = new BufferedReader(new InputStreamReader(is, MediaType.getCharsetRobustOrUTF(uc.getContentType())));
+			String line;
+			while ((line = in.readLine()) != null) {
+				ref.append( line ).append('\n');
+			}
+			return ref;
+		} finally {
+			Closer.close(is);
+		}
+	}
 
 	@Override
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
@@ -78,16 +97,7 @@ public class AddPeer extends FCPMessage {
 		if(urlString != null) {
 			try {
 				URL url = new URL(urlString);
-				URLConnection uc = url.openConnection();
-				// FIXME get charset from uc.getContentType()
-				in = new BufferedReader( new InputStreamReader(uc.getInputStream()));
-				ref = new StringBuilder(1024);
-				String line;
-				while((line = in.readLine()) != null) {
-					line = line.trim();
-					ref.append( line ).append('\n');
-				}
-				in.close();
+				ref = getReferenceFromURL(url);
 			} catch (MalformedURLException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.URL_PARSE_ERROR, "Error parsing ref URL <"+urlString+">: "+e.getMessage(), identifier, false);
 			} catch (IOException e) {
@@ -108,7 +118,7 @@ public class AddPeer extends FCPMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.NOT_A_FILE_ERROR, "The given ref file path <"+fileString+"> is not a file", identifier, false);
 			}
 			try {
-				in = new BufferedReader(new FileReader(f));
+				in = new BufferedReader(new InputStreamReader(new FileInputStream(f), "UTF-8"));
 				ref = new StringBuilder(1024);
 				String line;
 				while((line = in.readLine()) != null) {
@@ -146,7 +156,7 @@ public class AddPeer extends FCPMessage {
 			} catch (ReferenceSignatureVerificationException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.REF_SIGNATURE_INVALID, "Error adding ref: "+e.getMessage(), identifier, false);
 			}
-			if(Arrays.equals(pn.getIdentity(), node.getOpennetIdentity()))
+			if(Arrays.equals(pn.getPubKeyHash(), node.getOpennetPubKeyHash()))
 				throw new MessageInvalidException(ProtocolErrorMessage.CANNOT_PEER_WITH_SELF, "Node cannot peer with itself", identifier, false);
 			if(!node.addPeerConnection(pn)) {
 				throw new MessageInvalidException(ProtocolErrorMessage.DUPLICATE_PEER_REF, "Node already has a peer with that identity", identifier, false);
@@ -162,7 +172,7 @@ public class AddPeer extends FCPMessage {
 			} catch (ReferenceSignatureVerificationException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.REF_SIGNATURE_INVALID, "Error adding ref: "+e.getMessage(), identifier, false);
 			}
-			if(Arrays.equals(pn.getIdentity(), node.getDarknetIdentity()))
+			if(Arrays.equals(pn.getPubKeyHash(), node.getDarknetPubKeyHash()))
 				throw new MessageInvalidException(ProtocolErrorMessage.CANNOT_PEER_WITH_SELF, "Node cannot peer with itself", identifier, false);
 			if(!node.addPeerConnection(pn)) {
 				throw new MessageInvalidException(ProtocolErrorMessage.DUPLICATE_PEER_REF, "Node already has a peer with that identity", identifier, false);

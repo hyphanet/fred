@@ -97,10 +97,9 @@ public class TrivialTicker implements Ticker {
 			if(!running)
 				return;
 			
-			TimerTask t = jobs.get(job);
+			TimerTask t = jobs.remove(job);
 			if(t != null) {
 				t.cancel();
-				jobs.remove(t);
 			}
 		}
 	}

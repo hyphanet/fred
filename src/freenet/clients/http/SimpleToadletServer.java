@@ -12,6 +12,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Random;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -97,6 +98,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	// Control
 	private Thread myThread;
 	private final Executor executor;
+	private final Random random;
 	private BucketFactory bf;
 	private NodeClientCore core;
 	
@@ -188,18 +190,14 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	}
 
 	private class FProxyPortCallback extends IntCallback  {
-		private Integer savedPort;
 		@Override
 		public Integer get() {
-			if (savedPort == null)
-				savedPort = port;
-			return savedPort;
+			return port;
 		}
 		
 		@Override
 		public void set(Integer newPort) throws NodeNeedRestartException {
-			if(savedPort != newPort) {
-				savedPort = port;
+			if(port != newPort) {
 				throw new NodeNeedRestartException("Port cannot change on the fly");
 			}
 		}
@@ -278,7 +276,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 				else if(!tmp.canRead() || !tmp.isFile())
 					throw new InvalidConfigValueException(l10n("cssOverrideCantRead", "filename", tmp.toString()));
 				File parent = tmp.getParentFile();
-				String s = parent.toString();
 				// Basic sanity check.
 				// Prevents user from specifying root dir.
 				// They can still shoot themselves in the foot, but only when developing themes/using custom themes.
@@ -443,6 +440,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 
 		this.executor = executor;
 		this.core = node.clientCore;
+		this.random = new Random();
 		
 		int configItemOrder = 0;
 		
@@ -926,10 +924,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			}
 		}
 
-		Iterator<ToadletElement> i = toadlets.iterator();
-		while(i.hasNext()) {
-			ToadletElement te = i.next();
-						
+		for(ToadletElement te: toadlets) {
 			if(path.startsWith(te.prefix))
 					return te.t;
 			if(te.prefix.length() > 0 && te.prefix.charAt(te.prefix.length()-1) == '/') {
@@ -1240,6 +1235,14 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			return ((LinkFilterExceptedToadlet) toadlet).isLinkExcepted(link);
 		}
 		return false;
+	}
+
+
+
+	@Override
+	public long generateUniqueID() {
+		// FIXME increment a counter?
+		return random.nextLong();
 	}
 
 }

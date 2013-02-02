@@ -3,15 +3,12 @@ package freenet.node;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
-import freenet.keys.Key;
 import freenet.keys.NodeCHK;
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Ticker;
-import freenet.support.Logger.LogLevel;
 
 public class RequestTracker {
 	
@@ -111,8 +108,9 @@ public class RequestTracker {
 	private<T extends UIDTag> boolean innerLock(HashMap<Long, T> overallMap, HashMap<Long, T> localMap, T tag, Long uid, boolean ssk, boolean insert, boolean offerReply, boolean local) {
 		synchronized(overallMap) {
 			if(logMINOR) Logger.minor(this, "Locking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+overallMap.size(), new Exception("debug"));
-			if(overallMap.containsKey(uid)) {
-				if(overallMap.get(uid) == tag) {
+			T oldTag = overallMap.get(uid);
+			if(oldTag != null) {
+				if(oldTag == tag) {
 					Logger.error(this, "Tag already registered: "+tag, new Exception("debug"));
 				} else {
 					return false;
@@ -122,8 +120,9 @@ public class RequestTracker {
 			if(logMINOR) Logger.minor(this, "Locked "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+overallMap.size());
 			if(local) {
 				if(logMINOR) Logger.minor(this, "Locking (local) "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+localMap.size(), new Exception("debug"));
-				if(localMap.containsKey(uid)) {
-					if(localMap.get(uid) == tag) {
+				oldTag = localMap.get(uid);
+				if(oldTag != null) {
+					if(oldTag == tag) {
 						Logger.error(this, "Tag already registered (local): "+tag, new Exception("debug"));
 					} else {
 						// Violates the invariant that local requests are always registered on the main (non-local) map too.
@@ -664,7 +663,7 @@ public class RequestTracker {
 		return realTimeFlag ? runningCHKOfferReplyUIDsRT.size() : runningCHKOfferReplyUIDsBulk.size();
 	}
 
-	public void addRunningUIDs(Vector<Long> list) {
+	public void addRunningUIDs(List<Long> list) {
 		addRunningUIDs(runningSSKGetUIDsRT, list);
 		addRunningUIDs(runningCHKGetUIDsRT, list);
 		addRunningUIDs(runningSSKPutUIDsRT, list);
@@ -679,7 +678,7 @@ public class RequestTracker {
 		addRunningUIDs(runningCHKOfferReplyUIDsBulk, list);
 	}
 	
-	private void addRunningUIDs(HashMap<Long, ? extends UIDTag> runningUIDs, Vector<Long> list) {
+	private void addRunningUIDs(HashMap<Long, ? extends UIDTag> runningUIDs, List<Long> list) {
 		synchronized(runningUIDs) {
 			list.addAll(runningUIDs.keySet());
 		}

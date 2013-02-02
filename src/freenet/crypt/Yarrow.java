@@ -151,7 +151,6 @@ public class Yarrow extends RandomSource {
 					Closer.close(fis);
 				}
 
-			boolean isSystemEntropyAvailable = true;
 			// Read some bits from /dev/urandom
 			try {
 				fis = new FileInputStream("/dev/urandom");
@@ -164,7 +163,6 @@ public class Yarrow extends RandomSource {
 				Logger.normal(this, "Can't read /dev/urandom: " + t, t);
 				// We can't read it; let's skip /dev/random and seed from SecureRandom.generateSeed()
 				canBlock = true;
-				isSystemEntropyAvailable = false;
 			} finally {
 				Closer.close(dis);
 				Closer.close(fis);
@@ -470,7 +468,7 @@ public class Yarrow extends RandomSource {
 			long thingy = 0;
 			int bytes = 0;
 			for(int j = 0; j < Math.min(length, i + 8); j++) {
-				thingy = (thingy << 8) + buf[j];
+				thingy = (thingy << 8) + (buf[j] & 0xFF);
 				bytes++;
 			}
 			totalRealEntropy += acceptEntropy(source, thingy, bytes * 8, bias);

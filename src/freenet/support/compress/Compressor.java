@@ -6,11 +6,10 @@ package freenet.support.compress;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import com.db4o.ObjectContainer;
 
-import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
@@ -100,10 +99,10 @@ public interface Compressor {
 				COMPRESSOR_TYPE[] val = COMPRESSOR_TYPE.values();
 				COMPRESSOR_TYPE[] ret = new COMPRESSOR_TYPE[val.length-1];
 				int x = 0;
-				for(int i=0;i<val.length;i++) {
-					if((val[i] == LZMA) && !pre1254) continue;
-					if((val[i] == LZMA_NEW) && pre1254) continue;
-					ret[x++] = val[i];
+				for(COMPRESSOR_TYPE v: val) {
+					if((v == LZMA) && !pre1254) continue;
+					if((v == LZMA_NEW) && pre1254) continue;
+					ret[x++] = v;
 				}
 				result = ret;
 			}
@@ -116,7 +115,7 @@ public interface Compressor {
 			if (compressordescriptor.trim().length() == 0)
 				return null;
 			String[] codecs = compressordescriptor.split(",");
-			Vector<COMPRESSOR_TYPE> result = new Vector<COMPRESSOR_TYPE>();
+			ArrayList<COMPRESSOR_TYPE> result = new ArrayList<COMPRESSOR_TYPE>(codecs.length);
 			for (String codec : codecs) {
 				codec = codec.trim();
 				COMPRESSOR_TYPE ct = getCompressorByName(codec);

@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
+import java.util.Arrays;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.PCFBMode;
@@ -81,16 +82,14 @@ public class MasterKeys {
 				PCFBMode pcfb = PCFBMode.create(cipher, iv);
 				pcfb.blockDecipher(dataAndHash, 0, dataAndHash.length);
 //				System.err.println("Decrypted data and hash: "+HexUtil.bytesToHex(dataAndHash));
-				byte[] data = new byte[dataAndHash.length - HASH_LENGTH];
-				byte[] hash = new byte[HASH_LENGTH];
-				System.arraycopy(dataAndHash, 0, data, 0, dataAndHash.length - HASH_LENGTH);
+				byte[] data = Arrays.copyOf(dataAndHash, dataAndHash.length - HASH_LENGTH);
+				byte[] hash = Arrays.copyOfRange(dataAndHash, data.length, dataAndHash.length);
 //				System.err.println("Data: "+HexUtil.bytesToHex(data));
-				System.arraycopy(dataAndHash, dataAndHash.length - HASH_LENGTH, hash, 0, HASH_LENGTH);
 //				System.err.println("Hash: "+HexUtil.bytesToHex(hash));
 				clear(dataAndHash);
 				byte[] checkHash = md.digest(data);
 //				System.err.println("Check hash: "+HexUtil.bytesToHex(checkHash));
-				if(!arraysEqualTruncated(checkHash, hash, HASH_LENGTH)) {
+				if(!Fields.byteArrayEqual(checkHash, hash, 0, 0, HASH_LENGTH)) {
 					clear(data);
 					clear(hash);
 					throw new MasterKeysWrongPasswordException();
@@ -143,13 +142,19 @@ public class MasterKeys {
 		long flags = 0;
 		byte[] flagBytes = Fields.longToBytes(flags);
 		byte[] data = new byte[flagBytes.length + clientCacheKey.length + databaseKey.length + HASH_LENGTH];
-		System.arraycopy(flagBytes, 0, data, 0, flagBytes.length);
-		System.arraycopy(clientCacheKey, 0, data, flagBytes.length, clientCacheKey.length);
-		System.arraycopy(databaseKey, 0, data, flagBytes.length + clientCacheKey.length, databaseKey.length);
+		int offset = 0;
+		System.arraycopy(flagBytes, 0, data, offset, flagBytes.length);
+		offset += flagBytes.length;
+		System.arraycopy(clientCacheKey, 0, data, offset, clientCacheKey.length);
+		offset += clientCacheKey.length;
+		System.arraycopy(databaseKey, 0, data, offset, databaseKey.length);
+		offset += databaseKey.length;
 		MessageDigest md = SHA256.getMessageDigest();
-		md.update(data, 0, flagBytes.length + clientCacheKey.length + databaseKey.length);
+		md.update(data, 0, offset);
 		byte[] hash = md.digest();
-		System.arraycopy(hash, 0, data, flagBytes.length + clientCacheKey.length + databaseKey.length, HASH_LENGTH);
+		System.arraycopy(hash, 0, data, offset, HASH_LENGTH);
+		offset += HASH_LENGTH;
+		/* assert(offset == data.length); */
 
 //		System.err.println("Flag bytes: "+HexUtil.bytesToHex(flagBytes));
 //		System.err.println("Client cache key: "+HexUtil.bytesToHex(clientCacheKey));
@@ -182,17 +187,9 @@ public class MasterKeys {
 		return new MasterKeys(clientCacheKey, databaseKey, flags);
 	}
 
-	private static boolean arraysEqualTruncated(byte[] checkHash, byte[] hash, int length) {
-		for(int i=0;i<length;i++) {
-			if(checkHash[i] != hash[i]) return false;
-		}
-		return true;
-	}
-
 	public static void clear(byte[] buf) {
 		if(buf == null) return; // Valid no-op, simplifies code
-		for(int i=0;i<buf.length;i++)
-			buf[i] = 0;
+		Arrays.fill(buf, (byte)0x00);
 	}
 
 	public void changePassword(File masterKeysFile, String newPassword, RandomSource hardRandom) throws IOException {
@@ -210,16 +207,25 @@ public class MasterKeys {
 
 		byte[] data = new byte[iv.length + salt.length + flagBytes.length + clientCacheMasterKey.length + databaseKey.length + HASH_LENGTH];
 
-		System.arraycopy(salt, 0, data, 0, salt.length);
-		System.arraycopy(iv, 0, data, salt.length, iv.length);
+		int offset = 0;
+		System.arraycopy(salt, 0, data, offset, salt.length);
+		offset += salt.length;
+		System.arraycopy(iv, 0, data, offset, iv.length);
+		offset += iv.length;
 
-		System.arraycopy(flagBytes, 0, data, salt.length + iv.length, flagBytes.length);
-		System.arraycopy(clientCacheMasterKey, 0, data, flagBytes.length + salt.length + iv.length, clientCacheMasterKey.length);
-		System.arraycopy(databaseKey, 0, data, flagBytes.length + salt.length + iv.length + clientCacheMasterKey.length, databaseKey.length);
+		int hashedStart = offset;
+		System.arraycopy(flagBytes, 0, data, offset, flagBytes.length);
+		offset += flagBytes.length;
+		System.arraycopy(clientCacheMasterKey, 0, data, offset, clientCacheMasterKey.length);
+		offset += clientCacheMasterKey.length;
+		System.arraycopy(databaseKey, 0, data, offset, databaseKey.length);
+		offset += databaseKey.length;
 		MessageDigest md = SHA256.getMessageDigest();
-		md.update(data, salt.length + iv.length, flagBytes.length + clientCacheMasterKey.length + databaseKey.length);
+		md.update(data, hashedStart, offset-hashedStart);
 		byte[] hash = md.digest();
-		System.arraycopy(hash, 0, data, flagBytes.length + clientCacheMasterKey.length + databaseKey.length + iv.length + salt.length, HASH_LENGTH);
+		System.arraycopy(hash, 0, data, offset, HASH_LENGTH);
+		offset += HASH_LENGTH;
+		/* assert(offset == data.length); */
 
 		byte[] pwd;
 		try {

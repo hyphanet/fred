@@ -8,17 +8,20 @@ import freenet.crypt.ciphers.Rijndael;
 import freenet.support.HexUtil;
 import freenet.support.math.MersenneTwister;
 
+// 256,256 PCFB is the same as 256,256 CFB, however JCA does not support 256-bit block size, so we can't
+// test against JCA. We will move to the standard block size, and stop using PCFB, eventually, but we'll 
+// need PCFB for a while if only for old keys, so we need to test it.
 public class PCFBModeTest extends TestCase {
 
 	private MersenneTwister mt = new MersenneTwister(1634);
 
-	// XXX This test has nothing to do with NIST
+	// FIXME I don't think there are any standard test vectors?
 	byte[] PCFB_256_ENCRYPT_KEY = HexUtil
 			.hexToBytes("603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4");
-	// XXX This IV was tailored for CTR mode and 128-bit block, maybe needs adjustement
+	// FIXME This IV was tailored for CTR mode and 128-bit block, maybe needs adjustement
 	byte[] PCFB_256_ENCRYPT_IV = HexUtil
 			.hexToBytes("f0f1f2f3f4f5f6f7f8f9fafbfcfdfefff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff");
-	// XXX This plaintext was tailored for 128-bit block, maybe needs adjustement
+	// FIXME This plaintext was tailored for 128-bit block, maybe needs adjustement
 	byte[] PCFB_256_ENCRYPT_PLAINTEXT = HexUtil
 			.hexToBytes("6bc1bee22e409f96e93d7e117393172a"
 					+ "ae2d8a571e03ac9c9eb76fac45af8e51"

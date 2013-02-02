@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-public class HTMLNode implements XMLCharacterClasses {
+public class HTMLNode implements XMLCharacterClasses, Cloneable {
 	
 	private static final Pattern namePattern = Pattern.compile("^[" + NAME + "]*$");
 	private static final Pattern simpleNamePattern = Pattern.compile("^[A-Za-z][A-Za-z0-9]*$");
@@ -172,6 +172,8 @@ public class HTMLNode implements XMLCharacterClasses {
 	
 	@Override
 	public HTMLNode clone() {
+		// Implement Cloneable to shut up findbugs. We need a deep copy.
+		// FIXME is clearing read only an abuse of the clone() API? Should we rename the method?
 		return new HTMLNode(this, true);
 	}
 	
@@ -263,8 +265,8 @@ public class HTMLNode implements XMLCharacterClasses {
 	public void addChildren(HTMLNode[] childNodes) {
 		if(readOnly)
 			throw new IllegalArgumentException("Read only");
-		for (int i = 0, c = childNodes.length; i < c; i++) {
-			addChild(childNodes[i]);
+		for (HTMLNode childNode: childNodes) {
+			addChild(childNode);
 		}
 	}
 

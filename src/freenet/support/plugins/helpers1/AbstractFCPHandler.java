@@ -14,7 +14,6 @@ import freenet.support.api.Bucket;
 
 public abstract class AbstractFCPHandler {
 
-	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
 
 	static {

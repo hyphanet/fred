@@ -87,10 +87,10 @@ public class StatisticsToadlet extends Toadlet {
 	 */
 	private int getPeerStatusCount(PeerNodeStatus[] peerNodeStatuses, int status) {
 		int count = 0;
-		for (int peerIndex = 0, peerCount = peerNodeStatuses.length; peerIndex < peerCount; peerIndex++) {
-			if(!peerNodeStatuses[peerIndex].recordStatus())
+		for (PeerNodeStatus peerNodeStatus: peerNodeStatuses) {
+			if(!peerNodeStatus.recordStatus())
 				continue;
-			if (peerNodeStatuses[peerIndex].getStatusValue() == status) {
+			if (peerNodeStatus.getStatusValue() == status) {
 				count++;
 			}
 		}
@@ -99,16 +99,16 @@ public class StatisticsToadlet extends Toadlet {
 	
 	private int getCountSeedServers(PeerNodeStatus[] peerNodeStatuses) {
 		int count = 0;
-		for(int peerIndex = 0; peerIndex < peerNodeStatuses.length; peerIndex++) {
-			if(peerNodeStatuses[peerIndex].isSeedServer()) count++;
+		for (PeerNodeStatus peerNodeStatus: peerNodeStatuses) {
+			if(peerNodeStatus.isSeedServer()) count++;
 		}
 		return count;
 	}
 
 	private int getCountSeedClients(PeerNodeStatus[] peerNodeStatuses) {
 		int count = 0;
-		for(int peerIndex = 0; peerIndex < peerNodeStatuses.length; peerIndex++) {
-			if(peerNodeStatuses[peerIndex].isSeedClient()) count++;
+		for (PeerNodeStatus peerNodeStatus: peerNodeStatuses) {
+			if(peerNodeStatus.isSeedClient()) count++;
 		}
 		return count;
 	}
@@ -301,10 +301,10 @@ public class StatisticsToadlet extends Toadlet {
 				curBackoffReasonContent.addChild("#", l10n("notBackedOff"));
 			} else {
 				HTMLNode reasonList = curBackoffReasonContent.addChild("ul");
-				for(int i=0;i<routingBackoffReasons.length;i++) {
-					int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i], false);
+				for(String routingBackoffReason: routingBackoffReasons) {
+					int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReason, false);
 					if(reasonCount > 0) {
-						reasonList.addChild("li", routingBackoffReasons[i] + '\u00a0' + reasonCount);
+						reasonList.addChild("li", routingBackoffReason + '\u00a0' + reasonCount);
 					}
 				}
 			}
@@ -318,10 +318,10 @@ public class StatisticsToadlet extends Toadlet {
 				curBackoffReasonContent.addChild("#", l10n("notBackedOff"));
 			} else {
 				HTMLNode reasonList = curBackoffReasonContent.addChild("ul");
-				for(int i=0;i<routingBackoffReasons.length;i++) {
-					int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i], true);
+				for(String routingBackoffReason: routingBackoffReasons) {
+					int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReason, true);
 					if(reasonCount > 0) {
-						reasonList.addChild("li", routingBackoffReasons[i] + '\u00a0' + reasonCount);
+						reasonList.addChild("li", routingBackoffReason + '\u00a0' + reasonCount);
 					}
 				}
 			}
@@ -889,8 +889,7 @@ public class StatisticsToadlet extends Toadlet {
 				return secondCount.messageCount - firstCount.messageCount;  // sort in descending order
 			}
 		});
-		for (int countsArrayIndex = 0, countsArrayCount = unclaimedFIFOMessageCountsArray.length; countsArrayIndex < countsArrayCount; countsArrayIndex++) {
-			STMessageCount messageCountItem = unclaimedFIFOMessageCountsArray[countsArrayIndex];
+		for (STMessageCount messageCountItem: unclaimedFIFOMessageCountsArray) {
 			int thisMessageCount = messageCountItem.messageCount;
 			double thisMessagePercentOfTotal = ((double) thisMessageCount) / ((double) totalCount);
 			unclaimedFIFOMessageCountsList.addChild("li", "" + messageCountItem.messageName + ":\u00a0" + thisMessageCount + "\u00a0(" + fix3p1pct.format(thisMessagePercentOfTotal) + ')');
@@ -1339,9 +1338,9 @@ public class StatisticsToadlet extends Toadlet {
 
 		LinkedHashMap<String, ThreadBunch> map = new LinkedHashMap<String, ThreadBunch>();
 		int totalCount = 0;
-		for(int i=0;i<threads.length;i++) {
-			if(threads[i] == null) break;
-			String name = NativeThread.normalizeName(threads[i].getName());
+		for(Thread thread: threads) {
+			if(thread == null) break;
+			String name = NativeThread.normalizeName(thread.getName());
 			ThreadBunch bunch = map.get(name);
 			if(bunch != null) {
 				bunch.count++;
@@ -1361,9 +1360,9 @@ public class StatisticsToadlet extends Toadlet {
 
 		});
 		double thisThreadPercentOfTotal;
-		for(int i=0; i<bunches.length; i++) {
-			thisThreadPercentOfTotal = ((double) bunches[i].count) / ((double) totalCount);
-			threadUsageList.addChild("li", "" + bunches[i].name + ":\u00a0" + Integer.toString(bunches[i].count) + "\u00a0(" + fix3p1pct.format(thisThreadPercentOfTotal) + ')');
+		for(ThreadBunch bunch: bunches) {
+			thisThreadPercentOfTotal = ((double) bunch.count) / ((double) totalCount);
+			threadUsageList.addChild("li", "" + bunch.name + ":\u00a0" + Integer.toString(bunch.count) + "\u00a0(" + fix3p1pct.format(thisThreadPercentOfTotal) + ')');
 		}
 	}
 

@@ -140,8 +140,8 @@ public class RealNodeULPRTest extends RealNodeTest {
         
         Logger.normal(RealNodeRoutingTest.class, "Added random links");
         
-        for(int i=0;i<NUMBER_OF_NODES;i++)
-            nodes[i].start(false);
+		for(Node node: nodes)
+            node.start(false);
         
         int successfulTests = 0;
         
@@ -209,8 +209,8 @@ public class RealNodeULPRTest extends RealNodeTest {
         	
         };
         
-        for(int i=0;i<nodes.length;i++) {
-        	nodes[i].setDispatcherHook(cb);
+        for(Node node: nodes) {
+        	node.setDispatcherHook(cb);
         }
         
         for(int i=0;i<nodes.length;i++) {
@@ -262,8 +262,8 @@ public class RealNodeULPRTest extends RealNodeTest {
 			x++;
 			Thread.sleep(1000);
 			int count = 0;
-			for(int i=0;i<nodes.length;i++) {
-				if(nodes[i].hasKey(fetchKey.getNodeKey(false), true, true))
+			for(Node node: nodes) {
+				if(node.hasKey(fetchKey.getNodeKey(false), true, true))
 					count++;
 			}
 			System.err.println("T="+x+" : "+count+'/'+nodes.length+" have the data on test "+successfulTests+".");

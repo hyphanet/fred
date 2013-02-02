@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -28,7 +29,7 @@ public class IPConverter {
 		}
 	};
 	// Cached DB file content
-	private WeakReference<Cache> fullCache;
+	private SoftReference<Cache> fullCache;
 	// Reference to singleton object
 	private static IPConverter instance;
 	// File containing IP ranges
@@ -231,7 +232,7 @@ public class IPConverter {
 				String code = iprange.substring(0, 2);
 				// Ip
 				String ipcode = iprange.substring(2);
-				long ip = decodeBase85(ipcode.getBytes());
+				long ip = decodeBase85(ipcode.getBytes("ISO-8859-1"));
 				try {
 					Country country = Country.valueOf(code);
 					codes[i] = (short) country.ordinal();
@@ -333,12 +334,12 @@ public class IPConverter {
 	}
 
 	private Country locateIP(long longip) {
-		Cache memCache = getCache();
 		// Check cache first
 		Country cached = cache.get((int)longip);
 		if (cached != null) {
 			return cached;
 		}
+		Cache memCache = getCache();
 		if(memCache == null) return null;
 		int[] ips = memCache.getIps();
 		short[] codes = memCache.getCodes();
@@ -373,7 +374,7 @@ public class IPConverter {
 			if(fullCache != null)
 				memCache = fullCache.get();
 			if(memCache == null) {
-				fullCache = new WeakReference<Cache>(memCache = readRanges());
+				fullCache = new SoftReference<Cache>(memCache = readRanges());
 			}
 		}
 		return memCache;

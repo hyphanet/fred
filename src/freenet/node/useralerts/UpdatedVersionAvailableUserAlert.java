@@ -110,11 +110,9 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 		} else {
 			String formText;
 			if(updater.canUpdateNow()) {
-				boolean b = false;
 				if(updater.hasNewMainJar()) {
 					sb.append(l10n("downloadedNewJar", "version", Integer.toString(updater.newMainJarVersion())));
 					sb.append(' ');
-					b = true;
 				}
 				if(updater.canUpdateImmediately()) {
 					sb.append(l10n("clickToUpdateNow"));

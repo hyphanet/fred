@@ -479,13 +479,13 @@ public class FCPClient {
 					clients = null;
 			}
 			if(clients != null)
-			for(int i=0;i<clients.length;i++) {
+			for(FCPClient client: clients) {
 				if(persistenceType == ClientRequest.PERSIST_FOREVER)
-					container.activate(clients[i], 1);
-				if(clients[i].persistenceType != persistenceType) continue;
-				clients[i].queueClientRequestMessage(msg, verbosityLevel, true, container);
+					container.activate(client, 1);
+				if(client.persistenceType != persistenceType) continue;
+				client.queueClientRequestMessage(msg, verbosityLevel, true, container);
 				if(persistenceType == ClientRequest.PERSIST_FOREVER)
-					container.deactivate(clients[i], 1);
+					container.deactivate(client, 1);
 			}
 		}
 	}

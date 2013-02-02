@@ -1,28 +1,27 @@
 package freenet.clients.http;
 
+import java.io.IOException;
+import java.net.URI;
+
 import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.pluginmanager.PluginManager;
 import freenet.support.HTMLNode;
-import freenet.support.MultiValueTable;
 import freenet.support.api.HTTPRequest;
-
-import java.io.IOException;
-import java.net.URI;
 
 public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 
 	private final UserAlertManager alerts;
 	private final PluginManager plugins;
-	private final Node node;
+	//private final Node node;
 	
 	protected ChatForumsToadlet(HighLevelSimpleClient client, UserAlertManager alerts, PluginManager plugins, Node node) {
 		super(client);
 		this.alerts = alerts;
 		this.plugins = plugins;
-		this.node = node;
+		//this.node = node; //FIXME Don't used
 	}
 
 	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {

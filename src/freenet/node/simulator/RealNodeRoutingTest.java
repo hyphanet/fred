@@ -147,7 +147,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
 					double loc2 = randomNode2.getLocation();
 					Logger.normal(RealNodeRoutingTest.class, "Pinging " + randomNode2.getDarknetPortNumber() + " @ " + loc2 + " from " + randomNode.getDarknetPortNumber() + " @ " + randomNode.getLocation());
 					
-					int hopsTaken = randomNode.routedPing(loc2, randomNode2.getDarknetIdentity());
+					int hopsTaken = randomNode.routedPing(loc2, randomNode2.getDarknetPubKeyHash());
 					pings++;
 					if(hopsTaken < 0) {
 						failures++;

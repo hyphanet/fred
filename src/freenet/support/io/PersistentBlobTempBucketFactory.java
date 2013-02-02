@@ -292,6 +292,7 @@ public class PersistentBlobTempBucketFactory {
 		@SuppressWarnings("unchecked")
 		@Override
 		public boolean run(ObjectContainer container, ClientContext context) {
+			final boolean logMINOR = PersistentBlobTempBucketFactory.logMINOR;
 			int added = 0;
 			
 			while(true) {
@@ -359,7 +360,6 @@ outer:		while(true) {
 			query.constrain(PersistentBlobTempBucketTag.class);
 			query.descend("isFree").constrain(true).and(query.descend("index").constrain(l).smaller());
 			ObjectSet<PersistentBlobTempBucketTag> tags = query.execute();
-			Long[] notCommitted;
 			synchronized(PersistentBlobTempBucketFactory.this) {
 				while(tags.hasNext()) {
 					PersistentBlobTempBucketTag tag = tags.next();
@@ -679,6 +679,7 @@ outer:		while(true) {
 	
 	@SuppressWarnings("unchecked")
 	boolean maybeShrink(ObjectContainer container) {
+		final boolean logMINOR = PersistentBlobTempBucketFactory.logMINOR;
 		
 		if(logMINOR) Logger.minor(this, "maybeShrink()");
 		
@@ -798,12 +799,9 @@ outer:				while(true) {
 							if(newTag == null)
 								throw new NullPointerException();
 							
-							PersistentBlobTempBucket shadow = null;
-							if(shadows.containsKey(lastCommitted)) {
-								shadow = shadows.get(lastCommitted);
-								shadows.remove(lastCommitted);
+							PersistentBlobTempBucket shadow = shadows.remove(lastCommitted);
+							if(shadow != null)
 								shadows.put(newTag.index, shadow);
-							}
 							
 							// Synchronize on the target.
 							// We must ensure that the shadow is moved also before we relinquish the lock on either bucket.

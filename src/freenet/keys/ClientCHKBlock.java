@@ -6,7 +6,6 @@ package freenet.keys;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.util.Arrays;
 
@@ -16,8 +15,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import freenet.support.math.MersenneTwister;
-
 import com.db4o.ObjectContainer;
 
 import freenet.crypt.BlockCipher;
@@ -26,18 +23,18 @@ import freenet.crypt.JceLoader;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
+import freenet.crypt.Util;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.Key.Compressed;
 import freenet.node.Node;
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
+import freenet.support.math.MersenneTwister;
 
 /**
  * @author amphibian
@@ -53,17 +50,6 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         return super.toString()+",key="+key;
     }
     
-	private static volatile boolean logMINOR;
-
-	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
-			@Override
-			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-			}
-		});
-	}
-
     /**
      * Construct from data retrieved, and a key.
      * Do not do full decode. Verify what can be verified without doing
@@ -145,10 +131,8 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
             throw new CHKDecodeException("Crypto key too short");
         cipher.initialize(key.cryptoKey);
         PCFBMode pcfb = PCFBMode.create(cipher);
-	byte[] hbuf = new byte[headers.length-2];
-	System.arraycopy(headers, 2, hbuf, 0, headers.length-2);
-        byte[] dbuf = new byte[data.length];
-        System.arraycopy(data, 0, dbuf, 0, data.length);
+		byte[] hbuf = Arrays.copyOfRange(headers, 2, headers.length);
+        byte[] dbuf = Arrays.copyOf(data, data.length);
         // Decipher header first - functions as IV
         pcfb.blockDecipher(hbuf, 0, hbuf.length);
         pcfb.blockDecipher(dbuf, 0, dbuf.length);
@@ -158,8 +142,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         byte[] predIV = md256.digest(dkey);
         SHA256.returnMessageDigest(md256); md256 = null;
         // Extract the IV
-        byte[] iv = new byte[32];
-        System.arraycopy(hbuf, 0, iv, 0, 32);
+        byte[] iv = Arrays.copyOf(hbuf, 32);
         if(!Arrays.equals(iv, predIV))
             throw new CHKDecodeException("Check failed: Decrypted IV == H(decryption key)");
         // Checks complete
@@ -205,12 +188,13 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
 	}
 	static {
 		try {
-			final Class clazz = ClientCHKBlock.class;
+			final Class<ClientCHKBlock> clazz = ClientCHKBlock.class;
 			final String algo = "HmacSHA256";
 			final Provider sun = JceLoader.SunJCE;
 			SecretKeySpec dummyKey = new SecretKeySpec(new byte[Node.SYMMETRIC_KEY_LENGTH], algo);
 			Mac hmac = Mac.getInstance(algo);
 			hmac.init(dummyKey); // resolve provider
+			boolean logMINOR = Logger.shouldLog(Logger.LogLevel.MINOR, clazz);
 			if (sun != null) {
 				// SunJCE provider is faster (in some configurations)
 				try {
@@ -221,8 +205,10 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
 						long time_sun = benchmark(sun_hmac);
 						System.out.println(algo + " (" + hmac.getProvider() + "): " + time_def + "ns");
 						System.out.println(algo + " (" + sun_hmac.getProvider() + "): " + time_sun + "ns");
-						Logger.minor(clazz, algo + "/" + hmac.getProvider() + ": " + time_def + "ns");
-						Logger.minor(clazz, algo + "/" + sun_hmac.getProvider() + ": " + time_sun + "ns");
+						if(logMINOR) {
+							Logger.minor(clazz, algo + "/" + hmac.getProvider() + ": " + time_def + "ns");
+							Logger.minor(clazz, algo + "/" + sun_hmac.getProvider() + ": " + time_sun + "ns");
+						}
 						if (time_sun < time_def) {
 							hmac = sun_hmac;
 						}
@@ -253,8 +239,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
     public Bucket decodeNew(BucketFactory bf, int maxLength, boolean dontCompress) throws CHKDecodeException, IOException {
 		if(key.cryptoAlgorithm != Key.ALGO_AES_CTR_256_SHA256)
 			throw new UnsupportedOperationException();
-    	byte[] hash = new byte[32];
-    	System.arraycopy(headers, 2, hash, 0, 32);
+    	byte[] hash = Arrays.copyOfRange(headers, 2, 2+32);
         byte[] cryptoKey = key.cryptoKey;
         if(cryptoKey.length < Node.SYMMETRIC_KEY_LENGTH)
             throw new CHKDecodeException("Crypto key too short");
@@ -293,8 +278,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
     public Bucket decodeNewNoJCA(BucketFactory bf, int maxLength, boolean dontCompress) throws CHKDecodeException, IOException {
 		if(key.cryptoAlgorithm != Key.ALGO_AES_CTR_256_SHA256)
 			throw new UnsupportedOperationException();
-    	byte[] hash = new byte[32];
-    	System.arraycopy(headers, 2, hash, 0, 32);
+    	byte[] hash = Arrays.copyOfRange(headers, 2, 2+32);
         byte[] cryptoKey = key.cryptoKey;
         if(cryptoKey.length < Node.SYMMETRIC_KEY_LENGTH)
             throw new CHKDecodeException("Crypto key too short");
@@ -401,11 +385,8 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
             	md256.update(finalData);
             byte[] digest = md256.digest();
             MersenneTwister mt = new MersenneTwister(digest);
-            data = new byte[32768];
-            System.arraycopy(finalData, 0, data, 0, finalData.length);
-            byte[] randomBytes = new byte[32768-finalData.length];
-            mt.nextBytes(randomBytes);
-            System.arraycopy(randomBytes, 0, data, finalData.length, 32768-finalData.length);
+			data = Arrays.copyOf(finalData, 32768);
+			Util.randomBytes(mt, data, finalData.length, 32768-finalData.length);
         } else {
         	data = finalData;
         }

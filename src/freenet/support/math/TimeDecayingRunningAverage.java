@@ -23,14 +23,18 @@ import freenet.support.Logger.LogLevel;
  * into account the fact that reports persist and accumulate. :) 
  * 
  */
-public class TimeDecayingRunningAverage implements RunningAverage {
+public final class TimeDecayingRunningAverage implements RunningAverage, Cloneable {
 
 	private static final long serialVersionUID = -1;
     static final int MAGIC = 0x5ff4ac94;
     
     @Override
 	public final TimeDecayingRunningAverage clone() {
-        return new TimeDecayingRunningAverage(this);
+    	// Override clone to synchronize, as per comments in RunningAverage.
+    	// Implement Cloneable to shut up findbugs.
+    	synchronized(this) {
+    		return new TimeDecayingRunningAverage(this);
+    	}
     }
     
 	double curValue;

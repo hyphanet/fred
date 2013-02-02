@@ -734,10 +734,6 @@ public final class PageMaker {
 			ctx.getContainer().setAdvancedMode(req.getIntParam(MODE_SWITCH_PARAMETER) == MODE_ADVANCED);
 	}
 	
-	private static String l10n(String string) {
-		return NodeL10n.getBase().getString("PageMaker." + string);
-	}
-
 	/**
 	 * Bundles parameters that are used to create the page node. The default for
 	 * the render parameters is to include all optional render tasks. Individual

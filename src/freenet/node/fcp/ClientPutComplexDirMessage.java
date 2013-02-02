@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 
@@ -132,19 +131,15 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 
 	@Override
 	public void readFrom(InputStream is, BucketFactory bf, FCPServer server) throws IOException, MessageInvalidException {
-		Iterator<DirPutFile> i = filesToRead.iterator();
-		while(i.hasNext()) {
-			DirectDirPutFile f = (DirectDirPutFile) i.next();
-			f.read(is);
+		for(DirPutFile f: filesToRead) {
+			((DirectDirPutFile)f).read(is);
 		}
 	}
 
 	@Override
 	protected void writeData(OutputStream os) throws IOException {
-		Iterator<DirPutFile> i = filesToRead.iterator();
-		while(i.hasNext()) {
-			DirectDirPutFile f = (DirectDirPutFile) i.next();
-			f.write(os);
+		for(DirPutFile f: filesToRead) {
+			((DirectDirPutFile)f).write(os);
 		}
 	}
 
@@ -192,12 +187,10 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 		container.delete(this);
 	}
 
-	private void removeFrom(ObjectContainer container, HashMap filesByName) {
-		Iterator i = filesByName.values().iterator();
-		while(i.hasNext()) {
-			Object val = i.next();
+	private void removeFrom(ObjectContainer container, HashMap<String, Object> filesByName) {
+		for(Object val: filesByName.values()) {
 			if(val instanceof HashMap) {
-				removeFrom(container, (HashMap) val);
+				removeFrom(container, (HashMap<String, Object>) val);
 			} else {
 				((DirPutFile)val).removeFrom(container);
 			}

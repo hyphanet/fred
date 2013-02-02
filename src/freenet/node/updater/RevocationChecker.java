@@ -13,11 +13,13 @@ import freenet.client.async.BinaryBlobWriter;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.DatabaseDisabledException;
+import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.MediaType;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
@@ -59,8 +61,14 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		this.blobFile = blobFile;
 		this.logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		ctxRevocation = core.makeClient((short)0, true, false).getFetchContext();
+		// Do not allow redirects etc.
+		// If we allow redirects then it will take too long to download the revocation.
+		// Anyone inserting it should be aware of this fact! 
+		// You must insert with no content type, and be less than the size limit, and less than the block size after compression!
+		// If it doesn't fit, we'll still tell the user, but the message may not be easily readable.
 		ctxRevocation.allowSplitfiles = false;
-		ctxRevocation.maxArchiveLevels = 1;
+		ctxRevocation.maxArchiveLevels = 0;
+		ctxRevocation.followRedirects = false;
 		// big enough ?
 		ctxRevocation.maxOutputLength = NodeUpdateManager.MAX_REVOCATION_KEY_LENGTH;
 		ctxRevocation.maxTempLength = NodeUpdateManager.MAX_REVOCATION_KEY_TEMP_LENGTH;
@@ -190,7 +198,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		String msg = null;
 		try {
 			byte[] buf = result.asByteArray();
-			msg = new String(buf);
+			msg = new String(buf, MediaType.getCharsetRobustOrUTF(result.getMimeType()));
 		} catch (Throwable t) {
 			try {
 				msg = "Failed to extract result when key blown: "+t;
@@ -267,16 +275,20 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		if(e.isFatal()) {
 			if(!e.isDefinitelyFatal()) {
 				// INTERNAL_ERROR could be related to the key but isn't necessarily.
-				System.err.println("Auto-update is failing with an internal error:");
-				System.err.println(e);
+				// FIXME somebody should look at these two strings and de-uglify them!
+				// They should never be seen but they should be idiot-proof if they ever are.
+				// FIXME split into two parts? Fetch manually should be a second part?
+				String message = l10n("revocationFetchFailedMaybeInternalError", new String[] { "detail", "key" }, new String[] { e.toUserFriendlyString(), manager.getRevocationURI().toASCIIString() });
+				System.err.println(message);
 				e.printStackTrace();
-				System.err.println("Please fix this and restart Freenet!");
-				// Could be out of disk space???
-				manager.blow("Checking for revocation key is failing with an internal error: "+e.toString(), true);
+				manager.blow(message, true);
 				return;
 			}
 			// Really fatal, i.e. something was inserted but can't be decoded.
-			manager.blow("Permanent error fetching revocation (error inserting the revocation key?): "+e.toString(), false);
+			// FIXME somebody should look at these two strings and de-uglify them!
+			// They should never be seen but they should be idiot-proof if they ever are.
+			String message = l10n("revocationFetchFailedFatally", new String[] { "detail", "key" }, new String[] { e.toUserFriendlyString(), manager.getRevocationURI().toASCIIString() });			
+			manager.blow(message, false);
 			moveBlob(blob);
 			return;
 		}
@@ -315,6 +327,11 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		}
 	}
 	
+	private String l10n(String key, String[] pattern, String[] value) {
+		return NodeL10n.getBase().getString("RevocationChecker." + key,
+				pattern, value);
+	}
+
 	@Override
 	public void onMajorProgress(ObjectContainer container) {
 		// TODO Auto-generated method stub
