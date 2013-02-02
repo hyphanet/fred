@@ -58,7 +58,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     static final boolean ENABLE_PACKET_COALESCING = true;
     static final boolean ENABLE_FOAF = true;
     static final boolean FORK_ON_CACHEABLE = false;
-    static final boolean DISABLE_PROBABILISTIC_HTLS = false;
+    static final boolean DISABLE_PROBABILISTIC_HTLS = true;
     // Set to true to cache everything. This depends on security level.
     static final boolean USE_SLASHDOT_CACHE = false;
     static final boolean REAL_TIME_FLAG = false;
