@@ -7,6 +7,7 @@ import freenet.config.SubConfig;
 import freenet.crypt.DummyRandomSource;
 import freenet.node.Node;
 import freenet.node.NodeStarter;
+import freenet.node.NodeStats;
 import freenet.node.probe.Error;
 import freenet.node.probe.Listener;
 import freenet.node.probe.Probe;
@@ -40,6 +41,7 @@ public class RealNodeProbeTest extends RealNodeTest {
 	public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
 
 	public static void main(String[] args) throws Exception {
+		NodeStats.MIN_REPORTS_NOISY_REJECT_STATS = 1;
 		System.out.println("Probe test using real nodes:");
 		System.out.println();
 		String dir = "realNodeProbeTest";
@@ -60,7 +62,7 @@ public class RealNodeProbeTest extends RealNodeTest {
 		Executor executor = new PooledExecutor();
 		for(int i = 0; i < NUMBER_OF_NODES; i++) {
 			System.err.println("Creating node " + i);
-			nodes[i] = NodeStarter.createTestNode(DARKNET_PORT_BASE + i, 0, dir, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500 * NUMBER_OF_NODES, 65536, true, ENABLE_SWAPPING, false, false, false, ENABLE_SWAP_QUEUEING, true, 0, ENABLE_FOAF, false, true, false, null, i == 0);
+			nodes[i] = NodeStarter.createTestNode(DARKNET_PORT_BASE + i, 0, dir, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500 * NUMBER_OF_NODES, 256*1024, true, ENABLE_SWAPPING, false, false, false, ENABLE_SWAP_QUEUEING, true, 0, ENABLE_FOAF, false, true, false, null, i == 0);
 			Logger.normal(RealNodeProbeTest.class, "Created node " + i);
 		}
 		Logger.normal(RealNodeProbeTest.class, "Created " + NUMBER_OF_NODES + " nodes");

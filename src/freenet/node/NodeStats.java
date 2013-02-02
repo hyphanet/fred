@@ -3797,7 +3797,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 	};
 	
-	private static final int MIN_REPORTS_NOISY_REJECT_STATS = 200;
+	// FIXME needed for probe test. Make private static final.
+	public static int MIN_REPORTS_NOISY_REJECT_STATS = 200;
 	
 	private final byte[] noisyRejectStats;
 
