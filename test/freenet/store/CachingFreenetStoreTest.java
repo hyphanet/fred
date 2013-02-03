@@ -109,8 +109,8 @@ public class CachingFreenetStoreTest extends TestCase {
 			ClientSSKBlock block = encodeBlockSSK(test);
 			store.put(block, false, false);
 			ClientSSK key = block.getClientKey();
+			pubkeyCache.cacheKey((block.getKey()).getPubKeyHash(), (block.getKey()).getPubKey(), false, false, false, false, false);
 			SSKBlock verify = store.fetch(block.getKey(), false, false, false, false, null);
-			System.out.println("verify: "+verify);
 			String data = decodeBlockSSK(verify, key);
 			assertEquals(test, data);
 		}
@@ -223,7 +223,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		byte[] data = test.getBytes("UTF-8");
 		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(data);
 		RandomSource random = new DummyRandomSource(12345);
-		InsertableClientSSK ik = InsertableClientSSK.createRandom(random, "ssktest");
+		InsertableClientSSK ik = InsertableClientSSK.createRandom(random, test);
 		return ik.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
 	}
 }
