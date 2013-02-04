@@ -197,7 +197,7 @@ public class NodeStarter implements WrapperListener {
 		SSL.init(sslConfig);
 
 		try {
-			node = new Node(cfg, null, null, logConfigHandler, this, executor);
+			node = new Node(cfg, null, null, logConfigHandler, this, executor, 0);
 			node.start(false);
 			System.out.println("Node initialization completed.");
 		} catch(NodeInitException e) {
@@ -344,14 +344,14 @@ public class NodeStarter implements WrapperListener {
 		return random;
 	}
 
-	public static Node createTestNode(int port, int opennetPort, String testName, boolean disableProbabilisticHTLs,
+	public static Node createTestNode(int number, int port, int opennetPort, String testName, boolean disableProbabilisticHTLs,
 	                                  short maxHTL, int dropProb, RandomSource random,
 	                                  Executor executor, int threadLimit, long storeSize, boolean ramStore,
 	                                  boolean enableSwapping, boolean enableARKs, boolean enableULPRs, boolean enablePerNodeFailureTables,
 	                                  boolean enableSwapQueueing, boolean enablePacketCoalescing,
 	                                  int outputBandwidthLimit, boolean enableFOAF,
 	                                  boolean connectToSeednodes, boolean longPingTimes, boolean useSlashdotCache, String ipAddressOverride) throws NodeInitException {
-		return createTestNode(port, opennetPort, testName, disableProbabilisticHTLs, maxHTL, dropProb, random, executor,
+		return createTestNode(number, port, opennetPort, testName, disableProbabilisticHTLs, maxHTL, dropProb, random, executor,
 		    threadLimit, storeSize, ramStore, enableSwapping, enableARKs, enableULPRs, enablePerNodeFailureTables,
 		    enableSwapQueueing, enablePacketCoalescing, outputBandwidthLimit, enableFOAF, connectToSeednodes,
 		    longPingTimes, useSlashdotCache, ipAddressOverride, false);
@@ -365,7 +365,7 @@ public class NodeStarter implements WrapperListener {
 	 * @throws NodeInitException If the node cannot start up for some reason, most
 	 * likely a config problem.
 	 */
-	public static Node createTestNode(int port, int opennetPort, String testName, boolean disableProbabilisticHTLs,
+	public static Node createTestNode(int number, int port, int opennetPort, String testName, boolean disableProbabilisticHTLs,
 		short maxHTL, int dropProb, RandomSource random,
 		Executor executor, int threadLimit, long storeSize, boolean ramStore,
 		boolean enableSwapping, boolean enableARKs, boolean enableULPRs, boolean enablePerNodeFailureTables,
@@ -377,6 +377,7 @@ public class NodeStarter implements WrapperListener {
 			if((!isStarted) || (!isTestingVM)) 
 				throw new IllegalStateException("Call globalTestInit() first!"); 
 		}
+		assert(number > 0);
 
 		File baseDir = new File(testName);
 		File portDir = new File(baseDir, Integer.toString(port));
@@ -457,7 +458,7 @@ public class NodeStarter implements WrapperListener {
 
 		PersistentConfig config = new PersistentConfig(configFS);
 
-		Node node = new Node(config, random, random, null, null, executor);
+		Node node = new Node(config, random, random, null, null, executor, number);
 
 		//All testing environments connect the nodes as they want, even if the old setup is restored, it is not desired.
 		node.peers.removeAllPeers();

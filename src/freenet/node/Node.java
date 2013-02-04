@@ -747,6 +747,11 @@ public class Node implements TimeSkewDetectorCallback {
 	public final long lastBootID;
 	public final long bootID;
 	public final long startupTime;
+	/** This is 0 for a normal production node, negative for multiple production nodes within a single VM
+	 * (if we ever use such a monstrosity), and positive for multiple nodes within a testing VM. Low-level
+	 * code should use this ID in thread names etc to distinguish which node it is, rather than the 
+	 * darknet port number, for security but also for compatibility with transport plugins. FIXME! */
+	public final int internalID;
 
 	private SimpleToadletServer toadlets;
 
@@ -985,8 +990,10 @@ public class Node implements TimeSkewDetectorCallback {
 	 * @param executor Executor
 	 * @throws NodeInitException If the node initialization fails.
 	 */
-	 Node(PersistentConfig config, RandomSource r, RandomSource weakRandom, LoggingConfigHandler lc, NodeStarter ns, Executor executor) throws NodeInitException {
+	 Node(PersistentConfig config, RandomSource r, RandomSource weakRandom, LoggingConfigHandler lc, NodeStarter ns, Executor executor, int internalID) throws NodeInitException {
 		this.shutdownHook = SemiOrderedShutdownHook.get();
+		this.internalID = internalID;
+		assert((internalID > 0) == NodeStarter.isTestingVM());
 		// Easy stuff
 		String tmp = "Initializing Node using Freenet Build #"+Version.buildNumber()+" r"+Version.cvsRevision()+" and freenet-ext Build #"+NodeStarter.extBuildNumber+" r"+NodeStarter.extRevisionNumber+" with "+System.getProperty("java.vendor")+" JVM version "+System.getProperty("java.version")+" running on "+System.getProperty("os.arch")+' '+System.getProperty("os.name")+' '+System.getProperty("os.version");
 		fixCertsFile();
