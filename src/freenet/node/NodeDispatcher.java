@@ -79,10 +79,11 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	private NodeStats nodeStats;
 	private NodeDispatcherCallback callback;
 	final Probe probe;
+	private TagAcceptedCallback acceptanceCallback;
 	
 	private static final long STALE_CONTEXT=20000;
 	private static final long STALE_CONTEXT_CHECK=20000;
-
+	
 	NodeDispatcher(Node node) {
 		this.node = node;
 		this.tracker = node.tracker;
@@ -112,6 +113,16 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	
 	public interface NodeDispatcherCallback {
 		public void snoop(Message m, Node n);
+	}
+	
+	/** Callback to be used by simulation code. Callbacks should not do anything that can block,
+	 * take any locks from the node, etc. */
+	public static interface TagAcceptedCallback {
+		
+		public void accepted(int nodeID, UIDTag tag);
+		
+		public void rejected(int nodeID, UIDTag tag);
+		
 	}
 	
 	@Override
@@ -341,6 +352,9 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		Key key = (Key) m.getObject(DMT.KEY);
 		byte[] authenticator = ((ShortBuffer) m.getObject(DMT.OFFER_AUTHENTICATOR)).getData();
 		long uid = m.getLong(DMT.UID);
+		boolean isSSK = key instanceof NodeSSK;
+        boolean realTimeFlag = DMT.getRealTimeFlag(m);
+		OfferReplyTag tag = new OfferReplyTag(isSSK, source, realTimeFlag, uid, node);
 		if(!HMAC.verifyWithSHA256(node.failureTable.offerAuthenticatorKey, key.getFullKey(), authenticator)) {
 			Logger.error(this, "Invalid offer request from "+source+" : authenticator did not verify");
 			try {
@@ -348,14 +362,14 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				// Too bad.
 			}
+			TagAcceptedCallback cb = acceptanceCallback;
+			if(cb != null)
+				cb.accepted(node.internalID, new RequestTag(isSSK, RequestTag.START.REMOTE, source, realTimeFlag, uid, node));
 			return true;
 		}
 		if(logMINOR) Logger.minor(this, "Valid GetOfferedKey for "+key+" from "+source);
 		
 		// Do we want it? We can RejectOverload if we don't have the bandwidth...
-		boolean isSSK = key instanceof NodeSSK;
-        boolean realTimeFlag = DMT.getRealTimeFlag(m);
-		OfferReplyTag tag = new OfferReplyTag(isSSK, source, realTimeFlag, uid, node);
 		
 		if(!tracker.lockUID(uid, isSSK, false, true, false, realTimeFlag, tag)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+uid+" -> rejecting (already running)");
@@ -485,6 +499,12 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		// For now just handle everything on the thread...
 		if(!requestQueue.offer(m)) {
 			rejectRequest(m, isSSK ? node.nodeStats.sskRequestCtr : node.nodeStats.chkRequestCtr);
+			TagAcceptedCallback cb = acceptanceCallback;
+			if(cb != null) {
+		        boolean realTimeFlag = DMT.getRealTimeFlag(m);
+				long id = m.getLong(DMT.UID);
+				cb.accepted(node.internalID, new RequestTag(isSSK, RequestTag.START.REMOTE, source, realTimeFlag, id, node));
+			}
 		}
 	}
 	
@@ -497,18 +517,21 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			if(logMINOR) Logger.minor(this, "Handling request off thread, source disconnected: "+source+" for "+m);
 			return;
 		}
-		if(!source.isRoutable()) {
-			if(logMINOR) Logger.minor(this, "Handling request off thread, source no longer routable: "+source+" for "+m);
-			rejectRequest(m, isSSK ? node.nodeStats.sskRequestCtr : node.nodeStats.chkRequestCtr);
-			return;
-		}
+		TagAcceptedCallback cb = acceptanceCallback;
 		long id = m.getLong(DMT.UID);
 		ByteCounter ctr = isSSK ? node.nodeStats.sskRequestCtr : node.nodeStats.chkRequestCtr;
         short htl = m.getShort(DMT.HTL);
 		if(htl <= 0) htl = 1;
-        Key key = (Key) m.getObject(DMT.FREENET_ROUTING_KEY);
         boolean realTimeFlag = DMT.getRealTimeFlag(m);
         final RequestTag tag = new RequestTag(isSSK, RequestTag.START.REMOTE, source, realTimeFlag, id, node);
+		if(!source.isRoutable()) {
+			if(logMINOR) Logger.minor(this, "Handling request off thread, source no longer routable: "+source+" for "+m);
+			rejectRequest(m, isSSK ? node.nodeStats.sskRequestCtr : node.nodeStats.chkRequestCtr);
+			if(cb != null)
+				cb.rejected(node.internalID, tag);
+			return;
+		}
+        Key key = (Key) m.getObject(DMT.FREENET_ROUTING_KEY);
 		if(!tracker.lockUID(id, isSSK, false, false, false, realTimeFlag, tag)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
@@ -518,6 +541,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				Logger.normal(this, "Rejecting request from "+source.getPeer()+": "+e);
 			}
 			node.failureTable.onFinalFailure(key, null, htl, htl, -1, -1, source);
+			if(cb != null)
+				cb.rejected(node.internalID, tag);
 			return;
 		} else {
 			if(logMINOR) Logger.minor(this, "Locked "+id);
@@ -549,6 +574,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			// Do not tell failure table.
 			// Otherwise an attacker can flood us with requests very cheaply and purge our
 			// failure table even though we didn't accept any of them.
+			if(cb != null)
+				cb.rejected(node.internalID, tag);
 			return;
 		}
 		nodeStats.reportIncomingRequestLocation(key.toNormalizedDouble());
@@ -558,6 +585,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			needsPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
 		RequestHandler rh = new RequestHandler(source, id, node, htl, key, tag, block, realTimeFlag, needsPubKey);
 		rh.receivedBytes(m.receivedByteCount());
+		if(cb != null)
+			cb.accepted(node.internalID, tag);
 		node.executor.execute(rh, "RequestHandler for UID "+id+" on "+node.getDarknetPortNumber());
 	}
 
@@ -575,6 +604,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		long id = m.getLong(DMT.UID);
         boolean realTimeFlag = DMT.getRealTimeFlag(m);
 		InsertTag tag = new InsertTag(isSSK, InsertTag.START.REMOTE, source, realTimeFlag, id, node);
+		TagAcceptedCallback cb = acceptanceCallback;
 		if(!tracker.lockUID(id, isSSK, true, false, false, realTimeFlag, tag)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
@@ -583,6 +613,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting insert request from "+source.getPeer()+": "+e);
 			}
+			if(cb != null)
+				cb.rejected(node.internalID, tag);
 			return;
 		}
 		boolean preferInsert = Node.PREFER_INSERT_DEFAULT;
@@ -610,6 +642,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				Logger.normal(this, "Rejecting (overload) insert request from "+source.getPeer()+": "+e);
 			}
 			tag.unlockHandler(rejectReason.soft);
+			if(cb != null)
+				cb.rejected(node.internalID, tag);
 			return;
 		}
 		long now = System.currentTimeMillis();
@@ -638,6 +672,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			node.executor.execute(rh, "CHKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		}
 		if(logMINOR) Logger.minor(this, "Started InsertHandler for "+id);
+		if(cb != null)
+			cb.accepted(node.internalID, tag);
 	}
 	
 	private boolean handleAnnounceRequest(Message m, PeerNode source) {
@@ -1057,4 +1093,10 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	public void setHook(NodeDispatcherCallback cb) {
 		this.callback = cb;
 	}
+	
+	public void setHook(TagAcceptedCallback cb) {
+		this.acceptanceCallback = cb;
+	}
+	
+	
 }
