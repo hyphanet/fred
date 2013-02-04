@@ -62,6 +62,17 @@ public class NodeStarter implements WrapperListener {
 	
 	private volatile static boolean BCPROV_LOAD_FAILED = true;
 	
+	private static boolean isTestingVM;
+	private static boolean isStarted;
+
+	/** If false, this is some sort of multi-node testing VM */
+	public synchronized static boolean isTestingVM() {
+		if(isStarted)
+			return isTestingVM;
+		else
+			throw new IllegalStateException();
+	}
+	
 	public static boolean bcProvLoadFailed() {
 		return BCPROV_LOAD_FAILED;
 	}
@@ -94,6 +105,11 @@ public class NodeStarter implements WrapperListener {
 	 */
 	@Override
 	public Integer start(String[] args) {
+		synchronized(NodeStarter.class) {
+			if(isStarted) throw new IllegalStateException();
+			isStarted = true;
+			isTestingVM = false;
+		}
 		if(args.length > 1) {
 			System.out.println("Usage: $ java freenet.node.Node <configFile>");
 			return Integer.valueOf(-1);
@@ -264,6 +280,11 @@ public class NodeStarter implements WrapperListener {
 	 * @param testName The name of the test instance.
 	 */
 	public static RandomSource globalTestInit(String testName, boolean enablePlug, LogLevel logThreshold, String details, boolean noDNS) throws InvalidThresholdException {
+		synchronized(NodeStarter.class) {
+			if(isStarted) throw new IllegalStateException();
+			isStarted = true;
+			isTestingVM = true;
+		}
 
 		File dir = new File(testName);
 		if((!dir.mkdir()) && ((!dir.exists()) || (!dir.isDirectory()))) {
@@ -351,6 +372,11 @@ public class NodeStarter implements WrapperListener {
 		boolean enableSwapQueueing, boolean enablePacketCoalescing,
 		int outputBandwidthLimit, boolean enableFOAF,
 		boolean connectToSeednodes, boolean longPingTimes, boolean useSlashdotCache, String ipAddressOverride, boolean enableFCP) throws NodeInitException {
+		
+		synchronized(NodeStarter.class) {
+			if((!isStarted) || (!isTestingVM)) 
+				throw new IllegalStateException("Call globalTestInit() first!"); 
+		}
 
 		File baseDir = new File(testName);
 		File portDir = new File(baseDir, Integer.toString(port));
