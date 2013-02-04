@@ -78,24 +78,7 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
         System.out.println();
         DummyRandomSource random = new DummyRandomSource();
         //DiffieHellman.init(random);
-        Node[] nodes = new Node[NUMBER_OF_NODES];
-        Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
-        Executor executor = new PooledExecutor();
-        for(int i=0;i<NUMBER_OF_NODES;i++) {
-            nodes[i] =
-            	NodeStarter.createTestNode(i+1, DARKNET_PORT_BASE+i, 0, name, false, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, (CHKBlock.DATA_LENGTH+CHKBlock.TOTAL_HEADERS_LENGTH)*100, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, ENABLE_SWAP_QUEUEING, ENABLE_PACKET_COALESCING, 8000, ENABLE_FOAF, false, true, false, null);
-            Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
-        }
-
-        // Now link them up
-        makeKleinbergNetwork(nodes, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS, random);
-
-        Logger.normal(RealNodeRoutingTest.class, "Added random links");
-
-        for(int i=0;i<NUMBER_OF_NODES;i++) {
-            nodes[i].start(false);
-            System.err.println("Started node "+i+"/"+nodes.length);
-        }
+		Node[] nodes = createNodes(NUMBER_OF_NODES, name, random, random, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS, false);
 
         waitForAllConnected(nodes);
 
