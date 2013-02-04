@@ -625,10 +625,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			// Normal mode
 			minReportsNoisyRejectStats = 200;
 			rejectStatsUpdateInterval = 10*60*1000;
+			rejectStatsFuzz = 10.0;
 		} else {
 			// Stuff we only do in testing VMs
 			minReportsNoisyRejectStats = 1;
 			rejectStatsUpdateInterval = 10*1000;
+			rejectStatsFuzz = -1.0;
 		}
 	}
 
@@ -3792,7 +3794,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 							// Do not return data until there are at least 200 results.
 							result = -1;
 						} else {
-							double noisy = randomNoise(r.currentValue() * 100.0, 10.0);
+							double noisy = r.currentValue() * 100.0;
+							if(rejectStatsFuzz > 0)
+								noisy = randomNoise(noisy, rejectStatsFuzz);
 							if(noisy < 0) result = 0;
 							if(noisy > 100) result = 100;
 							else result = (byte)noisy;
@@ -3811,6 +3815,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private final int minReportsNoisyRejectStats;
 	/** How often to update the reject stats */
 	private final int rejectStatsUpdateInterval;
+	/** If positive, the level of fuzz (size of 1 standard deviation for gauss in percent) to use */
+	private final double rejectStatsFuzz;
 	
 	private final byte[] noisyRejectStats;
 
