@@ -620,6 +620,16 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		avgTransferBackoffTimesBulk = new Hashtable<String, TrivialRunningAverage>();
 
 		avgDatabaseJobExecutionTimes = new Hashtable<String, TrivialRunningAverage>();
+		
+		if(!NodeStarter.isTestingVM()) {
+			// Normal mode
+			minReportsNoisyRejectStats = 200;
+			rejectStatsUpdateInterval = 10*60*1000;
+		} else {
+			// Stuff we only do in testing VMs
+			minReportsNoisyRejectStats = 1;
+			rejectStatsUpdateInterval = 10*1000;
+		}
 	}
 
 	protected String l10n(String key) {
@@ -3778,7 +3788,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 					for(int i=0;i<REJECT_STATS_AVERAGERS.length;i++) {
 						byte result;
 						RunningAverage r = REJECT_STATS_AVERAGERS[i];
-						if(r.countReports() < MIN_REPORTS_NOISY_REJECT_STATS) {
+						if(r.countReports() < minReportsNoisyRejectStats) {
 							// Do not return data until there are at least 200 results.
 							result = -1;
 						} else {
@@ -3791,14 +3801,16 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 					}
 				}
 			} finally {
-				node.ticker.queueTimedJob(this, 600*1000);
+				node.ticker.queueTimedJob(this, rejectStatsUpdateInterval);
 			}
 		}
 		
 	};
 	
-	// FIXME needed for probe test. Make private static final.
-	public static int MIN_REPORTS_NOISY_REJECT_STATS = 200;
+	/** How many reports to require before returning a value for reject stats */
+	private final int minReportsNoisyRejectStats;
+	/** How often to update the reject stats */
+	private final int rejectStatsUpdateInterval;
 	
 	private final byte[] noisyRejectStats;
 
