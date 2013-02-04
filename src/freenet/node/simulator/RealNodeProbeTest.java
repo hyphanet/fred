@@ -43,7 +43,6 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
 	public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
 
 	public static void main(String[] args) throws Exception {
-		NodeStats.MIN_REPORTS_NOISY_REJECT_STATS = 1;
 		System.out.println("Probe test using real nodes:");
 		System.out.println();
 		String dir = "realNodeProbeTest";
