@@ -56,7 +56,7 @@ public class RealNodeTest {
 	        [0..n], some nodes tend to have *much* higher connections than the degree (the first few),
 	        starving the latter ones.
 	 */
-	static void makeKleinbergNetwork (Node[] nodes, boolean idealLocations, int degree, boolean forceNeighbourConnections, RandomSource random)
+	static void makeKleinbergNetwork (Node[] nodes, boolean idealLocations, int degree, boolean forceNeighbourConnections, RandomSource random, boolean slowStart) throws InterruptedException
 	{
 		if(idealLocations) {
 			// First set the locations up so we don't spend a long time swapping just to stabilise each network.
@@ -71,6 +71,7 @@ public class RealNodeTest {
 			for(int i=0;i<nodes.length;i++) {
 				int next = (i+1) % nodes.length;
 				connect(nodes[i], nodes[next]);
+				if(slowStart && ((i & 7) == 0)) waitForAllConnected(nodes);
 			}
 		}
 		for (int i=0; i<nodes.length; i++) {
@@ -94,6 +95,7 @@ public class RealNodeTest {
 					}
 				}
 			}
+			if(slowStart) waitForAllConnected(nodes);
 		}
 	}
 	

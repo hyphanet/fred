@@ -88,7 +88,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         System.out.println();
         DummyRandomSource random = new DummyRandomSource(3142);
         DummyRandomSource topologyRandom = new DummyRandomSource(3143);
-		Node[] nodes = createNodes(NUMBER_OF_NODES, name, random, topologyRandom, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS);
+		Node[] nodes = createNodes(NUMBER_OF_NODES, name, random, topologyRandom, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS, false);
         
         waitForAllConnected(nodes);
         

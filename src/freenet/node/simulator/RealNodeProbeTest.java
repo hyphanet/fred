@@ -14,10 +14,8 @@ import freenet.node.probe.Error;
 import freenet.node.probe.Listener;
 import freenet.node.probe.Probe;
 import freenet.node.probe.Type;
-import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.PooledExecutor;
 import freenet.support.io.FileUtil;
 
 /**
@@ -36,6 +34,8 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
 	static final boolean ENABLE_SWAP_QUEUEING = false;
 	static final boolean ENABLE_FOAF = true;
 	private static final boolean DO_INSERT_TEST = true;
+	/** Might be useful here, as it reduces the number of spurious rejections */
+	private static final boolean SLOW_START = true;
 	static final int MAX_PINGS = 2000;
 
 	public static int DARKNET_PORT_BASE = RealNodeRoutingTest.DARKNET_PORT_END;
@@ -58,7 +58,7 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
 		// Make the network reproducible so we can easily compare different routing options by specifying a seed.
 		DummyRandomSource random = new DummyRandomSource(3142);
 		
-		Node[] nodes = createNodes(NUMBER_OF_NODES, dir, random, random, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS);
+		Node[] nodes = createNodes(NUMBER_OF_NODES, dir, random, random, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS, SLOW_START);
 		
         System.out.println();
         System.out.println("Ping average > 95%, lets do some inserts/requests");

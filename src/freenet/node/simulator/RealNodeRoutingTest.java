@@ -57,7 +57,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
 		// Make the network reproducible so we can easily compare different routing options by specifying a seed.
 		DummyRandomSource random = new DummyRandomSource(3142);
 		//DiffieHellman.init(random);
-		Node[] nodes = createNodes(NUMBER_OF_NODES, dir, random, random, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS);
+		Node[] nodes = createNodes(NUMBER_OF_NODES, dir, random, random, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS, false);
 		// Make the choice of nodes to ping to and from deterministic too.
 		// There is timing noise because of all the nodes, but the network
 		// and the choice of nodes to start and finish are deterministic, so
@@ -66,8 +66,12 @@ public class RealNodeRoutingTest extends RealNodeTest {
 		System.exit(0);
 	}
 
+	/** Create a set of nodes, start them and setup connections a la Kleinberg.
+	 * @param slowStart If true, start the nodes BEFORE adding the connections, and take our time adding
+	 * connections, thus avoiding excessive CPU usage and rejects due to excessive ping times. Otherwise
+	 * add the connections before starting the nodes. */
 	protected static Node[] createNodes(int numberOfNodes, String dir, RandomSource random, RandomSource topologyRandom,
-			boolean startWithIdealLocations, int degree, boolean forceNeighbourConnections) throws NodeInitException, InterruptedException {
+			boolean startWithIdealLocations, int degree, boolean forceNeighbourConnections, boolean slowStart) throws NodeInitException, InterruptedException {
 		Node[] nodes = new Node[NUMBER_OF_NODES];
 		Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
 		Executor executor = new PooledExecutor();
@@ -77,14 +81,21 @@ public class RealNodeRoutingTest extends RealNodeTest {
 			Logger.normal(RealNodeRoutingTest.class, "Created node " + i);
 		}
 		Logger.normal(RealNodeRoutingTest.class, "Created " + NUMBER_OF_NODES + " nodes");
-		// Now link them up
-		makeKleinbergNetwork(nodes, startWithIdealLocations, degree, forceNeighbourConnections, topologyRandom);
+		
+		if(!slowStart) {
+			makeKleinbergNetwork(nodes, startWithIdealLocations, degree, forceNeighbourConnections, topologyRandom, slowStart);
+		}
 
 		Logger.normal(RealNodeRoutingTest.class, "Added random links");
 
 		for(int i = 0; i < NUMBER_OF_NODES; i++) {
 			System.err.println("Starting node " + i);
 			nodes[i].start(false);
+		}
+		
+		if(slowStart) {
+			waitForAllConnected(nodes);
+			makeKleinbergNetwork(nodes, startWithIdealLocations, degree, forceNeighbourConnections, topologyRandom, slowStart);
 		}
 
 		waitForAllConnected(nodes);
