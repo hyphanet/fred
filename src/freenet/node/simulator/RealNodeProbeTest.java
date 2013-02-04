@@ -28,7 +28,7 @@ import java.text.NumberFormat;
 public class RealNodeProbeTest extends RealNodeRoutingTest {
 
 	static final int NUMBER_OF_NODES = 100;
-	static final int DEGREE = 5;
+	static final int DEGREE = 10;
 	static final short MAX_HTL = (short) 5;
 	static final boolean START_WITH_IDEAL_LOCATIONS = true;
 	static final boolean FORCE_NEIGHBOUR_CONNECTIONS = true;
