@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.simulator;
 
+import java.io.File;
+import java.text.NumberFormat;
+
 import freenet.config.SubConfig;
 import freenet.crypt.DummyRandomSource;
 import freenet.node.Node;
@@ -16,9 +19,6 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.PooledExecutor;
 import freenet.support.io.FileUtil;
-
-import java.io.File;
-import java.text.NumberFormat;
 
 /**
  * Create a mesh of nodes and let them sort out their locations.
