@@ -3785,6 +3785,11 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 		@Override
 		public void run() {
+			// SECURITY/TRIVIAL PERFORMANCE TRADEOFF: I don't think we want to run this lazily.
+			// If we run it lazily, an attacker could trigger it, given that it's triggered rarely
+			// in normal operation. FIXME long term we probably want to get rid of this from the
+			// production network, and just surveil a few "special" nodes which volunteer to have
+			// heavier stats inserted regularly.
 			try {
 				synchronized(noisyRejectStats) { // Only used for accessing the bytes.
 					for(int i=0;i<REJECT_STATS_AVERAGERS.length;i++) {
