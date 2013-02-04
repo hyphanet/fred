@@ -68,16 +68,14 @@ import freenet.store.KeyCollisionException;
 import freenet.support.Base64;
 import freenet.support.Executor;
 import freenet.support.ExecutorIdleCallback;
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.MutableBoolean;
 import freenet.support.OOMHandler;
 import freenet.support.OOMHook;
 import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.SimpleFieldSet;
-import freenet.support.Ticker;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SizeUtil;
+import freenet.support.Ticker;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
@@ -98,12 +96,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	private static volatile boolean logMINOR;
 
 	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
-			@Override
-			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-			}
-		});
+		Logger.registerClass(NodeClientCore.class);
 	}
 
 	public final PersistentStatsPutter bandwidthStatsPutter;
