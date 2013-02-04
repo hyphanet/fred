@@ -27,11 +27,9 @@ import freenet.node.LowLevelGetException;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
-import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
-import freenet.support.PooledExecutor;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.io.ArrayBucket;
@@ -90,25 +88,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         System.out.println();
         DummyRandomSource random = new DummyRandomSource(3142);
         DummyRandomSource topologyRandom = new DummyRandomSource(3143);
-        //DiffieHellman.init(random);
-        Node[] nodes = new Node[NUMBER_OF_NODES];
-        Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
-        Executor executor = new PooledExecutor();
-        for(int i=0;i<NUMBER_OF_NODES;i++) {
-            nodes[i] = 
-            	NodeStarter.createTestNode(i+1, DARKNET_PORT_BASE+i, 0, name, DISABLE_PROBABILISTIC_HTLS, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, 256*1024, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, ENABLE_SWAP_QUEUEING, ENABLE_PACKET_COALESCING, BWLIMIT, ENABLE_FOAF, false, true, USE_SLASHDOT_CACHE, null);
-            Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
-        }
-        
-        // Now link them up
-        makeKleinbergNetwork(nodes, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS, topologyRandom);
-
-        Logger.normal(RealNodeRoutingTest.class, "Added random links");
-        
-        for(int i=0;i<NUMBER_OF_NODES;i++) {
-            nodes[i].start(false);
-            System.err.println("Started node "+i+"/"+nodes.length);
-        }
+		Node[] nodes = createNodes(NUMBER_OF_NODES, name, random, topologyRandom, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS);
         
         waitForAllConnected(nodes);
         

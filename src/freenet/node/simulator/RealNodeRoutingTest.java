@@ -9,6 +9,7 @@ import freenet.crypt.DummyRandomSource;
 import freenet.crypt.RandomSource;
 import freenet.node.LocationManager;
 import freenet.node.Node;
+import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.support.Executor;
 import freenet.support.Logger;
@@ -56,6 +57,17 @@ public class RealNodeRoutingTest extends RealNodeTest {
 		// Make the network reproducible so we can easily compare different routing options by specifying a seed.
 		DummyRandomSource random = new DummyRandomSource(3142);
 		//DiffieHellman.init(random);
+		Node[] nodes = createNodes(NUMBER_OF_NODES, dir, random, random, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS);
+		// Make the choice of nodes to ping to and from deterministic too.
+		// There is timing noise because of all the nodes, but the network
+		// and the choice of nodes to start and finish are deterministic, so
+		// the overall result should be more or less deterministic.
+		waitForPingAverage(0.98, nodes, new DummyRandomSource(3143), MAX_PINGS, 5000);
+		System.exit(0);
+	}
+
+	protected static Node[] createNodes(int numberOfNodes, String dir, RandomSource random, RandomSource topologyRandom,
+			boolean startWithIdealLocations, int degree, boolean forceNeighbourConnections) throws NodeInitException, InterruptedException {
 		Node[] nodes = new Node[NUMBER_OF_NODES];
 		Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
 		Executor executor = new PooledExecutor();
@@ -66,7 +78,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
 		}
 		Logger.normal(RealNodeRoutingTest.class, "Created " + NUMBER_OF_NODES + " nodes");
 		// Now link them up
-		makeKleinbergNetwork(nodes, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS, random);
+		makeKleinbergNetwork(nodes, startWithIdealLocations, degree, forceNeighbourConnections, topologyRandom);
 
 		Logger.normal(RealNodeRoutingTest.class, "Added random links");
 
@@ -77,12 +89,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
 
 		waitForAllConnected(nodes);
 
-		// Make the choice of nodes to ping to and from deterministic too.
-		// There is timing noise because of all the nodes, but the network
-		// and the choice of nodes to start and finish are deterministic, so
-		// the overall result should be more or less deterministic.
-		waitForPingAverage(0.98, nodes, new DummyRandomSource(3143), MAX_PINGS, 5000);
-		System.exit(0);
+		return nodes;
 	}
 
 	static void waitForPingAverage(double accuracy, Node[] nodes, RandomSource random, int maxTests, int sleepTime) throws InterruptedException {

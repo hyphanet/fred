@@ -57,25 +57,9 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
 		NodeStarter.globalTestInit(dir, false, LogLevel.ERROR, "", true);
 		// Make the network reproducible so we can easily compare different routing options by specifying a seed.
 		DummyRandomSource random = new DummyRandomSource(3142);
-		Node[] nodes = new Node[NUMBER_OF_NODES];
-		Logger.normal(RealNodeProbeTest.class, "Creating nodes...");
-		Executor executor = new PooledExecutor();
-		for(int i = 0; i < NUMBER_OF_NODES; i++) {
-			System.err.println("Creating node " + i);
-			nodes[i] = NodeStarter.createTestNode(i+1, DARKNET_PORT_BASE + i, 0, dir, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500 * NUMBER_OF_NODES, 65536, true, ENABLE_SWAPPING, false, false, false, ENABLE_SWAP_QUEUEING, true, 0, ENABLE_FOAF, false, true, false, null, i == 0);
-			Logger.normal(RealNodeProbeTest.class, "Created node " + i);
-		}
-		Logger.normal(RealNodeProbeTest.class, "Created " + NUMBER_OF_NODES + " nodes");
-		// Now link them up
-		makeKleinbergNetwork(nodes, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS, random);
-
-		Logger.normal(RealNodeProbeTest.class, "Added random links");
-
-		for(int i = 0; i < NUMBER_OF_NODES; i++) {
-			System.err.println("Starting node " + i);
-			nodes[i].start(false);
-		}
-
+		
+		Node[] nodes = createNodes(NUMBER_OF_NODES, dir, random, random, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS);
+		
         System.out.println();
         System.out.println("Ping average > 95%, lets do some inserts/requests");
         System.out.println();
