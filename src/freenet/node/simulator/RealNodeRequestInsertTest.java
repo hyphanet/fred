@@ -94,6 +94,10 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         
         waitForPingAverage(0.5, nodes, new DummyRandomSource(3143), MAX_PINGS, 1000);
         
+        SimpleTagStatusCallback cb = new SimpleTagStatusCallback();
+        for(Node node : nodes)
+        	node.setDispatcherHook(cb);
+        	
         random = new DummyRandomSource(3144);
         
         System.out.println();

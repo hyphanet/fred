@@ -66,6 +66,10 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
         
         if(DO_INSERT_TEST) {
         	
+            SimpleTagStatusCallback cb = new SimpleTagStatusCallback();
+            for(Node node : nodes)
+            	node.setDispatcherHook(cb);
+            	
             waitForPingAverage(0.5, nodes, new DummyRandomSource(3143), MAX_PINGS, 1000);
             
             RealNodeRequestInsertTest tester = new RealNodeRequestInsertTest(nodes, random, 10);
