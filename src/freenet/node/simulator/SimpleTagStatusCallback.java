@@ -79,9 +79,9 @@ public class SimpleTagStatusCallback implements TagStatusCallback {
 					}
 					sb.append("(");
 					sb.append(runningCount);
-					sb.append("r ");
+					sb.append("run ");
 					sb.append(finishedCount);
-					sb.append("f)");
+					sb.append("fin)");
 					System.out.println(sb.toString());
 				}
 			}
