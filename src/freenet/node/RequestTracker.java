@@ -54,9 +54,12 @@ public class RequestTracker {
 	/** UIDs of RequestHandler's currently transferring */
 	private final HashSet<Long> transferringRequestHandlers;
 	
-	RequestTracker(PeerManager peers, Ticker ticker) {
+	private final int nodeInternalID;
+	
+	RequestTracker(PeerManager peers, Ticker ticker, int nodeInternalID) {
 		this.peers = peers;
 		this.ticker = ticker;
+		this.nodeInternalID = nodeInternalID;
 		runningCHKGetUIDsRT = new HashMap<Long,RequestTag>();
 		runningLocalCHKGetUIDsRT = new HashMap<Long,RequestTag>();
 		runningSSKGetUIDsRT = new HashMap<Long,RequestTag>();
@@ -784,5 +787,8 @@ public class RequestTracker {
 		}
 	}
 
+	public int getNodeID() {
+		return nodeInternalID;
+	}
 
 }

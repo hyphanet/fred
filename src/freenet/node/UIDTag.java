@@ -3,6 +3,7 @@ package freenet.node;
 import java.lang.ref.WeakReference;
 import java.util.HashSet;
 
+import freenet.node.NodeDispatcher.TagStatusCallback;
 import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger.LogLevel;
@@ -33,6 +34,7 @@ public abstract class UIDTag {
 	protected final RequestTracker tracker;
 	protected boolean accepted;
 	protected boolean sourceRestarted;
+	private TagStatusCallback tagStatusCallback;
 	
 	/** Nodes we have routed to at some point */
 	private HashSet<PeerNode> routedTo = null;
@@ -46,7 +48,7 @@ public abstract class UIDTag {
 	 * are here too, we will reassignTagToSelf and not log an error. */
 	private HashSet<PeerNode> handlingTimeouts = null;
 	protected boolean notRoutedOnwards;
-	final long uid;
+	public final long uid;
 	
 	protected boolean unlockedHandler;
 	protected boolean noRecordUnlock;
@@ -175,6 +177,9 @@ public abstract class UIDTag {
 	
 	protected void innerUnlock(boolean noRecordUnlock) {
 		tracker.unlockUID(this, false, noRecordUnlock);
+		TagStatusCallback cb = tagStatusCallback;
+		if(cb != null)
+			cb.completed(tracker.getNodeID(), this);
 	}
 
 	public void postUnlock() {
@@ -459,6 +464,10 @@ public abstract class UIDTag {
 	
 	public synchronized boolean isWaitingForSlot() {
 		return waitingForSlot;
+	}
+	
+	public synchronized void setCallback(TagStatusCallback cb) {
+		this.tagStatusCallback = cb;
 	}
 
 }

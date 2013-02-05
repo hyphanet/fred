@@ -102,6 +102,7 @@ import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.node.NodeDispatcher.NodeDispatcherCallback;
+import freenet.node.NodeDispatcher.TagStatusCallback;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
@@ -1720,7 +1721,7 @@ public class Node implements TimeSkewDetectorCallback {
 		peers.tryReadPeers(nodeDir.file("peers-"+getDarknetPortNumber()).getPath(), darknetCrypto, null, false, false);
 		peers.updatePMUserAlert();
 		
-		tracker = new RequestTracker(peers, ticker);
+		tracker = new RequestTracker(peers, ticker, internalID);
 
 		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
 
@@ -5124,6 +5125,10 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public void setDispatcherHook(NodeDispatcherCallback cb) {
+		this.dispatcher.setHook(cb);
+	}
+	
+	public void setDispatcherHook(TagStatusCallback cb) {
 		this.dispatcher.setHook(cb);
 	}
 

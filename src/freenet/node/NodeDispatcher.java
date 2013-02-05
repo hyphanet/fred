@@ -79,7 +79,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	private NodeStats nodeStats;
 	private NodeDispatcherCallback callback;
 	final Probe probe;
-	private TagAcceptedCallback acceptanceCallback;
+	private TagStatusCallback acceptanceCallback;
 	
 	private static final long STALE_CONTEXT=20000;
 	private static final long STALE_CONTEXT_CHECK=20000;
@@ -117,11 +117,13 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	
 	/** Callback to be used by simulation code. Callbacks should not do anything that can block,
 	 * take any locks from the node, etc. */
-	public static interface TagAcceptedCallback {
+	public static interface TagStatusCallback {
 		
 		public void accepted(int nodeID, UIDTag tag);
 		
 		public void rejected(int nodeID, UIDTag tag);
+		
+		public void completed(int nodeID, UIDTag tag);
 		
 	}
 	
@@ -355,6 +357,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		boolean isSSK = key instanceof NodeSSK;
         boolean realTimeFlag = DMT.getRealTimeFlag(m);
 		OfferReplyTag tag = new OfferReplyTag(isSSK, source, realTimeFlag, uid, node);
+		TagStatusCallback cb = acceptanceCallback;
 		if(!HMAC.verifyWithSHA256(node.failureTable.offerAuthenticatorKey, key.getFullKey(), authenticator)) {
 			Logger.error(this, "Invalid offer request from "+source+" : authenticator did not verify");
 			try {
@@ -362,9 +365,9 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				// Too bad.
 			}
-			TagAcceptedCallback cb = acceptanceCallback;
-			if(cb != null)
-				cb.accepted(node.internalID, new RequestTag(isSSK, RequestTag.START.REMOTE, source, realTimeFlag, uid, node));
+			if(cb != null) {
+				cb.rejected(node.internalID, tag);
+			}
 			return true;
 		}
 		if(logMINOR) Logger.minor(this, "Valid GetOfferedKey for "+key+" from "+source);
@@ -378,6 +381,9 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				source.sendAsync(rejected, null, node.failureTable.senderCounter);
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting request from "+source.getPeer()+": "+e);
+			}
+			if(cb != null) {
+				cb.rejected(node.internalID, tag);
 			}
 			return true;
 		} else {
@@ -398,6 +404,9 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) data request from "+source.getPeer()+": "+e);
 			}
+			if(cb != null) {
+				cb.rejected(node.internalID, tag);
+			}
 			tag.unlockHandler(reject.soft);
 			return true;
 		}
@@ -416,6 +425,10 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			node.failureTable.sendOfferedKey(key, isSSK, needPubKey, uid, source, tag,realTimeFlag);
 		} catch (NotConnectedException e) {
 			// Too bad.
+		}
+		if(cb != null) {
+			tag.setCallback(cb);
+			cb.accepted(node.internalID, tag);
 		}
 		return true;
 	}
@@ -499,11 +512,11 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		// For now just handle everything on the thread...
 		if(!requestQueue.offer(m)) {
 			rejectRequest(m, isSSK ? node.nodeStats.sskRequestCtr : node.nodeStats.chkRequestCtr);
-			TagAcceptedCallback cb = acceptanceCallback;
+			TagStatusCallback cb = acceptanceCallback;
 			if(cb != null) {
 		        boolean realTimeFlag = DMT.getRealTimeFlag(m);
 				long id = m.getLong(DMT.UID);
-				cb.accepted(node.internalID, new RequestTag(isSSK, RequestTag.START.REMOTE, source, realTimeFlag, id, node));
+				cb.rejected(node.internalID, new RequestTag(isSSK, RequestTag.START.REMOTE, source, realTimeFlag, id, node));
 			}
 		}
 	}
@@ -517,7 +530,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			if(logMINOR) Logger.minor(this, "Handling request off thread, source disconnected: "+source+" for "+m);
 			return;
 		}
-		TagAcceptedCallback cb = acceptanceCallback;
+		TagStatusCallback cb = acceptanceCallback;
 		long id = m.getLong(DMT.UID);
 		ByteCounter ctr = isSSK ? node.nodeStats.sskRequestCtr : node.nodeStats.chkRequestCtr;
         short htl = m.getShort(DMT.HTL);
@@ -585,8 +598,10 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			needsPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
 		RequestHandler rh = new RequestHandler(source, id, node, htl, key, tag, block, realTimeFlag, needsPubKey);
 		rh.receivedBytes(m.receivedByteCount());
-		if(cb != null)
+		if(cb != null) {
 			cb.accepted(node.internalID, tag);
+			tag.setCallback(cb);
+		}
 		node.executor.execute(rh, "RequestHandler for UID "+id+" on "+node.getDarknetPortNumber());
 	}
 
@@ -604,7 +619,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		long id = m.getLong(DMT.UID);
         boolean realTimeFlag = DMT.getRealTimeFlag(m);
 		InsertTag tag = new InsertTag(isSSK, InsertTag.START.REMOTE, source, realTimeFlag, id, node);
-		TagAcceptedCallback cb = acceptanceCallback;
+		TagStatusCallback cb = acceptanceCallback;
 		if(!tracker.lockUID(id, isSSK, true, false, false, realTimeFlag, tag)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
@@ -672,8 +687,10 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			node.executor.execute(rh, "CHKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		}
 		if(logMINOR) Logger.minor(this, "Started InsertHandler for "+id);
-		if(cb != null)
+		if(cb != null) {
+			tag.setCallback(cb);
 			cb.accepted(node.internalID, tag);
+		}
 	}
 	
 	private boolean handleAnnounceRequest(Message m, PeerNode source) {
@@ -1094,7 +1111,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		this.callback = cb;
 	}
 	
-	public void setHook(TagAcceptedCallback cb) {
+	public void setHook(TagStatusCallback cb) {
 		this.acceptanceCallback = cb;
 	}
 	
