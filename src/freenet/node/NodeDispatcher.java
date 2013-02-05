@@ -21,6 +21,7 @@ import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
+import freenet.node.NodeDispatcher.TagStatusCallback;
 import freenet.node.NodeStats.PeerLoadStats;
 import freenet.node.NodeStats.RejectReason;
 import freenet.node.probe.Probe;
@@ -1113,6 +1114,10 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	
 	public void setHook(TagStatusCallback cb) {
 		this.acceptanceCallback = cb;
+	}
+
+	TagStatusCallback getTagStatusCallback() {
+		return acceptanceCallback;
 	}
 	
 	

@@ -58,6 +58,7 @@ import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.l10n.NodeL10n;
+import freenet.node.NodeDispatcher.TagStatusCallback;
 import freenet.node.NodeRestartJobsQueue.RestartDBJob;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.fcp.FCPServer;
@@ -1079,21 +1080,26 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	 */
 	void asyncGet(Key key, boolean offersOnly, long uid, RequestSenderListener listener, RequestTag tag, boolean canReadClientCache, boolean canWriteClientCache, short htl, boolean realTimeFlag, boolean localOnly, boolean ignoreStore) {
 		try {
+			TagStatusCallback cb = node.dispatcher.getTagStatusCallback();
 			Object o = node.makeRequestSender(key, htl, uid, tag, null, localOnly, ignoreStore, offersOnly, canReadClientCache, canWriteClientCache, realTimeFlag);
 			if(o instanceof KeyBlock) {
 				tag.setServedFromDatastore();
 				listener.onDataFoundLocally();
+				if(cb != null) cb.rejected(node.internalID, tag);
 				return; // Already have it.
 			}
 			if(o == null) {
 				listener.onNotStarted(false);
 				tag.unlockHandler();
+				if(cb != null) cb.rejected(node.internalID, tag);
 				return;
 			}
 			RequestSender rs = (RequestSender) o;
 			rs.addListener(listener);
 			if(rs.uid != uid)
 				tag.unlockHandler();
+			if(cb != null) cb.accepted(node.internalID, tag);
+			tag.setCallback(cb);
 			// Else it has started a request.
 			if(logMINOR)
 				Logger.minor(this, "Started " + o + " for " + uid + " for " + key);
@@ -1126,11 +1132,13 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	 * @throws LowLevelGetException
 	 */
 	ClientCHKBlock realGetCHK(ClientCHK key, boolean localOnly, boolean ignoreStore, boolean canWriteClientCache, boolean realTimeFlag) throws LowLevelGetException {
+		TagStatusCallback cb = node.dispatcher.getTagStatusCallback();
 		long startTime = System.currentTimeMillis();
 		long uid = makeUID();
 		RequestTag tag = new RequestTag(false, RequestTag.START.LOCAL, null, realTimeFlag, uid, node);
 		if(!tracker.lockUID(uid, false, false, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
+			if(cb != null) cb.rejected(node.internalID, tag);
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
 		tag.setAccepted();
@@ -1140,6 +1148,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			if(o instanceof CHKBlock)
 				try {
 					tag.setServedFromDatastore();
+					if(cb != null) {
+						cb.accepted(node.internalID, tag);
+						cb.completed(node.internalID, tag);
+					}
 					return new ClientCHKBlock((CHKBlock) o, key);
 				} catch(CHKVerifyException e) {
 					Logger.error(this, "Does not verify: " + e, e);
@@ -1147,6 +1159,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 			if(o == null)
 				throw new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND_IN_STORE);
+			if(cb != null) cb.accepted(node.internalID, tag);
+			tag.setCallback(cb);
 			rs = (RequestSender) o;
 			boolean rejectedOverload = false;
 			short waitStatus = 0;
@@ -1251,11 +1265,13 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	}
 
 	ClientSSKBlock realGetSSK(ClientSSK key, boolean localOnly, boolean ignoreStore, boolean canWriteClientCache, boolean realTimeFlag) throws LowLevelGetException {
+		TagStatusCallback cb = node.dispatcher.getTagStatusCallback();
 		long startTime = System.currentTimeMillis();
 		long uid = makeUID();
 		RequestTag tag = new RequestTag(true, RequestTag.START.LOCAL, null, realTimeFlag, uid, node);
 		if(!tracker.lockUID(uid, true, false, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
+			if(cb != null) cb.rejected(node.internalID, tag);
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
 		tag.setAccepted();
@@ -1267,6 +1283,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					tag.setServedFromDatastore();
 					SSKBlock block = (SSKBlock) o;
 					key.setPublicKey(block.getPubKey());
+					if(cb != null) {
+						cb.accepted(node.internalID, tag);
+						cb.completed(node.internalID, tag);
+					}
 					return ClientSSKBlock.construct(block, key);
 				} catch(SSKVerifyException e) {
 					Logger.error(this, "Does not verify: " + e, e);
@@ -1277,6 +1297,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			rs = (RequestSender) o;
 			boolean rejectedOverload = false;
 			short waitStatus = 0;
+			cb.accepted(node.internalID, tag);
+			tag.setCallback(cb);
 			while(true) {
 				waitStatus = rs.waitUntilStatusChange(waitStatus);
 				if((!rejectedOverload) && (waitStatus & RequestSender.WAIT_REJECTED_OVERLOAD) != 0) {
@@ -1383,6 +1405,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	}
 
 	public void realPutCHK(CHKBlock block, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) throws LowLevelPutException {
+		TagStatusCallback cb = node.dispatcher.getTagStatusCallback();
 		byte[] data = block.getData();
 		byte[] headers = block.getHeaders();
 		PartiallyReceivedBlock prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, data);
@@ -1391,9 +1414,14 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		InsertTag tag = new InsertTag(false, InsertTag.START.LOCAL, null, realTimeFlag, uid, node);
 		if(!tracker.lockUID(uid, false, true, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
+			if(cb != null) cb.rejected(node.internalID, tag);
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
 		}
 		tag.setAccepted();
+		if(cb != null) {
+			cb.accepted(node.internalID, tag);
+			tag.setCallback(cb);
+		}
 		try {
 			long startTime = System.currentTimeMillis();
 			is = node.makeInsertSender(block.getKey(),
@@ -1506,14 +1534,20 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	}
 
 	public void realPutSSK(SSKBlock block, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) throws LowLevelPutException {
+		TagStatusCallback cb = node.dispatcher.getTagStatusCallback();
 		SSKInsertSender is;
 		long uid = makeUID();
 		InsertTag tag = new InsertTag(true, InsertTag.START.LOCAL, null, realTimeFlag, uid, node);
 		if(!tracker.lockUID(uid, true, true, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
+			if(cb != null) cb.rejected(node.internalID, tag);
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
 		}
 		tag.setAccepted();
+		if(cb != null) {
+			cb.accepted(node.internalID, tag);
+			tag.setCallback(cb);
+		}
 		try {
 			long startTime = System.currentTimeMillis();
 			// Be consistent: use the client cache to check for collisions as this is a local insert.
