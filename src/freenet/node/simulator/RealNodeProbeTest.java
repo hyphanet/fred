@@ -26,16 +26,18 @@ import java.text.NumberFormat;
  *
  * Then present a user interface to run different types of probes from random nodes.
  */
-public class RealNodeProbeTest extends RealNodeTest {
+public class RealNodeProbeTest extends RealNodeRoutingTest {
 
 	static final int NUMBER_OF_NODES = 100;
-	static final int DEGREE = 5;
+	static final int DEGREE = 10;
 	static final short MAX_HTL = (short) 5;
 	static final boolean START_WITH_IDEAL_LOCATIONS = true;
 	static final boolean FORCE_NEIGHBOUR_CONNECTIONS = true;
 	static final boolean ENABLE_SWAPPING = false;
 	static final boolean ENABLE_SWAP_QUEUEING = false;
 	static final boolean ENABLE_FOAF = true;
+	private static final boolean DO_INSERT_TEST = true;
+	static final int MAX_PINGS = 2000;
 
 	public static int DARKNET_PORT_BASE = RealNodeRoutingTest.DARKNET_PORT_END;
 	public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
@@ -76,7 +78,30 @@ public class RealNodeProbeTest extends RealNodeTest {
 			nodes[i].start(false);
 		}
 
-		waitForAllConnected(nodes);
+        System.out.println();
+        System.out.println("Ping average > 95%, lets do some inserts/requests");
+        System.out.println();
+        
+        if(DO_INSERT_TEST) {
+        	
+            waitForPingAverage(0.5, nodes, new DummyRandomSource(3143), MAX_PINGS, 1000);
+            
+            RealNodeRequestInsertTest tester = new RealNodeRequestInsertTest(nodes, random, 10);
+            
+            waitForAllConnected(nodes);
+            
+            while(true) {
+            	try {
+            		waitForAllConnected(nodes);
+            		int status = tester.insertRequestTest();
+            		if(status == -1) continue;
+            		System.out.println("Insert test completed with status "+status);
+            		break;
+            	} catch (Throwable t) {
+            		Logger.error(RealNodeRequestInsertTest.class, "Caught "+t, t);
+            	}
+            }
+        }
 
 		final NumberFormat nf = NumberFormat.getInstance();
 		Listener print = new Listener() {
