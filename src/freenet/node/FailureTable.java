@@ -294,6 +294,9 @@ public class FailureTable implements OOMHook {
 		Key key = block.getKey();
 		if(key == null) throw new NullPointerException();
 		FailureTableEntry entry;
+		synchronized(blockOfferListByKey) {
+			blockOfferListByKey.removeKey(key);
+		}
 		synchronized(this) {
 			entry = entriesByKey.get(key);
 			if(entry == null) {
@@ -301,9 +304,6 @@ public class FailureTable implements OOMHook {
 				return; // Nobody cares
 			}
 			entriesByKey.removeKey(key);
-		}
-		synchronized(blockOfferListByKey) {
-			blockOfferListByKey.removeKey(key);
 		}
 		if(logMINOR) Logger.minor(this, "Offering key");
 		if(!node.enableULPRDataPropagation) return;
