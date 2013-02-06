@@ -67,6 +67,7 @@ import freenet.node.NodeStats.RunningRequestsSnapshot;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.PeerManager.PeerStatusChangeListener;
 import freenet.support.Base64;
+import freenet.support.BooleanLastTrueTracker;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
@@ -165,8 +166,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	private long timeLastReceivedDataPacket;
 	/** When did we last receive an ack? */
 	private long timeLastReceivedAck;
-	/** When was isConnected() last true? */
-	private long timeLastConnected;
 	/** When was isRoutingCompatible() last true? */
 	private long timeLastRoutable;
 	/** Time added or restarted (reset on startup unlike peerAddedTime) */
@@ -186,8 +185,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/** Is the peer connected? If currentTracker == null then we have no way to send packets 
 	 * (though we may be able to receive them on the other trackers), and are disconnected. So we
 	 * MUST set isConnected to false when currentTracker = null, but the other way around isn't
-	 * always true. */
-	private boolean isConnected;
+	 * always true. LOCKING: Locks itself, safe to read atomically, however we should take (this) 
+	 * when setting it. */
+	private final BooleanLastTrueTracker isConnected;
+	
+	// FIXME use a BooleanLastTrueTracker. Be careful as isRoutable() depends on more than this flag!
 	private boolean isRoutable;
 
 	/** Used by maybeOnConnect */
@@ -654,15 +656,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		timeLastSentPacket = -1;
 		timeLastReceivedPacket = -1;
 		timeLastReceivedSwapRequest = -1;
-		timeLastConnected = -1;
 		timeLastRoutable = -1;
 		timeAddedOrRestarted = System.currentTimeMillis();
 
 		swapRequestsInterval = new SimpleRunningAverage(50, Node.MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS);
 		probeRequestsInterval = new SimpleRunningAverage(50, Node.MIN_INTERVAL_BETWEEN_INCOMING_PROBE_REQUESTS);
-
-		// Not connected yet; need to handshake
-		isConnected = false;
 
 		messageQueue = new PeerMessageQueue();
 
@@ -717,10 +715,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					detectedPeer = p;
 				updateShortToString();
 				timeLastReceivedPacket = metadata.getLong("timeLastReceivedPacket", -1);
-				timeLastConnected = metadata.getLong("timeLastConnected", -1);
+				long timeLastConnected = metadata.getLong("timeLastConnected", -1);
 				timeLastRoutable = metadata.getLong("timeLastRoutable", -1);
 				if(timeLastConnected < 1 && timeLastReceivedPacket > 1)
 					timeLastConnected = timeLastReceivedPacket;
+				isConnected = new BooleanLastTrueTracker(timeLastConnected);
 				if(timeLastRoutable < 1 && timeLastReceivedPacket > 1)
 					timeLastRoutable = timeLastReceivedPacket;
 				peerAddedTime = metadata.getLong("peerAddedTime",
@@ -730,8 +729,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				maybeClearPeerAddedTimeOnRestart(now);
 				hadRoutableConnectionCount = metadata.getLong("hadRoutableConnectionCount", 0);
 				routableConnectionCheckCount = metadata.getLong("routableConnectionCheckCount", 0);
+			} else {
+				isConnected = new BooleanLastTrueTracker();
 			}
 		} else {
+			isConnected = new BooleanLastTrueTracker();
 			neverConnected = true;
 			peerAddedTime = now;
 		}
@@ -1084,14 +1086,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	@Override
 	public boolean isConnected() {
-		long now = System.currentTimeMillis(); // no System.currentTimeMillis in synchronized
-		synchronized(this) {
-			if(isConnected) {
-				timeLastConnected = now;
-				return true;
-			}
-			return false;
-		}
+		return isConnected.isConnected();
 	}
 
 	/**
@@ -1172,8 +1167,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return timeLastReceivedAck;
 	}
 
-	public synchronized long timeLastConnected() {
-		return timeLastConnected;
+	public long timeLastConnected(long now) {
+		return isConnected.getTimeLastConnected(now);
 	}
 
 	public synchronized long timeLastRoutable() {
@@ -1191,7 +1186,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		synchronized (this) {
 			timeWhenRekeyingShouldOccur = timeLastRekeyed + FNPPacketMangler.SESSION_KEY_REKEYING_INTERVAL;
 			shouldDisconnect = (timeWhenRekeyingShouldOccur + FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY < now) && isRekeying;
-			shouldReturn = isRekeying || !isConnected;
+			shouldReturn = isRekeying || !isConnected();
 			shouldRekey = (timeWhenRekeyingShouldOccur < now);
 			if((!shouldRekey) && totalBytesExchangedWithCurrentTracker > FNPPacketMangler.AMOUNT_OF_BYTES_ALLOWED_BEFORE_WE_REKEY) {
 				shouldRekey = true;
@@ -1277,9 +1272,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		PacketFormat oldPacketFormat = null;
 		synchronized(this) {
 			disconnecting = false;
-			ret = isConnected;
 			// Force renegotiation.
-			isConnected = false;
+			ret = isConnected.setConnected(false, now);
 			isRoutable = false;
 			isRekeying = false;
 			// Prevent sending packets to the node until that happens.
@@ -1339,7 +1333,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 							timeLastDisconnect == now) {
 						PacketFormat oldPacketFormat = null;
 						synchronized(this) {
-							if(isConnected) return;
+							if(isConnected()) return;
 							// Reset the boot ID so that we get different trackers next time.
 							myBootID = node.fastWeakRandom.nextLong();
 							oldPacketFormat = packetFormat;
@@ -1440,7 +1434,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		SessionKey prev;
 		PacketFormat pf;
 		synchronized(this) {
-			if(!isConnected) return Long.MAX_VALUE;
+			if(!isConnected()) return Long.MAX_VALUE;
 			cur = currentTracker;
 			prev = previousTracker;
 			pf = packetFormat;
@@ -1879,7 +1873,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				updateShortToString();
 				// IP has changed, it is worth looking up the DNS address again.
 				this.lastAttemptedHandshakeIPUpdateTime = 0;
-				if(!isConnected)
+				if(!isConnected())
 					return;
 			} else
 				return;
@@ -1947,7 +1941,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	@Override
 	public void receivedPacket(boolean dontLog, boolean dataPacket) {
 		synchronized(this) {
-			if((!isConnected) && (!dontLog)) {
+			if((!isConnected()) && (!dontLog)) {
 				// Don't log if we are disconnecting, because receiving packets during disconnecting is normal.
 				// That includes receiving packets after we have technically disconnected already.
 				// A race condition involving forceCancelDisconnecting causing a mistaken log message anyway
@@ -2045,7 +2039,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			synchronized(this) {
 				bogusNoderef = true;
 				// Disconnect, something broke
-				isConnected = false;
+				isConnected.setConnected(false, now);
 			}
 			Logger.error(this, "Failed to parse new noderef for " + this + ": " + e1, e1);
 			node.peers.disconnected(this);
@@ -2110,7 +2104,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			handshakeCount = 0;
 			bogusNoderef = false;
 			// Don't reset the uptime if we rekey
-			if(!isConnected) {
+			if(!isConnected()) {
 				connectedTime = now;
 				countSelectionsSinceConnected = 0;
 				sentInitialMessages = false;
@@ -2175,7 +2169,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				neverConnected = false;
 				maybeClearPeerAddedTimeOnConnect();
 			}
-			isConnected = (currentTracker != null);
+			isConnected.setConnected(currentTracker != null, now);
 			ctx = null;
 			isRekeying = false;
 			timeLastRekeyed = now - (unverified ? 0 : FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY / 2);
@@ -2370,7 +2364,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				previousTracker = currentTracker;
 				currentTracker = unverifiedTracker;
 				unverifiedTracker = null;
-				isConnected = true;
+				isConnected.setConnected(true, now);
 				neverConnected = false;
 				maybeClearPeerAddedTimeOnConnect();
 				ctx = null;
@@ -2772,7 +2766,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	*/
 	public void write(Writer w) throws IOException {
 		SimpleFieldSet fs = exportFieldSet();
-		SimpleFieldSet meta = exportMetadataFieldSet();
+		SimpleFieldSet meta = exportMetadataFieldSet(System.currentTimeMillis());
 		if(!meta.isEmpty())
 			fs.put("metadata", meta);
 		fs.writeTo(w);
@@ -2783,7 +2777,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 */
 	public synchronized SimpleFieldSet exportDiskFieldSet() {
 		SimpleFieldSet fs = exportFieldSet();
-		SimpleFieldSet meta = exportMetadataFieldSet();
+		SimpleFieldSet meta = exportMetadataFieldSet(System.currentTimeMillis());
 		if(!meta.isEmpty())
 			fs.put("metadata", meta);
 		if(fullFieldSet != null)
@@ -2794,7 +2788,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/**
 	* Export metadata about the node as a SimpleFieldSet
 	*/
-	public synchronized SimpleFieldSet exportMetadataFieldSet() {
+	public synchronized SimpleFieldSet exportMetadataFieldSet(long now) {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		if(detectedPeer != null)
 			fs.putSingle("detected.udp", detectedPeer.toStringPrefNumeric());
@@ -2802,7 +2796,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			fs.put("timeLastReceivedPacket", timeLastReceivedPacket);
 		if(lastReceivedAckTime() > 0)
 			fs.put("timeLastReceivedAck", timeLastReceivedAck);
-		if(timeLastConnected() > 0)
+		long timeLastConnected = isConnected.getTimeLastConnected(now);
+		if(timeLastConnected > 0)
 			fs.put("timeLastConnected", timeLastConnected);
 		if(timeLastRoutable() > 0)
 			fs.put("timeLastRoutable", timeLastRoutable);
@@ -3488,6 +3483,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	protected synchronized int getPeerNodeStatus(long now, long routingBackedOffUntilRT, long localRoutingBackedOffUntilBulk, boolean overPingTime, boolean noLoadStats) {
 		if(disconnecting)
 			return PeerManager.PEER_NODE_STATUS_DISCONNECTING;
+		boolean isConnected = isConnected();
 		if(isRoutable()) {  // Function use also updates timeLastConnected and timeLastRoutable
 			if(noLoadStats)
 				peerNodeStatus = PeerManager.PEER_NODE_STATUS_NO_LOAD_STATS;
@@ -3531,9 +3527,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					}
 				}
 			}
-		} else if(isConnected() && bogusNoderef)
+		} else if(isConnected && bogusNoderef)
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_CONN_ERROR;
-		else if(isConnected() && unroutableNewerVersion)
+		else if(isConnected && unroutableNewerVersion)
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_TOO_NEW;
 		else if(isConnected && unroutableOlderVersion)
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_TOO_OLD;
@@ -5468,10 +5464,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	/** Only called for new format connections, for which we don't care about PacketTracker */
 	public void dumpTracker(SessionKey brokenKey) {
+		long now = System.currentTimeMillis();
 		synchronized(this) {
 			if(currentTracker == brokenKey) {
 				currentTracker = null;
-				isConnected = false;
+				isConnected.setConnected(false, now);
 			} else if(previousTracker == brokenKey)
 				previousTracker = null;
 			else if(unverifiedTracker == brokenKey)

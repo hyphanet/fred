@@ -793,11 +793,12 @@ public class OpennetManager {
 	}
 
 	public void onRemove(OpennetPeerNode pn) {
+		long now = System.currentTimeMillis();
 		synchronized (this) {
 			peersLRU.remove(pn);
 			if(pn.isDroppable(true) && !pn.grabWasDropped()) {
 				if(logMINOR) Logger.minor(this, "onRemove() for "+pn);
-				if(pn.timeLastConnected() > 0) {
+				if(pn.timeLastConnected(now) > 0) {
 					// Don't even add it if it never connected.
 					oldPeers.push(pn);
 					while (oldPeers.size() > MAX_OLD_PEERS)

@@ -118,8 +118,8 @@ public class OpennetPeerNode extends PeerNode {
 	}
 	
 	@Override
-	public synchronized SimpleFieldSet exportMetadataFieldSet() {
-		SimpleFieldSet fs = super.exportMetadataFieldSet();
+	public synchronized SimpleFieldSet exportMetadataFieldSet(long now) {
+		SimpleFieldSet fs = super.exportMetadataFieldSet(now);
 		fs.put("timeLastSuccess", timeLastSuccess);
 		return fs;
 	}

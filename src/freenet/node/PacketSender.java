@@ -429,12 +429,12 @@ public class PacketSender implements Runnable {
 			PeerNode[] peers = om.getOldPeers();
 
 			for(PeerNode pn : peers) {
-				if(pn.timeLastConnected() <= 0)
+				if(pn.timeLastConnected(now) <= 0)
 					Logger.error(this, "Last connected is zero or negative for old-opennet-peer "+pn);
 				// Will be removed by next line.
-				if(now - pn.timeLastConnected() > OpennetManager.MAX_TIME_ON_OLD_OPENNET_PEERS) {
+				if(now - pn.timeLastConnected(now) > OpennetManager.MAX_TIME_ON_OLD_OPENNET_PEERS) {
 					om.purgeOldOpennetPeer(pn);
-					if(logMINOR) Logger.minor(this, "Removing old opennet peer (too old): "+pn+" age is "+TimeUtil.formatTime(now - pn.timeLastConnected()));
+					if(logMINOR) Logger.minor(this, "Removing old opennet peer (too old): "+pn+" age is "+TimeUtil.formatTime(now - pn.timeLastConnected(now)));
 					continue;
 				}
 				if(pn.isConnected()) continue; // Race condition??
