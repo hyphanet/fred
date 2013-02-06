@@ -327,9 +327,9 @@ class FailureTableEntry implements TimedOutNodesList {
 	 * Called after a) the data has been stored, and b) this entry has been removed from the FT */
 	public void offer() {
 		HashSet<PeerNodeUnlocked> set = new HashSet<PeerNodeUnlocked>();
+		final boolean logMINOR = FailureTableEntry.logMINOR;
+		if(logMINOR) Logger.minor(this, "Sending offers to nodes which requested the key from us: ("+requestorNodes.length+") for "+key);
 		synchronized(this) {
-			final boolean logMINOR = FailureTableEntry.logMINOR;
-			if(logMINOR) Logger.minor(this, "Sending offers to nodes which requested the key from us: ("+requestorNodes.length+") for "+key);
 			for(int i=0;i<requestorNodes.length;i++) {
 				WeakReference<? extends PeerNodeUnlocked> ref = requestorNodes[i];
 				if(ref == null) continue;
