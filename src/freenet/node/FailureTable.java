@@ -655,10 +655,8 @@ public class FailureTable implements OOMHook {
 	 * @return True if there are any offers, false otherwise.
 	 */
 	public boolean hadAnyOffers(Key key) {
-		BlockOfferList bl;
 		synchronized(blockOfferListByKey) {
-			bl = blockOfferListByKey.get(key);
-			return bl != null;
+			return blockOfferListByKey.get(key) != null;
 		}
 	}
 
