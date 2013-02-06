@@ -63,7 +63,7 @@ public class FailureTable implements OOMHook {
 
 	/** FailureTableEntry's by key. Note that we push an entry only when sentTime changes. */
 	private final LRUMap<Key,FailureTableEntry> entriesByKey;
-	/** BlockOfferList by key */
+	/** BlockOfferList by key. Synchronized on self, as it doesn't interact with the main FT. */
 	private final LRUMap<Key,BlockOfferList> blockOfferListByKey;
 	private final Node node;
 	
@@ -197,7 +197,7 @@ public class FailureTable implements OOMHook {
 		}
 
 		public long expires() {
-			synchronized(FailureTable.this) {
+			synchronized(blockOfferListByKey) {
 				long last = 0;
 				for(BlockOffer offer: offers) {
 					if(offer.offeredTime > last) last = offer.offeredTime;
@@ -207,7 +207,7 @@ public class FailureTable implements OOMHook {
 		}
 
 		public boolean isEmpty(long now) {
-			synchronized(FailureTable.this) {
+			synchronized(blockOfferListByKey) {
 				for(BlockOffer offer: offers) {
 					if(!offer.isExpired(now)) return false;
 				}
@@ -217,7 +217,7 @@ public class FailureTable implements OOMHook {
 
 		public void deleteOffer(BlockOffer offer) {
 			if(logMINOR) Logger.minor(this, "Deleting "+offer+" from "+this);
-			synchronized(FailureTable.this) {
+			synchronized(blockOfferListByKey) {
 				int idx = -1;
 				final int offerLength = offers.length;
 				for(int i=0;i<offerLength;i++) {
@@ -237,7 +237,7 @@ public class FailureTable implements OOMHook {
 		}
 
 		public void addOffer(BlockOffer offer) {
-			synchronized(FailureTable.this) {
+			synchronized(blockOfferListByKey) {
 				offers = Arrays.copyOf(offers, offers.length+1);
 				offers[offers.length-1] = offer;
 			}
@@ -280,7 +280,8 @@ public class FailureTable implements OOMHook {
 	
 	/**
 	 * Called when a data block is found (after it has been stored; there is a good chance of its being available in the
-	 * near future). If there are nodes waiting for it, we will offer it to them.
+	 * near future). If there are nodes waiting for it, we will offer it to them. Removes the list of 
+	 * nodes that offered the key too (but this is a separate operation).
 	 * LOCKING: Never call when locked PeerNode, and try to avoid other locks as
 	 * they might cause a deadlock. Schedule off-thread if necessary.
 	 */
@@ -300,6 +301,8 @@ public class FailureTable implements OOMHook {
 				return; // Nobody cares
 			}
 			entriesByKey.removeKey(key);
+		}
+		synchronized(blockOfferListByKey) {
 			blockOfferListByKey.removeKey(key);
 		}
 		if(logMINOR) Logger.minor(this, "Offering key");
@@ -416,7 +419,7 @@ public class FailureTable implements OOMHook {
 		
 		// Add to offers list
 		
-		synchronized(this) {			
+		synchronized(blockOfferListByKey) {			
 			if(logMINOR) Logger.minor(this, "Valid offer");
 			BlockOfferList bl = blockOfferListByKey.get(key);
 			BlockOffer offer = new BlockOffer(peer, now, authenticator, peer.getBootID());
@@ -440,15 +443,17 @@ public class FailureTable implements OOMHook {
 		node.clientCore.queueOfferedKey(key, false);
 	}
 
-	private synchronized void trimOffersList(long now) {
-		while(true) {
-			if(blockOfferListByKey.isEmpty()) return;
-			BlockOfferList bl = blockOfferListByKey.peekValue();
-			if(bl.isEmpty(now) || bl.expires() < now || blockOfferListByKey.size() > MAX_OFFERS) {
-				if(logMINOR) Logger.minor(this, "Removing block offer list "+bl+" list size now "+blockOfferListByKey.size());
-				blockOfferListByKey.popKey();
-			} else {
-				return;
+	private void trimOffersList(long now) {
+		synchronized(blockOfferListByKey) {
+			while(true) {
+				if(blockOfferListByKey.isEmpty()) return;
+				BlockOfferList bl = blockOfferListByKey.peekValue();
+				if(bl.isEmpty(now) || bl.expires() < now || blockOfferListByKey.size() > MAX_OFFERS) {
+					if(logMINOR) Logger.minor(this, "Removing block offer list "+bl+" list size now "+blockOfferListByKey.size());
+					blockOfferListByKey.popKey();
+				} else {
+					return;
+				}
 			}
 		}
 	}
@@ -651,7 +656,7 @@ public class FailureTable implements OOMHook {
 	 */
 	public boolean hadAnyOffers(Key key) {
 		BlockOfferList bl;
-		synchronized(this) {
+		synchronized(blockOfferListByKey) {
 			bl = blockOfferListByKey.get(key);
 			return bl != null;
 		}
@@ -660,7 +665,7 @@ public class FailureTable implements OOMHook {
 	public OfferList getOffers(Key key) {
 		if(!node.enableULPRDataPropagation) return null;
 		BlockOfferList bl;
-		synchronized(this) {
+		synchronized(blockOfferListByKey) {
 			bl = blockOfferListByKey.get(key);
 			if(bl == null) return null;
 		}
