@@ -183,9 +183,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	// Lower the following value if you want to spare memory... or better switch from a TreeSet to a bit field.
 	public static final int SELECTION_MAX_SAMPLES = 10 * SELECTION_SAMPLING_PERIOD / 1000;
 
-	/** Are we connected? If not, we need to start trying to
-	* handshake.
-	*/
+	/** Is the peer connected? If currentTracker == null then we have no way to send packets 
+	 * (though we may be able to receive them on the other trackers), and are disconnected. So we
+	 * MUST set isConnected to false when currentTracker = null, but the other way around isn't
+	 * always true. */
 	private boolean isConnected;
 	private boolean isRoutable;
 
@@ -2115,7 +2116,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				sentInitialMessages = false;
 			} else
 				wasARekey = true;
-			isConnected = true;
 			disableRouting = disableRoutingHasBeenSetLocally || disableRoutingHasBeenSetRemotely;
 			isRoutable = routable;
 			unroutableNewerVersion = newer;
@@ -2165,8 +2165,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						previousTracker = unverifiedTracker;
 				}
 				unverifiedTracker = newTracker;
-				if(currentTracker == null)
-					isConnected = false;
 			} else {
 				oldPrev = previousTracker;
 				previousTracker = currentTracker;
@@ -2177,6 +2175,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				neverConnected = false;
 				maybeClearPeerAddedTimeOnConnect();
 			}
+			isConnected = (currentTracker != null);
 			ctx = null;
 			isRekeying = false;
 			timeLastRekeyed = now - (unverified ? 0 : FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY / 2);
