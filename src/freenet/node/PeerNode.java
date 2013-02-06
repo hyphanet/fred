@@ -207,14 +207,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	private int handshakeCount;
 	/** After this many failed handshakes, we start the ARK fetcher. */
 	private static final int MAX_HANDSHAKE_COUNT = 2;
-	/** Separate lock for location data. It's updated independently of everything else. */
-	private final Object locationLock = new Object();
-	/** Current location in the keyspace, or -1 if it is unknown */
-	private double currentLocation;
-	/** Current locations of our peer's peers */
-	private double[] currentPeersLocation;
-	/** Time the location was set */
-	private long locSetTime;
+	private final PeerLocation location;
 	/** Node identity; for now a block of data, in future a
 	* public key (FIXME). Cannot be changed.
 	*/
@@ -468,9 +461,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		String locationString = fs.get("location");
 
-		currentLocation = Location.getLocation(locationString);
-		locSetTime = System.currentTimeMillis();
-
+		location = new PeerLocation(locationString);
+		
 		disableRouting = disableRoutingHasBeenSetLocally = false;
 		disableRoutingHasBeenSetRemotely = false; // Assume so
 
@@ -647,7 +639,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			throw new FSParseException(e1);
 		}
 		if(nominalPeer.isEmpty()) {
-			Logger.normal(this, "No IP addresses found for identity '" + identityAsBase64String + "', possibly at location '" + Double.toString(currentLocation) + ": " + userToString());
+			Logger.normal(this, "No IP addresses found for identity '" + identityAsBase64String + "', possibly at location '" + location + ": " + userToString());
 			detectedPeer = null;
 		} else {
 			detectedPeer = nominalPeer.get(0);
@@ -704,14 +696,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 			if(metadata != null) {
 				
-				String[] peerLocationsString = fs.getAll("peersLocation");
-				if(peerLocationsString != null) {
-					double[] peerLocations = new double[peerLocationsString.length];
-					for(int i = 0; i < peerLocationsString.length; i++)
-						peerLocations[i] = Location.getLocation(peerLocationsString[i]);
-					currentPeersLocation = peerLocations;
-				}
-
+				location.setPeerLocations(fs.getAll("peersLocation"));
+				
 				// Don't be tolerant of nonexistant domains; this should be an IP address.
 				Peer p;
 				try {
@@ -1009,9 +995,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	* Returns this peer's current keyspace location, or -1 if it is unknown.
 	*/
 	public double getLocation() {
-		synchronized(locationLock) {
-			return currentLocation;
-		}
+		return location.getLocation();
 	}
 
 	public boolean shouldBeExcludedFromPeerList() {
@@ -1027,15 +1011,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 
 	public double[] getPeersLocation() {
-		synchronized(locationLock) {
-			return currentPeersLocation;
-		}
+		return location.getPeerLocations();
 	}
 
 	public long getLocSetTime() {
-		synchronized(locationLock) {
-			return locSetTime;
-		}
+		return location.getLocationSetTime();
 	}
 
 	/**
@@ -1072,9 +1052,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	@Override
 	public boolean isRoutable() {
 		if((!isConnected()) || (!isRoutingCompatible())) return false;
-		synchronized(locationLock) {
-			return !(currentLocation < 0.0 || currentLocation > 1.0);
-		}
+		return location.isValidLocation();
 	}
 	
 	synchronized boolean isInMandatoryBackoff(long now, boolean realTime) {
@@ -1824,52 +1802,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * @return The number of peers this peer reports having, or 0 if this peer does not provide that information.
 	 */
 	public int getDegree() {
-		synchronized(locationLock) {
-			if (currentPeersLocation == null) return 0;
-			return currentPeersLocation.length;
-		}
+		return location.getDegree();
 	}
 
 	public void updateLocation(double newLoc, double[] newLocs) {
-		if(newLoc < 0.0 || newLoc > 1.0) {
-			Logger.error(this, "Invalid location update for " + this+ " ("+newLoc+')', new Exception("error"));
-			// Ignore it
-			return;
-		}
-
-		for(double currentLoc : newLocs) {
-			if(currentLoc < 0.0 || currentLoc > 1.0) {
-				Logger.error(this, "Invalid location update for " + this + " ("+currentLoc+')', new Exception("error"));
-				// Ignore it
-				return;
-			}
-		}
-
-		Arrays.sort(newLocs);
-		
-		boolean anythingChanged = false;
-
-		synchronized(locationLock) {
-			if(!Location.equals(currentLocation, newLoc))
-				anythingChanged = true;
-			currentLocation = newLoc;
-			if(currentPeersLocation == null)
-				anythingChanged = true;
-			else if(currentPeersLocation != null && !anythingChanged) {
-				if(currentPeersLocation.length != newLocs.length)
-					anythingChanged = true;
-				else {
-					for(int i=0;i<currentPeersLocation.length;i++) {
-						if(!Location.equals(currentPeersLocation[i], newLocs[i])) {
-							anythingChanged = true;
-							break;
-						}
-					}
-				}
-			}
-			currentPeersLocation = newLocs;
-			locSetTime = System.currentTimeMillis();
-		}
+		boolean anythingChanged = location.updateLocation(newLoc, newLocs);
 		node.peers.updatePMUserAlert();
 		if(anythingChanged)
 			// Not urgent. This makes up the majority of the total writes.
@@ -2699,19 +2636,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		String locationString = fs.get("location");
 		if(locationString != null) {
 			double newLoc = Location.getLocation(locationString);
-			synchronized(locationLock) {
-				if (newLoc == -1) {
-					if(logMINOR)
-						Logger.minor(this, "Invalid or null location, waiting for FNPLocChangeNotification: locationString=" + locationString);
-				} else {
-					if(!Location.equals(newLoc, currentLocation)) {
-						changedAnything = true;
-						if(currentLocation < 0.0 || currentLocation > 1.0)
-							shouldUpdatePeerCounts = true;
-						currentLocation = newLoc;
-						locSetTime = System.currentTimeMillis();
-					}
-				}
+			if (newLoc == -1) {
+				if(logMINOR)
+					Logger.minor(this, "Invalid or null location, waiting for FNPLocChangeNotification: locationString=" + locationString);
+			} else {
+				double oldLoc = location.setLocation(newLoc);
+				if(oldLoc < 0.0 || oldLoc > 1.0)
+					shouldUpdatePeerCounts = true;
+				if(!Location.equals(oldLoc, newLoc))
+					changedAnything = true;
 			}
 		}
 		try {
