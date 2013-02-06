@@ -20,6 +20,7 @@ import freenet.keys.ClientSSK;
 import freenet.keys.ClientSSKBlock;
 import freenet.keys.InsertableClientSSK;
 import freenet.keys.KeyDecodeException;
+import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKEncodeException;
 import freenet.keys.SSKVerifyException;
@@ -82,6 +83,8 @@ public class CachingFreenetStoreTest extends TestCase {
 			ClientCHKBlock block = encodeBlockCHK(test);
 			store.put(block, false);
 			ClientCHK key = block.getClientKey();
+			// Check that it's in the cache, *not* the underlying store.
+			assertEquals(saltStore.fetch(key.getRoutingKey(), key.getNodeCHK().getFullKey(), false, false, false, false, null), null);
 			CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
 			String data = decodeBlockCHK(verify, key);
 			assertEquals(test, data);
@@ -100,7 +103,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		new RAMFreenetStore<DSAPublicKey>(pk, keys);
 		GetPubkey pubkeyCache = new SimpleGetPubkey(pk);
 		SSKStore store = new SSKStore(pubkeyCache);
-		SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreSSK", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreSSK", store, weakPRNG, 20, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		CachingFreenetStore<SSKBlock> cachingStore = new CachingFreenetStore<SSKBlock>(store, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, saltStore, ticker);
 		cachingStore.start(null, true);
 		RandomSource random = new DummyRandomSource(12345);
@@ -111,6 +114,9 @@ public class CachingFreenetStoreTest extends TestCase {
 			store.put(block, false, false);
 			ClientSSK key = block.getClientKey();
 			pubkeyCache.cacheKey((block.getKey()).getPubKeyHash(), (block.getKey()).getPubKey(), false, false, false, false, false);
+			// Check that it's in the cache, *not* the underlying store.
+			NodeSSK ssk = (NodeSSK) key.getNodeKey();
+			assertEquals(saltStore.fetch(ssk.getRoutingKey(), ssk.getFullKey(), false, false, false, false, null), null);
 			SSKBlock verify = store.fetch(block.getKey(), false, false, false, false, null);
 			String data = decodeBlockSSK(verify, key);
 			assertEquals(test, data);
@@ -135,6 +141,8 @@ public class CachingFreenetStoreTest extends TestCase {
 		for(int i=0;i<5;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
+			// Check that it's in the cache, *not* the underlying store.
+			assertEquals(saltStore.fetch(block.getKey().getRoutingKey(), block.getKey().getFullKey(), false, false, false, false, null), null);
 			store.put(block, false);
 			tests.add(test);
 			chkBlocks.add(block);
@@ -177,6 +185,8 @@ public class CachingFreenetStoreTest extends TestCase {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
 			store.put(block, false);
+			// Check that it's in the cache, *not* the underlying store.
+			assertEquals(saltStore.fetch(block.getKey().getRoutingKey(), block.getKey().getFullKey(), false, false, false, false, null), null);
 			tests.add(test);
 			chkBlocks.add(block);
 		}
@@ -195,10 +205,12 @@ public class CachingFreenetStoreTest extends TestCase {
 			CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
 			String data = decodeBlockCHK(verify, key);
 			assertEquals(test, data);
+			// Check that it's in the underlying store now.
+			assertNotNull(saltStore.fetch(block.getKey().getRoutingKey(), block.getKey().getFullKey(), false, false, false, false, null));
 		}
 		
 		cachingStore.close();
-	} 
+	}
 
 	private String decodeBlockCHK(CHKBlock verify, ClientCHK key) throws CHKVerifyException, CHKDecodeException, IOException {
 		ClientCHKBlock cb = new ClientCHKBlock(verify, key);
