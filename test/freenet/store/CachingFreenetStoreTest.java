@@ -90,37 +90,8 @@ public class CachingFreenetStoreTest extends TestCase {
 		cachingStore.close();
 	}
 	
-	/* Simple test with SSK for CachingFreenetStore */
-	public void testSimpleSSK() throws IOException, KeyCollisionException, SSKVerifyException, KeyDecodeException, SSKEncodeException, InvalidCompressionCodecException {
-		File f = new File(tempDir, "saltstore");
-		FileUtil.removeAll(f);
-
-		final int keys = 5;
-		PubkeyStore pk = new PubkeyStore();
-		new RAMFreenetStore<DSAPublicKey>(pk, keys);
-		GetPubkey pubkeyCache = new SimpleGetPubkey(pk);
-		SSKStore store = new SSKStore(pubkeyCache);
-		SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreSSK", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
-		CachingFreenetStore<SSKBlock> cachingStore = new CachingFreenetStore<SSKBlock>(store, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, saltStore, ticker);
-		cachingStore.start(null, true);
-		RandomSource random = new DummyRandomSource(12345);
-
-		for(int i=0;i<5;i++) {
-			String test = "test" + i;
-			ClientSSKBlock block = encodeBlockSSK(test, random);
-			store.put(block, false, false);
-			ClientSSK key = block.getClientKey();
-			pubkeyCache.cacheKey((block.getKey()).getPubKeyHash(), (block.getKey()).getPubKey(), false, false, false, false, false);
-			SSKBlock verify = store.fetch(block.getKey(), false, false, false, false, null);
-			String data = decodeBlockSSK(verify, key);
-			assertEquals(test, data);
-		}
-		
-		cachingStore.close();
-	}
-	
 	/* Test to re-open after close */
-	public void testOnClose() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
+	public void testOnCloseCHK() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		File f = new File(tempDir, "saltstore");
 		FileUtil.removeAll(f);
 
@@ -159,7 +130,7 @@ public class CachingFreenetStoreTest extends TestCase {
 	}
 	
 	/* Test whether stuff gets written to disk after the caching period expires */
-	public void testTimeExpire() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
+	public void testTimeExpireCHK() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		File f = new File(tempDir, "saltstore");
 		FileUtil.removeAll(f);
 		long delay = 100;
@@ -212,6 +183,127 @@ public class CachingFreenetStoreTest extends TestCase {
 		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(data);
 		return ClientCHKBlock.encode(bucket, false, false, (short)-1, bucket.size(), Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false, null, (byte)0);
 	}
+	
+	/* Simple test with SSK for CachingFreenetStore */
+	public void testSimpleSSK() throws IOException, KeyCollisionException, SSKVerifyException, KeyDecodeException, SSKEncodeException, InvalidCompressionCodecException {
+		File f = new File(tempDir, "saltstore");
+		FileUtil.removeAll(f);
+
+		final int keys = 5;
+		PubkeyStore pk = new PubkeyStore();
+		new RAMFreenetStore<DSAPublicKey>(pk, keys);
+		GetPubkey pubkeyCache = new SimpleGetPubkey(pk);
+		SSKStore store = new SSKStore(pubkeyCache);
+		SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreSSK", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		CachingFreenetStore<SSKBlock> cachingStore = new CachingFreenetStore<SSKBlock>(store, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, saltStore, ticker);
+		cachingStore.start(null, true);
+		RandomSource random = new DummyRandomSource(12345);
+
+		for(int i=0;i<5;i++) {
+			String test = "test" + i;
+			ClientSSKBlock block = encodeBlockSSK(test, random);
+			store.put(block, false, false);
+			ClientSSK key = block.getClientKey();
+			pubkeyCache.cacheKey((block.getKey()).getPubKeyHash(), (block.getKey()).getPubKey(), false, false, false, false, false);
+			SSKBlock verify = store.fetch(block.getKey(), false, false, false, false, null);
+			String data = decodeBlockSSK(verify, key);
+			assertEquals(test, data);
+		}
+		
+		cachingStore.close();
+	}
+	
+	/* Test with SSK to re-open after close */
+	public void testOnCloseSSK() throws IOException, SSKEncodeException, InvalidCompressionCodecException, KeyCollisionException, SSKVerifyException, KeyDecodeException {
+		File f = new File(tempDir, "saltstore");
+		FileUtil.removeAll(f);
+
+		final int keys = 5;
+		PubkeyStore pk = new PubkeyStore();
+		new RAMFreenetStore<DSAPublicKey>(pk, keys);
+		GetPubkey pubkeyCache = new SimpleGetPubkey(pk);
+		SSKStore store = new SSKStore(pubkeyCache);
+		SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreOnCloseSSK", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		CachingFreenetStore<SSKBlock> cachingStore = new CachingFreenetStore<SSKBlock>(store, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, saltStore, ticker);
+		cachingStore.start(null, true);
+		RandomSource random = new DummyRandomSource(12345);
+		
+		List<ClientSSKBlock> sskBlocks = new ArrayList<ClientSSKBlock>();
+		List<String> tests = new ArrayList<String>();
+
+		for(int i=0;i<5;i++) {
+			String test = "test" + i;
+			ClientSSKBlock block = encodeBlockSSK(test, random);
+			store.put(block, false, false);
+			pubkeyCache.cacheKey((block.getKey()).getPubKeyHash(), (block.getKey()).getPubKey(), false, false, false, false, false);
+			tests.add(test);
+			sskBlocks.add(block);
+		}
+		
+		cachingStore.close();
+		
+		SaltedHashFreenetStore<SSKBlock> saltStore2 = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreOnCloseSSK", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		cachingStore = new CachingFreenetStore<SSKBlock>(store, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, saltStore2, ticker);
+		cachingStore.start(null, true);
+		
+
+		for(int i=0;i<5;i++) {
+			String test = tests.remove(0); //get the first element
+			ClientSSKBlock block = sskBlocks.remove(0); //get the first element
+			ClientSSK key = block.getClientKey();
+			SSKBlock verify = store.fetch(block.getKey(), false, false, false, false, null);
+			String data = decodeBlockSSK(verify, key);
+			assertEquals(test, data);
+		}
+		
+		cachingStore.close();
+	}
+	
+	/* Test with SSK whether stuff gets written to disk after the caching period expires */
+	public void testTimeExpireSSK() throws IOException, SSKEncodeException, InvalidCompressionCodecException, KeyCollisionException, SSKVerifyException, KeyDecodeException {
+		File f = new File(tempDir, "saltstore");
+		FileUtil.removeAll(f);
+		long delay = 100;
+		
+		final int keys = 5;
+		PubkeyStore pk = new PubkeyStore();
+		new RAMFreenetStore<DSAPublicKey>(pk, keys);
+		GetPubkey pubkeyCache = new SimpleGetPubkey(pk);
+		SSKStore store = new SSKStore(pubkeyCache);
+		SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreOnCloseSSK", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		CachingFreenetStore<SSKBlock> cachingStore = new CachingFreenetStore<SSKBlock>(store, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, saltStore, ticker);
+		cachingStore.start(null, true);
+		RandomSource random = new DummyRandomSource(12345);
+		
+		List<ClientSSKBlock> sskBlocks = new ArrayList<ClientSSKBlock>();
+		List<String> tests = new ArrayList<String>();
+
+		for(int i=0;i<5;i++) {
+			String test = "test" + i;
+			ClientSSKBlock block = encodeBlockSSK(test, random);
+			store.put(block, false, false);
+			pubkeyCache.cacheKey((block.getKey()).getPubKeyHash(), (block.getKey()).getPubKey(), false, false, false, false, false);
+			tests.add(test);
+			sskBlocks.add(block);
+		}
+		
+		try {
+			Thread.sleep(2*delay);
+		} catch (InterruptedException e) {
+			// Ignore
+		}
+		
+		for(int i=0;i<5;i++) {
+			String test = tests.remove(0); //get the first element
+			ClientSSKBlock block = sskBlocks.remove(0); //get the first element
+			ClientSSK key = block.getClientKey();
+			SSKBlock verify = store.fetch(block.getKey(), false, false, false, false, null);
+			String data = decodeBlockSSK(verify, key);
+			assertEquals(test, data);
+		}
+		
+		cachingStore.close();
+	} 
 	
 	private String decodeBlockSSK(SSKBlock verify, ClientSSK key) throws SSKVerifyException, KeyDecodeException, IOException {
 		ClientSSKBlock cb = ClientSSKBlock.construct(verify, key);
