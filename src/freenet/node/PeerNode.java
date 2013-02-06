@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
@@ -293,9 +294,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/** The context object for the currently running negotiation. */
 	private KeyAgreementSchemeContext ctx;
 	/** The other side's boot ID. This is a random number generated
-	* at startup.
-	*/
-	private long bootID;
+	* at startup. LOCKING: It is far too dangerous to hold the main (this) lock while accessing 
+	* bootID given that we ask for it in the messaging code and so on. This is essentially a "the 
+	* other side restarted" flag, so there isn't really a consistency issue with the rest of 
+	* PeerNode. So it's okay to effectively use a separate lock for it. */
+	private final AtomicLong bootID;
 	/** Our boot ID. This is set to a random number on startup, and then reset whenever
 	 * we dump the in-flight messages and call disconnected() on their clients, i.e.
 	 * whenever we call disconnected(true, ...) */
@@ -453,6 +456,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		this.backedOffPercentRT = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercentBulk = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.myBootID = node2.bootID;
+		this.bootID = new AtomicLong();
 		version = fs.get("version");
 		Version.seenVersion(version);
 		try {
@@ -2168,7 +2172,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			unroutableNewerVersion = newer;
 			unroutableOlderVersion = older;
 			boolean notReusingTracker = false;
-			bootIDChanged = (thisBootID != this.bootID);
+			long oldBootID;
+			oldBootID = bootID.getAndSet(thisBootID);
+			bootIDChanged = oldBootID != thisBootID;
 			if(myLastSuccessfulBootID != this.myBootID) {
 				// If our own boot ID changed, because we forcibly disconnected, 
 				// we need to use a new tracker. This is equivalent to us having restarted,
@@ -2179,14 +2185,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 			if(bootIDChanged && wasARekey) {
 				// This can happen if the other side thought we disconnected but we didn't think they did.
-				Logger.normal(this, "Changed boot ID while rekeying! from " + bootID + " to " + thisBootID + " for " + getPeer());
+				Logger.normal(this, "Changed boot ID while rekeying! from " + oldBootID + " to " + thisBootID + " for " + getPeer());
 				wasARekey = false;
 				connectedTime = now;
 				countSelectionsSinceConnected = 0;
 				sentInitialMessages = false;
 			} else if(bootIDChanged && logMINOR)
-				Logger.minor(this, "Changed boot ID from " + bootID + " to " + thisBootID + " for " + getPeer());
-			this.bootID = thisBootID;
+				Logger.minor(this, "Changed boot ID from " + oldBootID + " to " + thisBootID + " for " + getPeer());
 			if(bootIDChanged) {
 				if((!bootIDChanged) && notReusingTracker && !(currentTracker == null && previousTracker == null))
 					// FIXME is this a real problem? Clearly the other side has changed trackers for some reason...
@@ -2296,7 +2301,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	@Override
 	public long getBootID() {
-		return bootID;
+		return bootID.get();
 	}
 	private final Object arkFetcherSync = new Object();
 
