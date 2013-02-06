@@ -203,8 +203,16 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			System.err.println("Slot filter (" + slotFilterFile + ") for " + name + " is loaded (new="+slotFilter.isNew()+").");
 			if(newStore && slotFilter.isNew())
 				slotFilter.fill(SLOT_CHECKED);
-		} else
+		} else {
+			if(slotFilterFile.exists()) {
+				if(slotFilterFile.delete()) {
+					System.err.println("Old slot filter file deleted as slot filters are disabled, keeping it might cause data loss when they are turned back on.");
+				} else {
+					System.err.println("Old slot filter file "+slotFilterFile+" could not be deleted. If you turn on slot filters later you might lose data from your datastore. Please delete it manually.");
+				}
+			}
 			slotFilter = null;
+		}
 
 		if ((flags & FLAG_DIRTY) != 0)
 			System.err.println("Datastore(" + name + ") is dirty.");
