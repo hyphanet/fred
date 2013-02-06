@@ -1086,7 +1086,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public boolean isConnected() {
 		long now = System.currentTimeMillis(); // no System.currentTimeMillis in synchronized
 		synchronized(this) {
-			if(isConnected && currentTracker != null) {
+			if(isConnected) {
 				timeLastConnected = now;
 				return true;
 			}
