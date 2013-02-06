@@ -207,6 +207,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	private int handshakeCount;
 	/** After this many failed handshakes, we start the ARK fetcher. */
 	private static final int MAX_HANDSHAKE_COUNT = 2;
+	/** Separate lock for location data. It's updated independently of everything else. */
+	private final Object locationLock = new Object();
 	/** Current location in the keyspace, or -1 if it is unknown */
 	private double currentLocation;
 	/** Current locations of our peer's peers */
@@ -1006,8 +1008,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/**
 	* Returns this peer's current keyspace location, or -1 if it is unknown.
 	*/
-	public synchronized double getLocation() {
-		return currentLocation;
+	public double getLocation() {
+		synchronized(locationLock) {
+			return currentLocation;
+		}
 	}
 
 	public boolean shouldBeExcludedFromPeerList() {
@@ -1022,12 +1026,16 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 	}
 
-	public synchronized  double[] getPeersLocation() {
-		return currentPeersLocation;
+	public double[] getPeersLocation() {
+		synchronized(locationLock) {
+			return currentPeersLocation;
+		}
 	}
 
-	public synchronized long getLocSetTime() {
-		return locSetTime;
+	public long getLocSetTime() {
+		synchronized(locationLock) {
+			return locSetTime;
+		}
 	}
 
 	/**
@@ -1063,8 +1071,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	*/
 	@Override
 	public boolean isRoutable() {
-		return isConnected() && isRoutingCompatible() &&
-			!(currentLocation < 0.0 || currentLocation > 1.0);
+		if((!isConnected()) || (!isRoutingCompatible())) return false;
+		synchronized(locationLock) {
+			return !(currentLocation < 0.0 || currentLocation > 1.0);
+		}
 	}
 	
 	synchronized boolean isInMandatoryBackoff(long now, boolean realTime) {
@@ -1813,9 +1823,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * Determines the degree of the peer via the locations of its peers it provides.
 	 * @return The number of peers this peer reports having, or 0 if this peer does not provide that information.
 	 */
-	public synchronized int getDegree() {
-		if (currentPeersLocation == null) return 0;
-		return currentPeersLocation.length;
+	public int getDegree() {
+		synchronized(locationLock) {
+			if (currentPeersLocation == null) return 0;
+			return currentPeersLocation.length;
+		}
 	}
 
 	public void updateLocation(double newLoc, double[] newLocs) {
@@ -1837,7 +1849,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		
 		boolean anythingChanged = false;
 
-		synchronized(this) {
+		synchronized(locationLock) {
 			if(!Location.equals(currentLocation, newLoc))
 				anythingChanged = true;
 			currentLocation = newLoc;
@@ -2687,16 +2699,18 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		String locationString = fs.get("location");
 		if(locationString != null) {
 			double newLoc = Location.getLocation(locationString);
-			if (newLoc == -1) {
-				if(logMINOR)
-					Logger.minor(this, "Invalid or null location, waiting for FNPLocChangeNotification: locationString=" + locationString);
-			} else {
-				if(!Location.equals(newLoc, currentLocation)) {
-					changedAnything = true;
-					if(currentLocation < 0.0 || currentLocation > 1.0)
-						shouldUpdatePeerCounts = true;
-					currentLocation = newLoc;
-					locSetTime = System.currentTimeMillis();
+			synchronized(locationLock) {
+				if (newLoc == -1) {
+					if(logMINOR)
+						Logger.minor(this, "Invalid or null location, waiting for FNPLocChangeNotification: locationString=" + locationString);
+				} else {
+					if(!Location.equals(newLoc, currentLocation)) {
+						changedAnything = true;
+						if(currentLocation < 0.0 || currentLocation > 1.0)
+							shouldUpdatePeerCounts = true;
+						currentLocation = newLoc;
+						locSetTime = System.currentTimeMillis();
+					}
 				}
 			}
 		}
@@ -2873,8 +2887,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			fs.put("hadRoutableConnectionCount", hadRoutableConnectionCount);
 		if(routableConnectionCheckCount > 0)
 			fs.put("routableConnectionCheckCount", routableConnectionCheckCount);
-		if(currentPeersLocation != null)
-			fs.put("peersLocation", currentPeersLocation);
+		double[] peerLocs = getPeersLocation();
+		if(peerLocs != null)
+			fs.put("peersLocation", peerLocs);
 		return fs;
 	}
 
@@ -2920,7 +2935,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			fs.putAppend("physical.udp", nominalPeer.get(i).toString());
 		fs.put("auth.negTypes", negTypes);
 		fs.putSingle("identity", getIdentityString());
-		fs.put("location", currentLocation);
+		fs.put("location", getLocation());
 		fs.put("testnet", testnetEnabled);
 		fs.putSingle("version", version);
 		if(peerCryptoGroup != null)
