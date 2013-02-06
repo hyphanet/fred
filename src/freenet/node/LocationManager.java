@@ -123,7 +123,7 @@ public class LocationManager implements ByteCounter {
      * @param l
      */
     public synchronized void setLocation(double l) {
-    	if(l < 0.0 || l > 1.0) {
+    	if(!Location.isValid(l)) {
     		Logger.error(this, "Setting invalid location: "+l, new Exception("error"));
     		return;
     	}
@@ -382,7 +382,7 @@ public class LocationManager implements ByteCounter {
             long hisRandom = hisBufLong[0];
 
             double hisLoc = Double.longBitsToDouble(hisBufLong[1]);
-            if((hisLoc < 0.0) || (hisLoc > 1.0)) {
+            if(!Location.isValid(hisLoc)) {
                 Logger.error(this, "Bad loc: "+hisLoc+" on "+uid);
                 return;
             }
@@ -391,7 +391,7 @@ public class LocationManager implements ByteCounter {
             double[] hisFriendLocs = new double[hisBufLong.length-2];
             for(int i=0;i<hisFriendLocs.length;i++) {
                 hisFriendLocs[i] = Double.longBitsToDouble(hisBufLong[i+2]);
-                if((hisFriendLocs[i] < 0.0) || (hisFriendLocs[i] > 1.0)) {
+                if(!Location.isValid(hisFriendLocs[i])) {
                     Logger.error(this, "Bad friend loc: "+hisFriendLocs[i]+" on "+uid);
                     return;
                 }
@@ -584,7 +584,7 @@ public class LocationManager implements ByteCounter {
                 long hisRandom = hisBufLong[0];
 
                 double hisLoc = Double.longBitsToDouble(hisBufLong[1]);
-                if((hisLoc < 0.0) || (hisLoc > 1.0)) {
+                if(!Location.isValid(hisLoc)) {
                     Logger.error(this, "Bad loc: "+hisLoc+" on "+uid);
                     return;
                 }
@@ -593,7 +593,7 @@ public class LocationManager implements ByteCounter {
                 double[] hisFriendLocs = new double[hisBufLong.length-2];
                 for(int i=0;i<hisFriendLocs.length;i++) {
                     hisFriendLocs[i] = Double.longBitsToDouble(hisBufLong[i+2]);
-                    if((hisFriendLocs[i] < 0.0) || (hisFriendLocs[i] > 1.0)) {
+                    if(!Location.isValid(hisFriendLocs[i])) {
                         Logger.error(this, "Bad friend loc: "+hisFriendLocs[i]+" on "+uid);
                         return;
                     }
@@ -1226,7 +1226,7 @@ public class LocationManager implements ByteCounter {
         double[] locations = Fields.bytesToDoubles(data, 8, data.length-8);
 
         double hisLoc = locations[0];
-        if(hisLoc < 0.0 || hisLoc > 1.0) {
+        if(!Location.isValid(hisLoc)) {
         	Logger.error(this, "Invalid hisLoc in swap commit: "+hisLoc, new Exception("error"));
         	return;
         }

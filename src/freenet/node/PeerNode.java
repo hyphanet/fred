@@ -2641,7 +2641,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					Logger.minor(this, "Invalid or null location, waiting for FNPLocChangeNotification: locationString=" + locationString);
 			} else {
 				double oldLoc = location.setLocation(newLoc);
-				if(oldLoc < 0.0 || oldLoc > 1.0)
+				if(!Location.isValid(oldLoc))
 					shouldUpdatePeerCounts = true;
 				if(!Location.equals(oldLoc, newLoc))
 					changedAnything = true;

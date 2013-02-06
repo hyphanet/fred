@@ -47,7 +47,7 @@ public class PeerLocation {
 	}
 
 	public synchronized boolean isValidLocation() {
-		return !(currentLocation < 0.0 || currentLocation > 1.0);
+		return Location.isValid(currentLocation);
 	}
 
 	public int getDegree() {
@@ -56,14 +56,14 @@ public class PeerLocation {
 	}
 
 	boolean updateLocation(double newLoc, double[] newLocs) {
-		if(newLoc < 0.0 || newLoc > 1.0) {
+		if(!Location.isValid(newLoc)) {
 			Logger.error(this, "Invalid location update for " + this+ " ("+newLoc+')', new Exception("error"));
 			// Ignore it
 			return false;
 		}
 
 		for(double currentLoc : newLocs) {
-			if(currentLoc < 0.0 || currentLoc > 1.0) {
+			if(!Location.isValid(currentLoc)) {
 				Logger.error(this, "Invalid location update for " + this + " ("+currentLoc+')', new Exception("error"));
 				// Ignore it
 				return false;
