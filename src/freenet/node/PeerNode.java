@@ -97,7 +97,7 @@ import freenet.support.transport.ip.IPUtil;
  * LOCKING: Can hold PeerManager and then lock PeerNode. Cannot hold
  * PeerNode and then lock PeerManager.
  */
-public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
+public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, PeerNodeUnlocked {
 
 	private String lastGoodVersion;
 	/**
