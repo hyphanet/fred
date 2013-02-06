@@ -199,6 +199,8 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		if(!slotFilterDisabled) {
 			slotFilter = new ResizablePersistentIntBuffer(slotFilterFile, size);
 			System.err.println("Slot filter (" + slotFilterFile + ") for " + name + " is loaded (new="+slotFilter.isNew()+").");
+			if(newStore && slotFilter.isNew())
+				slotFilter.fill(SLOT_CHECKED);
 		} else
 			slotFilter = null;
 
