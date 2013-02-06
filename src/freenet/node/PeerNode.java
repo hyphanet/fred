@@ -2142,11 +2142,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			} else if(bootIDChanged && logMINOR)
 				Logger.minor(this, "Changed boot ID from " + oldBootID + " to " + thisBootID + " for " + getPeer());
 			if(bootIDChanged) {
-				if((!bootIDChanged) && notReusingTracker && !(currentTracker == null && previousTracker == null))
-					// FIXME is this a real problem? Clearly the other side has changed trackers for some reason...
-					// Normally that shouldn't happen except when a connection times out ... it is probably possible
-					// for that to timeout on one side and not the other ...
-					Logger.error(this, "Not reusing tracker, so wiping old trackers for "+this);
 				oldPrev = previousTracker;
 				oldCur = currentTracker;
 				previousTracker = null;
