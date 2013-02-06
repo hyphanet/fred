@@ -26,6 +26,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import junit.framework.AssertionFailedError;
+
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.crypt.BlockCipher;
@@ -2278,5 +2280,20 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	@Override
 	public FreenetStore<T> getUnderlyingStore() {
 		return this;
+	}
+
+	/** Only for testing (crude!) 
+	 * @throws InterruptedException */
+	void testingWaitForCleanerDone(int delay, int count) throws InterruptedException {
+		for(int i=0;i<count;i++) {
+			configLock.readLock().lock();
+			try {
+				if((flags & FLAG_REBUILD_BLOOM) == 0) return;
+			} finally {
+				configLock.readLock().unlock();
+			}
+			Thread.sleep(delay);
+		}
+		throw new AssertionFailedError();
 	}
 }
