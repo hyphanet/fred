@@ -200,14 +200,15 @@ public class LocationManager implements ByteCounter {
                                 boolean myFlag = false;
                                 double myLoc = getLocation();
                                 for(PeerNode pn: node.peers.connectedPeers()) {
+                                	PeerLocation l = pn.location;
                                     if(pn.isRoutable()) {
-                                    	synchronized(pn) {
-                                    		double ploc = pn.getLocation();
-                                    		if(Math.abs(ploc - myLoc) <= Double.MIN_VALUE) {
+                                    	synchronized(l) {
+                                    		double ploc = l.getLocation();
+                                    		if(Location.equals(ploc, myLoc)) {
                                     			// Don't reset location unless we're SURE there is a problem.
                                     			// If the node has had its location equal to ours for at least 2 minutes, and ours has been likewise...
                                     			long now = System.currentTimeMillis();
-                                    			if(now - pn.getLocSetTime() > 120*1000 && now - timeLocSet > 120*1000) {
+                                    			if(now - l.getLocationSetTime() > 120*1000 && now - timeLocSet > 120*1000) {
                                     				myFlag = true;
                                     				// Log an ERROR
                                     				// As this is an ERROR, it results from either a bug or malicious action.
