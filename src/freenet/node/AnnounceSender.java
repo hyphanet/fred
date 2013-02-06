@@ -398,6 +398,9 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 						try {
 							forwardedRefs++;
 							om.sendAnnouncementReply(uid, source, noderefBuf, AnnounceSender.this);
+							if(cb != null) {
+								cb.relayedNoderef();
+							}
 						} catch (NotConnectedException e) {
 							// Hmmm...!
 							return;
