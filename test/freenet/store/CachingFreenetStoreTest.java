@@ -103,10 +103,11 @@ public class CachingFreenetStoreTest extends TestCase {
 		SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreSSK", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		CachingFreenetStore<SSKBlock> cachingStore = new CachingFreenetStore<SSKBlock>(store, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, saltStore, ticker);
 		cachingStore.start(null, true);
+		RandomSource random = new DummyRandomSource(12345);
 
 		for(int i=0;i<5;i++) {
 			String test = "test" + i;
-			ClientSSKBlock block = encodeBlockSSK(test);
+			ClientSSKBlock block = encodeBlockSSK(test, random);
 			store.put(block, false, false);
 			ClientSSK key = block.getClientKey();
 			pubkeyCache.cacheKey((block.getKey()).getPubKeyHash(), (block.getKey()).getPubKey(), false, false, false, false, false);
@@ -219,10 +220,9 @@ public class CachingFreenetStoreTest extends TestCase {
 		return new String(buf, "UTF-8");
 	}
 
-	private ClientSSKBlock encodeBlockSSK(String test) throws IOException, SSKEncodeException, InvalidCompressionCodecException {
+	private ClientSSKBlock encodeBlockSSK(String test, RandomSource random) throws IOException, SSKEncodeException, InvalidCompressionCodecException {
 		byte[] data = test.getBytes("UTF-8");
 		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(data);
-		RandomSource random = new DummyRandomSource(12345);
 		InsertableClientSSK ik = InsertableClientSSK.createRandom(random, test);
 		return ik.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
 	}
