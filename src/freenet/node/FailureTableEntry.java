@@ -325,30 +325,34 @@ class FailureTableEntry implements TimedOutNodesList {
 
 	/** Offer this key to all the nodes that have requested it, and all the nodes it has been requested from.
 	 * Called after a) the data has been stored, and b) this entry has been removed from the FT */
-	public synchronized void offer() {
-		final boolean logMINOR = FailureTableEntry.logMINOR;
+	public void offer() {
 		HashSet<PeerNode> set = new HashSet<PeerNode>();
-		if(logMINOR) Logger.minor(this, "Sending offers to nodes which requested the key from us: ("+requestorNodes.length+") for "+key);
-		for(int i=0;i<requestorNodes.length;i++) {
-			WeakReference<PeerNode> ref = requestorNodes[i];
-			if(ref == null) continue;
-			PeerNode pn = ref.get();
-			if(pn == null) continue;
-			if(pn.getBootID() != requestorBootIDs[i]) continue;
-			if(!set.add(pn)) {
-				Logger.error(this, "Node is in requestorNodes twice: "+pn);
+		synchronized(this) {
+			final boolean logMINOR = FailureTableEntry.logMINOR;
+			if(logMINOR) Logger.minor(this, "Sending offers to nodes which requested the key from us: ("+requestorNodes.length+") for "+key);
+			for(int i=0;i<requestorNodes.length;i++) {
+				WeakReference<PeerNode> ref = requestorNodes[i];
+				if(ref == null) continue;
+				PeerNode pn = ref.get();
+				if(pn == null) continue;
+				if(pn.getBootID() != requestorBootIDs[i]) continue;
+				if(!set.add(pn)) {
+					Logger.error(this, "Node is in requestorNodes twice: "+pn);
+				}
 			}
-			if(logMINOR) Logger.minor(this, "Offering to "+pn);
-			pn.offer(key);
+			if(logMINOR) Logger.minor(this, "Sending offers to nodes which we sent the key to: ("+requestedNodes.length+") for "+key);
+			for(int i=0;i<requestedNodes.length;i++) {
+				WeakReference<PeerNode> ref = requestedNodes[i];
+				if(ref == null) continue;
+				PeerNode pn = ref.get();
+				if(pn == null) continue;
+				if(pn.getBootID() != requestedBootIDs[i]) continue;
+				if(!set.add(pn)) continue;
+			}
 		}
-		if(logMINOR) Logger.minor(this, "Sending offers to nodes which we sent the key to: ("+requestedNodes.length+") for "+key);
-		for(int i=0;i<requestedNodes.length;i++) {
-			WeakReference<PeerNode> ref = requestedNodes[i];
-			if(ref == null) continue;
-			PeerNode pn = ref.get();
-			if(pn == null) continue;
-			if(pn.getBootID() != requestedBootIDs[i]) continue;
-			if(!set.add(pn)) continue;
+		// Do the offers outside the lock. 
+		// We do not need to hold it, offer() doesn't do anything that affects us.
+		for(PeerNode pn : set) {
 			if(logMINOR) Logger.minor(this, "Offering to "+pn);
 			pn.offer(key);
 		}
