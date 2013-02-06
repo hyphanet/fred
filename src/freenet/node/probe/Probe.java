@@ -137,17 +137,8 @@ public class Probe implements ByteCounter {
 	 * @param sigma Percentage change at one standard deviation.
 	 * @return Value +/- Gaussian percentage.
 	 */
-	private double randomNoise(final double input, final double sigma) {
-		double multiplier = (node.random.nextGaussian() * sigma) + 1.0;
-
-		/*
-		 * Cap noise to [0.5, 1.5]. Such amounts are very rare (5 sigma at 10%) and serve only to throw off the
-		 * statistics by including crazy things like negative values or impossibly huge limits.
-		 */
-		if (multiplier < 0.5) multiplier = 0.5;
-		else if (multiplier > 1.5) multiplier = 1.5;
-
-		return input * multiplier;
+	private final double randomNoise(final double input, final double sigma) {
+		return node.nodeStats.randomNoise(input, sigma);
 	}
 
 	/**

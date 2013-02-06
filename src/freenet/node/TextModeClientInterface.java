@@ -930,7 +930,7 @@ public class TextModeClientInterface implements Runnable {
         		return false;
         	}
         	SimpleFieldSet fs = pn.exportFieldSet();
-        	SimpleFieldSet meta = pn.exportMetadataFieldSet();
+        	SimpleFieldSet meta = pn.exportMetadataFieldSet(System.currentTimeMillis());
         	if(!meta.isEmpty())
         	 	fs.put("metadata", meta);
         	outsb.append(fs.toString());

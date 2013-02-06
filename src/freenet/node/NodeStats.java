@@ -122,7 +122,15 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	/** nodeAveragePing PeerManagerUserAlert should happen if true */
 	public boolean nodeAveragePingAlertRelevant;
 	/** Average proportion of requests rejected immediately due to overload */
-	public final TimeDecayingRunningAverage pInstantRejectIncoming;
+	public final BootstrappingDecayingRunningAverage pInstantRejectIncomingOverall;
+	public final BootstrappingDecayingRunningAverage pInstantRejectIncomingCHKRequestRT;
+	public final BootstrappingDecayingRunningAverage pInstantRejectIncomingSSKRequestRT;
+	public final BootstrappingDecayingRunningAverage pInstantRejectIncomingCHKInsertRT;
+	public final BootstrappingDecayingRunningAverage pInstantRejectIncomingSSKInsertRT;
+	public final BootstrappingDecayingRunningAverage pInstantRejectIncomingCHKRequestBulk;
+	public final BootstrappingDecayingRunningAverage pInstantRejectIncomingSSKRequestBulk;
+	public final BootstrappingDecayingRunningAverage pInstantRejectIncomingCHKInsertBulk;
+	public final BootstrappingDecayingRunningAverage pInstantRejectIncomingSSKInsertBulk;
 	private boolean ignoreLocalVsRemoteBandwidthLiability;
 
 	/** Average delay caused by throttling for sending a packet */
@@ -301,7 +309,15 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		preemptiveRejectReasons = new StringCounter();
 		localPreemptiveRejectReasons = new StringCounter();
-		pInstantRejectIncoming = new TimeDecayingRunningAverage(0, 60000, 0.0, 1.0, node);
+		pInstantRejectIncomingOverall = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
+		pInstantRejectIncomingCHKRequestRT = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
+		pInstantRejectIncomingSSKRequestRT = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
+		pInstantRejectIncomingCHKInsertRT = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
+		pInstantRejectIncomingSSKInsertRT = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
+		pInstantRejectIncomingCHKRequestBulk = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
+		pInstantRejectIncomingSSKRequestBulk = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
+		pInstantRejectIncomingCHKInsertBulk = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
+		pInstantRejectIncomingSSKInsertBulk = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
 		ThreadGroup tg = Thread.currentThread().getThreadGroup();
 		while(tg.getParent() != null) tg = tg.getParent();
 		this.rootThreadGroup = tg;
@@ -1106,8 +1122,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 		int threadCount = getActiveThreadCount();
 		if(threadLimit < threadCount) {
-			pInstantRejectIncoming.report(1.0);
-			rejected(">threadLimit", isLocal, realTimeFlag);
+			rejected(">threadLimit", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
 			return new RejectReason(">threadLimit ("+threadCount+'/'+threadLimit+')', false);
 		}
 
@@ -1128,15 +1143,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 				if((now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) && canAcceptAnyway) {
 					if(logMINOR) Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
 				} else {
-					pInstantRejectIncoming.report(1.0);
-					rejected(">MAX_PING_TIME", isLocal, realTimeFlag);
+					rejected(">MAX_PING_TIME", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
 					return new RejectReason(">MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+ ')', false);
 				}
 			} else if(pingTime > subMaxPingTime) {
 				double x = ((pingTime - subMaxPingTime)) / (maxPingTime - subMaxPingTime);
 				if(randomLessThan(x, preferInsert)) {
-					pInstantRejectIncoming.report(1.0);
-					rejected(">SUB_MAX_PING_TIME", isLocal, realTimeFlag);
+					rejected(">SUB_MAX_PING_TIME", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
 					return new RejectReason(">SUB_MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+ ')', false);
 				}
 			}
@@ -1201,17 +1214,23 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 		String ret = checkBandwidthLiability(getOutputBandwidthUpperLimit(totalSent, totalOverhead, uptime, limit, nonOverheadFraction), requestsSnapshot, peerRequestsSnapshot, false, limit,
 				source, isLocal, isSSK, isInsert, isOfferReply, hasInStore, transfersPerInsert, realTimeFlag, maxOutputTransfers, maxTransfersOutPeerLimit);  
-		if(ret != null) return new RejectReason(ret, true);
+		if(ret != null) {
+			return new RejectReason(ret, true);
+		}
 		
 		ret = checkBandwidthLiability(getInputBandwidthUpperLimit(limit), requestsSnapshot, peerRequestsSnapshot, true, limit,
 				source, isLocal, isSSK, isInsert, isOfferReply, hasInStore, transfersPerInsert, realTimeFlag, maxOutputTransfers, maxTransfersOutPeerLimit);  
-		if(ret != null) return new RejectReason(ret, true);
+		if(ret != null) {
+			return new RejectReason(ret, true);
+		}
 		
 		// Check transfer-based limits, with fair sharing.
 		
 		ret = checkMaxOutputTransfers(maxOutputTransfers, maxTransfersOutUpperLimit, maxTransfersOutLowerLimit, maxTransfersOutPeerLimit,
-				requestsSnapshot, peerRequestsSnapshot, isLocal, realTimeFlag);
-		if(ret != null) return new RejectReason(ret, true);
+				requestsSnapshot, peerRequestsSnapshot, isLocal, realTimeFlag, isInsert, isSSK, isOfferReply);
+		if(ret != null) {
+			return new RejectReason(ret, true);
+		}
 		
 		// Do we have the bandwidth?
 		// The throttles should not be used much now, the timeout-based 
@@ -1222,8 +1241,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		if(logMINOR)
 			Logger.minor(this, "Expected sent bytes: "+expected+" -> "+expectedSent);
 		if(!requestOutputThrottle.instantGrab(expectedSent)) {
-			pInstantRejectIncoming.report(1.0);
-			rejected("Insufficient output bandwidth", isLocal, realTimeFlag);
+			rejected("Insufficient output bandwidth", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
 			return new RejectReason("Insufficient output bandwidth", false);
 		}
 		expected = this.getThrottle(isLocal, isInsert, isSSK, false).currentValue();
@@ -1232,8 +1250,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			Logger.minor(this, "Expected received bytes: "+expectedReceived);
 		if(!requestInputThrottle.instantGrab(expectedReceived)) {
 			requestOutputThrottle.recycle(expectedSent);
-			pInstantRejectIncoming.report(1.0);
-			rejected("Insufficient input bandwidth", isLocal, realTimeFlag);
+			rejected("Insufficient input bandwidth", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
 			return new RejectReason("Insufficient input bandwidth", false);
 		}
 
@@ -1241,11 +1258,11 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		// can transmit in a reasonable time, don't accept requests.
 		if(source != null) {
 			if(source.getMessageQueueLengthBytes() > MAX_PEER_QUEUE_BYTES) {
-				rejected(">MAX_PEER_QUEUE_BYTES", isLocal, realTimeFlag);
+				rejected(">MAX_PEER_QUEUE_BYTES", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
 				return new RejectReason("Too many message bytes queued for peer", false);
 			}
 			if(source.getProbableSendQueueTime() > MAX_PEER_QUEUE_TIME) {
-				rejected(">MAX_PEER_QUEUE_TIME", isLocal, realTimeFlag);
+				rejected(">MAX_PEER_QUEUE_TIME", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
 				return new RejectReason("Peer's queue will take too long to transfer", false);
 			}
 		}
@@ -1255,7 +1272,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			lastAcceptedRequest = now;
 		}
 		
-		pInstantRejectIncoming.report(0.0);
+		accepted(isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
 
 		if(tag != null) tag.setAccepted();
 		
@@ -1414,7 +1431,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			
 			double peerUsedBytes = getPeerBandwidthLiability(peerRequestsSnapshot, source, isSSK, transfersPerInsert, input);
 			if(peerUsedBytes > thisAllocation) {
-				rejected(name+" bandwidth liability: fairness between peers", isLocal, realTimeFlag);
+				rejected(name+" bandwidth liability: fairness between peers", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
 				return name+" bandwidth liability: fairness between peers (peer "+source+" used "+peerUsedBytes+" allowed "+thisAllocation+")";
 			}
 			
@@ -1429,14 +1446,15 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			int maxTransfersOutUpperLimit, int maxTransfersOutLowerLimit,
 			int maxTransfersOutPeerLimit,
 			RunningRequestsSnapshot requestsSnapshot,
-			RunningRequestsSnapshot peerRequestsSnapshot, boolean isLocal, boolean realTime) {
+			RunningRequestsSnapshot peerRequestsSnapshot, boolean isLocal, boolean realTime,
+			boolean isInsert, boolean isSSK, boolean isOfferReply) {
 		if(logMINOR) Logger.minor(this, "Max transfers: congestion control limit "+maxOutputTransfers+
 				" upper "+maxTransfersOutUpperLimit+" lower "+maxTransfersOutLowerLimit+" peer "+maxTransfersOutPeerLimit+" "+(realTime ? "(rt)" : "(bulk)"));
 		int peerOutTransfers = peerRequestsSnapshot.totalOutTransfers();
 		int totalOutTransfers = requestsSnapshot.totalOutTransfers();
 		if(peerOutTransfers > maxOutputTransfers && !isLocal) {
 			// Can't handle that many transfers with current bandwidth.
-			rejected("TooManyTransfers: Congestion control", isLocal, realTime);
+			rejected("TooManyTransfers: Congestion control", isLocal, isInsert, isSSK, isOfferReply, realTime);
 			return "TooManyTransfers: Congestion control";
 		}
 		if(totalOutTransfers <= maxTransfersOutLowerLimit) {
@@ -1448,7 +1466,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			// It is within its guaranteed space, so we accept it.
 			return null;
 		}
-		rejected("TooManyTransfers: Fair sharing between peers", isLocal, realTime);
+		rejected("TooManyTransfers: Fair sharing between peers", isLocal, isInsert, isSSK, isOfferReply, realTime);
 		return "TooManyTransfers: Fair sharing between peers";
 	}
 
@@ -1528,11 +1546,38 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return hardRandom.nextDouble() < x;
 	}
 
-	private void rejected(String reason, boolean isLocal, boolean realTime) {
-		reason += " "+(realTime?" (rt)":" (bulk)");
-		if(logMINOR) Logger.minor(this, "Rejecting (local="+isLocal+") : "+reason);
+	private void rejected(String reason, boolean isLocal, boolean isInsert, boolean isSSK, boolean isOfferReply, boolean isRealTime) {
+		reason += " "+(isRealTime?" (rt)":" (bulk)");
+		if(logMINOR) Logger.minor(this, "Rejecting (local="+isLocal+") isSSK="+isSSK+" isInsert="+isInsert+" : "+reason);
 		if(!isLocal) preemptiveRejectReasons.inc(reason);
 		else this.localPreemptiveRejectReasons.inc(reason);
+		if(!isLocal && !isOfferReply) {
+			this.pInstantRejectIncomingOverall.report(1.0);
+			getRejectedTracker(isRealTime, isSSK, isInsert).report(1.0);
+		}
+	}
+	
+	private void accepted(boolean isLocal, boolean isInsert, boolean isSSK,
+			boolean isOfferReply, boolean realTimeFlag) {
+		pInstantRejectIncomingOverall.report(0.0);
+		getRejectedTracker(realTimeFlag, isSSK, isInsert).report(0.0);
+	}
+
+	private BootstrappingDecayingRunningAverage getRejectedTracker(
+			boolean isRealTime, boolean isSSK, boolean isInsert) {
+		if(isRealTime) {
+			if(isSSK) {
+				return isInsert ? pInstantRejectIncomingSSKInsertRT : pInstantRejectIncomingCHKInsertRT;
+			} else {
+				return isInsert ? pInstantRejectIncomingCHKInsertRT : pInstantRejectIncomingCHKRequestRT;
+			}
+		} else {
+			if(isSSK) {
+				return isInsert ? pInstantRejectIncomingSSKInsertBulk : pInstantRejectIncomingCHKInsertBulk;
+			} else {
+				return isInsert ? pInstantRejectIncomingCHKInsertBulk : pInstantRejectIncomingCHKRequestBulk;
+			}
+		}
 	}
 
 	private RunningAverage getThrottle(boolean isLocal, boolean isInsert, boolean isSSK, boolean isSent) {
@@ -1618,7 +1663,39 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public double pRejectIncomingInstantly() {
-		return pInstantRejectIncoming.currentValue();
+		return pInstantRejectIncomingOverall.currentValue();
+	}
+
+	public double pRejectIncomingInstantlyCHKRequestRT() {
+		return pInstantRejectIncomingCHKRequestRT.currentValue();
+	}
+
+	public double pRejectIncomingInstantlyCHKInsertRT() {
+		return pInstantRejectIncomingCHKInsertRT.currentValue();
+	}
+
+	public double pRejectIncomingInstantlySSKRequestRT() {
+		return pInstantRejectIncomingSSKRequestRT.currentValue();
+	}
+
+	public double pRejectIncomingInstantlySSKInsertRT() {
+		return pInstantRejectIncomingSSKInsertRT.currentValue();
+	}
+
+	public double pRejectIncomingInstantlyCHKRequestBulk() {
+		return pInstantRejectIncomingCHKRequestBulk.currentValue();
+	}
+
+	public double pRejectIncomingInstantlyCHKInsertBulk() {
+		return pInstantRejectIncomingCHKInsertBulk.currentValue();
+	}
+
+	public double pRejectIncomingInstantlySSKRequestBulk() {
+		return pInstantRejectIncomingSSKRequestBulk.currentValue();
+	}
+
+	public double pRejectIncomingInstantlySSKInsertBulk() {
+		return pInstantRejectIncomingSSKInsertBulk.currentValue();
 	}
 
 	/**
@@ -3680,6 +3757,25 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	
 	public boolean enableNewLoadManagement(boolean realTimeFlag) {
 		return realTimeFlag ? enableNewLoadManagementRT : enableNewLoadManagementBulk;
+	}
+
+	/**
+	 * Applies multiplicative Gaussian noise of mean 1.0 and the specified sigma to the input value.
+	 * @param input Value to apply noise to.
+	 * @param sigma Percentage change at one standard deviation.
+	 * @return Value +/- Gaussian percentage.
+	 */
+	public final double randomNoise(final double input, final double sigma) {
+		double multiplier = (node.random.nextGaussian() * sigma) + 1.0;
+
+		/*
+		 * Cap noise to [0.5, 1.5]. Such amounts are very rare (5 sigma at 10%) and serve only to throw off the
+		 * statistics by including crazy things like negative values or impossibly huge limits.
+		 */
+		if (multiplier < 0.5) multiplier = 0.5;
+		else if (multiplier > 1.5) multiplier = 1.5;
+
+		return input * multiplier;
 	}
 
 }

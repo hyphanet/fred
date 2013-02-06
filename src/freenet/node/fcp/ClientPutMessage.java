@@ -9,6 +9,7 @@ import java.net.MalformedURLException;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.DefaultMIMETypes;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
 import freenet.keys.FreenetURI;

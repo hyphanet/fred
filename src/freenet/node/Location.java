@@ -103,4 +103,8 @@ public class Location {
 	public static boolean equals(double newLoc, double currentLocation) {
 		return Math.abs(newLoc - currentLocation) < Double.MIN_VALUE * 2;
 	}
+
+	public static boolean isValid(double loc) {
+		return loc >= 0.0 && loc <= 1.0;
+	}
 }

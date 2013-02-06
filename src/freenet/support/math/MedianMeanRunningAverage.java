@@ -8,7 +8,7 @@ import java.util.ArrayList;
  * (Also uses CPU time O(N log N) with the number of reports in currentValue()).
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  */
-public class MedianMeanRunningAverage implements RunningAverage, Cloneable {
+public final class MedianMeanRunningAverage implements RunningAverage, Cloneable {
 	private static final long serialVersionUID = 1L;
 
 	final ArrayList<Double> reports;

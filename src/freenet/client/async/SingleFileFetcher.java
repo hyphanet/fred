@@ -116,6 +116,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// Always copy if persistent
 			this.metaStrings = new ArrayList<String>(metaStrings);
 		this.addedMetaStrings = addedMetaStrings;
+		if(logMINOR) Logger.minor(this, "Metadata: "+metadata);
 		this.clientMetadata = (metadata != null ? metadata.clone() : new ClientMetadata());
 		if(hasInitialMetadata)
 			thisKey = FreenetURI.EMPTY_CHK_URI.clone();
@@ -788,8 +789,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(logMINOR) Logger.minor(this, "Is single-file redirect");
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
 				if(persistent) container.store(clientMetadata);
-				if(clientMetadata != null && !clientMetadata.isTrivial()) 
+				if(clientMetadata != null && !clientMetadata.isTrivial()) { 
 					rcb.onExpectedMIME(clientMetadata, container, context);
+					if(logMINOR) Logger.minor(this, "MIME type is "+clientMetadata);
+				}
 
 				String mimeType = clientMetadata.getMIMETypeNoParams();
 				if(mimeType != null && ArchiveManager.ARCHIVE_TYPE.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {

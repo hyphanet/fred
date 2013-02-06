@@ -126,7 +126,8 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 			 * 2) The node which just failed can be seen as the requestor for our purposes.
 			 */
 			// Decrement at this point so we can DNF immediately on reaching HTL 0.
-			htl = node.decrementHTL(hasForwarded ? next : source, htl);
+			if(onlyNode == null)
+				htl = node.decrementHTL(hasForwarded ? next : source, htl);
 
 			if(htl == 0) {
 				// No more nodes.

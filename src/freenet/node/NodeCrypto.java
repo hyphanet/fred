@@ -40,10 +40,8 @@ import freenet.keys.InsertableClientSSK;
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.IllegalBase64Exception;
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
-import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 
 /**
@@ -93,14 +91,9 @@ public class NodeCrypto {
 	/** A synchronization object used while signing the reference fieldset */
 	private volatile Object referenceSync = new Object();
 
-        private static volatile boolean logMINOR;
+	private static volatile boolean logMINOR;
 	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
-			@Override
-			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-			}
-		});
+		Logger.registerClass(NodeCrypto.class);
 	}
 	/**
 	 * Get port number from a config, create socket and packet mangler

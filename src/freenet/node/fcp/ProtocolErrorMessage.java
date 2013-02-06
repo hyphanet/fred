@@ -57,6 +57,7 @@ public class ProtocolErrorMessage extends FCPMessage {
 	static final int NO_SUCH_PLUGIN = 32;
 	static final int PERSISTENCE_DISABLED = 33;
 	static final int TOO_MANY_FILES_IN_INSERT = 34;
+	static final int BAD_MIME_TYPE = 35;
 	
 	final int code;
 	final String extra;
@@ -133,6 +134,8 @@ public class ProtocolErrorMessage extends FCPMessage {
 			return "No such plugin";
 		case TOO_MANY_FILES_IN_INSERT:
 			return "Too many files in a single folder on a freesite insert";
+		case BAD_MIME_TYPE:
+			return "Bad MIME type";
 		default:
 			Logger.error(this, "Unknown error code: "+code, new Exception("debug"));
 		return "(Unknown)";

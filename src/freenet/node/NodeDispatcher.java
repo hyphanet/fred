@@ -719,7 +719,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			}
 			if(source instanceof SeedClientPeerNode) {
 				short maxHTL = node.maxHTL();
-				if(htl != maxHTL) {
+				if(htl < maxHTL-1) {
 					Logger.error(this, "Announcement from seed client not at max HTL: "+htl+" for "+source);
 					htl = maxHTL;
 				}
@@ -742,7 +742,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 						synchronized(this) {
 							totalAdded++;
 						}
-						Logger.error(this, "Announcement from "+origin+" added node "+pn+" - THIS SHOULD NOT HAPPEN!");
+						Logger.minor(this, "Announcement from "+origin+" added node "+pn+(pn instanceof SeedClientPeerNode ? " (seed server added the peer directly)" : ""));
 						return;
 					}
 					@Override

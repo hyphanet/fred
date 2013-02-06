@@ -206,6 +206,11 @@ public class ClientPut extends ClientPutBase {
 		if ((mimeType == null) && (targetFilename != null)) {
 			mimeType = DefaultMIMETypes.guessMIMEType(targetFilename, true);
 		}
+		if(mimeType != null && mimeType.equals("")) mimeType = null;
+		if(mimeType != null && !DefaultMIMETypes.isPlausibleMIMEType(mimeType)) {
+			throw new MessageInvalidException(ProtocolErrorMessage.BAD_MIME_TYPE, "Bad MIME type in Metadata.ContentType", identifier, global);
+		}
+		
 		clientToken = message.clientToken;
 		Bucket tempData = message.bucket;
 		ClientMetadata cm = new ClientMetadata(mimeType);
