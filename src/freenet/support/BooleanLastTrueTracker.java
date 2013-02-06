@@ -23,8 +23,9 @@ public class BooleanLastTrueTracker {
 	
 	public synchronized boolean setConnected(boolean value, long now) {
 		if(value == isConnected) return value;
-		if(!value)
+		if(!isConnected)
 			timeLastConnected = now;
+		isConnected = value;
 		return !value;
 	}
 	
