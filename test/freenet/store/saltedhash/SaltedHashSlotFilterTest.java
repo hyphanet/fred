@@ -15,6 +15,7 @@ import freenet.node.SemiOrderedShutdownHook;
 import freenet.store.CHKStore;
 import freenet.support.PooledExecutor;
 import freenet.support.SimpleReadOnlyArrayBucket;
+import freenet.support.TestProperty;
 import freenet.support.Ticker;
 import freenet.support.TrivialTicker;
 import freenet.support.api.Bucket;
@@ -30,6 +31,8 @@ public class SaltedHashSlotFilterTest extends TestCase {
 	private PooledExecutor exec = new PooledExecutor();
 	private Ticker ticker = new TrivialTicker(exec);
 	private File tempDir;
+	private static final int TEST_COUNT = TestProperty.EXTENSIVE ? 100 : 10;
+	private static final int STORE_SIZE = TEST_COUNT * 5;
 
 	@Override
 	protected void setUp() throws java.lang.Exception {
@@ -56,12 +59,12 @@ public class SaltedHashSlotFilterTest extends TestCase {
 		FileUtil.removeAll(f);
 
 		CHKStore store = new CHKStore();
-		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, 500, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, STORE_SIZE, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(null, true);
 		
 		int falsePositives = 0;
 
-		for(int i=0;i<100;i++) {
+		for(int i=0;i<TEST_COUNT;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
 			ClientCHK key = block.getClientKey();
@@ -77,7 +80,7 @@ public class SaltedHashSlotFilterTest extends TestCase {
 		
 		assertTrue(falsePositives <= 5);
 		
-		for(int i=0;i<100;i++) {
+		for(int i=0;i<TEST_COUNT;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
 			ClientCHK key = block.getClientKey();
@@ -103,12 +106,12 @@ public class SaltedHashSlotFilterTest extends TestCase {
 		FileUtil.removeAll(f);
 
 		CHKStore store = new CHKStore();
-		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, 500, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, STORE_SIZE, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(null, true);
 		
 		int falsePositives = 0;
 
-		for(int i=0;i<100;i++) {
+		for(int i=0;i<TEST_COUNT;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
 			ClientCHK key = block.getClientKey();
@@ -126,10 +129,10 @@ public class SaltedHashSlotFilterTest extends TestCase {
 		
 		saltStore.close();
 		store = new CHKStore();
-		saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, 500, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, STORE_SIZE, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(null, true);
 		
-		for(int i=0;i<100;i++) {
+		for(int i=0;i<TEST_COUNT;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
 			ClientCHK key = block.getClientKey();
@@ -150,12 +153,12 @@ public class SaltedHashSlotFilterTest extends TestCase {
 		FileUtil.removeAll(f);
 
 		CHKStore store = new CHKStore();
-		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, 500, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, STORE_SIZE, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(null, true);
 		
 		int falsePositives = 0;
 
-		for(int i=0;i<100;i++) {
+		for(int i=0;i<TEST_COUNT;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
 			ClientCHK key = block.getClientKey();
@@ -180,10 +183,10 @@ public class SaltedHashSlotFilterTest extends TestCase {
 		// Abrupt abort. The slots should have been written by now.
 		saltStore.close(true);
 		store = new CHKStore();
-		saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, 500, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, STORE_SIZE, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(null, true);
 		
-		for(int i=0;i<100;i++) {
+		for(int i=0;i<TEST_COUNT;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
 			ClientCHK key = block.getClientKey();
@@ -204,12 +207,12 @@ public class SaltedHashSlotFilterTest extends TestCase {
 		FileUtil.removeAll(f);
 
 		CHKStore store = new CHKStore();
-		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, 500, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, STORE_SIZE, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(null, true);
 		
 		int falsePositives = 0;
 
-		for(int i=0;i<100;i++) {
+		for(int i=0;i<TEST_COUNT;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
 			ClientCHK key = block.getClientKey();
@@ -223,15 +226,15 @@ public class SaltedHashSlotFilterTest extends TestCase {
 			assertEquals(test, data);
 		}
 		
-		assertTrue(falsePositives == 100);
+		assertTrue(falsePositives == TEST_COUNT);
 		
 		saltStore.close();
 		store = new CHKStore();
 		// Now turn on slot filters. Does it still work?
-		saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, 500, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, STORE_SIZE, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(null, true);
 		
-		for(int i=0;i<100;i++) {
+		for(int i=0;i<TEST_COUNT;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
 			ClientCHK key = block.getClientKey();
@@ -252,12 +255,12 @@ public class SaltedHashSlotFilterTest extends TestCase {
 		FileUtil.removeAll(f);
 
 		CHKStore store = new CHKStore();
-		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, 500, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, STORE_SIZE, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(null, true);
 		
 		int falsePositives = 0;
 
-		for(int i=0;i<100;i++) {
+		for(int i=0;i<TEST_COUNT;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
 			ClientCHK key = block.getClientKey();
@@ -271,17 +274,17 @@ public class SaltedHashSlotFilterTest extends TestCase {
 			assertEquals(test, data);
 		}
 		
-		assertTrue(falsePositives == 100);
+		assertTrue(falsePositives == TEST_COUNT);
 		
 		saltStore.close();
 		store = new CHKStore();
 		// Now turn on slot filters. Does it still work?
 		SaltedHashFreenetStore.NO_CLEANER_SLEEP = true;
-		saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, 500, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, STORE_SIZE, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(null, true);
 		saltStore.testingWaitForCleanerDone(50, 100);
 		
-		for(int i=0;i<100;i++) {
+		for(int i=0;i<TEST_COUNT;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
 			ClientCHK key = block.getClientKey();
