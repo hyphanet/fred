@@ -591,29 +591,27 @@ public class PeerMessageQueue {
 		 * @return
 		 */
 		MessageItem addPriorityMessages(long now, MutableBoolean addPeerLoadStatsRT, MutableBoolean addPeerLoadStatsBulk) {
-			synchronized(PeerMessageQueue.this) {
-				// Urgent messages first.
-				if(logMINOR) {
-					int nonEmpty = nonEmptyItemsWithID == null ? 0 : nonEmptyItemsWithID.size();
-					int empty = emptyItemsWithID == null ? 0 : emptyItemsWithID.size();
-					int byID = itemsByID == null ? 0 : itemsByID.size();
-					if(nonEmpty + empty < byID) {
-						Logger.error(this, "Leaking itemsByID? non empty = "+nonEmpty+" empty = "+empty+" by ID = "+byID+" on "+this);
-					} else if(logDEBUG)
-						Logger.debug(this, "Items: non empty "+nonEmpty+" empty "+empty+" by ID "+byID+" on "+this);
-				}
-				if(roundRobinBetweenUIDs)
-					moveToUrgent(now);
-				clearOldNonUrgent(now);
-				if(roundRobinBetweenUIDs) {
-					MessageItem item = addUrgentMessages(now, addPeerLoadStatsRT, addPeerLoadStatsBulk);
-					if(item != null) return item;
-				} else {
-					assert(itemsByID == null);
-				}
-				// 	If no more urgent messages, try to add some non-urgent messages too.
-				return addNonUrgentMessages(now, addPeerLoadStatsRT, addPeerLoadStatsBulk);
+			// Urgent messages first.
+			if(logMINOR) {
+				int nonEmpty = nonEmptyItemsWithID == null ? 0 : nonEmptyItemsWithID.size();
+				int empty = emptyItemsWithID == null ? 0 : emptyItemsWithID.size();
+				int byID = itemsByID == null ? 0 : itemsByID.size();
+				if(nonEmpty + empty < byID) {
+					Logger.error(this, "Leaking itemsByID? non empty = "+nonEmpty+" empty = "+empty+" by ID = "+byID+" on "+this);
+				} else if(logDEBUG)
+					Logger.debug(this, "Items: non empty "+nonEmpty+" empty "+empty+" by ID "+byID+" on "+this);
 			}
+			if(roundRobinBetweenUIDs)
+				moveToUrgent(now);
+			clearOldNonUrgent(now);
+			if(roundRobinBetweenUIDs) {
+				MessageItem item = addUrgentMessages(now, addPeerLoadStatsRT, addPeerLoadStatsBulk);
+				if(item != null) return item;
+			} else {
+				assert(itemsByID == null);
+			}
+			// 	If no more urgent messages, try to add some non-urgent messages too.
+			return addNonUrgentMessages(now, addPeerLoadStatsRT, addPeerLoadStatsBulk);
 		}
 
 		private void clearOldNonUrgent(long now) {
@@ -859,7 +857,7 @@ public class PeerMessageQueue {
 	 * it assumes it has been sent for purposes of fairness between UID's. You should try
 	 * not to call this function if you are not going to be able to send the message: 
 	 * check in advance if possible. */
-	public MessageItem grabQueuedMessageItem(int minPriority) {
+	public synchronized MessageItem grabQueuedMessageItem(int minPriority) {
 		long now = System.currentTimeMillis();
 		
 		MutableBoolean addPeerLoadStatsRT = new MutableBoolean();
@@ -879,27 +877,18 @@ public class PeerMessageQueue {
 		
 		boolean tryRealtimeFirst = true;
 		
-		// LOCKING: Must lock while calling getNextUrgentTime, and also while accessing lastSentRealTime.
-		// However, we need to be (or needed to be in the FNP era anyway) flexible with addPriorityMessages,
-		// and we definitely need to not be locked when calling addLoadStats().
-		// FIXME: All this can go away when FNP goes away and we can just lock the whole function.
+		// If one is empty, try the other.
+		// Otherwise try whichever is more urgent, favouring realtime if there is a draw.
+		// Realtime is supposed to be bursty.
 		
-		synchronized(this) {
-			
-			// If one is empty, try the other.
-			// Otherwise try whichever is more urgent, favouring realtime if there is a draw.
-			// Realtime is supposed to be bursty.
-			
-			if(queuesByPriority[DMT.PRIORITY_REALTIME_DATA].isEmpty()) {
-				tryRealtimeFirst = false;
-			} else if(queuesByPriority[DMT.PRIORITY_BULK_DATA].isEmpty()) {
-				tryRealtimeFirst = true;
-			} else if(queuesByPriority[DMT.PRIORITY_BULK_DATA].getNextUrgentTime(Long.MAX_VALUE, 0) >= queuesByPriority[DMT.PRIORITY_REALTIME_DATA].getNextUrgentTime(Long.MAX_VALUE, 0)) {
-				tryRealtimeFirst = true;
-			} else {
-				tryRealtimeFirst = false;
-			}
-			
+		if(queuesByPriority[DMT.PRIORITY_REALTIME_DATA].isEmpty()) {
+			tryRealtimeFirst = false;
+		} else if(queuesByPriority[DMT.PRIORITY_BULK_DATA].isEmpty()) {
+			tryRealtimeFirst = true;
+		} else if(queuesByPriority[DMT.PRIORITY_BULK_DATA].getNextUrgentTime(Long.MAX_VALUE, 0) >= queuesByPriority[DMT.PRIORITY_REALTIME_DATA].getNextUrgentTime(Long.MAX_VALUE, 0)) {
+			tryRealtimeFirst = true;
+		} else {
+			tryRealtimeFirst = false;
 		}
 		
 		// FIXME token bucket?
