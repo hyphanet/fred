@@ -957,7 +957,7 @@ public class PeerMessageQueue {
 	 * check in advance if possible. */
 	public MessageItem grabQueuedMessageItem(int minPriority) {
 		ArrayList<MessageItem> messages = new ArrayList<MessageItem>(1);
-		addMessages(0, System.currentTimeMillis(), 0, Integer.MAX_VALUE, messages, minPriority);
+		addMessages(System.currentTimeMillis(), 0, Integer.MAX_VALUE, messages, minPriority);
 		if(messages.size() == 0) return null;
 		if(messages.size() != 1) {
 			Logger.error(this, "Asked it for one message but got "+messages.size());
@@ -988,7 +988,7 @@ public class PeerMessageQueue {
 	 * @return the size of the messages, multiplied by -1 if there were
 	 * messages that didn't fit
 	 */
-	public int addMessages(int size, long now, int minSize, int maxSize,
+	public int addMessages(long now, int minSize, int maxSize,
 			ArrayList<MessageItem> messages, int minPriority) {
 		// FIXME NETWORK PERFORMANCE NEW PACKET FORMAT:
 		// If at a priority we have more to send than can fit into the packet, yet there 
@@ -1010,7 +1010,7 @@ public class PeerMessageQueue {
 		for(int i=0;i<DMT.PRIORITY_REALTIME_DATA;i++) {
 			if(i < minPriority) continue;
 			if(logMINOR) Logger.minor(this, "Adding from priority "+i);
-			size = queuesByPriority[i].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, 1);
+			int size = queuesByPriority[i].addPriorityMessages(0, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, 1);
 			if(incomplete.value || messages.size() >= 1) {
 				return -size;
 			}
@@ -1046,6 +1046,7 @@ public class PeerMessageQueue {
 		// FIXME token bucket?
 		if(tryRealtimeFirst) {
 			// Try realtime first
+			int size = 0;
 			if(logMINOR) Logger.minor(this, "Trying realtime first");
 			int s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, 1);
 			if(s != size) {
@@ -1063,6 +1064,7 @@ public class PeerMessageQueue {
 				return -size;
 			}
 		} else {
+			int size = 0;
 			// Try bulk first
 			if(logMINOR) Logger.minor(this, "Trying bulk first");
 			int s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addPriorityMessages(Math.abs(size), minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, 1);
@@ -1084,12 +1086,12 @@ public class PeerMessageQueue {
 		for(int i=DMT.PRIORITY_BULK_DATA+1;i<DMT.NUM_PRIORITIES;i++) {
 			if(i < minPriority) continue;
 			if(logMINOR) Logger.minor(this, "Adding from priority "+i);
-			size = queuesByPriority[i].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, 1);
+			int size = queuesByPriority[i].addPriorityMessages(0, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, 1);
 			if(incomplete.value || messages.size() >= 1) {
 				return -size;
 			}
 		}
-		return size;
+		return 0;
 	}
 	
 	public boolean removeMessage(MessageItem message) {
