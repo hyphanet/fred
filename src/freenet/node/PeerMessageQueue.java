@@ -1049,6 +1049,7 @@ public class PeerMessageQueue {
 			if(logMINOR) Logger.minor(this, "Trying realtime first");
 			int s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, 1);
 			if(s != size) {
+				size = s;
 			}
 			if(incomplete.value || messages.size() >= 1) {
 				return -size;
