@@ -1325,6 +1325,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 					if(sortBy.equals("id")){
 						result = firstRequest.getIdentifier().compareToIgnoreCase(secondRequest.getIdentifier());
+						if(result == 0)
+							result = firstRequest.getIdentifier().compareTo(secondRequest.getIdentifier());
 					}else if(sortBy.equals("size")){
 						result = (firstRequest.getTotalBlocks() - secondRequest.getTotalBlocks()) < 0 ? -1 : 1;
 					}else if(sortBy.equals("progress")){
