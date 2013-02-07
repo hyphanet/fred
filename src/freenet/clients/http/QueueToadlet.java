@@ -71,6 +71,7 @@ import freenet.node.fcp.UploadFileRequestStatus;
 import freenet.node.fcp.UploadRequestStatus;
 import freenet.node.useralerts.StoringUserEvent;
 import freenet.node.useralerts.UserAlert;
+import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
@@ -1331,7 +1332,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						if(result == 0)
 							result = firstRequest.getIdentifier().compareTo(secondRequest.getIdentifier());
 					}else if(sortBy.equals("size")){
-						result = (firstRequest.getTotalBlocks() - secondRequest.getTotalBlocks()) < 0 ? -1 : 1;
+						result = Fields.compare(firstRequest.getTotalBlocks(), secondRequest.getTotalBlocks());
 					}else if(sortBy.equals("progress")){
 						boolean firstFinalized = firstRequest.isTotalFinalized();
 						boolean secondFinalized = secondRequest.isTotalFinalized();
@@ -1342,33 +1343,18 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						else {
 							double firstProgress = ((double)firstRequest.getFetchedBlocks()) / ((double)firstRequest.getMinBlocks());
 							double secondProgress = ((double)secondRequest.getFetchedBlocks()) / ((double)secondRequest.getMinBlocks());
-							if(Double.isNaN(firstProgress)) {
-								if(Double.isNaN(secondProgress)) {
-									result = 0; // both have 0 min blocks
-								} else {
-									result = -1; // second is better
-								}
-							} else if(Double.isNaN(secondProgress)) {
-								result = 1; // first is better
-							} else {
-								if(firstProgress > secondProgress)
-									result = 1;
-								else if(firstProgress < secondProgress)
-									result = -1;
-							}
+							result = Fields.compare(firstProgress, secondProgress);
 						}
 					} else if (sortBy.equals("lastActivity")) {
-						result = (int) Math.min(Integer.MAX_VALUE, Math.max(Integer.MIN_VALUE, firstRequest.getLastActivity() - secondRequest.getLastActivity()));
+						result = Fields.compare(firstRequest.getLastActivity(), secondRequest.getLastActivity());
 					}else
 						isSet=false;
 				}else
 					isSet=false;
 
 				if(!isSet){
-					int priorityDifference =  firstRequest.getPriority() - secondRequest.getPriority();
-					if (priorityDifference != 0)
-						result = (priorityDifference < 0 ? -1 : 1);
-					else
+					result = Fields.compare(firstRequest.getPriority(), secondRequest.getPriority());
+					if(result == 0)
 						result = firstRequest.getIdentifier().compareTo(secondRequest.getIdentifier());
 				}
 
