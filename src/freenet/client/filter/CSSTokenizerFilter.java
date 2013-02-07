@@ -4171,7 +4171,7 @@ class CSSTokenizerFilter {
 					if(!listStyleType.contains(counter.listType.getDecoded())) return false;
 				}
 				if(counter.separatorString != null && !(ElementInfo.ALLOW_ALL_VALID_STRINGS || ElementInfo.isValidStringDecoded(counter.separatorString.getDecoded())))
-					return false;
+					return false;  //FIXME Findbugs points out that this IF block does nothing.  Missing ELSE statement?  bugtype "Useless control flow"
 				return true;
 			}
 
