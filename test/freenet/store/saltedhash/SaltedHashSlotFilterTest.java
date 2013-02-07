@@ -32,6 +32,7 @@ public class SaltedHashSlotFilterTest extends TestCase {
 	private Ticker ticker = new TrivialTicker(exec);
 	private File tempDir;
 	private static final int TEST_COUNT = TestProperty.EXTENSIVE ? 100 : 10;
+	private static final int ACCEPTABLE_FALSE_POSITIVES = TestProperty.EXTENSIVE ? 5 : 2;
 	private static final int STORE_SIZE = TEST_COUNT * 5;
 
 	@Override
@@ -78,7 +79,7 @@ public class SaltedHashSlotFilterTest extends TestCase {
 			assertEquals(test, data);
 		}
 		
-		assertTrue(falsePositives <= 5);
+		assertTrue(falsePositives <= ACCEPTABLE_FALSE_POSITIVES);
 		
 		for(int i=0;i<TEST_COUNT;i++) {
 			String test = "test" + i;
@@ -125,7 +126,7 @@ public class SaltedHashSlotFilterTest extends TestCase {
 			assertEquals(test, data);
 		}
 		
-		assertTrue(falsePositives <= 5);
+		assertTrue(falsePositives <= ACCEPTABLE_FALSE_POSITIVES);
 		
 		saltStore.close();
 		store = new CHKStore();
@@ -172,7 +173,7 @@ public class SaltedHashSlotFilterTest extends TestCase {
 			assertEquals(test, data);
 		}
 		
-		assertTrue(falsePositives <= 5);
+		assertTrue(falsePositives <= ACCEPTABLE_FALSE_POSITIVES);
 		
 		try {
 			Thread.sleep(2*delay);
