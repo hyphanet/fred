@@ -205,8 +205,8 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 								configLock.writeLock().lock();
 								try {
 									pushAll();
-									startJob = false;
 								} finally {
+									startJob = false;
 									configLock.writeLock().unlock();
 								}
 							}
@@ -260,29 +260,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 
 	@Override
 	public StoreAccessStats getSessionAccessStats() {
-		return new StoreAccessStats() {
-
-			@Override
-			public long hits() {
-				return backDatastore.getSessionAccessStats().hits();
-			}
-
-			@Override
-			public long misses() {
-				return backDatastore.getSessionAccessStats().misses();
-			}
-
-			@Override
-			public long falsePos() {
-				return backDatastore.getSessionAccessStats().falsePos();
-			}
-
-			@Override
-			public long writes() {
-				return backDatastore.getSessionAccessStats().writes();
-			}
-			
-		};
+		return backDatastore.getSessionAccessStats();
 	}
 
 	@Override
