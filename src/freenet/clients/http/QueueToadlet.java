@@ -1339,8 +1339,24 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							result = 1;
 						else if(secondFinalized && !firstFinalized)
 							result = -1;
-						else
-							result = (((double)firstRequest.getFetchedBlocks()) / ((double)firstRequest.getMinBlocks()) - ((double)secondRequest.getFetchedBlocks()) / ((double)secondRequest.getMinBlocks())) < 0 ? -1 : 1;
+						else {
+							double firstProgress = ((double)firstRequest.getFetchedBlocks()) / ((double)firstRequest.getMinBlocks());
+							double secondProgress = ((double)secondRequest.getFetchedBlocks()) / ((double)secondRequest.getMinBlocks());
+							if(Double.isNaN(firstProgress)) {
+								if(Double.isNaN(secondProgress)) {
+									result = 0; // both have 0 min blocks
+								} else {
+									result = -1; // second is better
+								}
+							} else if(Double.isNaN(secondProgress)) {
+								result = 1; // first is better
+							} else {
+								if(firstProgress > secondProgress)
+									result = 1;
+								else if(firstProgress < secondProgress)
+									result = -1;
+							}
+						}
 					} else if (sortBy.equals("lastActivity")) {
 						result = (int) Math.min(Integer.MAX_VALUE, Math.max(Integer.MIN_VALUE, firstRequest.getLastActivity() - secondRequest.getLastActivity()));
 					}else
