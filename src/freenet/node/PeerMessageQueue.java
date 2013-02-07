@@ -671,6 +671,12 @@ public class PeerMessageQueue {
 		 * @param now
 		 * @param messages
 		 * @param maxMessages 
+		 * @param addPeerLoadStatsRT Will be set if the caller needs to include a load stats message for
+		 * realtime (i.e. a realtime request completes etc).
+		 * @param addPeerLoadStatsBulk Will be set if the caller needs to include a load stats message for
+		 * bulk (i.e. a bulk request completes etc).
+		 * @param incomplete Will be set if there were more messages but they did not fit. If this is
+		 * not set, we can try another priority.
 		 * @return
 		 */
 		int addPriorityMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages, MutableBoolean addPeerLoadStatsRT, MutableBoolean addPeerLoadStatsBulk, MutableBoolean incomplete, int maxMessages) {
