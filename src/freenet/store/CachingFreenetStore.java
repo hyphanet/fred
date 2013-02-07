@@ -48,6 +48,10 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 	}
 
 	public CachingFreenetStore(StoreCallback<T> callback, long maxSize, long period, FreenetStore<T> backDatastore, Ticker ticker) {
+		if(ticker == null) {
+			throw new NullPointerException();
+		}
+		
 		this.callback = callback;
 		this.maxSize = maxSize;
 		this.period = period;
