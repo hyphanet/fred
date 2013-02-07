@@ -7,9 +7,13 @@ import java.util.List;
 import java.util.Random;
 
 import junit.framework.TestCase;
+import freenet.crypt.DSAGroup;
+import freenet.crypt.DSAPrivateKey;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DummyRandomSource;
+import freenet.crypt.Global;
 import freenet.crypt.RandomSource;
+import freenet.crypt.SHA256;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKDecodeException;
 import freenet.keys.CHKEncodeException;
@@ -19,6 +23,7 @@ import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientSSK;
 import freenet.keys.ClientSSKBlock;
 import freenet.keys.InsertableClientSSK;
+import freenet.keys.Key;
 import freenet.keys.KeyDecodeException;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
@@ -315,7 +320,65 @@ public class CachingFreenetStoreTest extends TestCase {
 		}
 		
 		cachingStore.close();
-	} 
+	}
+	
+	/* Test collisions on SSK */
+	public void testOnCollisionsSSK() throws IOException, SSKEncodeException, InvalidCompressionCodecException, SSKVerifyException, KeyDecodeException, KeyCollisionException {
+		File f = new File(tempDir, "saltstore");
+		FileUtil.removeAll(f);
+
+		final int keys = 5;
+		PubkeyStore pk = new PubkeyStore();
+		new RAMFreenetStore<DSAPublicKey>(pk, keys);
+		GetPubkey pubkeyCache = new SimpleGetPubkey(pk);
+		SSKStore store = new SSKStore(pubkeyCache);
+		SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreOnCloseSSK", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		CachingFreenetStore<SSKBlock> cachingStore = new CachingFreenetStore<SSKBlock>(store, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, saltStore, ticker);
+		cachingStore.start(null, true);
+		RandomSource random = new DummyRandomSource(12345);
+		
+		final int CRYPTO_KEY_LENGTH = 32;
+		byte[] ckey = new byte[CRYPTO_KEY_LENGTH];
+		random.nextBytes(ckey);
+		DSAGroup g = Global.DSAgroupBigA;
+		DSAPrivateKey privKey = new DSAPrivateKey(g, random);
+		DSAPublicKey pubKey = new DSAPublicKey(g, privKey);
+		byte[] pkHash = SHA256.digest(pubKey.asBytes());
+		String docName = "myDOC";
+		InsertableClientSSK ik = new InsertableClientSSK(docName, pkHash, pubKey, privKey, ckey, Key.ALGO_AES_PCFB_256_SHA256);
+		
+		String test = "test";
+		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(test.getBytes("UTF-8"));
+		ClientSSKBlock block = ik.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
+		store.put(block, false, false);
+	
+		//If the block is the same, then there should not be a collision
+		//store.put(block, false, false);
+		
+		String test1 = "test1";
+		SimpleReadOnlyArrayBucket bucket1 = new SimpleReadOnlyArrayBucket(test1.getBytes("UTF-8"));
+		ClientSSKBlock block1 = ik.encode(bucket1, false, false, (short)-1, bucket1.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
+		
+		//if it's different (e.g. different content, same key), there should be a KCE thrown
+		try {
+			store.put(block1, false, false);
+			assertTrue(false);
+		} catch (KeyCollisionException e) {
+			assertTrue(true);
+		}
+		
+		// if overwrite is set, then no collision should be thrown
+		store.put(block1, true, false);
+		
+		ClientSSK key = block1.getClientKey();
+		pubkeyCache.cacheKey((block1.getKey()).getPubKeyHash(), (block1.getKey()).getPubKey(), false, false, false, false, false);
+		// Check that it's in the cache, *not* the underlying store.
+		//NodeSSK ssk = (NodeSSK) key.getNodeKey();
+		//assertEquals(saltStore.fetch(ssk.getRoutingKey(), ssk.getFullKey(), false, false, false, false, null), null);
+		SSKBlock verify = store.fetch(block1.getKey(), false, false, false, false, null);
+		String data = decodeBlockSSK(verify, key);
+		assertEquals(test1, data);
+	}
 	
 	private String decodeBlockSSK(SSKBlock verify, ClientSSK key) throws SSKVerifyException, KeyDecodeException, IOException {
 		ClientSSKBlock cb = ClientSSKBlock.construct(verify, key);
