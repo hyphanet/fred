@@ -444,7 +444,7 @@ public class PeerMessageQueue {
 			return length;
 		}
 		
-		private int addNonUrgentMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages, MutableBoolean addPeerLoadStatsRT, MutableBoolean addPeerLoadStatsBulk, int maxMessages) {
+		private int addNonUrgentMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages, MutableBoolean addPeerLoadStatsRT, MutableBoolean addPeerLoadStatsBulk) {
 			assert(size >= 0);
 			assert(minSize >= 0);
 			assert(maxSize >= minSize);
@@ -536,7 +536,7 @@ public class PeerMessageQueue {
 					return size;
 				}
 				
-				if(messages.size() >= maxMessages) return size;
+				if(messages.size() >= 1) return size;
 			}
 			if(logDEBUG && added != 0)
 				Logger.debug(this, "Returning with "+added+" non-urgent messages (all gone)");
@@ -562,7 +562,7 @@ public class PeerMessageQueue {
 		 * @return the size of <code>messages</code>, multiplied by -1 if there were
 		 * messages that didn't fit
 		 */
-		private int addUrgentMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages, MutableBoolean addPeerLoadStatsRT, MutableBoolean addPeerLoadStatsBulk, int maxMessages) {
+		private int addUrgentMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages, MutableBoolean addPeerLoadStatsRT, MutableBoolean addPeerLoadStatsBulk) {
 			assert(size >= 0);
 			assert(minSize >= 0);
 			assert(maxSize >= minSize);
@@ -648,7 +648,7 @@ public class PeerMessageQueue {
 						if(logDEBUG) Logger.debug(this, "Returning with oversize urgent message");
 						return size;
 					}
-					if(messages.size() >= maxMessages) {
+					if(messages.size() >= 1) {
 						if(logMINOR) Logger.minor(this, "Returning "+messages.size()+" urgent messages");
 						return size;
 					}
@@ -670,7 +670,6 @@ public class PeerMessageQueue {
 		 * @param maxSize
 		 * @param now
 		 * @param messages
-		 * @param maxMessages 
 		 * @param addPeerLoadStatsRT Will be set if the caller needs to include a load stats message for
 		 * realtime (i.e. a realtime request completes etc).
 		 * @param addPeerLoadStatsBulk Will be set if the caller needs to include a load stats message for
@@ -695,7 +694,7 @@ public class PeerMessageQueue {
 					moveToUrgent(now);
 				clearOldNonUrgent(now);
 				if(roundRobinBetweenUIDs) {
-					size = addUrgentMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, 1);
+					size = addUrgentMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk);
 				} else {
 					assert(itemsByID == null);
 				}
@@ -707,7 +706,7 @@ public class PeerMessageQueue {
 					if(messages.size() >= 1)
 						return size;
 					// If no more urgent messages, try to add some non-urgent messages too.
-						size = addNonUrgentMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, 1);
+						size = addNonUrgentMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk);
 						if(size < 0) {
 							size = -size;
 							incomplete.value = true;
