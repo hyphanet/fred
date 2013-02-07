@@ -51,12 +51,11 @@ Press enquiries should be directed to Ian Clarke.
 ALWAYS ON:
 On OSX, Freenet will create a configuration file at 
 ~/Library/LaunchAgents/com.freenet.startup.plist. On other unix-based systems,
-Freenet will create a cron job to run Freenet on startup. On Windows, it creates
-a user for Freenet to run under, and a service to start it. You should run
-Freenet as close to 24x7 as possible for good performance. It is however
+Freenet will create a cron job to run Freenet on startup. On Windows, Freenet is
+run by the rabbit tray icon, which starts on login from the startup folder. You should
+run Freenet as close to 24x7 as possible for good performance. It is however
 possible to remove the plist, to remove the cron job (with the remove cron job
-script in bin/), or to remove the service (from the services panel in Control
-Panel).
+script in bin/), or to remove the startup shortcut (edit the start menu).
 
 BASIC SECURITY:
 The easiest option is to use the system tray applet to launch Freenet. This will try to
