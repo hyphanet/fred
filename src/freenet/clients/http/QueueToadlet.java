@@ -1317,6 +1317,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		Comparator<RequestStatus> jobComparator = new Comparator<RequestStatus>() {
 			@Override
 			public int compare(RequestStatus firstRequest, RequestStatus secondRequest) {
+				
+				if(firstRequest == secondRequest) return 0; // Short cut.
+				
 				int result = 0;
 				boolean isSet = true;
 
