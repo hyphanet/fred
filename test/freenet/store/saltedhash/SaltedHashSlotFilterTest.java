@@ -52,7 +52,7 @@ public class SaltedHashSlotFilterTest extends TestCase {
 		checkCHKPresent(-1, TEST_COUNT, ACCEPTABLE_FALSE_POSITIVES, STORE_SIZE);
 		FileUtil.removeAll(tempDir);
 		checkCHKPresent(600*1000, TEST_COUNT, ACCEPTABLE_FALSE_POSITIVES, STORE_SIZE); // Much longer than the test will take.
-		checkCHKPresent(-1, 5, 1, 5); // Check that it doesn't reuse slots if it can avoid it.
+		checkCHKPresent(-1, SaltedHashFreenetStore.OPTION_MAX_PROBE, 1, SaltedHashFreenetStore.OPTION_MAX_PROBE); // Check that it doesn't reuse slots if it can avoid it.
 		checkCHKPresent(-1, 10, 1, 20);
 	}
 
