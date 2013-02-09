@@ -480,7 +480,7 @@ public class TempBucketFactory implements BucketFactory {
 	}
 	
 	// Storage accounting disabled by default.
-	public TempBucketFactory(Executor executor, Ticker ticker, FilenameGenerator filenameGenerator, long maxBucketSizeKeptInRam, long maxRamUsed, RandomSource strongPRNG, Random weakPRNG, boolean reallyEncrypt) {
+	public TempBucketFactory(Executor executor, Ticker ticker, FilenameGenerator filenameGenerator, long maxBucketSizeKeptInRam, long maxRamUsed, RandomSource strongPRNG, Random weakPRNG, boolean reallyEncrypt, boolean migrateWhenNotFull) {
 		this.filenameGenerator = filenameGenerator;
 		this.maxRamUsed = maxRamUsed;
 		this.maxRAMBucketSize = maxBucketSizeKeptInRam;
@@ -489,6 +489,7 @@ public class TempBucketFactory implements BucketFactory {
 		this.reallyEncrypt = reallyEncrypt;
 		this.executor = executor;
 		this.ticker = ticker;
+		this.migrateWhenNotFull = migrateWhenNotFull;
 	}
 
 	@Override

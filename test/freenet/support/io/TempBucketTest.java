@@ -35,7 +35,7 @@ public class TempBucketTest extends TestSuite {
 		}
 
 		public void testRamLimitCreate() throws IOException {
-			TempBucketFactory tbf = new TempBucketFactory(exec, ticker, fg, 16, 128, strongPRNG, weakPRNG, false);
+			TempBucketFactory tbf = new TempBucketFactory(exec, ticker, fg, 16, 128, strongPRNG, weakPRNG, false, false);
 
 			int maxRamBucket = 128 / 16;
 
@@ -68,7 +68,7 @@ public class TempBucketTest extends TestSuite {
 		}
 
 		public void testWriteExcessConversionFactor() throws IOException {
-			TempBucketFactory tbf = new TempBucketFactory(exec, ticker, fg, 16, 128, strongPRNG, weakPRNG, false);
+			TempBucketFactory tbf = new TempBucketFactory(exec, ticker, fg, 16, 128, strongPRNG, weakPRNG, false, false);
 
 			TempBucket b = (TempBucket) tbf.makeBucket(16);
 			try {
@@ -89,7 +89,7 @@ public class TempBucketTest extends TestSuite {
 		}
 
 		public void testWriteExcessLimit() throws IOException {
-			TempBucketFactory tbf = new TempBucketFactory(exec, ticker, fg, 16, 17, strongPRNG, weakPRNG, false);
+			TempBucketFactory tbf = new TempBucketFactory(exec, ticker, fg, 16, 17, strongPRNG, weakPRNG, false, false);
 
 			TempBucket b = (TempBucket) tbf.makeBucket(16);
 			try {
@@ -109,7 +109,7 @@ public class TempBucketTest extends TestSuite {
 		
 		// This CAN happen due to memory pressure.
 		public void testConversionWhileReading() throws IOException {
-			TempBucketFactory tbf = new TempBucketFactory(exec, ticker, fg, 1024, 65536, strongPRNG, weakPRNG, false);
+			TempBucketFactory tbf = new TempBucketFactory(exec, ticker, fg, 1024, 65536, strongPRNG, weakPRNG, false, false);
 			
 			TempBucket bucket = (TempBucket) tbf.makeBucket(64);
 			OutputStream os = bucket.getOutputStream();
@@ -126,7 +126,7 @@ public class TempBucketTest extends TestSuite {
 		
 		// Do a bigger read, verify contents.
 		public void testBigConversionWhileReading() throws IOException {
-			TempBucketFactory tbf = new TempBucketFactory(exec, ticker, fg, 4096, 65536, strongPRNG, weakPRNG, false);
+			TempBucketFactory tbf = new TempBucketFactory(exec, ticker, fg, 4096, 65536, strongPRNG, weakPRNG, false, false);
 			
 			TempBucket bucket = (TempBucket) tbf.makeBucket(2048);
 			OutputStream os = bucket.getOutputStream();
@@ -157,7 +157,7 @@ public class TempBucketTest extends TestSuite {
 
 		public RealTempBucketTest_(int maxRamSize, int maxTotalRamSize, boolean encrypted) throws IOException {
 			fg = new FilenameGenerator(weakPRNG, false, null, "junit");
-			tbf = new TempBucketFactory(exec, ticker, fg, maxRamSize, maxTotalRamSize, strongPRNG, weakPRNG, encrypted);
+			tbf = new TempBucketFactory(exec, ticker, fg, maxRamSize, maxTotalRamSize, strongPRNG, weakPRNG, encrypted, false);
 
 			canOverwrite = false;
 		}
@@ -223,5 +223,7 @@ public class TempBucketTest extends TestSuite {
 		suite.addTest(new TestSuite(TempBucketMigrationTest.class));
 		return suite;
 	}
+	
+	// FIXME test migrate when not full.
 
 }
