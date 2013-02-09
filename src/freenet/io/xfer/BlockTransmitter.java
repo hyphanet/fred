@@ -216,8 +216,7 @@ public class BlockTransmitter {
 		_prb = source;
 		_ctr = ctr;
 		if(_ctr == null) throw new NullPointerException();
-		PACKET_SIZE = DMT.packetTransmitSize(_prb._packetSize, _prb._packets)
-			+ destination.getOutgoingMangler().fullHeadersLengthOneMessage();
+		PACKET_SIZE = DMT.packetTransmitSize(_prb._packetSize, _prb._packets);
 		try {
 			_sentPackets = new BitArray(_prb.getNumPackets());
 		} catch (AbortedException e) {
