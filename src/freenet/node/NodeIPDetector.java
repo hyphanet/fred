@@ -64,8 +64,32 @@ public class NodeIPDetector {
 	DetectedIP[] pluginDetectedIPs;
 	/** Last detected IP address */
 	FreenetInetAddress[] lastIPAddress;
-	/** The minimum reported MTU on all detected interfaces */
-	private int minimumMTU = Integer.MAX_VALUE;
+	
+	private class MinimumMTU {
+		
+		/** The minimum reported MTU on all detected interfaces */
+		private int minimumMTU = Integer.MAX_VALUE;
+
+		/** Report a new MTU from an interface or detector.
+		 * If the minimum MTU has changed, returns true. */
+		boolean report(int mtu) {
+			if(mtu <= 0) return false;
+			if(mtu < minimumMTU) {
+				Logger.normal(this, "Reducing the MTU to "+minimumMTU);
+				minimumMTU = mtu;
+				return true;
+			}
+			return false;
+		}
+
+		public int get() {
+			return minimumMTU > 0 ? minimumMTU : 1500;
+		}
+
+	}
+	
+	private final MinimumMTU minimumMTU = new MinimumMTU();
+	
 	/** IP address detector */
 	private final IPAddressDetector ipDetector;
 	/** Plugin manager for plugin IP address detectors e.g. STUN */
@@ -357,16 +381,16 @@ public class NodeIPDetector {
 	 */
 	public void processDetectedIPs(DetectedIP[] list) {
 		pluginDetectedIPs = list;
+		boolean mtuChanged = false;
 		for(DetectedIP pluginDetectedIP: pluginDetectedIPs) {
-			int mtu = pluginDetectedIP.mtu;
-			if(minimumMTU > mtu && mtu > 0){
-				minimumMTU = mtu;
-				Logger.normal(this, "Reducing the MTU to "+minimumMTU);
-				if(mtu < UdpSocketHandler.MIN_MTU)
-					node.onTooLowMTU(minimumMTU, UdpSocketHandler.MIN_MTU);
-			}
+			mtuChanged |= minimumMTU.report(pluginDetectedIP.mtu);
 		}
-		node.updateMTU();
+		if(mtuChanged) {
+			int mtu = minimumMTU.get();
+			if(mtu < UdpSocketHandler.MIN_MTU)
+				node.onTooLowMTU(mtu, UdpSocketHandler.MIN_MTU);
+			node.updateMTU();
+		}
 		redetectAddress();
 	}
 
@@ -560,7 +584,7 @@ public class NodeIPDetector {
 	}
 
 	public int getMinimumDetectedMTU() {
-		return minimumMTU > 0 ? minimumMTU : 1500;
+		return minimumMTU.get();
 	}
 
 	public void setMaybeSymmetric() {
