@@ -280,8 +280,6 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	// conservative estimation when AF is not known
 	public static final int MIN_MTU = MIN_IPv4_MTU;
 
-	private volatile boolean disableMTUDetection = false;
-
 	private volatile int maxPacketSize = MAX_ALLOWED_MTU;
 	
 	/**
@@ -304,17 +302,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	/** Recalculate the maximum packet size */
 	int innerCalculateMaxPacketSize() { //FIXME: what about passing a peerNode though and doing it on a per-peer basis? How? PMTU would require JNI, although it might be worth it...
 		final int minAdvertisedMTU = node.getMinimumMTU();
-
-		// We don't want the MTU detection thingy to prevent us to send PacketTransmits!
-		if(disableMTUDetection || minAdvertisedMTU < MIN_MTU){
-			if(!disableMTUDetection) {
-				Logger.error(this, "It shouldn't happen : we disabled the MTU detection algorithm because the advertised MTU is smallish !! ("+node.ipDetector.getMinimumDetectedMTU()+')');
-				disableMTUDetection = true;
-			}
-			return maxPacketSize = MAX_ALLOWED_MTU - UDP_HEADERS_LENGTH;
-		} else {
-			return maxPacketSize = Math.min(MAX_ALLOWED_MTU, minAdvertisedMTU) - UDP_HEADERS_LENGTH;
-		}
+		return maxPacketSize = Math.min(MAX_ALLOWED_MTU, minAdvertisedMTU) - UDP_HEADERS_LENGTH;
 	}
 
 	@Override
