@@ -400,11 +400,10 @@ public class IPConverter {
 	private long decodeBase85(byte[] code) {
 		long result = 0;
 		if (code.length != 5)
-			return result;
+			throw new IllegalArgumentException();
 		for (int i = 0; i < code.length; i++) {
 			if (code[i] < (byte)32 || base85inv[code[i] - 32] < (byte)0)
-				continue; // XXX throw new IllegalArgumentException();
-			// assert (result < Long.MAX_VALUE/base);
+				throw new IllegalArgumentException();
 			result = (result * base) + base85inv[code[i] - 32];
 		}
 		return result;
