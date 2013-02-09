@@ -429,6 +429,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 				}
 			}
 		});
+		ignoreLocalVsRemoteBandwidthLiability = statsConfig.getBoolean("ignoreLocalVsRemoteBandwidthLiability");
 
 		statsConfig.register("maxPingTime", DEFAULT_MAX_PING_TIME, sortOrder++, true, true, "NodeStat.maxPingTime", "NodeStat.maxPingTimeLong", new LongCallback() {
 
