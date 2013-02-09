@@ -263,10 +263,6 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		}
 	}
 
-	// We can't easily detect PMTUs, so we impose a limit that will cover most of the Internet.
-	// However, even if we do have PMTU detection, we will still need to avoid using too large
-	// a fraction of our bandwidth limit, for example.
-	
 	// CompuServe use 1400 MTU; AOL claim 1450; DFN@home use 1448.
 	// http://info.aol.co.uk/broadband/faqHomeNetworking.adp
 	// http://www.compuserve.de/cso/hilfe/linux/hilfekategorien/installation/contentview.jsp?conid=385700
@@ -284,38 +280,34 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	// conservative estimation when AF is not known
 	public static final int MIN_MTU = MIN_IPv4_MTU;
 
-	private volatile int maxPacketSizeIPv4 = MAX_ALLOWED_MTU;
-	private volatile int maxPacketSizeIPv6 = MAX_ALLOWED_MTU;
+	private volatile int maxPacketSize = MAX_ALLOWED_MTU;
 	
 	/**
 	 * @return The maximum packet size supported by this SocketManager, not including transport (UDP/IP) headers.
 	 */
 	@Override
-	public int getMaxPacketSize(boolean ipv6) {
-		return ipv6 ? maxPacketSizeIPv6 : maxPacketSizeIPv4;
+	public int getMaxPacketSize() {
+		return maxPacketSize;
 	}
 
-	public int calculateMaxPacketSize(boolean ipv6) {
-		int oldSize = getMaxPacketSize(ipv6);
-		final int minAdvertisedMTU = node.getMinimumMTU(ipv6);
-		int newSize = Math.min(MAX_ALLOWED_MTU, minAdvertisedMTU) - getHeadersLength(ipv6);
-		if(ipv6)
-			maxPacketSizeIPv6 = newSize;
-		else
-			maxPacketSizeIPv4 = newSize;
+	public int calculateMaxPacketSize() {
+		int oldSize = maxPacketSize;
+		int newSize = innerCalculateMaxPacketSize();
+		maxPacketSize = newSize;
 		if(oldSize != newSize)
 			System.out.println("Max packet size: "+newSize);
-		return newSize;
+		return maxPacketSize;
 	}
 	
-	/** Minimum of the max packet sizes for IPv4 and IPv6. */
-	public int getMinMaxPacketSize() {
-		return Math.min(getMaxPacketSize(true), getMaxPacketSize(false));
+	/** Recalculate the maximum packet size */
+	int innerCalculateMaxPacketSize() { //FIXME: what about passing a peerNode though and doing it on a per-peer basis? How? PMTU would require JNI, although it might be worth it...
+		final int minAdvertisedMTU = node.getMinimumMTU();
+		return maxPacketSize = Math.min(MAX_ALLOWED_MTU, minAdvertisedMTU) - UDP_HEADERS_LENGTH;
 	}
 
 	@Override
 	public int getPacketSendThreshold() {
-		return getMinMaxPacketSize() - 100;
+		return getMaxPacketSize() - 100;
 	}
 
 	public void start() {
@@ -363,11 +355,8 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	}
 
 	@Override
-	public int getHeadersLength(boolean ipv6) {
-		if(ipv6)
-			return UDPv6_HEADERS_LENGTH;
-		else
-			return UDPv4_HEADERS_LENGTH;
+	public int getHeadersLength() {
+		return UDP_HEADERS_LENGTH;
 	}
 
 	@Override

@@ -2487,8 +2487,7 @@ public class Node implements TimeSkewDetectorCallback {
 					if(val > 1492) throw new InvalidConfigValueException("Larger than ethernet frame size unlikely to work!");
 					maxPacketSize = val;
 				}
-				updateMTU(false);
-				updateMTU(true);
+				updateMTU();
 			}
 
 		}, true);
@@ -2515,8 +2514,7 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 		enableRoutedPing = nodeConfig.getBoolean("enableRoutedPing");
 		
-		updateMTU(true);
-		updateMTU(false);
+		updateMTU();
 
 		/* Take care that no configuration options are registered after this point; they will not persist
 		 * between restarts.
@@ -5377,23 +5375,24 @@ public class Node implements TimeSkewDetectorCallback {
 		clientCore.alerts.unregister(visibilityAlert);
 	}
 
-	public int getMinimumMTU(boolean ipv6) {
+	public int getMinimumMTU() {
 		int mtu;
 		synchronized(this) {
 			mtu = maxPacketSize;
 		}
 		if(ipDetector != null) {
-			int detected = ipDetector.getMinimumDetectedMTU(ipv6);
+			int detected = ipDetector.getMinimumDetectedMTU();
 			if(detected < mtu) return detected;
 		}
 		return mtu;
 	}
 
-	public void updateMTU(boolean ipv6) {
-		this.darknetCrypto.socket.calculateMaxPacketSize(ipv6);
+
+	public void updateMTU() {
+		this.darknetCrypto.socket.calculateMaxPacketSize();
 		OpennetManager om = opennet;
 		if(om != null) {
-			om.crypto.socket.calculateMaxPacketSize(ipv6);
+			om.crypto.socket.calculateMaxPacketSize();
 		}
 	}
 
