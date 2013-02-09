@@ -149,6 +149,7 @@ public abstract class FECCodec {
 
 			byte[] realBuffer = new byte[k * stripeSize];
 
+			// Indicates where the data is for each block. Many of the blocks won't have any data.
 			int[] packetIndexes = new int[k];
 			for(int i = 0; i < packetIndexes.length; i++)
 				packetIndexes[i] = -1;
@@ -236,9 +237,9 @@ public abstract class FECCodec {
 						}
 					}
 				}
-				// Do the decode
-				// Not shuffled
+				// The FEC codec will change the indexes in disposableIndexes. We need them to stay the same for multiple stripes.
 				int[] disposableIndexes = packetIndexes.clone();
+				// Do the decode, not shuffled
 				fec.decode(packets, disposableIndexes);
 				// packets now contains an array of decoded blocks, in order
 				// Write the data out
