@@ -1,5 +1,6 @@
 package freenet.node;
 
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -88,7 +89,8 @@ public class NodeIPDetector {
 
 	}
 	
-	private final MinimumMTU minimumMTU = new MinimumMTU();
+	private final MinimumMTU minimumMTUIPv4 = new MinimumMTU();
+	private final MinimumMTU minimumMTUIPv6 = new MinimumMTU();
 	
 	/** IP address detector */
 	private final IPAddressDetector ipDetector;
@@ -383,7 +385,11 @@ public class NodeIPDetector {
 		pluginDetectedIPs = list;
 		boolean mtuChanged = false;
 		for(DetectedIP pluginDetectedIP: pluginDetectedIPs) {
-			mtuChanged |= minimumMTU.report(pluginDetectedIP.mtu);
+			if(pluginDetectedIP.publicAddress instanceof Inet6Address)
+				mtuChanged |= minimumMTUIPv6.report(pluginDetectedIP.mtu);
+			else
+				mtuChanged |= minimumMTUIPv4.report(pluginDetectedIP.mtu);
+			
 		}
 		if(mtuChanged) node.updateMTU();
 		redetectAddress();
@@ -578,8 +584,12 @@ public class NodeIPDetector {
 		}
 	}
 
+	public int getMinimumDetectedMTU(boolean ipv6) {
+		return ipv6 ? minimumMTUIPv6.get() : minimumMTUIPv4.get();
+	}
+
 	public int getMinimumDetectedMTU() {
-		return minimumMTU.get();
+		return Math.min(minimumMTUIPv4.get(), minimumMTUIPv6.get());
 	}
 
 	public void setMaybeSymmetric() {
