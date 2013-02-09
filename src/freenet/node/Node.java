@@ -5109,13 +5109,6 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	};
 
-	public void onTooLowMTU(int minAdvertisedMTU, int minAcceptableMTU) {
-		if(alertMTUTooSmall == null) {
-			alertMTUTooSmall = new SimpleUserAlert(false, l10n("tooSmallMTU"), l10n("tooSmallMTULong", new String[] { "mtu", "minMTU" }, new String[] { Integer.toString(minAdvertisedMTU), Integer.toString(minAcceptableMTU) }), l10n("tooSmallMTUShort"), UserAlert.ERROR);
-		} else return;
-		clientCore.alerts.register(alertMTUTooSmall);
-	}
-
 	public void setDispatcherHook(NodeDispatcherCallback cb) {
 		this.dispatcher.setHook(cb);
 	}

@@ -385,12 +385,7 @@ public class NodeIPDetector {
 		for(DetectedIP pluginDetectedIP: pluginDetectedIPs) {
 			mtuChanged |= minimumMTU.report(pluginDetectedIP.mtu);
 		}
-		if(mtuChanged) {
-			int mtu = minimumMTU.get();
-			if(mtu < UdpSocketHandler.MIN_MTU)
-				node.onTooLowMTU(mtu, UdpSocketHandler.MIN_MTU);
-			node.updateMTU();
-		}
+		if(mtuChanged) node.updateMTU();
 		redetectAddress();
 	}
 
