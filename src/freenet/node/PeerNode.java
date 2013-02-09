@@ -2624,7 +2624,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		String locationString = fs.get("location");
 		if(locationString != null) {
 			double newLoc = Location.getLocation(locationString);
-			if (newLoc == -1) {
+			if (!Location.isValid(newLoc)) {
 				if(logMINOR)
 					Logger.minor(this, "Invalid or null location, waiting for FNPLocChangeNotification: locationString=" + locationString);
 			} else {
