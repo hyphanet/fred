@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.io.comm;
 
+import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -32,7 +33,7 @@ public class IOStatisticCollector {
 		logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 	}
 	
-	public void addInfo(Object addr, int port, int inbytes, int outbytes, boolean isLocal) {
+	public void addInfo(InetAddress addr, int port, int inbytes, int outbytes, boolean isLocal) {
 		try {
 			synchronized (this) {
 				_addInfo(addr, port, inbytes, outbytes, isLocal);
@@ -42,7 +43,7 @@ public class IOStatisticCollector {
 		}
 	}
 	
-	private void _addInfo(Object addr, int port, int inbytes, int outbytes, boolean isLocal) {
+	private void _addInfo(InetAddress addr, int port, int inbytes, int outbytes, boolean isLocal) {
 		rotate();
 		if(ENABLE_PER_ADDRESS_TRACKING) {
 			String key = addr + ":" + port;
