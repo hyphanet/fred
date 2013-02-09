@@ -4918,10 +4918,6 @@ public class Node implements TimeSkewDetectorCallback {
 		return darknetCrypto.pubKeyHash;
 	}
 
-	public int estimateFullHeadersLengthOneMessage() {
-		return darknetCrypto.packetMangler.fullHeadersLengthOneMessage();
-	}
-
 	public synchronized boolean isOpennetEnabled() {
 		return opennet != null;
 	}
