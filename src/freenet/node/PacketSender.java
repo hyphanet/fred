@@ -136,6 +136,20 @@ public class PacketSender implements Runnable {
 		}
 	}
 
+	/**
+	 * Send loop. Strategy:
+	 * - Each peer can tell us when its data needs to be sent by. This is usually 100ms after it
+	 * is posted. It could vary by message type. Acknowledgements also become valid 100ms after 
+	 * being queued.
+	 * - If any peer's data is overdue, send the data from the most overdue peer.
+	 * - If there are peers with more than a packet's worth of data queued, send the data from the
+	 * peer with the oldest data.
+	 * - If there are peers with overdue ack's, send to the peer whose acks are oldest.
+	 * 
+	 * It does not attempt to ensure fairness, it attempts to minimise latency. Fairness is best
+	 * dealt with at a higher level e.g. requests, although some transfers are not part of requests,
+	 * e.g. bulk f2f transfers, so we may need to reconsider this eventually...
+	 */
 	private void realRun() {
 		long now = System.currentTimeMillis();
                 PeerManager pm;
