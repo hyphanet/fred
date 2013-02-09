@@ -8,6 +8,7 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.lang.ref.WeakReference;
 import java.math.BigInteger;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
@@ -5492,7 +5493,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	
 	@Override
 	public int getMaxPacketSize() {
-		return crypto.socket.getMaxPacketSize();
+		Peer p = getPeer();
+		InetAddress a = p == null ? null : p.getAddress(false);
+		if(a == null)
+			return crypto.socket.getMinMaxPacketSize();
+		else
+			return crypto.socket.getMaxPacketSize(a instanceof Inet6Address);
 	}
 	
 	@Override

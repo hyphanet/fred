@@ -14,7 +14,6 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
-import freenet.io.comm.UdpSocketHandler;
 import freenet.l10n.NodeL10n;
 import freenet.node.useralerts.IPUndetectedUserAlert;
 import freenet.node.useralerts.InvalidAddressOverrideUserAlert;
@@ -383,15 +382,17 @@ public class NodeIPDetector {
 	 */
 	public void processDetectedIPs(DetectedIP[] list) {
 		pluginDetectedIPs = list;
-		boolean mtuChanged = false;
+		boolean mtuChanged4 = false;
+		boolean mtuChanged6 = false;
 		for(DetectedIP pluginDetectedIP: pluginDetectedIPs) {
 			if(pluginDetectedIP.publicAddress instanceof Inet6Address)
-				mtuChanged |= minimumMTUIPv6.report(pluginDetectedIP.mtu);
+				mtuChanged6 |= minimumMTUIPv6.report(pluginDetectedIP.mtu);
 			else
-				mtuChanged |= minimumMTUIPv4.report(pluginDetectedIP.mtu);
+				mtuChanged4 |= minimumMTUIPv4.report(pluginDetectedIP.mtu);
 			
 		}
-		if(mtuChanged) node.updateMTU();
+		if(mtuChanged6) node.updateMTU(true);
+		if(mtuChanged4) node.updateMTU(false);
 		redetectAddress();
 	}
 

@@ -1987,7 +1987,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 */
 	private void sendAuthPacket(byte[] output, BlockCipher cipher, PeerNode pn, Peer replyTo, boolean anonAuth) {
 		int length = output.length;
-		if(length > sock.getMaxPacketSize()) {
+		boolean ipv6 = replyTo.isIPv6(true);
+		if(length > sock.getMaxPacketSize(ipv6)) {
 			throw new IllegalStateException("Cannot send auth packet: too long: "+length);
 		}
 		byte[] iv = new byte[PCFBMode.lengthIV(cipher)];
@@ -1995,7 +1996,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		byte[] hash = SHA256.digest(output);
 		if(logMINOR) Logger.minor(this, "Data hash: "+HexUtil.bytesToHex(hash));
 		int prePaddingLength = iv.length + hash.length + 2 /* length */ + output.length;
-		int maxPacketSize = sock.getMaxPacketSize();
+		int maxPacketSize = sock.getMaxPacketSize(ipv6);
 		int paddingLength;
 		if(prePaddingLength < maxPacketSize) {
 			paddingLength = node.fastWeakRandom.nextInt(Math.min(100, maxPacketSize - prePaddingLength));

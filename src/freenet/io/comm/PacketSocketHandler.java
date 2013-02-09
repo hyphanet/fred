@@ -11,8 +11,10 @@ import freenet.io.comm.Peer.LocalAddressException;
  */
 public interface PacketSocketHandler extends SocketHandler {
 
-	/** The maximum size of a packet, not including transport layer headers */
-	int getMaxPacketSize();
+	/** The maximum size of a packet, not including transport layer headers.
+	 * @param ipv6 If true, sending an IPv6 packet. If false, sending an IPv4 packet.
+     * FIXME Long term (with packet transports), we should use a separate transport for IPv6 vs IPv4. */
+	int getMaxPacketSize(boolean ipv6);
 
 	/**
 	 * Send a block of encoded bytes to a peer. This is called by
@@ -24,8 +26,10 @@ public interface PacketSocketHandler extends SocketHandler {
 
     /**
      * Get the size of the transport layer headers, for byte accounting purposes.
+     * @param ipv6 If true, sending an IPv6 packet. If false, sending an IPv4 packet.
+     * FIXME Long term (with packet transports), we should use a separate transport for IPv6 vs IPv4.
      */
-	public int getHeadersLength();
+	public int getHeadersLength(boolean ipv6);
 
     /**
      * Get the size of the transport layer headers, for byte accounting purposes.

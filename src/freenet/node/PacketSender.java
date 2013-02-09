@@ -146,9 +146,12 @@ public class PacketSender implements Runnable {
 	 * peer with the oldest data.
 	 * - If there are peers with overdue ack's, send to the peer whose acks are oldest.
 	 * 
-	 * It does not attempt to ensure fairness, it attempts to minimise latency. Fairness is best
-	 * dealt with at a higher level e.g. requests, although some transfers are not part of requests,
-	 * e.g. bulk f2f transfers, so we may need to reconsider this eventually...
+	 * No throttled peer is allowed to send anything until there is enough bandwidth for any peer
+	 * to send a full sized packet:
+	 * - Whenever a peer sends a packet (other than purely for ack's), it should send a full sized
+	 * packet if it can. It should NOT try to fit into the available bandwidth, because that wastes
+	 * a significant amount of bandwidth - it's much preferable to wait and then send a full sized 
+	 * packet.
 	 */
 	private void realRun() {
 		long now = System.currentTimeMillis();
@@ -161,9 +164,18 @@ public class PacketSender implements Runnable {
 		long nextActionTime = Long.MAX_VALUE;
 		long oldTempNow = now;
 
+		/** True if we can send a packet to a peer subject to throttling. We will sometimes send
+		 * overdue ack's even though !canSendThrottled. */
 		boolean canSendThrottled = false;
 
-		int MAX_PACKET_SIZE = node.darknetCrypto.socket.getMaxPacketSize();
+		// It's essential that we not limit the size of the data we can send by the amount of
+		// bandwidth immediately available. If we do, when we are short on bandwidth we'll send
+		// lots of inefficient small packets and thus waste even more bandwidth. Hence we don't
+		// send anything (other than the most urgent acks), until we can send a full size packet.
+		// There are complications if different peers have different ideas of "a full size packet",
+		// so we just use the smaller of the max packet sizes (note that if IPv6 is disabled it 
+		// might report a higher number, so max of the two limits probably doesn't make sense).
+		int MAX_PACKET_SIZE = node.darknetCrypto.socket.getMinMaxPacketSize();
 		long count = node.outputThrottle.getCount();
 		if(count > MAX_PACKET_SIZE)
 			canSendThrottled = true;
