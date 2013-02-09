@@ -235,13 +235,11 @@ public class IPConverter {
 			short[] codes = new short[size];
 			int[] ips = new int[size];
 			// Read ips and add it to ip table
-			for (int i = 0; i < size; i++) {
-				int offset = i * 7;
-				String iprange = line.substring(offset, offset + 7);
+			for (int i = 0, offset = 0; i < size; i++, offset += 7) {
 				// Code
-				String code = iprange.substring(0, 2);
+				String code = line.substring(offset, offset + 2);
 				// Ip
-				String ipcode = iprange.substring(2);
+				String ipcode = line.substring(offset + 2, offset + 7);
 				long ip = decodeBase85(ipcode.getBytes("ISO-8859-1"));
 				try {
 					Country country = Country.valueOf(code);
