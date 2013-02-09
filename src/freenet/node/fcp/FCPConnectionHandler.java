@@ -157,7 +157,7 @@ public class FCPConnectionHandler implements Closeable {
 		SubscribeUSK[] uskSubscriptions2;
 		synchronized(this) {
 			if(isClosed) {
-				Logger.error(this, "Already closed: "+this, new Exception("debug"));
+				// This is normal, both input and output handlers will call close().
 				return;
 			}
 			isClosed = true;
