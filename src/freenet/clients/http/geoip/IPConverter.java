@@ -34,6 +34,7 @@ public class IPConverter {
 	private static IPConverter instance;
 	// File containing IP ranges
 	private File dbFile;
+	private boolean dbFileCorrupt;
 
 	public enum Country {
 		L0("localhost"), I0("IntraNet"), A1("Anonymous Proxy"), A2(
@@ -245,6 +246,7 @@ public class IPConverter {
 					Country country = Country.valueOf(code);
 					codes[i] = (short) country.ordinal();
 				} catch (IllegalArgumentException e) {
+					// Does not invalidate the whole file, just means the country list is out of date.
 					Logger.error(this, "Country not in list: "+code);
 					codes[i] = (short)-1;
 				}
@@ -257,6 +259,11 @@ public class IPConverter {
 			Logger.warning(this, "Database file not found!", e);
 		} catch (IOException e) {
 			Logger.error(this, e.getMessage());
+		} catch (IPConverterParseException e) {
+			Logger.error(this, "IP to country datbase file is corrupt: "+e, e);
+			// Don't try again until next restart.
+			// FIXME add a callback to clear the flag when we download a new copy.
+			dbFileCorrupt = true;
 		}
 		return null;
 	}
@@ -382,6 +389,7 @@ public class IPConverter {
 			if(fullCache != null)
 				memCache = fullCache.get();
 			if(memCache == null) {
+				if(dbFileCorrupt) return null;
 				fullCache = new SoftReference<Cache>(memCache = readRanges());
 			}
 		}
@@ -394,14 +402,15 @@ public class IPConverter {
 	 * @param code
 	 *            encoded bytes
 	 * @return decoded long
+	 * @throws IPConverterParseException 
 	 */
-	private long decodeBase85(byte[] code) {
+	private long decodeBase85(byte[] code) throws IPConverterParseException {
 		long result = 0;
 		if (code.length != 5)
-			throw new IllegalArgumentException();
+			throw new IPConverterParseException();
 		for (int i = 0; i < code.length; i++) {
 			if (code[i] < (byte)32 || base85inv[code[i] - 32] < (byte)0)
-				throw new IllegalArgumentException();
+				throw new IPConverterParseException();
 			result = (result * base) + base85inv[code[i] - 32];
 		}
 		return result;
