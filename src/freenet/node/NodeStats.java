@@ -1567,13 +1567,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			boolean isRealTime, boolean isSSK, boolean isInsert) {
 		if(isRealTime) {
 			if(isSSK) {
-				return isInsert ? pInstantRejectIncomingSSKInsertRT : pInstantRejectIncomingCHKInsertRT;
+				return isInsert ? pInstantRejectIncomingSSKInsertRT : pInstantRejectIncomingSSKRequestRT;
 			} else {
 				return isInsert ? pInstantRejectIncomingCHKInsertRT : pInstantRejectIncomingCHKRequestRT;
 			}
 		} else {
 			if(isSSK) {
-				return isInsert ? pInstantRejectIncomingSSKInsertBulk : pInstantRejectIncomingCHKInsertBulk;
+				return isInsert ? pInstantRejectIncomingSSKInsertBulk : pInstantRejectIncomingSSKRequestBulk;
 			} else {
 				return isInsert ? pInstantRejectIncomingCHKInsertBulk : pInstantRejectIncomingCHKRequestBulk;
 			}
