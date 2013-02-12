@@ -352,8 +352,20 @@ public class CachingFreenetStoreTest extends TestCase {
 		ClientSSKBlock block = ik.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
 		store.put(block, false, false);
 	
+		boolean keyCollisionExceptionThrowed;
+		
 		//If the block is the same, then there should not be a collision
-		//store.put(block, false, false);
+		try {
+			store.put(block, false, false);
+			keyCollisionExceptionThrowed = false;
+		} catch (KeyCollisionException e) {
+			keyCollisionExceptionThrowed = true;
+			System.out.println("erroreeee"+e.getMessage());
+			e.printStackTrace();
+			
+		}
+		System.out.println(keyCollisionExceptionThrowed);
+		assertFalse(keyCollisionExceptionThrowed);
 		
 		String test1 = "test1";
 		SimpleReadOnlyArrayBucket bucket1 = new SimpleReadOnlyArrayBucket(test1.getBytes("UTF-8"));
@@ -362,10 +374,11 @@ public class CachingFreenetStoreTest extends TestCase {
 		//if it's different (e.g. different content, same key), there should be a KCE thrown
 		try {
 			store.put(block1, false, false);
-			assertTrue(false);
+			keyCollisionExceptionThrowed = false;
 		} catch (KeyCollisionException e) {
-			assertTrue(true);
+			keyCollisionExceptionThrowed = true;
 		}
+		assertTrue(keyCollisionExceptionThrowed);
 		
 		// if overwrite is set, then no collision should be thrown
 		store.put(block1, true, false);
