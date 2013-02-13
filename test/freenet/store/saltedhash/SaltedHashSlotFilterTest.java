@@ -31,8 +31,9 @@ public class SaltedHashSlotFilterTest extends TestCase {
 	private PooledExecutor exec = new PooledExecutor();
 	private Ticker ticker = new TrivialTicker(exec);
 	private File tempDir;
-	private static final int TEST_COUNT = TestProperty.EXTENSIVE ? 100 : 10;
-	private static final int STORE_SIZE = TEST_COUNT * 5;
+	private static final int TEST_COUNT = TestProperty.EXTENSIVE ? 100 : 20;
+	private static final int ACCEPTABLE_FALSE_POSITIVES = TestProperty.EXTENSIVE ? 5 : 2;
+	private static final int STORE_SIZE = TestProperty.EXTENSIVE ? 500 : 100;
 
 	@Override
 	protected void setUp() throws java.lang.Exception {
@@ -48,39 +49,41 @@ public class SaltedHashSlotFilterTest extends TestCase {
 	}
 	
 	public void testCHKPresent() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
-		checkCHKPresent(-1);
+		checkCHKPresent(-1, TEST_COUNT, ACCEPTABLE_FALSE_POSITIVES, STORE_SIZE);
 		FileUtil.removeAll(tempDir);
-		checkCHKPresent(600*1000); // Much longer than the test will take.
+		checkCHKPresent(600*1000, TEST_COUNT, ACCEPTABLE_FALSE_POSITIVES, STORE_SIZE); // Much longer than the test will take.
+		checkCHKPresent(-1, SaltedHashFreenetStore.OPTION_MAX_PROBE, 1, SaltedHashFreenetStore.OPTION_MAX_PROBE); // Check that it doesn't reuse slots if it can avoid it.
+		checkCHKPresent(-1, 10, 1, 20);
 	}
 
-	private void checkCHKPresent(int persistenceTime) throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
+	private void checkCHKPresent(int persistenceTime, int testCount, int acceptableFalsePositives, int storeSize) throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		ResizablePersistentIntBuffer.setPersistenceTime(persistenceTime);
 		File f = new File(tempDir, "saltstore");
 		FileUtil.removeAll(f);
 
 		CHKStore store = new CHKStore();
-		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, STORE_SIZE, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, storeSize, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(null, true);
 		
 		int falsePositives = 0;
 
-		for(int i=0;i<TEST_COUNT;i++) {
+		for(int i=0;i<testCount;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
 			ClientCHK key = block.getClientKey();
 			byte[] routingKey = key.getRoutingKey();
 			if(saltStore.probablyInStore(routingKey))
 				falsePositives++;
-			store.put(block, false);
+			store.put(block.getBlock(), false);
 			assertTrue(saltStore.probablyInStore(routingKey));
 			CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
 			String data = decodeBlockCHK(verify, key);
 			assertEquals(test, data);
 		}
 		
-		assertTrue(falsePositives <= 5);
+		assertTrue(falsePositives <= acceptableFalsePositives);
 		
-		for(int i=0;i<TEST_COUNT;i++) {
+		for(int i=0;i<testCount;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
 			ClientCHK key = block.getClientKey();
@@ -118,14 +121,14 @@ public class SaltedHashSlotFilterTest extends TestCase {
 			byte[] routingKey = key.getRoutingKey();
 			if(saltStore.probablyInStore(routingKey))
 				falsePositives++;
-			store.put(block, false);
+			store.put(block.getBlock(), false);
 			assertTrue(saltStore.probablyInStore(routingKey));
 			CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
 			String data = decodeBlockCHK(verify, key);
 			assertEquals(test, data);
 		}
 		
-		assertTrue(falsePositives <= 5);
+		assertTrue(falsePositives <= ACCEPTABLE_FALSE_POSITIVES);
 		
 		saltStore.close();
 		store = new CHKStore();
@@ -165,14 +168,14 @@ public class SaltedHashSlotFilterTest extends TestCase {
 			byte[] routingKey = key.getRoutingKey();
 			if(saltStore.probablyInStore(routingKey))
 				falsePositives++;
-			store.put(block, false);
+			store.put(block.getBlock(), false);
 			assertTrue(saltStore.probablyInStore(routingKey));
 			CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
 			String data = decodeBlockCHK(verify, key);
 			assertEquals(test, data);
 		}
 		
-		assertTrue(falsePositives <= 5);
+		assertTrue(falsePositives <= ACCEPTABLE_FALSE_POSITIVES);
 		
 		try {
 			Thread.sleep(2*delay);
@@ -219,7 +222,7 @@ public class SaltedHashSlotFilterTest extends TestCase {
 			byte[] routingKey = key.getRoutingKey();
 			if(saltStore.probablyInStore(routingKey))
 				falsePositives++;
-			store.put(block, false);
+			store.put(block.getBlock(), false);
 			assertTrue(saltStore.probablyInStore(routingKey));
 			CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
 			String data = decodeBlockCHK(verify, key);
@@ -267,7 +270,7 @@ public class SaltedHashSlotFilterTest extends TestCase {
 			byte[] routingKey = key.getRoutingKey();
 			if(saltStore.probablyInStore(routingKey))
 				falsePositives++;
-			store.put(block, false);
+			store.put(block.getBlock(), false);
 			assertTrue(saltStore.probablyInStore(routingKey));
 			CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
 			String data = decodeBlockCHK(verify, key);

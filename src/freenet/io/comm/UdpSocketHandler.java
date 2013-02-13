@@ -197,8 +197,8 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 			_sock.receive(packet);
 			InetAddress address = packet.getAddress();
 			boolean isLocal = !IPUtil.isValidAddress(address, false);
-			collector.addInfo(address + ":" + packet.getPort(),
-					packet.getLength(), 0, isLocal); // FIXME use (packet.getLength() + UDP_HEADERS_LENGTH)?
+			collector.addInfo(address, packet.getPort(),
+					getHeadersLength(address) + packet.getLength(), 0, isLocal);
 		} catch (SocketTimeoutException e1) {
 			return false;
 		} catch (IOException e2) {
@@ -252,7 +252,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 			_sock.send(packet);
 			tracker.sentPacketTo(destination);
 			boolean isLocal = (!IPUtil.isValidAddress(address, false)) && (IPUtil.isValidAddress(address, true));
-			collector.addInfo(address + ":" + port, 0, blockToSend.length + UDP_HEADERS_LENGTH, isLocal);
+			collector.addInfo(address, port, 0, getHeadersLength(address) + blockToSend.length, isLocal);
 			if(logMINOR) Logger.minor(this, "Sent packet length "+blockToSend.length+" to "+address+':'+port);
 		} catch (IOException e) {
 			if(packet.getAddress() instanceof Inet6Address) {
@@ -270,11 +270,15 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	// officially GRE is 1476 and PPPoE is 1492.
 	// unofficially, PPPoE is often 1472 (seen in the wild). Also PPPoATM is sometimes 1472.
 	static final int MAX_ALLOWED_MTU = 1280;
-	// FIXME this is different for IPv6 (check all uses of constant when fixing)
-	public static final int UDP_HEADERS_LENGTH = 28;
+	static final int UDPv4_HEADERS_LENGTH = 28;
+	static final int UDPv6_HEADERS_LENGTH = 48;
+	// conservative estimation when AF is not known
+	public static final int UDP_HEADERS_LENGTH = UDPv6_HEADERS_LENGTH;
 
-	public static final int MIN_MTU = 576;
-	private volatile boolean disableMTUDetection = false;
+	static final int MIN_IPv4_MTU = 576;
+	static final int MIN_IPv6_MTU = 1280;
+	// conservative estimation when AF is not known
+	public static final int MIN_MTU = MIN_IPv4_MTU;
 
 	private volatile int maxPacketSize = MAX_ALLOWED_MTU;
 	
@@ -298,18 +302,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	/** Recalculate the maximum packet size */
 	int innerCalculateMaxPacketSize() { //FIXME: what about passing a peerNode though and doing it on a per-peer basis? How? PMTU would require JNI, although it might be worth it...
 		final int minAdvertisedMTU = node.getMinimumMTU();
-
-		// We don't want the MTU detection thingy to prevent us to send PacketTransmits!
-		if(disableMTUDetection || minAdvertisedMTU < MIN_MTU){
-			if(!disableMTUDetection) {
-				Logger.error(this, "It shouldn't happen : we disabled the MTU detection algorithm because the advertised MTU is smallish !! ("+node.ipDetector.getMinimumDetectedMTU()+')');
-				disableMTUDetection = true;
-			}
-			return maxPacketSize = MAX_ALLOWED_MTU - UDP_HEADERS_LENGTH;
-		} else {
-			return maxPacketSize = Math.min(MAX_ALLOWED_MTU, minAdvertisedMTU) - UDP_HEADERS_LENGTH;
-		}
-		// UDP/IP header is 28 bytes.
+		return maxPacketSize = Math.min(MAX_ALLOWED_MTU, minAdvertisedMTU) - UDP_HEADERS_LENGTH;
 	}
 
 	@Override
@@ -364,6 +357,15 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	@Override
 	public int getHeadersLength() {
 		return UDP_HEADERS_LENGTH;
+	}
+
+	@Override
+	public int getHeadersLength(Peer peer) {
+		return getHeadersLength(peer.getAddress(false));
+	}
+
+	int getHeadersLength(InetAddress addr) {
+		return addr == null || addr instanceof Inet6Address ? UDPv6_HEADERS_LENGTH : UDPv4_HEADERS_LENGTH;
 	}
 
 	public AddressTracker getAddressTracker() {

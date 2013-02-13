@@ -50,7 +50,7 @@ public class PeerLocation {
 		return Location.isValid(currentLocation);
 	}
 
-	public int getDegree() {
+	public synchronized int getDegree() {
 		if (currentPeersLocation == null) return 0;
 		return currentPeersLocation.length;
 	}

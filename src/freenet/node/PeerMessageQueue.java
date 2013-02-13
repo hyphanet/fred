@@ -1,6 +1,5 @@
 package freenet.node;
 
-import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -39,8 +38,6 @@ public class PeerMessageQueue {
 	
 	private boolean mustSendLoadRT;
 	private boolean mustSendLoadBulk;
-	
-	private static final int MAX_PEER_LOAD_STATS_SIZE = DMT.FNPPeerLoadStatusInt.getMaxSize(0);
 	
 	private class PrioQueue {
 		
@@ -444,34 +441,15 @@ public class PeerMessageQueue {
 			return length;
 		}
 		
-		private int addNonUrgentMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages, MutableBoolean addPeerLoadStatsRT, MutableBoolean addPeerLoadStatsBulk, int maxMessages) {
-			assert(size >= 0);
-			assert(minSize >= 0);
-			assert(maxSize >= minSize);
+		private MessageItem addNonUrgentMessages(long now, MutableBoolean addPeerLoadStatsRT, MutableBoolean addPeerLoadStatsBulk) {
 			if(logMINOR) checkOrder();
-			if(size < 0) size = -size; // FIXME remove extra paranoia
-			if(itemsNonUrgent == null) return size;
-			int added = 0;
+			if(itemsNonUrgent == null) return null;
+			MessageItem ret;
 			for(ListIterator<MessageItem> items = itemsNonUrgent.listIterator();items.hasNext();) {
 				MessageItem item = items.next();
-				int thisSize = item.getLength();
-				boolean oversize = false;
-				if(size + 2 + thisSize > maxSize) {
-					if(size == minSize) {
-						// Won't fit regardless, send it on its own.
-						oversize = true;
-					} else {
-						// Send what we have so far.
-						if(logDEBUG && added != 0)
-							Logger.debug(this, "Returning with "+added+" non-urgent messages (have more but they don't fit)");
-						if(logMINOR) checkOrder();
-						return -size;
-					}
-				}
-				size += 2 + thisSize;
 				items.remove();
 				item.setDeadline(item.submitted + timeout);
-				messages.add(item);
+				ret = item;
 				if(itemsByID != null) {
 					long id = item.getID();
 					Items tracker = itemsByID.get(id);
@@ -513,68 +491,38 @@ public class PeerMessageQueue {
 					}
 				}
 				if(mustSendLoadRT && item.sendLoadRT && !addPeerLoadStatsRT.value) {
-					if(size + 2 + MAX_PEER_LOAD_STATS_SIZE > maxSize) {
-						if(logMINOR) Logger.minor(this, "Unable to add load message (realtime) to packet");
-					} else {
-						addPeerLoadStatsRT.value = true;
-						size += 2 + MAX_PEER_LOAD_STATS_SIZE;
-						mustSendLoadRT = false;
-					}
+					addPeerLoadStatsRT.value = true;
+					mustSendLoadRT = false;
 				} else if(mustSendLoadBulk && item.sendLoadBulk && !addPeerLoadStatsBulk.value) {
-					if(size + 2 + MAX_PEER_LOAD_STATS_SIZE > maxSize) {
-						if(logMINOR) Logger.minor(this, "Unable to add load message (bulk) to packet");
-					} else {
-						addPeerLoadStatsBulk.value = true;
-						size += 2 + MAX_PEER_LOAD_STATS_SIZE;
-						mustSendLoadBulk = false;
-					}
+					addPeerLoadStatsBulk.value = true;
+					mustSendLoadBulk = false;
 				}
-				added++;
 				if(logMINOR) checkOrder();
-				if(oversize) {
-					if(logDEBUG) Logger.debug(this, "Returning with non-urgent oversize message");
-					return size;
-				}
 				
-				if(messages.size() >= maxMessages) return size;
+				if(ret != null) return ret;
 			}
-			if(logDEBUG && added != 0)
-				Logger.debug(this, "Returning with "+added+" non-urgent messages (all gone)");
 			if(logMINOR) checkOrder();
-			return size;
+			return null;
 		}
 
 		/**
 		 * Add messages to <code>messages</code> until there are no more
-		 * messages to add or <code>size</code> would exceed
-		 * <code>maxSize</code>. If <code>size == maxSize</code>, a
-		 * message in the queue will be added even if it makes <code>size</code>
-		 * exceed <code>maxSize</code>. If <code>isUrgent</code> is set, only
-		 * messages that are considered urgent are added.
+		 * messages to add.
 		 *
-		 * @param size the current size of <code>messages</code>
-		 * @param minSize the size when <code>messages</code> is empty
-		 * @param maxSize the maximum size of <code>messages</code>
 		 * @param now the current time
 		 * @param messages the list that messages will be added to
 		 * @param maxMessages 
-		 * @param isUrgent <code>true</code> if only urgent messages should be added
 		 * @return the size of <code>messages</code>, multiplied by -1 if there were
 		 * messages that didn't fit
 		 */
-		private int addUrgentMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages, MutableBoolean addPeerLoadStatsRT, MutableBoolean addPeerLoadStatsBulk, int maxMessages) {
-			assert(size >= 0);
-			assert(minSize >= 0);
-			assert(maxSize >= minSize);
+		private MessageItem addUrgentMessages(long now, MutableBoolean addPeerLoadStatsRT, MutableBoolean addPeerLoadStatsBulk) {
 			if(logMINOR) checkOrder();
-			if(size < 0) size = -size; // FIXME remove extra paranoia
-			int added = 0;
+			MessageItem ret;
 			while(true) {
-				boolean addedNone = true;
 				int lists = 0;
 				if(nonEmptyItemsWithID == null) {
 					if(logMINOR) Logger.minor(this, "No non-empty items to send, not sending any urgent messages");
-					return size;
+					return null;
 				}
 				lists += nonEmptyItemsWithID.size();
 				Items list = nonEmptyItemsWithID.head();
@@ -587,25 +535,12 @@ public class PeerMessageQueue {
 						addToEmptyBackward(list);
 						if(nonEmptyItemsWithID.isEmpty()) {
 							if(logMINOR) Logger.minor(this, "Run out of non-empty items to send");
-							return size;
+							return null;
 						}
 						list = nonEmptyItemsWithID.head();
 						continue;
 					}
 					MessageItem item = list.items.getFirst();
-					int thisSize = item.getLength();
-					boolean oversize = false;
-					if(size + 2 + thisSize > maxSize) {
-						if(size == minSize) {
-							// Won't fit regardless, send it on its own.
-							oversize = true;
-						} else {
-							// Send what we have so far.
-							Logger.minor(this, "Added "+added+" urgent messages, could add more but out of space at "+size);
-							return -size;
-						}
-					}
-					size += 2 + thisSize;
 					list.items.removeFirst();
 					// Move to end of list.
 					Items prev = list.getPrev();
@@ -623,42 +558,21 @@ public class PeerMessageQueue {
 						list = nonEmptyItemsWithID.head();
 					else
 						list = prev.getNext();
-					messages.add(item);
-					added++;
-					addedNone = false;
+					ret = item;
 					if(mustSendLoadRT && item.sendLoadRT && !addPeerLoadStatsRT.value) {
-						if(size + 2 + MAX_PEER_LOAD_STATS_SIZE > maxSize) {
-							if(logMINOR) Logger.minor(this, "Unable to add load message (realtime) to packet");
-						} else {
-							addPeerLoadStatsRT.value = true;
-							size += 2 + MAX_PEER_LOAD_STATS_SIZE;
-							mustSendLoadRT = false;
-						}
+						addPeerLoadStatsRT.value = true;
+						mustSendLoadRT = false;
 					} else if(mustSendLoadBulk && item.sendLoadBulk && !addPeerLoadStatsBulk.value) {
-						if(size + 2 + MAX_PEER_LOAD_STATS_SIZE > maxSize) {
-							if(logMINOR) Logger.minor(this, "Unable to add load message (bulk) to packet");
-						} else {
-							addPeerLoadStatsBulk.value = true;
-							size += 2 + MAX_PEER_LOAD_STATS_SIZE;
-							mustSendLoadBulk = false;
-						}
+						addPeerLoadStatsBulk.value = true;
+						mustSendLoadBulk = false;
 					}
 					if(logMINOR) checkOrder();
-					if(oversize) {
-						if(logDEBUG) Logger.debug(this, "Returning with oversize urgent message");
-						return size;
-					}
-					if(messages.size() >= maxMessages) {
-						if(logMINOR) Logger.minor(this, "Returning "+messages.size()+" urgent messages");
-						return size;
-					}
+					if(ret != null) return ret;
 				}
-				if(addedNone) {
-					if(logDEBUG && added != 0)
-						Logger.debug(this, "Added "+added+" urgent messages, size now "+size+" no more queued at this priority");
-					if(logMINOR) checkOrder();
-					return size;
-				}
+				if(logDEBUG)
+					Logger.debug(this, "No more messages queued at this priority");
+				if(logMINOR) checkOrder();
+				return null;
 			}
 		}
 
@@ -666,50 +580,38 @@ public class PeerMessageQueue {
 		/**
 		 * Add urgent messages, then non-urgent messages. Add a load message if need to.
 		 * @param size
-		 * @param minSize
-		 * @param maxSize
 		 * @param now
 		 * @param messages
-		 * @param maxMessages 
+		 * @param addPeerLoadStatsRT Will be set if the caller needs to include a load stats message for
+		 * realtime (i.e. a realtime request completes etc).
+		 * @param addPeerLoadStatsBulk Will be set if the caller needs to include a load stats message for
+		 * bulk (i.e. a bulk request completes etc).
+		 * @param incomplete Will be set if there were more messages but they did not fit. If this is
+		 * not set, we can try another priority.
 		 * @return
 		 */
-		int addPriorityMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages, MutableBoolean addPeerLoadStatsRT, MutableBoolean addPeerLoadStatsBulk, MutableBoolean incomplete, int maxMessages) {
-			if(messages.size() >= maxMessages) return size;
-			synchronized(PeerMessageQueue.this) {
-				// Urgent messages first.
-				if(logMINOR) {
-					int nonEmpty = nonEmptyItemsWithID == null ? 0 : nonEmptyItemsWithID.size();
-					int empty = emptyItemsWithID == null ? 0 : emptyItemsWithID.size();
-					int byID = itemsByID == null ? 0 : itemsByID.size();
-					if(nonEmpty + empty < byID) {
-						Logger.error(this, "Leaking itemsByID? non empty = "+nonEmpty+" empty = "+empty+" by ID = "+byID+" on "+this);
-					} else if(logDEBUG)
-						Logger.debug(this, "Items: non empty "+nonEmpty+" empty "+empty+" by ID "+byID+" on "+this);
-				}
-				if(roundRobinBetweenUIDs)
-					moveToUrgent(now);
-				clearOldNonUrgent(now);
-				if(roundRobinBetweenUIDs) {
-					size = addUrgentMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, maxMessages);
-				} else {
-					assert(itemsByID == null);
-				}
-				if(size < 0) {
-					size = -size;
-					incomplete.value = true;
-					return size;
-				} else {
-					if(messages.size() >= maxMessages)
-						return size;
-					// If no more urgent messages, try to add some non-urgent messages too.
-						size = addNonUrgentMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, maxMessages);
-						if(size < 0) {
-							size = -size;
-							incomplete.value = true;
-						}
-				}
+		MessageItem addPriorityMessages(long now, MutableBoolean addPeerLoadStatsRT, MutableBoolean addPeerLoadStatsBulk) {
+			// Urgent messages first.
+			if(logMINOR) {
+				int nonEmpty = nonEmptyItemsWithID == null ? 0 : nonEmptyItemsWithID.size();
+				int empty = emptyItemsWithID == null ? 0 : emptyItemsWithID.size();
+				int byID = itemsByID == null ? 0 : itemsByID.size();
+				if(nonEmpty + empty < byID) {
+					Logger.error(this, "Leaking itemsByID? non empty = "+nonEmpty+" empty = "+empty+" by ID = "+byID+" on "+this);
+				} else if(logDEBUG)
+					Logger.debug(this, "Items: non empty "+nonEmpty+" empty "+empty+" by ID "+byID+" on "+this);
 			}
-			return size;
+			if(roundRobinBetweenUIDs)
+				moveToUrgent(now);
+			clearOldNonUrgent(now);
+			if(roundRobinBetweenUIDs) {
+				MessageItem item = addUrgentMessages(now, addPeerLoadStatsRT, addPeerLoadStatsBulk);
+				if(item != null) return item;
+			} else {
+				assert(itemsByID == null);
+			}
+			// 	If no more urgent messages, try to add some non-urgent messages too.
+			return addNonUrgentMessages(now, addPeerLoadStatsRT, addPeerLoadStatsBulk);
 		}
 
 		private void clearOldNonUrgent(long now) {
@@ -955,49 +857,8 @@ public class PeerMessageQueue {
 	 * it assumes it has been sent for purposes of fairness between UID's. You should try
 	 * not to call this function if you are not going to be able to send the message: 
 	 * check in advance if possible. */
-	public MessageItem grabQueuedMessageItem(int minPriority) {
-		ArrayList<MessageItem> messages = new ArrayList<MessageItem>(1);
-		addMessages(0, System.currentTimeMillis(), 0, Integer.MAX_VALUE, messages, minPriority);
-		if(messages.size() == 0) return null;
-		if(messages.size() != 1) {
-			Logger.error(this, "Asked it for one message but got "+messages.size());
-			synchronized(this) {
-				for(int i=1;i<messages.size();i++)
-					pushfrontPrioritizedMessageItem(messages.get(i));
-			}
-		}
-		if(logMINOR) Logger.minor(this, "Grabbed message "+messages.get(0)+" on "+this+" priority is "+messages.get(0).getPriority());
-		return messages.get(0);
-	}
-
-	
-	/** At each priority level, send overdue (urgent) messages, then only send non-overdue
-	 * messages if we have exhausted the supply of overdue urgent messages. In other words,
-	 * at each priority level, we send overdue messages, and if the overdue messages don't
-	 * fit, we *DON'T* send smaller non-overdue messages, because if we did it would delay
-	 * the overdue messages we haven't sent (because after we send a packet it will be a
-	 * while due to bandwidth limiting until we can send another one). HOWEVER, this only
-	 * applies within priorities! In other words, high priority messages should be sent
-	 * quickly and opportunistically even if this means that low priority messages which
-	 * are already overdue take a little longer to be sent.
-	 * @param size the current size of the messages
-	 * @param now the current time
-	 * @param minSize the starting size with no messages
-	 * @param maxSize the maximum size of messages
-	 * @param messages the list that messages will be added to
-	 * @return the size of the messages, multiplied by -1 if there were
-	 * messages that didn't fit
-	 */
-	public int addMessages(int size, long now, int minSize, int maxSize,
-			ArrayList<MessageItem> messages, int minPriority) {
-		// FIXME NETWORK PERFORMANCE NEW PACKET FORMAT:
-		// If at a priority we have more to send than can fit into the packet, yet there 
-		// are smaller messages at lower priorities, we don't add the smaller messsages.
-		// The same applies for urgent vs non-urgent at the same priority in the below method.
-		// The reason for this is that we don't want the smaller lower priority messages
-		// using up valuable, limited bandwidth and preventing us from clearing the backlog
-		// of high priority messages. Fortunately this doesn't arise in practice very much,
-		// but when we merge the new packet format it will be eliminated entirely.
+	public synchronized MessageItem grabQueuedMessageItem(int minPriority) {
+		long now = System.currentTimeMillis();
 		
 		MutableBoolean addPeerLoadStatsRT = new MutableBoolean();
 		MutableBoolean addPeerLoadStatsBulk = new MutableBoolean();
@@ -1005,90 +866,57 @@ public class PeerMessageQueue {
 		addPeerLoadStatsRT.value = true;
 		addPeerLoadStatsBulk.value = true;
 		
-		MutableBoolean incomplete = new MutableBoolean();
-
 		for(int i=0;i<DMT.PRIORITY_REALTIME_DATA;i++) {
 			if(i < minPriority) continue;
 			if(logMINOR) Logger.minor(this, "Adding from priority "+i);
-			size = queuesByPriority[i].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, 1);
-			if(incomplete.value || messages.size() >= 1) {
-				return -size;
-			}
+			MessageItem ret = queuesByPriority[i].addPriorityMessages(now, addPeerLoadStatsRT, addPeerLoadStatsBulk);
+			if(ret != null) return ret;
 		}
 		
 		// Include bulk or realtime, whichever is more urgent.
 		
 		boolean tryRealtimeFirst = true;
 		
-		// LOCKING: Must lock while calling getNextUrgentTime, and also while accessing lastSentRealTime.
-		// However, we need to be (or needed to be in the FNP era anyway) flexible with addPriorityMessages,
-		// and we definitely need to not be locked when calling addLoadStats().
-		// FIXME: All this can go away when FNP goes away and we can just lock the whole function.
+		// If one is empty, try the other.
+		// Otherwise try whichever is more urgent, favouring realtime if there is a draw.
+		// Realtime is supposed to be bursty.
 		
-		synchronized(this) {
-			
-			// If one is empty, try the other.
-			// Otherwise try whichever is more urgent, favouring realtime if there is a draw.
-			// Realtime is supposed to be bursty.
-			
-			if(queuesByPriority[DMT.PRIORITY_REALTIME_DATA].isEmpty()) {
-				tryRealtimeFirst = false;
-			} else if(queuesByPriority[DMT.PRIORITY_BULK_DATA].isEmpty()) {
-				tryRealtimeFirst = true;
-			} else if(queuesByPriority[DMT.PRIORITY_BULK_DATA].getNextUrgentTime(Long.MAX_VALUE, 0) >= queuesByPriority[DMT.PRIORITY_REALTIME_DATA].getNextUrgentTime(Long.MAX_VALUE, 0)) {
-				tryRealtimeFirst = true;
-			} else {
-				tryRealtimeFirst = false;
-			}
-			
+		if(queuesByPriority[DMT.PRIORITY_REALTIME_DATA].isEmpty()) {
+			tryRealtimeFirst = false;
+		} else if(queuesByPriority[DMT.PRIORITY_BULK_DATA].isEmpty()) {
+			tryRealtimeFirst = true;
+		} else if(queuesByPriority[DMT.PRIORITY_BULK_DATA].getNextUrgentTime(Long.MAX_VALUE, 0) >= queuesByPriority[DMT.PRIORITY_REALTIME_DATA].getNextUrgentTime(Long.MAX_VALUE, 0)) {
+			tryRealtimeFirst = true;
+		} else {
+			tryRealtimeFirst = false;
 		}
 		
 		// FIXME token bucket?
 		if(tryRealtimeFirst) {
 			// Try realtime first
 			if(logMINOR) Logger.minor(this, "Trying realtime first");
-			int s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, 1);
-			if(s != size) {
-			}
-			if(incomplete.value || messages.size() >= 1) {
-				return -size;
-			}
+			MessageItem ret = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addPriorityMessages(now, addPeerLoadStatsRT, addPeerLoadStatsBulk);
+			if(ret != null) return ret;
 			if(logMINOR) Logger.minor(this, "Trying bulk");
-			s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addPriorityMessages(Math.abs(size), minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, 1);
-			if(s != size) {
-				size = s;
-			}
-			if(incomplete.value || messages.size() >= 1) {
-				return -size;
-			}
+			ret = queuesByPriority[DMT.PRIORITY_BULK_DATA].addPriorityMessages(now, addPeerLoadStatsRT, addPeerLoadStatsBulk);
+			if(ret != null) return ret;
 		} else {
 			// Try bulk first
 			if(logMINOR) Logger.minor(this, "Trying bulk first");
-			int s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addPriorityMessages(Math.abs(size), minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, 1);
-			if(s != size) {
-				size = s;
-			}
-			if(incomplete.value || messages.size() >= 1) {
-				return -size;
-			}
+			MessageItem ret = queuesByPriority[DMT.PRIORITY_BULK_DATA].addPriorityMessages(now, addPeerLoadStatsRT, addPeerLoadStatsBulk);
+			if(ret != null) return ret;
 			if(logMINOR) Logger.minor(this, "Trying realtime");
-			s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, 1);
-			if(s != size) {
-				size = s;
-			}
-			if(incomplete.value || messages.size() >= 1) {
-				return -size;
-			}
+			ret = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addPriorityMessages(now, addPeerLoadStatsRT, addPeerLoadStatsBulk);
+			if(ret != null) return ret;
 		}
 		for(int i=DMT.PRIORITY_BULK_DATA+1;i<DMT.NUM_PRIORITIES;i++) {
 			if(i < minPriority) continue;
 			if(logMINOR) Logger.minor(this, "Adding from priority "+i);
-			size = queuesByPriority[i].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, 1);
-			if(incomplete.value || messages.size() >= 1) {
-				return -size;
-			}
+			MessageItem ret = queuesByPriority[i].addPriorityMessages(now, addPeerLoadStatsRT, addPeerLoadStatsBulk);
+			if(ret != null) return ret;
 		}
-		return size;
+		// Nothing to send.
+		return null;
 	}
 	
 	public boolean removeMessage(MessageItem message) {

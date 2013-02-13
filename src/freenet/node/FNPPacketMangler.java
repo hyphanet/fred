@@ -167,9 +167,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	static public final int HEADERS_LENGTH_ONE_MESSAGE =
 		HEADERS_LENGTH_MINIMUM + 2; // 2 bytes = length of message. rest is the same.
 
-	final int fullHeadersLengthMinimum;
-	final int fullHeadersLengthOneMessage;
-        
         private long lastConnectivityStatusUpdate;
         private Status lastConnectivityStatus;
 
@@ -179,8 +176,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		this.crypto = crypt;
 		this.sock = sock;
 		authenticatorCache = new HashMap<ByteArrayWrapper, byte[]>();
-		fullHeadersLengthMinimum = HEADERS_LENGTH_MINIMUM + sock.getHeadersLength();
-		fullHeadersLengthOneMessage = HEADERS_LENGTH_ONE_MESSAGE + sock.getHeadersLength();
 	}
 
 	/**
@@ -2022,9 +2017,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		System.arraycopy(output, 0, data, hash.length+iv.length+2, output.length);
 
 		Util.randomBytes(node.fastWeakRandom, data, hash.length+iv.length+2+output.length, paddingLength);
-		node.nodeStats.reportAuthBytes(data.length + sock.getHeadersLength());
 		try {
 			sendPacket(data, replyTo, pn);
+			node.nodeStats.reportAuthBytes(data.length + sock.getHeadersLength(replyTo));
 		} catch (LocalAddressException e) {
 			Logger.warning(this, "Tried to send auth packet to local address: "+replyTo+" for "+pn+" - maybe you should set allowLocalAddresses for this peer??");
 		}
@@ -2149,11 +2144,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return new int[] { 6, 7, 8 };
 		else
 			return new int[] { 7, 8 };
-	}
-
-	@Override
-	public int fullHeadersLengthOneMessage() {
-		return fullHeadersLengthOneMessage;
 	}
 
 	@Override

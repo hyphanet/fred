@@ -429,6 +429,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 				}
 			}
 		});
+		ignoreLocalVsRemoteBandwidthLiability = statsConfig.getBoolean("ignoreLocalVsRemoteBandwidthLiability");
 
 		statsConfig.register("maxPingTime", DEFAULT_MAX_PING_TIME, sortOrder++, true, true, "NodeStat.maxPingTime", "NodeStat.maxPingTimeLong", new LongCallback() {
 
@@ -577,9 +578,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		requestInputThrottle =
 			new TokenBucket(Math.max(ibwLimit*60, 32768*20), (int)((1000L*1000L*1000L) / (ibwLimit)), 0);
 
-		estimatedSizeOfOneThrottledPacket = 1024 + DMT.packetTransmitSize(1024, 32) +
-			node.estimateFullHeadersLengthOneMessage();
-
 		double nodeLoc=node.lm.getLocation();
 		this.avgCacheCHKLocation   = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageCacheCHKLocation"));
 		this.avgStoreCHKLocation   = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageStoreCHKLocation"));
@@ -660,8 +658,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private static final double MAX_PEER_QUEUE_TIME = 2 * 60 * 1000.0;
 
 	private long lastAcceptedRequest = -1;
-
-	final int estimatedSizeOfOneThrottledPacket;
 
 	static final double DEFAULT_OVERHEAD = 0.7;
 	static final long DEFAULT_ONLY_PERIOD = 60*1000;
@@ -1567,13 +1563,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			boolean isRealTime, boolean isSSK, boolean isInsert) {
 		if(isRealTime) {
 			if(isSSK) {
-				return isInsert ? pInstantRejectIncomingSSKInsertRT : pInstantRejectIncomingCHKInsertRT;
+				return isInsert ? pInstantRejectIncomingSSKInsertRT : pInstantRejectIncomingSSKRequestRT;
 			} else {
 				return isInsert ? pInstantRejectIncomingCHKInsertRT : pInstantRejectIncomingCHKRequestRT;
 			}
 		} else {
 			if(isSSK) {
-				return isInsert ? pInstantRejectIncomingSSKInsertBulk : pInstantRejectIncomingCHKInsertBulk;
+				return isInsert ? pInstantRejectIncomingSSKInsertBulk : pInstantRejectIncomingSSKRequestBulk;
 			} else {
 				return isInsert ? pInstantRejectIncomingCHKInsertBulk : pInstantRejectIncomingCHKRequestBulk;
 			}

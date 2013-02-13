@@ -517,6 +517,8 @@ public class ElementInfo {
 			return true;
 		}
 		
+		// FIXME get rid of ALLOW_ALL_VALID_STRINGS and isValidStringDecoded or implement something.
+		// Note this trips up findbugs in CSSTokenizerFilter.
 		public static final boolean ALLOW_ALL_VALID_STRINGS = true;
 		
 		public static boolean isValidStringDecoded(String s) {

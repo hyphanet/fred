@@ -71,6 +71,7 @@ import freenet.node.fcp.UploadFileRequestStatus;
 import freenet.node.fcp.UploadRequestStatus;
 import freenet.node.useralerts.StoringUserEvent;
 import freenet.node.useralerts.UserAlert;
+import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
@@ -1317,6 +1318,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		Comparator<RequestStatus> jobComparator = new Comparator<RequestStatus>() {
 			@Override
 			public int compare(RequestStatus firstRequest, RequestStatus secondRequest) {
+				
+				if(firstRequest == secondRequest) return 0; // Short cut.
+				
 				int result = 0;
 				boolean isSet = true;
 
@@ -1325,8 +1329,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 					if(sortBy.equals("id")){
 						result = firstRequest.getIdentifier().compareToIgnoreCase(secondRequest.getIdentifier());
+						if(result == 0)
+							result = firstRequest.getIdentifier().compareTo(secondRequest.getIdentifier());
 					}else if(sortBy.equals("size")){
-						result = (firstRequest.getTotalBlocks() - secondRequest.getTotalBlocks()) < 0 ? -1 : 1;
+						result = Fields.compare(firstRequest.getTotalBlocks(), secondRequest.getTotalBlocks());
 					}else if(sortBy.equals("progress")){
 						boolean firstFinalized = firstRequest.isTotalFinalized();
 						boolean secondFinalized = secondRequest.isTotalFinalized();
@@ -1334,20 +1340,21 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							result = 1;
 						else if(secondFinalized && !firstFinalized)
 							result = -1;
-						else
-							result = (((double)firstRequest.getFetchedBlocks()) / ((double)firstRequest.getMinBlocks()) - ((double)secondRequest.getFetchedBlocks()) / ((double)secondRequest.getMinBlocks())) < 0 ? -1 : 1;
+						else {
+							double firstProgress = ((double)firstRequest.getFetchedBlocks()) / ((double)firstRequest.getMinBlocks());
+							double secondProgress = ((double)secondRequest.getFetchedBlocks()) / ((double)secondRequest.getMinBlocks());
+							result = Fields.compare(firstProgress, secondProgress);
+						}
 					} else if (sortBy.equals("lastActivity")) {
-						result = (int) Math.min(Integer.MAX_VALUE, Math.max(Integer.MIN_VALUE, firstRequest.getLastActivity() - secondRequest.getLastActivity()));
+						result = Fields.compare(firstRequest.getLastActivity(), secondRequest.getLastActivity());
 					}else
 						isSet=false;
 				}else
 					isSet=false;
 
 				if(!isSet){
-					int priorityDifference =  firstRequest.getPriority() - secondRequest.getPriority();
-					if (priorityDifference != 0)
-						result = (priorityDifference < 0 ? -1 : 1);
-					else
+					result = Fields.compare(firstRequest.getPriority(), secondRequest.getPriority());
+					if(result == 0)
 						result = firstRequest.getIdentifier().compareTo(secondRequest.getIdentifier());
 				}
 

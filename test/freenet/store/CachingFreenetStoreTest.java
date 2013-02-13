@@ -347,25 +347,35 @@ public class CachingFreenetStoreTest extends TestCase {
 		String docName = "myDOC";
 		InsertableClientSSK ik = new InsertableClientSSK(docName, pkHash, pubKey, privKey, ckey, Key.ALGO_AES_PCFB_256_SHA256);
 		
+		// THe problem is simple InsertableClientSSK.encode function return a ClientSSKBlock and Entry.getStorableBlock return a SSKBlock
+		// so when I try to do block.equals(oldBlock), the block is CLientSSKBlock and oldBlock is a SSKBlock and from the implementation of equals
+		// if the oldblock is not instanceof ClientSSKBlock it return false
+		// It happen the same if I try to cast block to SSKBlock
+		
 		String test = "test";
 		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(test.getBytes("UTF-8"));
 		ClientSSKBlock block = ik.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
+		//SSKBlock block = ik.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
 		store.put(block, false, false);
 	
-		boolean keyCollisionExceptionThrowed;
-		
-		//If the block is the same, then there should not be a collision
-		try {
-			store.put(block, false, false);
-			keyCollisionExceptionThrowed = false;
-		} catch (KeyCollisionException e) {
-			keyCollisionExceptionThrowed = true;
-			System.out.println("erroreeee"+e.getMessage());
-			e.printStackTrace();
+		//If the block is the same
+		if(block.equals(block)) {
+			//then there should not be a collision
+			try {
+				store.put(block, false, true);
+				assertTrue(true);
+			} catch (KeyCollisionException e) {
+				assertTrue(false);
+			}
 			
+			try {
+				store.put(block, false, false);
+				assertTrue(true);
+			} catch (KeyCollisionException e) {
+				assertTrue(false);
+				
+			}
 		}
-		System.out.println(keyCollisionExceptionThrowed);
-		assertFalse(keyCollisionExceptionThrowed);
 		
 		String test1 = "test1";
 		SimpleReadOnlyArrayBucket bucket1 = new SimpleReadOnlyArrayBucket(test1.getBytes("UTF-8"));
@@ -374,20 +384,25 @@ public class CachingFreenetStoreTest extends TestCase {
 		//if it's different (e.g. different content, same key), there should be a KCE thrown
 		try {
 			store.put(block1, false, false);
-			keyCollisionExceptionThrowed = false;
+			assertTrue(false);
 		} catch (KeyCollisionException e) {
-			keyCollisionExceptionThrowed = true;
+			assertTrue(true);
 		}
-		assertTrue(keyCollisionExceptionThrowed);
 		
 		// if overwrite is set, then no collision should be thrown
-		store.put(block1, true, false);
+		try {
+			store.put(block1, true, false);
+			assertTrue(true);
+		} catch (KeyCollisionException e) {
+			assertTrue(false);
+			
+		}
 		
 		ClientSSK key = block1.getClientKey();
 		pubkeyCache.cacheKey((block1.getKey()).getPubKeyHash(), (block1.getKey()).getPubKey(), false, false, false, false, false);
 		// Check that it's in the cache, *not* the underlying store.
-		//NodeSSK ssk = (NodeSSK) key.getNodeKey();
-		//assertEquals(saltStore.fetch(ssk.getRoutingKey(), ssk.getFullKey(), false, false, false, false, null), null);
+		NodeSSK ssk = (NodeSSK) key.getNodeKey();
+		assertEquals(saltStore.fetch(ssk.getRoutingKey(), ssk.getFullKey(), false, false, false, false, null), null);
 		SSKBlock verify = store.fetch(block1.getKey(), false, false, false, false, null);
 		String data = decodeBlockSSK(verify, key);
 		assertEquals(test1, data);

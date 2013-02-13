@@ -73,7 +73,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	/** Option for saving plainkey. 
 	 * SECURITY: This should NEVER be enabled for a client-cache! */
 	private static final boolean OPTION_SAVE_PLAINKEY = false;
-	private static final int OPTION_MAX_PROBE = 5;
+	static final int OPTION_MAX_PROBE = 5;
 
 	private static final byte FLAG_DIRTY = 0x1;
 	private static final byte FLAG_REBUILD_BLOOM = 0x2;
@@ -2302,6 +2302,6 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			}
 			Thread.sleep(delay);
 		}
-		throw new AssertionFailedError();
+		throw new AssertionError();
 	}
 }

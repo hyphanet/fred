@@ -35,11 +35,6 @@ public interface OutgoingPacketMangler {
 	public int[] supportedNegTypes(boolean forPublic);
 	
 	/**
-	 * Size of the packet headers, in bytes, assuming only one message in this packet.
-	 */
-	public int fullHeadersLengthOneMessage();
-
-	/**
 	 * The SocketHandler we are connected to.
 	 */
 	public SocketHandler getSocketHandler();

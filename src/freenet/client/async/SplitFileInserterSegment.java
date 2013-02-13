@@ -1238,9 +1238,11 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			BlockItem block = (BlockItem) req.token;
 				try {
 					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Starting request: block number "+block.blockNum);
-					ClientCHKBlock b;
+					ClientCHKBlock encodedBlock;
+					CHKBlock b;
 					try {
-						b = encodeBucket(block.copyBucket, compressorDescriptor, block.cryptoAlgorithm, block.cryptoKey);
+						encodedBlock = encodeBucket(block.copyBucket, compressorDescriptor, block.cryptoAlgorithm, block.cryptoKey);
+						b = encodedBlock.getBlock();
 					} catch (CHKEncodeException e) {
 						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage()+" for "+block.copyBucket, e);
 					} catch (MalformedURLException e) {
@@ -1254,7 +1256,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						Logger.error(this, "Asked to send empty block", new Exception("error"));
 						return false;
 					}
-					key = b.getClientKey();
+					key = encodedBlock.getClientKey();
 					num = block.blockNum;
 					if(block.persistent) {
 						req.setGeneratedKey(key);
