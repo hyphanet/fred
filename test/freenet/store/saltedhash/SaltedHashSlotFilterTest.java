@@ -74,7 +74,7 @@ public class SaltedHashSlotFilterTest extends TestCase {
 			byte[] routingKey = key.getRoutingKey();
 			if(saltStore.probablyInStore(routingKey))
 				falsePositives++;
-			store.put(block, false);
+			store.put(block.getBlock(), false);
 			assertTrue(saltStore.probablyInStore(routingKey));
 			CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
 			String data = decodeBlockCHK(verify, key);
@@ -121,7 +121,7 @@ public class SaltedHashSlotFilterTest extends TestCase {
 			byte[] routingKey = key.getRoutingKey();
 			if(saltStore.probablyInStore(routingKey))
 				falsePositives++;
-			store.put(block, false);
+			store.put(block.getBlock(), false);
 			assertTrue(saltStore.probablyInStore(routingKey));
 			CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
 			String data = decodeBlockCHK(verify, key);
@@ -168,7 +168,7 @@ public class SaltedHashSlotFilterTest extends TestCase {
 			byte[] routingKey = key.getRoutingKey();
 			if(saltStore.probablyInStore(routingKey))
 				falsePositives++;
-			store.put(block, false);
+			store.put(block.getBlock(), false);
 			assertTrue(saltStore.probablyInStore(routingKey));
 			CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
 			String data = decodeBlockCHK(verify, key);
@@ -222,7 +222,7 @@ public class SaltedHashSlotFilterTest extends TestCase {
 			byte[] routingKey = key.getRoutingKey();
 			if(saltStore.probablyInStore(routingKey))
 				falsePositives++;
-			store.put(block, false);
+			store.put(block.getBlock(), false);
 			assertTrue(saltStore.probablyInStore(routingKey));
 			CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
 			String data = decodeBlockCHK(verify, key);
@@ -270,7 +270,7 @@ public class SaltedHashSlotFilterTest extends TestCase {
 			byte[] routingKey = key.getRoutingKey();
 			if(saltStore.probablyInStore(routingKey))
 				falsePositives++;
-			store.put(block, false);
+			store.put(block.getBlock(), false);
 			assertTrue(saltStore.probablyInStore(routingKey));
 			CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
 			String data = decodeBlockCHK(verify, key);
