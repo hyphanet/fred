@@ -86,7 +86,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		for(int i=0;i<5;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
-			store.put(block, false);
+			store.put(block.getBlock(), false);
 			ClientCHK key = block.getClientKey();
 			// Check that it's in the cache, *not* the underlying store.
 			assertEquals(saltStore.fetch(key.getRoutingKey(), key.getNodeCHK().getFullKey(), false, false, false, false, null), null);
@@ -116,13 +116,14 @@ public class CachingFreenetStoreTest extends TestCase {
 		for(int i=0;i<5;i++) {
 			String test = "test" + i;
 			ClientSSKBlock block = encodeBlockSSK(test, random);
-			store.put(block, false, false);
+			SSKBlock sskBlock = (SSKBlock) block.getBlock();
+			store.put(sskBlock, false, false);
 			ClientSSK key = block.getClientKey();
-			pubkeyCache.cacheKey((block.getKey()).getPubKeyHash(), (block.getKey()).getPubKey(), false, false, false, false, false);
-			// Check that it's in the cache, *not* the underlying store.
 			NodeSSK ssk = (NodeSSK) key.getNodeKey();
+			pubkeyCache.cacheKey(ssk.getPubKeyHash(), ssk.getPubKey(), false, false, false, false, false);
+			// Check that it's in the cache, *not* the underlying store.
 			assertEquals(saltStore.fetch(ssk.getRoutingKey(), ssk.getFullKey(), false, false, false, false, null), null);
-			SSKBlock verify = store.fetch(block.getKey(), false, false, false, false, null);
+			SSKBlock verify = store.fetch(ssk, false, false, false, false, null);
 			String data = decodeBlockSSK(verify, key);
 			assertEquals(test, data);
 		}
@@ -148,7 +149,7 @@ public class CachingFreenetStoreTest extends TestCase {
 			ClientCHKBlock block = encodeBlockCHK(test);
 			// Check that it's in the cache, *not* the underlying store.
 			assertEquals(saltStore.fetch(block.getKey().getRoutingKey(), block.getKey().getFullKey(), false, false, false, false, null), null);
-			store.put(block, false);
+			store.put(block.getBlock(), false);
 			tests.add(test);
 			chkBlocks.add(block);
 		}
@@ -189,7 +190,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		for(int i=0;i<5;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
-			store.put(block, false);
+			store.put(block.getBlock(), false);
 			// Check that it's in the cache, *not* the underlying store.
 			assertEquals(saltStore.fetch(block.getKey().getRoutingKey(), block.getKey().getFullKey(), false, false, false, false, null), null);
 			tests.add(test);
@@ -251,8 +252,9 @@ public class CachingFreenetStoreTest extends TestCase {
 		for(int i=0;i<5;i++) {
 			String test = "test" + i;
 			ClientSSKBlock block = encodeBlockSSK(test, random);
-			store.put(block, false, false);
-			pubkeyCache.cacheKey((block.getKey()).getPubKeyHash(), (block.getKey()).getPubKey(), false, false, false, false, false);
+			SSKBlock sskBlock = (SSKBlock) block.getBlock();
+			store.put(sskBlock, false, false);
+			pubkeyCache.cacheKey(sskBlock.getKey().getPubKeyHash(), sskBlock.getKey().getPubKey(), false, false, false, false, false);
 			tests.add(test);
 			sskBlocks.add(block);
 		}
@@ -268,7 +270,8 @@ public class CachingFreenetStoreTest extends TestCase {
 			String test = tests.remove(0); //get the first element
 			ClientSSKBlock block = sskBlocks.remove(0); //get the first element
 			ClientSSK key = block.getClientKey();
-			SSKBlock verify = store.fetch(block.getKey(), false, false, false, false, null);
+			NodeSSK ssk = (NodeSSK) key.getNodeKey();
+			SSKBlock verify = store.fetch(ssk, false, false, false, false, null);
 			String data = decodeBlockSSK(verify, key);
 			assertEquals(test, data);
 		}
@@ -298,8 +301,9 @@ public class CachingFreenetStoreTest extends TestCase {
 		for(int i=0;i<5;i++) {
 			String test = "test" + i;
 			ClientSSKBlock block = encodeBlockSSK(test, random);
-			store.put(block, false, false);
-			pubkeyCache.cacheKey((block.getKey()).getPubKeyHash(), (block.getKey()).getPubKey(), false, false, false, false, false);
+			SSKBlock sskBlock = (SSKBlock) block.getBlock();
+			store.put(sskBlock, false, false);
+			pubkeyCache.cacheKey(sskBlock.getKey().getPubKeyHash(), sskBlock.getKey().getPubKey(), false, false, false, false, false);
 			tests.add(test);
 			sskBlocks.add(block);
 		}
@@ -314,7 +318,8 @@ public class CachingFreenetStoreTest extends TestCase {
 			String test = tests.remove(0); //get the first element
 			ClientSSKBlock block = sskBlocks.remove(0); //get the first element
 			ClientSSK key = block.getClientKey();
-			SSKBlock verify = store.fetch(block.getKey(), false, false, false, false, null);
+			NodeSSK ssk = (NodeSSK) key.getNodeKey();
+			SSKBlock verify = store.fetch(ssk, false, false, false, false, null);
 			String data = decodeBlockSSK(verify, key);
 			assertEquals(test, data);
 		}
@@ -347,43 +352,29 @@ public class CachingFreenetStoreTest extends TestCase {
 		String docName = "myDOC";
 		InsertableClientSSK ik = new InsertableClientSSK(docName, pkHash, pubKey, privKey, ckey, Key.ALGO_AES_PCFB_256_SHA256);
 		
-		// THe problem is simple InsertableClientSSK.encode function return a ClientSSKBlock and Entry.getStorableBlock return a SSKBlock
-		// so when I try to do block.equals(oldBlock), the block is CLientSSKBlock and oldBlock is a SSKBlock and from the implementation of equals
-		// if the oldblock is not instanceof ClientSSKBlock it return false
-		// It happen the same if I try to cast block to SSKBlock
-		
 		String test = "test";
 		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(test.getBytes("UTF-8"));
 		ClientSSKBlock block = ik.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
-		//SSKBlock block = ik.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
-		store.put(block, false, false);
-	
-		//If the block is the same
-		if(block.equals(block)) {
-			//then there should not be a collision
-			try {
-				store.put(block, false, true);
-				assertTrue(true);
-			} catch (KeyCollisionException e) {
-				assertTrue(false);
-			}
+		SSKBlock sskBlock = (SSKBlock) block.getBlock();
+		store.put(sskBlock, false, false);
+		
+		//If the block is the same then there should not be a collision
+		try {
+			store.put(sskBlock, false, false);
+			assertTrue(true);
+		} catch (KeyCollisionException e) {
+			assertTrue(false);
 			
-			try {
-				store.put(block, false, false);
-				assertTrue(true);
-			} catch (KeyCollisionException e) {
-				assertTrue(false);
-				
-			}
 		}
 		
 		String test1 = "test1";
 		SimpleReadOnlyArrayBucket bucket1 = new SimpleReadOnlyArrayBucket(test1.getBytes("UTF-8"));
 		ClientSSKBlock block1 = ik.encode(bucket1, false, false, (short)-1, bucket1.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
+		SSKBlock sskBlock1 = (SSKBlock) block1.getBlock();
 		
 		//if it's different (e.g. different content, same key), there should be a KCE thrown
 		try {
-			store.put(block1, false, false);
+			store.put(sskBlock1, false, false);
 			assertTrue(false);
 		} catch (KeyCollisionException e) {
 			assertTrue(true);
@@ -391,7 +382,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		
 		// if overwrite is set, then no collision should be thrown
 		try {
-			store.put(block1, true, false);
+			store.put(sskBlock1, true, false);
 			assertTrue(true);
 		} catch (KeyCollisionException e) {
 			assertTrue(false);
@@ -399,11 +390,10 @@ public class CachingFreenetStoreTest extends TestCase {
 		}
 		
 		ClientSSK key = block1.getClientKey();
-		pubkeyCache.cacheKey((block1.getKey()).getPubKeyHash(), (block1.getKey()).getPubKey(), false, false, false, false, false);
+		pubkeyCache.cacheKey(sskBlock.getKey().getPubKeyHash(), sskBlock.getKey().getPubKey(), false, false, false, false, false);
 		// Check that it's in the cache, *not* the underlying store.
 		NodeSSK ssk = (NodeSSK) key.getNodeKey();
-		assertEquals(saltStore.fetch(ssk.getRoutingKey(), ssk.getFullKey(), false, false, false, false, null), null);
-		SSKBlock verify = store.fetch(block1.getKey(), false, false, false, false, null);
+		SSKBlock verify = store.fetch(ssk, false, false, false, false, null);
 		String data = decodeBlockSSK(verify, key);
 		assertEquals(test1, data);
 	}
