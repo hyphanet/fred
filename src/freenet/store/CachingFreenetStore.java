@@ -167,7 +167,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		configLock.writeLock().lock();
 		
 		try {
-			if(!shuttingDown) {
+			if(sizeBlock < maxSize && !shuttingDown) {
 				Block<T> previousBlock = blocksByRoutingKey.get(key);
 			
 				if(!collisionPossible || overwrite) {
