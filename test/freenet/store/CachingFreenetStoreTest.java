@@ -429,6 +429,8 @@ public class CachingFreenetStoreTest extends TestCase {
 		SSKBlock verify = store.fetch(ssk, false, false, false, false, null);
 		String data = decodeBlockSSK(verify, key);
 		assertEquals(test1, data);
+		
+		cachingStore.close();
 	}
 	
 	private String decodeBlockSSK(SSKBlock verify, ClientSSK key) throws SSKVerifyException, KeyDecodeException, IOException {
