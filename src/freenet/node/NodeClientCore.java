@@ -2189,9 +2189,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	};
 	
 	boolean dontSendRequests() {
-		OpennetManager om = null;
-		return node.peers.countConnectedPeers() < 3 && (om = node.getOpennet()) != null &&
-			System.currentTimeMillis() - om.getCreationTime() < 5*60*1000;		
+		return node.peers.countConnectedPeers() < 3 && node.getOpennet() != null;
 	}
 	
 }
