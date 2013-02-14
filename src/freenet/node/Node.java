@@ -2517,7 +2517,21 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		updateMTU();
 		
-		nodeConfig.register("cachingFreenetStoreMaxSize", "1M", sortOrder++, true, false, "Node.cachingFreenetStoreMaxSize", "Node.cachingFreenetStoreMaxSize",
+		long defaultCacheSize;
+		long memoryLimit = NodeStarter.getMemoryLimitBytes();
+		// This is tricky because systems with low memory probably also have slow disks, but using 
+		// up too much memory can be catastrophic...
+		// Total alchemy, FIXME!
+		if(memoryLimit == Long.MAX_VALUE || memoryLimit < 0)
+			defaultCacheSize = 1024*1024;
+		else if(memoryLimit <= 128*1024*1024)
+			defaultCacheSize = 0; // Turn off completely for very small memory.
+		else {
+			// 9 stores, total should be 5% of memory, up to maximum of 1MB per store at 308MB+
+			defaultCacheSize = Math.min(1024*1024, (memoryLimit - 128*1024*1024) / (20*9));
+		}
+		
+		nodeConfig.register("cachingFreenetStoreMaxSize", defaultCacheSize, sortOrder++, true, false, "Node.cachingFreenetStoreMaxSize", "Node.cachingFreenetStoreMaxSize",
 			new LongCallback() {
 				@Override
 				public Long get() {
@@ -2528,6 +2542,8 @@ public class Node implements TimeSkewDetectorCallback {
 
 				@Override
 				public void set(Long val) throws InvalidConfigValueException, NodeNeedRestartException {
+					if(val < 0) throw new InvalidConfigValueException(l10n("invalidMemoryCacheSize"));
+					// Any positive value is legal. In particular, e.g. 1200 bytes would cause us to cache SSKs but not CHKs.
 					synchronized(Node.this) {
 						cachingFreenetStoreMaxSize = val;
 					}
