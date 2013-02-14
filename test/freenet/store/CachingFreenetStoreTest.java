@@ -98,6 +98,32 @@ public class CachingFreenetStoreTest extends TestCase {
 		cachingStore.close();
 	}
 	
+	/* Check that if the size limit is 0 (and therefore presumably if it is smaller than the key being
+	 * cached), we will pass through immediately. */
+	public void testZeroSize() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
+		File f = new File(tempDir, "saltstore");
+		FileUtil.removeAll(f);
+
+		CHKStore store = new CHKStore();
+		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		CachingFreenetStore<CHKBlock> cachingStore = new CachingFreenetStore<CHKBlock>(store, 0, cachingFreenetStorePeriod, saltStore, ticker);
+		cachingStore.start(null, true);
+
+		for(int i=0;i<5;i++) {
+			String test = "test" + i;
+			ClientCHKBlock block = encodeBlockCHK(test);
+			store.put(block.getBlock(), false);
+			ClientCHK key = block.getClientKey();
+			// It should pass straight through.
+			assertNotNull(saltStore.fetch(key.getRoutingKey(), key.getNodeCHK().getFullKey(), false, false, false, false, null));
+			CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
+			String data = decodeBlockCHK(verify, key);
+			assertEquals(test, data);
+		}
+		
+		cachingStore.close();
+	}
+	
 	/* Simple test with SSK for CachingFreenetStore */
 	public void testSimpleSSK() throws IOException, KeyCollisionException, SSKVerifyException, KeyDecodeException, SSKEncodeException, InvalidCompressionCodecException {
 		File f = new File(tempDir, "saltstore");
