@@ -369,9 +369,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 					}
 		},false);
 		
-		if(lastVersion > 0 && lastVersion < 1270 && memoryLimit > 160*1024*1024 && memoryLimit < 192*1024*1024)
-			statsConfig.fixOldDefault("threadLimit", "300");
-		
 		threadLimit = statsConfig.getInt("threadLimit");
 
 		// Yes it could be in seconds insteed of multiples of 0.12, but we don't want people to play with it :)
