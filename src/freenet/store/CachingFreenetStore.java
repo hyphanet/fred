@@ -23,8 +23,6 @@ import freenet.support.io.NativeThread;
 public class CachingFreenetStore<T extends StorableBlock> implements FreenetStore<T> {
     private static volatile boolean logMINOR;
     
-    static { Logger.registerClass(CachingFreenetStore.class); }
-    
 	private long size;
 	private boolean startJob;
 	private boolean shuttingDown; /* If this flag is true, we don't accept puts anymore */
@@ -34,11 +32,12 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 	private final TreeMap<ByteArrayWrapper, Block<T>> blocksByRoutingKey;
 	private final StoreCallback<T> callback;
 	private final FreenetStore<T> backDatastore;
-	private final SemiOrderedShutdownHook shutdownHook;
 	private final Ticker ticker;
 	private final boolean collisionPossible;
 	private final ReadWriteLock configLock = new ReentrantReadWriteLock();
 	
+    static { Logger.registerClass(CachingFreenetStore.class); }
+    
 	private final static class Block<T> {
 		T block;
 		byte[] data;
@@ -56,7 +55,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		this.maxSize = maxSize;
 		this.period = period;
 		this.backDatastore = backDatastore;
-		this.shutdownHook = SemiOrderedShutdownHook.get();
+		SemiOrderedShutdownHook shutdownHook = SemiOrderedShutdownHook.get();
 		this.blocksByRoutingKey = new TreeMap<ByteArrayWrapper, Block<T>>(ByteArrayWrapper.FAST_COMPARATOR);
 		this.ticker = ticker;
 		this.size = 0;
