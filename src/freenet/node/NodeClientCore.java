@@ -61,6 +61,7 @@ import freenet.l10n.NodeL10n;
 import freenet.node.NodeRestartJobsQueue.RestartDBJob;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.fcp.FCPServer;
+import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
@@ -68,6 +69,7 @@ import freenet.store.KeyCollisionException;
 import freenet.support.Base64;
 import freenet.support.Executor;
 import freenet.support.ExecutorIdleCallback;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MutableBoolean;
 import freenet.support.OOMHandler;
@@ -767,6 +769,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		persister.start();
 
 		requestStarters.start();
+		
+		node.clientCore.alerts.register(notSendingRequestsAlert);
 
 		storeChecker.start(node.executor, "Datastore checker");
 		if(fcpServer != null)
@@ -2103,5 +2107,91 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		node.peers.closerPeer(null, new HashSet<PeerNode>(), key.toNormalizedDouble(), true, false, -1, null, 2.0, key, origHTL, 0, true, realTime, r, false, System.currentTimeMillis(), node.enableNewLoadManagement(realTime));
 		return r.recentlyFailed();
 	}
+	
+	// This is registered very early, so we need it to be localised. Hence we can't use e.g. AbstractUserAlert.
+	private final UserAlert notSendingRequestsAlert = new AbstractUserAlert() {
 
+		@Override
+		public boolean userCanDismiss() {
+			return true;
+		}
+
+		@Override
+		public String getTitle() {
+			return l10n("tooFewConnectedNotSendingRequestsTitle");
+		}
+
+		@Override
+		public String getText() {
+			return l10n("tooFewConnectedNotSendingRequests");
+		}
+
+		@Override
+		public HTMLNode getHTMLText() {
+			return new HTMLNode("#", getText());
+		}
+
+		@Override
+		public String getShortText() {
+			return l10n("tooFewConnectedNotSendingRequestsTitle");
+		}
+
+		@Override
+		public short getPriorityClass() {
+			return UserAlert.ERROR;
+		}
+
+		@Override
+		public boolean isValid() {
+			return dontSendRequests();
+		}
+
+		@Override
+		public void isValid(boolean validity) {
+			// Ignore.
+		}
+
+		@Override
+		public String dismissButtonText() {
+			return NodeL10n.getBase().getString("UserAlert.hide");
+		}
+
+		@Override
+		public boolean shouldUnregisterOnDismiss() {
+			return true;
+		}
+
+		@Override
+		public void onDismiss() {
+			// Ignore
+		}
+
+		@Override
+		public Object getUserIdentifier() {
+			return node;
+		}
+
+		@Override
+		public String anchor() {
+			return "RequestStarter.notSendingRequests";
+		}
+
+		@Override
+		public boolean isEventNotification() {
+			return false;
+		}
+
+		@Override
+		public long getUpdatedTime() {
+			return System.currentTimeMillis();
+		}
+		
+	};
+	
+	boolean dontSendRequests() {
+		OpennetManager om = null;
+		return node.peers.countConnectedPeers() < 3 && (om = node.getOpennet()) != null &&
+			System.currentTimeMillis() - om.getCreationTime() < 5*60*1000;		
+	}
+	
 }

@@ -13,11 +13,11 @@ import freenet.keys.Key;
 import freenet.node.NodeStats.RejectReason;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.OOMHandler;
 import freenet.support.RandomGrabArrayItem;
 import freenet.support.RandomGrabArrayItemExclusionList;
 import freenet.support.TokenBucket;
-import freenet.support.Logger.LogLevel;
 import freenet.support.math.RunningAverage;
 
 /**
@@ -118,9 +118,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		long cycleTime = System.currentTimeMillis();
 		while(true) {
 			// Allow 5 minutes before we start killing requests due to not connecting.
-			OpennetManager om;
-			if(core.node.peers.countConnectedPeers() < 3 && (om = core.node.getOpennet()) != null &&
-					System.currentTimeMillis() - om.getCreationTime() < 5*60*1000) {
+			if(core.dontSendRequests()) {
 				try {
 					synchronized(this) {
 						wait(1000);
