@@ -255,20 +255,15 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 		// Allocate 10% of the RAM to the RAMBucketPool by default
 		int defaultRamBucketPoolSize;
-		long maxMemory = Runtime.getRuntime().maxMemory();
-		if(maxMemory == Long.MAX_VALUE || maxMemory <= 0)
+		long maxMemory = NodeStarter.getMemoryLimitMB();
+		if(maxMemory < 0)
 			defaultRamBucketPoolSize = 10;
 		else {
-			maxMemory /= (1024 * 1024);
-			if(maxMemory <= 0) // Still bogus
-				defaultRamBucketPoolSize = 10;
-			else {
-				// 10% of memory above 64MB, with a minimum of 1MB.
-				defaultRamBucketPoolSize = Math.min(Integer.MAX_VALUE, (int)((maxMemory - 64) / 10));
-				if(defaultRamBucketPoolSize <= 0) defaultRamBucketPoolSize = 1;
-			}
+			// 10% of memory above 64MB, with a minimum of 1MB.
+			defaultRamBucketPoolSize = Math.min(Integer.MAX_VALUE, (int)((maxMemory - 64) / 10));
+			if(defaultRamBucketPoolSize <= 0) defaultRamBucketPoolSize = 1;
 		}
-
+		
 		// Max bucket size 5% of the total, minimum 32KB (one block, vast majority of buckets)
 		long maxBucketSize = Math.max(32768, (defaultRamBucketPoolSize * 1024 * 1024) / 20);
 

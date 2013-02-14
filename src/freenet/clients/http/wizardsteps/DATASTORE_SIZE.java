@@ -7,6 +7,7 @@ import freenet.config.Option;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.NodeStarter;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -135,9 +136,9 @@ public class DATASTORE_SIZE implements Step {
 	}
 
 	private long maxDatastoreSize() {
-		long maxMemory = Runtime.getRuntime().maxMemory();
-		if(maxMemory == Long.MAX_VALUE) return Long.MAX_VALUE;
-		if(maxMemory < 128*1024*1024) return 1024*1024*1024;
+		long maxMemory = NodeStarter.getMemoryLimitBytes();
+		if(maxMemory == Long.MAX_VALUE) return 1024*1024*1024; // Treat as don't know.
+		if(maxMemory < 128*1024*1024) return 1024*1024*1024; // 1GB default if don't know or very small memory.
 		return (((((maxMemory - 100*1024*1024)*4)/5) / (4 * 3) /* it's actually size per one key of each type */)) * Node.sizePerKey;
 	}
 
