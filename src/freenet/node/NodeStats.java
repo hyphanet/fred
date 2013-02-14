@@ -348,7 +348,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			System.out.println("Moderate memory pressure, setting 300 thread limit. Increase your memory limit in wrapper.conf if possible.");
 		} else if(memoryLimit > 0 && memoryLimit < 256) {
 			defaultThreadLimit = 400;
-			System.out.println("Setting 400 thread limit due to <256MB memory limit. This should be enough but more memory is better.");
+			System.out.println("Setting 400 thread limit due to <=256MB memory limit. This should be enough but more memory is better.");
 		} else {
 			System.out.println("Setting standard 500 thread limit. This should be enough for most nodes but more memory is usually a good thing.");
 			defaultThreadLimit = 500;
