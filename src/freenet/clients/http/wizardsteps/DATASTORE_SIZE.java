@@ -76,7 +76,9 @@ public class DATASTORE_SIZE implements Step {
 		if(maxSize >= 30l*1024*1024*1024) result.addChild("option", "value", "30G", "30 GiB");
 		if(maxSize >= 50l*1024*1024*1024) result.addChild("option", "value", "50G", "50 GiB");
 		if(maxSize >= 100l*1024*1024*1024) result.addChild("option", "value", "100G", "100 GiB");
-
+		if(maxSize >= 200l*1024*1024*1024) result.addChild("option", "value", "200G", "200GiB");
+		if(maxSize >= 300l*1024*1024*1024) result.addChild("option", "value", "300G", "300GiB");
+		if(maxSize >= 500l*1024*1024*1024) result.addChild("option", "value", "500G", "500GiB");
 
 		//Put buttons below dropdown.
 		HTMLNode below = bandwidthForm.addChild("div");
