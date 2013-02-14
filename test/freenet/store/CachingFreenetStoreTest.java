@@ -352,9 +352,16 @@ public class CachingFreenetStoreTest extends TestCase {
 		
 		cachingStore.close();
 	}
+
+	public void testOnCollisionsSSK() throws IOException, SSKEncodeException, InvalidCompressionCodecException, SSKVerifyException, KeyDecodeException, KeyCollisionException {
+		// With slot filters turned off, it goes straight to disk, because probablyInStore() always returns true.
+		checkOnCollisionsSSK(false);
+		// With slot filters turned on, it should be cached, it should compare it, and still not throw if it's the same block.
+		checkOnCollisionsSSK(true);
+	}
 	
 	/* Test collisions on SSK */
-	public void testOnCollisionsSSK() throws IOException, SSKEncodeException, InvalidCompressionCodecException, SSKVerifyException, KeyDecodeException, KeyCollisionException {
+	private void checkOnCollisionsSSK(boolean useSlotFilter) throws IOException, SSKEncodeException, InvalidCompressionCodecException, SSKVerifyException, KeyDecodeException, KeyCollisionException {
 		File f = new File(tempDir, "saltstore");
 		FileUtil.removeAll(f);
 
@@ -363,7 +370,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		new RAMFreenetStore<DSAPublicKey>(pk, keys);
 		GetPubkey pubkeyCache = new SimpleGetPubkey(pk);
 		SSKStore store = new SSKStore(pubkeyCache);
-		SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreOnCloseSSK", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreOnCloseSSK", store, weakPRNG, 10, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		CachingFreenetStore<SSKBlock> cachingStore = new CachingFreenetStore<SSKBlock>(store, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, saltStore, ticker);
 		cachingStore.start(null, true);
 		RandomSource random = new DummyRandomSource(12345);
