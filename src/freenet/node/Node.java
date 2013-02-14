@@ -2531,7 +2531,7 @@ public class Node implements TimeSkewDetectorCallback {
 			defaultCacheSize = Math.min(1024*1024, (memoryLimit - 128*1024*1024) / (20*9));
 		}
 		
-		nodeConfig.register("cachingFreenetStoreMaxSize", defaultCacheSize, sortOrder++, true, false, "Node.cachingFreenetStoreMaxSize", "Node.cachingFreenetStoreMaxSize",
+		nodeConfig.register("cachingFreenetStoreMaxSize", defaultCacheSize, sortOrder++, true, false, "Node.cachingFreenetStoreMaxSize", "Node.cachingFreenetStoreMaxSizeLong",
 			new LongCallback() {
 				@Override
 				public Long get() {
