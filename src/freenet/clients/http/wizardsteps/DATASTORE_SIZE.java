@@ -147,6 +147,7 @@ public class DATASTORE_SIZE implements Step {
 		long slots = available / 4;
 		// There are 3 types of keys. We want the number of { SSK, CHK, pubkey } i.e. the number of slots in each store.
 		slots /= 3;
+		// We return the total size, so we don't need to worry about cache vs store or even client cache.
 		// One key of all 3 types combined uses Node.sizePerKey bytes on disk. So we get a size.
 		return slots * Node.sizePerKey;
 	}
