@@ -179,6 +179,8 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 				} else {
 					//Case cache it but is it in blocksByRoutingKey? If so, throw a KCE
 					if(previousBlock != null) {
+						if(block.equals(previousBlock.block))
+							return;
 						throw new KeyCollisionException();
 					}
 					
