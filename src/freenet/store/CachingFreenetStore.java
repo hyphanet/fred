@@ -66,13 +66,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		shutdownHook.addEarlyJob(new NativeThread("Close CachingFreenetStore", NativeThread.HIGH_PRIORITY, true) {
 			@Override
 			public void realRun() {
-				configLock.writeLock().lock();
-				try {
-					shuttingDown = true;
-					pushAll();
-				} finally {
-					configLock.writeLock().unlock();
-				}
+				innerClose(); // SaltedHashFS has its own shutdown job.
 			}
 		});
 	}
@@ -284,6 +278,12 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 
 	@Override
 	public void close() {
+		innerClose();
+		backDatastore.close();
+	}
+
+	/** Close this store but not the underlying store. */
+	private void innerClose() {
 		configLock.writeLock().lock();
 		try {
 			shuttingDown = true;
@@ -291,7 +291,5 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		} finally {
 			configLock.writeLock().unlock();
 		}
-		
-		backDatastore.close();
 	}
 }
