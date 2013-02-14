@@ -337,13 +337,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		last_io_stat_time = 3;
 
 		int defaultThreadLimit;
-		long memoryLimit = Runtime.getRuntime().maxMemory();
+		long memoryLimit = NodeStarter.getMemoryLimitMB();
 		
-		System.out.println("Memory is "+SizeUtil.formatSize(memoryLimit)+" ("+memoryLimit+" bytes)");
-		if(memoryLimit > 0 && memoryLimit < 100*1024*1024) {
+		System.out.println("Memory is "+memoryLimit+"MB");
+		if(memoryLimit > 0 && memoryLimit < 100) {
 			defaultThreadLimit = 200;
 			System.out.println("Severe memory pressure, setting 200 thread limit. Freenet may not work well!");
-		} else if(memoryLimit > 0 && memoryLimit < 160*1024*1024) {
+		} else if(memoryLimit > 0 && memoryLimit < 160) {
 			defaultThreadLimit = 300;
 			System.out.println("Moderate memory pressure, setting 300 thread limit. Increase your memory limit in wrapper.conf if possible.");
 		// FIXME: reinstate this once either we raise the default or memory autodetection works on Windows.

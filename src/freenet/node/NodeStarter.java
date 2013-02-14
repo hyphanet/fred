@@ -450,4 +450,31 @@ public class NodeStarter implements WrapperListener {
 		nodestarter_osgi.stop(exitCode);
 		nodestarter_osgi = null;
 	}
+
+	/** Get the memory limit in MB. Return -1 if we don't know, -2 for unlimited. */
+	public static long getMemoryLimitMB() {
+		long limit = getMemoryLimitBytes();
+		if(limit <= 0) return limit;
+		if(limit == Long.MAX_VALUE) return -2;
+		if(limit > Integer.MAX_VALUE)
+			return -1; // Seems unlikely. FIXME 2TB limit!
+		return limit / (1024 * 1024);
+	}
+	
+	/** Get the memory limit in bytes. Return -1 if we don't know. Compensate for odd JVMs' 
+	 * behaviour. */
+	public static long getMemoryLimitBytes() {
+		long maxMemory = Runtime.getRuntime().maxMemory();
+		if(maxMemory == Long.MAX_VALUE)
+			return maxMemory;
+		else if(maxMemory <= 0)
+			return -1;
+		else {
+			if(maxMemory < (1024 * 1024)) {
+				// Some weird buggy JVMs provide this number in MB IIRC?
+				return maxMemory * 1024 * 1024;
+			}
+			return maxMemory;
+		}
+	}
 }
