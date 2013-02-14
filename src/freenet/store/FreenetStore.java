@@ -81,8 +81,9 @@ public interface FreenetStore<T extends StorableBlock> {
 
 	public abstract StoreAccessStats getTotalAccessStats();
 	
-	
 	public boolean start(Ticker ticker, boolean longStart) throws IOException;
+	
+	public void close();
 	
 	public void setUserAlertManager(UserAlertManager userAlertManager);
 	
