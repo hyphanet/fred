@@ -141,8 +141,8 @@ public class DATASTORE_SIZE implements Step {
 		if(maxMemory < 128*1024*1024) return 1024*1024*1024; // 1GB default if don't know or very small memory.
 		// Don't use the first 100MB for slot filters.
 		long available = maxMemory - 100*1024*1024;
-		// Don't use more than 80% of available memory for slot filters.
-		available = (available * 4) / 5;
+		// Don't use more than 50% of available memory for slot filters.
+		available = available / 2;
 		// Slot filters are 4 bytes per slot.
 		long slots = available / 4;
 		// There are 3 types of keys. We want the number of { SSK, CHK, pubkey } i.e. the number of slots in each store.
