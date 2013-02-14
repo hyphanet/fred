@@ -2552,6 +2552,8 @@ public class Node implements TimeSkewDetectorCallback {
 		}, true);
 		
 		cachingFreenetStoreMaxSize = nodeConfig.getLong("cachingFreenetStoreMaxSize");
+		if(cachingFreenetStoreMaxSize < 0)
+			throw new NodeInitException(NodeInitException.EXIT_BAD_CONFIG, l10n("invalidMemoryCacheSize"));
 		
 		nodeConfig.register("cachingFreenetStorePeriod", "300k", sortOrder++, true, false, "Node.cachingFreenetStorePeriod", "Node.cachingFreenetStorePeriod",
 			new LongCallback() {
