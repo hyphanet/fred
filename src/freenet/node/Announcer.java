@@ -743,11 +743,6 @@ public class Announcer {
 		}
 
 		@Override
-		public Object getUserIdentifier() {
-			return null;
-		}
-
-		@Override
 		public boolean isValid() {
 			return (!enoughPeers()) && node.isOpennetEnabled();
 		}

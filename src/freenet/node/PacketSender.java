@@ -593,11 +593,6 @@ public class PacketSender implements Runnable {
 		}
 
         @Override
-		public Object getUserIdentifier() {
-			return PacketSender.this;
-		}
-
-        @Override
 		public boolean isEventNotification() {
 			return false;
 		}
