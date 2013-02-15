@@ -105,10 +105,10 @@ public class TextModeClientInterface implements Runnable {
 		}
 	}
 
-    public TextModeClientInterface(Node n, HighLevelSimpleClient c, File downloadDir, InputStream in, OutputStream out) {
+    public TextModeClientInterface(Node n, NodeClientCore core, HighLevelSimpleClient c, File downloadDir, InputStream in, OutputStream out) {
     	this.n = n;
     	this.r = n.random;
-    	this.core = n.clientCore;
+    	this.core = core;
     	this.client = c;
     	this.downloadsDir = downloadDir;
     	this.in = in;
