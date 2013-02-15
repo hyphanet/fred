@@ -1884,11 +1884,6 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		}
 
 		@Override
-		public Object getUserIdentifier() {
-			return null;
-		}
-
-		@Override
 		public boolean isValid() {
 			return cleaner.isRebuilding || cleaner.isResizing;
 		}

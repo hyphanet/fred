@@ -3296,11 +3296,6 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 
 		@Override
-		public Object getUserIdentifier() {
-			return Node.this;
-		}
-
-		@Override
 		public boolean isEventNotification() {
 			return false;
 		}

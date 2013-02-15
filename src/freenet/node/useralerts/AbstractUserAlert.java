@@ -156,14 +156,6 @@ public abstract class AbstractUserAlert implements UserAlert {
 	public void onDismiss() {
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public Object getUserIdentifier() {
-		return userIdentifier;
-	}
-
 	@Override
 	public String anchor() {
 		return Integer.toString(hashCode());

@@ -150,11 +150,6 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		}
 
 		@Override
-		public Object getUserIdentifier() {
-			return IPDetectorPluginManager.this;
-		}
-
-		@Override
 		public boolean isValid() {
 			portsNotForwarded = getUDPPortsNotForwarded();
 			if(portsNotForwarded.length > maxPortsLength) {
