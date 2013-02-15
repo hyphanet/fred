@@ -87,7 +87,7 @@ public class TextModeClientInterfaceServer implements Runnable {
 		if(direct) {
 	        HighLevelSimpleClient client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, true, false);
 			TextModeClientInterface directTMCI =
-				new TextModeClientInterface(node, client, core.getDownloadsDir(), System.in, System.out);
+				new TextModeClientInterface(node, core, client, core.getDownloadsDir(), System.in, System.out);
 			node.executor.execute(directTMCI, "Direct text mode interface");
 			core.setDirectTMCI(directTMCI);
 		}
