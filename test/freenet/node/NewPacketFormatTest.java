@@ -356,7 +356,7 @@ public class NewPacketFormatTest extends TestCase {
 
 		SessionKey sessionKey = new SessionKey(null, null, null, incommingCipher, null, ivCipher, ivNonce, null, null, -1);
 
-		byte[] encrypted = NewPacketFormat.encryptSequenceNumber(0, sessionKey);
+		byte[] encrypted = NewPacketFormatPacketWatchList.encryptSequenceNumber(0, sessionKey);
 
 		/* This result has not been checked, but it was the output when
 		 * this test was added and we are (in this test) only
