@@ -318,7 +318,7 @@ public class NewPacketFormat implements PacketFormat {
 		keyContext.watchList.updateWatchList(sessionKey);
 		int sequenceNumber = -1;
 		while(true) {
-			sequenceNumber = keyContext.watchList.getPossibleMatch(buf, offset + hmacLength, sequenceNumber);
+			sequenceNumber = keyContext.watchList.getPossibleMatch(Fields.bytesToInt(buf, offset + hmacLength), sequenceNumber);
 			if(sequenceNumber == -1) return null;
 			if(logDEBUG) Logger.debug(this, "Received packet matches sequence number " + sequenceNumber);
 			NPFPacket p = decipherFromSeqnum(buf, offset, length, sessionKey, sequenceNumber);

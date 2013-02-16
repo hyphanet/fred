@@ -13,7 +13,7 @@ class NewPacketFormatPacketWatchList {
 	
 	private int highestReceivedSeqNum;
 
-	private byte[][] seqNumWatchList = null;
+	private int[] seqNumWatchList = null;
 	/** Index of the packet with the lowest sequence number */
 	private int watchListPointer = 0;
 	private int watchListOffset = 0;
@@ -40,11 +40,11 @@ class NewPacketFormatPacketWatchList {
 		if(seqNumWatchList == null) {
 			if(NewPacketFormatKeyContext.logMINOR) Logger.minor(this, "Creating watchlist starting at " + watchListOffset);
 			
-			seqNumWatchList = new byte[NUM_SEQNUMS_TO_WATCH_FOR][4];
+			seqNumWatchList = new int[NUM_SEQNUMS_TO_WATCH_FOR];
 
 			int seqNum = watchListOffset;
 			for(int i = 0; i < seqNumWatchList.length; i++) {
-				seqNumWatchList[i] = encryptSequenceNumber(seqNum++, sessionKey);
+				seqNumWatchList[i] = Fields.bytesToInt(encryptSequenceNumber(seqNum++, sessionKey));
 				if(seqNum < 0) seqNum = 0;
 			}
 		}
@@ -71,7 +71,7 @@ class NewPacketFormatPacketWatchList {
 
 			int seqNum = (int) ((0l + watchListOffset + seqNumWatchList.length) % NewPacketFormat.NUM_SEQNUMS);
 			for(int i = watchListPointer; i < (watchListPointer + moveBy); i++) {
-				seqNumWatchList[i % seqNumWatchList.length] = encryptSequenceNumber(seqNum++, sessionKey);
+				seqNumWatchList[i % seqNumWatchList.length] = Fields.bytesToInt(encryptSequenceNumber(seqNum++, sessionKey));
 				if(seqNum < 0) seqNum = 0;
 			}
 
@@ -80,14 +80,11 @@ class NewPacketFormatPacketWatchList {
 		}
 	}
 
-	synchronized int getPossibleMatch(byte[] buf, int offset, int startSequenceNumber) {
+	synchronized int getPossibleMatch(int encryptedSequenceNumber, int startSequenceNumber) {
 		// FIXME optimise. Be careful of modular arithmetic.
 		for(int i = 0; i < seqNumWatchList.length; i++) {
 			int index = (watchListPointer + i) % seqNumWatchList.length;
-			if (!Fields.byteArrayEqual(
-						buf, seqNumWatchList[index],
-						offset, 0,
-						seqNumWatchList[index].length))
+			if (encryptedSequenceNumber != seqNumWatchList[index])
 				continue;
 			int sequenceNumber = (int) ((0l + watchListOffset + i) % NewPacketFormat.NUM_SEQNUMS);
 			if(NewPacketFormat.seqNumGreaterThan(sequenceNumber, startSequenceNumber, 31))
