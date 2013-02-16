@@ -614,11 +614,6 @@ public class PluginManager {
 		}
 
 		@Override
-		public Object getUserIdentifier() {
-			return PluginManager.class;
-		}
-
-		@Override
 		public boolean isEventNotification() {
 			return false;
 		}

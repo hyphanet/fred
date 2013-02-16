@@ -1103,16 +1103,16 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 
 				@Override
 				public void blockReceived(byte[] buf) {
-					next.noLongerRoutingTo(origTag, false);
     				if(!wasFork)
     					origTag.senderTransferEnds((NodeCHK)key, RequestSender.this);
+					next.noLongerRoutingTo(origTag, false);
 				}
 
 				@Override
 				public void blockReceiveFailed(RetrievalException e) {
-					next.noLongerRoutingTo(origTag, false);
     				if(!wasFork)
     					origTag.senderTransferEnds((NodeCHK)key, RequestSender.this);
+					next.noLongerRoutingTo(origTag, false);
 				}
     			
     		});
