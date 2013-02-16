@@ -5,7 +5,9 @@ import freenet.crypt.PCFBMode;
 import freenet.support.Fields;
 import freenet.support.Logger;
 
-/** Tracks the encrypted packet numbers for the next several packets */
+/** Tracks the encrypted packet numbers for the next several packets.
+ * FIXME consider getting rid of all the locking, since we only decode packets for one peer on one thread?
+ */
 class NewPacketFormatPacketWatchList {
 	
 	private int highestReceivedSeqNum;
