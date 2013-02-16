@@ -30,7 +30,7 @@ import freenet.io.comm.Peer;
 import freenet.keys.Key;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
-import freenet.node.NewPacketFormat;
+import freenet.node.packet.NewPacketFormat;
 
 /**
  * @author ian

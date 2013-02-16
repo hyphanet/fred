@@ -7,6 +7,8 @@ import java.util.ListIterator;
 import java.util.Map;
 
 import freenet.io.comm.DMT;
+import freenet.node.packet.MessageItem;
+import freenet.node.packet.PacketSender;
 import freenet.support.DoublyLinkedList;
 import freenet.support.DoublyLinkedListImpl;
 import freenet.support.LogThresholdCallback;
@@ -710,7 +712,7 @@ public class PeerMessageQueue {
 
 	}
 
-	PeerMessageQueue() {
+	public PeerMessageQueue() {
 		queuesByPriority = new PrioQueue[DMT.NUM_PRIORITIES];
 		for(int i=0;i<queuesByPriority.length;i++) {
 			if(i == DMT.PRIORITY_BULK_DATA)
@@ -783,7 +785,7 @@ public class PeerMessageQueue {
 	 * WARNING: Pulling a message and then pushing it back will mess up the fairness 
 	 * between UID's send order. Try to avoid it.
 	 */
-	synchronized void pushfrontPrioritizedMessageItem(MessageItem addMe) {
+	public synchronized void pushfrontPrioritizedMessageItem(MessageItem addMe) {
 		//Assume it goes on the front
 		short prio = addMe.getPriority();
 		queuesByPriority[prio].addFirst(addMe);

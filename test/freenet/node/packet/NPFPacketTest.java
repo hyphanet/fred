@@ -1,10 +1,13 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node;
+package freenet.node.packet;
 
 import java.util.Arrays;
 import java.util.Random;
+
+import freenet.node.packet.MessageFragment;
+import freenet.node.packet.NPFPacket;
 
 import junit.framework.TestCase;
 

@@ -1,4 +1,4 @@
-package freenet.node;
+package freenet.node.packet;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -6,7 +6,9 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import freenet.io.xfer.PacketThrottle;
-import freenet.node.NewPacketFormat.SentPacket;
+import freenet.node.BasePeerNode;
+import freenet.node.SessionKey;
+import freenet.node.packet.NewPacketFormat.SentPacket;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SentTimes;
@@ -56,7 +58,7 @@ public class NewPacketFormatKeyContext {
 		});
 	}
 
-	NewPacketFormatKeyContext(int ourFirstSeqNum, int theirFirstSeqNum) {
+	public NewPacketFormatKeyContext(int ourFirstSeqNum, int theirFirstSeqNum) {
 		ourFirstSeqNum &= 0x7FFFFFFF;
 		theirFirstSeqNum &= 0x7FFFFFFF;
 		

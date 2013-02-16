@@ -105,6 +105,7 @@ public class SeedClientPeerNode extends PeerNode {
 	}
 	
 	@Override
+	public
 	void startARKFetcher() {
 		// Do not start an ARK fetcher.
 	}

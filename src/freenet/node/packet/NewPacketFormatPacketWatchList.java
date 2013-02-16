@@ -1,7 +1,8 @@
-package freenet.node;
+package freenet.node.packet;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.PCFBMode;
+import freenet.node.SessionKey;
 import freenet.support.Fields;
 import freenet.support.Logger;
 

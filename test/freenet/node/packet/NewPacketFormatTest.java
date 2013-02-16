@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node;
+package freenet.node.packet;
 
 import java.util.Arrays;
 import java.util.List;
@@ -10,6 +10,19 @@ import freenet.crypt.BlockCipher;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
+import freenet.node.BasePeerNode;
+import freenet.node.BlockedTooLongException;
+import freenet.node.DecodingMessageGroup;
+import freenet.node.NullBasePeerNode;
+import freenet.node.PeerMessageQueue;
+import freenet.node.SessionKey;
+import freenet.node.packet.MessageFragment;
+import freenet.node.packet.MessageItem;
+import freenet.node.packet.NPFPacket;
+import freenet.node.packet.NewPacketFormat;
+import freenet.node.packet.NewPacketFormatKeyContext;
+import freenet.node.packet.NewPacketFormatPacketWatchList;
+import freenet.node.packet.PacketSender;
 import freenet.support.MutableBoolean;
 import junit.framework.TestCase;
 

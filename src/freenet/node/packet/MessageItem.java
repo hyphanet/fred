@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node;
+package freenet.node.packet;
 
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.ByteCounter;
@@ -17,7 +17,7 @@ public class MessageItem {
 	final Message msg;
 	final byte[] buf;
 	final AsyncMessageCallback[] cb;
-	final long submitted;
+	public final long submitted;
 	/** If true, the buffer may contain several messages, and is formatted
 	 * for sending as a single packet.
 	 */
@@ -26,8 +26,8 @@ public class MessageItem {
 	private final short priority;
 	private long cachedID;
 	private boolean hasCachedID;
-	final boolean sendLoadRT;
-	final boolean sendLoadBulk;
+	public final boolean sendLoadRT;
+	public final boolean sendLoadBulk;
 	private long deadline;
 
 	public MessageItem(Message msg2, AsyncMessageCallback[] cb2, ByteCounter ctr, short overridePriority) {

@@ -4,6 +4,7 @@
 package freenet.node;
 
 import freenet.crypt.BlockCipher;
+import freenet.node.packet.NewPacketFormatKeyContext;
 
 /**
  * Class representing a single session key.
@@ -31,7 +32,7 @@ public class SessionKey {
 	
 	public final NewPacketFormatKeyContext packetContext;
 
-	SessionKey(PeerNode parent, BlockCipher outgoingCipher, byte[] outgoingKey,
+	public SessionKey(PeerNode parent, BlockCipher outgoingCipher, byte[] outgoingKey,
 	                BlockCipher incommingCipher, byte[] incommingKey, BlockCipher ivCipher,
 			byte[] ivNonce, byte[] hmacKey, NewPacketFormatKeyContext context, long trackerID) {
 		this.pn = parent;

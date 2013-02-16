@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node;
+package freenet.node.packet;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -9,6 +9,12 @@ import java.util.HashSet;
 import freenet.clients.http.ExternalLinkToadlet;
 import freenet.io.comm.Peer;
 import freenet.l10n.NodeL10n;
+import freenet.node.BlockedTooLongException;
+import freenet.node.Node;
+import freenet.node.NodeStats;
+import freenet.node.OpennetManager;
+import freenet.node.PeerManager;
+import freenet.node.PeerNode;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
@@ -45,12 +51,12 @@ public class PacketSender implements Runnable {
 	}
 
 	/** Maximum time we will queue a message for in milliseconds */
-	static final int MAX_COALESCING_DELAY = 100;
+	public static final int MAX_COALESCING_DELAY = 100;
 	/** Maximum time we will queue a message for in milliseconds if it is bulk data.
 	 * Note that we will send the data immediately anyway because it will normally be big
 	 * enough to send a full packet. However this impacts the choice of whether to send
 	 * realtime or bulk data, see PeerMessageQueue.addMessages(). */
-	static final int MAX_COALESCING_DELAY_BULK = 5000;
+	public static final int MAX_COALESCING_DELAY_BULK = 5000;
 	/** If opennet is enabled, and there are fewer than this many connections,
 	 * we MAY attempt to contact old opennet peers (opennet peers we have
 	 * dropped from the routing table but kept around in case we can't connect). */
@@ -68,14 +74,14 @@ public class PacketSender implements Runnable {
 	long lastReceivedPacketFromAnyNode;
 	private MersenneTwister localRandom;
 
-	PacketSender(Node node) {
+	public PacketSender(Node node) {
 		this.node = node;
 		myThread = new NativeThread(this, "PacketSender thread for " + node.getDarknetPortNumber(), NativeThread.MAX_PRIORITY, false);
 		myThread.setDaemon(true);
 		localRandom = node.createRandom();
 	}
 
-	void start(NodeStats stats) {
+	public void start(NodeStats stats) {
 		this.stats = stats;
 		Logger.normal(this, "Starting PacketSender");
 		System.out.println("Starting PacketSender");
@@ -163,7 +169,7 @@ public class PacketSender implements Runnable {
 
 		boolean canSendThrottled = false;
 
-		int MAX_PACKET_SIZE = node.darknetCrypto.socket.getMaxPacketSize();
+		int MAX_PACKET_SIZE = node.getDarknetMaxPacketSize();
 		long count = node.outputThrottle.getCount();
 		if(count > MAX_PACKET_SIZE)
 			canSendThrottled = true;
@@ -505,7 +511,7 @@ public class PacketSender implements Runnable {
 	}
 
 	/** Wake up, and send any queued packets. */
-	void wakeUp() {
+	public void wakeUp() {
 		// Wake up if needed
 		synchronized(this) {
 			notifyAll();

@@ -840,6 +840,7 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	@Override
+	public
 	void startARKFetcher() {
 		synchronized(this) {
 			if(isListenOnly) {

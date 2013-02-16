@@ -808,7 +808,7 @@ public class OpennetManager {
 		}
 	}
 
-	synchronized PeerNode[] getOldPeers() {
+	public synchronized PeerNode[] getOldPeers() {
 		return oldPeers.toArrayOrdered(new PeerNode[oldPeers.size()]);
 	}
 

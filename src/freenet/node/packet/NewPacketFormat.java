@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node;
+package freenet.node.packet;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,7 +18,14 @@ import freenet.io.comm.Message;
 import freenet.io.comm.Peer;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.io.xfer.PacketThrottle;
-import freenet.node.NewPacketFormatKeyContext.AddedAcks;
+import freenet.node.BasePeerNode;
+import freenet.node.BlockedTooLongException;
+import freenet.node.DecodingMessageGroup;
+import freenet.node.Node;
+import freenet.node.PeerMessageQueue;
+import freenet.node.PeerNode;
+import freenet.node.SessionKey;
+import freenet.node.packet.NewPacketFormatKeyContext.AddedAcks;
 import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;

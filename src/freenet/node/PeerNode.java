@@ -66,6 +66,10 @@ import freenet.node.NodeStats.RequestType;
 import freenet.node.NodeStats.RunningRequestsSnapshot;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.PeerManager.PeerStatusChangeListener;
+import freenet.node.packet.MessageItem;
+import freenet.node.packet.NewPacketFormat;
+import freenet.node.packet.NewPacketFormatKeyContext;
+import freenet.node.packet.PacketFormat;
 import freenet.support.Base64;
 import freenet.support.BooleanLastTrueTracker;
 import freenet.support.Fields;
@@ -2242,7 +2246,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	}
 	private final Object arkFetcherSync = new Object();
 
-	void startARKFetcher() {
+	public void startARKFetcher() {
 		// FIXME any way to reduce locking here?
 		if(!node.enableARKs) return;
 		synchronized(arkFetcherSync) {
@@ -3643,7 +3647,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		return false;
 	}
 
-	final void invalidate(long now) {
+	public final void invalidate(long now) {
 		synchronized(this) {
 			isRoutable = false;
 		}
@@ -4200,7 +4204,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	}
 
 	static final double MAX_RTO = 60*1000;
-	static final double MIN_RTO = 1000;
+	public static final double MIN_RTO = 1000;
 	private int consecutiveRTOBackoffs;
 
 	// Clock generally has 20ms granularity or better, right?

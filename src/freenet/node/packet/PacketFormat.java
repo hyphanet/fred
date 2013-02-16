@@ -1,8 +1,10 @@
-package freenet.node;
+package freenet.node.packet;
 
 import java.util.List;
 
 import freenet.io.comm.Peer;
+import freenet.node.BlockedTooLongException;
+import freenet.node.SessionKey;
 
 public interface PacketFormat {
 

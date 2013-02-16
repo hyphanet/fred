@@ -2276,7 +2276,7 @@ public class PeerManager {
 	 * Should be up to date (but not guaranteed when exit lock), DO NOT
 	 * MODIFY THE RETURNED DATA! Package-local - stuff outside node/ 
 	 * should use the copying getters (which are a little more expensive). */
-	synchronized PeerNode[] myPeers() {
+	public synchronized PeerNode[] myPeers() {
 		return myPeers;
 	}
 	

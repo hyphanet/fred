@@ -107,6 +107,7 @@ import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.fcp.FCPMessage;
 import freenet.node.fcp.FeedMessage;
+import freenet.node.packet.PacketSender;
 import freenet.node.probe.Listener;
 import freenet.node.probe.Type;
 import freenet.node.stats.DataStoreInstanceType;
@@ -5487,6 +5488,10 @@ public class Node implements TimeSkewDetectorCallback {
 		if(peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, true) > PeerManager.OUTDATED_MIN_TOO_NEW_DARKNET)
 			return true;
 		return false;
+	}
+	
+	public int getDarknetMaxPacketSize() {
+		return darknetCrypto.socket.getMaxPacketSize();
 	}
 
 }

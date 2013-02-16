@@ -6,8 +6,8 @@ package freenet.io.comm;
 import java.lang.ref.WeakReference;
 
 import freenet.io.xfer.PacketThrottle;
-import freenet.node.MessageItem;
 import freenet.node.OutgoingPacketMangler;
+import freenet.node.packet.MessageItem;
 
 /**
  * @author amphibian
