@@ -50,8 +50,6 @@ class NewPacketFormatPacketWatchList {
 		}
 
 		// Move the watchlist if needed
-		int highestReceivedSeqNum;
-		highestReceivedSeqNum = this.highestReceivedSeqNum;
 		// The entry for the highest received sequence number is kept in the middle of the list
 		int oldHighestReceived = (int) ((0l + watchListOffset + (seqNumWatchList.length / 2)) % NewPacketFormat.NUM_SEQNUMS);
 		if(NewPacketFormat.seqNumGreaterThan(highestReceivedSeqNum, oldHighestReceived, 31)) {
