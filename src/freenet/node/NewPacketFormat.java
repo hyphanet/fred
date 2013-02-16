@@ -29,9 +29,6 @@ public class NewPacketFormat implements PacketFormat {
 
 	private final int hmacLength;
 	private static final int HMAC_LENGTH = 10;
-	// FIXME Use a more efficient structure - int[] or maybe just a big byte[].
-	// FIXME increase this significantly to let it ride over network interruptions.
-	private static final int NUM_SEQNUMS_TO_WATCH_FOR = 1024;
 	static final int MAX_RECEIVE_BUFFER_SIZE = 256 * 1024;
 	private static final int MSG_WINDOW_SIZE = 65536;
 	private static final int NUM_MESSAGE_IDS = 268435456;
@@ -311,62 +308,11 @@ public class NewPacketFormat implements PacketFormat {
 
 	private NPFPacket tryDecipherPacket(byte[] buf, int offset, int length, SessionKey sessionKey) {
 		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
-		// Create the watchlist if the key has changed
-		if(keyContext.seqNumWatchList == null) {
-			if(logMINOR) Logger.minor(this, "Creating watchlist starting at " + keyContext.watchListOffset);
-			
-			keyContext.seqNumWatchList = new byte[NUM_SEQNUMS_TO_WATCH_FOR][4];
-
-			int seqNum = keyContext.watchListOffset;
-			for(int i = 0; i < keyContext.seqNumWatchList.length; i++) {
-				keyContext.seqNumWatchList[i] = NewPacketFormat.encryptSequenceNumber(seqNum++, sessionKey);
-				if(seqNum < 0) seqNum = 0;
-			}
-		}
-
-		// Move the watchlist if needed
-		int highestReceivedSeqNum;
-		synchronized(this) {
-			highestReceivedSeqNum = keyContext.highestReceivedSeqNum;
-		}
-		// The entry for the highest received sequence number is kept in the middle of the list
-		int oldHighestReceived = (int) ((0l + keyContext.watchListOffset + (keyContext.seqNumWatchList.length / 2)) % NUM_SEQNUMS);
-		if(seqNumGreaterThan(highestReceivedSeqNum, oldHighestReceived, 31)) {
-			int moveBy;
-			if(highestReceivedSeqNum > oldHighestReceived) {
-				moveBy = highestReceivedSeqNum - oldHighestReceived;
-			} else {
-				moveBy = ((int) (NUM_SEQNUMS - oldHighestReceived)) + highestReceivedSeqNum;
-			}
-
-			if(moveBy > keyContext.seqNumWatchList.length) {
-				Logger.warning(this, "Moving watchlist pointer by " + moveBy);
-			} else if(moveBy < 0) {
-				Logger.warning(this, "Tried moving watchlist pointer by " + moveBy);
-				moveBy = 0;
-			} else {
-				if(logDEBUG) Logger.debug(this, "Moving watchlist pointer by " + moveBy);
-			}
-
-			int seqNum = (int) ((0l + keyContext.watchListOffset + keyContext.seqNumWatchList.length) % NUM_SEQNUMS);
-			for(int i = keyContext.watchListPointer; i < (keyContext.watchListPointer + moveBy); i++) {
-				keyContext.seqNumWatchList[i % keyContext.seqNumWatchList.length] = encryptSequenceNumber(seqNum++, sessionKey);
-				if(seqNum < 0) seqNum = 0;
-			}
-
-			keyContext.watchListPointer = (keyContext.watchListPointer + moveBy) % keyContext.seqNumWatchList.length;
-			keyContext.watchListOffset = (int) ((0l + keyContext.watchListOffset + moveBy) % NUM_SEQNUMS);
-		}
-
-		for(int i = 0; i < keyContext.seqNumWatchList.length; i++) {
-			int index = (keyContext.watchListPointer + i) % keyContext.seqNumWatchList.length;
-			if (!Fields.byteArrayEqual(
-						buf, keyContext.seqNumWatchList[index],
-						offset + hmacLength, 0,
-						keyContext.seqNumWatchList[index].length))
-				continue;
-			
-			int sequenceNumber = (int) ((0l + keyContext.watchListOffset + i) % NUM_SEQNUMS);
+		keyContext.watchList.updateWatchList(sessionKey);
+		int sequenceNumber = -1;
+		while(true) {
+			sequenceNumber = keyContext.watchList.getPossibleMatch(buf, offset + hmacLength, sequenceNumber);
+			if(sequenceNumber == -1) return null;
 			if(logDEBUG) Logger.debug(this, "Received packet matches sequence number " + sequenceNumber);
 			NPFPacket p = decipherFromSeqnum(buf, offset, length, sessionKey, sequenceNumber);
 			if(p != null) {
@@ -374,8 +320,6 @@ public class NewPacketFormat implements PacketFormat {
 				return p;
 			}
 		}
-
-		return null;
 	}
 
 	/** Must NOT modify buf contents. */
@@ -402,41 +346,17 @@ public class NewPacketFormat implements PacketFormat {
 		NPFPacket p = NPFPacket.create(payload, pn);
 
 		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
-		synchronized(this) {
-			if(seqNumGreaterThan(sequenceNumber, keyContext.highestReceivedSeqNum, 31)) {
-				keyContext.highestReceivedSeqNum = sequenceNumber;
-			}
-		}
+		keyContext.watchList.receivedPacket(sequenceNumber);
 
 		return p;
 	}
 
-	private boolean seqNumGreaterThan(long i1, long i2, int serialBits) {
+	static boolean seqNumGreaterThan(long i1, long i2, int serialBits) {
 		//halfValue is half the window of possible numbers, so this returns true if the distance from
 		//i2->i1 is smaller than i1->i2. See RFC1982 for details and limitations.
 
 		long halfValue = (long) Math.pow(2, serialBits - 1);
 		return (((i1 < i2) && ((i2 - i1) > halfValue)) || ((i1 > i2) && (i1 - i2 < halfValue)));
-	}
-
-	static byte[] encryptSequenceNumber(int seqNum, SessionKey sessionKey) {
-		byte[] seqNumBytes = new byte[4];
-		seqNumBytes[0] = (byte) (seqNum >>> 24);
-		seqNumBytes[1] = (byte) (seqNum >>> 16);
-		seqNumBytes[2] = (byte) (seqNum >>> 8);
-		seqNumBytes[3] = (byte) (seqNum);
-
-		BlockCipher ivCipher = sessionKey.ivCipher;
-
-		byte[] IV = new byte[ivCipher.getBlockSize() / 8];
-		System.arraycopy(sessionKey.ivNonce, 0, IV, 0, IV.length);
-		System.arraycopy(seqNumBytes, 0, IV, IV.length - seqNumBytes.length, seqNumBytes.length);
-		ivCipher.encipher(IV, IV);
-
-		PCFBMode cipher = PCFBMode.create(sessionKey.incommingCipher, IV);
-		cipher.blockEncipher(seqNumBytes, 0, seqNumBytes.length);
-
-		return seqNumBytes;
 	}
 
 	@Override
