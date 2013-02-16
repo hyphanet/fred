@@ -81,13 +81,14 @@ class NewPacketFormatPacketWatchList {
 	}
 
 	synchronized int getPossibleMatch(int encryptedSequenceNumber, int startSequenceNumber) {
-		// FIXME optimise. Be careful of modular arithmetic.
-		for(int i = 0; i < seqNumWatchList.length; i++) {
-			int index = (watchListPointer + i) % seqNumWatchList.length;
+		int index = watchListPointer;
+		for(int i = 0; i < seqNumWatchList.length; i++, index++) {
+			if(index == seqNumWatchList.length) index = 0;
 			if (encryptedSequenceNumber != seqNumWatchList[index])
 				continue;
 			int sequenceNumber = (int) ((0l + watchListOffset + i) % NewPacketFormat.NUM_SEQNUMS);
-			if(NewPacketFormat.seqNumGreaterThan(sequenceNumber, startSequenceNumber, 31))
+			if(startSequenceNumber < 0 ||
+					NewPacketFormat.seqNumGreaterThan(sequenceNumber, startSequenceNumber, 31))
 				return sequenceNumber;
 		}
 		return -1;
