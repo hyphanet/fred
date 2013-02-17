@@ -43,6 +43,7 @@ public class BookmarkManager implements RequestClient {
 	private final File bookmarksFile;
 	private final File backupBookmarksFile;
 	private boolean isSavingBookmarks = false;
+	private boolean isSavingBookmarksLazy = false;
 	static {
 		String name = "freenet/clients/http/staticfiles/defaultbookmarks.dat";
 		SimpleFieldSet defaultBookmarks = null;
@@ -147,7 +148,7 @@ public class BookmarkManager implements RequestClient {
 				}
 			}
 			if(updated) {
-				storeBookmarks();
+				storeBookmarksLazy();
 			} else if(!matched) {
 				Logger.error(this, "No match for bookmark "+key+" edition "+edition);
 			}
@@ -325,6 +326,25 @@ public class BookmarkManager implements RequestClient {
 			uris[i] = items.get(i).getURI();
 
 		return uris;
+	}
+	
+	public void storeBookmarksLazy() {
+		synchronized(bookmarks) {
+			if(isSavingBookmarksLazy) return;
+			isSavingBookmarksLazy = true;
+			node.node.ticker.queueTimedJob(new Runnable() {
+
+				@Override
+				public void run() {
+					try {
+						storeBookmarks();
+					} finally {
+						isSavingBookmarksLazy = false;
+					}
+				}
+				
+			}, 5*60*1000);
+		}
 	}
 
 	public void storeBookmarks() {
