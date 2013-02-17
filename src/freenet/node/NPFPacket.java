@@ -20,13 +20,11 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger.LogLevel;
 
 class NPFPacket {
-	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
@@ -409,21 +407,17 @@ class NPFPacket {
 	}
 
 	public void onSent(int totalPacketLength, BasePeerNode pn) {
-		Iterator<MessageFragment> fragIt = fragments.iterator();
 		int totalMessageData = 0;
 		int size = fragments.size();
 		int biggest = 0;
-		while(fragIt.hasNext()) {
-			MessageFragment frag = fragIt.next();
+		for(MessageFragment frag: fragments) {
 			totalMessageData += frag.fragmentLength;
 			size++;
 			if(biggest < frag.messageLength) biggest = frag.messageLength;
 		}
 		int overhead = totalPacketLength - totalMessageData;
 		if(logDEBUG) Logger.debug(this, "Total packet overhead: "+overhead+" for "+size+" messages total message length "+totalMessageData+" total packet length "+totalPacketLength+" biggest message "+biggest);
-		fragIt = fragments.iterator();
-		while(fragIt.hasNext()) {
-			MessageFragment frag = fragIt.next();
+		for(MessageFragment frag: fragments) {
 			// frag.wrapper is always non-null on sending.
 			frag.wrapper.onSent(frag.fragmentOffset, frag.fragmentOffset + frag.fragmentLength - 1, overhead / size, pn);
 		}			

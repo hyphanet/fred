@@ -7,7 +7,6 @@ import com.db4o.ObjectContainer;
 
 import freenet.node.Node;
 import freenet.pluginmanager.PluginInfoWrapper;
-import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
 
 /**

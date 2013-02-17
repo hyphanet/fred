@@ -64,7 +64,7 @@ public class PartiallyReceivedBulk {
 		this.blockSize = blockSize;
 		this.raf = raf;
 		this.usm = usm;
-		long blocks = size / blockSize + (size % blockSize > 0 ? 1 : 0);
+		long blocks = (size + blockSize - 1) / blockSize;
 		if(blocks > Integer.MAX_VALUE)
 			throw new IllegalArgumentException("Too big");
 		this.blocks = (int)blocks;
@@ -133,9 +133,9 @@ public class PartiallyReceivedBulk {
 			abort(RetrievalException.IO_ERROR, t.toString());
 		}
 		if(notifyBTs == null) return;
-		for(int i=0;i<notifyBTs.length;i++) {
+		for(BulkTransmitter notifyBT: notifyBTs) {
 			// Not a generic callback, so no catch{} guard
-			notifyBTs[i].blockReceived(blockNum);
+			notifyBT.blockReceived(blockNum);
 		}
 	}
 
@@ -152,8 +152,8 @@ public class PartiallyReceivedBulk {
 			notifyBR = recv;
 		}
 		if(notifyBTs != null) {
-			for(int i=0;i<notifyBTs.length;i++) {
-				notifyBTs[i].onAborted();
+			for(BulkTransmitter notifyBT: notifyBTs) {
+				notifyBT.onAborted();
 			}
 		}
 		if(notifyBR != null)
@@ -185,14 +185,13 @@ public class PartiallyReceivedBulk {
 
 	public synchronized void remove(BulkTransmitter remove) {
 		boolean found = false;
-		for(int i=0;i<transmitters.length;i++) {
-			if(transmitters[i] == remove) found = true;
+		for(BulkTransmitter t: transmitters) {
+			if(t == remove) found = true;
 		}
 		if(!found) return;
 		BulkTransmitter[] newTrans = new BulkTransmitter[transmitters.length-1];
 		int j = 0;
-		for(int i=0;i<transmitters.length;i++) {
-			BulkTransmitter t = transmitters[i];
+		for(BulkTransmitter t: transmitters) {
 			if(t == remove) continue;
 			newTrans[j++] = t;
 		}

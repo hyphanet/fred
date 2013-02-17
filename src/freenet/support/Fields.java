@@ -546,6 +546,10 @@ public abstract class Fields {
 		return x;
 	}
 
+	public static int bytesToInt(byte[] buf) {
+		return bytesToInt(buf, 0);
+	}
+	
 	/**
 	 * Convert an array of bytes to a single int.
 	 */
@@ -908,5 +912,13 @@ public abstract class Fields {
 				break;
 		}
 		return i - origI;
+	}
+
+	public static int compareObjectID(Object o1, Object o2) {
+		int id1 = System.identityHashCode(o1);
+		int id2 = System.identityHashCode(o2);
+		if(id1 > id2) return 1;
+		if(id2 > id1) return -1;
+		return 0;
 	}
 }

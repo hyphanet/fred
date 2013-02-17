@@ -272,10 +272,6 @@ public class NewPacketFormatTest extends TestCase {
 		senderPeerTransport.peerConn.currentTracker = senderKey;
 		NewPacketFormat sender = new NewPacketFormat(senderNode, senderPeerTransport);
 		PeerMessageQueue senderQueue = senderNode.getMessageQueue();
-		NullBasePeerNode receiverNode = new NullBasePeerNode();
-		PeerPacketTransport receiverPeerTransport = new PeerPacketTransport();
-		NewPacketFormat receiver = new NewPacketFormat(receiverNode, receiverPeerTransport);
-		SessionKey receiverKey = new SessionKey(null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0), 1, null);
 
 		senderQueue.queueAndEstimateSize(new MessageItem(new byte[128], null, false, null, (short) 0, false, true), 1024);
 

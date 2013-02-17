@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -145,7 +146,13 @@ final public class FileUtil {
 		long blockUsage = roundup_2n(flen, 4096);
 		// Assume 512 byte filename entries, with 100 bytes overhead, for filename overhead (NTFS)
 		String filename = file.getName();
-		int nameLength = filename.getBytes().length + 100;
+		int nameLength;
+		try {
+			nameLength = Math.max(filename.getBytes("UTF-16").length, filename.getBytes("UTF-8").length) + 100;
+		} catch (UnsupportedEncodingException e) {
+			// Impossible.
+			throw new RuntimeException("UTF-16 or UTF-8 charset not supported?!");
+		} 
 		long filenameUsage = roundup_2n(nameLength, 512);
 		// Assume 50 bytes per block tree overhead with 1kB blocks (reiser3 worst case)
 		long extra = (roundup_2n(flen, 1024) / 1024) * 50;
@@ -533,9 +540,8 @@ final public class FileUtil {
 				return false;
 			}
 		} else {
-			File[] subfiles = wd.listFiles();
-			for(int i=0;i<subfiles.length;i++) {
-				if(!removeAll(subfiles[i])) return false;
+			for(File subfile: wd.listFiles()) {
+				if(!removeAll(subfile)) return false;
 			}
 			if(!wd.delete()) {
 				Logger.error(FileUtil.class, "Could not delete directory: "+wd);
@@ -555,9 +561,8 @@ final public class FileUtil {
 				return false;
 			}
 		} else {
-			File[] subfiles = wd.listFiles();
-			for(int i=0;i<subfiles.length;i++) {
-				if(!removeAll(subfiles[i])) return false;
+			for(File subfile: wd.listFiles()) {
+				if(!removeAll(subfile)) return false;
 			}
 			if(!wd.delete()) {
 				Logger.error(FileUtil.class, "Could not delete directory: "+wd);

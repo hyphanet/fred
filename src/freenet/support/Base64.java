@@ -89,6 +89,16 @@ public class Base64
   public static String encodeUTF8(String in, boolean equalsPad) {
     return encode(in.getBytes(UTF8), equalsPad, base64Alphabet);
   }
+  
+  /**
+   * Convenience method to encode a string.
+   *
+   * Please use this to encode a string, rather than trying to encode the string
+   * yourself using the 0-arg String.getBytes() which is not deterministic.
+   */
+  public static String encodeStandardUTF8(String in) {
+	  return encodeStandard(in.getBytes(UTF8));
+  }
 
   /**
    * Standard compliant encoding.

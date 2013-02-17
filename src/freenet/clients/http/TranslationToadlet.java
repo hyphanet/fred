@@ -5,7 +5,7 @@ package freenet.clients.http;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.BaseL10n;
@@ -169,7 +169,7 @@ public class TranslationToadlet extends Toadlet {
 		HTMLNode contentNode = page.content;
 
 		final HTMLNode translatingForBox = ctx.getPageMaker().getInfobox(null, l10n("selectTranslation"), contentNode);
-		Vector<String> elementsToTranslate = new Vector<String>();
+		ArrayList<String> elementsToTranslate = new ArrayList<String>();
 		elementsToTranslate.add("Node");
 		for(PluginInfoWrapper pluginInfo : this.core.node.pluginManager.getPlugins()) {
 			if(!pluginInfo.isBaseL10nPlugin()) {

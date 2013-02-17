@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import com.db4o.ObjectContainer;
 import freenet.support.LogThresholdCallback;
 
+import freenet.support.ListUtils;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
@@ -69,7 +70,7 @@ public class MultiReaderBucket {
 			synchronized(MultiReaderBucket.this) {
 				if(freed) return;
 				freed = true;
-				readers.remove(this);
+				ListUtils.removeBySwapLast(readers, this);
 				if(!readers.isEmpty()) return;
 				readers = null;
 				if(closed) return;

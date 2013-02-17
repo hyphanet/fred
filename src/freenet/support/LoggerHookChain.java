@@ -43,9 +43,8 @@ public class LoggerHookChain extends LoggerHook {
      */
     @Override
 	public synchronized void log(Object o, Class<?> c, String msg, Throwable e, LogLevel priority) {
-        LoggerHook[] myHooks = hooks;
-        for(int i=0;i<myHooks.length;i++) {
-            myHooks[i].log(o,c,msg,e,priority);
+        for(LoggerHook hook: hooks) {
+            hook.log(o,c,msg,e,priority);
         }
     }
 
@@ -62,18 +61,15 @@ public class LoggerHookChain extends LoggerHook {
      * Remove a hook from the logger.
      */
     public synchronized void removeHook(LoggerHook lh) {
-	final int hooksLength = hooks.length;
-        LoggerHook[] newHooks = new LoggerHook[hooksLength > 1 ? hooksLength-1 : 0];
+        final int hooksLength = hooks.length;
+        if(hooksLength == 0) return;
+        LoggerHook[] newHooks = new LoggerHook[hooksLength-1];
         int x=0;
-        boolean removed = false;
         for(int i=0;i<hooksLength;i++) {
-            if(hooks[i] == lh) {
-                removed = true;
-            } else {
-                newHooks[x++] = hooks[i];
-            }
+            if(hooks[i] == lh) continue;
+            if(x == newHooks.length) return; // nothing matched
+            newHooks[x++] = hooks[i];
         }
-        if(!removed) return;
         if(x == newHooks.length) {
             hooks = newHooks;
         } else {
@@ -92,16 +88,15 @@ public class LoggerHookChain extends LoggerHook {
 	public void setDetailedThresholds(String details) throws InvalidThresholdException {
 		super.setDetailedThresholds(details);
 		// No need to tell subordinates, we will do the filtering.
-//		LoggerHook[] h = getHooks();
-//		for (int i = 0; i < h.length; i++)
-//			h[i].setDetailedThresholds(details);
+//		LoggerHook[] h = ;
+//		for (LoggerHook h: getHooks())
+//			h.setDetailedThresholds(details);
 	}
 	@Override
 	public void setThreshold(LogLevel thresh) {
 		super.setThreshold(thresh);
-		LoggerHook[] h = getHooks();
-		for (int i = 0; i < h.length; i++)
-			h[i].setThreshold(thresh);
+//		for (LoggerHook h: getHooks())
+//			h.setThreshold(thresh);
 	}
 }
 

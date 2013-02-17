@@ -1,8 +1,6 @@
 package freenet.support;
 
 import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.List;
 
 import freenet.node.NodeStats;
 import freenet.node.PrioRunnable;
@@ -173,8 +171,8 @@ public class PrioritizedSerialExecutor implements Executor {
 		this.name=name;
 		synchronized (jobs) {
 			boolean empty = true;
-			for(int i=0;i<jobs.length;i++) {
-				if(!jobs[i].isEmpty()) {
+			for(ArrayDeque<Runnable> l: jobs) {
+				if(!l.isEmpty()) {
 					empty = false;
 					break;
 				}
@@ -280,17 +278,16 @@ public class PrioritizedSerialExecutor implements Executor {
 		return retval;
 	}
 	
-	@SuppressWarnings("unchecked")
-	public List<Runnable>[] getQueuedJobsByPriority() {
-		final List<Runnable>[] jobsClone = new List[jobs.length];
+	public Runnable[][] getQueuedJobsByPriority() {
+		final Runnable[][] ret = new Runnable[jobs.length][];
 		
 		synchronized(jobs) {
 			for(int i=0; i < jobs.length; ++i) {
-				jobsClone[i] = (List<Runnable>) jobs[i].clone();
+				ret[i] = jobs[i].toArray(new Runnable[jobs[i].size()]);
 			}
 		}
 		
-		return jobsClone;
+		return ret;
 	}
 
 	public int getQueueSize(int priority) {

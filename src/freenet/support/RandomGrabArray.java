@@ -304,7 +304,6 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 			int valid = 0;
 			int validIndex = -1;
 			int target = 0;
-			int chosenIndex = -1;
 			RandomGrabArrayItem chosenItem = null;
 			RandomGrabArrayItem validItem = null;
 			for(int i=0;i<index;i++) {
@@ -392,7 +391,6 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 					exclude++;
 				} else {
 					if(valid == random) { // Picked on previous round
-						chosenIndex = target-1;
 						chosenItem = item;
 					}
 					if(validIndex == -1) {
@@ -696,8 +694,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 	public void moveElementsTo(RandomGrabArray existingGrabber,
 			ObjectContainer container, boolean canCommit) {
 		WrapperManager.signalStarting(5*60*1000);
-		for(int i=0;i<blocks.length;i++) {
-			Block block = blocks[i];
+		for(Block block: blocks) {
 			if(persistent) container.activate(block, 1);
 			for(int j=0;j<block.reqs.length;j++) {
 				RandomGrabArrayItem item = block.reqs[j];

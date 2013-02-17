@@ -36,19 +36,20 @@ import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.BulkTransmitter.AllSentCallback;
 import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.node.OpennetPeerNode.NOT_DROP_REASON;
+import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.LRUQueue;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
-import freenet.support.SizeUtil;
-import freenet.support.TimeSortedHashtable;
 import freenet.support.Logger.LogLevel;
+import freenet.support.SimpleFieldSet;
+import freenet.support.TimeSortedHashtable;
 import freenet.support.io.ByteArrayRandomAccessThing;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.transport.ip.HostnameSyntaxException;
+import freenet.support.transport.ip.IPUtil;
 
 /**
  * Central location for all things opennet.
@@ -209,6 +210,7 @@ public class OpennetManager {
 		Arrays.sort(nodes, new Comparator<OpennetPeerNode>() {
 			@Override
 			public int compare(OpennetPeerNode pn1, OpennetPeerNode pn2) {
+				if(pn1 == pn2) return 0;
 				long lastSuccess1 = pn1.timeLastSuccess();
 				long lastSuccess2 = pn2.timeLastSuccess();
 
@@ -221,11 +223,15 @@ public class OpennetManager {
 					return -1;
 				if((!neverConnected1) && neverConnected2)
 					return 1;
-				return pn1.hashCode - pn2.hashCode;
+				// a-b not opposite sign to b-a possible in a corner case (a=0 b=Integer.MIN_VALUE).
+				if(pn1.hashCode > pn2.hashCode) return 1;
+				else if(pn1.hashCode < pn2.hashCode) return -1;
+				Logger.error(this, "Two OpennerPeerNode's with the same hashcode: "+pn1+" vs "+pn2);
+				return Fields.compareObjectID(pn1, pn2);
 			}
 		});
-		for(int i=0;i<nodes.length;i++)
-			peersLRU.push(nodes[i]);
+		for(OpennetPeerNode opn: nodes)
+			peersLRU.push(opn);
 		announcer = (enableAnnouncement ? new Announcer(this) : null);
 		if(logMINOR) {
 			Logger.minor(this, "My full compressed ref: "+crypto.myCompressedFullRef().length);
@@ -273,14 +279,14 @@ public class OpennetManager {
 		// Read contents
 		String[] udp = fs.getAll("physical.udp");
 		if((udp != null) && (udp.length > 0)) {
-			for(int i=0;i<udp.length;i++) {
+			for(String u: udp) {
 				// Just keep the first one with the correct port number.
 				Peer p;
 				try {
-					p = new Peer(udp[i], false, true);
+					p = new Peer(u, false, true);
 				} catch (HostnameSyntaxException e) {
-					Logger.error(this, "Invalid hostname or IP Address syntax error while loading opennet peer node reference: "+udp[i]);
-					System.err.println("Invalid hostname or IP Address syntax error while loading opennet peer node reference: "+udp[i]);
+					Logger.error(this, "Invalid hostname or IP Address syntax error while loading opennet peer node reference: "+u);
+					System.err.println("Invalid hostname or IP Address syntax error while loading opennet peer node reference: "+u);
 					continue;
 				} catch (PeerParseException e) {
 					throw (IOException)new IOException().initCause(e);
@@ -350,7 +356,7 @@ public class OpennetManager {
 	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs, ConnectionType connectionType, boolean allowExisting) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		try {
 		OpennetPeerNode pn = new OpennetPeerNode(fs, node, crypto, this, node.peers, false);
-		if(Arrays.equals(pn.getIdentity(), crypto.myIdentity)) {
+		if(Arrays.equals(pn.getPubKeyHash(), crypto.pubKeyHash)) {
 			if(logMINOR) Logger.minor(this, "Not adding self as opennet peer");
 			return null; // Equal to myself
 		}
@@ -668,8 +674,7 @@ public class OpennetManager {
 			if(addingNode) map = new EnumMap<NOT_DROP_REASON, Integer>(NOT_DROP_REASON.class);
 			// Do we want it?
 			OpennetPeerNode[] peers = peersLRU.toArrayOrdered(new OpennetPeerNode[peersLRU.size()]);
-			for(int i=0;i<peers.length;i++) {
-				OpennetPeerNode pn = peers[i];
+			for(OpennetPeerNode pn: peers) {
 				if(pn == null) continue;
 				boolean tooOld = pn.isUnroutableOlderVersion();
 				if(pn.isConnected() && tooOld) {
@@ -707,8 +712,7 @@ public class OpennetManager {
 				return null;
 			}
 			if(map != null) map.clear();
-			for(int i=0;i<peers.length;i++) {
-				OpennetPeerNode pn = peers[i];
+			for(OpennetPeerNode pn: peers) {
 				if(pn == null) continue;
 				boolean tooOld = pn.isUnroutableOlderVersion();
 				if(pn.isConnected() && tooOld) {

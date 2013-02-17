@@ -5,8 +5,6 @@ package freenet.store;
 
 import java.io.IOException;
 
-import com.sleepycat.je.DatabaseException;
-
 import freenet.crypt.DSAPublicKey;
 import freenet.keys.KeyVerifyException;
 import freenet.node.stats.StoreAccessStats;
@@ -41,7 +39,8 @@ public abstract class StoreCallback<T extends StorableBlock> {
 
 
 	
-	/** Called once when first connecting to a FreenetStore. Package-local. */
+	/** Called when first connecting to a FreenetStore. If the FreenetStore is a wrapper, it can be
+	 * called more than once, but the last call will determine which store we use. */
 	public void setStore(FreenetStore<T> store) {
 		this.store = store;
 	}

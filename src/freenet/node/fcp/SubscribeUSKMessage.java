@@ -11,7 +11,6 @@ import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
-import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
 
 /**

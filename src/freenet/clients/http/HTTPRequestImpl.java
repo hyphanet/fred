@@ -502,8 +502,8 @@ public class HTTPRequestImpl implements HTTPRequest {
 				return;
 
 			String boundary = null;
-			for(int i = 0; i < ctypeparts.length; i++) {
-				String[] subparts = ctypeparts[i].split("=");
+			for(String ctypepart: ctypeparts) {
+				String[] subparts = ctypepart.split("=");
 				if((subparts.length == 2) && subparts[0].trim().equalsIgnoreCase("boundary"))
 					boundary = subparts[1];
 			}

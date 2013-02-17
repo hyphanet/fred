@@ -159,9 +159,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		// So keep all the temp files for now.
 		// FIXME: tidy up unwanted temp files.
 		
-//		Iterator<File> i = originalFiles.iterator();
-//		while(i.hasNext()) {
-//			File f = (File) (i.next());
+//		for(File f: originalFiles) {
 //			if(Logger.shouldLog(LogLevel.MINOR, this))
 //				Logger.minor(this, "Deleting old tempfile "+f);
 //			f.delete();

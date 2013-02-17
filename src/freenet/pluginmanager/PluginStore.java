@@ -50,7 +50,7 @@ public class PluginStore {
 		conf.io(mia);
 		mia.put("Import", exportedStore);
 		ObjectContainer o = Db4o.openFile(conf, "Import");
-		ObjectSet query = o.query(PluginStoreContainer.class);
+		ObjectSet<PluginStoreContainer> query = o.query(PluginStoreContainer.class);
 		if(query.size() > 0) {
 			o.activate(query.get(0), Integer.MAX_VALUE);
 			PluginStore ret = ((PluginStoreContainer) query.get(0)).pluginStore;

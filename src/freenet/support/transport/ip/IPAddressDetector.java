@@ -2,13 +2,13 @@
 package freenet.support.transport.ip;
 
 import java.net.DatagramSocket;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.List;
 
 import freenet.io.AddressIdentifier;
@@ -101,6 +101,7 @@ public class IPAddressDetector implements Runnable {
 	 * Execute a checkpoint - detect our internet IP address and log it
 	 */
 	protected synchronized boolean checkpoint() {
+		final boolean logDEBUG = IPAddressDetector.logDEBUG;
 		List<InetAddress> addrs = new ArrayList<InetAddress>();
 
 		Enumeration<java.net.NetworkInterface> interfaces = null;
@@ -126,6 +127,14 @@ public class IPAddressDetector implements Runnable {
 				while (ee.hasMoreElements()) {
 
 					InetAddress addr = ee.nextElement();
+					if ((addr instanceof Inet6Address) && !(addr.isLinkLocalAddress() || IPUtil.isSiteLocalAddress(addr))) {
+						try {
+							// strip scope_id from global addresses
+							addr = InetAddress.getByAddress(addr.getAddress());
+						} catch(UnknownHostException e) {
+							// ignore/impossible
+						}
+					}
 					addrs.add(addr);
 					if (logDEBUG)
 						Logger.debug(
@@ -206,6 +215,7 @@ public class IPAddressDetector implements Runnable {
 	 *            Vector of InetAddresses
 	 */
 	protected void onGetAddresses(List<InetAddress> addrs) {
+		final boolean logDEBUG = IPAddressDetector.logDEBUG;
 		List<InetAddress> output = new ArrayList<InetAddress>();
 		if (logDEBUG)
 			Logger.debug(

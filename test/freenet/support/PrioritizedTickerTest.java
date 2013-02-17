@@ -56,6 +56,7 @@ public class PrioritizedTickerTest extends TestCase {
 	}
 
 	public void testDeduping() throws InterruptedException {
+		if(!TestProperty.EXTENSIVE) return; // FIXME unreliable test, only run on -Dtest.extensive=true
 		synchronized(PrioritizedTickerTest.this) {
 			runCount = 0;
 		}

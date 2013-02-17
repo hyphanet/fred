@@ -3,10 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 
 import freenet.io.comm.AsyncMessageCallback;
-import freenet.io.comm.AsyncMessageFilterCallback;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
@@ -47,7 +47,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		/** Have we completed the immediate transfer? */
 		boolean completedTransfer;
 		/** Did it succeed? */
-		boolean transferSucceeded;
+		//boolean transferSucceeded;
 		
 		/** Do we have the InsertReply, RNF or similar completion? If not,
 		 * there is no point starting to wait for a timeout. */
@@ -133,7 +133,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		
 		private void completedTransfer(boolean success) {
 			synchronized(backgroundTransfers) {
-				transferSucceeded = success;
+				//transferSucceeded = success; //FIXME Don't used
 				completedTransfer = true;
 				backgroundTransfers.notifyAll();
 			}
@@ -315,7 +315,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
         this.prb = prb;
         this.fromStore = fromStore;
         this.startTime = System.currentTimeMillis();
-        this.backgroundTransfers = new Vector<BackgroundTransfer>();
+        this.backgroundTransfers = new ArrayList<BackgroundTransfer>();
         this.forkOnCacheable = forkOnCacheable;
         this.preferInsert = preferInsert;
         this.ignoreLowBackoff = ignoreLowBackoff;
@@ -360,7 +360,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
     
     /** List of nodes we are waiting for either a transfer completion
      * notice or a transfer completion from. Also used as a sync object for waiting for transfer completion. */
-    private Vector<BackgroundTransfer> backgroundTransfers;
+    private List<BackgroundTransfer> backgroundTransfers;
     
     /** Have all transfers completed and all nodes reported completion status? */
     private boolean allTransfersCompleted;
@@ -965,28 +965,28 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 					boolean completedTransfers = true;
 					boolean completedNotifications = true;
 					boolean someFailed = false;
-					for(int i=0;i<transfers.length;i++) {
-						if(!transfers[i].pn.isRoutable()) {
+					for(BackgroundTransfer transfer: transfers) {
+						if(!transfer.pn.isRoutable()) {
 							if(logMINOR)
-								Logger.minor(this, "Ignoring transfer to "+transfers[i].pn+" for "+this+" as not routable");
+								Logger.minor(this, "Ignoring transfer to "+transfer.pn+" for "+this+" as not routable");
 							continue;
 						}
 						noneRouteable = false;
-						if(!transfers[i].completedTransfer) {
+						if(!transfer.completedTransfer) {
 							if(logMINOR)
-								Logger.minor(this, "Waiting for transfer completion to "+transfers[i].pn+" : "+transfers[i]);
+								Logger.minor(this, "Waiting for transfer completion to "+transfer.pn+" : "+transfer);
 							//must wait
 							completedTransfers = false;
 							break;
 						}
-						if (!transfers[i].receivedCompletionNotice) {
+						if (!transfer.receivedCompletionNotice) {
 							if(logMINOR)
-								Logger.minor(this, "Waiting for completion notice from "+transfers[i].pn+" : "+transfers[i]);
+								Logger.minor(this, "Waiting for completion notice from "+transfer.pn+" : "+transfer);
 							//must wait
 							completedNotifications = false;
 							break;
 						}
-						if (!transfers[i].completionSucceeded)
+						if (!transfer.completionSucceeded)
 							someFailed = true;
 					}
 					if(noneRouteable) return false;
@@ -1078,8 +1078,10 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		return receiveFailed;
 	}
 
-	public synchronized boolean startedSendingData() {
-		return !backgroundTransfers.isEmpty();
+	public boolean startedSendingData() {
+		synchronized(backgroundTransfers) {
+			return !backgroundTransfers.isEmpty();
+		}
 	}
 
 	@Override

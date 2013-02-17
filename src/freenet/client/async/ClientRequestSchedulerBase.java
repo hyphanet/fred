@@ -458,7 +458,7 @@ abstract class ClientRequestSchedulerBase {
 			SendableGet[] reqs = listener.getRequestsForKey(key, saltedKey, container, context);
 			if(reqs == null) continue;
 			if(list == null) list = new ArrayList<SendableGet>();
-			for(int i=0;i<reqs.length;i++) list.add(reqs[i]);
+			for(SendableGet req: reqs) list.add(req);
 		}
 		}
 		if(list == null) return null;

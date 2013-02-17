@@ -17,6 +17,8 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.HashMap;
+import java.util.Collections;
+import java.util.Map;
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.JceLoader;
 import freenet.crypt.ciphers.Rijndael;
@@ -37,25 +39,25 @@ public class Util {
 
 	public static void fillByteArrayFromInts(int[] ints, byte[] bytes) {
 		int ic = 0;
-		for (int i = 0; i < ints.length; i++) {
-			bytes[ic++] = (byte) (ints[i] >> 24);
-			bytes[ic++] = (byte) (ints[i] >> 16);
-			bytes[ic++] = (byte) (ints[i] >> 8);
-			bytes[ic++] = (byte) ints[i];
+		for (int i: ints) {
+			bytes[ic++] = (byte) (i >> 24);
+			bytes[ic++] = (byte) (i >> 16);
+			bytes[ic++] = (byte) (i >> 8);
+			bytes[ic++] = (byte)  i;
 		}
 	}
 
 	public static void fillByteArrayFromLongs(long[] ints, byte[] bytes) {
 		int ic = 0;
-		for (int i = 0; i < ints.length; i++) {
-			bytes[ic++] = (byte) (ints[i] >> 56);
-			bytes[ic++] = (byte) (ints[i] >> 48);
-			bytes[ic++] = (byte) (ints[i] >> 40);
-			bytes[ic++] = (byte) (ints[i] >> 32);
-			bytes[ic++] = (byte) (ints[i] >> 24);
-			bytes[ic++] = (byte) (ints[i] >> 16);
-			bytes[ic++] = (byte) (ints[i] >> 8);
-			bytes[ic++] = (byte) ints[i];
+		for (long l: ints) {
+			bytes[ic++] = (byte) (l >> 56);
+			bytes[ic++] = (byte) (l >> 48);
+			bytes[ic++] = (byte) (l >> 40);
+			bytes[ic++] = (byte) (l >> 32);
+			bytes[ic++] = (byte) (l >> 24);
+			bytes[ic++] = (byte) (l >> 16);
+			bytes[ic++] = (byte) (l >> 8);
+			bytes[ic++] = (byte)  l;
 		}
 	}
 
@@ -195,7 +197,7 @@ public class Util {
 	private static final MessageDigest ctx;
 	private static final int ctx_length;
 
-	public static final HashMap<String, Provider> mdProviders;
+	public static final Map<String, Provider> mdProviders;
 
 	static private long benchmark(MessageDigest md) throws GeneralSecurityException
 	{
@@ -225,12 +227,12 @@ public class Util {
 
 	static {
 		try {
-			mdProviders = new HashMap<String, Provider>();
+			HashMap<String,Provider> mdProviders_internal = new HashMap<String, Provider>();
 
 			for (String algo: new String[] {
 				"SHA1", "MD5", "SHA-256", "SHA-384", "SHA-512"
 			}) {
-				final Class clazz = Util.class;
+				final Class<?> clazz = Util.class;
 				final Provider sun = JceLoader.SUN;
 				MessageDigest md = MessageDigest.getInstance(algo);
 				md.digest();
@@ -261,8 +263,9 @@ public class Util {
 				Provider mdProvider = md.getProvider();
 				System.out.println(algo + ": using " + mdProvider);
 				Logger.normal(clazz, algo + ": using " + mdProvider);
-				mdProviders.put(algo, mdProvider);
+				mdProviders_internal.put(algo, mdProvider);
 			}
+			mdProviders = Collections.unmodifiableMap(mdProviders_internal);
 
 			ctx = MessageDigest.getInstance("SHA1", mdProviders.get("SHA1"));
 			ctx_length = ctx.getDigestLength();

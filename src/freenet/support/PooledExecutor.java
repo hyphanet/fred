@@ -4,7 +4,6 @@
 package freenet.support;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import freenet.node.PrioRunnable;
@@ -19,8 +18,7 @@ import freenet.support.io.NativeThread;
 public class PooledExecutor implements Executor {
 
 	/** All threads running or waiting */
-	@SuppressWarnings("unchecked")
-	private final ArrayList<MyThread>[] runningThreads = new ArrayList[NativeThread.JAVA_PRIORITY_RANGE + 1];
+	private final int[] runningThreads = new int[NativeThread.JAVA_PRIORITY_RANGE + 1];
 	/** Threads waiting for a job */
 	@SuppressWarnings("unchecked")
 	private final ArrayList<MyThread>[] waitingThreads = new ArrayList[runningThreads.length];
@@ -38,7 +36,7 @@ public class PooledExecutor implements Executor {
 
 	public PooledExecutor() {
 		for(int i = 0; i < runningThreads.length; i++) {
-			runningThreads[i] = new ArrayList<MyThread>();
+			/* runningThreads[i] = 0; */
 			waitingThreads[i] = new ArrayList<MyThread>();
 			threadCounter[i] = new AtomicLong();
 		}
@@ -104,7 +102,7 @@ public class PooledExecutor implements Executor {
 				t.setDaemon(true);
 
 				synchronized(this) {
-					runningThreads[prio - 1].add(t);
+					runningThreads[prio - 1]++;
 					jobMisses++;
 
 					if(logMINOR)
@@ -137,29 +135,11 @@ public class PooledExecutor implements Executor {
 		}
 	}
 
-	/**
-	 * Removes element from List by swapping with last element.
-	 * O(n) comparison, O(1) moves.
-	 * @return {@code true} if element was removed.
-	 */
-	// XXX move it to better place
-	private static <E> boolean removeFromUnorderedList(List<E> a, Object o) {
-		int idx = a.indexOf(o);
-		if (idx == -1)
-			return false;
-		int size = a.size();
-		assert(size > 0); // always true
-		E moved = a.remove(size-1);
-		if (idx != size-1)
-			a.set(idx, moved);
-		return true;
-	}
-
 	@Override
 	public synchronized int[] runningThreads() {
 		int[] result = new int[runningThreads.length];
 		for(int i = 0; i < result.length; i++)
-			result[i] = runningThreads[i].size() - waitingThreads[i].size();
+			result[i] = runningThreads[i] - waitingThreads[i].size();
 		return result;
 	}
 
@@ -191,6 +171,7 @@ public class PooledExecutor implements Executor {
 		volatile boolean alive = true;
 		Job nextJob;
 		final long threadNo;
+		private boolean removed = false;
 
 		public MyThread(String defaultName, Job firstJob, long threadCounter, int prio, boolean dontCheckRenice) {
 			super(defaultName, prio, dontCheckRenice);
@@ -198,11 +179,23 @@ public class PooledExecutor implements Executor {
 			threadNo = threadCounter;
 			nextJob = firstJob;
 		}
-
+		
 		@Override
 		public void realRun() {
-			long ranJobs = 0;
 			int nativePriority = getNativePriority();
+			try {
+				innerRun(nativePriority);
+			} finally {
+				if(!removed) {
+					synchronized(PooledExecutor.this) {
+						runningThreads[nativePriority - 1]--;
+					}
+				}
+			}
+		}
+		
+		private void innerRun(int nativePriority) {
+			long ranJobs = 0;
 			while(true) {
 				Job job;
 
@@ -227,7 +220,7 @@ public class PooledExecutor implements Executor {
 						}
 					}
 					synchronized(PooledExecutor.this) {
-						if (removeFromUnorderedList(waitingThreads[nativePriority - 1], this))
+						if (waitingThreads[nativePriority - 1].remove(this))
 							waitingThreadsCount--;
 
 						synchronized(this) {
@@ -239,9 +232,10 @@ public class PooledExecutor implements Executor {
 						}
 
 						if(!alive) {
-							removeFromUnorderedList(runningThreads[nativePriority - 1], this);
+							runningThreads[nativePriority - 1]--;
 							if(logMINOR)
 								Logger.minor(this, "Exiting having executed " + ranJobs + " jobs : " + this);
+							removed = true;
 							return;
 						}
 					}

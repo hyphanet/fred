@@ -4,10 +4,10 @@
 package freenet.node;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Arrays;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.HMAC;
@@ -168,6 +168,7 @@ public class NewPacketFormat implements PacketFormat {
 			}
 		}
 
+
 		return fullyReceived;
 	}
 
@@ -182,7 +183,7 @@ public class NewPacketFormat implements PacketFormat {
 			int seqNum = keyContext.watchListOffset;
 			for(int i = 0; i < keyContext.seqNumWatchList.length; i++) {
 				keyContext.seqNumWatchList[i] = NewPacketFormat.encryptSequenceNumber(seqNum++, sessionKey);
-				if((seqNum == NUM_SEQNUMS) || (seqNum < 0)) seqNum = 0;
+				if(seqNum < 0) seqNum = 0;
 			}
 		}
 
@@ -213,7 +214,7 @@ public class NewPacketFormat implements PacketFormat {
 			int seqNum = (int) ((0l + keyContext.watchListOffset + keyContext.seqNumWatchList.length) % NUM_SEQNUMS);
 			for(int i = keyContext.watchListPointer; i < (keyContext.watchListPointer + moveBy); i++) {
 				keyContext.seqNumWatchList[i % keyContext.seqNumWatchList.length] = encryptSequenceNumber(seqNum++, sessionKey);
-				if(seqNum == NUM_SEQNUMS) seqNum = 0;
+				if(seqNum < 0) seqNum = 0;
 			}
 
 			keyContext.watchListPointer = (keyContext.watchListPointer + moveBy) % keyContext.seqNumWatchList.length;
@@ -828,7 +829,6 @@ public class NewPacketFormat implements PacketFormat {
 		}
 
 		public void lost() {
-			int bytesToResend = 0;
 			Iterator<MessageWrapper> msgIt = messages.iterator();
 			Iterator<int[]> rangeIt = ranges.iterator();
 
@@ -836,7 +836,7 @@ public class NewPacketFormat implements PacketFormat {
 				MessageWrapper wrapper = msgIt.next();
 				int[] range = rangeIt.next();
 
-				bytesToResend += wrapper.lost(range[0], range[1]);
+				wrapper.lost(range[0], range[1]);
 			}
 		}
 

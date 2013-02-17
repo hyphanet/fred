@@ -65,13 +65,13 @@ public class DNSRequester implements Runnable {
         		Logger.minor(this, "Processing DNS Requests (log rate-limited)");
             lastLogTime = now;
         }
-        for(int i=0;i<nodes.length;i++) {
-            //Logger.minor(this, "Node: "+nodes[i]);
-            if(!nodes[i].isConnected()) {
+        for(PeerNode pn: nodes) {
+            //Logger.minor(this, "Node: "+pn);
+            if(!pn.isConnected()) {
                 // Not connected
                 // Try new DNS lookup
-            	//Logger.minor(this, "Doing lookup on "+nodes[i]+" of "+nodes.length);
-                nodes[i].maybeUpdateHandshakeIPs(false);
+            	//Logger.minor(this, "Doing lookup on "+pn+" of "+nodes.length);
+                pn.maybeUpdateHandshakeIPs(false);
             }
         }
         try {

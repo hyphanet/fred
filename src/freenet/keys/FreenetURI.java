@@ -139,6 +139,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 
 	@Override
 	public boolean equals(Object o) {
+		if(o == this) return true;
 		if(!(o instanceof FreenetURI))
 			return false;
 		else {
@@ -958,12 +959,14 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 		if(keyType != null && (keyType.equals("KSK") || keyType.equals("SSK") || keyType.equals("USK"))) {
 			if(logMINOR)
 				Logger.minor(this, "Adding docName: " + docName);
-			if(docName == null)
-				// Really this shouldn't be possible...
-				throw new NullPointerException();
-			names.add(docName);
-			if(keyType.equals("USK"))
-				names.add(Long.toString(suggestedEdition));
+			if(docName != null) {
+				names.add(docName);
+				if(keyType.equals("USK"))
+					names.add(Long.toString(suggestedEdition));
+			} else if(!keyType.equals("SSK")) {
+				// "SSK@" is legal for an upload.
+				throw new IllegalStateException("No docName for key of type "+keyType);
+			}
 		}
 		if(metaStr != null)
 			for(int i = 0; i < metaStr.length; i++) {
@@ -998,6 +1001,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 					Logger.minor(this, "Returning base64 encoded routing key");
 				return Base64.encode(routingKey);
 			}
+			// FIXME return null in this case, localise in a wrapper.
 			return "unknown";
 		}
 		return out.toString();

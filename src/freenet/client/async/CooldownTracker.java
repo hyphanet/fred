@@ -31,7 +31,6 @@ import freenet.support.Ticker;
 public class CooldownTracker {
 	
 	private static volatile boolean logMINOR;
-	private static volatile boolean logDEBUG;
 
 	static {
 		Logger.registerClass(CooldownTracker.class);

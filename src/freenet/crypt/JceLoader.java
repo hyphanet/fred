@@ -1,14 +1,19 @@
 package freenet.crypt;
 
+import java.io.BufferedWriter;
 import java.io.File;
-import java.io.IOException;
-import java.io.PrintStream;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.lang.reflect.Constructor;
 import java.security.Provider;
 import java.security.Security;
-import javax.crypto.KeyAgreement;
 import java.security.Signature;
 
+import javax.crypto.KeyAgreement;
+
 import freenet.support.Logger;
+import freenet.support.io.Closer;
 
 public class JceLoader {
 	static public final Provider BouncyCastle;
@@ -59,7 +64,8 @@ public class JceLoader {
 			Provider p = Security.getProvider("BC");
 			if (p == null) {
 				try {
-					p = new org.bouncycastle.jce.provider.BouncyCastleProvider();
+					Class<?> c = Class.forName("org.bouncycastle.jce.provider.BouncyCastleProvider");
+					p = (Provider)c.newInstance();
 					Security.addProvider(p);
 				} catch(Throwable e) {
 					throw e;
@@ -91,15 +97,23 @@ public class JceLoader {
 			if(nssProvider == null) {
 				File nssFile = File.createTempFile("nss",".cfg");
 				nssFile.deleteOnExit();
-				PrintStream nss = new PrintStream(nssFile);
+				OutputStream os = null;
 				try {
-					nss.println("name=NSScrypto");
-					nss.println("nssDbMode=noDb");
-					nss.println("attributes=compatibility");
+					// More robust than PrintWriter(file), which can hang on out of disk space.
+					os = new FileOutputStream(nssFile);
+					OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1");
+					BufferedWriter bw = new BufferedWriter(osw);
+					bw.write("name=NSScrypto\n");
+					bw.write("nssDbMode=noDb\n");
+					bw.write("attributes=compatibility\n");
+					bw.close();
+					os = null;
 				} finally {
-					nss.close();
+					Closer.close(os);
 				}
-				nssProvider = new sun.security.pkcs11.SunPKCS11(nssFile.getPath());
+				Class<?> c = Class.forName("sun.security.pkcs11.SunPKCS11");
+				Constructor<?> constructor = c.getConstructor(String.class);
+				nssProvider = (Provider)constructor.newInstance(nssFile.getPath());
 				if (atfirst)
 					Security.insertProviderAt(nssProvider, 1);
 				else

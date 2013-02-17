@@ -180,6 +180,10 @@ public final class MessageFilter {
 			throw new IllegalStateException("Setting a second .or() on the same filter will replace the " +
 			    "existing one, not add another. " + _or + " would be replaced by " + or + ".");
 		}
+		if(or._initialTimeout != _initialTimeout) {
+			Logger.error(this, "Message filters being or()ed have different timeouts! This is very dangerous! This is "+this+" or is "+or);
+			// FIXME throw new IllegalArgumentException()
+		}
 		_or = or;
 		return this;
 	}

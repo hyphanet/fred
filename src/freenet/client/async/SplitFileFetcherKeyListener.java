@@ -364,15 +364,15 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		Key[] removeKeys = segment.listKeys(container);
 		if(logMINOR)
 			Logger.minor(this, "Removing segment from bloom filter: "+segment+" keys: "+removeKeys.length);
-		for(int i=0;i<removeKeys.length;i++) {
+		for(Key removeKey: removeKeys) {
 			if(logMINOR)
-				Logger.minor(this, "Removing key from bloom filter: "+removeKeys[i]);
-			byte[] salted = context.getChkFetchScheduler(realTime).saltKey(persistent, removeKeys[i]);
+				Logger.minor(this, "Removing key from bloom filter: "+removeKey);
+			byte[] salted = context.getChkFetchScheduler(realTime).saltKey(persistent, removeKey);
 			if(filter.checkFilter(salted)) {
 				filter.removeKey(salted);
 			} else
 				// Huh??
-				Logger.error(this, "Removing key "+removeKeys[i]+" for "+this+" from "+segment+" : NOT IN BLOOM FILTER!", new Exception("debug"));
+				Logger.error(this, "Removing key "+removeKey+" for "+this+" from "+segment+" : NOT IN BLOOM FILTER!", new Exception("debug"));
 		}
 		scheduleWriteFilters(container, context, "killed segment "+segNo);
 		return keyCount -= removeKeys.length;

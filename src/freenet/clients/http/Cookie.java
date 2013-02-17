@@ -165,12 +165,10 @@ public class Cookie {
 		if("".equals(name))
 			throw new IllegalArgumentException("Name is empty.");
 		
-		final String newName = new String(usasciiCharset.encode(name).array());
-		
-		if(newName.equals(name) == false)
+		if(!isUSASCII(name))
 			throw new IllegalArgumentException("Invalid name, contains non-US-ASCII characters: " + name);
 		
-		name = newName.trim().toLowerCase(); // RFC2965: Name is case insensitive
+		name = name.trim().toLowerCase(); // RFC2965: Name is case insensitive
 		
 		/*
 		<TheSeeker>        CTL            = <any US-ASCII control character
@@ -217,6 +215,16 @@ public class Cookie {
 		return name;
 	}
 	
+	private static boolean isUSASCII(String name) {
+		for(int i=0;i<name.length();i++) {
+			char c = name.charAt(i);
+			// Java chars are unicode. Unicode is a superset of US-ASCII.
+			if(c < 32 || c > 126)
+				return false;
+		}
+		return true;
+	}
+
 	/**
 	 * Validates the value of a cookie against a mixture of RFC2965, RFC2616 (from IETF.org) and personal choice :|
 	 * The personal choice is mostly that it uses isISOControl for determining control characters instead of the
@@ -225,12 +233,10 @@ public class Cookie {
 	 * TODO: Read the RFCs in depth and make this function fully compatible.
 	 */
 	public static String validateValue(String value) {
-		String newValue = new String(usasciiCharset.encode(value).array());
-		
-		if(newValue.equals(value) == false)
+		if(!isUSASCII(value))
 			throw new IllegalArgumentException("Invalid value, contains non-US-ASCII characters: " + value);
 		
-		newValue = newValue.trim();
+		value = value.trim();
 
 		/*
 		<TheSeeker>        CTL            = <any US-ASCII control character
@@ -250,7 +256,7 @@ public class Cookie {
 		<TheSeeker> so, if it's quoted, it can be anything 32-126 and 128-255 (except a quote char, obviously)
 		*/
 
-		for(Character c : newValue.toCharArray()) {
+		for(Character c : value.toCharArray()) {
 			// We allow whitespace in the value because quotation is allowed and supported by the parser in ReceivedCookie
 
 			if(Character.isISOControl(c))
@@ -261,7 +267,7 @@ public class Cookie {
 				throw new IllegalArgumentException("Invalid value, contains one of the explicitely disallowed characters: " + value);
 		}
 		
-		return newValue;
+		return value;
 	}
 	
 	public static Date validateExpirationDate(Date expirationDate) {

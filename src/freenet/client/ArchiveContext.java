@@ -46,7 +46,9 @@ public class ArchiveContext {
 		FreenetURI uri = key;
 		if(container != null)
 			uri = uri.clone();
-		soFar.add(uri);
+		if(!soFar.add(uri)) {
+			throw new ArchiveFailureException(ArchiveFailureException.ARCHIVE_LOOP_DETECTED);
+		}
 		if(container != null) {
 			container.store(uri);
 			container.store(soFar);

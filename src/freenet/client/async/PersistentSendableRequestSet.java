@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import com.db4o.ObjectContainer;
 
 import freenet.node.SendableRequest;
+import freenet.support.ListUtils;
 import freenet.support.Logger;
 
 /**
@@ -77,7 +78,7 @@ public class PersistentSendableRequestSet implements SendableRequestSet {
 			if(success)
 				Logger.error(this, "Request is in "+this+" twice or more : "+req);
 			success = true;
-			list.remove(idx);
+			ListUtils.removeBySwapLast(list,idx);
 		}
 		if(!success) return false;
 		container.ext().store(list, 1);

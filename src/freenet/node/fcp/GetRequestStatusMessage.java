@@ -9,7 +9,6 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
 import freenet.node.Node;
-import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.NativeThread;
 

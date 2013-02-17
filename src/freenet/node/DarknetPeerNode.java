@@ -40,7 +40,6 @@ import freenet.node.useralerts.DownloadFeedUserAlert;
 import freenet.node.useralerts.N2NTMUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.Base64;
-import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
@@ -543,7 +542,7 @@ public class DarknetPeerNode extends PeerNode {
 				return false;
 			}
 			if(peerNoteType == Node.PEER_NOTE_TYPE_PRIVATE_DARKNET_COMMENT) {
-				synchronized(privateDarknetComment) {
+				synchronized(this) {
 				  	try {
 						privateDarknetComment = Base64.decodeUTF8(fs.get("privateDarknetComment"));
 					} catch (IllegalBase64Exception e) {
@@ -784,18 +783,14 @@ public class DarknetPeerNode extends PeerNode {
 
 	public synchronized void setPrivateDarknetCommentNote(String comment) {
 		int localFileNumber;
-		synchronized(privateDarknetComment) {
-			privateDarknetComment = comment;
-			localFileNumber = privateDarknetCommentFileNumber;
-		}
+		privateDarknetComment = comment;
+		localFileNumber = privateDarknetCommentFileNumber;
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.put("peerNoteType", Node.PEER_NOTE_TYPE_PRIVATE_DARKNET_COMMENT);
 		fs.putSingle("privateDarknetComment", Base64.encodeUTF8(comment));
 		if(localFileNumber == -1) {
 			localFileNumber = writeNewExtraPeerDataFile(fs, Node.EXTRA_PEER_DATA_TYPE_PEER_NOTE);
-			synchronized(privateDarknetComment) {
-				privateDarknetCommentFileNumber = localFileNumber;
-			}
+			privateDarknetCommentFileNumber = localFileNumber;
 		} else {
 			rewriteExtraPeerDataFile(fs, Node.EXTRA_PEER_DATA_TYPE_PEER_NOTE, localFileNumber);
 		}

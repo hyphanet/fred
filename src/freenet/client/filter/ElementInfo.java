@@ -256,16 +256,6 @@ public class ElementInfo {
 		return true;
 	}
 	
-	private static String[] makeAllButNonReplacedInlineElements() {
-		// all elements but non-replaced inline elements, table rows, and row groups
-		HashSet<String> elements = new HashSet<String>(HTML_ELEMENTS);
-		for(String s : REPLACED_ELEMENTS)
-			elements.remove(s);
-		elements.remove("tr");
-		elements.remove("tbody");
-		return elements.toArray(new String[elements.size()]);
-	}
-
 	/** font must be lower-case */
 	public static boolean isGenericFontFamily(String font) {
 		for(String s : GENERIC_FONT_KEYWORDS)

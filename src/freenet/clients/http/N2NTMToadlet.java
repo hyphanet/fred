@@ -63,10 +63,10 @@ public class N2NTMToadlet extends Toadlet {
 			}
 			if (input_hashcode != -1) {
 				DarknetPeerNode[] peerNodes = node.getDarknetConnections();
-				for (int i = 0; i < peerNodes.length; i++) {
-					int peer_hashcode = peerNodes[i].hashCode();
+				for (DarknetPeerNode pn: peerNodes) {
+					int peer_hashcode = pn.hashCode();
 					if (peer_hashcode == input_hashcode) {
-						peernode_name = peerNodes[i].getName();
+						peernode_name = pn.getName();
 						break;
 					}
 				}
@@ -182,10 +182,8 @@ public class N2NTMToadlet extends Toadlet {
 			HTMLNode peerTableHeaderRow = peerTable.addChild("tr");
 			peerTableHeaderRow.addChild("th", l10n("peerName"));
 			peerTableHeaderRow.addChild("th", l10n("sendStatus"));
-			for (int i = 0; i < peerNodes.length; i++) {
-				if (request.isPartSet("node_" + peerNodes[i].hashCode())) {
-					DarknetPeerNode pn = peerNodes[i];
-					
+			for (DarknetPeerNode pn: peerNodes) {
+				if (request.isPartSet("node_" + pn.hashCode())) {
 					int status;
 					
 					if(filename != null) {

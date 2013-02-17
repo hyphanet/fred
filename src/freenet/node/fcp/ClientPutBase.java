@@ -38,8 +38,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 
 	// Verbosity bitmasks
 	private static final int VERBOSITY_SPLITFILE_PROGRESS = 1;
-	private static final int VERBOSITY_COMPATIBILITY_MODE = 4; // same as CompatibilityMode
-
+	
 	private static final int VERBOSITY_EXPECTED_HASHES = 8; // same as ClientGet
 	private static final int VERBOSITY_PUT_FETCHABLE = 256;
 	private static final int VERBOSITY_COMPRESSION_START_END = 512;

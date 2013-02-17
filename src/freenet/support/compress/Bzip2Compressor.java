@@ -10,6 +10,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
@@ -19,7 +20,6 @@ import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.Closer;
 import freenet.support.io.CountedOutputStream;
-import freenet.support.io.NoCloseProxyOutputStream;
 import freenet.support.io.HeaderStreams;
 
 /**
@@ -32,7 +32,14 @@ import freenet.support.io.HeaderStreams;
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class Bzip2Compressor implements Compressor {
 
-	final public static byte[] BZ_HEADER = "BZ".getBytes();
+	final public static byte[] BZ_HEADER;
+	static {
+		try {
+			BZ_HEADER = "BZ".getBytes("ISO-8859-1");
+		} catch (UnsupportedEncodingException e) {
+			throw new Error(e); // Impossible!
+		}
+	}
 
 	@Override
 	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {

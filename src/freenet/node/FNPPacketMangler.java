@@ -243,7 +243,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			Logger.error(this, "Apparently contacted by "+peerTransport+") on "+this, new Exception("error"));
 			opn = null;
 		}
-		PeerNode pn;
 		boolean wantAnonAuth = crypto.wantAnonAuth();
 
 		if(opn != null) {
@@ -264,8 +263,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(node.isStopping()) return DECODED.SHUTTING_DOWN;
 		// Disconnected node connecting on a new IP address?
 		if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2) {
-			for(int i=0;i<peers.length;i++) {
-				pn = peers[i];
+			for(PeerNode pn: peers) {
 				PeerPacketTransport peerTransportPn = pn.getPeerTransport(sock);
 				if(pn == opn) continue;
 				if(logDEBUG)
@@ -296,8 +294,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			if(opennet.wantPeer(null, false, true, true, ConnectionType.RECONNECT)) {
 				// We want a peer.
 				// Try old connections.
-				PeerNode[] oldPeers = opennet.getOldPeers();
-				for(PeerNode oldPeer : oldPeers) {
+				for(PeerNode oldPeer : opennet.getOldPeers()) {
 					if(tryProcessAuth(buf, offset, length, oldPeer.getPeerTransport(sock), address, true, now)) return DECODED.DECODED;
 				}
 				didntTryOldOpennetPeers = false;
@@ -334,11 +331,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	private boolean checkAnonAuthChangeIP(PeerPacketTransport peerTransport, byte[] buf, int offset, int length, PluginAddress address, long now) {
 		PeerNode opn = peerTransport.pn;
 		PeerNode[] anonPeers = crypto.getAnonSetupPeerNodes(sock);
-		PeerNode pn;
 		PeerPacketTransport peerTransportPn;
 		if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 3) {
-			for(int i=0;i<anonPeers.length;i++) {
-				pn = anonPeers[i];
+			for(PeerNode pn: anonPeers) {
 				peerTransportPn = pn.getPeerTransport(sock);
 				if(pn == opn) continue;
 				if(tryProcessAuthAnonReply(buf, offset, length, peerTransportPn, address, now)) {
@@ -1230,8 +1225,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			}
 			computedExponential = ctx.getHMACKey(_hisExponential);
         } else {
-            ECPublicKey initiatorKey = ECDH.getPublicKey(initiatorExponential);
-            ECPublicKey responderKey = ECDH.getPublicKey(responderExponential);
+            ECPublicKey initiatorKey = ECDH.getPublicKey(initiatorExponential, ecdhCurveToUse);
+            ECPublicKey responderKey = ECDH.getPublicKey(responderExponential, ecdhCurveToUse);
             ECDHLightContext ctx = findECDHContextByPubKey(responderKey);
             if (ctx == null) {
                 Logger.error(this, "WTF? the HMAC verified but we don't know about that exponential! SHOULDN'T HAPPEN! - JFK3 - "+peerTransport);
@@ -1755,7 +1750,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		    NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
 		    computedExponential= ((DiffieHellmanLightContext)ctx).getHMACKey(_hisExponential);
 		}else {
-		    computedExponential = ((ECDHLightContext)ctx).getHMACKey(ECDH.getPublicKey(hisExponential)).getEncoded();
+		    computedExponential = ((ECDHLightContext)ctx).getHMACKey(ECDH.getPublicKey(hisExponential, ecdhCurveToUse)).getEncoded();
 		}
 		if(logDEBUG) Logger.debug(this, "The shared Master secret is : "+HexUtil.bytesToHex(computedExponential)+ " for " + peerTransport);
 		/* 0 is the outgoing key for the initiator, 7 for the responder */
@@ -2037,7 +2032,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		byte[] hash = SHA256.digest(output);
 		if(logMINOR) Logger.minor(this, "Data hash: "+HexUtil.bytesToHex(hash));
 		int prePaddingLength = iv.length + hash.length + 2 /* length */ + output.length;
-		int maxPacketSize = sock.getMaxPacketSize() - sock.getHeadersLength();
+		int maxPacketSize = sock.getMaxPacketSize();
 		int paddingLength;
 		if(prePaddingLength < maxPacketSize) {
 			paddingLength = node.fastWeakRandom.nextInt(Math.min(100, maxPacketSize - prePaddingLength));
@@ -2451,6 +2446,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 	}
 
+	// FIXME this is our Key Derivation Function for JFK.
+	// FIXME we should move it to freenet/crypt/
 	private byte[] computeJFKSharedKey(byte[] exponential, byte[] nI, byte[] nR, String what) {
 		assert("0".equals(what) || "1".equals(what) || "2".equals(what) || "3".equals(what)
 				|| "4".equals(what) || "5".equals(what) || "6".equals(what) || "7".equals(what));

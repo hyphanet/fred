@@ -43,9 +43,10 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 		children.clear();
 
 		FProxyFetchWaiter waiter = tracker.makeWaiterForFetchInProgress(key, maxSize, fctx);
-		FProxyFetchResult fr = waiter.getResult();
+		FProxyFetchResult fr = waiter == null ? null : waiter.getResult();
 		if (fr == null) {
 			addChild("div", "No fetcher found");
+			return;
 		}
 		
 		addChild("#", FProxyToadlet.l10n("filenameLabel")+ " ");
@@ -92,7 +93,7 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 	}
 
 	public static String getId(FreenetURI uri) {
-		return Base64.encodeStandard(("progressinfo[URI:" + uri.toString() + "]").getBytes());
+		return Base64.encodeStandardUTF8(("progressinfo[URI:" + uri.toString() + "]"));
 	}
 
 	@Override

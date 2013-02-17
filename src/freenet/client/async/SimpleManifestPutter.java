@@ -6,10 +6,8 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -191,8 +189,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 					container.ext().store(runningPutHandlers, 2);
 					container.activate(putHandlersWaitingForMetadata, 2);
 				}
-				if(putHandlersWaitingForMetadata.contains(this)) {
-					putHandlersWaitingForMetadata.remove(this);
+				if(putHandlersWaitingForMetadata.remove(this)) {
 					if(persistent) container.ext().store(putHandlersWaitingForMetadata, 2);
 					Logger.error(this, "PutHandler was in waitingForMetadata in onSuccess() on "+this+" for "+SimpleManifestPutter.this);
 				}
@@ -201,8 +198,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 					container.deactivate(putHandlersWaitingForMetadata, 1);
 					container.activate(waitingForBlockSets, 2);
 				}
-				if(waitingForBlockSets.contains(this)) {
-					waitingForBlockSets.remove(this);
+				if(waitingForBlockSets.remove(this)) {
 					if(persistent) container.store(waitingForBlockSets);
 					Logger.error(this, "PutHandler was in waitingForBlockSets in onSuccess() on "+this+" for "+SimpleManifestPutter.this);
 				}
@@ -211,8 +207,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 					container.deactivate(putHandlersWaitingForFetchable, 1);
 					container.activate(putHandlersWaitingForFetchable, 2);
 				}
-				if(putHandlersWaitingForFetchable.contains(this)) {
-					putHandlersWaitingForFetchable.remove(this);
+				if(putHandlersWaitingForFetchable.remove(this)) {
 					if(persistent) container.ext().store(putHandlersWaitingForFetchable, 2);
 					// Not getting an onFetchable is not unusual, just ignore it.
 					if(logMINOR) Logger.minor(this, "PutHandler was in waitingForFetchable in onSuccess() on "+this+" for "+SimpleManifestPutter.this);
@@ -711,21 +706,20 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 	static private void checkDefaultName(HashMap<String, Object> manifestElements,
 			String defaultName) {
 		int idx;
-		if((idx = defaultName.indexOf('/')) == -1) {
-			Object o = manifestElements.get(defaultName);
-			if(o == null) throw new IllegalArgumentException("Default name \""+defaultName+"\" does not exist");
-			if(o instanceof HashMap) throw new IllegalArgumentException("Default filename \""+defaultName+"\" is a directory?!");
-			// instanceof Bucket is checked in bucketsByNameToManifestEntries
-		} else {
+		while((idx = defaultName.indexOf('/')) != -1) {
 			String dir = defaultName.substring(0, idx);
 			String subname = defaultName.substring(idx+1);
 			Object o = manifestElements.get(defaultName);
 			if(o == null) throw new IllegalArgumentException("Default name dir \""+dir+"\" does not exist");
-			if(o instanceof HashMap)
-				checkDefaultName((HashMap<String, Object>)o, subname);
-			else
+			if(!(o instanceof HashMap))
 				throw new IllegalArgumentException("Default name dir \""+dir+"\" is not a directory in \""+defaultName+"\"");
+			manifestElements = (HashMap<String, Object>)o;
+			defaultName = subname;
 		}
+		Object o = manifestElements.get(defaultName);
+		if(o == null) throw new IllegalArgumentException("Default name \""+defaultName+"\" does not exist");
+		if(o instanceof HashMap) throw new IllegalArgumentException("Default filename \""+defaultName+"\" is a directory?!");
+		// instanceof Bucket is checked in bucketsByNameToManifestEntries
 	}
 
 	private void checkZips() {
@@ -785,16 +779,16 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 	}
 
 	private void makePutHandlers(HashMap<String, Object> manifestElements, HashMap<String,Object> putHandlersByName, String ZipPrefix, boolean persistent) {
-		Iterator<String> it = manifestElements.keySet().iterator();
-		while(it.hasNext()) {
-			String name = it.next();
-			Object o = manifestElements.get(name);
+		for(Map.Entry<String, Object> entry: manifestElements.entrySet()) {
+			String name = entry.getKey();
+			Object o = entry.getValue();
 			if (o instanceof HashMap) {
 				HashMap<String,Object> subMap = new HashMap<String,Object>();
+				HashMap<String,Object> elements = Metadata.forceMap(o);
 				putHandlersByName.put(name, subMap);
-				makePutHandlers(Metadata.forceMap(o), subMap, ZipPrefix+name+ '/', persistent);
+				makePutHandlers(elements, subMap, ZipPrefix+name+ '/', persistent);
 				if(logDEBUG)
-					Logger.debug(this, "Sub map for "+name+" : "+subMap.size()+" elements from "+((HashMap)o).size());
+					Logger.debug(this, "Sub map for "+name+" : "+subMap.size()+" elements from "+elements.size());
 			} else {
 				ManifestElement element = (ManifestElement) o;
 				String mimeType = element.mimeOverride;
@@ -933,8 +927,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			}
 			namesToByteArrays.put("", meta);
 		} else {
-			for(int j=0;j<defaultDefaultNames.length;j++) {
-				String name = defaultDefaultNames[j];
+			for(String name: defaultDefaultNames) {
 				Metadata meta = (Metadata) namesToByteArrays.get(name);
 				if(meta != null) {
 					namesToByteArrays.put("", meta);
@@ -1009,7 +1002,6 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		}
 		InsertBlock block;
 		boolean isMetadata = true;
-		boolean insertAsArchiveManifest = false;
 		ARCHIVE_TYPE archiveType = null;
 		byte[] ckey = null;
 		if(!(elementsToPutInArchive.isEmpty())) {
@@ -1043,7 +1035,6 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 				if(persistent()) container.activate(targetURI, 5);
 				block = new InsertBlock(outputBucket, new ClientMetadata(mimeType), persistent() ? targetURI.clone() : targetURI);
 				isMetadata = false;
-				insertAsArchiveManifest = true;
 			} catch (IOException e) {
 				fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
 				if(persistent())
@@ -1135,8 +1126,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		ZipOutputStream zos = new ZipOutputStream(os);
 		ZipEntry ze;
 
-		for(Iterator<PutHandler> i = elementsToPutInArchive.iterator(); i.hasNext();) {
-			PutHandler ph = i.next();
+		for(PutHandler ph : elementsToPutInArchive) {
 			if(persistent()) {
 				container.activate(ph, 1);
 				container.activate(ph.data, 1);
@@ -1175,8 +1165,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		Metadata[] metas = e.mustResolve;
 		if(persistent())
 			container.activate(metadataPuttersByMetadata, 2);
-		for(int i=0;i<metas.length;i++) {
-			Metadata m = metas[i];
+		for(Metadata m: metas) {
 			if(persistent()) container.activate(m, Integer.MAX_VALUE);
 			if(logMINOR) Logger.minor(this, "Resolving "+m+" for "+this);
 			synchronized(this) {
@@ -1218,10 +1207,9 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 	}
 
 	private void namesToByteArrays(HashMap<String, Object> putHandlersByName, HashMap<String,Object> namesToByteArrays, ObjectContainer container) {
-		Iterator<String> i = putHandlersByName.keySet().iterator();
-		while(i.hasNext()) {
-			String name = i.next();
-			Object o = putHandlersByName.get(name);
+		for(Map.Entry<String, Object> entry : putHandlersByName.entrySet()) {
+			String name = entry.getKey();
+			Object o = entry.getValue();
 			if(o instanceof PutHandler) {
 				PutHandler ph = (PutHandler) o;
 				if(persistent())
@@ -1241,15 +1229,16 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 				}
 			} else if (o instanceof HashMap) {
 				HashMap<String,Object> subMap = new HashMap<String,Object>();
+				HashMap<String,Object> elements = Metadata.forceMap(o);
 				if (persistent()) {
 					container.activate(o, 2); // Depth 1 doesn't load the elements...
 				}
 				namesToByteArrays.put(name, subMap);
 				if(logMINOR) {
-					Logger.minor(this, "Putting hashmap into base metadata: "+name+" size "+((HashMap)o).size()+" active = "+(container == null ? "null" : Boolean.toString(container.ext().isActive(o))));
+					Logger.minor(this, "Putting hashmap into base metadata: "+name+" size "+elements.size()+" active = "+(container == null ? "null" : Boolean.toString(container.ext().isActive(o))));
 					Logger.minor(this, "Putting directory: "+name);
 				}
-				namesToByteArrays(Metadata.forceMap(o), subMap, container);
+				namesToByteArrays(elements, subMap, container);
 			} else
 				throw new IllegalStateException();
 		}
@@ -1495,13 +1484,11 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		boolean fin = false;
 		ClientPutState oldState = null;
 		synchronized(this) {
-			boolean present = metadataPuttersByMetadata.containsKey(token);
-			if(present) {
-				oldState = metadataPuttersByMetadata.remove(token);
+			oldState = metadataPuttersByMetadata.remove(token);
+			if(oldState != null) {
 				if(persistent())
 					container.activate(metadataPuttersUnfetchable, 2);
-				if(metadataPuttersUnfetchable.containsKey(token)) {
-					metadataPuttersUnfetchable.remove(token);
+				if(metadataPuttersUnfetchable.remove(token) != null) {
 					if(persistent())
 						container.ext().store(metadataPuttersUnfetchable, 2);
 				}
@@ -1576,14 +1563,11 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		Metadata token = (Metadata) state.getToken();
 		synchronized(this) {
 			if(persistent()) container.activate(token, 1);
-			boolean present = metadataPuttersByMetadata.containsKey(token);
-			if(present) {
-				oldState = metadataPuttersByMetadata.remove(token);
+			oldState = metadataPuttersByMetadata.remove(token);
+			if(oldState != null) {
 				if(persistent())
 					container.activate(metadataPuttersUnfetchable, 2);
-				if(metadataPuttersUnfetchable.containsKey(token)) {
-					metadataPuttersUnfetchable.remove(token);
-
+				if(metadataPuttersUnfetchable.remove(token) != null) {
 					if(persistent())
 						container.ext().store(metadataPuttersUnfetchable, 2);
 				}
@@ -1637,8 +1621,8 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			container.activate(metadataPuttersByMetadata, 2);
 		}
 		synchronized(this) {
-			if(metadataPuttersByMetadata.containsKey(m)) {
-				ClientPutState prevState = metadataPuttersByMetadata.get(m);
+			ClientPutState prevState = metadataPuttersByMetadata.get(m);
+			if(prevState != null) {
 				if(prevState != oldState) {
 					if(logMINOR) Logger.minor(this, "Ignoring transition in "+this+" for metadata putter: "+oldState+" -> "+newState+" because current for "+m+" is "+prevState);
 					if(persistent()) {
@@ -1771,14 +1755,13 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 	 */
 	public static HashMap<String, Object> bucketsByNameToManifestEntries(HashMap<String,Object> bucketsByName) {
 		HashMap<String,Object> manifestEntries = new HashMap<String,Object>();
-		Iterator<String> i = bucketsByName.keySet().iterator();
-		while(i.hasNext()) {
-			String name = i.next();
-			Object o = bucketsByName.get(name);
+		for(Map.Entry<String,Object> entry: bucketsByName.entrySet()) {
+			String name = entry.getKey();
+			Object o = entry.getValue();
 			if(o instanceof ManifestElement) {
 				manifestEntries.put(name, o);
 			} else if(o instanceof Bucket) {
-				Bucket data = (Bucket) bucketsByName.get(name);
+				Bucket data = (Bucket) o;
 				manifestEntries.put(name, new ManifestElement(name, data, null,data.size()));
 			} else if(o instanceof HashMap) {
 				manifestEntries.put(name, bucketsByNameToManifestEntries(Metadata.forceMap(o)));
@@ -1793,17 +1776,16 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 	 * ManifestElement's, each of which has a full path.
 	 */
 	public static ManifestElement[] flatten(HashMap<String,Object> manifestElements) {
-		Vector<ManifestElement> v = new Vector<ManifestElement>();
+		List<ManifestElement> v = new ArrayList<ManifestElement>();
 		flatten(manifestElements, v, "");
 		return v.toArray(new ManifestElement[v.size()]);
 	}
 
-	public static void flatten(HashMap<String,Object> manifestElements, Vector<ManifestElement> v, String prefix) {
-		Iterator<String> i = manifestElements.keySet().iterator();
-		while(i.hasNext()) {
-			String name = i.next();
+	public static void flatten(HashMap<String,Object> manifestElements, List<ManifestElement> v, String prefix) {
+		for(Map.Entry<String,Object> entry: manifestElements.entrySet()) {
+			String name = entry.getKey();
 			String fullName = prefix.length() == 0 ? name : prefix+ '/' +name;
-			Object o = manifestElements.get(name);
+			Object o = entry.getValue();
 			if(o instanceof HashMap) {
 				flatten(Metadata.forceMap(o), v, fullName);
 			} else if(o instanceof ManifestElement) {

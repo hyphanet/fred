@@ -6,7 +6,6 @@ package freenet.keys;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.util.Arrays;
 
@@ -15,8 +14,6 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-
-import freenet.support.math.MersenneTwister;
 
 import com.db4o.ObjectContainer;
 
@@ -30,15 +27,14 @@ import freenet.crypt.Util;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.Key.Compressed;
 import freenet.node.Node;
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
+import freenet.support.math.MersenneTwister;
 
 /**
  * @author amphibian
@@ -54,17 +50,6 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         return super.toString()+",key="+key;
     }
     
-	private static volatile boolean logMINOR;
-
-	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
-			@Override
-			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-			}
-		});
-	}
-
     /**
      * Construct from data retrieved, and a key.
      * Do not do full decode. Verify what can be verified without doing
@@ -203,12 +188,13 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
 	}
 	static {
 		try {
-			final Class clazz = ClientCHKBlock.class;
+			final Class<ClientCHKBlock> clazz = ClientCHKBlock.class;
 			final String algo = "HmacSHA256";
 			final Provider sun = JceLoader.SunJCE;
 			SecretKeySpec dummyKey = new SecretKeySpec(new byte[Node.SYMMETRIC_KEY_LENGTH], algo);
 			Mac hmac = Mac.getInstance(algo);
 			hmac.init(dummyKey); // resolve provider
+			boolean logMINOR = Logger.shouldLog(Logger.LogLevel.MINOR, clazz);
 			if (sun != null) {
 				// SunJCE provider is faster (in some configurations)
 				try {
@@ -219,8 +205,10 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
 						long time_sun = benchmark(sun_hmac);
 						System.out.println(algo + " (" + hmac.getProvider() + "): " + time_def + "ns");
 						System.out.println(algo + " (" + sun_hmac.getProvider() + "): " + time_sun + "ns");
-						Logger.minor(clazz, algo + "/" + hmac.getProvider() + ": " + time_def + "ns");
-						Logger.minor(clazz, algo + "/" + sun_hmac.getProvider() + ": " + time_sun + "ns");
+						if(logMINOR) {
+							Logger.minor(clazz, algo + "/" + hmac.getProvider() + ": " + time_def + "ns");
+							Logger.minor(clazz, algo + "/" + sun_hmac.getProvider() + ": " + time_sun + "ns");
+						}
 						if (time_sun < time_def) {
 							hmac = sun_hmac;
 						}

@@ -137,9 +137,9 @@ public class ContentFilter {
 		synchronized(mimeTypesByName) {
 			mimeTypesByName.put(mimeType.primaryMimeType, mimeType);
 			String[] alt = mimeType.alternateMimeTypes;
-			if((alt != null) && (alt.length > 0)) {
-				for(int i=0;i<alt.length;i++)
-					mimeTypesByName.put(alt[i], mimeType);
+			if(alt != null) {
+				for(String a: alt)
+					mimeTypesByName.put(a, mimeType);
 			}
 		}
 	}
@@ -242,8 +242,7 @@ public class ContentFilter {
 			// Parse options
 			// Format: <type>/<subtype>[ optional white space ];[ optional white space ]<param>=<value>; <param2>=<value2>; ...
 			String[] rawOpts = options.split(";");
-			for(int i=0;i<rawOpts.length;i++) {
-				String raw = rawOpts[i];
+			for(String raw: rawOpts) {
 				idx = raw.indexOf('=');
 				if(idx == -1) {
 					Logger.error(ContentFilter.class, "idx = -1 for '=' on option: "+raw+" from "+typeName);

@@ -134,7 +134,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 //					}
 //
 //				});
-				ObjectSet results = null;
+				ObjectSet<RegisterMe> results = null;
 				for(int i=RequestStarter.MAXIMUM_PRIORITY_CLASS;i<=RequestStarter.MINIMUM_PRIORITY_CLASS;i++) {
 					Query query = container.query();
 					query.constrain(RegisterMe.class);
@@ -215,7 +215,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		return true;
 	}
 
-	private transient ObjectSet registerMeSet;
+	private transient ObjectSet<RegisterMe> registerMeSet;
 
 	private transient RegisterMeRunner registerMeRunner;
 
@@ -262,7 +262,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 					}
 					return true;
 				}
-				long startNext = System.currentTimeMillis();
 				RegisterMe reg = (RegisterMe) registerMeSet.next();
 				container.activate(reg, 1);
 				if(reg.bootID == context.bootID) {

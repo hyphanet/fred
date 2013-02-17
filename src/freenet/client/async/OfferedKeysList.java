@@ -18,12 +18,9 @@ import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestCompletionListener;
 import freenet.node.RequestScheduler;
-import freenet.node.RequestSender;
-import freenet.node.RequestSenderListener;
-import freenet.node.SendableInsert;
 import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
-import freenet.node.NodeClientCore.SimpleRequestSenderCompletionListener;
+import freenet.support.ListUtils;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -75,7 +72,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	public synchronized void remove(Key key) {
 		assert(keysList.size() == keys.size());
 		if(keys.remove(key)) {
-			keysList.remove(key);
+			ListUtils.removeBySwapLast(keysList, key);
 			if(logMINOR) Logger.minor(this, "Found "+key+" , removing it "+" for "+this+" size now "+keysList.size());
 		}
 		assert(keysList.size() == keys.size());
@@ -128,8 +125,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 			Key k = keysList.get(ptr);
 			if(fetching.hasKey(k, null, false, null)) continue;
 			// Ignore RecentlyFailed because an offered key overrides it.
-			keysList.set(ptr, keysList.get(keysList.size()-1));
-			keysList.setSize(keysList.size()-1);
+			ListUtils.removeBySwapLast(keysList, ptr);
 			keys.remove(k);
 			assert(keysList.size() == keys.size());
 			return new MySendableRequestItem(k);

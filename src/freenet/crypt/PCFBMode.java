@@ -7,8 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import freenet.crypt.ciphers.Rijndael;
-
 /**
  * Control mechanism for the Periodic Cipher Feed Back mode.  This is
  * a CFB variant used apparently by a number of programs, including PGP. 
@@ -17,16 +15,18 @@ import freenet.crypt.ciphers.Rijndael;
  * http://www.streamsec.com/pcfb1.pdf
  * 
  * NOTE: This is identical to CFB if block size = key size. As of Freenet 0.7, 
- * we use it with block size = key size.
+ * we use it with block size = key size. Which is not recommended, but is as 
+ * safe as CFB. We will get rid of this eventually, and move to 128-bit block
+ * size (i.e. standard AES) with a more standard mode (e.g. CTR or CBC).
  *
  * @author Scott
  */
 public class PCFBMode {
     
 	/** The underlying block cipher. */
-    protected BlockCipher c;
+    protected final BlockCipher c;
     /** The register, with which data is XOR'ed */
-    protected byte[] feedback_register;
+    protected final byte[] feedback_register;
     /** When this reaches the end of the register, we refillBuffer() i.e. re-encrypt the
      * register. */
     protected int registerPointer;
@@ -48,8 +48,6 @@ public class PCFBMode {
      */
     @Deprecated
     public static PCFBMode create(BlockCipher c) {
-    	if(c instanceof Rijndael)
-    		return new RijndaelPCFBMode((Rijndael)c);
     	return new PCFBMode(c);
     }
     
@@ -63,8 +61,6 @@ public class PCFBMode {
      * BE REMOVED EVENTUALLY. 
      * @param offset */
     public static PCFBMode create(BlockCipher c, byte[] iv, int offset) {
-    	if(c instanceof Rijndael)
-    		return new RijndaelPCFBMode((Rijndael)c, iv, offset);
     	return new PCFBMode(c, iv, offset);
     }
     
@@ -154,17 +150,38 @@ public class PCFBMode {
      */
     //public synchronized byte[] blockDecipher(byte[] buf, int off, int len) {
     public byte[] blockDecipher(byte[] buf, int off, int len) {
-        while (len > 0) {
-            if (registerPointer == feedback_register.length) refillBuffer();
-            int n = Math.min(len, feedback_register.length - registerPointer);
-            for (int i=off; i<off+n; ++i) {
-                byte b = buf[i];
-                buf[i] ^= feedback_register[registerPointer];
+		final int feedback_length = feedback_register.length;
+		if (registerPointer != 0) {
+			/* handle first incomplete feedback run */
+			int l = Math.min(feedback_length - registerPointer, len);
+			len -= l;
+			while(l-- > 0) {
+                byte b = buf[off];
+                buf[off++] ^= feedback_register[registerPointer];
                 feedback_register[registerPointer++] = b;
             }
-            off += n;
-            len -= n;
+			if (len == 0) return buf;
+			refillBuffer();
+		}
+		// assert(registerPointer == 0);
+        while (len > feedback_length) {
+			/* consume full blocks */
+			// note: we skip *last* full block to avoid extra refillBuffer()
+			len -= feedback_length;
+			while (registerPointer < feedback_length) {
+                byte b = buf[off];
+                buf[off++] ^= feedback_register[registerPointer];
+                feedback_register[registerPointer++] = b;
+            }
+			refillBuffer();
         }
+		// assert(registerPointer == 0 && len <= feedback_length);
+		while (len-- > 0) {
+			/* handle final block */
+			byte b = buf[off];
+			buf[off++] ^= feedback_register[registerPointer];
+			feedback_register[registerPointer++] = b;
+		}
         return buf;
     }
 
@@ -187,14 +204,29 @@ public class PCFBMode {
      */
     //public synchronized byte[] blockEncipher(byte[] buf, int off, int len) {
     public byte[] blockEncipher(byte[] buf, int off, int len) {
-        while (len > 0) {
-            if (registerPointer == feedback_register.length) refillBuffer();
-            int n = Math.min(len, feedback_register.length - registerPointer);
-            for (int i=off; i<off+n; ++i)
-                buf[i] = (feedback_register[registerPointer++] ^= buf[i]);
-            off += n;
-            len -= n;
+		final int feedback_length = feedback_register.length;
+		if (registerPointer != 0) {
+			/* handle first incomplete feedback run */
+			int l = Math.min(feedback_length - registerPointer, len);
+			for(len -= l; l-- > 0; off++)
+                buf[off] = (feedback_register[registerPointer++] ^= buf[off]);
+			if (len == 0) return buf;
+			refillBuffer();
+		}
+		// assert(registerPointer == 0);
+        while (len > feedback_length) {
+			/* consume full blocks */
+			// note: we skip *last* full block to avoid extra refillBuffer()
+			len -= feedback_length;
+			for (; registerPointer < feedback_length; off++)
+                buf[off] = (feedback_register[registerPointer++] ^= buf[off]);
+            refillBuffer();
         }
+		// assert(registerPointer == 0 && len <= feedback_length);
+		for (; len-- > 0; off++) {
+			/* handle final partial block */
+			buf[off] = (feedback_register[registerPointer++] ^= buf[off]);
+		}
         return buf;
     }
         

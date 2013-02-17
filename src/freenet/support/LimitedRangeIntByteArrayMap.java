@@ -1,7 +1,6 @@
 package freenet.support;
 
 import java.util.HashMap;
-import java.util.Iterator;
 
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.support.Logger.LogLevel;
@@ -231,10 +230,9 @@ public class LimitedRangeIntByteArrayMap {
     public synchronized LimitedRangeIntByteArrayMapElement[] grabAll() {
         int len = contents.size();
         LimitedRangeIntByteArrayMapElement[] output = new LimitedRangeIntByteArrayMapElement[len];
-        Iterator<LimitedRangeIntByteArrayMapElement> i = contents.values().iterator();
         int count = 0;
-        while(i.hasNext()) {
-            output[count++] = i.next();
+		for(LimitedRangeIntByteArrayMapElement e: contents.values()) {
+            output[count++] = e;
         }
         clear();
         return output;

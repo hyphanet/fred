@@ -10,7 +10,6 @@ import com.db4o.query.Predicate;
 import com.db4o.query.Query;
 
 import freenet.node.NodeClientCore;
-import freenet.node.fcp.whiteboard.Whiteboard;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -35,12 +34,12 @@ public class FCPPersistentRoot {
 		});
 	}
 	
-	public FCPPersistentRoot(long nodeDBHandle, Whiteboard whiteboard, ObjectContainer container) {
+	public FCPPersistentRoot(long nodeDBHandle, ObjectContainer container) {
 		this.nodeDBHandle = nodeDBHandle;
-		globalForeverClient = new FCPClient("Global Queue", null, true, null, ClientRequest.PERSIST_FOREVER, this, whiteboard, container);
+		globalForeverClient = new FCPClient("Global Queue", null, true, null, ClientRequest.PERSIST_FOREVER, this, container);
 	}
 
-	public static FCPPersistentRoot create(final long nodeDBHandle, Whiteboard whiteboard, RequestStatusCache cache, ObjectContainer container) {
+	public static FCPPersistentRoot create(final long nodeDBHandle, RequestStatusCache cache, ObjectContainer container) {
 		ObjectSet<FCPPersistentRoot> set = container.query(new Predicate<FCPPersistentRoot>() {
 			final private static long serialVersionUID = -8615907687034212486L;
 			@Override
@@ -59,12 +58,11 @@ public class FCPPersistentRoot {
 				container.delete(root);
 			} else {
 				root.globalForeverClient.init(container);
-				root.globalForeverClient.setWhiteboard(whiteboard);
 				root.globalForeverClient.setRequestStatusCache(cache, container);
 				return root;
 			}
 		}
-		FCPPersistentRoot root = new FCPPersistentRoot(nodeDBHandle, whiteboard, container);
+		FCPPersistentRoot root = new FCPPersistentRoot(nodeDBHandle, container);
 		root.globalForeverClient.setRequestStatusCache(cache, container);
 		container.store(root);
 		System.err.println("Created FCP persistent root.");
@@ -86,7 +84,7 @@ public class FCPPersistentRoot {
 		// I think that was the cause of the OOMs here...
 		Constraint con = query.descend("name").constrain(name);
 		con.and(query.descend("root").constrain(this).identity());
-		ObjectSet set = query.execute();
+		ObjectSet<FCPClient> set = query.execute();
 		while(set.hasNext()) {
 			FCPClient client = (FCPClient) set.next();
 			container.activate(client, 1);
@@ -101,7 +99,7 @@ public class FCPPersistentRoot {
 			client.init(container);
 			return client;
 		}
-		FCPClient client = new FCPClient(name, handler, false, null, ClientRequest.PERSIST_FOREVER, this,server.getWhiteboard(), container);
+		FCPClient client = new FCPClient(name, handler, false, null, ClientRequest.PERSIST_FOREVER, this, container);
 		container.store(client);
 		return client;
 	}

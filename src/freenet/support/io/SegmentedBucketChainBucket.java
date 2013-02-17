@@ -286,17 +286,16 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 			segs = segments.toArray(new SegmentedChainBucketSegment[segments.size()]);
 			segments.clear();
 		}
-		for(int i=0;i<segs.length;i++)
-			segs[i].free();
+		for(SegmentedChainBucketSegment seg: segs)
+			seg.free();
 		if(segs.length > 0) {
 			try {
 				dbJobRunner.runBlocking(new DBJob() {
 
 					@Override
 					public boolean run(ObjectContainer container, ClientContext context) {
-						for(int i=0;i<segs.length;i++) {
-							segs[i].removeFrom(container);
-						}
+						for(SegmentedChainBucketSegment seg: segs)
+							seg.removeFrom(container);
 						return true;
 					}
 					

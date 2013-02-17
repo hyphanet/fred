@@ -500,8 +500,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						String errCause = "";
 						if(signature == null)
 							errCause += " (No signature)";
-						if(peerCryptoGroup == null)
-							errCause += " (No peer crypto group)";
 						if(peerPubKey == null)
 							errCause += " (No peer public key)";
 						if(failed)
@@ -1414,6 +1412,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 		private boolean done = false;
 		private boolean disconnected = false;
+		private boolean sent = false;
 
 		public synchronized void waitForSend(long maxWaitInterval) throws NotConnectedException {
 			long now = System.currentTimeMillis();
@@ -1436,10 +1435,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		@Override
 		public void acknowledged() {
 			synchronized(this) {
-				if(!done)
-					// Can happen due to lag.
-					Logger.normal(this, "Acknowledged but not sent?! on " + this + " for " + PeerNode.this+" - lag ???");
-				else
+				if(!done) {
+					if (!sent) {
+						// Can happen due to lag.
+						Logger.normal(this, "Acknowledged but not sent?! on " + this + " for " + PeerNode.this+" - lag ???");
+					}
+				} else
 					return;
 				done = true;
 				notifyAll();
@@ -1465,8 +1466,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 		@Override
 		public void sent() {
-			// Ignore.
 			// It might have been lost, we wait until it is acked.
+			synchronized(this) {
+				sent = true;
+			}
 		}
 	}
 
@@ -1502,10 +1505,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(!Location.equals(currentLocation, newLoc))
 				anythingChanged = true;
 			currentLocation = newLoc;
-			if(newLocs != null && currentPeersLocation == null || 
-					newLocs == null && currentPeersLocation != null)
+			if(currentPeersLocation == null)
 				anythingChanged = true;
-			else if(currentPeersLocation != null && newLocs != null && !anythingChanged) {
+			else if(currentPeersLocation != null && !anythingChanged) {
 				if(currentPeersLocation.length != newLocs.length)
 					anythingChanged = true;
 				else {
@@ -2397,7 +2399,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 
 	@Override
-	public int hashCode() {
+	public final int hashCode() {
 		return hashCode;
 	}
 
@@ -3305,10 +3307,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			hisNegTypes = negTypes;
 		}
 		int bestNegType = -1;
-		for(int i = 0; i < myNegTypes.length; i++) {
-			int negType = myNegTypes[i];
-			for(int j = 0; j < hisNegTypes.length; j++) {
-				if(hisNegTypes[j] == negType) {
+		for(int negType: myNegTypes) {
+			for(int hisNegType: hisNegTypes) {
+				if(hisNegType == negType) {
 					bestNegType = negType;
 					break;
 				}
@@ -3473,7 +3474,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	public int getSigParamsByteLength() {
 		int bitLen = this.peerCryptoGroup.getQ().bitLength();
-		int byteLen = bitLen / 8 + (bitLen % 8 != 0 ? 1 : 0);
+		int byteLen = (bitLen + 7) / 8;
 		return byteLen;
 	}
 
@@ -3510,6 +3511,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		runningAnnounceUIDs = newList;
 		if(x < runningAnnounceUIDs.length) {
+			assert(false); // Callers prevent duplicated UIDs.
 			runningAnnounceUIDs = Arrays.copyOf(runningAnnounceUIDs, x);
 		}
 		return true;

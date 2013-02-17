@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import freenet.io.WritableToDataOutputStream;
-import freenet.node.NewPacketFormat;
 
 /**
  * Wrapper for a byte array which handles serialisation/deserialisation

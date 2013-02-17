@@ -45,25 +45,13 @@ public class SimpleHelpToadlet extends Toadlet {
 		HTMLNode table = helpScreenContent2.addChild("table", new String[]{"border", "style"}, new String[]{"0", "border: none"});
        
                 HTMLNode row = table.addChild("tr");
-                HTMLNode cell = row.addChild("td", "style", "border: none");
+                row.addChild("td", "style", "border: none");
               
-		        // cell.addChild("#", " ");
-                // }
-                // cell = row.addChild("td", "style", "border: none");
-                // cell.addChild("a", new String[]{"href", "title"}, new String[]{ ctx.fixLink('/' + item.getKey()), item.getDescription()}, item.getName());
-     
 		row.addChild("#", NodeL10n.getBase().getString("SimpleHelpToadlet.CHK"));
 		row.addChild("br");
 		row.addChild("#", NodeL10n.getBase().getString("SimpleHelpToadlet.SSK"));
 		row.addChild("br");
 		row.addChild("#", NodeL10n.getBase().getString("SimpleHelpToadlet.USK"));
-		
-		// helpScreenContent2.addchild("#", NodeL10n.getBase().getString("SimpleHelpToadlet.CHK"));
-		// helpScreenContent2.addchild("br");
-		// helpScreenContent2.addchild("#", NodeL10n.getBase().getString("SimpleHelpToadlet.SSK"));
-		// helpScreenContent2.addchild("br");
-		// helpScreenContent2.addchild("#", NodeL10n.getBase().getString("SimpleHelpToadlet.USK"));
-		
 		
 		// Port forwarding, etc.	
 		HTMLNode helpScreenContent3 = ctx.getPageMaker().getInfobox("infobox-content", NodeL10n.getBase().getString("SimpleHelpToadlet.connectivityTitle"), contentNode, "freenet-connectivity", true);

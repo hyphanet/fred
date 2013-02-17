@@ -8,7 +8,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
-import java.util.Vector;
 
 import com.db4o.ObjectContainer;
 
@@ -24,6 +23,7 @@ import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
 import freenet.node.SendableRequestSender;
 import freenet.node.SupportsBulkCallFailure;
+import freenet.support.ListUtils;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
@@ -197,13 +197,13 @@ public class PersistentChosenRequest {
 		}
 		if(request instanceof SendableGet) {
 			boolean supportsBulk = request instanceof SupportsBulkCallFailure;
-			Vector<BulkCallFailureItem> bulkFailItems = null;
+			List<BulkCallFailureItem> bulkFailItems = null;
 			for(PersistentChosenBlock block : finishedBlocks) {
 				if(!block.fetchSucceeded()) {
 					LowLevelGetException e = block.failedGet();
 					if(supportsBulk) {
 						if(bulkFailItems == null)
-							bulkFailItems = new Vector<BulkCallFailureItem>();
+							bulkFailItems = new ArrayList<BulkCallFailureItem>();
 						bulkFailItems.add(new BulkCallFailureItem(e, block.token));
 					} else {
 						((SendableGet)request).onFailure(e, block.token, container, context);
@@ -247,11 +247,8 @@ public class PersistentChosenRequest {
 		try {
 			synchronized(this) {
 				while(true) {
-					int size = blocksNotStarted.size();
-					if(size == 0) return null;
-					PersistentChosenBlock ret;
-					if(size == 1) ret = blocksNotStarted.remove(0);
-					else ret = blocksNotStarted.remove(random.nextInt(size));
+					if (blocksNotStarted.isEmpty()) return null;
+					PersistentChosenBlock ret = ListUtils.removeRandomBySwapLastSimple(random, blocksNotStarted);
 					Key key = ret.key;
 					if(key != null && sched.hasFetchingKey(key, null, false, null)) {
 						// Already fetching; remove from list.

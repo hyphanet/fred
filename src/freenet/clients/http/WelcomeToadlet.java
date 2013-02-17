@@ -170,9 +170,8 @@ public class WelcomeToadlet extends Toadlet {
             }
 	    int validAlertsRemaining = 0;
             UserAlert[] alerts = core.alerts.getAlerts();
-            for (int i = 0; i < alerts.length; i++) {
-                if (request.getIntPart("disable", -1) == alerts[i].hashCode()) {
-                    UserAlert alert = alerts[i];
+            for (UserAlert alert: alerts) {
+                if (request.getIntPart("disable", -1) == alert.hashCode()) {
                     // Won't be dismissed if it's not allowed anyway
                     if (alert.userCanDismiss() && alert.shouldUnregisterOnDismiss()) {
                         alert.onDismiss();
@@ -182,8 +181,9 @@ public class WelcomeToadlet extends Toadlet {
                         Logger.normal(this, "Disabling the userAlert " + alert.hashCode());
                         alert.isValid(false);
                     }
-                } else if(alerts[i].isValid())
-			validAlertsRemaining++;
+                } else if(alert.isValid()) {
+					validAlertsRemaining++;
+				}
             }
             writePermanentRedirect(ctx, l10n("disabledAlert"), (validAlertsRemaining > 0 ? "/alerts/" : "/"));
             return;

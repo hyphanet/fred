@@ -97,7 +97,7 @@ public class NewPacketFormatKeyContext {
 				}
 			}
 			int seqNum = nextSeqNum++;
-			if((nextSeqNum == NewPacketFormat.NUM_SEQNUMS) || (nextSeqNum < 0)) {
+			if(nextSeqNum < 0) {
 				nextSeqNum = 0;
 			}
 			return seqNum;

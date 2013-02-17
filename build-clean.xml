@@ -42,6 +42,10 @@ maintainers may prefer to use this instead of build.xml.
 		<fileset dir="${lib.dir}" includes="${gjs.lib.jars}"/>
 	</path>
 
+	<path id="pmd.classpath">
+		<fileset dir="${pmd.dir}" erroronmissingdir="false" includes="lib/*.jar"/>
+	</path>
+
 	<assertions><enable/></assertions>
 
 	<!-- set version string based on git-describe -->
@@ -65,7 +69,7 @@ maintainers may prefer to use this instead of build.xml.
 
 	<target name="dist" depends="clean-all, all" description="clean-build everything"/>
 
-	<target name="all" depends="package, doc" description="build everything, incl. docs, GWT js"/>
+	<target name="all" depends="package, doc, findbugs, pmd, cpd" description="build everything, incl. docs, GWT js"/>
 
 	<target name="clean-all" depends="clean, clean-doc, clean-gjs" description="clean all build products, incl. docs, GWT js"/>
 
@@ -81,6 +85,46 @@ maintainers may prefer to use this instead of build.xml.
 		<echo message="Misc parameters (-DPARAM=VALUE)"/>
 		<echo message="  javac.args  Command line arguments to pass to javac"/>
 		<echo message=""/>
+	</target>
+
+	<target name="findbugs" depends="package" unless="${findbugs.skip}">
+		<antcall target="libdep-findbugs"/>
+		<echo message="Running Findbugs"/>
+		<taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${findbugs.path}"/>
+
+		<findbugs home="${findbugs.dir}"
+		output="xml"
+		outputFile="${test.dst}/findbugs.xml"
+		warningsProperty="findbugs.module.warnings"
+		failOnError="true"
+		jvmargs="-Xmx1536m -XX:MaxPermSize=384m -XX:ReservedCodeCacheSize=128m" >
+		<auxClasspath refid="lib.path" />
+		<sourcePath path="${main.src}" />
+		<class location="${main.dst}/freenet.jar" />
+		</findbugs>
+	</target>
+
+	<target name="pmd" depends="package" unless="${pmd.skip}">
+		<antcall target="libdep-pmd"/>
+		<echo message="Running PMD"/>
+		<taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask" classpathref="pmd.classpath"/>
+		<pmd rulesetfiles="rulesets/java/design.xml" encoding="utf-8">
+			<formatter type="xml" toFile="${test.dst}/pmd.xml"/>
+			<fileset dir="${main.src}">
+				<include name="**/*.java"/>
+			</fileset>
+		</pmd>
+	</target>
+
+	<target name="cpd" depends="package" unless="${cpd.skip}">
+		<antcall target="libdep-cpd"/>
+		<echo message="Running CPD"/>
+		<taskdef name="cpd" classname="net.sourceforge.pmd.cpd.CPDTask" classpathref="pmd.classpath"/>
+		<cpd minimumTokenCount="100" format="xml" outputFile="${test.dst}/cpd.xml">
+			<fileset dir="${main.src}">
+				<include name="**/*.java"/>
+			</fileset>
+		</cpd>	
 	</target>
 
 	<target name="debug">
@@ -102,6 +146,9 @@ maintainers may prefer to use this instead of build.xml.
 		<available property="lib.contrib.present" classname="freenet.node.ExtVersion" classpathref="lib.path"/>
 		<available property="lib.bouncycastle.present" classname="org.bouncycastle.jce.provider.BouncyCastleProvider" classpathref="lib.path"/>
 		<available property="lib.junit.present" classname="junit.framework.Test" classpathref="libtest.path"/>
+		<available property="lib.findbugs.present" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${findbugs.path}"/>
+		<available property="lib.pmd.present" classname="net.sourceforge.pmd.ant.PMDTask" classpathref="pmd.classpath"/>
+		<available property="lib.cpd.present" classname="net.sourceforge.pmd.cpd.CPDTask" classpathref="pmd.classpath"/>
 		<available property="gjs.lib.gwt-user.present" classname="com.google.gwt.user.client.Window" classpathref="gjs.lib.path"/>
 		<available property="gjs.lib.gwt-dev.present" classname="com.google.gwt.dev.About" classpathref="gjs.lib.path"/>
 		<condition property="gjs.lib.gwt.present">
@@ -122,6 +169,18 @@ maintainers may prefer to use this instead of build.xml.
 
 	<target name="libdep-junit" depends="env" unless="lib.junit.present">
 		<fail message="JUnit not available"/>
+	</target>
+
+	<target name="libdep-findbugs" depends="env" unless="lib.findbugs.present">
+		<fail message="findbugs not available"/>
+	</target>
+
+	<target name="libdep-pmd" depends="env" unless="lib.pmd.present">
+		<fail message="PMD not available"/>
+	</target>
+
+	<target name="libdep-cpd" depends="env" unless="lib.cpd.present">
+		<fail message="CPD not available"/>
 	</target>
 
 	<target name="libdep-gwt-user" depends="env" unless="gjs.lib.gwt-user.present">
@@ -240,14 +299,18 @@ maintainers may prefer to use this instead of build.xml.
 		<copy todir="${test.make}/freenet/client/filter/bmp">
 			<fileset dir="${test.src}/freenet/client/filter/bmp"/>
 		</copy>
+		<copy todir="${test.make}/freenet/crypt/ciphers/rijndael-gladman-test-data">
+			<fileset dir="${test.src}/freenet/crypt/ciphers/rijndael-gladman-test-data"/>
+		</copy>
 	</target>
 
 	<target name="unit" depends="unit-build" unless="${test.skip}">
-		<junit printsummary="yes" fork="yes" haltonfailure="yes" dir="${test.dst}">
+		<junit printsummary="yes" fork="yes" haltonfailure="${test.haltonfailure}" dir="${test.dst}">
 			<classpath refid="libtest.path"/>
 			<formatter type="plain" usefile="false"/>
-			<test if="test.class" name="${test.class}"/>
-			<batchtest unless="test.class" fork="yes">
+			<formatter type="xml" if="${test.xml_output}"/>
+			<test if="test.class" name="${test.class}" todir="${test.dst}"/>
+			<batchtest unless="test.class" fork="yes" todir="${test.dst}">
 				<fileset dir="${test.make}" includes="**/*Test.class"/>
 			</batchtest>
 			<sysproperty key="test.verbose" value="${test.verbose}"/>

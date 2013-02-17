@@ -30,9 +30,8 @@ public class URIPreEncoder {
 			} else {
 				String tmp = ""+c;
 				try {
-					byte[] utf = tmp.getBytes("UTF-8");
-					for(int j=0;j<utf.length;j++) {
-						int x = utf[j] & 0xff;
+					for(byte u: tmp.getBytes("UTF-8")) {
+						int x = u & 0xff;
 						output.append('%');
 						if(x < 16)
 							output.append('0');

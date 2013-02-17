@@ -2,9 +2,12 @@ package freenet.support;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -60,17 +63,20 @@ public abstract class Logger {
 			}
 	
 			// read /proc/self/stat and parse for the specified field
+			InputStream is = null;
 			BufferedReader br = null;
-			FileReader fr = null;
 			File procFile = new File("/proc/self/stat");
 			if (procFile.exists()) {
 				try {
-					fr = new FileReader(procFile);
-					br = new BufferedReader(fr);
+					is = new FileInputStream(procFile);
+					br = new BufferedReader(new InputStreamReader(is, "ISO-8859-1" /* ASCII */));
 				} catch (FileNotFoundException e1) {
 					logStatic(o, "'/proc/self/stat' not found", logToFileVerbosity);
 					procSelfStatEnabled = false;
-					fr = null;
+					br = null;
+				} catch (UnsupportedEncodingException e) {
+					// Impossible.
+					throw new Error(e);
 				}
 				if (null != br) {
 					try {
@@ -91,8 +97,9 @@ public abstract class Logger {
 							error(o, "Caught PatternSyntaxException in readLine.trim().split(\" \") of OSThread.getFieldFromProcSelfStat() while parsing '"+readLine+"'", e);
 						}
 					}
+				} else {
+					Closer.close(is);
 				}
-				Closer.close(br);
 			}
 			return null;
 		}
