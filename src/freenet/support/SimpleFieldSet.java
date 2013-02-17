@@ -752,12 +752,23 @@ public class SimpleFieldSet {
 	}
 
 	/** Write to the given OutputStream and flush it. */
-        public void writeTo(OutputStream os) throws IOException {
+    public void writeTo(OutputStream os) throws IOException {
+    	writeTo(os, 4096);
+    }	
+	
+	/** Write to the given OutputStream and flush it. Use a big buffer, for jobs that aren't called
+	 * too often e.g. persisting a file every 10 minutes. */
+    public void writeToBigBuffer(OutputStream os) throws IOException {
+    	writeTo(os, 65536);
+    }	
+	
+	/** Write to the given OutputStream and flush it. */
+        public void writeTo(OutputStream os, int bufferSize) throws IOException {
             BufferedOutputStream bos = null;
             OutputStreamWriter osw = null;
             BufferedWriter bw = null;
 
-            bos = new BufferedOutputStream(os);
+            bos = new BufferedOutputStream(os, 65536);
             try {
             	osw = new OutputStreamWriter(bos, "UTF-8");
             } catch (UnsupportedEncodingException e) {

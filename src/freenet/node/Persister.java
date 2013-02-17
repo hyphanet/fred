@@ -68,7 +68,7 @@ class Persister implements Runnable {
 		FileOutputStream fos = null;
 		try {
 			fos = new FileOutputStream(persistTemp);
-			fs.writeTo(fos);
+			fs.writeToBigBuffer(fos);
 			fos.close();
 			FileUtil.renameTo(persistTemp, persistTarget);
 		} catch (FileNotFoundException e) {

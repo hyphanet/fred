@@ -338,7 +338,7 @@ public class BookmarkManager implements RequestClient {
 		FileOutputStream fos = null;
 		try {
 			fos = new FileOutputStream(backupBookmarksFile);
-			sfs.writeTo(fos);
+			sfs.writeToBigBuffer(fos);
 			fos.close();
 			fos = null;
 			if(!FileUtil.renameTo(backupBookmarksFile, bookmarksFile))

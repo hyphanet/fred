@@ -331,7 +331,7 @@ public class BaseL10n {
 			Logger.minor(this.getClass(), "The temporary filename is : " + tempFile);
 
 			fos = new FileOutputStream(tempFile);
-			this.translationOverride.writeTo(fos);
+			this.translationOverride.writeToBigBuffer(fos);
 			fos.close();
 			fos = null;
 
