@@ -17,6 +17,8 @@ class Persister implements Runnable {
         static {
             Logger.registerClass(Persister.class);
         }
+        
+        static final int PERIOD = 60*1000;
 
 	Persister(Persistable t, File persistTemp, File persistTarget, Ticker ps) {
 		this.persistable = t;
@@ -57,7 +59,7 @@ class Persister implements Runnable {
 			t.printStackTrace();
 			System.err.println("Will restart ThrottlePersister...");
 		}
-		ps.queueTimedJob(this, 60*1000);
+		ps.queueTimedJob(this, PERIOD);
 	}
 	
 	private void persistThrottle() {
