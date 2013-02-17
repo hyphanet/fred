@@ -127,6 +127,7 @@ public class BookmarkManager implements RequestClient {
 			}
 			List<BookmarkItem> items = MAIN_CATEGORY.getAllItems();
 			boolean matched = false;
+			boolean updated = false;
 			for(int i = 0; i < items.size(); i++) {
 				if(!"USK".equals(items.get(i).getKeyType()))
 					continue;
@@ -138,15 +139,16 @@ public class BookmarkManager implements RequestClient {
 					if(usk.equals(key, false)) {
 						if(logMINOR) Logger.minor(this, "Updating bookmark for "+furi+" to edition "+edition);
 						matched = true;
-						items.get(i).setEdition(edition, node);
+						BookmarkItem item = items.get(i);
+						updated |= item.setEdition(edition, node);
 						// We may have bookmarked the same site twice, so continue the search.
 					}
 				} catch(MalformedURLException mue) {
 				}
 			}
-			if(matched) {
+			if(updated) {
 				storeBookmarks();
-			} else {
+			} else if(!matched) {
 				Logger.error(this, "No match for bookmark "+key+" edition "+edition);
 			}
 		}
