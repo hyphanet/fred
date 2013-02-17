@@ -22,19 +22,14 @@ import freenet.support.io.NativeThread;
  */
 public class CachingFreenetStore<T extends StorableBlock> implements FreenetStore<T> {
     private static volatile boolean logMINOR;
-    
-	private long size;
-	private boolean startJob;
+ 
 	private boolean shuttingDown; /* If this flag is true, we don't accept puts anymore */
-	
-	private final long maxSize;
-	private final long period;
 	private final LRUMap<ByteArrayWrapper, Block<T>> blocksByRoutingKey;
 	private final StoreCallback<T> callback;
 	private final FreenetStore<T> backDatastore;
-	private final Ticker ticker;
 	private final boolean collisionPossible;
 	private final ReadWriteLock configLock = new ReentrantReadWriteLock();
+	private final CachingFreenetStoreTracker tracker;
 	
     static { Logger.registerClass(CachingFreenetStore.class); }
     
@@ -46,23 +41,17 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		boolean isOldBlock;
 	}
 
-	public CachingFreenetStore(StoreCallback<T> callback, long maxSize, long period, FreenetStore<T> backDatastore, Ticker ticker) {
-		if(ticker == null)
-			throw new IllegalArgumentException();
+	public CachingFreenetStore(StoreCallback<T> callback, FreenetStore<T> backDatastore, CachingFreenetStoreTracker tracker) {
 		this.callback = callback;
-		this.maxSize = maxSize;
-		this.period = period;
 		this.backDatastore = backDatastore;
 		SemiOrderedShutdownHook shutdownHook = SemiOrderedShutdownHook.get();
 		this.blocksByRoutingKey = LRUMap.createSafeMap(ByteArrayWrapper.FAST_COMPARATOR);
-		this.ticker = ticker;
-		this.size = 0;
-		this.startJob = false;
 		this.collisionPossible = callback.collisionPossible();
 		this.shuttingDown = false;
+		this.tracker = tracker;
 		
+		tracker.registerCachingFS(this);
 		callback.setStore(this);
-		
 		shutdownHook.addEarlyJob(new NativeThread("Close CachingFreenetStore", NativeThread.HIGH_PRIORITY, true) {
 			@Override
 			public void realRun() {
@@ -163,14 +152,16 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		configLock.writeLock().lock();
 		
 		try {
-			if(sizeBlock < maxSize && !shuttingDown) {
+			if(!shuttingDown) {
 				Block<T> previousBlock = blocksByRoutingKey.get(key);
 			
 				if(!collisionPossible || overwrite) {
-					blocksByRoutingKey.push(key, storeBlock);
-					
 					if(previousBlock == null) {
-						size += sizeBlock;
+						cacheIt = tracker.add(sizeBlock);
+					}
+					
+					if(cacheIt) {
+						blocksByRoutingKey.push(key, storeBlock);
 					}
 				} else {
 					//Case cache it but is it in blocksByRoutingKey? If so, throw a KCE
@@ -184,32 +175,11 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 					if(backDatastore.probablyInStore(routingKey)) {
 						cacheIt = false;
 					} else {
-						blocksByRoutingKey.push(key, storeBlock);
-						size += sizeBlock;
-					}
-				}
-				
-				//Check max size
-				if(size > maxSize) {
-					pushAll();
-				} else {
-					//Check period
-					if(!blocksByRoutingKey.isEmpty() && !startJob) {
-						configLock.writeLock().lock();
-						startJob = true;
-						this.ticker.queueTimedJob(new Runnable() {
-							@Override
-							public void run() {
-								configLock.writeLock().lock();
-								try {
-									pushAll();
-								} finally {
-									startJob = false;
-									configLock.writeLock().unlock();
-								}
-							}
-						}, period);
-						configLock.writeLock().unlock();
+						cacheIt = tracker.add(sizeBlock);
+						
+						if(cacheIt) {
+							blocksByRoutingKey.push(key, storeBlock);
+						}
 					}
 				}
 			} else {
@@ -226,14 +196,13 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		}
 	}
 	
-	private void pushAll() {
+	void pushAll() {
 		Block<T> block = null;
 		do {
 			configLock.writeLock().lock();
 			try {
 				if(block != null && block.equals(blocksByRoutingKey.peekValue())) {
 					blocksByRoutingKey.removeKey(blocksByRoutingKey.peekKey());
-					size -= getSizeBlock(block);
 				}
 				block = blocksByRoutingKey.peekValue();
 			} finally {
