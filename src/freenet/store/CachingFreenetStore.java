@@ -1,9 +1,6 @@
 package freenet.store;
 
 import java.io.IOException;
-import java.util.Date;
-import java.util.Map.Entry;
-import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -12,6 +9,7 @@ import freenet.node.SemiOrderedShutdownHook;
 import freenet.node.stats.StoreAccessStats;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.support.ByteArrayWrapper;
+import freenet.support.LRUMap;
 import freenet.support.Logger;
 import freenet.support.Ticker;
 import freenet.support.io.NativeThread;
@@ -31,8 +29,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 	
 	private final long maxSize;
 	private final long period;
-	private final TreeMap<ByteArrayWrapper, Block<T>> blocksByRoutingKey;
-	private final TreeMap<Long, ByteArrayWrapper> routingKeyByTimestamp;
+	private final LRUMap<ByteArrayWrapper, Block<T>> blocksByRoutingKey;
 	private final StoreCallback<T> callback;
 	private final FreenetStore<T> backDatastore;
 	private final Ticker ticker;
@@ -57,8 +54,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		this.period = period;
 		this.backDatastore = backDatastore;
 		SemiOrderedShutdownHook shutdownHook = SemiOrderedShutdownHook.get();
-		this.blocksByRoutingKey = new TreeMap<ByteArrayWrapper, Block<T>>(ByteArrayWrapper.FAST_COMPARATOR);
-		this.routingKeyByTimestamp = new TreeMap<Long, ByteArrayWrapper>();
+		this.blocksByRoutingKey = LRUMap.createSafeMap(ByteArrayWrapper.FAST_COMPARATOR);
 		this.ticker = ticker;
 		this.size = 0;
 		this.startJob = false;
@@ -152,7 +148,6 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 			KeyCollisionException {
 		byte[] routingKey = block.getRoutingKey();
 		final ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
-		long timestamp = new Date().getTime();
 		
 		Block<T> storeBlock = new Block<T>();
 		storeBlock.block = block;
@@ -172,8 +167,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 				Block<T> previousBlock = blocksByRoutingKey.get(key);
 			
 				if(!collisionPossible || overwrite) {
-					blocksByRoutingKey.put(key, storeBlock);
-					routingKeyByTimestamp.put(timestamp, key);
+					blocksByRoutingKey.push(key, storeBlock);
 					
 					if(previousBlock == null) {
 						size += sizeBlock;
@@ -190,8 +184,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 					if(backDatastore.probablyInStore(routingKey)) {
 						cacheIt = false;
 					} else {
-						blocksByRoutingKey.put(key, storeBlock);
-						routingKeyByTimestamp.put(timestamp, key);
+						blocksByRoutingKey.push(key, storeBlock);
 						size += sizeBlock;
 					}
 				}
@@ -234,21 +227,15 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 	}
 	
 	private void pushAll() {
-		Block<T> block;
-		Entry<Long, ByteArrayWrapper> entry;
+		Block<T> block = null;
 		do {
-			block = null;
-			entry = null;
 			configLock.writeLock().lock();
 			try {
-				entry = routingKeyByTimestamp.firstEntry(); // least recently used block in cache
-				if(entry != null) {
-					block = blocksByRoutingKey.remove(entry.getValue());
-					if(block != null) {
-						size -= getSizeBlock(block);
-						routingKeyByTimestamp.remove(entry.getKey());
-					}
+				if(block != null && block.equals(blocksByRoutingKey.peekValue())) {
+					blocksByRoutingKey.removeKey(blocksByRoutingKey.peekKey());
+					size -= getSizeBlock(block);
 				}
+				block = blocksByRoutingKey.peekValue();
 			} finally {
 				configLock.writeLock().unlock();
 			}
