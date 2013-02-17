@@ -130,8 +130,6 @@ public class CachingFreenetStoreTest extends TestCase {
 	public void testOverMaximumSize() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		File f = new File(tempDir, "saltstore");
 		FileUtil.removeAll(f);
-		long cachingFreenetStoreMaxSize = Fields.parseLong("830K");
-		//long cachingFreenetStoreMaxSize = Fields.parseLong("1M"); TODO Check why it doesn't work
 		
 		String test = "test0";
 		ClientCHKBlock block = encodeBlockCHK(test);
@@ -143,7 +141,12 @@ public class CachingFreenetStoreTest extends TestCase {
 		int howManyBlocks = ((int) (cachingFreenetStoreMaxSize / sizeBlock)) + 1;
 		
 		CHKStore store = new CHKStore();
-		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, howManyBlocks+10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		
+		// SaltedHashFreenetStore is lossy, since it only has 5 possible places to put each 
+		// key. So if you want to be 100% sure it doesn't lose any keys you need to give it 
+		// 5x the number of slots as the keys you are putting in. For small stores you can 
+		// get away with smaller numbers. 
+		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, howManyBlocks*5, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		CachingFreenetStore<CHKBlock> cachingStore = new CachingFreenetStore<CHKBlock>(store, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, saltStore, ticker);
 		cachingStore.start(null, true);
 		List<ClientCHKBlock> chkBlocks = new ArrayList<ClientCHKBlock>();
