@@ -388,58 +388,58 @@ public class Node implements TimeSkewDetectorCallback {
 			if (!found)
 				throw new InvalidConfigValueException("Invalid store type");
 
-				synchronized(this) { // Serialise this part.
-					String suffix = getStoreSuffix();
-					if (val.equals("salt-hash")) {
-						byte[] key;
-						synchronized(Node.this) {
-							key = cachedClientCacheKey;
-							cachedClientCacheKey = null;
-						}
-						if(key == null) {
-							MasterKeys keys = null;
-							try {
-								if(securityLevels.physicalThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
-									key = new byte[32];
-									random.nextBytes(key);
-								} else {
-									keys = MasterKeys.read(masterKeysFile, random, "");
-									key = keys.clientCacheMasterKey;
-									keys.clearAllNotClientCacheKey();
-								}
-							} catch (MasterKeysWrongPasswordException e1) {
-								setClientCacheAwaitingPassword();
-								synchronized(Node.this) {
-									clientCacheType = val;
-								}
-								throw new InvalidConfigValueException("You must enter the password");
-							} catch (MasterKeysFileSizeException e1) {
-								throw new InvalidConfigValueException("Master keys file corrupted (too " + e1.sizeToString() + ")");
-							} catch (IOException e1) {
-								throw new InvalidConfigValueException("Master keys file cannot be accessed: "+e1);
-							}
-						}
-						try {
-							initSaltHashClientCacheFS(suffix, true, key);
-						} catch (NodeInitException e) {
-							Logger.error(this, "Unable to create new store", e);
-							System.err.println("Unable to create new store: "+e);
-							e.printStackTrace();
-							// FIXME l10n both on the NodeInitException and the wrapper message
-							throw new InvalidConfigValueException("Unable to create new store: "+e);
-						} finally {
-							MasterKeys.clear(key);
-						}
-					} else if(val.equals("ram")) {
-						initRAMClientCacheFS();
-					} else /*if(val.equals("none")) */{
-						initNoClientCacheFS();
-					}
-
+			synchronized(this) { // Serialise this part.
+				String suffix = getStoreSuffix();
+				if (val.equals("salt-hash")) {
+					byte[] key;
 					synchronized(Node.this) {
-						clientCacheType = val;
+						key = cachedClientCacheKey;
+						cachedClientCacheKey = null;
 					}
+					if(key == null) {
+						MasterKeys keys = null;
+						try {
+							if(securityLevels.physicalThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
+								key = new byte[32];
+								random.nextBytes(key);
+							} else {
+								keys = MasterKeys.read(masterKeysFile, random, "");
+								key = keys.clientCacheMasterKey;
+								keys.clearAllNotClientCacheKey();
+							}
+						} catch (MasterKeysWrongPasswordException e1) {
+							setClientCacheAwaitingPassword();
+							synchronized(Node.this) {
+								clientCacheType = val;
+							}
+							throw new InvalidConfigValueException("You must enter the password");
+						} catch (MasterKeysFileSizeException e1) {
+							throw new InvalidConfigValueException("Master keys file corrupted (too " + e1.sizeToString() + ")");
+						} catch (IOException e1) {
+							throw new InvalidConfigValueException("Master keys file cannot be accessed: "+e1);
+						}
+					}
+					try {
+						initSaltHashClientCacheFS(suffix, true, key);
+					} catch (NodeInitException e) {
+						Logger.error(this, "Unable to create new store", e);
+						System.err.println("Unable to create new store: "+e);
+						e.printStackTrace();
+						// FIXME l10n both on the NodeInitException and the wrapper message
+						throw new InvalidConfigValueException("Unable to create new store: "+e);
+					} finally {
+						MasterKeys.clear(key);
+					}
+				} else if(val.equals("ram")) {
+					initRAMClientCacheFS();
+				} else /*if(val.equals("none")) */{
+					initNoClientCacheFS();
 				}
+				
+				synchronized(Node.this) {
+					clientCacheType = val;
+				}
+			}
 		}
 
 		@Override

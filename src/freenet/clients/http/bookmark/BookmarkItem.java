@@ -192,13 +192,15 @@ public class BookmarkItem extends Bookmark {
         return this.name + "###" + (this.desc != null ? this.desc : "") + "###" + this.hasAnActivelink + "###" + this.key.toString();
     }
 
-    public synchronized void setEdition(long ed, NodeClientCore node) {
+    /** @return True if we updated the edition */
+    public synchronized boolean setEdition(long ed, NodeClientCore node) {
         if (key.getSuggestedEdition() >= ed) {
         	if(logMINOR) Logger.minor(this, "Edition "+ed+" is too old, not updating "+key);
-            return;
+            return false;
         }
         key = key.setSuggestedEdition(ed);
         enableBookmark();
+        return true;
     }
 
     public USK getUSK() throws MalformedURLException {
