@@ -768,7 +768,7 @@ public class SimpleFieldSet {
             OutputStreamWriter osw = null;
             BufferedWriter bw = null;
 
-            bos = new BufferedOutputStream(os, 65536);
+            bos = new BufferedOutputStream(os, bufferSize);
             try {
             	osw = new OutputStreamWriter(bos, "UTF-8");
             } catch (UnsupportedEncodingException e) {
