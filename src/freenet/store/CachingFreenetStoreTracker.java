@@ -1,6 +1,7 @@
 package freenet.store;
 
 import java.util.ArrayList;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -39,9 +40,17 @@ public class CachingFreenetStoreTracker {
 	}
 
 	/** register a CachingFreenetStore to be called when we get full or to flush all after a setted period. */
-	public int registerCachingFS(CachingFreenetStore<?> fs) {
-		cachingStores.add(fs);
-		return cachingStores.size();
+	public void registerCachingFS(CachingFreenetStore<?> fs) {
+		synchronized (cachingStores) {
+			cachingStores.add(fs);
+		}
+	}
+	
+	public void unregisterCachingFS(CachingFreenetStore<?> fs) {
+		synchronized (cachingStores) {
+			fs.pushAll();
+			cachingStores.remove(fs);
+		}
 	}
 	
 	/** If we are close to the limit, we will schedule an off-thread job to flush ALL the caches. 
@@ -53,7 +62,7 @@ public class CachingFreenetStoreTracker {
 		
 		//Check max size
 		if(this.size > this.maxSize) {
-			pushAllCachingStore();
+			pushAllCachingStores();
 			configLock.writeLock().unlock();
 			return false;
 		} else {
@@ -66,7 +75,7 @@ public class CachingFreenetStoreTracker {
 					public void run() {
 						configLock.writeLock().lock();
 						try {
-							pushAllCachingStore();
+							pushAllCachingStores();
 						} finally {
 							startJob = false;
 							configLock.writeLock().unlock();
@@ -80,15 +89,15 @@ public class CachingFreenetStoreTracker {
 		}
 	}
 	
-	private void pushAllCachingStore() {
-		configLock.writeLock().lock();
-		try {
-			for(CachingFreenetStore<?> cfs : this.cachingStores) {
-				cfs.pushAll();
-			}
-		} finally {
-			size = 0;
-			configLock.writeLock().unlock();
+	private void pushAllCachingStores() {
+		CopyOnWriteArrayList<CachingFreenetStore<?>> snapshot = new CopyOnWriteArrayList<CachingFreenetStore<?>>(this.cachingStores);
+		
+		for(CachingFreenetStore<?> cfs : snapshot) {
+			cfs.pushAll();
 		}
+		
+		configLock.writeLock().lock();
+		size = 0;
+		configLock.writeLock().unlock();
 	}
 }
