@@ -50,7 +50,6 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		this.shuttingDown = false;
 		this.tracker = tracker;
 		
-		tracker.registerCachingFS(this);
 		callback.setStore(this);
 		shutdownHook.addEarlyJob(new NativeThread("Close CachingFreenetStore", NativeThread.HIGH_PRIORITY, true) {
 			@Override
@@ -244,6 +243,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 
 	@Override
 	public boolean start(Ticker ticker, boolean longStart) throws IOException {
+		tracker.registerCachingFS(this);
 		return this.backDatastore.start(ticker, longStart);
 	}
 
@@ -268,7 +268,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		configLock.writeLock().lock();
 		try {
 			shuttingDown = true;
-			pushAll();
+			tracker.unregisterCachingFS(this);
 		} finally {
 			configLock.writeLock().unlock();
 		}
