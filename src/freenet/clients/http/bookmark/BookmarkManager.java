@@ -43,6 +43,7 @@ public class BookmarkManager implements RequestClient {
 	private final File bookmarksFile;
 	private final File backupBookmarksFile;
 	private boolean isSavingBookmarks = false;
+	private boolean isSavingBookmarksLazy = false;
 	static {
 		String name = "freenet/clients/http/staticfiles/defaultbookmarks.dat";
 		SimpleFieldSet defaultBookmarks = null;
@@ -127,6 +128,7 @@ public class BookmarkManager implements RequestClient {
 			}
 			List<BookmarkItem> items = MAIN_CATEGORY.getAllItems();
 			boolean matched = false;
+			boolean updated = false;
 			for(int i = 0; i < items.size(); i++) {
 				if(!"USK".equals(items.get(i).getKeyType()))
 					continue;
@@ -138,15 +140,16 @@ public class BookmarkManager implements RequestClient {
 					if(usk.equals(key, false)) {
 						if(logMINOR) Logger.minor(this, "Updating bookmark for "+furi+" to edition "+edition);
 						matched = true;
-						items.get(i).setEdition(edition, node);
+						BookmarkItem item = items.get(i);
+						updated |= item.setEdition(edition, node);
 						// We may have bookmarked the same site twice, so continue the search.
 					}
 				} catch(MalformedURLException mue) {
 				}
 			}
-			if(matched) {
-				storeBookmarks();
-			} else {
+			if(updated) {
+				storeBookmarksLazy();
+			} else if(!matched) {
 				Logger.error(this, "No match for bookmark "+key+" edition "+edition);
 			}
 		}
@@ -324,6 +327,25 @@ public class BookmarkManager implements RequestClient {
 
 		return uris;
 	}
+	
+	public void storeBookmarksLazy() {
+		synchronized(bookmarks) {
+			if(isSavingBookmarksLazy) return;
+			isSavingBookmarksLazy = true;
+			node.node.ticker.queueTimedJob(new Runnable() {
+
+				@Override
+				public void run() {
+					try {
+						storeBookmarks();
+					} finally {
+						isSavingBookmarksLazy = false;
+					}
+				}
+				
+			}, 5*60*1000);
+		}
+	}
 
 	public void storeBookmarks() {
 		Logger.normal(this, "Attempting to save bookmarks to " + bookmarksFile.toString());
@@ -338,7 +360,7 @@ public class BookmarkManager implements RequestClient {
 		FileOutputStream fos = null;
 		try {
 			fos = new FileOutputStream(backupBookmarksFile);
-			sfs.writeTo(fos);
+			sfs.writeToBigBuffer(fos);
 			fos.close();
 			fos = null;
 			if(!FileUtil.renameTo(backupBookmarksFile, bookmarksFile))

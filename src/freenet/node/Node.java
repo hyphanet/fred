@@ -387,58 +387,58 @@ public class Node implements TimeSkewDetectorCallback {
 			if (!found)
 				throw new InvalidConfigValueException("Invalid store type");
 
-				synchronized(this) { // Serialise this part.
-					String suffix = getStoreSuffix();
-					if (val.equals("salt-hash")) {
-						byte[] key;
-						synchronized(Node.this) {
-							key = cachedClientCacheKey;
-							cachedClientCacheKey = null;
-						}
-						if(key == null) {
-							MasterKeys keys = null;
-							try {
-								if(securityLevels.physicalThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
-									key = new byte[32];
-									random.nextBytes(key);
-								} else {
-									keys = MasterKeys.read(masterKeysFile, random, "");
-									key = keys.clientCacheMasterKey;
-									keys.clearAllNotClientCacheKey();
-								}
-							} catch (MasterKeysWrongPasswordException e1) {
-								setClientCacheAwaitingPassword();
-								synchronized(Node.this) {
-									clientCacheType = val;
-								}
-								throw new InvalidConfigValueException("You must enter the password");
-							} catch (MasterKeysFileSizeException e1) {
-								throw new InvalidConfigValueException("Master keys file corrupted (too " + e1.sizeToString() + ")");
-							} catch (IOException e1) {
-								throw new InvalidConfigValueException("Master keys file cannot be accessed: "+e1);
-							}
-						}
-						try {
-							initSaltHashClientCacheFS(suffix, true, key);
-						} catch (NodeInitException e) {
-							Logger.error(this, "Unable to create new store", e);
-							System.err.println("Unable to create new store: "+e);
-							e.printStackTrace();
-							// FIXME l10n both on the NodeInitException and the wrapper message
-							throw new InvalidConfigValueException("Unable to create new store: "+e);
-						} finally {
-							MasterKeys.clear(key);
-						}
-					} else if(val.equals("ram")) {
-						initRAMClientCacheFS();
-					} else /*if(val.equals("none")) */{
-						initNoClientCacheFS();
-					}
-
+			synchronized(this) { // Serialise this part.
+				String suffix = getStoreSuffix();
+				if (val.equals("salt-hash")) {
+					byte[] key;
 					synchronized(Node.this) {
-						clientCacheType = val;
+						key = cachedClientCacheKey;
+						cachedClientCacheKey = null;
 					}
+					if(key == null) {
+						MasterKeys keys = null;
+						try {
+							if(securityLevels.physicalThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
+								key = new byte[32];
+								random.nextBytes(key);
+							} else {
+								keys = MasterKeys.read(masterKeysFile, random, "");
+								key = keys.clientCacheMasterKey;
+								keys.clearAllNotClientCacheKey();
+							}
+						} catch (MasterKeysWrongPasswordException e1) {
+							setClientCacheAwaitingPassword();
+							synchronized(Node.this) {
+								clientCacheType = val;
+							}
+							throw new InvalidConfigValueException("You must enter the password");
+						} catch (MasterKeysFileSizeException e1) {
+							throw new InvalidConfigValueException("Master keys file corrupted (too " + e1.sizeToString() + ")");
+						} catch (IOException e1) {
+							throw new InvalidConfigValueException("Master keys file cannot be accessed: "+e1);
+						}
+					}
+					try {
+						initSaltHashClientCacheFS(suffix, true, key);
+					} catch (NodeInitException e) {
+						Logger.error(this, "Unable to create new store", e);
+						System.err.println("Unable to create new store: "+e);
+						e.printStackTrace();
+						// FIXME l10n both on the NodeInitException and the wrapper message
+						throw new InvalidConfigValueException("Unable to create new store: "+e);
+					} finally {
+						MasterKeys.clear(key);
+					}
+				} else if(val.equals("ram")) {
+					initRAMClientCacheFS();
+				} else /*if(val.equals("none")) */{
+					initNoClientCacheFS();
 				}
+				
+				synchronized(Node.this) {
+					clientCacheType = val;
+				}
+			}
 		}
 
 		@Override
@@ -2157,6 +2157,64 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 		}
 		
+		long defaultCacheSize;
+		long memoryLimit = NodeStarter.getMemoryLimitBytes();
+		// This is tricky because systems with low memory probably also have slow disks, but using 
+		// up too much memory can be catastrophic...
+		// Total alchemy, FIXME!
+		if(memoryLimit == Long.MAX_VALUE || memoryLimit < 0)
+			defaultCacheSize = 1024*1024;
+		else if(memoryLimit <= 128*1024*1024)
+			defaultCacheSize = 0; // Turn off completely for very small memory.
+		else {
+			// 9 stores, total should be 5% of memory, up to maximum of 1MB per store at 308MB+
+			defaultCacheSize = Math.min(1024*1024, (memoryLimit - 128*1024*1024) / (20*9));
+		}
+		
+		nodeConfig.register("cachingFreenetStoreMaxSize", defaultCacheSize, sortOrder++, true, false, "Node.cachingFreenetStoreMaxSize", "Node.cachingFreenetStoreMaxSizeLong",
+			new LongCallback() {
+				@Override
+				public Long get() {
+					synchronized(Node.this) {
+						return cachingFreenetStoreMaxSize;
+					}
+				}
+
+				@Override
+				public void set(Long val) throws InvalidConfigValueException, NodeNeedRestartException {
+					if(val < 0) throw new InvalidConfigValueException(l10n("invalidMemoryCacheSize"));
+					// Any positive value is legal. In particular, e.g. 1200 bytes would cause us to cache SSKs but not CHKs.
+					synchronized(Node.this) {
+						cachingFreenetStoreMaxSize = val;
+					}
+					throw new NodeNeedRestartException("Caching Maximum Size cannot be changed on the fly");
+				}
+		}, true);
+		
+		cachingFreenetStoreMaxSize = nodeConfig.getLong("cachingFreenetStoreMaxSize");
+		if(cachingFreenetStoreMaxSize < 0)
+			throw new NodeInitException(NodeInitException.EXIT_BAD_CONFIG, l10n("invalidMemoryCacheSize"));
+		
+		nodeConfig.register("cachingFreenetStorePeriod", "300k", sortOrder++, true, false, "Node.cachingFreenetStorePeriod", "Node.cachingFreenetStorePeriod",
+			new LongCallback() {
+				@Override
+				public Long get() {
+					synchronized(Node.this) {
+						return cachingFreenetStorePeriod;
+					}
+				}
+
+				@Override
+				public void set(Long val) throws InvalidConfigValueException, NodeNeedRestartException {
+					synchronized(Node.this) {
+						cachingFreenetStorePeriod = val;
+					}
+					throw new NodeNeedRestartException("Caching Period cannot be changed on the fly");
+				}
+		}, true);
+		
+		cachingFreenetStorePeriod = nodeConfig.getLong("cachingFreenetStorePeriod");
+
 		boolean shouldWriteConfig = false;
 
 		if(storeType.equals("bdb-index")) {
@@ -2517,64 +2575,6 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		updateMTU();
 		
-		long defaultCacheSize;
-		long memoryLimit = NodeStarter.getMemoryLimitBytes();
-		// This is tricky because systems with low memory probably also have slow disks, but using 
-		// up too much memory can be catastrophic...
-		// Total alchemy, FIXME!
-		if(memoryLimit == Long.MAX_VALUE || memoryLimit < 0)
-			defaultCacheSize = 1024*1024;
-		else if(memoryLimit <= 128*1024*1024)
-			defaultCacheSize = 0; // Turn off completely for very small memory.
-		else {
-			// 9 stores, total should be 5% of memory, up to maximum of 1MB per store at 308MB+
-			defaultCacheSize = Math.min(1024*1024, (memoryLimit - 128*1024*1024) / (20*9));
-		}
-		
-		nodeConfig.register("cachingFreenetStoreMaxSize", defaultCacheSize, sortOrder++, true, false, "Node.cachingFreenetStoreMaxSize", "Node.cachingFreenetStoreMaxSizeLong",
-			new LongCallback() {
-				@Override
-				public Long get() {
-					synchronized(Node.this) {
-						return cachingFreenetStoreMaxSize;
-					}
-				}
-
-				@Override
-				public void set(Long val) throws InvalidConfigValueException, NodeNeedRestartException {
-					if(val < 0) throw new InvalidConfigValueException(l10n("invalidMemoryCacheSize"));
-					// Any positive value is legal. In particular, e.g. 1200 bytes would cause us to cache SSKs but not CHKs.
-					synchronized(Node.this) {
-						cachingFreenetStoreMaxSize = val;
-					}
-					throw new NodeNeedRestartException("Caching Maximum Size cannot be changed on the fly");
-				}
-		}, true);
-		
-		cachingFreenetStoreMaxSize = nodeConfig.getLong("cachingFreenetStoreMaxSize");
-		if(cachingFreenetStoreMaxSize < 0)
-			throw new NodeInitException(NodeInitException.EXIT_BAD_CONFIG, l10n("invalidMemoryCacheSize"));
-		
-		nodeConfig.register("cachingFreenetStorePeriod", "300k", sortOrder++, true, false, "Node.cachingFreenetStorePeriod", "Node.cachingFreenetStorePeriod",
-			new LongCallback() {
-				@Override
-				public Long get() {
-					synchronized(Node.this) {
-						return cachingFreenetStorePeriod;
-					}
-				}
-
-				@Override
-				public void set(Long val) throws InvalidConfigValueException, NodeNeedRestartException {
-					synchronized(Node.this) {
-						cachingFreenetStorePeriod = val;
-					}
-					throw new NodeNeedRestartException("Caching Period cannot be changed on the fly");
-				}
-		}, true);
-		
-		cachingFreenetStorePeriod = nodeConfig.getLong("cachingFreenetStorePeriod");
-
 		/* Take care that no configuration options are registered after this point; they will not persist
 		 * between restarts.
 		 */

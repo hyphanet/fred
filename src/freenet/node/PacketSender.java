@@ -369,7 +369,6 @@ public class PacketSender implements Runnable {
 			} catch (BlockedTooLongException e) {
 				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendPacket+" : "+("(new packet format)")+" (version "+toSendPacket.getVersionNumber()+") - DISCONNECTING!");
 				toSendPacket.forceDisconnect();
-				onForceDisconnectBlockTooLong(toSendPacket, e);
 			}
 
 			if(canSendThrottled || !toSendPacket.shouldThrottle()) {
@@ -400,7 +399,6 @@ public class PacketSender implements Runnable {
 			} catch (BlockedTooLongException e) {
 				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendAckOnly+" : "+("(new packet format)")+" (version "+toSendAckOnly.getVersionNumber()+") - DISCONNECTING!");
 				toSendAckOnly.forceDisconnect();
-				onForceDisconnectBlockTooLong(toSendAckOnly, e);
 			}
 
 			if(canSendThrottled || !toSendAckOnly.shouldThrottle()) {
@@ -505,124 +503,6 @@ public class PacketSender implements Runnable {
 				Logger.debug(this, "Next urgent time is "+(now - nextActionTime)+"ms in the past");
 		}
 	}
-
-	private final HashSet<Peer> peersDumpedBlockedTooLong = new HashSet<Peer>();
-
-	private void onForceDisconnectBlockTooLong(PeerNode pn, BlockedTooLongException e) {
-		Peer p = pn.getPeer();
-		synchronized(peersDumpedBlockedTooLong) {
-			peersDumpedBlockedTooLong.add(p);
-			if(peersDumpedBlockedTooLong.size() > 1) return;
-		}
-		if(node.clientCore == null || node.clientCore.alerts == null)
-			return;
-		// FIXME XXX: We have had this alert enabled for MONTHS which got us hundreds of bug reports about it. Unfortunately, nobody spend any work on fixing
-		// the issue after the alert was added so I have disabled it to quit annoying our users. We should not waste their time if we don't do anything. xor
-		// Notice that the same alert is commented out in FNPPacketMangler.
-		// node.clientCore.alerts.register(peersDumpedBlockedTooLongAlert);
-	}
-
-	@SuppressWarnings("unused")
-	private final UserAlert peersDumpedBlockedTooLongAlert = new AbstractUserAlert() {
-
-        @Override
-		public String anchor() {
-			return "disconnectedStillNotAcked";
-		}
-
-        @Override
-		public String dismissButtonText() {
-			return null;
-		}
-
-        @Override
-		public short getPriorityClass() {
-			return UserAlert.ERROR;
-		}
-
-        @Override
-		public String getShortText() {
-			int sz;
-			synchronized(peersDumpedBlockedTooLong) {
-				sz = peersDumpedBlockedTooLong.size();
-			}
-			return l10n("somePeersDisconnectedBlockedTooLong", "count", Integer.toString(sz));
-		}
-
-        @Override
-		public HTMLNode getHTMLText() {
-			HTMLNode div = new HTMLNode("div");
-			Peer[] peers;
-			synchronized(peersDumpedBlockedTooLong) {
-				peers = peersDumpedBlockedTooLong.toArray(new Peer[peersDumpedBlockedTooLong.size()]);
-			}
-			NodeL10n.getBase().addL10nSubstitution(div,
-			        "PacketSender.somePeersDisconnectedBlockedTooLongDetail",
-			        new String[] { "count", "link" },
-			        new HTMLNode[] { HTMLNode.text(peers.length),
-			                HTMLNode.link(ExternalLinkToadlet.escape("https://bugs.freenetproject.org/"))});
-			HTMLNode list = div.addChild("ul");
-			for(Peer peer : peers) {
-				list.addChild("li", peer.toString());
-			}
-			return div;
-		}
-
-        @Override
-		public String getText() {
-			StringBuilder sb = new StringBuilder();
-			Peer[] peers;
-			synchronized(peersDumpedBlockedTooLong) {
-				peers = peersDumpedBlockedTooLong.toArray(new Peer[peersDumpedBlockedTooLong.size()]);
-			}
-			sb.append(l10n("somePeersDisconnectedStillNotAckedDetail",
-					new String[] { "count", "link", "/link" },
-					new String[] { Integer.toString(peers.length), "", "" } ));
-			sb.append('\n');
-			for(Peer peer : peers) {
-				sb.append('\t');
-				sb.append(peer.toString());
-				sb.append('\n');
-			}
-			return sb.toString();
-		}
-
-        @Override
-		public String getTitle() {
-			return getShortText();
-		}
-
-        @Override
-		public boolean isEventNotification() {
-			return false;
-		}
-
-        @Override
-		public boolean isValid() {
-			return true;
-		}
-
-        @Override
-		public void isValid(boolean validity) {
-			// Ignore
-		}
-
-        @Override
-		public void onDismiss() {
-			// Ignore
-		}
-
-        @Override
-		public boolean shouldUnregisterOnDismiss() {
-			return false;
-		}
-
-        @Override
-		public boolean userCanDismiss() {
-			return false;
-		}
-
-	};
 
 	/** Wake up, and send any queued packets. */
 	void wakeUp() {

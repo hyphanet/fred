@@ -165,7 +165,7 @@ public class FilePersistentConfig extends PersistentConfig {
 			fos = new FileOutputStream(tempFilename);
 			synchronized(this) {
 				fs.setHeader(header);
-				fs.writeTo(fos);
+				fs.writeToBigBuffer(fos);
 			}
 			fos.close();
 			fos = null;
