@@ -44,9 +44,7 @@ import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.SocketHandler;
 import freenet.l10n.NodeL10n;
 import freenet.node.OpennetManager.ConnectionType;
-import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
-import freenet.node.useralerts.UserAlertManager;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -189,10 +187,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		for(int i=0;i<DH_CONTEXT_BUFFER_SIZE;i++) {
 			_fillJFKDHFIFO();
 		}
-		if(!NodeStarter.bcProvLoadFailed()) {
-			for(int i=0;i<DH_CONTEXT_BUFFER_SIZE;i++) {
-				_fillJFKECDHFIFO();
-			}
+		for(int i=0;i<DH_CONTEXT_BUFFER_SIZE;i++) {
+			_fillJFKECDHFIFO();
 		}
 	}
 
@@ -2123,23 +2119,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 	@Override
 	public int[] supportedNegTypes(boolean forPublic) {
-		if(NodeStarter.bcProvLoadFailed()) {
-			NodeClientCore core = node.clientCore;
-			if(core != null) {
-				UserAlertManager uam = node.clientCore.alerts;
-				synchronized(FNPPacketMangler.class) {
-					if(BCPROV_LOAD_FAILED == null) {
-						BCPROV_LOAD_FAILED = new SimpleUserAlert(false, NodeStarter.NO_BCPROV_WARNING, NodeStarter.NO_BCPROV_WARNING, NodeStarter.NO_BCPROV_WARNING, UserAlert.CRITICAL_ERROR);
-						uam.register(BCPROV_LOAD_FAILED);
-					}
-				}
-			}
-			// FIXME REMOVE!
-			if(forPublic)
-				return new int[] { 6, 7 };
-			else
-				return new int[] { 7 };
-		}
 		if(forPublic)
 			return new int[] { 6, 7, 8 };
 		else
