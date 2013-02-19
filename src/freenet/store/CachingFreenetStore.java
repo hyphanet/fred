@@ -195,7 +195,8 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		}
 	}
 	
-	void pushAll() {
+	long pushAll() {
+		long sumSizeBlocks = 0;
 		Block<T> block = null;
 		do {
 			configLock.writeLock().lock();
@@ -211,6 +212,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 			if(block != null) {
 				try {
 					backDatastore.put(block.block, block.data, block.header, block.overwrite, block.isOldBlock);
+					sumSizeBlocks += getSizeBlock(block);
 				} catch (IOException e) {
 					Logger.error(this, "Error in pushAll for CachingFreenetStore: "+e, e);
 				} catch (KeyCollisionException e) {
@@ -218,6 +220,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 				}
 			}
 		} while(block != null);
+		return sumSizeBlocks;
 	}
 
 	@Override
