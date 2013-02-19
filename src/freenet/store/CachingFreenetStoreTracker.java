@@ -65,7 +65,8 @@ public class CachingFreenetStoreTracker {
 		
 		//Check max size
 		if(this.size + sizeBlock > this.maxSize) {
-			pushAllCachingStores();
+			//Here don't check the startJob because certainly an offline thread is already created with a timeQueue setted to period  
+			startJob = true;
 			
 			this.ticker.queueTimedJob(new Runnable() {
 				@Override
@@ -106,17 +107,19 @@ public class CachingFreenetStoreTracker {
 	}
 	
 	private void pushAllCachingStores() {
-		Object[] cachingStoresSnapshot = null;
+		CachingFreenetStore<?>[] cachingStoresSnapshot = null;
 		synchronized (cachingStores) {
-			cachingStoresSnapshot = this.cachingStores.toArray();
+			cachingStoresSnapshot = this.cachingStores.toArray(new CachingFreenetStore[cachingStores.size()]);
 		}
 		
-		for(Object cfs : cachingStoresSnapshot) {
-			long sizeBlock = ((CachingFreenetStore<?>) cfs).pushAll();
-			configLock.writeLock().lock();
-			size -= sizeBlock;
-			configLock.writeLock().unlock();
-		}
+		do {
+			for(CachingFreenetStore<?> cfs : cachingStoresSnapshot) {
+				long sizeBlock = cfs.pushAll();
+				configLock.writeLock().lock();
+				size -= sizeBlock;
+				configLock.writeLock().unlock();
+			}
+		}while(getSizeOfCache() > 0);
 	}
 	
 	public long getSizeOfCache() {
