@@ -1,7 +1,6 @@
 package freenet.store;
 
 import java.util.ArrayList;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -47,8 +46,13 @@ public class CachingFreenetStoreTracker {
 	}
 	
 	public void unregisterCachingFS(CachingFreenetStore<?> fs) {
-		synchronized (cachingStores) {
-			fs.pushAll();
+		long sizeBlock = fs.pushAll();
+		
+		configLock.writeLock().lock();
+		size -= sizeBlock;
+		configLock.writeLock().unlock();
+		
+		synchronized (cachingStores) {			
 			cachingStores.remove(fs);
 		}
 	}
@@ -58,17 +62,30 @@ public class CachingFreenetStoreTracker {
 	 *  false, and the caller should write directly to the underlying store.  */
 	public boolean add(long sizeBlock) {
 		configLock.writeLock().lock();
-		this.size += sizeBlock;
 		
 		//Check max size
-		if(this.size > this.maxSize) {
+		if(this.size + sizeBlock > this.maxSize) {
 			pushAllCachingStores();
+			
+			this.ticker.queueTimedJob(new Runnable() {
+				@Override
+				public void run() {
+					configLock.writeLock().lock();
+					try {
+						pushAllCachingStores();
+					} finally {
+						startJob = false;
+						configLock.writeLock().unlock();
+					}
+				}
+			}, 0);
 			configLock.writeLock().unlock();
 			return false;
 		} else {
+			this.size += sizeBlock;
+			
 			//Check period
 			if(!startJob) {
-				configLock.writeLock().lock();
 				startJob = true;
 				this.ticker.queueTimedJob(new Runnable() {
 					@Override
@@ -82,7 +99,6 @@ public class CachingFreenetStoreTracker {
 						}
 					}
 				}, period);
-				configLock.writeLock().unlock();
 			}
 			configLock.writeLock().unlock();
 			return true;
@@ -90,14 +106,24 @@ public class CachingFreenetStoreTracker {
 	}
 	
 	private void pushAllCachingStores() {
-		CopyOnWriteArrayList<CachingFreenetStore<?>> snapshot = new CopyOnWriteArrayList<CachingFreenetStore<?>>(this.cachingStores);
-		
-		for(CachingFreenetStore<?> cfs : snapshot) {
-			cfs.pushAll();
+		Object[] cachingStoresSnapshot = null;
+		synchronized (cachingStores) {
+			cachingStoresSnapshot = this.cachingStores.toArray();
 		}
 		
-		configLock.writeLock().lock();
-		size = 0;
-		configLock.writeLock().unlock();
+		for(Object cfs : cachingStoresSnapshot) {
+			long sizeBlock = ((CachingFreenetStore<?>) cfs).pushAll();
+			configLock.writeLock().lock();
+			size -= sizeBlock;
+			configLock.writeLock().unlock();
+		}
+	}
+	
+	public long getSizeOfCache() {
+		long sizeReturned;
+		configLock.readLock().lock();
+		sizeReturned = size;
+		configLock.readLock().unlock();
+		return sizeReturned;
 	}
 }
