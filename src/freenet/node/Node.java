@@ -2653,10 +2653,19 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-
-	private void fixCertsFile() {
+	private void fixCertsFiles() {
 		// Hack to update certificates file to fix update.cmd
+		// startssl.pem: Might be useful for old versions of update.sh too?
 		File certs = new File(PluginDownLoaderOfficialHTTPS.certfileOld);
+		fixCertsFile(certs);
+		if(FileUtil.detectedOS.isWindows) {
+			// updater\startssl.pem: Needed for Windows update.cmd.
+			certs = new File("updater", PluginDownLoaderOfficialHTTPS.certfileOld);
+			fixCertsFile(certs);
+		}
+	}
+
+	private void fixCertsFile(File certs) {
 		long oldLength = certs.exists() ? certs.length() : -1;
 		try {
 			File tmpFile = File.createTempFile(PluginDownLoaderOfficialHTTPS.certfileOld, ".tmp", new File("."));
