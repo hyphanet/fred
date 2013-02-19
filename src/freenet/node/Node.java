@@ -990,7 +990,7 @@ public class Node implements TimeSkewDetectorCallback {
 		this.shutdownHook = SemiOrderedShutdownHook.get();
 		// Easy stuff
 		String tmp = "Initializing Node using Freenet Build #"+Version.buildNumber()+" r"+Version.cvsRevision()+" and freenet-ext Build #"+NodeStarter.extBuildNumber+" r"+NodeStarter.extRevisionNumber+" with "+System.getProperty("java.vendor")+" JVM version "+System.getProperty("java.version")+" running on "+System.getProperty("os.arch")+' '+System.getProperty("os.name")+' '+System.getProperty("os.version");
-		fixCertsFile();
+		fixCertsFiles();
 		Logger.normal(this, tmp);
 		System.out.println(tmp);
 		collector = new IOStatisticCollector();
