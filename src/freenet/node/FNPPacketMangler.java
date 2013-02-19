@@ -2286,7 +2286,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
         return result;
     }
     
-    private static class NoContextsException extends Exception {
+    @SuppressWarnings("serial")
+	private static class NoContextsException extends Exception {
     	
     	private enum CONTEXT {
     		SENDING,
