@@ -2657,31 +2657,28 @@ public class Node implements TimeSkewDetectorCallback {
 	private void fixCertsFile() {
 		// Hack to update certificates file to fix update.cmd
 		File certs = new File(PluginDownLoaderOfficialHTTPS.certfileOld);
-		if(certs.exists()) {
-			long oldLength = certs.length();
-			try {
-				File tmpFile = File.createTempFile(PluginDownLoaderOfficialHTTPS.certfileOld, ".tmp", new File("."));
-				PluginDownLoaderOfficialHTTPS.writeCertsTo(tmpFile);
-				if(FileUtil.renameTo(tmpFile, certs)) {
-					long newLength = certs.length();
-					if(newLength != oldLength)
-						System.err.println("Updated "+certs+" so that update scripts will work");
-				} else {
-					if(certs.length() != tmpFile.length()) {
-						System.err.println("Cannot update "+certs+" : last-resort update scripts (in particular update.cmd on Windows) may not work");
-						File manual = new File(PluginDownLoaderOfficialHTTPS.certfileOld+".new");
-						manual.delete();
-						if(tmpFile.renameTo(manual))
-							System.err.println("Please delete "+certs+" and rename "+manual+" over it");
-						else
-							tmpFile.delete();
-					}
+		long oldLength = certs.exists() ? certs.length() : -1;
+		try {
+			File tmpFile = File.createTempFile(PluginDownLoaderOfficialHTTPS.certfileOld, ".tmp", new File("."));
+			PluginDownLoaderOfficialHTTPS.writeCertsTo(tmpFile);
+			if(FileUtil.renameTo(tmpFile, certs)) {
+				long newLength = certs.length();
+				if(newLength != oldLength)
+					System.err.println("Updated "+certs+" so that update scripts will work");
+			} else {
+				if(certs.length() != tmpFile.length()) {
+					System.err.println("Cannot update "+certs+" : last-resort update scripts (in particular update.cmd on Windows) may not work");
+					File manual = new File(PluginDownLoaderOfficialHTTPS.certfileOld+".new");
+					manual.delete();
+					if(tmpFile.renameTo(manual))
+						System.err.println("Please delete "+certs+" and rename "+manual+" over it");
+					else
+						tmpFile.delete();
 				}
-			} catch (IOException e) {
 			}
+		} catch (IOException e) {
 		}
 	}
-
 
 	/**
 	** Sets up a program directory using the config value defined by the given
