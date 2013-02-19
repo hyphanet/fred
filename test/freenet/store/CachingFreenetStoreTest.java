@@ -129,7 +129,7 @@ public class CachingFreenetStoreTest extends TestCase {
 	/* Check that if we are going over the maximum size, the caching store will call pushAll and all blocks is in the 
 	 *  *undelying* store and the size is 0
 	 */
-	public void testOverMaximumSize() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
+	public void testOverMaximumSize() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException, InterruptedException {
 		File f = new File(tempDir, "saltstore");
 		FileUtil.removeAll(f);
 		
@@ -173,6 +173,15 @@ public class CachingFreenetStoreTest extends TestCase {
 		}
 		
 		assertTrue(sumSizeBlock > cachingFreenetStoreMaxSize);
+		
+		long time = 0;
+		long maxTime = 1000;
+		while(time < maxTime && tracker.getSizeOfCache() > 0) {
+			Thread.sleep(1);
+			time += 1;
+		}
+		
+		assertTrue(time < maxTime && tracker.getSizeOfCache() == 0);
 		
 		for(int i=0; i<howManyBlocks; i++) {
 			test = tests.remove(0); //get the first element
@@ -368,6 +377,8 @@ public class CachingFreenetStoreTest extends TestCase {
 			SSKBlock verify = store.fetch(ssk, false, false, false, false, null);
 			String data = decodeBlockSSK(verify, key);
 			assertEquals(test, data);
+			// Check that it's in the underlying store now.
+			assertNotNull(saltStore2.fetch(block.getKey().getRoutingKey(), block.getKey().getFullKey(), false, false, false, false, null));
 		}
 		
 		cachingStore.close();
@@ -417,6 +428,8 @@ public class CachingFreenetStoreTest extends TestCase {
 			SSKBlock verify = store.fetch(ssk, false, false, false, false, null);
 			String data = decodeBlockSSK(verify, key);
 			assertEquals(test, data);
+			// Check that it's in the underlying store now.
+			assertNotNull(saltStore.fetch(block.getKey().getRoutingKey(), block.getKey().getFullKey(), false, false, false, false, null));
 		}
 		
 		cachingStore.close();
@@ -494,7 +507,6 @@ public class CachingFreenetStoreTest extends TestCase {
 		
 		ClientSSK key = block1.getClientKey();
 		pubkeyCache.cacheKey(sskBlock.getKey().getPubKeyHash(), sskBlock.getKey().getPubKey(), false, false, false, false, false);
-		// Check that it's in the cache, *not* the underlying store.
 		NodeSSK ssk = (NodeSSK) key.getNodeKey();
 		SSKBlock verify = store.fetch(ssk, false, false, false, false, null);
 		String data = decodeBlockSSK(verify, key);
