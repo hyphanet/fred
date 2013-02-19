@@ -268,7 +268,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 
 	@Override
 	public void setUserAlertManager(UserAlertManager userAlertManager) {
-		// Do nothing
+		this.backDatastore.setUserAlertManager(userAlertManager);
 	}
 	
 	@Override
