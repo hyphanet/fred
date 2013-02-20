@@ -480,7 +480,6 @@ public class CachingFreenetStoreTest extends TestCase {
 			assertTrue(true);
 		} catch (KeyCollisionException e) {
 			assertTrue(false);
-			
 		}
 		
 		String test1 = "test1";
@@ -502,7 +501,6 @@ public class CachingFreenetStoreTest extends TestCase {
 			assertTrue(true);
 		} catch (KeyCollisionException e) {
 			assertTrue(false);
-			
 		}
 		
 		ClientSSK key = block1.getClientKey();
