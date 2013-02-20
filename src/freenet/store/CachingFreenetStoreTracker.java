@@ -49,11 +49,10 @@ public class CachingFreenetStoreTracker {
 		long sizeBlock = 0;
 		do {
 			sizeBlock = fs.pushLeastRecentlyBlock();
-		
 			configLock.writeLock().lock();
 			size -= sizeBlock;
 			configLock.writeLock().unlock();
-		} while(sizeBlock > 0);
+		} while(fs.getSize() > 0);
 		
 		synchronized (cachingStores) {			
 			cachingStores.remove(fs);
@@ -117,10 +116,12 @@ public class CachingFreenetStoreTracker {
 		
 		do {
 			for(CachingFreenetStore<?> cfs : cachingStoresSnapshot) {
-				long sizeBlock = cfs.pushLeastRecentlyBlock();
-				configLock.writeLock().lock();
-				size -= sizeBlock;
-				configLock.writeLock().unlock();
+				if(cfs.getSize() > 0) {
+					long sizeBlock = cfs.pushLeastRecentlyBlock();
+					configLock.writeLock().lock();
+					size -= sizeBlock;
+					configLock.writeLock().unlock();
+				}
 			}
 		}while(getSizeOfCache() > 0);
 	}
