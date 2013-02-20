@@ -195,32 +195,33 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		}
 	}
 	
-	long pushAll() {
-		long sumSizeBlocks = 0;
+	long pushLeastRecentlyBlock() {
+		long sizeBlock = 0;
 		Block<T> block = null;
-		do {
-			configLock.writeLock().lock();
-			try {
-				if(block != null && block.equals(blocksByRoutingKey.peekValue())) {
-					blocksByRoutingKey.removeKey(blocksByRoutingKey.peekKey());
-				}
-				block = blocksByRoutingKey.peekValue();
-			} finally {
-				configLock.writeLock().unlock();
-			}
+		configLock.writeLock().lock();
+		try {
+			block = blocksByRoutingKey.peekValue();
+		} finally {
+			configLock.writeLock().unlock();
+		}
 			
-			if(block != null) {
+		if(block != null) {
+			try {
+				backDatastore.put(block.block, block.data, block.header, block.overwrite, block.isOldBlock);
+				configLock.writeLock().lock();
 				try {
-					backDatastore.put(block.block, block.data, block.header, block.overwrite, block.isOldBlock);
-					sumSizeBlocks += getSizeBlock(block);
-				} catch (IOException e) {
-					Logger.error(this, "Error in pushAll for CachingFreenetStore: "+e, e);
-				} catch (KeyCollisionException e) {
-					if(logMINOR) Logger.minor(this, "KeyCollisionException in pushAll for CachingFreenetStore: "+e, e);
+					blocksByRoutingKey.removeKey(blocksByRoutingKey.peekKey());
+					sizeBlock = getSizeBlock(block);
+				} finally {
+					configLock.writeLock().unlock();
 				}
+			} catch (IOException e) {
+				Logger.error(this, "Error in pushAll for CachingFreenetStore: "+e, e);
+			} catch (KeyCollisionException e) {
+				if(logMINOR) Logger.minor(this, "KeyCollisionException in pushAll for CachingFreenetStore: "+e, e);
 			}
-		} while(block != null);
-		return sumSizeBlocks;
+		}
+		return sizeBlock;
 	}
 
 	@Override
