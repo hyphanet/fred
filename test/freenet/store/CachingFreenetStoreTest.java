@@ -430,6 +430,14 @@ public class CachingFreenetStoreTest extends TestCase {
 		String data = decodeBlockSSK(verify, key);
 		assertEquals(test1, data);
 		
+		if(useSlotFilter) {
+			// Check that it's in the cache
+			assertNull(saltStore.fetch(block.getKey().getRoutingKey(), block.getKey().getFullKey(), false, false, false, false, null));
+		} else {
+			// Check that it's in the underlying store now.
+			assertNotNull(saltStore.fetch(block.getKey().getRoutingKey(), block.getKey().getFullKey(), false, false, false, false, null));
+		}
+		
 		cachingStore.close();
 	}
 	
