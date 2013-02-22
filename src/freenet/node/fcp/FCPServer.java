@@ -309,9 +309,13 @@ public class FCPServer implements Runnable, DownloadCache {
 		}
 
 		@Override
-		public void set(String val) {
+		public void set(String val) throws InvalidConfigValueException {
 			if (!val.equals(get())) {
+				try {
 				node.getFCPServer().networkInterface.setAllowedHosts(val);
+				} catch(IllegalArgumentException e) {
+					throw new InvalidConfigValueException(e);
+				}
 			}
 		}
 	}
@@ -329,9 +333,13 @@ public class FCPServer implements Runnable, DownloadCache {
 		}
 
 		@Override
-		public void set(String val) {
+		public void set(String val) throws InvalidConfigValueException {
 			if (!val.equals(get())) {
+				try {
 				node.getFCPServer().allowedHostsFullAccess.setAllowedHosts(val);
+				} catch(IllegalArgumentException e) {
+					throw new InvalidConfigValueException(e);
+				}
 			}
 		}
 

@@ -222,7 +222,11 @@ public class TextModeClientInterfaceServer implements Runnable {
 			if (!val.equals(get())) {
 				TextModeClientInterfaceServer server = core.getTextModeClientInterface();
 				if(server != null) {
+					try {
 					server.networkInterface.setAllowedHosts(val);
+					} catch(IllegalArgumentException e) {
+						throw new InvalidConfigValueException(e);
+					}
 					server.allowedHosts = val;
 				} else
 					throw new InvalidConfigValueException("Setting allowedHosts for TMCI (console) server when TMCI is disabled");
