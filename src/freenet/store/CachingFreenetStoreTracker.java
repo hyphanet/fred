@@ -130,6 +130,7 @@ public class CachingFreenetStoreTracker {
 					long sizeBlock = cfs.pushLeastRecentlyBlock();
 					synchronized(this) {
 						size -= sizeBlock;
+						assert(size < 0); // Break immediately if in unit testing.
 						if(size < 0) {
 							Logger.error(this, "Cache broken: Size = "+size);
 							size = 0;
