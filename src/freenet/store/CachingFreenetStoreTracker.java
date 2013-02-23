@@ -1,8 +1,6 @@
 package freenet.store;
 
 import java.util.ArrayList;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import freenet.support.Logger;
 import freenet.support.Ticker;
@@ -20,7 +18,6 @@ public class CachingFreenetStoreTracker {
 	private final long period;
 	private final ArrayList<CachingFreenetStore<?>> cachingStores;
 	private final Ticker ticker;
-	private final ReadWriteLock configLock = new ReentrantReadWriteLock();
 	
 	private boolean startJob;
 	private long size;
@@ -49,9 +46,9 @@ public class CachingFreenetStoreTracker {
 		long sizeBlock = 0;
 		do {
 			sizeBlock = fs.pushLeastRecentlyBlock();
-			configLock.writeLock().lock();
-			size -= sizeBlock;
-			configLock.writeLock().unlock();
+			synchronized(this) {
+				size -= sizeBlock;
+			}
 		} while(fs.getSize() > 0);
 		
 		synchronized (cachingStores) {			
@@ -62,8 +59,7 @@ public class CachingFreenetStoreTracker {
 	/** If we are close to the limit, we will schedule an off-thread job to flush ALL the caches. 
 	 *  Even if we are not, we schedule one after period. If we are at the limit, we will return 
 	 *  false, and the caller should write directly to the underlying store.  */
-	public boolean add(long sizeBlock) {
-		configLock.writeLock().lock();
+	public synchronized boolean add(long sizeBlock) {
 		
 		//Check max size
 		if(this.size + sizeBlock > this.maxSize) {
@@ -73,16 +69,13 @@ public class CachingFreenetStoreTracker {
 			this.ticker.queueTimedJob(new Runnable() {
 				@Override
 				public void run() {
-					configLock.writeLock().lock();
 					try {
 						pushAllCachingStores();
 					} finally {
 						startJob = false;
-						configLock.writeLock().unlock();
 					}
 				}
 			}, 0);
-			configLock.writeLock().unlock();
 			return false;
 		} else {
 			this.size += sizeBlock;
@@ -93,17 +86,14 @@ public class CachingFreenetStoreTracker {
 				this.ticker.queueTimedJob(new Runnable() {
 					@Override
 					public void run() {
-						configLock.writeLock().lock();
 						try {
 							pushAllCachingStores();
 						} finally {
 							startJob = false;
-							configLock.writeLock().unlock();
 						}
 					}
 				}, period);
 			}
-			configLock.writeLock().unlock();
 			return true;
 		}
 	}
@@ -114,23 +104,28 @@ public class CachingFreenetStoreTracker {
 			cachingStoresSnapshot = this.cachingStores.toArray(new CachingFreenetStore[cachingStores.size()]);
 		}
 		
-		do {
+		while(true) {
 			for(CachingFreenetStore<?> cfs : cachingStoresSnapshot) {
 				if(cfs.getSize() > 0) {
 					long sizeBlock = cfs.pushLeastRecentlyBlock();
-					configLock.writeLock().lock();
-					size -= sizeBlock;
-					configLock.writeLock().unlock();
+					synchronized(this) {
+						size -= sizeBlock;
+						if(size < 0) {
+							Logger.error(this, "Cache broken: Size = "+size);
+							size = 0;
+						}
+						if(size == 0) return;
+					}
 				}
 			}
-		}while(getSizeOfCache() > 0);
+		}
 	}
 	
 	public long getSizeOfCache() {
 		long sizeReturned;
-		configLock.readLock().lock();
-		sizeReturned = size;
-		configLock.readLock().unlock();
+		synchronized(this) {
+			sizeReturned = size;
+		}
 		return sizeReturned;
 	}
 }
