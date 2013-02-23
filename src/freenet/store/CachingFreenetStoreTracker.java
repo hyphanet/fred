@@ -21,8 +21,13 @@ public class CachingFreenetStoreTracker {
 	private final ArrayList<CachingFreenetStore<?>> cachingStores;
 	private final Ticker ticker;
 	
-	/** Is a write job queued for some point in the next period? */
+	/** Is a write job queued for some point in the next period? There should only be one such job 
+	 * queued. However if we then run out of memory we will run a job immediately. */
 	private boolean queuedJob;
+	/** Is a write job running right now? This prevents us from running multiple pushAllCachingStores() 
+	 * in parallel and thus wasting memory, even if we run out of memory and so have to run a job
+	 * straight away. */
+	private boolean runningJob;
 	private long size;
 	
     static { Logger.registerClass(CachingFreenetStore.class); }
@@ -68,29 +73,42 @@ public class CachingFreenetStoreTracker {
 		if(this.size + sizeBlock > this.maxSize) {
 			//Here don't check the queuedJob because certainly an offline thread is already created with a timeQueue setted to period
 			assert(queuedJob);
-			this.ticker.queueTimedJob(new Runnable() {
-				@Override
-				public void run() {
-					pushAllCachingStores();
-					// Do not set queuedJob = false.
-					// There is probably already another job queued.
-				}
-			}, 0);
-			return false;
-		} else {
-			this.size += sizeBlock;
-			
-			//Check period
-			if(!queuedJob) {
-				queuedJob = true;
+			// Write everything to disk right now, but on another thread. Don't do anything if a job is
+			// already running.
+			if(!runningJob) {
+				runningJob = true;
 				this.ticker.queueTimedJob(new Runnable() {
 					@Override
 					public void run() {
 						try {
 							pushAllCachingStores();
 						} finally {
+							runningJob = false;
+						}
+					}
+				}, 0);
+			}
+			return false;
+		} else {
+			this.size += sizeBlock;
+			
+			// Write everything to disk after the maximum delay (period), unless there is already
+			// a job scheduled to write to disk before that.
+			if(!queuedJob) {
+				queuedJob = true;
+				this.ticker.queueTimedJob(new Runnable() {
+					@Override
+					public void run() {
+						synchronized(this) {
+							if(runningJob) return;
+							runningJob = true;
+						}
+						try {
+							pushAllCachingStores();
+						} finally {
 							synchronized(this) {
 								queuedJob = false;
+								runningJob = false;
 							}
 						}
 					}
