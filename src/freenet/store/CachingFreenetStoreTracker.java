@@ -21,7 +21,8 @@ public class CachingFreenetStoreTracker {
 	private final ArrayList<CachingFreenetStore<?>> cachingStores;
 	private final Ticker ticker;
 	
-	private boolean startJob;
+	/** Is a write job queued for some point in the next period? */
+	private boolean queuedJob;
 	private long size;
 	
     static { Logger.registerClass(CachingFreenetStore.class); }
@@ -32,7 +33,7 @@ public class CachingFreenetStoreTracker {
 		this.size = 0;
 		this.maxSize = maxSize;
 		this.period = period;
-		this.startJob = false;
+		this.queuedJob = false;
 		this.cachingStores = new ArrayList<CachingFreenetStore<?>>();
 		this.ticker = ticker;
 	}
@@ -65,13 +66,13 @@ public class CachingFreenetStoreTracker {
 		
 		//Check max size
 		if(this.size + sizeBlock > this.maxSize) {
-			//Here don't check the startJob because certainly an offline thread is already created with a timeQueue setted to period
-			assert(startJob);
+			//Here don't check the queuedJob because certainly an offline thread is already created with a timeQueue setted to period
+			assert(queuedJob);
 			this.ticker.queueTimedJob(new Runnable() {
 				@Override
 				public void run() {
 					pushAllCachingStores();
-					// Do not set startJob = false.
+					// Do not set queuedJob = false.
 					// There is probably already another job queued.
 				}
 			}, 0);
@@ -80,8 +81,8 @@ public class CachingFreenetStoreTracker {
 			this.size += sizeBlock;
 			
 			//Check period
-			if(!startJob) {
-				startJob = true;
+			if(!queuedJob) {
+				queuedJob = true;
 				this.ticker.queueTimedJob(new Runnable() {
 					@Override
 					public void run() {
@@ -89,7 +90,7 @@ public class CachingFreenetStoreTracker {
 							pushAllCachingStores();
 						} finally {
 							synchronized(this) {
-								startJob = false;
+								queuedJob = false;
 							}
 						}
 					}
