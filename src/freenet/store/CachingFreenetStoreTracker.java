@@ -65,19 +65,14 @@ public class CachingFreenetStoreTracker {
 		
 		//Check max size
 		if(this.size + sizeBlock > this.maxSize) {
-			//Here don't check the startJob because certainly an offline thread is already created with a timeQueue setted to period  
-			startJob = true;
-			
+			//Here don't check the startJob because certainly an offline thread is already created with a timeQueue setted to period
+			assert(startJob);
 			this.ticker.queueTimedJob(new Runnable() {
 				@Override
 				public void run() {
-					try {
-						pushAllCachingStores();
-					} finally {
-						synchronized(this) {
-							startJob = false;
-						}
-					}
+					pushAllCachingStores();
+					// Do not set startJob = false.
+					// There is probably already another job queued.
 				}
 			}, 0);
 			return false;
