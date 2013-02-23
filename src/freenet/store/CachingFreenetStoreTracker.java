@@ -6,7 +6,9 @@ import freenet.support.Logger;
 import freenet.support.Ticker;
 
 /**
- * CachingFreenetStoreTracker
+ * Tracks the memory used by a bunch of CachingFreenetStore's, and writes blocks to disk when full or 
+ * after 5 minutes. One major objective here is we should not do disk I/O inside a lock, all methods 
+ * should be non-blocking, even if it means the caller needs to do a blocking disk write.
  * 
  * @author Simon Vocella <voxsim@gmail.com>
  * 
