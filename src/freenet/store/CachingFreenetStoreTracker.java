@@ -72,7 +72,9 @@ public class CachingFreenetStoreTracker {
 					try {
 						pushAllCachingStores();
 					} finally {
-						startJob = false;
+						synchronized(this) {
+							startJob = false;
+						}
 					}
 				}
 			}, 0);
@@ -89,7 +91,9 @@ public class CachingFreenetStoreTracker {
 						try {
 							pushAllCachingStores();
 						} finally {
-							startJob = false;
+							synchronized(this) {
+								startJob = false;
+							}
 						}
 					}
 				}, period);
