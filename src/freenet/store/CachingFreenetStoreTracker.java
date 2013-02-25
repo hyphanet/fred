@@ -16,6 +16,9 @@ import freenet.support.Ticker;
 public class CachingFreenetStoreTracker {
     private static volatile boolean logMINOR;
     
+    /** Number of keys that it's pushed to the *underlying* store in the add function */
+    private static int numberOfKeysToWrite = 5;
+    
     private final long maxSize;
 	private final long period;
 	private final ArrayList<CachingFreenetStore<?>> cachingStores;
@@ -57,7 +60,7 @@ public class CachingFreenetStoreTracker {
 			synchronized(this) {
 				size -= sizeBlock;
 			}
-		} while(fs.getSize() > 0);
+		} while(!fs.isEmpty());
 		
 		synchronized (cachingStores) {			
 			cachingStores.remove(fs);
@@ -126,7 +129,8 @@ public class CachingFreenetStoreTracker {
 		
 		while(true) {
 			for(CachingFreenetStore<?> cfs : cachingStoresSnapshot) {
-				if(cfs.getSize() > 0) {
+				int k=0;
+				while(!cfs.isEmpty() && k < numberOfKeysToWrite) {
 					long sizeBlock = cfs.pushLeastRecentlyBlock();
 					synchronized(this) {
 						size -= sizeBlock;
@@ -137,6 +141,7 @@ public class CachingFreenetStoreTracker {
 						}
 						if(size == 0) return;
 					}
+					k++;
 				}
 			}
 		}
