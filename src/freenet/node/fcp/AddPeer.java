@@ -44,6 +44,7 @@ public class AddPeer extends FCPMessage {
 		fs.removeValue("Identifier");
 		try {
 			this.trust = FRIEND_TRUST.valueOf(fs.get("Trust"));
+			fs.removeValue("Trust");
 		} catch (NullPointerException e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "AddPeer requires Trust", identifier, false);
 		} catch (IllegalArgumentException e) {
@@ -51,6 +52,7 @@ public class AddPeer extends FCPMessage {
 		}
 		try {
 			this.visibility = FRIEND_VISIBILITY.valueOf(fs.get("Visibility"));
+			fs.removeValue("Visibility");
 		} catch (NullPointerException e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "AddPeer requires Visibility", identifier, false);
 		} catch (IllegalArgumentException e) {

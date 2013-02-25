@@ -518,14 +518,16 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		@Override
 		public boolean send(NodeClientCore core, RequestScheduler sched, final ClientContext context, final ChosenBlock req) {
 			// Ignore keyNum, key, since we're only sending one block.
-			ClientKeyBlock b;
+			ClientKeyBlock encodedBlock;
+			KeyBlock b;
 			final ClientKey key;
 			ClientKey k = null;
 			if(SingleBlockInserter.logMINOR) Logger.minor(this, "Starting request");
 			BlockItem block = (BlockItem) req.token;
 			try {
 				try {
-					b = innerEncode(context.random, block.uri, block.copyBucket, block.isMetadata, block.compressionCodec, block.sourceLength, compressorDescriptor, block.pre1254, block.cryptoAlgorithm, block.cryptoKey);
+					encodedBlock = innerEncode(context.random, block.uri, block.copyBucket, block.isMetadata, block.compressionCodec, block.sourceLength, compressorDescriptor, block.pre1254, block.cryptoAlgorithm, block.cryptoKey);
+					b = encodedBlock.getBlock();
 				} catch (CHKEncodeException e) {
 					throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
 				} catch (SSKEncodeException e) {
@@ -543,7 +545,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 					Logger.error(this, "Asked to send empty block", new Exception("error"));
 					return false;
 				}
-				key = b.getClientKey();
+				key = encodedBlock.getClientKey();
 				k = key;
 				if(block.persistent) {
 					req.setGeneratedKey(key);

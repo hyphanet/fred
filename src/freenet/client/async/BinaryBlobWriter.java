@@ -88,7 +88,7 @@ public final class BinaryBlobWriter {
 	public synchronized void addKey(ClientKeyBlock block, ClientContext context, ObjectContainer container) throws IOException, BinaryBlobAlreadyClosedException {
 		Key key = block.getKey();
 		if(_binaryBlobKeysAddedAlready.contains(key)) return;
-		BinaryBlob.writeKey(getOutputStream(), block, key);
+		BinaryBlob.writeKey(getOutputStream(), block.getBlock(), key);
 		_binaryBlobKeysAddedAlready.add(key);
 	}
 

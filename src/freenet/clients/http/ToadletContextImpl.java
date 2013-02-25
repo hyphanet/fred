@@ -524,6 +524,11 @@ public class ToadletContextImpl implements ToadletContext {
 						}
 
 						HTTPRequestImpl req = new HTTPRequestImpl(uri, data, ctx, method);
+						
+						if(ctx.isAllowedFullAccess()) {
+							ctx.getPageMaker().parseMode(req, container);
+						}
+						
 						try {
 							String methodName = Toadlet.HANDLE_METHOD_PREFIX + method;
 							try {

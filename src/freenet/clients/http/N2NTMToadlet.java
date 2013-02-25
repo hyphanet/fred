@@ -14,6 +14,7 @@ import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.NodeStarter;
 import freenet.node.PeerManager;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -105,9 +106,10 @@ public class N2NTMToadlet extends Toadlet {
 	 * File size limit is 1 MiB (1024*1024 bytes) or 5% of maximum Java memory, whichever is greater.
 	 */
 	private static long maxSize(){
-		long maxMem = Math.round(0.05*Runtime.getRuntime().maxMemory());
+		long memory = NodeStarter.getMemoryLimitBytes();
+		if(memory == Long.MAX_VALUE || memory <= 0) return 1024*1024;
+		long maxMem = Math.round(0.05*memory);
 		long limit = Math.max(maxMem, 1024*1024);
-		if(maxMem == Long.MAX_VALUE) limit = 1024*1024;
 		return limit;
 	}
 

@@ -344,18 +344,18 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		last_io_stat_time = 3;
 
 		int defaultThreadLimit;
-		long memoryLimit = Runtime.getRuntime().maxMemory();
+		long memoryLimit = NodeStarter.getMemoryLimitMB();
 		
-		System.out.println("Memory is "+SizeUtil.formatSize(memoryLimit)+" ("+memoryLimit+" bytes)");
-		if(memoryLimit > 0 && memoryLimit < 100*1024*1024) {
+		System.out.println("Memory is "+memoryLimit+"MB");
+		if(memoryLimit > 0 && memoryLimit < 100) {
 			defaultThreadLimit = 200;
 			System.out.println("Severe memory pressure, setting 200 thread limit. Freenet may not work well!");
-		} else if(memoryLimit > 0 && memoryLimit < 160*1024*1024) {
+		} else if(memoryLimit > 0 && memoryLimit < 128) {
 			defaultThreadLimit = 300;
 			System.out.println("Moderate memory pressure, setting 300 thread limit. Increase your memory limit in wrapper.conf if possible.");
-		// FIXME: reinstate this once either we raise the default or memory autodetection works on Windows.
-//		else if(memoryLimit > 0 && memoryLimit < 256*1024*1024)
-//			defaultThreadLimit = 400;
+		} else if(memoryLimit > 0 && memoryLimit < 192) {
+			defaultThreadLimit = 400;
+			System.out.println("Setting 400 thread limit due to <=192MB memory limit. This should be enough but more memory is better.");
 		} else {
 			System.out.println("Setting standard 500 thread limit. This should be enough for most nodes but more memory is usually a good thing.");
 			defaultThreadLimit = 500;
@@ -375,9 +375,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 						threadLimit = val;
 					}
 		},false);
-		
-		if(lastVersion > 0 && lastVersion < 1270 && memoryLimit > 160*1024*1024 && memoryLimit < 192*1024*1024)
-			statsConfig.fixOldDefault("threadLimit", "300");
 		
 		threadLimit = statsConfig.getInt("threadLimit");
 
@@ -436,6 +433,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 				}
 			}
 		});
+		ignoreLocalVsRemoteBandwidthLiability = statsConfig.getBoolean("ignoreLocalVsRemoteBandwidthLiability");
 
 		statsConfig.register("maxPingTime", DEFAULT_MAX_PING_TIME, sortOrder++, true, true, "NodeStat.maxPingTime", "NodeStat.maxPingTimeLong", new LongCallback() {
 
@@ -584,9 +582,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		requestInputThrottle =
 			new TokenBucket(Math.max(ibwLimit*60, 32768*20), (int)((1000L*1000L*1000L) / (ibwLimit)), 0);
 
-		estimatedSizeOfOneThrottledPacket = 1024 + DMT.packetTransmitSize(1024, 32) +
-			node.estimateFullHeadersLengthOneMessage();
-
 		double nodeLoc=node.lm.getLocation();
 		this.avgCacheCHKLocation   = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageCacheCHKLocation"));
 		this.avgStoreCHKLocation   = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageStoreCHKLocation"));
@@ -680,8 +675,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private static final double MAX_PEER_QUEUE_TIME = 2 * 60 * 1000.0;
 
 	private long lastAcceptedRequest = -1;
-
-	final int estimatedSizeOfOneThrottledPacket;
 
 	static final double DEFAULT_OVERHEAD = 0.7;
 	static final long DEFAULT_ONLY_PERIOD = 60*1000;
@@ -1587,13 +1580,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			boolean isRealTime, boolean isSSK, boolean isInsert) {
 		if(isRealTime) {
 			if(isSSK) {
-				return isInsert ? pInstantRejectIncomingSSKInsertRT : pInstantRejectIncomingCHKInsertRT;
+				return isInsert ? pInstantRejectIncomingSSKInsertRT : pInstantRejectIncomingSSKRequestRT;
 			} else {
 				return isInsert ? pInstantRejectIncomingCHKInsertRT : pInstantRejectIncomingCHKRequestRT;
 			}
 		} else {
 			if(isSSK) {
-				return isInsert ? pInstantRejectIncomingSSKInsertBulk : pInstantRejectIncomingCHKInsertBulk;
+				return isInsert ? pInstantRejectIncomingSSKInsertBulk : pInstantRejectIncomingSSKRequestBulk;
 			} else {
 				return isInsert ? pInstantRejectIncomingCHKInsertBulk : pInstantRejectIncomingCHKRequestBulk;
 			}

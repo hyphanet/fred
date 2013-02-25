@@ -71,7 +71,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	/** Option for saving plainkey. 
 	 * SECURITY: This should NEVER be enabled for a client-cache! */
 	private static final boolean OPTION_SAVE_PLAINKEY = false;
-	private static final int OPTION_MAX_PROBE = 5;
+	static final int OPTION_MAX_PROBE = 5;
 
 	private static final byte FLAG_DIRTY = 0x1;
 	private static final byte FLAG_REBUILD_BLOOM = 0x2;
@@ -199,8 +199,18 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		if(!slotFilterDisabled) {
 			slotFilter = new ResizablePersistentIntBuffer(slotFilterFile, size);
 			System.err.println("Slot filter (" + slotFilterFile + ") for " + name + " is loaded (new="+slotFilter.isNew()+").");
-		} else
+			if(newStore && slotFilter.isNew())
+				slotFilter.fill(SLOT_CHECKED);
+		} else {
+			if(slotFilterFile.exists()) {
+				if(slotFilterFile.delete()) {
+					System.err.println("Old slot filter file deleted as slot filters are disabled, keeping it might cause data loss when they are turned back on.");
+				} else {
+					System.err.println("Old slot filter file "+slotFilterFile+" could not be deleted. If you turn on slot filters later you might lose data from your datastore. Please delete it manually.");
+				}
+			}
 			slotFilter = null;
+		}
 
 		if ((flags & FLAG_DIRTY) != 0)
 			System.err.println("Datastore(" + name + ") is dirty.");
@@ -1874,11 +1884,6 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		}
 
 		@Override
-		public Object getUserIdentifier() {
-			return null;
-		}
-
-		@Override
 		public boolean isValid() {
 			return cleaner.isRebuilding || cleaner.isResizing;
 		}
@@ -2276,5 +2281,20 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	@Override
 	public FreenetStore<T> getUnderlyingStore() {
 		return this;
+	}
+
+	/** Only for testing (crude!) 
+	 * @throws InterruptedException */
+	void testingWaitForCleanerDone(int delay, int count) throws InterruptedException {
+		for(int i=0;i<count;i++) {
+			configLock.readLock().lock();
+			try {
+				if((flags & FLAG_REBUILD_BLOOM) == 0) return;
+			} finally {
+				configLock.readLock().unlock();
+			}
+			Thread.sleep(delay);
+		}
+		throw new AssertionError();
 	}
 }

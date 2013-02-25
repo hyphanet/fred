@@ -54,14 +54,6 @@ public class NodeStarter implements WrapperListener {
 	// experimental osgi support
 	private static NodeStarter nodestarter_osgi = null;
 
-	public static final String NO_BCPROV_WARNING =
-		"FAILED TO LOAD BOUNCY CASTLE CRYPTO LIBRARY! \n" +
-		"This means the file \"bcprov-jdk15on-147.jar\" is not found or not on the classpath. \n" +
-		"Freenet will not be able to use the newer link setup code or newer format keys. \n" +
-		"Unless you installed it yourself, THIS IS A SEVERE BUG!";
-	
-	private volatile static boolean BCPROV_LOAD_FAILED = true;
-	
 	private static boolean isTestingVM;
 	private static boolean isStarted;
 
@@ -73,15 +65,12 @@ public class NodeStarter implements WrapperListener {
 			throw new IllegalStateException();
 	}
 	
-	public static boolean bcProvLoadFailed() {
-		return BCPROV_LOAD_FAILED;
-	}
-	
 	/*---------------------------------------------------------------
 	 * Constructors
 	 *-------------------------------------------------------------*/
 	private NodeStarter() {
-		BCPROV_LOAD_FAILED = JceLoader.BouncyCastle == null;
+		// Force it to load right now, and log what exactly is loaded.
+		JceLoader.dumpLoaded();
 	}
 
 	public NodeStarter get() {
@@ -475,5 +464,32 @@ public class NodeStarter implements WrapperListener {
 	public static void stop_osgi(int exitCode) {
 		nodestarter_osgi.stop(exitCode);
 		nodestarter_osgi = null;
+	}
+
+	/** Get the memory limit in MB. Return -1 if we don't know, -2 for unlimited. */
+	public static long getMemoryLimitMB() {
+		long limit = getMemoryLimitBytes();
+		if(limit <= 0) return limit;
+		if(limit == Long.MAX_VALUE) return -2;
+		if(limit > Integer.MAX_VALUE)
+			return -1; // Seems unlikely. FIXME 2TB limit!
+		return limit / (1024 * 1024);
+	}
+	
+	/** Get the memory limit in bytes. Return -1 if we don't know. Compensate for odd JVMs' 
+	 * behaviour. */
+	public static long getMemoryLimitBytes() {
+		long maxMemory = Runtime.getRuntime().maxMemory();
+		if(maxMemory == Long.MAX_VALUE)
+			return maxMemory;
+		else if(maxMemory <= 0)
+			return -1;
+		else {
+			if(maxMemory < (1024 * 1024)) {
+				// Some weird buggy JVMs provide this number in MB IIRC?
+				return maxMemory * 1024 * 1024;
+			}
+			return maxMemory;
+		}
 	}
 }

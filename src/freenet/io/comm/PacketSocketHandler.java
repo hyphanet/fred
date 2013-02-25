@@ -27,6 +27,12 @@ public interface PacketSocketHandler extends SocketHandler {
      */
 	public int getHeadersLength();
 
+    /**
+     * Get the size of the transport layer headers, for byte accounting purposes.
+	 * @param peer used to detect address family.
+     */
+	public int getHeadersLength(Peer peer);
+
 	/** Set the decryption filter to which incoming packets will be fed */
 	public void setLowLevelFilter(IncomingPacketFilter f);
 

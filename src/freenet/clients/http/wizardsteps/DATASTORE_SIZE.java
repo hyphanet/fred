@@ -7,6 +7,7 @@ import freenet.config.Option;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.NodeStarter;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -75,7 +76,9 @@ public class DATASTORE_SIZE implements Step {
 		if(maxSize >= 30l*1024*1024*1024) result.addChild("option", "value", "30G", "30 GiB");
 		if(maxSize >= 50l*1024*1024*1024) result.addChild("option", "value", "50G", "50 GiB");
 		if(maxSize >= 100l*1024*1024*1024) result.addChild("option", "value", "100G", "100 GiB");
-
+		if(maxSize >= 200l*1024*1024*1024) result.addChild("option", "value", "200G", "200GiB");
+		if(maxSize >= 300l*1024*1024*1024) result.addChild("option", "value", "300G", "300GiB");
+		if(maxSize >= 500l*1024*1024*1024) result.addChild("option", "value", "500G", "500GiB");
 
 		//Put buttons below dropdown.
 		HTMLNode below = bandwidthForm.addChild("div");
@@ -135,10 +138,20 @@ public class DATASTORE_SIZE implements Step {
 	}
 
 	private long maxDatastoreSize() {
-		long maxMemory = Runtime.getRuntime().maxMemory();
-		if(maxMemory == Long.MAX_VALUE) return Long.MAX_VALUE;
-		if(maxMemory < 128*1024*1024) return 1024*1024*1024;
-		return (((((maxMemory - 100*1024*1024)*4)/5) / (4 * 3) /* it's actually size per one key of each type */)) * Node.sizePerKey;
+		long maxMemory = NodeStarter.getMemoryLimitBytes();
+		if(maxMemory == Long.MAX_VALUE) return 1024*1024*1024; // Treat as don't know.
+		if(maxMemory < 128*1024*1024) return 1024*1024*1024; // 1GB default if don't know or very small memory.
+		// Don't use the first 100MB for slot filters.
+		long available = maxMemory - 100*1024*1024;
+		// Don't use more than 50% of available memory for slot filters.
+		available = available / 2;
+		// Slot filters are 4 bytes per slot.
+		long slots = available / 4;
+		// There are 3 types of keys. We want the number of { SSK, CHK, pubkey } i.e. the number of slots in each store.
+		slots /= 3;
+		// We return the total size, so we don't need to worry about cache vs store or even client cache.
+		// One key of all 3 types combined uses Node.sizePerKey bytes on disk. So we get a size.
+		return slots * Node.sizePerKey;
 	}
 
 	private long canAutoconfigureDatastoreSize() {

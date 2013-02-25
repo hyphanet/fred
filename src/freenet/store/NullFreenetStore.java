@@ -114,4 +114,9 @@ public class NullFreenetStore<T extends StorableBlock> implements FreenetStore<T
 	public FreenetStore<T> getUnderlyingStore() {
 		return this;
 	}
+
+	@Override
+	public void close() {
+		// Do nothing
+	}
 }
