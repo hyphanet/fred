@@ -24,7 +24,6 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
     private static volatile boolean logMINOR;
  
 	private boolean shuttingDown; /* If this flag is true, we don't accept puts anymore */
-	private long size;
 	private final LRUMap<ByteArrayWrapper, Block<T>> blocksByRoutingKey;
 	private final StoreCallback<T> callback;
 	private final FreenetStore<T> backDatastore;
@@ -50,7 +49,6 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		this.collisionPossible = callback.collisionPossible();
 		this.shuttingDown = false;
 		this.tracker = tracker;
-		this.size = 0;
 		
 		callback.setStore(this);
 		shutdownHook.addEarlyJob(new NativeThread("Close CachingFreenetStore", NativeThread.HIGH_PRIORITY, true) {
@@ -163,10 +161,6 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 					
 					if(cacheIt) {
 						blocksByRoutingKey.push(key, storeBlock);
-						
-						if(previousBlock == null) {
-							this.size += sizeBlock;
-						}
 					}
 				} else {
 					//Case cache it but is it in blocksByRoutingKey? If so, throw a KCE
@@ -184,10 +178,6 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 						
 						if(cacheIt) {
 							blocksByRoutingKey.push(key, storeBlock);
-							
-							if(previousBlock == null) {
-								this.size += sizeBlock;
-							}
 						}
 					}
 				}
@@ -222,7 +212,6 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 				try {
 					blocksByRoutingKey.removeKey(blocksByRoutingKey.peekKey());
 					sizeBlock = getSizeBlock(block);
-					this.size -= sizeBlock;
 				} finally {
 					configLock.writeLock().unlock();
 				}
@@ -289,14 +278,14 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		}
 	}
 	
-	public long getSize() {
-		long sizeRet;
-		configLock.writeLock().lock();
+	public boolean isEmpty() {
+		boolean isEmpty;
+		configLock.readLock().lock();
 		try {
-			sizeRet = this.size;
+			isEmpty = this.blocksByRoutingKey.isEmpty();
 		} finally {
-			configLock.writeLock().unlock();
+			configLock.readLock().unlock();
 		}
-		return sizeRet;
+		return isEmpty;
 	}
 }
