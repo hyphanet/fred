@@ -207,8 +207,8 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 				backDatastore.put(block.block, block.data, block.header, block.overwrite, block.isOldBlock);
 				configLock.writeLock().lock();
 				try {
-					blocksByRoutingKey.removeKey(blocksByRoutingKey.peekKey());
-					sizeBlock = this.sizeBlock;
+					boolean removed = blocksByRoutingKey.removeKey(blocksByRoutingKey.peekKey());
+					if(removed) sizeBlock = this.sizeBlock;
 				} finally {
 					configLock.writeLock().unlock();
 				}
