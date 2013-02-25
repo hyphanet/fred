@@ -30,6 +30,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 	private final boolean collisionPossible;
 	private final ReadWriteLock configLock = new ReentrantReadWriteLock();
 	private final CachingFreenetStoreTracker tracker;
+	private final int sizeBlock;
 	
     static { Logger.registerClass(CachingFreenetStore.class); }
     
@@ -49,6 +50,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		this.collisionPossible = callback.collisionPossible();
 		this.shuttingDown = false;
 		this.tracker = tracker;
+		this.sizeBlock = callback.dataLength() + callback.headerLength() + callback.fullKeyLength() + callback.routingKeyLength();
 		
 		callback.setStore(this);
 		shutdownHook.addEarlyJob(new NativeThread("Close CachingFreenetStore", NativeThread.HIGH_PRIORITY, true) {
@@ -126,10 +128,6 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		return block != null || backDatastore.probablyInStore(routingKey);
 	}
 	
-	private long getSizeBlock(Block<T> block) {
-		return block.data.length+block.header.length+block.block.getFullKey().length+block.block.getRoutingKey().length;
-	}
-
 	@Override
 	public void put(T block, byte[] data, byte[] header,
 			boolean overwrite, boolean isOldBlock) throws IOException,
@@ -144,7 +142,6 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		storeBlock.overwrite = overwrite;
 		storeBlock.isOldBlock = isOldBlock;
 		
-		long sizeBlock = getSizeBlock(storeBlock);
 		boolean cacheIt = true;
 		
 		//Case cache it
@@ -211,7 +208,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 				configLock.writeLock().lock();
 				try {
 					blocksByRoutingKey.removeKey(blocksByRoutingKey.peekKey());
-					sizeBlock = getSizeBlock(block);
+					sizeBlock = this.sizeBlock;
 				} finally {
 					configLock.writeLock().unlock();
 				}
