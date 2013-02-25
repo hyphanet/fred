@@ -74,8 +74,9 @@ public class CachingFreenetStoreTracker {
 		
 		//Check max size
 		if(this.size + sizeBlock > this.maxSize) {
-			//Here don't check the queuedJob because certainly an offline thread is already created with a timeQueue setted to period
-			assert(queuedJob);
+			
+			/** Here don't check the queuedJob because if maxSize > 0 an offline thread is already created with a timeQueue setted to period */
+			assert(queuedJob || this.maxSize == 0);
 			// Write everything to disk right now, but on another thread. Don't do anything if a job is
 			// already running.
 			if(!runningJob) {
