@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.TreeMap;
 
 import com.db4o.ObjectContainer;
 
@@ -96,7 +97,7 @@ abstract class ClientRequestSchedulerBase {
 		this.isSSKScheduler = forSSKs;
 		this.isRTScheduler = forRT;
 		keyListeners = new ArrayList<KeyListener>();
-		singleKeyListeners = new HashMap<ByteArrayWrapper,ArrayList<KeyListener>>();
+		singleKeyListeners = new TreeMap<ByteArrayWrapper,ArrayList<KeyListener>>(ByteArrayWrapper.FAST_COMPARATOR);
 		singleKeyHasListeners = new IdentityHashMap<HasKeyListener,ArrayList<ByteArrayWrapper>>();
 		priorities = null;
 		newPriorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
