@@ -55,7 +55,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		this.collisionPossible = callback.collisionPossible();
 		this.shuttingDown = false;
 		this.tracker = tracker;
-		this.sizeBlock = callback.dataLength() + callback.headerLength() + callback.fullKeyLength() + callback.routingKeyLength();
+		this.sizeBlock = callback.getTotalBlockSize();
 		
 		callback.setStore(this);
 		shutdownHook.addEarlyJob(new NativeThread("Close CachingFreenetStore", NativeThread.HIGH_PRIORITY, true) {
