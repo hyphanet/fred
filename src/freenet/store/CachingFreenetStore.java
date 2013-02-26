@@ -195,7 +195,6 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		long sizeBlock = 0;
 		Block<T> block = null;
 		ByteArrayWrapper key = null;
-		boolean removeKey = false;
 		
 		configLock.writeLock().lock();
 		try {
@@ -208,23 +207,24 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		if(block != null) {
 			try {
 				backDatastore.put(block.block, block.data, block.header, block.overwrite, block.isOldBlock);
-				removeKey = true;
 			} catch (IOException e) {
 				Logger.error(this, "Error in pushAll for CachingFreenetStore: "+e, e);
 			} catch (KeyCollisionException e) {
 				if(logMINOR) Logger.minor(this, "KeyCollisionException in pushAll for CachingFreenetStore: "+e, e);
-				/** If backDatastore.put() throws, we should probably still remove the key. We don't want to keep looping forever. */
-				removeKey = true;
 			}
 			
-			if(removeKey) {
-				configLock.writeLock().lock();
-				try {
+			configLock.writeLock().lock();
+			try {
+				Block<T> lastVersionOfBlock = blocksByRoutingKey.get(key);
+				
+				/** it might have changed if there was a put() with overwrite=true. 
+				 *  If it has changed, return 0 , i.e. don't remove it*/
+				if(lastVersionOfBlock.equals(block)) {
 					boolean removed = blocksByRoutingKey.removeKey(key);
 					if(removed) sizeBlock = this.sizeBlock;
-				} finally {
-					configLock.writeLock().unlock();
 				}
+			} finally {
+				configLock.writeLock().unlock();
 			}
 		}
 		return sizeBlock;
