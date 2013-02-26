@@ -191,6 +191,11 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		}
 	}
 	
+	/** Try to write one block to disk.
+	 * @return The number of bytes written to disk if we successfully wrote a block, 0 if we wrote 
+	 * a block but can't remove it because it changed while we were writing it, and -1 if there 
+	 * were no blocks to write because the cache is empty.
+	 */
 	long pushLeastRecentlyBlock() {
 		Block<T> block = null;
 		ByteArrayWrapper key = null;
@@ -198,6 +203,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		configLock.writeLock().lock();
 		try {
 			block = blocksByRoutingKey.peekValue();
+			if(block == null) return -1;
 			key = blocksByRoutingKey.peekKey();
 		} finally {
 			configLock.writeLock().unlock();

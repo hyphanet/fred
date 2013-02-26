@@ -59,12 +59,15 @@ public class CachingFreenetStoreTracker {
 	
 	public void unregisterCachingFS(CachingFreenetStore<?> fs) {
 		long sizeBlock = 0;
-		do {
+		while(true) {
 			sizeBlock = fs.pushLeastRecentlyBlock();
 			synchronized(this) {
-				size -= sizeBlock;
+				if(sizeBlock == -1)
+					break;
+				else
+					size -= sizeBlock;
 			}
-		} while(!fs.isEmpty());
+		}
 		
 		synchronized (cachingStores) {			
 			cachingStores.remove(fs);
@@ -134,8 +137,9 @@ public class CachingFreenetStoreTracker {
 		while(true) {
 			for(CachingFreenetStore<?> cfs : cachingStoresSnapshot) {
 				int k=0;
-				while(!cfs.isEmpty() && k < numberOfKeysToWrite) {
+				while(k < numberOfKeysToWrite) {
 					long sizeBlock = cfs.pushLeastRecentlyBlock();
+					if(sizeBlock == -1) break;
 					synchronized(this) {
 						size -= sizeBlock;
 						assert(size >= 0); // Break immediately if in unit testing.
