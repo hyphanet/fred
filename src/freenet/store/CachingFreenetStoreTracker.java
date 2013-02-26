@@ -94,7 +94,8 @@ public class CachingFreenetStoreTracker {
 		//Check max size
 		if(this.size + sizeBlock <= this.maxSize) {
 			// Over the limit, caller must write directly.
-			// A queuedJob is probably scheduled already. This is not a problem.
+			// A delayed write is probably scheduled already. This is not a problem.
+			// FIXME maybe we should remove it?
 			return false;
 		} else {
 			this.size += sizeBlock;
