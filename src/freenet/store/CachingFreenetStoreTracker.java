@@ -75,7 +75,6 @@ public class CachingFreenetStoreTracker {
 	 *  Even if we are not, we schedule one after period. If we are at the limit, we will return 
 	 *  false, and the caller should write directly to the underlying store.  */
 	public synchronized boolean add(long sizeBlock) {
-		
 		/**  Here have a lower threshold, say 90% of maxSize, when it will start a write job, but still accept the data. */
 		if(this.size + sizeBlock > this.maxSize*lowerThreshold) {
 			if(!runningJob) {
@@ -92,31 +91,13 @@ public class CachingFreenetStoreTracker {
 				}, 0);
 			}
 		}
-		
 		//Check max size
-		if(this.size + sizeBlock > this.maxSize) {
-			
-			/** Here don't check the queuedJob because if maxSize > 0 an offline thread is already created with a timeQueue setted to period */
-			assert(queuedJob || this.maxSize == 0);
-			// Write everything to disk right now, but on another thread. Don't do anything if a job is
-			// already running.
-			if(!runningJob) {
-				runningJob = true;
-				this.ticker.queueTimedJob(new Runnable() {
-					@Override
-					public void run() {
-						try {
-							pushAllCachingStores();
-						} finally {
-							runningJob = false;
-						}
-					}
-				}, 0);
-			}
+		if(this.size + sizeBlock <= this.maxSize) {
+			// Over the limit, caller must write directly.
+			// A queuedJob is probably scheduled already. This is not a problem.
 			return false;
 		} else {
 			this.size += sizeBlock;
-			
 			// Write everything to disk after the maximum delay (period), unless there is already
 			// a job scheduled to write to disk before that.
 			if(!queuedJob) {
