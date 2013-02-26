@@ -218,7 +218,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 				
 				/** it might have changed if there was a put() with overwrite=true. 
 				 *  If it has changed, return 0 , i.e. don't remove it*/
-				if(lastVersionOfBlock.block.equals(block.block)) {
+				if(lastVersionOfBlock != null && lastVersionOfBlock.block.equals(block.block)) {
 					if(blocksByRoutingKey.removeKey(key))
 						return sizeBlock;
 				}
