@@ -19,6 +19,9 @@ public class CachingFreenetStoreTracker {
     /** Number of keys that it's pushed to the *underlying* store in the add function */
     private static int numberOfKeysToWrite = 5;
     
+    /** Lower threshold, when it will start a write job, but still accept the data. */
+    private static double lowerThreshold = 0.9;
+    
     private final long maxSize;
 	private final long period;
 	private final ArrayList<CachingFreenetStore<?>> cachingStores;
@@ -71,6 +74,23 @@ public class CachingFreenetStoreTracker {
 	 *  Even if we are not, we schedule one after period. If we are at the limit, we will return 
 	 *  false, and the caller should write directly to the underlying store.  */
 	public synchronized boolean add(long sizeBlock) {
+		
+		/**  Here have a lower threshold, say 90% of maxSize, when it will start a write job, but still accept the data. */
+		if(this.size + sizeBlock > this.maxSize*lowerThreshold) {
+			if(!runningJob) {
+				runningJob = true;
+				this.ticker.queueTimedJob(new Runnable() {
+					@Override
+					public void run() {
+						try {
+							pushAllCachingStores();
+						} finally {
+							runningJob = false;
+						}
+					}
+				}, 0);
+			}
+		}
 		
 		//Check max size
 		if(this.size + sizeBlock > this.maxSize) {
