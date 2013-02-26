@@ -1647,7 +1647,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 
 	@Override
 	public byte[] getWantedKey() {
-		return origUSK.pubKeyHash;
+		return origUSK.getPubKeyHash();
 	}
 
 	@Override
