@@ -16,8 +16,9 @@ import freenet.support.Ticker;
 public class CachingFreenetStoreTracker {
     private static volatile boolean logMINOR;
     
-    /** Number of keys that it's pushed to the *underlying* store in the add function */
-    private static int numberOfKeysToWrite = 5;
+    /** Number of keys that it's pushed to the *underlying* store in the add function.
+     * FIXME make this configurable??? */
+    private static int numberOfKeysToWrite = 20;
     
     /** Lower threshold, when it will start a write job, but still accept the data. */
     private static double lowerThreshold = 0.9;
