@@ -6,8 +6,6 @@ package freenet.client.async;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -88,7 +86,6 @@ abstract class ClientRequestSchedulerBase {
 	/** Transient even for persistent scheduler. */
 	protected transient ArrayList<KeyListener> keyListeners;
 	private transient Map<ByteArrayWrapper,ArrayList<KeyListener>> singleKeyListeners;
-	private transient IdentityHashMap<HasKeyListener,ArrayList<ByteArrayWrapper>> singleKeyHasListeners;
 
 	abstract boolean persistent();
 	
@@ -98,7 +95,6 @@ abstract class ClientRequestSchedulerBase {
 		this.isRTScheduler = forRT;
 		keyListeners = new ArrayList<KeyListener>();
 		singleKeyListeners = new TreeMap<ByteArrayWrapper,ArrayList<KeyListener>>(ByteArrayWrapper.FAST_COMPARATOR);
-		singleKeyHasListeners = new IdentityHashMap<HasKeyListener,ArrayList<ByteArrayWrapper>>();
 		priorities = null;
 		newPriorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 		globalSalt = new byte[32];
@@ -272,14 +268,6 @@ abstract class ClientRequestSchedulerBase {
 			if(keyListeners.contains(listener))
 				return;
 			keyListeners.add(listener);
-			if(wantedKey != null) {
-				HasKeyListener hasKeyListener = listener.getHasKeyListener();
-				ArrayList<ByteArrayWrapper> wrappers = singleKeyHasListeners.get(hasKeyListener);
-				if(wrappers == null)
-					singleKeyHasListeners.put(hasKeyListener,
-							(wrappers = new ArrayList<ByteArrayWrapper>(1)));
-				wrappers.add(wrapper);
-			}
 		}
 		if (logMINOR)
 			Logger.minor(this, "Added pending keys to "+this+" : size now "+keyListeners.size()+" : "+listener);
@@ -301,57 +289,39 @@ abstract class ClientRequestSchedulerBase {
 				Logger.error(this, "Still in pending keys after removal, must be in twice or more: "+listener, new Exception("error"));
 			}
 			listener.onRemove();
-			if (ret && wantedKey != null) {
-				if (keyListeners.isEmpty())
-					singleKeyHasListeners.remove(wrapper);
-				HasKeyListener hasKeylistener = listener.getHasKeyListener();
-				ArrayList<ByteArrayWrapper> wrappers = singleKeyHasListeners.get(hasKeylistener);
-				if (wrappers != null) {
-					if(wrappers.remove(wrapper) && wrappers.isEmpty())
-						singleKeyHasListeners.remove(hasKeylistener);
-				}
-			}
 		}
 		if (logMINOR)
 			Logger.minor(this, "Removed pending keys from "+this+" : size now "+keyListeners.size()+" : "+listener, new Exception("debug"));
 		return ret;
 	}
 	
-	public synchronized boolean removePendingKeys(HasKeyListener hasListener) {
-		boolean found = false;
-		for(Iterator<KeyListener> i = keyListeners.iterator();i.hasNext();) {
-			KeyListener listener = i.next();
-			if(listener == null) {
-				i.remove();
-				Logger.error(this, "Null KeyListener in removePendingKeys()");
-				continue;
-			}
-			if(listener.getHasKeyListener() == hasListener) {
-				found = true;
-				i.remove();
-				listener.onRemove();
-				Logger.normal(this, "Removed pending keys from "+this+" : size now "+keyListeners.size()+" : "+listener);
-			}
-		}
-		ArrayList<ByteArrayWrapper> wrappers = singleKeyHasListeners.remove(hasListener);
-		if (wrappers != null) {
-			for (ByteArrayWrapper wrapper: wrappers) {
-				ArrayList<KeyListener> listeners = singleKeyListeners.get(wrapper);
-				if (listeners == null) continue;
-				for (Iterator<KeyListener> i = listeners.iterator(); i.hasNext();) {
-					KeyListener listener = i.next();
+	public synchronized boolean removePendingKeys(HasKeyListener hasListener, ObjectContainer container) {
+		boolean ret = false;
+		byte[] wantedKey = hasListener.getWantedKey(container);
+		ByteArrayWrapper wrapper = wantedKey != null ? new ByteArrayWrapper(saltKey(wantedKey)) : null;
+		ArrayList<KeyListener> keyListeners = this.keyListeners;
+		synchronized (this) {
+			if(wantedKey != null)
+				keyListeners = singleKeyListeners.get(wrapper);
+			if(keyListeners != null) {
+				for(int i=0;i<keyListeners.size();i++) {
+					KeyListener listener = keyListeners.get(i);
 					if(listener.getHasKeyListener() == hasListener) {
-						found = true;
-						i.remove();
+						if(ret) {
+							Logger.error(this, "Still in pending keys after removal, must be in twice or more: "+hasListener, new Exception("error"));
+						}
+						ret = true;
+						keyListeners.remove(i);
 						listener.onRemove();
-						//Logger.normal(this, "Removed pending singleKeys from "+this+" : size now "+singleKeyListeners.size()+" : "+listener);
+						if(!logMINOR) break;
+						i--;
 					}
 				}
-				if(found && listeners.isEmpty())
-					singleKeyListeners.remove(wrapper);
 			}
 		}
-		return found;
+		if (logMINOR)
+			Logger.minor(this, "Removed pending keys from "+this+" : size now "+keyListeners.size()+" : "+hasListener, new Exception("debug"));
+		return ret;
 	}
 	
 	private synchronized ArrayList<KeyListener> probablyMatches(Key key, byte[] saltedKey) {
@@ -557,7 +527,6 @@ abstract class ClientRequestSchedulerBase {
 	public void onStarted(ObjectContainer container, ClientContext context) {
 		keyListeners = new ArrayList<KeyListener>();
 		singleKeyListeners = new HashMap<ByteArrayWrapper,ArrayList<KeyListener> >();
-		singleKeyHasListeners = new IdentityHashMap<HasKeyListener,ArrayList<ByteArrayWrapper> >();
 		if(newPriorities == null) {
 			newPriorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 			if(persistent()) container.store(this);

@@ -478,7 +478,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		if(persistent) {
 			container.activate(cb, 1);
 		}
-		context.getChkFetchScheduler(realTimeFlag).removePendingKeys(this, true);
+		context.getChkFetchScheduler(realTimeFlag).removePendingKeys(this, true, container);
 		boolean cbWasActive = true;
 		SplitFileStreamGenerator data = null;
 		try {
@@ -871,6 +871,11 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 
 	public SplitFileFetcherKeyListener getListener() {
 		return tempListener;
+	}
+
+	@Override
+	public byte[] getWantedKey(ObjectContainer container) {
+		return null; // No single wanted key.
 	}
 
 

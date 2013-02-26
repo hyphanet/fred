@@ -850,10 +850,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * @param getter
 	 * @param complain
 	 */
-	public void removePendingKeys(HasKeyListener getter, boolean complain) {
-		boolean found = schedTransient.removePendingKeys(getter);
+	public void removePendingKeys(HasKeyListener getter, boolean complain, ObjectContainer container) {
+		boolean found = schedTransient.removePendingKeys(getter, container);
 		if(schedCore != null)
-			found |= schedCore.removePendingKeys(getter);
+			found |= schedCore.removePendingKeys(getter, container);
 		if(complain && !found)
 			Logger.error(this, "Listener not found when removing: "+getter);
 	}

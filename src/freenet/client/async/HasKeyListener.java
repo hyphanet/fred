@@ -27,4 +27,12 @@ public interface HasKeyListener {
 	 * Notify that makeKeyListener() failed.
 	 */
 	void onFailed(KeyListenerConstructionException e, ObjectContainer container, ClientContext context);
+	
+	/**
+	 * @param container Database handle. This should be called on the database thread.
+	 * @return non-null if only one key with (isSSK() ? pubKeyHash : routingKey) wanted. Implementations
+	 * should throw if they are supposed to return a key and it's null because they are deactivated.
+	 */
+	public byte[] getWantedKey(ObjectContainer container);
+
 }

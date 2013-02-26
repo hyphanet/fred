@@ -15,6 +15,7 @@ import freenet.keys.ClientSSK;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.KeyVerifyException;
+import freenet.keys.NodeSSK;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelGetException;
 import freenet.node.NullSendableRequestItem;
@@ -222,7 +223,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	 * Call unregister(container) if you only want to remove from the queue.
 	 */
 	public void unregisterAll(ObjectContainer container, ClientContext context) {
-		getScheduler(container, context).removePendingKeys(this, false);
+		getScheduler(container, context).removePendingKeys(this, false, container);
 		unregister(container, context, (short)-1);
 	}
 
@@ -507,6 +508,15 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			if(cancelled || finished) return;
 		}
 		innerCheckCachedCooldownData(container);
+	}
+	
+	@Override
+	public byte[] getWantedKey(ObjectContainer container) {
+		if(persistent) {
+			container.activate(key, 5);
+		}
+		Key newKey = key.getNodeKey(false);
+		return newKey instanceof NodeSSK ? ((NodeSSK)newKey).getPubKeyHash() : newKey.getRoutingKey();
 	}
 
 }
