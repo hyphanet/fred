@@ -289,7 +289,8 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		}
 	}
 	
-	public boolean isEmpty() {
+	/** Only for unit tests */
+	boolean isEmpty() {
 		boolean isEmpty;
 		configLock.readLock().lock();
 		try {
