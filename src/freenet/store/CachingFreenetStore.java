@@ -214,11 +214,11 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 			
 			configLock.writeLock().lock();
 			try {
-				Block<T> lastVersionOfBlock = blocksByRoutingKey.get(key);
+				Block<T> currentVersionOfBlock = blocksByRoutingKey.get(key);
 				
 				/** it might have changed if there was a put() with overwrite=true. 
 				 *  If it has changed, return 0 , i.e. don't remove it*/
-				if(lastVersionOfBlock != null && lastVersionOfBlock.block.equals(block.block)) {
+				if(currentVersionOfBlock != null && currentVersionOfBlock.block.equals(block.block)) {
 					if(blocksByRoutingKey.removeKey(key))
 						return sizeBlock;
 				}
