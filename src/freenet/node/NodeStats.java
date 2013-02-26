@@ -318,6 +318,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		pInstantRejectIncomingSSKRequestBulk = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
 		pInstantRejectIncomingCHKInsertBulk = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
 		pInstantRejectIncomingSSKInsertBulk = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
+		REJECT_STATS_AVERAGERS = new RunningAverage[] {
+					pInstantRejectIncomingCHKRequestBulk,
+					pInstantRejectIncomingSSKRequestBulk,
+					pInstantRejectIncomingCHKInsertBulk,
+					pInstantRejectIncomingSSKInsertBulk
+		};
+		noisyRejectStats = new byte[4];
 		ThreadGroup tg = Thread.currentThread().getThreadGroup();
 		while(tg.getParent() != null) tg = tg.getParent();
 		this.rootThreadGroup = tg;
@@ -608,6 +615,18 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		avgTransferBackoffTimesBulk = new Hashtable<String, TrivialRunningAverage>();
 
 		avgDatabaseJobExecutionTimes = new Hashtable<String, TrivialRunningAverage>();
+		
+		if(!NodeStarter.isTestingVM()) {
+			// Normal mode
+			minReportsNoisyRejectStats = 200;
+			rejectStatsUpdateInterval = 10*60*1000;
+			rejectStatsFuzz = 10.0;
+		} else {
+			// Stuff we only do in testing VMs
+			minReportsNoisyRejectStats = 1;
+			rejectStatsUpdateInterval = 10*1000;
+			rejectStatsFuzz = -1.0;
+		}
 	}
 
 	protected String l10n(String key) {
@@ -626,6 +645,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			}
 		}, "Starting NodePinger");
 		persister.start();
+		noisyRejectStatsUpdater.run();
 	}
 
 	/** Every 60 seconds, check whether we need to adjust the bandwidth delay time because of idleness.
@@ -3750,6 +3770,64 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	
 	public boolean enableNewLoadManagement(boolean realTimeFlag) {
 		return realTimeFlag ? enableNewLoadManagementRT : enableNewLoadManagementBulk;
+	}
+	
+	final RunningAverage[] REJECT_STATS_AVERAGERS;
+	
+	private final Runnable noisyRejectStatsUpdater = new Runnable() {
+
+		@Override
+		public void run() {
+			// SECURITY/TRIVIAL PERFORMANCE TRADEOFF: I don't think we want to run this lazily.
+			// If we run it lazily, an attacker could trigger it, given that it's triggered rarely
+			// in normal operation. FIXME long term we probably want to get rid of this from the
+			// production network, and just surveil a few "special" nodes which volunteer to have
+			// heavier stats inserted regularly.
+			try {
+				synchronized(noisyRejectStats) { // Only used for accessing the bytes.
+					for(int i=0;i<REJECT_STATS_AVERAGERS.length;i++) {
+						byte result;
+						RunningAverage r = REJECT_STATS_AVERAGERS[i];
+						if(r.countReports() < minReportsNoisyRejectStats) {
+							// Do not return data until there are at least 200 results.
+							result = -1;
+						} else {
+							double noisy = r.currentValue() * 100.0;
+							if(rejectStatsFuzz > 0)
+								noisy = randomNoise(noisy, rejectStatsFuzz);
+							if(noisy < 0) result = 0;
+							if(noisy > 100) result = 100;
+							else result = (byte)noisy;
+						}
+						noisyRejectStats[i] = result;
+					}
+				}
+			} finally {
+				node.ticker.queueTimedJob(this, rejectStatsUpdateInterval);
+			}
+		}
+		
+	};
+	
+	/** How many reports to require before returning a value for reject stats */
+	private final int minReportsNoisyRejectStats;
+	/** How often to update the reject stats */
+	private final int rejectStatsUpdateInterval;
+	/** If positive, the level of fuzz (size of 1 standard deviation for gauss in percent) to use */
+	private final double rejectStatsFuzz;
+	
+	private final byte[] noisyRejectStats;
+
+	/**
+	 * @return Array of 4 bytes, with the percentage rejections for (bulk only): CHK request, 
+	 * SSK request, CHK insert, SSK insert. Negative value = insufficient data. Positive value = 
+	 * percentage rejected. PRECAUTIONS: We update this statistic every 10 minutes. We don't 
+	 * return a value unless we have at least 200 samples. We add Gaussian noise. 
+	 * FIXME SECURITY We should remove this eventually. */
+	public byte[] getNoisyRejectStats() {
+		synchronized(noisyRejectStats) {
+			return Arrays.copyOf(noisyRejectStats, noisyRejectStats.length);
+		}
 	}
 
 	/**

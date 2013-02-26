@@ -142,6 +142,7 @@ public class DMT {
 	public static final String LINK_LENGTHS = "linkLengths";
 	public static final String UPTIME_PERCENT = "uptimePercent";
 	public static final String EXPECTED_HASH = "expectedHash";
+	public static final String REJECT_STATS = "rejectStats";
 	
 	/** Very urgent */
 	public static final short PRIORITY_NOW=0;
@@ -1221,7 +1222,7 @@ public class DMT {
 		addField(UID, Long.class);
 		addField(UPTIME_PERCENT, Float.class);
 	}};
-
+	
 	/**
 	 * Creates a probe response to a query for uptime.
 	 * @param uid Probe identifier.
@@ -1232,6 +1233,18 @@ public class DMT {
 		Message msg = new Message(ProbeUptime);
 		msg.set(UID, uid);
 		msg.set(UPTIME_PERCENT, uptimePercent);
+		return msg;
+	}
+
+	public static final MessageType ProbeRejectStats = new MessageType("ProbeRejectStats", PRIORITY_HIGH) {{
+		addField(UID, Long.class);
+		addField(REJECT_STATS, ShortBuffer.class);
+	}};
+	
+	public static Message createProbeRejectStats(long uid, byte[] rejectStats) {
+		Message msg = new Message(ProbeRejectStats);
+		msg.set(UID, uid);
+		msg.set(REJECT_STATS, new ShortBuffer(rejectStats));
 		return msg;
 	}
 

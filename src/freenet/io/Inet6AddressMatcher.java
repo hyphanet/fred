@@ -49,6 +49,8 @@ public class Inet6AddressMatcher implements AddressMatcher {
 			} else {
 				netmask = new byte[16];
 				int bits = Integer.parseInt(netmaskString);
+				if (bits > 128 || bits < 0)
+					throw new IllegalArgumentException("Mask bits out of range: " + bits + " (" + netmaskString + ")");
 				for (int index = 0; index < 16; index++) {
 					netmask[index] = (byte) (255 << (8 - Math.min(bits, 8)));
 					bits = Math.max(bits - 8, 0);

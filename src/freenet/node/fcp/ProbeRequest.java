@@ -126,6 +126,11 @@ public class ProbeRequest extends FCPMessage {
 			public void onUptime(float uptimePercent) {
 				handler.outputHandler.queue(new ProbeUptime(identifier, uptimePercent));
 			}
+
+			@Override
+			public void onRejectStats(byte[] stats) {
+				handler.outputHandler.queue(new ProbeRejectStats(identifier, stats));
+			}
 		};
 		node.startProbe(htl, node.random.nextLong(), type, listener);
 	}

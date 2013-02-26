@@ -11,7 +11,8 @@ public enum Type {
 	LOCATION((byte)4),
 	STORE_SIZE((byte)5),
 	UPTIME_48H((byte)6),
-	UPTIME_7D((byte)7);
+	UPTIME_7D((byte)7),
+	REJECT_STATS((byte)8);
 
 	public final byte code;
 
@@ -45,6 +46,7 @@ public enum Type {
 			case 5: return STORE_SIZE;
 			case 6: return UPTIME_48H;
 			case 7: return UPTIME_7D;
+			case 8: return REJECT_STATS;
 			default: throw new IllegalArgumentException("There is no ProbeType with code " + code + ".");
 		}
 	}

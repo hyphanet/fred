@@ -29,6 +29,10 @@ public abstract class FCPMessage {
 	public static final String STORE_SIZE = "StoreSize";
 	public static final String TYPE = "Type";
 	public static final String UPTIME_PERCENT = "UptimePercent";
+	public static final String BULK_CHK_REQUEST_REJECTS = "Rejects.Bulk.Request.CHK";
+	public static final String BULK_SSK_REQUEST_REJECTS = "Rejects.Bulk.Request.SSK";
+	public static final String BULK_CHK_INSERT_REJECTS = "Rejects.Bulk.Insert.CHK";
+	public static final String BULK_SSK_INSERT_REJECTS = "Rejects.Bulk.Insert.SSK";
 
         private static volatile boolean logDEBUG;
 	static {
