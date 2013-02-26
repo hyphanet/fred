@@ -1,4 +1,4 @@
-package freenet.store;
+package freenet.store.caching;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,6 +30,13 @@ import freenet.keys.SSKBlock;
 import freenet.keys.SSKEncodeException;
 import freenet.keys.SSKVerifyException;
 import freenet.node.SemiOrderedShutdownHook;
+import freenet.store.CHKStore;
+import freenet.store.GetPubkey;
+import freenet.store.KeyCollisionException;
+import freenet.store.PubkeyStore;
+import freenet.store.RAMFreenetStore;
+import freenet.store.SSKStore;
+import freenet.store.SimpleGetPubkey;
 import freenet.store.caching.CachingFreenetStore;
 import freenet.store.caching.CachingFreenetStoreTracker;
 import freenet.store.saltedhash.ResizablePersistentIntBuffer;
