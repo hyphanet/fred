@@ -30,6 +30,8 @@ import freenet.keys.SSKBlock;
 import freenet.keys.SSKEncodeException;
 import freenet.keys.SSKVerifyException;
 import freenet.node.SemiOrderedShutdownHook;
+import freenet.store.caching.CachingFreenetStore;
+import freenet.store.caching.CachingFreenetStoreTracker;
 import freenet.store.saltedhash.ResizablePersistentIntBuffer;
 import freenet.store.saltedhash.SaltedHashFreenetStore;
 import freenet.support.Fields;

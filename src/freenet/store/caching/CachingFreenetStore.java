@@ -1,4 +1,4 @@
-package freenet.store;
+package freenet.store.caching;
 
 import java.io.IOException;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -8,6 +8,11 @@ import freenet.keys.KeyVerifyException;
 import freenet.node.SemiOrderedShutdownHook;
 import freenet.node.stats.StoreAccessStats;
 import freenet.node.useralerts.UserAlertManager;
+import freenet.store.BlockMetadata;
+import freenet.store.FreenetStore;
+import freenet.store.KeyCollisionException;
+import freenet.store.StorableBlock;
+import freenet.store.StoreCallback;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.LRUMap;
 import freenet.support.Logger;

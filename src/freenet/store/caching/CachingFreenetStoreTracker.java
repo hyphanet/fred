@@ -1,4 +1,4 @@
-package freenet.store;
+package freenet.store.caching;
 
 import java.util.ArrayList;
 
