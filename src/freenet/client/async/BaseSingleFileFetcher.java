@@ -511,12 +511,12 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 	
 	@Override
-	public byte[] getWantedKey(ObjectContainer container) {
+	public byte[] getWantedKey(ObjectContainer container, ClientRequestSchedulerBase sched) {
 		if(persistent) {
 			container.activate(key, 5);
 		}
 		Key newKey = key.getNodeKey(false);
-		return newKey instanceof NodeSSK ? ((NodeSSK)newKey).getPubKeyHash() : newKey.getRoutingKey();
+		return sched.saltKey(newKey);
 	}
 
 }

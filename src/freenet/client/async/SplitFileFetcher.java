@@ -874,7 +874,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	}
 
 	@Override
-	public byte[] getWantedKey(ObjectContainer container) {
+	public byte[] getWantedKey(ObjectContainer container, ClientRequestSchedulerBase sched) {
 		return null; // No single wanted key.
 	}
 

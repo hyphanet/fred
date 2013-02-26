@@ -17,6 +17,7 @@ public class SingleKeyListener implements KeyListener {
 	private short prio;
 	private final boolean persistent;
 	private final boolean realTime;
+	private byte[] saltedKey;
 
 	public SingleKeyListener(Key key, BaseSingleFileFetcher fetcher, short prio, boolean persistent, boolean realTime) {
 		this.key = key;
@@ -107,8 +108,12 @@ public class SingleKeyListener implements KeyListener {
 	}
 
 	@Override
-	public byte[] getWantedKey() {
-		return key instanceof NodeSSK ? ((NodeSSK)key).getPubKeyHash() : key.getRoutingKey();
+	public byte[] getWantedKey(ClientRequestSchedulerBase sched) {
+		synchronized(this) {
+			if(saltedKey != null) return saltedKey;
+			saltedKey = sched.saltKey(key);
+			return saltedKey;
+		}
 	}
 
 	@Override

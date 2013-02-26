@@ -456,7 +456,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 	}
 
 	@Override
-	public byte[] getWantedKey() {
+	public byte[] getWantedKey(ClientRequestSchedulerBase sched) {
 		return null;
 	}
 	

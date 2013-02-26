@@ -253,8 +253,8 @@ abstract class ClientRequestSchedulerBase {
 
 	public void addPendingKeys(KeyListener listener) {
 		if(listener == null) throw new NullPointerException();
-		byte[] wantedKey = listener.getWantedKey();
-		ByteArrayWrapper wrapper = wantedKey != null ? new ByteArrayWrapper(saltKey(wantedKey)) : null;
+		byte[] wantedKey = listener.getWantedKey(this);
+		ByteArrayWrapper wrapper = wantedKey != null ? new ByteArrayWrapper(wantedKey) : null;
 		ArrayList<KeyListener> keyListeners = this.keyListeners;
 		synchronized (this) {
 			// We have to register before checking the disk, so it may well get registered twice.
@@ -275,8 +275,8 @@ abstract class ClientRequestSchedulerBase {
 	
 	public boolean removePendingKeys(KeyListener listener) {
 		boolean ret;
-		byte[] wantedKey = listener.getWantedKey();
-		ByteArrayWrapper wrapper = wantedKey != null ? new ByteArrayWrapper(saltKey(wantedKey)) : null;
+		byte[] wantedKey = listener.getWantedKey(this);
+		ByteArrayWrapper wrapper = wantedKey != null ? new ByteArrayWrapper(wantedKey) : null;
 		ArrayList<KeyListener> keyListeners = this.keyListeners;
 		synchronized (this) {
 			if(wantedKey != null)
@@ -297,8 +297,8 @@ abstract class ClientRequestSchedulerBase {
 	
 	public synchronized boolean removePendingKeys(HasKeyListener hasListener, ObjectContainer container) {
 		boolean ret = false;
-		byte[] wantedKey = hasListener.getWantedKey(container);
-		ByteArrayWrapper wrapper = wantedKey != null ? new ByteArrayWrapper(saltKey(wantedKey)) : null;
+		byte[] wantedKey = hasListener.getWantedKey(container, this);
+		ByteArrayWrapper wrapper = wantedKey != null ? new ByteArrayWrapper(wantedKey) : null;
 		ArrayList<KeyListener> keyListeners = this.keyListeners;
 		synchronized (this) {
 			if(wantedKey != null)
@@ -654,10 +654,15 @@ abstract class ClientRequestSchedulerBase {
 	public byte[] globalSalt;
 	
 	public byte[] saltKey(Key key) {
-		return  saltKey(key instanceof NodeSSK ? ((NodeSSK)key).getPubKeyHash() : key.getRoutingKey());
+		if(key instanceof NodeSSK)
+			// SSKs are always single (pub)key, so are in the TreeMap, so don't need salting.
+			return ((NodeSSK)key).getPubKeyHash();
+		else
+			// CHKs can be splitfile blocks, so do need to be salted, for bloom filters.
+			return innerSaltKey(key.getRoutingKey());
 	}
 
-	private byte[] saltKey(byte[] key) {
+	private byte[] innerSaltKey(byte[] key) {
 		if (key == null) return null;
 		MessageDigest md = SHA256.getMessageDigest();
 		md.update(key);

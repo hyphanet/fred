@@ -87,9 +87,10 @@ public interface KeyListener {
 	public boolean isSSK();
 
 	/**
-	 * @return non-null if only one key with (isSSK() ? pubKeyHash : routingKey) wanted.
+	 * @return Return the salted key if we only want one key. For SSKs, return pubKeyHash (not salted),
+	 * for CHKs, return routingKey. Generally should just pass it to sched.saltKey(Key).
 	 */
-	public byte[] getWantedKey();
+	public byte[] getWantedKey(ClientRequestSchedulerBase sched);
 
 	/**
 	 * Should this be on the bulk or the real-time scheduler? The actual listener itself

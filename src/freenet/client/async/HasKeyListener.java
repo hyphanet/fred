@@ -30,9 +30,10 @@ public interface HasKeyListener {
 	
 	/**
 	 * @param container Database handle. This should be called on the database thread.
-	 * @return non-null if only one key with (isSSK() ? pubKeyHash : routingKey) wanted. Implementations
+	 * @return Return the salted key if we only want one key. For SSKs, return pubKeyHash (not salted),
+	 * for CHKs, return routingKey. Generally should just pass it to sched.saltKey(Key). Implementations
 	 * should throw if they are supposed to return a key and it's null because they are deactivated.
 	 */
-	public byte[] getWantedKey(ObjectContainer container);
+	public byte[] getWantedKey(ObjectContainer container, ClientRequestSchedulerBase sched);
 
 }
