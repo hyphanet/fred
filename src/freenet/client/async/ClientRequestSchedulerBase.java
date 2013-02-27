@@ -86,7 +86,9 @@ abstract class ClientRequestSchedulerBase {
 	protected transient ClientRequestScheduler sched;
 	/** Transient even for persistent scheduler. */
 	protected transient ArrayList<KeyListener> keyListeners;
-	private transient Map<ByteArrayWrapper,Object> singleKeyListeners;
+	/** Map from the salted key for a single key listener to either a single KeyListener or a KeyListener[].
+	 * Always a TreeMap because SSKs are not salted. */
+	private transient TreeMap<ByteArrayWrapper,Object> singleKeyListeners;
 
 	abstract boolean persistent();
 	
@@ -653,7 +655,7 @@ abstract class ClientRequestSchedulerBase {
 	
 	public void onStarted(ObjectContainer container, ClientContext context) {
 		keyListeners = new ArrayList<KeyListener>();
-		singleKeyListeners = new HashMap<ByteArrayWrapper,Object>();
+		singleKeyListeners = new TreeMap<ByteArrayWrapper,Object>(ByteArrayWrapper.FAST_COMPARATOR);
 		if(newPriorities == null) {
 			newPriorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 			if(persistent()) container.store(this);
