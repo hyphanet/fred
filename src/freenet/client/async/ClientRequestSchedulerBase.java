@@ -87,8 +87,8 @@ abstract class ClientRequestSchedulerBase {
 	/** Transient even for persistent scheduler. */
 	protected transient ArrayList<KeyListener> keyListeners;
 	/** Map from the salted key for a single key listener to either a single KeyListener or a KeyListener[].
-	 * Always a TreeMap because SSKs are not salted. */
-	private transient TreeMap<ByteArrayWrapper,Object> singleKeyListeners;
+	 * SSKs are not salted, so TreeMap, but CHKs are, so HashMap. */
+	private transient Map<ByteArrayWrapper,Object> singleKeyListeners;
 
 	abstract boolean persistent();
 	
@@ -97,7 +97,12 @@ abstract class ClientRequestSchedulerBase {
 		this.isSSKScheduler = forSSKs;
 		this.isRTScheduler = forRT;
 		keyListeners = new ArrayList<KeyListener>();
-		singleKeyListeners = new TreeMap<ByteArrayWrapper,Object>(ByteArrayWrapper.FAST_COMPARATOR);
+		if(!forInserts) {
+			if(forSSKs)
+				singleKeyListeners = new TreeMap<ByteArrayWrapper,Object>(ByteArrayWrapper.FAST_COMPARATOR);
+			else
+				singleKeyListeners = new HashMap<ByteArrayWrapper,Object>();
+		}
 		priorities = null;
 		newPriorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 		globalSalt = new byte[32];
@@ -655,7 +660,12 @@ abstract class ClientRequestSchedulerBase {
 	
 	public void onStarted(ObjectContainer container, ClientContext context) {
 		keyListeners = new ArrayList<KeyListener>();
-		singleKeyListeners = new TreeMap<ByteArrayWrapper,Object>(ByteArrayWrapper.FAST_COMPARATOR);
+		if(!isInsertScheduler) {
+			if(isSSKScheduler)
+				singleKeyListeners = new TreeMap<ByteArrayWrapper,Object>(ByteArrayWrapper.FAST_COMPARATOR);
+			else
+				singleKeyListeners = new HashMap<ByteArrayWrapper,Object>();
+		}
 		if(newPriorities == null) {
 			newPriorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 			if(persistent()) container.store(this);
