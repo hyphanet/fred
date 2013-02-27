@@ -362,7 +362,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		int sskBlockSize = store.getTotalBlockSize();
 		
 		SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreSSK", store, weakPRNG, 20, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
-		SleepingFreenetStore<SSKBlock> delayStore = new SleepingFreenetStore<SSKBlock>(500, saltStore);
+		SleepingFreenetStore<SSKBlock> delayStore = new SleepingFreenetStore<SSKBlock>(200, saltStore);
 		CachingFreenetStoreTracker tracker = new CachingFreenetStoreTracker((sskBlockSize * 3), cachingFreenetStorePeriod, ticker);
 		final CachingFreenetStore<SSKBlock> cachingStore = new CachingFreenetStore<SSKBlock>(store, delayStore, tracker);
 		cachingStore.start(null, true);
@@ -402,7 +402,7 @@ public class CachingFreenetStoreTest extends TestCase {
 			}
 			
 		});
-		Executors.newSingleThreadExecutor().execute(future);
+		Executors.newCachedThreadPool().execute(future);
 		
 		// Write colliding key. Should cause the write above to return 0.
 		test = "test1";
