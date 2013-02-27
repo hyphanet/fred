@@ -189,7 +189,8 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 				if (o instanceof HashMap) {
 					@SuppressWarnings("unchecked")
 					HashMap<String, Object> hm = (HashMap<String, Object>)o;
-					if (tmpSize < maxSize) {
+					// It will be possible to make it fit provided there is at least space for every subdir and file to be a redirect/external.
+					if (tmpSize < maxSize - (512 * hm.size())) {
 						// FIXME do we need 512 bytes for the dir entry here?
 						containerBuilder.pushCurrentDir();
 						containerBuilder.makeSubDirCD(name);
