@@ -160,9 +160,11 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 					if (o instanceof ManifestElement) {
 						ManifestElement me = (ManifestElement)o;
 						containerBuilder.addItem(name, prefix+name, me, name.equals(defaultName));
+					} else {
+						tmpSize += 512;
 					}
 				}
-				tmpSize = wholeSize.getSizeFilesNoLimit();
+				tmpSize += wholeSize.getSizeFilesNoLimit();
 			} else {
 				for(Map.Entry<String, Object> entry:manifestElements.entrySet()) {
 					String name = entry.getKey();
@@ -173,24 +175,28 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 							containerBuilder.addExternal(name, me.getData(), me.getMimeTypeOverride(), name.equals(defaultName));
 						else
 							containerBuilder.addItem(name, prefix+name, me, name.equals(defaultName));
+					} else {
+						tmpSize += 512;
 					}
 				}
-				tmpSize = wholeSize.getSizeFiles();
+				tmpSize += wholeSize.getSizeFiles();
 			}
 			// now fill up with stuff from sub's
 			for(Map.Entry<String, Object> entry:manifestElements.entrySet()) {
 				String name = entry.getKey();
 				Object o = entry.getValue();
+				// 512 bytes for the dir entry already included in tmpSize.
 				if (o instanceof HashMap) {
 					@SuppressWarnings("unchecked")
 					HashMap<String, Object> hm = (HashMap<String, Object>)o;
-					tmpSize += 512;
 					if (tmpSize < maxSize) {
+						// FIXME do we need 512 bytes for the dir entry here?
 						containerBuilder.pushCurrentDir();
 						containerBuilder.makeSubDirCD(name);
 						tmpSize += makePutHandlers(containerBuilder, hm, defaultName, "", maxSize-tmpSize, name);
 						containerBuilder.popCurrentDir();
 					} else {
+						// We definitely need the 512 bytes for the dir entry here.
 						ContainerBuilder subC = containerBuilder.makeSubContainer(name);
 						makePutHandlers(subC, hm, defaultName, "", DEFAULT_MAX_CONTAINERSIZE, name);
 					}
