@@ -2320,6 +2320,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String[] uriAttrs,
 			String[] inlineURIAttrs) {
 			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs);
+			ElementInfo.addHTMLTag(tag);
 			for(String attr : locallyVerifiedAttrs) {
 				this.parsedAttrs.add(attr);
 			}
@@ -3272,5 +3273,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	public int getCharsetBufferSize() {
 		//Read in 64 kilobytes. The charset could be defined anywhere in the head section
 		return 1024*64;
+	}
+
+	static void forceSetup() {
+		// Do nothing.
+		// Force static init of the class.
 	}
 }
