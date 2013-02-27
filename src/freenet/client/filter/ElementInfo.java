@@ -31,102 +31,15 @@ public class ElementInfo {
 		VOID_ELEMENTS.add("spacer");
 		VOID_ELEMENTS.add("wbr");
 	}
-	//Taken from HTMLFilter
 	public final static HashSet<String> HTML_ELEMENTS=new HashSet<String>();
+	
+	// Called by HTMLFilter initialisation.
+	static void addHTMLTag(String tag) {
+		HTML_ELEMENTS.add(tag.toLowerCase());
+	}
+	
 	static {
-		HTML_ELEMENTS.add("html");
-		HTML_ELEMENTS.add("head");
-		HTML_ELEMENTS.add("title");
-		HTML_ELEMENTS.add("body");
-		HTML_ELEMENTS.add("div");
-		HTML_ELEMENTS.add("header");
-		HTML_ELEMENTS.add("nav");
-		HTML_ELEMENTS.add("address");
-		HTML_ELEMENTS.add("hgroup");
-		HTML_ELEMENTS.add("aside");
-		HTML_ELEMENTS.add("section");
-		HTML_ELEMENTS.add("article");
-		HTML_ELEMENTS.add("footer");
-		HTML_ELEMENTS.add("h1");
-		HTML_ELEMENTS.add("h2");
-		HTML_ELEMENTS.add("h3");
-		HTML_ELEMENTS.add("h4");
-		HTML_ELEMENTS.add("h5");
-		HTML_ELEMENTS.add("h6");
-		HTML_ELEMENTS.add("p");
-		HTML_ELEMENTS.add("caption");
-		HTML_ELEMENTS.add("span");
-		HTML_ELEMENTS.add("address");
-		HTML_ELEMENTS.add("em");
-		HTML_ELEMENTS.add("strong");
-		HTML_ELEMENTS.add("dfn");
-		HTML_ELEMENTS.add("code");
-		HTML_ELEMENTS.add("samp");
-		HTML_ELEMENTS.add("kbd");
-		HTML_ELEMENTS.add("var");
-		HTML_ELEMENTS.add("cite");
-		HTML_ELEMENTS.add("abbr");
-		HTML_ELEMENTS.add("acronym");
-		HTML_ELEMENTS.add("sub");
-		HTML_ELEMENTS.add("sup");
-		HTML_ELEMENTS.add("dt");
-		HTML_ELEMENTS.add("dd");
-		HTML_ELEMENTS.add("tt");
-		HTML_ELEMENTS.add("i");
-		HTML_ELEMENTS.add("b");
-		HTML_ELEMENTS.add("big");
-		HTML_ELEMENTS.add("small");
-		HTML_ELEMENTS.add("strike");
-		HTML_ELEMENTS.add("s");
-		HTML_ELEMENTS.add("u");
-		HTML_ELEMENTS.add("noframes");
-		HTML_ELEMENTS.add("fieldset");
-		HTML_ELEMENTS.add("xmp");
-		HTML_ELEMENTS.add("listing");
-		HTML_ELEMENTS.add("plaintext");
-		HTML_ELEMENTS.add("center");
-		HTML_ELEMENTS.add("bdo");
-		HTML_ELEMENTS.add("blockquote");
-		HTML_ELEMENTS.add("q");
-		HTML_ELEMENTS.add("br");
-		HTML_ELEMENTS.add("pre");
-		HTML_ELEMENTS.add("ins");
-		HTML_ELEMENTS.add("del");
-		HTML_ELEMENTS.add("ul");
-		HTML_ELEMENTS.add("ol");
-		HTML_ELEMENTS.add("li");
-		HTML_ELEMENTS.add("dl");
-		HTML_ELEMENTS.add("dir");
-		HTML_ELEMENTS.add("menu");
-		HTML_ELEMENTS.add("table");
-		HTML_ELEMENTS.add("thead");
-		HTML_ELEMENTS.add("tfoot");
-		HTML_ELEMENTS.add("tbody");
-		HTML_ELEMENTS.add("colgroup");
-		HTML_ELEMENTS.add("col");
-		HTML_ELEMENTS.add("tr");
-		HTML_ELEMENTS.add("th");
-		HTML_ELEMENTS.add("td");
-		HTML_ELEMENTS.add("a");
-		HTML_ELEMENTS.add("img");
-		HTML_ELEMENTS.add("map");
-		HTML_ELEMENTS.add("area");
-		HTML_ELEMENTS.add("font");
-		HTML_ELEMENTS.add("basefont");
-		HTML_ELEMENTS.add("hr");
-		HTML_ELEMENTS.add("frame");
-		HTML_ELEMENTS.add("frameset");
-		HTML_ELEMENTS.add("form");
-		HTML_ELEMENTS.add("input");
-		HTML_ELEMENTS.add("button");
-		HTML_ELEMENTS.add("select");
-		HTML_ELEMENTS.add("optgroup");
-		HTML_ELEMENTS.add("option");
-		HTML_ELEMENTS.add("textarea");
-		HTML_ELEMENTS.add("isindex");
-		HTML_ELEMENTS.add("label");
-		HTML_ELEMENTS.add("legend");
-
+		HTMLFilter.forceSetup();
 	}
 	
 	static final HashSet<String> REPLACED_ELEMENTS = new HashSet<String>();
@@ -535,7 +448,7 @@ public class ElementInfo {
 				return isValidString(string);
 			} else return false;
 		}
-		
+
 			
 						
 
