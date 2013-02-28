@@ -165,32 +165,21 @@ public class OpennetManager {
 			new NodeCrypto(node, true, opennetConfig, startupTime, node.enableARKs);
 
 		timeLastDropped = new EnumMap<ConnectionType,Long>(ConnectionType.class);
-		for(ConnectionType c : ConnectionType.values())
-			timeLastDropped.put(c, 0L);
-
 		connectionAttempts = new EnumMap<ConnectionType,Long>(ConnectionType.class);
-		for(ConnectionType c : ConnectionType.values())
-			connectionAttempts.put(c, 0L);
-
 		connectionAttemptsAdded = new EnumMap<ConnectionType,Long>(ConnectionType.class);
-		for(ConnectionType c : ConnectionType.values())
-			connectionAttemptsAdded.put(c, 0L);
-
 		connectionAttemptsAddedPlentySpace = new EnumMap<ConnectionType,Long>(ConnectionType.class);
-		for(ConnectionType c : ConnectionType.values())
-			connectionAttemptsAddedPlentySpace.put(c, 0L);
-
 		connectionAttemptsRejectedByPerTypeEnforcement = new EnumMap<ConnectionType,Long>(ConnectionType.class);
-		for(ConnectionType c : ConnectionType.values())
-			connectionAttemptsRejectedByPerTypeEnforcement.put(c, 0L);
-
 		connectionAttemptsRejectedNoPeersDroppable = new EnumMap<ConnectionType,Long>(ConnectionType.class);
-		for(ConnectionType c : ConnectionType.values())
-			connectionAttemptsRejectedNoPeersDroppable.put(c, 0L);
-
 		successCount = new EnumMap<ConnectionType,Long>(ConnectionType.class);
-		for(ConnectionType c : ConnectionType.values())
+		for(ConnectionType c : ConnectionType.values()) {
+			timeLastDropped.put(c, 0L);
+			connectionAttempts.put(c, 0L);
+			connectionAttemptsAdded.put(c, 0L);
+			connectionAttemptsAddedPlentySpace.put(c, 0L);
+			connectionAttemptsRejectedByPerTypeEnforcement.put(c, 0L);
+			connectionAttemptsRejectedNoPeersDroppable.put(c, 0L);
 			successCount.put(c, 0L);
+		}
 
 		File nodeFile = node.nodeDir().file("opennet-"+crypto.portNumber);
 		File backupNodeFile = node.nodeDir().file("opennet-"+crypto.portNumber+".bak");
@@ -777,6 +766,7 @@ public class OpennetManager {
 
 	public void onSuccess(OpennetPeerNode pn) {
 		synchronized(this) {
+			// XXX should not this use pn.getAddedReason() ?
 			for(ConnectionType type : ConnectionType.values())
 				successCount.put(type, successCount.get(type)+1);
 			if(peersLRU.contains(pn)) {

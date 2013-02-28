@@ -16,6 +16,8 @@ public class HashResult implements Comparable<HashResult>, Cloneable {
 	public final HashType type;
 	/** The result of the hash. Immutable. */
 	private final byte[] result;
+	/** Cached HashType.values(). Never modify or pass this array to outside code! */
+	private static final HashType[] HashType_values = HashType.values();
 	
 	public HashResult(HashType hashType, byte[] bs) {
 		this.type = hashType;
@@ -26,14 +28,14 @@ public class HashResult implements Comparable<HashResult>, Cloneable {
 	public static HashResult[] readHashes(DataInputStream dis) throws IOException {
 		int bitmask = dis.readInt();
 		int count = 0;
-		for(HashType h : HashType.values()) {
+		for(HashType h : HashType_values) {
 			if((bitmask & h.bitmask) == h.bitmask) {
 				count++;
 			}
 		}
 		HashResult[] results = new HashResult[count];
 		int x = 0;
-		for(HashType h : HashType.values()) {
+		for(HashType h : HashType_values) {
 			if((bitmask & h.bitmask) == h.bitmask) {
 				results[x++] = HashResult.readFrom(h, dis);
 			}

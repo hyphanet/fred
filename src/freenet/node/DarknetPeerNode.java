@@ -102,11 +102,16 @@ public class DarknetPeerNode extends PeerNode {
 		NORMAL,
 		HIGH;
 
+		private static final FRIEND_TRUST[] valuesBackwards;
+		static {
+			final FRIEND_TRUST[] values = values();
+			valuesBackwards = new FRIEND_TRUST[values.length];
+			for(int i=0;i<values.length;i++)
+				valuesBackwards[i] = values[values.length-i-1];
+		}
+
 		public static FRIEND_TRUST[] valuesBackwards() {
-			FRIEND_TRUST[] valuesBackwards = new FRIEND_TRUST[values().length];
-			for(int i=0;i<values().length;i++)
-				valuesBackwards[i] = values()[values().length-i-1];
-			return valuesBackwards;
+			return valuesBackwards.clone();
 		}
 
 	}

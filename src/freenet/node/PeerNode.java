@@ -5022,6 +5022,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		
 	}
 	
+
+	/** cached RequestType.values(). Never modify or pass this array to outside code! */
+	private static final RequestType[] RequestType_values = RequestType.values();
+
 	/** Uses the information we receive on the load on the target node to determine whether
 	 * we can route to it and when we can route to it.
 	 */
@@ -5194,7 +5198,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 		
 		private void failSlotWaiters(boolean reallyFailed) {
-			for(RequestType type : RequestType.values()) {
+			for(RequestType type : RequestType_values) {
 				SlotWaiterList slots; 
 				synchronized(routedToLock) {
 					slots = slotWaiters.get(type);
@@ -5214,7 +5218,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			if(logMINOR) Logger.minor(this, "Maybe waking up slot waiters for "+this+" realtime="+realTime+" for "+PeerNode.this.shortToString());
 			while(true) {
 				boolean foundNone = true;
-				RequestType type;
 				int typeNum;
 				PeerLoadStats loadStats;
 				synchronized(routedToLock) {
@@ -5226,11 +5229,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 					typeNum = slotWaiterTypeCounter;
 				}
 				typeNum++;
-				if(typeNum == RequestType.values().length)
+				if(typeNum == RequestType_values.length)
 					typeNum = 0;
-				for(int i=0;i<RequestType.values().length;i++) {
+				for(int i=0;i<RequestType_values.length;i++) {
 					SlotWaiterList list;
-					type = RequestType.values()[typeNum];
+					RequestType type = RequestType_values[typeNum];
 					if(logMINOR) Logger.minor(this, "Checking slot waiter list for "+type);
 					SlotWaiter slot;
 					RequestLikelyAcceptedState acceptState;
@@ -5240,14 +5243,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 						if(list == null) {
 							if(logMINOR) Logger.minor(this, "No list");
 							typeNum++;
-							if(typeNum == RequestType.values().length)
+							if(typeNum == RequestType_values.length)
 								typeNum = 0;
 							continue;
 						}
 						if(list.isEmpty()) {
 							if(logMINOR) Logger.minor(this, "List empty");
 							typeNum++;
-							if(typeNum == RequestType.values().length)
+							if(typeNum == RequestType_values.length)
 								typeNum = 0;
 							continue;
 						}
@@ -5278,7 +5281,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 					slot.unregister(PeerNode.this, peersForSuccessfulSlot);
 					if(logMINOR) Logger.minor(this, "Accept state is "+acceptState+" for "+slot+" - waking up");
 					typeNum++;
-					if(typeNum == RequestType.values().length)
+					if(typeNum == RequestType_values.length)
 						typeNum = 0;
 				}
 				if(foundNone) {
