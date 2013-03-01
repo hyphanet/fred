@@ -3380,12 +3380,12 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private void finishInitSaltHashFS(final String suffix, NodeClientCore clientCore) {
 		if(clientCore.alerts == null) throw new NullPointerException();
-		((SaltedHashFreenetStore<CHKBlock>) chkDatastore.getStore()).setUserAlertManager(clientCore.alerts);
-		((SaltedHashFreenetStore<CHKBlock>) chkDatacache.getStore()).setUserAlertManager(clientCore.alerts);
-		((SaltedHashFreenetStore<DSAPublicKey>) pubKeyDatastore.getStore()).setUserAlertManager(clientCore.alerts);
-		((SaltedHashFreenetStore<DSAPublicKey>) pubKeyDatacache.getStore()).setUserAlertManager(clientCore.alerts);
-		((SaltedHashFreenetStore<SSKBlock>) sskDatastore.getStore()).setUserAlertManager(clientCore.alerts);
-		((SaltedHashFreenetStore<SSKBlock>) sskDatacache.getStore()).setUserAlertManager(clientCore.alerts);
+		chkDatastore.getStore().setUserAlertManager(clientCore.alerts);
+		chkDatacache.getStore().setUserAlertManager(clientCore.alerts);
+		pubKeyDatastore.getStore().setUserAlertManager(clientCore.alerts);
+		pubKeyDatacache.getStore().setUserAlertManager(clientCore.alerts);
+		sskDatastore.getStore().setUserAlertManager(clientCore.alerts);
+		sskDatacache.getStore().setUserAlertManager(clientCore.alerts);
 
 		if (isBDBStoreExist(suffix)) {
 			clientCore.alerts.register(new SimpleUserAlert(true, NodeL10n.getBase().getString("Node.storeSaltHashMigratedShort"),
