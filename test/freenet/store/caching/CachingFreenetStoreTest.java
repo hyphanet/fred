@@ -394,15 +394,61 @@ public class CachingFreenetStoreTest extends TestCase {
 			assertTrue(false);
 		}
 		
-		FutureTask<Long> future = new FutureTask<Long>(new Callable<Long>() {
+//		FutureTask<Long> future = new FutureTask<Long>(new Callable<Long>() {
+//
+//			@Override
+//			public Long call() throws Exception {
+//				return 
+//			}
+//			
+//		});
+//		Executors.newCachedThreadPool().execute(future);
+		
+		// FIXME Jenkins doesn't like Future's :(
+		class PushDriver implements Runnable {
 
+			private boolean finished;
+			private long retval = -1;
+			
 			@Override
-			public Long call() throws Exception {
-				return cachingStore.pushLeastRecentlyBlock();
+			public void run() {
+				try {
+					long val = cachingStore.pushLeastRecentlyBlock();
+					synchronized(this) {
+						retval = val;
+						finished = true;
+						notifyAll();
+					}
+				} finally {
+					synchronized(this) {
+						if(finished) return;
+						finished = true;
+						notifyAll();
+					}
+				}
 			}
 			
-		});
-		Executors.newCachedThreadPool().execute(future);
+			long get() {
+				synchronized(this) {
+					while(!finished) {
+						try {
+							wait();
+						} catch (InterruptedException e) {
+							// Ignore.
+						}
+					}
+					return retval;
+				}
+			}
+			
+			void start() {
+				new Thread(this).start();
+			}
+			
+		}
+		
+		PushDriver future = new PushDriver();
+		future.start();
 		
 		// Write colliding key. Should cause the write above to return 0.
 		test = "test1";
@@ -424,7 +470,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		// Size is still one key.
 		assertTrue(tracker.getSizeOfCache() == sskBlockSize);
 		
-		assertEquals(future.get().longValue(), 0L);
+		assertEquals(future.get(), 0L);
 		NodeSSK key = sskBlock.getKey();
 		assertTrue(saltStore.fetch(key.getRoutingKey(), key.getFullKey(), false, false, false, false, null).equals(sskBlock));
 		assertTrue(store.fetch(key, false, false, false, false, null).equals(sskBlock2));
