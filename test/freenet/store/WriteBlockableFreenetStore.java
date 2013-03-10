@@ -1,11 +1,17 @@
 package freenet.store;
 
 import java.io.IOException;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class WriteBlockableFreenetStore<T extends StorableBlock> extends ProxyFreenetStore<T> {
 
 	private boolean blocked;
 	private int countBlocked;
+	private final Lock lock = new ReentrantLock();
+	private final Condition blockedChanged = lock.newCondition();
+	private final Condition countBlockedIncreased = lock.newCondition();
 	
 	public WriteBlockableFreenetStore(FreenetStore<T> backDatastore, boolean initialValue) {
 		super(backDatastore);
@@ -19,25 +25,28 @@ public class WriteBlockableFreenetStore<T extends StorableBlock> extends ProxyFr
 		super.put(block, data, header, overwrite, oldBlock);
 	}
 
-	synchronized void waitForUnblocked() {
-		countBlocked++;
+	void waitForUnblocked() {
+		lock.lock();
 		try {
-			notifyAll(); // FIXME use two separate semaphores?
+			countBlocked++;
+			countBlockedIncreased.signalAll();
 			while(blocked) {
-				try {
-					wait();
-				} catch (InterruptedException e) {
-					// Ignore.
-				}
+				blockedChanged.awaitUninterruptibly();
 			}
 		} finally {
 			countBlocked--;
+			lock.unlock();
 		}
 	}
 	
-	public synchronized void setBlocked(boolean blocked) {
-		this.blocked = blocked;
-		notifyAll();
+	public void setBlocked(boolean blocked) {
+		lock.lock();
+		try {
+			this.blocked = blocked;
+			blockedChanged.signalAll();
+		} finally {
+			lock.unlock();
+		}
 	}
 	
 	public void unblock() {
@@ -48,17 +57,23 @@ public class WriteBlockableFreenetStore<T extends StorableBlock> extends ProxyFr
 		setBlocked(true);
 	}
 	
-	public synchronized int countBlocked() {
-		return countBlocked;
+	public int countBlocked() {
+		lock.lock();
+		try {
+			return countBlocked;
+		} finally {
+			lock.unlock();
+		}
 	}
 	
-	public synchronized void waitForSomeBlocked(int minBlocked) {
-		while(countBlocked < minBlocked) {
-			try {
-				wait();
-			} catch (InterruptedException e) {
-				// Ignore.
+	public void waitForSomeBlocked(int minBlocked) {
+		lock.lock();
+		try {
+			while(countBlocked < minBlocked) {
+				countBlockedIncreased.awaitUninterruptibly();
 			}
+		} finally {
+			lock.unlock();
 		}
 	}
 	
