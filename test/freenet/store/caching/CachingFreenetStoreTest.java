@@ -405,7 +405,7 @@ public class CachingFreenetStoreTest extends TestCase {
 //		Executors.newCachedThreadPool().execute(future);
 		
 		// FIXME Jenkins doesn't like Future's :(
-		class PushDriver implements Runnable {
+		class PushDriver extends Thread {
 
 			private boolean finished;
 			private long retval = -1;
@@ -440,11 +440,6 @@ public class CachingFreenetStoreTest extends TestCase {
 					return retval;
 				}
 			}
-			
-			void start() {
-				new Thread(this).start();
-			}
-			
 		}
 		
 		PushDriver future = new PushDriver();
