@@ -6,11 +6,10 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import freenet.keys.KeyVerifyException;
 import freenet.node.SemiOrderedShutdownHook;
-import freenet.node.stats.StoreAccessStats;
-import freenet.node.useralerts.UserAlertManager;
 import freenet.store.BlockMetadata;
 import freenet.store.FreenetStore;
 import freenet.store.KeyCollisionException;
+import freenet.store.ProxyFreenetStore;
 import freenet.store.StorableBlock;
 import freenet.store.StoreCallback;
 import freenet.support.ByteArrayWrapper;
@@ -25,13 +24,12 @@ import freenet.support.io.NativeThread;
  * @author Simon Vocella <voxsim@gmail.com>
  * 
  */
-public class CachingFreenetStore<T extends StorableBlock> implements FreenetStore<T> {
+public class CachingFreenetStore<T extends StorableBlock> extends ProxyFreenetStore<T> {
     private static volatile boolean logMINOR;
  
 	private boolean shuttingDown; /* If this flag is true, we don't accept puts anymore */
 	private final LRUMap<ByteArrayWrapper, Block<T>> blocksByRoutingKey;
 	private final StoreCallback<T> callback;
-	private final FreenetStore<T> backDatastore;
 	private final boolean collisionPossible;
 	private final ReadWriteLock configLock = new ReentrantReadWriteLock();
 	private final CachingFreenetStoreTracker tracker;
@@ -48,8 +46,8 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 	}
 
 	public CachingFreenetStore(StoreCallback<T> callback, FreenetStore<T> backDatastore, CachingFreenetStoreTracker tracker) {
+		super(backDatastore);
 		this.callback = callback;
-		this.backDatastore = backDatastore;
 		SemiOrderedShutdownHook shutdownHook = SemiOrderedShutdownHook.get();
 		this.blocksByRoutingKey = LRUMap.createSafeMap(ByteArrayWrapper.FAST_COMPARATOR);
 		this.collisionPossible = callback.collisionPossible();
@@ -91,31 +89,6 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		}
 		
 		return backDatastore.fetch(routingKey, fullKey, dontPromote, canReadClientCache, canReadSlashdotCache, ignoreOldBlocks, meta);	
-	}
-
-	@Override
-	public long getBloomFalsePositive() {
-		return backDatastore.getBloomFalsePositive();
-	}
-
-	@Override
-	public long getMaxKeys() {
-		return backDatastore.getMaxKeys();
-	}
-
-	@Override
-	public long hits() {
-		return backDatastore.hits();
-	}
-
-	@Override
-	public long keyCount() {
-		return backDatastore.keyCount();
-	}
-
-	@Override
-	public long misses() {
-		return backDatastore.misses();
 	}
 
 	@Override
@@ -241,40 +214,9 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 	}
 
 	@Override
-	public void setMaxKeys(long maxStoreKeys, boolean shrinkNow)
-			throws IOException {
-		backDatastore.setMaxKeys(maxStoreKeys, shrinkNow);
-	}
-
-	@Override
-	public long writes() {
-		return backDatastore.writes();
-	}
-
-	@Override
-	public StoreAccessStats getSessionAccessStats() {
-		return backDatastore.getSessionAccessStats();
-	}
-
-	@Override
-	public StoreAccessStats getTotalAccessStats() {
-		return backDatastore.getTotalAccessStats();
-	}
-
-	@Override
 	public boolean start(Ticker ticker, boolean longStart) throws IOException {
 		tracker.registerCachingFS(this);
 		return this.backDatastore.start(ticker, longStart);
-	}
-
-	@Override
-	public void setUserAlertManager(UserAlertManager userAlertManager) {
-		this.backDatastore.setUserAlertManager(userAlertManager);
-	}
-	
-	@Override
-	public FreenetStore<T> getUnderlyingStore() {
-		return this.backDatastore;
 	}
 
 	@Override
