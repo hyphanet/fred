@@ -41,6 +41,7 @@ import freenet.store.PubkeyStore;
 import freenet.store.RAMFreenetStore;
 import freenet.store.SSKStore;
 import freenet.store.SimpleGetPubkey;
+import freenet.store.WriteBlockableFreenetStore;
 import freenet.store.caching.CachingFreenetStore;
 import freenet.store.caching.CachingFreenetStoreTracker;
 import freenet.store.saltedhash.ResizablePersistentIntBuffer;
@@ -367,7 +368,8 @@ public class CachingFreenetStoreTest extends TestCase {
 		int sskBlockSize = store.getTotalBlockSize();
 		
 		SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreSSK", store, weakPRNG, 20, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
-		SleepingFreenetStore<SSKBlock> delayStore = new SleepingFreenetStore<SSKBlock>(500, saltStore);
+		// Don't let the write complete until we say so...
+		WriteBlockableFreenetStore<SSKBlock> delayStore = new WriteBlockableFreenetStore<SSKBlock>(saltStore, true);
 		CachingFreenetStoreTracker tracker = new CachingFreenetStoreTracker((sskBlockSize * 3), cachingFreenetStorePeriod, ticker);
 		final CachingFreenetStore<SSKBlock> cachingStore = new CachingFreenetStore<SSKBlock>(store, delayStore, tracker);
 		cachingStore.start(null, true);
@@ -472,6 +474,9 @@ public class CachingFreenetStoreTest extends TestCase {
 		
 		// Size is still one key.
 		assertTrue(tracker.getSizeOfCache() == sskBlockSize);
+		
+		// Now let the write through.
+		delayStore.setBlocked(false);
 		
 		assertEquals(future.get(), 0L);
 		NodeSSK key = sskBlock.getKey();
