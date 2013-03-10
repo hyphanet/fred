@@ -42,8 +42,6 @@ import freenet.store.RAMFreenetStore;
 import freenet.store.SSKStore;
 import freenet.store.SimpleGetPubkey;
 import freenet.store.WriteBlockableFreenetStore;
-import freenet.store.caching.CachingFreenetStore;
-import freenet.store.caching.CachingFreenetStoreTracker;
 import freenet.store.saltedhash.ResizablePersistentIntBuffer;
 import freenet.store.saltedhash.SaltedHashFreenetStore;
 import freenet.support.Fields;
@@ -401,57 +399,16 @@ public class CachingFreenetStoreTest extends TestCase {
 			fail();
 		}
 		
-//		FutureTask<Long> future = new FutureTask<Long>(new Callable<Long>() {
-//
-//			@Override
-//			public Long call() throws Exception {
-//				return 
-//			}
-//			
-//		});
-//		Executors.newCachedThreadPool().execute(future);
-		
-		// FIXME Jenkins doesn't like Future's :(
-		// Start a thread to call pushLeastRecentlyBlock().
-		class PushDriver extends Thread {
+		FutureTask<Long> future = new FutureTask<Long>(new Callable<Long>() {
 
-			private boolean finished;
-			private long retval = -1;
-			
 			@Override
-			public void run() {
-				try {
-					long val = cachingStore.pushLeastRecentlyBlock();
-					synchronized(this) {
-						retval = val;
-						finished = true;
-						notifyAll();
-					}
-				} finally {
-					synchronized(this) {
-						if(finished) return;
-						finished = true;
-						notifyAll();
-					}
-				}
+			public Long call() throws Exception {
+				return cachingStore.pushLeastRecentlyBlock();
 			}
 			
-			long get() {
-				synchronized(this) {
-					while(!finished) {
-						try {
-							wait();
-						} catch (InterruptedException e) {
-							// Ignore.
-						}
-					}
-					return retval;
-				}
-			}
-		}
+		});
+		Executors.newCachedThreadPool().execute(future);
 		
-		PushDriver future = new PushDriver();
-		future.start();
 		delayStore.waitForSomeBlocked();
 		
 		// Write colliding key. Should cause the write above to return 0: After it unlocks, it will see
@@ -479,7 +436,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		// Now let the write through.
 		delayStore.setBlocked(false);
 		
-		assertEquals(future.get(), 0L);
+		assertEquals(future.get().longValue(), 0L);
 		NodeSSK key = sskBlock.getKey();
 		assertTrue(saltStore.fetch(key.getRoutingKey(), key.getFullKey(), false, false, false, false, null).equals(sskBlock));
 		assertTrue(store.fetch(key, false, false, false, false, null).equals(sskBlock2));
