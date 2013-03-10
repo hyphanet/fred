@@ -387,7 +387,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		assertTrue(tracker.getSizeOfCache() == 0);
 		assertEquals(cachingStore.pushLeastRecentlyBlock(), -1);
 		
-		// Write one key to the store.
+		// Write one key to the cache. It will not be written through to disk.
 		String test = "test";
 		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(test.getBytes("UTF-8"));
 		ClientSSKBlock block = ik.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
@@ -410,6 +410,7 @@ public class CachingFreenetStoreTest extends TestCase {
 //		Executors.newCachedThreadPool().execute(future);
 		
 		// FIXME Jenkins doesn't like Future's :(
+		// Start a thread to call pushLeastRecentlyBlock().
 		class PushDriver extends Thread {
 
 			private boolean finished;
@@ -450,7 +451,9 @@ public class CachingFreenetStoreTest extends TestCase {
 		PushDriver future = new PushDriver();
 		future.start();
 		
-		// Write colliding key. Should cause the write above to return 0.
+		// Write colliding key. Should cause the write above to return 0: After it unlocks, it will see
+		// there is a new, different block for that key, and therefore it cannot remove the block, and
+		// thus must return 0.
 		test = "test1";
 		bucket = new SimpleReadOnlyArrayBucket(test.getBytes("UTF-8"));
 		block = ik.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
