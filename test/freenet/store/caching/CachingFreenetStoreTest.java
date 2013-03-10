@@ -452,6 +452,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		
 		PushDriver future = new PushDriver();
 		future.start();
+		delayStore.waitForSomeBlocked();
 		
 		// Write colliding key. Should cause the write above to return 0: After it unlocks, it will see
 		// there is a new, different block for that key, and therefore it cannot remove the block, and

@@ -5,6 +5,7 @@ import java.io.IOException;
 public class WriteBlockableFreenetStore<T extends StorableBlock> extends ProxyFreenetStore<T> {
 
 	private boolean blocked;
+	private int countBlocked;
 	
 	public WriteBlockableFreenetStore(FreenetStore<T> backDatastore, boolean initialValue) {
 		super(backDatastore);
@@ -19,12 +20,18 @@ public class WriteBlockableFreenetStore<T extends StorableBlock> extends ProxyFr
 	}
 
 	synchronized void waitForUnblocked() {
-		while(blocked) {
-			try {
-				wait();
-			} catch (InterruptedException e) {
-				// Ignore.
+		countBlocked++;
+		try {
+			notifyAll(); // FIXME use two separate semaphores?
+			while(blocked) {
+				try {
+					wait();
+				} catch (InterruptedException e) {
+					// Ignore.
+				}
 			}
+		} finally {
+			countBlocked--;
 		}
 	}
 	
@@ -39,6 +46,24 @@ public class WriteBlockableFreenetStore<T extends StorableBlock> extends ProxyFr
 	
 	public void block() {
 		setBlocked(true);
+	}
+	
+	public synchronized int countBlocked() {
+		return countBlocked;
+	}
+	
+	public synchronized void waitForSomeBlocked(int minBlocked) {
+		while(countBlocked < minBlocked) {
+			try {
+				wait();
+			} catch (InterruptedException e) {
+				// Ignore.
+			}
+		}
+	}
+	
+	public void waitForSomeBlocked() {
+		waitForSomeBlocked(1);
 	}
 
 }
