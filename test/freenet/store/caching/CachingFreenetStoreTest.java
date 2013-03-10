@@ -253,7 +253,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		try {
 			store.put(sskBlock, false, false);
 		} catch (KeyCollisionException e1) {
-			assertTrue(false);
+			fail();
 		}
 		
 		assertTrue(tracker.getSizeOfCache() == sskBlockSize);
@@ -265,14 +265,14 @@ public class CachingFreenetStoreTest extends TestCase {
 		sskBlock = (SSKBlock) block.getBlock();
 		try {
 			store.put(sskBlock, false, false);
-			assertTrue(false);
+			fail();
 		} catch (KeyCollisionException e) {
 			// Expected.
 		}
 		try {
 			store.put(sskBlock, true, false);
 		} catch (KeyCollisionException e) {
-			assertTrue(false);
+			fail();
 		}
 		
 		// Size is still one key.
@@ -290,7 +290,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		try {
 			store.put(sskBlock2, false, false);
 		} catch (KeyCollisionException e) {
-			assertTrue(false);
+			fail();
 		}
 		
 		// Wait for it to write to disk.
@@ -340,7 +340,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		try {
 			store.put(sskBlock, false, false);
 		} catch (KeyCollisionException e1) {
-			assertTrue(false);
+			fail();
 		}
 		
 		// Write.
@@ -391,7 +391,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		try {
 			store.put(sskBlock, false, false);
 		} catch (KeyCollisionException e1) {
-			assertTrue(false);
+			fail();
 		}
 		
 //		FutureTask<Long> future = new FutureTask<Long>(new Callable<Long>() {
@@ -452,14 +452,14 @@ public class CachingFreenetStoreTest extends TestCase {
 		SSKBlock sskBlock2 = (SSKBlock) block.getBlock();
 		try {
 			store.put(sskBlock2, false, false);
-			assertTrue(false);
+			fail();
 		} catch (KeyCollisionException e) {
 			// Expected.
 		}
 		try {
 			store.put(sskBlock2, true, false);
 		} catch (KeyCollisionException e) {
-			assertTrue(false);
+			fail();
 		}
 		
 		// Size is still one key.
@@ -757,7 +757,7 @@ public class CachingFreenetStoreTest extends TestCase {
 			store.put(sskBlock, false, false);
 			assertTrue(true);
 		} catch (KeyCollisionException e) {
-			assertTrue(false);
+			fail();
 		}
 		
 		String test1 = "test1";
@@ -768,7 +768,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		//if it's different (e.g. different content, same key), there should be a KCE thrown
 		try {
 			store.put(sskBlock1, false, false);
-			assertTrue(false);
+			fail();
 		} catch (KeyCollisionException e) {
 			assertTrue(true);
 		}
@@ -778,7 +778,7 @@ public class CachingFreenetStoreTest extends TestCase {
 			store.put(sskBlock1, true, false);
 			assertTrue(true);
 		} catch (KeyCollisionException e) {
-			assertTrue(false);
+			fail();
 		}
 		
 		ClientSSK key = block1.getClientKey();
