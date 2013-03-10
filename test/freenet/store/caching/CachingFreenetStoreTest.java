@@ -351,6 +351,11 @@ public class CachingFreenetStoreTest extends TestCase {
 		assertEquals(cachingStore.pushLeastRecentlyBlock(), -1);
 	}
 	
+	/** pushLeastRecentlyBlock() with collisions:
+	 * Lock { Grab a block for key K. (Do not remove it) }
+	 * Write the block.
+	 * Lock { Detected a different block for key K. Return 0 rather than removing it. }
+	 */
 	public void testManualWriteCollision() throws IOException, SSKEncodeException, InvalidCompressionCodecException, InterruptedException, ExecutionException {
 		
 		File f = new File(tempDir, "saltstore");
