@@ -187,28 +187,26 @@ public class CachingFreenetStore<T extends StorableBlock> extends ProxyFreenetSt
 			configLock.writeLock().unlock();
 		}
 			
-		if(block != null) {
-			try {
-				backDatastore.put(block.block, block.data, block.header, block.overwrite, block.isOldBlock);
-			} catch (IOException e) {
-				Logger.error(this, "Error in pushAll for CachingFreenetStore: "+e, e);
-			} catch (KeyCollisionException e) {
-				if(logMINOR) Logger.minor(this, "KeyCollisionException in pushAll for CachingFreenetStore: "+e, e);
-			}
+		try {
+			backDatastore.put(block.block, block.data, block.header, block.overwrite, block.isOldBlock);
+		} catch (IOException e) {
+			Logger.error(this, "Error in pushAll for CachingFreenetStore: "+e, e);
+		} catch (KeyCollisionException e) {
+			if(logMINOR) Logger.minor(this, "KeyCollisionException in pushAll for CachingFreenetStore: "+e, e);
+		}
+		
+		configLock.writeLock().lock();
+		try {
+			Block<T> currentVersionOfBlock = blocksByRoutingKey.get(key);
 			
-			configLock.writeLock().lock();
-			try {
-				Block<T> currentVersionOfBlock = blocksByRoutingKey.get(key);
-				
-				/** it might have changed if there was a put() with overwrite=true. 
-				 *  If it has changed, return 0 , i.e. don't remove it*/
-				if(currentVersionOfBlock != null && currentVersionOfBlock.block.equals(block.block)) {
-					if(blocksByRoutingKey.removeKey(key))
-						return sizeBlock;
-				}
-			} finally {
-				configLock.writeLock().unlock();
+			/** it might have changed if there was a put() with overwrite=true. 
+			 *  If it has changed, return 0 , i.e. don't remove it*/
+			if(currentVersionOfBlock != null && currentVersionOfBlock.block.equals(block.block)) {
+				if(blocksByRoutingKey.removeKey(key))
+					return sizeBlock;
 			}
+		} finally {
+			configLock.writeLock().unlock();
 		}
 		return 0;
 	}
