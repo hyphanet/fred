@@ -114,15 +114,18 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 			}
 			timeAccessed = block.lastAccessed;
 		}
-		InputStream in = block.data.getInputStream();
-		DataInputStream dis = new DataInputStream(in);
 		byte[] fk = new byte[fullKeySize];
 		byte[] header = new byte[headerSize];
 		byte[] data = new byte[dataSize];
-		dis.readFully(fk);
-		dis.readFully(header);
-		dis.readFully(data);
-		in.close();
+		InputStream in = block.data.getInputStream();
+		try {
+			DataInputStream dis = new DataInputStream(in);
+			dis.readFully(fk);
+			dis.readFully(header);
+			dis.readFully(data);
+		} finally {
+			in.close();
+		}
 		try {
 			T ret =
 				callback.construct(data, header, routingKey, fk, canReadClientCache, canReadSlashdotCache, null, null);
