@@ -239,7 +239,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 			cancelled.cancel(null, core.clientContext);
 	}
 
-	File getBlobFile(int availableVersion) {
+	final File getBlobFile(int availableVersion) {
 		return new File(node.clientCore.getPersistentTempDir(), blobFilenamePrefix + availableVersion + ".fblob");
 	}
 	Bucket getBlobBucket(int availableVersion) {
