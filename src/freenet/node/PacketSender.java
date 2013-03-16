@@ -136,6 +136,20 @@ public class PacketSender implements Runnable {
 		}
 	}
 
+	/**
+	 * Send loop. Strategy:
+	 * - Each peer can tell us when its data needs to be sent by. This is usually 100ms after it
+	 * is posted. It could vary by message type. Acknowledgements also become valid 100ms after 
+	 * being queued.
+	 * - If any peer's data is overdue, send the data from the most overdue peer.
+	 * - If there are peers with more than a packet's worth of data queued, send the data from the
+	 * peer with the oldest data.
+	 * - If there are peers with overdue ack's, send to the peer whose acks are oldest.
+	 * 
+	 * It does not attempt to ensure fairness, it attempts to minimise latency. Fairness is best
+	 * dealt with at a higher level e.g. requests, although some transfers are not part of requests,
+	 * e.g. bulk f2f transfers, so we may need to reconsider this eventually...
+	 */
 	private void realRun() {
 		long now = System.currentTimeMillis();
                 PeerManager pm;
@@ -355,7 +369,6 @@ public class PacketSender implements Runnable {
 			} catch (BlockedTooLongException e) {
 				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendPacket+" : "+("(new packet format)")+" (version "+toSendPacket.getVersionNumber()+") - DISCONNECTING!");
 				toSendPacket.forceDisconnect();
-				onForceDisconnectBlockTooLong(toSendPacket, e);
 			}
 
 			if(canSendThrottled || !toSendPacket.shouldThrottle()) {
@@ -386,7 +399,6 @@ public class PacketSender implements Runnable {
 			} catch (BlockedTooLongException e) {
 				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendAckOnly+" : "+("(new packet format)")+" (version "+toSendAckOnly.getVersionNumber()+") - DISCONNECTING!");
 				toSendAckOnly.forceDisconnect();
-				onForceDisconnectBlockTooLong(toSendAckOnly, e);
 			}
 
 			if(canSendThrottled || !toSendAckOnly.shouldThrottle()) {
@@ -429,12 +441,13 @@ public class PacketSender implements Runnable {
 			PeerNode[] peers = om.getOldPeers();
 
 			for(PeerNode pn : peers) {
-				if(pn.timeLastConnected() <= 0)
+				long lastConnected = pn.timeLastConnected(now);
+				if(lastConnected <= 0)
 					Logger.error(this, "Last connected is zero or negative for old-opennet-peer "+pn);
 				// Will be removed by next line.
-				if(now - pn.timeLastConnected() > OpennetManager.MAX_TIME_ON_OLD_OPENNET_PEERS) {
+				if(now - lastConnected > OpennetManager.MAX_TIME_ON_OLD_OPENNET_PEERS) {
 					om.purgeOldOpennetPeer(pn);
-					if(logMINOR) Logger.minor(this, "Removing old opennet peer (too old): "+pn+" age is "+TimeUtil.formatTime(now - pn.timeLastConnected()));
+					if(logMINOR) Logger.minor(this, "Removing old opennet peer (too old): "+pn+" age is "+TimeUtil.formatTime(now - lastConnected));
 					continue;
 				}
 				if(pn.isConnected()) continue; // Race condition??
@@ -490,129 +503,6 @@ public class PacketSender implements Runnable {
 				Logger.debug(this, "Next urgent time is "+(now - nextActionTime)+"ms in the past");
 		}
 	}
-
-	private final HashSet<Peer> peersDumpedBlockedTooLong = new HashSet<Peer>();
-
-	private void onForceDisconnectBlockTooLong(PeerNode pn, BlockedTooLongException e) {
-		Peer p = pn.getPeer();
-		synchronized(peersDumpedBlockedTooLong) {
-			peersDumpedBlockedTooLong.add(p);
-			if(peersDumpedBlockedTooLong.size() > 1) return;
-		}
-		if(node.clientCore == null || node.clientCore.alerts == null)
-			return;
-		// FIXME XXX: We have had this alert enabled for MONTHS which got us hundreds of bug reports about it. Unfortunately, nobody spend any work on fixing
-		// the issue after the alert was added so I have disabled it to quit annoying our users. We should not waste their time if we don't do anything. xor
-		// Notice that the same alert is commented out in FNPPacketMangler.
-		// node.clientCore.alerts.register(peersDumpedBlockedTooLongAlert);
-	}
-
-	@SuppressWarnings("unused")
-	private final UserAlert peersDumpedBlockedTooLongAlert = new AbstractUserAlert() {
-
-        @Override
-		public String anchor() {
-			return "disconnectedStillNotAcked";
-		}
-
-        @Override
-		public String dismissButtonText() {
-			return null;
-		}
-
-        @Override
-		public short getPriorityClass() {
-			return UserAlert.ERROR;
-		}
-
-        @Override
-		public String getShortText() {
-			int sz;
-			synchronized(peersDumpedBlockedTooLong) {
-				sz = peersDumpedBlockedTooLong.size();
-			}
-			return l10n("somePeersDisconnectedBlockedTooLong", "count", Integer.toString(sz));
-		}
-
-        @Override
-		public HTMLNode getHTMLText() {
-			HTMLNode div = new HTMLNode("div");
-			Peer[] peers;
-			synchronized(peersDumpedBlockedTooLong) {
-				peers = peersDumpedBlockedTooLong.toArray(new Peer[peersDumpedBlockedTooLong.size()]);
-			}
-			NodeL10n.getBase().addL10nSubstitution(div,
-			        "PacketSender.somePeersDisconnectedBlockedTooLongDetail",
-			        new String[] { "count", "link" },
-			        new HTMLNode[] { HTMLNode.text(peers.length),
-			                HTMLNode.link(ExternalLinkToadlet.escape("https://bugs.freenetproject.org/"))});
-			HTMLNode list = div.addChild("ul");
-			for(Peer peer : peers) {
-				list.addChild("li", peer.toString());
-			}
-			return div;
-		}
-
-        @Override
-		public String getText() {
-			StringBuilder sb = new StringBuilder();
-			Peer[] peers;
-			synchronized(peersDumpedBlockedTooLong) {
-				peers = peersDumpedBlockedTooLong.toArray(new Peer[peersDumpedBlockedTooLong.size()]);
-			}
-			sb.append(l10n("somePeersDisconnectedStillNotAckedDetail",
-					new String[] { "count", "link", "/link" },
-					new String[] { Integer.toString(peers.length), "", "" } ));
-			sb.append('\n');
-			for(Peer peer : peers) {
-				sb.append('\t');
-				sb.append(peer.toString());
-				sb.append('\n');
-			}
-			return sb.toString();
-		}
-
-        @Override
-		public String getTitle() {
-			return getShortText();
-		}
-
-        @Override
-		public Object getUserIdentifier() {
-			return PacketSender.this;
-		}
-
-        @Override
-		public boolean isEventNotification() {
-			return false;
-		}
-
-        @Override
-		public boolean isValid() {
-			return true;
-		}
-
-        @Override
-		public void isValid(boolean validity) {
-			// Ignore
-		}
-
-        @Override
-		public void onDismiss() {
-			// Ignore
-		}
-
-        @Override
-		public boolean shouldUnregisterOnDismiss() {
-			return false;
-		}
-
-        @Override
-		public boolean userCanDismiss() {
-			return false;
-		}
-
-	};
 
 	/** Wake up, and send any queued packets. */
 	void wakeUp() {

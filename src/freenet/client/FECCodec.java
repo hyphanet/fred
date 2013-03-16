@@ -143,12 +143,13 @@ public abstract class FECCodec {
 		// Must be even if 16-bit code.
 		if((k > 256 || n > 256) && ((stripeSize & 1) == 1))
 			stripeSize++;
-		if(stripeSize != 32768) System.out.println("Stripe size is "+stripeSize);
+		if(logMINOR && stripeSize != 32768) Logger.minor(this, "Stripe size is "+stripeSize);
 
 		try {
 
 			byte[] realBuffer = new byte[k * stripeSize];
 
+			// Indicates where the data is for each block. Many of the blocks won't have any data.
 			int[] packetIndexes = new int[k];
 			for(int i = 0; i < packetIndexes.length; i++)
 				packetIndexes[i] = -1;
@@ -215,11 +216,6 @@ public abstract class FECCodec {
 				for(int i = 0; i < packetIndexes.length; i++)
 					Logger.minor(this, "[" + i + "] = " + packetIndexes[i]);
 
-			if(fec instanceof Native8Code) {
-				System.out.println("Decoding with native code, n = "+n+" k = "+k);
-				System.out.flush();
-			}
-				
 			for(int offset = 0; offset < blockLength; offset += stripeSize) {
 				if(offset + stripeSize > blockLength) {
 					stripeSize = blockLength - offset;
@@ -241,9 +237,9 @@ public abstract class FECCodec {
 						}
 					}
 				}
-				// Do the decode
-				// Not shuffled
+				// The FEC codec will change the indexes in disposableIndexes. We need them to stay the same for multiple stripes.
 				int[] disposableIndexes = packetIndexes.clone();
+				// Do the decode, not shuffled
 				fec.decode(packets, disposableIndexes);
 				// packets now contains an array of decoded blocks, in order
 				// Write the data out
@@ -299,8 +295,8 @@ public abstract class FECCodec {
 //		Runtime.getRuntime().runFinalization();
 //		Runtime.getRuntime().gc();
 //		Runtime.getRuntime().runFinalization();
-		long memUsedAtStart = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
 		if(logMINOR) {
+			long memUsedAtStart = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
 			Logger.minor(this, "Memory in use at start: " + memUsedAtStart + " max=" + Runtime.getRuntime().maxMemory());
 			Logger.minor(this, "Doing encode: " + dataBlockStatus.length + " data blocks, " + checkBlockStatus.length + " check blocks, block length " + blockLength + " with " + this);
 		}
@@ -338,7 +334,7 @@ public abstract class FECCodec {
 			// Must be even if 16-bit code.
 			if((k > 256 || n > 256) && ((stripeSize & 1) == 1))
 				stripeSize++;
-			if(stripeSize != 32768) System.out.println("Stripe size is "+stripeSize);
+			if(logMINOR && stripeSize != 32768) Logger.minor(this, "Stripe size is "+stripeSize);
 
 			byte[] realBuffer = new byte[(k + numberToEncode) * stripeSize];
 			
@@ -376,24 +372,21 @@ public abstract class FECCodec {
 //			Runtime.getRuntime().runFinalization();
 //			Runtime.getRuntime().gc();
 //			Runtime.getRuntime().runFinalization();
-			long memUsedBeforeEncodes = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-			if(logMINOR)
+			if(logMINOR) {
+				long memUsedBeforeEncodes = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
 				Logger.minor(this, "Memory in use before encodes: " + memUsedBeforeEncodes);
-
-			if(fec instanceof Native8Code) {
-				System.out.println("Encoding with native code, n = "+n+" k = "+k);
-				System.out.flush();
 			}
-			
+
 			if(numberToEncode > 0)
 				// Do the (striped) encode
 
 				for(int offset = 0; offset < blockLength; offset += stripeSize) {
 					if(offset + stripeSize > blockLength)
 						stripeSize = blockLength - offset;
-					long memUsedBeforeRead = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-					if(logMINOR)
+					if(logMINOR) {
+						long memUsedBeforeRead = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
 						Logger.minor(this, "Memory in use before read: " + memUsedBeforeRead);
+					}
 					// Read the data in first
 					for(int i = 0; i < k; i++) {
 						DataInputStream dis;
@@ -411,25 +404,19 @@ public abstract class FECCodec {
 					}
 					// Do the encode
 					// Not shuffled
-					long startTime = System.currentTimeMillis();
-					//					Runtime.getRuntime().gc();
-//					Runtime.getRuntime().runFinalization();
-//					Runtime.getRuntime().gc();
-//					Runtime.getRuntime().runFinalization();
-					long memUsedBeforeStripe = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-					if(logMINOR)
+					long startTime = 0;
+					if(logMINOR) {
+						startTime = System.currentTimeMillis();
+						long memUsedBeforeStripe = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
 						Logger.minor(this, "Memory in use before stripe: " + memUsedBeforeStripe);
+					}
 					fec.encode(dataPackets, checkPackets, toEncode);
-					//					Runtime.getRuntime().gc();
-//					Runtime.getRuntime().runFinalization();
-//					Runtime.getRuntime().gc();
-//					Runtime.getRuntime().runFinalization();
-					long memUsedAfterStripe = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-					if(logMINOR)
+					if(logMINOR) {
+						long memUsedAfterStripe = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
 						Logger.minor(this, "Memory in use after stripe: " + memUsedAfterStripe);
-					long endTime = System.currentTimeMillis();
-					if(logMINOR)
+						long endTime = System.currentTimeMillis();
 						Logger.minor(this, "Stripe encode took " + (endTime - startTime) + "ms for k=" + k + ", n=" + n + ", stripeSize=" + stripeSize);
+					}
 					// packets now contains an array of decoded blocks, in order
 					// Write the data out
 					for(int i = 0; i < writers.length; i++) {
@@ -477,7 +464,7 @@ public abstract class FECCodec {
 	}
 	
 	public void objectCanDeactivate(ObjectContainer container) {
-		Logger.minor(this, "Deactivating "+this, new Exception("debug"));
+		if(logMINOR) Logger.minor(this, "Deactivating "+this, new Exception("debug"));
 	}
 
 	public abstract short getAlgorithm();

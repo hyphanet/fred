@@ -54,7 +54,7 @@ public class SlashdotStoreTest extends TestCase {
 		// Encode a block
 		String test = "test";
 		ClientCHKBlock block = encodeBlock(test);
-		store.put(block, false);
+		store.put(block.getBlock(), false);
 		
 		ClientCHK key = block.getClientKey();
 		
@@ -70,7 +70,7 @@ public class SlashdotStoreTest extends TestCase {
 		// Encode a block
 		String test = "test";
 		ClientCHKBlock block = encodeBlock(test);
-		store.put(block, false);
+		store.put(block.getBlock(), false);
 		
 		Thread.sleep(2000);
 		

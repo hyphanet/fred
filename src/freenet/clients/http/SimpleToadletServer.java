@@ -231,9 +231,13 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		}
 		
 		@Override
-		public void set(String allowedHosts) {
+		public void set(String allowedHosts) throws InvalidConfigValueException {
 			if (!allowedHosts.equals(get())) {
+				try {
 				networkInterface.setAllowedHosts(allowedHosts);
+				} catch(IllegalArgumentException e) {
+					throw new InvalidConfigValueException(e);
+				}
 			}
 		}
 	}
@@ -654,7 +658,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 
 					@Override
 					public void set(String val) throws InvalidConfigValueException {
+						try {
 						allowedFullAccess.setAllowedHosts(val);
+						} catch(IllegalArgumentException e) {
+							throw new InvalidConfigValueException(e);
+						}
 					}
 			
 		});

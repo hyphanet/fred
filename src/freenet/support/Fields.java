@@ -921,4 +921,57 @@ public abstract class Fields {
 		if(id2 > id1) return -1;
 		return 0;
 	}
+	
+	/** Avoid issues with overflow, 2's complement. E.g. 0-Integer.MIN_VALUE = Integer.MIN_VALUE-0. */
+	public static final int compare(int x, int y) {
+		if(x > y) return 1;
+		if(y > x) return -1;
+		return 0;
+	}
+	
+	/** Avoid issues with overflow, 2's complement. */
+	public static final int compare(long x, long y) {
+		if(x > y) return 1;
+		if(y > x) return -1;
+		return 0;
+	}
+
+	/** Avoid issues with NaN's. */
+	public static final int compare(double x, double y) {
+		if(Double.isNaN(x)) {
+			if(Double.isNaN(y)) {
+				return 0; // kind of!
+			} else {
+				return -1; // second is better
+			}
+		} else if(Double.isNaN(y)) {
+			return 1; // first is better
+		} else {
+			if(x > y)
+				return 1;
+			else if(x < y)
+				return -1;
+		}
+		return 0;
+	}
+
+	/** Avoid issues with NaN's. */
+	public static final int compare(float x, float y) {
+		if(Float.isNaN(x)) {
+			if(Float.isNaN(y)) {
+				return 0; // kind of!
+			} else {
+				return -1; // second is better
+			}
+		} else if(Float.isNaN(y)) {
+			return 1; // first is better
+		} else {
+			if(x > y)
+				return 1;
+			else if(x < y)
+				return -1;
+		}
+		return 0;
+	}
+
 }

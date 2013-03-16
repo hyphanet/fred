@@ -7,6 +7,7 @@ import freenet.config.SubConfig;
 import freenet.crypt.DummyRandomSource;
 import freenet.node.Node;
 import freenet.node.NodeStarter;
+import freenet.node.NodeStats;
 import freenet.node.probe.Error;
 import freenet.node.probe.Listener;
 import freenet.node.probe.Probe;
@@ -25,16 +26,18 @@ import java.text.NumberFormat;
  *
  * Then present a user interface to run different types of probes from random nodes.
  */
-public class RealNodeProbeTest extends RealNodeTest {
+public class RealNodeProbeTest extends RealNodeRoutingTest {
 
 	static final int NUMBER_OF_NODES = 100;
-	static final int DEGREE = 5;
+	static final int DEGREE = 10;
 	static final short MAX_HTL = (short) 5;
 	static final boolean START_WITH_IDEAL_LOCATIONS = true;
 	static final boolean FORCE_NEIGHBOUR_CONNECTIONS = true;
 	static final boolean ENABLE_SWAPPING = false;
 	static final boolean ENABLE_SWAP_QUEUEING = false;
 	static final boolean ENABLE_FOAF = true;
+	private static final boolean DO_INSERT_TEST = true;
+	static final int MAX_PINGS = 2000;
 
 	public static int DARKNET_PORT_BASE = RealNodeRoutingTest.DARKNET_PORT_END;
 	public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
@@ -60,7 +63,7 @@ public class RealNodeProbeTest extends RealNodeTest {
 		Executor executor = new PooledExecutor();
 		for(int i = 0; i < NUMBER_OF_NODES; i++) {
 			System.err.println("Creating node " + i);
-			nodes[i] = NodeStarter.createTestNode(DARKNET_PORT_BASE + i, 0, dir, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500 * NUMBER_OF_NODES, 65536, true, ENABLE_SWAPPING, false, false, false, ENABLE_SWAP_QUEUEING, true, 0, ENABLE_FOAF, false, true, false, null, i == 0);
+			nodes[i] = NodeStarter.createTestNode(DARKNET_PORT_BASE + i, 0, dir, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500 * NUMBER_OF_NODES, 256*1024, true, ENABLE_SWAPPING, false, false, false, ENABLE_SWAP_QUEUEING, true, 0, ENABLE_FOAF, false, true, false, null, i == 0);
 			Logger.normal(RealNodeProbeTest.class, "Created node " + i);
 		}
 		Logger.normal(RealNodeProbeTest.class, "Created " + NUMBER_OF_NODES + " nodes");
@@ -74,7 +77,30 @@ public class RealNodeProbeTest extends RealNodeTest {
 			nodes[i].start(false);
 		}
 
-		waitForAllConnected(nodes);
+        System.out.println();
+        System.out.println("Ping average > 95%, lets do some inserts/requests");
+        System.out.println();
+        
+        if(DO_INSERT_TEST) {
+        	
+            waitForPingAverage(0.5, nodes, new DummyRandomSource(3143), MAX_PINGS, 1000);
+            
+            RealNodeRequestInsertTest tester = new RealNodeRequestInsertTest(nodes, random, 10);
+            
+            waitForAllConnected(nodes);
+            
+            while(true) {
+            	try {
+            		waitForAllConnected(nodes);
+            		int status = tester.insertRequestTest();
+            		if(status == -1) continue;
+            		System.out.println("Insert test completed with status "+status);
+            		break;
+            	} catch (Throwable t) {
+            		Logger.error(RealNodeRequestInsertTest.class, "Caught "+t, t);
+            	}
+            }
+        }
 
 		final NumberFormat nf = NumberFormat.getInstance();
 		Listener print = new Listener() {
@@ -127,6 +153,15 @@ public class RealNodeProbeTest extends RealNodeTest {
 			public void onUptime(float uptimePercentage) {
 				System.out.print("Probe got uptime " + nf.format(uptimePercentage) + "%.");
 			}
+
+			@Override
+			public void onRejectStats(byte[] stats) {
+				System.out.println("Probe got reject stats:");
+				System.out.println("CHK request: "+stats[0]);
+				System.out.println("SSK request: "+stats[1]);
+				System.out.println("CHK insert: "+stats[2]);
+				System.out.println("SSK insert: "+stats[3]);
+			}
 		};
 
 		final Type types[] = {
@@ -137,7 +172,8 @@ public class RealNodeProbeTest extends RealNodeTest {
 			Type.LOCATION,
 			Type.STORE_SIZE,
 			Type.UPTIME_48H,
-			Type.UPTIME_7D
+			Type.UPTIME_7D,
+			Type.REJECT_STATS
 		};
 
 		int index = 0;
@@ -152,21 +188,23 @@ public class RealNodeProbeTest extends RealNodeTest {
 			System.out.println("5) STORE_SIZE");
 			System.out.println("6) UPTIME 48-hour");
 			System.out.println("7) UPTIME 7-day");
-			System.out.println("8) Pick another node");
-			System.out.println("9) Pick another HTL");
-			System.out.println("10) Pick current node's refusals");
+			System.out.println("8) REJECT_STATS");
+			System.out.println("9) Pick another node");
+			System.out.println("10) Pick another HTL");
+			System.out.println("11) Pick current node's refusals");
+			
 			System.out.println("Anything else to exit.");
 			System.out.println("Select: ");
 			try {
 				int selection = Integer.valueOf(System.console().readLine());
-				if (selection == 8) {
+				if (selection == 9) {
 					System.out.print("Enter new node index ([0-" + (NUMBER_OF_NODES - 1) + "]):");
 					index = Integer.valueOf(System.console().readLine());
 				}
-				else if (selection == 9) {
+				else if (selection == 10) {
 					System.out.print("Enter new HTL: ");
 					htl = Byte.valueOf(System.console().readLine());
-				} else if (selection == 10) {
+				} else if (selection == 11) {
 					SubConfig nodeConfig = nodes[index].config.get("node");
 					String[] options = { "probeBandwidth", "probeBuild", "probeIdentifier", "probeLinkLengths", "probeLinkLengths", "probeUptime" };
 					for (String option : options) {

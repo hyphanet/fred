@@ -28,7 +28,7 @@ public class PeerMessage extends FCPMessage {
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = pn.exportFieldSet();
 		if(withMetadata) {
-			SimpleFieldSet meta = pn.exportMetadataFieldSet();
+			SimpleFieldSet meta = pn.exportMetadataFieldSet(System.currentTimeMillis());
 			if(!meta.isEmpty()) {
 			 	fs.put("metadata", meta);
 			}

@@ -19,6 +19,7 @@ import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.LongCallback;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -128,6 +129,7 @@ public class Probe implements ByteCounter {
 	private volatile boolean respondLocation;
 	private volatile boolean respondStoreSize;
 	private volatile boolean respondUptime;
+	private volatile boolean respondRejectStats;
 
 	private volatile long probeIdentifier;
 
@@ -137,17 +139,8 @@ public class Probe implements ByteCounter {
 	 * @param sigma Percentage change at one standard deviation.
 	 * @return Value +/- Gaussian percentage.
 	 */
-	private double randomNoise(final double input, final double sigma) {
-		double multiplier = (node.random.nextGaussian() * sigma) + 1.0;
-
-		/*
-		 * Cap noise to [0.5, 1.5]. Such amounts are very rare (5 sigma at 10%) and serve only to throw off the
-		 * statistics by including crazy things like negative values or impossibly huge limits.
-		 */
-		if (multiplier < 0.5) multiplier = 0.5;
-		else if (multiplier > 1.5) multiplier = 1.5;
-
-		return input * multiplier;
+	private final double randomNoise(final double input, final double sigma) {
+		return node.nodeStats.randomNoise(input, sigma);
 	}
 
 	/**
@@ -274,6 +267,19 @@ public class Probe implements ByteCounter {
 			}
 		});
 		respondUptime = nodeConfig.getBoolean("probeUptime");
+		nodeConfig.register("probeRejectStats", true, sortOrder++, true, true, "Node.probeRejectStatsShort",
+				"Node.probeRejectStatsLong", new BooleanCallback() {
+				@Override
+				public Boolean get() {
+					return respondRejectStats;
+				}
+
+				@Override
+				public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+					respondRejectStats = val;
+				}
+			});
+			respondRejectStats = nodeConfig.getBoolean("probeRejectStats");
 
 		nodeConfig.register("identifier", -1, sortOrder++, true, true, "Node.probeIdentifierShort",
 			"Node.probeIdentifierLong", new LongCallback() {
@@ -539,6 +545,7 @@ public class Probe implements ByteCounter {
 			case STORE_SIZE: filter.setType(DMT.ProbeStoreSize); break;
 			case UPTIME_48H:
 			case UPTIME_7D: filter.setType(DMT.ProbeUptime); break;
+			case REJECT_STATS: filter.setType(DMT.ProbeRejectStats); break;
 			default: throw new UnsupportedOperationException("Missing filter for " + type.name());
 		}
 
@@ -646,6 +653,10 @@ public class Probe implements ByteCounter {
 			 */
 			listener.onUptime((float)randomNoise(100*node.uptime.getUptimeWeek(), 0.03));
 			break;
+		case REJECT_STATS:
+			byte[] stats = node.nodeStats.getNoisyRejectStats();
+			listener.onRejectStats(stats);
+			break;
 		default:
 			throw new UnsupportedOperationException("Missing response for " + type.name());
 		}
@@ -661,6 +672,7 @@ public class Probe implements ByteCounter {
 		case STORE_SIZE: return respondStoreSize;
 		case UPTIME_48H:
 		case UPTIME_7D: return respondUptime;
+		case REJECT_STATS: return respondRejectStats;
 		default: throw new UnsupportedOperationException("Missing permissions check for " + type.name());
 		}
 	}
@@ -721,6 +733,8 @@ public class Probe implements ByteCounter {
 				listener.onStoreSize(message.getFloat(DMT.STORE_SIZE));
 			} else if (message.getSpec().equals(DMT.ProbeUptime)) {
 				listener.onUptime(message.getFloat(DMT.UPTIME_PERCENT));
+			} else if (message.getSpec().equals(DMT.ProbeRejectStats)) {
+				listener.onRejectStats(message.getShortBufferBytes(DMT.REJECT_STATS));
 			} else if (message.getSpec().equals(DMT.ProbeError)) {
 				final byte rawError = message.getByte(DMT.TYPE);
 				if (Error.isValid(rawError)) {
@@ -828,6 +842,18 @@ public class Probe implements ByteCounter {
 		@Override
 		public void onUptime(float uptimePercentage) {
 			send(DMT.createProbeUptime(uid, uptimePercentage));
+		}
+
+		@Override
+		public void onRejectStats(byte[] stats) {
+			if(stats.length < 4) {
+				Logger.warning(this, "Unknown length for stats: "+stats.length);
+				onError(Error.UNKNOWN, Error.UNKNOWN.code, true);
+			} else {
+				if(stats.length > 4)
+					stats = Arrays.copyOf(stats, 4);
+				send(DMT.createProbeRejectStats(uid, stats));
+			}
 		}
 	}
 }

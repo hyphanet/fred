@@ -237,14 +237,14 @@ public class FECJob {
 					Logger.normal(this, "After successful decode, storing block statuses, "+countNullsData+"/"+dataLength+" nulls in data blocks "+countNullsCheck+"/"+checkLength+" nulls in check blocks");
 				else {
 					if(logMINOR)
-						Logger.normal(this, "After successful decode, storing block statuses, "+countNullsData+"/"+dataLength+" nulls in data blocks "+countNullsCheck+"/"+checkLength+" nulls in check blocks");
+						Logger.minor(this, "After successful decode, storing block statuses, "+countNullsData+"/"+dataLength+" nulls in data blocks "+countNullsCheck+"/"+checkLength+" nulls in check blocks");
 				}
 			} else {
 				if(countNullsCheck != 0 || countNullsData != 0)
 					Logger.normal(this, "After successful decode, storing block statuses, "+countNullsData+"/"+dataLength+" nulls in data blocks "+countNullsCheck+"/"+checkLength+" nulls in check blocks");
 				else {
 					if(logMINOR)
-						Logger.normal(this, "After successful decode, storing block statuses, "+countNullsData+"/"+dataLength+" nulls in data blocks "+countNullsCheck+"/"+checkLength+" nulls in check blocks");
+						Logger.minor(this, "After successful decode, storing block statuses, "+countNullsData+"/"+dataLength+" nulls in data blocks "+countNullsCheck+"/"+checkLength+" nulls in check blocks");
 				}
 			}
 		}

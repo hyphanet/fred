@@ -44,9 +44,7 @@ import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.SocketHandler;
 import freenet.l10n.NodeL10n;
 import freenet.node.OpennetManager.ConnectionType;
-import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
-import freenet.node.useralerts.UserAlertManager;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -167,9 +165,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	static public final int HEADERS_LENGTH_ONE_MESSAGE =
 		HEADERS_LENGTH_MINIMUM + 2; // 2 bytes = length of message. rest is the same.
 
-	final int fullHeadersLengthMinimum;
-	final int fullHeadersLengthOneMessage;
-        
         private long lastConnectivityStatusUpdate;
         private Status lastConnectivityStatus;
 
@@ -179,8 +174,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		this.crypto = crypt;
 		this.sock = sock;
 		authenticatorCache = new HashMap<ByteArrayWrapper, byte[]>();
-		fullHeadersLengthMinimum = HEADERS_LENGTH_MINIMUM + sock.getHeadersLength();
-		fullHeadersLengthOneMessage = HEADERS_LENGTH_ONE_MESSAGE + sock.getHeadersLength();
 	}
 
 	/**
@@ -194,10 +187,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		for(int i=0;i<DH_CONTEXT_BUFFER_SIZE;i++) {
 			_fillJFKDHFIFO();
 		}
-		if(!NodeStarter.bcProvLoadFailed()) {
-			for(int i=0;i<DH_CONTEXT_BUFFER_SIZE;i++) {
-				_fillJFKECDHFIFO();
-			}
+		for(int i=0;i<DH_CONTEXT_BUFFER_SIZE;i++) {
+			_fillJFKECDHFIFO();
 		}
 	}
 
@@ -2022,9 +2013,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		System.arraycopy(output, 0, data, hash.length+iv.length+2, output.length);
 
 		Util.randomBytes(node.fastWeakRandom, data, hash.length+iv.length+2+output.length, paddingLength);
-		node.nodeStats.reportAuthBytes(data.length + sock.getHeadersLength());
 		try {
 			sendPacket(data, replyTo, pn);
+			node.nodeStats.reportAuthBytes(data.length + sock.getHeadersLength(replyTo));
 		} catch (LocalAddressException e) {
 			Logger.warning(this, "Tried to send auth packet to local address: "+replyTo+" for "+pn+" - maybe you should set allowLocalAddresses for this peer??");
 		}
@@ -2128,32 +2119,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 	@Override
 	public int[] supportedNegTypes(boolean forPublic) {
-		if(NodeStarter.bcProvLoadFailed()) {
-			NodeClientCore core = node.clientCore;
-			if(core != null) {
-				UserAlertManager uam = node.clientCore.alerts;
-				synchronized(FNPPacketMangler.class) {
-					if(BCPROV_LOAD_FAILED == null) {
-						BCPROV_LOAD_FAILED = new SimpleUserAlert(false, NodeStarter.NO_BCPROV_WARNING, NodeStarter.NO_BCPROV_WARNING, NodeStarter.NO_BCPROV_WARNING, UserAlert.CRITICAL_ERROR);
-						uam.register(BCPROV_LOAD_FAILED);
-					}
-				}
-			}
-			// FIXME REMOVE!
-			if(forPublic)
-				return new int[] { 6, 7 };
-			else
-				return new int[] { 7 };
-		}
 		if(forPublic)
 			return new int[] { 6, 7, 8 };
 		else
 			return new int[] { 7, 8 };
-	}
-
-	@Override
-	public int fullHeadersLengthOneMessage() {
-		return fullHeadersLengthOneMessage;
 	}
 
 	@Override
@@ -2317,7 +2286,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
         return result;
     }
     
-    private static class NoContextsException extends Exception {
+    @SuppressWarnings("serial")
+	private static class NoContextsException extends Exception {
     	
     	private enum CONTEXT {
     		SENDING,

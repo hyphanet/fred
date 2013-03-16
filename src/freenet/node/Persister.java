@@ -17,6 +17,8 @@ class Persister implements Runnable {
         static {
             Logger.registerClass(Persister.class);
         }
+        
+        static final int PERIOD = 900*1000;
 
 	Persister(Persistable t, File persistTemp, File persistTarget, Ticker ps) {
 		this.persistable = t;
@@ -57,7 +59,7 @@ class Persister implements Runnable {
 			t.printStackTrace();
 			System.err.println("Will restart ThrottlePersister...");
 		}
-		ps.queueTimedJob(this, 60*1000);
+		ps.queueTimedJob(this, PERIOD);
 	}
 	
 	private void persistThrottle() {
@@ -68,7 +70,7 @@ class Persister implements Runnable {
 		FileOutputStream fos = null;
 		try {
 			fos = new FileOutputStream(persistTemp);
-			fs.writeTo(fos);
+			fs.writeToBigBuffer(fos);
 			fos.close();
 			FileUtil.renameTo(persistTemp, persistTarget);
 		} catch (FileNotFoundException e) {
@@ -105,6 +107,14 @@ class Persister implements Runnable {
 			}
 			started = true;
 		}
+		SemiOrderedShutdownHook.get().addEarlyJob(new Thread() {
+			
+			public void run() {
+				System.out.println("Writing "+persistTarget+" on shutdown");
+				persistThrottle();
+			}
+			
+		});
 		run();
 	}
 

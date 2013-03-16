@@ -318,6 +318,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		pInstantRejectIncomingSSKRequestBulk = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
 		pInstantRejectIncomingCHKInsertBulk = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
 		pInstantRejectIncomingSSKInsertBulk = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
+		REJECT_STATS_AVERAGERS = new RunningAverage[] {
+					pInstantRejectIncomingCHKRequestBulk,
+					pInstantRejectIncomingSSKRequestBulk,
+					pInstantRejectIncomingCHKInsertBulk,
+					pInstantRejectIncomingSSKInsertBulk
+		};
+		noisyRejectStats = new byte[4];
 		ThreadGroup tg = Thread.currentThread().getThreadGroup();
 		while(tg.getParent() != null) tg = tg.getParent();
 		this.rootThreadGroup = tg;
@@ -337,18 +344,18 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		last_io_stat_time = 3;
 
 		int defaultThreadLimit;
-		long memoryLimit = Runtime.getRuntime().maxMemory();
+		long memoryLimit = NodeStarter.getMemoryLimitMB();
 		
-		System.out.println("Memory is "+SizeUtil.formatSize(memoryLimit)+" ("+memoryLimit+" bytes)");
-		if(memoryLimit > 0 && memoryLimit < 100*1024*1024) {
+		System.out.println("Memory is "+memoryLimit+"MB");
+		if(memoryLimit > 0 && memoryLimit < 100) {
 			defaultThreadLimit = 200;
 			System.out.println("Severe memory pressure, setting 200 thread limit. Freenet may not work well!");
-		} else if(memoryLimit > 0 && memoryLimit < 160*1024*1024) {
+		} else if(memoryLimit > 0 && memoryLimit < 128) {
 			defaultThreadLimit = 300;
 			System.out.println("Moderate memory pressure, setting 300 thread limit. Increase your memory limit in wrapper.conf if possible.");
-		// FIXME: reinstate this once either we raise the default or memory autodetection works on Windows.
-//		else if(memoryLimit > 0 && memoryLimit < 256*1024*1024)
-//			defaultThreadLimit = 400;
+		} else if(memoryLimit > 0 && memoryLimit < 192) {
+			defaultThreadLimit = 400;
+			System.out.println("Setting 400 thread limit due to <=192MB memory limit. This should be enough but more memory is better.");
 		} else {
 			System.out.println("Setting standard 500 thread limit. This should be enough for most nodes but more memory is usually a good thing.");
 			defaultThreadLimit = 500;
@@ -368,9 +375,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 						threadLimit = val;
 					}
 		},false);
-		
-		if(lastVersion > 0 && lastVersion < 1270 && memoryLimit > 160*1024*1024 && memoryLimit < 192*1024*1024)
-			statsConfig.fixOldDefault("threadLimit", "300");
 		
 		threadLimit = statsConfig.getInt("threadLimit");
 
@@ -429,6 +433,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 				}
 			}
 		});
+		ignoreLocalVsRemoteBandwidthLiability = statsConfig.getBoolean("ignoreLocalVsRemoteBandwidthLiability");
 
 		statsConfig.register("maxPingTime", DEFAULT_MAX_PING_TIME, sortOrder++, true, true, "NodeStat.maxPingTime", "NodeStat.maxPingTimeLong", new LongCallback() {
 
@@ -577,9 +582,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		requestInputThrottle =
 			new TokenBucket(Math.max(ibwLimit*60, 32768*20), (int)((1000L*1000L*1000L) / (ibwLimit)), 0);
 
-		estimatedSizeOfOneThrottledPacket = 1024 + DMT.packetTransmitSize(1024, 32) +
-			node.estimateFullHeadersLengthOneMessage();
-
 		double nodeLoc=node.lm.getLocation();
 		this.avgCacheCHKLocation   = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageCacheCHKLocation"));
 		this.avgStoreCHKLocation   = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageStoreCHKLocation"));
@@ -613,6 +615,18 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		avgTransferBackoffTimesBulk = new Hashtable<String, TrivialRunningAverage>();
 
 		avgDatabaseJobExecutionTimes = new Hashtable<String, TrivialRunningAverage>();
+		
+		if(!NodeStarter.isTestingVM()) {
+			// Normal mode
+			minReportsNoisyRejectStats = 200;
+			rejectStatsUpdateInterval = 10*60*1000;
+			rejectStatsFuzz = 10.0;
+		} else {
+			// Stuff we only do in testing VMs
+			minReportsNoisyRejectStats = 1;
+			rejectStatsUpdateInterval = 10*1000;
+			rejectStatsFuzz = -1.0;
+		}
 	}
 
 	protected String l10n(String key) {
@@ -631,6 +645,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			}
 		}, "Starting NodePinger");
 		persister.start();
+		noisyRejectStatsUpdater.run();
 	}
 
 	/** Every 60 seconds, check whether we need to adjust the bandwidth delay time because of idleness.
@@ -660,8 +675,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private static final double MAX_PEER_QUEUE_TIME = 2 * 60 * 1000.0;
 
 	private long lastAcceptedRequest = -1;
-
-	final int estimatedSizeOfOneThrottledPacket;
 
 	static final double DEFAULT_OVERHEAD = 0.7;
 	static final long DEFAULT_ONLY_PERIOD = 60*1000;
@@ -1593,13 +1606,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			boolean isRealTime, boolean isSSK, boolean isInsert) {
 		if(isRealTime) {
 			if(isSSK) {
-				return isInsert ? pInstantRejectIncomingSSKInsertRT : pInstantRejectIncomingCHKInsertRT;
+				return isInsert ? pInstantRejectIncomingSSKInsertRT : pInstantRejectIncomingSSKRequestRT;
 			} else {
 				return isInsert ? pInstantRejectIncomingCHKInsertRT : pInstantRejectIncomingCHKRequestRT;
 			}
 		} else {
 			if(isSSK) {
-				return isInsert ? pInstantRejectIncomingSSKInsertBulk : pInstantRejectIncomingCHKInsertBulk;
+				return isInsert ? pInstantRejectIncomingSSKInsertBulk : pInstantRejectIncomingSSKRequestBulk;
 			} else {
 				return isInsert ? pInstantRejectIncomingCHKInsertBulk : pInstantRejectIncomingCHKRequestBulk;
 			}
@@ -3783,6 +3796,83 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	
 	public boolean enableNewLoadManagement(boolean realTimeFlag) {
 		return realTimeFlag ? enableNewLoadManagementRT : enableNewLoadManagementBulk;
+	}
+	
+	final RunningAverage[] REJECT_STATS_AVERAGERS;
+	
+	private final Runnable noisyRejectStatsUpdater = new Runnable() {
+
+		@Override
+		public void run() {
+			// SECURITY/TRIVIAL PERFORMANCE TRADEOFF: I don't think we want to run this lazily.
+			// If we run it lazily, an attacker could trigger it, given that it's triggered rarely
+			// in normal operation. FIXME long term we probably want to get rid of this from the
+			// production network, and just surveil a few "special" nodes which volunteer to have
+			// heavier stats inserted regularly.
+			try {
+				synchronized(noisyRejectStats) { // Only used for accessing the bytes.
+					for(int i=0;i<REJECT_STATS_AVERAGERS.length;i++) {
+						byte result;
+						RunningAverage r = REJECT_STATS_AVERAGERS[i];
+						if(r.countReports() < minReportsNoisyRejectStats) {
+							// Do not return data until there are at least 200 results.
+							result = -1;
+						} else {
+							double noisy = r.currentValue() * 100.0;
+							if(rejectStatsFuzz > 0)
+								noisy = randomNoise(noisy, rejectStatsFuzz);
+							if(noisy < 0) result = 0;
+							if(noisy > 100) result = 100;
+							else result = (byte)noisy;
+						}
+						noisyRejectStats[i] = result;
+					}
+				}
+			} finally {
+				node.ticker.queueTimedJob(this, rejectStatsUpdateInterval);
+			}
+		}
+		
+	};
+	
+	/** How many reports to require before returning a value for reject stats */
+	private final int minReportsNoisyRejectStats;
+	/** How often to update the reject stats */
+	private final int rejectStatsUpdateInterval;
+	/** If positive, the level of fuzz (size of 1 standard deviation for gauss in percent) to use */
+	private final double rejectStatsFuzz;
+	
+	private final byte[] noisyRejectStats;
+
+	/**
+	 * @return Array of 4 bytes, with the percentage rejections for (bulk only): CHK request, 
+	 * SSK request, CHK insert, SSK insert. Negative value = insufficient data. Positive value = 
+	 * percentage rejected. PRECAUTIONS: We update this statistic every 10 minutes. We don't 
+	 * return a value unless we have at least 200 samples. We add Gaussian noise. 
+	 * FIXME SECURITY We should remove this eventually. */
+	public byte[] getNoisyRejectStats() {
+		synchronized(noisyRejectStats) {
+			return Arrays.copyOf(noisyRejectStats, noisyRejectStats.length);
+		}
+	}
+
+	/**
+	 * Applies multiplicative Gaussian noise of mean 1.0 and the specified sigma to the input value.
+	 * @param input Value to apply noise to.
+	 * @param sigma Percentage change at one standard deviation.
+	 * @return Value +/- Gaussian percentage.
+	 */
+	public final double randomNoise(final double input, final double sigma) {
+		double multiplier = (node.random.nextGaussian() * sigma) + 1.0;
+
+		/*
+		 * Cap noise to [0.5, 1.5]. Such amounts are very rare (5 sigma at 10%) and serve only to throw off the
+		 * statistics by including crazy things like negative values or impossibly huge limits.
+		 */
+		if (multiplier < 0.5) multiplier = 0.5;
+		else if (multiplier > 1.5) multiplier = 1.5;
+
+		return input * multiplier;
 	}
 
 }

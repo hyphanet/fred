@@ -2,8 +2,6 @@ package freenet.store;
 
 import java.io.IOException;
 
-import com.sleepycat.je.DatabaseException;
-
 import freenet.node.stats.StoreAccessStats;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.support.Ticker;
@@ -81,8 +79,9 @@ public interface FreenetStore<T extends StorableBlock> {
 
 	public abstract StoreAccessStats getTotalAccessStats();
 	
-	
 	public boolean start(Ticker ticker, boolean longStart) throws IOException;
+	
+	public void close();
 	
 	public void setUserAlertManager(UserAlertManager userAlertManager);
 	

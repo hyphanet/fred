@@ -258,8 +258,8 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	@Override
-	public synchronized SimpleFieldSet exportMetadataFieldSet() {
-		SimpleFieldSet fs = super.exportMetadataFieldSet();
+	public synchronized SimpleFieldSet exportMetadataFieldSet(long now) {
+		SimpleFieldSet fs = super.exportMetadataFieldSet(now);
 		if(isDisabled)
 			fs.putSingle("isDisabled", "true");
 		if(isListenOnly)

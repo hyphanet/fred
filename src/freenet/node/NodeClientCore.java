@@ -68,16 +68,14 @@ import freenet.store.KeyCollisionException;
 import freenet.support.Base64;
 import freenet.support.Executor;
 import freenet.support.ExecutorIdleCallback;
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.MutableBoolean;
 import freenet.support.OOMHandler;
 import freenet.support.OOMHook;
 import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.SimpleFieldSet;
-import freenet.support.Ticker;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SizeUtil;
+import freenet.support.Ticker;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
@@ -98,12 +96,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	private static volatile boolean logMINOR;
 
 	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
-			@Override
-			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-			}
-		});
+		Logger.registerClass(NodeClientCore.class);
 	}
 
 	public final PersistentStatsPutter bandwidthStatsPutter;
@@ -262,20 +255,15 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 		// Allocate 10% of the RAM to the RAMBucketPool by default
 		int defaultRamBucketPoolSize;
-		long maxMemory = Runtime.getRuntime().maxMemory();
-		if(maxMemory == Long.MAX_VALUE || maxMemory <= 0)
+		long maxMemory = NodeStarter.getMemoryLimitMB();
+		if(maxMemory < 0)
 			defaultRamBucketPoolSize = 10;
 		else {
-			maxMemory /= (1024 * 1024);
-			if(maxMemory <= 0) // Still bogus
-				defaultRamBucketPoolSize = 10;
-			else {
-				// 10% of memory above 64MB, with a minimum of 1MB.
-				defaultRamBucketPoolSize = Math.min(Integer.MAX_VALUE, (int)((maxMemory - 64) / 10));
-				if(defaultRamBucketPoolSize <= 0) defaultRamBucketPoolSize = 1;
-			}
+			// 10% of memory above 64MB, with a minimum of 1MB.
+			defaultRamBucketPoolSize = (int)Math.min(Integer.MAX_VALUE, ((maxMemory - 64) / 10));
+			if(defaultRamBucketPoolSize <= 0) defaultRamBucketPoolSize = 1;
 		}
-
+		
 		// Max bucket size 5% of the total, minimum 32KB (one block, vast majority of buckets)
 		long maxBucketSize = Math.max(32768, (defaultRamBucketPoolSize * 1024 * 1024) / 20);
 

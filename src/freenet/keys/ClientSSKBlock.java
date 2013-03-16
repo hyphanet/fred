@@ -16,12 +16,13 @@ import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
 
-public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
+public class ClientSSKBlock implements ClientKeyBlock {
 	
 	static final int DATA_DECRYPT_KEY_LENGTH = 32;
 	
 	static public final int MAX_DECOMPRESSED_DATA_LENGTH = 32768;
 	
+	private final SSKBlock block;
 	/** Is metadata. Set on decode. */
 	private boolean isMetadata;
 	/** Has decoded? */
@@ -33,7 +34,7 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 	private short compressionAlgorithm = -1;
 	
 	public ClientSSKBlock(byte[] data, byte[] headers, ClientSSK key, boolean dontVerify) throws SSKVerifyException {
-		super(data, headers, (NodeSSK) key.getNodeKey(true), dontVerify);
+		block = new SSKBlock(data, headers, (NodeSSK) key.getNodeKey(true), dontVerify);
 		this.key = key;
 	}
 	
@@ -52,8 +53,8 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 	public Bucket decode(BucketFactory factory, int maxLength, boolean dontDecompress) throws KeyDecodeException, IOException {
 		/* We know the signature is valid because it is checked in the constructor. */
 		/* We also know e(h(docname)) is valid */
-		byte[] decryptedHeaders = new byte[ENCRYPTED_HEADERS_LENGTH];
-		System.arraycopy(headers, headersOffset, decryptedHeaders, 0, ENCRYPTED_HEADERS_LENGTH);
+		byte[] decryptedHeaders = new byte[SSKBlock.ENCRYPTED_HEADERS_LENGTH];
+		System.arraycopy(block.headers, block.headersOffset, decryptedHeaders, 0, SSKBlock.ENCRYPTED_HEADERS_LENGTH);
 		Rijndael aes;
 		try {
 			Logger.minor(this, "cryptoAlgorithm="+key.cryptoAlgorithm+" for "+getClientKey().getURI());
@@ -68,7 +69,7 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 		// First 32 bytes are the key
 		byte[] dataDecryptKey = Arrays.copyOf(decryptedHeaders, DATA_DECRYPT_KEY_LENGTH);
 		aes.initialize(dataDecryptKey);
-		byte[] dataOutput = data.clone();
+		byte[] dataOutput = block.data.clone();
 		// Data decrypt key should be unique, so use it as IV
 		pcfb.reset(dataDecryptKey);
 		pcfb.blockDecipher(dataOutput, 0, dataOutput.length);
@@ -80,8 +81,8 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 			dataLength = dataLength & ~32768;
 			isMetadata = true;
 		}
-		if(dataLength > data.length) {
-			throw new SSKDecodeException("Data length: "+dataLength+" but data.length="+data.length);
+		if(dataLength > dataOutput.length) {
+			throw new SSKDecodeException("Data length: "+dataLength+" but data.length="+dataOutput.length);
 		}
 		
         compressionAlgorithm = (short)(((decryptedHeaders[DATA_DECRYPT_KEY_LENGTH+2] & 0xff) << 8) + (decryptedHeaders[DATA_DECRYPT_KEY_LENGTH+3] & 0xff));
@@ -136,15 +137,26 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 
 	@Override
 	public int hashCode() {
-		return super.hashCode() ^ key.hashCode();
+		return block.hashCode() ^ key.hashCode();
 	}
-	
+
+	/** Return true if this is the same block as the other ClientSSKBlock, *and* it is the same key */
 	@Override
 	public boolean equals(Object o) {
 		if(!(o instanceof ClientSSKBlock)) return false;
 		ClientSSKBlock block = (ClientSSKBlock) o;
 		if(!key.equals(block.key)) return false;
-		return super.equals(o);
+		return this.block.equals(block.block);
+	}
+
+	@Override
+	public KeyBlock getBlock() {
+		return block;
+	}
+
+	@Override
+	public Key getKey() {
+		return block.getKey();
 	}
 	
 }

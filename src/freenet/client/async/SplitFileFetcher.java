@@ -546,6 +546,9 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 						// Not unusual, if some of the later segments are already finished when cancel() is called.
 						if(logMINOR) Logger.minor(this, "Finished mid-cancel on "+this);
 						return;
+					} else {
+						Logger.error(this, "Segment "+i+" is null on "+this+" but not finished?!");
+						continue;
 					}
 				}
 			}
