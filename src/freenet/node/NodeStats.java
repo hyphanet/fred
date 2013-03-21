@@ -1526,14 +1526,14 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		}
 		if(totalOutTransfers <= maxTransfersOutLowerLimit) {
 			// If the total is below the lower limit, then fine, go for it.
-			if(totalOutTransfers > Math.max(1, maxTransfersOutLowerLimit * SOFT_REJECT_MAX_BANDWIDTH_USAGE))
-				slowDown("TooManyTransfers: Fair sharing between peers", isLocal, isInsert, isSSK, isOfferReply, realTime, tag);
+			// Do not send slow-down's, we have plenty of spare bandwidth.
 			return null;
 		}
 		if(peerOutTransfers <= maxTransfersOutPeerLimit) {
 			// The total is above the lower limit, but the per-peer is below the peer limit.
 			// It is within its guaranteed space, so we accept it.
 			if(peerOutTransfers > Math.max(1, maxTransfersOutPeerLimit * SOFT_REJECT_MAX_BANDWIDTH_USAGE))
+				// Send slow-down's if we are using more than 80% of our peer limit.
 				slowDown("TooManyTransfers: Fair sharing between peers", isLocal, isInsert, isSSK, isOfferReply, realTime, tag);
 			return null;
 		}
