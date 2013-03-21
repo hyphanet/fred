@@ -1007,6 +1007,22 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			this.expectedTransfersOutSSKSR = 0;
 			this.totalRequestsSR = 0;
 		}
+		
+		/** For calculating minima only */
+		private RunningRequestsSnapshot(int averageTransfersPerInsert) {
+			realTimeFlag = false;
+			expectedTransfersInCHK = 1;
+			expectedTransfersInSSK = 1;
+			expectedTransfersOutCHK = 1;
+			expectedTransfersOutSSK = 1;
+			totalRequests = 1; // Yes this is inconsistent, but it's used for a different calculation.
+			this.averageTransfersPerInsert = averageTransfersPerInsert;
+			this.expectedTransfersInCHKSR = 0;
+			this.expectedTransfersInSSKSR = 0;
+			this.expectedTransfersOutCHKSR = 0;
+			this.expectedTransfersOutSSKSR = 0;
+			this.totalRequestsSR = 0;
+		}
 
 		public void log() {
 			log(null);
@@ -1061,6 +1077,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 		public int totalOutTransfers() {
 			return expectedTransfersOutCHK + expectedTransfersOutSSK;
+		}
+
+		public double calculateMinimum(boolean input, boolean ignoreLocalVsRemoteBandwidthLiability, int averageTransfersPerInsert) {
+			return new RunningRequestsSnapshot(averageTransfersPerInsert).calculate(ignoreLocalVsRemoteBandwidthLiability, input);
 		}
 
 	}
@@ -1467,9 +1487,14 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			if(peerUsedBytes > thisAllocation) {
 				rejected(name+" bandwidth liability: fairness between peers", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
 				return name+" bandwidth liability: fairness between peers (peer "+source+" used "+peerUsedBytes+" allowed "+thisAllocation+")";
-			} else if(peerUsedBytes > thisAllocation * SOFT_REJECT_MAX_BANDWIDTH_USAGE) {
-				// Sender should slow down if we are using more than 80% of our fair share of capacity.
-				slowDown(name+" bandwidth liability: fairness between peers", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag, tag);
+			} else {
+				double slowDownLimit = thisAllocation * SOFT_REJECT_MAX_BANDWIDTH_USAGE;
+				// Allow any node to use one request of each type. They'll just have to get backed off if necessary.
+				slowDownLimit = Math.max(slowDownLimit, requestsSnapshot.calculateMinimum(input, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert));
+				if(peerUsedBytes > slowDownLimit) {
+					// Sender should slow down if we are using more than 80% of our fair share of capacity.
+					slowDown(name+" bandwidth liability: fairness between peers", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag, tag);
+				}
 			}
 			
 		} else {
