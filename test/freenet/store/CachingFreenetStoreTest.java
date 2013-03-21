@@ -123,6 +123,67 @@ public class CachingFreenetStoreTest extends TestCase {
 		
 		cachingStore.close();
 	}
+
+	/* Check that if we are going over the maximum size, the caching store will call pushAll and all blocks is in the 
+	 *  *undelying* store and the size is 0
+	 */
+	public void testOverMaximumSize() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
+		File f = new File(tempDir, "saltstore");
+		FileUtil.removeAll(f);
+		
+		String test = "test0";
+		ClientCHKBlock block = encodeBlockCHK(test);
+		byte[] data = block.getBlock().getRawData();
+		byte[] header = block.getBlock().getRawHeaders();
+		byte[] routingKey = block.getBlock().getRoutingKey();
+		long sizeBlock = data.length+header.length+block.getBlock().getFullKey().length+routingKey.length;
+		long sumSizeBlock = sizeBlock;
+		int howManyBlocks = ((int) (cachingFreenetStoreMaxSize / sizeBlock)) + 1;
+		
+		CHKStore store = new CHKStore();
+		
+		// SaltedHashFreenetStore is lossy, since it only has 5 possible places to put each 
+		// key. So if you want to be 100% sure it doesn't lose any keys you need to give it 
+		// 5x the number of slots as the keys you are putting in. For small stores you can 
+		// get away with smaller numbers. 
+		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, howManyBlocks*5, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		CachingFreenetStore<CHKBlock> cachingStore = new CachingFreenetStore<CHKBlock>(store, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, saltStore, ticker);
+		cachingStore.start(null, true);
+		List<ClientCHKBlock> chkBlocks = new ArrayList<ClientCHKBlock>();
+		List<String> tests = new ArrayList<String>();
+		
+		store.put(block.getBlock(), false);
+		chkBlocks.add(block);
+		tests.add(test);
+		
+		for(int i=1; i<howManyBlocks; i++) {
+			test = "test" + i;
+			block = encodeBlockCHK(test);
+			data = block.getBlock().getRawData();
+			header = block.getBlock().getRawHeaders();
+			routingKey = block.getBlock().getRoutingKey();
+			sizeBlock = data.length+header.length+block.getBlock().getFullKey().length+routingKey.length;
+			sumSizeBlock += sizeBlock;
+			store.put(block.getBlock(), false);
+			chkBlocks.add(block);
+			tests.add(test);
+		}
+		
+		assertTrue(sumSizeBlock > cachingFreenetStoreMaxSize);
+		
+		for(int i=0; i<howManyBlocks; i++) {
+			test = tests.remove(0); //get the first element
+			block = chkBlocks.remove(0); //get the first element
+			ClientCHK key = block.getClientKey();
+			// It should pass straight through.
+			assertNotNull(saltStore.fetch(key.getRoutingKey(), key.getNodeCHK().getFullKey(), false, false, false, false, null));
+			CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
+			String receivedData = decodeBlockCHK(verify, key);
+			assertEquals(test, receivedData);
+		}
+		
+		cachingStore.close();
+	}
 	
 	/* Simple test with SSK for CachingFreenetStore */
 	public void testSimpleSSK() throws IOException, KeyCollisionException, SSKVerifyException, KeyDecodeException, SSKEncodeException, InvalidCompressionCodecException {
