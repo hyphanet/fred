@@ -1457,7 +1457,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 		if(bandwidthLiabilityOutput > bandwidthAvailableOutputLowerLimit) {
 			
-			// Fair sharing between peers.
+			// Bandwidth is scarce (we are over the lower limit i.e. more than half our capacity is used).
+			// Share available bandwidth fairly between peers.
 			
 			if(logMINOR)
 				Logger.minor(this, "Allocation ("+name+") for "+source+" is "+thisAllocation+" total usage is "+bandwidthLiabilityOutput+" of lower limit"+bandwidthAvailableOutputLowerLimit+" upper limit is "+bandwidthAvailableOutputUpperLimit+" for "+name);
@@ -1469,6 +1470,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			}
 			
 		} else {
+			
+			// Plenty of bandwidth available, allow one peer to use up to the lower limit (about half the total).
+			
 			if(bandwidthLiabilityOutput > (bandwidthAvailableOutputLowerLimit * SOFT_REJECT_MAX_BANDWIDTH_USAGE))
 				slowDown(name+" bandwidth liability: fairness between peers", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag, tag);
 			if(logMINOR)
