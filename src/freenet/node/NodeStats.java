@@ -1467,14 +1467,17 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			if(peerUsedBytes > thisAllocation) {
 				rejected(name+" bandwidth liability: fairness between peers", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
 				return name+" bandwidth liability: fairness between peers (peer "+source+" used "+peerUsedBytes+" allowed "+thisAllocation+")";
+			} else if(peerUsedBytes > thisAllocation * SOFT_REJECT_MAX_BANDWIDTH_USAGE) {
+				// Sender should slow down if we are using more than 80% of our fair share of capacity.
+				slowDown(name+" bandwidth liability: fairness between peers", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag, tag);
 			}
 			
 		} else {
 			
 			// Plenty of bandwidth available, allow one peer to use up to the lower limit (about half the total).
 			
-			if(bandwidthLiabilityOutput > (bandwidthAvailableOutputLowerLimit * SOFT_REJECT_MAX_BANDWIDTH_USAGE))
-				slowDown(name+" bandwidth liability: fairness between peers", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag, tag);
+			// slowDown() is unnecessary, we do NOT want to keep the total below the lower limit.
+			
 			if(logMINOR)
 				Logger.minor(this, "Total usage is "+bandwidthLiabilityOutput+" below lower limit "+bandwidthAvailableOutputLowerLimit+" for "+name);
 		}
