@@ -60,6 +60,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 	final boolean realTimeFlag;
 	final short manifestPutterType;
 	final String targetFilename;
+	final boolean ignoreUSKDatehints;
 	
 	public ClientPutDirMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		identifier = fs.get("Identifier");
@@ -204,6 +205,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 		if(manifestPutterType != ManifestPutter.MANIFEST_SIMPLEPUTTER && (persistenceType != ClientRequest.PERSIST_CONNECTION && persistenceType != ClientRequest.PERSIST_REBOOT)) {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Only Connection or Reboot persistenace can only be used with the default ManifestPutter", identifier, global);
 		}
+		ignoreUSKDatehints = fs.getBoolean("IgnoreUSKDatehints", false);
 	}
 
 	@Override
