@@ -568,7 +568,7 @@ public class PproxyToadlet extends Toadlet {
 		addOfficialForm.addChild("#", l10n("pluginSourceHTTPS"));
 		addOfficialForm.addChild("#", " ");
 		if(node.getOpennet() == null)
-			addOfficialForm.addChild("b").addChild("font", "color", "red", l10n("pluginSourceHTTPSWarningDarknet"));
+			addOfficialForm.addChild("b").addChild("font", "color", "red", l10n("pluginSourceHTTPSWarning"));
 		else
 			// FIXME CSS-ize this
 			addOfficialForm.addChild("b", l10n("pluginSourceHTTPSWarning"));
