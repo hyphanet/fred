@@ -1,3 +1,11 @@
+== Building Freenet from source: Short version ==
+
+Install ant.
+Run ant.
+It will tell you what is missing and where to put it.
+
+== Building Freenet from source: Long version ==
+
 These are instructions on how to rebuild Freenet completely from source.
 
 It is difficult for everyone to build all components, so the default Freenet
