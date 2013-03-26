@@ -1630,8 +1630,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	
 	private void accepted(boolean isLocal, boolean isInsert, boolean isSSK,
 			boolean isOfferReply, boolean realTimeFlag) {
-		pInstantRejectIncomingOverall.report(0.0);
-		getRejectedTracker(realTimeFlag, isSSK, isInsert).report(0.0);
+		if(!isLocal && !isOfferReply) {
+			pInstantRejectIncomingOverall.report(0.0);
+			getRejectedTracker(realTimeFlag, isSSK, isInsert).report(0.0);
+		}
 	}
 
 	private BootstrappingDecayingRunningAverage getRejectedTracker(
