@@ -30,7 +30,6 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
-import freenet.support.SizeUtil;
 import freenet.support.StringCounter;
 import freenet.support.TimeUtil;
 import freenet.support.TokenBucket;
@@ -687,18 +686,19 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 * actually happens) - but this should be very rare. */
 	static final double MIN_NON_OVERHEAD = 0.5;
 	
-	/** Proportion of the thread limit we can use without triggering slow-down messages */
-	private static final double SOFT_REJECT_MAX_THREAD_USAGE = 0.9;
-	/** Proportion of the various bandwidth limits we can use without triggering slow-down messages */
-	private static final double SOFT_REJECT_MAX_BANDWIDTH_USAGE = 0.8;
+	// FIXME slowdown
+//	/** Proportion of the thread limit we can use without triggering slow-down messages */
+//	private static final double SOFT_REJECT_MAX_THREAD_USAGE = 0.9;
+//	/** Proportion of the various bandwidth limits we can use without triggering slow-down messages */
+//	private static final double SOFT_REJECT_MAX_BANDWIDTH_USAGE = 1.0;
 	
 	/** All requests must be able to complete in this many seconds given the bandwidth
 	 * available, even if they all succeed. Bulk requests. */
-	static final int BANDWIDTH_LIABILITY_LIMIT_SECONDS_BULK = (int)(120 / SOFT_REJECT_MAX_BANDWIDTH_USAGE);
+	static final int BANDWIDTH_LIABILITY_LIMIT_SECONDS_BULK = 120; //FIXME slowdown (int)(120 / SOFT_REJECT_MAX_BANDWIDTH_USAGE);
 	/** All requests must be able to complete in this many seconds given the bandwidth
 	 * available, even if they all succeed. Realtime requests - separate from bulk 
 	 * requests, given higher priority but expected to be bursty and lower capacity. */
-	static final int BANDWIDTH_LIABILITY_LIMIT_SECONDS_REALTIME = (int)(60 / SOFT_REJECT_MAX_BANDWIDTH_USAGE);
+	static final int BANDWIDTH_LIABILITY_LIMIT_SECONDS_REALTIME = 60; //FIXME slowdown (int)(60 / SOFT_REJECT_MAX_BANDWIDTH_USAGE);
 	
 	/** Stats to send to a single peer so it can determine whether we are likely to reject 
 	 * a request. Includes the various limits, but also, the expected transfers
@@ -1163,8 +1163,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			rejected(">threadLimit", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
 			return new RejectReason(">threadLimit ("+threadCount+'/'+threadLimit+')', false);
 		}
-		if(threadLimit < threadCount * SOFT_REJECT_MAX_THREAD_USAGE)
-			slowDown(">softThreadLimit", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag, tag);
+		// FIXME slowdown
+//		if(threadLimit < threadCount * SOFT_REJECT_MAX_THREAD_USAGE)
+//			slowDown(">softThreadLimit", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag, tag);
 
 		long[] total = node.collector.getTotalIO();
 		long totalSent = total[0];
@@ -1326,13 +1327,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		}
 	}
 	
-	private void slowDown(String reason, boolean isLocal, boolean isInsert,
-			boolean isSSK, boolean isOfferReply, boolean realTimeFlag,
-			UIDTag tag) {
-		if(isLocal || isOfferReply) return;
-		if(logMINOR) Logger.minor(this, "Slow down: "+reason+" insert="+isInsert+" SSK="+isSSK+" realTimeFlag="+realTimeFlag);
-		tag.slowDown();
-	}
+//	private void slowDown(String reason, boolean isLocal, boolean isInsert,
+//			boolean isSSK, boolean isOfferReply, boolean realTimeFlag,
+//			UIDTag tag) {
+//		if(isLocal || isOfferReply) return;
+//		if(logMINOR) Logger.minor(this, "Slow down: "+reason+" insert="+isInsert+" SSK="+isSSK+" realTimeFlag="+realTimeFlag);
+//		tag.slowDown();
+//	}
 
 	public int calculateMaxTransfersOut(PeerNode peer, boolean realTime,
 			double nonOverheadFraction, int maxTransfersOutUpperLimit) {
@@ -1487,14 +1488,15 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			if(peerUsedBytes > thisAllocation) {
 				rejected(name+" bandwidth liability: fairness between peers", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
 				return name+" bandwidth liability: fairness between peers (peer "+source+" used "+peerUsedBytes+" allowed "+thisAllocation+")";
-			} else {
-				double slowDownLimit = thisAllocation * SOFT_REJECT_MAX_BANDWIDTH_USAGE;
-				// Allow any node to use one request of each type. They'll just have to get backed off if necessary.
-				slowDownLimit = Math.max(slowDownLimit, requestsSnapshot.calculateMinimum(input, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert));
-				if(peerUsedBytes > slowDownLimit) {
-					// Sender should slow down if we are using more than 80% of our fair share of capacity.
-					slowDown(name+" bandwidth liability: fairness between peers", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag, tag);
-				}
+			// FIXME slowdown
+//			} else {
+//				double slowDownLimit = thisAllocation * SOFT_REJECT_MAX_BANDWIDTH_USAGE;
+//				// Allow any node to use one request of each type. They'll just have to get backed off if necessary.
+//				slowDownLimit = Math.max(slowDownLimit, requestsSnapshot.calculateMinimum(input, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert));
+//				if(peerUsedBytes > slowDownLimit) {
+//					// Sender should slow down if we are using more than 80% of our fair share of capacity.
+//					slowDown(name+" bandwidth liability: fairness between peers", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag, tag);
+//				}
 			}
 			
 		} else {
@@ -1532,9 +1534,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		if(peerOutTransfers <= maxTransfersOutPeerLimit) {
 			// The total is above the lower limit, but the per-peer is below the peer limit.
 			// It is within its guaranteed space, so we accept it.
-			if(peerOutTransfers > Math.max(1, maxTransfersOutPeerLimit * SOFT_REJECT_MAX_BANDWIDTH_USAGE))
-				// Send slow-down's if we are using more than 80% of our peer limit.
-				slowDown("TooManyTransfers: Fair sharing between peers", isLocal, isInsert, isSSK, isOfferReply, realTime, tag);
+			// FIXME slowdown
+//			if(peerOutTransfers > Math.max(1, maxTransfersOutPeerLimit * SOFT_REJECT_MAX_BANDWIDTH_USAGE))
+//				// Send slow-down's if we are using more than 80% of our peer limit.
+//				slowDown("TooManyTransfers: Fair sharing between peers", isLocal, isInsert, isSSK, isOfferReply, realTime, tag);
 			return null;
 		}
 		rejected("TooManyTransfers: Fair sharing between peers", isLocal, isInsert, isSSK, isOfferReply, realTime);
