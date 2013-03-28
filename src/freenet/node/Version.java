@@ -52,8 +52,9 @@ public class Version {
 	/** The build number of the current revision */
 	private static final int buildNumber = 1438;
 
-	/** Oldest build of Fred we will talk to */
+	/** Oldest build of fred we will talk to *before* _cal */
 	private static final int oldLastGoodBuild = 1435;
+	/** Oldest build of fred we will talk to *after* _cal */
 	private static final int newLastGoodBuild = 1438;
 	static final long transitionTime;
 
