@@ -772,14 +772,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		public PeerLoadStats(PeerNode peer, int transfersPerInsert, boolean realTimeFlag) {
 			this.peer = peer;
 			this.realTime = realTimeFlag;
-			long[] total = node.collector.getTotalIO();
-			long totalSent = total[0];
-			long totalOverhead = getSentOverhead();
-			long uptime = node.getUptime();
-			
 			long now = System.currentTimeMillis();
 			
-			double nonOverheadFraction = getNonOverheadFraction(totalSent, totalOverhead, uptime, now);
+			double nonOverheadFraction = getNonOverheadFraction(now);
 			
 			int limit = realTimeFlag ? BANDWIDTH_LIABILITY_LIMIT_SECONDS_REALTIME : BANDWIDTH_LIABILITY_LIMIT_SECONDS_BULK;
 			
@@ -1167,13 +1162,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 //		if(threadLimit < threadCount * SOFT_REJECT_MAX_THREAD_USAGE)
 //			slowDown(">softThreadLimit", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag, tag);
 
-		long[] total = node.collector.getTotalIO();
-		long totalSent = total[0];
-		long totalOverhead = getSentOverhead();
-		long uptime = node.getUptime();
 		long now = System.currentTimeMillis();
 		
-		double nonOverheadFraction = getNonOverheadFraction(totalSent, totalOverhead, uptime, now);
+		double nonOverheadFraction = getNonOverheadFraction(now);
 		
 		// If no recent reports, no packets have been sent; correct the average downwards.
 		double pingTime;
@@ -1362,8 +1353,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return node.getInputBandwidthLimit() * limit;
 	}
 
-	private double getNonOverheadFraction(long totalSent, long totalOverhead,
-			long uptime, long now) {
+	private double getNonOverheadFraction(long now) {
+		
+		long[] total = node.collector.getTotalIO();
+		long totalSent = total[0];
+		long totalOverhead = getSentOverhead();
+		long uptime = node.getUptime();
 		
 		/** The fraction of output bytes which are used for requests */
 		// FIXME consider using a shorter average
