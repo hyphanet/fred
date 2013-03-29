@@ -776,7 +776,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			
 			double nonOverheadFraction = getNonOverheadFraction(now);
 			
-			int limit = realTimeFlag ? BANDWIDTH_LIABILITY_LIMIT_SECONDS_REALTIME : BANDWIDTH_LIABILITY_LIMIT_SECONDS_BULK;
+			int limit = getLimitSeconds(realTimeFlag);
 			
 			boolean ignoreLocalVsRemote = ignoreLocalVsRemoteBandwidthLiability();
 			
@@ -1209,7 +1209,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		if(logMINOR)
 			requestsSnapshot.log();
 		
-		long limit = realTimeFlag ? BANDWIDTH_LIABILITY_LIMIT_SECONDS_REALTIME : BANDWIDTH_LIABILITY_LIMIT_SECONDS_BULK;
+		long limit = getLimitSeconds(realTimeFlag);
 		
 		// Allow a bit more if the data is in the store and can therefore be served immediately.
 		// This should improve performance.
@@ -1325,6 +1325,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 //		if(logMINOR) Logger.minor(this, "Slow down: "+reason+" insert="+isInsert+" SSK="+isSSK+" realTimeFlag="+realTimeFlag);
 //		tag.slowDown();
 //	}
+
+	private int getLimitSeconds(boolean realTimeFlag) {
+		return realTimeFlag ? BANDWIDTH_LIABILITY_LIMIT_SECONDS_REALTIME : BANDWIDTH_LIABILITY_LIMIT_SECONDS_BULK;
+	}
 
 	public int calculateMaxTransfersOut(PeerNode peer, boolean realTime,
 			double nonOverheadFraction, int maxTransfersOutUpperLimit) {
