@@ -4,9 +4,11 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.Set;
 
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
@@ -877,6 +879,50 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 	}
 	
+	/** Get a snapshot of the running requests for every peer, including those which are not currently
+	 * running any requests.
+	 * @param realTimeFlag True for realtime requests, false for bulk requests.
+	 * @param transfersPerInsert Average number of transfers outwards caused by an insert.
+	 * @param ignoreLocalVsRemote If true, count imaginary transfers in the other direction for 
+	 * local requests. */
+	private Map<PeerNode, RunningRequestsSnapshot> getAllPeerSnapshots(boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote) {
+		// NodeStats needs to include peers we have no requests from. So start with peers.
+		// FIXME LOCKING A slight inconsistency is possible here because tracker is not necessarily 
+		// consistent with PeerManager. However any nodes added should not have any requests 
+		// running, so this should be OK. Long-term, consider keeping the snapshots on the 
+		// PeerNode's, although that would need a separate lock.
+		Set<PeerNode> peersSet = new HashSet<PeerNode>();
+		for(PeerNode p : peers.myPeers()) peersSet.add(p);
+		Map<PeerNode, CountedRequests> countersMapCHK = new HashMap<PeerNode, CountedRequests>();
+		Map<PeerNode, CountedRequests> countersMapSSK = new HashMap<PeerNode, CountedRequests>();
+		Map<PeerNode, CountedRequests> countersMapCHKSR = new HashMap<PeerNode, CountedRequests>();
+		Map<PeerNode, CountedRequests> countersMapSSKSR = new HashMap<PeerNode, CountedRequests>();
+		RequestTracker tracker = node.tracker;
+		tracker.countAllRequestsByIncomingPeer(true, false, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countersMapCHK, countersMapCHKSR);
+		tracker.countAllRequestsByIncomingPeer(true, true, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countersMapSSK, countersMapSSKSR);
+		tracker.countAllRequestsByIncomingPeer(true, false, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countersMapCHK, countersMapCHKSR);
+		tracker.countAllRequestsByIncomingPeer(true, true, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countersMapSSK, countersMapSSKSR);
+		tracker.countAllRequestsByIncomingPeer(false, false, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countersMapCHK, countersMapCHKSR);
+		tracker.countAllRequestsByIncomingPeer(false, true, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countersMapSSK, countersMapSSKSR);
+		tracker.countAllRequestsByIncomingPeer(false, false, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countersMapCHK, countersMapCHKSR);
+		tracker.countAllRequestsByIncomingPeer(false, true, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countersMapSSK, countersMapSSKSR);
+		tracker.countAllRequestsByIncomingPeer(false, false, false, true, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countersMapCHK, countersMapCHKSR);
+		tracker.countAllRequestsByIncomingPeer(false, true, false, true, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countersMapSSK, countersMapSSKSR);
+		Map<PeerNode, RunningRequestsSnapshot> ret = new HashMap<PeerNode, RunningRequestsSnapshot>();
+		for(PeerNode p : peersSet) {
+			ret.put(p, new RunningRequestsSnapshot(countersMapCHK.get(p), countersMapSSK.get(p),
+					countersMapCHKSR.get(p), countersMapSSKSR.get(p), realTimeFlag, 
+					transfersPerInsert));
+		}
+		return ret;
+	}
+	
+	/** Get a snapshot of the running requests for every peer, including those which are not currently
+	 * running any requests. Bulk requests only. */
+	public Map<PeerNode, RunningRequestsSnapshot> getAllPeerSnapshots() {
+		return getAllPeerSnapshots(false, outwardTransfersPerInsert(), ignoreLocalVsRemoteBandwidthLiability);
+	}
+	
 	class RunningRequestsSnapshot {
 		
 		final int expectedTransfersOutCHK;
@@ -992,6 +1038,48 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 				this.expectedTransfersOutSSKSR = 0;
 				this.totalRequestsSR = 0;
 			}
+		}
+		
+		private RunningRequestsSnapshot(CountedRequests countCHK, CountedRequests countSSK, 
+				CountedRequests countCHKSR, CountedRequests countSSKSR, boolean realTimeFlag, 
+				int transfersPerInsert) {
+			this.realTimeFlag = realTimeFlag;
+			this.averageTransfersPerInsert = transfersPerInsert;
+			if(countCHKSR != null) {
+				this.expectedTransfersInCHKSR = countCHKSR.expectedTransfersIn();
+				this.expectedTransfersOutCHKSR = countCHKSR.expectedTransfersOut();
+			} else {
+				expectedTransfersInCHKSR = 0;
+				expectedTransfersOutCHKSR = 0;
+			}
+			if(countSSKSR != null) {
+				this.expectedTransfersInSSKSR = countSSKSR.expectedTransfersIn();
+				this.expectedTransfersOutSSKSR = countSSKSR.expectedTransfersOut();
+			} else {
+				expectedTransfersInSSKSR = 0;
+				expectedTransfersOutSSKSR = 0;
+			}
+			this.totalRequestsSR = (countCHKSR == null ? 0 : countCHKSR.total()) + 
+				(countSSKSR == null ? 0 : countSSKSR.total());
+			if(countCHK != null) {
+				this.expectedTransfersInCHK = countCHK.expectedTransfersIn() - expectedTransfersInCHKSR;
+				this.expectedTransfersOutCHK = countCHK.expectedTransfersOut() - expectedTransfersOutCHKSR;
+			} else {
+				assert(countCHKSR == null);
+				expectedTransfersInCHK = 0;
+				expectedTransfersOutCHK = 0;
+			}
+			if(countSSK != null) {
+				this.expectedTransfersInSSK = countSSK.expectedTransfersIn() - expectedTransfersInSSKSR;
+				this.expectedTransfersOutSSK = countSSK.expectedTransfersOut() - expectedTransfersOutSSKSR;
+			} else {
+				assert(countSSKSR == null);
+				expectedTransfersInSSK = 0;
+				expectedTransfersOutSSK = 0;
+			}
+			this.totalRequests = ((countCHK == null ? 0 : countCHK.total()) + 
+					(countSSK == null ? 0 : countSSK.total())) - totalRequestsSR;
+			
 		}
 
 		public RunningRequestsSnapshot(PeerLoadStats stats) {
