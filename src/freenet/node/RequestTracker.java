@@ -221,6 +221,19 @@ public class RequestTracker {
 		}
 	}
 
+	/** Count all requests running globally which match particular parameters.
+	 * @param local If true, only include requests which originated locally.
+	 * @param ssk If true, count SSK requests, if false, count CHK requests.
+	 * @param insert If true, count inserts, otherwise count requests.
+	 * @param offer If true, count offer replies (takes precedence over insert).
+	 * @param realTimeFlag If true, count real-time requests, if false, count bulk requests. 
+	 * @param transfersPerInsert Assume that any insert will cause this many outgoing transfers. 
+	 * This is not predictable, so we use an average.
+	 * @param ignoreLocalVsRemote If true, pretend that the request is remote even if it's local 
+	 * (that is, count imaginary onward transfers etc depending on the request type).
+	 * @param counter Transfer counts for all requests will be added to this counter object.
+	 * @param counterSourceRestarted Transfer counts for requests whose source restarted (and so 
+	 * are counted as local) will be added to this counter object. */
 	public void countRequests(boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, CountedRequests counter, CountedRequests counterSourceRestarted) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
 		// Map is locked by the non-local version, although we're counting from the local version.
@@ -261,6 +274,28 @@ public class RequestTracker {
 		}
 	}
 
+	/**
+	 * Count requests routed to a peer, or accepted from a peer, that match the specified criteria.
+	 * PERFORMANCE: There is a map for all requests of a given type (local, ssk, etc). However this
+	 * is not divided up by node. FIXME ideally we would countRequests for all PeerNode's
+	 * simultaneously when we need data on more than one. FIXME it would be even better if we could
+	 * just store the status on the PeerNode's, but the memory usage might be an issue and 
+	 * synchronization would likely be problematic.
+	 * @param source The peer the requests were accepted from or routed to.
+	 * @param requestsToNode If true, count requests sent to the node and currently 
+	 * running. If false, count requests originated by the node.
+	 * @param local If true, only include requests which originated locally. 
+	 * @param ssk If true, count SSK requests, if false, count CHK requests. 
+	 * @param insert If true, count inserts, otherwise count requests.
+	 * @param offer If true, count offer replies (takes precedence over insert).
+	 * @param realTimeFlag If true, count real-time requests, if false, count bulk requests.
+	 * @param transfersPerInsert Assume that any insert will cause this many outgoing transfers. 
+	 * This is not predictable, so we use an average.
+	 * @param ignoreLocalVsRemote If true, pretend that the request is remote even if it's local 
+	 * (that is, count imaginary onward transfers etc depending on the request type).
+	 * @param counter Transfer counts for all requests will be added to this counter object.
+	 * @param counterSourceRestarted Transfer counts for requests whose source restarted (and so 
+	 * are counted as local) will be added to this counter object. */
 	public void countRequests(PeerNode source, boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, CountedRequests counter, CountedRequests counterSR) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
 		// Map is locked by the non-local version, although we're counting from the local version.

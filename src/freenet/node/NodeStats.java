@@ -892,6 +892,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		final int averageTransfersPerInsert;
 		final boolean realTimeFlag;
 		
+		/** Create a snapshot of all requests running.
+		 * @param tracker The RequestTracker for the Node.
+		 * @param ignoreLocalVsRemote If true, pretend that the request is remote even if it's local 
+		 * (that is, count imaginary onward transfers etc depending on the request type). 
+		 * @param transfersPerInsert Assume that any insert will cause this many outgoing transfers. 
+		 * This is not predictable, so we use an average.
+		 * @param realTimeFlag If true, count real-time requests, if false, count bulk requests. */
 		RunningRequestsSnapshot(RequestTracker tracker, boolean ignoreLocalVsRemote, int transfersPerInsert, boolean realTimeFlag) {
 			this.averageTransfersPerInsert = transfersPerInsert;
 			this.realTimeFlag = realTimeFlag;
