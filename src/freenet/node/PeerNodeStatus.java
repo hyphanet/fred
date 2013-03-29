@@ -124,7 +124,7 @@ public class PeerNodeStatus {
 	
 	public final boolean hasFullNoderef;
 
-	PeerNodeStatus(PeerNode peerNode, boolean noHeavy) {
+	PeerNodeStatus(PeerNode peerNode, boolean noHeavy, PeerNodeStatusContext context) {
 		Peer p = peerNode.getPeer();
 		if(p == null) {
 			peerAddress = null;

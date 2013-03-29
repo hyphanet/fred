@@ -18,8 +18,8 @@ public class SeedClientPeerNode extends PeerNode {
 	}
 
 	@Override
-	public PeerNodeStatus getStatus(boolean noHeavy) {
-		return new PeerNodeStatus(this, noHeavy);
+	public PeerNodeStatus getStatus(boolean noHeavy, PeerNodeStatusContext context) {
+		return new PeerNodeStatus(this, noHeavy, context);
 	}
 
 	@Override

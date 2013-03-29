@@ -27,8 +27,8 @@ public class OpennetPeerNode extends PeerNode {
 	}
 
 	@Override
-	public PeerNodeStatus getStatus(boolean noHeavy) {
-		return new OpennetPeerNodeStatus(this, noHeavy);
+	public PeerNodeStatus getStatus(boolean noHeavy, PeerNodeStatusContext context) {
+		return new OpennetPeerNodeStatus(this, noHeavy, context);
 	}
 
 	@Override

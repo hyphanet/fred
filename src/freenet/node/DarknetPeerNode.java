@@ -1617,8 +1617,8 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	@Override
-	public PeerNodeStatus getStatus(boolean noHeavy) {
-		return new DarknetPeerNodeStatus(this, noHeavy);
+	public PeerNodeStatus getStatus(boolean noHeavy, PeerNodeStatusContext context) {
+		return new DarknetPeerNodeStatus(this, noHeavy, context);
 	}
 
 	@Override

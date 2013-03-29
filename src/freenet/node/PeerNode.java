@@ -2731,7 +2731,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	 * Get a PeerNodeStatus for this node.
 	 * @param noHeavy If true, avoid any expensive operations e.g. the message count hashtables.
 	 */
-	public abstract PeerNodeStatus getStatus(boolean noHeavy);
+	public abstract PeerNodeStatus getStatus(boolean noHeavy, PeerNodeStatusContext context);
 
 	public String getTMCIPeerInfo() {
 		long now = System.currentTimeMillis();
@@ -2744,8 +2744,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		return String.valueOf(getPeer()) + '\t' + getIdentityString() + '\t' + getLocation() + '\t' + getPeerNodeStatusString() + '\t' + idle;
 	}
 
-	public String getFreevizOutput() {
-		return getStatus(true).toString() + '|' + identityAsBase64String;
+	public String getFreevizOutput(PeerNodeStatusContext context) {
+		return getStatus(true, context).toString() + '|' + identityAsBase64String;
 	}
 
 	public synchronized String getVersion() {
