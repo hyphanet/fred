@@ -795,7 +795,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			
 			// This implies that the sourceRestarted() requests are not counted when checking whether the peer is over the limit.
 			
-			outputBandwidthUpperLimit = getOutputBandwidthUpperLimit(totalSent, totalOverhead, uptime, limit, nonOverheadFraction);
+			outputBandwidthUpperLimit = getOutputBandwidthUpperLimit(limit, nonOverheadFraction);
 			outputBandwidthLowerLimit = getLowerLimit(outputBandwidthUpperLimit, peers);
 			
 			inputBandwidthUpperLimit = getInputBandwidthUpperLimit(limit);
@@ -1254,7 +1254,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 		// Check bandwidth-based limits, with fair sharing.
 		
-		String ret = checkBandwidthLiability(getOutputBandwidthUpperLimit(totalSent, totalOverhead, uptime, limit, nonOverheadFraction), requestsSnapshot, peerRequestsSnapshot, false, limit,
+		String ret = checkBandwidthLiability(getOutputBandwidthUpperLimit(limit, nonOverheadFraction), requestsSnapshot, peerRequestsSnapshot, false, limit,
 				source, isLocal, isSSK, isInsert, isOfferReply, hasInStore, transfersPerInsert, realTimeFlag, maxOutputTransfers, maxTransfersOutPeerLimit, tag);  
 		if(ret != null) {
 			return new RejectReason(ret, true);
@@ -1403,15 +1403,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return nonOverheadFraction;
 	}
 
-	private double getOutputBandwidthUpperLimit(long totalSent, long totalOverhead, long uptime, long limit, double nonOverheadFraction) {
-		double sentOverheadPerSecond = (totalOverhead*1000.0) / (uptime);
-		
-		if(logMINOR) Logger.minor(this, "Output rate: "+(totalSent*1000.0)/uptime+" overhead rate "+sentOverheadPerSecond+" non-overhead fraction "+nonOverheadFraction);
-		
+	private double getOutputBandwidthUpperLimit(long limit, double nonOverheadFraction) {
 		double outputAvailablePerSecond = node.getOutputBandwidthLimit() * nonOverheadFraction;
-		
-		if(logMINOR) Logger.minor(this, "Overhead per second: "+sentOverheadPerSecond+" bwlimit: "+node.getOutputBandwidthLimit()+" => output available per second: "+outputAvailablePerSecond+" but minimum of "+node.getOutputBandwidthLimit() / 5.0);
-		
 		return outputAvailablePerSecond * limit;
 	}
 	
