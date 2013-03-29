@@ -384,8 +384,11 @@ public class RequestTracker {
 	 * (that is, count imaginary onward transfers etc depending on the request type).
 	 * @param counterMap Map from PeerNode to CountedRequests counters. We will use "null" for 
 	 * various cases: local requests, requested that have been reassigned to us, requests where the 
-	 * originator PeerNode has been removed from the routing table etc. */
-	public void countAllRequestsByIncomingPeer(boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, Map<PeerNode, CountedRequests> counterMap) {
+	 * originator PeerNode has been removed from the routing table etc. 
+	 * @param counterMapSourceRestarted Counts requests which are source restarted, which are 
+	 * counted against the peer's limit before it is sent to the peer (requests will be counted to
+	 * either just counterMap or both counterMap and counterMapSourceRestarted). */
+	public void countAllRequestsByIncomingPeer(boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, Map<PeerNode, CountedRequests> counterMap, Map<PeerNode, CountedRequests> counterMapSourceRestarted) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
 		// Map is locked by the non-local version, although we're counting from the local version.
 		HashMap<Long, ? extends UIDTag> mapLock = map;
@@ -410,6 +413,16 @@ public class RequestTracker {
 				counter.total++;
 				counter.expectedTransfersIn += in;
 				counter.expectedTransfersOut += out;
+				if(counterMapSourceRestarted != null && tag.countAsSourceRestarted()) {
+					counter = counterMapSourceRestarted.get(source);
+					if(counter == null) {
+						counter = new CountedRequests();
+						counterMapSourceRestarted.put(source, counter);
+					}
+					counter.total++;
+					counter.expectedTransfersIn += in;
+					counter.expectedTransfersOut += out;
+				}
 			}
 		}
 	}
