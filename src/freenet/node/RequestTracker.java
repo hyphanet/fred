@@ -207,16 +207,17 @@ public class RequestTracker {
 	}
 
 	public static class CountedRequests {
-		int total;
-		int expectedTransfersOut;
-		int expectedTransfersIn;
-		private CountedRequests(int count, int out, int in) {
-			total = count;
-			expectedTransfersOut = out;
-			expectedTransfersIn = in;
+		private int total;
+		private int expectedTransfersOut;
+		private int expectedTransfersIn;
+		public int total() {
+			return total;
 		}
-		public CountedRequests() {
-			// Initially empty.
+		public int expectedTransfersOut() {
+			return expectedTransfersOut;
+		}
+		public int expectedTransfersIn() {
+			return expectedTransfersIn;
 		}
 	}
 

@@ -909,16 +909,16 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			tracker.countRequests(false, true, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK, countSSKSR);
 			tracker.countRequests(false, false, false, true, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK, countCHKSR);
 			tracker.countRequests(false, true, false, true, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK, countSSKSR);
-			this.expectedTransfersInCHK = countCHK.expectedTransfersIn;
-			this.expectedTransfersInSSK = countSSK.expectedTransfersIn;
-			this.expectedTransfersOutCHK = countCHK.expectedTransfersOut;
-			this.expectedTransfersOutSSK = countSSK.expectedTransfersOut;
-			this.totalRequests = countCHK.total + countSSK.total;
-			this.expectedTransfersInCHKSR = countCHKSR.expectedTransfersIn;
-			this.expectedTransfersInSSKSR = countSSKSR.expectedTransfersIn;
-			this.expectedTransfersOutCHKSR = countCHKSR.expectedTransfersOut;
-			this.expectedTransfersOutSSKSR = countSSKSR.expectedTransfersOut;
-			this.totalRequestsSR = countCHKSR.total + countSSKSR.total;
+			this.expectedTransfersInCHK = countCHK.expectedTransfersIn();
+			this.expectedTransfersInSSK = countSSK.expectedTransfersIn();
+			this.expectedTransfersOutCHK = countCHK.expectedTransfersOut();
+			this.expectedTransfersOutSSK = countSSK.expectedTransfersOut();
+			this.totalRequests = countCHK.total() + countSSK.total();
+			this.expectedTransfersInCHKSR = countCHKSR.expectedTransfersIn();
+			this.expectedTransfersInSSKSR = countSSKSR.expectedTransfersIn();
+			this.expectedTransfersOutCHKSR = countCHKSR.expectedTransfersOut();
+			this.expectedTransfersOutSSKSR = countSSKSR.expectedTransfersOut();
+			this.totalRequestsSR = countCHKSR.total() + countSSKSR.total();
 		}
 		
 		/**
@@ -963,22 +963,22 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			tracker.countRequests(source, requestsToNode, false, false, false, true, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countCHK, countCHKSR);
 			tracker.countRequests(source, requestsToNode, false, true, false, true, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countSSK, countSSKSR);
 			if(!requestsToNode) {
-				this.expectedTransfersInCHKSR = countCHKSR.expectedTransfersIn;
-				this.expectedTransfersInSSKSR = countSSKSR.expectedTransfersIn;
-				this.expectedTransfersOutCHKSR = countCHKSR.expectedTransfersOut;
-				this.expectedTransfersOutSSKSR = countSSKSR.expectedTransfersOut;
-				this.totalRequestsSR = countCHKSR.total + countSSKSR.total;
-				this.expectedTransfersInCHK = countCHK.expectedTransfersIn - expectedTransfersInCHKSR;
-				this.expectedTransfersInSSK = countSSK.expectedTransfersIn - expectedTransfersInSSKSR;
-				this.expectedTransfersOutCHK = countCHK.expectedTransfersOut - expectedTransfersOutCHKSR;
-				this.expectedTransfersOutSSK = countSSK.expectedTransfersOut - expectedTransfersOutSSKSR;
-				this.totalRequests = (countCHK.total + countSSK.total) - totalRequestsSR;
+				this.expectedTransfersInCHKSR = countCHKSR.expectedTransfersIn();
+				this.expectedTransfersInSSKSR = countSSKSR.expectedTransfersIn();
+				this.expectedTransfersOutCHKSR = countCHKSR.expectedTransfersOut();
+				this.expectedTransfersOutSSKSR = countSSKSR.expectedTransfersOut();
+				this.totalRequestsSR = countCHKSR.total() + countSSKSR.total();
+				this.expectedTransfersInCHK = countCHK.expectedTransfersIn() - expectedTransfersInCHKSR;
+				this.expectedTransfersInSSK = countSSK.expectedTransfersIn() - expectedTransfersInSSKSR;
+				this.expectedTransfersOutCHK = countCHK.expectedTransfersOut() - expectedTransfersOutCHKSR;
+				this.expectedTransfersOutSSK = countSSK.expectedTransfersOut() - expectedTransfersOutSSKSR;
+				this.totalRequests = (countCHK.total() + countSSK.total()) - totalRequestsSR;
 			} else {
-				this.expectedTransfersInCHK = countCHK.expectedTransfersIn;
-				this.expectedTransfersInSSK = countSSK.expectedTransfersIn;
-				this.expectedTransfersOutCHK = countCHK.expectedTransfersOut;
-				this.expectedTransfersOutSSK = countSSK.expectedTransfersOut;
-				this.totalRequests = countCHK.total + countSSK.total;
+				this.expectedTransfersInCHK = countCHK.expectedTransfersIn();
+				this.expectedTransfersInSSK = countSSK.expectedTransfersIn();
+				this.expectedTransfersOutCHK = countCHK.expectedTransfersOut();
+				this.expectedTransfersOutSSK = countSSK.expectedTransfersOut();
+				this.totalRequests = countCHK.total() + countSSK.total();
 				this.expectedTransfersInCHKSR = 0;
 				this.expectedTransfersInSSKSR = 0;
 				this.expectedTransfersOutCHKSR = 0;
