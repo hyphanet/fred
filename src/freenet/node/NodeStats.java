@@ -3763,6 +3763,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return new PeerLoadStats(source, m);
 	}
 
+	/** Get the requests being sent to a given peer */
 	public RunningRequestsSnapshot getRunningRequestsTo(PeerNode peerNode, int transfersPerInsert, boolean realTimeFlag) {
 		return new RunningRequestsSnapshot(node.tracker, peerNode, true, false, outwardTransfersPerInsert(), realTimeFlag);
 	}
