@@ -232,8 +232,8 @@ public class RequestTracker {
 	 * @param ignoreLocalVsRemote If true, pretend that the request is remote even if it's local 
 	 * (that is, count imaginary onward transfers etc depending on the request type).
 	 * @param counter Transfer counts for all requests will be added to this counter object.
-	 * @param counterSourceRestarted Transfer counts for requests whose source restarted (and so 
-	 * are counted as local) will be added to this counter object. */
+	 * @param counterSourceRestarted Transfer counts for requests whose source restarted (which 
+	 * will be deducted from the peer limit before the peer receives the limit) */
 	public void countRequests(boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, CountedRequests counter, CountedRequests counterSourceRestarted) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
 		// Map is locked by the non-local version, although we're counting from the local version.
@@ -294,8 +294,8 @@ public class RequestTracker {
 	 * @param ignoreLocalVsRemote If true, pretend that the request is remote even if it's local 
 	 * (that is, count imaginary onward transfers etc depending on the request type).
 	 * @param counter Transfer counts for all requests will be added to this counter object.
-	 * @param counterSourceRestarted Transfer counts for requests whose source restarted (and so 
-	 * are counted as local) will be added to this counter object. */
+	 * @param counterSourceRestarted Transfer counts for requests whose source restarted (which 
+	 * will be deducted from the peer limit before the peer receives the limit) */
 	public void countRequests(PeerNode source, boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, CountedRequests counter, CountedRequests counterSR) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
 		// Map is locked by the non-local version, although we're counting from the local version.
@@ -383,9 +383,8 @@ public class RequestTracker {
 	 * @param ignoreLocalVsRemote If true, pretend that the request is remote even if it's local 
 	 * (that is, count imaginary onward transfers etc depending on the request type).
 	 * @param counterMap Map from PeerNode to CountedRequests counters. We will use "null" for 
-	 * various cases: local requests, requested that have been adopted because their originator
-	 * restarted, requests where the originator PeerNode has been removed from the routing table
-	 * etc. */
+	 * various cases: local requests, requested that have been reassigned to us, requests where the 
+	 * originator PeerNode has been removed from the routing table etc. */
 	public void countAllRequestsByIncomingPeer(boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, Map<PeerNode, CountedRequests> counterMap) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
 		// Map is locked by the non-local version, although we're counting from the local version.
