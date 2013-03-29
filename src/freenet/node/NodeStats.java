@@ -3903,5 +3903,16 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 		return input * multiplier;
 	}
+	
+	public final double getBandwidthLiabilityUsage() {
+		long now = System.currentTimeMillis();
+		long limit = getLimitSeconds(false);
+		int transfersPerInsert = outwardTransfersPerInsert();
+		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node.tracker, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, false);
+		double usedBytes = requestsSnapshot.calculate(ignoreLocalVsRemoteBandwidthLiability, false);
+		double nonOverheadFraction = getNonOverheadFraction(now);
+		double upperLimit = getOutputBandwidthUpperLimit(limit, nonOverheadFraction);
+		return usedBytes / upperLimit;
+	}
 
 }
