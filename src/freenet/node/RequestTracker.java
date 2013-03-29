@@ -385,33 +385,31 @@ public class RequestTracker {
 	 * @param counterMap Map from PeerNode to CountedRequests counters. We will use "null" for 
 	 * various cases: local requests, requested that have been reassigned to us, requests where the 
 	 * originator PeerNode has been removed from the routing table etc. */
-	public void countAllRequestsByIncomingPeer(boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, Map<PeerNode, CountedRequests> counterMap) {
+	public void countAllRequestsByIncomingPeer(boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, Map<PeerNode, CountedRequests> counterMap) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
 		// Map is locked by the non-local version, although we're counting from the local version.
 		HashMap<Long, ? extends UIDTag> mapLock = map;
 		if(local)
 			mapLock = getTracker(false, ssk, insert, offer, realTimeFlag);
 		synchronized(mapLock) {
-			if(!requestsToNode) {
-				// If a request is adopted by us as a result of a timeout, it can be in the
-				// remote map despite having source == null. However, if a request is in the
-				// local map it will always have source == null.
-				for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
-					UIDTag tag = entry.getValue();
-					// The overall running* map can include local. But the local map can't include non-local.
-					if((!local) && tag.wasLocal) continue;
-					PeerNode source = tag.getSource(); // Can be null in various cases
-					CountedRequests counter = counterMap.get(source);
-					if(counter == null) {
-						counter = new CountedRequests();
-						counterMap.put(source, counter);
-					}
-					int out = tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, true);
-					int in = tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, true);
-					counter.total++;
-					counter.expectedTransfersIn += in;
-					counter.expectedTransfersOut += out;
+			// If a request is adopted by us as a result of a timeout, it can be in the
+			// remote map despite having source == null. However, if a request is in the
+			// local map it will always have source == null.
+			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
+				UIDTag tag = entry.getValue();
+				// The overall running* map can include local. But the local map can't include non-local.
+				if((!local) && tag.wasLocal) continue;
+				PeerNode source = tag.getSource(); // Can be null in various cases
+				CountedRequests counter = counterMap.get(source);
+				if(counter == null) {
+					counter = new CountedRequests();
+					counterMap.put(source, counter);
 				}
+				int out = tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, true);
+				int in = tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, true);
+				counter.total++;
+				counter.expectedTransfersIn += in;
+				counter.expectedTransfersOut += out;
 			}
 		}
 	}
