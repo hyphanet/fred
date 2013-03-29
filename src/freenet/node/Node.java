@@ -4385,23 +4385,6 @@ public class Node implements TimeSkewDetectorCallback {
 		return sb.toString();
 	}
 
-	/**
-	 * @return Data String for freeviz.
-	 */
-	public String getFreevizOutput() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append("\ntransferring_requests=");
-		sb.append(tracker.getNumTransferringRequestSenders());
-
-		sb.append('\n');
-
-		if (peers != null)
-			sb.append(peers.getFreevizOutput());
-
-		return sb.toString();
-	}
-
 	/** Length of signature parameters R and S */
 	static final int SIGNATURE_PARAMETER_LENGTH = 32;
 
