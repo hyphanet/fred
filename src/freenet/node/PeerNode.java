@@ -2744,10 +2744,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		return String.valueOf(getPeer()) + '\t' + getIdentityString() + '\t' + getLocation() + '\t' + getPeerNodeStatusString() + '\t' + idle;
 	}
 
-	public String getFreevizOutput() {
-		return getStatus(true).toString() + '|' + identityAsBase64String;
-	}
-
 	public synchronized String getVersion() {
 		return version;
 	}

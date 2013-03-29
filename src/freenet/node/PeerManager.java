@@ -1365,21 +1365,6 @@ public class PeerManager {
 		return sb.toString();
 	}
 
-	public String getFreevizOutput() {
-		StringBuilder sb = new StringBuilder();
-		PeerNode[] peers = myPeers();
-		String[] identity = new String[peers.length];
-		for(int i = 0; i < peers.length; i++) {
-			PeerNode pn = peers[i];
-			identity[i] = pn.getFreevizOutput();
-		}
-		Arrays.sort(identity);
-		for(String i: identity) {
-			sb.append(i);
-			sb.append('\n');
-		}
-		return sb.toString();
-	}
 	private final Object writePeersSync = new Object();
 	private final Object writePeerFileSync = new Object();
 	
