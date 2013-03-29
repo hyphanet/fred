@@ -303,70 +303,70 @@ public class RequestTracker {
 		if(local)
 			mapLock = getTracker(false, ssk, insert, offer, realTimeFlag);
 		synchronized(mapLock) {
-		int count = 0;
-		int transfersOut = 0;
-		int transfersIn = 0;
-		int countSR = 0;
-		int transfersOutSR = 0;
-		int transfersInSR = 0;
-		if(!requestsToNode) {
-			// If a request is adopted by us as a result of a timeout, it can be in the
-			// remote map despite having source == null. However, if a request is in the
-			// local map it will always have source == null.
-			if(source != null && local) return;
-			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
-				UIDTag tag = entry.getValue();
-				// The overall running* map can include local. But the local map can't include non-local.
-				if((!local) && tag.wasLocal) continue;
-				if(tag.getSource() == source) {
-					int out = tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, true);
-					int in = tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, true);
-					count++;
-					transfersOut += out;
-					transfersIn += in;
-					if(counterSR != null && tag.countAsSourceRestarted()) {
-						countSR++;
-						transfersOutSR += out;
-						transfersInSR += in;
-					}
-					if(logMINOR) Logger.minor(this, "Counting "+tag+" from "+entry.getKey()+" from "+source+" count now "+count+" out now "+transfersOut+" in now "+transfersIn);
-				} else if(logDEBUG) Logger.debug(this, "Not counting "+entry.getKey());
+			int count = 0;
+			int transfersOut = 0;
+			int transfersIn = 0;
+			int countSR = 0;
+			int transfersOutSR = 0;
+			int transfersInSR = 0;
+			if(!requestsToNode) {
+				// If a request is adopted by us as a result of a timeout, it can be in the
+				// remote map despite having source == null. However, if a request is in the
+				// local map it will always have source == null.
+				if(source != null && local) return;
+				for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
+					UIDTag tag = entry.getValue();
+					// The overall running* map can include local. But the local map can't include non-local.
+					if((!local) && tag.wasLocal) continue;
+					if(tag.getSource() == source) {
+						int out = tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, true);
+						int in = tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, true);
+						count++;
+						transfersOut += out;
+						transfersIn += in;
+						if(counterSR != null && tag.countAsSourceRestarted()) {
+							countSR++;
+							transfersOutSR += out;
+							transfersInSR += in;
+						}
+						if(logMINOR) Logger.minor(this, "Counting "+tag+" from "+entry.getKey()+" from "+source+" count now "+count+" out now "+transfersOut+" in now "+transfersIn);
+					} else if(logDEBUG) Logger.debug(this, "Not counting "+entry.getKey());
+				}
+				if(logMINOR) Logger.minor(this, "Returning count: "+count+" in: "+transfersIn+" out: "+transfersOut);
+				counter.total += count;
+				counter.expectedTransfersIn += transfersIn;
+				counter.expectedTransfersOut += transfersOut;
+				if(counterSR != null) {
+					counterSR.total += countSR;
+					counterSR.expectedTransfersIn += transfersInSR;
+					counterSR.expectedTransfersOut += transfersOutSR;
+				}
+			} else {
+				// hasSourceRestarted is irrelevant for requests *to* a node.
+				// FIXME improve efficiency!
+				for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
+					UIDTag tag = entry.getValue();
+					// The overall running* map can include local. But the local map can't include non-local.
+					if((!local) && tag.wasLocal) continue;
+					// Ordinary requests can be routed to an offered key.
+					// So we *DO NOT* care whether it's an ordinary routed relayed request or a GetOfferedKey, if we are counting outgoing requests.
+					if(tag.currentlyFetchingOfferedKeyFrom(source)) {
+						if(logMINOR) Logger.minor(this, "Counting "+tag+" to "+entry.getKey());
+						transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, false);
+						transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, false);
+						count++;
+					} else if(tag.currentlyRoutingTo(source)) {
+						if(logMINOR) Logger.minor(this, "Counting "+tag+" to "+entry.getKey());
+						transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, false);
+						transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, false);
+						count++;
+					} else if(logDEBUG) Logger.debug(this, "Not counting "+entry.getKey());
+				}
+				if(logMINOR) Logger.minor(this, "Counted for "+(local?"local":"remote")+" "+(ssk?"ssk":"chk")+" "+(insert?"insert":"request")+" "+(offer?"offer":"")+" : "+count+" of "+map.size()+" for "+source);
+				counter.total += count;
+				counter.expectedTransfersIn += transfersIn;
+				counter.expectedTransfersOut += transfersOut;
 			}
-			if(logMINOR) Logger.minor(this, "Returning count: "+count+" in: "+transfersIn+" out: "+transfersOut);
-			counter.total += count;
-			counter.expectedTransfersIn += transfersIn;
-			counter.expectedTransfersOut += transfersOut;
-			if(counterSR != null) {
-				counterSR.total += countSR;
-				counterSR.expectedTransfersIn += transfersInSR;
-				counterSR.expectedTransfersOut += transfersOutSR;
-			}
-		} else {
-			// hasSourceRestarted is irrelevant for requests *to* a node.
-			// FIXME improve efficiency!
-			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
-				UIDTag tag = entry.getValue();
-				// The overall running* map can include local. But the local map can't include non-local.
-				if((!local) && tag.wasLocal) continue;
-				// Ordinary requests can be routed to an offered key.
-				// So we *DO NOT* care whether it's an ordinary routed relayed request or a GetOfferedKey, if we are counting outgoing requests.
-				if(tag.currentlyFetchingOfferedKeyFrom(source)) {
-					if(logMINOR) Logger.minor(this, "Counting "+tag+" to "+entry.getKey());
-					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, false);
-					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, false);
-					count++;
-				} else if(tag.currentlyRoutingTo(source)) {
-					if(logMINOR) Logger.minor(this, "Counting "+tag+" to "+entry.getKey());
-					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, false);
-					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, false);
-					count++;
-				} else if(logDEBUG) Logger.debug(this, "Not counting "+entry.getKey());
-			}
-			if(logMINOR) Logger.minor(this, "Counted for "+(local?"local":"remote")+" "+(ssk?"ssk":"chk")+" "+(insert?"insert":"request")+" "+(offer?"offer":"")+" : "+count+" of "+map.size()+" for "+source);
-			counter.total += count;
-			counter.expectedTransfersIn += transfersIn;
-			counter.expectedTransfersOut += transfersOut;
-		}
 		}
 	}
 	
