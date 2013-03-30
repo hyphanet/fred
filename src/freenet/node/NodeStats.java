@@ -879,20 +879,27 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 	}
 	
-	/** Get a snapshot of the running requests for every peer, including those which are not currently
-	 * running any requests.
+	/** Get a snapshot of the running requests for all peers.
 	 * @param realTimeFlag True for realtime requests, false for bulk requests.
 	 * @param transfersPerInsert Average number of transfers outwards caused by an insert.
 	 * @param ignoreLocalVsRemote If true, count imaginary transfers in the other direction for 
-	 * local requests. */
+	 * local requests.
+	 * @return A map containing a RunningRequestsSnapshot for every currently connected, routable 
+	 * peer, and one for our own requests under the null key. Every running request will be 
+	 * included (although the method is only atomic for each category e.g. CHK requests). If a 
+	 * request was sent by a peer and it then restarted/disconnected, but is now connected and 
+	 * routable, we will count it as SourceRestarted towards that peer. However if the peer did not 
+	 * reconnect, it will be counted as local (even though it could later be shifted back to that 
+	 * peer if it reconnects). Hence the size of the map will be the number of routable connected 
+	 * peers. */
 	private Map<PeerNode, RunningRequestsSnapshot> getAllPeerSnapshots(boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote) {
 		// NodeStats needs to include peers we have no requests from. So start with peers.
 		// FIXME LOCKING A slight inconsistency is possible here because tracker is not necessarily 
 		// consistent with PeerManager. However any nodes added should not have any requests 
 		// running, so this should be OK. Long-term, consider keeping the snapshots on the 
 		// PeerNode's, although that would need a separate lock.
-		Set<PeerNode> peersSet = new HashSet<PeerNode>();
-		for(PeerNode p : peers.getConnectedPeers()) peersSet.add(p);
+		Set<PeerNode> peersSet = peers.getConnectedPeers();
+		peersSet.add(null); // Include self.
 		Map<PeerNode, CountedRequests> countersMapCHK = new HashMap<PeerNode, CountedRequests>();
 		Map<PeerNode, CountedRequests> countersMapSSK = new HashMap<PeerNode, CountedRequests>();
 		Map<PeerNode, CountedRequests> countersMapCHKSR = new HashMap<PeerNode, CountedRequests>();
@@ -909,11 +916,33 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		tracker.countAllRequestsByIncomingPeer(false, false, false, true, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countersMapCHK, countersMapCHKSR);
 		tracker.countAllRequestsByIncomingPeer(false, true, false, true, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countersMapSSK, countersMapSSKSR);
 		Map<PeerNode, RunningRequestsSnapshot> ret = new HashMap<PeerNode, RunningRequestsSnapshot>();
+		
+		// Remove peernodes that are disconnected or not routable but are still request originators.
+		Set<PeerNode> peersDisconnectedOriginators = new HashSet<PeerNode>();
+		Map<PeerNode,CountedRequests>[] maps = (Map<PeerNode,CountedRequests>[])new Map[] { countersMapSSK, countersMapCHK, countersMapCHKSR, countersMapSSKSR };
+		for(Map<PeerNode,CountedRequests> m : maps) {
+			peersDisconnectedOriginators.addAll(m.keySet());
+		}
+		peersDisconnectedOriginators.removeAll(peersSet);
+		for(Map<PeerNode,CountedRequests> m : maps) {
+			CountedRequests mine = m.get(null);
+			if(mine == null) {
+				mine = new CountedRequests();
+				m.put(null, mine);
+			}
+			for(Map.Entry<PeerNode,CountedRequests> entry : m.entrySet()) {
+				if(entry.getKey() != null)
+					mine.add(entry.getValue());
+			}
+		}
+		
+		// Now convert the "official" peers, including self.
 		for(PeerNode p : peersSet) {
 			ret.put(p, new RunningRequestsSnapshot(countersMapCHK.get(p), countersMapSSK.get(p),
 					countersMapCHKSR.get(p), countersMapSSKSR.get(p), realTimeFlag, 
 					transfersPerInsert));
 		}
+		
 		return ret;
 	}
 	

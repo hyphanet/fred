@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import freenet.keys.NodeCHK;
+import freenet.node.RequestTracker.CountedRequests;
 import freenet.support.Logger;
 import freenet.support.Ticker;
 
@@ -218,6 +219,11 @@ public class RequestTracker {
 		}
 		public int expectedTransfersIn() {
 			return expectedTransfersIn;
+		}
+		public void add(CountedRequests value) {
+			this.expectedTransfersIn += value.expectedTransfersIn;
+			this.expectedTransfersOut = value.expectedTransfersOut;
+			this.total = value.total;
 		}
 	}
 
