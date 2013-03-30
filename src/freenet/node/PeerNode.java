@@ -4582,6 +4582,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		public double outputUsageFraction() {
 			return ((double)usedCapacityOutputBytes)/((double)peerCapacityOutputBytes);
 		}
+		public double outputUsageFractionOverall() {
+			return ((double)(usedCapacityOutputBytes+othersUsedCapacityOutputBytes))/((double)totalCapacityOutputBytes);
+		}
 	}
 	
 	enum RequestLikelyAcceptedState {
