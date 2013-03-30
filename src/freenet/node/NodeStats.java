@@ -471,10 +471,16 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
-				if(newLevel == NETWORK_THREAT_LEVEL.MAXIMUM)
-					ignoreLocalVsRemoteBandwidthLiability = true;
-				if(oldLevel == NETWORK_THREAT_LEVEL.MAXIMUM)
-					ignoreLocalVsRemoteBandwidthLiability = false;
+				if(newLevel == NETWORK_THREAT_LEVEL.MAXIMUM) {
+					synchronized(NodeStats.this) {
+						ignoreLocalVsRemoteBandwidthLiability = true;
+					}
+				}
+				if(oldLevel == NETWORK_THREAT_LEVEL.MAXIMUM) {
+					synchronized(NodeStats.this) {
+						ignoreLocalVsRemoteBandwidthLiability = false;
+					}
+				}
 				// Otherwise leave it as it was. It defaults to false.
 			}
 
@@ -1209,7 +1215,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		int transfersPerInsert = outwardTransfersPerInsert();
 		
 		/** Requests running, globally */
-		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node.tracker, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, realTimeFlag);
+		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node.tracker, ignoreLocalVsRemoteBandwidthLiability(), transfersPerInsert, realTimeFlag);
 		
 		// Don't need to decrement because it won't be counted until setAccepted() below.
 
@@ -1240,7 +1246,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		 * which are not included in the count, and are decremented from the peer limit
 		 * before it is used and sent to the peer. This ensures that the peer
 		 * doesn't use more than it should after a restart. */
-		RunningRequestsSnapshot peerRequestsSnapshot = new RunningRequestsSnapshot(node.tracker, source, false, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, realTimeFlag);
+		RunningRequestsSnapshot peerRequestsSnapshot = new RunningRequestsSnapshot(node.tracker, source, false, ignoreLocalVsRemoteBandwidthLiability(), transfersPerInsert, realTimeFlag);
 		if(logMINOR)
 			peerRequestsSnapshot.log(source);
 		
@@ -1448,6 +1454,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			PeerNode source, boolean isLocal, boolean isSSK, boolean isInsert, boolean isOfferReply, boolean hasInStore, int transfersPerInsert, boolean realTimeFlag, int maxOutputTransfers, int maxOutputTransfersPeerLimit, UIDTag tag) {
 		String name = input ? "Input" : "Output";
 		int peers = node.peers.countConnectedPeers();
+		boolean ignoreLocalVsRemoteBandwidthLiability = ignoreLocalVsRemoteBandwidthLiability();
 		
 		double bandwidthAvailableOutputLowerLimit = getLowerLimit(bandwidthAvailableOutputUpperLimit, peers);
 		
@@ -1600,7 +1607,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 */
 	private double getPeerBandwidthLiability(RunningRequestsSnapshot requestsSnapshot, PeerNode source, boolean ignoreLocalVsRemote, int transfersOutPerInsert, boolean input) {
 		
-		return requestsSnapshot.calculate(ignoreLocalVsRemoteBandwidthLiability, input);
+		return requestsSnapshot.calculate(ignoreLocalVsRemoteBandwidthLiability(), input);
 	}
 
 	/** @return True if we should reject the request.
@@ -3679,7 +3686,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return new RunningRequestsSnapshot(node.tracker, peerNode, true, false, outwardTransfersPerInsert(), realTimeFlag);
 	}
 	
-	public boolean ignoreLocalVsRemoteBandwidthLiability() {
+	public synchronized boolean ignoreLocalVsRemoteBandwidthLiability() {
 		return ignoreLocalVsRemoteBandwidthLiability;
 	}
 	
@@ -3916,6 +3923,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		long now = System.currentTimeMillis();
 		long limit = getLimitSeconds(false);
 		int transfersPerInsert = outwardTransfersPerInsert();
+		boolean ignoreLocalVsRemoteBandwidthLiability = ignoreLocalVsRemoteBandwidthLiability();
 		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node.tracker, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, false);
 		double usedBytes = requestsSnapshot.calculate(ignoreLocalVsRemoteBandwidthLiability, false);
 		double nonOverheadFraction = getNonOverheadFraction(now);
