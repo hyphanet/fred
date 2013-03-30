@@ -21,7 +21,7 @@ public class PeerNodeStatusContext {
 		this.node = node;
 		requestsSnapshot = node.nodeStats.getAllPeerSnapshots();
 		transfersPerInsert = node.nodeStats.outwardTransfersPerInsert();
-		peerCount = requestsSnapshot.size();
+		peerCount = requestsSnapshot.size() - 1;
 		bandwidthAvailableUpperLower = node.nodeStats.getBandwidthAvailableForPeersGuaranteed(peerCount);
 		ignoreLocalVsRemoteBandwidthLiability = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
 	}
