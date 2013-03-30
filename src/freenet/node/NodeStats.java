@@ -4041,6 +4041,15 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return usedBytes / upperLimit;
 	}
 
+	/** Get the maximum output bulk bandwidth liability limit for an ordinary peer (i.e. not for 
+	 * ourself, which might be treated differently), assuming there are no SourceRestarted 
+	 * requests. */
+	public double getMaxPeerLimit() {
+		int peerCount = peers.countConnectedPeers();
+		int transfersPerInsert = outwardTransfersPerInsert();
+		return getPeerLimit(false, getBandwidthAvailableForPeersGuaranteed(peerCount), false, transfersPerInsert, false, peerCount, 0);
+	}
+
 	/**
 	 * Get the allocation for a peer.
 	 * @param local If true, calculate allocation for self, else calculate the allocation for a 
