@@ -1099,7 +1099,7 @@ public class StatisticsToadlet extends Toadlet {
 			activityList.addChild("li", "BackgroundFetcherByUSKSize:\u00a0" + node.clientCore.uskManager.getBackgroundFetcherByUSKSize());
 			activityList.addChild("li", "temporaryBackgroundFetchersLRUSize:\u00a0" + node.clientCore.uskManager.getTemporaryBackgroundFetchersLRU());
 			activityList.addChild("li", "outputBandwidthLiabilityUsage:\u00a0" + this.fix3p1pct.format(node.nodeStats.getBandwidthLiabilityUsage()));
-			int peerCount = node.peers.countConnectedPeers();
+			int peerCount = node.peers.countConnectedPeers() + 1;
 			activityList.addChild("li", "outputBandwidthLiabilityPeerLimit:\u00a0" + SizeUtil.formatSize((long) (node.nodeStats.getBandwidthAvailableForPeersGuaranteed(peerCount) / peerCount)));
 		}
 		
