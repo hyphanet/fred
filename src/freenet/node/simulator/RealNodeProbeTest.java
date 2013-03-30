@@ -187,37 +187,37 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
 		int index = 0;
 		byte htl = Probe.MAX_HTL;
 		while (true) {
-			System.out.println("Sending probes from node " + index + " with HTL " + htl + ".");
-			System.out.println("0) BANDWIDTH");
-			System.out.println("1) BUILD");
-			System.out.println("2) IDENTIFIER");
-			System.out.println("3) LINK_LENGTHS");
-			System.out.println("4) LOCATION");
-			System.out.println("5) STORE_SIZE");
-			System.out.println("6) UPTIME 48-hour");
-			System.out.println("7) UPTIME 7-day");
-			System.out.println("8) REJECT_STATS");
-			System.out.println("9) OVERALL_BULK_OUTPUT_CAPACITY_USAGE");
-			System.out.println("10) Pick another node");
-			System.out.println("11) Pick another HTL");
-			System.out.println("12) Pick current node's refusals");
+			System.err.println("Sending probes from node " + index + " with HTL " + htl + ".");
+			System.err.println("0) BANDWIDTH");
+			System.err.println("1) BUILD");
+			System.err.println("2) IDENTIFIER");
+			System.err.println("3) LINK_LENGTHS");
+			System.err.println("4) LOCATION");
+			System.err.println("5) STORE_SIZE");
+			System.err.println("6) UPTIME 48-hour");
+			System.err.println("7) UPTIME 7-day");
+			System.err.println("8) REJECT_STATS");
+			System.err.println("9) OVERALL_BULK_OUTPUT_CAPACITY_USAGE");
+			System.err.println("10) Pick another node");
+			System.err.println("11) Pick another HTL");
+			System.err.println("12) Pick current node's refusals");
 			
-			System.out.println("Anything else to exit.");
-			System.out.println("Select: ");
+			System.err.println("Anything else to exit.");
+			System.err.println("Select: ");
 			try {
 				int selection = Integer.valueOf(System.console().readLine());
 				if (selection == types.length) {
-					System.out.print("Enter new node index ([0-" + (NUMBER_OF_NODES - 1) + "]):");
+					System.err.print("Enter new node index ([0-" + (NUMBER_OF_NODES - 1) + "]):");
 					index = Integer.valueOf(System.console().readLine());
 				}
 				else if (selection == types.length+1) {
-					System.out.print("Enter new HTL: ");
+					System.err.print("Enter new HTL: ");
 					htl = Byte.valueOf(System.console().readLine());
 				} else if (selection == types.length+2) {
 					SubConfig nodeConfig = nodes[index].config.get("node");
 					String[] options = { "probeBandwidth", "probeBuild", "probeIdentifier", "probeLinkLengths", "probeLinkLengths", "probeUptime" };
 					for (String option : options) {
-						System.out.print(option + ": ");
+						System.err.print(option + ": ");
 						nodeConfig.set(option, Boolean.valueOf(System.console().readLine()));
 					}
 				} else nodes[index].startProbe(htl, random.nextLong(), types[selection], print);
