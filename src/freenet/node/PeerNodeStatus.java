@@ -10,6 +10,7 @@ import freenet.clients.http.DarknetConnectionsToadlet;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
 import freenet.io.xfer.PacketThrottle;
+import freenet.node.NodeStats.RunningRequestsSnapshot;
 import freenet.node.PeerNode.IncomingLoadSummaryStats;
 
 /**
@@ -122,6 +123,12 @@ public class PeerNodeStatus {
 
 	public final IncomingLoadSummaryStats incomingLoadStatsBulk;
 	
+	public final RunningRequestsSnapshot runningRequestsFromPeer;
+	
+	/** The amount of bandwidth the peer is allowed */
+	public final double peerOutputBandwidthLiabilityAllocation;
+	public final double outputBandwidthCapacityUsedByRequestsFromPeer;
+	
 	public final boolean hasFullNoderef;
 
 	PeerNodeStatus(PeerNode peerNode, boolean noHeavy, PeerNodeStatusContext context) {
@@ -193,6 +200,14 @@ public class PeerNodeStatus {
 		this.isSearchable = peerNode.isRealConnection();
 		this.resendBytesSent = peerNode.getResendBytesSent();
 		this.reportedUptimePercentage = peerNode.getUptime();
+		this.runningRequestsFromPeer = context.getPeerRequests(peerNode);
+		if(runningRequestsFromPeer != null) {
+			outputBandwidthCapacityUsedByRequestsFromPeer = runningRequestsFromPeer.calculate(context.ignoreLocalVsRemoteBandwidthLiability, false);
+			peerOutputBandwidthLiabilityAllocation = context.node.nodeStats.getPeerAllocation(peerNode, runningRequestsFromPeer, context.transfersPerInsert, context.peerCount, context.bandwidthAvailableUpperLower);
+		} else {
+			outputBandwidthCapacityUsedByRequestsFromPeer = 0;
+			peerOutputBandwidthLiabilityAllocation = 0;
+		}
 		messageQueueLengthBytes = peerNode.getMessageQueueLengthBytes();
 		messageQueueLengthTime = peerNode.getProbableSendQueueTime();
 		incomingLoadStatsRealTime = peerNode.getIncomingLoadStats(true);
@@ -486,5 +501,17 @@ public class PeerNodeStatus {
 
 	public double getSelectionRate() {
 		return selectionRate;
+	}
+
+	public double localCapacityUsedFraction() {
+		return outputBandwidthCapacityUsedByRequestsFromPeer / peerOutputBandwidthLiabilityAllocation;
+	}
+
+	public long localCapacityUsed() {
+		return (long) outputBandwidthCapacityUsedByRequestsFromPeer;
+	}
+
+	public long localCapacityPeerLimit() {
+		return (long) peerOutputBandwidthLiabilityAllocation;
 	}
 }

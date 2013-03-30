@@ -29,6 +29,7 @@ import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.NodeStats;
+import freenet.node.NodeStats.RunningRequestsSnapshot;
 import freenet.node.PeerManager;
 import freenet.node.PeerNode;
 import freenet.node.PeerNode.IncomingLoadSummaryStats;
@@ -160,6 +161,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	protected final PeerManager peers;
 	protected boolean isReversed = false;
 	public enum PeerAdditionReturnCodes{ OK, WRONG_ENCODING, CANT_PARSE, INTERNAL_ERROR, INVALID_SIGNATURE, TRY_TO_ADD_SELF, ALREADY_IN_REFERENCE}
+	
+	private final DecimalFormat fix3p1pct = new DecimalFormat("##0.0%");
 
 	protected ConnectionsToadlet(Node n, NodeClientCore core, HighLevelSimpleClient client) {
 		super(client);
@@ -458,9 +461,11 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					peerTableHeaderRow.addChild("th", "Congestion\u00a0Control");
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "time_delta")).addChild("#", "Time\u00a0Delta");
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "uptime")).addChild("#", "Reported\u00a0Uptime");
+					peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "How much of our per-peer capacity the peer is using", "border-bottom: 1px dotted; cursor: help;" }, "Local\u00a0Capacity");
 					peerTableHeaderRow.addChild("th", "Transmit\u00a0Queue");
-					peerTableHeaderRow.addChild("th", "Peer\u00a0Capacity\u00a0Bulk");
-					peerTableHeaderRow.addChild("th", "Peer\u00a0Capacity\u00a0Realtime");
+					peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "How much of the peer's per-peer capacity we are using (for bulk requests)", "border-bottom: 1px dotted; cursor: help;" }, "Peer\u00a0Capacity\u00a0Bulk");
+					peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "How much of the peer's per-peer capacity we are using (for realtime requests)", "border-bottom: 1px dotted; cursor: help;" }, "Peer\u00a0Capacity\u00a0Realtime");
+					
 				}
 				
 				SimpleColumn[] endCols = endColumnHeaders(advancedMode);
@@ -982,17 +987,20 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			// time delta
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", TimeUtil.formatTime(peerNodeStatus.getClockDelta()));
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", peerNodeStatus.getReportedUptimePercentage()+"%");
+			// our capacity used by the peer
+			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", fix3p1pct.format(peerNodeStatus.localCapacityUsedFraction())+" : "+SizeUtil.formatSize(peerNodeStatus.localCapacityUsed())+" / "+SizeUtil.formatSize(peerNodeStatus.localCapacityPeerLimit()));
+			// transmit queue length
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(peerNodeStatus.getMessageQueueLengthBytes())+":"+TimeUtil.formatTime(peerNodeStatus.getMessageQueueLengthTime()));
 			IncomingLoadSummaryStats loadStatsBulk = peerNodeStatus.incomingLoadStatsBulk;
 			if(loadStatsBulk == null)
 				peerRow.addChild("td", "class", "peer-idle" /* FIXME */);
 			else
-				peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", loadStatsBulk.runningRequestsTotal+"reqs:out:"+SizeUtil.formatSize(loadStatsBulk.usedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.othersUsedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.peerCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.totalCapacityOutputBytes)+":in:"+SizeUtil.formatSize(loadStatsBulk.usedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.othersUsedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.peerCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.totalCapacityInputBytes));
+				peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", this.fix3p1pct.format(loadStatsBulk.outputUsageFraction())+" : "+loadStatsBulk.runningRequestsTotal+"reqs:out:"+SizeUtil.formatSize(loadStatsBulk.usedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.othersUsedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.peerCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.totalCapacityOutputBytes)+":in:"+SizeUtil.formatSize(loadStatsBulk.usedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.othersUsedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.peerCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.totalCapacityInputBytes));
 			IncomingLoadSummaryStats loadStatsRT = peerNodeStatus.incomingLoadStatsRealTime;
 			if(loadStatsRT == null)
 				peerRow.addChild("td", "class", "peer-idle" /* FIXME */);
 			else
-				peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", loadStatsRT.runningRequestsTotal+"reqs:out:"+SizeUtil.formatSize(loadStatsRT.usedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.othersUsedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.peerCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.totalCapacityOutputBytes)+":in:"+SizeUtil.formatSize(loadStatsRT.usedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.othersUsedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.peerCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.totalCapacityInputBytes));
+				peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", this.fix3p1pct.format(loadStatsRT.outputUsageFraction())+" : "+loadStatsRT.runningRequestsTotal+"reqs:out:"+SizeUtil.formatSize(loadStatsRT.usedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.othersUsedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.peerCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.totalCapacityOutputBytes)+":in:"+SizeUtil.formatSize(loadStatsRT.usedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.othersUsedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.peerCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.totalCapacityInputBytes));
 		}
 		
 		if(endCols != null) {

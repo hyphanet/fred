@@ -923,7 +923,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return getAllPeerSnapshots(false, outwardTransfersPerInsert(), ignoreLocalVsRemoteBandwidthLiability);
 	}
 	
-	class RunningRequestsSnapshot {
+	public class RunningRequestsSnapshot {
 		
 		final int expectedTransfersOutCHK;
 		final int expectedTransfersInCHK;
@@ -4010,6 +4010,32 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		double nonOverheadFraction = getNonOverheadFraction(now);
 		double upperLimit = getOutputBandwidthUpperLimit(limit, nonOverheadFraction);
 		return usedBytes / upperLimit;
+	}
+
+	/**
+	 * Get the allocation for a peer.
+	 * @param source The peer.
+	 * @param peerRequestsSnapshot Snapshot of requests from the peer. (We deduct requests which are 
+	 * SourceRestarted).
+	 * @param transfersPerInsert The average number of transfers outward per insert (global 
+	 * parameter).
+	 * @param peerCount The number of peers to divide up the bandwidth.
+	 * @param bandwidthAvailableUpperLower The number of bytes of bandwidth available for guaranteed 
+	 * allocations, i.e. the difference between the upper and lower limits.
+	 */
+	public double getPeerAllocation(PeerNode source,
+			RunningRequestsSnapshot peerRequestsSnapshot, int transfersPerInsert, int peerCount,
+			double bandwidthAvailableUpperLower) {
+		return getPeerLimit(source, bandwidthAvailableUpperLower, false, transfersPerInsert, false, peerCount, peerRequestsSnapshot.calculateSR(ignoreLocalVsRemoteBandwidthLiability(), false));
+	}
+
+	/** Get the portion of available output bandwidth liability which is usable by peers for their guaranteed
+	 * allocations. I.e. the difference between the upper and lower limits. */
+	public double getBandwidthAvailableForPeersGuaranteed(int peerCount) {
+		double nonOverheadFraction = this.getNonOverheadFraction(System.currentTimeMillis());
+		int limitSeconds = this.getLimitSeconds(false);
+		double upperLimit = getOutputBandwidthUpperLimit(limitSeconds, nonOverheadFraction);
+		return upperLimit - getLowerLimit(upperLimit, peerCount);
 	}
 
 }
