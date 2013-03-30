@@ -4579,7 +4579,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		public final int usedCapacityInputBytes;
 		public final int othersUsedCapacityOutputBytes;
 		public final int othersUsedCapacityInputBytes;
-		public Object outputUsageFraction() {
+		public double outputUsageFraction() {
 			return ((double)usedCapacityOutputBytes)/((double)peerCapacityOutputBytes);
 		}
 	}
