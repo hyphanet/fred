@@ -222,7 +222,7 @@ public class PacketSender implements Runnable {
 				if(now - pn.lastReceivedDataPacketTime() > pn.maxTimeBetweenReceivedPackets()) {
 					Logger.normal(this, "Disconnecting from " + pn + " - haven't received packets recently");
 					// Hopefully this is a transient network glitch, but stuff will have already started to timeout, so lets dump the pending messages.
-					pn.disconnected(true, false);
+					pn.disconnected(false);
 					continue;
 				} else if(now - pn.lastReceivedAckTime() > pn.maxTimeBetweenReceivedAcks() && !pn.isDisconnecting()) {
 					// FIXME better to disconnect immediately??? Or check canSend()???

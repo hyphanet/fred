@@ -88,8 +88,8 @@ public class SeedClientPeerNode extends PeerNode {
 	}
 
 	@Override
-	public boolean disconnected(boolean dumpMessageQueue, boolean dumpTrackers) {
-		boolean ret = super.disconnected(true, true);
+	public boolean disconnected(boolean dumpTrackers) {
+		boolean ret = super.disconnected(true);
 		node.peers.disconnectAndRemove(this, false, false, false);
 		return ret;
 	}

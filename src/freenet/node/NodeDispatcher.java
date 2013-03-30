@@ -417,7 +417,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	}
 	
 	private void finishDisconnect(final Message m, final PeerNode source) {
-		source.disconnected(true, true);
+		source.disconnected(true);
 		// If true, remove from active routing table, likely to be down for a while.
 		// Otherwise just dump all current connection state and keep trying to connect.
 		boolean remove = m.getBoolean(DMT.REMOVE);
