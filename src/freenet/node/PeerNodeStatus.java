@@ -203,7 +203,7 @@ public class PeerNodeStatus {
 		this.runningRequestsFromPeer = context.getPeerRequests(peerNode);
 		if(runningRequestsFromPeer != null) {
 			outputBandwidthCapacityUsedByRequestsFromPeer = runningRequestsFromPeer.calculate(context.ignoreLocalVsRemoteBandwidthLiability, false);
-			peerOutputBandwidthLiabilityAllocation = context.node.nodeStats.getPeerAllocation(peerNode, runningRequestsFromPeer, context.transfersPerInsert, context.peerCount, context.bandwidthAvailableUpperLower);
+			peerOutputBandwidthLiabilityAllocation = context.node.nodeStats.getPeerAllocation(false, runningRequestsFromPeer, context.transfersPerInsert, context.peerCount, context.bandwidthAvailableUpperLower);
 		} else {
 			outputBandwidthCapacityUsedByRequestsFromPeer = 0;
 			peerOutputBandwidthLiabilityAllocation = 0;

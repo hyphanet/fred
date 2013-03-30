@@ -800,11 +800,11 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			
 			maxTransfersOutUpperLimit = getMaxTransfersUpperLimit(realTimeFlag, nonOverheadFraction);
 			maxTransfersOutLowerLimit = (int)Math.max(1,getLowerLimit(maxTransfersOutUpperLimit, peers));
-			maxTransfersOutPeerLimit = (int)Math.max(1,getPeerLimit(peer, maxTransfersOutUpperLimit - maxTransfersOutLowerLimit, false, transfersPerInsert, realTimeFlag, peers, runningLocal.expectedTransfersOutCHKSR + runningLocal.expectedTransfersOutSSKSR));
+			maxTransfersOutPeerLimit = (int)Math.max(1,getPeerLimit(peer == null, maxTransfersOutUpperLimit - maxTransfersOutLowerLimit, false, transfersPerInsert, realTimeFlag, peers, runningLocal.expectedTransfersOutCHKSR + runningLocal.expectedTransfersOutSSKSR));
 			maxTransfersOut = calculateMaxTransfersOut(peer, realTime, nonOverheadFraction, maxTransfersOutUpperLimit);
 			
-			outputBandwidthPeerLimit = getPeerLimit(peer, outputBandwidthUpperLimit - outputBandwidthLowerLimit, false, transfersPerInsert, realTimeFlag, peers, runningLocal.calculateSR(ignoreLocalVsRemote, false));
-			inputBandwidthPeerLimit = getPeerLimit(peer, inputBandwidthUpperLimit - inputBandwidthLowerLimit, true, transfersPerInsert, realTimeFlag, peers, runningLocal.calculateSR(ignoreLocalVsRemote, true));
+			outputBandwidthPeerLimit = getPeerLimit(peer == null, outputBandwidthUpperLimit - outputBandwidthLowerLimit, false, transfersPerInsert, realTimeFlag, peers, runningLocal.calculateSR(ignoreLocalVsRemote, false));
+			inputBandwidthPeerLimit = getPeerLimit(peer == null, inputBandwidthUpperLimit - inputBandwidthLowerLimit, true, transfersPerInsert, realTimeFlag, peers, runningLocal.calculateSR(ignoreLocalVsRemote, true));
 			
 			this.averageTransfersOutPerInsert = transfersPerInsert;
 			
@@ -1363,7 +1363,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 		int maxTransfersOutUpperLimit = getMaxTransfersUpperLimit(realTimeFlag, nonOverheadFraction);
 		int maxTransfersOutLowerLimit = (int)Math.max(1,getLowerLimit(maxTransfersOutUpperLimit, peers));
-		int maxTransfersOutPeerLimit = (int)Math.max(1,getPeerLimit(source, maxTransfersOutUpperLimit - maxTransfersOutLowerLimit, false, transfersPerInsert, realTimeFlag, peers, (peerRequestsSnapshot.expectedTransfersOutCHKSR + peerRequestsSnapshot.expectedTransfersOutSSKSR)));
+		int maxTransfersOutPeerLimit = (int)Math.max(1,getPeerLimit(source == null, maxTransfersOutUpperLimit - maxTransfersOutLowerLimit, false, transfersPerInsert, realTimeFlag, peers, (peerRequestsSnapshot.expectedTransfersOutCHKSR + peerRequestsSnapshot.expectedTransfersOutSSKSR)));
 		/** Per-peer limit based on current state of the connection. */
 		int maxOutputTransfers = this.calculateMaxTransfersOut(source, realTimeFlag, nonOverheadFraction, maxTransfersOutUpperLimit);
 		
@@ -1572,7 +1572,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 		// Calculate the peer limit so the peer gets notified, even if we are going to ignore it.
 		
-		double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputUpperLimit - bandwidthAvailableOutputLowerLimit, input, transfersPerInsert, realTimeFlag, peers, peerRequestsSnapshot.calculateSR(ignoreLocalVsRemoteBandwidthLiability, input));
+		double thisAllocation = getPeerLimit(source == null, bandwidthAvailableOutputUpperLimit - bandwidthAvailableOutputLowerLimit, input, transfersPerInsert, realTimeFlag, peers, peerRequestsSnapshot.calculateSR(ignoreLocalVsRemoteBandwidthLiability, input));
 		
 		if(SEND_LOAD_STATS_NOTICES && source != null) {
 			// FIXME tell local as well somehow?
@@ -1679,7 +1679,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 * @param sourceRestarted 
 	 * @return
 	 */
-	private double getPeerLimit(PeerNode source, double totalGuaranteedBandwidth, boolean input, int transfersPerInsert, boolean realTimeFlag, int peers, double sourceRestarted) {
+	private double getPeerLimit(boolean local, double totalGuaranteedBandwidth, boolean input, int transfersPerInsert, boolean realTimeFlag, int peers, double sourceRestarted) {
 		
 		double thisAllocation;
 		
@@ -1690,7 +1690,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			double totalAllocation = totalGuaranteedBandwidth;
 			// FIXME: MAKE CONFIGURABLE AND SECLEVEL DEPENDANT!
 			double localAllocation = totalAllocation * 0.5;
-			if(source == null)
+			if(local)
 				thisAllocation = localAllocation;
 			else {
 				totalAllocation -= localAllocation;
@@ -4043,7 +4043,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	/**
 	 * Get the allocation for a peer.
-	 * @param source The peer.
+	 * @param local If true, calculate allocation for self, else calculate the allocation for a 
+	 * real peer.
 	 * @param peerRequestsSnapshot Snapshot of requests from the peer. (We deduct requests which are 
 	 * SourceRestarted).
 	 * @param transfersPerInsert The average number of transfers outward per insert (global 
@@ -4052,10 +4053,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 * @param bandwidthAvailableUpperLower The number of bytes of bandwidth available for guaranteed 
 	 * allocations, i.e. the difference between the upper and lower limits.
 	 */
-	public double getPeerAllocation(PeerNode source,
+	public double getPeerAllocation(boolean local,
 			RunningRequestsSnapshot peerRequestsSnapshot, int transfersPerInsert, int peerCount,
 			double bandwidthAvailableUpperLower) {
-		return getPeerLimit(source, bandwidthAvailableUpperLower, false, transfersPerInsert, false, peerCount, peerRequestsSnapshot.calculateSR(ignoreLocalVsRemoteBandwidthLiability(), false));
+		return getPeerLimit(local, bandwidthAvailableUpperLower, false, transfersPerInsert, false, peerCount, peerRequestsSnapshot.calculateSR(ignoreLocalVsRemoteBandwidthLiability(), false));
 	}
 
 	/** Get the portion of available output bandwidth liability which is usable by peers for their guaranteed
