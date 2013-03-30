@@ -892,7 +892,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		// running, so this should be OK. Long-term, consider keeping the snapshots on the 
 		// PeerNode's, although that would need a separate lock.
 		Set<PeerNode> peersSet = new HashSet<PeerNode>();
-		for(PeerNode p : peers.myPeers()) peersSet.add(p);
+		for(PeerNode p : peers.getConnectedPeers()) peersSet.add(p);
 		Map<PeerNode, CountedRequests> countersMapCHK = new HashMap<PeerNode, CountedRequests>();
 		Map<PeerNode, CountedRequests> countersMapSSK = new HashMap<PeerNode, CountedRequests>();
 		Map<PeerNode, CountedRequests> countersMapCHKSR = new HashMap<PeerNode, CountedRequests>();

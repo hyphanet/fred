@@ -2089,6 +2089,20 @@ public class PeerManager {
 		}
 		return count;
 	}
+	
+	/** Checks routable, so more reliable than connectedPeers() */
+	public Set<PeerNode> getConnectedPeers() {
+		Set<PeerNode> ret = new HashSet<PeerNode>();
+		PeerNode[] peers = myPeers();
+		for(PeerNode peer: peers) {
+			if(peer == null)
+				continue;
+			if(!peer.isRoutable())
+				continue;
+			ret.add(peer);
+		}
+		return ret;
+	}
 
 	public int countAlmostConnectedDarknetPeers() {
 		int count = 0;
