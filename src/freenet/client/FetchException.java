@@ -199,7 +199,7 @@ public class FetchException extends Exception implements Cloneable {
 	}
 
 	public FetchException(int mode, long expectedSize, Throwable t, String expectedMimeType) {
-		super(getMessage(mode)+": "+t.getMessage());
+		super(getMessage(mode)+" "+NodeL10n.getBase().getString("FetchException.unsafeContentDetails")+" "+t.getMessage());
 		if(mode == 0)
 			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extraMessage = t.getMessage();
