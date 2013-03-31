@@ -5,6 +5,7 @@ package freenet.client;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.filter.DataFilterException;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
@@ -198,8 +199,23 @@ public class FetchException extends Exception implements Cloneable {
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
+	public FetchException(long expectedSize, DataFilterException t, String expectedMimeType) {
+		super(getMessage(CONTENT_VALIDATION_FAILED)+" "+NodeL10n.getBase().getString("FetchException.unsafeContentDetails")+" "+t.getMessage());
+		extraMessage = t.getMessage();
+		this.mode = CONTENT_VALIDATION_FAILED;
+		this.expectedSize = expectedSize;
+		this.expectedMimeType = expectedMimeType;
+		errorCodes = null;
+		initCause(t);
+		newURI = null;
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(logMINOR) 
+			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
+	}
+
 	public FetchException(int mode, long expectedSize, Throwable t, String expectedMimeType) {
-		super(getMessage(mode)+" "+NodeL10n.getBase().getString("FetchException.unsafeContentDetails")+" "+t.getMessage());
+		super(getMessage(mode)+": "+t.getMessage());
 		if(mode == 0)
 			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extraMessage = t.getMessage();
