@@ -17,7 +17,10 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.PooledExecutor;
 import freenet.support.io.FileUtil;
 
+import java.io.BufferedReader;
+import java.io.Console;
 import java.io.File;
+import java.io.InputStreamReader;
 import java.text.NumberFormat;
 
 /**
@@ -186,6 +189,12 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
 
 		int index = 0;
 		byte htl = Probe.MAX_HTL;
+		BufferedReader r;
+		Console console = System.console();
+		if(console != null)
+			r = new BufferedReader(console.reader());
+		else
+			r = new BufferedReader(new InputStreamReader(System.in)); // Use the system locale here.
 		while (true) {
 			System.err.println("Sending probes from node " + index + " with HTL " + htl + ".");
 			System.err.println("0) BANDWIDTH");
@@ -205,20 +214,20 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
 			System.err.println("Anything else to exit.");
 			System.err.println("Select: ");
 			try {
-				int selection = Integer.valueOf(System.console().readLine());
+				int selection = Integer.valueOf(r.readLine());
 				if (selection == types.length) {
 					System.err.print("Enter new node index ([0-" + (NUMBER_OF_NODES - 1) + "]):");
-					index = Integer.valueOf(System.console().readLine());
+					index = Integer.valueOf(r.readLine());
 				}
 				else if (selection == types.length+1) {
 					System.err.print("Enter new HTL: ");
-					htl = Byte.valueOf(System.console().readLine());
+					htl = Byte.valueOf(r.readLine());
 				} else if (selection == types.length+2) {
 					SubConfig nodeConfig = nodes[index].config.get("node");
 					String[] options = { "probeBandwidth", "probeBuild", "probeIdentifier", "probeLinkLengths", "probeLinkLengths", "probeUptime" };
 					for (String option : options) {
 						System.err.print(option + ": ");
-						nodeConfig.set(option, Boolean.valueOf(System.console().readLine()));
+						nodeConfig.set(option, Boolean.valueOf(r.readLine()));
 					}
 				} else nodes[index].startProbe(htl, random.nextLong(), types[selection], print);
 			} catch (Exception e) {
