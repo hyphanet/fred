@@ -7,7 +7,6 @@ import freenet.config.SubConfig;
 import freenet.crypt.DummyRandomSource;
 import freenet.node.Node;
 import freenet.node.NodeStarter;
-import freenet.node.NodeStats;
 import freenet.node.probe.Error;
 import freenet.node.probe.Listener;
 import freenet.node.probe.Probe;
