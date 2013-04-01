@@ -278,7 +278,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		boolean filterChecked = !(((threatLevel == PHYSICAL_THREAT_LEVEL.LOW &&
 		        netLevel == NETWORK_THREAT_LEVEL.LOW)) || disableFiltration);
 		if((filterChecked) && mimeType != null && !mimeType.equals("application/octet-stream") &&
-			!mimeType.equals("")) { MIMEType type = ContentFilter.getMIMEType(mimeType);
+			!mimeType.equals("")) {
+			MIMEType type = ContentFilter.getMIMEType(mimeType);
 			if((type == null || (!(type.safeToRead || type.readFilter != null))) &&
 				        !(threatLevel == PHYSICAL_THREAT_LEVEL.HIGH ||
 				        threatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM ||
