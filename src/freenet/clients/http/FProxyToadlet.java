@@ -322,6 +322,10 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			                        Integer.toString(QueueToadlet.MAX_FILENAME_LENGTH),
 			                        String.valueOf(downloadLocation.length())}),
 			                DOWNLOADS_LINK });
+			optionForm.addChild("#", " ");
+			NodeL10n.getBase().addL10nSubstitution(optionForm,
+			        "FProxyToadlet.downloadToDiskWarningNotFiltered",
+			        new String[] {"bold" }, new HTMLNode[] { HTMLNode.STRONG });
 			optionForm.addChild("input",
 			        new String[] { "type", "name", "value" },
 			        new String[] { "submit", "select-location",
