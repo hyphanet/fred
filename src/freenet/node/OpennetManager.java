@@ -207,39 +207,7 @@ public class OpennetManager {
 		}
 		peersLRU = new LRUQueue<PeerNode>();
 		oldPeers = new LRUQueue<PeerNode>();
-		node.peers.tryReadPeers(node.nodeDir().file("openpeers-"+crypto.portNumber).toString(), crypto, this, true, false);
-		OpennetPeerNode[] nodes = node.peers.getOpennetPeers();
-		Arrays.sort(nodes, new Comparator<OpennetPeerNode>() {
-			@Override
-			public int compare(OpennetPeerNode pn1, OpennetPeerNode pn2) {
-				if(pn1 == pn2) return 0;
-				long lastSuccess1 = pn1.timeLastSuccess();
-				long lastSuccess2 = pn2.timeLastSuccess();
-
-				if(lastSuccess1 > lastSuccess2) return 1;
-				if(lastSuccess2 > lastSuccess1) return -1;
-
-				boolean neverConnected1 = pn1.neverConnected();
-				boolean neverConnected2 = pn2.neverConnected();
-				if(neverConnected1 && (!neverConnected2))
-					return -1;
-				if((!neverConnected1) && neverConnected2)
-					return 1;
-				// a-b not opposite sign to b-a possible in a corner case (a=0 b=Integer.MIN_VALUE).
-				if(pn1.hashCode > pn2.hashCode) return 1;
-				else if(pn1.hashCode < pn2.hashCode) return -1;
-				Logger.error(this, "Two OpennerPeerNode's with the same hashcode: "+pn1+" vs "+pn2);
-				return Fields.compareObjectID(pn1, pn2);
-			}
-		});
-		for(OpennetPeerNode opn: nodes)
-			peersLRU.push(opn);
 		announcer = (enableAnnouncement ? new Announcer(this) : null);
-		if(logMINOR) {
-			Logger.minor(this, "My full compressed ref: "+crypto.myCompressedFullRef().length);
-			Logger.minor(this, "My full setup ref: "+crypto.myCompressedSetupRef().length);
-			Logger.minor(this, "My heavy setup ref: "+crypto.myCompressedHeavySetupRef().length);
-		}
 	}
 
 	public void writeFile() {
@@ -309,6 +277,38 @@ public class OpennetManager {
 			stopping = false;
 		}
 		// Do this outside the constructor, since the constructor is called by the Node constructor, and callbacks may make assumptions about data structures being ready.
+		node.peers.tryReadPeers(node.nodeDir().file("openpeers-"+crypto.portNumber).toString(), crypto, this, true, false);
+		OpennetPeerNode[] nodes = node.peers.getOpennetPeers();
+		Arrays.sort(nodes, new Comparator<OpennetPeerNode>() {
+			@Override
+			public int compare(OpennetPeerNode pn1, OpennetPeerNode pn2) {
+				if(pn1 == pn2) return 0;
+				long lastSuccess1 = pn1.timeLastSuccess();
+				long lastSuccess2 = pn2.timeLastSuccess();
+
+				if(lastSuccess1 > lastSuccess2) return 1;
+				if(lastSuccess2 > lastSuccess1) return -1;
+
+				boolean neverConnected1 = pn1.neverConnected();
+				boolean neverConnected2 = pn2.neverConnected();
+				if(neverConnected1 && (!neverConnected2))
+					return -1;
+				if((!neverConnected1) && neverConnected2)
+					return 1;
+				// a-b not opposite sign to b-a possible in a corner case (a=0 b=Integer.MIN_VALUE).
+				if(pn1.hashCode > pn2.hashCode) return 1;
+				else if(pn1.hashCode < pn2.hashCode) return -1;
+				Logger.error(this, "Two OpennerPeerNode's with the same hashcode: "+pn1+" vs "+pn2);
+				return Fields.compareObjectID(pn1, pn2);
+			}
+		});
+		for(OpennetPeerNode opn: nodes)
+			peersLRU.push(opn);
+		if(logMINOR) {
+			Logger.minor(this, "My full compressed ref: "+crypto.myCompressedFullRef().length);
+			Logger.minor(this, "My full setup ref: "+crypto.myCompressedSetupRef().length);
+			Logger.minor(this, "My heavy setup ref: "+crypto.myCompressedHeavySetupRef().length);
+		}
 		dropExcessPeers();
 		writeFile();
 		// Read old peers
