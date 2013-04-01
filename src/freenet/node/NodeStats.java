@@ -892,7 +892,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		final int averageTransfersPerInsert;
 		final boolean realTimeFlag;
 		
-		/** Create a snapshot of all requests running.
+		/** Create a snapshot of all requests running. Because this isn't for any particular peer, 
+		 * it includes all requests, even those which are SourceRestarted.
 		 * @param tracker The RequestTracker for the Node.
 		 * @param ignoreLocalVsRemote If true, pretend that the request is remote even if it's local 
 		 * (that is, count imaginary onward transfers etc depending on the request type). 
@@ -935,7 +936,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		 * i.e. the requests where the peer has reconnected after a timeout but the 
 		 * requests are still running. These are only counted in the *SR totals,
 		 * they are not in the basic totals. The caller will reduce the limits
-		 * according to the *SR totals, and only compare the non-SR requests when
+		 * according to the *SR totals, and only consider the non-SR requests when
 		 * deciding whether the peer is over the limit. The updated limits are 
 		 * sent to the downstream node so that it can send the right number of requests.
 		 * @param node We need this to count the requests.
