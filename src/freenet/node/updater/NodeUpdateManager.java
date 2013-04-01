@@ -156,6 +156,7 @@ public class NodeUpdateManager {
 	private volatile boolean hasNewMainJar;
 	/** If another main jar is being fetched, when did the fetch start? */
 	private long startedFetchingNextMainJar;
+	/** Time when we got the jar */
 	private long gotJarTime;
 
 	// Revocation alert
