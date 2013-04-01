@@ -1838,7 +1838,9 @@ public class NodeUpdateManager {
 			this.dependenciesValidForBuild = deps.build;
 		}
 		revocationChecker.start(true);
-		deployOffThread(REVOCATION_FETCH_TIMEOUT, true);
+		// Deploy immediately if the revocation checker has already reported in but we were waiting for deps.
+		// Otherwise wait for the revocation checker.
+		deployOffThread(0, true);
 	}
 
 	public File getTransitionExtBlob() {
