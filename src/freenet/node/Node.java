@@ -5384,7 +5384,10 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	public boolean enableNewLoadManagement(boolean realTimeFlag) {
 		NodeStats stats = this.nodeStats;
-		if(stats == null) return false;
+		if(stats == null) {
+			Logger.error(this, "Calling enableNewLoadManagement before Node constructor completes! FIX THIS!", new Exception("error"));
+			return false;
+		}
 		return stats.enableNewLoadManagement(realTimeFlag);
 	}
 	
