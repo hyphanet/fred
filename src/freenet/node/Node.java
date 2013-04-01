@@ -5380,7 +5380,9 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 	
 	public boolean enableNewLoadManagement(boolean realTimeFlag) {
-		return nodeStats.enableNewLoadManagement(realTimeFlag);
+		NodeStats stats = this.nodeStats;
+		if(stats == null) return false;
+		return stats.enableNewLoadManagement(realTimeFlag);
 	}
 	
 	/** FIXME move to Probe.java? */
