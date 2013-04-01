@@ -1705,7 +1705,8 @@ public class NodeUpdateManager {
 
 			@Override
 			public void run() {
-				isReadyToDeployUpdate(false);
+				if(isReadyToDeployUpdate(false))
+					deployUpdate();
 			}
 
 		}, "Check for updates");
