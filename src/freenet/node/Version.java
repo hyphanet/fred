@@ -50,7 +50,7 @@ public class Version {
 	public static final String protocolVersion = "1.0";
 
 	/** The build number of the current revision */
-	private static final int buildNumber = 1439;
+	private static final int buildNumber = 1440;
 
 	/** Oldest build of fred we will talk to *before* _cal */
 	private static final int oldLastGoodBuild = 1438;
