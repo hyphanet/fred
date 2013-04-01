@@ -926,7 +926,8 @@ public class NodeUpdateManager {
 	 * Does the updater have an update ready to deploy? May be called
 	 * synchronized(this).
 	 * @param ignoreRevocation If true, return whether we will deploy when the revocation check 
-	 * finishes. If false, return whether we can deploy now.
+	 * finishes. If false, return whether we can deploy now, and if not, deploy after a delay with
+	 * deployOffThread().
 	 */
 	private boolean isReadyToDeployUpdate(boolean ignoreRevocation) {
 		long now = System.currentTimeMillis();
