@@ -3896,7 +3896,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	/**
 	 * Applies multiplicative Gaussian noise of mean 1.0 and the specified sigma to the input value.
 	 * @param input Value to apply noise to.
-	 * @param sigma Percentage change at one standard deviation.
+	 * @param sigma Proportion change at one standard deviation.
 	 * @return Value +/- Gaussian percentage.
 	 */
 	public final double randomNoise(final double input, final double sigma) {

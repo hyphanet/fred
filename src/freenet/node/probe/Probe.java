@@ -137,7 +137,7 @@ public class Probe implements ByteCounter {
 	/**
 	 * Applies multiplicative Gaussian noise of mean 1.0 and the specified sigma to the input value.
 	 * @param input Value to apply noise to.
-	 * @param sigma Percentage change at one standard deviation.
+	 * @param sigma Proportion change at one standard deviation.
 	 * @return Value +/- Gaussian percentage.
 	 */
 	private final double randomNoise(final double input, final double sigma) {
@@ -681,7 +681,7 @@ public class Probe implements ByteCounter {
 			byte bandwidthClass = 
 				DMT.bandwidthClassForCapacityUsage(node.getOutputBandwidthLimit());
 			listener.onOverallBulkOutputCapacity(bandwidthClass, 
-					(float)randomNoise(node.nodeStats.getBandwidthLiabilityUsage(), 20.0));
+					(float)randomNoise(node.nodeStats.getBandwidthLiabilityUsage(), 0.20));
 			break;
 		default:
 			throw new UnsupportedOperationException("Missing response for " + type.name());
