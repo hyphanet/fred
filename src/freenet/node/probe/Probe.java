@@ -681,7 +681,7 @@ public class Probe implements ByteCounter {
 			byte bandwidthClass = 
 				DMT.bandwidthClassForCapacityUsage(node.getOutputBandwidthLimit());
 			listener.onOverallBulkOutputCapacity(bandwidthClass, 
-					(float)randomNoise(node.nodeStats.getBandwidthLiabilityUsage(), 0.20));
+					(float)randomNoise(node.nodeStats.getBandwidthLiabilityUsage(), 0.1));
 			break;
 		default:
 			throw new UnsupportedOperationException("Missing response for " + type.name());
