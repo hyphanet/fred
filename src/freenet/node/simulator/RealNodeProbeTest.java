@@ -162,6 +162,13 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
 				System.out.println("CHK insert: "+stats[2]);
 				System.out.println("SSK insert: "+stats[3]);
 			}
+
+			@Override
+			public void onOverallBulkOutputCapacity(
+					byte bandwidthClassForCapacityUsage, float outputBulkCapacityUsed) {
+				System.out.println("Probe got output capacity "+nf.format(outputBulkCapacityUsed)+
+						"% (bandwidth class "+bandwidthClassForCapacityUsage+")");
+			}
 		};
 
 		final Type types[] = {
@@ -173,7 +180,8 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
 			Type.STORE_SIZE,
 			Type.UPTIME_48H,
 			Type.UPTIME_7D,
-			Type.REJECT_STATS
+			Type.REJECT_STATS,
+			Type.OVERALL_BULK_OUTPUT_CAPACITY_USAGE
 		};
 
 		int index = 0;
@@ -189,22 +197,23 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
 			System.out.println("6) UPTIME 48-hour");
 			System.out.println("7) UPTIME 7-day");
 			System.out.println("8) REJECT_STATS");
-			System.out.println("9) Pick another node");
-			System.out.println("10) Pick another HTL");
-			System.out.println("11) Pick current node's refusals");
+			System.out.println("9) OVERALL_BULK_OUTPUT_CAPACITY_USAGE");
+			System.out.println("10) Pick another node");
+			System.out.println("11) Pick another HTL");
+			System.out.println("12) Pick current node's refusals");
 			
 			System.out.println("Anything else to exit.");
 			System.out.println("Select: ");
 			try {
 				int selection = Integer.valueOf(System.console().readLine());
-				if (selection == 9) {
+				if (selection == types.length) {
 					System.out.print("Enter new node index ([0-" + (NUMBER_OF_NODES - 1) + "]):");
 					index = Integer.valueOf(System.console().readLine());
 				}
-				else if (selection == 10) {
+				else if (selection == types.length+1) {
 					System.out.print("Enter new HTL: ");
 					htl = Byte.valueOf(System.console().readLine());
-				} else if (selection == 11) {
+				} else if (selection == types.length+2) {
 					SubConfig nodeConfig = nodes[index].config.get("node");
 					String[] options = { "probeBandwidth", "probeBuild", "probeIdentifier", "probeLinkLengths", "probeLinkLengths", "probeUptime" };
 					for (String option : options) {

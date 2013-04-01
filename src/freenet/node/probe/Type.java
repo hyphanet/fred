@@ -12,7 +12,8 @@ public enum Type {
 	STORE_SIZE((byte)5),
 	UPTIME_48H((byte)6),
 	UPTIME_7D((byte)7),
-	REJECT_STATS((byte)8);
+	REJECT_STATS((byte)8),
+	OVERALL_BULK_OUTPUT_CAPACITY_USAGE((byte)9);
 
 	public final byte code;
 
@@ -47,6 +48,7 @@ public enum Type {
 			case 6: return UPTIME_48H;
 			case 7: return UPTIME_7D;
 			case 8: return REJECT_STATS;
+			case 9: return OVERALL_BULK_OUTPUT_CAPACITY_USAGE;
 			default: throw new IllegalArgumentException("There is no ProbeType with code " + code + ".");
 		}
 	}

@@ -132,6 +132,12 @@ public class ProbeRequest extends FCPMessage {
 			public void onRejectStats(byte[] stats) {
 				handler.outputHandler.queue(new ProbeRejectStats(identifier, stats));
 			}
+
+			@Override
+			public void onOverallBulkOutputCapacity(
+					byte bandwidthClassForCapacityUsage, float capacityUsage) {
+				handler.outputHandler.queue(new ProbeOverallBulkOutputCapacityUsage(identifier, bandwidthClassForCapacityUsage, capacityUsage));
+			}
 		};
 		node.startProbe(htl, node.random.nextLong(), type, listener);
 	}

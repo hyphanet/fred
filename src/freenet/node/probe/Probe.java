@@ -130,6 +130,7 @@ public class Probe implements ByteCounter {
 	private volatile boolean respondStoreSize;
 	private volatile boolean respondUptime;
 	private volatile boolean respondRejectStats;
+	private volatile boolean respondOverallBulkOutputCapacityUsage;
 
 	private volatile long probeIdentifier;
 
@@ -280,6 +281,24 @@ public class Probe implements ByteCounter {
 				}
 			});
 			respondRejectStats = nodeConfig.getBoolean("probeRejectStats");
+			
+		nodeConfig.register("probeOverallBulkOutputCapacityUsage", true, sortOrder++, true, true, "Node.respondOverallBulkOutputCapacityUsage",
+				"Node.respondOverallBulkOutputCapacityUsageLong", new BooleanCallback() {
+
+					@Override
+					public Boolean get() {
+						return respondOverallBulkOutputCapacityUsage;
+					}
+
+					@Override
+					public void set(Boolean val)
+							throws InvalidConfigValueException,
+							NodeNeedRestartException {
+						respondOverallBulkOutputCapacityUsage = val;
+					}
+			
+		});
+		respondOverallBulkOutputCapacityUsage = nodeConfig.getBoolean("probeOverallBulkOutputCapacityUsage");
 
 		nodeConfig.register("identifier", -1, sortOrder++, true, true, "Node.probeIdentifierShort",
 			"Node.probeIdentifierLong", new LongCallback() {
@@ -546,6 +565,7 @@ public class Probe implements ByteCounter {
 			case UPTIME_48H:
 			case UPTIME_7D: filter.setType(DMT.ProbeUptime); break;
 			case REJECT_STATS: filter.setType(DMT.ProbeRejectStats); break;
+			case OVERALL_BULK_OUTPUT_CAPACITY_USAGE: filter.setType(DMT.ProbeOverallBulkOutputCapacityUsage); break;
 			default: throw new UnsupportedOperationException("Missing filter for " + type.name());
 		}
 
@@ -657,6 +677,12 @@ public class Probe implements ByteCounter {
 			byte[] stats = node.nodeStats.getNoisyRejectStats();
 			listener.onRejectStats(stats);
 			break;
+		case OVERALL_BULK_OUTPUT_CAPACITY_USAGE:
+			byte bandwidthClass = 
+				DMT.bandwidthClassForCapacityUsage(node.getOutputBandwidthLimit());
+			listener.onOverallBulkOutputCapacity(bandwidthClass, 
+					(float)randomNoise(node.nodeStats.getBandwidthLiabilityUsage(), 20.0));
+			break;
 		default:
 			throw new UnsupportedOperationException("Missing response for " + type.name());
 		}
@@ -673,6 +699,7 @@ public class Probe implements ByteCounter {
 		case UPTIME_48H:
 		case UPTIME_7D: return respondUptime;
 		case REJECT_STATS: return respondRejectStats;
+		case OVERALL_BULK_OUTPUT_CAPACITY_USAGE: return respondOverallBulkOutputCapacityUsage;
 		default: throw new UnsupportedOperationException("Missing permissions check for " + type.name());
 		}
 	}
@@ -735,6 +762,8 @@ public class Probe implements ByteCounter {
 				listener.onUptime(message.getFloat(DMT.UPTIME_PERCENT));
 			} else if (message.getSpec().equals(DMT.ProbeRejectStats)) {
 				listener.onRejectStats(message.getShortBufferBytes(DMT.REJECT_STATS));
+			} else if (message.getSpec().equals(DMT.ProbeOverallBulkOutputCapacityUsage)) {
+				listener.onOverallBulkOutputCapacity(message.getByte(DMT.OUTPUT_BANDWIDTH_CLASS), message.getFloat(DMT.CAPACITY_USAGE));
 			} else if (message.getSpec().equals(DMT.ProbeError)) {
 				final byte rawError = message.getByte(DMT.TYPE);
 				if (Error.isValid(rawError)) {
@@ -854,6 +883,14 @@ public class Probe implements ByteCounter {
 					stats = Arrays.copyOf(stats, 4);
 				send(DMT.createProbeRejectStats(uid, stats));
 			}
+		}
+
+		@Override
+		public void onOverallBulkOutputCapacity(
+				byte bandwidthClassForCapacityUsage, float capacityUsage) {
+			send(DMT.createProbeOverallBulkOutputCapacityUsage(uid, bandwidthClassForCapacityUsage, capacityUsage));
+			// TODO Auto-generated method stub
+			
 		}
 	}
 }
