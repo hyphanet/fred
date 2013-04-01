@@ -241,9 +241,13 @@ public class PeerManager {
 				// Read a single NodePeer
 				SimpleFieldSet fs;
 				fs = new SimpleFieldSet(br, false, true);
-				PeerNode pn;
 				try {
-					pn = PeerNode.create(fs, node, crypto, opennet, this, mangler);
+					PeerNode pn = PeerNode.create(fs, node, crypto, opennet, this, mangler);
+					if(oldOpennetPeers)
+						opennet.addOldOpennetNode(pn);
+					else
+						addPeer(pn, true, false);
+					gotSome = true;
 				} catch(FSParseException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
 					System.err.println("Cannot parse a friend from the peers file: "+e2);
@@ -266,11 +270,6 @@ public class PeerManager {
 					continue;
 					// FIXME tell the user???
 				}
-				if(oldOpennetPeers)
-					opennet.addOldOpennetNode(pn);
-				else
-					addPeer(pn, true, false);
-				gotSome = true;
 			}
 		} catch(EOFException e) {
 			// End of file, fine
