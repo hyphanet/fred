@@ -732,4 +732,17 @@ final public class FileUtil {
 		return File.createTempFile(prefix, suffix, directory);
 	}
 
+	public static boolean copyFile(File copyFrom, File copyTo) {
+		copyTo.delete();
+		FileBucket outBucket = new FileBucket(copyTo, false, true, false, false, false);
+		FileBucket inBucket = new FileBucket(copyFrom, true, false, false, false, false);
+		try {
+			BucketTools.copy(inBucket, outBucket);
+			return true;
+		} catch (IOException e) {
+			System.err.println("Unable to copy from "+copyFrom+" to "+copyTo);
+			return false;
+		}
+	}
+
 }
