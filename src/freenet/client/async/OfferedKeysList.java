@@ -19,6 +19,7 @@ import freenet.node.RequestClient;
 import freenet.node.RequestCompletionListener;
 import freenet.node.RequestScheduler;
 import freenet.node.SendableRequestItem;
+import freenet.node.SendableRequestItemKey;
 import freenet.node.SendableRequestSender;
 import freenet.support.ListUtils;
 import freenet.support.LogThresholdCallback;
@@ -94,7 +95,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		throw new UnsupportedOperationException();
 	}
 
-	private static class MySendableRequestItem implements SendableRequestItem {
+	private static class MySendableRequestItem implements SendableRequestItem, SendableRequestItemKey {
 		final Key key;
 		MySendableRequestItem(Key key) {
 			this.key = key;
@@ -102,6 +103,10 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		@Override
 		public void dump() {
 			// Ignore, we will be GC'ed
+		}
+		@Override
+		public SendableRequestItemKey getKey() {
+			return this;
 		}
 	}
 	

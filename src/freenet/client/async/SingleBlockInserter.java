@@ -38,6 +38,7 @@ import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequestItem;
+import freenet.node.SendableRequestItemKey;
 import freenet.node.SendableRequestSender;
 import freenet.store.KeyCollisionException;
 import freenet.support.Fields;
@@ -682,13 +683,15 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	@Override
 	public SendableRequestItem chooseKey(KeysFetchingLocally ignored, ObjectContainer container, ClientContext context) {
 		try {
+			BlockItemKey key;
 			synchronized(this) {
 				if(finished) return null;
+				key = new BlockItemKey(this, hashCode());
 				if(!persistent) {
-					if(ignored.hasTransientInsert(this, new FakeBlockItem()))
+					if(ignored.hasTransientInsert(this, key))
 						return null;
 				}
-				return getBlockItem(container, context);
+				return getBlockItem(key, container, context);
 			}
 		} catch (InsertException e) {
 			fail(e, container, context);
@@ -696,7 +699,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 	}
 
-	private BlockItem getBlockItem(ObjectContainer container, ClientContext context) throws InsertException {
+	private BlockItem getBlockItem(BlockItemKey key, ObjectContainer container, ClientContext context) throws InsertException {
 		try {
 			synchronized(this) {
 				if(finished) return null;
@@ -736,7 +739,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			boolean pre1254 = !(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal());
 			if(!ctxActive)
 				container.deactivate(ctx, 1);
-			return new BlockItem(this, data, isMetadata, compressionCodec, sourceLength, u, hashCode(), persistent, pre1254, cryptoAlgorithm, cryptoKey);
+			return new BlockItem(key, data, isMetadata, compressionCodec, sourceLength, u, persistent, pre1254, cryptoAlgorithm, cryptoKey);
 		} catch (IOException e) {
 			throw new InsertException(InsertException.BUCKET_ERROR, e, null);
 		}
@@ -747,7 +750,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
 		BlockItem item;
 		try {
-			item = getBlockItem(container, context);
+			BlockItemKey key = new BlockItemKey(this, hashCode());
+			item = getBlockItem(key, container, context);
 		} catch (InsertException e) {
 			fail(e, container, context);
 			return null;
@@ -756,39 +760,16 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		PersistentChosenBlock block = new PersistentChosenBlock(true, request, item, null, null, sched);
 		return Collections.singletonList(block);
 	}
-
-	private static class BlockItem implements SendableRequestItem {
-		
-		public byte cryptoAlgorithm;
-		public byte[] cryptoKey;
-		public final boolean pre1254;
-		private final boolean persistent;
-		private final Bucket copyBucket;
-		private final boolean isMetadata;
-		private final short compressionCodec;
-		private final int sourceLength;
-		private final FreenetURI uri;
+	
+	/** Everything needed to check whether we are already running a request */
+	private static class BlockItemKey implements SendableRequestItemKey {
 		private final int hashCode;
 		/** STRICTLY for purposes of equals() !!! */
 		private final SingleBlockInserter parent;
 		
-		BlockItem(SingleBlockInserter parent, Bucket bucket, boolean meta, short codec, int srclen, FreenetURI u, int hashCode, boolean persistent, boolean pre1254, byte cryptoAlgorithm, byte[] cryptoKey) throws IOException {
+		BlockItemKey(SingleBlockInserter parent, int hashCode) {
 			this.parent = parent;
-			this.copyBucket = bucket;
-			this.isMetadata = meta;
-			this.compressionCodec = codec;
-			this.sourceLength = srclen;
-			this.uri = u;
 			this.hashCode = hashCode;
-			this.persistent = persistent;
-			this.pre1254 = pre1254;
-			this.cryptoAlgorithm = cryptoAlgorithm;
-			this.cryptoKey = cryptoKey;
-		}
-		
-		@Override
-		public void dump() {
-			copyBucket.free();
 		}
 		
 		@Override
@@ -798,44 +779,54 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		
 		@Override
 		public boolean equals(Object o) {
-			if(o instanceof BlockItem) {
-				if(((BlockItem)o).parent == parent) return true;
-			} else if(o instanceof FakeBlockItem) {
-				if(((FakeBlockItem)o).getParent() == parent) return true;
+			if(o instanceof BlockItemKey) {
+				if(((BlockItemKey)o).parent == parent) return true;
 			}
 			return false;
+		}
+		
+	}
+
+	/** Everything needed to actually run a request, without access to the SingleBlockInserter (this is
+	 * why we copy the Bucket). */
+	private static class BlockItem implements SendableRequestItem {
+		
+		public final boolean pre1254;
+		private final Bucket copyBucket;
+		final BlockItemKey key;
+		private final FreenetURI uri;
+		private final boolean persistent;
+		private final boolean isMetadata;
+		private final short compressionCodec;
+		private final int sourceLength;
+		public byte cryptoAlgorithm;
+		public byte[] cryptoKey;
+		
+		BlockItem(BlockItemKey key, Bucket bucket, boolean meta, short codec, int srclen, FreenetURI u, boolean persistent, boolean pre1254, byte cryptoAlgorithm, byte[] cryptoKey) {
+			this.key = key;
+			this.copyBucket = bucket;
+			this.pre1254 = pre1254;
+			this.uri = u;
+			this.isMetadata = meta;
+			this.compressionCodec = codec;
+			this.sourceLength = srclen;
+			this.persistent = persistent;
+			this.cryptoAlgorithm = cryptoAlgorithm;
+			this.cryptoKey = cryptoKey;
+		}
+		
+		@Override
+		public void dump() {
+			copyBucket.free();
+		}
+
+		@Override
+		public SendableRequestItemKey getKey() {
+			return key;
 		}
 		
 	}
 	
-	// Used for testing whether a block is already queued.
-	private class FakeBlockItem implements SendableRequestItem {
-		
-		@Override
-		public void dump() {
-			// Do nothing
-		}
-		
-		public SingleBlockInserter getParent() {
-			return SingleBlockInserter.this;
-		}
-
-		@Override
-		public int hashCode() {
-			return SingleBlockInserter.this.hashCode();
-		}
-		
-		@Override
-		public boolean equals(Object o) {
-			if(o instanceof BlockItem) {
-				if(((BlockItem)o).parent == SingleBlockInserter.this) return true;
-			} else if(o instanceof FakeBlockItem) {
-				if(((FakeBlockItem)o).getParent() == SingleBlockInserter.this) return true;
-			}
-			return false;
-		}
-	}
-
 	@Override
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "removeFrom() on "+this);
