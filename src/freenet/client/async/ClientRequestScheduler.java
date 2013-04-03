@@ -343,10 +343,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 					}
 					if(!wereAnyValid) {
-						Logger.normal(this, "No requests valid: "+getters);
+						Logger.normal(this, "No requests valid");
 					}
 				} else {
-					Logger.normal(this, "No valid requests passed in: "+getters);
+					Logger.normal(this, "No valid requests passed in");
 				}
 				if(reg != null)
 					container.delete(reg);
