@@ -435,13 +435,13 @@ public class NetworkInterface implements Closeable {
 		}
 	}
 
-	public void waitBound() throws InterruptedException {
+	public void waitBound() {
 		lock.lock();
 		try {
 			if(acceptors.size() > 0) return;
 			while (true) {
 				Logger.error(this, "Network interface isn't bound, waiting");
-				boundCondition.await();
+				boundCondition.awaitUninterruptibly();
 				if(acceptors.size() > 0) {
 					Logger.error(this, "Finished waiting, network interface is now bound");
 					return;
