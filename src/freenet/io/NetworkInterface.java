@@ -177,6 +177,7 @@ public class NetworkInterface implements Closeable {
 		}
 		synchronized (syncObject) {
 			for (Acceptor acceptor : this.acceptors) {
+				runningAcceptors++;
 				executor.execute(acceptor, "Network Interface Acceptor for "+acceptor.serverSocket);
 			}
 			syncObject.notifyAll();
