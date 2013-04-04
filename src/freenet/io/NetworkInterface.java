@@ -27,6 +27,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Queue;
 import java.util.StringTokenizer;
@@ -90,16 +91,9 @@ public class NetworkInterface implements Closeable {
 
 	public static NetworkInterface create(int port, String bindTo, String allowedHosts, Executor executor, boolean ignoreUnbindableIP6) throws IOException {
 		NetworkInterface iface = new NetworkInterface(port, allowedHosts, executor);
-		try {
-			iface.setBindTo(bindTo, ignoreUnbindableIP6);
-		} catch (IOException e) {
-			try {
-				iface.close();
-			} catch (IOException e1) {
-				Logger.error(NetworkInterface.class, "Caught "+e1+" closing after catching "+e+" binding while constructing", e1);
-				// Ignore
-			}
-			throw e;
+		String[] failedBind = iface.setBindTo(bindTo, ignoreUnbindableIP6);
+		if(failedBind != null) {
+			System.err.println("Could not bind to some of the interfaces specified for port "+port+" : "+Arrays.toString(failedBind));
 		}
 		return iface;
 	}
@@ -128,11 +122,13 @@ public class NetworkInterface implements Closeable {
 	 * 
 	 * @param bindTo
 	 *            A comma-separated list of IP address to bind to
+	 * @return List of addresses that we failed to bind to, or null if completely successful.
 	 */
-	public void setBindTo(String bindTo, boolean ignoreUnbindableIP6) throws IOException {
+	public String[] setBindTo(String bindTo, boolean ignoreUnbindableIP6) {
                 if(bindTo == null || bindTo.equals("")) bindTo = NetworkInterface.DEFAULT_BIND_TO;
 		StringTokenizer bindToTokens = new StringTokenizer(bindTo, ",");
 		List<String> bindToTokenList = new ArrayList<String>();
+		List<String> brokenList = null;
 		while (bindToTokens.hasMoreTokens()) {
 			bindToTokenList.add(bindToTokens.nextToken().trim());
 		}
@@ -155,28 +151,37 @@ public class NetworkInterface implements Closeable {
 		}
 		acceptors.clear();
 		for (int serverSocketIndex = 0; serverSocketIndex < bindToTokenList.size(); serverSocketIndex++) {
-			ServerSocket serverSocket = createServerSocket();
 			InetSocketAddress addr = null;
+			String address = bindToTokenList.get(serverSocketIndex);
 			try {
-				addr = new InetSocketAddress(bindToTokenList.get(serverSocketIndex), port);
+				ServerSocket serverSocket = createServerSocket();
+				addr = new InetSocketAddress(address, port);
 				serverSocket.setReuseAddress(true);
 				serverSocket.bind(addr);
-			} catch (SocketException e) {
-				if(ignoreUnbindableIP6 && addr != null && addr.getAddress() instanceof Inet6Address)
+				Acceptor acceptor = new Acceptor(serverSocket);
+				acceptors.add(acceptor);
+			} catch (IOException e) {
+				if(e instanceof SocketException && ignoreUnbindableIP6 && addr != null && 
+						addr.getAddress() instanceof Inet6Address)
 					continue;
-				else
-					throw e;
+				System.err.println("Unable to bind to address "+address);
+				Logger.error(this, "Unable to bind "+address);
+				if(brokenList == null) brokenList = new ArrayList<String>();
+				brokenList.add(address);
 			}
-			Acceptor acceptor = new Acceptor(serverSocket);
-			acceptors.add(acceptor);
 		}
-		setSoTimeout(timeout);
+		try {
+			setSoTimeout(timeout);
+		} catch (SocketException e) {
+			Logger.error(this, "Unable to setSoTimeout in setBindTo() on "+bindTo);
+		}
 		synchronized (syncObject) {
 			for (Acceptor acceptor : this.acceptors) {
 				executor.execute(acceptor, "Network Interface Acceptor for "+acceptor.serverSocket);
 			}
 			syncObject.notifyAll();
 		}
+		return brokenList == null ? null : brokenList.toArray(new String[brokenList.size()]);
 	}
 
 	public void setAllowedHosts(String allowedHosts) {

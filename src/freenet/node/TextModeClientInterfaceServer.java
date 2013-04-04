@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.Arrays;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.Config;
@@ -192,12 +193,14 @@ public class TextModeClientInterfaceServer implements Runnable {
     	@Override
 		public void set(String val) throws InvalidConfigValueException {
     		if(val.equals(get())) return;
-		try {
-			core.getTextModeClientInterface().networkInterface.setBindTo(val, false);
+    		String[] failedAddresses = core.getTextModeClientInterface().networkInterface.setBindTo(val, false);
+			if(failedAddresses != null) {
+				// This is an advanced option for reasons of reducing clutter,
+				// but it is expected to be used by regular users, not devs.
+				// So we translate the error messages.
+				throw new InvalidConfigValueException("could not change bind to: "+Arrays.toString(failedAddresses));
+			}
 			core.getTextModeClientInterface().bindTo = val;
-		} catch (IOException e) {
-			throw new InvalidConfigValueException("could not change bind to!");
-		}
     	}
     }
 
