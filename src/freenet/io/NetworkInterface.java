@@ -154,8 +154,10 @@ public class NetworkInterface implements Closeable {
 		}
 		lock.lock();
 		try {
-			while(runningAcceptors > 0)
+			while(runningAcceptors > 0) {
 				acceptorClosedCondition.awaitUninterruptibly();
+				if(shutdown || WrapperManager.hasShutdownHookBeenTriggered()) return null;
+			}
 		} finally {
 			lock.unlock();
 		}
@@ -444,6 +446,10 @@ public class NetworkInterface implements Closeable {
 					Logger.error(this, "Finished waiting, network interface is now bound");
 					return;
 				}
+				if (shutdown)
+					return;
+				if (WrapperManager.hasShutdownHookBeenTriggered())
+					return;
 			}
 		} finally {
 			lock.unlock();
