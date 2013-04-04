@@ -187,8 +187,8 @@ public class NetworkInterface implements Closeable {
 				if(e instanceof SocketException && ignoreUnbindableIP6 && addr != null && 
 						addr.getAddress() instanceof Inet6Address)
 					continue;
-				System.err.println("Unable to bind to address "+address);
-				Logger.error(this, "Unable to bind "+address);
+				System.err.println("Unable to bind to address "+address+" for port "+port);
+				Logger.error(this, "Unable to bind to address "+address+" for port "+port);
 				if(brokenList == null) brokenList = new ArrayList<String>();
 				brokenList.add(address);
 			}
