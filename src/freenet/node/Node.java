@@ -1086,7 +1086,12 @@ public class Node implements TimeSkewDetectorCallback {
 					return;
 				System.out.println("Not enough entropy available.");
 				System.out.println("Trying to gather entropy (randomness) by reading the disk...");
-				System.out.println("You should consider installing a better random number generator e.g. haveged.");
+				if(File.separatorChar == '/') {
+					if(new File("/dev/hwrng").exists())
+						System.out.println("/dev/hwrng exists - have you installed rng-tools?");
+					else
+						System.out.println("You should consider installing a better random number generator e.g. haveged.");
+				}
 				extendTimeouts();
 				for(File root : File.listRoots()) {
 					if(isPRNGReady)
