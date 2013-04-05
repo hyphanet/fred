@@ -1086,6 +1086,7 @@ public class Node implements TimeSkewDetectorCallback {
 					return;
 				System.out.println("Not enough entropy available.");
 				System.out.println("Trying to gather entropy (randomness) by reading the disk...");
+				System.out.println("You should consider installing a better random number generator e.g. haveged.");
 				extendTimeouts();
 				for(File root : File.listRoots()) {
 					if(isPRNGReady)
@@ -1094,7 +1095,9 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 			}
 			
-			static final int EXTEND_BY = 10*60*1000;
+			/** This is ridiculous, but for some users it can take more than an hour, and timing out sucks
+			 * a few bytes and then times out again. :( */
+			static final int EXTEND_BY = 60*60*1000;
 			
 			private void extendTimeouts() {
 				long now = System.currentTimeMillis();
