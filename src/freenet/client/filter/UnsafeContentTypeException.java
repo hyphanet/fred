@@ -55,4 +55,12 @@ public abstract class UnsafeContentTypeException extends IOException {
 	public int getFetchErrorCode() {
 		return FetchException.CONTENT_VALIDATION_FAILED;
 	}
+
+	public FetchException recreateFetchException(FetchException e, String mime) {
+		return new FetchException(getFetchErrorCode(), e.expectedSize, this, mime);
+	}
+	
+	public FetchException createFetchException(String mime, long expectedSize) {
+		return new FetchException(getFetchErrorCode(), expectedSize, this, mime);
+	}
 }

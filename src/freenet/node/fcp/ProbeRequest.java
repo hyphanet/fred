@@ -20,6 +20,7 @@ import freenet.support.SimpleFieldSet;
  *     <li>IDENTIFIER - returns identifier and integer 7-day uptime percentage.</li>
  *     <li>LINK_LENGTHS - returns link lengths between the endpoint and its connected peers.</li>
  *     <li>LOCATION - returns the endpoint's location.</li>
+ *     <li>REJECT_STATS - returns CHK and SSK reject percentage for bulk inserts and bulk requests.</li>
  *     <li>STORE_SIZE - returns store size in GiB.</li>
  *     <li>UPTIME_48H - returns 48-hour uptime percentage.</li>
  *     <li>UPTIME_7D - returns 7-day uptime percentage.</li>
@@ -130,6 +131,12 @@ public class ProbeRequest extends FCPMessage {
 			@Override
 			public void onRejectStats(byte[] stats) {
 				handler.outputHandler.queue(new ProbeRejectStats(identifier, stats));
+			}
+
+			@Override
+			public void onOverallBulkOutputCapacity(
+					byte bandwidthClassForCapacityUsage, float capacityUsage) {
+				handler.outputHandler.queue(new ProbeOverallBulkOutputCapacityUsage(identifier, bandwidthClassForCapacityUsage, capacityUsage));
 			}
 		};
 		node.startProbe(htl, node.random.nextLong(), type, listener);

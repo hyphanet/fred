@@ -3386,72 +3386,6 @@ public class Node implements TimeSkewDetectorCallback {
 		pubKeyDatacache.getStore().setUserAlertManager(clientCore.alerts);
 		sskDatastore.getStore().setUserAlertManager(clientCore.alerts);
 		sskDatacache.getStore().setUserAlertManager(clientCore.alerts);
-
-		if (isBDBStoreExist(suffix)) {
-			clientCore.alerts.register(new SimpleUserAlert(true, NodeL10n.getBase().getString("Node.storeSaltHashMigratedShort"),
-			        NodeL10n.getBase().getString("Node.storeSaltHashMigratedShort"), NodeL10n.getBase()
-			                .getString("Node.storeSaltHashMigratedShort"), UserAlert.MINOR) {
-
-				@Override
-				public HTMLNode getHTMLText() {
-					HTMLNode div = new HTMLNode("div");
-					div.addChild("#", NodeL10n.getBase().getString("Node.storeSaltHashMigrated"));
-					HTMLNode ul = div.addChild("ul");
-
-					for (String type : new String[] { "chk", "pubkey", "ssk" })
-						for (String storecache : new String[] { "store", "store.keys", "store.lru", "cache",
-						        "cache.keys", "cache.lru" }) {
-							File f = storeDir.file(type + suffix + "." + storecache);
-							if (f.exists())
-								ul.addChild("li", f.getAbsolutePath());
-						}
-
-					File dbDir = storeDir.file("database" + suffix);
-					if (dbDir.exists())
-						ul.addChild("li", dbDir.getAbsolutePath());
-
-					return div;
-				}
-
-				@Override
-				public String getText() {
-					StringBuilder sb = new StringBuilder();
-					sb.append(NodeL10n.getBase().getString("Node.storeSaltHashMigrated") + " \n");
-
-					for (String type : new String[] { "chk", "pubkey", "ssk" })
-						for (String storecache : new String[] { "store", "store.keys", "store.lru", "cache",
-						        "cache.keys", "cache.lru" }) {
-							File f = storeDir.file(type + suffix + "." + storecache);
-					if (f.exists())
-								sb.append(" - ");
-							sb.append(f.getAbsolutePath());
-							sb.append("\n");
-					}
-					File dbDir = storeDir.file("database" + suffix);
-					if (dbDir.exists()) {
-						sb.append(" - ");
-						sb.append(dbDir.getAbsolutePath());
-						sb.append("\n");
-					}
-
-					return sb.toString();
-				}
-
-				@Override
-				public boolean isValid() {
-					return isBDBStoreExist(suffix);
-				}
-
-				@Override
-				public void onDismiss() {
-				}
-
-				@Override
-				public boolean userCanDismiss() {
-					return true;
-				}
-			});
-		}
 	}
 
 	private void initRAMFS() {
@@ -3470,18 +3404,6 @@ public class Node implements TimeSkewDetectorCallback {
 		new RAMFreenetStore<SSKBlock>(sskDatacache, (int) Math.min(Integer.MAX_VALUE, maxCacheKeys));
 	}
 
-	private boolean isBDBStoreExist(final String suffix) {
-		for(String type : new String[] { "chk", "pubkey", "ssk" }) {
-			for(String ver : new String[] { "store", "cache" }) {
-				for(String ext : new String[] { "", ".keys", ".lru" }) {
-					if(storeDir.file(type + suffix + "." + ver + ext).exists()) return true;
-				}
-			}
-		}
-		if(storeDir.file("database" + suffix).exists()) return true;
-		return false;
-    }
-	
 	private long cachingFreenetStoreMaxSize;
 	private long cachingFreenetStorePeriod;
 
@@ -4460,23 +4382,6 @@ public class Node implements TimeSkewDetectorCallback {
 			sb.append(peers.getTMCIPeerList());
 		else
 			sb.append("No peers yet");
-		return sb.toString();
-	}
-
-	/**
-	 * @return Data String for freeviz.
-	 */
-	public String getFreevizOutput() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append("\ntransferring_requests=");
-		sb.append(tracker.getNumTransferringRequestSenders());
-
-		sb.append('\n');
-
-		if (peers != null)
-			sb.append(peers.getFreevizOutput());
-
 		return sb.toString();
 	}
 
@@ -5475,7 +5380,9 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 	
 	public boolean enableNewLoadManagement(boolean realTimeFlag) {
-		return nodeStats.enableNewLoadManagement(realTimeFlag);
+		NodeStats stats = this.nodeStats;
+		if(stats == null) return false;
+		return stats.enableNewLoadManagement(realTimeFlag);
 	}
 	
 	/** FIXME move to Probe.java? */

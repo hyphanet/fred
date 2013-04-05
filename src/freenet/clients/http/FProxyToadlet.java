@@ -912,12 +912,15 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				String mime = writeSizeAndMIME(fileInformationList, e);
 				infobox = contentNode.addChild("div", "class", "infobox infobox-error");
 				infobox.addChild("div", "class", "infobox-header", l10n("explanationTitle"));
-				infoboxContent = infobox.addChild("div", "class", "infobox-content");
-				infoboxContent.addChild("p", l10n("unableToRetrieve"));
 				UnsafeContentTypeException filterException = null;
 				if(e.getCause() != null && e.getCause() instanceof UnsafeContentTypeException) {
 					filterException = (UnsafeContentTypeException)e.getCause();
 				}
+				infoboxContent = infobox.addChild("div", "class", "infobox-content");
+				if(filterException == null)
+					infoboxContent.addChild("p", l10n("unableToRetrieve"));
+				else
+					infoboxContent.addChild("p", l10n("unableToSafelyDisplay"));
 				if(e.isFatal() && filterException == null)
 					infoboxContent.addChild("p", l10n("errorIsFatal"));
 				infoboxContent.addChild("p", msg);

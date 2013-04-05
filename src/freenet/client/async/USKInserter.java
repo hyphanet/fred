@@ -100,7 +100,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			if(logMINOR)
 				Logger.minor(this, "scheduling fetcher for "+pubUSK.getURI());
 			if(finished) return;
-			fetcher = context.uskManager.getFetcherForInsertDontSchedule(persistent ? pubUSK.copy() : pubUSK, parent.priorityClass, this, parent.getClient(), container, context, persistent);
+			fetcher = context.uskManager.getFetcherForInsertDontSchedule(persistent ? pubUSK.copy() : pubUSK, parent.priorityClass, this, parent.getClient(), container, context, persistent, ctx.ignoreUSKDatehints);
 			if(logMINOR)
 				Logger.minor(this, "scheduled: "+fetcher);
 		}
@@ -161,6 +161,18 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	}
 
 	private void insertSucceeded(ObjectContainer container, ClientContext context, long edition) {
+		if(ctx.ignoreUSKDatehints) {
+			if(logMINOR) Logger.minor(this, "Inserted to edition "+edition);
+			boolean cbActive = true;
+			if(!container.ext().isActive(cb)) {
+				cbActive = false;
+				container.activate(cb, 1);
+			}
+			cb.onSuccess(this, container, context);
+			if(!cbActive)
+				container.deactivate(cb, 1);
+			return;
+		}
 		if(logMINOR) Logger.minor(this, "Inserted to edition "+edition+" - inserting USK date hints...");
 		USKDateHint hint = USKDateHint.now();
 		MultiPutCompletionCallback m = new MultiPutCompletionCallback(cb, parent, tokenObject, persistent, true);

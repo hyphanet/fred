@@ -97,7 +97,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	
 	protected void maybeProcessOldBlob() {
 		File oldBlob = getBlobFile(currentVersion);
-		if(oldBlob != null) {
+		if(oldBlob.exists()) {
 			File temp;
 			try {
 				temp = File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
@@ -239,7 +239,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 			cancelled.cancel(null, core.clientContext);
 	}
 
-	File getBlobFile(int availableVersion) {
+	final File getBlobFile(int availableVersion) {
 		return new File(node.clientCore.getPersistentTempDir(), blobFilenamePrefix + availableVersion + ".fblob");
 	}
 	Bucket getBlobBucket(int availableVersion) {

@@ -48,6 +48,8 @@ public class InsertContext implements Cloneable {
 	/** Number of extra inserts for a block inserted above a splitfile. */
 	public int extraInsertsSplitfileHeaderBlock;
 	public boolean localRequestOnly;
+	/** Don't insert USK DATEHINTs (and ignore them on polling for maximum edition). */
+	public boolean ignoreUSKDatehints;
 	// FIXME DB4O: This should really be an enum. However, db4o has a tendency to copy enum's,
 	// which wastes space (often unrecoverably), confuses programmers, creates wierd bugs and breaks == comparison.
 	
@@ -115,6 +117,7 @@ public class InsertContext implements Cloneable {
 			compatibilityMode = CompatibilityMode.latest();
 		this.compatibilityMode = compatibilityMode.ordinal();
 		this.localRequestOnly = localRequestOnly;
+		this.ignoreUSKDatehints = false;
 	}
 
 	public InsertContext(InsertContext ctx, SimpleEventProducer producer) {
@@ -131,6 +134,7 @@ public class InsertContext implements Cloneable {
 		this.extraInsertsSplitfileHeaderBlock = ctx.extraInsertsSplitfileHeaderBlock;
 		this.compatibilityMode = ctx.compatibilityMode;
 		this.localRequestOnly = ctx.localRequestOnly;
+		this.ignoreUSKDatehints = ctx.ignoreUSKDatehints;
 	}
 	
 	/** Make public, but just call parent for a field for field copy */

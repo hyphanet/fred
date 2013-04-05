@@ -114,21 +114,26 @@ public class PluginRespirator {
 		example.storeIdentifier = this.plugin.getClass().getCanonicalName();
 		example.pluginStore = null;
 
+		// This runs off-thread, so we need to synchronize, even though we wait for it to complete.
 		this.node.clientCore.runBlocking(new DBJob() {
 
 			@Override
 			public boolean run(ObjectContainer container, ClientContext context) {
 				ObjectSet<PluginStoreContainer> stores = container.queryByExample(example);
-				if(stores.size() == 0) store = new PluginStore();
-				else {
-					store = stores.get(0).pluginStore;
-					container.activate(store, Integer.MAX_VALUE);
+				synchronized(PluginRespirator.this) {
+					if(stores.size() == 0) store = new PluginStore();
+					else {
+						store = stores.get(0).pluginStore;
+						container.activate(store, Integer.MAX_VALUE);
+					}
 				}
 				return false;
 			}
 		}, NativeThread.HIGH_PRIORITY);
-
-		return this.store;
+		synchronized(this) {
+			if(store == null) throw new NullPointerException();
+			return store;
+		}
 	}
 
 	/**
