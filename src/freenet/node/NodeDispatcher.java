@@ -275,18 +275,6 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			return handleRoutedReply(m);
 		} else if(spec == DMT.FNPRoutedRejected) {
 			return handleRoutedRejected(m);
-			// FIXME implement threaded probe requests of various kinds.
-			// Old probe request code was a major pain, never really worked.
-			// We should have threaded probe requests (for simple code),
-			// and one for each routing strategy.
-//		} else if(spec == DMT.FNPProbeRequest) {
-//			return handleProbeRequest(m, source);
-//		} else if(spec == DMT.FNPProbeReply) {
-//			return handleProbeReply(m, source);
-//		} else if(spec == DMT.FNPProbeRejected) {
-//			return handleProbeRejected(m, source);
-//		} else if(spec == DMT.FNPProbeTrace) {
-//			return handleProbeTrace(m, source);
 		} else if(spec == DMT.FNPOfferKey) {
 			return handleOfferKey(m, source);
 		} else if(spec == DMT.FNPGetOfferedKey) {

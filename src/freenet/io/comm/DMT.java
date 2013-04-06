@@ -1277,57 +1277,6 @@ public class DMT {
 		return msg;
 	}
 
-	public static final MessageType FNPProbeRequest = new MessageType("FNPProbeRequest", PRIORITY_HIGH) {{
-		addField(UID, Long.class);
-		addField(TARGET_LOCATION, Double.class);
-		addField(NEAREST_LOCATION, Double.class);
-		addField(BEST_LOCATION, Double.class);
-		addField(HTL, Short.class);
-		addField(COUNTER, Short.class);
-		addField(LINEAR_COUNTER, Short.class);
-	}};
-	
-	public static final MessageType FNPProbeTrace = new MessageType("FNPProbeTrace", PRIORITY_LOW) {{
-		addField(UID, Long.class);
-		addField(TARGET_LOCATION, Double.class);
-		addField(NEAREST_LOCATION, Double.class);
-		addField(BEST_LOCATION, Double.class);
-		addField(HTL, Short.class);
-		addField(COUNTER, Short.class);
-		addField(LOCATION, Double.class);
-		addField(MY_UID, Long.class);
-		addField(PEER_LOCATIONS, ShortBuffer.class);
-		addField(PEER_UIDS, ShortBuffer.class);
-		addField(FORK_COUNT, Short.class);
-		addField(LINEAR_COUNTER, Short.class);
-		addField(REASON, String.class);
-		addField(PREV_UID, Long.class);
-	}};
-	
-	public static final MessageType FNPProbeReply = new MessageType("FNPProbeReply", PRIORITY_LOW) {{
-		addField(UID, Long.class);
-		addField(TARGET_LOCATION, Double.class);
-		addField(NEAREST_LOCATION, Double.class);
-		addField(BEST_LOCATION, Double.class);
-		addField(COUNTER, Short.class);
-		addField(LINEAR_COUNTER, Short.class);
-	}};
-	
-	public static final MessageType FNPProbeRejected = new MessageType("FNPProbeRejected", PRIORITY_HIGH) {{
-		addField(UID, Long.class);
-		addField(TARGET_LOCATION, Double.class);
-		addField(NEAREST_LOCATION, Double.class);
-		addField(BEST_LOCATION, Double.class);
-		addField(HTL, Short.class);
-		addField(COUNTER, Short.class);
-		addField(REASON, Short.class);
-		addField(LINEAR_COUNTER, Short.class);
-	}};
-	
-	static public final short PROBE_REJECTED_LOOP = 1;
-	static public final short PROBE_REJECTED_RNF = 2;
-	static public final short PROBE_REJECTED_OVERLOAD = 3;
-	
 	public static final MessageType FNPSwapRequest = new MessageType("FNPSwapRequest", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
 		addField(HASH, ShortBuffer.class);
