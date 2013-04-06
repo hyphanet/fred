@@ -3101,11 +3101,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				int x = node.random.nextInt(routingBackoffLength);
 				routingBackedOffUntil = now + x;
 				node.nodeStats.reportRoutingBackoff(reason, x, realTime);
-				String reasonWrapper = "";
-				if(0 < reason.length())
-					reasonWrapper = " because of '" + reason + '\'';
-				if(logMINOR)
+				if(logMINOR) {
+					String reasonWrapper = "";
+					if(0 < reason.length())
+						reasonWrapper = " because of '" + reason + '\'';
 					Logger.minor(this, "Backing off" + reasonWrapper + ": routingBackoffLength=" + routingBackoffLength + ", until " + x + "ms on " + peer);
+				}
 				if(realTime) {
 					routingBackedOffUntilRT = routingBackedOffUntil;
 					routingBackoffLengthRT = routingBackoffLength;
@@ -3182,11 +3183,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				int x = node.random.nextInt(transferBackoffLength);
 				transferBackedOffUntil = now + x;
 				node.nodeStats.reportTransferBackoff(reason, x, realTime);
-				String reasonWrapper = "";
-				if(0 < reason.length())
-					reasonWrapper = " because of '" + reason + '\'';
-				if(logMINOR)
+				if(logMINOR) {
+					String reasonWrapper = "";
+					if(0 < reason.length())
+						reasonWrapper = " because of '" + reason + '\'';
 					Logger.minor(this, "Backing off (transfer)" + reasonWrapper + ": transferBackoffLength=" + transferBackoffLength + ", until " + x + "ms on " + peer);
+				}
 				if(realTime) {
 					transferBackedOffUntilRT = transferBackedOffUntil;
 					transferBackoffLengthRT = transferBackoffLength;
