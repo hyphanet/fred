@@ -1407,7 +1407,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			}
 			if(!rateLimitLogging) {
 				String reasonWrapper = "";
-				if(0 <= reason.length()) {
+				if(0 < reason.length()) {
 					reasonWrapper = " because of '" + reason + '\'';
 				}
 				Logger.normal(this, "Requeueing " + messages.length + " messages" + reasonWrapper + " on " + this + rateLimitWrapper);
@@ -3102,7 +3102,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				routingBackedOffUntil = now + x;
 				node.nodeStats.reportRoutingBackoff(reason, x, realTime);
 				String reasonWrapper = "";
-				if(0 <= reason.length())
+				if(0 < reason.length())
 					reasonWrapper = " because of '" + reason + '\'';
 				if(logMINOR)
 					Logger.minor(this, "Backing off" + reasonWrapper + ": routingBackoffLength=" + routingBackoffLength + ", until " + x + "ms on " + peer);
@@ -3183,7 +3183,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				transferBackedOffUntil = now + x;
 				node.nodeStats.reportTransferBackoff(reason, x, realTime);
 				String reasonWrapper = "";
-				if(0 <= reason.length())
+				if(0 < reason.length())
 					reasonWrapper = " because of '" + reason + '\'';
 				if(logMINOR)
 					Logger.minor(this, "Backing off (transfer)" + reasonWrapper + ": transferBackoffLength=" + transferBackoffLength + ", until " + x + "ms on " + peer);
