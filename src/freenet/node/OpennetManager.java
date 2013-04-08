@@ -58,6 +58,9 @@ import freenet.support.transport.ip.IPUtil;
  * In particular:
  * - Opennet crypto
  * - LRU connections
+ * 
+ * Both here and in OpennetPeerNode there are lots of dubious heuristics to avoid excessive 
+ * connection churn.
  * @author toad
  */
 public class OpennetManager {
@@ -83,7 +86,8 @@ public class OpennetManager {
 	private final EnumMap<ConnectionType,Long> connectionAttemptsAddedPlentySpace;
 	private final EnumMap<ConnectionType,Long> connectionAttemptsRejectedByPerTypeEnforcement;
 	private final EnumMap<ConnectionType,Long> connectionAttemptsRejectedNoPeersDroppable;
-	/** Number of successful CHK requests since last added a node */
+	/** Number of successful CHK requests since last added a node. All values are incremented on a 
+	 * successful request, but when we add a node, we reset the value for that type of node. */
 	private final EnumMap<ConnectionType,Long> successCount;
 
 	/** Only drop a connection after at least this many successful requests.
@@ -766,7 +770,6 @@ public class OpennetManager {
 
 	public void onSuccess(OpennetPeerNode pn) {
 		synchronized(this) {
-			// XXX should not this use pn.getAddedReason() ?
 			for(ConnectionType type : ConnectionType.values())
 				successCount.put(type, successCount.get(type)+1);
 			if(peersLRU.contains(pn)) {
