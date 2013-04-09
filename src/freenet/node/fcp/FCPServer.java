@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.WeakHashMap;
 
@@ -25,6 +26,7 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
 import freenet.client.async.DownloadCache;
+import freenet.clients.http.SimpleToadletServer;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
@@ -273,20 +275,24 @@ public class FCPServer implements Runnable, DownloadCache {
 
 		@Override
 		public void set(String val) throws InvalidConfigValueException {
-			if(!val.equals(get())) {
-				try {
-					FCPServer server = node.getFCPServer();
-					server.networkInterface.setBindTo(val, true);
-					server.bindTo = val;
-
-					synchronized(server.networkInterface) {
-						server.networkInterface.notifyAll();
-					}
-				} catch (IOException e) {
+			String oldValue = get();
+			if(!val.equals(oldValue)) {
+				FCPServer server = node.getFCPServer();
+				
+				String[] failedAddresses = server.networkInterface.setBindTo(val, true);
+				if(failedAddresses != null) {
 					// This is an advanced option for reasons of reducing clutter,
 					// but it is expected to be used by regular users, not devs.
 					// So we translate the error messages.
-					throw new InvalidConfigValueException(l10n("couldNotChangeBindTo", "error", e.getLocalizedMessage()));
+					server.networkInterface.setBindTo(oldValue, true);
+					throw new InvalidConfigValueException(l10n("couldNotChangeBindTo", "failedInterfaces", Arrays.toString(failedAddresses)));
+				}
+				
+				server.networkInterface.setBindTo(val, true);
+				server.bindTo = val;
+				
+				synchronized(server.networkInterface) {
+					server.networkInterface.notifyAll();
 				}
 			}
 		}

@@ -10,6 +10,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Random;
@@ -211,15 +212,17 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		
 		@Override
 		public void set(String bindTo) throws InvalidConfigValueException {
-			if(!bindTo.equals(get())) {
-				try {
-					networkInterface.setBindTo(bindTo, false);
+			String oldValue = get();
+			if(!bindTo.equals(oldValue)) {
+				String[] failedAddresses = networkInterface.setBindTo(bindTo, false);
+				if(failedAddresses == null) {
 					SimpleToadletServer.this.bindTo = bindTo;
-				} catch (IOException e) {
+				} else {
 					// This is an advanced option for reasons of reducing clutter,
 					// but it is expected to be used by regular users, not devs.
 					// So we translate the error messages.
-					throw new InvalidConfigValueException(l10n("couldNotChangeBindTo", "error", e.getLocalizedMessage()));
+					networkInterface.setBindTo(oldValue, false);
+					throw new InvalidConfigValueException(l10n("couldNotChangeBindTo", "failedInterfaces", Arrays.toString(failedAddresses)));
 				}
 			}
 		}
