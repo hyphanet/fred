@@ -121,7 +121,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			try {
 				if(!results.hasNext()) break;
 				l = results.next();
-			} catch (IllegalArgumentException e) {
+			} catch (RuntimeException e) {
 				throw new Db4oException("Something is broken: "+e, e);
 				// Allow caller to terminate database.
 				// IllegalArgumentException isn't caught, but here it is exclusively caused by corrupt database and/or database bugs. :(
