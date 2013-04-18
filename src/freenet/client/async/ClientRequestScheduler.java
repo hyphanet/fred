@@ -31,6 +31,7 @@ import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
+import freenet.node.SendableRequestItemKey;
 import freenet.support.Fields;
 import freenet.support.IdentityHashSet;
 import freenet.support.Logger;
@@ -1066,7 +1067,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	@Override
-	public void removeTransientInsertFetching(SendableInsert insert, Object token) {
+	public void removeTransientInsertFetching(SendableInsert insert, SendableRequestItemKey token) {
 		selector.removeTransientInsertFetching(insert, token);
 		// Must remove here, because blocks selection and therefore creates cooldown cache entries.
 		insert.clearCooldown(null, clientContext, false);
@@ -1149,7 +1150,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	@Override
-	public boolean addTransientInsertFetching(SendableInsert insert, Object token) {
+	public boolean addTransientInsertFetching(SendableInsert insert, SendableRequestItemKey token) {
 		return selector.addTransientInsertFetching(insert, token);
 	}
 	

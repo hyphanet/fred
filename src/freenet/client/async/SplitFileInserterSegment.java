@@ -31,6 +31,7 @@ import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequestItem;
+import freenet.node.SendableRequestItemKey;
 import freenet.node.SendableRequestSender;
 import freenet.store.KeyCollisionException;
 import freenet.support.LogThresholdCallback;
@@ -777,23 +778,48 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		// distributed ... this is not true here.
 		return hashCode() * (blockNum + 1);
 	}
-
-	private static class BlockItem implements SendableRequestItem {
-
-		private final boolean persistent;
-		private final Bucket copyBucket;
+	
+	/** Only the parts that are needed for looking up whether we already have the insert running */
+	private static class BlockItemKey implements SendableRequestItemKey {
 		private final int hashCode;
 		/** STRICTLY for purposes of equals() !!! */
 		private final SplitFileInserterSegment parent;
 		private final int blockNum;
+
+		BlockItemKey(SplitFileInserterSegment parent, int blockNum) {
+			this.parent = parent;
+			this.blockNum = blockNum;
+			this.hashCode = parent.hashCodeForBlock(blockNum);
+		}
+		
+		@Override
+		public int hashCode() {
+			return hashCode;
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if(o instanceof BlockItemKey) {
+				if(((BlockItemKey)o).parent == parent && ((BlockItemKey)o).blockNum == blockNum) return true;
+			}
+			return false;
+		}
+
+	}
+
+	/** Everything else needed to send an insert. (Note that we won't have access to 
+	 * SplitFileInserterSegment when we do) */
+	private static class BlockItem implements SendableRequestItem {
+
+		private final Bucket copyBucket;
+		private final BlockItemKey key;
+		private final boolean persistent;
 		final byte cryptoAlgorithm;
 		public byte[] cryptoKey;
 
 		BlockItem(SplitFileInserterSegment parent, int blockNum, Bucket bucket, boolean persistent, byte cryptoAlgorithm, byte[] cryptoKey) throws IOException {
-			this.parent = parent;
-			this.blockNum = blockNum;
-			this.copyBucket = bucket;
-			this.hashCode = parent.hashCodeForBlock(blockNum);
+			key = new BlockItemKey(parent, blockNum);
+			copyBucket = bucket;
 			this.persistent = persistent;
 			this.cryptoAlgorithm = cryptoAlgorithm;
 			this.cryptoKey = cryptoKey;
@@ -805,57 +831,14 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		}
 
 		@Override
-		public int hashCode() {
-			return hashCode;
+		public SendableRequestItemKey getKey() {
+			return key;
 		}
 
-		@Override
-		public boolean equals(Object o) {
-			if(o instanceof BlockItem) {
-				if(((BlockItem)o).parent == parent && ((BlockItem)o).blockNum == blockNum) return true;
-			} else if(o instanceof FakeBlockItem) {
-				if(((FakeBlockItem)o).getParent() == parent && ((FakeBlockItem)o).blockNum == blockNum) return true;
-			}
-			return false;
+		public int blockNum() {
+			return key.blockNum;
 		}
 
-	}
-
-	// Used for testing whether a block is already queued.
-	private class FakeBlockItem implements SendableRequestItem {
-
-		private final int blockNum;
-		private final int hashCode;
-
-		FakeBlockItem(int blockNum) {
-			this.blockNum = blockNum;
-			this.hashCode = hashCodeForBlock(blockNum);
-
-		}
-
-		@Override
-		public void dump() {
-			// Do nothing
-		}
-
-		public SplitFileInserterSegment getParent() {
-			return SplitFileInserterSegment.this;
-		}
-
-		@Override
-		public int hashCode() {
-			return hashCode;
-		}
-
-		@Override
-		public boolean equals(Object o) {
-			if(o instanceof BlockItem) {
-				if(((BlockItem)o).parent == SplitFileInserterSegment.this && ((BlockItem)o).blockNum == blockNum) return true;
-			} else if(o instanceof FakeBlockItem) {
-				if(((FakeBlockItem)o).getParent() == SplitFileInserterSegment.this && ((FakeBlockItem)o).blockNum == blockNum) return true;
-			}
-			return false;
-		}
 	}
 
 	@Override
@@ -894,7 +877,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			container.store(errors);
 		boolean isRNF = e.code == LowLevelPutException.ROUTE_NOT_FOUND ||
 			e.code == LowLevelPutException.ROUTE_REALLY_NOT_FOUND;
-		int blockNum = block.blockNum;
+		int blockNum = block.blockNum();
 		if(logMINOR) Logger.minor(this, "Block "+blockNum+" failed on "+this+" : "+e);
 		boolean treatAsSuccess = false;
 		boolean failedBlock = false;
@@ -1056,7 +1039,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	@Override
 	public void onSuccess(Object keyNum, ObjectContainer container, final ClientContext context) {
 		BlockItem block = (BlockItem) keyNum;
-		int blockNum = block.blockNum;
+		int blockNum = block.blockNum();
 		int completed;
 		int succeeded;
 		if(logMINOR) Logger.minor(this, "Block "+blockNum+" succeeded on "+this);
@@ -1190,7 +1173,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 
 				// Check whether it is already running
 				if(!persistent) {
-					if(keys.hasTransientInsert(this, new FakeBlockItem(num)))
+					if(keys.hasTransientInsert(this, new BlockItemKey(this, num)))
 						continue;
 				}
 
@@ -1237,7 +1220,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			final ClientCHK key;
 			BlockItem block = (BlockItem) req.token;
 				try {
-					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Starting request: block number "+block.blockNum);
+					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Starting request: block number "+block.blockNum());
 					ClientCHKBlock encodedBlock;
 					CHKBlock b;
 					try {
@@ -1257,7 +1240,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						return false;
 					}
 					key = encodedBlock.getClientKey();
-					num = block.blockNum;
+					num = block.blockNum();
 					if(block.persistent) {
 						req.setGeneratedKey(key);
 					} else {
@@ -1603,7 +1586,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 
 	@Override
 	public void onEncode(SendableRequestItem token, ClientKey key, ObjectContainer container, ClientContext context) {
-		onEncode(((BlockItem)token).blockNum, (ClientCHK)key, container, context);
+		onEncode(((BlockItem)token).blockNum(), (ClientCHK)key, container, context);
 	}
 
 	public int allocateCrossDataBlock(SplitFileInserterCrossSegment seg, Random random) {
