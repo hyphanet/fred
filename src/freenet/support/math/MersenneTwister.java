@@ -78,4 +78,15 @@ public class MersenneTwister extends org.spaceroots.mantissa.random.MersenneTwis
 	/** {@inheritDoc} */
 	@Override protected synchronized int next(int bits) { return super.next(bits); }
 
+	/**
+	 * Due to bug #0005502 this method must be reimplemented.
+	 *  
+	 * See https://bugs.freenetproject.org/view.php?id=5502 for details
+	 */
+	@Override
+	public void nextBytes(byte[] bytes) {
+		super.nextBytes(bytes);
+		//TODO reimplement this
+	}
+	
 }
