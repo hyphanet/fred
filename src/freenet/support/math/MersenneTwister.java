@@ -103,7 +103,7 @@ public class MersenneTwister extends org.spaceroots.mantissa.random.MersenneTwis
 	 * the next call to the method is made when they will be used. 
 	 */
 	@Override
-	public void nextBytes(byte[] bytes) {
+	public synchronized void nextBytes(byte[] bytes) {
 		/*
 		 * Copy bytes from the currentBytes array if it is not empty
 		 */
