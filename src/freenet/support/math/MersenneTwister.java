@@ -37,6 +37,9 @@ import freenet.support.Fields;
 public class MersenneTwister extends org.spaceroots.mantissa.random.MersenneTwister {
 
 	private static final long serialVersionUID = 6555069655883958609L;
+	
+	private byte currentBytes[] = new byte[3];
+	private byte currentBytesSize = 0;
 
 	/** Creates a new random number generator using the current time as the seed. */
 	public MersenneTwister() { super(); }
@@ -78,4 +81,72 @@ public class MersenneTwister extends org.spaceroots.mantissa.random.MersenneTwis
 	/** {@inheritDoc} */
 	@Override protected synchronized int next(int bits) { return super.next(bits); }
 
+	/**
+	 * Due to bug #0005502 this method must be reimplemented.
+	 *  
+	 * See https://bugs.freenetproject.org/view.php?id=5502 for details
+	 */
+	@Override
+	public void nextBytes(byte[] bytes) {
+		/*
+		 * Copy bytes from the currentBytes array if it is not empty
+		 */
+		int k = 0;
+		if (currentBytesSize != 0) {
+			if (bytes.length >= currentBytesSize) {
+				k = currentBytesSize;
+				putKBytes(bytes, currentBytesSize);
+			} else {
+				putKBytes(bytes, bytes.length);
+				return;
+			}
+		}
+		
+		/*
+		 * Generate a multiple of 4 random bytes
+		 */
+		int missingBytes = bytes.length - k;
+		int noCycles = missingBytes / 4;
+		for (int j = 0; j < noCycles; j++)
+			for (int rnd = nextInt(), n = 4; n-- > 0; rnd >>= 8) {
+				bytes[k++] = (byte)rnd;
+			}
+		
+		/* Add the missing byte(s) to the array and store the rest of the generated
+		 * integer in the currentBytes array.
+		 */
+		missingBytes %= 4;
+		if (missingBytes != 0) {
+			int rnd = nextInt();
+			for (int n = 4; n-- >0; rnd >>= 8) {
+				if (k >= bytes.length) {
+					currentBytes[currentBytesSize++] = (byte)rnd;
+				} else {
+					bytes[k++] = (byte)rnd;
+				}
+			}
+		}
+	}
+
+	/**
+	 * Copy k bytes from the internal array to the output array. 
+	 * k must be smaller than the size of the state array!
+	 * 
+	 * @param bytes - the target array
+	 * @param k - number of bytes that will be copied in the target array
+	 */
+	private void putKBytes(byte[] bytes, int k) {
+		for (int i = 0; i < k; i++) {
+			bytes[i] = currentBytes[i];
+		}
+		if (k == currentBytesSize) {
+			currentBytesSize = 0;
+		} else {
+			for (int i = 0; i < currentBytesSize - k; i++) {
+				currentBytes[i] = currentBytes[i + k];
+			}
+			currentBytesSize -= k;
+		}
+	}
+	
 }
