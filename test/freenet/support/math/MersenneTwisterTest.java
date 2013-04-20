@@ -114,5 +114,22 @@ public class MersenneTwisterTest extends TestCase {
 
 		assertEquals(new String(EXPECTED_OUTPUT_MT_LONG, "UTF-8"), new String(md.digest(), "UTF-8"));
 	}
-
+	
+	public void testNextBytesMethod() throws NoSuchAlgorithmException, UnsupportedEncodingException {
+		MersenneTwister mt1 = new MersenneTwister(INT_SEED);
+		MersenneTwister mt2 = new MersenneTwister(INT_SEED);
+		byte buff[] = new byte[24];
+		mt1.nextBytes(buff);
+		int m = 0;
+		for (int i = 0; i < 4; i++) {
+			for (int j = 1; j <= 3; j++) {
+				byte buff2[] = new byte[j];
+				mt2.nextBytes(buff2);
+				for (int k = 0; k < j; k++) {
+					Assert.assertEquals(buff[m++], buff2[k]);
+				}
+			}
+		}
+	}
+	
 }
