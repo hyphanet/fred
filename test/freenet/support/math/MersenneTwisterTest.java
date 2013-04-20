@@ -1,6 +1,7 @@
 package freenet.support.math;
 
 import freenet.support.Fields;
+import freenet.support.TestProperty;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
@@ -115,6 +116,16 @@ public class MersenneTwisterTest extends TestCase {
 		assertEquals(new String(EXPECTED_OUTPUT_MT_LONG, "UTF-8"), new String(md.digest(), "UTF-8"));
 	}
 	
+	/**
+	 * This is a regression test which exposes a flaw in the default java 
+	 * implementation in java.util.Random which is inherited by {@link MersenneTwister}
+	 * class. It generates a 24 bytes using one instance of {@link MersenneTwister}, 
+	 * while using the second one try to generate the same sequence step by step 
+	 * by requesting 1, 2, or 3 bytes in a loop. The Oracle implementation loses 
+	 * some bytes when called with buffers of length not divisible by 4. If this is 
+	 * the case the output of the two instances of the {@link MersenneTwister} class
+	 * will be different.  
+	 */
 	public void testNextBytesMethod() throws NoSuchAlgorithmException, UnsupportedEncodingException {
 		MersenneTwister mt1 = new MersenneTwister(INT_SEED);
 		MersenneTwister mt2 = new MersenneTwister(INT_SEED);
@@ -130,6 +141,83 @@ public class MersenneTwisterTest extends TestCase {
 				}
 			}
 		}
+	}
+	
+	/**
+	 * Compare the new implementation of nextBytes() method with the Oracle's 
+	 * overriden implementation. 
+	 * 
+	 */
+	public void testBenchmarkNextBytesMethod() {
+		if(!TestProperty.BENCHMARK) 
+			return;
+		final int NO_REPETITIONS = 2000000;
+		
+		/** an object containing the new implementation */
+		MersenneTwister mt1 = new MersenneTwister();
+		/** an object containing Oracle's implementation */
+		MersenneTwister mt2 = new MersenneTwister() {
+			public void nextBytes(byte[] bytes) {
+				for (int i = 0; i < bytes.length; )
+					for (int rnd = nextInt(), n = Math.min(bytes.length - i, 4);
+							n-- > 0; rnd >>= 8)	
+						bytes[i++] = (byte)rnd;
+			}
+		};
+		/** Scenario 1: call the method only with numbers divisible by 4  */
+		byte b1[] = new byte[4];
+		byte b2[] = new byte[64];
+		long t1 = System.currentTimeMillis();
+		for (int i = 0; i < NO_REPETITIONS; i++) {
+			if (i % 2 == 0) {
+				mt1.nextBytes(b1);
+			} else {
+				mt1.nextBytes(b2);
+			}
+		}
+		long t2 = System.currentTimeMillis();
+		long diff1 = t2 - t1;
+		t2 = System.currentTimeMillis();
+		for (int i = 0; i < NO_REPETITIONS; i++) {
+			if (i % 2 == 0) {
+				mt2.nextBytes(b1);
+			} else {
+				mt2.nextBytes(b2);
+			}
+		}
+		t2 = System.currentTimeMillis();
+		long diff2 = t2 - t1;
+		System.out.println("SCENARIO 1: Oracle's code = " + diff2 + "; Our version = " + diff1);
+		
+		/** Scenario 2: call the method only with numbers not divisible by 4  */
+		b1 = new byte[1];
+		b2 = new byte[2];
+		byte b3[] = new byte[3];
+		t1 = System.currentTimeMillis();
+		for (int i = 0; i < NO_REPETITIONS; i++) {
+			if (i % 3 == 0) {
+				mt1.nextBytes(b1);
+			} if (i % 3 == 1) {
+				mt1.nextBytes(b2);
+			} else {
+				mt1.nextBytes(b3);
+			}
+		}
+		t2 = System.currentTimeMillis();
+		diff1 = t2 - t1;
+		t2 = System.currentTimeMillis();
+		for (int i = 0; i < NO_REPETITIONS; i++) {
+			if (i % 3 == 0) {
+				mt2.nextBytes(b1);
+			} if (i % 3 == 1) {
+				mt2.nextBytes(b2);
+			} else {
+				mt2.nextBytes(b3);
+			}
+		}
+		t2 = System.currentTimeMillis();
+		diff2 = t2 - t1;
+		System.out.println("SCENARIO 2: Oracle's code = " + diff2 + "; Our version = " + diff1);
 	}
 	
 }
