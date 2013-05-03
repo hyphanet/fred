@@ -95,8 +95,11 @@ public class NewPacketFormat implements PacketFormat {
 	
 	private long timeLastSentPacket;
 	private long timeLastSentPayload;
+	
+	private final boolean testingVMDisableSymmetricCrypto;
 
 	public NewPacketFormat(BasePeerNode pn, int ourInitialMsgID, int theirInitialMsgID) {
+		this.testingVMDisableSymmetricCrypto = NodeStarter.testingVMDisableSymmetricCrypto();
 		this.pn = pn;
 
 		startedByPrio = new ArrayList<HashMap<Integer, MessageWrapper>>(DMT.NUM_PRIORITIES);
@@ -319,7 +322,7 @@ public class NewPacketFormat implements PacketFormat {
 
 			int seqNum = keyContext.watchListOffset;
 			for(int i = 0; i < keyContext.seqNumWatchList.length; i++) {
-				keyContext.seqNumWatchList[i] = NewPacketFormat.encryptSequenceNumber(seqNum++, sessionKey);
+				keyContext.seqNumWatchList[i] = encryptSequenceNumber(seqNum++, sessionKey);
 				if(seqNum < 0) seqNum = 0;
 			}
 		}
@@ -380,24 +383,31 @@ public class NewPacketFormat implements PacketFormat {
 
 	/** Must NOT modify buf contents. */
 	private NPFPacket decipherFromSeqnum(byte[] buf, int offset, int length, SessionKey sessionKey, int sequenceNumber) {
-		BlockCipher ivCipher = sessionKey.ivCipher;
 
-		byte[] IV = new byte[ivCipher.getBlockSize() / 8];
-		System.arraycopy(sessionKey.ivNonce, 0, IV, 0, IV.length);
-		IV[IV.length - 4] = (byte) (sequenceNumber >>> 24);
-		IV[IV.length - 3] = (byte) (sequenceNumber >>> 16);
-		IV[IV.length - 2] = (byte) (sequenceNumber >>> 8);
-		IV[IV.length - 1] = (byte) (sequenceNumber);
-
-		ivCipher.encipher(IV, IV);
-
-		byte[] payload = Arrays.copyOfRange(buf, offset + hmacLength, offset + length);
-		byte[] hash = Arrays.copyOfRange(buf, offset, offset + hmacLength);
-
-		if(!HMAC.verifyWithSHA256(sessionKey.hmacKey, payload, hash)) return null;
-
-		PCFBMode payloadCipher = PCFBMode.create(sessionKey.incommingCipher, IV);
-		payloadCipher.blockDecipher(payload, 0, payload.length);
+		byte[] payload;
+		if(testingVMDisableSymmetricCrypto) {
+			payload = Arrays.copyOfRange(buf, offset + hmacLength, offset + length);
+		} else {
+			
+			BlockCipher ivCipher = sessionKey.ivCipher;
+			
+			byte[] IV = new byte[ivCipher.getBlockSize() / 8];
+			System.arraycopy(sessionKey.ivNonce, 0, IV, 0, IV.length);
+			IV[IV.length - 4] = (byte) (sequenceNumber >>> 24);
+			IV[IV.length - 3] = (byte) (sequenceNumber >>> 16);
+			IV[IV.length - 2] = (byte) (sequenceNumber >>> 8);
+			IV[IV.length - 1] = (byte) (sequenceNumber);
+			
+			ivCipher.encipher(IV, IV);
+			
+			payload = Arrays.copyOfRange(buf, offset + hmacLength, offset + length);
+			byte[] hash = Arrays.copyOfRange(buf, offset, offset + hmacLength);
+			
+			if(!HMAC.verifyWithSHA256(sessionKey.hmacKey, payload, hash)) return null;
+			
+			PCFBMode payloadCipher = PCFBMode.create(sessionKey.incommingCipher, IV);
+			payloadCipher.blockDecipher(payload, 0, payload.length);
+		}
 
 		NPFPacket p = NPFPacket.create(payload, pn);
 
@@ -418,13 +428,20 @@ public class NewPacketFormat implements PacketFormat {
 		long halfValue = (long) Math.pow(2, serialBits - 1);
 		return (((i1 < i2) && ((i2 - i1) > halfValue)) || ((i1 > i2) && (i1 - i2 < halfValue)));
 	}
+	
+	byte[] encryptSequenceNumber(int seqNum, SessionKey sessionKey) {
+		return encryptSequenceNumber(seqNum, sessionKey, testingVMDisableSymmetricCrypto);
+	}
 
-	static byte[] encryptSequenceNumber(int seqNum, SessionKey sessionKey) {
+	static byte[] encryptSequenceNumber(int seqNum, SessionKey sessionKey, boolean testingVMDisableSymmetricCrypto) {
 		byte[] seqNumBytes = new byte[4];
 		seqNumBytes[0] = (byte) (seqNum >>> 24);
 		seqNumBytes[1] = (byte) (seqNum >>> 16);
 		seqNumBytes[2] = (byte) (seqNum >>> 8);
 		seqNumBytes[3] = (byte) (seqNum);
+		
+		if(testingVMDisableSymmetricCrypto)
+			return seqNumBytes;
 
 		BlockCipher ivCipher = sessionKey.ivCipher;
 
@@ -494,18 +511,19 @@ public class NewPacketFormat implements PacketFormat {
 		System.arraycopy(sessionKey.ivNonce, 0, IV, 0, IV.length);
 		System.arraycopy(data, hmacLength, IV, IV.length - 4, 4);
 
-		ivCipher.encipher(IV, IV);
+		if(!testingVMDisableSymmetricCrypto) {
+			ivCipher.encipher(IV, IV);
+			PCFBMode payloadCipher = PCFBMode.create(sessionKey.outgoingCipher, IV);
+			payloadCipher.blockEncipher(data, hmacLength, paddedLen - hmacLength);
+			
+			//Add hash
+			byte[] text = new byte[paddedLen - hmacLength];
+			System.arraycopy(data, hmacLength, text, 0, text.length);
 
-		PCFBMode payloadCipher = PCFBMode.create(sessionKey.outgoingCipher, IV);
-		payloadCipher.blockEncipher(data, hmacLength, paddedLen - hmacLength);
+			byte[] hash = HMAC.macWithSHA256(sessionKey.hmacKey, text, hmacLength);
 
-		//Add hash
-		byte[] text = new byte[paddedLen - hmacLength];
-		System.arraycopy(data, hmacLength, text, 0, text.length);
-
-		byte[] hash = HMAC.macWithSHA256(sessionKey.hmacKey, text, hmacLength);
-
-		System.arraycopy(hash, 0, data, 0, hmacLength);
+			System.arraycopy(hash, 0, data, 0, hmacLength);
+		}
 
 		try {
 			if(logMINOR) {

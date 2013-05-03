@@ -37,6 +37,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
 	static final boolean ENABLE_SWAPPING = false;
 	static final boolean ENABLE_SWAP_QUEUEING = false;
 	static final boolean ENABLE_FOAF = true;
+	static final boolean DISABLE_SYMMETRIC_CRYPTO = true;
 	
 	public static int DARKNET_PORT_BASE = RealNodeRequestInsertTest.DARKNET_PORT_END;
 	public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
@@ -52,7 +53,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
 		}
 		wd.mkdir();
 		//NOTE: globalTestInit returns in ignored random source
-		NodeStarter.globalTestInit(dir, false, LogLevel.ERROR, "", true);
+		NodeStarter.globalTestInit(dir, false, LogLevel.ERROR, "", true, DISABLE_SYMMETRIC_CRYPTO);
 		// Make the network reproducible so we can easily compare different routing options by specifying a seed.
 		DummyRandomSource random = new DummyRandomSource(3142);
 		//DiffieHellman.init(random);

@@ -56,6 +56,7 @@ public class NodeStarter implements WrapperListener {
 
 	private static boolean isTestingVM;
 	private static boolean isStarted;
+	private static boolean testingVMDisableSymmetricCrypto;
 
 	/** If false, this is some sort of multi-node testing VM */
 	public synchronized static boolean isTestingVM() {
@@ -263,16 +264,22 @@ public class NodeStarter implements WrapperListener {
 
 	static SemiOrderedShutdownHook shutdownHook;
 
+	public static RandomSource globalTestInit(String testName, boolean enablePlug, LogLevel logThreshold, String details, boolean noDNS) throws InvalidThresholdException {
+		return globalTestInit(testName, enablePlug, logThreshold, details, noDNS, false);
+	}
+	
 	/**
 	 * VM-specific init.
 	 * Not Node-specific; many nodes may be created later.
 	 * @param testName The name of the test instance.
+	 * @param disableSymmetricCrypto 
 	 */
-	public static RandomSource globalTestInit(String testName, boolean enablePlug, LogLevel logThreshold, String details, boolean noDNS) throws InvalidThresholdException {
+	public static RandomSource globalTestInit(String testName, boolean enablePlug, LogLevel logThreshold, String details, boolean noDNS, boolean disableSymmetricCrypto) throws InvalidThresholdException {
 		synchronized(NodeStarter.class) {
 			if(isStarted) throw new IllegalStateException();
 			isStarted = true;
 			isTestingVM = true;
+			testingVMDisableSymmetricCrypto = disableSymmetricCrypto;
 		}
 
 		File dir = new File(testName);
@@ -491,5 +498,18 @@ public class NodeStarter implements WrapperListener {
 			}
 			return maxMemory;
 		}
+	}
+	
+	public synchronized static boolean testingVMDisableSymmetricCrypto() {
+		if(isTestingVM()) return testingVMDisableSymmetricCrypto;
+		return false;
+	}
+
+	public static synchronized void startTest(boolean setTesting, boolean noCrypto) {
+		if(isStarted) return;
+		isStarted = true;
+		isTestingVM = setTesting;
+		if(isTestingVM)
+			testingVMDisableSymmetricCrypto = noCrypto;
 	}
 }

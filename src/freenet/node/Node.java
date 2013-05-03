@@ -62,6 +62,7 @@ import freenet.config.EnumerableOptionCallback;
 import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
+import freenet.config.NullBooleanCallback;
 import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
 import freenet.crypt.DSAPublicKey;
@@ -491,7 +492,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	/** Config object for the whole node. */
 	public final PersistentConfig config;
-
+	
 	// Static stuff related to logger
 
 	/** Directory to log to */

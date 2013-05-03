@@ -20,6 +20,7 @@ public class NewPacketFormatTest extends TestCase {
 		// Because we don't call maybeSendPacket, the packet sent times are not updated,
 		// so lets turn off the keepalives.
 		NewPacketFormat.DO_KEEPALIVES = false;
+		NodeStarter.startTest(false, false);
 	}
 	
 	public void testEmptyCreation() throws BlockedTooLongException {
@@ -356,7 +357,7 @@ public class NewPacketFormatTest extends TestCase {
 
 		SessionKey sessionKey = new SessionKey(null, null, null, incommingCipher, null, ivCipher, ivNonce, null, null, -1);
 
-		byte[] encrypted = NewPacketFormat.encryptSequenceNumber(0, sessionKey);
+		byte[] encrypted = NewPacketFormat.encryptSequenceNumber(0, sessionKey, false);
 
 		/* This result has not been checked, but it was the output when
 		 * this test was added and we are (in this test) only
