@@ -1105,7 +1105,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		// At that point we don't know if it's "him"; let's check it out
 		byte[] locallyExpectedExponentials =  assembleDHParams(hisExponential, pn.peerCryptoGroup);
 
-		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, SHA256.digest(locallyExpectedExponentials)), false)) {
+		if((!NodeStarter.testingVMDisableSymmetricCrypto()) && 
+				!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, SHA256.digest(locallyExpectedExponentials)), false)) {
 			Logger.error(this, "The signature verification has failed in JFK(2)!! "+pn.getPeer());
 			return;
 		}
@@ -1229,18 +1230,25 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				// Possible this is a replay or severely delayed? We don't keep every exponential we ever use.
 				return;
 			}
-			computedExponential = ctx.getHMACKey(_hisExponential);
+			if(NodeStarter.testingVMDisableSymmetricCrypto())
+				computedExponential = new byte[32];
+			else
+				computedExponential = ctx.getHMACKey(_hisExponential);
         } else {
-            ECPublicKey initiatorKey = ECDH.getPublicKey(initiatorExponential, ecdhCurveToUse);
-            ECPublicKey responderKey = ECDH.getPublicKey(responderExponential, ecdhCurveToUse);
-            ECDHLightContext ctx = findECDHContextByPubKey(responderKey);
-            if (ctx == null) {
-                Logger.error(this, "WTF? the HMAC verified but we don't know about that exponential! SHOULDN'T HAPPEN! - JFK3 - "+pn);
-                // Possible this is a replay or severely delayed? We don't keep
-                // every exponential we ever use.
-                return;
-            }
-            computedExponential = ctx.getHMACKey(initiatorKey).getEncoded();
+			if(NodeStarter.testingVMDisableSymmetricCrypto())
+				computedExponential = new byte[32];
+			else {
+				ECPublicKey initiatorKey = ECDH.getPublicKey(initiatorExponential, ecdhCurveToUse);
+				ECPublicKey responderKey = ECDH.getPublicKey(responderExponential, ecdhCurveToUse);
+				ECDHLightContext ctx = findECDHContextByPubKey(responderKey);
+				if (ctx == null) {
+					Logger.error(this, "WTF? the HMAC verified but we don't know about that exponential! SHOULDN'T HAPPEN! - JFK3 - "+pn);
+					// Possible this is a replay or severely delayed? We don't keep
+					// every exponential we ever use.
+					return;
+				}
+				computedExponential = ctx.getHMACKey(initiatorKey).getEncoded();
+			}
         }
 		if(logDEBUG) Logger.debug(this, "The shared Master secret is : "+HexUtil.bytesToHex(computedExponential) +" for " + pn);
 		
@@ -1735,11 +1743,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 
 		byte[] computedExponential;
-		if (negType < 8 ) { // Legacy DH
-		    NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
-		    computedExponential= ((DiffieHellmanLightContext)ctx).getHMACKey(_hisExponential);
-		}else {
-		    computedExponential = ((ECDHLightContext)ctx).getHMACKey(ECDH.getPublicKey(hisExponential, ecdhCurveToUse)).getEncoded();
+		if(NodeStarter.testingVMDisableSymmetricCrypto()) {
+			computedExponential = new byte[32];
+		} else {
+			if (negType < 8 ) { // Legacy DH
+				NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
+				computedExponential= ((DiffieHellmanLightContext)ctx).getHMACKey(_hisExponential);
+			}else {
+				computedExponential = ((ECDHLightContext)ctx).getHMACKey(ECDH.getPublicKey(hisExponential, ecdhCurveToUse)).getEncoded();
+			}
 		}
 		if(logDEBUG) Logger.debug(this, "The shared Master secret is : "+HexUtil.bytesToHex(computedExponential)+ " for " + pn);
 		/* 0 is the outgoing key for the initiator, 7 for the responder */
@@ -2254,6 +2266,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
             }
 
             ecdhContextFIFO.addLast(_genECDHLightContext());
+            if(NodeStarter.testingVMDisableSymmetricCrypto()) return; // Just add one.
         }
     }	
 
@@ -2300,7 +2313,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
             result = ecdhContextFIFO.pollFirst();
             
             // Shall we replace one element of the queue ?
-            if((jfkECDHLastGenerationTimestamp + DH_GENERATION_INTERVAL) < now) {
+            if(((!NodeStarter.testingVMDisableSymmetricCrypto()) && (jfkECDHLastGenerationTimestamp + DH_GENERATION_INTERVAL) < now)) {
                 jfkECDHLastGenerationTimestamp = now;
                 _fillJFKECDHFIFOOffThread();
             }
