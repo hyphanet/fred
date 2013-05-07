@@ -164,7 +164,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		if(ctx.ignoreUSKDatehints) {
 			if(logMINOR) Logger.minor(this, "Inserted to edition "+edition);
 			boolean cbActive = true;
-			if(!container.ext().isActive(cb)) {
+			if(persistent && !container.ext().isActive(cb)) {
 				cbActive = false;
 				container.activate(cb, 1);
 			}
