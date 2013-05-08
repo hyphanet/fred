@@ -1103,7 +1103,7 @@ public class PluginManager {
 		addOfficialPlugin("Spider", "index", false, 50, false, new FreenetURI("CHK@K4Sawgmq9dqvySTrrvcCnXRLtKuSbHK9DxBNTqVZfKQ,s~6SIL9X9FsFA7yNmB4MF7DUEMMuz1VVht1CKvOPApE,AAMC--8/Spider.jar"), false, false, true);
 		addOfficialPlugin("Freetalk", "communication", false, 13, true, new FreenetURI("CHK@zZDy-KwoZHYy4ZRpK9ZNNQb1vyespIIi9b-RPIyRM0k,EDHJbQpLtGSW4WHA23UHt6MpcoAp--dR7zmX-SGzzis,AAMC--8/Freetalk.jar"), false, false, true);
 		addOfficialPlugin("WebOfTrust", "communication", false, 12, true, new FreenetURI("CHK@Z6jitqIR4tJc9gOXih5cbTJxwnThweDvE5e-pTzetGM,vJfK3hmt06b-dF0yIbovPZlCUqTdgZ5-xsRzcslq1KU,AAIC--8/WebOfTrust.jar"), false, false, false); // from 35617f66afba287d98320843a521a9b395a5fbb3 (WoT build fix for headless)
-		addOfficialPlugin("FlogHelper", "communication", false, 28, true, new FreenetURI("CHK@VnLCVZjapukeSY~H3FkNNlXnp2Yfg8GNwHyh~Xx2H~0,0EBr1kWcsPpnsgeqeet8JMeh-2g8Lni6LexEw9S9f6g,AAMC--8/FlogHelper.jar"), false, false, false);
+		addOfficialPlugin("FlogHelper", "communication", false, 29, true, new FreenetURI("CHK@deSqrIbHCOtLe6n1HdvhCprm-mAm9Fo7dxN9fGcGHmU,mqT5nMqNftPnoYd0JEuftSP3yInvZxYeF2PQMIJeerU,AAMC--8/FlogHelper.jar"), false, false, false);
 		} catch (MalformedURLException e) {
 			throw new Error("Malformed hardcoded URL: "+e, e);
 		}
