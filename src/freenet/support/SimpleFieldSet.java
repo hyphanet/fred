@@ -101,8 +101,12 @@ public class SimpleFieldSet {
     }
 
     public SimpleFieldSet(LineReader lis, int maxLineLength, int lineBufferSize, boolean utf8OrIso88591, boolean allowMultiple, boolean shortLived) throws IOException {
+    	this(lis, maxLineLength, lineBufferSize, utf8OrIso88591, allowMultiple, shortLived, false);
+    }
+
+    public SimpleFieldSet(LineReader lis, int maxLineLength, int lineBufferSize, boolean utf8OrIso88591, boolean allowMultiple, boolean shortLived, boolean allowBase64) throws IOException {
     	this(shortLived);
-    	read(lis, maxLineLength, lineBufferSize, utf8OrIso88591, allowMultiple, false);
+    	read(lis, maxLineLength, lineBufferSize, utf8OrIso88591, allowMultiple, allowBase64);
     }
 
     /**
@@ -433,16 +437,7 @@ public class SimpleFieldSet {
     	for (Map.Entry<String, String> entry: values.entrySet()) {
 			String key = entry.getKey();
 			String value = entry.getValue();
-            w.write(prefix);
-            w.write(key);
-            w.write(KEYVALUE_SEPARATOR_CHAR);
-            if(useBase64 && shouldBase64(value)) {
-            	w.write(KEYVALUE_SEPARATOR_CHAR);
-            	w.write(Base64.encodeUTF8(value));
-            } else {
-            	w.write(value);
-            }
-            w.write('\n');
+			writeValue(w, key, value, prefix, useBase64);
     	}
     	if(subsets != null) {
     		for (Map.Entry<String, SimpleFieldSet> entry: subsets.entrySet()) {
@@ -462,7 +457,20 @@ public class SimpleFieldSet {
     	}
     }
 
-    private boolean shouldBase64(String value) {
+    private void writeValue(Writer w, String key, String value, String prefix, boolean useBase64) throws IOException {
+        w.write(prefix);
+        w.write(key);
+        w.write(KEYVALUE_SEPARATOR_CHAR);
+        if(useBase64 && shouldBase64(value)) {
+        	w.write(KEYVALUE_SEPARATOR_CHAR);
+        	w.write(Base64.encodeUTF8(value));
+        } else {
+        	w.write(value);
+        }
+        w.write('\n');
+	}
+
+	private boolean shouldBase64(String value) {
     	for(int i=0;i<value.length();i++) {
     		char c = value.charAt(i);
     		if(c == SimpleFieldSet.KEYVALUE_SEPARATOR_CHAR) return true;
@@ -475,10 +483,10 @@ public class SimpleFieldSet {
 	}
 
 	public void writeToOrdered(Writer w) throws IOException {
-		writeToOrdered(w, "", false);
+		writeToOrdered(w, "", false, false);
 	}
 
-    private synchronized void writeToOrdered(Writer w, String prefix, boolean noEndMarker) throws IOException {
+    private synchronized void writeToOrdered(Writer w, String prefix, boolean noEndMarker, boolean useBase64) throws IOException {
 		writeHeader(w);
     	String[] keys = values.keySet().toArray(new String[values.size()]);
     	int i=0;
@@ -487,8 +495,9 @@ public class SimpleFieldSet {
     	Arrays.sort(keys);
 
     	// Output
-    	for(i=0; i < keys.length; i++)
-    		w.write(prefix+keys[i]+KEYVALUE_SEPARATOR_CHAR+get(keys[i])+'\n');
+    	for(i=0; i < keys.length; i++) {
+    		writeValue(w, keys[i], get(keys[i]), prefix, false);
+    	}
 
     	if(subsets != null) {
     		String[] orderedPrefixes = subsets.keySet().toArray(new String[subsets.size()]);
@@ -498,7 +507,7 @@ public class SimpleFieldSet {
         	for(i=0; i < orderedPrefixes.length; i++) {
     			SimpleFieldSet subset = subset(orderedPrefixes[i]);
     			if(subset == null) throw new NullPointerException();
-    			subset.writeToOrdered(w, prefix+orderedPrefixes[i]+MULTI_LEVEL_CHAR, true);
+    			subset.writeToOrdered(w, prefix+orderedPrefixes[i]+MULTI_LEVEL_CHAR, true, useBase64);
     		}
     	}
 
