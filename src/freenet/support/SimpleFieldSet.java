@@ -35,7 +35,14 @@ import freenet.support.io.Readers;
  * @author amphibian
  *
  * Very very simple FieldSet type thing, which uses the standard
- * Java facilities.
+ * Java facilities. Should always be written as UTF-8. Simpler than Properties.
+ * 
+ * DETAILS:
+ * <key>=<value> 
+ * Key is split into a tree via "."'s.
+ * Value is a string.
+ * Conversion methods are provided for most key types, one notable issue is arrays of string, 
+ * which are separated by ";".
  */
 public class SimpleFieldSet {
 
