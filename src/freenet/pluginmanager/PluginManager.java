@@ -1440,7 +1440,8 @@ public class PluginManager {
 				Logger.error(this, "could not find plugin class", cnfe1);
 				pluginFile.delete();
 				if(!downloaded) continue;
-				throw new PluginNotFoundException("could not find plugin class", cnfe1);
+				throw new PluginNotFoundException(
+					"could not find plugin class: \"" + cnfe1.getMessage() + "\"", cnfe1);
 			} catch(InstantiationException ie1) {
 				Logger.error(this, "could not instantiate plugin", ie1);
 				pluginFile.delete();
