@@ -16,4 +16,5 @@
 *.iws
 .*
 *~
+\#*\#
 /override.properties
