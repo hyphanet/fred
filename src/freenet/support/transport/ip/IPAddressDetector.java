@@ -124,21 +124,22 @@ public class IPAddressDetector implements Runnable {
 						this,
 						"Scanning NetworkInterface " + iface.getDisplayName());
 				int ifaceMTU = 0;
-				try {
-				     ifaceMTU = iface.getMTU(); //MTU is retrieved directly instead of using
-				                                //a plugin
-				     if (logDEBUG)
-					 Logger.debug(
-						      this,
-						      "MTU = " + ifaceMTU);
-				} catch (SocketException e) {
-				    Logger.error(
-						 this,
-						 "SocketException trying to retrieve the MTU NetworkInterfaces: "+e,
-						 e);
-				    addrs.add(oldDetect());
-				    old = true;
-				}
+                try {
+                    if (!iface.isLoopback()) {
+                        ifaceMTU = iface.getMTU(); //MTU is retrieved directly instead of using
+                        //a plugin
+                        if (logDEBUG)
+                            Logger.debug(
+                                         this,
+                                         "MTU = " + ifaceMTU);
+                    }
+                } catch (SocketException e) {
+                    Logger.error(
+                                this,
+                                 "SocketException trying to retrieve the MTU NetworkInterfaces: "+e,
+                                 e);
+                    ifaceMTU = 0; //code for ignoring this MTU
+                }
 				Enumeration<InetAddress> ee = iface.getInetAddresses();
 				while (ee.hasMoreElements()) {
 				    
