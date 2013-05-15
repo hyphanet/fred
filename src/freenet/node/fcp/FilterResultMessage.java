@@ -31,26 +31,6 @@ public class FilterResultMessage extends DataCarryingMessage {
 			this.bucket = bucket;
 		}
 	}
-	
-	public FilterResultMessage(SimpleFieldSet fs) throws MessageInvalidException {
-		try {
-			identifier = fs.getString(IDENTIFIER);
-		} catch (FSParseException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Must contain an " + IDENTIFIER + " field", null, isGlobal());
-		}
-		charset = fs.get("Charset");
-		mimeType = fs.get("MimeType");
-		unsafeContentType = fs.getBoolean("UnsafeContentType", false);
-		String dl = fs.get("DataLength");
-		if (dl == null) {
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Must contain a DataLength field", null, isGlobal());
-		}
-		try {
-			dataLength = fs.getLong("DataLength");
-		} catch (FSParseException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "DataLength field must be a long", null, isGlobal());
-		}
-	}
 
 	@Override
 	String getIdentifier() {
