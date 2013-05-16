@@ -79,9 +79,10 @@ public class FilterMessage extends DataCarryingMessage {
 		} catch (IllegalArgumentException e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Illegal DataSource value", identifier, false);
 		}
-		mimeType = fs.get("MimeType");
+		String inputMimeType = fs.get("MimeType");
 		filename = fs.get("Filename");
 		if (dataSource == DataSource.DIRECT) {
+			mimeType = inputMimeType;
 			if (mimeType == null) {
 				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Must contain a MimeType field", identifier, false);
 			}
@@ -107,6 +108,14 @@ public class FilterMessage extends DataCarryingMessage {
 			}
 			if (!file.canRead()) {
 				throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_READ_FILE, null, identifier, false);
+			}
+			if (inputMimeType != null) {
+				mimeType = inputMimeType;
+			} else {
+				mimeType = bestGuessMimeType(filename);
+				if (mimeType == null) {
+					throw new MessageInvalidException(ProtocolErrorMessage.BAD_MIME_TYPE, "Could not determine MIME type from filename", identifier, false);
+				}
 			}
 			dataLength = -1;
 			this.bucket = new FileBucket(file, true, false, false, false, false);
@@ -192,18 +201,17 @@ public class FilterMessage extends DataCarryingMessage {
 			Logger.error(this, "Inexplicable URI error", e);
 			throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR, e.toString(), identifier, false);
 		}
-		String filterMimeType = bestGuessMimeType();
 		//TODO: check operation, once ContentFilter supports write filtering
-		return ContentFilter.filter(input, output, filterMimeType, fakeUri, null, null, null, clientContext.linkFilterExceptionProvider);
+		return ContentFilter.filter(input, output, mimeType, fakeUri, null, null, null, clientContext.linkFilterExceptionProvider);
 	}
 	
-	private String bestGuessMimeType()
+	private String bestGuessMimeType(String filename)
 	{
-		String filterMimeType = mimeType;
-		if (filterMimeType == null && filename != null) {
-			filterMimeType = DefaultMIMETypes.guessMIMEType(filename, false);
+		String guessedMimeType = null;
+		if (filename != null) {
+			guessedMimeType = DefaultMIMETypes.guessMIMEType(filename, true);
 		}
-		return filterMimeType;
+		return guessedMimeType;
 	}
 
 	@Override
