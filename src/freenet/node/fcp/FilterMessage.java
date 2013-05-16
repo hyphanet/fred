@@ -55,63 +55,63 @@ public class FilterMessage extends DataCarryingMessage {
 		try {
 			identifier = fs.getString(IDENTIFIER);
 		} catch (FSParseException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Must contain an " + IDENTIFIER + " field", getIdentifier(), isGlobal());
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Must contain an " + IDENTIFIER + " field", null, false);
 		}
 		String op;
 		try {
 			op = fs.getString("Operation");
 		} catch (FSParseException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Must contain an Operation field", getIdentifier(), isGlobal());
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Must contain an Operation field", identifier, false);
 		}
 		try {
 			operation = FilterOperation.valueOf(op);
 		} catch (IllegalArgumentException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Illegal Operation value", getIdentifier(), isGlobal());
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Illegal Operation value", identifier, false);
 		}
 		String ds;
 		try {
 			ds = fs.getString("DataSource");
 		} catch (FSParseException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Must contain a DataSource field", getIdentifier(), isGlobal());
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Must contain a DataSource field", identifier, false);
 		}
 		try {
 			dataSource = DataSource.valueOf(ds);
 		} catch (IllegalArgumentException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Illegal DataSource value", getIdentifier(), isGlobal());
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Illegal DataSource value", identifier, false);
 		}
 		mimeType = fs.get("MimeType");
 		filename = fs.get("Filename");
 		if (dataSource == DataSource.DIRECT) {
 			if (mimeType == null) {
-				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Must contain a MimeType field", getIdentifier(), isGlobal());
+				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Must contain a MimeType field", identifier, false);
 			}
 			String dl = fs.get("DataLength");
 			if (dl == null) {
-				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Must contain a DataLength field", getIdentifier(), isGlobal());
+				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Must contain a DataLength field", identifier, false);
 			}
 			try {
 				dataLength = fs.getLong("DataLength");
 			} catch (FSParseException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "DataLength field must be a long", getIdentifier(), isGlobal());
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "DataLength field must be a long", identifier, false);
 			}
 		} else if (dataSource == DataSource.DISK) {
 			if (filename == null) {
-				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Must contain a Filename field", getIdentifier(), isGlobal());
+				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Must contain a Filename field", identifier, false);
 			}
 			File file = new File(filename);
 			if (!file.exists()) {
-				throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, null, getIdentifier(), isGlobal());
+				throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, null, identifier, false);
 			}
 			if (!file.isFile()) {
-				throw new MessageInvalidException(ProtocolErrorMessage.NOT_A_FILE_ERROR, null, getIdentifier(), isGlobal());
+				throw new MessageInvalidException(ProtocolErrorMessage.NOT_A_FILE_ERROR, null, identifier, false);
 			}
 			if (!file.canRead()) {
-				throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_READ_FILE, null, getIdentifier(), isGlobal());
+				throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_READ_FILE, null, identifier, false);
 			}
 			dataLength = -1;
 			this.bucket = new FileBucket(file, true, false, false, false, false);
 		} else {
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Illegal DataSource value", getIdentifier(), isGlobal());
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Illegal DataSource value", identifier, false);
 		}
 		this.bf = bf;
 	}
@@ -151,14 +151,14 @@ public class FilterMessage extends DataCarryingMessage {
 	@Override
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		if (bucket == null) {
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Must contain data", getIdentifier(), isGlobal());
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Must contain data", identifier, false);
 		}
 		Bucket resultBucket;
 		try {
 			resultBucket = bf.makeBucket(-1);
 		} catch (IOException e) {
 			Logger.error(this, "Failed to create temporary bucket", e);
-			throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR, e.toString(), getIdentifier(), isGlobal());
+			throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR, e.toString(), identifier, false);
 		}
 		String resultCharset = null;
 		String resultMimeType = null;
@@ -175,12 +175,12 @@ public class FilterMessage extends DataCarryingMessage {
 			unsafe = true;
 		} catch (IOException e) {
 			Logger.error(this, "IO error running content filter", e);
-			throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR, e.toString(), getIdentifier(), isGlobal());
+			throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR, e.toString(), identifier, false);
 		} finally {
 			Closer.close(input);
 			Closer.close(output);
 		}
-		FilterResultMessage response = new FilterResultMessage(getIdentifier(), resultCharset, resultMimeType, unsafe, resultBucket);
+		FilterResultMessage response = new FilterResultMessage(identifier, resultCharset, resultMimeType, unsafe, resultBucket);
 		handler.outputHandler.queue(response);
 	}
 	
@@ -190,7 +190,7 @@ public class FilterMessage extends DataCarryingMessage {
 			fakeUri = new URI("http://127.0.0.1:8888/");
 		} catch (URISyntaxException e) {
 			Logger.error(this, "Inexplicable URI error", e);
-			throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR, e.toString(), getIdentifier(), isGlobal());
+			throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR, e.toString(), identifier, false);
 		}
 		String filterMimeType = bestGuessMimeType();
 		//TODO: check operation, once ContentFilter supports write filtering
