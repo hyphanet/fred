@@ -123,10 +123,33 @@ public class IPAddressDetector implements Runnable {
 					Logger.debug(
 						this,
 						"Scanning NetworkInterface " + iface.getDisplayName());
+				int ifaceMTU = 0;
+                try {
+                    if (!iface.isLoopback()) {
+                        ifaceMTU = iface.getMTU(); //MTU is retrieved directly instead of using
+                        //a plugin
+                        if (logDEBUG)
+                            Logger.debug(
+                                         this,
+                                         "MTU = " + ifaceMTU);
+                    }
+                } catch (SocketException e) {
+                    Logger.error(
+                                this,
+                                 "SocketException trying to retrieve the MTU NetworkInterfaces: "+e,
+                                 e);
+                    ifaceMTU = 0; //code for ignoring this MTU
+                }
 				Enumeration<InetAddress> ee = iface.getInetAddresses();
 				while (ee.hasMoreElements()) {
-
+				    
 					InetAddress addr = ee.nextElement();
+					//telling the NodeIPDetector object about the MTU only if MTU != 0
+					// MTU = 0 means error in retrieving it
+					//FIXME: We should(n't) report MTU for local IPs
+					if (ifaceMTU > 0)
+					    detector.reportMTU(ifaceMTU, addr instanceof Inet6Address);
+
 					if ((addr instanceof Inet6Address) && !(addr.isLinkLocalAddress() || IPUtil.isSiteLocalAddress(addr))) {
 						try {
 							// strip scope_id from global addresses
