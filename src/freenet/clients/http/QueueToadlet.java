@@ -293,6 +293,35 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 				writePermanentRedirect(ctx, "Done", path());
 				return;
+			} else if(request.isPartSet("remove_finished_uploads_request") && (request.getPartAsStringFailsafe("remove_finished_uploads_request", 128).length() > 0)) {
+				String identifier = "";
+				try {
+					RequestStatus[] reqs;
+					reqs = fcp.getGlobalRequests();
+                                        for(RequestStatus r : reqs) {
+						if(r instanceof UploadFileRequestStatus) {
+							UploadFileRequestStatus upload = (UploadFileRequestStatus)r;
+							if(upload.hasSucceeded()) {
+								identifier = upload.getIdentifier();
+								fcp.removeGlobalRequestBlocking(identifier);
+							}
+						}
+					}	
+				} catch (MessageInvalidException e) {
+					this.sendErrorPage(ctx, 200,
+							l10n("failedToRemoveRequest"),
+							l10n("failedToRemove",
+							        new String[]{ "id", "message" },
+							        new String[]{ identifier, e.getMessage()}
+							));
+					return;
+				} catch (DatabaseDisabledException e) {
+					sendPersistenceDisabledError(ctx);
+					return;
+				}
+				writePermanentRedirect(ctx, "Done", path());
+				return;
+				
 			} else if(request.isPartSet("remove_finished_downloads_request") && (request.getPartAsStringFailsafe("remove_finished_downloads_request", 128).length() > 0)) {
 				String identifier = "";
 				try {
@@ -1803,6 +1832,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			deleteDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete_request", l10n("deleteFilesFromTemp") });
 		} else {
 			deleteDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_request", l10n("removeFilesFromList") });
+			if (isUpload) deleteDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_finished_uploads_request", l10n("removeFinishedUploads") });
 		}
 		if(canRestart) {
 			deleteDiv.addChild("br");
