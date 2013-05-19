@@ -1826,13 +1826,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	}
 	
 	/** Create a delete or restart control at the top of a table. It applies to whichever requests are checked in the table below. */
-	private HTMLNode createDeleteControl(PageMaker pageMaker, ToadletContext ctx, boolean isDownloadToTemp, boolean canRestart, boolean disableFilterChecked, boolean isUpload, String mimeType) {
+	private HTMLNode createDeleteControl(PageMaker pageMaker, ToadletContext ctx, boolean isDownloadToTemp, boolean canRestart, boolean disableFilterChecked, boolean isUpload, String mimeType, boolean isCompleted) {
 		HTMLNode deleteDiv = new HTMLNode("div", "class", "request-delete");
 		if(isDownloadToTemp) {
 			deleteDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete_request", l10n("deleteFilesFromTemp") });
 		} else {
 			deleteDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_request", l10n("removeFilesFromList") });
-			if (isUpload) deleteDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_finished_uploads_request", l10n("removeFinishedUploads") });
+			if (isUpload && isCompleted) deleteDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_finished_uploads_request", l10n("removeFinishedUploads") });
 		}
 		if(canRestart) {
 			deleteDiv.addChild("br");
@@ -2148,7 +2148,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		if( isFinishedDiskDownloads ) {
 			form.addChild(createRemoveFinishedDownloadsControl(pageMaker, ctx));
 		} else {
-			form.addChild(createDeleteControl(pageMaker, ctx, isDownloadToTemp, isFailed, isDisableFilterChecked, isUpload, mimeType));
+			form.addChild(createDeleteControl(pageMaker, ctx, isDownloadToTemp, isFailed, isDisableFilterChecked, isUpload, mimeType, isCompleted));
 		}
 		if(hasFriends && !(isUpload && isFailed))
 			form.addChild(createRecommendControl(pageMaker, ctx));
