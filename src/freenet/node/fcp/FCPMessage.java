@@ -151,6 +151,8 @@ public abstract class FCPMessage {
 		if(name.equals(WatchGlobal.NAME))
 			return new WatchGlobal(fs);
 		if(name.equals(ProbeRequest.NAME)) return new ProbeRequest(fs);
+		if(name.equals(FilterMessage.NAME))
+			return new FilterMessage(fs, bfTemp);
 		if(name.equals("Void"))
 			return null;
 
