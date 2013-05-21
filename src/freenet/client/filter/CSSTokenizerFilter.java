@@ -1834,7 +1834,13 @@ class CSSTokenizerFilter {
 
 			if(x==-1)
 			{
-				break;
+				if(currentState == STATE3 && c != ';' && !propertyName.isEmpty() && propertyValue.isEmpty()) {
+					// Finish off the current property.
+					// Common for e.g. HTML: style='background-image:url(blah)'
+					x = ';';
+				} else {
+					break;
+				}
 			}
 			if(x == (char) 0xFEFF) {
 				if(bomPossible) {

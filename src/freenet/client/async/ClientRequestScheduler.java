@@ -31,6 +31,7 @@ import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
+import freenet.node.SendableRequestItemKey;
 import freenet.support.Fields;
 import freenet.support.IdentityHashSet;
 import freenet.support.Logger;
@@ -121,7 +122,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			try {
 				if(!results.hasNext()) break;
 				l = results.next();
-			} catch (IllegalArgumentException e) {
+			} catch (RuntimeException e) {
 				throw new Db4oException("Something is broken: "+e, e);
 				// Allow caller to terminate database.
 				// IllegalArgumentException isn't caught, but here it is exclusively caused by corrupt database and/or database bugs. :(
@@ -343,10 +344,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 					}
 					if(!wereAnyValid) {
-						Logger.normal(this, "No requests valid: "+getters);
+						Logger.normal(this, "No requests valid");
 					}
 				} else {
-					Logger.normal(this, "No valid requests passed in: "+getters);
+					Logger.normal(this, "No valid requests passed in");
 				}
 				if(reg != null)
 					container.delete(reg);
@@ -1066,7 +1067,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	@Override
-	public void removeTransientInsertFetching(SendableInsert insert, Object token) {
+	public void removeTransientInsertFetching(SendableInsert insert, SendableRequestItemKey token) {
 		selector.removeTransientInsertFetching(insert, token);
 		// Must remove here, because blocks selection and therefore creates cooldown cache entries.
 		insert.clearCooldown(null, clientContext, false);
@@ -1149,7 +1150,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	@Override
-	public boolean addTransientInsertFetching(SendableInsert insert, Object token) {
+	public boolean addTransientInsertFetching(SendableInsert insert, SendableRequestItemKey token) {
 		return selector.addTransientInsertFetching(insert, token);
 	}
 	

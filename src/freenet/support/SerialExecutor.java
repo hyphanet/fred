@@ -84,7 +84,14 @@ public class SerialExecutor implements Executor {
 	};
 
 	public SerialExecutor(int priority) {
-		jobs = new LinkedBlockingQueue<Runnable>();
+		this(priority, 0);
+	}
+	
+	public SerialExecutor(int priority, int bound) {
+		if(bound > 0)
+			jobs = new LinkedBlockingQueue<Runnable>(bound);
+		else
+			jobs = new LinkedBlockingQueue<Runnable>();
 		this.priority = priority;
 		this.syncLock = new Object();
 	}
@@ -118,7 +125,7 @@ public class SerialExecutor implements Executor {
 		if (logMINOR)
 			Logger.minor(this, "Running " + jobName + " : " + job + " started=" + threadStarted + " waiting="
 			        + threadWaiting);
-		jobs.add(job);
+		jobs.offer(job);
 
 		synchronized (syncLock) {
 			if (!threadStarted && realExecutor != null)

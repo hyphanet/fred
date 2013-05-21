@@ -61,13 +61,16 @@ public class ArchiveManager {
 		public final short metadataID;
 		public final String[] mimeTypes;
 
+		/** cached values(). Never modify or pass this array to outside code! */
+		private static final ARCHIVE_TYPE[] values = values();
+
 		private ARCHIVE_TYPE(short metadataID, String[] mimeTypes) {
 			this.metadataID = metadataID;
 			this.mimeTypes = mimeTypes;
 		}
 
 		public static boolean isValidMetadataID(short id) {
-			for(ARCHIVE_TYPE current : values())
+			for(ARCHIVE_TYPE current : values)
 				if(id == current.metadataID)
 					return true;
 			return false;
@@ -77,7 +80,7 @@ public class ArchiveManager {
 		 * Is the given MIME type an archive type that we can deal with?
 		 */
 		public static boolean isUsableArchiveType(String type) {
-			for(ARCHIVE_TYPE current : values())
+			for(ARCHIVE_TYPE current : values)
 				for(String ctype : current.mimeTypes)
 					if(ctype.equalsIgnoreCase(type))
 						return true;
@@ -88,7 +91,7 @@ public class ArchiveManager {
 		 * get its archive type number (see the ARCHIVE_ constants in Metadata).
 		 */
 		public static ARCHIVE_TYPE getArchiveType(String type) {
-			for(ARCHIVE_TYPE current : values())
+			for(ARCHIVE_TYPE current : values)
 				for(String ctype : current.mimeTypes)
 					if(ctype.equalsIgnoreCase(type))
 						return current;
@@ -96,7 +99,7 @@ public class ArchiveManager {
 		}
 
 		public static ARCHIVE_TYPE getArchiveType(short type) {
-			for(ARCHIVE_TYPE current : values())
+			for(ARCHIVE_TYPE current : values)
 				if(current.metadataID == type)
 					return current;
 			return null;

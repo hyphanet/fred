@@ -58,6 +58,9 @@ import freenet.support.transport.ip.IPUtil;
  * In particular:
  * - Opennet crypto
  * - LRU connections
+ * 
+ * Both here and in OpennetPeerNode there are lots of dubious heuristics to avoid excessive 
+ * connection churn.
  * @author toad
  */
 public class OpennetManager {
@@ -83,7 +86,8 @@ public class OpennetManager {
 	private final EnumMap<ConnectionType,Long> connectionAttemptsAddedPlentySpace;
 	private final EnumMap<ConnectionType,Long> connectionAttemptsRejectedByPerTypeEnforcement;
 	private final EnumMap<ConnectionType,Long> connectionAttemptsRejectedNoPeersDroppable;
-	/** Number of successful CHK requests since last added a node */
+	/** Number of successful CHK requests since last added a node. All values are incremented on a 
+	 * successful request, but when we add a node, we reset the value for that type of node. */
 	private final EnumMap<ConnectionType,Long> successCount;
 
 	/** Only drop a connection after at least this many successful requests.
@@ -140,9 +144,9 @@ public class OpennetManager {
 	/** Minimum number of peers */
 	public static final int MIN_PEERS_FOR_SCALING = 10;
 	/** Maximum number of peers. */
-	public static final int MAX_PEERS_FOR_SCALING = 40;
+	public static final int MAX_PEERS_FOR_SCALING = 100;
 	/** Maximum number of peers for purposes of FOAF attack/sanity check */
-	public static final int PANIC_MAX_PEERS = 50;
+	public static final int PANIC_MAX_PEERS = 110;
 	/** Stop trying to reconnect to an old-opennet-peer after a month. */
 	public static final long MAX_TIME_ON_OLD_OPENNET_PEERS = 31 * 24 * 60 * 60 * 1000;
 
@@ -165,32 +169,21 @@ public class OpennetManager {
 			new NodeCrypto(node, true, opennetConfig, startupTime, node.enableARKs);
 
 		timeLastDropped = new EnumMap<ConnectionType,Long>(ConnectionType.class);
-		for(ConnectionType c : ConnectionType.values())
-			timeLastDropped.put(c, 0L);
-
 		connectionAttempts = new EnumMap<ConnectionType,Long>(ConnectionType.class);
-		for(ConnectionType c : ConnectionType.values())
-			connectionAttempts.put(c, 0L);
-
 		connectionAttemptsAdded = new EnumMap<ConnectionType,Long>(ConnectionType.class);
-		for(ConnectionType c : ConnectionType.values())
-			connectionAttemptsAdded.put(c, 0L);
-
 		connectionAttemptsAddedPlentySpace = new EnumMap<ConnectionType,Long>(ConnectionType.class);
-		for(ConnectionType c : ConnectionType.values())
-			connectionAttemptsAddedPlentySpace.put(c, 0L);
-
 		connectionAttemptsRejectedByPerTypeEnforcement = new EnumMap<ConnectionType,Long>(ConnectionType.class);
-		for(ConnectionType c : ConnectionType.values())
-			connectionAttemptsRejectedByPerTypeEnforcement.put(c, 0L);
-
 		connectionAttemptsRejectedNoPeersDroppable = new EnumMap<ConnectionType,Long>(ConnectionType.class);
-		for(ConnectionType c : ConnectionType.values())
-			connectionAttemptsRejectedNoPeersDroppable.put(c, 0L);
-
 		successCount = new EnumMap<ConnectionType,Long>(ConnectionType.class);
-		for(ConnectionType c : ConnectionType.values())
+		for(ConnectionType c : ConnectionType.values()) {
+			timeLastDropped.put(c, 0L);
+			connectionAttempts.put(c, 0L);
+			connectionAttemptsAdded.put(c, 0L);
+			connectionAttemptsAddedPlentySpace.put(c, 0L);
+			connectionAttemptsRejectedByPerTypeEnforcement.put(c, 0L);
+			connectionAttemptsRejectedNoPeersDroppable.put(c, 0L);
 			successCount.put(c, 0L);
+		}
 
 		File nodeFile = node.nodeDir().file("opennet-"+crypto.portNumber);
 		File backupNodeFile = node.nodeDir().file("opennet-"+crypto.portNumber+".bak");
@@ -207,39 +200,7 @@ public class OpennetManager {
 		}
 		peersLRU = new LRUQueue<PeerNode>();
 		oldPeers = new LRUQueue<PeerNode>();
-		node.peers.tryReadPeers(node.nodeDir().file("openpeers-"+crypto.portNumber).toString(), crypto, this, true, false);
-		OpennetPeerNode[] nodes = node.peers.getOpennetPeers();
-		Arrays.sort(nodes, new Comparator<OpennetPeerNode>() {
-			@Override
-			public int compare(OpennetPeerNode pn1, OpennetPeerNode pn2) {
-				if(pn1 == pn2) return 0;
-				long lastSuccess1 = pn1.timeLastSuccess();
-				long lastSuccess2 = pn2.timeLastSuccess();
-
-				if(lastSuccess1 > lastSuccess2) return 1;
-				if(lastSuccess2 > lastSuccess1) return -1;
-
-				boolean neverConnected1 = pn1.neverConnected();
-				boolean neverConnected2 = pn2.neverConnected();
-				if(neverConnected1 && (!neverConnected2))
-					return -1;
-				if((!neverConnected1) && neverConnected2)
-					return 1;
-				// a-b not opposite sign to b-a possible in a corner case (a=0 b=Integer.MIN_VALUE).
-				if(pn1.hashCode > pn2.hashCode) return 1;
-				else if(pn1.hashCode < pn2.hashCode) return -1;
-				Logger.error(this, "Two OpennerPeerNode's with the same hashcode: "+pn1+" vs "+pn2);
-				return Fields.compareObjectID(pn1, pn2);
-			}
-		});
-		for(OpennetPeerNode opn: nodes)
-			peersLRU.push(opn);
 		announcer = (enableAnnouncement ? new Announcer(this) : null);
-		if(logMINOR) {
-			Logger.minor(this, "My full compressed ref: "+crypto.myCompressedFullRef().length);
-			Logger.minor(this, "My full setup ref: "+crypto.myCompressedSetupRef().length);
-			Logger.minor(this, "My heavy setup ref: "+crypto.myCompressedHeavySetupRef().length);
-		}
 	}
 
 	public void writeFile() {
@@ -309,6 +270,38 @@ public class OpennetManager {
 			stopping = false;
 		}
 		// Do this outside the constructor, since the constructor is called by the Node constructor, and callbacks may make assumptions about data structures being ready.
+		node.peers.tryReadPeers(node.nodeDir().file("openpeers-"+crypto.portNumber).toString(), crypto, this, true, false);
+		OpennetPeerNode[] nodes = node.peers.getOpennetPeers();
+		Arrays.sort(nodes, new Comparator<OpennetPeerNode>() {
+			@Override
+			public int compare(OpennetPeerNode pn1, OpennetPeerNode pn2) {
+				if(pn1 == pn2) return 0;
+				long lastSuccess1 = pn1.timeLastSuccess();
+				long lastSuccess2 = pn2.timeLastSuccess();
+
+				if(lastSuccess1 > lastSuccess2) return 1;
+				if(lastSuccess2 > lastSuccess1) return -1;
+
+				boolean neverConnected1 = pn1.neverConnected();
+				boolean neverConnected2 = pn2.neverConnected();
+				if(neverConnected1 && (!neverConnected2))
+					return -1;
+				if((!neverConnected1) && neverConnected2)
+					return 1;
+				// a-b not opposite sign to b-a possible in a corner case (a=0 b=Integer.MIN_VALUE).
+				if(pn1.hashCode > pn2.hashCode) return 1;
+				else if(pn1.hashCode < pn2.hashCode) return -1;
+				Logger.error(this, "Two OpennerPeerNode's with the same hashcode: "+pn1+" vs "+pn2);
+				return Fields.compareObjectID(pn1, pn2);
+			}
+		});
+		for(OpennetPeerNode opn: nodes)
+			peersLRU.push(opn);
+		if(logMINOR) {
+			Logger.minor(this, "My full compressed ref: "+crypto.myCompressedFullRef().length);
+			Logger.minor(this, "My full setup ref: "+crypto.myCompressedSetupRef().length);
+			Logger.minor(this, "My heavy setup ref: "+crypto.myCompressedHeavySetupRef().length);
+		}
 		dropExcessPeers();
 		writeFile();
 		// Read old peers

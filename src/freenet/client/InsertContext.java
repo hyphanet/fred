@@ -72,10 +72,12 @@ public class InsertContext implements Cloneable {
 		/** 1416: New CHK encryption */
 		COMPAT_1416;
 		
+		/** cached values(). Never modify or pass this array to outside code! */
+		private static final CompatibilityMode[] values = values();
+
 		// Inserts should be converted to a specific compatibility mode as soon as possible, to avoid
 		// problems when an insert is restarted on a newer build with a newer default compat mode.
 		public static CompatibilityMode latest() {
-			CompatibilityMode[] values = values();
 			return values[values.length-1];
 		}
 	}
@@ -85,7 +87,7 @@ public class InsertContext implements Cloneable {
 	private long compatibilityMode;
 	
 	public CompatibilityMode getCompatibilityMode() {
-		return CompatibilityMode.values()[(int)compatibilityMode];
+		return CompatibilityMode.values[(int)compatibilityMode];
 	}
 	
 	public long getCompatibilityCode() {

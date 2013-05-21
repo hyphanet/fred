@@ -33,6 +33,9 @@ public interface Compressor {
 		public final Compressor compressor;
 		public final short metadataID;
 
+		/** cached values(). Never modify or pass this array to outside code! */
+		private final static COMPRESSOR_TYPE[] values = values();
+
 		COMPRESSOR_TYPE(String name, Compressor c, short metadataID) {
 			this.name = name;
 			this.compressor = c;
@@ -40,7 +43,6 @@ public interface Compressor {
 		}
 
 		public static COMPRESSOR_TYPE getCompressorByMetadataID(short id) {
-			COMPRESSOR_TYPE[] values = values();
 			for(COMPRESSOR_TYPE current : values)
 				if(current.metadataID == id)
 					return current;
@@ -48,7 +50,6 @@ public interface Compressor {
 		}
 
 		public static COMPRESSOR_TYPE getCompressorByName(String name) {
-			COMPRESSOR_TYPE[] values = values();
 			for(COMPRESSOR_TYPE current : values)
 				if(current.name.equals(name))
 					return current;
@@ -57,7 +58,7 @@ public interface Compressor {
 
 		public static String getHelloCompressorDescriptor() {
 			StringBuilder sb = new StringBuilder();
-			sb.append(COMPRESSOR_TYPE.values().length);
+			sb.append(values.length);
 			sb.append(" - ");
 			getCompressorDescriptor(sb);
 			return sb.toString();
@@ -70,7 +71,6 @@ public interface Compressor {
 		}
 
 		public static void getCompressorDescriptor(StringBuilder sb) {
-			COMPRESSOR_TYPE[] values = values();
 			boolean isfirst = true;
 			for(COMPRESSOR_TYPE current : values) {
 				if (isfirst)
@@ -96,10 +96,9 @@ public interface Compressor {
 		public static COMPRESSOR_TYPE[] getCompressorsArray(String compressordescriptor, boolean pre1254) throws InvalidCompressionCodecException {
 			COMPRESSOR_TYPE[] result = getCompressorsArrayNoDefault(compressordescriptor);
 			if (result == null) {
-				COMPRESSOR_TYPE[] val = COMPRESSOR_TYPE.values();
-				COMPRESSOR_TYPE[] ret = new COMPRESSOR_TYPE[val.length-1];
+				COMPRESSOR_TYPE[] ret = new COMPRESSOR_TYPE[values.length-1];
 				int x = 0;
-				for(COMPRESSOR_TYPE v: val) {
+				for(COMPRESSOR_TYPE v: values) {
 					if((v == LZMA) && !pre1254) continue;
 					if((v == LZMA_NEW) && pre1254) continue;
 					ret[x++] = v;
@@ -195,7 +194,7 @@ public interface Compressor {
 		}
 
 		public static int countCompressors() {
-			return Compressor.COMPRESSOR_TYPE.values().length;
+			return values.length;
 		}
 
 	}

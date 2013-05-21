@@ -18,12 +18,12 @@ package freenet.io;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.Arrays;
 
 import javax.net.ssl.SSLServerSocket;
 
 import freenet.crypt.SSL;
 import freenet.support.Executor;
-import freenet.support.Logger;
 
 /**
  * An SSL extension to the {@link NetworkInterface} 
@@ -33,16 +33,9 @@ public class SSLNetworkInterface extends NetworkInterface {
 	
 	public static NetworkInterface create(int port, String bindTo, String allowedHosts, Executor executor, boolean ignoreUnbindableIP6) throws IOException {
 		NetworkInterface iface = new SSLNetworkInterface(port, allowedHosts, executor);
-		try {
-			iface.setBindTo(bindTo, ignoreUnbindableIP6);
-		} catch (IOException e) {
-			try {
-				iface.close();
-			} catch (IOException e1) {
-				Logger.error(NetworkInterface.class, "Caught "+e1+" closing after catching "+e+" binding while constructing", e1);
-				// Ignore
-			}
-			throw e;
+		String[] failedBind = iface.setBindTo(bindTo, ignoreUnbindableIP6);
+		if(failedBind != null) {
+			System.err.println("Could not bind to some of the interfaces specified for port "+port+" : "+Arrays.toString(failedBind));
 		}
 		return iface;
 	}

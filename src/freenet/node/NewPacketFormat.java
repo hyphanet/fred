@@ -793,6 +793,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 									item = new MessageItem(msg, null, null);
 									item.setDeadline(now + PacketSender.MAX_COALESCING_DELAY);
 									wasGeneratedPing = true;
+									// Should we report this on the PeerNode's stats? We'd need to run a job off-thread, so probably not worth it.
 								} else {
 									break prio;
 								}

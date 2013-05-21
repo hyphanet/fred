@@ -30,6 +30,6 @@ public interface KeysFetchingLocally {
 	 * on a request level, and requests use hasKey(). Also, activation issues
 	 * with SendableRequest meaning getting a hash code would be problematic!
 	 */
-	public boolean hasTransientInsert(SendableInsert insert, Object token);
+	public boolean hasTransientInsert(SendableInsert insert, SendableRequestItemKey token);
 
 }

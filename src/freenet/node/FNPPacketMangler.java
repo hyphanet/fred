@@ -52,6 +52,7 @@ import freenet.support.LRUMap;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.SerialExecutor;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.io.FileUtil;
@@ -190,6 +191,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		for(int i=0;i<DH_CONTEXT_BUFFER_SIZE;i++) {
 			_fillJFKECDHFIFO();
 		}
+		this.authHandlingThread.start(node.executor, "FNP incoming auth packet handler thread");
 	}
 
 	/**
@@ -516,24 +518,24 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 * @param payload The decrypted payload of the packet.
 	 * @param replyTo The address the packet came in from.
 	 */
-	private void processDecryptedAuthAnon(byte[] payload, Peer replyTo) {
+	private void processDecryptedAuthAnon(final byte[] payload, final Peer replyTo) {
 		if(logMINOR) Logger.minor(this, "Processing decrypted auth packet from "+replyTo+" length "+payload.length);
 
 		/** Protocol version. Should be 1. */
-		int version = payload[0];
+		final int version = payload[0];
 		/** Negotiation type. Common to anonymous-initiator auth and normal setup.
 		 *   2 = JFK.
 		 *   3 = JFK, reuse PacketTracker
 		 * Other types might indicate other DH variants, or even non-DH-based
 		 * algorithms such as password based key setup. */
-		int negType = payload[1];
+		final int negType = payload[1];
 		/** Packet phase. */
-		int packetType = payload[2];
+		final int packetType = payload[2];
 		/** Setup type. This is specific to anonymous-initiator setup, and specifies the
 		 * purpose of the connection. At the moment it is SETUP_OPENNET_SEEDNODE to indicate
 		 * we are connecting to a seednode (which doesn't know us). Invites might require
 		 * a different setupType. */
-		int setupType = payload[3];
+		final int setupType = payload[3];
 
 		if(logMINOR) Logger.minor(this, "Received anonymous auth packet (phase="+packetType+", v="+version+", nt="+negType+", setup type="+setupType+") from "+replyTo+"");
 
@@ -558,32 +560,42 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		// We are the RESPONDER.
 		// Therefore, we can only get packets of phase 1 and 3 here.
 
-		if(packetType == 0) {
-			// Phase 1
-			processJFKMessage1(payload,4,null,replyTo, true, setupType, negType);
-		} else if(packetType == 2) {
-			// Phase 3
-			processJFKMessage3(payload, 4, null, replyTo, false, true, setupType, negType);
+		if(packetType == 0 || packetType == 2) {
+			this.authHandlingThread.execute(new Runnable() {
+
+				@Override
+				public void run() {
+					if(packetType == 0) {
+						// Phase 1
+						processJFKMessage1(payload,4,null,replyTo, true, setupType, negType);
+					} else if(packetType == 2) {
+						// Phase 3
+						processJFKMessage3(payload, 4, null, replyTo, false, true, setupType, negType);
+					}
+				}
+				
+			});
 		} else {
 			Logger.error(this, "Invalid phase "+packetType+" for anonymous-initiator (we are the responder) from "+replyTo);
 		}
+		
 	}
 
-	private void processDecryptedAuthAnonReply(byte[] payload, Peer replyTo, PeerNode pn) {
+	private void processDecryptedAuthAnonReply(final byte[] payload, final Peer replyTo, final PeerNode pn) {
 		if(logMINOR) Logger.minor(this, "Processing decrypted auth packet from "+replyTo+" for "+pn+" length "+payload.length);
 
 		/** Protocol version. Should be 1. */
-		int version = payload[0];
+		final int version = payload[0];
 		/** Negotiation type.
 		 *   2 = JFK.
 		 *   3 = JFK, reuse PacketTracker
 		 * Other types might indicate other DH variants, or even non-DH-based
 		 * algorithms such as password based key setup. */
-		int negType = payload[1];
+		final int negType = payload[1];
 		/** Packet phase. */
-		int packetType = payload[2];
+		final int packetType = payload[2];
 		/** Setup type. See above. */
-		int setupType = payload[3];
+		final int setupType = payload[3];
 
 		if(logMINOR) Logger.minor(this, "Received anonymous auth packet (phase="+packetType+", v="+version+", nt="+negType+", setup type="+setupType+") from "+replyTo+"");
 
@@ -608,31 +620,43 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		// We are the INITIATOR.
 		// Therefore, we can only get packets of phase 2 and 4 here.
 
-		if(packetType == 1) {
-			// Phase 2
-			processJFKMessage2(payload, 4, pn, replyTo, true, setupType, negType);
-		} else if(packetType == 3) {
-			// Phase 4
-			processJFKMessage4(payload, 4, pn, replyTo, false, true, setupType, negType);
+		if(packetType == 1 || packetType == 3) {
+			authHandlingThread.execute(new Runnable() {
+				
+				@Override
+				public void run() {
+					if(packetType == 1) {
+						// Phase 2
+						processJFKMessage2(payload, 4, pn, replyTo, true, setupType, negType);
+					} else if(packetType == 3) {
+						// Phase 4
+						processJFKMessage4(payload, 4, pn, replyTo, false, true, setupType, negType);
+					}
+				}
+				
+			});
 		} else {
 			Logger.error(this, "Invalid phase "+packetType+" for anonymous-initiator (we are the initiator) from "+replyTo);
 		}
+		
 	}
+	
+	private final SerialExecutor authHandlingThread = new SerialExecutor(NativeThread.HIGH_PRIORITY, 1000);
 
 	/**
 	 * Process a decrypted, authenticated auth packet.
 	 * @param payload The packet payload, after it has been decrypted.
 	 */
-	private void processDecryptedAuth(byte[] payload, PeerNode pn, Peer replyTo, boolean oldOpennetPeer) {
+	private void processDecryptedAuth(final byte[] payload, final PeerNode pn, final Peer replyTo, final boolean oldOpennetPeer) {
 		if(logMINOR) Logger.minor(this, "Processing decrypted auth packet from "+replyTo+" for "+pn);
 		if(pn.isDisabled()) {
 			if(logMINOR) Logger.minor(this, "Won't connect to a disabled peer ("+pn+ ')');
 			return;  // We don't connect to disabled peers
 		}
 
-		int negType = payload[1];
-		int packetType = payload[2];
-		int version = payload[0];
+		final int negType = payload[1];
+		final int packetType = payload[2];
+		final int version = payload[0];
 
 		if(logMINOR) {
 			long now = System.currentTimeMillis();
@@ -683,38 +707,44 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			if(packetType<0 || packetType>3) {
 				Logger.error(this,"Unknown PacketType" + packetType + "from" + replyTo + "from" +pn);
 				return ;
-			} else if(packetType==0) {
-				/*
-				 * Initiator- This is a straightforward DiffieHellman exponential.
-				 * The Initiator Nonce serves two purposes;it allows the initiator to use the same
-				 * exponentials during different sessions while ensuring that the resulting
-				 * session key will be different,can be used to differentiate between
-				 * parallel sessions
-				 */
-				processJFKMessage1(payload,3,pn,replyTo,false,-1,negType);
+			} else authHandlingThread.execute(new Runnable() {
 
-			} else if(packetType==1) {
-				/*
-				 * Responder replies with a signed copy of his own exponential, a random
-				 * nonce and an authenticator calculated from a transient hash key private
-				 * to the responder.
-				 */
-				processJFKMessage2(payload,3,pn,replyTo,false,-1,negType);
-			} else if(packetType==2) {
-				/*
-				 * Initiator echoes the data sent by the responder.These messages are
-				 * cached by the Responder.Receiving a duplicate message simply causes
-				 * the responder to Re-transmit the corresponding message4
-				 */
-				processJFKMessage3(payload, 3, pn, replyTo, oldOpennetPeer, false, -1, negType);
-			} else if(packetType==3) {
-				/*
-				 * Encrypted message of the signature on both nonces, both exponentials
-				 * using the same keys as in the previous message.
-				 * The signature is non-message recovering
-				 */
-				processJFKMessage4(payload, 3, pn, replyTo, oldOpennetPeer, false, -1, negType);
-			}
+				@Override
+				public void run() {
+					if(packetType==0) {
+						/*
+						 * Initiator- This is a straightforward DiffieHellman exponential.
+						 * The Initiator Nonce serves two purposes;it allows the initiator to use the same
+						 * exponentials during different sessions while ensuring that the resulting
+						 * session key will be different,can be used to differentiate between
+						 * parallel sessions
+						 */
+						processJFKMessage1(payload,3,pn,replyTo,false,-1,negType);
+
+					} else if(packetType==1) {
+						/*
+						 * Responder replies with a signed copy of his own exponential, a random
+						 * nonce and an authenticator calculated from a transient hash key private
+						 * to the responder.
+						 */
+						processJFKMessage2(payload,3,pn,replyTo,false,-1,negType);
+					} else if(packetType==2) {
+						/*
+						 * Initiator echoes the data sent by the responder.These messages are
+						 * cached by the Responder.Receiving a duplicate message simply causes
+						 * the responder to Re-transmit the corresponding message4
+						 */
+						processJFKMessage3(payload, 3, pn, replyTo, oldOpennetPeer, false, -1, negType);
+					} else if(packetType==3) {
+						/*
+						 * Encrypted message of the signature on both nonces, both exponentials
+						 * using the same keys as in the previous message.
+						 * The signature is non-message recovering
+						 */
+						processJFKMessage4(payload, 3, pn, replyTo, oldOpennetPeer, false, -1, negType);
+					}
+				}
+			});
 		} else {
 			Logger.error(this, "Decrypted auth packet but unknown negotiation type "+negType+" from "+replyTo+" possibly from "+pn);
 			return;

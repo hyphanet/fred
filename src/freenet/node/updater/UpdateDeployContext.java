@@ -45,6 +45,7 @@ public class UpdateDeployContext {
 	int mainClasspathNo;
 	int extClasspathNo;
 	File newMainJar;
+	File backupMainJar;
 	boolean mainJarAbsolute;
 	final MainJarDependencies deps;
 	
@@ -83,6 +84,7 @@ public class UpdateDeployContext {
 		
 		if(mainJar == null)
 			throw new UpdaterParserException(l10n("cannotUpdateNoMainJar"));
+		backupMainJar = new File(mainJar.getParent(), "freenet.jar.bak");
 	}
 
 	private String l10n(String key) {
@@ -360,6 +362,10 @@ public class UpdateDeployContext {
 			newConfig.delete();
 			return CHANGED.FAIL;
 		}
+	}
+
+	public File getBackupJar() {
+		return backupMainJar;
 	}
 
 }

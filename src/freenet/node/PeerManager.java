@@ -178,7 +178,8 @@ public class PeerManager {
 
 	/**
 	 * Attempt to read a file full of noderefs. Try the file as named first, then the .bak if it is empty or
-	 * otherwise doesn't work.
+	 * otherwise doesn't work. WARNING: Only call this AFTER the Node constructor has completed! Methods may 
+	 * be called on Node!
 	 * @param filename The filename to read from. If this doesn't work, we try the .bak file.
 	 * @param crypto The cryptographic identity which these nodes are connected to.
 	 * @param opennet The opennet manager for the nodes. Only needed (for constructing the nodes) if isOpennet.
@@ -240,9 +241,13 @@ public class PeerManager {
 				// Read a single NodePeer
 				SimpleFieldSet fs;
 				fs = new SimpleFieldSet(br, false, true);
-				PeerNode pn;
 				try {
-					pn = PeerNode.create(fs, node, crypto, opennet, this, mangler);
+					PeerNode pn = PeerNode.create(fs, node, crypto, opennet, this, mangler);
+					if(oldOpennetPeers)
+						opennet.addOldOpennetNode(pn);
+					else
+						addPeer(pn, true, false);
+					gotSome = true;
 				} catch(FSParseException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
 					System.err.println("Cannot parse a friend from the peers file: "+e2);
@@ -265,11 +270,6 @@ public class PeerManager {
 					continue;
 					// FIXME tell the user???
 				}
-				if(oldOpennetPeers)
-					opennet.addOldOpennetNode(pn);
-				else
-					addPeer(pn, true, false);
-				gotSome = true;
 			}
 		} catch(EOFException e) {
 			// End of file, fine
