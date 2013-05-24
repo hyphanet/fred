@@ -494,6 +494,9 @@ public final class PageMaker {
 						FredPluginL10n l10n = menu.navigationLinkL10n.get(navigationLink);
 						if(l10n == null) l10n = menu.plugin;
 						if(l10n != null) {
+							// From a plugin. Include the plugin name in the id.
+							sublistItem.addAttribute("id", getPluginL10nCSSIdentifier(menu.plugin, navigationTitle));
+
 							if(navigationTitle != null) {
 								String newNavigationTitle = l10n.getString(navigationTitle);
 								if(newNavigationTitle == null) {
@@ -511,6 +514,9 @@ public final class PageMaker {
 								}
 							}
 						} else {
+							// Not from a plugin. Add the localization key as id.
+							sublistItem.addAttribute("id", filterCSSIdentifier(navigationTitle));
+
 							if(navigationTitle != null) navigationTitle = NodeL10n.getBase().getString(navigationTitle);
 							if(navigationLink != null) navigationLink = NodeL10n.getBase().getString(navigationLink);
 						}
@@ -532,20 +538,19 @@ public final class PageMaker {
 						String menuItemTitle = menu.defaultNavigationLinkTitle;
 						String text = menu.navigationLinkText;
 						if(menu.plugin == null) {
-							//If not from a plugin, add the localization key as id.
+							// Not from a plugin. Add the localization key as id.
 							listItem.addAttribute("id", filterCSSIdentifier(menuItemTitle));
 
 							menuItemTitle = NodeL10n.getBase().getString(menuItemTitle);
 							text = NodeL10n.getBase().getString(text);
 						} else {
-							/* If from a plugin, add localization key appended to class
-							 * name, separated by a dash, so that plugins with multiple
-							 * menus still have distinguishable IDs. Please note that a
-							 * plugin could misbehave and not register its menu with proper
-							 * localization keys.
+							/*
+							 * From a plugin. Include the plugin name in the id.
+							 *
+							 * Note that a plugin could misbehave and fail to register its
+							 * menu with proper localization keys.
 							 */
-							String id = menu.plugin.getClass().getName()+'-'+text;
-							listItem.addAttribute("id", filterCSSIdentifier(id));
+							listItem.addAttribute("id", getPluginL10nCSSIdentifier(menu.plugin, text));
 
 							String newTitle = menu.plugin.getString(menuItemTitle);
 							if(newTitle == null) {
@@ -605,6 +610,17 @@ public final class PageMaker {
 		}
 		HTMLNode contentDiv = pageDiv.addChild("div", "id", "content");
 		return new PageNode(pageNode, headNode, contentDiv);
+	}
+
+	/**
+	 * Create a CSS identifier incorporating both a class name and a localization key.
+	 * @param plugin plugin localization instance (used for class name)
+	 * @param key localization key
+	 * @return valid CSS identifier.
+	 */
+	// TODO: Less-stupid name.
+	public static String getPluginL10nCSSIdentifier(FredPluginL10n plugin, String key) {
+		return filterCSSIdentifier(plugin.getClass().getName()+'-'+key);
 	}
 
 	/**
