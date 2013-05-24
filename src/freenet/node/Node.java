@@ -1810,7 +1810,7 @@ public class Node implements TimeSkewDetectorCallback {
 					@Override
 					public void set(Integer inputMaxOpennetPeers) throws InvalidConfigValueException {
 						if(inputMaxOpennetPeers < 0) throw new InvalidConfigValueException(l10n("mustBePositive"));
-						if(inputMaxOpennetPeers > OpennetManager.MAX_PEERS_FOR_SCALING) throw new InvalidConfigValueException(l10n("maxOpennetPeersMustBeTwentyOrLess"));
+						if(inputMaxOpennetPeers > OpennetManager.MAX_PEERS_FOR_SCALING) throw new InvalidConfigValueException(l10n("maxOpennetPeersMustBeTwentyOrLess", "maxpeers", Integer.toString(OpennetManager.MAX_PEERS_FOR_SCALING)));
 						maxOpennetPeers = inputMaxOpennetPeers;
 						}
 					}
