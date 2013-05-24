@@ -556,12 +556,8 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 				// config descriptions, otherwise use the node's BaseL10n
 				// instance like
 				// normal.
-				HTMLNode shortDesc = (plugin == null) ? NodeL10n.getBase()
-						.getHTMLNode(o.getShortDesc()) : new HTMLNode("#",
-						plugin.getString(o.getShortDesc()));
-				HTMLNode longDesc = (plugin == null) ? NodeL10n.getBase()
-						.getHTMLNode(o.getLongDesc()) : new HTMLNode("#",
-						plugin.getString(o.getLongDesc()));
+				HTMLNode shortDesc = o.getShortDescNode(plugin);
+				HTMLNode longDesc = o.getLongDescNode(plugin);
 
 				HTMLNode configItemNode = configGroupUlNode.addChild("li");
 				String defaultValue;
