@@ -180,7 +180,7 @@ public abstract class Option<T> {
 
 	/** Useful for plugins as can pass own BaseL10n in */
 	public String getLocalisedShortDesc(BaseL10n l10n) {
-		return l10n.getString(getShortDesc());
+		return l10n.getString(getShortDesc(), "default", getDefault());
 	}
 	
 	/** Get the localised short description */
@@ -190,7 +190,7 @@ public abstract class Option<T> {
 	
 	/** Useful for plugins as can pass own BaseL10n in */
 	public String getLocalisedLongDesc(BaseL10n l10n) {
-		return l10n.getString(getLongDesc());
+		return l10n.getString(getLongDesc(), "default", getDefault());
 	}
 	
 	/** Get the localised long description */
@@ -201,14 +201,14 @@ public abstract class Option<T> {
 	/** Get the localised short description as an HTMLNode, possibly with translation link */
 	public HTMLNode getShortDescNode(FredPluginConfigurable plugin) {
 		return (plugin == null) ? NodeL10n.getBase()
-				.getHTMLNode(getShortDesc()) : new HTMLNode("#",
+				.getHTMLNode(getShortDesc(), new String[] { "default" } , new String[] { getDefault() }) : new HTMLNode("#",
 				plugin.getString(getShortDesc()));
 	}
 
 	/** Get the localised long description as an HTMLNode, possibly with translation link */
 	public HTMLNode getLongDescNode(FredPluginConfigurable plugin) {
 		return (plugin == null) ? NodeL10n.getBase()
-				.getHTMLNode(getLongDesc()) : new HTMLNode("#",
+				.getHTMLNode(getLongDesc(), new String[] { "default" } , new String[] { getDefault() }) : new HTMLNode("#",
 				plugin.getString(getLongDesc()));
 	}
 	
