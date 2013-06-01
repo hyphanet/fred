@@ -785,6 +785,7 @@ public class SimpleFieldSetTest extends TestCase {
 		LineReader r = Readers.fromBufferedReader(new BufferedReader(new StringReader(written)));
 		SimpleFieldSet sfsCheck = new SimpleFieldSet(r, 1024, 1024, true, false, true, false);
 		assertTrue(sfsCheck.get("foo.blah").equals(""));
+		r = Readers.fromBufferedReader(new BufferedReader(new StringReader(written)));
 		sfsCheck = new SimpleFieldSet(r, 1024, 1024, true, false, true, true);
 		assertTrue(sfsCheck.get("foo.blah").equals(""));
 	}
