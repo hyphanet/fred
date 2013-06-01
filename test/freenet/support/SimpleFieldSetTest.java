@@ -779,4 +779,13 @@ public class SimpleFieldSetTest extends TestCase {
 		SimpleFieldSet sfsCheck = new SimpleFieldSet(r, 1024, 1024, true, false, true, true);
 		assertEquals(sfsCheck.get(key), value);
 	}
+	
+	public void testEmptyValue() throws IOException {
+		String written = "foo.blah=\nEnd\n";
+		LineReader r = Readers.fromBufferedReader(new BufferedReader(new StringReader(written)));
+		SimpleFieldSet sfsCheck = new SimpleFieldSet(r, 1024, 1024, true, false, true, false);
+		assertTrue(sfsCheck.get("foo.blah").equals(""));
+		sfsCheck = new SimpleFieldSet(r, 1024, 1024, true, false, true, true);
+		assertTrue(sfsCheck.get("foo.blah").equals(""));
+	}
 }
