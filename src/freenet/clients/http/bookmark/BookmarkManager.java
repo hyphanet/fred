@@ -247,8 +247,8 @@ public class BookmarkManager implements RequestClient {
 			for(int i = 0; i < cat.size(); i++)
 				removeBookmark(path + cat.get(i).getName() + ((cat.get(i) instanceof BookmarkCategory) ? "/"
 					: ""));
-		} else
-			if(((BookmarkItem) bookmark).getKeyType().equals("USK"))
+		} else {
+			if(((BookmarkItem) bookmark).getKeyType().equals("USK")) {
 				try {
 					USK u = ((BookmarkItem) bookmark).getUSK();
 					if(!wantUSK(u, (BookmarkItem)bookmark)) {
@@ -256,6 +256,8 @@ public class BookmarkManager implements RequestClient {
 					}
 				} catch(MalformedURLException mue) {
 				}
+			}
+		}
 
 		getCategoryByPath(parentPath(path)).removeBookmark(bookmark);
 		synchronized(bookmarks) {
