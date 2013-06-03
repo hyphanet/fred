@@ -1528,7 +1528,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			}
 		}
 
-		if (reqs.length > 1 && SimpleToadletServer.isPanicButtonToBeShown) {
+		if (SimpleToadletServer.isPanicButtonToBeShown) {
+			// db4o may leak data, so show this even if there are no requests queued.
+			// Also it may be better for usability.
+			// FIXME reconsider after purging db4o.
 			contentNode.addChild(createPanicBox(pageMaker, ctx));
 		}
 
