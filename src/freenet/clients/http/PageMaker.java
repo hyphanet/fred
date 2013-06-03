@@ -493,9 +493,9 @@ public final class PageMaker {
 						
 						FredPluginL10n l10n = menu.navigationLinkL10n.get(navigationLink);
 						if(l10n == null) l10n = menu.plugin;
-						if(menu.plugin != null) {
+						if(l10n != null) {
 							// From a plugin. Include the plugin name in the id.
-							sublistItem.addAttribute("id", getPluginL10nCSSIdentifier(menu.plugin, navigationTitle));
+							sublistItem.addAttribute("id", getPluginL10nCSSIdentifier(l10n, navigationTitle));
 
 							if(navigationTitle != null) {
 								String newNavigationTitle = l10n.getString(navigationTitle);
