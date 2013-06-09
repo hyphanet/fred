@@ -5243,6 +5243,16 @@ public class Node implements TimeSkewDetectorCallback {
 		return db != null;
 	}
 
+        /**
+         * @return canonical path of the database file in use.
+         */
+        public String getDatabasePath() throws IOException {
+                if (isDatabaseEncrypted()) {
+                        return dbFileCrypt.getCanonicalPath();
+                } else {
+                        return dbFile.getCanonicalPath();
+                }
+        }
 
 	public synchronized boolean autoChangeDatabaseEncryption() {
 		return autoChangeDatabaseEncryption;
