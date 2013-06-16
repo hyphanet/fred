@@ -1134,7 +1134,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 
 	/** Could this SSK be the result of sskForUSK()? */
 	public boolean isSSKForUSK() {
-		return keyType.equalsIgnoreCase("SSK") && docNameWithEditionPattern.matcher(docName).matches();
+		return keyType.equalsIgnoreCase("SSK") && docName != null && docNameWithEditionPattern.matcher(docName).matches();
 	}
 
 	/** Convert an SSK into a USK, if possible. */
