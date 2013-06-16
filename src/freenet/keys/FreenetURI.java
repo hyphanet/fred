@@ -1159,6 +1159,9 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 		if(keyType.equalsIgnoreCase("USK"))
 			return suggestedEdition;
 		else if(keyType.equalsIgnoreCase("SSK")) {
+			if(docName == null)
+				throw new IllegalStateException();
+			
 			Matcher matcher = docNameWithEditionPattern.matcher(docName);
 			if (!matcher.matches()) /* Taken from uskForSSK, also modify there if necessary; TODO just use isSSKForUSK() here?! */
 				throw new IllegalStateException();
