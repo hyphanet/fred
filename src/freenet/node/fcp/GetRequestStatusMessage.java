@@ -41,7 +41,11 @@ public class GetRequestStatusMessage extends FCPMessage {
 	public void run(final FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		ClientRequest req = handler.getRebootRequest(global, handler, identifier);
-		if(req == null && !node.clientCore.killedDatabase()) {
+		if(req == null) {
+			if(node.clientCore.killedDatabase()) {
+				// XXX FIXME add proper handling (I'd guess, limited to reporting error?)
+				return;
+			}
 			try {
 				node.clientCore.clientContext.jobRunner.queue(new DBJob() {
 
