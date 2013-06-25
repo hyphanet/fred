@@ -43,7 +43,7 @@ public class GetRequestStatusMessage extends FCPMessage {
 		ClientRequest req = handler.getRebootRequest(global, handler, identifier);
 		if(req == null) {
 			if(node.clientCore.killedDatabase()) {
-				// XXX FIXME add proper handling (I'd guess, limited to reporting error?)
+				// Ignore.
 				return;
 			}
 			try {
