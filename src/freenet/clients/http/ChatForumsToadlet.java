@@ -46,11 +46,10 @@ public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 		                HTMLNode.link("/SSK@ugb~uuscsidMI-Ze8laZe~o3BUIb3S50i25RIwDH99M,9T20t3xoG-dQfMO94LGOl9AxRTkaz~TykFY-voqaTQI,AQACAAE/FAFS-49/files/fms.htm")});
 		li = ul.addChild("li");
 		NodeL10n.getBase().addL10nSubstitution(li, "ChatForumsToadlet.frost",
-		        new String[] { "frost-freenet", "frost-web", "frost-help" },
+		        new String[] { "frost-freenet", "frost-web" },
 		                new HTMLNode[] {
 			                HTMLNode.link("/freenet:USK@QRZAI1nSm~dAY2hTdzVWXmEhkaI~dso0OadnppBR7kE,wq5rHGBI7kpChBe4yRmgBChIGDug7Xa5SG9vYGXdxR0,AQACAAE/frost/14/"),
-			                HTMLNode.link(ExternalLinkToadlet.escape("http://jtcfrost.sourceforge.net/")),
-			                HTMLNode.link("/SSK@ugb~uuscsidMI-Ze8laZe~o3BUIb3S50i25RIwDH99M,9T20t3xoG-dQfMO94LGOl9AxRTkaz~TykFY-voqaTQI,AQACAAE/FAFS-49/files/frost.htm")});
+			                HTMLNode.link(ExternalLinkToadlet.escape("http://jtcfrost.sourceforge.net/")) });
 		li = ul.addChild("li");
 		NodeL10n.getBase().addL10nSubstitution(li, "ChatForumsToadlet.sone",
 		       new String[] { "sone"},
