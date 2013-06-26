@@ -52,7 +52,8 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
     }
     
     public boolean isEnabled (ToadletContext ctx) {
-        return (!container.publicGatewayMode()) || ((ctx != null) && ctx.isAllowedFullAccess());
+        boolean fullAccess = (!container.publicGatewayMode()) || ((ctx != null) && ctx.isAllowedFullAccess());
+        return core.isAdvancedModeEnabled() && fullAccess;
     }
 
     public void handleMethodGET(URI uri, final HTTPRequest request, final ToadletContext ctx)
@@ -147,18 +148,16 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
         filterForm.addChild("br");
         filterForm.addChild("br");
         
-        if (core.isAdvancedModeEnabled()) {
-            // mime type
-            filterForm.addChild("#", l10n("mimeTypeLabel") + ": ");
-            filterForm.addChild("input",
-                    new String[] { "type", "name", "value" },
-                    new String[] { "text", "mime-type", "" });
-            filterForm.addChild("br");
-            filterForm.addChild("#", l10n("mimeTypeText"));
-            filterForm.addChild("br");
-            filterForm.addChild("br");
-        }
-
+        // mime type
+        filterForm.addChild("#", l10n("mimeTypeLabel") + ": ");
+        filterForm.addChild("input",
+                new String[] { "type", "name", "value" },
+                new String[] { "text", "mime-type", "" });
+        filterForm.addChild("br");
+        filterForm.addChild("#", l10n("mimeTypeText"));
+        filterForm.addChild("br");
+        filterForm.addChild("br");
+        
         // file selection
         if (ctx.isAllowedFullAccess()) {
             filterForm.addChild("#", l10n("filterFileBrowseLabel") + ": ");
