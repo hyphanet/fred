@@ -35,14 +35,14 @@ public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 
 		NodeL10n.getBase().addL10nSubstitution(contentBox.addChild("p"), "ChatForumsToadlet.fsng",
 				new String[] { "fsng" },
-				new HTMLNode[] { HTMLNode.link("/USK@t5zaONbYd5DvGNNSokVnDCdrIEytn9U5SSD~pYF0RTE,guWyS9aCMcywU5PFBrKsMiXs7LzwKfQlGSRi17fpffc,AQACAAE/fsng/37/") });
+				new HTMLNode[] { HTMLNode.link("/USK@t5zaONbYd5DvGNNSokVnDCdrIEytn9U5SSD~pYF0RTE,guWyS9aCMcywU5PFBrKsMiXs7LzwKfQlGSRi17fpffc,AQACAAE/fsng/56/") });
 
 		
 		HTMLNode ul = contentBox.addChild("ul");
 		HTMLNode li = ul.addChild("li");
 		NodeL10n.getBase().addL10nSubstitution(li, "ChatForumsToadlet.fms",
 		        new String[] { "fms", "fms-help" },
-		        new HTMLNode[] { HTMLNode.link("/USK@0npnMrqZNKRCRoGojZV93UNHCMN-6UU3rRSAmP6jNLE,~BG-edFtdCC1cSH4O3BWdeIYa8Sw5DfyrSV-TKdO5ec,AQACAAE/fms/136/"),
+		        new HTMLNode[] { HTMLNode.link("/USK@0npnMrqZNKRCRoGojZV93UNHCMN-6UU3rRSAmP6jNLE,~BG-edFtdCC1cSH4O3BWdeIYa8Sw5DfyrSV-TKdO5ec,AQACAAE/fms/137/"),
 		                HTMLNode.link("/SSK@ugb~uuscsidMI-Ze8laZe~o3BUIb3S50i25RIwDH99M,9T20t3xoG-dQfMO94LGOl9AxRTkaz~TykFY-voqaTQI,AQACAAE/FAFS-49/files/fms.htm")});
 		li = ul.addChild("li");
 		NodeL10n.getBase().addL10nSubstitution(li, "ChatForumsToadlet.frost",
