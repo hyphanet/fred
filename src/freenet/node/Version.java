@@ -53,9 +53,9 @@ public class Version {
 	private static final int buildNumber = 1444;
 
 	/** Oldest build of fred we will talk to *before* _cal */
-	private static final int oldLastGoodBuild = 1439;
+	private static final int oldLastGoodBuild = 1442;
 	/** Oldest build of fred we will talk to *after* _cal */
-	private static final int newLastGoodBuild = 1442;
+	private static final int newLastGoodBuild = 1443;
 	static final long transitionTime;
 
 	static {
