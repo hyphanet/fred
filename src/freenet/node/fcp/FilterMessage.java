@@ -12,6 +12,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.async.ClientContext;
 import freenet.client.filter.ContentFilter;
+import freenet.client.filter.FilterOperation;
 import freenet.client.filter.UnsafeContentTypeException;
 import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.node.FSParseException;

@@ -6,6 +6,8 @@ import java.net.URI;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertContext;
 import freenet.client.InsertContext.CompatibilityMode;
+import freenet.client.filter.FilterOperation;
+import freenet.clients.http.ContentFilterToadlet.ResultHandling;
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
@@ -165,6 +167,50 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		        new String[] { "submit", "insert",
 		                NodeL10n.getBase().getString("QueueToadlet.insertFileInsertFileLabel") });
 		insertForm.addChild("#", " \u00a0 ");
+		
+		// controls for previewing the filtered file
+		if (isAdvancedModeEnabled) {
+		    insertForm.addChild("br");
+		    insertForm.addChild("br");
+		    insertForm.addChild("#", l10n("filterFileLabel"));
+		    insertForm.addChild("br");
+		    insertForm.addChild("br");
+            
+	        // apply read filter, write filter, or both
+	        //TODO: radio buttons to select, once ContentFilter supports write filtering
+		    insertForm.addChild("input",
+	                new String[] { "type", "name", "value" },
+	                new String[] { "hidden", "filter-operation", FilterOperation.BOTH.toString() });
+
+	        // display in browser or save to disk
+		    insertForm.addChild("input",
+	                new String[] { "type", "name", "value" },
+	                new String[] { "radio", "result-handling", ResultHandling.DISPLAY.toString() });
+		    insertForm.addChild("#", ContentFilterToadlet.l10n("displayResultLabel"));
+		    insertForm.addChild("br");
+		    insertForm.addChild("input",
+	                new String[] { "type", "name", "value" },
+	                new String[] { "radio", "result-handling", ResultHandling.SAVE.toString() });
+		    insertForm.addChild("#", ContentFilterToadlet.l10n("saveResultLabel"));
+		    insertForm.addChild("br");
+		    insertForm.addChild("br");
+	        
+            // mime type
+            insertForm.addChild("#", ContentFilterToadlet.l10n("mimeTypeLabel") + ": ");
+            insertForm.addChild("input",
+                    new String[] { "type", "name", "value" },
+                    new String[] { "text", "mime-type", "" });
+            insertForm.addChild("br");
+            insertForm.addChild("#", ContentFilterToadlet.l10n("mimeTypeText"));
+            insertForm.addChild("br");
+            insertForm.addChild("br");
+	        
+		    insertForm.addChild("input",
+	                new String[] { "type", "name", "value" },
+	                new String[] { "submit", "filter-upload",
+	                        ContentFilterToadlet.l10n("filterFileFilterLabel") });
+		}
+		
 		return insertBox;
 	}
 	

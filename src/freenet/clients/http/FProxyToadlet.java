@@ -1198,6 +1198,13 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 		LocalFileInsertToadlet localFileInsertToadlet = new LocalFileInsertToadlet(core, client);
 		server.register(localFileInsertToadlet, null, LocalFileInsertToadlet.PATH, true, false);
+		
+		ContentFilterToadlet contentFilterToadlet = new ContentFilterToadlet(client, core);
+		server.register(contentFilterToadlet, "FProxyToadlet.categoryQueue", ContentFilterToadlet.PATH, true,
+		        "FProxyToadlet.filterFileTitle", "FProxyToadlet.filterFile", false, contentFilterToadlet);
+		
+		LocalFileFilterToadlet localFileFilterToadlet = new LocalFileFilterToadlet(core, client);
+		server.register(localFileFilterToadlet, null, LocalFileFilterToadlet.PATH, true, false);
 
 		SymlinkerToadlet symlinkToadlet = new SymlinkerToadlet(client, node);
 		server.register(symlinkToadlet, null, "/sl/", true, false);
