@@ -62,3 +62,13 @@ it separately by running the `clean-gjs` target.
 [1] However, you still need to trust your compiler and operating system; see
 Ken Thompson's "Reflections on Trusting Trust".
 [2] http://packages.debian.org/source/sid/gwt
+
+== Verify-build script ==
+
+See README.md in the Maintenance scripts repository. The verify-build script 
+will check a pre-built binary against the source code, but needs some work to
+configure, as you need e.g. to have the same version of javac as it was built
+with.
+
+Get it from the maintenance scripts repo:
+git clone git@github.com:freenet/scripts.git
