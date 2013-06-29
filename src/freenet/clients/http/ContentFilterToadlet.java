@@ -7,7 +7,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-
 import freenet.client.DefaultMIMETypes;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.filter.ContentFilter;
@@ -24,6 +23,7 @@ import freenet.support.api.HTTPRequest;
 import freenet.support.api.HTTPUploadedFile;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
+import freenet.support.io.FileUtil;
 
 /**
  * Allows the user to run the content filter on a file and view the result.
@@ -214,10 +214,10 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
             if (filename.length() == 0) {
                 throw new BadRequestException("filename");
             }
-            String resultFilename = makeResultFilename(filename);
             if (mimeType.length() == 0) {
                 mimeType = DefaultMIMETypes.guessMIMEType(filename, false);
             }
+            String resultFilename = makeResultFilename(filename, mimeType);
             File file = new File(filename);
             Bucket bucket = new FileBucket(file, true, false, false, false, false);
             try {
@@ -253,10 +253,10 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
             if (file == null || file.getFilename().trim().length() == 0) {
                 throw new BadRequestException("filename");
             }
-            String resultFilename = makeResultFilename(file.getFilename());
             if (mimeType.length() == 0) {
                 mimeType = file.getContentType();
             }
+            String resultFilename = makeResultFilename(file.getFilename(), mimeType);
             handleFilter(file.getData(), mimeType, filterOperation, resultHandling, resultFilename, ctx, core);
         } catch (BadRequestException e) {
             String invalidPart = e.getInvalidRequestPart();
@@ -292,13 +292,16 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
         }
     }
     
-    private static String makeResultFilename(String originalFilename) {
+    private static String makeResultFilename(String originalFilename, String mimeType) {
+        String filteredFilename;
         int p = originalFilename.indexOf('.', 1);
         if (p > 0) {
-            return originalFilename.substring(0, p) + ".filtered" + originalFilename.substring(p); 
+            filteredFilename = originalFilename.substring(0, p) + ".filtered" + originalFilename.substring(p); 
         } else {
-            return originalFilename + ".filtered";
+            filteredFilename = originalFilename + ".filtered";
         }
+        filteredFilename = FileUtil.sanitize(filteredFilename, mimeType);
+        return filteredFilename;
     }
     
     private static void handleFilter(Bucket data, String mimeType, FilterOperation operation, ResultHandling resultHandling, String resultFilename, ToadletContext ctx, NodeClientCore core)
