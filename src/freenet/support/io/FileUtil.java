@@ -464,10 +464,10 @@ final public class FileUtil {
 		filename = sanitize(filename);
 		if(mimeType == null) return filename;
 		if(filename.indexOf('.') >= 0) {
-			String oldExt = filename.substring(filename.lastIndexOf('.'));
+			String oldExt = filename.substring(filename.lastIndexOf('.') + 1);
 			if(DefaultMIMETypes.isValidExt(mimeType, oldExt)) return filename;
 		}
-		String defaultExt = DefaultMIMETypes.getExtension(filename);
+		String defaultExt = DefaultMIMETypes.getExtension(mimeType);
 		if(defaultExt == null) return filename;
 		else return filename + '.' + defaultExt;
 	}
