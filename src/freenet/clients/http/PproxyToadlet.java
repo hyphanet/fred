@@ -585,7 +585,7 @@ public class PproxyToadlet extends Toadlet {
 				if(!pm.isPluginLoaded(pluginName)) {
 					HTMLNode option = pluginNode.addChild("input", new String[] { "type", "name", "value" },
 							new String[] { "radio", "plugin-name", pluginName });
-					option.addChild("i", pluginName);
+					option.addChild("i", l10n("pluginName."+pluginName));
 					if(pluginDescription.deprecated)
 						option.addChild("b", " ("+l10n("loadLabelDeprecated")+")");
 					if(pluginDescription.experimental)
