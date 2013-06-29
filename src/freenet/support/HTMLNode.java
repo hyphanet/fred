@@ -513,4 +513,10 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 	public static HTMLNode text(short count) {
 		return new HTMLNode("#", Short.toString(count));
 	}
+
+	public void removeChildren() {
+		if(readOnly)
+			throw new IllegalArgumentException("Read only");
+		children.clear();
+	}
 }
