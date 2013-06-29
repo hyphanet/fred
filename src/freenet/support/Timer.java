@@ -24,6 +24,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+/** Simple API to time events, with a threshold for stronger logging. Can create sub-timers, 
+ * which are logged only if the parent timer is triggered.
+ * @author zidel
+ */
 public final class Timer {
 	private final long startTime;
 	private final boolean isSubTimer;
@@ -38,10 +42,12 @@ public final class Timer {
 		this.isSubTimer = isSubTimer;
 	}
 
+	/** Create a Timer */
 	public static Timer start() {
 		return new Timer(false);
 	}
 
+	/** Get time elapsed since the Timer was created */
 	public long getTime() {
 		long cur = System.nanoTime();
 		return Math.abs(cur - startTime);
@@ -65,6 +71,13 @@ public final class Timer {
 		}
 	}
 
+	/** Log the time taken since construction. If it exceeds a threshold given, log at warning 
+	 * level rather than minor.
+	 * @param c The class to log as.
+	 * @param warningThreshold The threshold i.e. minimum amount of time to log at WARNING.
+	 * @param unit The unit of time the threshold is measured in.
+	 * @param message Message to log.
+	 */
 	public void log(Class<?> c, long warningThreshold, TimeUnit unit, String message) {
 		long time = getTime();
 		logMessage = message + ": " + time + "ns";
@@ -78,6 +91,13 @@ public final class Timer {
 		}
 	}
 
+	/** Log the time taken since construction. If it exceeds a threshold given, log at warning 
+	 * level rather than minor.
+	 * @param c The object to log.
+	 * @param warningThreshold The threshold i.e. minimum amount of time to log at WARNING.
+	 * @param unit The unit of time the threshold is measured in.
+	 * @param message Message to log.
+	 */
 	public void log(Object o, long warningThreshold, TimeUnit unit, String message) {
 		long time = getTime();
 		logMessage = message + ": " + time + "ns";
@@ -91,6 +111,8 @@ public final class Timer {
 		}
 	}
 
+	/** Create a sub-timer. If the parent exceeds its time limit, the sub-timers will also be 
+	 * logged at warning level, whether or not they have exceeded their own thresholds. */
 	public Timer startSubTimer() {
 		Timer t = new Timer(true);
 		subTimers.add(t);
