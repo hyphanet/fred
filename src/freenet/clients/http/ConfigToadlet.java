@@ -51,6 +51,12 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 	 * Prompt for node restart
 	 */
 	private class NeedRestartUserAlert extends AbstractUserAlert {
+		private final String formPassword;
+		
+		public NeedRestartUserAlert(String formPassword) {
+			this.formPassword = formPassword;
+		}
+		
 		@Override
 		public String getTitle() {
 			return l10n("needRestartTitle");
@@ -81,7 +87,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 								"restartForm", "utf-8" }).addChild("div");
 				restartForm.addChild("input", new String[] { "type", "name",
 						"value" }, new String[] { "hidden", "formPassword",
-						node.clientCore.formPassword });
+						formPassword });
 				restartForm.addChild("div");
 				restartForm.addChild("input",//
 						new String[] { "type", "name" },//
@@ -187,7 +193,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		}
 
 		String pass = request.getPartAsStringFailsafe("formPassword", 32);
-		if ((pass == null) || !pass.equals(core.formPassword)) {
+		if ((pass == null) || !pass.equals(ctx.getFormPassword())) {
 			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", path());
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
@@ -393,7 +399,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 				}
 
 				if (needRestartUserAlert == null) {
-					needRestartUserAlert = new NeedRestartUserAlert();
+					needRestartUserAlert = new NeedRestartUserAlert(ctx.getFormPassword());
 					node.clientCore.alerts.register(needRestartUserAlert);
 				}
 			}

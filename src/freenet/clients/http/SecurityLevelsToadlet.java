@@ -65,7 +65,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		}
 
 		String formPassword = request.getPartAsStringFailsafe("formPassword", 32);
-		if((formPassword == null) || !formPassword.equals(core.formPassword)) {
+		if((formPassword == null) || !formPassword.equals(ctx.getFormPassword())) {
 			MultiValueTable<String,String> headers = new MultiValueTable<String,String>();
 			headers.put("Location", "/seclevels/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);

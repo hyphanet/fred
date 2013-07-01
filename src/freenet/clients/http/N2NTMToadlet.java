@@ -25,14 +25,12 @@ import freenet.support.api.HTTPUploadedFile;
 
 public class N2NTMToadlet extends Toadlet {
 	private Node node;
-	private NodeClientCore core;
 	private LocalFileN2NMToadlet browser;
 	protected N2NTMToadlet(Node n, NodeClientCore core,
 			HighLevelSimpleClient client) {
 		super(client);
 		browser = new LocalFileN2NMToadlet(core, client);
 		this.node = n;
-		this.core = core;
 	}
 
 	public Toadlet getBrowser() {
@@ -131,7 +129,7 @@ public class N2NTMToadlet extends Toadlet {
 			throws ToadletContextClosedException, IOException,
 			RedirectException {
 		String pass = request.getPartAsStringFailsafe("formPassword", 32);
-		if ((pass == null) || !pass.equals(core.formPassword)) {
+		if ((pass == null) || !pass.equals(ctx.getFormPassword())) {
 			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", "/send_n2ntm/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);

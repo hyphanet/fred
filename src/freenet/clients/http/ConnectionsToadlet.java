@@ -528,11 +528,11 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		}
 		
 		String pass = request.getPartAsStringFailsafe("formPassword", 32);
-		if((pass == null) || !pass.equals(core.formPassword)) {
+		if((pass == null) || !pass.equals(ctx.getFormPassword())) {
 			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", defaultRedirectLocation());
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-			if(logMINOR) Logger.minor(this, "No password ("+pass+" should be "+core.formPassword+ ')');
+			if(logMINOR) Logger.minor(this, "No password ("+pass+" should be "+ctx.getFormPassword()+ ')');
 			return;
 		}
 		

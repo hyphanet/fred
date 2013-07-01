@@ -205,6 +205,11 @@ public class ToadletContextImpl implements ToadletContext {
 	}
 	
 	@Override
+	public String getFormPassword() {
+		return container.getFormPassword();
+	}
+	
+	@Override
 	public MultiValueTable<String,String> getHeaders() {
 		return headers;
 	}

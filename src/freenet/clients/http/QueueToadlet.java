@@ -201,7 +201,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			}
 
 			String pass = request.getPartAsStringFailsafe("formPassword", 32);
-			if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
+			if ((pass.length() == 0) || !pass.equals(ctx.getFormPassword())) {
 				MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 				headers.put("Location", path());
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);

@@ -113,10 +113,10 @@ public class WelcomeToadlet extends Toadlet {
 		}
 
         String passwd = request.getPartAsStringFailsafe("formPassword", 32);
-        boolean noPassword = (passwd == null) || !passwd.equals(core.formPassword);
+        boolean noPassword = (passwd == null) || !passwd.equals(ctx.getFormPassword());
         if (noPassword) {
             if (logMINOR) {
-                Logger.minor(this, "No password (" + passwd + " should be " + core.formPassword + ')');
+                Logger.minor(this, "No password (" + passwd + " should be " + ctx.getFormPassword() + ')');
             }
         }
 
@@ -259,7 +259,7 @@ public class WelcomeToadlet extends Toadlet {
                 return;
             }
             MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-            headers.put("Location", "/?terminated&formPassword=" + core.formPassword);
+            headers.put("Location", "/?terminated&formPassword=" + ctx.getFormPassword());
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
             node.ticker.queueTimedJob(new Runnable() {
 
@@ -287,7 +287,7 @@ public class WelcomeToadlet extends Toadlet {
             }
 
             MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-            headers.put("Location", "/?restarted&formPassword=" + core.formPassword);
+            headers.put("Location", "/?restarted&formPassword=" + ctx.getFormPassword());
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
             node.ticker.queueTimedJob(new Runnable() {
 
@@ -323,7 +323,7 @@ public class WelcomeToadlet extends Toadlet {
                 this.writeTextReply(ctx, 200, "OK", FileUtil.readUTF(logs));
                 return;
             } else if (request.isParameterSet("terminated")) {
-                if ((!request.isParameterSet("formPassword")) || !request.getParam("formPassword").equals(core.formPassword)) {
+                if ((!request.isParameterSet("formPassword")) || !request.getParam("formPassword").equals(ctx.getFormPassword())) {
                     redirectToRoot(ctx);
                     return;
                 }
@@ -339,7 +339,7 @@ public class WelcomeToadlet extends Toadlet {
                 this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
                 return;
             } else if (request.isParameterSet("restarted")) {
-                if ((!request.isParameterSet("formPassword")) || !request.getParam("formPassword").equals(core.formPassword)) {
+                if ((!request.isParameterSet("formPassword")) || !request.getParam("formPassword").equals(ctx.getFormPassword())) {
                     redirectToRoot(ctx);
                     return;
                 }

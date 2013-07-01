@@ -70,6 +70,11 @@ public interface ToadletContext {
 	 * Get the page maker object.
 	 */
 	PageMaker getPageMaker();
+	
+	/**
+	 * Get the form password required for "dangerous" operations.
+	 */
+	String getFormPassword();
 
 	BucketFactory getBucketFactory();
 	

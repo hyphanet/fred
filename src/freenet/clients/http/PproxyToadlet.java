@@ -65,7 +65,7 @@ public class PproxyToadlet extends Toadlet {
 		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 
 		String pass = request.getPartAsStringFailsafe("formPassword", 32);
-		if((pass == null) || !pass.equals(core.formPassword)) {
+		if((pass == null) || !pass.equals(ctx.getFormPassword())) {
 			headers.put("Location", "/plugins/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
@@ -531,7 +531,7 @@ public class PproxyToadlet extends Toadlet {
 				} else {
 					if (pi.isPproxyPlugin()) {
 						HTMLNode visitForm = pluginRow.addChild("td").addChild("form", new String[] { "method", "action", "target" }, new String[] { "get", pi.getPluginClassName(), "_blank" });
-						visitForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
+						visitForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", ctx.getFormPassword() });
 						visitForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", NodeL10n.getBase().getString("PluginToadlet.visit") });
 					} else
 						pluginRow.addChild("td");
