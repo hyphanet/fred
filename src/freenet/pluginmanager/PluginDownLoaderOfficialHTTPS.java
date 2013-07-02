@@ -168,4 +168,8 @@ public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
 		fos.close();
 	}
 
+	public boolean isOfficialPluginLoader() {
+		return true;
+	}
+	
 }

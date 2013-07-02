@@ -390,7 +390,7 @@ public class PluginManager {
 			if (plug == null)
 				return null; // Already loaded
 			pluginProgress.setProgress(PluginProgress.PROGRESS_STATE.STARTING);
-			pi = new PluginInfoWrapper(node, plug, filename);
+			pi = new PluginInfoWrapper(node, plug, filename, pdl.isOfficialPluginLoader());
 			PluginHandler.startPlugin(PluginManager.this, pi);
 			synchronized (pluginWrappers) {
 				pluginWrappers.add(pi);

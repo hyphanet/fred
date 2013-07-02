@@ -28,4 +28,8 @@ public class PluginDownLoaderOfficialFreenet extends PluginDownLoaderFreenet {
 		return source + ".jar";
 	}
 	
+	public boolean isOfficialPluginLoader() {
+		return true;
+	}
+	
 }

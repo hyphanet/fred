@@ -39,12 +39,13 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 	private final boolean isL10nPlugin;
 	private final boolean isBaseL10nPlugin;
 	private final boolean isConfigurablePlugin;
+	private final boolean isOfficialPlugin;
 	private final String filename;
 	private HashSet<String> toadletLinks = new HashSet<String>();
 	private volatile boolean stopping = false;
 	private volatile boolean unregistered = false;
 	
-	public PluginInfoWrapper(Node node, FredPlugin plug, String filename) throws IOException {
+	public PluginInfoWrapper(Node node, FredPlugin plug, String filename, boolean isOfficial) throws IOException {
 		this.plug = plug;
 		className = plug.getClass().toString();
 		this.filename = filename;
@@ -75,6 +76,7 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 			subconfig = null;
 			configToadlet = null;
 		}
+		isOfficialPlugin = isOfficial;
 	}
 
 	void setThread(Thread ps) {
@@ -283,5 +285,9 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 
 	public ConfigToadlet getConfigToadlet() {
 		return configToadlet;
+	}
+
+	public boolean isOfficialPlugin() {
+		return isOfficialPlugin;
 	}
 }

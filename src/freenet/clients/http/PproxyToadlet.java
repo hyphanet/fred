@@ -503,7 +503,11 @@ public class PproxyToadlet extends Toadlet {
 			while (it.hasNext()) {
 				PluginInfoWrapper pi = it.next();
 				HTMLNode pluginRow = pluginTable.addChild("tr");
-				pluginRow.addChild("td", pi.getFilename());
+				String pluginName = pi.getFilename();
+				if(pi.isOfficialPlugin()) {
+					pluginName = l10n("pluginName."+pluginName);
+				}
+				pluginRow.addChild("td", pluginName);
 				if(advancedMode)
 					pluginRow.addChild("td", pi.getPluginClassName());
 				long ver = pi.getPluginLongVersion();
