@@ -8,7 +8,6 @@ import java.net.URI;
 import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
-import freenet.node.NodeClientCore;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.support.HTMLNode;
 import freenet.support.MultiValueTable;
@@ -19,12 +18,10 @@ import freenet.support.io.FileBucket;
 public class DarknetAddRefToadlet extends Toadlet {
 
 	private final Node node;
-	private final NodeClientCore core;
 	
-	protected DarknetAddRefToadlet(Node n, NodeClientCore core, HighLevelSimpleClient client) {
+	protected DarknetAddRefToadlet(Node n, HighLevelSimpleClient client) {
 		super(client);
 		this.node = n;
-		this.core = core;
 	}
 
 	public void handleMethodGET(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
@@ -77,7 +74,7 @@ public class DarknetAddRefToadlet extends Toadlet {
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
-		contentNode.addChild(core.alerts.createSummary());
+		contentNode.addChild(ctx.getAlertManager().createSummary());
 		
 		HTMLNode boxContent = pageMaker.getInfobox("infobox-information", l10n("explainBoxTitle"), contentNode, "darknet-explanations", true);
 		boxContent.addChild("p", l10n("explainBox1"));

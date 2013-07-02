@@ -400,7 +400,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 
 				if (needRestartUserAlert == null) {
 					needRestartUserAlert = new NeedRestartUserAlert(ctx.getFormPassword());
-					node.clientCore.alerts.register(needRestartUserAlert);
+					ctx.getAlertManager().register(needRestartUserAlert);
 				}
 			}
 		} else {
@@ -448,7 +448,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 
-		contentNode.addChild(core.alerts.createSummary());
+		contentNode.addChild(ctx.getAlertManager().createSummary());
 
 		HTMLNode infobox = contentNode.addChild("div", "class",
 				"infobox infobox-normal");

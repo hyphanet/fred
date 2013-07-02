@@ -247,7 +247,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		long now = System.currentTimeMillis();
 	
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary());
+			contentNode.addChild(ctx.getAlertManager().createSummary());
 		
 		if(peerNodeStatuses.length>0){
 			

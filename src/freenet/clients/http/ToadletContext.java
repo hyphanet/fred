@@ -6,6 +6,7 @@ import java.text.ParseException;
 import java.util.Date;
 
 import freenet.clients.http.FProxyFetchInProgress.REFILTER_POLICY;
+import freenet.node.useralerts.UserAlertManager;
 import freenet.support.HTMLNode;
 import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
@@ -75,6 +76,11 @@ public interface ToadletContext {
 	 * Get the form password required for "dangerous" operations.
 	 */
 	String getFormPassword();
+	
+	/**
+	 * Get the user alert manager.
+	 */
+	UserAlertManager getAlertManager();
 
 	BucketFactory getBucketFactory();
 	

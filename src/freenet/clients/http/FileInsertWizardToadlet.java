@@ -70,7 +70,7 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		HTMLNode contentNode = page.content;
 
 		/* add alert summary box */
-		if (ctx.isAllowedFullAccess()) contentNode.addChild(core.alerts.createSummary());
+		if (ctx.isAllowedFullAccess()) contentNode.addChild(ctx.getAlertManager().createSummary());
 
 		contentNode.addChild(createInsertBox(pageMaker, ctx, ctx.getContainer().isAdvancedModeEnabled()));
 		

@@ -1011,7 +1011,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		    freenet.support.Logger.OSThread.logPID(this);
 			if(logMINOR) Logger.minor(this, "Handling connection");
 			try {
-				ToadletContextImpl.handle(sock, SimpleToadletServer.this, pageMaker);
+				ToadletContextImpl.handle(sock, SimpleToadletServer.this, pageMaker, core.alerts);
 			} catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 				System.err.println("SimpleToadletServer request above failed.");

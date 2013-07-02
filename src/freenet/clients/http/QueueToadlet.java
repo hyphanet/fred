@@ -1055,7 +1055,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		if(context.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary());
+			contentNode.addChild(context.getAlertManager().createSummary());
 		HTMLNode infoboxContent = pageMaker.getInfobox("infobox-error", header, contentNode, "queue-error", false);
 		infoboxContent.addChild("#", message);
 		if(returnToQueuePage)
@@ -1141,7 +1141,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							HTMLNode contentNode = page.content;
 							/* add alert summary box */
 							if(ctx.isAllowedFullAccess())
-								contentNode.addChild(core.alerts.createSummary());
+								contentNode.addChild(ctx.getAlertManager().createSummary());
 							HTMLNode infoboxContent = pageMaker.getInfobox("infobox-information", "Queued requests status", contentNode, null, false);
 							infoboxContent.addChild("p", "Total awaiting CHKs: "+queued);
 							infoboxContent.addChild("p", "Total queued CHK requests: "+reallyQueued);
@@ -1245,7 +1245,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			HTMLNode contentNode = page.content;
 			/* add alert summary box */
 			if(ctx.isAllowedFullAccess())
-				contentNode.addChild(core.alerts.createSummary());
+				contentNode.addChild(ctx.getAlertManager().createSummary());
 			HTMLNode infoboxContent = pageMaker.getInfobox("infobox-information", l10n("globalQueueIsEmpty"), contentNode, "queue-empty", true);
 			infoboxContent.addChild("#", l10n("noTaskOnGlobalQueue"));
 			if(!uploads)
@@ -1433,7 +1433,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 		/* add alert summary box */
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary());
+			contentNode.addChild(ctx.getAlertManager().createSummary());
 
 		/* navigation bar */
 		InfoboxNode infobox = pageMaker.getInfobox("navbar", l10n("requestNavigation"), null, false);

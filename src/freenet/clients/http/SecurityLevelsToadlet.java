@@ -474,7 +474,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 
-		contentNode.addChild(core.alerts.createSummary());
+		contentNode.addChild(ctx.getAlertManager().createSummary());
 
 		drawSecurityLevelsPage(contentNode, ctx);
 

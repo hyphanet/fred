@@ -190,7 +190,7 @@ public class BrowserTestToadlet extends Toadlet {
 		HTMLNode contentNode = page.content;
 		
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary());
+			contentNode.addChild(ctx.getAlertManager().createSummary());
 		
 		// #### Test MIME inline
 		ctx.getPageMaker().getInfobox("infobox-warning", "MIME Inline", contentNode, "mime-inline-test", true).

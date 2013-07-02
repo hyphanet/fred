@@ -401,7 +401,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 							pageMaker.getInfobox("infobox-error", NodeL10n.getBase().getString("BookmarkEditorToadlet.invalidNameTitle"), content, "bookmark-error", false).
 								addChild("#", NodeL10n.getBase().getString("BookmarkEditorToadlet.invalidName"));
 						} else
-							newBookmark = new BookmarkItem(key, name, req.getPartAsStringFailsafe("descB", MAX_KEY_LENGTH), req.getPartAsStringFailsafe("explain", MAX_EXPLANATION_LENGTH), hasAnActivelink, core.alerts);
+							newBookmark = new BookmarkItem(key, name, req.getPartAsStringFailsafe("descB", MAX_KEY_LENGTH), req.getPartAsStringFailsafe("explain", MAX_EXPLANATION_LENGTH), hasAnActivelink, ctx.getAlertManager());
 					} else
 						if (name.contains("/")) {
 							pageMaker.getInfobox("infobox-error", NodeL10n.getBase().getString("BookmarkEditorToadlet.invalidNameTitle"), content, "bookmark-error", false).

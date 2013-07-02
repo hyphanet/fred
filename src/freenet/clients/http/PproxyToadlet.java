@@ -18,7 +18,6 @@ import java.util.TreeMap;
 import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
-import freenet.node.NodeClientCore;
 import freenet.pluginmanager.AccessDeniedPluginHTTPException;
 import freenet.pluginmanager.DownloadPluginHTTPException;
 import freenet.pluginmanager.NotFoundPluginHTTPException;
@@ -41,7 +40,6 @@ public class PproxyToadlet extends Toadlet {
 	/** Maximum time to wait for a threaded plugin to exit */
 	private static final int MAX_THREADED_UNLOAD_WAIT_TIME = 60*1000;
 	private final Node node;
-	private final NodeClientCore core;
 
         private static volatile boolean logMINOR;
 	static {
@@ -53,10 +51,9 @@ public class PproxyToadlet extends Toadlet {
 		});
 	}
 
-	public PproxyToadlet(HighLevelSimpleClient client, Node node, NodeClientCore core) {
+	public PproxyToadlet(HighLevelSimpleClient client, Node node) {
 		super(client);
 		this.node = node;
-		this.core = core;
 	}
 
 	public void handleMethodPOST(URI uri, final HTTPRequest request, ToadletContext ctx)
@@ -355,7 +352,7 @@ public class PproxyToadlet extends Toadlet {
 				}
 				HTMLNode contentNode = page.content;
 
-				contentNode.addChild(core.alerts.createSummary());
+				contentNode.addChild(ctx.getAlertManager().createSummary());
 
 				/* find which plugins have already been loaded. */
 				List<OfficialPluginDescription> availablePlugins = pm.findAvailablePlugins();

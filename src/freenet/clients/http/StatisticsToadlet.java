@@ -179,7 +179,7 @@ public class StatisticsToadlet extends Toadlet {
 		final long nodeUptimeSeconds = (now - node.startupTime) / 1000;
 
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary());
+			contentNode.addChild(ctx.getAlertManager().createSummary());
 
 		double swaps = node.getSwaps();
 		double noSwaps = node.getNoSwaps();
