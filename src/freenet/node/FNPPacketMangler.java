@@ -2232,7 +2232,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	private ECDHLightContext _genECDHLightContext() {
         final ECDHLightContext ctx = new ECDHLightContext(ecdhCurveToUse);
         ctx.setECDSASignature(crypto.ecdsaSign(ctx.getPublicKeyNetworkFormat()));
-        ctx.setDSASignature(crypto.sign(ctx.getPublicKeyNetworkFormat()));
+        ctx.setDSASignature(crypto.sign(SHA256.digest(assembleDHParams(ctx.getPublicKeyNetworkFormat(), crypto.getCryptoGroup()))));
         return ctx;
     }
 	
