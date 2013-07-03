@@ -83,8 +83,9 @@ public final class LRUCache<Key extends Comparable<Key>, Value> {
 	}
 	
 	/**
-	 * Gets a value from the cache. Returns null if there is no entry for the given key or if the entry is
-	 * expired. If an expired entry was found, it is removed from the cache.
+	 * Gets a value from the cache and moves it to top.
+	 * Returns null if there is no entry for the given key or if the entry is expired.
+	 * If an expired entry was found, it is removed from the cache.
 	 */
 	public Value get(final Key key) {
 		final Entry entry = mCache.get(key);
@@ -95,6 +96,8 @@ public final class LRUCache<Key extends Comparable<Key>, Value> {
 			mCache.removeKey(key);
 			return null;
 		}
+		
+		mCache.push(key, entry); // Move the key to top. 
 		
 		return entry.getValue();
 	}
