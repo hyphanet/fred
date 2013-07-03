@@ -143,8 +143,9 @@ public class ECDSA {
     }
     
     /**
-     * Returns a zero padded DER signature (maxSigSize)
-     * Space Inefficient but constant-size
+     * Sign data and return a fixed size signature. The data does not need to be hashed, the 
+     * signing code will handle that for us, using an algorithm appropriate for the keysize.
+     * @return A zero padded DER signature (maxSigSize). Space Inefficient but constant-size.
      */
     public byte[] signToNetworkFormat(byte[] data, int offset, int len) {
         byte[] plainsig = sign(data, offset, len);
