@@ -5,7 +5,7 @@ package freenet.support;
 
 
 /**
- * A key-value cache with a fixed size and expiration time.
+ * A key-value cache with a fixed size and optional expiration time.
  * The least recently used item is removed if the cache is full and a new entry is added.
  * 
  * Existing entries are only returned if they are not expired.
@@ -31,7 +31,7 @@ public final class LRUCache<Key extends Comparable<Key>, Value> {
 		
 		public Entry(final Value myValue) {
 			mValue = myValue;
-			mExpirationDate = CurrentTimeUTC.getInMillis() + mExpirationDelay; 
+			mExpirationDate = (mExpirationDelay < Long.MAX_VALUE) ? (CurrentTimeUTC.getInMillis() + mExpirationDelay) : (Long.MAX_VALUE); 
 		}
 		
 		public boolean expired(final long time) {
@@ -48,6 +48,16 @@ public final class LRUCache<Key extends Comparable<Key>, Value> {
 	}
 	
 	private final LRUMap<Key, Entry> mCache;
+	
+	/**
+	 * Creates a cache without an expiration time.
+	 * @param sizeLimit The maximal amount of items which the cache should hold.
+	 */
+	public LRUCache(final int sizeLimit) {
+		mCache = LRUMap.createSafeMap();
+		mSizeLimit = sizeLimit;
+		mExpirationDelay = Long.MAX_VALUE;
+	}
 
 
 	/**
@@ -92,7 +102,7 @@ public final class LRUCache<Key extends Comparable<Key>, Value> {
 		if(entry == null)
 			return null;
 		
-		if(entry.expired()) {
+		if(mExpirationDelay < Long.MAX_VALUE && entry.expired()) {
 			mCache.removeKey(key);
 			return null;
 		}
