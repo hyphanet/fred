@@ -2222,15 +2222,16 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 	private DiffieHellmanLightContext _genLightDiffieHellmanContext() {
 		final DiffieHellmanLightContext ctx = DiffieHellman.generateLightContext(dhGroupToUse);
-		ctx.setSignature(crypto.sign(SHA256.digest(assembleDHParams(ctx.getPublicKeyNetworkFormat(), crypto.getCryptoGroup()))));
+		if(logDEBUG) Logger.debug(this, "Signing for DiffieHellman: "+HexUtil.bytesToHex(SHA256.digest(assembleDHParams(ctx.getPublicKeyNetworkFormat(), crypto.getCryptoGroup())))+" for "+HexUtil.bytesToHex(assembleDHParams(ctx.getPublicKeyNetworkFormat(), crypto.getCryptoGroup())));
+		ctx.setDSASignature(crypto.sign(SHA256.digest(assembleDHParams(ctx.getPublicKeyNetworkFormat(), crypto.getCryptoGroup()))));
 
 		return ctx;
 	}
     
 	private ECDHLightContext _genECDHLightContext() {
         final ECDHLightContext ctx = new ECDHLightContext(ecdhCurveToUse);
-        ctx.setSignature(crypto.ecdsaSign(ctx.getPublicKeyNetworkFormat()));
-
+        ctx.setECDSASignature(crypto.ecdsaSign(ctx.getPublicKeyNetworkFormat()));
+        ctx.setDSASignature(crypto.sign(ctx.getPublicKeyNetworkFormat()));
         return ctx;
     }
 	
