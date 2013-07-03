@@ -959,14 +959,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		int modulusLength = getModulusLength(negType);
 		int nonceSize = getNonceSize(negType);
 		// g^r
-	    DiffieHellmanLightContext dhLctx = getLightDiffieHellmanContext();
-	    ECDHLightContext ecdhLctx = getECDHLightContext();
-		    
+		// Neg type 8 and later use ECDH for generating the keys.
+		KeyAgreementSchemeContext ctx = negType < 8 ? getLightDiffieHellmanContext() : getECDHLightContext();
+		
 		// Nr
 		byte[] myNonce = new byte[nonceSize];
 		node.random.nextBytes(myNonce);
-	    byte[] myExponential = (negType < 8 ? dhLctx : ecdhLctx).getPublicKeyNetworkFormat();
-	    byte[] sig = (negType < 9 ? dhLctx.dsaSig : ecdhLctx.ecdsaSig);
+		byte[] myExponential = ctx.getPublicKeyNetworkFormat();
+		// Neg type 9 and later use ECDSA signature.
+		byte[] sig = (negType < 9 ? ctx.dsaSig : ctx.ecdsaSig);
 	    if(sig.length != getSignatureLength(negType))
 	        throw new IllegalStateException("This shouldn't happen: please report! We are attempting to send "+sig.length+" bytes of signature in JFK2! "+pn.getPeer());
 	    byte[] authenticator = HMAC.macWithSHA256(getTransientKey(),assembleJFKAuthenticator(myExponential, hisExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress()), HASH_LENGTH);
