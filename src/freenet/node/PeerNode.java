@@ -517,6 +517,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			    // Old peer, no negtype > 8
 			    this.peerECDSAPubKey = null;
 			    this.peerECDSAPubKeyHash = null;
+			    for(int type : negTypes)
+			    	if(type >= 9)
+			    		throw new FSParseException("Neg type 9 or later must have an ECDSA key");
 			} else {
 	            byte[] pub = Base64.decode(sfs.get("pub"));
 	            if (pub.length > ECDSA.Curves.P256.modulusSize)
