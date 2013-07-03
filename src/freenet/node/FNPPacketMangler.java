@@ -1364,7 +1364,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 
 		// verify the signature
-		byte[] toVerify = assembleDHParams(nonceInitiatorHashed, nonceResponder, initiatorExponential, responderExponential, crypto.getIdentity(negType, unknownInitiator), data);
+		byte[] toVerify = assembleDHParams(nonceInitiatorHashed, nonceResponder, initiatorExponential, responderExponential, crypto.getIdentity(negType, false), data);
 		if(negType < 9) {
 		    byte[] r = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
 		    System.arraycopy(sig, 0, r, 0, Node.SIGNATURE_PARAMETER_LENGTH);
