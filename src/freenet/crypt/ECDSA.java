@@ -95,7 +95,7 @@ public class ECDSA {
         byte[] pri = null;
         try {
             pub = Base64.decode(sfs.get("pub"));
-            if (pub.length != curve.modulusSize)
+            if (pub.length > curve.modulusSize)
                 throw new InvalidKeyException();
             ECPublicKey pubK = getPublicKey(pub);
 

@@ -27,7 +27,7 @@ public class ECDSATest extends TestCase {
     public void testGetPublicKey() {
         PublicKey pub = ecdsa.getPublicKey();
         assertNotNull(pub);
-        assertEquals(pub.getEncoded().length, curveToTest.modulusSize);
+        assertTrue(pub.getEncoded().length <= curveToTest.modulusSize);
     }
     
     public void testSign() {
