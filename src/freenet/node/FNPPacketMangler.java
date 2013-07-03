@@ -970,8 +970,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	    if(sig.length != getSignatureLength(negType))
 	        throw new IllegalStateException("This shouldn't happen: please report! We are attempting to send "+sig.length+" bytes of signature in JFK2! "+pn.getPeer());
 	    byte[] authenticator = HMAC.macWithSHA256(getTransientKey(),assembleJFKAuthenticator(myExponential, hisExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress()), HASH_LENGTH);
-		if(logMINOR) Logger.minor(this, "We are using the following HMAC : " + HexUtil.bytesToHex(authenticator));
-        if(logMINOR) Logger.minor(this, "We have Ni' : " + HexUtil.bytesToHex(nonceInitator));
+		if(logDEBUG) Logger.debug(this, "We are using the following HMAC : " + HexUtil.bytesToHex(authenticator));
+        if(logDEBUG) Logger.debug(this, "We have Ni' : " + HexUtil.bytesToHex(nonceInitator));
 		byte[] message2 = new byte[nonceInitator.length + nonceSize+modulusLength+
 		                           sig.length+
 		                           HASH_LENGTH];
@@ -1188,7 +1188,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		byte[] nonceInitiator = new byte[nonceSize];
 		System.arraycopy(payload, inputOffset, nonceInitiator, 0, nonceSize);
 		inputOffset += nonceSize;
-		if(logMINOR) Logger.minor(this, "We are receiving Ni : " + HexUtil.bytesToHex(nonceInitiator));
+		if(logDEBUG) Logger.debug(this, "We are receiving Ni : " + HexUtil.bytesToHex(nonceInitiator));
 		// Before negtype 9 we didn't hash it!
 		byte[] nonceInitiatorHashed = (negType > 8 ? SHA256.digest(nonceInitiator) : nonceInitiator);
 		    
@@ -1210,8 +1210,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		// @see https://bugs.freenetproject.org/view.php?id=1604
 		if(!HMAC.verifyWithSHA256(getTransientKey(), assembleJFKAuthenticator(responderExponential, initiatorExponential, nonceResponder, nonceInitiatorHashed, replyTo.getAddress().getAddress()) , authenticator)) {
 			if(shouldLogErrorInHandshake(t1)) {
-			    if(logMINOR) Logger.minor(this, "We received the following HMAC : " + HexUtil.bytesToHex(authenticator));
-			    if(logMINOR) Logger.minor(this, "We have Ni' : " + HexUtil.bytesToHex(nonceInitiatorHashed));
+			    if(logDEBUG) Logger.debug(this, "We received the following HMAC : " + HexUtil.bytesToHex(authenticator));
+			    if(logDEBUG) Logger.debug(this, "We have Ni' : " + HexUtil.bytesToHex(nonceInitiatorHashed));
 				Logger.normal(this, "The HMAC doesn't match; let's discard the packet (either we rekeyed or we are victim of forgery) - JFK3 - "+pn);
 			}
 			return;
@@ -1764,7 +1764,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		// Ni
 		System.arraycopy(nonceInitiator, 0, message3, offset, nonceSize);
 		offset += nonceSize;
-		if(logMINOR) Logger.minor(this, "We are sending Ni : " + HexUtil.bytesToHex(nonceInitiator));
+		if(logDEBUG) Logger.debug(this, "We are sending Ni : " + HexUtil.bytesToHex(nonceInitiator));
 		// Nr
 		System.arraycopy(nonceResponder, 0, message3, offset, nonceSize);
 		offset += nonceSize;
@@ -2064,7 +2064,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		byte[] iv = new byte[PCFBMode.lengthIV(cipher)];
 		node.random.nextBytes(iv);
 		byte[] hash = SHA256.digest(output);
-		if(logMINOR) Logger.minor(this, "Data hash: "+HexUtil.bytesToHex(hash));
+		if(logDEBUG) Logger.debug(this, "Data hash: "+HexUtil.bytesToHex(hash));
 		int prePaddingLength = iv.length + hash.length + 2 /* length */ + output.length;
 		int maxPacketSize = sock.getMaxPacketSize();
 		int paddingLength;
