@@ -678,7 +678,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		    //      - send Ni' (a hash of Ni) in JFK1 to prevent a potential CPU DoS		    
 		    //      Improvements:
 		    //      - use ECDSA with P256 instead of DSA2048
-		    //      - use AES128-CBC instead of Rijndael256(256)-CFB
 		    //      - use a 128bit nonce instead of a 64bit one
 		    //      - use the hash of the pubkey as an identity instead of just random (forgeable) data
 		    // negType == 8 => use ECDH with P256 instead of DH1024
