@@ -111,4 +111,8 @@ public final class LRUCache<Key extends Comparable<Key>, Value> {
 		
 		return entry.getValue();
 	}
+	
+	public void clear() {
+		mCache.clear();
+	}
 }
