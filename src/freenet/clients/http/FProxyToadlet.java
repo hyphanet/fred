@@ -751,7 +751,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				infobox.addChild("div", "class", "infobox-header", l10n("fetchingPageBox"));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				infoboxContent.addAttribute("id", "infoContent");
-				infoboxContent.addChild(new ProgressInfoElement(fetchTracker, key, fctx, maxSize, core.isAdvancedModeEnabled(), ctx, isWebPushingEnabled));
+				infoboxContent.addChild(new ProgressInfoElement(fetchTracker, key, fctx, maxSize, ctx.isAdvancedModeEnabled(), ctx, isWebPushingEnabled));
 
 
 				HTMLNode table = infoboxContent.addChild("table", "border", "0");

@@ -169,7 +169,7 @@ public class StatisticsToadlet extends Toadlet {
 		int numberOfNoLoadStats = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_NO_LOAD_STATS);
 
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("fullTitle"), ctx);
-		boolean advancedMode = ctx.getContainer().isAdvancedModeEnabled();
+		boolean advancedMode = ctx.isAdvancedModeEnabled();
 		pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 

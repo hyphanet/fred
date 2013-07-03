@@ -109,6 +109,11 @@ public interface ToadletContext {
 	/** Is this Toadlet allowed full access to the node, including the ability to reconfigure it,
 	 * restart it etc? */
 	boolean isAllowedFullAccess();
+	
+	/**
+	 * Is the web interface in advanced mode?
+	 */
+	boolean isAdvancedModeEnabled();
 
 	/**
 	 * Return a robots.txt excluding all spiders and other non-browser HTTP clients?

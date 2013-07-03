@@ -53,7 +53,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
     
     public boolean isEnabled (ToadletContext ctx) {
         boolean fullAccess = (!container.publicGatewayMode()) || ((ctx != null) && ctx.isAllowedFullAccess());
-        return core.isAdvancedModeEnabled() && fullAccess;
+        return ctx.isAdvancedModeEnabled() && fullAccess;
     }
 
     public void handleMethodGET(URI uri, final HTTPRequest request, final ToadletContext ctx)

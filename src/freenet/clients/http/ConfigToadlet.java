@@ -440,8 +440,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			return;
 		}
 
-		boolean advancedModeEnabled = ctx.getContainer()
-				.isAdvancedModeEnabled();
+		boolean advancedModeEnabled = ctx.isAdvancedModeEnabled();
 
 		PageNode page = ctx.getPageMaker().getPageNode(
 				NodeL10n.getBase().getString("ConfigToadlet.fullTitle"), ctx);
@@ -799,7 +798,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 	@Override
 	public boolean isEnabled(ToadletContext ctx) {
 		Option<?>[] o = subConfig.getOptions();
-		if (core.isAdvancedModeEnabled())
+		if (ctx.isAdvancedModeEnabled())
 			return true;
 		for (Option<?> option : o)
 			if (!option.isExpert())

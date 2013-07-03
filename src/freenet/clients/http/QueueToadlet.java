@@ -1721,11 +1721,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		return reasonCell;
 	}
 
-	private HTMLNode createProgressCell(boolean started, COMPRESS_STATE compressing, int fetched, int failed, int fatallyFailed, int min, int total, boolean finalized, boolean upload) {
-		boolean advancedMode = core.isAdvancedModeEnabled();
-		return createProgressCell(advancedMode, started, compressing, fetched, failed, fatallyFailed, min, total, finalized, upload);
-	}
-
 	public static HTMLNode createProgressCell(boolean advancedMode, boolean started, COMPRESS_STATE compressing, int fetched, int failed, int fatallyFailed, int min, int total, boolean finalized, boolean upload) {
 		HTMLNode progressCell = new HTMLNode("td", "class", "request-progress");
 		if (!started) {
@@ -2123,9 +2118,21 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						break;
 					case PROGRESS:
 						if(clientRequest instanceof UploadFileRequestStatus)
-							requestRow.addChild(createProgressCell(clientRequest.isStarted(), ((UploadFileRequestStatus)clientRequest).isCompressing(), clientRequest.getFetchedBlocks(), clientRequest.getFailedBlocks(), clientRequest.getFatalyFailedBlocks(), clientRequest.getMinBlocks(), clientRequest.getTotalBlocks(), clientRequest.isTotalFinalized() || clientRequest instanceof UploadFileRequestStatus, isUpload));
+							requestRow.addChild(createProgressCell(ctx.isAdvancedModeEnabled(),
+									clientRequest.isStarted(), ((UploadFileRequestStatus)clientRequest).isCompressing(),
+									clientRequest.getFetchedBlocks(), clientRequest.getFailedBlocks(),
+									clientRequest.getFatalyFailedBlocks(), clientRequest.getMinBlocks(),
+									clientRequest.getTotalBlocks(),
+									clientRequest.isTotalFinalized() || clientRequest instanceof UploadFileRequestStatus,
+									isUpload));
 						else
-							requestRow.addChild(createProgressCell(clientRequest.isStarted(), COMPRESS_STATE.WORKING, clientRequest.getFetchedBlocks(), clientRequest.getFailedBlocks(), clientRequest.getFatalyFailedBlocks(), clientRequest.getMinBlocks(), clientRequest.getTotalBlocks(), clientRequest.isTotalFinalized() || clientRequest instanceof UploadFileRequestStatus, isUpload));
+							requestRow.addChild(createProgressCell(ctx.isAdvancedModeEnabled(),
+									clientRequest.isStarted(), COMPRESS_STATE.WORKING,
+									clientRequest.getFetchedBlocks(), clientRequest.getFailedBlocks(),
+									clientRequest.getFatalyFailedBlocks(), clientRequest.getMinBlocks(),
+									clientRequest.getTotalBlocks(),
+									clientRequest.isTotalFinalized() || clientRequest instanceof UploadFileRequestStatus,
+									isUpload));
 						break;
 					case REASON:
 						requestRow.addChild(createReasonCell(clientRequest.getFailureReason(false)));

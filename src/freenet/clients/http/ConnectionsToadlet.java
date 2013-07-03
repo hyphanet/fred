@@ -239,7 +239,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		}
 
 		PageNode page = ctx.getPageMaker().getPageNode(getPageTitle(titleCountString), ctx);
-		final boolean advancedMode = ctx.getContainer().isAdvancedModeEnabled();
+		final boolean advancedMode = ctx.isAdvancedModeEnabled();
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		

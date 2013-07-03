@@ -691,6 +691,11 @@ public class ToadletContextImpl implements ToadletContext {
 	public boolean isAllowedFullAccess() {
 		return container.isAllowedFullAccess(remoteAddr);
 	}
+	
+	@Override
+	public boolean isAdvancedModeEnabled() {
+		return container.isAdvancedModeEnabled();
+	}
 
 	@Override
 	public boolean doRobots() {

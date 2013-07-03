@@ -392,7 +392,7 @@ public final class PageMaker {
 			statusBarDiv.addChild("div", "id", "statusbar-language").addChild("a", "href", "/config/node#l10n", NodeL10n.getBase().getSelectedLanguage().fullName);
 
 			if (node.clientCore != null && ctx != null && renderParameters.isRenderModeSwitch()) {
-				boolean isAdvancedMode = ctx.activeToadlet().container.isAdvancedModeEnabled();
+				boolean isAdvancedMode = ctx.isAdvancedModeEnabled();
 				String uri = ctx.getUri().getQuery();
 				Map<String, List<String>> parameters = HTTPRequestImpl.parseUriParameters(uri, true);
 				List<String> newModeSwitchValues = new ArrayList<String>();

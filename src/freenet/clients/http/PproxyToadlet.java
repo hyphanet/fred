@@ -344,7 +344,7 @@ public class PproxyToadlet extends Toadlet {
 				Iterator<PluginProgress> loadingPlugins = pm.getStartingPlugins().iterator();
 
 				PageNode page = ctx.getPageMaker().getPageNode(l10n("plugins"), ctx);
-				boolean advancedModeEnabled = ctx.getContainer().isAdvancedModeEnabled();
+				boolean advancedModeEnabled = ctx.isAdvancedModeEnabled();
 				HTMLNode pageNode = page.outer;
 				if (loadingPlugins.hasNext()) {
 					/* okay, add a refresh. */

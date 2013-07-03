@@ -109,7 +109,7 @@ public class ConnectivityToadlet extends Toadlet {
 			row.addChild("td", AddressTracker.statusString(tracker.getPortForwardStatus()));
 		}
 		
-		if(ctx.getContainer().isAdvancedModeEnabled()) {
+		if(ctx.isAdvancedModeEnabled()) {
 		
 		// One box per port
 		
