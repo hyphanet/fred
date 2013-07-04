@@ -6,6 +6,7 @@ import java.text.ParseException;
 import java.util.Date;
 
 import freenet.clients.http.FProxyFetchInProgress.REFILTER_POLICY;
+import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.support.HTMLNode;
 import freenet.support.MultiValueTable;
@@ -81,6 +82,11 @@ public interface ToadletContext {
 	 * Get the user alert manager.
 	 */
 	UserAlertManager getAlertManager();
+	
+	/**
+	 * Get the bookmark manager.
+	 */
+	BookmarkManager getBookmarkManager();
 
 	BucketFactory getBucketFactory();
 	

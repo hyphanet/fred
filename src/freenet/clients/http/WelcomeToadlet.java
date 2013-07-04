@@ -38,7 +38,6 @@ import freenet.support.io.FileUtil;
 public class WelcomeToadlet extends Toadlet {
 
     final Node node;
-    final BookmarkManager bookmarkManager;
 
     private static volatile boolean logMINOR;
     static {
@@ -51,10 +50,9 @@ public class WelcomeToadlet extends Toadlet {
         });
     }
 
-    WelcomeToadlet(HighLevelSimpleClient client, Node node, BookmarkManager bookmarks) {
+    WelcomeToadlet(HighLevelSimpleClient client, Node node) {
         super(client);
         this.node = node;
-        this.bookmarkManager = bookmarks;
     }
 
     void redirectToRoot(ToadletContext ctx) throws ToadletContextClosedException, IOException {

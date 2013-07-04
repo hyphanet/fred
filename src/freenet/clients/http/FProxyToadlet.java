@@ -1121,7 +1121,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	}
 
 	public static void maybeCreateFProxyEtc(NodeClientCore core, Node node, Config config,
-	        SimpleToadletServer server, BookmarkManager bookmarks) throws IOException {
+	        SimpleToadletServer server) throws IOException {
 
 		// FIXME how to change these on the fly when the interface language is changed?
 
@@ -1233,7 +1233,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			        false);
 		}
 
-		WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, node, bookmarks);
+		WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, node);
 		server.register(welcometoadlet, null, "/welcome/", true, false);
 
 		ExternalLinkToadlet externalLinkToadlet = new ExternalLinkToadlet(client, node);
@@ -1260,7 +1260,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		LocalFileN2NMToadlet localFileN2NMToadlet = new LocalFileN2NMToadlet(core, client);
 		server.register(localFileN2NMToadlet, null, LocalFileN2NMToadlet.PATH, true, false);
 
-		BookmarkEditorToadlet bookmarkEditorToadlet = new BookmarkEditorToadlet(client, core, bookmarks);
+		BookmarkEditorToadlet bookmarkEditorToadlet = new BookmarkEditorToadlet(client, core);
 		server.register(bookmarkEditorToadlet, null, "/bookmarkEditor/", true, false);
 
 		BrowserTestToadlet browserTestToadlet = new BrowserTestToadlet(client, core);
