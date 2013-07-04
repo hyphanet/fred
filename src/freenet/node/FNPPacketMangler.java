@@ -1120,6 +1120,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		    // Verify the ECDSA signature ; We are assuming that it's the curve we expect
 		    if(!ECDSA.verify(Curves.P256, pn.peerECDSAPubKey, sig, hisExponential)) {
 	              Logger.error(this, "The ECDSA signature verification has failed in JFK(2)!! "+pn.getPeer());
+	              if(logDEBUG) Logger.debug(this, "Expected signature on "+HexUtil.bytesToHex(hisExponential)+" with "+HexUtil.bytesToHex(pn.peerECDSAPubKeyHash)+" signature "+HexUtil.bytesToHex(sig));
 	              return;
 		    }
 		}
@@ -2233,6 +2234,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
         final ECDHLightContext ctx = new ECDHLightContext(ecdhCurveToUse);
         ctx.setECDSASignature(crypto.ecdsaSign(ctx.getPublicKeyNetworkFormat()));
         ctx.setDSASignature(crypto.sign(SHA256.digest(assembleDHParams(ctx.getPublicKeyNetworkFormat(), crypto.getCryptoGroup()))));
+        if(logDEBUG) Logger.debug(this, "ECDSA Signature: "+HexUtil.bytesToHex(ctx.ecdsaSig)+" for "+HexUtil.bytesToHex(ctx.getPublicKeyNetworkFormat()));
         return ctx;
     }
 	
