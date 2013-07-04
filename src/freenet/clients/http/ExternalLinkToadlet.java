@@ -4,7 +4,6 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.PageMaker.RenderParameters;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
-import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
 import freenet.support.MultiValueTable;
 import freenet.support.api.HTTPRequest;
@@ -22,12 +21,10 @@ public class ExternalLinkToadlet extends Toadlet {
 	private static final String magicHTTPEscapeString = "_CHECKED_HTTP_";
 
 	private final Node node;
-	private final NodeClientCore core;
 
-	ExternalLinkToadlet(HighLevelSimpleClient client, NodeClientCore core, Node node) {
+	ExternalLinkToadlet(HighLevelSimpleClient client, Node node) {
 		super(client);
 		this.node = node;
-		this.core = core;
 	}
 
 	@Override
@@ -37,7 +34,7 @@ public class ExternalLinkToadlet extends Toadlet {
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		String password = request.getPartAsStringFailsafe("formPassword", 32);
-		if ((password == null) || !password.equals(core.formPassword)) {
+		if ((password == null) || !password.equals(ctx.getFormPassword())) {
 			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", PATH);
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);

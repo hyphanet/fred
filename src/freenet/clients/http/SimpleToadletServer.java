@@ -425,7 +425,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		intervalPushManager=new IntervalPusherManager(getTicker(), pushDataManager);
 		bookmarkManager = new BookmarkManager(core, publicGatewayMode());
 		try {
-			FProxyToadlet.maybeCreateFProxyEtc(core, core.node, core.node.config, this, bookmarkManager);
+			FProxyToadlet.maybeCreateFProxyEtc(core, core.node, core.node.config, this);
 		} catch (IOException e) {
 			Logger.error(this, "Could not start fproxy: "+e, e);
 			System.err.println("Could not start fproxy:");
@@ -1011,7 +1011,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		    freenet.support.Logger.OSThread.logPID(this);
 			if(logMINOR) Logger.minor(this, "Handling connection");
 			try {
-				ToadletContextImpl.handle(sock, SimpleToadletServer.this, pageMaker);
+				ToadletContextImpl.handle(sock, SimpleToadletServer.this, pageMaker, core.alerts, bookmarkManager);
 			} catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 				System.err.println("SimpleToadletServer request above failed.");

@@ -540,7 +540,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		} else if(ks.startsWith("/feed/") || ks.equals("/feed")) {
 			//TODO Better way to find the host. Find if https is used?
 			String host = ctx.getHeaders().get("host");
-			String atom = core.alerts.getAtom("http://" + host);
+			String atom = ctx.getAlertManager().getAtom("http://" + host);
 			byte[] buf = atom.getBytes("UTF-8");
 			ctx.sendReplyHeaders(200, "OK", null, "application/atom+xml", buf.length);
 			ctx.writeData(buf, 0, buf.length);
@@ -751,7 +751,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				infobox.addChild("div", "class", "infobox-header", l10n("fetchingPageBox"));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				infoboxContent.addAttribute("id", "infoContent");
-				infoboxContent.addChild(new ProgressInfoElement(fetchTracker, key, fctx, maxSize, core.isAdvancedModeEnabled(), ctx, isWebPushingEnabled));
+				infoboxContent.addChild(new ProgressInfoElement(fetchTracker, key, fctx, maxSize, ctx.isAdvancedModeEnabled(), ctx, isWebPushingEnabled));
 
 
 				HTMLNode table = infoboxContent.addChild("table", "border", "0");
@@ -1121,7 +1121,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	}
 
 	public static void maybeCreateFProxyEtc(NodeClientCore core, Node node, Config config,
-	        SimpleToadletServer server, BookmarkManager bookmarks) throws IOException {
+	        SimpleToadletServer server) throws IOException {
 
 		// FIXME how to change these on the fly when the interface language is changed?
 
@@ -1173,11 +1173,11 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		DecodeToadlet decodeKeywordURL = new DecodeToadlet(client, core);
 		server.register(decodeKeywordURL, null, "/decode/", true, false);
 
-		InsertFreesiteToadlet siteinsert = new InsertFreesiteToadlet(client, core.alerts);
+		InsertFreesiteToadlet siteinsert = new InsertFreesiteToadlet(client);
 		server.register(siteinsert, "FProxyToadlet.categoryBrowsing", "/insertsite/", true,
 		        "FProxyToadlet.insertFreesiteTitle", "FProxyToadlet.insertFreesite", false, null);
 
-		UserAlertsToadlet alerts = new UserAlertsToadlet(client, node, core);
+		UserAlertsToadlet alerts = new UserAlertsToadlet(client);
 		server.register(alerts, "FProxyToadlet.categoryStatus", "/alerts/", true, "FProxyToadlet.alertsTitle",
 		        "FProxyToadlet.alerts", true, null);
 
@@ -1213,7 +1213,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		server.register(seclevels, "FProxyToadlet.categoryConfig", "/seclevels/", true,
 		        "FProxyToadlet.seclevelsTitle", "FProxyToadlet.seclevels", true, null);
 
-		PproxyToadlet pproxy = new PproxyToadlet(client, node, core);
+		PproxyToadlet pproxy = new PproxyToadlet(client, node);
 		server.register(pproxy, "FProxyToadlet.categoryConfig", "/plugins/", true, "FProxyToadlet.pluginsTitle",
 		        "FProxyToadlet.plugins", true, null);
 
@@ -1233,17 +1233,17 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			        false);
 		}
 
-		WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, core, node, bookmarks);
+		WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, node);
 		server.register(welcometoadlet, null, "/welcome/", true, false);
 
-		ExternalLinkToadlet externalLinkToadlet = new ExternalLinkToadlet(client, core, node);
+		ExternalLinkToadlet externalLinkToadlet = new ExternalLinkToadlet(client, node);
 		server.register(externalLinkToadlet, null, ExternalLinkToadlet.PATH, true, false);
 
 		DarknetConnectionsToadlet friendsToadlet = new DarknetConnectionsToadlet(node, core, client);
 		server.register(friendsToadlet, "FProxyToadlet.categoryFriends", "/friends/", true,
 		        "FProxyToadlet.friendsTitle", "FProxyToadlet.friends", true, null);
 
-		DarknetAddRefToadlet addRefToadlet = new DarknetAddRefToadlet(node, core, client);
+		DarknetAddRefToadlet addRefToadlet = new DarknetAddRefToadlet(node, client);
 		server.register(addRefToadlet, "FProxyToadlet.categoryFriends", "/addfriend/", true,
 		        "FProxyToadlet.addFriendTitle", "FProxyToadlet.addFriend", true, null);
 
@@ -1251,8 +1251,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		server.register(opennetToadlet, "FProxyToadlet.categoryStatus", "/strangers/", true,
 		        "FProxyToadlet.opennetTitle", "FProxyToadlet.opennet", true, opennetToadlet);
 
-		ChatForumsToadlet chatForumsToadlet = new ChatForumsToadlet(client, core.alerts, node.pluginManager,
-		        core.node);
+		ChatForumsToadlet chatForumsToadlet = new ChatForumsToadlet(client, node.pluginManager);
 		server.register(chatForumsToadlet, "FProxyToadlet.categoryChat", "/chat/", true,
 		        "FProxyToadlet.chatForumsTitle", "FProxyToadlet.chatForums", true, chatForumsToadlet);
 
@@ -1261,7 +1260,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		LocalFileN2NMToadlet localFileN2NMToadlet = new LocalFileN2NMToadlet(core, client);
 		server.register(localFileN2NMToadlet, null, LocalFileN2NMToadlet.PATH, true, false);
 
-		BookmarkEditorToadlet bookmarkEditorToadlet = new BookmarkEditorToadlet(client, core, bookmarks);
+		BookmarkEditorToadlet bookmarkEditorToadlet = new BookmarkEditorToadlet(client, core);
 		server.register(bookmarkEditorToadlet, null, "/bookmarkEditor/", true, false);
 
 		BrowserTestToadlet browserTestToadlet = new BrowserTestToadlet(client, core);
@@ -1275,7 +1274,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		server.register(diagnosticToadlet, "FProxyToadlet.categoryStatus", "/diagnostic/", true,
 		        "FProxyToadlet.diagnosticTitle", "FProxyToadlet.diagnostic", true, null);
 
-		ConnectivityToadlet connectivityToadlet = new ConnectivityToadlet(client, node, core);
+		ConnectivityToadlet connectivityToadlet = new ConnectivityToadlet(client, node);
 		server.register(connectivityToadlet, "FProxyToadlet.categoryStatus", "/connectivity/", true,
 		        "ConnectivityToadlet.connectivityTitle", "ConnectivityToadlet.connectivity", true, null);
 

@@ -23,7 +23,6 @@ import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.Node;
-import freenet.node.NodeClientCore;
 import freenet.node.NodeStarter;
 import freenet.node.Version;
 import freenet.node.useralerts.UserAlert;
@@ -38,9 +37,7 @@ import freenet.support.io.FileUtil;
 
 public class WelcomeToadlet extends Toadlet {
 
-    final NodeClientCore core;
     final Node node;
-    final BookmarkManager bookmarkManager;
 
     private static volatile boolean logMINOR;
     static {
@@ -53,11 +50,9 @@ public class WelcomeToadlet extends Toadlet {
         });
     }
 
-    WelcomeToadlet(HighLevelSimpleClient client, NodeClientCore core, Node node, BookmarkManager bookmarks) {
+    WelcomeToadlet(HighLevelSimpleClient client, Node node) {
         super(client);
         this.node = node;
-        this.core = core;
-        this.bookmarkManager = bookmarks;
     }
 
     void redirectToRoot(ToadletContext ctx) throws ToadletContextClosedException, IOException {
@@ -113,10 +108,10 @@ public class WelcomeToadlet extends Toadlet {
 		}
 
         String passwd = request.getPartAsStringFailsafe("formPassword", 32);
-        boolean noPassword = (passwd == null) || !passwd.equals(core.formPassword);
+        boolean noPassword = (passwd == null) || !passwd.equals(ctx.getFormPassword());
         if (noPassword) {
             if (logMINOR) {
-                Logger.minor(this, "No password (" + passwd + " should be " + core.formPassword + ')');
+                Logger.minor(this, "No password (" + passwd + " should be " + ctx.getFormPassword() + ')');
             }
         }
 
@@ -169,14 +164,14 @@ public class WelcomeToadlet extends Toadlet {
                 return;
             }
 	    int validAlertsRemaining = 0;
-            UserAlert[] alerts = core.alerts.getAlerts();
+            UserAlert[] alerts = ctx.getAlertManager().getAlerts();
             for (UserAlert alert: alerts) {
                 if (request.getIntPart("disable", -1) == alert.hashCode()) {
                     // Won't be dismissed if it's not allowed anyway
                     if (alert.userCanDismiss() && alert.shouldUnregisterOnDismiss()) {
                         alert.onDismiss();
                         Logger.normal(this, "Unregistering the userAlert " + alert.hashCode());
-                        core.alerts.unregister(alert);
+                        ctx.getAlertManager().unregister(alert);
                     } else {
                         Logger.normal(this, "Disabling the userAlert " + alert.hashCode());
                         alert.isValid(false);
@@ -259,7 +254,7 @@ public class WelcomeToadlet extends Toadlet {
                 return;
             }
             MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-            headers.put("Location", "/?terminated&formPassword=" + core.formPassword);
+            headers.put("Location", "/?terminated&formPassword=" + ctx.getFormPassword());
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
             node.ticker.queueTimedJob(new Runnable() {
 
@@ -287,7 +282,7 @@ public class WelcomeToadlet extends Toadlet {
             }
 
             MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-            headers.put("Location", "/?restarted&formPassword=" + core.formPassword);
+            headers.put("Location", "/?restarted&formPassword=" + ctx.getFormPassword());
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
             node.ticker.queueTimedJob(new Runnable() {
 
@@ -307,7 +302,7 @@ public class WelcomeToadlet extends Toadlet {
         	String[] alertAnchors = alertsToDump.split(",");
         	HashSet<String> toDump = new HashSet<String>();
         	for(String alertAnchor : alertAnchors) toDump.add(alertAnchor);
-        	core.alerts.dumpEvents(toDump);
+        	ctx.getAlertManager().dumpEvents(toDump);
         	redirectToRoot(ctx);
         } else {
             redirectToRoot(ctx);
@@ -323,7 +318,7 @@ public class WelcomeToadlet extends Toadlet {
                 this.writeTextReply(ctx, 200, "OK", FileUtil.readUTF(logs));
                 return;
             } else if (request.isParameterSet("terminated")) {
-                if ((!request.isParameterSet("formPassword")) || !request.getParam("formPassword").equals(core.formPassword)) {
+                if ((!request.isParameterSet("formPassword")) || !request.getParam("formPassword").equals(ctx.getFormPassword())) {
                     redirectToRoot(ctx);
                     return;
                 }
@@ -339,7 +334,7 @@ public class WelcomeToadlet extends Toadlet {
                 this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
                 return;
             } else if (request.isParameterSet("restarted")) {
-                if ((!request.isParameterSet("formPassword")) || !request.getParam("formPassword").equals(core.formPassword)) {
+                if ((!request.isParameterSet("formPassword")) || !request.getParam("formPassword").equals(ctx.getFormPassword())) {
                     redirectToRoot(ctx);
                     return;
                 }
@@ -414,7 +409,7 @@ public class WelcomeToadlet extends Toadlet {
 
         // Alerts
         if (ctx.isAllowedFullAccess()) {
-			contentNode.addChild(core.alerts.createSummary());
+			contentNode.addChild(ctx.getAlertManager().createSummary());
         }
 		
         if (ctx.getPageMaker().getTheme().fetchKeyBoxAboveBookmarks) {
@@ -449,8 +444,8 @@ public class WelcomeToadlet extends Toadlet {
         searchBox.addChild("div", "class", "infobox-header").addChild("span", "class", "search-title-label", NodeL10n.getBase().getString("WelcomeToadlet.searchBoxLabel"));
 		HTMLNode searchBoxContent = searchBox.addChild("div", "class", "infobox-content");
 		// Search form
-		if(core.node.pluginManager != null &&
-				core.node.pluginManager.isPluginLoaded("plugins.Library.Main")) {
+		if(node.pluginManager != null &&
+				node.pluginManager.isPluginLoaded("plugins.Library.Main")) {
         	// FIXME: Remove this once we have a non-broken index.
         	searchBoxContent.addChild("span", "class", "search-warning-text", l10n("searchBoxWarningSlow"));
 			HTMLNode searchForm = container.addFormChild(searchBoxContent, "/library/", "searchform");
@@ -458,8 +453,8 @@ public class WelcomeToadlet extends Toadlet {
         	searchForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "find", l10n("searchFreenet") });
         	// Search must be in a new window so that the user is able to browse the bookmarks.
         	searchForm.addAttribute("target", "_blank");
-        } else if(core.node.pluginManager == null || 
-        		core.node.pluginManager.isPluginLoadedOrLoadingOrWantLoad("Library")) {
+        } else if(node.pluginManager == null || 
+        		node.pluginManager.isPluginLoadedOrLoadingOrWantLoad("Library")) {
 			// Warn that search plugin is not loaded.
 			HTMLNode textSpan = searchBoxContent.addChild("span", "class", "search-not-availible-warning");
 			NodeL10n.getBase().addL10nSubstitution(textSpan, "WelcomeToadlet.searchPluginLoading", new String[] { "link" }, new HTMLNode[] { HTMLNode.link("/plugins/") });

@@ -12,11 +12,8 @@ import freenet.support.api.HTTPRequest;
 /** This is just documentation, it will be replaced with a plugin wizard eventually. */
 public class InsertFreesiteToadlet extends Toadlet {
 
-	private final UserAlertManager alerts;
-	
-	protected InsertFreesiteToadlet(HighLevelSimpleClient client, UserAlertManager alerts) {
+	protected InsertFreesiteToadlet(HighLevelSimpleClient client) {
 		super(client);
-		this.alerts = alerts;
 	}
 
 	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
@@ -24,7 +21,7 @@ public class InsertFreesiteToadlet extends Toadlet {
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
-		contentNode.addChild(alerts.createSummary());
+		contentNode.addChild(ctx.getAlertManager().createSummary());
 		
 		HTMLNode contentBox = ctx.getPageMaker().getInfobox("infobox-information", l10n("title"), contentNode, "freesite-insert", true);
 		

@@ -53,7 +53,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
     
     public boolean isEnabled (ToadletContext ctx) {
         boolean fullAccess = (!container.publicGatewayMode()) || ((ctx != null) && ctx.isAllowedFullAccess());
-        return core.isAdvancedModeEnabled() && fullAccess;
+        return ctx.isAdvancedModeEnabled() && fullAccess;
     }
 
     public void handleMethodGET(URI uri, final HTTPRequest request, final ToadletContext ctx)
@@ -70,7 +70,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
         HTMLNode pageNode = page.outer;
         HTMLNode contentNode = page.content;
 
-        contentNode.addChild(core.alerts.createSummary());
+        contentNode.addChild(ctx.getAlertManager().createSummary());
 
         contentNode.addChild(createContent(pageMaker, ctx));
         
@@ -100,11 +100,11 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
                 } catch (BadRequestException e) {
                     String invalidPart = e.getInvalidRequestPart();
                     if (invalidPart == "filter-operation") {
-                        writeBadRequestError(l10n("errorMustSpecifyFilterOperationTitle"), l10n("errorMustSpecifyFilterOperation"), ctx, core, true);
+                        writeBadRequestError(l10n("errorMustSpecifyFilterOperationTitle"), l10n("errorMustSpecifyFilterOperation"), ctx, true);
                     } else if (invalidPart == "result-handling") {
-                        writeBadRequestError(l10n("errorMustSpecifyResultHandlingTitle"), l10n("errorMustSpecifyResultHandling"), ctx, core, true);
+                        writeBadRequestError(l10n("errorMustSpecifyResultHandlingTitle"), l10n("errorMustSpecifyResultHandling"), ctx, true);
                     } else {
-                        writeBadRequestError(l10n("errorBadRequestTitle"), l10n("errorBadRequest"), ctx, core, true);
+                        writeBadRequestError(l10n("errorBadRequestTitle"), l10n("errorBadRequest"), ctx, true);
                     }
                     return;
                 }
@@ -179,14 +179,14 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
         return filterBox;
     }
 
-    private static void writeBadRequestError(String header, String message, ToadletContext context, NodeClientCore core, boolean returnToFilterPage)
+    private static void writeBadRequestError(String header, String message, ToadletContext context, boolean returnToFilterPage)
             throws ToadletContextClosedException, IOException {
         PageMaker pageMaker = context.getPageMaker();
         PageNode page = pageMaker.getPageNode(header, context);
         HTMLNode pageNode = page.outer;
         HTMLNode contentNode = page.content;
         if (context.isAllowedFullAccess()) {
-            contentNode.addChild(core.alerts.createSummary());
+            contentNode.addChild(context.getAlertManager().createSummary());
         }
         HTMLNode infoboxContent = pageMaker.getInfobox("infobox-error", header, contentNode, "filter-error", false);
         infoboxContent.addChild("#", message);
@@ -223,19 +223,19 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
             try {
                 handleFilter(bucket, mimeType, filterOperation, resultHandling, resultFilename, ctx, core);
             } catch (FileNotFoundException e) {
-                writeBadRequestError(l10n("errorNoFileOrCannotReadTitle"), l10n("errorNoFileOrCannotRead", "file", filename), ctx, core, true);
+                writeBadRequestError(l10n("errorNoFileOrCannotReadTitle"), l10n("errorNoFileOrCannotRead", "file", filename), ctx, true);
                 return;
             }
         } catch (BadRequestException e) {
             String invalidPart = e.getInvalidRequestPart();
             if (invalidPart == "filter-operation") {
-                writeBadRequestError(l10n("errorMustSpecifyFilterOperationTitle"), l10n("errorMustSpecifyFilterOperation"), ctx, core, true);
+                writeBadRequestError(l10n("errorMustSpecifyFilterOperationTitle"), l10n("errorMustSpecifyFilterOperation"), ctx, true);
             } else if (invalidPart == "result-handling") {
-                writeBadRequestError(l10n("errorMustSpecifyResultHandlingTitle"), l10n("errorMustSpecifyResultHandling"), ctx, core, true);
+                writeBadRequestError(l10n("errorMustSpecifyResultHandlingTitle"), l10n("errorMustSpecifyResultHandling"), ctx, true);
             } else if (invalidPart == "filename") {
-                writeBadRequestError(l10n("errorNoFileSelectedTitle"), l10n("errorNoFileSelected"), ctx, core, true);
+                writeBadRequestError(l10n("errorNoFileSelectedTitle"), l10n("errorNoFileSelected"), ctx, true);
             } else {
-                writeBadRequestError(l10n("errorBadRequestTitle"), l10n("errorBadRequest"), ctx, core, true);
+                writeBadRequestError(l10n("errorBadRequestTitle"), l10n("errorBadRequest"), ctx, true);
             }
         }
     }
@@ -261,13 +261,13 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
         } catch (BadRequestException e) {
             String invalidPart = e.getInvalidRequestPart();
             if (invalidPart == "filter-operation") {
-                writeBadRequestError(l10n("errorMustSpecifyFilterOperationTitle"), l10n("errorMustSpecifyFilterOperation"), ctx, core, true);
+                writeBadRequestError(l10n("errorMustSpecifyFilterOperationTitle"), l10n("errorMustSpecifyFilterOperation"), ctx, true);
             } else if (invalidPart == "result-handling") {
-                writeBadRequestError(l10n("errorMustSpecifyResultHandlingTitle"), l10n("errorMustSpecifyResultHandling"), ctx, core, true);
+                writeBadRequestError(l10n("errorMustSpecifyResultHandlingTitle"), l10n("errorMustSpecifyResultHandling"), ctx, true);
             } else if (invalidPart == "filename") {
-                writeBadRequestError(l10n("errorNoFileSelectedTitle"), l10n("errorNoFileSelected"), ctx, core, true);
+                writeBadRequestError(l10n("errorNoFileSelectedTitle"), l10n("errorNoFileSelected"), ctx, true);
             } else {
-                writeBadRequestError(l10n("errorBadRequestTitle"), l10n("errorBadRequest"), ctx, core, true);
+                writeBadRequestError(l10n("errorBadRequestTitle"), l10n("errorBadRequest"), ctx, true);
             }
         }
     }

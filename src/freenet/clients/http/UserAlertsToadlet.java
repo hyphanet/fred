@@ -8,9 +8,6 @@ import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.NodeL10n;
-import freenet.node.Node;
-import freenet.node.NodeClientCore;
-import freenet.node.useralerts.UserAlertManager;
 import freenet.support.HTMLNode;
 import freenet.support.MultiValueTable;
 import freenet.support.api.HTTPRequest;
@@ -21,14 +18,9 @@ import freenet.support.api.HTTPRequest;
  */
 public class UserAlertsToadlet extends Toadlet {
 
-	UserAlertsToadlet(HighLevelSimpleClient client, Node node, NodeClientCore core) {
+	UserAlertsToadlet(HighLevelSimpleClient client) {
 		super(client);
-		this.node = node;
-		this.alerts = core.alerts;
 	}
-
-	private UserAlertManager alerts;
-	private Node node;
 
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		if (!ctx.isAllowedFullAccess()) {
@@ -39,7 +31,7 @@ public class UserAlertsToadlet extends Toadlet {
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("title"), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
-		HTMLNode alertsNode = alerts.createAlerts(false);
+		HTMLNode alertsNode = ctx.getAlertManager().createAlerts(false);
 		if (alertsNode.getFirstTag() == null) {
 			alertsNode = new HTMLNode("div", "class", "infobox");
 			alertsNode.addChild("div", "class", "infobox-content").addChild("div", NodeL10n.getBase().getString("UserAlertsToadlet.noMessages"));
@@ -54,13 +46,13 @@ public class UserAlertsToadlet extends Toadlet {
 		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 
 		String pass = request.getPartAsStringFailsafe("formPassword", 32);
-		if((pass == null) || !pass.equals(node.clientCore.formPassword)) {
+		if((pass == null) || !pass.equals(ctx.getFormPassword())) {
 			sendErrorPage(ctx, 403, "Forbidden", "Invalid form password.");
 			return;
 		}
 		if (request.isPartSet("dismiss-user-alert")) {
 			int userAlertHashCode = request.getIntPart("disable", -1);
-			node.clientCore.alerts.dismissAlert(userAlertHashCode);
+			ctx.getAlertManager().dismissAlert(userAlertHashCode);
 		}
 		headers.put("Location", ".");
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);

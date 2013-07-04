@@ -18,7 +18,6 @@ import java.util.TreeMap;
 import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
-import freenet.node.NodeClientCore;
 import freenet.pluginmanager.AccessDeniedPluginHTTPException;
 import freenet.pluginmanager.DownloadPluginHTTPException;
 import freenet.pluginmanager.NotFoundPluginHTTPException;
@@ -41,7 +40,6 @@ public class PproxyToadlet extends Toadlet {
 	/** Maximum time to wait for a threaded plugin to exit */
 	private static final int MAX_THREADED_UNLOAD_WAIT_TIME = 60*1000;
 	private final Node node;
-	private final NodeClientCore core;
 
         private static volatile boolean logMINOR;
 	static {
@@ -53,10 +51,9 @@ public class PproxyToadlet extends Toadlet {
 		});
 	}
 
-	public PproxyToadlet(HighLevelSimpleClient client, Node node, NodeClientCore core) {
+	public PproxyToadlet(HighLevelSimpleClient client, Node node) {
 		super(client);
 		this.node = node;
-		this.core = core;
 	}
 
 	public void handleMethodPOST(URI uri, final HTTPRequest request, ToadletContext ctx)
@@ -65,7 +62,7 @@ public class PproxyToadlet extends Toadlet {
 		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 
 		String pass = request.getPartAsStringFailsafe("formPassword", 32);
-		if((pass == null) || !pass.equals(core.formPassword)) {
+		if((pass == null) || !pass.equals(ctx.getFormPassword())) {
 			headers.put("Location", "/plugins/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
@@ -347,7 +344,7 @@ public class PproxyToadlet extends Toadlet {
 				Iterator<PluginProgress> loadingPlugins = pm.getStartingPlugins().iterator();
 
 				PageNode page = ctx.getPageMaker().getPageNode(l10n("plugins"), ctx);
-				boolean advancedModeEnabled = ctx.getContainer().isAdvancedModeEnabled();
+				boolean advancedModeEnabled = ctx.isAdvancedModeEnabled();
 				HTMLNode pageNode = page.outer;
 				if (loadingPlugins.hasNext()) {
 					/* okay, add a refresh. */
@@ -355,7 +352,7 @@ public class PproxyToadlet extends Toadlet {
 				}
 				HTMLNode contentNode = page.content;
 
-				contentNode.addChild(core.alerts.createSummary());
+				contentNode.addChild(ctx.getAlertManager().createSummary());
 
 				/* find which plugins have already been loaded. */
 				List<OfficialPluginDescription> availablePlugins = pm.findAvailablePlugins();
@@ -531,7 +528,7 @@ public class PproxyToadlet extends Toadlet {
 				} else {
 					if (pi.isPproxyPlugin()) {
 						HTMLNode visitForm = pluginRow.addChild("td").addChild("form", new String[] { "method", "action", "target" }, new String[] { "get", pi.getPluginClassName(), "_blank" });
-						visitForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
+						visitForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", ctx.getFormPassword() });
 						visitForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", NodeL10n.getBase().getString("PluginToadlet.visit") });
 					} else
 						pluginRow.addChild("td");

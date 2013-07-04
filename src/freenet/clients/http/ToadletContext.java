@@ -6,6 +6,8 @@ import java.text.ParseException;
 import java.util.Date;
 
 import freenet.clients.http.FProxyFetchInProgress.REFILTER_POLICY;
+import freenet.clients.http.bookmark.BookmarkManager;
+import freenet.node.useralerts.UserAlertManager;
 import freenet.support.HTMLNode;
 import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
@@ -70,6 +72,21 @@ public interface ToadletContext {
 	 * Get the page maker object.
 	 */
 	PageMaker getPageMaker();
+	
+	/**
+	 * Get the form password required for "dangerous" operations.
+	 */
+	String getFormPassword();
+	
+	/**
+	 * Get the user alert manager.
+	 */
+	UserAlertManager getAlertManager();
+	
+	/**
+	 * Get the bookmark manager.
+	 */
+	BookmarkManager getBookmarkManager();
 
 	BucketFactory getBucketFactory();
 	
@@ -98,6 +115,11 @@ public interface ToadletContext {
 	/** Is this Toadlet allowed full access to the node, including the ability to reconfigure it,
 	 * restart it etc? */
 	boolean isAllowedFullAccess();
+	
+	/**
+	 * Is the web interface in advanced mode?
+	 */
+	boolean isAdvancedModeEnabled();
 
 	/**
 	 * Return a robots.txt excluding all spiders and other non-browser HTTP clients?

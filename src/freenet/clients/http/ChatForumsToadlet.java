@@ -13,15 +13,11 @@ import freenet.support.api.HTTPRequest;
 
 public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 
-	private final UserAlertManager alerts;
 	private final PluginManager plugins;
-	//private final Node node;
 	
-	protected ChatForumsToadlet(HighLevelSimpleClient client, UserAlertManager alerts, PluginManager plugins, Node node) {
+	protected ChatForumsToadlet(HighLevelSimpleClient client, PluginManager plugins) {
 		super(client);
-		this.alerts = alerts;
 		this.plugins = plugins;
-		//this.node = node; //FIXME Don't used
 	}
 
 	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
@@ -29,7 +25,7 @@ public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
-		contentNode.addChild(alerts.createSummary());
+		contentNode.addChild(ctx.getAlertManager().createSummary());
 		
 		HTMLNode contentBox = ctx.getPageMaker().getInfobox("infobox-information", l10n("title"), contentNode, "chat-list", true);
 

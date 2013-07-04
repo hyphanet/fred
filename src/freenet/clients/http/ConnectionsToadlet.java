@@ -239,7 +239,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		}
 
 		PageNode page = ctx.getPageMaker().getPageNode(getPageTitle(titleCountString), ctx);
-		final boolean advancedMode = ctx.getContainer().isAdvancedModeEnabled();
+		final boolean advancedMode = ctx.isAdvancedModeEnabled();
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
@@ -247,7 +247,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		long now = System.currentTimeMillis();
 	
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary());
+			contentNode.addChild(ctx.getAlertManager().createSummary());
 		
 		if(peerNodeStatuses.length>0){
 			
@@ -528,11 +528,11 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		}
 		
 		String pass = request.getPartAsStringFailsafe("formPassword", 32);
-		if((pass == null) || !pass.equals(core.formPassword)) {
+		if((pass == null) || !pass.equals(ctx.getFormPassword())) {
 			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", defaultRedirectLocation());
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-			if(logMINOR) Logger.minor(this, "No password ("+pass+" should be "+core.formPassword+ ')');
+			if(logMINOR) Logger.minor(this, "No password ("+pass+" should be "+ctx.getFormPassword()+ ')');
 			return;
 		}
 		

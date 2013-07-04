@@ -233,9 +233,9 @@ public class TranslationToadlet extends Toadlet {
 		
 		final boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		final String passwd = request.getPartAsStringFailsafe("formPassword", 32);
-		boolean noPassword = (passwd == null) || !passwd.equals(core.formPassword);
+		boolean noPassword = (passwd == null) || !passwd.equals(ctx.getFormPassword());
 		if(noPassword) {
-			if(logMINOR) Logger.minor(this, "No password ("+passwd+" should be "+core.formPassword+ ')');
+			if(logMINOR) Logger.minor(this, "No password ("+passwd+" should be "+ctx.getFormPassword()+ ')');
 			redirectTo(ctx, "/");
 			return;
 		}

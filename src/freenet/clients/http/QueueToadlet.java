@@ -201,7 +201,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			}
 
 			String pass = request.getPartAsStringFailsafe("formPassword", 32);
-			if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
+			if ((pass.length() == 0) || !pass.equals(ctx.getFormPassword())) {
 				MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 				headers.put("Location", path());
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
@@ -1055,7 +1055,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		if(context.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary());
+			contentNode.addChild(context.getAlertManager().createSummary());
 		HTMLNode infoboxContent = pageMaker.getInfobox("infobox-error", header, contentNode, "queue-error", false);
 		infoboxContent.addChild("#", message);
 		if(returnToQueuePage)
@@ -1141,7 +1141,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							HTMLNode contentNode = page.content;
 							/* add alert summary box */
 							if(ctx.isAllowedFullAccess())
-								contentNode.addChild(core.alerts.createSummary());
+								contentNode.addChild(ctx.getAlertManager().createSummary());
 							HTMLNode infoboxContent = pageMaker.getInfobox("infobox-information", "Queued requests status", contentNode, null, false);
 							infoboxContent.addChild("p", "Total awaiting CHKs: "+queued);
 							infoboxContent.addChild("p", "Total queued CHK requests: "+reallyQueued);
@@ -1245,7 +1245,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			HTMLNode contentNode = page.content;
 			/* add alert summary box */
 			if(ctx.isAllowedFullAccess())
-				contentNode.addChild(core.alerts.createSummary());
+				contentNode.addChild(ctx.getAlertManager().createSummary());
 			HTMLNode infoboxContent = pageMaker.getInfobox("infobox-information", l10n("globalQueueIsEmpty"), contentNode, "queue-empty", true);
 			infoboxContent.addChild("#", l10n("noTaskOnGlobalQueue"));
 			if(!uploads)
@@ -1433,7 +1433,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 		/* add alert summary box */
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary());
+			contentNode.addChild(ctx.getAlertManager().createSummary());
 
 		/* navigation bar */
 		InfoboxNode infobox = pageMaker.getInfobox("navbar", l10n("requestNavigation"), null, false);
@@ -1719,11 +1719,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			reasonCell.addChild("span", "class", "failure_reason_is", failureReason);
 		}
 		return reasonCell;
-	}
-
-	private HTMLNode createProgressCell(boolean started, COMPRESS_STATE compressing, int fetched, int failed, int fatallyFailed, int min, int total, boolean finalized, boolean upload) {
-		boolean advancedMode = core.isAdvancedModeEnabled();
-		return createProgressCell(advancedMode, started, compressing, fetched, failed, fatallyFailed, min, total, finalized, upload);
 	}
 
 	public static HTMLNode createProgressCell(boolean advancedMode, boolean started, COMPRESS_STATE compressing, int fetched, int failed, int fatallyFailed, int min, int total, boolean finalized, boolean upload) {
@@ -2123,9 +2118,21 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						break;
 					case PROGRESS:
 						if(clientRequest instanceof UploadFileRequestStatus)
-							requestRow.addChild(createProgressCell(clientRequest.isStarted(), ((UploadFileRequestStatus)clientRequest).isCompressing(), clientRequest.getFetchedBlocks(), clientRequest.getFailedBlocks(), clientRequest.getFatalyFailedBlocks(), clientRequest.getMinBlocks(), clientRequest.getTotalBlocks(), clientRequest.isTotalFinalized() || clientRequest instanceof UploadFileRequestStatus, isUpload));
+							requestRow.addChild(createProgressCell(ctx.isAdvancedModeEnabled(),
+									clientRequest.isStarted(), ((UploadFileRequestStatus)clientRequest).isCompressing(),
+									clientRequest.getFetchedBlocks(), clientRequest.getFailedBlocks(),
+									clientRequest.getFatalyFailedBlocks(), clientRequest.getMinBlocks(),
+									clientRequest.getTotalBlocks(),
+									clientRequest.isTotalFinalized() || clientRequest instanceof UploadFileRequestStatus,
+									isUpload));
 						else
-							requestRow.addChild(createProgressCell(clientRequest.isStarted(), COMPRESS_STATE.WORKING, clientRequest.getFetchedBlocks(), clientRequest.getFailedBlocks(), clientRequest.getFatalyFailedBlocks(), clientRequest.getMinBlocks(), clientRequest.getTotalBlocks(), clientRequest.isTotalFinalized() || clientRequest instanceof UploadFileRequestStatus, isUpload));
+							requestRow.addChild(createProgressCell(ctx.isAdvancedModeEnabled(),
+									clientRequest.isStarted(), COMPRESS_STATE.WORKING,
+									clientRequest.getFetchedBlocks(), clientRequest.getFailedBlocks(),
+									clientRequest.getFatalyFailedBlocks(), clientRequest.getMinBlocks(),
+									clientRequest.getTotalBlocks(),
+									clientRequest.isTotalFinalized() || clientRequest instanceof UploadFileRequestStatus,
+									isUpload));
 						break;
 					case REASON:
 						requestRow.addChild(createReasonCell(clientRequest.getFailureReason(false)));

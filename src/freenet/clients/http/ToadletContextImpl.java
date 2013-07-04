@@ -23,7 +23,9 @@ import java.util.TimeZone;
 
 import freenet.clients.http.FProxyFetchInProgress.REFILTER_POLICY;
 import freenet.clients.http.annotation.AllowData;
+import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.l10n.NodeL10n;
+import freenet.node.useralerts.UserAlertManager;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.LogThresholdCallback;
@@ -64,6 +66,8 @@ public class ToadletContextImpl implements ToadletContext {
 	private final PageMaker pagemaker;
 	private final BucketFactory bf;
 	private final ToadletContainer container;
+	private final UserAlertManager userAlertManager;
+	private final BookmarkManager bookmarkManager;
 	private final InetAddress remoteAddr;
 	private boolean sentReplyHeaders;
 	private volatile Toadlet activeToadlet;
@@ -91,7 +95,7 @@ public class ToadletContextImpl implements ToadletContext {
 	private boolean closed;
 	private boolean shouldDisconnect;
 	
-	public ToadletContextImpl(Socket sock, MultiValueTable<String,String> headers, BucketFactory bf, PageMaker pageMaker, ToadletContainer container,URI uri, long uniqueID) throws IOException {
+	public ToadletContextImpl(Socket sock, MultiValueTable<String,String> headers, BucketFactory bf, PageMaker pageMaker, ToadletContainer container, UserAlertManager userAlertManager, BookmarkManager bookmarkManager, URI uri, long uniqueID) throws IOException {
 		this.headers = headers;
 		this.cookies = null;
 		this.replyCookies = null;
@@ -104,6 +108,8 @@ public class ToadletContextImpl implements ToadletContext {
 		this.bf = bf;
 		this.pagemaker = pageMaker;
 		this.container = container;
+		this.userAlertManager = userAlertManager;
+		this.bookmarkManager = bookmarkManager;
 		//Generate an unique id
 		uniqueId=String.valueOf(Math.random());
 	}
@@ -202,6 +208,21 @@ public class ToadletContextImpl implements ToadletContext {
 	@Override
 	public PageMaker getPageMaker() {
 		return pagemaker;
+	}
+	
+	@Override
+	public String getFormPassword() {
+		return container.getFormPassword();
+	}
+	
+	@Override
+	public UserAlertManager getAlertManager() {
+		return userAlertManager;
+	}
+	
+	@Override
+	public BookmarkManager getBookmarkManager() {
+		return bookmarkManager;
 	}
 	
 	@Override
@@ -366,7 +387,7 @@ public class ToadletContextImpl implements ToadletContext {
 	/**
 	 * Handle an incoming connection. Blocking, obviously.
 	 */
-	public static void handle(Socket sock, ToadletContainer container, PageMaker pageMaker) {
+	public static void handle(Socket sock, ToadletContainer container, PageMaker pageMaker, UserAlertManager userAlertManager, BookmarkManager bookmarkManager) {
 		try {
 			InputStream is = new BufferedInputStream(sock.getInputStream(), 4096);
 			
@@ -428,7 +449,7 @@ public class ToadletContextImpl implements ToadletContext {
 				boolean allowPost = container.allowPosts();
 				BucketFactory bf = container.getBucketFactory();
 				
-				ToadletContextImpl ctx = new ToadletContextImpl(sock, headers, bf, pageMaker, container,uri, container.generateUniqueID());
+				ToadletContextImpl ctx = new ToadletContextImpl(sock, headers, bf, pageMaker, container, userAlertManager, bookmarkManager, uri, container.generateUniqueID());
 				ctx.shouldDisconnect = disconnect;
 				
 				/*
@@ -677,6 +698,11 @@ public class ToadletContextImpl implements ToadletContext {
 	@Override
 	public boolean isAllowedFullAccess() {
 		return container.isAllowedFullAccess(remoteAddr);
+	}
+	
+	@Override
+	public boolean isAdvancedModeEnabled() {
+		return container.isAdvancedModeEnabled();
 	}
 
 	@Override
