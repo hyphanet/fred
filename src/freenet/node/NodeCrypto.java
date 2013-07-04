@@ -300,6 +300,7 @@ public class NodeCrypto {
 		identityHashHash = md.digest(identityHash);
 		anonSetupCipher.initialize(identityHash);
 		ecdsaP256 = new ECDSA(ECDSA.Curves.P256);
+        ecdsaPubKeyHash = SHA256.digest(ecdsaP256.getPublicKey().getEncoded());
 	}
 
 	public void start() {
