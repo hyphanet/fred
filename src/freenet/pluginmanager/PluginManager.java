@@ -1683,6 +1683,10 @@ public class PluginManager {
 		public void setDownloading() {
 			this.pluginProgress = PROGRESS_STATE.DOWNLOADING;
 		}
+		
+		public boolean isOfficialPlugin() {
+			return loader.isOfficialPluginLoader();
+		}
 	}
 
 	public void setFProxyTheme(final THEME cssName) {
