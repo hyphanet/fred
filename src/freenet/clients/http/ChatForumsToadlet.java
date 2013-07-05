@@ -50,7 +50,7 @@ public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 		NodeL10n.getBase().addL10nSubstitution(li, "ChatForumsToadlet.sone",
 		       new String[] { "sone"},
 			       new HTMLNode[] {
-				   HTMLNode.link("/USK@nwa8lHa271k2QvJ8aa0Ov7IHAV-DFOCFgmDt3X6BpCI,DuQSUZiI~agF8c-6tjsFFGuZ8eICrzWCILB60nT8KKo,AQACAAE/sone/56/")});
+				   HTMLNode.link("/USK@nwa8lHa271k2QvJ8aa0Ov7IHAV-DFOCFgmDt3X6BpCI,DuQSUZiI~agF8c-6tjsFFGuZ8eICrzWCILB60nT8KKo,AQACAAE/sone/59/")});
 		contentBox.addChild("p", l10n("content2"));
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
