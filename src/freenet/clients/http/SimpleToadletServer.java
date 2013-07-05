@@ -102,7 +102,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	private final Executor executor;
 	private final Random random;
 	private BucketFactory bf;
-	private NodeClientCore core;
+	private volatile NodeClientCore core;
 	
 	// HTTP Option
 	private boolean doRobots;
@@ -257,6 +257,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 				throw new InvalidConfigValueException(l10n("illegalCSSName"));
 			cssTheme = THEME.themeFromName(CSSName);
 			pageMaker.setTheme(cssTheme);
+			NodeClientCore core = SimpleToadletServer.this.core;
 			if (core.node.pluginManager != null)
 				core.node.pluginManager.setFProxyTheme(cssTheme);
 		}
@@ -274,6 +275,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 
 		@Override
 		public void set(String val) throws InvalidConfigValueException {
+			NodeClientCore core = SimpleToadletServer.this.core;
 			if(core == null) return;
 			if(val.equals(get()) || val.equals(""))
 				cssOverride = null;
@@ -417,6 +419,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	};
 
 	public void createFproxy() {
+		NodeClientCore core = this.core;
+		Node node = core.node;
 		synchronized(this) {
 			if(haveCalledFProxy) return;
 			haveCalledFProxy = true;
@@ -426,7 +430,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		intervalPushManager=new IntervalPusherManager(getTicker(), pushDataManager);
 		bookmarkManager = new BookmarkManager(core, publicGatewayMode());
 		try {
-			FProxyToadlet.maybeCreateFProxyEtc(core, core.node, core.node.config, this);
+			FProxyToadlet.maybeCreateFProxyEtc(core, node, node.config, this);
 		} catch (IOException e) {
 			Logger.error(this, "Could not start fproxy: "+e, e);
 			System.err.println("Could not start fproxy:");
@@ -436,7 +440,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	
 
 	
-	public synchronized void setCore(NodeClientCore core) {
+	public void setCore(NodeClientCore core) {
 		this.core = core;
 	}
 	
@@ -447,7 +451,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	public SimpleToadletServer(SubConfig fproxyConfig, BucketFactory bucketFactory, Executor executor, Node node) throws IOException, InvalidConfigValueException {
 
 		this.executor = executor;
-		this.core = node.clientCore;
+		this.core = null; // setCore() will be called later. 
 		this.random = new Random();
 		
 		int configItemOrder = 0;
@@ -800,10 +804,13 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	public StartupToadlet startupToadlet;
 	
 	public void removeStartupToadlet() {
-		unregister(startupToadlet);
-		// Ready to be GCed
-		startupToadlet = null;
-		// Not in the navbar.
+		// setCore() must have been called first. It is in fact called much earlier on.
+		synchronized(this) {
+			unregister(startupToadlet);
+			// Ready to be GCed
+			startupToadlet = null;
+			// Not in the navbar.
+		}
 	}
 	
 	private void maybeGetNetworkInterface() throws IOException {
@@ -923,6 +930,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		String path = uri.getPath();
 
 		// Show the wizard until dismissed by the user (See bug #2624)
+		NodeClientCore core = this.core;
 		if(core != null && core.node != null && !fproxyHasCompletedWizard) {
 			//If the user has not completed the wizard, only allow access to the wizard and static
 			//resources. Anything else redirects to the first page of the wizard.
@@ -1042,7 +1050,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		return this.cssTheme;
 	}
 
-	public synchronized UserAlertManager getUserAlertManager() {
+	public UserAlertManager getUserAlertManager() {
+		NodeClientCore core = this.core;
 		if(core == null) return null;
 		return core.alerts;
 	}
