@@ -489,7 +489,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 		});
 		toadletContainer = toadlets;
-		toadletContainer.setCore(this);
 		toadletContainer.setBucketFactory(tempBucketFactory);
 		if(fecQueue == null) throw new NullPointerException();
 		fecQueue.init(RequestStarter.NUMBER_OF_PRIORITY_CLASSES, FEC_QUEUE_CACHE_SIZE, clientContext.jobRunner, node.executor, clientContext);
