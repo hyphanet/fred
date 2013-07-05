@@ -705,11 +705,11 @@ public class PluginManager {
 	 *            The key to fetch
 	 * @return The translation
 	 */
-	private String l10n(String key) {
+	static String l10n(String key) {
 		return NodeL10n.getBase().getString("PluginManager." + key);
 	}
 
-	private String l10n(String key, String pattern, String value) {
+	private static String l10n(String key, String pattern, String value) {
 		return NodeL10n.getBase().getString("PluginManager." + key, pattern, value);
 	}
 
@@ -1071,6 +1071,14 @@ public class PluginManager {
 			this.deprecated = deprecated;
 			this.experimental = experimental;
 			this.advanced = advanced;
+		}
+
+		public String getLocalisedPluginName() {
+			return getOfficialPluginLocalisedName(name);
+		}
+
+		public String getLocalisedPluginDescription() {
+			return l10n("pluginDesc."+name);
 		}
 	}
 	
@@ -1687,6 +1695,17 @@ public class PluginManager {
 		public boolean isOfficialPlugin() {
 			return loader.isOfficialPluginLoader();
 		}
+
+		public String getLocalisedPluginName() {
+			String pluginName = getName();
+			if(isOfficialPlugin()) {
+				return getOfficialPluginLocalisedName(pluginName);
+			} else return pluginName;
+		}
+	}
+	
+	static String getOfficialPluginLocalisedName(String pluginName) {
+		return l10n("pluginName."+pluginName);
 	}
 
 	public void setFProxyTheme(final THEME cssName) {

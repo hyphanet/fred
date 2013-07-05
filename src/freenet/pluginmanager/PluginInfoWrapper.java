@@ -290,4 +290,11 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 	public boolean isOfficialPlugin() {
 		return isOfficialPlugin;
 	}
+
+	public String getLocalisedPluginName() {
+		String pluginName = getFilename();
+		if(isOfficialPlugin())
+			return PluginManager.getOfficialPluginLocalisedName(pluginName);
+		else return pluginName;
+	}
 }

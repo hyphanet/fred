@@ -469,11 +469,7 @@ public class PproxyToadlet extends Toadlet {
 			while (startingPluginsIterator.hasNext()) {
 				PluginProgress pluginProgress = startingPluginsIterator.next();
 				HTMLNode startingPluginsRow = startingPluginsTable.addChild("tr");
-				String pluginName = pluginProgress.getName();
-				if(pluginProgress.isOfficialPlugin()) {
-					pluginName = l10n("pluginName."+pluginName);
-				}
-				startingPluginsRow.addChild("td", pluginName);
+				startingPluginsRow.addChild("td", pluginProgress.getLocalisedPluginName());
 				startingPluginsRow.addChild(pluginProgress.toLocalisedHTML());
 				startingPluginsRow.addChild("td", "aligh", "right", TimeUtil.formatTime(pluginProgress.getTime()));
 			}
@@ -504,11 +500,7 @@ public class PproxyToadlet extends Toadlet {
 			while (it.hasNext()) {
 				PluginInfoWrapper pi = it.next();
 				HTMLNode pluginRow = pluginTable.addChild("tr");
-				String pluginName = pi.getFilename();
-				if(pi.isOfficialPlugin()) {
-					pluginName = l10n("pluginName."+pluginName);
-				}
-				pluginRow.addChild("td", pluginName);
+				pluginRow.addChild("td", pi.getLocalisedPluginName());
 				if(advancedMode)
 					pluginRow.addChild("td", pi.getPluginClassName());
 				long ver = pi.getPluginLongVersion();
@@ -590,7 +582,7 @@ public class PproxyToadlet extends Toadlet {
 				if(!pm.isPluginLoaded(pluginName)) {
 					HTMLNode option = pluginNode.addChild("input", new String[] { "type", "name", "value" },
 							new String[] { "radio", "plugin-name", pluginName });
-					option.addChild("i", l10n("pluginName."+pluginName));
+					option.addChild("i", pluginDescription.getLocalisedPluginName());
 					if(pluginDescription.deprecated)
 						option.addChild("b", " ("+l10n("loadLabelDeprecated")+")");
 					if(pluginDescription.experimental)
@@ -598,7 +590,7 @@ public class PproxyToadlet extends Toadlet {
 					if (advancedModeEnabled && pluginDescription.minimumVersion >= 0) {
 						option.addChild("#", " ("+l10n("pluginVersion")+" " + pluginDescription.minimumVersion + ")");
 					}
-					option.addChild("#", " - "+l10n("pluginDesc."+pluginName));
+					option.addChild("#", " - "+pluginDescription.getLocalisedPluginDescription());
 				}
 			}
 		}
