@@ -295,7 +295,7 @@ public class PeerManager {
 				System.err.println("Unable to copy broken peers file.");
 			}
 		}
-		return gotSome;
+		return !someBroken;
 	}
 
 	public boolean addPeer(PeerNode pn) {
