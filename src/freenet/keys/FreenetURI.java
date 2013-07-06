@@ -1005,7 +1005,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 			// FIXME return null in this case, localise in a wrapper.
 			return "unknown";
 		}
-		assert out.toString().equals(FileUtil.sanitize(out.toString())) : ("Not sanitized? \""+out.toString()+"\" -> \""+FileUtil.sanitize(out.toString()));
+		assert out.toString().equals(FileUtil.sanitize(out.toString())) : ("Not sanitized? \""+out.toString()+"\" -> \""+FileUtil.sanitize(out.toString()))+"\"";
 		return out.toString();
 	}
 
