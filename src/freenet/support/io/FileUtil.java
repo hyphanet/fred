@@ -386,7 +386,7 @@ final public class FileUtil {
 			}
 		}
 
-		for(char c : buffer.array()) {
+		for(char c : buffer.array()) { // Note that this will add extra whitespace to the end, which we will trim later.
 			
 			if(extraChars.indexOf(c) != -1) {
 				sb.append(def);
@@ -448,7 +448,8 @@ final public class FileUtil {
 			sb.append("Invalid filename"); // TODO: L10n
 		}
 
-		return sb.toString();
+		return sb.toString().trim(); // Trim leading and trailing whitespace.
+		// Some of the trailing whitespace may be from the CharBuffer.
 	}
 
 	public static String sanitize(String fileName) {
