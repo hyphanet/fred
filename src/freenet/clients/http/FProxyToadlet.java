@@ -1322,22 +1322,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	 * @param expectedMimeType The expected MIME type.
 	 */
 	private static String getFilename(FreenetURI uri, String expectedMimeType) {
-		String s = uri.getPreferredFilename();
-		int dotIdx = s.lastIndexOf('.');
-		String ext = DefaultMIMETypes.getExtension(expectedMimeType);
-		if(ext == null)
-			ext = "bin";
-		if((dotIdx == -1) && (expectedMimeType != null)) {
-			s += '.' + ext;
-			return s;
-		}
-		if(dotIdx != -1) {
-			String oldExt = s.substring(dotIdx+1);
-			if(DefaultMIMETypes.isValidExt(expectedMimeType, oldExt))
-				return s;
-			return s + '.' + ext;
-		}
-		return s + '.' + ext;
+		return DefaultMIMETypes.forceExtension(uri.getPreferredFilename(), expectedMimeType);
 	}
 
 	private static long[] parseRange(String hdrrange) throws HTTPRangeException {
