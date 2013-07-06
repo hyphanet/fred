@@ -200,15 +200,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 			}
 
-			String pass = request.getPartAsStringFailsafe("formPassword", 32);
-			if ((pass.length() == 0) || !pass.equals(ctx.getFormPassword())) {
-				MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-				headers.put("Location", path());
-				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-				if(logMINOR) Logger.minor(this, "No formPassword: "+pass);
-				return;
-			}
-
 			if(request.isPartSet("delete_request") && (request.getPartAsStringFailsafe("delete_request", 128).length() > 0)) {
 				// Confirm box
 				PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmDeleteTitle"), ctx);

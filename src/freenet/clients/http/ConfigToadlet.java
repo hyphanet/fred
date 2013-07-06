@@ -192,14 +192,6 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			return;
 		}
 
-		String pass = request.getPartAsStringFailsafe("formPassword", 32);
-		if ((pass == null) || !pass.equals(ctx.getFormPassword())) {
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", path());
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-			return;
-		}
-
 		// User requested reset to defaults, so present confirmation page.
 		if (request.isPartSet("confirm-reset-to-defaults")) {
 			PageNode page = ctx.getPageMaker().getPageNode(
