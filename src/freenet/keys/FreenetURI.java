@@ -951,7 +951,8 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 
 	/** Generate a suggested filename for the URI. This may be constructed
 	 * from more than one part of the URI e.g. SSK@blah,blah,blah/sitename/
-	 * might return sitename. */
+	 * might return sitename. The returned string will already have been 
+	 * through FileUtil.sanitize(). */
 	public String getPreferredFilename() {
 		if (logMINOR)
 			Logger.minor(this, "Getting preferred filename for " + this);
@@ -1004,6 +1005,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 			// FIXME return null in this case, localise in a wrapper.
 			return "unknown";
 		}
+		assert(out.toString().equals(FileUtil.sanitize(out.toString())));
 		return out.toString();
 	}
 
