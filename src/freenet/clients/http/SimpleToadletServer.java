@@ -906,16 +906,19 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 
 	@Override
 	public void unregister(Toadlet t) {
+		ToadletElement e = null;
 		synchronized(toadlets) {
 			for(Iterator<ToadletElement> i=toadlets.iterator();i.hasNext();) {
-				ToadletElement e = i.next();
+				e = i.next();
 				if(e.t == t) {
 					i.remove();
-					if(e.menu != null && e.name != null) {
-						pageMaker.removeNavigationLink(e.menu, e.name);
-					}
-					return;
+					break;
 				}
+			}
+		}
+		if(e != null && e.t == t) {
+			if(e.menu != null && e.name != null) {
+				pageMaker.removeNavigationLink(e.menu, e.name);
 			}
 		}
 	}
