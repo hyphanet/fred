@@ -100,7 +100,7 @@ public class LongTermManySingleBlocksTest extends LongTermTest {
 				} finally {
 					synchronized(InsertBatch.this) {
 						runningInserts--;
-						System.out.println("Stopping insert: running "+runningInserts);
+						System.out.println("Completed insert: running "+runningInserts);
 						//finished = true;
 						if(thisURI != null) {
 							uri = thisURI;
