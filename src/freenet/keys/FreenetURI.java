@@ -970,15 +970,15 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 			}
 		}
 		if(metaStr != null)
-			for(int i = 0; i < metaStr.length; i++) {
-				if(metaStr[i] == null || metaStr[i].equals("")) {
+			for(String s : metaStr) {
+				if(s == null || s.equals("")) {
 					if(logMINOR)
-						Logger.minor(this, "metaString " + i + ": was null or empty");
+						Logger.minor(this, "metaString \"" + s + "\": was null or empty");
 					continue;
 				}
 				if(logMINOR)
-					Logger.minor(this, "Adding metaString " + i + ": " + metaStr[i]);
-				names.add(metaStr[i]);
+					Logger.minor(this, "Adding metaString \"" + s + "\"");
+				names.add(s);
 			}
 		StringBuilder out = new StringBuilder();
 		for(int i = 0; i < names.size(); i++) {
