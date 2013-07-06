@@ -890,9 +890,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	@Override
 	public void register(Toadlet t, String menu, String urlPrefix, boolean atFront, String name, String title, boolean fullOnly, LinkEnabledCallback cb, FredPluginL10n l10n) {
 		ToadletElement te = new ToadletElement(t, urlPrefix, menu, name);
-		if(atFront) toadlets.addFirst(te);
-		else toadlets.addLast(te);
-		t.container = this;
+		synchronized(toadlets) {
+			if(atFront) toadlets.addFirst(te);
+			else toadlets.addLast(te);
+			t.container = this;
+		}
 		if (menu != null && name != null) {
 			pageMaker.addNavigationLink(menu, urlPrefix, name, title, fullOnly, cb, l10n);
 		}
@@ -903,15 +905,17 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	}
 
 	@Override
-	public synchronized void unregister(Toadlet t) {
-		for(Iterator<ToadletElement> i=toadlets.iterator();i.hasNext();) {
-			ToadletElement e = i.next();
-			if(e.t == t) {
-				i.remove();
-				if(e.menu != null && e.name != null) {
-					pageMaker.removeNavigationLink(e.menu, e.name);
+	public void unregister(Toadlet t) {
+		synchronized(toadlets) {
+			for(Iterator<ToadletElement> i=toadlets.iterator();i.hasNext();) {
+				ToadletElement e = i.next();
+				if(e.t == t) {
+					i.remove();
+					if(e.menu != null && e.name != null) {
+						pageMaker.removeNavigationLink(e.menu, e.name);
+					}
+					return;
 				}
-				return;
 			}
 		}
 	}
@@ -944,18 +948,20 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			}
 		}
 
-		for(ToadletElement te: toadlets) {
-			if(path.startsWith(te.prefix))
+		synchronized(toadlets) {
+			for(ToadletElement te: toadlets) {
+				if(path.startsWith(te.prefix))
 					return te.t;
-			if(te.prefix.length() > 0 && te.prefix.charAt(te.prefix.length()-1) == '/') {
-				if(path.equals(te.prefix.substring(0, te.prefix.length()-1))) {
-					URI newURI;
-					try {
-						newURI = new URI(te.prefix);
-					} catch (URISyntaxException e) {
-						throw new Error(e);
+				if(te.prefix.length() > 0 && te.prefix.charAt(te.prefix.length()-1) == '/') {
+					if(path.equals(te.prefix.substring(0, te.prefix.length()-1))) {
+						URI newURI;
+						try {
+							newURI = new URI(te.prefix);
+						} catch (URISyntaxException e) {
+							throw new Error(e);
+						}
+						throw new PermanentRedirectException(newURI);
 					}
-					throw new PermanentRedirectException(newURI);
 				}
 			}
 		}
