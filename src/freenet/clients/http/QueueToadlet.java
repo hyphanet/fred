@@ -869,7 +869,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				return;
             // Filter File button on upload page
             } else if (request.isPartSet("filter-upload")) {
-                ContentFilterToadlet.handleUploadedFilterRequest(request, ctx, core);
+            	try {
+            		throw new RedirectException(ContentFilterToadlet.PATH);
+            	} catch (URISyntaxException e) {
+            		Logger.error(this, "Invalid path for content filter toadlet", e);
+            	}
 			} else if (request.isPartSet("recommend_request")) {
 				PageNode page = ctx.getPageMaker().getPageNode(l10n("recommendAFileToFriends"), ctx);
 				HTMLNode pageNode = page.outer;
