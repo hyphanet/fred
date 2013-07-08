@@ -11,6 +11,7 @@ import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
+import java.security.interfaces.ECPublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -27,7 +28,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
-import net.i2p.util.NativeBigInteger;
 import freenet.client.FetchResult;
 import freenet.client.async.USKRetriever;
 import freenet.client.async.USKRetrieverCallback;
@@ -36,6 +36,8 @@ import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DSASignature;
+import freenet.crypt.ECDSA;
+import freenet.crypt.ECDSA.Curves;
 import freenet.crypt.Global;
 import freenet.crypt.HMAC;
 import freenet.crypt.KeyAgreementSchemeContext;
@@ -270,6 +272,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 	/** Peer node public key; changing this means new noderef */
 	final DSAPublicKey peerPubKey;
+	final ECPublicKey peerECDSAPubKey;
+	final byte[] peerECDSAPubKeyHash;
 	final byte[] pubKeyHash;
 	final byte[] pubKeyHashHash;
 	private boolean isSignatureVerificationSuccessfull;
@@ -507,43 +511,26 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				pubKeyHash = SHA256.digest(peerPubKey.asBytes());
 				pubKeyHashHash = SHA256.digest(pubKeyHash);
 			}
-
-			String signature = fs.get("sig");
-			if(!noSig) {
-				try {
-					boolean failed = false;
-					if(signature == null || peerCryptoGroup == null || peerPubKey == null)
-						failed = true;
-					else {
-						fs.removeValue("sig");
-						String toVerify = fs.toOrderedString();
-						fs.putSingle("sig", signature);
-						failed = !(DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(1, SHA256.digest(toVerify.getBytes("UTF-8"))), false));
-					}
-					if(failed) {
-						String errCause = "";
-						if(signature == null)
-							errCause += " (No signature)";
-						if(peerPubKey == null)
-							errCause += " (No peer public key)";
-						if(failed)
-							errCause += " (VERIFICATION FAILED)";
-						Logger.error(this, "The integrity of the reference has been compromised!" + errCause + " fs was\n" + fs.toOrderedString());
-						this.isSignatureVerificationSuccessfull = false;
-						throw new ReferenceSignatureVerificationException("The integrity of the reference has been compromised!" + errCause);
-					} else {
-						this.isSignatureVerificationSuccessfull = true;
-						if(!dontKeepFullFieldSet())
-							this.fullFieldSet = fs;
-					}
-				} catch(NumberFormatException e) {
-					Logger.error(this, "Invalid reference: " + e, e);
-					throw new ReferenceSignatureVerificationException("The node reference you added is invalid: It does not have a valid signature.");
-				} catch(UnsupportedEncodingException e) {
-					throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-				}
+			
+			sfs = fs.subset("ecdsa.P256");
+			if(sfs == null) {
+			    // Old peer, no negtype > 8
+			    this.peerECDSAPubKey = null;
+			    this.peerECDSAPubKeyHash = null;
+			    for(int type : negTypes)
+			    	if(type >= 9 && !fromAnonymousInitiator)
+			    		throw new FSParseException("Neg type 9 or later must have an ECDSA key: "+Arrays.toString(negTypes));
 			} else {
-				// Local is always good (assumed)
+	            byte[] pub = Base64.decode(sfs.get("pub"));
+	            if (pub.length > ECDSA.Curves.P256.modulusSize)
+	                throw new FSParseException("ecdsa.P256.pub is not the right size!");
+	            this.peerECDSAPubKey = ECDSA.getPublicKey(pub);
+	            this.peerECDSAPubKeyHash = SHA256.digest(peerECDSAPubKey.getEncoded());
+	            if(peerECDSAPubKey == null)
+	                throw new FSParseException("ecdsa.P256.pub is invalid!");
+			}
+
+			if(noSig || verifyReferenceSignature(fs)) {
 				this.isSignatureVerificationSuccessfull = true;
 			}
 		} catch(IllegalBase64Exception e) {
@@ -2509,33 +2496,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		boolean shouldUpdatePeerCounts = false;
 		
 		if(forFullNodeRef) {
-			// Check the signature.
-			String signature = fs.get("sig");
+		    // Check the signature.
 			try {
-				boolean failed = false;
-				if(signature == null)
-					failed = false;
-				else {
-					fs.removeValue("sig");
-					String toVerify = fs.toOrderedString();
-					fs.putSingle("sig", signature);
-					failed = !(DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(1, SHA256.digest(toVerify.getBytes("UTF-8"))), false));
-				}
-				if(failed) {
-					String errCause = "";
-					if(signature == null)
-						errCause += " (No signature)";
-					if(failed)
-						errCause += " (VERIFICATION FAILED)";
-					Logger.error(this, "The integrity of the reference has been compromised!" + errCause + " fs was\n" + fs.toOrderedString());
-					throw new FSParseException("Signature verification failed: "+errCause);
-				}
-			} catch(NumberFormatException e) {
-				Logger.error(this, "Invalid reference: " + e, e);
-				throw new FSParseException("Invalid signature", e);
-			} catch(UnsupportedEncodingException e) {
-				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-			}
+				if(!verifyReferenceSignature(fs))
+	                throw new FSParseException("Invalid signature");
+			} catch (ReferenceSignatureVerificationException e) {
+                throw new FSParseException("Invalid signature");
+            }
 		}
 		
 		// Anything may be omitted for a differential node reference
@@ -2861,6 +2828,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			fs.put("dsaGroup", peerCryptoGroup.asFieldSet());
 		if(peerPubKey != null)
 			fs.put("dsaPubKey", peerPubKey.asFieldSet());
+		if(peerECDSAPubKey != null) {
+		    fs.put("ecdsa", ECDSA.Curves.P256.getSFS(peerECDSAPubKey));
+		}
 		if(myARK != null) {
 			// Decrement it because we keep the number we would like to fetch, not the last one fetched.
 			fs.put("ark.number", myARK.suggestedEdition - 1);
@@ -3810,11 +3780,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		return bestNegType;
 	}
 
-	/** Verify a hash */
-	public boolean verify(byte[] hash, DSASignature sig) {
-		return DSA.verify(peerPubKey, sig, new NativeBigInteger(1, hash), false);
-	}
-
 	public String userToString() {
 		return "" + getPeer();
 	}
@@ -3882,10 +3847,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			return new OpennetPeerNode(fs, node2, crypto, opennet, manager, true, mangler);
 		else
 			return new DarknetPeerNode(fs, node2, crypto, manager, true, mangler, null, null);
-	}
-
-	public byte[] getIdentity() {
-		return identity;
 	}
 	
 	public byte[] getPubKeyHash() {
@@ -5868,4 +5829,90 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		else return Integer.MAX_VALUE;
 	}
 	
+	private boolean verifyReferenceSignature(SimpleFieldSet fs) throws ReferenceSignatureVerificationException {
+	    // Assume we failed at validating
+	    boolean failed = true;
+	    String signature = fs.get("sig");
+        String signatureP256 = fs.get("sigP256");
+            try {
+                // If we have:
+                // - the new P256 signature AND the P256 pubkey
+                // OR
+                // - the old DSA signature the pubkey and the groups
+                // THEN
+                // verify the signatures
+                fs.removeValue("sig");
+                byte[] toVerifyDSA = fs.toOrderedString().getBytes("UTF-8");
+                fs.removeValue("sigP256");
+                byte[] toVerifyECDSA = fs.toOrderedString().getBytes("UTF-8");
+                
+
+                boolean isECDSAsigPresent = (signatureP256 != null && peerECDSAPubKey != null);
+                boolean isDSAsigPresent = (signature != null && peerPubKey != null);
+                boolean verifyECDSA = false; // assume it failed.
+                boolean verifyDSA  = false; //assume it failed.
+                
+                // Is there a new ECDSA sig?
+                if(isECDSAsigPresent) {
+                        fs.putSingle("sigP256", signatureP256);
+                        verifyECDSA = ECDSA.verify(Curves.P256, peerECDSAPubKey, Base64.decode(signatureP256), toVerifyECDSA);                       
+                }
+                
+                // Is there an old DSA sig?
+                if(isDSAsigPresent) {
+                    fs.putSingle("sig", signature);
+                    verifyDSA = DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(1, SHA256.digest(toVerifyDSA)), false);
+                }
+
+                // If there is no signature, FAIL
+                // If there is an ECDSA signature, and it doesn't verify, FAIL
+                // If there is a DSA signature, and it doesn't verify, FAIL
+                boolean hasNoSignature = (!isECDSAsigPresent && !isDSAsigPresent);
+                boolean isECDSAsigInvalid = (isECDSAsigPresent && !verifyECDSA);
+                boolean isDSAsigInvalid = (isDSAsigPresent && !verifyDSA);
+                failed = hasNoSignature || isECDSAsigInvalid || isDSAsigInvalid;
+                if(failed) {
+                    String errCause = "";
+                    if(hasNoSignature)
+                        errCause += " (No signature)";
+                    if(peerCryptoGroup == null)
+                        errCause += " (No peer crypto group)";
+                    if(peerPubKey == null && peerECDSAPubKey == null)
+                        errCause += " (No peer public key)";
+                    if(isECDSAsigInvalid)
+                        errCause += " (ECDSA signature is invalid)";
+                    if(isDSAsigInvalid)
+                        errCause += " (DSA signature is invalid)";
+                    if(failed)
+                        errCause += " (VERIFICATION FAILED)";
+                    Logger.error(this, "The integrity of the reference has been compromised!" + errCause + " fs was\n" + fs.toOrderedString());
+                    this.isSignatureVerificationSuccessfull = false;
+                    throw new ReferenceSignatureVerificationException("The integrity of the reference has been compromised!" + errCause);
+                } else {
+                    this.isSignatureVerificationSuccessfull = true;
+                    if(!dontKeepFullFieldSet())
+                        this.fullFieldSet = fs;
+                }
+            } catch(NumberFormatException e) {
+                Logger.error(this, "Invalid reference: " + e, e);
+                throw new ReferenceSignatureVerificationException("The node reference you added is invalid: It does not have a valid DSA signature.");
+            } catch(IllegalBase64Exception e) {
+                Logger.error(this, "Invalid reference: " + e, e);
+                throw new ReferenceSignatureVerificationException("The node reference you added is invalid: It does not have a valid ECDSA signature.");
+            } catch(UnsupportedEncodingException e) {
+                throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
+            }
+        return !failed;
+	}
+	
+	protected byte[] getIdentity() {
+	    return identity;
+	}
+	
+	protected byte[] getIdentity(int negType) {
+	    if(negType > 8)
+	        return peerECDSAPubKeyHash;
+	    else
+	        return identity;
+	}
 }
