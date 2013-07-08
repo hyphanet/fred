@@ -6,7 +6,6 @@ package freenet.crypt;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 
 import freenet.support.HexUtil;
 
@@ -31,10 +30,12 @@ public class HMAC {
 	public HMAC(MessageDigest md) {
 		this.d = md;
 	}
-
+	
 	public boolean verify(byte[] K, byte[] text, byte[] mac) {
 		byte[] mac2 = mac(K, text, mac.length);
-		return Arrays.equals(mac, mac2);
+		
+		// this is constant-time; DO NOT 'optimize'
+		return MessageDigest.isEqual(mac, mac2);
 	}
 
 	public byte[] mac(byte[] K, byte[] text, int macbytes) {
