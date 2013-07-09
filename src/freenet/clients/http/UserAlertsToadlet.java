@@ -45,11 +45,6 @@ public class UserAlertsToadlet extends Toadlet {
 
 		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 
-		String pass = request.getPartAsStringFailsafe("formPassword", 32);
-		if((pass == null) || !pass.equals(ctx.getFormPassword())) {
-			sendErrorPage(ctx, 403, "Forbidden", "Invalid form password.");
-			return;
-		}
 		if (request.isPartSet("dismiss-user-alert")) {
 			int userAlertHashCode = request.getIntPart("disable", -1);
 			ctx.getAlertManager().dismissAlert(userAlertHashCode);

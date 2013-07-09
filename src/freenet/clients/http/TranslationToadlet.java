@@ -15,10 +15,8 @@ import freenet.node.NodeClientCore;
 import freenet.pluginmanager.FredPluginBaseL10n;
 import freenet.pluginmanager.PluginInfoWrapper;
 import freenet.support.HTMLNode;
-import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SimpleFieldSet;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet.KeyIterator;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.BucketTools;
@@ -231,15 +229,6 @@ public class TranslationToadlet extends Toadlet {
 			return;
 		}
 		
-		final boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-		final String passwd = request.getPartAsStringFailsafe("formPassword", 32);
-		boolean noPassword = (passwd == null) || !passwd.equals(ctx.getFormPassword());
-		if(noPassword) {
-			if(logMINOR) Logger.minor(this, "No password ("+passwd+" should be "+ctx.getFormPassword()+ ')');
-			redirectTo(ctx, "/");
-			return;
-		}
-
 		if(request.isPartSet("translating_for")) {
 			final String translateFor = request.getPartAsStringFailsafe("translating_for", 255);
 

@@ -33,14 +33,6 @@ public class ExternalLinkToadlet extends Toadlet {
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		String password = request.getPartAsStringFailsafe("formPassword", 32);
-		if ((password == null) || !password.equals(ctx.getFormPassword())) {
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", PATH);
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-			return;
-		}
-
 		String url = request.getPartAsStringFailsafe(magicHTTPEscapeString, MAX_URL_LENGTH);
 		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 		//If the user clicked cancel, or the URL is not defined, return to the main page.

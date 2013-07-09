@@ -12,6 +12,7 @@ import freenet.support.HTMLNode;
 import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.api.HTTPRequest;
 
 /**
  * Object represents context for a single request. Is used as a token,
@@ -77,6 +78,14 @@ public interface ToadletContext {
 	 * Get the form password required for "dangerous" operations.
 	 */
 	String getFormPassword();
+	
+	/**
+	 * Check a request for the form password, and send an error to the client if the password is
+	 * not valid.
+	 * 
+	 * @return Whether the request contains a valid form password
+	 */
+	boolean checkFormPassword(HTTPRequest request) throws ToadletContextClosedException, IOException;
 	
 	/**
 	 * Get the user alert manager.
