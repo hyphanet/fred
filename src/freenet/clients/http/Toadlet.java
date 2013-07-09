@@ -27,23 +27,11 @@ import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
 
 /**
- * Replacement for servlets. Just an easy to use HTTP interface, which is
- * compatible with continuations (eventually). You must extend this class
- * and provide the abstract methods. Apologies but we can't do it as an
- * interface and still have continuation compatibility; we can only 
- * suspend in a member function at this level in most implementations.
- * 
- * When we eventually implement continuations, these will require very
- * little thread overhead: We can suspend while running a freenet
- * request, and only grab a thread when we are either doing I/O or doing
- * computation in the derived class. We can suspend while doing I/O too;
- * on systems with NIO, we use that, on systems without it, we just run
- * the fetch on another (or this) thread. With no need to change any
- * APIs, and no danger of exploding memory use (unlike the traditional
- * NIO servlets approach). Obviously this assumes continuations, and that
- * we can suspend in a method on Toadlet ... which might be possible.
- * 
- * FIXME Investigate servlet 3.0, which support continuations.
+ * API similar to Servlets. Originally the reason for not using servlets was to support 
+ * continuations, but that hasn't been implemented, and modern servlets do support continuations
+ * anyway. Also it was supposed to be simpler, which may not be true any more. Many plugins wrap
+ * their own API around this!
+ * FIXME consider using servlets. 
  */
 public abstract class Toadlet {
 	
@@ -138,7 +126,14 @@ public abstract class Toadlet {
 	}
 
 	/**
-	 * Client calls to write a reply to the HTTP requester.
+	 * Write an HTTP response, e.g. a page, an image, an error message, with no special headers.
+	 * @param ctx The specific request to reply to.
+	 * @param code The HTTP reply code to use.
+	 * @param mimeType The MIME type of the data we are returning.
+	 * @param desc The HTTP response description for the code.
+	 * @param data The data to write as the response body.
+	 * @param offset The offset within data of the first byte to send.
+	 * @param length The number of bytes of data to send as the response body.
 	 */
 	protected void writeReply(ToadletContext ctx, int code, String mimeType, String desc, byte[] data, int offset, int length) throws ToadletContextClosedException, IOException {
 		ctx.sendReplyHeaders(code, desc, null, mimeType, length);
@@ -146,6 +141,11 @@ public abstract class Toadlet {
 	}
 
 	/**
+	 * Write an HTTP response, e.g. a page, an image, an error message, with no special headers.
+	 * @param ctx The specific request to reply to.
+	 * @param code The HTTP reply code to use.
+	 * @param mimeType The MIME type of the data we are returning.
+	 * @param desc The HTTP response description for the code.
 	 * @param data The Bucket which contains the reply data. This
 	 *        function assumes ownership of the Bucket, calling free()
 	 *        on it when done. If this behavior is undesired, callers
@@ -158,6 +158,13 @@ public abstract class Toadlet {
 	}
 	
 	/**
+	 * Write an HTTP response, e.g. a page, an image, an error message, possibly with custom 
+	 * headers, for example, we may want to send a redirect, or a file with a specified filename.
+	 * @param ctx The specific request to reply to.
+	 * @param code The HTTP reply code to use.
+	 * @param mimeType The MIME type of the data we are returning.
+	 * @param desc The HTTP response description for the code.
+	 * @param headers The additional HTTP headers to send.
 	 * @param data The Bucket which contains the reply data. This
 	 *        function assumes ownership of the Bucket, calling free()
 	 *        on it when done. If this behavior is undesired, callers
@@ -170,31 +177,95 @@ public abstract class Toadlet {
 		context.writeData(data);
 	}
 
+	/**
+	 * Write a text-based HTTP response, e.g. a page or an error message, with no special headers.
+	 * @param ctx The specific request to reply to.
+	 * @param code The HTTP reply code to use.
+	 * @param mimeType The MIME type of the data we are returning.
+	 * @param desc The HTTP response description for the code.
+	 * @param reply The reply data, as a String (so only use this for text-based replies, e.g. 
+	 * HTML, plain text etc).
+	 */
 	protected void writeReply(ToadletContext ctx, int code, String mimeType, String desc, String reply) throws ToadletContextClosedException, IOException {
 		writeReply(ctx, code, mimeType, desc, null, reply);
 	}
 	
+	/**
+	 * Write an HTTP response as HTML.
+	 * @param ctx The specific request to reply to.
+	 * @param code The HTTP reply code to use.
+	 * @param desc The HTTP response description for the code.
+	 * @param reply The HTML page, as a String.
+	 */
 	protected void writeHTMLReply(ToadletContext ctx, int code, String desc, String reply) throws ToadletContextClosedException, IOException {
 		writeReply(ctx, code, "text/html; charset=utf-8", desc, null, reply);
 	}
 	
+	/**
+	 * Write an HTTP response as plain text.
+	 * @param ctx The specific request to reply to.
+	 * @param code The HTTP reply code to use.
+	 * @param desc The HTTP response description for the code.
+	 * @param reply The text of the page, as a String.
+	 */
 	protected void writeTextReply(ToadletContext ctx, int code, String desc, String reply) throws ToadletContextClosedException, IOException {
 		writeReply(ctx, code, "text/plain; charset=utf-8", desc, null, reply);
 	}
 	
+	/**
+	 * Write an HTTP response as HTML, possibly with custom headers, for example, we may want to 
+	 * send a redirect, or a file with a specified filename. 
+	 * @param ctx The specific request to reply to.
+	 * @param code The HTTP reply code to use.
+	 * @param desc The HTTP response description for the code.
+	 * @param headers The additional HTTP headers to send.
+	 * @param reply The HTML page, as a String.
+	 */
 	protected void writeHTMLReply(ToadletContext ctx, int code, String desc, MultiValueTable<String, String> headers, String reply) throws ToadletContextClosedException, IOException {
 		writeReply(ctx, code, "text/html; charset=utf-8", desc, headers, reply);
 	}
 	
+	/**
+	 * Write an HTTP response as plain text, possibly with custom headers, for example, we may want 
+	 * to send a redirect, or a file with a specified filename.
+	 * @param ctx The specific request to reply to.
+	 * @param code The HTTP reply code to use.
+	 * @param desc The HTTP response description for the code.
+	 * @param headers The additional HTTP headers to send.
+	 * @param reply The text of the page, as a String.
+	 */
 	protected void writeTextReply(ToadletContext ctx, int code, String desc, MultiValueTable<String, String> headers, String reply) throws ToadletContextClosedException, IOException {
 		writeReply(ctx, code, "text/plain; charset=utf-8", desc, headers, reply);
 	}
-	
+
+	/**
+	 * Write an HTTP response, e.g. a page, an image, an error message, possibly with custom 
+	 * headers, for example, we may want to send a redirect, or a file with a specified filename.
+	 * @param context The specific request to reply to.
+	 * @param code The HTTP reply code to use.
+	 * @param mimeType The MIME type of the data we are returning.
+	 * @param desc The HTTP response description for the code.
+	 * @param headers The additional HTTP headers to send.
+	 * @param reply The reply data, as a String (so only use this for text-based replies, e.g. 
+	 * HTML, plain text etc).
+	 */
 	protected void writeReply(ToadletContext context, int code, String mimeType, String desc, MultiValueTable<String, String> headers, String reply) throws ToadletContextClosedException, IOException {
 		byte[] buffer = reply.getBytes("UTF-8");
 		writeReply(context, code, mimeType, desc, headers, buffer, 0, buffer.length);
 	}
 	
+	/**
+	 * Write an HTTP response, e.g. a page, an image, an error message, possibly with custom 
+	 * headers, for example, we may want to send a redirect, or a file with a specified filename.
+	 * @param context The specific request to reply to.
+	 * @param code The HTTP reply code to use.
+	 * @param mimeType The MIME type of the data we are returning.
+	 * @param desc The HTTP response description for the code.
+	 * @param headers The additional HTTP headers to send.
+	 * @param data The data to write as the response body.
+	 * @param offset The offset within data of the first byte to send.
+	 * @param length The number of bytes of data to send as the response body.
+	 */
 	protected void writeReply(ToadletContext context, int code, String mimeType, String desc, MultiValueTable<String, String> headers, byte[] buffer, int startIndex, int length) throws ToadletContextClosedException, IOException {
 		context.sendReplyHeaders(code, desc, headers, mimeType, length);
 		context.writeData(buffer, startIndex, length);
