@@ -8,6 +8,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
+import java.net.URI;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
@@ -25,6 +26,7 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
+import freenet.support.api.HTTPRequest;
 
 /**
  * API similar to Servlets. Originally the reason for not using servlets was to support 
@@ -32,8 +34,18 @@ import freenet.support.api.Bucket;
  * anyway. Also it was supposed to be simpler, which may not be true any more. Many plugins wrap
  * their own API around this!
  * FIXME consider using servlets. 
+ * 
+ * Important API complexity: The methods for handling the actual requests are synthetic:
+ * 
+ * Methods are handled via handleMethodGET/POST/whatever ( URI uri, HTTPRequest request, ToadletContext ctx )
+ * Typically this throws IOException and ToadletContextClosedException.
  */
 public abstract class Toadlet {
+
+	/** Handle a GET request.
+	 * Other methods are accessed via handleMethodPOST etc, invoked via reflection. But all toadlets
+	 * are expected to support GET. */
+	public abstract void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException;
 	
 	public static final String HANDLE_METHOD_PREFIX = "handleMethod";
 
