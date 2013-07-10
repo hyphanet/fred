@@ -44,7 +44,11 @@ public abstract class Toadlet {
 
 	/** Handle a GET request.
 	 * Other methods are accessed via handleMethodPOST etc, invoked via reflection. But all toadlets
-	 * are expected to support GET. */
+	 * are expected to support GET.
+	 * @param uri The URI being fetched.
+	 * @param request The original HTTPRequest, convenient for e.g. fetching ?blah=blah parameters.
+	 * @param ctx The request context. Mainly used for sending a reply; this identifies which 
+	 * request we are replying to. Also gives access to lots of important objects e.g. PageMaker. */
 	public abstract void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException;
 	
 	public static final String HANDLE_METHOD_PREFIX = "handleMethod";
