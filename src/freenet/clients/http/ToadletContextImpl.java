@@ -606,6 +606,17 @@ public class ToadletContextImpl implements ToadletContext {
 	private static void callToadletMethod(Toadlet t, String method, URI uri, HTTPRequestImpl req, 
 			ToadletContextImpl ctx, Bucket data, Socket sock, boolean methodIsConfigurable) throws Throwable {
 		String methodName = Toadlet.HANDLE_METHOD_PREFIX + method;
+		if("GET".equals(method)) {
+			// Short cut the common case.
+			if (data != null) {
+				sendError(sock.getOutputStream(), 400, "Bad Request", "Content not allowed", true, null);
+				ctx.close();
+				return;
+			}
+			ctx.setActiveToadlet(t);
+			t.handleMethodGET(uri, req, ctx);
+			return;
+		}
 		try {
 			Class<? extends Toadlet> c = t.getClass();
 			Method m = c.getMethod(methodName, HANDLE_PARAMETERS);
