@@ -147,12 +147,6 @@ public class ECDH {
         	if(keygenCached != null) return keygenCached;
             KeyPairGenerator kg = null;
             try {
-            	// FIXME: The correct algorithm name is "EC".
-            	// "ECDH" is an alias supported only by Bouncycastle.
-            	// Thus it forces the use of Bouncycastle.
-            	// Nextgens is worried about inadequate testing with JCA's other than Bouncycastle.
-            	// IMHO this is excessively paranoid - isn't JCA supposed to just work?
-            	// FIXME Test this with Sun and NSS and then change it to "EC".
                 kg = KeyPairGenerator.getInstance("EC", kgProvider);
                 kg.initialize(spec);
             } catch (NoSuchAlgorithmException e) {
