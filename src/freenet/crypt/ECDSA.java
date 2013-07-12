@@ -58,7 +58,7 @@ public class ECDSA {
             PrivateKey pk = key.getPrivate();
             byte [] pubkey = pub.getEncoded();
             byte [] pkey = pk.getEncoded();
-			if(pubkey.length != modulusSize)
+			if(pubkey.length > modulusSize || pubkey.length == 0)
 				throw new Error("Unexpected pubkey length: "+pubkey.length+"!="+modulusSize);
             PublicKey pub2 = kf.generatePublic(
                     new X509EncodedKeySpec(pubkey)
