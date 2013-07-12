@@ -57,6 +57,14 @@ public abstract class Toadlet {
 		return this;
 	}
 	
+	/**
+	 * Override to return true if the toadlet should handle POSTs that don't have the correct form
+	 * password. Otherwise they will be rejected and not passed to the toadlet.
+	 */
+	public boolean allowPOSTWithoutPassword() {
+		return false;
+	}
+	
 	protected Toadlet(HighLevelSimpleClient client) {
 		this.client = client;
 	}

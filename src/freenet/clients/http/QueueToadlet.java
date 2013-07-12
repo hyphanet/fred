@@ -147,6 +147,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			// The user will know soon enough
 		}
 	}
+	
+	@Override
+	public boolean allowPOSTWithoutPassword() {
+		return true;
+	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, final ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 
@@ -200,12 +205,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 			}
 
-			String pass = request.getPartAsStringFailsafe("formPassword", 32);
-			if ((pass.length() == 0) || !pass.equals(ctx.getFormPassword())) {
-				MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-				headers.put("Location", path());
-				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-				if(logMINOR) Logger.minor(this, "No formPassword: "+pass);
+			if (!ctx.checkFormPassword(request)) {
 				return;
 			}
 
