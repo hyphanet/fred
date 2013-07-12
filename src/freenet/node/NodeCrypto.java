@@ -416,10 +416,6 @@ public class NodeCrypto {
 				throw new NodeInitException(NodeInitException.EXIT_EXCEPTION_TO_DEBUG, mySignedReference);
 			return _signature;
 		} catch(UnsupportedEncodingException e){
-			//duh ?
-			Logger.error(this, "Error while signing the node identity!" + e, e);
-			System.err.println("Error while signing the node identity!"+e);
-			e.printStackTrace();
 			throw new NodeInitException(NodeInitException.EXIT_CRAPPY_JVM, "Impossible: JVM doesn't support UTF-8");
 		}
 	}
