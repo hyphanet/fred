@@ -73,7 +73,7 @@ public class FreenetURITest extends TestCase {
 		
 		try {
 			requestUriUSK.deriveRequestURIFromInsertURI();
-			fail("requestUriUSK.deriveRequestURIFromInsertURI() should fail because it IS an request URI already!");
+			fail("requestUriUSK.deriveRequestURIFromInsertURI() should fail because it IS a request URI already!");
 		} catch(MalformedURLException e) {
 			// Success
 		}
@@ -84,7 +84,7 @@ public class FreenetURITest extends TestCase {
 		
 		try {
 			requestUriSSK.deriveRequestURIFromInsertURI();
-			fail("requestUriSSK.deriveRequestURIFromInsertURI() should fail because it IS an request URI already!");
+			fail("requestUriSSK.deriveRequestURIFromInsertURI() should fail because it IS a request URI already!");
 		} catch(MalformedURLException e) {
 			// Success
 		}
