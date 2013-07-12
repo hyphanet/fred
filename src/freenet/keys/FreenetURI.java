@@ -1219,6 +1219,16 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 		return 0;
 	}
 	
+	/**
+	 * If this object is a USK/SSK insert URI, this function computes the request URI which belongs to it.
+	 * If it is a CHK/KSK, the original URI is returned as CHK/KSK do not have a private insert URI, they are their own "insert URI".
+	 * 
+	 * If you want to give people access to content at an URI, you should always publish only the request URI.
+	 * Never give away the insert URI, this allows anyone to insert under your URI!
+	 *  
+	 * @return The request URI which belongs to this insert URI.
+	 * @throws MalformedURLException If this object is a USK/SSK request URI already. NOT thrown for CHK/KSK URIs!
+	 */
 	public FreenetURI deriveRequestURIFromInsertURI() throws MalformedURLException {
 		final FreenetURI originalURI = this;
 		
@@ -1240,7 +1250,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 		} else if(originalURI.isKSK()) {
 			return originalURI;
 		} else {
-			throw new IllegalArgumentException();
+			throw new IllegalArgumentException("Not implemented yet for this key type: " + getKeyType());
 		}
 	}
 
