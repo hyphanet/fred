@@ -164,8 +164,9 @@ public class DMT {
 	 * requests to be rejected. That's the ultimate limiter if even output bandwidth liability fails.
 	 */
 	public static final short PRIORITY_BULK_DATA=5;
+	public static final short PRIORITY_IDLE_DATA=6;
 	
-	public static final short NUM_PRIORITIES = 6;
+	public static final short NUM_PRIORITIES = 7;
 	
 	// Assimilation
 

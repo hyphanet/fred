@@ -41,13 +41,23 @@ public class PeerMessageQueue {
 	
 	private class PrioQueue {
 		
-		// FIXME refactor into PrioQueue and RoundRobinByUIDPrioQueue
+		/** Create a queue for messages for a single priority.
+		 * @param timeout The timeout, period after which messages become urgent. If this is 0, messages become
+		 * urgent immediately (which is a bad idea!), and if it's -1, this is a queue for idle time
+		 * messages, so getNextUrgentTime() will return Long.MAX_VALUE, although internally all messages are
+		 * urgent immediately.
+		 * @param timeoutSinceLastSend If true, do round-robin between UID's, and count the timeout relative
+		 * to the last send. Block transfers need this - both realtime and bulk.
+		 * FIXME refactor into PrioQueue and RoundRobinByUIDPrioQueue
+		 */
 		PrioQueue(int timeout, boolean timeoutSinceLastSend) {
 			this.timeout = timeout;
 			this.roundRobinBetweenUIDs = timeoutSinceLastSend;
 		}
 		
-		/** The timeout, period after which messages become urgent. */
+		/** The timeout, period after which messages become urgent. If this is 0, messages become
+		 * urgent immediately (which is a bad idea!), and if it's -1, this is a queue for idle time
+		 * messages, so no message is ever urgent, getNextUrgentTime() will return Long.MAX_VALUE. */
 		final int timeout;
 		/** If true, do round-robin between UID's, and count the timeout relative
 		 * to the last send. Block transfers need this - both realtime and bulk. */
@@ -374,6 +384,7 @@ public class PeerMessageQueue {
 		 * return immediately.
 		 */
 		public long getNextUrgentTime(long t, long stopIfBeforeTime) {
+			if(timeout < 0) return Long.MAX_VALUE;
 			if(!roundRobinBetweenUIDs) {
 				if(itemsNonUrgent != null && !itemsNonUrgent.isEmpty()) {
 					t = Math.min(t, itemsNonUrgent.getFirst().submitted + timeout);
@@ -719,6 +730,9 @@ public class PeerMessageQueue {
 			else if(i == DMT.PRIORITY_REALTIME_DATA)
 				// Realtime: round-robin between UID's (timeout since last sent), short timeout.
 				queuesByPriority[i] = new PrioQueue(PacketSender.MAX_COALESCING_DELAY, true);
+			else if(i == DMT.PRIORITY_IDLE_DATA)
+				// Idle class: No deadline at all.
+				queuesByPriority[i] = new PrioQueue(-1, false);
 			else
 				// Everything else: Still round-robin between UID's, but timeout on submitted.
 				queuesByPriority[i] = new PrioQueue(PacketSender.MAX_COALESCING_DELAY, false);
