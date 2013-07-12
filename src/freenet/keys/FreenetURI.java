@@ -1220,25 +1220,25 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 	}
 	
 	public FreenetURI deriveRequestURIFromInsertURI() throws MalformedURLException {
-		String type = getKeyType();
-		if(type.equalsIgnoreCase("CHK")) {
-			return this;
-		} else if(type.equalsIgnoreCase("SSK") || type.equalsIgnoreCase("USK")) {
-			FreenetURI originalURI = this;
-			FreenetURI newURI = this;
-			if(type.equalsIgnoreCase("USK"))
-				newURI = newURI.setKeyType("SSK");
+		final FreenetURI originalURI = this;
+		
+		if(originalURI.isCHK()) {
+			return originalURI;
+		} else if(originalURI.isSSK() || originalURI.isUSK()) {
+			FreenetURI newURI = originalURI;
+			if(originalURI.isUSK())
+				newURI = newURI.sskForUSK();
 			InsertableClientSSK issk = InsertableClientSSK.create(newURI);
 			newURI = issk.getURI();
-			if(type.equalsIgnoreCase("USK")) {
-				newURI = newURI.setKeyType("USK");
+			if(originalURI.isUSK()) {
+				newURI = newURI.uskForSSK();
 				newURI = newURI.setSuggestedEdition(originalURI.getSuggestedEdition());
 			}
 			// docName will be preserved.
 			// Any meta strings *should not* be preserved.
 			return newURI;
-		} else if(type.equalsIgnoreCase("KSK")) {
-			return this;
+		} else if(originalURI.isKSK()) {
+			return originalURI;
 		} else {
 			throw new IllegalArgumentException();
 		}
