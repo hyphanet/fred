@@ -669,7 +669,6 @@ public class USKManager {
 	 * i.e. we will only download editions which we are confident about.
 	 * @param fctx Fetcher context for actually fetching the keys. Not used by the USK polling.
 	 * @param prio Priority for fetching the content (see constants in RequestScheduler).
-	 * @param sparse If true, only fetch once we're sure it's the latest edition.
 	 * @return
 	 */
 	public USKRetriever subscribeContent(USK origUSK, USKRetrieverCallback cb, boolean runBackgroundFetch, FetchContext fctx, short prio, RequestClient client) {
