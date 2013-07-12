@@ -562,8 +562,8 @@ public class ToadletContextImpl implements ToadletContext {
 
 						HTTPRequestImpl req = new HTTPRequestImpl(uri, data, ctx, method);
 						
-						// require form password if it's a POST
-						if (method.equals("POST")) {
+						// require form password if it's a POST, unless the toadlet requests otherwise
+						if (method.equals("POST") && !t.allowPOSTWithoutPassword()) {
 							if (!ctx.checkFormPassword(req)) {
 								break;
 							}

@@ -120,6 +120,11 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		this.context = core.clientContext;
 		fetchTracker = tracker;
 	}
+	
+	@Override
+	public boolean allowPOSTWithoutPassword() {
+		return true;
+	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		String ks = uri.getPath();
