@@ -107,7 +107,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		ctx.localRequestOnly = localRequestOnly;
 		this.earlyEncode = earlyEncode;
 		ctx.ignoreUSKDatehints = ignoreUSKDatehints;
-		publicURI = getPublicURI(this.uri);
+		publicURI = this.uri.deriveRequestURIFromInsertURI();
 	}
 
 	static FreenetURI checkEmptySSK(FreenetURI uri, String filename, ClientContext context) {
@@ -139,31 +139,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		ctx.setCompatibilityMode(compatMode);
 		ctx.ignoreUSKDatehints = ignoreUSKDatehints;
 		this.earlyEncode = earlyEncode;
-		publicURI = getPublicURI(this.uri);
-	}
-
-	private FreenetURI getPublicURI(FreenetURI uri) throws MalformedURLException {
-		String type = uri.getKeyType();
-		if(type.equalsIgnoreCase("CHK")) {
-			return uri;
-		} else if(type.equalsIgnoreCase("SSK") || type.equalsIgnoreCase("USK")) {
-			FreenetURI u = uri;
-			if(type.equalsIgnoreCase("USK"))
-				uri = uri.setKeyType("SSK");
-			InsertableClientSSK issk = InsertableClientSSK.create(uri);
-			uri = issk.getURI();
-			if(type.equalsIgnoreCase("USK")) {
-				uri = uri.setKeyType("USK");
-				uri = uri.setSuggestedEdition(u.getSuggestedEdition());
-			}
-			// docName will be preserved.
-			// Any meta strings *should not* be preserved.
-			return uri;
-		} else if(type.equalsIgnoreCase("KSK")) {
-			return uri;
-		} else {
-			throw new IllegalArgumentException();
-		}
+		publicURI = this.uri.deriveRequestURIFromInsertURI();
 	}
 
 	@Override

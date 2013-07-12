@@ -1219,6 +1219,31 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 		return 0;
 	}
 	
+	public FreenetURI deriveRequestURIFromInsertURI() throws MalformedURLException {
+		String type = getKeyType();
+		if(type.equalsIgnoreCase("CHK")) {
+			return this;
+		} else if(type.equalsIgnoreCase("SSK") || type.equalsIgnoreCase("USK")) {
+			FreenetURI originalURI = this;
+			FreenetURI newURI = this;
+			if(type.equalsIgnoreCase("USK"))
+				newURI = newURI.setKeyType("SSK");
+			InsertableClientSSK issk = InsertableClientSSK.create(newURI);
+			newURI = issk.getURI();
+			if(type.equalsIgnoreCase("USK")) {
+				newURI = newURI.setKeyType("USK");
+				newURI = newURI.setSuggestedEdition(originalURI.getSuggestedEdition());
+			}
+			// docName will be preserved.
+			// Any meta strings *should not* be preserved.
+			return newURI;
+		} else if(type.equalsIgnoreCase("KSK")) {
+			return this;
+		} else {
+			throw new IllegalArgumentException();
+		}
+	}
+
 	public static final Comparator<FreenetURI> FAST_COMPARATOR = new Comparator<FreenetURI>() {
 
 		@Override
