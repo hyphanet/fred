@@ -86,7 +86,7 @@ public interface ToadletContext {
 	 * Get the form password required for "dangerous" operations.
 	 */
 	String getFormPassword();
-	
+
 	/**
 	 * Check a request for the form password, and send an error to the client if the password is
 	 * not valid.
@@ -107,6 +107,10 @@ public interface ToadletContext {
 	 */
 	boolean checkFormPassword(HTTPRequest request) throws ToadletContextClosedException, IOException;
 
+	/** Check a request for the form password. Some Toadlet's will want to e.g. send a confirmation page
+	 * using the submitted data if the form password isn't present. 
+	 * @throws IOException */
+	boolean hasFormPassword(HTTPRequest request) throws IOException;
 	
 	/**
 	 * Get the user alert manager.

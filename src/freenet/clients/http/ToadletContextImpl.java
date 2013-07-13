@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.lang.Math;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -225,19 +226,26 @@ public class ToadletContextImpl implements ToadletContext {
 	@Override
 	public boolean checkFormPassword(HTTPRequest request, String redirectTo)
 			throws ToadletContextClosedException, IOException {
-		String pass = request.getPartAsStringFailsafe("formPassword", 32);
-		byte[] inputBytes = pass.getBytes("UTF-8");
-		byte[] compareBytes = getFormPassword().getBytes("UTF-8");
-		if (!MessageDigest.isEqual(inputBytes, compareBytes)) {
+		if (!hasFormPassword(request)) {
 			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", redirectTo);
 			sendReplyHeaders(302, "Found", headers, null, 0);
-			if (logMINOR)
-				Logger.minor(this, "Bad formPassword: " + pass);
 			return false;
 		} else {
 			return true;
 		}
+	}
+	
+	@Override
+	public boolean hasFormPassword(HTTPRequest request) throws IOException {
+		String pass = request.getPartAsStringFailsafe("formPassword", 32);
+		byte[] inputBytes = pass.getBytes("UTF-8");
+		byte[] compareBytes = getFormPassword().getBytes("UTF-8");
+		if(!MessageDigest.isEqual(inputBytes, compareBytes)) {
+			if (logMINOR)
+				Logger.minor(this, "Bad formPassword: " + pass);
+			return false;
+		} else return true;
 	}
 	
 	@Override
