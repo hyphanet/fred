@@ -319,7 +319,9 @@ public final class PageMaker {
 	 * @param title
 	 *            Title of the page.
 	 * @param ctx
-	 *            ToadletContext to use to render the page.
+	 *            ToadletContext to use to render the page. Can be null, e.g. if the HTML is not 
+	 *            being generated as part of a toadlet request, for example if it's using the old
+	 *            FredPluginHTTP interface.
 	 * @param renderParameters
 	 *            Parameters for inclusion or omission of certain page elements
 	 * @return A template PageNode.

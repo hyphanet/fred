@@ -52,14 +52,14 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
     }
     
     public boolean isEnabled (ToadletContext ctx) {
-        boolean fullAccess = (!container.publicGatewayMode()) || ((ctx != null) && ctx.isAllowedFullAccess());
+        boolean fullAccess = !container.publicGatewayMode() || ctx.isAllowedFullAccess();
         return ctx.isAdvancedModeEnabled() && fullAccess;
     }
 
     public void handleMethodGET(URI uri, final HTTPRequest request, final ToadletContext ctx)
             throws ToadletContextClosedException, IOException, RedirectException {
         if (container.publicGatewayMode() && !ctx.isAllowedFullAccess()) {
-            super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"),
+            sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"),
                     NodeL10n.getBase().getString("Toadlet.unauthorized"));
             return;
         }
@@ -110,10 +110,10 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
                 }
             // Filter button on local file browser
             } else if (request.isPartSet(LocalFileBrowserToadlet.selectFile)) {
-                handleFilterRequest(request, ctx, core);
+                handleFilterRequest(request, ctx, core, true);
             // Filter File button on filter page
             } else if (request.isPartSet("filter-upload")) {
-                handleUploadedFilterRequest(request, ctx, core);
+                handleFilterRequest(request, ctx, core, false);
             } else {
                 handleMethodGET(uri, new HTTPRequestImpl(uri, "GET"), ctx);
             }
@@ -179,7 +179,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
         return filterBox;
     }
 
-    private static void writeBadRequestError(String header, String message, ToadletContext context, boolean returnToFilterPage)
+    private void writeBadRequestError(String header, String message, ToadletContext context, boolean returnToFilterPage)
             throws ToadletContextClosedException, IOException {
         PageMaker pageMaker = context.getPageMaker();
         PageNode page = pageMaker.getPageNode(header, context);
@@ -195,36 +195,46 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
                     "ContentFilterToadlet.tryAgainFilterFilePage", new String[] { "link" },
                     new HTMLNode[] { HTMLNode.link(ContentFilterToadlet.PATH) });
         }
-        // copied from writeHTMLReply
-        byte[] buffer = pageNode.generate().getBytes("UTF-8");
-        context.sendReplyHeaders(400, "Bad request", null, "text/html; charset=utf-8", buffer.length);
-        context.writeData(buffer, 0, buffer.length);
+        writeHTMLReply(context, 400, "Bad request", pageNode.generate());
     }
     
     /**
-     * Handle a request to filter a local file.
+     * Handle a request to filter a file.
      */
-    static void handleFilterRequest(HTTPRequest request, ToadletContext ctx, NodeClientCore core)
+    private void handleFilterRequest(HTTPRequest request, ToadletContext ctx, NodeClientCore core, boolean localFile)
             throws ToadletContextClosedException, IOException {
         try {
             FilterOperation filterOperation = getFilterOperation(request);
             ResultHandling resultHandling = getResultHandling(request);
             String mimeType = request.getPartAsStringFailsafe("mime-type", 100);
-            String filename = request.getPartAsStringFailsafe("filename", QueueToadlet.MAX_FILENAME_LENGTH);
+            String filename;
+            Bucket bucket;
+            if (localFile) {
+            	filename = request.getPartAsStringFailsafe("filename", QueueToadlet.MAX_FILENAME_LENGTH);
+	            if (mimeType.length() == 0) {
+	                mimeType = DefaultMIMETypes.guessMIMEType(filename, false);
+	            }
+	            File file = new File(filename);
+	            bucket = new FileBucket(file, true, false, false, false, false);
+            } else {
+                HTTPUploadedFile file = request.getUploadedFile("filename");
+                if (file == null) {
+                    throw new BadRequestException("filename");
+                }
+                filename = file.getFilename();
+                if (mimeType.length() == 0) {
+                    mimeType = file.getContentType();
+                }
+                bucket = file.getData();
+            }
             if (filename.length() == 0) {
                 throw new BadRequestException("filename");
             }
-            if (mimeType.length() == 0) {
-                mimeType = DefaultMIMETypes.guessMIMEType(filename, false);
-            }
             String resultFilename = makeResultFilename(filename, mimeType);
-            File file = new File(filename);
-            Bucket bucket = new FileBucket(file, true, false, false, false, false);
             try {
                 handleFilter(bucket, mimeType, filterOperation, resultHandling, resultFilename, ctx, core);
             } catch (FileNotFoundException e) {
                 writeBadRequestError(l10n("errorNoFileOrCannotReadTitle"), l10n("errorNoFileOrCannotRead", "file", filename), ctx, true);
-                return;
             }
         } catch (BadRequestException e) {
             String invalidPart = e.getInvalidRequestPart();
@@ -240,39 +250,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
         }
     }
     
-    /**
-     * Handle a request to filter a file which is contained in the request.
-     */
-    static void handleUploadedFilterRequest(HTTPRequest request, ToadletContext ctx, NodeClientCore core)
-            throws ToadletContextClosedException, IOException {
-        try {
-            FilterOperation filterOperation = getFilterOperation(request);
-            ResultHandling resultHandling = getResultHandling(request);
-            String mimeType = request.getPartAsStringFailsafe("mime-type", 100);
-            HTTPUploadedFile file = request.getUploadedFile("filename");
-            if (file == null || file.getFilename().trim().length() == 0) {
-                throw new BadRequestException("filename");
-            }
-            if (mimeType.length() == 0) {
-                mimeType = file.getContentType();
-            }
-            String resultFilename = makeResultFilename(file.getFilename(), mimeType);
-            handleFilter(file.getData(), mimeType, filterOperation, resultHandling, resultFilename, ctx, core);
-        } catch (BadRequestException e) {
-            String invalidPart = e.getInvalidRequestPart();
-            if (invalidPart == "filter-operation") {
-                writeBadRequestError(l10n("errorMustSpecifyFilterOperationTitle"), l10n("errorMustSpecifyFilterOperation"), ctx, true);
-            } else if (invalidPart == "result-handling") {
-                writeBadRequestError(l10n("errorMustSpecifyResultHandlingTitle"), l10n("errorMustSpecifyResultHandling"), ctx, true);
-            } else if (invalidPart == "filename") {
-                writeBadRequestError(l10n("errorNoFileSelectedTitle"), l10n("errorNoFileSelected"), ctx, true);
-            } else {
-                writeBadRequestError(l10n("errorBadRequestTitle"), l10n("errorBadRequest"), ctx, true);
-            }
-        }
-    }
-    
-    private static FilterOperation getFilterOperation(HTTPRequest request)
+    private FilterOperation getFilterOperation(HTTPRequest request)
             throws BadRequestException {
         String s = request.getPartAsStringFailsafe("filter-operation", 100);
         try {
@@ -282,7 +260,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
         }
     }
     
-    private static ResultHandling getResultHandling(HTTPRequest request)
+    private ResultHandling getResultHandling(HTTPRequest request)
             throws BadRequestException {
         String s = request.getPartAsStringFailsafe("result-handling", 100);
         try {
@@ -292,7 +270,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
         }
     }
     
-    private static String makeResultFilename(String originalFilename, String mimeType) {
+    private String makeResultFilename(String originalFilename, String mimeType) {
         String filteredFilename;
         int p = originalFilename.indexOf('.', 1);
         if (p > 0) {
@@ -304,7 +282,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
         return filteredFilename;
     }
     
-    private static void handleFilter(Bucket data, String mimeType, FilterOperation operation, ResultHandling resultHandling, String resultFilename, ToadletContext ctx, NodeClientCore core)
+    private void handleFilter(Bucket data, String mimeType, FilterOperation operation, ResultHandling resultHandling, String resultFilename, ToadletContext ctx, NodeClientCore core)
             throws ToadletContextClosedException, IOException, BadRequestException {
         Bucket resultBucket = ctx.getBucketFactory().makeBucket(-1);
         String resultMimeType = null;
@@ -315,26 +293,12 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
         } catch (UnsafeContentTypeException e) {
             unsafe = true;
         } catch (IOException e) {
-            Logger.error(ContentFilterToadlet.class, "IO error running content filter", e);
+            Logger.error(this, "IO error running content filter", e);
             throw e;
         }
 
         if (unsafe) {
-            // copied from Toadlet.sendErrorPage()
-            PageNode page = ctx.getPageMaker().getPageNode(l10n("errorUnsafeContentTitle"), ctx);
-            HTMLNode pageNode = page.outer;
-            HTMLNode contentNode = page.content;
-            
-            HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox-error", l10n("errorUnsafeContentTitle"), contentNode, null, true);
-            infoboxContent.addChild(new HTMLNode("#", l10n("errorUnsafeContent")));
-            infoboxContent.addChild("br");
-            infoboxContent.addChild("a", "href", ".", NodeL10n.getBase().getString("Toadlet.returnToPrevPage"));
-            infoboxContent.addChild("br");
-            addHomepageLink(infoboxContent);
-            
-            byte[] buffer = pageNode.generate().getBytes("UTF-8");
-            ctx.sendReplyHeaders(200, "OK", null, "text/html; charset=utf-8", buffer.length);
-            ctx.writeData(buffer, 0, buffer.length);
+        	sendErrorPage(ctx, 200, l10n("errorUnsafeContentTitle"), l10n("errorUnsafeContent"));
         } else {
             if (resultHandling == ResultHandling.DISPLAY) {
                 ctx.sendReplyHeaders(200, "OK", null, resultMimeType, resultBucket.size());
@@ -352,7 +316,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
         }
     }
     
-    private static FilterStatus applyFilter(Bucket input, Bucket output, String mimeType, FilterOperation operation, NodeClientCore core)
+    private FilterStatus applyFilter(Bucket input, Bucket output, String mimeType, FilterOperation operation, NodeClientCore core)
             throws UnsafeContentTypeException, IOException {
         InputStream inputStream = null;
         OutputStream outputStream = null;
@@ -366,7 +330,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
         }
     }
     
-    private static FilterStatus applyFilter(InputStream input, OutputStream output, String mimeType, FilterOperation operation, NodeClientCore core)
+    private FilterStatus applyFilter(InputStream input, OutputStream output, String mimeType, FilterOperation operation, NodeClientCore core)
             throws UnsafeContentTypeException, IOException {
         URI fakeUri;
         try {

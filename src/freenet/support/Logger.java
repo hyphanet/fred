@@ -368,6 +368,10 @@ public abstract class Logger {
 		logger.log(o, s, prio);
 	}
 	
+	public synchronized static void logStatic(Object o, String s, Throwable e, LogLevel prio) {
+		logger.log(o, s, e, prio);
+	}
+	
 	@Deprecated
 	public synchronized static void logStatic(Object o, String s, int prio) {
 		logStatic(o, s, LogLevel.fromOrdinal(prio));

@@ -21,16 +21,24 @@ import freenet.support.api.HTTPRequest;
 public interface ToadletContext {
 
 	/**
-	 * Write reply headers.
+	 * Write reply headers, with a customised modification time, e.g. for fproxy content.
 	 * @param code HTTP code.
 	 * @param desc HTTP code description.
-	 * @param mvt Any extra headers.
+	 * @param mvt Any extra headers. Can be null.
 	 * @param mimeType The MIME type of the reply.
 	 * @param length The length of the reply.
 	 * @param mTime The modification time of the data being sent or null for 'now' and disabling caching
 	 */
 	void sendReplyHeaders(int code, String desc, MultiValueTable<String,String> mvt, String mimeType, long length, Date mTime) throws ToadletContextClosedException, IOException;
 	
+	/**
+	 * Write reply headers.
+	 * @param code HTTP code.
+	 * @param desc HTTP code description.
+	 * @param mvt Any extra headers. Can be null.
+	 * @param mimeType The MIME type of the reply.
+	 * @param length The length of the reply.
+	 */
 	void sendReplyHeaders(int code, String desc, MultiValueTable<String,String> mvt, String mimeType, long length) throws ToadletContextClosedException, IOException;
 
 	/**

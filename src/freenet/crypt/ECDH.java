@@ -6,12 +6,15 @@ import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
 
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
@@ -34,33 +37,116 @@ public class ECDH {
         
         public final ECGenParameterSpec spec;
         private KeyPairGenerator keygenCached;
-        protected final Provider kgProvider = JceLoader.BouncyCastle;
-        protected final Provider kfProvider = JceLoader.BouncyCastle;;
-        protected final Provider kaProvider = JceLoader.BouncyCastle;;
+        protected final Provider kgProvider;
+        protected final Provider kfProvider;
+        protected final Provider kaProvider;
         /** The symmetric algorithm associated with the curve (use that, nothing else!) */
         public final String defaultKeyAlgorithm;
+        
         /** Expected size of a pubkey */
         public final int modulusSize;
         /** Expected size of the derived secret (in bytes) */
         public final int derivedSecretSize;
         
+        /** Verify KeyPairGenerator and KeyFactory work correctly */
+        static private KeyPair selftest(KeyPairGenerator kg, KeyFactory kf, int modulusSize)
+            throws InvalidKeySpecException
+        {
+            KeyPair key = kg.generateKeyPair();
+            PublicKey pub = key.getPublic();
+            PrivateKey pk = key.getPrivate();
+            byte [] pubkey = pub.getEncoded();
+            byte [] pkey = pk.getEncoded();
+			if(pubkey.length > modulusSize || pubkey.length == 0)
+				throw new Error("Unexpected pubkey length: "+pubkey.length+"!="+modulusSize);
+            PublicKey pub2 = kf.generatePublic(
+                    new X509EncodedKeySpec(pubkey)
+                    );
+            if(!Arrays.equals(pub2.getEncoded(), pubkey))
+                throw new Error("Pubkey encoding mismatch");
+            PrivateKey pk2 = kf.generatePrivate(
+                    new PKCS8EncodedKeySpec(pkey)
+                    );
+			/*
+            if(!Arrays.equals(pk2.getEncoded(), pkey))
+                throw new Error("Pubkey encoding mismatch");
+			*/
+            return key;
+        }
+
+		static private void selftest_genSecret(KeyPair key, KeyAgreement ka)
+			throws InvalidKeyException
+		{
+			ka.init(key.getPrivate());
+            ka.doPhase(key.getPublic(), true);
+            ka.generateSecret();
+		}
+
         private Curves(String name, String defaultKeyAlg, int modulusSize, int derivedSecretSize) {
             this.spec = new ECGenParameterSpec(name);
             this.defaultKeyAlgorithm = defaultKeyAlg;
-            this.modulusSize = modulusSize;
-            this.derivedSecretSize = derivedSecretSize;
-        }
+            KeyAgreement ka = null;
+			KeyFactory kf = null;
+            KeyPairGenerator kg = null;
+			// Ensure providers loaded
+			JceLoader.BouncyCastle.toString();
+			try {
+				KeyPair key = null;
+				try {
+					/* check if default EC keys work correctly */
+					kg = KeyPairGenerator.getInstance("EC");
+					kf = KeyFactory.getInstance("EC");
+					kg.initialize(this.spec);
+					key = selftest(kg, kf, modulusSize);
+				} catch(Throwable e) {
+					/* we don't care why we fail, just fallback */
+					Logger.warning(this, "default KeyPairGenerator provider ("+(kg != null ? kg.getProvider() : null)+") is broken, falling back to BouncyCastle", e);
+					kg = KeyPairGenerator.getInstance("EC", JceLoader.BouncyCastle);
+					kf = KeyFactory.getInstance("EC", JceLoader.BouncyCastle);
+					kg.initialize(this.spec);
+					key = selftest(kg, kf, modulusSize);
+				}
+				try {
+					/* check default KeyAgreement compatible with kf/kg */
+					ka = KeyAgreement.getInstance("ECDH");
+					selftest_genSecret(key, ka);
+				} catch(Throwable e) {
+					/* we don't care why we fail, just fallback */
+					Logger.warning(this, "default KeyAgreement provider ("+(ka != null ? ka.getProvider() : null)+") is broken or incompatible with KeyPairGenerator, falling back to BouncyCastle", e);
+					kg = KeyPairGenerator.getInstance("EC", JceLoader.BouncyCastle);
+					kf = KeyFactory.getInstance("EC", JceLoader.BouncyCastle);
+					kg.initialize(this.spec);
+					ka = KeyAgreement.getInstance("ECDH", JceLoader.BouncyCastle);
+					selftest_genSecret(key, ka);
+				}
+			} catch(NoSuchAlgorithmException e) {
+				System.out.println(e);
+				e.printStackTrace(System.out);
+			} catch(InvalidKeySpecException e) {
+				System.out.println(e);
+				e.printStackTrace(System.out);
+			} catch(InvalidKeyException e) {
+				System.out.println(e);
+				e.printStackTrace(System.out);
+			} catch(InvalidAlgorithmParameterException e) {
+				System.out.println(e);
+				e.printStackTrace(System.out);
+			}
+			this.modulusSize = modulusSize;
+			this.derivedSecretSize = derivedSecretSize;
+
+			this.kgProvider = kg.getProvider();
+			this.kfProvider = kf.getProvider();
+			this.kaProvider = ka.getProvider();
+			Logger.normal(this, name +": using "+kgProvider+" for KeyPairGenerator(EC)");
+			Logger.normal(this, name +": using "+kfProvider+" for KeyFactory(EC)");
+			Logger.normal(this, name +": using "+kaProvider+" for KeyAgreement(ECDH)");
+		}
         
         private synchronized KeyPairGenerator getKeyPairGenerator() {
         	if(keygenCached != null) return keygenCached;
             KeyPairGenerator kg = null;
             try {
-            	// FIXME: The correct algorithm name is "EC".
-            	// "ECDH" is an alias supported only by Bouncycastle.
-            	// Thus it forces the use of Bouncycastle.
-            	// Nextgens is worried about inadequate testing with JCA's other than Bouncycastle.
-            	// IMHO this is excessively paranoid - isn't JCA supposed to just work?
-            	// FIXME Test this with Sun and NSS and then change it to "EC".
                 kg = KeyPairGenerator.getInstance("EC", kgProvider);
                 kg.initialize(spec);
             } catch (NoSuchAlgorithmException e) {

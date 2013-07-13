@@ -577,32 +577,7 @@ public class ToadletContextImpl implements ToadletContext {
 						}
 						
 						try {
-							String methodName = Toadlet.HANDLE_METHOD_PREFIX + method;
-							try {
-								Class<? extends Toadlet> c = t.getClass();
-								Method m = c.getMethod(methodName, HANDLE_PARAMETERS);
-								if (methodIsConfigurable) {
-									AllowData anno = m.getAnnotation(AllowData.class);
-									if (anno == null) {
-										if (data != null) {
-											sendError(sock.getOutputStream(), 400, "Bad Request", "Content not allowed", true, null);
-											ctx.close();
-											return;
-										}
-									} else if (anno.value()) {
-										if (data == null) {
-											sendError(sock.getOutputStream(), 400, "Bad Request", "Missing Content", true, null);
-											ctx.close();
-											return;
-										}
-									}
-								}
-								ctx.setActiveToadlet(t);
-								Object arglist[] = new Object[] {uri, req, ctx};
-								m.invoke(t, arglist);
-							} catch (InvocationTargetException ite) {
-								throw ite.getCause();
-							}
+							callToadletMethod(t, method, uri, req, ctx, data, sock, redirect);
 						} catch (RedirectException re) {
 							uri = re.newuri;
 							redirect = true;
@@ -654,6 +629,47 @@ public class ToadletContextImpl implements ToadletContext {
 		}
 	}
 	
+	private static void callToadletMethod(Toadlet t, String method, URI uri, HTTPRequestImpl req, 
+			ToadletContextImpl ctx, Bucket data, Socket sock, boolean methodIsConfigurable) throws Throwable {
+		String methodName = Toadlet.HANDLE_METHOD_PREFIX + method;
+		if("GET".equals(method)) {
+			// Short cut the common case.
+			if (data != null) {
+				sendError(sock.getOutputStream(), 400, "Bad Request", "Content not allowed", true, null);
+				ctx.close();
+				return;
+			}
+			ctx.setActiveToadlet(t);
+			t.handleMethodGET(uri, req, ctx);
+			return;
+		}
+		try {
+			Class<? extends Toadlet> c = t.getClass();
+			Method m = c.getMethod(methodName, HANDLE_PARAMETERS);
+			if (methodIsConfigurable) {
+				AllowData anno = m.getAnnotation(AllowData.class);
+				if (anno == null) {
+					if (data != null) {
+						sendError(sock.getOutputStream(), 400, "Bad Request", "Content not allowed", true, null);
+						ctx.close();
+						return;
+					}
+				} else if (anno.value()) {
+					if (data == null) {
+						sendError(sock.getOutputStream(), 400, "Bad Request", "Missing Content", true, null);
+						ctx.close();
+						return;
+					}
+				}
+			}
+			ctx.setActiveToadlet(t);
+			Object arglist[] = new Object[] {uri, req, ctx};
+			m.invoke(t, arglist);
+		} catch (InvocationTargetException ite) {
+			throw ite.getCause();
+		}
+	}
+
 	private void setActiveToadlet(Toadlet t) {
 		this.activeToadlet = t;
 	}

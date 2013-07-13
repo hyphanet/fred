@@ -368,7 +368,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		byte[] realHash = SHA256.digest(payload);
 
-		if(Arrays.equals(realHash, hash)) {
+		if(MessageDigest.isEqual(realHash, hash)) {
 			// Got one
 			processDecryptedAuth(payload, pn, peer, oldOpennetPeer);
 			pn.reportIncomingBytes(length);
@@ -424,7 +424,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		byte[] realHash = SHA256.digest(payload);
 
-		if(Arrays.equals(realHash, hash)) {
+		if(MessageDigest.isEqual(realHash, hash)) {
 			// Got one
 			processDecryptedAuthAnon(payload, peer);
 			return true;
@@ -481,7 +481,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		byte[] realHash = SHA256.digest(payload);
 
-		if(Arrays.equals(realHash, hash)) {
+		if(MessageDigest.isEqual(realHash, hash)) {
 			// Got one
 			processDecryptedAuthAnonReply(payload, peer, pn);
 			return true;
@@ -783,7 +783,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			// Check IDr'
 			offset += modulusLength;
 			byte[] expectedIdentityHash = Arrays.copyOfRange(payload, offset, offset + NodeCrypto.IDENTITY_LENGTH);
-			if(!Arrays.equals(expectedIdentityHash, crypto.identityHash)) {
+			if(!MessageDigest.isEqual(expectedIdentityHash, crypto.identityHash)) {
 				Logger.error(this, "Invalid unknown-initiator JFK(1), IDr' is "+HexUtil.bytesToHex(expectedIdentityHash)+" should be "+HexUtil.bytesToHex(crypto.identityHash));
 				return;
 			}
@@ -1063,7 +1063,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		byte[] myNi = null;
 		synchronized (pn) {
 			for(byte[] buf : pn.jfkNoncesSent) {
-				if(Arrays.equals(nonceInitiator, buf))
+				if(MessageDigest.isEqual(nonceInitiator, buf))
 					myNi = buf;
 			}
 		}
@@ -1073,7 +1073,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				Logger.normal(this, "We received an unexpected JFK(2) message from "+pn.getPeer()+" (time since added: "+pn.timeSinceAddedOrRestarted()+" time last receive:"+pn.lastReceivedPacketTime()+')');
 			}
 			return;
-		} else if(!Arrays.equals(myNi, nonceInitiator)) {
+		} else if(!MessageDigest.isEqual(myNi, nonceInitiator)) {
 			if(shouldLogErrorInHandshake(t1)) {
 				Logger.normal(this, "Ignoring old JFK(2) (different nonce to the one we sent - either a timing artefact or an attempt to change the nonce)");
 			}
