@@ -55,6 +55,10 @@ public class PproxyToadlet extends Toadlet {
 		super(client);
 		this.node = node;
 	}
+	
+	public boolean allowPOSTWithoutPassword() {
+		return true;
+	}
 
 	public void handleMethodPOST(URI uri, final HTTPRequest request, ToadletContext ctx)
 	throws ToadletContextClosedException, IOException {
@@ -78,6 +82,7 @@ public class PproxyToadlet extends Toadlet {
 
 		if(path.length()>0)
 		{
+			// Plugins handle their own formPassword checking.
 			try
 			{
 				String plugin = null;
@@ -122,6 +127,8 @@ public class PproxyToadlet extends Toadlet {
 		}
 		else
 		{
+			if(!ctx.checkFormPassword(request)) return;
+			
 			PageMaker pageMaker = ctx.getPageMaker();
 			
 			if (request.isPartSet("submit-official")) {
