@@ -90,10 +90,23 @@ public interface ToadletContext {
 	/**
 	 * Check a request for the form password, and send an error to the client if the password is
 	 * not valid.
+	 * @param request The request to check.
+	 * @param redirectTo The location to redirect to if the password is not set.
 	 * 
 	 * @return Whether the request contains a valid form password
 	 */
+	boolean checkFormPassword(HTTPRequest request, String redirectTo) throws ToadletContextClosedException, IOException;
+	
+	/**
+	 * Check a request for the form password, and send an error to the client if the password is
+	 * not valid.
+	 * @param request The request to check.
+	 * @return Whether the request contains a valid form password
+	 * @throws ToadletContextClosedException
+	 * @throws IOException
+	 */
 	boolean checkFormPassword(HTTPRequest request) throws ToadletContextClosedException, IOException;
+
 	
 	/**
 	 * Get the user alert manager.

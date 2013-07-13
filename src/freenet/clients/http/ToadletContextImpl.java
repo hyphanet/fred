@@ -219,12 +219,18 @@ public class ToadletContextImpl implements ToadletContext {
 	@Override
 	public boolean checkFormPassword(HTTPRequest request)
 			throws ToadletContextClosedException, IOException {
+		return checkFormPassword(request, "/");
+	}
+	
+	@Override
+	public boolean checkFormPassword(HTTPRequest request, String redirectTo)
+			throws ToadletContextClosedException, IOException {
 		String pass = request.getPartAsStringFailsafe("formPassword", 32);
 		byte[] inputBytes = pass.getBytes("UTF-8");
 		byte[] compareBytes = getFormPassword().getBytes("UTF-8");
 		if (!MessageDigest.isEqual(inputBytes, compareBytes)) {
 			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", "/");
+			headers.put("Location", redirectTo);
 			sendReplyHeaders(302, "Found", headers, null, 0);
 			if (logMINOR)
 				Logger.minor(this, "Bad formPassword: " + pass);
@@ -567,7 +573,7 @@ public class ToadletContextImpl implements ToadletContext {
 						
 						// require form password if it's a POST, unless the toadlet requests otherwise
 						if (method.equals("POST") && !t.allowPOSTWithoutPassword()) {
-							if (!ctx.checkFormPassword(req)) {
+							if (!ctx.checkFormPassword(req, t.path())) {
 								break;
 							}
 						}
