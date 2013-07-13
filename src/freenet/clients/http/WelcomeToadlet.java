@@ -55,11 +55,6 @@ public class WelcomeToadlet extends Toadlet {
         this.node = node;
     }
     
-    @Override
-    public boolean allowPOSTWithoutPassword() {
-    	return true;
-    }
-
     void redirectToRoot(ToadletContext ctx) throws ToadletContextClosedException, IOException {
         MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
         headers.put("Location", "/");
@@ -113,9 +108,6 @@ public class WelcomeToadlet extends Toadlet {
 		}
 
         if (request.getPartAsStringFailsafe("updateconfirm", 32).length() > 0) {
-            if (!ctx.checkFormPassword(request)) {
-                return;
-            }
             // false for no navigation bars, because that would be very silly
             PageNode page = ctx.getPageMaker().getPageNode(l10n("updatingTitle"), ctx);
             HTMLNode pageNode = page.outer;
@@ -137,9 +129,6 @@ public class WelcomeToadlet extends Toadlet {
             updateForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "updateconfirm", l10n("update")});
             writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	} else if (request.isPartSet("getThreadDump")) {
-            if (!ctx.checkFormPassword(request)) {
-                return;
-            }
             PageNode page = ctx.getPageMaker().getPageNode(l10n("threadDumpTitle"), ctx);
             HTMLNode pageNode = page.outer;
             HTMLNode contentNode = page.content;
@@ -154,9 +143,6 @@ public class WelcomeToadlet extends Toadlet {
             }
             this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
         } else if (request.isPartSet("disable")) {
-            if (!ctx.checkFormPassword(request)) {
-                return;
-            }
 	    int validAlertsRemaining = 0;
             UserAlert[] alerts = ctx.getAlertManager().getAlerts();
             for (UserAlert alert: alerts) {
@@ -177,10 +163,6 @@ public class WelcomeToadlet extends Toadlet {
             writePermanentRedirect(ctx, l10n("disabledAlert"), (validAlertsRemaining > 0 ? "/alerts/" : "/"));
             return;
         } else if (request.isPartSet("key") && request.isPartSet("filename")) {
-            if (!ctx.checkFormPassword(request)) {
-                return;
-            }
-
             FreenetURI key = new FreenetURI(request.getPartAsStringFailsafe("key", 128));
             String type = request.getPartAsStringFailsafe("content-type", 128);
             if (type == null) {
@@ -242,9 +224,6 @@ public class WelcomeToadlet extends Toadlet {
             writeHTMLReply(ctx, 200, "OK", pageNode.generate());
             return;
         } else if (request.isPartSet("shutdownconfirm")) {
-            if (!ctx.checkFormPassword(request)) {
-                return;
-            }
             MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
             headers.put("Location", "/?terminated&formPassword=" + ctx.getFormPassword());
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
@@ -268,10 +247,6 @@ public class WelcomeToadlet extends Toadlet {
             writeHTMLReply(ctx, 200, "OK", pageNode.generate());
             return;
         } else if (request.isPartSet("restartconfirm")) {
-            if (!ctx.checkFormPassword(request)) {
-                return;
-            }
-
             MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
             headers.put("Location", "/?restarted&formPassword=" + ctx.getFormPassword());
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
@@ -284,10 +259,6 @@ public class WelcomeToadlet extends Toadlet {
                     }, 1);
             return;
         } else if(request.isPartSet("dismiss-events")) {
-			if(!ctx.checkFormPassword(request)) {
-				return;
-			}
-
         	String alertsToDump = request.getPartAsStringFailsafe("events", Integer.MAX_VALUE);
         	String[] alertAnchors = alertsToDump.split(",");
         	HashSet<String> toDump = new HashSet<String>();

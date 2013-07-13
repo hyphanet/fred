@@ -148,11 +148,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		}
 	}
 	
-	@Override
-	public boolean allowPOSTWithoutPassword() {
-		return true;
-	}
-
 	public void handleMethodPOST(URI uri, HTTPRequest request, final ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 
 		if(container.publicGatewayMode() && !ctx.isAllowedFullAccess()) {
@@ -203,10 +198,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				} catch (URISyntaxException e) {
 					//Shouldn't happen, path is defined as such.
 				}
-			}
-
-			if (!ctx.checkFormPassword(request)) {
-				return;
 			}
 
 			if(request.isPartSet("delete_request") && (request.getPartAsStringFailsafe("delete_request", 128).length() > 0)) {

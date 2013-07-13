@@ -36,11 +36,6 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 	
 	protected abstract String postTo();
 	
-	@Override
-	public boolean allowPOSTWithoutPassword() {
-		return true;
-	}
-
 	/**
 	 * Last directory from which an action was performed. If accessible, this is used instead of the fallback
 	 * default directory.
