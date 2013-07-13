@@ -13,6 +13,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.MessageDigest;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -219,7 +220,9 @@ public class ToadletContextImpl implements ToadletContext {
 	public boolean checkFormPassword(HTTPRequest request)
 			throws ToadletContextClosedException, IOException {
 		String pass = request.getPartAsStringFailsafe("formPassword", 32);
-		if (!pass.equals(getFormPassword())) {
+		byte[] inputBytes = pass.getBytes("UTF-8");
+		byte[] compareBytes = getFormPassword().getBytes("UTF-8");
+		if (!MessageDigest.isEqual(inputBytes, compareBytes)) {
 			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", "/");
 			sendReplyHeaders(302, "Found", headers, null, 0);
@@ -562,8 +565,8 @@ public class ToadletContextImpl implements ToadletContext {
 
 						HTTPRequestImpl req = new HTTPRequestImpl(uri, data, ctx, method);
 						
-						// require form password if it's a POST
-						if (method.equals("POST")) {
+						// require form password if it's a POST, unless the toadlet requests otherwise
+						if (method.equals("POST") && !t.allowPOSTWithoutPassword()) {
 							if (!ctx.checkFormPassword(req)) {
 								break;
 							}
