@@ -293,13 +293,13 @@ maintainers may prefer to use this instead of build.xml.
 			<include name="**/*.java"/>
 			<exclude name="*.java"/>
 		</javac>
-		<copy todir="${test.make}/freenet/client/filter/png">
+		<copy todir="${test.make}/freenet/client/filter/png" overwrite="true">
 			<fileset dir="${test.src}/freenet/client/filter/png"/>
 		</copy>
-		<copy todir="${test.make}/freenet/client/filter/bmp">
+		<copy todir="${test.make}/freenet/client/filter/bmp" overwrite="true">
 			<fileset dir="${test.src}/freenet/client/filter/bmp"/>
 		</copy>
-		<copy todir="${test.make}/freenet/crypt/ciphers/rijndael-gladman-test-data">
+		<copy todir="${test.make}/freenet/crypt/ciphers/rijndael-gladman-test-data" overwrite="true">
 			<fileset dir="${test.src}/freenet/crypt/ciphers/rijndael-gladman-test-data"/>
 		</copy>
 	</target>
