@@ -3,10 +3,14 @@
 Install ant.
 Run ant.
 It will tell you what is missing and where to put it.
+In particular, you need freenet-ext.jar in lib/freenet/ and bcprov.jar in lib/
+You can get both of these jars from a node install, or from https://downloads.freenetproject.org/alpha/
 
 == Building Freenet from source: Caveats ==
 
-Don't use build-clean.xml, or call "ant distclean". This will cause problems. In particular it may delete the GWT-generated javascript in src/freenet/clients/http/staticfiles/freenetjs/ . If this happens just checkout the code. It's not used unless web-pushing is enabled in the config.
+Don't use build-clean.xml, or call "ant distclean". This will cause problems. In particular it may delete the GWT-generated javascript in src/freenet/clients/http/staticfiles/freenetjs/ . If this happens just checkout that folder again, or do "git reset --hard" to reset the whole project. Note that the generated javascript isn't actually used unless web-pushing is enabled in the config, but it is needed for building Freenet.
+
+You may want to use the command line git client, as people have sometimes had problems with the egit plugin for Eclipse.
 
 == Building Freenet from source: Long version ==
 
