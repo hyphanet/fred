@@ -1,5 +1,6 @@
 == Building Freenet from source: Short version ==
 
+Install junit.
 Install ant.
 Run ant.
 It will tell you what is missing and where to put it.
