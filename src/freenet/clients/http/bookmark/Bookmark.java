@@ -12,8 +12,8 @@ public abstract class Bookmark {
 	}
 
 	public String getVisibleName() {
-		if(name.startsWith("L10N:"))
-			return NodeL10n.getBase().getString("Bookmarks.Defaults.Name."+name.substring("L10N:".length()));
+		if(name.toLowerCase().startsWith("l10n:"))
+			return NodeL10n.getBase().getString("Bookmarks.Defaults.Name."+name.substring("l10n:".length()));
 		return name;
 	}
 

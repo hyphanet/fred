@@ -260,15 +260,15 @@ public class BookmarkItem extends Bookmark {
     
     public String getDescription() {
     	if(desc == null) return "";
-		if(desc.startsWith("L10N:"))
-			return NodeL10n.getBase().getString("Bookmarks.Defaults.Description."+desc.substring("L10N:".length()));
+		if(desc.toLowerCase().startsWith("l10n:"))
+			return NodeL10n.getBase().getString("Bookmarks.Defaults.Description."+desc.substring("l10n:".length()));
         return desc;
     }
     
     public String getShortDescription() {
     	if(shortDescription == null) return "";
-		if(shortDescription.startsWith("L10N:"))
-			return NodeL10n.getBase().getString("Bookmarks.Defaults.ShortDescription."+shortDescription.substring("L10N:".length()));
+		if(shortDescription.toLowerCase().startsWith("l10n:"))
+			return NodeL10n.getBase().getString("Bookmarks.Defaults.ShortDescription."+shortDescription.substring("l10n:".length()));
         return shortDescription;
     }
     
