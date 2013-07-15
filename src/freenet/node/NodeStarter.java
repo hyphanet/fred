@@ -471,9 +471,10 @@ public class NodeStarter implements WrapperListener {
 		long limit = getMemoryLimitBytes();
 		if(limit <= 0) return limit;
 		if(limit == Long.MAX_VALUE) return -2;
+		limit /= (1024 * 1024);
 		if(limit > Integer.MAX_VALUE)
 			return -1; // Seems unlikely. FIXME 2TB limit!
-		return limit / (1024 * 1024);
+		return limit;
 	}
 	
 	/** Get the memory limit in bytes. Return -1 if we don't know. Compensate for odd JVMs' 
