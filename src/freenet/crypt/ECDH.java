@@ -254,4 +254,9 @@ public class ECDH {
     	//Curves.P384.getKeyPairGenerator();
     	//Curves.P521.getKeyPairGenerator();
     }
+
+    /** Return the public key as a byte[] in network format */
+	public byte[] getPublicKeyNetworkFormat() {
+        return getPublicKey().getEncoded();
+	}
 }
